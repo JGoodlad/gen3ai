@@ -52,7 +52,6 @@ class Gen3Env(SinglesEnv):
                  emit_spread_labels: bool = False,
                  emit_opp_intent_labels: bool = False,
                  emit_hp_type_labels: bool = False, emit_item_labels: bool = False,
-                 distill_team_species=None,
                  opponent_team=None, obs_source: str = "python", **kwargs):
         if obs_source not in OBS_SOURCES:
             raise ValueError(f"obs_source must be one of {OBS_SOURCES}, got {obs_source!r}")
@@ -148,24 +147,6 @@ class Gen3Env(SinglesEnv):
         # COLLECTED row is always fully in the policy term, and only the rows the fork arm
         # INJECTS carry anything else.
         self._emit_fork_pg_mask = bool(emit_fork_pg_mask)
-        # gen3_exploiter_distill_v1: `distill_mask` [1] = 1.0 iff the trainee's CURRENT team IS the frozen
-        # distillation teacher's team (the exploiter's pinned team). Read ONLY by the exploiter-distillation
-        # KL in the PPO loss, which masks the teacher's advice to these states (elsewhere the specialist is
-        # off-distribution and would corrupt the other teams). `distill_team_species` is the teacher team's
-        # species id-set (frozenset), matched against the trainee's own team (`battle1.team`). None → the key
-        # is not emitted. Cached per battle (the team is fixed for a battle) in `_distill_active`.
-        # N teachers: distill_team_species is a LIST of species id-sets (one per teacher). The distill_mask
-        # obs key holds the INTEGER team-id (0=none, k=teacher k, 1-indexed). N=1 → id ∈ {0,1}, obs space
-        # unchanged vs the single-teacher form (Box high = len(list) = 1) → running single-teacher runs resume.
-        # A teacher may own MANY teams (a multi-team `--trainee-teams` z-cluster exploiter), so each entry
-        # is a LIST of species-sets and teacher k's mask fires on ANY of them. A BARE set (the older
-        # one-team-per-teacher form) is wrapped, so both shapes work and old callers are unaffected.
-        self._emit_distill_mask = bool(distill_team_species)
-        self._distill_team_species = [
-            [sp] if isinstance(sp, (set, frozenset)) else list(sp)
-            for sp in (distill_team_species or [])
-        ]
-        self._distill_team_id = None  # per-battle cache (0=none, k=teacher k)
         # Per-battle cache of the fresh per-mon identity encodes (keyed by species id). A hidden mon is
         # untouched (full HP, no status) until revealed, at which point it leaves the believed set, so a
         # mon's fresh encode is stable while it is a target — caching is exact. Cleared on reset().
@@ -195,10 +176,9 @@ class Gen3Env(SinglesEnv):
             opp_intent_labels=bool(self._emit_opp_intent_labels), win_target=bool(self._emit_win_target),
             spread_labels=bool(self._emit_spread_labels), hp_type_labels=bool(self._emit_hp_type_labels),
             item_labels=bool(self._emit_item_labels),
-            fork_pg_mask=self._emit_fork_pg_mask, distill_mask=self._emit_distill_mask)
+            fork_pg_mask=self._emit_fork_pg_mask)
         base_obs = dict(trainee_observation_space(
-            self.observation_encoder.get_layout(), self.vector_space, _gates,
-            distill_species=self._distill_team_species).spaces)
+            self.observation_encoder.get_layout(), self.vector_space, _gates).spaces)
         # SB3 reads the SINGULAR observation_space (threaded as the VecEnv space); the PLURAL
         # observation_spaces is intercepted + rewrapped by PokeEnv.__setattr__ (it would drop the
         # belief keys) and is not the SB3-facing space, so it can stay minimal.
@@ -709,28 +689,6 @@ class Gen3Env(SinglesEnv):
         if (self._emit_opp_intent_labels or self._emit_win_target) and "opp_class" not in agent_obs:
             agent_obs["opp_class"] = np.array(
                 [getattr(self, "_opponent_class", 0)], dtype=np.int64)
-        if self._emit_distill_mask:
-            agent_obs["distill_mask"] = np.array([self._distill_mask()], dtype=np.float32)
-
-    def _distill_mask(self) -> float:
-        """gen3_exploiter_distill_v1 (N teachers): the INTEGER team-id of the trainee's CURRENT team among
-        the distillation teachers' teams — 0.0 = not any teacher's team, k = teacher k (1-indexed). Only
-        these states get teacher k's KL. Cached per battle (`battle1.team` is fixed for a battle); 0.0
-        (uncached) until the full 6-mon team is known (early reset). Both sides use the SAME
-        `to_id_str(species)` id-set (the teacher teams' sets are precomputed in train_rl_agent)."""
-        if self._distill_team_id is not None:
-            return float(self._distill_team_id)
-        b1 = getattr(self, "battle1", None)
-        team = getattr(b1, "team", None) if b1 is not None else None
-        if not team or len(team) < TEAM_SIZE:
-            return 0.0  # team not fully known yet — don't cache a partial set
-        cur = frozenset(to_id_str(m.species) for m in team.values())
-        self._distill_team_id = 0
-        for k, sp_list in enumerate(self._distill_team_species, start=1):
-            if cur in sp_list:          # teacher k owns >=1 team; its KL fires on ANY of them
-                self._distill_team_id = k
-                break
-        return float(self._distill_team_id)
 
     def step(self, action):
         try:
@@ -746,7 +704,6 @@ class Gen3Env(SinglesEnv):
             out = super().step(action)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
                     or self._emit_hp_type_labels or self._emit_item_labels
-                    or self._emit_distill_mask
                     or self._emit_opp_intent_labels):
                 agent_obs = out[0].get(self.agent1.username)
                 if agent_obs is not None:
@@ -762,7 +719,6 @@ class Gen3Env(SinglesEnv):
         self.reward_manager.report_episode(getattr(self, "battle1", None))
         self._tracker.reset()
         self._core_n = 0
-        self._distill_team_id = None     # new battle → recompute which teacher's team (if any) the trainee is on
         try:
             if hasattr(self, "agent1"):
                 self.agent1.save_replays = None
@@ -771,7 +727,6 @@ class Gen3Env(SinglesEnv):
             out = super().reset(*args, **kwargs)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
                     or self._emit_hp_type_labels or self._emit_item_labels
-                    or self._emit_distill_mask
                     or self._emit_opp_intent_labels):
                 obs, info = out
                 agent_obs = obs.get(self.agent1.username)

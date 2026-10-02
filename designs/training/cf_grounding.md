@@ -234,8 +234,8 @@ the term trains the head's own params and provably cannot perturb the trunk.
     whole buffer. Live tell, measured: `cf/label_age_steps_p50` reading **−4,999,000**. Future rows
     expire like stale ones, are counted separately (`cf/labels_future_total`) and trip a one-time
     loud warning naming the cause — a negative age is a diagnosis, not noise.
-- **The LOSS (`instrumented_ppo._cf_winprob_term`).** Per minibatch — the `_td_aux_term` / search-teacher /
-  OPD shape, and for the same reason: the labelled states are recorded PAST decisions, absent from this
+- **The LOSS (`instrumented_ppo._cf_winprob_term`).** Per minibatch — the `_td_aux_term`
+  shape, and for the same reason: the labelled states are recorded PAST decisions, absent from this
   rollout, so they cannot ride `rollout_data`, and a once-per-`train()` fold would make the coefficient
   mean something different from every other aux. `_cf_sample_and_forward` samples up to `CF_SAMPLE_SIZE`
   (256) rows and runs ONE extractor forward (`{"observation": …}` is the only key the model reads); the
@@ -260,7 +260,7 @@ the term trains the head's own params and provably cannot perturb the trunk.
   `cf/labels_skipped_total`, plus `cf/rows_sampled` (rows the fold actually CONSUMED this `train()`,
   summed over minibatches — residency and throughput are different questions, and only the second
   goes to zero when a producer dies while its last labels are still resident). That is deliberate: an empty buffer that does not
-  announce itself is this tree's oldest failure mode (the search-teacher's silent starvation), and a flat
+  announce itself is this tree's oldest failure mode (the deleted search teacher's silent starvation), and a flat
   `labels_ingested_total` is unambiguous evidence the producer stopped, which reads completely differently
   from a rising `labels_expired_total` (a producer that is running but lagging). `train/cf_loss` +
   `train/cf_grad_share` are the TERM, only when it folded; `cf_grad_share` is lifted from the
@@ -270,11 +270,11 @@ the term trains the head's own params and provably cannot perturb the trunk.
 **Flag class — the `td_aux_coef` class** (`gen3_cf_coef_provenance_v1`, config **v100**). All four are
 **training-only** — no forward, no weight shape, not in `agents/model/flag_registry.py` (which declares
 EXTRACTOR toggles, and none of these builds a module), and **never in `check_compatible`**: a frozen
-eval/pool/distill opponent runs no loss at all, so gating a loss coefficient there would be a false
+eval/pool opponent runs no loss at all, so gating a loss coefficient there would be a false
 rejection that breaks league play. But they ARE `ModelVersion` fields, recorded for provenance and
 **read back on a flagless resume** via `_resolve`.
 
-> ⚠️ **They were the `--opd-coef` class until 2026-08-22, and the failure that bought the promotion is
+> ⚠️ **They were the (since deleted) `--opd-coef` class until 2026-08-22, and the failure that bought the promotion is
 > invisible by construction.** An R1 arm resumed without re-typing `--cf-winprob-coef 1.0` kept
 > training, kept logging, and simply stopped applying the term it was launched to measure — no error,
 > no FATAL, just a metric that goes quiet. It was strictly worse than a symmetric loss, because the
@@ -807,7 +807,7 @@ poll moved), for each STREAM a live coefficient reads:
   spawned producer is stopped by its PID.
 
 **The rest of the inventory** — the self-play pool, PFSP, team-PFSP, the fork
-arm, the search teacher, and the startup refusals that used to exit CRASH — is
+arm, and the startup refusals that used to exit CRASH — is
 `gen3_supply_guard_v2`, [`supply_guards.md`](supply_guards.md).
 
 **Honest limits.** The guard is per trainer PROCESS (a segment): the launcher's periodic restart

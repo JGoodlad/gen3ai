@@ -282,7 +282,7 @@ driver that consumes this API — is below.
 
 `src/bin/search_driver.rs` over `src/search.rs` (`gen3_rust_search_driver_v1` +
 `gen3_rust_replay_driver_v1`) is the byte-compatible drop-in for **both** node offline drivers, so
-`utils/bridge/search_session.py` (the prober's `better_line` beam, the search teacher) and
+`utils/bridge/search_session.py` (the prober's `better_line` beam and the search-dividend probe) and
 `utils/bridge/reconstruction.py` (`better_line` / `lookahead` / `falsify`) swap `node` for the binary
 with ZERO protocol change. **Dispatch is on the KEY**: a request carrying `mode` is the one-shot
 REPLAY family (`replay` / `reroll` / `reroll_many`) — a BARE JSON object on stdout, **no trailing
@@ -290,11 +290,9 @@ newline**, exit **0**, or `{"error"}` + exit **1**, which is what `_run_driver` 
 parses stdout; anything else runs the persistent `{id, cmd}` search loop (`open_root` /
 `expand_many` / `close`).
 
-**It already replaces node in `better_line`, and the COMPOSITION is gated** — `search_session.py`
-has the `impl` switch, `search_clone_parity_fuzz_test` takes `--impl rust`, the search teacher threads
-`SearchTeacherCallback(impl=...)`, and `src/main/train/search_teacher_composition_test.py` (`sim` +
-`slow`, ~11 min) runs the real trainer on `--use-bridge rust` asserting >= 2 teacher cycles whose
-corrections reach the AWR fold. `--use-bridge=node` remains the fallback.
+**It already replaces node in `better_line`** — `search_session.py` has the `impl` switch and
+`search_clone_parity_fuzz_test` takes `--impl rust`. (The trainer-side composition that once ran the
+search teacher on it was deleted with the search teacher, deletion pass L3.) `--use-bridge=node` remains the fallback.
 
 | gate | needs node? | what it proves |
 |---|---|---|

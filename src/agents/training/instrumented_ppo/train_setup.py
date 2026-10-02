@@ -2,7 +2,7 @@
 
 Three methods, each returning what the fold then reads: the opponent-intent label alignment (a
 buffer edit with no result), the FOLD FLAGS (which terms are live this call), and the PROBE SETUP
-(the once-per-`train()` diagnostics and the two gradient samplers).
+(the once-per-`train()` diagnostics and the gradient sampler).
 
 None of this is the fold. Each flag is computed once and read by the `if <x>_on:` guard of the term
 it owns, so the sequence in `ppo.train()` stays straight-line source with its guards inline — the
@@ -12,14 +12,12 @@ written against and the loop body is unchanged.
 """
 from typing import Any, NamedTuple
 
-import numpy as np
 import torch as th
 
 from agents.model.critic_mode import is_winprob
 from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
 from agents.training.grad_balance import shared_trunk_parameters
 from agents.training.instrumented_ppo.diagnostics_cadence import DiagnosticsPlan, mark_ran, plan_for
-from agents.training.instrumented_ppo.distill_grad_project import make_projector
 from agents.training.instrumented_ppo.noise_scale_terms import (
     NULL_TAGGER,
     PerTermNoiseSampler,
@@ -40,10 +38,6 @@ class FoldFlags(NamedTuple):
     critic_winprob: Any
     win_prob_on: Any
     scaffolding_on: Any
-    search_teacher_on: Any
-    opd_on: Any
-    distill_on: Any
-    distill_rows_in_buffer: Any
     policy_grad_coef: Any
     td_aux_on: Any
     cf_buffer: Any
@@ -58,9 +52,9 @@ class FoldFlags(NamedTuple):
 
 
 class ProbeSetup(NamedTuple):
-    """The once-per-`train()` diagnostics state. `ns_terms` / `dgp` are `_ns_terms` / `_dgp` in
-    `train()`; a `NamedTuple` field cannot start with an underscore, and the local names are what
-    the fold's `_ntg.add(...)` / `_dgp.add(...)` seams are written against."""
+    """The once-per-`train()` diagnostics state. `ns_terms` is `_ns_terms` in `train()`; a
+    `NamedTuple` field cannot start with an underscore, and the local name is what the fold's
+    `_ntg.add(...)` seam is written against."""
     shared_trunk: Any
     grad_balance: Any
     rank_metrics: Any
@@ -74,7 +68,6 @@ class ProbeSetup(NamedTuple):
     noise_g_small_sq: Any
     noise_g_big_sq: Any
     ns_terms: Any
-    dgp: Any
     diag: DiagnosticsPlan
 
 
@@ -147,49 +140,9 @@ class TrainSetup:
         # gauge is an observability read of whatever the head currently says. ALWAYS ON when the
         # head exists; there is no flag, matching the `signal/` group.
         scaffolding_on = getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
-        # +SEARCH-TEACHER: AWR policy distillation. On when enabled, the coef is non-zero, AND the
-        # standalone correction buffer has been populated (the callback fills it from worker shards).
-        # Each minibatch samples its OWN correction batch + does its OWN policy forward (off-policy
-        # states not in the rollout). OFF / empty buffer → skipped (loss byte-identical to upstream).
-        search_teacher_on = (
-            getattr(self, "_search_teacher_on", False) and self.search_teacher_coef != 0.0
-            and getattr(self, "_correction_buffer", None) is not None
-            and len(self._correction_buffer) > 0
-        )
-        # +OPD: on-policy self-distillation. On when enabled, the coef is non-zero, AND the SAME
-        # standalone correction buffer (filled by the SearchTeacherCallback, its workers building π')
-        # is populated. Its OWN get_distribution forward, like the search-teacher AWR. A sampled batch
-        # with no π' (an AWR-only buffer) is skipped by the None-guard. OFF → byte-identical to upstream.
-        opd_on = (
-            getattr(self, "_opd_on", False) and self.opd_coef != 0.0
-            and getattr(self, "_correction_buffer", None) is not None
-            and len(self._correction_buffer) > 0
-        )
-        # +DISTILL (gen3_exploiter_distill_v1): exploiter distillation, N teachers. On when a non-empty list
-        # of frozen teacher models is attached AND the coef is non-zero. Per minibatch: ONE student forward
-        # + one forward per teacher, each KL masked to that teacher's team states (the `distill_mask` obs key
-        # holds an INTEGER team-id — 0 = none, k = teacher k, 1-indexed). Per-teacher mean-KLs are averaged
-        # (per-archetype balancing → no teacher dominates). N=1 is byte-identical to the single-teacher form
-        # (id ∈ {0,1}). OFF (empty list / coef 0) → byte-identical to upstream.
-        distill_on = (
-            bool(getattr(self, "_distill_teachers", None)) and self.distill_coef != 0.0
-        )
-        # +DISTILL-SHARE (gen3_grad_distill_share_v1): does THIS rollout hold any teacher-team rows
-        # at all? Decides whether the grad-balance probe below WAITS for a minibatch with a live
-        # distill term (so `grad/distill_share` — the §6.2 dose meter of
-        # designs/ai_v10/design_advantage_gated_distillation.md — isn't silently dropped from the
-        # per-train() sample) or samples immediately: an all-zero buffer would otherwise suppress
-        # the WHOLE probe for the call (the cf starving-buffer lesson at the probe's gate). One
-        # np.max over the buffer per train(); off (no teachers / coef 0) it short-circuits free.
-        _buf_obs = getattr(self.rollout_buffer, "observations", None) if distill_on else None
-        distill_rows_in_buffer = (
-            distill_on and isinstance(_buf_obs, dict) and "distill_mask" in _buf_obs
-            and float(np.max(_buf_obs["distill_mask"])) >= 1.0
-        )
         # +PG-COEF (gen3_policy_grad_coef_v1, `--policy-grad-coef`): the PPO policy-gradient term's own weight.
         # 1.0 (default) takes the UNSCALED `policy_loss` tensor — the loss expression is then
-        # byte-identical to upstream; 0.0 removes the policy-gradient contribution alone (the
-        # arm-F pure-distill/aux phase). Scales ONLY `policy_loss` — entropy and the value term
+        # byte-identical to upstream; 0.0 removes the policy-gradient contribution alone. Scales ONLY `policy_loss` — entropy and the value term
         # keep their own coefficients (`ent_coef`, `vf_coef`).
         policy_grad_coef = float(getattr(self, "policy_grad_coef", 1.0))
         # +TD-AUX (gen3_td_consistency_aux_v1): the Bellman-residual consistency term over CONTIGUOUS
@@ -263,17 +216,14 @@ class TrainSetup:
             belief_aux_on=belief_aux_on, move_belief_on=move_belief_on, move_latent_on=move_latent_on,
             spread_belief_on=spread_belief_on, hp_type_belief_on=hp_type_belief_on, item_belief_on=item_belief_on,
             critic_winprob=critic_winprob, win_prob_on=win_prob_on, scaffolding_on=scaffolding_on,
-            search_teacher_on=search_teacher_on,
-            opd_on=opd_on, distill_on=distill_on, distill_rows_in_buffer=distill_rows_in_buffer,
             policy_grad_coef=policy_grad_coef, td_aux_on=td_aux_on, cf_buffer=cf_buffer,
             cf_winprob_on=cf_winprob_on, cf_evid_on=cf_evid_on, cf_twin_on=cf_twin_on,
             cf_shadow_on=cf_shadow_on, q_winprob_on=q_winprob_on, q_onpolicy_on=q_onpolicy_on,
             cf_any_on=cf_any_on, fork_pg_mask_on=fork_pg_mask_on,
         )
 
-    def _train_probe_setup(self, distill_metrics: dict) -> ProbeSetup:
-        """The once-per-`train()` probes and the two gradient samplers. Takes
-        `distill_metrics` because the grad-projector writes its diagnostics straight into it."""
+    def _train_probe_setup(self) -> ProbeSetup:
+        """The once-per-`train()` probes and the gradient sampler."""
         # +INSTRUMENTATION: gradient-balance + value-scale diagnostics (grad_balance.py).
         # The dual-head extractor shares one trunk; both losses' gradients compete there. We
         # sample that pull ONCE per train() call (first minibatch) so vf_coef can be tuned to a
@@ -328,18 +278,12 @@ class TrainSetup:
         _ns_terms = NULL_TAGGER
         if accum >= 2 and per_term_enabled(self) and diag.noise_terms:
             _ns_terms = PerTermNoiseSampler(list(self.policy.parameters()))
-        # +DISTILL-GRAD-PROJECT (gen3_distill_grad_project_v1): SOURCE-SEPARATED anchoring — project
-        # the DISTILL gradient off the off-slice behaviour subspace and leave PPO's gradient free.
-        # NULL unless `--distill-anchor-mode grad_project`, in which case `_dgp.add(...)` below is a
-        # passthrough and the two step-side hooks do nothing (update bit-identical). The whole
-        # mechanism lives in `distill_grad_project.py`; this file holds only the seam.
-        _dgp = make_projector(self, distill_metrics, list(self.policy.parameters()))
         return ProbeSetup(
             shared_trunk=shared_trunk, grad_balance=grad_balance, rank_metrics=rank_metrics,
             edge_metrics=edge_metrics, cell_metrics=cell_metrics, grad_norms=grad_norms,
             capacity=capacity, capacity_metrics=capacity_metrics,
             signal_metrics=signal_metrics, accum=accum, noise_g_small_sq=noise_g_small_sq,
-            noise_g_big_sq=noise_g_big_sq, ns_terms=_ns_terms, dgp=_dgp, diag=diag,
+            noise_g_big_sq=noise_g_big_sq, ns_terms=_ns_terms, diag=diag,
         )
 
     # ------------------------------------------------------------------ K8 region R1's setup

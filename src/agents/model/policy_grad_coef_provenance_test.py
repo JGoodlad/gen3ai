@@ -1,10 +1,10 @@
 """Gates for `gen3_policy_grad_coef_v1` (config v102) — the policy-gradient term's own weight.
 
 `--policy-grad-coef` multiplies ONLY the clipped PPO surrogate (`policy_grad_coef * policy_loss`) in the loss
-fold; 1.0 (the default) is the upstream expression byte-for-byte and 0.0 is the arm-F
-pure-distill/aux phase the flag exists for. It is the `td_aux_coef` provenance genre exactly:
+fold; 1.0 (the default) is the upstream expression byte-for-byte and 0.0 removes the
+policy-gradient term alone (the pure-aux phase the flag was built for). It is the `td_aux_coef` provenance genre exactly:
 TRAINING-only, recorded on `ModelVersion` for provenance, `_resolve`-inherited on a flagless
-resume, and NEVER gated by `check_compatible` — a frozen eval/pool/distill opponent runs no
+resume, and NEVER gated by `check_compatible` — a frozen eval/pool opponent runs no
 loss at all, so gating a loss coefficient there would be a false rejection.
 
 The four properties, mirroring `cf_coef_provenance_test.py` (the v100 family's gate):
@@ -100,7 +100,7 @@ def test_it_is_a_model_version_field_with_the_upstream_default():
 
 
 def test_it_is_not_gated_by_check_compatible(layout):
-    """A frozen eval / pool / distill opponent runs NO loss, so gating a loss coefficient there
+    """A frozen eval / pool opponent runs NO loss, so gating a loss coefficient there
     would be a false rejection that breaks league play."""
     pk = {"net_arch": [512, 512]}
     a = ModelVersion.from_layout_and_policy_kwargs(layout, pk)

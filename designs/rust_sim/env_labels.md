@@ -7,7 +7,7 @@ The Rust env core (`src/rust_env/`, package `pokesim_env`) writes the trainee's 
 `mask` (Lane 0). `Gen3Env` also puts TRAINING-ONLY LABEL keys into the trainee's Dict obs. They are
 read by a loss, a callback or a diagnostic, never by the policy forward (`designs/ARCHITECTURE.md` §7).
 For Python to leave the per-decision loop, every key the production surface emits must come from
-the core, from the host, or be refused. This doc is the human-readable view of that table.
+the core or from the host. This doc is the human-readable view of that table.
 
 ## 1. The inventory
 
@@ -25,7 +25,7 @@ and FAILS when:
 - a named consumer stops naming its key;
 - ARCHITECTURE.md §7's ✅/❌, or this doc's table, disagrees with the table.
 
-**Headline (deletion pass L2): `Gen3Env` can emit 23 label keys. Production emits 21.** (Seven keys — `win_row_w`, `opp_true_team`, `aux_target` / `aux_mask` / `aux_turn`, `defensive_opportunity`, `bait_opportunity` — went with their deleted levers.) The production keys fall into
+**Headline (deletion pass L3): `Gen3Env` can emit 22 label keys. Production emits 21.** (Seven keys — `win_row_w`, `opp_true_team`, `aux_target` / `aux_mask` / `aux_turn`, `defensive_opportunity`, `bait_opportunity` — went with their deleted levers in L2, and `distill_mask`, with distillation, in L3; its `refused` label kind went with it, so every row is now `core`, `host_const` or `host_episode`.) The production keys fall into
 eight families:
 
 - belief: 3 keys
@@ -38,7 +38,7 @@ eight families:
 - opponent intent (α/β): 4
 
 **18 of the 21 are per-decision values the core must compute. 2 are host constants. 1 is a
-per-episode host value.** The remaining 2 keys (`fork_pg_m`, `distill_mask`) are off the production surface.
+per-episode host value.** The remaining 1 key (`fork_pg_m`) is off the production surface.
 
 The `rust` column says where the Rust env gets each key:
 
@@ -47,7 +47,6 @@ The `rust` column says where the Rust env gets each key:
 - `host_const`: a placeholder the host writes as a constant. A rollout callback overwrites it after
   collection.
 - `host_episode`: a per-episode value the host owns, keyed by the core's `episode` column. `opp_class` is the class of the episode's opponent ROUTE: `rust_env_opponents.RustEnvOpponents.opp_class(cols)` reads it off the core's `opp_route` column (M5 Lane E), so it can never describe the previous opponent.
-- `refused`: off the production surface. A spec that asks for it is refused at startup.
 
 | key | dtype `shape` | family | prod | producer (Python) | consumer | rust |
 |---|---|---|---|---|---|---|
@@ -73,7 +72,6 @@ The `rust` column says where the Rust env gets each key:
 | `opp_switch_slot` | i64 `[1]` | intent | yes | `Gen3Env._opp_intent_labels` | `instrumented_ppo/ppo.py`, `train_setup.py` | `core` |
 | `opp_switch_species` | i64 `[1]` | intent | yes | `Gen3Env._opp_intent_labels` | `instrumented_ppo/ppo.py`, `train_setup.py` | `core` |
 | `fork_pg_m` | f32 `[1]` | fork | no | `Gen3Env._merge_training_keys` (1.0) | `fork_arm.py` | `host_const` |
-| `distill_mask` | f32 `[1]` | distill | no | `Gen3Env._distill_mask` | `instrumented_ppo/ppo.py`, `distill_anchor.py` | `refused` |
 
 `fork_buffer.py` and SB3's rollout buffer CARRY every key, but neither is a consumer.
 
@@ -128,7 +126,7 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
 2. **(BUILT)** The GENERATED label columns: `columns.py` builds one column per `core` row,
    18 in all, named by the key. The spec gains a `labels` declaration: the families the caller
    wants. `src/rust_env/src/labels/mod.rs` refuses, at STARTUP and by name, a `host_*` family, a
-   `refused` family, an unknown family, and a `core` family not built yet (`labels::BUILT`).
+   an unknown family, and a `core` family not built yet (`labels::BUILT`).
 3. One unit per `core` family, each with its slice-N parity gate against `Gen3Env` on recorded
    battles: COMMIT tier in the routine gate, MILESTONE tier `slow`. The order is belief, hp_type +
    item, spread, intent, then margin. **`belief` BUILT**

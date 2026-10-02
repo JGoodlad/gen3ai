@@ -46,7 +46,7 @@ toggle can lose its flag without losing its explicitness:
 THE FOUR CLASSES say what a mismatch MEANS, which is what picks the gate:
 
     structural         weights and/or the trained forward differ  -> ``check_compatible`` (gates
-                       EVERY load, including frozen eval/pool/distill opponents)
+                       EVERY load, including frozen eval/pool opponents)
     resume_immutable   the FORWARD is identical; only training differs -> a dedicated ``check_*``
                        on the resume path only, EXCLUDED from ``check_compatible`` (gating a frozen
                        opponent on it would be a false rejection that breaks league play)
@@ -446,7 +446,7 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "the registry's declared scope is 'the things that pass through "
                    "build_extractor_arch_kwargs'. Its two coefficients (--cf-evidential-coef / "
                    "--cf-evidential-reg) are NOT: they are training-only loss weights in the "
-                   "--opd-coef / --cf-winprob-coef class, set on the MODEL rather than the "
+                   "--td-aux-coef / --cf-winprob-coef class, set on the MODEL rather than the "
                    "extractor. Stronger than its two precedents in one way: there is no "
                    "read_only/shaping split, because the head's input is detached "
                    "UNCONDITIONALLY — it is a pure supervised readout that feeds nothing forward "
@@ -466,7 +466,7 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "identical trunk over identical states. IN the registry for the "
                    "`cf_evidential`/`win_prob_mode` reason: a Gen3FeaturesExtractor constructor "
                    "kwarg that builds MODULES. Its coefficient (--cf-twin-coef) is NOT — a "
-                   "training-only loss weight in the --opd-coef class. Head-only ALWAYS in v1 "
+                   "training-only loss weight in the --td-aux-coef class. Head-only ALWAYS in v1 "
                    "(both twins read a DETACHED value_pooled in every term), so this measures the "
                    "LABEL effect on a trunk frozen with respect to them; trunk exposure stays a "
                    "cross-run question. Never called by the forward, built LAST: OFF byte-identical, "
@@ -490,7 +490,7 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "argument. The `pubval` structural precedent. Detached ALWAYS — there is no "
                    "read_only/shaping split — and never called by the forward, so OFF is "
                    "byte-identical and ON-at-coef-0 is bit-identical in pi/vf. Its coefficient "
-                   "(--cf-shadow-coef) is training-only, the --opd-coef class. No `requires`: it "
+                   "(--cf-shadow-coef) is training-only, the --td-aux-coef class. No `requires`: it "
                    "reads value_pooled, which is unconditional.",
               family=Family.CRITIC),
     ModelFlag("q_winprob_mode", "none", Tier.CLI, Klass.STRUCTURAL, 107,

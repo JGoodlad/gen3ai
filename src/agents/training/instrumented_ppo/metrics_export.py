@@ -188,44 +188,8 @@ class TrainMetricsExport:
         for _sk2, _sv2 in self._winprob_start_metrics(scaffolding_on).items():
             self.logger.record(f"win_prob/{_sk2}", _sv2)
 
-    def _record_term_metrics(self, teacher_metrics: dict, opd_metrics: dict,
-                             distill_metrics: dict, td_aux_metrics: dict) -> None:
-        """The four per-term prefixes that carry no counterfactual."""
-
-        # +SEARCH-TEACHER: AWR diagnostics under their OWN `teacher/` TB prefix. `agree_rate` (policy ↔
-        # A* — should RISE as the distillation lands), `mean_adv` (the confirmed win-rate improvement of
-        # the corrections), `mean_w` (AWR weight), `ce`, `loss`, `n`; `buffer_size` = the standalone ring
-        # depth. The shared-trunk pull rides `grad/searchteacher_share` (+ `_policy_cosine` — the live
-        # "is the teacher fighting the actor" signal). `teacher/yield` + `/corrections_per_cycle` are
-        # emitted by SearchTeacherCallback (cross-process facts). Empty (off / empty buffer) → not logged.
-        if teacher_metrics:
-            for _tk, _tvals in teacher_metrics.items():
-                self.logger.record(f"teacher/{_tk}", float(np.mean(_tvals)))
-            cb = getattr(self, "_correction_buffer", None)
-            if cb is not None:
-                self.logger.record("teacher/buffer_size", float(len(cb)))
-
-        # +OPD: on-policy self-distillation KL diagnostics under their OWN `opd/` TB prefix. `kl` = the
-        # forward KL(π' ‖ π_student) being minimized (should FALL as the student matches π'),
-        # `pi_target_entropy` = π' sharpness (low = decisive target), `agree_rate` = student ↔ π' mode
-        # agreement (should RISE), `n` = the sampled correction count. The shared-trunk pull rides
-        # `grad/opd_share`. Empty (off / empty buffer / an AWR-only π'-less sample) → not logged.
-        if opd_metrics:
-            for _ok, _ovals in opd_metrics.items():
-                self.logger.record(f"opd/{_ok}", float(np.mean(_ovals)))
-
-        # +DISTILL: exploiter-distillation KL diagnostics under their OWN `distill/` TB prefix. `kl` = the
-        # masked forward KL(π_teacher ‖ π_student) being minimized (should FALL as the student matches the
-        # specialist), `agree_rate` = student ↔ teacher mode agreement on teacher-team states (should RISE),
-        # `coverage` = fraction of the minibatch on the teacher's team, `n` = teacher-team state count.
-        # Under `--distill-target action` (gen3_distill_target_gate_v1) the §4.3 liveness row rides the
-        # same prefix: `gated_frac` / `n_gated` (0 is a reading: the gate found nothing) /
-        # `gate_agree_rate` (student argmax == teacher argmax ON GATED ROWS) / `mean_gate_adv` — the
-        # dose meters G2's share-matching is read against (with grad/distill_share).
-        # Empty (off / no teacher-team states in any minibatch) → not logged.
-        if distill_metrics:
-            for _dk, _dvals in distill_metrics.items():
-                self.logger.record(f"distill/{_dk}", float(np.mean(_dvals)))
+    def _record_term_metrics(self, td_aux_metrics: dict) -> None:
+        """The per-term prefix that carries no counterfactual."""
 
         # +TD-AUX: Bellman-residual diagnostics under their OWN `td_aux/` TB prefix. `resid_rms` is
         # the headline — the quantity the term minimises, and the live counterpart of the offline
@@ -249,7 +213,7 @@ class TrainMetricsExport:
         #
         #  * `cf/*` is PRODUCER LIVENESS — published on every train() the moment a buffer exists,
         #    whether or not a single label ever arrived. An empty buffer that does not announce
-        #    itself is this tree's oldest failure mode (the search-teacher's silent starvation), so
+        #    itself is this tree's oldest failure mode (a supply that starves silently), so
         #    `cf/buffer_fill` == 0 with a flat `cf/labels_ingested_total` is a first-class reading,
         #    not an absence of readings.
         #  * `train/cf_loss` + `train/cf_grad_share` are the TERM — only when it actually folded.

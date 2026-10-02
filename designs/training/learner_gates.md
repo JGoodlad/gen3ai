@@ -242,8 +242,7 @@ among them) and resolve to `fatal` (`learner_gates_test`).
 `n_envs` rows, the learner a micro-batch (the healthy rows above); `--compile-trainer` — measured in
 both arms above; grad-checkpointing — the recompute is bit-exact
 (dropout 0, `use_reentrant=False`); fork-arm branch rows — their log-probs come from the parent's live
-policy (`fork_buffer.build_branch_rows`), i.e. the behaviour policy; distill rows — the trainee's own
-log-probs; `_align_opp_intent_labels` — rewrites label keys only, never a policy input.
+policy (`fork_buffer.build_branch_rows`), i.e. the behaviour policy; `_align_opp_intent_labels` — rewrites label keys only, never a policy input.
 **UNVERIFIED:** a real CUDA python-core launch (no GPU training during the M5 halt) — the CUDA numbers
 are the production learner's forwards on real rollout rows, not a live rollout loop.
 
@@ -271,16 +270,14 @@ can move anything (so a crash-save holds the last finite weights):
 | `opp_intent.set_valued_switch_loss` `avail = believed & isfinite` | a row whose only believed slots were NaN was dropped | `~isneginf`, same reasoning |
 | `ppo.py` advantage normalisation | a ONE-row final micro-batch (python core, n_steps·n_envs ≡ 1 mod the micro-batch; the Rust collector's target is a multiple of it) had std() = NaN → NaN into every weight, silently | stock SB3 PPO's `numel() > 1` guard (sb3_contrib's MaskablePPO lacks it) |
 | `rust_rollout/collector.py` `won = reward > 0` | a NaN reward became a finite LOSS label | the NaN reward is refused at the buffer check |
-| `distill_grad_project.py` (`grad_project` mode) | a NaN constraint gradient made `removed_sq > 0` False: the projection was SKIPPED silently, loss and `.grad` finite | typed FATAL on a non-finite `g_sq` / `removed_sq`, re-raised past the projector's broad `except` |
 | `adaptive_lr_callback.py` (both controllers) | a NaN KL froze `_kl_ema` (and the LR) for the rest of the run; an Inf walked the LR to `min_lr` | typed FATAL (the train-side `check_kl_finite` is the first line) |
 
 **Reach the total — covered by the loss / gradient checks:** the clipped surrogate, the value MSE (plain /
 clipped), entropy; the win-prob BCE and dense aux (multiplicative masks: NaN x 0 = NaN); the
-distill family, the anchor, TD-aux, the cf binomial / beta-binomial / shadow losses; the belief bank
+TD-aux, the cf binomial / beta-binomial / shadow losses; the belief bank
 (index selection: a selected NaN propagates); the switch-branch / intent-conditional weights
 (`clamp` keeps NaN); SB3's and the Rust collector's GAE (no checks of their own — the buffer check
-covers their output); the noise-scale EMA (reads the same `.grad`); the distill stop / dual-ascent
-controllers (their meters come from loss terms); a NaN INPUT row (torch's `Categorical` argument
+covers their output); the noise-scale EMA (reads the same `.grad`); a NaN INPUT row (torch's `Categorical` argument
 validation raises before any loss — untyped, pinned by `learner_gates_test`).
 
 **LEGIT masks:** `damage_op_blocks.py` `where(isfinite(cheapest))` (every candidate is a constant or
@@ -309,10 +306,7 @@ rate functions, the `try/except` telemetry blocks in
 
 **OPEN — off in production, recorded rather than changed:** `cf_label_buffer.py` rejects non-finite
 external labels at ingest and COUNTS them (`cf/labels_skipped_total`) — whether an external producer's
-bad row is fatal is a policy call; `teacher/produce.py` + `teacher/callback.py` encode a NaN π′ target
-as the "no target" sentinel; `teacher/winprob_oneply.py` treats a NaN win-prob read as "not contested";
-`distill_terms.py` search-teacher AWR weight `exp(adv/β).clamp(max)` clamps a +Inf confirmed advantage;
-`keyed_draw.py` reports a NaN logit row as "no legal action" (fail-closed, misleading message);
+bad row is fatal is a policy call; `keyed_draw.py` reports a NaN logit row as "no legal action" (fail-closed, misleading message);
 `--target-kl nan` parses (no finiteness validation in the parser).
 
 **The exit side (cutover-prep, `743008c1`).** Every K9(c) raise is `main.exit_codes.NonFiniteLearnerError`

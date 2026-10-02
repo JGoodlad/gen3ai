@@ -184,7 +184,7 @@ def test_a_pre_v112_config_is_REFUSED_and_a_current_one_records_its_regime_and_i
 
 
 def test_neither_field_is_GATED_by_check_compatible():
-    """A frozen eval/pool/distill opponent runs no eval cycle at all, so gating it on the regime
+    """A frozen eval/pool opponent runs no eval cycle at all, so gating it on the regime
     would be a false rejection that breaks league play."""
     from agents.model.model_version import ModelVersion
 

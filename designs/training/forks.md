@@ -264,7 +264,7 @@ alternative cost is a belief head trained on fiction.
 The arm's refusals are THREE `combination_checks` rows: it needs the winprob critic, it needs `--cf-records` on the python core, and it refuses `--win-prob-strata-weight`
 (it prices rows by `win_margin`, which the env's reward manager computes — every injected row would
 carry the 0.0 fill and land in one stratum, making the delivered strata dose a function of the fork
-rate). `fork_buffer.REFUSE_KEYS` holds only `distill_mask` (a key a branch cannot supply is refused at setup, never guessed). The privileged true-team and dense-aux flags the arm once also refused are deleted (deletion pass L2).
+rate). An obs key the fill table does not know is refused at setup, never guessed (`fork_buffer`'s fill table; the `REFUSE_KEYS` set that held `distill_mask` was deleted with distillation, deletion pass L3). The privileged true-team and dense-aux flags the arm once also refused are deleted (deletion pass L2).
 
 ### The buffer
 
@@ -556,7 +556,7 @@ Four tags are new:
 - `--rollout-trigger complete_game` (the window fill is the parity schedule).
 
 `--cf-records` is a Python-core requirement only; the core's finished logs replace the ring. Every
-other fork refusal holds on both cores: `winprob`, strata weight, and the `distill_mask` key.
+other fork refusal holds on both cores: `winprob` and strata weight.
 
 ### 14.8 Gates (each FAILS on revert)
 

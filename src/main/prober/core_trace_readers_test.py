@@ -154,11 +154,3 @@ def test_scaffolding_gauge_refuses_rather_than_dropping_the_cycle(core_run, no_e
     run_dir, _paths = core_run
     with pytest.raises(CoreTraceUnsupported, match="scaffolding_gauge.collect_slices"):
         collect_slices(run_dir)
-
-
-def test_the_winprob_teacher_refuses_instead_of_selecting_nothing(core_run, fake_expand):
-    from agents.training.teacher.winprob_oneply import select_winprob_candidates
-
-    run_dir, _paths = core_run
-    with pytest.raises(CoreTraceUnsupported, match="winprob_oneply.select_winprob_candidates"):
-        select_winprob_candidates(run_dir, step=STEP)

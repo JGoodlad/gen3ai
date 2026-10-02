@@ -317,7 +317,7 @@ def test_the_weight_is_recorded_and_inherited_on_a_flagless_resume():
     assert v.intent_label_bot_weight == 0.25
     assert ModelVersion(**json.loads(v.to_json())).intent_label_bot_weight == 0.25
 
-    # NOT gated by check_compatible — a frozen eval / pool / distill opponent never runs a loss,
+    # NOT gated by check_compatible — a frozen eval / pool opponent never runs a loss,
     # so comparing it there would be a false rejection that breaks league play.
     other = ModelVersion.from_layout_and_policy_kwargs(layout, pk, intent_label_bot_weight=1.0)
     other.check_compatible(v)

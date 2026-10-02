@@ -275,7 +275,7 @@ def resolve_checkpoint_with_rung(
     🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT, here as everywhere else**
     (`gen3_last_snapshot_resolution_v1`). This delegates to the ONE choke point,
     ``agents.training.fixed_opponent_pool.resolve_model_ref`` — the same resolution a
-    ``--distill-teacher`` or ``--stable-opponents`` spec gets — rather than keeping a second
+    ``--stable-opponents`` spec gets — rather than keeping a second
     opinion about what "this run's model" means.
 
     It used to prefer ``best_model/best_model.zip`` and fall back to latest, which is the ordering

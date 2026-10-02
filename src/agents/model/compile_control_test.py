@@ -748,7 +748,7 @@ def test_the_attached_wrappers_are_excluded_from_every_checkpoint():
     """`attach` sets INSTANCE attributes (`collect_rollouts`, `train`, `_compile_control`) on the
     model; SB3's `save` pickles `__dict__` minus `_excluded_save_params`, so without the exclusion
     every save after the first update would try to cloudpickle a live sentinel (logging handler,
-    dynamo callbacks) — the `_correction_buffer` lock hazard again."""
+    dynamo callbacks) — the `_cf_buffer` lock hazard again."""
     from agents.training.instrumented_ppo import InstrumentedMaskablePPO
     excluded = InstrumentedMaskablePPO._excluded_save_params(
         InstrumentedMaskablePPO.__new__(InstrumentedMaskablePPO))
@@ -829,8 +829,6 @@ def test_the_lock_is_released_even_when_learn_raises(sentinel):
 
 
 @pytest.mark.parametrize("module, needle, count", [
-    ("agents.training.instrumented_ppo.ppo", "with _eager_fe(", 3),     # search-teacher x2, OPD
-    ("agents.training.instrumented_ppo.distill_grad_project", "with eager_extractor(", 1),
     ("agents.training.fork_callback", "eager_extractor(", 1),
     ("agents.training.fork_driver", "eager_extractor(", 1),
 ])

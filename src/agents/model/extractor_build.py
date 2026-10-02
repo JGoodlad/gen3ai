@@ -795,7 +795,7 @@ class ExtractorBuild(torch.nn.Module):
         self.win_prob_mode = win_prob_mode
         self.win_head = WinProbHead() if win_prob_mode != "none" else None
         # (`stash.win_prob_logits` [B,1] — the aux BCE + prober readout — and `stash.value_pooled`
-        # — the FitNets HINT layer `instrumented_ppo._value_feat_distill` reads — are written each
+        # — the value-CLS hint layer the capacity / ride-along / cf readers use — are written each
         # forward; NEVER fed into pi/vf, so no label can leak.)
 
         # gen3_unified_value_readout_v1 (v80): the Stage-3 critic entity pool — see the class

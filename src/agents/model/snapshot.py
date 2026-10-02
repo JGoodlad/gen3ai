@@ -1250,7 +1250,7 @@ def load_foreign_opponent(
 
     INFERENCE ONLY by default (`gen3_opponent_inference_load_v1`): the model is an
     ``InferenceMaskablePPO`` — policy weights, no optimizer, no ride-along optimizer, no rollout
-    buffer — so a load inside a FROZEN learner (an exploiter target, a distill anchor, a stable
+    buffer — so a load inside a FROZEN learner (an exploiter target, a stable
     opponent at a restart) acquires nothing. ``inference_only=False`` is for an OFFLINE tool that
     fits the loaded model itself (the consensus warm-start's student); it builds the full learner.
 
@@ -1388,7 +1388,7 @@ def current_model_version(
     (e.g. ``--opp-belief-aux-coef>0`` → ``opp_belief_slots``,
     ``--attend-unrevealed-opponents``) MUST thread its real values here — otherwise the gate compares
     a toggle-OFF "current" version against the run's own toggle-ON snapshots and FATALs on every
-    pool/eval/distill load it is meant to protect.
+    pool/eval load it is meant to protect.
 
     Imports are function-local to avoid an import cycle (state_encoder/features_extractor
     pull in model code).

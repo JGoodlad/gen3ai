@@ -104,9 +104,6 @@ _METRIC_LABELS = {
     "grad/win_prob_share": "winprob share",
     "grad/win_prob_norm_shared": "winprob grad-norm",
     "grad/win_prob_policy_cosine": "winprob-pol cos",
-    "grad/opd_share": "opd share",
-    "grad/opd_norm_shared": "opd grad-norm",
-    "grad/opd_policy_cosine": "opd-policy cos",
     "grad/spread_belief_share": "spread blf share",
     "grad/spread_belief_norm_shared": "spread blf norm",
     "grad/spread_belief_policy_cosine": "spread blf-pol cos",
@@ -155,15 +152,6 @@ _METRIC_LABELS = {
     "belief/spread_largest_bias": "spread max-bias",
     "belief/spread_n_slots": "spread slots",
     "belief/spread_loss": "spread loss",
-    # Distributional value head (--value-dist-mode, v29): the interpretability critic's aggregate
-    # health. entropy/std fall as it sharpens; PIT → 0.5 ⟺ calibrated; |E[Z]−G| in support units.
-    # On-policy self-distillation (--opd-coef): KL(π' ‖ π_student) toward the beam's improved
-    # distribution. kl falls as the student matches π'; agree_rate (student↔π' mode) rises;
-    # pi_target_entropy = π' sharpness; n = sampled corrections.
-    "opd/kl": "opd KL",
-    "opd/pi_target_entropy": "opd pi' ent",
-    "opd/agree_rate": "opd agree",
-    "opd/n": "opd n",
 }
 
 
@@ -306,15 +294,6 @@ _METRIC_ORDER = [
     "grad/win_prob_share",
     "grad/win_prob_norm_shared",
     "grad/win_prob_policy_cosine",
-    "grad/opd_share",
-    "grad/opd_norm_shared",
-    "grad/opd_policy_cosine",
-    # On-policy self-distillation KL diagnostics (--opd-coef): kl (should fall), agree_rate (student↔π'
-    # mode, should rise), pi_target_entropy (π' sharpness), n (sampled corrections).
-    "opd/kl",
-    "opd/agree_rate",
-    "opd/pi_target_entropy",
-    "opd/n",
     # Effective-rank probe (always on): how many dims each readout actually uses (rank_metrics.py).
     # trunk = shared body (the capacity-utilization signal); value_cls = critic readout (runs low);
     # policy = actor rep (runs higher → the n90/n95/n99 percentile counts are the view).

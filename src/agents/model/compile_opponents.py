@@ -1,4 +1,4 @@
-"""Compiled CPU OPPONENTS — `torch.compile` for frozen self-play / eval / teacher models.
+"""Compiled CPU OPPONENTS — `torch.compile` for frozen self-play / eval models.
 
 Split out of `snapshot.py` 2026-08-16: loading a checkpoint and compiling its extractor are
 different responsibilities, and every consumer of one that never needed the other was importing
@@ -64,7 +64,7 @@ _LOCAL_TALLY = {"reverts": 0, "total": 0}
 # Set once a compile has been MEASURED to pay off in this process. The validation answers "does this
 # extractor's code object compile to something faster?", and `torch.compile` keys on exactly that
 # code object — so the answer cannot differ for a second model in the same process. Consumers that
-# load models in a LOOP (the search-teacher worker rebuilds its opponent every iteration; an eval
+# load models in a LOOP (an eval
 # worker walks several opponents) would otherwise re-pay ~15 eager forwards each time for an answer
 # they already have. Deliberately process-local: a fresh process re-validates, because that is where
 # a genuinely different outcome (a cold cache, a failing backend) could show up.

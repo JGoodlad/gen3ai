@@ -1,6 +1,6 @@
 """Gates for `gen3_cf_coef_provenance_v1` (config v100) — the counterfactual COEFFICIENT family.
 
-Ten training-only knobs on the counterfactual value-grounding stack leave the `--opd-coef` genre
+Ten training-only knobs on the counterfactual value-grounding stack leave the `--td-aux-coef` genre
 (argparse-only) for the `td_aux_coef` one (recorded on `ModelVersion` + `_resolve`-inherited).
 
 **What this closes is silent by construction, which is why it needs a test rather than a comment.**
@@ -18,7 +18,7 @@ Four properties carry it:
    it is asserted directly on the family, because the registry does not carry these rows.)
 2. **Each is a recorded `ModelVersion` field** that round-trips through JSON.
 3. **None is GATED** — `check_compatible` must accept two versions differing on all ten, or a
-   frozen eval/pool/distill opponent (which runs no loss at all) would be refused.
+   frozen eval/pool opponent (which runs no loss at all) would be refused.
 4. **The v100 migration defaults a pre-v100 config** to the argparse defaults — not a guess: before
    v100 the fields did not exist, so a flagless resume necessarily got exactly those values.
 """
@@ -126,7 +126,7 @@ def test_every_family_member_is_a_model_version_field():
 
 
 def test_none_of_them_is_gated_by_check_compatible(layout):
-    """A frozen eval / pool / distill opponent runs NO loss, so gating a loss coefficient there
+    """A frozen eval / pool opponent runs NO loss, so gating a loss coefficient there
     would be a false rejection that breaks league play. All ten differ at once, deliberately: a
     gate on any single one would fail this."""
     pk = {"net_arch": [512, 512]}

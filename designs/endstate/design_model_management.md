@@ -88,7 +88,6 @@ snapshot and never edited:
   "optimisation": { "lr_at_save": 2.8e-5, "lr_frozen": true, "batch": 2048, "accum": 32,
                     "epochs": 10, "dose": 4.272e-9, "dose_x_v8": 0.20 },   # THE MISSING BLOCK
   "ecology": {     "matchup": "ef5242cffd", "team_block_episodes": 1, "trainee_teams": [...],
-                   "distill": { "coef": 0.0, "target": null, "topk": null, "teachers": [] },
                    "pool": { "seeded_from": "…", "n": 20 }, "exploiter_target": null },
   "eval_regime": { "sentinel_greedy": true, "fixed_opponent_greedy": true,   # named, per branch
                    "trainee_greedy_in_eval": true },
@@ -104,7 +103,7 @@ Three rules. **(1) Every block is written by the thing that knows it** — the t
 appends to `ratings.anchors`; nothing is re-derived. **(2) A number never appears without its
 regime and its hazards** — the field shape forbids it. **(3) A diff of two records is a tool**
 (`python -m main.model_diff A B`) that prints every resolved difference, so the "fourth lever" class
-cannot recur: a fold registration includes the diff against its control, generated.
+cannot recur: an arm registration includes the diff against its control, generated. (The `ecology` block once carried a `distill` sub-block; distillation was deleted in L3, 2026-10-02, so it is gone from the design.)
 
 ### 3.2 The registry — names, roles, policies
 
@@ -227,7 +226,7 @@ document's step 4.
   set; `design_ladder_campaign.md` §2a.)*
 - Whether a `teacher` role should exist at all in the next era. *(**Answered for now**, 2026-09-22:
   the 1.78× teacher `ai_v13_18_teach5_offense_hidose` was NOT ADMITTED, five teachers built, five
-  refused; the new lineage's loop registers no distillation. The role stays in the design, unused.)*
+  refused; the new lineage's loop registers no distillation. Since deletion pass L3 (2026-10-02) there is no distillation code at all, so the role is unused and stays in the design only for X15 (expert iteration), whose only BUILT route was distillation; a Rust port is ~1-2 agent-days if X15 is ever scheduled.)*
 - The registry's storage: one JSON (today) or one record per model with an index; the latter when
   the count passes a few hundred.
 

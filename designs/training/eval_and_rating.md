@@ -206,7 +206,7 @@ cluster-bootstrapped win rate. Offline — no training, no launcher, no server, 
 | | |
 |---|---|
 | teams | `--teams` a manifest JSON, **in order — the order IS the seed** (index = team seed offset). Default: the untaught 8 (`reuse_batch_2026-09-03/offline_collateral_kl/untaught_teams.json`). `--taught` swaps in the taught 16 (`teacher_content_2x2_2026-09-04/taught_teams.json`). Both `pin_sha` (raw bytes, the MatchupSpec convention) and `team_sha` (strip-normalized, the archetype-artifact join key) are recorded per team — they DIFFER on a file with a trailing newline |
-| refs | resolved through the **imported** `fixed_opponent_pool.resolve_model_ref` — the same call `main/train/model_build.py` makes for a `--distill-teacher`. A bare run dir therefore means the run's **LAST SNAPSHOT**, and the resolved file + `rung` + `rule` + `num_timesteps` are printed per ref and stamped in the JSON, so no reader has to infer WHICH FILE was scored |
+| refs | resolved through the **imported** `fixed_opponent_pool.resolve_model_ref` — the same call every checkpoint-reference flag (`--stable-opponents`, `--exploiter`) goes through. A bare run dir therefore means the run's **LAST SNAPSHOT**, and the resolved file + `rung` + `rule` + `num_timesteps` are printed per ref and stamped in the JSON, so no reader has to infer WHICH FILE was scored |
 | opponent | one fixed model piloting the **paired** pool draw — **BY NAME** out of the baseline registry (`untaught_meter_opponent`, rev-1's 24M snapshot). The string literal is GONE; `--opponent` also takes any other registry name or a raw ref |
 | module tree | one `model_config.json` for every model (**BY NAME**, `untaught_meter_config` — rev-1's snapshot config, what the probes used; `--config auto` resolves each model's own), observation debugger stripped, `device="cpu"` |
 | play | `stochastic=True` both sides · rust bridge · **`concurrency=1`** |
@@ -240,7 +240,7 @@ byte-identical JSON).
 
 🚨 **THE CONTINUATION CONTROL IS THE SECOND COLUMN, and it is not optional bookkeeping.** Ledger
 2026-09-06 (cell 2) measured a plain +1.08M-step continuation of v8's parent — no teacher, no
-distillation term, no stable opponents — moving this meter **+3.45pp [+0.46, +6.48]** on its own. A
+distillation term (the lever is since deleted), no stable opponents — moving this meter **+3.45pp [+0.46, +6.48]** on its own. A
 delta against a **frozen** parent therefore credits a fold with progress the parent would have made
 anyway; re-based, v8's celebrated +4.64pp becomes ≈ +1.2pp and is not significant. `--control
 <arms…>` pools the continuation arms equal-weight and computes their **max-pairwise replicate

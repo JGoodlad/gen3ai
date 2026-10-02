@@ -164,11 +164,10 @@ def parse_stable_opponents(spec: str) -> list[dict]:
 # is used verbatim (``explicit_zip``). Naming the file is how you pin it; the ladder is only for
 # the caller who did not.
 #
-# EVERY CONSUMER GOES THROUGH HERE. ``--distill-teacher`` (``main/train/model_build.py``),
-# ``--stable-opponents`` and ``--exploiter`` (via :func:`resolve_stable_opponents`),
-# ``--exploiter-ladder``, ``--warmstart-consensus`` (``agents/training/warmstart.py``),
-# ``--distill-anchor-parent`` (``main/train/callbacks.py``) and ``--win-prob-pbrs-source``
-# (``main/train/model_build.py``) all call this function and no other — the census in
+# EVERY CONSUMER GOES THROUGH HERE. ``--stable-opponents`` and ``--exploiter`` (via
+# :func:`resolve_stable_opponents`), ``--exploiter-ladder`` and ``--warmstart-consensus``
+# (``agents/training/warmstart.py``) all call this function and no other (so did the deleted
+# ``--distill-teacher`` / ``--distill-anchor-parent`` / ``--win-prob-pbrs-source``) — the census in
 # ``run_spec_test.py`` fails when one of them stops.
 #
 # 🚨 **EVERY TEACHER LOADED BEFORE THIS CHANGE WENT THROUGH THE OLD RULE** (``best_model`` first,
@@ -339,9 +338,8 @@ def resolve_model_ref(path: str, step: "int | None" = None, *, warn: bool = True
 
     🚨 **THE ``@step`` SPLIT HAPPENS HERE, at the ONE choke point every run-spec consumer reaches**
     (``gen3_run_spec_split_v1``). ``--stable-opponents`` parses its own ``@step`` and passes it in;
-    every OTHER caller — ``--distill-teacher``, ``--win-prob-pbrs-source``,
-    ``--distill-anchor-parent``, ``--warmstart-consensus`` — calls with ``step=None`` and a raw
-    spec string, so before that fix they could only ever resolve a run DIR. A spec that still
+    every OTHER caller — ``--warmstart-consensus`` (and, before the deletion pass, the distillation
+    flags) — calls with ``step=None`` and a raw spec string, so before that fix they could only ever resolve a run DIR. A spec that still
     carries a suffix is split here rather than refused, which makes ``<run>@<step>`` mean the same
     thing on every flag; an explicit ``step`` that DISAGREES with an embedded one is a
     ``ValueError``, never a silent winner.
@@ -429,8 +427,8 @@ def _resolve_zip_and_config(path: str, step: "int | None") -> "tuple[str, str, s
 
     THE SIGNATURE IS FROZEN. Offline probe scripts under
     ``designs/research_state/measurements/arch_transfer_2026-09-05/`` import this by name to
-    reproduce exactly the call ``main/train/model_build.py`` makes for a ``--distill-teacher``; a
-    3-tuple is what they unpack. New call sites that want the rung / ``num_timesteps`` should call
+    reproduce exactly the call ``main/train/model_build.py`` once made for a ``--distill-teacher`` (the
+    flag is deleted); a 3-tuple is what they unpack. New call sites that want the rung / ``num_timesteps`` should call
     :func:`resolve_model_ref` instead.
     """
     r = resolve_model_ref(path, step)
@@ -524,7 +522,7 @@ def _read_trainee_pin(config_path: str) -> "tuple[list[str], list[str]]":
     its own teams, mirroring how it trained.
 
     Delegates to ``matchup_spec.read_recorded_trainee_teams`` — the SINGLE provenance reader shared
-    with ``--distill-teacher '<model>:*'``, so the two consumers cannot drift. It is FAIL-LOUD: a
+    with the pinned-team meters, so the consumers cannot drift. It is FAIL-LOUD: a
     recorded team file that is missing raises ``FileNotFoundError``; one whose content no longer
     matches the run's recorded fingerprint raises ``ValueError``. Generalist run → ``([], [])``.
     """

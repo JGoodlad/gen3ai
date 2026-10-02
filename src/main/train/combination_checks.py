@@ -4,24 +4,23 @@ WHY THIS MODULE EXISTS. `agents.model.flag_registry`'s `requires` graph expresse
 dependency — *flag A must be ENABLED for flag B to be enabled* — and `main.checkargs` reads it, so
 an unsatisfiable structural combination is reported offline instead of crashing inside
 `Gen3FeaturesExtractor.__init__`. But some launch-time refusals are not that shape: they are
-value-conditional (*`--distill-target action` requires `--distill-coef` > 0*), they lived in
+value-conditional (*`--q-winprob-coef` > 0 requires `--q-winprob-mode`*), they lived in
 `main.train.config.resolve_config` as `parser.error` lines, and nothing outside that function knew
 them.
 
-That gap has now cost two launches, and the SECOND one is why this module is no longer a list of
-four. C1 (2026-09-01) forked a parent whose recorded config carried `distill_target="action"`,
-passed `--distill-coef 0`, and did NOT name `--distill-target` — so `_resolve` inherited `action`,
-the check fired, and the run died at launch while `checkargs` had said "this command still
-launches". The fix moved *that* rule here and left every sibling behind, so the module's own
-premise — "one list, both readers" — held only for the four rules that had been migrated. G5
-(2026-09-06) then died three times in a row on the ones that had not: `--distill-anchor-monitor`
-at `--distill-coef 0`, `--distill-team-bias` with no teacher, and finally the inherited
-`--distill-target action`. A partial single-source is a single-source nobody can trust, because
-nothing about the output distinguishes "checked and clean" from "never asked".
+That gap cost launches, and the SECOND round is why this module is no longer a short list. C1
+(2026-09-01) forked a parent whose recorded config carried an action-form distillation target, passed
+`--distill-coef 0`, and did NOT name the target — so `_resolve` inherited it, the check fired, and the
+run died at launch while `checkargs` had said "this command still launches". The fix moved *that* rule
+here and left every sibling behind, so the module's own premise — "one list, both readers" — held only
+for the rules that had been migrated. G5 (2026-09-06) then died three times in a row on the ones that
+had not. (The distillation family those rules guarded was deleted with deletion pass L3; the lesson
+stands.) A partial single-source is a single-source nobody can trust, because nothing about the output
+distinguishes "checked and clean" from "never asked".
 
 So the list is now EXHAUSTIVE over its class, and that is enforced rather than intended:
 `combination_checks_test.py` walks `config.py`'s own AST — resolving local aliases, which is how
-`_anchor_wanted` and `_items` hid three refusals from an earlier reading — and FAILS, naming
+two helper predicates once hid three refusals from an earlier reading — and FAILS, naming
 file:line, if any `parser.error` remains whose guard reads a second flag's value. The allowlist
 carries a reason string per entry.
 
@@ -33,9 +32,9 @@ on the fork parent's recorded config) and reports every one. Neither owns the ru
 WHAT BELONGS HERE: a refusal that reads two or more RESOLVED values and says one combination is
 incoherent — including a range check that only applies in a mode (`--exploiter-ladder-gate` under
 `--exploiter-ladder`), because "which flag turns this on" is itself a cross-flag fact. What does
-NOT: a range check on a single value (`--distill-topk >= 1`), which argparse's caller can answer
-from the one value it has; and anything needing the parser, a torch import, an env var, or a
-teacher spec's filesystem — those stay in `resolve_config`, which has them, and are listed with
+NOT: a range check on a single value (`--rank-tripwire-drop` in (0, 1)), which argparse's caller can
+answer from the one value it has; and anything needing the parser, a torch import, an env var, or a
+filesystem — those stay in `resolve_config`, which has them, and are listed with
 their reason in the test's allowlist.
 
 ORDERING. `resolve_config` evaluates the whole list at ONE point, late in validation, and refuses
@@ -45,8 +44,8 @@ and the exit path are byte-identical to what shipped. For an argv broken two way
 comes first can differ from the pre-migration order, because the single-value range checks now all
 run before the sweep; the test table pins the one-defect case, which is the contract.
 
-EXPLICITNESS. Several refusals fire only on a value the operator actually TYPED (`--distill-team-bias`
-with no teacher; the anchor knobs that do nothing). On the launch path that is captured before
+EXPLICITNESS. Several refusals fire only on a value the operator actually TYPED (a knob that does
+nothing without its master flag). On the launch path that is captured before
 `_resolve` fills defaults, as `args._explicit_flags`; `main.checkargs` snapshots the same set before
 it inherits from the parent config. `_typed` reads that marker and falls back to `is not None` when
 it is absent, so a bare namespace still gets an honest answer.
@@ -93,7 +92,7 @@ class CombinationCheck(NamedTuple):
 # --------------------------------------------------------------------------------------------
 
 def _positive(value: Any) -> bool:
-    """The `args.distill_coef and args.distill_coef > 0` idiom the launch path uses, None-safe."""
+    """The `value and value > 0` idiom the launch path uses, None-safe."""
     return bool(value) and float(value) > 0.0
 
 
@@ -147,39 +146,6 @@ def _belief_mode(args) -> str:
     return _val(args, "move_belief_mode", "off")
 
 
-def _teacher_items(args) -> List[str]:
-    """The `--distill-teacher` spec split the way `resolve_config` splits it, before parsing."""
-    return [x.strip() for x in (getattr(args, "distill_teacher", None) or "").split(",") if x.strip()]
-
-
-def _grad_project(args) -> bool:
-    return getattr(args, "distill_anchor_mode", None) == "grad_project"
-
-
-def _anchor_wanted(args) -> bool:
-    """The anchor machinery is attached: a live coefficient, the monitor, or `grad_project`.
-
-    An UNSET monitor is not the same as an off one — a fold defaults it ON — so the launch path's
-    own `default_anchor_monitor` decides that case, rather than a second copy of the rule here.
-    """
-    from main.train.config import default_anchor_monitor          # local: config imports us
-    monitor = getattr(args, "distill_anchor_monitor", None)
-    if monitor is None:
-        monitor = default_anchor_monitor(args)
-    return bool(_positive(getattr(args, "distill_anchor_coef", None))
-                or monitor
-                or _grad_project(args))
-
-
-def _stop_on(args) -> bool:
-    stop = getattr(args, "distill_stop", None)
-    return bool(stop) and stop != "off"
-
-
-def _dual_on(args) -> bool:
-    return _positive(getattr(args, "distill_anchor_target_kl", None))
-
-
 def _q_live(args) -> bool:
     return ((getattr(args, "q_winprob_coef", None) or 0.0) > 0.0
             or (getattr(args, "q_winprob_onpolicy_coef", None) or 0.0) > 0.0)
@@ -209,28 +175,6 @@ def _edge_families(args) -> Optional[set]:
 def _fams(args, wanted: set) -> bool:
     fams = _edge_families(args)
     return bool(fams and (fams & wanted))
-
-
-def _anchor_knob_typed(args) -> bool:
-    return bool(_typed(args, "distill_anchor_mode")
-                or _typed(args, "distill_anchor_ref")
-                or _typed(args, "distill_anchor_ema_tau")
-                or _typed(args, "distill_anchor_refresh_every")
-                or getattr(args, "distill_anchor_parent", None) is not None)
-
-
-def _dual_knob_typed(args) -> bool:
-    return bool(_typed(args, "distill_anchor_dual_lr")
-                or _typed(args, "distill_anchor_coef_min")
-                or _typed(args, "distill_anchor_coef_max"))
-
-
-def _stop_knob_typed(args) -> bool:
-    return bool(_typed(args, "distill_stop_window")
-                or _typed(args, "distill_stop_eps")
-                or _typed(args, "distill_stop_kl_slope")
-                or _typed(args, "distill_stop_persist")
-                or _typed(args, "distill_stop_anneal_factor"))
 
 
 #: The cf-buffer consumers — the SAME tuple `agents.training.cf_supply` guards (pinned by
@@ -294,10 +238,7 @@ def _rust_core(args) -> bool:
 #: What `--env-core rust` does not serve yet, as (dest, predicate, reason). Each is a path the Python
 #: env or a Python-only callback owns today; the collector refuses rather than silently dropping it.
 _ENV_CORE_UNPORTED: Tuple[Tuple[str, Callable[[Any], bool], str], ...] = (
-    ("distill_coef", lambda a: _positive(_val(a, "distill_coef", 0.0)),
-     "--distill-coef > 0 (the distill_mask key and the per-team teachers)"),
     ("cf_records", lambda a: bool(_val(a, "cf_records", False)), "--cf-records (a bridge reconstruction tap)"),
-    ("search_teacher", lambda a: bool(_val(a, "search_teacher", False)), "--search-teacher"),
     ("team_pfsp", lambda a: _val(a, "team_pfsp", "off") != "off", "--team-pfsp (per-worker PFSP pulls)"),
     ("exploiter_ladder", lambda a: bool(_val(a, "exploiter_ladder", None)),
      "--exploiter-ladder (the rung loader is not wired to T2 yet)"),
@@ -552,8 +493,8 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "--warmstart-consensus builds an EXPLOITER init (a disagreement-gated consensus of "
         "teacher exploiters, sharp-on-agree / flat-on-disagree) and only applies in exploiter "
         "mode — pass --exploiter <target>. It is deliberately NOT available for "
-        "generalist / self-play training, whose objective is to ABSORB per-team divergence "
-        "(--distill-teacher), the OPPOSITE of distilling the consensus."),
+        "generalist / self-play training, whose objective is to ABSORB per-team divergence, "
+        "the OPPOSITE of distilling the consensus."),
     CombinationCheck(
         "exploiter_temp_start_needs_exploiter", ("exploiter_temp_start", "exploiter"),
         lambda a: _exploiter_temp_on(a) and not a.exploiter,
@@ -637,47 +578,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "--fork-lr-freeze needs --fork-lr: it freezes the KL controller AT the pinned "
         "rate, and without a pin there is no rate to freeze at (pass --fork-lr <value>)."),
 
-    # ---- the value-distribution head's support ---------------------------------------------
-
-    # ---- the win-prob head and its PBRS ------------------------------------------------------
-
-    # ---- the search teacher and OPD ----------------------------------------------------------
-    CombinationCheck(
-        "opd_coef_needs_search_teacher", ("opd_coef", "search_teacher"),
-        lambda a: _positive(a.opd_coef) and not a.search_teacher,
-        "--opd-coef > 0 requires --search-teacher (OPD distils the search-teacher's "
-        "correction buffer; its workers build the π' targets)"),
-    CombinationCheck(
-        # gen3_supply_guard_v1 — the cf class, one supplier over: the AWR coefficient is RECORDED
-        # and inherited on a flagless resume (`_resolve("search_teacher_coef")`), but
-        # `--search-teacher` (the workers that FILL the correction buffer) is operational and is
-        # not. A manual resume / fork that does not re-type it trained with a live coefficient, no
-        # callback, no buffer and not one `teacher/*` scalar — silent for the whole run (inventory
-        # 2026-09-30; no archive run hit it). FATAL_CONFIG: a restart would hit it identically.
-        "search_teacher_coef_needs_search_teacher", ("search_teacher_coef", "search_teacher"),
-        lambda a: _positive(_val(a, "search_teacher_coef", 0.0))
-                  and not bool(_val(a, "search_teacher", False)),
-        lambda a: (f"\n[SUPPLY] FATAL: --search-teacher-coef {_val(a, 'search_teacher_coef', 0.0):g} "
-                   f"is live but --search-teacher is off, so nothing fills the correction buffer "
-                   f"and the AWR term folds NOTHING for the whole run, with no teacher/* scalar to "
-                   f"say so. The coefficient is inherited on a flagless resume; --search-teacher is "
-                   f"not. Pass --search-teacher (and its knobs), or --search-teacher-coef 0."),
-        exit_style="fatal_config"),
-    CombinationCheck(
-        "search_teacher_mode_needs_teacher", ("search_teacher_mode", "search_teacher"),
-        lambda a: a.search_teacher_mode != "crater" and not a.search_teacher,
-        lambda a: (f"--search-teacher-mode {a.search_teacher_mode} requires "
-                   "--search-teacher — the mode selects which teacher fills the correction "
-                   "buffer, and without the flag no teacher runs at all.")),
-    CombinationCheck(
-        "search_teacher_mode_needs_win_prob", ("search_teacher_mode", "win_prob_mode"),
-        lambda a: a.search_teacher_mode != "crater"
-        and _val(a, "win_prob_mode", "none") == "none",
-        lambda a: (f"--search-teacher-mode {a.search_teacher_mode} requires "
-                   "--win-prob-mode read_only|shaping — the one-ply RANKING *is* the win-prob "
-                   "head, and --win-prob-mode none builds no head. Falling back to the critic's "
-                   "shaped-return ranking would run a DIFFERENT teacher under the same flag.")),
-
     # ---- the counterfactual label family -----------------------------------------------------
     CombinationCheck(
         "cf_winprob_coef_needs_win_prob_mode", ("cf_winprob_coef", "win_prob_mode"),
@@ -752,163 +652,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         ("cf_twin_coef", "cf_winprob_coef", "cf_records", "cf_label_lag_steps",
          "checkpoint_every_steps", "n_envs"),
         _cf_duty_cycle_starved, _cf_duty_cycle_message, exit_style="fatal_config"),
-
-    # ---- distillation: the coefficient gates the companions ----------------------------------
-    CombinationCheck(
-        "distill_value_coef_needs_distill_coef", ("distill_value_coef", "distill_coef"),
-        lambda a: _positive(a.distill_value_coef) and not _positive(a.distill_coef),
-        "--distill-value-coef > 0 requires --distill-coef > 0 — the value distillation is "
-        "coherent only because the policy KL drives π_student→π_teacher on those states, "
-        "making V_teacher the right target (V^π is policy-relative)."),
-    CombinationCheck(
-        "distill_value_feat_coef_needs_distill_coef", ("distill_value_feat_coef", "distill_coef"),
-        lambda a: _positive(a.distill_value_feat_coef) and not _positive(a.distill_coef),
-        "--distill-value-feat-coef > 0 requires --distill-coef > 0 — the FitNets value-feature "
-        "match is coherent only because the policy KL drives π_student→π_teacher on those states, "
-        "making the teacher's value_pooled the right target (V^π is policy-relative)."),
-
-    # ---- gen3_distill_offslice_anchor_v1 — the OFF-SLICE trust region -------------------------
-    CombinationCheck(
-        "anchor_proj_samples_needs_grad_project",
-        ("distill_anchor_proj_samples", "distill_anchor_mode"),
-        lambda a: _typed(a, "distill_anchor_proj_samples") and not _grad_project(a),
-        "--distill-anchor-proj-samples only applies to --distill-anchor-mode "
-        "grad_project — it sizes that mode's constraint set and nothing else reads it."),
-    CombinationCheck(
-        # G5 (2026-09-06), refusal #1. The slice IS the `distill_mask` obs key, and the env emits
-        # it only for a run with a live distill term — so a control arm at coef 0 cannot carry the
-        # instrument, and `checkargs` used to say the command launched.
-        "anchor_needs_live_distill",
-        ("distill_anchor_coef", "distill_anchor_monitor", "distill_anchor_mode", "distill_coef"),
-        lambda a: _anchor_wanted(a) and not _positive(a.distill_coef),
-        "--distill-anchor-coef / --distill-anchor-monitor require --distill-coef > 0 — "
-        "the anchor's OFF-SLICE split reads the `distill_mask` obs key, which the env "
-        "emits only for a run with a live exploiter-distillation term."),
-    CombinationCheck(
-        "anchor_knobs_need_anchor",
-        ("distill_anchor_mode", "distill_anchor_ref", "distill_anchor_parent",
-         "distill_anchor_coef", "distill_anchor_monitor"),
-        lambda a: _anchor_knob_typed(a) and not _anchor_wanted(a),
-        "--distill-anchor-mode / --distill-anchor-ref / --distill-anchor-ema-tau / "
-        "--distill-anchor-refresh-every / --distill-anchor-parent do nothing without "
-        "--distill-anchor-coef > 0 or --distill-anchor-monitor — pass one of those, or "
-        "drop these."),
-    CombinationCheck(
-        "anchor_target_kl_needs_coef", ("distill_anchor_target_kl", "distill_anchor_coef"),
-        lambda a: _dual_on(a) and not _positive(a.distill_anchor_coef),
-        "--distill-anchor-target-kl requires --distill-anchor-coef > 0: the dual "
-        "update is MULTIPLICATIVE (coef <- coef * exp(...)), so a coefficient of 0 "
-        "is a fixed point and the controller could never move it. Give the dual a "
-        "starting coefficient to scale."),
-    CombinationCheck(
-        "anchor_dual_lr_positive", ("distill_anchor_target_kl", "distill_anchor_dual_lr"),
-        lambda a: _dual_on(a) and a.distill_anchor_dual_lr is not None
-        and a.distill_anchor_dual_lr <= 0,
-        "--distill-anchor-dual-lr must be > 0 (it is the dual's step size)."),
-    CombinationCheck(
-        "anchor_coef_min_nonnegative", ("distill_anchor_target_kl", "distill_anchor_coef_min"),
-        lambda a: _dual_on(a) and (a.distill_anchor_coef_min or 0.0) < 0,
-        "--distill-anchor-coef-min must be >= 0 (it clamps a KL weight)."),
-    CombinationCheck(
-        "anchor_coef_max_ge_min",
-        ("distill_anchor_target_kl", "distill_anchor_coef_max", "distill_anchor_coef_min"),
-        lambda a: _dual_on(a) and a.distill_anchor_coef_max is not None
-        and a.distill_anchor_coef_max < (a.distill_anchor_coef_min or 0.0),
-        "--distill-anchor-coef-max must be >= --distill-anchor-coef-min."),
-    CombinationCheck(
-        "dual_knobs_need_target_kl",
-        ("distill_anchor_target_kl", "distill_anchor_dual_lr", "distill_anchor_coef_min",
-         "distill_anchor_coef_max"),
-        lambda a: _dual_knob_typed(a) and not _dual_on(a)
-        and not (a.distill_anchor_target_kl is not None and a.distill_anchor_target_kl < 0),
-        "--distill-anchor-dual-lr / --distill-anchor-coef-min / "
-        "--distill-anchor-coef-max do nothing without --distill-anchor-target-kl > 0 "
-        "— pass that, or drop these."),
-
-    # ---- gen3_distill_stop_rule_v1 -------------------------------------------------------------
-    CombinationCheck(
-        "distill_stop_needs_anchor_monitor",
-        ("distill_stop", "distill_anchor_monitor", "distill_anchor_coef", "distill_anchor_mode"),
-        lambda a: _stop_on(a) and not _anchor_wanted(a),
-        "--distill-stop requires the anchor MONITOR: pass --distill-anchor-monitor "
-        "(or --distill-anchor-coef > 0, or --distill-anchor-mode grad_project). "
-        "The rule's RISE half reads distill/collateral_kl_vs_parent, which only "
-        "exists when the frozen fold parent is attached — without it the AND-gate "
-        "could never close and the flag would be a silent no-op."),
-    CombinationCheck(
-        "distill_stop_window_min", ("distill_stop", "distill_stop_window"),
-        lambda a: _stop_on(a) and a.distill_stop_window is not None and a.distill_stop_window < 2,
-        "--distill-stop-window must be >= 2: the rise test is an OLS slope over "
-        "window+1 points and needs at least one residual degree of freedom for its "
-        "standard error to exist."),
-    CombinationCheck(
-        "distill_stop_persist_min", ("distill_stop", "distill_stop_persist"),
-        lambda a: _stop_on(a) and a.distill_stop_persist is not None and a.distill_stop_persist < 1,
-        "--distill-stop-persist must be >= 1."),
-    CombinationCheck(
-        "distill_stop_anneal_factor_range", ("distill_stop", "distill_stop_anneal_factor"),
-        lambda a: _stop_on(a) and a.distill_stop_anneal_factor is not None
-        and not 0.0 < a.distill_stop_anneal_factor < 1.0,
-        "--distill-stop-anneal-factor must be in (0, 1) — it is the per-rollout "
-        "geometric decay of --distill-coef after the rule fires."),
-    CombinationCheck(
-        "stop_knobs_need_distill_stop",
-        ("distill_stop", "distill_stop_window", "distill_stop_eps", "distill_stop_kl_slope",
-         "distill_stop_persist", "distill_stop_anneal_factor"),
-        lambda a: _stop_knob_typed(a) and not _stop_on(a),
-        "--distill-stop-window / --distill-stop-eps / --distill-stop-kl-slope / "
-        "--distill-stop-persist / --distill-stop-anneal-factor do nothing without "
-        "--distill-stop {warn,anneal,abort} — pass one, or drop these."),
-
-    # ---- the teacher spec's CROSS-FLAG requirements (the grammar itself stays in config.py) ----
-    CombinationCheck(
-        "distill_coef_needs_teacher", ("distill_coef", "distill_teacher"),
-        lambda a: _positive(a.distill_coef) and not _teacher_items(a),
-        "--distill-coef > 0 requires --distill-teacher (as 'TEACHER:TEAM[,TEAM...]' groups)"),
-    CombinationCheck(
-        # G5 (2026-09-06), refusal #2.
-        "distill_team_bias_needs_teacher", ("distill_team_bias", "distill_teacher"),
-        lambda a: _typed(a, "distill_team_bias")
-        and (getattr(a, "distill_team_bias", None) or 0) > 0 and not _teacher_items(a),
-        "--distill-team-bias > 0 requires --distill-teacher — the bias points at the "
-        "TEACHER TEAMS ('TEACHER:TEAM[,TEAM...]' groups) and there is nothing to bias "
-        "toward without one; the flag would be a silent no-op. Drop it, pass "
-        "--distill-team-bias 0, or name the teacher(s)."),
-
-    # ---- gen3_distill_target_gate_v1 (design §7.5): the action-form family's dependency graph ---
-    CombinationCheck(
-        # G5 (2026-09-06), refusal #3 — and the C1 (2026-09-01) launch this module was built for.
-        "distill_target_needs_coef", ("distill_target", "distill_coef"),
-        lambda a: getattr(a, "distill_target", None) == "action"
-        and not _positive(getattr(a, "distill_coef", None)),
-        "--distill-target action requires --distill-coef > 0 — the target form is a "
-        "property of the distill term; without the term there is nothing to shape"),
-    CombinationCheck(
-        "distill_topk_needs_action", ("distill_topk", "distill_target"),
-        lambda a: getattr(a, "distill_topk", 1) not in (1, None)
-        and getattr(a, "distill_target", None) not in ("action", None),
-        "--distill-topk requires --distill-target action — the top-K dial "
-        "parameterizes the action-form target; the 'kl' path has no K"),
-    CombinationCheck(
-        "distill_gate_needs_action", ("distill_gate", "distill_target"),
-        lambda a: getattr(a, "distill_gate", "none") not in ("none", None)
-        and getattr(a, "distill_target", None) not in ("action", None),
-        "--distill-gate requires --distill-target action (design §7.5: the gate "
-        "rides the action-form term)"),
-    CombinationCheck(
-        "distill_gate_tau_needs_advantage", ("distill_gate_tau", "distill_gate"),
-        lambda a: (getattr(a, "distill_gate_tau", 0.0) or 0.0) != 0.0
-        and getattr(a, "distill_gate", "none") not in ("advantage", None),
-        "--distill-gate-tau requires --distill-gate advantage — tau is the advantage "
-        "gate's threshold"),
-    CombinationCheck(
-        "distill_teacher_excludes_trainee_pin",
-        ("distill_teacher", "trainee_team", "trainee_teams"),
-        lambda a: bool(_teacher_items(a)) and bool(a.trainee_team or a.trainee_teams),
-        "--distill-teacher is mutually exclusive with --trainee-team/--trainee-teams: "
-        "distillation biases the trainee toward the teacher teams via --distill-team-bias "
-        "while keeping the pool for rehearsal; a hard pin would remove the rehearsal (and "
-        "cause forgetting), and the bias would override the pin anyway"),
 
     # ---- the belief stack ---------------------------------------------------------------------
     CombinationCheck(

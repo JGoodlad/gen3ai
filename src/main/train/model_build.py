@@ -20,7 +20,6 @@ from agents.model.snapshot import load_model_snapshot, record_checkpoint, save_m
 import agents.training.cuda_ledger as _cuda_ledger
 import agents.training.update_fit as _update_fit
 from agents.training.instrumented_ppo.device_batches import DEFAULT_MODE as _devb_default_mode
-from agents.training.distill_anchor_callback import save_anchor_ref_beside
 from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.training.adaptive_lr_callback import TwoPhaseLRCallback
 from agents.training.dose import kl_controller_snapshot
@@ -150,28 +149,6 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("fork_contested_absv",           _PLAIN),   # the |V-0.5| band; 0.0 = off (see the flag)
     ("fork_max_per_battle",           _PLAIN),   # forks per episode slice (inert at 0.0)
     ("fork_crn",                      _PLAIN),   # dice | dice_and_draws (inert at 0.0)
-    # SEARCH-TEACHER (coef 0 / flag absent = byte-identical). The buffer is filled by the
-    # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
-    ("search_teacher_coef",           _PLAIN),
-    ("search_teacher_value_coef",     _PLAIN),
-    ("search_teacher_beta",           _PLAIN),
-    ("search_teacher_batch_size",     _PLAIN),
-    # OPD (on-policy self-distillation). Requires --search-teacher: it fills the SAME
-    # _correction_buffer, its workers building π'.
-    ("opd_coef",                      _PLAIN),
-    ("opd_beta",                      _PLAIN),
-    # gen3_exploiter_distill_v1 — the KL/value weights; the TEACHERS are loaded below.
-    ("distill_coef",                  _F0),
-    ("distill_value_coef",            _F0),
-    ("distill_value_feat_coef",       _F0),      # gen3_exploiter_value_feat_distill_v1
-    # gen3_distill_target_gate_v1 — the action-form/top-K target + advantage gate (v103).
-    # (`rank_tripwire`/`rank_tripwire_drop` are CALLBACK config, not model attrs — see
-    # main.train.callbacks — so they are deliberately not rows here.)
-    ("distill_target",                _PLAIN),
-    ("distill_topk",                  _PLAIN),
-    ("distill_gate",                  _PLAIN),
-    ("distill_gate_tau",              _PLAIN),
-    ("distill_beta",                  _PLAIN),
     ("opp_intent_coef",               _F0_OPT),
     ("beta_setvalued_coef",           _F0_OPT),
     # gen3_capacity_telemetry_v1 — the live saturation early-warnings. Folds NO loss term and
@@ -190,8 +167,7 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     The table above covers the passthroughs. The things that follow it are NOT
     passthroughs and so are deliberately not table rows: two DERIVED booleans (a different arg
     name, and a predicate over a coefficient), one DERIVED float (a diagnostic denominator read
-    off a different flag), and the distill-teacher load, which does I/O and
-    can FATAL. Keeping the derived ones in code rather than inventing a table dialect to hold
+    off a different flag). Keeping the derived ones in code rather than inventing a table dialect to hold
     them is the point — the table stays a list of names, which is the thing that has to be
     reviewable at a glance for completeness.
     """
@@ -218,8 +194,6 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     if getattr(args, "lr", None) is not None:
         model._dose_lr_flag = float(args.lr)
 
-    # DERIVED, not passthrough: the arg is the flag, the attribute is the predicate.
-    model._search_teacher_on = bool(args.search_teacher)
     # gen3_diagnostics_cadence_v1: `--diagnostics-every` (resolved: a fresh run's default, or the
     # parent's recorded value on a flagless resume), plus the two LOAD-BEARING exemptions DERIVED
     # from the consumers' own flags — each predicate is the one that registers that consumer
@@ -235,7 +209,6 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     model.device_batch_mode = str(getattr(args, "device_batch", None) or _devb_default_mode)
     model.rank_probe_every_update = getattr(args, "rank_tripwire", "warn") != "off"
     model.noise_terms_every_update = getattr(args, "adaptive_batch", "off") not in ("off", "total")
-    model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
 
     # gen3_cf_label_plumbing_v1: counterfactual win-prob grounding (coef 0 = byte-identical).
     attach_cf_labels(model)
@@ -248,47 +221,6 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
             and getattr(args, "env_core", "python") != "rust"):   # rust: branch rows ride the FIFO (forks.md §14)
         from agents.training.fork_buffer import install_fork_buffer
         install_fork_buffer(model)
-
-    # gen3_exploiter_distill_v1: attach the frozen per-team teachers (foreign exploiters) on the
-    # training device. OFF (coef 0 / no teacher) → the list stays empty so the loss block is
-    # skipped (byte-identical). A bad path FATALs config, never a crash-restart loop.
-    #
-    # THE COEFFICIENT IS THE GATE, NOT THE PAIRS (gen3_distill_bias_at_coef0_v1). Since the fix,
-    # `_distill_pairs` is populated at ANY coefficient — the team bias reads it — so a coef-0
-    # CONTROL arm now arrives here with N teachers named. It must still load NONE of them: N frozen
-    # networks of RAM and a forward per minibatch, to be multiplied by a coefficient of zero.
-    model._distill_teachers = []          # teacher-id = index + 1
-    if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
-        from agents.model.snapshot import (
-            current_model_version as _cmv_d, load_foreign_opponent as _lfo_d)
-        from agents.training.fixed_opponent_pool import resolve_model_ref as _rmr_d
-        _cv_d = _cmv_d(mappings, **_run_arch_toggles(args))
-        # WHICH FILE each teacher resolved to, printed per teacher (gen3_last_snapshot_resolution_v1).
-        # A bare run dir names a RUN, not a file, and until 2026-09-06 it silently meant the
-        # BOT-WIN-RATE `best_model` export — which for 2 of 8 R5F teachers was a ~0.93M-step
-        # checkpoint rather than the ~2.93M final, with nothing recording it (ledger 2026-09-06,
-        # probe H8). The rung + num_timesteps are stated so a reader never infers them from layout.
-        _teacher_prov: "list[str]" = []
-        for _tp, _tf in args._distill_pairs:
-            try:
-                _ref_d = _rmr_d(_tp, None)              # run-dir/zip/@step → the resolved file
-                _tm_d, _ = _lfo_d(_ref_d.zip_path, current_version=_cv_d,
-                                  device=str(model.device), config_path=_ref_d.config_path)
-                _tm_d.policy.set_training_mode(False)
-                model._distill_teachers.append(_tm_d)
-                _teacher_prov.append(f"{_tp} -> {_ref_d.describe()}")
-            except Exception as _e_d:  # noqa: BLE001 — bad/incompatible teacher weights
-                print(f"\n[Distill] FATAL: could not load --distill-teacher {_tp}: {_e_d}")
-                sys.stdout.flush()
-                os._exit(int(TrainExitCode.FATAL_CONFIG))
-        emit(f"🧪 [DISTILL] {len(model._distill_teachers)} teacher(s) attached on {model.device} "
-             f"(order = teacher-id 1..{len(model._distill_teachers)})")
-        for _i_d, _line_d in enumerate(_teacher_prov, start=1):
-            emit(f"   teacher {_i_d}: {_line_d}")
-
-    if args.search_teacher:
-        from agents.training.teacher.buffer import CorrectionBuffer
-        model._correction_buffer = CorrectionBuffer(args.search_teacher_buffer_size)
 
 
 def _start_rust_env(env, model) -> None:
@@ -438,14 +370,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,
             capacity_velocity_every=args.capacity_velocity_every,
-            distill_target=args.distill_target,
-            distill_topk=args.distill_topk,
-            distill_gate=args.distill_gate,
-            distill_gate_tau=args.distill_gate_tau,
-            distill_beta=args.distill_beta,
             rank_tripwire=args.rank_tripwire,
             rank_tripwire_drop=args.rank_tripwire_drop,
-            teacher_scan_limit=args.teacher_scan_limit,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -696,7 +622,6 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             final_path = os.path.join(model_dir, "final_model")
             model.save(final_path)
             _write_latest_txt(model_dir, "final_model.zip")
-            save_anchor_ref_beside(model, final_path + ".zip")   # see run_io; no-op without a moving anchor
             save_model_snapshot(os.path.dirname(final_path), current_version, hparams=_model_hparams(model), cli_args=cli_args,
                                 reward_composition=reward_composition, lineage=_lineage)
             print(f"Training complete. Model saved to {final_path}")
@@ -811,14 +736,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,
             capacity_velocity_every=args.capacity_velocity_every,
-            distill_target=args.distill_target,
-            distill_topk=args.distill_topk,
-            distill_gate=args.distill_gate,
-            distill_gate_tau=args.distill_gate_tau,
-            distill_beta=args.distill_beta,
             rank_tripwire=args.rank_tripwire,
             rank_tripwire_drop=args.rank_tripwire_drop,
-            teacher_scan_limit=args.teacher_scan_limit,
         )
         # (A `PBRS_GAMMA == model.gamma` assert lived here while the reward folded hand potentials;
         # it went with them in the shaped-reward deletion, 2026-09-26.)
@@ -895,7 +814,6 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         _write_latest_txt(model_dir, "final_model.zip")
         _final_handoff = lr_callback.handoff_lr if isinstance(lr_callback, TwoPhaseLRCallback) else None
         record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, model.n_epochs, hparams=_model_hparams(model), handoff_lr=_final_handoff)
-        save_anchor_ref_beside(model, final_path + ".zip")   # see run_io; no-op without a moving anchor
         save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model), cli_args=cli_args,
                                 reward_composition=reward_composition, lineage=_lineage)
         print(f"Training complete. Model saved to {final_path}")

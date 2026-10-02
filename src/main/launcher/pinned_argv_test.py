@@ -703,8 +703,8 @@ def test_g_the_hook_answers_the_same_way_for_the_custom_action(repo):
 #
 # `resolve_pin_for` used to say "there is a --model, so the pin is its recorded git_hash",
 # full stop. But `--sync-to-main` tells the launcher to run the child at HEAD, so every
-# HEAD-only flag on such a fork (`--fork-lr`, `--fork-lr-freeze`, `--distill-anchor-monitor`,
-# `--distill-stop`) was reported as "in THIS tree but NOT at the pin" and the tool exited 3.
+# HEAD-only flag on such a fork (`--fork-lr`, `--fork-lr-freeze`) was reported as
+# "in THIS tree but NOT at the pin" and the tool exited 3.
 #
 # DIRECTION MATTERS: the three earlier checkargs defects were false NEGATIVES — a launch that
 # would die passing the check. This one is a false POSITIVE that stops a launch which works,

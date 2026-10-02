@@ -371,7 +371,7 @@ class TestTheLineageRecord:
         model = os.path.join(parent, "final_model.zip")
         rec = pool_seed.prepare_pool(_args(model=model), fork,
                                      emit_fn=lambda _m: None, exit_fn=_exit_fn)
-        block = _run_lineage(_args(model=model, exploiter=None, distill_teacher=None),
+        block = _run_lineage(_args(model=model, exploiter=None),
                              fork, model_path=model, fork_step=1234)
         assert block is not None
         assert block["pool_seeded_from"] == rec
@@ -384,7 +384,7 @@ class TestTheLineageRecord:
         fork = str(tmp_path / "fork")
         os.makedirs(fork)
         model = os.path.join(parent, "final_model.zip")
-        block = _run_lineage(_args(model=model, exploiter=None, distill_teacher=None),
+        block = _run_lineage(_args(model=model, exploiter=None),
                              fork, model_path=model, fork_step=0)
         assert block is not None and "pool_seeded_from" not in block
 
@@ -394,7 +394,7 @@ class TestTheLineageRecord:
         os.makedirs(os.path.join(fork, "checkpoints"))
         ckpt = os.path.join(fork, "checkpoints", "checkpoint_9_steps.zip")
         open(ckpt, "wb").write(b"own")
-        assert _run_lineage(_args(model=ckpt, exploiter=None, distill_teacher=None),
+        assert _run_lineage(_args(model=ckpt, exploiter=None),
                             fork, model_path=ckpt, fork_step=9) is None
 
 

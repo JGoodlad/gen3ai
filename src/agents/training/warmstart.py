@@ -18,7 +18,7 @@ RETAINS the generalist's competence instead of drifting toward the (weaker, narr
 
 **EXPLOITER-ONLY (by design).** This SEEDS a new model with consensus competence + freedom to diverge.
 It must NOT be used for GENERALIST training, whose objective is the OPPOSITE — absorb the DIVERGENT
-per-team specializations (that is `--distill-teacher`, one teacher per team-masked state). Distilling
+per-team specializations (the deleted `--distill-teacher` fold: one teacher per team-masked state). Distilling
 the consensus into the generalist would SHARPEN agreement and BLUR divergence — erasing exactly the
 specialization the generalist is trying to learn (and the generalist already ≈ the consensus, so it is
 near-circular). The CLI guards this: `--warmstart-consensus` requires `--exploiter` and is rejected with

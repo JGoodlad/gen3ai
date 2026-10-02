@@ -364,7 +364,7 @@ locked-move row is exactly the case that a V score cannot see.
   - **Monte-Carlo outcome labels are the GROUNDED lever (DEFERRED, §5.0),** because they carry the
     truth signal: a starved move that wins more often gets a higher label on average, whatever V thinks of it.
     Whether they actually un-starve the policy is X4's to measure; it is not assumed.
-- **Soundness rule (standing, the search-as-teacher lesson):** Q and search values train the POLICY
+- **Soundness rule (standing, the search-as-teacher lesson; the search-teacher TRAINING consumer itself is deleted, deletion pass L3, 2026-10-02 — the lesson stands):** Q and search values train the POLICY
   side or the Q head, NEVER PPO's GAE critic target. A search value is the IMPROVED policy's value;
   regressing the GAE critic toward it biases every advantage (`../ai_v6/design_search_teacher.md`).
   X6's branch successors may train V only as on-policy values of off-path states (the continuation is
@@ -532,7 +532,7 @@ PRIORITY (§5.0).
    - **X6** (branch successors train V through an on-policy continuation to terminal), for the same
      reason. When playouts return, X6 rides on the same outcomes, and it is a prerequisite for any
      V-bootstrapped TRAINING label (V's within-turn discrimination is the measured bottleneck);
-   - the Gumbel-search arm, then expert iteration (X15).
+   - the Gumbel-search arm, then expert iteration (X15). Distillation was the only BUILT route to X15 and is DELETED (deletion pass L3, 2026-10-02); a Rust port is ~1-2 agent-days if X15 is scheduled (`distill_mask` becomes a per-episode host key from `TeamStager`; teachers are frozen T2 slots or a learner-side forward).
 4. **X11** (the omniscient twin) as background infrastructure whenever a checkpoint is read.
 
 ## 10. Open questions (resolve by measurement, record the answer here)

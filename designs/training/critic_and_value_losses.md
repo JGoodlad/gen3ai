@@ -317,7 +317,7 @@ this rollout's frequencies would be a category error.
 `win_prob_strata_weight` is a **v115 `ModelVersion` field of the `td_aux_coef` class**: recorded in
 `model_config.json` for provenance and for flagless-resume read-back (`_resolve`), **never** compared
 by `check_compatible` or any `check_*` — it reweights a loss and touches no forward pass or weight
-shape, and gating a frozen eval/pool/distill opponent on it would be a false rejection. A pre-v115
+shape, and gating a frozen eval/pool opponent on it would be a false rejection. A pre-v115
 config migrates to `0.0`, which is a RECORD and not a guess: the field did not exist. It is **not** a
 `flag_registry.py` row — that registry declares EXTRACTOR toggles, and this builds no module (the
 `td_aux_coef` / `cf_*_coef` / `intent_label_bot_weight` precedent). It IS declared in
@@ -398,7 +398,7 @@ adjacent rows. Four facts make it correct:
   control by 12%, so the within-segment correlation is a feature.
 
 **It runs per MINIBATCH, with its own sample and its own critic forward** — modelled on the
-search-teacher / OPD folds, not on the once-per-`train()` diagnostic probes. Those are read-only;
+`_td_aux_term` / cf folds, not on the once-per-`train()` diagnostic probes. Those are read-only;
 this one carries gradient, and a once-per-`train()` fold would give it ONE contribution against the
 value loss's `n_epochs × n_minibatches` (~240 in production), so λ would have to be ~240× rung-1's
 band to mean the same thing. Cost is bounded by `TD_AUX_STATES`, not by `batch_size`: one extra

@@ -8,7 +8,7 @@ asserts the same total env-step interval.
 
 The audit behind the list (which cadence is total-step, which is per-UPDATE and why those are not
 here) is `designs/ops/training_runbook.md` → "Cadences and N". Per-update cadences (diagnostics,
-compile canary, adaptive batch, KL controller, team PFSP / win-rate pulls, distill-anchor refresh)
+compile canary, adaptive batch, KL controller, team PFSP / win-rate pulls)
 are N-independent in steps only while the rollout (`n_steps x n_envs`) is fixed — a sizing decision,
 not something a resolver can make equal.
 
@@ -60,9 +60,8 @@ def _resolved(tmp_path, n_envs: int) -> Dict[str, Any]:
         # Eval (and with it the snapshot-pool add and the opponent-pool refresh, both driven by the
         # eval cycle) compares `num_timesteps` — already total.
         "eval": int(eval_freq),
-        # Compared against `num_timesteps` inside `capacity_telemetry` / the search teacher.
+        # Compared against `num_timesteps` inside `capacity_telemetry`.
         "canary_reset": int(args.canary_reset_steps),
-        "teacher_refresh": int(args.teacher_refresh_steps),
     }
 
 
@@ -70,7 +69,7 @@ def test_every_step_counted_cadence_is_the_same_total_env_steps_at_N48_and_N2048
     a = _resolved(tmp_path, N_PRODUCTION)
     b = _resolved(tmp_path, N_SWEEP)
     assert a["checkpoint"] == DEFAULT_CHECKPOINT_ENV_STEPS, "the N = 48 value is the default"
-    for key in ("checkpoint", "eval", "canary_reset", "teacher_refresh"):
+    for key in ("checkpoint", "eval", "canary_reset"):
         assert a[key] == b[key], f"{key}: {a[key]:,} env steps at N=48 but {b[key]:,} at N=2048"
 
 

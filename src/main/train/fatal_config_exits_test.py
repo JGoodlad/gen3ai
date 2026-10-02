@@ -8,9 +8,7 @@ does not restart. Before it (verified 2026-09-30 on the parent commit):
   rapid-crash breaker gave up;
 * a failed `--warmstart-consensus` raised an uncaught exception → 1, and because the warm-start is
   rebuilt from scratch on each restart and can run longer than the breaker's 10-minute window, the
-  loop had no bound;
-* a `--distill-teacher` team that fails gen3ou validation was DROPPED silently by the teambuilder
-  (pinned with the real validator and the real trainer in `fatal_config_exits_integration_test.py`).
+  loop had no bound.
 """
 from __future__ import annotations
 

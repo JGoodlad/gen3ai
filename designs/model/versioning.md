@@ -66,7 +66,7 @@ be wrong-to-change-mid-run without changing any weight shape — `vf_coef` (`--v
 first: it rescales the value head's gradient on the shared trunk, so a forgotten/typo'd flag on
 resume would silently drift training. These are recorded on `ModelVersion` (→ `model_config.json`)
 but **deliberately excluded from `check_compatible`** — that gates EVERY load, including the frozen
-eval / self-play-pool / distill opponents, where the forward is identical regardless of the value
+eval / self-play-pool opponents, where the forward is identical regardless of the value
 and a false rejection would break league play. Instead they get a dedicated check
 (`ModelVersion.check_vf_coef`) invoked **only on the training-resume path** via
 `load_model_snapshot(..., enforce_vf_coef=…)`; `train_rl_agent.py` FATALs on mismatch exactly like
@@ -81,7 +81,7 @@ the DRAW/250-turn-timeout score of the SIGNED terminal — −35.0 is what an UN
 parser default is 0.0 since the bare-argv flip, with `--terminal-indicator` / `--victory-value 1.0`), and the no-progress
 clock's two OBS switches `progress_decision_tense` / `progress_switch_freeze`. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, and the error
-NAMES the flags to re-pass), excluded from `check_compatible` because a frozen eval / pool / distill
+NAMES the flags to re-pass), excluded from `check_compatible` because a frozen eval / pool
 forward never reads the reward. They are reward-VALUE changes — **no `ARCH_SIGNATURE` bump**.
 
 🚨 **The 14 SHAPED-reward fields LEFT the config at v122** (`gen3_shaped_reward_deletion_v1`,
@@ -117,6 +117,23 @@ shape `shaped_reward.py` set:
 
 Today this is belt-and-braces: every v121+ run on record recorded every lever OFF. No `ARCH_SIGNATURE` bump, no
 `MIGRATION_FLOOR` change.
+
+🚨 **L2 (v132, `gen3_retired_levers_l2_v1`) appended** `win_prob_lambda` (+ `win_prob_lambda_truncated`),
+`win_prob_rollout_target` (+ `_r` / `_mode` / `_weight`), `win_prob_dense_aux` and the STRUCTURAL bools `dense_aux` /
+`value_true_team` (a `DenseAuxHead` / `TrueTeamValueReadout` in the state_dict has no home, so an ON record is refused on
+every load; `snapshot._DEAD_FEK_JUDGED` carries the pickled extractor kwargs). Pin: `LAST_COMMIT_L2`.
+
+🚨 **The DISTILLATION and SEARCH-TEACHER levers left the config at v133** (deletion pass L3,
+`gen3_retired_levers_l3_v1`, owner-approved 2026-10-02: "delete all, port none"; stamp-only, no `ARCH_SIGNATURE`
+bump). Removed `ModelVersion` fields: `distill_target`, `distill_topk`, `distill_gate`, `distill_gate_tau`,
+`distill_beta`, `teacher_scan_limit`. They ride the SAME `retired_levers.py` table: `distill_target != 'kl'`,
+`distill_gate != 'none'` and `teacher_scan_limit != 60` are TRAINING-ONLY retired levers (a resume or fork of a run
+that recorded one is refused, naming the flag and the pin); `distill_topk` / `distill_gate_tau` / `distill_beta` are
+INERT retired fields (popped silently, any value). The pin is `LAST_COMMIT_L3`
+(`615a764fdb7e05abfcc1575797e2c83eb61c3ea1`). 🚨 **`--distill-coef`, `--distill-teacher`, `--search-teacher` and
+the rest were never recorded fields**, so a run that used them with the default knobs cannot be recognised from
+`model_config.json`: its recorded argv fails argparse on an UNPINNED resume instead. Flag list:
+`designs/deleted_flags.md`; history: [`../training/exploiter_and_distillation.md`](../training/exploiter_and_distillation.md).
 
 ## Where the per-version entries went
 

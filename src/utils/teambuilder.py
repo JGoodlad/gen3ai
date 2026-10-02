@@ -159,8 +159,7 @@ class Gen3Teambuilder(Teambuilder):
             bias_validations = validate_teams_locally("gen3ou", bias_teams)
             # The DROPPED bias teams, by index, with the validator's reason. Kept non-fatal here
             # (a sample-team bias of 0.1 must not die on one bad paste) but never SILENT: a caller
-            # whose bias teams are load-bearing (a distill teacher's — `matchup_setup`
-            # refuses those up front) reads this, and the drop is printed either way.
+            # whose bias teams are load-bearing reads this, and the drop is printed either way.
             for i, res in enumerate(bias_validations):
                 if res.get("valid"):
                     parsed = self.parse_showdown_team(bias_teams[i])
@@ -183,7 +182,7 @@ class Gen3Teambuilder(Teambuilder):
         self._tp_games = [0.0] * len(self.packed_teams)
         # Weights pushed from the callback (None → uniform sampling).
         self._tp_weights = None
-        # The pool index yielded for the CURRENT battle (None → not a pool team, i.e. a bias/distill
+        # The pool index yielded for the CURRENT battle (None → not a pool team, i.e. a bias
         # draw). Set on EVERY branch of ``_draw_team`` — it is the shared "which team did I just
         # hand out" utility, read by BOTH the team-side PFSP accumulator and the (separate,
         # always-on) per-team win-rate tracker below. The two keep their own COUNTER TABLES;
@@ -243,7 +242,7 @@ class Gen3Teambuilder(Teambuilder):
 
         With team_pfsp in a biasing mode the pool draw is weighted (per-team win-rate) and the
         yielded index is tracked so the battle outcome can be recorded. A bias-team battle is
-        never tracked (it uses a pinned distill/bias team, not a pool team). "off" is the exact
+        never tracked (it uses a pinned bias team, not a pool team). "off" is the exact
         legacy uniform ``random.choice`` — no extra RNG draws, no tracking (byte-identical)."""
         if self.bias_packed_teams and self._rng.random() < self.bias_prob:
             self._last_pool_idx = None
@@ -309,7 +308,7 @@ class Gen3Teambuilder(Teambuilder):
         """Record one finished episode's outcome against the LAST yielded pool team.
 
         Unconditional (no ``team_pfsp`` gate) and counts EVERY opponent class — it is
-        instrumentation, not a sampling weight. A no-op when the last yield was a bias/distill team
+        instrumentation, not a sampling weight. A no-op when the last yield was a bias team
         (``_last_pool_idx`` None), which is a pinned team and not a pool member."""
         idx = self._last_pool_idx
         if idx is None:

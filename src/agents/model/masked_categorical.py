@@ -93,7 +93,7 @@ def mode(logp: torch.Tensor) -> torch.Tensor:
 
 class MaskedPi:
     """The masked policy as TENSORS, for the readers of the old distribution stash
-    (``policy._last_pi_distribution``: the distill term, the off-slice anchor, the ride-along heads),
+    (``policy._last_pi_distribution``: the ride-along heads),
     which read ``.distribution.logits`` / ``.distribution.probs``. ``distribution`` is the object
     itself, so both spellings resolve. Built OUTSIDE any compiled region."""
 

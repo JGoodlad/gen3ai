@@ -27,7 +27,6 @@ from main.exit_codes import FatalConfigError, TrainExitCode
 from main.launcher.ipc import emit
 from main.train.run_io import _run_arch_toggles
 from poke_env.player import SimpleHeuristicsPlayer
-from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
 
 
@@ -90,96 +89,6 @@ def resolve_bot_weights(spec: str, roster: "List[str]") -> "List[float]":
         raise BotWeightsRejected("[Opponents] FATAL: --bot-weights gives every training bot weight "
                                  "0 — there is no bot to draw")
     return vec
-
-
-class DistillTeamRejected(FatalConfigError):
-    """A `--distill-teacher` team that Showdown's validator rejects → ``FATAL_CONFIG`` (3)."""
-
-
-def refuse_invalid_teacher_teams(team_strs, owners, *, validate=None) -> None:
-    """gen3_supply_guard_v2 — every TEACHER TEAM must be a legal gen3ou team, or the run REFUSES.
-
-    `Gen3Teambuilder` validates its bias teams and DROPS an invalid one in silence (it is the right
-    behaviour for the 719-team pool, where one bad paste must not kill a run). For a distill teacher
-    it is the wrong one: the dropped team is never drawn, so the teacher's per-state `distill_mask`
-    never fires on it and its `distill/*` scalars simply never appear — a fold that reads as running
-    and teaches nothing on that team. ``validate`` is the batch validator (the real Node one by
-    default); ``owners`` is ``[(teacher, team_file)]`` parallel to ``team_strs``."""
-    if not team_strs:
-        return
-    if validate is None:
-        from utils.bridge.team_validator import validate_teams_locally
-        validate = validate_teams_locally
-    results = validate("gen3ou", list(team_strs))
-    bad = [(owners[i], (r or {}).get("errors")) for i, r in enumerate(results)
-           if not (r or {}).get("valid")]
-    if not bad:
-        return
-    lines = "\n".join(f"  - {tf} (teacher {tp}): {'; '.join(map(str, errs or ['no reason given']))[:400]}"
-                      for (tp, tf), errs in bad)
-    raise DistillTeamRejected(
-        f"\n[SUPPLY] FATAL: {len(bad)} --distill-teacher team(s) FAIL gen3ou validation:\n{lines}\n"
-        f"  The teambuilder would DROP each one silently: it is never drawn, its distill_mask never "
-        f"fires, and its distill/* scalars never appear — a fold that teaches nothing on that team "
-        f"while reading as running. Fix the team file (or drop that TEACHER:TEAM pair). A restart "
-        f"would hit the same validator. Not restarting.")
-
-
-def apply_distill_team_bias(args, all_teams, trainee_teambuilder):
-    """gen3_exploiter_distill_v1: point `--distill-team-bias` of the trainee's episodes at the
-    TEACHER TEAMS (rest = pool rehearsal), and precompute those teams' species id-sets for the
-    env's per-state `distill_mask`. Returns the trainee teambuilder to use (the argument itself
-    when there is no teacher), and sets `args._distill_species`.
-
-    🚨 **THE BIAS IS KEYED ON THE TEACHERS, THE MASK ON THE COEFFICIENT** — and the split is the
-    whole point of `gen3_distill_bias_at_coef0_v1`. A `--distill-coef 0` CONTROL arm exists to hold
-    the team distribution constant against its treatment arm while folding no loss, so the bias
-    must apply at coef 0; `ai_v9_58_R2CTRL_0827` asked for exactly that, got an effective bias of
-    0.0 (the pairs were parsed only above coef 0), and its argv and metadata both said 0.4.
-    `_distill_species` stays coefficient-gated in the other direction: it is what makes the env emit
-    the training-only `distill_mask` obs key, so populating it at coef 0 would change the
-    OBSERVATION SPACE of a run that has no distill term to read it — a difference between the arms
-    where the design asks for none, and a resume-breaking change for a live control run.
-    """
-    args._distill_species = None
-    _pairs = getattr(args, "_distill_pairs", None)
-    if not _pairs:
-        return trainee_teambuilder
-    from poke_env.teambuilder.teambuilder import Teambuilder as _TB
-    from poke_env.data.normalize import to_id_str as _to_id
-    _loss_on = bool(args.distill_coef and args.distill_coef > 0)
-    _species_sets, _team_strs, _team_owner = [], [], []
-    for _tp, _tfs in _pairs:
-        _sets = []
-        for _tf in _tfs:
-            with open(_tf, encoding="utf-8") as _df:
-                _s = _df.read()
-            _team_strs.append(_s)
-            _team_owner.append((_tp, _tf))
-            if _loss_on:
-                # poke-env parks the species in `nickname` when the export has no nickname → fall back to it.
-                _sets.append(frozenset(_to_id(m.species or m.nickname) for m in _TB.parse_showdown_team(_s)))
-        _species_sets.append(_sets)
-    refuse_invalid_teacher_teams(_team_strs, _team_owner)
-    if _loss_on:
-        # list (per TEACHER, teacher-id = index+1) of LISTS of species-frozensets (that teacher's teams) —
-        # a multi-team teacher's KL fires on ANY of its teams (the env matches `cur in sp_list`).
-        args._distill_species = _species_sets
-    # Bias the trainee across ALL N teacher teams (bias_prob total, split evenly); rest = pool rehearsal.
-    trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=_team_strs,
-                                          bias_prob=args.distill_team_bias,
-                                          team_pfsp=args.team_pfsp,
-                                          team_pfsp_cap=args.team_pfsp_cap,
-                                          team_pfsp_floor=args.team_pfsp_floor)
-    emit(f"🧪 [DISTILL] {len(_pairs)} teacher(s) / {len(_team_strs)} team(s), "
-         f"coef={args.distill_coef}"
-         f"{'' if _loss_on else ' (LOSS OFF — team bias only, no teacher loaded, no distill_mask)'}"
-         f" | trainee biased {args.distill_team_bias:.0%} across all "
-         f"{len(_team_strs)} teacher team(s); rest = pool rehearsal")
-    for _i, (_tp, _tfs) in enumerate(_pairs, start=1):
-        emit(f"   [{_i}] {_tp} ← {len(_tfs)} team(s): "
-             f"{', '.join(os.path.basename(_f) for _f in _tfs)}")
-    return trainee_teambuilder
 
 
 def _planned_run_dir(args) -> "str | None":
@@ -249,7 +158,7 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     if getattr(args, "allow_nonsample_trainee", False):
         # RESEARCH override: skip the vetted-sample gate so an exploiter can pilot whole-POOL z-near
         # teams (anchor on a sample, nearest neighbors from all 719 teams). Use for capacity studies
-        # (count-vs-diversity of the FiLM cluster), NOT for a teacher you intend to distil as-is.
+        # (count-vs-diversity of the FiLM cluster).
         print("⚠️ [Exploiter] --allow-nonsample-trainee: SKIPPING the vetted-sample gate — trainee may "
               "pilot non-sample pool teams (research/capacity mode).")
     else:
@@ -264,7 +173,7 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     # a member of the UNTAUGHT 8 — the off-slice meter's own slice. Caught by LUCK on 2026-09-20,
     # one step before ~14 GPU-h of contaminated teachers; matching is by CONTENT sha, so a renamed
     # copy is caught too. Applies to every pinned trainee, not only exploiters: today's specialist
-    # is tomorrow's --distill-teacher.
+    # is tomorrow's teacher.
     if getattr(args, "allow_untaught_teacher", False):
         print("⚠️ [Untaught] --allow-untaught-teacher: SKIPPING the untaught-slice gate — the "
               "trainee may pilot a team the off-slice meter measures. Say so wherever the number "
@@ -277,8 +186,8 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
             print(f"\n[Untaught] FATAL: {_e}")
             sys.stdout.flush()
             os._exit(int(TrainExitCode.FATAL_CONFIG))
-    # → eval callbacks (trainee_team_str). Read from EVAL_trainee_teams (not trainee_teams) so the
-    # distillation path evals on the TAUGHT teams; a `pin_multi` source yields a LIST (eval samples
+    # → eval callbacks (trainee_team_str). Read from EVAL_trainee_teams (not trainee_teams); a
+    # `pin_multi` source yields a LIST (eval samples
     # among them, exactly as training does), a single pin yields the raw export, else None = pool.
     _ets = matchup.eval_trainee_teams
     _specialist_team_str = (list(_ets.pin_strs) if _ets.kind == "pin_multi" and _ets.pin_strs
@@ -295,7 +204,6 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     if args.team_block_episodes > 1:
         trainee_teambuilder.set_block_episodes(args.team_block_episodes)
     opponent_teambuilder = matchup.opponent_teams.build(all_teams, sample_teams)
-    trainee_teambuilder = apply_distill_team_bias(args, all_teams, trainee_teambuilder)
     for _ln in matchup.summary_lines():
         emit(_ln)
     if matchup.trainee_teams.kind == "pin_multi":
@@ -304,9 +212,7 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
              f"{', '.join(os.path.basename(f) for f in _tt.pin_files)} (opponents keep the full pool)")
     elif matchup.trainee_teams.pin_str:
         # Read the TRAINING pin, not `_specialist_team_str` — that one is EVAL-derived and may be a
-        # LIST (a distillation run trains on the full pool but evals on the TAUGHT teams, so
-        # `eval_trainee_teams.kind == "pin_multi"` while `trainee_teams.kind` is not). Calling
-        # `.splitlines()` on it crashed every --distill-coef launch at startup.
+        # LIST. Calling `.splitlines()` on it would crash the launch at startup.
         _spec_mons = [ln.split("@")[0].split("(")[0].strip()
                       for ln in matchup.trainee_teams.pin_str.splitlines()
                       if ln.strip() and "@" in ln]
@@ -480,8 +386,8 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
         # gen3_exploiter_pool_ladder_v1: resolve the POOL-LADDER rungs HERE, next to the target they
         # end at, so an unresolvable rung / a foreign-generation rung FATALs once up front instead of
         # crashing every env worker (the same reason the target's own weights are load-validated
-        # above). The resolved list rides on `args` — the established private-attr convention
-        # (`args._distill_pairs`) — because `build_callbacks` takes `args` and not the MatchupSetup.
+        # above). The resolved list rides on `args` — a private attr — because `build_callbacks` takes
+        # `args` and not the MatchupSetup.
         args._exploiter_ladder_rungs = None
         if args.exploiter_ladder:
             from agents.training.exploiter_ladder import build_ladder_rungs

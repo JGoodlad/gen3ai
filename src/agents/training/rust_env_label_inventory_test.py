@@ -23,7 +23,7 @@ from utils.rust_env import label_inventory as LI
 _NON_LABEL = {"observation", "action_mask"}
 _OFF = dict(emit_belief_labels=False, move_belief_mode="off", emit_win_target=False,
             emit_fork_pg_mask=False, emit_spread_labels=False, emit_opp_intent_labels=False,
-            emit_hp_type_labels=False, emit_item_labels=False, distill_team_species=None)
+            emit_hp_type_labels=False, emit_item_labels=False)
 _ENVS = {}
 
 
@@ -121,7 +121,7 @@ def test_the_design_doc_lists_every_key_with_its_rust_status():
 
 
 def test_each_family_is_one_rust_kind():
-    """A Lane-C build unit is one family, so a family is wholly built, host-filled or refused."""
+    """A Lane-C build unit is one family, so a family is wholly built or host-filled."""
     for fam, rows in LI.families().items():
         assert len({r.rust for r in rows}) == 1, (fam, [(r.key, r.rust) for r in rows])
 

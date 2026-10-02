@@ -95,7 +95,7 @@ last snapshot. I feel like best against target will always have a nuance that we
 of, whereas the last one is probably what our metrics would measure anyway."*
 
 **WHY IT CHANGED.** `best_model/best_model.zip` is exported on **BOT win rate** — an opponent set
-with nothing to do with what a teacher is being distilled FOR. Ledger 2026-09-06 (probe H8,
+with nothing to do with what a teacher is wanted FOR. Ledger 2026-09-06 (probe H8,
 *exploiter off-slice competence*) measured the consequence: for 2 of 8 unfunded R5F teachers
 (`ai_v9_94_R5F02`, `ai_v9_98_R5F06`) the exported file was a **~0.93M-step exploiter rather than the
 ~2.93M final**, so "the teacher" a fold distilled from was neither the last snapshot nor the best
@@ -108,26 +108,26 @@ last snapshot is what the metrics already measure.
 
 `agents.training.fixed_opponent_pool.resolve_model_ref(path, step=None)` → a `ResolvedModel`
 (`zip_path`, `config_path`, `run_base`, `run_dir`, `rung`, `rule`, `num_timesteps`). The flags it
-serves: **`--distill-teacher`** (`main/train/model_build.py`; `--win-prob-pbrs-source` was the second until it was deleted),
-**`--stable-opponents`** and **`--exploiter`** (via `resolve_stable_opponents`),
-**`--exploiter-ladder`** (`exploiter_ladder.py`), **`--warmstart-consensus`** (`warmstart.py`) and
-**`--distill-anchor-parent`** (`main/train/callbacks.py`). `run_spec_test.py` holds the census that
-fails, naming the file and its flags, when one of them stops.
+serves: **`--stable-opponents`** and **`--exploiter`** (via `resolve_stable_opponents`),
+**`--exploiter-ladder`** (`exploiter_ladder.py`) and **`--warmstart-consensus`** (`warmstart.py`)
+(`--distill-teacher`, `--distill-anchor-parent` and `--win-prob-pbrs-source` were the others until they
+were deleted). `run_spec_test.py` holds the census that fails, naming the file and its flags, when one
+of them stops.
 
 **`_resolve_zip_and_config(path, step)` is a FROZEN 3-tuple wrapper over it** — the offline probe
 scripts under `designs/research_state/measurements/arch_transfer_2026-09-05/`
 (`content_locality_v2`, `exploiter_competence`) import it by name to reproduce exactly the call
-`model_build.py` makes for a teacher. **They measured the OLD rule's files, by design, and stay as
+`model_build.py` once made for a teacher. **They measured the OLD rule's files, by design, and stay as
 records of it.** New call sites that want the rung or the step should call `resolve_model_ref`.
 
-### Provenance — a fold now records which file it loaded
+### Provenance — a run records which file each model reference loaded
 
 * `metadata.json`'s **`lineage`** block: every model reference (`fork_parent`, each entry of
   `teachers`, `exploiter_target`) carries `resolved_file`, `resolved_num_timesteps`,
   `resolution_rung` and `resolution_rule`. `python -m main.lineage <run>` prints them.
-* **Startup lines**: `🧪 [DISTILL]` emits one `teacher <k>: <spec> -> <zip> @<N> steps [rung=… rule=…]`
-  per teacher; `🐴 [STABLE]` and `🥊 [EXPLOITER]` emit the same per opponent
-  (`FixedOpponentEntry.provenance()`); `🧊 [WinProbPBRS]` names its frozen φ the same way.
+* **Startup lines**: `🐴 [STABLE]` and `🥊 [EXPLOITER]` emit the resolved file, its step and the rung
+  per opponent (`FixedOpponentEntry.provenance()`). (The `🧪 [DISTILL]` per-teacher line went with the
+  fold.)
 
 🚨 **EVERY TEACHER LOADED BEFORE 2026-09-06 WENT THROUGH THE OLD RULE** (`best_model` first, then
 `final_model.zip`, then `<run>/best_model.zip`) and recorded nothing about it. A pre-change run's
@@ -164,9 +164,11 @@ lineage: {schema, role, fork_step, recorded_at,
           ancestry_stop: {at, reason}}
 ```
 
-`role` is `fresh` / `fork` / `fold` (`--distill-teacher`) / `exploiter` (`--exploiter`, which wins
-— a double-sided exploiter is an exploiter that also distils, and its TARGET is what identifies
-it). `ancestry` is walked through each parent's OWN block, nearest ancestor first, bounded and
+`role` is `fresh` / `fork` / `fold` / `exploiter` (`--exploiter`, which wins
+— a double-sided exploiter is an exploiter that also distilled, and its TARGET is what identifies
+it). **`fold` and the `teachers` list are HISTORICAL**: `--distill-teacher` was deleted (deletion pass L3,
+2026-10-02), so nothing new writes them, but `agents.training.lineage` still derives them from an OLD
+run's recorded command, and `main.lineage` still prints them for those runs. `ancestry` is walked through each parent's OWN block, nearest ancestor first, bounded and
 cycle-safe on realpaths; `ancestry_stop` says where the chain went dark and why, because *"the
 chain ends at a fresh root"* and *"the parent directory is gone"* are different facts a bare list
 conflates.
@@ -176,7 +178,7 @@ conflates.
 run restarts every few hours and an idempotent FORK has its `--model` swapped to the fork's OWN
 latest checkpoint on each relaunch (`launcher.checkpoint.resolve_fork_resume_model`), so a block
 re-derived on a restart would silently re-point the recorded parent at the DRIFTED student — the
-exact failure `distill_anchor_callback` has a module of prose defending against. Belt and braces:
+exact failure the (deleted) distill-anchor callback had a module of prose defending against. Belt and braces:
 `build_lineage` also returns `None` on a same-run restart, decided by
 **`main.train.fork_lr.is_same_run_checkpoint`, IMPORTED rather than re-derived** (a second
 predicate for the same question is a second answer waiting to disagree; `<run>/warmstart/…` is
@@ -193,10 +195,6 @@ DERIVES it from `original_command`, printing
 `ForkParent.derived` says which, so a legacy guess is never mistaken for a recorded fact. Every run
 on disk today is legacy, so the derive path is not a corner case — but it lives in exactly ONE
 place, marked as legacy, instead of in each consumer.
-
-⚠️ `distill_anchor_callback.resolve_anchor_parent`'s `original_command` branch is the CURRENT
-consumer of that regex and should move to this accessor — same answer, one implementation, and the
-recorded block preferred where a run has one.
 
 **The CLI** is `python -m main.lineage <run>…` (torch-free and model-free, so it reads a run whose
 architecture drifted past current code — which is most of `models/`). It prints the tree with each

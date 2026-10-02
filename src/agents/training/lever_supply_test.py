@@ -2,10 +2,9 @@
 
 Pins the shared guard (`agents.training.lever_supply`), the exit-code mapping of both error classes,
 the launcher's response to each code, and each lever's wiring: the self-play POOL and PFSP
-(`SelfPlayCallback`), team-PFSP (`TeamPFSPCallback`) and the search teacher (`SearchTeacherCallback`). The fork arm and the
-win-prob rollout labeller are pinned in their own test files; the real-trainer exits are in
-`lever_supply_integration_test.py`. (`--bot-weights`, the warm-start and the distill teacher's
-team validation — FATAL_CONFIG, never CRASH — are `main/train/fatal_config_exits_test.py`.)
+(`SelfPlayCallback`) and team-PFSP (`TeamPFSPCallback`). The fork arm is pinned in its own test
+files; the real-trainer exits are in `lever_supply_integration_test.py`. (`--bot-weights` and the
+warm-start — FATAL_CONFIG, never CRASH — are `main/train/fatal_config_exits_test.py`.)
 
 Every test here FAILS on a revert of the piece it names: a guard that never raises, a callback that
 never observes, an error class mapped to CRASH, a streak that resets at a launcher restart.
@@ -54,10 +53,10 @@ def test_a_delivery_resets_the_streak_and_cycles_that_are_not_live_never_count()
 
 
 def test_zero_disables_the_fatal_but_announces_it_and_the_summary_is_still_loud():
-    g = DryStreakGuard("search_teacher", 0, emit=_quiet)
+    g = DryStreakGuard("pfsp", 0, emit=_quiet)
     for _ in range(20):
         g.observe(0, why="no traces")
-    assert "DISABLED" in g.announce() and "search_teacher=0" in g.announce()
+    assert "DISABLED" in g.announce() and "pfsp=0" in g.announce()
     (line,) = g.summary_lines()
     assert line.startswith("🚨🚨 [SUPPLY] ZERO") and "NOT evidence" in line
 
@@ -303,62 +302,6 @@ def test_the_live_probe_reads_the_pool_and_the_curriculum_fraction():
     assert probe() is False
     pool.load_summary.return_value = {"self_play_fraction": 0.4}
     assert probe() is True
-
-
-# -- the search teacher ------------------------------------------------------------------------
-
-def _teacher(tmp_path, starve=3):
-    from agents.training.teacher.buffer import CorrectionBuffer
-    from agents.training.teacher.callback import SearchTeacherCallback
-    from agents.training.teacher.callback_test import _Logger
-    cb = SearchTeacherCallback(str(tmp_path), freq_steps=1000, starve_cycles=starve,
-                               emit=_quiet, verbose=0)
-    cb.model = types.SimpleNamespace(_correction_buffer=CorrectionBuffer(10), logger=_Logger())
-    return cb
-
-
-def test_a_teacher_that_selects_NO_candidate_for_its_floor_is_FATAL(tmp_path, capsys):
-    from agents.training.teacher.callback_test import _select_pending
-    cb = _teacher(tmp_path)
-    for _ in range(2):
-        _select_pending(cb, {"candidates": [], "n_candidates": 0})
-        cb._finish_selection()
-    _select_pending(cb, {"candidates": [], "n_candidates": 0})
-    with pytest.raises(LeverStarvedError) as ei:
-        cb._finish_selection()
-    assert exit_code_for(ei.value) == 5
-    assert "eval_traces/ is EMPTY" in str(ei.value)
-    assert "no candidates" in capsys.readouterr().out, "printed even at verbose=0"
-
-
-def test_selection_FAILURES_count_and_the_streak_survives_a_restart(tmp_path):
-    from agents.training.teacher.callback_test import _select_pending
-    cb = _teacher(tmp_path)
-    _select_pending(cb, {"error": "RuntimeError: the re-roll driver died"})
-    cb._finish_selection()
-    _select_pending(cb, None)
-    cb._finish_selection()
-    cb2 = _teacher(tmp_path)                                  # a new segment, same run dir
-    assert cb2._guard.streak == 2
-    _select_pending(cb2, {"candidates": [], "n_candidates": 0})
-    with pytest.raises(LeverStarvedError):
-        cb2._finish_selection()
-
-
-def test_a_cycle_with_candidates_resets_the_teacher_streak(tmp_path, monkeypatch):
-    from agents.training.teacher import callback as cb_mod
-    from agents.training.teacher.callback_test import _FakePopen, _select_pending
-    monkeypatch.setattr(cb_mod.subprocess, "Popen", lambda argv, **kw: _FakePopen(argv, **kw))
-    cb = _teacher(tmp_path)
-    cb.model.save = lambda p: open(p, "w").close()
-    _select_pending(cb, {"candidates": [], "n_candidates": 0})
-    cb._finish_selection()
-    cand = {"summary_path": "/t/a_summary.json", "recon_path": "/t/a_reconstruction.json",
-            "inv_index": 4, "turn": 7, "opponent": "heuristic", "step": 1, "anchor_delta": 0.3,
-            "verdict": "MISTAKE"}
-    _select_pending(cb, {"candidates": [cand], "n_candidates": 1})
-    cb._finish_selection()
-    assert cb._guard.streak == 0 and cb._guard.total == 1
 
 
 def test_every_lever_names_a_real_flag():

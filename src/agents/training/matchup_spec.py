@@ -220,32 +220,9 @@ class MatchupSpec:
             play = PlayMode(kind="stochastic",
                             temperature=float(getattr(args, "stable_opponent_temp", 1.0)))
 
-        # DISTILLATION: training biases `--distill-team-bias` of episodes onto the TEACHER teams, so
-        # eval must measure the trainee ON THOSE TEAMS — otherwise `win_rate_vs_ext_<teacher>` compares a
-        # random-pool trainee against a teacher piloting its own pinned teams, which mostly measures the
-        # teacher's TEAM ADVANTAGE, not whether the distillation transferred. (This is the same
-        # eval-pilots-what-training-pilots invariant the single-team pin already enforces; the distill
-        # path silently violated it — the eval read 0.36 while an offline per-team probe read 0.710.)
-        # Keyed on the PAIRS, so it follows the team bias exactly — including a `--distill-coef 0`
-        # CONTROL arm, which since `gen3_distill_bias_at_coef0_v1` IS biased onto the teacher teams
-        # and so must be MEASURED on them too, or the invariant would hold for one arm of a pair only.
-        eval_trainee = None
-        _dp = getattr(args, "_distill_pairs", None)
-        if _dp:
-            _strs, _files = [], []
-            for _t, _teams in _dp:
-                for _f in _teams:
-                    with open(_f, "r", encoding="utf-8") as _fh:
-                        _strs.append(_fh.read())
-                    _files.append(_f)
-            if _strs:
-                eval_trainee = TeamSource(kind="pin_multi", pin_strs=tuple(_strs),
-                                          pin_files=tuple(_files))
-
         return cls(
             trainee_teams=trainee,
             opponent_teams=opponents,
-            eval_trainee_teams=eval_trainee,
             mix_kind=mix_kind,
             bot_weights=getattr(args, "bot_weights", None),
             exploiter_target=getattr(args, "exploiter", None),
@@ -329,7 +306,7 @@ def validate_trainee_not_untaught(spec: "MatchupSpec") -> None:
     """🚨 **A TEAM THE UNTAUGHT METER MEASURES MUST NOT BE A TEAM THE TRAINEE IS PINNED TO.**
 
     The untaught 8 is the campaign's PRIMARY endpoint — off-slice competence, measured on teams
-    the model was not taught. Pin a trainee (and above all a teacher destined for distillation) to
+    the model was not taught. Pin a trainee (and above all a team destined to be a teacher) to
     one of them and the meter stops measuring untaught teams: every later "off-slice" number is
     partly a measurement of teams that model specialised in, and it reads high for a reason that
     has nothing to do with the lever under test.
@@ -378,24 +355,21 @@ def read_recorded_trainee_teams(path: str, *, require_teams: bool = False) -> "l
         read_recorded_trainee_teams('models/ai_v9_92_R5F00_0831')          -> 2 teams
         read_recorded_trainee_teams('models/ai_v9_92_R5F00_0831@26267760') -> 0 teams   # was []
 
-    A `--distill-teacher '<run>@<step>:*'` fold therefore reported teachers that taught nothing,
-    diagnosed by the wrong message ("that run recorded NO trainee teams"). The producer side is
+    A `<run>@<step>` run spec handed to it by a fold's teacher resolver (the deleted
+    `--distill-teacher`) therefore reported teachers that taught nothing, diagnosed by the wrong message ("that run recorded NO trainee teams"). The producer side is
     fixed by `agents.training.run_spec.split_run_spec`; this raise is the consumer-side guard, so
     the silence cannot come back through some other caller. ``require_teams=True`` additionally
-    raises when the run exists but recorded no pin — for a caller (the ``'TEACHER:*'`` wildcard)
-    whose whole request is "the teams this run trained on".
+    raises when the run exists but recorded no pin — for a caller whose whole request is "the teams
+    this run trained on".
 
-    TWO consumers share this so producer and consumer cannot drift:
-      * ``--distill-teacher '<model>:*'`` — distil a teacher over EXACTLY the teams it trained on.
-        Hand-typing that list risks a mismatch, which would fire the distill mask on states where
-        the teacher is OFF-DISTRIBUTION — silently, since nothing checks it.
-      * the fold-back contract (``fixed_opponent_pool._read_trainee_pin``) — a specialist used as an
-        OPPONENT must pilot its OWN team(s), not the shared pool.
+    The consumers share this so producer and consumer cannot drift: the fold-back contract
+    (``fixed_opponent_pool._read_trainee_pin``) — a specialist used as an OPPONENT must pilot its OWN
+    team(s), not the shared pool — the pinned-team meters and ``main.promote_teams``.
 
     FAIL-LOUD, never silently degrade: a recorded team file that is missing raises
     ``FileNotFoundError``; a file whose content no longer matches the run's recorded fingerprint
     (``pin_shas`` / ``pin_sha`` from the MatchupSpec provenance, when present) raises ``ValueError``
-    — the file changed since that run trained on it, so distilling/piloting it would be a lie.
+    — the file changed since that run trained on it, so piloting it would be a lie.
     """
     import os
     if not os.path.exists(path):

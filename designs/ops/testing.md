@@ -196,11 +196,9 @@ the hand-off between two of them is invisible to every one of them at once. Thos
 launches the real entry point as a SUBPROCESS at smoke scale and asserts on the ARTIFACTS the run
 leaves behind — never on "it did not crash".
 
-| Gate | The composition it closes | Tier · measured |
-|---|---|---|
-| `src/main/train/search_teacher_composition_test.py` (`gen3_search_teacher_composition_rust_v1`) | **>= 2 search-teacher cycles on `--use-bridge rust`**, end to end: eval traces → the falsify-gated selection CHILD → frozen trainee → worker subprocess on the rust `search_driver` → confirm rollouts → shard → `CorrectionBuffer` → the AWR aux loss inside `train()`, across a cycle boundary. Asserts the per-cycle markers, the worker config's `"impl": "rust"`, the status histogram (no `worker_no_shard`, no `error:*`, no `error:selection`) and the TB scalars (`teacher/corrections_per_cycle`, `teacher/loss`, `teacher/n`, `grad/searchteacher_share`). Since 2026-09-22 it also asserts the per-cycle **SEARCHED** count (`produce_correction` returns exactly one status reason per candidate, so the histogram's TOTAL must equal what selection offered — without it, a cycle that selected 8 and silently searched 2 reads identically to an honest zero-yield cycle, because the missing candidates emit **no status key at all**) and that `teacher/loss` / `teacher/ce` / `grad/searchteacher_share` are **NON-ZERO rather than merely present** (a tag recorded as identically 0.0 passes a presence check and pulls the trunk not at all), and prints a per-cycle **wall** table | `sim` + `slow` · **9 m 32 s** (2026-09-22, 16-core box, contention 2.1, a GPU arm live; 30,000 steps, 5 launches / 4 collects / 5 corrections). Earlier: 7 m 52 s at factor 1.10 (2026-09-08). It also asserts and prints what the teacher cost the TRAINING STEP — **0.46 s over the whole 30,000-step run** (re-measured 2026-09-22; worst single step 115.9 ms, which is `model.save`), against the 30-350 s **per cycle** its first run measured |
+**No composition gate exists right now.** The only one (`search_teacher_composition_test.py`, `gen3_search_teacher_composition_rust_v1`: >= 2 search-teacher cycles on `--use-bridge rust`, end to end) was DELETED with the search teacher (deletion pass L3, 2026-10-02). The rules below are the shape the next one follows; add its row here (gate, the composition it closes, tier and measured cost) when one lands.
 
-**They are `slow` by DECLARATION, not by measurement.** A live training run normally shares this
+**A composition gate is `slow` by DECLARATION, not by measurement.** A live training run normally shares this
 box, so a duration recorded beside one is a note for planning, never a bound to assert against.
 
 Three rules every composition gate here follows, each of them a project rule applied to a subprocess:
@@ -223,14 +221,14 @@ Three rules every composition gate here follows, each of them a project rule app
   `cargo build` line, and a run that reaches "Training complete" having launched fewer than two
   cycles fails as NO-CYCLE rather than passing green on a run that did nothing.
 
-**What the first one actually found, and it was not a crash.** The search-teacher composition gate's
+**What the first one actually found, and it was not a crash** (history: that gate is deleted, see above). The search-teacher composition gate's
 opening run produced no failed assertion; what it produced was a MEASUREMENT nobody had — the
 candidate SELECTION ran inline in `_on_step` for **48 s over 9 traces and 350 s over the default
 60-trace `scan_limit`** (measured 2026-09-08 over a real run's copied traces; the gate's own
 smaller run read ~30 s / ~100 s), on the training step, every cycle, while the callback was documented
 everywhere as "non-blocking (subprocess workers)". That is the argument for this shape of gate: a
 leg-level test measures a leg's correctness, and only a whole run can tell you what a join COSTS.
-Where a composition gate can cheaply record such a cost as a scalar (`teacher/step_block_ms`), do —
+Where a composition gate can cheaply record such a cost as a scalar, do —
 a number in the run's own events survives the next person's assumptions better than a comment.
 
 ### PARITY tests on a policy: never on FRESH weights, and prove the check can fail (`gen3_fresh_parity_probe_v1`)

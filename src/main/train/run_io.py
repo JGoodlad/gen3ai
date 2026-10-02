@@ -12,7 +12,6 @@ from typing import Optional
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 
 from agents.model.snapshot import record_checkpoint
-from agents.training.distill_anchor_callback import save_anchor_ref_beside
 from agents.training.dose import dose_block
 from agents.training.lineage import build_lineage
 from main.train.constants import checkpoint_due
@@ -82,7 +81,7 @@ def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None
     """THE LINEAGE SEAM — the immutable `lineage` block for THIS process, or None on a restart.
 
     All of the work lives in `agents.training.lineage`; this is the one line that knows which
-    argparse fields carry the fork's parent, teachers and target. `None` means "a same-run restart
+    argparse fields carry the fork's parent and exploiter target. `None` means "a same-run restart
     contributes nothing", and `save_model_snapshot` preserves whatever the run already recorded
     (the same existing-value-wins rule `original_command` uses).
 
@@ -98,7 +97,6 @@ def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None
     """
     block = build_lineage(model_path=model_path, model_dir=model_dir,
                           exploiter=getattr(args, "exploiter", None),
-                          distill_teacher=getattr(args, "distill_teacher", None),
                           fork_step=fork_step)
     if block is not None:
         from agents.training.pool_seed import pool_dir_for, read_seed_record
@@ -128,16 +126,7 @@ def _matmul_precision() -> str:
 
 
 def _model_hparams(model) -> dict:
-    """The per-checkpoint hparam block, plus the two CONTROLLER states that are RUN STATE.
-
-    `distill_anchor_dual_state` and `distill_stop_state` (gen3_distill_stop_rule_v1) ride here for
-    exactly the reason `handoff_lr` and `grad_accum_steps` do: a launcher restart re-invokes the
-    ORIGINAL argv every few hours, so a controller that does not persist would reset to its flag's
-    value — a dual that had climbed 5x, a stop detector that had accumulated 7 of its 8-rollout
-    window, an annealed `--distill-coef` that the forwarded flag would re-install at full strength.
-    They are appended **only when the mechanism is live** (the attribute exists only while its
-    callback is registered), so an ordinary run's sidecar is byte-for-byte what it always was.
-    """
+    """The per-checkpoint hparam block."""
     clip_range_vf = float(model.clip_range_vf(1.0)) if model.clip_range_vf is not None else -1.0
     opt = model.policy.optimizer
     out = {
@@ -161,11 +150,6 @@ def _model_hparams(model) -> dict:
         "fork_contested_absv": float(getattr(model, "fork_contested_absv", 0.0)),
         "fork_max_per_battle": int(getattr(model, "fork_max_per_battle", 1)),
         "fork_crn": str(getattr(model, "fork_crn", 'dice_and_draws')),
-        "search_teacher_coef": float(getattr(model, "search_teacher_coef", 0.0)),
-        "search_teacher_value_coef": float(getattr(model, "search_teacher_value_coef", 0.0)),
-        "search_teacher_beta": float(getattr(model, "search_teacher_beta", 1.0)),
-        "search_teacher_batch_size": int(getattr(model, "search_teacher_batch_size", 256)),
-        "opd_coef": float(getattr(model, "opd_coef", 0.0)),
         "cf_winprob_coef": float(getattr(model, "cf_winprob_coef", 0.0)),
         "cf_label_likelihood": str(getattr(model, "cf_label_likelihood", "binomial")),
         "cf_evidential_coef": float(getattr(model, "cf_evidential_coef", 0.0)),
@@ -174,15 +158,6 @@ def _model_hparams(model) -> dict:
         "cf_shadow_coef": float(getattr(model, "cf_shadow_coef", 0.0)),
         "q_winprob_coef": float(getattr(model, "q_winprob_coef", 0.0)),
         "q_winprob_onpolicy_coef": float(getattr(model, "q_winprob_onpolicy_coef", 0.0)),
-        "distill_coef": float(getattr(model, "distill_coef", 0.0)),
-        "distill_value_coef": float(getattr(model, "distill_value_coef", 0.0)),
-        "distill_value_feat_coef": float(getattr(model, "distill_value_feat_coef", 0.0)),
-        "distill_target": str(getattr(model, "distill_target", "kl")),
-        "distill_topk": int(getattr(model, "distill_topk", 1)),
-        "distill_gate": str(getattr(model, "distill_gate", "none")),
-        "distill_gate_tau": float(getattr(model, "distill_gate_tau", 0.0)),
-        "distill_beta": float(getattr(model, "distill_beta", 1.0)),
-        "opd_beta": float(getattr(model, "opd_beta", 1.0)),
         "batch_size": model.batch_size,
         "grad_accum_steps": int(getattr(model, "grad_accum_steps", 1)),
         "n_steps": model.n_steps,
@@ -209,10 +184,6 @@ def _model_hparams(model) -> dict:
     _steps = getattr(model, "num_timesteps", None)
     if _steps is not None:
         out["num_timesteps"] = int(_steps)
-    for _key in ("distill_anchor_dual_state", "distill_stop_state"):
-        _val = getattr(model, _key, None)
-        if isinstance(_val, dict):
-            out[_key] = _val
     # M5 Lane G — WHICH ENV CORE this process's rollouts ran on (`--env-core`): the Rust core's stamp
     # (front end, build stamp, trigger, T2 backend + buckets, the keyed draw) or "python". Written on
     # every save like `matmul_precision`, so each checkpoint's sidecar names the core that produced it.
@@ -370,9 +341,4 @@ class _TrackingCheckpointCallback(CheckpointCallback):
                     hparams=_model_hparams(self.model),
                     handoff_lr=handoff_lr,
                 )
-            # gen3_distill_anchor_ref_v1: under `--distill-anchor-ref ema|periodic` the anchor's
-            # reference is RUN STATE with no path to re-read, so it rides beside the checkpoint it
-            # belongs to (`<ckpt>_anchor_ref.pt`) and is restored from that sibling on the next
-            # launch. A no-op — and a single `getattr` — in every other run.
-            save_anchor_ref_beside(self.model, ckpt_path)
         return True

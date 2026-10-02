@@ -259,7 +259,7 @@ def test_a_recorded_on_config_round_trips():
 def test_the_flag_is_in_the_registry_as_a_structural_cli_toggle():
     """It builds a MODULE from an extractor constructor kwarg, which is the registry's declared
     scope — the win_prob_mode / value_dist_mode precedent. Its two COEFFICIENTS are deliberately
-    absent (training-only, the --opd-coef class)."""
+    absent (training-only, the --td-aux-coef class)."""
     from agents.model.flag_registry import BY_NAME, Klass, Tier
     row = BY_NAME["cf_evidential"]
     assert row.tier is Tier.CLI and row.klass is Klass.STRUCTURAL and row.since == 98

@@ -175,10 +175,10 @@ def test_sampler_drops_a_group_that_first_appears_on_a_later_micro_batch():
     sampler.add("policy", net(th.ones(1, 3)).sum())
     sampler.flush_micro()
     sampler.add("policy", net(th.ones(1, 3)).sum())
-    sampler.add("distill", net(th.full((1, 3), 2.0)).sum())
+    sampler.add("aux", net(th.full((1, 3), 2.0)).sum())
     sampler.flush_micro()
     res = sampler.result(accum=2)
-    assert "policy" in res and "distill" not in res
+    assert "policy" in res and "aux" not in res
 
 
 def test_sampler_never_writes_dot_grad():
@@ -329,7 +329,7 @@ def test_off_is_byte_identical_and_on_adds_the_new_tags():
 
     assert not [k for k in log_off if "noise_scale_ratio_" in k], "OFF must emit no per-term tag"
     assert "train/noise_per_term_ms" not in log_off
-    for group in ("policy", "value"):     # entropy is coef-0 here; aux/distill are off on this env
+    for group in ("policy", "value"):     # entropy is coef-0 here; aux is off on this env
         assert f"train/noise_scale_{group}" in log_on
         assert f"train/noise_scale_ratio_{group}" in log_on
         assert f"train/noise_scale_share_{group}" in log_on

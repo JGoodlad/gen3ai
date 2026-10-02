@@ -2,8 +2,8 @@
 
 WHY THIS MODULE EXISTS (gen3_run_spec_split_v1, 2026-09-05). Several flags take a *run spec*
 (`models/<run>@<step>`) rather than a bare path: `--stable-opponents`, `--exploiter`, and — as of
-this module — `--distill-teacher`, `--win-prob-pbrs-source`, `--distill-anchor-parent` and
-`--warmstart-consensus`. Only ONE of them ever split the `@step` off, and every other consumer
+this module — `--warmstart-consensus` (and, until deletion pass L3 / L1, `--distill-teacher`,
+`--win-prob-pbrs-source` and `--distill-anchor-parent`). Only ONE of them ever split the `@step` off, and every other consumer
 handed the whole string to a reader that takes a *directory*::
 
     read_recorded_trainee_teams('models/ai_v9_92_R5F00_0831')            -> 2 teams
@@ -13,13 +13,13 @@ The second answer is a WRONG ANSWER ON A SUCCESS PATH — the same class as the 
 no-op: the reader could not find a `metadata.json` beside a directory that does not exist, and
 "no metadata" was indistinguishable from "a generalist run recorded no trainee teams". A fold
 written the obvious way therefore reported its teachers as teaching NOTHING, and the only symptom
-was a team count in the `[DISTILL]` startup line.
+was a team count in a startup line.
 
 The class fix is this function plus two throwing guards:
 
   * every consumer of a run spec routes the string through :func:`split_run_spec` BEFORE it reaches
     a filesystem reader — `fixed_opponent_pool._resolve_zip_and_config` does it at ITS entry, so
-    every caller that passes `step=None` (the four above) is fixed at once;
+    every caller that passes `step=None` is fixed at once;
   * `matchup_spec.read_recorded_trainee_teams` RAISES on a path that does not exist instead of
     reading as "a generalist run", so a spec that escapes the splitter cannot be silent again.
 

@@ -110,7 +110,7 @@ primitive (`gen3_bridge_clone_branch_v1` — `BridgeSession::snapshot()`, a deep
 `clear_chunks`/`request_kind`/`is_choice_done`/`active_request_json`/`battle_state`/`winner`
 surface; the `Battle::serialize`/`deserialize` stubs are deleted, the port's state needing no byte
 format) and the driver on top of it both shipped — see *Offline driver transport* below. The
-`--search-teacher` + rust guard is **gone**, and the reason it used to give — the record's
+old search-teacher + rust guard is **gone**, and the reason it used to give — the record's
 `input_log` being replay-EQUIVALENT rather than byte-identical — is **WRONG and RETRACTED**: no
 consumer reads the committed-choice lines at all (`replay_kernels.js::writeStart` and
 `ReconstructionRecord.start_options()`/`players()` read only `>start`/`>player`, which the rust
@@ -207,9 +207,6 @@ Threading (every default is `"node"`, so this is byte-identical for every existi
   `python -m main.prober.query --impl {node,rust} <cmd>`. `better_line` REFUSES an injected warm
   `SearchSession` whose impl differs from the session's, so a correction can't be half-searched on
   one engine and half-confirmed on the other.
-- Search teacher: `SearchTeacherCallback(impl=args.bridge_impl)` → both worker configs → the
-  workers' `ProbeSession` / `SearchSession` / `generate_loss_traces` (whose `run_local_battles` call
-  previously had no `impl` and so silently took node).
 
 Tests — the SEAM: `sim_bridge_bin_test.py` (node argv, the `POKESIM_SEARCH_DRIVER_BIN` override,
 bad-impl `ValueError`, independence of the two overrides, and a missing rust binary raising instead
@@ -265,9 +262,9 @@ effort — the materializer is the next lever, same lesson as the `torch.compile
 1.89× is an UPPER bound for a real search, because it was measured with the integration test's
 `V = obs.sum()` stub, so a real extractor's forward adds impl-invariant time on both arms.
 
-The RSS and cold-start numbers matter more than they look for the SEARCH TEACHER, which runs
-`--teacher-search-workers` of these concurrently and (in batch mode) respawns per cycle: 5 workers is
-~0.97 GB of node children vs ~47 MB of rust ones.
+The RSS and cold-start numbers matter more than they look for any caller that runs several search
+workers concurrently (the deleted search teacher ran `--teacher-search-workers` of them and respawned
+per cycle): 5 workers is ~0.97 GB of node children vs ~47 MB of rust ones.
 
 Both `--impl` and `--record-impl` exist on the two fuzz scripts on purpose: a MIXED run (train on
 rust, run forensics on node) is the realistic deployment, so a record produced by either engine must

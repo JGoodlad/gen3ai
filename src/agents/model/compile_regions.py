@@ -31,8 +31,7 @@ THE TABLE (`REGIONS`):
                            keyed on lr would be a new signature per update (or need lr as a tensor and
                            AdamW's capturable path) for no measurable gain.
   *   eager, declared      the batch build, label alignment, the per-micro host read, the EAGER TAIL
-                           of the fold (dense aux, the CF-twin mirror, value-dist, distill + anchor,
-                           search-teacher, OPD, TD-aux, the counterfactual block — none on the
+                           of the fold (the CF-twin mirror, TD-aux, the counterfactual block — none on the
                            production surface), every diagnostic probe, logging.
 
 TORCH. Regions are a torch 2.8 feature, and HEAD runs torch >= 2.8 only (`utils.torch_floor`): on

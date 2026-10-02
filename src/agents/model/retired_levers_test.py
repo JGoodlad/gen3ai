@@ -1,6 +1,6 @@
-"""The RETIRED LEVERS (deletion pass L1, config v131; L2, config v132; K2, TF32 — a metadata.json
-runtime knob, no config bump) — what a recorded config / a pickled zip that still names one does on
-every path that reads it.
+"""The RETIRED LEVERS (deletion pass L1, config v131; L2, config v132; L3, config v133; K2, TF32 — a
+metadata.json runtime knob, no config bump) — what a recorded config / a pickled zip that still names one
+does on every path that reads it.
 
 `model_version.retired_levers` is the ONE table; this file drives each consumer of it:
 
@@ -35,6 +35,7 @@ from agents.model.model_version.retired_levers import (
     LAST_COMMIT_K2,
     LAST_COMMIT_L1,
     LAST_COMMIT_L2,
+    LAST_COMMIT_L3,
     RETIRED,
     RETIRED_FIELD_FLAGS,
     check_no_retired_levers,
@@ -54,6 +55,10 @@ _OFF = {
     "win_prob_rollout_weight": 1.0,
     # K2 (a metadata.json runtime knob; popped from a config if one ever carried it)
     "matmul_precision": "highest",
+
+    # L3 (config v133): distillation's recorded loss knobs and the search teacher's scan width
+    "distill_target": "kl", "distill_topk": 1, "distill_gate": "none", "distill_gate_tau": 0.0,
+    "distill_beta": 1.0, "teacher_scan_limit": 60,
 }
 
 
@@ -100,7 +105,9 @@ def test_a_STRUCTURAL_lever_recorded_ON_is_refused_on_every_load(field, value):
                                          ("win_prob_coef", 0.05),
                                          ("win_prob_lambda", 0.9), ("win_prob_rollout_target", 0.01),
                                          ("win_prob_rollout_weight", 64.0),
-                                         ("win_prob_dense_aux", 0.1)])
+                                         ("win_prob_dense_aux", 0.1),
+                                         ("distill_target", "action"), ("distill_gate", "advantage"),
+                                         ("teacher_scan_limit", 200)])
 def test_a_TRAINING_ONLY_lever_recorded_ON_still_LOADS_it_just_cannot_resume(field, value):
     """A frozen forward (an eval opponent, a pool snapshot, the prober) never reads these, so the
     migration pops them silently — the refusal belongs to the resume / fork path below."""
@@ -161,6 +168,37 @@ def test_an_L2_lever_recorded_ON_refuses_a_resume_and_names_the_L2_pin(tmp_path,
     msg = str(ei.value)
     assert RETIRED_FIELD_FLAGS[field] in msg and LAST_COMMIT_L2[:8] in msg
     assert ei.value.last_commit == LAST_COMMIT_L2
+
+
+@pytest.mark.parametrize("field,value", [("distill_target", "action"), ("distill_gate", "advantage"),
+                                         ("teacher_scan_limit", 200)])
+def test_an_L3_lever_recorded_ON_refuses_a_resume_and_names_the_L3_pin(tmp_path, field, value):
+    run = _write(tmp_path, **{field: value})
+    with pytest.raises(RetiredLeverCheckpointError) as ei:
+        check_no_retired_levers(str(run / "model_config.json"))
+    msg = str(ei.value)
+    assert RETIRED_FIELD_FLAGS[field] in msg and LAST_COMMIT_L3[:8] in msg
+    assert ei.value.last_commit == LAST_COMMIT_L3
+
+
+def test_the_L3_INERT_knobs_alone_are_not_a_finding_and_are_popped():
+    """The top-K / gate threshold / AWR temperature are read only by the retired action-form target
+    and gate; recorded at a non-default value WITHOUT either they say nothing, so they must not
+    refuse a resume — but the dataclass has no such field any more, so the migration still pops them."""
+    inert = {"distill_topk": 3, "distill_gate_tau": 0.5, "distill_beta": 2.0}
+    assert retired_lever_evidence(inert) == []
+    out = _migrate_config({**_current_config(), **inert})
+    assert not (set(out) & set(inert))
+    ModelVersion(**out)
+
+
+def test_the_OFF_boundary_of_each_L3_lever_is_not_a_finding():
+    for raw in ({}, {"distill_target": "kl"}, {"distill_target": None}, {"distill_gate": "none"},
+                {"distill_gate": ""}, {"teacher_scan_limit": 60}, {"teacher_scan_limit": None}):
+        assert retired_lever_evidence(raw) == [], raw
+    assert [r.field for r in retired_lever_evidence({"teacher_scan_limit": 61})] == [
+        "teacher_scan_limit"]
+    assert [r.field for r in retired_lever_evidence({"distill_target": "action"})] == ["distill_target"]
 
 
 def test_an_L2_STRUCTURAL_refusal_names_its_own_unit_and_version():
@@ -297,6 +335,12 @@ def _pre_deletion_zip(tmp_path):
                value_true_team=False, dense_aux=False)
     model.policy_kwargs = {**model.policy_kwargs, "features_extractor_kwargs": fek,
                            "use_popart": False, "value_from_dist": False}
+    # L3: every pre-deletion trainer pickled the distillation / search-teacher hyperparameters it
+    # had set on the model as plain instance attributes; a load must tolerate them (they are inert).
+    for _name, _val in (("distill_coef", 0.0), ("distill_value_coef", 0.0), ("distill_target", "kl"),
+                        ("distill_anchor_coef", 0.0), ("search_teacher_coef", 0.0),
+                        ("search_teacher_batch_size", 256), ("opd_coef", 0.0), ("opd_beta", 1.0)):
+        setattr(model, _name, _val)
     zip_path = tmp_path / "pre_deletion"
     model.save(str(zip_path))
     return str(zip_path) + ".zip"
@@ -321,6 +365,8 @@ def test_a_checkpoint_written_before_the_deletion_still_loads_through_the_loader
     assert {"use_popart", "value_from_dist", "value_dist_mode", "value_true_team",
             "dense_aux"} <= set(dropped)
     assert MaskablePPO.load(zip_path, env=None, device="cpu", custom_objects=custom) is not None
+    # the pickled L3 hyperparameters ride in as inert instance attributes — loading must not choke
+    assert getattr(model, "search_teacher_coef", 0.0) == 0.0
 
 
 def test_a_pre_deletion_checkpoint_loads_as_an_OPPONENT(tmp_path):

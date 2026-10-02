@@ -511,7 +511,7 @@ def test_the_field_is_recorded_and_round_trips(field):
 
 
 def test_none_of_them_is_gated_by_check_compatible():
-    """A frozen eval / pool / distill opponent runs no train step at all, so gating it on a
+    """A frozen eval / pool opponent runs no train step at all, so gating it on a
     train-step diagnostic would be a false rejection that breaks league play."""
     from agents.model.model_version import ModelVersion
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings

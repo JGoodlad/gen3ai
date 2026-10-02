@@ -158,8 +158,8 @@ _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
 #   torch._functorch.config.donated_buffer = False. Torch 2.6+ defaults it True (2.5.1: False):
 #   AOTAutograd then lets the compiled BACKWARD reuse the forward's saved activations IN PLACE,
 #   which is legal only when every backward through that graph is single-use. Our learner is not:
-#   the read-only probes (`grad_balance._flat_grads`, the per-term noise-scale probe) and the distill
-#   grad-projection call `autograd.grad(..., retain_graph=True)` on the compiled graph. The donated
+#   the read-only probes (`grad_balance._flat_grads`, the per-term noise-scale probe)
+#   call `autograd.grad(..., retain_graph=True)` on the compiled graph. The donated
 #   indices are collected when the graph compiles (`aot_dispatch_autograd`) and cleared only if the
 #   FIRST backward through it retains the graph (`AOTDispatchAutograd.post_compile`'s lazy backward
 #   compile); the sentinel's prewarm does a plain `.backward()` first, so on torch 2.8 the first

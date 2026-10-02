@@ -40,9 +40,7 @@ from agents.model import compile_regions as cr
 N_ENVS, BATCH = 4, 16
 
 #: THE INVENTORY — every config that puts a non-production key in the learner's batch or turns on a
-#: lever R1 reads. (name, extra argv, what the declaration must carry). `distill` is set through
-#: `_distill_species` (the teacher teams' species sets `matchup_setup` derives from the teacher
-#: checkpoints; no checkpoint is loaded here).
+#: lever R1 reads. (name, extra argv, what the declaration must carry).
 LEVERS: Dict[str, Any] = {
     "production": ([], {}),
     "strata": (["--win-prob-strata-weight", "0.5"], {"strata": True}),
@@ -50,14 +48,13 @@ LEVERS: Dict[str, Any] = {
     # gen3_fork_rust_v1 (forks.md §14): on the Rust core the branch rows ride the complete-game FIFO
     # inside the FIXED update (no ragged tail, no ForkRolloutBuffer) — the mask key is still a lever
     "fork_rust": (["--env-core", "rust", "--fork-fraction", "0.01"], {"fork_pg_mask": True, "key": "fork_pg_m"}),
-    "distill": ([], {"key": "distill_mask"}),
 }
 
 
 #: The levers the production env core (rust, `recipe.sizing` — the M5 switch) does not serve yet: their
 #: rows run the learner on the PYTHON env core (`combination_checks._ENV_CORE_UNPORTED`). R1 is the same
 #: region on both cores, so the declaration is what is tested either way.
-PYTHON_CORE_ONLY = frozenset({"fork", "distill"})
+PYTHON_CORE_ONLY = frozenset({"fork"})
 
 
 def _lever_args(name: str) -> Any:
@@ -72,8 +69,6 @@ def _lever_args(name: str) -> Any:
     with contextlib.redirect_stdout(io.StringIO()):
         resolve_config(a, parser)
     a.use_bridge, a.bridge_impl, a.use_showdown_bridge = "rust", "rust", True
-    if name == "distill":
-        a._distill_species = [frozenset({1, 2, 3, 4, 5, 6})]
     return a
 
 
@@ -91,7 +86,7 @@ def _fill(model: Any, *, mixed_classes: bool, seed: int) -> None:
         g = data.get("obs:" + k)
         if g is not None and g.shape == arr.shape:
             arr[...] = g
-        elif k in (PG_MASK_KEY, "distill_mask"):
+        elif k == PG_MASK_KEY:
             arr[...] = rng.integers(0, 2, arr.shape)
         # anything else stays at zeros: an unsupervised label (mask 0)
     oc = rb.observations["opp_class"]

@@ -1,9 +1,9 @@
-"""The `# --- ADVANTAGE-GATED / ACTION-FORM DISTILLATION + the RANK TRIPWIRE ---`
-section — the largest one, carrying the distillation flags, the search-teacher
-tuning, the aux/belief heads and the remaining arch switches declared under it.
+"""The `# --- the RANK TRIPWIRE ---` section — historically the largest one (it also carried
+the distillation flags and the search-teacher tuning, DELETED in deletion pass L3), now the rank
+tripwire plus the aux/belief heads and the remaining arch switches declared under it.
 
-Lifted VERBATIM out of the old single-file `parser.py` (lines 980-1596); the flags
-keep their original relative order, which is the order `--help` renders.
+Lifted VERBATIM out of the old single-file `parser.py` (lines 980-1596) minus the deleted
+families; the flags keep their original relative order, which is the order `--help` renders.
 """
 import argparse
 
@@ -13,50 +13,12 @@ from main.train.parser.base import BoolFlag
 
 def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their original order."""
-    # --- ADVANTAGE-GATED / ACTION-FORM DISTILLATION + the RANK TRIPWIRE
-    # (gen3_distill_target_gate_v1; designs/ai_v10/design_advantage_gated_distillation.md
-    # §3.1/§3.3/§4.1/§7). ALL TRAINING-only, the td_aux_coef provenance class (config v103):
-    # argparse default None so `_resolve` can inherit on a flagless resume; recorded on
-    # ModelVersion for provenance; never gated. Defaults are byte-identical to today.
-    parser.add_argument("--distill-target", "--distill_target", dest="distill_target",
-                        choices=["kl", "action"], default=None,
-                        help="TARGET FORM of the exploiter-distillation policy term (rung (c), the "
-                             "axis no arm has ever manipulated). 'kl' (default) = today's "
-                             "full-distribution forward KL, byte-identical. 'action' = distil the "
-                             "teacher's top-K probabilities renormalized over the legal set "
-                             "(--distill-topk; K=1 = pure argmax CE — one bit of ordering, no tail "
-                             "shape), AWR-weighted w = clamp(exp(|adv|/--distill-beta), 20). "
-                             "Requires --distill-coef > 0. Watch distill/gated_frac + "
-                             "distill/gate_agree_rate + grad/distill_share (the §6.2 dose meter).")
-    parser.add_argument("--distill-topk", "--distill_topk", dest="distill_topk",
-                        type=int, default=None,
-                        help="With --distill-target action: distil toward the teacher's top-K "
-                             "probabilities renormalized over the legal set (default 1 = pure argmax "
-                             "CE; K >= n_actions recovers the full KL — the D-F dial, K=3 the "
-                             "defensible middle). Requires --distill-target action.")
-    parser.add_argument("--distill-gate", "--distill_gate", dest="distill_gate",
-                        choices=["none", "advantage"], default=None,
-                        help="THE JUDGE (rung (a)). 'none' (default) = every on-pin row, exactly the "
-                             "rows the KL fired on (arm G1). 'advantage' = keep only rows where the "
-                             "teacher DISAGREES with the sampled action AND the student's own "
-                             "NORMALIZED advantage reads it as a mistake (adv < -tau) — the distill "
-                             "gradient then pushes a logit PPO is already pushing down, by "
-                             "construction. Requires --distill-target action. Watch distill/n_gated "
-                             "(0 is a reading, not an absence) and the §6.2 dose confound: G2's coef "
-                             "is set by grad/distill_share, never by eye.")
-    parser.add_argument("--distill-gate-tau", "--distill_gate_tau", dest="distill_gate_tau",
-                        type=float, default=None,
-                        help="Advantage-gate threshold tau (default 0.0): a row contributes only when "
-                             "adv(s,a) < -tau, in NORMALIZED advantage units (the same normalization "
-                             "the clip objective uses). Requires --distill-gate advantage.")
-    parser.add_argument("--distill-beta", "--distill_beta", dest="distill_beta",
-                        type=float, default=None,
-                        help="AWR temperature beta for the action-form target's |adv| weight, "
-                             "w = clamp(exp(|adv|/beta), max=20) — mirrors --search-teacher-beta "
-                             "(default 1.0). Only used with --distill-target action.")
+    # --- the RANK TRIPWIRE (gen3_distill_target_gate_v1, config v103). TRAINING-only, the td_aux_coef
+    # provenance class: argparse default None so `_resolve` can inherit on a flagless resume;
+    # recorded on ModelVersion for provenance; never gated. Defaults are byte-identical to today.
     parser.add_argument("--rank-tripwire", "--rank_tripwire", dest="rank_tripwire",
                         choices=["off", "warn", "abort"], default=None,
-                        help="RANK TRIPWIRE (§4.1 — no fold runs blind again): watch the existing "
+                        help="RANK TRIPWIRE (no run goes blind on a collapsing representation): watch the existing "
                              "rank/policy_pr probe as an EMA (half-life 10 train() calls) against the "
                              "run's own baseline (median over readings [5,25), logged as "
                              "rank/policy_pr_baseline). WARN (launcher event + rank/policy_pr_ratio) "
@@ -73,124 +35,6 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "record: every KL-collapse arm fell 38-43%%, every control 0%% — 20%% "
                              "fires on all five known-bad arms and no known-good control; 20-38%% is "
                              "the honest margin.")
-    # gen3_distill_stop_rule_v1 — THE FOLD STOP RULE. v8's fold peaked at +9.67pp on untaught teams
-    # around +12.5M and fell to +4.98pp by +15.04M while distillation kept running against teachers
-    # it had already absorbed (ledger 2026-09-01). The signal is the pair below, and the mechanism
-    # lives in agents/training/distill_stop_callback.py.
-    parser.add_argument("--distill-stop", "--distill_stop", dest="distill_stop",
-                        choices=["off", "warn", "anneal", "abort"], default=None,
-                        help="THE FOLD STOP RULE. DEFAULT: 'warn' whenever a fold is running "
-                             "(--distill-teacher with --distill-coef > 0 and the frozen parent "
-                             "attached), 'off' otherwise — gen3_distill_instruments_default_v1; it "
-                             "was 'off' everywhere until 2026-09-03, which is how a seven-arm batch "
-                             "ended up with the detector on three argvs and not the other four. "
-                             "Fire when "
-                             "distill/teacher_agreement_on_slice has PLATEAUED (its EMA's "
-                             "improvement over --distill-stop-window rollouts is below "
-                             "--distill-stop-eps) AND distill/collateral_kl_vs_parent is RISING "
-                             "(the OLS slope of its RAW readings over the same window exceeds "
-                             "--distill-stop-kl-slope of that slope's OWN standard errors), for "
-                             "--distill-stop-persist consecutive rollouts. That conjunction is the "
-                             "R3-SELF regime seen from the inside: displacement still accumulating "
-                             "with nothing left to absorb. 'warn' = a launcher event + "
-                             "distill/stop_signal, nothing changes. 'anneal' = also decay "
-                             "--distill-coef by --distill-stop-anneal-factor every subsequent "
-                             "rollout to 0, so the fold winds DOWN rather than stopping between two "
-                             "rollouts. 'abort' = also stop learn() cleanly (checkpoint saved, exit "
-                             "COMPLETE, no launcher restart loop). Requires the frozen parent to be "
-                             "attached (--distill-anchor-coef > 0, --distill-anchor-monitor, or "
-                             "--distill-anchor-mode grad_project) — nothing else emits "
-                             "collateral_kl_vs_parent, so without it the AND-gate could never "
-                             "close and the flag would be a silent no-op — which is why the "
-                             "'warn' default is conditioned on the parent actually being attached "
-                             "and falls back to 'off' when it is not. RUN 'warn' FIRST: the window "
-                             "and eps are not yet sized by anything measured at this cadence. Every "
-                             "detector EMA, the hold count and the latch are persisted in the "
-                             "checkpoint sidecar, so a launcher restart continues the count.")
-    parser.add_argument("--distill-stop-window", "--distill_stop_window", dest="distill_stop_window",
-                        type=int, default=None,
-                        help="Rollouts the two detectors look back over (default 8; one rollout = "
-                             "one train() call). Must be >= 2 — the rise test is an OLS slope over "
-                             "window+1 points and needs a residual degree of freedom for its "
-                             "standard error to exist.")
-    parser.add_argument("--distill-stop-eps", "--distill_stop_eps", dest="distill_stop_eps",
-                        type=float, default=None,
-                        help="PLATEAU threshold (default 0.005): the improvement in the "
-                             "teacher_agreement_on_slice EMA over the window, below which absorption "
-                             "counts as stopped. ABSOLUTE, in top-1 agreement-rate units, because "
-                             "that is the unit the meter is in. The comparison is SIGNED, so a "
-                             "FALLING agreement is a plateau too — it is not absorbing either.")
-    parser.add_argument("--distill-stop-kl-slope", "--distill_stop_kl_slope",
-                        dest="distill_stop_kl_slope", type=float, default=None,
-                        help="RISE threshold (default 2.0) — IN UNITS OF THE SLOPE'S OWN STANDARD "
-                             "ERROR, not nats per rollout. The rule is 'slope > 0 AND slope > this "
-                             "x se(slope)', a one-sided t-test that the collateral trend is "
-                             "positive. It is scale-free on purpose: collateral KL's absolute scale "
-                             "moves by two orders of magnitude across configs, so no absolute slope "
-                             "could be quoted here and still be right on the next arm. The fit is on "
-                             "the RAW readings, NOT their EMA: a low-pass filter makes consecutive "
-                             "points autocorrelated, so an OLS fit through an EMA has residuals far "
-                             "smaller than the series' own noise and calls WHITE NOISE a significant "
-                             "trend (measured while building this). The PLATEAU half keeps its EMA, "
-                             "because it compares two LEVELS and autocorrelation does not bias a level.")
-    parser.add_argument("--distill-stop-persist", "--distill_stop_persist",
-                        dest="distill_stop_persist", type=int, default=None,
-                        help="Consecutive rollouts on which BOTH detectors must hold before the "
-                             "rule fires (default 3). Any rollout where either fails resets the "
-                             "count; a rollout where either meter does not read at all is silence — "
-                             "the count neither advances nor resets, as in --rank-tripwire.")
-    parser.add_argument("--distill-stop-anneal-factor", "--distill_stop_anneal_factor",
-                        dest="distill_stop_anneal_factor", type=float, default=None,
-                        help="Per-rollout geometric decay of --distill-coef under "
-                             "--distill-stop anneal (default 0.7, must be in (0,1)). It snaps to "
-                             "EXACTLY 0 once below 1e-6 of the coefficient in force when the rule "
-                             "fired (~39 rollouts at 0.7), because a coefficient of 1e-12 still "
-                             "pays a full teacher forward per minibatch for a term that changes "
-                             "nothing. At exactly 0 the teacher forwards stop and "
-                             "teacher_agreement_on_slice stops existing; the ANCHOR's meters keep "
-                             "reading. The annealed value is persisted and RE-APPLIED on restart "
-                             "over the argv's --distill-coef, which the launcher forwards verbatim.")
-    parser.add_argument("--search-teacher-batch-size", "--search_teacher_batch_size",
-                        dest="search_teacher_batch_size", type=int, default=None,
-                        help="Corrections sampled per train() for the AWR forward (default 256).")
-    parser.add_argument("--search-teacher-buffer-size", "--search_teacher_buffer_size",
-                        dest="search_teacher_buffer_size", type=int, default=20000,
-                        help="Correction ring capacity (recency; default 20000).")
-    parser.add_argument("--teacher-search-budget", "--teacher_search_budget", dest="teacher_search_budget",
-                        type=int, default=200, help="Candidates searched per cycle (budget cap; default 200).")
-    parser.add_argument("--teacher-confirm-rollouts", "--teacher_confirm_rollouts",
-                        dest="teacher_confirm_rollouts", type=int, default=8,
-                        help="Monte-Carlo confirm games per candidate for the Wilson-CI strictly-better gate.")
-    parser.add_argument("--teacher-scan-limit", "--teacher_scan_limit", dest="teacher_scan_limit",
-                        type=int, default=None,
-                        help="Loss traces of the newest eval cycle a `crater` search-teacher cycle "
-                             "SCANS for candidates (default 60). THE COST KNOB of the selection "
-                             "half: each scanned trace is falsify-gated through the re-roll driver "
-                             "(measured ~3 s per trace, so ~100 s per cycle at 60), which runs in "
-                             "the selection worker subprocess and NOT on the training step. "
-                             "Lowering it bounds a cycle's selection latency (and so how fresh the "
-                             "frozen trainee is when the search starts); raising it widens the "
-                             "crater pool a cycle can draw from. Ignored by "
-                             "--search-teacher-mode winprob_oneply, which scans every battle and "
-                             "spreads its budget with max_per_battle instead. Recorded in "
-                             "model_config and INHERITED on a flagless resume.")
-    parser.add_argument("--teacher-search-workers", "--teacher_search_workers",
-                        dest="teacher_search_workers", type=int, default=3,
-                        help="Search-teacher worker subprocesses per cycle (default 3).")
-    parser.add_argument("--teacher-search-freq", "--teacher_search_freq", dest="teacher_search_freq",
-                        type=int, default=0, help="TOTAL env steps between search-teacher cycles (0 = 2,000,000).")
-    parser.add_argument("--teacher-persistent", "--teacher_persistent", dest="teacher_persistent",
-                        action="store_true",
-                        help="PERSISTENT-pool mode (the supply lever): long-lived workers GENERATE their "
-                             "own fresh losses (frozen trainee vs current opponents) and search them "
-                             "CONTINUOUSLY, dripping corrections into the buffer — instead of the bursty "
-                             "per-cycle eval-trace scan. Higher, fresher supply; recommended once enabled.")
-    parser.add_argument("--teacher-refresh-steps", "--teacher_refresh_steps", dest="teacher_refresh_steps",
-                        type=int, default=500_000,
-                        help="Persistent mode: re-freeze the trainee snapshot the workers use every N "
-                             "steps (so long-lived workers track the moving policy). Default 500k.")
-    parser.add_argument("--teacher-gen-battles", "--teacher_gen_battles", dest="teacher_gen_battles",
-                        type=int, default=12, help="Persistent mode: battles generated per worker iteration.")
     parser.add_argument("--intent-move-cell", "--intent_move_cell",
                         dest="intent_move_cell", action=BoolFlag, default=None,
                         help="G3 (gen3_intent_move_cell_v1, design_conditional_execution.md): the "
@@ -453,11 +297,11 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                         type=float, default=None,
                         help="POLICY-GRADIENT term weight (gen3_policy_grad_coef_v1): multiplies ONLY the "
                              "clipped PPO surrogate `policy_loss` in the loss fold — never entropy "
-                             "(--ent-coef), never the value term (--vf-coef), never any aux/distill "
+                             "(--ent-coef), never the value term (--vf-coef), never any aux "
                              "coefficient. Default 1.0 = the upstream expression, byte-identical "
                              "(the unscaled tensor is used). 0.0 removes the policy-gradient "
-                             "contribution entirely — the pure-distill/aux phase (arm F of "
-                             "design_advantage_gated_distillation.md §5): every other term keeps "
+                             "contribution entirely (the old pure-aux phase, from when a distillation arm shared "
+                             "this loss): every other term keeps "
                              "training while PPO's own policy pull is off. TRAINING-only (not "
                              "version-locked; recorded for provenance and inherited on a flagless "
                              "resume, the td_aux_coef class). Watch grad/policy_share read ~0 at "

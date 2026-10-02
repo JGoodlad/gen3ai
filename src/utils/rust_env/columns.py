@@ -26,7 +26,7 @@ The LABEL columns (Lane C) are not hand-written rows: one per ``core`` row of
 so the table the inventory test pins against ``Gen3Env`` is the table the columns are built from.
 A label column is written iff ``need`` = 1 AND its family is declared in the spec's ``labels``;
 otherwise it is stale. ``LABEL_FAMILIES`` (rendered as ``labels::FAMILIES``) maps each ``core``
-family to its columns; the spec refuses a ``host_*`` or ``refused`` family by name.
+family to its columns; the spec refuses a ``host_*`` family by name.
 """
 from __future__ import annotations
 
@@ -278,7 +278,7 @@ def render() -> str:
         idx = ", ".join(f"super::col::{k.upper()}" for k in ks)
         w(f"        ({_rs_str(f)}, &[{idx}]),")
     w("    ];")
-    w("    /// Every other family, with where it comes from instead (`host_const`, `host_episode`, `refused`).")
+    w("    /// Every other family, with where it comes from instead (`host_const`, `host_episode`).")
     nc = list(LABEL_NOT_CORE.items())
     w(f"    pub const NOT_CORE: [(&str, &str); {len(nc)}] = [{', '.join(f'({_rs_str(f)}, {_rs_str(k)})' for f, k in nc)}];")
     w("}")

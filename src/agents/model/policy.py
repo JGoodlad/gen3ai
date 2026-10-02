@@ -243,7 +243,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
 
     def _get_action_dist_from_latent(self, latent_pi: th.Tensor) -> MaskableDistribution:
         """sb3's distribution object over `_pointer_logits` — for `get_distribution`'s callers
-        (`predict`, the distill teachers, search-teacher / OPD), which use the object API. The two
+        (`predict`, the offline readers), which use the object API. The two
         hot paths (`forward`, `evaluate_actions`) use the FUNCTIONAL masking below instead."""
         # Build through the public API so masking / log_prob / entropy all see these logits.
         return self.action_dist.proba_distribution(action_logits=self._pointer_logits(latent_pi))
@@ -312,11 +312,10 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     ) -> Tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
         values, log_prob, entropy, logp, masks_bool = self.evaluate_actions_functional(
             obs, actions, action_masks)
-        # gen3_exploiter_distill_v1: stash the (masked) pi so the exploiter-distillation KL, the
-        # off-slice anchor and the ride-along heads REUSE this forward instead of a redundant second
-        # one. `MaskedPi` answers `.distribution.logits` / `.distribution.probs` exactly as the sb3
-        # object did (the masked logits give a BIT-IDENTICAL KL: over LEGAL actions the logits are
-        # unchanged; illegal actions contribute exactly 0 either way).
+        # Stash the (masked) pi so the ride-along heads REUSE this forward instead of a redundant
+        # second one. `MaskedPi` answers `.distribution.logits` / `.distribution.probs` exactly as the
+        # sb3 object did (over LEGAL actions the logits are unchanged; illegal actions contribute
+        # exactly 0 either way).
         self._last_pi_distribution = _mc.MaskedPi(logp, masks_bool)
         return values, log_prob, entropy
 

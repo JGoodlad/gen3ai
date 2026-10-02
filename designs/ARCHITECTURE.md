@@ -1346,7 +1346,7 @@ win-indicator run under the signed defaults FATALs and the error names the flags
 🚨 **A resume or FORK of a checkpoint trained WITH the shaped reward REFUSES LOUDLY**
 (`agents.model.model_version.shaped_reward`, enforced in `resolve_config` and `main.checkargs`,
 typed `ShapedRewardCheckpointError`): it would otherwise continue on the terminal alone under the
-same run name. Run it pinned to ≤ `029cee83`. Frozen eval / pool / distill opponents are
+same run name. Run it pinned to ≤ `029cee83`. Frozen eval / pool opponents are
 unaffected — `check_compatible` excludes reward fields and `_migrate_config` pops the deleted ones,
 because a frozen forward never reads the reward.
 
@@ -1406,7 +1406,6 @@ logit. Declared conditionally, so a key absent from the space is simply not emit
 | `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | the win-prob head's BCE — under `--critic winprob` **the value loss itself** (MC outcome, a **future** label back-filled by `WinProbLabelCallback`) | `win_prob_mode != none` | ✅ **emitted and consumed — this is the critic's target** |
 | `opp_action_kind` / `opp_action_num` / `opp_switch_slot` / `opp_switch_species` | int64 `[1]` each | opponent-intent CE (`gen3_opp_intent_v1`) — what they did at the PREVIOUS decision, shifted one row back in `train()` | `opp_intent_coef > 0` | ✅ emitted and consumed (`opp_intent` true ⇒ `--arch production` sets `opp_intent_coef` 0.05; recorded in `model_config.json` from config v125, so a flagless resume or a launcher restart inherits it) |
 | `opp_class` | int64 `[1]` | **two consumers**: the intent metrics, which it SPLITS (bot / pool / stable / exploiter — one pooled intent accuracy over random bots, heuristics and frozen selves cannot be read); and the training-side value sidecar's per-class calibration slice | `opp_intent_coef > 0` **or** `win_prob_mode != none` | ✅ emitted (both gates hold), read by the intent metrics and the sidecar, not by any loss |
-| `distill_mask` | f32 `[1]` | exploiter-distillation KL gate | `--distill-coef > 0` with teacher teams | ❌ |
 | `fork_pg_m` | f32 `[1]` | the policy term's per-row mask (`gen3_fork_v1`; placeholder 1.0) | `--fork-fraction > 0` | ❌ |
 
 🚨 **In this config a privileged key is no longer merely auxiliary — `win_target` IS the critic's
@@ -1422,8 +1421,7 @@ Every belief label above is both emitted AND consumed here (all six supervised c
 `agents/training/rust_env_label_inventory_test.py`, which also reads this table's ✅/❌). **Do not infer supervision from emission**, though: the
 emit gates and the loss coefficients are separate conditions, and a config that drops a coefficient
 to 0 keeps paying the buffer cost while training nothing — which reads identically in every metric.
-`--distill-coef` and `--fork-fraction` are off, so their two keys (`distill_mask`, `fork_pg_m`) are not
-emitted at all.
+`--fork-fraction` is off, so its key (`fork_pg_m`) is not emitted at all.
 
 🚨 **`opp_class` IS EMITTED UNDER TWO GATES, AND THAT IS DELIBERATE** (`gen3_value_sidecar_v1`,
 2026-09-08). It used to ride the intent labels alone. A win-prob arm normally runs with no intent

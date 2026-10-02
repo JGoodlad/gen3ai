@@ -54,15 +54,15 @@ Three ways a command fails, and it reports all three in one pass:
     expensive than an argparse error: the run dir exists, the child starts, and the traceback comes
     out of `Gen3FeaturesExtractor.__init__`.
   * a combination `resolve_config` refuses — `main.train.combination_checks`, the value-conditional
-    rules that are not `requires`-shaped (`--distill-target action` needs `--distill-coef > 0`).
+    rules that are not `requires`-shaped (`--cf-winprob-coef > 0` needs `--win-prob-mode`).
 
 ⚠️ AN ARGV IS NOT A CONFIG, and this tool believed it was for three launches. With `--model`, every
 flag the argv does NOT name is INHERITED from the checkpoint's recorded `model_config.json`
 (`main.train.config`'s `_resolve`). So the thing that launches is the argv OVERLAID ON THE PARENT,
 and checking the argv alone is checking a document nobody executes. C1 (2026-09-01) is the third and
-sharpest instance: its parent recorded `distill_target="action"`, the argv said `--distill-coef 0`
-and named no target, `_resolve` inherited `action`, and the run died at launch — while this tool had
-printed "✓ this command still launches".
+sharpest instance: its parent recorded an action-form distillation target (the family is deleted),
+the argv said `--distill-coef 0` and named no target, `_resolve` inherited it, and the run died at
+launch — while this tool had printed "✓ this command still launches".
 
 🚨 AND `models/` LIVES ONLY IN THE MAIN CHECKOUT (2026-09-06). A recorded command names the
 archive RELATIVELY (`--model models/<run>/checkpoints/x.zip`), and most agents run in a git
@@ -287,8 +287,8 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
 
     With no `--model` there is nothing to inherit FROM, but the argv is still a config — so the
     namespace is built anyway (`no_parent: True`) and the combination checks run on it. They did
-    not, until 2026-09-06: a FRESH control arm carrying `--distill-coef 0` beside the fold
-    instruments printed "✓ this command still launches" and then died three times, because the
+    not, until 2026-09-06: a FRESH control arm carrying a flag that is refused beside another
+    printed "✓ this command still launches" and then died three times, because the
     whole combination half was skipped whenever `--model` was absent.
 
     Otherwise a dict carrying the namespace, which flags were inherited and from where, and — when
@@ -463,42 +463,12 @@ def _unmet_needs(combo, ns) -> List[str]:
 
 
 def _provenance(dest: str, ns, inherited: Dict[str, Any]) -> str:
-    """`--distill-target action (INHERITED from the parent's model_config.json)` — one finding's
+    """`--cf-winprob-coef 0.5 (INHERITED from the parent's model_config.json)` — one finding's
     origin. The word INHERITED is what turns a puzzling refusal into an obvious one."""
     val = getattr(ns, dest, None)
     flag = "--" + dest.replace("_", "-")
     where = "INHERITED from the parent's recorded config" if dest in inherited else "from the argv"
     return f"{flag} {val!r} ({where})"
-
-
-def teacher_spec_findings(argv: List[str], ns=None) -> List[str]:
-    """Every reason this argv's `--distill-teacher` would fail or teach NOTHING.
-
-    Reads `agents.training.distill_spec.check_teacher_spec` — the SAME function
-    `main.train.config.resolve_config` refuses on — so the offline answer and the launch answer
-    come from one declaration. `gen3_run_spec_split_v1`: a `<run>@<step>:*` teacher used to resolve
-    to zero teams and the only symptom was a count in the `[DISTILL]` startup line.
-
-    Filesystem-reading, so it answers only about paths that exist ON THIS BOX; a spec naming a run
-    dir that is simply not here reports as missing, which is the honest answer for a command about
-    to be launched here. Torch-free (`distill_spec` imports only `run_spec`, `matchup_spec` only
-    the stdlib), keeping this module's no-torch promise.
-    """
-    spec = getattr(ns, "distill_teacher", None) if ns is not None else None
-    if not spec:
-        spec = argv_value(argv, "--distill-teacher") or argv_value(argv, "--distill_teacher")
-    if not spec:
-        return []
-    from agents.training.distill_spec import check_teacher_spec
-    from agents.training.matchup_spec import read_recorded_trainee_teams
-
-    def _resolve(run_dir):
-        # Through the archive resolver too — a `'<teacher>:*'` wildcard READS the teacher run's
-        # recorded provenance, and in a worktree that read finds nothing at a relative path.
-        return read_recorded_trainee_teams(resolve_models_path(run_dir) or run_dir,
-                                           require_teams=True)
-
-    return check_teacher_spec(spec, resolve_wildcard=_resolve, resolve_path=resolve_models_path)
 
 
 def shaped_reward_finding(argv: List[str]) -> dict | None:
@@ -590,7 +560,7 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
     res = {"n_flags": len(ok) + len(launcher) + len(unknown),
            "accepted": ok, "launcher_only": launcher, "unknown": unknown,
            "unsatisfiable": unsatisfiable_pairs(argv),
-           "resolution": None, "combinations": [], "teacher_spec": [], "ns": None,
+           "resolution": None, "combinations": [], "ns": None,
            "arch": None, "recipe": None, "recipe_refusal": None, "env_core_refusal": None,
            "shaped_reward": shaped_reward_finding(argv),
            "retired_levers": retired_levers_finding(argv)}
@@ -599,7 +569,6 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
         # more to the point, the reader has to fix that first. Report it alone.
         return res
 
-    res["teacher_spec"] = teacher_spec_findings(argv)
     resolution = resolve_against_parent(argv)
     res["resolution"] = resolution
     if not resolution or resolution.get("ns") is None:
@@ -756,7 +725,7 @@ def resolve_pin_for(argv: List[str], explicit: str | None) -> Tuple[str | None, 
     🚨 THE `--sync-to-main` DEFECT (2026-09-05). This function used to read the checkpoint's
     hash whenever a `--model` was present, full stop — so every `--sync-to-main` fork was judged
     by its PARENT's parser while the launcher actually runs the child at HEAD. Flags that exist
-    only at HEAD (`--fork-lr`, `--fork-lr-freeze`, `--distill-anchor-monitor`, `--distill-stop`)
+    only at HEAD (`--fork-lr`, `--fork-lr-freeze`)
     were then reported as "in THIS tree but NOT at the pin" and the tool exited 3. It made
     exactly that complaint about `models/ai_v9_162_TCUNFA_0903`'s recorded command — a run that
     launched and trained to completion. Note the DIRECTION: the three earlier checkargs defects
@@ -969,17 +938,6 @@ def main(raw: List[str] | None = None) -> int:
         print("  The dependency graph is designs/flag_registry.md (generated from")
         print("  agents.model.flag_registry, which is where the constructor's raises are declared).")
 
-    if res["teacher_spec"]:
-        print(f"  --distill-teacher spec         : {len(res['teacher_spec'])}  "
-              "✗ WOULD FAIL IN resolve_config")
-        for line in res["teacher_spec"]:
-            print(f"      {line}")
-        print("\n  These are agents.training.distill_spec.check_teacher_spec — the same function")
-        print("  the launch path refuses on. A teacher that resolves to ZERO teams folds no loss")
-        print("  and biases no team draw while every startup line still reads as a running fold;")
-        print("  the grammar is '<run|zip>[@<step>]:<teams|*>' and the '@<step>' is part of the")
-        print("  SPEC, never part of the directory name.")
-
     if res["combinations"]:
         print(f"  refused combinations           : {len(res['combinations'])}  "
               "✗ WOULD FAIL IN resolve_config")
@@ -1057,14 +1015,7 @@ def main(raw: List[str] | None = None) -> int:
             return int(TrainExitCode.FATAL_CONFIG)
         if not pinned.ok and pinned.authoritative:
             return 1
-        if res["teacher_spec"]:
-            # Only the PARSER is pinned; a teacher spec is refused by resolve_config in whatever
-            # tree runs, so a pinned-clean parse is not a pass.
-            print("  ⚠️  the pinned parser accepts every flag, but the --distill-teacher spec "
-                  "above would be refused at launch")
-            return 1
-        # NO arch branch here, deliberately. A refused teacher spec is refused by whatever tree
-        # runs; an ARCH-SURFACE diff is not — it is measured against THIS tree's mirror, which the
+        # NO arch branch here, deliberately. An ARCH-SURFACE diff is measured against THIS tree's mirror, which the
         # pinned commit neither wrote nor is judged by. `check` was therefore called with
         # `advisory=True` above, so `arch.refuses` is False on this path and the block printed
         # itself as ADVISORY. Reported, never dropped; that is the other half of the same lesson.
@@ -1075,8 +1026,7 @@ def main(raw: List[str] | None = None) -> int:
         return 0
     recipe_refuses = recipe is not None and recipe.refuses
     arch_only = (arch is not None and arch.refuses and not res["unknown"]
-                 and not res["unsatisfiable"] and not res["combinations"]
-                 and not res["teacher_spec"])
+                 and not res["unsatisfiable"] and not res["combinations"])
     if arch_only:
         # 🚨 A SEPARATE VERDICT, NOT A SHARED ONE. A refused flag COMBINATION and architecture
         # drift are different failures and must never read alike: a bad combination is LOUD and
@@ -1090,13 +1040,12 @@ def main(raw: List[str] | None = None) -> int:
         print("    resolved-config diff above tests the second.")
         return 1
     if (recipe_refuses and not res["unknown"] and not res["unsatisfiable"]
-            and not res["combinations"] and not res["teacher_spec"]):
+            and not res["combinations"]):
         # The recipe twin of the verdict above — its own closing line, never the arch one.
         print("  ✗ this command LAUNCHES — and trains a recipe nobody chose (untyped parser "
               "defaults; RECIPE SURFACE above).")
         return 1
-    if (not res["unknown"] and not res["unsatisfiable"] and not res["combinations"]
-            and not res["teacher_spec"]):
+    if not res["unknown"] and not res["unsatisfiable"] and not res["combinations"]:
         print("  ✓ this command still launches")
         return 0
     return 1

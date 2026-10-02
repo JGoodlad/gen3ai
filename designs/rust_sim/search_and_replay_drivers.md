@@ -31,7 +31,7 @@ request, each fail exactly one named test).
 
 The Rust half of the clone-and-branch search layer: a byte-compatible drop-in for
 `src/utils/bridge/search_driver.js`, so `utils/bridge/search_session.py` (the prober's
-`better_line` beam, and the search teacher) can swap `node search_driver.js` for this binary
+`better_line` beam) can swap `node search_driver.js` for this binary
 with ZERO protocol change.
 
 **The same binary ALSO serves the offline REPLAY family** — see
@@ -226,22 +226,15 @@ class this file polices elsewhere (corrected 2026-09-07, verified against the co
   selects the child through `search_driver_spawn_argv(impl)`, and `"rust"` spawns this binary.
 - `search_clone_parity_fuzz_test` **takes** `--impl rust`, documented in its own header, plus an
   independent `--record-impl` so a record made by one engine is replayed on the other.
-- The search TEACHER's `input_log` blocker is **gone, and its stated reason was FALSE.** Nothing
-  reads the record's committed-choice lines; the only readers (`replay_kernels.js::writeStart`,
-  `ReconstructionRecord.start_options()` / `.players()`) touch the `>start` / `>player` lines,
-  which the rust record renders exactly. `main/train/config.py` records that finding where the
-  guard used to be and threads `SearchTeacherCallback(impl=args.bridge_impl)` instead, so a rust
-  run's teacher no longer silently falls back to node.
-
-**The COMPOSITION was the last ungated rung, and it is gated now** (2026-09-07,
-`gen3_search_teacher_composition_rust_v1`). Every leg already ran on rust — better_line node≡rust
-candidate values bit-identical · `search_clone_parity` · the counterfactual confirm leg — and
-`src/main/train/search_teacher_composition_test.py` (`sim` + `slow`, ~11 min) now adds the rung above
-them: the real `train_rl_agent.py` at smoke scale on `--use-bridge rust`, asserted to run **>= 2
-search-teacher cycles** whose workers carry `"impl": "rust"`, whose shards come back without a
-`worker_no_shard` or `error:*` status, and whose corrections reach the AWR fold (`teacher/loss` +
-`grad/searchteacher_share` in the TB events). **It found no seam on the first run.**
-`--use-bridge=node` remains the fallback if a cycle misbehaves.
+- The search-teacher `input_log` blocker was **gone, and its stated reason was FALSE** — nothing reads
+  the record's committed-choice lines; the only readers (`replay_kernels.js::writeStart`,
+  `ReconstructionRecord.start_options()` / `.players()`) touch the `>start` / `>player` lines, which the
+  rust record renders exactly. The search-teacher consumer itself (and its `gen3_search_teacher_composition_rust_v1`
+  composition gate, which ran >= 2 teacher cycles on `--use-bridge rust`) is DELETED (deletion pass L3,
+  2026-10-02; [`../training/search_teacher.md`](../training/search_teacher.md)). The remaining legs of
+  that composition — better_line node≡rust candidate values bit-identical · `search_clone_parity` · the
+  counterfactual confirm leg — are untouched and still gated.
+  Porting a teacher onto this driver is a deferred build, to be scheduled with X15.
 
 ### THE CORE ROAD — a tree of `BattleVersion`s (`gen3_core_search_v1`, the Rust Core Program's M2)
 

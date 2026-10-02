@@ -361,7 +361,7 @@ def test_the_ModelVersion_CONSTRUCTOR_accepts_the_kwarg():
 
 def test_it_is_NOT_gated_by_check_compatible():
     """A training-only loss weight inside `check_compatible` would FATAL a run while loading its
-    own frozen pool / eval / distill opponents, whose forward is identical regardless."""
+    own frozen pool / eval opponents, whose forward is identical regardless."""
     from agents.model.model_version import compat
     assert "win_prob_strata_weight" not in inspect.getsource(compat)
 

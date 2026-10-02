@@ -41,6 +41,11 @@ config to read an "ON" from; their only trace is `metadata.json`'s `cli_args` / 
 and an unpinned resume of such a run fails argparse on the inherited argv instead
 (`designs/ops/deletion_pass_manifest.md` §6 finding 8 — the flag census decides whether that is
 softened). `designs/deleted_flags.md` names the pin for each.
+
+L3 is the same shape for most of its flags: `--distill-coef`, `--distill-teacher`, `--search-teacher`,
+`--opd-coef` and the rest were never recorded fields either. Only the distillation TARGET / GATE knobs
+and `teacher_scan_limit` were, so a run that distilled with the default KL target leaves no trace in
+`model_config.json`; its recorded argv fails argparse on an unpinned resume instead.
 """
 from __future__ import annotations
 
@@ -76,6 +81,15 @@ LAST_COMMIT_K2 = "615a764fdb7e05abfcc1575797e2c83eb61c3ea1"
 #: Recorded in `metadata.json` (top level, rewritten on every save), not in `model_config.json`: the
 #: RUNTIME knobs a retired lever may have set. `check_no_retired_levers` overlays them onto the raw config.
 RUNTIME_RECORD_FIELDS: tuple = ("matmul_precision",)
+
+#: The last commit whose tree still has the L3 levers (distillation — the exploiter-fold KL, its
+#: anchor / stop-rule / gradient-projection machinery — and the search teacher with its AWR / OPD
+#: terms) — the tip when deletion unit L3 branched, which is the commit that shipped L2
+#: (`615a764f`). Any commit at or before it can resume a run that used one.
+LAST_COMMIT_L3 = "615a764fdb7e05abfcc1575797e2c83eb61c3ea1"
+
+#: The first config version written WITHOUT the L3 fields.
+L3_DELETION_VERSION = 133
 
 
 class RetiredLever(NamedTuple):
@@ -174,6 +188,24 @@ RETIRED: tuple = (
                  "matmul_precision != 'highest' (TF32 matmuls in the trainer process: the run's numerics "
                  "were ~1e-2 coarser than fp32, and TF32 was retired)",
                  LAST_COMMIT_K2, "K2", L2_DELETION_VERSION),
+
+    # ---- deletion pass L3 (config v133) -----------------------------------------------------
+    # Distillation and the search teacher. Their coefficients / teachers / flags were never RECORDED
+    # fields (only the knobs below were), so a run that distilled with the default knobs cannot be
+    # recognised from `model_config.json` — see the module docstring.
+    RetiredLever("distill_target", "distill-target",
+                 lambda raw: str(raw.get("distill_target", "kl") or "kl") != "kl", False,
+                 "distill_target != 'kl' (the action-form / top-K distillation target)",
+                 LAST_COMMIT_L3, "L3", L3_DELETION_VERSION),
+    RetiredLever("distill_gate", "distill-gate",
+                 lambda raw: str(raw.get("distill_gate", "none") or "none") != "none", False,
+                 "distill_gate != 'none' (the advantage-gated distillation judge)",
+                 LAST_COMMIT_L3, "L3", L3_DELETION_VERSION),
+    RetiredLever("teacher_scan_limit", "teacher-scan-limit",
+                 lambda raw: int(raw.get("teacher_scan_limit", 60) if raw.get("teacher_scan_limit")
+                                 is not None else 60) != 60, False,
+                 "teacher_scan_limit != 60 (a configured search-teacher selection scan width)",
+                 LAST_COMMIT_L3, "L3", L3_DELETION_VERSION),
 )
 
 #: Recorded fields that left the config but are INERT without one of the levers above (an atom count,
@@ -183,7 +215,10 @@ INERT_RETIRED_FIELDS: tuple = ("value_dist_bins", "value_dist_vmin", "value_dist
                                # L2: the lambda truncation convention and the rollout count / mode are
                                # inert without their (retired) lever above.
                                "win_prob_lambda_truncated", "win_prob_rollout_r",
-                               "win_prob_rollout_mode")
+                               "win_prob_rollout_mode",
+                               # L3: the top-K / gate threshold / AWR temperature are read only by the
+                               # (retired) action-form target and gate above.
+                               "distill_topk", "distill_gate_tau", "distill_beta")
 
 #: Every field `_migrate_config` pops, however its value reads.
 RETIRED_FIELDS: tuple = tuple(r.field for r in RETIRED) + INERT_RETIRED_FIELDS

@@ -54,7 +54,7 @@ symmetric variance), **`onesided`** (measure + bias, losing side held at MAX).
 - **Self-play only, pool teams only.** The per-team win-rate is measured ONLY on self-play POOL battles
   (bots wash the signal out — we win ~0.99 vs bots): `MaskableAgentWrapper.step` records the outcome to
   the trainee's `Gen3Teambuilder` (`self.env.agent1._team`) only when `self.opponent is
-  self._pool_player`. A bias/distill-pinned team (the `--distill-team-bias` branch) yields
+  self._pool_player`. A bias-pinned team (the matchup's `bias_prob` draw from `bias_packed_teams`) yields
   `_last_pool_idx=None` → its battle is never tracked (those teams get fixed exposure via the bias, not
   the win-rate weighting).
 - **Centralized aggregation (NOT per-worker — ~700 teams makes a single worker's counts too sparse; NOT
@@ -80,8 +80,8 @@ symmetric variance), **`onesided`** (measure + bias, losing side held at MAX).
   "weakest = stall-class") and an appended `team_winrates_history.jsonl` row `{step, wr:{sha:wr}}` (so
   the per-team win-rate is trackable OVER TIME offline — trends + noise, not just the latest). `measure`
   gives this signal on ANY self-play run without changing the team distribution.
-- **Training-only, not version-locked.** Threaded into the TRAINEE teambuilder only (both the
-  `matchup.trainee_teams.build` and the distill `Gen3Teambuilder` paths); the opponent builder is
+- **Training-only, not version-locked.** Threaded into the TRAINEE teambuilder only (the
+  `matchup.trainee_teams.build` path); the opponent builder is
   untouched. Registered ONLY when `--team-pfsp != off` (off → no callback, no `env_method`, exact-legacy
   `random.choice` → byte-identical); `var` pushes weights, `measure` never does. Forward it like
   `--pfsp-scale` on resume; no `model_config`/`ModelVersion` entry.
@@ -125,7 +125,7 @@ read `by_class`: a pre-self-play curriculum phase is ~all `bot` episodes, where 
   `--team-block-episodes` caches `_last_pool_idx` for the block, which on the default path used to
   be `None`, so a blocked default run can now attribute its whole block to the team it held.
 - **Stratified by opponent class** (`agents.training.opponent_classes.OPP_CLASS_*` / `OPP_CLASS_NAMES`), so a
-  rate can always be split back out by who it was measured against. A bias/distill-pinned yield
+  rate can always be split back out by who it was measured against. A bias-pinned yield
   (`_last_pool_idx is None`) is never attributed to a pool team.
 - **NO TensorBoard emission — owner rule** (design_flywheel_tick_tock.md §6b: per-team series
   would be noisy spam; "let's not spam it if the data won't be nice"). Pinned by

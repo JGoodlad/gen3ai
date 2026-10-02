@@ -1,6 +1,6 @@
 """`check_compatible` -- the gate that runs on EVERY load.
 
-Resume, frozen eval opponents, the self-play pool, distillation teachers: all of them pass a
+Resume, frozen eval opponents, the self-play pool: all of them pass a
 saved config through here before the weights are touched. Its members are the fields whose
 mismatch would be a wrong ANSWER rather than a loud failure, so a field belongs here only if
 flipping it changes the state_dict or the forward. The resume-only and opponent-only gates
@@ -68,7 +68,7 @@ class ModelVersionCompatibility(ModelVersionFields):
         # party changes the transformer's key_padding_mask (policy AND value forward). The state_dict
         # is identical either way, but a resume that flips it would feed the policy a different mask
         # than it trained under. Lives here (gates resume) with a dedicated message; same-run
-        # pool/sentinel/distill snapshots carry the same value so they pass trivially.
+        # pool/sentinel snapshots carry the same value so they pass trivially.
         if self.attend_unrevealed_opponents != saved.attend_unrevealed_opponents:
             raise ModelVersionError(
                 f"attend_unrevealed_opponents mismatch: saved={saved.attend_unrevealed_opponents}, "

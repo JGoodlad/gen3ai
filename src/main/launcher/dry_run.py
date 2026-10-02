@@ -70,15 +70,11 @@ from main.launcher.worktree import (
 from main.train.fork_lr import is_same_run_checkpoint
 
 
-#: The flags whose value the combination checks read, plus the two step-size pins. These are the
-#: ones where an INHERITED value has actually killed a launch (C1: an inherited
-#: ``distill_target="action"`` beside ``--distill-coef 0``), so the block names them explicitly
-#: rather than leaving the reader to diff two JSON files.
+#: The flags whose INHERITED value the dry-run block names explicitly (the step-size pins), rather
+#: than leaving the reader to diff two JSON files. It used to carry the distillation flags too (C1:
+#: an inherited action-form target beside ``--distill-coef 0`` killed a launch); that family is
+#: deleted.
 REPORTED_DESTS = (
-    "distill_teacher",
-    "distill_target",
-    "distill_coef",
-    "distill_topk",
     "grad_accum_steps",
     "fork_lr",
     "fork_lr_freeze",

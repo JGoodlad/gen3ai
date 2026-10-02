@@ -137,7 +137,7 @@ def test_the_structural_flag_is_in_the_registry_but_its_coefficients_are_not():
     `--cf-evidential` builds a MODULE from an extractor constructor kwarg — the registry's declared
     scope, and the win_prob_mode / value_dist_mode precedent — so it is a `cli`/`structural` row and
     is version-gated. The two coefficients are loss weights set on the MODEL and never reach the
-    extractor: the `--opd-coef` class, deliberately absent.
+    extractor: the `--td-aux-coef` class, deliberately absent.
     """
     from agents.model.flag_registry import BY_NAME
     assert "cf_evidential" in BY_NAME

@@ -70,10 +70,10 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   by the clone-parity fuzz. **L4 (training-scale):** `better_line_decision(session=…)` accepts an injected
   WARM `SearchSession` reused across battles (`open_root(record=…)` + the driver `NODES.clear()`s per root),
   so a background worker pays the ~0.68 s Node spawn ONCE not per search (~1.66× cumulative, ~3.4 s warm).
-  This is the expert tier of the **search-as-teacher** plateau-breaker (`designs/ai_v6/design_search_teacher.md`):
-  selective offline ExIt — search + rollout-confirm the worst `falsify`-flagged loss craters (exact reloaded
-  opponent), CI-gate strictly-better corrections, distil into a policy/value **aux loss** (no on-policy /
-  PPO-core change). NOT built; the search + 3-tier-confirm here are its ready foundation.
+  This was the expert tier of the **search-as-teacher** plateau-breaker (selective offline ExIt), whose
+  training-side consumer is DELETED (deletion pass L3, 2026-10-02; see
+  [`../training/search_teacher.md`](../training/search_teacher.md)); the search + 3-tier-confirm here stay as
+  prober tools.
 - `replay_counterfactual(battle_id, inv, action, n_rollouts=1, opponent_ckpt=, opponent_source=)` —
   **COUNTERFACTUAL replay-to-end** (`replay.py` → `utils/bridge/counterfactual.py`): "could the model
   have won if it hadn't choked this turn?". Pick up the recorded battle at `inv`'s turn, substitute

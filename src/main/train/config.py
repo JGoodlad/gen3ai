@@ -28,7 +28,7 @@ from main.train.compile_flags import (
     resolve_compile_opponents_preload, resolve_compile_trainer_auto,
 )
 from main.train.constants import (
-    CF_DUTY_CYCLE_FLOOR, DEFAULT_DISTILL_TEAM_BIAS, cf_label_duty_cycle,
+    CF_DUTY_CYCLE_FLOOR, cf_label_duty_cycle,
     checkpoint_interval_env_steps,
 )
 from poke_env import LocalhostServerConfiguration
@@ -254,103 +254,6 @@ def inherit_derived_enable_coefs(args, saved_ver, model_path, *, announce: bool 
             emit(f"[Resume] MIGRATION: {f.name} is ON but this checkpoint's model_config.json predates "
                  f"{f.source_arg}; inheriting {flag} {value!r} from the run's metadata.json:cli_args")
     return out
-
-
-def is_fold(args) -> bool:
-    """A fold is actually RUNNING: at least one `--distill-teacher` AND `--distill-coef > 0`."""
-    return bool(getattr(args, "distill_teacher", None)
-                and getattr(args, "distill_coef", None)
-                and args.distill_coef > 0)
-
-
-def default_anchor_monitor(args) -> bool:
-    """Would `--distill-anchor-monitor` default ON for this config? (Pure — no mutation, no print.)
-
-    Module-level and pure for the same reason `inherit_saved_flag` is: `main.checkargs` has to
-    reach the same verdict a launch reaches. It could not, and the cost was a FALSE POSITIVE in the
-    other direction from the C1/G5 family — a perfectly good fold argv reported as "--distill-stop
-    requires the anchor MONITOR", because offline the monitor still read as unset.
-
-    `coef_on` / `proj_on` already attach the frozen parent and already emit every collateral meter,
-    so defaulting the monitor on beside them would be a second name for one thing. And WILL a fold
-    parent resolve? `resolve_anchor_parent` tries an explicit `--distill-anchor-parent`, then the
-    run dir's `lineage` block, then `--model`; the lineage route only ever names a parent for a run
-    that was ITSELF launched from one, so on this launch those two flags decide it.
-    """
-    coef_on = bool(getattr(args, "distill_anchor_coef", None)
-                   and args.distill_anchor_coef > 0)
-    proj_on = getattr(args, "distill_anchor_mode", None) == "grad_project"
-    parent_available = bool(getattr(args, "distill_anchor_parent", None)
-                            or getattr(args, "model", None))
-    return bool(is_fold(args) and not coef_on and not proj_on and parent_available)
-
-
-def _resolve_fold_instruments(args) -> str:
-    """THE TWO PURE INSTRUMENTS DEFAULT ON FOR A FOLD (`gen3_distill_instruments_default_v1`).
-
-    Returns the default `--distill-stop` mode; sets `args.distill_anchor_monitor` and the two
-    `*_source` provenance strings that ride into `metadata.json`'s `cli_args`.
-
-    WHY A DEFAULT AND NOT A FLAG. `--distill-anchor-monitor` (the off-slice collateral meters) and
-    `--distill-stop warn` (the plateau-AND-rise detector in its log-only mode) are pure
-    INSTRUMENTS: the monitor attaches no loss term and changes no parameter, and `warn` only emits
-    a launcher event plus `distill/stop_signal`. As opt-ins they were carried on three of seven
-    fold arms in one batch and omitted on the other four, so the pre-registered cross-check could
-    not be run on the arms that mattered — and an ABSENT series in a column of numbers reads like a
-    zero. An instrument that costs nothing and whose absence is unreadable belongs on by default.
-
-    THE CONDITION is "a fold is actually running": at least one `--distill-teacher` AND
-    `--distill-coef > 0`. Both halves are load-bearing rather than cautious — the anchor's
-    off-slice split reads the `distill_mask` obs key, which the env emits only for a run with a
-    live distill term, and `resolve_config` refuses the anchor without one. A teacher named beside
-    `--distill-coef 0` (the distillation-free arm) is therefore NOT a fold here, and stays exactly
-    as it is today.
-
-    THE DEFAULT YIELDS; AN EXPLICIT FLAG REFUSES — the `--compile-trainer` rule, one flag over. A
-    fold whose parent cannot be resolved WARNS and leaves the instrument off (recorded as
-    `default-no-parent`, so the absence is visible rather than silent); an explicit
-    `--distill-anchor-monitor` still reaches the FATAL in `build_callbacks`, because there the
-    operator asked for something that cannot be delivered.
-    """
-    fold = is_fold(args)
-    coef_on = bool(args.distill_anchor_coef and args.distill_anchor_coef > 0)
-    proj_on = args.distill_anchor_mode == "grad_project"
-    if args.distill_anchor_monitor is None:
-        args.distill_anchor_monitor = default_anchor_monitor(args)
-        if args.distill_anchor_monitor:
-            args.distill_anchor_monitor_source = "default"
-            emit("📏 --distill-anchor-monitor ON by default (a fold is running: --distill-teacher "
-                 "with --distill-coef > 0). Attaches the FROZEN fold parent and emits "
-                 "distill/collateral_kl_vs_parent + the off-slice meters — no loss term, no "
-                 "parameter changed, one frozen no_grad forward per minibatch. "
-                 "--no-distill-anchor-monitor turns it off.")
-        elif fold and not coef_on and not proj_on:
-            args.distill_anchor_monitor_source = "default-no-parent"
-            emit("⚠️ --distill-anchor-monitor would be ON by default here (a fold is running), but "
-                 "no fold parent can be resolved — no --distill-anchor-parent and no --model. "
-                 "Leaving the instrument OFF rather than refusing to launch; the collateral meters "
-                 "will not exist for this run (cli_args records "
-                 "distill_anchor_monitor_source=default-no-parent). Pass "
-                 "--distill-anchor-parent to get them.")
-        else:
-            args.distill_anchor_monitor_source = "default-off"
-    else:
-        args.distill_anchor_monitor = bool(args.distill_anchor_monitor)
-        args.distill_anchor_monitor_source = "cli"
-    anchor_on = coef_on or proj_on or args.distill_anchor_monitor
-    stop_default = "warn" if (fold and anchor_on) else "off"
-    if args.distill_stop is not None:
-        args.distill_stop_source = "cli"
-    elif stop_default != "off":
-        args.distill_stop_source = "default"
-        emit("🛑 --distill-stop warn by default (a fold is running with the frozen parent "
-             "attached). LOG-ONLY: a launcher event + distill/stop_signal when "
-             "distill/teacher_agreement_on_slice has plateaued AND "
-             "distill/collateral_kl_vs_parent is rising. Nothing is annealed and nothing stops; "
-             "pass --distill-stop off to silence it, or anneal|abort to give it teeth.")
-    else:
-        args.distill_stop_source = "default-off"
-    return stop_default
 
 
 def desugar_umbrella_flags(args) -> None:
@@ -833,63 +736,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("capacity_velocity_every", 50)    # v101 training-only
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
-    _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)
-    _resolve("search_teacher_value_coef", 0.0)  # training-only off-policy value term (default OFF)
-    _resolve("search_teacher_beta", 1.0)       # training-only AWR temperature
-    _resolve("search_teacher_batch_size", 256)  # training-only per-train() correction sample
-    # gen3_teacher_scan_limit_flag_v1 (v113) — the selection half's COST knob. The
-    # `capacity_telemetry` class: TRAINING-only, recorded for provenance + flagless-resume
-    # read-back, never gated. 60 is the value the callback hard-coded before the flag existed.
-    _resolve("teacher_scan_limit", 60)         # v113 training-only (search-teacher selection scan)
-    _resolve("opd_coef", 0.0)                  # training-only OPD KL weight (inherited on flagless resume)
-    _resolve("distill_coef", 0.0)              # training-only exploiter-distillation KL weight (inherited on resume)
-    _resolve("distill_value_coef", 0.0)        # training-only exploiter VALUE-distillation MSE weight (inherited on resume)
-    _resolve("distill_value_feat_coef", 0.0)   # training-only FitNets value-FEATURE distill cosine weight (inherited on resume)
-    # gen3_distill_offslice_anchor_v1 — the OFF-SLICE trust region to the frozen fold parent. The
-    # distill_coef class: training-only, never gated, argparse default None so an unset flag lands
-    # on the byte-identical 0.0 / "off_slice" here rather than in three separate places.
-    _resolve("distill_anchor_coef", 0.0)       # training-only OFF-SLICE anchor KL weight (0.0 = off)
-    _resolve("distill_anchor_mode", "off_slice")  # training-only: which rows the anchor applies to
-    # WHICH policy the anchor is measured against. "parent" (the FIXED fold parent) is the default
-    # and is byte-identical to what the anchor shipped with; "ema"/"periodic" are the moving-
-    # reference arms. Same class as the two above: training-only, never gated, resolved here so an
-    # unset flag lands on the byte-identical default in ONE place.
-    _resolve("distill_anchor_ref", "parent")
-    _resolve("distill_anchor_ema_tau", 0.99)   # training-only Polyak tau (~1/(1-tau) train() calls)
-    _resolve("distill_anchor_refresh_every", 8)  # training-only periodic cadence (0 = never = parent)
-    # gen3_distill_grad_project_v1 — m, the off-slice rows that constrain each step's DISTILL
-    # gradient under `--distill-anchor-mode grad_project`. Same class as the three above:
-    # training-only, never gated, argparse default None so an unset flag lands on the one default.
-    _resolve("distill_anchor_proj_samples", 16)
-    # gen3_distill_stop_rule_v1 — the DUAL-ASCENT budget on the anchor coefficient, and the FOLD
-    # STOP RULE. Same class as everything above: training-only, never gated, argparse default None
-    # so an unset flag lands on the byte-identical OFF default in one place and a flagless resume
-    # keeps the arm it was launched as.
-    _resolve("distill_anchor_target_kl", 0.0)   # training-only dual budget (0.0 = off)
-    _resolve("distill_anchor_dual_lr", 0.1)     # training-only dual step eta
-    _resolve("distill_anchor_coef_min", 0.0)    # training-only lower clamp (0 = no floor)
-    # NOTE: `distill_anchor_coef_max` gets NO `_resolve` line, deliberately — its default is None,
-    # which MEANS "10x the starting coefficient" and is computed inside `AnchorDualAscent` where the
-    # starting coefficient is known. A `_resolve(..., None)` would be a line that does nothing and
-    # reads as if it did something.
-    _stop_default = _resolve_fold_instruments(args)
-    _resolve("distill_stop", _stop_default)
-    _resolve("distill_stop_window", 8)          # training-only detector look-back, in rollouts
-    _resolve("distill_stop_eps", 0.005)         # training-only PLATEAU threshold (absolute)
-    _resolve("distill_stop_kl_slope", 2.0)      # training-only RISE threshold, in slope-SEs
-    _resolve("distill_stop_persist", 3)         # training-only AND-gate persistence count
-    _resolve("distill_stop_anneal_factor", 0.7)  # training-only per-rollout decay of --distill-coef
-    # gen3_distill_target_gate_v1 (config v103) — the action-form/top-K distill target, the
-    # advantage gate, and the rank tripwire. The td_aux_coef class: recorded for provenance,
-    # never gated, read back here so a flagless resume keeps the arm it was launched as.
-    _resolve("distill_target", "kl")           # v103 training-only TARGET FORM ("kl" = byte-identical)
-    _resolve("distill_topk", 1)                # v103 training-only top-K (1 = argmax CE)
-    _resolve("distill_gate", "none")           # v103 training-only JUDGE (rung a)
-    _resolve("distill_gate_tau", 0.0)          # v103 training-only gate threshold (normalized-adv units)
-    _resolve("distill_beta", 1.0)              # v103 training-only AWR |adv| temperature
+    # gen3_distill_target_gate_v1 (config v103) — the rank tripwire. The td_aux_coef class: recorded
+    # for provenance, never gated, read back here so a flagless resume keeps the arm it was launched as.
     _resolve("rank_tripwire", "warn")          # v103 training-only diagnostic (§4.1; no loss, no grad)
     _resolve("rank_tripwire_drop", 0.20)       # v103 training-only TRIP threshold (fractional drop)
-    _resolve("opd_beta", 1.0)                  # training-only OPD softmax temperature β
     _resolve("damage_topk_k", 0)               # v30 structural int (top-K incoming; version-checked, fresh-only)
     _resolve("damage_matrices_outgoing", False)  # v32 structural (outgoing damage matrix; version-checked, fresh-only)
     _resolve("damage_matrices_incoming", False)  # v33 structural (incoming damage matrix; version-checked, fresh-only)
@@ -963,7 +813,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _terminal_scale_guards(args)
     if args.policy_grad_coef is not None and args.policy_grad_coef < 0.0:
         # A negative coef would ASCEND the PPO surrogate — train the policy to be maximally wrong.
-        # 0.0 (arm F's pure-distill/aux phase) is the intended floor. policy_grad_coef is training-only
+        # 0.0 is the intended floor. policy_grad_coef is training-only
         # (not version-locked), so guard it here — the only gate.
         parser.error("--policy-grad-coef must be >= 0 (1 = upstream PPO; 0 = no policy-gradient term)")
     _adaptive_batch_guards(args, parser)
@@ -1007,17 +857,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
                      "0 = off, and off is what the registered endpoint assumes)")
     if args.fork_max_per_battle is not None and args.fork_max_per_battle < 1:
         parser.error("--fork-max-per-battle must be >= 1 (forks per episode slice)")
-    if args.opd_coef is not None and args.opd_coef < 0.0:
-        parser.error("--opd-coef must be >= 0 (0 = off)")
-    # gen3_winprob_oneply_teacher_v1 (ai_v12 routes 2+3). The mode selects WHICH teacher fills the
-    # correction buffer; `crater` is the default and needs no gate. Two ways `winprob_oneply` can be
-    # asked for and be unable to run, both silent otherwise (the callback is simply never built, or
-    # every candidate is skipped for want of a head):
-    if not (0.0 < args.winprob_teacher_band <= 0.5):
-        # 0 admits nothing; > 0.5 admits every decision and the gate stops being a gate.
-        parser.error("--winprob-teacher-band must be in (0, 0.5] (the |P(win) - 0.5| half-width)")
-    if not (0.0 <= args.winprob_teacher_margin < 1.0):
-        parser.error("--winprob-teacher-margin must be in [0, 1) — it is a win-PROBABILITY gap")
     # gen3_cf_label_plumbing_v1 — training-only, so these parser checks are the ONLY gate.
     if args.cf_winprob_coef is not None and args.cf_winprob_coef < 0.0:
         parser.error("--cf-winprob-coef must be >= 0 (0 = off)")
@@ -1059,128 +898,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--checkpoint-every-steps must be >= 1 (it is an ENV-STEP interval; there is "
                      "no 'off' value — omit the flag for the 2,400,000-env-step default)")
     _announce_cf_duty_cycle(args)
-    if args.distill_coef is not None and args.distill_coef < 0.0:
-        parser.error("--distill-coef must be >= 0 (0 = off)")
-    if args.distill_value_coef is not None and args.distill_value_coef < 0.0:
-        parser.error("--distill-value-coef must be >= 0 (0 = off)")
-    if args.distill_value_feat_coef is not None and args.distill_value_feat_coef < 0.0:
-        parser.error("--distill-value-feat-coef must be >= 0 (0 = off)")
-    # gen3_distill_offslice_anchor_v1 — the OFF-SLICE trust region. The dependency is not a style
-    # rule: the anchor's slice IS the `distill_mask` obs key, and the env emits that key only when
-    # `_distill_species` is populated, which `apply_distill_team_bias` gates on --distill-coef > 0.
-    # Without a live distill there is no slice, so an anchor would either anchor everything or
-    # nothing — either way not the thing the flag names.
-    if args.distill_anchor_coef is not None and args.distill_anchor_coef < 0.0:
-        parser.error("--distill-anchor-coef must be >= 0 (0 = off; with --distill-anchor-monitor, "
-                     "0 is the pure-instrument arm)")
-    if args.distill_anchor_proj_samples is not None and args.distill_anchor_proj_samples < 1:
-        parser.error("--distill-anchor-proj-samples must be >= 1 — it is the number of off-slice "
-                     "rows that constrain each step's distill gradient, and 0 constraints is "
-                     "--distill-anchor-mode off_slice with no projection at all.")
-    # The two moving-reference knobs. tau is a convex-combination weight, so anything outside [0, 1]
-    # is not an average at all — it EXTRAPOLATES away from the student (tau > 1) or overshoots past
-    # it (tau < 0), and either would still train and still read as ON.
-    if args.distill_anchor_ema_tau is not None and not (0.0 <= args.distill_anchor_ema_tau <= 1.0):
-        parser.error("--distill-anchor-ema-tau must be in [0, 1] — it is the Polyak weight in "
-                     "ref <- tau*ref + (1-tau)*student. 1.0 IS --distill-anchor-ref parent (the "
-                     "reference never moves); 0.0 makes the reference the current student, so the "
-                     "anchor loss goes to ~0.")
-    if args.distill_anchor_refresh_every is not None and args.distill_anchor_refresh_every < 0:
-        parser.error("--distill-anchor-refresh-every must be >= 0 (0 = never refreshed = "
-                     "--distill-anchor-ref parent).")
-    # ---- gen3_distill_stop_rule_v1 refusals ----------------------------------------------------
-    # The DUAL is multiplicative, so a zero starting coefficient is a FIXED POINT: the controller
-    # would run every rollout and move nothing, while every startup line and every series said it
-    # was on. Refuse rather than ship a silent no-op — the same principle as the anchor's
-    # unresolvable-parent FATAL.
-    # The STOP RULE's AND-gate reads `distill/collateral_kl_vs_parent`, which exists only when the
-    # frozen fold parent is attached. Without it the rise half is permanently silent and the rule
-    # would never fire, while reading as ON — the exact silent-no-op class the anchor's loud
-    # startup line was written against.
-    # gen3_exploiter_distill_v1: parse --distill-teacher into (teacher_path, [team_files]) GROUPS once,
-    # stored on args for the teambuilder + model-setup to reuse. Preferred form =
-    # 'TEACHER:TEAM[,TEAM...][;TEACHER2:...]' — ';' separates TEACHERS, ',' separates that teacher's TEAMS,
-    # so ONE multi-team teacher (a --trainee-teams z-cluster exploiter) binds to all its teams without being
-    # repeated N times (which would cost N identical teacher forwards per batch). The legacy comma-separated
-    # pair form ('T1:a.txt,T2:b.txt') still parses (a comma segment containing ':' starts a new teacher).
-    #
-    # `--distill-team-bias` carries a None argparse default so a TYPED value is distinguishable from
-    # the unset flag; the guard below refuses a typed bias with no teacher, and could not exist if
-    # every flagless run arrived carrying 0.4. Resolved here, before any reader.
-    if args.distill_team_bias is None:
-        args.distill_team_bias = DEFAULT_DISTILL_TEAM_BIAS
-    #
-    # THE COEFFICIENT GATES THE LOSS, NOT THE BOOKKEEPING (gen3_distill_bias_at_coef0_v1). The pairs
-    # are parsed whenever --distill-teacher is given, at ANY coefficient — because `--distill-team-bias`
-    # (the trainee's team distribution) reads them, and a CONTROL arm is precisely "the same teacher
-    # teams, the same bias, no loss". Gating the parse on the coefficient made that arm silently
-    # UNBIASED: run `ai_v9_58_R2CTRL_0827` recorded `--distill-teacher <5> --distill-coef 0
-    # --distill-team-bias 0.4` and trained at an EFFECTIVE bias of 0.0, so the capstone's
-    # "team-bias constancy" design was violated by the config layer, invisibly, in both metadata and
-    # argv. What DOES stay coefficient-gated is everything that costs something or changes a tensor:
-    # the teacher model LOADING (main.train.model_build), the loss fold (instrumented_ppo), and the
-    # training-only `distill_mask` obs key (main.train.matchup_setup — emitting it at coef 0 would
-    # change the observation SPACE of a run that folds no distill term).
-    args._distill_pairs = []
-    _items = [x.strip() for x in (args.distill_teacher or "").split(",") if x.strip()]
-    if _items:
-        if ":" not in _items[0]:
-            # The bare-list + parallel --distill-teacher-team form is DELETED (no run ever passed it;
-            # verified across every models/*/metadata.json 2026-08-16). One form, no misalignment.
-            #
-            # The check is on the FIRST segment, which is the one that distinguishes the two forms.
-            # It used to be `all(":" in x for x in _items)`, which also rejected the DOCUMENTED
-            # multi-team group 'T1:a.txt,b.txt' (a teacher's 2nd and later teams are comma segments
-            # with no colon by construction) — unless another ';'-joined teacher happened to follow,
-            # which is the only reason the multi-team form was ever seen to work. A later bare
-            # segment with no preceding teacher is still refused, by `parse_distill_teacher_spec`.
-            parser.error("--distill-teacher takes 'TEACHER:TEAM[,TEAM...]' colon groups — the bare "
-                         "teacher list (with the deleted --distill-teacher-team) is no longer accepted")
-        from agents.training.distill_spec import check_teacher_spec, parse_distill_teacher_spec
-        from agents.training.matchup_spec import read_recorded_trainee_teams
-
-        def _resolve_teacher_teams(_run_dir):
-            """The ``'TEACHER:*'`` resolver. ``require_teams`` because THIS caller's whole request
-            is "the teams that run trained on" — a run that recorded none is a refusal here, not
-            the empty list a generalist legitimately reads as elsewhere. The `@step` suffix is
-            already off (`distill_spec` splits it); a path that does not exist RAISES."""
-            return read_recorded_trainee_teams(_run_dir, require_teams=True)
-
-        try:
-            # 'TEACHER:*' → EXACTLY the teams that teacher trained on, from its own recorded
-            # provenance (single source of truth — a hand-typed list could mismatch and fire the
-            # distill mask where the teacher is off-distribution, silently).
-            args._distill_pairs = parse_distill_teacher_spec(
-                args.distill_teacher, resolve_wildcard=_resolve_teacher_teams)
-        except (ValueError, FileNotFoundError) as _e:
-            parser.error(str(_e))
-        # gen3_run_spec_split_v1 — THE TEACHER-ASSEMBLY GUARD. A teacher that resolves to ZERO
-        # teams folds no loss and biases no team draw while every log line still reads as a running
-        # fold; the only witness was the team count in the `🧪 [DISTILL]` startup banner. The rule
-        # lives in ONE place (`distill_spec.check_teacher_spec`) and `main.checkargs` reads the same
-        # function offline, so the two cannot drift.
-        #
-        # `check_paths=False`: the PATH questions already have loud answers downstream on a real
-        # launch (`model_build` exits FATAL_CONFIG naming a teacher it cannot load;
-        # `apply_distill_team_bias` raises on a team file it cannot open), and re-asking them here
-        # would newly refuse a coef-0 CONTROL arm whose teacher run has since been archived.
-        # `main.checkargs` passes True, because offline there is no downstream to answer.
-        for _finding in check_teacher_spec(args.distill_teacher,
-                                           resolve_wildcard=_resolve_teacher_teams,
-                                           check_paths=False):
-            parser.error(_finding)
-    if args.distill_topk < 1:
-        parser.error("--distill-topk must be >= 1 (1 = argmax CE; K >= n_actions recovers the KL)")
-    # gen3_distill_target_gate_v1 (design §7.5): the action-form family's dependency graph.
-    # Checked on the RESOLVED values (after `_resolve`), so an incoherent combination is refused
-    # whether it was typed on this launch or inherited from the checkpoint's recorded config.
-    #
-    # The four rules themselves live in `main.train.combination_checks`, which `main.checkargs`
-    # reads too — that is the whole point of the module. C1 (2026-09-01) forked a parent recording
-    # `distill_target="action"`, passed `--distill-coef 0`, named no target, and died HERE while
-    # checkargs had said the command still launches. One declaration, both readers.
-    if args.distill_beta <= 0.0:
-        parser.error("--distill-beta must be > 0 (an AWR temperature)")
     if not (0.0 < args.rank_tripwire_drop < 1.0):
         parser.error("--rank-tripwire-drop must be in (0, 1) — a fractional drop from baseline")
     if args.damage_candidate_k and args.damage_candidate_k < 0:
@@ -1292,32 +1009,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             # instead of racing its own `cargo build` on first spawn.
             _rust_bin = resolve_and_publish_sim_bridge_bin()
             emit(f"🦀 [BRIDGE=rust] sim_bridge binary (prebuilt, published to children): {_rust_bin}")
-            # The search-TEACHER used to be hard-blocked here. That guard is GONE
-            # (`gen3_rust_search_driver_v1` / `gen3_rust_replay_driver_v1`): the Rust
-            # `search_driver` binary now serves BOTH offline verb families, and
-            # `SearchTeacherCallback(impl=args.bridge_impl)` threads this run's engine into the
-            # worker subprocesses, so a rust run's teacher no longer silently falls back to node.
-            #
-            # For the record, since it cost someone an investigation: the guard's ORIGINAL reason —
-            # that the search-teacher needs the sim's own byte-identical `input_log` — was simply
-            # FALSE. Nothing reads the record's committed-choice lines. The only readers are
-            # `replay_kernels.js::writeStart` and `ReconstructionRecord.start_options()` /
-            # `.players()`, all of which touch only the `>start` / `>player` lines, which the rust
-            # record renders exactly. The real blocker was always the missing DRIVER, and that is
-            # what got built.
-            if getattr(args, "search_teacher", False) or getattr(args, "teacher_persistent", False):
-                emit("🦀 [BRIDGE=rust] search-teacher SEARCH/CONFIRM workers on the RUST offline "
-                     "drivers (search_driver binary serves open_root/expand_many + replay/reroll/"
-                     "reroll_many). Gated by: better_line node≡rust candidate values bit-identical, "
-                     "search_clone_parity (clone ≡ reroll_many at the obs), the counterfactual "
-                     "confirm leg, AND the COMPOSITION itself — "
-                     "src/main/train/search_teacher_composition_test.py runs >=2 cycles end-to-end "
-                     "on rust. Fall back with --use-bridge=node if a cycle misbehaves. "
-                     "⚠️ The SELECTION half is NOT on rust: select_candidates falsify-gates its "
-                     "traces through the NODE re-roll driver regardless of --use-bridge "
-                     "(designs/ops/TECH_DEBT_BACKLOG.md). It runs in its own child "
-                     "(main.search_teacher_select_worker), so it costs the training step nothing "
-                     "either way — see teacher/step_block_ms.")
     else:
         emit(f"🔌 Showdown server: {server_config.websocket_url}")
     # gen3_core_obs_source_v1: resolve the default (core on the rust bridge since the M6 cutover)

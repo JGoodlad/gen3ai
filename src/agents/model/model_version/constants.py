@@ -68,7 +68,7 @@ from typing import Any, Dict
 #   byte-for-byte the baseline and ON-at-coefficient-0 is bit-identical in pi/vf too — hence NO
 #   ARCH_SIGNATURE bump, the optional-side-head rule. A pre-v98 config defaults it to False = OFF.
 #   Its two coefficients (`cf_evidential_coef`, `cf_evidential_reg`) are TRAINING-only argparse in
-#   the `--opd-coef` / `--cf-winprob-coef` class and appear nowhere here.
+#   the `--td-aux-coef` / `--cf-winprob-coef` class and appear nowhere here.
 # v99 (gen3_cf_twin_heads_v1): `cf_twin_heads` + `cf_shadow_critic` — the TWIN WIN-PROB HEADS and
 #   the passive SHADOW CRITIC (the owner-authorized amendment to the signed R1 pre-registration;
 #   ledger 2026-08-22 evening, "Three owner sign-offs" item 3). Two STRUCTURAL bools in exactly the
@@ -79,11 +79,11 @@ from typing import Any, Dict
 #   a bool compare in check_compatible, and the gate is the ONLY thing that can catch a flipped
 #   flag, because a head the forward never calls produces no shape error anywhere. A pre-v99 config
 #   defaults BOTH to False = OFF (not a guess: the modules did not exist). Their coefficients
-#   (`cf_twin_coef`, `cf_shadow_coef`) are TRAINING-only argparse in the `--opd-coef` class and
+#   (`cf_twin_coef`, `cf_shadow_coef`) are TRAINING-only argparse in the `--td-aux-coef` class and
 #   appear nowhere here. TWO fields in ONE bump because they ship as one amendment.
 # v100 (gen3_cf_coef_provenance_v1): the TEN counterfactual COEFFICIENTS (cf_records,
 #   cf_records_keep, cf_winprob_coef, cf_head_only, cf_label_lag_steps, cf_label_likelihood,
-#   cf_evidential_coef, cf_evidential_reg, cf_twin_coef, cf_shadow_coef) leave the `--opd-coef`
+#   cf_evidential_coef, cf_evidential_reg, cf_twin_coef, cf_shadow_coef) leave the `--td-aux-coef`
 #   genre for the td_aux_coef one: all TRAINING-only (a loss in the PPO step; no forward read, no
 #   weight shape) ⇒ RECORDED for provenance + flagless-resume read-back, NEVER gated.
 #   ⚠️ THE DEFECT IS SILENT: an R1 arm resumed without re-typing `--cf-winprob-coef 1.0` kept
@@ -203,7 +203,7 @@ from typing import Any, Dict
 #   and the promotion gate it derives (`promote_threshold`), in the v101 capacity-telemetry mould:
 #   TRAINING/EVAL-only, RECORDED for provenance + flagless-resume read-back, NEVER gated. Neither is
 #   read by any forward and neither changes a weight shape, so there is NO ARCH_SIGNATURE bump and
-#   a frozen eval/pool/distill opponent (which runs no eval cycle) passes trivially.
+#   a frozen eval/pool opponent (which runs no eval cycle) passes trivially.
 #   The bump exists because the UNRECORDED version of this flag already cost a year of
 #   comparability: `--eval-sentinel-greedy` was ON for 49 runs (v5.5–v8) and dropped without a note
 #   at the v9 launch, and the asymmetric regime it left behind reads +8.9 pp [+7.0, +10.7] in the
@@ -216,7 +216,7 @@ from typing import Any, Dict
 #   eval cycle the search-teacher's SELECTION half falsify-gates per cycle. The v101/v112 mould:
 #   TRAINING-only, RECORDED for provenance + flagless-resume read-back, NEVER gated. No forward
 #   reads it, no state_dict key depends on it, so there is NO ARCH_SIGNATURE bump and a frozen
-#   eval/pool/distill opponent (which runs no teacher cycle) passes trivially.
+#   eval/pool opponent (which runs no teacher cycle) passes trivially.
 #   The bump exists because the value was a HARD-CODED 60 inside `SearchTeacherCallback` with no
 #   flag at all, and it is simultaneously the selection half's COST (~3 s of re-rolls per trace,
 #   ~100 s per cycle at 60 — which is what the same commit moves off the training step) and its
@@ -391,7 +391,18 @@ from typing import Any, Dict
 #   run that recorded any lever ON is refused by `model_version.retired_levers`. Every v121+ run on
 #   record recorded them all OFF, so no checkpoint loads differently: no ARCH_SIGNATURE bump, no
 #   MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 132
+# v133 (deletion pass L3, owner-approved 2026-10-02): DISTILLATION and the SEARCH TEACHER leave the config:
+#   the five distillation loss knobs (distill_target / _topk / _gate / _gate_tau / _beta, v103) and
+#   teacher_scan_limit (v113). All TRAINING-only (no extractor forward reads them, no weight shape
+#   depends on them), so no lever of this slice is STRUCTURAL: `_migrate_config` POPs them from any
+#   vintage, and a RESUME or FORK of a run that recorded a non-default one (`distill_target != "kl"`,
+#   `distill_gate != "none"`, `teacher_scan_limit != 60`; the top-K / tau / beta values are inert
+#   without those) is refused by `model_version.retired_levers`. `--distill-coef`, `--distill-teacher`,
+#   `--search-teacher` and the rest were never recorded fields, so a run that used them under the
+#   DEFAULT knobs leaves no trace here (its recorded argv fails argparse on an unpinned resume
+#   instead). Every v121+ run on record recorded the knobs at their defaults: no ARCH_SIGNATURE
+#   bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 133
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

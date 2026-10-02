@@ -104,7 +104,7 @@ Risk is the risk of replacing a touchpoint without changing behaviour.
 | KL controller | `AdaptivePPOCallback._on_rollout_end` reads `model.logger.name_to_value["train/approx_kl"]` (`:413`) | **The logger is used as a message bus**; see §2.1 |
 | adaptive batch | `AdaptiveBatchCallback` writes `model.grad_accum_steps` | low |
 
-### 1.5 Callbacks — 26 classes, all built in `main/train/callbacks.py:92` (`build_callbacks`)
+### 1.5 Callbacks — 23 classes (26 before deletion pass L3 removed `DistillAnchorCallback`, `DistillStopCallback` and `SearchTeacherCallback`), all built in `main/train/callbacks.py:92` (`build_callbacks`)
 
 About 11 are on by default:
 - **Always on:** `_TrackingCheckpointCallback`, the LR controller, `MetricsExporterCallback`, `_HparamLogCallback`, `DoseLogCallback`, `GracefulRestartCallback`, `SignalMetricsCallback`, `RewardTermMetricsCallback`.
@@ -112,20 +112,20 @@ About 11 are on by default:
 - **On in a non-debug run:** one eval callback (`PerOpponentEvalCallback` or `SelfPlayCallback`).
 
 The rest are flag-gated:
-- Adaptive batch, the distill anchor and distill stop.
+- Adaptive batch.
 - The exploiter temperature and ladder.
 - `WinProbLabelCallback` (Python core only; the dense-aux callback it once sat beside is deleted, deletion pass L2).
 - The value sidecar, the fork arm and team PFSP.
-- cf supply and the search teacher.
+- cf supply.
 
 **What couples a callback to SB3:**
 - **`self.locals`:** reads in `signal_callback.py` (with an async fallback to `wave_infos`) and `win_prob_callback.py`, all `.get()` (the third file, `dense_aux_callback.py`, is deleted).
-- **The logger as a bus:** 6 readers of `logger.name_to_value` — the two LR controllers, RankTripwire, DistillAnchor, DistillStop and MetricsExporter — plus `compile_control.py:816`.
-- **Model attributes written by callbacks:** `lr_schedule`, `grad_accum_steps`, `distill_coef`, about 10 `distill_anchor_*` fields, and the `_win_*` / `_fork_metrics` stashes.
+- **The logger as a bus:** 4 readers of `logger.name_to_value` (6 before L3 deleted DistillAnchor and DistillStop) — the two LR controllers, RankTripwire and MetricsExporter — plus `compile_control.py:816`.
+- **Model attributes written by callbacks:** `lr_schedule`, `grad_accum_steps` and the `_win_*` / `_fork_metrics` stashes.
 - **`env_method` / `get_attr`:** in selfplay, the exploiter callbacks, team PFSP, team win rate and reward terms.
-- **`model.save`:** in checkpoint, selfplay, eval and the teacher.
+- **`model.save`:** in checkpoint, selfplay and eval (the search teacher, a fourth, is deleted).
 
-`self.globals` is never read. `self.parent` is read once (DistillAnchor).
+`self.globals` is never read. `self.parent` was read once, by DistillAnchor, which is deleted (deletion pass L3).
 
 **A second, undeclared hook system** sits on top of the callbacks. These modules reassign
 `model.learn`, `model.collect_rollouts` and `model.train` as instance attributes:
@@ -161,7 +161,7 @@ keep intercepting. Stage 2 folds them into the declared hook table.
   - resume (**high** — it restores `num_timesteps`, `_n_updates`, the optimizer state, and therefore the KL-annealed LR that makes `--lr` inert on a resume);
   - the pool, baselines, play, eval workers, eval-trace generation, the prober (2 sites plus a side read through `load_from_zip_file`), counterfactuals, search, cf producers, `winprob_finetune` (which loads AND saves), the Rust eval and the inference service.
 - **No policy-only loader exists.** Every reader except resume needs only `policy_kwargs` + `policy.pth`.
-- **Not traced:** `main.elo`, `main.anchors` and the teacher are assumed to route through `eval_worker` / `snapshot_ladder` / `load_foreign_opponent`. This is **UNVERIFIED**.
+- **Not traced:** `main.elo` and `main.anchors` are assumed to route through `eval_worker` / `snapshot_ladder` / `load_foreign_opponent`. This is **UNVERIFIED**.
 
 **Stages 1–3 do not touch any of this.**
 
@@ -182,7 +182,7 @@ So on every cycle where an eval publishes during the rollout:
 - the previous update's `train/*` values are written at the eval's SNAPSHOT step, which lies behind
   the current step;
 - `AdaptivePPOCallback` finds no reading and returns without updating its EMA (`adaptive_lr_callback.py:413`);
-- RankTripwire, DistillStop, the DistillAnchor dual and the MetricsExporter pipe each miss that reading.
+- RankTripwire and the MetricsExporter pipe each miss that reading (DistillStop and the DistillAnchor dual, since deleted in L3, missed it too).
 
 **Both env cores have it:**
 - **Python core:** it fires when a worker's results are collected in some `on_step`.
@@ -209,8 +209,8 @@ In N0, the LR was unchanged after **37 / 37** skipped updates, and after **695 /
 - **Bias between arms.** None is expected wherever arms share the eval cadence (every era above sits
   at exactly 1 eval per 20 updates). A comparison could be biased only between arms whose
   eval-cycles-per-update differ while the controller is live; none was found among the runs scanned.
-- **Other consumers.** RankTripwire (warn by default) and the distill-stop / anchor controllers lose
-  1 reading in 20.
+- **Other consumers.** RankTripwire (warn by default) loses
+  1 reading in 20 (the distill-stop / anchor controllers that shared the defect are deleted, L3).
 - **The sizing study.** Its arms share the cadence, so they share the defect equally; the comparisons
   stay fair.
 
@@ -310,7 +310,7 @@ before `MaskablePPO` in `InstrumentedMaskablePPO`'s bases. It owns:
 ### 3.2 Stage 2 — declared hooks and the two labelled fixes (`gen3_declared_loop_hooks_v1`)
 
 - **The update result is a value.** `train()` returns its scalar dict, and the `post_update` hooks
-  receive it. The KL controller, RankTripwire, DistillStop and the DistillAnchor dual read that value
+  receive it. The KL controller and RankTripwire read that value
   instead of `logger.name_to_value`. The eval callbacks' mid-rollout `dump(step)` is replaced by
   recording at the snapshot step **without clearing** the update's values. **Fixes §2.1.**
 - **One test per core that FAILS on revert:** an eval cycle inside a rollout neither clears the
@@ -439,3 +439,4 @@ separately (orchestrator's rule: tell, don't trim).
 | 2026-10-01 | Stage 1 built | `OwnedLoop` (`instrumented_ppo/loop.py`) after `RolloutProbes` and before `MaskablePPO`; the reference seam defers every vendored method to upstream; `_ppo_loop_mode` is excluded from the `.zip` | A reference seam over `learn` / collect only (upstream `learn` would reach our vendored methods through the MRO, and the A/B would compare ours with ours) | E0 golden unchanged; E1 / E2 exact; E3 Rust identical (same `policy.pth` as the pre-stage-1 control) |
 | 2026-10-01 | The eval-dump KL skip, FIXED (stage 2, unit 1) — a REGIME BOUNDARY | `logger_scope.isolated_dump` on both eval callbacks' `_collect_pending`: the cycle dumps only its own scalars, and the update's `train/*` survive for their dump and every bus reader. Live-controller runs from this commit onward are not comparable on LR / dose with earlier ones | Moving the dump after the update (it shifts every `train/*` series in the archive); routing only the KL controller around the bus (it leaves RankTripwire / DistillStop / the anchor dual and the TB stamping broken) | `eval_dump_isolation_test.py` (one test per core, fails on revert); ledger 2026-10-01 |
 | 2026-10-01 | The eval-dump KL skip | Preserved bit-for-bit in stage 1; fixed in stage 2 with per-core fail-on-revert tests, before X26 **(orchestrator)** | Fixing it inside stage 1 (that would make stage 1 non-identity and its verdict un-transferable) | §2.1: 37/739 N0 updates (5.0%), 1 per eval cycle in every run scanned |
+| 2026-10-02 | Deletion pass L3 removes three callbacks from the inventory (§1.5) | `DistillAnchorCallback`, `DistillStopCallback` and `SearchTeacherCallback` are deleted with distillation and the search teacher (owner: "delete all, port none"), so the logger bus has 4 readers, not 6, and the stage-2 `post_update` result value feeds only the KL controller and RankTripwire | Porting them onto the declared hooks first (nothing consumes them; a port is ~1-2 agent-days if X15 is scheduled) | `designs/ops/deletion_pass_manifest.md` §2; `designs/deleted_flags.md` |

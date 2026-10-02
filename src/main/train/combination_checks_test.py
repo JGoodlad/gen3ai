@@ -4,15 +4,16 @@ Three tests, answering three different questions:
 
 * **Is the list EXHAUSTIVE?** `test_no_cross_flag_parser_error_remains_in_config` walks
   `main.train.config`'s AST and fails, naming file:line, on any `parser.error` whose guard reads a
-  second flag's value. It RESOLVES LOCAL ALIASES (`_anchor_wanted = ...`, `_items = ...`), because
-  that indirection is exactly how three refusals hid from an earlier reading of this file and let
+  second flag's value. It RESOLVES LOCAL ALIASES (`x = bool(args.a and args.b)`), because that
+  indirection is exactly how three refusals hid from an earlier reading of this file and let
   G5 (2026-09-06) die three times on a command `checkargs` had passed.
 * **Do the two surfaces AGREE?** `test_resolve_config_and_checkargs_agree` drives one argv per
   check through the real `resolve_config` and through `main.checkargs.check`, and asserts the launch
   refuses, that checkargs names the same rule FIRST, and that the launch prints that rule's declared
-  text verbatim — including the motivating G5 shapes (`--distill-coef 0` beside
-  `--distill-anchor-monitor` / `--distill-team-bias`) and the C1 inherited-`action` case, built
-  against a synthetic parent `model_config.json` on disk.
+  text verbatim — including the C1 INHERITED-value shape (a parent recording
+  `move_belief_mode="both"`, a child zeroing `--opp-belief-aux-coef`), built against a synthetic
+  parent `model_config.json` on disk. (The original G5 / C1 shapes were distillation flags; that
+  family is deleted and the shape is kept.)
 * **Is every check REACHABLE?** `test_every_check_has_an_argv_that_trips_exactly_it` fails if a
   declared check has no row in the table, or if a row stops tripping the rule it names — the way a
   table of argvs rots into a table of nothing.
@@ -58,7 +59,7 @@ def _dests(node) -> set[str]:
 
 
 def _alias_map(fn) -> dict[str, set[str]]:
-    """`_anchor_wanted = bool(args.distill_anchor_coef … )` -> {"_anchor_wanted": {…}}.
+    """`_wanted = bool(args.a and args.b … )` -> {"_wanted": {…}}.
 
     Without this the scan is blind to precisely the indirection that hid the G5 refusals: the guard
     reads a LOCAL, and a local's name says nothing about which flags produced it.
@@ -140,7 +141,6 @@ def test_no_cross_flag_parser_error_remains_in_config():
 # so `--no-damage-op` alone does not produce the config the check is about.
 # ---------------------------------------------------------------------------------------------
 OFF = ["--unified-moves", "off"]
-TEACHER = "models/parent/final_model.zip:data/teams/sample/t1.txt"
 
 #: The composition `--critic winprob` REQUIRES. Declared once so a row that is about something
 #: ELSE does not also trip the three requirement rules and make its own failure ambiguous.
@@ -196,11 +196,6 @@ ARGVS: dict[str, list[str]] = {
                                            "--exploiter-temp-mode", "ratchet"],
     "fork_lr_is_resume_only": ["--fork-lr", "1e-5"],
     "fork_lr_freeze_needs_fork_lr": ["--fork-lr-freeze"],
-    "opd_coef_needs_search_teacher": ["--opd-coef", "0.1"],
-    "search_teacher_coef_needs_search_teacher": ["--search-teacher-coef", "0.1"],
-    "search_teacher_mode_needs_teacher": ["--search-teacher-mode", "winprob_oneply"],
-    "search_teacher_mode_needs_win_prob": ["--search-teacher", "--search-teacher-mode",
-                                           "winprob_oneply", "--win-prob-mode", "none"],
     "cf_winprob_coef_needs_win_prob_mode": ["--cf-winprob-coef", "0.1", "--win-prob-mode", "none"],
     "cf_evidential_coef_needs_head": ["--cf-evidential-coef", "0.1", "--no-cf-evidential"],
     "cf_twin_coef_needs_heads": ["--cf-twin-coef", "0.1", "--no-cf-twin-heads"],
@@ -240,51 +235,6 @@ ARGVS: dict[str, list[str]] = {
     "cf_label_duty_cycle_floor": ["--cf-records", "--cf-winprob-coef", "0.1",
                                   "--win-prob-mode", "read_only", "--cf-label-lag-steps", "10",
                                   "--n-envs", "48"],
-    "distill_value_coef_needs_distill_coef": ["--distill-value-coef", "0.1", "--distill-coef", "0"],
-    "distill_value_feat_coef_needs_distill_coef": ["--distill-value-feat-coef", "0.1",
-                                                   "--distill-coef", "0"],
-    "anchor_proj_samples_needs_grad_project": ["--distill-anchor-proj-samples", "8"],
-    # G5 refusal #1 — a distillation-free CONTROL arm carrying the instrument.
-    "anchor_needs_live_distill": ["--distill-anchor-monitor", "--distill-coef", "0"],
-    "anchor_knobs_need_anchor": ["--distill-anchor-mode", "all"],
-    "anchor_target_kl_needs_coef": ["--distill-teacher", TEACHER, "--distill-coef", "0.1",
-                                    "--distill-anchor-target-kl", "0.01",
-                                    "--distill-anchor-coef", "0"],
-    "anchor_dual_lr_positive": ["--distill-teacher", TEACHER, "--distill-coef", "0.1",
-                                "--distill-anchor-target-kl", "0.01",
-                                "--distill-anchor-coef", "0.02", "--distill-anchor-dual-lr", "0"],
-    "anchor_coef_min_nonnegative": ["--distill-teacher", TEACHER, "--distill-coef", "0.1",
-                                    "--distill-anchor-target-kl", "0.01",
-                                    "--distill-anchor-coef", "0.02",
-                                    "--distill-anchor-coef-min", "-1"],
-    "anchor_coef_max_ge_min": ["--distill-teacher", TEACHER, "--distill-coef", "0.1",
-                               "--distill-anchor-target-kl", "0.01",
-                               "--distill-anchor-coef", "0.02",
-                               "--distill-anchor-coef-min", "1.0",
-                               "--distill-anchor-coef-max", "0.5"],
-    "dual_knobs_need_target_kl": ["--distill-anchor-dual-lr", "0.2"],
-    "distill_stop_needs_anchor_monitor": ["--distill-teacher", TEACHER, "--distill-coef", "0.1",
-                                          "--no-distill-anchor-monitor", "--distill-stop", "warn"],
-    "distill_stop_window_min": ["--distill-teacher", TEACHER, "--distill-coef", "0.1",
-                                "--distill-anchor-monitor", "--distill-stop", "warn",
-                                "--distill-stop-window", "1"],
-    "distill_stop_persist_min": ["--distill-teacher", TEACHER, "--distill-coef", "0.1",
-                                 "--distill-anchor-monitor", "--distill-stop", "warn",
-                                 "--distill-stop-persist", "0"],
-    "distill_stop_anneal_factor_range": ["--distill-teacher", TEACHER, "--distill-coef", "0.1",
-                                         "--distill-anchor-monitor", "--distill-stop", "warn",
-                                         "--distill-stop-anneal-factor", "1.5"],
-    "stop_knobs_need_distill_stop": ["--distill-stop-window", "9"],
-    "distill_coef_needs_teacher": ["--distill-coef", "0.1"],
-    # G5 refusal #2 — the team bias on a teacher-less arm.
-    "distill_team_bias_needs_teacher": ["--distill-team-bias", "0.4"],
-    # G5 refusal #3, and the C1 (2026-09-01) launch this module was created for.
-    "distill_target_needs_coef": ["--distill-target", "action", "--distill-coef", "0"],
-    "distill_topk_needs_action": ["--distill-topk", "3", "--distill-target", "kl"],
-    "distill_gate_needs_action": ["--distill-gate", "advantage", "--distill-target", "kl"],
-    "distill_gate_tau_needs_advantage": ["--distill-gate-tau", "0.5", "--distill-gate", "none"],
-    "distill_teacher_excludes_trainee_pin": ["--distill-teacher", TEACHER,
-                                             "--trainee-team", "data/teams/sample/t1.txt"],
     "move_belief_hidden_needs_species_belief": ["--move-belief-mode", "both",
                                                 "--opp-belief-aux-coef", "0"],
     "damage_op_needs_revealed_move_belief": [*OFF, "--damage-op", "--move-belief-mode", "off",
@@ -445,39 +395,39 @@ def test_resolve_config_and_checkargs_agree(name):
     assert name in [c.name for c, _ in _check(argv)["combinations"]]
 
 
-def test_the_c1_inherited_action_target_is_still_caught(tmp_path, run_archive):
-    """C1: the parent's recorded `distill_target=action` + `--distill-coef 0`, argv naming neither.
+def test_the_c1_inherited_value_is_still_caught(tmp_path, run_archive):
+    """C1: the parent's recorded `move_belief_mode=both`, a child zeroing `--opp-belief-aux-coef`.
 
     The value is INHERITED, so an argv-only reading sees nothing — this is the case that made
-    `main.checkargs` read the effective namespace at all, and it must survive the migration.
+    `main.checkargs` read the effective namespace at all, and it must survive the migration. (C1
+    itself was an inherited distillation target; the family is deleted, the shape is kept.)
     """
     from main.checkargs import check
     from main.checkargs_test import _parent_run          # the one fixture, not a second copy
-    ckpt, _ = _parent_run(tmp_path, distill_target="action")
+    ckpt, _ = _parent_run(tmp_path, move_belief_mode="both", opp_belief_aux_coef=0.05)
 
-    res = check(["--model", ckpt, "--steps", "100", "--distill-coef", "0",
+    res = check(["--model", ckpt, "--steps", "100", "--opp-belief-aux-coef", "0",
                  "--run-name", "child_run"])
     names = [c.name for c, _ in res["combinations"]]
-    assert "distill_target_needs_coef" in names, (
-        "the inherited action-form target must still be reported; got "
+    assert "move_belief_hidden_needs_species_belief" in names, (
+        "the inherited move-belief mode must still be reported; got "
         f"{names} (resolution={res['resolution'] and res['resolution'].get('config_path')})")
     prov = dict(res["combinations"])[
-        next(c for c, _ in res["combinations"] if c.name == "distill_target_needs_coef")]
+        next(c for c, _ in res["combinations"]
+             if c.name == "move_belief_hidden_needs_species_belief")]
     assert any("INHERITED" in line for line in prov), prov
 
 
-def test_the_g5_control_arm_is_reported_without_a_model():
-    """G5: a FRESH control arm (no --model) carrying the fold instruments at --distill-coef 0.
+def test_the_g5_arm_is_reported_without_a_model():
+    """G5: a FRESH arm (no --model) carrying an incoherent pair.
 
-    `checkargs` used to run no combination check at all without a `--model`, so this argv printed
+    `checkargs` used to run no combination check at all without a `--model`, so such an argv printed
     "✓ this command still launches" and then died three times in a row.
     """
     from main.checkargs import check
-    res = check(["--steps", "100", "--distill-coef", "0", "--distill-anchor-monitor",
-                 "--distill-team-bias", "0.4"])
+    res = check(["--steps", "100", "--move-belief-mode", "both", "--opp-belief-aux-coef", "0"])
     names = [c.name for c, _ in res["combinations"]]
-    assert "anchor_needs_live_distill" in names, names
-    assert "distill_team_bias_needs_teacher" in names, names
+    assert "move_belief_hidden_needs_species_belief" in names, names
 
 
 def test_fresh_only_flags_are_parser_options_that_take_exactly_one_value():

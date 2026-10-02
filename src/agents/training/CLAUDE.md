@@ -21,7 +21,7 @@ always-current obligation as this file — update the topic doc in the same pass
 | the learner's DECLARED LIFECYCLE (K6): the FREEZE GUARD, optimizer state declared at startup, `@startup_builder` | [`designs/training/learner_lifecycle.md`](../../../designs/training/learner_lifecycle.md) |
 | bot eval, the untaught meter, the critic gate, ELO / the ladder / Hodge, the baseline registry | [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md) |
 | self-play, the snapshot pool, stable opponents | [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md) |
-| exploiter mode, the warm start, distillation + the off-slice anchor | [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md) |
+| exploiter mode, the warm start, the rank tripwire (distillation + the off-slice anchor are DELETED, config v133) | [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md) |
 | team-side PFSP, per-team win-rate tracking | [`designs/training/team_curriculum.md`](../../../designs/training/team_curriculum.md) |
 | `--critic`, TD-aux, the 250-turn cap (PopArt, the value-tail weight and the value-dist head are DELETED, config v131) | [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md) |
 | the win-prob head (its PBRS routes were DELETED, config v131) | [`designs/training/winprob_head_and_pbrs.md`](../../../designs/training/winprob_head_and_pbrs.md) |
@@ -31,8 +31,8 @@ always-current obligation as this file — update the topic doc in the same pass
 | the MatchupSpec, run-spec resolution provenance, LINEAGE, TB inheritance | [`designs/training/matchup_and_lineage.md`](../../../designs/training/matchup_and_lineage.md) |
 | the TB census detail, capacity telemetry, grad balance, `signal/`, the scaffolding gauge | [`designs/training/telemetry_scalars.md`](../../../designs/training/telemetry_scalars.md) |
 | the counterfactual audit, the cf label plumbing, the prefix-sharing materializer | [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md) |
-| a SUPPLY GUARD — any live lever that must deliver (self-play pool, PFSP, team-PFSP, fork arm, search teacher), `--supply-starve-cycles`, `FatalConfigError` | [`designs/training/supply_guards.md`](../../../designs/training/supply_guards.md) |
-| search-as-teacher, OPD, the win-prob one-ply teacher | [`designs/training/search_teacher.md`](../../../designs/training/search_teacher.md) |
+| a SUPPLY GUARD — any live lever that must deliver (self-play pool, PFSP, team-PFSP, fork arm), `--supply-starve-cycles`, `FatalConfigError` | [`designs/training/supply_guards.md`](../../../designs/training/supply_guards.md) |
+| search-as-teacher, OPD, the win-prob one-ply teacher — DELETED (config v133; the doc is a tombstone) | [`designs/training/search_teacher.md`](../../../designs/training/search_teacher.md) |
 | the FORK ARM — contested-state forks, the branch rows, the CRN, the `fork/` family | [`designs/training/forks.md`](../../../designs/training/forks.md) |
 | the stall-tail harvest / head-repair pipeline | [`designs/training/stall_tail_harvest.md`](../../../designs/training/stall_tail_harvest.md) |
 | either `--compile-*` flag, BLAS pinning | [`designs/training/compile_flags.md`](../../../designs/training/compile_flags.md) |
@@ -141,8 +141,7 @@ method to hook it); the **Python collect keeps sb3's local names and
 fires `on_step` before `rollout_buffer.add`** (`self.locals`, `buf.pos`). `own_ppo_loop_test.py` holds
 it EXACT against upstream; `GEN3AI_PPO_LOOP=sb3_reference` is the A/B test seam. 🚨 **REGIME BOUNDARY
 (`gen3_eval_dump_isolation_v1`, 2026-10-01):** an eval cycle's mid-rollout `logger.dump(step)` used to
-CLEAR the previous update's `train/*`, so the KL→LR controller (and RankTripwire, DistillStop, the
-DistillAnchor dual) skipped one reading per eval cycle — 5% of N0's updates. Both eval callbacks'
+CLEAR the previous update's `train/*`, so the KL→LR controller (and RankTripwire) skipped one reading per eval cycle — 5% of N0's updates. Both eval callbacks'
 `_collect_pending` now run under `logger_scope.isolated_dump`, so the cycle dumps only its own scalars.
 A live-controller run from that commit onward is not comparable with an earlier one on its LR / dose
 trajectory (`designs/training/step_size_and_batch.md`). A new callback that dumps the logger
@@ -187,17 +186,15 @@ Per minibatch (1 to 3a inside R1):
 1. the upstream PPO loss (`policy_grad_coef·policy_loss + ent_coef·entropy + vf_term` — `--policy-grad-coef`
    scales ONLY the clipped surrogate, never entropy/value/aux; at the 1.0 default the UNSCALED
    `policy_loss` tensor is used, byte-identical to upstream, and 0.0 removes the policy-gradient
-   term alone — the arm-F pure-distill/aux phase. Training-only, the `td_aux_coef` provenance
+   term alone. Training-only, the `td_aux_coef` provenance
    class: recorded, `_resolve`-inherited on a flagless resume, never gated)
 2. the belief bank — species/moves aux, opponent intent (+ set-valued β), move / spread /
    nature-EV / HP-type / item belief, move-latent
 3. (3a) the win-prob BCE — the last R1 term; then (3b, the tail's first) the
    CF-twin on-policy mirror
 4. (retired — the value-dist HL-Gauss CE was deleted with the dist head; the numbering below is unchanged)
-5. the distill family — the policy term (full KL, or the top-K/action-CE form with the optional
-   advantage gate under `--distill-target action` — gen3_distill_target_gate_v1), value MSE, the
-   value-feature hint
-6. search-teacher AWR, then OPD
+5. (retired — the distill family was deleted with distillation, config v133; the numbering is unchanged)
+6. (retired — search-teacher AWR and OPD were deleted with the search teacher, config v133)
 7. **TD-AUX**
 8. **the counterfactual block** — cf-winprob, cf-evidential, cf-twin, cf-shadow, **q-winprob**
 
@@ -327,13 +324,11 @@ read as a result about the lever. Now each such lever is judged once per cycle b
 override `--supply-starve-cycles key=N`, `key=0` = off and ANNOUNCED): `self_play_pool` 3 eval
 cycles (`--self-play` with the pool still EMPTY — failed cycles count; `ai_v12_27` trained 10M
 against bots), `pfsp` 3, `team_pfsp` 5 updates, `fork` 5 rollouts
-(its four DISABLE-with-a-print paths are now FATAL_CONFIG), `search_teacher` 3 cycles with no
-candidate. The eval/teacher-cycle streaks persist per RUN (`snapshots/summary.json`
-`supply_guard`, `teacher_cycle/supply_state.json`), not per launcher segment. Every supply line goes
+(its four DISABLE-with-a-print paths are now FATAL_CONFIG). The eval-cycle streak persists per RUN
+(`snapshots/summary.json` `supply_guard`), not per launcher segment. Every supply line goes
 through `lever_supply.loud` (the run's own log AND the launcher event stream — `emit` alone never
 reaches the child log). End of every segment: LOUD at zero. Also `FATAL_CONFIG`, never CRASH: a
-`--bot-weights` typo, a failed `--warmstart-consensus`, and a `--distill-teacher` team that fails
-gen3ou validation (the teambuilder used to DROP it silently). **Detail: [`designs/training/supply_guards.md`](../../../designs/training/supply_guards.md).**
+`--bot-weights` typo and a failed `--warmstart-consensus`. **Detail: [`designs/training/supply_guards.md`](../../../designs/training/supply_guards.md).**
 
 ## Self-play opponents (`--self-play`, gated behind pathology hunting)
 
@@ -353,7 +348,7 @@ its cap raises `PoolOverCapError`.
 
 **A bare run directory resolves to the run's LAST SNAPSHOT, not to `best_model/best_model.zip`.**
 Owner ruling, 2026-09-06. `best_model` is exported on **BOT win rate** — an opponent set with
-nothing to do with what a teacher is being distilled FOR — and probe H8 measured the consequence:
+nothing to do with what a model reused as a teacher / target is needed FOR — and probe H8 measured the consequence:
 for 2 of 8 unfunded R5F teachers the exported file was a ~0.93M-step exploiter rather than the
 ~2.93M final, and **nothing recorded which file was used**. Every meter this programme banks scores
 a run at its END, so the last snapshot is what the metrics already measure.
@@ -394,9 +389,9 @@ other rung even when it trained further.
 
 **Every consumer goes through ONE choke point** —
 `agents.training.fixed_opponent_pool.resolve_model_ref(path, step=None)` → a `ResolvedModel`
-carrying the rung, the rule and `num_timesteps`. It serves `--distill-teacher`,
-`--stable-opponents`, `--exploiter`, `--exploiter-ladder`,
-`--warmstart-consensus` and `--distill-anchor-parent`; `run_spec_test.py` holds the census that
+carrying the rung, the rule and `num_timesteps`. It serves `--stable-opponents`, `--exploiter`,
+`--exploiter-ladder` and `--warmstart-consensus` (and, until deletion pass L1 / L3, the distillation
+and PBRS-source flags); `run_spec_test.py` holds the census that
 fails, naming the file and its flags, when one of them stops. 🚨 **EVERY TEACHER LOADED BEFORE
 2026-09-06 WENT THROUGH THE OLD RULE and recorded nothing about it** — `main.lineage` says so
 rather than re-resolving under today's rule, because a current answer presented as history is worse
@@ -521,7 +516,7 @@ recover which buffer ROW a step landed on. A capture that needs the row is INLIN
 The periodic checkpoint was SB3's `n_calls % save_freq` at 50,000 calls — 2.4M env steps at N = 48,
 ~102M at N = 2048, early under `--async-rollout` waves; it now saves when `num_timesteps` crosses each
 multiple of 2.4M (`main.train.constants.checkpoint_due`), like eval, the pool add/refresh it drives,
-the search teacher and the plasticity canary. A callback CALL is not a fixed number of env steps (N
+and the plasticity canary. A callback CALL is not a fixed number of env steps (N
 sync, N decisions on the Rust collector, one WAVE < N under async), so a new cadence compares
 `num_timesteps` against a boundary — never `n_calls`. Everything counted in UPDATES or rollouts
 (`--diagnostics-every`, the compile canary, the team pulls, the CUDA memory-trend horizon, …) moves
@@ -586,7 +581,7 @@ a separate decision. Hazards an agent must know before touching it:
   deep-copies the policy as its slot templates, and a copy taken after the compile would carry the
   patched `forward` bound to the LEARNER's extractor.
 - 🚨 **Every flag whose path the Rust core does not serve is REFUSED at startup, by name**
-  (`combination_checks`' `env_core_rust_*`): distillation, `--cf-records`, the search teacher,
+  (`combination_checks`' `env_core_rust_*`): `--cf-records`,
   `--team-pfsp`, `--exploiter-ladder`, `--async-rollout`. The
   collector flags typed on the python core are refused too (they would be silently inert).
 - **`WinProbLabelCallback` is not registered** under `rust`: the collector fills `win_target` /
@@ -863,7 +858,7 @@ a step that finds an optimizer missing, or bound to other heads, raises
 must call `_ridealong_acquire()` again (both benchmarks do). 🚨 **Only the TRAINEE acquires: an
 OPPONENT load acquires nothing** (`gen3_opponent_inference_load_v1`). The self-play pool and the eval
 sentinels load through `snapshot.load_opponent_snapshot`, and every `load_foreign_opponent` (stable
-opponents, exploiter targets, distill teachers and anchors, `main.anchors`, the offline readers) is an
+opponents, exploiter targets, `main.anchors`, the offline readers) is an
 `InferenceMaskablePPO` by default: policy weights only, with no optimizer, no ride-along optimizer and
 no rollout buffer. It refuses `learn` / `train` / `save`. Before this fix a pool load after the freeze
 pre-stepped a ride-along Adam, and K6 FATALed the X26 launch at its first pool seeding. An opponent may
@@ -1035,7 +1030,9 @@ controllers** (KL-lr and adaptive-batch), so watch `train/dose_rate`, never eith
 ## LINEAGE — who forked whom (`lineage.py`, `python -m main.lineage`)
 
 `metadata.json`'s **`lineage`** block states the fork graph instead of implying it: `role`
-(`fresh`/`fork`/`fold`/`exploiter`), `fork_parent`, `teachers`, `exploiter_target`, a walked
+(`fresh`/`fork`/`fold`/`exploiter` — `fold` and `teachers` are HISTORICAL: nothing writes them since
+distillation was deleted, but the reader still derives them from OLD recorded commands),
+`fork_parent`, `exploiter_target`, a walked
 `ancestry` and an `ancestry_stop` saying where the chain went dark and why. 🚨 **IMMUTABILITY is the
 whole feature** — the existing value always wins, because a launcher restart re-derives the block
 and would silently re-point the recorded parent at the DRIFTED student. 🚨 **RECORDED and DERIVED
@@ -1262,38 +1259,24 @@ ON in a production generation. A checkpoint recording either is REFUSED by its m
 reasoning generalises to every aux head on this trunk and is kept as closed history:
 `designs/research_state/claude_md_archive/training_leaf_deleted_subsystems_history.md`.
 
-## Exploiter distillation (`--distill-teacher` / `--distill-coef` / `--distill-value-coef` / `--distill-value-feat-coef`)
+## Exploiter distillation and search-as-teacher — DELETED (deletion pass L3, config v133)
 
-`gen3_exploiter_distill_v1` — pour a frozen per-team SPECIALIST into the generalist so it learns to
-PILOT that team, closing the amortization gap the self-play average cannot. `--distill-teacher`
-takes `TEACHER:TEAM` colon pairs (a bare run dir → that run's **LAST SNAPSHOT**; the `🧪 [DISTILL]`
-line states the resolved file, its step and the rung per teacher); the env emits a training-only
-`distill_mask` key, and per teacher `distill_coef · KL(π_teacher ‖ π_student)` is folded masked to
-that teacher's states, the per-teacher mean-KLs AVERAGED so a small-coverage teacher still
-contributes comparable gradient. `--distill-team-bias` (0.4) keeps the rest as pool rehearsal. OFF
-is byte-identical; training-only, NOT version-locked, inherited on a flagless resume.
-**Full detail — the off-slice anchor, the stop rule, the advantage-gated/action-form target and the
-rank tripwire — is in [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md).**
-
-## Search-as-teacher (`--search-teacher`, `teacher/` package)
-
-Selective **Expert Iteration**: each cycle, search + rollout-confirm the worst loss craters of
-recent eval traces and distil the VERIFIED-better action into the policy via an advantage-weighted
-CE aux loss (AWR), or the full improved distribution via `--opd-coef` KL. Off by default and
-byte-identical. The "expert" is the prober's `better_line` beam plus the rollout-confirm tiers.
-
-🚨 **The distilled advantage is the CONFIRMED win-rate improvement, never the critic's optimistic
-backed-up value** (the Spore 95%-vs-62% lesson), and an opponent that cannot be resolved exactly is
-**SKIPPED, never approximated** — distilling "A\* beats a proxy" is a soundness failure, not a
-degrade. 🚨 **BOTH PHASES OF A CYCLE RUN IN CHILDREN**; selection used to run INLINE on the training
-step (measured 48.1 s over 9 traces, 350.2 s over 60) and "non-blocking" was half true for a year —
-`teacher/step_block_ms` now records what the teacher costs the training step as a series.
-🚨 **A FAILED SELECTION IS A REPORTED CYCLE, not a silence** (`teacher/selection_failures_total`).
-⚠️ **`--search-teacher-mode winprob_oneply`** (ai_v12 routes 2+3, nothing has run it) swaps only the
-selection and production halves, and its **CONFIRMATION step is a REQUIREMENT, not a refinement** —
-the WINNER'S CURSE: a separation procedure certifies the leaf's residual differential bias as much
-as signal, and unlike PBRS a distillation target has **no invariance shield**.
-**Full detail — in [`designs/training/search_teacher.md`](../../../designs/training/search_teacher.md).**
+Both levers ran only on the Python env core and were deleted with it (owner-approved 2026-10-02,
+"delete all, port none"): the exploiter FOLD (`--distill-teacher` / `--distill-coef` and its value,
+target-form, gate, off-slice anchor, dual-ascent, stop-rule and gradient-projection flags, the
+`distill_mask` obs key, the `distill/*` scalars) and SEARCH-AS-TEACHER (`--search-teacher`, `--opd-coef`,
+the win-prob one-ply teacher, the `teacher/` package, the `teacher/*` and `opd/*` scalars). Every flag is
+listed with its citation in `designs/deleted_flags.md`. **Distillation is the only BUILT route to X15
+(expert iteration); a Rust port is ~1-2 agent-days if X15 is ever scheduled** (`distill_mask` becomes a
+per-episode host key from `TeamStager`; teachers are frozen T2 slots or a learner-side forward), and the
+search teacher would be rebuilt on the Rust search driver. A run that recorded one of these resumes only
+PINNED to `model_version.retired_levers.LAST_COMMIT_L3` (a recorded `distill_target != "kl"`,
+`distill_gate != "none"` or `teacher_scan_limit != 60` is REFUSED on a resume or fork; the other flags were
+never recorded fields, so a run's recorded argv fails argparse on an unpinned resume). What stays: the
+**rank tripwire** (`--rank-tripwire`, `agents/training/rank_tripwire.py`), `--warmstart-consensus`, the
+`--allow-untaught-teacher` guard on a pinned trainee team, and the offline meters that read old runs.
+**Detail and the evidence — in [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md)
+(the exploiter half, plus a HISTORY note) and the tombstone [`designs/training/search_teacher.md`](../../../designs/training/search_teacher.md).**
 
 ## Process liveness guards (`watchdog.py`)
 

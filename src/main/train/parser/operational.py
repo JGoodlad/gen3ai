@@ -61,9 +61,7 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "counterfactual paths work on rust. The OFFLINE search/replay drivers "
                              "are on rust too (gen3_rust_search_driver_v1 / "
                              "gen3_rust_replay_driver_v1 — one search_driver binary serves both "
-                             "verb families), so --search-teacher no longer requires 'node'; the "
-                             "run's impl is threaded into the teacher workers. 'rust' also "
-                             "fail-louds on an unmodeled move.")
+                             "verb families). 'rust' also fail-louds on an unmodeled move.")
     parser.add_argument("--obs-source", type=str, default=None, choices=["python", "core"],
                         help="Where the TRAINEE's observation row comes from "
                              "(gen3_core_obs_source_v1, the Rust core program's M6). DEFAULT: 'core' "

@@ -263,7 +263,6 @@ class _MergeStub:
     _emit_hp_type_labels = False
     _emit_item_labels = False
     _emit_opp_intent_labels = False
-    _emit_distill_mask = False
     _emit_win_target = True
     _emit_fork_pg_mask = False
 

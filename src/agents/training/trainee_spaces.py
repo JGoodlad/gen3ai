@@ -18,7 +18,7 @@ Imports no poke-env env, no ``Gen3Env`` / ``wrappers`` / ``env_factory`` / bridg
 """
 from __future__ import annotations
 
-from typing import Any, NamedTuple, Optional, Sequence, Tuple
+from typing import Any, NamedTuple, Tuple
 
 import numpy as np
 from gymnasium import spaces
@@ -72,10 +72,6 @@ def trainee_env_kwargs(args: Any) -> dict:
         # ITEM-belief supervision (gen3_item_belief_v1): emit the privileged true-item
         # label only when the head exists AND the CE will consume it.
         emit_item_labels=(args.item_belief and args.item_belief_coef > 0.0),
-        # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1): the teacher team's species id-set
-        # (None unless --distill-coef>0). The env emits `distill_mask`=1 on states where the
-        # trainee pilots this team — the only states the distillation KL folds. None → no key.
-        distill_team_species=getattr(args, "_distill_species", None),
         # gen3_core_obs_source_v1: the trainee's row from the Rust core (`--obs-source core`)
         # or from the Python encoder (the default). Only the trainee env; opponents unchanged.
         obs_source=resolved_obs_source(args),
@@ -93,15 +89,13 @@ class LabelGates(NamedTuple):
     hp_type_labels: bool
     item_labels: bool
     fork_pg_mask: bool
-    distill_mask: bool
 
 
 def label_gates(*, emit_belief_labels: bool = False, move_belief_mode: str = "off",
                 emit_win_target: bool = False,
                 emit_fork_pg_mask: bool = False, emit_spread_labels: bool = False,
                 emit_opp_intent_labels: bool = False, emit_hp_type_labels: bool = False,
-                emit_item_labels: bool = False,
-                distill_team_species: Optional[Sequence[Any]] = None) -> LabelGates:
+                emit_item_labels: bool = False) -> LabelGates:
     """The per-key gates. One is DERIVED: the move belief needs the belief labels whatever
     ``--opp-belief-aux-coef`` says."""
     return LabelGates(
@@ -113,15 +107,13 @@ def label_gates(*, emit_belief_labels: bool = False, move_belief_mode: str = "of
         hp_type_labels=bool(emit_hp_type_labels),
         item_labels=bool(emit_item_labels),
         fork_pg_mask=bool(emit_fork_pg_mask),
-        distill_mask=bool(distill_team_species),
     )
 
 
-def trainee_observation_space(layout: dict, vector_space: Any, g: LabelGates,
-                              distill_species: Sequence[Any] = ()) -> spaces.Dict:
+def trainee_observation_space(layout: dict, vector_space: Any, g: LabelGates) -> spaces.Dict:
     """The trainee's ``spaces.Dict``: the flat observation + the action mask + every label key ``g``
     switches on. ``layout`` is the encoder's ``get_layout()``,
-    ``vector_space`` its schema's gym space, ``distill_species`` one entry per distillation teacher."""
+    ``vector_space`` its schema's gym space."""
     base_obs = {
         "observation": vector_space,
         "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8),
@@ -218,12 +210,6 @@ def trainee_observation_space(layout: dict, vector_space: Any, g: LabelGates,
         # `agents.training.fork_buffer`, THE MASK RULE).
         base_obs[FORK_PG_MASK_KEY] = spaces.Box(
             low=0.0, high=1.0, shape=(1,), dtype=np.float32)
-    if g.distill_mask:
-        # gen3_exploiter_distill_v1: INTEGER team-id (0=none, k=teacher k) of the trainee's current team
-        # among the N distillation-teacher teams. Read ONLY by the exploiter-distillation KL in the PPO
-        # loss (gates which teacher's advice is on-distribution). A REAL per-step value (const per battle).
-        base_obs["distill_mask"] = spaces.Box(
-            low=0.0, high=float(len(distill_species)), shape=(1,), dtype=np.float32)
 
     return spaces.Dict(base_obs)
 
@@ -237,7 +223,5 @@ def trainee_spaces(args: Any, mappings: Any = None) -> Tuple[spaces.Dict, spaces
     layout = get_observation_encoder(mappings if mappings is not None else load_mappings()).get_layout()
     kw = trainee_env_kwargs(args)
     kw.pop("obs_source", None)
-    species = kw.get("distill_team_species") or ()
-    obs = trainee_observation_space(layout, build_schema(layout).gym_space(), label_gates(**kw),
-                                    distill_species=list(species))
+    obs = trainee_observation_space(layout, build_schema(layout).gym_space(), label_gates(**kw))
     return obs, spaces.Discrete(N_ACTIONS)

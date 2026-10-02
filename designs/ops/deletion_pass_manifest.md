@@ -113,7 +113,7 @@ from `model_config.json` (and is then refused, D4), never the new parser default
 | P7 | **`proc_integration_test` flake** — apply the row's named unscaled bounds (`op_timeout=2.0` bounding setup, `_exited(wait=10.0)`, `startup_timeout=20`) through `utils/contention`; keep the traceback hunt open | §2(b) P2 — ✅ **SHIPPED 2026-10-02** (the bounds; the TECH_DEBT row stays OPEN for the traceback) | 0.5 | — | C |
 | P13 | **The PINNED-TEAM meters REFUSE `--mirrored-pairs`** (owner-directed 2026-10-02: the fixed-team meters measure TWO different things — piloting the pinned team and the response to it as an opponent — so mirroring them must not pool the two) — `main.untaught_meter --mirrored-pairs` and `main.best_response_gap --play --mirrored-pairs` refuse with a typed error (`MirroredPinnedTeamError`, cause `mirrored_pinned_team`) at the CLI and at `untaught_meter.play_cells(mirrored=True)`; the in-loop `--eval-mirrored-pairs` and `main.anchors --mirrored-pairs` (symmetric) are untouched | owner via orchestrator, 2026-10-02 — ✅ **SHIPPED 2026-10-02** | 0.25 | — | C |
 | P8 | **Test-speed rows** (§2(b) P2): parity gates subprocess-startup bound — cache `fresh:N` pool zips per session (S–M, 1.0) · `Teambuilder` Node validator per construction — memoise (S, 0.5) · fixed sleeps in 3 tests (S, 0.5) · anchors smoke 22 s of process startup (M, 1.0). P3 rows (mypy cache warm, stub-scan profile) only if the box allows | §2(b) | 3.0 | AFTER the deletions (re-measure first: R1/R2/R10 delete many of the slowest parity files) | C |
-| P9 | **Distillation teachers carry ride-along weights** | queued 2026-10-02 | 0.25 | **MOOT if D1 deletes distillation** | — |
+| P9 | **Distillation teachers carry ride-along weights** | queued 2026-10-02 — ✅ **MOOT 2026-10-02: D1 deleted distillation (L3)**; there is no teacher load left to carry ride-along weights | 0.25 | — | — |
 | P10 | **ONE independent code review** of the newest core modules (owned loop, lifecycle, compile regions, inference-only load) | TECH_DEBT §1 | 0.75 | AFTER R4 (so it reads the owned buffer / logger / hooks, not the code R4 replaces) | C |
 | P11 | **FLAG CENSUS** — every surviving flag names a live user; the rest go with code + checks + tests (`deleted_flags.md`) | TECH_DEBT §1 | 2.0 | LAST — after every R row (the deletions shrink its input from 303 flags) | A |
 | P12 | **Stale docs found while scoping** (fold into the unit that touches each): the refusal text's pointer to `rust_collector.md` "'What --env-core rust refuses'" (no such section; R2 deletes the table) · `design_model_management.md:31,251` (v123 is `policy_gae_lambda`, not `--matmul-precision`) · forks.md §14.1 (the port uses `store.game_gae`, not `branch_rewards`) · program §4's LOC and survivor claims (§7) | scoping | 0 (in-unit) | — | each |
@@ -136,7 +136,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | **U2** ✅ **SHIPPED 2026-10-02** (D3: no banked run) | extractions: standalone spaces builder (off `Gen3Env`), `OPP_CLASS_*` / `STABLE_CHALLENGE_SHARE` / `resolved_obs_source` / `_build_trainee_tb` re-homed; D4's python-era resume rule; D3's banked last-green run of every env-level gate | 1.0 | A | `rust_rollout/build.py`, `rust_env_setup.py`, `rust_env_opponents.py` | U1 |
 | **L1** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l1_v1`, config v131, stamp-only; **lines removed: non-test code −2,663 / +677 (net −1,986), tests −2,497 / +405 (net −2,092)**, docs + data −718 / +330; 15 flags, 12 `ModelVersion` fields, 16 `combination_checks` rows; K9 golden files untouched and green) | shaped-only levers + self-PBRS + frozen-φ (R2): PopArt, the value-dist head, `value_from_dist`, the CVaR value-tail weight, `--win-prob-coef`, `--win-prob-pbrs-{coef,source,frozen}` | 1.0 | B | `combination_checks`, `config`, parser `clean_world` / `distillation` / `value_heads` | U1 |
 | **L2** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l2_v1`, config v132, stamp-only; **lines removed: non-test code −4,229 / +341 (net −3,888), tests −5,070 / +323 (net −4,747)**, docs + data −1,377 / +218; 12 flags, 9 `ModelVersion` fields, 7 `combination_checks` rows + 6 `_ENV_CORE_UNPORTED` rows, 7 label-inventory rows; K9 golden files untouched and green) | λ, rollout target, dense aux, true team, entropy boosts, `choice_band_tracker` (R2) | 1.0 | B | same + `hyperparameters`; `label_inventory` | L1 |
-| **L3** | distillation + search teacher (R2) | 1.0 | B | + parser `capacity` / `distillation` / `teacher`, `matchup_setup` | L2 |
+| **L3** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l3_v1`, config v133, stamp-only; **lines removed: non-test code −6,674 / +313 (net −6,361), tests −6,603 / +203 (net −6,400)**, docs + data −1,342 / +436; 47 flags, 6 `ModelVersion` fields, ~30 `combination_checks` rows + 2 `_ENV_CORE_UNPORTED` rows, the `distill_mask` label row and the `refused` label kind; K9 golden files untouched and green) | distillation + search teacher (R2) | 1.0 | B | + parser `capacity` / `distillation` / `teacher`, `matchup_setup` | L2 |
 | **L4** | cf training half + team-PFSP + exploiter ladder + `REFUSED_WITH_FLAG` (R2) | 0.75 | B | + parser `cf_grounding` / `eval_subprocess`, `rust_vec_env` | L3 |
 | **L5** | the Python fork arm (R3) | 0.5 | B | `combination_checks`, `fork_*` | L4 |
 | **K1** ✅ **SHIPPED 2026-10-02** (`utils/torch_floor.py`; the cache-limit log detector KEPT — §6 finding 10) | torch < 2.8 refusal; 2.5.1 code + legacy compile gate (R7 + R8), the `hooks.py:179` fix | 1.25 | C | `compile_trainer`, `compile_control`, `team_transformer`, `lifecycle.py` | memory fix |
@@ -194,6 +194,35 @@ material, not L3's. (10) Hygiene that cost time: export `PYTHONPATH=<worktree>/s
 (none, or main's, imports MAIN's code through the editable install and the results are about a tree you did not edit); a local
 run that executes a `slow` test rewrites `designs/ops/slow_tier_status.json` — `git checkout` it before committing; and a
 rerun of a failed subset needs `-m "not slow and not e2e"` or it pulls in the milestone parity tests (minutes each).
+
+**L3 hand-off (read before L4).** (1) `lever_supply.LEVERS` is now {self_play_pool, pfsp, team_pfsp, fork}
+(`search_teacher` is gone with its callback; L4 removes `team_pfsp`, L5 `fork`). `_ENV_CORE_UNPORTED` holds
+cf_records, team_pfsp, exploiter_ladder, async_rollout (`distill_coef` / `search_teacher` left). (2)
+`utils/rust_env/label_inventory.py` has NO `refused` kind any more (`RUST_KINDS` = core / host_const / host_episode) and
+no `distill_mask` row; `NOT_CORE` is {winprob, opp_class, fork}; the generated `columns.rs` / `ffi.rs` / `shm.rs` are
+regenerated and the Rust `labels::declare` test no longer exercises a refused family. `rust_vec_env.REFUSED_WITH_FLAG`
+holds only `--exploiter-ladder` and `--team-pfsp` methods (L4's); `store.obs_key_sources`'s unknown-key list has no
+distill entry (checked). (3) `retired_levers.py`: `RetiredLever` rows for L3 use `"L3", 133` and `LAST_COMMIT_L3 =
+615a764f`; L4's append with `"L4", 134` and `LAST_COMMIT_L4` = the commit that ships L3. The `cf_*` /
+`team_pfsp` / `exploiter_ladder` flags: check which are RECORDED `ModelVersion` fields before tabling (the cf
+coefficients are; `--team-pfsp` / `--exploiter-ladder` are not — say so in `deleted_flags.md`, as L2/L3 did). (4)
+`combination_checks` lost every distillation / teacher row; its module docstring now tells the C1 / G5 story as
+history and `checkargs_test` / `combination_checks_test` pin the INHERITED-value shape on the belief-stack pair
+(`move_belief_mode` inherited, `--opp-belief-aux-coef 0` typed) — a cf row would be a worse anchor, because L4 deletes
+it. `combination_checks_test`'s ARGVS table is the place each remaining row is pinned; L4 removes the cf rows there.
+(5) `compile_trainer.eager_extractor` KEEPS its two callers `fork_callback.py` / `fork_driver.py` (L5 deletes both;
+delete the function and its two `compile_control_test` cases with them). L3 removed the learner callers (`ppo.py`'s
+search-teacher / OPD folds, `distill_grad_project`). (6) The parser file NAMED `distillation.py` now holds the rank
+tripwire + the aux / belief heads and arch switches (the name is historical; renaming it moves `--help` order for nobody
+but would touch ~10 doc links — census material). `parser/teacher.py` is deleted; `parser/capacity.py` is capacity
+telemetry only. L4's parser files (`cf_grounding`, `eval_subprocess`) are untouched. (7) `lineage.py` still PARSES
+`--distill-teacher` out of OLD recorded commands (spelled `"--" + n`, never as a literal — the freshness gate treats a bare
+`"--flag"` constant as live CLI surface) and the `fold` role / `teachers` list stay readable; nothing writes them. (8)
+`designs/production_config.json` lost the five `distill_*` keys (they were ModelVersion fields); the K9 learner golden
+files are untouched. (9) Hygiene (L2's item 10 still holds): absolute `PYTHONPATH`, `git checkout` the slow-tier JSON before a
+commit, `-m "not slow and not e2e"` on a rerun of a failed subset, and rebuild the env crate after regenerating its
+generated files. A deleted `slow` test leaves a stale row in `designs/ops/slow_tier_status.json`: this unit
+hand-removed the two (a textual edit — the file's own formatting is not `json.dumps`'s).
 
 **Totals.** Lane A (spine) 6.25 · lane B (levers) 4.25 · lane C (compile / precision / paydown) 8.0 · census +
 milestone 2.25 → **≈ 21 agent-days (range 17–26)**. Program §2 M6 budgeted "~2 agent-days" for this pass; the
@@ -256,15 +285,15 @@ calendar days with 3 lanes; 8 is the box**.
 9. **Not verified:** that every pre-2026-09-30 run records no `torch_version` (inferred from the launcher rule);
    that `b2c09132` runs under 2.5.1 at all; that `rust_rollout/fork_test.py` pins forks.md §5's mask rule; the
    test-by-test fate in `extractor_compiles_test`, `train_test`, `rust_eval/parity_test`, `eval_sharding_fuzz_test`;
-   whether the `--distill-anchor-*` / `--distill-stop` family can run without `--distill-coef > 0` (if so it is
-   silently inert on Rust today). The P5 arch-report lines were not located.
+   whether the `--distill-anchor-*` / `--distill-stop` family can run without `--distill-coef > 0` (MOOT: L3 deleted it; the
+   combination rows required a live coefficient). The P5 arch-report lines were not located.
 
 10. **K1 (2026-10-02): R7's "replace the cache-limit LOG detector with `fail_on_recompile_limit_hit`" was NOT
     done — the detector is KEPT.** Dynamo asserts `fail_on_recompile_limit_hit` and `suppress_errors` are never
     both set, and `main/compile_inventory/capture.py` patches `suppress_errors=True` in the trainer process; the
     regions compile `fullgraph=True`, where torch 2.8 already raises `FailOnRecompileLimitHit` on a limit hit, so
     the detector's remaining job is the sticky FATAL_CONFIG. Also from K1: `compile_trainer.eager_extractor` is a
-    no-op on the learner (its callers are L3/L5's to delete); no test now drives a full first `train()` through
+    no-op on the learner (L3 removed the learner callers; `fork_callback` / `fork_driver` keep it until L5); no test now drives a full first `train()` through
     the compiled REGIONS with the donating default forced (the deleted `compiled_train_probes_test` did it for the
     extractor compile); the region gate's collapsed-critic ladder climb has no teeth test (the deleted
     `parity_probe_test` gate tests had one for the extractor gate).

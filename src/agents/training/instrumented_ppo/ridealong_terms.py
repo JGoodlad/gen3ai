@@ -8,7 +8,7 @@
     losses, backpropagates them into the heads ALONE, clips the heads' own gradient, steps the
     heads' OWN Adam, and sets their gradients back to None — all before PPO's loss is even
     assembled. So `loss`, PPO's `clip_grad_norm_` (whose total norm would otherwise include the
-    heads' gradients and rescale the trunk's), the noise-scale probes and the distill projector
+    heads' gradients and rescale the trunk's), the noise-scale probes
     never see a ride-along gradient, and nothing the heads do consumes a random number.
   * `RideAlongAccumulator` folds the per-minibatch readouts into the `ridealong/*` TB family. The
     RANK meters (AUROC, Spearman, error by decile — does uncertainty predict V's actual error?) need
@@ -440,7 +440,7 @@ class RideAlongTerms:
                 acc.add("grad_norm", float(gn))
             opt.step()
             # Back to None, so no later reader of `policy.parameters()` in this minibatch — PPO's
-            # clip, the noise probes, the distill projector — can see a ride-along gradient.
+            # clip, the noise probes — can see a ride-along gradient.
             opt.zero_grad(set_to_none=True)
 
     def _ridealong_variant_optimizer(self, heads: Any, name: str) -> th.optim.Optimizer:

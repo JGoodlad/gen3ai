@@ -720,11 +720,9 @@ class ExtractorForward(ExtractorApi):
                                                                damage_block):
             value_pooled = value_pooled + _contrib
         # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
-        # 128-dim FitNets HINT layer). Consumed ONLY by the FitNets value-feature distillation
-        # (`instrumented_ppo._value_feat_distill`): both student and teacher forwards leave it here, so the
-        # distill loop can regress the student's value_pooled toward each teacher's on the teacher-team
-        # states. NOT read by the forward → off-path/eval is byte-identical; carries grad on the student pass
-        # (a live activation) so the cosine distill gradient flows into the shared trunk.
+        # 128-dim value-CLS hint layer). Read by the capacity probes, the ride-along heads and the cf
+        # terms. NOT read by the forward → off-path/eval is byte-identical; carries grad on the
+        # training pass (a live activation).
         self.stash.value_pooled = value_pooled
         # Auxiliary win-probability readout (flag-guarded; None when off). Reads the whole-board
         # value_pooled and stashes a [B,1] logit for the aux loss + the prober/eval. NOT fed into the

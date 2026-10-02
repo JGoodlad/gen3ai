@@ -367,7 +367,7 @@ resume); no-op (momentum carried verbatim) on an aligned resume. Pinned by
 
 **Resume-immutable training hparams (value-meaning, NOT weight-shape)** — `vf_coef`, the reward
 fields — are recorded on `ModelVersion` but **deliberately excluded from `check_compatible`**, which
-gates EVERY load including the frozen eval / pool / distill opponents whose forward is identical
+gates EVERY load including the frozen eval / pool opponents whose forward is identical
 regardless. They get a dedicated `check_*` on the training-resume path only, and `train_rl_agent.py`
 FATALs on a mismatch exactly like an arch error. To add one: field + `MODEL_CONFIG_VERSION` bump +
 `_migrate_config` default, **plus** a dedicated `check_*` and an `enforce_*` opt-in on

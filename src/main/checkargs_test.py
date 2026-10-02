@@ -152,10 +152,13 @@ def test_check_reports_both_failure_kinds_in_one_pass():
 # ---------------------------------------- an ARGV IS NOT A CONFIG: resolving against the parent
 #
 # The third instance of one class: `checkargs` passes, the launch fails. C1 (2026-09-01) forked a
-# parent whose `model_config.json` recorded `distill_target="action"`, passed `--distill-coef 0`,
-# and never named a target — so `config._resolve` INHERITED `action` and `resolve_config` refused
-# the pair, after this tool had printed "✓ this command still launches". The fixtures below are the
-# minimum shape that reproduces it: a run dir with a recorded config and a checkpoint path under it.
+# parent whose `model_config.json` recorded an action-form distillation target, passed
+# `--distill-coef 0`, and never named a target — so `config._resolve` INHERITED the target and
+# `resolve_config` refused the pair, after this tool had printed "✓ this command still launches".
+# (The distillation family is deleted; the SHAPE is kept, reproduced below with the belief-stack
+# pair: a parent recording `move_belief_mode="both"`, a child that zeroes `--opp-belief-aux-coef` and
+# never names the mode.) The fixtures are the minimum shape that reproduces it: a run dir with a
+# recorded config and a checkpoint path under it.
 
 
 def _minimal_model_config(**overrides) -> dict:
@@ -196,41 +199,45 @@ def _parent_run(tmp_path, name="parent", *, write_config=True, **recorded):
     return str(run / "checkpoints" / "checkpoint_10_steps.zip"), str(run)
 
 
+#: The recorded values of the C1-shaped parent: a move belief that scores the HIDDEN slots (which
+#: needs the species-belief head, i.e. `--opp-belief-aux-coef > 0`). Coherent as recorded.
+_C1_PARENT = dict(move_belief_mode="both", opp_belief_aux_coef=0.05)
+
+
 def _c1_argv(ckpt, *extra):
-    """C1's shape: fork a parent, turn the distill term OFF, never name the target form."""
-    # `--env-core python`: the distill flags run only on the python core (else D4 moves the fork to rust)
-    return ["--model", ckpt, "--run-name", "child_run", "--steps", "1000", "--env-core", "python",
-            "--distill-coef", "0", *extra]
+    """C1's shape: fork a parent, turn the species-belief coefficient OFF, never name the mode."""
+    return ["--model", ckpt, "--run-name", "child_run", "--steps", "1000",
+            "--opp-belief-aux-coef", "0", *extra]
 
 
-def test_an_inherited_distill_target_is_REPORTED(tmp_path):
+def test_an_inherited_move_belief_mode_is_REPORTED(tmp_path):
     """(a) THE C1 DEFECT. Nothing in the argv is wrong; the effective config is."""
-    ckpt, _ = _parent_run(tmp_path, distill_target="action")
+    ckpt, _ = _parent_run(tmp_path, **_C1_PARENT)
     res = check(_c1_argv(ckpt))
     names = [c.name for c, _ in res["combinations"]]
-    assert names == ["distill_target_needs_coef"], res["combinations"]
+    assert names == ["move_belief_hidden_needs_species_belief"], res["combinations"]
     combo, provenance = res["combinations"][0]
-    assert "--distill-target action requires --distill-coef > 0" in combo.message
-    assert any("--distill-target 'action'" in p and "INHERITED" in p for p in provenance), provenance
-    assert res["resolution"]["inherited"]["distill_target"] == "action"
+    assert "--move-belief-mode both scores the opponent's HIDDEN slots" in combo.text(res["ns"])
+    assert any("--move-belief-mode 'both'" in p and "INHERITED" in p for p in provenance), provenance
+    assert res["resolution"]["inherited"]["move_belief_mode"] == "both"
 
 
-def test_the_same_argv_with_an_explicit_target_passes(tmp_path):
-    """(b) The fix that actually launched C1: name the target the argv means."""
-    ckpt, _ = _parent_run(tmp_path, distill_target="action")
-    res = check(_c1_argv(ckpt, "--distill-target", "kl"))
+def test_the_same_argv_with_an_explicit_mode_passes(tmp_path):
+    """(b) The fix that actually launched C1: name the mode the argv means."""
+    ckpt, _ = _parent_run(tmp_path, **_C1_PARENT)
+    res = check(_c1_argv(ckpt, "--move-belief-mode", "revealed"))
     assert res["combinations"] == []
-    assert "distill_target" not in res["resolution"]["inherited"]
+    assert "move_belief_mode" not in res["resolution"]["inherited"]
 
 
 def test_main_exits_1_on_the_inherited_refusal_and_0_once_named(tmp_path, capsys):
     """The exit code is the whole interface — a wrapper script reads that, not the prose."""
     from main.checkargs import main as checkargs_main
-    ckpt, _ = _parent_run(tmp_path, distill_target="action")
+    ckpt, _ = _parent_run(tmp_path, **_C1_PARENT)
     assert checkargs_main(["--argv", " ".join(_c1_argv(ckpt))]) == 1
     out = capsys.readouterr().out
     assert "WOULD FAIL IN resolve_config" in out and "FORK PARENT" in out
-    assert checkargs_main(["--argv", " ".join(_c1_argv(ckpt, "--distill-target", "kl"))]) == 0
+    assert checkargs_main(["--argv", " ".join(_c1_argv(ckpt, "--move-belief-mode", "revealed"))]) == 0
 
 
 def test_a_same_run_restart_is_classified_as_a_restart_not_a_fork(tmp_path, capsys):
@@ -243,8 +250,8 @@ def test_a_same_run_restart_is_classified_as_a_restart_not_a_fork(tmp_path, caps
     launch exactly like a fork does, so suppressing the check there would re-open this hole.
     """
     from main.checkargs import main as checkargs_main, resolve_against_parent
-    ckpt, run = _parent_run(tmp_path, distill_target="action")
-    argv = ["--model", ckpt, "--run-dir", run, "--steps", "1000", "--distill-coef", "0"]
+    ckpt, run = _parent_run(tmp_path, **_C1_PARENT)
+    argv = ["--model", ckpt, "--run-dir", run, "--steps", "1000", "--opp-belief-aux-coef", "0"]
     assert resolve_against_parent(argv)["same_run"] is True
     checkargs_main(["--argv", " ".join(argv)])
     out = capsys.readouterr().out
@@ -253,7 +260,7 @@ def test_a_same_run_restart_is_classified_as_a_restart_not_a_fork(tmp_path, caps
 
 def test_a_fork_is_classified_as_a_fork(tmp_path):
     from main.checkargs import resolve_against_parent
-    ckpt, _ = _parent_run(tmp_path, distill_target="action")
+    ckpt, _ = _parent_run(tmp_path, **_C1_PARENT)
     assert resolve_against_parent(_c1_argv(ckpt))["same_run"] is False
 
 
@@ -274,7 +281,7 @@ def test_no_model_still_builds_a_namespace_and_runs_the_combination_checks():
     """A fresh run has nothing to INHERIT from — but the argv is still a config.
 
     Until 2026-09-06 the whole combination half was skipped whenever `--model` was absent, so a
-    FRESH control arm carrying `--distill-coef 0` beside the fold instruments printed "✓ this
+    FRESH control arm carrying a flag that is refused beside another printed "✓ this
     command still launches" and then died three times (G5). The resolution is now reported with
     `no_parent`, and the DEPENDENCY half stays conservative exactly as before.
     """
@@ -283,8 +290,9 @@ def test_no_model_still_builds_a_namespace_and_runs_the_combination_checks():
     assert res["resolution"]["inherited"] == {}
     assert res["combinations"] == []                       # a plain argv is still clean
 
-    g5 = check(["--steps", "100", "--distill-coef", "0", "--distill-anchor-monitor"])
-    assert "anchor_needs_live_distill" in [c.name for c, _ in g5["combinations"]], g5["combinations"]
+    g5 = check(["--steps", "100", "--move-belief-mode", "both", "--opp-belief-aux-coef", "0"])
+    assert "move_belief_hidden_needs_species_belief" in [c.name for c, _ in g5["combinations"]], \
+        g5["combinations"]
 
 
 def test_a_resolved_namespace_reports_an_ABSENT_dependency_the_argv_alone_cannot(tmp_path):
@@ -310,7 +318,7 @@ def test_config_and_checkargs_share_the_combination_rules():
     from main.train import config as _config
     from main.train.combination_checks import COMBINATION_CHECKS, refuse_first
     assert _config.refuse_first is refuse_first
-    assert "distill_target_needs_coef" in {c.name for c in COMBINATION_CHECKS}
+    assert "move_belief_hidden_needs_species_belief" in {c.name for c in COMBINATION_CHECKS}
     # The list is EXHAUSTIVE over its class now, not a sample of four — see
     # `main.train.combination_checks_test`, which AST-scans `config.py` to keep it that way.
     assert len(COMBINATION_CHECKS) > 40, len(COMBINATION_CHECKS)
@@ -321,15 +329,9 @@ def test_the_launch_path_still_refuses_the_C1_combination():
     is pure over an args-shaped object, which is why both surfaces can call it."""
     from types import SimpleNamespace
     from main.train.combination_checks import failing_checks
-    broken = SimpleNamespace(distill_target="action", distill_coef=0.0, distill_topk=1,
-                             distill_gate="none", distill_gate_tau=0.0)
-    assert [c.name for c in failing_checks(broken)] == ["distill_target_needs_coef"]
-    # `distill_teacher` is now load-bearing on the OK side: a live coefficient with no teacher is
-    # itself one of the migrated refusals, so leaving it out would trip a different rule.
-    # `env_core="python"`: distillation runs only there, and an unset core resolves to rust (D2)
-    ok = SimpleNamespace(distill_target="action", distill_coef=0.1, distill_topk=1,
-                         distill_gate="none", distill_gate_tau=0.0, env_core="python",
-                         distill_teacher="models/t:data/teams/sample/a.txt")
+    broken = SimpleNamespace(move_belief_mode="both", opp_belief_aux_coef=0.0)
+    assert [c.name for c in failing_checks(broken)] == ["move_belief_hidden_needs_species_belief"]
+    ok = SimpleNamespace(move_belief_mode="both", opp_belief_aux_coef=0.05)
     assert failing_checks(ok) == []
 
 
@@ -338,47 +340,8 @@ def test_an_unresolved_value_is_never_a_verdict():
     on every argv that has no parent to resolve against."""
     from types import SimpleNamespace
     from main.train.combination_checks import failing_checks
-    unresolved = SimpleNamespace(distill_target=None, distill_coef=None, distill_topk=None,
-                                 distill_gate=None, distill_gate_tau=None)
+    unresolved = SimpleNamespace(move_belief_mode=None, opp_belief_aux_coef=None)
     assert failing_checks(unresolved) == []
-
-
-# --- gen3_distill_instruments_default_v1 ------------------------------------------------------
-
-def test_the_tri_state_monitor_flag_and_its_negation_both_still_validate():
-    """`--distill-anchor-monitor` went from `store_true` to a tri-state `BoolFlag` so it can carry
-    a "not typed" state and a `--no-` opt-out. Both spellings have to survive the offline check, or
-    every recorded fold command that names one becomes un-validatable."""
-    from main.checkargs import check
-    base = ["--env-core", "python",           # distillation runs only on the python core (D2)
-            "--distill-teacher", "models/t:data/teams/sample/a.txt", "--distill-coef", "0.1"]
-    for flag in ("--distill-anchor-monitor", "--no-distill-anchor-monitor"):
-        got = check([*base, flag])
-        assert got["unknown"] == [], got["unknown"]
-        assert got["combinations"] == [] and got["unsatisfiable"] == []
-
-
-def test_a_fold_argv_and_a_teacherless_argv_both_still_pass(tmp_path):
-    """(f) The two ends of the new default: a fold command and an ordinary one. Neither the
-    defaulted monitor nor the defaulted stop rule may make an argv that LAUNCHES read as one that
-    would fail.
-
-    ⚠️ The fold argv now carries `--model`, and that is a correction, not a convenience. The
-    version of this test written for `gen3_distill_instruments_default_v1` used a `--distill-stop
-    warn` fold with NO parent and asserted checkargs said nothing — but `resolve_config` REFUSES
-    that command (`--distill-stop requires the anchor MONITOR`: with no `--model` and no
-    `--distill-anchor-parent` the monitor cannot default on, so the rule's rise half could never
-    fire). checkargs agreed only because it never ran the check. Verified against the pre-migration
-    tree, 2026-09-06: exit 2, that message.
-    """
-    from main.checkargs import check
-    ckpt, _ = _parent_run(tmp_path)
-    fold = check(["--steps", "10", "--model", ckpt, "--run-name", "child_run", "--env-core", "python",
-                  "--distill-teacher", "models/t:data/teams/sample/a.txt",
-                  "--distill-coef", "0.3", "--distill-stop", "warn"])
-    assert fold["unknown"] == [] and fold["combinations"] == [], fold["combinations"]
-    plain = check(["--steps", "10", "--device", "cuda"])
-    assert plain["unknown"] == [] and plain["combinations"] == []
 
 
 # --------------------------------------------------------- (g) models/ lives in the MAIN checkout
@@ -408,13 +371,13 @@ def test_a_relative_model_path_resolves_into_the_archive_from_a_worktree(tmp_pat
     archive, cwd = tmp_path / "archive", tmp_path / "worktree"
     archive.mkdir()
     cwd.mkdir()
-    rel = _archive_run(archive, distill_target="action")
+    rel = _archive_run(archive, **_C1_PARENT)
     monkeypatch.setenv("GEN3AI_MODELS_DIR", str(archive))
     monkeypatch.chdir(cwd)
     res = check(_c1_argv(rel))
     assert res["resolution"]["config_path"] == str(archive / "parent" / "model_config.json")
-    assert res["resolution"]["inherited"]["distill_target"] == "action"
-    assert [c.name for c, _ in res["combinations"]] == ["distill_target_needs_coef"]
+    assert res["resolution"]["inherited"]["move_belief_mode"] == "both"
+    assert [c.name for c, _ in res["combinations"]] == ["move_belief_hidden_needs_species_belief"]
 
 
 def test_no_archive_still_WARNS_and_still_runs_the_argv_only_checks(tmp_path, monkeypatch, capsys):

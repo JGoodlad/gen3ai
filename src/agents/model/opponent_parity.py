@@ -1,10 +1,10 @@
 """The DECISION-level parity check for the compiled CPU OPPONENT (gen3_opponent_compile_parity_v1).
 
 WHY. `--compile-opponents` (`compile_opponents.maybe_compile_extractor`) compiled every frozen
-self-play / eval / teacher / ladder model's extractor and checked only its SPEED, on an all-zero
+self-play / eval / ladder model's extractor and checked only its SPEED, on an all-zero
 observation. Nothing compared a compiled opponent's decisions with eager at all — so a CPU Inductor
 miscompile would have handed the learner a wrong opponent (a wrong self-play distribution, a wrong
-eval number, a wrong teacher target) with every gate green. The learner's own compile gate learned
+eval number) with every gate green. The learner's own compile gate learned
 the same lesson twice (zero obs hid a 7.65 miscompile; fresh weights hid the pointer head).
 
 WHAT IT CHECKS, at the learner gate's bars (`compile_trainer._FP32_TOL`, `decision_verdicts`):
@@ -27,7 +27,7 @@ COST AND CADENCE — once per DISTINCT WEIGHTS per process, never per game. Meas
 thread, 2026-09-29): the check costs ~0.28 s on trained weights and ~0.55 s on fresh ones (the
 perturbed pass doubles it), against a 106 s cold / ~6 s warm-cache compile on the first load and a
 ~0.3 s reused-compile load after. That is small per LOAD, but one consumer loads PER GAME: the
-search-teacher worker re-`MaskablePPO.load`s its snapshot opponent every iteration. So a PASS is
+eval worker re-`MaskablePPO.load`s its snapshot opponent every game batch. So a PASS is
 cached process-locally under a blake2b fingerprint of the policy's ``state_dict`` bytes plus its
 train/eval mode (`weights_fingerprint`, ~18 ms for the 7.0M-parameter production policy): the
 compiled callable is shared per process by dynamo's code-object cache and the parameters are graph

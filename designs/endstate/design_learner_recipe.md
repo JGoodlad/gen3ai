@@ -878,7 +878,7 @@ any order once A1 and A2 settle the shape.
 - **Decoupled policy and value epochs** (PPG), which the Q head's split value side makes natural.
 - **State-dependent λ from X25's confidence** (§3.11c).
 - **Search targets:** Gumbel MuZero's policy-improvement target (Danihelka et al. 2022) and expert
-  iteration (X15). These replace much of the entropy and exploration question with a planner.
+  iteration (X15). These replace much of the entropy and exploration question with a planner. (Distillation was the only BUILT route to X15 and is DELETED, deletion pass L3, 2026-10-02; a Rust port is ~1-2 agent-days if X15 is scheduled.)
 
 ---
 

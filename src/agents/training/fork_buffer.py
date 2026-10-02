@@ -134,16 +134,6 @@ FILL: Dict[str, Tuple[Any, str]] = {
     "opp_switch_species": (_const_block(0, (1,), np.int64), "unread under KIND_UNKNOWN"),
 }
 
-#: Keys whose presence REFUSES the arm rather than being filled, each with the reason. Separated
-#: from "not in the table at all" so the refusal can say *why* instead of only *that*.
-REFUSE_KEYS: Dict[str, str] = {
-    "distill_mask":
-        "distillation declares `distill_mask`, which gates WHICH rows the teacher KL scores. An "
-        "injected row has no teacher decision behind it, and both fills are wrong: 1.0 scores a "
-        "row the teacher never saw, 0.0 silently shrinks the distillation dose by the fork rate.",
-}
-
-
 def unfillable_keys(obs_keys: Sequence[str]) -> List[str]:
     """Obs keys this module cannot honestly fill for an injected row, in declaration order.
 
@@ -160,15 +150,13 @@ def unfillable_keys(obs_keys: Sequence[str]) -> List[str]:
 
 
 def refusal_text(keys: Sequence[str]) -> str:
-    """One message per unfillable key — the declared reason when there is one, else the generic."""
+    """One message per unfillable key."""
     lines = []
     for k in keys:
-        why = REFUSE_KEYS.get(k)
-        if why is None:
-            why = (f"the obs Dict carries `{k}`, which `agents.training.fork_buffer.FILL` does not "
-                   f"declare a value for. An injected row is not played inside a Gen3Env, so every "
-                   f"env-computed key needs an explicit decision: a real value, a NOT-SCORED "
-                   f"sentinel, or a refusal. Add the row (with its reason) or turn the flag off.")
+        why = (f"the obs Dict carries `{k}`, which `agents.training.fork_buffer.FILL` does not "
+               f"declare a value for. An injected row is not played inside a Gen3Env, so every "
+               f"env-computed key needs an explicit decision: a real value or a NOT-SCORED "
+               f"sentinel. Add the row (with its reason) or turn the flag off.")
         lines.append(f"  - {k}: {why}")
     return ("🚨 --fork-fraction REFUSED: an injected branch row cannot be built for "
             f"{len(keys)} obs key(s).\n" + "\n".join(lines))

@@ -432,7 +432,7 @@ class ModelVersionFields:
     cf_shadow_coef: float = 0.0
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the td_aux_coef class and then some: neither is read by any forward, no
-    # weight shape depends on either, and a frozen eval/pool/distill opponent runs no eval cycle at
+    # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at
     # all — so they are recorded for PROVENANCE + flagless-resume read-back (`_resolve` reads these
     # fields) and NEVER compared by check_compatible.
     #
@@ -449,43 +449,25 @@ class ModelVersionFields:
     # mid-run with nothing saying so.
     eval_sentinel_greedy: bool = True
     promote_threshold: float = 0.55
-    # ---- gen3_teacher_scan_limit_flag_v1 (config v113) — THE SEARCH-TEACHER SCAN WIDTH ---------
-    # How many loss traces of the newest eval cycle a `crater` teacher cycle falsify-gates looking
-    # for candidates. TRAINING-only, in the `capacity_telemetry` mould: no forward reads it, no
-    # weight shape depends on it, `check_compatible` never sees it. It is RECORDED because it is
-    # the selection half's cost AND its supply — two runs at 10 and at 200 draw their corrections
-    # from differently-sized crater pools, and a flagless resume that silently reset to the default
-    # would change the teacher's diet mid-run with nothing on disk saying so.
-    teacher_scan_limit: int = 60
     # ---- gen3_capacity_telemetry_v1 (config v101) — LIVE CAPACITY TELEMETRY --------------------
     # Four TRAINING-only diagnostic knobs (the plasticity canary / half-batch trunk cosine /
     # feature velocity). They are the td_aux_coef class and then some: td_aux_coef at least scales
     # a LOSS, while these fold nothing into `loss` and write no `.grad` at all, so the policy's
     # parameter updates are bit-identical on or off. Recorded for PROVENANCE + flagless-resume
     # read-back (`_resolve` reads these fields), NEVER compared by check_compatible — a frozen
-    # eval/pool/distill opponent runs no train step, so gating it on a train-step diagnostic would
+    # eval/pool opponent runs no train step, so gating it on a train-step diagnostic would
     # be a false rejection. Not registry rows: the registry declares EXTRACTOR toggles, and the
     # canary head is owned by the PPO object, not by the extractor.
     capacity_telemetry: bool = False
     canary_reset_steps: int = 1_000_000
     capacity_cosine_every: int = 50
     capacity_velocity_every: int = 50
-    # ---- gen3_distill_target_gate_v1 (config v103) — DISTILL TARGET FORM + ADVANTAGE GATE ------
-    # Seven TRAINING-only knobs (design_advantage_gated_distillation.md §3.1/§3.3/§4.1/§7.5). The
-    # five distill knobs shape the exploiter policy-distillation term in the PPO step: `distill_target`
-    # ("kl" = the full-distribution KL, the byte-identical default; "action" = the teacher's top-K
-    # renormalized target, `distill_topk`=1 ⇒ argmax CE), `distill_gate`/"advantage" + `distill_gate_tau`
-    # (rung (a): fire only where the teacher disagrees with the sampled action AND the student's own
-    # normalized Â < -τ), `distill_beta` (the AWR |Â| temperature). The two rank-tripwire knobs
-    # configure a pure DIAGNOSTIC callback (v101's class — no loss, no grad; "abort" may STOP learn(),
-    # which changes when training ends, never what a step computes). None is read by the extractor
-    # forward, none changes a weight shape ⇒ the td_aux_coef class exactly: recorded for PROVENANCE +
-    # flagless-resume read-back (`_resolve` reads these fields), NEVER compared by check_compatible.
-    distill_target: str = "kl"
-    distill_topk: int = 1
-    distill_gate: str = "none"
-    distill_gate_tau: float = 0.0
-    distill_beta: float = 1.0
+    # ---- the RANK TRIPWIRE (gen3_distill_target_gate_v1, config v103) ----------------------------
+    # Two TRAINING-only knobs that configure a pure DIAGNOSTIC callback (v101's class — no loss, no
+    # grad; "abort" may STOP learn(), which changes when training ends, never what a step computes).
+    # Neither is read by the extractor forward, neither changes a weight shape => the td_aux_coef
+    # class exactly: recorded for PROVENANCE + flagless-resume read-back (`_resolve` reads these
+    # fields), NEVER compared by check_compatible.
     rank_tripwire: str = "warn"
     rank_tripwire_drop: float = 0.20
     # gen3_belief_grad_mode_v1 (config v41): which gradient ARROW between the state-prediction belief
@@ -500,7 +482,7 @@ class ModelVersionFields:
     # detach() is value-preserving → the FORWARD (eval/inference/frozen-opponent) is bit-identical in every
     # mode; only the TRAINING gradient differs. So it is a RESUME-IMMUTABLE training hparam (the vf_coef
     # class): recorded here, enforced ONLY on the training-resume path via check_belief_grad_mode, and
-    # EXCLUDED from check_compatible / _WEIGHT_FIELDS (a frozen eval/pool/distill opponent's forward is
+    # EXCLUDED from check_compatible / _WEIGHT_FIELDS (a frozen eval/pool opponent's forward is
     # identical, so gating it would be a false rejection that breaks league play). NO ARCH_SIGNATURE bump.
     belief_grad_mode: str = "shaping"
     # v43 STRUCTURAL + resume-IMMUTABLE tri-state (gen3_pubval_aux_v1, the win_prob_mode pattern): the

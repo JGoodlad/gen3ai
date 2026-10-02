@@ -150,7 +150,7 @@ def test_check_compatible_rejects_a_frame_era_obs_width(version):
 
 def test_check_compatible_ignores_vf_coef(version):
     """vf_coef is a training-loss coefficient, not a weight-shape field — check_compatible
-    (which gates EVERY load, incl. frozen eval/pool/distill opponents) must ignore it."""
+    (which gates EVERY load, incl. frozen eval/pool opponents) must ignore it."""
     differing = dataclasses.replace(version, vf_coef=version.vf_coef + 0.25)
     version.check_compatible(differing)  # must NOT raise
 
@@ -181,7 +181,7 @@ def test_check_vf_coef_tolerates_float_repr(version):
 
 def test_check_compatible_ignores_belief_grad_mode(version):
     """belief_grad_mode is a training-gradient knob, not a weight-shape field — detach() is value-
-    preserving so a frozen eval/pool/distill forward is bit-identical either way. check_compatible
+    preserving so a frozen eval/pool forward is bit-identical either way. check_compatible
     (which gates EVERY load) must ignore it, else self-play would FATAL on its own snapshots."""
     differing = dataclasses.replace(version, belief_grad_mode="detached")
     version.check_compatible(differing)  # version is shaping (default) — must NOT raise
@@ -258,7 +258,7 @@ def test_check_reward_config_draw_penalty_default_matches(version):
 
 
 def test_check_compatible_ignores_draw_penalty(version):
-    """draw_penalty is value-meaning, NOT weight-shape — frozen eval / pool / distill loads
+    """draw_penalty is value-meaning, NOT weight-shape — frozen eval / pool loads
     (which go through check_compatible) must accept any value."""
     differing = dataclasses.replace(version, draw_penalty=version.draw_penalty - 5.0)
     version.check_compatible(differing)  # must not raise
@@ -285,7 +285,7 @@ def test_check_opponent_compatible_arch_mismatch_raises(version):
 
 def test_check_compatible_rejects_attend_unrevealed_mismatch(version):
     """attend_unrevealed_opponents changes the forward mask the policy trained under, so
-    check_compatible (resume + pool/sentinel/distill gate) must reject a mismatch."""
+    check_compatible (resume + pool/sentinel gate) must reject a mismatch."""
     flipped = dataclasses.replace(
         version, attend_unrevealed_opponents=not version.attend_unrevealed_opponents)
     with pytest.raises(ModelVersionError) as exc_info:
@@ -380,7 +380,7 @@ def test_move_belief_mode_read_from_features_extractor_kwargs(layout):
 
 def test_check_compatible_ignores_move_belief_coef(version):
     """move_belief_coef is a training-only loss weight (not weight-shape) → check_compatible must not
-    gate it (a frozen eval/pool/distill opponent never runs the loss)."""
+    gate it (a frozen eval/pool opponent never runs the loss)."""
     differing = dataclasses.replace(version, move_belief_coef=0.3)
     version.check_compatible(differing)   # must NOT raise
 

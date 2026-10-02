@@ -103,7 +103,7 @@ def test_team_block_episodes_attributes_the_whole_block_to_its_team():
 
 
 def test_a_bias_team_yield_is_never_attributed_to_a_pool_team():
-    """A distill/bias-pinned team is not a pool member; recording it against the last POOL index
+    """A bias-pinned team is not a pool member; recording it against the last POOL index
     would corrupt that team's rate."""
     tb = _make_builder([TEAM_A], bias_teams=[TEAM_B], bias_prob=1.0)
     tb.yield_team()

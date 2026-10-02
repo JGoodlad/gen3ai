@@ -212,8 +212,8 @@ learner gate does.
   and **~0.55 s on fresh ones**, where the perturbed pass doubles it. For comparison, the first
   compile of a process took 106 s with a cold cache and ~6 s warm, and a reused-compile load took
   ~0.3 s.
-- **Cadence: once per DISTINCT WEIGHTS per process, never per game.** One consumer loads per game:
-  the search-teacher worker re-`MaskablePPO.load`s its snapshot opponent every iteration. So a PASS
+- **Cadence: once per DISTINCT WEIGHTS per process, never per game.** A consumer that
+  loads a model per game or per iteration would re-pay it each time, so a PASS
   is cached process-locally under a blake2b fingerprint of the policy's `state_dict` bytes plus
   every submodule's train/eval mode (`weights_fingerprint`, ~18 ms for the 7.0M-parameter policy).
   The compiled callable is shared per process by dynamo's code-object cache and the parameters are
@@ -770,7 +770,7 @@ eager itself cannot be captured; only the compiled graph is. Detail and the AOT 
 K1's parity checks never put TWO backwards through one compiled graph; the first real update does —
 `grad_balance._flat_grads` and the per-term noise-scale probe call `autograd.grad(retain_graph=True)`
 on the compiled train graph before `loss.backward()` (K2 runs every probe on a process's first
-update), as does the distill grad-projection. On torch 2.8 that failed twice, for two reasons:
+update). On torch 2.8 that failed twice, for two reasons:
 
 1. **`torch._functorch.config.donated_buffer` defaults True from torch 2.6** (2.5.1: False). A
    donating backward reuses the forward's saved activations in place, legal only for single-use
@@ -792,7 +792,7 @@ the Inductor and AOTAutograd cache keys, so our graphs can never be served an ar
 the default config by any other process. The readers (`aot_dispatch_autograd`,
 `AOTDispatchAutograd.post_compile`, `FxGraphHashDetails.__init__`) are in the hashed drift row.
 Restructuring the calls instead was rejected: the outcome depends on which backward reaches each
-graph first (prewarm order, K2 cadence, the distill projection's loop), and it would not touch the
+graph first (prewarm order, K2 cadence), and it would not touch the
 cache hazard. Donation OFF runs the same kernels on the same inputs — `compile_control_test` pins the
 gradient bit-for-bit on vs off — and costs nothing measurable: production extractor fwd+bwd on 2.8,
 batch 64 ~10.1 ms and batch 2048 ~74.8 ms either way, peak memory +0.3%
@@ -1099,11 +1099,11 @@ flag and read attributes (`grad_checkpointing`):
 | rollout `policy(obs)`, end-of-rollout `predict_values`, `WinProbLabelCallback` bootstrap, frozen-φ / PBRS | eval · no-grad · `n_envs` (PBRS: 2048-chunks) | prewarm (rollout) + iteration 1 (PBRS runs every rollout) |
 | `evaluate_actions` | train · grad · `batch_size` | prewarm |
 | `rank_probe` (first minibatch of every update) | train · no-grad · `batch_size` | prewarm — HOOK-FREE since K6 (`gen3_rank_probe_stash_v1`): it reads `last_trunk_tokens` / `last_value_cls`. Its old forward hooks were a guard (`len(_forward_hooks) != 0`) — THE iteration-1 signature the `8fc297a2` lock absorbed (found 2026-09-30 on the real trainer with the lock moved before iteration 1); on 2.8 the hooks were instead silently SKIPPED inside the compiled frame, so `rank/trunk_*` and `rank/value_cls_*` vanished on every compiled 2.8 run |
-| capacity half-batch cosine (every 50 minibatches), td-aux, distill-anchor fallback | train · grad · other sizes ≥ 2 | prewarm at `batch_size // 2` makes the train graph dynamic |
+| capacity half-batch cosine (every 50 minibatches), td-aux | train · grad · other sizes ≥ 2 | prewarm at `batch_size // 2` makes the train graph dynamic |
 | truncated-episode `predict_values` under `--critic shaped` | eval · no-grad · **1** | EAGER (`EAGER_BATCHES`, `gen3_batch1_eager_v1`) — batch 1 never reaches the compiled graph |
-| search-teacher / OPD (`ppo.py`), fork-arm `_score_pool`, `fork_driver._score`, distill grad-projection | a different KEY SET and/or a variable batch that may be 1 | `compile_trainer.eager_extractor(fe)` — the EAGER forward for the block (same params, same autograd) |
+| fork-arm `_score_pool`, `fork_driver._score` | a different KEY SET and/or a variable batch that may be 1 | `compile_trainer.eager_extractor(fe)` — the EAGER forward for the block (same params, same autograd) |
 | cf terms, capacity velocity, win-prob episode-start read | — | already eager (`type(fe).forward(fe, …)`) |
-| eval, snapshot ladder, search-teacher workers, the opponents | — | other processes (fresh dynamo per process) |
+| eval, snapshot ladder, the opponents | — | other processes (fresh dynamo per process) |
 | `--debug` (DummyVecEnv) + `--compile-opponents` | opponents compile IN the learner process, on the learner's code objects, after the lock | **refused at startup** (`FATAL_CONFIG`): pass `--no-compile-opponents` |
 | the FINAL evaluation after `learn()` (in-process, the live compiled model) | eval · no-grad · 1, a smaller obs key set | batch 1 runs EAGER (`gen3_batch1_eager_v1`: torch 2.8 cannot lower the batch-1 CUDA graph); after `release()` anyway |
 
@@ -1182,8 +1182,8 @@ inventory) — and every `torch.distributions` object validates its logits and s
 unmasked path's double normalisation, masking from the single-normalised `_original_logits`, the
 `-1e8` floor, the masked entropy's `where`, the same `multinomial` call for a sample), and the
 policy's two hot paths use it: `forward` (the rollout) and `evaluate_actions` (the learner; the
-distill / anchor / ride-along readers get a `MaskedPi` answering `.distribution.logits` / `.probs`).
-`get_distribution` keeps sb3's object for its callers (`predict`, the teachers). Pinned BIT-IDENTICAL
+ride-along readers get a `MaskedPi` answering `.distribution.logits` / `.probs`).
+`get_distribution` keeps sb3's object for its callers (`predict`). Pinned BIT-IDENTICAL
 to sb3 (`masked_categorical_test`, both torches); the K9 learner golden is unchanged.
 
 ### K8 — DECLARED COMPILE REGIONS (`gen3_declared_regions_v1`, torch 2.8, 2026-10-01)
@@ -1358,7 +1358,7 @@ resolved config and held to that declaration every update:
 |---|---|---|---|
 | strata | `--win-prob-strata-weight > 0` (`--critic winprob`) | `var["strata_w"]` `[4]` + `var["strata_active"]` | from the FLAG (`TrainSetup._r1_levers`); a rollout with fewer than two opponent classes among its labelled rows gets the NEUTRAL weights (ones, `strata_active` False) — bit-identical to the unweighted BCE (`x * 1.0 == x`, forward and backward; `r1_declared_levers_test`), its row-weight diagnostics absent as before |
 | fork mask | `--fork-fraction > 0` | `fork_pg_m` (obs key) | the key is in the env's obs space at startup; injected rows make a RAGGED last micro-batch, which runs eager by declaration |
-| label keys | `--distill-*` (`distill_mask`), `--move-belief-mode` | `distill_mask`, `known_moves` | in the obs space at startup (they ride the dict; the forward reads none) |
+| label keys | `--move-belief-mode` | `known_moves` | in the obs space at startup (they ride the dict; the forward reads none) |
 
 `compile_regions.install` records the declaration (`R1Declaration`: static flags, obs keys, `var`
 keys); `check_r1_declared` runs at every compiled `train()` and raises a typed `CompileSentinelError`
@@ -1385,7 +1385,6 @@ inference-only), and the prober backprops through this same extractor for gradie
 |---|---|---|
 | training env workers | pool / stable / exploiter opponents | `--compile-opponents` (+ forkserver preload) |
 | `eval_worker` | **the trainee** (plays every eval game) + sentinel + fixed opponents | `compile_extractor` cfg key, threaded from both eval callbacks |
-| `search_teacher_persistent_worker` | trainee (per re-freeze) + opponent (per iteration) | `compile_extractor` cfg key |
 | `snapshot_ladder` | both frozen ladder players | **default ON** — offline tool, nothing races it |
 | prober (`session._load`) | the no-grad replay / rollout models | `--compile` (off by default) |
 | `play.py` | nothing — the websocket/LADDER client loads a plain `MaskablePPO` and stays eager: one process, one battle at a time, and eager already measures **18 ms/decision** against a 150 s ladder timer, so a compile would buy latency nobody is waiting on | n/a |
@@ -1413,7 +1412,7 @@ opponent's compile look like it had never run and cost a round of doubt. A succe
 the log is a success you will not trust. The eager-vs-compiled timing answers
 "does this extractor's code object compile to something faster?", and `torch.compile` keys on exactly
 that code object — so a second model in the same process cannot get a different answer. Consumers that
-load models in a LOOP (the search-teacher worker rebuilds its opponent every iteration) would
+load models in a LOOP (an opponent rebuilt every iteration) would
 otherwise re-pay ~15 eager forwards each time. Deliberately process-local: a fresh process
 re-validates, since that is where a cold cache or a failing backend would actually show up.
 

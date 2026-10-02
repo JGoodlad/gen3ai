@@ -18,11 +18,11 @@ win-prob PBRS (deletion pass L1). Three remain, each naming the pair it crosses:
    This runs the whole chain on a fabricated v104 config AND on every REAL archived config in the
    models root, and asserts the result is a fully-populated, constructible `ModelVersion`.
 
-5. **THE Q HEAD × the DISTILL FOLDS (stash clobbering).** Wave C added `q_winprob_*` to `cf_any_on`,
+5. **THE Q HEAD × the CF-TWIN FOLD (stash clobbering).** Wave C added `q_winprob_*` to `cf_any_on`,
    so a Q-head-only run now runs the cf sample+forward on minibatches where it never ran before —
-   and that forward CLOBBERS `last_value_pooled`, the FitNets hint the exploiter-distillation term
-   reads. It is correct today only because of statement ORDER inside one function, which is exactly
-   the kind of fact that is true until someone moves a block.
+   and that forward CLOBBERS `last_value_pooled`, which the twin mirror reads. It is correct today
+   only because of statement ORDER inside one function, which is exactly the kind of fact that is
+   true until someone moves a block.
 
 Run:
     python -m pytest src/agents/training/ai_v12_intersection_test.py -q
@@ -220,27 +220,8 @@ def test_the_chain_runs_on_EVERY_real_archived_config_of_this_generation():
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────
-# 5. THE Q HEAD × THE DISTILL FOLDS — the cf forward clobbers the FitNets hint
+# 5. THE Q HEAD × THE CF-TWIN FOLD — the cf forward clobbers the extractor stashes
 # ──────────────────────────────────────────────────────────────────────────────────────────────
-
-def test_the_distill_hint_is_read_BEFORE_the_cf_forward_clobbers_the_stash():
-    """Wave C put `q_winprob_on` / `q_onpolicy_on` into `cf_any_on`, so `_cf_sample_and_forward()`
-    — an extractor forward over a DIFFERENT batch of rows — now runs on minibatches where no cf
-    readout is configured at all. That forward overwrites `features_extractor.last_value_pooled`,
-    which is the FitNets hint `--distill-value-feat-coef` matches against.
-
-    It is correct today purely because `_s_vfeat` is captured EARLIER in `train()` than the cf
-    block. That is a statement-ORDER fact, invisible to every behavioural test (the two never
-    disagree unless a block moves), and the ledger already records one stash-clobber of exactly
-    this shape. Pinned as source order, the same idiom `entry_source()` scans use."""
-    from agents.training.instrumented_ppo import ppo as _ppo
-    src = inspect.getsource(_ppo.InstrumentedMaskablePPO.train)
-    hint = src.index("features_extractor.last_value_pooled")
-    cf = src.index("_cf_sample_and_forward()")
-    assert hint < cf, (
-        "the FitNets hint is now read AFTER the cf forward — under --q-winprob-coef the "
-        "distillation would match the teacher against the COUNTERFACTUAL batch's pooled features")
-
 
 def test_the_cf_twin_fold_is_also_before_it():
     """The same order, stated for the twin heads, whose own comment claims it. A claim in a

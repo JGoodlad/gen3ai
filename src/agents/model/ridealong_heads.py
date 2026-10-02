@@ -15,7 +15,7 @@ THE CORE RULE IS STOP-GRAD, and it is structural rather than a convention:
   * the heads are NOT in `policy.optimizer`'s param groups (they are built after SB3's `_build`
     made it) and the learner steps them with their OWN optimizer right after the minibatch's
     forward, then sets their grads back to None — so PPO's global `clip_grad_norm_`, the noise-scale
-    probes and the distill projector never see a ride-along gradient;
+    probes never see a ride-along gradient;
   * they are built inside `torch.random.fork_rng` from a PRIVATE seed and draw no random number at
     train time (the bootstrap masks are a HASH of the observation), so heads ON and OFF leave the
     global RNG stream — the policy's own init, every rollout sample, every minibatch shuffle —

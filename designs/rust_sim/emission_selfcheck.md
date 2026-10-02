@@ -56,7 +56,7 @@ rot between the builds that use them (the reason M1 deleted its cfg-gated spike 
   production resolver never reads `target/selfcheck/`. `sim_bridge_bin.build_argv` /
   `expected_bin_path` are the one place the two are named; the tests that exec a pre-built binary
   directly (`bridge_impl_parity_test`, `ws_frontend_byte_identity_integration_test`,
-  `search_teacher_composition_test`, `untaught_meter_reproducibility_integration_test`) ask
+  `untaught_meter_reproducibility_integration_test`) ask
   `expected_bin_path`, so they run the build the suite is on.
 * **An explicit `POKESIM_*_BIN` override still wins** — point it at a `target/selfcheck/` binary to
   keep the check on. `POKESIM_EMISSION_SELFCHECK=0` turns the switch off explicitly (it is never

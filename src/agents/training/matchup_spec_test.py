@@ -213,50 +213,7 @@ def test_tss_specialist_pin_is_a_sample_team():
     validate_exploiter_trainee_is_sample(spec, sample)
 
 
-# ── DISTILLATION must eval on the TAUGHT teams (eval-pilots-what-training-pilots) ────────────────
-
-def _distill_args(pairs):
-    return _args(self_play=True, _distill_pairs=pairs)
-
-
-def test_distill_run_evals_the_trainee_on_the_TAUGHT_teams():
-    """The distill path biases --distill-team-bias of TRAINING onto the teacher teams, so eval must
-    measure the trainee ON THOSE TEAMS. Before this, eval used the full pool, so
-    win_rate_vs_ext_<teacher> compared a random-pool trainee against a teacher piloting its own pin —
-    mostly the teacher's TEAM ADVANTAGE, not whether the distillation transferred (the eval read 0.36
-    while an offline per-team probe of the same model read 0.710)."""
-    pairs = [("models/T1", ["data/teams/sample/9d5f845869e899ee.txt",
-                            "data/teams/sample/f7ba5702fe856292.txt"]),
-             ("models/T2", ["data/teams/sample/0972146213a667c9.txt"])]
-    spec = MatchupSpec.from_args(_distill_args(pairs))
-    ev = spec.eval_trainee_teams
-    assert ev.kind == "pin_multi"
-    assert len(ev.pin_strs) == 3                     # ALL teacher teams across ALL teachers
-    assert ev is not spec.trainee_teams              # eval source is distinct from the training source
-    # provenance records every taught team's fingerprint
-    assert len(spec.to_dict()["eval_trainee_teams"]["pin_shas"]) == 3
-
-
 def test_non_distill_eval_source_is_unchanged():
     # no distillation -> eval_trainee_teams still defaults to trainee_teams (byte-identical behaviour)
     spec = MatchupSpec.from_args(_args())
     assert spec.eval_trainee_teams is spec.trainee_teams
-
-
-def test_distill_eval_pin_is_a_LIST_while_training_stays_pool_shaped():
-    """A distillation matchup's EVAL source is `pin_multi` (a LIST of team exports) while its TRAINING
-    source is still pool-shaped — and every consumer must keep those two straight.
-
-    This asymmetry is the whole point of `eval_trainee_teams` (train on the pool with a bias, eval on the
-    TAUGHT teams), but it is also a trap: `train_rl_agent` derived its `[SPECIALIST]` startup line from
-    the EVAL source and called `.splitlines()` on it, which crashed **every** `--distill-coef` launch at
-    startup with `AttributeError: 'list' object has no attribute 'splitlines'` — the single-teacher case
-    included, since one teacher still yields `pin_multi`. It shipped in the same commit that repointed the
-    variable at eval and went unseen because no distillation run has launched since. Pinned here so the
-    shape divergence is a stated contract rather than an accident."""
-    spec = MatchupSpec.from_args(_distill_args([("models/T1", ["data/teams/sample/9d5f845869e899ee.txt"])]))
-    assert spec.eval_trainee_teams.kind == "pin_multi"        # LIST-valued, even for ONE teacher/team
-    assert spec.trainee_teams.kind != "pin_multi"             # training is the biased pool
-    # The training source is what a "trainee pinned to ONE team" message may read: None here, so no
-    # single-team line is emitted at all (the crash was reading the eval source instead).
-    assert spec.trainee_teams.pin_str is None

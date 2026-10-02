@@ -4,7 +4,7 @@
 `B_simple = tr(Σ)/|G|²` from the TOTAL gradient. On this tree the total gradient is not the PPO
 policy gradient: it is the policy term plus the value term plus the entropy bonus plus a dozen
 DENSE supervised auxiliaries (belief heads, win-prob, spread/nature/HP-type, value-dist, TD-aux,
-the counterfactual family) plus, on a fold, the distillation KL. A supervised head's per-example
+the counterfactual family). A supervised head's per-example
 gradients AGREE far more than a policy-gradient's do (its target is a label, not an advantage), so
 a large aux share DEFLATES the measured `tr(Σ)/|G|²` — and the run reads "over-batched" while the
 term you actually care about is starved. That confound is the whole reason this module exists.
@@ -12,10 +12,9 @@ term you actually care about is starved. That confound is the whole reason this 
 WHAT IT DOES. On one sampled `train()` call, over the SAME two batch sizes the total estimator
 already uses for free (one micro-batch `B = batch_size`, and the accumulated first group
 `B = batch_size·accum`), it accumulates the gradient of each GROUP of loss terms separately and
-feeds the two squared norms through the SAME pure `_noise_scale_estimate` two-point solve. Five
+feeds the two squared norms through the SAME pure `_noise_scale_estimate` two-point solve. Four
 groups: `policy` (the clipped surrogate as folded), `value` (`vf_coef·value_loss`), `entropy`
-(`ent_coef·ent_loss_used`), `aux` (every belief / win-prob / value-dist / TD-aux / counterfactual
-/ search-teacher / OPD term), `distill` (the `--distill-coef` family).
+(`ent_coef·ent_loss_used`), `aux` (every belief / win-prob / TD-aux / counterfactual term).
 
 HOW IT IS WIRED, and why it cannot change the update. The tagger is threaded through the fold as
 `loss = loss + _ntg.add("aux", term)`: `add` RETURNS ITS ARGUMENT UNCHANGED, so the loss
@@ -45,9 +44,8 @@ import torch as th
 #: The gradient groups, in reporting order. `aux` is deliberately ONE bucket rather than one entry
 #: per head — `grad/<term>_share` already breaks the heads out individually, and the question this
 #: module answers ("do the dense supervised losses deflate the total reading?") is answered by the
-#: aggregate. `distill` is separated from `aux` because it is the one group that comes and goes
-#: with a fold and whose dose is the thing being tuned.
-NOISE_TERM_GROUPS: Tuple[str, ...] = ("policy", "value", "entropy", "aux", "distill")
+#: aggregate.
+NOISE_TERM_GROUPS: Tuple[str, ...] = ("policy", "value", "entropy", "aux")
 
 
 def per_term_enabled(model: object) -> bool:
@@ -91,12 +89,9 @@ def term_gradient(terms: Sequence[th.Tensor], params: Sequence[th.nn.Parameter],
     per-term gradient.
 
     `torch.autograd.grad` returns the gradients rather than accumulating them, so a caller can read
-    a loss term's own pull while the real `backward()` that follows is completely unaffected. Two
-    callers share it and MUST keep sharing it: `PerTermNoiseSampler` (which measures each group's
-    noise) and `distill_grad_project.DistillGradProjector` (which projects the distill group's
-    gradient). A second implementation would be a second answer to "what is the distill gradient",
-    and the projection's whole correctness argument is that it operates on the same object the
-    meters report.
+    a loss term's own pull while the real `backward()` that follows is completely unaffected.
+    `PerTermNoiseSampler` (which measures each group's noise) is its caller; a second implementation
+    would be a second answer to "what is this group's gradient".
     """
     return th.autograd.grad(sum_terms(terms), params,
                             retain_graph=retain_graph, allow_unused=True)

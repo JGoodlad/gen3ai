@@ -82,7 +82,7 @@ DEFAULT_TEAMS_MANIFEST = repo_path(
     "designs/research_state/measurements/reuse_batch_2026-09-03/offline_collateral_kl",
     "untaught_teams.json")
 
-#: The taught-16 slice — every 2×2 arm's own ``--distill-teacher`` expands to exactly this set.
+#: The taught-16 slice — every 2×2 arm's own (deleted) ``--distill-teacher`` expanded to exactly this set.
 DEFAULT_TAUGHT_MANIFEST = repo_path(
     "designs/research_state/measurements/teacher_content_2x2_2026-09-04", "taught_teams.json")
 
@@ -278,8 +278,8 @@ def resolve_ref(ref: str, *, label: Optional[str] = None, role: str = "ref",
                 config_override: Optional[str] = None) -> ResolvedRef:
     """Resolve one ref through :func:`agents.training.fixed_opponent_pool.resolve_model_ref`.
 
-    That is THE choke point every training-side consumer uses (``--distill-teacher``,
-    ``--stable-opponents``, ``--exploiter``, …), so a bare run directory here means what it means
+    That is THE choke point every training-side consumer uses (``--stable-opponents``,
+    ``--exploiter``, …), so a bare run directory here means what it means
     to a launch: the run's LAST SNAPSHOT (``gen3_last_snapshot_resolution_v1``), not the
     bot-selected ``best_model``. The rung and rule are carried into the artifact so the reader
     never has to infer WHICH FILE was scored — the failure ledger 2026-09-06 records.

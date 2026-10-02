@@ -95,7 +95,7 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--lr", type=float, default=3e-4, help="Initial learning rate (AdaptiveLRCallback adjusts from here)")
     parser.add_argument("--fork-lr", "--fork_lr", dest="fork_lr", type=float, default=None,
                         help="RESUME-ONLY: pin the step size of a FORK. On a resume the optimizer's "
-                             "saved LR wins and --lr is INERT, so a distillation fold silently "
+                             "saved LR wins and --lr is INERT, so a fork silently "
                              "inherits whatever rate the parent's KL controller had annealed to "
                              "(measured: 5.8e-5 / 2.8e-5 / 1.0e-4 across three folds that were all "
                              "launched with the same --lr). This sets the optimizer LR *and* "

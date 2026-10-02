@@ -112,7 +112,6 @@ STEP_MODULES: Dict[str, str] = {
     "agents/training/rust_rollout/consistency.py": "the behaviour-policy consistency gate, per update",
     "agents/training/rust_rollout/tie_margins.py": "K9(b)'s tie-margin recorder around the probe forward, "
                                                    "per update (a TorchFunctionMode; no learner object)",
-    "agents/training/teacher/buffer.py": "the teacher buffer the distill terms sample per minibatch",
     "agents/model/opp_intent.py": "the opponent-intent loss functions + label matching, per minibatch",
     "agents/model/ridealong_heads.py": "the ride-along heads' forward + loss, per minibatch (epoch 0)",
 }

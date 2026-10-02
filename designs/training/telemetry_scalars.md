@@ -426,9 +426,7 @@ sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 | `grad/` | (dynamic) | 16 | **every `--diagnostics-every` update** (fresh default 10; a skipped update is a GAP) | unitless shares | LIVE — `win_prob_*` **NOISE (gated)**: it IS the value term, and counting it twice deflated every share | `grad_balance` |
 | `rank/` | 6 | 18 | per rollout under `--rank-tripwire` (production), else every `--diagnostics-every` update | unitless | CONDITIONAL (needs the rank probe); `tripwire_no_reading` correctly reports its own blindness | `rank_tripwire`, `rank_metrics` |
 | `belief/` | 1 | 8 | per rollout | accuracy / CE | LIVE (unchanged by the critic mode) | `belief_bank` |
-| `distill/` | 7 | — | per rollout | KL / MSE / rate | CONDITIONAL — silent, no teacher | `distill_terms`, `distill_anchor*`, `distill_stop_callback` |
 | `cf/` | 5 | — | per rollout | probability + counts | CONDITIONAL — silent, no `--cf-records` | `cf_terms`, `cf_label_buffer` |
-| `teacher/` · `opd/` | 11 | — | per cycle / rollout | CE / KL | CONDITIONAL — silent | `teacher/callback`, `ppo.py` |
 | `team_pfsp/` · `hparams/` · `capacity/` · `td_aux/` · `q_winprob/` | 19 | — | per rollout | see each section | CONDITIONAL — all silent (flag-off); `popart/` and `value_dist/` were deleted with PopArt / the dist head | their own callbacks |
 
 **The diagnostics cadence (`gen3_diagnostics_cadence_v1`, config v124):** `grad/*` (with
@@ -452,6 +450,8 @@ measurement. Every classification below is from that arm's own tfevents, not fro
 | **REDUNDANT** | 19 | an exact duplicate of another tag by identical formula or affine invariance |
 | **CONDITIONAL** | (48 more observed on other configs, + ~14 whole families) | correctly SILENT — their flag is off, or the mode refuses them |
 | **DEAD** | **0** | nothing in the recorder set is unreachable; the v75 latent-belief and v88 `V_pub` purges left no orphans |
+
+> **Counts are as MEASURED then.** The `distill/*`, `teacher/*` and `opd/*` families and `grad/distill_share`, `grad/distill_anchor_share`, `grad/searchteacher_share`, `grad/opd_share` were DELETED with their levers (deletion pass L3, 2026-10-02); the CONDITIONAL counts were not re-measured. **UNVERIFIED:** the new CONDITIONAL total.
 
 **The NOISE tags are GATED** — the gate is on the SOURCE, never on the value, so a shaped run is
 byte-identical (verified: 172 tags, empty before/after diff):
@@ -698,14 +698,6 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
     pulls are **attributable individually** (the old combined `belief_share` lump is gone) — watch each
     sit small (~a few %); a spike with a degrading policy → lower THAT term's coef. `win_prob`
     is ≈0 under `read_only` (stop-grad), real under `shaping`.
-  - **`grad/distill_share`** (`gen3_grad_distill_share_v1`): the exploiter-distillation **policy KL**'s
-    own entry in the same dict — the dose meter `design_advantage_gated_distillation.md` §6.2
-    dose-matches the G1/G2 arms on (gradient share, not coefficient). Policy KL ONLY, deliberately:
-    the value-side distill coefficients are held fixed across those arms, so folding them in would
-    compress the very differences the meter reads. When distill is on, the once-per-`train()` sample
-    waits for a minibatch with a live distill term (unless the whole rollout holds no teacher-team
-    rows, in which case it samples immediately rather than suppressing the probe); distill off → not
-    logged, zero cost.
 - **Per-edge-family LIVENESS — `edge/<fam>_weight_norm` + `edge/<fam>_grad_norm`**
   (`edge_family_metrics`, sampled once per `train()` right after the backward so `.grad` is still
   populated; parameters only, so the forward — and therefore the CPU opponent path — pays nothing).

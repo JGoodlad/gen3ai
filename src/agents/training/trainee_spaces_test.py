@@ -88,7 +88,6 @@ def test_the_bare_argv_carries_only_the_win_prob_labels():
 
 @pytest.mark.parametrize("gate,keys", [
     ("fork_pg_mask", {"fork_pg_m"}),
-    ("distill_mask", {"distill_mask"}),
 ])
 def test_each_gate_opens_exactly_its_keys(gate, keys):
     from agents.observation.schema import build_schema
@@ -99,8 +98,7 @@ def test_each_gate_opens_exactly_its_keys(gate, keys):
     vec = build_schema(layout).gym_space()
     off = LabelGates(*([False] * len(LabelGates._fields)))
     base = set(trainee_observation_space(layout, vec, off).spaces)
-    on = trainee_observation_space(layout, vec, off._replace(**{gate: True}),
-                                   distill_species=[frozenset({1})])
+    on = trainee_observation_space(layout, vec, off._replace(**{gate: True}))
     assert set(on.spaces) - base == keys
 
 

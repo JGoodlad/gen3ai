@@ -304,7 +304,7 @@ def test_parse_command_is_total(cmd, expect):
     assert parse_command(cmd)["model"] == expect
 
 
-def test_teacher_paths_reuses_the_one_spec_parser():
+def test_teacher_paths_reads_the_recorded_spec_grammar():
     assert teacher_paths("A:*;B:x.txt,y.txt") == ["A", "B"]
     assert teacher_paths(None) == []
     assert teacher_paths("garbage-with-no-colon") == []     # malformed is not our error to raise

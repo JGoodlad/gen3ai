@@ -21,7 +21,7 @@ mark and this one":
     probes       the once-per-call grad-balance, rank, edge- and cell-liveness probes
     kl           the approx-KL read (`.cpu().numpy()`, a host sync) + the early-stop check
     noise_probe  the per-term noise-scale sampler's per-micro flush (`autograd.grad` per group)
-    backward     `(loss / accum).backward()` + the distill grad-projector seams
+    backward     `(loss / accum).backward()`
     noise_base   the two-point noise-scale `‖g_small‖²` read (once per call)
     optim        grad clip (a host sync) + optimizer step + zero_grad, when the group is full
     capacity     `--capacity-telemetry`'s per-minibatch observe

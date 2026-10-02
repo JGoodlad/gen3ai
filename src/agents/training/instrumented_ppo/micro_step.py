@@ -12,8 +12,7 @@ of the FOLD ORDER contract (`ppo.train`'s docstring; `src/agents/training/CLAUDE
   3a. the WIN-PROB BCE (the value loss under `--critic winprob`, else an aux term).
 
 in that order, as ONE straight line — the float-addition order of the inline fold is preserved term
-by term. Everything after 3a (the CF-twin mirror, distill + anchor,
-search-teacher, OPD, TD-aux, the counterfactual block) is the DECLARED EAGER TAIL, folded in contract
+by term. Everything after 3a (the CF-twin mirror, TD-aux, the counterfactual block) is the DECLARED EAGER TAIL, folded in contract
 order by `train()` onto this region's loss; none of it is on the production surface.
 
 WHY ONE FUNCTION. `train()` handed to dynamo is 514–646 graphs (the K8 inventory); this function is
@@ -83,9 +82,9 @@ class MicroOut(NamedTuple):
     values: th.Tensor                # flattened critic values (with grad)
     log_prob: th.Tensor
     entropy: Optional[th.Tensor]
-    logp: Optional[th.Tensor]        # masked normalised log-probs (the distill / anchor stash)
+    logp: Optional[th.Tensor]        # masked normalised log-probs (the ride-along heads' stash)
     masks_bool: Optional[th.Tensor]
-    advantages: th.Tensor            # normalised (the tail's distill gate reads them)
+    advantages: th.Tensor            # normalised
     entropy_loss: th.Tensor          # -mean(entropy), unweighted (the grad-balance probe's policy side)
     value_loss: th.Tensor            # the scalar value loss (the probe's value side off winprob)
     terms: Dict[str, th.Tensor]      # probe name -> live term (the grad-balance / noise probes)

@@ -10854,3 +10854,52 @@ if a lazy build is reintroduced.
   worktree's first gate read 32.6 s on the mypy gate against the 30 s unmarked-tier budget (warm 0.26 s); a check must not pass
   or fail by whether a cache is warm. The tier deselects nothing, is still contention-scaled and enforced on a quiet box, and
   `tier_budget_guard_test` pins that each gate declares it.
+## v133 — 2026-10-02 — DISTILLATION and the SEARCH TEACHER are DELETED: the exploiter fold (KL, value / FitNets terms, action-form target + advantage gate, off-slice anchor, dual ascent, stop rule, gradient projection), search-as-teacher (AWR, OPD, the win-prob one-ply teacher) and the `distill_mask` obs key (deletion pass L3, `gen3_retired_levers_l3_v1`)
+
+- **What left.** 47 flags, each row (with its ledger citation and the X15 port estimate) in `designs/deleted_flags.md`: the 27
+  `--distill-*` flags (`-teacher`, `-coef`, `-value-coef`, `-value-feat-coef`, `-team-bias`, `-target`, `-topk`, `-gate`,
+  `-gate-tau`, `-beta`, the twelve `-anchor-*`, `-stop` and its five knobs) and `--search-teacher` / `-mode` / `-coef` /
+  `-value-coef` / `-beta` / `-batch-size` / `-buffer-size`, `--opd-coef` / `-beta`, `--winprob-teacher-band` / `-margin`,
+  `--teacher-{search-budget,confirm-rollouts,scan-limit,search-workers,search-freq,persistent,refresh-steps,gen-battles}`.
+  Code: `agents/training/teacher/` (whole package), `distill_anchor_callback.py`, `distill_stop_callback.py`,
+  `distill_spec.py`, `instrumented_ppo/{distill_terms,distill_anchor,distill_grad_project}.py` (the `DistillTerms`
+  mixin; `train()`'s `+DISTILL` / `+DISTILL-ANCHOR` / `+SEARCH-TEACHER` / `+OPD` blocks and the grad-projector seams;
+  `FoldFlags.{search_teacher_on,opd_on,distill_on,distill_rows_in_buffer}`; `ProbeSetup.dgp`; the `distill` noise-scale
+  group, `NOISE_TERM_GROUPS` is now policy / value / entropy / aux), `main/search_teacher{,_persistent,_select}_worker.py`,
+  `parser/teacher.py` and the distillation / teacher / capacity-file flag blocks, `config.is_fold` /
+  `default_anchor_monitor` / `_resolve_fold_instruments`, `matchup_setup.apply_distill_team_bias` /
+  `DistillTeamRejected`, `checkargs.teacher_spec_findings`, `MatchupSpec`'s distillation eval-teams branch, the
+  `distill_mask` obs key (python env, `trainee_spaces`, `fork_buffer.REFUSE_KEYS`), `lever_supply`'s `search_teacher`
+  lever, the launcher's `opd/*` dashboard labels, ~30 `combination_checks` rows + 2 `_ENV_CORE_UNPORTED` rows.
+  **Distillation was the only BUILT route to X15 (expert iteration); a Rust port is ~1-2 agent-days if X15 is ever
+  scheduled** (`distill_mask` becomes a per-episode host key from `TeamStager`; teachers are frozen T2 slots or a
+  learner-side forward).
+- **Config.** `MODEL_CONFIG_VERSION` 133 is stamp-only (no `ARCH_SIGNATURE` bump, `MIGRATION_FLOOR` unchanged). 6
+  `ModelVersion` fields are gone (`distill_target`, `distill_topk`, `distill_gate`, `distill_gate_tau`, `distill_beta`,
+  `teacher_scan_limit`); `_migrate_config` POPs them from a config of ANY vintage. None is structural. The coefficients,
+  teachers and `--search-teacher` itself were never recorded fields.
+- **Retired-lever machinery** (`model_version/retired_levers.py`, the table APPENDED: `distill_target != "kl"`,
+  `distill_gate != "none"`, `teacher_scan_limit != 60`; `distill_topk` / `distill_gate_tau` / `distill_beta` are
+  inert fields, popped silently): a RESUME or FORK of a run that recorded one is refused naming
+  `LAST_COMMIT_L3 = 615a764f`. A run that distilled under the DEFAULT knobs leaves no trace in `model_config.json`;
+  its recorded argv fails argparse on an unpinned resume instead (run it pinned). No extractor / policy kwarg was
+  involved, so `snapshot._DEAD_*` gained nothing; `retired_levers_test`'s pre-deletion zip now also pickles the
+  deleted hyperparameters as instance attributes and still loads.
+- **Moved, kept.** `lineage.py` keeps reading `teachers` / the `fold` role for OLD runs (its own minimal grammar split
+  replaces `distill_spec`); nothing writes them now. `rank_tripwire` and its two flags STAY (a general trunk-rank
+  watchdog), as do `--warmstart-consensus` and `--allow-untaught-teacher`.
+- **The Rust env core's label inventory** lost the `distill_mask` row and the `refused` kind (`RUST_KINDS` is
+  core / host_const / host_episode); `labels::declare` lost its `refused` arm and `columns.rs` / `ffi.rs` / `shm.rs` were
+  regenerated (new schema id). `fork_buffer.REFUSE_KEYS` (its only row was `distill_mask`) is gone with its refusal path.
+- **Tests.** Deleted with their levers: `distill_anchor_test`, `distill_stop_callback_test`, `distill_spec_test`,
+  `instrumented_ppo_distill_grad_project_test`, `distill_team_bias_test`, `search_teacher_composition_test`,
+  `teacher_scan_limit_test`, `distill_target_gate_provenance_test`, the `teacher/*_test.py` files, and the lever cases of
+  ~30 files (the `_distill_loss` / `_opd_loss` / `_searchteacher_loss` units, `grad/distill_share`, the distill hint
+  order pin, the teacher-spec guards in `run_spec_test`, the combination rows). The inherited-value shape C1 pinned in
+  `checkargs_test` / `combination_checks_test` is kept, re-expressed on the belief-stack pair (`move_belief_mode` inherited
+  from a parent, `--opp-belief-aux-coef 0` typed); `retired_levers_test` gained the L3 cases; two stale rows for deleted
+  slow tests left `designs/ops/slow_tier_status.json`.
+- **Docs.** ARCHITECTURE (the `distill_mask` row), `flag_registry.md` (generated), `designs/training/*` (the fold half of
+  `exploiter_and_distillation.md` now a HISTORY note; `search_teacher.md` a tombstone), `designs/ops/*`,
+  `designs/rust_sim/*`, `designs/model/*`, `designs/prober/*`, the endstate notes, the training / launcher / prober /
+  rust_sim / model leaf `CLAUDE.md`s, `deleted_flags.md`, the manifest (L3 SHIPPED, P9 MOOT).

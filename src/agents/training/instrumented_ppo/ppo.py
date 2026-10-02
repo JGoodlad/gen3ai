@@ -7,8 +7,8 @@ numbered version. Splitting the sequence across modules would make an ordering t
 straight-line source order into something a reader has to reassemble, and the one property that
 matters about it (no flag combination reorders these) would stop being visible.
 
-Everything that is NOT the sequence has moved out. The per-term losses live in `distill_terms`,
-`value_terms` and `aux_terms`; the knobs in `hparams`; the noise-scale machinery in `noise_scale`.
+Everything that is NOT the sequence has moved out. The per-term losses live in `value_terms`
+and `aux_terms`; the knobs in `hparams`; the noise-scale machinery in `noise_scale`.
 Three modules hold the rest of what `train()` used to spell out inline, and each is a mixin whose
 methods `train()` calls in place:
 
@@ -48,8 +48,6 @@ from agents.training.instrumented_ppo.calibration import (   # the MODULE path, 
     sigmoid as _calib_sigmoid,                                # (pinned by the hub-contract test).
 )
 from agents.training.instrumented_ppo.constants import _WIN_CONTESTED_TAU
-from agents.training.instrumented_ppo.distill_anchor import distill_anchor_step
-from agents.training.instrumented_ppo.distill_terms import DistillTerms
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
 from agents.training.instrumented_ppo.loop import OwnedLoop   # gen3_owned_ppo_loop_v1: the loop is ours
 from agents.training.instrumented_ppo.learner_gates import (   # K9(b) python path + K9(c)
@@ -77,7 +75,6 @@ from agents.training.rank_metrics import rank_probe_from_stash
 from agents.training.instrumented_ppo.device_batches import install as _devb_install
 from agents.training.instrumented_ppo.device_batches import uninstall as _devb_uninstall
 from agents.training.instrumented_ppo.device_batches import DEFAULT_MODE as _DEVB_DEFAULT
-from agents.model.compile_trainer import eager_extractor as _eager_fe  # gen3_compile_sentinel_v1
 
 
 def train_step_source() -> str:
@@ -114,7 +111,6 @@ def train_step_source() -> str:
 
 class InstrumentedMaskablePPO(PpoHyperparameters,
                               NoiseScaleDiagnostics,
-                              DistillTerms,
                               ValueTerms,
                               AuxTerms,
                               CapacityTerms,
@@ -159,16 +155,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
           1. `loss = pg_term + ent_coef * entropy_loss + vf_term`   (the upstream PPO loss;
              `pg_term` is the UNSCALED `policy_loss` tensor at `policy_grad_coef == 1.0` — the default,
              byte-identical to upstream — else `policy_grad_coef * policy_loss` (`--policy-grad-coef`; 0.0 removes
-             the policy-gradient term alone, the arm-F pure-distill/aux phase — entropy and the
+             the policy-gradient term alone — entropy and the
              value term keep their own coefficients))
           2. the BELIEF bank — species/moves aux, opponent-intent (+ the set-valued beta term),
              move belief, spread belief, nature/EV, HP-type, item belief, move-latent
           3. (3a) the WIN-PROB BCE — the last R1 term — then (3b, the tail's first) the CF-TWIN
              on-policy mirror
-          5. the DISTILL family — the policy term (full KL, or the top-K/action-CE form with the
-             optional advantage gate under `--distill-target action` — gen3_distill_target_gate_v1),
-             value MSE, the FitNets value-feature hint
-          6. SEARCH-TEACHER AWR, then OPD
           7. TD-AUX (the Bellman-residual consistency term)
           8. the COUNTERFACTUAL block — cf-winprob, cf-evidential, cf-twin, cf-shadow
 
@@ -248,12 +240,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # nonlinear in the populations (see `calibration.CalibrationAccumulator`).
         calib_all = _CalibrationAccumulator()
         calib_contested = _CalibrationAccumulator()
-        teacher_metrics: dict[str, list[float]] = {}    # +SEARCH-TEACHER: AWR per-minibatch diagnostics
-        opd_metrics: dict[str, list[float]] = {}         # +OPD: on-policy self-distillation KL diagnostics
         # Shared sink for the per-minibatch aux diagnostics that already carry their OWN full TB
         # key (`opp_intent/*`), so they are recorded verbatim rather than under a prefix.
         aux_metrics: dict[str, list[float]] = {}
-        distill_metrics: dict[str, list[float]] = {}     # +DISTILL: exploiter-distillation KL diagnostics
         td_aux_metrics: dict[str, list[float]] = {}      # +TD-AUX: Bellman-residual diagnostics
         # Compute once: WHICH terms this call folds — and, for the counterfactual family, the one
         # per-rollout buffer poll. Every flag is read by exactly the guard of the term it names,
@@ -265,9 +254,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         belief_aux_on, move_belief_on = _f.belief_aux_on, _f.move_belief_on
         move_latent_on = _f.move_latent_on
         critic_winprob, win_prob_on = _f.critic_winprob, _f.win_prob_on
-        scaffolding_on, search_teacher_on = _f.scaffolding_on, _f.search_teacher_on
-        opd_on, distill_on = _f.opd_on, _f.distill_on
-        distill_rows_in_buffer = _f.distill_rows_in_buffer
+        scaffolding_on = _f.scaffolding_on
         td_aux_on, cf_buffer, cf_winprob_on = _f.td_aux_on, _f.cf_buffer, _f.cf_winprob_on
         cf_evid_on, cf_twin_on, cf_shadow_on = _f.cf_evid_on, _f.cf_twin_on, _f.cf_shadow_on
         q_winprob_on, q_onpolicy_on, cf_any_on = _f.q_winprob_on, _f.q_onpolicy_on, _f.cf_any_on
@@ -325,16 +312,15 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
         continue_training = True
 
-        # The once-per-train() probes and the two gradient samplers —
-        # `train_setup._train_probe_setup`, which takes `distill_metrics` because the grad-projector
-        # writes straight into it. Unpacked into the names the fold's `_ntg`/`_dgp` seams use.
-        _p = self._train_probe_setup(distill_metrics)
+        # The once-per-train() probes and the gradient sampler —
+        # `train_setup._train_probe_setup`. Unpacked into the names the fold's `_ntg` seam uses.
+        _p = self._train_probe_setup()
         shared_trunk, grad_balance = _p.shared_trunk, _p.grad_balance
         rank_metrics, edge_metrics = _p.rank_metrics, _p.edge_metrics
         cell_metrics, grad_norms, capacity = _p.cell_metrics, _p.grad_norms, _p.capacity
         capacity_metrics = _p.capacity_metrics
         signal_metrics, accum, noise_g_small_sq = _p.signal_metrics, _p.accum, _p.noise_g_small_sq
-        noise_g_big_sq, _ns_terms, _dgp = _p.noise_g_big_sq, _p.ns_terms, _p.dgp
+        noise_g_big_sq, _ns_terms = _p.noise_g_big_sq, _p.ns_terms
         diag = _p.diag   # gen3_diagnostics_cadence_v1: which optional probes run on THIS call
         # +PER-EPOCH (gen3_ppo_per_epoch_diag_v1): one (approx_kl, clip_fraction) pair per epoch the
         # loop actually ran, folded from the SAME per-minibatch numbers the stock tags already average
@@ -394,7 +380,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 values, log_prob = _mo.values, _mo.log_prob
                 advantages = _mo.advantages
                 loss = _mo.loss
-                # The distill / anchor / ride-along readers' stash, built OUTSIDE the region.
+                # The ride-along readers' stash, built OUTSIDE the region.
                 if _mo.logp is not None:
                     self.policy._last_pi_distribution = _MaskedPi(_mo.logp, _mo.masks_bool)
                 # +INSTRUMENTATION: effective rank of the trunk / value_cls / policy / vf reps, ONCE per
@@ -503,241 +489,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         for _ck, _cv in _ctm.items():
                             cf_twin_metrics.setdefault(_ck, []).append(float(_cv))
 
-                # +DISTILL (gen3_exploiter_distill_v1): ON-POLICY KL toward a frozen per-team SPECIALIST,
-                # masked to the rollout states where the trainee pilots the teacher's team (`distill_mask`).
-                # Its own get_distribution forwards — the student's (fresh, so its extractor re-stash can't
-                # clobber the aux losses above, which are already folded) + the FROZEN teacher's under
-                # no_grad. Folded at distill_coef; policy-only (never touches the value head). OFF (coef 0 /
-                # no teacher) → the whole block is skipped, loss byte-identical.
-                distill_term = None
-                if distill_on:
-                    _tid = rollout_data.observations.get("distill_mask")   # INTEGER team-id [B,1]: 0=none, k=teacher k
-                    if _tid is not None and float(_tid.reshape(-1).max()) >= 1.0:
-                        _tid_flat = _tid.reshape(-1)
-                        # ONE student forward, reused across all teachers (the teacher forwards are frozen).
-                        # gen3_exploiter_distill_v1 optimization: REUSE the student pi distribution the
-                        # evaluate_actions forward above already built (self.policy._last_pi_distribution),
-                        # instead of a redundant second get_distribution — the KL is bit-identical (masked
-                        # vs raw logits agree over legal actions; illegal contribute 0). Fall back to a fresh
-                        # forward if the stash is somehow absent (defensive; evaluate_actions always sets it).
-                        _last_pi = getattr(self.policy, "_last_pi_distribution", None)
-                        _s_logits = (_last_pi.distribution.logits if _last_pi is not None
-                                     else self.policy.get_distribution(
-                                         rollout_data.observations).distribution.logits)
-                        # +VALUE-DISTILL (gen3_exploiter_value_distill_v1): also pour the teacher's per-team
-                        # VALUE into the student. Requires policy distill (coherence). OFF (coef 0) → the
-                        # teacher predict_values forward is skipped, loss byte-identical.
-                        _vd_on = self.distill_value_coef != 0.0
-                        _s_val = values.flatten() if _vd_on else None        # student V (real-unit, WITH grad)
-                        # +FITNETS VALUE-FEATURE distill (gen3_exploiter_value_feat_distill_v1): match the
-                        # teacher's INTERMEDIATE value-CLS pool (the 128-dim hint) instead of the collapsed
-                        # scalar. The student's `last_value_pooled` from the evaluate_actions forward above
-                        # (WITH grad) — the teacher forwards below run on their OWN extractors, so this student
-                        # stash is not clobbered. OFF (coef 0) → no teacher value_pooled read, loss byte-identical.
-                        _vfd_on = self.distill_value_feat_coef != 0.0
-                        _s_vfeat = self.policy.features_extractor.last_value_pooled if _vfd_on else None
-                        # +DISTILL TARGET FORM (gen3_distill_target_gate_v1,
-                        # design_advantage_gated_distillation.md §3.1/§3.3): WHAT the policy term
-                        # asks for. "kl" (the default) takes the literal `_distill_loss` call below
-                        # — byte-identical to every run before the flag existed. "action" dispatches
-                        # to `_gated_action_distill_loss` (teacher top-K renormalized target, K=1 =
-                        # argmax CE, AWR-weighted by |Â|), optionally row-gated on the student's OWN
-                        # normalized advantage (`--distill-gate advantage`: teacher disagrees AND
-                        # Â < -τ). `advantages`/`actions` are the very tensors the clip objective
-                        # uses, so τ is in clip-objective units. Everything else — the teacher
-                        # forwards, the per-teacher balancing, every value-side term — is untouched.
-                        _d_target = str(getattr(self, "distill_target", "kl"))
-                        _gate_n = _gate_agree = _gate_adv = 0.0   # §4.3 liveness, summed over teachers
-                        # gen3_distill_offslice_anchor_v1: the licensing probe's ON-SLICE half —
-                        # student↔teacher top-1 agreement, averaged over the ACTIVE teachers, so
-                        # `distill/teacher_agreement_on_slice` (absorption) is readable beside
-                        # `distill/collateral_kl` (damage) without expanding the per-teacher rows.
-                        _on_agree, _on_agree_n = 0.0, 0
-                        _per_teacher_kl, _per_teacher_vd, _per_teacher_vfd = [], [], []
-                        for _k, _teacher in enumerate(self._distill_teachers, start=1):
-                            _sel = (_tid_flat == _k).to(_s_logits.dtype)      # states on teacher k's team
-                            if float(_sel.sum()) < 1.0:
-                                continue
-                            # Each frozen teacher has its OWN (older) obs space — pass only the keys it knows
-                            # (SB3's preprocess_obs iterates obs keys against the space; it needs just
-                            # observation + action_mask). See gen3_exploiter_distill_v1 invariance (Δ=0).
-                            _t_obs = {key: v for key, v in rollout_data.observations.items()
-                                      if key in _teacher.observation_space.spaces}
-                            with th.no_grad():
-                                _t_logits = _teacher.policy.get_distribution(_t_obs).distribution.logits
-                                # gen3_exploiter_value_feat_distill_v1: the get_distribution forward above ran
-                                # the teacher's FULL extractor, so its `last_value_pooled` (the hint) is set for
-                                # THESE states — capture it now, BEFORE the predict_values forward below re-runs
-                                # + overwrites it. Under no_grad → detached (the FitNets target is frozen).
-                                _t_vfeat = (_teacher.policy.features_extractor.last_value_pooled
-                                            if _vfd_on else None)
-                            if _d_target == "kl":
-                                _d_out = self._distill_loss(_s_logits, _t_logits, rollout_data.action_masks, _sel)
-                            else:
-                                _d_out = self._gated_action_distill_loss(
-                                    _s_logits, _t_logits, rollout_data.action_masks, _sel,
-                                    advantages, actions,
-                                    top_k=int(getattr(self, "distill_topk", 1)),
-                                    tau=float(getattr(self, "distill_gate_tau", 0.0)),
-                                    beta=float(getattr(self, "distill_beta", 1.0)),
-                                    gate=str(getattr(self, "distill_gate", "none")))
-                            if _d_out is not None:
-                                _kl_k, _m_k = _d_out
-                                _per_teacher_kl.append(_kl_k)
-                                _a_k = _m_k.get("agree_rate", _m_k.get("gate_agree_rate"))
-                                if _a_k is not None:
-                                    _on_agree += float(_a_k)
-                                    _on_agree_n += 1
-                                if _d_target != "kl":
-                                    _gate_n += _m_k["n_gated"]
-                                    _gate_agree += _m_k["gate_agree_rate"] * _m_k["n_gated"]
-                                    _gate_adv += _m_k["mean_gate_adv"] * _m_k["n_gated"]
-                                for _mk, _mv in _m_k.items():   # per-teacher diagnostics (distill/t{k}_*)
-                                    distill_metrics.setdefault(f"t{_k}_{_mk}", []).append(float(_mv))
-                            if _vfd_on:
-                                # Masked cosine distance between the student + teacher value-CLS pools on
-                                # teacher-k's states (the FitNets hint match).
-                                _vfd_k = self._value_feat_distill(_s_vfeat, _t_vfeat, _sel)
-                                if _vfd_k is not None:
-                                    _per_teacher_vfd.append(_vfd_k)
-                                    # NAMING (read this before quoting the number): the recorded value is the
-                                    # cosine DISTANCE `1 − cos`, i.e. the loss term — it FALLS toward 0 as the
-                                    # student and teacher hints align, so a reading of 0.005 means cos ≈ 0.995
-                                    # (near-PARALLEL), not near-orthogonal. `*_value_feat_dist` is the canonical
-                                    # key; `*_value_feat_cos` is the historical spelling, which reads as its own
-                                    # opposite and is kept ONE release for TensorBoard continuity.
-                                    for _vfd_key in (f"t{_k}_value_feat_dist", f"t{_k}_value_feat_cos"):
-                                        distill_metrics.setdefault(_vfd_key, []).append(float(_vfd_k))
-                            if _vd_on:
-                                # Teacher V (real-unit, frozen); masked MSE vs student V.
-                                with th.no_grad():
-                                    _t_val = _teacher.policy.predict_values(_t_obs).flatten()
-                                _vd_k = self._value_distill_mse(_s_val, _t_val, _sel)
-                                if _vd_k is not None:
-                                    _per_teacher_vd.append(_vd_k)
-                                    distill_metrics.setdefault(f"t{_k}_value_mse", []).append(float(_vd_k))
-                        if _d_target != "kl":
-                            # +GATE LIVENESS (§4.3): the aggregate-across-teachers row for THIS
-                            # minibatch. `n_gated == 0` is a READING — the gate found nothing to
-                            # teach here — not an absence; the rate metrics are gated on n>0
-                            # because a 0/0 agree-rate would be a fabricated perfect score.
-                            _B_rows = float(_tid_flat.shape[0])
-                            distill_metrics.setdefault("n_gated", []).append(_gate_n)
-                            distill_metrics.setdefault("gated_frac", []).append(
-                                _gate_n / max(_B_rows, 1.0))
-                            if _gate_n > 0:
-                                distill_metrics.setdefault("gate_agree_rate", []).append(
-                                    _gate_agree / _gate_n)
-                                distill_metrics.setdefault("mean_gate_adv", []).append(
-                                    _gate_adv / _gate_n)
-                        if _per_teacher_kl:
-                            # Per-archetype balancing: average the per-teacher mean-KLs so a teacher with
-                            # fewer states still contributes comparable gradient (not swamped by a big one).
-                            _distill_kl = th.stack(_per_teacher_kl).mean()
-                            distill_term = self.distill_coef * _distill_kl
-                            # +DISTILL-GRAD-PROJECT: `_dgp.add` records the TEACHER terms (this one
-                            # and the two value-side ones below) as the gradient source to project.
-                            # It returns its argument unchanged, so the fold is the one that was
-                            # here before; the anchor term deliberately does NOT get this wrapper.
-                            loss = loss + _ntg.add("distill", _dgp.add(distill_term))
-                            distill_metrics.setdefault("kl", []).append(float(_distill_kl))
-                            distill_metrics.setdefault("n_teachers_active", []).append(float(len(_per_teacher_kl)))
-                            if _on_agree_n:
-                                distill_metrics.setdefault("teacher_agreement_on_slice", []).append(
-                                    _on_agree / _on_agree_n)
-                        if _per_teacher_vd:
-                            _distill_vd = th.stack(_per_teacher_vd).mean()    # balanced like the policy KL
-                            loss = loss + _ntg.add(
-                                "distill", _dgp.add(self.distill_value_coef * _distill_vd))
-                            distill_metrics.setdefault("value_mse", []).append(float(_distill_vd))
-                        if _per_teacher_vfd:
-                            _distill_vfd = th.stack(_per_teacher_vfd).mean()  # balanced like the policy KL
-                            loss = loss + _ntg.add(
-                                "distill", _dgp.add(self.distill_value_feat_coef * _distill_vfd))
-                            # Same naming note as the per-teacher site above: DISTANCE (1 − cos), lower =
-                            # better aligned. `value_feat_dist` is canonical; `value_feat_cos` is the
-                            # deprecated alias kept one release.
-                            for _vfd_key in ("value_feat_dist", "value_feat_cos"):
-                                distill_metrics.setdefault(_vfd_key, []).append(float(_distill_vfd))
-
-                # +DISTILL-ANCHOR (gen3_distill_offslice_anchor_v1): the OFF-SLICE trust region to
-                # the FROZEN fold parent, and the live collateral-KL meters. ONE call — everything
-                # (the frozen forward, the slice split, the loss, every `distill/*` meter) lives in
-                # `distill_anchor.py`. `_distill_anchor_parent` absent (no flag) ⇒ returns None
-                # having done nothing, so the loss expression is byte-identical; attached at
-                # coefficient 0 (`--distill-anchor-monitor`) ⇒ meters only, still no term. It rides
-                # the `distill` noise-scale group because it is part of the fold's dose, not an aux
-                # head. The student's π is the one `evaluate_actions` already built, as the distill
-                # term reuses it.
-                anchor_term = distill_anchor_step(
-                    self, rollout_data,
-                    getattr(self.policy, "_last_pi_distribution", None), distill_metrics)
-                if anchor_term is not None:
-                    loss = loss + _ntg.add("distill", anchor_term)
-
-                # +SEARCH-TEACHER: AWR policy distillation toward the verified-better action. The
-                # corrections are OFF-POLICY (searched eval-trace states, not in this rollout), so this
-                # samples its OWN minibatch from the standalone _correction_buffer and runs its OWN policy
-                # forward (get_distribution → masked logits). Folded at search_teacher_coef; the CE
-                # gradient pulls the trunk (measured by grad/searchteacher_share). The OPTIONAL value term
-                # (default coef 0) is off-policy (the search value is V^π*) — kept behind its own coef.
-                # OFF / empty buffer → skipped (loss byte-identical).
-                searchteacher_term = None
-                if search_teacher_on:
-                    _batch = self._correction_buffer.sample(self.search_teacher_batch_size)
-                    if _batch:
-                        from agents.training.teacher.buffer import CorrectionBuffer as _CB
-                        _td = _CB.to_tensors(_batch, self.device)
-                        # EAGER: a (obs, action_mask)-only key set at a ring-sized batch is a
-                        # signature the compile lock would kill (gen3_compile_sentinel_v1).
-                        with _eager_fe(getattr(self.policy, "features_extractor", None)):
-                            _dist = self.policy.get_distribution(_td["obs_dict"])
-                        _st = self._searchteacher_loss(
-                            _dist.distribution.logits, _td["action_mask"], _td["better_action"],
-                            _td["advantage"], beta_awr=self.search_teacher_beta)
-                        if _st is not None:
-                            _st_loss, _st_m = _st
-                            searchteacher_term = self.search_teacher_coef * _st_loss
-                            if self.search_teacher_value_coef != 0.0:   # OFF by default (soundness)
-                                with _eager_fe(getattr(self.policy, "features_extractor", None)):
-                                    _vt = self.policy.predict_values(_td["obs_dict"]).flatten()
-                                _vtgt = _td["confirmed_value"]
-                                searchteacher_term = searchteacher_term + \
-                                    self.search_teacher_value_coef * ((_vt - _vtgt) ** 2).mean()
-                            loss = loss + _ntg.add("aux", searchteacher_term)
-                            for _tk, _tv in _st_m.items():
-                                teacher_metrics.setdefault(_tk, []).append(float(_tv))
-
-                # +OPD: on-policy self-distillation KL(π' ‖ π_student). Like the search-teacher AWR above,
-                # this samples the SAME standalone _correction_buffer + runs its OWN get_distribution
-                # forward — but distils the FULL improved distribution π' (the beam's per-action
-                # backed-up values, built worker-side) instead of only the single action A*. Folded at
-                # opd_coef; the KL gradient pulls the trunk (measured by grad/opd_share). A sampled batch
-                # with no π' (an AWR-only buffer) → to_tensors sets pi_target None → the loss None-guards
-                # (skipped). OFF / empty buffer → skipped (loss byte-identical).
-                opd_term = None
-                if opd_on:
-                    _obatch = self._correction_buffer.sample(self.search_teacher_batch_size)
-                    if _obatch:
-                        from agents.training.teacher.buffer import CorrectionBuffer as _CB
-                        _otd = _CB.to_tensors(_obatch, self.device)
-                        if _otd.get("pi_target") is not None:   # skip an AWR-only (π'-less) sample
-                            with _eager_fe(getattr(self.policy, "features_extractor", None)):   # see search-teacher
-                                _odist = self.policy.get_distribution(_otd["obs_dict"])
-                            _opd = self._opd_loss(
-                                _odist.distribution.logits, _otd["action_mask"], _otd["pi_target"])
-                            if _opd is not None:
-                                _opd_loss_t, _opd_m = _opd
-                                opd_term = self.opd_coef * _opd_loss_t
-                                loss = loss + _ntg.add("aux", opd_term)
-                                for _ok, _ov in _opd_m.items():
-                                    opd_metrics.setdefault(_ok, []).append(float(_ov))
-
                 # +TD-AUX: the TD-consistency auxiliary. Its OWN contiguous sample + its OWN critic
                 # forward (the minibatch is shuffled — it holds no adjacent pairs), so it must run
                 # AFTER every loss that reads an extractor stash from THIS minibatch's
                 # evaluate_actions forward: the forward below replaces those stashes. Placed here,
-                # beside the other own-forward folds (search-teacher / OPD), for exactly that reason.
+                # beside the other own-forward folds, for exactly that reason.
                 # The rank probe reads R1's stashes right after R1 (above), so it is unaffected.
                 # OFF → skipped (loss byte-identical).
                 td_aux_term = None
@@ -750,7 +506,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
                 # +CF-WINPROB: ground-truth Monte-Carlo P(win) supervision of the win-prob head on
                 # OFF-DISTRIBUTION recorded states (its own sample + its own extractor forward, so
-                # it belongs here beside td_aux/search-teacher/OPD — after every loss that reads a
+                # it belongs here beside td_aux — after every loss that reads a
                 # stash from THIS minibatch's evaluate_actions forward, which its forward replaces).
                 # OFF / empty buffer → skipped (loss byte-identical).
                 cf_term = None
@@ -837,23 +593,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 opp_intent_term = (_mo.terms["opp_intent"]
                                    if "opp_intent" in _mo.terms and _mpres.get("opp_intent", False)
                                    else None)
-                if searchteacher_term is not None: aux_probe_terms["searchteacher"] = searchteacher_term
-                # +DISTILL-SHARE (gen3_grad_distill_share_v1): the exploiter-distillation KL's own
-                # shared-trunk pull — `grad/distill_share`, on the SAME policy+value+Σaux
-                # denominator as every other `grad/*_share` (grad_balance.py), like
-                # `grad/searchteacher_share` / `grad/opd_share`. THE dose meter §6.2 of
-                # designs/ai_v10/design_advantage_gated_distillation.md dose-matches the G1/G2
-                # arms on (gradient share, not coefficient). The POLICY KL term only,
-                # deliberately: the value-side distill coefficients are held fixed across those
-                # arms (§6.1), so folding them in would compress the very differences the meter
-                # exists to read. None (distill off / no teacher-team rows this minibatch) → not
-                # logged; a non-distill run pays nothing.
-                if distill_term is not None:       aux_probe_terms["distill"] = distill_term
-                # +ANCHOR-SHARE (gen3_distill_offslice_anchor_v1): `grad/distill_anchor_share` on
-                # the SAME denominator as `grad/distill_share` — the pair IS the dose reading a
-                # trust region has to be sized by (how hard is the anchor pulling, relative to the
-                # teacher content it is protecting?). Absent when no anchor folded.
-                if anchor_term is not None:        aux_probe_terms["distill_anchor"] = anchor_term
                 # THE FIGHT DETECTOR. Registering the intent term here is what produces
                 # `grad/opp_intent_policy_cosine` — the angle between the intent objective's pull on
                 # the shared trunk and the policy's. Under `--opp-intent-grad-mode detached` the
@@ -861,7 +600,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # which is the correct and expected value, not a bug. It only becomes informative
                 # under `shaping`, which is precisely when you need to know.
                 if opp_intent_term is not None:    aux_probe_terms["opp_intent"] = opp_intent_term
-                if opd_term is not None:           aux_probe_terms["opd"] = opd_term
                 # The TD term pulls the trunk through the CRITIC path only, so `grad/td_aux_share`
                 # against `grad/value_share` is the read for "is the consistency term crowding out
                 # the level regression it is supposed to complement".
@@ -932,13 +670,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         # rest of the run — the `len(cf_buffer) == 0` escape says "there are no
                         # labels at all, sample anyway"; `cf/buffer_fill` is where that is read.
                         and (not cf_any_on or cf_term is not None or cf_evid_term is not None
-                             or len(cf_buffer) == 0)
-                        # +DISTILL-SHARE: wait for a minibatch with a live distill term so
-                        # `grad/distill_share` isn't dropped from the per-train() sample — but
-                        # ONLY when the rollout holds teacher-team rows at all
-                        # (`distill_rows_in_buffer`); a row-less rollout samples immediately
-                        # rather than suppressing the whole probe (the cf escape's reason).
-                        and (not distill_rows_in_buffer or distill_term is not None)):
+                             or len(cf_buffer) == 0)):
                     grad_balance = grad_balance_metrics(
                         # +PG-COEF: the probe measures the terms AS FOLDED — `_policy_grad_term`, not the
                         # raw `policy_loss` (at the 1.0 default they are the same tensor).
@@ -988,14 +720,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # `autograd.grad` writes no `.grad`, so the accumulation below is untouched.
                 _ntg.flush_micro()
                 if _ph is not None: _ph("noise_probe")
-                # +DISTILL-GRAD-PROJECT: the removal vector is computed while the graph is alive
-                # (read-only `autograd.grad`, no `.grad` written) and applied to `.grad` immediately
-                # after the real backward — so `.grad` goes from `g_ppo + g_distill` to
-                # `g_ppo + P_perp g_distill` with PPO's contribution bit-for-bit untouched. Both are
-                # no-ops unless `--distill-anchor-mode grad_project`.
-                _dgp.before_backward(self.policy, rollout_data)
                 (loss / accum).backward()
-                _dgp.after_backward(accum)
                 micro_in_group += 1
                 if _ph is not None: _ph("backward")
                 # +INSTRUMENTATION: per-edge-family liveness, sampled ONCE per train() and read
@@ -1111,7 +836,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         self._record_noise_scale_metrics(accum, noise_g_small_sq, noise_g_big_sq, _ns_terms)
         self._record_head_metrics(belief_metrics, win_prob_metrics, calib_all, calib_contested,
                                   critic_winprob, scaffolding_on, grad_balance)
-        self._record_term_metrics(teacher_metrics, opd_metrics, distill_metrics, td_aux_metrics)
+        self._record_term_metrics(td_aux_metrics)
         self._record_cf_metrics(cf_buffer, cf_any_on, cf_rows_sampled, cf_metrics, cf_winprob_on,
                                 cf_evid_metrics, cf_evid_on, cf_twin_metrics, cf_twin_on,
                                 cf_shadow_metrics, cf_shadow_on, q_metrics, q_winprob_on,

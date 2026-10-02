@@ -211,7 +211,7 @@ and loads the model **per selected battle**, not once at startup
    the `checkpoints/` path), so the ladder finds checkpoints under either layout.
 3. **most recent** — **the run's LAST SNAPSHOT**, resolved through the ONE choke point
    `agents.training.fixed_opponent_pool.resolve_model_ref`, so a bare run dir means here exactly
-   what it means to a `--distill-teacher` or `--stable-opponents` spec.
+   what it means to a `--stable-opponents` spec.
 
 🚨 **This tier was `best_model` → latest until 2026-09-06, which is the ordering
 `gen3_last_snapshot_resolution_v1` INVERTED everywhere else** — `best_model/best_model.zip` is the
@@ -592,7 +592,7 @@ a "rust" probe that silently ran on node would answer a different question than 
 **The default lives on the SESSION, not the call**: `ProbeSession(root, …, impl="node")` stores it
 and every probe reads it — the same shape as `compile_extractor`, and deliberate, since two probes
 of one run answering under different engines would not be comparable. `better_line` REFUSES an
-injected warm `SearchSession` whose `impl` differs from the session's (the search-teacher's reuse
+injected warm `SearchSession` whose `impl` differs from the session's (a caller's reuse
 path), so a correction can't be half-searched on one engine and half-confirmed on the other.
 
 

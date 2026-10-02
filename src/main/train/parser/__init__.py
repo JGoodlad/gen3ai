@@ -17,11 +17,11 @@ order, and `build_parser()` calls them in the original order; `--help` is byte-i
     reward.py            `# --- Reward config ---` (resume-immutable, value-checked)
     clean_world.py       `# --- gen3_clean_world_config_v1 ---` + the PPO clip / belief /
                          damage-op / compile / entity-seat flags declared under it
-    teacher.py           `# --- SEARCH-AS-TEACHER ---` + `# --- THE WIN-PROB ONE-PLY TEACHER ---`
     cf_grounding.py      `# --- COUNTERFACTUAL VALUE GROUNDING ---`
     value_heads.py       the EVIDENTIAL BETA / TWIN HEADS + SHADOW CRITIC / PER-ACTION Q sections
     capacity.py          `# --- LIVE CAPACITY TELEMETRY ---`
-    distillation.py      `# --- ADVANTAGE-GATED / ACTION-FORM DISTILLATION + the RANK TRIPWIRE ---`
+    distillation.py      `# --- the RANK TRIPWIRE ---` + the aux/belief heads and arch switches declared under it
+                         (the file's NAME is historical: the distillation flags were deleted in pass L3)
     eval_subprocess.py   `# --- Subprocess eval ---` (workers, self-play pool, exploiter, teams)
     env_core.py          `# --- THE ENV CORE (M5 Lane G) ---` (--env-core, the complete-game collector)
 
@@ -42,7 +42,6 @@ from main.train.parser.eval_subprocess import add_eval_subprocess_flags
 from main.train.parser.hyperparameters import add_hyperparameter_flags
 from main.train.parser.operational import add_operational_flags
 from main.train.parser.reward import add_reward_flags
-from main.train.parser.teacher import add_teacher_flags
 from main.train.parser.value_heads import add_value_head_flags
 
 __all__ = ["optional_float", "str2bool", "BoolFlag", "build_parser",
@@ -74,7 +73,6 @@ def build_parser() -> argparse.ArgumentParser:
     add_hyperparameter_flags(parser)
     add_reward_flags(parser)
     add_clean_world_flags(parser)
-    add_teacher_flags(parser)
     add_cf_grounding_flags(parser)
     add_value_head_flags(parser)
     add_capacity_flags(parser)

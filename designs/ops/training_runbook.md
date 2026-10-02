@@ -175,8 +175,7 @@ Detail: `src/agents/training/CLAUDE.md` → *A FORK starts POOLLESS*.
 
 🚨 **`--lr`, `--batch-size` and `--n-steps` are INERT on a resume** — the resume path restores the
 checkpoint's own optimizer LR and prints `(arg --lr=… ignored on resume)`, so a FORK inherits
-whatever rate the PARENT's KL controller had annealed to. Measured (ledger M7): three distillation
-folds launched with the same flags ran at a median **5.8e-5 / 2.8e-5 / 1.0e-4**, and the quantity
+whatever rate the PARENT's KL controller had annealed to. Measured (ledger M7, on the since-deleted distillation fold): three folds launched with the same flags ran at a median **5.8e-5 / 2.8e-5 / 1.0e-4**, and the quantity
 that predicts a fold's collateral is the **DOSE** = `lr × n_epochs × optimizer steps per epoch / rollout rows`
 (= `lr × n_epochs / (batch_size × grad_accum_steps)` when the rollout divides evenly; a ragged last
 accumulation group is a FULL step — K10(c))
@@ -236,7 +235,7 @@ the peak. `K=1` (default) is byte-identical to stock; it's a train-loop knob (no
 forward it on every resume like `--batch-size`. With `K>=2` it also emits a **`train/noise_scale`**
 diagnostic (McCandlish critical batch size) that tells you, as a number, whether your effective batch
 is too small / about right / bigger than needed. 🚨 **Read it beside the PER-TERM scalars, never
-alone** (`train/noise_scale{,_ratio,_share}_{policy,value,entropy,aux,distill}`, default ON): the
+alone** (`train/noise_scale{,_ratio,_share}_{policy,value,entropy,aux}`, default ON): the
 total is measured on the SUM of every loss term, and this tree's dense supervised aux heads
 have far lower gradient noise than the clipped surrogate — so a total reading "over-batched" can be
 aux DEFLATION rather than a batch that is too big, and the advisor says so explicitly when the two
@@ -274,8 +273,8 @@ async-wave and restart streams).
 |---|---|---|
 | periodic checkpoint (`--checkpoint-every-steps`) | `num_timesteps` boundary | yes — and under async waves |
 | eval cycle (`--eval-freq`, `EVAL_FREQ_STEPS` 2M) — and the snapshot-pool add and opponent-pool refresh it drives | `num_timesteps` | yes |
-| search teacher (`--teacher-search-freq`, `--teacher-refresh-steps`), plasticity canary (`--canary-reset-steps`) | `num_timesteps` | yes |
-| `--diagnostics-every`, compile canary (every 25 updates), `--adaptive-batch-every`, KL lr controller, team PFSP / team win-rate pulls (3 rollouts), exploiter-ladder persist (20), `--distill-anchor-refresh-every`, `--capacity-*-every`, CUDA memory-trend horizon (25 updates) | UPDATES / rollouts | only while the rollout `n_steps × n_envs` is fixed (production 2048 × 48 = 98,304) — a sizing change of N must restate `n_steps` or `--rollout-target-samples`, or every one of these moves |
+| plasticity canary (`--canary-reset-steps`) | `num_timesteps` | yes |
+| `--diagnostics-every`, compile canary (every 25 updates), `--adaptive-batch-every`, KL lr controller, team PFSP / team win-rate pulls (3 rollouts), exploiter-ladder persist (20), `--capacity-*-every`, CUDA memory-trend horizon (25 updates) | UPDATES / rollouts | only while the rollout `n_steps × n_envs` is fixed (production 2048 × 48 = 98,304) — a sizing change of N must restate `n_steps` or `--rollout-target-samples`, or every one of these moves |
 | launcher restart, graceful restart, `--log-level periodic` lines | wall clock / episodes | n/a |
 
 ### WHICH readout is the critic — `--critic {shaped,winprob}` (default `winprob`)

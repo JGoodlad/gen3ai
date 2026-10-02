@@ -18,8 +18,6 @@ lever (``key``)        what silently happened instead               measured vic
                        team sampling stays uniform
 ``fork``               `--fork-fraction` whose arm disables itself   (inventory)
                        or forks nothing, with a print
-``search_teacher``     `--search-teacher` selecting no candidates    (inventory)
-                       (no loss traces): the AWR term folds nothing
 =====================  ===========================================  ==================================
 
 **One mechanism, two failure classes.**
@@ -107,8 +105,6 @@ LEVERS: Dict[str, Lever] = {lv.key: lv for lv in (
           "team sampling stays uniform — no per-team win-rate is ever measured", 5),
     Lever("fork", "--fork-fraction", "rollout", "an injected fork row",
           "the buffer is exactly what collection made it — the arm forks nothing", 5),
-    Lever("search_teacher", "--search-teacher", "teacher cycle", "a selected candidate",
-          "the correction buffer never fills — the AWR / OPD terms fold nothing", 3),
 )}
 
 

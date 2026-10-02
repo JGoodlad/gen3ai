@@ -73,7 +73,7 @@ recorded in `metadata.json`'s `cli_args`, so it cannot be mirrored here.
 into `value_pooled`, which is exactly what the win head reads.
 
 The v97 → v109 migration adds 39 keys that did not exist in gen-17's config (the `cf_*` family, the
-`q_winprob_*` family, `policy_grad_coef`, the distillation block, `rank_tripwire`, …). All take the
+`q_winprob_*` family, `policy_grad_coef`, `rank_tripwire`, … — and a distillation block that deletion pass L3 has since removed). All take the
 migration's defaults, and all read OFF or INERT in §6's generated table.
 
 ### One flag a hand-built relaunch argv will drop
@@ -143,7 +143,7 @@ authoritative check, and a difference there is a defect in this file, not in the
 ### The argv finding that verification produced
 
 **gen-17's recorded command no longer launches on HEAD**, for a reason unrelated to the critic:
-`--distill-team-bias 0.4` with no `--distill-teacher` is now refused
-(`main.train.combination_checks`, migrated 2026-09-06). It is not a `model_config.json` key, so it
-cannot move this mirror — but a relaunch argv built by copying gen-17's command will be rejected
-until it is dropped or paired with a teacher. `python -m main.checkargs` reports it offline.
+`--distill-team-bias 0.4` was refused with no `--distill-teacher` (2026-09-06) and is now a DELETED flag
+(deletion pass L3, `designs/deleted_flags.md`), so argparse rejects it outright. It is not a
+`model_config.json` key, so it cannot move this mirror — but a relaunch argv built by copying gen-17's
+command will be rejected until it is dropped (or the run is launched pinned to its own commit). `python -m main.checkargs` reports it offline.

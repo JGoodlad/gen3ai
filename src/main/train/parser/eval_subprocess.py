@@ -171,8 +171,7 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "failed eval cycles count), pfsp (3 eval cycles: --pfsp-scale with no "
                              "sentinel win-rate measured while the pool has sentinels), team_pfsp (5 "
                              "updates: --team-pfsp with no self-play/exploiter team game while self-play "
-                             "is live), fork (5 rollouts: --fork-fraction injecting nothing), "
-                             "search_teacher (3 teacher cycles: --search-teacher selecting no candidate). "
+                             "is live), fork (5 rollouts: --fork-fraction injecting nothing). "
                              "key=0 disables that lever's FATAL — ANNOUNCED at training start, and the "
                              "end-of-run summary is still LOUD at zero.")
     parser.add_argument("--promote-threshold", type=float, default=None,
@@ -383,7 +382,7 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "FREELY, unbiased). Built ONCE into <run>/warmstart/ (idempotent across "
                              "launcher restarts; skipped once a training checkpoint exists). Deliberately "
                              "NOT valid for generalist/self-play runs (whose job is the opposite — absorb "
-                             "divergence via --distill-teacher). See agents.training.warmstart. Default off.")
+                             "divergence). See agents.training.warmstart. Default off.")
     parser.add_argument("--warmstart-battles", dest="warmstart_battles", type=int, default=200,
                         help="On-policy battles to collect for the --warmstart-consensus BC dataset (200).")
     parser.add_argument("--warmstart-bc-steps", dest="warmstart_bc_steps", type=int, default=4000,

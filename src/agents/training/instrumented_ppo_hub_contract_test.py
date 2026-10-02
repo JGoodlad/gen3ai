@@ -60,7 +60,7 @@ _PRE_SPLIT = (
     "_NATURE_CE_WEIGHT", "_SPREAD_LOSS_SCALE",
 )
 
-_BASES = ("PpoHyperparameters", "NoiseScaleDiagnostics", "DistillTerms", "ValueTerms", "AuxTerms",
+_BASES = ("PpoHyperparameters", "NoiseScaleDiagnostics", "ValueTerms", "AuxTerms",
           "CapacityTerms", "TrainSetup", "TrainMetricsExport", "RolloutProbes", "OwnedLoop")
 
 
@@ -80,8 +80,7 @@ def test_the_ppo_class_carries_every_term_family():
         assert base in mro, (
             f"`{base}` is gone from `InstrumentedMaskablePPO`'s bases (MRO is {mro}). The class "
             f"would still construct and still train — just without that family of loss terms.")
-    for method in ("_searchteacher_loss", "_opd_loss", "_distill_loss", "_value_distill_mse",
-                   "_value_feat_distill", "_win_prob_loss",
+    for method in ("_win_prob_loss",
                    "_td_aux_term", "_belief_aux_loss",
                    "_move_belief_loss", "_spread_belief_loss", "_nature_ev_belief_loss",
                    "_hp_type_belief_loss", "_move_belief_latent_loss", "_cf_winprob_term",
@@ -120,8 +119,7 @@ def test_maskable_ppo_stays_last_in_the_mro():
         f"a mixin sits after MaskablePPO in the MRO: {[c.__name__ for c in mro]}")
     assert issubclass(hub.InstrumentedMaskablePPO, MaskablePPO)
     excluded = _ExcludeProbe()._excluded_save_params()
-    for name in ("_correction_buffer", "_distill_teachers", "_cf_buffer", "_capacity_state",
-                 "rollout_buffer"):
+    for name in ("_cf_buffer", "_capacity_state", "rollout_buffer"):
         assert name in excluded, (
             f"{name!r} left `_excluded_save_params` — the last entry can only come from "
             f"upstream, so its absence means the `super()` chain no longer reaches MaskablePPO.")
@@ -148,12 +146,10 @@ def test_the_fold_sequence_is_two_straight_lines_R1_then_the_eager_tail():
     src = inspect.getsource(hub.InstrumentedMaskablePPO.train)
     assert inspect.getfile(hub.InstrumentedMaskablePPO.train) == str(_DIR / "ppo.py")
     for marker in ("+INSTRUMENTATION", "+GRAD-ACCUM", "+R1", "+TD-AUX", "+CF-WINPROB",
-                   "+DISTILL", "+SEARCH-TEACHER", "+OPD", "+NOISE-SCALE",
-                   "+CAPACITY"):
+                   "+NOISE-SCALE", "+CAPACITY"):
         assert marker in src, f"the `{marker}` block left `train()`"
     r1_call = src.index("self._micro_region()(")
-    for tail in ("distill_anchor_step(",
-                 "self._td_aux_term()", "self._cf_winprob_term("):
+    for tail in ("self._td_aux_term()", "self._cf_winprob_term("):
         assert r1_call < src.index(tail), f"the tail fold `{tail}` now runs BEFORE region R1"
     assert src.index("self._td_aux_term()") < src.index("self._cf_winprob_term("), (
         "the counterfactual fold now runs BEFORE the TD-aux fold. The CF forward CLOBBERS the "

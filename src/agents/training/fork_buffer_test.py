@@ -22,7 +22,7 @@ from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer
 
 from agents.training.fork_arm import PG_MASK_KEY
 from agents.training.fork_buffer import (
-    FILL, REFUSE_KEYS, ForkRolloutBuffer, branch_rewards, build_branch_rows, concat_blocks,
+    FILL, ForkRolloutBuffer, branch_rewards, build_branch_rows, concat_blocks,
     fork_buffer_class, gae, refusal_text, unfillable_keys,
 )
 
@@ -128,7 +128,7 @@ def test_concat_of_nothing_is_none():
 
 
 # ── the fill table ───────────────────────────────────────────────────────────────────────────
-def test_every_key_the_production_obs_dict_can_carry_is_either_filled_or_refused_by_name():
+def test_every_key_the_production_obs_dict_can_carry_is_filled():
     """A key that is neither is the failure mode this table exists to make impossible: an injected
     row would silently carry whatever a heuristic guessed."""
     for key in ("win_target", "win_mask", "win_margin", "opp_class", PG_MASK_KEY,
@@ -137,8 +137,6 @@ def test_every_key_the_production_obs_dict_can_carry_is_either_filled_or_refused
                 "belief_ev_mask", "hp_type_label", "hp_type_mask", "item_label", "item_mask",
                 "opp_action_kind", "opp_action_num", "opp_switch_slot", "opp_switch_species"):
         assert key in FILL, key
-    for key in ("distill_mask",):
-        assert key not in FILL and key in REFUSE_KEYS, key
 
 
 def test_an_unknown_key_refuses_with_its_own_name_and_a_generic_reason():
@@ -148,8 +146,8 @@ def test_an_unknown_key_refuses_with_its_own_name_and_a_generic_reason():
     assert "some_new_key" in text and "REFUSED" in text
 
 
-def test_a_declared_refusal_names_the_flag_rather_than_only_the_key():
-    assert "distillation" in refusal_text(["distill_mask"])
+def test_the_refusal_names_the_flag_rather_than_only_the_key():
+    assert "--fork-fraction" in refusal_text(["some_new_key"])
 
 
 def test_every_label_key_a_branch_cannot_supply_is_filled_NOT_SCORED():

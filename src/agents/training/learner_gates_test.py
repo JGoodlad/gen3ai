@@ -370,9 +370,11 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
     """The four paused learner-battery arms (none typing `--behaviour-check`) must still launch: K9(b)
     resolves to `fatal`, and no K9 rule refuses them. The launcher-only flags are stripped exactly as
     the launcher strips them, and so are the flags DELETED since the battery was recorded (deletion
-    pass L2: the recorded argvs carry the entropy-boost / true-team defaults; deletion pass K2: two of
-    them type `--matmul-precision high`; a pinned launch is judged by its OWN commit's parser, so HEAD's
+    passes L2 / L3: the recorded argvs carry the entropy-boost / true-team / distillation /
+    search-teacher defaults, every one at its OFF value; deletion pass K2: two of them type
+    `--matmul-precision high`; a pinned launch is judged by its OWN commit's parser, so HEAD's
     parser never sees them — what K9 does with the REST of the argv is what this pins)."""
+    import re
     import shlex
 
     from main.train.combination_checks import failing_checks
@@ -385,9 +387,12 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
     dead_valued = {"--defensive-entropy-boost", "--defensive-entropy-anneal-frac",
                    "--bait-entropy-boost", "--bait-entropy-anneal-frac",
                    "--matmul-precision", "--matmul_precision"}
+    # L3: the distillation / search-teacher families, every flag of which takes one value here
+    dead_l3 = re.compile(r"^--(distill-|opd-|search-teacher|teacher-|winprob-teacher-)")
     dead_bool = {"--value-true-team", "--no-value-true-team"}
     while i < len(toks):
-        if toks[i] in ("--restart-interval-hours", "--pin-commit") or toks[i] in dead_valued:
+        if (toks[i] in ("--restart-interval-hours", "--pin-commit") or toks[i] in dead_valued
+                or dead_l3.match(toks[i])):
             i += 2                                                    # launcher-only / deleted
             continue
         if toks[i] in dead_bool:

@@ -75,7 +75,7 @@ class ModelVersionResumeChecks(ModelVersionFields):
 
         vf_coef is a training-loss coefficient, not a weight-shape concern, so it is
         deliberately NOT part of check_compatible() — that gates EVERY checkpoint load,
-        including the frozen eval / self-play-pool / distill opponents, where vf_coef is
+        including the frozen eval / self-play-pool opponents, where vf_coef is
         irrelevant (the forward pass is identical regardless of it). This check is invoked
         ONLY on the training-resume path: silently changing the value head's gradient scale
         mid-run would let a forgotten/typo'd flag drift training, so a resume with a
@@ -95,7 +95,7 @@ class ModelVersionResumeChecks(ModelVersionFields):
         saved config's belief_grad_mode. Call as: saved_version.check_belief_grad_mode(args.belief_grad_mode).
 
         gen3_belief_grad_mode_v1: detach() is value-preserving, so the FORWARD (eval / inference / a frozen
-        pool / distill opponent) is bit-identical regardless of the mode — only the TRAINING gradient (does
+        pool opponent) is bit-identical regardless of the mode — only the TRAINING gradient (does
         the belief reshape the trunk) differs. So, like vf_coef, it is EXCLUDED from check_compatible (gating
         a frozen opponent on it would be a false rejection that breaks self-play) and enforced ONLY on the
         training-resume path: flipping shaping↔detached mid-run silently changes whether the belief

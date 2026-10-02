@@ -483,7 +483,8 @@ wake. Re-create it on the next GO, written to this contract.
   was believed for two rounds; a result that looks impossible is verified at the artifact, not explained.
 - **Every code and cell letter carries a human description in the same sentence when written for the
   owner, on EVERY use** (owner, 2026-09-03, repeated 2026-09-06): "C1, the fold with the distillation
-  loss switched off"; "R4DOSE3, the fold at double v8's step size". Not just the first use — the owner
+  loss switched off"; "R4DOSE3, the fold at double v8's step size" (historical examples of the
+  rule: the fold lever itself is deleted, deletion pass L3). Not just the first use — the owner
   reads on mobile and out of order, and a bare code "means very little" to them. Ledger entries may
   keep the bare codes (they carry the pin tables) but open with the description. Full rule and the
   self-check: `ORCHESTRATOR_SOP.md` §5.

@@ -267,7 +267,7 @@ python -m main.launcher --restart-interval-hours 3 --model models/<run>/checkpoi
 **The hazards that have actually cost runs — none of these are theoretical:**
 
 - 🚨 **"It launches" and "it is the experiment" are INDEPENDENT checks.** On 2026-09-06 an arm launched from a design-doc command block with every architecture flag at its OFF default and trained a near-bare network for 24.4M steps; three gates passed and all three were right. **`--arch production`** applies the production surface as if typed — the ARCH surface AND the TRAINING RECIPE (the mirror's `recipe.fresh`: N0's measured `n_envs`, batch × accumulation, epochs, LR + KL controller, clip, entropy, self-play, the critic, its reward values and the doses; `recipe.fork` = E5, for forks; K10(a)). `checkargs` prints an ARCH SURFACE and a RECIPE SURFACE diff and refuses a fresh argv that differs — a recipe knob only when it was NOT typed (a typed value is the arm's lever; `--allow-nonproduction-recipe` consents). Detail: `designs/endstate/design_learner_recipe.md` §3.22.
-- 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`resolve_model_ref`) — for `--distill-teacher`, `--stable-opponents`, `--exploiter` and friends. Name the `.zip` or `@step` to pin a file.
+- 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`resolve_model_ref`) — for `--stable-opponents`, `--exploiter` and friends. Name the `.zip` or `@step` to pin a file.
 - 🚨 **AN ARGV IS NOT A CONFIG.** With `--model`, every flag you do not name is INHERITED from the checkpoint's `model_config.json`.
 - 🚨 **`--lr`, `--batch-size`, `--n-steps` and `--gamma` are INERT on a resume** — SB3 restores the checkpoint's own values, so a FORK inherits whatever the parent's KL controller had annealed to. **`--fork-lr`** pins it; the quantity that predicts a fold's collateral is the **DOSE** (`lr × n_epochs × optimizer steps per epoch / rollout rows` — `lr × n_epochs / (batch_size × grad_accum_steps)` when the rollout divides evenly; a ragged last group is a FULL step, K10(c)), read with `python -m main.dose <run>`.
 - 🚨 **A FORK starts with an EMPTY self-play pool, and an empty pool does not disable `--self-play` — it falls back to the BOT pool.** A genuine fork now auto-seeds its parent's pool and exits `FATAL_CONFIG` if it still has none, and ANY run whose pool is still empty after 3 eval cycles exits `FATAL_SUPPLY` (5) — one of the declared lever supplies, `designs/training/supply_guards.md`.
@@ -360,7 +360,7 @@ src/
     observation/     # Observation encoders — has CLAUDE.md
     action/          # Action mask + mapping via LegalActions
     battle/          # Event-sourced battle layer (Gen3Battle, TurnView, LiveView) — has CLAUDE.md
-    training/        # Callbacks, reward, eval, distillation, cf grounding, meters — has CLAUDE.md
+    training/        # Callbacks, reward, eval, cf grounding, meters — has CLAUDE.md
   main/
     launcher/        # Restart loop + Textual TUI — has CLAUDE.md
     ops/             # LIVE-run instruments: tb_read, killbar, g7_report, plateau_signal…

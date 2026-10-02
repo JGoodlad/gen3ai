@@ -273,7 +273,7 @@ def test_resume_immutable_flags_are_excluded_from_check_compatible():
     """The class is not decorative: it decides WHICH gate, and the wrong gate breaks league play.
 
     A `resume_immutable` toggle has a bit-identical forward, so gating it in `check_compatible`
-    (which runs on EVERY load, including frozen eval / pool / distill opponents) would be a false
+    (which runs on EVERY load, including frozen eval / pool opponents) would be a false
     rejection. The check is a source scan of `check_compatible` for a `self.<name> !=` compare.
     """
     src = inspect.getsource(ModelVersion.check_compatible)

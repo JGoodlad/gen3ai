@@ -475,8 +475,8 @@ def eager_extractor(fe: Any) -> Iterator[None]:
     attribute over the class method; removing it for the block exposes the class method).
 
     For the learner-process callers whose signature can FIRST appear after the lock and cannot be
-    pre-warmed — a different obs KEY SET or a batch that may be 1 (search-teacher/OPD, fork-arm
-    scoring, the distill grad-projection). Same parameters, same autograd; eager numerics.
+    pre-warmed — a different obs KEY SET or a batch that may be 1 (fork-arm
+    scoring). Same parameters, same autograd; eager numerics.
 
     On the learner this is a NO-OP since the extractor-only compile was deleted (2026-10-02): the
     declared regions compile functions OVER the module and never patch `fe.forward`, so those callers

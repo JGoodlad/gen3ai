@@ -303,7 +303,7 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         opponent class counts (stratified by ``_opponent_class``, so a bot-heavy curriculum phase
         never reads as a per-team win rate), and it is on by default. The two share only the
         builder's "which team did I just yield" index — never a counter table. No-op on a
-        bias/distill yield (the builder's own guard) or a non-Gen3 builder."""
+        bias yield (the builder's own guard) or a non-Gen3 builder."""
         if not self._team_wr_tracking:
             return
         _tb = self._trainee_teambuilder()

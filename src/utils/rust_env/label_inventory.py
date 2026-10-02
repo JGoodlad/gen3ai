@@ -23,8 +23,6 @@ Each row says WHERE THE RUST ENV GETS IT (``rust``):
 * ``host_episode`` — a per-EPISODE value the host already owns (the opponent choice stays Python,
   program §2 M5 inventory). No column: the host writes it from its per-episode routing state, keyed
   by the core's ``episode`` column.
-* ``refused`` — OFF the production surface. The Rust env REFUSES a spec that asks for it (a typed
-  refusal at startup, never a silently-missing key) until it is ported.
 
 ``gate`` is the ``Gen3Env`` constructor kwargs that turn the key on (``main.train.env_factory.
 trainee_env_kwargs`` derives them from the CLI); ``family`` is the Lane-C build unit.
@@ -38,7 +36,7 @@ TEAM = 6          # agents.observation.constants.TEAM_SIZE
 MOVE_SLOTS = 4    # agents.observation.belief_labels.BELIEF_MOVE_SLOTS
 SPREAD = 5        # agents.observation.belief_labels.N_SPREAD_STATS
 
-RUST_KINDS = ("core", "host_const", "host_episode", "refused")
+RUST_KINDS = ("core", "host_const", "host_episode")
 
 
 @dataclass(frozen=True)
@@ -158,10 +156,6 @@ LABELS: Tuple[LabelKey, ...] = (
              "Gen3Env._merge_training_keys", ("agents/training/fork_arm.py",), "host_const",
              "PLACEHOLDER 1.0; only a row the fork arm INJECTS holds anything else", const=1.0,
              symbol="PG_MASK_KEY"),
-    LabelKey("distill_mask", "f32", (1,), "distill",
-             (("distill_team_species", (frozenset({"__inventory_probe__"}),)),), False,
-             "Gen3Env._distill_mask", (_PPO, "agents/training/instrumented_ppo/distill_anchor.py"), "refused",
-             "the trainee team's teacher id (0 = none), constant per battle"),
 )
 
 
@@ -176,8 +170,6 @@ def _check() -> None:
             raise AssertionError(f"{r.key}: dtype {r.dtype}")
         if (r.rust == "host_const") != (r.const is not None):
             raise AssertionError(f"{r.key}: a host_const row (and only one) carries `const`")
-        if r.production and r.rust == "refused":
-            raise AssertionError(f"{r.key}: a PRODUCTION key cannot be refused by the Rust env")
 
 
 _check()

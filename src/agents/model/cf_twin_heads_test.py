@@ -242,7 +242,7 @@ def test_a_recorded_on_config_round_trips():
 def test_the_flags_are_in_the_registry_as_structural_cli_toggles(flag):
     """They build MODULES from extractor constructor kwargs — the registry's declared scope, and
     the `cf_evidential` / `win_prob_mode` precedent. Their COEFFICIENTS are deliberately not:
-    training-only loss weights in the `--opd-coef` class, set on the model, never on the
+    training-only loss weights in the `--td-aux-coef` class, set on the model, never on the
     extractor."""
     from agents.model.flag_registry import BY_NAME, Klass, Tier
     row = BY_NAME[flag]

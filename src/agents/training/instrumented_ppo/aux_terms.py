@@ -47,9 +47,9 @@ class AuxTerms:
           are read-only diagnostics; this one carries gradient, and a once-per-`train()` fold would
           give it ONE gradient contribution against the value loss's `n_epochs x n_minibatches`
           (~240 in production). λ would then have to be ~240x rung-1's calibrated 1.0-3.0 band to
-          mean the same thing, which throws away the one number the pre-registration fixed. The
-          search-teacher / OPD folds already establish this shape here (own sample, own forward,
-          every minibatch); this follows it.
+          mean the same thing, which throws away the one number the pre-registration fixed. This
+          follows the shape the counterfactual folds establish here (own sample, own forward,
+          every minibatch).
         * The cost is bounded by `TD_AUX_STATES` (512) rather than by `batch_size`, so the term is
           ~10% of the train step at production shapes instead of doubling it.
 

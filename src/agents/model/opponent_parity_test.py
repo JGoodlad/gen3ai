@@ -1,7 +1,7 @@
 """gen3_opponent_compile_parity_v1 — a compiled CPU OPPONENT must match eager at the decision level.
 
 Before this, `--compile-opponents` checked only speed on an all-zero observation, so a compiled
-opponent whose decisions were wrong played every self-play / eval / teacher game with every gate
+opponent whose decisions were wrong played every self-play / eval game with every gate
 green. These tests drive `maybe_compile_extractor` itself on the REAL production policy (fresh, as a
 fresh pool snapshot would be, and perturbed as a stand-in for trained weights) with `torch.compile`
 and the timing stubbed, and pin: a correct compile passes and says so; a miscompile only the pointer
@@ -120,7 +120,7 @@ def test_a_stand_in_policy_is_REFUSED_not_installed_unvalidated():
 
 
 def test_a_PASS_is_cached_per_distinct_weights_and_a_weight_change_is_rechecked(monkeypatch, fresh):
-    """Once per distinct weights, not per load: the search-teacher worker re-loads its opponent
+    """Once per distinct weights, not per load: the eval worker re-loads its opponent
     every game. The same weights hit the cache; ANY weight change is a new key and is judged."""
     from agents.model import opponent_parity as op
     fe = fresh.policy.features_extractor

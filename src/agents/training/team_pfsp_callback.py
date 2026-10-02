@@ -11,7 +11,7 @@ global per-team win-rate ``p_i``, computes the variance weight ``floor + p_i*(1-
 its pool with ``random.choices(weights=...)`` and only accumulates outcomes — the math lives here.
 
 The per-team signal is measured ONLY on self-play POOL battles (the wrapper excludes bots — we win
-~0.99 vs bots, which washes out the variance signal) over the POOL teams (bias/distill-pinned teams
+~0.99 vs bots, which washes out the variance signal) over the POOL teams (bias-pinned teams
 are excluded — they get fixed exposure via the existing bias fraction).
 """
 import json
@@ -154,7 +154,7 @@ class TeamPFSPCallback(BaseCallback):
 
         self._observe_supply(int(sum(G)), "self-play is live (pool seeded, self_play_fraction "
                                           "> 0) but not one pool/exploiter battle was counted on a "
-                                          "POOL team — bias/distill-pinned draws are excluded")
+                                          "POOL team — bias-pinned draws are excluded")
 
         # 5) Compute the weights (capped) — 6) PUSH them ONLY in the biasing modes ("measure" tracks
         #    + persists the win-rate but never biases sampling, so the team distribution stays uniform).

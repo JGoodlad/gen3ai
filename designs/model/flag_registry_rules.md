@@ -89,7 +89,7 @@ migration refuses a checkpoint that recorded either ON.
 Getting this wrong hurts in **both** directions, so both are asserted: a `structural` toggle with no
 `check_compatible` compare lets a resume silently flip the architecture, and a `resume_immutable`
 toggle *inside* `check_compatible` makes a run FATAL while loading its own pool snapshots (that gate
-runs on frozen eval/pool/distill opponents too, whose forward is identical regardless).
+runs on frozen eval/pool opponents too, whose forward is identical regardless).
 
 
 ### Dependencies — `requires=`, and why both directions are enforced

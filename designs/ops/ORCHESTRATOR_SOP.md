@@ -267,7 +267,7 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
 - **Every code carries a human description on EVERY use** (owner, 2026-09-03, repeated 2026-09-06):
   arm codes, run names, cell names, probe letters, gate ids and file tags are written as
   "`<code>`, `<what it is>`" — e.g. "C1, the fold with the distillation loss switched OFF but the
-  teacher teams still sampled"; "G5, the parent simply trained on to the same depth (the continuation
+  teacher teams still sampled" (a historical example: the fold lever is deleted, deletion pass L3); "G5, the parent simply trained on to the same depth (the continuation
   control)". Not "define once": every use, in chat, recaps, push notifications and learning notes,
   because the owner reads on mobile and out of order. This applies to the orchestrator's own cell
   letters as much as to the Training Run's codes — it was broken twice, the second time across a whole

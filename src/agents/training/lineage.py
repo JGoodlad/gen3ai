@@ -70,10 +70,14 @@ LINEAGE_SCHEMA = 1
 #: deeper is a bug or a cycle, and both must terminate.
 MAX_ANCESTRY_DEPTH = 24
 
-#: The argv spellings argparse accepts for the fork parent (mirrors `distill_anchor_callback`).
+#: The argv spellings argparse accepted for the fork parent. `--distill-teacher` was DELETED with
+#: distillation (deletion pass L3); it is still PARSED here because the legacy-derive / backfill path
+#: reads OLD runs' recorded commands, and 100+ archived folds carry it.
 _MODEL_FLAGS = ("--model", "--model_path", "--model-path")
 _EXPLOITER_FLAGS = ("--exploiter",)
-_TEACHER_FLAGS = ("--distill-teacher", "--distill_teacher")
+# Spelled WITHOUT the literal flag: a bare "--flag" string constant counts as LIVE CLI surface to
+# `claude_md_freshness_gate_test`, and this flag is deleted (it is only ever READ out of old commands).
+_TEACHER_FLAGS = tuple("--" + n for n in ("distill-teacher", "distill_teacher"))
 
 _LEGACY_WARNING = "[lineage] WARNING: derived from original_command (legacy run, pre-lineage)"
 
@@ -349,16 +353,23 @@ def parse_command(command: str) -> Dict[str, Optional[str]]:
 
 
 def teacher_paths(spec: Optional[str]) -> List[str]:
-    """The TEACHER paths in a `--distill-teacher` spec, reusing the one parser that owns its grammar
-    (`agents.training.distill_spec`). The `*` wildcard is stubbed rather than resolved — lineage
-    wants the teachers, not their team lists, and resolving would touch the filesystem."""
+    """The TEACHER paths in an OLD run's recorded `--distill-teacher` spec (the flag is deleted; the
+    grammar below is what 100+ archived folds recorded): ``TEACHER:TEAM[,TEAM...][;TEACHER2:...]`` —
+    ``;`` separates teachers, ``,`` separates one teacher's teams, and in the legacy pair form
+    (``T1:a.txt,T2:b.txt``) a comma segment CONTAINING a colon starts a new teacher. Only the teacher
+    paths are wanted, so a team list (and the `*` wildcard) is never resolved. A malformed spec yields
+    what parsed so far — a lineage read must never raise."""
     if not spec:
         return []
-    try:
-        from agents.training.distill_spec import parse_distill_teacher_spec
-        return [t for t, _teams in parse_distill_teacher_spec(spec, resolve_wildcard=lambda _p: ["*"])]
-    except Exception:  # noqa: BLE001 — a malformed spec is not this module's error to raise
-        return []
+    out: List[str] = []
+    for group in spec.split(";"):
+        for seg in group.split(","):
+            seg = seg.strip()
+            if ":" in seg:
+                teacher = seg.split(":", 1)[0].strip()
+                if teacher:
+                    out.append(teacher)
+    return out
 
 
 def read_original_command(run_dir: str) -> Optional[str]:
@@ -386,9 +397,10 @@ def read_num_timesteps(run_dir: str) -> Optional[int]:
 # --------------------------------------------------------------------------------------------
 def role_for(*, model_path: Optional[str], exploiter: Optional[str],
              distill_teacher: Optional[str]) -> str:
-    """`fresh` | `exploiter` | `fold` | `fork`. `--exploiter` wins over `--distill-teacher`: a
-    double-sided exploiter is an exploiter that also distils, and its TARGET is the fact that
-    identifies it."""
+    """`fresh` | `exploiter` | `fold` | `fork`. `fold` is a HISTORICAL role — `--distill-teacher` is
+    deleted, so a live launch never passes `distill_teacher`; only the legacy-derive path does.
+    `--exploiter` wins over it: a double-sided exploiter is an exploiter that also distilled, and its
+    TARGET is the fact that identifies it."""
     if not model_path:
         return "fresh"
     if exploiter:

@@ -66,7 +66,7 @@ AREAS = (
     ("train() fold (inline)", ("agents/training/instrumented_ppo/ppo.py",)),
     ("loss terms", ("agents/training/belief_bank.py", "agents/training/instrumented_ppo/value_terms.py",
                     "agents/model/opp_intent.py", "agents/training/instrumented_ppo/aux_terms.py",
-                    "agents/training/instrumented_ppo/distill", "agents/training/opp_intent_labels.py")),
+                    "agents/training/opp_intent_labels.py")),
     ("diagnostics", ("agents/training/rank_metrics.py", "agents/training/grad_balance.py",
                      "agents/training/instrumented_ppo/calibration.py", "agents/training/scaffolding.py",
                      "agents/training/instrumented_ppo/signal_metrics.py",

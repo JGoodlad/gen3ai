@@ -124,7 +124,8 @@ and team PACE class decodes from the raw obs on unseen teams while `pi_features`
 **the abstraction is free in the input and the trunk discards it**. Four forward docs sit beside it: `design_flywheel_tick_tock.md`, `design_outcome_latent.md`,
 `design_counterfactual_value_grounding.md` (the counterfactual label factory + the R1/R2/R3
 critic-bias attacks) and `design_advantage_gated_distillation.md` (the DEEP-BRANCH fix for the fold
-— it separates the distillation TARGET FORM from its JUDGE and contests flywheel **D-F**).
+— it separates the distillation TARGET FORM from its JUDGE and contests flywheel **D-F**; the fold itself was
+DELETED in deletion pass L3, so the doc is a record of a lever that no longer exists).
 
 ### ai_v11 (OPEN — the human-ladder-replay chapter)
 Opened 2026-08-18. **Nothing built.** One doc,

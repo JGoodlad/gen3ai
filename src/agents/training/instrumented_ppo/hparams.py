@@ -5,7 +5,7 @@ constructs the algorithm and the entry point then assigns `model.<name> = ...`. 
 comment that says what it costs, what OFF means, and whether it is version-locked — which is the
 reason they are worth 300 lines and worth keeping in one place.
 
-The class defaults are all no-ops, so a smoke, a unit test, or a frozen eval/pool/distill
+The class defaults are all no-ops, so a smoke, a unit test, or a frozen eval/pool
 opponent that never sets them runs the byte-identical-to-upstream loss.
 """
 class PpoHyperparameters:
@@ -34,7 +34,7 @@ class PpoHyperparameters:
     #   For a bit-exact effective batch, pick batch_size | rollout and accum | minibatch-count.
     grad_accum_steps: int = 1
     # +PER-TERM NOISE SCALE (`noise_scale_terms.py`): also estimate the McCandlish critical batch
-    # SEPARATELY per loss group (policy / value / entropy / aux / distill), not just on the total
+    # SEPARATELY per loss group (policy / value / entropy / aux), not just on the total
     # gradient. Pure DIAGNOSTIC — it takes read-only `autograd.grad` snapshots and never touches
     # `.grad`, the loss, or the optimizer step, so it is neither version-locked nor recorded. Only
     # does anything when `grad_accum_steps >= 2` (it needs the same two batch sizes the total
@@ -57,7 +57,7 @@ class PpoHyperparameters:
     # (the clipped PPO surrogate) in the loss fold — never entropy, never the value term, never
     # any aux. 1.0 (default) takes the UNSCALED `policy_loss` tensor itself, so the loss
     # expression is byte-identical to upstream; 0.0 removes the policy-gradient contribution
-    # entirely (the arm-F pure-distill/aux phase — every other term keeps its own coefficient).
+    # entirely (every other term keeps its own coefficient).
     # TRAINING-only (scales a loss, never a forward pass) -> NOT version-locked / NOT in
     # check_compatible; recorded on ModelVersion for provenance + flagless-resume read-back,
     # like td_aux_coef.
@@ -67,7 +67,7 @@ class PpoHyperparameters:
     # aux-loss coefficient: opp_belief_aux_coef * (species_CE + moves_weight·moves_BCE) over the
     # believed opp slots is added to each minibatch loss. 0.0 = OFF (no aux term, byte-identical loss).
     # A TRAINING hparam (affects the loss only, never a forward pass) → NOT version-locked / NOT in
-    # check_compatible (treat like ent_coef; a frozen eval/pool/distill opponent never runs train()).
+    # check_compatible (treat like ent_coef; a frozen eval/pool opponent never runs train()).
     # Class default 0.0 so a smoke/test/frozen-opponent path that never sets it reads a safe no-op.
     opp_belief_aux_coef: float = 0.0
     # Relative weight of the moves multi-label BCE vs the species CE inside the aux term. Both are now
@@ -109,34 +109,6 @@ class PpoHyperparameters:
     # move_latent arch toggle.
     move_belief_latent_coef: float = 0.0
 
-    # Set by train_rl_agent. The SEARCH-TEACHER AWR policy-distillation weight:
-    # search_teacher_coef * advantage-weighted CE toward the verified-better action A*, over a minibatch
-    # sampled from the standalone `_correction_buffer` (NOT the rollout buffer — searched states are
-    # off-policy). 0.0 = OFF (loss byte-identical even if the buffer fills). Training-only (scales the
-    # loss, no forward/weight change) → NOT version-locked. `_correction_buffer` / `_search_teacher_on`
-    # are runtime attrs set externally (like `_async_rollout`). Design: design_search_teacher.md.
-    search_teacher_coef: float = 0.0
-    # AWR temperature β: weight w = clamp(exp(advantage/β), max=w_clip). Higher β → flatter weighting.
-    search_teacher_beta: float = 1.0
-    # Corrections sampled per train() for the AWR forward (its OWN forward — small, e.g. 256).
-    search_teacher_batch_size: int = 256
-    # OFF-POLICY value term (DEFAULT 0 — soundness): the search value is V^π*(s), so regressing the
-    # current critic (which feeds GAE) toward it biases advantages. Only enable for the joint-ExIt A/B.
-    search_teacher_value_coef: float = 0.0
-
-    # ON-POLICY SELF-DISTILLATION (OPD), modelled EXACTLY on search_teacher_coef. Upgrades the
-    # distillation TARGET from the single verified-better action A* (AWR) to the FULL improved
-    # distribution π' via KL(π' ‖ π_student) — π' is the softmax of the beam's per-action backed-up
-    # values (built in produce.py when the workers run OPD). Samples the SAME standalone
-    # `_correction_buffer` as the search-teacher (its own get_distribution forward). 0.0 = OFF (loss
-    # byte-identical even if the buffer fills). Training-only (scales the loss, no forward/weight change)
-    # → NOT version-locked / NOT in ModelVersion / check_compatible. `_opd_on` is a runtime attr set
-    # externally (like `_search_teacher_on`). OPD requires --search-teacher (it fills the buffer + its
-    # workers build π'); a run can A/B AWR vs KL since a Correction carries BOTH.
-    opd_coef: float = 0.0
-    # OPD softmax temperature β for π' (built worker-side in produce.py); recorded here for provenance.
-    opd_beta: float = 1.0
-
     # TD-CONSISTENCY AUXILIARY (gen3_td_consistency_aux_v1; the live-training half of
     # designs/research_state/levers/td_consistency_aux.md, ledger C5). The per-state value MSE never
     # constrains ADJACENT-state differences, so ΔV inherits ~2x the state noise exactly where the truth
@@ -176,113 +148,18 @@ class PpoHyperparameters:
     # silent no-op). Training-only, resume-mutable; scales a loss, touches no forward pass.
     win_prob_strata_weight: float = 0.0
 
-    # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1). The ON-POLICY KL that pours a frozen per-team
-    # SPECIALIST (an --exploiter checkpoint) into the generalist: for rollout states where the trainee
-    # pilots the teacher's team (the training-only `distill_mask` obs key = 1), a forward of the frozen
-    # teacher gives π_teacher, and distill_coef * KL(π_teacher ‖ π_student) is added — carving the
-    # specialist's per-team play into the shared trunk WITHOUT touching the value head (policy-only). The
-    # non-teacher-team states (distill_mask = 0) are the rehearsal that guards against forgetting. Training-
-    # only (scales the loss, no forward/weight change) → NOT version-locked / NOT in check_compatible.
-    # `_distill_teacher` is a runtime attr (a loaded frozen model) set externally (like `_correction_buffer`).
-    # 0.0 = OFF (byte-identical: the whole block is guarded on coef != 0 AND teacher present).
-    distill_coef: float = 0.0
-    # VALUE distillation (gen3_exploiter_value_distill_v1) — the missing head: policy-only distill leaves
-    # the student piloting the teacher's team with its OWN amortized (~4-dim) critic, so it mimics the
-    # teacher's MOVES but never gets its per-team VALUE understanding (confirmed: value_cls rank flat
-    # _14→_18→_19). This adds distill_value_coef * MSE(V_teacher, V_student) on the SAME teacher-team
-    # states (a raw-unit MSE). It is COHERENT
-    # despite V^π being policy-relative because the policy KL simultaneously drives π_student→π_teacher
-    # there, so V_teacher becomes the right value. Requires distill_coef > 0 (the policy-match validates
-    # the value-match). 0.0 = OFF (byte-identical); training-only, NOT version-locked. The A/B lever:
-    # policy-only (=0) vs policy+value (>0), read out by the value_cls rank probe.
-    distill_value_coef: float = 0.0
-    # FITNETS VALUE-FEATURE distillation (gen3_exploiter_value_feat_distill_v1) — the "hint" upgrade of scalar
-    # value distill. Matching only the teacher's SCALAR V crystallizes the critic (value_cls rank DROPS, A/B
-    # confirmed on ai_v7_20: value_mse falls but rank 4.15→3.55). This adds distill_value_feat_coef ·
-    # (1 − cos(value_pooled_student, value_pooled_teacher)) on the SAME teacher-team states — regressing the
-    # INTERMEDIATE 128-dim value-CLS pool (the FitNets hint layer) instead of the collapsed scalar, so the trunk
-    # inherits the teacher's per-team value STRUCTURE. COSINE (scale-free) chosen from the geometry analysis
-    # (complementary, non-competing, low-rank teacher subspaces — see _value_feat_distill). Requires
-    # distill_coef > 0 (the policy KL makes V_teacher the right target). 0.0 = OFF (byte-identical, no teacher
-    # value_pooled read); training-only, NOT version-locked. Composes with / is an A/B alternative to
-    # distill_value_coef (scalar) — read out by the value_cls effective-rank probe (does the HINT enrich it?).
-    distill_value_feat_coef: float = 0.0
-    # ---- gen3_distill_target_gate_v1 — the DISTILL TARGET FORM + ADVANTAGE GATE (config v103;
-    # designs/ai_v10/design_advantage_gated_distillation.md §3.1/§3.3/§7.1). WHAT the exploiter
-    # policy-distillation term asks for. "kl" (default) = the full-distribution forward KL above,
-    # byte-identical to every pre-flag run (the dispatch takes the literal `_distill_loss` call).
-    # "action" = `_gated_action_distill_loss`: the teacher's top-K probabilities renormalized over
-    # the legal set (distill_topk=1 ⇒ pure argmax CE — one bit of ordering, no tail shape;
-    # K >= n_actions recovers the KL — the D-F dial), AWR-weighted w = clamp(exp(|Â|/distill_beta),
-    # 20) with Â the NORMALIZED minibatch advantage. All TRAINING-only (a loss FORM: no forward
-    # read, no weight shape) → NOT gated by check_compatible; recorded on ModelVersion (v103) for
-    # provenance + flagless-resume read-back, like td_aux_coef.
-    distill_target: str = "kl"
-    distill_topk: int = 1
-    # THE JUDGE (rung a). "none" = every on-pin row — exactly the rows `_distill_loss` fires on
-    # (arm G1). "advantage" = keep only rows where the teacher's argmax DISAGREES with the sampled
-    # action AND the student's own normalized advantage reads that action as a mistake
-    # (Â < -distill_gate_tau), so the distill gradient pushes a logit PPO is already pushing down,
-    # by construction. Requires distill_target="action" (enforced in config.resolve_config).
-    distill_gate: str = "none"
-    distill_gate_tau: float = 0.0
-    # AWR temperature β for the |Â| weight (mirrors search_teacher_beta; w clamped at 20, as there).
-    distill_beta: float = 1.0
-
-    # ---- gen3_distill_offslice_anchor_v1 — THE OFF-SLICE TRUST REGION + the collateral meters ----
-    # A fold's net is teacher content MINUS overshoot damage on the UNTAUGHT distribution, and the
-    # 2026-08-31 licensing probe measured that damage as a systematic direction (a smaller distill
-    # step cut off-slice collateral 39% with absorption unchanged) rather than noise. This folds
-    #     distill_anchor_coef * mean_{off-slice} KL(π_parent ‖ π_student)
-    # against the FROZEN FOLD PARENT — a small-coefficient REGULARISER toward the starting policy on
-    # states no teacher covers. It is NOT the R3-SELF self-distillation TARGET (production dose,
-    # −9pp): a target drives steps, an anchor removes freedom. See `distill_anchor.py`.
-    #
-    # 0.0 = OFF and byte-identical *given no parent attached*; with `--distill-anchor-monitor` the
-    # parent IS attached at coef 0, which folds no term but costs one frozen forward per minibatch
-    # and emits every `distill/collateral_kl` meter — the pure-instrument arm.
-    #
-    # TRAINING-only (a loss weight + a diagnostic; no forward/weight-shape change) → NOT
-    # version-locked, NOT in check_compatible, resume-mutable. `_distill_anchor_parent` is a runtime
-    # attr (a loaded frozen model) attached externally by `DistillAnchorCallback`, like
-    # `_distill_teachers` — and RE-LOADED FROM THE FORK-PARENT PATH on every restart, never from the
-    # current checkpoint, which is why it is not persisted.
-    distill_anchor_coef: float = 0.0
-    # "off_slice" (default) anchors only where `distill_mask == 0`; "all" anchors every row. `all`
-    # exists so a future arm can test whether EXCLUDING the taught slice is what makes the trust
-    # region work — an assumption otherwise baked in and unmeasurable.
-    distill_anchor_mode: str = "off_slice"
-    # gen3_distill_grad_project_v1 — `m` for `--distill-anchor-mode grad_project`: how many OFF-SLICE
-    # rows of each micro-batch constrain that step's DISTILL gradient. Read only in that mode (and
-    # only ever set by `DistillAnchorCallback`, like the mode itself); see
-    # `instrumented_ppo/distill_grad_project.py` for what the projection does and what it costs.
-    distill_anchor_proj_samples: int = 16
-    # Attach the frozen parent (and therefore emit the meters) even at coefficient 0.
-    distill_anchor_monitor: bool = False
-    # WHICH policy the trust region is measured against — "parent" (the FIXED frozen fold parent,
-    # Learning-without-Forgetting), "ema" (a Polyak average of the student, ACER's average-policy
-    # trust region) or "periodic" (re-snapshot the student every N rollouts). The default is
-    # byte-identical to what this feature shipped with. The reference OBJECT itself lives on
-    # `_distill_anchor_ref` (a runtime attr, excluded from the save like the parent); this is the
-    # NAME, kept on the class so `train()` and any reader can see the arm without the callback.
-    distill_anchor_ref: str = "parent"
-    # Rollouts since the reference was last refreshed / initialised — or, under "ema", the nominal
-    # window 1/(1-tau), because a geometric average has no age. Published as
-    # `distill/anchor_ref_age_rollouts` so a reader can see WHAT the anchor is anchored to.
-    distill_anchor_ref_age: float = 0.0
-
     # COUNTERFACTUAL WIN-PROB GROUNDING (gen3_cf_label_plumbing_v1; G3 of
     # designs/ai_v10/design_counterfactual_value_grounding.md, rung R1). A background producer
     # re-rolls recorded training decisions to termination and drops tight Monte-Carlo P(win) labels
     # as JSONL; `_cf_buffer` (an `agents.training.cf_label_buffer.CfLabelBuffer`, attached
-    # externally like `_correction_buffer`) ingests them, and this coefficient folds
+    # externally like `_async_rollout`) ingests them, and this coefficient folds
     #     cf_winprob_coef * BCE( win_head(value_pooled(s)), MC_label(s) )
     # over its OWN sample and its OWN extractor forward — the labelled states are OFF-DISTRIBUTION
     # w.r.t. this rollout, so they cannot ride the minibatch.
     #
     # 0.0 = OFF and the whole block is skipped: no poll, no sample, no forward, loss byte-identical.
     # TRAINING-only (a loss weight; no forward/weight-shape change) → NOT version-locked, NOT in
-    # check_compatible, resume-mutable — the `opd_coef` class.
+    # check_compatible, resume-mutable — the `td_aux_coef` class.
     cf_winprob_coef: float = 0.0
     # THE SAFE STAGE, and the DEFAULT. True → the head's input `value_pooled` is stop-grad'd for
     # this term, so it trains the win-prob head's own params ONLY and cannot perturb the trunk (a
@@ -303,7 +180,7 @@ class PpoHyperparameters:
     #     as the A/B arm. The two are EXACTLY equal when every n == 1 (a 1-rollout label is already
     #     0 or 1, so the round is the identity and sum(n) == B).
     # TRAINING-only (a loss FORM, no forward and no weight shape) -> not version-locked, not in
-    # check_compatible, NOT read back on a flagless resume: the `--opd-coef` class.
+    # check_compatible, NOT read back on a flagless resume: the `td_aux_coef` class.
     cf_label_likelihood: str = "binomial"
     # gen3_cf_evidential_head_v1: the EVIDENTIAL Beta term's weight. Folds
     #     cf_evidential_coef * ( BetaBinomialNLL(alpha,beta; w,n)/sum(n)
@@ -330,7 +207,7 @@ class PpoHyperparameters:
     # folded at head A's own weight (1.0), not at this coefficient, so all three heads carry a bit-identical
     # A-term. 0.0 = OFF and the WHOLE twin block is skipped (including the on-policy mirror), so a
     # built-but-unused pair of heads leaves every parameter update byte-identical.
-    # TRAINING-only (a loss weight) → the `--opd-coef` class; the STRUCTURAL half is the extractor's
+    # TRAINING-only (a loss weight) → the `td_aux_coef` class; the STRUCTURAL half is the extractor's
     # `cf_twin_heads` kwarg (v99), which decides whether the heads' params exist at all.
     cf_twin_coef: float = 0.0
     # gen3_cf_twin_heads_v1: the SHADOW CRITIC's weight. Folds
@@ -372,33 +249,14 @@ class PpoHyperparameters:
     capacity_velocity_every: int = 50
 
     def _excluded_save_params(self):
-        # The search-teacher's `_correction_buffer` lives on the model (the callback↔train() hand-off),
-        # but it is TRANSIENT scaffolding like the rollout buffer — and it holds a threading.Lock that
-        # cloudpickle can't serialize (model.save would crash). Exclude it from the checkpoint (also keeps
-        # checkpoints small — a full buffer is hundreds of MB of obs); it's re-created on resume, empty,
-        # and the workers/cycle refill it. Mirrors SB3 excluding `rollout_buffer`.
-        # `_distill_teacher` is a full frozen model (a foreign exploiter) attached at setup — never pickle
-        # it into our checkpoint; it is re-loaded from its own path on resume (like a stable opponent).
-        # `_cf_buffer` is the same genre: transient scaffolding refilled from disk by the producer,
-        # and hundreds of MB of obs if pickled. Excluded for the same two reasons.
+        # `_cf_buffer` is the TRANSIENT scaffolding genre (like SB3's `rollout_buffer`): refilled from disk by
+        # the producer, holding a threading.Lock cloudpickle can't serialize and hundreds of MB of obs if
+        # pickled. Excluded for both reasons; re-created on resume, empty.
         # `_capacity_state` (gen3_capacity_telemetry_v1) is excluded DELIBERATELY and the
         # consequence is documented rather than hidden: it holds the canary's head, its Adam state,
         # the projection matrix and the frozen probe batch, so a resume re-inits the canary and its
         # loss/recovery curves restart. Persisting a diagnostic's optimizer into every checkpoint
         # is a worse trade than reading recoveries WITHIN a restart window.
-        # `_distill_anchor_parent` (gen3_distill_offslice_anchor_v1) is the `_distill_teacher` genre
-        # with one EXTRA reason: it must be re-loaded from the FORK-PARENT path on every restart, so
-        # persisting it would be worse than useless — a pickled parent would be silently carried
-        # forward and there would then be two answers to "what is the parent", the wrong one being
-        # the one that survives. See `agents.training.distill_anchor_callback`.
-        # `_distill_anchor_ref` is the anchor's REFERENCE: under `--distill-anchor-ref parent` it is
-        # the very same object (excluded above), and under `ema`/`periodic` it is a live policy copy
-        # that gets its OWN persistence — a `<checkpoint>_anchor_ref.pt` sibling — because the
-        # checkpoint has to stay loadable by everything that is not this trainer.
-        # `_distill_anchor_ref_writer` is the CALLBACK itself, parked on the model so the checkpoint
-        # sites can reach it without a handle; it back-references the model and SB3's `Logger` (which
-        # carries a `_contextvars.Context`), so pickling it would break EVERY save in the run at the
-        # pre-train round-trip smoke — the `_correction_buffer` lock hazard again.
         # `_vf_scale_announced` (gen3_winprob_critic_mode_v1) is the once-per-PROCESS latch on the
         # `[CRITIC] winprob` scale readout. Excluded so a launcher restart re-prints it: the line
         # belongs beside the startup banner, which every restart also re-prints, and the run's
@@ -433,11 +291,8 @@ class PpoHyperparameters:
         return super()._excluded_save_params() + ["_rust_collector", "_rust_fill", "_rust_row_versions",
                                                   "_rust_row_provenance",
                                                   "_rust_version", "_behaviour_probe_metrics", "_env_core_stamp",
-                                                  "_correction_buffer", "_distill_teacher",
-                                                  "_distill_teachers", "_cf_buffer",
+                                                  "_cf_buffer",
                                                   "_capacity_state",
-                                                  "_distill_anchor_parent", "_distill_anchor_ref",
-                                                  "_distill_anchor_ref_writer",
                                                   "_vf_scale_announced", "_diagnostics_ran_in_process",
                                                   "collect_rollouts",
                                                   "train", "learn", "_compile_control",

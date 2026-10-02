@@ -1,7 +1,7 @@
 """Phase 4 — CALLBACK ASSEMBLY: everything that runs DURING `learn()`.
 
 The LR controller (adaptive, or the two-phase KL->cosine schedule), the checkpointer, the
-exploiter temperature curriculum, the label back-fillers, the search teacher, and the one
+exploiter temperature curriculum, the label back-fillers, and the one
 non-blocking eval callback — `SelfPlayCallback` under `--self-play`, `PerOpponentEvalCallback`
 otherwise, neither under a plain `--debug` smoke.
 
@@ -66,9 +66,8 @@ def _arg_or(args, name, default):
     """`args.<name>`, or ``default`` when it is absent/None — WITHOUT collapsing a falsy value.
 
     `getattr(args, name, d) or d` is the idiom everywhere else in this file and it is wrong for any
-    knob whose 0 / 0.0 means something (`--distill-anchor-ema-tau 0`, `--distill-anchor-refresh-every
-    0`): it would rewrite the value the operator typed into the default and the run would report the
-    arm it was not.
+    knob whose 0 / 0.0 means something: it would rewrite the value the operator typed into the
+    default and the run would report the arm it was not.
     """
     got = getattr(args, name, None)
     return default if got is None else got
@@ -219,7 +218,7 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             ),
             resume_accum=_resumed_accum,
         ))
-    # RANK TRIPWIRE (gen3_distill_target_gate_v1, design_advantage_gated_distillation.md §4.1):
+    # RANK TRIPWIRE (gen3_distill_target_gate_v1):
     # watchdog over the EXISTING rank/policy_pr probe — EMA vs the run's own early baseline, with
     # a persistence rule. Default "warn" (no fold runs blind again); pure diagnostic bookkeeping —
     # no loss, no grad, no forward — except that "abort" stops learn() cleanly on a confirmed
@@ -228,152 +227,6 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
         from agents.training.rank_tripwire import RankTripwireCallback
         callbacks.append(RankTripwireCallback(mode=args.rank_tripwire,
                                               drop=args.rank_tripwire_drop))
-    # THE OFF-SLICE DISTILL ANCHOR (gen3_distill_offslice_anchor_v1) — the frozen fold PARENT that
-    # `instrumented_ppo/distill_anchor.py` regularises toward, plus the live collateral meters.
-    # Registered when the coefficient is live, or --distill-anchor-monitor is on, or the mode is
-    # grad_project. gen3_distill_instruments_default_v1 makes the MONITOR the default for any fold
-    # (--distill-teacher with --distill-coef > 0), so an ordinary fold now DOES attach the frozen
-    # parent — one no_grad forward per minibatch, no loss term, no parameter changed. A run with no
-    # teacher, or a teacher at --distill-coef 0, attaches nothing and stays byte-identical.
-    #
-    # A CALLBACK rather than an `apply_training_hparams` row on purpose: `_on_training_start` runs
-    # on EVERY launch, which is the cadence at which the parent must be re-read from the ORIGINAL
-    # fork-parent path (an idempotent fork's `--model` is swapped to the fork's own latest
-    # checkpoint on each restart — anchoring to that would let the trust region drift with the
-    # student). The resolution happens HERE, in phase 4, so an unresolvable parent refuses BEFORE
-    # the model is built rather than mid-`learn()`. The loader is injected so the agents-layer
-    # callback needs no `mappings` and no `main.train` import.
-    # gen3_distill_grad_project_v1: `--distill-anchor-mode grad_project` registers this callback
-    # even at coefficient 0 and without --distill-anchor-monitor. The projection changes the update
-    # on its own, so the mode has to REACH the model (this is the only site that sets
-    # `distill_anchor_mode`), and its readout is `distill/collateral_kl_vs_parent`, which only
-    # exists when the frozen parent is attached. `resolve_config` agrees — it counts the mode as
-    # `_anchor_wanted`, so the two conditions cannot drift into "the flag was accepted and did
-    # nothing".
-    if ((getattr(args, "distill_anchor_coef", 0.0) or 0.0) > 0
-            or getattr(args, "distill_anchor_monitor", False)
-            or getattr(args, "distill_anchor_mode", None) == "grad_project"):
-        from agents.training.distill_anchor_callback import (
-            DistillAnchorCallback, resolve_anchor_parent)
-        _anchor_path, _anchor_route = resolve_anchor_parent(
-            explicit=getattr(args, "distill_anchor_parent", None),
-            run_dir=model_dir, cli_model=args.model)
-        if not _anchor_path:
-            # gen3_distill_instruments_default_v1: THE DEFAULT YIELDS, THE ASK REFUSES. The monitor
-            # is now on by default for any fold, and `_resolve_fold_instruments` already declines it
-            # when neither --distill-anchor-parent nor --model can name a parent — so reaching here
-            # on a DEFAULTED monitor means some other route vanished between the two, and the right
-            # answer is still a warning rather than turning a launch that would work into a
-            # FATAL_CONFIG. Anything the operator actually TYPED (an explicit --distill-anchor-monitor,
-            # a live coefficient, grad_project) still refuses, loudly.
-            if (getattr(args, "distill_anchor_monitor_source", "cli") == "default"
-                    and not ((getattr(args, "distill_anchor_coef", 0.0) or 0.0) > 0)
-                    and getattr(args, "distill_anchor_mode", None) != "grad_project"):
-                print("\n[DistillAnchor] WARNING: the default fold monitor could not resolve a fold "
-                      f"parent (no --distill-anchor-parent, no --model, and {model_dir}/metadata.json "
-                      "records no `original_command` with a --model). Leaving it OFF — the "
-                      "distill/collateral_* meters will not exist for this run.")
-                args.distill_anchor_monitor = False
-                args.distill_anchor_monitor_source = "default-no-parent"
-                if getattr(args, "distill_stop_source", "cli") == "default":
-                    print("[DistillStop] WARNING: the default fold stop rule needs the monitor's "
-                          "distill/collateral_kl_vs_parent for its RISE half — disarming it too "
-                          "rather than running a detector whose AND-gate can never close.")
-                    args.distill_stop = "off"
-                    args.distill_stop_source = "default-no-parent"
-                _anchor_path = None
-            else:
-                from main.exit_codes import TrainExitCode
-                print("\n[DistillAnchor] FATAL: --distill-anchor-coef / --distill-anchor-monitor / "
-                      "--distill-anchor-mode grad_project is on "
-                      "but no fold parent could be resolved — no --distill-anchor-parent, no --model, "
-                      f"and {model_dir}/metadata.json records no `original_command` with a --model. "
-                      "The anchor has nothing to anchor to; refusing rather than training without it.")
-                sys.exit(int(TrainExitCode.FATAL_CONFIG))
-
-        # The default monitor may have just DECLINED above (no resolvable parent). Nothing
-        # below is meaningful without one, so the whole attach — loader, moving-reference
-        # restore, dual-ascent resume, callback — is skipped rather than half-run.
-        if _anchor_path:
-            def _load_anchor_parent(path, _args=args):
-                """Load the frozen parent the way a stable opponent / distill teacher is loaded."""
-                from agents.model.snapshot import current_model_version, load_foreign_opponent
-                from agents.observation.state_encoder import load_mappings
-                from agents.training.fixed_opponent_pool import _resolve_zip_and_config
-                from main.train.run_io import _run_arch_toggles
-                _zip, _cfg, _ = _resolve_zip_and_config(path, None)
-                _model, _ = load_foreign_opponent(
-                    _zip, current_version=current_model_version(load_mappings(),
-                                                                **_run_arch_toggles(_args)),
-                    device=str(_args.device), config_path=_cfg)
-                _model.policy.set_training_mode(False)
-                return _model
-
-            # A MOVING reference (`--distill-anchor-ref ema|periodic`) is RUN STATE, restored from the
-            # `<checkpoint>_anchor_ref.pt` sibling of this launch's --model. `expect_restore` is the
-            # fork-vs-restart predicate `--fork-lr` already owns (`--model` inside this run dir ⇒ a
-            # RESTART, which SHOULD have written the sibling), so a missing sibling is reported as a
-            # reset trust region on a restart and as an ordinary fold start on a fork's first launch.
-            from main.train.fork_lr import is_same_run_checkpoint
-            # gen3_distill_stop_rule_v1: the DUAL-ASCENT coefficient is RUN STATE and rides the SAME
-            # sidecar `handoff_lr` and `grad_accum_steps` ride. The launcher forwards the ORIGINAL argv
-            # on every relaunch, so without this a controller that had climbed to 5x its starting
-            # coefficient over three hours would silently reset to 1x at each restart — the same class
-            # of failure the moving reference's sibling blob exists to prevent.
-            _resumed_dual: dict | None = None
-            if args.model and os.path.exists(args.model):
-                try:
-                    _d = read_checkpoint_metadata(args.model).get("distill_anchor_dual_state")
-                    if isinstance(_d, dict):
-                        _resumed_dual = _d
-                except Exception as e:
-                    print(f"[DistillAnchor] WARNING: failed to read distill_anchor_dual_state from "
-                          f"{args.model}: {e} — the dual restarts from --distill-anchor-coef.")
-            callbacks.append(DistillAnchorCallback(
-                parent_path=_anchor_path, route=_anchor_route,
-                coef=float(getattr(args, "distill_anchor_coef", 0.0) or 0.0),
-                mode=str(getattr(args, "distill_anchor_mode", "off_slice") or "off_slice"),
-                monitor=bool(getattr(args, "distill_anchor_monitor", False)),
-                ref=str(getattr(args, "distill_anchor_ref", "parent") or "parent"),
-                # No `or` fallbacks here: tau 0.0 and refresh_every 0 are both LEGAL values with
-                # meanings of their own, so an `x or default` would silently rewrite one of them.
-                ema_tau=float(_arg_or(args, "distill_anchor_ema_tau", 0.99)),
-                refresh_every=int(_arg_or(args, "distill_anchor_refresh_every", 8)),
-                proj_samples=int(_arg_or(args, "distill_anchor_proj_samples", 16)),
-                run_dir=model_dir, resume_model=args.model,
-                expect_restore=bool(args.model and is_same_run_checkpoint(args.model, model_dir)),
-                target_kl=float(_arg_or(args, "distill_anchor_target_kl", 0.0)),
-                dual_lr=float(_arg_or(args, "distill_anchor_dual_lr", 0.1)),
-                coef_min=float(_arg_or(args, "distill_anchor_coef_min", 0.0)),
-                coef_max=getattr(args, "distill_anchor_coef_max", None),
-                resume_dual=_resumed_dual,
-                load_parent=_load_anchor_parent))
-    # THE FOLD STOP RULE (gen3_distill_stop_rule_v1) — plateau on teacher_agreement_on_slice AND
-    # rise on collateral_kl_vs_parent, AND-gated with a persistence count, driving warn/anneal/
-    # abort. Registered only when the flag is on, so an ordinary fold adds no callback and writes
-    # no series. `resolve_config` refuses the flag without a live anchor MONITOR, because the rise
-    # half of the gate reads a meter only the frozen parent provides. Its detector state rides the
-    # sidecar for the reason above: a detector re-armed on every 3h restart would need its whole
-    # window again each time and might never fire, while reading as ON throughout.
-    if getattr(args, "distill_stop", "off") not in ("off", None):
-        from agents.training.distill_stop_callback import DistillStopCallback
-        _resumed_stop: dict | None = None
-        if args.model and os.path.exists(args.model):
-            try:
-                _s = read_checkpoint_metadata(args.model).get("distill_stop_state")
-                if isinstance(_s, dict):
-                    _resumed_stop = _s
-            except Exception as e:
-                print(f"[DistillStop] WARNING: failed to read distill_stop_state from "
-                      f"{args.model}: {e} — the detector re-arms from scratch.")
-        callbacks.append(DistillStopCallback(
-            mode=str(args.distill_stop),
-            window=int(_arg_or(args, "distill_stop_window", 8)),
-            eps=float(_arg_or(args, "distill_stop_eps", 0.005)),
-            kl_slope_t=float(_arg_or(args, "distill_stop_kl_slope", 2.0)),
-            persist=int(_arg_or(args, "distill_stop_persist", 3)),
-            anneal_factor=float(_arg_or(args, "distill_stop_anneal_factor", 0.7)),
-            resume_state=_resumed_stop))
     # gen3_exploiter_temp_anneal_v1: control the EXPLOITER target's sampling temperature over training
     # (a difficulty curriculum via opponent stochasticity — hot/weak early → true strength later),
     # pushed to every env's exploiter RLPlayer via env_method each rollout. Registered ONLY when
@@ -472,37 +325,6 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
                 starve_minutes=_arg_or(args, "cf_supply_starve_minutes", DEFAULT_STARVE_MINUTES),
                 supply=_cf_supply),
             run_dir=model_dir, supply=_cf_supply))
-    # SEARCH-TEACHER: each cycle, search + confirm the worst loss craters and distil verified-better
-    # corrections into model._correction_buffer (the AWR aux loss samples it). Off by default (the
-    # buffer fills nothing → coef-0 loss is byte-identical regardless). BOTH halves of a cycle are
-    # subprocesses — the candidate SELECTION as well as the search/confirm workers; until 2026-09-07
-    # selection ran inline in _on_step and blocked the training loop for 48-250 s per cycle.
-    if args.search_teacher:
-        from agents.training.teacher.callback import SearchTeacherCallback
-        callbacks.append(SearchTeacherCallback(
-            run_dir=model_dir,
-            freq_steps=(args.teacher_search_freq if args.teacher_search_freq > 0 else 2_000_000),
-            budget=args.teacher_search_budget, n_workers=args.teacher_search_workers,
-            confirm_rollouts=args.teacher_confirm_rollouts,
-            # --teacher-scan-limit: how many loss traces the SELECTION child falsify-gates. It was
-            # hard-coded at the callback's own default until v113; it is the cost knob of the half
-            # that used to block the training step.
-            scan_limit=args.teacher_scan_limit,
-            persistent=args.teacher_persistent, refresh_steps=args.teacher_refresh_steps,
-            n_battles=args.teacher_gen_battles,
-            # OPD: when --opd-coef>0 the workers ALSO build the improved distribution π' (the KL target).
-            opd_build_pi_target=bool(args.opd_coef and args.opd_coef > 0), opd_beta=args.opd_beta,
-            # ai_v12 routes 2+3: which TEACHER produces the corrections. "crater" (the default) is
-            # the behaviour that existed before the flag; "winprob_oneply" swaps the selection +
-            # production halves and leaves everything downstream of the CorrectionBuffer alone.
-            mode=args.search_teacher_mode, wp_band=args.winprob_teacher_band,
-            wp_margin=args.winprob_teacher_margin,
-            # The workers' sim engine follows the run's --use-bridge impl (no separate flag);
-            # "node" when the bridge is off, which is the historical behaviour.
-            impl=args.bridge_impl,
-            # gen3_supply_guard_v2: N consecutive cycles with no candidate → FATAL_SUPPLY (5).
-            starve_cycles=starve_cycles_for(args, "search_teacher"),
-            verbose=1))
     eval_callback = None
     # A --debug smoke run skips ALL eval by default — the periodic eval callback below AND the
     # final win-rate eval — so it needs no eval opponents / Showdown eval connection and stays

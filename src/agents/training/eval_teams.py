@@ -18,7 +18,7 @@ def build_trainee_tb(cfg: dict, all_teams: Any, sample_teams: Any) -> Any:
 
     team_str = cfg.get("trainee_team_str")
     if team_str:
-        # a LIST = the distillation/multi-team case (sample among the taught teams, as training does);
+        # a LIST = the multi-team case (sample among the pinned teams, as training does);
         # a plain str = the single --trainee-team pin.
         return Gen3Teambuilder(list(team_str) if isinstance(team_str, (list, tuple)) else [team_str])
     return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)

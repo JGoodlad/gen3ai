@@ -12,7 +12,6 @@ from datetime import datetime
 from agents.model.extra_obs_keys import synthetic_obs
 from agents.model.model_version import ModelVersion
 from agents.model.snapshot import load_model_snapshot, record_checkpoint, save_model_snapshot
-from agents.training.distill_anchor_callback import save_anchor_ref_beside
 from agents.training.eval_callback import request_forced_eval
 from main.exit_codes import TrainExitCode
 from main.launcher.ipc import send_event
@@ -191,14 +190,6 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         canary_reset_steps=int(getattr(model, "canary_reset_steps", 1_000_000)),
         capacity_cosine_every=int(getattr(model, "capacity_cosine_every", 50)),
         capacity_velocity_every=int(getattr(model, "capacity_velocity_every", 50)),
-        # gen3_distill_target_gate_v1 (v103): the five loss knobs live on the model; the two
-        # rank-tripwire knobs are callback config (not model attrs) and default here — this
-        # version only feeds the round-trip smoke, and neither is gated.
-        distill_target=str(getattr(model, "distill_target", "kl")),
-        distill_topk=int(getattr(model, "distill_topk", 1)),
-        distill_gate=str(getattr(model, "distill_gate", "none")),
-        distill_gate_tau=float(getattr(model, "distill_gate_tau", 0.0)),
-        distill_beta=float(getattr(model, "distill_beta", 1.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -270,7 +261,6 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             hparams = _model_hparams(model)
             save_model_snapshot(model_dir, version, current_lr=lr, current_epochs=epochs, hparams=hparams)
             record_checkpoint(model_dir, path + ".zip", lr, epochs, hparams=hparams, handoff_lr=_handoff())
-            save_anchor_ref_beside(model, path + ".zip")   # see run_io; no-op without a moving anchor
             print(f"[ABORT] Checkpoint saved → {path}.zip")
         except Exception as e:
             print(f"[ABORT] Save failed: {e}")
@@ -302,7 +292,6 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             hparams=_model_hparams(model),
             handoff_lr=_handoff(),
         )
-        save_anchor_ref_beside(model, ckpt + ".zip")       # see run_io; no-op without a moving anchor
         print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
 
     def _forced_eval(sig, frame):

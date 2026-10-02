@@ -115,7 +115,7 @@ updated + scalar emitted at accum=2).
 **`train/noise_scale` is measured on the TOTAL gradient, and on this tree the total gradient is
 mostly not PPO.** The loss is the clipped surrogate + the value term + the entropy bonus + a dozen
 DENSE supervised auxiliaries (belief heads, win-prob, spread/nature/HP-type, TD-aux,
-the counterfactual family) + a distillation KL on a fold. A supervised head's per-example gradients
+the counterfactual family). A supervised head's per-example gradients
 **agree** — its target is a label, not an advantage — so its `tr(Σ)` is small and its `|G|²` is not.
 Mixing it into the total therefore **DEFLATES** `B_simple = tr(Σ)/|G|²`, and the run reads
 "over-batched" while the term you are actually trying to train may be starved. Acting on the total
@@ -125,7 +125,7 @@ That confound is not hypothetical here: the live runs read `train/noise_scale_ra
 and 0.05 late** on the generalists and **1.1** on the v8 fold, i.e. "over-batched 16-1000x" — a
 conclusion no batch-size decision should rest on until the policy term has been read on its own.
 
-**Five groups, the SAME estimator.** `PerTermNoiseSampler` accumulates each group's gradient over
+**Four groups, the SAME estimator.** `PerTermNoiseSampler` accumulates each group's gradient over
 the same two batch sizes the total already uses for free (one micro-batch, and the accumulated
 first group of epoch 0) and feeds them through the SAME `_noise_scale_estimate` two-point solve and
 the SAME separately-EMA'd numerator/denominator. The math is not forked — the whole point of the
@@ -136,8 +136,7 @@ comparison is that a disagreement can only be the *gradient*, never the estimato
 | `policy` | the clipped surrogate AS FOLDED (`_policy_grad_term`; at the 1.0 default that is `policy_loss` itself) |
 | `value` | `vf_coef · value_loss` (0.0 and therefore absent under `--critic winprob`, where the win-prob BCE carries the `value` tag instead) |
 | `entropy` | `ent_coef · ent_loss_used` — **degenerate at `--ent-coef 0`** (a 0.0-scaled tensor still folds, so the group is present but its norms are 0 and both EMAs stay non-positive ⇒ nothing is emitted, which is the right answer, not a gap) |
-| `aux` | every belief / win-prob / TD-aux / search-teacher / OPD / counterfactual term, as ONE bucket (`grad/<term>_share` already breaks the heads out individually) |
-| `distill` | the `--distill-coef` family — separated because it comes and goes with a fold and its dose is the thing being tuned |
+| `aux` | every belief / win-prob / TD-aux / counterfactual term, as ONE bucket (`grad/<term>_share` already breaks the heads out individually) |
 
 Three scalars per group, beside the existing pair:
 - **`train/noise_scale_<g>`** — that group's own `B_simple`.
@@ -212,7 +211,7 @@ past the warm-up window is unchanged. ⚠️ And an EMA is now `(value, COUNT)`:
 sample 1, which takes the next sample whole (the one live edge, pinned in the test file).
 
 **FIRST READING (2026-09-01, two `--debug --steps 12000 --n-steps 1024 --batch-size 128
---grad-accum-steps 2` runs, CPU, default flags so `aux` is small and `distill` absent).** It
+--grad-accum-steps 2` runs, CPU, default flags so `aux` is small).** It
 reproduces the confound in miniature. Run A: `train/noise_scale_share_value` = **1.00001** and
 `train/noise_scale` == `train/noise_scale_value` to five figures — **the "total" IS the value
 term**, contributing ~100% of |G|² — with `noise_scale_ratio` = **0.081** ("over-batched 12×").
@@ -259,8 +258,7 @@ family. A source scan asserts the tags in `train()` and `NOISE_TERM_GROUPS` are 
 callbacks publish with `logger.dump(step)` in the middle of a rollout, and sb3's `dump` CLEARS the
 logger. That took away the previous update's `train/*` before `AdaptivePPOCallback` /
 `TwoPhaseLRCallback` read `train/approx_kl` at `on_rollout_end`. The size of it: 1 reading in 20 on
-every run with a live controller (N0: 37 of 739 updates). RankTripwire, DistillStop and the
-DistillAnchor dual lost the same readings. Each lost update's `train/*` points were also written at
+every run with a live controller (N0: 37 of 739 updates). RankTripwire lost the same readings. Each lost update's `train/*` points were also written at
 the eval SNAPSHOT step, which lies behind the current step.
 
 **The fix** is `agents/training/logger_scope.isolated_dump` on both eval callbacks' `_collect_pending`:
@@ -270,7 +268,7 @@ the eval SNAPSHOT step, which lies behind the current step.
 
 **What the boundary means.** A run with a LIVE controller (not `--fork-lr-freeze`) trained from this
 commit onward is not comparable, on its LR / dose trajectory, with one trained before it. Frozen-LR
-forks are unaffected on that axis; only their tripwire and distill readings change. Arms on the same
+forks are unaffected on that axis; only their tripwire readings change. Arms on the same
 side of the boundary that share an eval cadence stay comparable. Evidence and scope: ledger
 2026-10-01 *THE EVAL DUMP DROPPED A KL READING*,
 [`design_own_ppo_loop.md`](../endstate/design_own_ppo_loop.md) §2.1.
@@ -282,7 +280,7 @@ optimizer LR and prints `(arg --lr=… ignored on resume)` — correct for a lau
 controller should keep the rate it settled on) and wrong for a FORK, which then inherits whatever
 the PARENT had annealed to. `--batch-size` and `--n-steps` are inherited the same way.
 
-**The quantity that predicts a distillation fold's collateral is the DOSE, not the LR** (ledger M7):
+**The quantity that predicts a fork's collateral is the DOSE, not the LR** (ledger M7, read on the now-deleted distillation fold):
 
 ```
 updates_per_env_step = n_epochs * optimizer_steps_per_epoch / rollout_rows
