@@ -20,23 +20,35 @@ from main.train.constants import checkpoint_due
 
 def _resolve_fresh_model_dir(run_name, exploiter_label, model_arg):
     """Pick the run directory for a run whose --run-dir is NOT set (i.e. not a launcher-managed
-    resume). Precedence: an explicit --run-name → ``models/<name>``; else, in exploiter mode, a
-    derived ``models/exploiter_vs_<target>``; else a date-stamped ``models/run_<timestamp>`` (the
-    legacy default). A NAMED dir is validated as a single safe path component, and we refuse to start
-    a FRESH run on top of an EXISTING run (one carrying a metadata.json) — unless --model resumes from
-    INSIDE that very dir — so naming a run after e.g. the live run can't silently clobber it. Returns
-    the dir (or exits with a clear FATAL). Pure given its args → unit-tested."""
+    resume). Precedence: an explicit --run-name → ``<archive>/<name>``; else, in exploiter mode, a
+    derived ``<archive>/exploiter_vs_<target>``; else a date-stamped ``<archive>/run_<timestamp>`` (the
+    legacy default). ``<archive>`` is ``utils.paths.run_archive_dir()`` — ``$GEN3AI_MODELS_DIR`` or the
+    MAIN checkout's ``models/`` — NEVER a cwd-relative ``models/``: from a worktree that directory is
+    deleted silently with the worktree (2026-09-23, eight runs). No archive → FATAL_CONFIG. A NAMED dir is
+    validated as a single safe path component, and we refuse to start a FRESH run on top of an EXISTING
+    run (one carrying a metadata.json) — unless --model resumes from INSIDE that very dir — so naming a
+    run after e.g. the live run can't silently clobber it. Returns the (absolute) dir, or exits with a
+    clear FATAL. Pure given its args and the archive → unit-tested."""
     import re
+    from main.exit_codes import TrainExitCode
+    from utils.paths import RunArchiveError, new_run_dir
     if run_name:
         if not re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*$", run_name):
             print(f"\n[RunName] FATAL: --run-name {run_name!r} must be a single name "
                   f"(letters/digits/._-), with no slashes or path traversal.")
             sys.exit(1)
-        model_dir = os.path.join("models", run_name)
+        leaf = run_name
     elif exploiter_label:
-        model_dir = os.path.join("models", "exploiter_vs_" + exploiter_label.removeprefix("ext_"))
+        leaf = "exploiter_vs_" + exploiter_label.removeprefix("ext_")
     else:
-        return f"models/run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # always unique → no guard
+        leaf = f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"   # always unique → no clobber guard
+    try:
+        model_dir = new_run_dir(leaf)
+    except RunArchiveError as exc:
+        print(f"\n[RunArchive] FATAL: {exc}", file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+    if not (run_name or exploiter_label):
+        return model_dir
     # Clobber guard: a named fresh run must not write into a DIFFERENT existing run's dir.
     resuming_into_it = bool(model_arg) and os.path.abspath(model_arg).startswith(
         os.path.abspath(model_dir) + os.sep)
@@ -45,6 +57,25 @@ def _resolve_fresh_model_dir(run_name, exploiter_label, model_arg):
               f"different --run-name, or pass --model <a checkpoint inside it> to resume that run.")
         sys.exit(1)
     return model_dir
+
+
+def _resolve_model_dir(run_dir, run_name, exploiter_label, model_arg):
+    """THE trainer's run directory — the ONE decision, so a test can drive it.
+
+    ``--run-dir`` (the launcher's resume / fork dir, or one typed by hand) is used as given but
+    CHECKED: a dir inside a linked worktree's OWN ``models/`` dies silently with the worktree
+    (2026-09-23, eight runs), so it exits ``FATAL_CONFIG`` here — the first moment it is known, before
+    anything exists. Otherwise ``_resolve_fresh_model_dir`` (``--run-name`` / exploiter / minted, all
+    in ``utils.paths.run_archive_dir()``, the main checkout's ``models/``). Always absolute."""
+    if not run_dir:
+        return _resolve_fresh_model_dir(run_name, exploiter_label, model_arg)
+    from main.exit_codes import TrainExitCode
+    from utils.paths import RunArchiveError, checked_run_dir
+    try:
+        return checked_run_dir(run_dir)
+    except RunArchiveError as exc:
+        print(f"\n[RunArchive] FATAL: {exc}", file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
 
 def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None":

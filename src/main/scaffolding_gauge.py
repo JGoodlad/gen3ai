@@ -825,7 +825,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     say = (lambda _m: None) if args.quiet else (lambda m: print(f"[scaffolding_gauge] {m}",
                                                                flush=True))
     t0 = time.time()
-    run_dir = args.run
+    from utils.paths import RunArchiveError, checked_run_dir, resolve_archive_ref
+    run_dir = resolve_archive_ref(args.run)         # `models/<run>` typed in a worktree
+    try:    # the DEFAULT output lands inside the run: never a worktree's own models/ (checked up front)
+        out = args.out or checked_run_dir(os.path.join(run_dir, "scaffolding_gauge.json"))
+    except RunArchiveError as exc:
+        print(f"[scaffolding_gauge] {exc}", file=sys.stderr)
+        return int(exc.exit_code)
     slices, coverage = collect_slices(
         run_dir, opponent=args.opponent, max_battles_per_step=args.max_battles_per_step,
         seed=args.seed, say=say)
@@ -855,7 +861,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         }
     report["meta"]["runtime_sec"] = round(time.time() - t0, 1)
 
-    out = args.out or os.path.join(run_dir, "scaffolding_gauge.json")
     try:
         with open(out, "w") as fh:
             json.dump(report, fh, indent=1)

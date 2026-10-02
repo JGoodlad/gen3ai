@@ -54,7 +54,7 @@ def run_dir_for_checkpoint(checkpoint_path: str) -> str:
 
 
 def find_latest_checkpoint(
-    models_root: str,
+    models_root: "str | None" = None,
     run_dir: "str | None" = None,
     min_mtime: float = 0.0,
 ) -> "str | None":
@@ -64,7 +64,9 @@ def find_latest_checkpoint(
     to resume (a fatal condition to surface), and the global step-number max used to resolve to
     whatever ancient run had the biggest step anywhere (observed: a crashed fresh run's exit
     summary pointing at a ``models/_goldens/ai_v3_*`` zip at 469M steps). ``run_dir=None`` keeps
-    the global search (the legacy un-scoped callers)."""
+    the global search (the legacy un-scoped callers) over ``models_root`` — and when that is
+    ``None`` too, over ``utils.paths.run_archive_dir()``, never a cwd-relative ``models/``. A
+    run-scoped caller passes ``run_dir`` alone: ``models_root`` is not read for it."""
     if run_dir:
         latest_txt = os.path.join(run_dir, "latest.txt")
         if os.path.exists(latest_txt):
@@ -80,6 +82,9 @@ def find_latest_checkpoint(
         # applies (snapshots/best_model/eval_traces zips are not resumable checkpoints).
         search_root = run_dir
     else:
+        if models_root is None:
+            from utils.paths import run_archive_dir
+            models_root = str(run_archive_dir())
         search_root = models_root
 
     zips = glob.glob(os.path.join(search_root, "**", "*.zip"), recursive=True)
@@ -273,7 +278,7 @@ def run_dir_progress(run_dir: str) -> "list[str]":
     found: list = []
     if not os.path.isdir(run_dir):
         return found
-    ckpt = find_latest_checkpoint("models", run_dir=run_dir)
+    ckpt = find_latest_checkpoint(run_dir=run_dir)
     if ckpt is not None:
         found.append(f"checkpoint {os.path.relpath(ckpt, run_dir)}")
     if os.path.exists(os.path.join(run_dir, "model_config.json")):
@@ -282,20 +287,26 @@ def run_dir_progress(run_dir: str) -> "list[str]":
 
 
 def _resolve_fresh_run_dir(args: list, timestamp: str) -> str:
-    """Run dir for a fresh (no --model) launcher run.
+    """Run dir for a fresh (no --model) launcher run — ALWAYS an absolute path, ALWAYS checked.
 
-    Honour a user-supplied ``--run-dir`` verbatim (normalized) — the folder the run should
-    write into; only mint a timestamped ``models/run_<timestamp>`` when none was given. Without
-    the ``--run-dir`` branch the launcher always overwrote the user's folder with a fresh
-    timestamp, so the TUI 🗂 badge and every checkpoint landed in the wrong place."""
+    Honour a user-supplied ``--run-dir`` (made absolute) — the folder the run should write into;
+    only mint ``<archive>/run_<timestamp>`` when none was given, where ``<archive>`` is
+    ``utils.paths.run_archive_dir()`` (``$GEN3AI_MODELS_DIR`` or the MAIN checkout's ``models/``) —
+    never a cwd-relative ``models/``, which from a worktree is deleted silently with it
+    (2026-09-23, eight runs). Without the ``--run-dir`` branch the launcher always overwrote the
+    user's folder with a fresh timestamp, so the TUI 🗂 badge and every checkpoint landed in the
+    wrong place. Every branch ends in ``checked_run_dir``: an explicit dir inside a linked
+    worktree's own ``models/`` is a typed ``RunArchiveError`` (FATAL_CONFIG), and no archive is the
+    same refusal (naming ``$GEN3AI_MODELS_DIR``)."""
+    from utils.paths import checked_run_dir, new_run_dir
     user_run_dir = _peek_arg(args, "--run-dir")
     if user_run_dir:
-        return os.path.normpath(user_run_dir)
+        return checked_run_dir(user_run_dir)
     run_name = _peek_arg(args, "--run-name") or _peek_arg(args, "--run_name")
     if run_name:
-        # A memorable name → models/<name>/ (basename-sanitized so it can't path-escape models/).
-        return os.path.join("models", os.path.basename(run_name.rstrip("/")) or f"run_{timestamp}")
-    return os.path.join("models", f"run_{timestamp}")
+        # A memorable name → <archive>/<name>/ (basename-sanitized so it can't path-escape the archive).
+        return new_run_dir(os.path.basename(run_name.rstrip("/")) or f"run_{timestamp}")
+    return new_run_dir(f"run_{timestamp}")
 
 
 def resolve_launch_run_dir(args: list, timestamp: str) -> str:
@@ -319,7 +330,7 @@ def resolve_launch_run_dir(args: list, timestamp: str) -> str:
         run_dir = _resolve_fresh_run_dir(args, timestamp)
         progress = run_dir_progress(run_dir)
         if progress:
-            latest = find_latest_checkpoint("models", run_dir=run_dir)
+            latest = find_latest_checkpoint(run_dir=run_dir)
             resume = (f"--model {latest}" if latest else "--model <checkpoint>")
             raise FreshRunDirHasProgress(
                 f"this is a FRESH launch (no --model) but its run dir {run_dir!r} already holds a "
@@ -338,13 +349,32 @@ def resolve_launch_run_dir(args: list, timestamp: str) -> str:
         # caller. The clobber guard now fires ONLY when the target exists WITHOUT any resumable
         # checkpoint (a genuine run-name collision, or a fork that crashed before its first save).
         if run_dir != run_dir_for_checkpoint(existing_model) \
-                and find_latest_checkpoint("models", run_dir=run_dir) is None \
+                and find_latest_checkpoint(run_dir=run_dir) is None \
                 and os.path.exists(os.path.join(run_dir, "metadata.json")):
             raise ValueError(f"fork target {run_dir!r} is already a run (has a metadata.json but no "
                              f"resumable checkpoint) — refusing to clobber it; pick a different "
                              f"--run-name")
         return run_dir
-    return run_dir_for_checkpoint(existing_model)
+    # PLAIN RESUME: the checkpoint's own dir — checked, because a checkpoint that lives inside a
+    # linked worktree's own models/ would keep writing there (and die with the worktree).
+    from utils.paths import checked_run_dir
+    return checked_run_dir(run_dir_for_checkpoint(existing_model))
+
+
+def archive_anchored_args(args: list) -> list:
+    """``--model models/<run>/…`` typed where the cwd has no ``models/`` (a worktree) → the same
+    path in the run archive, as an absolute path — so the run dir derived from it is the ARCHIVE's.
+
+    A fallback, never an override (``utils.paths.resolve_archive_ref``): a path the cwd holds, an
+    absolute one and one the archive does not have are untouched, so a main-checkout launch is
+    byte-identical and a genuinely missing checkpoint still fails with the path the user typed.
+    Called by the launch path and ``--dry-run`` BEFORE they resolve the run dir."""
+    from utils.paths import resolve_archive_ref
+    model = _find_model_arg(args)
+    if not model:
+        return args
+    anchored = resolve_archive_ref(model)
+    return args if anchored == model else _insert_or_replace_model_arg(args, anchored)
 
 
 def resolve_fork_resume_model(args: list, run_dir: str) -> "str | None":
@@ -360,7 +390,7 @@ def resolve_fork_resume_model(args: list, run_dir: str) -> "str | None":
     model = _find_model_arg(args)
     if not model or run_dir == run_dir_for_checkpoint(model):
         return None
-    return find_latest_checkpoint("models", run_dir=run_dir)
+    return find_latest_checkpoint(run_dir=run_dir)
 
 
 def _strip_launcher_args(argv: list) -> list:

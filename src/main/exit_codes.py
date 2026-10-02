@@ -88,6 +88,9 @@ _FATAL_BY_NAME = {"NonFiniteLearnerError": TrainExitCode.FATAL_NONFINITE,
                   "NonFiniteWeights": TrainExitCode.FATAL_NONFINITE,
                   "SupplyStarvedError": TrainExitCode.FATAL_SUPPLY,
                   "FatalConfigError": TrainExitCode.FATAL_CONFIG,
+                  # `utils.paths.RunArchiveError`: a run dir the archive cannot hold (no archive, or
+                  # inside a linked worktree's own models/) — a restart meets the same refusal.
+                  "RunArchiveError": TrainExitCode.FATAL_CONFIG,
                   "ParityFailure": TrainExitCode.FATAL_CONFIG}
 
 

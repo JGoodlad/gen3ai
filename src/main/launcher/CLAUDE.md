@@ -23,8 +23,15 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
 - `_prepare_session()` (worktree pin + run-dir + initial events + at-exit handlers) runs on the
   main thread **before** the screen opens — a pin failure `sys.exit`s with a clean message.
   **Run-dir resolution** (`checkpoint.resolve_launch_run_dir`, three cases): a **fresh** run (no
-  `--model`) honours `--run-dir` verbatim, then `--run-name <name>` (→ `models/<name>`,
-  basename-sanitized — a memorable name without the full path), else a timestamped `models/run_<ts>`.
+  `--model`) honours `--run-dir` (made absolute), then `--run-name <name>` (→ `<archive>/<name>`,
+  basename-sanitized — a memorable name without the full path), else a timestamped `<archive>/run_<ts>`.
+  🚨 **`<archive>` is `utils.paths.run_archive_dir()` — `$GEN3AI_MODELS_DIR`, else the MAIN checkout's
+  `models/` — never a cwd-relative `models/`** (from a worktree that directory is deleted silently with
+  it; 2026-09-23). Every resolved dir is ABSOLUTE and passes `checked_run_dir`: an explicit `--run-dir`
+  (or a resumed checkpoint's own dir) inside a linked worktree's own `models/`, or no archive at all, is a
+  typed `RunArchiveError` → `FATAL_CONFIG` (3, `sys.exit` in `_prepare_session`; `--dry-run` prints
+  `REFUSED (run dir)` and returns 3). `archive_anchored_args` first re-points a `--model models/<run>/…`
+  the cwd does not hold at the archive (a fallback — a main-checkout launch is byte-identical).
   A **plain resume** (`--model`, no fork signal) takes the checkpoint's own folder (continue it). A
   **fork** — a `--model` resume WITH an explicit `--run-name`, or with `--exploiter` — instead writes
   to a fresh `--run-name`/timestamped dir: the `--model` is only the INIT (an exploiter trained vs a
@@ -230,10 +237,11 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   🚨 **The last row, and the atexit `cleanup()`, run the SAME guard `scripts/land.sh` runs**
   (`_run_data_held`, 2026-09-23): refuse when a main-checkout `models/` symlink resolves into the
   tree, or when its untracked + ignored content outside the build/cache allowlist exceeds 50 MiB.
-  In normal operation a pin never holds a run — the child inherits the launcher's cwd, so
-  `models/<run>` lands in the main checkout — but a launcher started from INSIDE a worktree put
-  eight v9 runs in theirs, and a forced removal of those worktrees destroyed them (ledger
-  2026-09-23). A guard that cannot run keeps the tree. Gate: `worktree_prune_test.py` (e).
+  A pin never holds a run — the child gets an ABSOLUTE `--run-dir` in the archive — but a launcher
+  started from INSIDE a worktree used to put eight v9 runs in theirs (a cwd-relative `models/<run>`), and a
+  forced removal of those worktrees destroyed them (ledger 2026-09-23); that path is now closed at its
+  source (`run_archive_dir` / `checked_run_dir`), and this guard stays as the backstop. A guard that
+  cannot run keeps the tree. Gate: `worktree_prune_test.py` (e), `src/utils/run_archive_test.py`.
 
   It **reports every decision** through a `report` callable (`state.add_event` from the
   launcher, `print` standalone), naming the owning pid on each skip — a startup that leaves
@@ -873,10 +881,13 @@ an editable install present and no `PYTHONPATH`, a pinned old-commit child impor
 **main checkout** — an old checkpoint silently resuming on current HEAD, the arch-drift disaster
 class. `PYTHONPATH` entries land in `sys.path` *before* a `.pth`'s, so the pin and an editable
 install coexist correctly exactly as long as that line stays. Note the deliberate split it creates:
-the child **imports from the worktree** while writing `models/` **relative to the launcher's cwd**
-(the main checkout).
+the child **imports from the worktree** while the run it writes is the ABSOLUTE `--run-dir` the launcher
+hands it (in the archive — main's `models/`), so a pinned child running an OLD commit that knows nothing of
+`run_archive_dir` still lands there from any launcher cwd (verified 2026-10-02: a launcher in a worktree,
+child pinned to HEAD, wrote only into the archive; `run_archive_test.py` pins the absolute `--run-dir` and
+the no-`cwd=` spawn).
 
-That second half is why `models/` exists **only in the main checkout** and never in a worktree —
+`models/` exists **only in the main checkout** and never in a worktree —
 so anything else that needs the run archive must reach across rather than look beside itself.
 `utils.paths.main_models_dir()` is that reach (via git's shared `--git-common-dir`, the same fact
 `utils.git.get_main_repo_root()` reads); see the root `CLAUDE.md` § *Path discovery*. Four tests

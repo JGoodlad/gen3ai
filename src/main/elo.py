@@ -350,6 +350,9 @@ def refit_main(argv: list[str]) -> int:
             return 2
         print(f"[baseline] run_dir: {baselines.describe(run_dir)}")
         run_dir = resolved
+    # `models/<run>` typed where the cwd has no `models/` (a worktree) is the ARCHIVE's run.
+    from utils.paths import RunArchiveError, checked_run_dir, resolve_archive_ref
+    run_dir = resolve_archive_ref(run_dir)
     if not os.path.isdir(run_dir):
         print(f"error: {run_dir} is not a directory", file=sys.stderr)
         return 2
@@ -369,6 +372,11 @@ def refit_main(argv: list[str]) -> int:
         # Rewriting would only churn `computed_at`; the file is already on this scale.
         print("\n(already on the current recipe and identical — nothing written.)")
         return 0
+    try:      # `--apply` WRITES into the run: never into a worktree's own models/ (dies with it)
+        checked_run_dir(os.path.dirname(rep["ladder_json"]))
+    except RunArchiveError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return int(e.exit_code)
     backup = rep["backup_path"]
     if os.path.exists(backup):
         print(f"\nerror: {backup} already exists. That file is the ONLY surviving copy of what "
@@ -451,9 +459,16 @@ def main() -> int:
         print(f"[baseline] run_dir: {baselines.describe(args.run_dir)}")
         args.run_dir = resolved
 
+    from utils.paths import RunArchiveError, checked_run_dir, resolve_archive_ref
+    args.run_dir = resolve_archive_ref(args.run_dir)    # `models/<run>` typed in a worktree
     if not os.path.isdir(args.run_dir):
         print(f"error: {args.run_dir} is not a directory", file=sys.stderr)
         return 2
+    try:    # the DEFAULT output lands inside the run: never a worktree's own models/
+        out_dir = args.out or checked_run_dir(os.path.join(args.run_dir, "elo"))
+    except RunArchiveError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return int(e.exit_code)
 
     rows, fit, anchors = analyze(args.run_dir, args.source, args.anchors)
     if not rows:
@@ -463,7 +478,6 @@ def main() -> int:
         return 1
 
     anchored = bool(anchors)
-    out_dir = args.out or os.path.join(args.run_dir, "elo")
     os.makedirs(out_dir, exist_ok=True)
 
     _print_table(fit, anchored)

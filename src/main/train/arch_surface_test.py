@@ -482,7 +482,7 @@ def test_the_arch_verdict_never_shares_a_line_with_a_combination_refusal(capsys)
     assert "builds the wrong architecture" not in out
 
 
-def test_dry_run_and_checkargs_reach_the_same_verdict(monkeypatch, tmp_path, capsys):
+def test_dry_run_and_checkargs_reach_the_same_verdict(monkeypatch, tmp_path, run_archive, capsys):
     """The EXECUTING surface and the offline one must not disagree — that split is the whole
     failure mode (`checkargs` clean, the launch dead; here it would be `--dry-run` clean and the
     launcher refusing three seconds later)."""
@@ -501,7 +501,7 @@ def test_dry_run_and_checkargs_reach_the_same_verdict(monkeypatch, tmp_path, cap
     capsys.readouterr()
 
 
-def test_dry_run_accepts_the_umbrella(monkeypatch, tmp_path):
+def test_dry_run_accepts_the_umbrella(monkeypatch, tmp_path, run_archive):
     import main.launcher.dry_run as dry_run_mod
     monkeypatch.chdir(tmp_path)
     child_args = [t for t in _incident_argv()
@@ -512,7 +512,7 @@ def test_dry_run_accepts_the_umbrella(monkeypatch, tmp_path):
     assert rc == 0
 
 
-def test_dry_run_prints_the_applied_keys_under_the_umbrella(monkeypatch, tmp_path):
+def test_dry_run_prints_the_applied_keys_under_the_umbrella(monkeypatch, tmp_path, run_archive):
     import main.launcher.dry_run as dry_run_mod
     monkeypatch.chdir(tmp_path)
     lines = []

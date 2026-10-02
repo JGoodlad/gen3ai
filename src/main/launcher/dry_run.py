@@ -41,6 +41,7 @@ from typing import Callable, List, Optional
 
 from main.exit_codes import TrainExitCode
 from main.launcher.checkpoint import (
+    archive_anchored_args,
     child_uses_bridge,
     _find_model_arg,
     _insert_or_replace_model_arg,
@@ -196,10 +197,14 @@ def dry_run(
     # 1. Run dir — the same pure resolver the launch path calls, WITHOUT the makedirs that follows
     #    it there. Fresh / fork / plain resume, all three.
     try:
+        # The same anchoring the real launch does first: `--model models/<run>/…` the cwd (a
+        # worktree) does not hold is the run ARCHIVE's, so the dry run resolves what the launch will.
+        child_args = archive_anchored_args(child_args)
         run_dir = resolve_launch_run_dir(child_args, time.strftime("%Y%m%d_%H%M%S"))
     except ValueError as e:
         # Same exit code the real path leaves with: FATAL_CONFIG for a FRESH launch into a dir
-        # that already holds a run (`FreshRunDirHasProgress`), 1 for the historical fork refusal.
+        # that already holds a run (`FreshRunDirHasProgress`) and for a run dir the archive cannot
+        # hold (`RunArchiveError`), 1 for the historical fork refusal.
         out(f"  ✗ REFUSED (run dir): {e}")
         out("  ✗ DRY RUN — this command would NOT launch. Nothing was created or modified.")
         return getattr(e, "exit_code", 1)

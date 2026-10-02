@@ -228,11 +228,24 @@ def unsatisfiable_pairs(argv: List[str]) -> List[Tuple[str, str, str]]:
     return sorted(out)
 
 
+def _named_run_dir(name: str) -> str:
+    """`<run archive>/<name>` — where `--run-name <name>` lands (`utils.paths.run_archive_dir()`:
+    `$GEN3AI_MODELS_DIR`, else the MAIN checkout's `models/`, so a worktree and the main checkout
+    answer the same). REPORT-ONLY, so a box with no archive answers the old relative
+    `models/<name>` instead of raising: this tool never creates anything, and the real launch
+    REFUSES that case (`RunArchiveError`, FATAL_CONFIG) — the one place that does."""
+    from utils.paths import RunArchiveError, run_archive_dir
+    try:
+        return os.path.join(str(run_archive_dir()), str(name))
+    except RunArchiveError:
+        return os.path.join("models", str(name))
+
+
 def effective_run_dir(ns) -> str | None:
     """Where this argv would WRITE — mirroring `train_rl_agent`'s Directory Setup, in its order.
 
-    `--run-dir` (the launcher-managed resume) wins; else `--run-name` names `models/<name>`; else
-    the run dir is freshly minted (a date stamp, or the exploiter default) and `None` says so.
+    `--run-dir` (the launcher-managed resume) wins; else `--run-name` names `<run archive>/<name>`;
+    else the run dir is freshly minted (a date stamp, or the exploiter default) and `None` says so.
 
     `None` costs nothing that matters. It only routes the model through the FORK label rather than
     the RESTART one, and both resolve against the SAME file — `_resolve` reads the checkpoint's
@@ -241,7 +254,7 @@ def effective_run_dir(ns) -> str | None:
     if getattr(ns, "run_dir", None):
         return str(ns.run_dir)
     if getattr(ns, "run_name", None):
-        return os.path.join("models", str(ns.run_name))
+        return _named_run_dir(ns.run_name)
     return None
 
 
@@ -632,7 +645,7 @@ def argv_run_dir(argv: List[str]) -> str | None:
     if run_dir:
         return run_dir
     run_name = argv_value(argv, "--run-name")
-    return os.path.join("models", run_name) if run_name else None
+    return _named_run_dir(run_name) if run_name else None
 
 
 def pin_commit_arg(argv: List[str]) -> str | None:

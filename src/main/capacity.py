@@ -275,7 +275,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     t0 = time.time()
     say = (lambda _m: None) if args.quiet else (lambda m: print(f"[capacity] {m}", flush=True))
 
-    ckpt, run_dir = resolve_checkpoint(args.target)
+    from utils.paths import RunArchiveError, checked_run_dir, resolve_archive_ref
+    # `models/<run>` typed where the cwd has no `models/` (a worktree) is the ARCHIVE's run, and the
+    # DEFAULT output lands inside it — refused (before any compute) when that is a worktree's own.
+    ckpt, run_dir = resolve_checkpoint(resolve_archive_ref(args.target))
+    try:
+        default_out = args.out or checked_run_dir(os.path.join(run_dir, "capacity_battery.json"))
+    except RunArchiveError as exc:
+        print(f"[capacity] {exc}", file=sys.stderr)
+        return int(exc.exit_code)
     say(f"checkpoint {ckpt}")
     model, cfg, cfg_path = load_policy(ckpt, run_dir, args.device)
     policy = model.policy.eval()
@@ -321,7 +329,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     report = jsonable(report)
 
     print(render(report))
-    out = args.out or os.path.join(run_dir, "capacity_battery.json")
+    out = default_out
     os.makedirs(os.path.dirname(os.path.abspath(out)) or ".", exist_ok=True)
     with open(out, "w") as fh:
         json.dump(report, fh, indent=2, sort_keys=False, allow_nan=False)

@@ -15,6 +15,15 @@ import pytest
 
 import main.checkargs as checkargs
 
+
+@pytest.fixture(autouse=True)
+def _isolated_run_archive(run_archive):
+    """`--run-name X` resolves against the RUN ARCHIVE (`utils.paths.run_archive_dir`), which is
+    SEALED under pytest. Without one, `checkargs` falls back to the old relative `models/X` — a
+    report-only path these tests would then exercise by accident. A test that wants a different (or
+    no) archive sets `$GEN3AI_MODELS_DIR` itself, later, and wins."""
+    return run_archive
+
 from main.checkargs import (argv_from_run, check, known_option_strings,
                             split_argv, unsatisfiable_pairs)
 

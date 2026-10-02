@@ -109,7 +109,7 @@ def test_b_a_name_that_does_not_exist_never_falls_back_to_head(repo):
     assert wt.resolve_commit(first, repo_root=root)[0] == first
 
 
-def test_b_prepare_session_exits_fatal_config(repo, tmp_path, monkeypatch, capsys):
+def test_b_prepare_session_exits_fatal_config(repo, tmp_path, run_archive, monkeypatch, capsys):
     """End to end through the launcher's own session setup: exit code 3, reason on stderr."""
     root, _ = repo
     monkeypatch.chdir(tmp_path)
@@ -291,7 +291,7 @@ def test_f_checkargs_also_knows_the_legacy_spelling():
 # Provenance: the run must be able to say WHERE its pin came from.
 # ---------------------------------------------------------------------------------------
 
-def test_pin_source_is_handed_to_the_child_and_announced(repo, tmp_path, monkeypatch):
+def test_pin_source_is_handed_to_the_child_and_announced(repo, tmp_path, run_archive, monkeypatch):
     root, (first, _second) = repo
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(launcher_run, "get_repo_root", lambda *a, **k: root)

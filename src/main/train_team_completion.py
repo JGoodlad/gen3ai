@@ -232,6 +232,20 @@ def train(args: argparse.Namespace) -> None:
 
     # ── Run directory ────────────────────────────────────────────────────
     resuming = args.run_dir is not None
+    # Both branches go through the run archive (`utils.paths`): from a worktree `repo_root` is the
+    # WORKTREE, whose `models/` is deleted silently with it (2026-09-23, eight runs), so a new run
+    # lands in `<archive>/team_prediction/` and a resumed/typed dir inside a worktree's own
+    # `models/` is refused FATAL_CONFIG.
+    from main.exit_codes import TrainExitCode
+    from utils.paths import RunArchiveError, checked_run_dir, run_archive_dir
+    try:
+        if resuming:
+            args.run_dir = checked_run_dir(args.run_dir)
+        else:
+            _tp_base = checked_run_dir(os.path.join(str(run_archive_dir()), "team_prediction"))
+    except RunArchiveError as _e:
+        print(f"[RunArchive] FATAL: {_e}", file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
     if resuming:
         run_dir = args.run_dir
         # Read backbone path from metadata if not specified
@@ -242,7 +256,7 @@ def train(args: argparse.Namespace) -> None:
             args.backbone = saved_meta.get("backbone")
         console.print(f"[bold]Resuming run:[/] {run_dir}")
     else:
-        run_dir = _make_run_dir(os.path.join(repo_root, "models", "team_prediction"))
+        run_dir = _make_run_dir(_tp_base)
         console.print(f"[bold]New run:[/] {run_dir}")
         # Record command
         with open(os.path.join(run_dir, "command.txt"), "w") as f:

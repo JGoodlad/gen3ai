@@ -490,7 +490,7 @@ def test_resolve_config_and_checkargs_agree(name):
     assert name in [c.name for c, _ in _check(argv)["combinations"]]
 
 
-def test_the_c1_inherited_action_target_is_still_caught(tmp_path):
+def test_the_c1_inherited_action_target_is_still_caught(tmp_path, run_archive):
     """C1: the parent's recorded `distill_target=action` + `--distill-coef 0`, argv naming neither.
 
     The value is INHERITED, so an argv-only reading sees nothing — this is the case that made

@@ -26,6 +26,7 @@ from main.exit_codes import CUDA_LEAK_RESTART_CAP, TrainExitCode
 from main.launcher.checkpoint import (
     find_latest_checkpoint,
     run_dir_for_checkpoint,
+    archive_anchored_args,
     child_uses_bridge,
     _apply_default_showdown_port,
     _find_model_arg,
@@ -202,7 +203,7 @@ def _print_exit_summary(run_dir: "str | None", state: LauncherState) -> None:
         lines.append(f"  Last reward: {snap.metrics['rollout/ep_rew_mean']:.2f}")
     if "time/fps" in snap.metrics:
         lines.append(f"  FPS        : {int(snap.metrics['time/fps']):,}")
-    ckpt = find_latest_checkpoint("models", run_dir=run_dir)
+    ckpt = find_latest_checkpoint(run_dir=run_dir)
     if ckpt:
         lines.append(f"  Last model : {ckpt}")
     print("\n".join(lines), file=sys.stderr)
@@ -262,10 +263,14 @@ def _prepare_session(
     # (init from --model, write here, never clobber the checkpoint's source dir); plain resume →
     # continue the checkpoint's own dir. (resolve_launch_run_dir documents all three.)
     try:
+        # A `--model models/<run>/…` the cwd (a worktree) does not hold is the ARCHIVE's — anchored
+        # first so the run dir derived from it, and everything downstream, sees the real path.
+        child_args = archive_anchored_args(child_args)
         run_dir = resolve_launch_run_dir(child_args, time.strftime("%Y%m%d_%H%M%S"))
     except ValueError as e:
-        # A FRESH launch into a dir that already holds a run is FATAL_CONFIG (3); the other
-        # run-dir refusals (a fork onto an existing run) keep their historical exit 1.
+        # A FRESH launch into a dir that already holds a run is FATAL_CONFIG (3), and so is a run
+        # dir the archive cannot hold (`RunArchiveError`: no archive, or inside a linked worktree's
+        # own models/); the other run-dir refusals (a fork onto an existing run) keep exit 1.
         print(f"[launcher] ERROR: {e}", file=sys.stderr)
         sys.exit(getattr(e, "exit_code", 1))
 
@@ -713,9 +718,9 @@ def _supervise(
         if interval_hours <= 0 and not intended_restart and not crashed:
             return 0
 
-        checkpoint = find_latest_checkpoint("models", run_dir=run_dir, min_mtime=session_start)
+        checkpoint = find_latest_checkpoint(run_dir=run_dir, min_mtime=session_start)
         if checkpoint is None:
-            state.add_event("🛑 No checkpoint found under models/ — cannot restart")
+            state.add_event("🛑 No checkpoint found under the run dir — cannot restart")
             _tick()
             time.sleep(2)
             # A crash with nothing to resume from is genuinely fatal — propagate the

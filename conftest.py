@@ -68,6 +68,20 @@ if not os.environ.get("GEN3AI_TEST_ALLOW_THREADS"):
 os.environ.setdefault("POKESIM_EMISSION_SELFCHECK", "1")
 
 
+# --- The RUN ARCHIVE is SEALED for every test (gen3_run_archive_sealed_v1) -----------------------
+#
+# Runs always land in the MAIN checkout's `models/` (`utils.paths.run_archive_dir`), so a test that
+# creates a run directory and does not isolate it would write into the owner's REAL archive — from a
+# worktree no less (before, it wrote a worktree-local `models/` that died silently with the worktree).
+# While this is set and `$GEN3AI_MODELS_DIR` is not, `run_archive_dir()` REFUSES to name the real
+# archive (a typed `RunArchiveError`), so a test that forgot FAILS instead of polluting it; a test that
+# creates runs points `$GEN3AI_MODELS_DIR` at its `tmp_path` (`monkeypatch.setenv`). READERS
+# (`main_models_dir`, the real-archive skip-if-absent tests) are untouched. Set here, at import, so the
+# controller, every xdist worker and every subprocess a test starts inherit it. Pinned by
+# `src/utils/run_archive_test.py`.
+os.environ["GEN3AI_RUN_ARCHIVE_SEALED"] = "1"
+
+
 # --- Tier budget: a slow test may not hide in the cheap tier -------------------------------------
 #
 # The cost tiers (`sim`, `browser`, `e2e` — see the root CLAUDE.md) only pay off if the DEFAULT tier
@@ -859,3 +873,20 @@ def restore_torch_globals():
     from utils.torch_state_guard import torch_globals
     with torch_globals():
         yield
+
+
+@pytest.fixture
+def run_archive(tmp_path, monkeypatch):
+    """A test's OWN run archive: ``$GEN3AI_MODELS_DIR`` → ``<tmp_path>/models`` (created), returned.
+
+    The run archive is SEALED for every test (see the `GEN3AI_RUN_ARCHIVE_SEALED` block at the top):
+    anything that creates or resolves a run directory (`utils.paths.run_archive_dir` — the trainer's
+    `--run-name` / minted dirs, the launcher's fresh / resume / restart, `--dry-run`) must be given
+    one, or it REFUSES rather than touch the owner's real ``models/``. ``tmp_path/models`` is the
+    layout the launcher tests already build their fake runs in, so a test that chdir'd into
+    ``tmp_path`` keeps its fixtures where they were."""
+    from utils.paths import MODELS_DIR_ENV_VAR
+    archive = tmp_path / "models"
+    archive.mkdir(exist_ok=True)
+    monkeypatch.setenv(MODELS_DIR_ENV_VAR, str(archive))
+    return archive

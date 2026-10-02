@@ -249,6 +249,10 @@ def isolated(repo, tmp_path, monkeypatch):
     work = tmp_path / "work"
     work.mkdir()
     monkeypatch.chdir(work)
+    # Runs land in the RUN ARCHIVE (`utils.paths.run_archive_dir`), never a cwd-relative models/ —
+    # and the root conftest SEALS the real one — so the scratch dir's own models/ IS the archive.
+    (work / "models").mkdir()
+    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(work / "models"))
     monkeypatch.setattr(dry_run_mod, "get_repo_root", lambda *a, **k: root)
     monkeypatch.setattr(wt, "get_repo_root", lambda *a, **k: root)
     monkeypatch.setattr(pa, "_repo_root", lambda: root)
@@ -786,7 +790,7 @@ def test_f_end_to_end_without_sync_to_main_the_same_flag_is_REFUSED(
     assert "--fork-lr" in out and "NOT IN PINNED TREE" in out
 
 
-def test_f_the_TCUNFA_command_that_was_wrongly_refused(tmp_path):
+def test_f_the_TCUNFA_command_that_was_wrongly_refused(tmp_path, monkeypatch):
     """The recorded artifact the defect was found on. `models/` lives only in the MAIN
     checkout and is not committed, so this SKIPS rather than pretending to pass elsewhere."""
     import shlex
@@ -796,6 +800,11 @@ def test_f_the_TCUNFA_command_that_was_wrongly_refused(tmp_path):
     root = main_models_dir()
     if root is None:
         pytest.skip("no models/ archive on this box")
+    # A pure READ of the real archive — and `checkargs` derives the `--run-name` dir through
+    # `run_archive_dir`, which is SEALED under pytest. Naming the real archive explicitly satisfies
+    # the seal without isolating away the run this test exists to read (nothing here creates a dir).
+    from utils.paths import MODELS_DIR_ENV_VAR
+    monkeypatch.setenv(MODELS_DIR_ENV_VAR, str(root))
     run = os.path.join(str(root), "ai_v9_162_TCUNFA_0903")
     meta_path = os.path.join(run, "metadata.json")
     if not os.path.exists(meta_path):

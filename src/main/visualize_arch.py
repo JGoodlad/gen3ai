@@ -101,7 +101,10 @@ def build_extractor() -> tuple[Gen3FeaturesExtractor, spaces.Dict]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default="models/_arch/gen3_arch.onnx")
+    ap.add_argument("--out", default=None,
+                    help="where to write the ONNX graph (default: <run archive>/_arch/gen3_arch.onnx — "
+                         "`utils.paths.run_archive_dir()`, the MAIN checkout's models/ from a "
+                         "worktree, never a cwd-relative models/ that dies with the worktree)")
     ap.add_argument("--serve", action="store_true",
                     help="host the graph with Netron's built-in server (view in a browser, "
                          "no manual file-picking). Binds 0.0.0.0 so you can SSH-tunnel from a laptop.")
@@ -110,6 +113,12 @@ def main() -> None:
                     help="export every primitive op ungrouped (default groups attention / "
                          "FFN / transformer-layer modules into collapsible Netron blocks)")
     args = ap.parse_args()
+    if args.out is None:
+        from utils.paths import RunArchiveError, run_archive_dir
+        try:
+            args.out = os.path.join(str(run_archive_dir()), "_arch", "gen3_arch.onnx")
+        except RunArchiveError as exc:
+            raise SystemExit(f"[RunArchive] FATAL: {exc}  (or pass --out)")
 
     extractor, obs_space = build_extractor()
     obs_dim = obs_space["observation"].shape[0]

@@ -137,7 +137,7 @@ def _existing_run(tmp_path, *, checkpoint=True, model_config=True):
 
 
 @pytest.mark.parametrize("checkpoint,model_config", [(True, True), (True, False), (False, True)])
-def test_fresh_launch_into_a_run_with_progress_is_refused(tmp_path, monkeypatch,
+def test_fresh_launch_into_a_run_with_progress_is_refused(tmp_path, run_archive, monkeypatch,
                                                          checkpoint, model_config):
     monkeypatch.chdir(tmp_path)
     _existing_run(tmp_path, checkpoint=checkpoint, model_config=model_config)
@@ -158,14 +158,15 @@ def test_fresh_launch_via_run_dir_into_a_run_is_refused(tmp_path, monkeypatch):
         resolve_launch_run_dir(["--run-dir", str(run_dir), "--steps", "1"], TS)
 
 
-def test_fresh_launch_into_an_empty_or_seed_only_dir_is_allowed(tmp_path, monkeypatch):
+def test_fresh_launch_into_an_empty_or_seed_only_dir_is_allowed(tmp_path, run_archive, monkeypatch):
     """A dir with only the step-0 self-play seed (written before any checkpoint) is no run yet."""
     monkeypatch.chdir(tmp_path)
-    run_dir = tmp_path / "models" / "new_run"
+    run_dir = run_archive / "new_run"
     (run_dir / "snapshots").mkdir(parents=True)
     (run_dir / "snapshots" / "snapshot_0.zip").write_text("x")
     assert run_dir_progress(str(run_dir)) == []
-    assert resolve_launch_run_dir(["--run-name", "new_run"], TS) == "models/new_run"
+    # the run ARCHIVE's dir, absolute — never a cwd-relative `models/new_run`
+    assert resolve_launch_run_dir(["--run-name", "new_run"], TS) == str(run_dir)
 
 
 def test_restart_resume_of_the_same_run_is_not_refused(tmp_path, monkeypatch):

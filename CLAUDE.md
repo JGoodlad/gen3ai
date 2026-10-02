@@ -393,10 +393,13 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 |---|---|---|
 | the checkout this code came from (`data/`, `designs/`, `deps/`) | `repo_root()` / `repo_path(*parts)` | `__file__` |
 | `src/` (the import root) | `src_root()` / `src_path(*parts)` | `__file__` |
-| the **run archive** `models/` | `main_models_dir()` → `Path` **or `None`** | `git` |
+| the **run archive** `models/`, to READ | `main_models_dir()` → `Path` **or `None`** | `git` |
+| where a run **CREATES / RESOLVES** its dir | `run_archive_dir()` → `Path` or a typed `RunArchiveError`; `checked_run_dir(path)` | `git` + a refusal |
 | git's opinion / the HEAD hash | `utils.git` | `git` |
 
 🚨 **`models/` is the one that bites.** It is not committed and exists only in the **MAIN checkout** — `repo_root()` inside a worktree is the *worktree*, which has none. `main_models_dir()` reaches across via git's shared common dir and returns `None` when there is no archive, which every caller must turn into a **skip**. `$GEN3AI_MODELS_DIR` overrides and is authoritative (set-but-missing ⇒ `None`, never a quiet fall-back).
+
+🚨 **A RUN ALWAYS LANDS IN THE MAIN CHECKOUT'S `models/`, even from a worktree — automatically** (2026-10-02; a worktree's own `models/` died silently with it: eight runs, 2026-09-23). The trainer, the launcher (incl. `--dry-run`; the child gets an ABSOLUTE `--run-dir`) and the run-writing meters go through `run_archive_dir()` (`$GEN3AI_MODELS_DIR`, else main's); no archive ⇒ `RunArchiveError` (`FATAL_CONFIG`), and an explicit run dir inside a worktree's own `models/` is refused. Pytest SEALS the archive: a test that creates a run dir takes the `run_archive` fixture. Gate: `src/utils/run_archive_test.py`.
 
 `paths_test.py` AST-scans `src/agents`, `src/main`, `src/utils` and fails any module using a `/home/…` literal as a value. **When `__file__`-relative is still right:** a module locating a file that ships *beside it* is not doing repo-root discovery.
 

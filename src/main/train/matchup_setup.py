@@ -184,12 +184,19 @@ def apply_distill_team_bias(args, all_teams, trainee_teambuilder):
 
 def _planned_run_dir(args) -> "str | None":
     """The run dir this process WILL write, as far as it is known before `run_io` resolves it:
-    `--run-dir` (a launcher restart), else `models/<--run-name>`, else None (a timestamped or
-    exploiter-derived dir, which a `--model` can never already live inside)."""
+    `--run-dir` (a launcher restart), else `<archive>/<--run-name>` (`utils.paths.run_archive_dir()`,
+    the same directory `run_io._resolve_fresh_model_dir` will pick — a cwd-relative `models/<name>`
+    here would disagree with it from a worktree), else None (a timestamped or exploiter-derived dir,
+    which a `--model` can never already live inside, or no archive — the Directory Setup refuses that
+    one itself)."""
     if getattr(args, "run_dir", None):
         return args.run_dir
     if getattr(args, "run_name", None):
-        return os.path.join("models", args.run_name)
+        from utils.paths import RunArchiveError, run_archive_dir
+        try:
+            return os.path.join(str(run_archive_dir()), args.run_name)
+        except RunArchiveError:
+            return None
     return None
 
 

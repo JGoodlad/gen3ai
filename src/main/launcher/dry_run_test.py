@@ -71,6 +71,10 @@ def isolated(repo, tmp_path, monkeypatch):
     work = tmp_path / "work"
     work.mkdir()
     monkeypatch.chdir(work)
+    # Runs land in the RUN ARCHIVE (`utils.paths.run_archive_dir`), never a cwd-relative models/ —
+    # and the root conftest SEALS the real one — so the scratch dir's own models/ IS the archive.
+    (work / "models").mkdir()
+    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(work / "models"))
     monkeypatch.setattr(dry_run_mod, "get_repo_root", lambda *a, **k: root)
     monkeypatch.setattr(wt, "get_repo_root", lambda *a, **k: root)
     for name in ("_create_run_worktree", "_prune_stale_launcher_worktrees"):
@@ -221,7 +225,7 @@ def test_c_fresh_dry_run_prints_role_fresh_and_a_head_pin(isolated, monkeypatch,
     assert "role        : FRESH" in out
     assert second in out and "(source: head)" in out
     assert "commit 2: second" in out, "the pin's SUBJECT is what makes the sha readable"
-    assert not os.path.exists(work / "models"), "a dry run must not mint the fresh run dir"
+    assert not list((work / "models").iterdir()), "a dry run must not mint the fresh run dir"
 
 
 def test_c_no_pin_says_so_and_still_resolves_everything_else(isolated, monkeypatch, capsys):
@@ -353,7 +357,7 @@ def test_g_a_fresh_dry_run_refuses_a_nonproduction_arch(isolated, monkeypatch, c
     out = capsys.readouterr().out
     assert "ARCH SURFACE vs designs/production_config.json" in out
     assert "would NOT launch" in out
-    assert not os.path.exists(work / "models"), "a refused dry run must still create nothing"
+    assert not list((work / "models").iterdir()), "a refused dry run must still create nothing"
 
 
 def test_g_the_consent_flag_turns_it_into_a_note(isolated, monkeypatch, capsys):
@@ -415,7 +419,7 @@ def test_h_a_fresh_arch_production_dry_run_shows_the_resume_role_restart(
     assert "role        : FRESH" in out
     assert "on restart  : RESUME role — drops FRESH-only --arch" in out
     assert "--model → the run's latest checkpoint" in out
-    assert not os.path.exists(work / "models"), "a dry run must not mint the run dir"
+    assert not list((work / "models").iterdir()), "a dry run must not mint the run dir"
 
 
 def test_h_a_fresh_dry_run_into_an_existing_run_is_refused_and_touches_nothing(

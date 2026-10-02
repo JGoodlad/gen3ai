@@ -252,36 +252,45 @@ class TestInsertOrReplaceRunDirArg:
 # ── _resolve_fresh_run_dir ───────────────────────────────────────────────────
 
 class TestResolveFreshRunDir:
+    """A fresh launch's run dir is ALWAYS an absolute path in the RUN ARCHIVE
+    (`utils.paths.run_archive_dir`) — never a cwd-relative `models/`, which from a worktree dies
+    silently with it. The archive here is the `run_archive` fixture's `<tmp_path>/models`."""
     TS = "20260608_120000"
 
+    @pytest.fixture(autouse=True)
+    def _archive(self, tmp_path, run_archive, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        self.archive = run_archive
+
     def test_mints_timestamped_dir_when_no_run_dir(self):
-        assert _resolve_fresh_run_dir(["--debug"], self.TS) == "models/run_20260608_120000"
+        assert _resolve_fresh_run_dir(["--debug"], self.TS) == str(self.archive / "run_20260608_120000")
 
     def test_honours_user_run_dir(self):
         args = ["--debug", "--run-dir", "models/ai_v5_6_stable_N_0608"]
-        assert _resolve_fresh_run_dir(args, self.TS) == "models/ai_v5_6_stable_N_0608"
+        assert _resolve_fresh_run_dir(args, self.TS) == str(self.archive / "ai_v5_6_stable_N_0608")
 
     def test_strips_trailing_slash(self):
         # The user's invocation passes the folder with a trailing slash.
         args = ["--run-dir", "models/ai_v5_6_stable_N_0608/"]
-        assert _resolve_fresh_run_dir(args, self.TS) == "models/ai_v5_6_stable_N_0608"
+        assert _resolve_fresh_run_dir(args, self.TS) == str(self.archive / "ai_v5_6_stable_N_0608")
 
     def test_honours_equals_form(self):
         args = ["--run-dir=models/my_run"]
-        assert _resolve_fresh_run_dir(args, self.TS) == "models/my_run"
+        assert _resolve_fresh_run_dir(args, self.TS) == str(self.archive / "my_run")
 
     def test_honours_run_name(self):
-        # --run-name <name> → models/<name> (a memorable name without the full --run-dir path).
-        assert _resolve_fresh_run_dir(["--run-name", "crush_v3"], self.TS) == "models/crush_v3"
-        assert _resolve_fresh_run_dir(["--run-name=crush_v3"], self.TS) == "models/crush_v3"
+        # --run-name <name> → <archive>/<name> (a memorable name without the full --run-dir path).
+        want = str(self.archive / "crush_v3")
+        assert _resolve_fresh_run_dir(["--run-name", "crush_v3"], self.TS) == want
+        assert _resolve_fresh_run_dir(["--run-name=crush_v3"], self.TS) == want
 
     def test_run_name_is_basename_sanitized(self):
-        # A name can't path-escape models/ (basename only).
-        assert _resolve_fresh_run_dir(["--run-name", "../../etc/x"], self.TS) == "models/x"
+        # A name can't path-escape the archive (basename only).
+        assert _resolve_fresh_run_dir(["--run-name", "../../etc/x"], self.TS) == str(self.archive / "x")
 
     def test_run_dir_beats_run_name(self):
         args = ["--run-dir", "models/explicit", "--run-name", "ignored"]
-        assert _resolve_fresh_run_dir(args, self.TS) == "models/explicit"
+        assert _resolve_fresh_run_dir(args, self.TS) == str(self.archive / "explicit")
 
 
 # ── resolve_launch_run_dir (fresh / fork / continue) ─────────────────────────
@@ -290,64 +299,67 @@ class TestResolveLaunchRunDir:
     TS = "20260608_120000"
     CKPT = "models/ai_v6_13_outgoing_dmg_0620/checkpoints/checkpoint_89027105_steps.zip"
 
+    @pytest.fixture(autouse=True)
+    def _archive(self, tmp_path, run_archive, monkeypatch):
+        """cwd in a scratch dir whose `models/` IS the run archive — `CKPT` and every `models/…`
+        below are then relative paths the cwd really holds, and every resolved dir is absolute."""
+        monkeypatch.chdir(tmp_path)
+        self.archive = run_archive
+
     def test_fresh_no_model_mints_timestamp(self):
-        assert resolve_launch_run_dir(["--debug"], self.TS) == "models/run_20260608_120000"
+        assert resolve_launch_run_dir(["--debug"], self.TS) == str(self.archive / "run_20260608_120000")
 
     def test_plain_resume_continues_checkpoint_dir(self):
         # A --model resume with NO fork signal → write into the checkpoint's own run dir (continue).
         assert resolve_launch_run_dir(["--model", self.CKPT], self.TS) == \
             run_dir_for_checkpoint(self.CKPT)
-        assert resolve_launch_run_dir(["--model", self.CKPT], self.TS).endswith(
-            "models/ai_v6_13_outgoing_dmg_0620")
+        assert resolve_launch_run_dir(["--model", self.CKPT], self.TS) == \
+            str(self.archive / "ai_v6_13_outgoing_dmg_0620")
 
     def test_resume_with_run_name_forks_to_named_dir(self):
         # --run-name on a resume → FORK into the new dir, NOT the checkpoint's source dir.
         args = ["--model", self.CKPT, "--run-name", "ai_v6_13_outgoing_dmg_0620_exp_v1"]
-        assert resolve_launch_run_dir(args, self.TS) == "models/ai_v6_13_outgoing_dmg_0620_exp_v1"
+        assert resolve_launch_run_dir(args, self.TS) == \
+            str(self.archive / "ai_v6_13_outgoing_dmg_0620_exp_v1")
 
     def test_exploiter_resume_forks(self):
         # --exploiter inits from --model but must NOT write into the target's dir → fork.
         args = ["--model", self.CKPT, "--exploiter", "models/some_target", "--run-name", "crush_v1"]
-        assert resolve_launch_run_dir(args, self.TS) == "models/crush_v1"
+        assert resolve_launch_run_dir(args, self.TS) == str(self.archive / "crush_v1")
 
-    def test_fork_onto_existing_run_without_checkpoint_raises(self, tmp_path, monkeypatch):
+    def test_fork_onto_existing_run_without_checkpoint_raises(self):
         # A fork target that exists (metadata.json) but has NO resumable checkpoint is a genuine
         # clobber (run-name collision / crashed-pre-checkpoint) → refuse, not overwrite.
-        monkeypatch.chdir(tmp_path)
-        collide = tmp_path / "models" / "live_run"
+        collide = self.archive / "live_run"
         collide.mkdir(parents=True)
         (collide / "metadata.json").write_text("{}")
         args = ["--model", "models/other/checkpoints/c.zip", "--run-name", "live_run"]
         with pytest.raises(ValueError):
             resolve_launch_run_dir(args, self.TS)
 
-    def test_idempotent_fork_with_checkpoint_resumes_not_raises(self, tmp_path, monkeypatch):
+    def test_idempotent_fork_with_checkpoint_resumes_not_raises(self):
         # THE 24h-unattended fix: re-launching a fork whose target ALREADY made progress (has its
         # own resumable checkpoint) must RESUME it in place — resolve returns the dir (no raise),
         # and resolve_fork_resume_model swaps --model to the fork's own latest checkpoint.
-        monkeypatch.chdir(tmp_path)
-        fork = tmp_path / "models" / "capstone"
+        fork = self.archive / "capstone"
         (fork / "checkpoints").mkdir(parents=True)
         (fork / "metadata.json").write_text("{}")
         (fork / "checkpoints" / "checkpoint_500_steps.zip").write_text("")
         (fork / "checkpoints" / "checkpoint_900_steps.zip").write_text("")
         args = ["--model", "models/ai_v7_02/checkpoints/c.zip", "--run-name", "capstone"]
-        assert resolve_launch_run_dir(args, self.TS) == "models/capstone"      # no raise
-        resume = resolve_fork_resume_model(args, "models/capstone")
+        assert resolve_launch_run_dir(args, self.TS) == str(fork)      # no raise
+        resume = resolve_fork_resume_model(args, str(fork))
         assert resume is not None and resume.endswith("checkpoint_900_steps.zip")  # its OWN latest
 
-    def test_fork_first_launch_keeps_source_model(self, tmp_path, monkeypatch):
+    def test_fork_first_launch_keeps_source_model(self):
         # First fork (target doesn't exist yet) → resolve returns the new dir, and the resume
         # helper returns None so the source --model is used to COPY once.
-        monkeypatch.chdir(tmp_path)
-        (tmp_path / "models").mkdir()
         args = ["--model", "models/ai_v7_02/checkpoints/c.zip", "--run-name", "capstone"]
-        assert resolve_launch_run_dir(args, self.TS) == "models/capstone"
-        assert resolve_fork_resume_model(args, "models/capstone") is None
+        assert resolve_launch_run_dir(args, self.TS) == str(self.archive / "capstone")
+        assert resolve_fork_resume_model(args, str(self.archive / "capstone")) is None
 
-    def test_fork_resume_model_none_for_plain_resume(self, tmp_path, monkeypatch):
+    def test_fork_resume_model_none_for_plain_resume(self):
         # A plain resume (run_dir IS the model's own dir) → None (the restart loop owns it).
-        monkeypatch.chdir(tmp_path)
         rd = run_dir_for_checkpoint(self.CKPT)
         assert resolve_fork_resume_model(["--model", self.CKPT], rd) is None
 

@@ -318,10 +318,12 @@ _SHAPED_ARGV = ["--win-prob-mode", "read_only"]
 def _run_smoke(tmp_path, name, extra):
     """One short CPU `--debug` run into `tmp_path/models/<name>`; returns its scalar tag set.
 
-    Runs in a SCRATCH cwd, never the checkout: `--run-name X` writes to a cwd-relative
-    ``models/X``, and in the main checkout that is the read-only run archive. `TeamLoader`'s
-    ``base_dir`` is cwd-relative too (``"data/teams"``), so the scratch dir carries symlinks to the
-    checkout's `data/` and `deps/` — the two directories the trainer reaches for by relative path.
+    Runs in a SCRATCH cwd, never the checkout. `--run-name X` lands in the RUN ARCHIVE
+    (`utils.paths.run_archive_dir`: the main checkout's `models/`, and sealed under pytest), so the
+    child gets `$GEN3AI_MODELS_DIR = tmp_path/models` — the run is `tmp_path/models/X`, never the real
+    archive. `TeamLoader`'s ``base_dir`` is cwd-relative (``"data/teams"``), so the scratch dir carries
+    symlinks to the checkout's `data/` and `deps/` — the two directories the trainer reaches for by
+    relative path.
     """
     for d in ("data", "deps"):
         link = tmp_path / d
@@ -329,6 +331,8 @@ def _run_smoke(tmp_path, name, extra):
             link.symlink_to(repo_path(d))
     env = dict(os.environ)
     env["PYTHONPATH"] = str(src_path()) + os.pathsep + env.get("PYTHONPATH", "")
+    (tmp_path / "models").mkdir(exist_ok=True)
+    env["GEN3AI_MODELS_DIR"] = str(tmp_path / "models")
     argv = [sys.executable, str(src_path("main", "train_rl_agent.py")),
             "--debug", "--steps", "3000", "--n-steps", "256", "--batch-size", "128",
             "--n-epochs", "2", "--run-name", name, *extra]

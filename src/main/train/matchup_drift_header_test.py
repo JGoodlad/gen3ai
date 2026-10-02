@@ -38,8 +38,17 @@ def test_no_known_run_dir_is_a_fork():
     assert "FORK of p" in h
 
 
-def test_planned_run_dir_precedence():
+def test_planned_run_dir_precedence(run_archive):
     ns = argparse.Namespace
     assert _planned_run_dir(ns(run_dir="models/x", run_name="y")) == "models/x"
-    assert _planned_run_dir(ns(run_dir=None, run_name="y")) == os.path.join("models", "y")
+    # `--run-name y` lands in the RUN ARCHIVE (`utils.paths.run_archive_dir`), the directory the
+    # trainer will pick — not a cwd-relative `models/y`, which from a worktree is a different one.
+    assert _planned_run_dir(ns(run_dir=None, run_name="y")) == os.path.join(str(run_archive), "y")
     assert _planned_run_dir(ns(run_dir=None, run_name=None)) is None
+
+
+def test_planned_run_dir_is_none_when_there_is_no_archive(monkeypatch):
+    """No archive (here: the pytest seal, `$GEN3AI_MODELS_DIR` unset) → `None`, never a guess; the
+    trainer's own Directory Setup is what refuses that case."""
+    monkeypatch.delenv("GEN3AI_MODELS_DIR", raising=False)
+    assert _planned_run_dir(argparse.Namespace(run_dir=None, run_name="y")) is None

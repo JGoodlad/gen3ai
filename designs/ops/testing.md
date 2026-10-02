@@ -192,7 +192,15 @@ box, so a duration recorded beside one is a note for planning, never a bound to 
 Three rules every composition gate here follows, each of them a project rule applied to a subprocess:
 
 - **Every output path goes to the test's `tmp_path` — 🚨 NEVER under `models/`.** The run archive is
-  not a scratch space; `train_rl_agent.py`'s `--run-dir` takes the temp dir.
+  not a scratch space; `train_rl_agent.py`'s `--run-dir` takes the temp dir. 🚨 **The archive is SEALED
+  for every test** (2026-10-02, root `conftest.py` sets `GEN3AI_RUN_ARCHIVE_SEALED`): runs always land in
+  the MAIN checkout's `models/` (`utils.paths.run_archive_dir`), so anything that creates or resolves a run
+  dir — the trainer's `--run-name`, the launcher, `--dry-run`, a meter's default `--out` — REFUSES (a
+  typed `RunArchiveError`) unless `$GEN3AI_MODELS_DIR` is set. Take the **`run_archive` fixture**
+  (`$GEN3AI_MODELS_DIR` → `<tmp_path>/models`, created) and a forgetful test FAILS instead of writing the
+  owner's real archive; real-archive READERS (`main_models_dir`) are untouched. To test "launched from a
+  worktree", build a throwaway repo + `git worktree add` and point `utils.paths._archive_anchor` at it
+  (`src/utils/run_archive_test.py`).
 - **The child is bounded by a `ProgressDeadline` on its own log, not by a total-duration cap.**
   Contention stretches duration; only a real wedge stops output. A wedge is reported as
   **INCONCLUSIVE**, in wording distinct from a failed assertion and carrying

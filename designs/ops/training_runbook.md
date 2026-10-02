@@ -33,6 +33,8 @@ GPU-min). A FRESH launch (no `--model`) whose run dir holds a checkpoint or `mod
 REFUSED `FATAL_CONFIG` — pass `--model` to continue it, or use a new `--run-name`. `--dry-run` shows
 both (`on restart :` line; `REFUSED (run dir)`). Detail: `src/main/launcher/CLAUDE.md`.
 
+🚨 **Runs ALWAYS land in the MAIN checkout's `models/`, even from a worktree** (2026-10-02; no flag). `--run-name`, the minted `run_<ts>`, a resume and `--dry-run` resolve through `utils.paths.run_archive_dir()` (`$GEN3AI_MODELS_DIR`, else main's `models/`) and the child is handed an absolute `--run-dir`; no archive ⇒ `FATAL_CONFIG` naming `$GEN3AI_MODELS_DIR`. A typed `--run-dir` (or resumed checkpoint) inside a worktree's OWN `models/` is refused `FATAL_CONFIG` — that directory dies silently with the worktree (eight runs, 2026-09-23). `--model models/<run>/…` typed in a worktree resolves to the archive's run.
+
 The UI is **Textual** (built on the shared `src/main/tui/` base), launched with
 `python -m main.launcher …` (or the back-compat alias `python -m main.launcher.tui …`). A closed
 terminal (SIGHUP) or external `kill` (SIGTERM) is caught and turned into a clean,

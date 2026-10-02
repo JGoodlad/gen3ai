@@ -104,7 +104,7 @@ from main.train.checkpoint_state import (   # noqa: F401 — re-export hub
 )
 from main.train.run_io import (   # noqa: F401 — re-export hub
     _HparamLogCallback, _TrackingCheckpointCallback, _attach_run_tb_logger, _model_hparams,
-    _resolve_fresh_model_dir, _run_arch_toggles, _write_latest_txt,
+    _resolve_fresh_model_dir, _resolve_model_dir, _run_arch_toggles, _write_latest_txt,
 )
 from main.train.lifecycle import (   # noqa: F401 — re-export hub
     _apply_grad_checkpointing, _declare_compile_cache, _maybe_compile_trainer, _run_roundtrip_test,
@@ -181,15 +181,14 @@ async def main():
         _mu.heuristic_floor, _mu.sp_start_wr, _mu.sp_full_wr)
 
     # --- Directory Setup ---
-    if args.run_dir:
-        model_dir = args.run_dir                                     # launcher-managed resume
-    else:
-        # A memorable --run-name (models/<name>), an exploiter default (models/exploiter_vs_<target>),
-        # or the legacy date-stamp — with a guard against clobbering an existing run.
-        model_dir = _resolve_fresh_model_dir(
-            args.run_name,
-            _exploiter_entry.label if _exploiter_entry is not None else None,
-            args.model)
+    # ONE decision (`run_io._resolve_model_dir`): `--run-dir` (checked — never inside a linked
+    # worktree's OWN models/), else `--run-name` / the exploiter default / the legacy date-stamp in
+    # `utils.paths.run_archive_dir()` — main's models/ from a worktree, never a cwd-relative one —
+    # with a guard against clobbering an existing run.
+    model_dir = _resolve_model_dir(
+        args.run_dir, args.run_name,
+        _exploiter_entry.label if _exploiter_entry is not None else None,
+        args.model)
 
     # FORK-LR INHERITANCE guard (gen3_fork_lr_inherit_guard_v1): a fork of a run whose LR was
     # PINNED and FROZEN inherits the NUMBER but not the FREEZE, so a live KL controller starts

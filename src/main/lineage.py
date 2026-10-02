@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from typing import Any, Dict, List, Optional
 
 from agents.training.lineage import (
@@ -289,6 +290,10 @@ def backfill(run_dir: str, *, apply: bool = False) -> Dict[str, Any]:
     who = (parent or {}).get("run_name") or "(fresh)"
     out["action"] = f"WOULD WRITE lineage: role={block['role']}, parent={who}"
     if apply:
+        # `--apply` REWRITES the run's metadata.json: never inside a worktree's own models/ (a
+        # `RunArchiveError`, FATAL_CONFIG — `main` reports it and writes nothing).
+        from utils.paths import checked_run_dir
+        checked_run_dir(run_dir)
         with open(meta_path, encoding="utf-8") as f:
             meta = json.load(f)
         meta["lineage"] = block
@@ -315,7 +320,12 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     dirs = [_resolve(r) for r in args.runs]
     if args.backfill:
-        rows = [backfill(d, apply=args.apply) for d in dirs]
+        from utils.paths import RunArchiveError
+        try:
+            rows = [backfill(d, apply=args.apply) for d in dirs]
+        except RunArchiveError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return int(e.exit_code)
         if args.json:
             print(json.dumps({"backfill": rows}, indent=2))
             return 0
