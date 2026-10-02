@@ -53,6 +53,9 @@ says and leave a one-line pointer at the end of §2.
 
 | tier | item | why | size | done when |
 |---|---|---|---|---|
+| P1 | **FLAG CENSUS** (owner-accepted 2026-10-01; part of the post-switch deletion + paydown, BEFORE the X26 baseline) — every training flag (303 on 2026-10-01) must name a LIVE user: `recipe.fresh` / `recipe.fork`, a registered experiment or design-doc arm still open, or an open backlog row. Anything else is deleted WITH its code path, its combination checks and its tests; history goes to `designs/deleted_flags.md` | the largest single complexity cut: closed eras' levers (search teacher, the Python fork arm, retired critic/shaping variants, distillation levers, …) still multiply the combination space — `combination_checks.py` (1,442 lines) exists to police it | M–L | a census table (flag → user) committed; every flag without a user deleted; `combination_checks.py` shrunk accordingly; routine gate green |
+| P2 | **SPLIT `agents/training/eval_callback.py`** (1,907 lines, the size gate fails at 2,000) along its seams (launch / collect / record / sentinel and pool plumbing) before it crosses the bar | a hub file one feature away from the hard limit; every eval change lands in it | S–M | no file of the split > 1,000 lines; behaviour identical (routine gate + the eval tests) |
+| P2 | **ONE INDEPENDENT CODE REVIEW of the newest core modules** — the owned PPO loop (`instrumented_ppo/loop.py`, `loop_hooks.py`), the learner lifecycle, the compile regions (`compile_regions.py`, `micro_step.py`), the inference-only opponent load — by a fresh reviewer that did not write them | built fast by many agents in two days (2026-09-30/10-01); a cold read catches what the authors' tests encode as intended | S | findings triaged into fixes or rows |
 
 *(Was empty from 2026-09-07 — both accepted rows landed the same day: the mode-flag doc gate and
 the anti-vacuity stub audit; see §3. Per the rule above, with ACCEPTED empty and quota
