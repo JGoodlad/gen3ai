@@ -21846,3 +21846,45 @@ Tag: **FINDING + FIX · N = 256 reserved climb = per-update side stream × expan
 - The K9 learner golden is unchanged. `global_rng_guard_test` fails on revert.
 
 Tag: **FINDING + FIX · python-core team curriculum skewed by a per-load reseed (N0 166–5,676 games per team; var/mean 20–1,264 vs 1.7–2.0; seed-1001 runs Spearman 0.89–0.997) · Rust core: minibatch-permutation replay only · `gen3_no_global_reseed_v1`**
+
+### 2026-10-02 · VERDICT · THE M5 SIZING VERDICT — N\* = 256 (Part L guard: NO LOSS DETECTED, n = 1 flagged); fresh-run epochs STAY 10 (E5 −10.56 pp); `recipe.sizing` 256 × 384
+
+**Registered** (`designs/research_state/measurements/m5_sizing/REGISTRATION.md`, `e6d69d5c`) and read at the registered n: untaught-8 (U) at 600 games per team, and the SmallRL guard (G-A) at 1,200 games, greedy against greedy. Every arm is a FRESH `--arch production` run, 8,060,928 steps, fp32, torch 2.8, on the Rust core. Deviations D-1…D-19 and every number are in `PROGRESS.md`.
+
+**Arms.**
+- A2 is the control: N = 48, 10 epochs (E10), seed 1001, pin `277f318f`.
+- A′ is the seed replicate: as A2, seed 1002.
+- B is N = 256, E10, seed 1001, pin `7ef99979`. C is N = 256, 5 epochs (E5), seed 1001, pin `7ef99979`.
+- The pin difference is learning-neutral:
+  - the K9 learner golden is unchanged;
+  - on-GPU T2 parity at N = 256 holds over 376 slot × bucket checks, max |Δlog π| 1.31e-6.
+
+**Reads (ΔU in pp with its cluster CI; ΔG-A with its Newcombe CI).**
+
+| contrast | ΔU | ΔG-A |
+|---|---|---|
+| B − A2 | −2.71 [−4.50, −0.94] | +0.17 [−3.80, +4.13] |
+| A′ − A2 | −4.90 [−6.21, −3.60] | −0.83 [−4.79, +3.13] |
+| C − B | −10.56 [−13.12, −7.94] | −9.58 [−13.44, −5.68] |
+
+Levels: U is A2 45.8, B 43.1, A′ 40.9, C 32.5. G-A is A2 43.7 %, B 43.8 %, A′ 42.8 %, C 34.3 %.
+
+**Verdicts (REGISTRATION §5.3).**
+- **The run floor exceeds the bar.** |U(A′) − U(A2)| = 4.90 > 3.69, so both verdicts are flagged "run floor exceeds bar — n = 1 is not decisive". The same-seed cross-pin pair, old A (`f9349f95`) minus A2, differs by −11.35 [−13.73, −9.00]. That pair also differs by C-1's lost KL readings and by CUDA nondeterminism.
+- **N\* = 256: NO LOSS DETECTED.** This is not equivalence.
+  - Throughput: the registered E2E rule applied to the SERIAL rate (orchestrator D-10) gives 1,945 against a maximum of 1,986.
+  - The update dominates: at E10 the update cycle is 51.6 s against 55.2 s at 48, so 256 envs buy ~7 % end to end.
+  - Staleness is 5.5 % (6.1 % predicted).
+- **O8: E5 FAILS, so E10 STAYS.** C's update is 2.0× faster (20.39 s against 41.03 s), and its KL controller raised the LR to 5.18e-4 against 4.32e-4.
+- **Memory.** The arms climbed from 8,012 to 9,674 MiB reserved, a steady-state D-6 failure at 341.5 MiB. That was the per-update stream bug that `07eebe13` fixed (entry above). With 256 now fitting the production configuration (orchestrator ruling), the registered `recipe.sizing` change applies: `n_envs` 256, `n_steps` 384, `rollout_target_samples` 98,304.
+- **Other outputs:**
+  - O2 / O3: K 2–32, D_max 262,144, n_steps_max 1,024 at 256. Not adopted.
+  - O4: buckets as production declares them, (8, 64, 256) for the trainee and (8, 64) for opponents.
+  - O5: overlap NOT ADOPTED, 0.855 [0.851, 0.860].
+  - O6: grouped forward TRIGGERED, 38.6 % [38.3, 38.9].
+  - O7: 8-of-20 active 0.952× [0.940, 0.962], 1 active 1.206× [1.176, 1.227] at 256 (owner's decision; the 8-active read may be a bucket-spill artifact, UNVERIFIED)
+  - O9: eval stays blocking, 1.57 % of wall.
+
+**BOUNDARY.** Fresh `--arch production` runs launch at N = 256 from the commit that adds this entry. A run before it ran at 48, so throughput, staleness and per-update wall do not compare across it. Per-sample learning reads show no detected difference.
+
+Tag: **VERDICT · N\* = 256 (U −2.71 [−4.50, −0.94], G-A +0.2; NO LOSS DETECTED, run floor 4.90 > bar) · E10 STAYS (E5 −10.56 [−13.12, −7.94], G-A −9.58) · `recipe.sizing` 256 × 384 × 98,304 · BOUNDARY for fresh production runs**

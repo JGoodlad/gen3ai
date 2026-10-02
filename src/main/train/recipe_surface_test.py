@@ -38,7 +38,7 @@ def test_a_fresh_arch_production_argv_omitting_ent_coef_resolves_to_N0s_recipe()
     want = rs.production_recipe()
     for r in rs.ROWS:
         assert getattr(ns, r.dest) == want[r.dest], r.dest
-    assert (ns.n_envs, ns.batch_size, ns.grad_accum_steps, ns.n_epochs, ns.lr) == (48, 2048, 32, 10, 3e-4)
+    assert (ns.n_envs, ns.batch_size, ns.grad_accum_steps, ns.n_epochs, ns.lr) == (256, 2048, 32, 10, 3e-4)
     assert ns.clip_range_vf is None and ns.self_play is True and ns.critic == "winprob"
     assert ns.opp_intent_coef == 0.05 and ns.max_lr is None
     assert ns.recipe_source.startswith("production_config@")
@@ -48,7 +48,7 @@ def test_an_explicit_token_wins_even_when_it_equals_the_parser_default():
     ns = _desugared(["--arch", "production", "--ent-coef", "0.02", "--no-self-play"])
     assert ns.ent_coef == 0.02 and ns.self_play is False
     assert {"ent_coef", "self_play"} <= rs.typed_dests(ns)
-    assert ns.n_envs == 48                          # the untyped rest still applied
+    assert ns.n_envs == 256                         # the untyped rest still applied
 
 
 def test_without_the_umbrella_nothing_is_applied():

@@ -76,7 +76,14 @@ nstar)
     N=$2
     BK=$("$PY" -c 'import json,sys; print(",".join(str(b) for b in json.load(open(sys.argv[1]))["buckets"]))' "$RES/buckets_n$N.json")
     if ! done_unit "nstar_n$N"; then
-        gpu "nstar_n$N" 1200 "$PY" -m main.rust_core_m5 throughput --out "$RES/throughput_nstar_n$N.json" \
+        # QUIET box + the gate slot held, as abq (handoff §3.6): wait, bounded (${QWAIT:-3600} s), for load1 < 3
+        end=$((SECONDS + ${QWAIT:-3600}))
+        until awk '{exit !($1 < 3.0)}' /proc/loadavg; do
+            [ $SECONDS -ge $end ] && { mark "nstar_n$N" noquiet 9; exit 9; }
+            sleep 30
+        done
+        echo "nstar_n$N quiet at $(date -Is) load=$(cut -d' ' -f1-3 /proc/loadavg)" >> "$STATE/status"
+        gpuq "nstar_n$N" 1200 "$PY" -m main.rust_core_m5 throughput --out "$RES/throughput_nstar_n$N.json" \
             --n-envs "$N" --threads 8 --arms rust_serial_keyed,rust_serial_keyed_p8,rust_serial_keyed_p1 \
             --pairs 6 --block-seconds 20 --warmup-steps 120 "${COMMON[@]}" --t2-buckets "$BK"
         rc=$?; [ $rc -eq 0 ] && mark "nstar_n$N" ok $rc || { mark "nstar_n$N" fail $rc; exit $rc; }

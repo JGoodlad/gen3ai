@@ -73,12 +73,12 @@ and `new_lineage_2026-09-26/`):
 
 | # | knob | live value (K2) | grounded literature | recommendation | class |
 |---|---|---|---|---|---|
-| 1 | `n_envs` (N) | 48 | Rudin 2021: 2k–4k envs at ~100k-sample batches; performance drops when the per-env horizon gets too short | Decided by the registered SIZING study, not picked | KEEP (study) |
-| 2 | rollout size N × `n_steps` | 48 × 2048 = 98,304, fixed | Andrychowicz 2021: samples per iteration matter a lot; McCandlish 2018: batch ∝ √B_noise | **Size it dynamically from the policy noise scale**, inside a declared maximum. First land Lane G's complete-game collector (program_rust_core.md order constraint 6), because fixed short windows drop critic rows (§3.2); with it, the controller sets the SAMPLES-PER-UPDATE trigger rather than n_steps | ADAPTIVE (after a SAFE prerequisite) |
+| 1 | `n_envs` (N) | 256 | Rudin 2021: 2k–4k envs at ~100k-sample batches; performance drops when the per-env horizon gets too short | Decided by the registered SIZING study, not picked. **Read 2026-10-02 (§3.1): N\* = 256** — throughput rule on the serial rate; no learning loss detected beyond the bar (not equivalence; n = 1 flagged); fits at steady state on `07eebe13` | KEEP (study) |
+| 2 | rollout size N × `n_steps` | 256 × 384 = 98,304, fixed | Andrychowicz 2021: samples per iteration matter a lot; McCandlish 2018: batch ∝ √B_noise | **Size it dynamically from the policy noise scale**, inside a declared maximum. First land Lane G's complete-game collector (program_rust_core.md order constraint 6), because fixed short windows drop critic rows (§3.2); with it, the controller sets the SAMPLES-PER-UPDATE trigger rather than n_steps | ADAPTIVE (after a SAFE prerequisite) |
 | 3 | micro-batch | 2048 | — (a memory and compile lever) | Keep it fixed: one compiled learner graph | KEEP |
 | 4 | accumulation K / effective batch | 32 → 65,536, **plus a half-size second step every epoch** | Exact accumulation is standard; a ragged step is not | Rollout = a whole multiple of micro × K (no ragged step), then move K with `--adaptive-batch policy` | SAFE, then ADAPTIVE |
 | 5 | noise-scale estimator | two-point, raw gradient, epoch 0, first group, EMA 0.99 | McCandlish 2018 (raw B_simple predicted B_crit for Adam) | Add a split-half-by-GAME estimate: it is unbiased under within-game correlation and exposes the rollout's own noise | SAFE (telemetry) |
-| 6 | `n_epochs` | 10 in the argv; **5 adopted** for generalists (L21451) | PPG 2021: 1 policy epoch near-optimal; OpenAI Five: reuse ~1; Rudin: 5 | Keep 5. Test E2 at matched dose. Decoupled policy/value epochs wait for the Q head | KEEP → ARM |
+| 6 | `n_epochs` | 10 in the argv; **5 adopted** for generalists (L21451) | PPG 2021: 1 policy epoch near-optimal; OpenAI Five: reuse ~1; Rudin: 5 | Keep 5 for forks. A FRESH run keeps 10: 5 epochs at a KL-controlled 3e-4 lost 10.6 pp of untaught at matched samples (SIZING, 2026-10-02, §3.5). Test E2 at matched dose. Decoupled policy/value epochs wait for the Q head | KEEP → ARM |
 | 7 | `clip_range` | 0.15, no schedule; clip fraction 0.065–0.077 | Andrychowicz: 0.25 start; Huang: 0.1–0.2; Hilton 2022: decouple the proximal policy | Keep 0.15, no schedule. PPO-EWMA if the batch starts moving | KEEP; WAITS (EWMA) |
 | 8 | KL → LR controller | target 0.01, ×1.2 per rollout, FROZEN in this lineage | Rudin/rsl_rl: desired KL 0.01, ×1.5 | Make it **guard-only** (it may LOWER the LR, never raise it above the declared rate) | SAFE |
 | 9 | learning rate | frozen 2.8e-5; **5.6e-5 with E5** | OpenAI Five 5e-5 → 5e-6; DeepNash 5e-5; Andrychowicz 3e-4 (small nets) | Keep frozen at the declared dose. Hold LR fixed when K moves, and record the dose | KEEP |
@@ -245,7 +245,7 @@ matches its control at the SAME dose is its secondary read.
 
 ## 3. Per-knob sections
 
-### 3.1 `n_envs` — 48 now; decided by the SIZING study
+### 3.1 `n_envs` — 256, decided by the SIZING study (2026-10-02)
 
 - **Provenance.** The parser default is 32 (`operational.py:34`, `25fdb04f`, 2026-05-11, "optimize
   default hyperparameters for GPU"). The value 48 is typed per run in the argv.
@@ -258,6 +258,26 @@ matches its control at the SAME dose is its secondary read.
 - **Recommendation.** KEEP the registered SIZING study (`program_rust_core.md` order constraint 5):
   sweep N at a fixed rollout size, and read samples/s and learning per sample. **Add to the study**:
   the critic masked-row share (§3.2) and the design effect c (§2.3), both as functions of N.
+- **Outcome (the SIZING study, read 2026-10-02;** `designs/research_state/measurements/m5_sizing/`**):
+  `recipe.sizing.n_envs` = 256, `n_steps` = 384.**
+  - **Throughput.** The registered end-to-end rule, applied to the SERIAL rate the training path can
+    achieve (orchestrator D-10), picks 256: E2E 1,945 against a maximum of 1,986. Past 256, more envs
+    barely move E2E, because the UPDATE dominates: ~41 s at 10 epochs, against ~10 s of collection per
+    98,304 rows. At 10 epochs, 256 envs shorten the update cycle from 55.2 s to 51.6 s (~7 %).
+  - **Learning guard** (fresh 8M arms, fp32, matched samples):
+    - U(256) − U(48) = −2.71 pp [−4.50, −0.94]. The SmallRL guard (G-A) reads +0.2 pp [−3.8, +4.1].
+    - So **no loss is detected beyond the −3.69 bar. That is not equivalence.**
+    - The seed replicate at 48 moved U by 4.90 pp, above the bar, so the read carries "run floor exceeds
+      bar — n = 1 is not decisive".
+  - **Memory.**
+    - At 256 the arms' CUDA reserved memory CLIMBED from 8,012 to 9,674 MiB over the first ~33 updates.
+      At steady state that left 341.5 MiB of headroom, below D-6's 512.
+    - It was a bug: a CUDA stream per update in the staged batch. `07eebe13` FIXED it. Its acceptance run
+      at 256 with the X26 heads stayed flat at 7,798 MiB, with steady-state D-6 headroom of 2,218 MiB.
+    - The arms' learning is unaffected: the numerics are identical and the K9 golden is unchanged.
+  - **Staleness at 256:** 5.5 % of rows are one version old (predicted 6.1 %).
+  - **Future option:** 1024 envs with the overlapped collector. It needs that collector on the training
+    path, a staleness correction and memory.
 
 ### 3.2 `n_steps` and the rollout size — 2048 fixed; make it dynamic, AFTER the critic stops dropping rows
 
@@ -286,6 +306,16 @@ matches its control at the SAME dose is its secondary read.
   2. Log the masked-row share. At λ = 1 no `win_prob/lambda_*` tag exists, so this needs a new tag.
   3. Then run the dynamic-rollout arm (§2.2).
   - Until the buffer lands, **n_min = 512**. The masked share there is about 2–4 %.
+  - **On the Rust core this is SUBSUMED.** The complete-game collector labels every row with its own
+    game's outcome, so `win_mask` = 1 everywhere (`designs/training/rust_collector.md`, K10(b)), and
+    production's n_steps 384 drops no critic row.
+- **The n_steps MAXIMUM (the SIZING study, 2026-10-02, REGISTRATION §6).** This is the adaptive-batch
+  arm's ceiling, NOT applied: production's `n_steps` stays 384.
+  - D_max = 4 optimizer steps per epoch at K_max = 4 · 2,048 · 32 = **262,144 rows**, so
+    **n_steps_max = 1,024 at N = 256**.
+  - The host memory at D_max is an ANALYTIC estimate: +1.8–3.6 GB over a 16 GB peak, which fits the
+    56 GB cap. It is UNVERIFIED by a run. With `--device-batch staged` the device holds one
+    micro-batch, so D does not move GPU memory.
 
 ### 3.3 Micro-batch 2048, accumulation K 32 — and the ragged step
 
@@ -325,6 +355,11 @@ matches its control at the SAME dose is its secondary read.
 - **Recommendation.** ADAPTIVE through an arm (§5, A1), after the §2.3 telemetry. Use a target of
   1.0 and a band of 2.0 (the existing defaults: they cover the owner's 0.91 and never go
   noise-dominated by more than 2×). Keep `max_accum` under the rollout (§2.2, m = 4).
+- **Bounds (the SIZING study, 2026-10-02, REGISTRATION §6; not adopted, arm A1 adopts).**
+  - **K_min = 2.**
+  - **K_max = 32**: the smallest power of two with 2,048 · K ≥ 1.25 × the largest measured policy
+    B_noise (49.4k at K2 @91M). The fresh 8M arms read 2.2k–13.6k.
+  - Every B_noise may read LOW by up to the unmeasured design effect c (§2.3).
 
 ### 3.5 `n_epochs` — 10 → 5 (adopted 2026-09-29)
 
@@ -343,7 +378,7 @@ matches its control at the SAME dose is its secondary read.
   - OpenAI Five targets a sample reuse of about 1 and saw that reusing data 2–3 times "can cause a
     factor of two slowdown".
   - Rudin uses 5 epochs.
-- **Recommendation.** Keep 5 for generalist FORKS (`recipe.fork`, at the frozen 5.6e-5). A FRESH launch keeps N0's measured 10 at a KL-controlled 3e-4 (`recipe.fresh`, §3.22): 5 epochs at a fresh LR was never measured, and the SIZING study re-reads it. **ARM A3:** E2 at the matched dose (LR 1.4e-4). The literature favours
+- **Recommendation.** Keep 5 for generalist FORKS (`recipe.fork`, at the frozen 5.6e-5). A FRESH launch keeps N0's measured 10 at a KL-controlled 3e-4 (`recipe.fresh`, §3.22). **The SIZING study measured 5 epochs at a fresh LR (2026-10-02), and E10 STAYS.** At N = 256, matched samples and the same seed, E5 lost **10.56 pp [−13.12, −7.94]** of untaught (G-A −9.58 pp [−13.44, −5.68]) for an update 2.0× faster (20.4 s against 41.0 s). Its KL controller raised the LR further (max 5.18e-4 against 4.32e-4) at a lower approx-KL. E5 at MATCHED WALL (~1.9× the samples) is UNMEASURED. **ARM A3:** E2 at the matched dose (LR 1.4e-4). The literature favours
   it, and it saves more GPU time. The risk the ledger names is Adam overshoot at a higher per-step LR
   (L05595, L07591), so the arm reads KL and clip fraction as well as the meters. Decoupled policy and
   value epochs (PPG) WAIT for the Q head, which splits the value side anyway.
@@ -720,9 +755,9 @@ lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; 
 | knob | production | block | source |
 |---|---|---|---|
 | `env_core` | rust | `recipe.sizing` | THE M5 SWITCH (`gen3_env_core_switch_v1`): the Rust env core is the production core. Pre-flight at N = 48 (`program_rust_core.md` M5, "The switch"). `--env-core python` stays reachable until the deletion pass |
-| `n_envs` | 48 | `recipe.sizing` | N0 `--n-envs 48`, `cli_args.n_envs`. The SIZING study's to change (§3.1): N* PENDING |
-| `n_steps` | 2048 | `recipe.sizing` | N0 `--n-steps 2048`, metadata `n_steps`. The SIZING study's / Lane G's to change (§3.2); on the Rust core the n_steps MAXIMUM the buffer is allocated at |
-| `rollout_target_samples` | null | `recipe.sizing` | the complete-game collector's update size; null = N × n_steps (98,304). The SIZING study's |
+| `n_envs` | 256 | `recipe.sizing` | The SIZING study's N\* (2026-10-02, §3.1; `program_rust_core.md` Decision record): arms B / C. Was N0's `--n-envs 48` |
+| `n_steps` | 384 | `recipe.sizing` | The SIZING study (2026-10-02): D / N\* = 98,304 / 256, the shape arms B / C trained (was N0's 2048); on the Rust core the n_steps MAXIMUM the buffer is allocated at. The adaptive-batch ceiling n_steps_max = 1,024 is NOT applied (§3.2, arm A1) |
+| `rollout_target_samples` | 98304 | `recipe.sizing` | the complete-game collector's update size, set EXPLICITLY by the SIZING study (2026-10-02) to the 98,304 every arm trained at (null would mean N × n_steps, the same number today) |
 | `trainee_slots` | null | `recipe.sizing` | T2's trainee slots; null = derived (1; 3 under per-game pinning). The SIZING study's |
 | `t2_buckets` | null | `recipe.sizing` | T2's buckets; null = derived at startup: (8, N), plus the opponent cap 64 when N > 64 (`gen3_slot_bucket_caps_v1`, `--t2-opponent-bucket-cap`) — (8, 48) at N = 48, (8, 64, 256) at N = 256. The SIZING study's |
 | `t2_lanes` | null | `recipe.sizing` | T2's lanes; null = derived (min(slots, 8)). The SIZING study's |
@@ -769,10 +804,10 @@ lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; 
     their resolved defaults already equal N0's.
   - The critic readouts `--critic winprob` implies (`win_prob_mode`, `value_dist_*`, PopArt):
     implied, and `--win-prob-coef` is refused under that critic.
-- 🚨 **5 epochs at a FRESH learning rate: never measured.** E5 was a FORK at a frozen 5.6e-5.
-  `recipe.fresh` keeps N0's measured 10 epochs at a KL-controlled 3e-4, and E5 lives only in
-  `recipe.fork`. The first fresh run on the M5 infrastructure re-reads the epoch count inside the
-  SIZING study.
+- 🚨 **5 epochs at a FRESH learning rate: MEASURED, and it LOSES (the SIZING study, 2026-10-02).** E5
+  was adopted as a FORK at a frozen 5.6e-5. On a fresh launch at a KL-controlled 3e-4 it lost
+  10.56 pp [−13.12, −7.94] of untaught at matched samples (arm C against arm B, §3.5). `recipe.fresh`
+  keeps N0's measured 10 epochs, and E5 lives only in `recipe.fork`.
 
 ---
 
@@ -935,3 +970,4 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-09-29 | Migration order | **PROPOSED:** Stage 0 safe defaults → SIZING → A1 adaptive K → A2 dynamic n_steps → A3 E2, A4 λ sweep, A5 opponent T → magnet / EWMA / PFSP → PPG / state-dependent λ / search targets | Adopting several levers in one arm | §5 |
 | 2026-10-01 | Matmul precision **(owner)** | fp32 only; TF32 RETIRED, its knob and gate paths deleted in the post-switch pass | TF32 as an opt-in speed knob | T32b FUTILE at +2.48 % [+2.24, +2.91] GPU time per step vs C_fix (L21451); the K9(b) exclusion sweep (2026-10-01, `designs/research_state/measurements/k9_behaviour_exclusion/`): TF32's margin rounding scale is 9.6e-3 relative (~700x fp32), so no tie margin makes the behaviour check deterministic, and the existing TF32 rule false-FATALs on the rust core with trained weights (p99 over its bar in 36% of probes); `program_rust_core.md` Decision record |
 | 2026-10-01 | The env core and the run's SIZES live in ONE block, `recipe.sizing` (the M5 switch; SHIPPED 2026-10-02 at the pre-sizing N = 48 shape, orchestrator: the switch does not wait for the sizing verdict, which fills N\* and the verdict-dependent rows in its own commit) | `env_core` rust + N, the n_steps maximum, the collector's update size and T2's slots / buckets / lanes in `recipe.sizing`, applied by `--arch production`; `verdict` null until the SIZING study fills N*; an untyped `--env-core` on a `--model` launch (restart or fork) inherits the checkpoint's core | the sizes left in `recipe.fresh` beside the learning knobs (the verdict would edit two places); a parser-default flip to rust for every argv (a bare argv defaults to `--critic shaped`, which the Rust core refuses) | `program_rust_core.md` order constraint 5; `main/train/env_core_switch_test.py` |
+| 2026-10-02 | The SIZING verdict fills `recipe.sizing`; fresh-run epochs (the SIZING study's Part L; registered rules; orchestrator rulings) | **`recipe.sizing`: `n_envs` 256, `n_steps` 384, `rollout_target_samples` 98,304, `verdict` set; `recipe.fresh.n_epochs` stays 10.** (1) N\* = 256: the registered throughput rule on the serial rate; untaught −2.71 pp [−4.50, −0.94] vs N = 48, G-A +0.2 [−3.8, +4.1] ⇒ NO LOSS DETECTED beyond the bar (not equivalence); the replicate floor of 4.90 pp exceeds the 3.69 bar ⇒ flagged "run floor exceeds bar — n = 1 is not decisive". Memory: the arms (pin `7ef99979`) climbed to a steady-state D-6 failure (341.5 MiB), the staged batch's per-update stream; `07eebe13` fixed it (256 + X26 heads flat at 7,798 MiB, D-6 2,218 MiB), so 256 fits the production configuration (orchestrator ruling); learning unaffected. (2) **E10 STAYS:** E5 at a KL-controlled 3e-4 vs E10, N = 256, same seed, matched samples: untaught −10.56 pp [−13.12, −7.94], G-A −9.58 pp [−13.44, −5.68]; E5's update is 2.0× faster. (3) K bounds 2–32 and D_max 262,144 (n_steps_max 1,024 at 256) recorded, NOT applied (arm A1) | E5 on fresh launches; N = 48 kept; the adaptive ceiling applied without arm A1; reading the N guard as equivalence | `designs/research_state/measurements/m5_sizing/` (REGISTRATION §5–6, PROGRESS); `program_rust_core.md` Decision record 2026-10-02; ledger 2026-10-02 |

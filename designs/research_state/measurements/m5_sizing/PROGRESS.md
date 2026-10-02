@@ -12,8 +12,8 @@ Registration: [`REGISTRATION.md`](REGISTRATION.md) (order constraint 5 of
 | 1b | F-SZ-1 fix: the battery's untaught unit driver on main + its test | SHIPPED `bfb8e7e2` |
 | 2 | the registration + its scripts (`bucket_rule.py`, `part_t.sh`, `pps_check.py`) | REGISTERED (this commit) |
 | 3 | Part T: (T-c) update cost; (T-b)/(T-a) at N = 48, 128, 256, 512, 1024, 2048; (T-a′) at N\* | first pass DONE 08:36 (T-c dropped, D-1; 512–2048 BUSY, quiet re-runs after arm A, D-5); T-a′ after N\* |
-| 4 | Part L: pre-flight at each arm's N; arms A, B, C, A′; U + G-A reads | pre-flight N = 48 PASSED; arm A RUNNING (08:51) |
-| 5 | verdict: Decision records, endstate docs, `production_config.json` iff a production value changes, ledger | NOT STARTED |
+| 4 | Part L: pre-flight at each arm's N; arms A, B, C, A′; U + G-A reads | DONE 2026-10-02 02:33 (A, A2, A′, B, C; 0 failed meter units) |
+| 5 | verdict: Decision records, endstate docs, `production_config.json` iff a production value changes, ledger | DONE (the verdict commit; see "THE VERDICT" below) |
 
 ## How to run
 
@@ -410,3 +410,249 @@ core step with inference (O5) and a cheaper core step are.
 | C (256, E5) | ~22:45 | ~23:55 |
 | meters: A′ ~21:10–22:00; B ~22:45–23:35; C ~00:00–00:50 | | |
 | **verdict** | | **~01:30 (2026-10-02)** |
+
+## Session 3 (fresh agent, from the 2026-10-01 ~17:40 handoff; started 21:45)
+
+- **A′ DONE** (chain_ap: drain ended 19:27, arm exit 0 at 21:14; pin `277f318f`, 82 updates, 8,062,352 steps).
+  - No K9(b) event and no crash-restart.
+  - Descriptors: `results/arm_Ap_descriptors.json` (`train_ms` median 40.1 s, approx-KL mean 0.011).
+  - Meters complete at 22:10: 4,800 U + 1,200 G-A, 0 failed units.
+- **The memory fix SHIPPED as `7ef99979`** (gen3_update_fit_v1). B and C are pinned there.
+
+### D-15 proofs at `7ef99979` (recorded before B launched)
+
+- **(i) The K9 learner golden is UNCHANGED.**
+  - No commit in `277f318f..7ef99979` touches `learner_golden.{json,py}`, `learner_golden_buffer.npz` or
+    `learner_golden_test.py` (`git log` on the four paths is empty).
+  - `learner_golden_test.py` passes 5/5 at the pin (a detached worktree at `7ef99979`, torch 2.8).
+  - The memfit agent also ran it green under both interpreters.
+- **(ii) T2 parity.** The fix's own tests pass at the pin: `service_test` (bucket caps: captures, gates and
+  chunking; slots hold no heads), `update_fit_test` and `instrumented_ppo_device_batches_test` (47 passed;
+  1 skip, the CUDA-only staged-vs-resident test, because conftest hides the GPU).
+  - Every T2 slot × bucket is ALSO gated at startup (FATAL on failure), and B started clean.
+  - The explicit on-GPU per-slot × bucket parity table at 256, capped vs uncapped (`t2_caps_n256.json`),
+    runs in the memfit agent's deferred chain after C's `final_model.zip` (`~/gen3ai_archive/memfit/`). It is
+    cited in the verdict when it lands. If it shows a parity FAILURE, B and C are SUSPECT, and the
+    orchestrator hears of it before any recipe change.
+- **Resolved config vs A2** (the trainer's own `parse_args` + `resolve_config` at the pin, compared with
+  A2's `metadata.json:cli_args`). The only differences are:
+  - the registered levers `n_envs` (256) and `n_steps` (384);
+  - the pin's new defaults `device_batch` (staged), `t2_opponent_bucket_cap` (64) and `final_eval` (False,
+    `e6121412`: the legacy post-training eval, after the last update);
+  - provenance and bookkeeping fields (`model`, `run_*`, `*_source`, and `batch_size`, which A2's resumed
+    process records as the inert parser value 4096; the effective value is 2,048 in both);
+  - the umbrella flags `unified_damage` / `unified_moves` (`both` on a fresh launch; A2's resumed process
+    records `off` because it inherits the COMPONENT flags, which are equal).
+  - Eval and promotion regime: greedy sentinels, symmetric teams, promote_threshold 0.55, as A2.
+  - Neither mirrored team pairs nor SPRT promotion exists at the pin.
+- `checkargs` and `launcher --dry-run` both pass. RECIPE SURFACE: 2 of 30 knobs differ, both TYPED
+  (`n_envs`, `n_steps`).
+
+### New deviations
+
+- **D-18 (2026-10-01 ~21:50): B and C at `7ef99979` with UNTYPED buckets; the separate pre-flight is
+  replaced by the arm's own first updates.**
+  - **Buckets.** `arm.sh … -` lets B and C run what production declares at 256: (8, 64, 256). The trainee
+    lane uses all three; every opponent slot uses (8, 64), capped by `--t2-opponent-bucket-cap 64`, and any
+    rows above 64 are chunked. This differs from the registered (8, 16, 32, 256) and follows the memfit
+    agent's instruction.
+  - **Pre-flight.** D-6(a)'s separate 5-update pre-flight is replaced by the fix's predictive `update_fit`
+    gate. It runs one real epoch at the buffer's full shape before any training and refuses unless
+    headroom ≥ 1,024 MiB, which is D-6(b)'s first clause. D-6's second clause is applied with
+    `mem_rule.py` to B's own lifecycle sample at update 4/5, and B would have been killed on a FAIL.
+  - **B's numbers:**
+    - `update_fit`: demand 7,814 MiB, peak allocated 6,386 MiB, headroom 2,714 MiB.
+    - `mem_rule` at update 4: **PASS**. Demand 8,012 MiB; ceiling 10,015.5 MiB; headroom 2,003.5 MiB;
+      control demand 9,494 MiB, so demand is −1,482 MiB over the control.
+  - The memory pre-flight is declared and recorded; it is not an arm. Cost saved: one ≤ 20 min GPU hold.
+- **D-19 (2026-10-01 ~22:30): contention around B, and the meter-queue relaunch.**
+  - (a) A′'s G-A meter units (6 workers, nice 15, CPU) ran until 22:09:59. That covers B's startup and
+    roughly its first 8 updates (GPU from 21:54; first update ~22:01).
+  - (b) The switch agent's routine gate (`-n 4`) ran beside B from 22:08:37 to 22:09:47 (~70 s, mostly
+    worker startup) before it was stopped.
+  - B's throughput and `train_ms` reads are therefore ALSO reported over updates that END after 22:10:30,
+    and that is the quantity O8 uses.
+  - (c) To keep O8's `train_ms` clause clean, the meter queue was relaunched so that **no meter worker runs
+    while B or C trains**:
+    - the original chain_m (pgid 2652671) was killed by process group at ~22:30, while it sat in its wait
+      for B's zip;
+    - `chain_m2.sh` waits for arm C's end, then runs `chain_m.sh` with `LABS="B:… C:…"` (12 h bound from
+      ~22:30);
+    - (T-a′) (`chain_t.sh`) now waits for `CHAINM_ALL_DONE`, then waits for load1 < 3 with the gate slot
+      held.
+  - C therefore trains with no meter workers on the box.
+- **Memory note (memfit agent, `7ef99979`):** before the fix, the detached snapshot-ladder updater opened a
+  ~330 MiB CUDA context at each promotion and kept it for 15+ min. So A's and A2's `cuda_device_free_mib`
+  may read LOW by up to ~0.3–1.3 GiB around their promotions (4M, 6M, 8M). D-6's control DEMAND is
+  per-process and unaffected. Learning is unaffected. B and C run with the updater off the GPU.
+- **`part_t.sh nstar`** now waits for a quiet box (load1 < 3, bounded by `QWAIT`) and holds the gate slot
+  (`gpuq`), as `abq` does (handoff §3.6).
+
+### Part L table (continued)
+
+| arm | run | pin | launched | status |
+|---|---|---|---|---|
+| A′ (replicate) | `sizing_Ap_n48_e10_s1002` | `277f318f` | 19:27 (chain_ap) | DONE 21:14; meters DONE 22:10 |
+| B (256, E10) | `sizing_B_n256_e10_s1001` | `7ef99979` | 21:54 (chain_bc) | DONE 23:13; meters DONE 01:13 |
+| C (256, E5) | `sizing_C_n256_e5_s1001` | `7ef99979` | 23:16 (chain_bc; child 23:25) | DONE 00:11; meters DONE 02:33 |
+
+### Interim (PROGRESS only, never a verdict): the replicate floor
+
+`read_meters.py --allow-partial`, 22:12, with A2, A′ and A complete (600 per team, 1,200 G-A):
+
+| label | U mean (pp) | per-team U (pp) | G-A |
+|---|---|---|---|
+| A2 (control, s1001, `277f318f`) | 45.81 | 54.3 49.7 43.5 42.8 43.5 42.3 51.2 39.2 | 524/1200 = 43.7 % |
+| A′ (s1002, `277f318f`) | 40.92 | 46.3 43.5 38.8 40.7 38.3 35.7 48.5 35.5 | 514/1200 = 42.8 % |
+| A (s1001, `f9349f95`, descriptor) | 34.46 | 46.7 32.8 30.7 28.0 37.2 33.3 41.2 25.8 | 480/1200 = 40.0 % |
+
+- **|U(A′) − U(A2)| = 4.90 pp** (Δ −4.90 [−6.21, −3.60]) **> 3.69**. Under §5.3, both Part L verdicts will
+  carry the flag **"run floor exceeds bar — n = 1 is not decisive"**.
+- G-A Δ(A′ − A2) = −0.8 pp [−4.8, +3.1].
+- **FINDING F-SZ-10 (run-to-run variance at 8M):** the same-seed cross-pin pair A vs A2 differs by
+  **−11.35 pp [−13.73, −9.00]** in U (G-A −3.7 [−7.6, +0.3]).
+  - D-9 already declared that pair to mix the pin effect (C-1's lost KL-controller readings in A) with
+    CUDA nondeterminism, so it is not a pure pin read.
+  - Even so, a fresh 8M run's U moves by several times the 3.69 bar between runs that differ in nothing
+    learning-relevant, or in one controller detail. The game-and-team CI does not contain that variance.
+
+### Arm B descriptors (N = 256, E10, `7ef99979`; `results/arm_B_descriptors.json`, `scripts/train_ms_window.py`)
+
+- DONE 23:13: GPU from 21:54, 82 updates, exit 0.
+  - No K9(b) event and no crash-restart. Canary PASS at update 10.
+  - Peak RSS 16.02 GB of the 56 GB cap.
+- **`train_ms` median 41.03 s** [bootstrap 95 % of the median: 40.77, 41.18]. That is over the 71 updates
+  ending after 22:10:30, i.e. outside D-19's contention window; the unfiltered median is the same 41.03.
+  - A2: 40.23 s [40.15, 40.54]. A′: 40.06 s [40.04, 40.09].
+  - Update cycle (median, no eval): **B 51.6 s against A2 55.2 s** (A′ 54.0). So 256 envs buy ~7 % of
+    end-to-end wall at E10, because the update dominates.
+- KL controller 3e-4 → 4.32e-4, as A2. approx-KL mean 0.0126 (A2 0.0119); clip fraction mean 0.157
+  (A2 0.152).
+- **Staleness:** current-version share 94.5 %, so 5.5 % of rows are stale. D-1's prediction at 256 was 6.1 %.
+  Age-1 probe: |r − 1| 0.100, 21 % outside the clip band (A2: 0.103, 22 %).
+- `noise_scale_policy` (0–8M): mean 6.7k (IQR 3.5k–8.9k), last 8.2k. A2: last 13.5k; A′: last 5.3k.
+  Ratio policy ≈ 0.11, so OVER-batched at B_eff 65,536, as A2.
+- `rust_env/trainee_decisions_per_s`: mean 11.4k (A2 7.9k).
+- **O9 (eval):** the update cycles straddling the four eval steps run +16.9 / +11.9 / +16.3 / +20.3 s
+  over the median cycle. That is **1.57 % of B's wall**, against A2's 1.31 %. **≤ 10 % ⇒ the blocking eval
+  design stands; no filler build.**
+- **MAJOR FINDING F-SZ-11 (memory; reported 23:15; a fresh agent owns the root cause).** Reserved
+  (= demand) CLIMBED ~66 MiB per update, from 8,012 MiB at update 4 to **9,674 MiB at ~update 33 (3.25M
+  steps)**, then stayed flat to the end.
+  - Floor flat at ~980 MiB. `cuda_ooms`, `alloc_retries` and `segments_after_freeze` all 0. Device free
+    2,515 → 853.5 MiB.
+  - `[CudaMemTrend]` WARNed at update 14 (step-up 94.5 MiB), then at every reading from update 30 to the
+    end: **headroom 341.5 MiB < 512**.
+  - **D-6 at steady state: FAIL** (ceiling − demand = 341.5 < 512). D-6's second clause holds:
+    9,674 ≤ 9,494 + 512.
+  - `update_fit` predicted the first update (7,814 MiB demand), not the climb. On the same terms its
+    steady-state headroom is 853.5 MiB, under its 1,024 bar.
+  - The climb is NOT pool growth (orchestrator: the first promotion was at ~6.0M, after the climb ended).
+  - The `segments_after_freeze` = 0 beside +1.66 GiB reserved is itself unexplained. Suspected cause
+    (UNVERIFIED): the staged batch's side-stream copies; the caching allocator pools per stream.
+  - **Orchestrator ruling (23:2x):**
+    - B's LEARNING read stands.
+    - `recipe.fresh` `n_envs` / `n_steps` do NOT change, even if B passes the guard. N\* = 256 is
+      recorded as "learning guard result + steady-state memory FAIL (D-6 at 341.5 MiB), fit pending the
+      memory fix".
+    - C runs unchanged (its TB is a second series), and O8 stands on its merits.
+- C launched at 23:16 (chain_bc); it waited on the switch agent's 256 pre-flight; child up 23:25.
+  `checkargs`: 3 of 30 knobs differ from `recipe.fresh`, all TYPED (`n_envs`, `n_steps`, `n_epochs`).
+
+### Arm C descriptors (N = 256, E5, `7ef99979`; `results/arm_C_descriptors.json`, `results/train_ms_sizing_C.json`)
+
+- DONE 00:11 (child up 23:25), 82 updates, exit 0.
+  - No K9(b) event and no crash-restart. Canary PASS at update 10.
+  - Peak RSS 16.07 GB. No meter worker ran while it trained (D-19c).
+- **`train_ms` median 20.39 s [20.38, 20.41]** against B's 41.03 s [40.77, 41.18]. The CIs are disjoint, so
+  C's update is faster (O8's speed clause holds). Update cycle (median, no eval): **C 27.7 s against
+  B 51.6 s**, i.e. 1.86× end to end.
+- **KL controller (the Adam-overshoot watch, §5.3):**
+  - lr 3e-4 → max 5.18e-4 → last 4.32e-4. It moved higher than B's max (4.32e-4): with half the steps per
+    rollout, the controller raised the LR further.
+  - approx-KL mean 0.0100 (B 0.0126); clip fraction mean 0.137 (B 0.157).
+- Staleness 5.9 % (current share 94.1 %). Age-1 rows outside the clip band: 18 % (B 21 %).
+- `noise_scale_policy` last 9.5k (B 8.2k).
+- O9: the eval cycles run +13.9 / +15.3 / +20.4 / +17.2 s over the median cycle = **2.9 % of C's wall** (the
+  update is half as long, so eval's share doubles). ≤ 10 %.
+- **Memory: an identical climb.** Demand 8,012 → 9,674 MiB, device free 2,515.5 → 853.5 MiB. That is a
+  second series for F-SZ-11's root-cause agent.
+- K9(b) per arm: B none (82 updates), C none (82 updates), A′ none (82 updates).
+- **Check (orchestrator, 2026-10-02 ~01:40): `rust_core_m5/hooks.py:179` measures the LEGACY compile.** It is
+  NOT on any path this study measured.
+  - That line is `LearnerSampling`'s `compile_trainer_extractor`. It runs only with `--compile-trainee`,
+    which no `part_t.sh` unit passes.
+  - On every RUST arm (serial, overlap, `_p8` / `_p1`, the thread arms), the trainee's forward is the
+    production collector's T2 slot (`production.py:210–216`, the `graph` backend) built from the
+    checkpoint's own load. `fanout.py` constructs `LearnerSampling(…, compile=False)` only to name the
+    checkpoint.
+  - No Part T number and no O5 / O6 / O7 direction is affected.
+
+## THE VERDICT (2026-10-02 02:33; `scripts/read_meters.py --json results/meters_read.json`, complete = true)
+
+| label | arm | U (pp, 600 / team) | G-A (wins / 1,200) |
+|---|---|---|---|
+| A2 | N = 48, E10, s1001, `277f318f` (control) | 45.81 | 524 = 43.7 % [40.9, 46.5] |
+| B | N = 256, E10, s1001, `7ef99979` | 43.10 | 526 = 43.8 % [41.1, 46.7] |
+| C | N = 256, E5, s1001, `7ef99979` | 32.54 | 411 = 34.3 % [31.6, 37.0] |
+| A′ | N = 48, E10, s1002, `277f318f` (replicate) | 40.92 | 514 = 42.8 % [40.1, 45.7] |
+| A | N = 48, E10, s1001, `f9349f95` (descriptor) | 34.46 | 480 = 40.0 % [37.3, 42.8] |
+
+| contrast | ΔU (pp) [95 % cluster CI] | ΔG-A (pp) [Newcombe 95 %] |
+|---|---|---|
+| B − A2 (the N guard) | −2.71 [−4.50, −0.94] | +0.17 [−3.80, +4.13] |
+| A′ − A2 (the replicate) | −4.90 [−6.21, −3.60] | −0.83 [−4.79, +3.13] |
+| C − B (O8) | −10.56 [−13.12, −7.94] | −9.58 [−13.44, −5.68] |
+| A − A2 (cross-pin, same seed) | −11.35 [−13.73, −9.00] | −3.67 [−7.60, +0.28] |
+
+- **Replicate floor:** |U(A′) − U(A2)| = **4.90 pp > 3.69**. Both verdicts are therefore flagged **"run floor exceeds
+  bar — n = 1 is not decisive"** (§5.3).
+- **N guard: NO LOSS DETECTED (not equivalence). N\* = 256 is not vetoed.**
+  - −2.71 is not below −3.69, and |−2.71| < 4.90.
+  - G-A's CI upper bound is > 0.
+  - The U delta's own CI excludes 0. So a small loss is visible on game and team noise, but it lies inside
+    both the bar and the observed run-to-run spread.
+- **O8: E5 FAILS ⇒ E10 STAYS.** The CI lower bound −13.12 is below −3.69, and G-A's CI lower bound −13.44 is
+  below −11.0. That holds even though C's update is faster (20.39 s [20.38, 20.41] against 41.03 s
+  [40.77, 41.18]). The KL controller raised C's LR to 5.18e-4 against B's 4.32e-4 (§5.3's Adam-overshoot
+  watch).
+- **Memory.** The orchestrator's ruling after `07eebe13`, the per-update-stream fix: "256 fits the
+  production configuration" is ESTABLISHED. The fix's acceptance run, at 256 with the X26 heads, stayed flat
+  at 7,798 MiB with steady-state D-6 at 2,218 MiB. B's and C's climb was that bug, and their learning is
+  unaffected.
+  - So the registered rule applies: **`recipe.sizing` is set to `n_envs` 256, `n_steps` 384 and
+    `rollout_target_samples` 98,304**, and `recipe.fresh.n_epochs` stays 10.
+- **D-15 (ii), the on-GPU proof** (memfit `~/gen3ai_archive/memfit/t2_caps_n256.json`, at 01:51):
+  - capped (8, 64, 256): 376 slot × bucket checks, max |Δlog π| 1.31e-6, max |ΔV| 7.2e-7, 0 failures;
+  - uncapped (8, 256): 372 checks, max |Δlog π| 1.67e-6.
+  - T2 reserve: 2,168 MiB capped against 3,834 MiB uncapped.
+  - B and C are not suspect.
+- **O2 / O3:** K_min 2, K_max 32, D_max 262,144, n_steps_max 1,024 at 256 (5,504 at 48). NOT adopted (arm A1).
+  The arena RSS at D_max is ANALYTIC only (+1.8–3.6 GB over B's 16.0 GB peak, against a 56 GB cap).
+- **O4:** production's declaration (8, 64, 256) for the trainee lane, (8, 64) for every opponent slot,
+  31 slots, 8 lanes (D-18).
+- **O5:** overlap NOT ADOPTED at 256, 0.855 [0.851, 0.860].
+- **O6:** grouped forward TRIGGERED, 38.6 % [38.3, 38.9] of the serial step at 256.
+- **O7:** see the (T-a′) section below.
+- **O9:** blocking eval stands at 1.57 % of B's wall.
+
+### (T-a′) at N\* = 256 — O7, fewer active snapshots (for the OWNER; `results/throughput_nstar_n256.json`)
+
+- **Run.** 02:48–02:59 (2026-10-02), quiet (load1 0.4 at the start), with the gate slot held. 6 pairs of 20 s
+  blocks. Same tree and buckets as Part T's quiet table: worktree `a3d3556e`, registered buckets
+  (8, 16, 32, 256).
+  - The first attempt (02:46) died at once on a missing space that this session's edit put in `part_t.sh`
+    (`1200"$PY"`, so `timeout` got a bad interval). It was fixed and relaunched; no timed block ran.
+- **Results.**
+  - Serial: 10,400 decisions/s.
+  - **8 of 20 active: 0.952 × serial [0.940, 0.962], i.e. SLOWER.**
+  - **1 active (the ceiling): 1.206 × [1.176, 1.227].**
+  - At N = 48 the same reads were 1.59× and 1.74×. Rows per slot grow with N, so the fan-out amortises on
+    its own and the lever shrinks.
+- **Caveat (cause UNVERIFIED).** With 8 active, a slot sees ~256 × 0.95 / 8 ≈ 30 rows per flush. That is at
+  the edge of the 32 bucket, so a share of flushes spill into the 256 bucket under the registered set.
+  Production's (8, 64, 256) would serve them at 64. Re-reading at production's buckets would price the
+  lever fairly; it is a ≤ 20 min hold and is offered to the owner, not run.
+- The PPS construction check is DONE and exact (`results/pps_check.json`). The owner decides; nothing is
+  adopted here.
+- **`rust_core_m5/hooks.py:179` (legacy compile):** not on this path (see the check above).

@@ -33,7 +33,7 @@ refused). `verdict` reads what is there: a component never run reads NOT RUN, ne
 | 3 | the depth-3 slice (`depth3.py`, delegating to Lane I's `successors_parity`) | BUILT — PASS (F-LI-1 open) |
 | 4 | the THROUGHPUT A/B scaffold (`throughput.py` + `hooks.py` + `throughput_test.py`) | see below |
 | 5 | the composed M5 verdict (`__main__.py verdict`) | BUILT |
-| 6 | the SIZING study (order constraint 5) | NOT STARTED — after M5's gate (parity at N = 48); the A/B takes N and T as parameters for it |
+| 6 | the SIZING study (order constraint 5) | DONE 2026-10-02 — N\* = 256 (Part L guard NO LOSS DETECTED, n = 1 flagged), E10 stays, `recipe.sizing` 256 × 384; `measurements/m5_sizing/` (REGISTRATION, PROGRESS "THE VERDICT"), ledger 2026-10-02 *THE M5 SIZING VERDICT* |
 
 ## The lane registry — how a lane joins the gate
 

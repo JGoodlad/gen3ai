@@ -625,7 +625,7 @@ path's trainee decisions/s at 0.04× the CPU per decision, the step 74 % T2 forw
 `--critic winprob` and refuses, by name at startup, every flag whose path it does not serve yet
 (`src/agents/training/CLAUDE.md` → "The env core"). Validate an argv with `checkargs` first.
 
-**THE SWITCH (`gen3_env_core_switch_v1`, 2026-10-02, ledger *THE M5 SWITCH*; N = 48 until the SIZING verdict sets N\*).** The production core and
+**THE SWITCH (`gen3_env_core_switch_v1`, 2026-10-02, ledger *THE M5 SWITCH*; production N\* = 256 since the SIZING verdict, 2026-10-02).** The production core and
 every SIZE a run declares at startup live in ONE block, `designs/production_config.json`'s
 `recipe.sizing` (the env core, N, the n_steps maximum, the collector's update size, T2's slots /
 buckets / lanes; `verdict` names the sizing Decision record). An UNTYPED `--env-core` resolves

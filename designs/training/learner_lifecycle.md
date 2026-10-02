@@ -303,6 +303,24 @@ T2 rows replay at the same bucket as before, so its log-probs are bitwise unchan
 | T2 per-slot bucket caps (`gen3_slot_bucket_caps_v1`, `--t2-opponent-bucket-cap 64`) | each lane's CUDA-graph pool is sized by its largest capture: uncapped at N = 256, 8 lanes × 232 MiB; capped, only the trainee's lane captures 256 (others ≤ 64, a 60 MiB pool) | T2 startup row +1,399 / +3,924 → +850 / +2,112 MiB (alloc / reserved) |
 | T2 slots hold no ride-along heads (`gen3_opponent_inference_load_v1` + `served_replica`) | 18.2 MiB per slot at the X26 surface, never copied | T2 row +1,653 → +1,399 MiB allocated (heads then without RND variants) |
 
+**The caps keep T2 bit-faithful — on-GPU parity at N = 256** (deferred descriptor, 2026-10-02, `~/gen3ai_archive/memfit/t2_caps_n256.json`, 31 slots, 8 lanes, the X26 heads):
+
+| buckets | slot × bucket checks | max \|Δlog π\| | max \|ΔV\| | failures | T2 reserved | trainee lane pool | an opponent lane pool |
+|---|---|---|---|---|---|---|---|
+| capped (8, 64, 256), opponents ≤ 64 | 376 | 1.31e-6 | 7.2e-7 | 0 | 2,168 MiB | 1,516 MiB | 64–180 MiB |
+| uncapped (8, 256) | 372 | 1.67e-6 | 7.2e-7 | 0 | 3,834 MiB | 2,336 MiB | ~210 MiB |
+
+The staged batch's CUDA tests pass on the GPU on the compute-stream code (2 passed, `~/gen3ai_archive/staged_stream/cudatests_new.log`). The sizing study's arms B / C (N = 256, `7ef99979`) started clean through every startup gate and showed the climb the next section fixes.
+
+**Deferred descriptors (memfit chain, 2026-10-02 01:43–02:46, `~/gen3ai_archive/memfit/status`; CPU-CONTENDED — the sizing study's meter queue ran until 02:33, so none is a clean timing):**
+
+- **Staged vs resident update time.** At N = 48 with the X26 heads, 4 updates each. The first update and the one straddling an eval are dropped, so n = 2 for each.
+  - `--device-batch staged`: 41.2 / 42.8 s.
+  - `resident`: 44.1 / 46.7 s.
+  - So staged is NOT slower. With n = 2 under contention, that is a direction, not a measurement.
+- **Uncapped T2 at N = 256 + heads (`--t2-opponent-bucket-cap 0`):** REFUSED at startup by `UpdateWontFit` (exit 3), as designed. No throughput A/B was possible on that shape.
+- **The uncontended rerun of N = 256 + heads + promotions (`ship_n256h_b`):** hit its 1,200 s hold after 2 updates (exit 124), because it was contended. It is NOT a read. The fix's own acceptance run (next section) supersedes it.
+
 Where the peak lives now (dry update, per segment, N = 48 resident): the per-term noise-scale probe
 7,424 MiB and the once-per-call grad-balance / rank probes 7,382 — first-update DIAGNOSTICS, ~1.4 GiB
 above the micro-step's backward (5,997) and forward (5,476). A plain update peaks ~1.5 GiB lower (N = 256:

@@ -70,10 +70,10 @@ def test_the_sizing_block_is_what_a_fresh_production_launch_resolves(tmp_path):
     assert (ns.env_core, ns.n_envs, ns.n_steps) == ("rust", 1024, 96)
     assert (ns.t2_buckets, ns.t2_lanes) == ("64,256", 4)
     assert ns.trainee_slots is None                      # null = the collector derives it
-    # the live block (the pre-sizing N = 48 shape) through the real umbrella
+    # the live block (the SIZING verdict's N* = 256 shape, 2026-10-02) through the real umbrella
     live = _desugared(["--arch", "production"])
-    assert (live.env_core, live.n_envs, live.n_steps) == ("rust", 48, 2048)
-    assert live.t2_buckets is None and live.rollout_target_samples is None
+    assert (live.env_core, live.n_envs, live.n_steps) == ("rust", 256, 384)
+    assert live.t2_buckets is None and live.rollout_target_samples == 98304
 
 
 def test_collector_rows_are_never_applied_on_the_python_core():

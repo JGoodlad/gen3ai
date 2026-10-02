@@ -211,7 +211,7 @@ level the new lineage can be compared against; each is a DIRECTION to re-test, n
   CALIBRATION OFF THE POOL*; *BELIEF WIN-RATE A/B READ*]
 - **The Rust core reproduces training's observation byte-for-byte** and is now its source. [MEASURED · ledger
   2026-09-24 *RUST CORE M4 CLOSED*; 2026-09-25 *THE RUST CORE CUTOVER*]
-- **The Rust ENV core (M5) is the PRODUCTION env core from the M5 switch (2026-10-02, `gen3_env_core_switch_v1`), at N = 48 until the SIZING verdict sets N\*.**
+- **The Rust ENV core (M5) is the PRODUCTION env core from the M5 switch (2026-10-02, `gen3_env_core_switch_v1`), at N\* = 256 since the SIZING verdict (2026-10-02).**
   Every lane passes its parity gate at the milestone tier, with E, T2 and H's GPU parts too. On the production
   95 / 5 self-play mix at 48 envs it runs 5.11× [4.72, 5.63] the trainee decisions/s of the Python path
   (3,780 vs 743) at 0.038× the CPU per decision. An eval cycle takes ≈ 16.5 s vs ≈ 117 s, but it blocks the
@@ -221,6 +221,19 @@ level the new lineage can be compared against; each is a DIRECTION to re-test, n
   BEFORE it is on the Python env path and throughput or any core-dependent reading never compares across it.
   [MEASURED · ledger 2026-09-30 *M5 GATE MET*; `measurements/m5_laneJ/results/verdict.json`; ledger 2026-10-02
   *THE M5 SWITCH*; `measurements/m5_switch/`]
+- **The SIZING study (2026-10-02) put production at N\* = 256 and kept fresh-run epochs at 10.**
+  - **What 256 buys.** The update dominates: at 10 epochs, 256 envs buy only ~7 % end to end. Learning
+    per sample shows NO LOSS beyond the 3.69 pp bar: untaught −2.71 pp [−4.50, −0.94] against N = 48.
+    That is not equivalence.
+  - **Five epochs on a FRESH launch lose:** −10.56 pp [−13.12, −7.94] of untaught at matched samples,
+    even though the update is 2× faster. E5 stays a fork-only recipe.
+  - **The run-to-run floor of a fresh 8M arm is ABOVE the bar:**
+    - a seed replicate differs by 4.90 pp;
+    - a same-seed cross-pin pair differs by 11.35 pp. That pair also differs by a controller detail
+      (C-1) and by CUDA nondeterminism.
+    - So single fresh 8M arms are not decisive at a 3.69 pp bar.
+
+  [MEASURED, n = 1 per arm · ledger 2026-10-02 *THE M5 SIZING VERDICT*; `measurements/m5_sizing/`]
 
 **Not established.**
 - **Whether the loop lowers exploitability.** A fresh best responder found a smaller gap on the loop than on the

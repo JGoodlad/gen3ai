@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,849-line file. **The ledger itself is append-only and is never edited by this**;
+21,891-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**740 headings · 685 dated · 2026-08-01 → 2026-10-02 · ledger 21,849 lines.**
+**741 headings · 686 dated · 2026-08-01 → 2026-10-02 · ledger 21,891 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -760,3 +760,4 @@ rename.
   - `L21775` · `2026-10-02` · ERA BOUNDARY · **THE M5 SWITCH — `--env-core rust` is the PRODUCTION env core (`gen3_env_core_switch_v1`, the commit that adds this entry), at the pre-sizing N = 48 shape; the SIZING verdict sets N\* in its own commit. Every run before it trained on the Python env path; throughput and every core-dependent reading do NOT compare across it.**
   - `L21806` · `2026-10-02` · FINDING + FIX · THE N = 256 STEADY-STATE CLIMB WAS A PER-UPDATE CUDA STREAM — the staged batch now copies on the compute stream; D-6 holds at N = 256 with the X26 heads (2,218 MiB)
   - `L21823` · `2026-10-02` · FINDING + FIX · **EVERY OPPONENT LOAD RE-SEEDED THE GLOBAL RNG — the python core's team curriculum was a fixed, seed-determined skew; the Rust core replayed only the minibatch permutation (`gen3_no_global_reseed_v1`, the commit that adds this entry)**
+  - `L21850` · `2026-10-02` · VERDICT · THE M5 SIZING VERDICT — N\* = 256 (Part L guard: NO LOSS DETECTED, n = 1 flagged); fresh-run epochs STAY 10 (E5 −10.56 pp); `recipe.sizing` 256 × 384

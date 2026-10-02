@@ -201,7 +201,7 @@ def test_a_change_to_the_DOC_alone_FAILS_the_gate():
     assert not check_claims(text, recipe), "the real document must be clean before planting"
     plants = (
         ("ent_coef", "| `ent_coef` | 0.05 | `recipe.fresh` |", "| `ent_coef` | 0.02 | `recipe.fresh` |"),
-        ("n_envs", "| 1 | `n_envs` (N) | 48 |", "| 1 | `n_envs` (N) | 32 |"),
+        ("n_envs", "| 1 | `n_envs` (N) | 256 |", "| 1 | `n_envs` (N) | 48 |"),
         ("clip_range_vf", "| `clip_range_vf` | none | `recipe.fresh` |",
          "| `clip_range_vf` | 0.5 | `recipe.fresh` |"),
         ("critic", "| `critic` | winprob | `recipe.fresh` |", "| `critic` | shaped | `recipe.fresh` |"),
