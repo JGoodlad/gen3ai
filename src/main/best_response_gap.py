@@ -79,9 +79,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="--play in the EVAL regime (argmax both sides), which is the regime the "
                         "training-time series was measured in. Default is the TRAINING regime.")
     p.add_argument("--mirrored-pairs", action="store_true",
-                   help="--play as MIRRORED TEAM PAIRS (T17): each pairing from BOTH sides on one "
-                        "battle seed, an even count, and a PAIR-level interval (never per-game). A "
-                        "different population from an unmirrored --play; stamped on every row.")
+                   help="REFUSED (owner 2026-10-02): --play is a PINNED-TEAM read, and mirroring "
+                        "swaps the pinned team — one game would measure piloting it, the other the "
+                        "response to it. See designs/training/eval_and_rating.md 'Mirrored team pairs'.")
     p.add_argument("--play-seed", type=int, default=0)
     p.add_argument("--impl", choices=("rust", "node"), default="rust")
     p.add_argument("--concurrency", type=int, default=1,
@@ -311,6 +311,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     log = (lambda *a: None) if args.quiet else (lambda *a: print(*a, file=sys.stderr))
 
     try:
+        if args.mirrored_pairs:                  # P13: refused BEFORE any run is read
+            from agents.training.mirrored_pairs import pinned_team_refusal
+            raise engine.MirroredPinnedTeamError(pinned_team_refusal("main.best_response_gap --play"))
         teamsets = engine.load_teamsets(args.teamsets)
         runs = [engine.read_exploiter(ref, teamsets) for ref in args.runs]
         override = parse_rounds(args.rounds)

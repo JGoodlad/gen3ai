@@ -245,9 +245,20 @@ def test_the_exploiter_gap_treats_the_pairing_regime_as_part_of_the_regime():
     assert old != new                       # check_matched compares the tuple: unmatched ⇒ refused
 
 
-def test_the_gap_play_rounds_to_whole_pairs_and_reports_the_PAIR_interval(tmp_path, monkeypatch):
+def test_the_PINNED_TEAM_meters_REFUSE_mirrored_pairs(tmp_path, monkeypatch, capsys):
+    """P13 (owner 2026-10-02): the fixed-team meters measure the pilot ON its pinned team; mirroring
+    swaps the pinned team inside the pair, so one game measures piloting and the other the response to
+    it — pooled into one number. `main.untaught_meter --mirrored-pairs` and `main.best_response_gap
+    --play --mirrored-pairs` REFUSE with a typed error naming why, at the CLI and at the library choke
+    point (`untaught_meter.play_cells`), before anything is played. Fails on revert of any of them."""
     from agents.training import best_response_gap as brg
     from agents.training import untaught_meter as um
+    from main import best_response_gap as brg_cli
+    from main import untaught_meter as um_cli
+
+    with pytest.raises(um.MirroredPinnedTeamError, match="PINNED-TEAM") as ei:
+        um.play_cells([], [], None, games_per_team=4, mirrored=True)
+    assert isinstance(ei.value, um.MeterError) and "eval_and_rating.md" in str(ei.value)
 
     target = tmp_path / "target.zip"
     target.write_text("x")
@@ -255,16 +266,11 @@ def test_the_gap_play_rounds_to_whole_pairs_and_reports_the_PAIR_interval(tmp_pa
                            target_step=1, target_pins_own_teams=False, fork_step=0, num_timesteps=1,
                            budget=1, dose_rate=None, lr_median=None, teams=["a.txt"], archetype=None,
                            membership="", regime={}, series=[], lineage_derived=False)
-    seen = {}
+    with pytest.raises(brg.MirroredPinnedTeamError, match="PILOTING") as ei2:
+        brg.play_head_to_head(run, games=4, mirrored=True)
+    assert isinstance(ei2.value, brg.BestResponseGapError) and ei2.value.cause == "mirrored_pinned_team"
 
-    def fake_play(refs, teams, opp, *, games_per_team, mirrored, **_k):
-        seen.update(games=games_per_team, mirrored=mirrored)
-        return {"X": {"T0": um.Cell(wins=3, finished=4, attempted=4, pairs=[0, 0, 1, 0, 1])}}
-
-    monkeypatch.setattr(um, "team_slices", lambda paths, **_k: [SimpleNamespace(key="T0", to_json=dict)])
-    monkeypatch.setattr(um, "resolve_ref", lambda ref, **k: SimpleNamespace(label=k.get("label")))
-    monkeypatch.setattr(um, "play_cells", fake_play)
-    out = brg.play_head_to_head(run, games=3, mirrored=True)
-    assert seen == {"games": 4, "mirrored": True}                 # 3 -> 4: whole pairs
-    assert out["mirrored_pairs"] and out["ci_unit"].startswith("pair") and "MIRRORED" in out["regime"]
-    assert out["ci"] == out["pairs"]["score_ci95"]                # the PAIR interval, not Wilson
+    assert brg_cli.main([str(tmp_path / "no_such_run"), "--play", "4", "--mirrored-pairs"]) == 2
+    assert "PINNED-TEAM" in capsys.readouterr().err
+    assert um_cli.main([str(tmp_path / "no_such_ref"), "--mirrored-pairs"]) == 1
+    assert "PINNED-TEAM" in capsys.readouterr().err

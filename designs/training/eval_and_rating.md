@@ -704,17 +704,18 @@ are pinned at a commit that may carry this code: flipping the in-loop regime und
 the comparison. The orchestrator flips it ON at the era boundary — the X26 baseline launch — together
 with `--promotion-sprt` (T6), so it is one regime change, not two.
 
-**The offline head-to-heads use the same rule.** `untaught_meter.play_cells(mirrored=True)`
-(`main.untaught_meter --mirrored-pairs`, `main.best_response_gap --play --mirrored-pairs`): pair `j`
-draws ONE pool team `B_j`, the pilot plays its pinned team `T` vs the opponent on `B_j`, then `B_j` vs
-the opponent on `T`, both on battle `j`'s sim seed and policy seeds; `--games-per-team` must be even
-(the gap's `--play` rounds up). Each cell carries its `pairs`; `aggregate` adds a pair-level score per
-level (`levels[*].pairs`) beside the team-cluster bootstrap (whose unit, the TEAM, already nests the
-pairs) and `--play`'s interval becomes the pentanomial one (`ci_unit: pair`). 🚨 Mirroring CHANGES what
-those meters measure — half the games put the pilot on a POOL team, not its pinned one — so a mixed
-set of cells is REFUSED (`cells_regime`, `merge_cells`) and the registered untaught-8 meter switches
-only at the same era start. `main.anchors --mirrored-pairs`: see
-[`EXTERNAL_ANCHORS_SOP.md`](../ops/EXTERNAL_ANCHORS_SOP.md).
+🚨 **The PINNED-TEAM meters do NOT mirror — `--mirrored-pairs` is REFUSED there** (owner 2026-10-02,
+deletion pass P13). `main.untaught_meter` and `main.best_response_gap --play` measure the pilot ON its
+pinned team; a mirrored pair hands that team to the opponent for its second game, so one game measures
+PILOTING the pinned team and the other the RESPONSE to it as an opponent — two different quantities a
+pair would pool into one number. Both CLIs refuse before anything is read, and so does the one library
+path they play through, `untaught_meter.play_cells(mirrored=True)` (typed: `untaught_meter.
+MirroredPinnedTeamError` / `best_response_gap.MirroredPinnedTeamError`, cause `mirrored_pinned_team`;
+the text is `mirrored_pairs.pinned_team_refusal`). Mirroring belongs to the SYMMETRIC evals: the in-loop
+`--eval-mirrored-pairs` above and `main.anchors --mirrored-pairs` (see
+[`EXTERNAL_ANCHORS_SOP.md`](../ops/EXTERNAL_ANCHORS_SOP.md)). (The readers of a mirrored cell —
+`cells_regime` / `merge_cells` refusing a mixed set, `aggregate`'s `levels[*].pairs` — stay, for the
+shards written while the meters could mirror, 2026-10-01 to 10-02.)
 
 Tests: `agents/training/mirrored_pairs_test.py` (the rule on both paths, the split, the pentanomial and
 its interval, every reader's refusal), `main/train/eval_mirrored_pairs_regime_test.py` (resolve /
@@ -725,7 +726,8 @@ teams swapped between p1 and p2, 16 pairs vs the bots per cycle (`--eval-games 3
 core, the same plus `--env-core rust --critic winprob` and a pool forced to seed — the trace's `cycle`
 block reads game 2k `swapped False` / 2k+1 `swapped True` on one seed with the teams handed over, for the
 nine bots AND a pool sentinel (`pairs_vs_pool` 2 at step 12,000); (3) `main.untaught_meter
---mirrored-pairs` on two current-generation checkpoints, 16 games → 8 pairs, each pair one pool draw;
+--mirrored-pairs` on two current-generation checkpoints, 16 games → 8 pairs, each pair one pool draw
+(since refused, P13);
 (4) `main.anchors --mirrored-pairs` vs `metamon:SmallRL`, 8 games → 4 pairs, all four VERIFIED (teams,
 order, shared seed). ⚠️ **Not yet seen on a GPU run** — one confirmation rides a planned launch.
 

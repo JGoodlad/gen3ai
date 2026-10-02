@@ -129,6 +129,12 @@ class BestResponseGapError(RuntimeError):
     cause = "best_response_gap"
 
 
+class MirroredPinnedTeamError(BestResponseGapError):
+    """``--play --mirrored-pairs``: the exploiter plays its PINNED team (`mirrored_pairs.pinned_team_refusal`)."""
+
+    cause = "mirrored_pinned_team"
+
+
 class RunReadError(BestResponseGapError):
     """The run is not an exploiter run, or states nothing this meter can read."""
 
@@ -930,6 +936,9 @@ def play_head_to_head(run: ExploiterRun, *, games: int, seed: int = 0, impl: str
     """
     from agents.training import untaught_meter as um
 
+    if mirrored:
+        from agents.training.mirrored_pairs import pinned_team_refusal
+        raise MirroredPinnedTeamError(pinned_team_refusal("main.best_response_gap --play"))
     if games <= 0:
         raise BestResponseGapError("--play N: N must be positive.")
     if not run.teams:

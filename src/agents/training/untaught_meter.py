@@ -137,6 +137,12 @@ class MeterError(RuntimeError):
     """A refusal the caller should surface verbatim (bad concurrency, unresolvable input)."""
 
 
+class MirroredPinnedTeamError(MeterError):
+    """``--mirrored-pairs`` on this PINNED-TEAM meter (`mirrored_pairs.pinned_team_refusal`)."""
+
+    cause = "mirrored_pinned_team"
+
+
 # --------------------------------------------------------------------------------------------
 # Inputs — teams and model refs
 # --------------------------------------------------------------------------------------------
@@ -521,8 +527,11 @@ def play_cells(
     team, not its pinned one — a regime boundary, never pooled with an unmirrored read.
     """
     check_concurrency(concurrency)
-    if mirrored and games_per_team % 2:
-        raise MeterError(f"--mirrored-pairs plays whole pairs: games per team must be EVEN, got {games_per_team}")
+    if mirrored:
+        # P13 (owner 2026-10-02): every cell here is a PILOT on its PINNED team — the one place both
+        # pinned-team meters (`main.untaught_meter`, `main.best_response_gap --play`) play through.
+        from agents.training.mirrored_pairs import pinned_team_refusal
+        raise MirroredPinnedTeamError(pinned_team_refusal("untaught_meter.play_cells"))
     import asyncio
 
     import torch as th

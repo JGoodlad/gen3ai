@@ -28,6 +28,21 @@ from typing import Iterable, List, Optional, Sequence, Tuple
 
 SCHEMA = "gen3_mirrored_pairs_v1"
 
+
+def pinned_team_refusal(tool: str) -> str:
+    """Why a PINNED-TEAM meter refuses ``--mirrored-pairs`` (owner 2026-10-02, deletion pass P13).
+
+    The fixed-team meters (``main.untaught_meter``, ``main.best_response_gap --play``) measure the pilot
+    on ITS pinned team. Mirroring hands the teams over inside the pair, so one game measures PILOTING the
+    pinned team and the other the pilot's RESPONSE to that team as an opponent — two different things a
+    pair would pool into one number. The symmetric evals (the in-loop ``--eval-mirrored-pairs``,
+    ``main.anchors --mirrored-pairs``) are where mirroring belongs."""
+    return (f"{tool}: --mirrored-pairs is REFUSED on a PINNED-TEAM meter. Mirroring swaps the pinned team "
+            "inside each pair, so one game measures PILOTING the pinned team and the other the RESPONSE "
+            "to it as an opponent — two different quantities a pair would pool (owner 2026-10-02). Mirror "
+            "the symmetric evals instead (the in-loop --eval-mirrored-pairs, main.anchors "
+            "--mirrored-pairs); see designs/training/eval_and_rating.md \"Mirrored team pairs\".")
+
 #: The five pair categories, in half-points (0 = both games lost … 4 = both won).
 N_CATEGORIES = 5
 

@@ -96,10 +96,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="battles in flight per shard. Values above 1 are REFUSED (unquotable).")
     p.add_argument("--impl", choices=("rust", "node"), default="rust")
     p.add_argument("--mirrored-pairs", action="store_true",
-                   help="play every pairing (the pinned team vs a pool draw) as a MIRRORED PAIR "
-                        "(T17): both sides, one battle seed; --games-per-team must be EVEN. A REGIME "
-                        "BOUNDARY: half the games put the ref on the POOL team, so a mirrored read is "
-                        "never pooled or compared with an unmirrored one (refused).")
+                   help="REFUSED (owner 2026-10-02): this is a PINNED-TEAM meter, and mirroring "
+                        "swaps the pinned team — one game would measure piloting it, the other the "
+                        "response to it. See designs/training/eval_and_rating.md 'Mirrored team pairs'.")
     p.add_argument("--floor", type=float, default=None, metavar="PP",
                    help="the externally-ruled replicate floor for the BASELINE column, in pp "
                         "(e.g. 1.66 frozen / 4.27 controller-live). Regime-specific; never pooled.")
@@ -397,9 +396,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     try:
         engine.check_concurrency(args.concurrency)
-        if args.mirrored_pairs and args.games_per_team % 2:
-            raise MeterError(f"--mirrored-pairs plays whole pairs: --games-per-team must be EVEN, "
-                             f"got {args.games_per_team}")
+        if args.mirrored_pairs:
+            from agents.training.mirrored_pairs import pinned_team_refusal
+            from agents.training.untaught_meter import MirroredPinnedTeamError
+            raise MirroredPinnedTeamError(pinned_team_refusal("main.untaught_meter"))
         # The shard child's argv is built from `args`, so the defaults are expanded to SPECS here
         # — before resolution and before any child — and never re-read per process. A shard child
         # would only re-print its parent's lines, so it stays quiet.
