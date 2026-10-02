@@ -252,6 +252,21 @@ in a weak-keyed registry, never as a module attribute (an `RLock` there breaks
 `copy.deepcopy(policy)`), and the unguarded path contains no context manager at all so the compiled
 graph is unchanged. Gate: `forward_guard_test.py`.
 
+## 🚨 Every DISCRETE op in the forward is DECLARED (`selection_sites.py`, `gen3_behaviour_tie_exclusion_v1`)
+
+The forward is piecewise-discontinuous: a `topk` / `argmax` / comparison whose operands sit within a
+rounding error of the cutoff resolves differently in T2's compiled forward and the learner's eager one,
+and log π jumps on that row. K9(b) EXCLUDES those rows by their TIE MARGIN and judges the rest
+deterministically (`designs/training/learner_gates.md`), so it must know every such op. **A new
+selection call, value-position comparison or float → int cast in a `FORWARD_MODULES` module must be
+declared in `selection_sites.py`** — a `MARGIN` rule when its operand is a score (it moves with the
+weights, or is float arithmetic a rounding error can push across the cutoff), an `EXACT` reason
+otherwise (observation / table / integer / gathered at a declared selection). `selection_sites_test.py`
+fails on an undeclared or stale entry, on a line mixing the two classes (the recorder resolves ops by
+LINE — split it), and when a site declared EXACT moves under a few-ulp weight jitter; at run time an
+undeclared op on a float operand is a typed FATAL at the first update. The keys are source text, so
+editing a declared line means re-declaring it.
+
 ## ⚠️ One op's SPELLING is load-bearing for `torch.compile` (`gen3_species_posterior_spelling_v1`)
 
 `BeliefHead.species_posterior` computes `P(species)` for the expected-latent defender. It is written

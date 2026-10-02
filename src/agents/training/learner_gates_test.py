@@ -51,6 +51,10 @@ def test_normal_python_path_passes_the_behaviour_gate_on_the_first_micro_batch()
     worst = model.logger.name_to_value["behaviour/max_abs_dlogp_current"]
     assert worst < 1e-5, worst          # measured ~1e-6 (batch-composition rounding), 100x under the bar
     assert model.logger.name_to_value["behaviour/rows_current"] == L.GOLDEN_OVERRIDES["batch_size"]
+    from agents.training.rust_rollout import consistency as K   # fp32: the margins came from a real forward
+    excl = model.logger.name_to_value["behaviour/excluded_frac"]
+    assert 0.0 <= excl < K.FP32_EXCLUDED_CEILING
+    assert model.logger.name_to_value["behaviour/rows_judged"] == round((1 - excl) * L.GOLDEN_OVERRIDES["batch_size"])
 
 
 @pytest.mark.parametrize("precision", ["highest", "high"])
@@ -82,7 +86,8 @@ def test_warn_reports_and_off_skips():
     model.behaviour_check = "warn"
     model.rollout_buffer.log_probs += 1e-3
     worst = G.check_behaviour_first_micro(
-        model, th.as_tensor(model.rollout_buffer.log_probs[0] - 1e-3), th.as_tensor(model.rollout_buffer.log_probs[0]))
+        model, th.as_tensor(model.rollout_buffer.log_probs[0] - 1e-3), th.as_tensor(model.rollout_buffer.log_probs[0]),
+        margins=_no_tie(model.rollout_buffer.log_probs[0].size))
     assert worst == pytest.approx(1e-3, rel=1e-3)
 
 
@@ -180,14 +185,15 @@ def test_check_loss_finite_names_every_non_finite_term():
 
 def test_the_gate_is_keyed_by_the_matmul_precision_the_run_uses():
     """ONE table (`consistency.BEHAVIOUR_GATES`), ONE enforcement (`enforce_behaviour`), read by BOTH
-    implementations: fp32 = max < 1e-4 under the TIE RULE (4 consecutive, or too many rows, or a row at no
-    tie); TF32 = p99 < 3.6e-3 single-shot AND max < 0.071,
+    implementations: fp32 = DETERMINISTIC — max < 1e-4 over the rows not at a tie, single-shot, and the
+    excluded share under its ceiling; TF32 = p99 < 3.6e-3 single-shot AND max < 0.071,
     FATAL only on `TF32_MAX_PERSISTENCE` (4) consecutive updates; an undeclared precision is refused."""
     from agents.training.rust_rollout import consistency as K
 
     C = K.GateCondition
-    assert K.behaviour_gate("highest") == (C("max", 1e-4, K.FP32_MAX_PERSISTENCE, K.FP32_ROW_RATE_UPPER,
-                                              K.FP32_TIE_EPS),) and K.BEHAVIOUR_BAR == 1e-4
+    assert K.behaviour_gate("highest") == (C("max", 1e-4, 1, K.FP32_TIE_EPS),
+                                           C("excluded_frac", K.FP32_EXCLUDED_CEILING, 1, K.FP32_TIE_EPS))
+    assert K.BEHAVIOUR_BAR == 1e-4
     assert K.TF32_MAX_PERSISTENCE == 4
     assert K.behaviour_gate("high") == (C("p99", 3.6e-3, 1), C("max", 0.071, K.TF32_MAX_PERSISTENCE))
     with pytest.raises(K.UndeclaredPrecision, match="medium"):
@@ -199,7 +205,7 @@ def test_the_gate_is_keyed_by_the_matmul_precision_the_run_uses():
         assert model.logger.name_to_value["behaviour/bar_p99"] == 3.6e-3
         assert model.logger.name_to_value["behaviour/bar_max"] == 0.071
     with pytest.raises(BehaviourMismatch, match="'highest'"):
-        G.check_behaviour_first_micro(model, mid, th.zeros(2048))      # fp32 is single-shot
+        G.check_behaviour_first_micro(model, mid, th.zeros(2048), margins=_no_tie(2048))   # fp32: single-shot
 
 
 class _precision:
@@ -232,9 +238,17 @@ def _fp32(bad_rows: int, value: float = 1e-3):
     return d
 
 
-def _step(model, d):
+def _no_tie(n, tied=()):
+    """`behaviour_margins_first_micro`'s shape: every row far from a cutoff, except ``tied`` (exact ties)."""
+    m = np.ones(n)
+    m[list(tied)] = 0.0
+    return m, ["test" for _ in range(n)]
+
+
+def _step(model, d, margins=None):
     G.check_behaviour_first_micro(model, d, th.zeros(d.numel()),
-                                  actions=th.arange(d.numel()) % 11, masks=th.ones(d.numel(), 11))
+                                  actions=th.arange(d.numel()) % 11, masks=th.ones(d.numel(), 11),
+                                  margins=margins if margins is not None else _no_tie(d.numel()))
 
 
 def test_one_isolated_tf32_max_violation_warns_loudly_dumps_the_rows_and_does_not_fatal(tmp_path, capsys):
@@ -284,11 +298,12 @@ def test_a_clean_update_resets_the_streak_so_interleaved_violations_never_fatal(
         assert model.logger.name_to_value["behaviour/streak_max"] == 1.0
 
 
-def test_the_tf32_p99_is_single_shot_the_fp32_max_follows_the_tie_rule_and_a_nan_is_always_fatal():
-    """fp32 on the Python path (no full-buffer scan, no obs for the tie trace): ONE row over 1e-4 warns,
-    the 4th consecutive update is FATAL, and enough rows in the one micro-batch are FATAL at once (rule
-    (ii) on the judged rows; a stale-weights fault moves every row)."""
+def test_the_tf32_p99_is_single_shot_the_fp32_rule_is_deterministic_and_a_nan_is_always_fatal():
+    """fp32 on the Python path (`gen3_behaviour_tie_exclusion_v1`): ONE judged row over 1e-4 is FATAL on the
+    FIRST update; the same row AT a tie is excluded (no violation); too many tied rows FATAL; a NaN — even
+    on an excluded row — is never rounding; and fp32 without margins is refused, never judged blind."""
     from agents.training.rust_rollout import consistency as K
+    from agents.training.rust_rollout.tie_margins import TieMarginError
 
     model = _learner("fatal")
     with _precision("high"):
@@ -300,16 +315,24 @@ def test_the_tf32_p99_is_single_shot_the_fp32_max_follows_the_tie_rule_and_a_nan
         with pytest.raises(BehaviourMismatch):
             _step(model, nan)                                          # never rounding: no persistence
     model._behaviour_streaks = {}
-    for _ in range(K.FP32_MAX_PERSISTENCE - 1):
-        _step(model, _fp32(bad_rows=1))                                # fp32: one row over 1e-4 WARNS
-    with pytest.raises(BehaviourMismatch, match=r"\(i\) max violated on 4 consecutive"):
-        _step(model, _fp32(bad_rows=1))                                # ... and FATALs on the 4th in a row
+    d = _fp32(bad_rows=1)
+    bad = int(th.argmax(d))
+    with pytest.raises(BehaviourMismatch, match=r"max 0\.001 NOT < 0\.0001.*FATAL at 1"):
+        _step(model, d)                                                # not at a tie: FATAL at once
     model._behaviour_streaks = {}
-    lim = K.count_limit(K.FP32_ROW_RATE_UPPER, 2048, 2048)
-    with pytest.raises(BehaviourMismatch, match=r"\(ii\) .* in the judged micro-batch"):
-        _step(model, _fp32(bad_rows=lim))                              # ... and MANY rows FATAL at once
+    _step(model, d, margins=_no_tie(2048, tied=[bad]))                 # the same row AT a tie: excluded
+    assert model.logger.name_to_value["behaviour/rows_excluded"] == 1.0
+    assert model.logger.name_to_value["behaviour/streak_max"] == 0.0
+    nan = _fp32(bad_rows=0)
+    nan[5] = float("nan")
+    with pytest.raises(BehaviourMismatch, match="NON-FINITE"):
+        _step(model, nan, margins=_no_tie(2048, tied=[5]))             # a NaN on an EXCLUDED row
     model._behaviour_streaks = {}
-    _step(model, _fp32(bad_rows=lim - 1))                              # one fewer: a warning
+    many = list(range(int(K.FP32_EXCLUDED_CEILING * 2048) + 1))
+    with pytest.raises(BehaviourMismatch, match="TOO MANY rows sit at a tie"):
+        _step(model, _fp32(bad_rows=0), margins=_no_tie(2048, tied=many))
+    with pytest.raises(TieMarginError):
+        G.check_behaviour_first_micro(model, _fp32(bad_rows=0), th.zeros(2048))
 
 
 def _wide_learner(n_steps: int = 64):

@@ -73,7 +73,9 @@ one bar). WHICH implementation runs is decided once per `train()` by `learner_ga
   Never both.
 
 It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current`, `rows_current`,
-`rows_probed` and one `behaviour/bar_<statistic>` per condition either way.
+`rows_probed` and one `behaviour/bar_<statistic>` per condition either way; at fp32 also
+`behaviour/excluded_frac`, `rows_excluded`, `rows_judged`, `max_abs_dlogp_judged`,
+`max_abs_dlogp_excluded` and `tie_eps` (and the Rust probe `probe_forward_ms`).
 
 **The gate is KEYED BY the float32 matmul precision the run uses** (`consistency.BEHAVIOUR_GATES` — ONE
 table, read by Lane G's probe and by the in-loop gate through `judge_behaviour`; an undeclared precision
@@ -81,7 +83,7 @@ is a typed `UndeclaredPrecision`). Every condition must hold on the micro-batch'
 
 | precision | condition | catches | bar | FATAL when |
 |---|---|---|---|---|
-| `highest` (fp32, the default) | max \|Δ\| | every fault class | 1e-4 | the **TIE RULE** (below): (i) 4 CONSECUTIVE updates, (ii) too many rows over the bar in one update, (iii) a violating row at NO selection tie; a single tied row is a loud warning |
+| `highest` (fp32, the default) | max \|Δ\| over the rows NOT at a selection tie, + the excluded share | every fault class | 1e-4; excluded share < 0.15 | the FIRST violation — **DETERMINISTIC** (below): a row within a relative margin `FP32_TIE_EPS` = 2e-4 of a discrete cutoff is excluded, every other row is judged |
 | `high` (TF32) | p99 \|Δ\| | GLOBAL faults (every row moves: stale weights, a mode / sampling / temperature mismatch) | 3.6e-3 = 3 x the healthy per-row p99.9, rounded up | the first violation |
 | `high` (TF32) | max \|Δ\| | LOCALIZED gross faults (< 1 % of rows: misaligned rows, a wrong action index, a mask mismatch) | 0.071 = 1.75 x the healthy per-row max, rounded up | **4 CONSECUTIVE updates** (`TF32_MAX_PERSISTENCE`); a single violation is a loud warning |
 
@@ -117,43 +119,90 @@ Two artifacts are written beside it:
 A clean update pays nothing. The Python-core in-loop gate dumps what it has (index, |Δ|, action,
 mask); its buffer carries no collection provenance.
 
-**The fp32 TIE RULE (`gen3_behaviour_tie_rule_v1`, orchestrator 2026-10-01; every number from
-[`measurements/k9_behaviour_tail/result.json`](../research_state/measurements/k9_behaviour_tail/result.json)).**
+**The fp32 rule is DETERMINISTIC (`gen3_behaviour_tie_exclusion_v1`, owner 2026-10-01; every number
+from [`measurements/k9_behaviour_exclusion/result.json`](../research_state/measurements/k9_behaviour_exclusion/result.json)).**
+The owner: *"toss out ones where the cutoff would be sensitive to a rounding error … and then
+deterministically pass or fail"*. It **supersedes the probabilistic TIE RULE** (`gen3_behaviour_tie_rule_v1`,
+same day: a violation warned and was FATAL on 4 consecutive updates, on a count over the healthy rate, or
+at no tie — numbers in [`k9_behaviour_tail/result.json`](../research_state/measurements/k9_behaviour_tail/result.json)).
 
-*Why it changed.* Sizing arm A2 died under the old single-shot fp32 max. One row of 1,024 was at
-|Δ| 0.0389; the p99 was 2.6e-6 and the next-worst row 4.5e-6.
+*Why a row can jump.* Sizing arm A2 died on ONE row of 1,024 at |Δ| 0.0389 (p99 2.6e-6). The tail sweep
+(`k9_behaviour_tail/`) found the mechanism: the forward is PIECEWISE-DISCONTINUOUS — it SELECTS (the
+threat-seat `topk` and its `>=` cutoff in `pointer_head.py`, the damage op's candidate `topk`, the
+dominant-move `argmax` in `damage_op.py`) and THRESHOLDS — and where one sits within a rounding error of
+its cutoff, T2 (compiled, at its bucket) and the learner (eager, at its batch) resolve it differently.
+T2 reproduced its own stored value bit-for-bit; a few-ulp weight jitter of the eager forward landed on
+it; the flipped gaps were 5e-8 to 1.7e-7 in fp64 (`TECH_DEBT_BACKLOG.md` §2(b)).
 
-*The tail sweep.* It used A2's 4.0M checkpoint and pool on the production rust path (T2 graph, buckets
-8 / 48, 7 lanes, N = 48). Nothing trained, so all 3,538,944 rows of 36 fills were current, and every row
-went through the probe forward. It found 3 rows over 1e-4: |Δ| 2.4e-4, 4.8e-4 and 7.8e-4. All three
-have the same mechanism:
-- T2 recomputing the row in the SAME bucket reproduced its stored value bit-for-bit (no race, no
-  misalignment, no stale weights).
-- A few-ulp weight jitter of the eager forward landed on the stored value too: the value is two- or
-  four-valued, a jump apart.
-- The discrete-op trace named the selections that flipped: the threat-seat `topk` and its `>=`
-  threshold (`pointer_head.py`), the damage op's candidate `topk` (`damage_op_pairwise.py`), and the
-  dominant-move `argmax` (`damage_op.py`).
-- Their fp64 gaps were 5e-8 to 1.7e-7, and fp64 sides with the stored value twice and the learner once.
-- p(a) was 0.40, 0.10 and 0.13, so a near-zero probability is not the cause.
+*The rule.*
+1. **Every discrete op of the forward is DECLARED** in `agents/model/selection_sites.py` — each selection
+   call, value-position comparison and float → int cast of a forward module, keyed by source: a MARGIN
+   rule for a score (19 sites: the five candidate `topk`s, the `>=` top-K cutoff, the two dominant-move
+   `argmax`es — GATED, so a slot whose max is at or below the gate's 1e-6 is masked and cannot tie — their
+   two gates, and the other score / weight-free-arithmetic thresholds), an EXACT reason for the rest
+   (observation reads, constant tables, integers, values gathered at a declared selection's index, the
+   move-ID match). `selection_sites_test` fails on an undeclared or stale entry (an AST scan of every
+   forward module), on a line mixing the two classes, and on an EXACT site whose operands move under a
+   few-ulp weight jitter; at run time an undeclared op on a float operand is a typed `TieMarginError`.
+2. **Each judged row's TIE MARGIN** is computed from the probe's OWN forward — on the Rust core the
+   probe forward itself runs under `rust_rollout/tie_margins.TieMargins` (a `TorchFunctionMode` that
+   reads each declared op's operands after the op ran; the forward is unchanged, and training forwards
+   never run under it); on the Python core one no-grad eager forward of the first micro-batch runs under
+   it BEFORE R1's own forward (so every stash the fold reads is R1's; no optimizer step has run). The
+   margin is RELATIVE (|a − b| / max(|a|, |b|): fp32 rounding scales with the values compared) — a
+   `topk`'s k-th vs (k+1)-th, an `argmax`'s top-1 vs top-2, a threshold's distance — the minimum over
+   every MARGIN site. An EXACT tie is 0.
+3. **A row whose margin is below `FP32_TIE_EPS` = 2e-4 is EXCLUDED**; exact ties always.
+4. **Every other current row is JUDGED: any |Δ| ≥ 1e-4 is FATAL on the first update.** No persistence,
+   no count. A judged row resolves every selection identically in both forwards, so its |Δ| is
+   continuous fp32 noise.
+5. **The excluded share must stay under `FP32_EXCLUDED_CEILING` = 0.15** (FATAL otherwise): a fault that
+   pushed many rows onto ties would otherwise hide from the judgement.
 
-So the forward is PIECEWISE-DISCONTINUOUS, and T2 (compiled, at its bucket) and the learner (eager, at
-its batch) resolve a near-tie differently (`TECH_DEBT_BACKLOG.md` §2(b)). TF32's healthy tail is the
-same mechanism at a higher rate.
+*The measurement* (`k9_behaviour_exclusion/`, `sweep.py` + `derive.py`, criteria declared before the
+numbers were read): the tail sweep's setup re-run with margins — A2's 4.0M checkpoint and its 2
+snapshots, the production rust path (T2 graph backend, buckets 8 / 48, 7 lanes, N = 48), nothing
+training, every one of 3,538,944 rows of 36 fills through the probe forward; torch 2.8, RTX 3080 Ti.
 
-*The healthy rate.* 4 rows over the bar in 3,670,016 judged: the sweep, plus A's probes with 0 and A2's
-with 1. The one-sided 95 % Poisson upper bound is `FP32_ROW_RATE_UPPER` = 2.5e-6 per row. Both derived
-rules are held to a false FATAL of ≤ 1e-4 over 10,000 updates:
-
-| rule | FATAL when | derivation |
+| quantity | value | derivation |
 |---|---|---|
-| (i) persistence | the max violated on `FP32_MAX_PERSISTENCE` = **4** consecutive updates | the per-update violation rate of a probe of up to 2,048 rows at the upper rate is 5.1e-3; k = 3 gives 1.3e-3 over 10k updates, k = 4 gives 6.8e-6 |
-| (ii) count | too many rows over the bar in one update: the Rust probe counts its FULL-BUFFER scan, the Python path its judged micro-batch | `count_limit`: 1 + the smallest m with P(Poisson(rate × rows) ≥ m) ≤ 1e-4 / (10k × the per-update rate). It is **7** at 98,304 rows (N = 48 × 2,048) and at 131,072, and 11 at 524,288. Stale weights or an obs / mask mismatch move many rows |
-| (iii) no tie | a violating row (the probe's, then the scan's; up to 32) sits at NO selection tie within `FP32_TIE_EPS` = **1e-5** (`rust_rollout/tie_margins.py`: every topk / sort / argmax / max-with-dim's gap between the selected candidate and the next, in the run's precision) | the bar is ≥ 50 × the largest flipped gap (1.7e-7). 15.3 % of healthy rows sit at a tie within it, 13.9 % at an EXACT tie. So a fault on a random single row is FATAL at once with P ≈ 0.85. **Exact ties COUNT as ties (orchestrator, 2026-10-01):** excluding them would raise the teeth to 98.6 %, but a gap-0 selection CAN resolve differently in two kernels, and that false FATAL would kill a long run. The single-row miss is backed by (i) and (ii), and a real fault moves many rows. Rust path only: it needs the row's observation |
+| the ROUNDING SCALE R of the margins | **1.44e-5** | the largest \|m_learner − m_variant\| over 73,728 rows × every declared site, the variants being T2-like forwards: eval / no-grad at buckets 48 (≤ 3.6e-6) and 8 (≤ 4.8e-6), a few-ulp weight jitter (1.44e-5 — the largest; it is what reproduced T2's stored values in the tail sweep) |
+| `FP32_TIE_EPS` | **2e-4** | 10 × R, rounded up to 1-2-5 |
+| rows over the bar (all rows) | 4, at margins ≤ **4.2e-7** | every real flip sat ~480× under epsilon (and under 1e-6) |
+| JUDGED rows over the bar | **0 of 3,407,893** | judged max \|Δ\| 2.1e-5 — 4.7× under 1e-4; by margin decade the max is 2.1e-5 at [1e-3, 1e-2) and ≤ 1.9e-5 above |
+| excluded share | **3.70 %** (largest 1,024-row block 6.25 %) | 2.0 % dominant-move `argmax` exact ties with the gate open, 0.6 % fixed damage == current HP exactly, the rest near-ties of the candidate `topk` / its cutoff |
+| `FP32_EXCLUDED_CEILING` | **0.15** | the smallest of 0.02 / 0.05 / 0.10 / 0.15 / … at ≥ 3 × the pooled share and ≥ 1.5 × the largest block; fresh, 4.0M and 75M (N0 final) weights read 4.2 / 3.9 / 4.2 % at epsilon (CPU, 4,096 of A2's real rows) |
+| planted faults (the real probe, at epsilon) | **all FATAL on the FIRST update** | one-step-stale weights (an Adam-sized 2.8e-5 step on every weight); ONE wrong-action row at margin 0.128; one env's obs / mask column shifted by one decision. The unmodified buffer passes, before and after |
+| cost | **+27.7 ms** on a 62.6 ms probe forward of 2,048 rows | ~0.07 % of an update (~40 s); the Python path adds one no-grad forward (~0.25 %) |
 
-**Anything less is a LOUD warning.** That covers one tied row, or a few rows within the healthy count.
-The warning dumps everything above, and `behaviour/violations_total_max` counts violations over the run.
-The Python path has no obs for the tie trace, so a single-row fault there is caught by persistence alone.
+*The teeth, stated.* A fault confined to ONE row is missed only if that row is excluded: P ≈ 0.037 at
+the healthy share. A fault that moves many rows is caught by its judged rows, or by the ceiling.
+`consistency_test` re-derives epsilon and the ceiling from `result.json` and fails on a changed constant.
+
+*Exact ties are excluded, per the owner's rule.* Most are flip-proof in practice — two candidates with
+bit-identical scores (a capped damage roll on a saturated / revealed belief weight; fixed damage equal to
+the remaining HP) resolved by the same lowest-index tie-break in eager and Inductor — but the rule does
+not try to prove that. A refinement that counts an argmax tie only when the tied candidates' gathered
+payloads differ would return ~2 points of teeth (not built).
+
+*UNVERIFIED:* the rounding scale is measured against EAGER T2-like variants and a weight jitter, not
+against T2's own compiled intermediate values (a `TorchFunctionMode` cannot see inside a compiled
+graph); the sweep's 4 real flips — all ~480× under epsilon — are the end-to-end check against the real
+T2. The excluded share is measured on A2's states; a live run's ecology may differ (the ceiling FATAL
+names the re-measurement).
+
+**TF32 (`high`) is NOT made deterministic, and its rule is unchanged.** The same sweep at TF32 (12
+fills, 1,179,648 rows): the margins' rounding scale is **9.6e-3** relative (~700 × fp32), so epsilon at
+the same safety factor is 0.1 and would exclude **99.6 %** of rows (1e-2 still excludes 51 %); TF32's
+continuous noise on a judged row is itself ~1e-2. 🚨 **FINDING (2026-10-01): on the Rust core with
+TRAINED weights the TF32 gate below FALSE-FATALs.** On A2's 4.0M checkpoint the healthy p99 of a
+1,024-row probe exceeds its single-shot 3.6e-3 bar on **36 %** of probes and the max exceeds 0.071 on
+**17 %** (211 of 1.18M rows, the largest 1.22) — ~8 expected 4-consecutive runs per 10k updates. The
+TF32 bars below were measured on the PYTHON core with a fresh perturbed learner. **TF32 is RETIRED
+(owner, 2026-10-01):** `--matmul-precision high` and every TF32-only gate path leave with the deletion
+pass; until then `--env-core rust --matmul-precision high` with a FATAL `--behaviour-check` is REFUSED at
+launch (`combination_checks.env_core_rust_tf32_behaviour_check_fatal`, FATAL_CONFIG), naming the two
+ways out (`--behaviour-check warn`, or re-measure the gate on the Rust core).
 
 **Why the TF32 max is PERSISTENT, and why k = 4 (orchestrator 2026-09-30; k from data).** Its 1.8x
 headroom over the first pass's healthy max (0.040) came from a small sample, and the max of a noise

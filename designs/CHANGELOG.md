@@ -10531,3 +10531,27 @@ if a lazy build is reintroduced.
   (`RIDEALONG_FLAGS`) in either direction; every other mismatch still refuses. The T2 slot identity
   (`served_state_dict`, `forward_fingerprint`) ignores them too, and served replicas carry no heads.
   The trainee's resume stays strict.
+
+## 2026-10-01 — K9(b): the fp32 behaviour check is DETERMINISTIC — tie exclusion (`gen3_behaviour_tie_exclusion_v1`; no model change)
+
+- Owner direction: "toss out things that are within a rounding error and then deterministically pass
+  or fail". Supersedes the same day's TIE RULE (`gen3_behaviour_tie_rule_v1`), which was probabilistic.
+- Every discrete op of the policy forward (selection calls, value-position comparisons, float → int
+  casts in the forward modules) is DECLARED in `agents/model/selection_sites.py`. Score sites carry a
+  MARGIN rule (19 sites); the rest carry an EXACT reason. `selection_sites_test` AST-scans the modules
+  and fails on an undeclared or stale entry, on a line mixing the classes, and on an EXACT site that
+  moves under a weight jitter.
+- `rust_rollout/tie_margins.TieMargins` (a `TorchFunctionMode`) records each row's RELATIVE tie margin
+  from the probe's own forward. On the python core it runs one no-grad eager forward of the first
+  micro-batch before R1's. Training forwards are unchanged; the K9 golden passes under both torches.
+- fp32: a row under `FP32_TIE_EPS` = 2e-4 is excluded (exact ties always); any other row ≥ 1e-4 is
+  FATAL on the first update; an excluded share over `FP32_EXCLUDED_CEILING` = 0.15 is FATAL. The
+  persistence and count rules are removed (`measurements/k9_behaviour_exclusion/`). Measured on
+  3,538,944 rows: rounding scale 1.44e-5, 3.70 % excluded, 0 judged rows over the bar (max 2.1e-5),
+  every real flip excluded, three planted faults FATAL on their first update, +27.7 ms per update.
+- TF32: not made deterministic (rounding scale 9.6e-3 → 99.6 % excluded). Its gate fails by chance on
+  the Rust core with trained weights (p99 over its bar on 36 % of probes), so `--env-core rust
+  --matmul-precision high` with a FATAL `--behaviour-check` is REFUSED at launch
+  (`env_core_rust_tf32_behaviour_check_fatal`, FATAL_CONFIG). The owner then RETIRED TF32 (it leaves
+  with the deletion pass); the refusal guards the window until then. One P3 debt row: the argmax
+  payload refinement.

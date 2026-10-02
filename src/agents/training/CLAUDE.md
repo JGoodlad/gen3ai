@@ -588,7 +588,7 @@ a separate decision. Hazards an agent must know before touching it:
   `win_mask` (the window fill calls the callback's own `backfill_terminal_labels`).
 - **K9(b) `--behaviour-check`** (default `fatal` on BOTH cores): before any optimizer step of every
   update, the learner's log π on rows played at the CURRENT version must equal the stored behaviour
-  log-prob (the precision-keyed gate: max |Δ| < 1e-4 at fp32 under the TIE RULE — a violation warns; FATAL on 4 consecutive updates, too many rows over the bar, or a violating row at NO discrete-selection tie; p99 < 3.6e-3 AND max < 0.071 at TF32, the TF32 max FATAL only on 4 consecutive updates). Under `rust` Lane G's pre-loop probe runs its own forward and logs
+  log-prob (the precision-keyed gate: at fp32 DETERMINISTIC — a row whose forward has a declared selection / threshold within a relative margin 2e-4 of its cutoff is EXCLUDED (3.7 % of healthy rows; `agents/model/selection_sites.py`, `rust_rollout/tie_margins.py`), every other row's |Δ| < 1e-4 or FATAL at once, the excluded share < 0.15; p99 < 3.6e-3 AND max < 0.071 at TF32, the TF32 max FATAL only on 4 consecutive updates — 🚨 that TF32 gate fails BY CHANCE on the Rust core with trained weights, so `--env-core rust --matmul-precision high` with a FATAL check is REFUSED at launch: pass `--behaviour-check warn` or re-measure it first; TF32 itself is RETIRED by the owner and leaves with the deletion pass). Under `rust` Lane G's pre-loop probe runs its own forward and logs
   `staleness/*` (ratio, clip fraction, KL by row AGE) and `behaviour/*`; under `python` (no per-row
   versions) the first micro-batch's own forward is compared in-loop instead (`learner_gates.md`). Per-game version pinning (`--version-pinning per_game`) is the first
   staleness remedy, OFF unless those measurements call for it.
@@ -631,9 +631,7 @@ code then calls nothing) sets the TRAINER process's fp32 matmul precision; `high
 is stamped at launch as `🧮 [MATMUL PRECISION]` and recorded in `metadata.json`
 (`gen3_matmul_precision_v1`); a runtime knob, never inherited. K9(b)'s behaviour gate is KEYED BY it
 (one table, `rust_rollout/consistency.BEHAVIOUR_GATES`): `max` |Δ log π| < 1e-4 at `highest`, judged by
-the fp32 TIE RULE (the policy forward selects with topk / argmax, and a selection at a near-tie can resolve
-differently in T2 and in the learner — ~1 row per 1.2M; a violation warns, FATAL on 4 consecutive updates,
-too many rows, or a row at no tie); at `high`
+the fp32 rule, DETERMINISTIC (`gen3_behaviour_tie_exclusion_v1`: the policy forward selects with topk / argmax, and a selection within a rounding error of its cutoff can resolve differently in T2 and in the learner — such rows, 3.7 % at a relative margin 2e-4, are EXCLUDED and every other row is judged single-shot); at `high`
 BOTH the micro-batch's `p99` < 3.6e-3 (global faults — TF32's healthy tail reaches 0.04 on a few rows,
 so no max bar alone separates a one-step-stale rollout) AND its `max` < 0.071 (localized gross faults
 on < 1 % of rows) — the max PERSISTENT: one violation warns and dumps the rows to

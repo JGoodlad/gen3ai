@@ -500,18 +500,18 @@
   },
   "src/agents/training/rust_rollout/parity_test.py::test_milestone_the_learners_buffer_equals_todays_python_path[ladder]": {
    "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 68.78,
-   "contention": 1.02,
+   "commit": "94d20e6bebb678e06e6f6e66ee3a214dcb0b463c",
+   "at": "2026-10-02T01:54:51Z",
+   "duration_s": 55.63,
+   "contention": 1.01,
    "detail": ""
   },
   "src/agents/training/rust_rollout/parity_test.py::test_milestone_the_learners_buffer_equals_todays_python_path[pool]": {
    "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 67.93,
-   "contention": 1.03,
+   "commit": "94d20e6bebb678e06e6f6e66ee3a214dcb0b463c",
+   "at": "2026-10-02T01:54:51Z",
+   "duration_s": 50.17,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/tb_relevance_test.py::test_a_shaped_run_keeps_every_tag_the_gates_touch": {
@@ -1243,5 +1243,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-01T14:27:34Z"
+ "last_written": "2026-10-02T01:54:51Z"
 }

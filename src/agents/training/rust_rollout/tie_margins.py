@@ -1,123 +1,209 @@
-"""Which rows sit at a TIE of a discrete SELECTION inside the policy forward — K9(b)'s rule (iii)
-(`gen3_behaviour_tie_rule_v1`, 2026-10-01).
+"""Each row's TIE MARGIN — how far every discrete operation of the policy forward sits from its cutoff
+(K9(b), `gen3_behaviour_tie_exclusion_v1`, owner 2026-10-01).
 
-WHY. The policy forward is PIECEWISE-discontinuous: it SELECTS with topk (the threat-seat candidates,
-`pointer_head`; the damage op's candidate moves, `damage_op_pairwise`) and argmax (`damage_op`'s dominant
-move). Where two candidates are within fp32 noise of each other, the rollout's forward (T2: compiled, at
-the flush's bucket shape) and the learner's (eager, at the probe's batch) can select DIFFERENTLY, and
-log pi jumps on that row. The K9(b) tail sweep (`designs/research_state/measurements/k9_behaviour_tail/`)
-caught three such rows in 3.54M: T2 reproduced its own stored value exactly, a few-ulp weight jitter of the
-eager forward landed on it too, and the flipped selections' fp64 gaps were 5e-8 .. 1.7e-7.
+WHY. The policy forward is piecewise-discontinuous: it SELECTS (topk, argmax) and THRESHOLDS. Where one
+of those sits within a rounding error of its cutoff, T2's forward (compiled, at its bucket) and the
+learner's (eager, at the probe's batch) can resolve it differently and log pi(a|s) jumps on that row.
+K9(b) EXCLUDES such rows from the behaviour judgement and judges every other row deterministically
+(`consistency.py`). The owner: "toss out ones where the cutoff would be sensitive to a rounding error
+… and then deterministically pass or fail".
 
-A real FAULT (stale weights, a misaligned row, a mask mismatch, a corrupted output) moves a row whether or
-not it sits at a tie. So a violating row NOT at a tie is a fault — K9(b) FATALs at once on it.
+WHAT. `TieMargins` is a ``TorchFunctionMode`` run around a forward. At every op executed from a line
+of a forward module (`agents/model/selection_sites.FORWARD_MODULES`) it looks the line up in the
+DECLARED inventory (`selection_sites`): an EXACT site is skipped, a MARGIN site's per-row margin is
+computed by its `Rule` (RELATIVE: |a - b| / max(|a|, |b|); an exact tie is 0), and a discrete op on a
+float operand at an UNDECLARED line is recorded (`undeclared`) — the caller refuses it. The row's
+margin is the minimum over every MARGIN site, with the site that attained it.
 
-`selection_gaps` runs the learner's forward (train mode, no grad, the run's own precision) on the given
-rows under a TorchFunctionMode that records, for every SELECTION op (topk / sort / argsort / argmax /
-argmin / max / min / kthvalue with a dim), the per-row gap between the selected candidate and the next one
-(for a sort: the smallest adjacent gap). An exact tie (gap 0) is a tie. Called only on a violation."""
+It never changes what the forward computes: it reads each op's arguments after the op ran, on
+detached float64 copies. Training forwards never run under it — only the K9(b) probe's own forward
+(Rust core) and one no-grad forward of the judged micro-batch (python core).
+"""
 from __future__ import annotations
 
+import os
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch as th
 from torch.overrides import TorchFunctionMode
 
-#: The ops recorded. Which gap counts as "at a tie" is the gate table's (``consistency.FP32_TIE_EPS``).
-SELECTION_OPS = frozenset({"topk", "sort", "argsort", "argmax", "argmin", "max", "min", "kthvalue", "msort"})
+from agents.model import selection_sites as SS
+
+_TORCH_DIR = os.path.dirname(os.path.abspath(th.__file__))
+_MODEL_DIR = os.path.dirname(os.path.abspath(SS.__file__))
 
 
-def _site() -> str:
+class TieMarginError(RuntimeError):
+    """K9(b): a row's tie margin cannot be computed — an UNDECLARED discrete op on a float operand ran in
+    the forward (declare it in `agents/model/selection_sites.py`), a MARGIN site's tensor is not
+    row-major, or the forward ran opaque to the recorder (compiled)."""
+
+
+def _rel(a: th.Tensor, b: th.Tensor) -> th.Tensor:
+    """|a - b| / max(|a|, |b|) elementwise (float64); 0 where both are 0 (an exact tie)."""
+    d = (a - b).abs()
+    s = th.maximum(a.abs(), b.abs())
+    return th.where(s > 0, d / th.where(s > 0, s, th.ones_like(s)), th.zeros_like(d))
+
+
+def _arg(args: Tuple[Any, ...], kwargs: Dict[str, Any], i: int, key: str, default: Any) -> Any:
+    return args[i] if len(args) > i else kwargs.get(key, default)
+
+
+def site_margin(rule: SS.Rule, name: str, args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Optional[th.Tensor]:
+    """The elementwise margin of one MARGIN op (float64, any shape whose leading dim is the op's rows), or
+    None when the op cannot cross a cutoff (fewer candidates than the selection keeps)."""
+    x = args[0].detach().double()
+    if rule.kind == "topk":
+        k = int(_arg(args, kwargs, 1, "k", 1))
+        dim = int(_arg(args, kwargs, 2, "dim", -1))
+        largest = bool(_arg(args, kwargs, 3, "largest", True))
+        if x.shape[dim] <= k:
+            return None
+        v = th.topk(x, k + 1, dim=dim, largest=largest).values
+        return _rel(v.narrow(dim, k - 1, 1), v.narrow(dim, k, 1))
+    if rule.kind == "argmax":
+        dim = _arg(args, kwargs, 1, "dim", None)
+        if dim is None:
+            raise TieMarginError(f"an argmax without a dim cannot be attributed to rows ({name})")
+        dim = int(dim)
+        if x.shape[dim] < 2:
+            return None
+        v = th.topk(x, 2, dim=dim, largest=name in ("argmax", "max")).values
+        top, second = v.narrow(dim, 0, 1), v.narrow(dim, 1, 1)
+        g = _rel(top, second)
+        if rule.gate > 0:          # a slot whose max is at or below the gate is masked by the gate site
+            g = th.where(top > rule.gate, g, th.full_like(g, float("inf")))
+        return g
+    other = args[1] if len(args) > 1 else kwargs.get("other")
+    t = (other.detach().double() if isinstance(other, th.Tensor)
+         else th.tensor(float(other), dtype=th.float64, device=x.device))
+    x, t = th.broadcast_tensors(x, t.to(x.device))
+    g = _rel(x, t)
+    if rule.kind == "threshold":
+        if rule.zero_exact:
+            g = th.where((x == 0) & (t == 0), th.full_like(g, float("inf")), g)
+        return g
+    if rule.kind == "threshold_self":        # t is one of x's own values along the last dim (a top-k cutoff)
+        is_t = x == t
+        mult = is_t.sum(dim=-1, keepdim=True)
+        g = th.where(is_t, th.full_like(g, float("inf")), g)
+        return th.where(mult > 1, th.zeros_like(g), g)
+    raise TieMarginError(f"unknown margin rule {rule.kind!r}")
+
+
+def _caller() -> Optional[Tuple[str, int]]:
+    """(module, line) of the forward-module line that issued the op — the first frame outside torch —
+    or None when that frame is not in ``agents/model`` (a library-internal op)."""
     f = sys._getframe(2)
-    while f is not None:
-        fn = f.f_code.co_filename
-        if "/src/agents/" in fn and not fn.endswith("tie_margins.py"):
-            return f"{fn.split('/src/', 1)[1]}:{f.f_lineno}"
+    while f is not None and f.f_code.co_filename.startswith(_TORCH_DIR):
         f = f.f_back
-    return "?"
+    if f is None:
+        return None
+    fn = f.f_code.co_filename
+    if os.path.dirname(fn) != _MODEL_DIR:
+        return None
+    return os.path.basename(fn)[:-3], int(f.f_lineno)
 
 
-def _gap(name: str, x: th.Tensor, args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> th.Tensor:
-    """The per-element gap of one selection along its dim (keepdim-shaped)."""
-    def arg(i: int, key: str, default: Any) -> Any:
-        return args[i] if len(args) > i else kwargs.get(key, default)
+class TieMargins(TorchFunctionMode):
+    """Per row: the smallest margin over every MARGIN site the forward executed (module docs)."""
 
-    if name == "topk":
-        k, dim, largest = int(arg(1, "k", 1)), int(arg(2, "dim", -1)), bool(arg(3, "largest", True))
-        s = th.sort(x.double(), dim=dim, descending=largest).values
-        if s.shape[dim] <= k:
-            return th.full_like(s.narrow(dim, 0, 1), float("inf"))
-        return (s.narrow(dim, k - 1, 1) - s.narrow(dim, k, 1)).abs()
-    if name in ("sort", "argsort", "msort"):
-        dim = int(arg(1, "dim", -1)) if name != "msort" else 0
-        s = th.sort(x.double(), dim=dim).values
-        if s.shape[dim] < 2:
-            return th.full_like(s.narrow(dim, 0, 1), float("inf"))
-        return s.diff(dim=dim).abs().amin(dim=dim, keepdim=True)
-    dim = int(arg(1, "dim", -1))
-    if name == "kthvalue":
-        k, dim = int(arg(1, "k", 1)), int(arg(2, "dim", -1))
-        s = th.sort(x.double(), dim=dim).values
-        lo = s.narrow(dim, k - 1, 1)
-        nb = [(lo - s.narrow(dim, k - 2, 1)).abs()] if k >= 2 else []
-        nb += [(s.narrow(dim, k, 1) - lo).abs()] if s.shape[dim] > k else []
-        return th.minimum(*nb) if len(nb) == 2 else (nb[0] if nb else th.full_like(lo, float("inf")))
-    s = th.sort(x.double(), dim=dim, descending=name in ("argmax", "max")).values
-    if s.shape[dim] < 2:
-        return th.full_like(s.narrow(dim, 0, 1), float("inf"))
-    return (s.narrow(dim, 0, 1) - s.narrow(dim, 1, 1)).abs()
-
-
-class SelectionGaps(TorchFunctionMode):
-    """Per row (the leading ``rows`` of every selection's input): the smallest selection gap and its site."""
-
-    def __init__(self, rows: int) -> None:
+    def __init__(self, rows: int, keep_calls: bool = False) -> None:
         super().__init__()
         self.rows = int(rows)
-        self.min_gap = np.full(self.rows, np.inf)
-        self.site: List[str] = ["" for _ in range(self.rows)]
+        #: a measurement driver's switch: every MARGIN call's per-row margin, in call order (site, array)
+        self.calls: Optional[List[Tuple[str, np.ndarray]]] = [] if keep_calls else None
+        self.margin = np.full(self.rows, np.inf)
+        self.site = ["" for _ in range(self.rows)]
         self.ops = 0
+        self.sites_seen: Dict[str, int] = {}
+        self.undeclared: Dict[str, int] = {}
 
-    def __torch_function__(self, func, types, args=(), kwargs=None):
+    def __torch_function__(self, func: Any, types: Any, args: Tuple[Any, ...] = (), kwargs: Any = None) -> Any:
         kwargs = kwargs or {}
         out = func(*args, **kwargs)
-        name = getattr(func, "__name__", "")
-        if name not in SELECTION_OPS or not args or not isinstance(args[0], th.Tensor):
-            return out
-        x = args[0]
-        if name in ("max", "min") and not isinstance(out, tuple):
-            return out                         # a global max / min, or the elementwise form: no selection
-        if not x.is_floating_point() or x.dim() == 0 or x.shape[0] % self.rows:
-            return out
-        try:
-            g = _gap(name, x.detach(), args, kwargs)
-        except (RuntimeError, IndexError, TypeError, ValueError):
-            return out
-        per = g.reshape(self.rows, -1).amin(dim=1).cpu().numpy()
         self.ops += 1
-        site = _site()
-        better = per < self.min_gap
-        for i in np.flatnonzero(better):
-            self.site[int(i)] = f"{name}@{site}"
-        self.min_gap = np.minimum(self.min_gap, per)
+        r = SS.runtime_op(getattr(func, "__name__", ""))
+        if r is None or not args or not isinstance(args[0], th.Tensor):
+            return out
+        kind, op = r
+        name = getattr(func, "__name__", "")
+        if kind == "sel":
+            if not args[0].is_floating_point() or (name in ("max", "min") and not isinstance(out, tuple)):
+                return out            # an integer selection, or an elementwise / global max (continuous)
+        elif kind == "cmp":
+            if not (isinstance(out, th.Tensor) and out.dtype == th.bool):
+                return out
+            other = args[1] if len(args) > 1 else kwargs.get("other")
+            if not (args[0].is_floating_point() or (isinstance(other, th.Tensor) and other.is_floating_point())):
+                return out            # integer / bool operands: exact by type
+        else:
+            if not (args[0].is_floating_point() and isinstance(out, th.Tensor)
+                    and not out.is_floating_point() and out.dtype != th.bool):
+                return out            # not a float -> int cast
+        where = _caller()
+        if where is None:
+            return out
+        res = SS.resolve(where[0], where[1], kind)
+        if res is None or res.declared is None:
+            key = f"{where[0]}.py:{where[1]} {name}"
+            self.undeclared[key] = self.undeclared.get(key, 0) + 1
+            return out
+        rule = res.declared.rule
+        if rule is None:
+            return out
+        g = site_margin(rule, name, args, kwargs)
+        site = f"{where[0]}.py:{where[1]} {name}"
+        self.sites_seen[site] = self.sites_seen.get(site, 0) + 1
+        if g is None:
+            return out
+        if g.dim() == 0 or g.shape[0] != self.rows:
+            raise TieMarginError(f"[K9(b)] the MARGIN site {site} ({res.src!r}) is not row-major: its operand has "
+                                 f"shape {tuple(args[0].shape)} for {self.rows} rows — its margin cannot be attributed")
+        per = g.reshape(self.rows, -1).amin(dim=1)
+        per = th.where(th.isnan(per), th.zeros_like(per), per).cpu().numpy()   # a NaN operand is no margin
+        if self.calls is not None:
+            self.calls.append((site, per))
+        better = np.flatnonzero(per < self.margin)
+        for i in better:
+            self.site[int(i)] = site
+        self.margin = np.minimum(self.margin, per)
         return out
 
+    def check(self) -> None:
+        """Raise `TieMarginError` when the forward ran an undeclared discrete op, or saw nothing at all."""
+        if self.undeclared:
+            raise TieMarginError(
+                "[K9(b)] the policy forward ran discrete op(s) on a float operand at line(s) the inventory does "
+                f"not declare: {sorted(self.undeclared)} — declare each in agents/model/selection_sites.py "
+                "(a MARGIN rule for a score, an EXACT reason otherwise; `selection_sites_test` shows how)")
+        if self.ops == 0:
+            raise TieMarginError(
+                "[K9(b)] the tie-margin recorder saw NO torch op in the forward: it ran opaque to it (compiled?) "
+                "— the margins would read 'no tie' on every row")
 
-def selection_gaps(policy: Any, obs: Dict[str, np.ndarray], actions: np.ndarray, masks: np.ndarray,
-                   device: Any) -> Tuple[np.ndarray, List[str]]:
-    """``(min_gap [n], site [n])`` of the learner forward on these ``n`` rows (module docs)."""
+
+def selection_gaps(policy: Any, obs: Dict[str, np.ndarray], actions: Any, masks: Any, device: Any
+                   ) -> Tuple[np.ndarray, List[str]]:
+    """``(margin [n], site [n])``: one no-grad, train-mode forward of the learner on these ``n`` rows under
+    `TieMargins` (the python core's judged micro-batch; offline drivers)."""
     from stable_baselines3.common.utils import obs_as_tensor
 
-    n = int(np.asarray(actions).reshape(-1).shape[0])
-    mode = SelectionGaps(n)
+    acts = actions if isinstance(actions, th.Tensor) else th.as_tensor(np.asarray(actions))
+    acts = acts.reshape(-1).long().to(device)
+    msk = masks if isinstance(masks, th.Tensor) else th.as_tensor(np.asarray(masks))
+    o = {k: (v.to(device) if isinstance(v, th.Tensor) else v) for k, v in obs.items()}
+    o = o if all(isinstance(v, th.Tensor) for v in o.values()) else obs_as_tensor(obs, device)
+    mode = TieMargins(int(acts.shape[0]))
     was = policy.training
     policy.set_training_mode(True)
     try:
         with th.no_grad(), mode:
-            policy.evaluate_actions(obs_as_tensor(obs, device), th.as_tensor(np.asarray(actions).reshape(-1)).long().to(device),
-                                    action_masks=th.as_tensor(np.asarray(masks)).to(device))
+            policy.evaluate_actions(o, acts, action_masks=msk.to(device))
     finally:
         policy.set_training_mode(was)
-    return mode.min_gap, mode.site
+    mode.check()
+    return mode.margin, mode.site

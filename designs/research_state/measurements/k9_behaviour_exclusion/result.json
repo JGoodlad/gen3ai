@@ -1,0 +1,383 @@
+{
+ "what": "K9(b) fp32 DETERMINISTIC rule (gen3_behaviour_tie_exclusion_v1): epsilon, ceiling, verification",
+ "checkpoint": "A2's 4.0M checkpoint + its 2 snapshots (~/gen3ai_archive/k6_k8/k9tail/a2), as the tail sweep",
+ "path": "rust core, T2 graph backend (buckets 8/48, 7 lanes), N = 48, fills of 98,304 rows; learner probe forward eager, train mode, grad on, 1,024-row chunks; torch 2.8.0+cu126, RTX 3080 Ti",
+ "criteria": {
+  "safety": 10.0,
+  "eps": "round_up_125(safety x R)",
+  "ceilings": [
+   0.02,
+   0.05,
+   0.1,
+   0.15,
+   0.2,
+   0.3
+  ],
+  "ceiling_rule": ">= 3.0 x pooled share and >= 1.5 x the largest 1024-row block share"
+ },
+ "fills": 36,
+ "rounding_scale": {
+  "R": 1.4387517728961519e-05,
+  "by_variant": {
+   "eval_b48": 3.5607774508672474e-06,
+   "eval_b8": 4.8062700507799094e-06,
+   "jitter": 1.4387517728961519e-05
+  },
+  "by_site": {
+   "damage_op.py:858 argmax": 1.4387517728961519e-05,
+   "damage_op_blocks.py:875 topk": 1.2250799218432862e-05,
+   "damage_op_blocks.py:961 topk": 1.2250799218432862e-05,
+   "damage_op_pairwise.py:275 topk": 1.1008995535102123e-05,
+   "damage_op_pairwise.py:789 topk": 1.1008995535102123e-05,
+   "pointer_head.py:147 topk": 1.1008995535102123e-05,
+   "pointer_head.py:148 ge": 1.0451312764447884e-05,
+   "damage_op.py:864 argmax": 9.58079605565404e-06,
+   "damage_op.py:860 gt": 4.211912956186836e-06,
+   "belief_heads.py:660 gt": 4.463825975520308e-10,
+   "damage_op.py:866 gt": 4.4445969127338003e-10,
+   "damage_op_blocks.py:696 gt": 4.029043765285678e-11,
+   "pair_reduce.py:51 gt": 3.1086244689504383e-15,
+   "damage_op.py:595 ge": 0.0,
+   "damage_op_blocks.py:236 ge": 0.0,
+   "damage_op_blocks.py:419 ge": 0.0,
+   "damage_op_blocks.py:545 ge": 0.0,
+   "intent_conditional.py:165 gt": 0.0,
+   "intent_threshold.py:127 gt": 0.0
+  },
+  "rows_compared": 73728
+ },
+ "eps": 0.0002,
+ "ceiling": 0.15,
+ "verification": {
+  "eps": 0.0002,
+  "rows": 3538944,
+  "excluded": 131056,
+  "excluded_frac": 0.03703251591435185,
+  "exact_tie_rows": 86362,
+  "excluded_by_site": {
+   "damage_op.py:858 argmax": 72294,
+   "damage_op.py:595 ge": 21270,
+   "pointer_head.py:148 ge": 20074,
+   "pointer_head.py:147 topk": 13722,
+   "damage_op_blocks.py:875 topk": 1952,
+   "damage_op.py:864 argmax": 1742,
+   "damage_op.py:860 gt": 2
+  },
+  "judged_max_abs_dlogp": 2.1457672119140625e-05,
+  "judged_over_bar": 0,
+  "headroom": 4.660337777777778,
+  "all_rows_over_bar": 4,
+  "largest_margin_of_a_row_over_bar": 4.1650928978849035e-07,
+  "block": {
+   "rows": 1024,
+   "n": 7200,
+   "max": 0.0625,
+   "p999": 0.056640625,
+   "median": 0.037109375
+  }
+ },
+ "by_margin": [
+  {
+   "margin": "exact 0",
+   "n": 86362,
+   "max_abs_dlogp": 0.0001713782548904419
+  },
+  {
+   "margin": "[0, 1e-09)",
+   "n": 0,
+   "max_abs_dlogp": null,
+   "over_1e-4": 0
+  },
+  {
+   "margin": "[1e-09, 1e-08)",
+   "n": 0,
+   "max_abs_dlogp": null,
+   "over_1e-4": 0
+  },
+  {
+   "margin": "[1e-08, 1e-07)",
+   "n": 1758,
+   "max_abs_dlogp": 6.67572021484375e-06,
+   "over_1e-4": 0
+  },
+  {
+   "margin": "[1e-07, 1e-06)",
+   "n": 240,
+   "max_abs_dlogp": 0.00010180473327636719,
+   "over_1e-4": 2
+  },
+  {
+   "margin": "[1e-06, 1e-05)",
+   "n": 1304,
+   "max_abs_dlogp": 4.649162292480469e-06,
+   "over_1e-4": 0
+  },
+  {
+   "margin": "[1e-05, 0.0001)",
+   "n": 20006,
+   "max_abs_dlogp": 1.0967254638671875e-05,
+   "over_1e-4": 0
+  },
+  {
+   "margin": "[0.0001, 0.001)",
+   "n": 202952,
+   "max_abs_dlogp": 1.1682510375976562e-05,
+   "over_1e-4": 0
+  },
+  {
+   "margin": "[0.001, 0.01)",
+   "n": 1506780,
+   "max_abs_dlogp": 2.1457672119140625e-05,
+   "over_1e-4": 0
+  },
+  {
+   "margin": "[0.01, 0.1)",
+   "n": 1705816,
+   "max_abs_dlogp": 1.8835067749023438e-05,
+   "over_1e-4": 0
+  },
+  {
+   "margin": "[0.1, inf)",
+   "n": 13726,
+   "max_abs_dlogp": 1.1920928955078125e-05,
+   "over_1e-4": 0
+  }
+ ],
+ "eps_grid": {
+  "1e-06": {
+   "excluded_frac": 0.024967900028935185,
+   "judged_max_abs_dlogp": 2.1457672119140625e-05,
+   "judged_over_bar": 0
+  },
+  "1e-05": {
+   "excluded_frac": 0.025336371527777776,
+   "judged_max_abs_dlogp": 2.1457672119140625e-05,
+   "judged_over_bar": 0
+  },
+  "3e-05": {
+   "excluded_frac": 0.02646495677806713,
+   "judged_max_abs_dlogp": 2.1457672119140625e-05,
+   "judged_over_bar": 0
+  },
+  "0.0001": {
+   "excluded_frac": 0.030989470305266203,
+   "judged_max_abs_dlogp": 2.1457672119140625e-05,
+   "judged_over_bar": 0
+  },
+  "0.0002": {
+   "excluded_frac": 0.03703251591435185,
+   "judged_max_abs_dlogp": 2.1457672119140625e-05,
+   "judged_over_bar": 0
+  },
+  "0.001": {
+   "excluded_frac": 0.08833765100549769,
+   "judged_max_abs_dlogp": 2.1457672119140625e-05,
+   "judged_over_bar": 0
+  }
+ },
+ "extras": [
+  {
+   "fill": 36,
+   "cost": {
+    "rows": 2048,
+    "reps": 10,
+    "plain_ms_median": 62.63473199214786,
+    "recorder_ms_median": 90.30748705845326,
+    "added_ms_median": 27.66992896795273
+   },
+   "faults": {
+    "eps": 0.0002,
+    "healthy": {
+     "fatal": false,
+     "excluded_frac": 0.0439453125,
+     "max_judged": 5.9604644775390625e-06
+    },
+    "stale_one_adam_step": {
+     "fatal": true,
+     "message": "[K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (matmul precision 'highest': max 0.0155 NOT < 0.0001, excluded_frac 0.043 < 0.1; judged 1960 of 2048 rows \u2014 88 excluded within a relative margin 0.0002 of a selection / threshold cutoff; largest |d log pi| over every current row 0.0155) before a"
+    },
+    "one_wrong_action_row": {
+     "fatal": true,
+     "message": "[K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (matmul precision 'highest': max 5.13 NOT < 0.0001, excluded_frac 0.0439 < 0.1; judged 1958 of 2048 rows \u2014 90 excluded within a relative margin 0.0002 of a selection / threshold cutoff; largest |d log pi| over every current row 5.13) before any ",
+     "row_margin": 0.12817777792290913
+    },
+    "obs_mask_misaligned_one_env": {
+     "fatal": true,
+     "message": "[K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (matmul precision 'highest': max 1e+08 NOT < 0.0001, excluded_frac 0.0435 < 0.1; judged 1959 of 2048 rows \u2014 89 excluded within a relative margin 0.0002 of a selection / threshold cutoff; largest |d log pi| over every current row 1e+08) before an"
+    },
+    "healthy_after": {
+     "fatal": false,
+     "excluded_frac": 0.0439453125,
+     "max_judged": 5.9604644775390625e-06
+    }
+   }
+  }
+ ],
+ "tf32": {
+  "fills": 12,
+  "rounding_scale": {
+   "R": 0.009556366635184527,
+   "by_variant": {
+    "eval_b48": 0.009556366635184527,
+    "eval_b8": 0.003729358959347978,
+    "jitter": 0.0024683951223962997
+   },
+   "by_site": {
+    "damage_op.py:858 argmax": 0.009556366635184527,
+    "damage_op.py:864 argmax": 0.009556366635184527,
+    "damage_op_pairwise.py:275 topk": 0.006820663020918674,
+    "damage_op_pairwise.py:789 topk": 0.006820663020918674,
+    "pointer_head.py:147 topk": 0.006820663020918674,
+    "pointer_head.py:148 ge": 0.00633731218878867,
+    "damage_op_blocks.py:875 topk": 0.006182681951556246,
+    "damage_op_blocks.py:961 topk": 0.006182681951556246,
+    "damage_op.py:860 gt": 0.004306113536612727,
+    "damage_op_blocks.py:696 gt": 3.0019841715023254e-05,
+    "belief_heads.py:660 gt": 3.7929869467490107e-07,
+    "damage_op.py:866 gt": 2.766618597549453e-07,
+    "pair_reduce.py:51 gt": 1.4586110097525307e-12,
+    "damage_op.py:595 ge": 0.0,
+    "damage_op_blocks.py:236 ge": 0.0,
+    "damage_op_blocks.py:419 ge": 0.0,
+    "damage_op_blocks.py:545 ge": 0.0,
+    "intent_conditional.py:165 gt": 0.0,
+    "intent_threshold.py:127 gt": 0.0
+   },
+   "rows_compared": 24576
+  },
+  "eps": 0.1,
+  "verification_at_eps": {
+   "eps": 0.1,
+   "rows": 1179648,
+   "excluded": 1175018,
+   "excluded_frac": 0.9960751003689237,
+   "exact_tie_rows": 28415,
+   "excluded_by_site": {
+    "pointer_head.py:148 ge": 478242,
+    "pointer_head.py:147 topk": 455143,
+    "damage_op.py:858 argmax": 143430,
+    "damage_op_blocks.py:875 topk": 51166,
+    "damage_op.py:864 argmax": 28058,
+    "damage_op.py:595 ge": 18859,
+    "damage_op.py:860 gt": 120
+   },
+   "judged_max_abs_dlogp": 0.0057604312896728516,
+   "judged_over_bar": 0,
+   "headroom": 12.325465998923885,
+   "all_rows_over_bar": 211,
+   "largest_margin_of_a_row_over_bar": 0.003299019028981736,
+   "block": {
+    "rows": 1024,
+    "n": 2400,
+    "max": 1.0,
+    "p999": 1.0,
+    "median": 0.99609375
+   }
+  },
+  "by_margin": [
+   {
+    "margin": "exact 0",
+    "n": 28415,
+    "max_abs_dlogp": 0.1619713306427002
+   },
+   {
+    "margin": "[0, 1e-09)",
+    "n": 0,
+    "max_abs_dlogp": null,
+    "over_1e-4": 0
+   },
+   {
+    "margin": "[1e-09, 1e-08)",
+    "n": 0,
+    "max_abs_dlogp": null,
+    "over_1e-4": 0
+   },
+   {
+    "margin": "[1e-08, 1e-07)",
+    "n": 582,
+    "max_abs_dlogp": 0.02675807476043701,
+    "over_1e-4": 454
+   },
+   {
+    "margin": "[1e-07, 1e-06)",
+    "n": 82,
+    "max_abs_dlogp": 0.004285335540771484,
+    "over_1e-4": 63
+   },
+   {
+    "margin": "[1e-06, 1e-05)",
+    "n": 1290,
+    "max_abs_dlogp": 0.2044827938079834,
+    "over_1e-4": 951
+   },
+   {
+    "margin": "[1e-05, 0.0001)",
+    "n": 6815,
+    "max_abs_dlogp": 0.5150728225708008,
+    "over_1e-4": 5473
+   },
+   {
+    "margin": "[0.0001, 0.001)",
+    "n": 66932,
+    "max_abs_dlogp": 0.8735923767089844,
+    "over_1e-4": 52610
+   },
+   {
+    "margin": "[0.001, 0.01)",
+    "n": 500837,
+    "max_abs_dlogp": 1.2185688018798828,
+    "over_1e-4": 393499
+   },
+   {
+    "margin": "[0.01, 0.1)",
+    "n": 570065,
+    "max_abs_dlogp": 0.011058568954467773,
+    "over_1e-4": 445021
+   },
+   {
+    "margin": "[0.1, inf)",
+    "n": 4630,
+    "max_abs_dlogp": 0.0057604312896728516,
+    "over_1e-4": 3603
+   }
+  ],
+  "eps_grid": {
+   "1e-05": {
+    "excluded_frac": 0.025744120279947918,
+    "judged_max_abs_dlogp": 1.2185688018798828,
+    "judged_over_bar": 205
+   },
+   "0.0001": {
+    "excluded_frac": 0.03152126736111111,
+    "judged_max_abs_dlogp": 1.2185688018798828,
+    "judged_over_bar": 183
+   },
+   "0.001": {
+    "excluded_frac": 0.0882602267795139,
+    "judged_max_abs_dlogp": 1.2185688018798828,
+    "judged_over_bar": 31
+   },
+   "0.003": {
+    "excluded_frac": 0.19753011067708334,
+    "judged_max_abs_dlogp": 1.2185688018798828,
+    "judged_over_bar": 2
+   },
+   "0.01": {
+    "excluded_frac": 0.5128250122070312,
+    "judged_max_abs_dlogp": 0.011058568954467773,
+    "judged_over_bar": 0
+   },
+   "0.03": {
+    "excluded_frac": 0.8542387220594618,
+    "judged_max_abs_dlogp": 0.011058568954467773,
+    "judged_over_bar": 0
+   },
+   "0.1": {
+    "excluded_frac": 0.9960751003689237,
+    "judged_max_abs_dlogp": 0.0057604312896728516,
+    "judged_over_bar": 0
+   }
+  },
+  "extras": []
+ }
+}

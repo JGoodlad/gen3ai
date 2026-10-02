@@ -54,6 +54,7 @@ from agents.training.instrumented_ppo.hparams import PpoHyperparameters
 from agents.training.instrumented_ppo.loop import OwnedLoop   # gen3_owned_ppo_loop_v1: the loop is ours
 from agents.training.instrumented_ppo.learner_gates import (   # K9(b) python path + K9(c)
     behaviour_gate_mode,
+    behaviour_margins_first_micro,
     check_behaviour_first_micro,
     check_buffer_finite,
     check_kl_finite,
@@ -439,6 +440,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # (`micro_step.micro_step`), in exactly this source order inside it. Compiled as one
                 # `fullgraph=True` region under --compile-trainer (`self._micro_region`), eager
                 # otherwise; the steps after 3a below are the DECLARED EAGER TAIL, in contract order.
+                # +K9(b), python path: the first micro-batch's TIE MARGINS, from one no-grad eager forward
+                # BEFORE R1's (so every stash the fold reads below is R1's own; no optimizer step yet).
+                _bgate_margins = (behaviour_margins_first_micro(self, rollout_data.observations,
+                                                                rollout_data.actions, rollout_data.action_masks)
+                                  if _bgate_pending else None)
                 _mo = self._micro_region()(self.policy, popart, rollout_data.observations,
                                          rollout_data.actions, rollout_data.action_masks,
                                          rollout_data.old_log_prob, rollout_data.old_values,
@@ -498,7 +504,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # read per update, no forward of its own; `learner_gates` module docs).
                 if _bgate_pending:
                     check_behaviour_first_micro(self, log_prob, rollout_data.old_log_prob,
-                                                actions, rollout_data.action_masks)
+                                                actions, rollout_data.action_masks, margins=_bgate_margins)
                     _bgate_pending = False
 
                 # +DENSE-AUX (gen3_dense_aux_v1, v117): the DENSE AUXILIARY loss — per-slot

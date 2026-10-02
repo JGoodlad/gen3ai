@@ -129,10 +129,11 @@ def test_the_probe_reads_the_precision_keyed_gate():
     between the fp32 bar and the TF32 p99 bar FAILS at fp32 and PASSES under TF32; above the p99 bar it
     fails under both. (The localized half — p99 clean, max fires — is `learner_gates_test`'s, on a
     production-size micro-batch; this probe's 32 rows make its p99 ~ its max.)"""
-    assert K.BEHAVIOUR_GATES["highest"] == (K.GateCondition("max", 1e-4, 4, K.FP32_ROW_RATE_UPPER, K.FP32_TIE_EPS),)
+    assert K.BEHAVIOUR_GATES["highest"] == (K.GateCondition("max", 1e-4, 1, K.FP32_TIE_EPS),
+                                            K.GateCondition("excluded_frac", K.FP32_EXCLUDED_CEILING, 1, K.FP32_TIE_EPS))
     c99, cmax = K.BEHAVIOUR_GATES["high"]
     (p99_name, p99_bar, p99_k), (max_name, max_bar, max_k) = c99[:3], cmax[:3]
-    assert c99.row_rate == cmax.row_rate == c99.tie_eps == cmax.tie_eps == 0.0     # the tie rule is fp32's
+    assert c99.tie_eps == cmax.tie_eps == 0.0 == K.tie_eps("high")       # the exclusion is fp32's
     assert (p99_name, max_name, p99_k, max_k) == ("p99", "max", 1, K.TF32_MAX_PERSISTENCE)
     assert 1e-4 < p99_bar < max_bar
     prev = th.get_float32_matmul_precision()
@@ -219,8 +220,9 @@ def test_a_clean_update_builds_no_details_unless_the_driver_asks_for_the_scan():
     assert out["behaviour/scan_rows_over_bar"] == 0.0 and out["behaviour/scan_max_abs_dlogp"] < 5e-6
 
 
-# ------------------------------------------------------------- the fp32 TIE RULE (gen3_behaviour_tie_rule_v1)
-def _probe_rows_with_gaps(m):
+# ---------------------------- the fp32 DETERMINISTIC rule (gen3_behaviour_tie_exclusion_v1, owner 2026-10-01)
+def _probe_margins(m):
+    """The probe's own rows (its seeded choice) and each one's tie margin, from the learner forward."""
     from agents.training.rust_rollout.tie_margins import selection_gaps
 
     b = m.rollout_buffer
@@ -232,66 +234,87 @@ def _probe_rows_with_gaps(m):
     return t, e, g
 
 
+def _gate(eps, ceiling=K.FP32_EXCLUDED_CEILING):
+    C = K.GateCondition
+    return (C("max", 1e-4, 1, eps), C("excluded_frac", ceiling, 1, eps))
+
+
+def test_a_row_near_a_tie_is_excluded_not_judged(monkeypatch):
+    """The fixture's probe row nearest a cutoff, with epsilon placed just above its REAL margin (and below
+    every other row's): A2's 0.0389 jump on it is excluded — no violation — and reported as such."""
+    m = _with_provenance(_model())
+    m.behaviour_check = "fatal"
+    t, e, g = _probe_margins(m)
+    i = int(np.argmin(g))
+    nxt = np.sort(g[g > g[i]])
+    assert nxt.size and np.isfinite(g[i]), "the fixture's probe needs rows with distinct, finite margins"
+    eps = float(np.sqrt(max(g[i], 1e-300) * nxt[0]))
+    assert (g < eps).sum() == 1
+    monkeypatch.setitem(K.BEHAVIOUR_GATES, "highest", _gate(eps, ceiling=0.5))
+    m.rollout_buffer.log_probs[t[i], e[i]] += 0.0389
+    out = K.behaviour_probe(m)                                          # judged rows clean: no raise
+    assert out["behaviour/rows_excluded"] == 1.0 and out["behaviour/excluded_frac"] == pytest.approx(1 / g.size)
+    assert out["behaviour/max_abs_dlogp_excluded"] == pytest.approx(0.0389, rel=1e-3)
+    assert out["behaviour/max_abs_dlogp_judged"] < 1e-4 and out["behaviour/streak_max"] == 0.0
+
+
+def test_a_violating_row_NOT_at_a_tie_is_FATAL_on_the_first_update():
+    """Deterministic: no persistence, no count — the first update with one judged row over the bar FATALs."""
+    m = _with_provenance(_model())
+    m.behaviour_check = "fatal"
+    t, e, g = _probe_margins(m)
+    i = int(np.argmax(g))
+    assert g[i] > 100 * K.FP32_TIE_EPS
+    m.rollout_buffer.log_probs[t[i], e[i]] += 3e-4                      # 3x the bar, one row
+    with pytest.raises(K.BehaviourMismatch, match=r"max 0\.0003 NOT < 0\.0001.*judged.*FATAL at 1"):
+        K.behaviour_probe(m)
+
+
+def test_too_many_rows_at_a_tie_is_FATAL(monkeypatch):
+    """A fault that pushed many rows onto ties would hide from the judgement: past the ceiling it FATALs,
+    with every judged row clean."""
+    m = _with_provenance(_model())
+    m.behaviour_check = "fatal"
+    _t, _e, g = _probe_margins(m)
+    eps = float(np.quantile(g, 0.5)) * (1 + 1e-9)                         # about half the rows excluded
+    monkeypatch.setitem(K.BEHAVIOUR_GATES, "highest", _gate(eps))
+    with pytest.raises(K.BehaviourMismatch, match=r"excluded_frac 0\.\d+ NOT < 0\.1.*TOO MANY rows sit at a tie"):
+        K.behaviour_probe(m)
+
+
+def test_an_exact_tie_is_always_excluded_and_margins_are_required_at_fp32():
+    from agents.training.rust_rollout.tie_margins import TieMarginError
+
+    assert K.excluded_rows(np.array([0.0, np.nan, 1e-20, 1.0]), 1e-30, 4).tolist() == [True, True, False, False]
+    with pytest.raises(TieMarginError, match="no tie margins"):
+        K.judge_behaviour(np.zeros(4), "highest", None)
+    assert K.judge_behaviour(np.full(4, 1e-3), "high", None)[1].ok        # TF32 judges every row, no margins
+
+
 def test_the_fp32_rule_numbers_are_derived_from_the_banked_measurement():
-    """k, the row rate and epsilon are re-derived from `TAIL_MEASUREMENT` by the declared criteria — a
-    changed constant or a changed measurement FAILS here."""
+    """EPSILON and the CEILING are re-derived from `EXCLUSION_MEASUREMENT` by the criteria `derive.py`
+    declares — a changed constant or a changed measurement FAILS here — and the measurement itself must
+    still say the rule is deterministic: no judged row over the bar, and every planted fault FATAL on its
+    first update while the unmodified buffer passes."""
+    import importlib.util
     import json
 
     from utils.paths import repo_path
 
-    r = json.loads(open(repo_path(*K.TAIL_MEASUREMENT.split("/"))).read())
-    n_events, n_rows = r["rate"]["events"], r["rate"]["rows"]
-    assert (n_events, n_rows) == (4, 3_670_016)
-    upper = r["rate"]["poisson_upper95_events"] / n_rows                 # 9.154 / 3,670,016
-    assert upper <= K.FP32_ROW_RATE_UPPER < 1.01 * upper + 1e-7
-    p = K.per_update_rate(K.FP32_ROW_RATE_UPPER, 2048)
-    k = next(k for k in range(1, 10) if K.UPDATES_HORIZON * p ** k <= K.FALSE_FATAL_TARGET)
-    assert k == K.FP32_MAX_PERSISTENCE == 4
-    flipped = max(v["fp64_gap"] for v in r["violators"])
-    assert K.FP32_TIE_EPS >= 50 * flipped and all(v["fp32_gap"] <= K.FP32_TIE_EPS for v in r["violators"])
-    assert r["tie_rate"]["frac_at_or_below"]["1e-05"] < 0.2               # (iii) keeps its teeth
-    assert K.count_limit(K.FP32_ROW_RATE_UPPER, 98_304, 1024) == 7       # production N = 48 x 2,048
-
-
-def test_a_single_violating_row_AT_a_tie_warns_and_FATALs_only_on_its_4th_consecutive_update(capsys):
-    m = _with_provenance(_model())
-    m.behaviour_check = "fatal"
-    t, e, g = _probe_rows_with_gaps(m)
-    tied = np.flatnonzero((g > 0) & (g <= K.FP32_TIE_EPS))
-    assert tied.size, "the fixture's probe must hold a row at a (non-exact) selection tie"
-    i = int(tied[0])
-    m.rollout_buffer.log_probs[t[i], e[i]] += 0.0389          # A2's jump, on a row that sits at a tie
-    for n in range(1, 4):
-        out = K.behaviour_probe(m)
-        assert out["behaviour/streak_max"] == float(n) and out["behaviour/violations_total_max"] == float(n)
-    assert "NOT fatal YET" in capsys.readouterr().out
-    with pytest.raises(K.BehaviourMismatch, match=r"\(i\) max violated on 4 consecutive"):
-        K.behaviour_probe(m)
-
-
-def test_a_single_violating_row_at_NO_tie_is_a_FAULT_and_FATAL_at_once():
-    m = _with_provenance(_model())
-    m.behaviour_check = "fatal"
-    t, e, g = _probe_rows_with_gaps(m)
-    i = int(np.argmax(g))
-    assert g[i] > 100 * K.FP32_TIE_EPS
-    m.rollout_buffer.log_probs[t[i], e[i]] += 0.0389
-    with pytest.raises(K.BehaviourMismatch, match=r"\(iii\) 1 violating row\(s\) sit at NO selection tie"):
-        K.behaviour_probe(m)
-
-
-def test_many_rows_over_the_bar_in_the_full_buffer_scan_are_a_FAULT_and_FATAL_at_once():
-    m = _with_provenance(_model())
-    m.behaviour_check = "fatal"
-    t, e, g = _probe_rows_with_gaps(m)
-    tied = np.flatnonzero((g > 0) & (g <= K.FP32_TIE_EPS))
-    assert tied.size
-    lp = m.rollout_buffer.log_probs
-    lp[t[tied[0]], e[tied[0]]] += 0.0389                      # the probe's one row sits at a tie ...
-    chosen = set(zip(t.tolist(), e.tolist()))
-    others = [(a, b) for a in range(lp.shape[0]) for b in range(lp.shape[1]) if (a, b) not in chosen][:8]
-    for a, b in others:                                       # ... but 8 rows the probe did not pick moved too
-        lp[a, b] += 1e-3
-    assert K.count_limit(K.FP32_ROW_RATE_UPPER, lp.size, m.batch_size) <= 9
-    with pytest.raises(K.BehaviourMismatch, match=r"\(ii\) 9 of 64 current rows over the bar"):
-        K.behaviour_probe(m)
+    path = repo_path(*K.EXCLUSION_MEASUREMENT.split("/"))
+    spec = importlib.util.spec_from_file_location("k9_derive", path.parent / "derive.py")
+    D = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(D)
+    r = json.loads(path.read_text())
+    assert r["fills"] == 36 and r["verification"]["rows"] == 3_538_944
+    assert K.FP32_TIE_EPS == r["eps"] == D.round_up_125(D.SAFETY * r["rounding_scale"]["R"])
+    v = r["verification"]
+    ceiling = next(c for c in D.CEILINGS
+                   if c >= D.CEIL_X_POOLED * v["excluded_frac"] and c >= D.CEIL_X_BLOCK * v["block"]["max"])
+    assert K.FP32_EXCLUDED_CEILING == r["ceiling"] == ceiling
+    assert v["eps"] == K.FP32_TIE_EPS and v["judged_over_bar"] == 0 and v["judged_max_abs_dlogp"] < K.BEHAVIOUR_BAR
+    assert v["all_rows_over_bar"] >= 1 and v["largest_margin_of_a_row_over_bar"] < K.FP32_TIE_EPS   # flips seen, all excluded
+    f = r["extras"][0]["faults"]
+    assert f["eps"] == K.FP32_TIE_EPS and not f["healthy"]["fatal"] and not f["healthy_after"]["fatal"]
+    assert f["stale_one_adam_step"]["fatal"] and f["one_wrong_action_row"]["fatal"] and f["obs_mask_misaligned_one_env"]["fatal"]
+    assert f["one_wrong_action_row"]["row_margin"] >= K.FP32_TIE_EPS          # the planted row was judged

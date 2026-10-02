@@ -9,9 +9,11 @@ the check needs no forward of its own: it reads the FIRST micro-batch's ``evalua
 (epoch 0, before any optimizer step can have run) against the rollout's stored ``old_log_prob`` — one
 host read per update — and a failure is a typed `BehaviourMismatch`. The STATISTIC and its bar are
 keyed by the run's float32 matmul precision (``consistency.BEHAVIOUR_GATES``, measured —
-``designs/training/learner_gates.md``): ``max`` < 1e-4 at fp32 under the TIE RULE (one violation warns;
-FATAL on 4 consecutive updates or when too many of the micro-batch's rows exceed it — this path has no
-obs for the tie trace, so a single-row fault is caught by persistence alone); under TF32 BOTH the micro-batch's
+``designs/training/learner_gates.md``): at fp32 DETERMINISTIC — the rows whose forward sits within a
+rounding error of a discrete selection / threshold cutoff are excluded (`behaviour_margins_first_micro`:
+one no-grad eager forward of the micro-batch under `tie_margins.TieMargins`, before its own forward),
+every other row must have ``|Δ|`` < 1e-4 (FATAL at once), and the excluded share must stay under its
+ceiling; under TF32 BOTH the micro-batch's
 ``p99`` < 3.6e-3 (global faults) and its ``max`` < 0.071 (localized gross faults) — the TF32 max is
 PERSISTENT: one violation warns loudly and dumps the offending rows (``<run_dir>/behaviour_violations.jsonl``);
 FATAL when it recurs on 4 consecutive updates (``TF32_MAX_PERSISTENCE``, from the measured tail). One table and one enforcement
@@ -76,11 +78,36 @@ def behaviour_gate_mode(model: Any) -> str:
     return "probe" if getattr(model, "_rust_row_versions", None) is not None else "in_loop"
 
 
+def behaviour_margins_first_micro(model: Any, observations: Any, actions: Any, masks: Any) -> Any:
+    """K9(b), python path: the first micro-batch's TIE MARGINS (`tie_margins.selection_gaps`: one no-grad,
+    eager, train-mode forward of the learner under the recorder) — called BEFORE that micro-batch's own
+    forward, so the stashes the fold reads afterwards are that forward's, and before any optimizer step,
+    so the weights are the ones that played the rows. None when the run's precision judges every row
+    (no tie exclusion: TF32)."""
+    from agents.training.rust_rollout.consistency import checked_margins, tie_eps
+    from agents.training.rust_rollout.tie_margins import TieMargins
+
+    if tie_eps() <= 0:
+        return None
+    acts = actions.reshape(-1).long()
+    rec = TieMargins(int(acts.shape[0]))
+    was = model.policy.training
+    model.policy.set_training_mode(True)
+    try:
+        with th.no_grad(), rec:
+            model.policy.evaluate_actions(observations, acts, action_masks=masks)
+    finally:
+        model.policy.set_training_mode(was)
+    checked_margins(model, rec)
+    return rec.margin, rec.site
+
+
 def check_behaviour_first_micro(model: Any, log_prob: th.Tensor, old_log_prob: th.Tensor,
-                                actions: Any = None, masks: Any = None) -> float:
+                                actions: Any = None, masks: Any = None, margins: Any = None) -> float:
     """K9(b), python path (module docs): the first micro-batch's recomputed log-probs vs the stored
     behaviour log-probs, judged and enforced by the ONE precision-keyed gate
-    (``consistency.enforce_behaviour`` — persistence, the row dump, FATAL / warn). Records
+    (``consistency.enforce_behaviour`` — the tie exclusion, persistence, the row dump, FATAL / warn).
+    ``margins`` is `behaviour_margins_first_micro`'s ``(margin, site)`` — required at fp32. Records
     ``behaviour/*``; ``actions`` / ``masks`` (the micro-batch's) are read only for a dump. Returns the max |Δ|."""
     d = (log_prob.detach().reshape(-1).double() - old_log_prob.detach().reshape(-1).double()).abs()
     a = d.cpu().numpy()                                   # the one host read (a micro-batch of floats)
@@ -92,7 +119,8 @@ def check_behaviour_first_micro(model: Any, log_prob: th.Tensor, old_log_prob: t
     try:
         metrics.update(enforce_behaviour(
             model, a, where=f"the first micro-batch ({a.size} rows, every one played by the weights the "
-                            "learner holds now)", actions=actions, masks=masks))
+                            "learner holds now)", actions=actions, masks=masks,
+            margins=None if margins is None else margins[0], sites=None if margins is None else margins[1]))
     finally:
         if logger is not None:
             for k, v in metrics.items():
