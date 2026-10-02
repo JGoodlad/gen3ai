@@ -85,6 +85,7 @@ from agents.training.snapshot_pool import (
 from agents.training.wrappers import STABLE_CHALLENGE_SHARE  # default for the reporting-only share
 from agents.training.lever_supply import LEVERS, loud
 from agents.training.selfplay_supply import SelfPlaySupplyMixin
+from agents.training.sprt_promotion import SprtPromotionMixin
 from main.launcher.ipc import emit, send_event, send_metrics
 
 # Consecutive eval cycles a stable opponent's win_rate must stay ≥ the mastery threshold before the
@@ -121,7 +122,7 @@ def _monotonicity_score(win_rates: list[float]) -> float:
     return 2.0 * concordant / total - 1.0
 
 
-class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
+class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
     """Non-blocking bot + pool eval callback with snapshot promotion.
 
     Args:
@@ -191,9 +192,14 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
         pool_starve_cycles: int = LEVERS["self_play_pool"].default_cycles,
         pfsp_starve_cycles: int = LEVERS["pfsp"].default_cycles,
         eval_mirrored_pairs: bool = False,
+        promotion_sprt: bool = False,
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # T6 SPRT PROMOTION (`--promotion-sprt`, `gen3_sprt_promotion_v1`, DEFAULT OFF): each eval-cycle
+        # snapshot is a candidate decided by its own sequential test on fresh mirrored pairs vs the pool
+        # frozen at its launch — `--promote-threshold` is then not read (`sprt_promotion.py`).
+        self._init_sprt(promotion_sprt)
         # MIRRORED TEAM PAIRS (T17, `gen3_mirrored_pairs_v1`, `--eval-mirrored-pairs`, default OFF): the
         # bot AND pool eval play every team pairing from both sides on one battle seed; even counts; the
         # PAIR is the unit of every interval. Training games are untouched. A REGIME (recorded per run/row).
@@ -334,6 +340,7 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
         # weak model never seeds a near-random opponent into the pool.
         self._warn_if_fork_pool_empty()
         self._announce_supply_guards()
+        self._sprt_announce()             # T6: names the rule; records an interrupted test ABANDONED
         # Resumed run: re-publish the last eval so the TUI panel isn't blank until the
         # next cycle (which can be millions of steps away).
         replay_last_eval_to_tui(self._model_dir, self._resume_eval_metadata)
@@ -543,6 +550,8 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
 
     @isolated_dump   # gen3_eval_dump_isolation_v1: this cycle's dump must not take the last update's train/*
     def _collect_pending(self) -> None:
+        if (self._pending or {}).get("kind") == "sprt":
+            return self._sprt_collect_python()      # a T6 test's batch, not an eval cycle
         pending = self._pending
         self._pending = None
         step = pending["step"]
@@ -854,7 +863,12 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
         self._maybe_save_best(step, pending, self.win_rate_vs_bots)
 
         # ── Promotion — promote the FROZEN snapshot (the live model has since advanced) ──
-        if win_rate_vs_pool > self._promote_threshold:
+        # T6 (`--promotion-sprt`): the candidate's OWN sequential test decides, on fresh mirrored pairs
+        # vs the sentinels this cycle launched against; this cycle's pool games (win_rate_vs_pool, the
+        # SELECTION games) never enter it. On the Rust core it runs to its verdict right here.
+        if self._sprt_on:
+            self._sprt_begin(step, pending, sf)
+        elif win_rate_vs_pool > self._promote_threshold:
             self._pool.add_from_path(pending["snapshot"], step)
             self._pool_generation += 1
             self.logger.record("train/selfplay_promoted_steps", float(step))
@@ -1167,13 +1181,23 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
         budget = self._DRAIN_TIMEOUT_SEC if timeout is None else timeout
         deadline = time.monotonic() + budget
         print(f"[SELFPLAY EVAL] graceful shutdown — waiting up to {budget:.0f}s for eval worker(s)...")
-        for w in self._pending["procs"]:
-            remaining = max(0.0, deadline - time.monotonic())
-            try:
-                w["proc"].wait(timeout=remaining)
-            except subprocess.TimeoutExpired:
-                w["proc"].kill()
-        self._collect_pending()
+        # A T6 test launches its next batch from inside a collect, so drain until NOTHING is pending —
+        # inside the one budget. A test still running when it runs out is recorded ABANDONED.
+        while self._pending is not None:
+            for w in self._pending["procs"]:
+                remaining = max(0.0, deadline - time.monotonic())
+                try:
+                    w["proc"].wait(timeout=remaining)
+                except subprocess.TimeoutExpired:
+                    w["proc"].kill()
+            out_of_budget = time.monotonic() >= deadline
+            self._collect_pending()
+            if self._pending is not None and out_of_budget:
+                kill_eval_workers(self._pending["procs"])
+                for w in self._pending["procs"]:
+                    w["log"].close()
+                self._pending = None
+                self._sprt_abandon_in_flight("the drain budget ran out")
 
     # ── Bot regression guard ─────────────────────────────────────────────────
 

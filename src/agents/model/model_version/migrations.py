@@ -370,6 +370,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 128:
         data.setdefault("eval_mirrored_pairs", False)
         data["config_version"] = 128
+    # v129 (gen3_sprt_promotion_v1) — the PROMOTION regime, a RECORD: no run before v129 could promote by
+    # an SPRT, so False is the only possible past.
+    if version < 129:
+        data.setdefault("promotion_sprt", False)
+        data["config_version"] = 129
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

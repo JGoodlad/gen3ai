@@ -765,6 +765,14 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _mp_inherited = inherit_saved_flag(args, _saved_ver, "eval_mirrored_pairs", False)
     args.eval_mirrored_pairs = bool(args.eval_mirrored_pairs)
     args.eval_mirrored_pairs_source = ("argv" if _mp_typed else "inherited" if _mp_inherited else "default")
+    # T6 (gen3_sprt_promotion_v1): the PROMOTION regime, resolved and inherited exactly like the pairing.
+    _sp_typed = args.promotion_sprt is not None
+    _sp_inherited = inherit_saved_flag(args, _saved_ver, "promotion_sprt", False)
+    args.promotion_sprt = bool(args.promotion_sprt)
+    args.promotion_sprt_source = ("argv" if _sp_typed else "inherited" if _sp_inherited else "default")
+    emit(f"⚖️  [EVAL REGIME] promotion: "
+         f"{'SPRT on fresh mirrored pairs (T6; --promote-threshold not read)' if args.promotion_sprt else 'first win_rate_vs_pool > --promote-threshold'} "
+         f"(--{'' if args.promotion_sprt else 'no-'}promotion-sprt, source={args.promotion_sprt_source})")
     emit(f"⚖️  [EVAL REGIME] in-loop eval pairing: "
          f"{'MIRRORED TEAM PAIRS (each pairing from both sides, one seed; the pair is the unit)' if args.eval_mirrored_pairs else 'unpaired games'} "
          f"(--{'' if args.eval_mirrored_pairs else 'no-'}eval-mirrored-pairs, source={args.eval_mirrored_pairs_source})")

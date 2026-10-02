@@ -325,7 +325,11 @@ cores), counts are even, and every interval is the PAIR-level pentanomial one (`
 never per-game. Recorded in `model_config.json` and `_resolve`-inherited like `eval_sentinel_greedy`;
 the row's `mirrored_pairs` block is the stamp, and `elo.load_rows` REFUSES a run whose rows span it.
 Do not flip the default: the M5 sizing arms are compared across it; the orchestrator flips it at the
-X26 baseline. Eval-only fields like this one are RECORDED, `_resolve`-inherited and never compared by
+X26 baseline. 🚨 **`--promotion-sprt` (T6, config v129, DEFAULT OFF) is its promotion twin**: each
+eval-cycle snapshot is a candidate decided by a pentanomial GSPRT on fresh mirrored pairs vs the pool
+frozen at its launch (H0 0.50 / H1 0.55, α = β = 0.05, cap 1,680 pairs = reject; `sprt.py`,
+`sprt_promotion.py`), the cycle's own pool games never enter it, and `sprt_promotion.jsonl` makes a
+failed or interrupted test un-rerunnable. Eval-only fields like this one are RECORDED, `_resolve`-inherited and never compared by
 `check_compatible` — they are not `flag_registry` rows (that registry declares extractor toggles).
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md).**
 

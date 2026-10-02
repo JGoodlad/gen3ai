@@ -213,6 +213,18 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "comparison. Default None so a FLAGLESS resume INHERITS the regime its "
                              "checkpoint recorded. The Python eval path needs the in-process bridge and "
                              "--eval-concurrency-per-worker 1 (every game is seeded).")
+    parser.add_argument("--promotion-sprt", "--promotion_sprt", dest="promotion_sprt",
+                        action=BoolFlag, default=None,
+                        help="SPRT PROMOTION (T6, gen3_sprt_promotion_v1): instead of promoting the first "
+                             "snapshot whose win_rate_vs_pool crosses --promote-threshold (optional stopping, a "
+                             "winner's curse), every eval-cycle snapshot is a CANDIDATE decided by its OWN "
+                             "sequential test — H0 score <= 0.50 vs H1 >= 0.55, alpha = beta = 0.05, a pentanomial "
+                             "GSPRT over fresh MIRRORED PAIRS vs the pool frozen at the candidate's launch, a "
+                             "declared cap (= reject). The cycle's own pool games never enter the test, and a "
+                             "failed test is never re-run (sprt_promotion.jsonl). Needs --self-play; the Python "
+                             "eval path needs the in-process bridge and --eval-concurrency-per-worker 1. OFF by "
+                             "default — a REGIME BOUNDARY for promotion, flipped at an era start. Default None "
+                             "so a FLAGLESS resume INHERITS the recorded regime.")
     parser.add_argument("--self-play-temp", type=float, default=1.0,
                         help="Sampling temperature for self-play TRAINING opponents (they sample, "
                              "not argmax, so the learner faces the policy's full action distribution). "

@@ -742,3 +742,9 @@ class ModelVersionFields:
     # opponent's team draw), and a flagless resume must keep the regime its rows were written under
     # (`_resolve` reads this field). A pre-v128 config migrates to False — the only possible past.
     eval_mirrored_pairs: bool = False
+    # ---- gen3_sprt_promotion_v1 (config v129) — THE PROMOTION REGIME (T6) ---------------------------
+    # `--promotion-sprt`: pool promotion by a per-candidate SPRT on fresh mirrored pairs instead of the
+    # first `win_rate_vs_pool > promote_threshold`. EVAL/promotion-only, the v128 class exactly: never
+    # compared, RECORDED as a regime boundary (which snapshots enter the pool) and `_resolve`-inherited.
+    # A pre-v129 config migrates to False — the only possible past.
+    promotion_sprt: bool = False

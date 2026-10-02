@@ -58,14 +58,22 @@ def load_sentinels(pool: Any, model: Any) -> Dict[str, Any]:
 
 
 def run_rust_eval_cycle(cb: Any, *, pool: Any, run_dir: str, step: int,
-                        game_log: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
-    """Play the plan in ``run_dir`` on the Rust eval core (module docs). Returns the cycle's stats."""
+                        game_log: Optional[List[Dict[str, Any]]] = None, seed: Optional[int] = None,
+                        forensic: bool = True, record: bool = True) -> Dict[str, Any]:
+    """Play the plan in ``run_dir`` on the Rust eval core (module docs). Returns the cycle's stats.
+
+    ``seed`` overrides the cycle's per-game seed base (the SPRT promotion's batches play on their OWN
+    namespace, ``sprt_promotion.sprt_seed``, so no selection game is ever replayed as a decision game);
+    ``forensic=False`` captures no trace and ``record=False`` writes no ``rust_eval/*`` scalar (an SPRT
+    batch is neither a trace sample nor the cycle's cost)."""
     model = cb.model
     ev = evaluator_of(model)
     rc = model._rust_collector
     model_dir = getattr(cb, "_model_dir", None)
-    forensic_root = os.path.join(model_dir, "eval_traces", f"step_{step}") if model_dir else None
-    seed = cycle_seed(int(getattr(getattr(rc, "cfg", None), "run_seed", 0) or 0), step)
+    forensic_root = (os.path.join(model_dir, "eval_traces", f"step_{step}")
+                     if (model_dir and forensic) else None)
+    if seed is None:
+        seed = cycle_seed(int(getattr(getattr(rc, "cfg", None), "run_seed", 0) or 0), step)
     was_training = bool(model.policy.training)
     model.policy.eval()
     try:
@@ -80,7 +88,7 @@ def run_rust_eval_cycle(cb: Any, *, pool: Any, run_dir: str, step: int,
             model.policy.train()
     out = st.as_dict()
     out["cycle_seed"] = seed
-    logger = getattr(cb, "logger", None)
+    logger = getattr(cb, "logger", None) if record else None
     if logger is not None:
         s = out["seconds"]
         logger.record("rust_eval/cycle_wall_s", float(s["total"]))

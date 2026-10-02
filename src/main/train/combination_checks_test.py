@@ -382,6 +382,12 @@ ARGVS: dict[str, list[str]] = {
     # T17 mirrored team pairs — the Python eval path's prerequisites
     "mirrored_pairs_need_the_bridge": ["--eval-mirrored-pairs", "--use-bridge", "off"],
     "mirrored_pairs_need_one_game_in_flight": ["--eval-mirrored-pairs", "--eval-concurrency-per-worker", "2"],
+    # T6 SPRT promotion
+    "promotion_sprt_needs_self_play": ["--promotion-sprt"],
+    "promotion_sprt_ignores_the_threshold": ["--promotion-sprt", "--self-play", "--promote-threshold", "0.6"],
+    "promotion_sprt_needs_the_bridge": ["--promotion-sprt", "--self-play", "--use-bridge", "off"],
+    "promotion_sprt_needs_one_game_in_flight": ["--promotion-sprt", "--self-play",
+                                                "--eval-concurrency-per-worker", "2"],
 }
 
 

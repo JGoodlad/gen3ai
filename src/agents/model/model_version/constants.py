@@ -361,7 +361,11 @@ from typing import Any, Dict
 #   compared by check_compatible, RECORDED as a regime boundary and read back by `_resolve` on a flagless
 #   resume. A pre-v128 config migrates to False (the only possible past). No ARCH_SIGNATURE bump, no
 #   MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 128
+# v129 (gen3_sprt_promotion_v1): `promotion_sprt` — `--promotion-sprt` (T6), pool promotion by a
+#   per-candidate SPRT on fresh mirrored pairs. The v128 class: never compared, RECORDED as a regime
+#   boundary, read back by `_resolve`. A pre-v129 config migrates to False. No ARCH_SIGNATURE bump, no
+#   MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 129
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

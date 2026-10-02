@@ -52,3 +52,24 @@ def test_a_pre_v128_config_migrates_UNMIRRORED_and_the_field_is_recorded():
     data = {"config_version": 127}
     out = migrations._migrate_config(data)
     assert out["eval_mirrored_pairs"] is False and out["config_version"] >= 128
+
+
+# ---------------------------------------------------------------- T6: the PROMOTION regime, same rules
+
+def test_sprt_promotion_is_off_by_default_recorded_and_inherited(monkeypatch):
+    from main.train_rl_agent import build_parser
+
+    assert build_parser().parse_args([]).promotion_sprt is None
+    args = _resolved([])
+    assert args.promotion_sprt is False and args.promotion_sprt_source == "default"
+    args = _resolved(["--self-play"], saved=SimpleNamespace(promotion_sprt=True), monkeypatch=monkeypatch)
+    assert args.promotion_sprt is True and args.promotion_sprt_source == "inherited"
+
+
+def test_a_pre_v129_config_migrates_to_threshold_promotion():
+    from agents.model.model_version import migrations
+    from agents.model.model_version.fields import ModelVersionFields
+
+    assert ModelVersionFields.promotion_sprt is False
+    out = migrations._migrate_config({"config_version": 128, "eval_mirrored_pairs": True})
+    assert out["promotion_sprt"] is False and out["eval_mirrored_pairs"] is True

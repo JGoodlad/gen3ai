@@ -619,6 +619,8 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             pfsp_starve_cycles=starve_cycles_for(args, "pfsp"),
             # T17 mirrored team pairs (resolved: argv, else the run's recorded regime, else OFF).
             eval_mirrored_pairs=bool(getattr(args, "eval_mirrored_pairs", False)),
+            # T6 SPRT promotion (resolved: argv, else the run's recorded regime, else OFF).
+            promotion_sprt=bool(getattr(args, "promotion_sprt", False)),
         )
         callbacks.append(eval_callback)
     elif _run_eval:

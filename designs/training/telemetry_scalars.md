@@ -496,6 +496,12 @@ PENTANOMIAL over PAIRS (never per-game), and the pair count. Absent on an unmirr
 zero. `win_rate_vs_*` keep their meaning, but across the regime boundary they are a different
 population ([`eval_and_rating.md`](eval_and_rating.md) → *Mirrored team pairs*).
 
+🚨 **`eval/sprt_llr` · `eval/sprt_pairs` · `eval/sprt_promoted` exist ONLY under `--promotion-sprt`**
+(T6, config v129, DEFAULT OFF), recorded at the CANDIDATE's step when its test decides: the final LLR,
+the mirrored pairs the test played, and 1 / 0 for promoted / not. The verdict's full record (trail,
+config, the SELECTED test score) is `<run>/sprt_promotion.jsonl` ([`eval_and_rating.md`](eval_and_rating.md)
+→ *SPRT promotion*).
+
 🚨 **`eval/duration_sec` is SUMMED UNIT TIME, not wall time; the wall is `eval/wall_sec`**
 (`gen3_eval_wall_sec_v1`, 2026-10-01).
 - **`duration_sec`** adds up every shard's own duration. On the Rust eval core the units play

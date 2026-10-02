@@ -729,6 +729,88 @@ nine bots AND a pool sentinel (`pairs_vs_pool` 2 at step 12,000); (3) `main.unta
 (4) `main.anchors --mirrored-pairs` vs `metamon:SmallRL`, 8 games → 4 pairs, all four VERIFIED (teams,
 order, shared seed). ⚠️ **Not yet seen on a GPU run** — one confirmation rides a planned launch.
 
+### SPRT promotion (`--promotion-sprt`, T6 — `gen3_sprt_promotion_v1`, DEFAULT OFF)
+
+**What it replaces.** Without it, a snapshot is promoted the first cycle its `win_rate_vs_pool`
+crosses `--promote-threshold`. That is repeated peeking at a noisy rate — optional stopping — so the
+promoted snapshots are weaker than their promotion score (a winner's curse). With it, **every
+eval-cycle snapshot is a CANDIDATE** once the pool holds a snapshot, and its own sequential test
+decides it (`agents/training/sprt.py`, `sprt_promotion.py`). `--promote-threshold` is then not read,
+and typing it is REFUSED.
+
+**The test is Fishtest's GSPRT.**
+- The likelihood is the PENTANOMIAL over MIRRORED PAIRS (each pairing from both sides on one seed;
+  *Mirrored team pairs* above). A pair is 0..4 half-points; a 250-turn timeout and a `|tie|` are DRAWs
+  (½), checked at the source in `trace_result.classify_result`.
+- Under each hypothesis's mean constraint, the maximum-likelihood pentanomial is solved for its 1-D
+  Lagrange multiplier λ by deterministic bisection (Van den Bergh). The 200 fixed halvings are pinned by
+  a test to a constraint residual < 1e-12.
+- The LLR is `N · Σ p̂ ln(q1/q0)`, with zero counts regularized to 1e-3.
+
+**The hypotheses are in SCORE space: H0 ≤ 0.50 vs H1 ≥ 0.55**, the mean per-game score with a draw
+worth ½. α = β = 0.05, giving Wald bounds ±2.944. Score space was chosen over normalized Elo for three
+reasons:
+- the owner's hypotheses and the gate being replaced are stated as win rates;
+- eval draws are ~0 (0 in 145k traces), so normalized Elo's draw-ratio invariance buys nothing;
+- the GSPRT already uses the empirical pentanomial variance.
+
+**The schedule, from the Monte Carlo**
+([`measurements/sprt_promotion/`](../research_state/measurements/sprt_promotion/README.md); pinned by
+`sprt_test.py`):
+- a check every **40** pairs, split round-robin over the sentinels;
+- the first decision at **40**: a minimum of 80 or 160 moved neither error rate beyond noise and cost
+  pairs;
+- a cap of **1,680 pairs**, the untruncated worst-cell p95; reaching it is a REJECT;
+- plain **Wald** bounds. Siegmund overshoot-corrected bounds saved ~21% of pairs, but held α only within
+  simulation noise (5.07%).
+
+Operating characteristics (20k runs per cell, τ = 0/1/2 team effects):
+- false promotion at a true 0.50: 2.7–2.8%;
+- false rejection at a true 0.55: 2.6–2.8%;
+- expected pairs at 0.50: 225–346; p95 ≤ 1,680.
+
+**The three discipline rules, made true rather than intended:**
+1. **The pool is FROZEN at the test's start.** The test plays the sentinels the candidate's own cycle
+   launched against, in every batch. No cycle launches while a test is pending: the skip-while-running
+   rule covers its batches.
+2. **Selection games never pool into the decision.** The cycle's own pool games are telemetry. The test
+   plays its OWN fresh pairs on a seed namespace disjoint from every cycle's (`sprt_seed`, pinned by a
+   test), with no forensic trace and no `rust_eval/*` scalar.
+3. **A failed test is never re-run.** `<run>/sprt_promotion.jsonl` holds the start and verdict lines,
+   append-only. A candidate step with ANY line is never retested. A test the process died in is recorded
+   `abandoned` at the next start, as are a batch that played nothing and a drain that ran out of budget;
+   abandoned means not promoted.
+
+**Where it runs.** On the RUST eval core the whole test runs inside the candidate's own collect,
+blocking like the cycle, so the live weights ARE the candidate's. On the PYTHON core each batch is a
+non-blocking worker round in `_pending` (`kind: "sprt"`), and it needs the in-process bridge and one
+game in flight (`combination_checks`: `promotion_sprt_*`).
+
+**What it records.** On ACCEPT the candidate's frozen snapshot is promoted exactly as before (pool,
+generation, `train/selfplay_promoted_steps`, the detached ladder update). TensorBoard gets
+`eval/sprt_llr`, `eval/sprt_pairs` and `eval/sprt_promoted` at the candidate's step. 🚨 **The test's own
+score is a SELECTED number** (`test_score_selected` in the log): a promoted snapshot's strength is read
+from later, unselected games (`ladder.json`), never from its passing test.
+
+**The regime.** It is recorded as `promotion_sprt` (config v129), `_resolve`-inherited, and announced as
+`⚖️  [EVAL REGIME] promotion: …`. It is a regime boundary for which snapshots enter the pool, so the
+default stays OFF while the M5 sizing arms are compared. The orchestrator flips it with
+`--eval-mirrored-pairs` at the X26 baseline.
+
+**Evidence and what is owed.**
+- CPU, 2026-10-01, `--debug --debug-eval --self-play --eval-mirrored-pairs --promotion-sprt` with the
+  pool forced to seed early:
+  - **Rust core:** candidate @12,000 was ACCEPTED after 80 pairs (LLR +4.05) against its frozen pool
+    `[8000]`; candidate @16,000 after 80 pairs against `[12000, 8000]`. Both tests ran inside their
+    cycle's collect (cycle wall 31 s and 40 s at CPU speed), and each pentanomial includes draw-bearing
+    categories.
+  - **Python core:** candidate @8,000 was ACCEPTED after 800 pairs in 20 non-blocking batches (LLR
+    trail −1.84 → +3.91). The three later cycles were skipped while the test ran, which is the frozen
+    pool working as designed. Its last batch was collected by the shutdown drain.
+- ⚠️ **The cost is real:** a long test blocks training (Rust core) or holds the next eval cycles off
+  (Python core) until its verdict.
+- Owed: one GPU confirmation, which rides a planned launch.
+
 ### Eval on the Rust env core (`--env-core rust`, M5 Lane H — `agents/training/rust_eval/`)
 
 Under `--env-core rust` an eval cycle is played on the M5 Rust env core, not on `main.eval_worker`

@@ -1408,6 +1408,30 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         and int(_val(a, "eval_concurrency_per_worker", 1) or 1) != 1,
         "--eval-mirrored-pairs needs --eval-concurrency-per-worker 1: every game is seeded, and "
         "overlapping games would consume the seeded streams out of order"),
+
+    # ---- T6 SPRT PROMOTION (gen3_sprt_promotion_v1) ------------------------------------------------
+    CombinationCheck(
+        "promotion_sprt_needs_self_play", ("promotion_sprt", "self_play"),
+        lambda a: bool(_val(a, "promotion_sprt", False)) and not bool(_val(a, "self_play", False)),
+        "--promotion-sprt decides POOL promotion — without --self-play there is no pool and nothing to promote"),
+    CombinationCheck(
+        "promotion_sprt_ignores_the_threshold", ("promotion_sprt", "promote_threshold"),
+        lambda a: bool(_val(a, "promotion_sprt", False)) and _typed(a, "promote_threshold"),
+        "--promote-threshold does nothing under --promotion-sprt (the SPRT decides; a typed threshold "
+        "would be silently inert)"),
+    CombinationCheck(
+        "promotion_sprt_needs_the_bridge", ("promotion_sprt", "env_core", "use_bridge"),
+        lambda a: bool(_val(a, "promotion_sprt", False)) and not _rust_core(a)
+        and _val(a, "use_bridge", "rust") == "off",
+        "--promotion-sprt plays seeded mirrored pairs: the Python eval path needs the in-process bridge "
+        "(--use-bridge rust|node)"),
+    CombinationCheck(
+        "promotion_sprt_needs_one_game_in_flight",
+        ("promotion_sprt", "env_core", "eval_concurrency_per_worker"),
+        lambda a: bool(_val(a, "promotion_sprt", False)) and not _rust_core(a)
+        and int(_val(a, "eval_concurrency_per_worker", 1) or 1) != 1,
+        "--promotion-sprt plays seeded mirrored pairs: the Python eval path needs "
+        "--eval-concurrency-per-worker 1"),
 )
 
 

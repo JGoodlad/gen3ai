@@ -10600,3 +10600,19 @@ if a lazy build is reintroduced.
   (pair-level interval) and `main.anchors --mirrored-pairs` (the front end's `--pair-seeds` keys each
   battle's seed by its unordered team pair; the Metamon driver plays a planned team sequence; a pair
   counts only when teams, order and seed are all verified).
+
+## v129 — SPRT PROMOTION on mirrored pairs, behind `--promotion-sprt` (T6, `gen3_sprt_promotion_v1`; config bump, no ARCH_SIGNATURE bump, training math untouched)
+
+- **What:** pool promotion by a per-candidate sequential test instead of the first `win_rate_vs_pool >
+  --promote-threshold` (optional stopping, a winner's curse). Fishtest's GSPRT: the pentanomial over
+  mirrored pairs, the constrained MLE under each hypothesis via a bisected Lagrange multiplier (Van den
+  Bergh), H0 0.50 vs H1 0.55 in SCORE space, α = β = 0.05, Wald bounds ±2.944.
+- **Schedule (Monte Carlo, `designs/research_state/measurements/sprt_promotion/`, 20k runs/cell):** a
+  check every 40 pairs, first decision at 40, cap 1,680 pairs = reject; false promotion 2.7–2.8% at 0.50,
+  false rejection 2.6–2.8% at 0.55; Siegmund-corrected bounds saved ~21% of pairs but held α only within
+  simulation noise, so Wald stays.
+- **Discipline:** the pool frozen at the candidate's launch; the test's own fresh pairs on a disjoint
+  seed namespace (no selection game enters it); `sprt_promotion.jsonl` makes a failed or interrupted
+  test un-rerunnable.
+- **Config v129:** `promotion_sprt` recorded, `_resolve`-inherited, never compared; a pre-v129 config
+  migrates to False. DEFAULT OFF; flipped with `--eval-mirrored-pairs` at the X26 baseline.
