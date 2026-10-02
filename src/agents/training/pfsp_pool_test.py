@@ -22,7 +22,7 @@ from agents.training.wrappers import MaskableAgentWrapper
 def _make_pool(tmp_path, **kwargs) -> SnapshotPool:
     version = MagicMock()
     version.to_json.return_value = "{}"
-    with patch("agents.training.snapshot_pool.load_model_snapshot"):
+    with patch("agents.training.snapshot_pool.load_opponent_snapshot"):
         return SnapshotPool(pool_dir=tmp_path, current_version=version, **kwargs)
 
 

@@ -12,6 +12,7 @@ from sb3_contrib import MaskablePPO
 from agents.model.damage_tables import _PRIOR_FLOOR, sanitize_historical_move_floor
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
+from agents.training.instrumented_ppo.inference import InferenceMaskablePPO
 from utils.git import get_git_hash
 
 #: The launcher exports its chosen pin here; every git_hash written for a run reads it.
@@ -858,6 +859,13 @@ def load_model_snapshot(
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
+    The LEARNER's loader: the trainee's resume / fork (strict on every key, the ride-along heads
+    included, and the full ``InstrumentedMaskablePPO`` whose ``_setup_model`` acquires the heads'
+    optimizers at startup), the round-trip smoke and offline meters. 🚨 An OPPONENT load — the
+    self-play pool, an eval sentinel — goes through ``load_opponent_snapshot`` instead: this loader
+    acquires training state, which after the learner froze is a K6 FATAL
+    (`gen3_opponent_inference_load_v1`).
+
     Args:
         model_path:      Path to the .zip (with or without extension), or a directory
                          containing final_model.zip or best_model.zip.
@@ -867,9 +875,9 @@ def load_model_snapshot(
         tensorboard_log: Passed to InstrumentedMaskablePPO.load().
         enforce_vf_coef: TRAINING-RESUME ONLY. When set, the saved config's vf_coef must
                          match this value or a ModelVersionError is raised — vf_coef is fixed
-                         for a run's lifetime. Left None on every frozen-snapshot load (eval
-                         sentinels, self-play pool opponents, distill teacher, the roundtrip
-                         smoke), where the value-loss coefficient is irrelevant to the forward.
+                         for a run's lifetime. Left None on every other load (the roundtrip
+                         smoke, the offline meters), where the value-loss coefficient is
+                         irrelevant to the forward.
 
     Raises:
         ModelVersionError:  If saved config is incompatible with current_version, or (when
@@ -877,15 +885,7 @@ def load_model_snapshot(
         FileNotFoundError:  If no .zip can be found at the resolved path.
     """
     zip_path, config_dir = _resolve_paths(model_path)
-
-    # model_config.json is run-LEVEL — it sits at the run root, but a checkpoint .zip may
-    # live one level down in <run>/checkpoints/. Search the zip's dir then its parent
-    # (mirroring load_foreign_opponent) so the arch check survives the relocation.
-    config_path = os.path.join(config_dir, "model_config.json")
-    if not os.path.exists(config_path):
-        parent_config = os.path.join(os.path.dirname(config_dir), "model_config.json")
-        if os.path.exists(parent_config):
-            config_path = parent_config
+    config_path = _run_config_path(config_dir)
     arch_validated = False
     if os.path.exists(config_path):
         saved_version = ModelVersion.from_json_file(config_path)
@@ -932,6 +932,46 @@ def load_model_snapshot(
     _patch_historical_floor(zip_path, kwargs)
 
     return InstrumentedMaskablePPO.load(zip_path, **kwargs)
+
+
+def _run_config_path(config_dir: str) -> str:
+    """``model_config.json`` is run-LEVEL — it sits at the run root, but a checkpoint .zip may live
+    one level down in <run>/checkpoints/. Search the zip's dir then its parent (mirroring
+    load_foreign_opponent) so the arch check survives the relocation. Returns the zip-dir path when
+    neither exists (the caller's legacy-model branch)."""
+    config_path = os.path.join(config_dir, "model_config.json")
+    if not os.path.exists(config_path):
+        parent_config = os.path.join(os.path.dirname(config_dir), "model_config.json")
+        if os.path.exists(parent_config):
+            config_path = parent_config
+    return config_path
+
+
+def load_opponent_snapshot(model_path: str, current_version: ModelVersion,
+                           device: str = "cpu") -> MaskablePPO:
+    """Load one of THIS run's snapshots as an OPPONENT — the self-play pool, an eval sentinel
+    (`gen3_opponent_inference_load_v1`). An opponent never trains, so the load acquires nothing:
+
+      * the model is an ``InferenceMaskablePPO`` (policy weights only: no optimizer, no ride-along
+        optimizer, no rollout buffer), so a load AFTER the learner froze cannot trip K6's freeze guard
+        — the X26 FATAL at the first pool load;
+      * the gate is ``check_opponent_snapshot_compatible``: ``check_compatible`` with the DECLARED
+        ride-along key set ignored in either direction (F-MEM — the heads are detached and no forward
+        reads them); every other mismatch is still a hard ``ModelVersionError``.
+
+    The TRAINEE's own resume / fork stays on ``load_model_snapshot`` (strict, full learner)."""
+    zip_path, config_dir = _resolve_paths(model_path)
+    config_path = _run_config_path(config_dir)
+    if os.path.exists(config_path):
+        current_version.check_opponent_snapshot_compatible(ModelVersion.from_json_file(config_path))
+    else:
+        print(
+            f"[ModelVersion] WARNING: No model_config.json found at {config_dir!r}. "
+            "Skipping compatibility check (legacy model)."
+        )
+    kwargs: dict = {"env": None, "device": device}
+    _patch_historical_floor(zip_path, kwargs)
+    return InferenceMaskablePPO.load(zip_path, **kwargs)
 
 
 # Compiled-opponent machinery lives in `compile_opponents.py` (split 2026-08-16); re-exported
@@ -1143,8 +1183,15 @@ def load_foreign_opponent(
     current_version: ModelVersion,
     device: str = "cpu",
     config_path: Optional[str] = None,
+    inference_only: bool = True,
 ) -> "tuple[MaskablePPO, ModelVersion]":
     """Load a frozen model from ANOTHER run as an inference-only OPPONENT ("stable opponent").
+
+    INFERENCE ONLY by default (`gen3_opponent_inference_load_v1`): the model is an
+    ``InferenceMaskablePPO`` — policy weights, no optimizer, no ride-along optimizer, no rollout
+    buffer — so a load inside a FROZEN learner (an exploiter target, a distill anchor, a stable
+    opponent at a restart) acquires nothing. ``inference_only=False`` is for an OFFLINE tool that
+    fits the loaded model itself (the consensus warm-start's student); it builds the full learner.
 
     Unlike ``load_model_snapshot`` — which checks the saved config against the LIVE trainee via
     ``check_compatible`` (a hard FATAL on any ``_WEIGHT_FIELD`` / ``use_popart`` mismatch) — a stable
@@ -1196,7 +1243,8 @@ def load_foreign_opponent(
 
     load_kwargs: dict = {"env": None, "device": device}
     _patch_historical_floor(zip_path, load_kwargs)
-    return InstrumentedMaskablePPO.load(zip_path, **load_kwargs), foreign_version
+    cls = InferenceMaskablePPO if inference_only else InstrumentedMaskablePPO
+    return cls.load(zip_path, **load_kwargs), foreign_version
 
 
 def current_model_version(

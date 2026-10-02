@@ -675,3 +675,20 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "projection widths), so toggling it is incompatible with a saved checkpoint.\n"
                 "Resume with the matching --damage-matrices setting, or start a fresh training run."
             )
+
+    def check_opponent_snapshot_compatible(self, saved: ModelVersion) -> None:
+        """`check_compatible` for an OPPONENT load of a snapshot (F-MEM, `gen3_opponent_inference_load_v1`):
+        the self-play pool, the eval sentinels, and every other load whose model only PLAYS.
+
+        Identical to `check_compatible` except that the DECLARED ride-along key set
+        (`agents.model.ridealong_heads.RIDEALONG_FLAGS`, the one source of truth) may differ, in either
+        direction: the heads are detached, no forward reads them, and an opponent never trains, so an
+        opponent with heads the trainee lacks (or without heads the trainee has) plays the identical
+        function. Every OTHER mismatch is still a hard `ModelVersionError`. The TRAINEE's own resume
+        and fork stay on `check_compatible`, strict on every key (a resume that dropped a head would
+        silently delete a trained baseline)."""
+        from dataclasses import replace
+
+        from agents.model.ridealong_heads import RIDEALONG_FLAGS
+
+        self.check_compatible(replace(saved, **{k: getattr(self, k) for k in RIDEALONG_FLAGS}))

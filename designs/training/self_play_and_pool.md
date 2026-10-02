@@ -30,7 +30,8 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   saves best by **copying** the frozen snapshot, and — if `win_rate_vs_pool > --promote-threshold`
   — **promotes the FROZEN snapshot into the pool by file-copy** (`SnapshotPool.add_from_path`):
   the live model has advanced since launch, so re-saving `self.model` would promote the wrong
-  weights. Sentinels load via `load_model_snapshot` against the pool's shared `model_config.json`
+  weights. Sentinels load via `load_opponent_snapshot` (inference-only, the ride-along keys ignored —
+  `gen3_opponent_inference_load_v1`) against the pool's shared `model_config.json`
   using `current_model_version(mappings)` — a stale-arch snapshot fails with `ModelVersionError`,
   never loads silently. The **only** training-thread work per cycle is the `model.save` freeze +
   one cheap `opponent_default_stats` IPC at collect; all battles / model loads / inference run in
@@ -145,7 +146,7 @@ attributes so a rename there breaks the test rather than un-copying a file):
 | `snapshot_*.zip` | `_scan()` — they ARE the pool's entries |
 | `summary.json` | `_SUMMARY_FILE` — `load_summary` / `load_persisted_win_rate`; carries `win_rate_vs_bots` (the ramp input) plus `self_play_fraction` / `last_eval_step` / `seeded` / `pool_generation` |
 | `win_rate_vs_bots.txt` | `_WIN_RATE_FILE` — the legacy single-float fallback |
-| `model_config.json` | NOT by `SnapshotPool` itself: `load_model_snapshot` looks beside the `.zip` and then one dir up, so without it every pool opponent arch-checks against the RUN ROOT's config instead of the pool's own |
+| `model_config.json` | NOT by `SnapshotPool` itself: `load_opponent_snapshot` looks beside the `.zip` and then one dir up, so without it every pool opponent arch-checks against the RUN ROOT's config instead of the pool's own |
 
 Nothing else in the directory is read — there is no manifest, which is the whole reason the class is
 directory-derived.
@@ -339,10 +340,12 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   `eval_sentinel_greedy_test.py` (both halves of the switch), `selfplay_callback_test.py` (the
   stamp, incl. the specialist case), `main/train/eval_sentinel_regime_test.py` (the default, resume
   inheritance both ways, the gate's three branches, the round-trip and the migration).
-- **Opponent snapshots are version-checked.** They load via `load_model_snapshot` (not a raw
+- **Opponent snapshots are version-checked.** They load via `load_opponent_snapshot` (not a raw
   `MaskablePPO.load`), and `SnapshotPool` writes a shared `model_config.json` next to its
   snapshots, so an arch-mismatched snapshot fails with a clean `ModelVersionError` instead of
-  loading mismatched weights.
+  loading mismatched weights. The check ignores the ride-along keys alone (F-MEM). The load is
+  INFERENCE-ONLY: no optimizer and no ride-along acquisition, because it runs after the learner froze
+  (`gen3_opponent_inference_load_v1`, `designs/training/learner_lifecycle.md`).
 - **The opponent RE-DECIDES on a stale decision; the trainee crashes** — split by who *owns* the
   decision. `SingleAgentWrapper` polls the opponent's `choose_move` on the *training* thread while
   POKE_LOOP mutates its battle, so by serialize time the captured snapshot (`ctx.legal`) can diverge

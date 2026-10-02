@@ -22,7 +22,8 @@ gamma, and the self-play knobs (self_play_temp, eval_sentinel_greedy).
 Opponent kinds (from the plan item): a bot plays the scripted roster path; a sentinel plays the
 frozen trainee (greedy) vs a pool snapshot (stochastic + the flat pool teambuilder unless
 eval_sentinel_greedy, which makes the sentinel argmax AND gives it the trainee's own builder), loaded via
-``load_model_snapshot`` and version-checked; a fixed/ext_ opponent plays a foreign frozen model
+``load_opponent_snapshot`` (inference-only, ride-along keys ignored) and version-checked; a
+fixed/ext_ opponent plays a foreign frozen model
 (``load_foreign_opponent``, greedy yardstick). Under ``seed_rule = "per_game"`` (the Lane H gate
 only) a policy opponent's decisions are logged and a SAMPLED sentinel draws the Rust eval core's keyed
 draw (``install_opponent_log``), so the gate compares that regime game for game. Sentinel/fixed model
@@ -51,7 +52,7 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 from poke_env.ps_client.server_configuration import localhost_server_configuration
 
 from agents.inference.player import RLPlayer
-from agents.model.snapshot import (current_model_version, load_model_snapshot,
+from agents.model.snapshot import (current_model_version, load_opponent_snapshot,
                                    load_foreign_opponent, maybe_compile_extractor)
 from agents.observation.state_encoder import load_mappings
 from agents.training.eval_callback import (
@@ -130,7 +131,7 @@ def _get_opponent_model(cache: dict, path: str, loader, compile_extractor: bool 
                         device: str = "cpu"):
     """Return the opponent model for ``path``, loading it once per worker and caching it.
 
-    Amortizes the ~27MB ``load_model_snapshot`` / ``load_foreign_opponent`` deserialize across all
+    Amortizes the ~27MB ``load_opponent_snapshot`` / ``load_foreign_opponent`` deserialize across all
     of an item's shards (and across shards of distinct items that share a path). Safe to cache: the
     snapshot at ``path`` is a frozen file, immutable for the cycle; the version check is part of the
     first real load, so a cache hit can't smuggle in an incompatible model.
@@ -367,8 +368,8 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
     elif item.kind == SENTINEL:
         opp_model = _get_opponent_model(
             opp_model_cache, item.path,
-            lambda: load_model_snapshot(item.path, env=None,
-                                        current_version=current_version, device=device),
+            lambda: load_opponent_snapshot(item.path, current_version=current_version,
+                                           device=device),
             compile_extractor=compile_extractor, device=device)
         opponent = RLPlayer(
             model=opp_model, team=opp_tb if per_game else _sentinel_tb(trainee_tb, opp_tb, sentinel_greedy),

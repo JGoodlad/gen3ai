@@ -148,8 +148,11 @@ async def run_consensus_warmstart(student_ckpt: str, student_cfg: str,
 
     dev = th.device(device)
 
-    def _load(ck, cfg, dv="cpu"):
-        m, _ = load_foreign_opponent(ck, current_version=current_version, device=dv, config_path=cfg)
+    def _load(ck, cfg, dv="cpu", fits=False):
+        # The teachers only PLAY (inference-only); the student is FIT and saved here, so it is the
+        # full learner (gen3_opponent_inference_load_v1).
+        m, _ = load_foreign_opponent(ck, current_version=current_version, device=dv, config_path=cfg,
+                                     inference_only=not fits)
         return m
 
     def _log(msg):
@@ -157,7 +160,7 @@ async def run_consensus_warmstart(student_ckpt: str, student_cfg: str,
             print(msg, flush=True)
 
     pool_tb = Gen3Teambuilder(TeamLoader().get_all_teams())
-    student = _load(student_ckpt, student_cfg, device)
+    student = _load(student_ckpt, student_cfg, device, fits=True)
     teacher_models = {k: _load(v[0], v[1]) for k, v in teachers.items()}
     _log(f"[warmstart] student + {len(teacher_models)} teachers loaded")
 

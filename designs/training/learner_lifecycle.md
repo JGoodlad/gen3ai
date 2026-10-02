@@ -264,6 +264,68 @@ the update peak is open work.
   exception is the python env core's worker pool, which infers on the snapshot itself on the device
   `--self-play-use-cpu` chose.
 
+## An opponent never trains, so an opponent load acquires nothing (`gen3_opponent_inference_load_v1`)
+
+**The failure it closes (2026-10-01).** An X26 launch at N = 256 with the ride-along heads ON and
+`--self-play-start-wr 0` died at its first pool seeding. `set_self_play_target` loaded the snapshot
+through `load_model_snapshot` → `InstrumentedMaskablePPO.load` → `_setup_model` →
+`_ridealong_acquire`, which built an Adam over the snapshot's 111 ride-along tensors and pre-stepped
+it. The step pre-hook raised "an optimizer outside the frozen set STEPPED after the freeze", and the
+sticky violation FATALed the rollout end (`~/gen3ai_archive/k6_k8/memaudit/launch_n256p.log`). The
+eval sentinels (`rust_eval/launch.load_sentinels`, `eval_worker`) went through the same loader.
+
+**The structural fix: opponents are a different CLASS.** `InferenceMaskablePPO`
+(`agents/training/instrumented_ppo/inference.py`) builds the POLICY and nothing a learner needs:
+- no policy optimizer at all: the policy is constructed with an optimizer class that builds
+  nothing, and the checkpoint's saved Adam moments are dropped, never loaded;
+- no ride-along optimizer: the heads' WEIGHTS still load, so an offline reader reads them, but a
+  ride-along step raises `RideAlongLifecycleViolation`;
+- no rollout buffer, no loop hooks.
+
+It refuses `learn` / `train` / `collect_rollouts` / `save` (`InferenceOnlyModelError`). The rest is
+`MaskablePPO._setup_model` in its own order, including `set_random_seed(self.seed)`, so the global RNG
+after an opponent load is where the old load left it.
+
+**The routes:**
+- **`snapshot.load_opponent_snapshot`** — the self-play pool (`SnapshotPool.load_model`, and through it
+  every T2 pool refresh) and the eval sentinels (`rust_eval/launch.load_sentinels`, `eval_worker`).
+- **`snapshot.load_foreign_opponent`** — inference-only by default. That covers stable opponents,
+  exploiter targets, distill teachers, the distill anchor parent, `main.anchors`, `baselines.load` and
+  the offline readers. `inference_only=False` is for an offline tool that FITS the loaded model: the
+  consensus warm-start's student is the one caller.
+- **Not this class, and not affected:** the prober, `play.py` and the search workers load with a bare
+  sb3 `MaskablePPO.load`, which has no ride-along acquisition. None of them runs inside a frozen learner.
+
+**F-MEM: an opponent may differ from the trainee in the ride-along keys alone.** The gate is
+`ModelVersion.check_opponent_snapshot_compatible`: `check_compatible` with the declared key set
+(`ridealong_heads.RIDEALONG_FLAGS`, the one source of truth) ignored, in either direction. Every other
+mismatch is still a `ModelVersionError`. The T2 slot identity ignores the same set:
+`slots.served_state_dict` skips every `ridealong.*` tensor, `forward_fingerprint` skips the
+`ridealong_*` extractor kwargs, and a served replica drops the heads, so no slot stores, copies or
+compiles them.
+
+**The trainee stays strict.** Its resume or fork (`load_model_snapshot` with its env) is the full
+`InstrumentedMaskablePPO`. It acquires every ride-along optimizer in `_setup_model`, before the
+freeze, and it is checked on every key: a resume that dropped a head would silently delete a trained
+baseline.
+
+**Proof on the real path (2026-10-01, RTX 3080 Ti, torch 2.8, rust core, production, the X26 heads +
+`--ridealong-rnd-variants all`, `--self-play-start-wr 0 --promote-threshold 0`, an eval every rollout;
+run dirs + logs in `~/gen3ai_archive/k6_k8/oppload/`):**
+- At N = 48, n_steps 2,048, 3 rollouts: three promotions, each followed by a logged
+  `🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY`, and the pool snapshots also played as eval
+  sentinels. `[LEARNER FREEZE] released — 6 checks passed`, `Training complete`, exit 0. The update
+  peak was 8.79 GiB allocated / 9.53 GiB reserved (`train/cuda_update_peak_*`).
+- At N = 256, n_steps 384, the run passed the pool seeding and its `set_self_play_target` load, the
+  step that FATALed before the fix, with no lifecycle FATAL. It then ran OUT OF MEMORY in update 1's
+  R1 micro-step (10.21 GiB allocated), which is the known N = 256 OOM above and a separate unit. With the
+  heads out of the T2 slots, the ledger's rust-env-core row read 1,455 MiB allocated, against 1,685 MiB
+  before the fix without the RND variants.
+
+**Tests:** `opponent_inference_load_test`. Each test fails on revert: a pool / sentinel / foreign load
+under a FROZEN trainee builds no optimizer; both F-MEM directions load; a non-ride-along mismatch is
+refused; the trainee resume is strict and acquires at setup; the T2 identity ignores the heads.
+
 ## Smoke
 
 `python src/main/train_rl_agent.py --debug --steps 3000` (2026-09-30, CPU): `🧊 [LEARNER STARTUP]

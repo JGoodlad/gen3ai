@@ -23,7 +23,7 @@ from agents.training.eval_sharding import EvalItem, ShardedEvalPool, SENTINEL
 def _run_sentinel_unit(monkeypatch, sentinel_greedy, *, self_play_temp=0.7):
     captured = {}
     trainee_tb, opp_tb = MagicMock(name="trainee_tb"), MagicMock(name="opp_tb")
-    monkeypatch.setattr(ew, "load_model_snapshot", lambda *a, **k: MagicMock(name="sentinel_model"))
+    monkeypatch.setattr(ew, "load_opponent_snapshot", lambda *a, **k: MagicMock(name="sentinel_model"))
 
     # The trainee is built by build_eval_players (greedy by contract); stub it to a numeric mock so
     # _play_unit can read its raw counters and assemble a ShardResult without a real battle.

@@ -114,9 +114,22 @@ from agents.model.arch_constants import (
 from agents.model.q_winprob_head import QWinProbHead
 from agents.training.lifecycle_decl import startup_builder
 
-#: The four extractor kwargs (flag_registry rows) that declare the heads, in build order.
+#: The extractor kwargs (flag_registry rows) that declare the heads, in build order. ALSO the DECLARED
+#: KEY SET an OPPONENT load ignores (F-MEM, `gen3_opponent_inference_load_v1`): an opponent may differ
+#: from the trainee in these keys alone, in either direction (`ModelVersion.
+#: check_opponent_snapshot_compatible`, the T2 slot identity in `agents.inference.service.slots`),
+#: because the heads are detached and no forward reads them. `opponent_inference_load_test` pins
+#: this tuple to every `ridealong_*` field of `ModelVersion`, so a new head cannot escape it.
 RIDEALONG_FLAGS: Tuple[str, ...] = ("ridealong_ensemble", "ridealong_rnd", "ridealong_adv",
                                     "ridealong_opp", "ridealong_rnd_variants")
+#: The policy attribute the heads hang on, and the state-dict prefix of every ride-along tensor.
+RIDEALONG_ATTR = "ridealong"
+RIDEALONG_STATE_PREFIX = RIDEALONG_ATTR + "."
+
+
+def without_ridealong_state(sd: Mapping[str, Any]) -> Dict[str, Any]:
+    """``sd`` minus every ride-along tensor: the weights an OPPONENT's forward reads (F-MEM)."""
+    return {k: v for k, v in sd.items() if not k.startswith(RIDEALONG_STATE_PREFIX)}
 
 #: Bit offsets into the per-state hash, one block per ensemble so the V, A and B members' bootstrap
 #: masks are independent of one another.
@@ -848,7 +861,8 @@ def build_ridealong(fe: object, *, obs_dim: int,
                                         int(obs_dim)))
 
 
-__all__ = ["RIDEALONG_FLAGS", "RideAlongSpec", "RideAlongHeads", "RideAlongBatch",
+__all__ = ["RIDEALONG_FLAGS", "RIDEALONG_ATTR", "RIDEALONG_STATE_PREFIX",
+           "without_ridealong_state", "RideAlongSpec", "RideAlongHeads", "RideAlongBatch",
            "build_ridealong", "freeze_to_buffers", "state_hash", "bootstrap_mask",
            "ACTION_SPACE_SIZE", "RND_VARIANTS", "RND_VARIANT_DECLS", "RND_VARIANT_BY_NAME",
            "RND_FAST_LR_MULT", "RND_DECAY_HALF_LIFE_UPDATES", "RndVariantDecl", "RndObsVariant",

@@ -1041,7 +1041,15 @@ And **the heads' Adam state is not checkpointed** (a restart resumes their weigh
 `_ridealong_acquire`, Adam state pre-allocated, bit-identical to lazy init). There is NO lazy build:
 a step that finds an optimizer missing, or bound to other heads, raises
 `RideAlongLifecycleViolation`, as K6.1's freeze guard would. Tooling that swaps `policy.ridealong`
-must call `_ridealong_acquire()` again (both benchmarks do). The step is
+must call `_ridealong_acquire()` again (both benchmarks do). 🚨 **Only the TRAINEE acquires: an
+OPPONENT load acquires nothing** (`gen3_opponent_inference_load_v1`). The self-play pool and the eval
+sentinels load through `snapshot.load_opponent_snapshot`, and every `load_foreign_opponent` (stable
+opponents, exploiter targets, distill teachers and anchors, `main.anchors`, the offline readers) is an
+`InferenceMaskablePPO` by default: policy weights only, with no optimizer, no ride-along optimizer and
+no rollout buffer. It refuses `learn` / `train` / `save`. Before this fix a pool load after the freeze
+pre-stepped a ride-along Adam, and K6 FATALed the X26 launch at its first pool seeding. An opponent may
+differ from the trainee ONLY in the declared ride-along keys (`RIDEALONG_FLAGS`), in either direction
+(F-MEM); the trainee's own resume stays strict. Detail: `designs/training/learner_lifecycle.md`. The step is
 K8's candidate compile region R-ride; it stays eager. **The RND variants**
 (`--ridealong-rnd-variants all`, v127: `fast` / `decay` / `small` / `feat`, beside the unchanged base
 RND) each step on their own Adam after the four heads. A non-finite variant disables ITSELF

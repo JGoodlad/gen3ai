@@ -126,9 +126,9 @@ def core_label_families(obs_space: Any) -> Tuple[str, ...]:
 
 
 def _arch_key(policy: Any) -> Tuple[Any, str]:
-    from agents.inference.service.slots import forward_fingerprint, state_signature
+    from agents.inference.service.slots import forward_fingerprint, served_state_dict, state_signature
 
-    return state_signature(policy.state_dict()), forward_fingerprint(policy)
+    return state_signature(served_state_dict(policy)), forward_fingerprint(policy)
 
 
 def slot_groups(plan: Any, templates: Mapping[int, Any], trainee_policy: Any, n_trainee: int

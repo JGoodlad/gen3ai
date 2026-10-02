@@ -40,9 +40,9 @@ def evaluator_of(model: Any) -> Any:
 
 
 def load_sentinels(pool: Any, model: Any) -> Dict[str, Any]:
-    """Each SENTINEL item's snapshot, loaded as the eval worker loads it (``load_model_snapshot`` gated
+    """Each SENTINEL item's snapshot, loaded as the eval worker loads it (``load_opponent_snapshot`` gated
     against THIS run's architecture), on CPU — T2 copies it into its declared slot."""
-    from agents.model.snapshot import arch_toggles_from_model, current_model_version, load_model_snapshot
+    from agents.model.snapshot import arch_toggles_from_model, current_model_version, load_opponent_snapshot
     from agents.observation.state_encoder import load_mappings
     from agents.training.eval_sharding import SENTINEL
 
@@ -52,7 +52,7 @@ def load_sentinels(pool: Any, model: Any) -> Dict[str, Any]:
     version = current_model_version(load_mappings(), **arch_toggles_from_model(model))
     out = {}
     for it in items:
-        m = load_model_snapshot(it.path, env=None, current_version=version, device="cpu")
+        m = load_opponent_snapshot(it.path, current_version=version, device="cpu")
         out[it.key] = m.policy.eval()
     return out
 

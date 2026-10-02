@@ -27,6 +27,8 @@ name it ever exported still resolves from `agents.training.instrumented_ppo`.
                       per update, micro-batches gathered from it (bit-identical, same permutation)
     intent_fold.py    K8: the opponent-intent fold as ONE static, fullgraph-traceable function
                       (called by `micro_step`, region R1; its oracle is a verbatim copy of the old block)
+    inference.py      `InferenceMaskablePPO` — the class an OPPONENT / reader load builds: policy
+                      weights only, no optimizer of any kind (gen3_opponent_inference_load_v1)
     phase_hook.py     BENCHMARK-ONLY segment marks inside `train()` (None in production; the one
                       consumer is `agents.training.learner_benchmark`)
 
@@ -121,9 +123,13 @@ _verify_upstream_unchanged()
 CfForward = _cf.CfForward
 
 from agents.training.instrumented_ppo.ppo import InstrumentedMaskablePPO   # noqa: E402
+from agents.training.instrumented_ppo.inference import (   # noqa: E402
+    InferenceMaskablePPO, InferenceOnlyModelError)
 
 __all__ = [
     "CfForward",
+    "InferenceMaskablePPO",
+    "InferenceOnlyModelError",
     "InstrumentedMaskablePPO",
     "_EV_LOSS_SCALE",
     "_EV_LOSS_WEIGHT",

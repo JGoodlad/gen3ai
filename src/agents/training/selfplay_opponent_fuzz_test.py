@@ -5,7 +5,7 @@ This is the end-to-end guard for the Phase-1 self-play opponent path, which unit
 BattleStream bridge (same mechanism as the other ``*_fuzz_test.py`` files) and validates:
 
   1. **Pool round-trip + version check.** A real ``MaskablePPO`` (full Gen3 architecture) is
-     saved into a ``SnapshotPool`` and reloaded via ``load_model_snapshot`` — the exact path
+     saved into a ``SnapshotPool`` and reloaded via ``load_opponent_snapshot`` — the exact path
      the training-env opponents now use. The pool writes a shared ``model_config.json``, so
      the architecture compatibility check is REAL (matching version → loads clean). An
      intentionally-incompatible version is rejected with ``ModelVersionError``.
@@ -46,7 +46,7 @@ from agents.inference.player import RLPlayer
 from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.policy import Gen3DualHeadMaskablePolicy
 from agents.model.model_version import ModelVersion, ModelVersionError
-from agents.model.snapshot import load_model_snapshot
+from agents.model.snapshot import load_opponent_snapshot
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.training.snapshot_pool import SnapshotPool
 from utils.teambuilder import Gen3Teambuilder
@@ -129,8 +129,8 @@ def _check_pool_and_version(mappings, tmp_dir: Path) -> tuple[object, ModelVersi
     seed_entry = sorted(pool._entries, key=lambda e: e.step)[0]
 
     # Matching version → loads clean (this is the training-env opponent path).
-    opp_model = load_model_snapshot(
-        str(seed_entry.path), env=None, current_version=version, device="cpu"
+    opp_model = load_opponent_snapshot(
+        str(seed_entry.path), current_version=version, device="cpu"
     )
     assert hasattr(opp_model, "policy"), "reloaded opponent has no policy"
     print("  ✓ pool round-trip + version-checked load (matching arch)")
@@ -152,7 +152,7 @@ def _check_pool_and_version(mappings, tmp_dir: Path) -> tuple[object, ModelVersi
     if incompatible:
         raised = False
         try:
-            load_model_snapshot(str(seed_entry.path), env=None, current_version=bad_version, device="cpu")
+            load_opponent_snapshot(str(seed_entry.path), current_version=bad_version, device="cpu")
         except ModelVersionError:
             raised = True
         assert raised, "mismatched arch loaded silently — opponent version guard is broken"

@@ -1081,7 +1081,12 @@ Adam). It is ACQUIRED AT STARTUP (the declared lifecycle): `_setup_model` ends i
 which builds every ride-along optimizer and pre-allocates its Adam state, bit-identically to torch's
 lazy init. There is NO lazy build path: a step that finds an optimizer missing raises
 `RideAlongLifecycleViolation`. `ridealong_update_test` pins that raise, and unchanged optimizer,
-state and buffer identities across a real update. The heads' step is the K8 inventory's candidate compile region
+state and buffer identities across a real update. **Only the trainee acquires** (`gen3_opponent_inference_load_v1`):
+an OPPONENT load (the self-play pool, eval sentinels, stable / exploiter / teacher loads) is an
+`InferenceMaskablePPO`, with policy weights only and no optimizer of any kind. It may differ from the
+trainee in the ride-along keys (`RIDEALONG_FLAGS`) alone, in either direction, and the T2 slot identity
+and every served replica leave the heads out. The trainee's resume stays strict on every ride-along
+key (`designs/training/learner_lifecycle.md`). The heads' step is the K8 inventory's candidate compile region
 R-ride; it stays EAGER. `family=CRITIC`, so they are off the ARCH surface; §6's table carries them
 OFF. The pre-registered baseline that turns them on is EXPERIMENT_BACKLOG's X26.
 

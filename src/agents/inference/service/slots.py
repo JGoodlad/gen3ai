@@ -12,6 +12,12 @@ mode, ``--attend-unrevealed-opponents``, a belief grad mode, ...) would run the 
 with foreign weights — a silently different function. So a load must match both the state-dict
 SIGNATURE (keys x shapes x dtypes) and the FORWARD FINGERPRINT (the policy's constructor
 parameters, the extractor kwargs included, plus the critic runtime attributes).
+
+THE RIDE-ALONG HEADS ARE NOT SERVED (F-MEM, `gen3_opponent_inference_load_v1`): they are detached and
+no forward reads them, so both identities leave them out — the signature skips every `ridealong.*`
+tensor (`served_state_dict`) and the fingerprint skips the declared `ridealong_*` extractor kwargs
+(`RIDEALONG_FLAGS`). A snapshot with heads and one without serve the same function and load into the
+same slot, in either direction; a replica drops the heads (no slot stores, copies or compiles them).
 """
 from __future__ import annotations
 
@@ -33,14 +39,26 @@ _RUNTIME_ATTRS = ("_critic_mode", "_value_from_dist")
 _ADDR = re.compile(r" at 0x[0-9a-fA-F]+")
 
 
+def served_state_dict(policy: Any) -> Dict[str, torch.Tensor]:
+    """The weights a slot SERVES: the policy's state dict minus the ride-along heads (module docs)."""
+    from agents.model.ridealong_heads import without_ridealong_state
+
+    return without_ridealong_state(policy.state_dict())
+
+
 def state_signature(sd: Dict[str, torch.Tensor]) -> Tuple[Tuple[str, Tuple[int, ...], str], ...]:
     return tuple((k, tuple(v.shape), str(v.dtype)) for k, v in sorted(sd.items()))
 
 
 def forward_fingerprint(policy: Any) -> str:
-    """sha256 over what fixes the forward: constructor parameters (minus the optimizer and the
-    schedule) + the critic runtime attributes + whether PopArt is present."""
+    """sha256 over what fixes the forward: constructor parameters (minus the optimizer, the schedule
+    and the ride-along declarations) + the critic runtime attributes + whether PopArt is present."""
+    from agents.model.ridealong_heads import RIDEALONG_FLAGS
+
     params = {k: v for k, v in policy._get_constructor_parameters().items() if k not in _NOT_FORWARD}
+    fek = params.get("features_extractor_kwargs")
+    if isinstance(fek, dict):
+        params["features_extractor_kwargs"] = {k: v for k, v in fek.items() if k not in RIDEALONG_FLAGS}
     for a in _RUNTIME_ATTRS:
         params[a] = getattr(policy, a, None)
     params["popart"] = getattr(policy, "popart", None) is not None
@@ -78,7 +96,7 @@ class SlotGroup:
         self.name = spec.name
         self.n_slots = int(spec.n_slots)
         self.device = device
-        tsd = template.state_dict()
+        tsd = served_state_dict(template)
         require_finite(tsd, f"slot group {spec.name!r} template")
         self.signature = state_signature(tsd)
         self.fingerprint = forward_fingerprint(template)
@@ -86,6 +104,8 @@ class SlotGroup:
         for _ in range(self.n_slots):
             r = copy.deepcopy(template)
             r.optimizer = None            # a served replica never steps
+            if getattr(r, "ridealong", None) is not None:
+                r.ridealong = None        # ... and never carries the detached heads (F-MEM)
             replicas.append(r.to(device).eval())
         # sb3 registers the shared extractor under three names, so one tensor appears under up to
         # three keys: stack each UNIQUE tensor once and remember every key that aliases it.
@@ -112,7 +132,7 @@ class SlotGroup:
 
     def check_loadable(self, policy: Any) -> Dict[str, torch.Tensor]:
         """The policy's state dict, or `SlotArchMismatch` naming which identity differs."""
-        sd: Dict[str, torch.Tensor] = policy.state_dict()
+        sd: Dict[str, torch.Tensor] = served_state_dict(policy)
         sig = state_signature(sd)
         if sig != self.signature:
             mine, theirs = dict((k, (s, d)) for k, s, d in self.signature), \

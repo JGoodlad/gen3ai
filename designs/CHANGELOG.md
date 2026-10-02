@@ -10514,3 +10514,20 @@ if a lazy build is reintroduced.
   A LOWER bound only: N = 256 with the X26 heads ON passed it (1,135 vs 4,009 MiB) and ran out of memory
   in its first update (10.19 GiB allocated on an 11.63 GiB card).
 
+
+## 2026-10-01 — an opponent load acquires nothing; opponents may differ in the ride-along heads alone (`gen3_opponent_inference_load_v1`; no model change)
+
+- The X26 FATAL: at N = 256 with the ride-along heads ON and `--self-play-start-wr 0`, the first pool
+  load ran `_setup_model` → `_ridealong_acquire` on the snapshot after the learner froze. It built
+  and pre-stepped an Adam over 111 ride-along tensors, and K6's step hook FATALed the run. The eval
+  sentinels shared that loader.
+- `InferenceMaskablePPO` (`instrumented_ppo/inference.py`) is the class an opponent load builds. It
+  holds policy weights only: no policy optimizer (built with an optimizer class that builds nothing;
+  the saved Adam state is dropped), no ride-along optimizer, no rollout buffer. It refuses
+  learn / train / save. `snapshot.load_opponent_snapshot` serves the pool and the sentinels, and
+  `load_foreign_opponent` is inference-only by default (`inference_only=False` only for the
+  consensus warm-start's student).
+- F-MEM: `ModelVersion.check_opponent_snapshot_compatible` ignores the declared ride-along keys
+  (`RIDEALONG_FLAGS`) in either direction; every other mismatch still refuses. The T2 slot identity
+  (`served_state_dict`, `forward_fingerprint`) ignores them too, and served replicas carry no heads.
+  The trainee's resume stays strict.

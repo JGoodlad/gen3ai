@@ -17,7 +17,7 @@ from pathlib import Path
 from sb3_contrib import MaskablePPO
 
 from agents.model.compile_opponents import maybe_compile_extractor
-from agents.model.snapshot import load_model_snapshot
+from agents.model.snapshot import load_opponent_snapshot
 from agents.model.model_version import ModelVersion
 from main.launcher.ipc import emit
 
@@ -303,7 +303,7 @@ class SnapshotPool:
         dst = self.pool_dir / f"snapshot_{step:012d}.zip"
         if src.resolve() != dst.resolve():
             shutil.copy2(src, dst)
-        # Shared arch tag next to the snapshots, so load_model_snapshot() does a REAL
+        # Shared arch tag next to the snapshots, so load_opponent_snapshot() does a REAL
         # compatibility check (every snapshot in this pool shares current_version).
         (self.pool_dir / "model_config.json").write_text(self._current_version.to_json())
         entry = SnapshotEntry(path=dst, step=step, pinned=False)
@@ -399,9 +399,10 @@ class SnapshotPool:
         else:
             if len(self._model_cache) >= self._cache_size:
                 self._model_cache.popitem(last=False)
-            loaded = load_model_snapshot(
+            # An OPPONENT load (gen3_opponent_inference_load_v1): inference-only, ride-along keys
+            # ignored — it runs at every promotion, AFTER the learner froze.
+            loaded = load_opponent_snapshot(
                 str(entry.path),
-                env=None,
                 current_version=self._current_version,
                 device=self._device,
             )
@@ -410,6 +411,8 @@ class SnapshotPool:
                                     hide_cuda=self._compile_hide_cuda,
                                     strict=self._compile_strict)
             self._model_cache[key] = loaded
+            emit(f"🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): "
+                 f"{entry.path.name} on {self._device}")
         return self._model_cache[key]
 
     # ── Resume state persistence (summary.json) ────────────────────────────
@@ -516,7 +519,7 @@ class SnapshotPool:
     def _write(self, model: MaskablePPO, step: int, pinned: bool) -> SnapshotEntry:
         path = self.pool_dir / f"snapshot_{step:012d}.zip"
         model.save(str(path))
-        # Drop a shared model_config.json next to the snapshots so load_model_snapshot()
+        # Drop a shared model_config.json next to the snapshots so load_opponent_snapshot()
         # — used by BOTH eval sentinels and the training-env opponents — performs a REAL
         # architecture compatibility check instead of silently skipping it (every snapshot
         # in a pool shares this run's current_version). Without it, a stale-arch snapshot

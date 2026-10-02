@@ -8,7 +8,7 @@ REAL battles in-process via the local BattleStream bridge (same mechanism as the
   1. **Frozen trainee + version-checked sentinel load.** A real ``MaskablePPO`` (full Gen3
      architecture) is frozen to disk and reloaded the way the worker reloads the trainee
      snapshot (``MaskablePPO.load``), while pool sentinels are reloaded via
-     ``load_model_snapshot`` against the pool's shared ``model_config.json`` using the
+     ``load_opponent_snapshot`` against the pool's shared ``model_config.json`` using the
      CURRENT-code version from ``current_model_version`` — the exact path the worker takes.
      A deliberately-incompatible version is rejected with ``ModelVersionError``.
 
@@ -46,7 +46,7 @@ from agents.inference.player import RLPlayer
 from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.policy import Gen3DualHeadMaskablePolicy
 from agents.model.model_version import ModelVersion, ModelVersionError
-from agents.model.snapshot import load_model_snapshot, current_model_version
+from agents.model.snapshot import load_opponent_snapshot, current_model_version
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.training.eval_callback import EvalRLPlayer
 from agents.training.snapshot_pool import SnapshotPool
@@ -133,7 +133,7 @@ def _build_model(mappings, device="cpu"):
 
 def _load_like_worker(mappings, td: Path):
     """Reproduce the worker's loads: frozen trainee (MaskablePPO.load) + version-checked
-    sentinel (load_model_snapshot vs current_model_version). Returns (trainee, sentinel)."""
+    sentinel (load_opponent_snapshot vs current_model_version). Returns (trainee, sentinel)."""
     model, version, ek = _build_model(mappings)
 
     # Pool sentinels live on disk; the trainee snapshot is frozen separately at trigger.
@@ -148,8 +148,8 @@ def _load_like_worker(mappings, td: Path):
     # Sentinel load — exactly the worker's path (current_model_version → version-checked).
     cur = current_model_version(mappings)
     sentinel_entry = pool.sentinel_entries(n=5)[0]
-    sentinel_model = load_model_snapshot(
-        str(sentinel_entry.path), env=None, current_version=cur, device="cpu",
+    sentinel_model = load_opponent_snapshot(
+        str(sentinel_entry.path), current_version=cur, device="cpu",
     )
     assert hasattr(sentinel_model, "policy"), "reloaded sentinel has no policy"
     print("  ✓ frozen-trainee load + version-checked sentinel load (matching arch)")
@@ -168,7 +168,7 @@ def _load_like_worker(mappings, td: Path):
     if mismatch_in_signature:
         raised = False
         try:
-            load_model_snapshot(str(sentinel_entry.path), env=None, current_version=bad, device="cpu")
+            load_opponent_snapshot(str(sentinel_entry.path), current_version=bad, device="cpu")
         except ModelVersionError:
             raised = True
         assert raised, "mismatched arch loaded silently — sentinel version guard is broken"

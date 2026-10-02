@@ -43,6 +43,12 @@ python -m main.launcher --restart-interval-hours 3 --device cuda --arch producti
   green at the launch commit. `ridealong/*` present in TensorBoard from the first update.
   `ridealong/disabled` = 0 at every read. If it reads 1, the heads hit a non-finite step and
   stopped: that read point is VOID for the heads, and the run itself is unaffected.
+- **Launch checklist — the self-play pool load: FIXED 2026-10-01** (`gen3_opponent_inference_load_v1`).
+  Before the fix, the first pool load ran the ride-along acquisition on the snapshot after the
+  learner froze, and K6 FATALed the run. In this run that would have happened at the self-play
+  seeding win rate, hours in. A pool snapshot that differed from the trainee in heads alone was also
+  refused (F-MEM). Opponent loads are now inference-only, and they may differ in the ride-along keys
+  alone. `opponent_inference_load_test` must be green at the launch commit.
 
 ## Overhead (GPU learner benchmark, `learner_benchmark run --device cuda --ridealong`)
 
