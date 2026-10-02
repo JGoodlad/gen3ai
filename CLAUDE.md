@@ -30,6 +30,22 @@ Architecture constants (embedding dims, layer sizes, etc.) are defined as module
 
 ---
 
+## 🧱 Standing rules for EVERY session and agent — the ONE list
+
+Briefs do not repeat these; an agent that breaks one has broken its brief. Detail lives where each points.
+
+1. **Never stop, restart or signal the `:8001` training server**; a server of your own binds a `9XXX` port (§ Showdown Server).
+2. **Kill only by explicit PID or process group** — never `pkill -f` / a blanket kill. **No unbounded foreground wait loop**: wrap it in `timeout N` (N below the tool timeout) or run it in the background. (A hook refuses both.)
+3. **Never put the literal trainer script name in a backgrounded argv** — it trips the live-run watchers.
+4. **Edits and commits only in a worktree; main is never dirty.** Land code only via `/gen3ai-ship` (delegated or typed): routine gate green, `python -m utils.push_guard`, never a soft reset onto a moved ref (§ Git Workflow). In a worktree, `export PYTHONPATH=$PWD/src` (§ Python Environment).
+5. **GPU only via `scripts/ops/gpu_lock.sh`** (holds ≤ ~20 min unless approved); a heavy one-off job under `scripts/ops/mem_cap.sh` (§ Running Tests).
+6. **`models/` is read-only** except your own new run dirs; **no `data/` change while a pinned run is live** (pins isolate code, not data).
+7. **Report every hazard, skip, or thing you could not verify as an explicit FINDING** — a reported hazard is a finding, not a footnote.
+8. **Checks pass or fail DETERMINISTICALLY**: exclude inputs within a rounding error of a decision boundary rather than tolerating them by chance (owner, 2026-10-01).
+9. **Out of scope ⇒ STOP and report**; never widen a unit or a closed list on your own.
+
+---
+
 ## 🚨 CRITICAL — running subagents / Workflows on this box
 
 **Two rules. Both are required; either alone fails.** Measured 2026-08-09: two workflows returned
