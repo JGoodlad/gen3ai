@@ -35,6 +35,7 @@ import time
 import numpy as np
 import pytest
 
+from utils.contention import scale_timeout
 from utils.paths import src_path
 from utils.rust_env import columns as C
 from utils.rust_env import ffi, proc
@@ -312,13 +313,20 @@ def test_gate_2_an_abort_takes_only_the_child(built):
 
 
 def test_gate_2_a_stopped_child_times_out_and_is_replaced(built):
-    with proc.ProcCore(_small_spec(), nan_poison=True, op_timeout=2.0) as core:
+    # The op bound applies to the SIGSTOP'd step ONLY (deletion pass P7): built with `op_timeout=2.0`,
+    # the setup `reset()` and the post-respawn `reset()` were bounded by the same unscaled 2 s, so a
+    # busy box could time out a HEALTHY child — a flake that is not the property under test. The
+    # stopped step's bound is scaled by the measured contention (`utils.contention`): it never
+    # answers, so a longer bound only waits longer, it cannot pass a broken timeout.
+    with proc.ProcCore(_small_spec(), nan_poison=True) as core:
         _stage(core)
         core.reset()
         pid = core.pid
+        core.op_timeout = scale_timeout(2.0)
         os.kill(pid, signal.SIGSTOP)
         with pytest.raises(proc.CoreProcessTimeout, match="KILLED") as ei:
             core.step()
+        core.op_timeout = None
         assert ei.value.respawned and core.pid != pid and _exited(pid)
         _stage(core)
         core.reset()
@@ -374,7 +382,7 @@ def test_gate_2_the_respawn_is_re_stamped(lib, built, tmp_path):
     """A binary swapped under a live core is REFUSED at the respawn — the death is still typed."""
     exe = tmp_path / "rust_env_proc"
     shutil.copy2(built, exe)
-    with proc.ProcCore(_small_spec(), binary=exe, nan_poison=True, startup_timeout=20) as core:
+    with proc.ProcCore(_small_spec(), binary=exe, nan_poison=True, startup_timeout=scale_timeout(20)) as core:
         forged, log = _forged_child(tmp_path, _foreign_stamp(lib))
         os.replace(forged, exe)
         os.kill(core.pid, signal.SIGKILL)
@@ -388,8 +396,9 @@ def test_gate_2_the_respawn_is_re_stamped(lib, built, tmp_path):
 
 
 def _exited(pid, wait=10.0):
-    """True once ``pid`` is gone or a zombie (an orphan's reaper is not ours to wait for)."""
-    t = time.monotonic() + wait
+    """True once ``pid`` is gone or a zombie (an orphan's reaper is not ours to wait for). ``wait``
+    is scaled by the measured contention (deletion pass P7)."""
+    t = time.monotonic() + scale_timeout(wait)
     while time.monotonic() < t:
         try:
             with open(f"/proc/{pid}/stat") as f:
@@ -528,12 +537,12 @@ def test_gate_4_a_foreign_child_is_refused_before_it_is_sent_a_byte(lib, built, 
     mine0 = _self_memfds()
     exe, log = _forged_child(tmp_path, _foreign_stamp(lib))
     with pytest.raises(S.StampMismatch, match="sources"):
-        proc.ProcCore(_small_spec(), binary=exe, nan_poison=True, startup_timeout=20)
+        proc.ProcCore(_small_spec(), binary=exe, nan_poison=True, startup_timeout=scale_timeout(20))
     assert log.read_bytes() == b"", "the spec (or anything else) was sent to a refused child"
     exe2, log2 = _forged_child(tmp_path, lib.rust_env_stamp().decode(), wire="0" * 16,
                                log=tmp_path / "wire_stdin.bin")
     with pytest.raises(proc.ProcLoadError, match="wire"):
-        proc.ProcCore(_small_spec(), binary=exe2, nan_poison=True, startup_timeout=20)
+        proc.ProcCore(_small_spec(), binary=exe2, nan_poison=True, startup_timeout=scale_timeout(20))
     assert log2.read_bytes() == b""
     assert _self_memfds() == mine0
 
