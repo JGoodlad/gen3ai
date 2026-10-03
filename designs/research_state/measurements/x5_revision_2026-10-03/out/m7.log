@@ -1,0 +1,10 @@
+A-A2: meter SE 1.21, sigma_run 7.98
+first two pooled sigma 2.97 95% CI [np.float64(1.55), np.float64(18.65)]
+all three seed/pin pairs pooled sigma 5.21 95% CI [np.float64(2.95), np.float64(19.41)]
+SD of E10 levels A,A2,A',B 4.84
+sig 2.5 panel 300 games/run (meter SE 2.9): panel NI power 0.54
+sig 2.5 panel 1200 games/run (meter SE 1.4): panel NI power 0.75
+sig 3.43 panel 300 games/run (meter SE 2.9): panel NI power 0.44
+sig 3.43 panel 1200 games/run (meter SE 1.4): panel NI power 0.56
+sig 4.8 panel 300 games/run (meter SE 2.9): panel NI power 0.32
+sig 4.8 panel 1200 games/run (meter SE 1.4): panel NI power 0.38

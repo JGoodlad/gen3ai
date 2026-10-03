@@ -1,0 +1,20 @@
+OBF z boundaries (one-sided 0.05, t = 3/8, 5/8, 1): C=1.7054 [2.7849 2.1572 1.7054]
+
+=== cross: t boundaries on df [4, 8, 14]: [5.493 2.613 1.833]
+  delta 3.5 sig 2.5 sig_int 0.0: typeI(no fut) 0.0506
+  delta 3.5 sig 2.5 sig_int 1.5: typeI(no fut) 0.0493
+  delta 3.5 sig 3.43 sig_int 0.0: typeI(no fut) 0.0518
+  delta 3.5 sig 3.43 sig_int 1.5: typeI(no fut) 0.0505
+  delta 3.5 sig 4.8 sig_int 0.0: typeI(no fut) 0.0513
+  delta 3.5 sig 4.8 sig_int 1.5: typeI(no fut) 0.0510
+
+=== paired: t boundaries on df [2, 4, 7]: [13.612  3.263  1.98 ]
+  delta 3.5 sig 2.5 sig_int 0.0: typeI(no fut) 0.0547
+  delta 3.5 sig 2.5 sig_int 1.5: typeI(no fut) 0.0548
+  delta 3.5 sig 3.43 sig_int 0.0: typeI(no fut) 0.0530
+  delta 3.5 sig 3.43 sig_int 1.5: typeI(no fut) 0.0537
+  delta 3.5 sig 4.8 sig_int 0.0: typeI(no fut) 0.0540
+  delta 3.5 sig 4.8 sig_int 1.5: typeI(no fut) 0.0544
+
+=== cross: simulation-calibrated boundaries
+  scale 1.0 typeI 0.05191

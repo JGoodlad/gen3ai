@@ -1,0 +1,41 @@
+FINAL t-bounds [5.761 2.683 1.874] nominal one-sided p ['0.002251', '0.01389', '0.04097']
+type I at small sigma (cell noise dominant):
+  sig 0.5 sig_int 0.0: 0.0325
+  sig 0.5 sig_int 1.5: 0.0241
+  sig 1.0 sig_int 0.0: 0.0431
+  sig 1.0 sig_int 1.5: 0.0365
+  sig 1.5 sig_int 0.0: 0.0458
+  sig 1.5 sig_int 1.5: 0.0418
+delta 3.5 sig 2.5 fut None: typeI 0.0476 power 0.818 (NI at looks [0.034 0.333 0.451]) fut-stop H1 0.000 H0 0.000 E[GPU-h] H1 34.8 H0 40.6
+delta 3.5 sig 2.5 fut 1.0: typeI 0.0458 power 0.806 (NI at looks [0.033 0.335 0.438]) fut-stop H1 0.050 H0 0.610 E[GPU-h] H1 33.6 H0 26.1
+delta 3.5 sig 2.5 fut 0.5: typeI 0.0316 power 0.697 (NI at looks [0.033 0.33  0.333]) fut-stop H1 0.240 H0 0.902 E[GPU-h] H1 29.2 H0 18.6
+delta 3.5 sig 3.43 fut None: typeI 0.0475 power 0.584 (NI at looks [0.018 0.188 0.378]) fut-stop H1 0.000 H0 0.000 E[GPU-h] H1 37.5 H0 40.5
+delta 3.5 sig 3.43 fut 1.0: typeI 0.0452 power 0.571 (NI at looks [0.019 0.188 0.364]) fut-stop H1 0.125 H0 0.609 E[GPU-h] H1 34.4 H0 26.1
+delta 3.5 sig 3.43 fut 0.5: typeI 0.0387 power 0.510 (NI at looks [0.018 0.188 0.304]) fut-stop H1 0.324 H0 0.847 E[GPU-h] H1 29.8 H0 20.1
+delta 3.5 sig 4.8 fut None: typeI 0.0480 power 0.373 (NI at looks [0.011 0.104 0.258]) fut-stop H1 0.000 H0 0.000 E[GPU-h] H1 38.9 H0 40.5
+delta 3.5 sig 4.8 fut 1.0: typeI 0.0471 power 0.364 (NI at looks [0.011 0.105 0.248]) fut-stop H1 0.225 H0 0.610 E[GPU-h] H1 33.6 H0 26.1
+delta 3.5 sig 4.8 fut 0.5: typeI 0.0417 power 0.335 (NI at looks [0.011 0.104 0.22 ]) fut-stop H1 0.403 H0 0.790 E[GPU-h] H1 29.4 H0 21.6
+delta 4.5 sig 2.5 fut None: typeI 0.0469 power 0.951 (NI at looks [0.058 0.516 0.377]) fut-stop H1 0.000 H0 0.000 E[GPU-h] H1 31.4 H0 40.6
+delta 4.5 sig 2.5 fut 1.0: typeI 0.0458 power 0.942 (NI at looks [0.058 0.514 0.371]) fut-stop H1 0.016 H0 0.609 E[GPU-h] H1 31.1 H0 26.1
+delta 4.5 sig 2.5 fut 0.5: typeI 0.0245 power 0.822 (NI at looks [0.058 0.504 0.26 ]) fut-stop H1 0.164 H0 0.944 E[GPU-h] H1 27.7 H0 17.4
+delta 4.5 sig 3.43 fut None: typeI 0.0479 power 0.776 (NI at looks [0.03  0.303 0.443]) fut-stop H1 0.000 H0 0.000 E[GPU-h] H1 35.4 H0 40.5
+delta 4.5 sig 3.43 fut 1.0: typeI 0.0463 power 0.762 (NI at looks [0.03  0.301 0.431]) fut-stop H1 0.063 H0 0.611 E[GPU-h] H1 33.9 H0 26.1
+delta 4.5 sig 3.43 fut 0.5: typeI 0.0328 power 0.664 (NI at looks [0.031 0.298 0.335]) fut-stop H1 0.256 H0 0.893 E[GPU-h] H1 29.4 H0 18.8
+delta 4.5 sig 4.8 fut None: typeI 0.0476 power 0.527 (NI at looks [0.016 0.162 0.348]) fut-stop H1 0.000 H0 0.000 E[GPU-h] H1 37.9 H0 40.6
+delta 4.5 sig 4.8 fut 1.0: typeI 0.0475 power 0.514 (NI at looks [0.016 0.162 0.336]) fut-stop H1 0.149 H0 0.608 E[GPU-h] H1 34.3 H0 26.1
+delta 4.5 sig 4.8 fut 0.5: typeI 0.0388 power 0.462 (NI at looks [0.017 0.162 0.283]) fut-stop H1 0.347 H0 0.833 E[GPU-h] H1 29.7 H0 20.5
+delta 5.5 sig 2.5 fut None: typeI 0.0474 power 0.992 (NI at looks [0.095 0.662 0.235]) fut-stop H1 0.000 H0 0.000 E[GPU-h] H1 28.3 H0 40.5
+delta 5.5 sig 2.5 fut 1.0: typeI 0.0458 power 0.989 (NI at looks [0.094 0.663 0.231]) fut-stop H1 0.004 H0 0.611 E[GPU-h] H1 28.2 H0 26.1
+delta 5.5 sig 2.5 fut 0.5: typeI 0.0172 power 0.893 (NI at looks [0.096 0.644 0.153]) fut-stop H1 0.105 H0 0.970 E[GPU-h] H1 26.0 H0 16.5
+delta 5.5 sig 3.43 fut None: typeI 0.0483 power 0.903 (NI at looks [0.046 0.432 0.425]) fut-stop H1 0.000 H0 0.000 E[GPU-h] H1 33.0 H0 40.5
+delta 5.5 sig 3.43 fut 1.0: typeI 0.0467 power 0.892 (NI at looks [0.045 0.432 0.415]) fut-stop H1 0.028 H0 0.610 E[GPU-h] H1 32.3 H0 26.1
+delta 5.5 sig 3.43 fut 0.5: typeI 0.0284 power 0.773 (NI at looks [0.047 0.423 0.304]) fut-stop H1 0.196 H0 0.927 E[GPU-h] H1 28.5 H0 17.9
+delta 5.5 sig 4.8 fut None: typeI 0.0486 power 0.676 (NI at looks [0.023 0.237 0.416]) fut-stop H1 0.000 H0 0.000 E[GPU-h] H1 36.6 H0 40.5
+delta 5.5 sig 4.8 fut 1.0: typeI 0.0464 power 0.661 (NI at looks [0.024 0.237 0.401]) fut-stop H1 0.093 H0 0.610 E[GPU-h] H1 34.3 H0 26.1
+delta 5.5 sig 4.8 fut 0.5: typeI 0.0365 power 0.582 (NI at looks [0.024 0.235 0.323]) fut-stop H1 0.295 H0 0.869 E[GPU-h] H1 29.6 H0 19.5
+PAIRED delta 3.5 sig 2.5: typeI 0.0496 power 0.748
+PAIRED delta 3.5 sig 3.43: typeI 0.0501 power 0.530
+PAIRED delta 3.5 sig 4.8: typeI 0.0500 power 0.344
+FIXED n=8 cross delta 3.5 sig 2.5: typeI 0.0490 power 0.839
+FIXED n=8 cross delta 3.5 sig 3.43: typeI 0.0497 power 0.611
+FIXED n=8 cross delta 3.5 sig 4.8: typeI 0.0498 power 0.399

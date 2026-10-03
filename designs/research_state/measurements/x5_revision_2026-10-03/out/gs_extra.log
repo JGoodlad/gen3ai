@@ -1,0 +1,6 @@
+sig 5.21 delta 3.5: typeI 0.0447 power 0.326 E[GPU-h] H1 33.2 H0 26.1
+sig 5.21 delta 4.5: typeI 0.0463 power 0.461 E[GPU-h] H1 34.2 H0 26.1
+sig 5.21 delta 5.5: typeI 0.0467 power 0.600 E[GPU-h] H1 34.4 H0 26.1
+sig 8.0 delta 3.5: typeI 0.0470 power 0.189 E[GPU-h] H1 31.3 H0 26.1
+sig 8.0 delta 4.5: typeI 0.0469 power 0.258 E[GPU-h] H1 32.5 H0 26.1
+sig 8.0 delta 5.5: typeI 0.0475 power 0.335 E[GPU-h] H1 33.3 H0 26.2

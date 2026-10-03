@@ -1,0 +1,4 @@
+scale 1.0: worst typeI 0.0525 t-bounds [5.493 2.613 1.833]
+scale 1.01: worst typeI 0.0502 t-bounds [5.625 2.648 1.854]
+scale 1.02: worst typeI 0.0480 t-bounds [5.761 2.683 1.874]
+scale 1.03: worst typeI 0.0461 t-bounds [5.902 2.719 1.895]
