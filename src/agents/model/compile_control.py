@@ -39,7 +39,10 @@ THE TWO SILENT FAILURES (first verified in torch 2.5.1 source; re-read on 2.8, b
     rejection a caller's `except Exception` would otherwise swallow.
 
 TORCH VERSION GUARD. The internals used here are pinned per version in `_SUPPORTED`; an unknown
-torch REFUSES (typed FATAL) rather than run a sentinel whose semantics may have moved. Each internal
+torch REFUSES (typed FATAL) rather than run a sentinel whose semantics may have moved. The guard
+(`require_supported_torch`: the version table + the source-hash tripwire) runs where a learner
+COMPILES — the compile preflight and every `CompileControl` — never at import: importing this module
+(the T2 service's graph counter does) checks nothing (P10-D). Each internal
 is exercised on the installed torch by `compile_control_test.py`'s CONTRACT tests. HEAD supports
 2.8.0+cu126 only (the 2.5.1 rows were deleted 2026-10-02), which locks with
 `torch.compiler.set_stance("fail_on_recompile")` (the `"stance"` mode), rejecting ANY cache miss at
@@ -64,6 +67,8 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tupl
 
 import torch
 
+from agents.model.compile_config import COMPILE_CONFIG as _COMPILE_CONFIG
+from agents.model.compile_config import config_row_hash  # noqa: F401 — re-exported (see below)
 from agents.model.compile_trainer import CompileTrainerError
 
 # EXACT torch version (local tag included) -> lock mechanism. "stance" =
@@ -79,8 +84,9 @@ _STANCE_REJECT_TEXT = "Detected recompile when torch.compile stance is 'fail_on_
 
 # THE SOURCE-HASH DRIFT TRIPWIRE (the `instrumented_ppo._verify_upstream_unchanged` pattern, for
 # torch): SHA256 of `inspect.getsource(...)` of EVERY torch internal this adapter's semantics rest
-# on, at the finest granularity `inspect` allows, per exact torch version. Verified at this module's
-# import (so in every process that uses --compile-trainer) and by `compile_control_test`. A HASH
+# on, at the finest granularity `inspect` allows, per exact torch version. Verified where a learner
+# compiles (`require_supported_torch`: the compile preflight and every `CompileControl`) and by
+# `compile_control_test` — never at import (P10-D). A HASH
 # says the code changed; the behavioural CONTRACT tests say the behaviour changed — both are kept.
 #   cache_size.*                  — how entries are counted against the limit, and the verdict
 #   guards.get_and_maybe_log_...  — the function that raises RecompileError on error_on_recompile
@@ -150,42 +156,11 @@ _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
     },
 }
 
-# THE COMPILE CONFIG ROW (gen3_donated_buffer_off_v1, Lane K1b, 2026-09-29) — the torch compile-config
-# values this adapter PINS, per exact torch version, keyed by their full dotted path; set at
-# `install()` (so before the gate's first compile and before the post-gate prewarm) and restored at
-# `uninstall()`.
-#
-#   torch._functorch.config.donated_buffer = False. Torch 2.6+ defaults it True (2.5.1: False):
-#   AOTAutograd then lets the compiled BACKWARD reuse the forward's saved activations IN PLACE,
-#   which is legal only when every backward through that graph is single-use. Our learner is not:
-#   the read-only probes (`grad_balance._flat_grads`, the per-term noise-scale probe)
-#   call `autograd.grad(..., retain_graph=True)` on the compiled graph. The donated
-#   indices are collected when the graph compiles (`aot_dispatch_autograd`) and cleared only if the
-#   FIRST backward through it retains the graph (`AOTDispatchAutograd.post_compile`'s lazy backward
-#   compile); the sentinel's prewarm does a plain `.backward()` first, so on torch 2.8 the first
-#   update's grad-balance probe raised "This backward function was compiled with non-empty donated
-#   buffers ..." (the K1 learner-bench A/B, 2026-09-29, both workers). Off, the backward keeps its
-#   saved tensors as eager does — same kernels, same numbers (`compile_control_test` pins the
-#   gradient bit-for-bit on vs off); measured cost on 2.8: none in time, +0.3% peak memory
-#   (`designs/research_state/measurements/m5_k1/`).
-#
-#   torch.compiler.config.cache_key_tag = "gen3_donated_buffer_off_v1" (2.8 only; 2.5.1 has no such
-#   config and never donated). Setting donated_buffer alone was NOT enough — measured 2026-09-29: the
-#   Inductor FX-graph cache key (`codecache.FxGraphHashDetails`) does not include the backward's
-#   donated indices, so a backward compiled WITH donation by any earlier torch-2.8 process (the
-#   crashed K1 A/B, any test that compiles a train graph without this adapter) is served from the
-#   shared on-disk cache to a donation-OFF compile of the same graph. Its kernels still write into
-#   the saved activations, so the probe's first `retain_graph` backward corrupted saved tensor
-#   [2048, 128] (version 1 -> 2) and the second raised "modified by an inplace operation"; with a
-#   fresh `TORCHINDUCTOR_CACHE_DIR` the same run completed. The tag is part of that key (and of the
-#   AOTAutograd cache key), so our graphs can never be served an artifact compiled under the
-#   default config. A kernel that reused a saved buffer WITHOUT an ATen op would not have bumped a
-#   version counter — i.e. this could have been SILENT — which is why the tag is not optional.
-#   Both readers are in the hashed row above (`FxGraphHashDetails.__init__` reads the tag).
-_COMPILE_CONFIG: Dict[str, Dict[str, Any]] = {
-    "2.8.0+cu126": {"torch._functorch.config.donated_buffer": False,
-                    "torch.compiler.config.cache_key_tag": "gen3_donated_buffer_off_v1"},
-}
+# THE COMPILE CONFIG ROW (gen3_donated_buffer_off_v1, Lane K1b) lives in `agents.model.compile_config`
+# (data only, no check at import — the hermetic cache's stamp reads its hash in EVERY trainer; P10-D).
+# Re-exported (imported at the top): `_COMPILE_CONFIG` IS that module's dict, `config_row_hash`
+# its function.
+
 
 # The logger `convert_frame` writes the cache-limit warning to (`logging.getLogger(__name__)`).
 _CONVERT_FRAME_LOGGER = "torch._dynamo.convert_frame"
@@ -272,6 +247,18 @@ def verify_torch_internals(version: Optional[str] = None) -> None:
             f"compile sentinel depends on changed source:\n{lines}\nACTION REQUIRED: {_RERECORD}")
 
 
+def require_supported_torch(version: Optional[str] = None) -> str:
+    """THE SENTINEL'S TORCH CHECK, run where a learner COMPILES and nowhere else (P10-D): the exact
+    version must have a lock mechanism (`lock_mode`) AND its recorded torch internals must be
+    unchanged (`verify_torch_internals`). Returns the lock mode; raises `CompileSentinelError` (a
+    `CompileTrainerError`, so the startup path exits FATAL_CONFIG with the reason). Called by the
+    compile preflight and by every `CompileControl` construction; importing this module checks
+    nothing, so a process that never compiles never trips it."""
+    mode = lock_mode(version)
+    verify_torch_internals(version)
+    return mode
+
+
 # --------------------------------------------------------------------------- thin dynamo shims
 def cache_size_limit() -> int:
     """dynamo's per-code-object entry limit (`recompile_limit` on torch >= 2.8, where
@@ -310,18 +297,6 @@ def apply_compile_config(version: Optional[str] = None) -> Dict[str, Any]:
         prev[path] = getattr(mod, key)
         setattr(mod, key, val)
     return prev
-
-
-def config_row_hash(version: Optional[str] = None) -> str:
-    """SHA256 of this torch version's `_COMPILE_CONFIG` row (canonical JSON), or of `null` for a
-    torch with no row (which `install()` refuses anyway). One of the three fields of the hermetic
-    compile cache's stamp (`agents.model.compile_cache`, K3): a change to what this adapter pins
-    changes what Inductor compiles, and the K1b fault proved the cache KEY can omit such a setting
-    — so a changed row WIPES a run's cache instead of trusting the key."""
-    import hashlib
-    import json as _json
-    row = _COMPILE_CONFIG.get(str(version or torch.__version__))
-    return hashlib.sha256(_json.dumps(row, sort_keys=True, default=repr).encode()).hexdigest()
 
 
 def restore_compile_config(prev: Dict[str, Any]) -> None:
@@ -442,7 +417,7 @@ class CompileControl:
 
     def __init__(self, emit: Optional[Callable[[str], None]] = None, *,
                  torch_version: Optional[str] = None):
-        self.mode = lock_mode(torch_version)
+        self.mode = require_supported_torch(torch_version)
         self._emit = emit
         self.phase = "new"
         self.installed = False
@@ -926,13 +901,15 @@ class TrainMsWatch:
         return out
 
 
-# --------------------------------------------------------------------------- import-time tripwire
-# Every process that imports this adapter is a --compile-trainer process (it is imported lazily by
-# `compile_trainer` only when the learner compiles), so verifying HERE covers every such process.
-# `CompileSentinelError` is a `CompileTrainerError`, so the startup path turns it into FATAL_CONFIG.
-if __name__ != "__main__":
-    verify_torch_internals()
-else:  # pragma: no cover — the re-record helper: `python -m agents.model.compile_control --record`
+# --------------------------------------------------------------------------- the re-record helper
+# NO import-time tripwire (P10-D, 2026-10-03). It used to run `verify_torch_internals()` here, on the
+# claim "every process that imports this adapter is a --compile-trainer process" — false: the
+# hermetic cache's stamp (every trainer, `--debug` included) and the T2 service's freeze guard
+# imported it, so every trainer died with an uncaught `CompileSentinelError` on any torch but the
+# recorded one. The check now runs where a learner COMPILES: `require_supported_torch` at the
+# compile preflight (`compile_trainer.preflight_compile_trainer`, FATAL_CONFIG) and at every
+# `CompileControl` construction (the gate / prewarm / lock path, and `install_rollout_region`).
+if __name__ == "__main__":  # pragma: no cover — `python -m agents.model.compile_control --record`
     import json as _json
     # the installed torch's own row if it has one, else the NEWEST row's qualnames (then edit the
     # renamed ones by hand — a '<missing: ...>' value names each)

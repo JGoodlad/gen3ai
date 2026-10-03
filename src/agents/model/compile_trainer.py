@@ -363,10 +363,16 @@ def preflight_compile_trainer(model: Any, enabled: bool, *,
     and prewarmed at `arm_compile_sentinel` (after grad checkpointing, the forward reads it).
 
     A no-op when `enabled` is False (nothing is touched, so an off run is byte-identical). Raises
-    `CompileTrainerError` on a policy without a features extractor, a non-CUDA learner, or a learner
+    `CompileSentinelError` on a torch the sentinel does not support or whose internals drifted
+    (`compile_control.require_supported_torch`), and `CompileTrainerError` on a policy without a features extractor, a non-CUDA learner, or a learner
     without the micro-step (`_micro_static`: the instrumented PPO's R1 declaration)."""
     if not enabled:
         return
+    # The sentinel's torch check FIRST — decidable before anything else, and the compile path is the
+    # only one that runs it (P10-D): an unsupported / drifted torch is a `CompileSentinelError`, i.e.
+    # the caller's FATAL_CONFIG with the reason, never an import-time crash.
+    from agents.model import compile_control as _cc
+    _cc.require_supported_torch()
     policy = getattr(model, "policy", None)
     fe = getattr(policy, "features_extractor", None)
     if fe is None:

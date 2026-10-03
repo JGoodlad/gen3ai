@@ -652,12 +652,14 @@ extractor eager already (the regions compile functions over the module and never
 so there is no eager-route wrapper any more — `eager_extractor` was deleted with the Python fork arm, its last caller); batch 1 is ALWAYS
 eager (`compile_trainer.EAGER_BATCHES`, `gen3_batch1_eager_v1` — torch 2.8 cannot lower a batch-1 CUDA graph) — the late-shape
 table in the doc lists every caller. An unknown torch or a drifted torch internal
-(`_SOURCE_HASHES`) REFUSES. TB: `compile/recompiles_after_lock` must stay 0.
+(`_SOURCE_HASHES`) REFUSES — checked WHERE A LEARNER COMPILES (`compile_control.require_supported_torch`:
+the compile preflight + every `CompileControl`, FATAL_CONFIG with the reason), never at import, so a
+non-compile run never trips it (P10-D). TB: `compile/recompiles_after_lock` must stay 0.
 🚨 **THE COMPILE CACHE IS THE RUN'S OWN (K3, `gen3_hermetic_compile_cache_v1`).** Every process of a
 run's tree compiles into `<run>/compile_cache/` (Inductor, Triton, T2's AOT packages), declared by
 `lifecycle._declare_compile_cache` the moment the run dir exists — EMPTY at a fresh launch or fork,
 reused only by the run's own restart under a matching stamp (commit, clean tree, torch, interpreter,
-`compile_control.config_row_hash()`), wiped otherwise; printed as `🧊 [CompileCache]`. Tests and
+`compile_config.config_row_hash()` — data only, so stamping never imports the sentinel), wiped otherwise; printed as `🧊 [CompileCache]`. Tests and
 every other compiling process get a fresh private dir on the REAL DISK (`$GEN3AI_SCRATCH`, else
 `~/.cache/gen3ai/tmp`; never tmpfs `/tmp`), deleted at exit, swept by PID if its owner died
 (`agents.model.compile_cache`). **A new

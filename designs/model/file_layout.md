@@ -52,7 +52,8 @@ table exists to prevent:
 | `extractor_forward.py` | `ExtractorForward` — `forward_internal`, the T0/T1 belief+physics stack, `_value_pooled_routes` |
 | `features_extractor.py` | the `Gen3FeaturesExtractor` class + `forward`; **the re-export HUB for every moved name** |
 | `compile_opponents.py` | `maybe_compile_extractor(model, enabled, label, hide_cuda)` — the CPU compile of ONE frozen extractor, used by the offline readers (split out of `snapshot.py`; the trainer-side opponent compile, its strict mode and revert quorum were deleted in U3) |
-| `compile_control.py` | `gen3_compile_sentinel_v1` — the ONLY runtime module that touches `torch._dynamo`: the gate → reset → prewarm → lock → stats phases, the cache-limit detector, the torch version table and the source-hash drift tripwire (`designs/training/compile_flags.md`) |
+| `compile_config.py` | the compile-config ROW `compile_control` pins per torch version (`COMPILE_CONFIG`: `donated_buffer=False` + the cache-key tag) and its hash, the hermetic cache stamp's third field — DATA only, no check at import (P10-D) |
+| `compile_control.py` | `gen3_compile_sentinel_v1` — the ONLY runtime module that touches `torch._dynamo`: the gate → reset → prewarm → lock → stats phases, the cache-limit detector, the torch version table and the source-hash drift tripwire, run by `require_supported_torch` where a learner compiles — never at import (`designs/training/compile_flags.md`) |
 
 ## The table LAYERING — `damage_tables` → `belief_tables` → `dex_ids`
 

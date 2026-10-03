@@ -423,7 +423,8 @@ kernels live in process memory). n = 1 round per part: a difference below ~10% i
 
 - **THE STAMP** (`<run>/compile_cache/stamp.json`): the code's commit (`utils.git.get_git_hash`, i.e. a
   pinned child's PIN) + whether `src/` is dirty + `torch.__version__` + the interpreter +
-  `compile_control.config_row_hash()` (SHA256 of the `_COMPILE_CONFIG` row). Any field that differs
+  `compile_config.config_row_hash()` (SHA256 of the `COMPILE_CONFIG` row — data only, in its own module so
+  stamping a cache never imports the sentinel; P10-D). Any field that differs
   WIPES; a DIRTY or unnamed tree NEVER reuses (a sha cannot name it); an unreadable stamp WIPES. The
   decision is printed at startup: `🧊 [CompileCache] CREATED | WIPED | REUSED <root> — <reason>`.
 - **WHERE IT IS DECLARED.** `main.train.lifecycle._declare_compile_cache`, called in
@@ -1127,8 +1128,11 @@ contention (an eval burst, a peer job) has the same signature.
 `ConvertFrame.__call__` (the soft-fail swallow), `ConvertFrameAssert.__call__` + `Tracker` +
 `eval_frame._debug_get_cache_entry_list` (the per-code read), `callback.CompilationCallbackHandler`,
 `OutputGraph.compile_and_call_fx_graph` (the graph counter), `torch._dynamo.reset`,
-`torch.compiler.reset`). Verified at the adapter's import — every `--compile-trainer` process — and
-in the routine tier; a mismatch raises naming each drifted qualname with both hashes. Re-record with
+`torch.compiler.reset`). Verified WHERE A LEARNER COMPILES — `compile_control.require_supported_torch` (the
+version table + this tripwire) at the compile preflight and at every `CompileControl` construction, a
+failure the startup path's FATAL_CONFIG with the reason — and in the routine tier; NEVER at import (P10-D,
+2026-10-03: the import-time check ran in EVERY trainer through the cache stamp and the T2 service's graph
+counter, so a non-compile run died uncaught on any torch but the recorded one; `compile_sentinel_scope_test`); a mismatch raises naming each drifted qualname with both hashes. Re-record with
 `python -m agents.model.compile_control --record` AFTER re-reading the functions and re-running
 (3) the behavioural CONTRACT tests in `compile_control_test.py` (the warning's text and logger, the
 raw `RecompileError`, the start callback, the counter / entry list / reset, the per-code-object

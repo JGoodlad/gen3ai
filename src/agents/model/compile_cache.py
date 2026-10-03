@@ -7,7 +7,7 @@ shared `/tmp/torchinductor_<user>` (12 GB on tmpfs, i.e. RAM) used by every run,
 benchmark and test, plus the opponents' CPU compile in a second shared dir
 (`/tmp/gen3ai_inductor_cache`). The 2026-09-29 K1b fault proved a cache KEY can omit a setting that
 changes the artifact (a backward compiled WITH donated buffers was served to a donation-OFF compile;
-`compile_control._COMPILE_CONFIG`'s comment has the story) — so the rule is NOT "trust the key".
+`compile_config.COMPILE_CONFIG`'s comment has the story) — so the rule is NOT "trust the key".
 
 THE RULE (one decision, made once per process, BEFORE the first compile):
 
@@ -18,7 +18,7 @@ THE RULE (one decision, made once per process, BEFORE the first compile):
   `t2_aot/` (T2's AOTInductor packages). It is created EMPTY at a FRESH launch or a FORK, and reused
   only by the run's OWN restarts (`--model` = a checkpoint this run wrote), and only when the STAMP
   matches: the code's commit (a dirty tree never reuses — a sha cannot name it), the torch version,
-  and `compile_control.config_row_hash()`. Any mismatch WIPES it. Children inherit the three
+  and `compile_config.config_row_hash()`. Any mismatch WIPES it. Children inherit the three
   environment variables, so every process of the run's tree compiles into the run's own cache.
 * ANY OTHER PROCESS that compiles (a test, a benchmark, the prober, an offline meter) gets a FRESH
   private temp dir (`ensure_hermetic_cache`, called at every compile site), deleted when the process
@@ -99,10 +99,14 @@ def _code_identity() -> Dict[str, Any]:
 
 def cache_stamp() -> Dict[str, Any]:
     """What a cache must have been written under to be reused: code commit + torch version +
-    `compile_control`'s config-row hash (+ the interpreter, so two conda envs never meet)."""
+    the compile-config row's hash (+ the interpreter, so two conda envs never meet).
+
+    Read from `compile_config` (data only), NEVER from `compile_control`: every trainer stamps its
+    cache, compiled or not, and the adapter's torch check belongs to the compile path alone (P10-D —
+    importing it here crashed every trainer on any torch but the recorded one)."""
     import torch
 
-    from agents.model.compile_control import config_row_hash
+    from agents.model.compile_config import config_row_hash
     return {"schema": SCHEMA, **_code_identity(), "torch": str(torch.__version__),
             "python": sys.executable, "config_row_sha": config_row_hash()}
 
