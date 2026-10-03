@@ -369,7 +369,7 @@ def test_the_signal_callback_is_registered_unconditionally():
     resolve_config(args, p)
     args.debug_eval, args.debug = False, True     # skip the eval callback (needs a server/pool)
     bundle = build_callbacks(
-        args=args, model_dir=tempfile.mkdtemp(prefix="signal_metrics_test_"), server_config=None, annealing_mode=False,
+        args=args, model_dir=tempfile.mkdtemp(prefix="signal_metrics_test_"), annealing_mode=False,
         _pool=None, _fixed_opponents=None, _bot_weight_vec=None, OPPONENT_CLASSES=(),
         _specialist_team_str=None, _promote_threshold=0.6, _heuristic_floor=0.0,
         _sp_start_wr=0.5, _sp_full_wr=0.9)

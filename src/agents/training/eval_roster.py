@@ -30,7 +30,7 @@ _EVAL_CONCURRENCY = 100
 # on contention: extra Node sim procs on the bridge / extra load on the shared
 # Showdown server, both fighting training's CPU-saturated env workers. Overlap
 # measured slower, not faster. Cross-opponent parallelism still comes from the
-# `--eval-workers` (3) subprocesses work-stealing the pool; each plays serially.
+# eval-worker subprocesses (3, the deleted `--eval-workers` default) work-stealing the pool; each plays serially.
 _EVAL_SUBPROCESS_CONCURRENCY = 1
 
 # Flat eval schedule — one cadence, one game count, applied uniformly to every bot

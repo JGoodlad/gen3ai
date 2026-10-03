@@ -5,7 +5,7 @@ the GPU lock, the Python arm does not touch the GPU):
 
 * ``--arm python`` — TODAY's live eval cycle: the self-play callback's plan (the nine roster bots + the
   sentinels, ``--eval-games`` each, ``--eval-shard-games`` units) played by ``--workers`` work-stealing
-  ``main.eval_worker`` processes (the production count is ``--eval-workers`` x 2 = 10 under
+  ``main.eval_worker`` processes (the production count WAS 5 x 2 = 10 under
   ``--self-play``), CPU, ``--compile-opponents``' compiled extractor, the rust bridge, no seed — exactly
   what ``SelfPlayCallback._launch_eval`` spawns. Wall = spawn → every worker exited.
 * ``--arm rust`` — the same plan on the Rust eval core: T2 (``graph`` on CUDA, the trainee's eval slot

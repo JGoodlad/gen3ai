@@ -27,12 +27,9 @@ from main.launcher.checkpoint import (
     find_latest_checkpoint,
     run_dir_for_checkpoint,
     archive_anchored_args,
-    child_uses_bridge,
-    _apply_default_showdown_port,
     _find_model_arg,
     _insert_or_replace_model_arg,
     _insert_or_replace_run_dir_arg,
-    _peek_arg,
     resolve_launch_run_dir,
     resolve_fork_resume_model,
     resume_child_args,
@@ -432,14 +429,9 @@ def _prepare_session(
     if _torch.required is not None:
         state.add_event(f"   ↳ run torch {_torch.required} ({_torch.required_source})")
 
-    if child_uses_bridge(child_args):
-        # In-process BattleStream transport for training AND eval — no server, the port is unused.
-        _impl = _peek_arg(child_args, "--use-bridge") or "rust"   # matches the trainer default
-        state.add_event(f"🌉 Transport: in-process bridge [{_impl}] (no Showdown server)")
-    else:
-        showdown_port = _peek_arg(child_args, "--showdown-port", type_=int)
-        if showdown_port is not None:
-            state.add_event(f"🔌 Showdown server :{showdown_port}")
+    # In-process BattleStream transport for training AND eval — no Showdown server (deletion pass P11
+    # removed the websocket branch and `--showdown-port`: nothing HEAD's trainer accepts connects to one).
+    state.add_event("🌉 Transport: in-process bridge [rust] (no Showdown server)")
 
     if pin:
         if pin_decision is not None and pin_decision.source == "pin_commit":
@@ -1087,10 +1079,6 @@ def main() -> None:
         parser.error("--pin-commit and --no-pin are mutually exclusive")
 
     child_args = _strip_launcher_args(sys.argv[1:])
-    # Launcher sessions are long-lived: default to the dedicated training server (8001)
-    # so dev-server churn on 8000 can't drop every worker's connection mid-run. An
-    # explicit --showdown-port still wins.
-    child_args = _apply_default_showdown_port(child_args)
 
     # --dry-run returns BEFORE anything with an effect: before the niceness change, before
     # `_prepare_session`'s makedirs / worktree / prune, before any child. That ordering is the

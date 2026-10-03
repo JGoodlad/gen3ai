@@ -407,9 +407,9 @@ next to `--no-compile-*` — the launcher parser and the trainer's are `allow_ab
 P11, `main/train/parser_abbrev_test.py`, so an abbreviation is refused instead of matched).
 `compile_flag_forwarding_test.py` pins both against the REAL parser —
 `build_launcher_parser()` was extracted from `main()` for exactly that, so the test interrogates the
-parser rather than a hand-copied twin. Same failure class as `default_port_test.py`, mirrored: that
-one catches a launcher-injected default drifting from the trainer's, this one catches the launcher
-silently swallowing a child flag.
+parser rather than a hand-copied twin. It catches the launcher silently swallowing a child flag
+(its sibling `default_port_test.py`, which caught a launcher-injected default drifting from the
+trainer's, went with the injection in deletion pass P11).
 
 ## Validating a launch without launching — `--dry-run`
 
@@ -893,28 +893,13 @@ so anything else that needs the run archive must reach across rather than look b
 `utils.git.get_main_repo_root()` reads); see the root `CLAUDE.md` § *Path discovery*. Four tests
 used to encode this box's absolute path instead and therefore skipped forever everywhere else.
 
-## Showdown port default
+## Showdown port — GONE (deletion pass P11)
 
-⚠️ **The port default is now MOSTLY UNREACHABLE, because the transport default inverted.**
-`--use-bridge` defaults to `rust`, so a launcher run with no transport flag is a BRIDGE run and
-gets no port at all. The port logic below applies only to an explicit `--use-bridge off`, which the trainer's parser now REFUSES at parse time (`--use-bridge` has ONE legal value, `rust`, since U3) — so the `off` branch is unreachable for a real trainer launch; the launcher's own peeking code (`child_uses_bridge`, `_apply_default_showdown_port`) is untouched and still implements it.
-
-**Bridge mode is port-free, and it is the default.** `child_uses_bridge` treats an ABSENT
-`--use-bridge` as a bridge run (matching `train_rl_agent`'s own default — a drift between the two
-is what `default_port_test.py` now exists to catch), so `_apply_default_showdown_port` injects
-**no** default port and the events panel shows `🌉 Transport: in-process bridge [rust] (no Showdown
-server)` instead of a port. The bridge connects to no server at all (training AND eval run
-in-process), so any `--showdown-port` passed alongside it is inert — built into `server_config` but
-never connected to, so it cannot even disturb the live :8001 server.
-
-**When `--use-bridge off` is passed** (the launcher still implements this; the trainer then refuses it), the launcher **defaults `--showdown-port` to 8001**
-(`DEFAULT_TRAINING_SHOWDOWN_PORT` in `launcher/checkpoint.py`, injected in
-`launcher/__init__.main()` via `_apply_default_showdown_port`) so a long websocket session never
-rides on the shared dev server (8000), where a routine dev `npm run stop` would drop every worker's
-connection at once and the connection guard would crash the run. An explicit `--showdown-port` (any
-spelling) always wins; the resolved port shows in the TUI events panel (`🔌 Showdown server :8001`).
-This default lives **only** here — `train_rl_agent.py` run directly still defaults to 8000.
-
-Guarded by `default_port_test.py` (both directions: absent flag ⇒ bridge ⇒ no port; explicit `off`
-⇒ the 8001 injection). See the root `CLAUDE.md` → In-process bridge transport, and the
-port-threading detail in `src/agents/training/CLAUDE.md`.
+The launcher injects **no** `--showdown-port` and the trainer has no such flag: `--use-bridge` is `rust`-only
+(U3), training AND eval run in-process, and nothing HEAD's trainer accepts connects to a Showdown server. The events
+panel and `--dry-run` print `🌉 Transport: in-process bridge [rust] (no Showdown server)`. `DEFAULT_TRAINING_SHOWDOWN_PORT`,
+`child_uses_bridge`, `_apply_default_showdown_port` and `default_port_test.py` were deleted with the flag (the websocket
+branch they served was already unreachable). A PINNED resume of a pre-rust-bridge (websocket) run no longer gets the
+launcher's `:8001` default — it runs its own commit's trainer with that trainer's default (`:8000`); the training
+server on `:8001` is untouched (root `CLAUDE.md` § Showdown Server). The root `CLAUDE.md` → In-process bridge transport
+has the transport.

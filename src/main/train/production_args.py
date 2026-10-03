@@ -29,7 +29,7 @@ def production_args():
     import copy
 
     a = copy.deepcopy(_resolved_production_args())
-    a.use_bridge, a.bridge_impl, a.use_showdown_bridge = "rust", "rust", True
+    a.use_bridge = "rust"
     return a
 
 

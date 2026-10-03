@@ -331,8 +331,8 @@ targets that gate nothing, and every row names which clause decided it beside th
 was decided against. G1 and G4 are unchanged.
 
 `PerOpponentEvalCallback` (non-self-play path) does **not** eval in-process. On each
-scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-workers`
-(default 5) `main.eval_worker` subprocesses that **work-steal at battle granularity** from a
+scheduled step it snapshots the live weights (`model.save`) and spawns the eval workers
+(default 5; `--eval-workers`, deleted in P11 — production runs the in-process Rust eval core) `main.eval_worker` subprocesses that **work-steal at battle granularity** from a
 shared pool, load the **frozen** snapshot, and play against the shared Showdown server (or the
 in-process bridge) **without pausing training**. **The trainee's eval teambuilder follows the
 run's `--trainee-team` pin** (`trainee_team_str` in the worker cfg → `agents.training.eval_teams.build_trainee_tb`, shared by the Python eval worker and the Rust eval core;
@@ -560,11 +560,11 @@ in the trainer). Behaviors:
 
 | Flag | Default | Notes |
 |------|---------|-------|
-| `--eval-workers` | `5` | Eval subprocesses per cycle; work-steal **shard units** from a shared pool. Capped at the unit count (≈ opponents × shards-per-opponent, so sharding lets the full pool help). Self-play doubles this (→ `10`) since sentinel matchups run the model for both players. |
+| ~~`--eval-workers`~~ (DELETED, P11) | `5` | Eval subprocesses per cycle; work-steal **shard units** from a shared pool. Capped at the unit count (≈ opponents × shards-per-opponent, so sharding lets the full pool help). Self-play doubles this (→ `10`) since sentinel matchups run the model for both players. |
 | `--eval-games` | `None` (=`EVAL_GAMES`, 100) | Games per **opponent** per eval cycle. Raise for tighter sentinel/promotion CIs (200 → ±0.069) at proportionally more eval compute — work-stolen across the workers, off the training path. Shards/opponent = eval-games / `--eval-shard-games`. |
 | `--eval-shard-games` | `25` | Games per work-steal **shard unit** (battle-level work-stealing). Each opponent's `EVAL_GAMES` split into chunks any idle worker drains → the long tail collapses to one shard (≈4-shards-per-opponent default = ~4× shorter tail). Smaller = finer tail collapse but more player builds / (on websocket) more connection churn — the bridge is preferred for fine shards. `>= EVAL_GAMES` ⇒ one shard/opponent = the original opponent-level behaviour. Aggregation is exact (Σwon/Σfinished etc.); see the package below. |
-| `--eval-device` | `cpu` | Device for eval-worker inference. `cpu` decouples eval from the training GPU. |
-| `--eval-concurrency-per-worker` | `1` | Battles each worker overlaps **within** its claimed opponent (single-thread asyncio latency-hiding — NOT multi-core). `1` = today's sequential play. Threaded to the constructor's `eval_concurrency` → `cfg["concurrency"]` → `run_local_battles(concurrency=)` (bridge) / the player's `max_concurrent_battles` (websocket). See the concurrency note below. |
+| ~~`--eval-device`~~ (DELETED, P11) | `cpu` | Device for eval-worker inference. `cpu` decouples eval from the training GPU. |
+| ~~`--eval-concurrency-per-worker`~~ (DELETED, P11) | `1` | Battles each worker overlaps **within** its claimed opponent (single-thread asyncio latency-hiding — NOT multi-core). `1` = today's sequential play. Threaded to the constructor's `eval_concurrency` → `cfg["concurrency"]` → `run_local_battles(concurrency=)` (bridge) / the player's `max_concurrent_battles` (websocket). See the concurrency note below. |
 | `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~27MB each; default ≈270MB) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
 | `--keep-eval-trace-steps` | `0` (= **KEEP ALL**) | The trainer keeps only the N most-recent eval **step dirs** under `eval_traces/` after each cycle. 🚨 **Was `20`, and that default deleted arm A's 10M traces — the ladder's registered A@10M comparator — before anyone read them** (`gen3_keep_all_eval_traces_v1`, 2026-09-08). ~55 MB/cycle, ~3 GB for a 75M run. Pass a positive N to cap it again; `python -m main.prober.groom` is the manual fallback. |
 | `--keep-stalls` | `50` | Each cycle keep only the N most-recent `stalls/stall_*.html` replays (`0` = keep all). A self-play run writes thousands (~80 KB each); this caps the dir. `artifact_retention.py`; CLI fallback `python -m agents.training.artifact_retention`. |
@@ -587,7 +587,7 @@ prober's offline recompute (guarded by `td_residual_parity_fuzz_test.py`). More-
 got blindsided more often — the **leading indicator for the critic-coverage obs work** (it moves in a
 cycle or two, where saturated win-rate / gate-pinned `win_rate_vs_pool` / wide-CI ELO don't).
 
-**Intra-worker concurrency (`--eval-concurrency-per-worker`, default `1` = sequential).** Each
+**Intra-worker concurrency (the flag `--eval-concurrency-per-worker` was deleted in P11; every production path runs `1` = sequential).** Each
 worker overlaps up to N battles **within** its claimed opponent. This is **single-thread asyncio
 latency-hiding, NOT multi-core** — everything (the obs build + PyTorch forward in `choose_move`, the
 bridge/server I/O) runs on the one `POKE_LOOP` thread with BLAS pinned (`OMP/MKL=1`), so concurrency
@@ -602,7 +602,7 @@ cores (idle box / the cycle tail)** it's a clean ~2×. So the live gain runs bet
 depending on how saturated the box is during the eval window; default stays `1` (opt-in). It does
 **not** use idle cores at the tail — that needs *process-level* sharding (chunk one opponent across
 workers); concurrency stacks multiplicatively on top of that (≈`2 × #shards`). Cross-opponent
-parallelism is still the `--eval-workers` (5) subprocesses work-stealing the pool.
+parallelism is still the (5) eval-worker subprocesses work-stealing the pool.
 
 ### Battle-level work-stealing (`eval_sharding/` package)
 

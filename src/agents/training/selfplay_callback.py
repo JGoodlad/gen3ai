@@ -7,7 +7,7 @@ workers, and — at collect — does one cheap `opponent_default_stats` IPC. Eve
 (battles, sentinel model loads, inference) runs in the worker processes.
 
   1. **Launch** (trigger step): `model.save` the live weights to disk and spawn
-     `--eval-workers` `main.eval_worker` subprocesses that **work-steal** BOTH the bot
+     N `main.eval_worker` subprocesses that **work-steal** BOTH the bot
      roster AND up to 5 pool sentinels from one shared pool. Training continues immediately.
   2. **Collect** (a later poll, when all workers finish): merge per-opponent +
      per-sentinel results → ``win_rate_vs_bots`` / ``win_rate_vs_pool`` /

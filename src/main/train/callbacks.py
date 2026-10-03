@@ -59,7 +59,7 @@ def _value_sidecar_on(args) -> bool:
     return is_winprob(getattr(args, "critic", None) or CRITIC_DEFAULT)
 
 
-def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
+def build_callbacks(*, args, model_dir, annealing_mode, _pool,
                     _fixed_opponents, _bot_weight_vec, OPPONENT_CLASSES,
                     _specialist_team_str, _promote_threshold,
                     _heuristic_floor, _sp_start_wr, _sp_full_wr) -> CallbackBundle:
@@ -258,10 +258,6 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             eval_freq=args.eval_freq,
             snapshot_ladder_games=args.snapshot_ladder_games,
             model_dir=model_dir,
-            server_config=server_config,
-            showdown_port=args.showdown_port,
-            use_showdown_bridge=args.use_showdown_bridge,
-            bridge_impl=args.bridge_impl,
             best_model_save_path=os.path.join(model_dir, "best_model"),
             promote_threshold=_promote_threshold,
             self_play_temp=args.self_play_temp,
@@ -273,14 +269,6 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             heuristic_floor=_heuristic_floor,
             self_play_start_wr=_sp_start_wr,
             self_play_full_wr=_sp_full_wr,
-            # Self-play eval is ~2x the inference of bot eval — the sentinel matchups
-            # (--n-sentinels) run the model for BOTH players (trainee + sentinel), vs bot matchups
-            # where only the trainee infers. So double the work-stealing pool to keep wall-clock
-            # comparable (5 bot-eval workers → 10 here); raise --eval-workers too if --n-sentinels
-            # is pushed high so the extra sentinel shards still drain promptly.
-            n_workers=args.eval_workers * 2,
-            eval_device=args.eval_device,
-            eval_concurrency=args.eval_concurrency_per_worker,
             eval_shard_games=args.eval_shard_games,
             forensic_quota=ForensicQuota(win=args.forensic_win_quota,
                                          loss=args.forensic_loss_quota,
@@ -325,18 +313,11 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             model_dir=model_dir,
             eval_games=args.eval_games,
             eval_freq=args.eval_freq,
-            server_config=server_config,
             best_model_save_path=os.path.join(model_dir, "best_model"),
-            n_workers=args.eval_workers,
-            eval_device=args.eval_device,
-            eval_concurrency=args.eval_concurrency_per_worker,
             eval_shard_games=args.eval_shard_games,
             forensic_quota=ForensicQuota(win=args.forensic_win_quota,
                                          loss=args.forensic_loss_quota,
                                          draw=args.forensic_draw_quota),
-            showdown_port=args.showdown_port,
-            use_showdown_bridge=args.use_showdown_bridge,
-            bridge_impl=args.bridge_impl,
             resume_eval_metadata=_resume_meta,
             keep_eval_snapshots=args.keep_eval_snapshots,
             keep_eval_trace_steps=args.keep_eval_trace_steps,

@@ -152,8 +152,7 @@ async def main():
                      "(single-team pin) — use one or the other.")
 
     _cfg = resolve_config(args, parser)
-    server_config, annealing_mode, log_level = (
-        _cfg.server_config, _cfg.annealing_mode, _cfg.log_level)
+    annealing_mode, log_level = _cfg.annealing_mode, _cfg.log_level
 
     # --- Phase 2: teams, the matchup, and every opponent source ---
     _mu = build_matchup_and_opponents(args)
@@ -301,7 +300,7 @@ async def main():
 
     # --- Phase 4: everything that runs during learn() ---
     _cb = build_callbacks(
-        args=args, model_dir=model_dir, server_config=server_config,
+        args=args, model_dir=model_dir,
         annealing_mode=annealing_mode, _pool=_pool, _fixed_opponents=_fixed_opponents,
         _bot_weight_vec=_bot_weight_vec, OPPONENT_CLASSES=OPPONENT_CLASSES,
         _specialist_team_str=_specialist_team_str, _promote_threshold=_promote_threshold,

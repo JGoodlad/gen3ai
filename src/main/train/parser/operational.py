@@ -31,10 +31,6 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "(non-debug) runs, which always eval.")
     parser.add_argument("--n-envs", type=int, default=32, help="Number of parallel environments")
     parser.add_argument("--device", type=str, default="auto", help="Device to use (cpu, cuda, or auto)")
-    parser.add_argument("--showdown-port", type=int, default=None,
-                        help="Local Showdown server port (default 8000). Sets the port for the trainee, "
-                             "eval, and self-play clients. Start the server on the matching port, "
-                             "e.g. npm run showdown -- <port>.")
     parser.add_argument("--use-bridge", type=retired_choice(
                             "--use-bridge", ("rust",),
                             "the Python env core was deleted — deletion pass U3, 2026-10-02 — and with it the "

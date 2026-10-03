@@ -19,7 +19,7 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
 - **Eval + promotion are NON-BLOCKING (frozen-snapshot subprocess), mirroring
   `PerOpponentEvalCallback`.** Self-play eval no longer runs in-process on the training thread.
   On a trigger step `SelfPlayCallback` freezes the live weights to disk (`model.save`) and
-  spawns `--eval-workers`×2 (default 10) `main.eval_worker` subprocesses that **work-steal BOTH
+  spawns 2× the eval workers (default 10; `--eval-workers`, deleted in P11) `main.eval_worker` subprocesses that **work-steal BOTH
   the bot roster AND up to `--n-sentinels` pool sentinels** (default 5; all split into shard units)
   from one shared pool (the
   worker's `_play_unit` SENTINEL branch plays the frozen trainee greedy vs each sentinel stochastic);

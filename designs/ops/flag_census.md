@@ -13,9 +13,9 @@
 | | trainer flags | launcher flags | total |
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
-| DELETED by P11 so far | 8 | 0 | 8 |
-| NOW | 194 | 9 | 203 |
-| verdicts at the inventory commit | KEEP 163 · DELETE 4 · ONE-VALUED 8 · NEEDS-OWNER 19 | KEEP 9 | |
+| DELETED by P11 so far | 12 | 0 | 12 |
+| NOW | 190 | 9 | 199 |
+| verdicts at the inventory commit | KEEP 163 · DELETE 0 · ONE-VALUED 8 · NEEDS-OWNER 19 | KEEP 9 | |
 | ENDING | _filled in by the last batch_ | | |
 
 ## 1. The deletions this pass makes
@@ -30,13 +30,13 @@
 * `--warmstart-consensus` (B3) — consensus DISTILLATION of teacher exploiters into an init (`warmstart.py`); exploiters are opponents never teachers (L3); 0 of 275 recorded runs typed it
 * `--warmstart-battles` (B3) — the warm start's battle count
 * `--warmstart-bc-steps` (B3) — the warm start's BC steps
+* `--showdown-port` (B4) — `--use-bridge rust` is the only transport: no server, the `server_config` was only stored; the launcher's default injection went with it
+* `--eval-workers` (B4) — the Python eval-worker pool size; read only on the `env_core != "rust"` eval branch no production run reaches
+* `--eval-device` (B4) — the same Python eval worker pool
+* `--eval-concurrency-per-worker` (B4) — the same Python eval worker pool
 
 **Planned, not yet shipped:**
 
-* `--showdown-port` — only reader is the Python eval workers' `port` (never reached under the rust eval core) and `config.py`'s `server_config`; the launcher appends a default `--showdown-port 8001` that nothing consumes
-* `--eval-workers` — read only by `spawn_eval_workers` on the Python eval path (`env_core != "rust"`), which no production run reaches (manifest finding 12(c))
-* `--eval-device` — the same Python eval worker pool
-* `--eval-concurrency-per-worker` — the same Python eval worker pool
 
 ## 2. NEEDS-OWNER
 
@@ -86,7 +86,6 @@
 | `--debug-eval` | false | 0 / 0 | the root `CLAUDE.md` smoke names it as the way to exercise the eval path; read by `callbacks._run_eval` | **KEEP** |
 | `--n-envs` | 32 | 268 / 39 | `recipe.sizing.n_envs` (256) in `--arch production` | **KEEP** |
 | `--device` | auto | 272 / 39 | every launch (`--device cuda`) | **KEEP** |
-| `--showdown-port` | — | 0 / 0 | only reader is the Python eval workers' `port` (never reached under the rust eval core) and `config.py`'s `server_config`; the launcher appends a default `--showdown-port 8001` that nothing consumes | **DELETE** |
 | `--use-bridge` | rust | 186 / 34 | the only legal value is `rust` (`retired_choice`, deletion pass U3); read only by `production_args.py` | **ONE-VALUED** |
 | `--tb-inherit` | true | 0 / 0 | a fork copies its parent's scalar TB events (`tb_inherit.py`, `main.tb_inherit`, root `CLAUDE.md`'s fork notes); `--no-tb-inherit` is the documented fleet opt-out | **KEEP** |
 | `--seed` | 42 | 172 / 39 | every launch (`recipe`-adjacent reproducibility; the Rust core's `segment_seed`) | **KEEP** |
@@ -232,9 +231,6 @@
 
 | flag | default | typed (all / last 40) | live user | verdict |
 |---|---|---|---|---|
-| `--eval-workers` | 5 | 259 / 34 | read only by `spawn_eval_workers` on the Python eval path (`env_core != "rust"`), which no production run reaches (manifest finding 12(c)) | **DELETE** |
-| `--eval-device` | cpu | 184 / 34 | the same Python eval worker pool | **DELETE** |
-| `--eval-concurrency-per-worker` | 1 | 185 / 34 | the same Python eval worker pool | **DELETE** |
 | `--eval-shard-games` | 25 | 184 / 34 | sizes the Rust eval core's shard units (`rust_eval`, `training_runbook.md`) | **KEEP** |
 | `--bait-bot-share` | 0.0 | 3 / 0 | BaitBot joins the training roster; the bait hunt is CLOSED, but BaitBot is also a RUST bot (`rust_env/src/bots/`, `bots_gate_test`, the Python class is its oracle), so deleting it is a Rust crossing | **NEEDS-OWNER** |
 | `--bait-bot-p` | 0.6 | 3 / 0 | BaitBot's pivot probability, same Rust reach as `--bait-bot-share` | **NEEDS-OWNER** |

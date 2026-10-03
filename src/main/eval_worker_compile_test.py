@@ -58,7 +58,7 @@ def test_opponent_is_not_compiled_when_the_flag_is_off(monkeypatch):
 
 
 def test_cuda_is_not_hidden_for_a_gpu_eval_worker(monkeypatch):
-    """`--eval-device cuda` runs eval on the GPU; hiding the device there would be wrong."""
+    """an eval worker on `cuda` runs eval on the GPU; hiding the device there would be wrong."""
     spy, calls = _spy()
     monkeypatch.setattr(ew, "maybe_compile_extractor", spy)
     ew._get_opponent_model({}, "/pool/a.zip", lambda: object(),

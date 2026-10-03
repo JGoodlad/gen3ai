@@ -16,7 +16,6 @@ Three jobs, in order, and the order is load-bearing:
 """
 import dataclasses
 import sys
-from typing import Any
 
 from agents.model.damage_tables import _MIN_PRIOR_FLOOR, _PRIOR_FLOOR
 from agents.training.watchdog import start_orphan_watchdog
@@ -25,16 +24,13 @@ from main.train import arch_surface
 from main.train.checkpoint_state import _load_saved_version
 from main.train.combination_checks import refuse_first
 from main.train.compile_flags import resolve_compile_trainer_auto
-from poke_env import LocalhostServerConfiguration
-from poke_env.ps_client.server_configuration import localhost_server_configuration
 from utils.logging.levels import LogLevel
 
 
 @dataclasses.dataclass(frozen=True)
 class ResolvedRunConfig:
-    """The three resolved values that are NOT attributes of `args`."""
+    """The two resolved values that are NOT attributes of `args`."""
 
-    server_config: Any
     annealing_mode: bool
     log_level: LogLevel
 
@@ -430,15 +426,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # `main.checkargs` stamps the same marker before it inherits from the parent config, so
     # `combination_checks._typed` gives both surfaces the same answer. See that module's docstring.
     args._explicit_flags = frozenset(d for d, v in vars(args).items() if v is not None)
-
-    # --- `--use-bridge` -> the two internal fields -------------------------------------------------
-    # `--use-bridge` has ONE legal value now (`rust`; the Python env core and the node / websocket
-    # transports for training went with it — deletion pass U3), and it splits into
-    # `args.use_showdown_bridge` (a plain bool = "bridge enabled?", read at every transport site) +
-    # `args.bridge_impl` (the child selector, read only at spawn). Both are constants of the build
-    # now; the fields stay because the eval callbacks and the eval worker's config carry them.
-    args.bridge_impl = "rust"
-    args.use_showdown_bridge = True
 
     # --- Resolve resumable structural toggles (None sentinel = "not passed on the CLI") ---
     # Each version-checked structural toggle defaults to None so a FLAGLESS resume can INHERIT the
@@ -869,15 +856,8 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             for _line in recipe_surface.report_lines(_recipe_report):
                 emit(_line)
 
-    # One server config, built from --showdown-port and threaded to every Showdown client
-    # (training-env players in spawn workers, eval, and self-play). Default port: 8000.
-    server_config = (
-        LocalhostServerConfiguration
-        if args.showdown_port is None
-        else localhost_server_configuration(args.showdown_port)
-    )
-    emit(f"🌉 Transport: in-process BattleStream bridge [{args.bridge_impl}] for BOTH training "
-         "and eval (no Showdown server needed — --showdown-port ignored)")
+    emit("🌉 Transport: in-process BattleStream bridge [rust] for BOTH training "
+         "and eval (no Showdown server needed)")
     # One-time startup warning naming the Rust bridge's honest remaining scope limits (an INCOMPLETE
     # modeled move set that fail-louds) — resolve/build the binary NOW so a missing toolchain fails
     # loudly at startup, not deep inside the first env reset.
@@ -958,5 +938,4 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             emit("⚡ --compile-trainer ON by default (device=cuda) — ~1.75x on the PPO train step. "
                  "--no-compile-trainer opts out. Compile failure is FATAL by design.")
 
-    return ResolvedRunConfig(server_config=server_config, annealing_mode=annealing_mode,
-                             log_level=log_level)
+    return ResolvedRunConfig(annealing_mode=annealing_mode, log_level=log_level)

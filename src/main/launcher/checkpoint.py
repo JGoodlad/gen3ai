@@ -159,46 +159,6 @@ def _set_arg(args: list, name: str, value: str) -> list:
     return out
 
 
-# The dedicated, stable training Showdown server. train_rl_agent.py defaults to the
-# shared dev server on 8000 when --showdown-port is omitted — fine for an ad-hoc run,
-# but a long launcher session pointed at 8000 dies whenever routine dev-server churn
-# (a restart, `npm run stop`) drops every worker's connection at once. The launcher
-# isolates training onto its own port by default.
-DEFAULT_TRAINING_SHOWDOWN_PORT = 8001
-
-
-def child_uses_bridge(args: list) -> bool:
-    """True when the child args use the in-process bridge transport (no Showdown server).
-
-    ``--use-bridge {off,node,rust}`` (value form ``--use-bridge X`` or ``--use-bridge=X``). Only
-    ``off`` means a websocket server — and since the trainer's DEFAULT is now ``rust``, an ABSENT
-    flag is a BRIDGE run, which is the inversion this function used to have backwards. It must
-    agree with `train_rl_agent`'s own default or the launcher injects a phantom `--showdown-port`
-    into a run that connects to no server.
-
-    (The deprecated ``--use-showdown-bridge`` boolean is deleted; it meant ``--use-bridge=node``,
-    which is no longer the default, so keeping it would have made the legacy spelling silently
-    select the slower impl.)"""
-    val = _peek_arg(args, "--use-bridge")
-    return val != "off"          # absent (None) => the trainer's `rust` default => a bridge run
-
-
-def _apply_default_showdown_port(
-    args: list, default_port: int = DEFAULT_TRAINING_SHOWDOWN_PORT
-) -> list:
-    """Inject ``--showdown-port <default_port>`` into the child args when the user
-    didn't pass one. An explicit ``--showdown-port`` (any spelling) always wins.
-
-    A bridge run (``--use-bridge {node,rust}``, which is now the DEFAULT) connects to no Showdown
-    server at all (training AND eval run in-process), so no default port is injected — a phantom
-    port would only mislead the TUI. Only an explicit ``--use-bridge off`` reaches the injection."""
-    if child_uses_bridge(args):
-        return args
-    if _peek_arg(args, "--showdown-port", type_=int) is not None:
-        return args
-    return _set_arg(args, "--showdown-port", str(default_port))
-
-
 def _find_model_arg(args: list) -> "str | None":
     return _peek_arg(args, "--model")
 

@@ -13,7 +13,6 @@ back-compat alias for the same entry point. Re-exports the public API so
 from main.launcher.checkpoint import (
     find_latest_checkpoint,
     run_dir_for_checkpoint,
-    _apply_default_showdown_port,
     _find_model_arg,
     _insert_or_replace_model_arg,
     _insert_or_replace_run_dir_arg,

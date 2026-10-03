@@ -17,7 +17,7 @@ That equality proves, in one shot:
   (stall check → embed → zero-mask deferral → tracker.advance with the live
   action), including every stateful tracker the obs depends on.
 
-Runs TWO phases: sequential (eval's default ``--eval-concurrency-per-worker 1``)
+Runs TWO phases: sequential (an eval worker's default concurrency of 1)
 and **concurrent** (``concurrency=3`` — overlapping battles whose feeds
 interleave on POKE_LOOP, the latency-hiding eval mode). The concurrent phase
 pins the structural claim that per-battle state (tracker, recorder, packed

@@ -209,7 +209,7 @@ async def run_local_battles(
     reads it, but battle *play* overlaps. ``concurrency == 1`` is the unchanged
     sequential path. Don't set it above ~10 here — each concurrent battle is a Node
     process. (Eval runs serially by default — ``_EVAL_SUBPROCESS_CONCURRENCY`` is 1 — but
-    ``--eval-concurrency-per-worker`` raises it for latency-hiding; integration tests also
+    an eval worker's concurrency setting raises it for latency-hiding; integration tests also
     exercise concurrency > 1.)
 
     ``start_extra`` merges extra fields into the bridge ``START`` json — e.g.
@@ -304,7 +304,7 @@ class _LocalBattleRunner:
         self.c2 = self._attach(self.p2, "p2")
         if concurrency <= 1:
             # Sequential path — what all the fuzz suites, the parity test and (at the default
-            # --eval-concurrency-per-worker 1) eval itself exercise. Bounded by the IDLE gap, so a
+            # an eval worker's default concurrency of 1) eval itself exercise. Bounded by the IDLE gap, so a
             # merely-slow battle beside a training run finishes instead of being scored a timeout.
             for i in range(n_battles):
                 await _await_battle(self._one_battle(i), (self.c1, self.c2),
@@ -324,7 +324,7 @@ class _LocalBattleRunner:
                 # neighbour would mask a wedged battle's silence, which is worse than no idle
                 # bound at all. Per-battle attribution would need per-`battle_tag` counting in
                 # `feed`; not built, because every default path (fuzz, parity, eval at
-                # --eval-concurrency-per-worker 1) is sequential.
+                # an eval worker's default concurrency of 1) is sequential.
                 await asyncio.wait_for(
                     self._one_battle(i, start_lock), timeout=_per_battle_timeout()
                 )

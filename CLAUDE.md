@@ -343,7 +343,7 @@ npm run showdown -- 8001    # explicit port
 npm run stop -- 8001        # stops that instance
 ```
 
-The **launcher defaults `--showdown-port` to 8001**; `train_rl_agent.py` run directly defaults to 8000. With the default `--use-bridge rust` no server is involved at all.
+Training and eval run in-process (`--use-bridge rust`, the only transport) — **no server and no port is involved at all**; the `:8001` server above is the standing training server for other tools, never one the trainer connects to.
 
 ---
 

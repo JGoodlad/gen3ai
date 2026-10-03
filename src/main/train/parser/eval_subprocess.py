@@ -8,7 +8,7 @@ import argparse
 
 from agents.training.artifact_retention import KEEP_EVAL_TRACE_STEPS_DEFAULT
 from agents.training.eval_callback import (
-    _EVAL_SUBPROCESS_CONCURRENCY, EVAL_SHARD_GAMES,
+    EVAL_SHARD_GAMES,
     _FORENSIC_WIN_QUOTA, _FORENSIC_LOSS_QUOTA, _FORENSIC_DRAW_QUOTA)
 from agents.training.snapshot_pool import (
     EVAL_SENTINEL_GREEDY_DEFAULT, HEURISTIC_FLOOR, PROMOTE_THRESHOLD_GREEDY,
@@ -20,20 +20,6 @@ from main.train.parser.base import BoolFlag
 def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their original order."""
     # --- Subprocess eval ---
-    parser.add_argument("--eval-workers", "--eval_workers", dest="eval_workers", type=int, default=5,
-                        help="Number of parallel eval-worker subprocesses per cycle (default 5 for bot "
-                             "eval; self-play doubles this to 10). Workers work-steal opponents from a "
-                             "shared pool, so uneven per-opponent cost self-balances. Capped at the "
-                             "opponent count.")
-    parser.add_argument("--eval-device", "--eval_device", dest="eval_device", type=str, default="cpu",
-                        help="Device for the eval-worker subprocess inference (default cpu, to decouple from the training GPU).")
-    parser.add_argument("--eval-concurrency-per-worker", "--eval_concurrency_per_worker",
-                        dest="eval_concurrency_per_worker", type=int, default=_EVAL_SUBPROCESS_CONCURRENCY,
-                        help="Battles each eval worker overlaps at once within its claimed opponent (default 1 = "
-                             "sequential). Single-thread asyncio latency-hiding (not multi-core): overlaps the "
-                             "bridge/server I/O wait with other battles' forwards. A single-core bridge benchmark "
-                             "measured ~2x decisions/sec at 3 on spare cores (less under live training contention); "
-                             "the plateau is ~3. Cross-opponent parallelism is still --eval-workers.")
     parser.add_argument("--eval-shard-games", "--eval_shard_games",
                         dest="eval_shard_games", type=int, default=EVAL_SHARD_GAMES,
                         help="Games per work-steal shard unit (battle-level work-stealing, default 25 → ~4 shards "
@@ -72,7 +58,7 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                         help="Games per OPPONENT per eval cycle (default: the module EVAL_GAMES, 100). "
                              "Per-cell 95%% CI: n=100 -> +/-0.098, n=200 -> +/-0.069 — raise for tighter "
                              "sentinel/promotion reads at proportionally more eval compute (work-stolen "
-                             "across --eval-workers, off the training path). Shards per opponent = "
+                             "across the eval workers, off the training path). Shards per opponent = "
                              "eval-games / --eval-shard-games.")
     parser.add_argument("--snapshot-ladder-games", "--snapshot_ladder_games",
                         dest="snapshot_ladder_games", type=int, default=100,
@@ -208,7 +194,7 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "trainee on the opponent's team draw), flipped at an era start, never mid-"
                              "comparison. Default None so a FLAGLESS resume INHERITS the regime its "
                              "checkpoint recorded. The Python eval path needs the in-process bridge and "
-                             "--eval-concurrency-per-worker 1 (every game is seeded).")
+                             "eval-worker concurrency 1 (every game is seeded).")
     parser.add_argument("--promotion-sprt", "--promotion_sprt", dest="promotion_sprt",
                         action=BoolFlag, default=None,
                         help="SPRT PROMOTION (T6, gen3_sprt_promotion_v1): instead of promoting the first "
@@ -218,7 +204,7 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "GSPRT over fresh MIRRORED PAIRS vs the pool frozen at the candidate's launch, a "
                              "declared cap (= reject). The cycle's own pool games never enter the test, and a "
                              "failed test is never re-run (sprt_promotion.jsonl). Needs --self-play; the Python "
-                             "eval path needs the in-process bridge and --eval-concurrency-per-worker 1. OFF by "
+                             "eval path needs the in-process bridge and eval-worker concurrency 1. OFF by "
                              "default — a REGIME BOUNDARY for promotion, flipped at an era start. Default None "
                              "so a FLAGLESS resume INHERITS the recorded regime.")
     parser.add_argument("--self-play-temp", type=float, default=1.0,

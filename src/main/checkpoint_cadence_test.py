@@ -80,7 +80,7 @@ def _checkpoint_callback_interval(model_dir, *flags) -> int:
     args.debug_eval = False          # skip the eval callback: this is about the checkpointer
     args.debug = True                # ... which needs _run_eval False; n_envs is read separately
     bundle = build_callbacks(
-        args=args, model_dir=str(model_dir), server_config=None, annealing_mode=False,
+        args=args, model_dir=str(model_dir), annealing_mode=False,
         _pool=None, _fixed_opponents=None, _bot_weight_vec=None, OPPONENT_CLASSES=(),
         _specialist_team_str=None, _promote_threshold=0.6, _heuristic_floor=0.0,
         _sp_start_wr=0.5, _sp_full_wr=0.9)

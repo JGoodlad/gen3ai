@@ -1270,17 +1270,11 @@ went with the Python env core's workers — it was a no-op on the Rust env, dele
   so a startup hang is covered too. **Real launcher-managed runs keep a live parent and never
   arm it.** Regression test: `watchdog_test.py` (subprocess-driven orphan + no-false-fire).
 
-## Showdown port threading (the `server_config` seam)
+## Showdown port threading (the `server_config` seam) — the flag is GONE (deletion pass P11)
 
-`train_rl_agent.py --showdown-port <port>` builds **one** `ServerConfiguration` in `main()`
-via the single constructor `localhost_server_configuration(port)` (in
-`poke_env.ps_client.server_configuration`) and threads it to **every** Showdown client —
-the training-env players, eval, and self-play. Every player-creating callback takes a `server_config` param
-(defaulting to port 8000 for standalone use) and builds its players from it — **never** from a
-bare `LocalhostServerConfiguration` constant. `server_port_threading_test.py` is the
-regression guard: it fails if any of these callbacks hardcodes the default port instead of
-threading the configured one (the original bug had the now-retired replay recorder connecting
-to :8000 while training ran on :8001; eval forensic traces inherit the same guard).
-There is no environment variable; `train_rl_agent.py`'s own default is 8000, but the **launcher**
-overrides it to 8001 before forwarding (see `src/main/launcher/CLAUDE.md`). The launcher
-forwards `--showdown-port` verbatim (it strips only launcher-owned flags).
+`--showdown-port` was deleted: with `--use-bridge rust` as the only transport nothing connects to a Showdown server, and
+`train_rl_agent` no longer builds a `ServerConfiguration` at all. The eval callbacks still ACCEPT a `server_config` (and the
+Python eval-worker knobs — `n_workers`, `eval_device`, `eval_concurrency`, `use_showdown_bridge`, `bridge_impl`) for the
+`env_core != "rust"` branch that only tests drive (manifest finding 12(c), a follow-up unit); the trainer passes none of them.
+`server_port_threading_test.py` still guards that those callbacks and the eval builders thread the config they are given
+rather than a bare `LocalhostServerConfiguration`.

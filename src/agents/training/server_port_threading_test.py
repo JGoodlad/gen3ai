@@ -1,5 +1,5 @@
 """Regression guard: every training-path component that creates Showdown clients
-must thread the configured server (i.e. respect ``--showdown-port``), NOT hardcode
+must thread the configured server (a `server_config` argument), NOT hardcode
 the default :8000 ``LocalhostServerConfiguration``.
 
 The bug this originally guarded against: the (now-retired) ReplayCallback's
@@ -9,7 +9,7 @@ player-creation hardcoded ``LocalhostServerConfiguration``, so replays connected
 (PerOpponentEvalCallback), which this guard still covers.
 
 The single constructor is ``localhost_server_configuration(port)`` (built once in
-train_rl_agent.main from ``--showdown-port``); these are the components it must
+train_rl_agent.main from the deleted ``--showdown-port``, deletion pass P11); these are the components it must
 thread to.
 """
 import inspect
@@ -74,7 +74,7 @@ def test_callback_has_no_in_process_player_creation():
 # The subprocess eval path builds players via these functions: build_eval_* for the trainee + bot
 # opponents, and _play_unit (eval_worker) for the per-shard matchup — which additionally builds the
 # pool-sentinel / stable-opponent RLPlayer. All take server_config and must thread it (the worker
-# rebuilds it from the --showdown-port the trainer passes). Same anti-:8000-hardcode guard.
+# rebuilds it from the port the trainer passed — now always the default). Same anti-:8000-hardcode guard.
 @pytest.mark.parametrize("fn", [build_eval_opponents, build_eval_players, _play_unit])
 def test_eval_builders_thread_server_config_param(fn):
     sig = inspect.signature(fn)

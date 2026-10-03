@@ -379,10 +379,9 @@ though every `impl=` default is still `"node"`.
 **Operational facts worth knowing:**
 - A bridge child that **dies** mid-run **crashes** the env (launcher restart) — resuming risks a
   corrupted PPO transition.
-- Eval plays **one game at a time per worker** by default (`--eval-concurrency-per-worker 1`);
-  raising it is asyncio latency-hiding, not multi-core, and nets negative under training contention.
-- The launcher treats an ABSENT `--use-bridge` as a bridge run (its own `off` branch is unreachable from the trainer now), so it injects no phantom
-  `--showdown-port` (pinned by `default_port_test.py`).
+- Eval plays **one game at a time per worker** (the worker-concurrency flag `--eval-concurrency-per-worker` was deleted by the
+  flag census, P11; raising it was asyncio latency-hiding, not multi-core, and netted negative under training contention).
+- The launcher injects no `--showdown-port` (the flag was deleted in P11; training and eval run in-process).
 - **The trainee's observation comes from the Rust core**, the only source (the obs-source flag and its `python` value were deleted in U3; the `__OBS__` frame is how the rust child ships each decision's row). Detail: `src/agents/training/CLAUDE.md`.
 
 🚨 **THE DURABLE LESSON — a "default" branch that nothing tests is untested however green the suite
@@ -482,7 +481,7 @@ and `designs/research_state/measurements/m5_laneG/PROGRESS.md`.
 
 ### Bot evaluation
 
-Bot eval runs in **frozen-snapshot subprocesses** (`--eval-workers`, default 5) that
+Bot eval runs in **frozen-snapshot subprocesses** (the Python eval-worker pool — `--eval-workers`, default 5, deleted in P11; production runs the in-process Rust eval core) that
 **work-steal at battle granularity** from a shared pool and play the live server (or the bridge)
 **without pausing training**; results merge into TensorBoard + TUI + best-model and land in
 `metadata.json` as a top-level `latest_eval` block. Each opponent's `EVAL_GAMES` are split into
@@ -497,7 +496,7 @@ this exact non-blocking pipeline** (with the worker pool doubled to 10, since se
 for both players) — the workers additionally work-steal the pool sentinels' shards, and a winning
 cycle promotes its frozen snapshot into the pool by file-copy (`SnapshotPool.add_from_path`). The full
 design (battle-level work-stealing, exact aggregation, graceful-shutdown drain, resume re-publish,
-sentinels + promotion, `--eval-workers` / `--eval-shard-games` / `--eval-device`) is in
+sentinels + promotion, `--eval-shard-games`) is in
 `src/agents/training/CLAUDE.md`.
 
 ### The UNTAUGHT METER — offline off-slice competence (`python -m main.untaught_meter`)

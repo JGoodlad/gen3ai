@@ -33,7 +33,7 @@ from typing import Dict, List, Tuple
 # behavioural difference in the RUN, so they are reported separately rather than gating.
 LAUNCHER_OWNED = {
     "--restart-interval-hours", "--restart-grace-minutes", "--max-crash-restarts",
-    "--nice", "--no-pin", "--sync-to-main", "--showdown-port", "--run-name",
+    "--nice", "--no-pin", "--sync-to-main", "--run-name",
 }
 # Flags whose value is expected to differ per run and never needs acknowledging.
 PER_RUN = {"--run-name", "--model", "--steps"}

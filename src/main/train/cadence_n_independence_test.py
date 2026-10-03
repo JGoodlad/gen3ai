@@ -46,7 +46,7 @@ def _resolved(tmp_path, n_envs: int) -> Dict[str, Any]:
     resolve_config(args, p)
     assert not args.debug, "a --debug build forces N = 1 and would make this test vacuous"
     bundle = build_callbacks(
-        args=args, model_dir=str(tmp_path / f"n{n_envs}"), server_config=None,
+        args=args, model_dir=str(tmp_path / f"n{n_envs}"),
         annealing_mode=False, _pool=None, _fixed_opponents=None, _bot_weight_vec=None,
         OPPONENT_CLASSES=(), _specialist_team_str=None, _promote_threshold=0.6,
         _heuristic_floor=0.0, _sp_start_wr=0.5, _sp_full_wr=0.9)

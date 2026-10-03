@@ -42,7 +42,6 @@ from typing import Callable, List, Optional
 from main.exit_codes import TrainExitCode
 from main.launcher.checkpoint import (
     archive_anchored_args,
-    child_uses_bridge,
     _find_model_arg,
     _insert_or_replace_model_arg,
     _insert_or_replace_run_dir_arg,
@@ -297,11 +296,7 @@ def dry_run(
     torch_res = resolve_for_launch(model_path, allow_switch=allow_torch_switch)
     for line in torch_res.lines():
         out(f"  {line}")
-    if child_uses_bridge(child_args):
-        impl = _peek_arg(child_args, "--use-bridge") or "rust"
-        out(f"  transport   : in-process bridge [{impl}] (no Showdown server)")
-    else:
-        out(f"  transport   : websocket → Showdown :{_peek_arg(child_args, '--showdown-port', int)}")
+    out("  transport   : in-process bridge [rust] (no Showdown server)")
     sched = (f"every {interval_hours:.1f}h" if interval_hours > 0 else "single run (no restart)")
     out(f"  restarts    : {sched}, grace {grace_minutes:.1f} min, "
         f"max {max_crash_restarts} crash restart(s), nice {nice}")

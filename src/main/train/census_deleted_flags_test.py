@@ -23,6 +23,10 @@ DELETED = [
     ("--warmstart-consensus", ["models/a,models/b"]),                  # B3
     ("--warmstart-battles", ["200"]),
     ("--warmstart-bc-steps", ["4000"]),
+    ("--showdown-port", ["8001"]),                                     # B4
+    ("--eval-workers", ["5"]),
+    ("--eval-device", ["cpu"]),
+    ("--eval-concurrency-per-worker", ["1"]),
 ]
 
 
