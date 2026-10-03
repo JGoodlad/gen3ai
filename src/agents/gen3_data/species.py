@@ -41,7 +41,7 @@ def _build(raw: Dict[str, dict]) -> Dict[str, SpeciesData]:
         bs = v.get("baseStats", {})
         dex[sid] = SpeciesData(
             id=sid,
-            num=int(v.get("num", 0)),
+            num=int(v["num"]),
             name=v.get("name", sid),
             base_stats={k: int(bs[k]) for k in _STAT_KEYS if k in bs},
             types=tuple(str(t).upper() for t in v.get("types", ())),
@@ -51,7 +51,7 @@ def _build(raw: Dict[str, dict]) -> Dict[str, SpeciesData]:
     return dex
 
 
-raw = _base.singleton(lambda: _base.load_json("gen3_species.json"))
+raw = _base.singleton(lambda: _base.load_dex_json("gen3_species.json"))
 _dex = _base.singleton(lambda: _build(raw()))
 _base_forms = _base.singleton(
     lambda: tuple(sid for sid, sd in _dex().items() if sd.base_species is None)

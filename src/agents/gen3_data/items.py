@@ -22,11 +22,11 @@ class ItemData:
 
 
 def _build(raw: Dict[str, dict]) -> Dict[str, ItemData]:
-    return {iid: ItemData(id=iid, num=int(v.get("num", 0)), name=v.get("name", iid))
+    return {iid: ItemData(id=iid, num=int(v["num"]), name=v.get("name", iid))
             for iid, v in raw.items()}
 
 
-raw = _base.singleton(lambda: _base.load_json("gen3_items.json"))
+raw = _base.singleton(lambda: _base.load_dex_json("gen3_items.json"))
 _dex = _base.singleton(lambda: _build(raw()))
 
 

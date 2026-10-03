@@ -129,7 +129,7 @@ def _build(raw: Dict[str, dict]) -> Dict[str, MoveData]:
         mtype = _resolve_type(str(v.get("type", "Normal")))
         dex[mid] = MoveData(
             id=mid,
-            num=int(v.get("num", 0)),
+            num=int(v["num"]),
             base_power=base_power,
             type=mtype,
             category=_derive_category(base_power, mtype),
@@ -159,7 +159,7 @@ def _build(raw: Dict[str, dict]) -> Dict[str, MoveData]:
     return dex
 
 
-raw = _base.singleton(lambda: _base.load_json("gen3_moves.json"))
+raw = _base.singleton(lambda: _base.load_dex_json("gen3_moves.json"))
 _dex = _base.singleton(lambda: _build(raw()))
 
 

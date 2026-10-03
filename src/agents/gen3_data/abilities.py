@@ -22,11 +22,11 @@ class AbilityData:
 
 
 def _build(raw: Dict[str, dict]) -> Dict[str, AbilityData]:
-    return {aid: AbilityData(id=aid, num=int(v.get("num", 0)), name=v.get("name", aid))
+    return {aid: AbilityData(id=aid, num=int(v["num"]), name=v.get("name", aid))
             for aid, v in raw.items()}
 
 
-raw = _base.singleton(lambda: _base.load_json("gen3_abilities.json"))
+raw = _base.singleton(lambda: _base.load_dex_json("gen3_abilities.json"))
 _dex = _base.singleton(lambda: _build(raw()))
 
 

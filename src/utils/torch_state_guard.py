@@ -312,6 +312,24 @@ def torch_globals(*, num_threads: Optional[int] = None,
         torch.set_num_threads(prev_threads)
 
 
+@contextlib.contextmanager
+def single_thread_build() -> Iterator[None]:
+    """Build FRESH model weights at ONE intra-op thread, restoring the caller's count on exit
+    (even on an exception) — THE shared helper for every site that creates and initialises new
+    parameters (`gen3_single_thread_init_v1`).
+
+    WHY. SB3 re-initialises every Linear with `torch.nn.init.orthogonal_`, a LAPACK QR whose blocked
+    reduction order follows the BLAS thread count. The RNG draws are identical, the rounding is not:
+    the same seed built at 1 and at 8 threads gives byte-different weights (max |delta| ~1.1e-6,
+    ~95% of a 512x512 matrix's bytes; measured 2026-10-03, torch 2.8.0+cu126). Without this a fresh
+    run's starting network depended on the core count and `OMP_NUM_THREADS` (F-X5-4).
+
+    Only the intra-op count matters (the QR is a BLAS/LAPACK call); the interop pool is untouched.
+    A thin `torch_globals(num_threads=1)`, so the restore is the guard's own."""
+    with torch_globals(num_threads=1):
+        yield
+
+
 def restores_torch_globals(fn: Callable[..., Any]) -> Callable[..., Any]:
     """Decorate a LIBRARY function that sets torch globals for its own work (a thread cap, TF32 off):
     whatever it sets is restored when it returns or raises, so its caller — a test, a notebook, a CLI

@@ -53,15 +53,16 @@ the golden — `learner_golden_test` names the drifted knob before the hashes do
 from __future__ import annotations
 
 import argparse
-import contextlib
 import datetime as _dt
 import hashlib
 import json
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
+
+from utils.torch_state_guard import single_thread_build
 
 SCHEMA = "gen3_learner_golden_v1"
 #: Ship BESIDE this module (a module locating its own data files, not repo-root discovery).
@@ -240,16 +241,8 @@ def buffer_sha256(path: Path = BUFFER_PATH) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-@contextlib.contextmanager
-def _one_thread() -> Iterator[None]:
-    import torch as th
-
-    prev = th.get_num_threads()
-    th.set_num_threads(1)
-    try:
-        yield
-    finally:
-        th.set_num_threads(prev)
+# The ONE shared single-thread build helper (`utils.torch_state_guard`); the old name stays for its callers.
+_one_thread = single_thread_build
 
 
 def compute(model: Optional[Any] = None,

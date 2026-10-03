@@ -76,12 +76,14 @@ def fresh_model(env: Any, *, n_steps: int, batch_size: int, n_epochs: int = 1, s
     from agents.model.policy import Gen3DualHeadMaskablePolicy
     from agents.training.instrumented_ppo import InstrumentedMaskablePPO
     from main.fresh_checkpoint import _production_policy_kwargs
+    from utils.torch_state_guard import single_thread_build
 
     _args, _layout, pk = _production_policy_kwargs(policy_args)
     torch.manual_seed(seed)
-    model = InstrumentedMaskablePPO(Gen3DualHeadMaskablePolicy, env, n_steps=n_steps, batch_size=batch_size,
-                                    n_epochs=n_epochs, gamma=gamma, gae_lambda=gae_lambda, device="cpu", seed=seed,
-                                    policy_kwargs=pk, verbose=0, **kw)
+    with single_thread_build():      # the init follows the thread count (F-X5-4): same seed => same bytes
+        model = InstrumentedMaskablePPO(Gen3DualHeadMaskablePolicy, env, n_steps=n_steps, batch_size=batch_size,
+                                        n_epochs=n_epochs, gamma=gamma, gae_lambda=gae_lambda, device="cpu",
+                                        seed=seed, policy_kwargs=pk, verbose=0, **kw)
     perturb_(model.policy, seed=perturb_seed, scale=PERTURB_SCALE)
     model.ep_info_buffer = deque(maxlen=100)
     model.ep_success_buffer = deque(maxlen=100)

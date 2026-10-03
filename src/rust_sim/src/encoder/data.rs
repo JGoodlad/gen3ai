@@ -20,7 +20,7 @@ use crate::json::Json;
 /// One `gen3_species.json` row as `SpeciesEncoder` reads it.
 #[derive(Debug, Clone)]
 pub struct SpeciesRec {
-    /// `entry.get("num", 0)`.
+    /// `entry["num"]` — REQUIRED (a row without one is a load error, `num_of`).
     pub num: f64,
     /// `entry["baseStats"]` as `stats.get(k, 100)` per key (hp, atk, def, spa, spd, spe); `None`
     /// when the row has no `baseStats` (the encoder then reads the mon's own `base_stats`).
@@ -73,6 +73,16 @@ fn int_of(v: &Json, key: &str, default: i64) -> i64 {
     }
 }
 
+/// A dex row's `num`, REQUIRED (F-X5-5): a row with no numeric `num` is a load-time error, never a silent
+/// 0 — Python's `get("num", 0)` default is gone too (`gen3_data._base.load_dex_json` raises on the same rows).
+/// A JSON bool is not a number here (Python's check rejects it as well).
+fn num_of(v: &Json, file: &str, id: &str) -> Result<i64, String> {
+    match v.get("num") {
+        Some(Json::Num(n)) => Ok(*n as i64),
+        other => Err(format!("{file}: row {id:?} has no numeric `num` (got {other:?}) — it would silently encode as 0")),
+    }
+}
+
 fn bool_of(v: &Json, key: &str) -> bool {
     match v.get(key) {
         None | Some(Json::Null) => false,
@@ -99,13 +109,13 @@ fn build() -> Result<Tables, String> {
             }
             s
         });
-        species.insert(id.clone(), SpeciesRec { num: int_of(v, "num", 0) as f64, base_stats });
+        species.insert(id.clone(), SpeciesRec { num: num_of(v, "gen3_species.json", id)? as f64, base_stats });
     }
     let nums = |name: &str| -> Result<HashMap<String, f64>, String> {
         let mut m = HashMap::default();
         for (id, v) in obj(&load(name)?)? {
             if v.as_object().is_some() {
-                m.insert(id.clone(), int_of(v, "num", 0) as f64);
+                m.insert(id.clone(), num_of(v, name, id)? as f64);
             }
         }
         Ok(m)
@@ -121,7 +131,7 @@ fn build() -> Result<Tables, String> {
         moves.insert(
             id.clone(),
             MoveRec {
-                num: int_of(v, "num", 0),
+                num: num_of(v, "gen3_moves.json", id)?,
                 base_power: int_of(v, "basePower", 0),
                 type_idx: type_idx(&name),
                 accuracy: int_of(v, "accuracy", 100),
@@ -165,4 +175,29 @@ fn build() -> Result<Tables, String> {
 pub fn tables() -> &'static Tables {
     static T: OnceLock<Tables> = OnceLock::new();
     T.get_or_init(|| build().unwrap_or_else(|e| panic!("encoder tables: {e}")))
+}
+
+#[cfg(test)]
+mod num_tests {
+    use super::*;
+
+    fn row(s: &str) -> Json {
+        Json::parse(s).unwrap()
+    }
+
+    #[test]
+    fn a_dex_row_needs_a_numeric_num_and_a_real_zero_is_fine() {
+        assert_eq!(num_of(&row(r#"{"num": 7}"#), "f.json", "a"), Ok(7));
+        assert_eq!(num_of(&row(r#"{"num": 0}"#), "f.json", "z"), Ok(0));
+        for bad in [r#"{"name": "x"}"#, r#"{"num": null}"#, r#"{"num": true}"#, r#"{"num": "7"}"#, r#""not a row""#] {
+            let e = num_of(&row(bad), "f.json", "bad").unwrap_err();
+            assert!(e.contains("row \"bad\" has no numeric `num`"), "{bad}: {e}");
+        }
+    }
+
+    #[test]
+    fn every_shipped_dex_row_has_a_numeric_num() {
+        // The tables load (`build` runs `num_of` on every species / item / ability / move row).
+        assert!(super::tables().species.len() > 400);
+    }
 }

@@ -38,6 +38,7 @@ from main.train.run_io import (
     _attach_run_tb_logger, _model_hparams, _run_lineage, _write_latest_txt,
 )
 from utils.logging.levels import LogLevel
+from utils.torch_state_guard import single_thread_build
 
 
 # ── The training-hparam passthroughs: ONE declared table, applied on BOTH build paths ──
@@ -148,6 +149,37 @@ def _start_rust_env(env, model) -> None:
     startup = getattr(env, "startup", None)
     if callable(startup):
         startup(model)
+
+
+def construct_fresh_learner(args, env, policy_kwargs):
+    """THE FRESH learner's construction — the one site where a production run's starting weights are
+    created and initialised, built at ONE torch thread (`single_thread_build`,
+    `gen3_single_thread_init_v1`).
+
+    SB3's `_build` re-initialises every Linear with `orthogonal_`, a LAPACK QR whose reduction order
+    follows the thread count, so the same `--seed` built at a different core count / `OMP_NUM_THREADS`
+    gave byte-different starting weights (F-X5-4). The caller's thread count is restored on return, so
+    the first rollout and update run at the training thread count. A resume / fork never reaches this:
+    `load_model_snapshot` is STRICT on every key, so the loaded weights overwrite the init."""
+    with single_thread_build():
+        return InstrumentedMaskablePPO(
+            Gen3DualHeadMaskablePolicy,
+            env,
+            verbose=1,
+            learning_rate=args.lr,
+            n_steps=args.n_steps,
+            batch_size=args.batch_size,
+            n_epochs=args.n_epochs,
+            gamma=args.gamma,
+            gae_lambda=float(args.policy_gae_lambda),   # gen3_policy_gae_lambda_v1 (default 0.80)
+            clip_range=args.clip_range,
+            clip_range_vf=args.clip_range_vf,
+            ent_coef=args.ent_coef,
+            vf_coef=args.vf_coef,
+            device=args.device,
+            seed=args.seed,
+            policy_kwargs=policy_kwargs
+        )
 
 
 async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level, n_envs,
@@ -519,24 +551,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             print(f"Note: Capping batch_size from {args.batch_size} to {total_rollout_size} to match rollout capacity.")
             args.batch_size = total_rollout_size
 
-        model = InstrumentedMaskablePPO(
-            Gen3DualHeadMaskablePolicy,
-            env,
-            verbose=1,
-            learning_rate=args.lr,
-            n_steps=args.n_steps,
-            batch_size=args.batch_size,
-            n_epochs=args.n_epochs,
-            gamma=args.gamma,
-            gae_lambda=float(args.policy_gae_lambda),   # gen3_policy_gae_lambda_v1 (default 0.80)
-            clip_range=args.clip_range,
-            clip_range_vf=args.clip_range_vf,
-            ent_coef=args.ent_coef,
-            vf_coef=args.vf_coef,
-            device=args.device,
-            seed=args.seed,
-            policy_kwargs=policy_kwargs
-        )
+        model = construct_fresh_learner(args, env, policy_kwargs)
 
         # Every training-only hparam, from the one table shared with the resume path above.
         apply_training_hparams(model, args, mappings=mappings)

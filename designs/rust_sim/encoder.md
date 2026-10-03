@@ -75,6 +75,7 @@ screen maps, `assembler.SAT_LUT`, the sleep-wake tables, the protect floor and p
 stale; a dim change is a one-place edit in `constants.py` plus a regeneration. The dex and prior
 tables are NOT generated: `data.rs` reads `data/pokemon/{species,items,abilities,moves,ability_priors,
 natures}.json` at runtime exactly as the facade does, so a `tools/` regeneration reaches both encoders.
+A species / item / ability / move row with no numeric `num` is a LOAD ERROR on both sides (`data.rs::num_of`; `gen3_data._base.load_dex_json`) — neither reads a missing `num` as 0 any more (F-X5-5; no shipped row trips it).
 
 ## 5. The row on the wire
 

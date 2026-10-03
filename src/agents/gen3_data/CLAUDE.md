@@ -11,6 +11,8 @@ runtime reads **only** `data/` through it and is blind to where the data origina
 | **`data/pokemon/`** | nothing | normalized, committed JSON — the contract between the layers |
 | **Access** (`gen3_data`) | only `data/` | typed, domain-organized lookups for the runtime |
 
+Every DEX file (species / moves / items / abilities) loads through `_base.load_dex_json`, which refuses a row with no numeric `num` at load — it used to read as `get("num", 0)` and silently encode as index 0 (F-X5-5; the Rust encoder tables refuse the same rows, `src/rust_sim/src/encoder/data.rs`).
+
 The three upstreams collapse to **one place that knows them** (`tools/`, see `tools/CLAUDE.md`).
 Everything downstream asks by *concept*, never by *source*.
 

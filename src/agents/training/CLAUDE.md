@@ -581,6 +581,7 @@ and the win label run on the complete game (every row `win_mask` 1), and an upda
 `--rollout-target-samples` completed-game rows (default `n_steps × n_envs`), consuming exactly that many
 — no row is dropped or down-weighted for age. Hazards an agent must know before touching it:
 
+- 🚨 **A fresh model is BUILT AT ONE TORCH THREAD** (`model_build.construct_fresh_learner`, `utils.torch_state_guard.single_thread_build`, `gen3_single_thread_init_v1`): SB3's orthogonal re-init is a LAPACK QR whose rounding follows the thread count, so an unpinned build gave a different start for the same `--seed` at a different core count / `OMP_NUM_THREADS`. The caller's count is restored on return; a resume / fork loads strictly and needs none. Any new site that creates and initialises fresh parameters uses the same helper (`fresh_build_threads_test.py`; `designs/training/learner_gates.md`).
 - 🚨 **Startup runs BEFORE `--compile-trainer`** (`model_build._start_rust_env`): the inference service
   deep-copies the policy as its slot templates, and a copy taken after the compile would carry the
   patched `forward` bound to the LEARNER's extractor.

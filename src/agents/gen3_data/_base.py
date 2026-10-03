@@ -36,6 +36,22 @@ def load_json(filename: str) -> Any:
     return data
 
 
+def load_dex_json(filename: str) -> Any:
+    """:func:`load_json` for a DEX file (species / moves / items / abilities): additionally every row
+    must be an object carrying a numeric ``num``. Crash-don't-drop, at LOAD: a row without one used
+    to read as ``num = 0`` through ``get("num", 0)`` — in the typed dex AND in every obs encoder that
+    reads the raw rows — i.e. it silently encoded as the dex's index 0 (the Rust encoder tables
+    mirror this check, `encoder/data.rs`; F-X5-5, 2026-10-03). No current row trips it."""
+    data = load_json(filename)
+    for key, row in data.items():
+        num = row.get("num") if isinstance(row, dict) else None
+        if isinstance(num, bool) or not isinstance(num, (int, float)):
+            raise ValueError(
+                f"CRITICAL: {filename}: row {key!r} has no numeric `num` (got {num!r}) — it would "
+                f"silently encode as 0. Fix the row in tools/pokemon_data_extractor and re-sync.")
+    return data
+
+
 def singleton(builder: Callable[[], Any]) -> Callable[[], Any]:
     """Wrap a zero-arg builder so it runs at most once and caches its result — the lazy-load
     idiom every dex uses (parse on first access, reuse forever after)."""

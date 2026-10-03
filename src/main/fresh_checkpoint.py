@@ -61,6 +61,7 @@ def build_fresh_model(seed: int, *, num_timesteps: int = 0) -> Tuple[Any, Any, D
     from stable_baselines3.common.vec_env import DummyVecEnv
 
     from agents.model.policy import Gen3DualHeadMaskablePolicy
+    from utils.torch_state_guard import single_thread_build
 
     args, layout, pk = _production_policy_kwargs()
     total_dim = layout["total_dim"]
@@ -80,8 +81,9 @@ def build_fresh_model(seed: int, *, num_timesteps: int = 0) -> Tuple[Any, Any, D
             return self.reset()[0], 0.0, False, False, {}
 
     torch.manual_seed(seed)
-    model = MaskablePPO(Gen3DualHeadMaskablePolicy, DummyVecEnv([_E]), policy_kwargs=pk,
-                        verbose=0, device="cpu", seed=seed, vf_coef=args.vf_coef)
+    with single_thread_build():      # the init follows the thread count (F-X5-4): same seed => same bytes
+        model = MaskablePPO(Gen3DualHeadMaskablePolicy, DummyVecEnv([_E]), policy_kwargs=pk,
+                            verbose=0, device="cpu", seed=seed, vf_coef=args.vf_coef)
     model.num_timesteps = num_timesteps
     return model, args, pk
 

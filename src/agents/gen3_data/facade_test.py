@@ -27,3 +27,22 @@ def test_base_singleton_runs_builder_once():
 def test_base_missing_file_raises():
     with pytest.raises(FileNotFoundError):
         _base.load_json("does_not_exist.json")
+
+
+@pytest.mark.parametrize("row", [{"name": "No Num"}, {"num": None}, {"num": True}, {"num": "7"}, "not a row"])
+def test_a_dex_row_without_a_numeric_num_is_a_load_error_not_a_silent_zero(tmp_path, monkeypatch, row):
+    """F-X5-5: `load_dex_json` refuses a row with no numeric `num` (it used to read as 0 through
+    `get("num", 0)`, and so silently encode as the dex's index 0). The Rust encoder tables mirror it."""
+    import json
+
+    monkeypatch.setattr(_base, "_DATA_DIR", tmp_path)
+    (tmp_path / "dex.json").write_text(json.dumps({"good": {"num": 3}, "bad": row}))
+    with pytest.raises(ValueError, match="row 'bad' has no numeric `num`"):
+        _base.load_dex_json("dex.json")
+    (tmp_path / "dex.json").write_text(json.dumps({"good": {"num": 3}, "zero": {"num": 0}}))
+    assert _base.load_dex_json("dex.json")["zero"]["num"] == 0      # a REAL zero is fine
+
+
+def test_every_shipped_dex_row_has_a_numeric_num():
+    for ns in (gen3_data.species, gen3_data.moves, gen3_data.items, gen3_data.abilities):
+        assert ns.raw()                                  # loads through load_dex_json: raises on a bad row

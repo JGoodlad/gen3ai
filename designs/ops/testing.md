@@ -622,6 +622,8 @@ these globals:
   (installed, locked)
 - `numpy.geterr()`
 
+**The library half for FRESH WEIGHTS:** `single_thread_build()` (same module; `torch_globals(num_threads=1)`) is THE context manager every site that creates and initialises new parameters builds inside — SB3's orthogonal re-init is a thread-count-dependent LAPACK QR, so the same seed gives different bytes at a different count (`gen3_single_thread_init_v1`, `designs/training/learner_gates.md`). Never write a second copy.
+
 A row is read only when its module is already imported, so the guard never imports a subsystem to
 inspect it. The exception is `torch`, which it imports once per process so the core rows always
 have a "before". A module first imported INSIDE a window is compared against its import-time
