@@ -227,7 +227,7 @@ def sigmoid(x: Sequence[float]) -> np.ndarray:
 
 
 # --------------------------------------------------------------------------------------------
-# THE CRITIC'S OWN RELIABILITY, under `--critic winprob` (gen3_winprob_critic_mode_v1)
+# THE CRITIC'S OWN RELIABILITY, under the win-prob critic (gen3_winprob_critic_mode_v1)
 # --------------------------------------------------------------------------------------------
 
 #: The Murphy/Brier keys lifted out of `scaffolding.reliability_table` for the live export. A
@@ -240,7 +240,7 @@ _CRITIC_KEYS = ("brier", "skill", "ece", "mce", "reliability", "resolution", "un
 def critic_reliability(rollout_buffer) -> Dict[str, float]:
     """The Murphy split of the ROLLOUT's own critic values against the realized outcome.
 
-    Under `--critic winprob` the buffer's `values` ARE `sigmoid(win-prob logit)`, and
+    Under the win-prob critic the buffer's `values` ARE `sigmoid(win-prob logit)`, and
     `win_target` / `win_mask` are the Monte-Carlo outcome `WinProbLabelCallback` back-fills for
     every step whose episode finished inside this buffer. So this needs no forward at all: both
     columns are already there, in probability units, for the exact states GAE bootstrapped from.
@@ -292,7 +292,7 @@ def vf_coef_scale_line(vf_coef: float, bce: float,
                        policy_grad_norm: float, value_grad_norm: float) -> str:
     """One human line: what `--vf-coef` is actually doing to the SHARED TRUNK on this run.
 
-    🚨 **`--vf-coef` MEANS SOMETHING DIFFERENT UNDER `--critic winprob`, AND NOTHING IN A METRIC
+    🚨 **`--vf-coef` MEANS SOMETHING DIFFERENT UNDER the win-prob critic, AND NOTHING IN A METRIC
     NAME SAYS SO.** Under `shaped` it weights an MSE on a shaped return; under
     `winprob` it weights the win-prob head's **BCE against a Bernoulli outcome**, which is bounded
     near `ln 2 ~ 0.693` at initialisation and falls from there. The historical default 0.5 was
@@ -370,7 +370,7 @@ def announce_vf_coef_scale(model, bce: Optional[Sequence[float]],
     * **THE GRADIENT NORMS ARE READ, NEVER RECOMPUTED.** ``grad_balance`` is the dict
       `grad_balance_metrics` already produced for this `train()` — the read-only
       `autograd.grad(retain_graph=True)` probe that has run per-term on every rollout for
-      generations. Under `--critic winprob` its ``grad/value_norm_shared`` is the norm of
+      generations. Under the win-prob critic its ``grad/value_norm_shared`` is the norm of
       ``vf_coef * BCE`` (the term as folded) and ``grad/policy_norm_shared`` is
       ``policy_loss + ent_coef * entropy_loss``, both over the same shared-trunk parameter set. A
       second backward pass here would cost a rollout's worth of graph and could disagree with the

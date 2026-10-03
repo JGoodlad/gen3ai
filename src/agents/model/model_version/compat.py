@@ -312,7 +312,8 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "terminal outcome. Flipping mid-run swaps the quantity GAE bootstraps from, "
                 "leaves value_net in no loss graph (or untrained), and changes what the reward "
                 "stream has to be — with no shape error anywhere to catch it.\n"
-                "Resume with the matching --critic setting, or start a fresh training run."
+                "Resume a checkpoint of the matching critic (a shaped one runs PINNED to its own commit — "
+                "the trainer trains only the win-prob critic), or start a fresh training run."
             )
 
 

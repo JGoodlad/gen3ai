@@ -41,8 +41,8 @@ every term, gate, measurement and hazard — is this file at the last pre-deleti
 | pre-cap tie | `0.0` | `−victory_value` (shares the loss branch) |
 | 250-turn TIMEOUT (a forfeit-loss detected by TURN COUNT, `turn >= _TIMEOUT_TURN_CAP`) | `0.0` | `--draw-penalty` (−35 historically; the parser default is 0 since the flip, so type it) |
 
-Production — and, since the deletion pass's bare-argv flip (D2, 2026-10-02), the bare argv — is `--critic winprob --terminal-indicator --victory-value 1.0 --draw-penalty 0`, so the
-undiscounted return is exactly `1{win}` and V(s) == P(win|s). `--critic winprob` REQUIRES the other
+Production — and, since the deletion pass's bare-argv flip (D2, 2026-10-02), the bare argv — is `--terminal-indicator --victory-value 1.0 --draw-penalty 0`, so the
+undiscounted return is exactly `1{win}` and V(s) == P(win|s). The win-prob critic (the only critic) REQUIRES the other
 three (`combination_checks`); under the indicator `--draw-penalty` is INERT (named in
 `inert_reward_flags`) and any non-zero value is refused. Every non-terminal turn pays exactly 0.0.
 

@@ -125,7 +125,7 @@ artifact above then describes a model that may not exist.
 
 `ai_v12_02_winprob_critic` did not exist when this mirror was built, so it was verified against the
 **relaunch argv** instead: gen-17's recorded `original_command`, minus the launcher-owned flags,
-minus every flag `--critic winprob` refuses, plus the critic block — parsed by the live
+minus every flag the win-prob critic refuses, plus the critic block — parsed by the live
 `build_parser()` and resolved through the launch path's own
 `resolve_critic_mode` → `desugar_umbrella_flags` → `resolve_config`.
 

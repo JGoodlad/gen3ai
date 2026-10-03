@@ -231,37 +231,20 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         fresh_only=("--arch",)),
 
     # ---- gen3_winprob_critic_mode_v1: THE CRITIC MODE ---------------------------------------
-    # `--critic winprob` makes the win-prob head the value function. Everything below either
-    # CONTRADICTS that (a second critic, a normalizer with no scale to track, a reward whose
-    # currency is not P(win)) or is a knob the mode SUBSUMES. Each one is refused rather than
-    # ignored, because a silently-inert flag on a critic-route change is the failure this whole
-    # module exists to end. `config.resolve_critic_mode` IMPLIES the coherent value for each of
-    # them first, so a refusal here means the operator TYPED something incompatible.
+    # The win-prob head IS the value function (the only critic: `--critic` was deleted, P11b). Everything
+    # below either CONTRADICTS that (a head that is not built, a reward whose currency is not P(win)) or
+    # is a knob the mode SUBSUMES. Each one is refused rather than ignored, because a silently-inert flag
+    # on a critic-route change is the failure this whole module exists to end.
+    # `config.resolve_critic_mode` IMPLIES the coherent value for each of them first, so a refusal here
+    # means the operator TYPED something incompatible.
     CombinationCheck(
-        "winprob_critic_needs_a_head", ("critic", "win_prob_mode"),
-        # unset resolves to 'shaping' under this critic (`config.resolve_critic_mode`'s implication)
-        lambda a: _winprob(a) and _val(a, "win_prob_mode", "shaping") == "none",
-        "--critic winprob requires --win-prob-mode read_only|shaping: the win-prob HEAD is the "
-        "critic, and 'none' builds no head at all, so there would be no value function. "
-        "(An unset --win-prob-mode is implied to 'shaping' — this fires only on an explicit "
-        "'none'.) 'read_only' is the arm where the critic's gradient does not reach the trunk."),
-    CombinationCheck(
-        # The one check in this family pointing the OTHER way: not "winprob refuses X" but
-        # "X requires winprob". Refused rather than ignored because the flag's whole premise is
-        # that the BCE it reweights IS the value loss. Under `--critic shaped` that BCE is an
-        # auxiliary readout, so a stratified weight there would re-price a
-        # DIAGNOSTIC and leave the actual critic untouched — a silent no-op wearing the name of
-        # the experiment, which is exactly what this module exists to end.
-        "winprob_strata_needs_the_winprob_critic",
-        ("win_prob_strata_weight", "critic"),
-        lambda a: float(_val(a, "win_prob_strata_weight", 0.0) or 0.0) > 0.0 and not _winprob(a),
-        "--win-prob-strata-weight > 0 requires --critic winprob. It reweights the win-prob BCE "
-        "per OPPONENT CLASS so the between-class share of the objective rises (the head refit's "
-        "§6 mechanism: only ~10-14% of the terminal label's variance lies between (cycle, "
-        "opponent) cells). Under --critic shaped that BCE is an AUXILIARY readout and the critic "
-        "is the scalar value net, so the weight would re-price a diagnostic and change nothing "
-        "about the value function — and the `opp_class` label key it strata-fies on is declared "
-        "under the win-prob label gate. Pass --critic winprob, or drop the flag."),
+        "winprob_critic_needs_a_head", ("win_prob_mode",),
+        # unset resolves to 'shaping' (`config.resolve_critic_mode`'s implication)
+        lambda a: _val(a, "win_prob_mode", "shaping") == "none",
+        "--win-prob-mode none is refused: the win-prob HEAD is the critic (the only critic), and 'none' "
+        "builds no head at all, so there would be no value function. (An unset --win-prob-mode is "
+        "implied to 'shaping' — this fires only on an explicit 'none'.) 'read_only' is the arm where "
+        "the critic's gradient does not reach the trunk."),
     CombinationCheck(
         # gen3_ridealong_rnd_variants_v1 (v127): the observation variants share base's frozen
         # target and normalisation, and base is the reference every variant is compared with —
@@ -276,20 +259,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "with. Pass --ridealong-rnd, or drop the variants."),
     # --- gen3_fork_v1: the FORK ARM's three refusals. ---------------------------------------
     CombinationCheck(
-        # 🚨 THE ONE THAT IS NOT A CONVENTION. Under `winprob` the reward stream is the TERMINAL
-        # WIN INDICATOR alone, so a branch's ENTIRE reward sequence is reconstructible from its
-        # outcome bit — which is the only reason the Rust fork pass can build one outside the env
-        # (`rust_rollout/fork.py`: the core's indicator rule). Under `shaped` the terminal is the
-        # SIGNED one, which the builder does not make.
-        "fork_needs_the_winprob_critic", ("fork_fraction", "critic"),
-        lambda a: float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0 and not _winprob(a),
-        "--fork-fraction > 0 requires --critic winprob. A forked branch's transitions are built "
-        "OUTSIDE the env, and only under this critic is a branch's reward sequence reconstructible "
-        "from its outcome as the WIN INDICATOR (--terminal-indicator, --victory-value 1.0), which "
-        "is what the fork pass builds. Under `shaped` the terminal is SIGNED "
-        "(+V / -V / --draw-penalty), which the branch builder does not reproduce. Pass --critic "
-        "winprob, or drop the flag."),
-    CombinationCheck(
         "fork_refuses_strata_weight", ("fork_fraction", "win_prob_strata_weight"),
         lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
                    and float(_val(a, "win_prob_strata_weight", 0.0) or 0.0) != 0.0),
@@ -303,7 +272,7 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         # ordering `--draw-penalty` exists to set is not merely unused here — it is unrepresentable.
         "winprob_critic_refuses_draw_penalty", ("critic", "draw_penalty", "terminal_indicator"),
         lambda a: _winprob(a) and float(_val(a, "draw_penalty", 0.0) or 0.0) != 0.0,
-        lambda a: ("--critic winprob is incompatible with --draw-penalty "
+        lambda a: ("The win-prob critic is incompatible with --draw-penalty "
                    f"{float(_val(a, 'draw_penalty', 0.0)):g}. Under this critic the terminal is "
                    "the WIN INDICATOR (+victory_value on a win, 0.0 on a loss, a tie AND a "
                    "250-turn timeout alike), so there is no separate draw magnitude to set, and a "
@@ -313,7 +282,7 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
     CombinationCheck(
         "winprob_critic_needs_the_indicator_terminal", ("critic", "terminal_indicator"),
         lambda a: _winprob(a) and not bool(_val(a, "terminal_indicator", True)),
-        "--critic winprob requires --terminal-indicator. The critic is sigmoid(logit) in [0,1] "
+        "The win-prob critic requires --terminal-indicator. The critic is sigmoid(logit) in [0,1] "
         "and GAE mixes the REWARD with it, so a +V/-V terminal would put the return and the "
         "critic in different scales and every terminal TD error would carry a systematic, "
         "state-dependent offset (a loss reads `-V - V` against a truth of `0 - V`). The indicator "
@@ -321,7 +290,7 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
     CombinationCheck(
         "winprob_critic_needs_unit_victory_value", ("critic", "victory_value"),
         lambda a: _winprob(a) and float(_val(a, "victory_value", 1.0) or 0.0) != 1.0,
-        lambda a: ("--critic winprob requires --victory-value 1.0 (got "
+        lambda a: ("The win-prob critic requires --victory-value 1.0 (got "
                    f"{float(_val(a, 'victory_value', 1.0)):g}). With the indicator terminal the "
                    "undiscounted return is `victory_value * 1{win}` while the critic is "
                    "sigmoid(logit) in [0,1], so the two agree at exactly one scale. At 1.0 the "
@@ -336,7 +305,7 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "winprob_critic_needs_unit_gamma", ("critic", "gamma"),
         lambda a: _winprob(a) and getattr(a, "gamma", None) is not None
         and float(a.gamma) != _winprob_gamma(),
-        lambda a: (f"--critic winprob requires --gamma {_winprob_gamma():g} (got {float(a.gamma):g}). "
+        lambda a: (f"The win-prob critic requires --gamma {_winprob_gamma():g} (got {float(a.gamma):g}). "
                    "The discount is PAIRED with the critic (agents.model.critic_mode.critic_gamma): "
                    "with the terminal-only indicator reward and the 250-turn hard cap, V(s) == "
                    "P(win|s) holds exactly only at gamma 1 -- at 0.9999 over 250 turns the return is "

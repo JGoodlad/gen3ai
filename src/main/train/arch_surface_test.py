@@ -47,6 +47,19 @@ INCIDENT_ARGV_FALLBACK = (
 INCIDENT_RUN = "ai_v12_01_winprob_critic"
 
 
+def _incident_argv_at_head() -> list:
+    """The incident's argv with the flags HEAD has DELETED taken out (it types `--critic winprob` and, until the
+    reward cluster went, three more) — what an operator would have to type today for HEAD's own parser."""
+    from main.checkargs import LAUNCHER_ONLY, _without_deleted_flags, known_option_strings, split_argv
+    argv = _incident_argv()
+    known = known_option_strings()
+    unknown = [f for f, _ in split_argv(argv)
+               if f.startswith("--") and f not in known and f not in LAUNCHER_ONLY]
+    out = _without_deleted_flags(argv, unknown)
+    assert out is not None, f"the incident argv carries a flag HEAD neither knows nor lists as deleted: {unknown}"
+    return out
+
+
 def _incident_argv() -> list:
     """The incident's own recorded `original_command`, minus the program name — else the copy."""
     from utils.paths import main_models_dir
@@ -84,7 +97,7 @@ def _namespace(argv):
         ns, _rest = parser.parse_known_args(argv)
         ns._explicit_flags = frozenset(d for d, v in vars(ns).items() if v is not None)
         ns._saved_config_present = False
-        resolve_critic_mode(ns, None)
+        resolve_critic_mode(ns)
         desugar_umbrella_flags(ns)
     return ns
 
@@ -198,7 +211,8 @@ def test_the_umbrella_SETS_or_NAMES_every_supervision_dose():
 
 
 def test_the_umbrella_does_not_fight_the_winprob_critic():
-    """`--critic winprob` REFUSES `--value-dist-mode` and `--value-from-dist`, both of which the
+    """The win-prob critic (the incident argv types `--critic winprob`, a flag deleted since; the helper
+    ignores unknown tokens) REFUSED `--value-dist-mode` and `--value-from-dist`, both of which the
     production mirror has ON. If the umbrella applied them it would turn every critic arm into a
     launch refusal — the reason the critic family is excluded by declaration."""
     from main.train.combination_checks import failing_checks
@@ -426,7 +440,7 @@ def test_checkargs_exits_zero_with_the_umbrella(capsys):
     check correctly refuses it (the pinned-parser rule, and a real constraint — see the runbook).
     The question here is whether the ARCH SURFACE half passes."""
     from main.checkargs import main as checkargs_main
-    argv = [t for t in _incident_argv() if t not in ("--pin-commit", "e798c13a")]
+    argv = [t for t in _incident_argv_at_head() if t not in ("--pin-commit", "e798c13a")]
     rc = checkargs_main(["--argv", " ".join(argv + ["--arch", "production"])])
     out = capsys.readouterr().out
     assert rc == 0, out[-2000:]
@@ -467,17 +481,16 @@ def test_the_arch_verdict_never_shares_a_line_with_a_combination_refusal(capsys)
     stripped surface), so the two must read as two findings — separate blocks, separate closing
     lines — or a reader who fixes the loud one believes they have fixed the silent one."""
     from main.checkargs import main as checkargs_main
-    argv = ("--steps 100 --critic winprob --terminal-indicator "
-            "--victory-value 1.0 --draw-penalty 0 --gamma 0.99")
+    argv = "--steps 100 --win-prob-mode none"
     rc = checkargs_main(["--argv", argv])
     out = capsys.readouterr().out
     assert rc != 0
     assert "refused combinations" in out and "ARCH SURFACE" in out
-    # the refused flag is `--gamma` (paired with the critic): its refusal is a COMBINATION finding,
-    # printed in the combinations block — not a line of the arch block above it.
+    # the refused flag is `--win-prob-mode none` (the win-prob head IS the critic): its refusal is a
+    # COMBINATION finding, printed in the combinations block — not a line of the arch block above it.
     combos_block = out.split("ARCH SURFACE", 1)[0]
-    assert "--critic winprob requires --gamma 1" in combos_block
-    assert "--critic winprob requires --gamma" not in out.split("ARCH SURFACE", 1)[1]
+    assert "--win-prob-mode none is refused" in combos_block
+    assert "--win-prob-mode none is refused" not in out.split("ARCH SURFACE", 1)[1]
     # ...and the arch-only closing line must NOT fire when a combination also failed, or the two
     # verdicts would blur into one.
     assert "builds the wrong architecture" not in out
@@ -505,7 +518,7 @@ def test_dry_run_and_checkargs_reach_the_same_verdict(monkeypatch, tmp_path, run
 def test_dry_run_accepts_the_umbrella(monkeypatch, tmp_path, run_archive):
     import main.launcher.dry_run as dry_run_mod
     monkeypatch.chdir(tmp_path)
-    child_args = [t for t in _incident_argv()
+    child_args = [t for t in _incident_argv_at_head()
                   if t not in ("--restart-interval-hours", "3", "--pin-commit", "e798c13a")]
     rc = dry_run_mod.dry_run(
         child_args + ["--arch", "production"], interval_hours=0, pin=False, sync_to_main=False,

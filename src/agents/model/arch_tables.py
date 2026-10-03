@@ -106,7 +106,7 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # v115 gen3_winprob_strata_weight_v1 — the OPPONENT-STRATIFIED weight on the win-prob BCE.
     # Named to `win_head` rather than None because it CAN be inert in the way this column exists to
     # show: a live weight with no win-prob head reweights a loss that is not being computed. (The
-    # cross-flag half — it also needs `--critic winprob` — is a `combination_checks` REFUSAL, so it
+    # cross-flag half — it also needs the win-prob critic — is a `combination_checks` REFUSAL, so it
     # cannot reach a config; the head is the part a config can get wrong.) Declared here rather
     # than relying on the `*_coef` suffix, which is exactly how `intent_label_bot_weight` above
     # stayed out of every generated table from v97.

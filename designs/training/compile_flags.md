@@ -848,7 +848,7 @@ routine gate the moment the layout changes. It checks four things, eager vs comp
 |---|---|---|---|
 | (pi ‖ vf) features, no-grad | 1e-4 (unchanged) | 2.4e-05 | 10.7 |
 | MASKED legal log-probs (what the rollout samples and PPO's ratio reads) | 1e-3 | 1.2e-05 | legal logits off by up to 7.39 (3,840 rows) |
-| V (the win-prob sigmoid under `--critic winprob`) | 1e-4 | 5.4e-07 | 0.33 (3,840 rows) |
+| V (the win-prob sigmoid under the win-prob critic (the only critic)) | 1e-4 | 5.4e-07 | 0.33 (3,840 rows) |
 | TRAIN graph: fwd features + gradient cosine on the gate's own loss (since `gen3_gate_grad_coverage_v1`: the probe loss over the whole policy, plus the coverage guard and the per-parameter rule below) | 1e-4 · cos ≥ 0.9999 | 1.9e-05 · 1.000000 | 7.65 · 0.778 |
 
 The healthy column is the gate's own line on `ai_v14_01_base/final_model.zip`.
@@ -1372,7 +1372,7 @@ resolved config and held to that declaration every update:
 
 | lever | flag | in the batch | how it is declared |
 |---|---|---|---|
-| strata | `--win-prob-strata-weight > 0` (`--critic winprob`) | `var["strata_w"]` `[4]` + `var["strata_active"]` | from the FLAG (`TrainSetup._r1_levers`); a rollout with fewer than two opponent classes among its labelled rows gets the NEUTRAL weights (ones, `strata_active` False) — bit-identical to the unweighted BCE (`x * 1.0 == x`, forward and backward; `r1_declared_levers_test`), its row-weight diagnostics absent as before |
+| strata | `--win-prob-strata-weight > 0` (the win-prob critic) | `var["strata_w"]` `[4]` + `var["strata_active"]` | from the FLAG (`TrainSetup._r1_levers`); a rollout with fewer than two opponent classes among its labelled rows gets the NEUTRAL weights (ones, `strata_active` False) — bit-identical to the unweighted BCE (`x * 1.0 == x`, forward and backward; `r1_declared_levers_test`), its row-weight diagnostics absent as before |
 | fork mask | `--fork-fraction > 0` | `fork_pg_m` (obs key) | the key is in the env's obs space at startup; injected rows make a RAGGED last micro-batch, which runs eager by declaration |
 | label keys | `--move-belief-mode` | `known_moves` | in the obs space at startup (they ride the dict; the forward reads none) |
 

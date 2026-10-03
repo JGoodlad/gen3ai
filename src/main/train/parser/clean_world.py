@@ -8,10 +8,9 @@ keep their original relative order, which is the order `--help` renders.
 """
 import argparse
 
-from agents.model.critic_mode import CRITIC_TRAINABLE_MODES
 from agents.training.value_sidecar import DEFAULT_SIDECAR_FRACTION
 from main.train.constants import CLIP_RANGE_DEFAULT
-from main.train.parser.base import BoolFlag, optional_float, retired_choice
+from main.train.parser.base import BoolFlag, optional_float
 
 
 def _rnd_variants_arg(value: str) -> str:
@@ -27,37 +26,18 @@ def _rnd_variants_arg(value: str) -> str:
 
 def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their original order."""
-    # --- gen3_winprob_critic_mode_v1 (ai_v12, designs/ai_v12/design_winprob_only_critic.md): WHICH
-    #     readout is the value function. Declared FIRST in this family because it governs the
-    #     reward composition and the win-prob head below it. ---
-    parser.add_argument("--critic", dest="critic", choices=CRITIC_TRAINABLE_MODES, default=None,
-                        type=retired_choice(
-                            "--critic", CRITIC_TRAINABLE_MODES,
-                            "'shaped' trained on the Python env core, deleted in deletion pass U3, "
-                            "2026-10-02; a shaped-era run resumes PINNED to its own commit — an OLD shaped "
-                            "checkpoint still LOADS (as an opponent, in the meters and the prober)"),
-                        help="WHICH readout is the critic. 'winprob' (the DEFAULT and the ONLY trainable value "
-                             "since the Python env core was deleted — deletion pass U3, 2026-10-02) = THE "
-                             "WIN-PROB HEAD IS THE CRITIC: V(s) = sigmoid(logit) in [0,1], the value loss IS "
-                             "that head's BCE against the terminal outcome (weighted by --vf-coef), "
-                             "the reward stream is "
-                             "the TERMINAL WIN INDICATOR (--terminal-indicator and "
-                             "--victory-value 1.0 required -- both the bare-argv defaults -- so "
-                             "V(s) == E[return] exactly) "
-                             "and --gamma defaults to 1.0 (a win on turn 200 is worth a win on turn "
-                             "20), which makes V(s) EXACTLY P(win|s) with no approximation term. "
-                             "It requires --win-prob-mode read_only|shaping (unset defaults to "
-                             "'shaping' under this critic) and REFUSES the flags whose job it "
-                             "subsumes -- see the refusals `python -m main.checkargs` prints. "
-                             "'shaped' (every generation through gen-16: the scalar value_net in raw return "
-                             "units) is refused at parse time.")
+    # --- gen3_winprob_critic_mode_v1 (ai_v12, designs/ai_v12/design_winprob_only_critic.md): WHICH readout is
+    #     the value function. THERE IS NO `--critic` FLAG (deletion pass P11b, 2026-10-03): the win-prob critic
+    #     is the only trainable critic (`'shaped'` trained on the Python env core, deleted in U3), so the mode
+    #     is a CONSTANT of the namespace (`parser/objective.py`) and a typed `--critic` is refused with the
+    #     reason. The win-prob head's own readout mode stays a flag, `--win-prob-mode`, further down. ---
     parser.add_argument("--value-sidecar", "--value_sidecar", dest="value_sidecar",
                         type=str, choices=("auto", "on", "off"), default="auto",
                         help="Log the critic against its OWN TRAINING TARGET. Once per rollout a "
                              "seeded fraction of buffer states is appended to "
                              "<run>/value_sidecar/rows.jsonl (value, derived win logit, back-filled "
                              "win target, opponent class, turn, episode extent, timeout flag). "
-                             "'auto' (the DEFAULT) = ON under --critic winprob, OFF otherwise: "
+                             "'auto' (the DEFAULT) = ON (the win-prob critic is the only critic), OFF otherwise: "
                              "every probe this project owns reads EVAL battles, so on a win-prob "
                              "arm the training distribution's calibration was simply never "
                              "measured. Read it with `python -m main.ops.value_sidecar_read <run>`. "
@@ -96,8 +76,8 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                         help="TERMINAL SHAPE: ON (the DEFAULT since the deletion pass, 2026-10-02) "
                              "pays +V on a WIN and 0.0 on EVERYTHING else, so the undiscounted return "
                              "is V*1{win} and at --victory-value 1.0 the return IS the win indicator. "
-                             "That is what makes V(s) == P(win|s) exactly under --critic winprob (the "
-                             "default critic), which REQUIRES this flag. ⚠️ It makes --draw-penalty "
+                             "That is what makes V(s) == P(win|s) exactly under the win-prob critic (the "
+                             "only critic), which REQUIRES this flag. ⚠️ It makes --draw-penalty "
                              "and the draw<=loss ORDERING inapplicable, not merely inert -- a [0,1] "
                              "critic cannot represent 'a timeout is worse than a loss' -- so the "
                              "anti-stall pressure must come from the obs deadline clock. OFF "
@@ -346,9 +326,8 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "target with a higher between-cell share DOES condition "
                              "(designs/research_state/measurements/winprob_head_refit_2026-09-09/). "
                              "This raises that share directly, with no new labels and no rollout "
-                             "cost. REQUIRES --critic winprob (refused otherwise -- the BCE is an "
-                             "auxiliary readout under `shaped`, not the objective the measurement "
-                             "indicts). Watch win_prob/strata_share_*, strata_w_entropy and "
+                             "cost. The BCE it reweights IS the value loss (the win-prob critic is "
+                             "the only critic). Watch win_prob/strata_share_*, strata_w_entropy and "
                              "loss vs loss_unweighted. TRAINING-only, resume-inherited.")
     # --- gen3_ridealong_heads_v1 (2026-09-30, owner): the DETACHED RIDE-ALONG baseline heads.
     #     Each OFF by default; the baseline argv turns all four on. None of them can change what the
@@ -419,8 +398,7 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "shape), so above ~0.008 this flag is INERT and the delivered count "
                              "is the budget's -- read fork/requested against fork/forks. Watch "
                              "fork/sim_steps_share, fork/branch_share, fork/rate and "
-                             "fork/pairwise_acc. REQUIRES --critic winprob, and REFUSES "
-                             "--win-prob-strata-weight. "
+                             "fork/pairwise_acc. REFUSES --win-prob-strata-weight. "
                              "TRAINING-only, resume-inherited.")
     parser.add_argument("--fork-branches", "--fork_branches", dest="fork_branches",
                         type=int, choices=(2, 3), default=None,

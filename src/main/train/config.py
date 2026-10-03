@@ -233,8 +233,8 @@ def desugar_umbrella_flags(args) -> None:
               f"designs/production_config.json ({args.arch_source}). An explicitly-typed flag "
               f"still wins.")
         # K10(a) THE RECIPE SURFACE, right after the architecture and before every other desugar
-        # (and before `resolve_critic_mode`, which then implies the rest of an applied
-        # `--critic winprob`). Typed tokens win: `recipe_surface.typed_dests` is the parser's record.
+        # (and before `resolve_critic_mode`, which then implies the rest of the win-prob critic's
+        # settings). Typed tokens win: `recipe_surface.typed_dests` is the parser's record.
         from main.train.recipe_surface import apply_production_recipe
         recipe = apply_production_recipe(args)
         print(f"[Recipe] --arch production: applied {len(recipe)} RECIPE knob(s) from "
@@ -312,48 +312,37 @@ def _agree_float(a, b) -> bool:
     return a is not None and b is not None and float(a) == float(b)
 
 
-def resolve_critic_mode(args, saved_ver=None) -> None:
-    """Resolve `--critic` and imply the two tri-state flags the `winprob` value settles, in place.
+def resolve_critic_mode(args) -> None:
+    """Imply the two tri-state flags the win-prob critic settles, in place (`--critic` itself is no flag:
+    deletion pass P11b made the critic a CONSTANT of the namespace, `parser/objective.py`).
 
     Module-level, and called before the `_resolve` sweep, for `desugar_umbrella_flags`' exact
     reason: `main.checkargs` has to build the SAME effective namespace a launch builds before it
-    can read `combination_checks` on it, and every refusal in the critic family reads a value this
-    function fills. A checker that skipped it would report a `winprob` command's implied
+    can read `combination_checks` on it. A checker that skipped it would report the implied
     `--win-prob-mode shaping` as a missing dependency on a command that launches.
 
-    An UNTYPED `--critic` resolves to the checkpoint's recorded critic on a resume (an absent record
-    = `CRITIC_UNRECORDED`, shaped — the `ModelVersion` field default), and to `CRITIC_DEFAULT`
-    (`winprob`, the deletion pass's bare-argv flip, 2026-10-02) on a fresh argv. Under `shaped`
-    nothing beyond the mode itself is assigned.
-
-    **IMPLIED under `winprob` — exactly the flags whose "unset" is REPRESENTABLE:**
+    **IMPLIED — exactly the flags whose "unset" is REPRESENTABLE:**
 
     ``win_prob_mode``  'shaping'  the head must EXIST to be the critic ('none' is refused)
     ``gamma``          1.0        V(s) is then EXACTLY P(win|s) (see the flag's help)
 
     Both carry an argparse default of `None`, so an unset flag is distinguishable from a
     typed one and the implication can never overwrite an operator's choice — it is then judged by
-    `combination_checks`. Running BEFORE the inheritance sweep is load-bearing: a fork of a
-    `shaped` parent would otherwise inherit that parent's `win_prob_mode='none'` from its recorded
-    config, and the mode would be broken by a value nobody typed.
+    `combination_checks`. Running BEFORE the inheritance sweep is load-bearing: the sweep would
+    otherwise inherit a parent's recorded `win_prob_mode` over the implication (a shaped parent's
+    `'none'` is refused outright now, D4, so the only live case is a parent that recorded another
+    legal mode).
 
     🚨 **NOT IMPLIED, and that is a decision rather than an omission:** `--terminal-indicator`,
     `--victory-value 1.0` and `--draw-penalty 0`. Those three are resume-immutable REWARD fields
-    with concrete argparse defaults — since the bare-argv flip (2026-10-02) exactly the winprob values
-    (True / 1.0 / 0.0), so a bare argv satisfies the checks below without typing them; a typed
-    `--critic shaped` must type its own signed terminal — so "the operator left it alone" and "the
-    operator typed the default" are indistinguishable — an implication there would silently
-    overwrite a typed value, and the refusal meant to catch a conflicting one could never fire.
-    They are instead REQUIRED, each by its own `combination_checks` entry naming the flag to pass:
-    a self-documenting config beats a silent override, and the reward a run trained under is
-    exactly the thing the v8→v9 drift proved must be stated. (`--no-hand-shaping` was the fourth
-    until the shaped reward path was deleted, 2026-09-26.)
+    with concrete argparse defaults — exactly the winprob values (True / 1.0 / 0.0) since the
+    bare-argv flip (2026-10-02) — so "the operator left it alone" and "the operator typed the
+    default" are indistinguishable: an implication there would silently overwrite a typed value,
+    and the refusal meant to catch a conflicting one could never fire. They are instead REQUIRED,
+    each by its own `combination_checks` entry naming the flag to pass.
     """
-    from agents.model.critic_mode import CRITIC_DEFAULT, critic_gamma, is_winprob
+    from agents.model.critic_mode import critic_gamma
 
-    inherit_saved_flag(args, saved_ver, "critic", CRITIC_DEFAULT)
-    if not is_winprob(args.critic):
-        return
     for name, value in (("win_prob_mode", "shaping"), ("gamma", critic_gamma(args.critic))):
         if getattr(args, name, None) is None:
             setattr(args, name, value)
@@ -487,9 +476,9 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # --- gen3_winprob_critic_mode_v1: THE CRITIC MODE, and the composition it implies ------------
     # Resolved BEFORE `_resolve` so the implications below land on the same tri-state sentinels
     # every other flag is inherited through — an implied value must look exactly like a typed one
-    # to `_resolve`, or a fork would inherit the parent's `shaped` composition under a `winprob`
-    # argv. `--critic` itself is STRUCTURAL + resume-immutable, so it inherits like `win_prob_mode`.
-    resolve_critic_mode(args, _saved_ver)
+    # to `_resolve`. The critic itself is a CONSTANT of the namespace (`parser/objective.py`): a recorded
+    # shaped parent was REFUSED above (D4), so no parent can hand a different critic to this sweep.
+    resolve_critic_mode(args)
     # A pre-v125 checkpoint with opp_intent ON records no dose: migrate it from metadata.json or
     # REFUSE (never guess). Before the sweep, so `_resolve` sees the migrated coefficient as set.
     try:

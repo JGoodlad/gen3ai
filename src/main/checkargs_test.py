@@ -506,25 +506,23 @@ def test_a_repeated_flag_reads_the_LAST_value_the_way_argparse_does():
 # the child will never run. Observed on the first win-prob arm's launch (`--pin-commit e798c13a`,
 # no `--model`): harmless only because HEAD happened to BE the pin that afternoon.
 
-#: A REAL commit in this repository, one before `--critic` existed. Real on purpose: the whole
+#: A REAL commit in this repository, one before the win-prob critic mode existed. Real on purpose: the whole
 #: mechanism is `git archive` + that commit's own `build_parser()`, so a fabricated sha would
-#: exercise nothing. `--critic` is likewise a real current-only flag — `flags_only_in_current_tree`
-#: asks the LIVE parser what it knows, and a made-up spelling would land in the ordinary
-#: unrecognized bucket instead.
+#: exercise nothing. `--allow-nonproduction-arch` is likewise a real current-only flag —
+#: `flags_only_in_current_tree` asks the LIVE parser what it knows, and a made-up spelling would land in
+#: the ordinary unrecognized bucket instead. (It replaced `--critic` here when P11b deleted that flag.)
 _COMMIT_BEFORE_CRITIC = "08dac300"
-_CURRENT_ONLY_FLAG = "--critic"
+_CURRENT_ONLY_FLAG = "--allow-nonproduction-arch"
 
-#: A `--critic winprob` argv the CURRENT tree accepts outright — every companion the mode's own
-#: combination checks require, so the only thing separating the two arms below is the pin.
+#: An argv the CURRENT tree accepts outright, so the only thing separating the two arms below is the pin.
 # `--allow-nonproduction-arch` is carried deliberately: these two tests are about WHICH PARSER
 # judges an argv, and without it the ARCH-SURFACE guard (gen3_arch_surface_guard_v1) refuses the
 # command for a different, correct reason — a bare fresh argv is not the production architecture —
 # which would make the pinned/unpinned arms differ in two things instead of one. That the guard
 # fires on this exact shape is `main/train/arch_surface_test.py`'s subject. The RECIPE consent
 # (K10(a)) is carried for the identical reason; `recipe_surface_test.py` owns that subject.
-_WINPROB_ARGV = ("--steps 1000 --critic winprob --terminal-indicator "
-                 "--victory-value 1.0 --draw-penalty 0 --device cuda "
-                 "--allow-nonproduction-arch --allow-nonproduction-recipe")
+_HEAD_ARGV = ("--steps 1000 --device cuda "
+              "--allow-nonproduction-arch --allow-nonproduction-recipe")
 
 
 def _require_commit(sha: str) -> None:
@@ -576,7 +574,7 @@ def test_a_fresh_pinned_argv_is_judged_by_THAT_commits_parser(capsys):
     from main.exit_codes import TrainExitCode
     _require_commit(_COMMIT_BEFORE_CRITIC)
     rc = checkargs_main(
-        ["--argv", f"--pin-commit {_COMMIT_BEFORE_CRITIC} {_WINPROB_ARGV}"])
+        ["--argv", f"--pin-commit {_COMMIT_BEFORE_CRITIC} {_HEAD_ARGV}"])
     out = capsys.readouterr().out
     assert rc == int(TrainExitCode.FATAL_CONFIG), out
     assert f"PINNED commit {_COMMIT_BEFORE_CRITIC}" in out, out
@@ -589,7 +587,7 @@ def test_the_same_argv_WITHOUT_the_pin_passes(capsys):
     """The paired control. Drop the `--pin-commit` and the identical flags are judged by THIS
     tree, where they all exist — so the arms differ in the pin and nothing else."""
     from main.checkargs import main as checkargs_main
-    rc = checkargs_main(["--argv", _WINPROB_ARGV])
+    rc = checkargs_main(["--argv", _HEAD_ARGV])
     out = capsys.readouterr().out
     assert rc == 0, out
     assert "this argv would run on HEAD" in out and "✓ this command still launches" in out
@@ -681,7 +679,7 @@ def test_a_resume_of_a_winprob_rust_run_inherits_its_critic_and_is_not_refused(t
         res = check(argv)
         ns = res["resolution"]["ns"]
         assert ns.critic == "winprob" and not hasattr(ns, "env_core"), argv
-        assert res["resolution"]["inherited"]["critic"] == "winprob"
+        assert "critic" not in res["resolution"]["inherited"]       # a constant, never inherited (P11b)
         names = [c.name for c, _ in res["combinations"]]
         assert "env_core_rust_needs_the_winprob_critic" not in names, names
 

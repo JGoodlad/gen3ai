@@ -107,7 +107,7 @@ class Family(str, Enum):
     split `Klass` cannot express is inside `structural`: the CRITIC READOUTS (`win_prob_mode`, the
     ride-along heads) build modules exactly the
     way an entity seat does, but they are the quantity an experiment is deliberately CHANGING —
-    `--critic winprob` implies one of them — so a guard that demanded they
+    the win-prob critic implies one of them — so a guard that demanded they
     match the production mirror would refuse every critic arm it exists to protect.
 
     So the guard's key set is `structural` AND `ARCH`, and the exclusion is DECLARED here rather
@@ -635,7 +635,7 @@ def registry_table_section() -> str:
         "guard compares against `designs/production_config.json` on every FRESH launch "
         "(`main.train.arch_surface`, read by `--dry-run`, `python -m main.checkargs` and the "
         "launcher alike). `family` = `critic` marks a readout an experiment deliberately VARIES "
-        "(`--critic winprob` implies one and refuses two others), so it is excluded from both; "
+        "(the win-prob critic implies one and refuses two others), so it is excluded from both; "
         "`training_coef` / `runtime` / `resume_immutable` are excluded by CLASS.",
     ]
 

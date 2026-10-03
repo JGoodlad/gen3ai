@@ -167,7 +167,7 @@ class TrainMetricsExport:
             self.logger.record(f"win_prob/{_ck2}", _cv2)
 
         # +WIN-PROB CRITIC RELIABILITY (gen3_winprob_critic_mode_v1) — the DEPLOYED value's own
-        # Murphy split, once per rollout, under `--critic winprob` only. Beside the head's
+        # Murphy split, once per rollout, under the win-prob critic only. Beside the head's
         # calibration keys above rather than in a parallel prefix; the `critic_` infix says which
         # of the two this is. `resolution` is the meter, not `reliability` — see
         # `calibration.critic_reliability`, which owns the read and the reasoning.

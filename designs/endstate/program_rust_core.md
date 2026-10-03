@@ -801,7 +801,7 @@ and `verdict` (the Decision-record pointer: the SIZING verdict of 2026-10-02 set
 `--arch production` like every recipe knob (the collector-only rows only on the Rust core). The core is rust (no flag; `--env-core` was deleted, P11b): fresh `--arch production` → rust; `--model` (a restart or a fork) → the core the
 checkpoint was produced on when that is rust — a python-era checkpoint (python, or recorded before the core stamp)
 moves onto rust, announced as a core switch, and a shaped-critic one is REFUSED (deletion pass D4); a bare non-production fresh argv → rust (the deletion pass's bare-argv flip, D2 2026-10-02: the
-bare argv is `--critic winprob` + its three reward values). The Python core was DELETED (deletion pass U3, 2026-10-02) and the one-valued `--env-core` flag after it (P11b: a typed one is refused at parse time with the reason). `--dry-run` /
+bare argv is the win-prob critic + its three reward values). The Python core was DELETED (deletion pass U3, 2026-10-02) and the one-valued `--env-core` flag after it (P11b: a typed one is refused at parse time with the reason). `--dry-run` /
 `checkargs` / the launcher print the resolved core with its source and the sizing verdict. Pre-flight at
 N = 48 under the launcher (2026-10-01): startup to the compile LOCK 7.8 min (T2 161 s), 3 updates of 98,304
 rows with 0 compiles after the lock, 3 eval cycles. Pre-flight at N = 256 with the X26 heads, fresh and `--model` resume (2026-10-01/02, after

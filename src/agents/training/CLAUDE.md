@@ -24,7 +24,7 @@ always-current obligation as this file — update the topic doc in the same pass
 | self-play, the snapshot pool, stable opponents | [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md) |
 | exploiter mode, the rank tripwire (distillation, the off-slice anchor and the consensus warm start are DELETED, config v133 / P11) | [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md) |
 | team-side PFSP, per-team win-rate tracking | [`designs/training/team_curriculum.md`](../../../designs/training/team_curriculum.md) |
-| `--critic`, TD-aux, the 250-turn cap (PopArt, the value-tail weight and the value-dist head are DELETED, config v131) | [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md) |
+| the win-prob critic, TD-aux, the 250-turn cap (PopArt, the value-tail weight and the value-dist head are DELETED, config v131) | [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md) |
 | the win-prob head (its PBRS routes were DELETED, config v131) | [`designs/training/winprob_head_and_pbrs.md`](../../../designs/training/winprob_head_and_pbrs.md) |
 | the training-side value sidecar, its two flags, its cost, `main.ops.value_sidecar_read` | [`designs/training/value_sidecar.md`](../../../designs/training/value_sidecar.md) |
 | any supervised belief loss, or the opponent-class label weight | [`designs/training/belief_losses.md`](../../../designs/training/belief_losses.md) |
@@ -61,14 +61,14 @@ value quantities in **three different currencies at once** (a fourth, PopArt-nor
 | **RAW REWARD** | the units `--victory-value` is in, undiscounted | every `reward/*` term, `--draw-penalty` |
 | **RAW SHAPED RETURN** | `Σγᵏr` in raw-reward units | `train/return_*`, `rollout_buffer.{values,returns}`, `train/explained_variance` |
 | **PROBABILITY** | `[0, 1]`, outcome units, undiscounted | every `win_prob/*`, `cf/*` labels, `eval/win_rate_*` |
-| ⚠️ **PROBABILITY, under `--critic winprob`** | the same `[0,1]`, but it is now ALSO what `rollout_buffer.values` / `returns` / `train/explained_variance` are in | the row above **plus** `train/return_*`, `train/explained_variance`, `train/value_loss` (raw) |
+| ⚠️ **PROBABILITY, under the win-prob critic (the only critic)** | the same `[0,1]`, but it is now ALSO what `rollout_buffer.values` / `returns` / `train/explained_variance` are in | the row above **plus** `train/return_*`, `train/explained_variance`, `train/value_loss` (raw) |
 
 ⚠️ **A number is only comparable to another number in the SAME currency.** PopArt (and with it the
 `popart/*` tags and the normalized-return currency) was DELETED (deletion pass L1, config v131), so
 `train/value_loss` is raw in every run; `designs/learning/popart_value_scale_and_currencies.md` is the
 historical background for old traces.
 
-🚨 **`--critic winprob` COLLAPSES the currencies into one, which changes what several tags
+🚨 **The win-prob critic (the only critic) COLLAPSES the currencies into one, which changes what several tags
 MEAN without changing their names** (`gen3_winprob_critic_mode_v1`). The reward is the terminal WIN
 INDICATOR and `V(s) = sigmoid(win_head logit)` — so `train/return_mean` reads a
 win RATE, `train/value_loss` is an MSE in probability units (a diagnostic; its term is
@@ -78,7 +78,7 @@ says so — read the run's `🎯 [CRITIC]` startup line first. The one tag that 
 the two is the `win_prob/` family, which was in probability units all along.
 
 **ERA RELEVANCE — a tag whose SOURCE is absent is not emitted (`gen3_tb_relevance_v1`).** The
-`--critic winprob` era changes no tag NAME but removes the SOURCE behind several of them, and the
+The win-prob critic (the only critic) era changes no tag NAME but removes the SOURCE behind several of them, and the
 recorders kept publishing — flat constants and byte-identical duplicates a reader cannot tell from
 a measurement. Classified from the live arm's own tfevents (216 tags): **166 LIVE · 31 NOISE, all
 now GATED · 19 REDUNDANT · 0 DEAD**, plus ~48 correctly-silent CONDITIONAL ones. 🚨 **The gate is
@@ -557,7 +557,7 @@ Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` �
 ## The env core — the Rust core (the ONLY core; the M5 switch, M5 Lane G)
 
 🚨 **`rust` is the ONLY env core** (`gen3_env_core_switch_v1`; the Python core was deleted in the deletion pass, U3, and the one-valued `--env-core` flag with it, P11b: a typed one is refused at parse time with the reason, and no `env_core` attribute is left on the namespace). Every run SIZE is declared in ONE block, `designs/production_config.json` `recipe.sizing`.
-Every launch runs on rust (a fresh `--arch production` or bare argv — the bare argv is `--critic winprob` + its three reward values, which the Rust core serves). What stays keyed on the RECORD: a `--model` checkpoint produced on rust runs on it silently, and a PYTHON-ERA checkpoint (produced on python, or before the core was stamped) that trained the WINPROB critic moves onto rust, announced as a CORE SWITCH (`rust_env_setup.env_core_switch_line`, read off `metadata.json`'s `env_core` stamp). A checkpoint that trained the SHAPED critic is REFUSED on a resume or fork whatever the core (`FATAL_CONFIG`, D4 `PythonEraShapedCheckpoint`: run it pinned to its own commit); it still LOADS as an opponent, in the meters and in the prober.
+Every launch runs on rust (a fresh `--arch production` or bare argv — the bare argv is the win-prob critic (the only critic) + its three reward values, which the Rust core serves). What stays keyed on the RECORD: a `--model` checkpoint produced on rust runs on it silently, and a PYTHON-ERA checkpoint (produced on python, or before the core was stamped) that trained the WINPROB critic moves onto rust, announced as a CORE SWITCH (`rust_env_setup.env_core_switch_line`, read off `metadata.json`'s `env_core` stamp). A checkpoint that trained the SHAPED critic is REFUSED on a resume or fork whatever the core (`FATAL_CONFIG`, D4 `PythonEraShapedCheckpoint`: run it pinned to its own commit); it still LOADS as an opponent, in the meters and in the prober.
 One refusal: `main.train.rust_env_setup.refuse_python_era_checkpoint`, called by `resolve_config` and
 `checkargs` (read off the checkpoint's recorded critic); pinned by `main/train/env_core_switch_test.py`. Runbook: `designs/ops/training_runbook.md`.
 
@@ -692,9 +692,9 @@ half-batch trunk-gradient cosine, and feature velocity. They exist because every
 and saturation is a trend.
 **Full detail — in [`designs/training/telemetry_scalars.md`](../../../designs/training/telemetry_scalars.md).**
 
-## THE VALUE LOSS has a MODE — `--critic winprob` (`gen3_winprob_critic_mode_v1`)
+## THE VALUE LOSS has a MODE — the win-prob critic (`gen3_winprob_critic_mode_v1`)
 
-**`winprob` is the ONLY trainable critic and the default** (the bare-argv flip, deletion pass D2; a typed `--critic shaped` is refused at parse time since U3, `CRITIC_TRAINABLE_MODES = (winprob,)`). `shaped` is the historical critic (`CRITIC_SHAPED`, still in `CRITIC_MODES` and the meaning of an ABSENT record, so an old shaped checkpoint still LOADS as an opponent, in meters and in the prober); a resume or fork of one is refused `FATAL_CONFIG` (D4) — run it pinned to its own commit. The `shaped` column below is the historical contrast. Design of record:
+**`winprob` is the ONLY trainable critic** (a CONSTANT of every trainer namespace — `src/main/train/parser/objective.py`, `parser.set_defaults`; the `--critic` flag is DELETED, P11b batch (b), and a typed one is refused with its reason from `designs/deleted_flags.md`; `CRITIC_TRAINABLE_MODES` is deleted). `shaped` is the historical critic (`CRITIC_SHAPED`, still in `CRITIC_MODES` and the meaning of an ABSENT record, so an old shaped checkpoint still LOADS as an opponent, in meters and in the prober); a resume or fork of one is refused `FATAL_CONFIG` (D4) — run it pinned to its own commit. The `shaped` column below is the historical contrast. Design of record:
 `designs/ai_v12/design_winprob_only_critic.md`; the model-side half is `src/agents/model/CLAUDE.md`
 → *The CRITIC MODE*.
 
@@ -730,8 +730,7 @@ RESUME like `--lr`.**
 
 ### `--win-prob-strata-weight` — the BCE's opponent MIX (`gen3_winprob_strata_weight_v1`, v115)
 
-**Default `0.0` = OFF and the loss is BIT-identical; `--critic winprob` is REQUIRED** (refused
-otherwise — under `shaped` that BCE is an auxiliary diagnostic, not the value loss). Each state's
+**Default `0.0` = OFF and the loss is BIT-identical; it runs on the win-prob critic (the only critic)** (the BCE IS the value loss). Each state's
 BCE term is multiplied by its opponent CLASS's weight `w_c ∝ freq_c ** (−s)`, capped at **8×** and
 renormalised so the **mean weight over the rollout buffer is exactly 1** — it re-prices the MIX
 without moving the loss SCALE, so an arm cannot confound "re-weighted the classes" with "raised the
@@ -758,7 +757,7 @@ family is published whenever the flag is on, so 0 means "on, but one class prese
 ### `--fork-fraction` — THE FORK ARM, contested-state EXPLORING STARTS (`gen3_fork_v1`, v120)
 
 **Default `0.0` = OFF and BIT-identical** — no fork object built, no obs key declared, no row injected.
-**`--critic winprob` is REQUIRED**, and `--win-prob-strata-weight` is REFUSED
+**It runs on the win-prob critic (the only critic)**, and `--win-prob-strata-weight` is REFUSED
 alongside it; the arm's replay
 ring, `--cf-records`, was deleted in deletion pass L4 and the Python arm's code in L5. Detail:
 [`designs/training/forks.md`](../../../designs/training/forks.md).
@@ -897,7 +896,7 @@ buffer** — the value PPO actually used, against `win_target`, the label the BC
 Once per rollout at `_on_rollout_end`, a seeded 1/64 of buffer states is appended to
 `<run>/value_sidecar/rows.jsonl`. Read it with `python -m main.ops.value_sidecar_read <run>`.
 
-- **`--value-sidecar {auto,on,off}` (default `auto` = ON under `--critic winprob`)**, plus
+- **`--value-sidecar {auto,on,off}` (default `auto` = ON under the win-prob critic (the only critic))**, plus
   `--value-sidecar-fraction` (1/64) and `--value-sidecar-seed` (0). None of the three reaches
   `model_config.json`, so there is no `MODEL_CONFIG_VERSION` implication.
 - 🚨 **THE LABELS MUST BE FILLED BEFORE THE SIDECAR READS THEM.** The Rust COLLECTOR fills `win_target` /
@@ -948,8 +947,7 @@ The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s
   the ARCH surface, before `resolve_critic_mode`). "Typed" is recorded by the parser
   (`_recipe_typed`). `recipe_source` lands in `metadata.json`'s `cli_args`.
 - 🚨 **`--gamma` is PAIRED with the critic, not a free recipe row** (`critic_mode.critic_gamma`:
-  winprob 1.0, shaped 0.9999 — no run ever trained a shaped critic at 1.0). Under a TYPED `--critic
-  shaped` the umbrella applies 0.9999 (reported `paired`); `--critic winprob` refuses a typed gamma
+  winprob 1.0, shaped 0.9999 — no run ever trained a shaped critic at 1.0). The win-prob critic (the only critic) refuses a typed gamma
   other than 1.0; an untyped gamma that is not its critic's is a launch `FATAL_CONFIG`.
 - **Refusal.** `checkargs`, `--dry-run` and the launcher REFUSE a FRESH argv that differs on an
   UNTYPED knob; a TYPED difference is the arm's lever (INFO); `--allow-nonproduction-recipe`
@@ -1040,7 +1038,7 @@ a handful of numpy means per rollout.
 ## The SCAFFOLDING GAUGE — `train/scaffolding_gauge` + `python -m main.scaffolding_gauge`
 
 🚨 **THIS GAUGE IS A SHAPED-CRITIC INSTRUMENT AND IS DEGENERATE ON THE PRODUCTION RUN.** It
-measures the divergence between TWO readouts; under `--critic winprob` there is one — the win-prob
+measures the divergence between TWO readouts; under the win-prob critic (the only critic) there is one — the win-prob
 head IS the critic, so the gauge compares a head with itself and its rank correlation is 1 by
 construction. Read it on an archived shaped run; do not read it as a scaffolding
 measurement of a terminal-only run, which has no scaffolding to measure.

@@ -38,7 +38,7 @@ class _AnalysisMixin:
                                protocol=protocol)
         d = asdict(a)
         d["model_resolution"] = dict(_choice_dict(choice), dropped_kwargs=list(dropped))
-        # WHICH READOUT IS THE CRITIC. Under `--critic winprob` `value` and `win_prob` below are
+        # WHICH READOUT IS THE CRITIC. Under the win-prob critic `value` and `win_prob` below are
         # the SAME number, so a surface must be able to say so instead of presenting them as two
         # estimators that happen to agree on every decision ever rendered.
         d["critic_currency"] = self.critic_currency()

@@ -310,8 +310,7 @@ CRITIC_MODE_TAGS = (
     "win_prob/critic_decomp_residual",
 )
 
-_WINPROB_ARGV = ["--critic", "winprob", "--terminal-indicator",
-                 "--victory-value", "1.0", "--draw-penalty", "0"]
+_WINPROB_ARGV = []      # the bare argv IS the win-prob run (the critic and its reward are constants, P11b)
 _SHAPED_ARGV = ["--win-prob-mode", "read_only"]
 
 

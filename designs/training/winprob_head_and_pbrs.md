@@ -16,7 +16,7 @@ filename stays so existing links resolve.
 
 The training half of the tri-state win-probability head (model side: `src/agents/model/CLAUDE.md` →
 win-probability head, v22). A calibrated **P(win|state)** the shaped critic can't give — supervised by the
-Monte-Carlo episode OUTCOME. Off by default (`--win-prob-mode none`); under `--critic winprob` it is THE CRITIC.
+Monte-Carlo episode OUTCOME. Off by default (`--win-prob-mode none`); under the win-prob critic (the only critic) it is THE CRITIC.
 Three pieces live here:
 
 - **The label is a FUTURE quantity** — the outcome is only known when the battle ends, so (unlike the
@@ -31,7 +31,7 @@ Three pieces live here:
     excluded — never trained toward a fabricated label. (The Python `MaskableAgentWrapper.step` and `WinProbLabelCallback` that did this, sync and async, were deleted in U3.)
 - **Loss (`instrumented_ppo.py` `_win_prob_loss`).** `train()` reads `last_win_prob_logits` (stashed by the
   `evaluate_actions` forward) + `rollout_data.observations["win_target"]`/`["win_mask"]`, folds
-  the masked BCE (at `vf_coef` under `--critic winprob`, a fixed weight 1.0 as an aux otherwise — the
+  the masked BCE (at `vf_coef` under the win-prob critic (the only critic), a fixed weight 1.0 as an aux otherwise — the
   `--win-prob-coef` flag that once set it was deleted). read_only vs shaping differ ONLY in whether the
   extractor stop-grads the head's input (the trunk gradient) — the loss term itself is identical. Folded
   whenever the extractor's `win_prob_mode != none`.

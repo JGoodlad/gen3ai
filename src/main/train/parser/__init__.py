@@ -15,6 +15,7 @@ order, and `build_parser()` calls them in the original order; `--help` is byte-i
     operational.py       `# --- Operational Flags ---`
     hyperparameters.py   `# --- Hyperparameter Flags (Optimized for GPU) ---`
     reward.py            `# --- Reward config ---` (resume-immutable, value-checked)
+    objective.py         the one-valued flags' CONSTANTS (deletion pass P11b): no option, set via `set_defaults`
     clean_world.py       `# --- gen3_clean_world_config_v1 ---` + the PPO clip / belief /
                          damage-op / compile / entity-seat flags declared under it
     capacity.py          `# --- LIVE CAPACITY TELEMETRY ---`
@@ -37,6 +38,7 @@ from main.train.parser.distillation import add_distillation_flags
 from main.train.parser.env_core import add_env_core_flags
 from main.train.parser.eval_subprocess import add_eval_subprocess_flags
 from main.train.parser.hyperparameters import add_hyperparameter_flags
+from main.train.parser.objective import set_objective_constants
 from main.train.parser.operational import add_operational_flags
 from main.train.parser.reward import add_reward_flags
 
@@ -78,6 +80,8 @@ def build_parser() -> argparse.ArgumentParser:
     add_distillation_flags(parser)
     add_eval_subprocess_flags(parser)
     add_env_core_flags(parser)
+    # deletion pass P11b: the one-valued flags' constants ride the namespace, no option types them
+    set_objective_constants(parser)
 
     # K10(a): the RECIPE rows record whether they were TYPED (`_recipe_typed`), because a concrete
     # default (`--ent-coef` 0.02) is otherwise indistinguishable from a typed one — and "an explicit

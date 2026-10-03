@@ -205,7 +205,7 @@ evenly across decisions, i.e. nothing is being localized even though the std may
 
 ### ⚠️ UNITS — within a run freely, across runs only cautiously
 
-The advantages ride the run's own returns (raw `[0,1]` probability returns under `--critic winprob`;
+The advantages ride the run's own returns (raw `[0,1]` probability returns under the win-prob critic (the only critic);
 PopArt, which once normalized them, is deleted). `adv_raw_std` / `adv_raw_abs_mean` are therefore in *this run's
 own return units*, not a fixed scale: their TREND is meaningful, their absolute level is not
 portable. Across two runs with different reward composition, critic or `gamma`/`gae_lambda`,
@@ -257,7 +257,7 @@ monkeypatched out.
 ## The SCAFFOLDING GAUGE — `train/scaffolding_gauge` + `python -m main.scaffolding_gauge`
 
 🚨 **THIS GAUGE IS A SHAPED-CRITIC INSTRUMENT AND IS DEGENERATE ON THE PRODUCTION RUN.** It
-measures the divergence between TWO readouts; under `--critic winprob` there is one — the win-prob
+measures the divergence between TWO readouts; under the win-prob critic (the only critic) there is one — the win-prob
 head IS the critic, so the gauge compares a head with itself and its rank correlation is 1 by
 construction. Read it on an archived shaped run; do not read it as a scaffolding
 measurement of a terminal-only run, which has no scaffolding to measure.
@@ -293,7 +293,7 @@ is identical and float32 ranks never saturate.
 ### ⚠️ UNITS — the rank form is the ONLY one that is live-legal
 
 Under the (no longer trainable) shaped critic `V` is a SHAPED return and there is no general unit
-conversion to a probability. (Under `--critic winprob` the question dissolves: `V` IS the
+conversion to a probability. (Under the win-prob critic (the only critic) the question dissolves: `V` IS the
 probability, which is the same fact that makes this gauge degenerate there.) The
 live scalar is therefore **rank-based and claims ORDERING only** — nothing about magnitude or
 calibration. It also goes **AMBIGUOUS at the PBRS constancy endpoint**: under a good frozen
@@ -408,11 +408,11 @@ sites are flag-gated off in any one run. **Recount before quoting** — `tmp_cen
 `grep -rn "logger.record(" src/agents/training src/main/train src/main/eval_worker.py` for the
 sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 
-| group | sites | tags seen | cadence | currency | **era** (`--critic winprob`) | computed in |
+| group | sites | tags seen | cadence | currency | **era** (the win-prob critic (the only critic)) | computed in |
 |---|---:|---:|---|---|---|---|
 | `reward/` | 1 | 46 | **per rollout** | RAW REWARD | 14 emitted, of which **6 NOISE (gated)** + 5 REDUNDANT — a 1-term composition has nothing to apportion | `reward_term_callback` ← `reward_term_stats` |
 | `train/` | 53 | 23 | per rollout (`train()`) | MIXED — see per-tag below | LIVE, but `return_*` / `value_loss` / `explained_variance` **change currency to P(win)**; `scaffolding_*` **NOISE (gated)** | `instrumented_ppo/ppo.py`, `grad_balance`, `run_io` |
-| `win_prob/` | 5 | 42 (+10 under `--critic winprob`) | per rollout | PROBABILITY | **the era's core group.** The `critic_*` ten are LIVE and primary; the 19 `contested`/`material` tags are **NOISE** on a spread-free margin and are ALL gated (see below) | `ppo.py` ← `value_terms`, `calibration`, `scaffolding.reliability_table` |
+| `win_prob/` | 5 | 42 (+10 under the win-prob critic (the only critic)) | per rollout | PROBABILITY | **the era's core group.** The `critic_*` ten are LIVE and primary; the 19 `contested`/`material` tags are **NOISE** on a spread-free margin and are ALL gated (see below) | `ppo.py` ← `value_terms`, `calibration`, `scaffolding.reliability_table` |
 | `eval/` | 35 | — | **per EVAL CYCLE** | win rate / ELO / reward | LIVE — except **13 `mean_reward_*` REDUNDANT** (byte-identical to their `win_rate_*` twin under the indicator) | `eval_callback`, `selfplay_callback` |
 | `eval_final/` | 0 | — | — | — | **DELETED (P6, 2026-10-02)** — emitted only by the post-training final eval; runs before that date carry the tags | — |
 | `signal/` | 4 | 12 | per rollout | NORMALIZED (adv) / probability (outcome) / rate (draw) | LIVE — `draw_rate` is **promoted to a PRIMARY endpoint** (the G7 kill condition) | `signal_metrics`, `signal_callback` |
@@ -432,7 +432,7 @@ bit-identity guarantee: [`ppo_step.md`](ppo_step.md).
 ### ERA RELEVANCE — a tag whose SOURCE is absent is not emitted (`gen3_tb_relevance_v1`)
 
 **Measured 2026-09-06 over `models/ai_v12_01_winprob_critic`'s first hours: 216 tags emitted.** The
-`--critic winprob` era changes no tag NAME but removes the SOURCE behind several, and the recorders
+The win-prob critic (the only critic) era changes no tag NAME but removes the SOURCE behind several, and the recorders
 kept publishing — as flat constants and byte-identical duplicates that a reader cannot tell from a
 measurement. Every classification below is from that arm's own tfevents, not from reading code.
 
@@ -612,7 +612,7 @@ non-obvious but not misleading, it is the subject of a documented section and an
 | `value_loss` | the fitted loss | raw |
 | `policy_gradient_loss` · `entropy_loss` · `loss` · `approx_kl` · `clip_fraction` · `clip_range[_vf]` · `grad_norm` · `n_updates` | the stock PPO step | unitless / loss units |
 | `approx_kl_epoch_<k>` · `clip_fraction_epoch_<k>` | one pair per epoch the update ran, `k = 0…n_epochs−1` (fewer after a `target_kl` stop) — each epoch's mean of the SAME per-minibatch numbers the stock pair folds (`gen3_ppo_per_epoch_diag_v1`). ⚠️ stock `approx_kl` is the LAST epoch's mean; stock `clip_fraction` pools every epoch. Detail: [`ppo_step.md`](ppo_step.md) | unitless |
-| `scaffolding_gauge` · `scaffolding_rho` · `scaffolding_n` | the shaped critic vs the win-prob head — **DEGENERATE under `--critic winprob`**, where the two readouts are one head | unitless (rank) |
+| `scaffolding_gauge` · `scaffolding_rho` · `scaffolding_n` | the shaped critic vs the win-prob head — **DEGENERATE under the win-prob critic (the only critic)**, where the two readouts are one head | unitless (rank) |
 | `noise_scale[_ratio][_<term>]` · `dose_rate` · `effective_batch` · `grad_accum_steps` · `train_ms` | the step-size controllers | see their sections |
 
 🚨 **`train/explained_variance` is computed on the RAW return arrays** (`rollout_buffer.values` and `returns`).

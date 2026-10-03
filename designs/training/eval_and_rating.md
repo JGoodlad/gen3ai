@@ -722,7 +722,7 @@ inherit / migrate), `main/anchors/mirrored_test.py`. **CPU evidence (2026-10-01)
 reconstruction records (`prng_seed` + both players' teams): (1) Python core, `--debug --debug-eval
 --self-play --eval-mirrored-pairs` — 72 traces, every bot's games in pairs sharing one seed with the
 teams swapped between p1 and p2, 16 pairs vs the bots per cycle (`--eval-games 3 → 4`); (2) Rust eval
-core, the same on the Rust env core (`--critic winprob`) and a pool forced to seed — the trace's `cycle`
+core, the same on the Rust env core (the win-prob critic (the only critic)) and a pool forced to seed — the trace's `cycle`
 block reads game 2k `swapped False` / 2k+1 `swapped True` on one seed with the teams handed over, for the
 nine bots AND a pool sentinel (`pairs_vs_pool` 2 at step 12,000); (3) `main.untaught_meter
 --mirrored-pairs` on two current-generation checkpoints, 16 games → 8 pairs, each pair one pool draw

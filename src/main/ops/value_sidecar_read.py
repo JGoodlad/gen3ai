@@ -355,7 +355,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="episode-clustered bootstrap resamples (default 2000)")
     p.add_argument("--seed", type=int, default=7, help="bootstrap seed (default 7)")
     p.add_argument("--allow-shaped", action="store_true",
-                   help="read a --critic shaped sidecar anyway. REFUSED by default: under shaped "
+                   help="read a shaped-critic sidecar anyway. REFUSED by default: under shaped "
                         "V is a PopArt-normalised shaped return whose scale moves over the run, "
                         "so a Brier decomposition of it is a category error, not a loose reading.")
     p.add_argument("--compare", default=None, metavar="RUN2",
@@ -551,7 +551,7 @@ def main(argv=None) -> int:
 
     mode = header.get("critic_mode")
     if not is_winprob(mode) and not args.allow_shaped:
-        refuse(f"REFUSING: this sidecar was written under --critic {mode!r}, so `v` is a "
+        refuse(f"REFUSING: this sidecar was written under the {mode!r} critic, so `v` is a "
                "PopArt-normalised SHAPED RETURN,",
                "  not a probability. A Brier decomposition of it is a category error rather than "
                "a loose reading:",

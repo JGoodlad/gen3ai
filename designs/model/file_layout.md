@@ -29,7 +29,7 @@ table exists to prevent:
 | `pools.py` | `CLSPool`, `HiddenOppBeliefPool` |
 | `belief_heads.py` | `BeliefSlots`, `BeliefHead`, `MoveBelief`, `SpreadBelief`, `ItemBelief`, `HPTypeBelief`, `BELIEF_GRAD_MODES` |
 | `q_winprob_head.py` | `QWinProbHead` — the per-action `P(win\|s,a)` shared scorer over the pointer head's own action tokens. The extractor-built per-action Q head (and `Q_WINPROB_MODES`) was deleted with the cf training half (deletion pass L4); the class survives ONLY as the scorer the detached ride-along A head (`ridealong_heads.AdvantageEnsemble`) is built from |
-| `aux_value_heads.py` | `WinProbHead` only — the readout off `value_pooled` that is the critic under `--critic winprob`. (`ValueDistHead` went with the distributional value head, deletion pass L1; `CfEvidentialHead` and `ShadowValueHead` went with the cf training half, L4; the twin win-prob heads B/C reused `WinProbHead`.) |
+| `aux_value_heads.py` | `WinProbHead` only — the readout off `value_pooled` that is the critic under the win-prob critic (the only critic). (`ValueDistHead` went with the distributional value head, deletion pass L1; `CfEvidentialHead` and `ShadowValueHead` went with the cf training half, L4; the twin win-prob heads B/C reused `WinProbHead`.) |
 | `pointer_head.py` | `EntityMoveSeats`, `PointerNativeActionHead`, request-slot alignment |
 | `value_readouts.py` | `UnifiedValueReadout` (the critic's entity pool — the ONE `_value_pooled_routes` member) |
 | `value_threat_inject.py` | `ValueThreatInject` — the v64 damage-summary row as TOKEN CONTENT on the value pool's local copy of our tokens, inside `CLSPool`. Not in the v89 seam by design (a post-pool route must collapse the J axis) |

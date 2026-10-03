@@ -352,7 +352,7 @@ finding about GENERALISATION, not a defect in either instrument — report it as
 
 ⚠️ **The sidecar cannot be reconstructed after the fact.** It reads the rollout buffer, which is
 gone the moment `train()` returns; a run launched without `--value-sidecar` has no training-side
-read available at any later date. It is ON by default under `--critic winprob`, which is the only
+read available at any later date. It is ON by default under the win-prob critic (the only critic), which is the only
 regime where `v` is a probability at all.
 
 A session may still keep a scratch copy while an arm is live; the repo copies are the durable
@@ -400,7 +400,7 @@ is the cost the owner named, so a cron survives only while an arm is live AND on
 items above; in REPORT-AND-WAIT there is nothing to poll, and the orchestrator's next message is the
 wake. Re-create it on the next GO, written to this contract.
 
-- **Pre-registered kill conditions are executed, not debated.** Under `--critic winprob` stall rate
+- **Pre-registered kill conditions are executed, not debated.** Under the win-prob critic (the only critic) stall rate
   and mean episode length are standing KILL conditions (a [0,1] critic cannot rank a timeout below a
   loss). The famine pre-test compares against the named comparator at matched SNAPSHOT COUNT with
   the registry's floor.

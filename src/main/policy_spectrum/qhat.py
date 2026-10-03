@@ -74,7 +74,7 @@ class QhatError(RuntimeError):
 
 def logits_and_values(model, rows: np.ndarray, masks: np.ndarray, batch: int = 1024) -> np.ndarray:
     """``[N, 12]`` float32: the raw policy logits (masking is the caller's) and the critic's V — for
-    a ``--critic winprob`` checkpoint ``sigmoid(win_head)`` = P(win) ∈ [0, 1] — from ONE extractor
+    a win-prob-critic checkpoint ``sigmoid(win_head)`` = P(win) ∈ [0, 1] — from ONE extractor
     forward (the policy's own ``forward`` wiring: ``_critic_value`` + ``_get_action_dist_from_latent``
     read the same stash)."""
     import torch as th

@@ -167,7 +167,7 @@ other and with the code.
   the moment the next one lands, and quoting a stale one is how a v30 description got applied to a
   v59 model.
 
-## The `--critic` route has no fallback, its version gate, and how the mode is threaded
+## The `critic` route has no fallback, its version gate, and how the mode is threaded
 
 **The `winprob` route has NO FALLBACK, for the deleted `value_from_dist` route's exact reason** (the v89
 orphaned-route class): `value_net` is in no loss graph under this critic, so quietly returning it
@@ -182,7 +182,7 @@ ONLY thing standing between a resume and that, which is the same argument `win_p
 `q_winprob_mode` make and the reason all three are gated identically.
 
 **NO `ARCH_SIGNATURE` bump — at v109 (the mode) nor at v130 (the default flip, deletion pass D2,
-2026-10-02).** The flip moved only what an UNTYPED `--critic` means on a FRESH argv
+2026-10-02).** The flip moved only what an UNTYPED critic meant on a FRESH argv (the `--critic` flag itself is deleted since P11b batch (b); `critic` is now the recorded field alone)
 (`critic_mode.CRITIC_DEFAULT` = `winprob`); what an ABSENT RECORD means is a separate constant that did
 not move (`CRITIC_UNRECORDED` = `shaped`: the policy constructor's default, `ModelVersion.critic`'s field
 default, and every `getattr(policy, "_critic_mode", …)` read). So no checkpoint loads differently, a

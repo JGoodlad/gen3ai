@@ -4,7 +4,7 @@
 ~25 BIAS terms, the bias-additivity refund, the no-progress tax and the 14 flags that configured
 them — was DELETED on 2026-09-26 (program_rust_core §4 M3 row; the flags are in
 `designs/deleted_flags.md`). Production had trained on the terminal alone since the win-prob era
-(`--critic winprob --terminal-indicator --victory-value 1.0`), and the Rust core's reward is the
+(the win-prob critic: `--terminal-indicator --victory-value 1.0`), and the Rust core's reward is the
 win indicator.
 
 * `RewardClass`     — the reward classes. ONE survives: TERMINAL.
@@ -62,7 +62,7 @@ class RewardConfig:
     # gen3_winprob_critic_mode_v1 — the TERMINAL as a WIN INDICATOR, for the win-prob critic.
     # False: a win pays +victory_value, a decisive loss / pre-cap tie −victory_value, a timeout
     # `draw_penalty`. True: +victory_value on a WIN and **0.0 on everything else**. Under
-    # `--critic winprob` the critic is sigmoid(logit) ∈ [0,1] and GAE mixes the REWARD with it, so
+    # the win-prob critic: the critic is sigmoid(logit) ∈ [0,1] and GAE mixes the REWARD with it, so
     # with this on and `victory_value == 1.0` the undiscounted return from any state is exactly
     # 1{win} and V(s) == P(win|s) with no approximation term. PRODUCTION.
     terminal_indicator: bool = False

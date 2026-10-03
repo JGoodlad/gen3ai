@@ -311,7 +311,7 @@ the dead-`_resolve` state: [`designs/model/flag_registry_rules.md`](../../../des
 ## Model versioning (`model_version/`, `snapshot.py`)
 
 **`model_version` is a PACKAGE**; `__init__.py` is a pure re-export hub. What each module holds, what
-a save writes, the two sanitizers and the `--critic` version gate:
+a save writes, the two sanitizers and the recorded-`critic` version gate:
 [`designs/model/versioning.md`](../../../designs/model/versioning.md). The playbooks are here.
 
 **When you change an architecture constant:**
@@ -388,17 +388,17 @@ the entry in `CHANGELOG.md` and state the new truth in `ARCHITECTURE.md` — nev
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 
-## The CRITIC MODE (`critic_mode.py`, `--critic {shaped,winprob}`, v109)
+## The CRITIC MODE (`critic_mode.py`, the recorded `critic` field {shaped,winprob}, v109)
 
 `gen3_winprob_critic_mode_v1`. `Gen3DualHeadMaskablePolicy._critic_value` chooses between two
 readouts, and `agents/model/critic_mode.py` is the ONE declaration of the legal set. That module is
 deliberately **torch-free and import-light**: `main.checkargs` promises not to import torch and
-needs the legal set to validate an argv offline.
+needs the legal set to validate an argv offline. There is NO `--critic` flag any more (deletion pass P11b batch (b)): the win-prob critic is a CONSTANT of every trainer namespace, and `critic` survives as the FIELD `model_config.json` records, string-compared by `check_compatible` (an absent record still means `shaped`).
 
-| `--critic` | `_critic_value` returns | `value_net` |
+| recorded `critic` | `_critic_value` returns | `value_net` |
 |---|---|---|
-| `shaped` (what an ABSENT record means; no longer trainable — a typed `--critic shaped` is refused, `CRITIC_TRAINABLE_MODES = (winprob,)`; an old checkpoint still loads) | `value_net(latent_vf)` | trained |
-| **`winprob`** (the bare-argv default) | `sigmoid(fe.last_win_prob_logits)` in **[0,1]**, `[B,1]` | in NO loss graph |
+| `shaped` (what an ABSENT record means; loadable only — an old checkpoint still loads as an opponent / in meters / in the prober, and a resume or fork of one is refused `FATAL_CONFIG`, D4) | `value_net(latent_vf)` | trained |
+| **`winprob`** (the only critic a run trains) | `sigmoid(fe.last_win_prob_logits)` in **[0,1]**, `[B,1]` | in NO loss graph |
 
 **Read the mode through `is_winprob`, never a bare `== "winprob"`** — one spelling, one answer, and
 a `getattr(obj, "critic", "shaped")` read answers correctly through it.

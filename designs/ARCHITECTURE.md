@@ -813,15 +813,15 @@ the critic:**
 |---|---|---|
 | `win_head` | `win_prob_mode` **`shaping`** | live `value_pooled` — the win objective also shapes the trunk (`read_only` would stop-grad it) |
 
-#### WHICH readout is the critic — `--critic {shaped,winprob}`
+#### WHICH readout is the critic — the recorded `critic` field {shaped,winprob}
 
-`policy._critic_value` has a MODE, and the production config is on the second of two. **This is
+`policy._critic_value` has a MODE, and the production config is on the second of two. There is no `--critic` flag (deleted, deletion pass P11b batch (b)): the win-prob critic is a constant of every trainer namespace and `critic` is the recorded field below. **This is
 the ONLY axis on which this generation differs from gen-17** — the trunk, the seats, the edge
 families, the pointer cells and the belief stack are that run's, unchanged.
 
-| `--critic` | `V(s)` is | trained by | reward stream | `gamma` |
+| recorded `critic` | `V(s)` is | trained by | reward stream | `gamma` |
 |---|---|---|---|---|
-| `shaped` (the historical critic; LOADABLE only — not selectable since the Python env core was deleted, so an old shaped checkpoint serves as an opponent / in the meters but cannot be resumed) | `value_net` | the MSE at `vf_coef`, in raw return units | the SIGNED terminal alone, ±30 with a −35 timeout (the shaping it once carried is deleted, §6.3) | 0.9999 |
+| `shaped` (the historical critic; LOADABLE only — not trainable since the Python env core was deleted, so an old shaped checkpoint serves as an opponent / in the meters, and a resume or fork of one is refused `FATAL_CONFIG`, D4) | `value_net` | the MSE at `vf_coef`, in raw return units | the SIGNED terminal alone, ±30 with a −35 timeout (the shaping it once carried is deleted, §6.3) | 0.9999 |
 | **`winprob`** (**this config**) | `sigmoid(win_head logit)` ∈ **[0, 1]** | the win-prob head's **BCE against the terminal WIN INDICATOR**, at `vf_coef` **0.5** | the TERMINAL **WIN INDICATOR** alone — `+victory_value` (**1.0**) on a win, `0.0` on a loss, a tie and a 250-turn timeout alike | **1.0** |
 
 **PopArt, the distributional value head (`value_dist_head`) and the `value_from_dist` critic route
@@ -857,19 +857,18 @@ are PRIMARY endpoints, not monitored ones.** The 250-turn cap, forfeits and ties
 this mode rather than SB3 truncations — as truncations at γ = 1 the bootstrapped `γ·V(s_last)` made
 every timeout's TD error identically zero, so the critic could not see them at all.
 
-Two flags are IMPLIED by `--critic winprob` (`--win-prob-mode shaping`, `--gamma 1.0`) because
+Two flags are IMPLIED by the win-prob critic (the only critic; `resolve_critic_mode` still applies them when untyped) (`--win-prob-mode shaping`, `--gamma 1.0`) because
 their argparse default is the `None` sentinel, so "unset" is
 representable and an implication can never overwrite a typed value. The discount is PAIRED with the
 critic, declared once (`critic_mode.critic_gamma`: winprob 1.0, shaped 0.9999 — the latter only for
 loading): a typed `--gamma` other than 1.0 under winprob is REFUSED. Three are REQUIRED and named by
 their own refusal (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because theirs are concrete, so an implication could not be told apart from an
-overwrite. `resolve_critic_mode` runs BEFORE the resume-inheritance sweep, so a fork of a `shaped`
-parent cannot inherit that parent's `win_prob_mode` and break the mode with a value nobody typed. Design of record:
+overwrite. `resolve_critic_mode` runs BEFORE the resume-inheritance sweep, so the implied values land on the `None` sentinels before `_resolve` can inherit a recorded one (a fork of a `shaped` parent never gets that far: it is REFUSED, D4). Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](ai_v12/design_winprob_only_critic.md).
 
 **`--win-prob-strata-weight` re-prices this BCE's opponent MIX** (`gen3_winprob_strata_weight_v1`,
 config v115, the critic ladder's arm 7). Default **`0.0` = OFF and the loss is BIT-identical**;
-`--critic winprob` is REQUIRED. Each state's BCE term is multiplied by its opponent CLASS's weight
+it runs on the win-prob critic (the only critic). Each state's BCE term is multiplied by its opponent CLASS's weight
 `w_c ∝ freq_c ** (−s)`, capped at 8× and renormalised so the mean weight over the rollout buffer is
 exactly 1 — so it moves the mix and not the loss SCALE. It exists because only **10.2 % / 14.4 %**
 of the terminal 0/1 label's variance lies BETWEEN (cycle, opponent) cells
@@ -885,8 +884,7 @@ it. Mechanics: `designs/training/critic_and_value_losses.md`.
 
 **`--fork-fraction` FORKS CONTESTED STATES INTO THE BUFFER** (`gen3_fork_v1`, config v120 — THE
 FORK ARM). Default **`0.0` = OFF and BIT-identical**: no fork pass is built, no obs key is declared
-and no row is injected. `--critic winprob`
-is REQUIRED, and `--win-prob-strata-weight` is REFUSED alongside it. It runs on the Rust core (the only env core). Above 0.0 it is the FRACTION of the buffer's
+and no row is injected. It runs on the win-prob critic (the only critic), and `--win-prob-strata-weight` is REFUSED alongside it. It runs on the Rust core (the only env core). Above 0.0 it is the FRACTION of the buffer's
 decisions that are FORKED: at a CONTESTED decision (a move round, turn 2-40, ≥3 legal actions, top-2
 masked-logit gap under the `--fork-contested-gap` quantile of this rollout's own candidate pool) the
 episode is replayed to that turn (on the Rust core, from its own finished input log) and `--fork-branches` continuations —
@@ -1358,7 +1356,7 @@ split was deleted with HEAD's 2.5.1 support. **UNVERIFIED:** the root-cause op. 
 are **not** inherited on resume — with the compile flags defaulting ON it is the OPT-OUT that must
 be re-passed each launch, not the flag.
 
-⚠️ **`--gamma` is not in `model_config.json` either.** `--critic winprob` implies γ 1.0 and the
+⚠️ **`--gamma` is not in `model_config.json` either.** The win-prob critic (the only critic) implies γ 1.0 and the
 resume path restores the checkpoint's own γ, so the value in force is visible in `metadata.json`'s
 `cli_args` and in the startup lines — not in the mirror, and therefore not in §6's table.
 
@@ -1386,7 +1384,7 @@ logit. Declared conditionally, so a key absent from the space is simply not emit
 | `belief_ev` / `belief_ev_mask` | f32 `[6,5]` / `[6]` | EV smooth-L1 — the declared EVs at `4·⌊ev/4⌋` | " | ✅ |
 | `hp_type_label` / `hp_type_mask` | int64 `[6]` / f32 `[6]` | HP-type CE | `move_belief_mode != off` **and** `hp_belief_mode == composed` **and** `hp_type_belief_coef > 0` | ✅ **emitted and consumed** |
 | `item_label` / `item_mask` | int64 `[6]` / f32 `[6]` | item CE (`gen3_item_belief_v1`) | `item_belief` **and** `item_belief_coef > 0` | ✅ emitted and consumed (`item_belief_coef` 0.05) |
-| `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | the win-prob head's BCE — under `--critic winprob` **the value loss itself** (MC outcome, a **future** label back-filled by the Rust collector — `rust_rollout/store.py`, `win_prob_callback.backfill_terminal_labels`) | `win_prob_mode != none` | ✅ **emitted and consumed — this is the critic's target** |
+| `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | the win-prob head's BCE — under the win-prob critic (the only critic) **the value loss itself** (MC outcome, a **future** label back-filled by the Rust collector — `rust_rollout/store.py`, `win_prob_callback.backfill_terminal_labels`) | `win_prob_mode != none` | ✅ **emitted and consumed — this is the critic's target** |
 | `opp_action_kind` / `opp_action_num` / `opp_switch_slot` / `opp_switch_species` | int64 `[1]` each | opponent-intent CE (`gen3_opp_intent_v1`) — what they did at the PREVIOUS decision, shifted one row back in `train()` | `opp_intent_coef > 0` | ✅ emitted and consumed (`opp_intent` true ⇒ `--arch production` sets `opp_intent_coef` 0.05; recorded in `model_config.json` from config v125, so a flagless resume or a launcher restart inherits it) |
 | `opp_class` | int64 `[1]` | **two consumers**: the intent metrics, which it SPLITS (bot / pool / stable / exploiter — one pooled intent accuracy over random bots, heuristics and frozen selves cannot be read); and the training-side value sidecar's per-class calibration slice | `opp_intent_coef > 0` **or** `win_prob_mode != none` | ✅ emitted (both gates hold), read by the intent metrics and the sidecar, not by any loss |
 | `fork_pg_m` | f32 `[1]` | the policy term's per-row mask (`gen3_fork_v1`; placeholder 1.0) | `--fork-fraction > 0` | ❌ |

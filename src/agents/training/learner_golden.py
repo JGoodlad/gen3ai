@@ -2,8 +2,8 @@
 
 WHAT IT PINS. Beside ``reward_golden`` (the number the trainer optimizes) and the obs golden (what the
 network reads), this pins WHAT ONE UPDATE COMPUTES: a production-surface learner, built from a fixed
-seed, runs ONE real ``InstrumentedMaskablePPO.train()`` — the production loss surface (``--critic
-winprob``, every belief / intent / win-prob term the production mirror turns on, via the SAME
+seed, runs ONE real ``InstrumentedMaskablePPO.train()`` — the production loss surface (the win-prob
+critic, every belief / intent / win-prob term the production mirror turns on, via the SAME
 ``apply_training_hparams`` a launch runs) — on a committed small rollout buffer, and the golden is:
 
 * ``post_params_sha256`` — sha256 of every parameter's float32 BYTES after the update, in

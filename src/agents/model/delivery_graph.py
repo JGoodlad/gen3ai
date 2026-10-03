@@ -65,7 +65,7 @@ def buildable_child_names() -> frozenset:
     (`"win_head"`, `"alpha_head"`, …), not class names, so **none of them ever resolved**;
     the check returned False for every entry and only stayed quiet because the gen-17 production
     config happened to build all of them. The 2026-09-06 win-prob production config turns eight off
-    at once and the gate reported all eight as STALE — modules `--critic shaped` still builds.
+    at once and the gate reported all eight as STALE — modules a shaped critic still builds.
     """
     import ast
     import agents.model.extractor_build as _eb

@@ -417,7 +417,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         v_even: "float | None" = Query(
             None, description="V fallback threshold when no win-prob head. Unset (the default) "
                               "takes the run's CRITIC CURRENCY even-point: 0.0 shaped, 0.5 under "
-                              "--critic winprob, where V IS P(win)"),
+                              "the win-prob critic, where V IS P(win)"),
     ) -> dict:
         # v_even stays None unless the caller names one: `triage` resolves it from the run's
         # critic currency, and passing a shaped 0.0 here would defeat that for every winprob run.
@@ -490,7 +490,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         overvalue_tau: "float | None" = Query(
             None, description="reliability-gap above which a crater is critic_overvalued. UNITS "
                               "FOLLOW THE RUN'S CRITIC — unset takes the per-currency default "
-                              "(5.0 shaped, ~0.083 P(win) under --critic winprob)"),
+                              "(5.0 shaped, ~0.083 P(win) under the win-prob critic)"),
     ) -> JobRef:
         require_unlocked(request)
         sess = session(pick(run))

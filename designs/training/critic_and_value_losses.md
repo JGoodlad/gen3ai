@@ -103,7 +103,7 @@ production), Showdown answers `|win|<opponent>`, and the boundary reported `fini
 That flag then becomes `info["TimeLimit.truncated"]` in `DummyVecEnv`/`SubprocVecEnv`, and
 `MaskablePPO.collect_rollouts` (`sb3_contrib/ppo_mask/ppo_mask.py:251-260`, mirrored by our
 deleted async collector) does `rewards[idx] += gamma * V(s_last)`. Under
-`--critic winprob` the terminal reward is the win indicator — **0** for a cap loss — and γ is
+the win-prob critic (the only critic) the terminal reward is the win indicator — **0** for a cap loss — and γ is
 **1**, so the last step's target becomes `0 + 1.0·V(s_last) = V(s_last)`: **a TD error of
 identically zero.** The timeout leaves the loss entirely, and a policy that stalls to the cap is
 taught nothing about it — while G7's stall rate is a KILL CONDITION on that arm, i.e. the gate
@@ -169,8 +169,8 @@ instrument is `grad/value_policy_logratio` (0 = balanced). Reading rule: design 
 ## `--win-prob-strata-weight` — OPPONENT-STRATIFIED weighting of the win-prob BCE
 
 `gen3_winprob_strata_weight_v1`, config **v115**, landed 2026-09-09 as **arm 7 of the critic
-ladder**. Default **0.0 = OFF and the loss is BIT-identical**; **`--critic winprob` is REQUIRED**
-(`combination_checks.winprob_strata_needs_the_winprob_critic`). Code:
+ladder**. Default **0.0 = OFF and the loss is BIT-identical**; it runs on the win-prob critic (the only critic).
+Code:
 `instrumented_ppo/value_terms.py::_win_prob_strata_weights` + `_win_prob_loss`, called once per
 rollout from `ppo.train()`. Gate: `src/agents/training/winprob_strata_weight_test.py`.
 

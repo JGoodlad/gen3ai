@@ -30,7 +30,7 @@ cells default to ``--side-swap`` (every game played in both team orientations of
 so the report can difference out the team draw, and they are read against the null rather than
 folded into the anchored-ELO fit, which has no anchor for ``self``.
 
-On a ``--critic winprob`` checkpoint (`gen3_winprob_critic_mode_v1`) the leaf sets COLLAPSE at
+On a win-prob-critic checkpoint (`gen3_winprob_critic_mode_v1`) the leaf sets COLLAPSE at
 startup, read off the LIVE policy: ``winprob`` is the only ``--defensive-leaf``, ``--score auto``
 RESOLVES to ``win_prob`` and says so, and an explicit ``value`` on either is refused — there is one
 value readout, so probe G's ``value`` control arm does not exist there (it is untouched on
@@ -106,7 +106,7 @@ def build_parser() -> argparse.ArgumentParser:
                         "construction and the contrast is the leaf. Refused unless the resolved "
                         "leaf is `winprob`. See leaf_head.py.")
     p.add_argument("--score", default="auto", choices=["auto", "value", "win_prob"],
-                   help="which readout scores a leaf. On a `--critic winprob` checkpoint there is "
+                   help="which readout scores a leaf. On a win-prob-critic checkpoint there is "
                         "only one, so `auto` RESOLVES to win_prob (announced at startup) and an "
                         "explicit `value` is refused.")
     p.add_argument("--max-opp", type=int, default=6, help="cap on alpha-pruned opponent actions")
@@ -139,7 +139,7 @@ def build_parser() -> argparse.ArgumentParser:
                         "`value` head's +0.0135 [-0.0007,+0.0280] does not clear zero (probe G, "
                         "317 decisions / 142,208 terminal rollouts). Unlike `--score auto` this "
                         "never silently falls back — a checkpoint with no win-prob head raises. "
-                        "On a `--critic winprob` checkpoint `winprob` is the ONLY leaf and `value` "
+                        "On a win-prob-critic checkpoint `winprob` is the ONLY leaf and `value` "
                         "is refused (there is no second readout for probe G's control arm to be). "
                         "--root-strategy defensive only.")
     p.add_argument("--defensive-wp-margin", type=float, default=DefensiveConfig.wp_margin,

@@ -508,7 +508,7 @@ answer arrives before the GPU-hours do.
 
 🚨 **THIS IS A DIFFERENT FAILURE FROM A REFUSED FLAG COMBINATION, AND THE TWO SHARE NO MESSAGE, NO
 SUMMARY LINE AND NO REFUSAL PATH.** Rebuilding that arm from an older generation's recorded
-`original_command` also fails — on nine flags `--critic winprob` SUBSUMES. That failure is **LOUD
+`original_command` also fails — on nine flags the win-prob critic (the only critic) SUBSUMES. That failure is **LOUD
 and PRE-launch**: `checkargs` names it, nothing starts, it is fixed in a minute. Arch drift is
 **SILENT and POST-launch**. A guard that catches the first is no protection against the second.
 
@@ -541,11 +541,11 @@ hand list, which would go stale the first time a toggle landed and then silently
 **The compared-key count is RECONCILED, not merely smaller.** Every block prints
 `39 arch + 7 critic + 3 non-structural = 49 registry rows` (`arch_surface.surface_partition()`,
 2026-09-06), because a guard that compares fewer keys than a reader's own count leaves them unable
-to tell an excluded row from a forgotten one. `family=critic` is excluded because `--critic winprob`
+to tell an excluded row from a forgotten one. `family=critic` is excluded because the win-prob critic
 IMPLIES one of those readouts and REFUSES two others, so gating them would refuse every critic arm.
 
 **`--arch production` is the remedy**, and what it does NOT set it NAMES on every run: the critic
-readouts `--critic winprob` implies, and `--belief-grad-mode`. The critic MODE, its three reward
+readouts the win-prob critic implies, and `--belief-grad-mode`. The win-prob critic (a constant now), its three reward
 values and the SUPERVISION DOSES (`--move-belief-coef` and siblings) it used to only name are now
 APPLIED by its recipe half (next section). Silence that reads as coverage is the same failure one
 layer down. Measured against the incident's own config: of its 31 differing keys, 26 are refused on
@@ -556,7 +556,7 @@ coefficient of a refused surface row — none can pass unmentioned.
 
 The ARCH guard's twin, for the TRAINING RECIPE: five parser defaults (`--n-envs`, `--batch-size`,
 `--n-epochs`, `--ent-coef`, `--clip-range-vf`) and more (`--grad-accum-steps` 1 vs 32, `--self-play`,
-`--critic`, the reward values, the doses) differed from the live recipe, and `--arch production`
+the critic, the reward values, the doses) differed from the live recipe, and `--arch production`
 applied none of them. `main.train.recipe_surface` holds the declared rows; the values live in
 `designs/production_config.json`'s `recipe` block: `recipe.fresh` (N0's measured fresh recipe) and
 `recipe.fork` (E5). Spec, values and their sources:

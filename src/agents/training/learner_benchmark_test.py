@@ -240,7 +240,7 @@ def test_trainer_argv_cpu_and_tiny_swap_the_compile_and_the_env_count():
 
 def test_trainer_argv_refuses_the_trainer_module_name():
     with pytest.raises(ValueError):
-        lb.build_trainer_argv(_CMD + " --critic /x/train_rl_" + "agent", model_zip="/m.zip",
+        lb.build_trainer_argv(_CMD + " --log-level /x/train_rl_" + "agent", model_zip="/m.zip",
                               run_dir="/r", steps=1, device="cuda")
 
 

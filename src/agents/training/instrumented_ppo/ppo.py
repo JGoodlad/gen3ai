@@ -254,7 +254,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # balance itself a sampling-noise term. Read here rather than in `_resolve_fold_flags`
         # because it needs the buffer, and `_align_opp_intent_labels` above has already run — the
         # only writer of `opp_class` in this call (a semantic no-op: the class is constant within
-        # an episode). Under `--critic winprob` only; every other configuration passed None and
+        # an episode). Under the win-prob critic only; every other configuration passed None and
         # takes the unweighted expression unchanged.
         strata_w = None
         if win_prob_on and critic_winprob and float(getattr(self, "win_prob_strata_weight", 0.0)) > 0.0:

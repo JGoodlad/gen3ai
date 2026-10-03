@@ -21,7 +21,7 @@ def _resolve_overvalue_tau(currency: dict, requested: "float | None") -> "tuple[
     (`gen3_prober_winprob_currency_v1`).
 
     The historical bar is 5.0 SHAPED RETURN UNITS against a critic spanning roughly
-    ±``victory_value`` (30), i.e. 1/12 of that 60-wide span. Under ``--critic winprob`` the critic
+    ±``victory_value`` (30), i.e. 1/12 of that 60-wide span. Under the win-prob critic the critic
     is a probability: the span is 1.0 and the reliability gap is bounded in [-1, 1], so the SAME
     NUMBER can never be reached and the split it decides silently collapses to 100%
     ``lost_position`` — reported, before this, as a confident
@@ -29,7 +29,7 @@ def _resolve_overvalue_tau(currency: dict, requested: "float | None") -> "tuple[
     the correctly-scaled tau reports **0.4997**. Measured on ``ai_v12_01_winprob_critic`` step 8M
     (2026-09-06), the FIRST win-prob arm, since KILLED — it had launched without the production
     surface. That does not weaken the measurement: the defect is in the CURRENCY of the recorded
-    ``values``, which `--critic winprob` fixes at [0,1] whatever else the arm was or was not
+    ``values``, which the win-prob critic fixes at [0,1] whatever else the arm was or was not
     training.
 
     The winprob bar is DERIVED, not invented: the same 1/12 fraction of the critic's own span
@@ -394,7 +394,7 @@ class _AggregateMixin:
         pass that finds the unattributed craters runs at ``concurrency`` (default 8).
 
         **``overvalue_tau`` is CURRENCY-DEPENDENT and defaults per critic mode** (``None`` =
-        resolve from the run's ``--critic``): 5.0 on a shaped critic, ≈0.083 on a win-prob one,
+        resolve from the run's recorded critic): 5.0 on a shaped critic, ≈0.083 on a win-prob one,
         the same 1/12-of-span fraction either way. An explicit value is honoured verbatim and, if
         it cannot be reached by any gap this run produced, the result carries a loud
         ``threshold_warning`` rather than a confident ``critic_overvalued: 0``.
@@ -406,7 +406,7 @@ class _AggregateMixin:
         the gold-standard per-crater resolution is a re-roll → policy-rollout → return
         PIT (the true distributional-critic validator), deferred.
         """
-        # 0. WHAT CURRENCY the recorded V is in — model-free, off the run's `--critic`. Every
+        # 0. WHAT CURRENCY the recorded V is in — model-free, off the run's recorded critic. Every
         #    value-unit threshold below is resolved against it rather than assuming the shaped
         #    scale that was the only one that existed until config version 109.
         currency = self.critic_currency()

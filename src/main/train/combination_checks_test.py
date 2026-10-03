@@ -142,21 +142,8 @@ def test_no_cross_flag_parser_error_remains_in_config():
 # ---------------------------------------------------------------------------------------------
 OFF = ["--unified-moves", "off"]
 
-#: The composition `--critic winprob` REQUIRES. Declared once so a row that is about something
-#: ELSE does not also trip the three requirement rules and make its own failure ambiguous.
-_WP = ["--critic", "winprob", "--terminal-indicator",
-       "--victory-value", "1.0", "--draw-penalty", "0"]
-#: Rows whose broken configuration CANNOT be typed any more: `--critic shaped` is refused by the PARSER
-#: (deletion pass U3 — the Python env core served it) and a shaped CHECKPOINT by D4 before the sweep, so
-#: "X needs the winprob critic" can only be judged on a namespace that carries `critic="shaped"`
-#: (a defence-in-depth row — a flag-census candidate). name -> (argv, namespace overrides).
-NAMESPACE_ONLY: dict[str, tuple[list[str], dict]] = {
-    "winprob_strata_needs_the_winprob_critic": (["--win-prob-strata-weight", "1.0"], {"critic": "shaped"}),
-    "fork_needs_the_winprob_critic": (["--fork-fraction", "0.02"], {"critic": "shaped"}),
-}
-
 ARGVS: dict[str, list[str]] = {
-    "winprob_critic_needs_unit_gamma": _WP + ["--gamma", "0.99"],
+    "winprob_critic_needs_unit_gamma": ["--gamma", "0.99"],
     "arch_umbrella_is_fresh_only": ["--arch", "production", "--model", "models/p/final_model.zip"],
     "adaptive_batch_target_positive": ["--adaptive-batch", "total", "--adaptive-batch-target", "0"],
     "adaptive_batch_band_above_one": ["--adaptive-batch", "total", "--adaptive-batch-band", "1.0"],
@@ -188,26 +175,21 @@ ARGVS: dict[str, list[str]] = {
                                            "--exploiter-temp-mode", "ratchet"],
     "fork_lr_is_resume_only": ["--fork-lr", "1e-5"],
     "fork_lr_freeze_needs_fork_lr": ["--fork-lr-freeze"],
-    # ---- gen3_winprob_critic_mode_v1. `_WP` is the composition `--critic winprob` REQUIRES, so a
-    # row below trips its own rule rather than the three "you did not pass the reward flags" ones.
-    # The three requirement rows themselves each OMIT exactly one member of `_WP`.
-    "winprob_critic_needs_a_head": _WP + ["--win-prob-mode", "none"],
-    # gen3_winprob_strata_weight_v1 — the one row in this family pointing the OTHER way ("X
-    # REQUIRES winprob") — judged in NAMESPACE_ONLY above (a shaped critic cannot be typed any more).
-    # gen3_fork_v1 — the fork arm's two refusals: a treatment that means nothing without the critic it
-    # re-aims (NAMESPACE_ONLY above), and the strata weight (a branch row has no material margin to
-    # stratify on). The third (the Python core's fork arm, UNAVAILABLE) went with that core — U3.
+    # ---- gen3_winprob_critic_mode_v1. The bare argv IS the win-prob composition (the critic is a
+    # constant of the namespace, deletion pass P11b), so a row below trips its own rule.
+    "winprob_critic_needs_a_head": ["--win-prob-mode", "none"],
+    # gen3_fork_v1 — the fork arm's refusal that survives: the strata weight (a branch row has no
+    # material margin to stratify on). "The fork needs the winprob critic" and "the strata weight needs
+    # the winprob critic" can no longer fire (there is no other critic: P11b) and are gone, with the
+    # Python core's fork arm (UNAVAILABLE, U3).
     "fork_refuses_strata_weight":
-        _WP + ["--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"],
+        ["--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"],
     "rnd_variants_need_the_base_rnd_head": ["--ridealong-rnd-variants", "all"],
-    "winprob_critic_refuses_draw_penalty": ["--critic", "winprob",
-                                            "--terminal-indicator", "--victory-value", "1.0",
+    "winprob_critic_refuses_draw_penalty": ["--terminal-indicator", "--victory-value", "1.0",
                                             "--draw-penalty", "-1.0"],
-    "winprob_critic_needs_the_indicator_terminal": ["--critic", "winprob", "--no-terminal-indicator",
-                                                    "--victory-value", "1.0",
+    "winprob_critic_needs_the_indicator_terminal": ["--no-terminal-indicator", "--victory-value", "1.0",
                                                     "--draw-penalty", "0"],
-    "winprob_critic_needs_unit_victory_value": ["--critic", "winprob",
-                                                "--terminal-indicator", "--victory-value", "7.5",
+    "winprob_critic_needs_unit_victory_value": ["--terminal-indicator", "--victory-value", "7.5",
                                                 "--draw-penalty", "0"],
     "move_belief_hidden_needs_species_belief": ["--move-belief-mode", "both",
                                                 "--opp-belief-aux-coef", "0"],
@@ -252,11 +234,11 @@ ARGVS: dict[str, list[str]] = {
     "anneal_start_needs_min_lr": ["--anneal-lr-start-steps", "5"],
     "anneal_start_below_steps": ["--anneal-lr-start-steps", "500", "--anneal-min-lr", "1e-6"],
     # gen3_fork_rust_v1 — the fork arm on the Rust core (forks.md §14.7)
-    "fork_rust_needs_keyed_opponent_sampling": [*_WP, "--fork-fraction", "0.02",
+    "fork_rust_needs_keyed_opponent_sampling": ["--fork-fraction", "0.02",
                                                 "--opponent-sampling", "generator"],
-    "fork_rust_needs_complete_game_trigger": [*_WP, "--fork-fraction", "0.02",
+    "fork_rust_needs_complete_game_trigger": ["--fork-fraction", "0.02",
                                               "--rollout-trigger", "window"],
-    "rollout_target_on_the_quantum": [*_WP, "--n-envs", "48", "--batch-size", "2048",
+    "rollout_target_on_the_quantum": ["--n-envs", "48", "--batch-size", "2048",
                                       "--rollout-target-samples", "100000"],
     # T6 SPRT promotion
     "promotion_sprt_needs_self_play": ["--promotion-sprt"],
@@ -296,7 +278,7 @@ def _namespace(argv: list[str]):
     desugared — in that order, which is the order `resolve_config` and `checkargs` use.
 
     `resolve_critic_mode` belongs here for `desugar_umbrella_flags`' exact reason: it IMPLIES
-    `--win-prob-mode shaping` / `--gamma 1.0` under `--critic winprob`, so a
+    `--win-prob-mode shaping` / `--gamma 1.0` (the win-prob critic's settings), so a
     table row judged without it would report a command as broken on the very flags the mode fills
     in."""
     from main.train.config import desugar_umbrella_flags, resolve_critic_mode
@@ -306,7 +288,7 @@ def _namespace(argv: list[str]):
         args = parser.parse_args(argv)
         args._explicit_flags = frozenset(d for d, v in vars(args).items() if v is not None)
         args._saved_config_present = False
-        resolve_critic_mode(args, None)
+        resolve_critic_mode(args)
         desugar_umbrella_flags(args)
     return args
 
@@ -321,22 +303,9 @@ def test_every_check_has_an_argv_that_trips_exactly_it(name):
         f"argv that stops tripping its check silences the agreement test without failing it.")
 
 
-@pytest.mark.parametrize("name", sorted(NAMESPACE_ONLY))
-def test_a_namespace_only_row_trips_its_check_and_its_argv_route_is_closed(name):
-    """These rows cannot be reached by TYPING their broken value, so they are judged on a namespace that
-    carries it — and the route that WOULD have typed it is shown closed (the parser refuses it)."""
-    argv, overrides = NAMESPACE_ONLY[name]
-    args = _namespace(["--steps", "100"] + argv)
-    for k, v in overrides.items():
-        setattr(args, k, v)
-    assert name in [c.name for c in failing_checks(args)]
-    code, text = _resolved(["--steps", "100", "--critic", "shaped"] + argv)   # refused at PARSE time
-    assert code != 0 and "DELETED" in text, (code, text)
-
-
 def test_the_table_covers_every_declared_check():
-    missing = sorted({c.name for c in COMBINATION_CHECKS} - set(ARGVS) - set(NAMESPACE_ONLY))
-    extra = sorted((set(ARGVS) | set(NAMESPACE_ONLY)) - {c.name for c in COMBINATION_CHECKS})
+    missing = sorted({c.name for c in COMBINATION_CHECKS} - set(ARGVS))
+    extra = sorted(set(ARGVS) - {c.name for c in COMBINATION_CHECKS})
     assert not missing, f"COMBINATION_CHECKS entries with no argv in the table: {missing}"
     assert not extra, f"table rows naming no declared check: {extra}"
 

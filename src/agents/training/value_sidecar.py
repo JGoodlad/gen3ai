@@ -12,7 +12,7 @@ target**. That is a real hole and not a cosmetic one, for three reasons:
    was unmeasurable.
 2. **The eval read is 8 cycles wide.** A 10M arm evaluates 5 times. The training side produces a
    labelled state every step of every episode, so the same question can be asked per rollout.
-3. **The training target is the thing the loss actually minimises.** `--critic winprob` fits
+3. **The training target is the thing the loss actually minimises.** The win-prob critic fits
    `V = sigmoid(win logit)` by BCE against `win_target`, back-filled to every state by
    `WinProbLabelCallback`. Calibration against THAT is the objective's own residual; calibration
    against an eval battle is a generalisation question. They are different measurements and only
@@ -38,7 +38,7 @@ mistaken for a measurement it is not:
 | column | provenance |
 |---|---|
 | `v` | READ — `rollout_buffer.values`, the value PPO actually used |
-| `win_logit` | DERIVED — the exact inverse link of `v` under `--critic winprob`, `null` otherwise |
+| `win_logit` | DERIVED — the exact inverse link of `v` under the win-prob critic, `null` otherwise |
 | `target` / `target_known` | READ — the back-filled `win_target` / `win_mask` obs keys |
 | `outcome` / `outcome_known` | READ — the terminal bit and its mask; identical to `target` / `target_known` in every file this writer produces (a pre-L2 λ file carries the pre-λ bit here, and the reader still understands it) |
 | `opp_class` | READ — the `opp_class` obs key (bot / pool / stable / exploiter), `null` if absent |
@@ -90,10 +90,10 @@ resumed across a flag change then held one header above rows that meant somethin
 nothing on disk to say so. A header per writer session makes the change visible at the exact row it
 happens, which is what `read_sidecar_segments` refuses by index.
 
-⚠️ **`win_logit` IS NOT AN INDEPENDENT MEASUREMENT.** Under `--critic winprob` the head IS the
+⚠️ **`win_logit` IS NOT AN INDEPENDENT MEASUREMENT.** Under the win-prob critic the head IS the
 critic, so `v = sigmoid(logit)` exactly and the logit is recoverable by inverting it — but it
 carries no information `v` does not. It is written because logit-space is where a calibration
-residual is linear, not because a second quantity was observed. Under `--critic shaped` `v` is a
+residual is linear, not because a second quantity was observed. Under a shaped critic `v` is a
 shaped return in raw-reward units and there is no link at all, so the column is `null`: a number
 there would be a category error, and this file's whole job is to not produce one.
 
@@ -211,7 +211,7 @@ class ValueSidecarCallback(BaseCallback):
         fraction: share of buffer states to sample per rollout.
         seed: the sampler's seed. A run's sample is reproducible from (seed, rollout index), so a
             re-read of the same run scores the same states.
-        critic_mode: the run's `--critic` value. Decides whether `win_logit` is meaningful.
+        critic_mode: the run's critic (``"winprob"``; ``"shaped"`` only for an old run). Decides whether `win_logit` is meaningful.
     """
 
     def __init__(self, run_dir: "str | None", *,

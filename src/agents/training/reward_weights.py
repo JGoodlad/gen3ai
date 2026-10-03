@@ -19,7 +19,7 @@ VICTORY_VALUE = 30.0
 # kept in sync with the env's stall cap so the reward's timeout test matches where the env forfeits.
 _TIMEOUT_TURN_CAP = _StallConfig().threshold
 
-#: The shaped-critic DEFAULT discount (`--gamma` unset, `--critic shaped`) — the historical PPO gamma.
+#: The shaped-critic DEFAULT discount (`--gamma` unset, a shaped critic) — the historical PPO gamma.
 #: The name survives from when the hand potentials required it to equal the PPO gamma; the one PBRS
 #: that remained was the win-prob head's PBRS (deleted in deletion pass L1).
 PBRS_GAMMA = 0.9999

@@ -191,7 +191,7 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   🚨 **`overvalue_tau` IS IN THE CRITIC'S OWN UNITS, and until 2026-09-06 it silently was not**
   (`gen3_prober_winprob_currency_v1`). It defaults per CRITIC CURRENCY — `None` resolves it from
   the run — because the two eras' V are not the same quantity: 5.0 SHAPED RETURN UNITS on a critic
-  spanning roughly ±30, ≈**0.083** P(win) under `--critic winprob`, the same 1/12-of-span fraction
+  spanning roughly ±30, ≈**0.083** P(win) under the win-prob critic (the only critic), the same 1/12-of-span fraction
   either way. Carried across unchanged, the shaped 5.0 **exceeds the entire representable range of
   a probability gap**, so no crater can clear it and `critic_overvalued` reads a confident **0** —
   a units error in the shape of a finding. Measured on `ai_v12_01_winprob_critic` step 8M — the
@@ -199,7 +199,7 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   `ai_v12_02_winprob_critic`): the reliability gaps ran **0.067–0.461** and the headline flipped
   from `critic_mean_reducible_upper_bound` **0.0** to **0.4997** once the tau was in the right
   currency. The kill does not weaken it — the defect is in the CURRENCY of the recorded `values`,
-  which `--critic winprob` fixes at [0,1] regardless of what else the arm was training.
+  which the win-prob critic (the only critic) fixes at [0,1] regardless of what else the arm was training.
   An EXPLICIT value is still honoured verbatim (a threshold sweep must not be re-scaled), and the
   result carries `params.overvalue_tau_source` plus `critic_currency`. **A tau no gap in the run
   can reach now produces a loud `threshold_warning`** naming the largest observed gap — the durable

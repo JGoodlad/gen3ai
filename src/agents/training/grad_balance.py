@@ -100,7 +100,7 @@ def grad_balance_metrics(
     ``{"species_belief": …, "move_belief": …, "move_latent": …, "win_prob": …}`` — pass only the terms that are ACTIVE this minibatch (an empty / ``None``
     dict means "RL heads only", the upstream-identical 2-way case). **An aux term that is the SAME
     tensor object as ``value_term`` is skipped** (`gen3_tb_relevance_v1`): under
-    ``--critic winprob`` the critic loss IS the win-prob BCE, and reporting it as both would
+    the win-prob critic the critic loss IS the win-prob BCE, and reporting it as both would
     publish duplicate curves and double-count its norm in the shared denominator below.
 
     Every ``grad/<term>_share`` is that term's shared-trunk gradient norm divided by the SAME
@@ -129,7 +129,7 @@ def grad_balance_metrics(
     n_vf = float(g_vf.norm())
 
     # gen3_tb_relevance_v1: AN AUX TERM THAT *IS* THE VALUE TERM IS NOT A SECOND TERM. Under
-    # `--critic winprob` the deployed critic loss IS the win-prob BCE, so `ppo.py` passes the SAME
+    # the win-prob critic: the deployed critic loss IS the win-prob BCE, so `ppo.py` passes the SAME
     # tensor object as `value_term` and as `aux_terms["win_prob"]`. Reporting it twice published
     # three exact duplicate curves (`grad/win_prob_*` ≡ `grad/value_*`) AND — the real defect —
     # counted its norm twice in the shared denominator, deflating EVERY `grad/*_share` on such a

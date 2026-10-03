@@ -259,14 +259,12 @@ def test_the_sidecar_is_ON_BY_DEFAULT_for_a_winprob_run():
     from main.train.parser import build_parser
 
     p = build_parser()
-    assert _value_sidecar_on(p.parse_args(["--critic", "winprob"])) is True
-    assert _value_sidecar_on(p.parse_args([])) is True            # the bare argv is winprob (D2)
+    assert _value_sidecar_on(p.parse_args([])) is True            # the bare argv is winprob (D2; the only critic)
     shaped = p.parse_args([])
     shaped.critic = "shaped"            # no longer typeable (U3); an inherited / hand-built namespace
     assert _value_sidecar_on(shaped) is False   # shaped: byte-identical
     assert _value_sidecar_on(p.parse_args(["--value-sidecar", "on"])) is True
-    assert _value_sidecar_on(
-        p.parse_args(["--critic", "winprob", "--value-sidecar", "off"])) is False
+    assert _value_sidecar_on(p.parse_args(["--value-sidecar", "off"])) is False
 
 
 # ── the reader ─────────────────────────────────────────────────────────────────────────────────

@@ -125,7 +125,7 @@ LABELS: Tuple[LabelKey, ...] = (
     LabelKey("win_target", "f32", (1,), "winprob", _WIN, True, "Gen3Env._merge_training_keys",
              ("agents/training/win_prob_callback.py", _PPO), "host_const",
              "PLACEHOLDER; the Rust collector back-fills the episode outcome post-collection "
-             "(under `--critic winprob` it IS the value target)", const=0.0),
+             "(under the win-prob critic it IS the value target)", const=0.0),
     LabelKey("win_mask", "f32", (1,), "winprob", _WIN, True, "Gen3Env._merge_training_keys",
              ("agents/training/win_prob_callback.py", _PPO), "host_const",
              "PLACEHOLDER; back-filled with the known-outcome mask", const=0.0),

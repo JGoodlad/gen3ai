@@ -35,16 +35,10 @@ CRITIC_WINPROB = "winprob"
 #: checkpoint (and every shaped-era opponent in a pool) still LOADS.
 CRITIC_MODES = (CRITIC_SHAPED, CRITIC_WINPROB)
 
-#: What `--critic` ACCEPTS for a run to TRAIN. `shaped` was the Python env core's critic (the Rust
-#: env core refuses it, and the core it ran on was deleted — deletion pass U3, 2026-10-02), so a typed
-#: `--critic shaped` is refused at parse time and a shaped CHECKPOINT is refused on a resume / fork
-#: (`rust_env_setup.PythonEraShapedCheckpoint`, D4): run it PINNED to its own commit.
-CRITIC_TRAINABLE_MODES = (CRITIC_WINPROB,)
-
-#: The BARE-ARGV default — what a FRESH argv that types no `--critic` resolves to (deletion pass D2,
-#: owner 2026-10-02, `designs/ops/deletion_pass_manifest.md` §2.1). `--arch production` applies the same
-#: value from the recipe; the bare parser now agrees with it, so the `--debug` smoke runs the production
-#: critic on the production env core. Read ONLY where an ARGV is being resolved.
+#: THE critic a run TRAINS: the only trainable one (`shaped` was the Python env core's, deleted in deletion pass
+#: U3, 2026-10-02; a shaped CHECKPOINT is refused on a resume / fork, D4: run it PINNED to its own commit). Since
+#: deletion pass P11b there is no `--critic` flag — this value is the `critic` constant of every trainer
+#: namespace (`main.train.parser.objective`), and the bare `--debug` smoke runs it on the production env core.
 CRITIC_DEFAULT = CRITIC_WINPROB
 
 #: What an ABSENT record means — a `model_config.json` / saved `policy_kwargs` / policy attribute that
@@ -66,14 +60,13 @@ WINPROB_GAMMA = 1.0
 
 
 def critic_gamma(mode: object) -> float:
-    """THE CRITIC -> DISCOUNT PAIRING, declared once: the `--gamma` an UNTYPED flag resolves to
+    """THE CRITIC -> DISCOUNT PAIRING, declared once: the discount a run trains with
     under `mode`. ``winprob`` -> `WINPROB_GAMMA` (1.0); ``shaped`` -> `reward_weights.PBRS_GAMMA`
     (0.9999, the historical PPO gamma — every shaped and pre-critic run in `models/` trained at it,
     incl. the shaped ladder controls that otherwise took the win-prob reward values).
 
-    Read by `resolve_critic_mode` / `resolve_config` (the launch), `recipe_surface` (a TYPED
-    `--critic` under `--arch production` gets ITS critic's discount, never `recipe.fresh`'s) and
-    `combination_checks` (`--critic winprob` refuses any other gamma). Lazy import: this module stays
+    Read by `resolve_critic_mode` / `resolve_config` (the launch), `recipe_surface` and
+    `combination_checks` (the win-prob critic refuses any other gamma). Lazy import: this module stays
     torch-free, and `reward_weights` is pure constants."""
     if is_winprob(mode):
         return WINPROB_GAMMA

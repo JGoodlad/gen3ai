@@ -39,7 +39,7 @@ by an exception here:
                            reader is not misled into thinking `--arch production` covered them.
   * `runtime`            — perf knobs, never recorded.
   * `resume_immutable`   — the forward is identical (`belief_grad_mode`, the value-dist bounds).
-  * `family=critic`      — the readouts an experiment deliberately VARIES. `--critic winprob`
+  * `family=critic`      — the readouts an experiment deliberately VARIES. The win-prob critic
                            IMPLIES `win_prob_mode` and REFUSES `--value-dist-mode` /
                            `--value-from-dist`, so a guard that demanded these match production
                            would refuse every critic arm — the exact class of arm the incident was.
@@ -436,7 +436,7 @@ def report_lines(rep: ArchReport) -> List[str]:
         if skipped:
             out.append("  ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface "
                        "(the RECIPE block below applies the critic mode and the supervision "
-                       "doses). These critic READOUTS are implied by --critic winprob or sit at "
+                       "doses). These critic READOUTS are implied by the win-prob critic or sit at "
                        "their defaults; type them yourself if you want them pinned:")
             out.append("      " + "  ".join(f"{f} {v!r}" + (" (typed)" if typed else "")
                                             for f, v, typed in skipped))

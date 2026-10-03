@@ -67,7 +67,7 @@ audit / probe CLIs still hand-build (`designs/ops/TECH_DEBT_BACKLOG.md`).
 
 A separate `WinProbHead` (`win_prob_mode != none`) reads `value_pooled` *after* the pools and stashes
 a `last_win_prob_logits` [B,1]. It never enters the pi/vf CONCAT, so projection dims are unchanged
-either way — but **what consumes it depends on `--critic`**: under `shaped` it is a side readout fed
+either way — but **what consumes it depends on the recorded `critic`**: under `shaped` it is a side readout fed
 to the win-prob AUX loss and the prober, and under **`winprob` it IS the critic** (`_critic_value`
 returns `sigmoid` of these logits and the head's BCE is the value loss at `vf_coef`). `read_only`
 feeds it a STOP-GRAD `value_pooled` (head trains its own params only); `shaping` feeds it live (the

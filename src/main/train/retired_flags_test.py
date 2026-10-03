@@ -1,10 +1,9 @@
-"""The Python env core's flags (deletion pass U3, manifest R1 / R6): deleted, or reduced to ONE legal value
-that REFUSES the deleted one at PARSE time with the reason. (P11b then deleted `--env-core` and `--use-bridge`
-outright: they are in `census_deleted_flags_test`, and nothing of them is left on the namespace.)
+"""The Python env core's flags (deletion pass U3, manifest R1 / R6): deleted, or reduced to ONE legal value.
+(P11b then deleted `--env-core`, `--use-bridge` and `--critic` outright: they are in `census_deleted_flags_test`,
+refused WITH their reason, and `critic` is a constant of the namespace, `parser/objective.py`.)
 
-A silent no-op is the failure this file exists to rule out. After U3 the trainer has one env core, so a
-typed `--critic shaped` would otherwise parse, change nothing, and read as a run on the critic the command
-named. Each case below fails on a revert of the piece it names.
+A silent no-op is the failure this file exists to rule out. Each case below fails on a revert of the piece it
+names.
 """
 from __future__ import annotations
 
@@ -20,22 +19,6 @@ _DELETED = ["--" + n for n in ("async-rollout", "obs-source", "compile-opponents
                                "compile-opponents-preload", "compile-opponents-strict")]
 
 
-@pytest.mark.parametrize("flag,value", [("--critic", "shaped")])
-def test_a_deleted_value_is_refused_at_parse_time_with_the_reason(flag, value, capsys):
-    with pytest.raises(SystemExit) as e:
-        build_parser().parse_args(["--steps", "1", flag, value])
-    assert e.value.code == 2
-    err = " ".join(capsys.readouterr().err.split())
-    assert f"{flag} '{value}' was DELETED" in err and "only legal value is" in err, err
-    assert "U3" in err, err                                    # names the pass, so the reader can find why
-
-
-@pytest.mark.parametrize("flag,value", [("--critic", "winprob")])
-def test_the_one_legal_value_still_parses(flag, value):
-    ns = build_parser().parse_args(["--steps", "1", flag, value])
-    assert getattr(ns, flag[2:].replace("-", "_")) == value
-
-
 @pytest.mark.parametrize("flag", _DELETED + ["--no-" + _DELETED[0][2:], "--no-" + _DELETED[2][2:]])
 def test_a_deleted_flag_is_unrecognised(flag, capsys):
     with pytest.raises(SystemExit):
@@ -43,19 +26,23 @@ def test_a_deleted_flag_is_unrecognised(flag, capsys):
     assert "unrecognized arguments" in capsys.readouterr().err
 
 
-def test_the_defaults_are_the_one_core():
-    """The one env core is not a namespace attribute at all: nothing can type it and nothing reads it."""
+def test_the_one_core_and_transport_are_no_namespace_attribute_and_the_critic_is_a_constant():
+    """The one env core and transport are not namespace attributes at all (nothing can type them, nothing reads
+    them); the one critic is a CONSTANT of every namespace (`parser/objective.py`), not an option."""
     ns = build_parser().parse_args(["--steps", "1"])
     assert not hasattr(ns, "env_core") and not hasattr(ns, "use_bridge")      # deleted outright (P11b)
-    assert ns.critic is None                                                  # None = resolve_critic_mode
+    assert ns.critic == "winprob"
+    assert "--critic" not in {o for a in build_parser()._actions for o in a.option_strings}
 
 
-def test_the_trainable_critics_are_a_strict_subset_of_the_loadable_ones():
-    """`shaped` stays LOADABLE (every pre-v109 checkpoint, every shaped-era opponent) but is not trainable."""
-    from agents.model.critic_mode import (CRITIC_MODES, CRITIC_SHAPED, CRITIC_TRAINABLE_MODES, CRITIC_UNRECORDED)
+def test_shaped_stays_LOADABLE_but_the_trainer_trains_only_the_default():
+    """`shaped` stays LOADABLE (every pre-v109 checkpoint, every shaped-era opponent) but the one critic the
+    trainer trains is `CRITIC_DEFAULT` (winprob) — there is no trainable-set constant any more (P11b)."""
+    from agents.model import critic_mode
+    from agents.model.critic_mode import CRITIC_DEFAULT, CRITIC_MODES, CRITIC_SHAPED, CRITIC_UNRECORDED
 
-    assert set(CRITIC_TRAINABLE_MODES) < set(CRITIC_MODES) and CRITIC_SHAPED in CRITIC_MODES
-    assert CRITIC_SHAPED not in CRITIC_TRAINABLE_MODES
+    assert CRITIC_DEFAULT in CRITIC_MODES and CRITIC_SHAPED in CRITIC_MODES and CRITIC_DEFAULT != CRITIC_SHAPED
+    assert not hasattr(critic_mode, "CRITIC_TRAINABLE_MODES")
     assert CRITIC_UNRECORDED == CRITIC_SHAPED, "an ABSENT record still means shaped: old checkpoints must load as such"
 
 
@@ -65,7 +52,7 @@ def test_the_policy_still_loads_a_shaped_critic_checkpoint():
     assert "critic" in inspect.signature(Gen3DualHeadMaskablePolicy.__init__).parameters
     # the policy's own validation takes the LOADABLE set, never the trainable one
     src = inspect.getsource(Gen3DualHeadMaskablePolicy.__init__)
-    assert "CRITIC_MODES" in src and "CRITIC_TRAINABLE_MODES" not in src
+    assert "CRITIC_MODES" in src
 
 
 def test_the_rollout_has_one_source_the_rust_collector():

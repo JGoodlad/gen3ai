@@ -18,8 +18,9 @@ made unrepresentable rather than merely unlikely:
     confounds "re-priced the mix" with "raised the learning rate on the critic".
   * The CAP must bind where it is documented to bind, because at the production mix it DOES bind
     and a reader comparing `strata_share_*` against 50/50 must know why it is 44/56.
-  * The flag must REFUSE without the win-prob critic rather than no-op: under `--critic shaped`
-    the BCE it reweights is an auxiliary diagnostic, not the value loss.
+  * (It used to REFUSE without the win-prob critic rather than no-op, because under the shaped critic the
+    BCE it reweights was an auxiliary diagnostic. The win-prob critic is the only critic now — deletion pass
+    P11b — so that row is gone and the BCE is always the value loss.)
   * The value must be RECORDED and re-read on a flagless resume, or a launcher restart converts
     the arm back into its own control under the same run name (the v100 defect).
 """
@@ -230,33 +231,21 @@ def test_no_class_can_ever_exceed_the_cap_relative_to_the_smallest():
         assert max(live) / min(live) <= _STRATA_WEIGHT_CAP * (1 + 1e-9)
 
 
-# ── (5) it REFUSES without the win-prob critic, never no-ops ────────────────────────────────────
+# ── (5) the win-prob critic is the only critic, so the BCE it reweights IS the value loss ───────
 def _ns(**kw):
     import argparse
     return argparse.Namespace(**kw)
 
 
-def test_the_combination_check_refuses_a_strata_weight_under_the_shaped_critic():
+def test_no_combination_row_gates_the_strata_weight_on_the_critic_any_more():
+    """`winprob_strata_needs_the_winprob_critic` fired only for a SHAPED critic, which cannot be trained
+    (the Python env core that served it is deleted; a shaped checkpoint is refused on a resume, D4) — the row
+    was deleted with `--critic` (P11b), and a positive weight launches on the bare argv."""
     from main.train.combination_checks import COMBINATION_CHECKS, failing_checks
-    names = {c.name for c in COMBINATION_CHECKS}
-    assert "winprob_strata_needs_the_winprob_critic" in names, (
-        "the refusal must live in combination_checks so BOTH `resolve_config` and "
-        "`python -m main.checkargs` report it — a rule only one surface knows is the defect that "
-        "module's docstring exists to end.")
-    bad = [c.name for c in failing_checks(
-        _ns(critic="shaped", win_prob_strata_weight=1.0, _explicit_flags={"win_prob_strata_weight"}))]
-    assert "winprob_strata_needs_the_winprob_critic" in bad
-
-
-def test_the_check_is_silent_under_the_winprob_critic_and_when_the_flag_is_off():
-    from main.train.combination_checks import failing_checks
+    assert "winprob_strata_needs_the_winprob_critic" not in {c.name for c in COMBINATION_CHECKS}
     ok = [c.name for c in failing_checks(
         _ns(critic="winprob", win_prob_strata_weight=1.0, win_prob_mode="shaping"))]
-    assert "winprob_strata_needs_the_winprob_critic" not in ok
-    off = [c.name for c in failing_checks(_ns(critic="shaped", win_prob_strata_weight=0.0))]
-    assert "winprob_strata_needs_the_winprob_critic" not in off
-    unset = [c.name for c in failing_checks(_ns(critic=None, win_prob_strata_weight=None))]
-    assert "winprob_strata_needs_the_winprob_critic" not in unset
+    assert not [n for n in ok if "strata" in n]
 
 
 def test_the_range_check_refuses_outside_zero_to_one():

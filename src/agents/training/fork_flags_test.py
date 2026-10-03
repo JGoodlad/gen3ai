@@ -29,8 +29,7 @@ DEFAULTS = {"fork_fraction": 0.0, "fork_branches": 3, "fork_contested_gap": 0.40
             "fork_contested_absv": 0.0, "fork_max_per_battle": 1, "fork_crn": "dice_and_draws"}
 
 
-_WP = ["--critic", "winprob", "--terminal-indicator", "--victory-value",
-       "1.0", "--draw-penalty", "0", "--steps", "1000"]
+_WP = ["--steps", "1000"]      # the bare argv IS the win-prob composition (the critic is a constant, P11b)
 
 
 def _resolved(argv):
@@ -176,14 +175,13 @@ def test_the_fraction_is_in_the_arch_table_so_a_headless_run_reads_INERT():
 
 # ── the refusals ─────────────────────────────────────────────────────────────────────────────
 @pytest.mark.parametrize("extra,needle", [
-    # `shaped` is not a trainable critic any more (the Python core served it — U3): the parser says so
-    (["--critic", "shaped", "--steps", "1000", "--fork-fraction", "0.02"], "DELETED"),
+    # (`--fork-fraction` needing the win-prob critic is gone: it is the only critic — P11b; a typed
+    # `--critic shaped` is refused as a DELETED flag by `census_deleted_flags_test`)
     (_WP + ["--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"], "strata-weight"),
 ])
 def test_the_refusals_fire_with_their_own_text(extra, needle, capsys):
-    argv = extra if extra[0].startswith("--critic") else ["--steps", "1000"] + extra
     with pytest.raises(SystemExit):
-        _resolved(argv)
+        _resolved(extra)
     assert needle in capsys.readouterr().err
 
 

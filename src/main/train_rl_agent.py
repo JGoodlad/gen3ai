@@ -215,7 +215,7 @@ async def main():
     # gen3_winprob_critic_mode_v1: STATE WHICH READOUT IS THE CRITIC, for the composition line's own
     # reason. The critic changes the quantity the value function predicts, the loss that trains it,
     # what --vf-coef multiplies and what the reward stream has to be — and NOTHING in a metric would
-    # say so, because every scalar keeps its name. (`--critic shaped` was the Python env core's;
+    # say so, because every scalar keeps its name. (a shaped critic was the Python env core's;
     # it was deleted with that core — deletion pass U3 — and a shaped checkpoint is refused, D4.)
     emit(f"🎯 [CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1]; the value loss IS "
          f"that head's BCE against the terminal outcome, weighted by --vf-coef "

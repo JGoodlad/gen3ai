@@ -59,8 +59,8 @@ def test_compile_flags_survive_a_full_launcher_style_argv():
     argv = [
         "--restart-interval-hours", "3", "--nice", "10", "--no-pin",
         "--steps", "25000000", "--n-envs", "48", "--device", "cuda",
-        "--no-compile-trainer", "--critic", "winprob",
+        "--no-compile-trainer", "--ent-coef", "0.05",
     ]
     out = _strip_launcher_args(argv)
     assert out == ["--steps", "25000000", "--n-envs", "48", "--device", "cuda",
-                   "--no-compile-trainer", "--critic", "winprob"]
+                   "--no-compile-trainer", "--ent-coef", "0.05"]

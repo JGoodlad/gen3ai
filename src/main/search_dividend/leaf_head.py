@@ -4,7 +4,7 @@ Why this is a legal move at all, and why it is a narrow one.
 
 The `WinProbHead` is a **leak-safe SIDE readout**: it reads `value_pooled` and its logit is stashed
 for the aux loss and the offline instruments, and it is **never concatenated into pi or vf**
-(`agents/model/aux_value_heads.py`). So on a `--critic winprob` checkpoint, where
+(`agents/model/aux_value_heads.py`). So on a win-prob-critic checkpoint, where
 `defensive.resolve_for_critic` makes `win_prob` the only leaf, replacing this head's four tensors
 changes **what search believes about a candidate** and changes **nothing** about the action either
 player takes when it is not searching. In the MIRROR cell that is exactly one thing: the unsearched
@@ -23,7 +23,7 @@ It is narrow on purpose:
   a row cannot say about itself, and the startup line is where it is said.)
 
 The counterpart refusal matters as much as the load: if a future caller points this at a
-``--critic shaped`` checkpoint, the leaf is `value`, not `win_prob`, and swapping the win head
+a shaped critic checkpoint, the leaf is `value`, not `win_prob`, and swapping the win head
 would change NOTHING while looking like it changed something. `resolve_for_critic` already narrows
 the leaf at startup; :func:`refuse_if_score_is_not_winprob` makes the silent case loud.
 """
@@ -53,7 +53,7 @@ def refuse_if_score_is_not_winprob(score: str) -> None:
         raise ValueError(
             f"--leaf-head replaces the WIN-PROB head, but this cell's resolved --score is "
             f"{score!r} — the swap would change nothing while looking like it changed something. "
-            f"Run it on a `--critic winprob` checkpoint (where `resolve_for_critic` resolves "
+            f"Run it on a win-prob-critic checkpoint (where `resolve_for_critic` resolves "
             f"`auto` to `win_prob`), or drop --leaf-head.")
 
 

@@ -442,7 +442,7 @@ and `main.scaffolding_gauge` all read, so the three cannot drift on what the quo
 
 `calibration`'s over-value threshold defaults **per critic currency** (`None` resolves it from the
 run): 5.0 shaped return units on a critic spanning roughly ±30, ≈**0.083** P(win) under
-`--critic winprob` — the same 1/12-of-span fraction either way. Carried across unchanged, the
+the win-prob critic (the only critic) — the same 1/12-of-span fraction either way. Carried across unchanged, the
 shaped 5.0 **exceeds the entire representable range of a probability gap**, so no crater can clear
 it and `critic_overvalued` reads a confident **0** — a units error in the shape of a finding
 (measured: the headline moved 0.0 → 0.4997 once the tau was in the right currency). An EXPLICIT

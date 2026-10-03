@@ -4,7 +4,7 @@
 parser defaults differed from the live recipe (`--n-envs` 32 vs 48, `--batch-size` 4096 vs 2048,
 `--n-epochs` 5 vs 10, `--ent-coef` 0.02 vs 0.05, `--clip-range-vf` 0.5 vs none), and so did
 `--grad-accum-steps` (1 vs 32 — an effective batch of 4,096 instead of 65,536), `--self-play`,
-`--critic` (`shaped` vs `winprob`) with its three REQUIRED reward values, and the supervision
+the critic (`shaped` vs `winprob`) with its three REQUIRED reward values, and the supervision
 doses. A fresh argv that omitted them parsed, resolved, dry-ran and launched — and trained a
 different recipe: the recipe-side twin of the 2026-09-06 stripped-architecture incident
 (`arch_surface`'s docstring), closed the same way — a DECLARED surface, a mirror, one applier, one
@@ -14,7 +14,7 @@ report, read by every surface that launches.
 `agents.training.baselines.production_config()`, so no arch consumer ever sees it):
 
   * ``recipe.fresh`` — N0's MEASURED fresh recipe (`models/ai_v14_01_base`, the lineage's fresh
-    launch), every knob it launched with, including the critic and its reward values, plus
+    launch), every knob it launched with, including its reward values, plus
     ``kl_controller``: the controller constants it ran with (not flags — pinned against the
     callbacks' own defaults by `recipe_surface_test`). A key that is ALSO a recorded top-level
     mirror field must EQUAL it (`production_recipe` refuses otherwise): one truth, two readers.
@@ -32,8 +32,8 @@ Sources of every value: `designs/endstate/design_learner_recipe.md` §3.22; the 
 held together by `src/recipe_doc_gate_test.py`.
 
 **WHAT `--arch production` DOES.** Writes every ``recipe.fresh`` row the argv did not TYPE, as if
-typed, after the ARCH surface and before `resolve_critic_mode` (which then implies the rest of an
-applied `--critic winprob`). "Typed" is a fact the parser records (`record_typed_recipe_flags`).
+typed, after the ARCH surface and before `resolve_critic_mode` (which then implies the rest of the
+win-prob critic's settings). "Typed" is a fact the parser records (`record_typed_recipe_flags`).
 
 **THE REFUSAL.** A FRESH argv that differs on an UNTYPED knob refuses (`checkargs`, `--dry-run`, the
 launcher); a TYPED difference is the arm's lever (INFO); `--allow-nonproduction-recipe` consents.
@@ -44,8 +44,8 @@ of an `--arch production` run, every untyped row is resolved by exactly one rout
 
   1. `--lr`, `--batch-size`, `--n-steps`, `--gamma`: INERT on a resume (SB3 restores the
      checkpoint's own values) — never re-applied here, whatever the argv says;
-  2. a recorded tri-state field (`critic`, the doses, `opp_intent_coef` from config v125,
-     `policy_gae_lambda`, …): the general restart mechanism (`_resolve` / `resolve_critic_mode` /
+  2. a recorded tri-state field (the doses, `opp_intent_coef` from config v125,
+     `policy_gae_lambda`, …): the general restart mechanism (`_resolve` /
      `config.inherit_derived_enable_coefs`, `68850f27`) inherits it — untouched here;
   3. a recorded field with a concrete parser default (`terminal_indicator`, `victory_value`,
      `draw_penalty`, `vf_coef` — value-CHECKED, so the default would FATAL): from the checkpoint's
@@ -67,7 +67,7 @@ import os
 import shlex
 from typing import Any, Dict, FrozenSet, List, NamedTuple, Optional, Sequence, Tuple
 
-from agents.model.critic_mode import CRITIC_DEFAULT
+from agents.model.critic_mode import CRITIC_DEFAULT, critic_gamma
 
 #: The namespace attribute the recording actions write: the dests the argv TYPED.
 TYPED_ATTR = "_recipe_typed"
@@ -92,9 +92,9 @@ KL_CONSTANTS = ("target_kl", "kl_factor", "lr_factor")
 
 #: ``RecipeRow.unset`` for a row whose parser default is CONCRETE: read the default off the parser.
 PARSER_DEFAULT = "<parser default>"
-#: ``RecipeRow.unset`` for `--gamma`: an unset one resolves to its CRITIC's declared discount
-#: (`agents.model.critic_mode.critic_gamma`), so it is read off the resolved critic, never a constant.
-CRITIC_PAIRED = "<the --critic pairing>"
+#: ``RecipeRow.unset`` for `--gamma`: an unset one resolves to the critic's declared discount
+#: (`agents.model.critic_mode.critic_gamma`), so it is read off the critic, never a literal.
+CRITIC_PAIRED = "<the critic pairing>"
 
 #: INERT on a resume — SB3 restores the checkpoint's own values (root CLAUDE.md). Never re-applied
 #: on a restart, so nothing here fights that restoration.
@@ -150,11 +150,9 @@ FRESH_ROWS: Tuple[RecipeRow, ...] = (
     RecipeRow("clip_range_vf", "--clip-range-vf", PARSER_DEFAULT, "§1 row 14 — none (INERT under winprob)"),
     RecipeRow("ent_coef", "--ent-coef", PARSER_DEFAULT, "§1 row 11"),
     RecipeRow("gamma", "--gamma", CRITIC_PAIRED, "§1 row 12 — the critic's declared discount "
-              "(critic_mode.critic_gamma): 1.0 under winprob; a TYPED --critic shaped gets 0.9999"),
+              "(critic_mode.critic_gamma): 1.0 under winprob"),
     RecipeRow("policy_gae_lambda", "--policy-gae-lambda", 0.80, "§1 row 13"),
     RecipeRow("self_play", "--self-play", PARSER_DEFAULT, "§1 row 22"),
-    RecipeRow("critic", "--critic", CRITIC_DEFAULT, "§1 row 14 — the win-prob critic (also the "
-              "bare-argv default since the deletion pass, 2026-10-02)"),
     RecipeRow("terminal_indicator", "--terminal-indicator", PARSER_DEFAULT, "§1 row 14 — REQUIRED by winprob"),
     RecipeRow("victory_value", "--victory-value", PARSER_DEFAULT, "§1 row 14 — REQUIRED by winprob"),
     RecipeRow("draw_penalty", "--draw-penalty", PARSER_DEFAULT, "§1 row 14 — REQUIRED by winprob"),
@@ -257,10 +255,9 @@ def recipe_blocks(mirror: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, An
     if not {r.dest for r in FORK_ROWS} <= set(fork) or set(fork) - fork_allowed:
         raise RecipeError(f"`recipe.fork` must hold {sorted(r.dest for r in FORK_ROWS)} and may "
                           f"override only {sorted(FORK_OVERRIDES)} (got {sorted(fork)})")
-    from agents.model.critic_mode import critic_gamma
-    if not _agree(fresh["gamma"], critic_gamma(fresh["critic"])):
-        raise RecipeError(f"`recipe.fresh.gamma` {fresh['gamma']!r} is not its critic's declared discount "
-                          f"(critic_mode.critic_gamma({fresh['critic']!r}) = {critic_gamma(fresh['critic'])!r})"
+    if not _agree(fresh["gamma"], critic_gamma(CRITIC_DEFAULT)):
+        raise RecipeError(f"`recipe.fresh.gamma` {fresh['gamma']!r} is not the critic's declared discount "
+                          f"(critic_mode.critic_gamma({CRITIC_DEFAULT!r}) = {critic_gamma(CRITIC_DEFAULT)!r})"
                           " — the discount is PAIRED with the critic; change the pairing, not one side")
     top = {k: v for k, v in doc.items() if k != RECIPE_BLOCK_KEY}
     clash = sorted(k for k in declared if k in top and not _agree(fresh[k], top[k]))
@@ -305,21 +302,17 @@ def source_tag() -> str:
 def apply_production_recipe(ns: Any, mirror: Optional[Dict[str, Any]] = None) -> List[Tuple[str, Any]]:
     """`--arch production`'s recipe half: every UNTYPED ``recipe.fresh`` row set as if typed.
     Stamps `ns.recipe_source` (recorded in `metadata.json`'s `cli_args`)."""
-    from agents.model.critic_mode import critic_gamma
     want = production_recipe(mirror)
     typed = typed_dests(ns)
     # `--gamma` is PAIRED with the critic: an untyped one takes the discount of the critic this launch
-    # will train — a TYPED `--critic shaped` gets the shaped critic's 0.9999, never recipe.fresh's
-    # winprob 1.0 (a pairing no run trained). With the critic untyped this IS recipe.fresh's gamma
-    # (`recipe_blocks` refuses a block whose gamma is not its critic's).
-    critic = ns.critic if "critic" in typed else want["critic"]
+    # trains (the win-prob critic, the only one: `recipe_blocks` refuses a block whose gamma is not its).
     applied: List[Tuple[str, Any]] = []
     for r in ROWS:
         if r.dest in typed:
             continue
         if r.dest in COLLECTOR_ROWS and want[r.dest] is None:
             continue                       # derived by the collector
-        value = critic_gamma(critic) if r.dest == "gamma" else want[r.dest]
+        value = critic_gamma(CRITIC_DEFAULT) if r.dest == "gamma" else want[r.dest]
         setattr(ns, r.dest, value)
         applied.append((r.dest, value))
     ns.recipe_source = source_tag()
@@ -345,7 +338,7 @@ def _model_version_fields() -> FrozenSet[str]:
 def restart_route(dest: str, parser_default: Any, fields: FrozenSet[str]) -> str:
     """WHERE a same-run restart takes an untyped row from — exactly one route per row:
     ``inert`` (SB3 restores it; never re-applied), ``resume`` (a recorded tri-state field —
-    `_resolve` / `resolve_critic_mode` inherit it), ``model_config`` (a recorded field with a
+    `_resolve` inherits it), ``model_config`` (a recorded field with a
     concrete default — value-checked, so its default would FATAL) or ``cli_args`` (recorded nowhere
     else)."""
     if dest in INERT_ON_RESUME:
@@ -429,14 +422,12 @@ class RecipeDiff(NamedTuple):
     resolved: Any
     production: Any
     #: "argv" (TYPED — a deliberate deviation), "default" (the silent kind), "restart" (resolved
-    #: by `inherit_on_restart`), "inherited" (a fork's value from its parent's config) or "paired"
-    #: (`--gamma` following a TYPED `--critic` — the deviation is the critic's, already typed).
+    #: by `inherit_on_restart`) or "inherited" (a fork's value from its parent's config).
     source: str
 
     def line(self) -> str:
         how = {"argv": "TYPED", "default": "untyped default", "restart": "restored at restart",
-               "inherited": "inherited", "paired": "paired with the TYPED --critic"
-               }.get(self.source, self.source)
+               "inherited": "inherited"}.get(self.source, self.source)
         return f"{self.dest:<24} {self.resolved!r:<10} ({how})   production: {self.production!r}"
 
 
@@ -476,8 +467,7 @@ def _resolved(r: RecipeRow, ns: Any, defaults: Dict[str, Any]) -> Any:
         return getattr(ns, r.dest, defaults.get(r.dest))
     v = getattr(ns, r.dest, None)
     if v is None and r.unset == CRITIC_PAIRED:
-        from agents.model.critic_mode import critic_gamma
-        return critic_gamma(_resolved(_ROW["critic"], ns, defaults))
+        return critic_gamma(CRITIC_DEFAULT)
     return r.unset if v is None else v
 
 
@@ -499,10 +489,6 @@ def diff_against_production(ns: Any, mirror: Optional[Dict[str, Any]] = None,
     defaults = _parser_defaults()
     typed = typed_dests(ns)
     restored = {d for d, *_ in getattr(ns, "_recipe_restart_inherited", ()) or ()}
-    from agents.model.critic_mode import critic_gamma
-    #: the discount a TYPED `--critic` pairs with (None when the critic was not typed)
-    typed_critic_gamma = (critic_gamma(_resolved(_ROW["critic"], ns, defaults))
-                          if "critic" in typed else None)
     out: List[RecipeDiff] = []
     for r in rows:
         if r.dest in COLLECTOR_ROWS and want[r.dest] is None:
@@ -511,8 +497,6 @@ def diff_against_production(ns: Any, mirror: Optional[Dict[str, Any]] = None,
         if _agree(have, want[r.dest]):
             continue
         src = ("argv" if r.dest in typed else "restart" if r.dest in restored
-               else "paired" if (r.dest == "gamma" and typed_critic_gamma is not None
-                                 and _agree(have, typed_critic_gamma))
                else "inherited" if r.dest in inherited else "default")
         out.append(RecipeDiff(r.dest, r.flag, have, want[r.dest], src))
     return out

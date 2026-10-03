@@ -407,7 +407,7 @@ def live_gauge_metrics(values, win_prob_logits) -> Dict[str, float]:
     head writes no curve at all rather than a flat zero.
 
     🚨 **AND an empty dict when the two readouts are THE SAME QUANTITY** (`gen3_tb_relevance_v1`).
-    Under ``--critic winprob`` the deployed value IS ``sigmoid(win_prob_logit)``, so ρ is 1.0 and
+    Under the win-prob critic the deployed value IS ``sigmoid(win_prob_logit)``, so ρ is 1.0 and
     the gauge is 0 *by construction* — a tautology, not a measurement, and it published one for
     every rollout of the first win-prob arm (``train/scaffolding_rho`` a flat 1.0,
     ``train/scaffolding_gauge`` a flat 5.5e-13). The test is the RANK VECTORS being identical,

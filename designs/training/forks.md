@@ -211,7 +211,7 @@ A branch is a complete episode from the fork step to a terminal, so its advantag
 (the Python arm's `fork_buffer.gae`, cross-checked against SB3's own arrays — deleted in L5; the Rust pass uses `store.game_gae`, §14.5). `win_target` is
 the branch's own outcome bit and `win_mask` is 1.
 
-🚨 **Why the arm REFUSES any critic but `winprob`.** Under `--critic winprob` the reward stream is
+🚨 **Why the arm needs the win-prob critic (the only critic).** Under the win-prob critic (the only critic) the reward stream is
 the **terminal win indicator alone** (`--terminal-indicator`, `--victory-value 1.0`,
 the terminal-only reward), so a branch's ENTIRE reward sequence is reconstructible from its outcome bit —
 which is the only reason a branch's reward can be built outside the env (the Python arm's `branch_rewards`, deleted in L5; the Rust pass applies the core's indicator rule, §14.5). Under `shaped`
@@ -385,7 +385,7 @@ that DID resolve were the rollout's LATE ones — a selection bias, with `fork/r
 tell — so the registered launch raised the cap to 4096: `ctrl10M`'s argv plus `--fork-fraction 0.02
 --fork-branches 3 --seed 1001` and the ring flags, i.e. the arm on top of the exact configuration whose
 0.5169 baseline it is being read against. None of that can be launched now: the ring flags are gone and
-the Python core refuses the arm. A Rust-core launch needs `--critic winprob` (§7) and the §14.7 refusals
+the Python core refuses the arm. A Rust-core launch runs on the win-prob critic (the only critic) (§7) and the §14.7 refusals
 only.
 
 **Registered endpoints, in order** (from the measurement's orchestrator note):

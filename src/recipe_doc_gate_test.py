@@ -206,7 +206,8 @@ def test_a_change_to_the_DOC_alone_FAILS_the_gate():
         ("n_envs", "| 1 | `n_envs` (N) | 256 |", "| 1 | `n_envs` (N) | 48 |"),
         ("clip_range_vf", "| `clip_range_vf` | none | `recipe.fresh` |",
          "| `clip_range_vf` | 0.5 | `recipe.fresh` |"),
-        ("critic", "| `critic` | winprob | `recipe.fresh` |", "| `critic` | shaped | `recipe.fresh` |"),
+        ("policy_gae_lambda", "| `policy_gae_lambda` | 0.8 | `recipe.fresh` |",
+         "| `policy_gae_lambda` | 0.9 | `recipe.fresh` |"),
         ("n_epochs", "| `n_epochs` | 10 | `recipe.fresh` |", "| `n_epochs` | 5 | `recipe.fresh` |"),
     )
     for key, original, lie in plants:

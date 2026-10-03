@@ -218,7 +218,7 @@ def extract_cycle(trace_dir: str, *, v_column: str = DEFAULT_V_COLUMN
 
     🚨 ``v_column`` exists because ON A SHAPED-CRITIC RUN ``values`` AND ``win_probs`` ARE DIFFERENT
     READOUTS. On every win-prob arm they are the same tensor and
-    ``max_abs_values_minus_winprobs`` reads ~0; under ``--critic shaped`` the critic is the
+    ``max_abs_values_minus_winprobs`` reads ~0; under a shaped critic the critic is the
     scalar value net in raw return units (``values``) while ``win_probs`` is the
     AUXILIARY head, and that QC scalar is large BY CONSTRUCTION. The
     default is ``win_probs``, which keeps every banked read byte-identical; pass ``values`` to read
@@ -343,13 +343,13 @@ def extract_cycle(trace_dir: str, *, v_column: str = DEFAULT_V_COLUMN
             "max_abs_values_minus_winprobs": vmax,
             "v_column": v_column,
             "v_column_note": (
-                "V was read from the npz's `values` column — the ACTUAL critic on a --critic "
-                "shaped run (distributional E[Z] in raw shaped-return units). Rank-based rows "
+                "V was read from the npz's `values` column — the ACTUAL critic on a shaped-"
+                "critic run (distributional E[Z] in raw shaped-return units). Rank-based rows "
                 "(the AUCs) are valid; the calibration family and every gate.* reliability row "
                 "are NOT defined on this scale and must not be read from this frame."
                 if v_column == "values" else
-                "V was read from the npz's `win_probs` column. On a --critic winprob run that IS "
-                "the critic; on a --critic shaped run it is the AUXILIARY win-prob head, not the "
+                "V was read from the npz's `win_probs` column. On a win-prob-critic run that IS "
+                "the critic; on a shaped-critic run it is the AUXILIARY win-prob head, not the "
                 "value function."),
             "opponents": per_opp, "refusals": refusals}
     return arr, meta

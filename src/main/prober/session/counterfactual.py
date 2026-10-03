@@ -69,7 +69,7 @@ class _CounterfactualMixin:
             out = lookahead_battle(model, record, summary, npz, invs=invs, worst=worst,
                                    gamma=self._gamma, n_seeds=n_seeds, followup=followup,
                                    impl=self._impl)
-        # The currency `value_crn` / `delta_v` are in. Under `--critic winprob` `win_prob_crn` is
+        # The currency `value_crn` / `delta_v` are in. Under the win-prob critic `win_prob_crn` is
         # the SAME number as `value_crn` (verified on the live arm: equal to 4 dp on every
         # candidate), so a surface must be able to say "one readout" rather than presenting a
         # column that can never disagree as a second opinion.

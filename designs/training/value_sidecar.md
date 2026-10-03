@@ -24,7 +24,7 @@ reasons that is a real hole rather than a cosmetic one:
    A critic can be well calibrated on one and badly calibrated on the other.
 2. **The eval read is 8 cycles wide.** A 10M arm evaluates 5 times. The training side produces a
    labelled state every step of every episode, so the same question can be asked per rollout.
-3. **The training target is what the loss actually minimises.** `--critic winprob` fits
+3. **The training target is what the loss actually minimises.** the win-prob critic (the only critic) fits
    `V = sigmoid(win logit)` by BCE against `win_target`. Calibration against THAT is the
    objective's own residual; calibration against an eval battle is a *generalisation* question.
 
@@ -42,7 +42,7 @@ any later date.
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `--value-sidecar {auto,on,off}` | `auto` | `auto` = **ON under `--critic winprob`**, off otherwise. `on` forces it under any critic (the file then records the mode, and the reader refuses to Brier-decompose a shaped return without `--allow-shaped`). |
+| `--value-sidecar {auto,on,off}` | `auto` | `auto` = **ON under the win-prob critic (the only critic)**, off otherwise. `on` forces it under any critic (the file then records the mode, and the reader refuses to Brier-decompose a shaped return without `--allow-shaped`). |
 | `--value-sidecar-fraction` | `1/64` (0.015625) | Share of buffer states sampled per rollout. |
 | `--value-sidecar-seed` | `0` | Sampler seed. The sample is a function of **(seed, rollout index)**, never of a running stream. |
 

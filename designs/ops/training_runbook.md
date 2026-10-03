@@ -6,7 +6,7 @@ file is the detail behind them**, and `src/main/launcher/CLAUDE.md` +
 `src/agents/training/CLAUDE.md` own the per-flag semantics.
 
 Covers: the launcher and its restart loop, `main.checkargs` and the arch-surface guard, fresh /
-resume / fork launches, `--critic`, the in-process bridge transport, the compile flag,
+resume / fork launches, the win-prob critic, the in-process bridge transport, the compile flag,
 bot evaluation, the untaught meter, the critic gate, ELO, and exploitability.
 
 ---
@@ -102,9 +102,9 @@ builds the wrong architecture"*.
 
 **`--arch production`** is the remedy: it applies every ARCH-surface key from
 `designs/production_config.json` as if typed, and records `arch_source` in `model_config.json`; its
-RECIPE half applies the training recipe (incl. `--critic winprob`, its three reward values and the
+RECIPE half applies the training recipe (incl. the win-prob critic (the only critic), its three reward values and the
 supervision doses) and records `recipe_source` in `metadata.json`'s `cli_args`. It deliberately does
-NOT set the critic READOUTS `--critic winprob` implies, or `--belief-grad-mode` — the block lists
+NOT set the critic READOUTS the win-prob critic (the only critic) implies, or `--belief-grad-mode` — the block lists
 them every time, so its silence is never read as coverage. A same-run restart (which strips `--arch`)
 resolves each recipe knob by one route (INERT `--lr` / `--batch-size` / `--n-steps` / `--gamma`
 untouched; recorded fields from `model_config.json`; the rest from the run's `metadata.json:cli_args`),
@@ -277,12 +277,11 @@ checkpointer through the real Rust-collector loop) and `src/main/train_rl_agent_
 | `--diagnostics-every`, compile canary (every 25 updates), `--adaptive-batch-every`, KL lr controller, team win-rate pulls (3 rollouts), `--capacity-*-every`, CUDA memory-trend horizon (25 updates) | UPDATES / rollouts | only while the rollout `n_steps × n_envs` is fixed (production 2048 × 48 = 98,304) — a sizing change of N must restate `n_steps` or `--rollout-target-samples`, or every one of these moves |
 | launcher restart, graceful restart, `--log-level periodic` lines | wall clock / episodes | n/a |
 
-### WHICH readout is the critic — `--critic winprob` (the only trainable value, and the default)
+### WHICH readout is the critic — the win-prob critic (the only critic; no `--critic` flag)
 
-`policy._critic_value` has a MODE. **`winprob` is the default** for a fresh argv (the deletion pass's
-bare-argv flip, D2 2026-10-02 — `critic_mode.CRITIC_DEFAULT`), with its three reward values as the
+`policy._critic_value` has a MODE. **`winprob` is the only critic** (a constant of every trainer namespace, `src/main/train/parser/objective.py`; `--critic` was DELETED in P11b batch (b) and a typed one is refused with its reason, `designs/deleted_flags.md`), with its three reward values as the
 parser defaults (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`). **`shaped`** —
-every generation through gen-16 — is the scalar `value_net` in raw shaped-return units, with the win-prob head an auxiliary BCE (PopArt and the distributional `E[Z]` critic were DELETED, L1, config v131); a typed `--critic shaped` is now REFUSED at parse time (U3; `CRITIC_TRAINABLE_MODES = (winprob,)`). An ABSENT record (a pre-v109 config / saved
+every generation through gen-16 — is the scalar `value_net` in raw shaped-return units, with the win-prob head an auxiliary BCE (PopArt and the distributional `E[Z]` critic were DELETED, L1, config v131); `shaped` is no longer trainable (`CRITIC_TRAINABLE_MODES` is deleted). An ABSENT record (a pre-v109 config / saved
 `policy_kwargs`) still means `shaped` (`critic_mode.CRITIC_UNRECORDED`), so an old shaped checkpoint still LOADS (opponent, meters, prober); a resume or fork of one is refused `FATAL_CONFIG` (D4 `PythonEraShapedCheckpoint` — run it pinned to its own commit).
 
 **`winprob` promotes the head to BE the critic**: `V(s) = sigmoid(win_head logit)` in [0,1], the
@@ -305,10 +304,10 @@ theirs are concrete and an implication could not be told apart from an overwrite
 flip those ARE the parser defaults, so the requirement bites only on a typed signed-terminal value. Everything the
 mode SUBSUMES is refused rather than ignored. `python -m main.checkargs` reports every one offline.
 
-**`--win-prob-pbrs-frozen`, `--win-prob-pbrs-coef` and `--win-prob-pbrs-source` were DELETED** (L1, config v131; the actor-only frozen potential was the one PBRS route buildable under `winprob`). **`--critic` is STRUCTURAL and resume-immutable.**
+**`--win-prob-pbrs-frozen`, `--win-prob-pbrs-coef` and `--win-prob-pbrs-source` were DELETED** (L1, config v131; the actor-only frozen potential was the one PBRS route buildable under `winprob`). **The recorded `critic` is STRUCTURAL and resume-immutable.**
 
 **`--win-prob-strata-weight <0..1>`** (default `0.0` = OFF, bit-identical; **requires
-`--critic winprob`**) re-prices WHICH OPPONENTS the value loss is bought from: each state's BCE term
+the win-prob critic (the only critic)**) re-prices WHICH OPPONENTS the value loss is bought from: each state's BCE term
 is weighted by its opponent CLASS's inverse frequency (`bot` / `pool` / `stable` / `exploiter`),
 capped at 8× and renormalised so the mean weight over the buffer is 1 — the mix moves, the loss
 scale does not. It exists because only ~10–14 % of the terminal label's variance lies BETWEEN
@@ -321,7 +320,7 @@ at the production ~10/90 mix: `1.0` gives a 44/56 split, not 50/50.** Read `win_
 **The critic-ladder target levers are DELETED (deletion pass L2).** `--win-prob-lambda` / `--win-prob-lambda-truncated` (a λ-return BCE target), `--win-prob-rollout-target` / `-r` / `-mode` / `-weight` (R-rollout Monte-Carlo targets and their anchor weight) and `--win-prob-dense-aux` (25 dense end-of-battle targets) no longer exist: the win-prob BCE's target is always the episode's terminal outcome, and a checkpoint recorded with `dense_aux` ON is refused on every load (a training-only lever refuses a resume/fork naming the pin 475bd817). Why and where recoverable: [`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
 
 **`--fork-fraction <0..1>`** (default `0.0` = OFF and bit-identical — no module, no obs key, no
-callback, no row; **requires `--critic winprob`**, and REFUSES
+callback, no row; runs on the win-prob critic (the only critic), and REFUSES
 `--win-prob-strata-weight`) is **THE FORK ARM**: the
 fraction of the buffer's decisions that are FORKED. At a contested decision the episode is replayed
 out of the Rust core's finished input log to that turn and `--fork-branches` continuations — the policy's top-2
@@ -449,7 +448,7 @@ one flush, bots in the core, and the COMPLETE-GAME collector (an update fires at
 rest; `--rollout-target-samples` must be a multiple of lcm(`--batch-size`, `--n-envs`) — every
 micro-batch is full). Measured at the production mix (N = 48, 95 % self-play): 5.1× the Python
 path's trainee decisions/s at 0.04× the CPU per decision, the step 74 % T2 forward. It needs
-`--critic winprob` and refuses, by name at startup, every flag whose path it does not serve yet
+the win-prob critic (the only critic) and refuses, by name at startup, every flag whose path it does not serve yet
 (`src/agents/training/CLAUDE.md` → "The env core"). Validate an argv with `checkargs` first.
 
 **THE SWITCH (`gen3_env_core_switch_v1`, 2026-10-02, ledger *THE M5 SWITCH*; production N\* = 256 since the SIZING verdict, 2026-10-02).** The production core and
@@ -540,7 +539,7 @@ minimises. Once per rollout a seeded 1/64 of buffer states is appended to
 
 | Flag | Default |
 |---|---|
-| `--value-sidecar {auto,on,off}` | `auto` — **ON under `--critic winprob`**, off otherwise |
+| `--value-sidecar {auto,on,off}` | `auto` — **ON under the win-prob critic (the only critic)**, off otherwise |
 | `--value-sidecar-fraction` | `0.015625` (1/64 of buffer states) |
 | `--value-sidecar-seed` | `0` (the sample is a function of *(seed, rollout index)*) |
 

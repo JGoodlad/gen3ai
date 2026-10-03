@@ -321,25 +321,20 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
         desugar_umbrella_flags(ns)
 
-    # THE CRITIC MODE (gen3_winprob_critic_mode_v1) is resolved where the launch resolves it: with
-    # NO parent right here, and on a `--model` launch AFTER the parent config is read (below), so an
-    # untyped `--critic` INHERITS the checkpoint's recorded mode. `--critic winprob` IMPLIES
-    # `--win-prob-mode shaping` and `--gamma 1.0`; a checker that skipped them
-    # would report a launching command as broken on the very flags the mode fills in. The three
-    # reward flags it does NOT imply (--terminal-indicator, --victory-value 1.0, --draw-penalty 0)
-    # are REQUIRED, and the checks below are what report a command missing one.
-    # 🚨 Resolving it here with no parent on EVERY argv (as before 2026-10-02) filled the parser
-    # default `shaped` before the inheritance sweep could read the parent's `winprob`, so every
-    # `--model` resume of a winprob run on the Rust core was REFUSED here and by `--dry-run`
-    # ("--env-core rust requires --critic winprob") while the real launch resolved it and ran.
+    # THE CRITIC MODE'S IMPLICATIONS (gen3_winprob_critic_mode_v1) are resolved where the launch resolves
+    # them. `--critic` itself is no flag any more (deletion pass P11b: the win-prob critic is a CONSTANT of
+    # the namespace), but `--win-prob-mode shaping` and `--gamma 1.0` are still IMPLIED when untyped, and
+    # a checker that skipped them would report a launching command as broken on the very flags the mode
+    # fills in. The three reward flags it does NOT imply (--terminal-indicator, --victory-value 1.0,
+    # --draw-penalty 0) are REQUIRED, and the checks below are what report a command missing one.
 
-    def _critic(saved_cfg) -> None:
+    def _critic() -> None:
         with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
-            resolve_critic_mode(ns, saved_cfg)
+            resolve_critic_mode(ns)
 
     model = resolve_models_path(getattr(ns, "model", None))
     if not model:
-        _critic(None)
+        _critic()
         ns._saved_config_present = False
         return {"ns": ns, "model": None, "config_path": None, "tried": [], "inherited": {},
                 "same_run": False, "no_parent": True}
@@ -356,7 +351,7 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
             saved = ModelVersion.from_json_file(config_path)
         except Exception as e:                       # noqa: BLE001 — unreadable is not a crash
             ns._saved_config_present = False
-            _critic(None)
+            _critic()
             return {"ns": ns, "model": model, "config_path": config_path, "tried": tried,
                     "inherited": {}, "same_run": same_run, "read_error": str(e)}
 
@@ -381,12 +376,9 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
         refuse_python_era_checkpoint(model, saved_ver=saved)
     except PythonEraShapedCheckpoint as e:
         env_core_refusal = str(e)
-    # THE CRITIC MODE with the parent's recorded config — the launch's order (`resolve_config`:
-    # after the restart route and the env core, before the derived coefs and the sweep).
-    _critic_unset = ns.critic is None
-    _critic(saved)
-    if _critic_unset and saved is not None and hasattr(saved, "critic"):
-        inherited["critic"] = ns.critic
+    # THE CRITIC MODE's implications — the launch's order (`resolve_config`: after the restart route and
+    # the D4 refusal, before the derived coefs and the sweep).
+    _critic()
     # THE EVAL OPPONENT REGIME, run BEFORE the blanket inheritance sweep and for
     # `resolve_critic_mode`'s reason. `--promote-threshold` is not a plain inherited flag: when the
     # argv TYPES the regime, the launch RE-DERIVES the gate from the new regime instead of

@@ -174,11 +174,11 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
 
     def critic_mode(self) -> str:
         """WHICH READOUT IS THE CRITIC, and therefore WHAT CURRENCY the recorded ``values`` are
-        in — read MODEL-FREE from the run root's ``model_config.json`` (`--critic`), exactly as
+        in — read MODEL-FREE from the run root's ``model_config.json`` (the recorded ``critic``), exactly as
         ``_dist_support`` reads the dist head's support. ``"shaped"`` or ``"winprob"``.
 
         **An ABSENT key means ``"shaped"``**, and that is a fact about the archive rather than a
-        default chosen here: `--critic` landed with config version 109, so every run recorded
+        default chosen here: the ``critic`` field landed with config version 109, so every run recorded
         before it (214 of the 215 on this box, measured 2026-09-06) has no key and every one of
         them is shaped. A run that cannot be read at all is also shaped — the historical
         behaviour, so an unreadable config can never silently re-scale an old run's numbers.

@@ -442,15 +442,17 @@ def test_h_a_fresh_dry_run_into_an_existing_run_is_refused_and_touches_nothing(
 def test_g_a_refusal_whose_message_is_a_renderer_prints_the_TEXT(isolated, monkeypatch, capsys):
     """`CombinationCheck.message` may be a callable that quotes a value; the dry run printed the
     callable itself (`✗ REFUSED (resolve_config): <function <lambda> at 0x…>`, 2026-09-30, a
-    `--critic winprob` argv missing `--victory-value 1.0` / `--draw-penalty 0`). It must print
-    `combo.text(ns)`, as `main.checkargs` does."""
+    winprob argv with a wrong `--victory-value`; that row is gone with the one-valued flags, P11b, so the
+    case is now a rollout target off the lcm quantum — another row whose message is a renderer). It must
+    print `combo.text(ns)`, as `main.checkargs` does."""
     _root, (_first, second), _work = isolated
     monkeypatch.setattr(wt, "get_git_hash", lambda *a, **k: second)
-    # a winprob argv with a TYPED signed magnitude (the bare-argv default is the unit terminal, D2)
-    _dry_run(["--steps", "1000", "--critic", "winprob", "--victory-value", "30", *_ARCH_OK], monkeypatch,
+    # a rollout target that is not a multiple of lcm(--batch-size, --n-envs): its message is a callable
+    _dry_run(["--steps", "1000", "--n-envs", "48", "--batch-size", "2048",
+              "--rollout-target-samples", "100000", *_ARCH_OK], monkeypatch,
              expect=int(TrainExitCode.FATAL_CONFIG))
     out = capsys.readouterr().out
     refused = [ln for ln in out.splitlines() if "(resolve_config):" in ln]
     assert refused, out
     assert not any("<function" in ln for ln in refused), refused
-    assert any("--victory-value" in ln for ln in refused), refused
+    assert any("--rollout-target-samples" in ln for ln in refused), refused

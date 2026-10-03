@@ -120,7 +120,7 @@ class TrainSetup:
         # +WIN-PROB: the head's MODE (none/read_only/shaping) lives on the extractor; the loss is added
         # whenever the mode is on. read_only vs shaping differ only in whether the
         # extractor stop-grads the head's input (the trunk gradient) — the loss term itself is identical.
-        # +CRITIC MODE (gen3_winprob_critic_mode_v1): under `--critic winprob` the win-prob head IS
+        # +CRITIC MODE (gen3_winprob_critic_mode_v1): under the win-prob critic the win-prob head IS
         # the value function, so the BCE below stops being an auxiliary and becomes THE value loss
         # — at `vf_coef`, tagged "value" (never "aux": §1.4 of the design records that
         # `train/noise_scale_value` spent the distributional-critic era describing a zero-weighted
@@ -229,7 +229,7 @@ class TrainSetup:
         startup declaration (`compile_regions._r1_static`), so the compiled region's signature is
         known before the lock.
 
-        `--win-prob-strata-weight > 0` under `--critic winprob` with the `opp_class` / `win_mask`
+        `--win-prob-strata-weight > 0` under the win-prob critic with the `opp_class` / `win_mask`
         keys the weights are computed from. Declared from the FLAG: whether a given rollout yields
         weights (two or more opponent classes among its labelled rows) is data, and R1 gets the
         neutral ones when it does not (`_micro_var`).

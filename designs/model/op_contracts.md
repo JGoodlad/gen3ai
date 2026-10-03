@@ -37,7 +37,7 @@ supervision dict rides the container, so its per-forward clear IS the entry repl
 Boundary rule: each producer module owns its own stash surface — the op keeps `OpStashes`,
 `PokemonEncoder` keeps `last_move_tokens` (written unconditionally every encoder forward, read in
 the same extractor forward) — a submodule never writes into its parent's container. Related
-fail-loud: `Gen3DualHeadMaskablePolicy._critic_value` under `--critic winprob` RAISES when the
+fail-loud: `Gen3DualHeadMaskablePolicy._critic_value` under the win-prob critic (the only critic) RAISES when the
 win head/logits are missing or batch-stale instead of falling back to the scalar
 `value_net` (the silently-wrong-critic shape v89 exposed). Gate: `extractor_stashes_test.py`.
 

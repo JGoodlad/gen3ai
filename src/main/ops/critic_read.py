@@ -1195,11 +1195,11 @@ def build_parser() -> argparse.ArgumentParser:
                          "omitted with that reason. Every other conditioning row is unaffected — "
                          "the spread identity needs no strength axis.")
     ap.add_argument("--v-column", choices=("win_probs", "values"), default="win_probs",
-                    help="which npz column the CONDITIONING rows read as V. 🚨 On a `--critic "
-                         "shaped` run the two are DIFFERENT READOUTS: `values` is the actual "
+                    help="which npz column the CONDITIONING rows read as V. 🚨 On a shaped-"
+                         "critic run the two are DIFFERENT READOUTS: `values` is the actual "
                          "critic (the scalar value net in raw return units) and "
-                         "`win_probs` is the AUXILIARY head. On a `--critic "
-                         "winprob` run they are the same tensor. The default is `win_probs`, "
+                         "`win_probs` is the AUXILIARY head. On a win-prob-"
+                         "critic run they are the same tensor. The default is `win_probs`, "
                          "which keeps every banked read byte-identical. Only the RANK-based rows "
                          "(the AUCs) are valid under `values`; the calibration family is not "
                          "defined on a raw shaped-return scale, and the gate.* reliability rows "

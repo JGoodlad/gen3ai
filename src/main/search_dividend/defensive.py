@@ -211,7 +211,7 @@ SCORES = ("auto", "value", "win_prob")
 def leaves_for_critic(critic_mode: object) -> tuple:
     """The `--defensive-leaf` values a checkpoint trained under `critic_mode` can honestly take.
 
-    Under `--critic winprob` there is exactly ONE readout — `predict_values` IS
+    Under the win-prob critic there is exactly ONE readout — `predict_values` IS
     `sigmoid(win-prob logit)` — so `value` names a critic that is in no loss graph and would be
     the SAME number wearing a different label. It is refused rather than aliased: probe G's whole
     finding is that the two leaves are different arms with different measured worth, and a run
@@ -257,7 +257,7 @@ def resolve_for_critic(critic_mode: object, score: str, leaf: Optional[str] = No
     notes = []
     if str(score) == "value":
         raise ValueError(
-            "--score value is refused on a --critic winprob model: this checkpoint has ONE value "
+            "--score value is refused on a win-prob-critic model: this checkpoint has ONE value "
             "readout (predict_values IS the win-prob head's sigmoid), so 'value' names a critic "
             "that is in no loss graph. Pass --score win_prob.")
     if str(score) == "auto":
@@ -266,7 +266,7 @@ def resolve_for_critic(critic_mode: object, score: str, leaf: Optional[str] = No
                      "nothing to fall back to; resolved rather than left implicit)")
     if leaf is not None and leaf not in leaves_for_critic(critic_mode):
         raise ValueError(
-            f"--defensive-leaf {leaf!r} is refused on a --critic winprob model: the only leaf is "
+            f"--defensive-leaf {leaf!r} is refused on a win-prob-critic model: the only leaf is "
             f"{LEAF_WINPROB!r} (probe G's `value` control arm does not exist on this critic — "
             "predict_values and the win-prob head are the same number). Pass "
             f"--defensive-leaf {LEAF_WINPROB}.")

@@ -91,10 +91,9 @@ def test_checkargs_refuses_a_fresh_argv_whose_untyped_recipe_differs():
     silent = {d.dest for d in rep.silent}
     assert {"n_envs", "batch_size", "grad_accum_steps", "n_epochs", "ent_coef", "clip_range_vf",
             "self_play", "opp_intent_coef"} <= silent
-    # the bare-argv flip (deletion pass D2): the critic and its three reward values
+    # the bare-argv flip (deletion pass D2): its three reward values
     # now AGREE with the recipe untyped, so none of them is a silent difference any more
-    assert not {"critic", "terminal_indicator", "victory_value", "draw_penalty",
-                "gamma"} & silent
+    assert not {"terminal_indicator", "victory_value", "draw_penalty", "gamma"} & silent
     assert any("--ent-coef" in line for line in rs.report_lines(rep))
 
 
@@ -160,7 +159,7 @@ def test_each_row_has_exactly_one_restart_route():
     p = build_parser()
     route = {r.dest: rs.restart_route(r.dest, p.get_default(r.dest), fields) for r in rs.ROWS}
     assert {d for d, v in route.items() if v == "inert"} == {"lr", "batch_size", "n_steps", "gamma"}
-    assert route["critic"] == "resume" and route["move_belief_coef"] == "resume"
+    assert "critic" not in route and route["move_belief_coef"] == "resume"     # the critic is no recipe row (P11b)
     assert route["policy_gae_lambda"] == "resume"
     assert {route[d] for d in ("terminal_indicator", "victory_value", "draw_penalty", "vf_coef")} \
         == {"model_config"}
@@ -181,7 +180,7 @@ def test_a_same_run_restart_resolves_every_untyped_row_by_its_route(tmp_path):
     assert (ns.lr, ns.batch_size, ns.n_steps, ns.gamma) == (3e-4, 4096, 2048, None)
     assert not {"lr", "batch_size", "n_steps", "gamma"} & set(got)
     # recorded tri-state fields are the resume's own inheritance:
-    assert ns.critic is None and ns.move_belief_coef is None
+    assert ns.critic == "winprob" and ns.move_belief_coef is None      # a constant; the tri-state ones inherit
     rep = rs.report(ns, fresh=False, restart=True)
     assert rep.restart_inherited and not rep.refuses and rep.kind == "fresh"
 
@@ -273,8 +272,6 @@ def test_every_tri_state_unset_equals_what_resolve_config_fills():
     for r in rs.ALL_ROWS:
         if r.unset == rs.PARSER_DEFAULT:
             assert p.get_default(r.dest) is not None, f"{r.dest}: tri-state needs a declared unset"
-        elif r.dest == "critic":
-            assert r.unset == CRITIC_DEFAULT
         elif r.dest == "gamma":
             # paired with the critic (critic_mode.critic_gamma): the default critic's is WINPROB_GAMMA,
             # a typed shaped one's PBRS_GAMMA

@@ -42,7 +42,7 @@ class CallbackBundle:
 def _value_sidecar_on(args) -> bool:
     """Is the training-side value sidecar on for this run? (`gen3_value_sidecar_v1`.)
 
-    `auto` — the default — means ON under `--critic winprob` and OFF otherwise, and the asymmetry
+    `auto` — the default — means ON under the win-prob critic and OFF otherwise, and the asymmetry
     is deliberate rather than a convenience. Under `winprob` the buffer's `values` ARE `P(win|s)`
     and `win_target` is the objective's own label, so a row is a calibration measurement of the
     thing being optimised. Under `shaped` the value is a PopArt-normalised shaped return whose

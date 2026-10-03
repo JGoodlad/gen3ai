@@ -233,7 +233,7 @@ answers, each pinned by a test in `app_test.py` → "usability / information flo
 
 ## The critic's CURRENCY, and the thresholds that depend on it
 
-`--critic winprob` makes V a **probability in [0,1]** instead of a shaped return of roughly ±30,
+The win-prob critic (the only critic) makes V a **probability in [0,1]** instead of a shaped return of roughly ±30,
 and `values` then EQUALS `win_probs`. Nothing here computes that — `ProbeSession.critic_currency()`
 does, and it rides `run_summary()`, `battle_turns()`, `analyze()` and `calibration()`. This package
 only has to stop CONTRADICTING it.

@@ -9,7 +9,7 @@ of the FOLD ORDER contract (`ppo.train`'s docstring; `src/agents/training/CLAUDE
   2. the BELIEF bank's `hidden_move` site (hidden-team aux, move belief) → the OPPONENT-INTENT fold
      (set-valued β, then α/β) → the `latent` site (move latent) → the `revealed` site (spread,
      nature/EV, HP type, item);
-  3a. the WIN-PROB BCE (the value loss under `--critic winprob`, else an aux term).
+  3a. the WIN-PROB BCE (the value loss under the win-prob critic, else an aux term).
 
 in that order, as ONE straight line — the float-addition order of the inline fold is preserved term
 by term. Everything after 3a (the CF-twin mirror, TD-aux, the counterfactual block) is the DECLARED EAGER TAIL, folded in contract

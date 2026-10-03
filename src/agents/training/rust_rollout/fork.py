@@ -650,11 +650,11 @@ def fork_decl_from_args(args: Any) -> Optional[ForkDecl]:
 
 
 def check_terminal(terminal: Any) -> None:
-    """§7: a branch's reward is rebuilt from its outcome bit — only the INDICATOR terminal (--critic winprob)
+    """§7: a branch's reward is rebuilt from its outcome bit — only the INDICATOR terminal (the win-prob critic)
     makes that exact. Any other terminal REFUSES at startup."""
     if not bool(terminal["terminal_indicator"]):
         raise LeverConfigError("\n[SUPPLY] FATAL: the fork arm rebuilds a branch's reward from its outcome bit, "
-                               "which needs the indicator terminal (--critic winprob --terminal-indicator)")
+                               "which needs the indicator terminal (the win-prob critic's `--terminal-indicator`)")
 
 
 def check_obs_keys(obs_keys: Sequence[str]) -> None:

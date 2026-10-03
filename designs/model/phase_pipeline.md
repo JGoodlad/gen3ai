@@ -108,7 +108,7 @@ Scope is the four heads with a forward path: `MoveBelief`, `SpreadBelief`, `HPTy
 through the POLICY, via the pointer cells). `BeliefHead`, `PubValHead` and `BetaSwitchHead` are
 structurally label-only in every mode — asserted in `belief_label_only_gate_test.py`, not assumed,
 so a head that starts feeding forward fails a test instead of quietly rejoining the PPO objective.
-🚨 **`WinProbHead` is NOT in that set under `--critic winprob`**: there the head IS `_critic_value`,
+🚨 **`WinProbHead` is NOT in that set under the win-prob critic (the only critic)**: there the head IS `_critic_value`,
 so it feeds GAE, the value loss and (at `win_prob_mode shaping`, which the mode implies) the trunk.
 Under the shaped critic (an old checkpoint; no longer trainable) it is label-only like the other three. The claim is mode-conditional, and
 reading it as unconditional would say the production critic cannot reach the objective.
@@ -129,7 +129,7 @@ narrow. Both projection input dims are STATIC ARITHMETIC (`gen3_static_widths_v1
 `ProjectionAssembler.forward`'s concat exactly. **`vf` is a CONSTANT `D_MODEL`** — the
 critic-route deletion wave retired the whole post-assembler vf tail (the seed window; the
 hidden-opp belief's vf half; the `non_matchup_rest` vf concat), so `vf_combined IS value_pooled`,
-the same tensor the critic reads — the win head under `--critic winprob`. That is the structural cure for the v89/M2
+the same tensor the critic reads — the win head under the win-prob critic (the only critic). That is the structural cure for the v89/M2
 orphaned-branch class rather than another instance of it: there is no second vf path left for a
 critic parameterization to bypass. Only TWO inputs still move `pi`: the layout's
 `non_matchup_rest` tail, and the hidden-opp belief pool (`k·D_MODEL`, **policy side only** — its

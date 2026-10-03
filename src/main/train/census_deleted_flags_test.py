@@ -29,6 +29,7 @@ DELETED = [
     ("--eval-concurrency-per-worker", ["1"]),
     ("--env-core", ["rust"]),                                          # P11b (a): the one-valued flags
     ("--use-bridge", ["rust"]),
+    ("--critic", ["winprob"]),                                         # P11b (b)
 ]
 
 

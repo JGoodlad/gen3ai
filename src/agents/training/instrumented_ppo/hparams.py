@@ -141,7 +141,7 @@ class PpoHyperparameters:
     # episode proportion (inverse-frequency `f ** -s`, capped, renormalised so the mean weight over
     # the buffer is 1). It exists because only ~10-14% of the terminal label's variance lies BETWEEN
     # (cycle, opponent) cells, so the head buys its resolution from the board instead
-    # (`winprob_head_refit_2026-09-09`). Requires `--critic winprob` (refused otherwise, never a
+    # (`winprob_head_refit_2026-09-09`). Requires the win-prob critic (refused otherwise, never a
     # silent no-op). Training-only, resume-mutable; scales a loss, touches no forward pass.
     win_prob_strata_weight: float = 0.0
 

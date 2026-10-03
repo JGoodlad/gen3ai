@@ -205,7 +205,7 @@ def build(root: str) -> str:
 
 
 def build_winprob(root: str) -> str:
-    """A `--critic winprob` run — the SECOND era, written so every currency-dependent surface has
+    """A win-prob-critic run — the SECOND era, written so every currency-dependent surface has
     a case to render (`gen3_prober_winprob_currency_v1`).
 
     It is a separate builder rather than a flag on `build` because the two eras differ in what
@@ -255,7 +255,7 @@ def build_winprob(root: str) -> str:
     with open(os.path.join(run, "metadata.json"), "w") as f:
         json.dump({"gamma": 1.0}, f)          # undiscounted: G(s) is the terminal win indicator
     with open(os.path.join(run, "model_config.json"), "w") as f:
-        # No `value_dist_*`: `--critic winprob` REFUSES a non-none dist mode, so a fixture that
+        # No `value_dist_*`: the win-prob critic REFUSES a non-none dist mode, so a fixture that
         # carried one would describe a configuration the trainer will not launch.
         json.dump({"critic": "winprob"}, f)
     return run

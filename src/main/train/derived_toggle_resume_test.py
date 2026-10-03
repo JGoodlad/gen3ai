@@ -22,8 +22,7 @@ import pytest
 from agents.model.model_version import ModelVersion
 from main.train.parser import build_parser
 
-_FRESH = ["--arch", "production", "--critic", "winprob", "--terminal-indicator", "--victory-value", "1.0",
-          "--draw-penalty", "0", "--steps", "1000"]
+_FRESH = ["--arch", "production", "--steps", "1000"]
 
 
 def _umbrella_keys():

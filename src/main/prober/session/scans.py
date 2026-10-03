@@ -439,7 +439,7 @@ class _ScansMixin:
 
         ``v_even=None`` (the default) resolves that even-point from the run's CRITIC CURRENCY: 0.0
         on a shaped critic — the documented over-counting fallback above — but **0.5 under
-        ``--critic winprob``**, where V *is* P(win) and 0.0 is not "even" but a certain loss. On a
+        the win-prob critic**, where V *is* P(win) and 0.0 is not "even" but a certain loss. On a
         winprob run the fallback is also unreachable in practice (``values`` equals ``win_probs``,
         so the primary split always has its input), but a threshold that is wrong only where it is
         currently unused is still wrong, and the next reader will not know that."""

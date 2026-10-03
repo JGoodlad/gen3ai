@@ -134,7 +134,7 @@ comparison is that a disagreement can only be the *gradient*, never the estimato
 | group | is |
 |---|---|
 | `policy` | the clipped surrogate AS FOLDED (`_policy_grad_term`; at the 1.0 default that is `policy_loss` itself) |
-| `value` | `vf_coef · value_loss` (0.0 and therefore absent under `--critic winprob`, where the win-prob BCE carries the `value` tag instead) |
+| `value` | `vf_coef · value_loss` (0.0 and therefore absent under the win-prob critic (the only critic), where the win-prob BCE carries the `value` tag instead) |
 | `entropy` | `ent_coef · ent_loss_used` — **degenerate at `--ent-coef 0`** (a 0.0-scaled tensor still folds, so the group is present but its norms are 0 and both EMAs stay non-positive ⇒ nothing is emitted, which is the right answer, not a gap) |
 | `aux` | every belief / win-prob / TD-aux / counterfactual term, as ONE bucket (`grad/<term>_share` already breaks the heads out individually) |
 
