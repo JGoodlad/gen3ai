@@ -70,6 +70,11 @@ from main.launcher.worktree import (
 # takes to bring up the SubprocVecEnv workers + Showdown connections.
 _FAST_CRASH_SECONDS = 600.0
 
+#: How long a SIGTERMed child gets before the supervisor SIGKILLs it. The child's deferred abort
+#: (`main.train.deferred_abort`) waits for a safe point for less than this, minus a save budget —
+#: `deferred_abort_test` pins the relation.
+KILL_GRACE_SECONDS = 90.0
+
 
 # Substrings in the child's output that mark a deterministic, non-recoverable startup
 # failure — restarting would hit the exact same error every time. The dedicated
@@ -485,8 +490,6 @@ def _supervise(
     thread). ``on_tick(snapshot)`` marks where Rich would repaint (Textual passes ``None``
     and renders on its own timer). ``shutdown``/``proc_box`` support frontend-driven
     teardown so an abnormal app exit never orphans the child."""
-    KILL_GRACE_SECONDS = 90.0
-
     child_args = ctx.child_args
     child_env = ctx.child_env
     train_script = ctx.train_script

@@ -145,7 +145,10 @@ an edit must not break: the **dump stays BEFORE the update** (update k's `train/
 rollout k+1 — the archive's TB convention); the **final dump** (`gen3_final_update_dump_v1`, P3) writes the
 LAST update's pending scalars at `learn()`'s end, at the current step (so on a normal end the `train/*`
 tags carry two points at the final step — update k-1's, then update k's), and the abort / graceful-restart
-path (`main/train/lifecycle.py`) runs the loop's own `dump_logs()` before it saves — so a test reads what
+path (`main/train/lifecycle.py`) runs the loop's own `dump_logs()` before it saves — at a SAFE POINT only
+(`main/train/deferred_abort.py`, `gen3_deferred_abort_v1`: a stop signal just records the request, and
+`GracefulRestartCallback` runs it at every loop event, never inside an update or a dump; a new loop event
+or a new place that dumps must not become a place the abort can run mid-update) — so a test reads what
 an update logged from a recorded dump (`testkit.record_dumps`), never from `name_to_value` after `learn()`;
 **`learn` > `collect` | `update` are the DECLARED HOOK POINTS** (`agents/training/loop_hooks.py`,
 `gen3_declared_loop_hooks_v1`: K6's freeze guard and the compile sentinel REGISTER there, outermost first

@@ -89,3 +89,31 @@ def test_does_not_fire_before_abort_fn_wired(monkeypatch):
 def test_on_step_is_noop(monkeypatch):
     cb, _ = _make(monkeypatch, "100")
     assert cb._on_step() is True
+
+
+def test_every_loop_event_is_a_safe_point_and_runs_first(monkeypatch):
+    """gen3_deferred_abort_v1: a signal-requested abort runs at these events, before the callback's own work
+    (so a rollout end with BOTH a pending abort and an elapsed interval aborts as the signal asked)."""
+    cb, clock = _make(monkeypatch, "100")
+    seen = []
+    fired = []
+    cb.safe_point_fn = seen.append
+    cb.abort_fn = lambda reason: fired.append(reason)
+    cb._on_training_start()
+    cb._on_rollout_start()
+    assert cb._on_step() is True
+    clock.t = 100.0
+    cb._on_rollout_end()
+    cb._on_training_end()
+    assert seen == ["training_start", "rollout_start", "step", "rollout_end", "training_end"]
+    assert len(fired) == 1                              # the interval restart still fires after it
+
+
+def test_safe_points_are_inert_until_wired(monkeypatch):
+    cb, _ = _make(monkeypatch, None)
+    assert cb.safe_point_fn is None
+    cb._on_training_start()
+    cb._on_rollout_start()
+    assert cb._on_step() is True
+    cb._on_rollout_end()
+    cb._on_training_end()

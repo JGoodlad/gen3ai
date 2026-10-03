@@ -1,8 +1,9 @@
 """Run LIFECYCLE: the things done to a live model once, around `learn()`.
 
 Grad checkpointing, the trainer compile, the save/reload round-trip smoke test, and the signal
-handlers (SIGINT/SIGTERM/SIGHUP checkpoint-and-exit, SIGUSR1 forced checkpoint, SIGUSR2 forced
-eval) that turn a kill into a clean, checkpoint-saving shutdown.
+handlers (SIGINT/SIGTERM/SIGHUP checkpoint-and-exit at the next SAFE POINT — `deferred_abort` —,
+SIGUSR1 forced checkpoint, SIGUSR2 forced eval) that turn a kill into a clean, checkpoint-saving
+shutdown.
 """
 import os
 import signal
@@ -15,6 +16,7 @@ from agents.model.snapshot import load_model_snapshot, record_checkpoint, save_m
 from agents.training.eval_callback import request_forced_eval
 from main.exit_codes import TrainExitCode
 from main.launcher.ipc import send_event
+from main.train.deferred_abort import DeferredAbort
 from main.train.run_io import _model_hparams, _write_latest_txt
 
 
@@ -200,9 +202,15 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn, handoff_lr_fn=None, eval_drain_fn=None):
-    """Wire SIGINT/SIGTERM/SIGHUP/SIGUSR1/SIGUSR2. Returns the abort_training closure so it
-    can be passed to eval callbacks as their canonical "die cleanly" path.
+def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn,
+                           handoff_lr_fn=None, eval_drain_fn=None, *, exit_fn=os._exit, wait_fn=None,
+                           start_watchdog=True):
+    """Wire SIGINT/SIGTERM/SIGHUP/SIGUSR1/SIGUSR2. Returns the run's `DeferredAbort`
+    (`main.train.deferred_abort`, gen3_deferred_abort_v1): CALLED with a reason it is the canonical
+    "save a checkpoint and exit 15" path (the graceful restart's), and its `safe_point()` runs a
+    signal-requested abort. Both run ONLY on the main thread at a safe point — the stop signals just
+    record the request (P10 review F1: the old in-handler dump deadlocked on TensorBoard's lock, and
+    the in-handler save could tear a checkpoint mid-update).
 
     ``handoff_lr_fn`` is optional; when present it returns the TwoPhaseLR
     callback's current handoff_lr (or None while still in Phase 1) so the
@@ -212,25 +220,24 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
     is safely saved to wait (briefly, bounded) for an in-flight subprocess eval so
     its results land before exit. Bounded so the child still exits inside the
     launcher's SIGKILL grace — the checkpoint is already safe regardless.
+
+    ``exit_fn`` / ``wait_fn`` / ``start_watchdog`` are the test seams (`DeferredAbort`'s).
     """
 
     def _handoff() -> "float | None":
         return handoff_lr_fn() if handoff_lr_fn is not None else None
 
-    def abort_training(reason: str) -> None:
-        """Single canonical abort path — works from any thread.
+    def _commit_abort(reason: str) -> None:
+        """The abort's body — at a safe point, on the main thread (`DeferredAbort.abort` claims the exit
+        first, then exits 15 after this returns).
 
-        Saves a full checkpoint (with metadata + latest.txt), then exits with
-        TrainExitCode.INTERRUPTED (15) so the launcher restarts the run.
-        Uses os._exit() rather than sys.exit() so it terminates the whole
-        process even when called from a background eval thread.
+        Saves a full checkpoint (with metadata + latest.txt), then drains an in-flight eval.
         """
         shutdown_event.set()
-        print(f"\n[ABORT] {reason}")
+        print(f"\n[ABORT] {reason}", flush=True)
         # The pending scalars (P3, gen3_final_update_dump_v1): the loop dumps BEFORE each update, so the
-        # last update's `train/*` are still pending — at a rollout boundary (the graceful restart) this
-        # IS that iteration's dump, at the step the rollout reached (`OwnedLoop.dump_logs`). Best effort:
-        # from a signal or an eval thread mid-update the pending values can be in flux.
+        # last update's `train/*` are still pending — this IS that iteration's dump, at the step the
+        # rollout reached (`OwnedLoop.dump_logs`). Safe now: a safe point is never inside a dump.
         try:
             model.dump_logs()
         except Exception as e:
@@ -255,7 +262,9 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
                 eval_drain_fn()
             except Exception as e:
                 print(f"[ABORT] eval drain failed: {e}")
-        os._exit(int(TrainExitCode.INTERRUPTED))
+        sys.stdout.flush()
+
+    abort = DeferredAbort(_commit_abort, exit_fn=exit_fn, wait_fn=wait_fn)
 
     def _forced_checkpoint(sig, frame):
         step = model.num_timesteps
@@ -283,8 +292,10 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
         # cycle is already running. Driven by the launcher's "force eval" button (SIGUSR2).
         request_forced_eval()
 
-    signal.signal(signal.SIGINT,  lambda sig, frame: abort_training("SIGINT received"))
-    signal.signal(signal.SIGTERM, lambda sig, frame: abort_training("SIGTERM received"))
+    # The stop signals only RECORD the request (`DeferredAbort.request`: attribute stores + raw
+    # `os.write`s); the main thread runs the abort at its next safe point (gen3_deferred_abort_v1).
+    signal.signal(signal.SIGINT,  lambda sig, frame: abort.request("SIGINT received"))
+    signal.signal(signal.SIGTERM, lambda sig, frame: abort.request("SIGTERM received"))
     # SIGHUP = the controlling terminal/window closed. The launcher spawns the child in the
     # SAME session (no start_new_session), so closing the tmux window SIGHUPs the whole group;
     # without this handler the child died mid-iteration with NO checkpoint (lost ~1h once).
@@ -292,8 +303,10 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
     # window close costs nothing. (Running the launcher under `nohup` also prevents the SIGHUP;
     # this is the in-code backstop for when it isn't.)
     if hasattr(signal, "SIGHUP"):
-        signal.signal(signal.SIGHUP, lambda sig, frame: abort_training("SIGHUP received (terminal/window closed)"))
+        signal.signal(signal.SIGHUP, lambda sig, frame: abort.request("SIGHUP received (terminal/window closed)"))
     signal.signal(signal.SIGUSR1, _forced_checkpoint)
     # SIGUSR2 = the launcher's "force eval" button — run an off-cadence eval cycle now.
     signal.signal(signal.SIGUSR2, _forced_eval)
-    return abort_training
+    if start_watchdog:
+        abort.start()
+    return abort

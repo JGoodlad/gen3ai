@@ -8,6 +8,7 @@ save a snapshot, wire the signal handlers, seed the pool, start the watchdog and
 """
 import os
 import sys
+import threading
 import traceback
 
 import torch
@@ -435,6 +436,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         if eval_callback is not None:
             eval_callback.abort_fn = _abort_fn
         graceful_restart_callback.abort_fn = _abort_fn
+        # gen3_deferred_abort_v1: a stop signal only records the request; it runs at these safe points.
+        graceful_restart_callback.safe_point_fn = _abort_fn.safe_point
 
         # Seed the pool from these weights iff self-play is active and the pool is empty
         # (no env rebuild — workers re-scan the dir on demand). No-op when below threshold
@@ -467,7 +470,10 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             _write_latest_txt(model_dir, "final_model_exception.zip")
             raise
 
-        # Training is over: say so (the abort path and every waiter on the event read it).
+        # Training is over: claim the exit (the deferred abort's fallback can no longer fire into the
+        # final save; gen3_deferred_abort_v1), then say so (every waiter on the event reads it).
+        if not _abort_fn.stand_down():
+            threading.Event().wait()   # the fallback claimed the exit first and is ending the process
         _shutdown_event.set()
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)
@@ -615,6 +621,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         if eval_callback is not None:
             eval_callback.abort_fn = _abort_fn
         graceful_restart_callback.abort_fn = _abort_fn
+        # gen3_deferred_abort_v1: a stop signal only records the request; it runs at these safe points.
+        graceful_restart_callback.safe_point_fn = _abort_fn.safe_point
 
         # Seed the pool from these weights iff self-play is active and the pool is empty
         # (no env rebuild — workers re-scan the dir on demand).
@@ -641,6 +649,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             os._exit(exit_code_for(e))
 
         # Training is over (see the resume path's note).
+        if not _abort_fn.stand_down():
+            threading.Event().wait()
         _shutdown_event.set()
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)

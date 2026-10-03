@@ -450,7 +450,12 @@ wake. Re-create it on the next GO, written to this contract.
 ## 4. Killing and relaunching
 
 1. Kill by EXPLICIT pid (`pgrep -af <pattern>`, read the matches, `kill <pid>`). Never `pkill -f`
-   (it matches the killer's own shell; it has killed a launch).
+   (it matches the killer's own shell; it has killed a launch). A SIGTERM'd trainer saves
+   `final_model_interrupted.zip` at its next SAFE POINT, so it can take one in-flight update
+   (41-48 s at the production recipe) to exit; it prints `[ABORT] … stopping at the next safe point`
+   at once and `[ABORT] … at the safe point: <event>` when it saves. Past 75 s with no safe point it
+   exits 15 WITHOUT a save (`[ABORT] no safe point within 75s`), and the last periodic checkpoint is
+   the resume point (`gen3_deferred_abort_v1`, `src/main/launcher/CLAUDE.md`).
 2. **An arm is not killed until the pid is gone and the GPU is free** — verify with `ps -p` and
    `nvidia-smi`. A session restart does not kill a launcher child; "killed" was once said for an arm
    that then ran 7 more hours (ledger `81016942`).

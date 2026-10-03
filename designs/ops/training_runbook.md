@@ -38,7 +38,8 @@ both (`on restart :` line; `REFUSED (run dir)`). Detail: `src/main/launcher/CLAU
 The UI is **Textual** (built on the shared `src/main/tui/` base), launched with
 `python -m main.launcher …` (or the back-compat alias `python -m main.launcher.tui …`). A closed
 terminal (SIGHUP) or external `kill` (SIGTERM) is caught and turned into a clean,
-checkpoint-saving shutdown rather than a lost checkpoint.
+checkpoint-saving shutdown rather than a lost checkpoint, at the trainer's next SAFE POINT (after an
+in-flight update; a 75 s fallback exits 15 without a save; `src/main/launcher/CLAUDE.md`).
 
 **A detached launch (`nohup … < /dev/null &`, systemd, cron) runs HEADLESS automatically** — with
 no TTY on stdin, Textual's input thread would otherwise busy-loop a whole core forever (measured

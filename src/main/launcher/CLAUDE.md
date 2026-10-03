@@ -127,7 +127,17 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
 
 - **Periodic restarts** — kills and relaunches the child every N hours to reclaim pymalloc
   fragmentation; the child saves a checkpoint on SIGTERM and the launcher picks it up
-  automatically. The child also checkpoints on **SIGHUP** (`_setup_signal_handlers` routes it
+  automatically. 🚨 **The child's save is DEFERRED to a SAFE POINT** (`main/train/deferred_abort.py`,
+  `gen3_deferred_abort_v1`, P10 review F1): a SIGINT / SIGTERM / SIGHUP only records the request,
+  and the abort (pending-scalar dump, `final_model_interrupted.zip`, exit 15) runs on the main thread
+  at the next loop event (a collector step, a rollout start / end, training start / end), never
+  inside an update or a logger dump. A signal mid-update therefore waits for that update (41-48 s at
+  the production recipe, `train_ms` 2026-10-02). If no safe point comes within
+  `SAFE_POINT_DEADLINE_SEC` (75 s) a watchdog exits 15 WITHOUT a save (a save then could tear the
+  checkpoint) and the launcher resumes from the last periodic checkpoint; 75 s + a 15 s save budget
+  fit inside `KILL_GRACE_SECONDS` (90 s, module level in `run.py`, pinned by `deferred_abort_test`).
+  The old in-handler abort deadlocked on TensorBoard's non-reentrant writer lock when the signal
+  landed inside a dump, and could save mid-update. The child also checkpoints on **SIGHUP** (`_setup_signal_handlers` routes it
   to the same graceful path) — the child shares the launcher's session (`child.py` spawns it
   without `start_new_session`), so closing the controlling terminal/tmux window SIGHUPs the
   whole group; without that handler the child died mid-iteration with no checkpoint. Running
@@ -371,7 +381,7 @@ What that established:
 | Code | `TrainExitCode` | Meaning |
 |------|----------------|---------|
 | 0 | `COMPLETE` | All steps done — launcher stops |
-| 15 | `INTERRUPTED` | SIGTERM received, checkpoint saved — launcher restarts |
+| 15 | `INTERRUPTED` | SIGTERM received, checkpoint saved at the next safe point (or, past the 75 s safe-point deadline, NO save — the last periodic checkpoint stands) — launcher restarts |
 | 1 | `CRASH` | Unhandled exception — launcher saves `crashes/restart_err_<token>.txt` and auto-restarts from the last checkpoint (up to `--max-crash-restarts` consecutive rapid crashes, then gives up; any non-enum exit code is treated the same way). A crash with no checkpoint to resume from is fatal: the child's exit code is propagated and the crash log printed. |
 | 3 | `FATAL_CONFIG` | **Non-recoverable** config/architecture error — `train_rl_agent.py` raises it for a `ModelVersionError` (checkpoint arch-family mismatch, or a resume `vf_coef`/reward-config drift), exits with it on the T2 inference service's `ParityFailure` / `VacuousParity` (mapped by NAME; the verdict is deterministic in code + weights + fixture and a restart resumes the same weights; `parity_refusal_exit_test.py`), and for any `main.exit_codes.FatalConfigError` raised anywhere (mapped by NAME through `exit_code_for`, like codes 4/5; `gen3_supply_guard_v2`): a `--bot-weights` typo (it used to exit 1, i.e. be RESTARTED; the consensus warm start, whose failure did so without bound, was deleted by P11), a mis-wired fork arm (`LeverConfigError`). Restarting would hit the *identical* error every time, so the launcher does **not** restart: it saves the crash log, surfaces the reason on-screen, and gives up immediately (returning this code) instead of looping until the crash circuit-breaker trips. See **Crash auto-restart**. |
 | 4 | `FATAL_NONFINITE` | **The learner went non-finite** — a NaN / Inf loss or gradient (`main.exit_codes.NonFiniteLearnerError`, Lane K's K9 fail-closed guard; a guard's own class must subclass it — the NAME is matched along the MRO and the `__cause__` chain), or T2 refused NaN / Inf WEIGHTS (`NonFiniteWeights`, matched by name). The trainer's two fail-fast handlers — and, since 2026-09-30, `build_and_train`'s FRESH-path `learn()` handler, which used to `os._exit(1)` — exit `exit_codes.exit_code_for(exc)`, so this error is 4 and every other uncaught exception stays `CRASH`. Same class as `FATAL_CONFIG`: a restart would resume the checkpoint that produced it and replay the same update, so the launcher saves the crash log, shows `🛑 Non-finite learner — will NOT restart` + the error line, and returns 4. Pinned by `nonfinite_exit_test.py`. |

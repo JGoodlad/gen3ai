@@ -1,4 +1,5 @@
-"""Graceful, rollout-boundary restart for launcher-managed training runs."""
+"""The run's CLEAN STOPS: the graceful rollout-boundary restart, and the SAFE POINTS at which a
+signal-requested abort runs (`main.train.deferred_abort`, gen3_deferred_abort_v1)."""
 
 import os
 import time
@@ -27,9 +28,17 @@ class GracefulRestartCallback(BaseCallback):
     run synchronously inside rollout collection — guarantees no eval is ever
     interrupted mid-flight.
 
-    Inert when ``LAUNCHER_RESTART_INTERVAL_SEC`` is absent or <= 0 (``--debug``
-    runs, direct ``train_rl_agent.py`` invocations, launcher runs with
+    The interval restart is inert when ``LAUNCHER_RESTART_INTERVAL_SEC`` is absent or <= 0
+    (``--debug`` runs, direct ``train_rl_agent.py`` invocations, launcher runs with
     ``--restart-interval-hours 0``).
+
+    **The safe points (always on, gen3_deferred_abort_v1).** A SIGINT / SIGTERM / SIGHUP only
+    RECORDS a stop request; ``safe_point_fn`` (the run's ``DeferredAbort.safe_point``) runs it here,
+    at every event the loop fires — ``training_start``, ``rollout_start`` (the first boundary after an
+    update), every collector ``step``, ``rollout_end`` and ``training_end`` (a request made during the
+    last update). None of them is inside an update or a logger dump, so the abort's dump cannot
+    deadlock on TensorBoard's lock and its save cannot tear a checkpoint mid-update. Each is checked
+    FIRST, before this callback's own work.
     """
 
     def __init__(self, verbose: int = 0):
@@ -42,6 +51,8 @@ class GracefulRestartCallback(BaseCallback):
         # Wired by train_rl_agent after the signal handlers are set up — the
         # single canonical "save a checkpoint and exit 15" path.
         self.abort_fn = None
+        # Wired with abort_fn: the run's `DeferredAbort.safe_point` (a signal-requested abort, run here).
+        self.safe_point_fn = None
         self._start: float | None = None
         self._fired = False
 
@@ -49,11 +60,23 @@ class GracefulRestartCallback(BaseCallback):
     def armed(self) -> bool:
         return self._interval > 0
 
+    def _safe_point(self, where: str) -> None:
+        if self.safe_point_fn is not None:
+            self.safe_point_fn(where)       # does not return when an abort was requested
+
     def _on_training_start(self) -> None:
+        self._safe_point("training_start")
         if self.armed:
             self._start = time.monotonic()
 
+    def _on_rollout_start(self) -> None:
+        self._safe_point("rollout_start")
+
+    def _on_training_end(self) -> None:
+        self._safe_point("training_end")
+
     def _on_rollout_end(self) -> None:
+        self._safe_point("rollout_end")
         if not self.armed or self._fired or self.abort_fn is None or self._start is None:
             return
         if time.monotonic() - self._start >= self._interval:
@@ -69,4 +92,5 @@ class GracefulRestartCallback(BaseCallback):
             )
 
     def _on_step(self) -> bool:
+        self._safe_point("step")
         return True

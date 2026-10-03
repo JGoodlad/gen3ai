@@ -119,8 +119,8 @@ double-counts the ending while the bootstrap removes it — and re-deriving that
 `shaped`-era question this change does not reopen.
 
 **Two adjacent paths are CLEAN, checked rather than assumed.** A launcher SIGTERM
-(`lifecycle.abort_training`) saves a checkpoint and `os._exit`s, so the partially-collected rollout
-buffer is discarded and never reaches an update — SB3 does not persist it. The eval
+(the deferred abort, `main/train/deferred_abort.py`, run at a safe point) saves a checkpoint and
+`os._exit`s, so the partially-collected rollout buffer is discarded and never reaches an update — SB3 does not persist it. The eval
 reset-mid-battle forfeit lives in `PokeEnv.reset`, which returns only an observation and fills no
 rollout buffer. Neither can leak a truncation into the loss.
 
