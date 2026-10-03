@@ -1,9 +1,8 @@
-# Evaluation end state — the league, the meters, the budget
+# Evaluation end state — the unified system: ledger, scheduler, estimators, budget
 
-**Status: ALWAYS-CURRENT SKELETON (owner, 2026-10-02: "put the skeleton in and the TODOs, and we fill it out
-with our implementation over time").** It says how we evaluate: which questions eval answers, with what statistics,
-on what infrastructure and at what budget. A build or decision that differs updates this doc and its Decision
-record in the same commit. Era context: [`era_plan_post_m5.md`](era_plan_post_m5.md).
+**Status: ALWAYS-CURRENT SKELETON (owner, 2026-10-02: "put the skeleton in and the TODOs, and we fill it out with our implementation over time").** This doc is the SYSTEM: how eval evidence is produced, stored, scheduled and estimated. The population DECISIONS (promotion, eviction, plateau) live in [`design_league_decisions.md`](design_league_decisions.md). A build or decision that differs updates this doc and its Decision record in the same commit. Era context: [`era_plan_post_m5.md`](era_plan_post_m5.md).
+
+**Direction (owner):** robust, durable, auditable, and reusable later to answer new questions WITHOUT a new training run.
 
 ## 0. Principles
 1. **Every eval DECISION is deterministic, with a declared error rate.** A sequential test with stated α/β, or a
@@ -16,7 +15,54 @@ record in the same commit. Era context: [`era_plan_post_m5.md`](era_plan_post_m5
 5. **Re-ground week-one choices** (§6). Several eval parameters were set by what one CPU could afford in week
    one, not by the precision a question needs.
 
-## 1. The questions eval answers
+## 0b. The eval LEDGER — append-only, aggregated (owner, 2026-10-02)
+**One append-only JSONL ledger of COUNTS, not of games** (owner: "per-opponent would be great, running counters for
+teams; we don't need the richest data ever").
+- **One row per (batch × matchup).** A matchup is one player against one opponent, under one regime, for one purpose.
+  A row records:
+  - `schema`;
+  - `ts` and the batch's time span;
+  - `run` and `commit`;
+  - both players (snapshot id + checkpoint hash);
+  - the regime (greedy or sampled, mirrored, the eval core, the turn limit);
+  - `purpose` (promotion / plateau / matrix / audit / anchor / training / cycle);
+  - the counts: W / L / D;
+  - for mirrored pairs, the **pentanomial pair-outcome counts** (0, ½, 1, 1½, 2);
+  - a **per-team counter map** (team id → games, wins, for each side);
+  - the seed range.
+- **Why counts are enough:** they are SUFFICIENT STATISTICS for every estimator we plan:
+  - Bradley-Terry / Elo and HodgeRank need the win counts per pair;
+  - Nash averaging needs the pair win-rate matrix;
+  - the GSPRT's verdict needs the pentanomial counts;
+  - the power prior needs the counts by regime and purpose;
+  - per-team reads need the team counters.
+
+  **What is given up:** per-game covariates (game length, the exact matchup sequence) and replaying a sequential
+  test's path after the fact. Neither has a planned reader, and the live test records its own verdict.
+- **Durable:**
+  - one file per WRITER process (no interleaved appends), with readers globbing;
+  - rows are never edited; a correction is a NEW row that references the one it supersedes;
+  - shards are compressed once closed.
+- **Where:** archive-level (main's `models/_ledger/`), not per run, so cross-run questions (the archive's Nash
+  mixture, any population's Hodge structure, a new estimator over old evidence) need no new training run.
+- **Auditable:** a schema gate validates every row; the readers declare which `purpose` and regime they consume.
+- **Today:** `eval_results.jsonl` is per run and per cycle (bot and sentinel win RATES, no counts by pair or team, no
+  regime per row). The ledger supersedes it. TODO: a one-off backfill of what can be recovered.
+
+## 0c. Reuse rules (one ledger, many readers)
+1. **A sequential DECISION counts only rows produced FOR it, after it started.** That is SPRT's peeking rule. Older
+   rows enter only as a declared, discounted prior (the power prior). ESTIMATES (ratings, the matrix, Hodge) may pool
+   every eligible row.
+2. **Pool only rows of the same regime.**
+3. **Never estimate from a SELECTED sample.** The prober's trace quota prefers losses; estimates read the ledger's
+   counts, never traces. The `purpose` tag makes this enforceable.
+
+## 0d. One scheduler
+The background-eval scheduler (TASK_BACKLOG T19) takes REQUESTS from every reader: promotion, plateau, matrix tiers,
+audits, anchors. It plays the games worth the most information across all of them, and appends their counts to the
+ledger. TODO: the value-of-information rule (ResponseGraphUCB-style for the matrix; the open tests first).
+
+## 1. The questions eval answers (decisions: `design_league_decisions.md`)
 
 | question | meter / test | status |
 |---|---|---|
@@ -94,6 +140,8 @@ record in the same commit. Era context: [`era_plan_post_m5.md`](era_plan_post_m5
 | per-pair games on the snapshot ladder | — | — | enough for its ±10 Elo claim with mirrored pairs? |
 
 ## 7. TODO (fill in as implemented)
+- [ ] The ledger: schema, writer shards, the schema gate, the readers' declarations, the backfill (§0b–0c).
+- [ ] The scheduler's value-of-information rule (§0d).
 - [ ] Literature review (owner, required before the T20 build): the references in §3.
 - [ ] T19 background eval: design, capacity measurement, build.
 - [ ] T20 tiered pool matrix + Nash eviction + cycling meter, with the T0–T2 vs T3 validation gate.
@@ -110,3 +158,5 @@ record in the same commit. Era context: [`era_plan_post_m5.md`](era_plan_post_m5
 | 2026-10-02 | Promotion **(owner)** | GSPRT on mirrored pairs (Fishtest's method + a minimum pair count), Wald bounds | overshoot-corrected bounds (saved ~21 % of pairs, false promotion 5.07 %) | `measurements/sprt_promotion/` |
 | 2026-10-02 | Performance checks **(owner)** | deterministic performance-SHAPE tests + an on-demand benchmark | a wall-clock perf guard | `48265bf8` |
 | 2026-10-02 | Pool defence against cycling **(owner)** | tiered matrix + Nash averaging + Hodge meter, validated against dense; grow the pool rather than evict harder when cycles are wide | hope; recency-only eviction | TASK_BACKLOG T20 |
+| 2026-10-02 | The eval LEDGER **(owner)** | append-only JSONL of COUNTS per (batch × matchup), with pentanomial pair counts and per-team counters, archive-level, one writer per file | a per-game ledger (richer than any planned reader needs) | §0b: counts are sufficient statistics for every planned estimator |
+| 2026-10-02 | Doc split (orchestrator) | the SYSTEM here; the three population DECISIONS in `design_league_decisions.md` | one combined doc | separate use cases from implementation (owner's suggestion) |
