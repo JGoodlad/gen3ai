@@ -63,7 +63,12 @@ def build_parser() -> argparse.ArgumentParser:
     they were added. Reordering these calls, or moving a flag between families, silently
     rewrites `--help`; keep an addition inside its family.
     """
-    parser = argparse.ArgumentParser(description="Train or Evaluate Gen 3 OU RL Agent")
+    # allow_abbrev=False (deletion pass P11): argparse otherwise resolves an unknown token that is a unique
+    # PREFIX of a known option onto it, so a DELETED flag that is a prefix of a surviving one quietly sets
+    # the survivor — `--eval-concurrency 100` (deleted) would have set `--eval-concurrency-per-worker 100`,
+    # and `--hp-type-belief learned` already made `--hp-type-belief-coef` refuse a string. A typed flag now
+    # means exactly that flag or is refused. The launcher's checkpoint parser and its own parser agree.
+    parser = argparse.ArgumentParser(description="Train or Evaluate Gen 3 OU RL Agent", allow_abbrev=False)
 
     add_operational_flags(parser)
     add_hyperparameter_flags(parser)

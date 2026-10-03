@@ -179,6 +179,7 @@ reactions from a reader.
 | `--exploiter-ladder-gate` | deletion pass L4 (config v134, `gen3_retired_levers_l4_v1`; manifest §2 / D1: built 2026-08-28 (F6), no strength read; the new-lineage loop uses a stable-set window instead) | the training win rate vs the CURRENT rung that promoted it (default 0.55) |
 | `--exploiter-ladder-window` | deletion pass L4 (config v134, `gen3_retired_levers_l4_v1`; manifest §2 / D1: built 2026-08-28 (F6), no strength read; the new-lineage loop uses a stable-set window instead) | minimum games vs the CURRENT rung per promotion check (default 500) |
 | `--exploiter-ladder-rungs` | deletion pass L4 (config v134, `gen3_retired_levers_l4_v1`; manifest §2 / D1: built 2026-08-28 (F6), no strength read; the new-lineage loop uses a stable-set window instead) | `auto:` ladders only: how many evenly-ELO-spaced snapshots to draw (default 4) |
+| `--eval-concurrency` | deletion pass P11 (`designs/ops/flag_census.md`, batch B1, 2026-10-03) | "concurrent battles during evaluation", the final eval's concurrency; read by nothing since P6 deleted `final_eval`. KEPT through P6 because it is an exact prefix of `--eval-concurrency-per-worker` and the trainer's parser abbreviation-matched; P11 set `allow_abbrev=False` on the trainer's and the launcher's parsers, so an old `--eval-concurrency 100` is now refused instead of setting the per-worker value. Never a recorded `ModelVersion` field, so no `RETIRED` row and no config bump |
 
 ### 1b. DELETED VALUES — the flag stays, one of its values went
 

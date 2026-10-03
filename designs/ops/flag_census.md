@@ -4,7 +4,7 @@
 
 **Verdicts.** `KEEP` — has a live user (named). `DELETE` — no live user: deleted by this pass (a row stays here only while its batch is unshipped). `ONE-VALUED` — can only take its default after the Python core's deletion (U3) and the winprob critic: the flag is a constant with a recorded-field story; see §3. `NEEDS-OWNER` — ambiguous, or deleting it reaches shared kernels / Rust / recorded fields; one line of evidence, the owner decides.
 
-**Evidence columns.** `typed` = recorded argvs (`models/*/metadata.json` `original_command`, 257 runs, measured 2026-10-03) that type the flag, over ALL runs / the LAST 40 by `saved_at`. A recent run that types every flag copies a whole argv, so a high recent count of a default-valued flag is not a use.
+**Evidence columns.** `typed` = recorded argvs (`models/*/metadata.json` `original_command`, else `launcher_command`; 275 runs, measured 2026-10-03) that type the flag, over ALL runs / the LAST 40 by `saved_at`. A recent run that types every flag copies a whole argv, so a high recent count of a default-valued flag is not a use.
 
 **Generated from the parsers** (`build_parser()` + the launcher's `build_launcher_parser()`), so no flag is missed; the verdict table below is hand-judged. Counts exclude the generated `--no-<flag>` negations (`BoolFlag`) and the `--help` action.
 
@@ -13,16 +13,21 @@
 | | trainer flags | launcher flags | total |
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
-| verdicts at the inventory commit | KEEP 160 · DELETE 15 · ONE-VALUED 8 · NEEDS-OWNER 19 | KEEP 9 | |
+| DELETED by P11 so far | 1 | 0 | 1 |
+| NOW | 201 | 9 | 210 |
+| verdicts at the inventory commit | KEEP 160 · DELETE 14 · ONE-VALUED 8 · NEEDS-OWNER 19 | KEEP 9 | |
 | ENDING | _filled in by the last batch_ | | |
 
 ## 1. The deletions this pass makes
 
-_Filled in as each batch ships; the inventory commit lists the plan._
+**Shipped** (each also has a row in [`deleted_flags.md`](../deleted_flags.md)):
+
+* `--eval-concurrency` (B1) — no reader since P6 deleted `final_eval`; an exact prefix of `--eval-concurrency-per-worker`, so its deletion needed `allow_abbrev=False`
+
+**Planned, not yet shipped:**
 
 * `--showdown-port` — only reader is the Python eval workers' `port` (never reached under the rust eval core) and `config.py`'s `server_config`; the launcher appends a default `--showdown-port 8001` that nothing consumes
 * `--self-play-use-cpu` — reads nothing on the Rust core (U3 finding 6(d)): two startup `emit()` lines and an `opponent_device` local that nothing uses
-* `--eval-concurrency` — no reader since P6 deleted `final_eval` (manifest finding 12(a)); an exact prefix of `--eval-concurrency-per-worker`
 * `--predict-unrevealed-mon-moves` — an EXPLICIT-clarity alias of `--move-belief-mode`; nothing reads its dest outside the parser and the config resolver
 * `--unified-damage` — a parse-time macro that desugars into component flags `--arch production` already supplies; no reader of its dest
 * `--unified-moves` — the same macro one level up (`--unified-damage` + the move system); no reader of its dest
@@ -88,7 +93,6 @@ _Filled in as each batch ships; the inventory commit lists the plan._
 | `--use-bridge` | rust | 186 / 34 | the only legal value is `rust` (`retired_choice`, deletion pass U3); read only by `production_args.py` | **ONE-VALUED** |
 | `--self-play-use-cpu` | true | 114 / 20 | reads nothing on the Rust core (U3 finding 6(d)): two startup `emit()` lines and an `opponent_device` local that nothing uses | **DELETE** |
 | `--tb-inherit` | true | 0 / 0 | a fork copies its parent's scalar TB events (`tb_inherit.py`, `main.tb_inherit`, root `CLAUDE.md`'s fork notes); `--no-tb-inherit` is the documented fleet opt-out | **KEEP** |
-| `--eval-concurrency` | 100 | 0 / 0 | no reader since P6 deleted `final_eval` (manifest finding 12(a)); an exact prefix of `--eval-concurrency-per-worker` | **DELETE** |
 | `--seed` | 42 | 172 / 39 | every launch (`recipe`-adjacent reproducibility; the Rust core's `segment_seed`) | **KEEP** |
 | `--log-level` | periodic | 192 / 39 | root `CLAUDE.md` / launcher (`--log-level periodic`) | **KEEP** |
 | `--arch` | — | 6 / 6 | THE production surface (root `CLAUDE.md`, `checkargs`) | **KEEP** |

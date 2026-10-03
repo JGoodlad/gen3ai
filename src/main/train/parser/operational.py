@@ -73,7 +73,6 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
              "Pass --no-tb-inherit to opt out — worth doing for a large sibling FLEET under an "
              "UNCURATED logdir, where 8 exploiters off one target then draw 8 identical prefixes "
              "in every chart (under `main.tb_curate` this is exactly what you want).")
-    parser.add_argument("--eval-concurrency", type=int, default=100, help="Concurrent battles during evaluation")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
     parser.add_argument("--log-level", type=str, default="periodic", choices=["quiet", "periodic", "detailed", "debug"], help="Logging verbosity level")
     # --- gen3_arch_surface_guard_v1 (2026-09-06) — THE ARCH SURFACE ---------------------------

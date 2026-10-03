@@ -599,6 +599,17 @@ def test_f_an_unambiguous_abbreviation_is_not_called_absent(repo):
     assert not r.declares("--checkpoint-every-steps")
 
 
+def test_f_a_pinned_parser_that_refuses_abbreviations_calls_a_prefix_absent():
+    """Deletion pass P11 set `allow_abbrev=False` on the trainer's parser, so at a pin on or after
+    it a unique prefix does NOT parse. The report carries the pinned parser's own setting; an
+    unknown setting (an older probe, a static scan) keeps the old, never-accuse reading."""
+    exact = pa.ParseReport(sha="x", mode="build_parser", options=["--run-dir", "--steps"], allow_abbrev=False)
+    assert exact.declares("--run-dir") and exact.declares("--run-dir=3")
+    assert not exact.declares("--run-d")
+    lenient = pa.ParseReport(sha="x", mode="build_parser", options=["--run-dir", "--steps"])
+    assert lenient.allow_abbrev is True and lenient.declares("--run-d")
+
+
 def test_f_dry_run_exits_fatal_config_on_a_flag_that_exists_only_here(
         isolated, monkeypatch, capsys):
     _root, (c1, _c2, _c3, _c4, _c5), _work = isolated

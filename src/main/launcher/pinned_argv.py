@@ -108,6 +108,10 @@ class ParseReport:
     errors: List[str] = field(default_factory=list)
     values: Dict[str, str] = field(default_factory=dict)
     options: List[str] = field(default_factory=list)   # THE PINNED OPTION SET
+    #: Did the PINNED parser abbreviation-match? A commit before deletion pass P11 did (argparse's
+    #: default); one at or after it builds `allow_abbrev=False`. Unknown (a static scan, or a probe
+    #: that predates the field) reads True, the old behaviour, so the check never invents a refusal.
+    allow_abbrev: bool = True
     n_options: int = 0
     seconds: float = 0.0
     #: 🚨 The demotion was OURS, not the pinned commit's — see :func:`incomplete_checkout_reason`.
@@ -149,9 +153,10 @@ class ParseReport:
     def declares(self, flag: str) -> bool:
         """Would the PINNED parser accept this spelling?
 
-        Exact match, the ``--flag=value`` form, or an UNAMBIGUOUS PREFIX — argparse
-        abbreviation-matches by default, so a token that is a unique prefix of a pinned option
-        really does parse there, and calling it absent would be a false alarm.
+        Exact match, the ``--flag=value`` form, or — only when the pinned parser abbreviation-matches
+        (``allow_abbrev``; argparse's default, which every commit before deletion pass P11 kept) — an
+        UNAMBIGUOUS PREFIX: such a token really does parse there, and calling it absent would be a
+        false alarm. A pinned ``allow_abbrev=False`` parser refuses it, so it is absent.
         """
         if not self.options:
             return True                      # nothing to compare against ⇒ never accuse
@@ -160,6 +165,8 @@ class ParseReport:
             return True
         if not name.startswith("--"):
             return True                      # short/positional spellings are not this check's job
+        if not self.allow_abbrev:
+            return False
         hits = [o for o in self.options if o.startswith(name)]
         return len(hits) == 1
 
@@ -386,6 +393,7 @@ def pinned_parser_check(
         errors=list(data.get("errors", [])),
         values=dict(data.get("values", {})),
         options=list(data.get("options", [])),
+        allow_abbrev=bool(data.get("allow_abbrev", True)),
         n_options=int(data.get("n_options", 0)),
         seconds=time.monotonic() - started,
     )

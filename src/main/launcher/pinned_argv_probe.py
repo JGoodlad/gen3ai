@@ -324,7 +324,8 @@ def _run_hook(src_dir: str, child_argv: List[str], out_path: str) -> int:
             # Let it through rather than answering the launcher with the wrong parser.
             return real_parse_known(self, args, namespace)[0]
         res: Dict[str, Any] = {"mode": "parse_args_hook", "reason": "",
-                               "n_options": len(opts), "options": opts}
+                               "n_options": len(opts), "options": opts,
+                               "allow_abbrev": bool(getattr(self, "allow_abbrev", True))}
         buf = io.StringIO()
         try:
             with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
@@ -404,6 +405,7 @@ def main(raw: "Optional[List[str]]" = None) -> int:
         res["mode"] = "build_parser"
         res["options"] = option_strings(parser)
         res["n_options"] = len(res["options"])
+        res["allow_abbrev"] = bool(getattr(parser, "allow_abbrev", True))
     else:
         # No build_parser() at this commit. Ask its REAL parser anyway, by running the entry point
         # only as far as its first parse_args() — authoritative, and time-boxed.

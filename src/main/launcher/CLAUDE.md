@@ -403,7 +403,9 @@ launcher-owned flags).
 only job is to be transparent to it and to its `--no-` opt-out. Two ways it could stop being:
 `_strip_launcher_args` could grow an entry that eats one, or argparse could abbreviation-match an
 unknown token against a launcher flag (it parses with `parse_known_args`, and `--no-pin` lives right
-next to `--no-compile-*`). `compile_flag_forwarding_test.py` pins both against the REAL parser —
+next to `--no-compile-*` — the launcher parser and the trainer's are `allow_abbrev=False` since deletion pass
+P11, `main/train/parser_abbrev_test.py`, so an abbreviation is refused instead of matched).
+`compile_flag_forwarding_test.py` pins both against the REAL parser —
 `build_launcher_parser()` was extracted from `main()` for exactly that, so the test interrogates the
 parser rather than a hand-copied twin. Same failure class as `default_port_test.py`, mirrored: that
 one catches a launcher-injected default drifting from the trainer's, this one catches the launcher
@@ -563,7 +565,9 @@ presence check can see.** On 2026-09-05::
 
 At `b13b30b2` **`--hp-type-belief` TOOK A VALUE** (`learned`). Today that flag is deleted, so
 argparse — which abbreviation-matches by default — resolved the token onto the surviving
-`--hp-type-belief-coef` and handed it the value. Every argv check the launcher performed (its own
+`--hp-type-belief-coef` and handed it the value. (HEAD's parsers no longer abbreviation-match — deletion pass P11 —
+so today that token is `unrecognized`; a PINNED commit's parser is judged by its own setting, which the probe now
+reports as `ParseReport.allow_abbrev`.) Every argv check the launcher performed (its own
 `--dry-run`, and `main.checkargs`) read the **CURRENT** tree's `build_parser()`, while the child
 runs the **PINNED** tree's. **A same-named flag whose ARITY or TYPE changed is invisible to a "does
 the parser still know this flag?" test**, because the current parser thinks it does — and the

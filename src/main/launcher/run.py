@@ -958,10 +958,11 @@ def build_launcher_parser():
     """The launcher's OWN flags — everything else is forwarded verbatim to `train_rl_agent.py`.
 
     Extracted from `main()` so a test can interrogate the real parser rather than a hand-copied
-    twin. What that buys: argparse abbreviation-matches unknown tokens against known options, so a
-    NEW trainer flag can be silently swallowed here and never reach the child (the failure would be
-    a flag that appears to do nothing). `compile_flag_forwarding_test.py` pins that the compile
-    flags survive this parser AND `_strip_launcher_args`.
+    twin. What that buys: this parser once abbreviation-matched unknown tokens against its known
+    options (it is `allow_abbrev=False` now), so a NEW trainer flag could be silently swallowed here and
+    never reach the child (the failure would be a flag that appears to do nothing).
+    `compile_flag_forwarding_test.py` pins that the compile flags survive this parser AND
+    `_strip_launcher_args`.
     """
     import argparse
 
@@ -969,6 +970,9 @@ def build_launcher_parser():
         prog="python -m main.launcher",
         description="Launcher: wraps train_rl_agent.py with periodic full-process restart (Textual UI).",
         add_help=False,
+        # Exact spellings only (deletion pass P11): `_strip_launcher_args` strips exact spellings, so an
+        # abbreviation this parser accepted (`--nic 5`) was ALSO forwarded to the child, which now refuses it.
+        allow_abbrev=False,
     )
     parser.add_argument(
         "--restart-interval-hours",
