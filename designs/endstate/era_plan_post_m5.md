@@ -10,12 +10,39 @@ seed land about 4.9 pp apart on untaught (sizing F-SZ-10). So every lever arm ge
 bar, and either runs long enough (the X5 A/B runs 10–15M steps per arm) or is replicated. Levers stack one at a
 time, never in bundles.
 
+## Plateau first (owner, 2026-10-02)
+**Plateau = plain training gains less than 2 Elo per training GPU-hour.** Above that rate, the GPU's best use is
+more plain training. The owner checks back in; nothing else needs to happen.
+
+- **Why:** on one GPU, an experiment hour displaces an hour of baseline training. So the PRICE of an experiment is
+  the plain-training gain it displaces (the baseline's current rate × its hours), PLUS the information lost:
+  - before a plateau, the control is still climbing fast;
+  - a lever's effect is small next to that climb and next to the run-to-run floor (~4.9 pp ≈ 35 Elo on short fresh runs);
+  - so plateau-breaker arms read NOT DETECTED, or the wrong sign, and the decisions persist.
+
+  The v8 "gift" hump, both population-loop rounds and the closed 10M ladder were all plateau questions asked
+  before a plateau.
+- **Two kinds of lever:**
+  - SPEED levers (epochs, batch, lr, architecture efficiency) are tested on fresh runs, per GPU-hour.
+  - PLATEAU-BREAKERS (forks, exploration, exploiters, discrimination, team curriculum) are tested ONLY from a plateaued parent.
+- **The plateau test, one registered decision:**
+  - once per 10M steps, the newest snapshot plays the snapshot from W ≈ 7 GPU-hours back (≈ 50M steps at N = 256);
+  - it plays on mirrored pairs, as a GSPRT with H0 p ≤ 0.50 vs H1 p ≥ 0.52. 2 Elo/h × 7 h ≈ 14 Elo ≈ 2 pp;
+  - that is ≈ 3–7k games, a few minutes on the eval core;
+  - **AND** the same against a fixed OUTSIDE panel (frozen pool snapshots, the bots, SmallRL), because self-play can cycle;
+  - plateau = both accept H0.
+  - CUSUM over the checkpoint comparisons is the refinement if the onset needs to be caught sooner.
+- **Plateau-breakers FORK from the plateau checkpoint, with PAIRED controls:**
+  - two control continuations (seed only) give the floor AT the plateau;
+  - one or two lever arms;
+  - `--fork-lr` pinned and dose matched.
+
 ## The order
 
 | # | step | what it is | meter / stop rule | detail |
 |---|---|---|---|---|
 | 0 | **Generalist baseline (X26)** | fresh, on the FINAL architecture (X5 landed), `recipe.fresh` at N = 256, KL early stop ON, detached ride-along heads (V ensemble, RND, A/B) | the comparator for everything below; the ride-alongs map uncertainty (ensemble), novelty (RND) and the value/advantage split (A/B) for free | `EXPERIMENT_BACKLOG.md` X26, X5 |
-| 1 | **Pool + PFSP + exploiters (the population loop)** | the generalist trains against its pool, weighted by `--pfsp-scale`; exploiters train against a frozen generalist; a snapshot joins the pool only by SPRT on mirrored pairs (T6/T17) | **the best-response gap must FALL round over round** (`main.best_response_gap`) | `designs/training/exploiter_and_distillation.md`, `eval_and_rating.md` |
+| 1 | **Pool + PFSP + exploiters (the population loop)** | the generalist trains against its pool, weighted by `--pfsp-scale`; exploiters train against a frozen generalist; a snapshot joins the pool only by SPRT on mirrored pairs (T6/T17) | **the best-response gap must FALL round over round** (`main.best_response_gap`). EXPLOITER RECIPE: choose teams by the generalist's RESPONSE weakness (the archetypes it loses AGAINST), at most 1–2 per archetype, 5–7 per round; FORK each from the current generalist (fork > scratch, measured); train vs a frozen snapshot at a matched budget and dose; RESET every round; promote by SPRT. PILOTING weakness is NOT an exploiter's job: see the team curriculum (backlog X30) | `designs/training/exploiter_and_distillation.md`, `eval_and_rating.md` |
 | 2 | **Exploiters are OPPONENTS, never teachers** | structural: distillation is deleted (L3, `cbd20111`) | — | `deleted_flags.md` |
 | 3 | **A DISCRIMINATION meter first, then its lever** | register one meter for the value's WITHIN-GAME discrimination, by phase and opponent class (exploiters especially), before choosing a lever. Candidate levers: X5's belief tokens (already in), the V ensemble, X21 calibration, exploiter-dense data | the registered meter | `design_q_head.md` |
 | 4 | **Exploration that does not change the objective** | (a) opponent and team diversity (free, from step 1); (b) the FORK arm (built OFF, `gen3_fork_rust_v1`): counterfactual one-ply branches played to the end under common random numbers, subsample-eligible, enabled where the RND map shows regions the agent avoids; (c) X23 entropy anneal stays DEFERRED, because it changes the objective | a novelty or coverage read plus the step 3 meter. Exploration comes after discrimination, because the value must tell new states apart before exploring them pays | `designs/training/forks.md` §14 |
@@ -29,3 +56,4 @@ time, never in bundles.
 | 2026-10-02 | The era's shape **(owner)** | generalist → PFSP + exploiters → no exploiter-as-teacher → a discrimination meter then its lever → exploration that doesn't change the objective → main-agent ladder loop → see how it goes | bundling levers; exploration bonuses in the reward | owner, 2026-10-02 |
 | 2026-10-02 | Discrimination before exploration (orchestrator) | define and move the discrimination meter before enabling forks | forks first | exploring more pays only once the value tells the new states apart |
 | 2026-10-02 | A basin probe **(owner)** | X29 queued after the loop is running | — | tests for a local optimum of PPO + exploiters |
+| 2026-10-02 | Plateau first **(owner: "2 elo per hour feels right")** | plateau = < 2 Elo per training GPU-hour, by a registered head-to-head GSPRT (W ≈ 7 GPU-h, H1 0.52) plus an outside panel, checked once per 10M steps; plateau-breakers fork from the plateau with paired controls | plateau-breaker arms on fresh or still-climbing runs; a 0.51 band per 10M steps (too fine for the window) | the price of an experiment = the baseline gain it displaces |
