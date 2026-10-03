@@ -105,7 +105,7 @@ from `model_config.json` (and is then refused, D4), never the new parser default
 | # | item | source | size (agent-days) | depends on | lane |
 |---|---|---|---|---|---|
 | P1 | **Opponent loads must not reseed the global RNG.** `InferenceMaskablePPO._setup_model` (`instrumented_ppo/inference.py:63`) calls `set_random_seed(self.seed)`: every pool refresh / sentinel / teacher load re-seeds Python `random`, NumPy and torch to the SNAPSHOT's saved seed mid-run. Any later global-RNG draw (team builders that draw from the global `random`, `rust_collector.md` "Teams, seeds") replays a stream | **SHIPPED 2026-10-02** (`gen3_no_global_reseed_v1`): Rust core: only the minibatch permutation replayed; python core: the team curriculum (ledger 2026-10-02). Loads isolated, a global seed after the K6 freeze is FATAL, static gate `src/global_rng_seed_gate_test.py` | 0.25 (+ a check of which Rust-core draws read the global RNG — GIGO class, so first) | — | C |
-| P2 | **Opponent T2 slots compute the value forward they never use** (`inference/service/decision.py` runs `_critic_value` for every slot) — a policy-only forward for non-trainee slots | queued 2026-10-02 | 0.75 (T2 slot identity + parity tests) | GPU memory fix landed | C |
+| P2 | **Opponent T2 slots compute the value forward they never use** (`inference/service/decision.py` runs `_critic_value` for every slot) — a policy-only forward for non-trainee slots | ❌ **CLOSED NO-GO 2026-10-02 — BUILT, parity-proven and MEASURED; NOT landed on main** (§6 finding 11). Branch `p2` @ `e9d17f06` holds the machinery (`ServiceSpec.value_slots`, `PolicyOnlyDecisionModule`, a NaN value-arena contract, the value-free parity judge, the production declaration `rust_rollout.build.value_slot_ids`; the trainee slot bit-identical, an opponent slot's log-probs / greedy bit-identical on CPU eager and CUDA eager + captured-graph). **Measured** on the production-shaped T2 (31 slots, 8 lanes, buckets 8/64/256, trainee slot 24; torch 2.8.0+cu126, RTX 3080 Ti, quiet box, `designs/research_state/measurements/p2_policy_only_slots/`): a policy-only slot's graph replay is **−0.3 % (bucket 8) / −0.6 % (64)** vs a valued slot's, `max_memory_allocated` is **identical (988 MiB)**, and a COLD T2 startup is **+103 s (186 → 289 s)** (a second Inductor entry per bucket). Cutting the EXTRACTOR's value branch too (scratch experiment) saves only 3.1–3.8 % | 0.75 (T2 slot identity + parity tests) | GPU memory fix landed | C |
 | P3 | **The last update's scalars are never dumped**: `dump_logs` runs BEFORE each update (the TB step contract), so the final update's `train/*` stay pending at `learn()`'s end (switch report #3) | switch report | 0.25 | — (folds into R4 if R4 is in flight) | A |
 | P4 | **Launcher `render error: cannot convert float NaN to integer`** (`main/launcher/app.py:325`, once, headless) | switch report — ✅ **SHIPPED 2026-10-02**: the cause was `format._fmt_val`'s `int(v)` on a NaN metric value (the render guard swallowed it and the tick's whole dashboard went unpainted); a non-finite metric now renders as `nan` / `inf` (`launcher_app_test`) | 0.25 | — | C |
 | P5 | **The arch-report cosmetic lines** the switch report flagged | orchestrator — ✅ **SHIPPED 2026-10-02**: (a) a same-run restart's report read `damage_matrices_outgoing/incoming False (this argv, default)` against a run that recorded True — `checkargs`' inheritance sweep covered parser dests only, and those two are desugared from `--damage-matrices`; it now also sweeps every registry row's attribute; (b) the `--arch` block's NOT-applied list printed the mirror's value for a TYPED flag (the ride-along heads) — it now prints the typed value, marked `(typed)` (`arch_surface.unapplied_for_argv`) | 0.25 | — | C (🚨 the lines are NOT named in `m5_switch/README.md` — the orchestrator names them at dispatch) |
@@ -142,7 +142,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | **K1** ✅ **SHIPPED 2026-10-02** (`utils/torch_floor.py`; the cache-limit log detector KEPT — §6 finding 10) | torch < 2.8 refusal; 2.5.1 code + legacy compile gate (R7 + R8), the `hooks.py:179` fix | 1.25 | C | `compile_trainer`, `compile_control`, `team_transformer`, `lifecycle.py` | memory fix |
 | **K2** ✅ **SHIPPED 2026-10-02** (`gen3_tf32_retired_v1`, no config bump, stamp-less: `matmul_precision` was a `metadata.json` knob; **lines removed: non-test code −604 / +269 (net −335), tests −436 / +352 (net −84)**, docs + data −244 / +186 + this row; 1 flag, 1 `combination_checks` row, 1 `RETIRED` row added for the resume refusal; K9 golden files untouched and green) | RETIRE TF32 (R9) | 1.0 | C | parser `hyperparameters` (after L2 hands it off), `consistency.py`, `parity_probe`, one `combination_checks` row | K1, L2 |
 | **P1, P4, P5, P7** | small fixes | 1.25 | C | disjoint | — (P1 first) |
-| **P2** | value-free opponent slots | 0.75 | C | `inference/service/*` | memory fix |
+| **P2** ❌ **CLOSED NO-GO 2026-10-02** (measured ≈ 0 % GPU, 0 memory, +103 s cold startup; branch `p2` keeps the machinery — §3 row, §6 finding 11) | value-free opponent slots | 0.75 | C | `inference/service/*` | memory fix |
 | **U3** ✅ **SHIPPED 2026-10-02** (no config bump, stamp-less: no recorded field removed; **lines removed: non-test code −10,854 / +554 (net −10,300), tests −7,176 / +431 (net −6,745)**, docs + data −831 / +364; 5 flags + 3 generated `--no-` forms deleted, 3 flags reduced to one legal value, 10 `combination_checks` rows and the `_ENV_CORE_UNPORTED` table; K9 golden files untouched and green) | DELETE the Python env core + collect + async + compile-opponents trim + harnesses (R1 + R6 + R10) | 1.5 | A | `train_rl_agent`, `env_factory`, `rust_env_setup`, `combination_checks` | U2, L5 |
 | **U4** | PPO stage 3 + SB3 leftovers (R4 + R5) + P3 | 2.5 | A | `loop.py`, `rust_vec_env`, `device_batches`, `run_io`, callbacks | U3, memory fix |
 | **P6** | final-eval deletion | 0.5 | A or B | parser `operational`, `final_eval.py` | U0 (any gap in lane A/B) |
@@ -360,6 +360,37 @@ calendar days with 3 lanes; 8 is the box**.
     (`compiled_perf_guard_test` DELETED; `perf_baseline.json` kept as history, no test reads it): performance is checked by
     deterministic performance-shape tests in every routine gate (`update_performance_shape_test`: R1 route counts, a host-read
     pin, the fused-SDPA pin; the audit is `designs/ops/testing.md`) plus this benchmark at milestones.
+
+11. **P2 closed NO-GO — the value forward the opponent slots "never use" is ~nil of their cost (measured 2026-10-02).**
+    (a) *Why.* Under the production `winprob` critic `_critic_value` reads `fe.last_win_prob_logits` (stashed by the
+    EXTRACTOR) and `mlp_extractor.forward_critic`'s output feeds only a shape check, so Inductor already
+    dead-code-eliminates the critic tower: skipping it at `DecisionModule` level removes 12 of ~8,670 dynamo graph
+    nodes (2 Linear + 2 tanh + the sigmoid + their reshapes) and no compiled kernel. Graph replay, in-service A/B
+    (one valued slot vs one policy-only slot, same weights, arms interleaved): **−0.3 % (bucket 8) / −0.6 % (64)**; in
+    the same-process 3-way: +0.04 % / +0.06 % — noise. A T2 flush is launch-latency-bound (`rust_collector.md`
+    "Where a host step's time goes"), which is why removing a few small kernels does not move it.
+    (b) *The extractor-level ceiling is small too.* pi and V share the whole trunk (team transformer, op, seats, edge
+    bias); the value branch is a thin readout on top. Cutting the value routes + win head + value pre-norm /
+    projection by in-process surgery (the 1-query value CLS attention kept) saves **3.8 % (bucket 8) / 3.1 % (64)**
+    of replay time with bit-identical log-probs — an upper-ish bound for any "policy-only extractor" (T2 is 8.7 of
+    11.7 ms a step at the N = 48 mix of `rust_collector.md`, so ≲ 2.5 % of a collection step), which would also need an
+    `extractor_forward` change (compiled by the learner's regions: K9 / compile-parity risk; not P2's holds) and the
+    same second compiled entry.
+    (c) *Cost.* That second Inductor entry per bucket (the policy-only class) made a COLD T2 startup **+103 s
+    (186 → 289 s)**; a restart on a warm hermetic cache pays less.
+    (d) *Memory: nothing.* `max_memory_allocated` is identical (988 MiB). The value-only weights are 2.75 MiB of a
+    slot's 15.39 MiB (alias-deduped; ≈ 82 MiB over 30 opponent slots) and cannot be dropped cleanly: the group's
+    `[n_slots, …]` stacked storage and its signature / fingerprint identity are per ARCHITECTURE, so it would need a
+    policy-only slot GROUP per run of opponent slots (breaking "pool + trainee share ONE group" and the plan-slot ==
+    T2-slot id rule), a load path that skips the value keys, and its own compile entries.
+    (e) *A side benefit, not enough to land it.* A policy-only slot's parity gate ignores V, so an opponent snapshot
+    whose win-prob head collapsed beyond every perturbation rung would load (a full slot is refused `VacuousParity`,
+    which POISONS the service on a mid-run load).
+    Measured by `service_benchmark.py --backend graph --slots 31 --lanes 8 --buckets 8,64,256 --trainee-slot 24
+    --cap-non-trainee 64 [--value-slots 24]` at `p2@e9d17f06`; the raw rows and the cut experiment (script + result) are in
+    `designs/research_state/measurements/p2_policy_only_slots/`. **Reopen only** with an extractor-level mode that
+    saves ≳ 10 % of opponent replay time, or if T2 startup time stops mattering; `git cherry-pick e9d17f06` brings the
+    machinery back (docs for it are NOT on that commit).
 
 ## 7. Corrections to `program_rust_core.md` §4 (applied by the unit that executes each row)
 

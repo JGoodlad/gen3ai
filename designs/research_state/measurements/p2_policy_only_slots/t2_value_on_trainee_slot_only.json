@@ -1,0 +1,138 @@
+{
+  "torch": "2.8.0+cu126",
+  "backend": "graph",
+  "device": "cuda",
+  "ckpt": "fresh-perturbed(seed 0)",
+  "slots": 31,
+  "buckets": [
+    8,
+    64,
+    256
+  ],
+  "lanes": 8,
+  "value_slots": [
+    24
+  ],
+  "slot_bucket_caps": [
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    256,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64
+  ],
+  "matmul_precision": "highest",
+  "startup_s": 289.1,
+  "startup_phases_s": {
+    "allocate": 1.0,
+    "build": 282.1,
+    "parity": 5.9
+  },
+  "parity_worst": {
+    "legal_logprob": 7.152557373046875e-07,
+    "value": 3.5762786865234375e-07
+  },
+  "busy_box_warnings": [],
+  "per_bucket": {
+    "8": {
+      "ms_per_flush": 1.249,
+      "us_per_row": 156.1
+    },
+    "64": {
+      "ms_per_flush": 1.972,
+      "us_per_row": 30.8
+    },
+    "256": {
+      "ms_per_flush": 7.829,
+      "us_per_row": 30.6
+    }
+  },
+  "mixed_flush_ms": 29.721,
+  "lane_e_flush_ms": 9.805,
+  "lane_e_rows_per_slot": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "ab_value_vs_policy_only": {
+    "value_slot": 24,
+    "policy_only_slot": 0,
+    "per_bucket": {
+      "8": {
+        "flush_ms_value_slot": 1.271,
+        "flush_ms_policy_only_slot": 1.269,
+        "flush_delta_pct": -0.17,
+        "graph_replay_us_value_slot": 1236.5,
+        "graph_replay_us_policy_only_slot": 1233.0,
+        "graph_replay_delta_pct": -0.29
+      },
+      "64": {
+        "flush_ms_value_slot": 2.002,
+        "flush_ms_policy_only_slot": 1.988,
+        "flush_delta_pct": -0.68,
+        "graph_replay_us_value_slot": 1935.4,
+        "graph_replay_us_policy_only_slot": 1923.8,
+        "graph_replay_delta_pct": -0.6
+      }
+    }
+  },
+  "after_freeze": {
+    "compiles_after_freeze": 0,
+    "captures_after_freeze": 0,
+    "cuda_segments_after_freeze": 0
+  },
+  "max_memory_allocated_mib": 988
+}

@@ -1,0 +1,38 @@
+{
+  "what": "UPPER BOUND on an extractor-level policy-only mode: replica B = PolicyOnlyDecisionModule on an extractor with its value routes (value_entity_pool, value_threat_proj), win head, value_pre_norm and value_projection CUT by in-process surgery (the 1-query value CLS attention inside CLSPool is NOT cut). Same process, same weights (fresh-perturbed seed 0), torch.compile(dynamic=False) + one CUDA graph per variant per bucket, graph replay timed with CUDA events (median of 15 rounds x 100 replays, arms alternating).",
+  "script": "extractor_value_cut.py (this directory)",
+  "box": "RTX 3080 Ti, torch 2.8.0+cu126, quiet (no other GPU process; run under scripts/ops/gpu_lock.sh + mem_cap.sh 24)",
+  "measured": "2026-10-02, code at branch p2 e9d17f06 (the p2 machinery is the PolicyOnlyDecisionModule)",
+  "graph_replay_us_by_bucket": {
+    "8": {
+      "full": 1225.1,
+      "policy_only(DecisionModule-level)": 1225.6,
+      "policy_only+extractor_value_cut": 1178.7,
+      "delta_pct_vs_full": {
+        "full": 0.0,
+        "policy_only(DecisionModule-level)": 0.04,
+        "policy_only+extractor_value_cut": -3.79
+      },
+      "logp_max_abs_diff_vs_full": {
+        "full": 0.0,
+        "policy_only(DecisionModule-level)": 0.0,
+        "policy_only+extractor_value_cut": 0.0
+      }
+    },
+    "64": {
+      "full": 1924.5,
+      "policy_only(DecisionModule-level)": 1925.6,
+      "policy_only+extractor_value_cut": 1865.4,
+      "delta_pct_vs_full": {
+        "full": 0.0,
+        "policy_only(DecisionModule-level)": 0.06,
+        "policy_only+extractor_value_cut": -3.07
+      },
+      "logp_max_abs_diff_vs_full": {
+        "full": 0.0,
+        "policy_only(DecisionModule-level)": 0.0,
+        "policy_only+extractor_value_cut": 0.0
+      }
+    }
+  }
+}

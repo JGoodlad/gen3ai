@@ -199,6 +199,17 @@ eval slot, the sentinel slots, fixed opponents the plan does not already serve) 
 when the architecture matches, so they reuse its compiled buckets; `col.extra_slots` names them and
 `col.evaluator` is the eval core built over the same service (`designs/training/eval_and_rating.md`).
 
+**Every slot serves the SAME full forward — an opponent slot computes a V nothing reads, and that is measured to be
+free.** A policy-only forward for the non-trainee slots (`ServiceSpec.value_slots`, a module without the critic tower,
+the value arena NaN for those slots) was built, proven bit-identical on the policy outputs (CPU, CUDA eager, captured
+graph) and MEASURED (deletion pass P2, 2026-10-02, 31 slots x 8 lanes, buckets 8/64/256): graph replay −0.3 % /
+−0.6 % at bucket 8 / 64, `max_memory_allocated` identical, a COLD T2 startup +103 s (a second Inductor entry per
+bucket) — NOT adopted. Under `winprob` Inductor already drops the critic tower, and the value branch is a thin readout
+on the trunk pi shares (cutting the extractor's value routes + win head too saves only 3.1–3.8 %). A new consumer of
+an opponent slot's V needs nothing declared today; if the mode is ever revived (`git cherry-pick e9d17f06`), the
+consumer list is `rust_rollout.build.value_slot_ids`. Evidence: `designs/ops/deletion_pass_manifest.md` §6 finding 11,
+`designs/research_state/measurements/p2_policy_only_slots/`.
+
 ## The gate — what holds the collector now
 
 The rollout-level slice N and the learner-level check (`rust_rollout/parity.py`: RECORD in Rust, REPLAY through the Python `collect_rollouts` over production-surface `Gen3Env`s) were retired with the Python env core in the deletion pass (U3); no Python path remains to replay against. The collector is held by its own unit and integration tests (`rust_rollout/store_test.py`, `trigger_test.py`, `collector_integration_test.py`, `fork_test.py`), by K9(b)'s behaviour-consistency gate at every update (`consistency.py`, above), and by the Rust-side differential gates (`designs/rust_sim/`). The measured numbers of the retired gate (exact observation / action / reward equality, values and log-probs within 1e-5, one optimizer step within 1e-5 of the Python learner; F-LG-8's amplification over several steps) are history in `designs/research_state/` PROGRESS files.
