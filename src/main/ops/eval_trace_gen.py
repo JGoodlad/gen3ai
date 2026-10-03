@@ -669,9 +669,8 @@ def _arch_toggles(snapshot: str) -> dict:
     what a live cycle does (``arch_toggles_from_model`` on the live policy) and a toggle-OFF
     default FATALs on the run's own belief-ON sentinels.
     """
-    from sb3_contrib import MaskablePPO
-    from agents.model.snapshot import arch_toggles_from_model
-    model = MaskablePPO.load(snapshot, env=None, device="cpu")
+    from agents.model.snapshot import arch_toggles_from_model, load_checkpoint_strict
+    model = load_checkpoint_strict(snapshot, device="cpu")
     return arch_toggles_from_model(model)
 
 

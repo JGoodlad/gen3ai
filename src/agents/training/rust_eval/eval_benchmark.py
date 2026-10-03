@@ -72,14 +72,12 @@ def _model_dir(root: Path, trainee: str) -> Path:
 
 
 def arm_python(a: argparse.Namespace, root: Path) -> Dict[str, Any]:
-    from sb3_contrib import MaskablePPO
-
-    from agents.model.snapshot import arch_toggles_from_model
+    from agents.model.snapshot import arch_toggles_from_model, load_checkpoint_strict
     from agents.training.eval_callback import ForensicQuota, kill_eval_workers, spawn_eval_workers
     from agents.training.eval_sharding import ShardedEvalPool
 
     md = _model_dir(root, a.trainee)
-    toggles = arch_toggles_from_model(MaskablePPO.load(a.trainee, env=None, device="cpu"))
+    toggles = arch_toggles_from_model(load_checkpoint_strict(a.trainee, device="cpu"))
     run_dir = md / ".eval_runs" / "step_0"
     shutil.rmtree(run_dir, ignore_errors=True)
     (run_dir / "claims").mkdir(parents=True)
@@ -108,8 +106,6 @@ def arm_python(a: argparse.Namespace, root: Path) -> Dict[str, Any]:
 
 
 def arm_rust(a: argparse.Namespace, root: Path) -> Dict[str, Any]:
-    from sb3_contrib import MaskablePPO
-
     from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
     from agents.training.eval_callback import ForensicQuota
     from agents.training.eval_sharding import ShardedEvalPool
@@ -120,7 +116,9 @@ def arm_rust(a: argparse.Namespace, root: Path) -> Dict[str, Any]:
     from utils.rust_env import episode as EP
 
     md = _model_dir(root, a.trainee)
-    model = MaskablePPO.load(a.trainee, env=None, device=a.device)
+    from agents.model.snapshot import load_checkpoint_strict
+
+    model = load_checkpoint_strict(a.trainee, device=a.device)
     model.policy.eval()
     n_slots = 1 + len(a.sentinels)
     t0 = time.perf_counter()

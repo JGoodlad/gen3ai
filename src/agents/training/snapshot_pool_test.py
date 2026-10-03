@@ -416,3 +416,78 @@ def test_load_summary_missing_returns_empty(tmp_path):
     assert pool.load_summary() == {}
 
 
+
+
+# ── the pool's ARCH RECORD is write-once (gen3_pool_arch_record_v1, P10 follow-up F1) ──────────
+
+def _real_versions():
+    """A real `ModelVersion` and a STRUCTURALLY different one (opp_belief_cls_k is a weight-shape field)."""
+    import dataclasses
+
+    from agents.model.snapshot import current_model_version
+    from agents.observation.state_encoder import load_mappings
+
+    a = current_model_version(load_mappings())
+    return a, dataclasses.replace(a, opp_belief_cls_k=a.opp_belief_cls_k + 1)
+
+
+def test_the_pool_arch_record_is_written_once_so_a_resumed_pool_stays_checked(tmp_path):
+    """The record (`<pool>/model_config.json`) is what `load_opponent_snapshot` gates the live version
+    against. It was REWRITTEN with the live version on every add, so after the first promotion of a
+    session every load compared the run with its own copy (vacuous for the snapshots already in the
+    directory — a resume's, a fork's seeded parent pool). Revert `_record_arch` to the rewrite and the
+    drifted pool's `add` succeeds, then `load_model` passes the arch check and fails for another reason."""
+    from agents.model.model_version import ModelVersionError
+
+    a, b = _real_versions()
+    pool_a = SnapshotPool(pool_dir=tmp_path, current_version=a)
+    pool_a.add(_fake_model(tmp_path), step=100)
+    record = (tmp_path / "model_config.json").read_text()
+    assert record == a.to_json()
+
+    pool_b = SnapshotPool(pool_dir=tmp_path, current_version=b)      # the dir resumed under drifted code
+    old = pool_b._entries[0]
+    with pytest.raises(ModelVersionError):
+        pool_b.load_model(old)                                        # a REAL check: the record is A's
+    with pytest.raises(ModelVersionError, match="NOT compatible"):
+        pool_b.add(_fake_model(tmp_path), step=200)                   # refused BEFORE anything is written
+    assert (tmp_path / "model_config.json").read_text() == record     # never rewritten with B
+    assert not (tmp_path / "snapshot_000000000200.zip").exists()
+    with pytest.raises(ModelVersionError):
+        pool_b.load_model(old)                                        # and the next load is STILL a real check
+
+
+def test_a_compatible_version_adds_without_rewriting_the_record(tmp_path):
+    import dataclasses
+
+    a, _ = _real_versions()
+    pool_a = SnapshotPool(pool_dir=tmp_path, current_version=a)
+    pool_a.add(_fake_model(tmp_path), step=100)
+    record = (tmp_path / "model_config.json").read_text()
+    a2 = dataclasses.replace(a, vf_coef=a.vf_coef + 0.25)             # not a structural field
+    assert a2.to_json() != record
+    pool_2 = SnapshotPool(pool_dir=tmp_path, current_version=a2)
+    pool_2.add(_fake_model(tmp_path), step=200)                       # compatible: the add goes through
+    assert (tmp_path / "model_config.json").read_text() == record     # the record keeps what it was first written under
+    assert sorted(e.step for e in pool_2._entries) == [100, 200]
+
+
+def test_add_from_path_is_refused_under_the_same_record(tmp_path):
+    from agents.model.model_version import ModelVersionError
+
+    a, b = _real_versions()
+    SnapshotPool(pool_dir=tmp_path, current_version=a).add(_fake_model(tmp_path), step=100)
+    src = tmp_path / "frozen.zip"
+    src.write_bytes(b"frozen-weights")
+    with pytest.raises(ModelVersionError, match="NOT compatible"):
+        SnapshotPool(pool_dir=tmp_path, current_version=b).add_from_path(src, step=300)
+    assert not (tmp_path / "snapshot_000000000300.zip").exists()
+
+
+def test_a_pool_holding_snapshots_but_no_record_is_announced_then_recorded(tmp_path, capsys):
+    a, _ = _real_versions()
+    (tmp_path / "snapshot_000000000050.zip").write_bytes(b"old")      # a pre-record run's snapshot
+    pool = SnapshotPool(pool_dir=tmp_path, current_version=a)
+    assert not (tmp_path / "model_config.json").exists()
+    pool.add(_fake_model(tmp_path), step=100)
+    assert (tmp_path / "model_config.json").read_text() == a.to_json()

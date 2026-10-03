@@ -311,7 +311,7 @@ def test_a_checkpoint_MISSING_an_extractor_submodule_is_refused_by_every_load(
     submodule's keys deleted loaded "normally" with that submodule at FRESH INIT. The opponent path
     (pool / sentinel / foreign) and the trainee's resume must all REFUSE it."""
     from agents.model.snapshot import load_foreign_opponent, load_model_snapshot, load_opponent_snapshot
-    from agents.training.instrumented_ppo.loop import StrictLoadError
+    from agents.training.instrumented_ppo.strict_load import StrictLoadError
 
     bad = _rewrite_policy(world["zip_off"], tmp_path / "dropped", _drop(submodule))
     with pytest.raises(StrictLoadError, match=submodule):
@@ -336,7 +336,7 @@ def test_a_checkpoint_with_an_UNEXPECTED_key_is_refused(world: Dict[str, Any], t
 
 
 def test_set_parameters_REFUSES_exact_match_False_on_a_mismatch(world: Dict[str, Any]) -> None:
-    from agents.training.instrumented_ppo.loop import StrictLoadError
+    from agents.training.instrumented_ppo.strict_load import StrictLoadError
 
     m = world["off"]
     sd = {k: v.clone() for k, v in m.policy.state_dict().items()}
@@ -347,3 +347,67 @@ def test_set_parameters_REFUSES_exact_match_False_on_a_mismatch(world: Dict[str,
     full = {k: v.clone() for k, v in m.policy.state_dict().items()}
     m.set_parameters({"policy": full, "policy.optimizer": m.policy.optimizer.state_dict()},
                      exact_match=False)
+
+
+# ---------------------------------------------------------------- the READER loads (P10 follow-up F1)
+def test_a_READER_load_REFUSES_a_checkpoint_missing_an_extractor_submodule(
+        world: Dict[str, Any], tmp_path: Path) -> None:
+    """P10 follow-up F1: the plain `MaskablePPO.load` callers (the ladder session, the prober, the eval
+    worker, the offline meters) kept sb3's non-strict retry after P10-B closed it on the learner and the
+    opponents. They all load through `load_checkpoint_strict` now. The precondition is the bug itself:
+    sb3's own load takes the SAME zip, warns once, and leaves the deleted submodule at fresh init."""
+    import warnings
+
+    from sb3_contrib import MaskablePPO
+
+    from agents.model.snapshot import load_checkpoint_strict
+    from agents.training.instrumented_ppo.strict_load import StrictLoadError
+
+    bad = _rewrite_policy(world["zip_off"], tmp_path / "reader", _drop("alpha_head"))
+    with warnings.catch_warnings(record=True) as seen:
+        warnings.simplefilter("always")
+        bare = MaskablePPO.load(str(bad), env=None, device="cpu")           # the BUG: loads, silently
+    assert bare is not None and any("SB3 < 1.7.0" in str(w.message) for w in seen)
+    with pytest.raises(StrictLoadError, match="alpha_head"):
+        load_checkpoint_strict(str(bad), device="cpu")
+
+
+def test_the_strict_reader_load_is_otherwise_a_plain_MaskablePPO_load(world: Dict[str, Any]) -> None:
+    """The strict class changes the load's STRICTNESS and nothing else: same weights as a bare load, an
+    optimizer, the seed applied, a working `save` (`winprob_finetune`'s graft writes through one)."""
+    import torch as torch_
+    from sb3_contrib import MaskablePPO
+
+    from agents.model.snapshot import load_checkpoint_strict
+    from agents.training.instrumented_ppo.inference import InferenceMaskablePPO
+    from agents.training.instrumented_ppo.strict_load import StrictMaskablePPO
+
+    zip_off = str(world["zip_off"])
+    strict = load_checkpoint_strict(zip_off, device="cpu")
+    bare = MaskablePPO.load(zip_off, env=None, device="cpu")
+    assert type(strict) is StrictMaskablePPO and isinstance(strict, MaskablePPO)
+    assert not isinstance(strict, InferenceMaskablePPO)
+    assert strict.policy.optimizer is not None
+    sd_s, sd_b = strict.policy.state_dict(), bare.policy.state_dict()
+    assert sd_s.keys() == sd_b.keys() and all(torch_.equal(sd_s[k], sd_b[k]) for k in sd_s)
+    # the learner's own weights are what was saved, bit for bit
+    sd_l = world["off"].policy.state_dict()
+    assert all(torch_.equal(sd_s[k], sd_l[k]) for k in sd_l)
+    assert not getattr(strict, "inference_only", False)
+
+
+def test_the_reader_surfaces_refuse_a_dropped_submodule_and_the_prober_still_DIAGNOSES(
+        world: Dict[str, Any], tmp_path: Path) -> None:
+    """The ladder session's `play.load_policy` refuses it; the prober's `ProbeModel.load` still turns
+    the refusal into its `ArchDriftError` diagnosis (the cause chained), never a bare crash."""
+    from main.play import load_policy
+    from main.prober.model import ArchDriftError, ProbeModel
+    from agents.training.instrumented_ppo.strict_load import StrictLoadError
+
+    bad = _rewrite_policy(world["zip_off"], tmp_path / "surfaces", _drop("win_head"))
+    with pytest.raises(StrictLoadError, match="win_head"):
+        load_policy(str(bad), "cpu")
+    with pytest.raises(ArchDriftError) as ei:
+        ProbeModel.load(str(bad))
+    assert isinstance(ei.value.__cause__, StrictLoadError) and "win_head" in str(ei.value.__cause__)
+    assert "StrictLoadError" in str(ei.value) and "state dict does not match" in str(ei.value)

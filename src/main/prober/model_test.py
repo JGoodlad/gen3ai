@@ -15,6 +15,7 @@ import numpy as np
 import pytest
 import torch
 
+from agents.model import snapshot
 from main.prober.model import (
     ArchDriftError, ObsOffsets, ProbeModel, _accepted_extractor_kwargs, _arch_drift_error,
     _sidecar, peek_checkpoint,
@@ -168,15 +169,18 @@ def test_every_prober_checkpoint_load_goes_through_the_sanitizer():
     `replay_counterfactual`'s rollout-player loader — and a bare `MaskablePPO.load` at either one
     TypeErrors on any checkpoint written before a flag was deleted (measured over `models/`: 70 of
     89 runs carry at least one such kwarg). The counterfactual site was bare until this gate, which
-    is why the failure only showed up on the rollout paths. A new load site must sanitize too."""
+    is why the failure only showed up on the rollout paths. A new load site must sanitize too.
+    (Every load is `load_checkpoint_strict` since P10 follow-up F1; a bare `MaskablePPO.load` is a
+    failure of `src/strict_checkpoint_load_gate_test.py`.)"""
     import pathlib
     import main.prober as pkg
 
     root = pathlib.Path(pkg.__file__).parent
-    bare = [f"{p.relative_to(root)}:{i}" for p in sorted(root.rglob("*.py"))
-            if not p.name.endswith("_test.py")
-            for i, line in enumerate(p.read_text().splitlines(), 1)
-            if "MaskablePPO.load(" in line and "custom_objects" not in line]
+    loads = [(p, i, line) for p in sorted(root.rglob("*.py")) if not p.name.endswith("_test.py")
+             for i, line in enumerate(p.read_text().splitlines(), 1)
+             if "load_checkpoint_strict(" in line and "import" not in line]
+    assert len(loads) >= 2, f"the scan found {len(loads)} strict checkpoint loads in the prober"
+    bare = [f"{p.relative_to(root)}:{i}" for p, i, line in loads if "custom_objects" not in line]
     assert not bare, ("checkpoint load without `custom_objects=` from "
                       f"`sanitized_load_custom_objects`: {bare}")
 
@@ -219,7 +223,6 @@ def test_load_drops_unknown_kwargs_and_records_the_drop(tmp_path, monkeypatch):
     """The recovery: a checkpoint whose only problem is a DELETED flag still loads — and the drop is
     RECORDED, because a dropped flag means the rebuilt extractor is not the one that played and a
     surface has to be able to say so."""
-    import sb3_contrib
     from stable_baselines3.common import save_util
 
     accepted = _accepted_extractor_kwargs()
@@ -239,11 +242,11 @@ def test_load_drops_unknown_kwargs_and_records_the_drop(tmp_path, monkeypatch):
         def modules(self):
             return []
 
-    def fake_load(path, device="cpu", custom_objects=None):
+    def fake_load(path, *, device="cpu", custom_objects=None):
         seen["kwargs"] = custom_objects["policy_kwargs"]["features_extractor_kwargs"]
         return type("M", (), {"policy": _StubPolicy(_Ext(_Op(op_row)))})()
 
-    monkeypatch.setattr(sb3_contrib.MaskablePPO, "load", staticmethod(fake_load))
+    monkeypatch.setattr(snapshot, "load_checkpoint_strict", fake_load)
 
     pm = ProbeModel.load(ckpt)
     assert "deleted_flag" not in seen["kwargs"] and keep in seen["kwargs"]
@@ -253,14 +256,12 @@ def test_load_drops_unknown_kwargs_and_records_the_drop(tmp_path, monkeypatch):
 def test_load_turns_any_failure_into_a_diagnosis(tmp_path, monkeypatch):
     """Walls 2 and 3 (a value the code now rejects; weight shapes that no longer fit) are NOT
     recoverable — but they must still arrive as an ArchDriftError, with the original preserved."""
-    import sb3_contrib
-
     ckpt = _fake_ckpt(tmp_path / "m.zip", {"whatever": 1})
 
     def boom(*a, **k):
         raise RuntimeError("mat1 and mat2 shapes cannot be multiplied (12x380 and 386x256)")
 
-    monkeypatch.setattr(sb3_contrib.MaskablePPO, "load", staticmethod(boom))
+    monkeypatch.setattr(snapshot, "load_checkpoint_strict", boom)
     with pytest.raises(ArchDriftError) as ei:
         ProbeModel.load(ckpt)
     assert "cannot be re-run" in str(ei.value)

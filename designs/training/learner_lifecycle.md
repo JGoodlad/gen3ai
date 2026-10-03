@@ -243,10 +243,26 @@ allocated / 9.49 GiB reserved, 1.14 GiB of it the then-resident device batch; th
 - The pool loads snapshots on the CPU. On the card, each promotion's snapshot stayed in the pool's
   LRU (cap 3) beside the slot T2 had copied it into: +~33 MiB of quiescent floor per promotion on
   sizing arm A.
-- A pool weight source found on the card is a typed `LazyAcquisitionError`.
+- A weight source found on the card is a typed `LazyAcquisitionError` — the pool's, and (since P10
+  follow-up F1, 2026-10-03) every stable / exploiter opponent's too (`OpponentSources.policy_for`
+  -> `_require_cpu`). `rust_env_setup` loads the stable and exploiter opponents on the CPU, as the
+  pool is: T2 copies them into their declared slots (a group template, then `svc.load`) and nothing
+  reads the policy again, yet they were loaded onto the card and kept there for the run, a duplicate
+  of their slot. MEASURED (2026-10-03, RTX 3080 Ti, `ai_v14_08_g0p_k3`'s checkpoint through
+  `load_foreign_opponent`, under `gpu_lock`): a CUDA load left +15.46 MiB allocated and +58.0 MiB
+  reserved (11.7 MiB of parameters; the rest buffers and the load's staging, cached) per source;
+  the CPU load leaves 0 / 0. The Lane H parity harness loads its fixed opponents on the CPU the same
+  way.
 - Every route's slot load goes through `rust_rollout.build.checked_slot_load`, which refuses a load
   that leaves more than 1 MiB newly allocated (`declared_slot_load_test`). It reads ALLOCATED, not
-  reserved, memory. Measured 2026-10-03 (P10 F7, buckets 8 / 64 / 256): an opponent load (CPU
+  reserved, memory — **and that is DECIDED, not an oversight** (P10 follow-up F1): allocated is the
+  one quantity a load either leaves behind or does not (a persisting tensor); reserved moves with the
+  allocator's cache state (a transient peak that finds no free block opens a segment, one that
+  finds a block does not — the trainee's first load grows reserved 2 MiB once without expandable
+  segments, 0 with them), so a reserved bar would pass or fail on cache history, not on what the
+  load did (standing rule 8). A cache that GROWS is what the K6 counters see: `reserved_after_freeze`
+  (below) counts reserved grown since the freeze whatever grew it. Measured 2026-10-03 (P10 F7,
+  buckets 8 / 64 / 256): an opponent load (CPU
   source) grows neither; its transient peak (~27 MiB: the eager reference forward and the served
   clones) comes from the cache. A replica keeps its LAST eager reference forward's activation
   stash (`ExtractorStashes`; 17 MiB at 255 rows) until its next forward — bounded, replaced not
@@ -457,19 +473,50 @@ stream is bit-identical before and after the load ("No global reseed after the f
   exploiter targets, `main.anchors`, `baselines.load` and
   the offline readers. `inference_only=False` is for an offline tool that FITS the loaded model: the
   consensus warm-start's student is the one caller.
-- **Not this class, and not affected:** the prober, `play.py` and the search workers load with a bare
-  sb3 `MaskablePPO.load`, which has no ride-along acquisition. None of them runs inside a frozen learner.
+- **Not this class, and not affected:** the prober, `play.py`, the eval worker, the search workers and
+  the offline tools load through `snapshot.load_checkpoint_strict` — a `StrictMaskablePPO`, a plain
+  `MaskablePPO` plus the strict `set_parameters` (below), which has no ride-along acquisition. None of
+  them runs inside a frozen learner.
 
-**Every load is STRICT (`gen3_strict_checkpoint_load_v1`, P10 F4, 2026-10-03).** sb3's `load` retries
-with `exact_match=False` whenever the strict error mentions `pi_features_extractor` (its "SB3 < 1.7.0"
-patch), and our extractor is registered under three aliases, so ANY missing extractor key named it: a
-checkpoint with `alpha_head`'s keys deleted loaded as the trainee AND as an opponent with the head at
-fresh init, behind one warning. `OwnedLoop.set_parameters` (under `InstrumentedMaskablePPO` and
-`InferenceMaskablePPO` alike) always loads strictly — a MISSING and an UNEXPECTED key both raise — and
-answers a non-strict request with `StrictLoadError` naming the strict error. No declared non-strict
+**Every load is STRICT (`gen3_strict_checkpoint_load_v1`, P10 F4, 2026-10-03; readers: P10 follow-up F1).**
+sb3's `load` retries with `exact_match=False` whenever the strict error mentions `pi_features_extractor`
+(its "SB3 < 1.7.0" patch), and our extractor is registered under three aliases, so ANY missing extractor
+key named it: a checkpoint with `alpha_head`'s keys deleted loaded as the trainee AND as an opponent with
+the head at fresh init, behind one warning. `StrictCheckpointLoad.set_parameters`
+(`instrumented_ppo/strict_load.py`) always loads strictly — a MISSING and an UNEXPECTED key both raise —
+and answers a non-strict request with `StrictLoadError` naming the strict error FIRST (a reader that
+truncates the message, the prober's drift diagnosis, still sees which keys differ). It is a MIXIN:
+`OwnedLoop` inherits it (so `InstrumentedMaskablePPO` and `InferenceMaskablePPO` carry it), and
+`StrictMaskablePPO` is a plain `MaskablePPO` plus it. P10-B closed the learner and the opponents; the
+READERS — `play.py`'s ladder session, the prober (`ProbeModel.load` and the counterfactual rollout
+players), the eval worker, `eval_trace_gen`, `cf_producer_snapshot`, `search_dividend`, the Rust eval
+parity / benchmark harnesses and `winprob_finetune` — still called sb3's `MaskablePPO.load` and kept the
+retry. They load through ONE function, `snapshot.load_checkpoint_strict(path, device=, custom_objects=)`.
+It is deliberately a `StrictMaskablePPO` and not an `InferenceMaskablePPO`: an inference class also
+drops the optimizer and the global reseed, and a caller that FITS and saves (`winprob_finetune`'s graft)
+or that compares against an older measurement (the eval worker's seeding) must keep a plain
+`MaskablePPO`'s behaviour. `src/strict_checkpoint_load_gate_test.py` keeps the class closed (a bare
+`MaskablePPO.load` / `PPO.load`, an `exact_match=False`, or an sb3-algorithm subclass without the
+mixin FAILS; EMPTY allowlist). Surveyed read-only over 36 random real checkpoints (`models/`,
+2026-10-03): every load that succeeded still succeeds (2 current-architecture runs, prober and ladder
+path alike), every one that failed still fails — as a `StrictLoadError` where the bare load raised a
+shape `RuntimeError` (16 prober, 7 ladder), the prober's `ArchDriftError` diagnosis intact on all of
+them; none of the 36 had been silently half-loaded by the retry. No declared non-strict
 exception exists (the deleted-kwarg sanitizers pop only kwargs that build no parameters and refuse
-the rest); a future one is declared there, with its reason. The bare sb3 `MaskablePPO.load` callers
-(the prober, `play.py`, the search workers, a few offline tools) still carry sb3's retry.
+the rest); a future one is declared in `strict_load.py`, with its reason.
+
+**The pool's arch record is WRITE-ONCE (`gen3_pool_arch_record_v1`, P10 follow-up F1).** The opponent
+load's version gate (`check_opponent_snapshot_compatible`) compares the live version against
+`<pool>/model_config.json`, found beside the zips — and a snapshot zip carries no `ModelVersion` of its
+own, so that file is the only witness of what the pool was written under. `SnapshotPool` REWROTE it with
+its own live version on every add: after the first promotion of a session every load compared the run
+with its own copy — vacuous for exactly the snapshots that can be stale, the ones already in the
+directory (a resume's, a fork's seeded parent pool). The record is now written when absent, the live
+version is checked against it BEFORE every add (a `ModelVersionError` naming the pool; nothing written),
+and it is never rewritten. The choice of "against the record" over "against the current code": the
+current code's version IS the live version, so comparing against it is the tautology; the record is the
+independent side. A directory that holds snapshots but no record (a pre-record run) is announced and
+recorded, unverifiable.
 
 **F-MEM: an opponent may differ from the trainee in the ride-along keys alone.** The gate is
 `ModelVersion.check_opponent_snapshot_compatible`: `check_compatible` with the declared key set

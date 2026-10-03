@@ -28,6 +28,10 @@ name it ever exported still resolves from `agents.training.instrumented_ppo`.
                       (called by `micro_step`, region R1; its oracle is a verbatim copy of the old block)
     inference.py      `InferenceMaskablePPO` — the class an OPPONENT / reader load builds: policy
                       weights only, no optimizer of any kind (gen3_opponent_inference_load_v1)
+    strict_load.py    THE STRICT CHECKPOINT LOAD (`gen3_strict_checkpoint_load_v1`): the
+                      `StrictCheckpointLoad` mixin (`OwnedLoop` inherits it) and `StrictMaskablePPO`
+                      — a plain `MaskablePPO` + that mixin, the class every READER of a checkpoint
+                      builds (`agents.model.snapshot.load_checkpoint_strict`)
     phase_hook.py     BENCHMARK-ONLY segment marks inside `train()` (None in production; the one
                       consumer is `agents.training.learner_benchmark`)
 

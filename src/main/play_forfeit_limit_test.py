@@ -26,7 +26,7 @@ def test_flag_overrides():
     assert args.forfeit_turn_limit == 120
 
 
-def test_the_flag_reaches_the_players_stall_config():
+def test_the_flag_reaches_the_players_stall_config(monkeypatch):
     """The plumbing, not just the parse — a flag that never reaches `RLPlayer` is a no-op, and a
     no-op here reads exactly like a limit that fired."""
     captured = {}
@@ -46,21 +46,21 @@ def test_the_flag_reaches_the_players_stall_config():
     def _fake_load(*a, **k):
         return _FakeModel()
 
+    # `build_model_player` loads through `load_policy` (the one seam; strict since P10 follow-up F1)
+    monkeypatch.setattr(play, "load_policy", _fake_load)
+
     import sys
     import types
 
     # `build_model_player` imports these lazily INSIDE the function, so a stub module in
     # sys.modules is what the import actually resolves to.
-    sb3_contrib = types.ModuleType("sb3_contrib")
-    sb3_contrib.MaskablePPO = types.SimpleNamespace(load=_fake_load)
     inference_player = types.ModuleType("agents.inference.player")
     inference_player.RLPlayer = _fake_rl_player
     state_encoder = types.ModuleType("agents.observation.state_encoder")
     state_encoder.load_mappings = lambda: None
 
     saved = {k: sys.modules.get(k) for k in
-             ("sb3_contrib", "agents.inference.player", "agents.observation.state_encoder")}
-    sys.modules["sb3_contrib"] = sb3_contrib
+             ("agents.inference.player", "agents.observation.state_encoder")}
     sys.modules["agents.inference.player"] = inference_player
     sys.modules["agents.observation.state_encoder"] = state_encoder
     try:

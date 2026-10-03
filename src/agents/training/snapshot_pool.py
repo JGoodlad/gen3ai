@@ -17,7 +17,7 @@ from pathlib import Path
 from sb3_contrib import MaskablePPO
 
 from agents.model.snapshot import load_opponent_snapshot
-from agents.model.model_version import ModelVersion
+from agents.model.model_version import ModelVersion, ModelVersionError
 from main.launcher.ipc import emit
 
 
@@ -282,11 +282,9 @@ class SnapshotPool:
         """
         src = Path(src_zip)
         dst = self.pool_dir / f"snapshot_{step:012d}.zip"
+        self._record_arch()      # BEFORE the copy: a refused add leaves nothing on disk
         if src.resolve() != dst.resolve():
             shutil.copy2(src, dst)
-        # Shared arch tag next to the snapshots, so load_opponent_snapshot() does a REAL
-        # compatibility check (every snapshot in this pool shares current_version).
-        (self.pool_dir / "model_config.json").write_text(self._current_version.to_json())
         entry = SnapshotEntry(path=dst, step=step, pinned=False)
         # Replace any existing entry at this step (idempotent), keep sorted by step.
         self._entries = [e for e in self._entries if e.step != step]
@@ -493,15 +491,49 @@ class SnapshotPool:
                  f"{len(self._entries)}; dropped steps {dropped} "
                  f"({'deleted' if self._owns_dir else 'left on disk, not in this pool'})")
 
+    def _record_arch(self) -> None:
+        """The pool's ARCH RECORD — ``<pool_dir>/model_config.json``, WRITE-ONCE (`gen3_pool_arch_record_v1`,
+        P10 follow-up F1).
+
+        ``load_opponent_snapshot`` — used by BOTH the eval sentinels and the training-env opponents —
+        reads this file (it sits beside the zips) and gates the live version against it, so that a
+        stale-arch snapshot is a clean ``ModelVersionError`` rather than mismatched weights. A snapshot
+        zip carries no ``ModelVersion`` of its own, so the record is the ONLY independent witness of what
+        the pool's snapshots were written under.
+
+        It used to be REWRITTEN with ``self._current_version`` on every add. After the first promotion of
+        a session the record was therefore the live version itself, and every later check compared the
+        run against its own copy — vacuous for exactly the snapshots that could be stale: the ones
+        already in the directory (a resumed run's, a fork's seeded parent pool).
+
+        Now: absent -> written (from the live version, which wrote every snapshot this pool adds);
+        present -> the live version is checked against it BEFORE the add (a ``ModelVersionError`` naming
+        the pool, nothing written) and it is NEVER rewritten, so every later load still compares against
+        what the directory was recorded under. A directory that already holds snapshots but no record
+        (a pre-record run) is announced: the live version is recorded for them, unverifiable."""
+        cfg = self.pool_dir / "model_config.json"
+        live = self._current_version.to_json()
+        if not cfg.exists():
+            if self._entries:
+                emit(f"⚠️  [SELFPLAY] Pool {self.pool_dir} holds {len(self._entries)} snapshot(s) but no "
+                     f"model_config.json: recording THIS run's architecture for them, UNVERIFIED")
+            cfg.write_text(live)
+            return
+        if cfg.read_text() == live:
+            return                                      # byte-identical: compatible by construction
+        try:
+            self._current_version.check_opponent_snapshot_compatible(ModelVersion.from_json_file(str(cfg)))
+        except ModelVersionError as exc:
+            raise ModelVersionError(
+                f"snapshot pool {self.pool_dir}: this run's architecture is NOT compatible with the one the "
+                f"pool's snapshots were recorded under ({cfg}) — adding a snapshot would mix architectures "
+                f"in one pool (and rewriting the record would hide it from every later load). Use a fresh "
+                f"run dir, or restore the matching architecture.\n{exc}") from exc
+
     def _write(self, model: MaskablePPO, step: int, pinned: bool) -> SnapshotEntry:
         path = self.pool_dir / f"snapshot_{step:012d}.zip"
+        self._record_arch()      # BEFORE the save: a refused add leaves nothing on disk
         model.save(str(path))
-        # Drop a shared model_config.json next to the snapshots so load_opponent_snapshot()
-        # — used by BOTH eval sentinels and the training-env opponents — performs a REAL
-        # architecture compatibility check instead of silently skipping it (every snapshot
-        # in a pool shares this run's current_version). Without it, a stale-arch snapshot
-        # would load with mismatched weights instead of a clean ModelVersionError.
-        (self.pool_dir / "model_config.json").write_text(self._current_version.to_json())
         entry = SnapshotEntry(path=path, step=step, pinned=pinned)
         # Replace any existing entry at this step (idempotent re-seed)
         self._entries = [e for e in self._entries if e.step != step]

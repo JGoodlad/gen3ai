@@ -204,10 +204,9 @@ def _run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[s
               n_envs: int, buckets: Tuple[int, ...], front: str, profile: str, lanes: int,
               fixed: List[Dict[str, Any]], sentinel_greedy: bool, self_play_temp: float,
               safe_point: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
-    from sb3_contrib import MaskablePPO
-
     from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
-    from agents.model.snapshot import arch_toggles_from_model, current_model_version, load_foreign_opponent
+    from agents.model.snapshot import (arch_toggles_from_model, current_model_version, load_checkpoint_strict,
+                                       load_foreign_opponent)
     from agents.observation.state_encoder import load_mappings
     from agents.training.eval_sharding import ShardedEvalPool
     from agents.training.fixed_opponent_pool import FixedOpponentEntry
@@ -218,11 +217,12 @@ def _run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[s
 
     with declared_torch_state(RUST_THREADS):
         t0 = time.perf_counter()
-        model = MaskablePPO.load(trainee, env=None, device=device)
+        model = load_checkpoint_strict(trainee, device=device)
         model.policy.eval()
         # FIXED opponents as `rust_env_setup` loads and declares them (module docs).
         version = current_model_version(load_mappings(), **arch_toggles_from_model(model)) if fixed else None
-        fixed_pol = {f["label"]: load_foreign_opponent(f["path"], current_version=version, device=device,
+        # on the CPU, as `rust_env_setup` loads them: a fixed opponent is only a weight source for its slots
+        fixed_pol = {f["label"]: load_foreign_opponent(f["path"], current_version=version, device="cpu",
                                                        config_path=f["config_path"])[0].policy.eval() for f in fixed}
         reused_labels = [f["label"] for f in fixed if f["reused"]]
         decl = EvalDecl(n_envs=n_envs, n_sentinels=len(sentinels), fixed_labels=tuple(f["label"] for f in fixed),

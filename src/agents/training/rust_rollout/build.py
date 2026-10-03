@@ -223,24 +223,30 @@ class OpponentSources:
     self_play_fraction: float = 0.0
 
     def policy_for(self, model_id: str) -> Any:
+        """The weight set behind ``model_id`` — EVERY source stays on the CPU (`_require_cpu`): T2's slot is
+        the only copy that serves, and a source on the card is a second copy of it."""
         kind, _, rest = model_id.partition(":")
         if kind == "pool":
             step = int(rest)
             entry = next(e for e in self.pool._entries if e.step == step)
-            pol = self.pool.load_model(entry).policy.eval()
-            on_card = sorted({str(p.device) for p in pol.parameters() if p.device.type != "cpu"})
-            if on_card:
-                from agents.training.learner_lifecycle import FATAL_TAG, LazyAcquisitionError
-                raise LazyAcquisitionError(
-                    f"{FATAL_TAG} — pool snapshot {model_id} was loaded onto {on_card}: a pool refresh is "
-                    f"a DECLARED LOAD into its T2 slot, so the snapshot itself must stay on the CPU — a "
-                    f"device copy is a new allocation at every promotion (gen3_declared_slot_load_v1)")
-            return pol
+            return self._require_cpu(self.pool.load_model(entry).policy.eval(), model_id)
         if kind == "stable":
-            return self.stable[rest]
+            return self._require_cpu(self.stable[rest], model_id)
         if kind == "exploiter":
-            return self.exploiter
+            return self._require_cpu(self.exploiter, model_id)
         raise KeyError(model_id)
+
+    @staticmethod
+    def _require_cpu(pol: Any, model_id: str) -> Any:
+        on_card = sorted({str(p.device) for p in pol.parameters() if p.device.type != "cpu"})
+        if on_card:
+            from agents.training.learner_lifecycle import FATAL_TAG, LazyAcquisitionError
+            raise LazyAcquisitionError(
+                f"{FATAL_TAG} — weight source {model_id} was loaded onto {on_card}: a route's load is a "
+                f"DECLARED LOAD into its T2 slot, so the source itself must stay on the CPU — a device "
+                f"copy is a duplicate of the slot (a pool snapshot: a new allocation at every promotion; "
+                f"a stable / exploiter opponent: one for the run) (gen3_declared_slot_load_v1)")
+        return pol
 
 
 #: A route's weight refresh may leave at most this much NEW memory allocated on the card (the

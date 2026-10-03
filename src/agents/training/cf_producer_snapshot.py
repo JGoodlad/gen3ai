@@ -228,17 +228,17 @@ def load_snapshot(path: str, step: Optional[int], *, device: str = "cpu",
     """Load a checkpoint for scoring + rollouts.
 
     Uses the prober's `sanitized_load_custom_objects` (drop extractor kwargs the CURRENT
-    constructor no longer accepts) rather than a bare `MaskablePPO.load`, for the same reason
+    constructor no longer accepts) rather than a bare load, for the same reason
     every other rollout path does: a checkpoint written one flag-deletion ago otherwise TypeErrors.
     The step is taken from the model's own ``num_timesteps`` — the authoritative number — with the
     filename as the fallback for a checkpoint that does not carry one.
     """
-    from sb3_contrib import MaskablePPO
+    from agents.model.snapshot import load_checkpoint_strict
     from agents.observation.state_encoder import load_mappings
     from main.prober.model import sanitized_load_custom_objects
 
     custom_objects, _dropped = sanitized_load_custom_objects(path, device)
-    model = MaskablePPO.load(path, env=None, device=device, custom_objects=custom_objects)
+    model = load_checkpoint_strict(path, device=device, custom_objects=custom_objects)
     model.policy.set_training_mode(False)
     compiled = False
     if compile_extractor:

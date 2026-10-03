@@ -6,10 +6,14 @@ call. Tests substitute a fake exposing the same three members
 (``action_dist``, ``logit_grad``, ``offsets``), so the engine is exercised with
 zero torch.
 
-We deliberately use raw ``MaskablePPO.load`` (no env, no
-``ModelVersion.check_compatible``) to match the legacy ``probe_replay.py`` CLI —
-this tool's job is to open ARCHIVED runs, and a compatibility gate that refuses
-them is the opposite of what a forensic tool wants.
+We deliberately load with NO env and NO ``ModelVersion.check_compatible`` (matching the legacy
+``probe_replay.py`` CLI) — this tool's job is to open ARCHIVED runs, and a compatibility gate that
+refuses them is the opposite of what a forensic tool wants. The load is ``load_checkpoint_strict``,
+a plain ``MaskablePPO`` load with sb3's non-strict "SB3 < 1.7.0" retry REFUSED
+(`gen3_strict_checkpoint_load_v1`): that retry loaded a checkpoint missing an extractor submodule's
+keys with the submodule at FRESH INIT, so a forensic read answered with a model that never played. A
+strict mismatch is a ``StrictLoadError`` and arrives here as an ``ArchDriftError`` diagnosis like every
+other failed load.
 
 **But "no gate" was not the same as "a good failure", and that gap is what
 `ArchDriftError` closes.** This project iterates the architecture continuously
@@ -391,7 +395,7 @@ class ProbeModel:
 
     @classmethod
     def load(cls, ckpt_path: str, device: str = "cpu") -> "ProbeModel":
-        from sb3_contrib import MaskablePPO
+        from agents.model.snapshot import load_checkpoint_strict
         from agents.observation.state_encoder import (
             Gen3ObservationEncoder,
             load_mappings,
@@ -407,7 +411,7 @@ class ProbeModel:
         custom_objects, dropped = sanitized_load_custom_objects(ckpt_path, device)
 
         try:
-            model = MaskablePPO.load(ckpt_path, device=device, custom_objects=custom_objects)
+            model = load_checkpoint_strict(ckpt_path, device=device, custom_objects=custom_objects)
         except Exception as exc:  # noqa: BLE001 — every failure becomes a DIAGNOSIS, not a stack trace
             raise _arch_drift_error(ckpt_path, peek, dropped, exc) from exc
         policy = model.policy

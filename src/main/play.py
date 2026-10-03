@@ -166,7 +166,7 @@ def build_account(username: Optional[str], password: Optional[str], server: str,
 def load_policy(path: str, device: str):
     """Load a checkpoint for INFERENCE — the one seam a measurement harness can replace.
 
-    A bare ``MaskablePPO.load`` rebuilds the extractor from the zip's own ``policy_kwargs``, so it
+    A plain load rebuilds the extractor from the zip's own ``policy_kwargs``, so it
     only works for a checkpoint whose flag set the CURRENT ``ExtractorBuild`` still accepts: a
     frozen snapshot from an older run in the same observation family dies here with
     ``ExtractorBuild.__init__() got an unexpected keyword argument ...``. That is correct for a
@@ -175,14 +175,15 @@ def load_policy(path: str, device: str):
     inline call. ``main.anchors`` swaps in ``agents.model.snapshot.load_foreign_opponent``, which
     verifies the ``arch_signature`` instead of trusting the kwargs.
     """
-    from sb3_contrib import MaskablePPO
-
-    from agents.model.snapshot import historical_load_kwargs
+    from agents.model.snapshot import historical_load_kwargs, load_checkpoint_strict
 
     # `historical_load_kwargs` strips the policy / extractor kwargs deleted since the checkpoint was
     # written (an ON one is REFUSED), so a current-lineage checkpoint written before a deletion
     # still plays — a ladder session plays the model it was handed or refuses it for a stated reason.
-    return MaskablePPO.load(path, env=None, device=device, **historical_load_kwargs(path))
+    # `load_checkpoint_strict` refuses sb3's non-strict retry too (`gen3_strict_checkpoint_load_v1`): a
+    # checkpoint missing an extractor submodule's keys is a `StrictLoadError`, never a model with that
+    # submodule at fresh init playing rated games.
+    return load_checkpoint_strict(path, device=device, **historical_load_kwargs(path))
 
 
 def build_model_player(args, teambuilder, server_config, account):

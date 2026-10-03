@@ -94,6 +94,26 @@ def test_a_read_inserted_key_fails_the_dump_loudly_as_sb3s_did():
         log.dump(step=1)
 
 
+def test_a_pair_of_EQUAL_LENGTH_dicts_with_different_keys_fails_the_dump_loudly(tmp_path):
+    """P10 follow-up F1 (item 5): `zip(sorted(a.items()), sorted(b.items()), strict=True)` checks LENGTHS.
+    A phantom value key (an indexing read) together with a stranded exclusion key (the values dict edited
+    on its own, as `name_to_value.clear()` does) is the SAME length, so the old writer paired the rows
+    wrongly and wrote on — here it is the same loud error naming both keys, on BOTH writers."""
+    for fmt in (TL.HumanOutputFormat(io.StringIO()), TL.TensorBoardOutputFormat(str(tmp_path / "tb"))):
+        log = TL.Logger(None, [fmt])
+        log.record("train/x", 1.0)
+        log.record("train/y", 2.0, exclude="tensorboard")
+        _ = log.name_to_value["train/phantom"]                  # a value with no `record`
+        del log.name_to_value["train/y"]                        # ... and an exclusion with no value
+        assert len(log.name_to_value) == len(log.name_to_excluded)       # the case strict-zip cannot see
+        with pytest.raises(ValueError, match=r"train/phantom.*train/y"):
+            log.dump(step=1)
+        log.name_to_value.clear()
+        log.name_to_excluded.clear()
+        log.record("train/ok", 3.0)
+        log.dump(step=2)                                         # a consistent bus still dumps
+
+
 def test_configure_serves_stdout_and_tensorboard_only(tmp_path, capsys):
     null = TL.configure(None, [])
     null.record("a/b", 1.0)

@@ -171,8 +171,8 @@ class _CounterfactualMixin:
         says it played — **stochastic** at temp 1.0, matching ``eval_worker``'s sentinels — unless
         ``opponent_stochastic`` overrides it. **Requires the trace's ``*_reconstruction.json``
         sibling.**"""
-        from sb3_contrib import MaskablePPO
         from poke_env.ps_client import LocalhostServerConfiguration
+        from agents.model.snapshot import load_checkpoint_strict
         from agents.observation.state_encoder import load_mappings
         from main.prober.replay import replay_counterfactual_battle
         from utils.bridge.reconstruction import ReconstructionRecord
@@ -202,7 +202,7 @@ class _CounterfactualMixin:
                 # better-line, lookahead). Same sanitizer ProbeModel.load uses.
                 from main.prober.model import sanitized_load_custom_objects
                 custom_objects, _dropped = sanitized_load_custom_objects(path, "cpu")
-                m = MaskablePPO.load(path, env=None, device="cpu", custom_objects=custom_objects)
+                m = load_checkpoint_strict(path, device="cpu", custom_objects=custom_objects)
                 m.policy.set_training_mode(False)
                 # These models are used ONLY for no-grad rollouts (better-line's beam,
                 # replay-counterfactual's Monte-Carlo re-rolls, falsify's paired sweeps) — thousands

@@ -238,12 +238,16 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
         for r in plan.routes():
             if r.team_strs:
                 route_builders[r.index] = pinned_builder(r.team_strs)
+        # device="cpu" (gen3_declared_slot_load_v1, P10 follow-up F1): a stable / exploiter opponent is only a
+        # WEIGHT SOURCE — T2 copies it into its declared slot (a group template, then `svc.load`) and nothing
+        # reads the policy again. Loaded on the card it stayed there for the run, a duplicate of its slot
+        # (`OpponentSources.policy_for` refuses a source on the card, as it does the pool's).
         for e in (fixed_opponents or ()):
-            m, _ = load_foreign_opponent(e.zip_path, current_version=opponent_version, device=device,
+            m, _ = load_foreign_opponent(e.zip_path, current_version=opponent_version, device="cpu",
                                          config_path=e.config_path)
             sources.stable[e.label] = m.policy.eval()
         if exploiter_entry is not None:
-            m, _ = load_foreign_opponent(exploiter_entry.zip_path, current_version=opponent_version, device=device,
+            m, _ = load_foreign_opponent(exploiter_entry.zip_path, current_version=opponent_version, device="cpu",
                                          config_path=exploiter_entry.config_path)
             sources.exploiter = m.policy.eval()
         model.behaviour_check = args.behaviour_check

@@ -136,7 +136,8 @@ vendored from sb3 operation for operation (hash-pinned). **PPO stage 3 (deletion
 sb3's RUNTIME off it — each owned module holds sb3's arithmetic for our one layout and REFUSES any other:**
 the rollout buffer (`rollout_buffer.py`, `gen3_owned_rollout_buffer_v1`: host numpy, sb3's `get()`
 permutation — the K9 golden is its bar), the logger (`train_logger.py`, `gen3_owned_logger_v1`: the same
-tags, steps, stdout table and `name_to_value` bus), the callback protocol (`loop_callbacks.py`,
+tags, steps, stdout table and `name_to_value` bus; its writers pair values with exclusions KEY FOR KEY —
+`paired()` raises on a key only one side holds, where sb3's `zip(strict=True)` checked lengths only), the callback protocol (`loop_callbacks.py`,
 `gen3_owned_callbacks_v1`: declared events, and the per-step locals declared in `STEP_LOCALS` — an
 undeclared key, an sb3 callback or a bare function is refused) and the env base (`trainer_env.py`: the
 learner's env must be a `TrainerVecEnv` — `RustVecEnv`, or `testkit.ToyVecEnv` in a test). The
@@ -358,7 +359,12 @@ state reconstructed from `<run_dir>/snapshots/` on every restart — no manifest
 eval cycles exits `FATAL_SUPPLY` (§ above). 🚨 **`max_snapshots` holds on EVERY path that
 populates the pool, a directory SCAN included** (`gen3_pool_cap_every_path_v1`): a scan applies the add
 path's eviction order, only the trainer's `owns_dir` pool deletes what it evicts, and a pool still over
-its cap raises `PoolOverCapError`.
+its cap raises `PoolOverCapError`. 🚨 **The pool's `model_config.json` is a WRITE-ONCE ARCH RECORD**
+(`SnapshotPool._record_arch`, `gen3_pool_arch_record_v1`): a snapshot zip carries no `ModelVersion`, so
+the record is the only witness of what the pool was written under. It used to be REWRITTEN with the live
+version on every add, so after the first promotion every `load_opponent_snapshot` check compared the run
+with itself. Now it is written when absent, checked against the live version BEFORE every add (a
+`ModelVersionError`, nothing written) and never rewritten.
 **Full detail — in [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md).**
 
 ## WHICH FILE a run spec names — the ONE resolution rule (`gen3_last_snapshot_resolution_v1`)
@@ -846,10 +852,16 @@ opponents, exploiter targets, `main.anchors`, the offline readers) is an
 no rollout buffer. It refuses `learn` / `train` / `save`. Before this fix a pool load after the freeze
 pre-stepped a ride-along Adam, and K6 FATALed the X26 launch at its first pool seeding. An opponent may
 differ from the trainee ONLY in the declared ride-along keys (`RIDEALONG_FLAGS`), in either direction
-(F-MEM); the trainee's own resume stays strict. 🚨 **Every learner and opponent load is STRICT on state-dict
-keys** (`gen3_strict_checkpoint_load_v1`): `OwnedLoop.set_parameters` refuses sb3's non-strict "SB3 < 1.7.0"
-retry (`StrictLoadError`), which used to load a checkpoint missing an extractor submodule with that
-submodule at fresh init. Detail: `designs/training/learner_lifecycle.md`. The step is
+(F-MEM); the trainee's own resume stays strict. 🚨 **Every checkpoint load is STRICT on state-dict
+keys** (`gen3_strict_checkpoint_load_v1`): `StrictCheckpointLoad.set_parameters`
+(`instrumented_ppo/strict_load.py`; `OwnedLoop` inherits it, so the learner and the opponent classes
+carry it) refuses sb3's non-strict "SB3 < 1.7.0" retry (`StrictLoadError`), which used to load a
+checkpoint missing an extractor submodule with that submodule at fresh init. The READERS (the ladder
+session `play.py`, the prober, the eval worker, the offline meters, `winprob_finetune`) load through
+`agents.model.snapshot.load_checkpoint_strict` — a `StrictMaskablePPO`, a plain `MaskablePPO` with only
+that `set_parameters` — and `src/strict_checkpoint_load_gate_test.py` fails a bare `MaskablePPO.load` /
+`PPO.load`, an `exact_match=False`, or an sb3-algorithm subclass without the mixin (EMPTY allowlist).
+Detail: `designs/training/learner_lifecycle.md`. The step is
 K8's candidate compile region R-ride; it stays eager. **The RND variants**
 (`--ridealong-rnd-variants all`, v127: `fast` / `decay` / `small` / `feat`, beside the unchanged base
 RND) each step on their own Adam after the four heads. A non-finite variant disables ITSELF

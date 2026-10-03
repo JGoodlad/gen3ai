@@ -23,6 +23,33 @@ def test_the_rust_core_pool_loads_its_snapshots_on_the_CPU():
     assert 'device="cpu"' in src[i:i + 200], src[i:i + 200]
 
 
+def test_the_rust_core_loads_its_stable_and_exploiter_opponents_on_the_CPU():
+    """P10 follow-up F1: a stable / exploiter opponent is a weight source T2 copies into its slot; loaded on
+    the card it stayed there for the run beside that slot. Every `load_foreign_opponent` in `rust_env_setup`
+    (the stable loop, the exploiter) names `device="cpu"`."""
+    import ast
+
+    from main.train import rust_env_setup
+    tree = ast.parse(inspect.getsource(rust_env_setup))
+    calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+             and getattr(n.func, "id", getattr(n.func, "attr", "")) == "load_foreign_opponent"]
+    assert len(calls) == 2, "the stable loop and the exploiter — a new load site needs this test's attention"
+    for c in calls:
+        dev = {k.arg: k.value for k in c.keywords}.get("device")
+        assert isinstance(dev, ast.Constant) and dev.value == "cpu", ast.dump(c)
+
+
+@pytest.mark.parametrize("model_id", ["stable:a", "exploiter:target"])
+def test_a_stable_or_exploiter_weight_source_on_the_card_is_REFUSED(model_id):
+    """The pool's refusal now covers EVERY source (`OpponentSources._require_cpu`): a stable / exploiter
+    policy on the card is a duplicate of its slot for the whole run."""
+    cpu = torch.nn.Linear(2, 2, device="cpu")
+    assert B.OpponentSources(stable={"a": cpu}, exploiter=cpu).policy_for(model_id) is cpu
+    card = torch.nn.Linear(2, 2, device="meta")                   # any non-CPU device
+    with pytest.raises(LazyAcquisitionError, match="must stay on the CPU"):
+        B.OpponentSources(stable={"a": card}, exploiter=card).policy_for(model_id)
+
+
 def _sources(device):
     pol = torch.nn.Linear(2, 2, device=device)
     pol.eval = lambda: pol

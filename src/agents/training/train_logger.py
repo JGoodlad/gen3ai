@@ -17,9 +17,13 @@ NAME — ``main.ops.killbar`` / ``tb_read`` / ``restart_startup`` / ``stall_exhi
 ``format.py``, ``utils/plot_tb.py``, ``tb_curate`` / ``tb_inherit`` — read the event files, never this
 class.
 
-The writer pairs ``sorted(name_to_value)`` with ``sorted(name_to_excluded)`` STRICTLY, as sb3 did: a key
-that reaches ``name_to_value`` without ``record`` (an indexing READ of the defaultdict inserts 0.0) fails
-the dump loudly instead of writing a phantom 0.
+The writers pair ``name_to_value`` with ``name_to_excluded`` KEY FOR KEY (:func:`paired`): the two key
+sets must be EQUAL, or the dump raises ``ValueError`` naming the keys that are in one and not the other.
+A key that reaches ``name_to_value`` without ``record`` (an indexing READ of the defaultdict inserts 0.0)
+fails the dump loudly instead of writing a phantom 0. sb3 paired the two sorted lists with
+``zip(strict=True)``, which checks LENGTHS only — a phantom value key plus a stranded exclusion key
+(one dict edited without the other) is the same length, pairs the wrong rows and drops or keeps a value
+under another key's exclusion; here that is the same loud error (P10 follow-up F1, item 5).
 """
 from __future__ import annotations
 
@@ -40,6 +44,22 @@ FORMATS = ("stdout", "tensorboard")
 Excluded = Tuple[str, ...]
 
 
+def paired(key_values: Dict[str, Any], key_excluded: Dict[str, Excluded]) -> List[Tuple[str, Any, Excluded]]:
+    """``(key, value, exclusion)`` in sorted key order — and the two dicts' KEY SETS must be equal.
+
+    ``ValueError`` otherwise, naming the keys only one side holds. (``zip(..., strict=True)`` over the two
+    sorted item lists checks only that they are the same LENGTH.)"""
+    only_value = sorted(set(key_values) - set(key_excluded))
+    only_excluded = sorted(set(key_excluded) - set(key_values))
+    if only_value or only_excluded:
+        raise ValueError(
+            "the logger's pending values and exclusions do not pair key for key: "
+            f"{len(only_value)} key(s) hold a value with no `record` (an indexing READ of the "
+            f"name_to_value defaultdict inserts one): {only_value[:5]}; {len(only_excluded)} key(s) hold an "
+            f"exclusion with no value: {only_excluded[:5]}")
+    return [(k, key_values[k], key_excluded[k]) for k in sorted(key_values)]
+
+
 class HumanOutputFormat:
     """The stdout table: ``| key | value |`` rows grouped under their ``tag/`` (sb3's, text for text)."""
 
@@ -50,7 +70,7 @@ class HumanOutputFormat:
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Excluded], step: int = 0) -> None:
         key2str: Dict[Tuple[str, str], str] = {}
         tag = ""
-        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items()), strict=True):
+        for key, value, excluded in paired(key_values, key_excluded):
             if excluded is not None and ("stdout" in excluded or "log" in excluded):
                 continue
             elif isinstance(value, float):
@@ -107,7 +127,7 @@ class TensorBoardOutputFormat:
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Excluded], step: int = 0) -> None:
         assert not self._is_closed, "The SummaryWriter was closed, please re-create one."
-        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items()), strict=True):
+        for key, value, excluded in paired(key_values, key_excluded):
             if excluded is not None and "tensorboard" in excluded:
                 continue
             if isinstance(value, np.ScalarType):

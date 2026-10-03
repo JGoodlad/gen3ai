@@ -769,12 +769,11 @@ def graft_into_checkpoint(subject_zip: str, head_ckpt_path: str, out_zip: str,
     import shutil
 
     import torch
-    from sb3_contrib import MaskablePPO
-
+    from agents.model.snapshot import load_checkpoint_strict
     from main.prober.model import sanitized_load_custom_objects
 
     custom_objects, _dropped = sanitized_load_custom_objects(subject_zip, device)
-    model = MaskablePPO.load(subject_zip, device=device, custom_objects=custom_objects)
+    model = load_checkpoint_strict(subject_zip, device=device, custom_objects=custom_objects)
     head = getattr(model.policy.features_extractor, "win_head", None)
     if head is None:
         raise ValueError("subject checkpoint carries no win_head — nothing to graft")
@@ -790,7 +789,7 @@ def graft_into_checkpoint(subject_zip: str, head_ckpt_path: str, out_zip: str,
             shutil.copyfile(src, os.path.join(os.path.dirname(os.path.abspath(out_zip)), sib))
 
     co2, _ = sanitized_load_custom_objects(out_zip, device)
-    reloaded = MaskablePPO.load(out_zip, device=device, custom_objects=co2)
+    reloaded = load_checkpoint_strict(out_zip, device=device, custom_objects=co2)
     got = reloaded.policy.features_extractor.win_head.state_dict()
     for k, v in want.items():
         if not torch.equal(got[k].cpu(), v.cpu()):

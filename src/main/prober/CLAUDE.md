@@ -87,7 +87,10 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   | `taxonomy.py` | loss attribution: the turning-point category table |
   | `probes.py` | representation probing (`fit_probe`) |
 - **`model.py`** — `ProbeModel`: the torch boundary, and the ONLY place a forward or backward runs.
-  `load(ckpt)` does a raw `MaskablePPO.load` (no env, no `ModelVersion` check), resolves `ObsOffsets`
+  `load(ckpt)` does a plain strict load (`snapshot.load_checkpoint_strict` — no env, no `ModelVersion`
+  check; sb3's non-strict "SB3 < 1.7.0" retry is REFUSED, `gen3_strict_checkpoint_load_v1`, so a checkpoint
+  missing an extractor submodule is an `ArchDriftError` diagnosis, never a model with that submodule at
+  fresh init), resolves `ObsOffsets`
   once from `enc.get_layout()`, and raises
   `ArchDriftError` on a stale checkpoint. `action_dist` / `logit_grad` are the forward/backward pair;
   `belief`, `damage_op_view`, `move_belief`, `win_prob_at` and `architecture()` each

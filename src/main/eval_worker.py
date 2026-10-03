@@ -47,12 +47,11 @@ import functools
 import traceback
 from datetime import datetime
 
-from sb3_contrib import MaskablePPO
 from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
 from poke_env.ps_client.server_configuration import localhost_server_configuration
 
 from agents.inference.player import RLPlayer
-from agents.model.snapshot import (current_model_version, load_opponent_snapshot,
+from agents.model.snapshot import (current_model_version, load_checkpoint_strict, load_opponent_snapshot,
                                    load_foreign_opponent, maybe_compile_extractor)
 from agents.observation.state_encoder import load_mappings
 from agents.training.eval_callback import (
@@ -496,7 +495,7 @@ def _run(cfg: dict) -> None:
     cycle_tag = cfg["cycle_tag"]
 
     # Frozen trainee weights — inference only, so the base algorithm + env=None is enough.
-    model = MaskablePPO.load(cfg["snapshot"], env=None, device=device)
+    model = load_checkpoint_strict(cfg["snapshot"], device=device)
     # The trainee plays EVERY eval game, so it is the hottest forward in this process. Same frozen
     # CPU B=1 shape as a training opponent => the same ~6.5x. Unlike an env worker this is a fresh
     # `Popen`d process (not forked from the trainer's forkserver), so it cannot inherit a compiled

@@ -275,7 +275,7 @@ def _pin_blas() -> None:
 
 
 def _load_model(path: str, device: str):
-    from sb3_contrib import MaskablePPO
+    from agents.model.snapshot import load_checkpoint_strict
     from main.prober.model import sanitized_load_custom_objects
 
     ckpt = path
@@ -286,7 +286,7 @@ def _load_model(path: str, device: str):
         else:
             raise SystemExit(f"{path} has no latest.txt — pass a checkpoint .zip directly")
     custom_objects, dropped = sanitized_load_custom_objects(ckpt, device)
-    model = MaskablePPO.load(ckpt, env=None, device=device, custom_objects=custom_objects)
+    model = load_checkpoint_strict(ckpt, device=device, custom_objects=custom_objects)
     model.policy.set_training_mode(False)
     if dropped:
         print(f"[search_dividend] dropped saved extractor kwargs: {sorted(dropped)}",

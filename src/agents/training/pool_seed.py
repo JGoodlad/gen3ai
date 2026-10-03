@@ -34,10 +34,15 @@ the pool's loader reads out of its own directory):
 ``win_rate_vs_bots.txt``         ``_WIN_RATE_FILE`` — the legacy single-float fallback
                                  ``load_persisted_win_rate`` reads when ``summary.json`` has no
                                  ``win_rate_vs_bots`` key.
-``model_config.json``            NOT read by ``SnapshotPool`` itself: ``load_model_snapshot``
-                                 looks for it beside the ``.zip`` and then one directory up, so
-                                 without it every pool opponent silently arch-checks against the
-                                 RUN ROOT's config instead of the pool's own.
+``model_config.json``            the pool's ARCH RECORD — WRITE-ONCE (``SnapshotPool._record_arch``,
+                                 `gen3_pool_arch_record_v1`): ``load_opponent_snapshot`` looks for
+                                 it beside the ``.zip`` and then one directory up, so without it
+                                 every pool opponent silently arch-checks against the RUN ROOT's
+                                 config instead of the pool's own. The parent's record travels with
+                                 its snapshots, and the fork's FIRST add checks the fork's version
+                                 against it (a ``ModelVersionError``, nothing written) and never
+                                 rewrites it, so the parent's snapshots stay checked against what
+                                 they were written under.
 ===============================  ===============================================================
 
 Nothing else in the pool directory is read, and there is no manifest — that is the whole reason

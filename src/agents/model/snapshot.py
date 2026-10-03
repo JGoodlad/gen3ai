@@ -13,6 +13,7 @@ from agents.model.damage_tables import _PRIOR_FLOOR, sanitize_historical_move_fl
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.training.instrumented_ppo.inference import InferenceMaskablePPO
+from agents.training.instrumented_ppo.strict_load import StrictMaskablePPO
 from utils.git import get_git_hash
 
 #: The launcher exports its chosen pin here; every git_hash written for a run reads it.
@@ -1246,6 +1247,31 @@ def historical_load_kwargs(zip_path: str) -> dict:
     kwargs: dict = {}
     _patch_historical_floor(zip_path, kwargs)
     return kwargs
+
+
+def load_checkpoint_strict(path: str, *, device: str = "cpu",
+                           custom_objects: Optional[Dict[str, Any]] = None) -> "MaskablePPO":
+    """THE loader for every READER of a checkpoint that is neither the trainee's resume
+    (``load_model_snapshot``) nor an opponent (``load_opponent_snapshot`` / ``load_foreign_opponent``):
+    the ladder session (``play.py``), the prober, the eval worker, the offline meters, the fine-tune
+    graft (`gen3_strict_checkpoint_load_v1`, P10 follow-up F1).
+
+    A bare ``MaskablePPO.load`` retries with ``exact_match=False`` whenever the strict error names
+    ``pi_features_extractor`` — any missing extractor key does, through the alias — and loads the rest
+    with that submodule at FRESH INIT behind one warning (P10 F4). This builds a ``StrictMaskablePPO``,
+    a plain ``MaskablePPO`` whose ``set_parameters`` is always strict (the SAME mixin the learner and the
+    opponent classes carry), so such a checkpoint is a typed ``StrictLoadError``. Nothing else differs
+    from a bare load (the optimizer is built, the seed applied, ``save`` works): a caller that wants a
+    policy-only model uses ``load_foreign_opponent``.
+
+    ``custom_objects`` is the caller's sanitizer's output (``historical_load_kwargs`` for a ladder
+    session, the prober's ``sanitized_load_custom_objects`` for a forensic read). No module outside
+    the strict classes calls ``MaskablePPO.load`` / ``PPO.load``: ``strict_checkpoint_load_gate_test``
+    fails one, with an empty allowlist."""
+    kwargs: Dict[str, Any] = {"env": None, "device": device}
+    if custom_objects:
+        kwargs["custom_objects"] = custom_objects
+    return StrictMaskablePPO.load(path, **kwargs)
 
 
 def load_foreign_opponent(
