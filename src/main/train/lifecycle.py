@@ -74,12 +74,20 @@ def _maybe_compile_trainer(model, args) -> None:
                                                preflight_compile_trainer)
     try:
         if getattr(args, "compile_trainer", False):
-            # Decidable at startup, so decide it at startup: a config that would feed the compiled
-            # extractor an unbounded set of batch shapes ends in a SILENT eager fallback.
+            # Decidable at startup, so decide it at startup: an update that does not divide into full
+            # micro-batches would hand the one compiled learner graph a second, undeclared shape (the
+            # collector refuses it at the first buffer build; this refuses it before the model
+            # compiles). The REAL update size: the model's own n_steps / batch_size (a resume restores
+            # the checkpoint's, so the argv's are inert there) with the argv's trigger and target
+            # (P10-E, F9 — it used to judge n_steps * n_envs, which the target overrides).
+            from main.train.compile_flags import update_rows_for
             check_shape_stability(
-                n_steps=int(getattr(args, "n_steps", 0) or 0),
-                n_envs=int(getattr(args, "n_envs", 0) or 0),
-                batch_size=int(getattr(args, "batch_size", 0) or 0),
+                update_rows=update_rows_for(
+                    rollout_trigger=getattr(args, "rollout_trigger", None),
+                    rollout_target_samples=getattr(args, "rollout_target_samples", 0),
+                    n_steps=int(getattr(model, "n_steps", None) or getattr(args, "n_steps", 0) or 0),
+                    n_envs=int(getattr(model, "n_envs", None) or getattr(args, "n_envs", 0) or 0)),
+                batch_size=int(getattr(model, "batch_size", None) or getattr(args, "batch_size", 0) or 0),
             )
         # `send_event`, NOT `emit`: emit() falls back to print() when there is no launcher pipe, and
         # compile_trainer already prints to stdout — so passing emit duplicated every line in a
@@ -94,8 +102,8 @@ def _maybe_compile_trainer(model, args) -> None:
 
 def _arm_compile_sentinel(model, args) -> None:
     """gen3_compile_sentinel_v1 — `agents.model.compile_control`'s phases for a compiled learner:
-    reset dynamo, install + gate the DECLARED REGIONS (R0, R1), prewarm every declared signature,
-    lock, and attach the per-rollout / per-update checks.
+    reset dynamo, install + gate the DECLARED REGION (R1, the micro-step), prewarm its declared
+    signature, lock, and attach the per-rollout / per-update checks.
 
     Placed AFTER `_apply_grad_checkpointing` (the forward reads that attribute, so anything compiled
     before it is a stale cache entry) and before `learn()`. No-op when the learner is not compiled.
@@ -104,8 +112,7 @@ def _arm_compile_sentinel(model, args) -> None:
     if not getattr(args, "compile_trainer", False):
         return
     try:
-        arm_compile_sentinel(model, n_envs=int(getattr(model, "n_envs", 0) or args.n_envs),
-                             batch_size=int(model.batch_size), emit=send_event)
+        arm_compile_sentinel(model, batch_size=int(model.batch_size), emit=send_event)
     except CompileTrainerError as exc:
         print(f"\n[CompileSentinel] FATAL: {exc}", file=sys.stderr, flush=True)
         send_event(f"[CompileSentinel] FATAL: {exc}")

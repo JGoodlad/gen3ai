@@ -65,11 +65,16 @@ def test_arm_Cs_trained_weights_pass_the_R1_gate_at_fp32_on_cuda(clean_dynamo):
     model.device = dev
     model.rollout_buffer.device = dev
     torch.set_float32_matmul_precision("highest")
+    # R1's declared signature is the MODEL's batch size (`install` reads it) and the gate below judges
+    # 2048 rows: they must agree. (The golden's 16 made every gate call a "ragged" one, which took a
+    # silent EAGER route — this test compared eager with eager until that route was deleted,
+    # `gen3_r1_no_ragged_v1`.)
+    model.batch_size = 2048
     cc.control().install()
     cr.install(model)
     try:
         assert cr.weights_regime(model) == "trained"
-        rules = cr.gate_regions(model, n_envs=48, batch_size=2048, say=lambda _m: None)
+        rules = cr.gate_regions(model, batch_size=2048, say=lambda _m: None)
         assert any(r.startswith("R1 [trained weights]") for r in rules), rules
     finally:
         cr.uninstall(model)

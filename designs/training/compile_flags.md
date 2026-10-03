@@ -525,9 +525,9 @@ the T32b read found it futile (+2.48 % GPU time per step, ledger 2026-10-01). Wh
 `torch.compile`s the LEARNER — the CUDA forward **and backward** the PPO step runs. The other half of
 the pair above, and the larger of the two.
 
-> **WHAT SHIPS NOW (2026-10-02, deletion pass K1).** The learner compiles ONLY as its DECLARED
-> REGIONS — R0 the rollout core, R1 the micro-step (K8 below) — installed, gated, prewarmed and
-> locked by `compile_trainer.arm_compile_sentinel`; the trainer's earlier compile step
+> **WHAT SHIPS NOW (2026-10-02, deletion pass K1; the rollout region R0 deleted 2026-10-03, P10-E).**
+> The learner compiles ONLY as its DECLARED REGION — R1 the micro-step (K8 below) — installed, gated,
+> prewarmed and locked by `compile_trainer.arm_compile_sentinel`; the trainer's earlier compile step
 > (`preflight_compile_trainer`) compiles nothing and only refuses a learner the regions cannot serve.
 > HEAD runs **torch >= 2.8 only** (`utils/torch_floor.py`: the trainer exits `FATAL_CONFIG` on an
 > older torch). The torch-2.5.1 extractor-only compile, its startup parity gate (speed refusal, probe
@@ -555,8 +555,8 @@ that. **The REFUSAL is unchanged**: an explicit `--compile-trainer --device cpu`
 `FATAL_CONFIG` with the same message. `--no-compile-trainer` is the opt-out.
 
 **⚠️ The device is only HALF the auto default, and the other half is easy to miss.**
-`check_shape_stability` (below) refuses a rollout that does not divide by
-`--batch-size` — correct for someone who ASKED for the compile, and fatal for a DEFAULT,
+`check_shape_stability` (below) refuses an UPDATE (the real size: `--rollout-target-samples`, else
+`n_steps * n_envs`) that does not divide by `--batch-size` — correct for someone who ASKED for the compile, and fatal for a DEFAULT,
 because it would convert a class of command that works today into a startup `FATAL_CONFIG`. (It also refused the async-rollout collector until that collector was deleted, U3.)
 So `resolve_compile_trainer_auto` runs those same checks and, on a refusal, **leaves the default OFF
 and says why** rather than refusing to launch:
@@ -801,27 +801,21 @@ probe, revert `donated_buffer` ⇒ the probe raised — was DELETED with that pi
 forced; the routine `compile_regions_test` runs two real updates through R1 on CPU with the pin in
 force, which is not the same revert-must-fail.)
 
-**Batch 1 never reaches a compiled learner graph (`gen3_batch1_eager_v1`, 2026-09-30, Lane K).**
+**Batch 1 never reached a compiled learner graph (`gen3_batch1_eager_v1`, 2026-09-30, Lane K) — HISTORY;
+the route and the region it guarded are DELETED (P10-E, 2026-10-03).**
 The K1 finding: on torch 2.8.0+cu126 a **batch-1 CUDA eval/no-grad** graph of the production extractor
 fails to LOWER — Triton `CompilationError` (`'constexpr_type' object has no attribute 'is_block'` on a
-fully-constant `tl.broadcast_to` index); batch 2 and 4 compile. Batch 1 reaches the learner process
-only off the hot path (a `--debug` single-env rollout; the trainer's in-process final evaluation, DELETED in P6 — historical at the 2026-09-30 smoke below). The rule
-today: region R0's dispatcher (`compile_regions._make_r0`) runs a batch in
-`compile_trainer.EAGER_BATCHES` (= {1}) through the EAGER rollout core, every other batch through the
-compiled one; the batch test is Python, outside the graph, and the declared signature table
-(`compile_regions.prewarm_calls`) holds NO batch-1 signature. Rejected: padding batch 1 to 2 (every
-per-forward extractor stash would have to be sliced back to one row). Cost: ~18 ms per batch-1
-forward, eager. Pinned by `compile_regions_test` (a batch-1 call compiles nothing after the lock,
-CPU). (Until 2026-10-02 the extractor-only compile routed batch 1 the same way, pinned on CUDA by
-`compile_batch1_cuda_test`, deleted with it; MEASURED 2026-09-30, RTX 3080 Ti, torch 2.8.0+cu126:
-the batch-1 call equalled eager bit-for-bit, and reverting the routing raised the
-`CompilationError`.) SMOKE (2026-09-30, the same
-GPU, torch 2.8.0+cu126, `--device cuda --compile-trainer --arch production --steps 256 --n-envs 2
---n-steps 64 --batch-size 64 --n-epochs 2 --eval-battles 2`, a flag deleted with the final evaluation): parity gate PASS → prewarm → lock →
-two iterations with 0 compiles after the lock → `Training complete` → the in-process FINAL
-EVALUATION (deleted since) at batch 1 ran all 18 games (`Final aggregate win rate: 11.1%`), exit 0
-(`~/gen3ai_archive/k6_k8/smoke28_b1.log`). Before the fix that call was the batch-1 CUDA compile the
-reverted-routing test shows raising.
+fully-constant `tl.broadcast_to` index); batch 2 and 4 compile. Region R0's dispatcher
+(`compile_regions._make_r0`) ran a batch in `compile_trainer.EAGER_BATCHES` (= {1}) through the EAGER
+rollout core and every other batch through the compiled one. R0 itself is gone (K8 below: the Rust
+collector serves rollouts through T2, so the learner process never called it), and with it
+`EAGER_BATCHES`, the dispatcher and `install_rollout_region`: the learner's `policy.forward` /
+`rollout_core` are eager at EVERY batch (`predict`-class callers), so there is no batch-1 route to
+declare and no batch-1 CUDA graph to lower. Measured then (RTX 3080 Ti, torch 2.8.0+cu126): the batch-1
+call equalled eager bit-for-bit, and reverting the routing raised the `CompilationError`; the 2026-09-30
+smoke (`~/gen3ai_archive/k6_k8/smoke28_b1.log`) ran gate → prewarm → lock → two iterations with 0 compiles
+after the lock. `compile_regions_test` now pins that an eager rollout forward at every batch (4 and 1)
+takes no region route and compiles nothing after the lock.
 
 ### The startup parity gate (`gen3_compile_parity_real_obs_v1`)
 
@@ -967,15 +961,26 @@ two-shape case work rather than being the hazard.
 
 The actual hazard is dynamo's **`cache_size_limit` (8)**: exceed it for one code object and dynamo
 falls back to **eager SILENTLY** — precisely the invisible ~1.75x regression this flag exists to
-prevent. One config gets there, decidable before training starts, and is now fatal
-(`check_shape_stability`, pure and unit-tested; its async-rollout rule left with the async collector, U3):
+prevent. One config gets there, decidable before training starts, and is fatal
+(`check_shape_stability`, pure and unit-tested; its async-rollout rule left with the async collector,
+U3; it judges the REAL update size since P10-E, F9):
 
 | refused | why |
 |---|---|
-| `n_steps*n_envs` not divisible by `batch_size` | the remainder minibatch is a THIRD shape, replayed every epoch, for no benefit. The error names a concrete divisor to use instead rather than leaving you to do arithmetic |
+| the UPDATE size (`--rollout-target-samples` under the complete-game trigger, `n_steps * n_envs` when it is 0 or under the window trigger — `rust_rollout.trigger.update_rows`, `main.train.compile_flags.update_rows_for`) not divisible by `batch_size` | the remainder micro-batch is a SECOND shape the one compiled R1 graph does not declare, replayed every epoch. The error names a concrete divisor to use instead rather than leaving you to do arithmetic |
 
-Production is safe by arithmetic — 2048x48 = 98304 = 24 x 4096 exactly, so exactly two shapes — but
-that was luck of the config until these guards existed.
+The check used to take `n_steps * n_envs`, which `--rollout-target-samples` overrides (the production
+recipe sets the target independently): a valid run — target divides, the product does not — had
+`--compile-trainer` QUIETLY switched off by the auto default, and an invalid one — the product
+divides, the target does not — passed this and died at the first buffer build. `_maybe_compile_trainer`
+reads the MODEL's own `n_steps` / `batch_size` / `n_envs` when it has them (a resume restores the
+checkpoint's; the argv's are inert), with the argv's trigger and target. It is decided at startup and
+backed by two runtime refusals — `RustCollector._ensure_buffer` (every buffer build, both triggers) and
+R1's dispatcher (one declared row count) — so a ragged micro-batch can neither reach the compiled
+graph nor run eager (`gen3_r1_no_ragged_v1`).
+
+Production is safe by arithmetic — the 98,304-row update (`rollout_target_samples` 98,304) = 48 x 2048
+exactly, so exactly one micro-batch shape — but that was luck of the config until these guards existed.
 
 ⚠️ **The validation runs at a SMALL batch on a ZERO observation, and both halves are load-bearing.**
 
@@ -1010,7 +1015,7 @@ conditional on a launcher being attached.
 **Mechanics.** Never compiles the module: `torch.compile(module)` returns an `OptimizedModule` and
 prefixes every `state_dict` key with `_orig_mod.`, which would land in every checkpoint of the run and
 make them unloadable by anything else. The regions compile FUNCTIONS over the module and are stored
-off it (`model._compiled_micro_step`, the weak `policy._ROLLOUT_REGIONS` registry). **Runtime perf knob**: never versioned, never in `check_compatible`, NOT
+off it (`model._compiled_micro_step`; the weak `policy._ROLLOUT_REGIONS` registry of the deleted R0 is gone too). **Runtime perf knob**: never versioned, never in `check_compatible`, NOT
 inherited on resume — but with the AUTO default that means a flagless cuda resume gets it ON, so it
 is `--no-compile-trainer` you re-pass each launch, not the flag.
 
@@ -1037,12 +1042,12 @@ Two failures were silent before it:
 
 | phase | where | what |
 |---|---|---|
-| 1 `gate()` | (none on the learner since the extractor-only gate's deletion, 2026-10-02) | a startup parity gate compiles FREELY inside it; the cache-limit detector already listens (a hit here is fatal too) |
-| 2 `reset()` | `_arm_compile_sentinel`, after `_apply_grad_checkpointing` | `torch._dynamo.reset()` — drops any graph compiled before the regions |
-| 3 `prewarm(calls)` | same, after the regions' install + gate | runs every DECLARED signature NOW (`compile_regions.prewarm_calls`), RNG-neutral (`fork_rng`), gradients zeroed |
-| 4 `lock(where)` | **the end of startup** — `arm_compile_sentinel`, right after the prewarm, BEFORE the first real iteration (K6, 2026-09-30; was: the end of the first `train()`, which absorbed whatever iteration 1 compiled — see below) | the `fail_on_recompile` stance (torch 2.8; 2.5.1's `error_on_recompile` mode was deleted 2026-10-02) + a compile-START callback counting every frame compile. `🧊 [COMPILE LOCK] …` states the per-code-object entry count and the headroom to the limit. A rejection is a typed FATAL that NAMES the failing guard(s) (`UNDECLARED SIGNATURE — the failing guard(s): …`): 2.5.1's `RecompileError` lists them; on 2.8 the stance's rejection says nothing, so the sentinel replays the call ONCE under `error_on_recompile` to read them |
-| — `release(why)` | when `learn()` returns or raises | the lock's scope is TRAINING: the trainer's FINAL EVALUATION runs in-process on the same model (batch 1 / no-grad — routed EAGER since `gen3_batch1_eager_v1`; a smaller obs key set elsewhere) — new signatures by design. MEASURED on the real trainer (the end-to-end smoke below): a still-locked sentinel broke it with `RecompileError`. Prints `🧊 [COMPILE LOCK] released …` with the post-lock compile count (must be 0) |
-| 5 `stats()` | every update | TB `compile/graphs_total`, `compile/recompiles_after_lock` (**must stay 0**), `compile/cache_limit_hits`, `compile/max_cache_entries_per_code`, `compile/locked`, `compile/regression_flag`, `compile/train_ms_vs_lock_baseline` |
+| 1 `reset()` | `_arm_compile_sentinel`, after `_apply_grad_checkpointing` | `torch._dynamo.reset()` — drops any graph compiled before the region is installed; the log line names how many cache entries it dropped (it read a stale "dropped 0" from a `gate()` only tests called until P10-E, which deleted `gate()` and its `entries_after_gate`) |
+| (the startup gate) | `compile_regions.gate_regions`, after the install | R1 compiled vs eager on real rows; compiles freely (the cache-limit detector already listens, a hit here is fatal too); its graph is the one the prewarm then hits |
+| 2 `prewarm(calls)` | same, after the region's install + gate | runs every DECLARED signature NOW (`compile_regions.prewarm_calls`: R1's), RNG-neutral (`fork_rng`), gradients zeroed |
+| 3 `lock(where)` | **the end of startup** — `arm_compile_sentinel`, right after the prewarm, BEFORE the first real iteration (K6, 2026-09-30; was: the end of the first `train()`, which absorbed whatever iteration 1 compiled — see below) | the `fail_on_recompile` stance (torch 2.8; 2.5.1's `error_on_recompile` mode was deleted 2026-10-02) + a compile-START callback counting every frame compile. `🧊 [COMPILE LOCK] …` states the per-code-object entry count and the headroom to the limit. A rejection is a typed FATAL that NAMES the failing guard(s) (`UNDECLARED SIGNATURE — the failing guard(s): …`): 2.5.1's `RecompileError` lists them; on 2.8 the stance's rejection says nothing, so the sentinel replays the call ONCE under `error_on_recompile` to read them |
+| — `release(why)` | when `learn()` returns or raises | the lock's scope is TRAINING: a forward after `learn()` on the compiled model is a new signature by design (the trainer's former in-process FINAL EVALUATION was the measured case, now deleted). MEASURED on the real trainer (the end-to-end smoke below): a still-locked sentinel broke it with `RecompileError`. Prints `🧊 [COMPILE LOCK] released …` with the post-lock compile count (must be 0) |
+| 4 `stats()` | every update | TB `compile/graphs_total`, `compile/recompiles_after_lock` (**must stay 0**), `compile/cache_limit_hits`, `compile/max_cache_entries_per_code`, `compile/locked`, `compile/regression_flag`, `compile/train_ms_vs_lock_baseline` |
 
 The checks run at every rollout end and every update end. `CompileControl.attach` registers the
 `compile_sentinel` owner on the loop's DECLARED HOOK TABLE (`agents/training/loop_hooks.py`,
@@ -1058,7 +1063,7 @@ compile that STARTS after the lock is `CompileSentinelError` → **`[CompileSent
 checkpoint save on this exit (the last periodic checkpoint stands); the weights are not wrong, the
 throughput is.
 
-**Why the reset (phase 2) — the gate's graphs spent production's slots.** The cache is keyed per
+**Why the reset (phase 1) — earlier graphs spent production's slots** (the original measurement below was of a gate that ran BEFORE the reset; the reset now runs before the region is installed).** The cache is keyed per
 code object (`Gen3FeaturesExtractor.forward.__code__`, `TeamTransformer.forward.__code__`, the
 trunk split's resume frames …), shared by every instance and every `torch.compile` wrapper of that
 code — so a separate compiled callable for the gate would NOT have isolated it in 2.5.1
@@ -1089,14 +1094,14 @@ flag and read attributes (`grad_checkpointing`):
 
 | caller | signature | handled by |
 |---|---|---|
-| rollout `policy(obs)`, end-of-rollout `predict_values`, frozen-φ / PBRS | eval · no-grad · `n_envs` (PBRS: 2048-chunks) | prewarm (rollout) + iteration 1 (PBRS runs every rollout) |
+| rollout `policy(obs)`, end-of-rollout `predict_values`, frozen-φ / PBRS (the learner-process forwards; the Rust collector's rollout is T2's own `DecisionModule`) | eval · no-grad · any batch | EAGER at every batch since P10-E (no compiled rollout region R0: it was never called); takes no region route and compiles nothing |
 | `evaluate_actions` | train · grad · `batch_size` | prewarm |
 | `rank_probe` (first minibatch of every update) | train · no-grad · `batch_size` | prewarm — HOOK-FREE since K6 (`gen3_rank_probe_stash_v1`): it reads `last_trunk_tokens` / `last_value_cls`. Its old forward hooks were a guard (`len(_forward_hooks) != 0`) — THE iteration-1 signature the `8fc297a2` lock absorbed (found 2026-09-30 on the real trainer with the lock moved before iteration 1); on 2.8 the hooks were instead silently SKIPPED inside the compiled frame, so `rank/trunk_*` and `rank/value_cls_*` vanished on every compiled 2.8 run |
 | capacity half-batch cosine (every 50 minibatches), td-aux | train · grad · other sizes ≥ 2 | prewarm at `batch_size // 2` makes the train graph dynamic |
-| truncated-episode `predict_values` (a shaped-critic-era caller; the shaped critic is no longer trainable) | eval · no-grad · **1** | EAGER (`EAGER_BATCHES`, `gen3_batch1_eager_v1`) — batch 1 never reaches the compiled graph |
+| truncated-episode `predict_values` (a shaped-critic-era caller; the shaped critic is no longer trainable) | eval · no-grad · **1** | EAGER (no compiled rollout region) |
 | cf terms, capacity velocity, win-prob episode-start read | — | already eager (`type(fe).forward(fe, …)`) |
 | eval, snapshot ladder, the opponents | — | other processes (fresh dynamo per process) |
-| the FINAL evaluation after `learn()` (in-process, the live compiled model) | eval · no-grad · 1, a smaller obs key set | batch 1 runs EAGER (`gen3_batch1_eager_v1`: torch 2.8 cannot lower the batch-1 CUDA graph); after `release()` anyway |
+| the FINAL evaluation after `learn()` (in-process; DELETED, P6) | eval · no-grad · 1, a smaller obs key set | after `release()` anyway |
 
 A launcher restart is a fresh process (a fresh dynamo cache, a new gate, a new lock; the ON-DISK
 Inductor/Triton cache is the run's own and is reused only under a matching stamp — K3 below).
@@ -1119,8 +1124,8 @@ K2's cadence), then FROZEN; `train_ms > 1.4x` it for 3 consecutive updates print
 `⚠️ [COMPILE REGRESSION?] …` once and sets `compile/regression_flag` = 1. WARN, never fatal —
 contention (an eval burst, a peer job) has the same signature.
 
-**THE TORCH GUARDRAILS.** (1) An exact version table (`_SUPPORTED`, `2.5.1+cu121` → the
-`error_on_recompile` mode); an unknown torch REFUSES. (2) **A source-hash drift tripwire** (the SB3
+**THE TORCH GUARDRAILS.** (1) An exact version table (`_SUPPORTED`, `2.8.0+cu126` → the
+`stance` mode — the only row since the 2.5.1 row was deleted, 2026-10-02); an unknown torch REFUSES. (2) **A source-hash drift tripwire** (the SB3
 `instrumented_ppo._verify_upstream_unchanged` pattern): `_SOURCE_HASHES` = {torch version →
 {qualname → SHA256 of `inspect.getsource`}} over every internal the adapter rests on
 (`cache_size.compute_cache_size` / `is_recompilation` / `exceeds_cache_size_limit`,
@@ -1138,19 +1143,22 @@ counter, so a non-compile run died uncaught on any torch but the recorded one; `
 raw `RecompileError`, the start callback, the counter / entry list / reset, the per-code-object
 cache). Hash = the code changed; contract = the behaviour changed; both are kept.
 
-**Per torch version** (`_SUPPORTED`, `_SOURCE_HASHES` — one row each; the contract tests run on BOTH
-envs and assert each version's own semantics): **2.5.1+cu121 → `error_on_recompile`** (13 hashed
-internals); **2.8.0+cu126 → `stance`** (17): the lock is `torch.compiler.set_stance(
+**Per torch version** (`_SUPPORTED`, `_SOURCE_HASHES` — one row each; the contract tests run on
+the installed torch and assert its own semantics): **2.8.0+cu126 → `stance`** (20 hashed internals,
+`len(_SOURCE_HASHES["2.8.0+cu126"])`; the 2.5.1+cu121 → `error_on_recompile` row, 13 internals, was
+DELETED with HEAD's 2.5.1 support, K1 2026-10-02 — a 2.5.1 run resumes pinned to its own commit): the lock is `torch.compiler.set_stance(
 "fail_on_recompile")`, which raises at the call site on ANY cache miss of a compiled callable — a
 recompile AND the first call of a never-compiled one — compiling nothing; `release`/`uninstall` set
-the stance back to `"default"`. **What moved in 2.8** (re-read at the source): `exceeds_cache_size_limit`
+the stance back to `"default"` (nothing sets `error_on_recompile` any more: the lock and `release`
+no longer touch it, and its only user is the rejection DIAGNOSIS replay, a context-managed `patch`).
+**What moved in 2.8** (re-read at the source): `exceeds_cache_size_limit`
 → `exceeds_recompile_limit`, and `config.cache_size_limit` is now an ALIAS of `config.recompile_limit`
 (the warning reads `hit config.recompile_limit (8)`; the soft failure is `RecompileLimitExceeded`,
 still swallowed into eager); `get_and_maybe_log_recompilation_reason` → `..._reasons`; the
 compile-START callback takes a `CallbackArgs`, fires for LAZY_BACKWARD / TRITON_AUTOTUNING /
 CUDAGRAPH_RECORDING too, and now runs AFTER the recompile check — so it no longer sees a REJECTED
 recompile, and a caller's `except Exception` could have hidden one. **`CompileControl.wrap_compiled`**
-closes that on both versions: the learner forward is installed through it and records any lock
+closes that: the compiled region is installed through it and records any lock
 rejection (sticky, `rejected_after_lock`) before it propagates. The stance's rejection is a plain
 `RuntimeError` (text `_STANCE_REJECT_TEXT`), which `find_recompile_error` matches. Measured on the
 real extractor on 2.8 (fp32, prewarm B=48/256/128): lock at 3 entries on 1 code object (headroom
@@ -1183,20 +1191,20 @@ to sb3 (`masked_categorical_test`, both torches); the K9 learner golden is uncha
 ### K8 — DECLARED COMPILE REGIONS (`gen3_declared_regions_v1`, torch 2.8, 2026-10-01)
 
 On torch 2.8 `--compile-trainer` no longer compiles the extractor alone: `arm_compile_sentinel`
-installs the learner's DECLARED REGIONS (`agents/model/compile_regions.py`, the table `REGIONS`),
-each compiled `fullgraph=True, dynamic=False`, so a graph break INSIDE a region is a startup
+installs the learner's DECLARED REGION (`agents/model/compile_regions.py`, the table `REGIONS`),
+compiled `fullgraph=True, dynamic=False`, so a graph break INSIDE a region is a startup
 `CompileTrainerError` naming dynamo's reason (FATAL_CONFIG), never a silent split:
 
 | region | callable | declared signature | why the boundary is here |
 |---|---|---|---|
-| R0 `rollout_forward` | `policy.rollout_core` — extractor + towers + pointer head + critic read + functional masking -> (V, masked log-probs) | eval / no-grad / `n_envs` (batch 1 runs the eager core) | the env step; the action draw stays eager (the same `multinomial`, the same RNG stream) |
-| R1 `learner_micro_step` | `instrumented_ppo.micro_step.micro_step` — `evaluate_actions` + fold steps 1-3a; its backward is AOTAutograd's from the same graph | train / grad / `batch_size` (a RAGGED micro-batch runs the same function eager) | the accumulation group and the optimizer step are per GROUP; the host read follows it |
+| R0 `rollout_forward` — **DELETED 2026-10-03 (P10-E, owner-approved; see below)** | was `policy.rollout_core` | was eval / no-grad / `n_envs` | the Rust collector serves every rollout forward through T2, so the learner process never called it |
+| R1 `learner_micro_step` | `instrumented_ppo.micro_step.micro_step` — `evaluate_actions` + fold steps 1-3a; its backward is AOTAutograd's from the same graph | train / grad / `batch_size` — ONE row count; a ragged micro-batch is REFUSED by the dispatcher (`gen3_r1_no_ragged_v1`) | the accumulation group and the optimizer step are per GROUP; the host read follows it |
 | R2 rank probe | NO forward: reads R1's own stashes on the first micro-batch, spectra on the device (`rank_metrics.rank_probe_from_stash`) | — | — |
 | R3 optimizer step | `clip_grad_norm_` + AdamW + `zero_grad`, EAGER by decision | — | 0.04 s per update; the KL->LR controller moves lr every update, so a compiled step keyed on it is a new signature per update |
 | *eager, declared* | the batch build (micro-batches staged to the device by a prefetch thread, or one resident device copy per update — `--device-batch`, `instrumented_ppo/device_batches.py`), label alignment, the per-micro host read, the fold's eager tail, every cadence diagnostic, logging | — | host-side or data-dependent by nature |
 
 The sequence: reset → `install` (removes any instance-level compiled extractor forward, so every
-other caller of the extractor runs eager) → `gate_regions` holds R1 and R0 to eager on REAL rows (R1
+other caller of the extractor runs eager) → `gate_regions` holds R1 to eager on REAL rows (R1
 ALWAYS on the K9 golden's labelled buffer — `gen3_r1_golden_rows_always_v1`, P10-C: a key the run
 declares that the golden lacks takes its DECLARED placeholder (`compile_regions.fill_value`: the label
 inventory's `host_const` value — the fork arm's `fork_pg_m` = 1.0, a multiplier on the policy term — or
@@ -1210,15 +1218,64 @@ buffer without it; `gen3_r1_judged_set_v1`): a parameter the golden rows judge C
 ratio > `JUDGED_SET_BAND` = 2x the floor) that the run's rows do not judge is FATAL_CONFIG — the band
 keeps a parameter a hair from the floor (the smallest judged one reads 1.01e-3) from ever deciding it.
 The gate line reads `R1 judged set >= the golden rows' own: all N parameters …`. The loss, the gradient
-over every policy parameter at the cosine and per-parameter bars; R0's decision readout, on a seeded perturbation when
+over every policy parameter at the cosine and per-parameter bars, the per-parameter bar chosen by weight regime
+(`train_verdict` takes NO default bar — a caller that names none is refused, P10-E; the retired extractor gate's TF32-era 1e-3 / 0.2 constants are deleted), on a seeded perturbation too when
 the weights are fresh; at fp32 `highest`, the only precision, a process at any other is refused)
-→ prewarm exactly the declared signatures → LOCK (K6) → the canary every 100 updates (confirmed in the same update before it FATALs — `designs/training/learner_lifecycle.md`)
-(`compile_canary._regions`). The regions are the ONLY compiled learner surface: on torch 2.5.1
+→ prewarm exactly the declared signature → LOCK (K6) → the canary at update 10 and every 100 updates (R1's loss and gradient on the golden rows, EVERY canary; confirmed in the same update before it FATALs — `designs/training/learner_lifecycle.md`)
+(`compile_canary._regions`). The region is the ONLY compiled learner surface: on torch 2.5.1
 `forward_guard`'s weakref lookup breaks `fullgraph=True`, and HEAD no longer runs 2.5.1 at all (the
 extractor-only compile kept for it was deleted 2026-10-02, K1; `utils/torch_floor.py`).
-`compile_regions.install_rollout_region` installs R0 alone — production's rollout compile — for a
-caller that measures the rollout forward outside the trainer (the M5 throughput A/B's
-`LearnerSampling` of the M5 throughput A/B — its harness package, `main/rust_core_m5/`, was deleted in U3).
+
+**R0 (the compiled rollout region) was DELETED (P10-E, 2026-10-03; owner approved the change to the
+declared region table).** On the only env core the Rust collector serves the trainee's rollout forward
+through the T2 inference service (`agents/inference/service`, its own `DecisionModule`, gated on every
+served bucket at load), so the learner process never called R0 — a production run's per-update route
+counts were exactly R1's micro-batches × epochs (480 = 48 × 10 at N = 256, `lifecycle/compiled_region_calls`),
+R0 contributing none. It was nevertheless compiled, gated, prewarmed and canaried at every launch, so
+its canary verdict checked a graph nothing ran (a vacuous check, standing rule 8) and every launch paid
+its compile. Deleted with it: `install_rollout_region` (its only other caller, the M5 throughput harness,
+went with U3), the compiled `policy.forward` → region dispatch and the weak `policy._ROLLOUT_REGIONS`
+registry, the batch-1 eager route (`EAGER_BATCHES`, `gen3_batch1_eager_v1`), R0's gate arm (the
+decision-readout verdicts and the perturbation-ladder climb for a collapsed critic), its prewarm call and
+inventory row, the canary's decision-readout arm (and its `compile/canary_max_abs_*` scalars, and the
+decision-only canary: `GRAD_EVERY`, `compile/canary_grad_checked`), `region_calls`' R0 rows, and their
+tests. KEPT, eager: `Gen3DualHeadMaskablePolicy.forward` and `rollout_core` — callers: the toy-collector
+test kit (`rust_rollout/testkit.py`), `masked_categorical_test` (the bit-identical pin against sb3's
+distribution object), the compile inventory's `fullgraph_check` / worker (a whole-step trace over the
+eager forward), and `rollout_core`'s second caller, `compile_regions.weights_regime` (the freshness read
+that picks R1's per-parameter bar); `predict` / `get_distribution` (`play.py`, the prober, the eval
+workers) never went through `forward`. The T2 service builds its own `DecisionModule` and calls neither.
+**MEASURED (P10-E, 2026-10-03; RTX 3080 Ti, torch 2.8.0+cu126, fp32 `highest`, two real
+`--arch production` launches under `gpu_lock` with `--no-pin`, a scratch archive on disk, a COLD compile
+cache each, N = 256, B = 2048, the 98,304-row update; the control is `900de5e2`'s code, the arm is the
+deletion):**
+
+| | with R0 (control) | R0 deleted |
+|---|---|---|
+| child attached → first TB event file / `model_config.json` (the compile lock is just before it) | 410 s (08:13:52 → 08:20:42) | 345 s (08:51:13 → 08:56:58) — **−65 s, −15.9 %** |
+| the sentinel's own `reset + prewarm took` (it includes the startup gate) | 171.0 s | 117.1 s — **−53.9 s, −31.5 %** |
+| graphs in the process / code objects holding entries at the lock | 5 / 2 | 4 / 1 |
+| `lifecycle/compiled_region_calls` per update (updates 2-27) | 480 (= 48 micro-batches × 10 epochs); the canary update 482 | 480; the canary update 481 |
+| the first update's count | 528 | 528 (the same 48 more R1 calls — a first-update-only pass, cause not traced) |
+| `lifecycle/eager_fallback_calls`, `compile/recompiles_after_lock` | 0, 0 | 0, 0 |
+| steady `update_wall_s` | 40.3-40.5 s | 40.3-40.7 s (unchanged: R0 was never in the update) |
+| the canary at update 10 | pass, 0.41 s (R0 + R1) | pass, 0.37 s (R1: `R1 [trained weights]`, 199 parameters judged, max per-parameter error 4.25e-05) |
+
+R0 contributed ZERO of the 480 region calls (the arm's counts are the same, with nothing deleted from
+R1's path), which is the finding's proof: it was compiled, gated, prewarmed and canaried for nothing.
+The saving is the compile + gate + prewarm time of one region, paid once per launch AND per interval /
+crash restart (a restart compiles into the run's own warm cache, so its saving is smaller). The new
+reset line also named, for the first time, what the reset drops at a production launch: `dropped 3
+cache entries compiled before the region was installed [decide (engine.py:41) x3]` — the T2 inference
+service's `decide` (`agents/inference/service/engine.py`), compiled when T2 builds, before the sentinel
+runs; the line names the code objects it drops (read on the final code's own short launch, 114.6 s
+`reset + prewarm`). Harmless today: T2's served graphs are CAPTURED CUDA graphs, replayed without dynamo, so
+a dropped dynamo entry is never looked up again; a T2 call that ever reached dynamo after the lock would
+be an undeclared signature (a typed FATAL), not a silent one.
+
+A consequence: a resume onto a checkpoint whose win-prob head is saturated (a collapsed critic) is no
+longer refused by an R0 "vacuous on every perturbation rung" verdict — R1's verdict is the loss and the
+gradients, not V's spread (pinned by `compile_regions_test::test_a_COLLAPSED_critic_is_judged_by_R1_like_any_other_weights`).
 
 **One startup gate per region** (`gen3_one_gate_per_region_v1`, 2026-10-01). The trainer runs no
 extractor-only gate: `preflight_compile_trainer` compiles nothing, and the sentinel installs and gates
@@ -1231,8 +1288,8 @@ The checks that remain on 2.8, each with its measured bar and the fault it catch
 
 | check | bar | catches |
 |---|---|---|
-| the regions' startup gate | R1: loss rel ≤ 1e-4, gradient cosine ≥ 0.9999, the regime-selected per-parameter bar. R0: the decision bars. Fresh weights also get a perturbed pass | a miscompile at t = 0 |
-| the in-run canary | every 100 updates, confirmed before it FATALs | a graph that changed by t = N |
+| the region's startup gate | R1: loss rel ≤ 1e-4, gradient cosine ≥ 0.9999, the regime-selected per-parameter bar. Fresh weights also get a perturbed pass | a miscompile at t = 0 |
+| the in-run canary | update 10, then every 100 updates, R1's loss and gradient on the golden rows, confirmed before it FATALs | a graph that changed by t = N |
 | K9(b), the behaviour check | the learner's log π against the rollout's stored log-prob | stale weights, an eval/train-mode difference, a rollout/learner obs mismatch |
 | the no-silent-eager guards | see above | a partly uncompiled learner |
 | the learner golden (test time) | — | a change in what the update computes |
@@ -1242,9 +1299,8 @@ no counterpart at startup. The update-wall drift warning, the performance-shape 
 
 **Measured** (2026-09-30/10-01): R1 on the production surface traces as ONE graph on 2.8 (CPU,
 `aot_eager`, compiled loss bit-equal to eager); `compile_regions_test` (routine, CPU, dynamo `eager`
-backend): graphs == regions x signatures (2), one cache entry per region code object, 0 compiles and
-0 rejections after the lock across two real updates, a rollout forward, a batch-1 call and a ragged
-micro-batch; a host read planted inside R1 is the typed startup FATAL. On CUDA (Inductor, fp32, the
+backend): graphs == regions x signatures (2 when R0 existed, 1 now), one cache entry per region code object, 0 compiles and
+0 rejections after the lock across two real updates and an eager rollout forward (at batch 4 and 1); a host read planted inside R1 is the typed startup FATAL. On CUDA (Inductor, fp32, the
 golden learner): the gate passes, 2 graphs, 0 compiles after the lock; NON-VACUOUS by an element-wise
 read (`~/gen3ai_archive/k6_k8/r1_nonvacuous.log`): dynamo captured one graph in the compiled arm and
 none in the eager arm; compiled vs eager loss |Δ| 6.0e-8 (B=16) / 1.2e-7 (B=2048), gradients differ
@@ -1265,21 +1321,22 @@ that we don't have silent performance regressions from it not being fully compil
 
 The defences that run in every run are the PRIMARY ones.
 - **Every region call goes through its dispatcher** (`compile_regions.install`), which takes the
-  COMPILED route or a DECLARED EAGER route. The declared eager routes are R1's ragged micro-batch and
-  R0's batch 1. Every route is counted (`agents/model/region_calls.py`).
+  COMPILED route. There is no declared eager route any more (R1's ragged micro-batch is refused;
+  R0 and its batch-1 route are deleted); a future one counts under `<region>_eager_<why>`
+  (`agents/model/region_calls.py`).
 - **A compiled route that silently ran eager is a typed FATAL.** Each region's body calls
   `note_eager_body`, which is a no-op inside a dynamo trace, and a compiled graph never re-enters the
   Python body. So if the body runs during a compiled-route call, the region ran EAGER. That covers
   dynamo disabled, a swallowed compile error, a skipped frame, and the `force_eager` stance.
-- **A ragged tail has a declared size: one per epoch.** More ragged micro-batches in one update is a
-  typed FATAL.
+- **A ragged micro-batch is a typed FATAL at R1's dispatcher** (`gen3_r1_no_ragged_v1`; it used to have a
+  declared size of one per epoch and run eager, a route the collector's refusal made unreachable).
 - **The lock refuses the three switches** that make dynamo run eager without an error. With the lock
   held, each of these is a sentinel violation (`CompileControl.violation`):
   - `torch._dynamo.config.disable`;
   - `suppress_errors`;
   - a stance other than `fail_on_recompile`.
-- **The run asserts its compiled inventory** after the prewarm: one cache entry on R1's code object,
-  one on R0's (`assert_inventory`). On 2.8 a policy without the micro-step says
+- **The run asserts its compiled inventory** after the prewarm: one cache entry on R1's code object
+  (`assert_inventory`). On 2.8 a policy without the micro-step says
   `⚠️ [CompileRegions] NOT installed` instead of compiling less silently.
 - **Every update records** `lifecycle/compiled_region_calls`, `lifecycle/eager_fallback_calls`,
   `lifecycle/eager_share` and `lifecycle/update_wall_s`.
@@ -1295,8 +1352,8 @@ The routes the audit closed or declared:
 | guard failure after the lock | a typed FATAL (existing) |
 | `torch.compiler.disable` or a graph break inside a region | refused at startup, because the regions compile `fullgraph=True` |
 | a region skipped by a flag | the loud line above |
-| a ragged tail past its size | a typed FATAL |
-| batch 1 | declared, counted |
+| a ragged micro-batch | refused by R1's dispatcher (a typed FATAL) |
+| batch 1 | no route: R0 is deleted; the learner's rollout forward is eager at every batch |
 | dynamo disabled, swallowed errors, `force_eager` | a typed FATAL |
 
 The CPU opponents' eager fallback is in the env workers, not the learner, and it already says so.

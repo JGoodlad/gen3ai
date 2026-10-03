@@ -15,7 +15,6 @@ make SB3 instantiate a second full body (Option A, ~2× compute) — not what Op
 
 from __future__ import annotations
 
-import weakref
 from typing import TYPE_CHECKING, Any, Optional, Tuple, cast
 
 import numpy as np
@@ -26,7 +25,6 @@ from sb3_contrib.common.maskable.distributions import MaskableDistribution
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 
 from agents.model import masked_categorical as _mc
-from agents.model import region_calls as _rc
 from agents.model.arch_constants import D_MODEL
 from agents.model.critic_mode import CRITIC_UNRECORDED, CRITIC_MODES, is_winprob
 
@@ -78,13 +76,6 @@ class _NoFlatActionNet(th.nn.Module):
             "Gen3DualHeadMaskablePolicy.pointer_head via _get_action_dist_from_latent. A code path "
             "calling action_net directly is running the deleted flat policy."
         )
-
-
-#: K8 region R0 (`compile_regions.install`): policy -> its compiled rollout core (a dispatcher that
-#: also routes batch 1 to the eager core). Held OUTSIDE the module, weakly, on purpose: an attribute
-#: would ride `copy.deepcopy(policy)` (T2's slot templates, the snapshot pool) and point at the
-#: original policy's compiled frames.
-_ROLLOUT_REGIONS: "weakref.WeakKeyDictionary[Any, Any]" = weakref.WeakKeyDictionary()
 
 
 class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
@@ -257,10 +248,11 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         return _mc.masked_logits(self._pointer_logits(latent_pi), action_masks, n_actions)
 
     def rollout_core(self, obs: Any, action_masks: Any) -> Tuple[th.Tensor, th.Tensor]:
-        """The rollout forward as TENSORS — ``(values, masked_logp)`` — region R0 of K8
-        (`agents.model.compile_regions`): everything `forward` computes before the action draw.
-        Traceable as one `fullgraph=True` graph (functional masking, no distribution object)."""
-        _rc.note_eager_body("R0")   # a no-op under a dynamo trace; counts an EAGER run (gen3_no_silent_eager_v1)
+        """The rollout forward as TENSORS — ``(values, masked_logp)`` — everything `forward` computes
+        before the action draw (functional masking, no distribution object). EAGER only: the learner
+        process compiles nothing here (the compiled rollout region R0 was deleted, P10-E — the Rust
+        collector's rollout forward is the T2 inference service's own `DecisionModule`); this is the
+        seam `forward` and `compile_regions.weights_regime`'s freshness read share."""
         pi_features, vf_features = self.extract_features(obs)
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)
@@ -273,15 +265,9 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         deterministic: bool = False,
         action_masks: Optional[np.ndarray] = None,
     ) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
-        # K8 region R0: the compiled rollout core when --compile-trainer installed one (a callable
-        # stored OFF the module — `compile_regions.install` — so deepcopy / state_dict never see it),
-        # else the eager core. The action draw stays eager: the same `multinomial` call as sb3's
-        # distribution object (the same RNG stream), pinned bit-for-bit.
-        region = _ROLLOUT_REGIONS.get(self)
-        if region is not None:
-            values, logp = region(self, obs, action_masks)
-        else:
-            values, logp = self.rollout_core(obs, action_masks)
+        # The action draw is the same `multinomial` call as sb3's distribution object (the same RNG
+        # stream), pinned bit-for-bit (`masked_categorical_test`). Eager: no compiled rollout region.
+        values, logp = self.rollout_core(obs, action_masks)
         actions = _mc.mode(logp) if deterministic else _mc.sample(logp)
         log_prob = _mc.log_prob(logp, actions)
         actions = actions.reshape((-1, *self.action_space.shape))  # type: ignore[misc]

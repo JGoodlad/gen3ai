@@ -581,12 +581,13 @@ def _one_call(model: Any, orig_train: Callable, *, name: str, pristine: Dict[str
               warmup: bool, profile_to: Optional[Path] = None) -> Dict[str, Any]:
     import torch
     from agents.training.instrumented_ppo import phase_hook
+    from agents.training.logger_scope import hold
     cuda = str(model.device).startswith("cuda")
     sync = torch.cuda.synchronize if cuda else None
     restore_buffer_state(model.rollout_buffer, pristine)
     added = restore_model_state(model, state0)
     seed_all(seed)
-    model.logger.name_to_value.clear()
+    hold(model.logger)      # drop EVERY pending scalar — value, count AND exclusion (the owned logger pairs them key for key)
     timer = PhaseTimer(sync=sync)
     scal = {"s": 0.0, "n": 0}
     rec: Dict[str, Any] = {"config": name, "warmup": warmup, "bracketed": bracketed,

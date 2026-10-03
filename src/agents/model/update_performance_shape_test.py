@@ -51,7 +51,7 @@ N_ENVS, BATCH = 4, 16
 
 @pytest.fixture
 def learner() -> Iterator[Any]:
-    """The production-surface learner (the K9 golden's), CPU, R0 + R1 installed under dynamo's `eager`
+    """The production-surface learner (the K9 golden's), CPU, R1 installed under dynamo's `eager`
     backend, prewarmed and LOCKED — `compile_regions_test`'s own setup minus the parity gate (these pins
     read counts, not numbers)."""
     from agents.training import learner_golden as LG
@@ -62,7 +62,7 @@ def learner() -> Iterator[Any]:
     ctl = cc.control()
     ctl.install()
     cr.install(model, backend="eager")
-    ctl.prewarm(cr.prewarm_calls(model, n_envs=N_ENVS, batch_size=BATCH))
+    ctl.prewarm(cr.prewarm_calls(model, batch_size=BATCH))
     ctl.lock("test: the end of startup")
     try:
         yield model

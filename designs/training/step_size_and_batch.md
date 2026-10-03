@@ -455,11 +455,11 @@ rollout is noise).
 
 **Why K and never `--batch-size`** — three independent reasons and all three matter: (1) SHAPE —
 `--compile-trainer` keys graphs on shape against a `cache_size_limit` of 8, so a moving batch size
-is the unbounded shape set `check_shape_stability` exists to refuse, and dropping to eager is
+is the unbounded shape set `check_shape_stability` exists to refuse (R1 has ONE declared micro-batch row count), and dropping to eager is
 invisible (~1.75×); moving K leaves every forward shape byte-identical. (2) MEMORY — the activation
 peak is one micro-batch, so K is the one batch lever with no VRAM cost. (3) EXACTNESS — K
 micro-batches summed **is** the gradient of a `batch_size·K` batch. `check_shape_stability` takes
-`n_steps`/`n_envs`/`batch_size` and *not* K, which is the proof rather than the
+the update size (`update_rows`) and `batch_size` and *not* K, which is the proof rather than the
 claim (`test_shape_stability_does_not_depend_on_k`), and a source scan fails any assignment to
 `batch_size` in the controller module.
 

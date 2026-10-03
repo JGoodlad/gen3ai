@@ -2,7 +2,7 @@
 function at update N.
 
 THE GAP IT CLOSES. The startup region gate (`compile_regions.gate_regions`) proves the
-compiled graph equals eager at t = 0, on the committed real-observation fixture. Nothing proved it
+compiled graph equals eager at t = 0, on the K9 learner golden's real labelled rows. Nothing proved it
 afterwards: a graph that changes behaviour mid-run (a silent recompile into a miscompiling variant, a
 cache artifact served under a key that omitted a setting — the K1b class — or a kernel that goes bad
 on weights it never saw at t = 0) would train on, and the K9(b) behaviour gate cannot see it when the
@@ -10,18 +10,16 @@ rollout and the learner share the wrong function (the 2026-09-28 miscompile). Th
 "I don't review the code or the logs, I trust agents — stopping GIGO is so powerful."
 
 WHAT RUNS. Every `CANARY_EVERY` updates (after `train()` returns, between updates), on the SAME
-committed real-obs fixture as the startup gate, through the DECLARED signatures only (the canary must
-never be an undeclared compile itself):
+golden rows as the startup gate (`compile_regions.r1_batch`), through the DECLARED signature only (the
+canary must never be an undeclared compile itself): the TRAIN graph at the UPDATE signature — train /
+grad / batch `batch_size` — compiled vs eager: region R1's loss and every policy gradient (the
+per-parameter bar chosen by `compile_regions.weights_regime`). It is the only compiled region (the
+compiled rollout region R0 and its decision-readout arm were deleted, P10-E: the learner process
+never ran R0, so its verdict checked a graph nothing used), and EVERY canary runs it — there is no
+decision-only canary, which would check nothing.
 
-  * the DECISION readout (masked legal log-probs, V) at the ROLLOUT signature — eval / no-grad /
-    batch `n_envs` — compiled vs eager;
-  * the TRAIN graph at the UPDATE signature — train / grad / batch `batch_size` — compiled vs
-    eager: region R1's loss and every policy gradient (the per-parameter bar chosen by
-    `compile_regions.weights_regime`).
-
-The bars are the startup gate's (`decision_verdicts`, `train_verdict`), at fp32 matmul precision
-'highest' — the one precision. The weights are the live, trained ones, so vacuity is REPORTED, never a
-refusal.
+The bars are the startup gate's (`train_verdict`), at fp32 matmul precision 'highest' — the one
+precision. The weights are the live, trained ones, so vacuity is REPORTED, never a refusal.
 
 PERSISTENCE, NOT A SINGLE SHOT (owner, 2026-10-01: "implement the consecutive check, up it to 100").
 A real miscompile is deterministic and disagrees every time; a healthy graph's rare exceedance is a
@@ -29,8 +27,8 @@ property of one batch on one weight state. So a disagreement is CONFIRMED IN THE
 
   1. warn, dump the verdict (`<run_dir>/canary_disagreements.jsonl`), and re-run the whole check —
      compiled AND eager, so the confirmation is not the same arithmetic repeated — on the SAME rows
-     and on an INDEPENDENT fixture slice (`compile_trainer.fixture_index` slice 1: the second half
-     of the rows, tiled, the same declared shape);
+     and on an INDEPENDENT slice of the golden rows (`compile_trainer.fixture_index` slice 1: the
+     second half of the rows, tiled, the same declared shape);
   2. CONFIRMED (it disagrees again on both) — checkpoint (`final_model_canary_fatal.zip`), then
      `CompileCanaryError` (FATAL_CONFIG, not restarted);
   3. not confirmed — `compile/canary_unconfirmed_disagreements` counts it, training continues, and
@@ -43,11 +41,10 @@ written at or before the last PASSING canary's step (`rollback_point`; restarts 
 is the run's, not the process's).
 
 WHAT IT DOES NOT DO: change training. It runs under `torch.random.fork_rng`, restores the policy's
-training mode, and leaves every `.grad` as it found it (None between updates); the train-graph check
-reads gradients through `.backward()` on R1's micro-step loss and clears them. Cost (measured on the
+training mode, and leaves every `.grad` as it found it (None between updates); the check reads
+gradients through `.backward()` on R1's micro-step loss and clears them. Cost (measured on the
 production surface by the K6 smoke, see `designs/training/learner_lifecycle.md`): one eager + one
-compiled forward at `n_envs` per canary, plus one eager + one compiled forward+backward at
-`batch_size` every `GRAD_EVERY` canaries.
+compiled forward+backward at `batch_size` per canary (0.65-0.71 s at B = 2048, K6).
 """
 from __future__ import annotations
 
@@ -68,12 +65,6 @@ CANARY_EVERY = 100
 #: earliest point where training has moved the weights off the startup gate's state, so no run of
 #: any length goes unchecked (sizing arm A — 82 updates — never reached update 100).
 CANARY_FIRST = 10
-#: Every this-many canaries the train graph's gradient is checked too: EVERY canary since the cadence
-#: became 100. MEASURED (CUDA, arm C's weights, n_envs 48, B = 2048, 2026-10-01): a canary costs
-#: 0.06-0.09 s without the gradient check and 0.65-0.71 s with it, against ~3,600 s of training
-#: between canaries.
-GRAD_EVERY = 1
-
 CANARY_TAG = "[CompileCanary] FATAL"
 #: The run-dir files the canary appends to (one JSON object per line).
 VERDICTS_FILE = "canary_verdicts.jsonl"
@@ -135,20 +126,18 @@ class CompileCanary:
     """Runs the canary on its cadence; see the module docstring. ``saver(path)`` writes the FATAL's
     checkpoint (default `model.save`; a test seam)."""
 
-    def __init__(self, model: Any, *, n_envs: int, batch_size: int,
+    def __init__(self, model: Any, *, batch_size: int,
                  emit: Optional[Callable[[str], None]] = None,
-                 every: int = CANARY_EVERY, grad_every: int = GRAD_EVERY,
+                 every: int = CANARY_EVERY,
                  saver: Optional[Callable[[str], None]] = None,
                  first: Optional[int] = None) -> None:
         self.model = model
-        self.n_envs = int(n_envs)
         self.batch_size = int(batch_size)
         self.every = max(1, int(every))
         # the first canary: `CANARY_FIRST` at the production cadence; a custom cadence (tests) starts
         # at its own period unless told otherwise
         self.first = int(first) if first is not None else (CANARY_FIRST if self.every == CANARY_EVERY
                                                             else self.every)
-        self.grad_every = max(1, int(grad_every))
         self._emit = emit
         self._saver = saver
         self.updates = 0
@@ -163,10 +152,10 @@ class CompileCanary:
         self.updates += 1
         if self.updates != self.first and self.updates % self.every:
             return {}
-        return self.run(grad=(self.runs % self.grad_every) == self.grad_every - 1)
+        return self.run()
 
     # ---------------------------------------------------------------------------- one verdict
-    def _check(self, grad: bool, slice_: int, out: Dict[str, float]) -> List[str]:
+    def _check(self, slice_: int, out: Dict[str, float]) -> List[str]:
         """One full comparison (compiled AND eager re-computed) on fixture slice ``slice_``. Raises
         `CompileTrainerError` on a disagreement; restores training mode and `.grad` either way."""
         model = self.model
@@ -175,7 +164,7 @@ class CompileCanary:
         devices = [torch.cuda.current_device()] if torch.cuda.is_available() else []
         try:
             with torch.random.fork_rng(devices=devices):
-                return self._regions(model, grad, out, slice_)
+                return self._regions(model, out, slice_)
         finally:
             policy.set_training_mode(was_training)
             for p in policy.parameters():
@@ -213,23 +202,23 @@ class CompileCanary:
             f"Training on a wrong function is GIGO: fatal by design, the launcher does NOT restart it "
             f"(FATAL_CONFIG). See designs/training/learner_lifecycle.md (the canary).") from first
 
-    def run(self, *, grad: bool) -> Dict[str, float]:
+    def run(self) -> Dict[str, float]:
         out: Dict[str, float] = {}
         t0 = time.perf_counter()
         try:
-            rules = self._check(grad, 0, out)
+            rules = self._check(0, out)
         except ct.CompileTrainerError as first:
             # (1) warn + dump, then CONFIRM in the same update: the same rows again and an
             # independent slice, compiled and eager both re-computed.
             _append(_run_dir(self.model), DISAGREEMENTS_FILE,
                     {"update": self.updates, "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
-                     "grad_checked": bool(grad), "verdict": str(first)[:4000]})
+                     "verdict": str(first)[:4000]})
             self._say(f"⚠️  [CompileCanary] update {self.updates}: compiled DISAGREES with eager — "
                       f"confirming now (the same rows + an independent slice). {str(first)[:300]}")
             again = []
             for sl in (0, 1):
                 try:
-                    self._check(grad, sl, {})
+                    self._check(sl, {})
                 except ct.CompileTrainerError as exc:
                     again.append((sl, exc))
             if len(again) == 2:                              # (2) confirmed on both
@@ -247,7 +236,7 @@ class CompileCanary:
                       f"(reproduced on slice(s) {[sl for sl, _ in again]} of [0, 1]) — training "
                       f"continues; {self.unconfirmed} unconfirmed so far; a disagreement at the NEXT "
                       f"scheduled canary is FATAL.")
-            out = {"compile/canary_ok": 0.0, "compile/canary_grad_checked": 1.0 if grad else 0.0,
+            out = {"compile/canary_ok": 0.0,
                    "compile/canary_unconfirmed_disagreements": float(self.unconfirmed),
                    "compile/canary_seconds": time.perf_counter() - t0}
             self.last = out
@@ -256,7 +245,6 @@ class CompileCanary:
         self.runs += 1
         self._record("pass")
         out["compile/canary_ok"] = 1.0
-        out["compile/canary_grad_checked"] = 1.0 if grad else 0.0
         out["compile/canary_unconfirmed_disagreements"] = float(self.unconfirmed)
         out["compile/canary_seconds"] = time.perf_counter() - t0
         self.last = out
@@ -264,33 +252,18 @@ class CompileCanary:
                   f"(fp32, {out['compile/canary_seconds']:.1f} s) — " + " | ".join(rules))
         return out
 
-    # ------------------------------------------------------------------ the two compiled shapes
-    def _regions(self, model: Any, grad: bool, out: Dict[str, float], slice_: int = 0) -> list:
-        """K8's declared regions: R0 (compiled rollout core vs eager) on the fixture at n_envs; on a
-        gradient canary also R1 (compiled micro-step vs eager: loss + every policy gradient) on the
-        same real labelled batch the startup gate uses."""
+    # ------------------------------------------------------------------ the compiled region
+    def _regions(self, model: Any, out: Dict[str, float], slice_: int = 0) -> list:
+        """K8's declared region: R1 (compiled micro-step vs eager: loss + every policy gradient) on the
+        same real labelled batch the startup gate uses (``slice_`` 1 = the independent half)."""
         from agents.model import compile_regions as cr
-        from agents.model.policy import _ROLLOUT_REGIONS
         from agents.training.instrumented_ppo.micro_step import micro_step
         policy = model.policy
-        rules = []
-        if self.n_envs not in ct.EAGER_BATCHES:
-            policy.set_training_mode(False)
-            obs = ct._prewarm_obs(model, self.n_envs, slice_)
-            _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), self.n_envs,
-                                     ct.resolve_device(policy.features_extractor), slice_)
-            c = cr._r0_readout(model, _ROLLOUT_REGIONS[policy], obs, mask)
-            e = cr._r0_readout(model, cr._rollout_core, obs, mask)
-            rules += ["R0 " + x for x in ct.decision_verdicts(eager=e, compiled=c, allow_vacuous=True)]
-            for key in ("legal_logprob", "value"):
-                out[f"compile/canary_max_abs_{key}"] = float((c[key] - e[key]).abs().max())
-        if grad:
-            policy.set_training_mode(True)
-            args = cr._r1_args(model, cr.r1_batch(model, self.batch_size, slice_))
-            comp = cr._r1_arm(model, model._compiled_micro_step, args)
-            eager = cr._r1_arm(model, micro_step, args)
-            names = [n for n, _ in ct.grad_parameters(model, policy.features_extractor)]
-            rules.append("R1 " + cr._r1_verdict(eager, comp, names, cr.weights_regime(model)))
-            out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
+        policy.set_training_mode(True)
+        args = cr._r1_args(model, cr.r1_batch(model, self.batch_size, slice_))
+        comp = cr._r1_arm(model, model._compiled_micro_step, args)
+        eager = cr._r1_arm(model, micro_step, args)
+        names = [n for n, _ in ct.grad_parameters(model, policy.features_extractor)]
+        rules = ["R1 " + cr._r1_verdict(eager, comp, names, cr.weights_regime(model))]
+        out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
         return rules
-

@@ -13,8 +13,10 @@ from __future__ import annotations
 import pytest
 import torch
 
-from agents.model.compile_trainer import (_MAX_PARAM_GRAD_REL, _PARAM_GRAD_FLOOR,
-                                          CompileTrainerError, _cos, train_verdict)
+from agents.model.compile_trainer import (_PARAM_GRAD_FLOOR, CompileTrainerError, _cos,
+                                          train_verdict)
+
+BAR = 1e-3        # a caller's own bar (R1's are `compile_regions.R1_PARAM_BAR`; the rule has no default)
 
 
 def test_per_param_rule_catches_a_small_path_the_global_cosine_cannot():
@@ -31,9 +33,9 @@ def test_per_param_rule_catches_a_small_path_the_global_cosine_cannot():
     def arm(grad):
         return {"features": f, "grad": grad, "grad_sizes": sizes}
     with pytest.raises(CompileTrainerError, match="per-param.*FAILED"):
-        train_verdict(eager=arm(e), compiled=arm(c), param_names=["B", "S"])
-    assert "per-param" in train_verdict(eager=arm(e), compiled=arm(e.clone()))
-    assert 0 < _PARAM_GRAD_FLOOR < 1 and 0 < _MAX_PARAM_GRAD_REL < 0.1
+        train_verdict(eager=arm(e), compiled=arm(c), param_names=["B", "S"], param_bar=BAR)
+    assert "per-param" in train_verdict(eager=arm(e), compiled=arm(e.clone()), param_bar=BAR)
+    assert 0 < _PARAM_GRAD_FLOOR < 1
 
 
 def test_cosine_is_float64_and_never_reads_above_one():

@@ -139,8 +139,8 @@ def test_the_compile_sentinel_registers_into_the_table() -> None:
 def test_the_per_update_region_call_window_is_reset_by_the_update_hook() -> None:
     """gen3_no_silent_eager_v1's contract on the hook table: `CompileControl.record` — which TAKES the
     per-update route window — runs once per update through the `update` hook, after `train()`. Here
-    every update makes ONE ragged R1 call; dropped from the hook, the window would accumulate across
-    updates (the cap counts across updates and a fork-shaped buffer false-FATALs) and outlive learn()."""
+    every update counts ONE R1 call; dropped from the hook, the window would accumulate across
+    updates and outlive learn()."""
     from agents.model import region_calls
     from agents.model.compile_control import CompileControl
 
@@ -150,16 +150,15 @@ def test_the_per_update_region_call_window_is_reset_by_the_update_hook() -> None
         region_calls.take()
         orig_train = model.train
 
-        def train_with_one_ragged_call(*a: Any, **k: Any) -> Any:
-            region_calls.count("R1_eager_ragged")
+        def train_with_one_counted_call(*a: Any, **k: Any) -> Any:
+            region_calls.count("R1_compiled")
             return orig_train(*a, **k)
 
-        model.train = train_with_one_ragged_call
+        model.train = train_with_one_counted_call
         from agents.training.rust_rollout.testkit import record_dumps
         dumps = record_dumps(model)
         model.learn(total_timesteps=2 * LG.N_STEPS * LG.N_ENVS)
     assert region_calls.peek() == {}, "the last update's route window was not taken"
-    # the LAST update's value, written by learn()'s final dump (P3; one ragged call per update)
-    assert dumps[-1].get("lifecycle/eager_fallback_calls") == 1.0, \
+    # the LAST update's value, written by learn()'s final dump (P3; one counted call per update)
+    assert dumps[-1].get("lifecycle/compiled_region_calls") == 1.0, \
         "the window accumulated across updates — the per-update take() did not run"
-

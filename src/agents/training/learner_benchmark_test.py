@@ -136,6 +136,32 @@ def test_hook_changes_no_number_and_restore_repeats_the_same_work(tiny_model):
     assert set(timer.seconds) == set(phase_hook.PHASES) - {"start"}
 
 
+def test_the_benchmarks_restore_starts_from_an_EMPTY_logger_bus_value_count_and_exclusion(tiny_model):
+    """The owned logger pairs `name_to_value` with `name_to_excluded` KEY FOR KEY (P10-F1), so a restore
+    that cleared only the values would strand an exclusion — and the next dump would raise. Both the
+    learner benchmark's `_one_call` and the compile inventory's `_restore` drop every pending scalar.
+    `bench/stale` is a key `train()` never re-records, so a stranded exclusion for it is NOT healed by
+    the next update; fails on revert (a values-only clear)."""
+    from main.compile_inventory.worker import _restore
+    m = tiny_model
+    pristine = lb.capture_buffer_state(m.rollout_buffer)
+    state0 = lb.capture_model_state(m)
+
+    m.logger.record("bench/stale", 1.0)
+    m.logger.record_mean("bench/stale_mean", 2.0)
+    _restore(m, pristine, state0, 1)
+    assert not m.logger.name_to_value and not m.logger.name_to_count and not m.logger.name_to_excluded
+    m.logger.record("bench/fresh", 1.0)
+    m.logger.dump(0)                                  # raises if a stale exclusion paired no value
+
+    m.logger.record("bench/stale", 1.0)
+    rec = lb._one_call(m, InstrumentedMaskablePPO.train, name="baseline", pristine=pristine, state0=state0,
+                       seed=3, base_epochs=2, bracketed=False, warmup=False)
+    assert "bench/stale" not in m.logger.name_to_value and "bench/stale" not in m.logger.name_to_excluded
+    assert rec["train_ms"] is not None or rec["work"]
+    m.logger.dump(0)                                  # the update's own scalars pair key for key
+
+
 def test_hook_off_path_does_not_call_anything(tiny_model):
     """With no hook installed nothing is called — a hook installed AFTER the call's read is ignored
     too, because `train()` reads it once, at the top."""

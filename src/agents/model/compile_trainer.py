@@ -1,6 +1,7 @@
 """`--compile-trainer` — the learner process's compile: its startup preflight, the parity VERDICTS
 every compile gate shares, and the compile SENTINEL that installs, gates, prewarms and locks the
-learner's DECLARED REGIONS (`agents.model.compile_regions`: R0 the rollout core, R1 the micro-step).
+learner's DECLARED REGION (`agents.model.compile_regions`: R1 the micro-step — the only compiled
+learner surface; the compiled rollout region R0 was deleted, P10-E, owner-approved 2026-10-03).
 
 ONE COMPILED SURFACE (gen3_one_gate_per_region_v1; the torch-2.5.1 extractor-only compile and its own
 parity gate were DELETED in the post-switch deletion pass, 2026-10-02). HEAD runs torch >= 2.8 only
@@ -18,9 +19,9 @@ CPU IS REJECTED, not attempted. The compiled learner is gated and measured on CU
 `atomic_add` scatter; on 2.8 it lowers, per `extractor_compiles_test`'s per-torch pin, but no CPU
 compiled learner has been gated.)
 
-THE COMPILED STATE IS OFF THE MODULE. The regions are stored on the model (`_compiled_micro_step`) and
-in the policy module's weak registry (`policy._ROLLOUT_REGIONS`), never as a patched module or an
-`OptimizedModule` — so `state_dict` keys (and every checkpoint) are unchanged.
+THE COMPILED STATE IS OFF THE MODULE. The region is stored on the model (`_compiled_micro_step`),
+never as a patched module or an `OptimizedModule` — so `state_dict` keys (and every checkpoint) are
+unchanged.
 """
 from __future__ import annotations
 
@@ -51,44 +52,38 @@ class VacuousCompileParityError(CompileTrainerError, VacuousParityError):
 _MAX_NUMERIC_DRIFT = 1e-4
 
 
-def check_shape_stability(*, n_steps: int, n_envs: int, batch_size: int) -> None:
-    """Refuse a config that would feed the compiled extractor an UNBOUNDED set of batch shapes.
+def check_shape_stability(*, update_rows: int, batch_size: int) -> None:
+    """Refuse a config whose UPDATE does not divide into full micro-batches.
 
-    MEASURED BACKGROUND (2026-08-14), because the naive reading of this is wrong. Recompiles here
-    are NORMAL and must not be an error: `share_features_extractor=True` means one extractor serves
-    both paths, so `fe.forward` is called at batch=`n_envs` during rollout and batch=`batch_size`
-    during train, alternating forever. Dynamo handles that — alternating two shapes converges after
-    ~6 calls to a fixed set of graphs and then never recompiles again (17 graphs; steady state 8.8 ms
-    at batch 48 / 74 ms at 512). So `torch._dynamo.config.error_on_recompile = True` would crash a
-    perfectly healthy run on its second call, and `automatic_dynamic_shapes` is what makes the
-    two-shape case work at all rather than being the hazard.
+    ``update_rows`` is the REAL update size — the rows one update trains on:
+    `--rollout-target-samples` under the complete-game trigger (0 = ``n_steps * n_envs``), and
+    ``n_steps * n_envs`` under the window trigger (`rust_rollout.trigger.update_rows`, the one
+    definition the collector's own trigger uses). It is NOT ``n_steps * n_envs`` alone: a production
+    recipe sets the target independently, and judging the product of two flags that no longer set the
+    update size would switch `--compile-trainer` off for a perfectly valid run (P10-E, F9).
 
-    THE ACTUAL HAZARD is dynamo's `cache_size_limit` (8). Exceed it for one code object and dynamo
-    silently falls back to EAGER — which is exactly the invisible ~1.75x regression this whole flag
-    exists to prevent, arriving with no error and no metric that would show it. Two configs get you
-    there, and it is decidable at startup: a REMAINDER minibatch — `n_steps*n_envs` not divisible by
-    `batch_size` adds a third shape (and every epoch replays it), for no benefit. (The other config
-    that did it, `--async-rollout`'s READY-env batches, was deleted with the Python env core —
-    deletion pass U3.)
+    WHY A REMAINDER IS REFUSED. R1 (`compile_regions`) has ONE declared micro-batch signature,
+    `batch_size` rows, compiled with `fullgraph=True` and locked at startup. A remainder micro-batch is
+    a SECOND shape, replayed every epoch: it would be a new compiled signature after the lock (the
+    sentinel's FATAL) or, with a ragged eager route, a silent ~2x slowdown for that micro-step. The
+    route is deleted (`gen3_r1_no_ragged_v1`): the collector refuses such an update at every buffer
+    build (`RustCollector._ensure_buffer`) and R1's dispatcher refuses the call. This check says so at
+    STARTUP, decidable from the argv, with a concrete batch size that fits.
 
     Raises `CompileTrainerError`; pure, so the rule is testable without a GPU.
     """
-    rollout = int(n_steps) * int(n_envs)
-    if batch_size and rollout % int(batch_size) != 0:
+    rows = int(update_rows)
+    if batch_size and rows % int(batch_size) != 0:
         raise CompileTrainerError(
-            f"--compile-trainer needs a rollout that divides evenly into minibatches, but "
-            f"n_steps*n_envs = {n_steps}*{n_envs} = {rollout} leaves a remainder of "
-            f"{rollout % int(batch_size)} against --batch-size {batch_size}.\n"
-            "That remainder minibatch is a THIRD batch shape, replayed every epoch, which spends "
-            f"dynamo's cache_size_limit ({_dynamo_cache_limit()}) faster and buys nothing — and "
-            "exhausting it makes dynamo fall back to eager SILENTLY.\n"
-            f"Adjust --batch-size to a divisor of {rollout} (e.g. "
-            f"{_largest_divisor_at_most(rollout, int(batch_size))}), or drop --compile-trainer.")
-
-
-def _dynamo_cache_limit() -> int:
-    from agents.model.compile_control import cache_size_limit   # the one torch._dynamo adapter
-    return cache_size_limit()
+            f"--compile-trainer needs an update that divides evenly into micro-batches, but an update "
+            f"trains on {rows:,} rows (--rollout-target-samples, or n_steps*n_envs when it is 0 / "
+            f"the window trigger) and that leaves a remainder of {rows % int(batch_size):,} against "
+            f"--batch-size {batch_size}.\n"
+            "That remainder micro-batch is a SECOND batch shape the one compiled learner graph "
+            "does not declare, replayed every epoch — and the collector refuses such an update.\n"
+            f"Adjust --batch-size to a divisor of {rows:,} (e.g. "
+            f"{_largest_divisor_at_most(rows, int(batch_size))}) or --rollout-target-samples to a "
+            f"multiple of lcm(--batch-size, --n-envs), or drop --compile-trainer.")
 
 
 def _largest_divisor_at_most(n: int, cap: int) -> int:
@@ -134,16 +129,11 @@ _MIN_GRAD_COSINE = 0.9999
 # whole gradient through the pointer head's move cells left it at 1.0000 (the path's parameters are
 # a sliver of the norm), while the per-parameter relative error ||c_p - e_p|| / ||e_p|| read 0.10 on
 # `damage_op.out_gain`. So every parameter whose eager gradient norm is above
-# `_PARAM_GRAD_FLOOR` x the largest one is ALSO held to a per-parameter bar. TWO bars, because the
-# healthy noise differs by 100x between the two weight regimes (RTX 3080 Ti, torch 2.5.1, 64 rows,
-# fp32, 2026-09-29; `designs/training/compile_flags.md`, "The train graph's coverage"):
-#   * the FRESH-weights perturbed pass (every fresh launch): healthy max 7.3e-06 over 6 seeds;
-#     a 10% backward error on the pointer's move cells reads 1.01e-02 -> bar 1e-3;
-#   * REAL (trained) weights: healthy max 9.3e-04 on ai_v14_01_base/final, and perturbed trained
-#     states showed isolated 4.9e-02 outliers (the alpha seat scorer) -> bar 0.2, which still
-#     refuses any >=20% backward error on a path (a DROPPED path reads ~1.0).
-_MAX_PARAM_GRAD_REL = 1e-3
-_MAX_PARAM_GRAD_REL_TRAINED = 0.2
+# `_PARAM_GRAD_FLOOR` x the largest one is ALSO held to a per-parameter bar. The BAR is the caller's:
+# it depends on the weight regime and on the loss it judges — region R1's is `compile_regions.
+# R1_PARAM_BAR` (`gen3_r1_param_bar_by_regime_v1`), and `train_verdict` / `_param_verdict` REFUSE a
+# per-parameter comparison without one (P10-E: the retired extractor gate's 1e-3 / 0.2 TF32-era
+# bars were the silent default of a caller that forgot to pass its own, and are deleted).
 _PARAM_GRAD_FLOOR = 1e-3
 
 
@@ -241,11 +231,19 @@ def decision_verdicts(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "
 
 def _param_verdict(compiled: Dict[str, "torch.Tensor"], eager: Dict[str, "torch.Tensor"],
                    param_names: Optional[List[str]], *, allow_vacuous: bool = False,
-                   bar: float = _MAX_PARAM_GRAD_REL) -> Optional[str]:
+                   bar: Optional[float] = None) -> Optional[str]:
     """The per-parameter gradient rule (fp32 only). None when the arms carry no ``grad_sizes``
-    (a hand-built verdict input)."""
+    (a hand-built verdict input). The ``bar`` is REQUIRED once they do: there is no default bar
+    (`_PARAM_GRAD_FLOOR`'s comment), so a caller that forgot the regime-selected one is a typed
+    refusal, never a quietly stricter or looser gate."""
     if "grad_sizes" not in eager or "grad_sizes" not in compiled:
         return None
+    if bar is None:
+        raise CompileTrainerError(
+            "--compile-trainer: the per-parameter gradient rule needs the caller's own bar "
+            "(`param_bar` — region R1's is `compile_regions.R1_PARAM_BAR[regime]`); there is no "
+            "default (the retired extractor gate's 1e-3 was TF32-era and would judge R1's healthy "
+            "fp32 noise as a miscompile)")
     sizes = [int(x) for x in eager["grad_sizes"].tolist()]
     if sizes != [int(x) for x in compiled["grad_sizes"].tolist()]:
         raise CompileTrainerError("--compile-trainer: the two arms' gradients cover different "
@@ -275,14 +273,14 @@ def _param_verdict(compiled: Dict[str, "torch.Tensor"], eager: Dict[str, "torch.
 
 def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torch.Tensor"],
                   allow_vacuous: bool = False, param_names: Optional[List[str]] = None,
-                  param_bar: float = _MAX_PARAM_GRAD_REL) -> str:
+                  param_bar: Optional[float] = None) -> str:
     """The TRAIN-graph parity gate: forward features (the numerics rule) AND the gradient's cosine:
     cos(compiled_grad, eager_grad) >= 0.9999. The eager arm's features must vary across rows and its
     gradient must be non-zero (`VacuousCompileParityError` otherwise; an all-zero gradient has cosine 1.0
     with anything's zero).
 
     When the arms carry per-parameter sizes (``grad_sizes``, region R1's arms do), every parameter above
-    the floor is ALSO held to ``param_bar`` (`_param_verdict`)."""
+    the floor is ALSO held to ``param_bar`` (`_param_verdict`) — REQUIRED then, with no default."""
     if not allow_vacuous:
         _require_informative({"features": eager["features"], "grad": eager["grad"]},
                              {"features": _MAX_NUMERIC_DRIFT, "grad": 0.0},
@@ -308,35 +306,15 @@ def resolve_device(fe: Any) -> "torch.device":
     return next(fe.parameters()).device  # type: ignore[no-any-return]
 
 
-#: Batch sizes the compiled rollout region R0 never serves (`gen3_batch1_eager_v1`, Lane K): a call at
-#: one of these batch sizes runs the policy's EAGER rollout core (same parameters, same autograd).
-#:
-#: WHY batch 1. On torch 2.8.0+cu126 a batch-1 CUDA eval/no-grad graph of the production extractor
-#: does not LOWER (Triton `CompilationError`, "'constexpr_type' object has no attribute 'is_block'" on
-#: a fully-constant `tl.broadcast_to` index — the K1 finding; batch 2 and 4 compile). Batch 1 reaches
-#: the learner process only OFF the hot path (a `--debug` single-env rollout; the trainer's former
-#: in-process final evaluation is deleted). Eager costs ~18 ms per batch-1 forward and nothing else. So batch 1 is never a
-#: compiled signature, and the declared signature table (`compile_regions.prewarm_calls`) contains
-#: none; `compile_regions_test` pins the route.
-EAGER_BATCHES = frozenset({1})
-
-
-def _rows(obs: Any) -> int:
-    x: Any = obs.get("observation") if isinstance(obs, dict) else obs
-    if x is None and isinstance(obs, dict):
-        x = next(iter(obs.values()))
-    return int(x.shape[0])
-
-
 # ------------------------------------------------------------------------------------------------
-# gen3_compile_sentinel_v1 — `compile_control`'s phases for the declared regions: reset, install +
+# gen3_compile_sentinel_v1 — `compile_control`'s phases for the declared region: reset, install +
 # gate, prewarm, lock, attach
 # ------------------------------------------------------------------------------------------------
 
 def _prewarm_obs(model: Any, batch: int, slice_: int = 0) -> Dict[str, "torch.Tensor"]:
-    """A batch shaped EXACTLY like the rollout's `obs_as_tensor(self._last_obs)`: every key of the
-    policy's observation space (dynamo guards the dict), `observation` from the committed REAL rows,
-    `action_mask` from their masks, every other key zeros of its space's shape and dtype."""
+    """A batch of ``batch`` rows over every key of the policy's observation space: `observation` from
+    the committed REAL rows, `action_mask` from their masks, every other key zeros of its space's
+    shape and dtype (`compile_regions.weights_regime`'s eager freshness read)."""
     import numpy as np
 
     policy = model.policy
@@ -383,17 +361,17 @@ def preflight_compile_trainer(model: Any, enabled: bool, *,
     if device.type != "cuda":
         raise CompileTrainerError(
             f"--compile-trainer requires CUDA, but the model is on {device.type!r}.\n"
-            "The compiled learner (the declared regions, their startup gate, the canary and the "
+            "The compiled learner (the declared region, its startup gate, the canary and the "
             "measured speedup) exists on CUDA only; a CPU compiled learner has never been gated. "
             "Pass --device cuda, or drop --compile-trainer.")
     if not hasattr(model, "_micro_static"):
         raise CompileTrainerError(
             "--compile-trainer: this learner has no micro-step (`_micro_static`), so its declared "
-            "region R1 cannot be built. The learner compiles ONLY as its declared regions (R0 the "
-            "rollout core, R1 the micro-step; the extractor-only compile was deleted 2026-10-02) — "
-            "use the instrumented learner, or drop --compile-trainer.")
-    msg = ("⚡ [CompileTrainer] ON — the learner compiles as its DECLARED REGIONS (R0, R1) at the "
-           "compile sentinel, gated there (gen3_one_gate_per_region_v1)")
+            "region R1 cannot be built. The learner compiles ONLY as its declared region (R1 the "
+            "micro-step; the extractor-only compile was deleted 2026-10-02, the rollout region R0 "
+            "2026-10-03) — use the instrumented learner, or drop --compile-trainer.")
+    msg = ("⚡ [CompileTrainer] ON — the learner compiles as its DECLARED REGION (R1, the micro-step) "
+           "at the compile sentinel, gated there (gen3_one_gate_per_region_v1)")
     print(msg, flush=True)
     if emit is not None:
         try:
@@ -402,22 +380,22 @@ def preflight_compile_trainer(model: Any, enabled: bool, *,
             pass                          # a diagnostic must never break the run
 
 
-def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
+def arm_compile_sentinel(model: Any, *, batch_size: int,
                          emit: Optional[Callable[[str], None]] = None) -> str:
-    """Install, gate, prewarm and LOCK the learner's declared regions, and attach the per-rollout /
+    """Install, gate, prewarm and LOCK the learner's declared region, and attach the per-rollout /
     per-update checks. Called only for a compiled learner (`--compile-trainer`).
 
-    K8 (gen3_declared_regions_v1): R0 (the rollout core) and R1 (the micro-step), each
-    `fullgraph=True`, gated against eager on real rows, prewarmed at exactly the declared signatures,
-    then locked (K6: before the first real iteration). MUST run after `_apply_grad_checkpointing`
-    (the forward reads `grad_checkpointing`, so a graph compiled before it is a stale entry) and
-    before `learn()`. Raises `CompileTrainerError` (incl. `CompileSentinelError`).
+    K8 (gen3_declared_regions_v1): R1 (the micro-step), `fullgraph=True`, gated against eager on real
+    rows, prewarmed at exactly its declared signature, then locked (K6: before the first real
+    iteration). MUST run after `_apply_grad_checkpointing` (the forward reads `grad_checkpointing`,
+    so a graph compiled before it is a stale entry) and before `learn()`. Raises
+    `CompileTrainerError` (incl. `CompileSentinelError`).
     """
     fe = getattr(getattr(model, "policy", None), "features_extractor", None)
     if fe is None or not hasattr(model, "_micro_static"):
         raise CompileTrainerError(
             "--compile-trainer: the compile sentinel needs the instrumented learner (a features "
-            "extractor and the micro-step `_micro_static`) — the declared regions are the only "
+            "extractor and the micro-step `_micro_static`) — the declared region is the only "
             "compiled learner surface")
     from agents.model.compile_control import control, set_strict_errors
     # `install` pins the compile config (K1b's `donated_buffer=False` — without it the first
@@ -439,9 +417,9 @@ def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
     from agents.model import compile_regions as _cr
     _say(f"[CompileRegions] installing {_cr.install(model, emit=emit)} (fullgraph=True, static "
          f"shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)")
-    _cr.gate_regions(model, n_envs=int(n_envs), batch_size=int(batch_size), say=_say)
-    line = ctl.prewarm(_cr.prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size)))
-    _say(_cr.assert_inventory(model, int(n_envs)))
+    _cr.gate_regions(model, batch_size=int(batch_size), say=_say)
+    line = ctl.prewarm(_cr.prewarm_calls(model, batch_size=int(batch_size)))
+    _say(_cr.assert_inventory(model))
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     _say(f"{line} — reset + prewarm took {time.perf_counter() - t0:.1f}s")
@@ -451,11 +429,11 @@ def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
     ctl.lock("the end of startup (the region gate, the reset and the prewarm of every declared "
              "signature)")
     # K6's IN-RUN PARITY CANARY: the startup gate proves the graph at t=0, the canary at t=N.
-    from agents.model.compile_canary import CANARY_EVERY, CANARY_FIRST, GRAD_EVERY, CompileCanary
-    ctl.canary = CompileCanary(model, n_envs=int(n_envs), batch_size=int(batch_size), emit=emit)
-    _say(f"🐤 [CompileCanary] armed: compiled vs eager on the real-obs fixture at update {CANARY_FIRST}, "
-         f"then every {CANARY_EVERY} updates (decision readout at the rollout signature "
-         f"B={int(n_envs)}; the train graph's gradient every {CANARY_EVERY * GRAD_EVERY}, "
-         f"B={int(batch_size)}), at the startup gate's bars; a disagreement is confirmed before it FATALs")
+    from agents.model.compile_canary import CANARY_EVERY, CANARY_FIRST, CompileCanary
+    ctl.canary = CompileCanary(model, batch_size=int(batch_size), emit=emit)
+    _say(f"🐤 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner "
+         f"golden's real labelled rows at update {CANARY_FIRST}, then every {CANARY_EVERY} updates "
+         f"(loss + every policy gradient, B={int(batch_size)}), at the startup gate's bars; a "
+         f"disagreement is confirmed before it FATALs")
     ctl.attach(model)
     return line

@@ -167,10 +167,11 @@ def _rollout_batch(model: Any, pristine: Dict[str, Any]) -> tuple:
 
 
 def _restore(model: Any, pristine: Dict[str, Any], state0: Dict[str, Any], seed: int) -> None:
+    from agents.training.logger_scope import hold
     lb.restore_buffer_state(model.rollout_buffer, pristine)
     lb.restore_model_state(model, state0)
     lb.seed_all(seed)
-    model.logger.name_to_value.clear()
+    hold(model.logger)      # drop EVERY pending scalar — value, count AND exclusion (the owned logger pairs them key for key)
 
 
 def _update(model: Any, fn: Callable[[Any], None], *, cfg_name: Optional[str], base_epochs: int,
@@ -392,7 +393,7 @@ def _stage_time(model: Any, cfg: Dict[str, Any], out: Path) -> Dict[str, Any]:
     from agents.model import compile_regions as _cr
     res: Dict[str, Any] = {"compiled_extractor": "forward" in vars(fe),
                            "buffer_restored": bool(lb._WORKER.get("buffer_restored")),
-                           "compiled_regions": _cr.installed(model),     # K8: R0 + R1 on torch 2.8
+                           "compiled_regions": _cr.installed(model),     # K8: R1 (the micro-step)
                            "torch": torch.__version__,
                            "matmul_precision": torch.get_float32_matmul_precision()}
     if not (res["compiled_extractor"] or res["compiled_regions"]):

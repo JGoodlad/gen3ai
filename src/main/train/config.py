@@ -802,8 +802,9 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # --debug run with no --device is cpu, and must stay a pure-CPU minute-long smoke). An explicit
     # --compile-trainer / --no-compile-trainer always wins; the auto value only fills the None.
     #
-    # ⚠️ THE SECOND HALF IS NOT OPTIONAL. `check_shape_stability` REFUSES a rollout that does not
-    # divide by --batch-size, so a device-only default would convert a class of command that works
+    # ⚠️ THE SECOND HALF IS NOT OPTIONAL. `check_shape_stability` REFUSES an update (the real size:
+    # --rollout-target-samples, else n_steps * n_envs) that does not divide by --batch-size, so a
+    # device-only default would convert a class of command that works
     # today into a FATAL_CONFIG exit — the same failure the cpu conditioning above exists to avoid,
     # one flag over. A DEFAULT yields
     # to the config the user actually typed and says why; an EXPLICIT --compile-trainer still hits
@@ -811,7 +812,8 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if args.compile_trainer is None:
         args.compile_trainer, _ct_why = resolve_compile_trainer_auto(
             device=args.device, debug=args.debug, n_steps=args.n_steps, n_envs=args.n_envs,
-            batch_size=args.batch_size)
+            batch_size=args.batch_size, rollout_trigger=getattr(args, "rollout_trigger", None),
+            rollout_target_samples=getattr(args, "rollout_target_samples", 0))
         if _ct_why:
             emit("⚡ --compile-trainer would be ON by default here, but this config cannot take "
                  f"it — leaving it OFF rather than refusing to launch. Reason: {_ct_why} "

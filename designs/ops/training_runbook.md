@@ -419,7 +419,7 @@ refused up front: the compiled learner is gated on CUDA only.
 
 **The DEFAULT yields; the REFUSAL does not.** `auto`/`cuda` with a card ⇒ on; `cpu`, any other
 explicit device, or `--debug` ⇒ off. The auto path *also* runs `check_shape_stability` and stays
-OFF (with a startup line saying why) when the config is one this flag refuses — a rollout that does not divide by `--batch-size` — because a default must never turn a command
+OFF (with a startup line saying why) when the config is one this flag refuses — an update (the real size: `--rollout-target-samples`, else `n_steps * n_envs`) that does not divide by `--batch-size` — because a default must never turn a command
 that works today into a `FATAL_CONFIG`. An explicit `--compile-trainer` on any of those still exits
 `FATAL_CONFIG` with the message it always did. **A default yields to the config you typed and says
 so; an explicit flag refuses.**

@@ -10,17 +10,24 @@ pinned by file:line (line keys churn on every edit). Owner: correctness beats ch
 
 THE TABLE (`REGIONS`):
 
-  R0  rollout_forward      `Gen3DualHeadMaskablePolicy.rollout_core`: extractor + MLP towers +
-                           pointer head + critic read + FUNCTIONAL masking -> (values, masked log-
-                           probs). eval / no-grad / batch n_envs. The action draw stays eager (the
-                           same `multinomial` call, the same RNG stream). Batch 1 (an off-hot-path
-                           forward, e.g. a `--debug` single-env rollout) runs the eager core (`gen3_batch1_eager_v1`). Serves the
-                           python env core's rollout; on the Rust env core T2 serves rollouts.
+  R0  (DELETED, P10-E, owner-approved 2026-10-03)  The compiled ROLLOUT forward. On the only env core
+                           the Rust collector serves every rollout forward through the T2 inference
+                           service (`agents/inference/service`, its own gate on every served bucket),
+                           so the learner process never called R0 — yet it was compiled, gated,
+                           prewarmed and canaried at every launch (a sizing run's log: 240 compiled
+                           region calls per update, all R1's). The learner's EAGER
+                           `Gen3DualHeadMaskablePolicy.rollout_core` / `forward` stay for the
+                           callers that are not the hot path (`predict`, the prober, the eval workers,
+                           tests).
   R1  learner_micro_step   `instrumented_ppo.micro_step.micro_step`: `evaluate_actions` + fold steps
                            1–3a (`gen3_learner_micro_step_v1`). train / grad / batch batch_size; its
-                           backward is AOTAutograd's, from the same graph. A RAGGED micro-batch (any
-                           other row count: the last of an epoch over an uneven rollout) runs the
-                           same function EAGER — a declared route, never a new signature.
+                           backward is AOTAutograd's, from the same graph. ONE declared row count:
+                           the collector refuses an update that does not divide by the micro-batch
+                           (`RustCollector._ensure_buffer`; the combination check
+                           `rollout_target_on_the_quantum`; `compile_trainer.check_shape_stability` at
+                           startup), so a ragged micro-batch never reaches R1 — and one that does
+                           (a mis-wired caller) is REFUSED by the dispatcher, never run eager or
+                           compiled as a new signature (`gen3_r1_no_ragged_v1`).
   R2  rank_probe         — NO forward at all (K8, `gen3_rank_device_v1`): the effective-rank probe
                            reads R1's OWN forward's stashes on the first micro-batch (trunk tokens,
                            value CLS, the projected pi / vf features) and computes the four spectra
@@ -39,7 +46,7 @@ TORCH. Regions are a torch 2.8 feature, and HEAD runs torch >= 2.8 only (`utils.
 the ONLY compiled learner surface (the 2.5.1 extractor-only compile was deleted 2026-10-02); a run
 trained on 2.5.1 resumes pinned to its own commit, which still carries that compile.
 
-THE GATE. `gate_regions` holds each compiled region to eager at startup on REAL rows — R1 ALWAYS on
+THE GATE. `gate_regions` holds the compiled region to eager at startup on REAL rows — R1 ALWAYS on
 the K9 learner golden's real labelled buffer (`gen3_r1_golden_rows_always_v1`, P10-C): a key this run
 declares that the golden lacks is filled with its DECLARED placeholder (`fill_value`: the label
 inventory's `host_const` value, e.g. the fork arm's `fork_pg_m` = 1.0, or the extra-obs-keys
@@ -50,9 +57,8 @@ belief losses, so ~48 of their parameters fell under the per-parameter floor unj
 parameter set is ALSO held to the golden rows' own (the same weights, the filled keys removed and the
 static resolved without them): a parameter the golden judges CLEARLY that this run's rows do not judge
 is a FATAL (`judged_set_shrinkage`). R1's loss and the gradient over
-every policy parameter (cosine ≥ 0.9999 and the per-parameter rule), R0's decision readout (legal
-log-probs, V; on a seeded perturbation of FRESH weights, whose legal log-probs are constant). The
-gate runs at fp32 matmul precision 'highest' only — the one precision (TF32 was retired, deletion pass
+every policy parameter (cosine ≥ 0.9999 and the per-parameter rule; on a FRESH launch also on a seeded
+perturbation, whose legal log-probs are not constant). The gate runs at fp32 matmul precision 'highest' only — the one precision (TF32 was retired, deletion pass
 K2); a process at any other precision is refused. A disagreement is a `CompileTrainerError`
 (FATAL_CONFIG).
 """
@@ -69,7 +75,7 @@ from agents.model import region_calls as RC
 
 
 class Signature(NamedTuple):
-    batch: str                       # "n_envs" | "batch_size"
+    batch: str                       # "batch_size"
     mode: str                        # "eval" | "train"
     grad: bool
 
@@ -83,9 +89,6 @@ class Region(NamedTuple):
 
 
 REGIONS: Tuple[Region, ...] = (
-    Region("R0_rollout_forward", "Gen3DualHeadMaskablePolicy.rollout_core",
-           (Signature("n_envs", "eval", False),), True,
-           "the env step is the boundary; the action draw stays eager (same RNG stream)"),
     Region("R1_learner_micro_step", "instrumented_ppo.micro_step.micro_step",
            (Signature("batch_size", "train", True),), True,
            "the accumulation group + optimizer step are per GROUP; the host read follows it"),
@@ -100,37 +103,26 @@ def compiled_regions() -> Tuple[Region, ...]:
     return tuple(r for r in REGIONS if r.compiled)
 
 
-def declared_signature_count(n_envs: int) -> int:
-    """How many compiled graphs the table declares (a batch in `EAGER_BATCHES` is not compiled)."""
-    n = 0
-    for r in compiled_regions():
-        for s in r.signatures:
-            if not (s.batch == "n_envs" and int(n_envs) in ct.EAGER_BATCHES):
-                n += 1
-    return n
+def declared_signature_count() -> int:
+    """How many compiled graphs the table declares."""
+    return sum(len(r.signatures) for r in compiled_regions())
 
 
 # ------------------------------------------------------------------------------------- install
-def _rollout_core(policy: Any, obs: Any, action_masks: Any) -> Tuple[torch.Tensor, torch.Tensor]:
-    out: Tuple[torch.Tensor, torch.Tensor] = policy.rollout_core(obs, action_masks)
-    return out
-
-
 def install(model: Any, *, backend: Optional[str] = None,
             emit: Optional[Callable[[str], None]] = None) -> List[str]:
-    """Compile R0 and R1 (`fullgraph=True`, static shapes) and install them: R1 as
-    ``model._compiled_micro_step`` (read by `TrainSetup._micro_region`), R0 in the policy module's
-    weak registry (`policy._ROLLOUT_REGIONS`). Any instance-level extractor forward (none is
-    installed on the learner since the extractor-only compile's deletion) is removed first, so the regions trace the extractor's own forward and every
-    other caller runs it eager. Returns the installed region names. Compilation happens LAZILY at
-    each region's first call — the gate and the prewarm make that first call at startup."""
+    """Compile R1 (`fullgraph=True`, static shapes) and install it as ``model._compiled_micro_step``
+    (read by `TrainSetup._micro_region`). Any instance-level extractor forward (none is installed on
+    the learner since the extractor-only compile's deletion) is removed first, so the region traces
+    the extractor's own forward and every other caller runs it eager. Returns the installed region
+    names. Compilation happens LAZILY at the region's first call — the gate and the prewarm make that
+    first call at startup."""
     from agents.model.compile_control import control
-    from agents.model.policy import _ROLLOUT_REGIONS
     from agents.training.instrumented_ppo.micro_step import micro_step
     policy = model.policy
     fe = policy.features_extractor
-    # K3 (gen3_hermetic_compile_cache_v1): the regions compile into the RUN's own cache (declared by
-    # the trainer at startup; idempotent here), never a cache torch would pick by default.
+    # K3 (gen3_hermetic_compile_cache_v1): the regions compile into the RUN's own cache (declared
+    # by the trainer at startup; idempotent here), never a cache torch would pick by default.
     from agents.model.compile_cache import ensure_hermetic_cache
     ensure_hermetic_cache("learner regions compile")
     if "forward" in vars(fe):
@@ -143,21 +135,18 @@ def install(model: Any, *, backend: Optional[str] = None,
     rows = int(getattr(model, "batch_size", 0) or 0)
 
     def r1(policy: Any, obs: Any, actions: Any, *rest: Any) -> Any:
-        # R1's ONE declared signature is `batch_size` rows. A RAGGED micro-batch (the last one of an
-        # epoch when the rollout does not divide evenly — fork rows, an uneven sizing) takes the
-        # DECLARED EAGER route, the same function: never a new compiled signature after the lock.
-        # Its declared size is ONE per epoch (`rollout_buffer.get` yields full batches, then the
-        # rest); more in one update is not a ragged tail any more (gen3_no_silent_eager_v1).
+        # R1's ONE declared signature is `batch_size` rows (`gen3_r1_no_ragged_v1`). The collector
+        # refuses an update that does not divide by the micro-batch, so another row count is a
+        # mis-wired caller: REFUSED here, naming the cause — never an eager run (a silent ~2x
+        # slowdown) and never a second compiled signature (the sentinel's FATAL after the lock, a
+        # silent extra graph before it).
         if int(actions.shape[0]) != rows:
-            n = RC.count("R1_eager_ragged")
-            cap = max(1, int(getattr(model, "n_epochs", 1) or 1))
-            if ctl.locked and n > cap:
-                raise ct.CompileTrainerError(
-                    f"--compile-trainer region R1: {n} RAGGED micro-batches in one update (declared: "
-                    f"at most one per epoch, {cap}) — R1 is running EAGER on the hot path "
-                    f"({int(actions.shape[0])} rows vs the declared {rows}); a silent ~2x slowdown, "
-                    f"stopped (gen3_no_silent_eager_v1)")
-            return micro_step(policy, obs, actions, *rest)
+            raise ct.CompileTrainerError(
+                f"--compile-trainer region R1: a micro-batch of {int(actions.shape[0])} rows, but the "
+                f"declared signature is {rows} (--batch-size). The collector guarantees full "
+                f"micro-batches (an update that does not divide by the batch size is refused at "
+                f"startup and at every buffer build), so this call is mis-wired — R1 has no ragged "
+                f"route (gen3_r1_no_ragged_v1)")
         before = RC.EAGER_BODY["R1"]
         out = r1c(policy, obs, actions, *rest)
         _ran_compiled("R1", before)
@@ -168,54 +157,7 @@ def install(model: Any, *, backend: Optional[str] = None,
     # the R1 signature this run DECLARES (its levers from the resolved config) — every update is
     # held to it (`check_r1_declared`)
     model._r1_declared = r1_declaration(model)
-    _ROLLOUT_REGIONS[policy] = _make_r0(ctl, kw)
-    return ["R0_rollout_forward", "R1_learner_micro_step"]
-
-
-def _make_r0(ctl: Any, kw: Dict[str, Any]) -> Callable[..., Tuple[torch.Tensor, torch.Tensor]]:
-    """Region R0's dispatcher: the compiled rollout core (`_rollout_core`, ``kw`` = the compile
-    kwargs) for every batch but `EAGER_BATCHES`, which run the eager core."""
-    r0c = ctl.wrap_compiled(torch.compile(_rollout_core, **kw))
-
-    def r0(pol: Any, obs: Any, action_masks: Any) -> Tuple[torch.Tensor, torch.Tensor]:
-        out: Tuple[torch.Tensor, torch.Tensor]
-        # ONE declared mask input: a bool tensor on the learner's device (`gen3_r0_mask_dtype_v1`).
-        # The rollout hands the policy the env's numpy masks — int8 from the env workers — while the
-        # gate and the prewarm passed numpy bool, and dynamo guards a numpy input's dtype: the first
-        # real rollout was an UNDECLARED signature, the sentinel's FATAL at rollout end (found by the
-        # launcher restart proof, 2026-10-01). `masked_categorical` reads any of them as
-        # `as_tensor(m, dtype=bool)`, so normalising here changes no number.
-        if action_masks is not None:
-            action_masks = torch.as_tensor(action_masks, dtype=torch.bool,
-                                           device=ct.resolve_device(pol.features_extractor))
-        if ct._rows(obs) in ct.EAGER_BATCHES:            # gen3_batch1_eager_v1
-            RC.count("R0_eager_batch1")                  # declared, counted, logged per update
-            out = pol.rollout_core(obs, action_masks)
-        else:
-            before = RC.EAGER_BODY["R0"]
-            out = r0c(pol, obs, action_masks)
-            _ran_compiled("R0", before)
-            RC.count("R0_compiled")
-        return out
-    return r0
-
-
-def install_rollout_region(policy: Any, *, backend: Optional[str] = None,
-                           emit: Optional[Callable[[str], None]] = None) -> str:
-    """Install region R0 ALONE on ``policy`` — production's rollout compile (`fullgraph=True`, static
-    shapes, the process's compile config) — for a caller that measures the rollout forward outside
-    the trainer (the M5 throughput A/B's `LearnerSampling`). Compiles lazily at the first call; never
-    locked. Returns the region name."""
-    from agents.model.compile_control import control
-    from agents.model.policy import _ROLLOUT_REGIONS
-    from agents.model.compile_cache import ensure_hermetic_cache
-    ensure_hermetic_cache("rollout region compile")
-    ctl = control(emit).install()
-    kw: Dict[str, Any] = {"fullgraph": True, "dynamic": False}
-    if backend is not None:
-        kw["backend"] = backend
-    _ROLLOUT_REGIONS[policy] = _make_r0(ctl, kw)
-    return "R0_rollout_forward"
+    return ["R1_learner_micro_step"]
 
 
 def _ran_compiled(region: str, before: int) -> None:
@@ -231,28 +173,24 @@ def _ran_compiled(region: str, before: int) -> None:
             f"slowdown: stopped (gen3_no_silent_eager_v1)")
 
 
-def assert_inventory(model: Any, n_envs: int) -> str:
+def assert_inventory(model: Any) -> str:
     """The compiled-region INVENTORY equals the declaration, in the run (startup, after the
-    prewarm): one cache entry on R1's code object, one on R0's (none when `n_envs` is a declared
-    eager batch). Other code objects are not judged (they belong to other components). Raises
-    `CompileTrainerError`; returns the log line."""
+    prewarm): one cache entry on R1's code object. Other code objects are not judged (they belong to
+    other components). Raises `CompileTrainerError`; returns the log line."""
     from agents.model.compile_control import cache_entries_by_code
     ent = cache_entries_by_code()
-    want = {"micro_step": 1, "_rollout_core": 0 if int(n_envs) in ct.EAGER_BATCHES else 1}
+    want = {"micro_step": 1}
     got = {name: sum(v for k, v in ent.items() if k.split(" ")[0] == name) for name in want}
     if got != want:
         raise ct.CompileTrainerError(
             f"--compile-trainer: the compiled-region INVENTORY differs from the declaration — "
             f"cache entries {got}, declared {want} (gen3_no_silent_eager_v1)")
-    return (f"[CompileRegions] inventory == declaration: R1 1 graph, R0 {want['_rollout_core']} "
-            f"graph(s) (fullgraph=True)")
+    return "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)"
 
 
 def uninstall(model: Any) -> None:
-    from agents.model.policy import _ROLLOUT_REGIONS
     model._compiled_micro_step = None
     model._r1_declared = None
-    _ROLLOUT_REGIONS.pop(model.policy, None)
 
 
 def installed(model: Any) -> bool:
@@ -468,9 +406,8 @@ def _fatal_compile_errors() -> Iterator[None]:
 
 
 # ------------------------------------------------------------------------------------ the gate
-def gate_regions(model: Any, *, n_envs: int, batch_size: int,
-                 say: Callable[[str], None] = print) -> List[str]:
-    """Hold R1 and R0 to eager at startup (module docstring). Raises `CompileTrainerError`."""
+def gate_regions(model: Any, *, batch_size: int, say: Callable[[str], None] = print) -> List[str]:
+    """Hold R1 to eager at startup (module docstring). Raises `CompileTrainerError`."""
     from agents.model.parity_probe import unmeasured_precision
     refusal = unmeasured_precision()
     if refusal is not None:
@@ -496,9 +433,6 @@ def gate_regions(model: Any, *, n_envs: int, batch_size: int,
                 rules.append("R1 " + _r1_judged_set_rule(model, b, eager, names))
             if regime == "fresh":
                 rules.append("R1 " + _r1_perturbed(model, args, names))
-            # ---- R0: eval / no-grad / n_envs, the decision readout
-            if int(n_envs) not in ct.EAGER_BATCHES:
-                rules += ["R0 " + r for r in _r0_verdicts(model, int(n_envs))]
     finally:
         policy.set_training_mode(was)
         for p in policy.parameters():
@@ -627,7 +561,7 @@ def weights_regime(model: Any, rows: int = 8) -> str:
                              ct.resolve_device(policy.features_extractor))
     policy.set_training_mode(False)
     try:
-        e = _r0_readout(model, _rollout_core, obs, mask)
+        e = _decision_readout(model, obs, mask)
     finally:
         policy.set_training_mode(was)
     bar = {"legal_logprob": ct._FP32_TOL["legal_logprob"]}
@@ -639,7 +573,7 @@ def _r1_perturbed(model: Any, args: Tuple[Any, ...], names: List[str]) -> str:
     every policy parameter, in place and restored bit-exactly (`parity_probe.perturbed_parameters`)
     — judged at the TRAINED bar. On fresh weights a few ill-conditioned gradients (the uniform belief
     heads) need the looser fresh bar, under which a backward defect could hide; the perturbed weights
-    are trained-like and get the tight one (the extractor gate's and R0's own fresh-weights rule)."""
+    are trained-like and get the tight one (the deleted extractor gate's fresh-weights rule)."""
     from agents.model.parity_probe import PERTURB_LADDER, perturbed_parameters, rung_seed
     from agents.training.instrumented_ppo.micro_step import micro_step
     scale, k = PERTURB_LADDER[0]
@@ -669,61 +603,21 @@ def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], n
     return f"[{label or regime + ' weights'}] {loss_rule}; {grad_rule}"
 
 
-def _r0_readout(model: Any, fn: Callable[..., Any], obs: Any, mask: Any) -> Dict[str, torch.Tensor]:
+def _decision_readout(model: Any, obs: Any, mask: Any) -> Dict[str, torch.Tensor]:
+    """The EAGER decision readout (legal log-probs, V) of the policy's own rollout core on ``obs`` —
+    what `weights_regime` reads to tell a fresh launch's constant legal log-probs from trained ones."""
     with torch.no_grad():
-        values, logp = fn(model.policy, obs, mask)
+        values, logp = model.policy.rollout_core(obs, mask)
         legal = torch.as_tensor(mask, device=logp.device, dtype=torch.bool)
         return {"value": values.float().flatten().clone(),
                 "legal_logprob": torch.where(legal, logp.float(), torch.zeros_like(logp.float())).clone()}
 
 
-def _r0_verdicts(model: Any, n_envs: int) -> List[str]:
-    from agents.model.parity_probe import PERTURB_LADDER, fresh_reason, perturbed_parameters, rung_seed
-    from agents.model.policy import _ROLLOUT_REGIONS
-    policy = model.policy
-    policy.set_training_mode(False)
-    obs = ct._prewarm_obs(model, n_envs)
-    _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), n_envs, ct.resolve_device(
-        policy.features_extractor))
-    comp_fn = _ROLLOUT_REGIONS[policy]
-
-    def arms() -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
-        return (_r0_readout(model, comp_fn, obs, mask), _r0_readout(model, _rollout_core, obs, mask))
-
-    c, e = arms()
-    tol = {k: v for k, v in ct._FP32_TOL.items() if k in e}
-    fresh = fresh_reason(e, tol)
-    if fresh is None:
-        return ct.decision_verdicts(eager=e, compiled=c)
-    for scale, k in PERTURB_LADDER:
-        with perturbed_parameters(policy, seed=rung_seed(k), scale=scale):
-            c, e = arms()
-            if fresh_reason(e, tol) is None:
-                return [f"[fresh weights, perturbation scale={scale:g} seed+{k}] " + x
-                        for x in ct.decision_verdicts(eager=e, compiled=c)]
-    raise ct.CompileTrainerError(f"--compile-trainer region R0: the decision readout is vacuous on the "
-                                 f"weights and on every perturbation rung ({fresh}) — refusing")
-
-
 # ---------------------------------------------------------------------------------- the prewarm
-def prewarm_calls(model: Any, *, n_envs: int, batch_size: int) -> List[Tuple[str, Callable[[], None]]]:
-    """The declared signatures, as prewarm calls (`compile_control.prewarm`): R0 at its rollout
-    signature, R1 at its update signature (forward + backward), each on real rows."""
-    from agents.model.policy import _ROLLOUT_REGIONS
+def prewarm_calls(model: Any, *, batch_size: int) -> List[Tuple[str, Callable[[], None]]]:
+    """The declared signatures, as prewarm calls (`compile_control.prewarm`): R1 at its update
+    signature (forward + backward), on real rows."""
     policy = model.policy
-    calls: List[Tuple[str, Callable[[], None]]] = []
-
-    def _r0() -> None:
-        was = policy.training
-        policy.set_training_mode(False)
-        try:
-            obs = ct._prewarm_obs(model, int(n_envs))
-            _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), int(n_envs),
-                                     ct.resolve_device(policy.features_extractor))
-            with _fatal_compile_errors(), torch.no_grad():
-                _ROLLOUT_REGIONS[policy](policy, obs, mask)
-        finally:
-            policy.set_training_mode(was)
 
     def _r1() -> None:
         was = policy.training
@@ -735,8 +629,4 @@ def prewarm_calls(model: Any, *, n_envs: int, batch_size: int) -> List[Tuple[str
             policy.set_training_mode(was)
             policy.zero_grad(set_to_none=True)
 
-    if int(n_envs) not in ct.EAGER_BATCHES:
-        calls.append((f"R0 rollout_forward eval/no-grad B={int(n_envs)}", _r0))
-    calls.append((f"R1 learner_micro_step train/grad B={int(batch_size)}", _r1))
-    return calls
-
+    return [(f"R1 learner_micro_step train/grad B={int(batch_size)}", _r1)]

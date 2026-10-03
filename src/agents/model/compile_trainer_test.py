@@ -107,8 +107,8 @@ def test_missing_extractor_is_refused():
 
 
 def test_a_learner_without_the_micro_step_is_REFUSED_not_compiled_another_way(monkeypatch):
-    """The declared regions are the ONLY compiled learner surface (the torch-2.5.1 extractor-only
-    compile was deleted, K1 2026-10-02): a learner without `_micro_static` cannot build R1, so it is
+    """The declared region is the ONLY compiled learner surface (the torch-2.5.1 extractor-only
+    compile was deleted, K1 2026-10-02; the rollout region R0, P10-E): a learner without `_micro_static` cannot build R1, so it is
     refused at the compile step rather than silently compiled as something smaller. Fails if a
     fallback compile path comes back."""
     monkeypatch.setattr("agents.model.compile_trainer.resolve_device",
@@ -119,11 +119,11 @@ def test_a_learner_without_the_micro_step_is_REFUSED_not_compiled_another_way(mo
     assert "forward" not in vars(m.policy.features_extractor)
     from agents.model.compile_trainer import arm_compile_sentinel
     with pytest.raises(CompileTrainerError, match="instrumented learner"):
-        arm_compile_sentinel(m, n_envs=4, batch_size=16)
+        arm_compile_sentinel(m, batch_size=16)
     lines = []
     m._micro_static = lambda *a: None
     preflight_compile_trainer(m, True, emit=lines.append)
-    assert lines and "DECLARED REGIONS" in lines[0]
+    assert lines and "DECLARED REGION (R1" in lines[0]
 
 
 def test_resolve_device_reads_the_models_real_device():
@@ -134,19 +134,20 @@ def test_resolve_device_reads_the_models_real_device():
 
 
 def _stable(**kw):
-    base = dict(n_steps=2048, n_envs=48, batch_size=4096)   # gen-10's config
+    base = dict(update_rows=2048 * 48, batch_size=4096)   # gen-10's config: 98,304 rows per update
     base.update(kw)
     return base
 
 
 def test_the_production_config_is_accepted():
-    """gen-10: 2048*48 = 98304 = 24 x 4096 exactly. Two shapes total, well under cache_size_limit."""
+    """gen-10: 2048*48 = 98304 = 24 x 4096 exactly — every micro-batch is full."""
     check_shape_stability(**_stable())
 
 
-def test_a_remainder_minibatch_is_refused_with_a_concrete_suggestion():
-    """A remainder is a THIRD shape replayed every epoch, for no benefit. The error must not leave
-    the reader doing arithmetic — it names a batch size that actually divides."""
+def test_a_remainder_microbatch_is_refused_with_a_concrete_suggestion():
+    """A remainder is a SECOND micro-batch shape replayed every epoch — one the single compiled R1
+    graph does not declare. The error must not leave the reader doing arithmetic — it names a batch
+    size that actually divides."""
     with pytest.raises(CompileTrainerError) as e:
         check_shape_stability(**_stable(batch_size=5000))
     msg = str(e.value)
@@ -155,7 +156,7 @@ def test_a_remainder_minibatch_is_refused_with_a_concrete_suggestion():
     m = re.search(r"e\.g\. (\d+)", msg)
     assert m, f"no concrete suggestion in: {msg}"
     suggested = int(m.group(1))
-    assert (2048 * 48) % suggested == 0, f"suggested {suggested} does not divide the rollout"
+    assert (2048 * 48) % suggested == 0, f"suggested {suggested} does not divide the update"
     assert suggested <= 5000
 
 
@@ -169,6 +170,63 @@ def test_the_suggestion_is_the_LARGEST_divisor_that_fits():
 
 def test_a_zero_batch_size_does_not_divide_by_zero():
     check_shape_stability(**_stable(batch_size=0))     # unknown -> not our call to police
+
+
+def test_the_stability_check_judges_the_REAL_update_size_not_n_steps_times_n_envs():
+    """F9 (P10-E): the check took `n_steps * n_envs`, but the update is `--rollout-target-samples` rows
+    (the production recipe sets it independently), so a VALID run (target divides, product does not)
+    was refused / had `--compile-trainer` quietly switched off, and an invalid one (product divides,
+    target does not) passed. It now takes the update size. Fails on revert: the signature goes back to
+    (n_steps, n_envs) and the callers' real-size math is lost."""
+    import inspect
+    assert set(inspect.signature(check_shape_stability).parameters) == {"update_rows", "batch_size"}
+    from main.train.compile_flags import update_rows_for
+    # a valid run whose n_steps*n_envs (1000*48 = 48,000) does NOT divide by 4096 but whose target does
+    valid = update_rows_for(rollout_trigger="complete_game", rollout_target_samples=98_304,
+                            n_steps=1000, n_envs=48)
+    assert valid == 98_304 and 1000 * 48 % 4096 != 0
+    check_shape_stability(update_rows=valid, batch_size=4096)
+    # an invalid one: n_steps*n_envs divides (98,304) but the target (100,000) does not
+    bad = update_rows_for(rollout_trigger="complete_game", rollout_target_samples=100_000,
+                          n_steps=2048, n_envs=48)
+    assert bad == 100_000 and 2048 * 48 % 4096 == 0
+    with pytest.raises(CompileTrainerError, match=r"100,000 rows"):
+        check_shape_stability(update_rows=bad, batch_size=4096)
+
+
+# --------------------------------------------- the per-parameter bar has NO default (P10-E, item 1)
+
+
+def _arms_with_sizes(eps=1e-5, n=6):
+    g = torch.Generator().manual_seed(3)
+    sizes = [50] * n
+    eager = torch.randn(sum(sizes), generator=g)
+    comp = eager * (1.0 + eps)
+    f = torch.randn(2, 4, generator=torch.Generator().manual_seed(2))
+    mk = lambda gr: {"features": f, "grad": gr, "grad_sizes": torch.tensor(sizes)}  # noqa: E731
+    return mk(eager), mk(comp), [f"p{i}" for i in range(n)]
+
+
+def test_the_per_parameter_rule_REFUSES_a_caller_that_names_no_bar():
+    """`train_verdict`'s default `param_bar` was the retired extractor gate's TF32-era 1e-3 — a bar that
+    flags R1's healthy fp32 noise (2.47e-3 on arm C's weights) as a miscompile, picked silently by any
+    caller that forgot its own. The rule now needs the caller's bar whenever the arms carry per-parameter
+    sizes, and says so; the bar a caller names is the bar applied. Fails on revert (a default returns, so
+    a healthy 1e-5 reading would pass with no bar named)."""
+    e, c, names = _arms_with_sizes(1e-5)
+    from agents.model.compile_trainer import train_verdict
+    with pytest.raises(CompileTrainerError, match="needs the caller's own bar"):
+        train_verdict(eager=e, compiled=c, allow_vacuous=True, param_names=names)
+    line = train_verdict(eager=e, compiled=c, allow_vacuous=True, param_names=names, param_bar=1e-2)
+    assert "<= 0.01" in line
+    e, c, names = _arms_with_sizes(5e-2)
+    with pytest.raises(CompileTrainerError, match="DISAGREES with eager on"):
+        train_verdict(eager=e, compiled=c, allow_vacuous=True, param_names=names, param_bar=1e-2)
+
+
+def test_the_retired_extractor_gate_bars_are_gone():
+    from agents.model import compile_trainer as ct
+    assert not hasattr(ct, "_MAX_PARAM_GRAD_REL") and not hasattr(ct, "_MAX_PARAM_GRAD_REL_TRAINED")
 
 
 # ------------------------------------------------ gen3_compile_parity_real_obs_v1: the fixture + verdicts

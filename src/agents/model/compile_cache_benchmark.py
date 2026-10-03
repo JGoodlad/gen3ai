@@ -7,8 +7,8 @@
 What a run's STARTUP compiles, each part timed in a FRESH child process (a restart is a new process:
 dynamo's in-memory caches never carry over, only the on-disk cache does):
 
-  * ``learner``  — `arm_compile_sentinel`: install the declared regions (R0, R1), their startup
-                   gate against eager, and the prewarm of every declared signature, CUDA, on the K9
+  * ``learner``  — `arm_compile_sentinel`: install the declared region (R1), its startup
+                   gate against eager, and the prewarm of its declared signature, CUDA, on the K9
                    golden's production-surface learner (the instrumented PPO — the regions need its
                    micro-step);
   * ``t2``       — `InferenceService.startup()` at the training shape (a trainee slot + a 20-slot
@@ -56,7 +56,7 @@ def _worker(part: str, root: str, device: str) -> Dict[str, Any]:
         model.device = torch.device(device)
         preflight_compile_trainer(model, True, emit=None)
         t0 = time.perf_counter()
-        arm_compile_sentinel(model, n_envs=48, batch_size=int(model.batch_size), emit=None)
+        arm_compile_sentinel(model, batch_size=int(model.batch_size), emit=None)
         out["startup_s"] = time.perf_counter() - t0
     elif part == "t2":
         from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec

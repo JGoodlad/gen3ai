@@ -241,7 +241,7 @@ def test_d_the_sentinel_changes_NO_numerics():
         assert torch.equal(x, y)
 
 
-def test_uninstall_restores_error_on_recompile(sentinel):
+def test_uninstall_restores_the_default_stance_and_never_leaves_error_on_recompile_on(sentinel):
     net = _compile_bound(_Net(), sentinel)
     _one_iteration(net)
     sentinel.lock("iteration 1")
@@ -274,22 +274,26 @@ def test_train_ms_watch_resets_the_streak_on_a_normal_update():
 
 
 # --------------------------------------------------------------------------- the phases
-def test_gate_then_reset_drops_every_gate_graph_before_production(sentinel):
-    """Phase 2. The gate's graphs live on the SAME code objects production uses (the cache is per
-    code object, not per compiled wrapper), so without the reset they spend production's slots."""
+def test_reset_drops_every_earlier_graph_before_production_and_SAYS_how_many(sentinel):
+    """Phase 1. Graphs compiled before the region is installed live on the SAME code objects
+    production uses (the cache is per code object, not per compiled wrapper), so without the reset they
+    spend production's slots. The log line names the number it dropped AND the code objects — it used to
+    read a stale "dropped 0" from a `gate()` nothing but this test ever called."""
     net = _Net()
-    with sentinel.gate():
-        g = torch.compile(net.forward, backend="eager")
-        net.train()
+    g = torch.compile(net.forward, backend="eager")
+    net.train()
+    g(_obs(64))
+    with torch.no_grad():
         g(_obs(64))
-        with torch.no_grad():
-            g(_obs(64))
-    assert sum(sentinel.entries_after_gate.values()) >= 2
     # a SEPARATE compiled wrapper of the same bound method shares those entries — the reason a
     # "separate callable for the gate" would not have isolated them:
     assert max(cache_entries_by_code().values()) >= 2
-    sentinel.reset()
+    resident = sum(cache_entries_by_code().values())
+    line = sentinel.reset()
     assert cache_entries_by_code() == {}
+    assert f"dropped {resident} cache entries" in line and "(now 0)" in line, line
+    assert "forward" in line, line                    # it NAMES the code object it dropped
+    assert sentinel.phase == "reset"
 
 
 def test_prewarm_is_rng_neutral_and_its_signatures_survive_the_lock(sentinel):

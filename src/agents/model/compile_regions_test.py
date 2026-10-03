@@ -2,9 +2,10 @@
 
 The production-surface learner (the K9 golden's), CPU, torch 2.8, dynamo's `eager` backend (graphs,
 breaks, guards and recompiles are dynamo's — independent of the backend; the CUDA Inductor compile is
-the GPU tier's and the startup gate's): install R0 + R1 `fullgraph=True`, gate them against eager,
-prewarm the declared signatures, LOCK, then run two REAL updates (every fold step, the eager tail, the
-probes) and a rollout forward. The inventory must EQUAL the declaration table:
+the GPU tier's and the startup gate's): install R1 `fullgraph=True`, gate it against eager,
+prewarm the declared signature, LOCK, then run two REAL updates (every fold step, the eager tail, the
+probes) and the learner's EAGER rollout forward (the compiled rollout region R0 was deleted, P10-E).
+The inventory must EQUAL the declaration table:
 
   * graphs == declared regions x signatures (`compile_regions.declared_signature_count`);
   * 0 undeclared breaks — guaranteed by `fullgraph=True` (a break is a compile error), and the teeth
@@ -52,9 +53,8 @@ def test_the_declaration_table_is_well_formed():
     for r in cr.REGIONS:
         assert r.why, r.name
         assert bool(r.signatures) == r.compiled, r.name        # compiled <=> it declares signatures
-    assert {r.name for r in cr.compiled_regions()} == {"R0_rollout_forward", "R1_learner_micro_step"}
-    assert cr.declared_signature_count(48) == 2
-    assert cr.declared_signature_count(1) == 1                  # batch 1 is never compiled
+    assert {r.name for r in cr.compiled_regions()} == {"R1_learner_micro_step"}
+    assert cr.declared_signature_count() == 1
 
 
 def test_the_compiled_inventory_EQUALS_the_declaration_table(learner):
@@ -62,35 +62,37 @@ def test_the_compiled_inventory_EQUALS_the_declaration_table(learner):
     ctl = cc.control()
     ctl.install()
     g0 = _graphs()
-    assert cr.install(model, backend="eager") == ["R0_rollout_forward", "R1_learner_micro_step"]
-    rules = cr.gate_regions(model, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
-    assert any(r.startswith("R1 ") for r in rules) and any(r.startswith("R0 ") for r in rules)
-    ctl.prewarm(cr.prewarm_calls(model, n_envs=N_ENVS, batch_size=BATCH))
+    assert cr.install(model, backend="eager") == ["R1_learner_micro_step"]
+    rules = cr.gate_regions(model, batch_size=BATCH, say=lambda _m: None)
+    assert rules and all(r.startswith("R1 ") for r in rules), rules      # the ONLY gated region
+    ctl.prewarm(cr.prewarm_calls(model, batch_size=BATCH))
     ctl.lock("test: the end of startup")
-    assert _graphs() - g0 == cr.declared_signature_count(N_ENVS)
+    assert _graphs() - g0 == cr.declared_signature_count()
     ent = cc.cache_entries_by_code()
-    assert {k.split(" ")[0] for k in ent} == {"micro_step", "_rollout_core"}, ent
+    assert {k.split(" ")[0] for k in ent} == {"micro_step"}, ent
     assert all(v == 1 for v in ent.values()), ent
     from agents.training import learner_golden as LG
     for _ in range(2):                                      # two REAL updates: the fold, the tail, the probes
         LG.load_buffer_into(model)
         with ctl.guard("update end"):
             model.train()
+    # the learner's rollout forward (`predict`-class callers; the Rust collector's is T2's own) is EAGER
+    # at every batch, takes NO region route, and compiles nothing — there is no compiled rollout region
+    from agents.model import region_calls as RC
     obs = ct._prewarm_obs(model, N_ENVS)
     _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), N_ENVS, torch.device("cpu"))
     model.policy.set_training_mode(False)
+    RC.take()
     with ctl.guard("rollout"), torch.no_grad():
-        model.policy(obs, action_masks=mask)               # the rollout forward through R0
-        # the env workers' masks are int8 numpy (`gen3_r0_mask_dtype_v1`): the REAL rollout's input,
-        # never an undeclared signature; a torch bool / float mask is the same declared input
         import numpy as np
-        model.policy(obs, action_masks=np.asarray(mask).astype(np.int8))
-        model.policy(obs, action_masks=torch.as_tensor(np.asarray(mask)))
-        model.policy(obs, action_masks=torch.as_tensor(np.asarray(mask)).float())
-        model.policy(ct._prewarm_obs(model, 1), action_masks=mask[:1])   # batch 1: eager, compiles nothing
+        for m in (mask, np.asarray(mask).astype(np.int8), torch.as_tensor(np.asarray(mask)),
+                  torch.as_tensor(np.asarray(mask)).float()):
+            model.policy(obs, action_masks=m)
+        model.policy(ct._prewarm_obs(model, 1), action_masks=mask[:1])   # batch 1
+    assert RC.peek() == {}, f"a rollout forward took a region route: {RC.peek()}"
     ctl.check("end")
     assert ctl.compiles_after_lock == 0 and ctl.rejected_after_lock == 0, ctl.after_lock_frames
-    assert _graphs() - g0 == cr.declared_signature_count(N_ENVS)
+    assert _graphs() - g0 == cr.declared_signature_count()
 
 
 def test_a_graph_break_INSIDE_a_region_is_the_typed_startup_FATAL(learner, monkeypatch):
@@ -109,14 +111,14 @@ def test_a_graph_break_INSIDE_a_region_is_the_typed_startup_FATAL(learner, monke
     cc.control().install()
     cr.install(learner, backend="eager")
     with pytest.raises(ct.CompileTrainerError, match="DECLARED REGION does not compile as one graph"):
-        cr.gate_regions(learner, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+        cr.gate_regions(learner, batch_size=BATCH, say=lambda _m: None)
 
 
 def test_an_UNDECLARED_signature_after_the_lock_names_the_failing_guard(learner):
     ctl = cc.control()
     ctl.install()
     cr.install(learner, backend="eager")
-    ctl.prewarm(cr.prewarm_calls(learner, n_envs=N_ENVS, batch_size=BATCH))
+    ctl.prewarm(cr.prewarm_calls(learner, batch_size=BATCH))
     ctl.lock("test")
     args = cr._r1_args(learner, cr.r1_batch(learner, BATCH * 2))     # a batch the table never declared
     with pytest.raises(cc.CompileSentinelError, match="UNDECLARED SIGNATURE") as ei:
@@ -125,23 +127,27 @@ def test_an_UNDECLARED_signature_after_the_lock_names_the_failing_guard(learner)
     assert "size mismatch" in str(ei.value) or "expected 16" in str(ei.value), str(ei.value)[-800:]
 
 
-def test_a_RAGGED_micro_batch_takes_the_declared_eager_route(learner):
-    """The last micro-batch of an epoch over a rollout that does not divide evenly (fork rows, an
-    uneven sizing) has another row count: through R1's dispatcher it runs the SAME function eager —
-    no compile after the lock, the same loss as the eager function. Fails if the dispatcher hands it
-    to the compiled region (an undeclared signature -> the sentinel's FATAL)."""
-    from agents.training.instrumented_ppo.micro_step import micro_step
+def test_a_RAGGED_micro_batch_is_REFUSED_by_R1s_dispatcher_and_compiles_nothing(learner):
+    """R1 has ONE declared row count (`gen3_r1_no_ragged_v1`): the collector refuses an update that does
+    not divide by the micro-batch, so the former declared EAGER route for the last micro-batch of an
+    epoch (unreachable in production) is deleted. A call with another row count is a mis-wired caller:
+    the dispatcher raises a typed error naming the cause — it does not run the function eager (a silent
+    slowdown), does not hand the compiled region an undeclared shape, and compiles nothing, locked or
+    not. Fails on revert: the old route returned `micro_step`'s eager loss instead of raising."""
+    from agents.model import region_calls as RC
     ctl = cc.control()
     ctl.install()
     cr.install(learner, backend="eager")
-    ctl.prewarm(cr.prewarm_calls(learner, n_envs=N_ENVS, batch_size=BATCH))
+    ctl.prewarm(cr.prewarm_calls(learner, batch_size=BATCH))
     ctl.lock("test")
+    RC.take()
     args = cr._r1_args(learner, cr.r1_batch(learner, BATCH - 5))
-    with ctl.guard("update end"):
-        out = learner._compiled_micro_step(*args)
+    with pytest.raises(ct.CompileTrainerError, match=r"a micro-batch of 11 rows, but the declared signature is 16"):
+        with ctl.guard("update end"):
+            learner._compiled_micro_step(*args)
     ctl.check("end")
     assert ctl.compiles_after_lock == 0 and ctl.rejected_after_lock == 0
-    assert torch.equal(out.loss.detach(), micro_step(*args).loss.detach())
+    assert RC.peek() == {}, f"a refused call must count no route: {RC.peek()}"
 
 
 # ------------------------------------------------- R1's per-parameter bar, by weight regime (K8)
@@ -149,6 +155,8 @@ def test_a_RAGGED_micro_batch_takes_the_declared_eager_route(learner):
 #: at the gate's batch read 2.47e-3 (the sizing study's FATAL under the old 1e-3 bar — CUDA EAGER's own
 #: fp32 error on `history_events.itemtr_emb`; the compiled gradient was within 1.7e-5 of float64).
 C_FINAL_HEALTHY_READING = 2.47e-3
+#: The retired extractor gate's per-parameter bar (TF32-era; `compile_trainer` no longer carries it).
+RETIRED_EXTRACTOR_BAR = 1e-3
 
 
 def _arms(eps, k=3, n_params=20):
@@ -170,7 +178,7 @@ def test_R1s_per_parameter_bar_is_the_REGIMES_measured_bar(regime):
     """C's measured healthy reading passes the TRAINED regime (it FATAL'd every fp32 resume under the
     extractor gate's fresh bar, 1e-3 — fails on revert); twice the regime's bar is refused in both."""
     bar = cr.R1_PARAM_BAR[regime]
-    assert bar > ct._MAX_PARAM_GRAD_REL                     # the old bar, which the healthy noise exceeds
+    assert bar > RETIRED_EXTRACTOR_BAR                      # the old bar, which the healthy noise exceeds
     e, c, names = _arms(C_FINAL_HEALTHY_READING)
     line = cr._r1_verdict(e, c, names, regime)
     assert f"[{regime} weights]" in line and f"<= {bar:g}" in line
@@ -218,11 +226,11 @@ def test_the_GATE_judges_trained_weights_at_the_trained_bar(learner, monkeypatch
     cc.control().install()
     cr.install(learner, backend="eager")
     monkeypatch.setattr(cr, "_r1_arm", planted(C_FINAL_HEALTHY_READING))
-    rules = cr.gate_regions(learner, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+    rules = cr.gate_regions(learner, batch_size=BATCH, say=lambda _m: None)
     assert any("[trained weights]" in r for r in rules), rules
     monkeypatch.setattr(cr, "_r1_arm", planted(3.0 * cr.R1_PARAM_BAR["trained"]))
     with pytest.raises(ct.CompileTrainerError, match="DISAGREES with eager"):
-        cr.gate_regions(learner, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+        cr.gate_regions(learner, batch_size=BATCH, say=lambda _m: None)
 
 
 def test_a_FRESH_launch_is_ALSO_judged_on_a_perturbation_at_the_TRAINED_bar(monkeypatch):
@@ -251,9 +259,9 @@ def test_a_FRESH_launch_is_ALSO_judged_on_a_perturbation_at_the_TRAINED_bar(monk
         assert cr.weights_regime(model) == "fresh"
         monkeypatch.setattr(cr, "_r1_arm", planted)
         with pytest.raises(ct.CompileTrainerError, match="DISAGREES with eager"):
-            cr.gate_regions(model, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+            cr.gate_regions(model, batch_size=BATCH, say=lambda _m: None)
         monkeypatch.setattr(cr, "_r1_arm", real)
-        rules = cr.gate_regions(model, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+        rules = cr.gate_regions(model, batch_size=BATCH, say=lambda _m: None)
         assert any("[fresh weights]" in r for r in rules), rules
         assert any("[fresh weights, seeded perturbation" in r for r in rules), rules
     finally:
@@ -263,89 +271,47 @@ def test_a_FRESH_launch_is_ALSO_judged_on_a_perturbation_at_the_TRAINED_bar(monk
         torch._dynamo.reset()
 
 
-# ------------------------------------- a COLLAPSED critic: the gate's perturbation-ladder climb (K1 follow-up)
+# ----------------------------------------------------- a COLLAPSED critic no longer refuses the gate
 #
 # A win-prob head saturated at a logit of about -9 (a trainee losing ~97 %; `~/gen3ai_archive/cutover_prep/
-# fresh3`, 2026-09-30) has a value spread far under V's 1e-4 bar, so R0's decision readout is VACUOUS on
-# its real weights and on the ladder's first rung. The gate must CLIMB `parity_probe.PERTURB_LADDER` to the
-# first rung whose readout is informative and judge there — never refuse a resume onto such a checkpoint,
-# never pass it vacuously. The deleted extractor gate had this under test (`parity_probe_test`); the region
-# gate's was left bare by K1 (deletion manifest §6 finding 10).
+# fresh3`, 2026-09-30) has a value spread far under V's 1e-4 bar, so the DECISION readout of the deleted
+# compiled rollout region R0 was vacuous on its real weights and the gate had to CLIMB the perturbation
+# ladder to judge it (and refused a critic no rung could move). R1's verdict is the loss and the
+# gradients, not V's spread, so with R0 gone a collapsed critic is judged on its real weights like any
+# other and the climb (`_r0_verdicts`) is deleted with it.
 
-@pytest.fixture
-def collapsible(learner):
-    """The golden learner with K8's regions installed (CPU, dynamo `eager` backend, so compiled == eager
-    unless a test plants a fault) and a ``collapse(bias)`` that saturates its win head from the SAME
-    starting weights every time."""
+def _gate(model):
+    return cr.gate_regions(model, batch_size=BATCH, say=lambda _m: None)
+
+
+def test_a_COLLAPSED_critic_is_judged_by_R1_like_any_other_weights(learner, monkeypatch):
+    """The saturated critic (win logit -12) that the old R0 readout REFUSED ("vacuous on every perturbation
+    rung") passes the gate now, judged by R1's loss and gradients — and a gradient fault planted on it is
+    still caught, so the pass is not vacuous. Fails if an R0-style vacuity refusal comes back."""
     cc.control().install()
     cr.install(learner, backend="eager")
     fe = learner.policy.features_extractor
-    base = {k: v.clone() for k, v in fe.state_dict().items()}
+    head = fe.win_head.net[3]
+    with torch.no_grad():
+        head.bias.fill_(-12.0)
+        head.weight.mul_(0.01)
+    rules = _gate(learner)
+    assert rules and all(r.startswith("R1 ") for r in rules), rules
+    real = cr._r1_arm
 
-    def collapse(bias):
-        fe.load_state_dict(base)
-        head = fe.win_head.net[3]
-        with torch.no_grad():
-            head.bias.fill_(bias)
-            head.weight.mul_(0.01)
-    return learner, collapse
-
-
-def _gate(model):
-    return cr.gate_regions(model, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
-
-
-def test_a_COLLAPSED_critic_is_judged_on_a_LATER_rung_of_the_ladder_not_refused(collapsible):
-    """Precondition ASSERTED, not branched on: on the collapsed weights the readout is vacuous at the
-    ladder's FIRST rung. The gate must still PASS, judging on a later rung, and say which. Fails if the
-    gate stops after one rung (it would refuse this resume) or judges the vacuous readout as it is."""
-    from agents.model import parity_probe as pp
-
-    model, collapse = collapsible
-    collapse(-9.0)
-    first_scale, first_k = pp.PERTURB_LADDER[0]
-    obs = ct._prewarm_obs(model, N_ENVS)
-    _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), N_ENVS,
-                             ct.resolve_device(model.policy.features_extractor))
-    tol = {k: v for k, v in ct._FP32_TOL.items() if k in ("legal_logprob", "value")}
-    assert pp.fresh_reason(cr._r0_readout(model, cr._rollout_core, obs, mask), tol) is not None, \
-        "precondition: the collapsed critic's real-weights readout is vacuous"
-    with pp.perturbed_parameters(model.policy, seed=pp.rung_seed(first_k), scale=first_scale):
-        assert pp.fresh_reason(cr._r0_readout(model, cr._rollout_core, obs, mask), tol) is not None, \
-            "precondition: the FIRST rung is still vacuous on V"
-    r0 = [r for r in _gate(model) if r.startswith("R0 ")]
-    assert r0 and all("[fresh weights, perturbation scale=" in r for r in r0), r0
-    judged = {(sc, k) for sc, k in pp.PERTURB_LADDER if f"scale={sc:g} seed+{k}]" in r0[0]}
-    assert len(judged) == 1 and judged != {pp.PERTURB_LADDER[0]}, (judged, r0[0])
-
-
-def test_a_SATURATED_critic_that_no_rung_can_move_is_REFUSED_never_passed(collapsible):
-    """A critic saturated beyond what any rung (scale <= 0.1) moves (win logit about -12) stays vacuous on
-    V at every rung: the gate is fail-closed — a typed startup FATAL naming the spread. Fails if a
-    vacuous comparison is ever allowed through."""
-    model, collapse = collapsible
-    collapse(-12.0)
-    with pytest.raises(ct.CompileTrainerError, match="vacuous on the weights and on every perturbation rung"):
-        _gate(model)
-
-
-def test_a_MISCOMPILE_in_R0_is_caught_on_a_collapsed_critic_at_the_climbed_rung(collapsible):
-    """The point of climbing: a collapsed critic is judged on an INFORMATIVE perturbed copy, where a
-    compiled-graph fault (+0.05 on every legal log-prob) shows. Fails if the climb waives the check
-    instead of moving to an informative rung (the vacuous real-weights pass would not see it)."""
-    from agents.model.policy import _ROLLOUT_REGIONS
-
-    model, collapse = collapsible
-    collapse(-9.0)
-    assert _gate(model), "control: the healthy compiled arm passes the collapsed critic"
-    real = _ROLLOUT_REGIONS[model.policy]
-
-    def faulty(pol, obs, masks):
-        values, logp = real(pol, obs, masks)
-        return values, logp + 0.05
-    _ROLLOUT_REGIONS[model.policy] = faulty
-    with pytest.raises(ct.CompileTrainerError, match="DISAGREES with eager on legal_logprob"):
-        _gate(model)
+    def planted(model, fn, args):
+        out = real(model, fn, args)
+        if fn is model._compiled_micro_step:
+            g = out["grad"].clone()
+            sizes = [int(x) for x in out["grad_sizes"].tolist()]
+            big = max(range(len(sizes)), key=lambda i: float(torch.split(g, sizes)[i].norm()))
+            start = sum(sizes[:big])
+            g[start:start + sizes[big]] *= 1.5
+            out = {**out, "grad": g}
+        return out
+    monkeypatch.setattr(cr, "_r1_arm", planted)
+    with pytest.raises(ct.CompileTrainerError, match="DISAGREES with eager"):
+        _gate(learner)
 
 
 # --------------------------------------------- no silent fall-back to eager (gen3_no_silent_eager_v1)
@@ -353,7 +319,7 @@ def _locked(learner):
     ctl = cc.control()
     ctl.install()
     cr.install(learner, backend="eager")
-    ctl.prewarm(cr.prewarm_calls(learner, n_envs=N_ENVS, batch_size=BATCH))
+    ctl.prewarm(cr.prewarm_calls(learner, batch_size=BATCH))
     ctl.lock("test")
     return ctl
 
@@ -361,22 +327,16 @@ def _locked(learner):
 def test_a_region_that_runs_EAGER_on_its_COMPILED_route_is_FATAL(learner):
     """Owner, 2026-10-01: no silent performance regression from a partly uncompiled learner. Under
     the `force_eager` stance the compiled callable silently runs its Python body; the dispatcher sees
-    the body execute and refuses, for R1 and R0. Fails if the dispatchers stop watching."""
+    the body execute and refuses. Fails if the dispatcher stops watching."""
     from agents.model import region_calls as RC
     _locked(learner)
     args = cr._r1_args(learner, cr.r1_batch(learner, BATCH))
-    obs = ct._prewarm_obs(learner, N_ENVS)
-    _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), N_ENVS, torch.device("cpu"))
     learner._compiled_micro_step(*args)                       # healthy: compiled, counted
     assert RC.peek().get("R1_compiled") == 1
     torch.compiler.set_stance("force_eager")
     try:
         with pytest.raises(ct.CompileTrainerError, match="region R1 ran EAGER on its COMPILED route"):
             learner._compiled_micro_step(*args)
-        learner.policy.set_training_mode(False)
-        with pytest.raises(ct.CompileTrainerError, match="region R0 ran EAGER on its COMPILED route"):
-            with torch.no_grad():
-                learner.policy(obs, action_masks=mask)
     finally:
         torch.compiler.set_stance("fail_on_recompile")
         RC.take()
@@ -391,7 +351,7 @@ def test_dynamo_DISABLED_at_startup_is_the_gates_FATAL_not_an_eager_run(learner)
     try:
         cr.install(learner, backend="eager")
         with pytest.raises(ct.CompileTrainerError, match="ran EAGER on its COMPILED route"):
-            cr.gate_regions(learner, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+            cr.gate_regions(learner, batch_size=BATCH, say=lambda _m: None)
     finally:
         torch._dynamo.config.disable = prev
 
@@ -416,24 +376,9 @@ def test_the_lock_refuses_every_switch_that_makes_dynamo_run_eager_silently(lear
     ctl.check("restored")
 
 
-def test_a_RAGGED_tail_beyond_one_per_epoch_is_FATAL_and_the_window_is_per_update(learner):
-    from agents.model import region_calls as RC
-    ctl = _locked(learner)
-    learner.n_epochs = 2
-    args = cr._r1_args(learner, cr.r1_batch(learner, BATCH - 5))
-    for _ in range(2):                                        # one per epoch: declared
-        learner._compiled_micro_step(*args)
-    with pytest.raises(ct.CompileTrainerError, match="RAGGED micro-batches in one update"):
-        learner._compiled_micro_step(*args)
-    RC.take()                                                 # the next update's window
-    learner._compiled_micro_step(*args)
-    RC.take()
-    del ctl
-
-
 def test_the_run_asserts_the_compiled_inventory_equals_the_declaration(learner):
     _locked(learner)
-    assert "inventory == declaration" in cr.assert_inventory(learner, N_ENVS)
+    assert "inventory == declaration" in cr.assert_inventory(learner)
     torch.compiler.set_stance("default")
     try:
         args = cr._r1_args(learner, cr.r1_batch(learner, BATCH * 2))
@@ -441,17 +386,18 @@ def test_the_run_asserts_the_compiled_inventory_equals_the_declaration(learner):
     finally:
         torch.compiler.set_stance("fail_on_recompile")
     with pytest.raises(ct.CompileTrainerError, match="INVENTORY differs"):
-        cr.assert_inventory(learner, N_ENVS)
+        cr.assert_inventory(learner)
 
 
 def test_each_update_records_its_compiled_and_eager_region_calls(learner):
+    """The per-update window: every R1 micro-batch is a compiled-route call; there is NO declared eager
+    route any more, so `eager_fallback_calls` / `eager_share` read 0 — and a future declared route
+    (`<region>_eager_<why>`, counted by its dispatcher) is what they would carry (synthetic here)."""
     from agents.model import region_calls as RC
     ctl = _locked(learner)
     full = cr._r1_args(learner, cr.r1_batch(learner, BATCH))
-    ragged = cr._r1_args(learner, cr.r1_batch(learner, BATCH - 5))
     learner._compiled_micro_step(*full)
     learner._compiled_micro_step(*full)
-    learner._compiled_micro_step(*ragged)
 
     class _Log:
         name_to_value = {"train/train_ms": 36300.0}
@@ -463,10 +409,13 @@ def test_each_update_records_its_compiled_and_eager_region_calls(learner):
     learner._logger = log
     ctl.record(learner)
     assert log.rec["lifecycle/compiled_region_calls"] == 2.0
-    assert log.rec["lifecycle/eager_fallback_calls"] == 1.0
-    assert abs(log.rec["lifecycle/eager_share"] - 1 / 3) < 1e-9
+    assert log.rec["lifecycle/eager_fallback_calls"] == 0.0 and log.rec["lifecycle/eager_share"] == 0.0
     assert log.rec["lifecycle/update_wall_s"] == 36.3
     assert RC.peek() == {}                                    # the window was reset
+    RC.count("R1_compiled")
+    RC.count("RX_eager_synthetic")                            # what a future declared eager route would count
+    ctl.record(learner)
+    assert abs(log.rec["lifecycle/eager_share"] - 0.5) < 1e-9 and log.rec["lifecycle/eager_fallback_calls"] == 1.0
 
 
 # ------------------------------------------------ one startup gate per region (gen3_one_gate_per_region_v1)
@@ -481,7 +430,7 @@ def test_the_sentinel_installs_the_regions_and_the_preflight_compiles_nothing(le
     monkeypatch.setattr(ct, "resolve_device", lambda fe: torch.device("cuda"))   # the CPU refusal's seam
     assert ct.preflight_compile_trainer(learner, True) is None
     assert "forward" not in vars(learner.policy.features_extractor)
-    assert "DECLARED REGIONS" in capsys.readouterr().out
+    assert "DECLARED REGION (R1" in capsys.readouterr().out
     reached = []
 
     class _Stop(Exception):
@@ -494,7 +443,7 @@ def test_the_sentinel_installs_the_regions_and_the_preflight_compiles_nothing(le
         raise _Stop
     monkeypatch.setattr(cr, "install", stop)
     with pytest.raises(_Stop):
-        ct.arm_compile_sentinel(learner, n_envs=N_ENVS, batch_size=BATCH)
+        ct.arm_compile_sentinel(learner, batch_size=BATCH)
     assert reached == [learner]
 
 
@@ -504,23 +453,3 @@ def test_the_trainer_calls_the_preflight_and_the_sentinel_with_no_fallback_route
     src = inspect.getsource(lifecycle)
     assert "preflight_compile_trainer(model" in src and "arm_compile_sentinel(model" in src
     assert "compile_trainer_extractor" not in src and "regions_follow" not in src
-
-
-def test_install_rollout_region_serves_the_rollout_forward_through_R0(learner):
-    """The R0-alone install (`install_rollout_region`, the throughput A/B's `LearnerSampling`): the
-    policy's rollout forward runs the COMPILED rollout core and equals eager."""
-    from agents.model import region_calls as RC
-    from agents.model.policy import _ROLLOUT_REGIONS
-    obs = ct._prewarm_obs(learner, N_ENVS)
-    _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), N_ENVS, torch.device("cpu"))
-    pol = learner.policy
-    pol.set_training_mode(False)
-    with torch.no_grad():
-        e_values, e_logp = pol.rollout_core(obs, torch.as_tensor(mask))
-    assert cr.install_rollout_region(pol, backend="eager") == "R0_rollout_forward"
-    assert pol in _ROLLOUT_REGIONS
-    RC.take()
-    with torch.no_grad():
-        values, logp = _ROLLOUT_REGIONS[pol](pol, obs, mask)
-    assert RC.peek().get("R0_compiled") == 1
-    assert torch.equal(values, e_values) and torch.equal(logp, e_logp)

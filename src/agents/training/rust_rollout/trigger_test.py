@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from agents.training.rust_rollout.trigger import (SampleTrigger, TriggerError, WindowTrigger, ragged_accumulation,
-                                                  trigger_for)
+                                                  trigger_for, update_rows)
 
 
 def test_the_default_target_is_todays_rollout_size_on_the_lcm_quantum():
@@ -14,6 +14,24 @@ def test_the_default_target_is_todays_rollout_size_on_the_lcm_quantum():
     assert (t.lo, t.hi) == (98_304, 98_304)
     assert not t.ready(98_303) and t.ready(98_304) and t.ready(120_000) and t.take() == 98_304
     assert isinstance(trigger_for("window", n_envs=48, n_steps=2048, micro_batch=2048), WindowTrigger)
+
+
+def test_update_rows_is_the_ONE_definition_of_the_update_size_and_the_trigger_agrees_with_it():
+    """The rows one update trains on: the window's n_steps x n_envs, or the complete-game target (0 =
+    n_steps x n_envs). `compile_trainer.check_shape_stability`'s callers judge THIS (P10-E, F9); the
+    trigger the collector builds takes the same number, so the startup check and the runtime refusal
+    (`RustCollector._ensure_buffer`) cannot disagree."""
+    assert update_rows("window", n_envs=48, n_steps=1000, target=999_999) == 48_000      # the target is ignored
+    assert update_rows("complete_game", n_envs=48, n_steps=1000) == 48_000                # 0 = n_steps x n_envs
+    assert update_rows("complete_game", n_envs=48, n_steps=1000, target=98_304) == 98_304
+    for mode, tgt in (("complete_game", 0), ("complete_game", 98_304), ("window", 0)):
+        t = trigger_for(mode, n_envs=48, n_steps=2048, micro_batch=2048, target=tgt)
+        rows = update_rows(mode, n_envs=48, n_steps=2048, target=tgt)
+        assert (t.take() if mode == "complete_game" else t.n_steps * 48) == rows
+    with pytest.raises(TriggerError, match="unknown rollout trigger"):
+        update_rows("bogus", n_envs=48, n_steps=2048)
+    with pytest.raises(TriggerError, match="unknown rollout trigger"):
+        trigger_for("bogus", n_envs=48, n_steps=2048, micro_batch=2048)
 
 
 def test_the_live_shape_takes_a_ragged_accumulation_step_and_it_is_reported_not_refused():

@@ -115,8 +115,8 @@ def _locked_learner(name: str, made: List[Any]) -> Any:
     ctl = cc.control()
     ctl.install()
     cr.install(model, backend="eager")
-    cr.gate_regions(model, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
-    ctl.prewarm(cr.prewarm_calls(model, n_envs=N_ENVS, batch_size=BATCH))
+    cr.gate_regions(model, batch_size=BATCH, say=lambda _m: None)
+    ctl.prewarm(cr.prewarm_calls(model, batch_size=BATCH))
     ctl.lock("test: the end of startup")
     return model
 

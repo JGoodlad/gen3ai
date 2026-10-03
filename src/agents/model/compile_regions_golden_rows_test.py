@@ -105,10 +105,14 @@ def test_the_gate_REFUSES_a_placeholder_that_shrinks_the_judged_set(fork, monkey
     typed startup FATAL, not a quieter gate. The positive half: the declared placeholder passes."""
     cc._reset_control_for_tests()
     torch._dynamo.reset()
+    # R1's declared signature is the MODEL's batch size (`install` reads it); the gate below judges BATCH
+    # rows, so they must agree — a ragged call used to take the eager route silently, and the "compiled"
+    # arm of this gate was eager (R1 refuses it now, `gen3_r1_no_ragged_v1`)
+    monkeypatch.setattr(fork, "batch_size", BATCH)
     try:
         cc.control().install()
         cr.install(fork, backend="eager")
-        rules = cr.gate_regions(fork, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+        rules = cr.gate_regions(fork, batch_size=BATCH, say=lambda _m: None)
         r1 = [r for r in rules if r.startswith("R1 judged set")]
         assert r1 and "[filled ['fork_pg_m']]" in r1[0], rules
 
@@ -116,7 +120,7 @@ def test_the_gate_REFUSES_a_placeholder_that_shrinks_the_judged_set(fork, monkey
             return np.zeros(tuple(space.shape), dtype=space.dtype)
         monkeypatch.setattr(cr, "fill_value", blanking)
         with pytest.raises(ct.CompileTrainerError, match="SHRANK the judged parameter set"):
-            cr.gate_regions(fork, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+            cr.gate_regions(fork, batch_size=BATCH, say=lambda _m: None)
     finally:
         cr.uninstall(fork)
         cc._reset_control_for_tests()

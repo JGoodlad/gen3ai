@@ -38,13 +38,25 @@ def resolve_compile_trainer_default(device, debug: bool, cuda_available=None) ->
         return False
 
 
+def update_rows_for(*, rollout_trigger, rollout_target_samples, n_steps: int, n_envs: int) -> int:
+    """The REAL update size of a run: the rows one update trains on (`rust_rollout.trigger.update_rows`).
+    An untyped trigger is the default (``complete_game``), an untyped / zero target is ``n_steps * n_envs``.
+    This — not ``n_steps * n_envs`` alone — is what `check_shape_stability` judges (P10-E, F9)."""
+    from agents.training.rust_rollout.trigger import update_rows
+    return update_rows(str(rollout_trigger or "complete_game"), n_envs=int(n_envs or 0),
+                       n_steps=int(n_steps or 0), target=int(rollout_target_samples or 0))
+
+
 def resolve_compile_trainer_auto(*, device, debug: bool, n_steps: int, n_envs: int,
-                                 batch_size: int, cuda_available=None):
+                                 batch_size: int, rollout_trigger=None, rollout_target_samples=0,
+                                 cuda_available=None):
     """The full AUTO decision for `--compile-trainer`. Returns `(enabled, downgrade_reason)`.
 
-    Two gates, and the SECOND one is the non-obvious half. `check_shape_stability` REFUSES a rollout
-    that does not divide by `--batch-size` (a third shape, every epoch) — because for someone who
-    ASKED for the compile, silently getting eager is the whole failure this flag exists to prevent.
+    Two gates, and the SECOND one is the non-obvious half. `check_shape_stability` REFUSES an update
+    that does not divide by `--batch-size` (a second micro-batch shape the one compiled learner graph
+    does not declare) — because for someone who ASKED for the compile, silently getting eager is the
+    whole failure this flag exists to prevent. The update size is the real one
+    (`--rollout-target-samples`, else ``n_steps * n_envs``; `update_rows_for`).
 
     But a DEFAULT is not an ask. Applying that refusal to the default would convert a class of
     command that works today into a `FATAL_CONFIG` exit, which is exactly the failure the cpu
@@ -56,8 +68,11 @@ def resolve_compile_trainer_auto(*, device, debug: bool, n_steps: int, n_envs: i
         return False, None
     from agents.model.compile_trainer import CompileTrainerError, check_shape_stability
     try:
-        check_shape_stability(n_steps=int(n_steps or 0), n_envs=int(n_envs or 0),
-                              batch_size=int(batch_size or 0))
+        check_shape_stability(
+            update_rows=update_rows_for(rollout_trigger=rollout_trigger,
+                                        rollout_target_samples=rollout_target_samples,
+                                        n_steps=n_steps, n_envs=n_envs),
+            batch_size=int(batch_size or 0))
     except CompileTrainerError as exc:
         return False, str(exc)
     return True, None

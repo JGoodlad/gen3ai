@@ -1336,12 +1336,14 @@ uses · `--grad-checkpointing`. **Matmul precision is not a knob: fp32 `highest`
 FP32, no TF32 — PyTorch's default) is the only precision** (TF32 was retired and `--matmul-precision` deleted,
 deletion pass K2); `metadata.json` records the realized value as provenance, every parity gate refuses any
 other, and a run that recorded `high` resumes pinned or not at all. **The CUDA learner
-compile is the DECLARED REGIONS** — R0 the rollout core and R1 the micro-step, each `fullgraph=True`
-at its declared signature (`agents/model/compile_regions.py`, `designs/training/compile_flags.md` "K8
-— DECLARED COMPILE REGIONS"); the startup region gate holds each to eager on real observation rows at
-the decision level, then the compile sentinel (`gen3_compile_sentinel_v1`) prewarms the declared
-signatures and LOCKS before the first iteration: a later recompile or a dynamo cache-limit hit (a
-silent eager fallback) exits `FATAL_CONFIG`. **The code runs on torch >= 2.8 only**
+compile is ONE DECLARED REGION** — R1, the micro-step (`evaluate_actions` + the fold), `fullgraph=True`
+at its one declared signature, `batch_size` rows (`agents/model/compile_regions.py`,
+`designs/training/compile_flags.md` "K8 — DECLARED COMPILE REGIONS"; the rollout forward is NOT a
+learner-compiled region — the Rust collector serves it through the T2 inference service, and the
+learner's own `policy.forward` is eager); the startup region gate holds it to eager on the K9 learner
+golden's real labelled rows (loss and every policy gradient), then the compile sentinel
+(`gen3_compile_sentinel_v1`) prewarms the declared signature and LOCKS before the first iteration: a
+later recompile or a dynamo cache-limit hit (a silent eager fallback) exits `FATAL_CONFIG`. **The code runs on torch >= 2.8 only**
 (`src/utils/torch_floor.py`, 2026-10-02): torch 2.8 (`gen3ai_torch28`) is the interpreter for every
 new run, and a run that recorded torch 2.5.1 (or none) resumes PINNED to its own commit on
 `gen3ai_stable` (`src/main/launcher/torch_runtime.py`). Eager, the CPU compile and the weights are

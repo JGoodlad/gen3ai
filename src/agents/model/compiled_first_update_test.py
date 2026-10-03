@@ -1,4 +1,4 @@
-"""A FULL real `train()` on a learner compiled as its DECLARED REGIONS (R0 + R1), as the first update of a
+"""A FULL real `train()` on a learner compiled as its DECLARED REGION (R1), as the first update of a
 process, with `torch._functorch.config.donated_buffer` handed in at TORCH'S DEFAULT (True) — the protection
 deletion pass K1 removed with the extractor-only compile's `compiled_train_probes_test` and left uncovered
 (`designs/ops/deletion_pass_manifest.md` §6 finding 10; `gen3_donated_buffer_off_v1`, Lane K1b).
@@ -70,7 +70,7 @@ def _compiled_first_update(device: str, gate: bool = True):
             real_gate = cr.gate_regions
             cr.gate_regions = lambda *a, **k: []        # `arm_compile_sentinel` reads it at call time
         try:
-            arm_compile_sentinel(model, n_envs=int(model.n_envs), batch_size=int(model.batch_size))
+            arm_compile_sentinel(model, batch_size=int(model.batch_size))
         finally:
             if not gate:
                 cr.gate_regions = real_gate

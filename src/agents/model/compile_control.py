@@ -10,24 +10,28 @@ an Inductor cache-key tag — per torch version, at `install()`; Lane K1b, see t
 
 THE PHASES (one `CompileControl` per process — `control()`):
 
-  1. `gate()`      — a startup parity gate compiles FREELY inside it. The cache-limit detector is
-                     already listening: a limit hit here is fatal too.
-  2. `reset()`     — `torch._dynamo.reset()` right after the gate, BEFORE production warm-up. WHY
-                     (measured, `designs/training/compile_flags.md` "The compile sentinel"): dynamo's
-                     cache is keyed per CODE OBJECT, shared by every instance and every
+  1. `reset()`     — `torch._dynamo.reset()` at startup, BEFORE the region is installed and warmed.
+                     WHY (measured, `designs/training/compile_flags.md` "The compile sentinel"):
+                     dynamo's cache is keyed per CODE OBJECT, shared by every instance and every
                      `torch.compile` wrapper of that code, so anything compiled before the reset
                      spends the SAME `cache_size_limit` slots production needs. The reset runs
-                     before the regions are installed, so it loses nothing.
-  3. `prewarm(calls)` — run every production signature NOW, so caching happens when WE say, not
+                     before the region is installed, so it loses nothing; its log line names how many
+                     cache entries it dropped.
+  2. `prewarm(calls)` — run every production signature NOW, so caching happens when WE say, not
                      whenever a late caller first arrives.
-  4. `lock(where)` — before the first real iteration: the `fail_on_recompile` stance; a compile
+  3. `lock(where)` — before the first real iteration: the `fail_on_recompile` stance; a compile
                      START callback counts every frame compile attempted from here on. Any late
                      recompile, first compile or cache-limit hit is a typed FATAL
                      (`CompileSentinelError` -> `os._exit(FATAL_CONFIG)`; the launcher does not
                      restart it).
-  5. `stats()`     — graphs total, per-code cache entries, hits, post-lock compiles -> TB scalars.
+  4. `stats()`     — graphs total, per-code cache entries, hits, post-lock compiles -> TB scalars.
 
-THE TWO SILENT FAILURES (first verified in torch 2.5.1 source; re-read on 2.8, below):
+The startup parity gate (`compile_regions.gate_regions`) runs AFTER the reset and the region's
+install, and compiles R1 freely — its graph is the one the prewarm then hits; the cache-limit
+detector is already listening, so a limit hit there is fatal too. (A `CompileControl.gate()` context
+manager for a gate that ran before the reset was deleted: only tests called it.)
+
+THE TWO SILENT FAILURES (re-read on torch 2.8, below):
   * CACHE-LIMIT FALLBACK — `convert_frame._compile` logs ONE `log.warning("torch._dynamo hit
     config.%s ...")` and raises `CacheLimitExceeded`/`unimplemented`, a SOFT failure
     `ConvertFrame.__call__` swallows: that frame runs EAGER from then on. A logging handler that
@@ -73,9 +77,8 @@ from agents.model.compile_trainer import CompileTrainerError
 
 # EXACT torch version (local tag included) -> lock mechanism. "stance" =
 # `torch.compiler.set_stance("fail_on_recompile")` + the log-warning detector + the compile-start
-# callback (Lane K1, torch 2.8.0+cu126, contract-tested 2026-09-28). The 2.5.1 row
-# ("error_on_recompile") was deleted with HEAD's torch-2.5.1 support (2026-10-02): a 2.5.1 run
-# resumes pinned to its own commit, which carries it.
+# callback (Lane K1, torch 2.8.0+cu126, contract-tested 2026-09-28). HEAD supports this one torch
+# (the 2.5.1 row was deleted 2026-10-02: a 2.5.1 run resumes pinned to its own commit).
 _SUPPORTED: Dict[str, str] = {"2.8.0+cu126": "stance"}
 
 # What `stance` mode's rejection raises (torch 2.8 `eval_frame._callback_from_stance`): a plain
@@ -97,7 +100,7 @@ _STANCE_REJECT_TEXT = "Detected recompile when torch.compile stance is 'fail_on_
 #   Tracker / _debug_get_cache_entry_list — the per-code entry read
 #   CompilationCallbackHandler    — the compile-start callback registry
 #   OutputGraph.compile_and_call_fx_graph — increments counters['stats']['unique_graphs']
-#   torch._dynamo.reset / torch.compiler.reset — the post-gate reset
+#   torch._dynamo.reset / torch.compiler.reset — the startup reset
 # TORCH 2.8 (Lane K1, re-read 2026-09-28) — what MOVED, and what the row hashes instead:
 #   cache_size.exceeds_cache_size_limit -> exceeds_recompile_limit; config.cache_size_limit is now an
 #     ALIAS of config.recompile_limit, and the warning names `config.recompile_limit (8)` /
@@ -185,7 +188,7 @@ class CompileSentinelError(CompileTrainerError):
 _RERECORD = ("re-read these functions in the installed torch, re-run "
              "`src/agents/model/compile_control_test.py` (the behavioural contract tests) on it, "
              "then re-record the row with `python -m agents.model.compile_control --record` "
-             "(Lane K1 hits this by design when moving to torch >= 2.8: add the 'stance' mode).")
+             "(a new torch needs its own `_SUPPORTED` / `_SOURCE_HASHES` / `compile_config` rows).")
 
 
 def lock_mode(v: Optional[str] = None) -> str:
@@ -261,11 +264,9 @@ def require_supported_torch(version: Optional[str] = None) -> str:
 
 # --------------------------------------------------------------------------- thin dynamo shims
 def cache_size_limit() -> int:
-    """dynamo's per-code-object entry limit (`recompile_limit` on torch >= 2.8, where
-    `cache_size_limit` is its alias; `cache_size_limit` on 2.5.1)."""
-    cfg = torch._dynamo.config
+    """dynamo's per-code-object entry limit (`recompile_limit`; `cache_size_limit` is its alias)."""
     try:
-        return int(getattr(cfg, "recompile_limit", None) or cfg.cache_size_limit)
+        return int(torch._dynamo.config.recompile_limit)
     except Exception:
         return 8
 
@@ -425,7 +426,6 @@ class CompileControl:
         self.lock_where: Optional[str] = None
         self.graphs_at_lock: Optional[int] = None
         self.entries_at_lock: Dict[str, int] = {}
-        self.entries_after_gate: Dict[str, int] = {}
         self.prewarmed: List[str] = []
         self.compile_starts = 0
         self.compiles_after_lock = 0
@@ -438,7 +438,6 @@ class CompileControl:
         self.watch = TrainMsWatch()
         self._handler: Optional[_CacheLimitHandler] = None
         self._prev_level: Optional[int] = None
-        self._prev_error_on_recompile: Optional[bool] = None
         self._stance_set = False
         self._prev_config: Dict[str, Any] = {}
 
@@ -457,7 +456,6 @@ class CompileControl:
         self._handler = _CacheLimitHandler(self)
         lg.addHandler(self._handler)
         callback_handler.register_start_callback(self._on_compile_start)
-        self._prev_error_on_recompile = bool(torch._dynamo.config.error_on_recompile)
         self._prev_config = apply_compile_config()
         self.installed = True
         return self
@@ -473,8 +471,6 @@ class CompileControl:
             lg.setLevel(self._prev_level)
         with contextlib.suppress(ValueError):
             callback_handler.remove_start_callback(self._on_compile_start)
-        if self._prev_error_on_recompile is not None:
-            torch._dynamo.config.error_on_recompile = self._prev_error_on_recompile
         self._unset_stance()
         restore_compile_config(self._prev_config)
         self._prev_config = {}
@@ -482,9 +478,9 @@ class CompileControl:
         self.locked = False
 
     # -- dynamo hooks (never raise) ------------------------------------------------------------
-    def _on_compile_start(self, args: Any = None) -> None:
-        # torch 2.5.1 calls this with no argument; torch 2.8 passes a `CallbackArgs` whose
-        # `callback_trigger` is DYNAMO / LAZY_BACKWARD / TRITON_AUTOTUNING / CUDAGRAPH_RECORDING.
+    def _on_compile_start(self, args: Any) -> None:
+        # torch 2.8 passes a `CallbackArgs` whose `callback_trigger` is DYNAMO / LAZY_BACKWARD /
+        # TRITON_AUTOTUNING / CUDAGRAPH_RECORDING.
         self.compile_starts += 1
         if self.locked:
             self.compiles_after_lock += 1
@@ -495,10 +491,9 @@ class CompileControl:
 
     def _on_rejected(self, exc: BaseException, diagnosis: str = "") -> None:
         """The lock REJECTED a compile at a watched call site. Sticky, so a caller's
-        `except Exception` cannot hide it (on torch 2.8 the start callback never sees a rejected
-        recompile: it runs after the recompile check). Records the FAILING GUARD(S) (K6): on
-        `error_on_recompile` the `RecompileError` lists them; on the 2.8 stance the rejection says
-        nothing, so ``diagnosis`` (`_diagnose_rejection`'s replay) carries them."""
+        `except Exception` cannot hide it (the start callback never sees a rejected recompile: it
+        runs after the recompile check). Records the FAILING GUARD(S) (K6): the stance's rejection
+        says nothing, so ``diagnosis`` (`_diagnose_rejection`'s replay) carries them."""
         self.rejected_after_lock += 1
         if len(self.after_lock_frames) < 8:
             self.after_lock_frames.append(f"rejected: {str(exc).splitlines()[0][:200]}")
@@ -507,15 +502,13 @@ class CompileControl:
             self.rejection_reasons.append(reasons)
 
     def _diagnose_rejection(self, compiled: Callable[..., Any], a: Any, k: Any) -> str:
-        """NAME the guard a stance rejection hit (torch >= 2.8, K6): replay the same call ONCE with
+        """NAME the guard a stance rejection hit (K6): replay the same call ONCE with
         the stance at "default" and `error_on_recompile` on — dynamo then raises a `RecompileError`
         listing the failing guards at the recompile check, before compiling anything. A never-seen
         frame has no guard to fail: the replay compiles it (the compile START callback counts it — the
         run is FATAL either way) and that is what the diagnosis says. Never raises."""
-        if self.mode != "stance":
-            return ""
         try:
-            set_stance = getattr(torch.compiler, "set_stance")   # torch >= 2.6 only ("stance" mode)
+            set_stance = getattr(torch.compiler, "set_stance")
             patch = getattr(torch._dynamo.config, "patch")        # the config module's own patcher
             with set_stance("default"), patch(error_on_recompile=True):
                 compiled(*a, **k)
@@ -544,37 +537,27 @@ class CompileControl:
         return watched
 
     def _unset_stance(self) -> None:
-        if getattr(self, "_stance_set", False):
+        if self._stance_set:
             torch.compiler.set_stance("default")  # type: ignore[attr-defined, unused-ignore]
             self._stance_set = False
 
     def _on_limit_hit(self, limit_type: str, msg: str) -> None:
         self.limit_hits.append((limit_type, msg))
 
-    # -- phase 1: the gate ---------------------------------------------------------------------
-    @contextlib.contextmanager
-    def gate(self) -> Iterator["CompileControl"]:
-        """The startup parity gate compiles freely inside this block (detector already on)."""
-        self.install()
-        set_strict_errors()
-        self.phase = "gate"
-        try:
-            yield self
-        finally:
-            self.entries_after_gate = cache_entries_by_code()
-        self.check("the startup parity gate")
-
-    # -- phase 2: reset ------------------------------------------------------------------------
+    # -- phase 1: reset ------------------------------------------------------------------------
     def reset(self) -> str:
-        """Drop every dynamo cache entry (the gate's, and any throwaway in-process compile)."""
-        self.check("before the post-gate reset")
+        """Drop every dynamo cache entry compiled so far in the process (before the region is
+        installed, so the region's own graphs are never dropped). The line says how many it dropped."""
+        self.check("before the reset")
+        resident = cache_entries_by_code()
         torch._dynamo.reset()
         self.phase = "reset"
-        before = sum(self.entries_after_gate.values()) if self.entries_after_gate else 0
-        return (f"[CompileControl] reset after the gate: dropped {before} cache entries the gate "
-                f"left on the production code objects (now {sum(cache_entries_by_code().values())})")
+        what = (" [" + ", ".join(f"{k} x{v}" for k, v in sorted(resident.items())) + "]") if resident else ""
+        return (f"[CompileControl] dynamo reset at startup: dropped {sum(resident.values())} cache entries "
+                f"compiled before the region was installed{what} (now "
+                f"{sum(cache_entries_by_code().values())})")
 
-    # -- phase 3: prewarm ----------------------------------------------------------------------
+    # -- phase 2: prewarm ----------------------------------------------------------------------
     def prewarm(self, calls: Sequence[Tuple[str, Callable[[], None]]]) -> str:
         """Run each labelled production signature once, RNG-neutral. Returns the log line."""
         self.phase = "prewarm"
@@ -590,15 +573,15 @@ class CompileControl:
                 f"[{', '.join(self.prewarmed)}]: {dynamo_graphs_total()} graphs in process, max "
                 f"{worst} cache entries per code object (limit {cache_size_limit()})")
 
-    # -- phase 4: lock -------------------------------------------------------------------------
+    # -- phase 3: lock -------------------------------------------------------------------------
     def lock(self, where: str) -> str:
         """Freeze the graph set: from here any dynamo compile in this process is a FATAL."""
         self.check(f"lock ({where})")
         self.graphs_at_lock = dynamo_graphs_total()
         self.entries_at_lock = cache_entries_by_code()
         set_strict_errors()                  # a swallowed RecompileError is still counted, not eaten
-        # "stance" (torch >= 2.8, Lane K1): any cache MISS on a compiled callable raises at the call
-        # site — a recompile AND a never-seen frame
+        # the stance (Lane K1): any cache MISS on a compiled callable raises at the call site — a
+        # recompile AND a never-seen frame
         torch.compiler.set_stance("fail_on_recompile")  # type: ignore[attr-defined, unused-ignore]
         self._stance_set = True
         self.locked = True
@@ -678,7 +661,7 @@ class CompileControl:
             raise
         self.check(where)
 
-    # -- phase 5: stats ------------------------------------------------------------------------
+    # -- phase 4: stats ------------------------------------------------------------------------
     def stats(self) -> Dict[str, float]:
         ent = cache_entries_by_code()
         out = {
@@ -762,13 +745,11 @@ class CompileControl:
         model._compile_control = self
 
     def release(self, why: str) -> None:
-        """End the lock (training is over): restore `error_on_recompile`, stop counting."""
+        """End the lock (training is over): restore the default stance, stop counting."""
         if not self.locked:
             return
         self.locked = False
         self.phase = "released"
-        prev = self._prev_error_on_recompile
-        torch._dynamo.config.error_on_recompile = bool(prev) if prev is not None else False
         self._unset_stance()
         self._say(f"🧊 [COMPILE LOCK] released — {why}; {self.compiles_after_lock} compile(s) "
                   f"after the lock during training (must be 0); {self.rejected_after_lock} rejected "
@@ -908,7 +889,7 @@ class TrainMsWatch:
 # imported it, so every trainer died with an uncaught `CompileSentinelError` on any torch but the
 # recorded one. The check now runs where a learner COMPILES: `require_supported_torch` at the
 # compile preflight (`compile_trainer.preflight_compile_trainer`, FATAL_CONFIG) and at every
-# `CompileControl` construction (the gate / prewarm / lock path, and `install_rollout_region`).
+# `CompileControl` construction (the install / prewarm / lock path).
 if __name__ == "__main__":  # pragma: no cover — `python -m agents.model.compile_control --record`
     import json as _json
     # the installed torch's own row if it has one, else the NEWEST row's qualnames (then edit the

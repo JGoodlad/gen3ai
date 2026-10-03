@@ -105,8 +105,9 @@ name, the freeze guard proves at runtime that it ran before the freeze.
 
 **The declared table.** The region table (`compile_regions.REGIONS`, prewarmed through
 `compile_regions.prewarm_calls`) IS the declaration: every compiled-learner signature (region × batch ×
-train/eval × grad) the steady state may reach, prewarmed at startup (`arm_compile_sentinel`). Batch 1 is never in it: it always runs eager
-(`gen3_batch1_eager_v1`, `compile_flags.md`). The compile sentinel then LOCKS right after the prewarm —
+train/eval × grad) the steady state may reach, prewarmed at startup (`arm_compile_sentinel`) — today ONE,
+R1's (train / grad / `batch_size`); the compiled rollout region R0 and its batch-1 eager route were
+deleted (P10-E, `compile_flags.md`). The compile sentinel then LOCKS right after the prewarm —
 before the first real iteration (was: after the first `train()`, `8fc297a2`'s interim, which absorbed
 whatever iteration 1 compiled). A signature outside the table is a typed FATAL (`[CompileSentinel]
 FATAL`, exit FATAL_CONFIG) that NAMES the failing guard(s): the `fail_on_recompile` stance's rejection
@@ -129,17 +130,17 @@ MISSING on every compiled 2.8 run. `rank_metrics_test` fails on a revert to hook
 gate proves the compiled graph at t = 0; the canary proves it at t = N. It runs first at update
 `CANARY_FIRST` (10), then every `CANARY_EVERY` (100) updates, between updates (owner, 2026-10-01: "up
 it to 100"; the first run at 10 so no run of any length goes unchecked — sizing arm A's 82 updates
-never reached 100), on the committed real-obs fixture
-and through DECLARED signatures only. Each run compares compiled against eager on two things:
-- the decision readout (masked legal log-probs, V) at the rollout signature (eval / no-grad / `n_envs`);
-- the train graph: on K8, region R1's loss and every policy gradient, with the per-parameter bar
-  chosen by `compile_regions.weights_regime`, on R1's gate rows — ALWAYS the K9 golden's labelled
-  buffer, a key it lacks at its declared placeholder (`compile_regions.r1_batch`; P10-C: before it, a
-  fork-shaped run's canary judged zero-label rows, with ~48 critic / intent / belief parameters
-  unjudged); on the legacy compile, the gate's probe loss.
+never reached 100), on R1's gate rows — ALWAYS the K9 golden's labelled buffer, a key it lacks at its
+declared placeholder (`compile_regions.r1_batch`; P10-C: before it, a fork-shaped run's canary judged
+zero-label rows, with ~48 critic / intent / belief parameters unjudged) — and through the DECLARED
+signature only. Every run compares compiled against eager on R1's loss and every policy gradient, with
+the per-parameter bar chosen by `compile_regions.weights_regime`. (Until P10-E a canary ALSO compared the
+decision readout of the compiled rollout region R0 at the rollout signature — a graph the learner process
+never ran, so its verdict checked nothing the run used; the arm, its `compile/canary_max_abs_<q>`
+scalars and the decision-only canary — the gradient ran every `GRAD_EVERY`-th canary — are deleted. EVERY
+canary checks the gradient: a canary without one would pass anything.)
 
-The train-graph check now runs at EVERY canary (`GRAD_EVERY` 1). It used to run every 4th. It costs
-0.65–0.71 s at the production shape: arm C's weights, CUDA, `n_envs` 48, B = 2048, R1 through the compiled region and eager. The decision readout alone costs 0.06–0.09 s. Against a 36 s update every 100 updates that is under 0.02% (`~/gen3ai_archive/k6_k8/r1bar/canary_cost.log`, 2026-10-01).
+The check costs 0.65–0.71 s at the production shape: arm C's weights, CUDA, `n_envs` 48, B = 2048, R1 through the compiled region and eager (the decision readout it used to add was 0.06–0.09 s). Against a 36 s update every 100 updates that is under 0.02% (`~/gen3ai_archive/k6_k8/r1bar/canary_cost.log`, 2026-10-01).
 
 The bars are the startup gate's, at fp32 `highest` (the only matmul precision; TF32 was retired, deletion
 pass K2). Live weights are trained, so vacuity is not a refusal here.
@@ -150,8 +151,8 @@ batch on one weight state. Waiting for the next scheduled canary would mean ~1 h
 graph, so a disagreement is confirmed IN THE SAME UPDATE:
 - **Warn and dump** to `<run_dir>/canary_disagreements.jsonl`.
 - **Re-run the whole comparison**, compiled AND eager recomputed, on the same rows and on an
-  INDEPENDENT fixture slice (`compile_trainer.fixture_index` slice 1: the second half of the rows,
-  tiled, the same declared shape).
+  INDEPENDENT slice of the golden rows (`compile_trainer.fixture_index` slice 1: the second half of the
+  rows, tiled, the same declared shape).
 - **Confirmed** (it disagrees again on both): checkpoint to `<run_dir>/final_model_canary_fatal.zip`
   (forensics only; `latest.txt` is not moved), then `CompileCanaryError` (FATAL_CONFIG, not restarted).
 - **Not confirmed:** `compile/canary_unconfirmed_disagreements` counts it and training continues.
@@ -165,14 +166,13 @@ PASSING canary's step (`rollback_point`; the file is the run's, so it spans rest
 The canary runs under `fork_rng`, restores the training mode and leaves every `.grad` None, so training
 is untouched (pinned). TB scalars, written on canary updates only:
 - `compile/canary_ok` (1 pass, 0 unconfirmed);
-- `compile/canary_grad_checked`;
 - `compile/canary_unconfirmed_disagreements`;
 - `compile/canary_seconds`;
-- `compile/canary_max_abs_<q>`;
 - `compile/canary_grad_cosine`.
 
-`compile_canary_test` fails on each of these: a forward that drifted (×1.01); a BACKWARD-only drift; a
-planted persistent R0 fault (FATAL in the same update, with the checkpoint and the rollback point); a
+`compile_canary_test` fails on each of these: a BACKWARD-only drift, caught on the FIRST scheduled canary
+(R1's loss and gradient cosine cannot see it; the per-parameter rule does); a planted persistent R1 fault
+(FATAL in the same update, with the checkpoint and the rollback point); a
 one-shot blip that FATALs instead of counting; two consecutive unconfirmed disagreements that do not
 FATAL; and a wrong rollback-point choice.
 ## The memory half — the CUDA memory TREND, wired (`gen3_cuda_memory_trend_v1`)

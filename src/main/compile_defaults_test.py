@@ -113,6 +113,48 @@ def test_a_cpu_config_short_circuits_before_the_shape_check():
     assert _auto(device="cpu", batch_size=5000) == (False, None)
 
 
+def test_auto_judges_the_REAL_update_size_not_n_steps_times_n_envs():
+    """F9 (P10-E): the update is `--rollout-target-samples` rows (the production recipe sets it
+    independently of --n-steps / --n-envs), so the auto default must judge THAT. Before, a valid run
+    (target divides, n_steps*n_envs does not) had `--compile-trainer` QUIETLY left off, and an invalid one
+    (the product divides, the target does not) turned it on only to die at the first buffer build.
+    Fails on revert (the check goes back to n_steps x n_envs)."""
+    assert 1000 * 48 % 4096 != 0 and 98_304 % 4096 == 0
+    assert _auto(n_steps=1000, n_envs=48, batch_size=4096, rollout_trigger="complete_game",
+                 rollout_target_samples=98_304) == (True, None)
+    enabled, why = _auto(rollout_trigger="complete_game", rollout_target_samples=100_000)
+    assert enabled is False and why and "100,000 rows" in why, why
+    # the window trigger ignores the target; an untyped trigger / target is today's default
+    assert _auto(rollout_trigger="window", rollout_target_samples=100_000) == (True, None)
+    assert _auto(rollout_trigger=None, rollout_target_samples=None) == (True, None)
+    assert _auto(rollout_trigger=None, rollout_target_samples=0, batch_size=5000)[0] is False
+
+
+def test_the_explicit_preflight_judges_the_real_update_size_with_the_models_own_batch(capsys):
+    """An EXPLICIT --compile-trainer reaches `check_shape_stability` through `_maybe_compile_trainer`,
+    with the same real update size, and with the MODEL's n_steps / batch_size when it has them (a resume
+    restores the checkpoint's; the argv's are inert there). The valid config gets PAST the shape check (to
+    the next refusal, the stand-in model's missing extractor); the invalid ones stop AT it."""
+    from types import SimpleNamespace
+
+    from main.train.lifecycle import _maybe_compile_trainer
+
+    def run(model, **over):
+        args = SimpleNamespace(compile_trainer=True, n_steps=1000, n_envs=48, batch_size=4096,
+                               rollout_trigger="complete_game", rollout_target_samples=98_304)
+        for k, v in over.items():
+            setattr(args, k, v)
+        with pytest.raises(SystemExit):
+            _maybe_compile_trainer(model, args)
+        return capsys.readouterr().err
+    assert "no `features_extractor`" in run(SimpleNamespace(policy=None))        # past the shape check
+    err = run(SimpleNamespace(policy=None), n_steps=2048, rollout_target_samples=100_000)
+    assert "divides evenly" in err and "100,000 rows" in err
+    # the model's own batch size is the one the collector will use
+    err = run(SimpleNamespace(policy=None, batch_size=5000), rollout_target_samples=0, n_steps=2048)
+    assert "divides evenly" in err and "--batch-size 5000" in err
+
+
 def test_an_explicit_flag_never_reaches_the_auto_path():
     """The refusal is preserved where it belongs. An explicit --compile-trainer parses to True and
     `_maybe_compile_trainer` calls `check_shape_stability` directly, so an impossible ask still

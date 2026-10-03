@@ -99,17 +99,28 @@ def ragged_accumulation(target: int, micro_batch: int, accum: int) -> bool:
     return int(target) % (int(micro_batch) * max(1, int(accum))) != 0
 
 
+def update_rows(mode: str, *, n_envs: int, n_steps: int, target: int = 0) -> int:
+    """The rows ONE update trains on, from the trigger declaration alone (the one definition: the
+    trigger below and `compile_trainer.check_shape_stability`'s callers both use it). ``window``:
+    ``n_steps * n_envs``. ``complete_game``: ``target``, which defaults (0) to ``n_steps * n_envs``
+    (today's rollout size, so the switch changes WHEN rows are trained on, not how many) — the
+    recipe sets the target independently of both, so it is NOT their product in general."""
+    if mode == "window":
+        return int(n_steps) * int(n_envs)
+    if mode != "complete_game":
+        raise TriggerError(f"unknown rollout trigger {mode!r}")
+    return int(target) or int(n_steps) * int(n_envs)
+
+
 def trigger_for(mode: str, *, n_envs: int, n_steps: int, micro_batch: int, target: int = 0,
                 band_lo: int = 0, band_hi: int = 0):
     """The declared trigger for a run. ``complete_game``: ``target`` defaults to ``n_steps * n_envs``
-    (today's rollout size, so the switch changes WHEN rows are trained on, not how many); the band
-    defaults to the target alone; the quantum is lcm(micro_batch, n_envs)."""
+    (`update_rows`); the band defaults to the target alone; the quantum is lcm(micro_batch,
+    n_envs)."""
     from math import gcd
 
     if mode == "window":
         return WindowTrigger(int(n_steps))
-    if mode != "complete_game":
-        raise TriggerError(f"unknown rollout trigger {mode!r}")
+    t = update_rows(mode, n_envs=n_envs, n_steps=n_steps, target=target)     # refuses an unknown mode
     quantum = int(micro_batch) * int(n_envs) // gcd(int(micro_batch), int(n_envs))
-    t = int(target) or int(n_steps) * int(n_envs)
     return SampleTrigger(target=t, quantum=quantum, lo=int(band_lo) or t, hi=int(band_hi) or t)
