@@ -100,7 +100,7 @@ def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None
                           fork_step=fork_step)
     if block is not None:
         from agents.training.pool_seed import pool_dir_for, read_seed_record
-        record = read_seed_record(pool_dir_for(args, model_dir))
+        record = read_seed_record(pool_dir_for(model_dir))
         if record is not None:
             block["pool_seeded_from"] = record
     return block

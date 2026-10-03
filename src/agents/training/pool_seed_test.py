@@ -25,7 +25,7 @@ from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
 # --------------------------------------------------------------------------------------------
 def _args(**kw):
     ns = types.SimpleNamespace(
-        model=None, self_play=True, snapshot_dir=None,
+        model=None, self_play=True,
         fork_pool_seed=True, allow_empty_pool=False,
     )
     for k, v in kw.items():
@@ -343,20 +343,8 @@ class TestPreparePool:
         assert lines == []
         assert not os.path.isdir(os.path.join(fork, "snapshots"))
 
-    def test_an_explicit_snapshot_dir_is_honoured(self, tmp_path):
-        parent = _make_parent(tmp_path, n_snapshots=2)
-        fork = str(tmp_path / "fork")
-        os.makedirs(fork)
-        elsewhere = str(tmp_path / "pool_elsewhere")
-        pool_seed.prepare_pool(
-            _args(model=os.path.join(parent, "final_model.zip"), snapshot_dir=elsewhere),
-            fork, emit_fn=lambda _m: None, exit_fn=_exit_fn)
-        assert len(pool_seed.snapshot_zips(elsewhere)) == 2
-        assert not os.path.isdir(os.path.join(fork, "snapshots"))
-
     def test_pool_dir_for_matches_the_trainers_own_resolution(self, tmp_path):
-        assert pool_seed.pool_dir_for(_args(), "/runs/x") == os.path.join("/runs/x", "snapshots")
-        assert pool_seed.pool_dir_for(_args(snapshot_dir="/p"), "/runs/x") == "/p"
+        assert pool_seed.pool_dir_for("/runs/x") == os.path.join("/runs/x", "snapshots")
 
 
 # --------------------------------------------------------------------------------------------

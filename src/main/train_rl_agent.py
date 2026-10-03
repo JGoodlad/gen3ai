@@ -252,7 +252,8 @@ async def main():
         # an empty pool gets its parent's pool (zips + metadata); a poolless fork is REFUSED
         # rather than silently trained against bots. See agents.training.pool_seed.
         prepare_pool(args, model_dir)
-        _snapshot_dir = _Path(args.snapshot_dir) if args.snapshot_dir else _Path(model_dir) / "snapshots"
+        from agents.training.pool_seed import pool_dir_for as _pool_dir_for
+        _snapshot_dir = _Path(_pool_dir_for(model_dir))
         _cv = _current_model_version(mappings, **_run_arch_toggles(args))
         _opp_version = _cv
         # owns_dir=True: THIS is the pool that writes the directory (seed / promote), so it is the one
@@ -267,13 +268,6 @@ async def main():
         emit(
             f"🎮 [SELFPLAY] Pool has {len(_pool)} snapshots, win_rate_vs_bots={_persisted_wr:.2%} "
             f"→ self_play_fraction={_initial_self_play_fraction:.0%} (live, per-episode)"
-        )
-
-    opponent_device = "cpu" if args.self_play_use_cpu else args.device
-    if args.self_play:
-        emit(
-            f"🧠 [SELFPLAY] Opponent snapshots load on '{opponent_device}' "
-            f"({'CPU — avoids per-worker CUDA contexts' if args.self_play_use_cpu else 'training device'})"
         )
 
     # Exploiter mode is NOT self-play, so the self-play block above left _opp_version=None — but the

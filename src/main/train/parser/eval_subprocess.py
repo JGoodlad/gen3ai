@@ -136,7 +136,6 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                         help="Bound the run's crashes/ dir: each eval cycle keep only the N most-recent "
                              "launcher restart_err_*.txt files (0 = keep all).")
     parser.add_argument("--self-play", action=BoolFlag, default=False, help="Enable self-play snapshot pool as training opponents")
-    parser.add_argument("--snapshot-dir", type=str, default=None, help="Pool directory (default: <run_dir>/snapshots)")
     # ── The FORK pool-seed guard (gen3_fork_pool_seed_v1) ──────────────────────────────────────
     # A FORK starts in a new run dir whose snapshots/ is EMPTY, and an empty pool does not disable
     # --self-play: it silently falls back to the BOT pool. That confound voided a three-arm A/B
@@ -439,9 +438,3 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "a measurement of a team this model specialised in. Pass this ONLY "
                              "when the contamination is intended AND will be stated wherever the "
                              "number is reported. Training-only, not version-locked.")
-    parser.add_argument("--allow-nonsample-trainee", dest="allow_nonsample_trainee", action="store_true",
-                        help="RESEARCH override: skip the exploiter vetted-SAMPLE gate so --trainee-team(s) "
-                             "may pin NON-sample POOL teams (anchor on a sample, nearest neighbors from all "
-                             "719 pool teams → a tighter z-cluster than the 32 samples allow). For FiLM "
-                             "capacity / count-vs-diversity studies; NOT for a teacher you'll distil as-is. "
-                             "Training-only, not version-locked. Default off (gate enforced).")

@@ -152,18 +152,9 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                         help="Relative weight of the moves multi-label BCE vs the species CE inside the "
                              "belief aux term (aux = species_CE + w·moves_BCE; both on a per-believed-slot "
                              "scale). Default 1.0 — species dominates; raise to up-weight move prediction. "
-                             "TRAINING-only, like --opp-belief-aux-coef. Ignored when the coef is 0. The "
-                             "explicit --[no-]predict-unrevealed-mon-moves knob below is the clear on/off.")
-    parser.add_argument("--predict-unrevealed-mon-moves", "--predict_unrevealed_mon_moves",
-                        dest="predict_unrevealed_mon_moves", action=BoolFlag, default=None,
-                        help="EXPLICIT clarity knob: should the model predict the MOVES of opponent mons it "
-                             "has NOT even seen (the hidden bench)? Default (unset) = yes (current behavior). "
-                             "--no-predict-unrevealed-mon-moves turns it OFF — zeros BOTH hidden-mon "
-                             "move-prediction paths: the BeliefHead's hidden-slot moves-BCE "
-                             "(--opp-belief-moves-weight → 0) AND any MoveBelief unrevealed leg "
-                             "(--move-belief-mode 'unrevealed'/'both' → 'revealed'). The REVEALED-mon move "
-                             "belief (a SEEN mon's unseen slots) and the SPECIES belief on hidden mons are "
-                             "UNTOUCHED. A desugar into existing fields — no version field.")
+                             "TRAINING-only, like --opp-belief-aux-coef. Ignored when the coef is 0. 0.0 zeroes "
+                             "the hidden-mon move prediction (the deleted --no-predict-unrevealed-mon-moves "
+                             "alias also set --move-belief-mode revealed).")
     parser.add_argument("--move-belief-mode", "--move_belief_mode", dest="move_belief_mode",
                         choices=("off", "revealed", "unrevealed", "both"), default=None,
                         help="MOVE-belief REINJECTION: predict each opp mon's moveset and FLOW it back into "

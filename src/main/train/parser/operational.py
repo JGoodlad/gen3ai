@@ -50,15 +50,6 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "offline tools (`main.prober`, the eval worker, the search drivers) keep their "
                              "own transport choice.")
     parser.add_argument(
-        "--self-play-use-cpu",
-        action=BoolFlag,
-        default=True,
-        help="Load self-play opponent snapshots on CPU instead of the training device. "
-             "Default True: avoids one CUDA context per SubprocVecEnv worker (~300-600 MB each), "
-             "which would otherwise OOM the GPU at high --n-envs. Opponent inference is batch-1 "
-             "no_grad, so CPU is plenty fast. Pass --no-self-play-use-cpu to load them on --device.",
-    )
-    parser.add_argument(
         "--tb-inherit",
         action=BoolFlag,
         default=True,

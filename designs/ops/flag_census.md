@@ -13,9 +13,9 @@
 | | trainer flags | launcher flags | total |
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
-| DELETED by P11 so far | 1 | 0 | 1 |
-| NOW | 201 | 9 | 210 |
-| verdicts at the inventory commit | KEEP 160 · DELETE 14 · ONE-VALUED 8 · NEEDS-OWNER 19 | KEEP 9 | |
+| DELETED by P11 so far | 5 | 0 | 5 |
+| NOW | 197 | 9 | 206 |
+| verdicts at the inventory commit | KEEP 163 · DELETE 7 · ONE-VALUED 8 · NEEDS-OWNER 19 | KEEP 9 | |
 | ENDING | _filled in by the last batch_ | | |
 
 ## 1. The deletions this pass makes
@@ -23,23 +23,20 @@
 **Shipped** (each also has a row in [`deleted_flags.md`](../deleted_flags.md)):
 
 * `--eval-concurrency` (B1) — no reader since P6 deleted `final_eval`; an exact prefix of `--eval-concurrency-per-worker`, so its deletion needed `allow_abbrev=False`
+* `--self-play-use-cpu` (B2) — read nothing on the Rust core (two startup `emit()` lines and an unused local)
+* `--predict-unrevealed-mon-moves` (B2) — a clarity alias of `--opp-belief-moves-weight 0` + `--move-belief-mode revealed`
+* `--snapshot-dir` (B2) — an unused override of the pool directory; no doc, no run typed it
+* `--allow-nonsample-trainee` (B2) — a research override for the closed FiLM capacity studies; the vetted-sample gate is now unconditional
 
 **Planned, not yet shipped:**
 
 * `--showdown-port` — only reader is the Python eval workers' `port` (never reached under the rust eval core) and `config.py`'s `server_config`; the launcher appends a default `--showdown-port 8001` that nothing consumes
-* `--self-play-use-cpu` — reads nothing on the Rust core (U3 finding 6(d)): two startup `emit()` lines and an `opponent_device` local that nothing uses
-* `--predict-unrevealed-mon-moves` — an EXPLICIT-clarity alias of `--move-belief-mode`; nothing reads its dest outside the parser and the config resolver
-* `--unified-damage` — a parse-time macro that desugars into component flags `--arch production` already supplies; no reader of its dest
-* `--unified-moves` — the same macro one level up (`--unified-damage` + the move system); no reader of its dest
-* `--damage-matrices` — a parse-time macro for the two `--damage-matrices-{in,out}coming` toggles `--arch production` already supplies
 * `--eval-workers` — read only by `spawn_eval_workers` on the Python eval path (`env_core != "rust"`), which no production run reaches (manifest finding 12(c))
 * `--eval-device` — the same Python eval worker pool
 * `--eval-concurrency-per-worker` — the same Python eval worker pool
-* `--snapshot-dir` — an unused override of the pool directory (`<run>/snapshots`); named by no doc, no run typed it
 * `--warmstart-consensus` — disagreement-gated CONSENSUS DISTILLATION of N teachers into an exploiter's init (`warmstart.py`); the era plan says exploiters are OPPONENTS, never teachers, and distillation was deleted (L3); 0 recorded runs typed it
 * `--warmstart-battles` — the warm start's dataset size
 * `--warmstart-bc-steps` — the warm start's BC steps
-* `--allow-nonsample-trainee` — a RESEARCH override for the closed count-vs-diversity capacity studies (10 older recorded runs, none recent); the vetted-sample gate it skips stays
 
 ## 2. NEEDS-OWNER
 
@@ -91,7 +88,6 @@
 | `--device` | auto | 272 / 39 | every launch (`--device cuda`) | **KEEP** |
 | `--showdown-port` | — | 0 / 0 | only reader is the Python eval workers' `port` (never reached under the rust eval core) and `config.py`'s `server_config`; the launcher appends a default `--showdown-port 8001` that nothing consumes | **DELETE** |
 | `--use-bridge` | rust | 186 / 34 | the only legal value is `rust` (`retired_choice`, deletion pass U3); read only by `production_args.py` | **ONE-VALUED** |
-| `--self-play-use-cpu` | true | 114 / 20 | reads nothing on the Rust core (U3 finding 6(d)): two startup `emit()` lines and an `opponent_device` local that nothing uses | **DELETE** |
 | `--tb-inherit` | true | 0 / 0 | a fork copies its parent's scalar TB events (`tb_inherit.py`, `main.tb_inherit`, root `CLAUDE.md`'s fork notes); `--no-tb-inherit` is the documented fleet opt-out | **KEEP** |
 | `--seed` | 42 | 172 / 39 | every launch (`recipe`-adjacent reproducibility; the Rust core's `segment_seed`) | **KEEP** |
 | `--log-level` | periodic | 192 / 39 | root `CLAUDE.md` / launcher (`--log-level periodic`) | **KEEP** |
@@ -151,11 +147,10 @@
 | `--opp-belief-cls-k` | — | 186 / 34 | `--arch production`: `production_config.json` `opp_belief_cls_k` = `6` | **KEEP** |
 | `--opp-belief-aux-coef` | — | 254 / 34 | `--arch production`: `production_config.json` `opp_belief_aux_coef` = `0.05`; `--arch production`: `recipe.fresh.opp_belief_aux_coef` = `0.05` | **KEEP** |
 | `--opp-belief-moves-weight` | 1.0 | 191 / 34 | the moves-BCE vs species-CE weight inside the belief aux term (read by `train_setup`; default 1.0 is the production value) | **KEEP** |
-| `--predict-unrevealed-mon-moves` | — | 0 / 0 | an EXPLICIT-clarity alias of `--move-belief-mode`; nothing reads its dest outside the parser and the config resolver | **DELETE** |
 | `--move-belief-mode` | — | 186 / 34 | `--arch production`: `production_config.json` `move_belief_mode` = `"both"` | **KEEP** |
 | `--move-belief-coef` | — | 251 / 34 | `--arch production`: `production_config.json` `move_belief_coef` = `0.05`; `--arch production`: `recipe.fresh.move_belief_coef` = `0.05` | **KEEP** |
 | `--damage-op` | — | 184 / 34 | `--arch production`: `production_config.json` `damage_op` = `true` | **KEEP** |
-| `--unified-damage` | off | 185 / 34 | a parse-time macro that desugars into component flags `--arch production` already supplies; no reader of its dest | **DELETE** |
+| `--unified-damage` | off | 185 / 34 | the parse-time macro the registry, `extractor_build` and `combination_checks` refusal texts name; `resolve_config` desugars it into the component toggles (`config.desugar_umbrella_flags`) | **KEEP** |
 | `--damage-outgoing` | — | 184 / 34 | `--arch production`: `production_config.json` `damage_outgoing` = `true` | **KEEP** |
 | `--move-candidate-floor` | — | 245 / 34 | `--arch production`: `production_config.json` `move_candidate_floor` = `0.02` | **KEEP** |
 | `--move-prior-fusion` | — | 184 / 34 | `--arch production`: `production_config.json` `move_prior_fusion` = `true` | **KEEP** |
@@ -218,9 +213,9 @@
 | `--policy-grad-coef` | — | 3 / 0 | `--arch production`: `production_config.json` `policy_grad_coef` = `1.0` | **KEEP** |
 | `--move-latent` | — | 184 / 34 | `--arch production`: `production_config.json` `move_latent` = `true` | **KEEP** |
 | `--move-belief-latent-coef` | — | 184 / 34 | `--arch production`: `production_config.json` `move_belief_latent_coef` = `0.05`; `--arch production`: `recipe.fresh.move_belief_latent_coef` = `0.05` | **KEEP** |
-| `--unified-moves` | — | 250 / 34 | the same macro one level up (`--unified-damage` + the move system); no reader of its dest | **DELETE** |
+| `--unified-moves` | — | 250 / 34 | a flagless fresh argv resolves it to `both`, which turns `--damage-op` / `--move-latent` ON (`config.desugar_umbrella_flags`) — the BARE-argv default's route to the unified move system | **KEEP** |
 | `--damage-topk` | — | 246 / 34 | `--arch production`: `production_config.json` `damage_topk_k` = `6` | **KEEP** |
-| `--damage-matrices` | — | 244 / 34 | a parse-time macro for the two `--damage-matrices-{in,out}coming` toggles `--arch production` already supplies | **DELETE** |
+| `--damage-matrices` | — | 244 / 34 | the ONLY CLI spelling of the two `production_config.json` toggles `damage_matrices_incoming` / `damage_matrices_outgoing` (registry rows `cli_name`, `checkargs`) | **KEEP** |
 | `--spread-belief` | — | 250 / 34 | `--arch production`: `production_config.json` `spread_belief` = `true` | **KEEP** |
 | `--spread-belief-coef` | — | 243 / 34 | `--arch production`: `production_config.json` `spread_belief_coef` = `0.05`; `--arch production`: `recipe.fresh.spread_belief_coef` = `0.05` | **KEEP** |
 | `--spread-belief-nature` | — | 236 / 34 | `--arch production`: `production_config.json` `spread_belief_nature` = `true` | **KEEP** |
@@ -254,7 +249,6 @@
 | `--keep-stalls` | 50 | 184 / 34 | artifact retention | **KEEP** |
 | `--keep-crashes` | 10 | 184 / 34 | artifact retention | **KEEP** |
 | `--self-play` | false | 167 / 22 | `--arch production`: `recipe.fresh.self_play` = `true`; the self-play pool (recipe.fresh `self_play`) | **KEEP** |
-| `--snapshot-dir` | — | 0 / 0 | an unused override of the pool directory (`<run>/snapshots`); named by no doc, no run typed it | **DELETE** |
 | `--fork-pool-seed` | true | 0 / 0 | a fork auto-seeds its parent's pool (root `CLAUDE.md` fork hazard) | **KEEP** |
 | `--allow-empty-pool` | false | 0 / 0 | the consent for a fork with an empty pool (root `CLAUDE.md`, `supply_guards.md`) | **KEEP** |
 | `--supply-starve-cycles` | — | 0 / 0 | the declared lever-supply floors (`designs/training/supply_guards.md`) | **KEEP** |
@@ -293,7 +287,6 @@
 | `--trainee-team` | — | 17 / 0 | SPECIALIST mode (`TECH_DEBT_BACKLOG.md` P1, `eval_trace_gen`, `promote_teams`) | **KEEP** |
 | `--trainee-teams` | — | 83 / 14 | MULTI-SPECIALIST mode (`main.promote_teams`) | **KEEP** |
 | `--allow-untaught-teacher` | false | 0 / 0 | the documented override of the untaught-slice guard (`matchup_setup`); the untaught meter is live | **KEEP** |
-| `--allow-nonsample-trainee` | false | 10 / 0 | a RESEARCH override for the closed count-vs-diversity capacity studies (10 older recorded runs, none recent); the vetted-sample gate it skips stays | **DELETE** |
 
 ### env_core
 

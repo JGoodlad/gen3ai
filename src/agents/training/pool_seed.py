@@ -97,12 +97,12 @@ class PoolSeedDecision:
 # --------------------------------------------------------------------------------------------
 # plain filesystem questions
 # --------------------------------------------------------------------------------------------
-def pool_dir_for(args, model_dir: str) -> str:
-    """The pool directory this run uses — ``--snapshot-dir`` if given, else ``<run>/snapshots``.
+def pool_dir_for(model_dir: str) -> str:
+    """The pool directory a run uses — always ``<run>/snapshots`` (the ``--snapshot-dir`` override was
+    deleted by the flag census, P11: no doc and no run used it).
 
-    Mirrors `train_rl_agent`'s own resolution exactly; both call this so they cannot drift."""
-    snapshot_dir = getattr(args, "snapshot_dir", None)
-    return str(snapshot_dir) if snapshot_dir else os.path.join(model_dir, "snapshots")
+    `train_rl_agent` and the launcher's dry run both read the pool through this, so they cannot drift."""
+    return os.path.join(model_dir, "snapshots")
 
 
 def snapshot_zips(pool_dir: str) -> List[str]:
@@ -319,7 +319,7 @@ def prepare_pool(args, model_dir: str, *, emit_fn=None, exit_fn=None) -> Optiona
     if exit_fn is None:
         exit_fn = sys.exit
 
-    pool_dir = pool_dir_for(args, model_dir)
+    pool_dir = pool_dir_for(model_dir)
     parent = parent_run_dir_for(args, model_dir)
     decision = decide(
         self_play=bool(getattr(args, "self_play", False)),

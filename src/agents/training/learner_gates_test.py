@@ -378,13 +378,11 @@ _PAUSED_ARGVS = ("argv_L95.txt", "scripts/argv_T32_STANDIN.txt", "validation/rer
 def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
     """The four paused learner-battery arms (none typing `--behaviour-check`) must still launch: K9(b)
     resolves to `fatal`, and no K9 rule refuses them. The launcher-only flags are stripped exactly as
-    the launcher strips them, and so are the flags DELETED since the battery was recorded (deletion
-    passes L2 / L3 / L4 / U3: the recorded argvs carry the entropy-boost / true-team / distillation /
-    search-teacher defaults, every one at its OFF value; L4: `--team-pfsp`,
-    `--team-pfsp-cap`, `--team-pfsp-floor`; deletion pass K2: two of them type
-    `--matmul-precision high`; deletion pass P6: all four type `--eval-battles 100`; a pinned launch is judged by its OWN commit's parser, so HEAD's
-    parser never sees them — what K9 does with the REST of the argv is what this pins)."""
-    import re
+    the launcher strips them, and so are the flags DELETED since the battery was recorded (every deletion
+    pass since L2: the recorded argvs carry the entropy-boost / true-team / distillation / search-teacher
+    defaults, `--matmul-precision high`, `--eval-battles 100`, `--self-play-use-cpu`, ... each at its OFF
+    value; a pinned launch is judged by its OWN commit's parser, so HEAD's parser never sees them — what
+    K9 does with the REST of the argv is what this pins)."""
     import shlex
 
     from main.train.combination_checks import failing_checks
@@ -392,34 +390,19 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
     from main.train_rl_agent import build_parser
     from utils.paths import repo_path
 
+    from agents.training.learner_benchmark import _unknown_to_the_trainer, split_flags
+
     toks = shlex.split(repo_path(*(_BATTERY + name).split("/")).read_text())
-    argv, i = [], 0
-    dead_valued = {"--defensive-entropy-boost", "--defensive-entropy-anneal-frac",
-                   "--bait-entropy-boost", "--bait-entropy-anneal-frac",
-                   "--matmul-precision", "--matmul_precision",
-                   # L4: team-PFSP, each of which takes one value
-                   "--team-pfsp", "--team-pfsp-cap", "--team-pfsp-floor",
-                   # U3: the trainer's obs-source flag (the Python env's row source)
-                   "--obs-source",
-                   # P6: the deleted final eval's battle count (every recorded argv types it)
-                   "--eval-battles"}
-    # L3: the distillation / search-teacher families, every flag of which takes one value here
-    dead_l3 = re.compile(r"^--(distill-|opd-|search-teacher|teacher-|winprob-teacher-)")
-    # U3 / R6: the `--compile-opponents` family (bare booleans here; recorded commands carry the flags
-    # the trainer's parser deleted with the Python env core, none of them meaningful on the Rust core)
-    dead_bool = {"--value-true-team", "--no-value-true-team", "--compile-opponents", "--no-compile-opponents",
-                 "--compile-opponents-strict", "--compile-opponents-preload",
-                 "--no-compile-opponents-preload"}
-    while i < len(toks):
-        if (toks[i] in ("--restart-interval-hours", "--pin-commit") or toks[i] in dead_valued
-                or dead_l3.match(toks[i])):
-            i += 2                                                    # launcher-only / deleted
-            continue
-        if toks[i] in dead_bool:
-            i += 1
-            continue
-        argv.append(toks[i])
-        i += 1
+    # Every flag the trainer's parser no longer defines is dropped WITH its value (a recorded argv types the
+    # whole family of levers every deletion unit removes, each at its OFF value) — the flag census (P11) made
+    # a per-batch strip list a standing chore, so this is the same class fix `learner_benchmark` already uses.
+    unknown = _unknown_to_the_trainer()
+    argv = []
+    for flag, vals in split_flags(toks):
+        if flag in ("--restart-interval-hours", "--pin-commit") or unknown(flag):
+            continue                                                  # launcher-only / deleted
+        argv.append(flag)
+        argv.extend(vals)
     args = build_parser().parse_args(argv)
     assert args.behaviour_check is None
     # Each arm is a `--model` FORK of a python-era checkpoint: an untyped `--env-core` resolves to rust at

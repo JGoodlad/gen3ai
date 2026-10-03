@@ -155,20 +155,13 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     # curated, tournament-proven set) — never a bulk-downloaded `other` team. FATAL otherwise (a
     # deliberate startup gate, like the stable-opponent arch check). Non-exploiter / unpinned runs
     # are unaffected; the existing TSS specialist pin IS a sample team, so it passes.
-    if getattr(args, "allow_nonsample_trainee", False):
-        # RESEARCH override: skip the vetted-sample gate so an exploiter can pilot whole-POOL z-near
-        # teams (anchor on a sample, nearest neighbors from all 719 teams). Use for capacity studies
-        # (count-vs-diversity of the FiLM cluster).
-        print("⚠️ [Exploiter] --allow-nonsample-trainee: SKIPPING the vetted-sample gate — trainee may "
-              "pilot non-sample pool teams (research/capacity mode).")
-    else:
-        try:
-            from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
-            validate_exploiter_trainee_is_sample(matchup, sample_teams)
-        except ValueError as _e:
-            print(f"\n[Exploiter] FATAL: {_e}")
-            sys.stdout.flush()
-            os._exit(int(TrainExitCode.FATAL_CONFIG))
+    try:
+        from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
+        validate_exploiter_trainee_is_sample(matchup, sample_teams)
+    except ValueError as _e:
+        print(f"\n[Exploiter] FATAL: {_e}")
+        sys.stdout.flush()
+        os._exit(int(TrainExitCode.FATAL_CONFIG))
     # UNTAUGHT-SLICE guarantee (gen3_untaught_teacher_guard_v1): a pinned trainee team must not be
     # a member of the UNTAUGHT 8 — the off-slice meter's own slice. Caught by LUCK on 2026-09-20,
     # one step before ~14 GPU-h of contaminated teachers; matching is by CONTENT sha, so a renamed

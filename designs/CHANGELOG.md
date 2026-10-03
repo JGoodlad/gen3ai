@@ -11070,3 +11070,13 @@ team-PFSP is OFF in the recipe (probe P, ledger 2026-08-30); the exploiter ladde
 - **`--eval-concurrency` DELETED** (no reader since P6 deleted `final_eval`). `main.launcher.pinned_argv.ParseReport` gained `allow_abbrev` (read from the pinned parser by the probe; unknown reads True) so `declares()` no longer calls a prefix "declared" at a pin whose parser refuses it.
 - **Tests.** Added `main/train/parser_abbrev_test.py` (trainer + launcher refuse a prefix; the exact spellings parse; the deleted flag is not an option) and a `pinned_argv_test` case for the report's `allow_abbrev`.
 - **Docs.** `deleted_flags.md` (one row), `src/main/launcher/CLAUDE.md`, the census.
+
+## 2026-10-03 — FLAG CENSUS batch B2: four flags with no live user are deleted — `--self-play-use-cpu`, `--predict-unrevealed-mon-moves`, `--snapshot-dir`, `--allow-nonsample-trainee` (deletion pass P11; no model change, no config bump, stamp-less: none was a recorded field; the K9 learner golden unchanged)
+
+- **`--self-play-use-cpu`** (+ `--no-self-play-use-cpu`): read nothing on the Rust core since U3 — two startup `emit()` lines and an unused `opponent_device` local (U3 finding 6(d)).
+- **`--predict-unrevealed-mon-moves`** (+ `--no-…`): a clarity alias that desugared into `--opp-belief-moves-weight 0` plus `--move-belief-mode revealed`; both survive. The `config.resolve_config` desugar block went with it.
+- **`--snapshot-dir`**: an override of the pool directory nobody named or typed. `pool_seed.pool_dir_for(model_dir)` lost its `args` parameter (callers: `pool_seed.prepare_pool`, `run_io`, the trainer, and the launcher's `--dry-run`, which now reads the same function instead of peeking the flag).
+- **`--allow-nonsample-trainee`**: a research override of the exploiter vetted-sample gate, for the closed FiLM count-vs-diversity studies; the gate (`validate_exploiter_trainee_is_sample`) is now unconditional.
+- **Census corrections.** The three macro flags `--unified-damage`, `--unified-moves`, `--damage-matrices` were first marked DELETE and are KEEP: `--unified-moves` resolves to `both` on a flagless argv (the bare-argv route to the unified move system) and `--damage-matrices` is the only CLI spelling of two `production_config.json` toggles. The first reading missed `config.desugar_umbrella_flags`.
+- **Tests.** Added `main/train/census_deleted_flags_test.py` (each census-deleted flag is refused by the trainer parser and is not an option); `pool_seed_test` lost the explicit-`--snapshot-dir` case.
+- **Docs.** `deleted_flags.md` (6 rows), `learner_lifecycle.md`, the census.

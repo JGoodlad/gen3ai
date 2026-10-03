@@ -210,7 +210,7 @@ def inherit_derived_enable_coefs(args, saved_ver, model_path, *, announce: bool 
 
 def desugar_umbrella_flags(args) -> None:
     """The UMBRELLA desugars, in one place: `--unified-moves` -> `--unified-damage` -> the
-    component toggles, `--predict-unrevealed-mon-moves`, and `--damage-matrices` -> its two bools.
+    component toggles, and `--damage-matrices` -> its two bools.
 
     Module-level for the same reason `inherit_saved_flag` is: `main.checkargs` has to build the
     SAME namespace a launch builds before it can read `combination_checks` on it. A flagless run
@@ -293,17 +293,6 @@ def desugar_umbrella_flags(args) -> None:
         args.damage_op = True
         args.move_prior_fusion = True
         args.damage_outgoing = (args.unified_damage == "both")
-
-    # Explicit CLARITY knob: "predict the moves of mons we haven't even SEEN". OFF
-    # (--no-predict-unrevealed-mon-moves) zeros BOTH hidden-mon move-prediction paths — the
-    # hidden-opponent BeliefHead's moves-BCE (`opp_belief_moves_weight` → 0) AND any MoveBelief
-    # unrevealed leg (`move_belief_mode` 'unrevealed'/'both' → 'revealed'). The REVEALED-mon move belief
-    # (predict a SEEN mon's unseen slots) and the SPECIES belief on hidden mons are UNTOUCHED. A desugar
-    # into existing fields (no new version field); unset/True preserves the current behavior.
-    if getattr(args, "predict_unrevealed_mon_moves", None) is False:
-        args.opp_belief_moves_weight = 0.0
-        if args.move_belief_mode in ("unrevealed", "both"):
-            args.move_belief_mode = "revealed"
 
     # gen3_per_move_matrices_v1: --damage-matrices desugars to the two bool toggles BEFORE _resolve (so a
     # resume inherits them). None ⇒ let _resolve inherit/default; an explicit value wins. The INCOMING matrix

@@ -124,8 +124,7 @@ def _pool_line(run_dir: str, child_args: List[str]) -> Optional[str]:
     a line BEFORE launching. Read-only: a glob and two file reads."""
     from agents.training import pool_seed
 
-    snapshot_dir = _peek_arg(child_args, "--snapshot-dir")
-    pool_dir = str(snapshot_dir) if snapshot_dir else os.path.join(run_dir, "snapshots")
+    pool_dir = pool_seed.pool_dir_for(run_dir)
     if not os.path.isdir(pool_dir):
         return None
     zips = pool_seed.snapshot_zips(pool_dir)
