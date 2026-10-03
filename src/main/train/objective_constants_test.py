@@ -20,7 +20,8 @@ from main.train.parser.objective import OBJECTIVE_CONSTANTS
 from utils.paths import repo_path
 
 #: constant -> the deleted flag that used to type it (the census / `deleted_flags.md` name)
-_FLAG = {"critic": "--critic"}
+_FLAG = {"critic": "--critic", "gamma": "--gamma", "victory_value": "--victory-value", "draw_penalty": "--draw-penalty",
+         "terminal_indicator": "--terminal-indicator"}
 
 
 def test_every_constant_is_on_every_namespace():
@@ -36,7 +37,9 @@ def test_no_constant_is_an_option_and_each_names_a_deleted_flag_row():
     for dest in OBJECTIVE_CONSTANTS:
         flag = _FLAG[dest]
         assert flag not in options, f"{flag} is an option again — a constant must not be typeable"
-        assert f"| `{flag}` |" in text, f"{flag} has no designs/deleted_flags.md row"
+        # section 1 (`| `--flag` |`), or section 1c for a trainer flag another tool's parser still declares
+        # (`| trainer --flag |`, e.g. `--gamma` in `cf_producer`)
+        assert f"| `{flag}` |" in text or f"| trainer {flag} |" in text, f"{flag} has no designs/deleted_flags.md row"
     assert set(_FLAG) == set(OBJECTIVE_CONSTANTS), "a constant with no declared deleted flag"
 
 

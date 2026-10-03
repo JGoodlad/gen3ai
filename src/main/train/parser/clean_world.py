@@ -58,33 +58,10 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                         help="Seed for the sidecar sampler (default 0). Seeded per (seed, rollout "
                              "index), not as one stream, so a restart re-draws the same states an "
                              "uninterrupted run would.")
-    # --- gen3_clean_world_config_v1: the TERMINAL's switches. (`--hand-shaping`, `--pbrs-material`,
+    # --- gen3_clean_world_config_v1: the TERMINAL's switches (`--victory-value`, `--terminal-indicator` and `--draw-penalty` are
+    #     DELETED, P11b: constants of the namespace, `parser/objective.py`). (`--hand-shaping`, `--pbrs-material`,
     #     `--pbrs-belief` and `--arm-no-progress-tax` were DELETED with the shaped reward path,
     #     gen3_shaped_reward_deletion_v1, 2026-09-26 — the reward is the terminal alone.) ---
-    parser.add_argument("--victory-value", "--victory_value", dest="victory_value", type=float,
-                        default=1.0, help="TERMINAL magnitude: a win scores +V, a decisive loss and "
-                        "a rare pre-cap tie score -V, a 250-turn TIMEOUT scores --draw-penalty. "
-                        "Default 1.0 = the win-prob critic's REQUIRED unit terminal (production, with "
-                        "--terminal-indicator; the bare-argv default since 2026-10-02). 30.0 is the "
-                        "historical reward_weights.VICTORY_VALUE constant, still what a config that "
-                        "never recorded the field means. Under the "
-                        "SIGNED terminal THE OUTCOME ORDERING IS LOAD-BEARING: --draw-penalty must "
-                        "stay <= -V, or a 250-turn stall becomes the best non-winning outcome. "
-                        "Resume-immutable, value-checked.")
-    parser.add_argument("--terminal-indicator", "--terminal_indicator",
-                        dest="terminal_indicator", action=BoolFlag, default=True,
-                        help="TERMINAL SHAPE: ON (the DEFAULT since the deletion pass, 2026-10-02) "
-                             "pays +V on a WIN and 0.0 on EVERYTHING else, so the undiscounted return "
-                             "is V*1{win} and at --victory-value 1.0 the return IS the win indicator. "
-                             "That is what makes V(s) == P(win|s) exactly under the win-prob critic (the "
-                             "only critic), which REQUIRES this flag. ⚠️ It makes --draw-penalty "
-                             "and the draw<=loss ORDERING inapplicable, not merely inert -- a [0,1] "
-                             "critic cannot represent 'a timeout is worse than a loss' -- so the "
-                             "anti-stall pressure must come from the obs deadline clock. OFF "
-                             "(--no-terminal-indicator; every generation through gen-16, and what a "
-                             "config that never recorded the field means) pays +V on a win, -V on a "
-                             "decisive loss and a pre-cap tie, and --draw-penalty on a 250-turn "
-                             "TIMEOUT. Resume-immutable, value-checked.")
     parser.add_argument("--progress-decision-tense", "--progress_decision_tense",
                         dest="progress_decision_tense", action=BoolFlag, default=False,
                         help="No-progress clock: read BOTH window gates (the forced-switch sit-out "
@@ -102,7 +79,7 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                         "own doing — the tax prices the action KIND (-0.101 per voluntary switch vs "
                         "-0.010 per move) and within the branch its discrimination is INVERTED. "
                         "42.7%% of all charges. Anti-stall survives via the move turns between "
-                        "pivots + --draw-penalty + the 250-turn forfeit; a pure A-B switch-loop "
+                        "pivots + the 250-turn forfeit; a pure A-B switch-loop "
                         "becomes free, so watch the stall-rate canary. Default OFF = the shipped "
                         "behaviour. Retrain-class. Resume-immutable, value-checked.")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")

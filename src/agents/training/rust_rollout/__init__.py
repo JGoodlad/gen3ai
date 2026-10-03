@@ -20,5 +20,5 @@ resume point: ``designs/research_state/measurements/m5_laneG/PROGRESS.md``.
     parity.py       THE GATE: slice N at the ROLLOUT level (the learner's buffer vs today's Python path)
                     and the learner-level check (one update on each buffer)
 
-The trainer reaches it through ``agents.training.rust_vec_env.RustVecEnv`` (``--env-core rust``).
+The trainer reaches it through ``agents.training.rust_vec_env.RustVecEnv`` (the Rust env core).
 """

@@ -649,7 +649,7 @@ def test_an_argv_that_ALREADY_starts_with_a_flag_is_untouched() -> None:
 
 
 def test_a_negative_number_value_is_not_mistaken_for_a_program() -> None:
-    argv = ["--draw-penalty", "-0.5", "--steps", "10"]
+    argv = ["--ent-coef", "-0.5", "--steps", "10"]
     assert checkargs.strip_program_token(list(argv)) == argv
 
 

@@ -11,7 +11,7 @@ on ``RewardConfig``.
 from agents.training.stall import StallConfig as _StallConfig
 
 #: The DEFAULT terminal magnitude (`RewardConfig.victory_value`'s default; pinned equal by
-#: `reward_defaults_test.py`). Production runs `--victory-value 1.0 --terminal-indicator`.
+#: `reward_defaults_test.py`). Production runs victory 1.0 with the win indicator (namespace constants, P11b).
 VICTORY_VALUE = 30.0
 
 # The turn at which gen3_env forfeits a stalled battle (ForfeitBattleOrder). A terminal at/after this
@@ -19,7 +19,7 @@ VICTORY_VALUE = 30.0
 # kept in sync with the env's stall cap so the reward's timeout test matches where the env forfeits.
 _TIMEOUT_TURN_CAP = _StallConfig().threshold
 
-#: The shaped-critic DEFAULT discount (`--gamma` unset, a shaped critic) — the historical PPO gamma.
+#: The shaped-critic DEFAULT discount (a shaped critic's) — the historical PPO gamma.
 #: The name survives from when the hand potentials required it to equal the PPO gamma; the one PBRS
 #: that remained was the win-prob head's PBRS (deleted in deletion pass L1).
 PBRS_GAMMA = 0.9999

@@ -13,9 +13,9 @@
 | | trainer flags | launcher flags | total |
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
-| DELETED by P11 so far | 15 | 0 | 15 |
-| NOW | 187 | 9 | 196 |
-| verdicts NOW | KEEP 163 · DELETE 0 · ONE-VALUED 4 · NEEDS-OWNER 20 | KEEP 9 | |
+| DELETED by P11 so far | 19 | 0 | 19 |
+| NOW | 183 | 9 | 192 |
+| verdicts NOW | KEEP 163 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 20 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -37,6 +37,10 @@
 * `--env-core` (P11b (a)) — the Rust env core is the only core (the Python one was deleted in U3); the flag was one-valued. The recorded `env_core` stamp and the D4 shaped-checkpoint refusal stay, keyed on the record
 * `--use-bridge` (P11b (a)) — the trainer's transport is the in-process Rust core and nothing else; no reader but `production_args.py`
 * `--critic` (P11b (b)) — the win-prob critic is the only trainable critic (shaped served the deleted Python core); a constant of the namespace now (`parser/objective.py`). `--win-prob-mode` is NOT deleted: it is not one-valued (see section 2)
+* `--gamma` (P11b (c)) — the discount is 1.0 and nothing else trains the win-prob critic exactly; a constant of the namespace now. NOT a research lever: no registered experiment varies it (no `recipe.fork` / EXPERIMENT_BACKLOG row, `winprob_critic_needs_unit_gamma` refused every other value)
+* `--victory-value` (P11b (c)) — the win indicator magnitude, 1.0 only; a namespace constant now
+* `--draw-penalty` (P11b (c)) — the win indicator pays 0.0 on a tie and a timeout; a namespace constant now
+* `--terminal-indicator` (P11b (c)) — the terminal is the win indicator, ON only; a namespace constant now (its generated `--no-terminal-indicator` negation went with it)
 
 **Planned, not yet shipped:** (none left in the DELETE column — the remaining work is the ONE-VALUED sweep and the NEEDS-OWNER rows below, sized in the manifest's P11 hand-off)
 
@@ -66,10 +70,7 @@
 
 ## 3. ONE-VALUED
 
-* `--gamma` — `winprob_critic_needs_unit_gamma` refuses any value but 1.0 under the only trainable critic; in `recipe.fresh` as 1.0
-* `--draw-penalty` — the winprob critic REQUIRES 0.0 (`winprob_critic_refuses_draw_penalty`); `recipe.fresh` 0.0
-* `--victory-value` — the winprob critic REQUIRES 1.0 (`winprob_critic_needs_unit_victory_value`); `recipe.fresh` 1.0
-* `--terminal-indicator` — the winprob critic REQUIRES it ON (`winprob_critic_needs_the_indicator_terminal`); `recipe.fresh` true
+(none left — P11b deleted all eight the P11 hand-off listed, bar `--win-prob-mode`, which turned out NOT to be one-valued and is in §2: batch (a) `--env-core`, `--use-bridge`; batch (b) `--critic`; batch (c) `--gamma`, `--victory-value`, `--draw-penalty`, `--terminal-indicator`. A deleted flag's row leaves the census for `designs/deleted_flags.md`.)
 
 ## 4. The table — every flag, in `--help` order
 
@@ -116,7 +117,6 @@
 | `--anneal-lr-start-steps` | — | 50 / 0 | `--arch production`: `recipe.fresh.anneal_lr_start_steps` = `null` (the production value is OFF / zero: an arch toggle held for ablations, see FINDINGS) | **KEEP** |
 | `--anneal-min-lr` | — | 50 / 0 | the cosine floor REQUIRED by `--anneal-lr-start-steps` (a `recipe.fresh` row, null = off; `TwoPhaseLRCallback`) | **KEEP** |
 | `--ent-coef` | 0.02 | 264 / 34 | `--arch production`: `recipe.fresh.ent_coef` = `0.05` | **KEEP** |
-| `--gamma` | — | 0 / 0 | `winprob_critic_needs_unit_gamma` refuses any value but 1.0 under the only trainable critic; in `recipe.fresh` as 1.0 | **ONE-VALUED** |
 | `--policy-gae-lambda` | — | 7 / 7 | `--arch production`: `recipe.fresh.policy_gae_lambda` = `0.8` | **KEEP** |
 | `--diagnostics-every` | — | 0 / 0 | the documented telemetry cadence (`designs/training/`, `training_runbook.md`) | **KEEP** |
 | `--device-batch` | — | 0 / 0 | the GPU-memory design's batch-delivery mode (`resident` / `staged` / `host`; `designs/endstate/`) | **KEEP** |
@@ -126,7 +126,6 @@
 
 | flag | default | typed (all / last 40) | live user | verdict |
 |---|---|---|---|---|
-| `--draw-penalty` | 0.0 | 156 / 34 | the winprob critic REQUIRES 0.0 (`winprob_critic_refuses_draw_penalty`); `recipe.fresh` 0.0 | **ONE-VALUED** |
 
 ### clean_world
 
@@ -135,8 +134,6 @@
 | `--value-sidecar` | auto | 0 / 0 | the training-side value sidecar (`main.ops.value_sidecar_read`, `training_runbook.md`); `auto` = on under winprob | **KEEP** |
 | `--value-sidecar-fraction` | 0.015625 | 1 / 0 | the sidecar's sampling share (`training_runbook.md`) | **KEEP** |
 | `--value-sidecar-seed` | 0 | 0 / 0 | the sidecar's sampler seed (`training_runbook.md`) | **KEEP** |
-| `--victory-value` | 1.0 | 67 / 34 | the winprob critic REQUIRES 1.0 (`winprob_critic_needs_unit_victory_value`); `recipe.fresh` 1.0 | **ONE-VALUED** |
-| `--terminal-indicator` | true | 66 / 34 | the winprob critic REQUIRES it ON (`winprob_critic_needs_the_indicator_terminal`); `recipe.fresh` true | **ONE-VALUED** |
 | `--progress-decision-tense` | false | 0 / 0 | no-progress-clock fix (`designs/training/reward.md`), OFF in `production_config.json`, 0 recorded runs; read by the RUST env decl (`RustEnvDecl.decision_tense`), so deleting it reaches `src/rust_env` | **NEEDS-OWNER** |
 | `--progress-switch-freeze` | false | 0 / 0 | the sibling no-progress-clock fix; same Rust reach (`RustEnvDecl.switch_freeze`), OFF, 0 recorded runs | **NEEDS-OWNER** |
 | `--clip-range` | 0.15 | 261 / 34 | `--arch production`: `recipe.fresh.clip_range` = `0.15` | **KEEP** |

@@ -105,7 +105,7 @@ def load_fixed_slots(svc: Any, decl: EvalDecl, table: EvalTable, fixed_policies:
             continue
         pol = fixed_policies.get(lab)
         if pol is None:
-            raise RuntimeError(f"--env-core rust eval: fixed opponent {lab!r} has a declared eval slot ({slot}) "
+            raise RuntimeError(f"the Rust env core eval: fixed opponent {lab!r} has a declared eval slot ({slot}) "
                                "but no policy to load into it")
         svc.load(int(slot), pol, f"eval:fixed:{lab}")
         done.append((lab, int(slot)))
@@ -134,7 +134,7 @@ def build_eval_core(decl: EvalDecl, *, collector_decl: Any, svc: Any, extra_ids:
     bots = eval_opponent_names()
     missing = [b for b in bots if not by_name().get(b) or not by_name()[b].rust]
     if missing:
-        raise RuntimeError(f"--env-core rust eval: roster bots with no Rust port (Lane F): {missing}")
+        raise RuntimeError(f"the Rust env core eval: roster bots with no Rust port (Lane F): {missing}")
     table = eval_table(decl, extra_ids, bots)
     loaded = load_fixed_slots(svc, decl, table, dict(fixed_policies or {}))
     teams = TeamTable()

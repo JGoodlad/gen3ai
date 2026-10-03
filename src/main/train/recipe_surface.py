@@ -4,7 +4,8 @@
 parser defaults differed from the live recipe (`--n-envs` 32 vs 48, `--batch-size` 4096 vs 2048,
 `--n-epochs` 5 vs 10, `--ent-coef` 0.02 vs 0.05, `--clip-range-vf` 0.5 vs none), and so did
 `--grad-accum-steps` (1 vs 32 — an effective batch of 4,096 instead of 65,536), `--self-play`,
-the critic (`shaped` vs `winprob`) with its three REQUIRED reward values, and the supervision
+the critic (`shaped` vs `winprob`) with its three REQUIRED reward values and its discount (those
+five are CONSTANTS of the namespace now, `parser/objective.py` — deletion pass P11b), and the supervision
 doses. A fresh argv that omitted them parsed, resolved, dry-ran and launched — and trained a
 different recipe: the recipe-side twin of the 2026-09-06 stripped-architecture incident
 (`arch_surface`'s docstring), closed the same way — a DECLARED surface, a mirror, one applier, one
@@ -42,13 +43,13 @@ launcher); a TYPED difference is the arm's lever (INFO); `--allow-nonproduction-
 with the general rule that a resume inherits its surface from the CHECKPOINT: on a same-run restart
 of an `--arch production` run, every untyped row is resolved by exactly one route —
 
-  1. `--lr`, `--batch-size`, `--n-steps`, `--gamma`: INERT on a resume (SB3 restores the
+  1. `--lr`, `--batch-size`, `--n-steps`: INERT on a resume (SB3 restores the
      checkpoint's own values) — never re-applied here, whatever the argv says;
   2. a recorded tri-state field (the doses, `opp_intent_coef` from config v125,
      `policy_gae_lambda`, …): the general restart mechanism (`_resolve` /
      `config.inherit_derived_enable_coefs`, `68850f27`) inherits it — untouched here;
-  3. a recorded field with a concrete parser default (`terminal_indicator`, `victory_value`,
-     `draw_penalty`, `vf_coef` — value-CHECKED, so the default would FATAL): from the checkpoint's
+  3. a recorded field with a concrete parser default (`vf_coef` — value-CHECKED, so the default would
+     FATAL): from the checkpoint's
      `model_config.json`, ANNOUNCED;
   4. a knob recorded nowhere else (`n_envs`, `n_epochs`, `ent_coef`, …): from the run's own
      `metadata.json:cli_args`, ANNOUNCED.
@@ -66,8 +67,6 @@ import json
 import os
 import shlex
 from typing import Any, Dict, FrozenSet, List, NamedTuple, Optional, Sequence, Tuple
-
-from agents.model.critic_mode import CRITIC_DEFAULT, critic_gamma
 
 #: The namespace attribute the recording actions write: the dests the argv TYPED.
 TYPED_ATTR = "_recipe_typed"
@@ -92,13 +91,9 @@ KL_CONSTANTS = ("target_kl", "kl_factor", "lr_factor")
 
 #: ``RecipeRow.unset`` for a row whose parser default is CONCRETE: read the default off the parser.
 PARSER_DEFAULT = "<parser default>"
-#: ``RecipeRow.unset`` for `--gamma`: an unset one resolves to the critic's declared discount
-#: (`agents.model.critic_mode.critic_gamma`), so it is read off the critic, never a literal.
-CRITIC_PAIRED = "<the critic pairing>"
-
 #: INERT on a resume — SB3 restores the checkpoint's own values (root CLAUDE.md). Never re-applied
 #: on a restart, so nothing here fights that restoration.
-INERT_ON_RESUME = frozenset({"lr", "batch_size", "n_steps", "gamma"})
+INERT_ON_RESUME = frozenset({"lr", "batch_size", "n_steps"})
 
 
 class RecipeError(ValueError):
@@ -149,13 +144,8 @@ FRESH_ROWS: Tuple[RecipeRow, ...] = (
     RecipeRow("clip_range", "--clip-range", PARSER_DEFAULT, "§1 row 7"),
     RecipeRow("clip_range_vf", "--clip-range-vf", PARSER_DEFAULT, "§1 row 14 — none (INERT under winprob)"),
     RecipeRow("ent_coef", "--ent-coef", PARSER_DEFAULT, "§1 row 11"),
-    RecipeRow("gamma", "--gamma", CRITIC_PAIRED, "§1 row 12 — the critic's declared discount "
-              "(critic_mode.critic_gamma): 1.0 under winprob"),
     RecipeRow("policy_gae_lambda", "--policy-gae-lambda", 0.80, "§1 row 13"),
     RecipeRow("self_play", "--self-play", PARSER_DEFAULT, "§1 row 22"),
-    RecipeRow("terminal_indicator", "--terminal-indicator", PARSER_DEFAULT, "§1 row 14 — REQUIRED by winprob"),
-    RecipeRow("victory_value", "--victory-value", PARSER_DEFAULT, "§1 row 14 — REQUIRED by winprob"),
-    RecipeRow("draw_penalty", "--draw-penalty", PARSER_DEFAULT, "§1 row 14 — REQUIRED by winprob"),
     RecipeRow("vf_coef", "--vf-coef", PARSER_DEFAULT, "§1 row 14"),
     RecipeRow("opp_belief_aux_coef", "--opp-belief-aux-coef", 0.0, "§1 row 16"),
     RecipeRow("opp_intent_coef", "--opp-intent-coef", 0.0, "§1 row 16"),
@@ -255,10 +245,6 @@ def recipe_blocks(mirror: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, An
     if not {r.dest for r in FORK_ROWS} <= set(fork) or set(fork) - fork_allowed:
         raise RecipeError(f"`recipe.fork` must hold {sorted(r.dest for r in FORK_ROWS)} and may "
                           f"override only {sorted(FORK_OVERRIDES)} (got {sorted(fork)})")
-    if not _agree(fresh["gamma"], critic_gamma(CRITIC_DEFAULT)):
-        raise RecipeError(f"`recipe.fresh.gamma` {fresh['gamma']!r} is not the critic's declared discount "
-                          f"(critic_mode.critic_gamma({CRITIC_DEFAULT!r}) = {critic_gamma(CRITIC_DEFAULT)!r})"
-                          " — the discount is PAIRED with the critic; change the pairing, not one side")
     top = {k: v for k, v in doc.items() if k != RECIPE_BLOCK_KEY}
     clash = sorted(k for k in declared if k in top and not _agree(fresh[k], top[k]))
     if clash:
@@ -304,15 +290,13 @@ def apply_production_recipe(ns: Any, mirror: Optional[Dict[str, Any]] = None) ->
     Stamps `ns.recipe_source` (recorded in `metadata.json`'s `cli_args`)."""
     want = production_recipe(mirror)
     typed = typed_dests(ns)
-    # `--gamma` is PAIRED with the critic: an untyped one takes the discount of the critic this launch
-    # trains (the win-prob critic, the only one: `recipe_blocks` refuses a block whose gamma is not its).
     applied: List[Tuple[str, Any]] = []
     for r in ROWS:
         if r.dest in typed:
             continue
         if r.dest in COLLECTOR_ROWS and want[r.dest] is None:
             continue                       # derived by the collector
-        value = critic_gamma(CRITIC_DEFAULT) if r.dest == "gamma" else want[r.dest]
+        value = want[r.dest]
         setattr(ns, r.dest, value)
         applied.append((r.dest, value))
     ns.recipe_source = source_tag()
@@ -466,8 +450,6 @@ def _resolved(r: RecipeRow, ns: Any, defaults: Dict[str, Any]) -> Any:
     if r.unset == PARSER_DEFAULT:
         return getattr(ns, r.dest, defaults.get(r.dest))
     v = getattr(ns, r.dest, None)
-    if v is None and r.unset == CRITIC_PAIRED:
-        return critic_gamma(CRITIC_DEFAULT)
     return r.unset if v is None else v
 
 
@@ -544,7 +526,7 @@ def report_lines(rep: RecipeReport) -> List[str]:
         out.append("  ♻️  same-run RESTART of an --arch production run (--arch stripped): "
                    "resolved from the run's own record — "
                    + "  ".join(f"{d}={v!r} [{s}]" for d, v, s in rep.restart_inherited))
-        out.append("      (--lr / --batch-size / --n-steps / --gamma are INERT on a resume — SB3 "
+        out.append("      (--lr / --batch-size / --n-steps are INERT on a resume — SB3 "
                    "restores them — and are never re-applied here)")
     n = len(ROWS) if rep.kind == FRESH_KEY else len(ALL_ROWS)
     if not rep.diffs:

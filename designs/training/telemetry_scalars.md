@@ -510,8 +510,7 @@ config, the SELECTED test score) is `<run>/sprt_promotion.jsonl` ([`eval_and_rat
 
 **REDUNDANT (19) — kept, deliberately, and named so nobody measures them twice:**
 
-* **`eval/mean_reward_*` ≡ `eval/win_rate_*`, all 13 of them.** At `--victory-value 1.0
-  --draw-penalty 0 --terminal-indicator` the episode reward IS the win indicator, so the two families
+* **`eval/mean_reward_*` ≡ `eval/win_rate_*`, all 13 of them.** Under the win-indicator terminal (indicator, victory 1.0, draw 0.0 — constants of the namespace) the episode reward IS the win indicator, so the two families
   are byte-identical on every opponent (verified to the last bit on the live arm). They are NOT
   redundant on a `shaped` run and the TUI reads both, so neither is dropped — but quoting both as
   "two agreeing signals" would be quoting one number twice.

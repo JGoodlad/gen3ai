@@ -1,6 +1,6 @@
 """The eval callbacks' seam onto the Rust eval core (M5 Lane H).
 
-Under ``--env-core rust`` both eval callbacks (``PerOpponentEvalCallback``, ``SelfPlayCallback``) write
+On the Rust env core both eval callbacks (``PerOpponentEvalCallback``, ``SelfPlayCallback``) write
 the cycle's plan and manifest exactly as today and then call :func:`run_rust_eval_cycle` INSTEAD of
 spawning ``main.eval_worker`` processes. The cycle runs IN THE TRAINER'S PROCESS, BLOCKING, on the
 eval core and the T2 slots declared at startup (``rust_eval.build``); it publishes one
@@ -8,7 +8,7 @@ eval core and the T2 slots declared at startup (``rust_eval.build``); it publish
 unchanged. It runs between two host steps of the collector (the callbacks' ``on_step``), when no
 T2 result of the rollout is outstanding.
 
-A missing evaluator under ``--env-core rust`` is REFUSED (``RustEvalUnavailable``) — never a silent
+A missing evaluator on the Rust env core is REFUSED (``RustEvalUnavailable``) — never a silent
 fall-back to the Python workers.
 """
 from __future__ import annotations
@@ -19,7 +19,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 
 class RustEvalUnavailable(RuntimeError):
-    """``--env-core rust`` but the model carries no declared eval core."""
+    """the Rust env core but the model carries no declared eval core."""
 
 
 def cycle_seed(run_seed: int, step: int) -> int:
@@ -34,7 +34,7 @@ def evaluator_of(model: Any) -> Any:
     ev = getattr(rc, "evaluator", None)
     if ev is None:
         raise RustEvalUnavailable(
-            "--env-core rust: the model's Rust collector declares no eval core (rust_env_setup.eval_decl) — "
+            "the Rust env core: the model's Rust collector declares no eval core (rust_env_setup.eval_decl) — "
             "eval cannot run on the Python workers under the Rust env core")
     return ev
 

@@ -42,7 +42,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import random
-import shlex
 import statistics
 import sys
 import time
@@ -121,10 +120,10 @@ class _TrainerTurnPlayer(Player):
         # (what `Gen3Env(obs_source="core")` does) instead of running the Python encoder.
         self._obs_source = obs_source
         self._core_n: Dict[str, int] = {}
-        # The reward COMPOSITION under test. `None` = the dataclass default (the shaped
-        # production reward). `--reward-argv` builds it through the REAL launch path
-        # (`build_parser` → `RewardConfig.from_args`), so a composition measured here is a
-        # composition a run can actually be launched with — never a hand-built lookalike.
+        # The reward config under test, built by `main()` through the REAL launch path
+        # (`build_parser` → `RewardConfig.from_args`: the win indicator alone), so what is timed
+        # is what a run trains with — never a hand-built lookalike. `None` = the dataclass default
+        # (the HISTORICAL signed terminal) for a caller that builds a player without one.
         self._reward_config = reward_config
         maps = load_mappings()
         self.obs_enc = get_observation_encoder(maps)
@@ -351,30 +350,20 @@ def _battle_seed(seed: int, index: int) -> List[int]:
     return [(h >> (16 * k)) & 0xFFFF for k in range(4)]
 
 
-def _reward_config_from_argv(reward_argv: "str | None") -> "RewardConfig | None":
-    """Build the reward config under test from a string of REAL `train_rl_agent` flags.
+def _production_reward_config() -> "RewardConfig":
+    """The reward config under test: the one a launch builds (`RewardConfig.from_args` over the trainer's own
+    parser — the win indicator alone, victory 1.0, draw 0.0, gamma 1.0; those are namespace CONSTANTS since
+    deletion pass P11b, so there is no `--reward-argv` composition to type any more).
 
-    e.g. ``--reward-argv '--terminal-indicator --victory-value 1.0 --draw-penalty 0'``.
-    It goes through `build_parser()` + `RewardConfig.from_args` — the launch path's own two
-    steps — rather than constructing a `RewardConfig(...)` here by hand, so the arm this
-    benchmark times is provably the arm a launch produces from the same flags. A hand-built
-    lookalike is how a benchmark ends up measuring a composition nothing runs.
-
-    ``None`` (the flag unset) keeps the dataclass default = the shaped production reward.
-    Note this deliberately stops at `parse_args`: `resolve_config`'s cross-flag REFUSALS are a
-    launch concern, and this profiler is allowed to time a composition the launcher would
-    argue with (it never trains anything). The composition it resolved is PRINTED, so what
-    was measured is on the record either way.
-    """
-    if reward_argv is None:
-        return None
+    Going through `build_parser()` + `RewardConfig.from_args` — the launch path's own two steps — rather than
+    constructing a `RewardConfig(...)` here by hand keeps the arm this benchmark times provably the arm a launch
+    produces. (`RewardConfig()` alone is the HISTORICAL signed terminal, which nothing trains any more.)"""
     from main.train_rl_agent import build_parser
-    args = build_parser().parse_args(shlex.split(reward_argv))
-    return RewardConfig.from_args(args)
+    return RewardConfig.from_args(build_parser().parse_args([]))
 
 
 async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
-               use_assembler: bool = True, reward_argv: "str | None" = None,
+               use_assembler: bool = True,
                pin: bool = False, bridge: str = "rust", obs_source: str = "python") -> int:
     if obs_source == "core" and bridge != "rust":
         raise SystemExit("--obs-source core needs --bridge rust (the core lives in sim_bridge)")
@@ -385,7 +374,7 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
     # gets its own stream off a distinct derived seed; p1 and p2 must differ or the two sides draw
     # in lockstep. The module seed stays for any other global consumer in the import graph.
     random.seed(seed)
-    reward_config = _reward_config_from_argv(reward_argv)
+    reward_config = _production_reward_config()
     ts = int(time.time()) % 100000
     pool = _team_pool()
     player = _TrainerTurnPlayer(
@@ -411,9 +400,8 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
                    if obs_source == "core" else None)
     # The reward arm is part of the measurement, so it is printed with the run header rather
     # than left implicit — `format_reward_composition` is the SAME announcer a launch prints.
-    print(format_reward_composition(reward_config or RewardConfig())
-          + ("   [default — shaped production reward]" if reward_config is None else
-             f"   [--reward-argv {reward_argv!r}]"), flush=True)
+    print(format_reward_composition(reward_config) + "   [the production reward: the namespace constants]",
+          flush=True)
     battles = 0
     while player.measured < target_decisions and battles < battle_cap:
         # The bridge assigns each battle a process-unique tag (local_battle_runner._BATTLE_SEQ),
@@ -445,13 +433,8 @@ def _parse_args(argv):
                         "invocations play different battles and the run-to-run spread exceeds "
                         "the effect (measured). Off by default so the headline share table "
                         "still samples the board distribution.")
-    p.add_argument("--reward-argv", default=None,
-                   help="real train_rl_agent flags naming the reward composition to time, as "
-                        "ONE quoted string (e.g. '--terminal-indicator "
-                        "--victory-value 1.0'). Parsed by the launcher's own build_parser + "
-                        "RewardConfig.from_args. Unset = the default signed terminal.")
     p.add_argument("--bridge", choices=("rust", "node"), default="rust",
-                   help="the sim child: 'rust' (DEFAULT — training's `--use-bridge` default, the "
+                   help="the sim child: 'rust' (DEFAULT — training's transport, the "
                         "production release `sim_bridge`) or 'node' (local_sim_bridge.js, the old "
                         "default, kept as the explicit A/B arm). The per-decision WALL cycle "
                         "includes the child's sim advance, so the two are different measurements.")
@@ -475,4 +458,4 @@ if __name__ == "__main__":
     args = _parse_args(sys.argv[1:])
     sys.exit(asyncio.run(
         main(args.target_decisions, args.battle_cap, args.warmup, args.seed,
-             args.use_assembler, args.reward_argv, args.pin, args.bridge, args.obs_source)))
+             args.use_assembler, args.pin, args.bridge, args.obs_source)))

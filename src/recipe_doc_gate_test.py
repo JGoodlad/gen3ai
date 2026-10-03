@@ -82,7 +82,6 @@ _CLAIMS: Tuple[Claim, ...] = tuple(_t(r.dest) for r in FRESH_ROWS) + tuple(
     Claim("clip_range", "fresh", r"\|\s*7\s*\|\s*`clip_range`\s*\|\s*(?P<value>[\d.]+),", "§1 row 7"),
     Claim("fork_lr", "fork", r"\*\*(?P<value>[\d.e-]+) with E5\*\*", "§1 row 9"),
     Claim("ent_coef", "fresh", r"\|\s*11\s*\|\s*`ent_coef`\s*\|\s*(?P<value>[\d.]+)\s*\|", "§1 row 11"),
-    Claim("gamma", "fresh", r"\|\s*12\s*\|\s*γ \(discount\)\s*\|\s*(?P<value>[\d.]+),", "§1 row 12"),
     Claim("policy_gae_lambda", "fresh",
           r"\|\s*13\s*\|\s*policy GAE λ\s*\|\s*(?P<value>[\d.]+)\s*\|", "§1 row 13"),
     Claim("vf_coef", "fresh", r"`vf_coef` (?P<value>[\d.]+), no value clip", "§1 row 14"),

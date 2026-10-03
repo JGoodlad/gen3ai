@@ -142,7 +142,7 @@ def apply_training_hparams(model, args, *, mappings) -> None:
 
 
 def _start_rust_env(env, model) -> None:
-    """M5 Lane G (`--env-core rust`): the Rust env's STARTUP (core, T2, arena) from the model's own
+    """M5 Lane G (the Rust env core): the Rust env's STARTUP (core, T2, arena) from the model's own
     policy and hyperparameters. It must run BEFORE `--compile-trainer`: T2 deep-copies the policy as its
     slot templates, and a copy taken after the compile would carry the patched `forward` bound to the
     LEARNER's extractor."""
@@ -377,14 +377,14 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             print(f"Training already complete ({model.num_timesteps:,} / {args.steps:,} steps)")
             sys.exit(TrainExitCode.COMPLETE)
         print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail}))")
-        # gen3_winprob_critic_mode_v1: `--gamma` is INERT ON A RESUME, exactly like `--lr` —
-        # SB3 restores the checkpoint's own gamma, so the argv's value never reaches GAE. STATE
-        # it rather than let a resumed run silently discount differently from what its command
-        # says, and RE-POINT the reward config's copy at the value actually in force (it is
+        # The discount is the namespace's constant (1.0, deletion pass P11b deleted `--gamma`), but SB3
+        # restores the CHECKPOINT's own gamma on a resume (like `--lr`), so what is in force is the
+        # checkpoint's. STATE a difference rather than let a resumed run silently discount differently from
+        # what the code says, and RE-POINT the reward config's copy at the value actually in force (it is
         # recorded, and hashed into `reward_config_digest`).
         if abs(float(reward_config.gamma) - float(model.gamma)) > 1e-12:
             print(f"[Resume] gamma: using the checkpoint's {float(model.gamma):g} "
-                  f"(arg --gamma={float(reward_config.gamma):g} ignored on resume, like --lr); "
+                  f"(the trainer's constant {float(reward_config.gamma):g} is not applied on a resume, like --lr); "
                   f"the reward config's copy follows it.")
             reward_config.gamma = float(model.gamma)
         _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes

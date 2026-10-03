@@ -35,49 +35,6 @@ class ResolvedRunConfig:
     log_level: LogLevel
 
 
-#: A TIMEOUT this many times a clean loss stops being a tie-breaker and starts being the objective.
-#: The validated composition is 35/30 = 1.17x; the clean-world ruling is 1/1 = 1.0x. 3.0 is loose
-#: enough that no composition anyone has actually launched trips it.
-_DRAW_SCALE_RATIO = 3.0
-
-
-def _terminal_scale_guards(args) -> None:
-    """The SCALE question `gen3_clean_world_config_v1` opened by making the terminal a flag.
-
-    `--victory-value` (v105) is the first flag that can change the RETURN SCALE, and `--draw-penalty`
-    is quietly denominated in that same scale. The v105 guard above tests the ORDERING (a draw must
-    not beat a loss) and passes the far more likely mistake: typing `--victory-value 1.0` and
-    inheriting the -35.0 default, i.e. a timeout 35x a clean loss. The composition is then not "1
-    TERMINAL" at all — it is a stall-avoidance objective with a win bonus, and no metric downstream
-    distinguishes the two. (The second scale question this guard once asked, the value-dist atom
-    support against the terminal, left with the distributional value head.)
-
-    A warning, never a refusal: a launch that works today must not become a `FATAL_CONFIG`. But it
-    is stated at launch, because the defect trains correctly toward the wrong thing.
-    """
-    victory = getattr(args, "victory_value", None)
-    if victory is None or float(victory) <= 0.0:
-        return                                   # refused above; nothing to say about a bad scale
-    if bool(getattr(args, "terminal_indicator", False)):
-        # gen3_winprob_critic_mode_v1: under the WIN INDICATOR every non-win pays exactly 0.0, so
-        # `draw_penalty` is not merely unused — it is inapplicable, and the guards are
-        # statements ABOUT it. The ORDERING one would fire on every such run and say the opposite
-        # of the truth ("running the clock out is the best non-winning outcome") when a timeout and
-        # a loss are the SAME payoff by construction; the SCALE one would divide by a magnitude
-        # that is not in the stream. A warning that is false on a supported configuration teaches
-        # the reader to skip the whole family, so it is suppressed rather than reworded.
-        return
-    victory = float(victory)
-    draw = float(args.draw_penalty) if getattr(args, "draw_penalty", None) is not None else -victory
-    if abs(draw) > _DRAW_SCALE_RATIO * victory:
-        print(f"[Reward] ⚠️ TERMINAL SCALE: --draw-penalty {draw:g} is {abs(draw) / victory:.0f}x a "
-              f"clean loss (-{victory:g}). The ordering is right, but the MAGNITUDE makes the "
-              f"250-turn timeout — not the win — the dominant term in the reward stream, so a run "
-              f"advertised as '1 TERMINAL' is really a stall-avoidance objective. The validated "
-              f"pairing is 30/-35 (1.2x) and the clean-world ruling is draw = loss: pass "
-              f"--draw-penalty {-victory:g} with --victory-value {victory:g}.")
-
-
 def _adaptive_batch_guards(args, parser) -> None:
     """Validate the `--adaptive-batch` family — the ONLY gate on it (training-only, never recorded).
 
@@ -308,44 +265,27 @@ def desugar_umbrella_flags(args) -> None:
             args.damage_matrices_incoming = None
 
 
-def _agree_float(a, b) -> bool:
-    return a is not None and b is not None and float(a) == float(b)
-
-
 def resolve_critic_mode(args) -> None:
-    """Imply the two tri-state flags the win-prob critic settles, in place (`--critic` itself is no flag:
-    deletion pass P11b made the critic a CONSTANT of the namespace, `parser/objective.py`).
+    """Imply the ONE tri-state flag the win-prob critic settles, in place — `--win-prob-mode shaping` when
+    untyped. (Deletion pass P11b deleted `--critic`, `--gamma`, `--victory-value`, `--draw-penalty` and
+    `--terminal-indicator`: the critic, the discount and the whole terminal are CONSTANTS of the namespace,
+    `parser/objective.py`, so nothing else is left to imply or to refuse.)
 
-    Module-level, and called before the `_resolve` sweep, for `desugar_umbrella_flags`' exact
-    reason: `main.checkargs` has to build the SAME effective namespace a launch builds before it
-    can read `combination_checks` on it. A checker that skipped it would report the implied
-    `--win-prob-mode shaping` as a missing dependency on a command that launches.
-
-    **IMPLIED — exactly the flags whose "unset" is REPRESENTABLE:**
+    Module-level, and called before the `_resolve` sweep, for `desugar_umbrella_flags`' exact reason:
+    `main.checkargs` has to build the SAME effective namespace a launch builds before it can read
+    `combination_checks` on it. A checker that skipped it would report the implied value as a missing
+    dependency on a command that launches.
 
     ``win_prob_mode``  'shaping'  the head must EXIST to be the critic ('none' is refused)
-    ``gamma``          1.0        V(s) is then EXACTLY P(win|s) (see the flag's help)
 
-    Both carry an argparse default of `None`, so an unset flag is distinguishable from a
-    typed one and the implication can never overwrite an operator's choice — it is then judged by
-    `combination_checks`. Running BEFORE the inheritance sweep is load-bearing: the sweep would
-    otherwise inherit a parent's recorded `win_prob_mode` over the implication (a shaped parent's
-    `'none'` is refused outright now, D4, so the only live case is a parent that recorded another
-    legal mode).
-
-    🚨 **NOT IMPLIED, and that is a decision rather than an omission:** `--terminal-indicator`,
-    `--victory-value 1.0` and `--draw-penalty 0`. Those three are resume-immutable REWARD fields
-    with concrete argparse defaults — exactly the winprob values (True / 1.0 / 0.0) since the
-    bare-argv flip (2026-10-02) — so "the operator left it alone" and "the operator typed the
-    default" are indistinguishable: an implication there would silently overwrite a typed value,
-    and the refusal meant to catch a conflicting one could never fire. They are instead REQUIRED,
-    each by its own `combination_checks` entry naming the flag to pass.
+    Its argparse default is the `None` sentinel, so an unset flag is distinguishable from a typed one and the
+    implication can never overwrite an operator's choice — it is then judged by `combination_checks`. Running
+    BEFORE the inheritance sweep is load-bearing: the sweep would otherwise inherit a parent's recorded
+    `win_prob_mode` over the implication (a shaped parent's `'none'` is refused outright, D4, so the only
+    live case is a parent that recorded another legal mode).
     """
-    from agents.model.critic_mode import critic_gamma
-
-    for name, value in (("win_prob_mode", "shaping"), ("gamma", critic_gamma(args.critic))):
-        if getattr(args, name, None) is None:
-            setattr(args, name, value)
+    if getattr(args, "win_prob_mode", None) is None:
+        args.win_prob_mode = "shaping"
 
 
 def resolve_eval_sentinel_regime(args, saved_ver, *, announce: bool = True) -> None:
@@ -491,32 +431,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
 
     def _resolve(name, default):
         inherit_saved_flag(args, _saved_ver, name, default)
-    # gen3_winprob_critic_mode_v1: `--gamma` is now a FLAG. An unset one resolves to its CRITIC's
-    # declared discount (`critic_mode.critic_gamma`: shaped -> `reward_weights.PBRS_GAMMA` 0.9999,
-    # the historical hardcoded value; winprob -> 1.0, already implied by `resolve_critic_mode` above,
-    # so this line does not fire there).
-    from agents.model.critic_mode import critic_gamma as _critic_gamma
-    _gamma_typed = "gamma" in args._explicit_flags
-    _resolve("gamma", _critic_gamma(args.critic))
-    # THE PAIRING GUARD (cutover loose end 2, 2026-09-30): an UNTYPED discount that is not its
-    # critic's is a value some surface filled from the OTHER critic — `--arch production --critic
-    # shaped` used to take recipe.fresh's winprob 1.0, a pairing no run ever trained (every shaped
-    # and pre-critic run in models/ is at 0.9999). `recipe_surface.apply_production_recipe` now
-    # pairs it; this refuses any regression rather than training it. A TYPED gamma is the
-    # operator's lever (judged by `combination_checks`: winprob refuses anything but 1.0).
-    if not _gamma_typed and not _agree_float(args.gamma, _critic_gamma(args.critic)):
-        from main.exit_codes import TrainExitCode
-        _msg = (f"[Critic] FATAL: --gamma resolved to {args.gamma!r} under --critic {args.critic}, "
-                f"but nobody typed it and that critic's declared discount is "
-                f"{_critic_gamma(args.critic)!r} (agents.model.critic_mode.critic_gamma). A surface "
-                "filled the OTHER critic's discount. Type --gamma to make a deviation deliberate.")
-        print(f"\n{_msg}", file=sys.stderr, flush=True)
-        emit(_msg)
-        sys.exit(int(TrainExitCode.FATAL_CONFIG))
-    if not args.model:     # on a resume --gamma is INERT (SB3 restores the checkpoint's own value)
-        emit(f"[Critic] gamma={float(args.gamma):g} — "
-             + (f"TYPED (the --critic {args.critic} pairing is {_critic_gamma(args.critic):g})"
-                if _gamma_typed else f"the --critic {args.critic} pairing (critic_mode.critic_gamma)"))
     # gen3_policy_gae_lambda_v1: the PPO POLICY's GAE λ. 0.80 is the value both model_build sites
     # hardcoded for every run to date, so an unset flag on a fresh run is byte-identical; a flagless
     # resume inherits the parent's recorded value (a pre-v123 config migrates to 0.80 — the only
@@ -677,24 +591,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # A negative coef would INVERT the consistency gradient (train the critic to MAXIMISE its own
         # Bellman residual). td_aux_coef is training-only (not version-locked), so guard it here.
         parser.error("--td-aux-coef must be >= 0 (0 = off)")
-    # --- gen3_clean_world_config_v1: the TERMINAL magnitude + the outcome ORDERING it implies ---
-    if getattr(args, "victory_value", 30.0) is not None and args.victory_value <= 0.0:
-        # A non-positive victory value inverts win/loss (or flattens them), which trains correctly
-        # toward the wrong objective and no metric names it.
-        parser.error("--victory-value must be > 0 (a win scores +V, a loss -V; 1.0 = the default, "
-                     "the clean-world ±1 terminal; 30.0 = the historical signed terminal)")
-    if (getattr(args, "victory_value", None) is not None
-            and not bool(getattr(args, "terminal_indicator", False))   # see _terminal_scale_guards
-            and args.draw_penalty is not None and args.draw_penalty > -float(args.victory_value)):
-        # NOT an error — "a draw is better than a loss" is a legitimate thing to want, and a fresh
-        # arm may deliberately choose it. It IS the single largest hazard in the clean-world arm,
-        # so it is stated once, loudly, at launch (probe N §5.2/B3).
-        print(f"[Reward] ⚠️ ORDERING: --draw-penalty {args.draw_penalty:g} is BETTER than a clean "
-              f"loss (-{float(args.victory_value):g}), so running the 250-turn clock out is the best "
-              f"non-winning outcome and a losing agent's optimal play is to stall. The validated "
-              f"composition keeps draw_penalty <= -victory_value. If this is deliberate, make "
-              f"stall rate + mean game length a PRIMARY endpoint.")
-    _terminal_scale_guards(args)
     if args.policy_grad_coef is not None and args.policy_grad_coef < 0.0:
         # A negative coef would ASCEND the PPO surrogate — train the policy to be maximally wrong.
         # 0.0 is the intended floor. policy_grad_coef is training-only

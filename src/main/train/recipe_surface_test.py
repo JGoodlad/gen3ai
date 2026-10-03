@@ -93,7 +93,8 @@ def test_checkargs_refuses_a_fresh_argv_whose_untyped_recipe_differs():
             "self_play", "opp_intent_coef"} <= silent
     # the bare-argv flip (deletion pass D2): its three reward values
     # now AGREE with the recipe untyped, so none of them is a silent difference any more
-    assert not {"terminal_indicator", "victory_value", "draw_penalty", "gamma"} & silent
+    # (the reward values and the discount are namespace constants since P11b — no recipe rows at all)
+    assert not {"terminal_indicator", "victory_value", "draw_penalty", "gamma"} & {r.dest for r in rs.ROWS}
     assert any("--ent-coef" in line for line in rs.report_lines(rep))
 
 
@@ -132,10 +133,10 @@ _LAUNCH_CLI = {"ent_coef": 0.05, "n_envs": 48, "grad_accum_steps": 32, "n_epochs
                "weight_decay": 1e-05, "clip_range": 0.15, "clip_range_vf": None, "self_play": True,
                "beta_setvalued_coef": 0.05, "opp_intent_coef": 0.05,
                # INERT on resume: deliberately DIFFERENT from the parser's, to prove they are
-               # never written back
+               # never written back (`gamma` is no recipe row any more — a PRE-P11b run's cli_args still
+               # carries it, and it must never reach the namespace's constant)
                "lr": 9e-9, "batch_size": 7, "n_steps": 3, "gamma": 0.5}
-_SAVED = types.SimpleNamespace(terminal_indicator=True, victory_value=1.0, draw_penalty=0.0,
-                               vf_coef=0.5)
+_SAVED = types.SimpleNamespace(vf_coef=0.5)
 
 
 def _run(tmp_path, original_command, cli_args):
@@ -158,11 +159,10 @@ def test_each_row_has_exactly_one_restart_route():
     fields = rs._model_version_fields()
     p = build_parser()
     route = {r.dest: rs.restart_route(r.dest, p.get_default(r.dest), fields) for r in rs.ROWS}
-    assert {d for d, v in route.items() if v == "inert"} == {"lr", "batch_size", "n_steps", "gamma"}
+    assert {d for d, v in route.items() if v == "inert"} == {"lr", "batch_size", "n_steps"}
     assert "critic" not in route and route["move_belief_coef"] == "resume"     # the critic is no recipe row (P11b)
     assert route["policy_gae_lambda"] == "resume"
-    assert {route[d] for d in ("terminal_indicator", "victory_value", "draw_penalty", "vf_coef")} \
-        == {"model_config"}
+    assert route["vf_coef"] == "model_config"
     assert {route[d] for d in ("n_envs", "n_epochs", "ent_coef", "self_play", "beta_setvalued_coef")} \
         == {"cli_args"}
 
@@ -175,9 +175,10 @@ def test_a_same_run_restart_resolves_every_untyped_row_by_its_route(tmp_path):
     assert got["n_envs"] == (48, "metadata.json:cli_args") and ns.n_epochs == 10
     assert ns.clip_range_vf is None and ns.beta_setvalued_coef == 0.05
     # value-CHECKED recorded fields come from the CHECKPOINT, not cli_args:
-    assert got["terminal_indicator"] == (True, "model_config.json") and ns.draw_penalty == 0.0
-    # INERT on resume — never written back, whatever cli_args says:
-    assert (ns.lr, ns.batch_size, ns.n_steps, ns.gamma) == (3e-4, 4096, 2048, None)
+    assert got["vf_coef"] == (0.5, "model_config.json")
+    # INERT on resume — never written back, whatever cli_args says (and a pre-P11b `gamma` never reaches
+    # the namespace's constant):
+    assert (ns.lr, ns.batch_size, ns.n_steps, ns.gamma) == (3e-4, 4096, 2048, 1.0)
     assert not {"lr", "batch_size", "n_steps", "gamma"} & set(got)
     # recorded tri-state fields are the resume's own inheritance:
     assert ns.critic == "winprob" and ns.move_belief_coef is None      # a constant; the tri-state ones inherit
@@ -195,7 +196,7 @@ def test_a_missing_value_REFUSES_by_name_never_a_default(tmp_path):
     with pytest.raises(rs.RecipeRestartError, match="--n-envs"):
         rs.inherit_on_restart(_restart_ns(no_cli), str(no_cli), _SAVED)
     run_c = _run(tmp_path / "c", "launcher --arch production", _LAUNCH_CLI)
-    with pytest.raises(rs.RecipeRestartError, match="--terminal-indicator"):
+    with pytest.raises(rs.RecipeRestartError, match="--vf-coef"):
         rs.inherit_on_restart(_restart_ns(run_c), str(run_c), None)
     # …and a typed value closes the gap it names
     ns = _restart_ns(run, "--ent-coef", "0.05")
@@ -257,8 +258,6 @@ def test_every_row_names_a_real_parser_dest_and_flag():
 
 
 def test_every_tri_state_unset_equals_what_resolve_config_fills():
-    from agents.model.critic_mode import CRITIC_DEFAULT
-    from agents.training.reward_weights import PBRS_GAMMA
     src = pathlib.Path(__file__).with_name("config.py").read_text()
     literals = {}
     for node in ast.walk(ast.parse(src)):
@@ -272,12 +271,6 @@ def test_every_tri_state_unset_equals_what_resolve_config_fills():
     for r in rs.ALL_ROWS:
         if r.unset == rs.PARSER_DEFAULT:
             assert p.get_default(r.dest) is not None, f"{r.dest}: tri-state needs a declared unset"
-        elif r.dest == "gamma":
-            # paired with the critic (critic_mode.critic_gamma): the default critic's is WINPROB_GAMMA,
-            # a typed shaped one's PBRS_GAMMA
-            from agents.model.critic_mode import WINPROB_GAMMA, critic_gamma
-            assert r.unset == rs.CRITIC_PAIRED and critic_gamma(CRITIC_DEFAULT) == WINPROB_GAMMA
-            assert critic_gamma("shaped") == PBRS_GAMMA
         elif r.dest in literals:
             assert r.unset == literals[r.dest], r.dest
 
@@ -340,10 +333,7 @@ def test_a_launcher_restart_of_a_fresh_arch_production_run_keeps_the_whole_recip
 
     argv = ["--arch", "production", "--steps", "1000"]
     fresh = _resolve(argv)
-    # `_saved_version` records only the same-named constructor kwargs; a real save records the
-    # reward fields through `reward_config`, so the double gets the launch's values here.
-    saved = dataclasses.replace(_saved_version(fresh), terminal_indicator=fresh.terminal_indicator,
-                                victory_value=fresh.victory_value, draw_penalty=fresh.draw_penalty)
+    saved = _saved_version(fresh)
     run, ckpt = _run_dir(tmp_path, saved, cli_args=json.loads(json.dumps(vars(fresh), default=str)))
     meta = pathlib.Path(run) / "metadata.json"
     meta.write_text(json.dumps({**json.loads(meta.read_text()),
@@ -358,7 +348,7 @@ def test_a_launcher_restart_of_a_fresh_arch_production_run_keeps_the_whole_recip
     assert not drift, f"a launcher restart changed what the recipe set: {drift}"
     out = capsys.readouterr().out
     assert "ent_coef=0.05 from metadata.json:cli_args" in out
-    assert "terminal_indicator=True from model_config.json" in out
+    assert "vf_coef=0.5 from model_config.json" in out
     # a recorded field is the resume's own inheritance (cutover-prep's v125 route), never ours:
     assert "opp_intent_coef=" not in out and "critic=" not in out
     assert restarted.opp_intent_coef == 0.05

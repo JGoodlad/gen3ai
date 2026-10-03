@@ -17,7 +17,6 @@ from agents.model.model_version.constants import (
     _BELIEF_GRAD_MODE_EFFECT,
     _REWARD_IMMUTABLE_FIELDS,
     ModelVersionError,
-    _reward_flag_repr,
 )
 from agents.model.model_version.fields import ModelVersionFields
 
@@ -130,12 +129,14 @@ class ModelVersionResumeChecks(ModelVersionFields):
         so they are enforced ONLY on the training-resume path and excluded from check_compatible().
         Call as: saved_version.check_reward_config(args_reward_config).
 
-        The error NAMES the fix: a diff that only reports "saved=X, requested=Y" leaves the reader
-        to reconstruct the flag spelling (a bool's `--no-` negation, a float's old number). A
-        checkpoint that recorded the DELETED shaped reward never reaches this check — the resume
-        path refuses it first (`model_version.shaped_reward`).
+        Since deletion pass P11b no reward field has a CLI flag (the terminal is a constant of the trainer's
+        namespace: the win indicator alone, victory 1.0, draw 0.0), so there is nothing to "re-pass": a
+        checkpoint recorded on ANY other reward cannot resume on this code. The error says so and names the
+        way out (run it PINNED to its own commit, or start fresh). A checkpoint that recorded the DELETED
+        shaped reward never reaches this check — the resume path refuses it first
+        (`model_version.shaped_reward`).
         """
-        problems, repass, recorded_pairs = [], [], []
+        problems, recorded_pairs = [], []
         for name, default in _REWARD_IMMUTABLE_FIELDS.items():
             wanted = getattr(reward_config, name, default)
             saved = getattr(self, name)
@@ -148,12 +149,15 @@ class ModelVersionResumeChecks(ModelVersionFields):
             if differs:
                 problems.append(f"  {name}: saved={saved!r}, requested={wanted!r}")
                 recorded_pairs.append(f"{name}={saved!r}")
-                repass.append(_reward_flag_repr(name, saved))
         if problems:
             recorded = ", ".join(recorded_pairs)
             raise ModelVersionError(
                 "Reward-config mismatch on resume — these hparams are fixed for a run's lifetime "
                 "(changing them silently shifts the reward / objective):\n" + "\n".join(problems) +
                 f"\n\nThis run recorded {recorded}.\n"
-                f"Fix: re-pass `{' '.join(repass)}` to resume it, or start a fresh run."
+                "The trainer's reward is the win indicator alone (victory_value 1.0, draw_penalty 0.0, "
+                "terminal_indicator ON) and none of it is a flag any more (deletion pass P11b), so a run "
+                "recorded on any other reward cannot resume on this code. Fix: run it PINNED to its own "
+                "commit (the launcher's default for a resume — never --no-pin / --sync-to-main), or start a "
+                "fresh run."
             )

@@ -321,12 +321,10 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
         desugar_umbrella_flags(ns)
 
-    # THE CRITIC MODE'S IMPLICATIONS (gen3_winprob_critic_mode_v1) are resolved where the launch resolves
-    # them. `--critic` itself is no flag any more (deletion pass P11b: the win-prob critic is a CONSTANT of
-    # the namespace), but `--win-prob-mode shaping` and `--gamma 1.0` are still IMPLIED when untyped, and
-    # a checker that skipped them would report a launching command as broken on the very flags the mode
-    # fills in. The three reward flags it does NOT imply (--terminal-indicator, --victory-value 1.0,
-    # --draw-penalty 0) are REQUIRED, and the checks below are what report a command missing one.
+    # THE CRITIC MODE'S ONE IMPLICATION (gen3_winprob_critic_mode_v1) is resolved where the launch resolves it:
+    # `--win-prob-mode shaping` when untyped. The critic, the discount and the whole terminal are no flags any
+    # more (deletion pass P11b: CONSTANTS of the namespace, `parser/objective.py`), but a checker that skipped
+    # the implication would report a launching command as broken on the very flag the mode fills in.
 
     def _critic() -> None:
         with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):

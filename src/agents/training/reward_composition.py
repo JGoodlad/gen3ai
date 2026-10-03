@@ -67,7 +67,7 @@ def format_reward_composition(config) -> str:
 def inert_reward_flags(config) -> list:
     """The recorded reward flags this config makes INERT — sorted, possibly empty.
 
-    One source survives the deletion: `draw_penalty` under `--terminal-indicator`. The term is
+    One source survives the deletion: `draw_penalty` under the win indicator. The term is
     still emitted; the flag's number is simply not read, because the indicator pays
     `+victory_value` on a win and `0.0` on a loss, a tie AND a 250-turn timeout alike. It is
     DOCUMENTATION written beside the fields (`snapshot.save_model_snapshot`), never in place of one.

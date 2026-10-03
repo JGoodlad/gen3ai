@@ -1,6 +1,6 @@
 """The CUDA MEMORY LEDGER (`gen3_cuda_ledger_v1`, 2026-10-01) — where the learner process's card goes.
 
-The sizing study measured production (N = 48, torch 2.8, fp32, `--env-core rust`) reserving 9.49 GiB
+The sizing study measured production (N = 48, torch 2.8, fp32, the Rust env core) reserving 9.49 GiB
 of the 12 GiB card with 1.2 GiB free — under K6's own ceiling margin — and ~3.9 GiB of it unattributed.
 This ledger attributes it, in EVERY run's log, at the startup steps that acquire device memory:
 

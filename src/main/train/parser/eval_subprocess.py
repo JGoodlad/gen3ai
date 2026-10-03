@@ -26,7 +26,7 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "per opponent). Each opponent's eval games split into chunks any idle worker can drain, "
                              "so one straggler no longer pins a whole opponent on a single worker — the long tail "
                              "collapses to one shard. Smaller = finer tail collapse but more player builds / (on "
-                             "websocket) more connection churn; the in-process bridge (--use-bridge, the default) is "
+                             "websocket) more connection churn; the in-process bridge (the only training transport) is "
                              "preferred for fine shards. >= the per-opponent game count disables sharding (one shard "
                              "per opponent = the original opponent-level behaviour).")
     parser.add_argument("--bait-bot-share", "--bait_bot_share", dest="bait_bot_share",

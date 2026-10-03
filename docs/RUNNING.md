@@ -75,8 +75,8 @@ python -m main.launcher \
 OFF, so an argv that omits it trains a near-bare network that launches cleanly and looks healthy.
 It applies the whole surface in `designs/production_config.json` as if each flag had been typed —
 the architecture AND the production training recipe (the file's `recipe.fresh` block — the
-lineage's measured fresh launch: env count, batch, epochs, learning rate, clip, entropy, self-play,
-the critic and its reward values) — and an
+lineage's measured fresh launch: env count, batch, epochs, learning rate, clip, entropy, self-play;
+the critic and its win-indicator terminal are constants of every trainer namespace) — and an
 explicitly-typed flag still wins. Validate any argv offline first with
 `python -m main.checkargs --argv "…"`, which prints an architecture-surface and a recipe-surface
 diff and refuses a fresh argv that differs from production (a recipe knob only when it was not
@@ -92,7 +92,7 @@ python -m main.launcher --model models/<run>/checkpoints/checkpoint_NNNN_steps.z
 ```
 
 On a resume an argv is not a config: every flag you do not name is inherited from the checkpoint's
-`model_config.json`, and `--lr`, `--batch-size`, `--n-steps` and `--gamma` are inert because SB3
+`model_config.json`, and `--lr`, `--batch-size` and `--n-steps` are inert because SB3
 restores the checkpoint's own values. A bare run directory anywhere a model is expected means that
 run's **last snapshot** — name the `.zip` to pin a file.
 

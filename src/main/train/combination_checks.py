@@ -129,17 +129,6 @@ def _val(args, dest: str, default: Any) -> Any:
     return default if value is None else value
 
 
-def _winprob_gamma() -> float:
-    from agents.model.critic_mode import CRITIC_WINPROB, critic_gamma
-    return critic_gamma(CRITIC_WINPROB)
-
-
-def _winprob(args) -> bool:
-    """Is this the WIN-PROB critic? Read through the ONE predicate, never a string compare here."""
-    from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
-    return is_winprob(_val(args, "critic", CRITIC_DEFAULT))
-
-
 def _belief_mode(args) -> str:
     return _val(args, "move_belief_mode", "off")
 
@@ -235,8 +224,9 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
     # below either CONTRADICTS that (a head that is not built, a reward whose currency is not P(win)) or
     # is a knob the mode SUBSUMES. Each one is refused rather than ignored, because a silently-inert flag
     # on a critic-route change is the failure this whole module exists to end.
-    # `config.resolve_critic_mode` IMPLIES the coherent value for each of them first, so a refusal here
-    # means the operator TYPED something incompatible.
+    # `config.resolve_critic_mode` IMPLIES the coherent value first, so a refusal here means the operator
+    # TYPED something incompatible. (The critic, the discount and the terminal's three values were refused
+    # here by four more rows until deletion pass P11b made them constants of the namespace.)
     CombinationCheck(
         "winprob_critic_needs_a_head", ("win_prob_mode",),
         # unset resolves to 'shaping' (`config.resolve_critic_mode`'s implication)
@@ -267,51 +257,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "computes; a branch has no env, so every injected row carries the 0.0 FILL and would land "
         "in one stratum. The delivered strata dose would then be a function of the fork rate "
         "rather than of the flag. Drop one of the two."),
-    CombinationCheck(
-        # See `--terminal-indicator`. A [0,1] critic cannot represent "worse than a loss", so the
-        # ordering `--draw-penalty` exists to set is not merely unused here — it is unrepresentable.
-        "winprob_critic_refuses_draw_penalty", ("critic", "draw_penalty", "terminal_indicator"),
-        lambda a: _winprob(a) and float(_val(a, "draw_penalty", 0.0) or 0.0) != 0.0,
-        lambda a: ("The win-prob critic is incompatible with --draw-penalty "
-                   f"{float(_val(a, 'draw_penalty', 0.0)):g}. Under this critic the terminal is "
-                   "the WIN INDICATOR (+victory_value on a win, 0.0 on a loss, a tie AND a "
-                   "250-turn timeout alike), so there is no separate draw magnitude to set, and a "
-                   "critic bounded in [0,1] cannot represent 'a timeout is worse than a loss' at "
-                   "all. The anti-stall pressure comes from the obs deadline clock. "
-                   "Pass --draw-penalty 0.")),
-    CombinationCheck(
-        "winprob_critic_needs_the_indicator_terminal", ("critic", "terminal_indicator"),
-        lambda a: _winprob(a) and not bool(_val(a, "terminal_indicator", True)),
-        "The win-prob critic requires --terminal-indicator. The critic is sigmoid(logit) in [0,1] "
-        "and GAE mixes the REWARD with it, so a +V/-V terminal would put the return and the "
-        "critic in different scales and every terminal TD error would carry a systematic, "
-        "state-dependent offset (a loss reads `-V - V` against a truth of `0 - V`). The indicator "
-        "terminal is what makes V(s) == E[return] hold."),
-    CombinationCheck(
-        "winprob_critic_needs_unit_victory_value", ("critic", "victory_value"),
-        lambda a: _winprob(a) and float(_val(a, "victory_value", 1.0) or 0.0) != 1.0,
-        lambda a: ("The win-prob critic requires --victory-value 1.0 (got "
-                   f"{float(_val(a, 'victory_value', 1.0)):g}). With the indicator terminal the "
-                   "undiscounted return is `victory_value * 1{win}` while the critic is "
-                   "sigmoid(logit) in [0,1], so the two agree at exactly one scale. At 1.0 the "
-                   "return IS the win indicator and V(s) == P(win|s) with no approximation term "
-                   "-- the identity the whole mode rests on.")),
-    CombinationCheck(
-        # Cutover loose end 2 (2026-09-30): the critic -> discount PAIRING (`critic_mode.critic_gamma`).
-        # `resolve_critic_mode` IMPLIES 1.0 and its docstring hands a TYPED value to this module to
-        # judge — which had no gamma row, so `--critic winprob --gamma 0.99` launched with the
-        # identity broken. Every winprob run in models/ trained at 1.0; the shaped critic's gamma is
-        # its own tunable (no row here). An UNTYPED mismatch is `resolve_config`'s pairing guard.
-        "winprob_critic_needs_unit_gamma", ("critic", "gamma"),
-        lambda a: _winprob(a) and getattr(a, "gamma", None) is not None
-        and float(a.gamma) != _winprob_gamma(),
-        lambda a: (f"The win-prob critic requires --gamma {_winprob_gamma():g} (got {float(a.gamma):g}). "
-                   "The discount is PAIRED with the critic (agents.model.critic_mode.critic_gamma): "
-                   "with the terminal-only indicator reward and the 250-turn hard cap, V(s) == "
-                   "P(win|s) holds exactly only at gamma 1 -- at 0.9999 over 250 turns the return is "
-                   "discounted by 0.975, the same order as the calibration error this critic exists "
-                   "to remove. Drop --gamma (it is implied) or pass --gamma 1.0.")),
-
     # ---- the distributional critic --------------------------------------------------------
 
     # ---- gen3_supply_guard_v2: a PFSP lever with no possible supply ---------------------------
@@ -569,7 +514,7 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
 
     # ---- the compile pair: the rule itself lives in compile_flags, referenced not re-typed ------
 
-    # ---- the env core (M5 Lane G): what `--env-core rust` serves, refused by name -------------
+    # ---- the env core (M5 Lane G): what the Rust env core serves, refused by name -------------
     CombinationCheck(
         # gen3_fork_rust_v1 (forks.md §14.3): a branch replays the parent's draws BY KEY; a per-env
         # torch.Generator stream cannot be replayed per branch.

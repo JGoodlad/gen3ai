@@ -1,8 +1,8 @@
 """THE OBJECTIVE'S CONSTANTS — values that were trainer FLAGS until deletion pass P11b.
 
 Each had ONE legal value: the win-prob critic is the only trainable critic (`critic_mode`), and its
-identity `V(s) == P(win | s)` holds only at gamma 1 with the unit win-indicator terminal, so a
-`combination_checks` row refused every other value. They are deleted as flags
+identity `V(s) == P(win | s)` holds only at gamma 1 with the unit win-indicator terminal (indicator ON,
+victory 1.0, draw 0.0), so a `combination_checks` row refused every other value. They are deleted as flags
 (`designs/deleted_flags.md`: a typed one is refused WITH its reason) and live here instead, on the
 namespace through `parser.set_defaults`, because ~20 readers take them off `args`
 (`RewardConfig.from_args`, `model_build`, the sidecar / callbacks gates, `checkargs`).
@@ -22,12 +22,18 @@ from __future__ import annotations
 import argparse
 from typing import Any, Dict
 
-from agents.model.critic_mode import CRITIC_DEFAULT
+from agents.model.critic_mode import CRITIC_DEFAULT, WINPROB_GAMMA
 
-#: ``dest`` -> the one value. Grows batch by batch of P11b; `parser_objective_test` pins that no member has a
-#: parser option and that every member has a `designs/deleted_flags.md` row.
+#: ``dest`` -> the one value. `objective_constants_test` pins that no member has a parser option and that every
+#: member has a `designs/deleted_flags.md` row.
 OBJECTIVE_CONSTANTS: Dict[str, Any] = {
     "critic": CRITIC_DEFAULT,
+    # the TERMINAL WIN INDICATOR alone, undiscounted: +1.0 on a win, 0.0 on a loss, a tie AND a 250-turn
+    # timeout alike, so the return IS 1{win} and V(s) == P(win | s) with no approximation term
+    "terminal_indicator": True,
+    "victory_value": 1.0,
+    "draw_penalty": 0.0,
+    "gamma": WINPROB_GAMMA,
 }
 
 

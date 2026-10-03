@@ -30,6 +30,11 @@ DELETED = [
     ("--env-core", ["rust"]),                                          # P11b (a): the one-valued flags
     ("--use-bridge", ["rust"]),
     ("--critic", ["winprob"]),                                         # P11b (b)
+    ("--gamma", ["1.0"]),                                              # P11b (c): the reward cluster
+    ("--victory-value", ["1.0"]),
+    ("--draw-penalty", ["0"]),
+    ("--terminal-indicator", []),
+    ("--no-terminal-indicator", []),
 ]
 
 

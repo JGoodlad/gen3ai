@@ -27,7 +27,7 @@ A typical investigation:
 
 The two GLOBAL flags sit before the subcommand: ``--compile`` (torch.compile the rollout models)
 and ``--impl {node,rust}`` (which sim engine the search/replay children run — the offline analogue
-of the trainer's ``--use-bridge``; default ``node``).
+of the (now fixed) training transport; default ``node``).
 """
 
 from __future__ import annotations
@@ -133,7 +133,7 @@ def _build_parser() -> argparse.ArgumentParser:
                         "one-time). Worth it for better-line / falsify / falsify-scan / "
                         "replay-counterfactual; pointless for summary/list.")
     # WHICH sim engine the re-roll/search/replay children run. The offline analogue of the
-    # trainer's --use-bridge={node,rust}; ignored by the model-free / no-replay commands
+    # trainer's training transport; ignored by the model-free / no-replay commands
     # (summary/list/scan/triage/…), which spawn no sim child at all. Session-wide, not per
     # question: results from two engines are not comparable within one investigation.
     p.add_argument("--impl", dest="impl", default="node", choices=["node", "rust"],

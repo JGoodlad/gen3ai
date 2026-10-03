@@ -48,7 +48,7 @@ What to fix vs re-sample, how many seeds, and what to measure are deliberately
 NOT decided here — Phase-1 consumers compose those.
 
 All three take an ``impl`` (``"node"`` default | ``"rust"``), the offline analogue of
-``--use-bridge={node,rust}``: it picks WHICH driver child runs, via the one seam
+the training transport: it picks WHICH driver child runs, via the one seam
 ``sim_bridge_bin.search_driver_spawn_argv``. Node splits these verbs across
 ``replay_driver.js`` and ``search_driver.js``; the Rust port serves both from a single
 ``search_driver`` binary. A missing/unbuildable rust binary raises — it never falls back
@@ -362,7 +362,7 @@ class RerollResult:
 def _run_driver(request: dict, timeout: float, impl: str = "node") -> dict:
     """Spawn ONE offline replay/re-roll driver, feed it ``request``, return its JSON reply.
 
-    ``impl`` selects the child exactly like ``--use-bridge={node,rust}`` selects the live
+    ``impl`` selects the child exactly like the training transport selects the live
     transport. Note the ASYMMETRY the seam hides: **node** splits the offline verbs across two
     scripts — ``replay_driver.js`` (replay / reroll / reroll_many, what this function drives) and
     ``search_driver.js`` (the clone-and-branch server ``search_session.py`` drives) — while the

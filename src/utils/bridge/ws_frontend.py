@@ -12,7 +12,7 @@ So the integration point cannot be an import. It has to be a SOCKET, and the opp
 in its own process with its own poke-env. This module is that socket: an asyncio websocket server
 that speaks just enough of the Showdown client protocol for a poke-env-style client to log in,
 challenge or accept, and play complete battles — with each battle backed by ONE `sim_bridge`
-child (the `local_sim_bridge` stdin/stdout protocol, `--use-bridge rust` semantics) instead of a
+child (the `local_sim_bridge` stdin/stdout protocol, the Rust bridge's semantics) instead of a
 Showdown server.
 
     python -m utils.bridge.ws_frontend --port 9601          # ws://127.0.0.1:9601/showdown/websocket

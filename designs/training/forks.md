@@ -212,7 +212,7 @@ A branch is a complete episode from the fork step to a terminal, so its advantag
 the branch's own outcome bit and `win_mask` is 1.
 
 🚨 **Why the arm needs the win-prob critic (the only critic).** Under the win-prob critic (the only critic) the reward stream is
-the **terminal win indicator alone** (`--terminal-indicator`, `--victory-value 1.0`,
+the **terminal win indicator alone** (indicator, victory 1.0, draw 0.0 — constants of the namespace;
 the terminal-only reward), so a branch's ENTIRE reward sequence is reconstructible from its outcome bit —
 which is the only reason a branch's reward can be built outside the env (the Python arm's `branch_rewards`, deleted in L5; the Rust pass applies the core's indicator rule, §14.5). Under `shaped`
 a per-turn reward is a PBRS/bias composition the env's `RewardManager` folds from a `TurnDelta` that

@@ -5,7 +5,7 @@ row, owner-approved 2026-09-26): the eight PBRS potentials (`reward_potentials.p
 terms (`reward_bias_terms.py`), the bias-additivity refund, the no-progress tax, the suppressed-term
 fast path and its `GEN3AI_REWARD_VERIFY` shadow twin (`reward_verify.py`), and the 14 flags that
 configured them (`designs/deleted_flags.md`). Production had trained on the terminal alone since the
-win-prob era (the win-prob critic: `--terminal-indicator --victory-value 1.0`); `reward_golden_test`
+win-prob era (the win-prob critic's terminal: indicator ON, victory 1.0); `reward_golden_test`
 was recorded at the last pre-deletion commit and passes unchanged after it, which is the proof that
 production's reward — and the `win_margin` obs key this module publishes — did not move.
 

@@ -6,7 +6,7 @@ LOADED checkpoint's saved seed — and a training process loads models mid-run: 
 refresh (`SnapshotPool.load_model`), every eval sentinel (`rust_eval/launch.load_sentinels`), every
 exploiter rung. Every snapshot of a run carries the run's own `--seed`, so each load REWOUND the
 trainee's global streams to the state they had at startup. Measured on the production path
-(`--env-core rust --arch production`, CPU `--debug`): the PPO minibatch permutation
+(the Rust env core with `--arch production`, CPU `--debug`): the PPO minibatch permutation
 (`RolloutBuffer.get` → `np.random.permutation`, one per epoch) is the one global-RNG consumer of the
 steady state, and after every load the update sequence replayed the run's first updates' permutation
 stream exactly (`designs/training/learner_lifecycle.md` "No global reseed after the freeze").

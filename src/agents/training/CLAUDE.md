@@ -58,7 +58,7 @@ value quantities in **three different currencies at once** (a fourth, PopArt-nor
 
 | currency | is | who is in it |
 |---|---|---|
-| **RAW REWARD** | the units `--victory-value` is in, undiscounted | every `reward/*` term, `--draw-penalty` |
+| **RAW REWARD** | the units the terminal's victory value (a constant, 1.0) is in, undiscounted | every `reward/*` term |
 | **RAW SHAPED RETURN** | `Σγᵏr` in raw-reward units | `train/return_*`, `rollout_buffer.{values,returns}`, `train/explained_variance` |
 | **PROBABILITY** | `[0, 1]`, outcome units, undiscounted | every `win_prob/*`, `cf/*` labels, `eval/win_rate_*` |
 | ⚠️ **PROBABILITY, under the win-prob critic (the only critic)** | the same `[0,1]`, but it is now ALSO what `rollout_buffer.values` / `returns` / `train/explained_variance` are in | the row above **plus** `train/return_*`, `train/explained_variance`, `train/value_loss` (raw) |
@@ -233,7 +233,7 @@ module reached only through `train_setup` still counts as reachable — requirin
 **The shaped reward path is DELETED** (`gen3_shaped_reward_deletion_v1`, config v122, 2026-09-26):
 the PBRS potentials, the BIAS terms, the bias refund, the no-progress TAX and their 14 flags
 (`designs/deleted_flags.md`). The reward is the terminal — production's win indicator
-(`--terminal-indicator --victory-value 1.0`), or the signed ±`victory_value` / `--draw-penalty`
+(indicator, victory 1.0, draw 0.0 — constants of the namespace; the four flags `--gamma`, `--victory-value`, `--draw-penalty`, `--terminal-indicator` are DELETED, P11b batch (c)), or — historically, for an old checkpoint only — the signed ±`victory_value` / draw-penalty
 terminal. `reward_golden_test.py` was recorded at the last pre-deletion commit and passes unchanged,
 which is the proof production's reward did not move. 🚨 **A resume or fork of a checkpoint trained
 WITH shaping REFUSES** (`agents.model.model_version.shaped_reward`, enforced in `resolve_config`
@@ -710,9 +710,8 @@ and saturation is a trend.
 | the scalar `value_loss` | the loss | a DIAGNOSTIC only (its term is dropped), computed UNCLIPPED |
 | PopArt · `--value-dist-*` · `--value-from-dist` · `--value-tail-weight` · `--win-prob-coef` · every `--win-prob-pbrs-*` | **DELETED** (L1, config v131: `designs/deleted_flags.md`; a checkpoint that recorded one ON is refused, `model_version/retired_levers.py`) | **DELETED** |
 
-🚨 **`winprob` REQUIRES all three of `--terminal-indicator --victory-value 1.0 --draw-penalty 0`**,
-each named by its own `combination_checks` refusal, so the undiscounted return
-is exactly `1{win}` and at `--gamma 1.0` `V(s) = P(win|s)` with no approximation term.
+🚨 **`winprob` has the win-indicator terminal (indicator, victory 1.0, draw 0.0) and gamma 1.0 BY CONSTRUCTION** (constants of the namespace, `parser/objective.py` `set_defaults`; a typed flag is refused with its reason; a recorded non-production reward is refused on a resume by `check_reward_config`), so the undiscounted return
+is exactly `1{win}` and `V(s) = P(win|s)` with no approximation term.
 🚨 **THE COST IS STATED, NOT BURIED: a critic bounded in [0,1] cannot represent "a timeout is worse
 than a loss."** The anti-stall pressure is the obs deadline clock (the reward has no anti-stall term), and
 **stall rate and mean episode length are PRIMARY, kill-condition-bearing endpoints on a `winprob`
@@ -731,8 +730,8 @@ series that watches the 250-turn cap is `signal/stall_rate` / mean episode lengt
 🚨 **THE 250-TURN CAP IS A TERMINAL, NOT A TRUNCATION** — this env never truncates in the SB3 sense;
 a cap forfeit used to arrive as `truncated`, so SB3 bootstrapped `V(s_last)` onto a 0 reward at
 γ=1 and the timeout left the loss entirely with **a TD error of identically zero**. Fixed in
-the Python env wrapper's `resolve_episode_end` (deleted with that core in U3; the Rust collector's complete-game rule serves it now), under `winprob` only. **`--gamma` is a flag now and is INERT ON A
-RESUME like `--lr`.**
+the Python env wrapper's `resolve_episode_end` (deleted with that core in U3; the Rust collector's complete-game rule serves it now), under `winprob` only. **`gamma` is a constant of the namespace (1.0; no flag), and SB3 restores a checkpoint's own gamma on a
+resume like `--lr`.**
 
 ### `--win-prob-strata-weight` — the BCE's opponent MIX (`gen3_winprob_strata_weight_v1`, v115)
 
@@ -946,8 +945,7 @@ The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s
 - **`recipe.fresh`** is N0's MEASURED fresh recipe (`models/ai_v14_01_base`): every training knob it
   launched with — the rollout/update shape, `n_epochs` 10, `lr` 3e-4 with the KL controller as it ran
   (`max_lr` unset, no cosine, and `kl_controller`'s `target_kl` / `kl_factor` / `lr_factor`, which
-  are constructor constants pinned against the callbacks), clip, entropy, `gamma`, self-play, the
-  critic with its reward values, `vf_coef` and every supervision dose. A key that is also a
+  are constructor constants pinned against the callbacks), clip, entropy, self-play, `vf_coef` and every supervision dose. A key that is also a
   recorded top-level mirror field must EQUAL it.
 - **`recipe.fork`** is what a generalist fork changes: E5 (`n_epochs` 5 at a FROZEN `fork_lr`
   5.6e-5). Never applied by `--arch` (`--fork-lr` is refused on a fresh run); a fork's argv is
@@ -956,22 +954,19 @@ The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s
   `baselines.production_recipe_block()` reads it; `compare_production` exempts it; `--sync-config`
   carries it over.
 - **`--arch production`** writes every `recipe.fresh` knob the argv did not TYPE, as if typed (after
-  the ARCH surface, before `resolve_critic_mode`). "Typed" is recorded by the parser
+  the ARCH surface, before `resolve_critic_mode`, which now implies only `--win-prob-mode shaping`). "Typed" is recorded by the parser
   (`_recipe_typed`). `recipe_source` lands in `metadata.json`'s `cli_args`.
-- 🚨 **`--gamma` is PAIRED with the critic, not a free recipe row** (`critic_mode.critic_gamma`:
-  winprob 1.0, shaped 0.9999 — no run ever trained a shaped critic at 1.0). The win-prob critic (the only critic) refuses a typed gamma
-  other than 1.0; an untyped gamma that is not its critic's is a launch `FATAL_CONFIG`.
+- 🚨 **`gamma` is not a recipe row or a flag** — `--gamma` is DELETED (P11b batch (c)); the discount is `WINPROB_GAMMA` = 1.0, a constant of the namespace (`critic_mode.critic_gamma` is deleted), and `recipe.fresh` holds no gamma.
 - **Refusal.** `checkargs`, `--dry-run` and the launcher REFUSE a FRESH argv that differs on an
   UNTYPED knob; a TYPED difference is the arm's lever (INFO); `--allow-nonproduction-recipe`
   consents.
 - 🚨 **A same-run RESTART strips `--arch`.** For a run whose immutable `original_command` carried
   `--arch production`, `inherit_on_restart` resolves each untyped knob by exactly one route
   (`restart_route`), announced as `[Recipe] … from <source>`:
-  - `--lr` / `--batch-size` / `--n-steps` / `--gamma` are INERT on a resume (SB3 restores them) —
+  - `--lr` / `--batch-size` / `--n-steps` are INERT on a resume (SB3 restores them, and a checkpoint's own gamma) —
     never re-applied;
   - a recorded tri-state field (critic, doses incl. `opp_intent_coef`, `policy_gae_lambda`) is `_resolve`'s to inherit;
-  - a recorded value-checked field (`terminal_indicator`, `victory_value`, `draw_penalty`,
-    `vf_coef`) comes from the checkpoint's `model_config.json`;
+  - a recorded value-checked field (`vf_coef`; the reward fields `terminal_indicator` / `victory_value` / `draw_penalty` are no recipe rows now) comes from the checkpoint's `model_config.json`;
   - a knob recorded nowhere else comes from the run's `metadata.json:cli_args`.
 
   A value MISSING from its route REFUSES by name (`RecipeRestartError` → `FATAL_CONFIG`; `checkargs`

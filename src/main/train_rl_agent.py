@@ -224,7 +224,7 @@ async def main():
          f"{args.win_prob_mode!r}. At victory_value 1.0 and gamma 1.0, V(s) == P(win|s) "
          f"exactly. ⚠️ A [0,1] critic cannot express 'a timeout is worse than a loss' — stall "
          f"rate and mean episode length are PRIMARY endpoints on this arm.")
-    # The env: the Rust core (`--env-core rust` is the only core) — N envs in ONE core behind the
+    # The env: the Rust core (the only core) — N envs in ONE core behind the
     # process (or FFI) front end; the trainee and every policy opponent forward through the inference
     # service (T2), the scripted bots play inside the core. `--debug` runs ONE env.
     n_envs = 1 if args.debug else args.n_envs

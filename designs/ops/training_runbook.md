@@ -102,11 +102,10 @@ builds the wrong architecture"*.
 
 **`--arch production`** is the remedy: it applies every ARCH-surface key from
 `designs/production_config.json` as if typed, and records `arch_source` in `model_config.json`; its
-RECIPE half applies the training recipe (incl. the win-prob critic (the only critic), its three reward values and the
-supervision doses) and records `recipe_source` in `metadata.json`'s `cli_args`. It deliberately does
+RECIPE half applies the training recipe (incl. the supervision doses; the win-prob critic, its win-indicator terminal and gamma are constants of the namespace, not recipe rows) and records `recipe_source` in `metadata.json`'s `cli_args`. It deliberately does
 NOT set the critic READOUTS the win-prob critic (the only critic) implies, or `--belief-grad-mode` — the block lists
 them every time, so its silence is never read as coverage. A same-run restart (which strips `--arch`)
-resolves each recipe knob by one route (INERT `--lr` / `--batch-size` / `--n-steps` / `--gamma`
+resolves each recipe knob by one route (INERT `--lr` / `--batch-size` / `--n-steps`
 untouched; recorded fields from `model_config.json`; the rest from the run's `metadata.json:cli_args`),
 announced, and REFUSES by name when a value is missing — never a default. It also KEEPS the run's
 provenance tags — `arch_source` from the checkpoint's `model_config.json`, `recipe_source` from
@@ -279,29 +278,23 @@ checkpointer through the real Rust-collector loop) and `src/main/train_rl_agent_
 
 ### WHICH readout is the critic — the win-prob critic (the only critic; no `--critic` flag)
 
-`policy._critic_value` has a MODE. **`winprob` is the only critic** (a constant of every trainer namespace, `src/main/train/parser/objective.py`; `--critic` was DELETED in P11b batch (b) and a typed one is refused with its reason, `designs/deleted_flags.md`), with its three reward values as the
-parser defaults (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`). **`shaped`** —
+`policy._critic_value` has a MODE. **`winprob` is the only critic** (a constant of every trainer namespace, `src/main/train/parser/objective.py`; `--critic` was DELETED in P11b batch (b) and a typed one is refused with its reason, `designs/deleted_flags.md`), with its win-indicator terminal (indicator, victory 1.0, draw 0.0) and gamma 1.0 as constants of the namespace too (`--terminal-indicator`, `--victory-value`, `--draw-penalty`, `--gamma` are DELETED, P11b batch (c); a typed one is refused with its reason). **`shaped`** —
 every generation through gen-16 — is the scalar `value_net` in raw shaped-return units, with the win-prob head an auxiliary BCE (PopArt and the distributional `E[Z]` critic were DELETED, L1, config v131); `shaped` is no longer trainable (`CRITIC_TRAINABLE_MODES` is deleted). An ABSENT record (a pre-v109 config / saved
 `policy_kwargs`) still means `shaped` (`critic_mode.CRITIC_UNRECORDED`), so an old shaped checkpoint still LOADS (opponent, meters, prober); a resume or fork of one is refused `FATAL_CONFIG` (D4 `PythonEraShapedCheckpoint` — run it pinned to its own commit).
 
 **`winprob` promotes the head to BE the critic**: `V(s) = sigmoid(win_head logit)` in [0,1], the
 value loss IS that head's BCE against the terminal outcome (weighted by `--vf-coef` — one critic, one coefficient; the old `--win-prob-coef` was deleted), and the reward stream is the TERMINAL **WIN
-INDICATOR** alone. At `--victory-value 1.0` and `--gamma 1.0` the undiscounted return from any state
+INDICATOR** alone. With victory 1.0 and gamma 1.0 (constants) the undiscounted return from any state
 is exactly `1{win}`, so **`V(s) = P(win | s)` with no approximation term** — which is why
-`--terminal-indicator` and `--victory-value 1.0` are requirements, not suggestions. (A bounded Bernoulli payoff has no scale to track — PopArt is deleted.)
+the indicator terminal and victory 1.0 are fixed by construction, not options. (A bounded Bernoulli payoff has no scale to track — PopArt is deleted.)
 
 🚨 **A critic bounded in [0,1] cannot represent "a timeout is worse than a loss."** That ordering is
-not merely unused under `winprob` — it is *unrepresentable*, so `--draw-penalty` is REFUSED. The
+not merely unused under `winprob` — it is *unrepresentable*, so the draw value is fixed at 0.0 (no flag). The
 anti-stall pressure comes from the obs deadline clock (the reward has no anti-stall term). **Stall rate
 and mean episode length are PRIMARY endpoints on any `winprob` arm, not monitored ones.**
 
-Two flags are IMPLIED (`--win-prob-mode shaping`, `--gamma 1.0`) because their
-argparse default is a `None` sentinel (the discount is PAIRED with the critic — `critic_mode.critic_gamma`,
-winprob 1.0 / shaped 0.9999; a typed non-1.0 gamma under winprob is REFUSED, and the launch prints
-`[Critic] gamma=… — <source>`); three are REQUIRED and named by their own refusal
-(`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because
-theirs are concrete and an implication could not be told apart from an overwrite — since the bare-argv
-flip those ARE the parser defaults, so the requirement bites only on a typed signed-terminal value. Everything the
+ONE flag is IMPLIED (`--win-prob-mode shaping`) because its
+argparse default is a `None` sentinel; the discount and the terminal are constants of the namespace (a resume whose recorded reward is not the production one is REFUSED by `check_reward_config`: run it pinned, or start fresh). Everything the
 mode SUBSUMES is refused rather than ignored. `python -m main.checkargs` reports every one offline.
 
 **`--win-prob-pbrs-frozen`, `--win-prob-pbrs-coef` and `--win-prob-pbrs-source` were DELETED** (L1, config v131; the actor-only frozen potential was the one PBRS route buildable under `winprob`). **The recorded `critic` is STRUCTURAL and resume-immutable.**
@@ -348,9 +341,7 @@ Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](designs/ai_v12/design_winprob_only_critic.md);
 flag mechanics in `src/agents/model/CLAUDE.md` → *The CRITIC MODE*.
 
-**`--gamma` is a flag** (it was hardcoded at `0.9999`). Its `shaped` default is
-`reward_weights.PBRS_GAMMA` itself, so the PBRS invariance premise cannot break on a second copy of
-the number, and it is **INERT ON A RESUME** like `--lr`.
+**`gamma` is not a flag** (`--gamma` was DELETED, P11b batch (c)): the discount is `WINPROB_GAMMA` = 1.0, a constant of the namespace, and SB3 restores a checkpoint's own gamma on a resume like `--lr`.
 ### In-process bridge transport (the Rust bridge — the ONLY training transport)
 
 There is no transport flag: the trainer's one transport is `rust` (U3 deleted the Python RL transport that took `node` / `off`; P11b deleted the one-valued `--use-bridge`, so a typed one is refused at parse time with the reason). The table below records the transports that still exist as `impl=` values for the harnesses, `play.py` and the ladder. The bridge is an

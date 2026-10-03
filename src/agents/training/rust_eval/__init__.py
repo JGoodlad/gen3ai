@@ -1,4 +1,4 @@
-"""EVAL ON THE RUST ENV CORE (M5 Lane H) — ``--env-core rust``'s eval cycle.
+"""EVAL ON THE RUST ENV CORE (M5 Lane H) — the Rust env core's eval cycle.
 
 Module map (design of record: ``designs/training/eval_and_rating.md`` → "Eval on the Rust core";
 progress: ``designs/research_state/measurements/m5_laneH/PROGRESS.md``):

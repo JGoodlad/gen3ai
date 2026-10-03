@@ -55,20 +55,7 @@ def is_winprob(mode: object) -> bool:
 
 
 #: The win-prob critic's discount — an IDENTITY, not a tuning: with a terminal-only indicator reward
-#: and a 250-turn hard cap, V(s) == P(win | s) exactly at gamma = 1 (see `--gamma`'s help).
+#: and a 250-turn hard cap, V(s) == P(win | s) exactly at gamma = 1. The `gamma` constant of every trainer
+#: namespace (`main.train.parser.objective`; the `--gamma` flag was deleted, P11b). A checkpoint's OWN gamma
+#: is SB3's (restored on a resume); a shaped-era 0.9999 (`reward_weights.PBRS_GAMMA`) only ever loads.
 WINPROB_GAMMA = 1.0
-
-
-def critic_gamma(mode: object) -> float:
-    """THE CRITIC -> DISCOUNT PAIRING, declared once: the discount a run trains with
-    under `mode`. ``winprob`` -> `WINPROB_GAMMA` (1.0); ``shaped`` -> `reward_weights.PBRS_GAMMA`
-    (0.9999, the historical PPO gamma — every shaped and pre-critic run in `models/` trained at it,
-    incl. the shaped ladder controls that otherwise took the win-prob reward values).
-
-    Read by `resolve_critic_mode` / `resolve_config` (the launch), `recipe_surface` and
-    `combination_checks` (the win-prob critic refuses any other gamma). Lazy import: this module stays
-    torch-free, and `reward_weights` is pure constants."""
-    if is_winprob(mode):
-        return WINPROB_GAMMA
-    from agents.training.reward_weights import PBRS_GAMMA
-    return float(PBRS_GAMMA)

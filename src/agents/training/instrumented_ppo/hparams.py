@@ -189,7 +189,7 @@ class PpoHyperparameters:
         # owns the `collect_rollouts` / `train` / `learn` wrappers above when it is the outermost.
         # `_compiled_micro_step` (K8 region R1, `compile_regions.install`) is a process-local compiled
         # callable — re-installed by every process that compiles, never pickled.
-        # `_rust_collector` (M5 Lane G, `--env-core rust`) is the live env core + inference service
+        # `_rust_collector` (M5 Lane G, the Rust env core) is the live env core + inference service
         # + row arena (locks, a child process, GPU slot storage): process-local by construction and
         # rebuilt by every process's startup. `_rust_fill` / `_rust_row_versions` / `_rust_version` /
         # `_behaviour_probe_metrics` are the last update's staleness record — transient like the buffer.

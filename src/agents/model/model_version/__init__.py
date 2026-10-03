@@ -6,7 +6,7 @@ gate's hard bound, one line from tripping it — and is now one module per conce
 <anything>` resolves unchanged for all ~48 import sites.
 
     constants.py      MODEL_CONFIG_VERSION · ARCH_SIGNATURE · ModelVersionError · the
-                      reward-immutable field tables + `_reward_flag_repr`
+                      reward-immutable field table
     migrations.py     MIGRATION_FLOOR · SIGNATURE_FIRST_VERSION · `_migrate_config`, including
                       the PRE-FLOOR HISTORY archive
     fields.py         `ModelVersionFields` — the dataclass field block alone
@@ -31,9 +31,7 @@ from agents.model.model_version.constants import (
     MODEL_CONFIG_VERSION,
     ModelVersionError,
     _BELIEF_GRAD_MODE_EFFECT,
-    _REWARD_FIELD_FLAGS,
     _REWARD_IMMUTABLE_FIELDS,
-    _reward_flag_repr,
 )
 from agents.model.model_version.migrations import (
     MIGRATION_FLOOR,
@@ -64,8 +62,6 @@ __all__ = [
     "ShapedRewardCheckpointError",
     "SIGNATURE_FIRST_VERSION",
     "_BELIEF_GRAD_MODE_EFFECT",
-    "_REWARD_FIELD_FLAGS",
     "_REWARD_IMMUTABLE_FIELDS",
     "_migrate_config",
-    "_reward_flag_repr",
 ]

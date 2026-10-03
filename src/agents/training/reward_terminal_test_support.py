@@ -8,7 +8,7 @@ wrong in a way no assertion catches:
   a tie — `gen3_env` issues a `ForfeitBattleOrder` there, so the terminal detects it by TURN COUNT
   and a `finished`-but-not-`lost` board at turn 250 is a different case entirely;
 * a **tie** is `finished` with neither `won` nor `lost`, *before* the cap — it shares the decisive
-  loss's branch, which is exactly the conflation `--victory-value` had to be threaded through;
+  loss's branch, which is exactly the conflation `victory_value` had to be threaded through;
 * a **decisive loss** has to be well before the cap or it reads as the timeout;
 * and every one of them is folded after a prior non-terminal turn, the way a real episode reaches it.
 

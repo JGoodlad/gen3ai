@@ -2,7 +2,7 @@
 
 The eval callbacks write the cycle's PLAN exactly as today (``ShardedEvalPool.write_plan``: the bot
 roster, the pool sentinels, the fixed / stable opponents, split into shard UNITS) and the manifest;
-under ``--env-core rust`` they hand the plan to :meth:`RustEvalCore.run_cycle` instead of spawning
+on the Rust env core they hand the plan to :meth:`RustEvalCore.run_cycle` instead of spawning
 ``main.eval_worker`` processes. It publishes one ``ShardResult`` per unit into the cycle's run dir —
 the SAME raw additive record a Python worker publishes — so the collect, the aggregation, every
 metric, the manifest's trace selection and the ELO inputs are the unchanged Python code.

@@ -713,7 +713,7 @@ matches its control at the SAME dose is its secondary read.
   `src/agents/training/CLAUDE.md` "The recipe surface"):
   - a `recipe` block in `designs/production_config.json` with two parts. `recipe.fresh` is N0's
     MEASURED fresh recipe: every training knob `models/ai_v14_01_base` launched with, including
-    the critic, its reward values, the doses and the KL controller's constants. `recipe.fork` is
+    the doses and the KL controller's constants. `recipe.fork` is
     what a generalist fork changes: E5. A `recipe.fresh` key that is also a recorded mirror field
     must equal it.
   - `--arch production` writes every `recipe.fresh` knob the argv did not TYPE, as if typed. A
@@ -724,11 +724,11 @@ matches its control at the SAME dose is its secondary read.
     (INFO); `--allow-nonproduction-recipe` consents. A fork is compared with `recipe.fork`, as INFO.
   - **Restarts.** A launcher restart strips `--arch`. On a same-run restart of an
     `--arch production` run, each untyped knob comes from exactly one place, announced:
-    - `--lr`, `--batch-size`, `--n-steps` and `--gamma` are INERT on a resume (SB3 restores
-      them) and are never re-applied;
+    - `--lr`, `--batch-size` and `--n-steps` are INERT on a resume (SB3 restores
+      them, and a checkpoint's own gamma) and are never re-applied;
     - a recorded tri-state field (critic, doses incl. `opp_intent_coef`, `policy_gae_lambda`) is inherited by the resume's
       own `_resolve`;
-    - a recorded value-checked field (the reward values, `vf_coef`) comes from the checkpoint's
+    - a recorded value-checked field (`vf_coef`) comes from the checkpoint's
       `model_config.json`;
     - a knob recorded nowhere else (`n_envs`, `n_epochs`, `ent_coef`, …) comes from the run's
       `metadata.json` `cli_args`.
@@ -774,12 +774,8 @@ lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; 
 | `clip_range` | 0.15 | `recipe.fresh` | N0 `--clip-range 0.15`, metadata `clip_range` |
 | `clip_range_vf` | none | `recipe.fresh` | N0 `--clip-range-vf none`, metadata `clip_range_vf` −1.0 (disabled). INERT under the win-prob critic (the only critic) |
 | `ent_coef` | 0.05 | `recipe.fresh` | N0 `--ent-coef 0.05`, metadata `ent_coef` |
-| `gamma` | 1.0 | `recipe.fresh` | N0 `cli_args.gamma`, metadata `gamma` (implied by the win-prob critic). PAIRED with the critic, declared once in `agents.model.critic_mode.critic_gamma`; `recipe_blocks` refuses a block whose gamma is not the win-prob critic's |
 | `policy_gae_lambda` | 0.8 | `recipe.fresh` | N0 metadata `gae_lambda` 0.8 (N0 predates the flag; the value was hardcoded) |
 | `self_play` | true | `recipe.fresh` | N0 `--self-play`, `cli_args.self_play` |
-| `terminal_indicator` | true | `recipe.fresh` | N0 `--terminal-indicator`, `model_config.json` |
-| `victory_value` | 1.0 | `recipe.fresh` | N0 `--victory-value 1.0`, `model_config.json` |
-| `draw_penalty` | 0.0 | `recipe.fresh` | N0 `--draw-penalty 0`, `model_config.json` |
 | `vf_coef` | 0.5 | `recipe.fresh` | N0 `--vf-coef 0.5`, `model_config.json` |
 | `opp_belief_aux_coef` | 0.05 | `recipe.fresh` | N0 `--opp-belief-aux-coef 0.05`, `model_config.json` |
 | `opp_intent_coef` | 0.05 | `recipe.fresh` | N0 `--opp-intent-coef 0.05`, `cli_args.opp_intent_coef` |
@@ -972,3 +968,4 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-10-02 | The BARE-ARGV default **(owner, deletion pass D2)** | A fresh argv without `--arch production` defaults to `--critic winprob` + `--terminal-indicator --victory-value 1.0 --draw-penalty 0` + `--env-core rust` (`gen3_bare_argv_winprob_v1`, config v130): the bare parser and the production surface agree on the critic, its terminal and the core, so the `--debug` smoke runs the Rust core. What an ABSENT record means did NOT move (`critic_mode.CRITIC_UNRECORDED` = shaped; `_REWARD_IMMUTABLE_FIELDS`), so no checkpoint loads differently and a flagless resume reads its recorded critic and terminal; no `ARCH_SIGNATURE` bump | Keep `python` / `shaped` as the bare default until the Python core is deleted (the 2026-10-01 rows' interim — a bare argv with nowhere to run once it goes); make the Rust core accept `shaped` (D1 deletes it instead) | `designs/ops/deletion_pass_manifest.md` §0 D2, §2.1; `main/critic_mode_config_test.py`, `main/reward_defaults_test.py`, `main/train/env_core_switch_test.py`; the `--debug --steps 10000` smoke on the Rust core (Training complete, K9(b) excluded share 1.6–4.5 % < 0.15) |
 | 2026-10-03 | `--env-core` is DELETED; `env_core` leaves `recipe.sizing` **(deletion pass P11b, batch (a); orchestrator, owner asleep)** | The Rust env core is the only core, so the flag had one legal value and the recipe a row that could not vary: `recipe.sizing` now holds only the SIZES (`n_envs`, `n_steps`, `rollout_target_samples`, `trainee_slots`, `t2_buckets`, `t2_lanes`, `verdict`); `recipe_blocks` refuses a stray `env_core` key by name; the restart route no longer restores a core from `cli_args`. What stays keyed on the RECORD: `metadata.json`'s `env_core` stamp, the CORE SWITCH announcement for a python-era winprob checkpoint, and the D4 refusal of a shaped-critic checkpoint (`rust_env_setup.refuse_python_era_checkpoint`). No `ARCH_SIGNATURE` / `MODEL_CONFIG_VERSION` change (it was never a recorded `ModelVersion` field) | Keeping a one-valued row "for the record" (a row the gate can only ever confirm); a hidden tolerated spelling of `--env-core rust` (a flag that stays is a flag the census counts) | `designs/ops/flag_census.md` (P11b (a)); `src/main/train/env_core_switch_test.py`, `census_deleted_flags_test.py` |
 | 2026-10-03 | `--critic` is DELETED; `critic` leaves `recipe.fresh` **(deletion pass P11b, batch (b))** | The win-prob critic is a constant of the trainer namespace (`src/main/train/parser/objective.py`, `parser.set_defaults`); `recipe.fresh` holds no `critic` row; the typed `--critic` is refused with its reason (`designs/deleted_flags.md`); a recorded shaped checkpoint is refused on a resume or fork (D4) and an absent record still means shaped (`CRITIC_UNRECORDED`); no `MODEL_CONFIG_VERSION` change | A hidden tolerated `--critic winprob` spelling (a flag that stays is a flag the census counts) | `designs/ops/flag_census.md` (P11b (b)); `src/main/train/retired_flags_test.py`, `src/main/critic_mode_config_test.py` |
+| 2026-10-03 | `--gamma`, `--victory-value`, `--draw-penalty` and `--terminal-indicator` are DELETED; their rows leave `recipe.fresh` (deletion pass P11b batch (c)) | They are constants of the namespace (`parser/objective.py`), `recipe.fresh` holds none of them, a typed one is refused with its reason, `check_reward_config` refuses a recorded non-production reward with no flag to re-pass, SB3 still restores a checkpoint's own gamma, no `MODEL_CONFIG_VERSION` change | Keeping gamma as a research lever (no registered experiment varies it; `winprob_critic_needs_unit_gamma` refused every value but 1.0); a tolerated production-value spelling | `designs/ops/flag_census.md` (P11b (c)), `src/main/train/objective_constants_test.py`, `src/main/reward_defaults_test.py` |

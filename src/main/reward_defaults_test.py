@@ -1,19 +1,21 @@
-"""The reward DEFAULTS, and the reward flag surface — which since 2026-09-26 is the TERMINAL's alone.
+"""The reward DEFAULTS, and the reward surface — which since 2026-09-26 is the TERMINAL alone, and since deletion
+pass P11b has NO flags (the terminal is a constant of the trainer's namespace, `parser/objective.py`).
 
 History (kept because the defaults are a contract): the 2026-08-18 owner decision pinned
 `--all-shaping-pbrs` ON and `--draw-penalty -35` after the silent v8→v9 composition drift. The shaped
 reward path was then DELETED (`gen3_shaped_reward_deletion_v1`, program_rust_core §4 M3 row); its 14
 flags are in `designs/deleted_flags.md`. What this file pins now:
 
-1. **The terminal defaults, by value** — since the bare-argv flip (deletion pass D2, 2026-10-02) the
-   PARSER's are the win-prob critic's (+1 indicator, draw 0), while an ABSENT recorded field still
-   means the historical signed terminal (±30, draw −35) — two questions, two answers.
+1. **The terminal constants, by value** — the namespace's are the win-prob critic's (+1 indicator, draw 0),
+   while an ABSENT recorded field still means the historical signed terminal (±30, draw −35) — two
+   questions, two answers.
 2. **The deleted flags are GONE from the parser** — a revert that brought one back would be a
    shaped reward reachable by flag again.
 3. **The three declarations agree** — `RewardConfig`, `ModelVersion`'s fields and
    `_REWARD_IMMUTABLE_FIELDS` decide what an ABSENT field means; a divergence is a silent drift. The
    parser differs from them on exactly the three winprob-terminal fields, and nowhere else.
-4. **The actionable resume error** — it names the flags to re-pass, and they parse back.
+4. **The resume refusal** — a recorded NON-production reward is refused with the values it recorded and the way
+   out (run it PINNED, or start fresh); there is no flag to re-pass.
 """
 
 import dataclasses
@@ -22,7 +24,6 @@ import pytest
 
 from agents.model.model_version import (
     DELETED_SHAPED_REWARD_FIELDS,
-    _REWARD_FIELD_FLAGS,
     _REWARD_IMMUTABLE_FIELDS,
     ModelVersion,
     ModelVersionError,
@@ -50,9 +51,13 @@ def test_the_terminal_defaults_are_pinned_by_value():
     assert (a.progress_decision_tense, a.progress_switch_freeze) == (False, False)
 
 
-def test_the_signed_terminal_is_still_reachable_by_typing_it():
-    a = _args(["--no-terminal-indicator", "--victory-value", "30", "--draw-penalty", "-35"])
-    assert (a.victory_value, a.draw_penalty, a.terminal_indicator) == (30.0, -35.0, False)
+@pytest.mark.parametrize("argv", [["--no-terminal-indicator"], ["--terminal-indicator"], ["--victory-value", "30"],
+                                  ["--draw-penalty", "-35"]])
+def test_the_signed_terminal_is_NOT_reachable_by_typing_it(argv, capsys):
+    """It was, until P11b: the winprob critic refused it, so the flags offered a value nothing could train."""
+    with pytest.raises(SystemExit):
+        _args(argv)
+    assert "was DELETED" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("flag", sorted(set(DELETED_SHAPED_REWARD_FIELDS.values())))
@@ -92,13 +97,15 @@ def test_model_version_default_reward_fields_match_reward_config():
         assert not hasattr(cfg, name) and name not in ModelVersion.__dataclass_fields__, name
 
 
-def test_every_immutable_reward_field_has_a_flag():
-    """The resume error is only actionable if every flag it can print is a flag that exists."""
-    assert set(_REWARD_IMMUTABLE_FIELDS) == set(_REWARD_FIELD_FLAGS)
+def test_no_immutable_reward_field_has_a_flag_any_more():
+    """The resume refusal is only honest if it does not point at a flag: every immutable reward field is a
+    namespace CONSTANT (P11b), none an option."""
     known = build_parser()._option_string_actions
-    for name, flag in _REWARD_FIELD_FLAGS.items():
-        assert flag in known, f"{flag} ({name}) is not a real flag"
-        assert known[flag].dest == name, f"{flag} does not set {name}"
+    for name in _REWARD_IMMUTABLE_FIELDS:
+        if name in ("progress_decision_tense", "progress_switch_freeze"):
+            continue                                    # the no-progress clock's two switches: still flags
+        assert "--" + name.replace("_", "-") not in known, f"{name} has a flag again"
+        assert hasattr(_args([]), name), f"{name} is not a constant of the namespace"
 
 
 def test_the_default_composition_is_one_terminal():
@@ -122,13 +129,13 @@ def test_a_production_run_resumed_under_the_defaults_is_a_hard_error():
     assert "start a fresh run" in msg
 
 
-def test_the_re_passed_flags_actually_parse_back_to_the_saved_values():
+def test_the_refusal_names_the_way_out_and_no_flag():
     saved = _saved_production()
     with pytest.raises(ModelVersionError) as exc:
         saved.check_reward_config(RewardConfig())
-    fix = str(exc.value).split("re-pass `")[1].split("`")[0]
-    assert "--terminal-indicator" in fix and "--victory-value 1.0" in fix
-    saved.check_reward_config(RewardConfig.from_args(_args(fix.split())))   # must not raise
+    msg = str(exc.value)
+    assert "PINNED" in msg and "re-pass" not in msg and "--terminal-indicator" not in msg
+    saved.check_reward_config(RewardConfig.from_args(_args([])))   # the production reward resumes: no raise
 
 
 def test_a_fresh_default_run_resumes_flaglessly():
@@ -142,12 +149,12 @@ def test_a_fresh_default_run_resumes_flaglessly():
 
 def test_a_SIGNED_terminal_run_resumed_flaglessly_is_REFUSED_by_name():
     """The other side of the flip: a run recorded on the signed terminal, resumed with no reward
-    flags, now meets the winprob defaults — and must FATAL naming the flags, never train on."""
+    flags, now meets the winprob constants — and must FATAL naming the fields, never train on."""
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
     v = ModelVersion.from_layout_and_policy_kwargs(
         layout, {"net_arch": [512, 512]}, reward_config=RewardConfig())
-    with pytest.raises(ModelVersionError, match="--no-terminal-indicator"):
+    with pytest.raises(ModelVersionError, match="terminal_indicator.*PINNED|PINNED"):
         v.check_reward_config(RewardConfig.from_args(_args([])))
 
 

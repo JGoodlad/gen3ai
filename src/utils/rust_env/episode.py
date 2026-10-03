@@ -21,7 +21,7 @@ from typing import Dict, Mapping, Union
 #: The ``terminal`` object's keys (``episode::Terminal::from_json``): every one required.
 TERMINAL_KEYS = ("victory_value", "terminal_indicator", "draw_penalty", "timeout_turn_cap")
 
-#: The PRODUCTION terminal: ``--terminal-indicator --victory-value 1.0`` (``draw_penalty`` 0, the
+#: The PRODUCTION terminal: the win indicator, victory 1.0 (``draw_penalty`` 0, the
 #: only value ``combination_checks`` admits under the indicator) and the reward's timeout cap
 #: ``reward_weights._TIMEOUT_TURN_CAP`` (== ``StallConfig().threshold`` == ``MAX_TURNS``).
 PRODUCTION_TERMINAL: Dict[str, Union[float, bool, int]] = {

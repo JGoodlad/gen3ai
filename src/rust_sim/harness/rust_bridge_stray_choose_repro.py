@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NO-TRAINING repro for the ``--use-bridge=rust`` worker death (~8 min, twice out of two).
+"""NO-TRAINING repro for the Rust bridge worker death (~8 min, twice out of two).
 
 Runs in ~5 seconds. No model, no PPO, no 25M-step run, no Showdown server, no
 ``SubprocVecEnv``: it drives one ``sim_bridge`` child over a raw pipe and speaks the

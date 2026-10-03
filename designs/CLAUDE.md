@@ -151,8 +151,7 @@ becomes when it stops being a barometer and becomes the value function.**
   while the policy samples it at a median **p = 0.002**.
 - [`design_winprob_only_critic.md`](ai_v12/design_winprob_only_critic.md) — **the design of record**,
   implemented as `gen3_winprob_critic_mode_v1`: a critic mode {shaped,winprob} (the `--critic` flag it introduced is DELETED, P11b batch (b); `critic` survives as the recorded field), where `winprob` makes
-  `V(s) = P(win|s)` with no approximation term (hence `--terminal-indicator` and `--victory-value
-  1.0` are requirements). `shaped` is still the DEFAULT — **the default flip, its `ARCH_SIGNATURE`
+  `V(s) = P(win|s)` with no approximation term (hence the win-indicator terminal and victory 1.0 are required; since P11b batch (c) they are constants of the namespace, their flags DELETED). `shaped` is still the DEFAULT — **the default flip, its `ARCH_SIGNATURE`
   bump and §5.3's deletion list are a LATER commit, after an arm has run.**
 - [`launch_runbook.md`](ai_v12/launch_runbook.md) — the three generation-scale arms **SPARSE /
   SELF-φ / FROZEN-φ**, identical but for where the potential comes from, ahead of them a paired 5M

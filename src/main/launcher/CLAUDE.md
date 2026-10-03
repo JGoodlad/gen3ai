@@ -177,8 +177,8 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   (`n_envs`, `n_epochs`, `ent_coef`, `self_play`, …) plus value-CHECKED recorded fields with concrete
   parser defaults (the reward values, `vf_coef`) that `_resolve` cannot inherit. For a run whose
   `original_command` carried `--arch production`, the CHILD resolves each untyped one on a same-run
-  restart (`main.train.recipe_surface.inherit_on_restart`): `--lr` / `--batch-size` / `--n-steps` /
-  `--gamma` untouched (INERT — SB3 restores them); recorded tri-state fields left to `_resolve` (the
+  restart (`main.train.recipe_surface.inherit_on_restart`): `--lr` / `--batch-size` / `--n-steps`
+  untouched (INERT — SB3 restores them); recorded tri-state fields left to `_resolve` (the
   mechanism above — `opp_intent_coef` included); value-checked fields from `model_config.json`; the rest
   from `metadata.json:cli_args` — each announced `[Recipe] … from <source>`, and a MISSING value
   REFUSED (`FATAL_CONFIG`, naming the flag). This file's restart argv is unchanged. Test:
@@ -370,7 +370,7 @@ What that established:
 - **A pin that predates the Rust env core flags (before `ac67fa6c`) is refused before anything exists.** The
   pinned parser check names `--rust-eval-envs` (and the other collector flags the argv types) as `NOT IN PINNED TREE`
   (`FATAL_CONFIG`). No flag here is FRESH-only, so none is stripped on a restart. (A recorded argv that
-  types a flag HEAD deleted — `--env-core`, `--use-bridge`, `--critic`, … — is the opposite case: the PINNED
+  types a flag HEAD deleted — `--env-core`, `--use-bridge`, `--critic`, `--gamma`, `--victory-value`, `--draw-penalty`, `--terminal-indicator`, … — is the opposite case: the PINNED
   parser knows it, so it is ADVISORY, and `checkargs` still builds the effective config from the rest.)
 - `metadata.json` and every sidecar record `env_core` (the core's stamp, T2, trigger) beside
   `git_hash` / `pin_history`. The `*_after_freeze` counters are ENFORCED after every update and eval

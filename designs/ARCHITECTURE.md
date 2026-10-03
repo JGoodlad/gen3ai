@@ -832,7 +832,7 @@ v121+ checkpoint recorded them OFF. A checkpoint that recorded one ON is refused
 (`model_version.retired_levers`). (On a shaped checkpoint — loadable, not trainable — the win-prob BCE
 was an auxiliary readout at a fixed weight of 1.0.)
 
-The critic and the return are the same quantity by construction: at `--victory-value 1.0` the
+The critic and the return are the same quantity by construction: with the win-indicator terminal (victory 1.0, a constant of the namespace) the
 undiscounted return from any state is exactly `1{win}`, so **`V(s) = P(win | s)` with no
 approximation term**. `value_net` is in no loss graph (its scalar term is dropped), the BCE joins
 the **`value`** noise-scale group rather than `aux`, and there is one critic and one coefficient
@@ -849,21 +849,16 @@ The critic mode is STRUCTURAL — it selects a different set of heads to carry t
 `[B,1]`), which is exactly why the recorded-and-compared field is the whole safety.
 
 ⚠️ **A critic bounded in [0,1] cannot represent "a timeout is worse than a loss."** The `−35 < −30`
-ordering `--draw-penalty` exists to set is not merely unused here, it is unrepresentable — so
-`--draw-penalty` is REFUSED at any non-zero value, and the anti-stall pressure comes from the obs
+ordering a draw penalty would set is not merely unused here, it is unrepresentable — so
+the draw value is fixed at 0.0 by construction (the `--draw-penalty` flag is DELETED), and the anti-stall pressure comes from the obs
 deadline clock (§1.4) — the reward has no anti-stall term at all since the shaped reward path was
 deleted (§6.3). **Stall rate and mean episode length
 are PRIMARY endpoints, not monitored ones.** The 250-turn cap, forfeits and ties are TERMINAL under
 this mode rather than SB3 truncations — as truncations at γ = 1 the bootstrapped `γ·V(s_last)` made
 every timeout's TD error identically zero, so the critic could not see them at all.
 
-Two flags are IMPLIED by the win-prob critic (the only critic; `resolve_critic_mode` still applies them when untyped) (`--win-prob-mode shaping`, `--gamma 1.0`) because
-their argparse default is the `None` sentinel, so "unset" is
-representable and an implication can never overwrite a typed value. The discount is PAIRED with the
-critic, declared once (`critic_mode.critic_gamma`: winprob 1.0, shaped 0.9999 — the latter only for
-loading): a typed `--gamma` other than 1.0 under winprob is REFUSED. Three are REQUIRED and named by
-their own refusal (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because theirs are concrete, so an implication could not be told apart from an
-overwrite. `resolve_critic_mode` runs BEFORE the resume-inheritance sweep, so the implied values land on the `None` sentinels before `_resolve` can inherit a recorded one (a fork of a `shaped` parent never gets that far: it is REFUSED, D4). Design of record:
+ONE flag is IMPLIED by the win-prob critic (the only critic; `resolve_critic_mode` applies it when untyped): `--win-prob-mode shaping`, because its argparse default is the `None` sentinel, so "unset" is
+representable and an implication can never overwrite a typed value. The discount (`WINPROB_GAMMA` = 1.0) and the win-indicator terminal (indicator, victory 1.0, draw 0.0) are not flags: `--gamma`, `--victory-value`, `--draw-penalty` and `--terminal-indicator` are DELETED (P11b batch (c)) and are CONSTANTS of every trainer namespace (`src/main/train/parser/objective.py`, `parser.set_defaults`); a typed one is refused with its reason (`designs/deleted_flags.md`), and a resume whose recorded reward is not the production one is REFUSED by `check_reward_config`. `resolve_critic_mode` runs BEFORE the resume-inheritance sweep, so the implied value lands on the `None` sentinel before `_resolve` can inherit a recorded one (a fork of a `shaped` parent never gets that far: it is REFUSED, D4). Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](ai_v12/design_winprob_only_critic.md).
 
 **`--win-prob-strata-weight` re-prices this BCE's opponent MIX** (`gen3_winprob_strata_weight_v1`,
@@ -1319,7 +1314,7 @@ values in `model_config.json` and in `metadata.json`'s `reward_composition` bloc
 **It is the ONLY reward the code has.** The hand-shaped reward path — eight PBRS potentials, ~25
 BIAS terms, the bias-additivity refund, the no-progress tax — and its 14 recorded fields were
 DELETED (`gen3_shaped_reward_deletion_v1`, config v122, 2026-09-26; the fields are listed in
-`designs/deleted_flags.md`). Without `--terminal-indicator` the terminal is SIGNED: `±victory_value`,
+`designs/deleted_flags.md`). Without the indicator terminal (an old checkpoint that recorded none) the terminal is SIGNED: `±victory_value`,
 a pre-cap tie scoring as a loss, and `draw_penalty` (default −35) at the 250-turn cap.
 `reward_golden_test` was recorded at the last pre-deletion commit (`029cee83`) and passes unchanged
 after it — the measured proof that production's reward, and the `win_margin` training-only obs key
@@ -1358,7 +1353,7 @@ split was deleted with HEAD's 2.5.1 support. **UNVERIFIED:** the root-cause op. 
 are **not** inherited on resume — with the compile flags defaulting ON it is the OPT-OUT that must
 be re-passed each launch, not the flag.
 
-⚠️ **`--gamma` is not in `model_config.json` either.** The win-prob critic (the only critic) implies γ 1.0 and the
+⚠️ **`gamma` is not in `model_config.json` either.** It is a constant of the namespace (γ 1.0; no flag) and the
 resume path restores the checkpoint's own γ, so the value in force is visible in `metadata.json`'s
 `cli_args` and in the startup lines — not in the mirror, and therefore not in §6's table.
 

@@ -8,7 +8,7 @@ impl-selectable through this module:
    ``local_battle_runner.py`` for eval) spawn a child speaking the ``local_sim_bridge.js``
    protocol. ``node`` → ``node local_sim_bridge.js``; ``rust`` → the std-only Rust binary
    ``src/rust_sim/src/bin/sim_bridge.rs``, byte-for-byte protocol-compatible (validated by
-   ``harness/gen_sim_bridge_diff.js``). Selected by ``--use-bridge={node,rust}``.
+   ``harness/gen_sim_bridge_diff.js``). Selected by the training transport.
 2. **The offline search / replay drivers.** ``search_session.py`` (the warm clone-and-branch
    search server) and ``reconstruction.py`` (``replay_battle`` / ``reroll_turn`` /
    ``reroll_many``) drive a child over a recorded ``ReconstructionRecord``. On **node** those
@@ -248,7 +248,7 @@ def resolve_sim_bridge_bin() -> str:
     ``SimBridgeBinaryError`` with a clear fix instruction on any failure (missing cargo,
     missing crate, build error, missing artifact). NEVER falls back to Node.
     """
-    return _resolve_rust_bin("sim_bridge", _ENV_OVERRIDE, "--use-bridge=rust")
+    return _resolve_rust_bin("sim_bridge", _ENV_OVERRIDE, "the Rust bridge")
 
 
 def resolve_search_driver_bin() -> str:

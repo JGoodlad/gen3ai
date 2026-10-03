@@ -14,7 +14,6 @@ order, and `build_parser()` calls them in the original order; `--help` is byte-i
     base.py              `optional_float` / `str2bool` / `BoolFlag` — the shared argparse pieces
     operational.py       `# --- Operational Flags ---`
     hyperparameters.py   `# --- Hyperparameter Flags (Optimized for GPU) ---`
-    reward.py            `# --- Reward config ---` (resume-immutable, value-checked)
     objective.py         the one-valued flags' CONSTANTS (deletion pass P11b): no option, set via `set_defaults`
     clean_world.py       `# --- gen3_clean_world_config_v1 ---` + the PPO clip / belief /
                          damage-op / compile / entity-seat flags declared under it
@@ -40,7 +39,6 @@ from main.train.parser.eval_subprocess import add_eval_subprocess_flags
 from main.train.parser.hyperparameters import add_hyperparameter_flags
 from main.train.parser.objective import set_objective_constants
 from main.train.parser.operational import add_operational_flags
-from main.train.parser.reward import add_reward_flags
 
 __all__ = ["optional_float", "str2bool", "BoolFlag", "build_parser",
            "_BOOL_TRUE", "_BOOL_FALSE"]
@@ -74,7 +72,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     add_operational_flags(parser)
     add_hyperparameter_flags(parser)
-    add_reward_flags(parser)
     add_clean_world_flags(parser)
     add_capacity_flags(parser)
     add_distillation_flags(parser)

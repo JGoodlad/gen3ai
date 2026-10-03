@@ -11,7 +11,7 @@ the census calls "active" ever emits anything at all. A term can be structurally
 the startup banner, and identically zero for a whole generation -- and until this group existed,
 nothing said so.
 
-**THE UNIT IS RAW REWARD**, the same units `--victory-value` is in, before the discount.
+**THE UNIT IS RAW REWARD**, the same units `victory_value` is in, before the discount.
 That is deliberate and it is the only frame in which the shares are meaningful. Read `reward/*`
 beside `train/return_mean` when you want the learned frame.
 

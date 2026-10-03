@@ -255,7 +255,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         # team pairing is played from BOTH sides on ONE battle seed, the per-opponent count is EVEN, and the
         # PAIR is the statistical unit of every interval recorded. A REGIME — recorded per run and per row.
         self._mirrored = bool(eval_mirrored_pairs)
-        # M5 Lane H: under --env-core rust the cycle plays IN PROCESS on the declared eval core
+        # M5 Lane H: on the Rust env core the cycle plays IN PROCESS on the declared eval core
         # (`rust_eval.launch`), never on Python workers.
         self._env_core = env_core
         # Per-opponent games per eval cycle (--eval-games; None → the module default EVAL_GAMES).

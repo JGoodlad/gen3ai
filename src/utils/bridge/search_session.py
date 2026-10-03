@@ -10,7 +10,7 @@ node by cloning its mid-battle state (``State.serializeBattle`` / ``deserializeB
 ~1.7 ms/clone, constant in depth) instead of re-replaying the whole prefix per node.
 
 **Transport selection.** ``impl`` picks WHICH driver child is spawned, exactly the way
-``--use-bridge={node,rust}`` picks the live battle transport; the seam is
+the training transport picks the live battle transport; the seam is
 ``sim_bridge_bin.search_driver_spawn_argv``. ``"node"`` (the default) is the historical
 behavior byte-for-byte. ``"rust"`` execs the std-only ``src/rust_sim`` ``search_driver``
 binary, which speaks the identical request→one-line-response protocol — so nothing below

@@ -110,7 +110,7 @@ def better_line_decision(
     node, ``opp_model`` = the reloaded opponent for interior plies (None → sim-default, flagged).
 
     ``impl`` (``"node"`` default | ``"rust"``) selects the offline replay/search driver, the same
-    way ``--use-bridge={node,rust}`` selects the live transport. It is IGNORED when ``session`` is
+    way the training transport selects the live transport. It is IGNORED when ``session`` is
     injected — that warm ``SearchSession`` already carries its own impl, and silently re-spawning
     it on a different one would defeat the reuse the injection exists for."""
     invs = summary.get("invocations", [])

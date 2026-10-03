@@ -28,23 +28,22 @@ every term, gate, measurement and hazard — is this file at the last pre-deleti
 > | `reward_manager.py` | `Gen3RewardManager`: the terminal, the `reward/` export, the episode counters, the `win_margin` by-product; re-exports the three below |
 > | `reward_config.py` | `RewardClass` (TERMINAL only), `RewardConfig`, `RewardBreakdown` (one field, `win_loss`) |
 > | `reward_composition.py` | the census + its one-line announcer + `inert_reward_flags` + `reward_config_digest` |
-> | `reward_weights.py` | `VICTORY_VALUE` (30.0, what an UNRECORDED `victory_value` means; the parser default is 1.0 since the bare-argv flip), `_TIMEOUT_TURN_CAP` (== the env's forfeit turn), `PBRS_GAMMA` (0.9999, the shaped-critic default discount) |
+> | `reward_weights.py` | `VICTORY_VALUE` (30.0, what an UNRECORDED `victory_value` means; a constant of the namespace, 1.0, since the flags were deleted), `_TIMEOUT_TURN_CAP` (== the env's forfeit turn), `PBRS_GAMMA` (0.9999, the shaped-critic default discount) |
 > | `material_margin.py` | the normalised material margin — the `win_margin` training-only OBS key, **not a reward term** |
 
-**The terminal.** `RewardConfig` carries its three knobs, all resume-immutable (recorded in
+**The terminal.** `RewardConfig` carries its three knobs (constants of every trainer namespace now — `--terminal-indicator`, `--victory-value`, `--draw-penalty` are DELETED, P11b batch (c); a typed one is refused with its reason), all resume-immutable (recorded in
 `model_config.json`, value-checked by `ModelVersion.check_reward_config`):
 
-| outcome | `--terminal-indicator` (PRODUCTION, and the parser default since the bare-argv flip, 2026-10-02) | signed terminal (`--no-terminal-indicator`, the no-longer-trainable shaped critic; what an UNRECORDED field means) |
+| outcome | indicator terminal (PRODUCTION; the only value a trainer namespace holds) | signed terminal (the no-longer-trainable shaped critic; what an UNRECORDED field means) |
 |---|---|---|
 | win | `+victory_value` | `+victory_value` |
 | decisive loss | `0.0` | `−victory_value` |
 | pre-cap tie | `0.0` | `−victory_value` (shares the loss branch) |
-| 250-turn TIMEOUT (a forfeit-loss detected by TURN COUNT, `turn >= _TIMEOUT_TURN_CAP`) | `0.0` | `--draw-penalty` (−35 historically; the parser default is 0 since the flip, so type it) |
+| 250-turn TIMEOUT (a forfeit-loss detected by TURN COUNT, `turn >= _TIMEOUT_TURN_CAP`) | `0.0` | the draw penalty (−35 historically; 0.0 in production) |
 
-Production — and, since the deletion pass's bare-argv flip (D2, 2026-10-02), the bare argv — is `--terminal-indicator --victory-value 1.0 --draw-penalty 0`, so the
-undiscounted return is exactly `1{win}` and V(s) == P(win|s). The win-prob critic (the only critic) REQUIRES the other
-three (`combination_checks`); under the indicator `--draw-penalty` is INERT (named in
-`inert_reward_flags`) and any non-zero value is refused. Every non-terminal turn pays exactly 0.0.
+Production — and every trainer namespace — is the win-indicator terminal (indicator, victory 1.0, draw 0.0), so the
+undiscounted return is exactly `1{win}` and V(s) == P(win|s). The values are constants, not options; under the indicator the draw penalty is INERT (named in
+`inert_reward_flags`), and a resume whose recorded reward is not the production one is REFUSED by `check_reward_config` (run it pinned, or start fresh). Every non-terminal turn pays exactly 0.0.
 
 **The parity proof (2026-09-26).** `reward_golden_test.py` (`gen3_reward_golden_v2`, routine tier,
 `sim`) hashes every decision's reward, `win_loss` and `win_margin` over 30 bridge battles under six

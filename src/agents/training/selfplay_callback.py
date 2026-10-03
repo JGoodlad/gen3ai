@@ -204,7 +204,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         # bot AND pool eval play every team pairing from both sides on one battle seed; even counts; the
         # PAIR is the unit of every interval. Training games are untouched. A REGIME (recorded per run/row).
         self._mirrored = bool(eval_mirrored_pairs)
-        # M5 Lane H: under --env-core rust the cycle plays IN PROCESS on the declared eval core.
+        # M5 Lane H: on the Rust env core the cycle plays IN PROCESS on the declared eval core.
         self._env_core = env_core
         # Per-opponent games per eval cycle (--eval-games; None → EVAL_GAMES). Sentinel cells at
         # n=100 carry ±0.098 95% CIs; 200 tightens to ±0.069 (~2× eval cost, work-stolen).

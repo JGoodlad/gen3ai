@@ -654,7 +654,7 @@ def check_terminal(terminal: Any) -> None:
     makes that exact. Any other terminal REFUSES at startup."""
     if not bool(terminal["terminal_indicator"]):
         raise LeverConfigError("\n[SUPPLY] FATAL: the fork arm rebuilds a branch's reward from its outcome bit, "
-                               "which needs the indicator terminal (the win-prob critic's `--terminal-indicator`)")
+                               "which needs the indicator terminal (the win-prob critic's win-indicator terminal)")
 
 
 def check_obs_keys(obs_keys: Sequence[str]) -> None:

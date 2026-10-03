@@ -294,12 +294,10 @@ def test_the_default_terminal_is_unchanged():
     assert terminal_reward(cfg, "timeout") == pytest.approx(-35.0)
 
 
-def test_the_indicator_field_is_resume_immutable_and_names_a_real_flag():
-    from agents.model.model_version.constants import _REWARD_FIELD_FLAGS, _REWARD_IMMUTABLE_FIELDS
-    for name, flag in (("terminal_indicator", "--terminal-indicator"),):
-        assert name in _REWARD_IMMUTABLE_FIELDS, f"{name} is not value-checked on resume"
-        assert _REWARD_IMMUTABLE_FIELDS[name] is False, "the default must be today's behaviour"
-        assert _REWARD_FIELD_FLAGS[name] == flag, "the resume message must name a real flag"
+def test_the_indicator_field_is_resume_immutable():
+    from agents.model.model_version.constants import _REWARD_IMMUTABLE_FIELDS
+    assert "terminal_indicator" in _REWARD_IMMUTABLE_FIELDS, "terminal_indicator is not value-checked on resume"
+    assert _REWARD_IMMUTABLE_FIELDS["terminal_indicator"] is False, "the default must be today's behaviour"
 
 
 def test_the_reward_defaults_track_the_dataclass():
@@ -312,15 +310,15 @@ def test_the_reward_defaults_track_the_dataclass():
         assert getattr(rc, name) == _REWARD_IMMUTABLE_FIELDS[name]
 
 
-def test_the_gamma_default_is_the_pbrs_constant_not_a_retyped_number():
-    """A second copy of 0.9999 is a second place for the PBRS invariance premise to break. The
-    default is the critic's declared discount (`critic_mode.critic_gamma`), which READS PBRS_GAMMA."""
+def test_the_winprob_discount_is_the_identity_and_the_shaped_one_is_never_retyped():
+    """The win-prob critic's discount is 1.0 (V == P(win) exactly) and is the `gamma` constant of every
+    namespace (P11b); the shaped-era 0.9999 lives only in `reward_weights.PBRS_GAMMA` (RewardConfig's
+    historical default), never as a second copy of the number."""
     import agents.model.critic_mode as cm
-    import main.train.config as cfg
     from agents.training.reward_weights import PBRS_GAMMA
-    assert '_resolve("gamma", _critic_gamma(args.critic))' in open(cfg.__file__).read()
-    assert "return float(PBRS_GAMMA)" in open(cm.__file__).read()      # read, never retyped
-    assert cm.critic_gamma(cm.CRITIC_SHAPED) == PBRS_GAMMA == 0.9999
+    from agents.training.reward_manager import RewardConfig
+    assert cm.WINPROB_GAMMA == 1.0 and not hasattr(cm, "critic_gamma")
+    assert PBRS_GAMMA == 0.9999 == RewardConfig().gamma
 
 
 # --------------------------------------------------------------------------------------------

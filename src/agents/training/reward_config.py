@@ -4,7 +4,7 @@
 ~25 BIAS terms, the bias-additivity refund, the no-progress tax and the 14 flags that configured
 them — was DELETED on 2026-09-26 (program_rust_core §4 M3 row; the flags are in
 `designs/deleted_flags.md`). Production had trained on the terminal alone since the win-prob era
-(the win-prob critic: `--terminal-indicator --victory-value 1.0`), and the Rust core's reward is the
+(the win-prob critic's terminal: indicator ON, victory 1.0 — namespace constants since deletion pass P11b), and the Rust core's reward is the
 win indicator.
 
 * `RewardClass`     — the reward classes. ONE survives: TERMINAL.
@@ -68,18 +68,20 @@ class RewardConfig:
     terminal_indicator: bool = False
 
     # --- single source of truth: build once, flow everywhere (training + eval + version record) ---
-    # Adding a reward flag = add the field above + a matching `--field-name` CLI arg. `from_args`
-    # picks it up (no hand-threading), `from_dict` reconstructs it for eval/resume, and the eval
+    # Adding a reward field = add the field above + a matching namespace attribute (a CLI arg, or an
+    # objective constant — `parser/objective.py`). `from_args` picks it up (no hand-threading), `from_dict` reconstructs it for eval/resume, and the eval
     # reward then automatically matches what the policy was trained with. This DRY-ness exists because
     # a hand-threaded field was once silently MISSED on the eval path (eval measured the wrong reward).
     @classmethod
     def from_args(cls, args) -> "RewardConfig":
-        """THE construction site from parsed CLI args. Every field whose name matches a CLI dest is
-        pulled from ``args``; ``gamma`` is the fixed PPO discount (0.9999, asserted == model.gamma)."""
+        """THE construction site from the parsed namespace. Every field whose name matches a namespace attribute
+        is pulled from ``args`` — the terminal's three values and ``gamma`` are CONSTANTS of the trainer's
+        namespace (deletion pass P11b: `main.train.parser.objective`), so a launch always gets the win-prob
+        reward; an attribute a hand-built namespace lacks falls back to the dataclass default, which is the
+        HISTORICAL signed terminal (30 / -35 / 0.9999) — the reason those constants are always on the namespace."""
         vals = {f.name: getattr(args, f.name)
                 for f in fields(cls) if f.name != "gamma" and hasattr(args, f.name)}
-        # gen3_winprob_critic_mode_v1: `--gamma` is a flag. An UNSET --gamma resolves to the
-        # historical 0.9999 in `main.train.config`, so a flagless run reads exactly as it always did.
+        # The discount: the namespace's constant (1.0); a namespace without one reads the historical 0.9999.
         vals["gamma"] = float(getattr(args, "gamma", None) or PBRS_GAMMA)
         return cls(**vals)
 

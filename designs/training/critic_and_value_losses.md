@@ -9,7 +9,7 @@ training package). Each section below is unchanged, including its dated measurem
 
 ---
 
-## THE VALUE LOSS has a MODE — `--critic winprob` (`gen3_winprob_critic_mode_v1`)
+## THE VALUE LOSS has a MODE — the win-prob critic (`gen3_winprob_critic_mode_v1`; the `--critic` flag is deleted)
 
 **`winprob` is the ONLY trainable critic and the default (the bare-argv flip, deletion pass D2); `shaped` is the historical critic — a typed `--critic shaped` is refused at parse time (U3), an old shaped checkpoint still LOADS (opponent, meters, prober) and a resume or fork of one is refused `FATAL_CONFIG` (D4: run it pinned).** PopArt, the distributional value head, `value_from_dist`, the value-tail weight and
 the aux-BCE coefficient were DELETED with the shaped critic's levers (deletion pass L1, config v131 —
@@ -50,12 +50,10 @@ rather than the loss-enriched eval quota, so it needs no selection reweighting a
 **`{}`, never zeros**: a calibration of nothing and a perfect calibration must not render the same.
 
 **What `winprob` does to the REWARD, and the one thing it gives up.** The stream becomes the
-TERMINAL **win indicator** (`--terminal-indicator` + `--victory-value 1.0` + `--draw-penalty 0`,
-all three REQUIRED and each named by its own
-`combination_checks` refusal), so the undiscounted return is exactly `1{win}` and, at `--gamma 1.0`,
+TERMINAL **win indicator** (indicator, victory 1.0, draw 0.0 — constants of the namespace; the flags `--terminal-indicator`, `--victory-value`, `--draw-penalty` are DELETED, P11b batch (c)), so the undiscounted return is exactly `1{win}` and, at gamma 1.0 (a constant too),
 `V(s) = P(win | s)` with no approximation term. The cost is stated rather than buried: **a critic
-bounded in [0,1] cannot represent "a timeout is worse than a loss."** `--draw-penalty`'s
-`−35 < −30` ordering is unrepresentable there, so the anti-stall pressure is the obs deadline clock
+bounded in [0,1] cannot represent "a timeout is worse than a loss."** The shaped
+`−35 < −30` draw-penalty ordering is unrepresentable there, so the anti-stall pressure is the obs deadline clock
 (the reward has no anti-stall term since the shaped reward path was deleted, 2026-09-26). **Stall rate and mean episode length
 are PRIMARY, kill-condition-bearing endpoints on a `winprob` arm.**
 
@@ -76,14 +74,11 @@ on the merits the draw rate is an OUTCOME statistic whose literal siblings — `
 
 ⚠️ **The label and the objective DISAGREE about draws under the shaped terminal, and that is a real
 property of that composition rather than a defect here.** The label scores a timeout as a not-win
-(`y = 0`, the same as a loss) while the reward pays `--draw-penalty` (−35, i.e. WORSE than the −30
-loss). Under `--terminal-indicator` they agree: a timeout pays 0.0, exactly like a loss.
+(`y = 0`, the same as a loss) while the reward pays the draw penalty (−35, i.e. WORSE than the −30
+loss). Under the indicator terminal they agree: a timeout pays 0.0, exactly like a loss.
 
-**`--gamma` is now a flag** (design gap B6; it was hardcoded at `model_build.py`'s
-`InstrumentedMaskablePPO(...)` call). Its `shaped` default is `reward_weights.PBRS_GAMMA` itself
-rather than a retyped `0.9999` (the `PBRS_GAMMA == model.gamma` assert went with the hand
-potentials when the shaped reward path was deleted, 2026-09-26). It is **INERT ON A RESUME**
-like `--lr`: SB3 restores the checkpoint's own γ, the resume path SAYS so, and it re-points
+**`gamma` is NOT a flag** (`--gamma` existed from design gap B6, when it was hardcoded at `model_build.py`'s
+`InstrumentedMaskablePPO(...)` call; it was DELETED in P11b batch (c)). The discount is `WINPROB_GAMMA` = 1.0, a constant of every trainer namespace. SB3 restores a checkpoint's own γ on a resume, like `--lr`, the resume path SAYS so, and it re-points
 `reward_config.gamma` at the value actually in force so the two cannot silently disagree.
 
 ### 🚨 THE 250-TURN CAP IS A TERMINAL, NOT A TRUNCATION — and it was the other way round (B6)
@@ -114,7 +109,7 @@ exactly `V`.
 
 **`shaped` is UNCHANGED and byte-identical, and what it does is worth stating rather than leaving
 implicit:** a cap forfeit and a tie both bootstrap `0.9999·V(s_last)` on top of a terminal reward
-that already paid `--draw-penalty`. Two wrongs that partly cancel — the shaped terminal
+that already paid the draw penalty. Two wrongs that partly cancel — the shaped terminal
 double-counts the ending while the bootstrap removes it — and re-deriving that composition is a
 `shaped`-era question this change does not reopen.
 

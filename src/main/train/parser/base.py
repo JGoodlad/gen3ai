@@ -94,6 +94,12 @@ def deleted_flag_reasons(flags) -> list:
         if m.group(1) not in rows:
             cite = re.sub(r"\s*\(.*$", "", m.group(2)).strip(" ,;")
             rows[m.group(1)] = f"{cite}: {head(m.group(3))}"
+    # a TRAINER flag whose spelling another tool's parser still has (section 1c: the freshness gate would
+    # read a backticked first cell as "gone everywhere"): `| trainer --flag | cite | note |`
+    for m in re.finditer(r"^\| trainer (--[a-z0-9][a-z0-9-]*) \| (.*?) \| (.*) \|$", text, flags=re.M):
+        if m.group(1) not in rows:
+            cite = re.sub(r"\s*\(.*$", "", m.group(2)).strip(" ,;")
+            rows[m.group(1)] = f"{cite}: {head(m.group(3))}"
     return [f"  {f} was DELETED — {rows[f]}  [designs/deleted_flags.md]" for f in dict.fromkeys(flags) if f in rows]
 
 

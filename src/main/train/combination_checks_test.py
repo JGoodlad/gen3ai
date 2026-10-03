@@ -143,7 +143,6 @@ def test_no_cross_flag_parser_error_remains_in_config():
 OFF = ["--unified-moves", "off"]
 
 ARGVS: dict[str, list[str]] = {
-    "winprob_critic_needs_unit_gamma": ["--gamma", "0.99"],
     "arch_umbrella_is_fresh_only": ["--arch", "production", "--model", "models/p/final_model.zip"],
     "adaptive_batch_target_positive": ["--adaptive-batch", "total", "--adaptive-batch-target", "0"],
     "adaptive_batch_band_above_one": ["--adaptive-batch", "total", "--adaptive-batch-band", "1.0"],
@@ -185,12 +184,6 @@ ARGVS: dict[str, list[str]] = {
     "fork_refuses_strata_weight":
         ["--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"],
     "rnd_variants_need_the_base_rnd_head": ["--ridealong-rnd-variants", "all"],
-    "winprob_critic_refuses_draw_penalty": ["--terminal-indicator", "--victory-value", "1.0",
-                                            "--draw-penalty", "-1.0"],
-    "winprob_critic_needs_the_indicator_terminal": ["--no-terminal-indicator", "--victory-value", "1.0",
-                                                    "--draw-penalty", "0"],
-    "winprob_critic_needs_unit_victory_value": ["--terminal-indicator", "--victory-value", "7.5",
-                                                "--draw-penalty", "0"],
     "move_belief_hidden_needs_species_belief": ["--move-belief-mode", "both",
                                                 "--opp-belief-aux-coef", "0"],
     "damage_op_needs_revealed_move_belief": [*OFF, "--damage-op", "--move-belief-mode", "off",

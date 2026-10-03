@@ -303,7 +303,7 @@ class ProgressClock:
         # incentive flipped with nobody re-deriving the term. Under `--progress-switch-freeze` the
         # window FREEZES (no increment, no charge) — the composition-corrected reading of the same
         # intent. The anti-stall job survives: a pivot-loop still pays on every MOVE turn between
-        # the pivots, and --draw-penalty + the 250-turn forfeit remain the hard backstop. The honest
+        # the pivots, and the draw reward + the 250-turn forfeit remain the hard backstop. The honest
         # cost is that a pure A↔B switch-loop becomes free; stall rate is the canary.
         # (Placed AFTER the classification, so a switch that DOES reset the clock — clauses ii/iv/v,
         # 27% of them empirically — still resets rather than merely freezing.)

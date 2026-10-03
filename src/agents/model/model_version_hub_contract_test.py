@@ -44,8 +44,10 @@ _DIR = pathlib.Path(hub.__file__).parent
 _PRE_SPLIT = (
     "ARCH_SIGNATURE", "MIGRATION_FLOOR", "MODEL_CONFIG_VERSION", "ModelVersion",
     "ModelVersionError", "SIGNATURE_FIRST_VERSION", "_BELIEF_GRAD_MODE_EFFECT",
-    "_REWARD_FIELD_FLAGS", "_REWARD_IMMUTABLE_FIELDS", "_migrate_config", "_reward_flag_repr",
+    "_REWARD_IMMUTABLE_FIELDS", "_migrate_config",
 )
+# (`_REWARD_FIELD_FLAGS` and `_reward_flag_repr` were defined then and DELETED with the reward flags, P11b —
+# no reward field has a flag to re-pass any more.)
 
 # The mixins `ModelVersion` is assembled from, innermost last. Dropping one is silent.
 _BASES = ("ModelVersionConstruction", "ModelVersionCompatibility", "ModelVersionResumeChecks",

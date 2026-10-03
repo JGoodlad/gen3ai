@@ -366,8 +366,8 @@ from typing import Any, Dict
 #   boundary, read back by `_resolve`. A pre-v129 config migrates to False. No ARCH_SIGNATURE bump, no
 #   MIGRATION_FLOOR change.
 # v130 (gen3_bare_argv_winprob_v1, deletion pass D2, owner 2026-10-02): the BARE-ARGV DEFAULT FLIP — a
-#   fresh argv without `--arch production` now defaults to the win-prob critic, `--terminal-indicator`,
-#   `--victory-value 1.0`, `--draw-penalty 0.0` and `--env-core rust`. A PROVENANCE boundary only: no
+#   fresh argv without `--arch production` now defaults to the win-prob critic, the win-indicator terminal
+#   (indicator ON, victory 1.0, draw 0.0) and the Rust core (all constants since P11b). A PROVENANCE boundary only: no
 #   field is added, every one of those is recorded explicitly, and an ABSENT record still means the
 #   historical value (`critic_mode.CRITIC_UNRECORDED`, `_REWARD_IMMUTABLE_FIELDS`), so no checkpoint
 #   loads differently. No ARCH_SIGNATURE bump (designs/model/versioning.md says why), no
@@ -456,26 +456,3 @@ _REWARD_IMMUTABLE_FIELDS: Dict[str, Any] = {
     # (The 14 SHAPED-reward fields left this table at v122, gen3_shaped_reward_deletion_v1 — see
     # `model_version.shaped_reward.DELETED_SHAPED_REWARD_FIELDS`.)
 }
-
-# field -> the CLI flag that sets it. Bools use the BoolFlag `--no-` negation (the documented
-# opt-out spelling); floats take their value positionally.
-_REWARD_FIELD_FLAGS: Dict[str, str] = {
-    "draw_penalty": "--draw-penalty",
-    "victory_value": "--victory-value",
-    "progress_decision_tense": "--progress-decision-tense",
-    "progress_switch_freeze": "--progress-switch-freeze",
-    "terminal_indicator": "--terminal-indicator",
-}
-
-
-def _reward_flag_repr(name: str, value: Any) -> str:
-    """The exact CLI text that would set reward field `name` to `value` — what a resume must re-pass.
-
-    Bools render as the bare flag or its `--no-` negation rather than `--flag false`: both parse
-    (BoolFlag takes a value too), but the negation is the spelling the help text and the docs use,
-    and an error message that teaches a second spelling costs more than it saves.
-    """
-    flag = _REWARD_FIELD_FLAGS[name]
-    if isinstance(value, bool):
-        return flag if value else f"--no-{flag[2:]}"
-    return f"{flag} {value!r}"

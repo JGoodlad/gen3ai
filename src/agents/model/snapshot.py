@@ -187,7 +187,7 @@ def save_model_snapshot(
     # 🚨 `inert_reward_flags` (gen3_frozen_phi_actor_only_v1) names the reward flags this config
     # makes unreachable — because a recorded value is not a running value and nothing said so. Since
     # the shaped-reward deletion (v122) the one remaining case is `draw_penalty` under
-    # `--terminal-indicator`. WRITTEN BESIDE THE VALUES, NEVER IN PLACE OF THEM: `check_reward_config`
+    # `terminal_indicator`. WRITTEN BESIDE THE VALUES, NEVER IN PLACE OF THEM: `check_reward_config`
     # compares each RECORDED value against the resuming argv's.
     #
     # It is NOT a `ModelVersion` field: it is a pure function of fields already in the file, so a

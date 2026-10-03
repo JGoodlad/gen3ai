@@ -887,7 +887,7 @@ export PYTHONPATH=$PYTHONPATH:src
 python3 src/agents/training/obs_build_benchmark.py [--turn 25] [--reps 400] [--top 22] [--battles 200] [--seed 0]
 # WHERE a whole trainer turn's CPU goes (parse + obs + reward + mask + map + tracker), GPU-excluded
 # (a standalone profiler that MIRRORS the per-decision stages the deleted Python `Gen3Env` ran — it imports no env)
-python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0] [--pin-battles] [--reward-argv '…'] [--bridge rust|node]   # rust is the default (training's)
+python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0] [--pin-battles] [--bridge rust|node]   # rust is the default (training's)
 # A/B one implementation of LiveView.from_battle against the previous one, on ONE frozen board
 python3 src/agents/training/live_view_build_benchmark.py [--reps 2500] [--rounds 6] [--turn 12] [--profile]
 # WHERE ONE SEARCHED DECISION's wall goes — the real SearchEngine (the Rust-core road) over BANKED
