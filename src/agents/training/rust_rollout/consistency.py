@@ -21,7 +21,8 @@ reuses the training graph rather than declaring a new signature) and compares th
   of every older version, bucketed by AGE (updates since the version played the row): the PPO ratio
   ``π/μ`` at the start of the update (mean, mean |r − 1|), the share outside the clip band, and sb3's
   approx-KL ``mean((r − 1) − log r)``. With the buffer-wide age histogram (``FillReport``) these are the
-  ``staleness/*`` tags the SIZING study and the version-pinning decision read.
+  ``staleness/*`` tags the SIZING study read (the version-pinning remedy they once informed was deleted,
+  deletion pass P11c).
 
 Row choice: every current-version row first (up to half the micro-batch), then the older ages in equal
 shares, deterministic (seeded by ``num_timesteps``). On today's Python path (no version record) every

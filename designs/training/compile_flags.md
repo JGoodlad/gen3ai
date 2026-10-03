@@ -967,7 +967,7 @@ U3; it judges the REAL update size since P10-E, F9):
 
 | refused | why |
 |---|---|
-| the UPDATE size (`--rollout-target-samples` under the complete-game trigger, `n_steps * n_envs` when it is 0 or under the window trigger — `rust_rollout.trigger.update_rows`, `main.train.compile_flags.update_rows_for`) not divisible by `batch_size` | the remainder micro-batch is a SECOND shape the one compiled R1 graph does not declare, replayed every epoch. The error names a concrete divisor to use instead rather than leaving you to do arithmetic |
+| the UPDATE size (`--rollout-target-samples` under the complete-game trigger, `n_steps * n_envs` when it is 0 — `rust_rollout.trigger.update_rows`, `main.train.compile_flags.update_rows_for`) not divisible by `batch_size` | the remainder micro-batch is a SECOND shape the one compiled R1 graph does not declare, replayed every epoch. The error names a concrete divisor to use instead rather than leaving you to do arithmetic |
 
 The check used to take `n_steps * n_envs`, which `--rollout-target-samples` overrides (the production
 recipe sets the target independently): a valid run — target divides, the product does not — had

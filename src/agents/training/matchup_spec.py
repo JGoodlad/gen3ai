@@ -98,17 +98,15 @@ class TeamSource:
 @dataclass(frozen=True)
 class PlayMode:
     """How a (frozen NN) opponent selects actions. Descriptive in P0 — the executors (RLPlayer
-    stochastic/temp, the anneal/ratchet callbacks) already exist; the spec records the intent so
-    the echo/provenance say what a metric was measured under. Bots are deterministic (n/a)."""
+    stochastic/temp) already exist; the spec records the intent so the echo/provenance say what a
+    metric was measured under. Bots are deterministic (n/a)."""
     kind: str = "stochastic"            # greedy | stochastic
     temperature: float = 1.0
-    schedule: str = "fixed"             # fixed | anneal | ratchet (the exploiter-temp modes)
 
     def describe(self) -> str:
         if self.kind == "greedy":
             return "greedy"
-        sched = "" if self.schedule == "fixed" else f", {self.schedule}"
-        return f"stochastic@{self.temperature:g}{sched}"
+        return f"stochastic@{self.temperature:g}"
 
 
 @dataclass(frozen=True)
@@ -205,15 +203,10 @@ class MatchupSpec:
         else:
             mix_kind = "bots"
 
-        # The frozen-NN opponents' play mode (bots are deterministic — n/a): the exploiter target's
-        # temp curriculum when set, else the stable/self-play temperature.
-        if getattr(args, "exploiter_temp_start", None) is not None:
-            play = PlayMode(kind="stochastic", temperature=float(args.exploiter_temp_start),
-                            schedule=str(getattr(args, "exploiter_temp_mode", "fixed") or "fixed")
-                            if getattr(args, "exploiter_temp_mode", "fixed") != "fixed" else "anneal")
-        else:
-            play = PlayMode(kind="stochastic",
-                            temperature=float(getattr(args, "stable_opponent_temp", 1.0)))
+        # The frozen-NN opponents' play mode (bots are deterministic — n/a): the stable/self-play
+        # temperature.
+        play = PlayMode(kind="stochastic",
+                        temperature=float(getattr(args, "stable_opponent_temp", 1.0)))
 
         return cls(
             trainee_teams=trainee,

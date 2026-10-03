@@ -21,17 +21,14 @@ from main.launcher.ipc import emit as _emit
 def resolve_env_core_args(args: Any) -> None:
     """Fill every collector flag left ``None`` (untyped) with the default its help states. Idempotent."""
     defaults = {
-        "rollout_trigger": "complete_game", "rollout_target_samples": 0, "rust_env_front": "proc",
+        "rollout_target_samples": 0, "rust_env_front": "proc",
         "rust_env_threads": 8, "rust_env_profile": "release", "rust_env_refusal_budget": 64,
-        "rust_env_respawn_budget": 2, "version_pinning": "off", "t2_lanes": 0, "t2_opponent_bucket_cap": 64,
-        "opponent_sampling": "keyed",
-        "rust_eval_envs": 64,
+        "rust_env_respawn_budget": 2, "t2_lanes": 0, "t2_opponent_bucket_cap": 64,
+        "trainee_slots": 1, "rust_eval_envs": 64,
     }
     for k, v in defaults.items():
         if getattr(args, k, None) is None:
             setattr(args, k, v)
-    if getattr(args, "trainee_slots", None) is None:
-        args.trainee_slots = 3 if args.version_pinning == "per_game" else 1
     if getattr(args, "behaviour_check", None) is None:
         # K9(b) is FATAL on both env cores (M5 Lane K): under python it reads the first micro-batch's
         # own forward (`instrumented_ppo/learner_gates.py`) — one host read per update, no forward.
@@ -200,8 +197,6 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
     plan = E.OpponentPlan.from_args(args, bot_names=_bot_names(opponent_classes),
                                     stable_entries=list(fixed_opponents or ()), exploiter_entry=exploiter_entry,
                                     heuristic_weights=bot_weights, bot_seed=0)
-    band = getattr(args, "rollout_target_band", None)
-    band_lo, band_hi = (int(x) for x in band.split(",")) if band else (0, 0)
     buckets = tuple(int(x) for x in args.t2_buckets.split(",")) if getattr(args, "t2_buckets", None) else ()
     device = str(args.device if args.device != "auto" else ("cuda" if _cuda() else "cpu"))
     backend = args.t2_backend or ("graph" if device.startswith("cuda") else "eager")
@@ -215,17 +210,16 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
         run_seed = segment_seed(getattr(args, "seed", 0), int(model.num_timesteps))
         decl = RustEnvDecl(
             n_envs=int(n_envs), threads=int(args.rust_env_threads), front=args.rust_env_front,
-            profile=args.rust_env_profile, trigger=args.rollout_trigger, n_steps=int(model.n_steps),
-            micro_batch=int(model.batch_size), target=int(args.rollout_target_samples or 0), band_lo=band_lo,
-            band_hi=band_hi, gamma=float(model.gamma), gae_lambda=float(model.gae_lambda), run_seed=run_seed,
+            profile=args.rust_env_profile, n_steps=int(model.n_steps),
+            micro_batch=int(model.batch_size), target=int(args.rollout_target_samples or 0),
+            gamma=float(model.gamma), gae_lambda=float(model.gae_lambda), run_seed=run_seed,
             turn_limit=EP.stall_threshold(), terminal=EP.terminal_from_reward_config(RewardConfig.from_args(args)),
             decision_tense=bool(getattr(args, "progress_decision_tense", False)),
             switch_freeze=bool(getattr(args, "progress_switch_freeze", False)),
             refusal_budget=int(args.rust_env_refusal_budget), respawn_budget=int(args.rust_env_respawn_budget),
             device=device, backend=backend, buckets=buckets, lanes=int(args.t2_lanes or 0),
             opponent_bucket_cap=int(args.t2_opponent_bucket_cap),
-            version_pinning=args.version_pinning == "per_game", trainee_slots=int(args.trainee_slots),
-            opponent_sampling=args.opponent_sampling, policy_seed=run_seed, fork=fork_decl_from_args(args))
+            trainee_slots=int(args.trainee_slots), policy_seed=run_seed, fork=fork_decl_from_args(args))
         sources = OpponentSources(self_play_fraction=float(self_play_fraction))
         if plan.pool_slots and snapshot_dir is not None:
             # device="cpu" (gen3_declared_slot_load_v1): a pool snapshot is only a WEIGHT SOURCE that T2 copies
@@ -276,7 +270,7 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
         emit(f"🦀 [ENV CORE] rust — {model._env_core_stamp['summary']}")
         return col
 
-    desc = (f"rust env core: {n_envs} envs, {args.rust_env_front} front end, {args.rollout_trigger} trigger, "
+    desc = (f"rust env core: {n_envs} envs, {args.rust_env_front} front end, complete-game trigger, "
             f"T2 {backend} on {device}")
     return RustVecEnv(n_envs=int(n_envs), observation_space=obs_space, action_space=act_space, build=build,
                       describe=desc)
@@ -306,14 +300,13 @@ def env_core_stamp(decl: Any, col: Any) -> Dict[str, Any]:
             stamp = col.core.lib.rust_env_stamp().decode()
         except Exception:
             stamp = ""
-    trig = decl.trigger
     return {
         "env_core": "rust", "front": decl.front, "profile": decl.profile, "core_stamp": stamp,
-        "n_envs": decl.n_envs, "threads": decl.threads, "trigger": trig,
+        "n_envs": decl.n_envs, "threads": decl.threads, "trigger": "complete_game",
         "target_samples": int(getattr(col.cfg.trigger, "target", 0) or 0),
-        "version_pinning": decl.version_pinning, "trainee_slots": decl.trainee_slots,
+        "trainee_slots": decl.trainee_slots,
         "t2": {"backend": decl.backend, "device": decl.device, "buckets": list(decl.resolved_buckets)},
-        "opponent_sampling": decl.opponent_sampling, "keyed_draw": "gen3_keyed_draw_v1",
+        "opponent_sampling": "keyed", "keyed_draw": "gen3_keyed_draw_v1",
         "run_seed": decl.run_seed,
         "summary": (f"{decl.n_envs} envs x {decl.threads} threads, {decl.front}/{decl.profile}, "
                     f"{col.cfg.trigger.describe()}, T2 {decl.backend} buckets {decl.resolved_buckets}"),

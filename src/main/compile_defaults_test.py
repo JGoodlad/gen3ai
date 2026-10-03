@@ -120,14 +120,12 @@ def test_auto_judges_the_REAL_update_size_not_n_steps_times_n_envs():
     (the product divides, the target does not) turned it on only to die at the first buffer build.
     Fails on revert (the check goes back to n_steps x n_envs)."""
     assert 1000 * 48 % 4096 != 0 and 98_304 % 4096 == 0
-    assert _auto(n_steps=1000, n_envs=48, batch_size=4096, rollout_trigger="complete_game",
-                 rollout_target_samples=98_304) == (True, None)
-    enabled, why = _auto(rollout_trigger="complete_game", rollout_target_samples=100_000)
+    assert _auto(n_steps=1000, n_envs=48, batch_size=4096, rollout_target_samples=98_304) == (True, None)
+    enabled, why = _auto(rollout_target_samples=100_000)
     assert enabled is False and why and "100,000 rows" in why, why
-    # the window trigger ignores the target; an untyped trigger / target is today's default
-    assert _auto(rollout_trigger="window", rollout_target_samples=100_000) == (True, None)
-    assert _auto(rollout_trigger=None, rollout_target_samples=None) == (True, None)
-    assert _auto(rollout_trigger=None, rollout_target_samples=0, batch_size=5000)[0] is False
+    # an untyped / zero target is today's default (n_steps x n_envs)
+    assert _auto(rollout_target_samples=None) == (True, None)
+    assert _auto(rollout_target_samples=0, batch_size=5000)[0] is False
 
 
 def test_the_explicit_preflight_judges_the_real_update_size_with_the_models_own_batch(capsys):
@@ -141,7 +139,7 @@ def test_the_explicit_preflight_judges_the_real_update_size_with_the_models_own_
 
     def run(model, **over):
         args = SimpleNamespace(compile_trainer=True, n_steps=1000, n_envs=48, batch_size=4096,
-                               rollout_trigger="complete_game", rollout_target_samples=98_304)
+                               rollout_target_samples=98_304)
         for k, v in over.items():
             setattr(args, k, v)
         with pytest.raises(SystemExit):

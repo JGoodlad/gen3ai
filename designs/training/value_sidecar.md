@@ -4,7 +4,7 @@
 > update it in the same pass as `value_sidecar.py`, `value_sidecar_read.py` or either gate.
 
 Code: `src/agents/training/value_sidecar.py` (writer) · `src/main/ops/value_sidecar_read.py`
-(reader) · `src/agents/training/win_prob_callback.py` (the pre-λ outcome stash the writer reads) ·
+(reader) ·
 `src/agents/training/value_sidecar_benchmark.py` (cost) ·
 `src/agents/training/value_sidecar_test.py` (writer + the pooled read) ·
 `src/main/ops/value_sidecar_read_test.py` (the schema guard).
@@ -86,7 +86,7 @@ exact row it happens; `resumed` is `false` on the first and `true` on every late
 
 ### The hazards a reader must carry
 
-🚨 **THE LABELS MUST BE FILLED BEFORE THE SIDECAR READS THEM, AND A MISS IS SILENT.** The Rust collector fills `win_target` / `win_mask` with the Monte-Carlo label before `on_rollout_end` (the window fill calls `win_prob_callback.backfill_terminal_labels`; the `WinProbLabelCallback` whose registration order used to be the hazard was deleted in U3). A sidecar reading placeholder ZEROS writes a
+🚨 **THE LABELS MUST BE FILLED BEFORE THE SIDECAR READS THEM, AND A MISS IS SILENT.** The Rust collector fills `win_target` / `win_mask` with the Monte-Carlo label before `on_rollout_end` (`store.fill_complete`; the `WinProbLabelCallback` whose registration order used to be the hazard was deleted in U3). A sidecar reading placeholder ZEROS writes a
 file full of `target: 0.0` — which looks exactly like a critic scoring an unbroken run of losses.
 At runtime an all-zero mask
 over a whole rollout is **reported** (`labels_unfilled`), never written as data.

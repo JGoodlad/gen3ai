@@ -40,7 +40,7 @@ FOUR PIECES, each testable alone:
 :class:`RustEnvOpponents` puts them together for a host loop (Lane G wires it into training): it
 stages ``ep_opp`` one episode ahead, re-stages every env whose ``episode`` moved (an auto-reset, a
 quarantine, a refused start — the core consumed the staged row), and takes the live pushes the
-wrapper takes today (``set_self_play_target`` … ``set_exploiter_temperature``).
+wrapper takes today (``set_self_play_target`` … ``set_stable_win_rates``).
 
 WHAT DIFFERS FROM TODAY, by construction (each stated in the program doc):
 
@@ -536,12 +536,6 @@ class PolicyOpponentServer:
 
     def generator(self, env: int, player: str) -> Any:
         return self._gens[(env, player)]
-
-    def set_temperature(self, player: str, temperature: float) -> None:
-        """``set_exploiter_temperature``'s path (the sampling is the host's, so a push is immediate)."""
-        if player not in self.temperature:
-            raise OpponentRoutingError(f"no policy player {player!r}")
-        self.temperature[player] = float(temperature)
 
     def serve(self, cols: Mapping[str, np.ndarray], *, record: Optional[List[Any]] = None) -> np.ndarray:
         """Answer every p2 decision on a POLICY route; returns the env indices served. ``record``

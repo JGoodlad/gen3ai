@@ -236,7 +236,7 @@ class _Logger:
 
 def _cb():
     """`logger` is a read-only BaseCallback property (it reads `model.logger`), so the sink is
-    injected through a stand-in model — the same idiom as `exploiter_temp_callback_test`."""
+    injected through a stand-in model."""
     from types import SimpleNamespace
 
     cb = SignalMetricsCallback()

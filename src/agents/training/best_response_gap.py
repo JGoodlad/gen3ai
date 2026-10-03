@@ -473,8 +473,13 @@ def _regime(meta: Dict[str, Any], series: Sequence[SeriesPoint],
         "eval_mirrored_pairs": bool(cli.get("eval_mirrored_pairs") or False),
         "exploiter_keep_bots": cli.get("exploiter_keep_bots"),
         "exploiter_bot_fraction": cli.get("exploiter_bot_fraction"),
-        "exploiter_temp_mode": cli.get("exploiter_temp_mode"),
-        "exploiter_temp_end": cli.get("exploiter_temp_end"),
+        # The exploiter temperature curriculum was DELETED (deletion pass P11c); an OLD run's recorded
+        # curriculum is still a different regime from a fixed-temperature target, and a run after the
+        # deletion records none (None) — so it matches only a run that recorded no curriculum either.
+        "exploiter_temp_curriculum": (
+            None if cli.get("exploiter_temp_start") is None
+            else [cli.get("exploiter_temp_start"), cli.get("exploiter_temp_mode"),
+                  cli.get("exploiter_temp_end")]),
         "cycle_games": games[0] if len(games) == 1 else games,
         "target_pins_own_teams": target_pins,
     }

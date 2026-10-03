@@ -123,12 +123,12 @@ LABELS: Tuple[LabelKey, ...] = (
              (_BANK,), "core", "1 where `item_label` is set"),
     # ---------------------------------------------------------------- win-prob
     LabelKey("win_target", "f32", (1,), "winprob", _WIN, True, "Gen3Env._merge_training_keys",
-             ("agents/training/win_prob_callback.py", _PPO), "host_const",
-             "PLACEHOLDER; the Rust collector back-fills the episode outcome post-collection "
+             (_PPO,), "host_const",
+             "PLACEHOLDER; the Rust collector fills the episode outcome at the update's fill "
              "(under the win-prob critic it IS the value target)", const=0.0),
     LabelKey("win_mask", "f32", (1,), "winprob", _WIN, True, "Gen3Env._merge_training_keys",
-             ("agents/training/win_prob_callback.py", _PPO), "host_const",
-             "PLACEHOLDER; back-filled with the known-outcome mask", const=0.0),
+             (_PPO,), "host_const",
+             "PLACEHOLDER; filled with 1 (every row of a complete game has its outcome)", const=0.0),
     LabelKey("win_margin", "f32", (1,), "margin", _WIN, True,
              "Gen3RewardManager.process_turn_reward → material_margin.material_margin",
              (_PPO, "agents/training/value_sidecar.py"), "core",

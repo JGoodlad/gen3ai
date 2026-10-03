@@ -6,11 +6,10 @@ resume point: ``designs/research_state/measurements/m5_laneG/PROGRESS.md``.
 
     store.py        the ROW ARENA: every trainee row played and not yet trained on, per-game assembly,
                     complete-game GAE (sb3's arithmetic, bit for bit), the completed-game FIFO, and the
-                    two fills of the learner's buffer (WINDOW = today's schedule; COMPLETE-GAME = order
-                    constraint 6) — with each row's behaviour log-prob and policy VERSION
-    trigger.py      WHEN an update fires: ``WindowTrigger`` (n_steps per env) / ``SampleTrigger`` (the
-                    declared target sample count of completed-game rows, a band + quantum for the
-                    adaptive-batch hook)
+                    fill of the learner's buffer (COMPLETE-GAME = order constraint 6) — with each row's
+                    behaviour log-prob and policy VERSION
+    trigger.py      WHEN an update fires: ``SampleTrigger`` (the declared target sample count of
+                    completed-game rows, on a quantum)
     teams.py        per-episode TEAMS and SEEDS staged into the core (the startup team table, per-env
                     seeded teambuilder draws, pinned opponent teams, the team win-rate tables)
     collector.py    the HOST LOOP: the env core (process or FFI front end) + T2 (trainee and policy

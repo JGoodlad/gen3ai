@@ -1,8 +1,8 @@
 # Supply guards — every live lever's supply is a DECLARED resource (`gen3_supply_guard_v2`)
 
 **Owner of:** `agents/training/lever_supply.py` (the shared guard), `agents/training/selfplay_supply.py`
-(the self-play pool + PFSP mixin), the guard wiring in `win_prob_callback.py`
-and `rust_rollout/fork.py`, the `--bot-weights` refusal
+(the self-play pool + PFSP mixin), the guard wiring in
+`rust_rollout/fork.py`, the `--bot-weights` refusal
 in `main/train/matchup_setup.py`, and `main.exit_codes.FatalConfigError`.
 The cf label producer's own guard (`gen3_supply_guard_v1`) was deleted with the cf training half
 (deletion pass L4, 2026-10-02; history in [`cf_grounding.md`](cf_grounding.md)); this doc is the shared

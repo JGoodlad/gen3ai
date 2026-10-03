@@ -193,23 +193,6 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
         from agents.training.rank_tripwire import RankTripwireCallback
         callbacks.append(RankTripwireCallback(mode=args.rank_tripwire,
                                               drop=args.rank_tripwire_drop))
-    # gen3_exploiter_temp_anneal_v1: control the EXPLOITER target's sampling temperature over training
-    # (a difficulty curriculum via opponent stochasticity — hot/weak early → true strength later),
-    # pushed to every env's exploiter RLPlayer via env_method each rollout. Registered ONLY when
-    # --exploiter-temp-start is set → an off run makes no push (byte-identical). Training-only.
-    # 'fixed' = linear time schedule; 'ratchet' = dynamic win-rate-driven one-way ratchet.
-    if args.exploiter and args.exploiter_temp_start is not None:
-        from agents.training.exploiter_temp_callback import (
-            ExploiterTempAnnealCallback, ExploiterTempRatchetCallback)
-        if args.exploiter_temp_mode == "ratchet":
-            callbacks.append(ExploiterTempRatchetCallback(
-                temp_start=args.exploiter_temp_start, temp_end=args.exploiter_temp_end,
-                threshold=args.exploiter_temp_ratchet_wr, factor=args.exploiter_temp_ratchet_factor,
-                min_games=args.exploiter_temp_ratchet_games, run_dir=model_dir))
-        else:
-            callbacks.append(ExploiterTempAnnealCallback(
-                temp_start=args.exploiter_temp_start, temp_end=args.exploiter_temp_end,
-                anneal_frac=args.exploiter_temp_anneal_frac))
     # THE TRAINING-SIDE VALUE SIDECAR (gen3_value_sidecar_v1). The Rust COLLECTOR fills `win_target` /
     # `win_mask` itself (complete games: every row its own outcome; the window fill:
     # `win_prob_callback.backfill_terminal_labels`) BEFORE `on_rollout_end`, so the sidecar reads the

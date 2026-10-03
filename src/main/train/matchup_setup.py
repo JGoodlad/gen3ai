@@ -329,15 +329,9 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
         from agents.model.snapshot import (
             current_model_version as _current_model_version, load_foreign_opponent)
         _cv_expl = _current_model_version(mappings, **_run_arch_toggles(args))
-        # gen3_exploiter_temp_anneal_v1: when annealing the target's temperature, START it at
-        # --exploiter-temp-start (so the very first episodes are already at the curriculum's hot temp,
-        # before ExploiterTempAnnealCallback's first per-rollout push); else the fixed
-        # --stable-opponent-temp (unchanged default).
-        _expl_temp0 = (args.exploiter_temp_start if args.exploiter_temp_start is not None
-                       else args.stable_opponent_temp)
         try:
             _resolved = resolve_stable_opponents(args.exploiter, _cv_expl,
-                                                 default_temperature=_expl_temp0)
+                                                 default_temperature=args.stable_opponent_temp)
             if len(_resolved) != 1:
                 raise ValueError(f"--exploiter takes exactly ONE target model, got {len(_resolved)}")
             _exploiter_entry = _resolved[0]
@@ -351,14 +345,7 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
             print(f"\n[Exploiter] FATAL: failed to load exploiter target weights: {e}")
             sys.stdout.flush()
             os._exit(int(TrainExitCode.FATAL_CONFIG))
-        if args.exploiter_temp_start is None:
-            _temp_desc = f"temp {args.stable_opponent_temp:g}"
-        elif args.exploiter_temp_mode == "ratchet":
-            _temp_desc = (f"temp {args.exploiter_temp_start:g}→{args.exploiter_temp_end:g} WR-RATCHETED "
-                          f"(harder when train-WR ≥ {args.exploiter_temp_ratchet_wr:.0%})")
-        else:
-            _temp_desc = (f"temp {args.exploiter_temp_start:g}→{args.exploiter_temp_end:g} annealed over "
-                          f"{args.exploiter_temp_anneal_frac:.0%} of training")
+        _temp_desc = f"temp {args.stable_opponent_temp:g}"
         if args.exploiter_keep_bots:
             emit(f"🥊 [EXPLOITER] training vs {_exploiter_entry.label} ({_temp_desc}) "
                  f"with the heuristic bots MIXED IN: per episode P(target)={1 - args.exploiter_bot_fraction:.0%}, "

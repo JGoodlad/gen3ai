@@ -41,7 +41,7 @@ def _space():
 
 def _col(capacity=64):
     st = S.RowStore(_space(), capacity, fork=True)
-    log = S.GameLog(st, 1, mode="complete_game", gamma=GAMMA, gae_lambda=LAM, max_game_rows=40)
+    log = S.GameLog(st, 1, gamma=GAMMA, gae_lambda=LAM, max_game_rows=40)
     return SimpleNamespace(store=st, log=log, version=3)
 
 
@@ -236,15 +236,10 @@ def test_a_non_indicator_terminal_is_refused():
         FK.check_terminal({"terminal_indicator": False})
 
 
-def test_the_decl_refuses_generator_sampling_and_the_window_trigger():
+def test_the_decl_builds_with_a_fork_and_refuses_a_zero_fraction():
     from agents.training.rust_rollout.build import RustEnvDecl
 
-    fd = FK.ForkDecl(fraction=0.05)
-    RustEnvDecl(n_envs=2, fork=fd)
-    with pytest.raises(ValueError, match="opponent-sampling keyed"):
-        RustEnvDecl(n_envs=2, fork=fd, opponent_sampling="generator")
-    with pytest.raises(ValueError, match="complete_game"):
-        RustEnvDecl(n_envs=2, fork=fd, trigger="window")
+    RustEnvDecl(n_envs=2, fork=FK.ForkDecl(fraction=0.05))
     with pytest.raises(ValueError):
         FK.ForkDecl(fraction=0.0)
 
@@ -262,10 +257,10 @@ def test_the_arena_declares_the_fork_budget_at_startup():
     from agents.training.rust_rollout.build import RustEnvDecl
     from agents.training.rust_rollout.trigger import trigger_for
 
-    trig = trigger_for("complete_game", n_envs=2, n_steps=64, micro_batch=64, target=0, band_lo=0, band_hi=0)
+    trig = trigger_for(n_envs=2, n_steps=64, micro_batch=64, target=0)
     off = RustEnvDecl(n_envs=2, n_steps=64, micro_batch=64)
     on = RustEnvDecl(n_envs=2, n_steps=64, micro_batch=64, fork=FK.ForkDecl(fraction=0.05))
-    assert on.capacity(trig) - off.capacity(trig) == int(trig.hi)
+    assert on.capacity(trig) - off.capacity(trig) == int(trig.target)
 
 
 def test_a_branch_plays_the_parents_REAL_policy_opponent_only_while_its_slot_serves_that_model():

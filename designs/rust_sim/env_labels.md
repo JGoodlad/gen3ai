@@ -64,8 +64,8 @@ The `rust` column says where the Rust env gets each key:
 | `hp_type_mask` | f32 `[6]` | hp_type | yes | `Gen3Env._hp_type_labels` | `belief_bank.py` | `core` |
 | `item_label` | i64 `[6]` | item | yes | `Gen3Env._item_labels` | `belief_bank.py` | `core` |
 | `item_mask` | f32 `[6]` | item | yes | `Gen3Env._item_labels` | `belief_bank.py` | `core` |
-| `win_target` | f32 `[1]` | winprob | yes | `Gen3Env._merge_training_keys` (0.0) | `win_prob_callback.py`, `instrumented_ppo/ppo.py` | `host_const` |
-| `win_mask` | f32 `[1]` | winprob | yes | `Gen3Env._merge_training_keys` (0.0) | `win_prob_callback.py`, `instrumented_ppo/ppo.py` | `host_const` |
+| `win_target` | f32 `[1]` | winprob | yes | `Gen3Env._merge_training_keys` (0.0) | `rust_rollout/store.py`, `instrumented_ppo/ppo.py` | `host_const` |
+| `win_mask` | f32 `[1]` | winprob | yes | `Gen3Env._merge_training_keys` (0.0) | `rust_rollout/store.py`, `instrumented_ppo/ppo.py` | `host_const` |
 | `win_margin` | f32 `[1]` | margin | yes | `Gen3RewardManager.process_turn_reward` → `material_margin` | `instrumented_ppo/ppo.py`, `value_sidecar.py` | `core` |
 | `opp_class` | i64 `[1]` | opp_class | yes | `Gen3Env._merge_training_keys` (the wrapper's `_opponent_class`) | `instrumented_ppo/ppo.py`, `value_sidecar.py` | `host_episode` |
 | `opp_action_kind` | i64 `[1]` | intent | yes | `Gen3Env._opp_intent_labels` | `instrumented_ppo/ppo.py`, `train_setup.py` | `core` |

@@ -50,34 +50,28 @@ class _Opp:
 def _env():
     sp = spaces.Dict({"observation": spaces.Box(0, 1, (3,), np.float32)})
     col = SimpleNamespace(
-        opponents=_Opp(), server=SimpleNamespace(temperature={"exploiter": 1.0}, set_temperature=None),
-        p2_policy_by_env=np.array([3, 0]), exploiter_games=np.array([2, 1]), exploiter_wins=np.array([1.0, 0.0]),
+        opponents=_Opp(), p2_policy_by_env=np.array([3, 0]),
         reward_terms=SimpleNamespace(drain=lambda: {"n": 5}),
         stager=SimpleNamespace(drain_team_wr_counts=lambda: [("c0", "k"), ("c1", "k")]),
         start=lambda: None, close=lambda: None)
-    temps = {}
-    col.server.set_temperature = lambda p, t: temps.__setitem__(p, t)
     env = R.RustVecEnv(n_envs=2, observation_space=sp, action_space=spaces.Discrete(11), build=lambda m: col)
     env.startup(SimpleNamespace())
-    return env, col, temps
+    return env, col
 
 
 def test_the_surface_routes_to_the_collector():
-    env, col, temps = _env()
+    env, col = _env()
     assert env.env_method("set_self_play_target", 0.5, 3) == [None, None]
     assert col.opponents.calls[-1] == ("set_self_play_target", (0.5, 3))
     env.env_method("set_stable_mastered", ["a"])
     assert col.opponents.calls[-1] == ("set_stable_mastered", (["a"],))
-    env.env_method("set_exploiter_temperature", 0.7)
-    assert temps == {"exploiter": 0.7}
     assert env.env_method("opponent_default_stats") == [(3, 0, 0), (0, 0, 0)]
-    assert env.env_method("exploiter_winrate_totals") == [(2, 1.0), (1, 0.0)]
     assert env.env_method("drain_reward_terms") == [{"n": 5}, None]
     assert env.env_method("drain_team_wr_counts", indices=[1]) == [("c1", "k")]
 
 
 def test_unmapped_calls_are_typed_refusals():
-    env, _col, _t = _env()
+    env, _col = _env()
     with pytest.raises(R.RustEnvSurfaceError, match="set_team_pfsp_weights"):
         env.env_method("set_team_pfsp_weights", [1.0])      # a DELETED lever's method: still a typed refusal
     with pytest.raises(R.RustEnvSurfaceError, match="not stepped"):

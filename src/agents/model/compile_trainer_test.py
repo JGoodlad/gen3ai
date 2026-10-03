@@ -182,13 +182,11 @@ def test_the_stability_check_judges_the_REAL_update_size_not_n_steps_times_n_env
     assert set(inspect.signature(check_shape_stability).parameters) == {"update_rows", "batch_size"}
     from main.train.compile_flags import update_rows_for
     # a valid run whose n_steps*n_envs (1000*48 = 48,000) does NOT divide by 4096 but whose target does
-    valid = update_rows_for(rollout_trigger="complete_game", rollout_target_samples=98_304,
-                            n_steps=1000, n_envs=48)
+    valid = update_rows_for(rollout_target_samples=98_304, n_steps=1000, n_envs=48)
     assert valid == 98_304 and 1000 * 48 % 4096 != 0
     check_shape_stability(update_rows=valid, batch_size=4096)
     # an invalid one: n_steps*n_envs divides (98,304) but the target (100,000) does not
-    bad = update_rows_for(rollout_trigger="complete_game", rollout_target_samples=100_000,
-                          n_steps=2048, n_envs=48)
+    bad = update_rows_for(rollout_target_samples=100_000, n_steps=2048, n_envs=48)
     assert bad == 100_000 and 2048 * 48 % 4096 == 0
     with pytest.raises(CompileTrainerError, match=r"100,000 rows"):
         check_shape_stability(update_rows=bad, batch_size=4096)

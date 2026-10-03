@@ -339,51 +339,6 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                         help="Under --exploiter-keep-bots, the per-episode probability of facing a "
                              "heuristic bot instead of the exploiter target (default 0.5). The exploiter "
                              "target is faced with the complementary probability (1 - this).")
-    parser.add_argument("--exploiter-temp-start", dest="exploiter_temp_start", type=float, default=None,
-                        help="EXPLOITER MODE (requires --exploiter): ANNEAL the target opponent's sampling "
-                             "temperature over training — a difficulty curriculum via opponent STOCHASTICITY. "
-                             "Setting this (a positive float, e.g. 2.0) starts the target at this temperature "
-                             "(flatter logits → noisier/weaker play, so a from-scratch trainee can win some "
-                             "games and get a learning signal) and linearly anneals it to --exploiter-temp-end "
-                             "over --exploiter-temp-anneal-frac of training, held after. None (default) = OFF: "
-                             "the target plays at --stable-opponent-temp the whole run (byte-identical). "
-                             "Training-only (not version-locked; forwarded verbatim on resume, where the anneal "
-                             "continues from the resumed step).")
-    parser.add_argument("--exploiter-temp-end", dest="exploiter_temp_end", type=float, default=1.0,
-                        help="EXPLOITER MODE: the target opponent's temperature at the END of the anneal window "
-                             "(default 1.0 = the policy's own distribution, i.e. the target's true strength as a "
-                             "stochastic training opponent). Only used when --exploiter-temp-start is set. Set "
-                             "below 1.0 to push the target toward greedy (harder) by the end.")
-    parser.add_argument("--exploiter-temp-anneal-frac", dest="exploiter_temp_anneal_frac", type=float,
-                        default=0.2,
-                        help="EXPLOITER MODE: fraction of total --steps over which to linearly anneal the target "
-                             "temperature from --exploiter-temp-start to --exploiter-temp-end (default 0.2 = the "
-                             "first 20%% of training; held at the end temp after). 0 = constant at "
-                             "--exploiter-temp-start (a fixed hotter opponent, no anneal). Only used in the FIXED "
-                             "temp mode (--exploiter-temp-mode fixed).")
-    parser.add_argument("--exploiter-temp-mode", dest="exploiter_temp_mode",
-                        choices=["fixed", "ratchet"], default="fixed",
-                        help="EXPLOITER MODE (with --exploiter-temp-start): how the target temperature is "
-                             "controlled. 'fixed' (default) = the linear time schedule (--exploiter-temp-anneal-frac). "
-                             "'ratchet' = DYNAMIC win-rate-driven: start at --exploiter-temp-start (set it HIGH, e.g. "
-                             "5.0, so early games are trivially winnable) and ratchet the temperature DOWN toward "
-                             "--exploiter-temp-end only when the trainee's measured TRAINING win-rate vs the target "
-                             "clears --exploiter-temp-ratchet-wr — a ONE-WAY auto-curriculum that tracks the trainee's "
-                             "competence frontier (never weakens the target, so no comfort-trap). Resume-safe (the "
-                             "ratcheted temp is persisted to <run>/exploiter_temp_state.json).")
-    parser.add_argument("--exploiter-temp-ratchet-wr", dest="exploiter_temp_ratchet_wr", type=float,
-                        default=0.55,
-                        help="RATCHET mode: the trainee TRAINING-WR vs the target at which the temperature ratchets "
-                             "DOWN (harder). Default 0.55 (keeps play near the ~0.5 max-advantage-signal zone). "
-                             "Measured per window of --exploiter-temp-ratchet-games target games.")
-    parser.add_argument("--exploiter-temp-ratchet-factor", dest="exploiter_temp_ratchet_factor",
-                        type=float, default=0.9,
-                        help="RATCHET mode: multiply the temperature by this (<1) on each ratchet (default 0.9 = 10%% "
-                             "harder steps). Floored at --exploiter-temp-end.")
-    parser.add_argument("--exploiter-temp-ratchet-games", dest="exploiter_temp_ratchet_games",
-                        type=int, default=500,
-                        help="RATCHET mode: min target-games per decision window before a ratchet check (default 500 "
-                             "— the noise guard; larger = smoother/slower).")
     parser.add_argument("--trainee-team", dest="trainee_team", type=str, default=None,
                         help="SPECIALIST MODE: pin the TRAINEE's team pool to the ONE team in this file "
                              "(a Showdown EXPORT string, like data/teams/sample/*.txt), so the agent "

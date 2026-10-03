@@ -30,8 +30,8 @@ own exit style; `main.checkargs` calls `failing_checks` on the EFFECTIVE namespa
 on the fork parent's recorded config) and reports every one. Neither owns the rule.
 
 WHAT BELONGS HERE: a refusal that reads two or more RESOLVED values and says one combination is
-incoherent — including a range check that only applies in a mode (`--exploiter-temp-ratchet-wr`
-under `--exploiter-temp-mode ratchet`), because "which flag turns this on" is itself a cross-flag fact. What does
+incoherent — including a range check that only applies in a mode (`--adaptive-batch-target`
+under `--adaptive-batch`), because "which flag turns this on" is itself a cross-flag fact. What does
 NOT: a range check on a single value (`--rank-tripwire-drop` in (0, 1)), which argparse's caller can
 answer from the one value it has; and anything needing the parser, a torch import, an env var, or a
 filesystem — those stay in `resolve_config`, which has them, and are listed with
@@ -135,10 +135,6 @@ def _belief_mode(args) -> str:
 
 def _adaptive_on(args) -> bool:
     return _val(args, "adaptive_batch", "off") != "off"
-
-
-def _exploiter_temp_on(args) -> bool:
-    return getattr(args, "exploiter_temp_start", None) is not None
 
 
 def _edge_families(args) -> Optional[set]:
@@ -287,52 +283,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         lambda a: bool(a.exploiter_keep_bots) and not a.exploiter,
         "--exploiter-keep-bots only applies in exploiter mode — pass --exploiter <target> "
         "too (it mixes the bots in ALONGSIDE that target)."),
-    CombinationCheck(
-        "exploiter_temp_start_needs_exploiter", ("exploiter_temp_start", "exploiter"),
-        lambda a: _exploiter_temp_on(a) and not a.exploiter,
-        "--exploiter-temp-start only applies in exploiter mode — pass --exploiter "
-        "<target> too (it anneals THAT target's play temperature)."),
-    CombinationCheck(
-        "exploiter_temp_positive", ("exploiter_temp_start", "exploiter_temp_end"),
-        lambda a: _exploiter_temp_on(a) and (a.exploiter_temp_start <= 0.0
-                                             or a.exploiter_temp_end <= 0.0),
-        "--exploiter-temp-start / --exploiter-temp-end must be > 0 (a softmax "
-        "temperature; the opponent's logits are divided by it)."),
-    CombinationCheck(
-        "exploiter_temp_anneal_frac", ("exploiter_temp_start", "exploiter_temp_anneal_frac"),
-        lambda a: _exploiter_temp_on(a) and not 0.0 <= a.exploiter_temp_anneal_frac <= 1.0,
-        "--exploiter-temp-anneal-frac must be a fraction in [0, 1]"),
-    CombinationCheck(
-        "exploiter_temp_ratchet_factor",
-        ("exploiter_temp_start", "exploiter_temp_mode", "exploiter_temp_ratchet_factor"),
-        lambda a: _exploiter_temp_on(a) and a.exploiter_temp_mode == "ratchet"
-        and not 0.0 < a.exploiter_temp_ratchet_factor < 1.0,
-        "--exploiter-temp-ratchet-factor must be in (0, 1) (it multiplies the "
-        "temperature DOWN each ratchet)."),
-    CombinationCheck(
-        "exploiter_temp_ratchet_wr",
-        ("exploiter_temp_start", "exploiter_temp_mode", "exploiter_temp_ratchet_wr"),
-        lambda a: _exploiter_temp_on(a) and a.exploiter_temp_mode == "ratchet"
-        and not 0.0 < a.exploiter_temp_ratchet_wr < 1.0,
-        "--exploiter-temp-ratchet-wr must be a win-rate in (0, 1)."),
-    CombinationCheck(
-        "exploiter_temp_ratchet_games",
-        ("exploiter_temp_start", "exploiter_temp_mode", "exploiter_temp_ratchet_games"),
-        lambda a: _exploiter_temp_on(a) and a.exploiter_temp_mode == "ratchet"
-        and a.exploiter_temp_ratchet_games < 1,
-        "--exploiter-temp-ratchet-games must be >= 1."),
-    CombinationCheck(
-        "exploiter_temp_ratchet_start_above_end",
-        ("exploiter_temp_start", "exploiter_temp_mode", "exploiter_temp_end"),
-        lambda a: _exploiter_temp_on(a) and a.exploiter_temp_mode == "ratchet"
-        and a.exploiter_temp_start <= a.exploiter_temp_end,
-        "--exploiter-temp-mode ratchet needs --exploiter-temp-start > "
-        "--exploiter-temp-end (it ratchets the temp DOWN from start toward end)."),
-    CombinationCheck(
-        "exploiter_temp_ratchet_needs_start", ("exploiter_temp_start", "exploiter_temp_mode"),
-        lambda a: a.exploiter_temp_start is None and a.exploiter_temp_mode == "ratchet",
-        "--exploiter-temp-mode ratchet requires --exploiter-temp-start (the initial/max "
-        "temperature to ratchet down from — set it HIGH, e.g. 5.0)."),
 
     # ---- gen3_fork_lr_pin_v1 ---------------------------------------------------------------
     CombinationCheck(
@@ -515,25 +465,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
     # ---- the compile pair: the rule itself lives in compile_flags, referenced not re-typed ------
 
     # ---- the env core (M5 Lane G): what the Rust env core serves, refused by name -------------
-    CombinationCheck(
-        # gen3_fork_rust_v1 (forks.md §14.3): a branch replays the parent's draws BY KEY; a per-env
-        # torch.Generator stream cannot be replayed per branch.
-        "fork_rust_needs_keyed_opponent_sampling", ("fork_fraction", "opponent_sampling"),
-        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
-                   and _val(a, "opponent_sampling", "keyed") != "keyed"),
-        "--fork-fraction > 0 requires --opponent-sampling keyed: a branch is the "
-        "parent's game under the PARENT's draw keys (common random numbers, designs/training/forks.md "
-        "§14.3), and the generator mode's per-env stream cannot be replayed per branch",
-        exit_style="fatal_config"),
-    CombinationCheck(
-        # gen3_fork_rust_v1 (forks.md §14.2): branch games join the completed-game FIFO.
-        "fork_rust_needs_complete_game_trigger", ("fork_fraction", "rollout_trigger"),
-        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
-                   and _val(a, "rollout_trigger", "complete_game") != "complete_game"),
-        "--fork-fraction > 0 requires --rollout-trigger complete_game: a branch is "
-        "a complete game that joins the completed-game FIFO beside its parent (designs/training/forks.md "
-        "§14.2); the window fill is the parity schedule",
-        exit_style="fatal_config"),
     CombinationCheck(
         "rollout_target_on_the_quantum", ("rollout_target_samples", "batch_size", "n_envs"),
         lambda a: _target_off_quantum(a),

@@ -19,7 +19,6 @@ def teams():
 def _args(**kw):
     base = dict(trainee_team=None, trainee_teams=None, exploiter=None, self_play=False,
                 bot_weights=None, exploiter_keep_bots=False, exploiter_bot_fraction=0.5,
-                exploiter_temp_start=None, exploiter_temp_mode="fixed",
                 stable_opponent_temp=1.0)
     base.update(kw)
     return SimpleNamespace(**base)
@@ -108,10 +107,9 @@ def test_from_args_mix_kinds():
     assert spec.exploiter_keep_bots
 
 
-def test_from_args_play_mode_ratchet():
-    spec = MatchupSpec.from_args(_args(exploiter="models/x", exploiter_temp_start=5.0,
-                                       exploiter_temp_mode="ratchet"))
-    assert spec.opponent_play == PlayMode(kind="stochastic", temperature=5.0, schedule="ratchet")
+def test_from_args_play_mode_is_the_stable_opponent_temperature():
+    spec = MatchupSpec.from_args(_args(exploiter="models/x", stable_opponent_temp=0.7))
+    assert spec.opponent_play == PlayMode(kind="stochastic", temperature=0.7)
 
 
 def test_eval_trainee_defaults_to_trainee(teams):
@@ -133,10 +131,10 @@ def test_hash_stable_and_regime_sensitive():
 
 def test_summary_lines_echo_the_essentials():
     spec = MatchupSpec.from_args(_args(exploiter="models/x", exploiter_keep_bots=True,
-                                       exploiter_temp_start=5.0, exploiter_temp_mode="ratchet",
+                                       stable_opponent_temp=0.7,
                                        trainee_team="data/teams/specialist/tss_starmie.txt"))
     text = "\n".join(spec.summary_lines())
-    for token in ("MATCHUP", "PINNED", "full pool", "exploiter", "models/x", "ratchet", "eval:"):
+    for token in ("MATCHUP", "PINNED", "full pool", "exploiter", "models/x", "stochastic@0.7", "eval:"):
         assert token in text, f"echo missing {token!r}:\n{text}"
 
 

@@ -3,8 +3,8 @@
 ``RustEnvDecl`` is everything the steady state will ever use, named before anything starts (the M5
 DECLARED LIFECYCLE): the env count and worker threads, the front end (``proc`` — the default for
 training: a core fault must not take the learner's optimizer and GPU context with it — or ``ffi``),
-the build profile, the trigger and its band (which sizes the row arena), the terminal / stall rules,
-the refusal and respawn budgets, the inference backend, buckets and lanes, and version pinning.
+the build profile, the trigger's target (which sizes the row arena), the terminal / stall rules,
+the refusal and respawn budgets, the inference backend, buckets and lanes.
 ``build_collector`` acquires it all and returns a ``RustCollector`` ready for ``start()``.
 
 T2 SLOT GROUPS (F-LE-7): one group per ARCHITECTURE, in the route table's slot order, so a global T2
@@ -52,12 +52,9 @@ class RustEnvDecl:
     threads: int = 8
     front: str = "proc"
     profile: str = "release"
-    trigger: str = "complete_game"
     n_steps: int = 2048
     micro_batch: int = 2048
     target: int = 0
-    band_lo: int = 0
-    band_hi: int = 0
     gamma: float = 1.0
     gae_lambda: float = 0.8
     run_seed: int = 0
@@ -72,11 +69,9 @@ class RustEnvDecl:
     backend: str = "graph"
     buckets: Tuple[int, ...] = ()
     lanes: int = 0
-    version_pinning: bool = False
     trainee_slots: int = 1
     max_game_rows: int = 0
     op_timeout: Optional[float] = None
-    opponent_sampling: str = "keyed"
     policy_seed: int = 0
     #: gen3_slot_bucket_caps_v1: the largest bucket a NON-trainee slot (pool / stable / exploiter
     #: opponents, eval's extra slots) captures; 0 = no caps (every slot captures every bucket).
@@ -90,18 +85,6 @@ class RustEnvDecl:
             raise ValueError(f"RustEnvDecl.front {self.front!r} not in {FRONTS}")
         if self.profile not in PROFILES:
             raise ValueError(f"RustEnvDecl.profile {self.profile!r} not in {PROFILES}")
-        if self.version_pinning and self.trainee_slots < 2:
-            raise ValueError("version pinning needs >= 2 trainee slots")
-        if self.opponent_sampling not in ("keyed", "generator"):
-            raise ValueError(f"opponent_sampling {self.opponent_sampling!r}")
-        if self.fork is not None:
-            # §14.3 / §14.7: the branches replay the parent's draws by KEY, and join the complete-game FIFO
-            if self.opponent_sampling != "keyed":
-                raise ValueError("the fork arm needs --opponent-sampling keyed (a per-env generator stream "
-                                 "cannot be replayed per branch)")
-            if self.trigger != "complete_game":
-                raise ValueError("the fork arm needs --rollout-trigger complete_game (branch games join the "
-                                 "completed-game FIFO; the window fill is the parity schedule)")
 
     @property
     def resolved_buckets(self) -> Tuple[int, ...]:
@@ -132,10 +115,8 @@ class RustEnvDecl:
     def capacity(self, trigger: Any) -> int:
         n = int(self.n_envs)
         per_env = 2 * self.resolved_max_game_rows
-        if trigger.mode == "window":
-            return n * (int(self.n_steps) + 1) + n * per_env
-        fork_rows = self.fork.row_budget(int(trigger.hi)) if self.fork is not None else 0
-        return int(trigger.hi) + n * per_env + fork_rows
+        fork_rows = self.fork.row_budget(int(trigger.target)) if self.fork is not None else 0
+        return int(trigger.target) + n * per_env + fork_rows
 
 
 def core_label_families(obs_space: Any) -> Tuple[str, ...]:
@@ -301,8 +282,7 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
             "deep-copies the policy as its slot templates, and a copied bound forward runs the ORIGINAL extractor "
             "— start the Rust env BEFORE the trainer compile (model_build._start_rust_env), or pass an uncompiled "
             "load of the checkpoint")
-    trig = trigger_for(decl.trigger, n_envs=n, n_steps=decl.n_steps, micro_batch=decl.micro_batch,
-                       target=decl.target, band_lo=decl.band_lo, band_hi=decl.band_hi)
+    trig = trigger_for(n_envs=n, n_steps=decl.n_steps, micro_batch=decl.micro_batch, target=decl.target)
     fams = core_label_families(obs_space)
     label_keys = tuple(k for f in fams for k in C.LABEL_FAMILIES[f])
 
@@ -354,7 +334,7 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
     server = None
     if plan.n_policy_slots:
         server = E.PolicyOpponentServer(plan, svc, n, policy_seed=int(decl.policy_seed), seed_stride=1,
-                                        run_seed=int(decl.run_seed), sampling=decl.opponent_sampling)
+                                        run_seed=int(decl.run_seed), sampling="keyed")
 
     # ---- teams + the core
     table = TeamTable()
@@ -375,7 +355,7 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
     cfg = CollectorConfig(n_envs=n, trigger=trig, gamma=float(decl.gamma), gae_lambda=float(decl.gae_lambda),
                           run_seed=int(decl.run_seed), turn_limit=int(decl.turn_limit),
                           capacity=decl.capacity(trig), max_game_rows=decl.resolved_max_game_rows,
-                          label_keys=label_keys, version_pinning=bool(decl.version_pinning),
+                          label_keys=label_keys,
                           respawn_budget=int(decl.respawn_budget),
                           victory_value=float(terminal["victory_value"]), fork=decl.fork is not None)
     col = RustCollector(cfg, core=core, obs_space=obs_space, svc=svc, trainee_slots=trainee_slots,
@@ -388,12 +368,12 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
         FK.check_obs_keys(list(obs_space.spaces))
         col.fork = FK.RustForkPass(decl.fork, lib_path=F.default_path(decl.profile), nan_poison=decl.profile == "selfcheck",
                                    turn_limit=int(decl.turn_limit), victory_value=float(terminal["victory_value"]),
-                                   target_hi=int(trig.hi), max_rows_per_flush=int(svc.spec.max_rows_per_flush),
+                                   target_hi=int(trig.target), max_rows_per_flush=int(svc.spec.max_rows_per_flush),
                                    obs_dim=int(obs_space.spaces[S.KEY_OBSERVATION].shape[0]), emit=emit)
     col.decl = decl
     col.extra_slots = extra_ids      # M5 Lane H: the declared eval slots (``extra_slots``' order)
-    emit(f"🦀 [RUST ENV] collector: {trig.describe()}; arena {cfg.capacity:,} rows; version pinning "
-         f"{'ON' if decl.version_pinning else 'off'}; opponent sampling {decl.opponent_sampling}")
+    emit(f"🦀 [RUST ENV] collector: {trig.describe()}; arena {cfg.capacity:,} rows; opponent sampling "
+         "keyed (gen3_keyed_draw_v1)")
     return col
 
 

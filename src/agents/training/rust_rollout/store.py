@@ -1,4 +1,4 @@
-"""THE ROW ARENA and the two fills of the learner's buffer (M5 Lane G; package docstring).
+"""THE ROW ARENA and the fill of the learner's buffer (M5 Lane G; package docstring).
 
 Every trainee decision the collector plays becomes ONE row in a preallocated arena (declared at
 startup: ``capacity`` rows of every learner obs key + the PPO fields + per-row metadata), and stays
@@ -8,26 +8,21 @@ there until an update consumes it. A row carries what PPO needs AND what stalene
 * ``action``, the BEHAVIOUR log-prob μ(a|s) the action was drawn under, ``value`` V(s) at play time,
 * the policy ``version`` that played it (the update count of the weights T2 served),
 * the ``reward`` (terminal alone), the episode-start flag, and — once its game ends — the game's
-  outcome, and (complete-game mode) its GAE advantage and return.
+  outcome, its GAE advantage and return.
 
-TWO FILLS of the model's own buffer (``agents/training/rollout_buffer.RolloutBuffer``, ``[n_steps, n_envs]``,
+THE FILL of the model's own buffer (``agents/training/rollout_buffer.RolloutBuffer``, ``[n_steps, n_envs]``,
 the layout sb3-contrib's ``MaskableDictRolloutBuffer`` had, so ``train()`` and every buffer reader are untouched):
-
-* ``fill_window`` — TODAY'S SCHEDULE: column ``i`` = env ``i``'s next ``n_steps`` rows in play order;
-  GAE by the buffer's own ``compute_returns_and_advantage`` (sb3's arithmetic) with the bootstrap V of each env's
-  NEXT row; the win labels by ``win_prob_callback.backfill_terminal_labels`` (a game unfinished at the edge
-  gets ``win_mask`` 0). It exists so the collector is proven against today's path (the rollout-level
-  slice N) before it changes the schedule. Rows beyond a column's ``n_steps`` carry to the next window.
-* ``fill_complete`` — ORDER CONSTRAINT 6: completed games only, FIFO by completion; exactly ``D`` rows
-  (the trigger's target), laid column-major into the same buffer; GAE computed per COMPLETE game at
-  its end (``game_gae``: sb3's arithmetic over a contiguous episode, bit for bit); every row labelled
-  with its game's real outcome (``win_mask`` 1). A game straddling the D-th row is split: its tail
-  stays at the FIFO head for the next update — **no row is ever dropped or down-weighted for age**
-  (owner, 2026-09-29).
+``fill_complete`` — ORDER CONSTRAINT 6: completed games only, FIFO by completion; exactly ``D`` rows
+(the trigger's target), laid column-major into the buffer; GAE computed per COMPLETE game at
+its end (``game_gae``: sb3's arithmetic over a contiguous episode, bit for bit); every row labelled
+with its game's real outcome (``win_mask`` 1). A game straddling the D-th row is split: its tail
+stays at the FIFO head for the next update — **no row is ever dropped or down-weighted for age**
+(owner, 2026-09-29). (The n_steps-per-env WINDOW fill — the rollout-level parity schedule — was deleted
+with ``--rollout-trigger``, deletion pass P11c.)
 
 The one thing that removes rows is a CUT game (a quarantine, a core respawn): it has no outcome and no
 next state, so its in-progress rows are released and COUNTED (``rows_cut``), never fabricated into a
-loss. Window mode refuses a cut row outright (it is the parity tool, where a cut is a gate failure).
+loss.
 """
 from __future__ import annotations
 
@@ -36,8 +31,6 @@ from dataclasses import dataclass, field
 from typing import Any, Deque, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
-
-from agents.training.win_prob_callback import backfill_terminal_labels  # the ONE window back-fill
 
 #: Learner obs keys the collector fills, by source. Anything else in the observation space is REFUSED
 #: at startup by name (a key nothing fills would be a silent zero in the buffer).
@@ -70,7 +63,7 @@ class EndedGame:
 
     env: int
     episode: int
-    slots: np.ndarray            # its rows, play order (complete-game mode); the terminal row only (window)
+    slots: np.ndarray            # its rows, play order
     reward: float
     outcome: float               # 1.0 win, 0.0 otherwise (a tie and the stall forfeit included)
     draw: bool                   # a TIE (truncated without the stall forfeit)
@@ -87,10 +80,9 @@ class FillReport:
     """What one fill handed the learner — the STALENESS record of the update."""
 
     rows: int
-    mode: str
     current_version: int
     age_hist: Dict[int, int] = field(default_factory=dict)   # age (updates) -> rows
-    games_whole: int = 0          # complete-game mode: games entirely inside this update
+    games_whole: int = 0          # games entirely inside this update
     games_split: int = 0          # games whose rows straddle this update and the next
     carry_rows: int = 0           # completed rows left at the FIFO head for the next update
     in_progress_rows: int = 0     # rows of games still being played
@@ -275,25 +267,21 @@ def game_gae(rewards: np.ndarray, values: np.ndarray, gamma: float, gae_lambda: 
 
 
 class GameLog:
-    """Per-env game assembly over a ``RowStore`` (module docs). ``mode`` is ``window`` or
-    ``complete_game``; ``gamma`` / ``gae_lambda`` are the POLICY's (complete-game GAE)."""
+    """Per-env game assembly over a ``RowStore`` (module docs). ``gamma`` / ``gae_lambda`` are the
+    POLICY's (complete-game GAE)."""
 
-    def __init__(self, store: RowStore, n_envs: int, *, mode: str, gamma: float, gae_lambda: float,
+    def __init__(self, store: RowStore, n_envs: int, *, gamma: float, gae_lambda: float,
                  max_game_rows: int):
-        if mode not in ("window", "complete_game"):
-            raise ValueError(f"GameLog: mode {mode!r}")
-        self.store, self.n, self.mode = store, int(n_envs), mode
+        self.store, self.n = store, int(n_envs)
         self.gamma, self.gae_lambda = float(gamma), float(gae_lambda)
         self.max_game_rows = int(max_game_rows)
         self.cur: List[List[int]] = [[] for _ in range(self.n)]          # the in-progress game's rows
-        self.order: List[Deque[int]] = [deque() for _ in range(self.n)]  # window: unconsumed rows
         self.completed: Deque[np.ndarray] = deque()                       # complete-game FIFO
         self.completed_rows = 0
         self.games_ended = 0
         self.rows_cut = 0
         self.games_cut = 0
         self.games_without_rows = 0
-        self.cut_in_window = 0
 
     # ---- rows in
     def add(self, envs: np.ndarray, slots: np.ndarray) -> None:
@@ -304,8 +292,6 @@ class GameLog:
                 raise CollectorError(
                     f"env {e}: a game reached {len(cur)} trainee decisions, above the declared "
                     f"max_game_rows {self.max_game_rows} (the arena's sizing assumption)")
-            if self.mode == "window":
-                self.order[e].append(s)
 
     def in_progress_rows(self) -> int:
         return sum(len(c) for c in self.cur)
@@ -323,20 +309,15 @@ class GameLog:
         st.reward[last] = np.float32(reward)
         st.terminal[last] = True
         self.games_ended += 1
-        if self.mode == "window":
-            st.outcome[last] = np.float32(outcome)
-            slots = np.asarray([last], dtype=np.int64)
-            vs = (int(st.version[last]), int(st.version[last]))
-        else:
-            slots = np.asarray(rows, dtype=np.int64)
-            st.outcome[slots] = np.float32(outcome)
-            adv, ret = game_gae(st.reward[slots], st.value[slots], self.gamma, self.gae_lambda)
-            st.adv[slots] = adv
-            st.ret[slots] = ret
-            self.completed.append(slots)
-            self.completed_rows += int(slots.size)
-            v = st.version[slots]
-            vs = (int(v.min()), int(v.max()))
+        slots = np.asarray(rows, dtype=np.int64)
+        st.outcome[slots] = np.float32(outcome)
+        adv, ret = game_gae(st.reward[slots], st.value[slots], self.gamma, self.gae_lambda)
+        st.adv[slots] = adv
+        st.ret[slots] = ret
+        self.completed.append(slots)
+        self.completed_rows += int(slots.size)
+        v = st.version[slots]
+        vs = (int(v.min()), int(v.max()))
         return EndedGame(env=int(env), episode=int(episode), slots=slots, reward=float(reward),
                          outcome=float(outcome), draw=bool(draw), forfeit=bool(forfeit),
                          terminated=bool(terminated), truncated=bool(truncated), length=len(rows),
@@ -344,46 +325,21 @@ class GameLog:
 
     def cut(self, env: int) -> int:
         """The in-progress game of ``env`` ends WITHOUT an outcome (quarantine / respawn): its rows are
-        released (complete-game) or poisoned for the window (window mode refuses them). Returns rows."""
+        released. Returns rows."""
         rows = self.cur[env]
         self.cur[env] = []
         if not rows:
             return 0
         self.rows_cut += len(rows)
         self.games_cut += 1
-        if self.mode == "window":
-            self.cut_in_window += len(rows)
-            raise CollectorError(
-                f"env {env}: a game was CUT ({len(rows)} rows, no outcome) in WINDOW mode — the window "
-                "is the parity schedule, where a quarantine is itself a failure")
         self.store.release(np.asarray(rows, dtype=np.int64))
         return len(rows)
 
-    # ---- window mode
-    def window_ready(self, n_steps: int) -> bool:
-        return all(len(o) >= n_steps + 1 for o in self.order)
-
-    def take_window(self, n_steps: int) -> Tuple[np.ndarray, np.ndarray]:
-        """``(idx [n_steps, n_envs], next_slots [n_envs])``: each env's next ``n_steps`` rows and the
-        row after them (the bootstrap row, which stays for the next window)."""
-        if not self.window_ready(n_steps):
-            raise CollectorError("take_window before every env holds n_steps + 1 rows")
-        idx = np.empty((n_steps, self.n), dtype=np.int64)
-        nxt = np.empty(self.n, dtype=np.int64)
-        for e, o in enumerate(self.order):
-            for t in range(n_steps):
-                idx[t, e] = o.popleft()
-            nxt[e] = o[0]
-        return idx, nxt
-
-    # ---- complete-game mode
     def insert_after(self, parent: np.ndarray, games: Sequence[np.ndarray]) -> None:
         """The fork arm (`fork.py`): complete BRANCH games join the FIFO right after their PARENT game
         (so a branch is trained in its parent's update whenever the parent is). A parent no longer in
         the FIFO (cannot happen: the pass runs before the fill over games no fill has taken) is a
         refusal, never a silent append."""
-        if self.mode != "complete_game":
-            raise CollectorError("insert_after: branch games need the complete-game FIFO")
         if not games:
             return
         p0 = int(np.asarray(parent).reshape(-1)[0])
@@ -446,37 +402,6 @@ def _check_buffer(buf: Any, n_steps: int, n_envs: int) -> None:
                              f"[{n_steps}, {n_envs}]")
 
 
-def fill_window(buf: Any, log: GameLog, n_steps: int, *, current_version: int) -> Tuple[FillReport, np.ndarray]:
-    """TODAY'S SCHEDULE (module docs): the bootstrap is V of each env's NEXT row (played by the policy
-    of the time, which stays in the arena for the next window). Returns ``(report, versions)``; the
-    window's rows are released after the copy."""
-    import torch as th
-
-    st = log.store
-    _check_buffer(buf, n_steps, log.n)
-    buf.reset()
-    idx, nxt = log.take_window(n_steps)
-    _copy_rows(buf, st, idx)
-    dones = st.start[nxt] >= 0.5                      # the window's last row ended its game
-    buf.compute_returns_and_advantage(
-        last_values=th.as_tensor(np.asarray(st.value[nxt], dtype=np.float32)), dones=dones)
-    if KEY_WIN_TARGET in buf.observations:
-        scratch = np.where(st.terminal[idx], st.outcome[idx], np.nan).astype(np.float32)
-        backfill_terminal_labels(scratch, buf.episode_starts, buf.observations[KEY_WIN_TARGET],
-                                 buf.observations[KEY_WIN_MASK])
-    buf.pos = n_steps
-    buf.full = True
-    rep = FillReport(rows=int(idx.size), mode="window", current_version=int(current_version),
-                     age_hist=_age_hist(st.version[idx], current_version),
-                     in_progress_rows=log.in_progress_rows(), cut_rows_total=log.rows_cut)
-    if KEY_WIN_MASK in buf.observations:
-        rep.labelled_rows = int((buf.observations[KEY_WIN_MASK] >= 0.5).sum())
-    rep.provenance = row_provenance(st, idx)
-    versions = st.version[idx].copy()
-    st.release(idx.reshape(-1))
-    return rep, versions
-
-
 def fill_complete(buf: Any, log: GameLog, d: int, *, current_version: int) -> Tuple[FillReport, np.ndarray]:
     """ORDER CONSTRAINT 6 (module docs): exactly ``d`` completed rows, column-major into the buffer
     ``[d / n_envs, n_envs]``; the precomputed complete-game GAE; every row labelled. Returns
@@ -498,7 +423,7 @@ def fill_complete(buf: Any, log: GameLog, d: int, *, current_version: int) -> Tu
         buf.observations[KEY_WIN_MASK][..., 0] = 1.0
     buf.pos = n_steps
     buf.full = True
-    rep = FillReport(rows=int(d), mode="complete_game", current_version=int(current_version),
+    rep = FillReport(rows=int(d), current_version=int(current_version),
                      age_hist=_age_hist(st.version[idx], current_version), games_whole=whole,
                      games_split=split, carry_rows=log.completed_rows,
                      in_progress_rows=log.in_progress_rows(), labelled_rows=int(d),

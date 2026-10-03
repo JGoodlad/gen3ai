@@ -26,9 +26,8 @@ Three pieces live here:
     `win_target` [1] + `win_mask` [1] (float32). The rollout buffer therefore stores + shuffles them automatically (the belief-label path). Read ONLY by
     the loss; the model forward reads only `obs["observation"]`, so the OUTCOME can't leak.
   - **The Rust collector** (`rust_rollout/collector.py`) records `info["win_outcome"]` (1.0 win / 0.0 loss-or-tie)
-    at each done step, and fills `win_target` / `win_mask` itself: complete-game mode gives every row its own game's outcome (every row `win_mask` 1); the window fill calls `win_prob_callback.backfill_terminal_labels`
-    (γ_win = 1, undiscounted → P(win|s) = "probability this state leads to a win"). The trailing IN-PROGRESS episode of a window (no terminal yet in-buffer) gets `win_mask=0` and is
-    excluded — never trained toward a fabricated label. (The Python `MaskableAgentWrapper.step` and `WinProbLabelCallback` that did this, sync and async, were deleted in U3.)
+    at each done step, and fills `win_target` / `win_mask` itself: complete-game mode gives every row its own game's outcome (every row `win_mask` 1)
+    (γ_win = 1, undiscounted → P(win|s) = "probability this state leads to a win"). A game still in progress is never filled — never trained toward a fabricated label. (The Python `MaskableAgentWrapper.step` and `WinProbLabelCallback` that did this, sync and async, were deleted in U3.)
 - **Loss (`instrumented_ppo.py` `_win_prob_loss`).** `train()` reads `last_win_prob_logits` (stashed by the
   `evaluate_actions` forward) + `rollout_data.observations["win_target"]`/`["win_mask"]`, folds
   the masked BCE (at `vf_coef` under the win-prob critic (the only critic), a fixed weight 1.0 as an aux otherwise — the

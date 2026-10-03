@@ -61,7 +61,7 @@ class SelfLikeP2:
 def played():
     TK.build_selfcheck()
     _args, obs, act = fork_spaces()
-    decl = RustEnvDecl(n_envs=N, threads=2, front="ffi", profile="selfcheck", trigger="complete_game",
+    decl = RustEnvDecl(n_envs=N, threads=2, front="ffi", profile="selfcheck",
                        n_steps=64, micro_batch=64, device="cpu", backend="eager", run_seed=23, gamma=1.0,
                        gae_lambda=0.8, fork=FK.ForkDecl(fraction=0.05, concurrency=4))
     p2 = SelfLikeP2()
@@ -195,7 +195,7 @@ def test_the_fork_phase_runs_inside_collect_and_the_lifecycle_stays_clean():
     TK.build_selfcheck()
     _args, obs, act = fork_spaces()
     n_steps = 64
-    decl = RustEnvDecl(n_envs=N, threads=2, front="ffi", profile="selfcheck", trigger="complete_game",
+    decl = RustEnvDecl(n_envs=N, threads=2, front="ffi", profile="selfcheck",
                        n_steps=n_steps, micro_batch=n_steps, device="cpu", backend="eager", run_seed=29, gamma=1.0,
                        gae_lambda=0.8, fork=FK.ForkDecl(fraction=0.05, concurrency=4))
     p2 = SelfLikeP2()

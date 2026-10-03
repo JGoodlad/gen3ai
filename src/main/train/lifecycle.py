@@ -78,12 +78,11 @@ def _maybe_compile_trainer(model, args) -> None:
             # micro-batches would hand the one compiled learner graph a second, undeclared shape (the
             # collector refuses it at the first buffer build; this refuses it before the model
             # compiles). The REAL update size: the model's own n_steps / batch_size (a resume restores
-            # the checkpoint's, so the argv's are inert there) with the argv's trigger and target
+            # the checkpoint's, so the argv's are inert there) with the argv's target
             # (P10-E, F9 — it used to judge n_steps * n_envs, which the target overrides).
             from main.train.compile_flags import update_rows_for
             check_shape_stability(
                 update_rows=update_rows_for(
-                    rollout_trigger=getattr(args, "rollout_trigger", None),
                     rollout_target_samples=getattr(args, "rollout_target_samples", 0),
                     n_steps=int(getattr(model, "n_steps", None) or getattr(args, "n_steps", 0) or 0),
                     n_envs=int(getattr(model, "n_envs", None) or getattr(args, "n_envs", 0) or 0)),

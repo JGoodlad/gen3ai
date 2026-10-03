@@ -13,9 +13,9 @@
 | | trainer flags | launcher flags | total |
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
-| DELETED by P11 so far | 19 | 0 | 19 |
-| NOW | 183 | 9 | 192 |
-| verdicts NOW | KEEP 163 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 20 | KEEP 9 | |
+| DELETED by P11 so far | 30 | 0 | 30 |
+| NOW | 172 | 9 | 181 |
+| verdicts NOW | KEEP 163 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 9 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -41,6 +41,17 @@
 * `--victory-value` (P11b (c)) — the win indicator magnitude, 1.0 only; a namespace constant now
 * `--draw-penalty` (P11b (c)) — the win indicator pays 0.0 on a tie and a timeout; a namespace constant now
 * `--terminal-indicator` (P11b (c)) — the terminal is the win indicator, ON only; a namespace constant now (its generated `--no-terminal-indicator` negation went with it)
+* `--exploiter-temp-start` (P11c batch 1) — the exploiter temperature curriculum: 23 recorded runs, none of the last 40; no backlog / era / end-state row names it (X29's pool-temperature anneal is a different mechanism)
+* `--exploiter-temp-end` (P11c batch 1) — the exploiter temperature curriculum
+* `--exploiter-temp-anneal-frac` (P11c batch 1) — the exploiter temperature curriculum
+* `--exploiter-temp-mode` (P11c batch 1) — the exploiter temperature curriculum
+* `--exploiter-temp-ratchet-wr` (P11c batch 1) — the exploiter temperature curriculum
+* `--exploiter-temp-ratchet-factor` (P11c batch 1) — the exploiter temperature curriculum
+* `--exploiter-temp-ratchet-games` (P11c batch 1) — the exploiter temperature curriculum
+* `--rollout-target-band` (P11c batch 1) — an adaptive-target hook with no controller (`set_target` had no caller outside its test); 0 recorded runs; X28 is an epoch controller
+* `--rollout-trigger` (P11c batch 1) — the window trigger was the python-parity schedule: only tests selected it and its oracle (the Python core's collect) is deleted; the complete-game trigger is a constant
+* `--opponent-sampling` (P11c batch 1) — `generator` was the Python core's RLPlayer stream; production and the fork arm are `keyed` only; 0 recorded runs
+* `--version-pinning` (P11c batch 1) — the first staleness remedy, OFF by owner decision 2026-09-29; no backlog row revisits it; 0 recorded runs
 
 **Planned, not yet shipped:** (none left in the DELETE column — the remaining work is the ONE-VALUED sweep and the NEEDS-OWNER rows below, sized in the manifest's P11 hand-off)
 
@@ -55,17 +66,6 @@
 * `--grad-checkpointing` — a bit-exact memory lever read by the compile sentinel (`lifecycle`); no recipe row, no runbook workflow, 67 older recorded runs
 * `--bait-bot-share` — BaitBot joins the training roster; the bait hunt is CLOSED, but BaitBot is also a RUST bot (`rust_env/src/bots/`, `bots_gate_test`, the Python class is its oracle), so deleting it is a Rust crossing
 * `--bait-bot-p` — BaitBot's pivot probability, same Rust reach as `--bait-bot-share`
-* `--exploiter-temp-start` — the exploiter temperature curriculum (anneal / ratchet, `exploiter_temp_callback.py`, 191 lines): 23 recorded runs typed it, none of the last 40; no backlog row; named only by `design_own_ppo_loop.md` as a callback in scope
-* `--exploiter-temp-end` — the exploiter temperature curriculum
-* `--exploiter-temp-anneal-frac` — the exploiter temperature curriculum
-* `--exploiter-temp-mode` — the exploiter temperature curriculum
-* `--exploiter-temp-ratchet-wr` — the exploiter temperature curriculum
-* `--exploiter-temp-ratchet-factor` — the exploiter temperature curriculum
-* `--exploiter-temp-ratchet-games` — the exploiter temperature curriculum
-* `--rollout-trigger` — `window` is the python-parity schedule; only tests select it, but it is the collector's `store` / `trigger` mode, so deleting it reaches the rollout internals
-* `--rollout-target-band` — an adaptive-target hook with no controller; the sizing study fixed the target; `rust_env_setup` reads it for the trigger band and arena size
-* `--version-pinning` — the first staleness remedy, OFF by owner decision 2026-09-29 ("enable only if the staleness/* measurements say old rows are harmful"); no backlog row
-* `--opponent-sampling` — `generator` is the Python core's RLPlayer stream; with that core gone only tests select it, but it lives in the T2 service's sampler and `combination_checks` row `fork_rust_needs_keyed_opponent_sampling`
 * `--win-prob-mode` — **NOT one-valued** (the P11 hand-off's "the winprob critic REQUIRES `shaping`" was wrong): the only refusal is `none` (`winprob_critic_needs_a_head`), so `read_only` (the win-prob head on a STOP-GRAD value pool: the critic's gradient does not reach the trunk) is a legal winprob arm. It is a registered open question — `designs/ai_v12/design_winprob_only_critic.md` §3 "keep the flag, drop `none`" and open question 5 ("whether `--win-prob-mode read_only` is the interesting arm"), a `Family.CRITIC` row of `flag_registry.py` that `arch_surface` deliberately leaves unapplied "because an experiment varies it", a recorded `ModelVersion` field, and `ARCHITECTURE.md` §3.4 names `read_only` as the stop-grad alternative; no recorded winprob run used it (all 69 recorded `critic: winprob` configs read `shaping`; the 16 `read_only` configs are shaped-era). Deleting it removes the only trunk-exposure lever of the critic, so the owner decides; left in place by P11b
 
 ## 3. ONE-VALUED
@@ -265,13 +265,6 @@
 | `--exploiter` | — | 94 / 12 | the exploiter of the population loop (era plan row 1; `main.best_response_gap`) | **KEEP** |
 | `--exploiter-keep-bots` | false | 40 / 12 | the exploiter's bot-mix floor (`best_response_gap`) | **KEEP** |
 | `--exploiter-bot-fraction` | 0.5 | 114 / 34 | the exploiter's bot-mix fraction | **KEEP** |
-| `--exploiter-temp-start` | — | 23 / 0 | the exploiter temperature curriculum (anneal / ratchet, `exploiter_temp_callback.py`, 191 lines): 23 recorded runs typed it, none of the last 40; no backlog row; named only by `design_own_ppo_loop.md` as a callback in scope | **NEEDS-OWNER** |
-| `--exploiter-temp-end` | 1.0 | 112 / 34 | the exploiter temperature curriculum | **NEEDS-OWNER** |
-| `--exploiter-temp-anneal-frac` | 0.2 | 91 / 34 | the exploiter temperature curriculum | **NEEDS-OWNER** |
-| `--exploiter-temp-mode` | fixed | 112 / 34 | the exploiter temperature curriculum | **NEEDS-OWNER** |
-| `--exploiter-temp-ratchet-wr` | 0.55 | 90 / 34 | the exploiter temperature curriculum | **NEEDS-OWNER** |
-| `--exploiter-temp-ratchet-factor` | 0.9 | 90 / 34 | the exploiter temperature curriculum | **NEEDS-OWNER** |
-| `--exploiter-temp-ratchet-games` | 500 | 90 / 34 | the exploiter temperature curriculum | **NEEDS-OWNER** |
 | `--trainee-team` | — | 17 / 0 | SPECIALIST mode (`TECH_DEBT_BACKLOG.md` P1, `eval_trace_gen`, `promote_teams`) | **KEEP** |
 | `--trainee-teams` | — | 83 / 14 | MULTI-SPECIALIST mode (`main.promote_teams`) | **KEEP** |
 | `--allow-untaught-teacher` | false | 0 / 0 | the documented override of the untaught-slice guard (`matchup_setup`); the untaught meter is live | **KEEP** |
@@ -280,21 +273,17 @@
 
 | flag | default | typed (all / last 40) | live user | verdict |
 |---|---|---|---|---|
-| `--rollout-trigger` | — | 0 / 0 | `window` is the python-parity schedule; only tests select it, but it is the collector's `store` / `trigger` mode, so deleting it reaches the rollout internals | **NEEDS-OWNER** |
 | `--rollout-target-samples` | — | 0 / 0 | `--arch production`: `recipe.sizing.rollout_target_samples` = `98304`; `recipe.sizing.rollout_target_samples` (98,304) | **KEEP** |
-| `--rollout-target-band` | — | 0 / 0 | an adaptive-target hook with no controller; the sizing study fixed the target; `rust_env_setup` reads it for the trigger band and arena size | **NEEDS-OWNER** |
 | `--rust-env-front` | — | 0 / 0 | `proc` (production) vs `ffi` (`rust_collector.md`) | **KEEP** |
 | `--rust-env-threads` | — | 0 / 0 | the Rust core's worker threads (`rust_collector.md`) | **KEEP** |
 | `--rust-env-profile` | — | 0 / 0 | `selfcheck` is the build every test run uses (`rust_collector.md`) | **KEEP** |
 | `--rust-env-refusal-budget` | — | 0 / 0 | a production FATAL budget (`rust_collector.md`) | **KEEP** |
 | `--rust-env-respawn-budget` | — | 0 / 0 | a production FATAL budget (`rust_collector.md`) | **KEEP** |
-| `--version-pinning` | — | 0 / 0 | the first staleness remedy, OFF by owner decision 2026-09-29 ("enable only if the staleness/* measurements say old rows are harmful"); no backlog row | **NEEDS-OWNER** |
-| `--trainee-slots` | — | 0 / 0 | `--arch production`: `recipe.sizing.trainee_slots` = `null`; `recipe.sizing.trainee_slots` (null); its only non-default use is `--version-pinning per_game` | **KEEP** |
+| `--trainee-slots` | — | 0 / 0 | named by `recipe.sizing.trainee_slots` (`null` = 1) in `--arch production`. **FINDING (P11c batch 1):** its only non-default use was `--version-pinning per_game`, deleted there — above 1 it now reserves T2 trainee slots nothing plays. The list is closed (standing rule 9), so it stays KEEP; it is the next one-valued candidate for the owner | **KEEP** |
 | `--t2-buckets` | — | 0 / 0 | `--arch production`: `recipe.sizing.t2_buckets` = `null`; `recipe.sizing.t2_buckets` | **KEEP** |
 | `--t2-opponent-bucket-cap` | — | 0 / 0 | the T2 graph-pool memory cap (`gen3_slot_bucket_caps_v1`) | **KEEP** |
 | `--t2-lanes` | — | 0 / 0 | `--arch production`: `recipe.sizing.t2_lanes` = `null`; `recipe.sizing.t2_lanes` | **KEEP** |
 | `--t2-backend` | — | 0 / 0 | `graph` / `eager` / `aot` inference backends (`inference/service`) | **KEEP** |
-| `--opponent-sampling` | — | 0 / 0 | `generator` is the Python core's RLPlayer stream; with that core gone only tests select it, but it lives in the T2 service's sampler and `combination_checks` row `fork_rust_needs_keyed_opponent_sampling` | **NEEDS-OWNER** |
 | `--rust-eval-envs` | — | 0 / 0 | the Rust eval core's env count (`rust_eval.build`) | **KEEP** |
 | `--behaviour-check` | — | 0 / 0 | K9(b), default `fatal` (`rust_rollout/consistency.py`) | **KEEP** |
 

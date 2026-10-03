@@ -56,8 +56,7 @@ def check_shape_stability(*, update_rows: int, batch_size: int) -> None:
     """Refuse a config whose UPDATE does not divide into full micro-batches.
 
     ``update_rows`` is the REAL update size — the rows one update trains on:
-    `--rollout-target-samples` under the complete-game trigger (0 = ``n_steps * n_envs``), and
-    ``n_steps * n_envs`` under the window trigger (`rust_rollout.trigger.update_rows`, the one
+    `--rollout-target-samples` (0 = ``n_steps * n_envs``; `rust_rollout.trigger.update_rows`, the one
     definition the collector's own trigger uses). It is NOT ``n_steps * n_envs`` alone: a production
     recipe sets the target independently, and judging the product of two flags that no longer set the
     update size would switch `--compile-trainer` off for a perfectly valid run (P10-E, F9).
@@ -76,8 +75,8 @@ def check_shape_stability(*, update_rows: int, batch_size: int) -> None:
     if batch_size and rows % int(batch_size) != 0:
         raise CompileTrainerError(
             f"--compile-trainer needs an update that divides evenly into micro-batches, but an update "
-            f"trains on {rows:,} rows (--rollout-target-samples, or n_steps*n_envs when it is 0 / "
-            f"the window trigger) and that leaves a remainder of {rows % int(batch_size):,} against "
+            f"trains on {rows:,} rows (--rollout-target-samples, or n_steps*n_envs when it is 0) "
+            f"and that leaves a remainder of {rows % int(batch_size):,} against "
             f"--batch-size {batch_size}.\n"
             "That remainder micro-batch is a SECOND batch shape the one compiled learner graph "
             "does not declare, replayed every epoch — and the collector refuses such an update.\n"

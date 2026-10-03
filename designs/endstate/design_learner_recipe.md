@@ -288,7 +288,7 @@ matches its control at the SAME dose is its secondary read.
     al. 2019 §4.4). Staleness of about 8 versions caused "significant slowdowns".
 - **🚨 HAZARD found by this review.** Under the win-prob critic (the only critic) at λ = 1, rows of an episode still
   running when the buffer fills get `win_mask = 0`. They are excluded from the critic loss, and no
-  label is back-filled (`win_prob_callback.py:22-24`; `critic_and_value_losses.md` "The BUFFER
+  label is back-filled (the window schedule, since deleted; `critic_and_value_losses.md` "The BUFFER
   BOUNDARY").
   - **Size.** Per env column, the excluded rows are the unfinished tail: to first order about L/2
     rows, where L is the game length in decisions, plus a length-variance term. That is roughly

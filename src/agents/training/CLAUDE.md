@@ -576,7 +576,7 @@ One refusal: `main.train.rust_env_setup.refuse_python_era_checkpoint`, called by
 The trainer runs the rollout on the M5 Rust env core: N envs in ONE core (process front end by
 default, `--rust-env-front`), the trainee and every policy opponent forwarded through the inference
 service in ONE flush, the scripted bots played inside the core, and the COMPLETE-GAME collector
-(`--rollout-trigger complete_game`, the default there): a game's rows are buffered until it ends, GAE
+(the only trigger): a game's rows are buffered until it ends, GAE
 and the win label run on the complete game (every row `win_mask` 1), and an update fires at
 `--rollout-target-samples` completed-game rows (default `n_steps × n_envs`), consuming exactly that many
 — no row is dropped or down-weighted for age. Hazards an agent must know before touching it:
@@ -584,19 +584,18 @@ and the win label run on the complete game (every row `win_mask` 1), and an upda
 - 🚨 **Startup runs BEFORE `--compile-trainer`** (`model_build._start_rust_env`): the inference service
   deep-copies the policy as its slot templates, and a copy taken after the compile would carry the
   patched `forward` bound to the LEARNER's extractor.
-- **The collector fills `win_target` / `win_mask`** (the window fill calls `win_prob_callback.backfill_terminal_labels`, the one function left of the deleted `WinProbLabelCallback`).
+- **The collector fills `win_target` / `win_mask`** (`store.fill_complete`; the `WinProbLabelCallback` is deleted).
 - **K9(b) `--behaviour-check`** (default `fatal`): before any optimizer step of every
   update, the learner's log π on rows played at the CURRENT version must equal the stored behaviour
   log-prob (ONE gate, at fp32 matmul precision `highest` — the only precision, TF32 was retired: DETERMINISTIC — a row whose forward has a declared selection / threshold within a relative margin 2e-4 of its cutoff is EXCLUDED (3.7 % of healthy rows; `agents/model/selection_sites.py`, `rust_rollout/tie_margins.py`), every other row's |Δ| < 1e-4 or FATAL at once, the excluded share < 0.15; a process at any other precision is refused). Lane G's pre-loop probe runs its own forward and logs
-  `staleness/*` (ratio, clip fraction, KL by row AGE) and `behaviour/*` (`learner_gates.md`). Per-game version pinning (`--version-pinning per_game`) is the first
-  staleness remedy, OFF unless those measurements call for it.
+  `staleness/*` (ratio, clip fraction, KL by row AGE) and `behaviour/*` (`learner_gates.md`). No staleness remedy is built (per-game version pinning was deleted); those tags are the whole read.
 - **Every micro-batch is FULL — no padding, no drop.** `--rollout-target-samples` must be a multiple of
-  lcm(`--batch-size`, `--n-envs`) (refused at parse, at the trigger, at every adaptive move, and by the
+  lcm(`--batch-size`, `--n-envs`) (refused at parse, at the trigger, and by the
   collector before a fill); the one game straddling the target is split and its tail trained next
   update. Only the last ACCUMULATION group can be short, and the learner flushes it as a FULL-weight step
   normalised by its real rows — which the dose now counts as such (K10(c)).
 - **Stochastic actions are the KEYED DRAW** (`gen3_keyed_draw_v1`; the trainee always, policy opponents
-  by default — `--opponent-sampling keyed`): replayable from the decision's key, which is what keeps the
+  always): replayable from the decision's key, which is what keeps the
   parity gates exact. It is NOT a speed lever (~0.2 ms a step: F-LE-8's "5.1 ms of sampling" was the host
   waiting for the forward). A core RESPAWN (up to `--rust-env-respawn-budget`) cuts the live games,
   derives a new segment seed and re-stages; past the budget it is fatal.
@@ -783,8 +782,7 @@ draw on the PARENT's keyed-draw key (a parent-action branch IS the parent — ga
 after its parent, so **branch rows COMPETE for the update's D** rather than doubling the buffer, and
 a branch plays the parent's REAL policy opponent where its slot still serves it
 (`fork/opp_substituted` is the rest). Both are DEPARTURES from the arm that read NOT DETECTED on
-2026-09-16 — that read does not transfer unchanged. Requires `--opponent-sampling keyed` and
-`--rollout-trigger complete_game` (refused by name otherwise).
+2026-09-16 — that read does not transfer unchanged. Needs no extra flag.
 
 🚨 **WHY — the head ranks siblings at CHANCE.** `paired_refit_discrimination_2026-09-14` measured
 the promoted win-prob critic's pairwise accuracy on successors ONE MOVE APART at **0.5169
@@ -889,9 +887,9 @@ EXPERIMENT_BACKLOG X26.
 
 ## The win-probability head (`--win-prob-mode`); its PBRS routes were DELETED
 
-A calibrated **P(win|state)** supervised by the Monte-Carlo episode OUTCOME, back-filled onto every
-step of an episode by the Rust collector (`win_prob_callback.backfill_terminal_labels`); the trailing in-progress episode gets `win_mask=0` and
-is **never trained toward a fabricated label**. `win_target`/`win_mask` are TRAINING-ONLY obs keys
+A calibrated **P(win|state)** supervised by the Monte-Carlo episode OUTCOME, filled onto every
+row of a game by the Rust collector (`store.fill_complete`); a game still in progress is
+**never trained toward a fabricated label**. `win_target`/`win_mask` are TRAINING-ONLY obs keys
 read only by the loss, so the outcome cannot leak into the forward.
 
 🚨 **`--win-prob-mode shaping` carries NO behavioral force, and the word has misled readers.** It is
@@ -917,7 +915,7 @@ Once per rollout at `_on_rollout_end`, a seeded 1/64 of buffer states is appende
   `--value-sidecar-fraction` (1/64) and `--value-sidecar-seed` (0). None of the three reaches
   `model_config.json`, so there is no `MODEL_CONFIG_VERSION` implication.
 - 🚨 **THE LABELS MUST BE FILLED BEFORE THE SIDECAR READS THEM.** The Rust COLLECTOR fills `win_target` /
-  `win_mask` itself (`win_prob_callback.backfill_terminal_labels` for the window fill) BEFORE `on_rollout_end`;
+  `win_mask` itself (`store.fill_complete`) BEFORE `on_rollout_end`;
   `WinProbLabelCallback` (whose registration order used to be the hazard) was deleted in U3. A sidecar that read the
   placeholders would write ZEROS — a file that looks exactly like a critic scoring an unbroken run of losses — so at runtime an all-zero mask over
   a whole rollout is REPORTED (`labels_unfilled`) rather than written as data.

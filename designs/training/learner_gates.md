@@ -289,8 +289,7 @@ validation raises before any loss — untyped, pinned by `learner_gates_test`).
 
 **LEGIT masks:** `damage_op_blocks.py` `where(isfinite(cheapest))` (every candidate is a constant or
 the +inf "no cure path" sentinel, no learned value); sb3_contrib's `where(mask, logits, -1e8)` (illegal
-slots, zero gradient); `fork_arm.py` gap `isfinite` (selection of which states fork); the NaN
-"not terminal" sentinels of `win_prob_callback`; integer label keys (int64 —
+slots, zero gradient); `fork_arm.py` gap `isfinite` (selection of which states fork); integer label keys (int64 —
 a NaN cannot be stored).
 
 **DETACHED METERS that may fail open by design — the ride-along heads** (`instrumented_ppo/ridealong_terms.py`,

@@ -812,8 +812,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if args.compile_trainer is None:
         args.compile_trainer, _ct_why = resolve_compile_trainer_auto(
             device=args.device, debug=args.debug, n_steps=args.n_steps, n_envs=args.n_envs,
-            batch_size=args.batch_size, rollout_trigger=getattr(args, "rollout_trigger", None),
-            rollout_target_samples=getattr(args, "rollout_target_samples", 0))
+            batch_size=args.batch_size, rollout_target_samples=getattr(args, "rollout_target_samples", 0))
         if _ct_why:
             emit("⚡ --compile-trainer would be ON by default here, but this config cannot take "
                  f"it — leaving it OFF rather than refusing to launch. Reason: {_ct_why} "

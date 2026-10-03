@@ -571,7 +571,7 @@ policy it is attributed to).
 | **`start_*_{bots,pool,stable,target}`** | the same, split by opponent class — **`start_*_pool` IS "the self-play win probability at episode start vs the realized self-play win rate"** | ✅ |
 
 🚨 **THE EPISODE-START READ IS PAIRED, AND THAT IS THE WHOLE POINT.** `win_target` is back-filled by
-the collector (`backfill_terminal_labels`) from the episode's own outcome to every step of that episode, so at an
+the collector (`store.fill_complete`) from the episode's own outcome to every step of that episode, so at an
 episode-START row it IS the realized outcome of the game that starts there. Prediction and
 realization therefore come from ONE set of episodes and `start_gap` is a paired difference — not
 the difference of two independently-windowed averages, which would carry the two windows'

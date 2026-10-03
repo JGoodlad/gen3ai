@@ -35,6 +35,17 @@ DELETED = [
     ("--draw-penalty", ["0"]),
     ("--terminal-indicator", []),
     ("--no-terminal-indicator", []),
+    ("--exploiter-temp-start", ["2.0"]),
+    ("--exploiter-temp-end", ["1.0"]),
+    ("--exploiter-temp-anneal-frac", ["0.2"]),
+    ("--exploiter-temp-mode", ["ratchet"]),
+    ("--exploiter-temp-ratchet-wr", ["0.55"]),
+    ("--exploiter-temp-ratchet-factor", ["0.9"]),
+    ("--exploiter-temp-ratchet-games", ["500"]),
+    ("--rollout-target-band", ["49152,196608"]),
+    ("--rollout-trigger", ["window"]),
+    ("--opponent-sampling", ["generator"]),
+    ("--version-pinning", ["per_game"]),
 ]
 
 

@@ -88,7 +88,7 @@ def _play(log, env, n_rows, rng, version=0):
 def test_take_complete_is_fifo_exact_and_splits_only_the_straddler():
     rng = np.random.default_rng(1)
     st = _store()
-    log = S.GameLog(st, 2, mode="complete_game", gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
+    log = S.GameLog(st, 2, gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
     a = _play(log, 0, 5, rng)
     log.end(0, reward=1.0, outcome=1.0, draw=False, forfeit=False, terminated=True, truncated=False,
             episode=0, opp_class=0)
@@ -107,7 +107,7 @@ def test_complete_fill_labels_every_row_and_carries_game_gae():
     rng = np.random.default_rng(2)
     st = _store()
     n = 2
-    log = S.GameLog(st, n, mode="complete_game", gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
+    log = S.GameLog(st, n, gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
     games = []
     for e, L, won in ((0, 6, 1.0), (1, 5, 0.0), (0, 9, 0.0)):
         s = _play(log, e, L, rng, version=1)
@@ -138,47 +138,13 @@ def test_complete_fill_labels_every_row_and_carries_game_gae():
     assert set(in_play.tolist()) <= set(log.cur[1])
 
 
-def test_window_fill_is_sb3_gae_and_the_callbacks_backfill():
-    rng = np.random.default_rng(3)
-    st = _store()
-    n, T = 2, 6
-    log = S.GameLog(st, n, mode="window", gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
-    # env 0: a game of 4 (won), then a game still running; env 1: one long running game
-    _play(log, 0, 4, rng)
-    log.end(0, reward=1.0, outcome=1.0, draw=False, forfeit=False, terminated=True, truncated=False,
-            episode=0, opp_class=0)
-    _play(log, 0, 5, rng)
-    _play(log, 1, 8, rng)
-    buf = _buf(T, n)
-    rep, _v = S.fill_window(buf, log, T, current_version=0)
-    # the reference: the same rows through sb3 + the callback's back-fill
-    ref = _buf(T, n)
-    ref.reset()
-    ref.rewards[...] = buf.rewards
-    ref.episode_starts[...] = buf.episode_starts
-    ref.values[...] = buf.values
-    assert buf.rewards[3, 0] == 1.0 and buf.episode_starts[4, 0] == 1.0
-    # the bootstrap: env 0's 7th row and env 1's 7th row (both mid-game)
-    nxt = np.array([st.value[log.order[0][0]], st.value[log.order[1][0]]], np.float32)
-    ref.compute_returns_and_advantage(last_values=th.as_tensor(nxt), dones=np.array([False, False]))
-    assert ref.advantages.tobytes() == buf.advantages.tobytes()
-    wm = buf.observations["win_mask"][..., 0]
-    assert wm[:4, 0].tolist() == [1.0] * 4 and wm[4:, 0].tolist() == [0.0] * 2 and not wm[:, 1].any()
-    assert buf.observations["win_target"][:4, 0, 0].tolist() == [1.0] * 4
-    assert rep.labelled_rows == 4
-
-
-def test_a_cut_game_releases_its_rows_and_window_mode_refuses_one():
+def test_a_cut_game_releases_its_rows():
     rng = np.random.default_rng(4)
     st = _store()
-    log = S.GameLog(st, 1, mode="complete_game", gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
+    log = S.GameLog(st, 1, gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
     _play(log, 0, 6, rng)
     before = st.live_count
     assert log.cut(0) == 6 and st.live_count == before - 6 and log.rows_cut == 6
-    wlog = S.GameLog(_store(), 1, mode="window", gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
-    _play(wlog, 0, 3, rng)
-    with pytest.raises(S.CollectorError, match="CUT"):
-        wlog.cut(0)
 
 
 def test_the_arena_refuses_past_its_declared_capacity_and_a_game_past_max_rows():
@@ -186,7 +152,7 @@ def test_the_arena_refuses_past_its_declared_capacity_and_a_game_past_max_rows()
     st.alloc(3)
     with pytest.raises(S.ArenaExhausted):
         st.alloc(2)
-    log = S.GameLog(_store(), 1, mode="complete_game", gamma=GAMMA, gae_lambda=LAM, max_game_rows=3)
+    log = S.GameLog(_store(), 1, gamma=GAMMA, gae_lambda=LAM, max_game_rows=3)
     with pytest.raises(S.CollectorError, match="max_game_rows"):
         _play(log, 0, 4, np.random.default_rng(0))
 
@@ -217,7 +183,7 @@ def test_both_fills_hand_the_learner_each_row_s_collection_provenance():
     rng = np.random.default_rng(5)
     st = _store()
     n = 2
-    log = S.GameLog(st, n, mode="complete_game", gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
+    log = S.GameLog(st, n, gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
     for e, L in ((0, 6), (1, 5), (0, 9)):
         s = _play(log, e, L, rng, version=3)
         full = np.log(rng.dirichlet(np.ones(11), L)).astype(np.float32)

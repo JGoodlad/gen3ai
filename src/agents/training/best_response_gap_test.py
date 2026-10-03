@@ -38,7 +38,7 @@ def _team_files(tmp_path, stems):
 
 def make_run(tmp_path, name, *, target_run, target_step, fork_step, num_timesteps,
              cycles, team_stems, lr=2.5e-4, batch_size=2048, grad_accum=32, n_epochs=10,
-             bot_fraction=0.5, external=None, role="exploiter", with_target=True):
+             bot_fraction=0.5, external=None, role="exploiter", with_target=True, extra_cli=None):
     """One synthetic exploiter run directory: metadata.json + sidecars + eval_results.jsonl.
 
     ``cycles`` is ``[(step, wins, games), …]``; ``external`` overrides the ``ext_*`` label so a
@@ -59,7 +59,7 @@ def make_run(tmp_path, name, *, target_run, target_step, fork_step, num_timestep
         "num_timesteps": num_timesteps,
         "cli_args": {"trainee_teams": ",".join(teams), "eval_sentinel_greedy": True,
                      "exploiter_keep_bots": True, "exploiter_bot_fraction": bot_fraction,
-                     "exploiter_temp_mode": "fixed", "exploiter_temp_end": 1.0},
+                     **(extra_cli or {})},
         "lineage": {"schema": 1, "role": role, "fork_step": fork_step,
                     "fork_parent": target_block, "teachers": [],
                     "exploiter_target": target_block if with_target else None,
@@ -234,6 +234,20 @@ def test_regime_mismatch_refuses(tmp_path):
                                     num_timesteps=40, cycles=[(35, 5, 10)],
                                     team_stems=["bbbb1111"], bot_fraction=0.9), TEAMSETS)
     with pytest.raises(UnmatchedRegimeError, match="exploiter_bot_fraction"):
+        brg.check_matched([a, b])
+
+
+def test_a_recorded_temperature_curriculum_is_a_different_regime(tmp_path):
+    """The curriculum's flags are DELETED (P11c) but an old run's record still carries them: a run that
+    annealed its target's temperature is not comparable with one that recorded none (every run after
+    the deletion)."""
+    a = brg.read_exploiter(make_run(tmp_path, "a", target_run="g1", target_step=10, fork_step=10,
+                                    num_timesteps=20, cycles=[(15, 7, 10)], team_stems=["aaaa1111"],
+                                    extra_cli={"exploiter_temp_start": 2.0, "exploiter_temp_mode": "fixed",
+                                               "exploiter_temp_end": 1.0}), TEAMSETS)
+    b = brg.read_exploiter(make_run(tmp_path, "b", target_run="g2", target_step=30, fork_step=30,
+                                    num_timesteps=40, cycles=[(35, 5, 10)], team_stems=["bbbb1111"]), TEAMSETS)
+    with pytest.raises(UnmatchedRegimeError, match="exploiter_temp_curriculum"):
         brg.check_matched([a, b])
 
 

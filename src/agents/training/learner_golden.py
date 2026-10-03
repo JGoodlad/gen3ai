@@ -388,7 +388,7 @@ def rebuild_buffer(reason: str) -> None:
 
     TK.build_selfcheck()
     _a, obs, act = _spaces()
-    decl = RustEnvDecl(n_envs=N_ENVS, threads=2, front="ffi", profile="selfcheck", trigger="complete_game",
+    decl = RustEnvDecl(n_envs=N_ENVS, threads=2, front="ffi", profile="selfcheck",
                        n_steps=RECORD_N_STEPS, micro_batch=RECORD_N_STEPS, device="cpu", backend="eager",
                        run_seed=RECORD_RUN_SEED, gamma=1.0, gae_lambda=0.8)
     p2 = TK.RandomP2(RECORD_P2_SEED)

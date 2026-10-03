@@ -1,12 +1,10 @@
-"""Win-probability loss + the MC-label callback (the future-outcome plumbing)."""
+"""Win-probability loss + the RLPlayer win-prob read (the future-outcome plumbing)."""
 
 from types import SimpleNamespace
 
-import numpy as np
 import torch
 
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
-from agents.training.win_prob_callback import backfill_terminal_labels
 
 
 # ── _win_prob_loss ──────────────────────────────────────────────────────────────
@@ -113,41 +111,6 @@ def test_loss_grad_flows_to_logits():
     loss, _ = InstrumentedMaskablePPO._win_prob_loss(logits, target, mask)
     loss.backward()
     assert logits.grad is not None and float(logits.grad.abs().sum()) > 0
-
-
-# ── the window back-fill (`backfill_terminal_labels`: the Rust collector's WINDOW fill runs it) ──
-
-def _fill(n_steps, n_envs, episode_starts, terminals):
-    """Run the back-fill on a scratch holding ``terminals`` ({(step, env): outcome}); return (wt, wm)."""
-    scratch = np.full((n_steps, n_envs), np.nan, np.float32)
-    for (t, e), v in terminals.items():
-        scratch[t, e] = v
-    wt = np.zeros((n_steps, n_envs, 1), np.float32)
-    wm = np.zeros((n_steps, n_envs, 1), np.float32)
-    backfill_terminal_labels(scratch, np.asarray(episode_starts, np.float32), wt, wm)
-    return wt, wm
-
-
-def test_mc_fill_propagates_outcome_and_masks_inprogress():
-    # 1 env, 5 steps: episode A = steps 0,1,2 (WIN at step 2); episode B = steps 3,4 (in progress).
-    es = np.array([[1.0], [0.0], [0.0], [1.0], [0.0]])     # starts at step 0 and step 3
-    wt, wm = _fill(5, 1, es, {(2, 0): 1.0})               # WIN terminal at step 2
-    np.testing.assert_array_equal(wt[:, 0, 0], [1, 1, 1, 0, 0])
-    np.testing.assert_array_equal(wm[:, 0, 0], [1, 1, 1, 0, 0])
-
-
-def test_mc_fill_two_complete_episodes():
-    # episode A = 0,1 (LOSS at 1); episode B = 2,3,4 (WIN at 4). All known.
-    es = np.array([[1.0], [0.0], [1.0], [0.0], [0.0]])
-    wt, wm = _fill(5, 1, es, {(1, 0): 0.0, (4, 0): 1.0})
-    np.testing.assert_array_equal(wt[:, 0, 0], [0, 0, 1, 1, 1])
-    np.testing.assert_array_equal(wm[:, 0, 0], [1, 1, 1, 1, 1])
-
-
-def test_mc_fill_no_terminal_all_masked():
-    es = np.array([[1.0], [0.0], [0.0]])                   # one in-progress episode, no done
-    _, wm = _fill(3, 1, es, {})
-    np.testing.assert_array_equal(wm[:, 0, 0], [0, 0, 0])
 
 
 def test_rlplayer_win_prob_reads_stashed_logit():

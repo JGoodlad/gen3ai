@@ -122,8 +122,7 @@ SIZING_ROWS: Tuple[RecipeRow, ...] = (
               "rust core's n_steps MAXIMUM: the buffer is preallocated at it)"),
     RecipeRow("rollout_target_samples", "--rollout-target-samples", 0,
               "the collector's update size; null / 0 = n_envs x n_steps"),
-    RecipeRow("trainee_slots", "--trainee-slots", 1, "T2's trainee slots; null = the collector's (1, or 3 "
-              "under per-game pinning)"),
+    RecipeRow("trainee_slots", "--trainee-slots", 1, "T2's trainee slots; null = the collector's (1)"),
     RecipeRow("t2_buckets", "--t2-buckets", None, "T2's opponent buckets; null = derived at startup"),
     RecipeRow("t2_lanes", "--t2-lanes", 0, "T2's lanes; null / 0 = derived (min(slots, 8))"),
 )

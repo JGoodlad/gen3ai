@@ -47,7 +47,7 @@ import numpy as np
 from agents.training import keyed_draw as KD
 from agents.training.rust_rollout import store as S
 from agents.training.rust_rollout.teams import TeamStager
-from agents.training.rust_rollout.trigger import TriggerError, WindowTrigger
+from agents.training.rust_rollout.trigger import TriggerError
 
 
 #: The collector's phases, in order (``collect``). ``fork`` exists only when the fork arm is declared
@@ -61,14 +61,10 @@ class LifecycleViolation(S.CollectorError):
     beyond the declared budget."""
 
 
-class SlotCapacityExceeded(S.CollectorError):
-    """Per-game version pinning found no trainee slot free of an in-progress game."""
-
-
 @dataclass
 class CollectorConfig:
     n_envs: int
-    trigger: Any                          # SampleTrigger | WindowTrigger
+    trigger: Any                          # SampleTrigger
     gamma: float
     gae_lambda: float
     run_seed: int
@@ -76,7 +72,6 @@ class CollectorConfig:
     capacity: int
     max_game_rows: int
     label_keys: Tuple[str, ...]
-    version_pinning: bool = False
     respawn_budget: int = 0
     victory_value: float = 1.0
     fork: bool = False                    # the fork arm is declared (the arena tracks turns + branch rows)
@@ -102,7 +97,7 @@ class CollectorStats:
 class RustCollector:
     """See the module docstring. ``core`` is a started ``FfiCore`` / ``ProcCore`` whose spec declared
     ``plan.spec_rows(...)`` as its opponents; ``svc`` a STARTED inference service; ``trainee_slots``
-    the global T2 slots of the trainee (1, or K under version pinning); ``opponents`` Lane E's
+    the global T2 slots of the trainee (``--trainee-slots``, 1 by default); ``opponents`` Lane E's
     ``RustEnvOpponents``; ``server`` its ``PolicyOpponentServer`` (None when no policy route);
     ``external_p2(cols, envs) -> actions`` answers p2 on an EXTERNAL route (harnesses only)."""
 
@@ -120,16 +115,13 @@ class RustCollector:
         self.trainee_slots = [int(s) for s in trainee_slots]
         if not self.trainee_slots:
             raise S.CollectorError("the collector needs at least one trainee slot")
-        if cfg.version_pinning and len(self.trainee_slots) < 2:
-            raise S.CollectorError("per-game version pinning needs >= 2 trainee slots (the current version "
-                                   "and the one games in progress still play)")
         self.opponents, self.server, self.stager = opponents, server, stager
         self.external_p2 = external_p2
         self.obs_space = obs_space
         self.sources = S.obs_key_sources(obs_space, cfg.label_keys)
         self.store = S.RowStore(obs_space, cfg.capacity, fork=bool(cfg.fork))
-        self.log = S.GameLog(self.store, self.n, mode=cfg.trigger.mode, gamma=cfg.gamma,
-                             gae_lambda=cfg.gae_lambda, max_game_rows=cfg.max_game_rows)
+        self.log = S.GameLog(self.store, self.n, gamma=cfg.gamma, gae_lambda=cfg.gae_lambda,
+                             max_game_rows=cfg.max_game_rows)
         self.version = 0
         self.slot_version = {s: 0 for s in self.trainee_slots}
         self.current_slot = self.trainee_slots[0]
@@ -139,8 +131,6 @@ class RustCollector:
         self.cur_episode = np.zeros(self.n, dtype=np.int64)
         self.ep_start_time = np.zeros(self.n, dtype=np.float64)
         self.p2_policy_by_env = np.zeros(self.n, dtype=np.int64)
-        self.exploiter_games = np.zeros(self.n, dtype=np.int64)
-        self.exploiter_wins = np.zeros(self.n, dtype=np.float64)
         self._klass = np.array([r.klass for r in opponents.routes], dtype=np.int64)
         self.stats = CollectorStats()
         self._pending_decisions = 0
@@ -338,11 +328,6 @@ class RustCollector:
         self.stats.games_ended += 1
         self._observe_rows(g.length, reward)
         self.stager.record_outcome(e, won, klass)
-        from agents.training.rust_env_opponents import OPP_CLASS_EXPLOITER
-
-        if klass == OPP_CLASS_EXPLOITER:
-            self.exploiter_games[e] += 1
-            self.exploiter_wins[e] += won
         self._infos.append({
             "episode": {"r": reward, "l": g.length, "t": round(time.time() - self._t_start, 6)},
             "win_outcome": won, "win_draw": float(draw), "opponent_class": klass,
@@ -360,10 +345,7 @@ class RustCollector:
 
     # ------------------------------------------------------------------ the PPO hook
     def ready(self) -> bool:
-        trig = self.cfg.trigger
-        if isinstance(trig, WindowTrigger):
-            return self.log.window_ready(trig.n_steps)
-        return trig.ready(self.log.completed_rows)
+        return self.cfg.trigger.ready(self.log.completed_rows)
 
     def collect(self, model: Any, callback: Any, rollout_buffer: Any) -> bool:
         """``collect_rollouts``' contract for the learner (module docs). Returns False iff a callback
@@ -394,13 +376,8 @@ class RustCollector:
             self.fork.run(self, model)
         t0 = time.perf_counter()
         self._ensure_buffer(model)
-        trig = self.cfg.trigger
-        if isinstance(trig, WindowTrigger):
-            rep, versions = S.fill_window(model.rollout_buffer, self.log, trig.n_steps,
-                                          current_version=self.version)
-        else:
-            rep, versions = S.fill_complete(model.rollout_buffer, self.log, trig.take(),
-                                            current_version=self.version)
+        rep, versions = S.fill_complete(model.rollout_buffer, self.log, self.cfg.trigger.take(),
+                                        current_version=self.version)
         self.stats.seconds["fill"] += time.perf_counter() - t0
         self.last_fill, self.last_versions = rep, versions
         model._rust_fill = rep
@@ -442,11 +419,10 @@ class RustCollector:
         logger.record("rust_env/arena_live_rows", float(self.store.live_count))
 
     def _ensure_buffer(self, model: Any) -> None:
-        """The learner's buffer is ``[n_steps, n_envs]`` for THIS update (complete-game: target / n_envs;
-        the adaptive-batch hook may have moved the target). A new size is a new buffer object (the
-        learner's `rollout_buffer.RolloutBuffer`, whose ``reset()`` re-allocates every array anyway)."""
-        trig = self.cfg.trigger
-        n_steps = trig.n_steps if isinstance(trig, WindowTrigger) else trig.take() // self.n
+        """The learner's buffer is ``[n_steps, n_envs]`` for THIS update (target / n_envs). A new size is
+        a new buffer object (the learner's `rollout_buffer.RolloutBuffer`, whose ``reset()``
+        re-allocates every array anyway)."""
+        n_steps = self.cfg.trigger.take() // self.n
         micro = int(getattr(model, "batch_size", 0) or 0)
         if micro and (n_steps * self.n) % micro:
             # the trigger's quantum is lcm(batch_size, n_envs), so this cannot happen unless the
@@ -463,32 +439,15 @@ class RustCollector:
 
     # ------------------------------------------------------------------ after an update
     def after_update(self, model: Any) -> None:
-        """The learner stepped: LOAD its weights into T2 (the current slot, or — pinning — a free one)
-        and bump the version. Then the lifecycle check."""
+        """The learner stepped: LOAD its weights into T2 (the current slot) and bump the version. Then
+        the lifecycle check."""
         self.version += 1
         self.stats.updates += 1
         target = self.current_slot
-        if self.cfg.version_pinning:
-            in_use = set(self.env_slot[self._live_envs()].tolist())
-            free = [s for s in self.trainee_slots if s not in in_use]
-            if not free:
-                raise SlotCapacityExceeded(
-                    f"per-game version pinning: every trainee slot {self.trainee_slots} holds a version a game "
-                    "in progress still plays; declare more trainee slots")
-            target = free[0]
         self.svc.load(target, model.policy, f"trainee:v{self.version}")
         self.slot_version[target] = self.version
-        self.current_slot = target
-        if self.cfg.version_pinning:
-            # a game that has STARTED but not yet played a row pins to the new version
-            fresh = np.asarray([len(r) == 0 for r in self.log.cur])
-            self.env_slot[fresh] = target
-        else:
-            self.env_slot[:] = target
+        self.env_slot[:] = target
         self.check_lifecycle()
-
-    def _live_envs(self) -> np.ndarray:
-        return np.flatnonzero(np.asarray([len(r) > 0 for r in self.log.cur]))
 
     def check_lifecycle(self) -> Dict[str, int]:
         after = dict(self.core.after_freeze())

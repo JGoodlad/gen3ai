@@ -20,8 +20,7 @@ def _args(*argv):
 def test_every_collector_flag_is_untyped_and_the_core_is_no_namespace_attribute():
     a = _args()
     assert not hasattr(a, "env_core")     # the only core is not a choice (deletion pass P11b)
-    for d in ("rollout_trigger", "rollout_target_samples", "rust_env_front", "version_pinning",
-              "opponent_sampling", "behaviour_check", "trainee_slots"):
+    for d in ("rollout_target_samples", "rust_env_front", "behaviour_check", "trainee_slots"):
         assert getattr(a, d) is None, d
     resolve_env_core_args(a)
     assert a.behaviour_check == "fatal"        # K9(b) on both cores (the python gate costs one read)
@@ -30,12 +29,10 @@ def test_every_collector_flag_is_untyped_and_the_core_is_no_namespace_attribute(
 def test_the_rust_core_resolves_to_the_stated_defaults():
     a = _args()
     resolve_env_core_args(a)
-    assert (a.rollout_trigger, a.rust_env_front, a.rust_env_profile, a.version_pinning, a.trainee_slots,
-            a.behaviour_check, a.rollout_target_samples, a.opponent_sampling) == (
-        "complete_game", "proc", "release", "off", 1, "fatal", 0, "keyed")
-    b = _args("--version-pinning", "per_game")
-    resolve_env_core_args(b)
-    assert b.trainee_slots == 3
+    assert (a.rust_env_front, a.rust_env_profile, a.trainee_slots, a.behaviour_check,
+            a.rollout_target_samples) == ("proc", "release", 1, "fatal", 0)
+    for gone in ("rollout_trigger", "rollout_target_band", "version_pinning", "opponent_sampling"):
+        assert not hasattr(a, gone), gone       # constants now (deletion pass P11c)
     c = _args("--behaviour-check", "warn", "--trainee-slots", "4")
     resolve_env_core_args(c)
     assert (c.behaviour_check, c.trainee_slots) == ("warn", 4)

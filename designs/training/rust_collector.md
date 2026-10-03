@@ -59,14 +59,7 @@ micro-batch reaches the one compiled learner graph, and the buffer keeps its sha
 also a multiple of micro-batch × K takes a smaller last optimizer step each epoch (the recipe review's
 §3.3 "ragged step"; PROPOSED there as Stage 0.2, reported by `trigger.ragged_accumulation`, not imposed).
 
-**The adaptive-batch hook:** `SampleTrigger.set_target(rows)` inside a declared band `[lo, hi]` (the
-band's `hi` sizes the arena at startup, so a move allocates nothing); off-quantum or out-of-band is a
-typed refusal; accepted moves are counted. The SIZING study (order constraint 5) chooses the numbers.
-
-**The window fill** (`--rollout-trigger window`, `store.fill_window`) reproduces TODAY'S schedule —
-column `i` = env `i`'s next `n_steps` rows, sb3's own GAE with the bootstrap V of each env's next row,
-and the win labels by `win_prob_callback.backfill_terminal_labels` (the one function left of the deleted `WinProbLabelCallback`, which the window fill calls). It was built to prove the collector against the Python collect before the schedule changed (the
-rollout-level slice N, deleted with the Python path in U3). Rows beyond a column carry to the next window.
+The row arena is sized by `--rollout-target-samples` (or `n_steps x n_envs`) alone. The complete-game trigger is the only trigger (`SampleTrigger(target, quantum)`); `store.fill_complete` is the one fill, and it labels every row with its game's outcome (`win_mask` 1).
 
 ## The FORK phase (declared, OFF — `gen3_fork_rust_v1`)
 
@@ -76,7 +69,7 @@ last pass (their core input logs come from `core.finished()`), plays the branche
 Lane I playout handles with T2 serving every decision, and inserts each branch game into the completed-game
 FIFO right after its parent. The arena then also tracks each row's TURN and which live rows are branch
 rows (the fork row budget, `ROW_BUDGET_MULTIPLE × target`, added to the declared capacity). OFF builds
-none of it. Requires `--opponent-sampling keyed` and the complete-game trigger. Detail:
+none of it. Detail:
 [`forks.md`](forks.md) §14.
 
 ## Staleness — measured, not pre-empted
@@ -88,10 +81,7 @@ optimizer step of every update, `consistency.behaviour_probe` runs the learner's
 micro-batch and logs, per age bucket (0, 1, 2, 3–4, 5–8, 9+): rows, the ratio π/μ (mean and mean
 |r − 1|), the share outside the clip band, and sb3's approx-KL — the `staleness/*` tags.
 
-**The first remedy, if staleness proves harmful, is PER-GAME VERSION PINNING** — a declared option,
-OFF by default: each game is played start-to-finish by the version it began with, held in its own T2
-slot (K trainee slots); an update loads into a FREE slot (one no game in play still uses); no free slot
-is a typed `SlotCapacityExceeded`.
+The measurements above are the whole staleness read: no remedy is built (per-game version pinning was deleted), so a row is trained on at whatever age the `staleness/*` tags show, corrected by PPO's own per-row ratio.
 
 ## K9(b) — behaviour-policy consistency
 
@@ -111,9 +101,8 @@ inverse CDF over `softmax(logp / T)` of the legal actions (`keyed_draw.py` state
 No generator, no state: the Python replay recomputes it from ITS OWN log-probs, so the parity gates stay
 EXACT, and the margin `min |c_i − u·c_last| / c_last` names the near-boundary rows two paths whose
 log-probs differ in the last bits could disagree on (counted, never a silent pass). The trainee always
-uses it (stream 0); a POLICY OPPONENT's stochastic action uses it too by default (stream 1,
-`--opponent-sampling keyed`; `generator` keeps today's per-env `torch.Generator` stream, bit for bit
-with `RLPlayer`). The reason is REPLAYABILITY — Lane E's opponent gate then replays a sampled game
+uses it (stream 0); a POLICY OPPONENT's stochastic action uses it too, always (stream 1;
+`PolicyOpponentServer`'s own `sampling` argument keeps the generator stream only as the keyed-draw benchmark's A/B baseline and its parity test). The reason is REPLAYABILITY — Lane E's opponent gate then replays a sampled game
 EXACTLY from its key (`rust_env_opponents_parity.py` mode `keyed`) — not speed: the draws cost
 ~0.13 / 0.25 / 0.38 ms at 8 / 40 / 48 rows either way (F-LE-8's "5.1 ms of sampling" was the host
 waiting for the forward, corrected 2026-09-30), so the keyed draw saves ~0.2 ms a step at most. The
@@ -123,8 +112,8 @@ never replays the first segment's teams, battle seeds or draws; a core RESPAWN r
 ## Every micro-batch is full — no padding, no drop
 
 The update takes EXACTLY the target, and the target is a multiple of lcm(`--batch-size`, N) (refused
-off the quantum at parse — `rollout_target_on_the_quantum` — at the trigger's construction, at every
-adaptive move, and by `_ensure_buffer` if the learner's micro-batch ever moved under a built
+off the quantum at parse — `rollout_target_on_the_quantum` — at the trigger's construction, and by
+`_ensure_buffer` if the learner's micro-batch ever moved under a built
 collector). The one game straddling the D-th row is SPLIT, its tail trained next update (F-LG-1), so
 the row count never varies and no rows are dropped. Every micro-batch the learner sees is therefore
 full-shaped: one compiled learner graph, no pad rows, no masked means. What CAN be short is the last
@@ -179,8 +168,7 @@ core that global stream was also RE-SEEDED by every pool load until 2026-10-02, 
 ## The env surface
 
 `RustVecEnv.SURFACE` maps every `env_method` a production callback calls (self-play pushes → Lane E's
-`RustEnvOpponents`; `drain_team_wr_counts`, `drain_reward_terms`, `opponent_default_stats`,
-`exploiter_winrate_totals`, `set_exploiter_temperature`) and nothing else — a method outside
+`RustEnvOpponents`; `drain_team_wr_counts`, `drain_reward_terms`, `opponent_default_stats`) and nothing else — a method outside
 `SURFACE` is a typed `RustEnvSurfaceError`; `rust_vec_env_test.py` walks every `env_method` call in
 the training sources and fails on one that is not in it. (The refused-method table
 `REFUSED_WITH_FLAG` is deleted with the flags it named, deletion pass L4.)

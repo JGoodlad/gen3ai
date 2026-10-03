@@ -503,8 +503,7 @@ streams 0 and 1, so they never share a uniform. The k-th post-fork decision of e
 the same key, so it consumes the same uniform. The prefix consumes nothing: the replay feeds the
 log's commands by token. `n` is read from the playout (`rust_env_playout_pending_n`), never counted
 host-side, because a decision a later feed REPLACES within one write moves `n` without the host
-answering it. **Requires `--opponent-sampling keyed`**: the `generator` mode's per-env
-`torch.Generator` cannot be replayed per branch, so it is refused.
+answering it. Policy opponents always draw with the keyed draw, which is what makes a branch replayable.
 
 ### 14.4 The branch's opponent
 
@@ -563,9 +562,7 @@ Four tags are new:
 
 ### 14.7 Refusals (combination checks)
 
-`--fork-fraction` leaves the Rust core's unported list. On the Rust core (the only core) it requires:
-- `--opponent-sampling keyed` (§14.3);
-- `--rollout-trigger complete_game` (the window fill is the parity schedule).
+`--fork-fraction` leaves the Rust core's unported list. On the Rust core (the only core) it has no extra flag requirement: the keyed draw (§14.3) and the complete-game trigger are the only ones.
 
 The ring was a Python-core requirement only; the Rust core's finished logs replace it, and the Python
 core's arm is now refused outright (`fork_python_core_unavailable`, deletion pass L4). The other fork

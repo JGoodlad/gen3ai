@@ -19,16 +19,15 @@ against the callers):
 
     set_self_play_target / set_opponent_win_rates / set_stable_mastered / set_stable_win_rates
         → Lane E's ``RustEnvOpponents`` (a new generation LOADS new snapshots into free T2 slots)
-    set_exploiter_temperature   → the opponent server's temperature (sampling is the host's)
     opponent_default_stats      → per env (p2 policy decisions served, 0, 0): T2 never defaults
-    exploiter_winrate_totals    → per env (games, wins) against the exploiter class
     drain_reward_terms          → the collector's ``reward/`` accumulator (env 0; None elsewhere)
     drain_team_wr_counts        → the per-env seeded teambuilders' tables (``TeamStager``)
 
 Anything else is a typed ``RustEnvSurfaceError`` naming the method — a callback that reaches for an
 unmapped method fails at the call, never silently gets ``None``. (Every ``env_method`` a production
 callback calls is in ``SURFACE``: the methods only a Python-core-only flag called — the exploiter
-ladder's rung push, team-PFSP's pulls — were deleted with those flags, deletion pass L4.)
+ladder's rung push, team-PFSP's pulls — were deleted with those flags, deletion pass L4; the exploiter
+temperature curriculum's push and its win-rate pull, deletion pass P11c.)
 """
 from __future__ import annotations
 
@@ -49,9 +48,7 @@ SURFACE: Dict[str, str] = {
     "set_opponent_win_rates": "RustEnvOpponents.set_opponent_win_rates (the pool's PFSP weights)",
     "set_stable_mastered": "RustEnvOpponents.set_stable_mastered",
     "set_stable_win_rates": "RustEnvOpponents.set_stable_win_rates",
-    "set_exploiter_temperature": "PolicyOpponentServer.set_temperature('exploiter', T)",
     "opponent_default_stats": "per env (policy p2 decisions served, 0 defaults, 0 re-decides)",
-    "exploiter_winrate_totals": "per env (games, wins) vs the exploiter class",
     "drain_reward_terms": "the collector's reward/ accumulator (the terminal is the one term)",
     "drain_team_wr_counts": "TeamStager.drain_team_wr_counts (per-env seeded teambuilders)",
 }
@@ -127,16 +124,8 @@ class RustVecEnv(TrainerVecEnv):
         col.opponents.set_stable_win_rates(rates)
         return self._all(None)
 
-    def _m_set_exploiter_temperature(self, col: Any, temperature: float) -> List[Any]:
-        if col.server is not None and "exploiter" in col.server.temperature:
-            col.server.set_temperature("exploiter", float(temperature))
-        return self._all(None)
-
     def _m_opponent_default_stats(self, col: Any) -> List[Any]:
         return [(int(n), 0, 0) for n in col.p2_policy_by_env]
-
-    def _m_exploiter_winrate_totals(self, col: Any) -> List[Any]:
-        return [(int(g), float(w)) for g, w in zip(col.exploiter_games, col.exploiter_wins)]
 
     def _m_drain_reward_terms(self, col: Any) -> List[Any]:
         out: List[Any] = self._all(None)
