@@ -1,0 +1,3 @@
+== P1 tree=/home/goodlad/dev/gen3ai-wt/lane-c-plant head=cbd20111 dirty=7
+before: load 0.47 1.25 1.03; gpu apps: 0
+after: load 1.71 1.50 1.36; gpu apps: 0

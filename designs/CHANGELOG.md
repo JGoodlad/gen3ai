@@ -10962,3 +10962,41 @@ team-PFSP is OFF in the recipe (probe P, ledger 2026-08-30); the exploiter ladde
   `designs/training/*` (`cf_grounding.md` is a tombstone over the kept offline sections), `designs/model/*`, `designs/ops/*`,
   `designs/endstate/*`, `production_config.README.md`, the training / model / launcher leaf `CLAUDE.md`s, `deleted_flags.md`, the
   manifest (L4 SHIPPED, finding 5 closed, the L5 hand-off).
+
+## 2026-10-02 — Deletion pass lane C: the update benchmark WORKS again (cause of K2's "the time stage does not reuse the pinned buffer" found and fixed), the wall-clock perf guard is RETIRED for deterministic performance-shape tests (no model change)
+
+- **The cause (manifest §6 finding 11).** `gen3_update_fit_v1` (CUDA) makes the trainer run ONE REAL `model.train()` at
+  startup — `update_fit.dry_update`, on a tiled FIXTURE of the buffer's declared shape (4,096 rows at the workers'
+  `--n-envs 2`). `learner_benchmark` and `main.compile_inventory` each replaced `InstrumentedMaskablePPO.train` for the
+  WHOLE process, so that startup call WAS their measurement: the time stage timed the fixture, wrote its result and exited
+  before `learn()` could reach the pinned-buffer restore (`_bench_collect`); the learner benchmark's fresh-collection mode
+  would likewise have pickled the fixture as "the rollout". K2's "a Rust collection of 4,096 fresh rows" was the collector's
+  startup banner. The Rust core was not at fault.
+- **The fix.** `learner_benchmark.learn_loop_only` / `install_worker_hooks`: the tool's `train` is live only from the learn
+  loop's first `collect_rollouts`; the startup update runs production's own code. The time stage REFUSES to run unless the
+  pinned buffer was restored (`buffer_restored`, in the result). Both workers run their repeats inside
+  `global_rng_guard.isolated_global_rng()` (each repeat SEEDS the global streams; a global reseed after the learner froze is
+  `FATAL_CONFIG` — found behind the first bug). A time stage without `--keep-prewarm` is refused up front: the K8 regions are
+  installed by the compile sentinel, which the old skip-the-prewarm variant replaced wholesale, so it always died "not
+  compiled" after the whole startup (dead branch deleted).
+- **The benchmark read** (fp32 'highest', K8 regions, pinned 98,304 rows, arm C's checkpoint, RTX 3080 Ti, idle box, n = 5):
+  **40.17 s**, spread 0.31%, compiled share 0.892; six CPU bystanders +0.04% (the update is GPU-bound); a planted regression
+  (R1 on its eager route, uncounted) 116.5 s (2.90×), share 0.000, loss matching to 4 digits.
+  `designs/research_state/measurements/k6_k8/update_benchmark_fp32/`. A read, not a baseline.
+- **Scope change (owner): NO wall-clock gate.** `compiled_perf_guard_test` is DELETED (a timing test is noisy, needs an idle
+  box and goes stale — its only baseline, TF32's, died in K2 and it skipped, blind); `acceptance/perf_baseline.json` is kept as
+  history only (schema `gen3_compiled_perf_history_v4`, no test reads it). The retired guard, run once more on the planted tree
+  before its deletion, did fail it (120.3 s against a 42.2 s bar, share 0.000).
+- **Performance-shape tests** (deterministic, every routine gate; `designs/ops/testing.md` carries the audit of existing + new):
+  `update_performance_shape_test` — every micro-batch of a REAL update takes R1's compiled route and none the eager one (the
+  planted dispatcher bypass is invisible to every run-level FATAL and is seen only here); a pinned host-scalar-read count per
+  update (1,050 on the golden; each read a device sync); R1's attention profile on CPU (2 fused + 2 MATH SDPA) and, on the
+  card (`slow`, `GEN3AI_TEST_ALLOW_GPU=1`), the trunk layer's fused `_scaled_dot_product_efficient_attention`;
+  `instrumented_ppo_device_batches_test` — the staged gather moves one micro-batch per micro-step, never the buffer. Each fails
+  on its planted regression (listed in the commit).
+- **Tests.** `learner_benchmark_test` (the REAL dry update on the golden learner must run the original `train` — fails on revert;
+  the fresh-collection mode keeps the class's own collect; `_bench_collect` records the restore), `worker_test` (the time
+  stage's refusal; the `--keep-prewarm` refusal).
+- **Docs.** Root `CLAUDE.md` Smoke Test (measured: ~2 min; what a Rust-core success prints — `🏁 Episode Finished` is the python
+  core's), `designs/ops/testing.md`, `designs/training/{compile_flags,learner_lifecycle}.md`, the training leaf,
+  `program_rust_core.md`'s K8 decision row, the manifest.

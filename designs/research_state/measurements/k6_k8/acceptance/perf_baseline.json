@@ -1,10 +1,6 @@
 {
- "schema": "gen3_compiled_perf_baseline_v3",
- "what": "one production PPO update through the compile inventory's time stage (torch 2.8, CUDA, fp32 matmul precision 'highest' — the ONLY precision since TF32 was retired, deletion pass K2 — --keep-prewarm --unbracketed) on arm C's final checkpoint (ai_v14_02_lbat_ctrl) and the learner benchmark's pinned buffer (learner_bench/20260928_135948_cuda/rollout_buffer.pkl; 98,304 rows, micro-batch 2048 x accumulation 32, 10 epochs), the K8 regions installed",
- "min_compiled_share": 0.8,
- "min_compiled_share_why": "K8's acceptance criterion (designs/research_state/measurements/k8_inventory/README.md, criterion 3)",
- "baseline": null,
- "baseline_unbanked_because": "the K8 acceptance's only banked baseline (36.32 s, `history.high`) was TF32, which deletion pass K2 retired; a live fp32 'highest' update reads ~40-42 s (the old test docstring), but NO fp32 baseline was banked: on 2026-10-02 the time stage, run as this test runs it, did not reuse the pinned buffer under the Rust env core (the worker collected a fresh 4,096-row buffer and timed 0.32 s on it; the worker log has no `reused buffer` line, so `learner_benchmark._bench_collect` was not reached; why is UNVERIFIED), so any number read from it is the wrong update. Bank one once the time stage reuses the pinned buffer again (geometry rows 98,304 / micro-batch 2,048 / accumulation 32 / 10 epochs), as `baseline: {update_wall_s, compiled_share_of_train_wall, wall_tolerance, wall_tolerance_why, source}`, and the guard runs.",
+ "schema": "gen3_compiled_perf_history_v4",
+ "status": "HISTORY ONLY — NO TEST READS THIS FILE. `compiled_perf_guard_test` (a wall-clock gate on one update, held to a banked number) was RETIRED 2026-10-02 by the owner: a timing test is noisy, needs an idle box and goes stale, which is what happened to its TF32 baseline (K2). Performance is checked by deterministic functional tests of the properties that make the update fast (designs/ops/testing.md 'Performance-shape tests') plus the on-demand update BENCHMARK at milestones (after a torch upgrade, before a baseline run, on suspicion): `python -m main.compile_inventory run --stage time --device cuda --keep-prewarm --unbracketed`. The reads below are what the benchmark said on the day; they go stale.",
  "history": {
   "high": {
    "update_wall_s": 36.32,
@@ -13,6 +9,40 @@
    "source": "designs/research_state/measurements/k6_k8/acceptance/README.md (units B1 36.37 s and B2 36.27 s; 2026-10-01; code of f3878594..fce2955a)",
    "wall_tolerance_why": "2.5x the largest run-to-run spread the acceptance read measured on this box at matched code and precision: arm A 45.28 vs 48.03 s (6.1%, under bystander load); arm B 36.37 vs 36.27 s (0.3%)",
    "retired": "TF32 ('high') was retired by deletion pass K2; kept as the K8 acceptance's record, never compared against an fp32 run"
+  },
+  "highest": {
+   "what": "the compile inventory's time stage as the retired guard ran it (torch 2.8.0+cu126, RTX 3080 Ti, fp32 matmul precision 'highest' — the only precision since K2 — --keep-prewarm --unbracketed, the Rust env core, arm C's final checkpoint, the pinned 98,304-row buffer, micro-batch 2048 x accumulation 32, 10 epochs, the K8 regions installed), the tree = main cbd20111 + the lane C benchmark fix",
+   "update_wall_s": 40.17,
+   "compiled_share_of_train_wall": 0.892,
+   "n": 5,
+   "relative_spread": 0.0031,
+   "units": {
+    "B1": {
+     "update_wall_s": 40.189,
+     "compiled_share": 0.8913
+    },
+    "B2": {
+     "update_wall_s": 40.14,
+     "compiled_share": 0.8924
+    },
+    "B3": {
+     "update_wall_s": 40.234,
+     "compiled_share": 0.8902
+    },
+    "B4": {
+     "update_wall_s": 40.182,
+     "compiled_share": 0.892
+    },
+    "B5": {
+     "update_wall_s": 40.11,
+     "compiled_share": 0.8933
+    }
+   },
+   "planted_regression": "R1 on its eager route once locked, uncounted: 116.48 s (2.90x), compiled share 0.000 (a second read through the retired guard: 120.34 s)",
+   "six_cpu_bystanders": "+0.04 % (the regions' update is GPU-bound)",
+   "min_compiled_share_k8_criterion": 0.8,
+   "source": "designs/research_state/measurements/k6_k8/update_benchmark_fp32/README.md",
+   "retired": "2026-10-02, not a baseline: kept as the record of what the working benchmark read after the pinned-buffer fix"
   }
  }
 }

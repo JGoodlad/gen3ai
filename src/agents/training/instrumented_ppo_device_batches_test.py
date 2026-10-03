@@ -184,6 +184,37 @@ def test_staged_batches_are_bit_identical_to_the_host_path_and_consume_the_same_
     assert "_devb_staged" not in buf.__dict__ and g.pool._shutdown
 
 
+def _sample_bytes(s) -> int:
+    """Every tensor a micro-batch sample carries, in bytes (what one staged copy moves to the card)."""
+    flat = (s.actions, s.old_values, s.old_log_prob, s.advantages, s.returns, s.action_masks)
+    return (sum(int(v.numel()) * v.element_size() for v in s.observations.values())
+            + sum(int(v.numel()) * v.element_size() for v in flat))
+
+
+def test_the_staged_gather_moves_one_micro_batch_per_micro_step_never_the_whole_buffer(monkeypatch):
+    """PERFORMANCE SHAPE (production's default mode): each micro-step copies ITS micro-batch to the card —
+    one copy per micro-batch, of exactly that micro-batch's bytes — never the flattened buffer (~1.1 GB at 98k
+    rows: that is the `resident` mode's once-per-update copy, and re-copying it per micro-step would be
+    ~11 GB of H2D per update). `nbytes` is the most the stager holds on the card at once: 2 micro-batches.
+    TEETH, in the same test: a gather that stages every row for every micro-batch is seen."""
+    model = _golden_buffer()
+    buf = model.rollout_buffer
+    rows = int(buf.buffer_size) * int(buf.n_envs)
+    with DB.device_samples(buf, force=True, mode="staged") as g:
+        samples = list(buf.get(16))
+        micro = max(_sample_bytes(s) for s in samples)
+        assert len(samples) == 4 and g.copies == 4                    # one staged copy per micro-batch
+        assert g.nbytes == 2 * micro                                  # the in-use batch + the one being copied
+    whole = sum(int(np.asarray(v).nbytes) for v in buf.observations.values())
+    assert 0 < g.nbytes < whole, (g.nbytes, whole)                    # ... and the buffer is far larger
+    orig = DB._StagedGather._host
+    with monkeypatch.context() as m:
+        m.setattr(DB._StagedGather, "_host", lambda self, inds: orig(self, np.arange(rows)))
+        with DB.device_samples(buf, force=True, mode="staged") as bad:
+            list(buf.get(16))
+    assert bad.nbytes > 2 * micro, (bad.nbytes, micro)
+
+
 def test_staged_survives_an_early_break_and_host_mode_installs_nothing():
     model = _golden_buffer()
     buf = model.rollout_buffer

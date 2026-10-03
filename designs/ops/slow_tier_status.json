@@ -241,6 +241,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/model/update_performance_shape_test.py::test_on_cuda_the_trunk_layer_dispatches_a_fused_sdpa_kernel_not_math": {
+   "status": "pass",
+   "commit": "bca40902a5d6df9db5162facd39377731fd54835",
+   "at": "2026-10-03T01:36:02Z",
+   "duration_s": 1.32,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/training/instrumented_ppo_device_batches_test.py::test_on_cuda_the_device_batches_equal_the_host_batches": {
    "status": "pass",
    "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
@@ -1139,5 +1147,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-02T01:54:51Z"
+ "last_written": "2026-10-03T01:36:02Z"
 }

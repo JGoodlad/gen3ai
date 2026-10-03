@@ -1,0 +1,313 @@
+{
+ "source": "/home/goodlad/gen3ai_archive/lane_c_perf_guard/bank/P1/20261002_162753_time_cuda_torch2.8.0/time_result.json",
+ "torch": "2.8.0+cu126",
+ "matmul_precision": "highest",
+ "geometry": {
+  "rows": 98304,
+  "micro_batch": 2048,
+  "micro_per_epoch": 48,
+  "grad_accum_steps": 32,
+  "n_epochs": 10,
+  "diagnostics_every": 1
+ },
+ "bracketed": {
+  "train_ms": 116607.83301503398,
+  "wall_s": 116.60935900895856,
+  "phases_s": {
+   "setup": 0.005963600007817149,
+   "batch": 0.6672481436980888,
+   "forward": 39.10606810846366,
+   "ridealong": 0.003585351863875985,
+   "loss": 0.26801579841412604,
+   "probes": 0.0056615222711116076,
+   "kl": 0.005725748371332884,
+   "noise_probe": 0.0017759115435183048,
+   "backward": 76.36961344792508,
+   "noise_base": 0.004399610101245344,
+   "optim": 0.028615910443477333,
+   "capacity": 0.0016823079204186797,
+   "epoch_end": 0.034329434973187745,
+   "logging": 0.10513792105484754
+  },
+  "phase_counts": {
+   "setup": 1,
+   "batch": 480,
+   "forward": 480,
+   "ridealong": 480,
+   "loss": 480,
+   "probes": 960,
+   "kl": 480,
+   "noise_probe": 480,
+   "backward": 480,
+   "noise_base": 480,
+   "optim": 480,
+   "capacity": 480,
+   "epoch_end": 10,
+   "logging": 1
+  },
+  "scalar_read_s": 0.002592951408587396,
+  "scalar_reads": 9782,
+  "n_epochs": 10,
+  "work": {
+   "train/loss": 0.3842107057571411,
+   "train/approx_kl": 0.008705468848347664,
+   "train/clip_fraction": 0.08421834309895833,
+   "train/value_loss": 0.012493652446816364,
+   "train/policy_gradient_loss": -0.0017985511791872948,
+   "train/grad_norm": 0.528999638557434,
+   "train/entropy_loss": -0.9039312546451886,
+   "param_abs_sum": 198474.26169935046
+  }
+ },
+ "unbracketed": {
+  "train_ms": 116481.19139694609,
+  "wall_s": 116.48257501295302,
+  "work": {
+   "train/loss": 0.384319543838501,
+   "train/approx_kl": 0.008703742176294327,
+   "train/clip_fraction": 0.0842315673828125,
+   "train/value_loss": 0.012493551227574546,
+   "train/policy_gradient_loss": -0.0017954769340576605,
+   "train/grad_norm": 0.5297554343938827,
+   "train/entropy_loss": -0.9039379250258207,
+   "param_abs_sum": 198474.2592133165
+  }
+ },
+ "rss_peak_mb_by_stage": {
+  "time:warmup": 6994,
+  "time:bracketed": 6907,
+  "time:unbracketed": 7888,
+  "time:profile_skipped": 19624
+ },
+ "profiles": [
+  {
+   "tag": "skipped",
+   "config": "diag_skipped",
+   "epochs": 2,
+   "wall_s": 26.28414037101902,
+   "totals": {
+    "trace_span_ms": 26284.334947006224,
+    "train_span_ms": 26284.135572998046,
+    "gpu_busy_ms": 21496.183566818236,
+    "gpu_idle_ms": 4787.95200617981,
+    "compiled_kernel_ms": 0.0,
+    "eager_kernel_ms": 17327.4381169977,
+    "compiled_memop_ms": 0.0,
+    "eager_memop_ms": 4168.745125999157,
+    "compiled_kernel_share": 0.0,
+    "compiled_share_of_train_wall": 0.0,
+    "compiled_host_ops": 0.0,
+    "eager_host_ops": 2013806.0,
+    "compiled_host_op_share": 0.0,
+    "unmatched_device_events": 0,
+    "device_events": 1436182
+   },
+   "phases": {
+    "backward": {
+     "host_wall_ms": 13300.008417999263,
+     "eager_ops": 494112.0,
+     "eager_host_ms": 11939.489231999889,
+     "eager_kernel_ms": 10967.774969001319,
+     "eager_kernels": 448400.0,
+     "eager_memop_ms": 4017.060245999165,
+     "eager_memops": 71520.0
+    },
+    "batch": {
+     "host_wall_ms": 171.3887990264893,
+     "eager_ops": 3264.0,
+     "eager_host_ms": 30.613563000000006,
+     "eager_memop_ms": 93.77179500000001,
+     "eager_memops": 2784.0
+    },
+    "capacity": {
+     "host_wall_ms": 0.722567047119141
+    },
+    "epoch_end": {
+     "host_wall_ms": 52.92010800170898,
+     "eager_ops": 2006.0,
+     "eager_host_ms": 48.27234999999985,
+     "eager_kernel_ms": 2.037939000000001,
+     "eager_kernels": 590.0,
+     "eager_memop_ms": 0.00496,
+     "eager_memops": 4.0
+    },
+    "forward": {
+     "host_wall_ms": 12461.183708023067,
+     "eager_ops": 1498271.0,
+     "eager_host_ms": 10731.586428998902,
+     "eager_kernel_ms": 6324.4740259963855,
+     "eager_kernels": 884492.0,
+     "eager_memop_ms": 57.04220999999182,
+     "eager_memops": 21132.0
+    },
+    "kl": {
+     "host_wall_ms": 1.1778580627441406
+    },
+    "logging": {
+     "host_wall_ms": 118.06749899291992,
+     "eager_ops": 11822.0,
+     "eager_host_ms": 46.564252000000245,
+     "eager_kernel_ms": 30.548633000000006,
+     "eager_kernels": 6028.0,
+     "eager_memop_ms": 0.5275780000000014,
+     "eager_memops": 98.0
+    },
+    "loss": {
+     "host_wall_ms": 83.39814895629878,
+     "eager_ops": 1837.0,
+     "eager_host_ms": 3.9467570000000234,
+     "eager_kernel_ms": 0.009217,
+     "eager_kernels": 4.0,
+     "eager_memop_ms": 0.3298899999999999,
+     "eager_memops": 289.0
+    },
+    "noise_base": {
+     "host_wall_ms": 25.40030599975585,
+     "eager_ops": 976.0,
+     "eager_host_ms": 23.706428000000027,
+     "eager_kernel_ms": 1.2476100000000026,
+     "eager_kernels": 731.0,
+     "eager_memop_ms": 0.00371,
+     "eager_memops": 4.0
+    },
+    "noise_probe": {
+     "host_wall_ms": 0.4365019989013672
+    },
+    "optim": {
+     "host_wall_ms": 52.58168193054198,
+     "eager_ops": 1518.0,
+     "eager_host_ms": 47.72375799999977,
+     "eager_kernel_ms": 1.345723,
+     "eager_kernels": 102.0,
+     "eager_memop_ms": 0.004737,
+     "eager_memops": 4.0
+    },
+    "probes": {
+     "host_wall_ms": 2.4125650329589834
+    },
+    "ridealong": {
+     "host_wall_ms": 1.79792301940918
+    },
+    "setup": {
+     "host_wall_ms": 6.037319000244141
+    },
+    "tail": {
+     "host_wall_ms": 1.4896959991455079
+    }
+   },
+   "eager_by_component": {
+    "(no python stack)": {
+     "eager_ops": 1519886.0,
+     "eager_host_ms": 10934.761698998285
+    },
+    "backward (eager autograd)": {
+     "eager_ops": 493920.0,
+     "eager_host_ms": 11937.141069999892
+    }
+   },
+   "backward_eager_nodes_top": [
+    [
+     "SliceBackward0",
+     63264.0
+    ],
+    [
+     "MulBackward0",
+     61344.0
+    ],
+    [
+     "AddmmBackward0",
+     52800.0
+    ],
+    [
+     "torch::autograd::CopySlices",
+     25920.0
+    ],
+    [
+     "torch::autograd::AccumulateGrad",
+     23424.0
+    ],
+    [
+     "AmaxBackward0",
+     22272.0
+    ],
+    [
+     "ViewBackward0",
+     21024.0
+    ],
+    [
+     "ClampBackward1",
+     20256.0
+    ],
+    [
+     "StackBackward0",
+     19200.0
+    ],
+    [
+     "DivBackward0",
+     17184.0
+    ],
+    [
+     "CatBackward0",
+     16512.0
+    ],
+    [
+     "SelectBackward0",
+     15360.0
+    ],
+    [
+     "WhereBackward0",
+     10848.0
+    ],
+    [
+     "MmBackward0",
+     10560.0
+    ],
+    [
+     "UnsqueezeBackward0",
+     10560.0
+    ],
+    [
+     "TBackward0",
+     10272.0
+    ],
+    [
+     "SubBackward0",
+     7680.0
+    ],
+    [
+     "TransposeBackward0",
+     7680.0
+    ],
+    [
+     "AddBackward0",
+     6048.0
+    ],
+    [
+     "PermuteBackward0",
+     6048.0
+    ],
+    [
+     "GatherBackward0",
+     5664.0
+    ],
+    [
+     "BmmBackward0",
+     4608.0
+    ],
+    [
+     "EmbeddingBackward0",
+     4416.0
+    ],
+    [
+     "SumBackward1",
+     4224.0
+    ],
+    [
+     "IndexBackward0",
+     4224.0
+    ]
+   ]
+  }
+ ],
+ "analyze_peak_rss_mb": 8384
+}

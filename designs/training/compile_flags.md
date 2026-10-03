@@ -1234,7 +1234,7 @@ The checks that remain on 2.8, each with its measured bar and the fault it catch
 | the learner golden (test time) | — | a change in what the update computes |
 
 The extractor gate's speed refusal (`check_speedup`, measured at batch 64; deleted 2026-10-02) has
-no counterpart at startup. The update-wall drift warning and the milestone `compiled_perf_guard_test` cover speed.
+no counterpart at startup. The update-wall drift warning, the performance-shape tests and the milestone update benchmark cover speed (below).
 
 **Measured** (2026-09-30/10-01): R1 on the production surface traces as ONE graph on 2.8 (CPU,
 `aot_eager`, compiled loss bit-equal to eager); `compile_regions_test` (routine, CPU, dynamo `eager`
@@ -1297,14 +1297,26 @@ The routes the audit closed or declared:
 
 The CPU opponents' eager fallback is in the env workers, not the learner, and it already says so.
 
-The MILESTONE check is `compiled_perf_guard_test` (GPU tier, `slow`). It reruns the K8 acceptance's
-time stage and holds it to `designs/research_state/measurements/k6_k8/acceptance/perf_baseline.json`:
-- the update wall within 15% of the banked 36.32 s;
-- the compiled share of the update wall at least 0.80.
+**Performance is checked by STRUCTURE plus a milestone benchmark — there is no wall-clock gate** (owner, 2026-10-02).
+`compiled_perf_guard_test` (one production update held to a banked time, a compiled share >= 0.80) was RETIRED: a timing
+test is noisy, needs an idle box and goes stale, and it went blind the day K2 retired TF32, its only baseline. What
+replaces it, in every routine gate: the deterministic tests of the properties that make the update fast — the inventory
+== declaration, 0 compiles after the lock, the no-silent-eager FATALs, **every micro-batch of a real update on R1's
+compiled route (route counts)**, **a pinned host-scalar-read count per update**, **attention on the fused SDPA kernel, not
+MATH**, the micro-batch never re-copied whole per micro-step, no CUDA stream / optimizer built after startup (the audit,
+each test and what it catches: `designs/ops/testing.md` "Performance-shape tests"; the new ones are
+`src/agents/model/update_performance_shape_test.py`). The run-time defences stay primary.
 
-The slow tier runs at major points (after the cutover, at a new era or lineage start) or when an agent
-judges it warranted; there is no nightly run (owner, 2026-10-01). So this guard bites only
-occasionally, and the run-time defences are primary.
+At milestones (after a torch upgrade, before a baseline run, on suspicion) run the **update benchmark**:
+`python -m main.compile_inventory run --stage time --device cuda --keep-prewarm --unbracketed` under `gpu_lock` (≈ 6.5 min).
+Lane C (2026-10-02) made it work again: since `gen3_update_fit_v1` the trainer runs one real `train()` at STARTUP (the CUDA
+fit check's dry update, on a 4,096-row fixture at the workers' `--n-envs 2`), and the benchmark tools, which replaced
+`train` for the whole process, took THAT as their measurement and exited before the pinned buffer was restored
+(`learner_benchmark.learn_loop_only`; K2's un-banked fp32 baseline). Its read that day, fp32 'highest', K8 regions,
+pinned 98,304 rows: **40.17 s, n = 5, spread 0.31%, compiled share 0.892** — and a planted regression (R1 on its eager
+route, uncounted) read 116.5 s with share 0.000, which the route-count test above fails deterministically
+(`designs/research_state/measurements/k6_k8/update_benchmark_fp32/`; `acceptance/perf_baseline.json` is kept as that
+history, no test reads it). A read, not a baseline: it goes stale.
 
 **R0's mask input is ONE declared dtype** (`gen3_r0_mask_dtype_v1`, 2026-10-01). The R0 dispatcher
 turns the action masks into a bool tensor on the learner's device before the compiled core. The env

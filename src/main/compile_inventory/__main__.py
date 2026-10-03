@@ -6,7 +6,7 @@ stack-profiled trace OOM-killed the host three times — `memcap.py`), at nice 1
   scripts/ops/mem_cap.sh 12 nice -n 19 python -m main.compile_inventory run --stage trace \
         --device cpu --micro 64 --trace-steps 4                       # (a)(b)(c), both views
   scripts/ops/gpu_lock.sh timeout 1200 scripts/ops/mem_cap.sh 16 python -m main.compile_inventory \
-        run --stage time --device cuda --time-epochs 1                        # (d)
+        run --stage time --device cuda --time-epochs 1 --keep-prewarm        # (d)
   scripts/ops/mem_cap.sh 8 python -m main.compile_inventory fullgraph  # fullgraph=True verdicts
   python -m main.compile_inventory analyze <out dir>                  # re-classify (streaming)
   python -m main.compile_inventory report <out dir> [...] --out <tables.md>
@@ -77,6 +77,13 @@ def cmd_run(a: argparse.Namespace) -> int:
     if a.stage == "time" and a.device != "cuda":
         print("REFUSED: the time stage measures the compiled GPU learner; pass --device cuda.")
         return 2
+    if a.stage == "time" and not a.keep_prewarm:
+        # The K8 regions are installed, gated, prewarmed and locked by ONE call (the compile sentinel), so
+        # there is no "skip the prewarm" variant: the old one replaced the sentinel wholesale, never
+        # installed the regions, and the stage raised "not compiled" after the whole startup.
+        print("REFUSED: the time stage runs the production compile sentinel (region install + gate + "
+              "prewarm + lock, ~8 min of cold compile); pass --keep-prewarm.")
+        return 2
     if getattr(a, "allow_stack_profile", False):
         from main.compile_inventory.memcap import (StackProfileRefused, memory_cap_bytes,
                                                    require_cap_for_stack_profile)
@@ -133,7 +140,6 @@ def cmd_run(a: argparse.Namespace) -> int:
         "profile_trace": not a.no_profile, "time_config": "diag_skipped",
         "classify_in_worker": bool(a.classify_in_worker),
         "allow_stack_profile": bool(a.allow_stack_profile),
-        "skip_prewarm": a.stage == "time" and not a.keep_prewarm,
         "unbracketed": bool(a.unbracketed),
         "profiles": [["skipped", "diag_skipped", a.time_epochs]]
                     + ([["diag", "baseline", 1]] if a.profile_diag else []),
@@ -275,8 +281,9 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--time-epochs", type=int, default=2,
                    help="time stage: epochs of the profiled update")
     r.add_argument("--keep-prewarm", action="store_true",
-                   help="time stage: run the production prewarm + lock (minutes; off so a unit "
-                        "fits the 20-min GPU budget — the compile and its parity gate still run)")
+                   help="time stage: REQUIRED — the production compile sentinel (region install + "
+                        "gate + prewarm + lock; ~8 min cold). The sentinel is the only thing that "
+                        "installs the K8 regions, so a time stage cannot skip it")
     r.add_argument("--unbracketed", action="store_true",
                    help="time stage: also time one un-bracketed full update")
     r.add_argument("--profile-diag", action="store_true",

@@ -25,8 +25,10 @@ pristine pre-`train()` buffer, the RNG seeds), so every repeat is the same work.
 so random obs would benchmark a different program. The worker runs the TRAINER ITSELF in-process
 (`main.train_rl_agent.main()`, argv = C's recorded command re-pointed as a FORK into a scratch run
 dir under `~/gen3ai_archive/learner_bench/`, never `models/`), lets the first `collect_rollouts`
-and its `_on_rollout_end` label callbacks run, and intercepts the first `train()`: the pre-update
-buffer is pickled beside the run dir and every repeat restores it. `--buffer` reuses a saved one.
+and its `_on_rollout_end` label callbacks run, and intercepts the learn loop's first `train()`: the
+pre-update buffer is pickled beside the run dir and every repeat restores it. `--buffer` reuses a
+saved one. 🚨 The trainer's own STARTUP update (CUDA's first-update fit check, `update_fit`, which runs
+a real `train()` on a fixture buffer before `learn()`) is NOT intercepted — `learn_loop_only`.
 
 **BENCHMARKS WARN, THEY NEVER STRETCH** (root `CLAUDE.md`): contention is REPORTED; a number is
 never rescaled. A cuda run REFUSES a GPU that holds any compute process or a box running a trainer.
@@ -414,10 +416,46 @@ def summarise_calls(calls: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 # ------------------------------------------------------------------------------------------------
-# The worker: the trainer in-process, first `train()` intercepted
+# The worker: the trainer in-process, the learn loop's first `train()` intercepted
 # ------------------------------------------------------------------------------------------------
 
 _WORKER: Dict[str, Any] = {}
+
+
+def learn_loop_only(tool_train: Callable[[Any], Any], orig_train: Callable[[Any], Any]
+                    ) -> Callable[[Any], Any]:
+    """The `train` a worker installs: ``tool_train`` (the measurement) once the LEARN LOOP has begun
+    collecting (`_WORKER["learning"]`), the ORIGINAL ``train`` before it.
+
+    🚨 The trainer calls `model.train()` at STARTUP, before `learn()` — `update_fit.dry_update` (the
+    first-update fit check, CUDA only, `gen3_update_fit_v1`) runs one real update on a tiled FIXTURE
+    buffer of the declared shape. A worker that replaced `train` for the whole process took that call
+    for its measurement: the time stage timed the 2-env fixture (4,096 rows, 0.32 s) instead of the
+    pinned 98,304-row buffer, wrote its result and exited before `collect_rollouts` ever ran, and the
+    learner benchmark would have PICKLED the fixture as "the rollout" (K2's un-banked fp32 baseline,
+    2026-10-02). The startup update is production's own and stays production's: it runs the real code."""
+    def train(self: Any) -> Any:
+        if not _WORKER.get("learning"):
+            return orig_train(self)
+        return tool_train(self)
+    return train
+
+
+def install_worker_hooks(ppo_cls: Any, *, tool_train: Callable[[Any], Any],
+                         buffer_collect: Optional[Callable[..., Any]] = None) -> None:
+    """The class-level replacements both workers make (this one and `main.compile_inventory.worker`):
+    `train` -> :func:`learn_loop_only`, and `collect_rollouts` -> ``buffer_collect`` when a saved
+    buffer is reused (else the class's own), wrapped so its first call marks `_WORKER["learning"]`.
+    Records the original `train` as `_WORKER["_orig_train"]`."""
+    orig_train, orig_collect = ppo_cls.train, ppo_cls.collect_rollouts
+    collect = buffer_collect if buffer_collect is not None else orig_collect
+
+    def collect_rollouts(self: Any, *a: Any, **k: Any) -> Any:
+        _WORKER["learning"] = True
+        return collect(self, *a, **k)
+    _WORKER["_orig_train"] = orig_train
+    ppo_cls.train = learn_loop_only(tool_train, orig_train)
+    ppo_cls.collect_rollouts = collect_rollouts
 
 
 def _write_json(path: Path, obj: Any) -> None:
@@ -707,7 +745,17 @@ def summarise_profile(prof: Any, n_micro: int, trace_path: Optional[Path]) -> Di
 
 
 def _bench_train(self) -> None:
-    """Replaces `train()` in the worker: save/restore the buffer, run every config, exit."""
+    """Replaces `train()` in the worker (from the learn loop's first collection on — `learn_loop_only`):
+    save/restore the buffer, run every config, exit. 🚨 Runs inside `isolated_global_rng()`: every repeat
+    SEEDS the global streams (`seed_all`) so it replays the same minibatch permutations, and the
+    learner has FROZEN by now (K6: a global reseed after the freeze is a FATAL_CONFIG) — inside the
+    scope a seed is local by construction, restored on exit (the trainer is never resumed here anyway)."""
+    from agents.training.global_rng_guard import isolated_global_rng
+    with isolated_global_rng():
+        _bench_train_body(self)
+
+
+def _bench_train_body(self) -> None:
     cfg = _WORKER
     out = Path(cfg["out_dir"])
     res: Dict[str, Any] = {"worker": cfg["name"], "started": _dt.datetime.now().isoformat(),
@@ -792,6 +840,7 @@ def _bench_collect(self, env, callback, rollout_buffer, n_rollout_steps, use_mas
     restore_buffer_state(rollout_buffer, saved["buffer"])
     for k, v in saved["stash"].items():
         setattr(self, k, v)
+    _WORKER["buffer_restored"] = True
     print(f"[learner_bench] reused buffer {_WORKER['buffer_in']} "
           f"({saved['meta'].get('n_steps')}x{saved['meta'].get('n_envs')})", flush=True)
     return True
@@ -816,11 +865,11 @@ def worker_main(cfg_path: str) -> None:
     os.environ.pop("GEN3AI_NOISE_SCALE_PER_TERM", None)   # the ablation owns this switch
     import asyncio
     from agents.training.instrumented_ppo import InstrumentedMaskablePPO
-    _WORKER["_orig_train"] = InstrumentedMaskablePPO.train
-    InstrumentedMaskablePPO.train = _bench_train
-    if cfg.get("buffer_in"):
-        InstrumentedMaskablePPO.collect_rollouts = _bench_collect
-    elif cfg.get("tiny"):
+    # `train` is the measurement only from the learn loop's first collection on (`learn_loop_only`):
+    # the trainer's STARTUP update (the fit check's dry update) runs production's own `train`.
+    install_worker_hooks(InstrumentedMaskablePPO, tool_train=_bench_train,
+                         buffer_collect=_bench_collect if cfg.get("buffer_in") else None)
+    if not cfg.get("buffer_in") and cfg.get("tiny"):
         InstrumentedMaskablePPO.learn = _tiny_learn(InstrumentedMaskablePPO.learn)
     import importlib
     # `model_build` holds its OWN binding of the watchdog starter (a from-import), so the wrapper

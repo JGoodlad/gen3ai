@@ -348,6 +348,18 @@ calendar days with 3 lanes; 8 is the box**.
     accumulation 32 / 10 epochs). Also from K2: `learner_benchmark.build_trainer_argv` now drops every flag the trainer's parser
     no longer knows — arm C's recorded command types flags L1/L2 deleted and crashed the worker on argparse — so L3..L5's
     deleted flags need no list entry there.
+    ✅ **RESOLVED by lane C (2026-10-02), with a CHANGE OF SCOPE (owner): the guard is RETIRED, not re-banked.** The cause of the
+    un-reused pinned buffer: `gen3_update_fit_v1` (CUDA) runs ONE REAL `model.train()` at startup (`update_fit.dry_update`, on a
+    4,096-row fixture at the workers' `--n-envs 2`) and both tools had replaced `train` for the whole process — the stage took
+    that startup call as its measurement and exited before `learn()` could collect (the "Rust collection of 4,096 rows" was the
+    collector's startup banner). Fix: `learner_benchmark.learn_loop_only` / `install_worker_hooks` (the tool's `train` is live
+    only from the learn loop's first collection); the time stage refuses to run unless the pinned buffer was restored; both
+    workers run inside `isolated_global_rng()` (the K6 freeze makes a global reseed FATAL); a time stage without `--keep-prewarm`
+    is refused (the regions are installed by the sentinel it replaced). The benchmark reads **40.17 s, n = 5, spread 0.31%,
+    compiled share 0.892** (`measurements/k6_k8/update_benchmark_fp32/`). The owner then retired the wall-clock gate
+    (`compiled_perf_guard_test` DELETED; `perf_baseline.json` kept as history, no test reads it): performance is checked by
+    deterministic performance-shape tests in every routine gate (`update_performance_shape_test`: R1 route counts, a host-read
+    pin, the fused-SDPA pin; the audit is `designs/ops/testing.md`) plus this benchmark at milestones.
 
 ## 7. Corrections to `program_rust_core.md` §4 (applied by the unit that executes each row)
 

@@ -179,7 +179,8 @@ cache per stream, so the staged batch's per-update side stream (built in a helpe
 (None in production). A new mark must use exactly that guarded one-line form and a name in
 `phase_hook.PHASES`; `learner_benchmark_test.py` pins the guard, the names, and that installing a
 hook changes no parameter. The one consumer is `learner_benchmark.py` (where an update's wall time
-goes — `designs/ops/testing.md` → Benchmarks).
+goes — `designs/ops/testing.md` → Benchmarks), and its workers measure the LEARN LOOP's update only: the
+trainer's own startup `train()` (the CUDA fit check's dry update) runs production's code (`learn_loop_only`).
 
 Per minibatch (1 to 3a inside R1):
 

@@ -271,6 +271,10 @@ D-6 at the first update. Below it, or an OOM inside the dry update, is `UpdateWo
 naming the levers; `<run_dir>/update_fit.json` keeps the reading and each `train()` segment's peak
 (`phase_peaks`, booked by a `phase_hook`). Cost: one epoch, 13–17 s at startup (measured 12.7–17.4 s,
 N = 48 and 256). `GEN3AI_UPDATE_FIT_SNAPSHOT=<path>` dumps the allocator's history of the dry update.
+🚨 The dry update calls `model.train()` — the SAME method a benchmark worker replaces. A tool that swaps `train`
+process-wide (`learner_benchmark`, `main.compile_inventory`) would take this startup call as its measurement, so
+both install `learner_benchmark.learn_loop_only`: the tool is live only from the learn loop's first collection
+(`designs/ops/testing.md`).
 
 **PREDICTIVE — measured against the real first update in the same process** (RTX 3080 Ti 12 GiB, torch
 2.8, fp32, rust core, `--arch production`, the X26 heads incl. `--ridealong-rnd-variants all`):

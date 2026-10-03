@@ -924,6 +924,21 @@ program by construction.
 (`--matmul-precision`, the entropy boosts, `--no-value-true-team`, …) and one unknown flag is an argparse
 exit that kills the worker before it measures anything.
 
+🚨 **Both tools measure the LEARN LOOP's update, never the trainer's STARTUP update.** The trainer runs a real
+`train()` BEFORE `learn()` — the CUDA fit check's dry update (`update_fit.dry_update`, on a tiled FIXTURE of the
+buffer's declared shape). A worker that replaced `train` for the whole process took that call as its
+measurement: the compile inventory's time stage timed a 2-env, 4,096-row fixture (0.32 s) instead of the pinned
+98,304-row buffer, wrote its result and exited before `collect_rollouts` ever ran (K2, 2026-10-02: the reason no
+fp32 baseline could be banked), and the benchmark's fresh-collection mode would have pickled the fixture as "the
+rollout". `learner_benchmark.learn_loop_only` / `install_worker_hooks` are the fix — the tool's `train` is live only
+from the loop's first `collect_rollouts` (`_WORKER["learning"]`), and the time stage refuses to run unless
+`buffer_restored` — pinned by `learner_benchmark_test::test_the_tool_never_takes_the_trainers_startup_update`
+(the REAL dry update on the golden learner; it fails on the revert). Both workers run their repeats inside
+`global_rng_guard.isolated_global_rng()` (each repeat SEEDS the global streams to replay the same minibatch
+permutations, and a global reseed after the learner froze is `FATAL_CONFIG`). The time stage REQUIRES
+`--keep-prewarm`: the K8 regions are installed by the compile sentinel, and the old skip-the-prewarm variant
+replaced the sentinel, never installed them, and died "not compiled" after the whole startup.
+
 🚨 **`learner_benchmark`'s bracketed phases are NOT the un-bracketed update cut into pieces.** Every
 mark adds a `torch.cuda.synchronize()`, which removes exactly the CPU/GPU overlap an update with
 ~270 host-blocking scalar reads per micro-batch lives on. So it reports BOTH train_ms sets, and the
@@ -968,6 +983,42 @@ Baselines with their provenance:
 `designs/research_state/measurements/post_paydown_baselines_2026-08-23.{json,md}`; the superseded
 figures and the full share tables are in
 `designs/research_state/claude_md_archive/benchmark_measurements.md`.
+### Performance-shape tests — speed is checked by STRUCTURE, plus a benchmark at milestones (owner, 2026-10-02)
+
+**There is no wall-clock gate.** `compiled_perf_guard_test` (one production update held to a banked time) was RETIRED:
+a timing test is noisy, needs an idle box and goes stale — its only baseline was TF32's, which K2 retired and left it
+skipping, blind, until lane C re-measured it. Performance is checked two ways:
+
+1. **Deterministic functional tests of the properties that make the update fast** — counts and graph facts, never a
+   time, in every routine gate. The audit (existing + new), what each catches:
+
+| property | test | catches |
+|---|---|---|
+| the compiled inventory EQUALS the declaration (graphs = regions × signatures, one cache entry per region code object) | `compile_regions_test::test_the_compiled_inventory_EQUALS_the_declaration_table` (two real updates + rollout forwards of every mask dtype and batch 1, then the count) · `test_the_run_asserts_the_compiled_inventory_equals_the_declaration` | an extra, missing or duplicated region graph; a region that stopped compiling |
+| 0 compiles / rejections after the lock | the same test (`compiles_after_lock == 0`) · `compile_control_test::test_b_*` (a new shape / new code object after the lock is the typed FATAL), `test_an_UNDECLARED_signature_on_the_FIRST_iteration_is_FATAL_not_absorbed`, `test_attach_locks_BEFORE_the_first_iteration…`, the cache-limit detector tests · `r1_declared_levers_test` (every lever an update reaches is declared at startup) | a recompile in the steady state (each is seconds to minutes), an undeclared signature |
+| no silent fall-back to eager | `compile_regions_test::test_a_region_that_runs_EAGER_on_its_COMPILED_route_is_FATAL`, `test_dynamo_DISABLED_at_startup…`, `test_the_lock_refuses_every_switch_that_makes_dynamo_run_eager_silently`, `test_a_graph_break_INSIDE_a_region…`, `test_a_RAGGED_tail_beyond_one_per_epoch_is_FATAL…`, `test_each_update_records_its_compiled_and_eager_region_calls` | a region whose compiled route ran its Python body; a graph break; more declared-eager calls than declared |
+| **every micro-batch of a REAL update takes R1's compiled route, none eager** *(new)* | `update_performance_shape_test::test_a_real_update_runs_every_micro_batch_through_R1_compiled_and_none_eager` (+ its teeth) | R1 routed AROUND its dispatcher — the eager body run uncounted. **The 2.9× regression the benchmark read (116 s vs 40 s, share 0.000) leaves every run-level FATAL silent**; only the route counts of a real update see it |
+| **a bounded number of host scalar reads per update** *(new)* | `update_performance_shape_test::test_a_real_update_makes_a_bounded_number_of_host_scalar_reads` (exact pin: 1,050 on the golden's 8-micro-batch update; production 9,942 vs 66,784 before K8) | a `.item()` / `float(tensor)` added to the per-micro-batch path (each is a device sync; ×480 micro-batches per production update) |
+| **attention lowers to the FUSED SDPA kernel, not MATH** *(new)* | CPU: `update_performance_shape_test::test_R1s_attention_profile_on_cpu_is_pinned` (R1's AOT forward graph: 2 fused + 2 MATH on the golden) · CUDA (`slow`, `GEN3AI_TEST_ALLOW_GPU=1`): `test_on_cuda_the_trunk_layer_dispatches_a_fused_sdpa_kernel_not_math` (`_scaled_dot_product_efficient_attention`, never bmm + `_safe_softmax`) | a global `enable_*_sdp(False)`, a hand-rolled attention, a forced `sdpa_kernel(MATH)` (+5.2% of R1 fwd+bwd, `measurements/k6_k8/r1_noise/`). The CUDA cell is the trunk's pin (on CPU a grad-requiring bias is MATH by construction); the CPU cell is the routine-gate net |
+| the micro-batch is never re-copied whole from the host per micro-step | `instrumented_ppo_device_batches_test`: resident = ONE copy per update (`copies == 1`); staged (production's default) = one copy per micro-batch (`copies == micro-batches`) and **`test_the_staged_gather_moves_one_micro_batch_per_micro_step_never_the_whole_buffer`** *(new: the bytes per copy = one micro-batch, 2 in flight)* | a gather that stages the whole buffer per micro-step (~11 GB of H2D per update at production shape) |
+| no CUDA stream / CUDA graph / optimizer / parameter / module built after startup | `learner_lifecycle_test` (`test_healthy_steps_after_the_freeze_acquire_nothing`, `test_a_production_surface_update_acquires_nothing…`, the lazy-acquisition FATALs) · `learner_lifecycle_gate_test` (static: no training-step path constructs one, `cuda_resource` kind included) · `instrumented_ppo_device_batches_test::test_on_cuda_staged_updates_strand_no_cache_on_a_new_stream` (`slow`, CUDA: forty staged updates hold ONE stream's cache and a flat reserved total) | a per-update stream (the +46–66 MiB/update climb of sizing arm B), a lazy optimizer |
+
+   Every new test carries a TEETH case or was run against the planted regression through the same seam (`update_performance_shape_test`'s
+   module docstring; the planted failures are listed in the commit). **When a pin moves on purpose** (the host-read count after
+   removing a read, the attention profile after a deliberate change) update the number in the same commit and say why — an
+   exact count is a reviewed edit, never a threshold that drifts.
+
+2. **The on-demand update BENCHMARK, at milestones** — after a torch upgrade, before a baseline run, on suspicion:
+
+        scripts/ops/gpu_lock.sh timeout 1260 scripts/ops/mem_cap.sh 48 python -m main.compile_inventory run \
+            --stage time --device cuda --keep-prewarm --unbracketed --out-root <dir>        # ≈ 6.5 min, idle GPU
+
+   It times the production update on the pinned 98,304-row buffer (arm C's checkpoint) and reports the profiled compiled
+   share; `learner_benchmark` gives the phase / kernel breakdown. The pinned buffer is reused on the Rust core since lane C
+   fixed the tools to leave the trainer's startup update (the fit check's dry `train()`) alone. Its 2026-10-02 read — 40.17 s,
+   compiled share 0.892, n = 5 — and the planted-regression and loaded-box units are in
+   `designs/research_state/measurements/k6_k8/update_benchmark_fp32/`; **a read, not a baseline: it goes stale, re-run it.**
+
 ### What "fuzz test" means in this project
 
 **Fuzz tests run real battles — by default in-process via the local BattleStream bridge (no server), or against a live server — and validate observations or behaviour against the actual protocol stream.** They are NOT deterministic scenario tests with fixed inputs.

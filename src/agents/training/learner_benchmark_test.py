@@ -296,3 +296,85 @@ def test_summarise_calls_skips_warmup_and_reports_phases():
     assert s["phases"]["forward"]["s_per_update"] == pytest.approx(0.5)
     assert s["phases"]["forward"]["pct_of_bracketed_train_ms"] == pytest.approx(25.0)
     assert s["work_spread"]["train/loss"] == {"min": 1.0, "max": 1.0}
+
+
+# ------------------------------------- the worker's hooks: the STARTUP update is production's own
+
+@pytest.fixture
+def clean_worker_state():
+    """`_WORKER` is process-global (the worker owns the process); a test starts and leaves it empty."""
+    saved = dict(lb._WORKER)
+    lb._WORKER.clear()
+    try:
+        yield lb._WORKER
+    finally:
+        lb._WORKER.clear()
+        lb._WORKER.update(saved)
+
+
+def test_the_tool_never_takes_the_trainers_startup_update(clean_worker_state):
+    """K2 (2026-10-02): the trainer runs a real `train()` BEFORE `learn()` — the CUDA fit check's dry
+    update (`update_fit.dry_update`, here run for real on the learner golden's CPU learner) — and a
+    worker that replaced `train` for the whole process took that call as its measurement: the time stage
+    timed a 4,096-row fixture (0.32 s) and exited before the pinned buffer was ever restored. The
+    startup update must run the ORIGINAL `train`; the tool's takes over at the learn loop's first
+    collection. Fails on revert: with `train` replaced unconditionally the dry update lands on the tool."""
+    import agents.training.update_fit as UF
+    from agents.training import learner_golden as LG
+
+    m = LG.build_learner()
+    LG.load_buffer_into(m)
+    cls = type(m)
+    orig_train, orig_collect = cls.train, cls.collect_rollouts
+    seen = {"tool": 0, "orig": 0}
+
+    def counting_orig(self):
+        seen["orig"] += 1
+        return orig_train(self)
+
+    def tool(self):
+        seen["tool"] += 1
+
+    cls.train = counting_orig
+    try:
+        lb.install_worker_hooks(cls, tool_train=tool, buffer_collect=lambda self, *a, **k: True)
+        UF.dry_update(m)                                   # the trainer's STARTUP update
+        assert seen == {"tool": 0, "orig": 1}, seen
+        assert not lb._WORKER.get("learning")
+        assert cls.collect_rollouts(m, None, None, None, 0) is True      # the learn loop's first collect
+        assert lb._WORKER["learning"] is True
+        m.train()
+        assert seen == {"tool": 1, "orig": 1}, seen         # now the tool's, and only now
+        assert lb._WORKER["_orig_train"] is counting_orig
+    finally:
+        cls.train, cls.collect_rollouts = orig_train, orig_collect
+
+
+def test_the_hooks_wrap_the_classes_own_collect_when_no_buffer_is_reused(clean_worker_state):
+    """The benchmark's FRESH-collection mode keeps the real `collect_rollouts` — marked, not replaced."""
+    class _Cls:
+        calls = 0
+
+        def train(self):
+            return "orig"
+
+        def collect_rollouts(self, *a, **k):
+            type(self).calls += 1
+            return "real"
+
+    lb.install_worker_hooks(_Cls, tool_train=lambda self: "tool")
+    o = _Cls()
+    assert o.train() == "orig"                              # before the loop: production's
+    assert o.collect_rollouts() == "real" and _Cls.calls == 1
+    assert o.train() == "tool"
+
+
+def test_bench_collect_records_that_the_pinned_buffer_was_restored(tiny_model, tmp_path, clean_worker_state):
+    m = tiny_model
+    state = lb.capture_buffer_state(m.rollout_buffer)
+    path = tmp_path / "rollout_buffer.pkl"
+    lb.save_buffer(path, state, {}, {"n_steps": 8, "n_envs": 4})
+    lb._WORKER["buffer_in"] = str(path)
+    assert not lb._WORKER.get("buffer_restored")
+    assert lb._bench_collect(m, None, None, m.rollout_buffer, 8) is True
+    assert lb._WORKER["buffer_restored"] is True

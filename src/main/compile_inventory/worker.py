@@ -391,6 +391,7 @@ def _stage_time(model: Any, cfg: Dict[str, Any], out: Path) -> Dict[str, Any]:
     fe = model.policy.features_extractor
     from agents.model import compile_regions as _cr
     res: Dict[str, Any] = {"compiled_extractor": "forward" in vars(fe),
+                           "buffer_restored": bool(lb._WORKER.get("buffer_restored")),
                            "compiled_regions": _cr.installed(model),     # K8: R0 + R1 on torch 2.8
                            "torch": torch.__version__,
                            "matmul_precision": torch.get_float32_matmul_precision()}
@@ -398,6 +399,13 @@ def _stage_time(model: Any, cfg: Dict[str, Any], out: Path) -> Dict[str, Any]:
         raise RuntimeError("the time stage measures the PRODUCTION compiled learner, and this "
                            "worker's learner is not compiled — neither the extractor nor the K8 "
                            "regions (was --compile-trainer stripped?)")
+    if not lb._WORKER.get("buffer_restored"):
+        # unreachable through `learn_loop_only` (the stage runs only after `_bench_collect`); a typed
+        # refusal anyway, because the failure it guards is a WRONG NUMBER, not a crash (K2: 0.32 s on a
+        # 4,096-row fixture read as the update)
+        raise RuntimeError("the time stage measures the update on the PINNED buffer, and it was reached "
+                           "before `collect_rollouts` restored that buffer — the update it would time "
+                           "is not the production update")
     buf = model.rollout_buffer
     pristine = lb.capture_buffer_state(buf)
     state0 = lb.capture_model_state(model)
@@ -412,7 +420,6 @@ def _stage_time(model: Any, cfg: Dict[str, Any], out: Path) -> Dict[str, Any]:
                                                                              None)}
     common = dict(pristine=pristine, state0=state0, seed=seed, base_epochs=base_epochs)
     cfgname = cfg.get("time_config", "diag_skipped")
-    res["prewarm_skipped"] = bool(_W.get("skip_prewarm"))
     _stage("time:warmup")
     _restore(model, pristine, state0, seed)
     res["warmup"] = _update(model, orig_train, cfg_name=cfgname, base_epochs=base_epochs,
@@ -465,7 +472,12 @@ def _inventory_train(self: Any) -> None:
     rss = RssSampler(out / "rss.jsonl").start()
     _W["_rss"] = rss
     try:
-        body = _stage_trace(self, cfg, out) if stage == "trace" else _stage_time(self, cfg, out)
+        # inside `isolated_global_rng()`: each unit re-SEEDS the global streams (`lb.seed_all`, so every
+        # repeat replays the same minibatch permutations) and the learner has FROZEN (K6: a global reseed
+        # after the freeze is a FATAL_CONFIG); a seed inside the scope is local, restored on exit.
+        from agents.training.global_rng_guard import isolated_global_rng
+        with isolated_global_rng():
+            body = _stage_trace(self, cfg, out) if stage == "trace" else _stage_time(self, cfg, out)
         res["rss_peak_mb_by_stage"] = rss.peaks_mb()
         res.update(body)
         res["status"] = "ok"
@@ -489,9 +501,12 @@ def worker_main(cfg_path: str) -> None:
     lb._WORKER.update(cfg)                   # `_bench_collect` reads `buffer_in` from here
     os.environ.pop("GEN3AI_NOISE_SCALE_PER_TERM", None)
     from agents.training.instrumented_ppo import InstrumentedMaskablePPO
-    _W["orig_train"] = InstrumentedMaskablePPO.train
-    InstrumentedMaskablePPO.train = _inventory_train
-    InstrumentedMaskablePPO.collect_rollouts = lb._bench_collect
+    # The measurement is the learn loop's update on the PINNED buffer: `train` is the stage only
+    # after the loop's first collection (which restores that buffer), and the trainer's STARTUP update
+    # (the CUDA fit check's dry `train()` on a fixture) runs production's own — `lb.learn_loop_only`.
+    lb.install_worker_hooks(InstrumentedMaskablePPO, tool_train=_inventory_train,
+                            buffer_collect=lb._bench_collect)
+    _W["orig_train"] = lb._WORKER["_orig_train"]
     from main.train import model_build as _mb
     _orig_wd = _mb.start_subprocess_watchdog
 
@@ -499,19 +514,6 @@ def worker_main(cfg_path: str) -> None:
         lb._WORKER["_watchdog_event"] = shutdown_event
         return _orig_wd(env, label=label, shutdown_event=shutdown_event)
     _mb.start_subprocess_watchdog = _wd
-    if cfg.get("skip_prewarm"):
-        # TIME stage under a 20-min GPU unit: keep the real compile and its parity gate, skip the
-        # production PREWARM of every declared signature and the post-update LOCK (minutes under
-        # load). The warm-up update compiles the one signature the timed updates use; the
-        # lifecycle module imports the name at call time, so the module attribute is the seam.
-        from agents.model import compile_trainer as _ct
-
-        def _reset_only(model: Any, **_k: Any) -> Optional[str]:
-            from agents.model.compile_control import control
-            line = control().reset()
-            print(f"[compile_inventory] prewarm + lock SKIPPED (time stage); {line}", flush=True)
-            return line
-        _ct.arm_compile_sentinel = _reset_only
     trainer = importlib.import_module("main." + lb._TRAINER_LITERAL)
     sys.argv = ["compile_inventory[worker]"] + list(cfg["trainer_argv"])
     asyncio.run(trainer.main())

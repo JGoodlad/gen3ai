@@ -40,3 +40,32 @@ def test_argv_drops_env_count_and_compile_flags_then_sets_them_once():
     assert t[t.index("--lr") + 1] == "0.0003"
     f = adjust_argv(argv, compile_trainer=False)
     assert "--no-compile-trainer" in f and "--compile-trainer" not in f
+
+
+def test_the_time_stage_refuses_to_run_before_the_pinned_buffer_was_restored(tmp_path, monkeypatch):
+    """K2: the stage once ran on the trainer's startup (fit-check) update, timing a 4,096-row fixture
+    (0.32 s) as if it were the 98,304-row pinned update — a WRONG NUMBER, not a crash. It now refuses."""
+    import types
+
+    import pytest
+
+    from agents.training import learner_benchmark as lb
+    from main.compile_inventory import worker as W
+
+    monkeypatch.setitem(W._W, "orig_train", lambda self: None)
+    monkeypatch.setattr(lb, "_WORKER", {})                    # `buffer_restored` unset
+    model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=types.SimpleNamespace()),
+                                  _compiled_micro_step=object())   # the K8 regions "installed"
+    with pytest.raises(RuntimeError, match="PINNED buffer"):
+        W._stage_time(model, {}, tmp_path)
+
+
+def test_a_time_stage_without_keep_prewarm_is_refused_before_anything_runs(capsys):
+    """The regions install inside the compile sentinel; the old `skip prewarm` variant replaced the
+    sentinel wholesale, so the stage always died "not compiled" after the whole startup."""
+    import argparse
+
+    from main.compile_inventory.__main__ import cmd_run
+
+    rc = cmd_run(argparse.Namespace(stage="time", device="cuda", keep_prewarm=False))
+    assert rc == 2 and "--keep-prewarm" in capsys.readouterr().out

@@ -1,0 +1,3 @@
+== B4 tree=/home/goodlad/dev/gen3ai-wt/lane-c-perf-guard head=cbd20111 dirty=12
+before: load 0.43 1.64 2.06; gpu apps: 0
+after: load 1.24 1.77 1.99; gpu apps: 0
