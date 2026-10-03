@@ -334,6 +334,12 @@ class H2HEngine:
         self.player, self.opponent, self.compute, self.emit = player, opponent, compute, emit
         check_core_flags(player)
         check_core_flags(opponent)
+        # THIS checkout's env core, built (incrementally) before anything loads — the trainer's own startup step
+        # (`rust_env_setup`, F-LG-6); the loaders' stamp check refuses a build that is not this tree's, so a stale
+        # `target/` (a rebase moved the wire) is "missing / stale" turned into "current", never another checkout's
+        from utils.rust_env.build import ensure_built
+
+        ensure_built(compute.profile, emit=emit)
         self.team_check = {player.id: check_team_source(player), opponent.id: check_team_source(opponent)}
         self.turn_limit = EP.stall_threshold()
         self.regime = regime_for(self.turn_limit)
