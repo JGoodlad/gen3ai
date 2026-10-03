@@ -1,0 +1,224 @@
+{
+ "A": {
+  "core_stamp_commit": "f9349f95b6cc3d9fb8cdff89dffca91eec390c0f",
+  "effective_hyperparameters": {
+   "_n_updates": 820,
+   "batch_size": 2048,
+   "ent_coef": 0.05,
+   "gae_lambda": 0.8,
+   "gamma": 1.0,
+   "grad_accum_steps": 32,
+   "learning_rate": 0.0003,
+   "n_epochs": 10,
+   "n_steps": 2048,
+   "num_timesteps": 8062355,
+   "seed": 1001,
+   "target_kl": null,
+   "vf_coef": 0.5
+  },
+  "eval_trainee_teams": {
+   "bias_prob": 0.1,
+   "kind": "default_biased",
+   "pin_file": null,
+   "pin_sha": null
+  },
+  "final_sha256": "808ad2756f5911e8d77dd29a17edb83ca32d7a0d77bc3a9000420c247c180f79",
+  "final_snapshot": "/home/goodlad/dev/gen3ai/models/sizing_A_n48_e10_s1001/final_model.zip",
+  "last_segment_cli_batch_size": 2048,
+  "last_segment_unified_damage": "both",
+  "last_segment_unified_moves": "both",
+  "matchup_hash": "ef5242cffd",
+  "model_config_sha256": "aa46f29d37343008ff43bbfaedac35a011e3fd77343d959e6aa3e111d85e218b",
+  "n_envs": 48,
+  "n_steps_arg": 2048,
+  "num_timesteps": 8062355,
+  "original_command": "/home/goodlad/dev/gen3ai/src/main/launcher/__main__.py --restart-interval-hours 3 --pin-commit f9349f95b6cc3d9fb8cdff89dffca91eec390c0f --env-core rust --n-envs 48 --steps 8060928 --run-name sizing_A_n48_e10_s1001 --seed 1001 --checkpoint-every-steps 2000000 --device cuda --log-level periodic --arch production",
+  "pin": "f9349f95b6cc3d9fb8cdff89dffca91eec390c0f",
+  "pin_history": [
+   {
+    "first_step": 0,
+    "git_hash": "f9349f95b6cc3d9fb8cdff89dffca91eec390c0f",
+    "last_step": 8062355,
+    "pin_source": "pin_commit",
+    "torch": "2.8.0+cu126"
+   }
+  ],
+  "policy_kwargs_sha256": "0ba62e8c28706e2cbfa1c09995037dcf7aac972fa1d4baa917437872b176c617",
+  "resume_from": null,
+  "resumed": false,
+  "run": "sizing_A_n48_e10_s1001",
+  "run_seed_recorded": 40363377759500,
+  "rung": "latest_txt",
+  "seed": 1001,
+  "torch": "2.8.0+cu126"
+ },
+ "A2": {
+  "core_stamp_commit": "277f318fad93a587e5ad1a3f476fab917c563ed0",
+  "effective_hyperparameters": {
+   "_n_updates": 820,
+   "batch_size": 2048,
+   "ent_coef": 0.05,
+   "gae_lambda": 0.8,
+   "gamma": 1.0,
+   "grad_accum_steps": 32,
+   "learning_rate": 0.0003,
+   "n_epochs": 10,
+   "n_steps": 2048,
+   "num_timesteps": 8130046,
+   "seed": 1001,
+   "target_kl": null,
+   "vf_coef": 0.5
+  },
+  "eval_trainee_teams": {
+   "bias_prob": 0.1,
+   "kind": "default_biased",
+   "pin_file": null,
+   "pin_sha": null
+  },
+  "final_sha256": "8498cc01cf9e4524805caae3357c44e95588b51cd430e19479d818fdda034cc4",
+  "final_snapshot": "/home/goodlad/dev/gen3ai/models/sizing_A2_n48_e10_s1001/final_model.zip",
+  "last_segment_cli_batch_size": 4096,
+  "last_segment_unified_damage": "off",
+  "last_segment_unified_moves": "off",
+  "matchup_hash": "ef5242cffd",
+  "model_config_sha256": "aa46f29d37343008ff43bbfaedac35a011e3fd77343d959e6aa3e111d85e218b",
+  "n_envs": 48,
+  "n_steps_arg": 2048,
+  "num_timesteps": 8130046,
+  "original_command": "/home/goodlad/dev/gen3ai/src/main/launcher/__main__.py --restart-interval-hours 3 --pin-commit 277f318fad93a587e5ad1a3f476fab917c563ed0 --env-core rust --n-envs 48 --steps 8060928 --run-name sizing_A2_n48_e10_s1001 --seed 1001 --checkpoint-every-steps 2000000 --device cuda --log-level periodic --arch production",
+  "pin": "277f318fad93a587e5ad1a3f476fab917c563ed0",
+  "pin_history": [
+   {
+    "first_step": 0,
+    "git_hash": "277f318fad93a587e5ad1a3f476fab917c563ed0",
+    "last_step": 8130046,
+    "pin_source": "pin_commit",
+    "torch": "2.8.0+cu126"
+   }
+  ],
+  "policy_kwargs_sha256": "0ba62e8c28706e2cbfa1c09995037dcf7aac972fa1d4baa917437872b176c617",
+  "resume_from": "models/sizing_A2_n48_e10_s1001/checkpoints/checkpoint_4000032_steps.zip",
+  "resumed": true,
+  "run": "sizing_A2_n48_e10_s1001",
+  "run_seed_recorded": 60373188270226,
+  "rung": "latest_txt",
+  "seed": 1001,
+  "torch": "2.8.0+cu126"
+ },
+ "Ap": {
+  "core_stamp_commit": "277f318fad93a587e5ad1a3f476fab917c563ed0",
+  "effective_hyperparameters": {
+   "_n_updates": 820,
+   "batch_size": 2048,
+   "ent_coef": 0.05,
+   "gae_lambda": 0.8,
+   "gamma": 1.0,
+   "grad_accum_steps": 32,
+   "learning_rate": 0.0003,
+   "n_epochs": 10,
+   "n_steps": 2048,
+   "num_timesteps": 8062352,
+   "seed": 1002,
+   "target_kl": null,
+   "vf_coef": 0.5
+  },
+  "eval_trainee_teams": {
+   "bias_prob": 0.1,
+   "kind": "default_biased",
+   "pin_file": null,
+   "pin_sha": null
+  },
+  "final_sha256": "b68ea6d4b603876e08d6f4d4e14042640f80b50a665b76dfb0dc4e38ff7e0c29",
+  "final_snapshot": "/home/goodlad/dev/gen3ai/models/sizing_Ap_n48_e10_s1002/final_model.zip",
+  "last_segment_cli_batch_size": 2048,
+  "last_segment_unified_damage": "both",
+  "last_segment_unified_moves": "both",
+  "matchup_hash": "ef5242cffd",
+  "model_config_sha256": "aa46f29d37343008ff43bbfaedac35a011e3fd77343d959e6aa3e111d85e218b",
+  "n_envs": 48,
+  "n_steps_arg": 2048,
+  "num_timesteps": 8062352,
+  "original_command": "/home/goodlad/dev/gen3ai/src/main/launcher/__main__.py --restart-interval-hours 3 --pin-commit 277f318fad93a587e5ad1a3f476fab917c563ed0 --env-core rust --n-envs 48 --steps 8060928 --run-name sizing_Ap_n48_e10_s1002 --seed 1002 --checkpoint-every-steps 2000000 --device cuda --log-level periodic --arch production",
+  "pin": "277f318fad93a587e5ad1a3f476fab917c563ed0",
+  "pin_history": [
+   {
+    "first_step": 0,
+    "git_hash": "277f318fad93a587e5ad1a3f476fab917c563ed0",
+    "last_step": 8062352,
+    "pin_source": "pin_commit",
+    "torch": "2.8.0+cu126"
+   }
+  ],
+  "policy_kwargs_sha256": "0ba62e8c28706e2cbfa1c09995037dcf7aac972fa1d4baa917437872b176c617",
+  "resume_from": null,
+  "resumed": false,
+  "run": "sizing_Ap_n48_e10_s1002",
+  "run_seed_recorded": 13101109564405,
+  "rung": "latest_txt",
+  "seed": 1002,
+  "torch": "2.8.0+cu126"
+ },
+ "B": {
+  "core_stamp_commit": "7ef99979ad38f2676cace24dc29e546ccfc7c8da",
+  "effective_hyperparameters": {
+   "_n_updates": 820,
+   "batch_size": 2048,
+   "ent_coef": 0.05,
+   "gae_lambda": 0.8,
+   "gamma": 1.0,
+   "grad_accum_steps": 32,
+   "learning_rate": 0.0003,
+   "n_epochs": 10,
+   "n_steps": 384,
+   "num_timesteps": 8068077,
+   "seed": 1001,
+   "target_kl": null,
+   "vf_coef": 0.5
+  },
+  "eval_trainee_teams": {
+   "bias_prob": 0.1,
+   "kind": "default_biased",
+   "pin_file": null,
+   "pin_sha": null
+  },
+  "final_sha256": "cfdfb9f24d7a152da1bb97e4135c1d3ed2e01b855cd329ceafce0811aa2d0073",
+  "final_snapshot": "/home/goodlad/dev/gen3ai/models/sizing_B_n256_e10_s1001/final_model.zip",
+  "last_segment_cli_batch_size": 2048,
+  "last_segment_unified_damage": "both",
+  "last_segment_unified_moves": "both",
+  "matchup_hash": "ef5242cffd",
+  "model_config_sha256": "aa46f29d37343008ff43bbfaedac35a011e3fd77343d959e6aa3e111d85e218b",
+  "n_envs": 256,
+  "n_steps_arg": 384,
+  "num_timesteps": 8068077,
+  "original_command": "/home/goodlad/dev/gen3ai/src/main/launcher/__main__.py --restart-interval-hours 3 --pin-commit 7ef99979ad38f2676cace24dc29e546ccfc7c8da --env-core rust --n-envs 256 --steps 8060928 --run-name sizing_B_n256_e10_s1001 --seed 1001 --checkpoint-every-steps 2000000 --device cuda --log-level periodic --n-steps 384 --arch production",
+  "pin": "7ef99979ad38f2676cace24dc29e546ccfc7c8da",
+  "pin_history": [
+   {
+    "first_step": 0,
+    "git_hash": "7ef99979ad38f2676cace24dc29e546ccfc7c8da",
+    "last_step": 8068077,
+    "pin_source": "pin_commit",
+    "torch": "2.8.0+cu126"
+   }
+  ],
+  "policy_kwargs_sha256": "0ba62e8c28706e2cbfa1c09995037dcf7aac972fa1d4baa917437872b176c617",
+  "resume_from": null,
+  "resumed": false,
+  "run": "sizing_B_n256_e10_s1001",
+  "run_seed_recorded": 40363377759500,
+  "rung": "latest_txt",
+  "seed": 1001,
+  "torch": "2.8.0+cu126"
+ },
+ "_effective_hyperparameters_differing": {
+  "n_steps": {
+   "A": 2048,
+   "A2": 2048,
+   "Ap": 2048,
+   "B": 384
+  }
+ },
+ "_model_config_identical_across_all_four": true,
+ "_policy_kwargs_identical_across_all_four": true
+}

@@ -1,0 +1,16 @@
+[mem_cap] cap 20.00 GB (swap 0) · unit gen3ai-capped-main.h2h-3698237.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] sizing_B_n256_e10_s1001@8068077 vs sizing_Ap_n48_e10_s1002@8062352: 5000 pairs in 10 batch(es) of 500; 0 already on disk, 10 to play; schedule h2h:6bbb7e3ee2f815de seed 0
+[h2h] engine up in 161.0s: sizing_B_n256_e10_s1001@8068077 vs sizing_Ap_n48_e10_s1002@8062352; 64 envs, T2 graph on cuda; regime 191bb5810017ba85
+[h2h] batch 1/10: 500 pairs / 1000 games in 10.0s (99.87 games/s); W/L/D 497/498/5; pair counts [113, 2, 270, 3, 112]; near-tie games 0
+[h2h] batch 2/10: 500 pairs / 1000 games in 11.2s (89.46 games/s); W/L/D 478/509/13; pair counts [126, 6, 253, 3, 112]; near-tie games 2
+[h2h] batch 3/10: 500 pairs / 1000 games in 9.4s (106.64 games/s); W/L/D 488/505/7; pair counts [115, 3, 272, 4, 106]; near-tie games 1
+[h2h] batch 4/10: 500 pairs / 1000 games in 9.7s (102.99 games/s); W/L/D 490/498/12; pair counts [119, 4, 256, 8, 113]; near-tie games 4
+[h2h] batch 5/10: 500 pairs / 1000 games in 11.3s (88.47 games/s); W/L/D 492/500/8; pair counts [106, 4, 284, 4, 102]; near-tie games 5
+[h2h] batch 6/10: 500 pairs / 1000 games in 9.6s (104.05 games/s); W/L/D 488/505/7; pair counts [113, 4, 275, 3, 105]; near-tie games 2
+[h2h] batch 7/10: 500 pairs / 1000 games in 10.9s (91.78 games/s); W/L/D 493/496/11; pair counts [102, 2, 291, 7, 98]; near-tie games 1
+[h2h] batch 8/10: 500 pairs / 1000 games in 9.9s (101.30 games/s); W/L/D 477/518/5; pair counts [120, 3, 275, 2, 100]; near-tie games 1
+[h2h] batch 9/10: 500 pairs / 1000 games in 11.7s (85.38 games/s); W/L/D 487/510/3; pair counts [117, 0, 277, 1, 105]; near-tie games 0
+[h2h] batch 10/10: 500 pairs / 1000 games in 10.8s (92.46 games/s); W/L/D 512/483/5; pair counts [112, 1, 259, 2, 126]; near-tie games 1
+[mem_cap] done: gen3ai-capped-main.h2h-3698237.scope exit 0 · peak 5.24 GB of cap 20.00 GB (26%) · not OOM-killed
+[mem_cap] done: gen3ai-capped-main.h2h-3698237.scope exit 0 · peak 5.24 GB of cap 20.00 GB (26%) · not OOM-killed
+[run_edges] exit 0

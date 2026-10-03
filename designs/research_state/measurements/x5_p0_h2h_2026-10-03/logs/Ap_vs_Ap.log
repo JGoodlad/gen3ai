@@ -1,0 +1,16 @@
+[mem_cap] cap 20.00 GB (swap 0) · unit gen3ai-capped-main.h2h-3748470.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] sizing_Ap_n48_e10_s1002@8062352 vs sizing_Ap_n48_e10_s1002@8062352: 5000 pairs in 10 batch(es) of 500; 0 already on disk, 10 to play; schedule h2h:cbc066b7b5cc8447 seed 0
+[h2h] engine up in 144.1s: sizing_Ap_n48_e10_s1002@8062352 vs sizing_Ap_n48_e10_s1002@8062352; 64 envs, T2 graph on cuda; regime 191bb5810017ba85
+[h2h] batch 1/10: 500 pairs / 1000 games in 10.9s (91.78 games/s); W/L/D 502/494/4; pair counts [14, 0, 468, 0, 18]; near-tie games 0
+[h2h] batch 2/10: 500 pairs / 1000 games in 8.3s (120.66 games/s); W/L/D 496/493/11; pair counts [10, 0, 478, 1, 11]; near-tie games 0
+[h2h] batch 3/10: 500 pairs / 1000 games in 8.6s (115.72 games/s); W/L/D 489/505/6; pair counts [21, 0, 466, 0, 13]; near-tie games 2
+[h2h] batch 4/10: 500 pairs / 1000 games in 7.7s (129.31 games/s); W/L/D 489/497/14; pair counts [12, 0, 480, 0, 8]; near-tie games 3
+[h2h] batch 5/10: 500 pairs / 1000 games in 7.9s (126.15 games/s); W/L/D 488/507/5; pair counts [19, 0, 471, 1, 9]; near-tie games 2
+[h2h] batch 6/10: 500 pairs / 1000 games in 7.8s (128.42 games/s); W/L/D 496/499/5; pair counts [11, 1, 478, 0, 10]; near-tie games 0
+[h2h] batch 7/10: 500 pairs / 1000 games in 9.2s (108.66 games/s); W/L/D 498/494/8; pair counts [14, 0, 470, 0, 16]; near-tie games 2
+[h2h] batch 8/10: 500 pairs / 1000 games in 7.4s (136.01 games/s); W/L/D 503/488/9; pair counts [10, 1, 471, 0, 18]; near-tie games 2
+[h2h] batch 9/10: 500 pairs / 1000 games in 9.7s (103.40 games/s); W/L/D 496/499/5; pair counts [14, 1, 472, 0, 13]; near-tie games 5
+[h2h] batch 10/10: 500 pairs / 1000 games in 13.2s (75.87 games/s); W/L/D 495/497/8; pair counts [16, 0, 469, 0, 15]; near-tie games 2
+[mem_cap] done: gen3ai-capped-main.h2h-3748470.scope exit 0 · peak 5.21 GB of cap 20.00 GB (26%) · not OOM-killed
+[mem_cap] done: gen3ai-capped-main.h2h-3748470.scope exit 0 · peak 5.21 GB of cap 20.00 GB (26%) · not OOM-killed
+[run_edges] exit 0

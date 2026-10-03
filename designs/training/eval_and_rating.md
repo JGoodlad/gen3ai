@@ -754,7 +754,10 @@ the seats relabelled, which is a mirror image only while the engine is seat-symm
 RNG in a seat-dependent order. Measured on seeded perturbed-fresh checkpoints, 64 pairs against itself: the mirrored
 decision margins agree to 5 digits until a seat-dependent event and jump after it; 3 of 64 pairs scored 0 or 4
 half-points (two LL, one WW — the same seat favoured in both games, which RAISES the within-pair correlation; the
-pair-clustered interval is the honest one). `play_test.py` pins the exact cancellation of the SCORING on a seat-symmetric
+pair-clustered interval is the honest one). **On the trained M5 sizing finals (X5 P0, 2026-10-03, 15,000 self-play pairs):
+the seat effect is u = −0.006 ± 0.083 pp, and 5.2 % of self-play pairs are WW or LL — 779 of the 14,963 pairs that are
+CLEAR of a near-tie decision, so it is not rounding** (the speed-tie diagnosis above was traced on the perturbed-fresh
+checkpoints only). `play_test.py` pins the exact cancellation of the SCORING on a seat-symmetric
 toy engine; `play_mirror_integration_test.py` asserts it on the real engine only for the pairs that stayed mirror images
 decision for decision. A 4-game block (teams × seats) would cancel seat luck too — it needs the core to seat the
 sentinel at p1, which it does not (a FINDING, not built).
@@ -790,8 +793,12 @@ scale with the METER's variance subtracted exactly — the estimator, its exact 
 the module's docstring; its unbiasedness is a deterministic identity test (all sign patterns of the edge noise).
 
 **Hardware.** On CUDA the tool takes the GPU lock itself (re-entrant under `scripts/ops/gpu_lock.sh`); a heavy job runs
-under `scripts/ops/mem_cap.sh`. T2 `graph` on the card compiles on a cold start (~2 min for the production model, 123 s
-measured 2026-10-03); the throughput numbers are in `designs/research_state/measurements/x5_p0_h2h_2026-10-03/README.md`.
+under `scripts/ops/mem_cap.sh`. Measured 2026-10-03 on the production model (X5 P0, `designs/research_state/measurements/x5_p0_h2h_2026-10-03/`): T2
+`graph` on the RTX 3080 Ti, 64 envs — 45–171 games/s per 1,000-game batch (median 130, pooled 118, beside other agents' test
+gates), but the ENGINE START is 114–167 s per edge (the T2 graphs compile again for every engine), so a 1,000-pair cell is
+~17 s of play after ~2.5 min of start; T2 `eager` on the CPU — 4.77 games/s (8 torch threads, load average 6–10), a
+2,000-game cell ≈ 7 min. CPU eager and GPU graph played identical games (200 games: the same W/L/D, pentanomial and per-team
+counters). A multi-cell engine (one architecture, weights loaded per cell) is NOT built.
 
 Tests: `agents/training/eval_ledger_test.py` (every schema rule has a row refused for exactly that rule),
 `main/h2h/play_test.py` (scoring, the toy-engine mirror, seeds, resume, the team-source refusal),

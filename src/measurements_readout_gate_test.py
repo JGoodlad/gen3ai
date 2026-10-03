@@ -50,6 +50,9 @@ REGISTRY = [
      "the K=6 (v8-dose) cell's pre-registered P1 / P2 / P3"),
     ("arch_transfer_2026-09-05/teacher_distance/fold_table.py",
      "every gen-era fold's untaught delta, recomputed from per-team rows"),
+    ("x5_p0_h2h_2026-10-03/scripts/analyze.py",
+     "X5 P0: the head-to-head round-robin's §0b count rows, the four runs' provenance, the banked untaught read "
+     "and the registered design's simulator -> sigma_h, the seat effect, the power at sigma_h"),
 ]
 
 _MEAS = repo_path("designs", "research_state", "measurements")
@@ -96,7 +99,7 @@ def test_registered_readout_resolves_its_inputs(rel: str, why: str) -> None:
 #: keeps retiring — and a registry that quietly SHRINKS is the same failure at partial strength.
 #: Lowering this number is a legal move only in the same commit that deletes a readout, and the
 #: commit message says which one.
-_REGISTRY_FLOOR = 5
+_REGISTRY_FLOOR = 6
 
 
 def test_registry_does_not_silently_shrink() -> None:
