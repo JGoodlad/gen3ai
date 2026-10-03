@@ -53,10 +53,10 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   slower, raise `floor` for a bigger permanent bot slice). `--bot-weights name=w,…` additionally
   biases WHICH heuristic each episode draws (e.g. `aggressive_v2=3,heuristic2=3` → ~3× emphasis on
   the loss-analysis-flagged coverage bots; unlisted bots stay 1.0, omitted → uniform) — the weighted
-  pick lives in `MaskableAgentWrapper._select_episode_opponent`, an O(1) in-memory `rng.choices`
+  pick lives in `rust_env_opponents.EpisodeOpponentSampler` (the rule-for-rule successor of the deleted Python `MaskableAgentWrapper._select_episode_opponent`), an O(1) in-memory `rng.choices`
   with zero per-step cost. All three default to the original behavior, so an unset run is unchanged.
   Crucially the heuristic-vs-pool split is **no longer fixed per process**: every training env
-  picks its opponent **per episode** in `MaskableAgentWrapper.reset()` from a live
+  picks its opponent **per episode** (the sampler, at each episode start) from a live
   `self_play_fraction`, and `SelfPlayCallback` pushes the fresh fraction (+ a `pool_generation`)
   to all envs via `training_env.env_method("set_self_play_target", …)` **after every eval**, so
   the ratio tracks measured strength mid-run with no restart. The opponent is a pure decision
@@ -76,7 +76,7 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   the envs and persisted to `summary.json` is the **challenge-ENTRY** probability (= pool +
   un-mastered stable, *when* the challenge pick returns non-None) — NOT the pool share. So the
   reported metrics are derived separately by `SelfPlayCallback._opponent_mix_fractions(sf, pool_ready)`,
-  a pure mirror of `MaskableAgentWrapper._select_episode_opponent` (it does **not** change selection).
+  a pure mirror of the sampler's selection (it does **not** change selection).
   The four mutually-exclusive opponent types (bot / pool / un-mastered-stable / mastered-stable) sum
   to 1; the metrics report **`train/selfplay_fraction` = P(pool)** (REPOINTED — it used to log `sf`),
   **`train/stable_fraction` = P(any stable)** (un-mastered in the challenge **+** mastered in the
@@ -87,9 +87,8 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   `len(OPPONENT_CLASSES)` — the floor roster, which excludes eval-only `random`).
   With no stable opponents these reduce to `selfplay_fraction = nonbot = sf·P`, `stable = 0`.
   `_opponent_mix_fractions` is a hand-written **mirror** of the wrapper's selection, so the anti-drift
-  guard is `wrappers_test.py::test_mix_fractions_match_actual_sampling`: it runs the REAL
-  `_select_episode_opponent` thousands of times and asserts the empirical pool/stable shares match
-  the analytic fractions (the per-case `selfplay_callback_test.py::test_opponent_mix_*` pin the math
+  guard was `wrappers_test.py::test_mix_fractions_match_actual_sampling` (deleted with the wrapper, U3; it ran the REAL
+  selection thousands of times against the analytic fractions — the sampler's own tests in `rust_env_opponents_test.py` now hold the draw, and the per-case `selfplay_callback_test.py::test_opponent_mix_*` pin the math
   itself). A future selection change that isn't mirrored fails that cross-check.
 - **Seeding is GATED on competence; the pool is a SLIDING WINDOW (nothing pinned) by default.** The
   pool is seeded only once win rate clears `SELF_PLAY_START` (at startup via `_maybe_seed_pool`, or the
@@ -228,7 +227,7 @@ parent's pool hidden exited **3** with the three-way message. Gates:
       `SelfPlayCallback._update_pfsp_ema` EMA-smooths them (`_PFSP_WR_EMA_BETA`=0.5, to damp ~100-game eval
       noise) and `_prune_and_push_pfsp` prunes the map to the live pool and pushes it to every env via
       `env_method("set_opponent_win_rates", {step: p})` (mirrors the `set_self_play_target` push;
-      `MaskableAgentWrapper.set_opponent_win_rates` → `SnapshotPool.set_win_rates`). The map survives resume
+      `RustEnvOpponents.set_opponent_win_rates` → `SnapshotPool.set_win_rates`). The map survives resume
       in `summary.json` (`pfsp_win_rates`). Headline signals: `eval/pfsp_hardest_win_rate` (the most
       up-weighted self) + `eval/pfsp_tracked_snapshots`. Try `1.0–2.0`.
     - **`--pool-spread` (default off)** — replaces the oldest-evicted window with **spread retention**
@@ -247,7 +246,7 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   the frame deletion and two signature bumps. It did: **70/70 existing tests green unmodified**, and
   every call site is intact — both `SnapshotPool` constructions (env-worker + trainer-side), the
   `_update_pfsp_ema` fold in `_collect_pending`, the `_prune_and_push_pfsp` env push, the
-  `summary.json` `pfsp_win_rates` resume-load, and `MaskableAgentWrapper.set_opponent_win_rates`.
+  `summary.json` `pfsp_win_rates` resume-load, and `RustEnvOpponents.set_opponent_win_rates`.
   A `--debug --self-play --debug-eval --pfsp-scale 2.0 --pool-spread` CPU smoke ran to
   `Training complete` (exit 0). **What that smoke does NOT show, and why it can't:** pool seeding is
   gated on `win_rate_vs_bots >= SELF_PLAY_START` (0.55) and a fresh debug model sits at ~4%, so the
@@ -368,7 +367,7 @@ parent's pool hidden exited **3** with the three-way message. Gates:
     default']`). On that the wrapper falls back to the default order rather than crash (guarded by
     `single_agent_wrapper_test.py` + `order_to_action_race_fuzz_test.py`).
   - **Trainee** — its action is *SB3's*, computed outside `step` and not re-runnable mid-step, so a
-    stale trainee decision **crashes** (`gen3_env`, no fallback): acting on it would corrupt its
+    stale trainee decision **crashes** (the Python `gen3_env`, deleted in U3; no fallback): acting on it would corrupt its
     `(obs, action) → (reward, next_obs)` transition. Empirically it doesn't hit this — gated by the
     env's `race_get` request-wait (17 h vs-bots + self-play, zero trainee staleness).
   `_settle_opponent_battle` is a **pre-drain** that only trims how often the opponent re-decides — it
@@ -429,11 +428,11 @@ against in eval AND (under `--self-play`) played against in training. Design:
 — the run's **LAST SNAPSHOT**, with `best_model/best_model.zip` as the last-resort fallback.
 
 **Training-mix participation (Stage 2) — "tossed in like a sentinel, becomes a bot when mastered":**
-a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgentWrapper`
-(`wrappers.py`), no new source-model abstraction:
+a stable opponent rides the *existing* pool-vs-heuristic split in the opponent sampler
+(`rust_env_opponents.py`), no new source-model abstraction:
 - **CHALLENGE bucket** (the self-play pool branch, competence-gated by `self_play_fraction`): the
   pool gets the BULK; un-mastered stable opponents share a **capped minority slice**
-  (`STABLE_CHALLENGE_SHARE` = 0.20 in `wrappers.py`), so a single fixed opponent can never dominate
+  (`STABLE_CHALLENGE_SHARE` = 0.20 in `opponent_classes.py`), so a single fixed opponent can never dominate
   training (multiple un-mastered ones SHARE the 20%, so the total stays bounded). It only enters the
   mix once the model clears `SELF_PLAY_START` (a weak model trains on bots first), and only under
   `--self-play` (without it, stable opponents are eval-only — a startup NOTE says so).
@@ -455,19 +454,19 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
 - **Dynamic within-slice selection (`--stable-opponent-pfsp`, default off).** A FLAT capped share
   splits the stable slice UNIFORMLY over the un-mastered opponents — so a generalist hardening against
   several exploiters at once spends equal budget on the axis it already handles and the one it's
-  failing. Under `--stable-opponent-pfsp`, `MaskableAgentWrapper._pick_stable` weights the
+  failing. Under `--stable-opponent-pfsp`, the sampler's `_pick_stable` weights the
   un-mastered-stable pick by **`1 − win_rate`** (floored 0.05) — the exploiter it's LOSING to worst
   gets most of the slice, and each fades as mastered (win_rate→1 ⇒ weight→0), then the mastery flip
   retires it to the floor. Win-rates are the same `win_rate_vs_ext_<label>` eval already computes,
   EMA-smoothed (`_PFSP_WR_EMA_BETA`) and pushed each cycle via `SelfPlayCallback._push_stable_mastered`
   → `env_method("set_stable_win_rates", …)` (mirrors the pool PFSP `set_opponent_win_rates`). **The
   TOTAL pool-vs-stable share is unchanged** (still `--stable-opponent-selfplay-share`), so the
-  opponent-mix telemetry + the `test_mix_fractions_match_actual_sampling` anti-drift guard are
+  opponent-mix telemetry is
   unaffected — only WHICH un-mastered stable opponent is picked shifts. Training-only (not
   version-locked, forwarded on resume like `--pfsp-scale`); OFF = uniform, byte-identical. **Pairs
   with a raised `--stable-opponent-selfplay-share`.** Motivation: a flat 0.35 share (≈12% exposure
   each of 3 exploiters) left ai_v7_14's hardening flattening at ~0.30 vs the exploiters; the dynamic
-  focus + a raised share is the fix. Tests: `wrappers_test.py::test_stable_pfsp_*`.
+  focus + a raised share is the fix. Tests: the sampler's stable-PFSP cases in `rust_env_opponents_test.py` (the old `wrappers_test.py::test_stable_pfsp_*` went with the wrapper).
 - The stable-opponent players are **built once per worker** (`load_foreign_opponent` in the env
   factory), so no per-episode reload; each plays **stochastic** at `--stable-opponent-temp` in
   TRAINING but **greedy (temp 0)** in EVAL (a clean yardstick).
@@ -533,19 +532,13 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
   `resolve_stable_opponents` reads the pin from the opponent run's `metadata.json:
   cli_args.trainee_team` (`_read_trainee_pin`) into `FixedOpponentEntry.team_str` — **fail-loud**:
   a recorded pin whose file is missing raises, and a pin that no longer matches the run's recorded
-  MatchupSpec `pin_sha` raises (never a silent pool fallback). TRAINING: the env factory builds a
-  per-entry pinned builder and `MaskableAgentWrapper._apply_opponent_team` switches
-  `env.agent2._team` **per episode** to match the selected opponent (agent2 does the opponent-side
-  networking, so its `_team` decides the opponent's real team — the mirror lesson); unpinned
-  episodes restore the pool builder (the SAME instance, so team-draw RNG streams are unchanged);
-  with no pinned opponent anywhere the wrapper never touches `agent2._team` (byte-identical). EVAL:
+  MatchupSpec `pin_sha` raises (never a silent pool fallback). TRAINING: the Rust env core's opponent team plumbing (`rust_rollout/teams.py`; the deleted Python wrapper's `_apply_opponent_team` switched `env.agent2._team` **per episode** — the mirror lesson: the opponent's real team is the one its agent holds) plays each pinned entry on its own pin; unpinned episodes use the pool teams. EVAL:
   `team_str` rides `to_cfg()` → the `EvalItem` → `eval_worker._fixed_opponent_tb`, so the FIXED
   branch measures the opponent piloting its pin (eval matches training, same rule as the trainee's
   own pin). The `[STABLE]`/`[EXPLOITER]` startup lines annotate `[pilots ITS OWN pin: <file>]`.
-  Guard: `poke_env_gaps/opponent_pin_fuzz_test.py` (bridge, real battles — pinned episodes field
-  EXACTLY the pin, bot episodes the pool).
+  (The guard `poke_env_gaps/opponent_pin_fuzz_test.py` — bridge, real battles — was deleted with the Python env core in U3.)
 - **Tests:** `fixed_opponent_pool_test.py` (parse + resolve + the arch FATAL gate + the pin
   resolve/fail-loud/sha cases + `register_exploiter_for_eval` dedup),
   `snapshot_test.py::*opponent*/*foreign*` (the loader + `check_opponent_compatible`), and the
   end-to-end `stable_opponent_fuzz_test.py` (bridge, no server — resolve + arch FATAL + foreign
-  load + legal stochastic play) + `opponent_pin_fuzz_test.py` (the fold-back realized-team guard).
+  load + legal stochastic play) (the fold-back realized-team guard `opponent_pin_fuzz_test.py` was deleted in U3).

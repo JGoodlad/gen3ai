@@ -112,8 +112,8 @@ range. That is what the control is for, and it is why the meter refuses to repor
 
 ### 🚨 The cap-record blocker — 8 of 48, and it is the KNOWN rust `forcelose` gap
 
-A 250-turn game ends by FORFEIT (`Gen3Env.action_to_order` returns `ForfeitBattleOrder` at
-`MAX_TURNS`), logged as a `["forcelose", side]` command. **A record without it never terminates, and
+A 250-turn game ends by FORFEIT (the env's `action_to_order` returns `ForfeitBattleOrder` at
+`MAX_TURNS` — formerly `Gen3Env`'s, deleted in U3; the Rust env core enforces the same cap), logged as a `["forcelose", side]` command. **A record without it never terminates, and
 the offline replay driver refuses it** — *"replayed all N commands but battle has not ended (turn
 250)"*, asserted by BOTH impls in the `replay` verb that `materialize_from_record` depends on. So
 every model-scored offline path is blocked on such a record, not just this one.

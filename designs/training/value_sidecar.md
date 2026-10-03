@@ -46,7 +46,7 @@ any later date.
 | `--value-sidecar-fraction` | `1/64` (0.015625) | Share of buffer states sampled per rollout. |
 | `--value-sidecar-seed` | `0` | Sampler seed. The sample is a function of **(seed, rollout index)**, never of a running stream. |
 
-**`auto` is off under `--critic shaped` because `v` is not a probability there** — it is a
+**`auto` is off under a shaped critic (no longer trainable; an old shaped run is read pinned) because `v` is not a probability there** — it is a
 shaped return (reward units, not [0,1]), so a Brier decomposition of it is a
 category error rather than a loose reading.
 
@@ -86,11 +86,9 @@ exact row it happens; `resumed` is `false` on the first and `true` on every late
 
 ### The hazards a reader must carry
 
-🚨 **CALLBACK ORDER IS LOAD-BEARING AND SILENT IF WRONG.** The sidecar must run **after**
-`WinProbLabelCallback`, whose `_on_rollout_end` overwrites the `win_target` / `win_mask`
-placeholders with the Monte-Carlo label. Registered earlier it reads placeholder ZEROS and writes a
+🚨 **THE LABELS MUST BE FILLED BEFORE THE SIDECAR READS THEM, AND A MISS IS SILENT.** The Rust collector fills `win_target` / `win_mask` with the Monte-Carlo label before `on_rollout_end` (the window fill calls `win_prob_callback.backfill_terminal_labels`; the `WinProbLabelCallback` whose registration order used to be the hazard was deleted in U3). A sidecar reading placeholder ZEROS writes a
 file full of `target: 0.0` — which looks exactly like a critic scoring an unbroken run of losses.
-`main.train.callbacks` appends them in that order and the test pins it; at runtime an all-zero mask
+At runtime an all-zero mask
 over a whole rollout is **reported** (`labels_unfilled`), never written as data.
 
 ### 🚨 What `target` IS — one NAME, two MEANINGS in OLD files, and only the header says which
@@ -148,7 +146,7 @@ Bucketing by it is a statement about game phase, not about decision count.
 `opp_class` is one of four codes. The finer identities are deliberately absent:
 
 * the **bot's archetype name** and the **pool snapshot's step** are chosen per EPISODE inside
-  `MaskableAgentWrapper._select_episode_opponent` and never reach the observation;
+  the per-episode opponent draw (`rust_env_opponents.EpisodeOpponentSampler`) and never reach the observation;
 * an opponent **ladder rating does not exist at training time at all** — bots are unrated by
   construction and a snapshot's Elo is a POST-HOC quantity `main.elo` derives from the finished
   run's `snapshot_ladder/ladder.json`. A rating column would be null on every row of every run,
@@ -156,7 +154,7 @@ Bucketing by it is a statement about game phase, not about decision count.
 
 🚨 **`opp_class` rides a gate this subsystem WIDENED.** It used to be declared only under the
 opponent-intent labels, and a win-prob arm normally runs with no intent loss — so the by-class slice
-was empty on exactly the runs the sidecar exists for. `gen3_env` now declares it under the win-prob
+was empty on exactly the runs the sidecar exists for. the env's label declaration (`trainee_spaces.trainee_observation_space`) declares it under the win-prob
 label gate too (`designs/ARCHITECTURE.md` §7). It stays a LABEL key the network never reads, and
 `train()`'s one-ahead intent SHIFT is still gated on `opp_intent_coef > 0` **and** runs after every
 `_on_rollout_end` — so what the sidecar reads is the env's own per-episode value, unshifted, in both

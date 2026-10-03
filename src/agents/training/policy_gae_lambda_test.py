@@ -206,9 +206,10 @@ def _tiny_ppo(n_epochs, target_kl=None):
     from agents.training.instrumented_ppo import InstrumentedMaskablePPO
     from agents.training.instrumented_ppo_test import _CounterDictEnv
     venv = DummyVecEnv([(lambda: _CounterDictEnv()) for _ in range(2)])
-    return InstrumentedMaskablePPO("MultiInputPolicy", venv, n_steps=8, batch_size=4,
-                                   n_epochs=n_epochs, learning_rate=3e-3, target_kl=target_kl,
-                                   device="cpu", seed=0)
+    from agents.training.rust_rollout.testkit import attach_vec_collector
+    return attach_vec_collector(InstrumentedMaskablePPO(
+        "MultiInputPolicy", venv, n_steps=8, batch_size=4, n_epochs=n_epochs, learning_rate=3e-3,
+        target_kl=target_kl, device="cpu", seed=0))
 
 
 def _epoch_rows(logged, family):

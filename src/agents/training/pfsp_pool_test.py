@@ -14,7 +14,7 @@ import pytest
 
 from agents.training.snapshot_pool import SnapshotPool, SnapshotEntry
 from agents.training.selfplay_callback import SelfPlayCallback, _PFSP_WR_EMA_BETA
-from agents.training.wrappers import MaskableAgentWrapper
+from agents.training.rust_env_opponents import RustEnvOpponents
 
 
 # ── helpers (mirrors snapshot_pool_test) ─────────────────────────────────────
@@ -188,21 +188,22 @@ def test_spread_keeps_endpoints_and_pinned_interior(tmp_path):
 
 # ── REVIVAL GATE: the whole eval→env push path, end to end, with NUMBERS ─────
 #
-# Every test above exercises ONE link (pool math / callback EMA / wrapper forwarding), each with the
+# Every test above exercises ONE link (pool math / callback EMA / host forwarding), each with the
 # other side mocked. PFSP was built ai_v8-era and never production-enabled, so what a revival has to
-# prove is the COMPOSITION: a measured sentinel win-rate travelling callback → env_method → wrapper
+# prove is the COMPOSITION: a measured sentinel win-rate travelling callback → env_method → the Rust opponents host
 # → SnapshotPool and coming out as a sampling skew of the size the formula predicts. A per-link
 # green suite cannot say that.
 
 def test_measured_winrates_skew_real_sampling_end_to_end(tmp_path):
-    """eval win-rates → callback EMA → env push → wrapper → pool.sample(): the empirical draw
+    """eval win-rates → callback EMA → env push → opponents host → pool.sample(): the empirical draw
     distribution must match the analytic PFSP weights, NOT merely be ordered correctly."""
     pool = _make_pool(tmp_path, recency_weight=0.0, pfsp_scale=2.0)   # recency off ⇒ pure PFSP
     _fill(pool, [1_000_000, 2_000_000, 3_000_000])
 
-    # A real wrapper shell holding the real pool (the object an env worker owns).
-    wrapper = MaskableAgentWrapper.__new__(MaskableAgentWrapper)
-    wrapper._pool = pool
+    # The REAL receiver method (`RustEnvOpponents.set_opponent_win_rates`, what `RustVecEnv.env_method`
+    # dispatches to) bound to a shell holding the real pool — host construction needs a T2 service and
+    # is not the link under test.
+    receiver = types.SimpleNamespace(pool=types.SimpleNamespace(pool=pool))
 
     # A real callback shell; the eval cycle measured the trainee LOSING to the 1M self (0.1) and
     # DOMINATING the 3M one (0.9). First sight ⇒ the EMA seeds to the measurement.
@@ -212,7 +213,7 @@ def test_measured_winrates_skew_real_sampling_end_to_end(tmp_path):
     cb._pool = _make_pool(tmp_path, recency_weight=0.0, pfsp_scale=2.0)
     training_env = MagicMock()
     training_env.env_method.side_effect = (
-        lambda name, *a: [getattr(wrapper, name)(*a)])
+        lambda name, *a: [getattr(RustEnvOpponents, name)(receiver, *a)])
     cb.training_env = training_env
     SelfPlayCallback._update_pfsp_ema(
         cb, [_sentinel(s, w) for s, w in [(1_000_000, 0.1), (2_000_000, 0.5), (3_000_000, 0.9)]], {})
@@ -340,17 +341,15 @@ def test_prune_and_push_survives_env_method_failure():
     SelfPlayCallback._prune_and_push_pfsp(cb)   # non-fatal — must not raise
 
 
-# ── wrapper forwarding ────────────────────────────────────────────────────────
+# ── host forwarding ────────────────────────────────────────────────────────
 
-def test_wrapper_forwards_win_rates_to_pool():
+def test_the_opponents_host_forwards_win_rates_to_the_pool():
     pool = MagicMock()
-    w = MaskableAgentWrapper.__new__(MaskableAgentWrapper)   # skip SingleAgentWrapper.__init__
-    w._pool = pool
-    w.set_opponent_win_rates({1_000_000: 0.4})
+    host = types.SimpleNamespace(pool=types.SimpleNamespace(pool=pool))
+    RustEnvOpponents.set_opponent_win_rates(host, {1_000_000: 0.4})
     pool.set_win_rates.assert_called_once_with({1_000_000: 0.4})
 
 
-def test_wrapper_win_rates_noop_without_pool():
-    w = MaskableAgentWrapper.__new__(MaskableAgentWrapper)
-    w._pool = None
-    w.set_opponent_win_rates({1_000_000: 0.4})   # heuristic-only env → no pool, must not raise
+def test_the_opponents_host_win_rates_noop_without_pool():
+    host = types.SimpleNamespace(pool=None)
+    RustEnvOpponents.set_opponent_win_rates(host, {1_000_000: 0.4})   # bots-only run → no pool, must not raise

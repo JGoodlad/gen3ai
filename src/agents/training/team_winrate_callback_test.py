@@ -17,12 +17,12 @@ import pytest
 from agents.model.opp_intent import OPP_CLASS_NAMES
 from agents.training.team_archetypes import team_sha
 from agents.training.team_winrate_callback import TeamWinRateCallback
-from agents.training.wrappers import MaskableAgentWrapper
+from agents.training import opponent_classes as _oc
 from utils.teambuilder_test import TEAM_A, TEAM_B, _make_builder
 
-BOT = MaskableAgentWrapper.OPP_CLASS_BOT
-POOL = MaskableAgentWrapper.OPP_CLASS_POOL
-NCLS = MaskableAgentWrapper.N_OPP_CLASSES
+BOT = _oc.OPP_CLASS_BOT
+POOL = _oc.OPP_CLASS_POOL
+NCLS = _oc.N_OPP_CLASSES
 
 
 # ── the sha convention: ONE hash, not two that happen to agree today ─────────
@@ -111,40 +111,6 @@ def test_out_of_range_opp_class_is_dropped_not_mis_slotted():
     tb._last_pool_idx = 0
     tb.record_team_wr_outcome(1.0, 99, NCLS)
     assert tb.drain_team_wr_counts()[0] == {}
-
-
-# ── the wrapper hook ──────────────────────────────────────────────────────────
-
-def _wrapper(tb, *, tracking=True, opp_class=POOL):
-    w = MaskableAgentWrapper.__new__(MaskableAgentWrapper)
-    w._team_wr_tracking = tracking
-    w._opponent_class = opp_class
-    w.env = MagicMock()
-    w.env.agent1._team = tb
-    return w
-
-
-def test_wrapper_records_the_episode_outcome_under_this_episodes_class():
-    tb = _make_builder([TEAM_A])
-    tb._last_pool_idx = 0
-    w = _wrapper(tb, opp_class=BOT)
-    w._maybe_record_team_wr(1.0)
-    counts, _ = tb.drain_team_wr_counts()
-    assert counts[0][1][BOT] == 1.0 and counts[0][1][POOL] == 0.0
-
-
-def test_wrapper_off_records_nothing_and_drains_none():
-    tb = _make_builder([TEAM_A])
-    tb._last_pool_idx = 0
-    w = _wrapper(tb, tracking=False)
-    w._maybe_record_team_wr(1.0)
-    assert tb.drain_team_wr_counts()[0] == {}
-    assert w.drain_team_wr_counts() is None      # off ⇒ the callback sees nothing to aggregate
-
-
-def test_wrapper_drain_is_none_on_a_non_tracking_builder():
-    w = _wrapper(object(), tracking=True)
-    assert w.drain_team_wr_counts() is None
 
 
 # ── the callback ──────────────────────────────────────────────────────────────

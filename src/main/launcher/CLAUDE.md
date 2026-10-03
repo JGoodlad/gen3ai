@@ -172,8 +172,8 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   checkpoint. A **circuit-breaker** (`--max-crash-restarts`, default 3) stops the run after that
   many *consecutive rapid* crashes (each within `_FAST_CRASH_SECONDS` = 600 s / 10 min of launch)
   so a deterministic startup crash can't spin forever; a crash after sustained progress resets the
-  counter. The window is deliberately well past the 3+ min it takes to bring up the SubprocVecEnv
-  workers + Showdown connections, so a startup-time crash is still counted as "rapid" rather than
+  counter. The window is deliberately well past the 3+ min it takes to bring up the env core
+  and its inference service, so a startup-time crash is still counted as "rapid" rather than
   misread as progress. If a crash has no checkpoint to resume from, it's fatal — the launcher
   propagates the child's exit code rather than masking it. "Checkpoint" here means a *real* run
   checkpoint at `<run>/checkpoints/checkpoint_*_steps.zip` / `…/checkpoint_forced_*` (current
@@ -399,9 +399,8 @@ What that established:
 All other flags are forwarded verbatim to `train_rl_agent.py` (the launcher strips only
 launcher-owned flags).
 
-**The launcher owns NO compile default.** `--compile-opponents` / `--compile-opponents-preload` /
-`--compile-trainer` all default ON in `train_rl_agent`'s own parser (2026-08-17), and the launcher's
-only job is to be transparent to them and to their `--no-` opt-outs. Two ways it could stop being:
+**The launcher owns NO compile default.** `--compile-trainer` defaults ON in `train_rl_agent`'s own parser (2026-08-17; the compile-opponents flags were deleted in U3), and the launcher's
+only job is to be transparent to it and to its `--no-` opt-out. Two ways it could stop being:
 `_strip_launcher_args` could grow an entry that eats one, or argparse could abbreviation-match an
 unknown token against a launcher flag (it parses with `parse_known_args`, and `--no-pin` lives right
 next to `--no-compile-*`). `compile_flag_forwarding_test.py` pins both against the REAL parser —
@@ -419,7 +418,7 @@ later, after the startup lines. A fork writes a NEW directory, so that habit had
 harmless; a RESTART operates on the REAL run directory, and those seconds were enough to write
 `final_model_interrupted.zip`/`.json`, repoint `latest.txt` at that phantom artifact, overwrite
 `metadata.json` (whose `steps` became a target that never ran) and `model_config.json`, and leave
-`.compile_quorum` files behind. **"Dry" was a property of forks, never of the launcher.**
+`.compile_quorum` files behind (the compile quorum was deleted in U3; the incident record stands). **"Dry" was a property of forks, never of the launcher.**
 
 `--dry-run` makes it a property of the launcher. It performs *everything the launcher resolves
 before a child exists* — argv parse, the fork-vs-restart classification (`fork_lr.
@@ -430,7 +429,7 @@ block, and exits.
 
 **What it prints**, in order: role · run dir (flagged `EXISTS — a real launch WRITES INTO IT` when
 it does) · `--model` · pin sha + subject + source · `--steps` beside the checkpoint's recorded
-`num_timesteps` and the `+X steps` delta · interpreter · transport · the trainee's obs source (`--obs-source`, `core` by default on the rust bridge) · restart/grace/nice · the
+`num_timesteps` and the `+X steps` delta · interpreter · transport · restart/grace/nice · the
 effective config with each reported flag marked `INHERITED` or `from the argv` (`grad_accum_steps`, `fork_lr`,
 `fork_lr_freeze` — `dry_run.REPORTED_DESTS`) · the pool as recorded (`N snapshot(s)` + `win_rate_vs_bots`, so pool
 drift is visible BEFORE launch) · then one `(child-only: …)` line per fact it structurally cannot
@@ -894,7 +893,7 @@ used to encode this box's absolute path instead and therefore skipped forever ev
 
 ⚠️ **The port default is now MOSTLY UNREACHABLE, because the transport default inverted.**
 `--use-bridge` defaults to `rust`, so a launcher run with no transport flag is a BRIDGE run and
-gets no port at all. The port logic below applies only to an explicit `--use-bridge off`.
+gets no port at all. The port logic below applies only to an explicit `--use-bridge off`, which the trainer's parser now REFUSES at parse time (`--use-bridge` has ONE legal value, `rust`, since U3) — so the `off` branch is unreachable for a real trainer launch; the launcher's own peeking code (`child_uses_bridge`, `_apply_default_showdown_port`) is untouched and still implements it.
 
 **Bridge mode is port-free, and it is the default.** `child_uses_bridge` treats an ABSENT
 `--use-bridge` as a bridge run (matching `train_rl_agent`'s own default — a drift between the two
@@ -904,7 +903,7 @@ server)` instead of a port. The bridge connects to no server at all (training AN
 in-process), so any `--showdown-port` passed alongside it is inert — built into `server_config` but
 never connected to, so it cannot even disturb the live :8001 server.
 
-**When `--use-bridge off` IS passed**, the launcher **defaults `--showdown-port` to 8001**
+**When `--use-bridge off` is passed** (the launcher still implements this; the trainer then refuses it), the launcher **defaults `--showdown-port` to 8001**
 (`DEFAULT_TRAINING_SHOWDOWN_PORT` in `launcher/checkpoint.py`, injected in
 `launcher/__init__.main()` via `_apply_default_showdown_port`) so a long websocket session never
 rides on the shared dev server (8000), where a routine dev `npm run stop` would drop every worker's

@@ -11,11 +11,9 @@ obligation as the leaf — update it in the same pass as the code.
 > `WinProbLabelCallback`, and `compile_trainer.eager_extractor`; the callable-substitute seam in
 > `utils/bridge/counterfactual.py` went with it). What the Rust port imports is KEPT: `fork_arm.py`
 > (selector, branch actions, meters) and `fork_buffer.FILL` / `unfillable_keys` / `refusal_text`. The
-> `--fork-fraction > 0` on `--env-core python` refusal row (`fork_python_core_unavailable`) stays until
-> the Python core itself is deleted, so the flag cannot be a silent no-op there. Before L5 the arm was
+> `--fork-fraction > 0` on the python core refusal row (`fork_python_core_unavailable`) went with the Python core itself (U3; `--env-core` has one legal value, `rust`). Before L5 the arm was
 > **UNREACHABLE**: it replayed its episode from the `<run>/cf_records/` ring, the ring and its flag
-> (`cf-records`) were deleted with the cf training half, and `--fork-fraction > 0` on
-> `--env-core python` is refused (combination row `fork_python_core_unavailable`). Its code is deleted
+> (`cf-records`) were deleted with the cf training half (the python-core refusal row that guarded it was itself deleted with the Python core, U3). Its code is deleted
 > in unit L5 (done). The **live arm is the Rust fork port (§14)**, which replays the core's own finished input
 > log and needs no ring. §§1–13 stay as the record of what was measured and built (the measurement in
 > §1, the draw pairing, the cost model and the endpoints all carry to the Rust port); wherever they name
@@ -83,7 +81,7 @@ climbs is buying less, whatever its fork count says.
 | condition | source |
 |---|---|
 | `win_mask == 1` — the episode TERMINATED in this buffer (which is also what makes the state replayable: the `__RECON__` record is written at episode END) | `fork_arm.eligible_mask` |
-| a per-decision reconstruction HANDLE was captured (`turns >= 0`) | the per-decision handle capture `WinProbLabelCallback` performs for the fork arm |
+| a per-decision reconstruction HANDLE was captured (`turns >= 0`) | the per-decision handle capture the (deleted) `WinProbLabelCallback` performed for the Python fork arm |
 | `MIN_LABELABLE_TURN <= turn <= 40` | `cf_producer` / the offline builder's `--max-turn` |
 | a MOVE ROUND with `>= 3` legal actions | `cf_producer_sampler.is_move_round`, `--min-legal 3` |
 
@@ -266,7 +264,7 @@ fork turn has no successor and reports one row rather than a fabricated one.
 
 ### The fill table, and why an unknown key REFUSES
 
-A branch is played by two `RLPlayer`s, not by a `Gen3Env`, so the capture yields `observation` and
+A branch is played by two `RLPlayer`s, not by an env, so the capture yields `observation` and
 `action_mask` and nothing else — while the buffer's obs Dict may carry a dozen flag-gated LABEL
 keys. `fork_buffer.FILL` declares, per key, what an injected row honestly holds; a key that is not
 in the table makes the arm REFUSE at setup, naming the key. The alternative is a heuristic
@@ -429,7 +427,7 @@ allows, i.e. the injection is doubling the buffer, which is the arm's designed m
 
 ⚠️ **`pairwise_acc` here is noise and must be read as such** — 8–16 pairs a rollout on a network
 10k steps old. It is the METER that is being smoked, not the quantity. 🚨 `--debug` exercises a STRICTLY SMALLER surface than a real launch
-(no forkserver, no compile preload, no warm start), so the smoke proves the arm FIRES and costs what
+(no warm start; the forkserver and compile preload no longer exist), so the smoke proves the arm FIRES and costs what
 the model says — it does not prove the launch layer.
 
 ---

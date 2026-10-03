@@ -9,9 +9,9 @@ The table of record for porting the scripted bots into the Rust env core (`src/r
 * a row's ``used_by`` disagrees with the rosters (a bot dropped from a pool reads as dropped here);
 * a ``Player`` subclass is defined in one of the bot modules with no row (defined-but-unused bots
   are listed with ``used_by=()`` so "not in any pool" is a stated fact, not an omission);
-* the exploiter keep-bots mix stops being the training roster (it is today: `env_factory` builds
-  ``heuristic_opponents`` from ``OPPONENT_CLASSES``, and `MaskableAgentWrapper._pick_floor_opponent`
-  draws the keep-bots episodes from it);
+* (the exploiter keep-bots mix == the training roster check read the Python env core's `env_factory` /
+  `MaskableAgentWrapper`, deleted in deletion pass U3; the Rust plan builds the floor from the same
+  roster, `rust_env_setup._bot_names`);
 * a row marked PORTED names a Rust bot the crate does not define.
 
 THE STATE a bot reads is ONE object: the opponent side's poke-env ``Battle`` (in training
@@ -37,7 +37,7 @@ from dataclasses import dataclass
 #: The roster SITES a bot can be used from (the test derives each from the code).
 SITES = {
     "train": "the training floor roster — `main/train/matchup_setup.py` OPPONENT_CLASSES (also the "
-             "exploiter --exploiter-keep-bots mix: `env_factory` builds heuristic_opponents from it)",
+             "exploiter --exploiter-keep-bots mix, mapped to the core's bots by `rust_env_setup._bot_names`)",
     "train_bait": "the training roster, ONLY with --bait-bot-share > 0 (`make_baitbot_class(--bait-bot-p)`)",
     "eval": "the eval roster — `agents/training/eval_roster.py` _EVAL_OPPONENT_SPECS (also "
             "`main.anchors` `bot:<name>` and the prober's replay, both through that table)",

@@ -35,10 +35,12 @@ pipeline runs byte-for-byte the same; only the transport changes (poke-env issue
 This powers the `*_fuzz_test.py` suite. (A few timing-sensitive checks stay on the live
 server as `*_fuzz_e2e_test.py` — e.g. `effectiveness_fuzz_e2e_test`.)
 
-#### Node vs Rust sim bridge (`--use-bridge {off,node,rust}`)
+#### Node vs Rust sim bridge (the `impl={node,rust}` argument)
+
+> **Deletion pass U3:** the Python RL transport (`bridge_session.py`, `BridgeSession` / `attach_bridge_transport`, the Python `Gen3Env` it fed) is DELETED, and the trainer's `--use-bridge` has ONE legal value, `rust` (`node` / `off` are refused at parse time). Training and eval run on the Rust env core. `BridgeSession` in the Rust-side passages below is `src/rust_sim/src/bridge.rs`'s struct and is live; passages that still describe the Python session (`_dispatch`, `_child_error`, `_recycle_child`, the fatal-report latch) are RECORDED INCIDENT HISTORY of the deleted code.
 
 The bridge child that speaks the `local_sim_bridge.js` stdin/stdout protocol has **two
-implementations**, selected by `--use-bridge`:
+implementations**, selected by an `impl` argument (`run_local_battles`, the offline drivers, the harnesses and benchmarks):
 
 - **`node`** (`local_sim_bridge.js`) — the default bridge impl, a relay over the real Showdown
   `BattleStream`. Handles the full gen3 move/ability set and produces the `__RECON__`
@@ -60,7 +62,7 @@ implementations**, selected by `--use-bridge`:
   `src/rust_sim/harness/gen_sim_bridge_diff.js`). No Node needed for battle stepping.
 
 `sim_bridge_bin.py::bridge_spawn_argv(impl)` turns the impl into the spawn argv both transport
-seams (`bridge_session.py`, `local_battle_runner.py`) exec:
+seam (`local_battle_runner.py`) execs:
 `node` → `["node", local_sim_bridge.js]`; `rust` → `[<resolved sim_bridge binary>]`.
 `resolve_sim_bridge_bin()` honors `$POKESIM_SIM_BRIDGE_BIN` (absolute-path override) first, else
 runs `cargo build --release --bin sim_bridge` in `src/rust_sim` and caches the resulting
@@ -142,8 +144,8 @@ Gate: `bridge_impl_parity_test.py::test_poke_env_fallback_choice_tokens_never_pr
 and `::test_stray_choose_after_battle_end_is_ignored_on_a_persistent_child`, both parametrized over
 node AND rust — node is the reference arm. Repro (no training, ~5 s):
 `src/rust_sim/harness/rust_bridge_stray_choose_repro.py`. **Why the existing gate missed it:**
-`bridge_session_fuzz_test.py --impl rust` drives only masked-legal `move`/`switch` tokens and
-never lands a CHOOSE after `__END__`; a 16-worker / ~22 000-episode soak passes clean either way.
+the (since-deleted) `bridge_session_fuzz_test.py --impl rust` drove only masked-legal `move`/`switch` tokens and
+never landed a CHOOSE after `__END__`; a 16-worker / ~22 000-episode soak passes clean either way.
 
 **The CHOICE-REJECT framing is MODELED** (`gen3_choice_reject_framing_v1`). When a client sends a
 choice the request marks illegal, `bridge.rs`'s `RejectClass` / `classify_reject` emit the sim's own
@@ -172,7 +174,7 @@ Still genuinely deferred:
 
 ## Offline driver transport — `impl={node,rust}` (`gen3_search_driver_impl_seam_v1`)
 
-`--use-bridge={node,rust}` selects the LIVE battle child. The **offline** children — the warm
+`impl={node,rust}` selects the LIVE battle child of the library drivers. The **offline** children — the warm
 clone-and-branch search server and the replay/re-roll primitives — are selected the same way, by an
 `impl` argument threaded from the caller. Same module owns both: `sim_bridge_bin.py`.
 
@@ -332,7 +334,7 @@ the training seam forfeits whenever `reset()` lands mid-battle, *every* episode 
 wedge, which is what stalled the multi-env `--use-bridge=rust` runs (they logged episodes but
 never completed a single PPO iteration). Fixed by `BridgeSession::forfeit`; pinned by
 `src/rust_sim/src/bridge.rs::a_forfeit_emits_the_win_line_to_both_sides_not_a_bare_end` and gated
-end-to-end by `bridge_session_fuzz_test.py --impl rust` (whose every-9th-episode forfeit-reset is
+end-to-end, when it was written, by the since-deleted `bridge_session_fuzz_test.py --impl rust` (whose every-9th-episode forfeit-reset was
 the reproducer).
 
 **Illegal-choice parity — the two impls fail DIFFERENTLY (know this before debugging a hang).**
@@ -356,53 +358,13 @@ then resolves the turn immediately). Two consequences:
   lockstep check), revert-verified — disabling the bound leaves the wedge pin spinning out its
   full 25 s budget with no `__ERR__` while the other three still pass.
   **MEASURED not-a-regression** (the real risk of a bound like this is a FALSE trip, not a missed
-  one): `bridge_session_fuzz_test --impl node` 40 episodes clean; the bridge test package 91
+  one): the since-deleted `bridge_session_fuzz_test --impl node` 40 episodes clean; the bridge test package 91
   passed / 6 skipped; the python unit suite 3900 passed; and a 100-battle node-vs-rust
   `gen_sim_bridge_diff --mode randbats --persistent` soak came back **100/100 ended, 0
   divergences, 0 drain timeouts** while carrying **128 `trapped:true` frames** — i.e. the
   legitimate refusal round (the maybe-trapped probe) was exercised heavily and never tripped the
   cap. The max streak seen in normal play remains 1.
-  **SCOPE — the bound makes the failure BOUNDED; the wake below makes it IMMEDIATE.**
-  `BridgeSession` latches the `__ERR__` into `_child_error` and raises it at the next `reset()`
-  (so the run dies with the refusal text, the side, and the offending choice).
-  `run_local_battles` (the eval driver) is stricter still: it raises on the `__ERR__` frame
-  directly.
-  **The latch is no longer the ONLY report** (`gen3_bridge_fatal_report_now_v1`). Latching alone
-  loses the reason whenever the run dies before that next `reset()` — which is the NORMAL
-  ordering, because `_signal_transport_dead` immediately wakes the in-flight `step()` into
-  poke-env's GENERIC `ShowdownException: Showdown websocket dropped …` (a message about a
-  websocket the bridge does not use), the worker dies, and the parent cascades on dead
-  `SubprocVecEnv` pipes. That is exactly how a one-line
-  `__ERR__ CHOOSE: unsupported choice "default"` reached production as an unattributable
-  ~8-minute crash. `_report_fatal` now prints the real reason **and the child's stderr tail** to
-  stderr the moment the reader retires, on both fatal paths (`__ERR__`/malformed line, and child
-  EOF). Related diagnostics trap: the `race_trace.dump_recent()` appended to that exception is a
-  **no-op unless `GEN3_RACE_TRACE=1`**, so an empty trace there means the ring buffer was off,
-  not that nothing happened.
-
-**A dead child WAKES an in-flight `step()`** (`gen3_bridge_child_error_wakes_step_v1`) — the
-former "known gap", now closed. Latching alone only covered the NEXT `reset()`: a `step()` already
-parked in `battle_queue.race_get` waited for a request the now-dead reader could never deliver, so
-it sat out poke-env's watchdog first. The gap became materially more reachable once the reject
-bound above made `__ERR__` a real outcome on BOTH transports.
-
-It is closed by REUSING the mechanism poke-env already has rather than inventing a second one:
-`ps_client.listen` sets `_disconnected` on an unrequested websocket close, and
-`_AsyncQueue._get` / `race_get` race their gets against it, raising `ShowdownException` instead of
-hanging. A dead bridge child is the SAME event — "the transport can no longer deliver" — so the
-reader now fires that signal from its two fatal exits (child EOF, dispatch failure).
-
-**The load-bearing detail, and why the obvious implementation is wrong:** `_EnvPlayer` binds its
-queues to `ps_client._disconnected` at CONSTRUCTION, and `attach()` then REPLACES `ps_client` with
-a `BattleStreamClient` carrying its own fresh event. Signalling the NEW client's event wakes
-NOTHING — the queues still hold the ORIGINAL object. The session therefore captures the events off
-the QUEUES themselves.
-`bridge_session_test.py::test_child_error_wakes_a_blocked_queue_get_instead_of_hanging` pins that
-by IDENTITY and is revert-verified against the plausible-but-wrong client-signalling version,
-which it fails. Terminal by design and safe: the signal fires only on no-in-place-recovery paths,
-while a routine `_recycle_child` CANCELS the reader and so reaches neither — confirmed by
-`bridge_session_fuzz_test --impl {node,rust}`, 40 episodes each (including the every-9th-episode
-forfeit-reset), both clean.
+  **History (the deleted Python session):** the Python `BridgeSession` latched the `__ERR__` into `_child_error`, printed the real reason and the child's stderr tail the moment its reader retired (`gen3_bridge_fatal_report_now_v1`), and woke an in-flight `step()` by firing poke-env's `_disconnected` event captured off the `_EnvPlayer` queues (`gen3_bridge_child_error_wakes_step_v1`) — the lesson that outlives it: a dead bridge child must surface its OWN reason, never poke-env's generic websocket-dropped exception. `run_local_battles` (the eval driver) raises on the `__ERR__` frame directly.
 - **Both impls validate the move INDEX against what the REQUEST OFFERED**, not against the moveset
   (`gen3_single_entry_request_slot_reject_v1`) — `Side.chooseMove`'s index check runs FIRST, ahead of
   the Struggle and Choice-lock substitution branches, so the two shapes that collapse the offered
@@ -455,65 +417,15 @@ stale-HP, no overkill caps that plague scraping damage from random games).
   `damage_op_fuzz_test.py` is a looser broad-coverage net by comparison (its per-side percent HP is
   inherently confounded — adjudicate any real physics question in the probe).
 
-### RL-training transport (`BridgeSession`) — the bridge as a gym env transport
+### RL-training transport — DELETED (deletion pass U3)
 
-`run_local_battles` is a *synchronous driver*: it owns the battle loop and pulls each decision
-from a self-contained `choose_move`. That shape can't host SB3, whose action arrives from
-*outside* the env via `step()`. `BridgeSession` (`bridge_session.py`) closes that gap: it makes
-the bridge a **drop-in transport for poke-env's `PokeEnv`**, so the *exact same* obs / reward /
-mask / wrapper stack trains with no websocket, no server, no port, no `/challenge` connection
-storm.
+The Python gym-env transport (`bridge_session.py`: `BridgeSession`, `attach_bridge_transport`, persistent / spawn-per-battle child modes, `recycle_every`) is gone with the Python env core it fed; the RL rollout runs on the Rust env core (`src/rust_env/`, `src/utils/rust_env/`, `designs/training/rust_collector.md`). Its recorded measurements (persistent bridge ~2.1x over websocket per step, a node child's flat RSS) are history, not a current surface. What remains of the bridge on the Python side is the SYNCHRONOUS driver `run_local_battles` (eval opponents, the fuzz scripts), the offline search / replay children and the websocket front end below.
 
-`PokeEnv` already inverts control with its two `_EnvPlayer` agents and their
-`battle_queue` / `order_queue` handshake — the websocket is only the byte transport underneath.
-`attach_bridge_transport(env, battle_format=…)` swaps that transport on a freshly-built env
-(built `start_listening=False`):
-
-1.  Reassigns both `_EnvPlayer.ps_client` to a `BattleStreamClient` (sides p1 / p2).
-2.  Intercepts the one battle-start seam — `agent1.battle_against` (the `/challenge` handshake
-    `PokeEnv.reset()` calls) — with a coroutine that spawns the bridge subprocess, sends `START`
-    with both packed teams, and launches a **background reader**.
-3.  The reader mirrors poke-env's own websocket `listen()`: it reads one protocol chunk, frames
-    it with the room header, and **fires** the feed as a task (never `await`s it). That is
-    mandatory — `_EnvPlayer._choose_move` blocks on `order_queue` awaiting SB3's action, so
-    awaiting the feed inline would stall the reader and deadlock the *other* side. It is safe
-    because `_handle_message` serializes same-battle handling under a per-battle `asyncio.Lock`,
-    so chunks for one battle stay strictly ordered, and the two sides use independent clients.
-
-Two child-lifecycle modes (`attach_bridge_transport(persistent=…)`): **persistent** (default)
-reuses ONE long-lived bridge child per env across every episode (a fresh `START` rebuilds a clean
-`BattleStream`); **spawn-per-battle** spawns a fresh child per battle. Persistent is the win — a
-single-env transport-latency A/B (`bridge_vs_websocket_latency_benchmark.py`, RandomPlayer
-opponent, no GPU) measured **~13.0 ms/step websocket → ~6.1 ms/step persistent bridge (~2.1×)**,
-while spawn-per-battle was only ~11.3 ms/step: re-loading the Showdown sim into a fresh Node
-process every episode eats nearly all the savings, so reusing the child is what unlocks the gain
-(matching issue #907's "reset/startup overhead is the bottleneck"). **It is now the DEFAULT
-transport**: `--use-bridge` defaults to `rust`, so `python -m main.launcher …` (or
-`train_rl_agent.py`) with no transport flag runs serverless; `--use-bridge off` is the websocket
-opt-out. Guarded by `bridge_session_test.py` (transport-swap contract, no server)
-and `bridge_session_integration_test.py` (a real `Gen3Env` plays full episodes over the bridge).
-
-**Persistent-child lifecycle (two rules, both guarded):**
-- **A dead child CRASHES the env, no in-place recovery.** If the bridge child exits mid-run, lost /
-  inconsistent battle state means resuming could feed PPO a corrupted transition — so the reader
-  latches `_child_crashed` on stdout EOF and the next `reset()` raises (the launcher restarts from
-  checkpoint). Same crash-over-corruption rule as the trainee's stale-decision path.
-- **A healthy child is RECYCLED every `recycle_every` battles — a backstop, not a routine need.**
-  `bridge_heap_growth_benchmark.py` measured a NODE child's RSS **flat**: ~189 MB fresh → a one-time
-  ~+36 MB V8 warmup → **~229 MB with ~0 growth over thousands of battles** (V8 GC reclaims the
-  per-battle `BattleStream`). At production scale a child plays only ~2150 battles in the
-  launcher's 3h restart window, so the default `recycle_every=5000` **never fires under the
-  launcher** (the 3h restart owns the lifecycle); it only caps marathon / no-launcher direct runs.
-
-**Eval rides the same flag, via the *synchronous* driver, not `BridgeSession`.** Eval is a pure
-synchronous-decision matchup (a greedy trainee vs a bot/sentinel — no SB3-supplied action), so it
-doesn't need the inversion-of-control machinery: the eval worker's `_play_unit` just calls
+**The synchronous driver, `run_local_battles`.** Eval is a pure
+synchronous-decision matchup (a greedy trainee vs a bot/sentinel — no SB3-supplied action): the eval worker's `_play_unit` calls
 `run_local_battles` instead of `battle_against` when `use_showdown_bridge` is set (players built
-`start_listening=False`). The flag threads as a `use_showdown_bridge` config key through
-`PerOpponentEvalCallback` / `SelfPlayCallback` → `eval_worker`, plus the end-of-training
-`evaluate_model_random`. So a bridge run — which is now the DEFAULT — needs no Showdown server for
-training **or** eval. (The config KEY keeps the name `use_showdown_bridge`; it is a cross-process
-worker-config contract, not a flag, and the deleted CLI alias of the same name is unrelated to it.)
+`start_listening=False`). The config KEY `use_showdown_bridge` is a cross-process
+worker-config contract, not a flag.
 
 ### Battle reconstruction (capture + offline replay / re-roll)
 
@@ -532,11 +444,9 @@ regenerates it exactly.
 - **Capture join** — the `__RECON__` frame arrives *after* the `|win|` chunks (when the eval
   forensic trace is already written), so the two sides meet in a bounded registry keyed by battle
   tag: the demux calls `offer_record`, the forensic writer calls `register_trace_prefix`, and
-  whichever lands second writes `<prefix>_reconstruction.json` next to the trace. (`BridgeSession`
-  instead keeps a single-slot `last_recon` — training persists no traces.) `attach_bridge_transport`
-  no longer takes a `recon_sink`: the counterfactual training half's record tap (the opt-in callable
-  that wrote each episode's record into a `cf_records/` ring) was deleted in deletion pass L4, so a
-  training episode's record is no longer persisted anywhere.
+  whichever lands second writes `<prefix>_reconstruction.json` next to the trace. (The counterfactual training half's record tap — the opt-in callable
+  that wrote each episode's record into a `cf_records/` ring — was deleted in deletion pass L4, and the Python transport that owned it in U3, so a
+  training episode's record is no longer persisted anywhere.)
 - **`replay_battle(record)`** — re-runs the battle verbatim (`replay_driver.js`, batch
   JSON-over-stdio, no server) and returns the regenerated per-side protocol chunks +
   the final omniscient outcome. Byte-identical to the live streams modulo `|t:|` wall-clock
@@ -696,8 +606,8 @@ strings go back to the sim verbatim, so counterfactuals always run with the true
 
 ### Websocket front end (`ws_frontend.py`) — the bridge as a Showdown *server* for OUTSIDE clients
 
-**The transport for an opponent we do not own.** `BridgeSession` and `run_local_battles` are
-*library* seams: both assign a `BattleStreamClient` onto a poke-env `Player` **in this process**.
+**The transport for an opponent we do not own.** `run_local_battles` is a
+*library* seam (the Python `BridgeSession` was another, deleted in U3): it assigns a `BattleStreamClient` onto a poke-env `Player` **in this process**.
 That is closed to a third party for the reason the metamon de-risk recorded as its verdict (d) —
 their player subclasses *upstream* poke-env, ours subclasses the *vendored fork*, and one process
 resolves `import poke_env` to exactly one of them. So the integration point cannot be an import; it
@@ -765,7 +675,6 @@ changes**):
 | bound | baseline | where |
 |---|---|---|
 | per-battle | `_PER_BATTLE_TIMEOUT` 180 s (parity test overrides to 20 s) | `local_battle_runner._per_battle_timeout()` |
-| previous battle's `__END__` before child reuse | `_BATTLE_END_TIMEOUT` 180 s | `bridge_session` |
 | silent-stall watchdog | `_RACE_GET_TIMEOUT_S` 120 s (`GEN3_RACE_GET_TIMEOUT_S`) | `poke_env.environment.env._race_get_timeout()` |
 
 Two rules this encodes, both learned the hard way:
@@ -804,18 +713,6 @@ from utils.bridge.local_battle_runner import run_local_battles
 await run_local_battles(my_player, opponent, n_battles=40)   # no `npm run showdown`
 ```
 
-### RL-training transport (used by `train_rl_agent.py --use-bridge {node,rust}`)
-```python
-from utils.bridge.bridge_session import attach_bridge_transport
-
-# Build the env with start_listening=False, then swap in the bridge transport.
-env = Gen3Env(mappings, battle_format="gen3ou", team=teambuilder, start_listening=False)
-attach_bridge_transport(env, battle_format="gen3ou", impl="node")  # or impl="rust"
-# env now trains with no websocket / server — everything above the transport is unchanged.
-```
-`train_rl_agent.py --use-bridge {off,node,rust}` selects the transport for BOTH training and eval.
-**The default is `rust`** (changed 2026-08-14): serverless is the normal way to run, `node` stays an
-explicit value for the A/B arm and the parity harness, and `off` is the websocket/ladder path. The
-deprecated `--use-showdown-bridge` boolean alias is DELETED — it meant `--use-bridge=node`, which is
-no longer the default, so keeping it would have silently selected the slower impl.
-`run_local_battles(..., impl=…)` takes the same impl for the eval driver.
+### Impl selection (`run_local_battles(..., impl=…)`)
+The trainer's `--use-bridge` has ONE legal value, `rust` (since U3 — `node` and `off` are refused at parse time, and the Python RL transport that took `node` is deleted). `node` remains an explicit `impl` for the A/B arm and the parity harness; the websocket server is only for `play.py` / the ladder. The deprecated `--use-showdown-bridge` boolean alias is DELETED.
+`run_local_battles(..., impl=…)` takes the impl for the eval driver.

@@ -51,8 +51,7 @@ class VacuousCompileParityError(CompileTrainerError, VacuousParityError):
 _MAX_NUMERIC_DRIFT = 1e-4
 
 
-def check_shape_stability(*, n_steps: int, n_envs: int, batch_size: int,
-                          async_rollout: bool) -> None:
+def check_shape_stability(*, n_steps: int, n_envs: int, batch_size: int) -> None:
     """Refuse a config that would feed the compiled extractor an UNBOUNDED set of batch shapes.
 
     MEASURED BACKGROUND (2026-08-14), because the naive reading of this is wrong. Recompiles here
@@ -67,25 +66,13 @@ def check_shape_stability(*, n_steps: int, n_envs: int, batch_size: int,
     THE ACTUAL HAZARD is dynamo's `cache_size_limit` (8). Exceed it for one code object and dynamo
     silently falls back to EAGER — which is exactly the invisible ~1.75x regression this whole flag
     exists to prevent, arriving with no error and no metric that would show it. Two configs get you
-    there, and both are decidable at startup:
+    there, and it is decidable at startup: a REMAINDER minibatch — `n_steps*n_envs` not divisible by
+    `batch_size` adds a third shape (and every epoch replays it), for no benefit. (The other config
+    that did it, `--async-rollout`'s READY-env batches, was deleted with the Python env core —
+    deletion pass U3.)
 
-      * a REMAINDER minibatch — `n_steps*n_envs` not divisible by `batch_size` adds a third shape
-        (and every epoch replays it), for no benefit;
-      * `--async-rollout`, which forwards whatever set of envs is READY, so the rollout batch VARIES
-        by construction — an unbounded shape set, guaranteed to exhaust the cache.
-
-    Raises `CompileTrainerError`; pure, so both rules are testable without a GPU.
+    Raises `CompileTrainerError`; pure, so the rule is testable without a GPU.
     """
-    if async_rollout:
-        raise CompileTrainerError(
-            "--compile-trainer is incompatible with --async-rollout.\n"
-            "The async collector forwards whichever envs are READY, so the rollout batch size VARIES "
-            "every step. torch.compile keys on shape, so that is an unbounded set of graphs: dynamo "
-            f"blows its cache_size_limit ({_dynamo_cache_limit()}) and SILENTLY falls back to eager "
-            "— a ~1.75x regression with no error and nothing in any metric to show it.\n"
-            "Pick one: drop --async-rollout (measured +14% at n_envs=64) and keep --compile-trainer "
-            "(measured +62%), or drop --compile-trainer.")
-
     rollout = int(n_steps) * int(n_envs)
     if batch_size and rollout % int(batch_size) != 0:
         raise CompileTrainerError(

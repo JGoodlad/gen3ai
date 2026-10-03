@@ -45,11 +45,22 @@ def build_selfcheck() -> None:
 def production_spaces() -> Tuple[Any, Any, Any]:
     """``(args, obs_space, action_space)`` at the production surface."""
     from agents.training.rust_rollout.build import trainee_spaces
-    from main.rust_core_cutover.envs import production_args
+    from main.train.production_args import production_args
 
     args = production_args()
     obs, act = trainee_spaces(args)
     return args, obs, act
+
+
+def unset_to_class_defaults(model: Any) -> None:
+    """``production_args()`` is the parser's namespace + the production config, NOT ``resolve_config``'s
+    (which refuses a namespace whose every key reads as typed): the flags it leaves ``None`` are the ones
+    ``_resolve`` would default. A learner built from it takes the class default for exactly those."""
+    from main.train.model_build import _TRAINING_HPARAMS
+
+    for name, _how in _TRAINING_HPARAMS:
+        if getattr(model, name, None) is None and getattr(type(model), name, None) is not None:
+            setattr(model, name, getattr(type(model), name))
 
 
 def fresh_model(env: Any, *, n_steps: int, batch_size: int, n_epochs: int = 1, seed: int = 0,
@@ -70,6 +81,68 @@ def fresh_model(env: Any, *, n_steps: int, batch_size: int, n_epochs: int = 1, s
     perturb_(model.policy, seed=perturb_seed, scale=PERTURB_SCALE)
     model.ep_info_buffer = deque(maxlen=100)
     model.ep_success_buffer = deque(maxlen=100)
+    return model
+
+
+class VecEnvCollector:
+    """A TEST double for the Rust collector: fills the learner's rollout buffer from the model's own toy
+    SB3 ``VecEnv``, written from the requirements rather than copied from sb3 (the vendored copy of
+    upstream's collect that used to serve this was deleted with the Python env core, deletion pass U3).
+
+    The production rollout is the Rust collector's: ``RolloutProbes.collect_rollouts`` refuses a learner
+    without a ``_rust_collector``. The ``train()``-fold unit tests (accumulation, the diagnostics, the
+    ride-along heads, the loop's hook trace …) still need SOME rollout from a toy env, so they attach this
+    through :func:`attach_vec_collector`, the seam ``_collect_rust`` calls (``collect`` / ``after_update`` /
+    ``seen_updates``).
+
+    What it does, and nothing more: ``n_steps`` vector steps, the policy acting under the env's action
+    masks; ``on_step`` fires BEFORE the row is added (a callback reads ``rollout_buffer.pos`` as the row about
+    to be written) with ``locals`` carrying the fields the callbacks under test read; then the buffer's own
+    GAE. It models no truncation bootstrap and no complete-game window — those are the Rust collector's
+    business and are pinned by ``rust_rollout/store_test.py``. Never imported by training."""
+
+    seen_updates = None
+
+    def after_update(self, model: Any) -> None:       # no inference service to refresh
+        return None
+
+    def collect(self, model: Any, callback: Any, rollout_buffer: Any) -> bool:
+        import torch as th
+        from sb3_contrib.common.maskable.utils import get_action_masks
+        from stable_baselines3.common.utils import obs_as_tensor
+
+        env = model.env
+        assert model._last_obs is not None, "the learner was not set up (learn() runs _setup_learn first)"
+        model.policy.set_training_mode(False)
+        rollout_buffer.reset()
+        callback.on_rollout_start()
+        for _ in range(model.n_steps):
+            with th.no_grad():
+                masks = get_action_masks(env)
+                actions, values, log_probs = model.policy(obs_as_tensor(model._last_obs, model.device),
+                                                          action_masks=masks)
+            actions = actions.cpu().numpy()
+            new_obs, rewards, dones, infos = env.step(actions)
+            model.num_timesteps += env.num_envs
+            callback.update_locals({"rollout_buffer": rollout_buffer, "infos": infos, "dones": dones,
+                                    "rewards": rewards, "actions": actions, "new_obs": new_obs})
+            if not callback.on_step():
+                return False
+            model._update_info_buffer(infos, dones)
+            rollout_buffer.add(model._last_obs, actions.reshape(-1, 1), rewards, model._last_episode_starts,
+                               values, log_probs, action_masks=masks)
+            model._last_obs, model._last_episode_starts = new_obs, dones
+        with th.no_grad():
+            last_values = model.policy.predict_values(obs_as_tensor(model._last_obs, model.device))
+        rollout_buffer.compute_returns_and_advantage(last_values=last_values, dones=model._last_episode_starts)
+        callback.on_rollout_end()
+        return True
+
+
+def attach_vec_collector(model: Any) -> Any:
+    """Make ``model`` collect from its own VecEnv through :class:`VecEnvCollector` (a test double for the
+    Rust collector); returns the model. A loaded model lost its collector (it is never saved): re-attach."""
+    model._rust_collector = VecEnvCollector()
     return model
 
 

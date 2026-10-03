@@ -2,11 +2,12 @@
 
 Before this module, `InstrumentedMaskablePPO.train()` was ours (vendored, hash-pinned) but the loop
 AROUND it was still sb3's: `MaskablePPO.learn`, `BaseAlgorithm._setup_learn`,
-`OnPolicyAlgorithm.dump_logs`, `_update_current_progress_remaining`, `_update_info_buffer` and, on
-the Python env core, `MaskablePPO.collect_rollouts`. They are vendored here, each one OPERATION FOR
-OPERATION, so stage 1 is IDENTITY: the same calls in the same order, on the same objects, with the
-same RNG draws. `own_ppo_loop_test` holds the owned loop against upstream `MaskablePPO.learn` (still
-callable unbound while sb3 is installed) — hook trace, buffers, logger dumps and parameters, exactly.
+`OnPolicyAlgorithm.dump_logs`, `_update_current_progress_remaining` and `_update_info_buffer`. They are
+vendored here, each one OPERATION FOR OPERATION, so stage 1 is IDENTITY: the same calls in the same
+order, on the same objects, with the same RNG draws. (`MaskablePPO.collect_rollouts` was vendored too,
+as the Python env core's collection; it went with that core — deletion pass U3 — and the rollout is the
+Rust collector's, `RolloutProbes._collect_rust`. `own_ppo_loop_test`, which drove it, was retired
+with it: the bar for the owned loop is the K9 learner golden and the Rust-core real-run A/B.)
 
 **The loop, as a declared table (`LOOP_PHASES`).** One `learn()` call is
 
@@ -27,18 +28,17 @@ Three properties are CONTRACTS, each load-bearing for something outside this fil
 * **`collect` and `update` are called THROUGH ATTRIBUTE LOOKUP** (`self.collect_rollouts`,
   `self.train`). K6's freeze guard (`learner_lifecycle`) and the compile sentinel (`compile_control`)
   wrap them as instance attributes; a direct call would bypass both, silently.
-* **The Python collect keeps sb3's LOCAL NAMES** (`infos`, `dones`, `rollout_buffer`, …), because
-  callbacks read them through `self.locals` after `callback.update_locals(locals())`, and it fires
-  `on_step` BEFORE `rollout_buffer.add` (`WinProbLabelCallback` reads
-  `buf.pos` as the row about to be written).
+* **The rollout is the Rust collector's** (`RolloutProbes.collect_rollouts` → `_collect_rust`), the
+  only env core; the loop below calls it through the attribute and never steps a VecEnv itself.
 
 **What is still sb3 after stage 1** (design §3.1): the constructor / `_setup_model`, the policy base
 classes and their init, the buffer class (its `reset` / `add` / `get` / GAE), `BaseCallback` /
 `CallbackList` (driven from here), the logger, the VecEnv classes and the `.zip`.
 
 **The reference seam.** `GEN3AI_PPO_LOOP=sb3_reference` (read ONCE per `learn()` call) runs
-upstream's `learn` / `collect_rollouts` instead — the A/B arm of the real-run equivalence check
-(design §4 E3). It is a test seam, deleted in stage 3 with the Python core; any other value refuses.
+upstream's `learn` instead (its `self.collect_rollouts` still resolves to the Rust collector's entry) —
+the A/B arm of the real-run equivalence check (design §4 E3). It is a test seam, deleted in stage 3
+(deletion pass U4); any other value refuses.
 
 **Drift.** Each vendored upstream source is hash-pinned (`UPSTREAM_SOURCE_SHA256`) and checked at
 import, like `train()`'s pin in the hub: an sb3 upgrade that changes one of them is a loud error
@@ -57,14 +57,10 @@ from typing import Any, Dict, Tuple
 
 import numpy as np
 import torch as th
-from gymnasium import spaces
 from sb3_contrib import MaskablePPO
-from sb3_contrib.common.maskable.buffers import MaskableDictRolloutBuffer, MaskableRolloutBuffer
-from sb3_contrib.common.maskable.utils import get_action_masks, is_masking_supported
 from stable_baselines3.common import utils as _sb3_utils
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
-from stable_baselines3.common.utils import obs_as_tensor
 
 from agents.training.loop_hooks import LoopHooks
 
@@ -88,7 +84,6 @@ LOOP_OWNED, LOOP_REFERENCE = "owned", "sb3_reference"
 #: sha256 of `inspect.getsource(...)` of every upstream method vendored here (sb3 / sb3-contrib 2.8.0).
 UPSTREAM_SOURCE_SHA256: Dict[str, str] = {
     "MaskablePPO.learn": "ad8b3b8f3935053cca795d1f77b7faa1d26430e231050bf5d60454ed7106c18e",
-    "MaskablePPO.collect_rollouts": "6b894b173404c6f6762c4e930335641215aa26c1e5710e2da74533a9b6e9f314",
     "BaseAlgorithm._setup_learn": "1c5a903f4b48a0fb90050520408fc9affc400195ee862745b2169d014cc553ce",
     "OnPolicyAlgorithm.dump_logs": "22e7a7c5dd2a01858e567d878765ed6e43da9da0570a800652e322e2e0912fb8",
     "BaseAlgorithm._update_current_progress_remaining":
@@ -102,7 +97,6 @@ UPSTREAM_SOURCE_SHA256: Dict[str, str] = {
 def _upstream_sources() -> Dict[str, Any]:
     return {
         "MaskablePPO.learn": MaskablePPO.learn,
-        "MaskablePPO.collect_rollouts": MaskablePPO.collect_rollouts,
         "BaseAlgorithm._setup_learn": BaseAlgorithm._setup_learn,
         "OnPolicyAlgorithm.dump_logs": OnPolicyAlgorithm.dump_logs,
         "BaseAlgorithm._update_current_progress_remaining": BaseAlgorithm._update_current_progress_remaining,
@@ -142,8 +136,7 @@ def loop_mode() -> str:
 
 class OwnedLoop:
     """Mixin: the PPO loop. Mixed in AFTER `RolloutProbes` and BEFORE `MaskablePPO`, so
-    `RolloutProbes.collect_rollouts` (the env-core dispatch) still wins, and its Python-core branch
-    calls `_collect_python` below instead of `super()`."""
+    `RolloutProbes.collect_rollouts` (the Rust collector's entry) still wins."""
 
     def _reference_loop(self) -> bool:
         """True only inside a `learn()` the `GEN3AI_PPO_LOOP=sb3_reference` seam selected: then EVERY
@@ -376,102 +369,6 @@ class OwnedLoop:
         if len(self.ep_success_buffer) > 0:
             self.logger.record("rollout/success_rate", _safe_mean(self.ep_success_buffer))
         self.logger.dump(step=self.num_timesteps)
-
-    # ------------------------------------------------------------------ collect (Python env core)
-    def _collect_python(
-        self,
-        env: Any,
-        callback: Any,
-        rollout_buffer: Any,
-        n_rollout_steps: int,
-        use_masking: bool = True,
-    ) -> bool:
-        """Vendored from `MaskablePPO.collect_rollouts` — the Python env core's collection. 🚨 THE
-        LOCAL NAMES ARE A CONTRACT (`callback.update_locals(locals())`; `signal_callback` /
-        `win_prob_callback` read them), and `on_step` fires BEFORE
-        `rollout_buffer.add`. Under the reference seam it is upstream's own method."""
-        if self._reference_loop():
-            return MaskablePPO.collect_rollouts(self, env, callback, rollout_buffer,  # type: ignore[arg-type]
-                                                n_rollout_steps, use_masking)
-        assert isinstance(
-            rollout_buffer, (MaskableRolloutBuffer, MaskableDictRolloutBuffer)
-        ), "RolloutBuffer doesn't support action masking"
-        assert self._last_obs is not None, "No previous observation was provided"
-        # Switch to eval mode (this affects batch norm / dropout)
-        self.policy.set_training_mode(False)
-        n_steps = 0
-        action_masks = None
-        rollout_buffer.reset()
-
-        if use_masking and not is_masking_supported(env):
-            raise ValueError("Environment does not support action masking. Consider using ActionMasker wrapper")
-
-        callback.on_rollout_start()
-
-        while n_steps < n_rollout_steps:
-            with th.no_grad():
-                # Convert to pytorch tensor or to TensorDict
-                obs_tensor = obs_as_tensor(self._last_obs, self.device)  # type: ignore[arg-type]
-
-                # This is the only change related to invalid action masking
-                if use_masking:
-                    action_masks = get_action_masks(env)
-
-                actions, values, log_probs = self.policy(obs_tensor, action_masks=action_masks)
-
-            actions = actions.cpu().numpy()
-            new_obs, rewards, dones, infos = env.step(actions)
-
-            self.num_timesteps += env.num_envs
-
-            # Give access to local variables
-            callback.update_locals(locals())
-            if not callback.on_step():
-                return False
-
-            self._update_info_buffer(infos, dones)
-            n_steps += 1
-
-            if isinstance(self.action_space, spaces.Discrete):
-                # Reshape in case of discrete action
-                actions = actions.reshape(-1, 1)
-
-            # Handle timeout by bootstraping with value function
-            # see GitHub issue #633
-            for idx, done in enumerate(dones):
-                if (
-                    done
-                    and infos[idx].get("terminal_observation") is not None
-                    and infos[idx].get("TimeLimit.truncated", False)
-                ):
-                    terminal_obs = self.policy.obs_to_tensor(infos[idx]["terminal_observation"])[0]
-                    with th.no_grad():
-                        terminal_value = self.policy.predict_values(terminal_obs)[0]
-                    rewards[idx] += self.gamma * terminal_value
-
-            rollout_buffer.add(
-                self._last_obs,
-                actions,
-                rewards,
-                self._last_episode_starts,
-                values,
-                log_probs,
-                action_masks=action_masks,
-            )
-            self._last_obs = new_obs  # type: ignore[assignment]
-            self._last_episode_starts = dones
-
-        with th.no_grad():
-            # Compute value for the last timestep
-            # Masking is not needed here, the choice of action doesn't matter.
-            # We only want the value of the current observation.
-            values = self.policy.predict_values(obs_as_tensor(new_obs, self.device))  # type: ignore[arg-type]
-
-        rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones)
-
-        callback.on_rollout_end()
-
-        return True
 
 
 def _safe_mean(arr: Any) -> Any:

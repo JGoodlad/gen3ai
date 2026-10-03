@@ -209,7 +209,7 @@ there and everything before it is still checked.
 
 `designs/research_state/measurements/rust_core_m1_2026-09-23/` (`core_events --bench-parse`):
 incremental `Line::parse` + the reading fold of one side's stream, per decision (≈ 12.5 lines, the
-`|request|` included), in-process Rust, no IPC — against a `Gen3Env.step` wall on the rust bridge
+`|request|` included), in-process Rust, no IPC — against a (deleted, U3) Python `Gen3Env.step` wall on the rust bridge
 with random legal actions (no policy forward). Measured 2026-09-23 at load 19-21: **21.6-30.8 µs
 per decision, 0.66-0.76 % of a random-action env step** (medians of two 5-round interleaved runs;
 the `|request|` JSON is ~60-70 % of it). The MILESTONE tier's first full run: 622 battles, 1,244

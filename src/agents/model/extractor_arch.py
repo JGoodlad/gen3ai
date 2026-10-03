@@ -8,9 +8,9 @@ would mean a resume silently version-checks against a DIFFERENT arch than it bui
 `gen3_resume_optimizer_realign_bug` failure shape — a mismatch that surfaces as a confusing tensor
 error much later, or not at all.
 
-There is now a third consumer that made the duplication untenable: the forkserver preload
-(`agents.model.compile_preload`) must build the SAME extractor the env workers will, in a fresh
-interpreter that never parsed argv, so it needs this mapping as DATA rather than as inline statements.
+(A third consumer made the duplication untenable: the forkserver preload, which had to build the SAME
+extractor the env workers would, in a fresh interpreter that never parsed argv, and so needed this mapping
+as DATA. It was deleted with the Python env core — deletion pass U3 / R6 — and the table stays.)
 
 `ARCH_ARG_KEYS` is that data: extractor-kwarg name -> the `args` attribute it reads. It is now
 **GENERATED from `agents.model.flag_registry`** rather than hand-kept — the registry is the single
@@ -85,21 +85,3 @@ def arch_toggles_from_args(args) -> Dict[str, Any]:
     toggles.update({kwarg: fn(args) for kwarg, fn in _DERIVED.items()})
     toggles.update(FROZEN_ARCH_KWARGS)
     return toggles
-
-
-def arch_kwargs_to_plain(kwargs: Dict[str, Any]) -> Dict[str, Any]:
-    """The JSON-serialisable subset, for handing an arch across a process boundary.
-
-    The forkserver preload receives its config through the environment, so anything unpicklable or
-    huge (the layout's numpy mapping tables) is dropped — the preload only needs the toggles that
-    change the traced GRAPH. Dropping a key means the preload builds a slightly different extractor
-    and the worker's guards miss, which costs a recompile but is never incorrect, so this errs
-    toward dropping.
-    """
-    plain: Dict[str, Any] = {}
-    for k, v in kwargs.items():
-        if k in ("log_level",):
-            continue
-        if isinstance(v, (bool, int, float, str)) or v is None:
-            plain[k] = v
-    return plain

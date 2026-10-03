@@ -34,7 +34,7 @@ every term, gate, measurement and hazard — is this file at the last pre-deleti
 **The terminal.** `RewardConfig` carries its three knobs, all resume-immutable (recorded in
 `model_config.json`, value-checked by `ModelVersion.check_reward_config`):
 
-| outcome | `--terminal-indicator` (PRODUCTION, and the parser default since the bare-argv flip, 2026-10-02) | signed terminal (`--no-terminal-indicator`, `--critic shaped`; what an UNRECORDED field means) |
+| outcome | `--terminal-indicator` (PRODUCTION, and the parser default since the bare-argv flip, 2026-10-02) | signed terminal (`--no-terminal-indicator`, the no-longer-trainable shaped critic; what an UNRECORDED field means) |
 |---|---|---|
 | win | `+victory_value` | `+victory_value` |
 | decisive loss | `0.0` | `−victory_value` |
@@ -75,7 +75,7 @@ exactly 0.0** (the census and the fold agree). The PBRS / BIAS / refund rollups 
 
 **The `win_margin` obs key** (`material_margin.py`) —
 `clamp(2·ΔHP + 1.25·Δalive, ±6·3.25) / (6·3.25)` over the DECLARED team (unrevealed opp mons count
-full-HP-alive), recomputed every turn by the manager and read by `gen3_env` for the win-prob head's
+full-HP-alive), recomputed every turn by the manager and read by the env's label path (formerly the deleted `gen3_env`) for the win-prob head's
 closeness-stratified metrics. It was Φ_mat's by-product; the potential went and the margin stayed,
 with the deleted `--mat-alive-weight` frozen at the 1.25 every run trained with.
 🚨 **A reward change may never move an OBSERVATION feature** — this one was once pinned at 0.0 for
@@ -95,7 +95,7 @@ Both default OFF (a flagless run's clock is byte-identical to every generation's
 `progress_clock_test.py`'s recorded `n` trace). They are resume-immutable `RewardConfig` fields
 (recorded, value-checked, no `ARCH_SIGNATURE` bump) because they change the `turns_since_progress`
 OBS scalar; they are threaded onto the clock by ONE call, `ProgressClock.apply_reward_config(cfg)`
-from `gen3_env.py`. `--progress-decision-tense` points the forced-switch sit-out gate at the decision
+from the env (formerly the deleted `gen3_env.py`). `--progress-decision-tense` points the forced-switch sit-out gate at the decision
 that OPENED the window (`TurnDelta.decision_was_forced_switch`) instead of the one after it;
 `--progress-switch-freeze` makes a voluntary switch that fails the (offense-only) progress predicate
 FREEZE the clock instead of advancing it. Their motivating measurements (probes M and N,

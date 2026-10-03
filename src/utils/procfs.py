@@ -317,8 +317,7 @@ def fd_path_for(pid: int, key: str, proc: str = _PROC) -> str:
 
 def live_training_runs(proc: str = _PROC) -> Dict[str, int]:
     """``{run_dir (absolute): pid}`` of every live ``train_rl_agent.py`` process that names a
-    ``--run-dir`` — the live-run rule the ops layer reads (``rust_core_cutover.governor.live_runs``
-    delegates here; ``utils.gate_lock`` warns from it)."""
+    ``--run-dir`` — the live-run rule the ops layer reads (``utils.gate_lock`` warns from it)."""
     out: Dict[str, int] = {}
     for pid in all_pids(proc):
         try:

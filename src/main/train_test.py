@@ -33,13 +33,13 @@ _HUB = "main.train_rl_agent"
 _PRE_SPLIT_EXPORTS = (
     "BATTLE_FORMAT", "BoolFlag", "CLIP_RANGE_DEFAULT", "DEFAULT_EVAL_BATTLES",
     "SMOKE_EVAL_BATTLES", "SMOKE_STEPS", "_ABORT_EVAL_DRAIN_SEC", "_BOOL_FALSE", "_BOOL_TRUE",
-    "_HparamLogCallback", "_PRELOAD_WITHOUT_OPPONENTS", "_TrackingCheckpointCallback",
+    "_HparamLogCallback", "_TrackingCheckpointCallback",
     "_apply_grad_checkpointing", "_attach_run_tb_logger", "_load_saved_version",
     "_maybe_compile_trainer", "_model_hparams", "_read_saved_optimizer_state",
     "_remap_optimizer_state_by_name", "_resolve_fresh_model_dir", "_run_arch_toggles",
     "_run_roundtrip_test", "_setup_signal_handlers", "_shape_only_reset_optimizer_state",
     "_validate_or_reset_optimizer_state", "_write_latest_txt", "build_parser", "main",
-    "optional_float", "resolve_compile_opponents_preload", "resolve_compile_trainer_auto",
+    "optional_float", "resolve_compile_trainer_auto",
     "resolve_compile_trainer_default", "str2bool",
 )
 
@@ -102,11 +102,11 @@ def test_entry_source_is_the_whole_entry_point():
     assert len(names) >= 10, f"only {len(names)} entry-point files found: {sorted(names)}"
     src = entry_source()
     # One marker per gate that reads this: the parser, the `_resolve` inheritance helper, the
-    # edge-family validator, the two learn() sites, and the worker thread pin. If a phase module
+    # edge-family validator, the two learn() sites, and the Rust env core's startup. If a phase module
     # stops being reachable from here, at least one of these disappears.
     for marker in ('parser.add_argument("--model"', 'def _resolve(name, default)',
                    "--edge-bias-families: unknown families", "reset_num_timesteps=False",
-                   "set_num_threads(1)"):
+                   "def build_rust_vec_env"):
         assert marker in src, (
             f"entry_source() no longer contains {marker!r} — a phase module has dropped out of "
             f"the seam, and the gate that reads it is now vacuous rather than red.")

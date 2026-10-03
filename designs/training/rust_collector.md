@@ -65,9 +65,8 @@ typed refusal; accepted moves are counted. The SIZING study (order constraint 5)
 
 **The window fill** (`--rollout-trigger window`, `store.fill_window`) reproduces TODAY'S schedule —
 column `i` = env `i`'s next `n_steps` rows, sb3's own GAE with the bootstrap V of each env's next row,
-and the win labels by `WinProbLabelCallback`'s own back-fill (`backfill_terminal_labels`, one function
-both call). It exists to prove the collector against today's path before the schedule changes (the
-rollout-level slice N). Rows beyond a column carry to the next window.
+and the win labels by `win_prob_callback.backfill_terminal_labels` (the one function left of the deleted `WinProbLabelCallback`, which the window fill calls). It was built to prove the collector against the Python collect before the schedule changed (the
+rollout-level slice N, deleted with the Python path in U3). Rows beyond a column carry to the next window.
 
 ## The FORK phase (declared, OFF — `gen3_fork_rust_v1`)
 
@@ -200,18 +199,6 @@ eval slot, the sentinel slots, fixed opponents the plan does not already serve) 
 when the architecture matches, so they reuse its compiled buckets; `col.extra_slots` names them and
 `col.evaluator` is the eval core built over the same service (`designs/training/eval_and_rating.md`).
 
-## The gate — slice N at the ROLLOUT level + the learner-level check (`rust_rollout/parity.py`)
+## The gate — what holds the collector now
 
-RECORD in Rust (the collector in WINDOW mode — today's schedule, so the collector is proven before the
-schedule changes — a fixed policy, p2 an external seeded-random route whose actions are recorded), REPLAY
-in Python through today's path itself: `InstrumentedMaskablePPO.collect_rollouts` over a `DummyVecEnv` of
-production-surface `Gen3Env`s wrapped as `env_factory` wraps a worker (`Monitor(MaskableAgentWrapper)`),
-`WinProbLabelCallback` registered. The one substitution into sb3's loop is the policy forward's SAMPLE:
-the replay draws the trainee's action with the keyed draw from its OWN log-probs, so reproducing every
-recorded action is itself a check. Compared per window: every observation key, actions, masks, rewards,
-episode starts EXACT; values / log-probs within 1e-5 and advantages / returns within 1e-4 (the paths
-forward different batch compositions, and CPU matmul rounds by batch shape — measured ≤ 7.2e-7). The
-learner check runs ONE optimizer step (the buffer in 4 accumulated micro-batches) from identical
-production learners on each buffer and compares the weights (≤ 1e-5) and every logged scalar
-(≤ 1e-6 + 1e-4 × |value|); over several steps PPO amplifies the rounding (F-LG-8). COMMIT in the routine
-gate, MILESTONE (`slow`) on pool and ladder teams. Numbers: PROGRESS.
+The rollout-level slice N and the learner-level check (`rust_rollout/parity.py`: RECORD in Rust, REPLAY through the Python `collect_rollouts` over production-surface `Gen3Env`s) were retired with the Python env core in the deletion pass (U3); no Python path remains to replay against. The collector is held by its own unit and integration tests (`rust_rollout/store_test.py`, `trigger_test.py`, `collector_integration_test.py`, `fork_test.py`), by K9(b)'s behaviour-consistency gate at every update (`consistency.py`, above), and by the Rust-side differential gates (`designs/rust_sim/`). The measured numbers of the retired gate (exact observation / action / reward equality, values and log-probs within 1e-5, one optimizer step within 1e-5 of the Python learner; F-LG-8's amplification over several steps) are history in `designs/research_state/` PROGRESS files.

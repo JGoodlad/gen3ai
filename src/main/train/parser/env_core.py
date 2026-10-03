@@ -4,42 +4,45 @@
 (or FFI) front end, the trainee and every policy opponent forwarded through the inference service
 (T2), the scripted bots played inside the core — through the COMPLETE-GAME collector (order
 constraint 6 of ``designs/endstate/program_rust_core.md``). Design and hazards:
-``designs/training/rust_collector.md``. ``--env-core python`` is the ``SubprocVecEnv`` of ``Gen3Env``
-workers, reachable by typing it until the deletion pass.
+``designs/training/rust_collector.md``.
+
+THE ONLY CORE (deletion pass U3, 2026-10-02): the Python env core (``Gen3Env`` workers behind a
+``SubprocVecEnv``) was DELETED, so ``rust`` is the one legal value. The flag stays — every recorded
+argv, runbook and ``recipe.sizing`` row that types ``--env-core rust`` still parses — and a typed
+``python`` is REFUSED at parse time with the reason (``base.retired_choice``), never a silent no-op.
+(A one-valued flag is a flag-census candidate, P11.)
 
 THE M5 SWITCH (`gen3_env_core_switch_v1`): ``rust`` is the PRODUCTION env core —
 ``recipe.sizing.env_core`` of ``designs/production_config.json``, applied by ``--arch production``
-like every recipe knob. An UNTYPED ``--env-core`` resolves (``rust_env_setup.resolve_env_core_default``):
-fresh ``--arch production`` → ``recipe.sizing``; ``--model`` (a restart or a fork) → INHERITED, the core the
-checkpoint was produced on when that is rust — a python-era checkpoint (python, or recorded before
-``--env-core``) moves onto rust, announced as a core switch, and a shaped-critic one is REFUSED (deletion pass
-D4); a bare non-production fresh argv →
-the parser default ``rust`` (deletion pass D2, 2026-10-02: a bare argv defaults to ``--critic winprob`` and its
-three reward values, which is what the Rust core serves).
+like every recipe knob. A ``--model`` resume resolves (``rust_env_setup.resolve_env_core_default``): the
+core the checkpoint was produced on when that is rust; a python-era checkpoint (recorded ``python``, or
+recorded before ``--env-core``) moves onto rust, announced as a core switch, and a shaped-critic one is
+REFUSED (deletion pass D4 — run it pinned to its own commit).
 
 Not recorded in ``model_config.json``; ``metadata.json`` records the env core a process ran under
-(``env_core``, read back by ``recorded_env_core``) and ``cli_args`` the resolved flags. Every collector flag defaults to ``None`` =
-"not typed", resolved by ``main.train.rust_env_setup.resolve_env_core_args`` (the defaults the help
-strings state), so a collector flag typed on the python core is REFUSED rather than silently inert
-(``combination_checks``' ``env_core_flags_need_the_rust_core``).
+(``env_core``, read back by ``recorded_env_core``) and ``cli_args`` the resolved flags. Every collector
+flag defaults to ``None`` = "not typed", resolved by ``main.train.rust_env_setup.resolve_env_core_args``
+(the defaults the help strings state).
 """
 import argparse
 
-from main.train.parser.base import BoolFlag  # noqa: F401 — the family's shared pieces
+from main.train.parser.base import BoolFlag, retired_choice  # noqa: F401 — the family's shared pieces
 
 
 def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their `--help` order."""
-    parser.add_argument("--env-core", "--env_core", dest="env_core", choices=("python", "rust"), default="rust",
-                        help="Which env the rollout runs on (M5). UNTYPED: --arch production takes the PRODUCTION "
-                             "core (recipe.sizing.env_core, 'rust'); --model (a restart or a fork) INHERITS the "
-                             "core its checkpoint was produced on, except that a python-era checkpoint moves "
-                             "onto 'rust' (announced; a shaped-critic one is refused -- deletion pass D4); a bare non-production fresh argv takes "
-                             "'rust' too (the parser default since the deletion pass, 2026-10-02). 'python' = "
-                             "the SubprocVecEnv of Gen3Env workers. 'rust' = the M5 Rust env core: N envs in one "
-                             "core (process front end), trainee + policy opponents through the inference "
-                             "service, bots in the core, the COMPLETE-GAME collector (--rollout-trigger). "
-                             "Refuses every flag whose path it does not serve yet, by name, at startup.")
+    parser.add_argument("--env-core", "--env_core", dest="env_core", choices=("rust",), default="rust",
+                        type=retired_choice("--env-core", ("rust",),
+                                            "the Python env core was deleted — deletion pass U3, 2026-10-02; a "
+                                            "python-era run resumes PINNED to its own commit"),
+                        help="Which env the rollout runs on (M5): 'rust' = the M5 Rust env core, the ONLY core "
+                             "since the Python env core was deleted (deletion pass U3, 2026-10-02): N envs in "
+                             "one core (process front end), trainee + policy opponents through the inference "
+                             "service, bots in the core, the COMPLETE-GAME collector (--rollout-trigger). A "
+                             "typed 'python' is refused at parse time. --arch production takes "
+                             "recipe.sizing.env_core; --model (a restart or a fork) moves a python-era "
+                             "checkpoint onto 'rust' (announced; a shaped-critic one is refused -- "
+                             "deletion pass D4).")
     parser.add_argument("--rollout-trigger", "--rollout_trigger", dest="rollout_trigger",
                         choices=("complete_game", "window"), default=None,
                         help="--env-core rust only. 'complete_game' (DEFAULT, the owner's collector, "

@@ -33,7 +33,7 @@ N = 4
 
 def fork_spaces() -> Tuple[Any, Any, Any]:
     from agents.training.rust_rollout.build import trainee_spaces
-    from main.rust_core_cutover.envs import production_args
+    from main.train.production_args import production_args
 
     args = production_args()
     args.fork_fraction = 0.05

@@ -33,13 +33,12 @@ _WP = ["--critic", "winprob", "--terminal-indicator", "--victory-value",
        "1.0", "--draw-penalty", "0", "--steps", "1000"]
 
 
-def _resolved(argv, core="python"):
-    """`core="python"` types the python env core (bare argv = rust since D2); `core=None` leaves the bare
-    default — the rust core, the only one a `--fork-fraction > 0` argv can resolve on since deletion
-    passes L4 / L5 removed the Python fork arm (its replay ring, then its code)."""
+def _resolved(argv):
+    """The resolved namespace of ``argv`` on the one env core there is (the Rust core; the Python core
+    and its fork arm were deleted — deletion passes L4 / L5 / U3)."""
     from main.train.config import resolve_config
     p = build_parser()
-    args = p.parse_args([*(["--env-core", core] if core else []), *argv])
+    args = p.parse_args(list(argv))
     resolve_config(args, p)
     return args
 
@@ -69,7 +68,7 @@ def test_the_off_defaults_are_what_resolve_config_fills_in():
 def test_a_flagged_argv_keeps_its_values():
     args = _resolved(_WP + ["--fork-fraction", "0.02", "--fork-branches", "2",
                             "--fork-contested-gap", "0.25", "--fork-max-per-battle", "2",
-                            "--fork-crn", "dice"], core=None)
+                            "--fork-crn", "dice"])
     assert args.fork_fraction == 0.02 and args.fork_branches == 2
     assert args.fork_contested_gap == 0.25 and args.fork_max_per_battle == 2
     assert args.fork_crn == "dice"
@@ -176,50 +175,45 @@ def test_the_fraction_is_in_the_arch_table_so_a_headless_run_reads_INERT():
 
 
 # ── the refusals ─────────────────────────────────────────────────────────────────────────────
-@pytest.mark.parametrize("extra,core,needle", [
-    (["--critic", "shaped", "--steps", "1000", "--fork-fraction", "0.02"], "python",
-     "requires --critic winprob"),
-    # deletion pass L4: the Python core's replay ring is gone, so a fork argv on it is UNAVAILABLE
-    (_WP + ["--fork-fraction", "0.02"], "python", "UNAVAILABLE"),
-    (_WP + ["--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"], None, "strata-weight"),
+@pytest.mark.parametrize("extra,needle", [
+    # `shaped` is not a trainable critic any more (the Python core served it — U3): the parser says so
+    (["--critic", "shaped", "--steps", "1000", "--fork-fraction", "0.02"], "DELETED"),
+    (_WP + ["--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"], "strata-weight"),
 ])
-def test_the_three_refusals_fire_with_their_own_text(extra, core, needle, capsys):
+def test_the_refusals_fire_with_their_own_text(extra, needle, capsys):
     argv = extra if extra[0].startswith("--critic") else ["--steps", "1000"] + extra
     with pytest.raises(SystemExit):
-        _resolved(argv, core=core)
+        _resolved(argv)
     assert needle in capsys.readouterr().err
 
 
 def test_a_complete_forked_argv_is_ACCEPTED():
-    args = _resolved(_WP + ["--fork-fraction", "0.02"], core=None)
+    args = _resolved(_WP + ["--fork-fraction", "0.02"])
     assert args.fork_fraction == 0.02
 
 
 # ── OFF costs nothing ────────────────────────────────────────────────────────────────────────
-def _env(**kw):
-    from poke_env import AccountConfiguration
-    from agents.observation.state_encoder import load_mappings
-    from agents.training.gen3_env import Gen3Env
-    return Gen3Env(load_mappings(), battle_format="gen3ou",
-                   account_configuration1=AccountConfiguration("ForkKeyT", None),
-                   start_listening=False, **kw)
+def _fork_space(on: bool):
+    from agents.observation.schema import build_schema
+    from agents.observation.state_encoder import get_observation_encoder, load_mappings
+    from agents.training.trainee_spaces import LabelGates, trainee_observation_space
+
+    layout = get_observation_encoder(load_mappings()).get_layout()
+    gates = LabelGates(*([False] * len(LabelGates._fields)))._replace(fork_pg_mask=on)
+    return trainee_observation_space(layout, build_schema(layout).gym_space(), gates).spaces
 
 
 def test_the_obs_key_is_declared_ONLY_when_the_arm_is_on():
-    assert PG_MASK_KEY not in _env().observation_space.spaces
-    space = _env(emit_fork_pg_mask=True).observation_space.spaces
+    assert PG_MASK_KEY not in _fork_space(False)
+    space = _fork_space(True)
     assert PG_MASK_KEY in space
     assert space[PG_MASK_KEY].shape == (1,)
     assert (float(space[PG_MASK_KEY].low[0]), float(space[PG_MASK_KEY].high[0])) == (0.0, 1.0)
 
 
-def test_a_collected_row_carries_the_ONE_placeholder():
-    """A zero here would delete the policy gradient on every collected row and read as a dead run
-    rather than as a plumbing break."""
-    env = _env(emit_fork_pg_mask=True)
-    obs: dict = {}
-    env._merge_training_keys(obs)
-    assert obs[PG_MASK_KEY].tolist() == [1.0]
+# (The placeholder-row case — a collected row carries the ONE placeholder — pinned `Gen3Env`'s
+# `_merge_training_keys`; the Rust side builds the key from `trainee_spaces` + `rust_rollout/store.py`
+# and is pinned by `store_test` / `fork_test`.)
 
 
 def test_trainee_spaces_arms_the_obs_key_from_the_fraction():

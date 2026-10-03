@@ -263,14 +263,13 @@ def test_the_module_never_assigns_batch_size():
 
 def test_shape_stability_does_not_depend_on_k():
     """`check_shape_stability` — the refusal that protects the compiled trainer — takes n_steps,
-    n_envs, batch_size and async_rollout. K is not among them, BY CONSTRUCTION, which is the whole
+    n_envs and batch_size. K is not among them, BY CONSTRUCTION, which is the whole
     reason the loop moves K: no value it can pick is expressible as a shape change."""
     from agents.model.compile_trainer import check_shape_stability
     params = set(inspect.signature(check_shape_stability).parameters)
-    assert params == {"n_steps", "n_envs", "batch_size", "async_rollout"}
+    assert params == {"n_steps", "n_envs", "batch_size"}
     for k in (1, 2, 4, 8, 16, 32):       # every K the controller can reach is equally acceptable
-        check_shape_stability(n_steps=2048, n_envs=64, batch_size=2048 * 64 // 8,
-                              async_rollout=False)
+        check_shape_stability(n_steps=2048, n_envs=64, batch_size=2048 * 64 // 8)
         assert k >= 1
 
 

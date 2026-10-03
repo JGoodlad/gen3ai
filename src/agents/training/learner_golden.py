@@ -142,9 +142,8 @@ def build_learner(env: Any = None, args: Any = None) -> Any:
     from stable_baselines3.common.logger import configure
 
     from agents.training.rust_rollout import testkit as TK
-    from agents.training.rust_rollout.parity import _unset_to_class_defaults
     from agents.training.rust_vec_env import RustVecEnv
-    from main.rust_core_cutover.envs import production_args
+    from main.train.production_args import production_args
     from main.train.model_build import apply_training_hparams
 
     if args is None:
@@ -165,7 +164,7 @@ def build_learner(env: Any = None, args: Any = None) -> Any:
                            policy_args=policy_args)
     apply_training_hparams(model, production_args() if policy_args is None else policy_args,
                            mappings=None)
-    _unset_to_class_defaults(model)
+    TK.unset_to_class_defaults(model)
     model.grad_accum_steps = int(RECIPE["grad_accum_steps"])
     # K9(b) is its own gate (`learner_gates_test`); the golden pins the update's arithmetic.
     model.behaviour_check = "off"

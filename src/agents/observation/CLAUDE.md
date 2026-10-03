@@ -15,7 +15,7 @@ have **different** gates:
 
 > **Off-hot-path exception — `belief_labels.py`.** This module (the pure builder of the
 > hidden-opponent belief-aux labels) lives here for cohesion with the obs layer but is **NOT called
-> by `encode`** — `Gen3Env.step/reset` invoke it only when `--opp-belief-aux-coef>0` or
+> by `encode`** — the training label path (the label gates in `agents.training.trainee_spaces.label_gates`; inventory `utils/rust_env/label_inventory.py`) emits it only when `--opp-belief-aux-coef>0` or
 > `--move-belief-mode != off`, to emit the privileged training-only `belief_species`/`belief_moves`
 > (and, for move-belief known/both, `known_moves`; for `--spread-belief-coef>0`, `belief_spread`/`_mask` —
 > and, under `--spread-belief-nature`, `belief_nature`/`belief_ev`(+masks) for the nature/EV
@@ -342,8 +342,8 @@ instead of clamping a new id onto `tox`.
 ## The incremental cache (`assembler.py`) — what may and may not be cached
 
 `ObsAssembler` is owned by the `EpisodeTracker` (so it resets with the episode and deep-copies
-with a counterfactual arm) and is threaded into `encode(..., assembler=…)` by `Gen3Env` and the
-inference player. **Every other caller passes nothing and gets the full rebuild** — which is also
+with a counterfactual arm) and is threaded into `encode(..., assembler=…)` by the
+inference player (and the profilers). **Every other caller passes nothing and gets the full rebuild** — which is also
 the oracle. There is deliberately **no flag**: a launch flag would fork the obs path into two
 long-lived variants and this tree has measured what happens to the branch nothing runs (the
 seedless-seed lesson). The diagnostic escape hatch is `GEN3AI_OBS_VERIFY=1`, which shadow-encodes

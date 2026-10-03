@@ -54,8 +54,6 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, NamedTuple, Optional, Tuple, Union
 
-# The rule is DECLARED in the resolver that also applies it; referenced here, never re-typed.
-from main.train.compile_flags import _PRELOAD_WITHOUT_OPPONENTS
 
 
 class CombinationCheck(NamedTuple):
@@ -176,37 +174,9 @@ def _fams(args, wanted: set) -> bool:
 # THE LIST. Declaration order is the source order these refusals had inside `resolve_config`.
 # --------------------------------------------------------------------------------------------
 
-# ---- `--env-core rust` (M5 Lane G) -------------------------------------------------------------
-
-def _rust_core(args) -> bool:
-    return _val(args, "env_core", "rust") == "rust"     # the parser default since D2 (2026-10-02)
-
-
-#: What `--env-core rust` does not serve yet, as (dest, predicate, reason). Each is a path the Python
-#: env or a Python-only callback owns today; the collector refuses rather than silently dropping it.
-_ENV_CORE_UNPORTED: Tuple[Tuple[str, Callable[[Any], bool], str], ...] = (
-    ("async_rollout", lambda a: bool(_val(a, "async_rollout", False)),
-     "--async-rollout (a SubprocVecEnv scheduling mode)"),
-)
-_ENV_CORE_UNPORTED_DESTS: Tuple[str, ...] = ("env_core",) + tuple(d for d, _, _ in _ENV_CORE_UNPORTED)
-
-#: Flags that act only under `--env-core rust`.
-_ENV_CORE_ONLY_DESTS: Tuple[str, ...] = (
-    "rollout_trigger", "rollout_target_samples", "rollout_target_band", "version_pinning", "trainee_slots",
-    "t2_buckets", "t2_lanes", "t2_opponent_bucket_cap", "t2_backend", "rust_env_front", "rust_env_threads", "rust_env_profile",
-    "rust_env_refusal_budget", "rust_env_respawn_budget", "opponent_sampling", "rust_eval_envs")
-
-
-def _env_core_unported(args) -> List[str]:
-    out: List[str] = []
-    for _dest, pred, why in _ENV_CORE_UNPORTED:
-        try:
-            if pred(args):
-                out.append(why)
-        except (TypeError, ValueError, AttributeError):
-            continue
-    return out
-
+# ---- the Rust env core (M5 Lane G): the ONLY env core -----------------------------------------
+# (The python-core rows — `--critic shaped`, the unported-path list, the collector flags "typed on the
+# python core", the mirrored-pairs / SPRT eval-path rows — went with the Python env core, deletion pass U3.)
 
 def _quantum(args) -> int:
     from math import gcd
@@ -319,19 +289,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "is what the fork pass builds. Under `shaped` the terminal is SIGNED "
         "(+V / -V / --draw-penalty), which the branch builder does not reproduce. Pass --critic "
         "winprob, or drop the flag."),
-    CombinationCheck(
-        # THE PYTHON CORE HAS NO FORK ARM: it replayed its episode from the `<run>/cf_records/` ring,
-        # the ring (`--cf-records`) was deleted with the cf training half (deletion pass L4) and the
-        # arm's code with it (L5). This row is what stops `--fork-fraction` being a SILENT no-op on the
-        # Python core (no callback, no buffer) — it goes with the Python core (U3). On --env-core rust
-        # a fork replays the core's finished input log (`rust_rollout/fork.py`, forks.md §14).
-        "fork_python_core_unavailable", ("fork_fraction", "env_core"),
-        lambda a: float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0 and not _rust_core(a),
-        "--fork-fraction > 0 on --env-core python is UNAVAILABLE: the Python core's fork arm "
-        "replayed its episode from the `<run>/cf_records/` ring, that ring (--cf-records) was "
-        "DELETED with the counterfactual training half (deletion pass L4), and the arm's code was "
-        "deleted after it (L5). The Rust core forks from its own finished input log — use "
-        "--env-core rust (the default)."),
     CombinationCheck(
         "fork_refuses_strata_weight", ("fork_fraction", "win_prob_strata_weight"),
         lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
@@ -484,11 +441,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "--fork-lr-freeze needs --fork-lr: it freezes the KL controller AT the pinned "
         "rate, and without a pin there is no rate to freeze at (pass --fork-lr <value>)."),
 
-    CombinationCheck(
-        "obs_source_core_needs_rust_bridge", ("obs_source", "use_bridge"),
-        lambda a: _val(a, "obs_source", None) == "core" and _val(a, "use_bridge", "rust") != "rust",
-        "--obs-source core requires --use-bridge rust — the core that builds the row lives in "
-        "the rust sim_bridge child (gen3_core_obs_source_v1)"),
 
     # ---- the belief stack ---------------------------------------------------------------------
     CombinationCheck(
@@ -655,54 +607,30 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         exit_style="exit1"),
 
     # ---- the compile pair: the rule itself lives in compile_flags, referenced not re-typed ------
-    CombinationCheck(
-        "compile_preload_needs_compile_opponents",
-        ("compile_opponents_preload", "compile_opponents"),
-        lambda a: bool(a.compile_opponents_preload) and not a.compile_opponents,
-        _PRELOAD_WITHOUT_OPPONENTS),
 
     # ---- the env core (M5 Lane G): what `--env-core rust` serves, refused by name -------------
     CombinationCheck(
-        "env_core_rust_needs_the_winprob_critic", ("env_core", "critic"),
-        lambda a: _rust_core(a) and not _winprob(a),
-        "--env-core rust requires --critic winprob: the Rust env produces NO terminal observation "
-        "(Lane D's decision), and a shaped critic bootstraps a truncation from one (F-LD-2)",
-        exit_style="fatal_config"),
-    CombinationCheck(
-        "env_core_rust_unported_paths", _ENV_CORE_UNPORTED_DESTS,
-        lambda a: _rust_core(a) and bool(_env_core_unported(a)),
-        lambda a: ("--env-core rust does not serve these paths yet: " + "; ".join(_env_core_unported(a))
-                   + ". Turn them off, or run --env-core python (designs/training/rust_collector.md, "
-                   "'What --env-core rust refuses')"),
-        exit_style="fatal_config"),
-    CombinationCheck(
         # gen3_fork_rust_v1 (forks.md §14.3): a branch replays the parent's draws BY KEY; a per-env
         # torch.Generator stream cannot be replayed per branch.
-        "fork_rust_needs_keyed_opponent_sampling", ("fork_fraction", "env_core", "opponent_sampling"),
-        lambda a: (_rust_core(a) and float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
+        "fork_rust_needs_keyed_opponent_sampling", ("fork_fraction", "opponent_sampling"),
+        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
                    and _val(a, "opponent_sampling", "keyed") != "keyed"),
-        "--fork-fraction > 0 under --env-core rust requires --opponent-sampling keyed: a branch is the "
+        "--fork-fraction > 0 requires --opponent-sampling keyed: a branch is the "
         "parent's game under the PARENT's draw keys (common random numbers, designs/training/forks.md "
         "§14.3), and the generator mode's per-env stream cannot be replayed per branch",
         exit_style="fatal_config"),
     CombinationCheck(
         # gen3_fork_rust_v1 (forks.md §14.2): branch games join the completed-game FIFO.
-        "fork_rust_needs_complete_game_trigger", ("fork_fraction", "env_core", "rollout_trigger"),
-        lambda a: (_rust_core(a) and float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
+        "fork_rust_needs_complete_game_trigger", ("fork_fraction", "rollout_trigger"),
+        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
                    and _val(a, "rollout_trigger", "complete_game") != "complete_game"),
-        "--fork-fraction > 0 under --env-core rust requires --rollout-trigger complete_game: a branch is "
+        "--fork-fraction > 0 requires --rollout-trigger complete_game: a branch is "
         "a complete game that joins the completed-game FIFO beside its parent (designs/training/forks.md "
         "§14.2); the window fill is the parity schedule",
         exit_style="fatal_config"),
     CombinationCheck(
-        "env_core_flags_need_the_rust_core", _ENV_CORE_ONLY_DESTS,
-        lambda a: not _rust_core(a) and any(_typed(a, d) for d in _ENV_CORE_ONLY_DESTS),
-        "the rollout-collector flags (--rollout-trigger / --rollout-target-samples / --rollout-target-band / "
-        "--version-pinning / --trainee-slots / --t2-* / --rust-eval-envs) act only under --env-core rust — typed on the python "
-        "env core they would be silently inert"),
-    CombinationCheck(
-        "rollout_target_on_the_quantum", ("env_core", "rollout_target_samples", "batch_size", "n_envs"),
-        lambda a: _rust_core(a) and _target_off_quantum(a),
+        "rollout_target_on_the_quantum", ("rollout_target_samples", "batch_size", "n_envs"),
+        lambda a: _target_off_quantum(a),
         lambda a: (f"--rollout-target-samples {int(_val(a, 'rollout_target_samples', 0) or 0):,} must be a "
                    f"multiple of lcm(--batch-size {a.batch_size}, --n-envs {a.n_envs}) = {_quantum(a):,}: no "
                    "ragged micro-batch may reach the compiled learner graph, and the buffer keeps its "
@@ -712,19 +640,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
     # ---- T17 MIRRORED TEAM PAIRS (gen3_mirrored_pairs_v1): the Python eval path's prerequisites -----
     # A mirrored pair's two games share ONE battle seed, so the Python eval path plays every game under
     # the per-GAME seed rule — which only the in-process bridge, one game in flight, can honour.
-    CombinationCheck(
-        "mirrored_pairs_need_the_bridge", ("eval_mirrored_pairs", "env_core", "use_bridge"),
-        lambda a: bool(_val(a, "eval_mirrored_pairs", False)) and not _rust_core(a)
-        and _val(a, "use_bridge", "rust") == "off",
-        "--eval-mirrored-pairs needs the in-process bridge (--use-bridge rust|node): a mirrored pair shares "
-        "one battle seed, and a Showdown server mints its own dice"),
-    CombinationCheck(
-        "mirrored_pairs_need_one_game_in_flight",
-        ("eval_mirrored_pairs", "env_core", "eval_concurrency_per_worker"),
-        lambda a: bool(_val(a, "eval_mirrored_pairs", False)) and not _rust_core(a)
-        and int(_val(a, "eval_concurrency_per_worker", 1) or 1) != 1,
-        "--eval-mirrored-pairs needs --eval-concurrency-per-worker 1: every game is seeded, and "
-        "overlapping games would consume the seeded streams out of order"),
 
     # ---- T6 SPRT PROMOTION (gen3_sprt_promotion_v1) ------------------------------------------------
     CombinationCheck(
@@ -736,19 +651,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         lambda a: bool(_val(a, "promotion_sprt", False)) and _typed(a, "promote_threshold"),
         "--promote-threshold does nothing under --promotion-sprt (the SPRT decides; a typed threshold "
         "would be silently inert)"),
-    CombinationCheck(
-        "promotion_sprt_needs_the_bridge", ("promotion_sprt", "env_core", "use_bridge"),
-        lambda a: bool(_val(a, "promotion_sprt", False)) and not _rust_core(a)
-        and _val(a, "use_bridge", "rust") == "off",
-        "--promotion-sprt plays seeded mirrored pairs: the Python eval path needs the in-process bridge "
-        "(--use-bridge rust|node)"),
-    CombinationCheck(
-        "promotion_sprt_needs_one_game_in_flight",
-        ("promotion_sprt", "env_core", "eval_concurrency_per_worker"),
-        lambda a: bool(_val(a, "promotion_sprt", False)) and not _rust_core(a)
-        and int(_val(a, "eval_concurrency_per_worker", 1) or 1) != 1,
-        "--promotion-sprt plays seeded mirrored pairs: the Python eval path needs "
-        "--eval-concurrency-per-worker 1"),
 )
 
 

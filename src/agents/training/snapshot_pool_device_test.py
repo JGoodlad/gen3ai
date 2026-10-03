@@ -5,8 +5,8 @@ each one in its LRU beside that slot (sizing arm A, 2026-10-01: +~33 MiB of quie
 promotion). `277f318f` fixed the trainer's rust-core pool; the sizing harness's own pool still built on
 cuda and died on the runtime refusal (`95af710e` fixed it) — so the rule is pinned REPO-WIDE here, one
 AST scan over src/ and tools/ (tests included): a `SnapshotPool(...)` call either omits `device=` (the
-default is "cpu") or passes the literal "cpu". The ONE declared exception is the python env core's
-worker pool, which INFERS on the snapshot itself on the device `--self-play-use-cpu` chose."""
+default is "cpu") or passes the literal "cpu". There is NO declared exception since deletion pass U3
+deleted the python env core's worker pool (the one pool that INFERRED on its snapshot)."""
 from __future__ import annotations
 
 import ast
@@ -14,11 +14,9 @@ from pathlib import Path
 
 from utils.paths import repo_path, src_path
 
-#: (file relative to the repo, the device expression's source) — the declared exceptions, each a pool
-#: whose snapshots are the INFERENCE model (no T2 slot), never a slot's weight source.
-DECLARED = {("src/main/train/env_factory.py", "opponent_device"):
-            "the python env core's env-worker pool infers on the snapshot itself (no T2 slot); "
-            "`--self-play-use-cpu` (default ON) chooses its device"}
+#: (file relative to the repo, the device expression's source) — the declared exceptions: a pool whose
+#: snapshots are the INFERENCE model (no T2 slot), never a slot's weight source. None today.
+DECLARED: dict = {}
 
 
 def _calls():

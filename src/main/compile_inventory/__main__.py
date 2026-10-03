@@ -43,21 +43,20 @@ def _write(path: Path, obj: Any) -> None:
 
 
 def adjust_argv(argv: List[str], *, compile_trainer: bool) -> List[str]:
-    """The benchmark's re-pointed trainer argv, with the inventory's two changes: few env workers,
-    no opponent compile (neither is exercised — the buffer replaces the rollout), and the learner
-    compile ON (time) or OFF (trace: the capture compiles, from a clean dynamo)."""
-    from agents.training.learner_benchmark import split_flags
-    drop = {"--n-envs", "--n_envs", "--compile-opponents", "--no-compile-opponents",
-            "--compile-opponents-strict", "--compile-opponents-preload",
-            "--no-compile-opponents-preload", "--compile-trainer", "--no-compile-trainer"}
+    """The benchmark's re-pointed trainer argv, with the inventory's two changes: few env workers
+    (not exercised — the buffer replaces the rollout), and the learner compile ON (time) or OFF
+    (trace: the capture compiles, from a clean dynamo). A recorded command's `--compile-opponents`
+    family (deleted, deletion pass U3) is dropped, never forwarded."""
+    from agents.training.learner_benchmark import _unknown_to_the_trainer, split_flags
+    drop = {"--n-envs", "--n_envs", "--compile-trainer", "--no-compile-trainer"}
+    unknown = _unknown_to_the_trainer()     # a flag the trainer's parser no longer knows is dropped, not forwarded
     out: List[str] = []
     for flag, vals in split_flags(argv):
-        if flag in drop:
+        if flag in drop or unknown(flag):
             continue
         out.append(flag)
         out.extend(vals)
-    out += ["--n-envs", WORKER_N_ENVS, "--no-compile-opponents",
-            "--compile-trainer" if compile_trainer else "--no-compile-trainer"]
+    out += ["--n-envs", WORKER_N_ENVS, "--compile-trainer" if compile_trainer else "--no-compile-trainer"]
     return out
 
 

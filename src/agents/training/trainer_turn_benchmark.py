@@ -3,9 +3,10 @@
 The obs-build benchmark (`obs_build_benchmark.py`) is a microscope on ONE stage (the
 observation encode). This is the wide-angle lens: it walks a real ``gen3ou`` battle
 **in-process via the local BattleStream bridge** and times every CPU stage the training env
-(`Gen3Env`) runs per decision, so you can see where a turn's controllable CPU actually goes.
+(the deleted Python env core's `Gen3Env`, deletion pass U3) ran per decision — the same stages `RLPlayer`
+still runs for eval, the ladder and the meters — so you can see where a turn's controllable CPU actually goes.
 
-Stages timed (all the CPU work `Gen3Env` owns per step — see `gen3_env.py`
+Stages timed (all the CPU work `Gen3Env` owned per step — it was `agents/training/gen3_env.py`,
 embed_battle / calc_reward / action_to_order / step):
 
   * **parse + event-log fold** — the real `Gen3Battle.parse_message` (protocol → state +

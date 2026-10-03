@@ -131,16 +131,14 @@ def build_trainer_argv(original_command: str, *, model_zip: str, run_dir: str, s
     Keeps every training flag verbatim (so the fold, the arch and the compile are C's), strips the
     launcher-only flags and the run identity, and re-supplies ``--model/--run-dir/--steps``, an
     eval cadence that cannot fire and ``--no-tb-inherit``. ``device='cpu'``
-    swaps both compile flags off (`--compile-trainer` refuses a CPU device by design); ``tiny``
+    swaps the compile flag off (`--compile-trainer` refuses a CPU device by design); ``tiny``
     shrinks ``--n-envs``. The result never contains the trainer's module name.
     """
     toks = shlex.split(original_command)
     drop = set(_STRIP_ALWAYS) | set(launcher_only)
     cpu = device == "cpu"
     if cpu:
-        drop |= {"--device", "--compile-trainer", "--no-compile-trainer", "--compile-opponents",
-                 "--no-compile-opponents", "--compile-opponents-strict",
-                 "--compile-opponents-preload", "--no-compile-opponents-preload"}
+        drop |= {"--device", "--compile-trainer", "--no-compile-trainer"}
     else:
         drop |= {"--device"}
     if tiny:
@@ -154,7 +152,7 @@ def build_trainer_argv(original_command: str, *, model_zip: str, run_dir: str, s
         argv.extend(vals)
     argv += ["--device", device]
     if cpu:
-        argv += ["--no-compile-trainer", "--no-compile-opponents"]
+        argv += ["--no-compile-trainer"]
     if tiny:
         argv += ["--n-envs", str(TINY["n_envs"])]
     argv += ["--model", model_zip, "--run-dir", run_dir, "--steps", str(int(steps)),

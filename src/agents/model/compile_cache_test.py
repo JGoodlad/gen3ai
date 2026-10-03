@@ -355,8 +355,7 @@ def test_the_trainer_declares_the_cache_before_anything_compiles_or_spawns():
     body = src[src.index("async def main():"):]
     at = body.index("_declare_compile_cache(args, model_dir)")
     assert body.index("os.makedirs(model_dir, exist_ok=True)") < at
-    for later in ("arm_compile_quorum(", "set_forkserver_preload(", "prewarm_extractor_compile(",
-                  "build_rust_vec_env(", "create_training_env_random", "build_and_train("):
+    for later in ("build_rust_vec_env(", "build_and_train("):
         if later in body:
             assert at < body.index(later), f"{later} runs before the run's compile cache is declared"
 

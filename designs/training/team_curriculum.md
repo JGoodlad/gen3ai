@@ -67,12 +67,9 @@ read `by_class`: a pre-self-play curriculum phase is ~all `bot` episodes, where 
 
 - **The seam is an `env_method` PULL, not an info-dict thread — and that is the async decision.**
   Each worker's `Gen3Teambuilder` accumulates a windowed per-team, per-opponent-class count
-  (`record_team_wr_outcome`), fed by `MaskableAgentWrapper._maybe_record_team_wr` at the terminal
-  step beside the existing `win_outcome` capture; `TeamWinRateCallback._on_rollout_end` drains
-  every worker (`drain_team_wr_counts`) at a rollout boundary. **This works identically under
-  `SubprocVecEnv` and `--async-rollout`** because `AsyncSubprocVecEnv.env_method` is drain-safe (it
-  stashes in-flight step results before the barrier RPC), whereas an info-dict route would have to
-  know which buffer ROW a terminal landed on — knowledge only the async collector has, which is why
+  (`record_team_wr_outcome`), fed by the env core's terminal step (the deleted Python `MaskableAgentWrapper._maybe_record_team_wr`'s job; `RustVecEnv.SURFACE` serves `drain_team_wr_counts`); `TeamWinRateCallback._on_rollout_end` drains
+  every worker (`drain_team_wr_counts`) at a rollout boundary. An info-dict route would have to
+  know which buffer ROW a terminal landed on — knowledge the callback does not have, which is why
   the (deleted) team-PFSP callback avoided that route for the same reason.
   `test_aggregation_reads_env_method_and_never_the_info_dicts` pins it by feeding the callback a
   deliberately contradictory `self.locals["infos"]` and asserting the result ignores it.

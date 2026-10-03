@@ -705,19 +705,6 @@ def test_contract_cache_is_per_code_object_shared_across_compiled_wrappers():
 
 
 # --------------------------------------------------------------------------- the trainer wiring
-def test_debug_with_in_process_opponent_compiles_is_refused_at_startup():
-    """--debug's DummyVecEnv compiles opponents in the learner process, on the learner's code
-    objects, after the lock — refused at startup (FATAL_CONFIG), not discovered at the first
-    snapshot load."""
-    import argparse
-    from main.exit_codes import TrainExitCode
-    from main.train.lifecycle import _arm_compile_sentinel
-    args = argparse.Namespace(compile_trainer=True, debug=True, compile_opponents=True)
-    with pytest.raises(SystemExit) as ei:
-        _arm_compile_sentinel(None, args)
-    assert ei.value.code == TrainExitCode.FATAL_CONFIG
-
-
 def test_arming_is_a_noop_when_the_learner_is_not_compiled():
     import argparse
     from main.train.lifecycle import _arm_compile_sentinel

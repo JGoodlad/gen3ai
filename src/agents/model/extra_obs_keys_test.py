@@ -24,7 +24,6 @@ import types
 import torch
 
 from agents.model import extra_obs_keys as EOK
-from agents.model.compile_preload import build_preload_extractor, preload_trace_obs
 from agents.model.extra_obs_keys import (
     BASE_OBS_KEYS, EXTRA_OBS_KEYS, ExtraObsKey, required_extra_obs_keys, synthetic_obs,
     zero_extra_obs,
@@ -32,8 +31,27 @@ from agents.model.extra_obs_keys import (
 
 
 def _fe(**cfg):
-    """The extractor the FORKSERVER builds, through the preload's own entry point."""
-    return build_preload_extractor(cfg)
+    """A serverless extractor from an arch-kwargs dict, and its layout (what the deleted forkserver
+    preload built — deletion pass U3 / R6 — kept here as the test's own fixture)."""
+    import gymnasium as gym
+    import numpy as np
+
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+
+    mappings = load_mappings()
+    layout = Gen3ObservationEncoder(mappings).get_layout()
+    space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
+    sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
+    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings,
+                               **{k: v for k, v in cfg.items() if k in sig})
+    fe.eval()
+    return fe, layout
+
+
+def preload_trace_obs(fe, layout):
+    """The synthetic obs a compile trace runs on: `observation` plus every declared flag-gated key."""
+    return synthetic_obs(fe, int(layout["total_dim"]))
 
 
 def scan_obs_key_reads(module):

@@ -1,139 +1,24 @@
-"""M5 Lane E unit tier (routine, CPU, no core): the host's opponent routing equals TODAY's rules.
+"""M5 Lane E unit tier (routine, CPU, no core): the host's opponent routing and sampling rules.
 
-* the per-episode draw equals ``MaskableAgentWrapper._select_episode_opponent`` DRAW FOR DRAW, from
-  the same seeds, under every production branch (exploiter sole / keep-bots, the self-play coin,
-  the capped stable share, stable PFSP, mastered stables in the floor, ``--bot-weights``, one pool
-  snapshot per env per generation through ``SnapshotPool.sample`` with recency x PFSP, a generation
-  push that adds a snapshot);
 * ``sample_actions`` equals ``RLPlayer``'s ``torch.multinomial(Categorical(logits=x/T).probs, 1, True,
   generator=g)`` BIT FOR BIT on the same probabilities and generator state;
 * a slot family never loads over a model a current or staged episode plays, and running out of
-  slots is typed.
+  slots is typed;
+* the plan declares its route table; the bot seed rule is the core's.
+
+(The draw-for-draw equality of the per-episode opponent draw against the Python wrapper's
+``_select_episode_opponent`` — an oracle replayed through the Python env core — was retired with that
+core, deletion pass U3 / owner D3.)
 """
 from __future__ import annotations
 
 import random
-from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
 import torch
 
 from agents.training import rust_env_opponents as E
-from agents.training.snapshot_pool import SnapshotPool
-from agents.training.wrappers import MaskableAgentWrapper
-
-
-def _stub_env():
-    env = MagicMock()
-    env.agent1.username = "a1"
-    env.observation_spaces = {"a1": MagicMock()}
-    env.action_spaces = {"a1": MagicMock()}
-    return env
-
-
-def _pool(tmp_path, steps, seed=None, pfsp=0.0):
-    for s in steps:
-        (tmp_path / f"snapshot_{s:012d}.zip").write_bytes(b"x")
-    p = SnapshotPool(tmp_path, current_version=None, pfsp_scale=pfsp, rng_seed=seed)
-    p.load_model = lambda entry: entry.step     # the wrapper assigns this to pool_player.model
-    return p
-
-
-CONFIGS = [
-    # (label, plan kwargs, fraction, mastered, stable win rates, pool pfsp win rates)
-    ("bots-only", dict(pool_slots=0), 0.0, [], {}, {}),
-    ("pool+bots", dict(), 0.85, [], {}, {}),
-    ("pool+stable", dict(stable=2), 0.9, [], {}, {}),
-    ("stable-pfsp", dict(stable=3, stable_pfsp=True), 0.9, [], {"s0": 0.2, "s1": 0.9, "s2": 0.99}, {}),
-    ("mastered-floor+weights", dict(stable=2, bot_weights=(1.0, 3.0, 0.5)), 0.7, ["s1"], {}, {}),
-    ("pool-pfsp", dict(pfsp=2.0), 0.95, [], {}, {100: 0.2, 300: 0.9}),
-    ("exploiter-sole", dict(exploiter=True), 0.9, [], {}, {}),
-    ("exploiter-keep-bots", dict(exploiter=True, keep_bots=True), 0.9, [], {}, {}),
-]
-
-
-@pytest.mark.parametrize("label,kw,fraction,mastered,swr,pwr", CONFIGS, ids=[c[0] for c in CONFIGS])
-def test_the_draw_is_the_wrappers_draw_for_draw(tmp_path, label, kw, fraction, mastered, swr, pwr):
-    bots = ("heuristic", "heuristic2", "staller")
-    n_stable = int(kw.get("stable", 0))
-    labels = [f"s{j}" for j in range(n_stable)]
-    steps = [100, 200, 300, 400]
-    ex = kw.get("exploiter", False)
-    plan = E.OpponentPlan(
-        pool_slots=0 if kw.get("pool_slots") == 0 else len(steps) + 1 + 2,
-        stable=tuple(E.StableSpec(lab, 1.0) for lab in labels),
-        exploiter=E.ExploiterSpec(temperature=1.0, keep_bots=kw.get("keep_bots", False), bot_fraction=0.4) if ex else None,
-        bots=bots, bot_weights=kw.get("bot_weights"), stable_pfsp=kw.get("stable_pfsp", False))
-    routes = plan.routes()
-    for env_idx in (0, 5):
-        wdir, mdir = tmp_path / f"w{env_idx}", tmp_path / f"m{env_idx}"
-        wdir.mkdir()
-        mdir.mkdir()
-        pool_seed = 1000 + env_idx
-        use_pool = plan.pool_slots > 0
-        wpool = _pool(wdir, steps, seed=pool_seed, pfsp=kw.get("pfsp", 0.0)) if use_pool else None
-        mpool = _pool(mdir, steps, seed=None, pfsp=kw.get("pfsp", 0.0)) if use_pool else None
-        heur = [MagicMock(name=b) for b in bots]
-        stable = [MagicMock(name=lab) for lab in labels]
-        exploiter = MagicMock(name="exploiter") if ex else None
-        pool_player = MagicMock(name="pool") if use_pool else None
-        w = MaskableAgentWrapper(
-            _stub_env(), heuristic_opponents=heur, pool=wpool, pool_player=pool_player,
-            self_play_fraction=fraction, rng_seed=env_idx, heuristic_weights=plan.bot_weights,
-            stable_players=stable or None, stable_labels=labels or None, stable_pfsp=plan.stable_pfsp,
-            exploiter_player=exploiter, exploiter_keep_bots=ex and kw.get("keep_bots", False),
-            exploiter_bot_fraction=0.4)
-        loads = []
-        host = E.RustEnvOpponents(
-            plan, env_idx + 1, load=lambda r, m: loads.append((r, m)), pool=mpool,
-            stable_ids=[f"stable:{lab}" for lab in labels], exploiter_id="exploiter:t0" if ex else None,
-            self_play_fraction=fraction, pool_rng_seeds=[pool_seed] * (env_idx + 1),
-            rng_seeds=list(range(env_idx + 1)))
-        s = host.samplers[env_idx]
-        for obj in (w, s):
-            obj.set_stable_mastered(mastered)
-            obj.set_stable_win_rates(swr)
-        if use_pool:
-            wpool.set_win_rates(pwr)
-            mpool.set_win_rates(pwr)
-
-        def ident_w():
-            o = w.opponent
-            if o is pool_player:
-                return ("pool", int(pool_player.model))
-            if o in stable:
-                return ("stable", labels[stable.index(o)])
-            if o is exploiter:
-                return ("exploiter",)
-            return ("bot", bots[heur.index(o)])
-
-        def ident_m(r):
-            rt = routes[r]
-            if rt.family == "pool":
-                mid = host.families["pool"].resident[host.families["pool"].routes.index(r)]
-                return ("pool", int(mid.split(":")[1]))
-            if rt.family.startswith("stable:"):
-                return ("stable", rt.family.split(":", 1)[1])
-            if rt.family == "exploiter":
-                return ("exploiter",)
-            return ("bot", rt.bot)
-
-        seen = set()
-        for k in range(1500):
-            if k in (400, 900):            # an eval push: a promotion adds a snapshot, a new generation
-                gen = 1 if k == 400 else 2
-                if use_pool:
-                    for d in (wdir, mdir):
-                        (d / f"snapshot_{500 * gen:012d}.zip").write_bytes(b"x")
-                w.set_self_play_target(fraction, gen)
-                host.set_self_play_target(fraction, gen)
-            w._select_episode_opponent()
-            a, b = ident_w(), ident_m(s.draw())
-            assert a == b, f"{label} env {env_idx} draw {k}: wrapper {a}, Lane E {b}"
-            seen.add(a[0])
-        want = {"bots-only": {"bot"}, "exploiter-sole": {"exploiter"}, "exploiter-keep-bots": {"exploiter", "bot"}}
-        assert seen >= want.get(label, {"pool", "bot"} | ({"stable"} if n_stable else set())), (label, seen)
 
 
 def _reference_sample(logp_row, t, g):
@@ -213,7 +98,7 @@ def test_the_plan_declares_the_route_table():
         E.OpponentPlan(pool_slots=2)            # no floor bucket
 
 
-def test_from_args_mirrors_env_factory():
+def test_from_args_builds_the_plan_the_run_declares():
     from types import SimpleNamespace as NS
 
     args = NS(self_play=True, self_play_temp=1.0, stable_opponent_selfplay_share=0.2, stable_opponent_pfsp=True,
@@ -223,7 +108,7 @@ def test_from_args_mirrors_env_factory():
     assert plan.pool_slots == 20 + E.DEFAULT_POOL_SPARE and plan.stable[0].temperature == 0.9 and plan.stable_pfsp
     off = E.OpponentPlan.from_args(NS(**{**vars(args), "self_play": False}), bot_names=("heuristic",),
                                    stable_entries=[NS(label="ext", temperature=0.9, team_strs=())])
-    assert off.pool_slots == 0 and off.stable == (), "stable opponents join only under self-play (env_factory)"
+    assert off.pool_slots == 0 and off.stable == (), "stable opponents join only under self-play"
     random.seed(0)
 
 

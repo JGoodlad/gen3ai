@@ -4,17 +4,14 @@ Deletion pass U2 (``designs/ops/deletion_pass_manifest.md`` §6 finding 1): prod
 instantiate a ``Gen3Env`` (a poke-env ``SinglesEnv`` that never connects) just to read its two spaces
 (``rust_rollout.build.trainee_spaces``), which made the Python env core a production dependency of the
 Rust env core. The spaces are a pure function of the resolved args and the observation layout, so they
-live here, and ``Gen3Env`` builds ITS space through this module too — one declaration, so the two env
-cores cannot disagree on a key, a shape, a dtype or a bound while both exist.
+live here — and, since the Python core was deleted (U3), this is the ONE declaration of them.
 
-* ``resolved_obs_source`` / ``trainee_env_kwargs`` — the trainee's per-run label switches as a pure
-  function of the args (moved here from ``main.train.env_factory``, which re-exports them until it goes).
+* ``trainee_env_kwargs`` — the trainee's per-run label switches as a pure function of the args.
 * ``label_gates`` — the derived per-key gates (``Gen3Env`` reads the same ones at step time).
 * ``trainee_observation_space`` — the Dict space, key by key.
 * ``trainee_spaces`` — both spaces for a run's args.
 
-Imports no poke-env env, no ``Gen3Env`` / ``wrappers`` / ``env_factory`` / bridge session
-(pinned by ``trainee_spaces_test``).
+Imports no poke-env env (the deleted Python core's modules cannot come back unseen: ``trainee_spaces_test``).
 """
 from __future__ import annotations
 
@@ -31,21 +28,11 @@ from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
 N_ACTIONS = 11
 
 
-def resolved_obs_source(args: Any) -> str:
-    """The trainee's obs source for ``args`` (gen3_core_obs_source_v1): the typed value, else
-    ``core`` on the rust bridge (the production default since the M6 cutover) and ``python`` on
-    any other transport (the core lives in the rust ``sim_bridge`` child)."""
-    typed = getattr(args, "obs_source", None)
-    if typed is not None:
-        return typed
-    return "core" if getattr(args, "use_bridge", "rust") == "rust" else "python"
-
-
 def trainee_env_kwargs(args: Any) -> dict:
-    """The TRAINEE ``Gen3Env``'s per-run keyword arguments — which training-only label keys it
-    emits (ARCHITECTURE.md §7) and where its observation row comes from — as a pure function of
-    the resolved ``args``, so every builder of a training-shaped env (this factory, the cutover
-    stress's slice N) derives the SAME surface from one place."""
+    """The trainee's per-run label switches — which training-only label keys its observation emits
+    (ARCHITECTURE.md §7) — as a pure function of the resolved ``args``, so every builder of a
+    training-shaped env derives the SAME surface from one place. (The ``emit_*`` names are the
+    ``label_gates`` keywords; they were the ``Gen3Env`` constructor's before U3.)"""
     return dict(
         # TRAINING-only privileged belief labels (only the trainee env; the model side
         # gates the BeliefHead on the same coef>0 signal). Eval/self-play opponents play
@@ -72,9 +59,6 @@ def trainee_env_kwargs(args: Any) -> dict:
         # ITEM-belief supervision (gen3_item_belief_v1): emit the privileged true-item
         # label only when the head exists AND the CE will consume it.
         emit_item_labels=(args.item_belief and args.item_belief_coef > 0.0),
-        # gen3_core_obs_source_v1: the trainee's row from the Rust core (`--obs-source core`)
-        # or from the Python encoder (the default). Only the trainee env; opponents unchanged.
-        obs_source=resolved_obs_source(args),
     )
 
 
@@ -222,6 +206,5 @@ def trainee_spaces(args: Any, mappings: Any = None) -> Tuple[spaces.Dict, spaces
 
     layout = get_observation_encoder(mappings if mappings is not None else load_mappings()).get_layout()
     kw = trainee_env_kwargs(args)
-    kw.pop("obs_source", None)
     obs = trainee_observation_space(layout, build_schema(layout).gym_space(), label_gates(**kw))
     return obs, spaces.Discrete(N_ACTIONS)

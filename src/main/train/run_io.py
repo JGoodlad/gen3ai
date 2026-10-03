@@ -177,11 +177,12 @@ def _model_hparams(model) -> dict:
     if _steps is not None:
         out["num_timesteps"] = int(_steps)
     # M5 Lane G — WHICH ENV CORE this process's rollouts ran on (`--env-core`): the Rust core's stamp
-    # (front end, build stamp, trigger, T2 backend + buckets, the keyed draw) or "python". Written on
+    # (front end, build stamp, trigger, T2 backend + buckets, the keyed draw), or the bare `rust` for a save
+    # with no collector (a fresh-checkpoint tool). A python-era record (`python`) is read by D4. Written on
     # every save like `matmul_precision`, so each checkpoint's sidecar names the core that produced it.
     _ec = getattr(model, "_env_core_stamp", None)
     out["env_core"] = ({k: v for k, v in _ec.items() if k != "summary"} if isinstance(_ec, dict)
-                       else {"env_core": "python"})
+                       else {"env_core": "rust"})
     return out
 
 

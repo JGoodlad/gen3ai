@@ -9,13 +9,9 @@ points here. **This file is the owner of the detail.**
 
 ---
 
-## Compiled CPU opponents (`--compile-opponents`, DEFAULT ON) + BLAS thread pinning
+## Compiled CPU opponents — the trainer-side path was DELETED (deletion pass U3); the offline compile and its gates remain
 
-> **Two independent compile flags, split by WHO and WHERE** (renamed 2026-08-14 from the
-> single `--compile-extractor`, which said neither): **`--compile-opponents`** is the
-> CPU/ROLLOUT half documented in this section — frozen opponents in the env workers.
-> **`--compile-trainer`** is the GPU/LEARNER half, documented below. They are orthogonal;
-> a run can take either, both, or neither.
+> **What is true now.** The compile-opponents flag (and its `-preload` / `-strict` variants and generated `no-` forms), the forkserver preload (`compile_preload.py`), the parent cache prewarm (`compile_prewarm.py`) and the cross-process revert QUORUM are DELETED: under the Rust env core every policy opponent forwards through the T2 inference service, so the trainer compiles no opponent, and `SnapshotPool` no longer takes a compile argument. **`--compile-trainer` is the only compile flag** (the GPU/learner half, below). What survives is `agents.model.compile_opponents.maybe_compile_extractor(model, enabled, label, hide_cuda)` — ONE frozen model's extractor, no `strict` argument, no quorum — used by the OFFLINE readers (the prober's counterfactual view, the snapshot ladder, the eval worker, the cf producer, the search-dividend perf probe), with its decision-level parity gate (`opponent_parity.py`) and the measured speed-up floor. Everything from here down to "The recurring promotion cost" is the RECORDED design and dated measurements of the original opponent-compile path, kept as history; where a sentence names a deleted flag, module or quorum, it describes what was believed and built then.
 
 **`--compile-opponents`** `torch.compile`s each frozen OPPONENT's feature extractor in the env workers
 (pool / stable / exploiter loads, via `agents.model.snapshot.maybe_compile_extractor`). It is a
@@ -247,7 +243,7 @@ distinguish from a busy box**; it sent three separate investigations after the w
 the floor to 0.7× was proposed and **rejected**: widening a broken instrument buys a confidently
 wrong answer in the other direction.
 
-**What ships instead (all four compose — `agents/model/compile_opponents.py`):**
+**What shipped instead (all four composed — `agents/model/compile_opponents.py`; the quorum and strict-verdict rows were DELETED in U3, the median-of-alternated-arms measurement and the floor stay):**
 
 | | old | now |
 |---|---|---|
@@ -336,6 +332,8 @@ on a box that is always training would turn the gate into a no-op that still rea
 
 ### The recurring promotion cost — measured, and it is SMALL (~2.7%)
 
+> *History: measured on the trainer-side opponent compile and its preload, both deleted in U3.*
+
 Everything above sizes **startup**. There is a second bill during the run, when a self-play
 promotion makes env workers compile the new opponent. Measured on gen-14, 2026-08-17
 (`designs/research_state/measurements/gen14_pool_refresh_compile_cost.json`, n=2 events):
@@ -397,7 +395,7 @@ module; every compile site calls it.
 
 | process | its compile cache | reused when |
 |---|---|---|
-| a TRAINING RUN (the trainer, its env workers, forkserver, eval subprocess, T2 service — every child inherits) | `<run>/compile_cache/{inductor,triton,t2_aot}` — `TORCHINDUCTOR_CACHE_DIR`, `TRITON_CACHE_DIR`, `GEN3AI_COMPILE_CACHE_DIR` | only by the run's OWN restart (`--model` = a checkpoint this run wrote, `fork_lr.is_same_run_checkpoint`) AND a matching `stamp.json`; a fresh launch or a fork WIPES it to EMPTY |
+| a TRAINING RUN (the trainer, its env core, eval subprocess, T2 service — every child inherits) | `<run>/compile_cache/{inductor,triton,t2_aot}` — `TORCHINDUCTOR_CACHE_DIR`, `TRITON_CACHE_DIR`, `GEN3AI_COMPILE_CACHE_DIR` | only by the run's OWN restart (`--model` = a checkpoint this run wrote, `fork_lr.is_same_run_checkpoint`) AND a matching `stamp.json`; a fresh launch or a fork WIPES it to EMPTY |
 | a pytest process (controller and each xdist worker) | a fresh `gen3ai_pytest_compile_<pid>_*` dir under the SCRATCH root (root `conftest.py`) | within that process's session only; deleted at unconfigure |
 | anything else that compiles (a benchmark, the prober, an offline meter, a standalone eval) | a fresh private `gen3ai_compile_<pid>_*` dir under the SCRATCH root (`ensure_hermetic_cache`) | never; deleted when its creator exits |
 
@@ -429,8 +427,7 @@ kernels live in process memory). n = 1 round per part: a difference below ~10% i
   WIPES; a DIRTY or unnamed tree NEVER reuses (a sha cannot name it); an unreadable stamp WIPES. The
   decision is printed at startup: `🧊 [CompileCache] CREATED | WIPED | REUSED <root> — <reason>`.
 - **WHERE IT IS DECLARED.** `main.train.lifecycle._declare_compile_cache`, called in
-  `train_rl_agent.main` the moment `model_dir` exists — before the quorum dir, the forkserver preload,
-  the parent prewarm, the vec env, T2 and `build_and_train`. A shared value already in force at that
+  `train_rl_agent.main` the moment `model_dir` exists — before the vec env, T2 and `build_and_train`. A shared value already in force at that
   point (torch exports its default on a process's FIRST compile) means something compiled first: a
   typed `CompileCacheError` → `FATAL_CONFIG`.
 - **A torch default is never honoured.** `ensure_hermetic_cache` treats `/tmp/torchinductor_<user>`
@@ -464,7 +461,7 @@ kernels live in process memory). n = 1 round per part: a difference below ~10% i
   process COLD (70–90 s), so the codegen-numerics tests of `extractor_compiles_test`
   (`…_without_suppression`, `test_cpu_backward_still_does_not_compile`) are `slow`; the one-graph
   `explain` tests stay routine. So: `python3 -m pytest src/agents/model/extractor_compiles_test.py
-  src/agents/model/compile_control_test.py src/agents/model/compile_prewarm_test.py
+  src/agents/model/compile_control_test.py
   src/agents/inference/service/service_cuda_test.py -m slow` under `gen3ai_torch28` (until
   2026-09-30 also `gen3ai_stable`; the CUDA file under `scripts/ops/gpu_lock.sh`); the rows land in
   `designs/ops/slow_tier_status.json`, which the routine gate reads. Production's guard is unchanged:
@@ -494,10 +491,7 @@ Lane G's slot/bucket shapes and box load differ and are not re-measured here). t
 
 The warm residual is dynamo tracing + guard construction + CUDA-graph capture + the parity gates,
 which no on-disk cache removes. Per-run disk: ~0.6 GB (learner 466 MB + T2 116 MB + opponents 13 MB) on the run's own disk, not tmpfs — `models/` retention may delete `compile_cache/` freely (it is regenerable; the next start is cold). The CPU opponents' compile in one env worker
-(`maybe_compile_extractor`, CUDA hidden, same load): **93.5 s cold → 26.6 s warm** (13 MB). At a fresh
-launch the parent prewarm (or the forkserver preload) pays the cold opponent compile once and the
-workers read it warm, exactly as with the old box-wide dir — but now once PER RUN rather than once per
-box. What K3 changes is only what a FRESH launch pays: the old box-wide cache was usually warm for a
+(`maybe_compile_extractor`, CUDA hidden, same load): **93.5 s cold → 26.6 s warm** (13 MB). (Until U3 the parent prewarm / forkserver preload paid it once at a fresh launch; neither exists now.) What K3 changes is only what a FRESH launch pays: the old box-wide cache was usually warm for a
 new run of an unchanged graph; the run's own cache is always cold at a fresh launch, by design.
 
 ## FP32 matmul precision — the ONLY precision (TF32 retired; `--matmul-precision` DELETED)
@@ -560,9 +554,9 @@ that. **The REFUSAL is unchanged**: an explicit `--compile-trainer --device cpu`
 `FATAL_CONFIG` with the same message. `--no-compile-trainer` is the opt-out.
 
 **⚠️ The device is only HALF the auto default, and the other half is easy to miss.**
-`check_shape_stability` (below) refuses `--async-rollout` and a rollout that does not divide by
-`--batch-size` — both correct for someone who ASKED for the compile, and both fatal for a DEFAULT,
-because they would convert two classes of command that work today into a startup `FATAL_CONFIG`.
+`check_shape_stability` (below) refuses a rollout that does not divide by
+`--batch-size` — correct for someone who ASKED for the compile, and fatal for a DEFAULT,
+because it would convert a class of command that works today into a startup `FATAL_CONFIG`. (It also refused the async-rollout collector until that collector was deleted, U3.)
 So `resolve_compile_trainer_auto` runs those same checks and, on a refusal, **leaves the default OFF
 and says why** rather than refusing to launch:
 
@@ -574,8 +568,7 @@ and says why** rather than refusing to launch:
 
 The rule, and it generalises to any future default: **a default yields to the config the user typed
 and announces it; an explicit flag refuses.** Pinned by `src/main/compile_defaults_test.py`
-(`test_auto_yields_to_async_rollout_instead_of_refusing_to_launch`,
-`test_auto_yields_to_a_rollout_that_does_not_divide_the_batch`, and
+(`test_auto_yields_to_a_rollout_that_does_not_divide_the_batch`, and
 `test_an_explicit_flag_never_reaches_the_auto_path`, which holds the refusal in place).
 
 **Measured** (2026-08-14, v76 `gen3_ctx_dedup_v1`, RTX 3080 Ti, the real
@@ -610,8 +603,8 @@ the value head contribute nothing — so the whole-policy scope buys nothing for
 blast radius. Also confirmed: rollout 2048x48 / batch 4096 = **exactly 24 minibatches, no
 remainder**, so one graph and no per-epoch recompile.
 
-**FAIL-LOUD BY DESIGN, and deliberately asymmetric with `--compile-opponents`.** The opponent path
-warns and falls back to eager (`--compile-opponents-strict` opts into raising) because it prints a
+**FAIL-LOUD BY DESIGN, and deliberately asymmetric with the offline opponent compile.** The opponent path
+warns and falls back to eager because it prints a
 `[CompileExtractor]` line either way. Here there is nothing to notice: a silent fallback trains
 perfectly correctly and just produces ~38% fewer steps/hour forever. So every failure is fatal
 (`CompileTrainerError` -> `TrainExitCode.FATAL_CONFIG`, so the launcher gives up instead of
@@ -638,7 +631,7 @@ learner disagreed with eager by up to **7.65 on pi_features** (scale ~16). At th
 **argmax agreement was 70.9%**, masked-policy TV had median 0.12 and p99 0.63, win-prob |dV| had
 median 0.024 and max 0.33, and in the TRAIN graph the extractor gradient's **cosine to eager was
 0.778**. dynamo `backend="eager"` and `"aot_eager"` matched exactly, and the CPU Inductor compile
-(`--compile-opponents`: eval workers, sentinels, pool, stable and exploiter opponents, so every eval
+(the CPU opponent compile: eval workers, sentinels, pool, stable and exploiter opponents, so every eval
 trace) matched to 3e-5, the batch-shape noise floor. **Scope: the GPU LEARNER only**, since
 `--compile-trainer` became default-on for cuda in `28eaef29` (2026-08-17). A run's rollouts, its PPO
 ratio and its gradients were computed on the diverged function, while its eval, opponents and
@@ -896,7 +889,7 @@ train-graph coverage fix below closes that). **Measured** (M5 T2,
   - ⚠️ **UNVERIFIED on CUDA at the 0.1 rungs:** whether this gate's per-parameter GRADIENT bar
     (1e-3, measured at 0.05 on fresh weights) holds at 0.1 with a real `torch.compile`. The forward
     decision's noise at 0.1 is measured (above); the backward's is not.
-  - The `--compile-opponents` gate (`opponent_parity.py`) and the T2 inference service walk the
+  - The offline opponent compile's gate (`opponent_parity.py`) and the T2 inference service walk the
     same ladder.
   - **One precision.** fp32 `highest` is the only precision, so the ladder's scale cap is the single
     `PERTURB_MAX_SCALE` = 0.1. `parity_probe` also holds `LOGPROB_BAR` (1e-3, where `_FP32_TOL`'s
@@ -973,12 +966,11 @@ two-shape case work rather than being the hazard.
 
 The actual hazard is dynamo's **`cache_size_limit` (8)**: exceed it for one code object and dynamo
 falls back to **eager SILENTLY** — precisely the invisible ~1.75x regression this flag exists to
-prevent. Two configs get there, both decidable before training starts, both now fatal
-(`check_shape_stability`, pure and unit-tested):
+prevent. One config gets there, decidable before training starts, and is now fatal
+(`check_shape_stability`, pure and unit-tested; its async-rollout rule left with the async collector, U3):
 
 | refused | why |
 |---|---|
-| `--async-rollout` | the async collector forwards whichever envs are READY, so the rollout batch VARIES every step — an unbounded shape set, guaranteed to exhaust the cache. The error prints both measured numbers (`--async-rollout` +14% at n_envs=64 vs `--compile-trainer` +62%) so the choice is informed, not blind |
 | `n_steps*n_envs` not divisible by `batch_size` | the remainder minibatch is a THIRD shape, replayed every epoch, for no benefit. The error names a concrete divisor to use instead rather than leaving you to do arithmetic |
 
 Production is safe by arithmetic — 2048x48 = 98304 = 24 x 4096 exactly, so exactly two shapes — but
@@ -1096,14 +1088,13 @@ flag and read attributes (`grad_checkpointing`):
 
 | caller | signature | handled by |
 |---|---|---|
-| rollout `policy(obs)`, end-of-rollout `predict_values`, `WinProbLabelCallback` bootstrap, frozen-φ / PBRS | eval · no-grad · `n_envs` (PBRS: 2048-chunks) | prewarm (rollout) + iteration 1 (PBRS runs every rollout) |
+| rollout `policy(obs)`, end-of-rollout `predict_values`, frozen-φ / PBRS | eval · no-grad · `n_envs` (PBRS: 2048-chunks) | prewarm (rollout) + iteration 1 (PBRS runs every rollout) |
 | `evaluate_actions` | train · grad · `batch_size` | prewarm |
 | `rank_probe` (first minibatch of every update) | train · no-grad · `batch_size` | prewarm — HOOK-FREE since K6 (`gen3_rank_probe_stash_v1`): it reads `last_trunk_tokens` / `last_value_cls`. Its old forward hooks were a guard (`len(_forward_hooks) != 0`) — THE iteration-1 signature the `8fc297a2` lock absorbed (found 2026-09-30 on the real trainer with the lock moved before iteration 1); on 2.8 the hooks were instead silently SKIPPED inside the compiled frame, so `rank/trunk_*` and `rank/value_cls_*` vanished on every compiled 2.8 run |
 | capacity half-batch cosine (every 50 minibatches), td-aux | train · grad · other sizes ≥ 2 | prewarm at `batch_size // 2` makes the train graph dynamic |
-| truncated-episode `predict_values` under `--critic shaped` | eval · no-grad · **1** | EAGER (`EAGER_BATCHES`, `gen3_batch1_eager_v1`) — batch 1 never reaches the compiled graph |
+| truncated-episode `predict_values` (a shaped-critic-era caller; the shaped critic is no longer trainable) | eval · no-grad · **1** | EAGER (`EAGER_BATCHES`, `gen3_batch1_eager_v1`) — batch 1 never reaches the compiled graph |
 | cf terms, capacity velocity, win-prob episode-start read | — | already eager (`type(fe).forward(fe, …)`) |
 | eval, snapshot ladder, the opponents | — | other processes (fresh dynamo per process) |
-| `--debug` (DummyVecEnv) + `--compile-opponents` | opponents compile IN the learner process, on the learner's code objects, after the lock | **refused at startup** (`FATAL_CONFIG`): pass `--no-compile-opponents` |
 | the FINAL evaluation after `learn()` (in-process, the live compiled model) | eval · no-grad · 1, a smaller obs key set | batch 1 runs EAGER (`gen3_batch1_eager_v1`: torch 2.8 cannot lower the batch-1 CUDA graph); after `release()` anyway |
 
 A launcher restart is a fresh process (a fresh dynamo cache, a new gate, a new lock; the ON-DISK
@@ -1212,8 +1203,7 @@ the weights are fresh; at fp32 `highest`, the only precision, a process at any o
 extractor-only compile kept for it was deleted 2026-10-02, K1; `utils/torch_floor.py`).
 `compile_regions.install_rollout_region` installs R0 alone — production's rollout compile — for a
 caller that measures the rollout forward outside the trainer (the M5 throughput A/B's
-`LearnerSampling`, `main/rust_core_m5/hooks.py`, which until K1 measured the extractor-only compile
-instead).
+`LearnerSampling` of the M5 throughput A/B — its harness package, `main/rust_core_m5/`, was deleted in U3).
 
 **One startup gate per region** (`gen3_one_gate_per_region_v1`, 2026-10-01). The trainer runs no
 extractor-only gate: `preflight_compile_trainer` compiles nothing, and the sentinel installs and gates
@@ -1394,7 +1384,7 @@ inference-only), and the prober backprops through this same extractor for gradie
 
 | consumer | what is compiled | gate |
 |---|---|---|
-| training env workers | pool / stable / exploiter opponents | `--compile-opponents` (+ forkserver preload) |
+| training env workers | — (none since U3: policy opponents forward through the T2 inference service) | — |
 | `eval_worker` | **the trainee** (plays every eval game) + sentinel + fixed opponents | `compile_extractor` cfg key, threaded from both eval callbacks |
 | `snapshot_ladder` | both frozen ladder players | **default ON** — offline tool, nothing races it |
 | prober (`session._load`) | the no-grad replay / rollout models | `--compile` (off by default) |

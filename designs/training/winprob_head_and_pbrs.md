@@ -22,20 +22,13 @@ Three pieces live here:
 - **The label is a FUTURE quantity** — the outcome is only known when the battle ends, so (unlike the
   per-step belief labels, which are privileged info known *each* step) it CANNOT ride as a real per-step
   obs key. The plumbing reuses the obs-dict-label STORAGE path with post-hoc population:
-  - **`gen3_env.py`** declares two TRAINING-ONLY obs keys when `emit_win_target` (`--win-prob-mode != none`):
-    `win_target` [1] + `win_mask` [1] (float32), and emits PLACEHOLDER zeros each step (`_merge_training_keys`).
-    The rollout buffer therefore stores + shuffles them automatically (the belief-label path). Read ONLY by
+  - **The trainee's observation space** (`agents.training.trainee_spaces`; the deleted Python `gen3_env.py` used to declare it) carries two TRAINING-ONLY obs keys when `emit_win_target` (`--win-prob-mode != none`):
+    `win_target` [1] + `win_mask` [1] (float32). The rollout buffer therefore stores + shuffles them automatically (the belief-label path). Read ONLY by
     the loss; the model forward reads only `obs["observation"]`, so the OUTCOME can't leak.
-  - **`MaskableAgentWrapper.step` (`wrappers.py`)** sets `info["win_outcome"]` (1.0 win / 0.0 loss-or-tie,
-    from `battle1.won`) at the done step (before the VecEnv auto-resets).
-  - **`WinProbLabelCallback` (`win_prob_callback.py`)** captures each terminal outcome during collection
-    (SYNC: in `_on_step` at `rollout_buffer.pos`; ASYNC: the `collect_rollouts_async` collector records it
-    inline at the env's just-written `(t, i)` buffer row — it owns the row, the wave-batched `on_step`
-    can't recover it), into a shared `model._win_terminal_scratch` [n_steps, n_envs]. At `_on_rollout_end`
-    (before `train()`) it propagates each episode's outcome BACKWARD to all its steps (γ_win = 1, undiscounted
-    → P(win|s) = "probability this state leads to a win") and OVERWRITES the buffer's `win_target`/`win_mask`
-    placeholders. The trailing IN-PROGRESS episode (no terminal yet in-buffer) gets `win_mask=0` and is
-    excluded — never trained toward a fabricated label. Only added to the callback list when the head is on.
+  - **The Rust collector** (`rust_rollout/collector.py`) records `info["win_outcome"]` (1.0 win / 0.0 loss-or-tie)
+    at each done step, and fills `win_target` / `win_mask` itself: complete-game mode gives every row its own game's outcome (every row `win_mask` 1); the window fill calls `win_prob_callback.backfill_terminal_labels`
+    (γ_win = 1, undiscounted → P(win|s) = "probability this state leads to a win"). The trailing IN-PROGRESS episode of a window (no terminal yet in-buffer) gets `win_mask=0` and is
+    excluded — never trained toward a fabricated label. (The Python `MaskableAgentWrapper.step` and `WinProbLabelCallback` that did this, sync and async, were deleted in U3.)
 - **Loss (`instrumented_ppo.py` `_win_prob_loss`).** `train()` reads `last_win_prob_logits` (stashed by the
   `evaluate_actions` forward) + `rollout_data.observations["win_target"]`/`["win_mask"]`, folds
   the masked BCE (at `vf_coef` under `--critic winprob`, a fixed weight 1.0 as an aux otherwise — the
@@ -67,7 +60,7 @@ Three pieces live here:
 - **Tests.** Unit: `agents/training/win_prob_test.py` (loss masking + None guards + the callback MC-fill
   backward-propagation + in-progress masking + sync-capture-at-pos + async-skip), `agents/model/
   win_prob_head_test.py` (module build, off byte-identical projection dims, the read_only-stop-grad /
-  shaping-flows gradient gating, the v22 version gate). End-to-end `--debug --use-bridge=node
+  shaping-flows gradient gating, the v22 version gate). End-to-end `--debug
   --win-prob-mode read_only` smoke confirms the roundtrip + `train/win_prob_*` metrics + `win_prob_share`=0.
 
 🚨 **`--win-prob-mode shaping` carries NO behavioral force, and the word has misled readers.** It is

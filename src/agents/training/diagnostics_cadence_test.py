@@ -216,6 +216,8 @@ def _real_gen3_ppo(device: str = "cpu"):
         Gen3DualHeadMaskablePolicy,
         DummyVecEnv([(lambda s=s: _Env(layout["total_dim"], s)) for s in range(2)]),
         n_steps=8, batch_size=4, n_epochs=2, device=device, seed=0, policy_kwargs=pk)
+    from agents.training.rust_rollout.testkit import attach_vec_collector
+    attach_vec_collector(model)         # the rollout comes from the toy VecEnv (the Rust collector is production's)
     # gen3_fresh_parity_probe_v1: and off the fresh zero-init weights — the shared seeded
     # perturbation (private RNG, so the seeded stream below is unchanged) opens the zero-init
     # projections' paths from the first minibatch on. `test_learning_is_BIT_IDENTICAL…` asserts

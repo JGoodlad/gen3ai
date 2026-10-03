@@ -58,7 +58,7 @@ KL→LR controller and every other callback (outside `train()`), CUDA / compiled
 compile parity gate and K6's canary own those). When K10(a)'s recipe block lands, `RECIPE` should read
 it and the golden be re-recorded.
 
-## (b) Behaviour-policy consistency on BOTH env cores (`--behaviour-check`, default `fatal`)
+## (b) Behaviour-policy consistency (`--behaviour-check`, default `fatal`)
 
 Before any optimizer step of every update, the learner's recomputed log π(a|s) must equal the stored
 behaviour log-prob: max |Δ| < 1e-4, else `BehaviourMismatch` (`rust_rollout/consistency.py` — one type,
@@ -67,7 +67,7 @@ one bar). WHICH implementation runs is decided once per `train()` by `learner_ga
 * **the buffer carries per-row policy versions** (`--env-core rust`): Lane G's pre-loop probe — its own
   forward on one micro-batch while the buffer is still `[n_steps, n_envs]`, so current rows are held to
   the bar and older rows are age-bucketed into `staleness/*` (`rust_collector.md`);
-* **it does not** (`--env-core python`: every row was played by the weights the learner holds): the
+* **it does not** (the `in_loop` mode — every row played by the weights the learner holds; a trainer launch no longer reaches it since the Python env core was deleted in U3, but the code path stays in `instrumented_ppo/ppo.py`): the
   IN-LOOP gate — the FIRST micro-batch of epoch 0's own `evaluate_actions` output against
   `rollout_data.old_log_prob`, before `values.flatten()`. No second forward; one host read per update.
   Never both.

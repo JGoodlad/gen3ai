@@ -135,15 +135,6 @@ def test_every_player_class_in_the_bot_modules_has_a_row():
                 assert _canonical(cls) in rows, f"{_canonical(cls)} is a bot class with no inventory row"
 
 
-def test_the_keep_bots_mix_is_the_training_roster():
-    """`--exploiter-keep-bots` draws from ``heuristic_opponents``; it must be built from OPPONENT_CLASSES."""
-    src = ast.unparse(_tree("main/train/env_factory.py"))
-    assert re.search(r"heuristic_opponents = \[.*for i, cls in enumerate\(OPPONENT_CLASSES\)", src, re.S), \
-        "env_factory no longer builds heuristic_opponents from OPPONENT_CLASSES — the keep-bots mix changed"
-    wr = ast.unparse(_tree("agents/training/wrappers.py"))
-    assert "self._heuristic_opponents + mastered" in wr, "the floor/keep-bots draw no longer reads the roster"
-
-
 def test_display_names_agree_with_the_eval_table():
     t = _tree("agents/training/eval_roster.py")
     (lst,) = _list_assign(t, "_EVAL_OPPONENT_SPECS")

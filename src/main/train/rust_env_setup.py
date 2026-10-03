@@ -1,9 +1,9 @@
-"""Phase 3, ``--env-core rust`` (M5 Lane G): the trainer's ``RustVecEnv`` from the resolved args.
+"""Phase 3, the Rust env core (M5 Lane G): the trainer's ``RustVecEnv`` from the resolved args.
 
-``env_factory.create_training_env_random`` builds today's per-worker ``Gen3Env`` closures; this module
-is its twin for the Rust env core, fed the SAME inputs (the matchup's teambuilders, the floor roster,
-``--bot-weights``, the stable opponents, the exploiter, the self-play pool and its starting fraction),
-so the two env cores differ in WHERE a battle runs, not in what the run declared.
+The ONLY env core since deletion pass U3 (the Python core's per-worker ``Gen3Env`` factory,
+``env_factory.create_training_env_random``, was deleted). It is fed the run's declarations: the matchup's
+teambuilders, the floor roster, ``--bot-weights``, the stable opponents, the exploiter, the self-play pool
+and its starting fraction.
 
 Two phases (the declared lifecycle; ``rust_vec_env`` module docs): ``build_rust_vec_env`` fixes the
 spaces and N before the model exists; ``RustVecEnv.startup(model)`` — called by ``model_build`` right
@@ -71,9 +71,9 @@ def recorded_env_core(model_path: Optional[str]) -> Optional[str]:
 
 class PythonEraShapedCheckpoint(ValueError):
     """Deletion pass D4: a ``--model`` checkpoint that trained the SHAPED critic cannot resume or fork on
-    this code — the Rust core refuses the shaped critic and the Python core is being deleted. Re-running
-    cannot change it (``FATAL_CONFIG``); the way out is to run it PINNED to a commit that has the shaped
-    path (the launcher pins a resume to its checkpoint's commit by default)."""
+    this code — the Rust core refuses the shaped critic and the Python core that served it was deleted
+    (U3). Re-running cannot change it (``FATAL_CONFIG``); the way out is to run it PINNED to a commit that
+    has the shaped path (the launcher pins a resume to its checkpoint's commit by default)."""
 
 
 def recorded_critic(model_path: Optional[str], saved_ver: Any = None) -> Optional[str]:
@@ -103,7 +103,7 @@ def recorded_critic(model_path: Optional[str], saved_ver: Any = None) -> Optiona
 
 def python_era_refusal(model_path: str, critic: str) -> str:
     return (f"⛔ [ENV CORE] FATAL (deletion pass D4): {model_path} trained the {critic!r} critic, which no "
-            "env core on this code serves — the Rust core refuses it and the Python core is being deleted. "
+            "env core on this code serves — the Rust core refuses it and the Python core was deleted (U3). "
             "Run it PINNED to its own commit (the launcher's default for a resume; never --no-pin / "
             "--sync-to-main), or start a fresh run. Not a silent switch: a shaped critic cannot be carried "
             "onto the win-prob objective (designs/ops/deletion_pass_manifest.md §0 D4).")
@@ -123,8 +123,8 @@ def resolve_env_core_default(args: Any, *, run_dir: Optional[str] = None,
 
     * A ``--model`` checkpoint that trained the SHAPED critic — REFUSED, typed core or not (deletion pass
       D4: run it pinned).
-    * TYPED — wins (``--env-core python`` keeps the Python core reachable until the deletion pass removes
-      it; ``--env-core rust`` on a python-era checkpoint is the same move D4 makes untyped).
+    * TYPED — wins (``rust`` is the only legal value; a typed ``--env-core rust`` on a python-era
+      checkpoint is the same move D4 makes untyped).
     * FRESH — the parser default ``rust`` (deletion pass D2) or ``--arch production``'s
       ``recipe.sizing.env_core`` (rust); nothing to resolve here.
     * ``--model`` (a same-run restart OR a fork) — the core the checkpoint was PRODUCED on
@@ -161,19 +161,14 @@ def env_core_switch_line(args: Any) -> Optional[str]:
     """A LOUD line when a resume runs on another env core than its checkpoint was produced on, else None.
 
     A python-era checkpoint moves onto the Rust core (deletion pass D4, ``resolve_env_core_default``) — a
-    change of data stream, announced as a CORE SWITCH. A TYPED ``--env-core python`` on a Rust-era
-    checkpoint is the other direction. Neither is a refusal; neither may be silent."""
+    change of data stream, announced as a CORE SWITCH. It is not a refusal, and it may not be silent."""
     model = getattr(args, "model", None)
     if not model:
         return None
     rec = recorded_env_core(model) or "python"     # recorded before --env-core existed = python
-    cur = getattr(args, "env_core", "rust")
-    if rec == cur:
+    if rec == "rust":
         return None
-    if cur == "rust":
-        return f"🔀 [ENV CORE] CORE SWITCH — {D4_CORE_SWITCH}"
-    return (f"⚠️  [ENV CORE] this resume runs --env-core {cur}, but its checkpoint was produced on {rec} — "
-            f"drop --env-core to stay on {rec} (a switch changes the data stream)")
+    return f"🔀 [ENV CORE] CORE SWITCH — {D4_CORE_SWITCH}"
 
 
 def _bot_names(opponent_classes: Sequence[Any]) -> List[str]:
@@ -191,7 +186,7 @@ def _bot_names(opponent_classes: Sequence[Any]) -> List[str]:
         key = f"{cls.__module__}.{cls.__qualname__}"
         row = by_cls.get(key)
         if row is None or not row.rust:
-            raise RuntimeError(f"--env-core rust: the floor roster's {key} has no ported Rust bot (Lane F)")
+            raise RuntimeError(f"the Rust env core: the floor roster's {key} has no ported Rust bot (Lane F)")
         out.append(row.name)
     return out
 

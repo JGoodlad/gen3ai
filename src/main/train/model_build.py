@@ -131,7 +131,7 @@ def apply_training_hparams(model, args, *, mappings) -> None:
     # (A namespace without the dest — a hand-built test namespace — keeps the class default 1.)
     model.diagnostics_every = int(getattr(args, "diagnostics_every", None) or 1)
     # M5 Lane G — K9(b) behaviour-policy consistency (`--behaviour-check`): resolved per env core
-    # (`rust_env_setup.resolve_env_core_args`: fatal on both env cores — M5 Lane K9). A namespace
+    # (`rust_env_setup.resolve_env_core_args`: fatal by default — M5 Lane K9). A namespace
     # without the dest keeps it off.
     model.behaviour_check = str(getattr(args, "behaviour_check", None) or "off")
     # gen3_device_batch_mode_v1 (`--device-batch`): how train()'s micro-batches reach the device —
@@ -145,14 +145,14 @@ def _start_rust_env(env, model) -> None:
     """M5 Lane G (`--env-core rust`): the Rust env's STARTUP (core, T2, arena) from the model's own
     policy and hyperparameters. It must run BEFORE `--compile-trainer`: T2 deep-copies the policy as its
     slot templates, and a copy taken after the compile would carry the patched `forward` bound to the
-    LEARNER's extractor. A no-op on the python env core."""
+    LEARNER's extractor."""
     startup = getattr(env, "startup", None)
     if callable(startup):
         startup(model)
 
 
 async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level, n_envs,
-                          reward_config, reward_composition, annealing_mode, _async_rollout,
+                          reward_config, reward_composition, annealing_mode,
                           _shutdown_event, _run_eval, _effective_max_lr,
                           callbacks, eval_callback, lr_callback, adaptive_ppo_callback,
                           graceful_restart_callback,
@@ -440,7 +440,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                 reward_config.gamma = float(model.gamma)
             _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes
             _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer's compile step
-            _ledger.mark("rust env core (T2 slots, staging, arena; python core: none)")
+            _ledger.mark("rust env core (T2 slots, staging, arena)")
             _maybe_compile_trainer(model, args)
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
@@ -454,7 +454,6 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             _fit = _update_fit.check_update_fits(model, model_dir)
             if _fit:
                 print(_fit, flush=True)
-            model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
             # gen3_run_lineage_v1 — written ONCE at fork creation and preserved by every later save.
             # `None` on a same-run restart, which is what keeps the recorded parent immutable.
             _lineage = _run_lineage(args, model_dir, model_path=_fork_source_model,
@@ -635,7 +634,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # it went with them in the shaped-reward deletion, 2026-09-26.)
         _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes
         _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer's compile step
-        _ledger.mark("rust env core (T2 slots, staging, arena; python core: none)")
+        _ledger.mark("rust env core (T2 slots, staging, arena)")
         _maybe_compile_trainer(model, args)
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
@@ -649,7 +648,6 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         _fit = _update_fit.check_update_fits(model, model_dir)
         if _fit:
             print(_fit, flush=True)
-        model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
         # gen3_run_lineage_v1 — a FRESH run states the explicit null form (`fork_parent: null,
         # role: "fresh"`), because "no block" and "no parent" are different facts.
         _lineage = _run_lineage(args, model_dir, model_path=None,

@@ -21,7 +21,7 @@ python -m utils.bridge.ws_frontend --port 9601 --impl rust --seed-base 914001 \
 
 **Why it exists.** Every external gen3ou opponent measured so far (Metamon, Foul Play) is a
 websocket CLIENT, so playing one has meant `npm run showdown -- 9XXX`. The serverless transports we
-already have — `bridge_session.py` for training, `local_battle_runner.py` for offline series — are
+already have — `bridge_session.py` for training (deleted in U3; training is the Rust env core), `local_battle_runner.py` for offline series — are
 *library* seams: they assign a `BattleStreamClient` onto a poke-env `Player` **in this process**.
 That is closed to a third party for the reason
 [`metamon_derisk_2026-09-14/README.md`](../research_state/measurements/metamon_derisk_2026-09-14/README.md)
@@ -32,7 +32,7 @@ opponent in its own process and its own poke-env.
 
 | | transport | who drives | opponent lives |
 |---|---|---|---|
-| training | `bridge_session.py` | SB3 `step()` | in-process |
+| training | the Rust env core (`src/rust_env/`; formerly `bridge_session.py`) | the collector | in-process |
 | offline series | `local_battle_runner.py` | `choose_move` | in-process |
 | **external opponent** | **`ws_frontend.py`** | **the opponent's own loop** | **its own process** |
 

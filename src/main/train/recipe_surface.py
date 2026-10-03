@@ -244,8 +244,9 @@ def recipe_blocks(mirror: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, An
     both = sorted(s_declared & set(fresh))
     if both:
         raise RecipeError(f"{both} are in both `recipe.{FRESH_KEY}` and `recipe.{SIZING_KEY}` — one place")
-    if sizing["env_core"] not in ("python", "rust"):
-        raise RecipeError(f"`recipe.{SIZING_KEY}.env_core` must be 'python' or 'rust' (got {sizing['env_core']!r})")
+    if sizing["env_core"] != "rust":
+        raise RecipeError(f"`recipe.{SIZING_KEY}.env_core` must be 'rust' — the Python env core was deleted "
+                          f"(got {sizing['env_core']!r})")
     fresh.update({k: v for k, v in sizing.items() if k != VERDICT_KEY})
     declared = {r.dest for r in ROWS}
     missing = sorted(declared - set(fresh))

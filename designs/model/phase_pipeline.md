@@ -110,7 +110,7 @@ structurally label-only in every mode — asserted in `belief_label_only_gate_te
 so a head that starts feeding forward fails a test instead of quietly rejoining the PPO objective.
 🚨 **`WinProbHead` is NOT in that set under `--critic winprob`**: there the head IS `_critic_value`,
 so it feeds GAE, the value loss and (at `win_prob_mode shaping`, which the mode implies) the trunk.
-Under `--critic shaped` it is label-only like the other three. The claim is mode-conditional, and
+Under the shaped critic (an old checkpoint; no longer trainable) it is label-only like the other three. The claim is mode-conditional, and
 reading it as unconditional would say the production critic cannot reach the objective.
 
 `detach()` is value-preserving ⇒ the forward is bit-identical in all three modes ⇒ this is a

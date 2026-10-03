@@ -81,7 +81,7 @@ def test_every_save_records_the_env_core():
                         clip_range=lambda _p: 0.15, clip_range_vf=None, n_epochs=5, ent_coef=0.05,
                         vf_coef=0.5, gamma=1.0, gae_lambda=0.8, max_grad_norm=0.5, learning_rate=1e-4)
     out = _model_hparams(m)
-    assert out["env_core"] == {"env_core": "python"}
+    assert out["env_core"] == {"env_core": "rust"}   # no collector stamp: the only core there is
     m._env_core_stamp = {"env_core": "rust", "front": "proc", "summary": "x"}
     assert _model_hparams(m)["env_core"] == {"env_core": "rust", "front": "proc"}
 
@@ -115,8 +115,8 @@ def test_startup_builds_this_checkouts_env_core_before_anything_else(monkeypatch
 
 def test_a_resume_that_switches_env_core_is_announced_never_silent(tmp_path):
     """An UNTYPED `--env-core` on a `--model` launch INHERITS the checkpoint's core (the M5 switch,
-    `resolve_env_core_default`); a TYPED other core is a switch of data stream, and
-    `env_core_switch_line` names it (the trainer emits it at startup; `--dry-run` prints it)."""
+    `resolve_env_core_default`); a PYTHON-ERA checkpoint moves onto rust, and `env_core_switch_line` names
+    it (the trainer emits it at startup; `--dry-run` prints it)."""
     import json
 
     from main.train.rust_env_setup import env_core_switch_line, recorded_env_core
@@ -132,12 +132,12 @@ def test_a_resume_that_switches_env_core_is_announced_never_silent(tmp_path):
     untyped = _args("--model", str(ckpt))
     assert resolve_env_core_default(untyped) is not None and untyped.env_core == "rust"
     assert env_core_switch_line(untyped) is None              # inherited: no switch
-    line = env_core_switch_line(_args("--model", str(ckpt), "--env-core", "python"))
-    assert line and "--env-core python" in line and "produced on rust" in line
     assert env_core_switch_line(_args("--model", str(ckpt), "--env-core", "rust")) is None
     assert env_core_switch_line(_args()) is None              # a fresh run has nothing to switch from
     (run / "checkpoints" / "checkpoint_512_steps.json").unlink()
     assert recorded_env_core(str(ckpt)) == "python"           # falls back to the run's metadata.json
+    py_line = env_core_switch_line(_args("--model", str(ckpt)))
+    assert py_line and "CORE SWITCH" in py_line               # a python-era record moves onto rust: announced
     import inspect
 
     import main.launcher.dry_run as dr

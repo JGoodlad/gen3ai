@@ -10,6 +10,7 @@ SB3's loop is off the production path, and equivalence is held as identity (§4:
 on the Rust core; the readout is
 [`research_state/measurements/own_ppo_loop/`](../research_state/measurements/own_ppo_loop/README.md)).
 Stage 1 was scoped at 1.6 agent-days (range 1.3–1.9), under the 2-day bar, and was GO.
+**2026-10-02 (deletion pass U3):** the PYTHON CORE is gone, and with it two things this plan scheduled for stage 3 — the vendored Python collect (`OwnedLoop._collect_python`) and the async collector (`async_vec_env.py`); `RolloutProbes.collect_rollouts` is the Rust collector's entry and refuses a learner without one. **E2 (`own_ppo_loop_parity_test.py`) was DELETED** (it replayed through `Gen3Env`). **E1 survives** on a TOY collector (`rust_rollout/testkit.VecEnvCollector`, attached to both arms), so it now holds the LOOP (`learn`, `_setup_learn`, `dump_logs`, the progress / info updates, the hook points) against upstream, not the collection; stage 3 retires it, with the K9 golden + the Rust-core E3 as the bar.
 **STAGE 2 BUILT 2026-10-01** (owner-approved in full). It shipped as three units:
 - the eval-dump KL-skip fix (a regime boundary for runs with a live controller);
 - the declared hook table (identity);
@@ -72,8 +73,8 @@ Risk is the risk of replacing a touchpoint without changing behaviour.
 | `MaskablePPO.learn` | sb3_contrib `ppo_mask.py:428`. Called at `main/train/model_build.py:786` (resume) and `:991` (fresh) | The outer loop: `_setup_learn` → `on_training_start(locals(), globals())`, then repeat (collect → `iteration += 1` → progress → `dump_logs` → `train()`) → `on_training_end` | **low**. 35 lines, and its ORDER is load-bearing (§2.2) |
 | `BaseAlgorithm._setup_learn` | sb3 `base_class.py:383` | `start_time`; `ep_info_buffer` (deque 100); `total_timesteps += num_timesteps` on a resume (the 2026 budget-doubling incident, `model_build.py:779`); env reset when `_last_obs` is None; callback init | **low**. Vendor it |
 | `OnPolicyAlgorithm.dump_logs` | sb3 `on_policy_algorithm.py:277` | `time/fps`, `rollout/ep_rew_mean`, `rollout/ep_len_mean`, `time/*`, then `logger.dump(step=num_timesteps)` | **low**. The tag names are read by `killbar`, `tb_read`, `restart_startup`, `stall_exhibit`, the launcher's `format.py` and `plot_tb` |
-| `MaskablePPO.collect_rollouts` (Python core) | `ppo_mask.py:181`, reached via `RolloutProbes.collect_rollouts` (`instrumented_ppo/rollout_probes.py:32`) | Step the VecEnv, `update_locals(locals())` **before** `rollout_buffer.add`, the truncation bootstrap, then GAE | **med**. `WinProbLabelCallback` reads `buf.pos` in `on_step` as the row about to be written. Vendor it with its LOCAL NAMES unchanged |
-| async collector | `agents/training/async_vec_env.py:226` | `--async-rollout`'s own loop, already ours. It still calls SB3's GAE | low. Deleted with the Python core |
+| `MaskablePPO.collect_rollouts` (Python core) — **DELETED, U3** | `ppo_mask.py:181` | Step the VecEnv, `update_locals(locals())` **before** `rollout_buffer.add`, the truncation bootstrap, then GAE | It was vendored into `loop.py` (`_collect_python`) and went with the Python core, with `WinProbLabelCallback` (the `buf.pos` reader). `RolloutProbes.collect_rollouts` now serves the Rust collector only |
+| async collector — **DELETED, U3** | `agents/training/async_vec_env.py` | `--async-rollout`'s own loop, already ours. It still called SB3's GAE | gone with the Python core, the flag and `AsyncSubprocVecEnv` |
 | Rust collector | `rust_rollout/collector.py:327` | Already ours: host steps, `on_step` with a fixed locals dict, `_update_info_buffer`, filling SB3's buffer in place | low |
 | `train()` | `instrumented_ppo/ppo.py:134` | Already ours (vendored, upstream hash pinned) | — |
 | `_update_learning_rate`, `self.clip_range(progress)` | SB3 base | Applies `lr_schedule(progress)` to the optimizer every `train()`; records `train/learning_rate` | **low**. `lr_schedule` is a contract with the KL controller (§1.4) |
@@ -114,7 +115,7 @@ About 11 are on by default:
 The rest are flag-gated:
 - Adaptive batch.
 - The exploiter temperature anneal / ratchet (the exploiter ladder was deleted in deletion pass L4).
-- `WinProbLabelCallback` (Python core only; the dense-aux callback it once sat beside is deleted, deletion pass L2).
+- `WinProbLabelCallback` (DELETED with the Python core, deletion pass U3; `win_prob_callback.backfill_terminal_labels` stays, the Rust store runs it).
 - The value sidecar and the fork arm (team PFSP and the cf supply guard were deleted in deletion pass L4).
 
 **What couples a callback to SB3:**
@@ -147,8 +148,8 @@ keep intercepting. Stage 2 folds them into the declared hook table.
 
 | path | class | learner reliance |
 |---|---|---|
-| `--env-core python` (the default today) | `SubprocVecEnv` (spawn) over `Monitor(MaskableAgentWrapper(Gen3Env))` (`main/train/env_factory.py:318`) | `step_async` / `step_wait`, `reset`, `get_action_masks` via `env_method("action_masks")`, `Monitor`'s `info["episode"]` |
-| `--async-rollout` | `AsyncSubprocVecEnv(SubprocVecEnv)` | its own collect loop |
+| `--env-core python` — **DELETED, U3** | `SubprocVecEnv` (spawn) over `Monitor(MaskableAgentWrapper(Gen3Env))` (`main/train/env_factory.py`) | `step_async` / `step_wait`, `reset`, `get_action_masks` via `env_method("action_masks")`, `Monitor`'s `info["episode"]` |
+| `--async-rollout` — **DELETED, U3** | `AsyncSubprocVecEnv(SubprocVecEnv)` | its own collect loop |
 | `--debug` | `DummyVecEnv` | as for the Python core |
 | `--env-core rust` | `RustVecEnv(VecEnv)` (`rust_vec_env.py:71`): a stub whose `env_method` is a declared dispatch onto `_m_<name>`; stepping raises | only the interface type |
 
@@ -287,10 +288,9 @@ before `MaskablePPO` in `InstrumentedMaskablePPO`'s bases. It owns:
 - **`_setup_learn`, `dump_logs`, `_update_current_progress_remaining`**: vendored. Each upstream source
   is hash-pinned next to the existing `train` pin, so an sb3 upgrade is loud while sb3 is still
   installed.
-- **The Python core's collect** (`_collect_python`): vendored from `MaskablePPO.collect_rollouts` with
-  its **local variable names unchanged**, because callbacks read `self.locals`. `RolloutProbes`
-  dispatches to it in place of `super()`. The Rust and async collectors are already ours and are
-  unchanged.
+- **The Python core's collect** (`_collect_python`) — BUILT in stage 1 as a vendored copy of
+  `MaskablePPO.collect_rollouts` with its local names unchanged, and DELETED by deletion pass U3 with the
+  Python core (it is not a stage-3 item any more). The Rust collector is already ours and is unchanged.
 - **Hooks keep their interception points.** The loop calls `self.collect_rollouts` and `self.train`
   by attribute, so K6's freeze guard and the compile sentinel keep wrapping them untouched. This
   avoids colliding with the K6+K8 agent's canary-persistence work.
@@ -345,8 +345,8 @@ before `MaskablePPO` in `InstrumentedMaskablePPO`'s bases. It owns:
 - **The buffer is ours.** Flat device tensors, written by the Rust collector directly, with window
   GAE as `store.game_gae`'s sibling. It is held to SB3's `get()` permutation, so the K9 golden stays
   bit-identical.
-- **Deleted with the Python core:** the vendored Python collect, `async_vec_env.py` (287), the
-  `DummyVecEnv` / `SubprocVecEnv` / `Monitor` wiring, `RustVecEnv`'s SB3 base, and
+- **Deleted with the Python core:** the vendored Python collect and `async_vec_env.py` (287) — DONE in U3;
+  still to go in stage 3: the `DummyVecEnv` / `SubprocVecEnv` / `Monitor` wiring, `RustVecEnv`'s SB3 base, and
   `device_batches`' SB3 sample type.
 - **The logger is ours.** A thin `SummaryWriter` writer with the same tags, the same step convention
   and the same `<run>/tb` layout, plus the launcher pipe.
@@ -371,8 +371,8 @@ costs nothing per update, while the `.zip` is the most widely read contract in t
 | check | what | bar | tier |
 |---|---|---|---|
 | **E0** | The K9 LEARNER GOLDEN (`agents.training.learner_golden`) | bit-identical. **Necessary, not sufficient:** it calls `train()` directly and does not exercise `learn()` | routine (exists) |
-| **E1** (`own_ppo_loop_test.py`, PASS; mutation-checked) | **Lockstep differential** (new, CPU, seconds): a seeded scripted VecEnv over the production spaces, serving rows of the golden's buffer, with dones on a fixed schedule, one `TimeLimit.truncated` + `terminal_observation` (the bootstrap branch) and `info["episode"]` dicts. Real callbacks that need no live env are registered — `WinProbLabelCallback`, `AdaptivePPOCallback`, `SignalMetricsCallback`, a mid-rollout `dump(step)` stand-in for eval (pinning §2.1's preserved quirk) — plus a RECORDING callback. Three iterations of upstream `MaskablePPO.learn(model, …)` (still callable unbound while sb3 is installed) vs `OwnedLoop.learn`, from the same seeded learner | EXACT: the hook trace (name, `num_timesteps`, `n_calls`, locals keys, `buf.pos`), every buffer array at each rollout end, `name_to_value` before every dump and each dump's step, params sha after each update, `_n_updates`, `_current_progress_remaining`, `ep_info_buffer` | routine |
-| **E2** (`own_ppo_loop_parity_test.py`, PASS; mutation-checked) | **Rollout level on REAL games**: `rust_rollout.parity`'s record/replay machinery (the same games, keyed trainee draws). The Python-core side is filled by the stock collect and by the owned collect, in one process with the same weights | buffers byte-EXACT on every field (tighter than parity's 1e-5 bars, which compare different batch compositions) | integration (`sim`) |
+| **E1** (`own_ppo_loop_test.py`, PASS; mutation-checked) | **Lockstep differential** (new, CPU, seconds): a seeded scripted VecEnv over the production spaces, serving rows of the golden's buffer, with dones on a fixed schedule, one `TimeLimit.truncated` + `terminal_observation` (the bootstrap branch) and `info["episode"]` dicts. Real callbacks that need no live env are registered — `AdaptivePPOCallback`, `SignalMetricsCallback`, a mid-rollout `dump(step)` stand-in for eval (pinning §2.1's preserved quirk) — plus a RECORDING callback. Three iterations of upstream `MaskablePPO.learn(model, …)` (still callable unbound while sb3 is installed) vs `OwnedLoop.learn`, from the same seeded learner | EXACT: the hook trace (name, `num_timesteps`, `n_calls`, locals keys, `buf.pos`), every buffer array at each rollout end, `name_to_value` before every dump and each dump's step, params sha after each update, `_n_updates`, `_current_progress_remaining`, `ep_info_buffer` | routine |
+| **E2** (`own_ppo_loop_parity_test.py`, PASS; mutation-checked) — **DELETED, U3 (owner D3: it replayed through `Gen3Env`)** | **Rollout level on REAL games**: `rust_rollout.parity`'s record/replay machinery (the same games, keyed trainee draws). The Python-core side is filled by the stock collect and by the owned collect, in one process with the same weights | buffers byte-EXACT on every field (tighter than parity's 1e-5 bars, which compare different batch compositions) | integration (`sim`) |
 | **E3** | **Short real-run A/B** at matched seed: `train_rl_agent --debug` (CPU) for ≥ 3 updates, under each loop, on BOTH env cores. The stock loop is selected through a TEST SEAM env var (`GEN3AI_PPO_LOOP=sb3_reference`), deleted in stage 3. **The control is run FIRST:** stock vs stock | If stock-vs-stock is identical (§2.3's Rust half): every non-wall TB series identical (tag set, step grid, values) and `policy.pth` bytes equal. Otherwise: the same tag set and step grid, and divergence onset and magnitude no earlier or larger than stock-vs-stock, declared before reading | one-off, recorded in `measurements/own_ppo_loop/`; the control is MEASURED (§2.3): **Rust core identical, so identity is the bar there**; Python core not reproducible, so it gets the bound. **RESULT (2026-10-01):** Rust — 342 / 342 non-wall series identical, and `policy.pth` equal in both arms AND to the pre-stage-1 control; Python — the same tag set and step grid, with values diverging from the first dump exactly as stock-vs-stock does |
 | **E4** | The sizing study's carry-over | nothing extra: E0–E2 make stage 1 identity at the update and rollout level, so the arms' verdicts (run pinned on today's loop) transfer by construction | — |
 
@@ -420,8 +420,8 @@ separately (orchestrator's rule: tell, don't trim).
 **What becomes dead** (program §4):
 - **Stage 1:** the stock `MaskablePPO.collect_rollouts` / `learn` paths become unreachable in
   production; the `GEN3AI_PPO_LOOP` seam becomes deletable in stage 3.
-- **Stage 3:** `async_vec_env.py` (287), the Python collect, `Monitor` / `DummyVecEnv` /
-  `SubprocVecEnv` use, and `RustVecEnv`'s SB3 base.
+- **Stage 3:** `Monitor` / `DummyVecEnv` / `SubprocVecEnv` use and `RustVecEnv`'s SB3 base (`async_vec_env.py`
+  and the Python collect went in deletion pass U3).
 - **Stage 4:** the sb3 / sb3-contrib dependency.
 
 ---

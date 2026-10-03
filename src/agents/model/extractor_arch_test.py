@@ -5,7 +5,6 @@ path. Nothing tied them together, so a new toggle could land on one and not the 
 would version-check an arch it did not build. These tests exist to keep that from coming back.
 """
 import inspect
-import json
 import re
 
 
@@ -85,21 +84,3 @@ def test_log_level_is_never_threaded():
     args = types.SimpleNamespace(**{a: False for a in EA.ARCH_ARG_KEYS.values()})
     args.opp_belief_aux_coef = 0.0
     assert "log_level" not in EA.build_extractor_arch_kwargs(args)
-
-
-def test_plain_form_is_json_serialisable_and_drops_unpicklables():
-    """The forkserver preload receives the arch through the environment, so it must survive JSON and
-    must not try to carry the numpy layout tables."""
-    import types
-    args = types.SimpleNamespace(**{a: False for a in EA.ARCH_ARG_KEYS.values()})
-    args.opp_belief_aux_coef = 0.0
-    args.opp_intent_coef = 0.0
-    # An OLD checkpoint's saved kwargs still carry `log_level`; the plain form drops it.
-    kwargs = EA.build_extractor_arch_kwargs(args, base={"layout": {"np": object()},
-                                                        "log_level": "periodic"})
-    plain = EA.arch_kwargs_to_plain(kwargs)
-    assert "layout" not in plain
-    assert "log_level" not in plain
-    json.dumps(plain)                                  # must not raise
-    # the toggles that actually change the traced graph DO survive
-    assert "damage_op" in plain and "damage_matrices_incoming" in plain

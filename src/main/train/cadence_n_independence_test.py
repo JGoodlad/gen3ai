@@ -42,7 +42,7 @@ def _resolved(tmp_path, n_envs: int) -> Dict[str, Any]:
     from main.train.config import resolve_config
 
     p = build_parser()
-    args = p.parse_args(["--steps", "15000000", "--use-bridge", "node", "--n-envs", str(n_envs)])
+    args = p.parse_args(["--steps", "15000000", "--n-envs", str(n_envs)])
     resolve_config(args, p)
     assert not args.debug, "a --debug build forces N = 1 and would make this test vacuous"
     bundle = build_callbacks(

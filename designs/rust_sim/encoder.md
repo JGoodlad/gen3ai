@@ -23,7 +23,7 @@ under its own flag, default OFF** — with the flag off, no training byte change
 ## 1. What it is
 
 `encode(inputs, out)` is `Gen3ObservationEncoder.encode(battle, hp_tracker, legal, progress_clock,
-recency, pair_history, event_window)` — the call `Gen3Env.embed_battle` makes for the trainee — over
+recency, pair_history, event_window)` — the call the deleted Python `Gen3Env.embed_battle` made for the trainee — over
 the core's reading of ONE side's stream. It reads the same two surfaces the Python encoder reads:
 
 * the **view** (`present()`, the `LiveView`): species / base stats, status, HP fraction, counters,
@@ -88,8 +88,7 @@ other length before touching it. Pins: `core_obs_test.py`, `tests/encoder_test.r
 
 ## 5a. The row on the TRAINING wire — `sim_bridge`'s core observation mode
 
-The training env already talks to one `sim_bridge` child per env over its stdin/stdout pipe
-(`src/utils/bridge/bridge_session.py`). The mode is OPT-IN per battle: START's `core_obs` key
+The training env talks to the `sim_bridge` / env core over its stdin/stdout pipe (the Python session that used to do this, `bridge_session.py`, was deleted in U3). The mode is OPT-IN per battle: START's `core_obs` key
 
 ```text
 "core_obs": {"sides": ["p1"] | ["p2"] | ["p1","p2"], "decision_tense": <bool>, "switch_freeze": <bool>}
@@ -180,7 +179,7 @@ dex load at the first decision.
 ## 6. Slice O — the gate
 
 `agents/battle/rust_core_parity_obs.py`, inside slice T's decision loop (the tracker fold runs once
-for both): at every decision of both viewers, the row `Gen3Env.embed_battle` encodes (the real
+for both): at every decision of both viewers, the row the Python `Gen3ObservationEncoder` path encodes (formerly via the deleted `Gen3Env.embed_battle`; the real
 `EpisodeTracker`, the legality snapshot, the incremental assembler) against the core's, BYTE-equal,
 plus the 11-dim mask. **No allowlist.** `core_events --obs` also folds each side's PARSE chain (one
 side's text, trackers on, the same `note_choice` tokens — the chain §5a ships to training) and REFUSES

@@ -1,13 +1,14 @@
-"""The training-label INVENTORY is the whole truth about ``Gen3Env``'s label keys (M5 Lane C).
+"""The training-label INVENTORY is the whole truth about the trainee's label keys (M5 Lane C).
 
 ``utils.rust_env.label_inventory.LABELS`` is the list the Rust env's label columns are built from.
-These tests EXECUTE ``Gen3Env`` (no battle, no server: construction alone declares the obs space)
-and fail the day the env and the inventory disagree:
+These tests EXECUTE ``agents.training.trainee_spaces`` (no battle, no env: the obs space is a pure
+function of the label gates; before deletion pass U3 they constructed a ``Gen3Env`` for it) and fail the
+day the declared space and the inventory disagree:
 
-* a key ``Gen3Env`` can declare that the inventory does not list (or one it lists that the env
+* a key the trainee space can declare that the inventory does not list (or one it lists that the space
   cannot declare), or a dtype / shape that drifted;
 * the PRODUCTION surface (``--arch production`` + ``designs/production_config.json``, resolved the
-  way a production launch's env factory resolves it) emitting a different set than the rows marked
+  way a production launch resolves it) emitting a different set than the rows marked
   ``production`` — so a flag flip that adds a label to production cannot reach the Rust env unseen;
 * a row's emit gate that does not emit it, or an ungated env that does;
 * a named consumer that no longer reads the key;
@@ -28,19 +29,17 @@ _ENVS = {}
 
 
 def _space(**kw):
-    """The label part of a ``Gen3Env``'s declared obs space for ``kw`` (on top of every gate OFF)."""
-    from poke_env import AccountConfiguration
-
-    from agents.observation.state_encoder import load_mappings
-    from agents.training.gen3_env import Gen3Env
+    """The label part of the trainee's declared obs space for the gate kwargs ``kw`` (on top of every gate OFF)."""
+    from agents.observation.schema import build_schema
+    from agents.observation.state_encoder import get_observation_encoder, load_mappings
+    from agents.training.trainee_spaces import label_gates, trainee_observation_space
 
     args = dict(_OFF, **kw)
     k = repr(sorted(args.items(), key=lambda t: t[0]))
     if k not in _ENVS:
-        env = Gen3Env(load_mappings(), battle_format="gen3ou",
-                      account_configuration1=AccountConfiguration(f"LInv{len(_ENVS)}", None),
-                      start_listening=False, **args)
-        _ENVS[k] = {n: s for n, s in env.observation_space.spaces.items() if n not in _NON_LABEL}
+        layout = get_observation_encoder(load_mappings()).get_layout()
+        space = trainee_observation_space(layout, build_schema(layout).gym_space(), label_gates(**args))
+        _ENVS[k] = {n: s for n, s in space.spaces.items() if n not in _NON_LABEL}
     return _ENVS[k]
 
 
@@ -54,11 +53,11 @@ def _all_on():
 _NP = {"i64": np.int64, "f32": np.float32}
 
 
-def test_every_key_gen3env_can_emit_is_inventoried_with_its_dtype_and_shape():
+def test_every_key_the_trainee_space_can_declare_is_inventoried_with_its_dtype_and_shape():
     space = _all_on()
     assert set(space) == {r.key for r in LI.LABELS}, (
-        f"Gen3Env declares {sorted(set(space) - {r.key for r in LI.LABELS})} the inventory does not "
-        f"list; the inventory lists {sorted({r.key for r in LI.LABELS} - set(space))} Gen3Env cannot "
+        f"the trainee space declares {sorted(set(space) - {r.key for r in LI.LABELS})} the inventory does not "
+        f"list; the inventory lists {sorted({r.key for r in LI.LABELS} - set(space))} the space cannot "
         "declare — add / remove the row in utils/rust_env/label_inventory.py (and its Rust status)")
     for r in LI.LABELS:
         assert space[r.key].dtype == _NP[r.dtype], (r.key, space[r.key].dtype)
@@ -66,11 +65,10 @@ def test_every_key_gen3env_can_emit_is_inventoried_with_its_dtype_and_shape():
 
 
 def test_the_production_surface_emits_exactly_the_production_rows():
-    from main.rust_core_cutover.envs import production_args
-    from main.train.env_factory import trainee_env_kwargs
+    from agents.training.trainee_spaces import trainee_env_kwargs
+    from main.train.production_args import production_args
 
     kw = trainee_env_kwargs(production_args())
-    kw.pop("obs_source")
     emitted = set(_space(**kw))
     assert emitted == set(LI.production_keys()), (
         f"production emits {sorted(emitted - set(LI.production_keys()))} not marked production, and "

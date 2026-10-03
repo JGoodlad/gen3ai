@@ -6,7 +6,7 @@ architecture boundary (``MIGRATION_FLOOR``) puts all of them behind the pre-gene
 A test whose point is that the pieces FIT — a policy drives real battles, a checkpoint loads, a
 tool's output is reproducible — needs a POLICY, not a strong one. This builds that policy at the
 current architecture with the production surface applied (``--arch production`` + the
-``production_config.json`` mirror, as ``rust_core_cutover.envs.production_args`` resolves it — so
+``production_config.json`` mirror, as ``main.train.production_args.production_args`` resolves it — so
 the belief heads a forensic trace reads exist), seeded so the same seed gives the same weights, and
 saves it through the project's own save path (a real ``MaskablePPO.save`` plus
 ``save_model_snapshot``'s ``model_config.json`` / ``metadata.json`` beside it).
@@ -35,7 +35,7 @@ def _production_policy_kwargs(args: Any = None) -> Tuple[Any, Dict[str, Any], Di
     from agents.model.features_extractor import Gen3FeaturesExtractor
     from agents.model.policy import POLICY_ACTIVATION_FN
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-    from main.rust_core_cutover.envs import production_args
+    from main.train.production_args import production_args
 
     if args is None:
         args = production_args()

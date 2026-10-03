@@ -1,52 +1,27 @@
-"""The trainee's spaces without an env, and the Python env core's production dependents (deletion pass U2).
+"""The trainee's spaces without an env, and the DELETED Python env core (deletion pass U2 / U3).
 
 1. ``trainee_spaces`` builds ``(observation_space, action_space)`` from the args alone — the production
    argv's 23 keys, every label gate opening exactly its keys.
-2. **The Python env core has NO production dependents.** A FRESH interpreter that resolves a production
-   argv, builds its spaces, its opponent plan and its eval team table, and imports every module the Rust
-   core's launch reads, never loads ``Gen3Env`` / ``wrappers`` / ``env_factory`` / ``async_vec_env`` /
-   ``bridge_session`` (RUNTIME); and every non-test module that names one of them is DECLARED below with
-   the deletion unit that removes it (STATIC) — a new production importer fails here.
+2. **The Python env core is GONE** (deletion pass U3, 2026-10-02): ``Gen3Env`` / ``wrappers`` /
+   ``env_factory`` / ``async_vec_env`` / ``bridge_session`` do not exist, and no module in the tree
+   imports one. (Until U3 this file held the runtime proof that a production launch never LOADED them
+   and the static list of every remaining importer with its deletion unit; the list is empty now.)
 """
 from __future__ import annotations
 
 import ast
 import contextlib
+import importlib.util
 import io
-import json
-import os
-import subprocess
-import sys
 
 import pytest
 
-from utils.paths import repo_root, src_path
+from utils.paths import src_path
 
-#: The Python env core — what deletion pass R1 deletes.
+#: The Python env core — what deletion pass R1 deleted. A file by one of these names coming back, or
+#: any module importing one, fails here.
 PY_CORE = ("agents.training.gen3_env", "agents.training.wrappers", "agents.training.async_vec_env",
            "main.train.env_factory", "utils.bridge.bridge_session")
-
-#: Every non-test module allowed to import the Python env core, and why. Each goes in the deletion
-#: pass (designs/ops/deletion_pass_manifest.md) — none is on the Rust core's launch path.
-ALLOWED_IMPORTERS = {
-    # the Python core's OWN branches inside shared modules: lazy, reached only on --env-core python
-    "main.train_rl_agent": "R1 — the python branch (lazy imports), U3",
-    "agents.training.instrumented_ppo.rollout_probes": "R4 — the python branch (lazy import), U4",
-    # Python-vs-Rust oracle harnesses (D3: retired without a banked run)
-    "agents.training.rust_env_opponents_parity": "R10, U3",
-    "agents.training.rust_rollout.parity": "R10, U3",
-    "main.rust_core_cutover.driver": "R10, U3",
-    "main.rust_core_cutover.envs": "R10, U3",
-    "main.rust_core_m5.production": "R10, U3",
-    "main.rust_core_m5.slice_n": "R10, U3",
-    "main.rust_core_m5.throughput": "R10, U3",
-    "utils.rust_env.bot_corpus": "R10 — the bot-corpus re-record, U3",
-    # benchmarks of the Python bridge session itself
-    "utils.bridge.bridge_heap_growth_benchmark": "R1 (bridge_session), U3",
-    "utils.bridge.bridge_impl_throughput_benchmark": "R1 (bridge_session), U3",
-    "utils.bridge.bridge_vs_websocket_latency_benchmark": "R1 (bridge_session), U3",
-}
-
 
 def _resolved(*argv: str):
     from main.train.config import resolve_config
@@ -110,36 +85,9 @@ def test_the_derived_gates():
     assert not label_gates(move_belief_mode="unrevealed").known_moves
 
 
-#: The production-path probe, run in a FRESH interpreter so nothing an earlier test imported counts.
-_PROBE = r"""
-import contextlib, io, json, sys
-from main.train.config import resolve_config
-from main.train.parser import build_parser
-import main.train_rl_agent, main.train.rust_env_setup, main.checkargs
-import main.train.parser.eval_subprocess, main.ops.value_sidecar_read
-import agents.training.rust_rollout.build, agents.training.rust_rollout.collector
-import agents.training.rust_env_opponents, agents.training.selfplay_callback
-import agents.training.rust_eval.build, agents.training.instrumented_ppo.ppo
-from agents.training.trainee_spaces import trainee_spaces
-from agents.training.rust_eval.build import eval_builders
-from agents.training.opponent_classes import OPP_CLASS_NAMES
-p = build_parser()
-a = p.parse_args(["--steps", "1", "--arch", "production"])
-with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-    resolve_config(a, p)
-assert a.env_core == "rust", a.env_core
-trainee_spaces(a)
-eval_builders(None, [])
-print(json.dumps(sorted(m for m in sys.modules if m in %r)))
-""" % (PY_CORE,)
-
-
-def test_a_production_launch_path_never_loads_the_python_env_core():
-    out = subprocess.run([sys.executable, "-c", _PROBE], capture_output=True, text=True, timeout=600,
-                         cwd=str(repo_root()), env={**os.environ, "PYTHONPATH": str(src_path())})
-    assert out.returncode == 0, out.stderr[-3000:]
-    loaded = json.loads(out.stdout.strip().splitlines()[-1])
-    assert loaded == [], f"the Rust core's launch path loaded the Python env core: {loaded}"
+def test_the_python_env_core_modules_do_not_exist():
+    for m in PY_CORE:
+        assert importlib.util.find_spec(m) is None, f"{m} is back — the Python env core was deleted (U3)"
 
 
 def _importers() -> dict:
@@ -147,11 +95,8 @@ def _importers() -> dict:
     found: dict = {}
     for p in sorted(root.rglob("*.py")):
         rel = p.relative_to(root).as_posix()
-        if rel.startswith(("poke_env/", "rust_sim/", "rust_env/")) or rel.endswith("_test.py") \
-                or "/target/" in rel:
-            continue
-        mod = rel[:-3].replace("/", ".")
-        if mod in PY_CORE:
+        if rel.startswith(("poke_env/", "rust_sim/", "rust_env/")) or "/target/" in rel \
+                or rel == "agents/training/trainee_spaces_test.py":
             continue
         for n in ast.walk(ast.parse(p.read_text())):
             names = []
@@ -161,19 +106,15 @@ def _importers() -> dict:
                 names = [a.name for a in n.names]
             hit = set(PY_CORE) & set(names)
             if hit:
-                found.setdefault(mod, set()).update(hit)
+                found.setdefault(rel, set()).update(hit)
     return found
 
 
-def test_every_python_env_core_importer_is_declared_with_its_deletion_unit():
+def test_no_module_imports_the_deleted_python_env_core():
     found = _importers()
-    undeclared = sorted(set(found) - set(ALLOWED_IMPORTERS))
-    assert not undeclared, (
-        f"new importer(s) of the Python env core {undeclared}: the Rust core's launch must not depend "
-        "on it (deletion pass U2) — read the constant / builder from its env-free home "
-        "(agents.training.trainee_spaces, opponent_classes, eval_teams)")
-    stale = sorted(set(ALLOWED_IMPORTERS) - set(found))
-    assert not stale, f"declared importers that no longer import the Python env core: {stale} — drop them"
+    assert not found, (f"module(s) import the deleted Python env core: {sorted(found)} — the Rust env core "
+                       "is the only core (deletion pass U3); read spaces / class tables / the eval team "
+                       "table from agents.training.trainee_spaces, opponent_classes, eval_teams")
 
 
 def test_the_model_packages_class_table_agrees_with_the_declared_one():

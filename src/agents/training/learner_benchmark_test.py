@@ -81,6 +81,8 @@ def tiny_model():
     venv = DummyVecEnv([(lambda: _CounterDictEnv()) for _ in range(4)])
     model = InstrumentedMaskablePPO("MultiInputPolicy", venv, n_steps=8, batch_size=4,
                                     n_epochs=2, ent_coef=0.0, vf_coef=0.5, device="cpu", seed=0)
+    from agents.training.rust_rollout.testkit import attach_vec_collector
+    attach_vec_collector(model)         # the rollout comes from the toy VecEnv (the Rust collector is production's)
     model.grad_accum_steps = 2          # takes the accumulation AND the noise-probe branches
     # Stop learn() at its first train(): the buffer is then exactly as a real update would see it.
     orig = InstrumentedMaskablePPO.train
@@ -199,17 +201,18 @@ def test_trainer_argv_repoints_the_recorded_command_as_a_fork():
     assert a[a.index("--run-dir") + 1] == "/arch/run"
     assert a[a.index("--steps") + 1] == "99"
     assert a[a.index("--device") + 1] == "cuda"
-    # C's training flags survive verbatim, the compile included.
-    for flag in ("--ent-coef", "--compile-trainer", "--compile-opponents", "--fork-lr",
-                 "--fork-lr-freeze", "--n-envs"):
+    # C's training flags survive verbatim, the compile included — except the `--compile-opponents` family,
+    # deleted with the Python env core (deletion pass U3): the unknown-flag filter drops it.
+    for flag in ("--ent-coef", "--compile-trainer", "--fork-lr", "--fork-lr-freeze", "--n-envs"):
         assert flag in f, flag
+    assert "--compile-opponents" not in f and "--compile-opponents-strict" not in f
     assert "--no-tb-inherit" in f
     assert not any("train_rl_" + "agent" in t for t in a)
 
 
 def test_trainer_argv_drops_flags_the_trainers_parser_no_longer_knows():
     """C's recorded command types flags later deleted (TF32's `--matmul-precision`, L2's entropy boosts and
-    true-team toggle): one unknown flag is an argparse exit that kills the worker before it measures.
+    true-team toggle, U3's `--compile-opponents` family): one unknown flag is an argparse exit that kills the worker before it measures.
     Revert ⇒ the argv carries them and the REAL trainer parser refuses it."""
     from main.checkargs import LAUNCHER_ONLY
     from main.train.parser import build_parser
@@ -231,13 +234,13 @@ def test_trainer_argv_cpu_and_tiny_swap_the_compile_and_the_env_count():
                               tiny=True)
     f = _flags(a)
     assert "--compile-trainer" not in f and "--compile-opponents" not in f
-    assert "--no-compile-trainer" in f and "--no-compile-opponents" in f
+    assert "--no-compile-trainer" in f and "--no-compile-opponents" not in f
     assert a[a.index("--n-envs") + 1] == str(lb.TINY["n_envs"]) and f.count("--n-envs") == 1
 
 
 def test_trainer_argv_refuses_the_trainer_module_name():
     with pytest.raises(ValueError):
-        lb.build_trainer_argv(_CMD + " --obs-source /x/train_rl_" + "agent", model_zip="/m.zip",
+        lb.build_trainer_argv(_CMD + " --critic /x/train_rl_" + "agent", model_zip="/m.zip",
                               run_dir="/r", steps=1, device="cuda")
 
 

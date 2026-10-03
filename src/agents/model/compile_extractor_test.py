@@ -24,12 +24,9 @@ from agents.model import compile_opponents as S
 
 @pytest.fixture(autouse=True)
 def _isolate_module_state(monkeypatch):
-    """Every test gets a virgin module: no validated compile carried in from a neighbour, no quorum
-    verdicts pooled across tests, no inherited tally directory. Without this the file's verdicts
+    """Every test gets a virgin module: no validated compile carried in from a neighbour. Without this the file's verdicts
     depend on collection ORDER — which is the same class of defect the measurement fix is about."""
     monkeypatch.setattr(S, "_COMPILE_VALIDATED", False)
-    monkeypatch.setattr(S, "_LOCAL_TALLY", {"reverts": 0, "total": 0})
-    monkeypatch.delenv(S.COMPILE_QUORUM_ENV, raising=False)
     # These are CONTROL-FLOW tests on an 8-wide stand-in with no policy heads; the decision-level
     # parity check (gen3_opponent_compile_parity_v1) needs the real policy and the real-width
     # fixture, and is pinned on it by `opponent_parity_test.py`.
@@ -426,7 +423,7 @@ class TestTheProductionRegime:
         but not all of it: each arm's five samples sit at slightly different moments, so a residual
         bias of order drift^0.1 survives. Under a hostile 64x drift that is ~1.5x — enough to carry
         a marginally-losing 0.70x compile up to the floor in ~2% of draws, and the reason a
-        below-floor reading is the QUORUM's business rather than one worker's."""
+        below-floor reading is a REVERT to eager rather than a verdict worth trusting alone."""
         ratios = self._losing_ratios(monkeypatch, true_speedup=0.70, drift_decades=64.0)
         reverted = sum(r < S._MIN_COMPILE_SPEEDUP for r in ratios) / len(ratios)
         assert reverted > 0.95, f"only {reverted:.0%} of a 0.70x compile's readings reverted"
@@ -475,92 +472,6 @@ class TestTheProductionRegime:
         S._measure_arms(_tagged("eager"), _tagged("compiled"), obs=None)
         assert order[:4] == ["eager", "compiled", "compiled", "eager"], order
         assert order.count("eager") == order.count("compiled") == S._TIMING_SAMPLES
-
-
-class TestTheQuorum:
-    """`--compile-opponents-strict` killed three launches because ONE worker's ratio was fatal.
-    Below-floor is now a warning with its numbers; fatal needs a systemic fraction to agree."""
-
-    @staticmethod
-    def _slow_compile(fn):
-        def wrapper(obs):
-            import time as _t
-            t0 = _t.perf_counter()
-            while (_t.perf_counter() - t0) * 1e3 < 0.5:
-                pass
-            return fn(obs)
-        return wrapper
-
-    def _armed(self, monkeypatch, tmp_path, ok=0, revert=0):
-        monkeypatch.setenv(S.COMPILE_QUORUM_ENV, str(tmp_path))
-        for i in range(ok):
-            (tmp_path / f"pre{i}.ok").write_text("")
-        for i in range(revert):
-            (tmp_path / f"pre{i}.revert").write_text("")
-        monkeypatch.setattr(torch, "compile", self._slow_compile)
-
-    def test_one_worker_below_the_floor_is_a_warning_not_a_launch_killer(
-            self, monkeypatch, tmp_path, capsys):
-        self._armed(monkeypatch, tmp_path, ok=20)
-        fe = _FE()
-        assert S.maybe_compile_extractor(_model(fe), True, label="w7", strict=True) is False
-        assert _is_eager(fe), "the reading still reverts THIS opponent to eager"
-        err = capsys.readouterr().err
-        assert "REVERTED" in err and "Quorum so far: 1/21" in err, err
-
-    def test_a_systemic_revert_is_still_fatal_under_strict(self, monkeypatch, tmp_path):
-        """The flag must keep its point: an invisible ~6.5x regression across the fleet should stop
-        the run at startup rather than show up in the FPS graph a day later."""
-        self._armed(monkeypatch, tmp_path, revert=3)
-        with pytest.raises(S.CompileExtractorError) as exc:
-            S.maybe_compile_extractor(_model(_FE()), True, label="w7", strict=True)
-        assert "systemic" in str(exc.value)
-
-    def test_the_first_readings_can_never_be_fatal(self, monkeypatch, tmp_path):
-        """A prefix tally has to survive being read when it holds one entry. The worker that reports
-        first would otherwise be 1/1 = 100% below the floor and kill the run by itself."""
-        self._armed(monkeypatch, tmp_path)
-        assert S.maybe_compile_extractor(_model(_FE()), True, label="w0", strict=True) is False
-
-    def test_a_compile_that_ERRORS_is_still_fatal_immediately(self, monkeypatch, tmp_path):
-        """The quorum covers the TIMING verdict only. A backend crash is a fact, not a reading."""
-        monkeypatch.setenv(S.COMPILE_QUORUM_ENV, str(tmp_path))
-
-        def boom(_fn):
-            raise RuntimeError("inductor exploded")
-        monkeypatch.setattr(torch, "compile", boom)
-        with pytest.raises(S.CompileExtractorError):
-            S.maybe_compile_extractor(_model(_FE()), True, label="w0", strict=True)
-
-    @pytest.mark.parametrize("reverts,total,fatal", [
-        (1, 1, False), (3, 3, False),               # below _QUORUM_MIN_REPORTS: decides nothing
-        (1, 4, False),                              # EXACTLY 25% — the boundary must not trip
-        (2, 4, True), (13, 48, True), (12, 48, False),
-    ])
-    def test_the_fatal_condition(self, reverts, total, fatal):
-        assert S._quorum_is_fatal(reverts, total) is fatal
-
-    def test_the_tally_is_shared_across_processes_through_the_environment(self, tmp_path, monkeypatch):
-        """One file per verdict, no lock: the count a worker reads is every verdict written before
-        it looked. That is a PREFIX estimate and is documented as one."""
-        monkeypatch.setenv(S.COMPILE_QUORUM_ENV, str(tmp_path))
-        assert S._record_verdict(reverted=False) == (0, 1)
-        assert S._record_verdict(reverted=True) == (1, 2)
-        assert S._record_verdict(reverted=True) == (2, 3)
-
-    def test_an_unwritable_tally_falls_back_to_the_process_local_one(self, monkeypatch):
-        """Bookkeeping must never be the thing that fails a compile."""
-        monkeypatch.setenv(S.COMPILE_QUORUM_ENV, "/proc/definitely/not/writable")
-        assert S._record_verdict(reverted=True) == (1, 1)
-        assert S._record_verdict(reverted=False) == (1, 2)
-
-    def test_arming_publishes_a_fresh_directory(self, tmp_path, monkeypatch):
-        monkeypatch.delenv(S.COMPILE_QUORUM_ENV, raising=False)
-        d = S.arm_compile_quorum(str(tmp_path))
-        S._record_verdict(reverted=True)
-        assert len(list(__import__("os").listdir(d))) == 1
-        S.arm_compile_quorum(str(tmp_path))           # a restart counts fresh, not protected by history
-        assert len(list(__import__("os").listdir(d))) == 0
 
 
 def test_the_revert_message_reports_measurements_and_asserts_no_cause(monkeypatch, capsys):

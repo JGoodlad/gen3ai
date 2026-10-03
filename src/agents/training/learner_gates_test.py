@@ -289,9 +289,8 @@ def _wide_learner(n_steps: int = 64):
     from stable_baselines3.common.logger import configure
 
     from agents.training.rust_rollout import testkit as TK
-    from agents.training.rust_rollout.parity import _unset_to_class_defaults
     from agents.training.rust_vec_env import RustVecEnv
-    from main.rust_core_cutover.envs import production_args
+    from main.train.production_args import production_args
     from main.train.model_build import apply_training_hparams
 
     _a, obs, act = TK.production_spaces()
@@ -299,7 +298,7 @@ def _wide_learner(n_steps: int = 64):
     m = TK.fresh_model(env, n_steps=n_steps, batch_size=n_steps * L.N_ENVS, n_epochs=1, seed=L.MODEL_SEED,
                        perturb_seed=L.PERTURB_SEED, learning_rate=0.0)
     apply_training_hparams(m, production_args(), mappings=None)
-    _unset_to_class_defaults(m)
+    TK.unset_to_class_defaults(m)
     m.grad_accum_steps, m.behaviour_check = 1, "fatal"
     m._logger = configure(None, [])
     with np.load(L.BUFFER_PATH) as z:
@@ -370,7 +369,7 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
     """The four paused learner-battery arms (none typing `--behaviour-check`) must still launch: K9(b)
     resolves to `fatal`, and no K9 rule refuses them. The launcher-only flags are stripped exactly as
     the launcher strips them, and so are the flags DELETED since the battery was recorded (deletion
-    passes L2 / L3 / L4: the recorded argvs carry the entropy-boost / true-team / distillation /
+    passes L2 / L3 / L4 / U3: the recorded argvs carry the entropy-boost / true-team / distillation /
     search-teacher defaults, every one at its OFF value; L4: `--team-pfsp`,
     `--team-pfsp-cap`, `--team-pfsp-floor`; deletion pass K2: two of them type
     `--matmul-precision high`; a pinned launch is judged by its OWN commit's parser, so HEAD's
@@ -389,10 +388,16 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
                    "--bait-entropy-boost", "--bait-entropy-anneal-frac",
                    "--matmul-precision", "--matmul_precision",
                    # L4: team-PFSP, each of which takes one value
-                   "--team-pfsp", "--team-pfsp-cap", "--team-pfsp-floor"}
+                   "--team-pfsp", "--team-pfsp-cap", "--team-pfsp-floor",
+                   # U3: the trainer's obs-source flag (the Python env's row source)
+                   "--obs-source"}
     # L3: the distillation / search-teacher families, every flag of which takes one value here
     dead_l3 = re.compile(r"^--(distill-|opd-|search-teacher|teacher-|winprob-teacher-)")
-    dead_bool = {"--value-true-team", "--no-value-true-team"}
+    # U3 / R6: the `--compile-opponents` family (bare booleans here; recorded commands carry the flags
+    # the trainer's parser deleted with the Python env core, none of them meaningful on the Rust core)
+    dead_bool = {"--value-true-team", "--no-value-true-team", "--compile-opponents", "--no-compile-opponents",
+                 "--compile-opponents-strict", "--compile-opponents-preload",
+                 "--no-compile-opponents-preload"}
     while i < len(toks):
         if (toks[i] in ("--restart-interval-hours", "--pin-commit") or toks[i] in dead_valued
                 or dead_l3.match(toks[i])):
@@ -405,10 +410,9 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
         i += 1
     args = build_parser().parse_args(argv)
     assert args.behaviour_check is None
-    # Each arm is a `--model` FORK of a python-era checkpoint, so an untyped `--env-core` INHERITS
-    # python at launch (`rust_env_setup.resolve_env_core_default`), not the bare parser's `rust`.
+    # Each arm is a `--model` FORK of a python-era checkpoint: an untyped `--env-core` resolves to rust at
+    # launch (`rust_env_setup.resolve_env_core_default`, D4 — the Python core was deleted).
     assert "--model" in argv and "--env-core" not in argv
-    args.env_core = "python"
     k9 = [c.name for c in failing_checks(args) if "behaviour_check" in set(c.dests)]
     assert not k9, k9
     resolve_env_core_args(args)

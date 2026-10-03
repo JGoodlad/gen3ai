@@ -68,7 +68,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     from agents.model.model_version import ModelVersion
     from agents.training import rust_env_opponents as E
     from agents.training.snapshot_pool import SnapshotPool
-    from main.rust_core_cutover.envs import packed_teams
+    from utils.team_sources import packed_teams
     from utils.rust_env import bot_inventory as BI
     from utils.rust_env import episode as EP
     from utils.rust_env import ffi

@@ -106,7 +106,6 @@ STEP_MODULES: Dict[str, str] = {
     "agents/training/opp_intent_labels.py": "the opponent-intent labels built per rollout/update",
     "agents/training/fork_arm.py": "the fork-arm PG mask read per minibatch",
     "agents/training/scaffolding.py": "the live scaffolding gauge, computed per update",
-    "agents/training/async_vec_env.py": "the async rollout collection, run every rollout",
     "agents/training/rust_rollout/consistency.py": "the behaviour-policy consistency gate, per update",
     "agents/training/rust_rollout/tie_margins.py": "K9(b)'s tie-margin recorder around the probe forward, "
                                                    "per update (a TorchFunctionMode; no learner object)",
@@ -455,7 +454,7 @@ def test_the_scan_actually_walked_the_tree(tree_scan: Tuple[List[Hit], Dict[str,
     """A scan that found nothing because it looked at nothing reads exactly like a clean tree."""
     c = tree_scan[1]
     assert c["step_modules"] >= len(STEP_MODULES) + 15, c
-    assert c["callback_files"] >= 20 and c["callback_classes"] >= 18, c   # 19 before L5 deleted ForkArmCallback
+    assert c["callback_files"] >= 20 and c["callback_classes"] >= 17, c   # 19 before L5 deleted ForkArmCallback, 18 before U3 deleted WinProbLabelCallback
     assert c["repo_modules"] >= 20, c
     assert c["cuda_scope_modules"] >= 15, c          # the T2 service + the rust collector / eval / env
     assert {"Linear", "LayerNorm", "ModuleList", "Sequential"} <= TORCH_NN_MODULES

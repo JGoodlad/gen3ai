@@ -75,7 +75,7 @@ grandchild subprocess) and fails on a revert of either half. ⚠️ A deep `tmp_
 socket's 108-byte `sun_path` — bind by a RELATIVE name from inside the dir (as
 `src/main/ops/tmp_sweep_test.py` does). Hard-coded `/tmp` defaults that remain for bulk data:
 `main/ladder_drift_scan.py --cache /tmp/psreplays` and
-`agents/training/selfplay_opponent_leak_fuzz_test.py`'s stall dir (a script, not collected).
+`/tmp` defaults of the remaining fuzz scripts (scripts, not collected).
 
 ### Test tiers — TWO AXES, and keeping them apart is the point
 
@@ -292,8 +292,7 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 | **before a `/gen3ai-ship`, and in CI** | `pytest src/` (everything) | 11,578 tests, **~47 m** serial (2026-09-29, nice 19, load ~3; the browser tier is ~19 s of it — the rest is corpus growth since 2026-08) |
 | just the bridge | `-m sim` | ~100 s |
 | just the browser views | `-m browser` | **~19 s** (2026-09-29) |
-| **the M5 milestone** (the Rust env core, every M5 lane) | `python -m main.rust_core_m5 gates --tier milestone [--gpu]`, `slice-n` / `depth3 --tier milestone`, `throughput`, then `verdict` — the ONE place M5 is judged (`src/main/rust_core_m5/`, program doc §2 M5 Lane J) | gates ~7.5 m at `-n 2` (2026-09-29); `gates --from-status` reads the banked verdicts in ~1 s |
-| **anything on the GPU** (a `GEN3AI_TEST_ALLOW_GPU=1` test, a cuda benchmark) | `scripts/ops/gpu_lock.sh <cmd>` — **never a bare `flock ~/.claude/jobs/gpu.lock`**. The helper (`src/utils/gpu_lock.py`, Python: `with gpu_lock():`) exports `GEN3AI_GPU_LOCK_HELD=<pid>`, so a command that takes the lock itself (`rust_core_m5 gates --gpu`, `policy_spectrum truth --lock`) re-enters instead of deadlocking on its own ancestor (2026-09-30: 15 min at 0% CPU); an ancestor held by a bare `flock` raises `GpuLockSelfDeadlock` at once. **A wall timeout goes INSIDE the lock** — `scripts/ops/gpu_lock.sh timeout 3000 <cmd>`, never `timeout 3000 scripts/ops/gpu_lock.sh <cmd>`, which counts lock-WAIT time and killed a queued job that never ran (2026-09-30); every acquisition prints `[gpu_lock] acquired … at <time> after <N> s waiting` | — |
+| **anything on the GPU** (a `GEN3AI_TEST_ALLOW_GPU=1` test, a cuda benchmark) | `scripts/ops/gpu_lock.sh <cmd>` — **never a bare `flock ~/.claude/jobs/gpu.lock`**. The helper (`src/utils/gpu_lock.py`, Python: `with gpu_lock():`) exports `GEN3AI_GPU_LOCK_HELD=<pid>`, so a command that takes the lock itself (`policy_spectrum truth --lock`) re-enters instead of deadlocking on its own ancestor (2026-09-30: 15 min at 0% CPU); an ancestor held by a bare `flock` raises `GpuLockSelfDeadlock` at once. **A wall timeout goes INSIDE the lock** — `scripts/ops/gpu_lock.sh timeout 3000 <cmd>`, never `timeout 3000 scripts/ops/gpu_lock.sh <cmd>`, which counts lock-WAIT time and killed a queued job that never ran (2026-09-30); every acquisition prints `[gpu_lock] acquired … at <time> after <N> s waiting` | — |
 | **any exploratory or one-off HEAVY job** (a trace, a benchmark, a measurement driver, anything that loads many checkpoints) | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`), a timeout INSIDE (`mem_cap.sh 24 timeout 2h python …`), composes with `gpu_lock.sh` in either order. The job gets its OWN scope (`MemoryMax=<GB>G`, swap 0, `OOMPolicy=stop`) inside `gen3ai-heavy.slice` (aggregate cap, default 64 GB of 89) at `oom_score_adj` +500, so an overrun kills only that job (exit 86). 2026-09-30: three global OOM kills of a 74-82 GB python3 each tore down the whole tmux scope (Claude + every agent) | — |
 
 ```bash
@@ -315,7 +314,7 @@ ancestors is `GateLockSelfDeadlock` (exit 3); the timeout is inside (`--timeout-
 acquisition time go to stderr; `--status` names the holders. When a `train_rl_agent.py --run-dir`
 process is live, every take prints ONE line naming the run and recommending `-n 4`
 (`gate_lock.live_run_warning`, from `utils.procfs.live_training_runs` — the rule
-`rust_core_cutover.governor.live_runs` reads); it never changes the command.
+the retired cutover governor read); it never changes the command.
 
 ### Routine-gate wall time and the `-n` × gate_lock policy (measured 2026-09-30 / 10-01)
 
@@ -348,7 +347,7 @@ the test time, the top 5 % hold 93 %, the top 20 % hold 99 %; collection is ~4.5
 session teardown ~5-10 s, so the gate is test bodies. An attribution run over the 45 heaviest files
 put **45 %** of their time in waits on CHILD processes (rust binaries, node bridges, python
 eval/replay children), 6 % in production-size policy construction and 4 % in fixed sleeps; the
-heavy hitters are the M5 parity gates (`rust_eval/parity*`, `rust_env_opponents_parity`,
+heavy hitters are the M5 parity gates (`rust_eval/parity*`,
 `rust_core_parity`, `bots_gate`), the `cf_producer`/`cf_audit` integration paths, the anchors smoke,
 `extractor_compiles` (compile) and the two mypy-backed static gates on a COLD cache (~45 s on a fresh
 worktree's first gate; since 2026-10-02 they sit in the `static` budget tier above, so that cost is
@@ -689,7 +688,7 @@ window in turn: every removal fails exactly the test for that window.
 an EXACT tie. Real policies produce exact and near ties between their top two actions. So a
 cross-path comparison of the greedy action (compiled vs eager, served vs reference, rust vs python)
 asserts equality only where the reference's top-2 margin exceeds a DECLARED bound. That bound is 2×
-the path's |Δ log-prob| bar in `rust_env_opponents_parity.judge_flips`, and `_TIE_BAND` in T2's
+the path's |Δ log-prob| bar in the (since-deleted) `rust_env_opponents_parity.judge_flips`, and `_TIE_BAND` in T2's
 `inference/service/parity.judge`. Strict argmax equality with no margin is a flake waiting for a
 tie.
 
@@ -797,7 +796,6 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch2
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/agents/battle/event_log_fuzz_test.py [n_battles]
 # also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch,incoming_damage}_fuzz_test.py
 #                                  poke_env_gaps/move_alignment_fuzz_test.py (per-move obs features ↔ legal.move_slots[k] ↔ action 6+k, forces Choice-lock/Disable)
-#                                  poke_env_gaps/belief_labels_fuzz_test.py (hidden-opp belief labels == actual opp team + no-leak)
 #                                  poke_env_gaps/faint_attribution_fuzz_test.py (a recorded `<side>:<species>:fainted` names the mon)
 #                                      PROTOCOL says fainted — the switch-in-dies case the old decision-time-active label got wrong)
 #                                  poke_env_gaps/damage_op_probe_fuzz_test.py (AUTHORITATIVE DamageOperator physics gate — CONSTRUCTED single-turn)
@@ -861,17 +859,7 @@ written atomically to a durable directory, resumable (a restarted driver skips t
 pinned by `main/ladder_usage_smoke_test.py` and proven by a real kill + resume), detached
 (`run --detach`), `status` for progress, `report` refuses before the registered n.
 
-**The Rust core CUTOVER stress** (`python -m main.rust_core_cutover`, `gen3_core_cutover_stress_v1`;
-the pre-registered targets are `designs/endstate/program_rust_core.md` §3's CUTOVER subsection) is
-the same pattern at the cutover's scale: slices E / V / T / O (and N once `--obs-source core`
-exists) over the ladder FULL tier from both slots, the pool, procedural teams and the `production`
-policy; the four A/B fuzzers; a soak — minutes-long units, one atomic row each, resumable,
-`nice 19`, a worker cap in `control.json`, and a GOVERNOR that reads the live training arm's
-marginal fps (read-only) and throttles on a >15% drop. 🚨 **Run it from a PIN**
-(`python -m main.rust_core_cutover pin --root <dir>`: a `git archive` export with its own
-self-check binaries), never from a worktree — a binary compiled in a worktree panics once the
-worktree is removed. `status --out <dir>` reports progress by stream and every divergence by
-CUTOVER / READING / VIEW-ROAD class (`main/rust_core_cutover/verdict.py`).
+**The Rust core CUTOVER stress and the M5 milestone harness are DELETED** (`main/rust_core_cutover/`, `main/rust_core_m5/`, deletion pass U3): the cutover is done, and the Python env they compared the core against is gone. Their pre-registered targets and verdicts are history (`designs/endstate/program_rust_core.md` §3, the ledger). The pattern they proved — minutes-long units, one atomic row each, resumable, `nice 19`, a worker cap, a governor on the live arm's fps, run from a `git archive` PIN (never a worktree: a binary compiled in a worktree panics once it is removed) — remains the template for any new long measurement driver.
 
 ### E2E tests (`*_e2e_test.py` / `*_fuzz_e2e_test.py`, require a live server)
 ```bash
@@ -898,6 +886,7 @@ export PYTHONPATH=$PYTHONPATH:src
 # WHERE the obs pipeline's time goes (component breakdown + cProfile ranking)
 python3 src/agents/training/obs_build_benchmark.py [--turn 25] [--reps 400] [--top 22] [--battles 200] [--seed 0]
 # WHERE a whole trainer turn's CPU goes (parse + obs + reward + mask + map + tracker), GPU-excluded
+# (a standalone profiler that MIRRORS the per-decision stages the deleted Python `Gen3Env` ran — it imports no env)
 python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0] [--pin-battles] [--reward-argv '…'] [--bridge rust|node]   # rust is the default (training's)
 # A/B one implementation of LiveView.from_battle against the previous one, on ONE frozen board
 python3 src/agents/training/live_view_build_benchmark.py [--reps 2500] [--rounds 6] [--turn 12] [--profile]

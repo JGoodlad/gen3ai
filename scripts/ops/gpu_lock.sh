@@ -4,7 +4,7 @@
 #
 # Replaces a bare `flock ~/.claude/jobs/gpu.lock <cmd>`. The difference is the class fix for the
 # 2026-09-30 self-deadlock: a bare flock exports nothing, so a command that takes the lock itself
-# (main.rust_core_m5 gates --gpu, throughput/fanout on cuda, policy_spectrum truth --lock) opened
+# (the deleted main.rust_core_m5 harness's gates --gpu, a cuda throughput probe, policy_spectrum truth --lock) opened
 # the file again and waited forever on its own ancestor. Under this wrapper the child inherits
 # GEN3AI_GPU_LOCK_HELD=<holder pid>, which utils.gpu_lock VERIFIES (ancestor + /proc/locks) and
 # then does not re-acquire.

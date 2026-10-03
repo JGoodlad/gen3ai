@@ -299,24 +299,13 @@ def test_an_untagged_outcome_still_feeds_the_pooled_window():
     assert not any(k.startswith("signal/outcome_entropy_") for k in cb.model.logger.rows)
 
 
-def test_the_opponent_class_map_matches_the_wrapper_constants():
-    """The integer is all that crosses the env pipe, so a renumbering in `MaskableAgentWrapper` must
+def test_the_opponent_class_map_matches_the_declared_constants():
+    """The integer is all that crosses the env boundary, so a renumbering in `opponent_classes` must
     not silently relabel a curve."""
-    from agents.training.wrappers import MaskableAgentWrapper as W
-    assert OPP_CLASS_SUFFIX == {W.OPP_CLASS_BOT: "bots", W.OPP_CLASS_POOL: "pool",
-                                W.OPP_CLASS_STABLE: "stable", W.OPP_CLASS_EXPLOITER: "target"}
-    assert len(OPP_CLASS_SUFFIX) == W.N_OPP_CLASSES
-
-
-def test_the_wrapper_tags_the_episode_end_info_with_the_selected_class():
-    """The producer half of the contract, asserted on the real `step` source rather than a mock —
-    the tag must be set in the same block as `win_outcome`, off `_opponent_class`."""
-    import inspect
-
-    from agents.training.wrappers import MaskableAgentWrapper
-    src = inspect.getsource(MaskableAgentWrapper.step)
-    assert 'info["opponent_class"]' in src and "_opponent_class" in src
-    assert src.index('info["win_outcome"]') < src.index('info["opponent_class"]')
+    from agents.training import opponent_classes as oc
+    assert OPP_CLASS_SUFFIX == {oc.OPP_CLASS_BOT: "bots", oc.OPP_CLASS_POOL: "pool",
+                                oc.OPP_CLASS_STABLE: "stable", oc.OPP_CLASS_EXPLOITER: "target"}
+    assert len(OPP_CLASS_SUFFIX) == oc.N_OPP_CLASSES
 
 
 # ══ 4. It is OBSERVABILITY — the training path is untouched ═══════════════════
@@ -388,7 +377,7 @@ def test_the_signal_callback_is_registered_unconditionally():
     from main.train.parser import build_parser
 
     p = build_parser()
-    args = p.parse_args(["--steps", "1", "--use-bridge", "node", "--debug-eval"])
+    args = p.parse_args(["--steps", "1", "--debug-eval"])
     resolve_config(args, p)
     args.debug_eval, args.debug = False, True     # skip the eval callback (needs a server/pool)
     bundle = build_callbacks(

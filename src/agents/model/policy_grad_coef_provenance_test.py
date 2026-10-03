@@ -77,9 +77,7 @@ def test_a_negative_value_is_refused():
     from main.train.parser import build_parser
 
     parser = build_parser()
-    # `--use-bridge node`: keep resolve_config from touching the rust sim_bridge binary
-    # (the checkpoint_cadence_test convention); irrelevant to the coefficient under test.
-    args = parser.parse_args(["--policy-grad-coef", "-0.5", "--steps", "1", "--use-bridge", "node"])
+    args = parser.parse_args(["--policy-grad-coef", "-0.5", "--steps", "1"])
     with pytest.raises(SystemExit):
         resolve_config(args, parser)
 

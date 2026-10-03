@@ -24,8 +24,6 @@ from utils.torch_state_guard import torch_globals
 @pytest.fixture(autouse=True)
 def _isolate(monkeypatch):
     monkeypatch.setattr(S, "_COMPILE_VALIDATED", False)
-    monkeypatch.setattr(S, "_LOCAL_TALLY", {"reverts": 0, "total": 0})
-    monkeypatch.delenv(S.COMPILE_QUORUM_ENV, raising=False)
     monkeypatch.setattr(S, "_measure_arms", lambda e, c, o: ([10.0] * 5, [2.0] * 5))
     from agents.model import opponent_parity as op
     monkeypatch.setattr(op, "_PASSED", {})        # the per-process PASS cache: per test
@@ -71,15 +69,13 @@ def test_a_correct_compile_PASSES_parity_on_fresh_weights_and_says_so(monkeypatc
     assert all(torch.equal(before[k], v) for k, v in fresh.policy.state_dict().items())
 
 
-@pytest.mark.parametrize("strict", [False, True])
-def test_a_pointer_only_miscompile_is_REFUSED_with_the_typed_error_whatever_strict_says(
-        monkeypatch, fresh, strict):
+def test_a_pointer_only_miscompile_is_REFUSED_with_the_typed_error(monkeypatch, fresh):
     fe = fresh.policy.features_extractor
     before = {k: v.clone() for k, v in fresh.policy.state_dict().items()}
     monkeypatch.setattr(torch, "compile", _pointer_cell_miscompile(fe))
     try:
         with pytest.raises(CompileTrainerError, match="--compile-opponents parity.*legal_logprob"):
-            S.maybe_compile_extractor(fresh, True, label="t-bad", strict=strict)
+            S.maybe_compile_extractor(fresh, True, label="t-bad")
         assert "forward" not in vars(fe) or getattr(fe.forward, "__func__", None) is \
             type(fe).forward, "a refused compile must be uninstalled"
     finally:

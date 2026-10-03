@@ -125,6 +125,8 @@ def _build(ridealong: dict):
     model = InstrumentedMaskablePPO(
         Gen3DualHeadMaskablePolicy, DummyVecEnv([(lambda s=s: env_cls(s)) for s in range(2)]),
         n_steps=8, batch_size=4, n_epochs=2, device="cpu", seed=0, policy_kwargs=pk)
+    from agents.training.rust_rollout.testkit import attach_vec_collector
+    attach_vec_collector(model)         # the rollout comes from the toy VecEnv (the Rust collector is production's)
     built_rng = _rng_state()
     # The startup acquisition, observed BEFORE any update: every optimizer and its Adam state exist.
     acquired = _acquired(model)

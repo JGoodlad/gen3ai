@@ -7,7 +7,7 @@ keep their original relative order, which is the order `--help` renders.
 import argparse
 
 from main.train.constants import SMOKE_EVAL_BATTLES, SMOKE_STEPS
-from main.train.parser.base import BoolFlag
+from main.train.parser.base import BoolFlag, retired_choice
 
 
 def add_operational_flags(parser: argparse.ArgumentParser) -> None:
@@ -32,50 +32,25 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "--debug-eval to exercise the eval pipeline in a smoke run. No effect on real "
                              "(non-debug) runs, which always eval.")
     parser.add_argument("--n-envs", type=int, default=32, help="Number of parallel environments")
-    parser.add_argument("--async-rollout", "--async_rollout", dest="async_rollout",
-                        action=BoolFlag, default=False,
-                        help="Non-barrier async rollout collection: keep every env worker "
-                             "continuously in-flight and forward whichever are ready, instead of "
-                             "barriering on the slowest env each step (AsyncSubprocVecEnv + an "
-                             "on-policy async collect_rollouts that overlaps the GPU forward with "
-                             "CPU env-stepping). Off by default; ignored under --debug. With async, "
-                             "right-size --n-envs nearer the core count (16) rather than oversubscribing.")
     parser.add_argument("--device", type=str, default="auto", help="Device to use (cpu, cuda, or auto)")
     parser.add_argument("--showdown-port", type=int, default=None,
                         help="Local Showdown server port (default 8000). Sets the port for the trainee, "
                              "eval, and self-play clients. Start the server on the matching port, "
                              "e.g. npm run showdown -- <port>.")
-    parser.add_argument("--use-bridge", type=str, default="rust",
-                        choices=["off", "node", "rust"],
-                        help="In-process BattleStream bridge transport for BOTH training AND eval "
-                             "(no Showdown server, no port, no /challenge storm, deterministic). "
-                             "'rust' (DEFAULT) = the byte-compatible src/rust_sim sim_bridge binary "
-                             "(built via cargo; override with POKESIM_SIM_BRIDGE_BIN) — measured "
-                             "1.41x node's throughput at --n-envs 48 with a ~25x smaller child "
-                             "(9 MB RSS vs ~224 MB). 'node' = the Node local_sim_bridge.js, kept as "
-                             "the explicit A/B arm and for the parity harness. 'off' = the websocket "
-                             "transport, which needs a running Showdown server on --showdown-port. "
-                             "NOTE: 'rust' now emits __RECON__ (gen3_bridge_recon_record_v1, on a "
-                             "seedless battle too) and supports resumeReseed "
-                             "(gen3_bridge_resume_reseed_v1), so the forensic reconstruction and "
-                             "counterfactual paths work on rust. The OFFLINE search/replay drivers "
-                             "are on rust too (gen3_rust_search_driver_v1 / "
-                             "gen3_rust_replay_driver_v1 — one search_driver binary serves both "
-                             "verb families). 'rust' also fail-louds on an unmodeled move.")
-    parser.add_argument("--obs-source", type=str, default=None, choices=["python", "core"],
-                        help="Where the TRAINEE's observation row comes from "
-                             "(gen3_core_obs_source_v1, the Rust core program's M6). DEFAULT: 'core' "
-                             "on the rust bridge (the production default since the M6 cutover, "
-                             "2026-09-25) — the Rust core's row, built in the rust sim_bridge child "
-                             "from the trainee's own per-side stream (parse -> reading -> view -> "
-                             "trackers -> encode) and shipped before the request it answers; the env "
-                             "refuses a frame of another battle / decision / turn, a NaN cell or a "
-                             "mask that disagrees with the reading. 'python' = Gen3ObservationEncoder "
-                             "in the env worker (the explicit opt-out, byte-identical by construction; "
-                             "removed by the deletion pass), and the default on --use-bridge node|off. "
-                             "Typing 'core' needs --use-bridge rust. Labels, reward and action "
-                             "mapping are Python either way; terminal and non-decision embeds stay "
-                             "Python and are counted. Opponents are unaffected.")
+    parser.add_argument("--use-bridge", type=retired_choice(
+                            "--use-bridge", ("rust",),
+                            "the Python env core was deleted — deletion pass U3, 2026-10-02 — and with it the "
+                            "node and websocket ('off') transports for TRAINING; the Rust env core is "
+                            "serverless and in-process"),
+                        default="rust", choices=["rust"],
+                        help="The battle transport of training AND eval: 'rust' = the byte-compatible "
+                             "src/rust_sim sim_bridge binary / the Rust env core (built via cargo; override "
+                             "with POKESIM_SIM_BRIDGE_BIN) — in-process, no Showdown server, no port, no "
+                             "/challenge storm, deterministic, fail-loud on an unmodeled move. The ONLY legal "
+                             "value since the Python env core was deleted (deletion pass U3, 2026-10-02): "
+                             "'node' and 'off' (the websocket transport) are refused at parse time. The "
+                             "offline tools (`main.prober`, the eval worker, the search drivers) keep their "
+                             "own transport choice.")
     parser.add_argument(
         "--self-play-use-cpu",
         action=BoolFlag,

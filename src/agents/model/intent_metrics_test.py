@@ -148,11 +148,11 @@ def test_the_loss_is_untouched_by_the_metric_change():
     assert torch.equal(loss_a, loss_b)
 
 
-def test_class_names_match_the_wrapper_constants():
+def test_class_names_match_the_declared_constants():
     """The table is duplicated to keep `model/` from importing `training/` — pin them together."""
-    from agents.training.wrappers import MaskableAgentWrapper as W
-    assert OPP_CLASS_NAMES == {W.OPP_CLASS_BOT: "bot", W.OPP_CLASS_POOL: "pool",
-                               W.OPP_CLASS_STABLE: "stable", W.OPP_CLASS_EXPLOITER: "exploiter"}
+    from agents.training import opponent_classes as oc
+    assert OPP_CLASS_NAMES == {oc.OPP_CLASS_BOT: "bot", oc.OPP_CLASS_POOL: "pool",
+                               oc.OPP_CLASS_STABLE: "stable", oc.OPP_CLASS_EXPLOITER: "exploiter"}
 
 
 # ------------------------------------------------- the AXIS metrics carry the split too

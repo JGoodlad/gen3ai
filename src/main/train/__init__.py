@@ -9,13 +9,13 @@ re-exports every name that used to live in it, so no import path and no recorded
                         order (base + operational, hyperparameters, reward, clean_world,
                         capacity, distillation, eval_subprocess); `base.py` holds the three
                         custom argparse pieces
-    compile_flags.py    the `--compile-opponents` / `--compile-trainer` default resolvers
+    compile_flags.py    the `--compile-trainer` default resolvers
     checkpoint_state.py reading a checkpoint's saved arch; the by-NAME optimizer realign
     run_io.py           the run directory, latest.txt, the TB logger, the checkpoint callback
     lifecycle.py        grad checkpointing, the trainer compile, the round-trip smoke, signals
     config.py           phase 1 — desugar / `_resolve` / validate
     matchup_setup.py    phase 2 — teams, the matchup, every opponent source
-    env_factory.py      phase 3 — the per-worker training-env `_init` closure
+    rust_env_setup.py   phase 3 — the Rust env core's `RustVecEnv` (the only env core)
     callbacks.py        phase 4 — everything that runs during `learn()`
     model_build.py      phase 5 — the resume + fresh model paths, and `learn()` itself
     final_eval.py       the post-training win-rate evaluation

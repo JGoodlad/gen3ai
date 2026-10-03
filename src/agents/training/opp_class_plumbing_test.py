@@ -1,137 +1,42 @@
-"""The `opp_class` label's route: wrapper -> env -> obs key -> rollout buffer -> `train()`.
+"""The `opp_class` label's CONSUMER side: obs key -> one-ahead shift -> rollout buffer -> `train()`.
 
 `opp_class` (`gen3_opp_class_v1`) shipped as a METRICS key — it is what splits every `opp_intent/*`
 number by opponent kind. `--intent-label-bot-weight` (`gen3_intent_label_bot_weight_v1`) makes it
-LOAD-BEARING: it now decides how much each alpha/beta label is trained on, so a break in this chain
-stops being a mislabelled dashboard and becomes wrong supervision. Nothing covered the chain, so
-these are the gates it never had.
+LOAD-BEARING: it decides how much each alpha/beta label is trained on, so a break in this chain
+stops being a mislabelled dashboard and becomes wrong supervision.
 
 The property that matters at each hop is the PAIRING, not the presence: row i's `opp_class` must
 still be row i's opponent after the label shift and after `get()`'s shuffle. A key that survives
 but decouples from its label would weight the wrong rows and look completely healthy.
+
+(The PRODUCER hops — the Python wrapper tagging the episode, `Gen3Env` emitting the key — were
+deleted with the Python env core, deletion pass U3. The Rust collector writes the key from the
+declared class table; its column is pinned by `rust_rollout/store_test` and `trainee_spaces_test`.)
 """
-import types
-from unittest.mock import MagicMock
 
 import numpy as np
-import pytest
 import torch
 
 from agents.model.opp_intent import OPP_CLASS_BOT, OPP_CLASS_NAMES
 from agents.training.opp_intent_labels import align_labels_to_predictions
-from agents.training.wrappers import MaskableAgentWrapper
 
 
 # ── the two class tables must agree (they are hand-mirrored across packages) ───────────────
 
-def test_the_model_side_class_table_mirrors_the_wrapper():
+def test_the_model_side_class_table_mirrors_the_declared_one():
     """`opp_intent.OPP_CLASS_NAMES` is a hand copy kept in the model package so it does not import
     the training package. A drift here silently renames every stratified metric AND mis-targets
     the label weight."""
-    assert OPP_CLASS_NAMES == {
-        MaskableAgentWrapper.OPP_CLASS_BOT: "bot",
-        MaskableAgentWrapper.OPP_CLASS_POOL: "pool",
-        MaskableAgentWrapper.OPP_CLASS_STABLE: "stable",
-        MaskableAgentWrapper.OPP_CLASS_EXPLOITER: "exploiter",
-    }
+    from agents.training import opponent_classes as oc
+
+    assert OPP_CLASS_NAMES == dict(oc.OPP_CLASS_NAMES)
 
 
 def test_the_weighted_class_is_the_bot_class():
-    """The label weight discounts exactly the class the wrapper calls a bot."""
-    assert OPP_CLASS_BOT == MaskableAgentWrapper.OPP_CLASS_BOT
+    """The label weight discounts exactly the class the collector calls a bot."""
+    from agents.training import opponent_classes as oc
 
-
-# ── hop 1: the wrapper tags the episode and pushes it onto the env ─────────────────────────
-
-def _stub_env():
-    env = MagicMock()
-    env.agent1.username = "a1"
-    env.observation_spaces = {"a1": MagicMock()}
-    env.action_spaces = {"a1": MagicMock()}
-    return env
-
-
-def _wrapper(**kw):
-    env = _stub_env()
-    return MaskableAgentWrapper(env, heuristic_opponents=[MagicMock()], **kw), env
-
-
-def test_a_bot_episode_tags_the_bot_class():
-    w, _ = _wrapper(self_play_fraction=0.0)
-    w._select_episode_opponent()
-    assert w._opponent_class == MaskableAgentWrapper.OPP_CLASS_BOT
-
-
-def test_a_pool_episode_tags_the_pool_class():
-    pool = MagicMock()
-    pool.is_empty.return_value = False
-    pool.sample.return_value = MagicMock()
-    pool.load_model.return_value = "M"
-    w, _ = _wrapper(self_play_fraction=1.0, pool=pool, pool_player=MagicMock())
-    w._select_episode_opponent()
-    assert w._opponent_class == MaskableAgentWrapper.OPP_CLASS_POOL
-
-
-def test_an_exploiter_episode_tags_the_exploiter_class():
-    w, _ = _wrapper(exploiter_player=MagicMock())
-    w._select_episode_opponent()
-    assert w._opponent_class == MaskableAgentWrapper.OPP_CLASS_EXPLOITER
-
-
-def test_reset_pushes_the_class_down_to_the_env_that_owns_the_obs():
-    """The env builds the obs, so the tag has to reach it — and at RESET, so a label can never
-    describe the PREVIOUS opponent."""
-    from unittest.mock import patch
-
-    from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
-
-    w, env = _wrapper(exploiter_player=MagicMock())
-    # Stub only the SUPER call (it needs a live battle); the push under test is the wrapper's own.
-    with patch.object(SingleAgentWrapper, "reset", return_value=({}, {})):
-        w.reset()
-    assert env._opponent_class == MaskableAgentWrapper.OPP_CLASS_EXPLOITER
-
-
-# ── hop 2: the env emits it beside the intent labels ───────────────────────────────────────
-
-class _EnvStub:
-    """The minimum `Gen3Env._opp_intent_labels` reads. `_intent_delta=None` takes the
-    zero-label branch, which is the case that matters here: even a masked label must carry an
-    honest class, since the class is what the WEIGHT keys on."""
-
-    _intent_delta = None
-    _opp_slot_map_prev: dict = {}
-    _species_num: dict = {}
-
-
-def _labels(cls_code=None):
-    from agents.training.gen3_env import Gen3Env
-    stub = _EnvStub()
-    if cls_code is not None:
-        stub._opponent_class = cls_code
-    return Gen3Env._opp_intent_labels(stub)
-
-
-@pytest.mark.parametrize("code", sorted(OPP_CLASS_NAMES))
-def test_the_env_emits_the_class_the_wrapper_set(code):
-    out = _labels(code)
-    assert out["opp_class"].dtype == np.int64
-    assert out["opp_class"].shape == (1,)
-    assert int(out["opp_class"][0]) == code
-
-
-def test_an_unwrapped_env_reports_bot_rather_than_crashing():
-    """A bare env has no opponent rotation. 0 is the honest default — and it is the WEIGHTED
-    class, so the fallback is conservative (train less), never optimistic."""
-    assert int(_labels()["opp_class"][0]) == MaskableAgentWrapper.OPP_CLASS_BOT
-
-
-def test_the_class_rides_the_same_dict_as_the_intent_labels():
-    """One dict, one emission point — so the class cannot describe a different decision than the
-    label it qualifies."""
-    out = _labels(1)
-    assert {"opp_action_kind", "opp_action_num", "opp_switch_slot",
-            "opp_switch_species", "opp_class"} <= set(out)
+    assert OPP_CLASS_BOT == oc.OPP_CLASS_BOT
 
 
 # ── hop 3: the one-ahead shift moves it with everything else ───────────────────────────────
@@ -241,80 +146,3 @@ def test_only_the_intent_loss_takes_the_weight():
     r1 = inspect.getsource(ms.micro_step)
     assert r1.count("bot_label_weight=st.bot_label_weight") == 1          # the intent fold's call
     assert r1.count("bot_label_weight") == 2                              # ... and nowhere else
-
-
-# ── hop 0: WHICH RUNS emit the key at all ──────────────────────────────────────────────────
-#
-# `gen3_value_sidecar_v1` (2026-09-08) widened the gate. `opp_class` used to be declared only
-# under the opponent-intent labels — and a win-prob arm normally runs with NO intent loss, so the
-# value sidecar's by-opponent-class calibration slice was empty on exactly the runs it exists for.
-# It is a LABEL key the network never reads, so widening it cannot change a forward pass.
-
-class _MergeStub:
-    """The minimum `Gen3Env._merge_training_keys` reads on a WIN-PROB-only run.
-
-    Every other emit gate is off, which is the configuration under test: a win-prob arm with no
-    belief, spread, item, HP-type or intent supervision. If `opp_class` only appeared because some
-    OTHER gate was open, this stub would not produce it.
-    """
-
-    _emit_belief_labels = False
-    _emit_spread_labels = False
-    _emit_hp_type_labels = False
-    _emit_item_labels = False
-    _emit_opp_intent_labels = False
-    _emit_win_target = True
-    _emit_fork_pg_mask = False
-
-    def __init__(self, cls_code):
-        self._opponent_class = cls_code
-        self.reward_manager = types.SimpleNamespace(_last_material_margin=0.25)
-
-
-@pytest.mark.parametrize("code", sorted(OPP_CLASS_NAMES))
-def test_a_WIN_PROB_run_emits_opp_class_with_NO_intent_labels(code):
-    """THE property the value sidecar's opponent slice rests on."""
-    from agents.training.gen3_env import Gen3Env
-    stub = _MergeStub(code)
-    agent_obs = {"observation": np.zeros(4, dtype=np.float32)}
-    Gen3Env._merge_training_keys(stub, agent_obs)
-    assert "win_target" in agent_obs and "win_mask" in agent_obs   # the gate really was win-prob's
-    assert "opp_action_kind" not in agent_obs                      # and the intent gate stayed shut
-    assert agent_obs["opp_class"].dtype == np.int64
-    assert agent_obs["opp_class"].shape == (1,)
-    assert int(agent_obs["opp_class"][0]) == code
-
-
-def test_the_win_prob_gate_does_not_OVERWRITE_the_intent_labels_class():
-    """Both gates open: `_opp_intent_labels` supplies the key and the win-prob block must leave it
-    alone. The two compute the same value today, so a clobber would be invisible — which is
-    precisely why it is pinned rather than trusted."""
-    from agents.training.gen3_env import Gen3Env
-
-    class _Both(_MergeStub):
-        _emit_opp_intent_labels = True
-        _intent_delta = None
-        _opp_slot_map_prev: dict = {}
-        _species_num: dict = {}
-        # The REAL emission point, bound onto the stub — a re-implementation here could agree with
-        # itself while disagreeing with the env, which is the whole failure this file guards.
-        _opp_intent_labels = Gen3Env._opp_intent_labels
-
-    stub = _Both(MaskableAgentWrapper.OPP_CLASS_STABLE)
-    agent_obs = {"observation": np.zeros(4, dtype=np.float32)}
-    Gen3Env._merge_training_keys(stub, agent_obs)
-    assert int(agent_obs["opp_class"][0]) == MaskableAgentWrapper.OPP_CLASS_STABLE
-    assert "opp_action_kind" in agent_obs      # the intent labels really did run
-
-
-def test_a_run_with_NEITHER_gate_emits_no_class_at_all():
-    """The key is not unconditional. A shaped-critic run with no intent loss has no consumer for
-    it, and an obs key nothing reads is still an obs key every resume has to tolerate."""
-    from agents.training.gen3_env import Gen3Env
-
-    class _Neither(_MergeStub):
-        _emit_win_target = False
-
-    agent_obs = {"observation": np.zeros(4, dtype=np.float32)}
-    Gen3Env._merge_training_keys(_Neither(0), agent_obs)
-    assert "opp_class" not in agent_obs

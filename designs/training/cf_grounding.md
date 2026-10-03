@@ -46,8 +46,7 @@ resume / fork (`agents/model/model_version/retired_levers.py`). Flag-by-flag cit
 
 **The Python fork arm was the last reader of the ring (deleted, unit L5).** `agents/training/cf_records.py`
 (the `safe_tag` / `record_key` / `index_records` join helpers) went with the arm and the wrapper's
-decision-time handle capture; `--fork-fraction > 0` on `--env-core python` stays refused (combination row
-`fork_python_core_unavailable`). The Rust fork port needs no ring ([`forks.md`](forks.md) §14).
+decision-time handle capture; the python-core refusal row went with the Python core (U3). The Rust fork port needs no ring ([`forks.md`](forks.md) §14).
 
 **What stays — the OFFLINE cf stack (design decision D6; nothing in training spawns or consumes it):**
 
@@ -358,7 +357,7 @@ of a net is strictly stronger than a temp-1.0 sample of it, and greedy rollouts 
 sentinel labels LOW by a measured +0.037 [+0.007, +0.066].
 
 **Which side is the trainee.** A training record names none, so `_trainee_side` answers from the
-transport's own invariant: `BridgeSession` seats `env.agent1` — the trainee — on **p1**, always. A
+transport's own invariant: the (deleted, U3) Python `BridgeSession` seated `env.agent1` — the trainee — on **p1**, always; the Rust env core keeps the same seating. A
 record that DOES name a trainee (an eval sibling handed to this tool) is honoured instead.
 
 🚨 **A rollout that reaches the 250-turn cap is a DRAW AT CAP and scores 0.5** — never a win or a

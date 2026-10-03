@@ -1,30 +1,33 @@
-"""THE TRAINING-LABEL INVENTORY — every label key ``Gen3Env`` can emit, and where each comes from in
-the Rust env (M5 Lane C, ``designs/endstate/program_rust_core.md`` §2 M5).
+"""THE TRAINING-LABEL INVENTORY — every label key the trainee's observation can carry, and where each
+comes from in the Rust env (M5 Lane C, ``designs/endstate/program_rust_core.md`` §2 M5).
 
-``Gen3Env`` (``agents/training/gen3_env.py``) puts two kinds of keys in the trainee's Dict obs: the
-``observation`` row + ``action_mask`` (Lane 0's ``obs`` / ``mask`` columns), and the TRAINING-ONLY
-LABEL keys below — read by a loss, a callback or a diagnostic, never by the policy forward
-(``designs/ARCHITECTURE.md`` §7).
-This table is the ONE list of them. ``src/agents/training/rust_env_label_inventory_test.py``
-(routine) fails the day ``Gen3Env`` declares a key this table does not list, a row's dtype / shape /
-emit gate drifts, the PRODUCTION surface (``--arch production`` + ``designs/production_config.json``)
-emits a different set than the rows marked ``production``, or ARCHITECTURE.md §7 disagrees about
-which keys production emits. The human-readable version, with each key's derivation, is
+The trainee's Dict obs holds the ``observation`` row + ``action_mask`` (Lane 0's ``obs`` / ``mask``
+columns) and the TRAINING-ONLY LABEL keys below — read by a loss, a callback or a diagnostic, never by
+the policy forward (``designs/ARCHITECTURE.md`` §7). This table is the ONE list of them.
+``src/agents/training/rust_env_label_inventory_test.py`` (routine) fails the day
+``agents.training.trainee_spaces`` declares a key this table does not list, a row's dtype / shape / emit
+gate drifts, the PRODUCTION surface (``--arch production`` + ``designs/production_config.json``) emits a
+different set than the rows marked ``production``, or ARCHITECTURE.md §7 disagrees about which keys
+production emits. The human-readable version, with each key's derivation, is
 ``designs/rust_sim/env_labels.md``.
+
+(Until deletion pass U3 the list was the whole truth about the Python env's ``Gen3Env`` label keys, and each
+row's ``producer`` names the ``Gen3Env`` method that wrote it — kept as the DEFINITION's name; that env and its
+label parity gates are deleted, and the Rust label columns are pinned by ``rust_env/tests`` and the label
+columns test.)
 
 Each row says WHERE THE RUST ENV GETS IT (``rust``):
 
 * ``core`` — a per-decision value the env core computes from what it holds: the TRUTH (the other
-  side's own reading of its team — ``battle2.team`` in the Python env — and the engine board) and
-  the side's own READING / row. A label column (Lane C, ``src/rust_env/src/labels/``), gated
-  against ``Gen3Env`` per decision (``rust_env_labels_parity_test.py``).
-* ``host_const`` — a PLACEHOLDER: ``Gen3Env`` writes a constant that a rollout callback overwrites
-  post-collection. No column: the host (Lane G's vec env) writes ``const``.
+  side's own reading of its team and the engine board) and the side's own READING / row. A label
+  column (Lane C, ``src/rust_env/src/labels/``).
+* ``host_const`` — a PLACEHOLDER: a constant that the collector's back-fill overwrites after the
+  game. No column: the host (Lane G's vec env) writes ``const``.
 * ``host_episode`` — a per-EPISODE value the host already owns (the opponent choice stays Python,
   program §2 M5 inventory). No column: the host writes it from its per-episode routing state, keyed
   by the core's ``episode`` column.
 
-``gate`` is the ``Gen3Env`` constructor kwargs that turn the key on (``main.train.env_factory.
+``gate`` is the ``label_gates`` keywords that turn the key on (``agents.training.trainee_spaces.
 trainee_env_kwargs`` derives them from the CLI); ``family`` is the Lane-C build unit.
 """
 from __future__ import annotations
@@ -42,12 +45,12 @@ RUST_KINDS = ("core", "host_const", "host_episode")
 @dataclass(frozen=True)
 class LabelKey:
     key: str
-    dtype: str                     # "i64" | "f32" — the Gen3Env Box dtype
+    dtype: str                     # "i64" | "f32" — the declared Box dtype
     shape: Tuple[int, ...]
     family: str
-    gate: Tuple[Tuple[str, object], ...]   # Gen3Env kwargs that emit it (any ONE row of `alt_gates` also does)
+    gate: Tuple[Tuple[str, object], ...]   # `label_gates` kwargs that emit it (any ONE row of `alt_gates` also does)
     production: bool
-    producer: str                  # the Python function that writes it
+    producer: str                  # the (deleted) Python env function that originally wrote it — the definition's name
     consumers: Tuple[str, ...]     # src-relative files that READ it (not the carriers: the fork FILL table, the rollout buffer)
     rust: str
     derivation: str
@@ -121,7 +124,7 @@ LABELS: Tuple[LabelKey, ...] = (
     # ---------------------------------------------------------------- win-prob
     LabelKey("win_target", "f32", (1,), "winprob", _WIN, True, "Gen3Env._merge_training_keys",
              ("agents/training/win_prob_callback.py", _PPO), "host_const",
-             "PLACEHOLDER; `WinProbLabelCallback` back-fills the episode outcome post-collection "
+             "PLACEHOLDER; the Rust collector back-fills the episode outcome post-collection "
              "(under `--critic winprob` it IS the value target)", const=0.0),
     LabelKey("win_mask", "f32", (1,), "winprob", _WIN, True, "Gen3Env._merge_training_keys",
              ("agents/training/win_prob_callback.py", _PPO), "host_const",

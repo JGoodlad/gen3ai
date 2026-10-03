@@ -7,7 +7,7 @@ USAGE
         ...                                   # children inherit GEN3AI_GPU_LOCK_HELD=<this pid>
 
     # a shell, around one command:
-    scripts/ops/gpu_lock.sh python -m main.rust_core_m5 gates --tier milestone --gpu
+    scripts/ops/gpu_lock.sh python -m main.policy_spectrum truth --lock    # any GPU command
     python -m utils.gpu_lock -- <cmd> [args...]          # the same, without the wrapper
     python -m utils.gpu_lock --status                     # who holds it now
 
@@ -16,8 +16,8 @@ USAGE
     scripts/ops/gpu_lock.sh timeout 3000 <cmd>            # right
     timeout 3000 scripts/ops/gpu_lock.sh <cmd>            # WRONG
 
-WHY. On 2026-09-30 an agent wrapped ``python -m main.rust_core_m5 gates … --gpu`` in
-``flock ~/.claude/jobs/gpu.lock``. ``gates.py`` takes that same lock itself around its GPU pytest, and a
+WHY. On 2026-09-30 an agent wrapped the M5 gate harness's GPU run (``main.rust_core_m5 gates … --gpu``,
+deleted in deletion pass U3) in ``flock ~/.claude/jobs/gpu.lock``. The harness took that same lock itself around its GPU pytest, and a
 ``flock`` on a NEW open of the file is a different lock owner, so the inner flock waited 15 min at 0%
 CPU on a lock its own ancestor held. Nothing could ever release it. The class fix:
 

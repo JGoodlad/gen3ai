@@ -134,7 +134,7 @@ def test_resolve_device_reads_the_models_real_device():
 
 
 def _stable(**kw):
-    base = dict(n_steps=2048, n_envs=48, batch_size=4096, async_rollout=False)   # gen-10's config
+    base = dict(n_steps=2048, n_envs=48, batch_size=4096)   # gen-10's config
     base.update(kw)
     return base
 
@@ -142,16 +142,6 @@ def _stable(**kw):
 def test_the_production_config_is_accepted():
     """gen-10: 2048*48 = 98304 = 24 x 4096 exactly. Two shapes total, well under cache_size_limit."""
     check_shape_stability(**_stable())
-
-
-def test_async_rollout_is_refused():
-    """The async collector forwards whichever envs are READY, so the batch VARIES by construction —
-    an unbounded shape set, which exhausts dynamo's cache and drops to eager SILENTLY."""
-    with pytest.raises(CompileTrainerError) as e:
-        check_shape_stability(**_stable(async_rollout=True))
-    msg = str(e.value)
-    assert "--async-rollout" in msg and "SILENTLY" in msg
-    assert "+14%" in msg and "+62%" in msg, "the error should let you pick, with the measured numbers"
 
 
 def test_a_remainder_minibatch_is_refused_with_a_concrete_suggestion():

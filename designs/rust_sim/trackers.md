@@ -143,7 +143,7 @@ without `{"own": …}`), so COMMIT, MILESTONE and the tracker fuzz all fail on a
 
 `agents/battle/rust_core_parity_trackers.py`, on the same `core_events` replay as slices E and V
 (`core_events --trackers`): at every decision of both viewers, the real `EpisodeTracker` driven as
-`Gen3Env.embed_battle` drives it over a `Gen3Battle` fed the viewer's text, serialised into the
+the (deleted, U3) `Gen3Env.embed_battle` drove it over a `Gen3Battle` fed the viewer's text, serialised into the
 core's shape and compared TYPE-strict, EVERY differing leaf reported (one bad field never hides
 another), **no allowlist**: slots, the HP belief (every float32), the clock (`n`, its inputs,
 `value()`), recency, pair history, the 32 event-window rows (every column), the wish / sleep folds,

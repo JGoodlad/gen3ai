@@ -8,10 +8,10 @@ keep their original relative order, which is the order `--help` renders.
 """
 import argparse
 
-from agents.model.critic_mode import CRITIC_MODES
+from agents.model.critic_mode import CRITIC_TRAINABLE_MODES
 from agents.training.value_sidecar import DEFAULT_SIDECAR_FRACTION
 from main.train.constants import CLIP_RANGE_DEFAULT
-from main.train.parser.base import BoolFlag, optional_float
+from main.train.parser.base import BoolFlag, optional_float, retired_choice
 
 
 def _rnd_variants_arg(value: str) -> str:
@@ -30,15 +30,16 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     # --- gen3_winprob_critic_mode_v1 (ai_v12, designs/ai_v12/design_winprob_only_critic.md): WHICH
     #     readout is the value function. Declared FIRST in this family because it governs the
     #     reward composition and the win-prob head below it. ---
-    parser.add_argument("--critic", dest="critic", choices=CRITIC_MODES, default=None,
-                        help="WHICH readout is the critic. 'winprob' is the DEFAULT (the "
-                             "deletion pass's bare-argv flip, 2026-10-02 -- the production critic). "
-                             "'shaped' (every generation through gen-16; PopArt, the distributional "
-                             "E[Z] critic and the aux-BCE coefficient were deleted with it) = the "
-                             "scalar value_net in raw return units, with the win-prob head an "
-                             "auxiliary BCE. 'winprob' = THE WIN-PROB HEAD IS "
-                             "THE CRITIC: V(s) = sigmoid(logit) in [0,1], the value loss IS that "
-                             "head's BCE against the terminal outcome (weighted by --vf-coef), "
+    parser.add_argument("--critic", dest="critic", choices=CRITIC_TRAINABLE_MODES, default=None,
+                        type=retired_choice(
+                            "--critic", CRITIC_TRAINABLE_MODES,
+                            "'shaped' trained on the Python env core, deleted in deletion pass U3, "
+                            "2026-10-02; a shaped-era run resumes PINNED to its own commit — an OLD shaped "
+                            "checkpoint still LOADS (as an opponent, in the meters and the prober)"),
+                        help="WHICH readout is the critic. 'winprob' (the DEFAULT and the ONLY trainable value "
+                             "since the Python env core was deleted — deletion pass U3, 2026-10-02) = THE "
+                             "WIN-PROB HEAD IS THE CRITIC: V(s) = sigmoid(logit) in [0,1], the value loss IS "
+                             "that head's BCE against the terminal outcome (weighted by --vf-coef), "
                              "the reward stream is "
                              "the TERMINAL WIN INDICATOR (--terminal-indicator and "
                              "--victory-value 1.0 required -- both the bare-argv defaults -- so "
@@ -48,11 +49,8 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "It requires --win-prob-mode read_only|shaping (unset defaults to "
                              "'shaping' under this critic) and REFUSES the flags whose job it "
                              "subsumes -- see the refusals `python -m main.checkargs` prints. "
-                             "STRUCTURAL + resume-IMMUTABLE (a different set of heads carries the "
-                             "value, so a mid-run flip is a different training problem).")
-    # --- gen3_value_sidecar_v1 (2026-09-08): the TRAINING-SIDE value read. Declared here because
-    #     it is only meaningful relative to --critic above: `v` is a probability under `winprob`
-    #     and a shaped return under `shaped`, and the sidecar's header records which. ---
+                             "'shaped' (every generation through gen-16: the scalar value_net in raw return "
+                             "units) is refused at parse time.")
     parser.add_argument("--value-sidecar", "--value_sidecar", dest="value_sidecar",
                         type=str, choices=("auto", "on", "off"), default="auto",
                         help="Log the critic against its OWN TRAINING TARGET. Once per rollout a "
@@ -259,43 +257,6 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "are non-persistent buffers), but STRUCTURAL + version-checked all the "
                              "same: flipping it re-means every species logit. REQUIRES "
                              "--opp-belief-aux-coef>0. Off by default (byte-identical).")
-    parser.add_argument("--compile-opponents", "--compile_opponents", dest="compile_opponents",
-                        action=BoolFlag, default=True,
-                        help="torch.compile each frozen SELF-PLAY OPPONENT's feature extractor in the "
-                             "env workers (CPU, B=1 — the measured 68%% of rollout worker time). "
-                             "Measured 6.53x on the real forward; value-preserving to ~5e-7 with 0/16 "
-                             "argmax flips. This is the CPU/ROLLOUT half; --compile-trainer is the "
-                             "GPU/LEARNER half and they are independent. **DEFAULT ON** — pass "
-                             "--no-compile-opponents to fall back to eager. The default failure mode "
-                             "is still warn-and-fall-back (--compile-opponents-strict promotes it to "
-                             "a hard error). RUNTIME PERF KNOB: not versioned, not in "
-                             "check_compatible; with the default ON a flagless resume gets it ON. "
-                             "Hides CUDA in the (CPU) workers first, because compiling in a "
-                             "CUDA-visible process costs ~252 MiB of card per worker.")
-    parser.add_argument("--compile-opponents-preload", "--compile_opponents_preload",
-                        dest="compile_opponents_preload", action=BoolFlag, default=None,
-                        help="gen3_forkserver_preload_v1: compile the extractor ONCE in the "
-                             "multiprocessing FORKSERVER so every env worker inherits the traced "
-                             "graph by fork (~0.12 s/worker instead of ~30 s against a warm disk "
-                             "cache). Possible since the lazy poke_env __init__ made the extractor "
-                             "import single-threaded (compile_prewarm.extractor_import_is_fork_safe). "
-                             "FAIL-LOUD: a preload that cannot prove the forkserver is "
-                             "single-threaded after the compile RAISES, killing env construction "
-                             "with a traceback instead of the silent 2-of-48-workers wedge the "
-                             "2026-08 attempt caused. **DEFAULT: FOLLOWS --compile-opponents** (so "
-                             "ON by default, OFF whenever the opponent compile is off); "
-                             "--no-compile-opponents-preload keeps the opponent compile but reverts "
-                             "to the per-worker in-trainer cache prewarm. Runtime perf knob (never "
-                             "versioned, not inherited on resume).")
-    parser.add_argument("--compile-opponents-strict", "--compile_opponents_strict",
-                        dest="compile_opponents_strict", action="store_true", default=False,
-                        help="Turn a failed or ineffective OPPONENT compile into a hard error instead "
-                             "of a warning. Without --compile-opponents this does nothing. Falling "
-                             "back to eager is a ~6.5x regression on the opponent forward that is "
-                             "otherwise invisible (the run just produces fewer steps/hour forever), so "
-                             "use this when you would rather fail at startup than discover it in the "
-                             "FPS graph a day later. (--compile-trainer needs no such flag: it is "
-                             "ALWAYS fail-loud, see its help.)")
     parser.add_argument("--compile-trainer", "--compile_trainer", dest="compile_trainer",
                         action=BoolFlag, default=None,
                         help="torch.compile the LEARNER's feature extractor — the GPU forward AND "
@@ -468,8 +429,7 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "is the budget's -- read fork/requested against fork/forks. Watch "
                              "fork/sim_steps_share, fork/branch_share, fork/rate and "
                              "fork/pairwise_acc. REQUIRES --critic winprob, and REFUSES "
-                             "--win-prob-strata-weight (and --env-core python: the Python core's fork "
-                             "arm lost its replay ring with --cf-records, deletion pass L4). "
+                             "--win-prob-strata-weight. "
                              "TRAINING-only, resume-inherited.")
     parser.add_argument("--fork-branches", "--fork_branches", dest="fork_branches",
                         type=int, choices=(2, 3), default=None,

@@ -11,10 +11,7 @@ opponent that never sets them runs the byte-identical-to-upstream loss.
 class PpoHyperparameters:
     """The after-construction knobs, and the save-exclusion list that goes with them."""
 
-    # Set by train_rl_agent after construction; opt-in (default off → stock sync collection).
-    _async_rollout: bool = False
-
-    # Set by train_rl_agent after construction (like _async_rollout). GRADIENT ACCUMULATION: do K
+    # Set by train_rl_agent after construction. GRADIENT ACCUMULATION: do K
     # forward/backward passes over `batch_size`-sized MICRO-batches, summing their gradients, and
     # call optimizer.step() only ONCE per group of K. The accumulated gradient is the EXACT gradient
     # of one (batch_size·K) batch (gradients are additive + each micro-loss is scaled by 1/K), but the

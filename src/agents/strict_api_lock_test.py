@@ -220,7 +220,6 @@ def test_walk_actually_covers_the_known_consumers():
         "action/mapper.py",
         "action/mask_generator.py",
         "training/reward_manager.py",
-        "training/gen3_env.py",
         "inference/player.py",
     ):
         assert expected in found, f"{expected} missing from the consumer walk — exclusions too broad?"

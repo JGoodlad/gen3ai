@@ -124,9 +124,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
     Behaviour-identical to `MaskablePPO` except for the additional TensorBoard
     metric. See module docstring for drift-detection details.
 
-    Also dispatches rollout collection to the **non-barrier async collector** when
-    ``self._async_rollout`` is set and the env is an ``AsyncSubprocVecEnv`` (``--async-rollout``);
-    otherwise it is the unchanged stock ``MaskablePPO.collect_rollouts``.
+    Rollout collection is the Rust collector's (`RolloutProbes.collect_rollouts`).
     """
 
     def train(self) -> None:

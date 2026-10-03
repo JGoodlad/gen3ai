@@ -5,7 +5,7 @@
 """
 import argparse
 
-__all__ = ["optional_float", "str2bool", "BoolFlag", "_BOOL_TRUE", "_BOOL_FALSE"]
+__all__ = ["optional_float", "str2bool", "BoolFlag", "retired_choice", "_BOOL_TRUE", "_BOOL_FALSE"]
 
 
 def optional_float(s: str) -> float | None:
@@ -19,6 +19,25 @@ def optional_float(s: str) -> float | None:
     if s.strip().lower() in ("none", "null", ""):
         return None
     return float(s)
+
+
+def retired_choice(flag: str, legal: tuple, why: str):
+    """argparse `type=` converter for a flag whose OTHER values were deleted with the code that served them.
+
+    ``choices=`` alone would answer a typed ``--env-core python`` with "invalid choice: 'python'
+    (choose from 'rust')" and say nothing about WHY, which reads as a typo. This raises the reason
+    (``why``) instead, so a command copied from a pre-deletion runbook fails at parse time with the
+    explanation and the way out. A legal value passes through unchanged (pair it with ``choices=legal``
+    so ``--help`` still lists it).
+    """
+    def convert(value: str) -> str:
+        if value in legal:
+            return value
+        raise argparse.ArgumentTypeError(
+            f"{flag} {value!r} was DELETED ({why}); the only legal value is "
+            f"{' / '.join(repr(x) for x in legal)}")
+    convert.__name__ = f"retired_choice({flag})"
+    return convert
 
 
 _BOOL_TRUE = ("true", "t", "yes", "y", "1", "on")

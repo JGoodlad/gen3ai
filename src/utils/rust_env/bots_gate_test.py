@@ -2,13 +2,12 @@
 it read, the action, the token and the RNG stream offset — and the banked battle replays.
 
 * COMMIT (routine): the banked corpus `src/rust_env/tests/fixtures/bots/commit_corpus.json.gz`
-  (every pooled bot × pool / ladder / procedural teams) through `tests/bots_gate_test.rs`, plus a
-  RE-RECORD: the Python bots, run again on the same keys, must produce the bank byte for byte — so
-  a Python bot change cannot leave the bank (and the port) stale in silence.
+  (every pooled bot × pool / ladder / procedural teams) through `tests/bots_gate_test.rs`.
+  **The bank is a FROZEN FIXTURE** (deletion pass U3, owner D3): the re-record that proved the Python
+  bots still produce it byte for byte ran through the Python env core and was deleted with it, as was
+  the fresh-corpus MILESTONE.
 * TEETH (routine): a moved action, a moved view hash, a moved stream offset, and a bot relabelled
   as another bot each FAIL, on the counter they should.
-* MILESTONE (``slow``; verdict in `designs/ops/slow_tier_status.json`): a freshly recorded corpus
-  at scale over the three team sources.
 """
 from __future__ import annotations
 
@@ -123,51 +122,27 @@ def _is_setup_token(tok) -> bool:
 def test_the_setup_bots_actually_set_up(bank):
     """F-LF-1 (fixed): before the fix, `move.target == "self"` compared a ``Target`` ENUM to a str,
     so the four setup steps never fired — the bank then held ZERO setup-move choices for these bots.
-    Reverting the Python fix makes the re-record test above fail AND this one; reverting only the
-    Rust port fails the COMMIT gate's action counter and its setup-site coverage."""
+    Reverting only the Rust port fails the COMMIT gate's action counter and its setup-site coverage."""
     counts = {b: 0 for b in SETUP_BOTS}
     for ep in bank["episodes"]:
         if ep["bot"] in counts:
             counts[ep["bot"]] += sum(_is_setup_token(d["tok"]) for d in ep["p2"])
     assert all(n >= 1 for n in counts.values()), counts
-    # And LIVE, not only from the bank: the chosen heuristic2 battle re-plays with its Calm Minds.
-    bot, src, n, key = next(x for x in BC.COMMIT_EXTRA if x[0] == "heuristic2")
-    eps = BC.record(bot, BC.team_list(src, n, key), key_base=key)
-    assert sum(_is_setup_token(d["tok"]) for e in eps for d in e["p2"]) >= 1
 
 
 def test_every_setup_bot_sets_up_with_curse(bank):
     """Owner 2026-09-29, "allow Curse": a non-Ghost's Curse is a setup move for all four setup bots
     (``baselines.self_setup_boosts``). Before, poke-env's Curse (target NORMAL, no boosts) could not
-    pass any setup step, so the bank held ZERO Curse choices. Reverting the Python change fails this
-    and the re-record test; reverting only the Rust port fails the COMMIT gate's action counter."""
+    pass any setup step, so the bank held ZERO Curse choices. Reverting only the Rust port fails the
+    COMMIT gate's action counter."""
     counts = {b: 0 for b in SETUP_BOTS}
     for ep in bank["episodes"]:
         if ep["bot"] in counts:
             counts[ep["bot"]] += sum(d["tok"] == "move curse" for d in ep["p2"])
     assert all(n >= 1 for n in counts.values()), counts
 
-RERECORD_PARTS = 2   # the whole re-record overran the 30 s default-tier budget once the Curse batches landed
-
-
 def test_the_bank_holds_exactly_the_commit_tier_plan(bank):
     assert sum(n for _, _, n, _ in BC.commit_tier_plan()) == len(bank["episodes"])
-
-
-@pytest.mark.parametrize("part", range(RERECORD_PARTS))
-def test_commit_tier_the_bank_is_what_the_python_bots_do_today(bank, part):
-    """Re-record on the bank's keys: the Python bots must reproduce it exactly (in parts — each part
-    re-records a contiguous slice of the plan and compares the matching slice of the bank)."""
-    plan = BC.commit_tier_plan()
-    cut = [len(plan) * i // RERECORD_PARTS for i in range(RERECORD_PARTS + 1)]
-    start = sum(n for _, _, n, _ in plan[:cut[part]])
-    fresh = BC.record_plan(plan[cut[part]:cut[part + 1]])
-    banked = bank["episodes"][start:start + len(fresh)]
-    assert len(fresh) == len(banked) and fresh
-    for e, (a, b) in enumerate(zip(fresh, banked), start):
-        assert a == b, (f"episode {e} ({b['bot']}) re-records differently — a Python bot, the env or the "
-                        "view changed; rebuild the bank with `python -m utils.rust_env.bot_corpus --commit-tier "
-                        "--write` and re-run this gate")
 
 
 def _first(corpus, bot, pred=lambda d: True):
@@ -198,15 +173,3 @@ def test_the_gate_has_teeth(built, bank, tmp_path, what):
     rep = gate(built, c, tmp_path, expect_fail=True, name=f"teeth_{what}.json")
     key = "action" if what == "relabel" else what
     assert _total(rep, key) >= 1, (what, rep)
-
-
-@pytest.mark.slow
-def test_milestone_every_decision_is_equal_at_scale(built, tmp_path):
-    bots = BC.COMMIT_BOTS
-    corpus = BC.build(bots, ("pool", "ladder", "procedural"), {"pool": 20, "ladder": 20, "procedural": 12}, 90_000)
-    rep = gate(built, corpus, tmp_path)
-    print(json.dumps({b: {k: t[k] for k in ("episodes", "decisions", "draw_decisions", "branches")}
-                      for b, t in rep["bots"].items()}))
-    _assert_clean(rep, corpus)
-    for bot in DRAWING:
-        assert rep["bots"][bot]["draw_decisions"] > 0, bot

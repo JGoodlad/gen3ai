@@ -213,21 +213,12 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             callbacks.append(ExploiterTempAnnealCallback(
                 temp_start=args.exploiter_temp_start, temp_end=args.exploiter_temp_end,
                 anneal_frac=args.exploiter_temp_anneal_frac))
-    # Win-probability head: captures each episode's win/loss outcome during collection + back-fills the
-    # rollout buffer's MC label before train() (only when the head is on → a default run pays nothing).
-    # M5 Lane G: under `--env-core rust` the COLLECTOR fills `win_target` / `win_mask` (complete
-    # games: every row its own outcome; the window fill: this callback's `backfill_terminal_labels`),
-    # and this callback's per-step scratch has no vec-step rows to read — so it is not registered.
-    if args.win_prob_mode != "none" and getattr(args, "env_core", "python") != "rust":
-        from agents.training.win_prob_callback import WinProbLabelCallback
-        callbacks.append(WinProbLabelCallback())
-    # THE TRAINING-SIDE VALUE SIDECAR (gen3_value_sidecar_v1). Appended IMMEDIATELY AFTER
-    # WinProbLabelCallback and the order is LOAD-BEARING: that callback's _on_rollout_end is what
-    # overwrites the win_target/win_mask placeholders with the MC label, and SB3 runs
-    # _on_rollout_end in list order. Registered before it, the sidecar reads placeholder ZEROS and
-    # writes a file full of target=0.0 that looks exactly like a critic facing a run of losses.
-    # `value_sidecar_test.py` pins this ordering; at runtime an all-zero mask is REPORTED rather
-    # than written, because a plausible wrong number is worse than a gap.
+    # THE TRAINING-SIDE VALUE SIDECAR (gen3_value_sidecar_v1). The Rust COLLECTOR fills `win_target` /
+    # `win_mask` itself (complete games: every row its own outcome; the window fill:
+    # `win_prob_callback.backfill_terminal_labels`) BEFORE `on_rollout_end`, so the sidecar reads the
+    # real labels; an all-zero mask is REPORTED rather than written, because a plausible wrong number
+    # is worse than a gap. (The `WinProbLabelCallback` this used to be ordered after was the Python
+    # collect's per-step capture; it was deleted with that core — deletion pass U3.)
     if _value_sidecar_on(args):
         from agents.training.value_sidecar import ValueSidecarCallback
         callbacks.append(ValueSidecarCallback(
@@ -285,7 +276,6 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             server_config=server_config,
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
-            compile_extractor=args.compile_opponents,
             bridge_impl=args.bridge_impl,
             best_model_save_path=os.path.join(model_dir, "best_model"),
             promote_threshold=_promote_threshold,
@@ -332,7 +322,7 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             debug=args.debug,
             # --trainee-team pin → eval measures the trainee ON ITS OWN TEAM (None = default pool).
             trainee_team_str=_specialist_team_str,
-            env_core=getattr(args, "env_core", "python"),
+            env_core=getattr(args, "env_core", "rust"),
             # gen3_supply_guard_v2: the pool and PFSP supply floors (lever_supply.LEVERS).
             pool_starve_cycles=starve_cycles_for(args, "self_play_pool"),
             pfsp_starve_cycles=starve_cycles_for(args, "pfsp"),
@@ -361,7 +351,6 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
                                          draw=args.forensic_draw_quota),
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
-            compile_extractor=args.compile_opponents,
             bridge_impl=args.bridge_impl,
             resume_eval_metadata=_resume_meta,
             keep_eval_snapshots=args.keep_eval_snapshots,
@@ -371,7 +360,7 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             fixed_opponents=_fixed_opponents,
             # --trainee-team pin → eval measures the trainee ON ITS OWN TEAM (None = default pool).
             trainee_team_str=_specialist_team_str,
-            env_core=getattr(args, "env_core", "python"),
+            env_core=getattr(args, "env_core", "rust"),
             # T17 mirrored team pairs (resolved: argv, else the run's recorded regime, else OFF).
             eval_mirrored_pairs=bool(getattr(args, "eval_mirrored_pairs", False)),
         )

@@ -135,6 +135,8 @@ class _CounterDictEnv(gym.Env):
 
 def _build_tiny_ppo(n_steps=8, n_envs=4):
     from stable_baselines3.common.vec_env import DummyVecEnv
+
+    from agents.training.rust_rollout.testkit import attach_vec_collector
     venv = DummyVecEnv([(lambda: _CounterDictEnv()) for _ in range(n_envs)])
     model = InstrumentedMaskablePPO(
         "MultiInputPolicy", venv,
@@ -142,6 +144,7 @@ def _build_tiny_ppo(n_steps=8, n_envs=4):
         normalize_advantage=False,   # per-micro-batch adv-norm is the ONE non-identity; remove it for an exact check
         ent_coef=0.0, vf_coef=0.5, device="cpu", seed=0,
     )
+    attach_vec_collector(model)   # the rollout comes from the toy VecEnv (the Rust collector is production's)
     return model, venv
 
 

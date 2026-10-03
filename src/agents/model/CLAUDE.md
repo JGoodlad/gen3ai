@@ -174,7 +174,7 @@ learned nothing). The privileged true-team route's `opp_true_team` was the first
 the mechanism + its drift gate stay). That mapping is DECLARED once
 in `extra_obs_keys.py` as `(extractor attribute -> key, shape, canonical zero block)`, keyed on the
 ATTRIBUTE the forward itself tests, and every synthetic-obs caller on a TRAINING path builds from it
-via `zero_extra_obs` / `synthetic_obs`: `compile_preload`, `main/train/lifecycle.py`'s round-trip
+via `zero_extra_obs` / `synthetic_obs`: `main/train/lifecycle.py`'s round-trip
 smoke, `compile_trainer`, `compile_opponents`, `agents/training/warmstart.py`. **Never hand-build
 `{"observation": zeros(1, D)}` on a path a run reaches** — that literal is what killed
 `ai_v12_14_ladder_truevalue` two minutes into its launch, and `extra_obs_keys_test.py` reproduces
@@ -397,7 +397,7 @@ needs the legal set to validate an argv offline.
 
 | `--critic` | `_critic_value` returns | `value_net` |
 |---|---|---|
-| `shaped` (what an ABSENT record means; selectable on `--env-core python` only) | `value_net(latent_vf)` | trained |
+| `shaped` (what an ABSENT record means; no longer trainable — a typed `--critic shaped` is refused, `CRITIC_TRAINABLE_MODES = (winprob,)`; an old checkpoint still loads) | `value_net(latent_vf)` | trained |
 | **`winprob`** (the bare-argv default) | `sigmoid(fe.last_win_prob_logits)` in **[0,1]**, `[B,1]` | in NO loss graph |
 
 **Read the mode through `is_winprob`, never a bare `== "winprob"`** — one spelling, one answer, and

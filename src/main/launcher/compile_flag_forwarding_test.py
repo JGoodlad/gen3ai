@@ -10,23 +10,18 @@ Two ways that happens, both pinned below:
 1. `_strip_launcher_args` removes launcher-owned flags by exact match. A future `--no-compile-*`
    entry in that list would drop the owner's fallback on the floor.
 2. argparse abbreviation-matches an unknown token against the parser's KNOWN options, and the
-   launcher parses with `parse_known_args`. `--no-compile-opponents` sitting next to the
+   launcher parses with `parse_known_args`. `--no-compile-trainer` sitting next to the
    launcher's own `--no-pin` is exactly the neighbourhood where that bites.
 
-The launcher owns NO compile default and must not acquire one: `--compile-opponents` /
-`--compile-opponents-preload` / `--compile-trainer` are defaulted once, in `train_rl_agent`'s
-parser, and the launcher's job is to be transparent to them.
+The launcher owns NO compile default and must not acquire one: `--compile-trainer` is defaulted once,
+in `train_rl_agent`'s parser, and the launcher's job is to be transparent to it. (The `--compile-opponents`
+family was deleted with the Python env core — deletion pass U3.)
 """
 
 from main.launcher.checkpoint import _strip_launcher_args
 from main.launcher.run import build_launcher_parser
 
-_COMPILE_FLAGS = [
-    "--compile-opponents", "--no-compile-opponents",
-    "--compile-opponents-preload", "--no-compile-opponents-preload",
-    "--compile-opponents-strict",
-    "--compile-trainer", "--no-compile-trainer",
-]
+_COMPILE_FLAGS = ["--compile-trainer", "--no-compile-trainer"]
 
 
 def test_strip_launcher_args_forwards_every_compile_flag():
@@ -52,7 +47,7 @@ def test_the_launcher_owns_no_compile_default():
     """A launcher-side default would be a second source of truth for a value train_rl_agent
     already defaults — the `child_uses_bridge` drift class, one flag over."""
     ns, _ = build_launcher_parser().parse_known_args(["--steps", "100"])
-    for name in ("compile_opponents", "compile_trainer", "compile_opponents_preload"):
+    for name in ("compile_trainer",):
         assert not hasattr(ns, name), (
             f"the launcher parser now defines {name}; the trainer's parser is the single source "
             "of truth for it")
@@ -64,8 +59,8 @@ def test_compile_flags_survive_a_full_launcher_style_argv():
     argv = [
         "--restart-interval-hours", "3", "--nice", "10", "--no-pin",
         "--steps", "25000000", "--n-envs", "48", "--device", "cuda",
-        "--no-compile-trainer", "--compile-opponents-strict",
+        "--no-compile-trainer", "--critic", "winprob",
     ]
     out = _strip_launcher_args(argv)
     assert out == ["--steps", "25000000", "--n-envs", "48", "--device", "cuda",
-                   "--no-compile-trainer", "--compile-opponents-strict"]
+                   "--no-compile-trainer", "--critic", "winprob"]

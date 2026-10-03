@@ -4,7 +4,7 @@ challenge bucket — the opponent-mix constants, declared once and free of any e
 Deletion pass U2: these lived on the Python env core's ``MaskableAgentWrapper`` (``wrappers.py``), so
 the Rust env core's opponent plan, the self-play callback, the eval-subprocess parser and the value
 sidecar reader all imported the Python env core to read four integers and a float. They live here now;
-``wrappers`` reads them from here until it is deleted. ``agents.model.opp_intent.OPP_CLASS_NAMES`` (the
+``agents.model.opp_intent.OPP_CLASS_NAMES`` (the
 model package's plain table) is pinned to agree with ``OPP_CLASS_NAMES`` below.
 """
 

@@ -120,3 +120,37 @@ def add_arguments(ap, default: str = "pool") -> None:
                          "the LADDER-USAGE corpus (default %(default)s)")
     ap.add_argument("--ladder-tier", choices=TIERS, default="milestone",
                     help="with --team-source ladder: the corpus tier (default %(default)s)")
+
+
+class SequenceTeambuilder(Teambuilder):
+    """Yields a fixed list of PACKED teams in order (one per ``yield_team``), so two players built
+    from the same list play the same teams on the same games. (Re-homed from the deleted
+    ``main/rust_core_cutover/envs.py`` — deletion pass U3 / R10; the eval worker's per-game seed rule
+    hands it each unit's teams.)"""
+
+    def __init__(self, packed):
+        self._teams = list(packed)
+        self._i = 0
+
+    def yield_team(self) -> str:
+        t = self._teams[self._i % len(self._teams)]
+        self._i += 1
+        return t
+
+
+def packed_teams(source: str, tier: str = "full"):
+    """Every team of ``source`` as PACKED strings — the pool through the TRAINING teambuilder's own
+    packing (``Gen3Teambuilder``: validated, the gen-3 Hidden Power IV fix), refused unless every
+    pool team survived it (an index would otherwise name a different team)."""
+    from utils import ladder_corpus
+    from utils.teambuilder import Gen3Teambuilder
+
+    if source == "pool":
+        raw = team_list("pool")
+        packed = Gen3Teambuilder(raw).packed_teams
+        if len(packed) != len(raw):
+            raise RuntimeError(f"{len(raw) - len(packed)} pool teams failed validation — team indices would shift")
+        return packed
+    if source == "ladder":
+        return ladder_corpus.teams(tier)
+    raise ValueError(source)

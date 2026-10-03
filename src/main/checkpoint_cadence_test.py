@@ -68,14 +68,14 @@ class TestBoundary:
 def _checkpoint_callback_interval(model_dir, *flags) -> int:
     """`build_callbacks`'s ACTUAL checkpointer, for an argv — not a re-derivation of it.
 
-    `--use-bridge node` only to keep `resolve_config` from resolving (and possibly building) the
-    rust `sim_bridge` binary; it has nothing to do with the cadence.
+    (`resolve_config` resolves — and, on a fresh worktree, builds — the rust `sim_bridge` binary; it has
+    nothing to do with the cadence.)
     """
     from main.train.callbacks import build_callbacks
     from main.train.config import resolve_config
 
     p = build_parser()
-    args = p.parse_args(["--steps", "1", "--use-bridge", "node", "--debug-eval", *flags])
+    args = p.parse_args(["--steps", "1", "--debug-eval", *flags])
     resolve_config(args, p)
     args.debug_eval = False          # skip the eval callback: this is about the checkpointer
     args.debug = True                # ... which needs _run_eval False; n_envs is read separately

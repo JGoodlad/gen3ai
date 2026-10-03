@@ -76,13 +76,6 @@ def test_an_explicit_winprob_is_the_same_namespace_as_no_flag():
            {k: v for k, v in vars(b).items() if k not in ignore}
 
 
-def test_a_typed_shaped_critic_implies_nothing():
-    """`shaped` assigns nothing beyond the mode: its tri-states stay the sentinel."""
-    a = _ns(["--critic", "shaped"])
-    assert a.critic == "shaped"
-    assert a.win_prob_mode is None and a.gamma is None
-
-
 def test_a_flagless_run_trips_no_critic_check():
     assert not [h for h in _hits([]) if "winprob" in h or "frozen" in h]
 

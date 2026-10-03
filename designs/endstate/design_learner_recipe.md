@@ -739,12 +739,12 @@ matches its control at the SAME dose is its secondary read.
     the general restart rule (`68850f27`: the surface is inherited from `model_config.json`,
     `opp_intent_coef` a recorded field from config v125) and covers only what it cannot supply.
   - `src/recipe_doc_gate_test.py` holds the table below and §1's live-value column to the block.
-  - **The cutover harness carries the recipe (closed 2026-09-30):** `rust_core_cutover.envs.
-    production_args()` is the resolved namespace of a real fresh `--arch production` launch — the
+  - **The production namespace carries the recipe (closed 2026-09-30):** `main.train.production_args.
+    production_args()` (re-homed from the deleted cutover harness, deletion pass U3) is the resolved namespace of a real fresh `--arch production` launch — the
     trainer's own `resolve_config`, not a second copy of the surface. It used to build its namespace
     from the ARCH surface plus a `hasattr` copy of the mirror's top-level fields, which skipped the
     nested `recipe` block (`n_envs` 32, `ent_coef` 0.02, self-play off, …).
-    `src/main/rust_core_cutover/production_args_test.py` compares it with a real resolved fresh
+    `src/main/train/production_args_test.py` compares it with a real resolved fresh
     launch on every mirror key, the recipe included, and fails if either side drops a key. The K9
     learner golden was re-recorded for it (its learner now carries `beta_setvalued_coef` 0.05).
 
@@ -754,7 +754,7 @@ lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; 
 
 | knob | production | block | source |
 |---|---|---|---|
-| `env_core` | rust | `recipe.sizing` | THE M5 SWITCH (`gen3_env_core_switch_v1`): the Rust env core is the production core. Pre-flight at N = 48 (`program_rust_core.md` M5, "The switch"). `--env-core python` stays reachable until the deletion pass |
+| `env_core` | rust | `recipe.sizing` | THE M5 SWITCH (`gen3_env_core_switch_v1`): the Rust env core is the production core. Pre-flight at N = 48 (`program_rust_core.md` M5, "The switch"). `--env-core python` was DELETED with the Python env core (deletion pass U3): the flag has one legal value and `recipe.sizing.env_core` must be `rust` |
 | `n_envs` | 256 | `recipe.sizing` | The SIZING study's N\* (2026-10-02, §3.1; `program_rust_core.md` Decision record): arms B / C. Was N0's `--n-envs 48` |
 | `n_steps` | 384 | `recipe.sizing` | The SIZING study (2026-10-02): D / N\* = 98,304 / 256, the shape arms B / C trained (was N0's 2048); on the Rust core the n_steps MAXIMUM the buffer is allocated at. The adaptive-batch ceiling n_steps_max = 1,024 is NOT applied (§3.2, arm A1) |
 | `rollout_target_samples` | 98304 | `recipe.sizing` | the complete-game collector's update size, set EXPLICITLY by the SIZING study (2026-10-02) to the 98,304 every arm trained at (null would mean N × n_steps, the same number today) |

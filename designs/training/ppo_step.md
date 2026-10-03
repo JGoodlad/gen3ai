@@ -145,32 +145,6 @@ accumulation makes anyway — and `--adaptive-batch total`'s input), `signal/*`,
   exercises the path; the GPU number is `python3 -m agents.training.learner_benchmark run --device
   cuda` on an idle GPU (**UNVERIFIED** until that read lands).
 
-## Rollout collection: sync barrier vs `--async-rollout` (`async_vec_env.py`)
+## Rollout collection — the Rust complete-game collector is the ONLY collector
 
-> `InstrumentedMaskablePPO.collect_rollouts` is what dispatches to it, which is why the detail
-> sits beside the PPO step. The leaf keeps the seam rule (`env_method` PULL, not an info-dict
-> thread) and the headline FPS number.
-
-The default `SubprocVecEnv.step()` is a **per-step barrier** — the trainer waits for the slowest of
-N env workers every step, so a slow battle turn / heavy opponent forward / oversubscription jitter
-stalls the whole batch and the GPU policy-forward never overlaps CPU env-stepping. `--async-rollout`
-swaps in **`AsyncSubprocVecEnv`** (per-env `send_step`/`poll_ready`/`recv_step` over the pipes +
-**drain-safe `env_method`** — the eval callback's `set_self_play_target`/
-`opponent_default_stats` fire mid-collection, so the override stashes in-flight step results before
-any barrier RPC to avoid a pipe desync) and **`collect_rollouts_async`**, dispatched by
-`InstrumentedMaskablePPO.collect_rollouts` when `model._async_rollout` is set.
-
-The collector keeps every worker continuously in-flight, batch-forwards whichever envs are READY
-(dynamic batch), and writes each env's transition into **its own buffer column**
-(`MaskableDictRolloutBuffer`); collection ends when every column has `n_steps`. It is **exactly
-on-policy** — PPO freezes the policy during collection, so this is a *scheduling* change (overlap
-forward with stepping, drop the max-latency barrier), NOT an APPO-style algorithm change. Bookkeeping
-(`num_timesteps`, GH-#633 timeout bootstrap, `_update_info_buffer`, `_last_*` carry-over, per-column
-GAE) mirrors the stock loop exactly. The per-decision **mask rides in the Dict obs**
-(`obs["action_mask"]`, = `last_ctx.mask`), so no per-env `env_method` and no wrapper change.
-
-**Measured FPS (bridge, GPU forward, steady-state, heuristic opponents):** +20% at `--n-envs 16`;
-**+14% at the production `--n-envs 64` (1489→1695)**; `--async-rollout --n-envs 32` matches `sync@64`
-FPS with half the envs (≈half the env/bridge RAM). Off by default (stock `SubprocVecEnv`), ignored
-under `--debug`. Caveat: benchmarked with heuristic opponents — re-bench under `--self-play` for the
-production-regime number. Full design + benchmark table: `designs/ai_v5/design_async_rollout.md`.
+> The Python collectors are DELETED (deletion pass U3): the per-step-barrier `SubprocVecEnv` path, the async-wave collector (`AsyncSubprocVecEnv`, `collect_rollouts_async`, and the async-rollout flag) and `OwnedLoop._collect_python`. `InstrumentedMaskablePPO.collect_rollouts` / `OwnedLoop` collect only through the Rust collector (`rust_rollout/`; a `RolloutProbes.collect_rollouts` with no `_rust_collector` raises). Design and hazards: [`rust_collector.md`](rust_collector.md). The async design record, with its dated FPS table (+14% at `--n-envs 64`, heuristic opponents) is history: `designs/ai_v5/design_async_rollout.md`.

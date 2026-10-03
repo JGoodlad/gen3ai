@@ -45,7 +45,7 @@ win head/logits are missing or batch-stale instead of falling back to the scalar
 
 `torch.softmax` over the last dim of the `[B,6,n_species]` logits lowers to a numerator buffer plus a
 `[B,6,1]` denominator, and the Inductor **CPU** scheduler then trips `AssertionError: buf<N>` trying to
-fuse the division. That single op was the reason `--compile-opponents` used to set
+fuse the division. That single op was the reason the opponent compile (the trainer-side flag, deleted in U3) used to set
 `torch._dynamo.config.suppress_errors = True`, which in turn meant the production config compiled only
 partially (3.6× instead of 6.53×) and every other backend failure in the process went silent.
 

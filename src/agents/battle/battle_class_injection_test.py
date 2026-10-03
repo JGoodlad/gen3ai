@@ -34,13 +34,6 @@ def test_gen3player_defaults_to_gen3battle():
     assert sig.parameters["battle_class"].default is Gen3Battle
 
 
-def test_gen3env_defaults_to_gen3battle():
-    import inspect
-    from agents.training.gen3_env import Gen3Env
-    sig = inspect.signature(Gen3Env.__init__)
-    assert sig.parameters["battle_class"].default is Gen3Battle
-
-
 def test_gen3battle_has_event_log_and_live_view():
     """A constructed Gen3Battle exposes the event log + cursor + live_view that the
     consumers (obs/turn-delta/reward/replay) will read."""

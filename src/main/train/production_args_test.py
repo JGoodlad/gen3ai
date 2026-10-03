@@ -1,8 +1,7 @@
 """`production_args()` IS a real fresh `--arch production` launch — on every mirror key, the recipe included.
 
-The cutover harness (slice N, the parity suites, the learner golden, the M5 throughput arms) builds its
-"production" envs and learners from `rust_core_cutover.envs.production_args()`. It used to rebuild the
-surface by hand — `apply_production_arch` plus a `hasattr` copy of every top-level
+The learner golden, the rollout tests and the offline tools build their "production" learners from
+`main.train.production_args.production_args()`. It used to rebuild the surface by hand — `apply_production_arch` plus a `hasattr` copy of every top-level
 `designs/production_config.json` key — and that filter silently skipped the nested `recipe` block
 (K10(a), `dc4232d4`), so the harness ran 32 envs x 4096 x 5 epochs at ent 0.02 with no self-play and no
 grad accumulation while a real launch ran `recipe.fresh`. It now runs the launch's own
@@ -32,7 +31,7 @@ MODEL_DERIVED = frozenset({
     "species_embedding_dim", "total_dim", "type_embedding_dim",
 })
 
-#: The fresh argv, spelled here rather than read from `envs.PRODUCTION_ARGV`: the reference must not
+#: The fresh argv, spelled here rather than read from `production_args.PRODUCTION_ARGV`: the reference must not
 #: move when the thing under test does.
 _FRESH_ARGV = ["--steps", "1", "--arch", "production"]
 
@@ -104,7 +103,7 @@ def test_a_real_fresh_arch_production_launch_resolves_every_mirror_key(real, des
 
 
 def test_production_args_agrees_with_a_real_fresh_launch_on_every_mirror_key(real, dests):
-    from main.rust_core_cutover.envs import production_args
+    from main.train.production_args import production_args
 
     mirror = _mirror()
     pa = production_args()
@@ -128,7 +127,7 @@ def test_every_recipe_fresh_key_is_compared():
 
 
 def test_production_args_returns_an_independent_namespace_per_call():
-    from main.rust_core_cutover.envs import production_args
+    from main.train.production_args import production_args
 
     a = production_args()
     a.self_play, a.n_envs = False, 1

@@ -24,9 +24,7 @@ from main.launcher.ipc import emit
 from main.train import arch_surface
 from main.train.checkpoint_state import _load_saved_version
 from main.train.combination_checks import refuse_first
-from main.train.compile_flags import (
-    resolve_compile_opponents_preload, resolve_compile_trainer_auto,
-)
+from main.train.compile_flags import resolve_compile_trainer_auto
 from poke_env import LocalhostServerConfiguration
 from poke_env.ps_client.server_configuration import localhost_server_configuration
 from utils.logging.levels import LogLevel
@@ -444,19 +442,14 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # `combination_checks._typed` gives both surfaces the same answer. See that module's docstring.
     args._explicit_flags = frozenset(d for d, v in vars(args).items() if v is not None)
 
-    # --- Resolve `--use-bridge` into the two internal fields ------------------------------------
-    # ONE knob now: `--use-bridge {off,node,rust}`, defaulting to `rust` (serverless training AND
-    # eval). It splits into `args.use_showdown_bridge` (a plain bool = "bridge enabled?", read at
-    # every transport site) + `args.bridge_impl` (the "node"|"rust" child selector, read only at
-    # spawn). `off` keeps a bridge_impl of "node" so a websocket run still has a well-formed value
-    # for the offline/search paths that take one.
-    #
-    # The DEPRECATED `--use-showdown-bridge` boolean alias is DELETED. It meant `--use-bridge=node`,
-    # which is no longer the default, so keeping it would have made "the legacy flag" silently mean
-    # "the slower impl" — pass `--use-bridge=node` explicitly for that.
-    _use_bridge = getattr(args, "use_bridge", "rust")
-    args.bridge_impl = "node" if _use_bridge == "off" else _use_bridge
-    args.use_showdown_bridge = _use_bridge != "off"
+    # --- `--use-bridge` -> the two internal fields -------------------------------------------------
+    # `--use-bridge` has ONE legal value now (`rust`; the Python env core and the node / websocket
+    # transports for training went with it — deletion pass U3), and it splits into
+    # `args.use_showdown_bridge` (a plain bool = "bridge enabled?", read at every transport site) +
+    # `args.bridge_impl` (the child selector, read only at spawn). Both are constants of the build
+    # now; the fields stay because the eval callbacks and the eval worker's config carry them.
+    args.bridge_impl = "rust"
+    args.use_showdown_bridge = True
 
     # --- Resolve resumable structural toggles (None sentinel = "not passed on the CLI") ---
     # Each version-checked structural toggle defaults to None so a FLAGLESS resume can INHERIT the
@@ -894,32 +887,18 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         if args.showdown_port is None
         else localhost_server_configuration(args.showdown_port)
     )
-    if args.use_showdown_bridge:
-        emit(f"🌉 Transport: in-process BattleStream bridge [{args.bridge_impl}] for BOTH training "
-             "and eval (no Showdown server needed — --showdown-port ignored)")
-        if args.bridge_impl == "rust":
-            # One-time startup warning naming the Rust bridge's honest remaining scope limits (the
-            # offline search/replay drivers are still Node-only; an INCOMPLETE modeled move set that
-            # fail-louds) — resolve/build the binary NOW so a missing toolchain fails loudly at
-            # startup, not deep inside the first env reset.
-            from utils.bridge.sim_bridge_bin import (
-                warn_rust_deferrals, resolve_and_publish_sim_bridge_bin)
-            warn_rust_deferrals(emit)
-            # Build ONCE here and PUBLISH the path (POKESIM_SIM_BRIDGE_BIN) so every
-            # SubprocVecEnv env worker / eval-worker subprocess inherits a ready binary
-            # instead of racing its own `cargo build` on first spawn.
-            _rust_bin = resolve_and_publish_sim_bridge_bin()
-            emit(f"🦀 [BRIDGE=rust] sim_bridge binary (prebuilt, published to children): {_rust_bin}")
-    else:
-        emit(f"🔌 Showdown server: {server_config.websocket_url}")
-    # gen3_core_obs_source_v1: resolve the default (core on the rust bridge since the M6 cutover)
-    # into the namespace, so every reader and the run's recorded argv see ONE value, and stamp it.
-    from agents.training.trainee_spaces import resolved_obs_source
-    args.obs_source = resolved_obs_source(args)
-    emit(f"🔭 [OBS SOURCE] {args.obs_source} — "
-         + ("the Rust core's row (sim_bridge __OBS__ frames; Python encodes only terminal / "
-            "non-decision embeds) — the production default" if args.obs_source == "core"
-            else "the Python encoder (the opt-out; the default off the rust bridge)"))
+    emit(f"🌉 Transport: in-process BattleStream bridge [{args.bridge_impl}] for BOTH training "
+         "and eval (no Showdown server needed — --showdown-port ignored)")
+    # One-time startup warning naming the Rust bridge's honest remaining scope limits (an INCOMPLETE
+    # modeled move set that fail-louds) — resolve/build the binary NOW so a missing toolchain fails
+    # loudly at startup, not deep inside the first env reset.
+    from utils.bridge.sim_bridge_bin import (
+        warn_rust_deferrals, resolve_and_publish_sim_bridge_bin)
+    warn_rust_deferrals(emit)
+    # Build ONCE here and PUBLISH the path (POKESIM_SIM_BRIDGE_BIN) so every eval-worker
+    # subprocess inherits a ready binary instead of racing its own `cargo build` on first spawn.
+    _rust_bin = resolve_and_publish_sim_bridge_bin()
+    emit(f"🦀 [BRIDGE=rust] sim_bridge binary (prebuilt, published to children): {_rust_bin}")
     annealing_mode = args.anneal_lr_start_steps is not None
 
     if args.hp_type_belief_coef and args.move_belief_mode == "off":
@@ -942,16 +921,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
               "builds no HP-type head, so there is no posterior for the CE to supervise). The 16 "
               "typed HP channels are still predicted + supervised by the move-belief BCE.")
         args.hp_type_belief_coef = 0.0
-    # The preload IS the opponent compile, moved into the forkserver — so it FOLLOWS
-    # --compile-opponents by default (both ship ON). Only an EXPLICIT --compile-opponents-preload
-    # alongside --no-compile-opponents is a contradiction worth erroring on; the same pairing
-    # arrived at by defaults must silently resolve to "no compile at all", or --no-compile-opponents
-    # (the documented fallback) would itself become a usage error.
-    try:
-        args.compile_opponents_preload = resolve_compile_opponents_preload(
-            args.compile_opponents_preload, args.compile_opponents)
-    except ValueError as exc:
-        parser.error(str(exc))
     if args.item_belief_coef and not args.item_belief:
         # The CE supervises the ItemBelief head's posterior (last_item_logits) and the head exists
         # only under --item-belief; a coef with no head would be a silent no-op (the bank's row
@@ -981,16 +950,16 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # --debug run with no --device is cpu, and must stay a pure-CPU minute-long smoke). An explicit
     # --compile-trainer / --no-compile-trainer always wins; the auto value only fills the None.
     #
-    # ⚠️ THE SECOND HALF IS NOT OPTIONAL. `check_shape_stability` REFUSES two configs outright
-    # (--async-rollout, and a rollout that does not divide by --batch-size), so a device-only
-    # default would convert two classes of command that work today into a FATAL_CONFIG exit —
-    # the same failure the cpu conditioning above exists to avoid, one flag over. A DEFAULT yields
+    # ⚠️ THE SECOND HALF IS NOT OPTIONAL. `check_shape_stability` REFUSES a rollout that does not
+    # divide by --batch-size, so a device-only default would convert a class of command that works
+    # today into a FATAL_CONFIG exit — the same failure the cpu conditioning above exists to avoid,
+    # one flag over. A DEFAULT yields
     # to the config the user actually typed and says why; an EXPLICIT --compile-trainer still hits
     # the refusal, loudly, because there the user asked for something impossible.
     if args.compile_trainer is None:
         args.compile_trainer, _ct_why = resolve_compile_trainer_auto(
             device=args.device, debug=args.debug, n_steps=args.n_steps, n_envs=args.n_envs,
-            batch_size=args.batch_size, async_rollout=bool(getattr(args, "async_rollout", False)))
+            batch_size=args.batch_size)
         if _ct_why:
             emit("⚡ --compile-trainer would be ON by default here, but this config cannot take "
                  f"it — leaving it OFF rather than refusing to launch. Reason: {_ct_why} "

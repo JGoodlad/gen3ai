@@ -30,8 +30,16 @@ CRITIC_SHAPED = "shaped"
 #: terminal outcome, with a TERMINAL-indicator reward stream.
 CRITIC_WINPROB = "winprob"
 
-#: The legal set, in `--help` order.
+#: Every critic a checkpoint can CARRY — what `Gen3DualHeadMaskablePolicy` accepts and what an old
+#: `model_config.json` / saved `policy_kwargs` may record. `shaped` stays here so every pre-v109
+#: checkpoint (and every shaped-era opponent in a pool) still LOADS.
 CRITIC_MODES = (CRITIC_SHAPED, CRITIC_WINPROB)
+
+#: What `--critic` ACCEPTS for a run to TRAIN. `shaped` was the Python env core's critic (the Rust
+#: env core refuses it, and the core it ran on was deleted — deletion pass U3, 2026-10-02), so a typed
+#: `--critic shaped` is refused at parse time and a shaped CHECKPOINT is refused on a resume / fork
+#: (`rust_env_setup.PythonEraShapedCheckpoint`, D4): run it PINNED to its own commit.
+CRITIC_TRAINABLE_MODES = (CRITIC_WINPROB,)
 
 #: The BARE-ARGV default — what a FRESH argv that types no `--critic` resolves to (deletion pass D2,
 #: owner 2026-10-02, `designs/ops/deletion_pass_manifest.md` §2.1). `--arch production` applies the same

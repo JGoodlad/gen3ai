@@ -58,7 +58,7 @@ with the rest of the critic-ladder levers (ledger arms-ladder verdicts; recovera
 `obs` argument; `agents/model/extra_obs_keys.py`'s registry is EMPTY, but the mechanism (declare an
 `(extractor attribute -> obs key, shape, zero block)` row; every training-path synthetic-obs site
 builds from `zero_extra_obs` / `synthetic_obs`; an AST drift gate fails on an undeclared key) stays,
-because the failure it prevents (`ai_v12_14_ladder_truevalue`: a forkserver preload traced on a
+because the failure it prevents (`ai_v12_14_ladder_truevalue`: a (since-deleted) forkserver preload traced on a
 one-key dict, killed at env init) is re-armed by any future obs-key-adding route. **A new route that
 reads a new Dict key needs a row there and nothing else.** Adoption is partial by design: the offline
 audit / probe CLIs still hand-build (`designs/ops/TECH_DEBT_BACKLOG.md`).

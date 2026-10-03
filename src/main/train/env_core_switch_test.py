@@ -10,9 +10,8 @@ Pinned here, each failing on a revert of the piece it names:
   recorded when that is rust, and a PYTHON-ERA checkpoint (recorded python, or predating the record)
   → rust, ANNOUNCED as a core switch (deletion pass D4); a checkpoint that trained the SHAPED critic is
   REFUSED, typed core or not (D4: run it pinned);
-* a TYPED `--env-core python` keeps the Python core reachable, reported as a TYPED deviation;
-* the collector-only sizing rows are applied only on the Rust core, so `--arch production
-  --env-core python` is not refused for flags that would be inert there;
+* a TYPED `--env-core python` is REFUSED at parse time with the reason — the Python env core was deleted
+  (deletion pass U3); a typed `rust` is accepted and reported as no deviation;
 * a same-run restart of an `--arch production` run restores the core from `cli_args` — and a
   python-era one (cli_args python, or launched before `--env-core` existed) then moves to rust under D4.
 """
@@ -78,13 +77,13 @@ def test_the_sizing_block_is_what_a_fresh_production_launch_resolves(tmp_path):
     assert live.t2_buckets is None and live.rollout_target_samples == 98304
 
 
-def test_collector_rows_are_never_applied_on_the_python_core():
-    planted = copy.deepcopy(rs._raw_mirror())
-    planted["recipe"]["sizing"].update(t2_buckets="64,256", trainee_slots=2)
-    ns = _desugared(["--arch", "production", "--env-core", "python"], mirror=planted)
-    assert ns.env_core == "python" and ns.t2_buckets is None and ns.trainee_slots is None
-    diffs = {d.dest: d for d in rs.diff_against_production(ns, planted)}
-    assert set(diffs) == {"env_core"} and diffs["env_core"].source == "argv"
+def test_a_typed_python_core_is_refused_at_parse_time_with_the_reason(capsys):
+    """The Python env core is gone (deletion pass U3): the flag keeps one legal value and says why."""
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(["--steps", "1", "--arch", "production", "--env-core", "python"])
+    err = " ".join(capsys.readouterr().err.split())
+    assert "--env-core 'python' was DELETED" in err and "only legal value is 'rust'" in err, err
+    assert build_parser().parse_args(["--steps", "1", "--env-core", "rust"]).env_core == "rust"
 
 
 def test_a_sizing_block_defect_is_refused_by_name():
@@ -112,15 +111,14 @@ def test_fresh_arch_production_and_a_bare_argv_both_resolve_rust():
     assert resolve_env_core_default(bare) is None           # nothing to resolve without --model
 
 
-def test_a_typed_python_core_is_reachable_and_reported_TYPED():
-    ns = _desugared(["--arch", "production", "--env-core", "python"])
-    assert ns.env_core == "python"
+def test_a_typed_rust_core_is_no_deviation_from_production():
+    ns = _desugared(["--arch", "production", "--env-core", "rust"])
     rep = rs.report(ns, fresh=True)
-    assert [d.dest for d in rep.diffs] == ["env_core"] and not rep.refuses
+    assert ns.env_core == "rust" and not rep.diffs and not rep.refuses
 
 
 @pytest.mark.parametrize("recorded,want", [("rust", "rust"), ("python", "rust"), (None, "rust")])
-def test_a_fork_INHERITS_a_rust_core_and_MOVES_a_python_era_one_and_a_typed_core_wins(tmp_path, recorded,
+def test_a_fork_INHERITS_a_rust_core_and_MOVES_a_python_era_one(tmp_path, recorded,
                                                                                       want):
     _run_dir, ckpt = _run(tmp_path, env_core=recorded)
     ns = build_parser().parse_args(["--steps", "1", "--model", str(ckpt)])   # no --run-dir: a new run
@@ -128,9 +126,8 @@ def test_a_fork_INHERITS_a_rust_core_and_MOVES_a_python_era_one_and_a_typed_core
     assert core is not None and core[0] == want and ns.env_core == want
     assert (core[1] == D4_CORE_SWITCH) is (recorded != "rust")             # D4: announced, never silent
     assert ("CORE SWITCH" in (env_core_switch_line(ns) or "")) is (recorded != "rust")
-    for typed_core in ("python", "rust"):
-        typed = build_parser().parse_args(["--steps", "1", "--model", str(ckpt), "--env-core", typed_core])
-        assert resolve_env_core_default(typed) is None and typed.env_core == typed_core
+    typed = build_parser().parse_args(["--steps", "1", "--model", str(ckpt), "--env-core", "rust"])
+    assert resolve_env_core_default(typed) is None and typed.env_core == "rust"      # a typed rust wins
 
 
 @pytest.mark.parametrize("recorded,want", [("rust", "rust"), ("python", "rust"), (None, "rust")])
@@ -160,7 +157,7 @@ def test_a_restart_of_an_arch_production_run_restores_its_core_from_cli_args(tmp
 
 # ----------------------------------------------------- deletion pass D4: the python-era resume rule
 @pytest.mark.parametrize("cfg", [{"critic": "shaped"}, {}])        # {} = recorded before --critic
-@pytest.mark.parametrize("typed", [[], ["--env-core", "python"], ["--env-core", "rust"]])
+@pytest.mark.parametrize("typed", [[], ["--env-core", "rust"]])
 def test_a_SHAPED_critic_checkpoint_is_REFUSED_whatever_the_core(tmp_path, cfg, typed):
     run, ckpt = _run(tmp_path, env_core="python")
     (run / "model_config.json").write_text(json.dumps(cfg))

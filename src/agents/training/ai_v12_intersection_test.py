@@ -5,16 +5,11 @@ no single wave could see: the compositions a launch actually types. It exists be
 lesson (`value_from_dist`) — every flag in a tail had its own test, the INTERSECTION had none, and
 an entire critic chain was orphaned for four generations while every suite stayed green.
 
-Groups 1 and 3 of the original five (the value-dist atom support against the terminal, and the
-`train/pbrs_reward_share` absent-never-zero rule) left with the distributional head and the
-win-prob PBRS (deletion pass L1), and group 5 (the Q head x the cf-twin fold's stash clobbering)
-left with the counterfactual training half (deletion pass L4). Two remain, each naming the pair it
-crosses:
-
-2. **CLEAN WORLD × the TIMEOUT terminal.** The wave-A guard warns on ONE side of the ordering
-   (draw better than a loss). A launch that types `--victory-value 1.0` and forgets
-   `--draw-penalty` keeps the −35 default, i.e. a timeout 35× a clean loss — the "1 TERMINAL"
-   claim is then false and no metric names it.
+Of the original five groups only the migration STACK (group 4, below) remains: groups 1 and 3 (the
+value-dist atom support, the `train/pbrs_reward_share` rule) left with the distributional head and the
+win-prob PBRS (deletion pass L1), group 5 (the Q head x the cf-twin fold) with the counterfactual training
+half (L4), and group 2 (CLEAN WORLD x the TIMEOUT terminal — a shaped-composition scale guard whose
+`--critic shaped` argv can no longer be typed) with the Python env core (deletion pass U3).
 
 4. **v105 × v106 × v107 STACKED.** The three migrations landed as three commits an hour apart.
    This runs the whole chain on a fabricated v104 config AND on every REAL archived config in the
@@ -35,59 +30,6 @@ import pytest
 from agents.model.model_version import ModelVersion
 from agents.model.model_version.constants import MODEL_CONFIG_VERSION
 from agents.model.model_version.migrations import _migrate_config
-from main.train_rl_agent import build_parser
-
-#: The registered clean-world reward set (kept spelled the same as `clean_world_config_test`).
-CLEAN_REWARD = ["--victory-value", "1.0", "--draw-penalty", "-1.0"]
-#: The warning BANNER, quoted from the guard so a rename breaks the test rather than silently making
-#: it vacuous. Deliberately distinctive: the launch prints hundreds of lines of flag help, several of
-#: which contain the bare word "SCALE".
-_SCALE = "TERMINAL SCALE"
-
-
-#: The HISTORICAL shaped composition (the bare argv until the deletion pass's flip, D2 2026-10-02):
-#: the shaped critic on the python core with the signed ±30 / −35 terminal. Every guard here is about
-#: that critic, so each argv is typed ON TOP of it (argparse: the later typed value wins).
-HISTORICAL = ["--critic", "shaped", "--env-core", "python", "--no-terminal-indicator",
-              "--victory-value", "30", "--draw-penalty", "-35"]
-
-
-def _resolve(argv):
-    from main.train.config import resolve_config
-    parser = build_parser()
-    return resolve_config(parser.parse_args(["--steps", "1", "--debug", *HISTORICAL, *argv]), parser)
-
-
-# ──────────────────────────────────────────────────────────────────────────────────────────────
-# 2. CLEAN WORLD × the TIMEOUT terminal — the guard covered one side of the ordering
-# ──────────────────────────────────────────────────────────────────────────────────────────────
-
-def test_a_pm1_terminal_with_the_INHERITED_minus35_draw_penalty_warns(capsys):
-    """`--victory-value 1.0` alone leaves `--draw-penalty` at the historical −35. The wave-A ORDERING
-    guard passes it (−35 IS worse than a loss, which is the ordering it checks), so the launch is
-    silent — while the reward stream is dominated 35:1 by an outcome the arm exists to make rare.
-    A run in that state is not the clean world; it is a stall-avoidance objective wearing its
-    label."""
-    _resolve(["--victory-value", "1.0"])
-    out = capsys.readouterr().out
-    assert _SCALE in out, out
-    assert "draw-penalty" in out
-
-
-def test_the_registered_clean_set_is_silent_on_BOTH_guards(capsys):
-    """`--victory-value 1.0 --draw-penalty -1.0` is exactly `draw = loss`; neither guard may fire,
-    or the launch this whole wave exists for starts by printing two warnings it should ignore."""
-    _resolve(CLEAN_REWARD)
-    out = capsys.readouterr().out
-    assert _SCALE not in out and "ORDERING" not in out, out
-
-
-def test_the_HISTORICAL_pairing_is_silent(capsys):
-    """±30 with −35 is a 1.17× ratio — the composition every generation through gen-15 trained
-    under. A guard that fires on it would be a guard nobody reads."""
-    _resolve([])
-    assert _SCALE not in capsys.readouterr().out
-
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────
 # 4. v105 × v106 × v107 STACKED — three migrations, one chain, on configs that really exist

@@ -14,13 +14,13 @@ THE MODULE MAP (`main/train/`, and `main/train/__init__.py` repeats it):
     constants.py        BATTLE_FORMAT / the smoke-eval scale / the abort drain bound
     parser/             `build_parser()` behind a hub, one module per FLAG FAMILY in `--help`
                         order; `base.py` holds `BoolFlag` / `str2bool` / `optional_float`
-    compile_flags.py    the `--compile-opponents` / `--compile-trainer` default resolvers
+    compile_flags.py    the `--compile-trainer` default resolvers
     checkpoint_state.py reading a checkpoint's saved arch; the by-NAME optimizer realign
     run_io.py           the run directory, latest.txt, the TB logger, the checkpoint callback
     lifecycle.py        grad checkpointing, the trainer compile, the round-trip smoke, signals
     config.py           phase 1 — desugar / `_resolve` / validate     (mutates `args` in place)
     matchup_setup.py    phase 2 — teams, the matchup, every opponent source
-    env_factory.py      phase 3 — the per-worker training-env `_init` closure
+    rust_env_setup.py   phase 3 — the Rust env core's `RustVecEnv` (the only env core)
     callbacks.py        phase 4 — everything that runs during `learn()`
     model_build.py      phase 5 — the resume + fresh model paths, and `learn()` itself
     final_eval.py       the post-training win-rate evaluation
@@ -34,16 +34,16 @@ import traceback
 import functools
 
 # ── BLAS THREAD PINNING — must run BEFORE torch is imported anywhere ──────────────────────────
-# Each SubprocVecEnv worker runs a full CPU opponent forward; with the library default (one thread
-# per core) N workers spawn N×cores competing threads. Measured on a 16-core box, 8 neural-opponent
-# envs run DIRECTLY (no launcher): load average 110 and **6 fps**, vs 231 fps with these pinned — a
-# ~38× cliff that dwarfs every other measured throughput lever.
+# Every CPU helper process (the Rust env core's front end, an eval worker) would otherwise run with
+# the library default of one BLAS thread per core, so N helpers spawn N×cores competing threads.
+# Measured on a 16-core box, 8 neural-opponent envs run DIRECTLY (no launcher): load average 110 and
+# **6 fps**, vs 231 fps with these pinned — a ~38× cliff that dwarfs every other measured throughput
+# lever.
 #
 # `launcher/child.py` already exports these for production, so runs under the launcher were never
 # affected — but `python src/main/train_rl_agent.py …` is a DOCUMENTED entry point (root CLAUDE.md
-# "Training — run directly") and had no such protection. Setting them here covers both paths; workers
-# inherit them through `spawn`. `setdefault` so an explicit override still wins, and the env-worker
-# `_init` pins `torch.set_num_threads(1)` independently in case one does.
+# "Training — run directly") and had no such protection. Setting them here covers both paths; child
+# processes inherit them through `spawn`. `setdefault` so an explicit override still wins.
 for _v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
     _os.environ.setdefault(_v, "1")
 
@@ -66,15 +66,9 @@ for d in [root_dir, src_dir, main_dir]:
 import asyncio
 import json
 import threading
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
-from agents.model.extractor_arch import build_extractor_arch_kwargs
-from agents.model.compile_opponents import arm_compile_quorum
-from agents.model.compile_prewarm import prewarm_extractor_compile
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
 from agents.training.pool_seed import prepare_pool
-from agents.training.reward_manager import Gen3RewardManager
-from agents.training.stall import StallConfig
 from main.exit_codes import TrainExitCode, exit_code_for
 from main.launcher.ipc import emit
 
@@ -92,8 +86,7 @@ from main.train.parser import (   # noqa: F401 — re-export hub
     BoolFlag, build_parser, optional_float, str2bool, _BOOL_FALSE, _BOOL_TRUE,
 )
 from main.train.compile_flags import (   # noqa: F401 — re-export hub
-    resolve_compile_opponents_preload, resolve_compile_trainer_auto,
-    resolve_compile_trainer_default, _PRELOAD_WITHOUT_OPPONENTS,
+    resolve_compile_trainer_auto, resolve_compile_trainer_default,
 )
 from main.train.checkpoint_state import (   # noqa: F401 — re-export hub
     _load_saved_version, _read_saved_optimizer_state, _remap_optimizer_state_by_name,
@@ -206,15 +199,13 @@ async def main():
         with open(os.path.join(model_dir, "command.txt"), "w") as f:
             f.write(" ".join(sys.argv))
 
-    stall_cfg = StallConfig(output_dir=os.path.join(model_dir, "stalls"))
     # Per-run reward config (design §1). gamma MUST == the PPO gamma (asserted post-build below); the
-    # factory passes it to every env's reward manager. Default = the single-variable run.
+    # Rust env core's collector builds its reward from the same config. Default = the single-variable run.
     from agents.training.reward_manager import (
         RewardConfig, format_reward_composition, reward_composition_block)
     # Single construction site (gamma == InstrumentedMaskablePPO(gamma=0.9999), asserted below). Every
     # reward CLI flag flows in by name → training, eval, and the version record all use ONE config.
     reward_config = RewardConfig.from_args(args)
-    reward_factory = functools.partial(Gen3RewardManager, config=reward_config)
     # STATE the reward composition rather than implying it. The v8->v9 drift was invisible because a
     # launch never said what its reward was made of; this line, and the `reward_composition` block it
     # records into metadata.json, are what a launch-diff gate compares.
@@ -227,82 +218,30 @@ async def main():
     # launcher Events panel — the composition must never be visible in only one of them.
     emit(format_reward_composition(reward_config))
     # gen3_winprob_critic_mode_v1: STATE WHICH READOUT IS THE CRITIC, for the composition line's own
-    # reason. `--critic` changes the quantity the value function predicts, the loss that trains it,
+    # reason. The critic changes the quantity the value function predicts, the loss that trains it,
     # what --vf-coef multiplies and what the reward stream has to be — and NOTHING in a metric would
-    # say so, because both routes emit a [B,1] tensor and every scalar keeps its name. 'shaped' is
-    # announced too: a reader must be able to tell "this run is on the historical critic" from
-    # "this line was not printed by that build".
-    from agents.model.critic_mode import is_winprob as _is_winprob
-    if _is_winprob(args.critic):
-        emit(f"🎯 [CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1]; the value loss IS "
-             f"that head's BCE against the terminal outcome, weighted by --vf-coef "
-             f"{args.vf_coef:g} (a BCE, NOT the shaped-return MSE 0.5 was tuned for). Reward = the "
-             f"TERMINAL WIN INDICATOR alone; gamma={args.gamma:g}; win_prob_mode="
-             f"{args.win_prob_mode!r}. At victory_value 1.0 and gamma 1.0, V(s) == P(win|s) "
-             f"exactly. ⚠️ A [0,1] critic cannot express 'a timeout is worse than a loss' — stall "
-             f"rate and mean episode length are PRIMARY endpoints on this arm.")
-    else:
-        emit(f"🎯 [CRITIC] shaped — V(s) = value_net in raw return units, gamma="
-             f"{args.gamma:g}; the win-prob head is an auxiliary BCE.")
-    # Running parallel environments
+    # say so, because every scalar keeps its name. (`--critic shaped` was the Python env core's;
+    # it was deleted with that core — deletion pass U3 — and a shaped checkpoint is refused, D4.)
+    emit(f"🎯 [CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1]; the value loss IS "
+         f"that head's BCE against the terminal outcome, weighted by --vf-coef "
+         f"{args.vf_coef:g}. Reward = the "
+         f"TERMINAL WIN INDICATOR alone; gamma={args.gamma:g}; win_prob_mode="
+         f"{args.win_prob_mode!r}. At victory_value 1.0 and gamma 1.0, V(s) == P(win|s) "
+         f"exactly. ⚠️ A [0,1] critic cannot express 'a timeout is worse than a loss' — stall "
+         f"rate and mean episode length are PRIMARY endpoints on this arm.")
+    # The env: the Rust core (`--env-core rust` is the only core) — N envs in ONE core behind the
+    # process (or FFI) front end; the trainee and every policy opponent forward through the inference
+    # service (T2), the scripted bots play inside the core. `--debug` runs ONE env.
     n_envs = 1 if args.debug else args.n_envs
-    # --async-rollout swaps the barriered SubprocVecEnv for AsyncSubprocVecEnv (per-env in-flight
-    # stepping + drain-safe env_method). Only when not --debug (DummyVecEnv has one env, no barrier).
-    _async_rollout = args.async_rollout and not args.debug
-    if args.debug:
-        EnvClass = DummyVecEnv
-    elif _async_rollout:
-        # lazy: the Python env core is imported only on its own path (deletion pass U2)
-        from agents.training.async_vec_env import AsyncSubprocVecEnv
-        EnvClass = AsyncSubprocVecEnv
-    else:
-        EnvClass = SubprocVecEnv
-
-    _rust_core = getattr(args, "env_core", "python") == "rust"
-    emit(f"⚙️ Initializing {n_envs} envs "
-         + ("(RustVecEnv — the M5 Rust env core, --env-core rust)" if _rust_core else f"({EnvClass.__name__})")
-         + (" — non-barrier async rollout" if _async_rollout else ""))
-
-    # --compile-opponents: warm the SHARED on-disk Inductor cache in THIS process before any env
-    # worker exists, so the workers all hit it warm instead of racing on a cold one (measured
-    # 59.6 s -> 30.1 s wall for 16 workers). Uses the same arch table as the model build below, so
-    # the cached codegen is for the graph the workers will actually run.
-    #
-    # gen3_forkserver_preload_v1: `--compile-opponents-preload` goes further — the graph is
-    # traced ONCE in the forkserver and every worker inherits it by fork (~0.12 s/worker). This
-    # was IMPOSSIBLE until the lazy poke_env __init__ (2026-08-16): forking is only safe from a
-    # single-threaded process, and the extractor import used to start poke-env's global asyncio
-    # loop thread — the 2026-08 attempt forked 2 of 48 workers and hung forever. The preload now
-    # proves single-threadedness after its compile and RAISES otherwise (loud env-construction
-    # failure, never a silent wedge); `compile_prewarm_test.py` pins the import invariant.
-    # (Under --env-core rust every policy opponent forwards through the inference service, T2, so
-    # the per-worker opponent compile, its quorum, preload and prewarm have nothing to compile.)
-    if args.compile_opponents and not args.debug and not _rust_core:
-        # Publish ONE tally directory for this process tree before any worker exists. Every env
-        # worker / eval worker inherits it through the environment and reports its keep-or-revert
-        # verdict there, which is what lets --compile-opponents-strict be fatal on a SYSTEMIC
-        # failure instead of on one worker's timing draw (three launches died that way on
-        # 2026-08-24). Cleared per process, so a restart counts fresh.
-        arm_compile_quorum(model_dir)
-        if args.compile_opponents_preload:
-            import multiprocessing as _mp
-            from agents.model.extractor_arch import arch_kwargs_to_plain
-            os.environ["GEN3AI_PRELOAD_ARCH"] = json.dumps(
-                arch_kwargs_to_plain(build_extractor_arch_kwargs(args)))
-            _mp.get_context("forkserver").set_forkserver_preload(
-                ["agents.model.compile_preload"])
-            emit("⚙️ forkserver preload armed — workers inherit ONE traced graph "
-                 "(gen3_forkserver_preload_v1)")
-        else:
-            prewarm_extractor_compile(build_extractor_arch_kwargs(args), mappings)
+    emit(f"⚙️ Initializing {n_envs} envs (RustVecEnv — the M5 Rust env core)")
 
     _shutdown_event = threading.Event()
 
     # --- Self-Play Pool Setup ---
-    # The pool is a directory the env workers read off disk (each builds its own SnapshotPool).
+    # The pool is a directory the Rust env core's inference service loads its opponent slots from.
     # The heuristic-vs-pool split is NOT fixed per process anymore: every env picks its opponent
     # per-episode from a LIVE self_play_fraction that the eval callback updates each eval (see
-    # MaskableAgentWrapper). The initial fraction comes from the persisted win rate (summary.json)
+    # `rust_env_opponents.OpponentPlan`). The initial fraction comes from the persisted win rate (summary.json)
     # so a resumed run starts at the right ramp level instead of cold-starting at 0%.
     _pool: SnapshotPool | None = None
     _opp_version = None  # ModelVersion threaded into opponent snapshot loads (set when self-play on)
@@ -347,39 +286,14 @@ async def main():
         from agents.model.snapshot import current_model_version as _current_model_version
         _opp_version = _current_model_version(mappings, **_run_arch_toggles(args))
 
-    def _make_factories():
-        # lazy: the Python env core is imported only on its own path (deletion pass U2)
-        from main.train.env_factory import create_training_env_random
-        return [
-            create_training_env_random(
-                i, stall_config=stall_cfg, opponent_device=opponent_device,
-                opponent_version=_opp_version,
-                snapshot_dir=str(_snapshot_dir) if _snapshot_dir is not None else None,
-                self_play_fraction=_initial_self_play_fraction, self_play=args.self_play,
-                heuristic_weights=_bot_weight_vec,
-                stable_opponents=_fixed_opponents,
-                exploiter_entry=_exploiter_entry,
-                # What used to be closure state when the factory lived inside `main()`.
-                args=args, mappings=mappings, log_level=log_level,
-                trainee_teambuilder=trainee_teambuilder,
-                opponent_teambuilder=opponent_teambuilder, server_config=server_config,
-                OPPONENT_CLASSES=OPPONENT_CLASSES, reward_factory=reward_factory,
-            )
-            for i in range(n_envs)
-        ]
-
-    if _rust_core:
-        from main.train.rust_env_setup import build_rust_vec_env
-        env = build_rust_vec_env(
-            args, mappings=mappings, trainee_teambuilder=trainee_teambuilder,
-            opponent_teambuilder=opponent_teambuilder, opponent_classes=OPPONENT_CLASSES,
-            bot_weights=_bot_weight_vec, fixed_opponents=_fixed_opponents, exploiter_entry=_exploiter_entry,
-            snapshot_dir=str(_snapshot_dir) if _snapshot_dir is not None else None,
-            opponent_version=_opp_version, self_play_fraction=_initial_self_play_fraction, n_envs=n_envs,
-            eval_trainee_team_str=_specialist_team_str)
-    else:
-        env_factories = _make_factories()
-        env = EnvClass(env_factories)
+    from main.train.rust_env_setup import build_rust_vec_env
+    env = build_rust_vec_env(
+        args, mappings=mappings, trainee_teambuilder=trainee_teambuilder,
+        opponent_teambuilder=opponent_teambuilder, opponent_classes=OPPONENT_CLASSES,
+        bot_weights=_bot_weight_vec, fixed_opponents=_fixed_opponents, exploiter_entry=_exploiter_entry,
+        snapshot_dir=str(_snapshot_dir) if _snapshot_dir is not None else None,
+        opponent_version=_opp_version, self_play_fraction=_initial_self_play_fraction, n_envs=n_envs,
+        eval_trainee_team_str=_specialist_team_str)
     # NOTE: the subprocess watchdog is started LATER, just before model.learn() — nothing steps
     # the env before then (model construction/load only reads its spaces).
 
@@ -414,7 +328,7 @@ async def main():
         args=args, env=env, mappings=mappings, model_dir=model_dir, cli_args=cli_args,
         log_level=log_level, n_envs=n_envs, reward_config=reward_config,
         reward_composition=reward_composition, annealing_mode=annealing_mode,
-        _async_rollout=_async_rollout, _shutdown_event=_shutdown_event,
+        _shutdown_event=_shutdown_event,
         _run_eval=_cb.run_eval, _effective_max_lr=_cb.effective_max_lr,
         callbacks=_cb.callbacks, eval_callback=_cb.eval_callback, lr_callback=_cb.lr_callback,
         adaptive_ppo_callback=_cb.adaptive_ppo_callback,

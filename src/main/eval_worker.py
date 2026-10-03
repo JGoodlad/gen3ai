@@ -312,7 +312,7 @@ def _per_game_teams(unit, pool, item, seed_base, trainee_tb, opp_builder):
     MIRRORED (``pool.mirrored``): a pair's two games draw the SAME two teams (the key of its first game)
     and the second game hands them over — the trainee pilots what the opponent drew and vice versa."""
     from agents.training.rust_eval import seeds as SD
-    from main.rust_core_cutover.envs import SequenceTeambuilder
+    from utils.team_sources import SequenceTeambuilder
 
     mirrored = bool(getattr(pool, "mirrored", False))
     ours, theirs = [], []

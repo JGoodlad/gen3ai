@@ -500,7 +500,7 @@ run per env core):
   at update entry EQUALED update 1's. Updates 8–15 replayed updates 1–8's permutations, and 16–23 did
   again. Which rows train, and how often, is unchanged, so the expected effect on learning is nil. The
   M5 sizing arms (A / A2 / A′ / B / C) had it from their first pool seed on.
-- **The Python core** (every pre-M5 self-play run). Each `SubprocVecEnv` worker loads its pool
+- **The Python core** (every pre-M5 self-play run; DELETED in U3 — recorded as history). Each `SubprocVecEnv` worker loaded its pool
   snapshot once per generation (`MaskableAgentWrapper._ensure_pool_model`). Its teambuilders and the
   heuristic bots draw from that worker's global `random`. After the load the worker's team draws
   replayed the run's first draws exactly (25, 281, 142, 104, 558, 89, 32, 30, …), and every worker

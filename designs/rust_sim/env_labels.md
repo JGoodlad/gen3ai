@@ -3,29 +3,30 @@
 **Always current.** Owner of the plan: `designs/endstate/program_rust_core.md` §2 M5, lane C
 ("training labels"). Resume point and findings: `designs/research_state/measurements/m5_laneC/PROGRESS.md`.
 
+> **Deletion pass U3:** the Python env this lane was built against (`Gen3Env`, its `_belief_labels` / `_spread_labels` / `_hp_type_labels` / `_item_labels` / `_opp_intent_labels` / `_merge_training_keys` methods, `env_factory`) and the label parity gates that compared the core to it (`rust_env_labels_parity_test.py`, the `slice_n` harness, `nature_ev_label_test.py`) are DELETED. The Rust label columns are the only implementation and are pinned by `src/rust_env/tests` and `src/utils/rust_env/label_columns_test.py`. Where this doc says "Python", "`Gen3Env`" or "parity gate", it records how the columns were derived and proven when they were built; the `producer` column names the (deleted) method each key's DEFINITION came from.
+
 The Rust env core (`src/rust_env/`, package `pokesim_env`) writes the trainee's `obs` row and
-`mask` (Lane 0). `Gen3Env` also puts TRAINING-ONLY LABEL keys into the trainee's Dict obs. They are
+`mask` (Lane 0), and the trainee's Dict obs also carries TRAINING-ONLY LABEL keys. They are
 read by a loss, a callback or a diagnostic, never by the policy forward (`designs/ARCHITECTURE.md` §7).
-For Python to leave the per-decision loop, every key the production surface emits must come from
-the core or from the host. This doc is the human-readable view of that table.
+Every key the production surface emits comes from the core or from the host. This doc is the human-readable view of that table.
 
 ## 1. The inventory
 
 **The table of record is `src/utils/rust_env/label_inventory.py` (`LABELS`).** The routine test
-`src/agents/training/rust_env_label_inventory_test.py` constructs `Gen3Env` (no battle, no server)
+`src/agents/training/rust_env_label_inventory_test.py` reads the trainee's declared spaces (`agents.training.trainee_spaces`; no battle, no server)
 and FAILS when:
 
-- `Gen3Env` can declare a key the table does not list (or the reverse);
+- `trainee_spaces` can declare a key the table does not list (or the reverse);
 - a dtype or shape drifts;
 - a row's emit gate does not emit it;
 - the PRODUCTION surface emits a different set than the rows marked production. The production
   surface is `--arch production` + `designs/production_config.json`, resolved by
-  `main.rust_core_cutover.envs.production_args` → `env_factory.trainee_env_kwargs`, exactly as a
+  `main.train.production_args.production_args` → `trainee_spaces.trainee_env_kwargs`, exactly as a
   production launch resolves it;
 - a named consumer stops naming its key;
 - ARCHITECTURE.md §7's ✅/❌, or this doc's table, disagrees with the table.
 
-**Headline (deletion pass L3): `Gen3Env` can emit 22 label keys. Production emits 21.** (Seven keys — `win_row_w`, `opp_true_team`, `aux_target` / `aux_mask` / `aux_turn`, `defensive_opportunity`, `bait_opportunity` — went with their deleted levers in L2, and `distill_mask`, with distillation, in L3; its `refused` label kind went with it, so every row is now `core`, `host_const` or `host_episode`.) The production keys fall into
+**Headline (deletion pass L3): the trainee's spaces can declare 22 label keys. Production emits 21.** (Seven keys — `win_row_w`, `opp_true_team`, `aux_target` / `aux_mask` / `aux_turn`, `defensive_opportunity`, `bait_opportunity` — went with their deleted levers in L2, and `distill_mask`, with distillation, in L3; its `refused` label kind went with it, so every row is now `core`, `host_const` or `host_episode`.) The production keys fall into
 eight families:
 
 - belief: 3 keys
@@ -42,8 +43,8 @@ per-episode host value.** The remaining 1 key (`fork_pg_m`) is off the productio
 
 The `rust` column says where the Rust env gets each key:
 
-- `core`: a label column the env core writes per decision. It is gated against `Gen3Env` by
-  `rust_env_labels_parity_test.py`.
+- `core`: a label column the env core writes per decision (it was gated against `Gen3Env` by
+  `rust_env_labels_parity_test.py` until both were deleted in U3).
 - `host_const`: a placeholder the host writes as a constant. A rollout callback overwrites it after
   collection.
 - `host_episode`: a per-episode value the host owns, keyed by the core's `episode` column. `opp_class` is the class of the episode's opponent ROUTE: `rust_env_opponents.RustEnvOpponents.opp_class(cols)` reads it off the core's `opp_route` column (M5 Lane E), so it can never describe the previous opponent.
@@ -107,7 +108,7 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
 | margin | `win_margin` | `material_margin(live)` on the side's `present()` view. **Timing:** Python computes it in `calc_reward` on the same board the obs describes, and 0.0 at reset |
 | intent | the 4 intent keys | the port's `trackers::IntentLabel` (slice T already gates it against the Python label), num-mapped. Hidden Power resolves to the attacker's truth typed num (`_intent_move_num_resolver`). `opp_switch_slot` uses the PREVIOUS decision's revealed-slot map (`_opp_slot_map_prev`); `SWITCH_SLOT_NONE` and the zero label come from `opp_intent_labels.py` |
 
-## 3. Hazards the parity gate must decide (no claim made here)
+## 3. Hazards the (since-deleted) parity gate had to decide
 
 - **The truth side's timing (DECIDED by the item gate).** Python reads `battle2` when the trainee's
   step returns; the core reads the truth chain after the same write. `item` is the only dynamic
@@ -128,7 +129,7 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
    wants. `src/rust_env/src/labels/mod.rs` refuses, at STARTUP and by name, a `host_*` family, a
    an unknown family, and a `core` family not built yet (`labels::BUILT`).
 3. One unit per `core` family, each with its slice-N parity gate against `Gen3Env` on recorded
-   battles: COMMIT tier in the routine gate, MILESTONE tier `slow`. The order is belief, hp_type +
+   battles (the gates were deleted with `Gen3Env` in U3; the milestone numbers below are their last read): COMMIT tier in the routine gate, MILESTONE tier `slow`. The order is belief, hp_type +
    item, spread, intent, then margin. **`belief` BUILT**
    (`src/rust_env/src/labels/belief.rs`, gated by `src/agents/training/rust_env_labels_parity_test.py`:
    400 milestone episodes, 0 divergences). **`hp_type` and `item` BUILT**
@@ -144,5 +145,5 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
    revealed slot with a `belief_spread` label carries its nature / EV label too. Milestone:
    83,905 / 83,905 pool, 91,316 / 91,316 ladder, 42,539 / 42,539 procedural slot-decisions (the
    IV-31 inversion it replaced left 54.6 % of the pool's short and 1.2 % of the ladder's). Over all
-   719 pool teams, `src/agents/training/nature_ev_label_test.py` pins 4,314 / 4,314 mons labelled
+   719 pool teams, `nature_ev_label_test.py` (deleted in U3) pinned 4,314 / 4,314 mons labelled
    with their declared set.

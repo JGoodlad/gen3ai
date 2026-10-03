@@ -49,16 +49,54 @@ top-2 log-probs were exactly equal on the Rust path, 2.4e-7 apart on the Python 
 from __future__ import annotations
 
 import json
+import contextlib
 import os
 import subprocess
 import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 
-from agents.training.rust_env_opponents_parity import NEAR_TIE_FACTOR, declared_torch_state
+#: A flip below ``NEAR_TIE_FACTOR x`` the tier's |Δ legal log-prob| bar is a TIE: 2 is the exact bound (each
+#: of the two compared log-probs moves by at most the bar). (Re-homed with `declared_torch_state` from the
+#: deleted `rust_env_opponents_parity` — deletion pass U3 / R10.)
+NEAR_TIE_FACTOR = 2.0
+#: The process-global torch state the gate declares (the values a fresh process has).
+DECLARED_MATMUL_PRECISION = "highest"
+
+
+class GateStateError(RuntimeError):
+    """A process-global torch setting the gate depends on is not what it declares."""
+
+
+@contextlib.contextmanager
+def declared_torch_state(threads: int) -> Iterator[None]:
+    """Pin the thread count for the block, refuse an undeclared global, restore what was found."""
+    import torch
+
+    def check(where: str) -> None:
+        bad = {}
+        if torch.get_float32_matmul_precision() != DECLARED_MATMUL_PRECISION:
+            bad["float32_matmul_precision"] = torch.get_float32_matmul_precision()
+        if torch.get_default_dtype() != torch.float32:
+            bad["default_dtype"] = str(torch.get_default_dtype())
+        if torch.get_num_threads() != int(threads):
+            bad["num_threads"] = torch.get_num_threads()
+        if bad:
+            raise GateStateError(f"{where}: torch state {bad} is not the declared one (precision "
+                                 f"{DECLARED_MATMUL_PRECISION!r}, float32, {threads} threads) — a test or "
+                                 "import left it changed; fix it at the source")
+
+    found = torch.get_num_threads()
+    torch.set_num_threads(int(threads))
+    try:
+        check("entering the gate region")
+        yield
+        check("leaving the gate region")
+    finally:
+        torch.set_num_threads(found)
 
 #: The critic-residual tail tolerance (V through T2 vs the Python forward).
 TD_BAR = 1e-4

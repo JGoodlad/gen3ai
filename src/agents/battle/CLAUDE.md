@@ -127,7 +127,7 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
     back tracker state and never touches the battle, so the memo stays correct across it by
     not participating.
 
-  Measured over 589 real bridge decisions (`gen3ou`, the full `Gen3Env` path): **5.000 →
+  Measured over 589 real bridge decisions (`gen3ou`, measured through the now-deleted Python `Gen3Env` path — a dated measurement): **5.000 →
   1.000 `LiveView` builds per decision, 57.0 → 11.6 `LivePokemon.from_pokemon` calls per
   decision**; `trainer_turn_benchmark --decisions 300` (same session, back to back, quiet box)
   **0.923 → 0.666 ms of our controllable CPU per decision, −28%**. `mask_generator.get_mask`
@@ -347,9 +347,7 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
 - **Injection seam (wired into training):** `poke_env.player.Player.__init__` takes
   `battle_class=Battle` (default, with a `None`-guard since `PokeEnv` threads a `None`
   default to its `_EnvPlayer` agents). `Gen3Player` defaults `battle_class=Gen3Battle`
-  (so RL / eval / replay / stat-tracking players inherit it), and `Gen3Env` defaults it
-  too (both env agents track the log; the trainee `battle1` is what obs/reward/replay
-  read). These + the (unchanged) parser are the only edits to the poke-env core.
+  (so RL / eval / replay / stat-tracking players inherit it) (the Python `Gen3Env`, which also defaulted it, was deleted in U3). These + the (unchanged) parser are the only edits to the poke-env core.
 - **Per-decision event window:** `Gen3Battle.event_cursor` + `events_since(cursor)` slice
   the log by "since the agent was last asked to act" — the granularity `TurnDelta` needs,
   which is NOT a protocol `|turn|N` boundary (a forced switch splits a turn into two

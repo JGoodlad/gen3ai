@@ -13,7 +13,7 @@ training package). Each section below is unchanged, including its dated measurem
 
 The training half of the in-place belief feature (model side in `src/agents/model/CLAUDE.md` →
 `BeliefSlots`/`BeliefHead`, v16). Off by default. Two pieces live here:
-- **Labels (`gen3_env.py`).** When `emit_belief_labels` (set from `--opp-belief-aux-coef>0`), `step()`
+- **Labels (the Rust env core's label path (formerly `gen3_env.py`, deleted in U3; `designs/rust_sim/env_labels.md`)).** When `emit_belief_labels` (set from `--opp-belief-aux-coef>0`), `step()`
   and `reset()` merge two PRIVILEGED int64 Dict-obs keys into the trainee obs: `belief_species[6]`
   and `belief_moves[6,4]` — the opponent's still-hidden mons (species/move NUMs), sourced from
   `battle2.team` (agent2's own full team). The believed-slot mask is read **straight from the obs
@@ -69,17 +69,13 @@ The training half of the in-place belief feature (model side in `src/agents/mode
 - **Tests.** Unit: `belief_aux_loss_test.py` (Hungarian order-invariance + min-cost-matching, empty
   guard, grad, fail-loud out-of-vocab, perf fast-path), `agents/observation/belief_labels_test.py`,
   `agents/model/belief_slots_test.py` (incl. end-to-end gradient flow through the stash to the belief
-  params + shared trunk). **Fuzz** (real bridge battles, no server):
-  `poke_env_gaps/belief_labels_fuzz_test.py` validates the emitted labels against the ACTUAL opponent
-  team, the single-source mask invariant, the moves-⊆-moveset invariant, and the no-leak width check
-  over thousands of live decisions:
-  `python src/agents/training/poke_env_gaps/belief_labels_fuzz_test.py [n_battles]`.
+  params + shared trunk). **Fuzz:** `poke_env_gaps/belief_labels_fuzz_test.py` (real bridge battles against the Python env's emitted labels) was DELETED with the Python env core (U3); the label contract is held by the Rust label gates (`rust_env_label_inventory_test.py`, `utils/rust_env/label_columns_test.py`).
 
 ## Move-belief reinjection loss (`--move-belief-mode` / `--move-belief-coef`)
 
 The training half of the move-belief feature (model side: `src/agents/model/CLAUDE.md` → MoveBelief,
 v17). The predicted moveset is REINJECTED into the opp token (it flows to both heads), AND supervised:
-- **Labels (`gen3_env.py`).** When `move_belief_mode != "off"` (or species-belief on), the trainee obs
+- **Labels (the Rust env core's label path (formerly `gen3_env.py`, deleted in U3; `designs/rust_sim/env_labels.md`)).** When `move_belief_mode != "off"` (or species-belief on), the trainee obs
   carries `belief_moves[6,4]` (hidden slots, shared with the species aux) and — when mode ∈
   {revealed, both} — `known_moves[6,4]`: each REVEALED slot's FULL privileged moveset (so the head learns
   the as-yet-unrevealed moves). Both are training-only, sourced from `battle2.team`; builder
@@ -112,7 +108,7 @@ the `DamageOperator` consumes it for damage + outspeed. WITHOUT this loss the he
 gets only the weak/unaligned gradient leaking back through the op, so it sits at the usage-mean prior, which
 **over-estimates the largest-EV stat** (the modal Smogon set maxes it) → the op mis-prices damage/outspeed
 against the *modal* opponent, not the real one. Off by default (`--spread-belief-coef 0`). Two pieces:
-- **Label (`gen3_env.py` → `belief_labels.build_known_spread_labels`).** When `emit_spread_labels`
+- **Label (the Rust env core's label path (formerly `gen3_env.py`, deleted in U3; `designs/rust_sim/env_labels.md`) → `belief_labels.build_known_spread_labels`).** When `emit_spread_labels`
   (= `--spread-belief` AND `--spread-belief-coef>0`), `_spread_labels` (INDEPENDENT of the species/move
   belief path, so `--spread-belief` works standalone) merges two TRAINING-ONLY Dict keys: `belief_spread`
   [6,5] (the TRUE derived stats of each REVEALED opp mon, matched BY SPECIES against agent2's own team's
@@ -142,7 +138,7 @@ against the *modal* opponent, not the real one. Off by default (`--spread-belief
   EVs) — the spread poke-env backfills onto its own mons from the team it declared, EVs at their
   stat-effective `4·⌊ev/4⌋` (`belief_tables.true_nature_ev_label`, `gen3_true_spread_labels_v1`). A THROWING
   guard (`SpreadLabelError`): the declared set at L100 with its TRUE IVs must reproduce the request's
-  `mon.stats`. Emitted by `gen3_env._spread_labels` as training-only `belief_nature`/`belief_ev`(+masks),
+  `mon.stats`. Emitted (formerly by the deleted `gen3_env._spread_labels`) as training-only `belief_nature`/`belief_ev`(+masks),
   per decision, never cached. Coverage: every revealed slot with a `belief_spread` label (the Rust env's
   label gate pins the equality). It replaced an IV-31 stat INVERSION (to 2026-09-29) that left 54.6 % of
   pool revealed-slot decisions unlabelled (the Hidden Power IV-30 sets), mislabelled the IV-30 mons it did
@@ -162,7 +158,7 @@ against the *modal* opponent, not the real one. Off by default (`--spread-belief
 - **Tests.** Unit: `spread_belief_loss_test.py` (masking, scale-normalised smooth_l1, grad ONLY to
   supervised slots, the `largest_bias` over-estimate detector, off→None, the stat-order GIGO pin),
   `belief_labels_test.py` (`build_known_spread_labels` species-match + mask + incomplete-stat skip). **Fuzz**
-  (real bridge battles, no server): `poke_env_gaps/belief_labels_fuzz_test.py` validates `belief_spread` ==
+  (real bridge battles, no server; DELETED with the Python env core, U3): `poke_env_gaps/belief_labels_fuzz_test.py` validated `belief_spread` ==
   the actual revealed opp mons' true derived stats (`mon.stats`), believed/pad slots zero (no leak), and the
   OFF env declaring no spread keys, over thousands of live decisions. End-to-end smoke (`--debug
   --unified-moves both --spread-belief --spread-belief-coef 0.1 --n-steps 64`) confirms the roundtrip + the
@@ -174,7 +170,7 @@ The training half of `gen3_typed_hp_belief_v1` (model side: `src/agents/model/CL
 Hidden Power, v51). The opponent's Hidden Power is reasoned about ONLY as the 16 discrete typed moves; the
 `HPTypeBelief` head supplies the type half of `P(HP_t) = presence · P(type=t)`, and this CE is its direct
 supervision.
-- **Label (training-only, privileged).** `Gen3Env._hp_type_labels` reads agent2's OWN team for each
+- **Label (training-only, privileged).** The env core's HP-type label (formerly the deleted `Gen3Env._hp_type_labels`) reads agent2's OWN team for each
   REVEALED opp mon's true Hidden Power type (the typed move-id suffix → `belief_labels.build_hp_type_labels` /
   `hp_type_idx_from_move_id`, in the `HIDDEN_POWER_TYPE_ORDER` index space) and emits the `hp_type_label` [6]
   / `hp_type_mask` [6] Dict keys (mask=1 only at a revealed slot whose species runs HP). Gen 3 NEVER reveals
@@ -197,10 +193,10 @@ supervision.
   whenever there is a move belief, and it no longer requires `--damage-op`.
 - **Tests.** Unit: `model/hp_type_belief_test.py` (the Σ-typed-equals-presence constraint, both certain-fact
   eliminations, the immune-bug regression, the op having no HP source of its own, the CE loss masking,
-  `build_hp_type_labels`, the 16-axis GIGO pin, the v51 migration). **Fuzz** (real bridge battles): the
-  extended `poke_env_gaps/belief_labels_fuzz_test.py` validates `hp_type_label` == each revealed HP-mon's true
+  `build_hp_type_labels`, the 16-axis GIGO pin, the v51 migration). **Fuzz** (real bridge battles; DELETED with the Python env core, U3): the
+  extended `poke_env_gaps/belief_labels_fuzz_test.py` validated `hp_type_label` == each revealed HP-mon's true
   type, the TYPED move labels == the real opponent movesets, mask 0 on revealed-no-HP / believed / pad slots
-  (no leak), and the OFF env declaring no HP-type keys. End-to-end smoke (`--debug --use-bridge=node
+  (no leak), and the OFF env declaring no HP-type keys. End-to-end smoke (`--debug
   --unified-moves both --spread-belief --hp-type-belief-coef 0.05`)
   confirms the roundtrip + `belief/hptype_*`.
 
@@ -216,8 +212,8 @@ pool 0.254, accuracy flat ~0.50 all run). The risk this knob addresses is imprin
 a decision tree during the ramp and carrying it into pool play.
 
 **The mechanism.** It reuses the EXISTING identity source — the `opp_class` obs key
-(`gen3_opp_class_v1`), tagged once per episode by `MaskableAgentWrapper._select_episode_opponent`,
-pushed onto the env at `reset()`, emitted beside the α/β labels by `Gen3Env._opp_intent_labels`,
+(`gen3_opp_class_v1`), tagged once per episode by the opponent draw (`rust_env_opponents.EpisodeOpponentSampler`; formerly `MaskableAgentWrapper._select_episode_opponent`),
+emitted beside the α/β labels by the env core (formerly `Gen3Env._opp_intent_labels`),
 shifted with them by `align_labels_to_predictions`, and already read in `train()` for the
 stratified metrics. **No new obs key was added**; the key that splits the dashboards is now also
 the key that weights the loss. `agents.model.opp_intent.intent_losses` takes a `bot_label_weight`

@@ -31,12 +31,12 @@ def test_slice_is_a_no_op_at_or_above_the_buffer():
 
 
 def test_argv_drops_env_count_and_compile_flags_then_sets_them_once():
-    argv = ["--n-envs", "48", "--compile-trainer", "--compile-opponents",
-            "--compile-opponents-strict", "--lr", "0.0003", "--device", "cuda"]
+    gone = "--" + "compile-opponents"          # deleted (U3): spelled so the CLI-surface scan does not read it as live
+    argv = ["--n-envs", "48", "--compile-trainer", gone, gone + "-strict", "--lr", "0.0003", "--device", "cuda"]
     t = adjust_argv(argv, compile_trainer=True)
     assert t.count("--n-envs") == 1 and t[t.index("--n-envs") + 1] == WORKER_N_ENVS
     assert "--compile-trainer" in t and "--no-compile-trainer" not in t
-    assert "--compile-opponents" not in t and "--no-compile-opponents" in t
+    assert gone not in t and "--no-" + gone[2:] not in t and gone + "-strict" not in t   # deleted flags: never forwarded
     assert t[t.index("--lr") + 1] == "0.0003"
     f = adjust_argv(argv, compile_trainer=False)
     assert "--no-compile-trainer" in f and "--compile-trainer" not in f

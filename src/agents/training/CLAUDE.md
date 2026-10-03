@@ -130,7 +130,7 @@ export (`metrics_export`) and the per-rollout probes (`rollout_probes`).
 
 🚨 **THE LOOP AROUND `train()` IS OURS TOO** (`gen3_owned_ppo_loop_v1`, `src/agents/training/instrumented_ppo/loop.py`;
 [`designs/endstate/design_own_ppo_loop.md`](../../../designs/endstate/design_own_ppo_loop.md)): `learn()`
-is the declared `LOOP_PHASES` table, and `_setup_learn` / `dump_logs` / the Python core's collect are
+is the declared `LOOP_PHASES` table, and `_setup_learn` / `dump_logs` are
 vendored from sb3 operation for operation (hash-pinned). Three things an edit must not break: the
 **dump stays BEFORE the update** (update k's `train/*` is stamped after rollout k+1 — the archive's TB
 convention and the KL controller's logger read); **`learn` > `collect` | `update` are the DECLARED
@@ -151,8 +151,7 @@ every CUDA construction and load (a nominal regime boundary: 0 cuDNN kernels run
 🚨 **No global RNG is SEEDED after the freeze** (`gen3_no_global_reseed_v1`, `global_rng_guard.py`): `LearnerFreeze` arms a guard
 on `random.seed` / `numpy.random.seed` / `torch.manual_seed` and kin, so a seed is `GlobalReseedError` (FATAL_CONFIG) naming its
 site. An opponent / reader load (`InferenceMaskablePPO`) never seeds and builds inside `isolated_global_rng()`. Until 2026-10-02
-every load re-seeded to the snapshot's seed, which replayed the minibatch permutation (rust core) and every worker's team draws
-(python core). A stream that must repeat owns a generator. Static twin: `src/global_rng_seed_gate_test.py`. Detail:
+every load re-seeded to the snapshot's seed, which replayed the minibatch permutation. A stream that must repeat owns a generator. Static twin: `src/global_rng_seed_gate_test.py`. Detail:
 `designs/training/learner_lifecycle.md` "No global reseed after the freeze".
 
 **K9 — the learner's GIGO gates** ([`designs/training/learner_gates.md`](../../../designs/training/learner_gates.md)).
@@ -405,7 +404,7 @@ against in eval AND (under `--self-play`) played against in training. Which FILE
 to is the ONE rule above. Design: `designs/ai_v5/design_stable_opponents.md`.
 **Full detail — in [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md).**
 
-## Exploiter mode (`--exploiter`, `MaskableAgentWrapper._exploiter_player`)
+## Exploiter mode (`--exploiter`; the per-episode draw is `rust_env_opponents.EpisodeOpponentSampler`)
 
 A clean opponent-mix front-end for the league **exploiter** role: train a dedicated agent against
 ONE fixed foreign model as the **sole opponent every episode**, to surface (and then patch, by
@@ -444,8 +443,7 @@ first; the artifact carries that sentence in its own `notes` field. 🚨 **NO Te
 (owner rule: per-team series are noisy spam), pinned by a test that fails on "just one scalar".
 🚨 **Same pool SIZE is not the same pool ORDER** — the tracker verifies per-index team identity
 across workers and RAISES on disagreement. Both are training-only, not version-locked, and the
-tracker takes an `env_method` PULL rather than an info-dict thread, because that is the seam that
-works identically under `--async-rollout`.
+tracker takes an `env_method` PULL rather than an info-dict thread.
 **Full detail — in [`designs/training/team_curriculum.md`](../../../designs/training/team_curriculum.md).**
 
 ## ELO / skill rating (`elo.py`, `bot_elo_calibration.py`, `main.elo`)
@@ -496,29 +494,15 @@ one JSON per run, is `designs/research_state/measurements/ladder_refit_audit_202
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)
 and [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md).**
 
-## Rollout collection: sync barrier vs `--async-rollout` (`async_vec_env.py`)
+## Rollout collection — the Rust complete-game collector is the ONLY collector
 
-The default `SubprocVecEnv.step()` is a **per-step barrier**. `--async-rollout` swaps in
-**`AsyncSubprocVecEnv`** (per-env `send_step`/`poll_ready`/`recv_step` + **drain-safe
-`env_method`**, which stashes in-flight step results before any barrier RPC) and
-`collect_rollouts_async`. It keeps every worker in flight, batch-forwards whichever envs are READY,
-and writes each env's transition into **its own buffer column**. It is **exactly on-policy** — a
-scheduling change, not an APPO-style algorithm change — and the per-decision mask rides in the Dict
-obs, so no wrapper changes. Off by default; ignored under `--debug`. Measured **+14% FPS at the
-production `--n-envs 64`** (1489→1695, heuristic opponents); design + benchmark table:
-`designs/ai_v5/design_async_rollout.md`.
-
-🚨 **This is why several callbacks are `env_method` PULLS rather than info-dict threads** (reward
-terms, team PFSP, per-team win rates): the async collector wave-batches, so callback locals cannot
-recover which buffer ROW a step landed on. A capture that needs the row is INLINED into
-`collect_rollouts_async` instead (`WinProbLabelCallback`'s terminal capture).
+There is no Python rollout collector, no per-step `SubprocVecEnv` barrier and no async-wave collector (all deleted in the deletion pass, U3; the async-rollout flag with them). The collector is `rust_rollout/` (see "The env core" below and `designs/training/rust_collector.md`).
 
 🚨 **A STEP-COUNTED CADENCE IS TOTAL ENV STEPS, never vec calls or rollouts** (F-SZ-3, 2026-10-01).
 The periodic checkpoint was SB3's `n_calls % save_freq` at 50,000 calls — 2.4M env steps at N = 48,
-~102M at N = 2048, early under `--async-rollout` waves; it now saves when `num_timesteps` crosses each
+~102M at N = 2048; it now saves when `num_timesteps` crosses each
 multiple of 2.4M (`main.train.constants.checkpoint_due`), like eval, the pool add/refresh it drives,
-and the plasticity canary. A callback CALL is not a fixed number of env steps (N
-sync, N decisions on the Rust collector, one WAVE < N under async), so a new cadence compares
+and the plasticity canary. A callback CALL is not a fixed number of env steps (N decisions on the Rust collector), so a new cadence compares
 `num_timesteps` against a boundary — never `n_calls`. Everything counted in UPDATES or rollouts
 (`--diagnostics-every`, the compile canary, the team pulls, the CUDA memory-trend horizon, …) moves
 with `n_steps × n_envs`. The table and its tests: `designs/ops/training_runbook.md` → "Cadences and
@@ -541,31 +525,21 @@ BIT-IDENTICAL at any N (`diagnostics_cadence_test.py`). Recorded + inherited; a 
 1. ⚠️ A reader that windows by reading COUNT (the vf_coef "last 20") now spans N× the updates.
 Detail: [`designs/training/ppo_step.md`](../../../designs/training/ppo_step.md).
 
-## Where the trainee's observation comes from (`--obs-source {python,core}`, DEFAULT `core` on the rust bridge)
+## Where the trainee's observation comes from — the Rust core, the ONLY source
 
-`gen3_core_obs_source_v1` — the Rust core program's M6: **the production default since the cutover
-(2026-09-25)**; `python` is the explicit opt-out (byte-identical by construction; removed by the
-deletion pass) and the default on `--use-bridge node|off`. `core` takes the trainee's observation row (2761-dim) and 11-bit mask from the rust
-`sim_bridge` child (`__OBS__` frames; needs `--use-bridge rust`); `Gen3Env` REFUSES a frame of
-another battle, decision (`n`) or turn, a NaN cell or a mask that disagrees with the reading. Labels,
-reward, the tracker fold and the action mapping stay Python; terminal and non-decision embeds are
-still encoded here and counted (`Gen3Env.core_obs_counts`). The env-level parity gate is slice N
-(`main/rust_core_cutover/slice_n_test.py`), zero differences, no allowlist. 🚨 **A DECISION is recorded only when the env
+`gen3_core_obs_source_v1`: the trainee's observation row (2761-dim) and 11-bit mask are produced by the Rust core (`__OBS__` frames
+from the `sim_bridge` / env core) and read by the collector; the obs-source flag (a Python-vs-core choice) was deleted in the deletion pass (U3) with the Python env core, so there is no second source to
+diff against. Labels, reward and the action mapping are served by the core too (`rust_rollout/`). **The trainee's `(observation_space, action_space)` has ONE builder,
+`agents.training.trainee_spaces`** (`trainee_spaces()`, `trainee_env_kwargs()` — the per-run label switches as a pure function of the args; no env is built to read them). 🚨 **A DECISION is recorded only when the env
 asks the trainee to move** (`gen3_no_phantom_decision_v1`, a TRAINING-INPUT change): poke-env embeds
 `battle1` on every step, including a `wait` request or its re-embed of an answered request, and the
 trackers used to take a decision there (5.0% of steps); a `wait` request reaching the record RAISES. 🚨 **The OPPONENT is polled only when its order will be SENT** (`gen3_no_phantom_opponent_poll_v1`, M5 Lane E, the opponent twin): `SingleAgentWrapper.step` asked `choose_move` on steps whose p2 order was dropped, so a self-play `RLPlayer` recorded a phantom decision (progress clock one step high) and drew a sample, and a bot drew from its RNG.
 Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` §3.
 
-## The env core — `--env-core {python,rust}` (PRODUCTION `rust` — the M5 switch; M5 Lane G)
+## The env core — `--env-core rust` (the ONLY core; the M5 switch, M5 Lane G)
 
-🚨 **THE M5 SWITCH (`gen3_env_core_switch_v1`): `rust` is the PRODUCTION env core**, declared with every
-run SIZE in ONE block, `designs/production_config.json` `recipe.sizing` (the sizing verdict fills it).
-An UNTYPED `--env-core`: fresh `--arch production` → rust; `--model` (a restart or a fork) → INHERITED,
-the core the checkpoint was produced on when that is rust — a PYTHON-ERA checkpoint (produced on python,
-or before `--env-core` existed) moves onto rust, announced as a CORE SWITCH, and one that trained the
-SHAPED critic is REFUSED whatever the core (`FATAL_CONFIG`: run it pinned) — deletion pass D4; a bare non-production fresh argv → rust too (the deletion pass's bare-argv flip, D2 2026-10-02: the
-bare argv is `--critic winprob` + its three reward values, which the Rust core serves). `--env-core python`
-(typed) opts out until the deletion pass removes the Python core.
+🚨 **`rust` is the ONLY env core** (`gen3_env_core_switch_v1`; the Python core was deleted in the deletion pass, U3). The flag stays with ONE legal value: a typed `--env-core python` is refused at parse time with the reason. Every run SIZE is declared in ONE block, `designs/production_config.json` `recipe.sizing`.
+An UNTYPED `--env-core` resolves to rust everywhere: fresh (`--arch production` or a bare argv — the bare argv is `--critic winprob` + its three reward values, which the Rust core serves); `--model` (a restart or a fork) → the core the checkpoint was produced on when that is rust, and a PYTHON-ERA checkpoint (produced on python, or before `--env-core` existed) that trained the WINPROB critic moves onto rust, announced as a CORE SWITCH. A checkpoint that trained the SHAPED critic is REFUSED on a resume or fork whatever the core (`FATAL_CONFIG`, D4 `PythonEraShapedCheckpoint`: run it pinned to its own commit); it still LOADS as an opponent, in the meters and in the prober.
 One resolver: `main.train.rust_env_setup.resolve_env_core_default`, called by `resolve_config` and
 `checkargs`; pinned by `main/train/env_core_switch_test.py`. Runbook: `designs/ops/training_runbook.md`.
 
@@ -575,22 +549,16 @@ service in ONE flush, the scripted bots played inside the core, and the COMPLETE
 (`--rollout-trigger complete_game`, the default there): a game's rows are buffered until it ends, GAE
 and the win label run on the complete game (every row `win_mask` 1), and an update fires at
 `--rollout-target-samples` completed-game rows (default `n_steps × n_envs`), consuming exactly that many
-— no row is dropped or down-weighted for age. `python` is untouched and stays the default; the cutover is
-a separate decision. Hazards an agent must know before touching it:
+— no row is dropped or down-weighted for age. Hazards an agent must know before touching it:
 
 - 🚨 **Startup runs BEFORE `--compile-trainer`** (`model_build._start_rust_env`): the inference service
   deep-copies the policy as its slot templates, and a copy taken after the compile would carry the
   patched `forward` bound to the LEARNER's extractor.
-- 🚨 **Every flag whose path the Rust core does not serve is REFUSED at startup, by name**
-  (`combination_checks`' `env_core_rust_*`): today only `--async-rollout`. The
-  collector flags typed on the python core are refused too (they would be silently inert).
-- **`WinProbLabelCallback` is not registered** under `rust`: the collector fills `win_target` /
-  `win_mask` (the window fill calls the callback's own `backfill_terminal_labels`).
-- **K9(b) `--behaviour-check`** (default `fatal` on BOTH cores): before any optimizer step of every
+- **The collector fills `win_target` / `win_mask`** (the window fill calls `win_prob_callback.backfill_terminal_labels`, the one function left of the deleted `WinProbLabelCallback`).
+- **K9(b) `--behaviour-check`** (default `fatal`): before any optimizer step of every
   update, the learner's log π on rows played at the CURRENT version must equal the stored behaviour
-  log-prob (ONE gate, at fp32 matmul precision `highest` — the only precision, TF32 was retired: DETERMINISTIC — a row whose forward has a declared selection / threshold within a relative margin 2e-4 of its cutoff is EXCLUDED (3.7 % of healthy rows; `agents/model/selection_sites.py`, `rust_rollout/tie_margins.py`), every other row's |Δ| < 1e-4 or FATAL at once, the excluded share < 0.15; a process at any other precision is refused). Under `rust` Lane G's pre-loop probe runs its own forward and logs
-  `staleness/*` (ratio, clip fraction, KL by row AGE) and `behaviour/*`; under `python` (no per-row
-  versions) the first micro-batch's own forward is compared in-loop instead (`learner_gates.md`). Per-game version pinning (`--version-pinning per_game`) is the first
+  log-prob (ONE gate, at fp32 matmul precision `highest` — the only precision, TF32 was retired: DETERMINISTIC — a row whose forward has a declared selection / threshold within a relative margin 2e-4 of its cutoff is EXCLUDED (3.7 % of healthy rows; `agents/model/selection_sites.py`, `rust_rollout/tie_margins.py`), every other row's |Δ| < 1e-4 or FATAL at once, the excluded share < 0.15; a process at any other precision is refused). Lane G's pre-loop probe runs its own forward and logs
+  `staleness/*` (ratio, clip fraction, KL by row AGE) and `behaviour/*` (`learner_gates.md`). Per-game version pinning (`--version-pinning per_game`) is the first
   staleness remedy, OFF unless those measurements call for it.
 - **Every micro-batch is FULL — no padding, no drop.** `--rollout-target-samples` must be a multiple of
   lcm(`--batch-size`, `--n-envs`) (refused at parse, at the trigger, at every adaptive move, and by the
@@ -602,30 +570,26 @@ a separate decision. Hazards an agent must know before touching it:
   parity gates exact. It is NOT a speed lever (~0.2 ms a step: F-LE-8's "5.1 ms of sampling" was the host
   waiting for the forward). A core RESPAWN (up to `--rust-env-respawn-budget`) cuts the live games,
   derives a new segment seed and re-stages; past the budget it is fatal.
-- `rollout/collect_ms` + `rollout/collect_decisions` are logged on BOTH cores (the A/B reads them);
+- `rollout/collect_ms` + `rollout/collect_decisions` are logged (the A/B reads them);
   `rust_env/*` is the collector's per-phase read. `metadata.json` records `env_core` on every save.
 - ⚠️ A launcher RESUME pins to the checkpoint's commit. A commit before Lane G has no `--env-core`
   and is refused by name. The trainer builds its checkout's env core at startup
   (`utils.rust_env.build`), because a pin worktree has no `target/`. An untyped `--env-core` on a
   `--model` launch INHERITS the checkpoint's recorded core (an `--arch production` restart's from
-  `cli_args`); a TYPED switch is announced (`⚠️ [ENV CORE]`). Detail: `src/main/launcher/CLAUDE.md` → "A `--env-core rust` run under the
+  `cli_args`). Detail: `src/main/launcher/CLAUDE.md` → "A `--env-core rust` run under the
   launcher".
 - **EVAL runs on the core too** (M5 Lane H, `rust_eval/`): both eval callbacks write the same plan and
   manifest, then play the cycle IN PROCESS and BLOCKING on a declared eval core (`--rust-eval-envs`) and
   declared eval T2 slots, publish the workers' own shard records, and collect them with the unchanged
   code. Games are seeded by the GAME (`gen3_eval_game_seed_v1`); traces are CORE traces (records +
-  reconstruction + states; the prober expands them). A missing eval core under `rust` is FATAL, never a
+  reconstruction + states; the prober expands them). A missing eval core is FATAL, never a
   fall-back to Python workers. Detail: `designs/training/eval_and_rating.md` → "Eval on the Rust env core".
 
 Detail: [`designs/training/rust_collector.md`](../../../designs/training/rust_collector.md).
 
-## The two compile flags (`--compile-opponents` · `--compile-trainer`, both DEFAULT ON)
+## The compile flag (`--compile-trainer`, DEFAULT ON)
 
-**Split by WHO and WHERE** (renamed 2026-08-14 from the single `--compile-extractor`, which said
-neither): **`--compile-opponents`** is the CPU/ROLLOUT half — the frozen opponents in the env
-workers, plus BLAS thread pinning. **`--compile-trainer`** is the GPU/LEARNER half (auto-on for
-cuda) — the CUDA forward **and backward** the PPO step runs, and the larger of the two. They are
-orthogonal; a run can take either, both or neither.
+**`--compile-trainer`** is the GPU/LEARNER compile (auto-on for cuda) — the CUDA forward **and backward** the PPO step runs. The CPU/ROLLOUT half (the compile-opponents flag, its preload and strict variants, the forkserver preload, the cache prewarm and the cross-process revert quorum) was deleted in the deletion pass (U3): under the Rust env core every policy opponent forwards through the inference service, so the trainer compiles no opponent. What is left of the opponent compile is `agents.model.compile_opponents.maybe_compile_extractor(model, enabled, label, hide_cuda)`, used by the OFFLINE readers (the prober's counterfactual view, the snapshot ladder, the eval worker, the cf producer, the search-dividend perf probe).
 **fp32 matmul precision `highest` is the ONLY precision** (TF32 retired, deletion pass K2; `--matmul-precision`
 is DELETED — `designs/deleted_flags.md`). Nothing in the trainer sets it; `metadata.json` still records the
 realized value as `matmul_precision`, and every parity gate (the region gate, the canary, T2's judge, K9(b))
@@ -643,7 +607,7 @@ policy gradient (cosine ≥ 0.9999 plus the per-parameter rule) to eager. **On F
 launch: the zero-init pointer head makes every legal log-prob `-log(n_legal)`, so that check cannot
 fail) it ALSO runs on a seeded, bit-exactly-restored perturbation of the policy
 (`agents.model.parity_probe`, `gen3_fresh_parity_probe_v1`), and a vacuous comparison REFUSES rather
-than passes. The CPU `--compile-opponents` path runs a decision-level parity check once per distinct
+than passes. The offline CPU opponent compile runs a decision-level parity check once per distinct
 weights (`agents.model.opponent_parity`), which RAISES on a mismatch. 🚨 **HEAD runs torch >= 2.8 ONLY** (deletion pass K1, 2026-10-02): `utils/torch_floor.py`
 exits the trainer `FATAL_CONFIG` on an older torch, because every 2.5.1 path is gone — the
 extractor-only compile and its gate, and the CUDA trunk split (`gen3_inductor_trunk_split_v1`) that
@@ -709,9 +673,9 @@ half-batch trunk-gradient cosine, and feature velocity. They exist because every
 and saturation is a trend.
 **Full detail — in [`designs/training/telemetry_scalars.md`](../../../designs/training/telemetry_scalars.md).**
 
-## THE VALUE LOSS has a MODE — `--critic {shaped,winprob}` (`gen3_winprob_critic_mode_v1`)
+## THE VALUE LOSS has a MODE — `--critic winprob` (`gen3_winprob_critic_mode_v1`)
 
-**Default `winprob` (the bare-argv flip, deletion pass D2); `shaped` is the historical critic, `--env-core python` only.** Design of record:
+**`winprob` is the ONLY trainable critic and the default** (the bare-argv flip, deletion pass D2; a typed `--critic shaped` is refused at parse time since U3, `CRITIC_TRAINABLE_MODES = (winprob,)`). `shaped` is the historical critic (`CRITIC_SHAPED`, still in `CRITIC_MODES` and the meaning of an ABSENT record, so an old shaped checkpoint still LOADS as an opponent, in meters and in the prober); a resume or fork of one is refused `FATAL_CONFIG` (D4) — run it pinned to its own commit. The `shaped` column below is the historical contrast. Design of record:
 `designs/ai_v12/design_winprob_only_critic.md`; the model-side half is `src/agents/model/CLAUDE.md`
 → *The CRITIC MODE*.
 
@@ -742,7 +706,7 @@ series that watches the 250-turn cap is `signal/stall_rate` / mean episode lengt
 🚨 **THE 250-TURN CAP IS A TERMINAL, NOT A TRUNCATION** — this env never truncates in the SB3 sense;
 a cap forfeit used to arrive as `truncated`, so SB3 bootstrapped `V(s_last)` onto a 0 reward at
 γ=1 and the timeout left the loss entirely with **a TD error of identically zero**. Fixed in
-`wrappers.resolve_episode_end`, under `winprob` only. **`--gamma` is a flag now and is INERT ON A
+the Python env wrapper's `resolve_episode_end` (deleted with that core in U3; the Rust collector's complete-game rule serves it now), under `winprob` only. **`--gamma` is a flag now and is INERT ON A
 RESUME like `--lr`.**
 
 ### `--win-prob-strata-weight` — the BCE's opponent MIX (`gen3_winprob_strata_weight_v1`, v115)
@@ -763,7 +727,7 @@ refit proved the fault is the TARGET, not the head, on both substrates
 
 🚨 **THE VOCABULARY IS THE FOUR `opp_class` CODES** — `bot` / `pool` / `stable` / `exploiter` — and
 per-BOT identity is **not available**: the archetype is drawn per EPISODE in
-`MaskableAgentWrapper._select_episode_opponent` and never reaches the observation. So the lever
+the per-episode opponent draw (`rust_env_opponents.EpisodeOpponentSampler`) and never reaches the observation. So the lever
 balances the between-CLASS share and leaves within-class heterogeneity in episode proportion.
 ⚠️ **THE CAP BINDS AT THE PRODUCTION MIX, deliberately**: at ~10 % bots / ~90 % self-play, `s = 1`
 asks for 10× and gets 8×, so the objective splits **44/56, not 50/50** — a 4.4× re-pricing with a
@@ -776,8 +740,8 @@ family is published whenever the flag is on, so 0 means "on, but one class prese
 
 **Default `0.0` = OFF and BIT-identical** — no fork object built, no obs key declared, no row injected.
 **`--critic winprob` is REQUIRED**, and `--win-prob-strata-weight` is REFUSED
-alongside it; the arm runs on the Rust core only (`--fork-fraction > 0` on `--env-core python` is refused: its replay
-ring, `--cf-records`, was deleted in deletion pass L4 and the Python arm's code in L5; the refusal row stays until the Python core goes). Detail:
+alongside it; the arm's replay
+ring, `--cf-records`, was deleted in deletion pass L4 and the Python arm's code in L5. Detail:
 [`designs/training/forks.md`](../../../designs/training/forks.md).
 
 🚨 **ONE implementation: the Rust port** (the Python arm — callback, replay-ring child process,
@@ -888,7 +852,7 @@ EXPERIMENT_BACKLOG X26.
 ## The win-probability head (`--win-prob-mode`); its PBRS routes were DELETED
 
 A calibrated **P(win|state)** supervised by the Monte-Carlo episode OUTCOME, back-filled onto every
-step of an episode by `WinProbLabelCallback`; the trailing in-progress episode gets `win_mask=0` and
+step of an episode by the Rust collector (`win_prob_callback.backfill_terminal_labels`); the trailing in-progress episode gets `win_mask=0` and
 is **never trained toward a fabricated label**. `win_target`/`win_mask` are TRAINING-ONLY obs keys
 read only by the loss, so the outcome cannot leak into the forward.
 
@@ -914,11 +878,10 @@ Once per rollout at `_on_rollout_end`, a seeded 1/64 of buffer states is appende
 - **`--value-sidecar {auto,on,off}` (default `auto` = ON under `--critic winprob`)**, plus
   `--value-sidecar-fraction` (1/64) and `--value-sidecar-seed` (0). None of the three reaches
   `model_config.json`, so there is no `MODEL_CONFIG_VERSION` implication.
-- 🚨 **CALLBACK ORDER IS LOAD-BEARING AND SILENT IF WRONG.** It MUST be appended after
-  `WinProbLabelCallback` — that callback's `_on_rollout_end` is what replaces the `win_target` /
-  `win_mask` placeholders with the Monte-Carlo label. Registered earlier it reads ZEROS and writes a
-  file that looks exactly like a critic scoring an unbroken run of losses. `main.train.callbacks`
-  appends them in that order, `value_sidecar_test.py` pins it, and at runtime an all-zero mask over
+- 🚨 **THE LABELS MUST BE FILLED BEFORE THE SIDECAR READS THEM.** The Rust COLLECTOR fills `win_target` /
+  `win_mask` itself (`win_prob_callback.backfill_terminal_labels` for the window fill) BEFORE `on_rollout_end`;
+  `WinProbLabelCallback` (whose registration order used to be the hazard) was deleted in U3. A sidecar that read the
+  placeholders would write ZEROS — a file that looks exactly like a critic scoring an unbroken run of losses — so at runtime an all-zero mask over
   a whole rollout is REPORTED (`labels_unfilled`) rather than written as data.
 - 🚨 **It cannot be reconstructed after the fact.** It reads the rollout buffer, which is gone the
   moment `train()` returns. A run launched without it has no training-side read, ever.
@@ -987,7 +950,7 @@ The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s
   rule (`68850f27`: a restart inherits the surface from `model_config.json`, `opp_intent_coef`
   recorded from config v125, a pre-v125 dose migrated from `cli_args` or refused) and covers only
   what that cannot supply.
-- **The cutover harness's "production" IS a launch:** `rust_core_cutover.envs.production_args()`
+- **The "production" argv IS a launch:** `main.train.production_args.production_args()` (re-homed from the deleted cutover harness)
   runs `resolve_config` on a fresh `--arch production` argv (the trainer's own resolver), so the
   recipe arrives with the arch; `production_args_test.py` holds it to a real fresh launch on every
   mirror key, the recipe included (it used to `hasattr`-copy the top-level keys and skip `recipe`).
@@ -1054,10 +1017,10 @@ a handful of numpy means per rollout.
 
 ## The SCAFFOLDING GAUGE — `train/scaffolding_gauge` + `python -m main.scaffolding_gauge`
 
-🚨 **THIS GAUGE IS A `--critic shaped` INSTRUMENT AND IS DEGENERATE ON THE PRODUCTION RUN.** It
+🚨 **THIS GAUGE IS A SHAPED-CRITIC INSTRUMENT AND IS DEGENERATE ON THE PRODUCTION RUN.** It
 measures the divergence between TWO readouts; under `--critic winprob` there is one — the win-prob
 head IS the critic, so the gauge compares a head with itself and its rank correlation is 1 by
-construction. Read it on a shaped run, or on an archived one; do not read it as a scaffolding
+construction. Read it on an archived shaped run; do not read it as a scaffolding
 measurement of a terminal-only run, which has no scaffolding to measure.
 
 **Full detail — every flag, gate, measurement and hazard — is in [`designs/training/telemetry_scalars.md`](../../../designs/training/telemetry_scalars.md).**
@@ -1280,14 +1243,14 @@ never recorded fields, so a run's recorded argv fails argparse on an unpinned re
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:
 
-- **`start_subprocess_watchdog`** — for the `SubprocVecEnv` path. A crashed worker leaves the
+- **`start_subprocess_watchdog`** — for a vec env that exposes worker `processes` (a no-op for one that exposes none). A crashed worker leaves the
   parent blocked on a pipe `recv` forever; this thread polls `processes` and `os._exit(1)`s the
   moment a worker dies with a nonzero exitcode. Started *after* env construction (and, in
   self-play, after `_maybe_engage_self_play` rebuilds the env), right before `learn()`, and
   **stood down the moment `learn()` returns** (`model_build` sets its shutdown event before the
   final save/eval; the thread checks the event before the workers). Without that, a worker
   SIGTERM'd in teardown (exitcode −15) turned every clean finish into a launcher "crash #1"
-  (`watchdog_teardown_test.py`). It is a **no-op on the `--debug` DummyVecEnv path** (no worker
+  (`watchdog_teardown_test.py`). It is a **no-op on the `--debug` path** (no worker
   processes to watch).
 - **`start_orphan_watchdog`** — for the `--debug` smoke path, which has no worker watchdog. A
   smoke run is a child of the launching shell/agent; if that parent dies the run is orphaned
@@ -1303,8 +1266,7 @@ Two daemon-thread watchdogs keep a hung/abandoned run from lingering:
 `train_rl_agent.py --showdown-port <port>` builds **one** `ServerConfiguration` in `main()`
 via the single constructor `localhost_server_configuration(port)` (in
 `poke_env.ps_client.server_configuration`) and threads it to **every** Showdown client —
-the training-env players (carried into the `SubprocVecEnv` spawn workers via the env-factory
-closures), eval, and self-play. Every player-creating callback takes a `server_config` param
+the training-env players, eval, and self-play. Every player-creating callback takes a `server_config` param
 (defaulting to port 8000 for standalone use) and builds its players from it — **never** from a
 bare `LocalhostServerConfiguration` constant. `server_port_threading_test.py` is the
 regression guard: it fails if any of these callbacks hardcodes the default port instead of

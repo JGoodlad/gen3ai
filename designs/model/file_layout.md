@@ -51,7 +51,7 @@ table exists to prevent:
 | `extractor_api.py` | `ExtractorApi` — the `last_*` stash reads, the pointer-cell widths, the debugger/ortho-init/belief-grad-mode setters |
 | `extractor_forward.py` | `ExtractorForward` — `forward_internal`, the T0/T1 belief+physics stack, `_value_pooled_routes` |
 | `features_extractor.py` | the `Gen3FeaturesExtractor` class + `forward`; **the re-export HUB for every moved name** |
-| `compile_opponents.py` | `maybe_compile_extractor` — the CPU-opponent compile path (split out of `snapshot.py`) |
+| `compile_opponents.py` | `maybe_compile_extractor(model, enabled, label, hide_cuda)` — the CPU compile of ONE frozen extractor, used by the offline readers (split out of `snapshot.py`; the trainer-side opponent compile, its strict mode and revert quorum were deleted in U3) |
 | `compile_control.py` | `gen3_compile_sentinel_v1` — the ONLY runtime module that touches `torch._dynamo`: the gate → reset → prewarm → lock → stats phases, the cache-limit detector, the torch version table and the source-hash drift tripwire (`designs/training/compile_flags.md`) |
 
 ## The table LAYERING — `damage_tables` → `belief_tables` → `dex_ids`
@@ -88,7 +88,7 @@ same "a fix lands in one copy" hazard, and is exactly the shortcut a later split
 
 `damage_tables` **re-exports every moved name** (`# noqa: F401  (re-export)` inline, never a new
 `ruff.toml` entry), so the ~20 historical `from agents.model.damage_tables import …` spellings in
-`belief_heads`, `t0_species`, `extractor_build`, `snapshot`, `gen3_env`, `main.train.config`,
+`belief_heads`, `t0_species`, `extractor_build`, `snapshot`, the (deleted) Python env, `main.train.config`,
 `flag_registry`, the prober and nine test modules still resolve — and the test asserts they resolve
 to the SAME object as the owning module.
 
@@ -124,16 +124,14 @@ preference:**
    class changes no attribute PATH on the instance, so the 236 keys are byte-identical.
 2. **The constructor SIGNATURE is a public surface.** SB3 builds the extractor as
    `features_extractor_class(observation_space, **features_extractor_kwargs)`, and ~10 sites read
-   `inspect.signature(Gen3FeaturesExtractor.__init__).parameters` as the flag set (`compile_prewarm`,
-   `compile_preload`, `ctor_kwarg_snapshot_test`, `config_only_pattern_test`, `delivery_graph`, …).
+   `inspect.signature(Gen3FeaturesExtractor.__init__).parameters` as the flag set (`ctor_kwarg_snapshot_test`, `config_only_pattern_test`, `delivery_graph`, …).
    An inherited `__init__` IS that function, so every one of them is unchanged.
 
 > 🚨 **A second public surface of the forward: the obs DICT's key set.** `forward` is normally a
 > pure function of `obs["observation"]`, but a route may read a flag-gated Dict key of its own
 > (the deleted privileged true-team route's `opp_true_team` was the first; the registry is now empty) and RAISE when it is absent. That mapping is
 > DECLARED in **`extra_obs_keys.py`** — `(extractor attribute -> key, shape, canonical zero block)`
-> — and every synthetic-obs caller on a training path builds from it (`compile_preload`,
-> `lifecycle._run_roundtrip_test`, `compile_trainer`, `compile_opponents`, `warmstart`). The enable
+> — and every synthetic-obs caller on a training path builds from it (`lifecycle._run_roundtrip_test`, `compile_trainer`, `compile_opponents`, `warmstart`). The enable
 > condition is the ATTRIBUTE the forward itself tests, so the table cannot drift from the seam, and
 > an AST gate over `extractor_forward` fails on an undeclared key. Hand-building
 > `{"observation": zeros(1, D)}` is what killed `ai_v12_14_ladder_truevalue` two minutes into its

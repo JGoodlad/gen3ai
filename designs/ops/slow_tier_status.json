@@ -193,14 +193,6 @@
    "contention": 1.0,
    "detail": ""
   },
-  "src/agents/model/compile_prewarm_test.py::test_preload_compiles_single_threaded_end_to_end": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 18.8,
-   "contention": 1.0,
-   "detail": ""
-  },
   "src/agents/model/compile_regions_trained_cuda_test.py::test_arm_Cs_trained_weights_pass_the_R1_gate_at_fp32_on_cuda": {
    "status": "pass",
    "commit": "ee6a9e6b65672469cc86fe76d9583eacf694e030",
@@ -305,87 +297,6 @@
    "contention": 1.0,
    "detail": ""
   },
-  "src/agents/training/rust_env_episode_parity_test.py::test_milestone_episodes_equal_gen3env[ladder]": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 13.88,
-   "contention": 1.01,
-   "detail": ""
-  },
-  "src/agents/training/rust_env_episode_parity_test.py::test_milestone_episodes_equal_gen3env[pool]": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 13.75,
-   "contention": 1.01,
-   "detail": ""
-  },
-  "src/agents/training/rust_env_labels_parity_test.py::test_milestone_the_core_labels_equal_gen3env[ladder]": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 46.64,
-   "contention": 1.21,
-   "detail": ""
-  },
-  "src/agents/training/rust_env_labels_parity_test.py::test_milestone_the_core_labels_equal_gen3env[pool]": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 40.97,
-   "contention": 1.08,
-   "detail": ""
-  },
-  "src/agents/training/rust_env_labels_parity_test.py::test_milestone_the_core_labels_equal_gen3env[procedural]": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 27.28,
-   "contention": 1.2,
-   "detail": ""
-  },
-  "src/agents/training/rust_env_opponents_parity_test.py::test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool[greedy]": {
-   "status": "pass",
-   "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33",
-   "at": "2026-09-30T14:50:32Z",
-   "duration_s": 167.39,
-   "contention": 1.0,
-   "detail": "",
-   "last_skipped_at": "2026-09-30T16:00:52Z",
-   "last_skipped_commit": "6b5df359e6d9fdbd0c257f5ba3c4cd67099eb026",
-   "last_skip_detail": ""
-  },
-  "src/agents/training/rust_env_opponents_parity_test.py::test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool[keyed]": {
-   "status": "pass",
-   "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33",
-   "at": "2026-09-30T14:50:32Z",
-   "duration_s": 188.54,
-   "contention": 1.0,
-   "detail": "",
-   "last_skipped_at": "2026-09-30T16:00:52Z",
-   "last_skipped_commit": "6b5df359e6d9fdbd0c257f5ba3c4cd67099eb026",
-   "last_skip_detail": ""
-  },
-  "src/agents/training/rust_env_opponents_parity_test.py::test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool[sampled]": {
-   "status": "pass",
-   "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33",
-   "at": "2026-09-30T14:50:32Z",
-   "duration_s": 360.62,
-   "contention": 1.0,
-   "detail": "",
-   "last_skipped_at": "2026-09-30T16:00:52Z",
-   "last_skipped_commit": "6b5df359e6d9fdbd0c257f5ba3c4cd67099eb026",
-   "last_skip_detail": ""
-  },
-  "src/agents/training/rust_env_opponents_parity_test.py::test_slow_compiled_per_env_path": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 185.89,
-   "contention": 1.46,
-   "detail": ""
-  },
   "src/agents/training/rust_eval/parity_test.py::test_milestone_fixed_opponents_and_the_sampled_regime_on_cpu": {
    "status": "pass",
    "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
@@ -408,22 +319,6 @@
    "at": "2026-10-01T05:50:52Z",
    "duration_s": 1458.2,
    "contention": 1.38,
-   "detail": ""
-  },
-  "src/agents/training/rust_rollout/parity_test.py::test_milestone_the_learners_buffer_equals_todays_python_path[ladder]": {
-   "status": "pass",
-   "commit": "94d20e6bebb678e06e6f6e66ee3a214dcb0b463c",
-   "at": "2026-10-02T01:54:51Z",
-   "duration_s": 55.63,
-   "contention": 1.01,
-   "detail": ""
-  },
-  "src/agents/training/rust_rollout/parity_test.py::test_milestone_the_learners_buffer_equals_todays_python_path[pool]": {
-   "status": "pass",
-   "commit": "94d20e6bebb678e06e6f6e66ee3a214dcb0b463c",
-   "at": "2026-10-02T01:54:51Z",
-   "duration_s": 50.17,
-   "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/tb_relevance_test.py::test_a_shaped_run_keeps_every_tag_the_gates_touch": {
@@ -864,46 +759,6 @@
    "at": "2026-09-29T22:44:41Z",
    "duration_s": 0.17,
    "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/rust_core_cutover/slice_n_test.py::test_milestone_env_slice[ladder_full]": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 16.27,
-   "contention": 1.71,
-   "detail": ""
-  },
-  "src/main/rust_core_cutover/slice_n_test.py::test_milestone_env_slice[pool_policy]": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 40.18,
-   "contention": 1.29,
-   "detail": ""
-  },
-  "src/main/rust_core_cutover/slice_n_test.py::test_milestone_env_slice[pool_random]": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 23.73,
-   "contention": 1.77,
-   "detail": ""
-  },
-  "src/main/rust_core_cutover/slice_n_test.py::test_milestone_env_slice[procedural]": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 7.6,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/rust_core_m5/slice_n_test.py::test_milestone_the_rust_env_at_n48_equals_gen3env": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 153.68,
-   "contention": 1.64,
    "detail": ""
   },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_two_sharded_runs_of_the_meter_are_byte_identical": {

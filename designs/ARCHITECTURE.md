@@ -68,7 +68,7 @@ Every number below comes from `agents/observation/constants.py` and
 | **Total** *(= `base_dim`)* | | **2761** | | `Gen3ObservationEncoder.dimension` |
 
 The event window is the LAST block: `total_dim == base_dim`, and the encoder's output IS the
-observation. There is no appended tail — `Gen3Env.embed_battle` returns `encode(...)` unchanged.
+observation. There is no appended tail — the row the Rust core builds IS `encode(...)`, unchanged.
 
 **The event window** (Tier H-B, `gen3_event_window_v1`, reshaped by `gen3_event_record_v2`): the
 last 32 decision-relevant EVENTS as typed 30-column records — type id · actor/target species +
@@ -821,7 +821,7 @@ families, the pointer cells and the belief stack are that run's, unchanged.
 
 | `--critic` | `V(s)` is | trained by | reward stream | `gamma` |
 |---|---|---|---|---|
-| `shaped` (the historical critic; selectable on `--env-core python` only) | `value_net` | the MSE at `vf_coef`, in raw return units | the SIGNED terminal alone, ±30 with a −35 timeout (the shaping it once carried is deleted, §6.3) | 0.9999 |
+| `shaped` (the historical critic; LOADABLE only — not selectable since the Python env core was deleted, so an old shaped checkpoint serves as an opponent / in the meters but cannot be resumed) | `value_net` | the MSE at `vf_coef`, in raw return units | the SIGNED terminal alone, ±30 with a −35 timeout (the shaping it once carried is deleted, §6.3) | 0.9999 |
 | **`winprob`** (**this config**) | `sigmoid(win_head logit)` ∈ **[0, 1]** | the win-prob head's **BCE against the terminal WIN INDICATOR**, at `vf_coef` **0.5** | the TERMINAL **WIN INDICATOR** alone — `+victory_value` (**1.0**) on a win, `0.0` on a loss, a tie and a 250-turn timeout alike | **1.0** |
 
 **PopArt, the distributional value head (`value_dist_head`) and the `value_from_dist` critic route
@@ -829,8 +829,8 @@ were DELETED** (deletion pass L1, config v131 — `designs/ops/deletion_pass_man
 three of them, the CVaR value-tail weight, the win-prob aux-BCE coefficient and both win-prob PBRS
 rungs (self-φ, frozen-φ) were levers of the shaped critic or the Python env core, and every
 v121+ checkpoint recorded them OFF. A checkpoint that recorded one ON is refused
-(`model_version.retired_levers`). Under `--critic shaped` the win-prob BCE is an auxiliary readout
-at a fixed weight of 1.0.
+(`model_version.retired_levers`). (On a shaped checkpoint — loadable, not trainable — the win-prob BCE
+was an auxiliary readout at a fixed weight of 1.0.)
 
 The critic and the return are the same quantity by construction: at `--victory-value 1.0` the
 undiscounted return from any state is exactly `1{win}`, so **`V(s) = P(win | s)` with no
@@ -860,10 +860,8 @@ every timeout's TD error identically zero, so the critic could not see them at a
 Two flags are IMPLIED by `--critic winprob` (`--win-prob-mode shaping`, `--gamma 1.0`) because
 their argparse default is the `None` sentinel, so "unset" is
 representable and an implication can never overwrite a typed value. The discount is PAIRED with the
-critic, declared once (`critic_mode.critic_gamma`: winprob 1.0, shaped 0.9999): a typed `--gamma`
-other than 1.0 under winprob is REFUSED, `--arch production` under a typed `--critic shaped` takes
-0.9999 (never `recipe.fresh`'s 1.0), and an untyped gamma that is not its critic's is a
-`FATAL_CONFIG` at launch. Three are REQUIRED and named by
+critic, declared once (`critic_mode.critic_gamma`: winprob 1.0, shaped 0.9999 — the latter only for
+loading): a typed `--gamma` other than 1.0 under winprob is REFUSED. Three are REQUIRED and named by
 their own refusal (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because theirs are concrete, so an implication could not be told apart from an
 overwrite. `resolve_critic_mode` runs BEFORE the resume-inheritance sweep, so a fork of a `shaped`
 parent cannot inherit that parent's `win_prob_mode` and break the mode with a value nobody typed. Design of record:
@@ -888,8 +886,7 @@ it. Mechanics: `designs/training/critic_and_value_losses.md`.
 **`--fork-fraction` FORKS CONTESTED STATES INTO THE BUFFER** (`gen3_fork_v1`, config v120 — THE
 FORK ARM). Default **`0.0` = OFF and BIT-identical**: no fork pass is built, no obs key is declared
 and no row is injected. `--critic winprob`
-is REQUIRED, and `--win-prob-strata-weight` is REFUSED alongside it. It runs on the Rust core only (`--fork-fraction > 0` on
-`--env-core python` is refused: the Python core has no fork arm — its code, and the `<run>/cf_records/` ring it replayed from, are deleted). Above 0.0 it is the FRACTION of the buffer's
+is REQUIRED, and `--win-prob-strata-weight` is REFUSED alongside it. It runs on the Rust core (the only env core). Above 0.0 it is the FRACTION of the buffer's
 decisions that are FORKED: at a CONTESTED decision (a move round, turn 2-40, ≥3 legal actions, top-2
 masked-logit gap under the `--fork-contested-gap` quantile of this rollout's own candidate pool) the
 episode is replayed to that turn (on the Rust core, from its own finished input log) and `--fork-branches` continuations —
@@ -1338,9 +1335,8 @@ because a frozen forward never reads the reward.
 
 ### 6.4 Runtime knobs (never versioned, must be re-passed on every resume)
 
-`--use-bridge rust` (serverless) · `--env-core` (**rust** for a fresh `--arch production` launch — `designs/production_config.json` `recipe.sizing`, the M5 switch `gen3_env_core_switch_v1`; on a `--model` launch the core the checkpoint RECORDED, so unlike the knobs below it IS inherited — except that a python-era checkpoint (produced on `python`, or before `--env-core` existed) moves onto `rust`, announced as a CORE SWITCH, and one that trained the SHAPED critic is REFUSED (`FATAL_CONFIG` — run it pinned; deletion pass D4); and `rust` for a bare non-production argv too — the deletion pass's bare-argv flip, 2026-10-02) · `--compile-opponents` + `--compile-opponents-preload` +
-`--compile-trainer` (all ON by default) · `--grad-accum-steps` at whatever `--batch-size` the run
-uses · `--grad-checkpointing` · `--async-rollout`. **Matmul precision is not a knob: fp32 `highest` (full
+`--use-bridge rust` and `--env-core rust` (one legal value each since deletion pass U3, which deleted the Python env core; `designs/production_config.json` `recipe.sizing`, the M5 switch `gen3_env_core_switch_v1`; on a `--model` launch a python-era checkpoint (produced on `python`, or before `--env-core` existed) moves onto `rust`, announced as a CORE SWITCH, and one that trained the SHAPED critic is REFUSED (`FATAL_CONFIG` — run it pinned; deletion pass D4)) · `--compile-trainer` (ON by default for cuda) · `--grad-accum-steps` at whatever `--batch-size` the run
+uses · `--grad-checkpointing`. **Matmul precision is not a knob: fp32 `highest` (full
 FP32, no TF32 — PyTorch's default) is the only precision** (TF32 was retired and `--matmul-precision` deleted,
 deletion pass K2); `metadata.json` records the realized value as provenance, every parity gate refuses any
 other, and a run that recorded `high` resumes pinned or not at all. **The CUDA learner
@@ -1375,7 +1371,7 @@ load (config ≥ v121) trained at the hardcoded 0.80 (older eras ran 0.95 and 0.
 
 ## 7. Training-only obs keys — the leak-safety list
 
-These are Dict-obs keys emitted by `Gen3Env` for supervision. **The forward reads only
+These are Dict-obs keys the Rust env core emits for supervision (declared by `agents/training/trainee_spaces.py`). **The forward reads only
 `obs["observation"]`** (`ObsUnpack.forward`), so none of them can reach `pi`/`vf` or any pointer
 logit. Declared conditionally, so a key absent from the space is simply not emitted.
 
@@ -1389,7 +1385,7 @@ logit. Declared conditionally, so a key absent from the space is simply not emit
 | `belief_ev` / `belief_ev_mask` | f32 `[6,5]` / `[6]` | EV smooth-L1 — the declared EVs at `4·⌊ev/4⌋` | " | ✅ |
 | `hp_type_label` / `hp_type_mask` | int64 `[6]` / f32 `[6]` | HP-type CE | `move_belief_mode != off` **and** `hp_belief_mode == composed` **and** `hp_type_belief_coef > 0` | ✅ **emitted and consumed** |
 | `item_label` / `item_mask` | int64 `[6]` / f32 `[6]` | item CE (`gen3_item_belief_v1`) | `item_belief` **and** `item_belief_coef > 0` | ✅ emitted and consumed (`item_belief_coef` 0.05) |
-| `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | the win-prob head's BCE — under `--critic winprob` **the value loss itself** (MC outcome, a **future** label back-filled by `WinProbLabelCallback`) | `win_prob_mode != none` | ✅ **emitted and consumed — this is the critic's target** |
+| `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | the win-prob head's BCE — under `--critic winprob` **the value loss itself** (MC outcome, a **future** label back-filled by the Rust collector — `rust_rollout/store.py`, `win_prob_callback.backfill_terminal_labels`) | `win_prob_mode != none` | ✅ **emitted and consumed — this is the critic's target** |
 | `opp_action_kind` / `opp_action_num` / `opp_switch_slot` / `opp_switch_species` | int64 `[1]` each | opponent-intent CE (`gen3_opp_intent_v1`) — what they did at the PREVIOUS decision, shifted one row back in `train()` | `opp_intent_coef > 0` | ✅ emitted and consumed (`opp_intent` true ⇒ `--arch production` sets `opp_intent_coef` 0.05; recorded in `model_config.json` from config v125, so a flagless resume or a launcher restart inherits it) |
 | `opp_class` | int64 `[1]` | **two consumers**: the intent metrics, which it SPLITS (bot / pool / stable / exploiter — one pooled intent accuracy over random bots, heuristics and frozen selves cannot be read); and the training-side value sidecar's per-class calibration slice | `opp_intent_coef > 0` **or** `win_prob_mode != none` | ✅ emitted (both gates hold), read by the intent metrics and the sidecar, not by any loss |
 | `fork_pg_m` | f32 `[1]` | the policy term's per-row mask (`gen3_fork_v1`; placeholder 1.0) | `--fork-fraction > 0` | ❌ |
@@ -1403,7 +1399,7 @@ now means "not in the forward", never "not load-bearing".
 Every belief label above is both emitted AND consumed here (all six supervised coefficients are at
 0.05), and so are the four intent labels (`opp_intent_coef` 0.05), so the whole emitted set is read:
 **21 keys** (the list, each key's producer, consumer and where the Rust env gets it:
-`src/utils/rust_env/label_inventory.py`, pinned against `Gen3Env` by
+`src/utils/rust_env/label_inventory.py`, pinned against the declared trainee space by
 `agents/training/rust_env_label_inventory_test.py`, which also reads this table's ✅/❌). **Do not infer supervision from emission**, though: the
 emit gates and the loss coefficients are separate conditions, and a config that drops a coefficient
 to 0 keeps paying the buffer cost while training nothing — which reads identically in every metric.
@@ -1418,24 +1414,21 @@ SHIFT is still gated on `opp_intent_coef > 0`, so a win-prob-only run carries th
 per-episode value with no shift applied. This is the one row in the table whose production consumer
 is a DIAGNOSTIC rather than a loss.
 
-Only the **trainee** `Gen3Env` emits any of these. Eval and self-play opponents play through
-`RLPlayer`, which never constructs them.
+Only the **trainee** carries any of these. Eval and self-play opponents play through
+`RLPlayer` (and, in training, the inference service's slots), which never construct them.
 
-**Where the trainee's `observation` row comes from** is a transport choice, not an architecture
-one: `--obs-source core` (`gen3_core_obs_source_v1`, **the production default on the rust bridge
-since the Rust core program's M6 cutover, 2026-09-25**) takes the Rust core's row from the rust
-`sim_bridge` child; `--obs-source python` (the explicit opt-out, and the default off the rust
-bridge) encodes the byte-identical row in the env worker. Either way every key in the table
-above is computed by the Python env from both battles and the engine side it holds, and the
-leak-safety property is unchanged — the forward reads `obs["observation"]` alone. The env-level
-parity gate (slice N, `main/rust_core_cutover/slice_n_test.py`) requires every key, the row, the
-mask, the reward and the episode end EQUAL between the two sources, per decision.
+**Where the trainee's `observation` row comes from:** the Rust env core builds it from the trainee's
+own per-side stream (parse -> reading -> view -> trackers -> encode) — the only source since the Python
+env core, whose `Gen3Env` could also encode it in the env worker, was deleted (deletion pass U3). Every
+key in the table above is computed in the core from both sides' readings and the engine board, or filled
+by the host (`label_inventory.py` says which, per key), and the leak-safety property is unchanged — the
+forward reads `obs["observation"]` alone.
 
-**Which env runs the rollout** is likewise a transport choice: since the M5 switch (2026-10-02, `gen3_env_core_switch_v1`; ledger *THE M5 SWITCH*)
-the production rollout runs on the Rust env core (`--env-core rust`, `designs/production_config.json`
-`recipe.sizing`), whose label keys come from the core, the host or a refusal (the inventory of record:
-`src/utils/rust_env/label_inventory.py`, `designs/rust_sim/env_labels.md`). The network and the keys its
-forward reads are the same on both cores.
+**Which env runs the rollout:** the Rust env core, the only one (`--env-core rust`,
+`designs/production_config.json` `recipe.sizing`; the M5 switch `gen3_env_core_switch_v1` made it the
+production core, ledger *THE M5 SWITCH*, and deletion pass U3 deleted the Python core). Its label keys come
+from the core, the host or a refusal (the inventory of record: `src/utils/rust_env/label_inventory.py`,
+`designs/rust_sim/env_labels.md`).
 
 Two side-channel stashes are also never fed forward: `last_belief_target_latent` (computed only
 under `torch.is_grad_enabled()`) and `last_move_latent_table`. The pinned no-leak tests are

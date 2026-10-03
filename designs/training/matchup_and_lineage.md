@@ -29,7 +29,7 @@ CONSUMED — never re-derived — by the consumers (the `plan.json` pattern).
   across the set), `pin_biased` (the future
   `--trainee-team-prob` shape — supported, no CLI yet). Each is byte-parity with the legacy
   construction (pinned by `matchup_spec_test.py`). **The two sides are independent BY CONSTRUCTION**
-  (`trainee_teams` / `opponent_teams` → `Gen3Env(team=, opponent_team=)`) — the mirror-bug class is
+  (`trainee_teams` / `opponent_teams` → the env's `team=` / `opponent_team=`; the Python `Gen3Env` that took them was deleted in U3) — the mirror-bug class is
   structurally closed.
 - **`PlayMode`** — how the frozen-NN opponents select actions (greedy | stochastic@temp, schedule
   fixed | anneal | ratchet). Descriptive in P0 — the executors (RLPlayer temp, the anneal/ratchet
@@ -42,9 +42,9 @@ CONSUMED — never re-derived — by the consumers (the `plan.json` pattern).
 - **Startup echo** — `summary_lines()` emits a `🧭 [MATCHUP <hash>]` block to the launcher Events
   panel: trainee teams, opponent teams + mix, exploiter target + play mode, eval regime — one glance
   at what the run actually plays.
-- **The realized-matchup fuzz** (`poke_env_gaps/matchup_realized_fuzz_test.py`, bridge, no server) is
-  the permanent mirror-catcher: it drives the REAL construction path (spec → builders →
-  `Gen3Env(team=, opponent_team=)` → bridge) over real battles and asserts per episode that the
+- **The realized-matchup fuzz** (`poke_env_gaps/matchup_realized_fuzz_test.py`, bridge, no server) was
+  the mirror-catcher — DELETED with the Python env core (U3), so nothing now drives the real construction path over battles to catch a mirror; the Rust env core's team plumbing is `rust_rollout/teams.py` (UNVERIFIED as an equivalent catcher). It drove the REAL construction path (spec → builders →
+  `Gen3Env(team=, opponent_team=)` → bridge) over real battles and asserted per episode that the
   trainee fields EXACTLY the declared pin, the opponent does NOT (the mirror signature), and opponent
   rosters VARY across episodes. P1+ (not built): controllers keyed on eval play modes, per-row regime
   tags, per-opponent team pools.

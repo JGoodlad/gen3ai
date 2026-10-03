@@ -9,10 +9,9 @@ training package). Each section below is unchanged, including its dated measurem
 
 ---
 
-## THE VALUE LOSS has a MODE — `--critic {shaped,winprob}` (`gen3_winprob_critic_mode_v1`)
+## THE VALUE LOSS has a MODE — `--critic winprob` (`gen3_winprob_critic_mode_v1`)
 
-**Default `winprob` (the bare-argv flip, deletion pass D2); `shaped` is the historical critic, selectable on
-`--env-core python` only.** PopArt, the distributional value head, `value_from_dist`, the value-tail weight and
+**`winprob` is the ONLY trainable critic and the default (the bare-argv flip, deletion pass D2); `shaped` is the historical critic — a typed `--critic shaped` is refused at parse time (U3), an old shaped checkpoint still LOADS (opponent, meters, prober) and a resume or fork of one is refused `FATAL_CONFIG` (D4: run it pinned).** PopArt, the distributional value head, `value_from_dist`, the value-tail weight and
 the aux-BCE coefficient were DELETED with the shaped critic's levers (deletion pass L1, config v131 —
 `designs/deleted_flags.md`); the sections below that describe them are gone. Design of record:
 `designs/ai_v12/design_winprob_only_critic.md`. The model-side half (the route, the version gate)
@@ -62,7 +61,7 @@ are PRIMARY, kill-condition-bearing endpoints on a `winprob` arm.**
 
 **THE DRAW BRANCH IS EXPLICIT, and `signal/draw_rate` states its frequency** (design §3.2 / gap
 B9). `battle.won` is a TRI-STATE — True / False / **None**, the last being a draw or the 250-turn
-timeout — and `MaskableAgentWrapper.step` used to reach `0.0` for the third case through a boolean
+timeout — and the deleted Python `MaskableAgentWrapper.step` used to reach `0.0` for the third case through a boolean
 test, i.e. by accident. It is now a named branch: **a draw is scored as a NOT-WIN by decision**
 (`y = 0`), because that makes "P(win)" literally P(win); 0.5 would make the critic systematically
 wrong exactly where stalling tempts; and masking the episode out would leave its ~250 decisions
@@ -97,13 +96,13 @@ genuine **tie**. Both are OUTCOMES. Nothing here is a time limit that interrupte
 mid-flight, which is the one thing `TimeLimit.truncated` is supposed to mean.
 
 MEASURED 2026-09-06 on a real bridge battle with `StallConfig.threshold` lowered to 6:
-`gen3_env.action_to_order` returns a `ForfeitBattleOrder` at `turn >= threshold` (`== MAX_TURNS` in
+the Python env's `action_to_order` (deleted in U3; the Rust env core enforces the same cap) returned a `ForfeitBattleOrder` at `turn >= threshold` (`== MAX_TURNS` in
 production), Showdown answers `|win|<opponent>`, and the boundary reported `finished=True`,
 `won=False`, **six mons alive a side**, `terminated=False, truncated=True`.
 
 That flag then becomes `info["TimeLimit.truncated"]` in `DummyVecEnv`/`SubprocVecEnv`, and
 `MaskablePPO.collect_rollouts` (`sb3_contrib/ppo_mask/ppo_mask.py:251-260`, mirrored by our
-`async_vec_env.collect_rollouts_async:216-219`) does `rewards[idx] += gamma * V(s_last)`. Under
+deleted async collector) does `rewards[idx] += gamma * V(s_last)`. Under
 `--critic winprob` the terminal reward is the win indicator — **0** for a cap loss — and γ is
 **1**, so the last step's target becomes `0 + 1.0·V(s_last) = V(s_last)`: **a TD error of
 identically zero.** The timeout leaves the loss entirely, and a policy that stalls to the cap is
@@ -111,13 +110,7 @@ taught nothing about it — while G7's stall rate is a KILL CONDITION on that ar
 would have been reading a signal the critic never received. Verified by revert: the row reads
 exactly `V`.
 
-**`agents/training/wrappers.resolve_episode_end` is the fix** — under `winprob` only, a
-`trunc and not term` end is re-labelled TERMINAL. It sits at the END of
-`MaskableAgentWrapper.step`, so every outcome consumer above it still sees the flags the sim
-produced, and it is the ONE seam upstream of BOTH rollout loops (which is why it is here and not in
-`Gen3Env.calc_term_trunc`). The mode arrives as `MaskableAgentWrapper(critic=…)` from
-`env_factory`. Pinned by `winprob_truncation_test.py`, including the SB3 composition through a real
-`collect_rollouts`.
+**The fix, as it stands now:** the Rust collector's `store.end(...)` records the stall forfeit as a plain LOSS (`forfeit=True`, outcome 0.0, the episode terminal), so the cap loss is trained, not bootstrapped away. (The Python fix — `wrappers.resolve_episode_end`, re-labelling a `trunc and not term` end TERMINAL under `winprob` at the end of `MaskableAgentWrapper.step`, pinned by `winprob_truncation_test.py` through a real SB3 `collect_rollouts` — was deleted with the Python env core in U3.)
 
 **`shaped` is UNCHANGED and byte-identical, and what it does is worth stating rather than leaving
 implicit:** a cap forfeit and a tie both bootstrap `0.9999·V(s_last)` on top of a terminal reward
@@ -249,13 +242,13 @@ semantic no-op — the class is constant within an episode).
 ### The VOCABULARY, and the option that was rejected
 
 **Shipped: the four `opp_class` codes** — `bot` / `pool` / `stable` / `exploiter`
-(`agents.model.opp_intent.OPP_CLASS_NAMES`). That is the label key `gen3_env` declares under the
+(`agents.model.opp_intent.OPP_CLASS_NAMES`). That is the label key the trainee's obs space (`trainee_spaces`) declares under the
 win-prob gate, and it is **all the env knows per step**.
 
 🚨 **REJECTED — one class per BOT NAME plus a single `selfplay` class**, which is the finer
 stratification the measurement's 14-opponent cell structure would suggest. It is not available:
 the bot archetype and the pool snapshot's step are drawn per EPISODE inside
-`MaskableAgentWrapper._select_episode_opponent` and **never reach the observation**; shipping it
+the opponent draw (`rust_env_opponents.EpisodeOpponentSampler`) and **never reach the observation**; shipping it
 would mean a new obs key per identity, which `value_sidecar.py` had already declined for the same
 reason. **The consequence is stated rather than buried: this lever balances the between-CLASS
 share, and the residual heterogeneity WITHIN the bot class (random vs. the heuristics) stays in

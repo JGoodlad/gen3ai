@@ -23,31 +23,24 @@ from agents.training.instrumented_ppo.signal_metrics import (
 
 
 class RolloutProbes:
-    """Mixin: `collect_rollouts` (the env-core DISPATCH) + the per-rollout probes. Mixed in BEFORE
-    `OwnedLoop`, whose `_collect_python` is the Python env core's collection."""
+    """Mixin: `collect_rollouts` (the Rust collector's entry) + the per-rollout probes. Mixed in BEFORE
+    `OwnedLoop`."""
 
     def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps, use_masking=True):
         # `rollout/collect_ms` + `rollout/collect_decisions` (M5 Lane G): the wall clock of this
-        # collection and the trainee decisions it played — on EITHER env core, so the two are A/B'd
-        # from the same tags. Recorded, never read by anything that trains.
+        # collection and the trainee decisions it played. Recorded, never read by anything that trains.
         _t0, _n0 = time.perf_counter(), int(self.num_timesteps)
-        # M5 Lane G (`--env-core rust`): the rollout is the Rust collector's (`_collect_rust`). The
-        # python env core below is unchanged.
+        # The Rust env core is the ONLY env core (the Python core and its `_collect_python` were
+        # deleted — deletion pass U3): the rollout is the Rust collector's (`_collect_rust`), attached
+        # by `RustVecEnv.startup(model)` before `learn()`. A learner without one has nothing to collect
+        # from, and says so rather than falling into an upstream loop that would step a VecEnv that
+        # does not step.
         rc = getattr(self, "_rust_collector", None)
-        if rc is not None:
-            ok = self._collect_rust(rc, callback, rollout_buffer)
-            self._record_collect(_t0, _n0)
-            return ok
-        if self._async_rollout:
-            # lazy: the Python env core is imported only on its own path (deletion pass U2)
-            from agents.training.async_vec_env import AsyncSubprocVecEnv, collect_rollouts_async
-        if self._async_rollout and isinstance(env, AsyncSubprocVecEnv):
-            ok = collect_rollouts_async(
-                self, env, callback, rollout_buffer, n_rollout_steps, use_masking)
-        else:
-            # gen3_owned_ppo_loop_v1: the Python core's collection is OURS (`loop.OwnedLoop`), vendored
-            # from sb3-contrib operation for operation — no longer `super()` into upstream.
-            ok = self._collect_python(env, callback, rollout_buffer, n_rollout_steps, use_masking)
+        if rc is None:
+            raise RuntimeError(
+                "collect_rollouts: this learner has no Rust collector (`_rust_collector`) — the Rust env "
+                "core is the only env core, and `RustVecEnv.startup(model)` attaches it before learn()")
+        ok = self._collect_rust(rc, callback, rollout_buffer)
         self._record_collect(_t0, _n0)
         return ok
 

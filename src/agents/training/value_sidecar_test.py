@@ -261,29 +261,12 @@ def test_the_sidecar_is_ON_BY_DEFAULT_for_a_winprob_run():
     p = build_parser()
     assert _value_sidecar_on(p.parse_args(["--critic", "winprob"])) is True
     assert _value_sidecar_on(p.parse_args([])) is True            # the bare argv is winprob (D2)
-    assert _value_sidecar_on(p.parse_args(["--critic", "shaped"])) is False   # shaped: byte-identical
+    shaped = p.parse_args([])
+    shaped.critic = "shaped"            # no longer typeable (U3); an inherited / hand-built namespace
+    assert _value_sidecar_on(shaped) is False   # shaped: byte-identical
     assert _value_sidecar_on(p.parse_args(["--value-sidecar", "on"])) is True
     assert _value_sidecar_on(
         p.parse_args(["--critic", "winprob", "--value-sidecar", "off"])) is False
-
-
-def test_the_sidecar_is_registered_AFTER_the_win_prob_backfill():
-    """🚨 SB3 runs `_on_rollout_end` in list order, and reading before the back-fill is SILENT.
-
-    Pinned by reading the source: the two registrations must appear in this order in the builder,
-    because there is no runtime error to catch the other one — only a file of plausible zeros.
-    """
-    import inspect
-
-    import main.train.callbacks as mod
-
-    src = inspect.getsource(mod.build_callbacks)
-    i_win = src.index("WinProbLabelCallback(")
-    i_side = src.index("ValueSidecarCallback(")
-    assert i_win < i_side, (
-        "ValueSidecarCallback must be appended AFTER WinProbLabelCallback — before it, the "
-        "win_target/win_mask placeholders are still zeros and the sidecar records a critic "
-        "apparently facing an unbroken run of losses")
 
 
 # ── the reader ─────────────────────────────────────────────────────────────────────────────────

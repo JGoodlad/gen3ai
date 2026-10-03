@@ -55,8 +55,8 @@ KEYED_DRAW_ID = "gen3_keyed_draw_v1"
 #: A decision's side: the trainee (p1) or the opponent (p2).
 #: THE near-boundary threshold for a keyed draw's margin (a CDF fraction): the collector's and the
 #: opponent server's ``near_boundary`` telemetry, both sides of the rollout gate's counts, and its tie
-#: rule all use it — 2 (``rust_env_opponents_parity.NEAR_TIE_FACTOR``) x the rollout gate's |Δ log-prob|
-#: bar 1e-5 (``rust_rollout.parity.FLOAT_BAR``): two paths whose log-probs differ by less than the bar
+#: rule all use it — 2 (``rust_eval.parity.NEAR_TIE_FACTOR``) x the rollout gate's |Δ log-prob|
+#: bar 1e-5 (the rollout gate's FLOAT_BAR, deleted with the Python core): two paths whose log-probs differ by less than the bar
 #: can disagree only on a row whose margin is below it.
 NEAR_MARGIN = 2e-5
 

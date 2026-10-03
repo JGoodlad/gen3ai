@@ -4,7 +4,14 @@ Split out of `snapshot.py` 2026-08-16: loading a checkpoint and compiling its ex
 different responsibilities, and every consumer of one that never needed the other was importing
 both. This is the OPPONENT half (CPU, B=1, warn-and-fall-back); the LEARNER half — CUDA,
 fail-loud — is `compile_trainer.py`, and the reasons they cannot be one module are at the top of
-that file. `compile_prewarm.py` warms the shared on-disk Inductor cache this module reads.
+that file.
+
+What is LEFT here after deletion pass U3 (R6): the compile of ONE frozen model's extractor, used by the
+offline readers (the prober's counterfactual view, the snapshot ladder, the eval worker, the cf producer,
+the search-dividend perf probe). The TRAINER no longer compiles opponents — under the Rust env core every
+policy opponent forwards through the inference service (T2) — so `--compile-opponents`,
+`--compile-opponents-preload` / `-strict`, the forkserver preload, the cache prewarm and the cross-process
+revert QUORUM (which existed to make `-strict` fatal on a systemic failure across 48 workers) are gone.
 
 Import surface: `snapshot.py` re-exports every public name here, so historical import paths
 (`from agents.model.snapshot import maybe_compile_extractor`) still resolve.
@@ -12,21 +19,15 @@ Import surface: `snapshot.py` re-exports every public name here, so historical i
 from __future__ import annotations
 
 import os
-import shutil
 import statistics
 import sys
-import tempfile
 import time
 from typing import Any, Callable, Dict, List, Tuple
 
-# The on-disk Inductor cache. Under `spawn` every worker re-imports and re-traces from scratch, but a
-# cache SHARED BY THE RUN'S PROCESS TREE turns all but the first process's CODEGEN into a hit
-# (measured 19.1s cold -> 5.8s warm). This is the only compile artifact that crosses a process
-# boundary: `torch.compile` returns a live Python object, so the compiled callable itself can never be
-# handed to a spawned child — see `prewarm_extractor_compile`. Since K3 (gen3_hermetic_compile_cache_v1)
-# it is the RUN's own `<run>/compile_cache/inductor` (the trainer declares it before any worker
-# exists; workers inherit it), never the retired shared `/tmp/gen3ai_inductor_cache` — see
-# `agents.model.compile_cache`.
+# The on-disk Inductor cache. Since K3 (gen3_hermetic_compile_cache_v1) it is the RUN's own
+# `<run>/compile_cache/inductor` (the trainer declares it before anything compiles; child processes
+# inherit it), or a fresh private temp dir for a process no run declared one for — never the retired
+# shared `/tmp/gen3ai_inductor_cache`. See `agents.model.compile_cache`.
 
 # A compile must beat eager by at least this much to be kept. A floor on "worth the risk at all",
 # not a safety margin against noise — the noise is handled by the MEASUREMENT below, not by moving
@@ -41,25 +42,6 @@ _MIN_COMPILE_SPEEDUP = 1.05
 _TIMING_SAMPLES = 5
 _TIMING_REPS = 4
 _TIMING_WARMUP = 3
-
-# QUORUM. A single worker landing below the floor is a reading, not a diagnosis: 48 workers
-# measuring the same model on the same box spread 7.7x on the EAGER arm alone (14.9-115.7 ms,
-# 2026-08-24), and the same checkpoint that scored 0.78x in one worker scored 6.3x median across
-# 48/48 minutes later. So under `--compile-opponents-strict` a below-floor reading is fatal only
-# when a MAJORITY-ISH fraction of the reporting workers agree — a systemic failure — and never on
-# one worker's draw. `_QUORUM_MIN_REPORTS` keeps the very first readings from deciding anything.
-_QUORUM_REVERT_FRACTION = 0.25
-_QUORUM_MIN_REPORTS = 4
-
-# Where the cross-process tally lives. Set by `arm_compile_quorum` in the trainer BEFORE any env
-# worker exists, and inherited by every spawn/forkserver child through the environment. Unset (the
-# prober, a standalone eval worker, a test) ⇒ the tally is process-local and the quorum degenerates
-# to "this process" — documented in `_record_verdict`.
-COMPILE_QUORUM_ENV = "GEN3AI_COMPILE_QUORUM_DIR"
-
-# The process-local fallback tally. Deliberately module-level and NOT reset per call: a process that
-# validates several opponents should accumulate, exactly as the file tally does across processes.
-_LOCAL_TALLY = {"reverts": 0, "total": 0}
 
 # Set once a compile has been MEASURED to pay off in this process. The validation answers "does this
 # extractor's code object compile to something faster?", and `torch.compile` keys on exactly that
@@ -100,19 +82,8 @@ def _inductor_cache_dir() -> str:
     return os.environ[ENV_INDUCTOR]
 
 
-class CompileExtractorError(RuntimeError):
-    """Raised under `--compile-opponents-strict` when the compile path fails.
-
-    Two different conditions, deliberately not symmetric:
-
-    * a compile that ERRORS (backend crash, a mis-declared `hide_cuda`) is fatal in THIS process
-      immediately — it is a fact, not a reading;
-    * a compile that merely measures below the floor is fatal only on a QUORUM (`_quorum_is_fatal`),
-      because a single timing verdict was measured to be worth nothing (see `_measure_arms`)."""
-
-
 def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
-                            hide_cuda: bool = False, strict: bool = False) -> bool:
+                            hide_cuda: bool = False) -> bool:
     """`torch.compile` a frozen model's FEATURE EXTRACTOR for CPU inference. Returns True if applied.
 
     WHY THE EXTRACTOR AND NOT THE OP. The 2026-06-30 attempt compiled only `DamageOperator.forward`
@@ -138,9 +109,8 @@ def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
 
     HOW THE KEEP/REVERT DECISION IS MADE (rewritten 2026-08-24 after it killed three launches on
     timing noise): both arms are warmed identically, then timed ALTERNATED, and the verdict is the
-    ratio of their MEDIANS — see `_measure_arms` for the measured spreads that forced this. Under
-    `strict`, a below-floor reading warns with its numbers and is fatal only when a quorum of the
-    reporting compiles agree (`_quorum_is_fatal`).
+    ratio of their MEDIANS — see `_measure_arms` for the measured spreads that forced this. A
+    below-floor reading REVERTS to eager and warns with its numbers.
 
     NOTE ON `suppress_errors`: this deliberately does NOT set it. It used to, because ONE op
     crashed Inductor codegen (`BeliefHead.species_posterior`, now fixed) — and globally
@@ -163,8 +133,6 @@ def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
             msg = (f"{label}: DISABLED — hide_cuda=True but this process has already initialised "
                    f"CUDA; refusing to compile (it would add a ~252 MiB context per worker).")
             _compile_warn(msg)
-            if strict:
-                raise CompileExtractorError(msg)
             return False
         os.environ["CUDA_VISIBLE_DEVICES"] = ""       # no per-worker CUDA context (the June OOM)
     cache_dir = _inductor_cache_dir()
@@ -190,14 +158,12 @@ def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
         fe.forward = original
         msg = f"{label}: DISABLED — {type(e).__name__}: {str(e)[:200]}"
         _compile_warn(msg)
-        if strict:
-            raise CompileExtractorError(msg) from e
         return False
 
     # gen3_opponent_compile_parity_v1: the DECISION-level parity check (legal log-probs, V and the
     # features on the committed real-obs fixture, at B=1, perturbed when fresh), on EVERY call —
     # i.e. once per model LOAD, never per game — because the weights are this load's own. A parity
-    # FAILURE raises the learner gate's typed error whatever `strict` says: a timing miss costs
+    # FAILURE raises the learner gate's typed error: a timing miss costs
     # throughput, a parity miss is a wrong opponent. Any OTHER exception from the check (a backend
     # crash on the real rows) is a compile failure and takes the usual warn/fall-back/strict path.
     from agents.model.compile_trainer import CompileTrainerError
@@ -211,8 +177,6 @@ def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
         fe.forward = original
         msg = f"{label}: DISABLED — parity check crashed: {type(e).__name__}: {str(e)[:200]}"
         _compile_warn(msg)
-        if strict:
-            raise CompileExtractorError(msg) from e
         return False
     parity_ms = (time.perf_counter() - t_parity) * 1e3
     print(f"[CompileExtractor] {label}: {parity} ({parity_ms:.0f} ms)", flush=True)
@@ -236,23 +200,15 @@ def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
         # that asserted "the graph is probably fragmented" sent three launch failures down the wrong
         # investigation. Report the measurement; let the reader diagnose.
         fe.forward = original
-        reverts, total = _record_verdict(reverted=True)
         msg = (f"{label}: REVERTED to eager — median eager {eager_ms:.2f} ms vs median compiled "
                f"{comp_ms:.2f} ms = {speedup:.2f}x, below the {_MIN_COMPILE_SPEEDUP:.2f}x floor. "
                f"{_describe_measurement(eager_series, comp_series)} "
-               f"This opponent's forward now runs eager. "
-               f"Quorum so far: {reverts}/{total} compiles below the floor.")
+               f"This opponent's forward now runs eager.")
         _compile_warn(msg)
-        if strict and _quorum_is_fatal(reverts, total):
-            raise CompileExtractorError(
-                f"{msg} FATAL under --compile-opponents-strict: more than "
-                f"{_QUORUM_REVERT_FRACTION:.0%} of the {total} compiles that have reported are "
-                f"below the floor, which is a systemic failure rather than one worker's draw.")
         return False
 
     fe.forward = _eager_fallback_on_error(compiled, original, label)
     _COMPILE_VALIDATED = True
-    _record_verdict(reverted=False)
     print(f"[CompileExtractor] {label}: ON — median {eager_ms:.2f} -> {comp_ms:.2f} ms "
           f"({speedup:.1f}x, cache {cache_dir})", flush=True)
     return True
@@ -377,62 +333,6 @@ def _describe_measurement(eager_series: List[float], comp_series: List[float]) -
     fmt = lambda xs: "[" + ", ".join(f"{x:.2f}" for x in xs) + "]"   # noqa: E731
     return (f"Samples (ms, alternated, min-of-{_TIMING_REPS} each): "
             f"eager {fmt(eager_series)} compiled {fmt(comp_series)}.")
-
-
-# ── The quorum ────────────────────────────────────────────────────────────────────────────────
-
-def arm_compile_quorum(run_dir: str | None = None) -> str:
-    """Create a FRESH shared tally directory for this process tree and publish it in `os.environ`.
-
-    Call ONCE in the trainer, before the vec env exists: every `SubprocVecEnv` worker, forkserver
-    child and Popen'd eval worker inherits the environment, so they all tally into one place and
-    `--compile-opponents-strict` can ask "how many of us reverted?" instead of "did I revert?".
-    The directory is CLEARED here, so each launcher restart starts a fresh count rather than being
-    protected by the previous window's verdicts."""
-    base = (os.path.join(run_dir, ".compile_quorum") if run_dir
-            else os.path.join(tempfile.gettempdir(), f"gen3ai_compile_quorum_{os.getpid()}"))
-    shutil.rmtree(base, ignore_errors=True)
-    os.makedirs(base, exist_ok=True)
-    os.environ[COMPILE_QUORUM_ENV] = base
-    return base
-
-
-def _record_verdict(reverted: bool) -> Tuple[int, int]:
-    """Record this compile's verdict and return `(reverts, total)` OBSERVED SO FAR.
-
-    One empty file per verdict, named `<pid>-<ns>.{ok,revert}`: a create-and-count needs no lock, no
-    server and no cleanup, and a worker that cannot write (read-only FS, a deleted dir) falls back to
-    the process-local tally rather than failing a compile over bookkeeping.
-
-    ⚠️ THE LIMIT, stated rather than hidden: this is a PREFIX estimate. A worker sees only the
-    verdicts written before it looked, so the fraction it reads is "of the workers that have reported
-    so far", not of all N. Consequences, both deliberate: an isolated bad reading can never be fatal
-    (it is 1 of a growing denominator, and the first `_QUORUM_MIN_REPORTS` decide nothing), while a
-    systemic failure trips as soon as enough workers have agreed — which is the asymmetry strict mode
-    wants. Within one run the tally also spans the whole process tree and the whole restart window,
-    so a healthy startup does dilute a later mid-run regression; the alternative (a real barrier
-    across 48 spawned workers) is cross-process plumbing this perf knob does not justify."""
-    d = os.environ.get(COMPILE_QUORUM_ENV)
-    if d:
-        try:
-            os.makedirs(d, exist_ok=True)
-            suffix = "revert" if reverted else "ok"
-            with open(os.path.join(d, f"{os.getpid()}-{time.time_ns()}.{suffix}"), "w"):
-                pass
-            names = os.listdir(d)
-            return sum(1 for n in names if n.endswith(".revert")), len(names)
-        except OSError:
-            pass                                      # unwritable/vanished: the local tally is honest too
-    _LOCAL_TALLY["total"] += 1
-    _LOCAL_TALLY["reverts"] += int(reverted)
-    return _LOCAL_TALLY["reverts"], _LOCAL_TALLY["total"]
-
-
-def _quorum_is_fatal(reverts: int, total: int) -> bool:
-    """Is a below-floor reading a SYSTEMIC failure? Strict mode's only fatal condition for the timing
-    gate. `>` not `>=` on the fraction, so exactly 1-of-4 (the boundary a 48-worker run reaches early
-    and often) warns rather than kills — boundary artifacts are how this gate failed before."""
-    return total >= _QUORUM_MIN_REPORTS and reverts > _QUORUM_REVERT_FRACTION * total
 
 
 def _compile_warmup_obs(fe: Any) -> Dict[str, Any]:

@@ -6,8 +6,8 @@ file is the detail behind them**, and `src/main/launcher/CLAUDE.md` +
 `src/agents/training/CLAUDE.md` own the per-flag semantics.
 
 Covers: the launcher and its restart loop, `main.checkargs` and the arch-surface guard, fresh /
-resume / fork launches, `--critic`, the in-process bridge transport, the two compile flags,
-`--async-rollout`, bot evaluation, the untaught meter, the critic gate, ELO, and exploitability.
+resume / fork launches, `--critic`, the in-process bridge transport, the compile flag,
+bot evaluation, the untaught meter, the critic gate, ELO, and exploitability.
 
 ---
 
@@ -57,7 +57,7 @@ resume contract, and the `:8001` Showdown-port default — live in `src/main/lau
 **The launcher and everything it spawns run at `--nice 10` by default** (`0` disables). A run holds
 ~940 processes; at nice 0 it competes on equal terms with interactive work sharing the box.
 Niceness is inherited across fork/exec, so one call before the first child covers the trainer, its
-SubprocVecEnv workers and every eval worker, across periodic and crash restarts alike. **On an idle
+env-core processes and every eval worker, across periodic and crash restarts alike. **On an idle
 box this changes nothing** — niceness only arbitrates under contention.
 
 ### Will this command still launch? — `python -m main.checkargs`
@@ -256,36 +256,33 @@ beside its per-checkpoint `.json` sidecar); the run-level `model_config.json` / 
 **The periodic checkpoint is every 2,400,000 TOTAL env steps at every `--n-envs`**
 (`main.train.constants.DEFAULT_CHECKPOINT_EVERY_ENV_STEPS`; `--checkpoint-every-steps` overrides, in
 the same unit). It used to be a hardcoded 50,000 VEC-ENV CALLS — 2.4M at N = 48 but ~102M at
-N = 2048, a run that never checkpoints — and under `--async-rollout` (one callback call per WAVE of
+N = 2048, a run that never checkpoints — and under the (since-deleted) async collector (one callback call per WAVE of
 ready envs, < N) it fired early by the mean wave fraction. **The save now lands at the first callback
 call whose `num_timesteps` reaches the next multiple of the interval** (`run_io._TrackingCheckpoint
 Callback`, `constants.checkpoint_due` — the rule the eval callbacks use), so it is the same under
-every collector: sync, Rust (ragged host steps), async waves. Each save is at most one call's advance
+the Rust collector (ragged host steps; the sync and async-wave collectors were deleted in U3). Each save is at most one call's advance
 past its boundary. **A fresh sync run is unchanged** wherever the interval is a multiple of N (N = 48:
 the same k × 2.4M steps). **A RESTART changed**: the boundaries are GLOBAL multiples of the interval,
 so a run resumed at step S saves next at the first multiple above S, not at S + interval (SB3's call
 counter restarted every process), and never re-saves the step it resumed on. Pinned by
 `src/main/train/cadence_n_independence_test.py` (N = 48 vs N = 2048 through `build_callbacks`; the real
-checkpointer through the real Rust-collector loop) and `src/main/train_rl_agent_test.py` (sync,
-async-wave and restart streams).
+checkpointer through the real Rust-collector loop) and `src/main/train_rl_agent_test.py` (restart streams).
 
 | cadence | unit | N-independent? |
 |---|---|---|
-| periodic checkpoint (`--checkpoint-every-steps`) | `num_timesteps` boundary | yes — and under async waves |
+| periodic checkpoint (`--checkpoint-every-steps`) | `num_timesteps` boundary | yes |
 | eval cycle (`--eval-freq`, `EVAL_FREQ_STEPS` 2M) — and the snapshot-pool add and opponent-pool refresh it drives | `num_timesteps` | yes |
 | plasticity canary (`--canary-reset-steps`) | `num_timesteps` | yes |
 | `--diagnostics-every`, compile canary (every 25 updates), `--adaptive-batch-every`, KL lr controller, team win-rate pulls (3 rollouts), `--capacity-*-every`, CUDA memory-trend horizon (25 updates) | UPDATES / rollouts | only while the rollout `n_steps × n_envs` is fixed (production 2048 × 48 = 98,304) — a sizing change of N must restate `n_steps` or `--rollout-target-samples`, or every one of these moves |
 | launcher restart, graceful restart, `--log-level periodic` lines | wall clock / episodes | n/a |
 
-### WHICH readout is the critic — `--critic {shaped,winprob}` (default `winprob`)
+### WHICH readout is the critic — `--critic winprob` (the only trainable value, and the default)
 
 `policy._critic_value` has a MODE. **`winprob` is the default** for a fresh argv (the deletion pass's
 bare-argv flip, D2 2026-10-02 — `critic_mode.CRITIC_DEFAULT`), with its three reward values as the
 parser defaults (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`). **`shaped`** —
-every generation through gen-16 — is the scalar `value_net` in raw shaped-return units, with the win-prob head an auxiliary BCE (PopArt and the distributional `E[Z]` critic were DELETED, L1, config v131); it is now TYPED
-(python core only; it leaves with the deletion pass). An ABSENT record (a pre-v109 config / saved
-`policy_kwargs`) still means `shaped` (`critic_mode.CRITIC_UNRECORDED`), so a flagless RESUME reads the
-checkpoint's own critic, never the new default.
+every generation through gen-16 — is the scalar `value_net` in raw shaped-return units, with the win-prob head an auxiliary BCE (PopArt and the distributional `E[Z]` critic were DELETED, L1, config v131); a typed `--critic shaped` is now REFUSED at parse time (U3; `CRITIC_TRAINABLE_MODES = (winprob,)`). An ABSENT record (a pre-v109 config / saved
+`policy_kwargs`) still means `shaped` (`critic_mode.CRITIC_UNRECORDED`), so an old shaped checkpoint still LOADS (opponent, meters, prober); a resume or fork of one is refused `FATAL_CONFIG` (D4 `PythonEraShapedCheckpoint` — run it pinned to its own commit).
 
 **`winprob` promotes the head to BE the critic**: `V(s) = sigmoid(win_head logit)` in [0,1], the
 value loss IS that head's BCE against the terminal outcome (weighted by `--vf-coef` — one critic, one coefficient; the old `--win-prob-coef` was deleted), and the reward stream is the TERMINAL **WIN
@@ -323,7 +320,7 @@ at the production ~10/90 mix: `1.0` gives a 44/56 split, not 50/50.** Read `win_
 **The critic-ladder target levers are DELETED (deletion pass L2).** `--win-prob-lambda` / `--win-prob-lambda-truncated` (a λ-return BCE target), `--win-prob-rollout-target` / `-r` / `-mode` / `-weight` (R-rollout Monte-Carlo targets and their anchor weight) and `--win-prob-dense-aux` (25 dense end-of-battle targets) no longer exist: the win-prob BCE's target is always the episode's terminal outcome, and a checkpoint recorded with `dense_aux` ON is refused on every load (a training-only lever refuses a resume/fork naming the pin 475bd817). Why and where recoverable: [`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
 
 **`--fork-fraction <0..1>`** (default `0.0` = OFF and bit-identical — no module, no obs key, no
-callback, no row; **requires `--critic winprob`**, is UNAVAILABLE on `--env-core python` (the Python arm replayed from a `cf_records` ring that deletion pass L4 deleted; the arm itself goes in L5), and REFUSES
+callback, no row; **requires `--critic winprob`**, and REFUSES
 `--win-prob-strata-weight`) is **THE FORK ARM**: the
 fraction of the buffer's decisions that are FORKED. At a contested decision the episode is replayed
 out of the Rust core's finished input log to that turn and `--fork-branches` continuations — the policy's top-2
@@ -354,18 +351,18 @@ flag mechanics in `src/agents/model/CLAUDE.md` → *The CRITIC MODE*.
 **`--gamma` is a flag** (it was hardcoded at `0.9999`). Its `shaped` default is
 `reward_weights.PBRS_GAMMA` itself, so the PBRS invariance premise cannot break on a second copy of
 the number, and it is **INERT ON A RESUME** like `--lr`.
-### In-process bridge transport (`--use-bridge {off,node,rust}`, **default `rust`**)
+### In-process bridge transport (`--use-bridge rust` — the ONLY legal value)
 
-`--use-bridge` swaps **both training and eval** between a websocket Showdown server and an
-in-process `BattleStream` subprocess — no server, no port, no `/challenge` connection storm,
+`--use-bridge` has ONE legal value, `rust` (U3: a typed `node` or `off` is refused at parse time; the Python RL transport that took them is deleted). The table below records the transports that still exist as `impl=` values for the harnesses, `play.py` and the ladder. The bridge is an
+in-process `BattleStream` subprocess for **training and eval** — no server, no port, no `/challenge` connection storm,
 deterministic delivery (poke-env issue #907). **THE DEFAULT IS `rust`, so a run needs no Showdown
-server at all.** It reuses the *entire* obs/reward/mask/wrapper stack unchanged.
+server at all.** 
 
 | value | transport | when |
 |---|---|---|
 | **`rust`** | the std-only pokesim `src/rust_sim/src/bin/sim_bridge.rs` | **the DEFAULT** — fastest, smallest child, serverless |
-| `node` | the Node `local_sim_bridge.js` | the explicit A/B arm; the parity harness and `gen_sim_bridge_diff.js` need it |
-| `off` | websocket to a Showdown server on `--showdown-port` | the ladder / live-server path |
+| `node` (an `impl=` value, not a trainer flag value) | the Node `local_sim_bridge.js` | the explicit A/B arm; the parity harness and `gen_sim_bridge_diff.js` need it |
+| websocket (not a trainer transport) | a Showdown server | `play.py` / the ladder only |
 
 `rust` is a byte-for-byte protocol-compatible drop-in for `node`, so nothing above the transport
 changes. Binaries resolve through `sim_bridge_bin.py::resolve_sim_bridge_bin()` /
@@ -381,17 +378,12 @@ though every `impl=` default is still `"node"`.
 
 **Operational facts worth knowing:**
 - A bridge child that **dies** mid-run **crashes** the env (launcher restart) — resuming risks a
-  corrupted PPO transition. RSS is flat, so the 3 h launcher restart owns the lifecycle and
-  `recycle_every` (5000) never fires under it.
+  corrupted PPO transition.
 - Eval plays **one game at a time per worker** by default (`--eval-concurrency-per-worker 1`);
   raising it is asyncio latency-hiding, not multi-core, and nets negative under training contention.
-- The launcher treats an ABSENT `--use-bridge` as a bridge run, so it injects no phantom
+- The launcher treats an ABSENT `--use-bridge` as a bridge run (its own `off` branch is unreachable from the trainer now), so it injects no phantom
   `--showdown-port` (pinned by `default_port_test.py`).
-- **The trainee's observation comes from the Rust core** on this transport (`--obs-source core`,
-  the default since the M6 cutover, 2026-09-25: the rust child ships each decision's row as an
-  `__OBS__` frame; every launch stamps `🔭 [OBS SOURCE]`). `--obs-source python` is the explicit
-  opt-out (byte-identical by construction) and the default on `--use-bridge node|off`; typing `core`
-  there is refused. Detail: `src/agents/training/CLAUDE.md`.
+- **The trainee's observation comes from the Rust core**, the only source (the obs-source flag and its `python` value were deleted in U3; the `__OBS__` frame is how the rust child ships each decision's row). Detail: `src/agents/training/CLAUDE.md`.
 
 🚨 **THE DURABLE LESSON — a "default" branch that nothing tests is untested however green the suite
 is.** Three seed defects shipped on this path because every gate was inherently SEEDED or compared
@@ -403,79 +395,11 @@ Detail — the (all FIXED) seed and CHOOSE-path defects, the parity-gate invento
 census and the throughput tables — is in `src/utils/bridge/README.md`, `src/rust_sim/CLAUDE.md`,
 `designs/ai_v5/design_local_sim_bridge_transport.md`, and
 `designs/research_state/claude_md_archive/bridge_transport_history.md`.
-### The two compile flags — CPU opponents vs GPU trainer
+### The compile flag — `--compile-trainer` (GPU learner)
 
-`torch.compile` is applied at two independent sites, split by WHO and WHERE. They were one flag
-(`--compile-extractor`) until 2026-08-14, which named neither half:
+`torch.compile` is applied to the LEARNER (CUDA), through the one flag `--compile-trainer`: **AUTO — ON when the resolved device is cuda**, OFF on cpu, OFF under `--debug`; opt-out `--no-compile-trainer`; on failure **always FATAL**. It is a runtime perf knob: never versioned, never in `check_compatible`, and **not INHERITED on resume** (a flagless resume gets it ON, so the opt-out is what you re-pass). It cannot be a flat `True`: it **refuses** a non-cuda device by design, so its default is conditioned on the resolved device, and `--debug` is excluded even with `--device cuda`. **An EXPLICIT `--compile-trainer` on cpu still refuses, loudly.**
 
-| flag | what | device | **default** | opt-out | on failure |
-|---|---|---|---|---|---|
-| `--compile-opponents` | each frozen self-play OPPONENT's extractor, in the env workers | **CPU** | **ON** | `--no-compile-opponents` | warn + fall back to eager; `--compile-opponents-strict` opts into raising |
-| `--compile-opponents-preload` | the same compile, done ONCE in the forkserver and inherited by fork | **CPU** | **follows `--compile-opponents`** | `--no-compile-opponents-preload` | RAISES at env construction (never a silent wedge) |
-| `--compile-trainer` | the LEARNER's extractor — the fwd **and bwd** of the PPO step | **CUDA** | **AUTO — ON when the resolved device is cuda**, OFF on cpu, OFF under `--debug` | `--no-compile-trainer` | **always FATAL** |
-
-**🚨 These default ON (2026-08-17). They are FALLBACKS, not opt-ins** — the flags exist so a run can
-be turned back to eager when something is wrong, not so a run can opt into speed. A launch that
-types none of them compiles.
-
-`--compile-trainer` is the one that cannot be a flat `True`: it **refuses** a non-cuda device by
-design, so a flat default would turn every working CPU invocation into a `FATAL_CONFIG` exit. Its
-default is therefore conditioned on the resolved device (`auto` follows the box), and `--debug` is
-excluded outright even with an explicit `--device cuda`. **An EXPLICIT `--compile-trainer` on cpu
-still refuses, loudly — the default was flipped, not the safety.**
-
-Orthogonal — a run can take either, both, or neither. All are runtime perf knobs: never versioned,
-never in `check_compatible`. **They are still not INHERITED on resume — but with the defaults ON
-that now cuts the other way**: a flagless resume gets them ON, so it is the OPT-OUT you have to
-re-pass each launch, not the flag.
-
-### Compiled CPU opponents (`--compile-opponents`, **default ON**)
-
-`torch.compile`s each frozen self-play OPPONENT's feature extractor in the env workers — the measured
-**68% of rollout-worker time**, run on CPU at B=1 where the graph is dispatch-bound. A **runtime perf
-knob**: never versioned, never in `check_compatible`. **ON by default**; `--no-compile-opponents`
-falls the whole path back to eager, which is what to reach for when the compile is the suspect.
-
-**Measured: B=1 CPU forward 6.371 → 0.976 ms (6.53×)** on the literal production arch (1 graph, 0
-graph breaks, max|Δ| vs eager 5.07e-07), and **+33.3% marginal training FPS at `--n-envs 48`**
-(406.5 → 541.8, disjoint ranges, 48/48 workers compiled) — the first throughput lever here the
-`SubprocVecEnv` barrier does NOT absorb. But the per-forward win has **saturated**: doubling it
-(3.6× → 6.53×) moved end-to-end only ~31% → ~33%, so the opponent forward is no longer the rollout
-bottleneck and further compiler work on this path is spent effort.
-
-🚨 **The preload traces on a SYNTHETIC obs, and it must carry every Dict key the extractor reads.**
-`ai_v12_14_ladder_truevalue` (377a5aa1) died two minutes in at env init, exit 1, because the trace
-input was a hand-built one-key dict and the (since deleted) `--value-true-team` value route RAISED on a missing
-`opp_true_team` — inside the forkserver that raise kills the bootstrap and fails `SubprocVecEnv`
-construction. The trace input is now built from the declared registry
-(`agents.model.extra_obs_keys`), as are `--compile-trainer`'s and `--compile-opponents`' warmups and
-`--warmstart-battles`' behaviour-cloning forwards, which carried the same defect on the same argv.
-A new obs-key flag needs one row in that table; adding a key by hand at any of those sites is the
-bug coming back.
-
-Startup: **`--compile-opponents-preload`** (`gen3_forkserver_preload_v1`, 2026-08-16) compiles ONCE in
-the forkserver so every worker inherits the traced graph (~0.12 s each instead of ~30 s). It
-**follows `--compile-opponents`**, so it is on by default too; `--no-compile-opponents-preload`
-keeps the opponent compile and falls back to `agents.model.compile_prewarm`, which warms the shared
-on-disk Inductor cache in the trainer before any worker exists (**59.6 s -> 30.1 s** wall for 16
-workers). The two fix DIFFERENT halves — the disk cache removes codegen, the fork removes
-per-process dynamo tracing and guard construction.
-
-**It is not the approach that hung a run, and the difference is structural, not a tuning.** The
-2026-08 attempt wedged a 48-env run because `fork()` copies every mutex but only the calling thread
-and the extractor import started poke-env's global asyncio loop thread. That root cause is FIXED
-(the `poke_env` package inits are LAZY, so the extractor's import graph is thread-free — pinned by
-`compile_prewarm_test.py`), and the preload additionally **asserts single-threadedness after its own
-compile and RAISES**, which kills the forkserver bootstrap and fails `SubprocVecEnv` construction
-with a traceback in the parent. The silent wedge is unrepresentable; the worst case is a loud
-refusal at startup with a one-flag opt-out. **Untested at 48 workers** (proven live at 4) — see the
-training leaf.
-Failure is loud on stderr + the launcher event stream, and `--compile-opponents-strict` promotes it to
-a hard error (falling back to eager is an invisible ~6.5× regression). "The model still compiles" is a
-**default-on test** (`extractor_compiles_test.py`; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out).
-
-Full detail — the four guards, the Inductor crash root-caused to one op, and the startup-cost table —
-is in `src/agents/training/CLAUDE.md` → Compiled CPU opponents.
+**The CPU opponent compile is gone (deletion pass U3).** The compile-opponents flag, its `-preload` / `-strict` variants and generated `no-` forms, the forkserver preload (`compile_preload.py`), the cache prewarm (`compile_prewarm.py`) and the cross-process revert quorum were deleted: every policy opponent forwards through the T2 inference service, so the trainer compiles none. What remains is `agents.model.compile_opponents.maybe_compile_extractor(model, enabled, label, hide_cuda)` for the OFFLINE readers (prober counterfactual view, snapshot ladder, eval worker, cf producer, search-dividend probe). The recorded design and measurements of the retired path (B=1 CPU forward 6.371 → 0.976 ms, +33.3% marginal FPS at `--n-envs 48`, the synthetic-obs lesson of `ai_v12_14_ladder_truevalue`) are history in `designs/training/compile_flags.md`. The synthetic-obs registry (`agents.model.extra_obs_keys`) still builds every training-path warm-up (`--compile-trainer`'s, `--warmstart-battles`' behaviour-cloning forwards); a new obs-key flag needs one row in that table.
 
 ### Compiled GPU trainer (`--compile-trainer`, **default ON for cuda**)
 
@@ -505,8 +429,7 @@ refused up front: the compiled learner is gated on CUDA only.
 
 **The DEFAULT yields; the REFUSAL does not.** `auto`/`cuda` with a card ⇒ on; `cpu`, any other
 explicit device, or `--debug` ⇒ off. The auto path *also* runs `check_shape_stability` and stays
-OFF (with a startup line saying why) when the config is one this flag refuses — `--async-rollout`,
-or a rollout that does not divide by `--batch-size` — because a default must never turn a command
+OFF (with a startup line saying why) when the config is one this flag refuses — a rollout that does not divide by `--batch-size` — because a default must never turn a command
 that works today into a `FATAL_CONFIG`. An explicit `--compile-trainer` on any of those still exits
 `FATAL_CONFIG` with the message it always did. **A default yields to the config you typed and says
 so; an explicit flag refuses.**
@@ -517,25 +440,10 @@ which is why it announces itself at startup when the auto default resolves to on
 `state_dict` hazard, the measurement table — is in `src/agents/training/CLAUDE.md` → Compiled GPU
 trainer.
 
-### Non-barrier async rollout (`--async-rollout`, opt-in)
-
-Stock `SubprocVecEnv.step()` is a **barrier** — each step waits for the *slowest* of N env workers,
-so the latency-bound rollout (py-spy: ~86% wall, GPU ~86% idle) is straggler-gated and the policy
-forward never overlaps env stepping. `--async-rollout` swaps in `AsyncSubprocVecEnv` + an on-policy
-`collect_rollouts_async` (`src/agents/training/async_vec_env.py`) that keeps every worker
-continuously in-flight and forwards whichever envs are **ready**, filling each env's own buffer
-column. It stays **exactly on-policy** (PPO freezes the policy during collection — a scheduling
-change, not an APPO-style algorithm change). Masks ride natively in the Dict obs (`obs["action_mask"]`);
-`env_method` is drain-safe so the eval callback's mid-collection pushes don't desync.
-**Measured (bridge, GPU forward, steady-state FPS): +20% at n_envs=16 (=logical cores); +14% at the
-production `--n-envs 64` (1489→1695); `--async-rollout --n-envs 32` matches production `sync@64` FPS
-with half the envs** (≈half the RAM). Off by default (= stock `SubprocVecEnv`), ignored under
-`--debug`. Full design: `designs/ai_v5/design_async_rollout.md`.
-
 ### The Rust env core (`--env-core rust`) — THE PRODUCTION ENV CORE (the M5 switch)
 
-`--env-core rust` replaces the `SubprocVecEnv` of `Gen3Env` workers with the M5 Rust env core (N envs
-in one core process), the trainee and the policy opponents forwarded through the inference service in
+`--env-core rust` is the M5 Rust env core (N envs
+in one core process; it replaced the Python `SubprocVecEnv` of `Gen3Env` workers, deleted in U3), the trainee and the policy opponents forwarded through the inference service in
 one flush, bots in the core, and the COMPLETE-GAME collector (an update fires at
 `--rollout-target-samples` completed-game rows; no row dropped for age; `staleness/*` measures the
 rest; `--rollout-target-samples` must be a multiple of lcm(`--batch-size`, `--n-envs`) — every
@@ -556,8 +464,7 @@ buckets / lanes; `verdict` names the sizing Decision record). An UNTYPED `--env-
 | `--model` — a same-run RESTART or a FORK | **rust-era** checkpoint: INHERITED (`metadata.json` / the sidecar's `env_core`; `cli_args` for a restart of an `--arch production` run). **Python-era** checkpoint (produced on python, or recorded before `--env-core` existed): **rust**, printed as `🔀 [ENV CORE] CORE SWITCH` — the data stream changes, the weights and recorded config carry across (deletion pass D4). A checkpoint that trained the **SHAPED critic** (or never recorded one) is **REFUSED**, typed core or not (`FATAL_CONFIG`; `--dry-run` reports it advisory when the launch is pinned) — run it PINNED to its own commit |
 | a bare non-production fresh argv | **rust** (the parser default since the deletion pass's bare-argv flip, D2 2026-10-02 — the bare argv is `--critic winprob` + its three reward values) |
 
-`--env-core python` (TYPED) keeps the Python env reachable until the deletion pass; the recipe
-surface reports it as a TYPED deviation. `--dry-run` and `checkargs` print the resolved core with its
+A typed `--env-core python` is refused at parse time with the reason (the Python core was deleted in U3; `--env-core` has ONE legal value). `--dry-run` and `checkargs` print the resolved core with its
 source and a `sizing: … verdict` line. **Era boundary:** a run across the switch changes its DATA
 stream (the keyed trainee draw, per-game eval seeds, complete-game updates), so throughput and every
 core-dependent reading compare only within one core (ledger *THE M5 SWITCH*).
@@ -743,4 +650,4 @@ background: `designs/research_state/learning_notes/2026-08-28_nash_exploitabilit
 
 ---
 
-> 🚨 **`--debug` bypasses the forkserver preload, `--compile-trainer`, `--compile-opponents` and warm-start.** No `--debug` smoke can catch a defect in that layer (2026-09-09: the true-team arm passed the smoke and died in the preload). Watch a real launch's first two minutes as the test; the synthetic-obs registry `extra_obs_keys.py` + its AST gate are the standing guard.
+> 🚨 **`--debug` bypasses `--compile-trainer` and warm-start.** No `--debug` smoke can catch a defect in that layer (2026-09-09: the true-team arm passed the smoke and died in the then-existing forkserver preload). Watch a real launch's first two minutes as the test; the synthetic-obs registry `extra_obs_keys.py` + its AST gate are the standing guard.

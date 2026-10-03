@@ -78,7 +78,6 @@ def _maybe_compile_trainer(model, args) -> None:
                 n_steps=int(getattr(args, "n_steps", 0) or 0),
                 n_envs=int(getattr(args, "n_envs", 0) or 0),
                 batch_size=int(getattr(args, "batch_size", 0) or 0),
-                async_rollout=bool(getattr(args, "async_rollout", False)),
             )
         # `send_event`, NOT `emit`: emit() falls back to print() when there is no launcher pipe, and
         # compile_trainer already prints to stdout — so passing emit duplicated every line in a
@@ -102,18 +101,6 @@ def _arm_compile_sentinel(model, args) -> None:
     from agents.model.compile_trainer import CompileTrainerError, arm_compile_sentinel
     if not getattr(args, "compile_trainer", False):
         return
-    if getattr(args, "debug", False) and getattr(args, "compile_opponents", False):
-        # --debug is ONE DummyVecEnv: the opponents live IN THIS PROCESS, and each pool snapshot
-        # compiles `Gen3FeaturesExtractor.forward` lazily — the SAME code objects (the SAME
-        # cache_size_limit slots) as the learner, and after the lock. Refuse at startup rather than
-        # die at the first snapshot load with a sentinel FATAL that names the learner's frame.
-        msg = ("[CompileSentinel] FATAL: --debug with --compile-trainer AND --compile-opponents "
-               "compiles opponents inside the learner process, on the learner's own dynamo code "
-               "objects, after the compile lock. Pass --no-compile-opponents with --debug "
-               "--compile-trainer (production's SubprocVecEnv compiles opponents in the workers).")
-        print(f"\n{msg}", file=sys.stderr, flush=True)
-        send_event(msg)
-        sys.exit(TrainExitCode.FATAL_CONFIG)
     try:
         arm_compile_sentinel(model, n_envs=int(getattr(model, "n_envs", 0) or args.n_envs),
                              batch_size=int(model.batch_size), emit=send_event)

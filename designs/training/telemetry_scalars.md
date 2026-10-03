@@ -230,18 +230,12 @@ any traced graph). Degenerate rollouts are NaN-safe: an empty buffer publishes n
 rollout reports a real std/abs-mean with `adv_kurtosis` **NaN** — TensorBoard drops NaN, so the
 curve gaps rather than reporting a fabricated 0.0 that would read as "evenly smeared".
 
-**Outcome entropy rides the info dicts the loop already sees.** `MaskableAgentWrapper.step` publishes
-`info["win_outcome"]` (which the win-prob head already used) and, new here, `info["opponent_class"]`
-— purely additive keys, so nothing downstream changes. `SignalMetricsCallback` pushes each `done`
+**Outcome entropy rides the info dicts the loop already sees.** The Rust collector (`rust_rollout/collector.py`) publishes, per finished episode,
+`info["win_outcome"]` (which the win-prob head already used) and `info["opponent_class"]`
+— the keys the deleted Python `MaskableAgentWrapper.step` used to publish. `SignalMetricsCallback` pushes each `done`
 into rolling per-kind deques in `_on_step` and records in `_on_rollout_end`.
 
-**`--async-rollout` IS covered.** The stock collector publishes `infos`/`dones` in the callback
-locals; `collect_rollouts_async` publishes `wave_infos`/`wave_dones` (a wave = a macro-step over
-whichever envs came ready). The callback reads whichever pair is present. Unlike
-`WinProbLabelCallback` — which needs the `(step, env)` BUFFER ROW and therefore cannot use the wave
-batching at all — outcome entropy is a per-episode aggregate with no row alignment, so the wave form
-carries everything it needs. The advantage half is transport-agnostic (both paths call
-`compute_returns_and_advantage` into the same buffer). Works under `--debug` — the callback is in
+The callback reads `infos`/`dones` from the callback locals (the deleted async collector's `wave_infos`/`wave_dones` form went with it, U3). Outcome entropy is a per-episode aggregate with no buffer-row alignment. The advantage half reads the buffer the collector filled. Works under `--debug` — the callback is in
 `build_callbacks`' unconditional base list.
 
 **Which opponent splits are REAL.** The wrapper's four `OPP_CLASS_*` values are the whole of what
@@ -257,15 +251,15 @@ hundred episodes, the same contract the noise-scale EMAs take.
 
 Tests: `signal_metrics_test.py` — hand-computed moments, an independently-written closed form, the
 sparse-vs-spread kurtosis discrimination at MATCHED std, scale-freeness, every degenerate input,
-the rolling-window eviction, the kind routing, both rollout paths' locals, the
-`OPP_CLASS_SUFFIX` ↔ wrapper-constant pin, and the byte-identity of `train()` with the read
+the rolling-window eviction, the kind routing, the rollout locals, the
+`OPP_CLASS_SUFFIX` ↔ opp-class-constant pin, and the byte-identity of `train()` with the read
 monkeypatched out.
 ## The SCAFFOLDING GAUGE — `train/scaffolding_gauge` + `python -m main.scaffolding_gauge`
 
-🚨 **THIS GAUGE IS A `--critic shaped` INSTRUMENT AND IS DEGENERATE ON THE PRODUCTION RUN.** It
+🚨 **THIS GAUGE IS A SHAPED-CRITIC INSTRUMENT AND IS DEGENERATE ON THE PRODUCTION RUN.** It
 measures the divergence between TWO readouts; under `--critic winprob` there is one — the win-prob
 head IS the critic, so the gauge compares a head with itself and its rank correlation is 1 by
-construction. Read it on a shaped run, or on an archived one; do not read it as a scaffolding
+construction. Read it on an archived shaped run; do not read it as a scaffolding
 measurement of a terminal-only run, which has no scaffolding to measure.
 
 **How far apart are the two value readouts, and is the gap closing?** Under `shaped`, the critic
@@ -298,7 +292,7 @@ is identical and float32 ranks never saturate.
 
 ### ⚠️ UNITS — the rank form is the ONLY one that is live-legal
 
-Under `--critic shaped` `V` is a SHAPED return and there is no general unit
+Under the (no longer trainable) shaped critic `V` is a SHAPED return and there is no general unit
 conversion to a probability. (Under `--critic winprob` the question dissolves: `V` IS the
 probability, which is the same fact that makes this gauge degenerate there.) The
 live scalar is therefore **rank-based and claims ORDERING only** — nothing about magnitude or
@@ -557,11 +551,7 @@ disagree with the startup line. Since the shaped reward path was deleted (2026-0
 composition is ONE terminal term (`win_loss`), so the group is `reward/win_loss_*`, `reward/total_*`,
 `reward/class_terminal_*` and the guard below. Bounded by the REGISTRY, never per-team.
 
-**Transport: an `env_method` PULL, not an info-dict thread.** The reward is computed in the env
-WORKER, and under `--async-rollout` the callback's step locals arrive wave-batched with no way to
-recover which buffer row a step landed on — the same reason `TeamWinRateCallback` uses this seam.
-`AsyncSubprocVecEnv.env_method` is drain-safe, so one seam covers both collectors, and
-`RewardTermAccumulator.drain()` zeroes the window so a double pull cannot double-count. ALWAYS ON,
+**Transport: an `env_method` PULL, not an info-dict thread.** The reward is computed in the env core, and the callback's step locals cannot recover which buffer row a step landed on — the same reason `TeamWinRateCallback` uses this seam (`RustVecEnv.SURFACE`'s `drain_reward_terms`). `RewardTermAccumulator.drain()` zeroes the window so a double pull cannot double-count. ALWAYS ON,
 no flag: the accumulator folds the ACTIVE terms — the one terminal term. Read `metadata.json`'s `reward_composition`, never a remembered count.
 
 #### `win_prob/` — the head's PREDICTION, its CALIBRATION, and the paired episode-start read
@@ -582,7 +572,7 @@ policy it is attributed to).
 | **`start_*_{bots,pool,stable,target}`** | the same, split by opponent class — **`start_*_pool` IS "the self-play win probability at episode start vs the realized self-play win rate"** | ✅ |
 
 🚨 **THE EPISODE-START READ IS PAIRED, AND THAT IS THE WHOLE POINT.** `win_target` is back-filled by
-`WinProbLabelCallback` from the episode's own outcome to every step of that episode, so at an
+the collector (`backfill_terminal_labels`) from the episode's own outcome to every step of that episode, so at an
 episode-START row it IS the realized outcome of the game that starts there. Prediction and
 realization therefore come from ONE set of episodes and `start_gap` is a paired difference — not
 the difference of two independently-windowed averages, which would carry the two windows'

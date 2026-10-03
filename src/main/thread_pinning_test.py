@@ -11,16 +11,14 @@ exported OMP/MKL=1, so production under the launcher was fine — but `python sr
 is a documented entry point (root CLAUDE.md, "Training — run directly") and had no protection, so the
 ~38× cliff was one forgotten `export` away on any direct run.
 
-Two independent guards, both pinned here because they fail differently:
-  * module-level env vars in train_rl_agent (inherited by `spawn`ed workers) — the primary;
-  * `torch.set_num_threads(1)` inside the worker `_init` — survives an explicit OMP override that a
-    user sets for the LEARNER, which must not silently un-pin every worker.
+The module-level env vars in train_rl_agent (inherited by `spawn`ed children) are the guard. (The second,
+`torch.set_num_threads(1)` inside the Python env worker's `_init`, went with the Python env core — deletion
+pass U3.)
 """
 import ast
 import os
 import pathlib
 
-from main.train import entry_source
 
 _TRAIN = pathlib.Path(__file__).with_name("train_rl_agent.py")   # the HUB (where the pin lives)
 _LAUNCHER_CHILD = pathlib.Path(__file__).with_name("launcher") / "child.py"
@@ -84,22 +82,6 @@ def test_pinning_uses_setdefault_not_hard_assignment():
     src = _TRAIN.read_text()
     assert "setdefault" in src.split("import torch")[0], (
         "the import-time pin should use os.environ.setdefault so an explicit override is honoured"
-    )
-
-
-def test_env_worker_pins_torch_threads_independently():
-    """Because the env vars are setdefault-only, a learner-side override would otherwise un-pin every
-    worker. The worker `_init` must call torch.set_num_threads(1) itself.
-
-    Reads the whole entry point rather than the hub: `_init` moved into
-    `main/train/env_factory.py` with the 2026-08-22 decomposition.
-    """
-    src = entry_source()
-    init_idx = src.index("def _init():")
-    body = src[init_idx:init_idx + 2000]
-    assert "set_num_threads(1)" in body, (
-        "the env-worker _init no longer pins torch.set_num_threads(1) — an explicit OMP_NUM_THREADS "
-        "for the learner would silently make every worker's B=1 opponent forward multi-threaded."
     )
 
 

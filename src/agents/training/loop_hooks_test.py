@@ -90,7 +90,8 @@ def _learner() -> Any:
     _, obs_space, act_space = LG._spaces()
     with np.load(LG.BUFFER_PATH) as z:
         data = {k: z[k] for k in z.files}
-    return LG.build_learner(ScriptedVecEnv(obs_space, act_space, data))
+    from agents.training.rust_rollout.testkit import attach_vec_collector
+    return attach_vec_collector(LG.build_learner(ScriptedVecEnv(obs_space, act_space, data)))
 
 
 @pytest.fixture(scope="module")

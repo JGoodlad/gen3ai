@@ -8,20 +8,24 @@ EXACT equality on everything the loop touches:
 
 * the HOOK TRACE — every callback call in order, with `num_timesteps`, `n_calls`, the `self.locals`
   KEY SET (callbacks read the collect's local names) and `rollout_buffer.pos` at `on_step` (the
-  win-prob labeller writes the row ABOUT to be added);
+  row ABOUT to be written);
 * the BUFFER at every `on_rollout_end` (every obs key and every flat array, byte for byte);
 * every logger DUMP: its step and every key/value (wall clocks excluded);
 * the parameters after every update, `_n_updates`, `_current_progress_remaining`, `ep_info_buffer`;
 * the train()/collect_rollouts() INSTANCE WRAPPERS still intercept (K6 and the compile sentinel wrap
   them that way) — each sees every call under both loops.
 
-The scripted env exercises the branches a real one would: episode ends with ``info["episode"]``,
-win outcomes, and a `TimeLimit.truncated` end with a ``terminal_observation`` (the bootstrap branch).
-The callbacks are the REAL ones that need no live env — `WinProbLabelCallback` (the `buf.pos` /
-locals consumer), `AdaptivePPOCallback` (the KL controller reading `train/approx_kl` off the logger,
-cooldown 0 so it moves the LR), `SignalMetricsCallback` — plus an EVAL STAND-IN that dumps the logger
-mid-rollout at an earlier step, exactly as the eval callbacks do: the owned loop preserves that
-defect (design §2.1) bit-for-bit, and this test is what says so.
+The rollout is the toy `VecEnvCollector` (`rust_rollout/testkit.py`) on BOTH arms — the Python env core's
+collection, which this test used to put through upstream's own, was deleted with that core (deletion pass
+U3), so what is held against upstream here is the LOOP: `learn`, `_setup_learn`, `dump_logs`, the progress
+and info updates and the hook points around collect / update. (Stage 3 of the PPO-loop ownership, U4,
+retires this test and replaces upstream as the reference by the K9 golden and the Rust-core A/B.)
+The scripted env exercises the branches a real one would: episode ends with ``info["episode"]``
+and win outcomes. The callbacks are the REAL ones that need no live env — `AdaptivePPOCallback` (the
+KL controller reading `train/approx_kl` off the logger, cooldown 0 so it moves the LR),
+`SignalMetricsCallback` — plus an EVAL STAND-IN that dumps the logger mid-rollout at an earlier step,
+exactly as the eval callbacks do: the owned loop preserves that defect (design §2.1) bit-for-bit, and
+this test is what says so.
 """
 from __future__ import annotations
 
@@ -39,6 +43,7 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from agents.training import learner_golden as LG
 from agents.training.instrumented_ppo import loop as L
 from agents.training.logger_scope import isolated_dump
+from agents.training.rust_rollout.testkit import attach_vec_collector
 
 ITERATIONS = 3
 RESUME_ITERATIONS = 1
@@ -220,10 +225,8 @@ def _wrap_counting(model: Any, counts: Dict[str, int]) -> None:
 def _callbacks(trace: List[Any], buffers: List[Any], lr: float) -> List[BaseCallback]:
     from agents.training.adaptive_lr_callback import AdaptivePPOCallback
     from agents.training.signal_callback import SignalMetricsCallback
-    from agents.training.win_prob_callback import WinProbLabelCallback
 
-    return [WinProbLabelCallback(),
-            AdaptivePPOCallback(initial_lr=lr, target_kl=1e-6, cooldown_rollouts=0, verbose=0),
+    return [AdaptivePPOCallback(initial_lr=lr, target_kl=1e-6, cooldown_rollouts=0, verbose=0),
             SignalMetricsCallback(),
             _EvalDumpStandIn(at_call=LG.N_STEPS + 5),          # mid-rollout, iteration 2
             _Recorder(trace, buffers)]
@@ -237,7 +240,7 @@ def _run(mode: str, tmp_path: Any) -> Dict[str, Any]:
     try:
         with LG._one_thread():
             env = ScriptedVecEnv(obs_space, act_space, data)
-            model = LG.build_learner(env)
+            model = attach_vec_collector(LG.build_learner(env))
             rec = _DumpRecorder()
             model.set_logger(Logger(folder=None, output_formats=[rec]))
             counts: Dict[str, Any] = {"collect": 0, "train": 0}
@@ -261,7 +264,7 @@ def _run(mode: str, tmp_path: Any) -> Dict[str, Any]:
             path = tmp_path / f"m_{mode}.zip"
             model.save(path)
             from agents.training.instrumented_ppo import InstrumentedMaskablePPO
-            m2 = InstrumentedMaskablePPO.load(path, env=env, device="cpu")
+            m2 = attach_vec_collector(InstrumentedMaskablePPO.load(path, env=env, device="cpu"))
             m2.behaviour_check = "off"
             rec2 = _DumpRecorder()
             m2.set_logger(Logger(folder=None, output_formats=[rec2]))

@@ -346,9 +346,7 @@ per-episode opponent Players are decision-functions over `battle2` (agent2 does 
 agent2's `_team` decides the opponent's REAL team — a `--trainee-team` pin therefore also pinned the
 OPPONENTS, turning every specialist run's training into a single-team MIRROR vs bot pilots
 (genuinely-won ~100% training WRs, fake curriculum; a probe on the exact path measured the same
-checkpoint at 1.000 mirror vs 0.483 with real opponent teams). Fixed by the `Gen3Env(opponent_team=…)`
-post-init seam (the `_battle_class` injection pattern), threaded unconditionally from the env factory
-(`opponent_teambuilder`); `None` = the pre-fix both-sides behavior. Pinned by `gen3_env_test.py`. Each opponent's `EVAL_GAMES` are split into
+checkpoint at 1.000 mirror vs 0.483 with real opponent teams). Fixed by an opponent-team seam on the Python env (`Gen3Env(opponent_team=…)`, threaded from the env factory; both deleted in U3 — the Rust env core plays each side on its own team, `rust_rollout/teams.py`). Each opponent's `EVAL_GAMES` are split into
 **shard units** of `--eval-shard-games` (default 25 → 4 shards/opponent); a worker claims units
 (atomic `O_EXCL` lock per `unit_id`), plays them, and publishes one `shard__<unit_id>.json` of
 **raw** counts; the parent pools an opponent's shards back into one **exact** result. This is the
@@ -659,9 +657,8 @@ yours") cancels inside the pair instead of riding the win rate as noise. Trainin
 second is `swapped`. The Rust eval core (`executor._make_game`) and the Python worker's per-GAME seed
 rule (`eval_worker._per_game_teams` / `_play_per_game`) both call it. On the Python path a mirrored
 cycle therefore plays every game seeded (`seed_rule = "per_game"`, `eval_launch.mirrored_worker_cfg`),
-which needs the in-process bridge and one game in flight — `--use-bridge off` or
-`--eval-concurrency-per-worker` ≠ 1 is REFUSED (`combination_checks`: `mirrored_pairs_need_*`), and a
-worker handed a mirrored plan without the per-game rule raises.
+which needs one game in flight per worker; a
+worker handed a mirrored plan without the per-game rule raises. (The `mirrored_pairs_need_*` combination rows, which refused `--use-bridge off` and a concurrency other than 1, were removed in U3 — the bridge is the only transport.)
 
 **Counts are even by construction.** An odd `--eval-games` is rounded UP (`mirrored_eval_games`; the
 `--debug` cadence's 3 becomes 4), and the shard split is in PAIRS (`units._split_games(paired=True)`), so

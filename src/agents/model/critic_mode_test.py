@@ -327,57 +327,6 @@ def test_the_gamma_default_is_the_pbrs_constant_not_a_retyped_number():
 # the DRAW BRANCH (design §3.2 / gap B9)
 # --------------------------------------------------------------------------------------------
 
-class _Battle:
-    def __init__(self, won):
-        self.won = won
-
-
-class _EnvStub:
-    def __init__(self, won):
-        self.battle1 = _Battle(won)
-
-
-def _win_outcome(won):
-    """The wrapper's terminal label branch, exercised on its own inputs.
-
-    `MaskableAgentWrapper.step` is a long method over a real env, so the branch is reproduced here
-    against the ONE thing it reads — `battle1.won`, a TRI-STATE. Kept in step with the source by
-    `test_the_draw_branch_matches_the_wrapper_source` below, which reads the real code."""
-    b = _EnvStub(won).battle1
-    outcome = getattr(b, "won", None)
-    if outcome is True:
-        return 1.0, False
-    if outcome is False:
-        return 0.0, False
-    return 0.0, True
-
-
-@pytest.mark.parametrize("won,expect_y,expect_draw", [
-    (True, 1.0, False), (False, 0.0, False), (None, 0.0, True),
-])
-def test_a_draw_is_SCORED_as_a_not_win_and_COUNTED(won, expect_y, expect_draw):
-    """Design §3.2, option (a), made an explicit branch instead of a boolean fall-through.
-
-    The load-bearing half is the third row: `won is None` — a draw or the 250-turn timeout — is
-    scored `y = 0` and **flagged**, never masked out. Masking would leave that episode's ~250
-    decisions with no learning signal at all, and they are the decisions that most need one."""
-    y, is_draw = _win_outcome(won)
-    assert y == expect_y
-    assert is_draw is expect_draw
-
-
-def test_the_draw_branch_matches_the_wrapper_source():
-    """The stub above is only worth having if it still describes the real code: pin the three-way
-    branch and the `win_draw` publication in `MaskableAgentWrapper.step`."""
-    import agents.training.wrappers as w
-    src = open(w.__file__).read()
-    assert 'if _outcome is True:' in src and 'elif _outcome is False:' in src
-    assert 'info["win_draw"] = float(is_draw)' in src
-    assert 'won = 1.0 if (b is not None and b.won is True) else 0.0' not in src, (
-        "the boolean fall-through is back — a draw would again be a not-win BY ACCIDENT rather "
-        "than by decision, and nothing would count it")
-
-
 def test_the_draw_rate_is_published_from_the_terminal_scan():
     """A decision that is not stated is a decision nobody can audit. `signal/draw_rate` is what
     makes the §3.2 choice's FREQUENCY visible — and it is a PRIMARY endpoint on a `winprob` arm,
@@ -386,5 +335,5 @@ def test_the_draw_rate_is_published_from_the_terminal_scan():
     src = open(sc.__file__).read()
     assert 'self.logger.record("signal/draw_rate"' in src
     assert 'info.get("win_draw", 0.0)' in src, (
-        "the rate must read the wrapper's published flag, not re-derive a draw from win_outcome — "
+        "the rate must read the published `win_draw` flag, not re-derive a draw from win_outcome — "
         "a loss and a draw are the SAME win_outcome by construction")

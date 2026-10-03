@@ -99,6 +99,8 @@ def main() -> None:
                        "net_arch": NET_ARCH},
         n_steps=N_STEPS, batch_size=BATCH, n_epochs=EPOCHS, device="cpu", seed=0)
     print(f"policy params: {sum(p.numel() for p in model.policy.parameters()):,}")
+    from agents.training.rust_rollout.testkit import attach_vec_collector
+    attach_vec_collector(model)                       # the rollout comes from the toy VecEnv above
     model.learn(total_timesteps=N_STEPS * N_ENVS)
 
     def timed(on: bool, reps: int = 1):

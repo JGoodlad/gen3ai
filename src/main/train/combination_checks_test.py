@@ -146,12 +146,14 @@ OFF = ["--unified-moves", "off"]
 #: ELSE does not also trip the three requirement rules and make its own failure ambiguous.
 _WP = ["--critic", "winprob", "--terminal-indicator",
        "--victory-value", "1.0", "--draw-penalty", "0"]
-#: The python env core, typed — the bare argv has run on the Rust core since the deletion pass's
-#: bare-argv flip (D2, 2026-10-02), so a row about a python-only path must name it.
-_PY = ["--env-core", "python"]
-#: The shaped critic, typed (on the python core — the Rust core refuses it): the configuration the
-#: "X needs the winprob critic" rows refuse, which a bare argv no longer is.
-_SH = ["--critic", "shaped", *_PY]
+#: Rows whose broken configuration CANNOT be typed any more: `--critic shaped` is refused by the PARSER
+#: (deletion pass U3 — the Python env core served it) and a shaped CHECKPOINT by D4 before the sweep, so
+#: "X needs the winprob critic" can only be judged on a namespace that carries `critic="shaped"`
+#: (a defence-in-depth row — a flag-census candidate). name -> (argv, namespace overrides).
+NAMESPACE_ONLY: dict[str, tuple[list[str], dict]] = {
+    "winprob_strata_needs_the_winprob_critic": (["--win-prob-strata-weight", "1.0"], {"critic": "shaped"}),
+    "fork_needs_the_winprob_critic": (["--fork-fraction", "0.02"], {"critic": "shaped"}),
+}
 
 ARGVS: dict[str, list[str]] = {
     "winprob_critic_needs_unit_gamma": _WP + ["--gamma", "0.99"],
@@ -192,15 +194,10 @@ ARGVS: dict[str, list[str]] = {
     # The three requirement rows themselves each OMIT exactly one member of `_WP`.
     "winprob_critic_needs_a_head": _WP + ["--win-prob-mode", "none"],
     # gen3_winprob_strata_weight_v1 — the one row in this family pointing the OTHER way ("X
-    # REQUIRES winprob"), so it deliberately does NOT carry `_WP`: the default `shaped` critic is
-    # exactly the configuration it refuses.
-    "winprob_strata_needs_the_winprob_critic": [*_SH, "--win-prob-strata-weight", "1.0"],
-    # gen3_fork_v1 — the fork arm's three: a treatment that means nothing without the critic it
-    # re-aims, one the Python core can no longer run (its replay ring, `--cf-records`, was deleted
-    # with the cf training half — deletion pass L4), and the strata weight (a branch row has no
-    # material margin to stratify on).
-    "fork_needs_the_winprob_critic": [*_SH, "--fork-fraction", "0.02"],
-    "fork_python_core_unavailable": _WP + [*_PY, "--fork-fraction", "0.02"],
+    # REQUIRES winprob") — judged in NAMESPACE_ONLY above (a shaped critic cannot be typed any more).
+    # gen3_fork_v1 — the fork arm's two refusals: a treatment that means nothing without the critic it
+    # re-aims (NAMESPACE_ONLY above), and the strata weight (a branch row has no material margin to
+    # stratify on). The third (the Python core's fork arm, UNAVAILABLE) went with that core — U3.
     "fork_refuses_strata_weight":
         _WP + ["--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"],
     "rnd_variants_need_the_base_rnd_head": ["--ridealong-rnd-variants", "all"],
@@ -213,7 +210,6 @@ ARGVS: dict[str, list[str]] = {
     "winprob_critic_needs_unit_victory_value": ["--critic", "winprob",
                                                 "--terminal-indicator", "--victory-value", "7.5",
                                                 "--draw-penalty", "0"],
-    "obs_source_core_needs_rust_bridge": ["--obs-source", "core", "--use-bridge", "node"],
     "move_belief_hidden_needs_species_belief": ["--move-belief-mode", "both",
                                                 "--opp-belief-aux-coef", "0"],
     "damage_op_needs_revealed_move_belief": [*OFF, "--damage-op", "--move-belief-mode", "off",
@@ -256,12 +252,6 @@ ARGVS: dict[str, list[str]] = {
                                               "--move-belief-mode", "off"],
     "anneal_start_needs_min_lr": ["--anneal-lr-start-steps", "5"],
     "anneal_start_below_steps": ["--anneal-lr-start-steps", "500", "--anneal-min-lr", "1e-6"],
-    "compile_preload_needs_compile_opponents": ["--compile-opponents-preload",
-                                                "--no-compile-opponents"],
-    # M5 Lane G — `--env-core rust`
-    "env_core_rust_needs_the_winprob_critic": ["--env-core", "rust", "--critic", "shaped"],
-    "env_core_rust_unported_paths": ["--env-core", "rust", *_WP, "--async-rollout"],
-    "env_core_flags_need_the_rust_core": [*_PY, "--rollout-trigger", "window"],
     # gen3_fork_rust_v1 — the fork arm on the Rust core (forks.md §14.7)
     "fork_rust_needs_keyed_opponent_sampling": ["--env-core", "rust", *_WP, "--fork-fraction", "0.02",
                                                 "--opponent-sampling", "generator"],
@@ -269,16 +259,9 @@ ARGVS: dict[str, list[str]] = {
                                               "--rollout-trigger", "window"],
     "rollout_target_on_the_quantum": ["--env-core", "rust", *_WP, "--n-envs", "48", "--batch-size", "2048",
                                       "--rollout-target-samples", "100000"],
-    # T17 mirrored team pairs — the Python eval path's prerequisites (the python env core's eval)
-    "mirrored_pairs_need_the_bridge": [*_PY, "--eval-mirrored-pairs", "--use-bridge", "off"],
-    "mirrored_pairs_need_one_game_in_flight": [*_PY, "--eval-mirrored-pairs",
-                                               "--eval-concurrency-per-worker", "2"],
     # T6 SPRT promotion
     "promotion_sprt_needs_self_play": ["--promotion-sprt"],
     "promotion_sprt_ignores_the_threshold": ["--promotion-sprt", "--self-play", "--promote-threshold", "0.6"],
-    "promotion_sprt_needs_the_bridge": [*_PY, "--promotion-sprt", "--self-play", "--use-bridge", "off"],
-    "promotion_sprt_needs_one_game_in_flight": [*_PY, "--promotion-sprt", "--self-play",
-                                                "--eval-concurrency-per-worker", "2"],
 }
 
 
@@ -339,9 +322,22 @@ def test_every_check_has_an_argv_that_trips_exactly_it(name):
         f"argv that stops tripping its check silences the agreement test without failing it.")
 
 
+@pytest.mark.parametrize("name", sorted(NAMESPACE_ONLY))
+def test_a_namespace_only_row_trips_its_check_and_its_argv_route_is_closed(name):
+    """These rows cannot be reached by TYPING their broken value, so they are judged on a namespace that
+    carries it — and the route that WOULD have typed it is shown closed (the parser refuses it)."""
+    argv, overrides = NAMESPACE_ONLY[name]
+    args = _namespace(["--steps", "100"] + argv)
+    for k, v in overrides.items():
+        setattr(args, k, v)
+    assert name in [c.name for c in failing_checks(args)]
+    code, text = _resolved(["--steps", "100", "--critic", "shaped"] + argv)   # refused at PARSE time
+    assert code != 0 and "DELETED" in text, (code, text)
+
+
 def test_the_table_covers_every_declared_check():
-    missing = sorted({c.name for c in COMBINATION_CHECKS} - set(ARGVS))
-    extra = sorted(set(ARGVS) - {c.name for c in COMBINATION_CHECKS})
+    missing = sorted({c.name for c in COMBINATION_CHECKS} - set(ARGVS) - set(NAMESPACE_ONLY))
+    extra = sorted((set(ARGVS) | set(NAMESPACE_ONLY)) - {c.name for c in COMBINATION_CHECKS})
     assert not missing, f"COMBINATION_CHECKS entries with no argv in the table: {missing}"
     assert not extra, f"table rows naming no declared check: {extra}"
 

@@ -58,6 +58,13 @@ reactions from a reader.
 | `--seed-quantile-coef` | v78 `gen3_flag_surface_p1_v1` (CHANGELOG L3980) | the SEED-PRESSURE pair — both cap at ~1-D of k=4, from opposite directions |
 | `--seed-vicreg-coef` | v78 `gen3_flag_surface_p1_v1` (CHANGELOG L3980, L3990) | as above; a training-only coefficient, so any recorded value pops silently |
 | `--value-seed-vicreg-coef` | v78 `gen3_flag_surface_p1_v1` (CHANGELOG L3980) | the v62 spelling of the same coefficient |
+| `--async-rollout` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | a SubprocVecEnv scheduling mode (`AsyncSubprocVecEnv` + an on-policy async collector). Deleted with the Python env core; the Rust collector has its own trigger (`--rollout-trigger`). Never a recorded `ModelVersion` field, so no `RETIRED` row and no config bump |
+| `--no-async-rollout` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the generated negation of the above |
+| `--compile-opponents` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the CPU opponent compile in the env workers. Under the Rust core every policy opponent forwards through the inference service (T2), so there was nothing to compile; `agents/model/compile_opponents.py`'s `maybe_compile_extractor` STAYS for the offline readers (prober counterfactual, snapshot ladder, eval worker, cf producer, search-dividend). 184 recorded argvs carry it: an unpinned HEAD resume of such a run fails argparse — run it pinned |
+| `--no-compile-opponents` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the generated negation of the above |
+| `--compile-opponents-preload` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the forkserver preload (`agents/model/compile_preload.py`, deleted) that traced the opponent graph once and forked it into every env worker |
+| `--no-compile-opponents-preload` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the generated negation of the above |
+| `--compile-opponents-strict` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | made a failed opponent compile fatal on a cross-worker revert QUORUM (`arm_compile_quorum`, deleted with it); `maybe_compile_extractor` now always warns and falls back to eager |
 | `--film-grad-accum-steps` | v78 `gen3_flag_surface_p1_v1` (CHANGELOG L2892) | went with the zarch family's group accumulator and the `film/*` + `zarch/*` TB families |
 | `--zarch-film` | v78 `gen3_flag_surface_p1_v1` (CHANGELOG L3987) | the zarch conditioning family; the LUT arm moved the N=20 ceiling +0.024, CI [-0.016,+0.064] |
 | `--zarch-mode` | v78 `gen3_flag_surface_p1_v1` (CHANGELOG L3987) | as above |
@@ -173,6 +180,20 @@ reactions from a reader.
 | `--exploiter-ladder-window` | deletion pass L4 (config v134, `gen3_retired_levers_l4_v1`; manifest §2 / D1: built 2026-08-28 (F6), no strength read; the new-lineage loop uses a stable-set window instead) | minimum games vs the CURRENT rung per promotion check (default 500) |
 | `--exploiter-ladder-rungs` | deletion pass L4 (config v134, `gen3_retired_levers_l4_v1`; manifest §2 / D1: built 2026-08-28 (F6), no strength read; the new-lineage loop uses a stable-set window instead) | `auto:` ladders only: how many evenly-ELO-spaced snapshots to draw (default 4) |
 
+### 1b. DELETED VALUES — the flag stays, one of its values went
+
+A flag that keeps a single legal value refuses the deleted one at PARSE time with the reason
+(`main/train/parser/base.py` `retired_choice`), never as a silent no-op. These rows are not gated (the
+flag itself is live); they are the record. Each is a flag-census candidate (P11): a flag with one legal value.
+
+| flag value | citation | note |
+|---|---|---|
+| env-core value `python` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the `SubprocVecEnv` of `Gen3Env` workers. `rust` is the only core; a python-era WINPROB checkpoint resumed on HEAD moves onto it ("CORE SWITCH", D4), a shaped one is refused (`PythonEraShapedCheckpoint`). `recipe.sizing.env_core` must be `rust` |
+| use-bridge values `node` and `off` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the node bridge child and the websocket transport as TRAINING transports; the Rust env core is serverless. The offline tools keep their own transport choice |
+| the trainer's obs-source flag | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | where the trainee's observation row came from (`python` encoder vs the Rust core's `__OBS__` frame) — a `Gen3Env` constructor choice. The Rust env core always builds the row in the core, and with no `Gen3Env` the flag read nothing. Not a recorded field. (`agents/training/trainer_turn_benchmark.py` keeps an `--obs-source` of its OWN, so the flag is not gated as deleted here) |
+| critic value `shaped` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the scalar `value_net` in raw return units, the Python core's critic (the Rust core refused it). An OLD shaped checkpoint still LOADS (as an opponent, in the meters, in the prober: `CRITIC_UNRECORDED` stays `shaped`) but a resume / fork of one is refused FATAL_CONFIG — run it pinned to its own commit |
+
+
 ## 2. DEMOTED — the config field survives, the CLI flag does not
 
 v78 `gen3_flag_surface_p1_v1` introduced the `cli` / `config_only` / `constructor_only` TIER axis:
@@ -204,3 +225,13 @@ there.
 |---|---|---|
 | `data/gen3_pubval.json` | v88 `gen3_dead_flag_purge_v1` (CHANGELOG L4078) | the public-info value calibration artifact, deleted with the subsystem. Named as history in `designs/CLAUDE.md` and `src/agents/training/CLAUDE.md` |
 | `src/agents/training/cf_records.py` | deletion pass L5 (`designs/ops/deletion_pass_manifest.md` R3, 2026-10-02) | the `record_key` / `index_records` join of the Python fork arm's replay ring, deleted with the arm (the ring writer went in L4). Named as history in `src/agents/training/CLAUDE.md` and `designs/training/forks.md`. L5 deleted NO flag: every `--fork-*` flag is the Rust port's surface |
+| `src/agents/training/gen3_env.py` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the Python env core's per-battle `Gen3Env` (a poke-env `SinglesEnv`: obs, labels, reward, action mapping, stall). Named as history in the docs that cite it |
+| `src/agents/training/wrappers.py` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | `MaskableAgentWrapper` (per-episode opponent choice, the win-outcome labels) and `resolve_episode_end`; the `OPP_CLASS_*` constants live in `agents/training/opponent_classes.py` since U2. Named as history in the docs that cite it |
+| `src/agents/training/async_vec_env.py` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | `AsyncSubprocVecEnv` and the async collect (`--async-rollout`). Named as history in the docs that cite it |
+| `src/main/train/env_factory.py` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the per-worker training-env `_init` closure; `trainee_env_kwargs` lives in `agents/training/trainee_spaces.py` since U2. Named as history in the docs that cite it |
+| `src/utils/bridge/bridge_session.py` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the Python env's persistent bridge-child session (`attach_bridge_transport`); `battle_stream_client.py` SURVIVES (eval, ladder, meters, prober). Named as history in the docs that cite it |
+| `src/main/rust_core_cutover` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the Python-vs-Rust cutover stress harness (slices, soak, governor); `production_args()` moved to `src/main/train/production_args.py`, `SequenceTeambuilder` / `packed_teams` to `src/utils/team_sources.py`. Named as history in the docs that cite it |
+| `src/main/rust_core_m5` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the M5 gate harness (lane registry, slice N, depth-3, the Python-vs-Rust throughput A/B, T2 fan-out). The sizing study ran from its own pinned worktree (`m5-sizing`, `a3d3556e`), so deleting it from HEAD changes nothing it recorded. Named as history in the docs that cite it |
+| `src/agents/model/compile_preload.py` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the forkserver preload (`--compile-opponents-preload`). Named as history in the docs that cite it |
+| `src/agents/model/compile_prewarm.py` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the in-trainer Inductor cache prewarm for the env workers. Named as history in the docs that cite it |
+| `src/agents/training/rust_rollout/parity.py` | deletion pass U3 (`designs/ops/deletion_pass_manifest.md` R1 / R6, 2026-10-02) | the rollout-level slice N (Rust collector vs the Python path through `Gen3Env`) and the learner-level check; `unset_to_class_defaults` moved to `rust_rollout/testkit.py`. Named as history in the docs that cite it |

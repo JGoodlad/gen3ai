@@ -14,8 +14,8 @@ silently for hours on 2026-09-29/30:
 
 * seven ``while pgrep -f PAT; do sleep N; done`` waiters matched their own ``bash -c`` wrapper and
   looped forever (now also refused up front by ``~/.claude/hooks/self_match_guard.py``);
-* ``flock gpu.lock python -m main.rust_core_m5 gates --gpu`` waited 15 min at 0% CPU on a lock its
-  own ancestor held, because ``gates.py`` takes that lock itself (class fix: ``utils.gpu_lock``).
+* ``flock gpu.lock`` around the M5 gate harness (``main.rust_core_m5 gates --gpu``, deleted in U3) waited
+  15 min at 0% CPU on a lock its own ancestor held, because the harness took that lock itself (class fix: ``utils.gpu_lock``).
 
 WHAT IS FLAGGED
 1. **SELF-DEADLOCK** — any process BLOCKED on a lock (``/proc/locks`` ``->`` line) whose holder is
