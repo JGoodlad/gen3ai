@@ -947,7 +947,7 @@ which lead's switch-in handlers run first. The port's `event::run_start_switchin
 deterministic side order at a raw-Speed tie and draws nothing. The golden's `INIT` seed is the
 post-construction seed, so the draw COUNT is accounted for and the seed anchor passes; only the
 ORDER is unmodelled. This is the same root as the omniscient E1/A1 keys. It is seed=None-invisible,
-so it has zero production impact under `--use-bridge=rust`.
+so it has zero production impact under the Rust bridge (the only training transport).
 
 **Why the existing keys missed it.** B1 (`classify_perside_construction_order_flip`) admits a moved
 line only if it is `-ability` or `-weather`, and here the `-unboost` moves. The mirror key needs
@@ -1095,7 +1095,7 @@ artifact is EXPLICITLY allowlisted (not silently ignored). Mechanism:
     seed-convention deferral EVERY seed golden depends on). Both port paths (offline replay
     `run_full_battle_logged` AND the production bridge `run_full_battle_bridge` → `start_with_switchins`) share
     `event::run_start_switchins`, which falls back to a DETERMINISTIC side-order at a raw-Speed tie and draws
-    nothing → ZERO production impact under `--use-bridge=rust` (seed=None: the port is the sole oracle). **This
+    nothing → ZERO production impact under the Rust bridge (seed=None: the port is the sole oracle). **This
     signature was NARROWED (2026-07-16, the Lens-1 green-gate-integrity fix)** from the prior coarse
     per-line-TYPE key (`line_type ∈ {-ability,-weather,-unboost}`), which SWALLOWED a content-DIFFERENT framing
     divergence at a mirror lead (a genuinely-wrong `[of]` target / wrong weather / a missing-or-extra line — a
@@ -1118,7 +1118,7 @@ artifact is EXPLICITLY allowlisted (not silently ignored). Mechanism:
     map — via the framing `|switch|pNa: <ident>|<Species>,…` details' species field — to the SAME species (the
     sibling mirror). A `[of]` to a NON-sibling / different-species mon, a different weather/ability prefix, a
     missing/extra framing line, or a non-mirror pair breaks a clause → None. seed=None-INVISIBLE (a cosmetic
-    `[of]` tag on identical-species mirror mons → ZERO production impact under `--use-bridge=rust`; the port is
+    `[of]` tag on identical-species mirror mons → ZERO production impact under the Rust bridge; the port is
     the sole oracle at `seed=None`). **GATE-INTEGRITY PROVEN:** two cp-aside/mangled-golden injections (weather
     `Sandstorm`→`RainDance` breaks clause (4); a non-mirror `Tyranitar`→`Blissey` lead breaks clause (2)/(6))
     both replay to `diverged` with NO `allowlisted` field → the gate FAILS; plus 7 `#[cfg(test)]`

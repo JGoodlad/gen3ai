@@ -395,7 +395,7 @@ not a measurement of the corpus.
 ⚠️ **A record written BEFORE 2026-08-24 by the rust bridge carries no `forcelose` entry at all, so a
 scan of its `commands` reads a false 0.** The rust `sim_bridge` pushed `commands` only in
 `handle_choose`, while node has always pushed `['forcelose', <side>]` — so under the PRODUCTION
-default (`--use-bridge rust`) a forfeited battle's record looked exactly like one that played on.
+default (the in-process Rust bridge) a forfeited battle's record looked exactly like one that played on.
 Two consumers read that field and both were silently wrong: the offline replay path
 (`search::feed_recorded_cmd` has a `"forcelose"` arm; `recorded_turn_choices` stops at one) never
 reproduced the forfeit, and `record_is_full_replay_anchorable`'s forfeit exclusion was **INERT**

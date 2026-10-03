@@ -444,7 +444,7 @@ step "Rust simulator binaries (optional)" 6
 cost "~3-10 min of a FULLY SATURATED box on a cold build; near-instant when warm"
 if [ "$WITH_RUST" = "ask" ]; then
     if [ -t 0 ] && [ "$DRY_RUN" -eq 0 ]; then
-        info "Training defaults to --use-bridge rust, and the FIRST Rust-backed test builds"
+        info "Training runs on the in-process Rust bridge (the only transport), and the FIRST Rust-backed test builds"
         info "these anyway — mid-test, saturating every core, which is a known cause of"
         info "spurious timeout failures. Building now is strictly better if you have the time."
         read -r -p "      Build them now? [y/N] " reply
@@ -461,7 +461,7 @@ if [ "$WITH_RUST" = "no" ]; then
     info "      --manifest-path src/rust_sim/Cargo.toml"
 elif ! command -v cargo >/dev/null 2>&1; then
     warn "cargo not found — skipping. Install Rust from https://rustup.rs and re-run with"
-    warn "--with-rust. Everything else works; --use-bridge node is the fallback transport."
+    warn "--with-rust. Training and the Rust-backed tests need the binaries; only the offline tools keep a node transport (--bridge node)."
 else
     info "cargo is incremental — a warm tree finishes in seconds"
     run cargo build --release --bin sim_bridge --bin search_driver \

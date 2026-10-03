@@ -722,7 +722,7 @@ inherit / migrate), `main/anchors/mirrored_test.py`. **CPU evidence (2026-10-01)
 reconstruction records (`prng_seed` + both players' teams): (1) Python core, `--debug --debug-eval
 --self-play --eval-mirrored-pairs` — 72 traces, every bot's games in pairs sharing one seed with the
 teams swapped between p1 and p2, 16 pairs vs the bots per cycle (`--eval-games 3 → 4`); (2) Rust eval
-core, the same plus `--env-core rust --critic winprob` and a pool forced to seed — the trace's `cycle`
+core, the same on the Rust env core (`--critic winprob`) and a pool forced to seed — the trace's `cycle`
 block reads game 2k `swapped False` / 2k+1 `swapped True` on one seed with the teams handed over, for the
 nine bots AND a pool sentinel (`pairs_vs_pool` 2 at step 12,000); (3) `main.untaught_meter
 --mirrored-pairs` on two current-generation checkpoints, 16 games → 8 pairs, each pair one pool draw
@@ -812,9 +812,9 @@ default stays OFF while the M5 sizing arms are compared. The orchestrator flips 
   (Python core) until its verdict.
 - Owed: one GPU confirmation, which rides a planned launch.
 
-### Eval on the Rust env core (`--env-core rust`, M5 Lane H — `agents/training/rust_eval/`)
+### Eval on the Rust env core (the only trainer core, M5 Lane H — `agents/training/rust_eval/`)
 
-Under `--env-core rust` an eval cycle is played on the M5 Rust env core, not on `main.eval_worker`
+An eval cycle is played on the M5 Rust env core, not on `main.eval_worker`
 processes. **What it keeps, exactly:** the plan (`ShardedEvalPool`: the nine roster bots, the pool
 sentinels, the fixed / stable opponents, the same shard units), the regime (the trainee GREEDY; the
 sentinels greedy on the trainee's own teams under `eval_sentinel_greedy`, else a sample at

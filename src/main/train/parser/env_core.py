@@ -1,51 +1,32 @@
-"""`# --- THE ENV CORE (M5 Lane G) ---`: which environment the trainer's rollout runs on.
+"""`# --- THE ENV CORE (M5 Lane G) ---`: the Rust env core's collector, T2 and eval-core knobs.
 
-``--env-core rust`` runs the rollout on the M5 Rust env core — N envs in ONE core behind the process
-(or FFI) front end, the trainee and every policy opponent forwarded through the inference service
-(T2), the scripted bots played inside the core — through the COMPLETE-GAME collector (order
-constraint 6 of ``designs/endstate/program_rust_core.md``). Design and hazards:
-``designs/training/rust_collector.md``.
+The Rust env core is the ONLY env core: N envs in ONE core behind the process (or FFI) front end, the
+trainee and every policy opponent forwarded through the inference service (T2), the scripted bots
+played inside the core, the COMPLETE-GAME collector (order constraint 6 of
+``designs/endstate/program_rust_core.md``). Design and hazards: ``designs/training/rust_collector.md``.
 
-THE ONLY CORE (deletion pass U3, 2026-10-02): the Python env core (``Gen3Env`` workers behind a
-``SubprocVecEnv``) was DELETED, so ``rust`` is the one legal value. The flag stays — every recorded
-argv, runbook and ``recipe.sizing`` row that types ``--env-core rust`` still parses — and a typed
-``python`` is REFUSED at parse time with the reason (``base.retired_choice``), never a silent no-op.
-(A one-valued flag is a flag-census candidate, P11.)
+THERE IS NO ``--env-core`` FLAG (deletion pass P11b, 2026-10-03; ``designs/deleted_flags.md``): the
+Python env core (``Gen3Env`` workers behind a ``SubprocVecEnv``) was DELETED in U3 and ``rust`` was its
+one legal value, so a typed ``--env-core`` is refused with the reason by ``ExplainingParser``. What
+stays keyed on the RECORD, not on a flag: ``metadata.json`` records the env core a process ran under
+(``env_core``, read back by ``rust_env_setup.recorded_env_core``), and a python-era checkpoint that is
+resumed or forked moves onto the Rust core ANNOUNCED as a core switch (``env_core_switch_line``) — a
+shaped-critic one is REFUSED (deletion pass D4, ``rust_env_setup.refuse_python_era_checkpoint``: run it
+pinned to its own commit).
 
-THE M5 SWITCH (`gen3_env_core_switch_v1`): ``rust`` is the PRODUCTION env core —
-``recipe.sizing.env_core`` of ``designs/production_config.json``, applied by ``--arch production``
-like every recipe knob. A ``--model`` resume resolves (``rust_env_setup.resolve_env_core_default``): the
-core the checkpoint was produced on when that is rust; a python-era checkpoint (recorded ``python``, or
-recorded before ``--env-core``) moves onto rust, announced as a core switch, and a shaped-critic one is
-REFUSED (deletion pass D4 — run it pinned to its own commit).
-
-Not recorded in ``model_config.json``; ``metadata.json`` records the env core a process ran under
-(``env_core``, read back by ``recorded_env_core``) and ``cli_args`` the resolved flags. Every collector
-flag defaults to ``None`` = "not typed", resolved by ``main.train.rust_env_setup.resolve_env_core_args``
-(the defaults the help strings state).
+Every collector flag defaults to ``None`` = "not typed", resolved by
+``main.train.rust_env_setup.resolve_env_core_args`` (the defaults the help strings state).
 """
 import argparse
 
-from main.train.parser.base import BoolFlag, retired_choice  # noqa: F401 — the family's shared pieces
+from main.train.parser.base import BoolFlag  # noqa: F401 — the family's shared pieces
 
 
 def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their `--help` order."""
-    parser.add_argument("--env-core", "--env_core", dest="env_core", choices=("rust",), default="rust",
-                        type=retired_choice("--env-core", ("rust",),
-                                            "the Python env core was deleted — deletion pass U3, 2026-10-02; a "
-                                            "python-era run resumes PINNED to its own commit"),
-                        help="Which env the rollout runs on (M5): 'rust' = the M5 Rust env core, the ONLY core "
-                             "since the Python env core was deleted (deletion pass U3, 2026-10-02): N envs in "
-                             "one core (process front end), trainee + policy opponents through the inference "
-                             "service, bots in the core, the COMPLETE-GAME collector (--rollout-trigger). A "
-                             "typed 'python' is refused at parse time. --arch production takes "
-                             "recipe.sizing.env_core; --model (a restart or a fork) moves a python-era "
-                             "checkpoint onto 'rust' (announced; a shaped-critic one is refused -- "
-                             "deletion pass D4).")
     parser.add_argument("--rollout-trigger", "--rollout_trigger", dest="rollout_trigger",
                         choices=("complete_game", "window"), default=None,
-                        help="--env-core rust only. 'complete_game' (DEFAULT, the owner's collector, "
+                        help="'complete_game' (DEFAULT, the owner's collector, "
                              "2026-09-29): every row of a game is buffered until the game ends, GAE and the "
                              "win-prob labels run on COMPLETE games, and an update fires once the buffer holds "
                              "--rollout-target-samples completed-game rows; games in progress carry over, "
@@ -108,12 +89,12 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                         help="Inference backend; default 'graph' on CUDA, 'eager' on CPU.")
     parser.add_argument("--opponent-sampling", "--opponent_sampling", dest="opponent_sampling",
                         choices=("keyed", "generator"), default=None,
-                        help="How a policy opponent's stochastic action is drawn under --env-core rust: 'keyed' "
+                        help="How a policy opponent's stochastic action is drawn 'keyed' "
                              "(DEFAULT, gen3_keyed_draw_v1: a counter-based draw keyed by (run seed, env, episode, "
                              "decision) — one vectorised op, exactly replayable; F-LE-8) or 'generator' (one torch "
                              "generator per env per opponent — today's RLPlayer stream, bit for bit).")
     parser.add_argument("--rust-eval-envs", "--rust_eval_envs", dest="rust_eval_envs", type=int, default=None,
-                        help="--env-core rust only (M5 Lane H): envs of the EVAL core, declared at startup "
+                        help="(M5 Lane H) envs of the EVAL core, declared at startup "
                              "(default 64). An eval cycle plays each shard unit's games in order on one env, "
                              "so about --eval-games / --eval-shard-games x opponents envs run it in one wave.")
     parser.add_argument("--behaviour-check", "--behaviour_check", dest="behaviour_check",

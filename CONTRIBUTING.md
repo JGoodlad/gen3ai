@@ -57,7 +57,7 @@ it — the launcher reads the run's recorded torch (`metadata.json` `torch_versi
 selects that env, or refuses (`src/main/launcher/torch_runtime.py`). Bootstrap never touches it;
 never edit `environment.yml`. On a fresh machine you do not need it unless you resume such a run.
 
-**Say yes to the Rust build if you have ten minutes.** Training defaults to `--use-bridge rust`,
+**Say yes to the Rust build if you have ten minutes.** Training runs on the in-process Rust bridge (the only transport),
 and the first Rust-backed test builds those binaries *anyway* — mid-test, saturating every core, a
 documented cause of spurious timeout failures on a fresh checkout.
 
@@ -188,7 +188,7 @@ so they print a "THE BOX IS BUSY" banner rather than stretching. Report whether 
 Killing :8001 drops every poke-env websocket at once and crashes a training run that may have been
 going for days. `npm run stop` with no argument kills :8000 — never run a blanket `node`/`showdown`
 kill, and only ever stop the port you personally started. Most work needs no server at all:
-training and evaluation default to `--use-bridge rust`, an in-process reimplementation of the Gen 3
+training and evaluation run on the in-process Rust bridge (the only transport), an in-process reimplementation of the Gen 3
 engine. Prefer it for throwaway work.
 
 ```bash

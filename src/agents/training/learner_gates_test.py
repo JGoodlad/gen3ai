@@ -405,9 +405,10 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
         argv.extend(vals)
     args = build_parser().parse_args(argv)
     assert args.behaviour_check is None
-    # Each arm is a `--model` FORK of a python-era checkpoint: an untyped `--env-core` resolves to rust at
-    # launch (`rust_env_setup.resolve_env_core_default`, D4 — the Python core was deleted).
-    assert "--model" in argv and "--env-core" not in argv
+    # Each arm is a `--model` FORK of a python-era checkpoint: it moves onto the Rust core at launch (announced
+    # as a CORE SWITCH, `rust_env_setup.env_core_switch_line`, D4 — the Python core was deleted; `--env-core`
+    # itself is deleted, so the strip above drops it from a recorded argv).
+    assert "--model" in argv
     k9 = [c.name for c in failing_checks(args) if "behaviour_check" in set(c.dests)]
     assert not k9, k9
     resolve_env_core_args(args)

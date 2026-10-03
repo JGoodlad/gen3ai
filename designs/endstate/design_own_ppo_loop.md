@@ -255,7 +255,7 @@ Two `train_rl_agent --debug --steps 6000 --seed 42` runs on the Python core (CPU
 - different `policy.pth`.
 
 So "a real-run A/B at a matched seed has identical losses" is **not measurable on the Python core**.
-**The Rust core IS reproducible.** Two `--debug --arch production --env-core rust --n-envs 4
+**The Rust core IS reproducible.** Two `--debug --arch production --n-envs 4
 --n-steps 256 --batch-size 256 --steps 4000 --seed 42` runs (CPU, 2026-10-01; 16 updates each) give:
 - all 342 non-wall-clock series identical (tag, step and value; NaN = NaN);
 - the same `final_model.zip` `policy.pth` bytes.

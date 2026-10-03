@@ -6,7 +6,7 @@ sequence, emit byte-identical protocol output to upstream Showdown — so it can
 slot in behind our existing bridge/tooling without changing any results.
 
 > **Status: LIVE — bit-for-bit through full battles, and the DEFAULT training/eval
-> transport** (`--use-bridge` defaults to `rust`). The PRNG, the dex, the team codec,
+> transport** (the only one). The PRNG, the dex, the team codec,
 > in-battle stat computation, construction-time battle state, the single-hit
 > damage calc, the **event-dispatch core + `>start` switch-in events** (Intimidate
 > / Sand Stream / Drizzle / Drought), **multi-turn move execution + residuals**

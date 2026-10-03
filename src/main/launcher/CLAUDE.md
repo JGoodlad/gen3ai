@@ -342,7 +342,7 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   ⚠️ The live launcher process runs OLD code and is **pinned**, so it will not pick this up.
   The rotating copy appears on the next launcher started from new code.
 
-## A `--env-core rust` run under the launcher (M5; F-LG-6, closed 2026-09-30)
+## A Rust-core run under the launcher (M5; F-LG-6, closed 2026-09-30)
 
 Exercised end to end on CPU: a fresh launch, an interval restart, a crash restart (the child
 SIGKILLed by PID) and a SIGTERM stop, all pinned. Run dirs: `~/gen3ai_archive/cutover_prep/fresh{1..4}`.
@@ -350,7 +350,7 @@ What that established:
 
 - 🚨 **The pinned worktree has no Rust env build**, because `git worktree add` gives no `target/`. The
   env core loads from THIS checkout's `src/rust_env/target/<profile>/`
-  (`utils.rust_env.proc.default_path` / `ffi.default_path`), so every `--env-core rust` launch through
+  (`utils.rust_env.proc.default_path` / `ffi.default_path`), so every Rust-core launch through
   the launcher died about 10 s in with `ProcLoadError: …/rust_env_proc does not exist`. The trainer
   now builds its own checkout's core at startup, before the model exists
   (`utils.rust_env.build.ensure_built`, from `rust_env_setup.build_rust_vec_env`). It is an
@@ -358,18 +358,20 @@ What that established:
   on a restart, printed as `🦀 [ENV CORE BUILD]`. The stamp check still refuses a foreign build. ⚠️ A
   checkpoint recorded at a commit BEFORE this fix still cannot be resumed through the launcher on the
   Rust core: its pin has no build step. Use `--sync-to-main`.
-- **A restart keeps the run's env core** (`gen3_env_core_switch_v1`): a typed `--env-core` rides the
-  re-sent argv; an untyped one (`--arch production`'s `recipe.sizing`) is restored from the run's
-  `cli_args` / recorded `env_core` (`rust_env_setup.resolve_env_core_default`), so every restart
-  re-declares the same core, T2 slots and eval core. The events to look for are
-  `🦀 [RUST ENV] T2 up …`, `🦀 [RUST EVAL] eval core up …` and `🦀 [ENV CORE] rust — …`. A
-  HAND-TYPED resume or fork inherits the checkpoint's recorded core. `--dry-run` prints
-  `env core : …` beside what the checkpoint recorded, and the trainer emits `⚠️ [ENV CORE] …`
-  (`rust_env_setup.env_core_switch_line`). The switch is not refused, because switching on purpose
-  is an A/B.
-- **A pin that predates `--env-core` (before `ac67fa6c`) is refused before anything exists.** The
-  pinned parser check names `--env-core` / `--rust-eval-envs` as `NOT IN PINNED TREE`
-  (`FATAL_CONFIG`). No flag here is FRESH-only, so none is stripped on a restart.
+- **A restart keeps the run's env core** (`gen3_env_core_switch_v1`): there is one core and no flag to
+  type for it (`--env-core` was deleted, P11b), so every restart re-declares the same core, T2 slots and
+  eval core (the SIZES come from `recipe.sizing` / the run's `cli_args`). The events to look for are
+  `🦀 [RUST ENV] T2 up …`, `🦀 [RUST EVAL] eval core up …` and `🦀 [ENV CORE] rust — …`. `--dry-run`
+  prints `env core : rust [the only core]` beside what the checkpoint recorded, and the trainer emits
+  `🔀 [ENV CORE] CORE SWITCH …` for a python-era winprob checkpoint (`rust_env_setup.env_core_switch_line`,
+  keyed on the recorded `env_core`). That switch is not refused, because moving a winprob checkpoint
+  onto the only core is the M5 carry-over; a SHAPED-critic checkpoint IS refused (D4,
+  `refuse_python_era_checkpoint`).
+- **A pin that predates the Rust env core flags (before `ac67fa6c`) is refused before anything exists.** The
+  pinned parser check names `--rust-eval-envs` (and the other collector flags the argv types) as `NOT IN PINNED TREE`
+  (`FATAL_CONFIG`). No flag here is FRESH-only, so none is stripped on a restart. (A recorded argv that
+  types a flag HEAD deleted — `--env-core`, `--use-bridge`, `--critic`, … — is the opposite case: the PINNED
+  parser knows it, so it is ADVISORY, and `checkargs` still builds the effective config from the rest.)
 - `metadata.json` and every sidecar record `env_core` (the core's stamp, T2, trigger) beside
   `git_hash` / `pin_history`. The `*_after_freeze` counters are ENFORCED after every update and eval
   cycle (`LifecycleViolation`), not logged. A clean restart is the absence of that error.
@@ -914,8 +916,8 @@ used to encode this box's absolute path instead and therefore skipped forever ev
 
 ## Showdown port — GONE (deletion pass P11)
 
-The launcher injects **no** `--showdown-port` and the trainer has no such flag: `--use-bridge` is `rust`-only
-(U3), training AND eval run in-process, and nothing HEAD's trainer accepts connects to a Showdown server. The events
+The launcher injects **no** `--showdown-port` and the trainer has no such flag: the Rust bridge is the only transport
+(U3; `--use-bridge` was deleted, P11b), training AND eval run in-process, and nothing HEAD's trainer accepts connects to a Showdown server. The events
 panel and `--dry-run` print `🌉 Transport: in-process bridge [rust] (no Showdown server)`. `DEFAULT_TRAINING_SHOWDOWN_PORT`,
 `child_uses_bridge`, `_apply_default_showdown_port` and `default_port_test.py` were deleted with the flag (the websocket
 branch they served was already unreachable). A PINNED resume of a pre-rust-bridge (websocket) run no longer gets the

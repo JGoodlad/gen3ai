@@ -28,9 +28,7 @@ def production_args():
     returns a fresh deep copy, so a caller that mutates its namespace cannot reach the next one."""
     import copy
 
-    a = copy.deepcopy(_resolved_production_args())
-    a.use_bridge = "rust"
-    return a
+    return copy.deepcopy(_resolved_production_args())
 
 
 @functools.lru_cache(maxsize=1)

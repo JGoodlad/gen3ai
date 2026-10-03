@@ -11,7 +11,7 @@ obligation as the leaf — update it in the same pass as the code.
 > `WinProbLabelCallback`, and `compile_trainer.eager_extractor`; the callable-substitute seam in
 > `utils/bridge/counterfactual.py` went with it). What the Rust port imports is KEPT: `fork_arm.py`
 > (selector, branch actions, meters) and `fork_buffer.FILL` / `unfillable_keys` / `refusal_text`. The
-> `--fork-fraction > 0` on the python core refusal row (`fork_python_core_unavailable`) went with the Python core itself (U3; `--env-core` has one legal value, `rust`). Before L5 the arm was
+> `--fork-fraction > 0` on the python core refusal row (`fork_python_core_unavailable`) went with the Python core itself (U3; the Rust core is the only core). Before L5 the arm was
 > **UNREACHABLE**: it replayed its episode from the `<run>/cf_records/` ring, the ring and its flag
 > (`cf-records`) were deleted with the cf training half (the python-core refusal row that guarded it was itself deleted with the Python core, U3). Its code is deleted
 > in unit L5 (done). The **live arm is the Rust fork port (§14)**, which replays the core's own finished input
@@ -563,7 +563,7 @@ Four tags are new:
 
 ### 14.7 Refusals (combination checks)
 
-`--fork-fraction` leaves the `--env-core rust` unported list. Under `--env-core rust` it requires:
+`--fork-fraction` leaves the Rust core's unported list. On the Rust core (the only core) it requires:
 - `--opponent-sampling keyed` (§14.3);
 - `--rollout-trigger complete_game` (the window fill is the parity schedule).
 
@@ -594,7 +594,7 @@ exists to find exactly that.
 
 ### 14.10 The CPU smoke (2026-10-01), and what it does NOT cover
 
-`--debug --steps 8192 --env-core rust --arch production --fork-fraction 0.05 --device cpu
+`--debug --steps 8192 --arch production --fork-fraction 0.05 --device cpu
 --rust-env-profile selfcheck` on the build commit, one env, a 2,048-row update. **Training
 complete**: 8 passes, every update's core and T2 lifecycle check clean, 0 `records_missing`.
 
@@ -631,7 +631,7 @@ complete**: 8 passes, every update's core and T2 lifecycle check clean, 0 `recor
 ### 14.11 🚨 BEFORE ENABLING — the checklist that lifts the owner's deferral
 
 The port is readiness, not a validated treatment. **No argv sets `--fork-fraction > 0` on
-`--env-core rust` until every item below is done and recorded here**, each with a link to its
+the Rust core until every item below is done and recorded here**, each with a link to its
 evidence. Whoever lifts the owner's deferral (2026-10-01, the one-ply scope rule) works from this
 list; an item may not be waived silently.
 

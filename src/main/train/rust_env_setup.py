@@ -13,7 +13,7 @@ checkpoint's n_steps / batch_size / gamma / gae_lambda, so they are read off the
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from main.launcher.ipc import emit as _emit
 
@@ -115,57 +115,34 @@ D4_CORE_SWITCH = ("a PYTHON-ERA checkpoint moves onto the Rust core — a CORE S
                   "checkpoint's weights and recorded config carry across, as the M5 switch's did")
 
 
-def resolve_env_core_default(args: Any, *, run_dir: Optional[str] = None,
-                             model: Optional[str] = None,
-                             saved_ver: Any = None) -> Optional[Tuple[str, str]]:
-    """THE ENV CORE of a launch, for an UNTYPED ``--env-core``: set on ``args`` and returned as
-    ``(core, source)``; None when nothing was resolved here. Raises :class:`PythonEraShapedCheckpoint`.
+def refuse_python_era_checkpoint(model: Optional[str], saved_ver: Any = None) -> None:
+    """Deletion pass D4, the one refusal that outlived ``--env-core``: a ``--model`` checkpoint that trained
+    the SHAPED critic cannot resume or fork on this code. Raises :class:`PythonEraShapedCheckpoint`; a no-op
+    for a fresh launch (``model`` falsy), for a winprob checkpoint, and when no record can be read.
 
-    * A ``--model`` checkpoint that trained the SHAPED critic — REFUSED, typed core or not (deletion pass
-      D4: run it pinned).
-    * TYPED — wins (``rust`` is the only legal value; a typed ``--env-core rust`` on a python-era
-      checkpoint is the same move D4 makes untyped).
-    * FRESH — the parser default ``rust`` (deletion pass D2) or ``--arch production``'s
-      ``recipe.sizing.env_core`` (rust); nothing to resolve here.
-    * ``--model`` (a same-run restart OR a fork) — the core the checkpoint was PRODUCED on
-      (``recorded_env_core``; a restart of an ``--arch production`` run already took it from
-      ``metadata.json:cli_args``), the rule every unnamed flag of a resume follows — EXCEPT a
-      PYTHON-ERA checkpoint (produced on ``python``, or recorded before ``--env-core`` existed): it moves
-      onto the Rust core, ANNOUNCED as a core switch (D4; the ledger's M5 switch entry carries
-      checkpoints across). Its critic is winprob — a shaped one was refused above."""
+    Keyed on the RECORD (``recorded_critic``: the parsed ``ModelVersion`` when the caller has it, else the
+    raw ``model_config.json``), never on a flag — there is no ``--env-core`` or ``--critic`` to type any
+    more (deletion pass P11b). A python-era checkpoint that DID train winprob (produced on ``python``, or
+    recorded before the env core was stamped) is not refused: it moves onto the Rust core ANNOUNCED, by
+    :func:`env_core_switch_line` (D4; the ledger's M5 switch entry carries checkpoints across)."""
     from agents.model.critic_mode import is_winprob
-    from main.train.recipe_surface import typed_dests
-    model = model or getattr(args, "model", None)
-    if model:
-        critic = recorded_critic(model, saved_ver)
-        if critic is not None and not is_winprob(critic):
-            raise PythonEraShapedCheckpoint(python_era_refusal(model, critic))
-    if "env_core" in typed_dests(args):
-        return None
     if not model:
-        return None
-    if any(d == "env_core" for d, *_ in (getattr(args, "_recipe_restart_inherited", ()) or ())):
-        if getattr(args, "env_core", None) != "python":
-            return None                    # the restart route already resolved a Rust-era run
-        args.env_core = "rust"
-        return "rust", D4_CORE_SWITCH
-    rec = recorded_env_core(model)
-    if rec == "rust":
-        args.env_core = "rust"
-        return "rust", "inherited from the checkpoint's record"
-    args.env_core = "rust"
-    return "rust", D4_CORE_SWITCH
+        return
+    critic = recorded_critic(model, saved_ver)
+    if critic is not None and not is_winprob(critic):
+        raise PythonEraShapedCheckpoint(python_era_refusal(model, critic))
 
 
 def env_core_switch_line(args: Any) -> Optional[str]:
     """A LOUD line when a resume runs on another env core than its checkpoint was produced on, else None.
 
-    A python-era checkpoint moves onto the Rust core (deletion pass D4, ``resolve_env_core_default``) — a
-    change of data stream, announced as a CORE SWITCH. It is not a refusal, and it may not be silent."""
+    A python-era checkpoint moves onto the Rust core (deletion pass D4) — a change of data stream, announced
+    as a CORE SWITCH. It is not a refusal, and it may not be silent. Keyed on the checkpoint's RECORDED core
+    (``recorded_env_core``), since there is no ``--env-core`` flag any more."""
     model = getattr(args, "model", None)
     if not model:
         return None
-    rec = recorded_env_core(model) or "python"     # recorded before --env-core existed = python
+    rec = recorded_env_core(model) or "python"     # recorded before the env core was stamped = python
     if rec == "rust":
         return None
     return f"🔀 [ENV CORE] CORE SWITCH — {D4_CORE_SWITCH}"

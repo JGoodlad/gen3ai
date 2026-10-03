@@ -57,7 +57,7 @@ touching either — the engine/app seam, the module map, the per-battle resoluti
 
 ## Rust-eval CORE TRACES — expanded on read (`core_trace.py`)
 
-The Rust eval path (`--env-core rust`, M5 Lane H) has no poke-env battle, so
+The Rust eval path (the only trainer eval path, M5 Lane H) has no poke-env battle, so
 `agents.training.rust_eval.traces.write_core_trace` persists a **core trace**
 (`meta.trace_source.schema == "gen3_core_trace_v1"`, `is_core_trace`): a META-ONLY
 `*_summary.json` (no `teams`, no `invocations`), the two sides' `gen3_core_event_v1` records

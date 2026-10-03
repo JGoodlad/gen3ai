@@ -352,9 +352,9 @@ flag mechanics in `src/agents/model/CLAUDE.md` → *The CRITIC MODE*.
 **`--gamma` is a flag** (it was hardcoded at `0.9999`). Its `shaped` default is
 `reward_weights.PBRS_GAMMA` itself, so the PBRS invariance premise cannot break on a second copy of
 the number, and it is **INERT ON A RESUME** like `--lr`.
-### In-process bridge transport (`--use-bridge rust` — the ONLY legal value)
+### In-process bridge transport (the Rust bridge — the ONLY training transport)
 
-`--use-bridge` has ONE legal value, `rust` (U3: a typed `node` or `off` is refused at parse time; the Python RL transport that took them is deleted). The table below records the transports that still exist as `impl=` values for the harnesses, `play.py` and the ladder. The bridge is an
+There is no transport flag: the trainer's one transport is `rust` (U3 deleted the Python RL transport that took `node` / `off`; P11b deleted the one-valued `--use-bridge`, so a typed one is refused at parse time with the reason). The table below records the transports that still exist as `impl=` values for the harnesses, `play.py` and the ladder. The bridge is an
 in-process `BattleStream` subprocess for **training and eval** — no server, no port, no `/challenge` connection storm,
 deterministic delivery (poke-env issue #907). **THE DEFAULT IS `rust`, so a run needs no Showdown
 server at all.** 
@@ -440,9 +440,9 @@ which is why it announces itself at startup when the auto default resolves to on
 `state_dict` hazard, the measurement table — is in `src/agents/training/CLAUDE.md` → Compiled GPU
 trainer.
 
-### The Rust env core (`--env-core rust`) — THE PRODUCTION ENV CORE (the M5 switch)
+### The Rust env core — THE ONLY ENV CORE (the M5 switch)
 
-`--env-core rust` is the M5 Rust env core (N envs
+The M5 Rust env core (N envs
 in one core process; it replaced the Python `SubprocVecEnv` of `Gen3Env` workers, deleted in U3), the trainee and the policy opponents forwarded through the inference service in
 one flush, bots in the core, and the COMPLETE-GAME collector (an update fires at
 `--rollout-target-samples` completed-game rows; no row dropped for age; `staleness/*` measures the
@@ -454,18 +454,16 @@ path's trainee decisions/s at 0.04× the CPU per decision, the step 74 % T2 forw
 
 **THE SWITCH (`gen3_env_core_switch_v1`, 2026-10-02, ledger *THE M5 SWITCH*; production N\* = 256 since the SIZING verdict, 2026-10-02).** The production core and
 every SIZE a run declares at startup live in ONE block, `designs/production_config.json`'s
-`recipe.sizing` (the env core, N, the n_steps maximum, the collector's update size, T2's slots /
-buckets / lanes; `verdict` names the sizing Decision record). An UNTYPED `--env-core` resolves
-(`main.train.rust_env_setup.resolve_env_core_default`):
+`recipe.sizing` (N, the n_steps maximum, the collector's update size, T2's slots /
+buckets / lanes; `verdict` names the sizing Decision record). There is no `--env-core` flag (deleted, P11b); what a launch does with the checkpoint's RECORDED core is
+(`main.train.rust_env_setup.env_core_switch_line` / `refuse_python_era_checkpoint`):
 
-| launch | `--env-core` |
+| launch | core |
 |---|---|
-| fresh `--arch production` | `recipe.sizing.env_core` = **rust** |
-| `--model` — a same-run RESTART or a FORK | **rust-era** checkpoint: INHERITED (`metadata.json` / the sidecar's `env_core`; `cli_args` for a restart of an `--arch production` run). **Python-era** checkpoint (produced on python, or recorded before `--env-core` existed): **rust**, printed as `🔀 [ENV CORE] CORE SWITCH` — the data stream changes, the weights and recorded config carry across (deletion pass D4). A checkpoint that trained the **SHAPED critic** (or never recorded one) is **REFUSED**, typed core or not (`FATAL_CONFIG`; `--dry-run` reports it advisory when the launch is pinned) — run it PINNED to its own commit |
-| a bare non-production fresh argv | **rust** (the parser default since the deletion pass's bare-argv flip, D2 2026-10-02 — the bare argv is `--critic winprob` + its three reward values) |
+| fresh (`--arch production` or a bare argv) | **rust** — the only core; the SIZES come from `recipe.sizing` |
+| `--model` — a same-run RESTART or a FORK | **rust-era** checkpoint (`metadata.json` / the sidecar's `env_core` stamp says rust): runs on it silently. **Python-era** checkpoint (produced on python, or recorded before the core was stamped): **rust**, printed as `🔀 [ENV CORE] CORE SWITCH` — the data stream changes, the weights and recorded config carry across (deletion pass D4). A checkpoint that trained the **SHAPED critic** (or never recorded one) is **REFUSED**, typed core or not (`FATAL_CONFIG`; `--dry-run` reports it advisory when the launch is pinned) — run it PINNED to its own commit |
 
-A typed `--env-core python` is refused at parse time with the reason (the Python core was deleted in U3; `--env-core` has ONE legal value). `--dry-run` and `checkargs` print the resolved core with its
-source and a `sizing: … verdict` line. **Era boundary:** a run across the switch changes its DATA
+A typed `--env-core` is refused at parse time with the reason (the Python core was deleted in U3 and the one-valued flag in P11b). `--dry-run` prints `env core : rust [the only core]`, the core-switch line when one applies, and (with the RECIPE SURFACE block) a `sizing: … verdict` line. **Era boundary:** a run across the switch changes its DATA
 stream (the keyed trainee draw, per-game eval seeds, complete-game updates), so throughput and every
 core-dependent reading compare only within one core (ledger *THE M5 SWITCH*).
 
@@ -476,8 +474,8 @@ startup (`🦀 [ENV CORE BUILD]`, about 7 s cold in the launcher's fresh pin wor
 (N = 256 with the X26 heads, 2026-10-01: T2 ~240 s, LOCK 7.8 min; a same-run resume reuses the compile
 cache, T2 ~40 s, LOCK 1.8 min).
 The interval and crash restarts re-declare the core, T2 and the eval core. A pin before
-`--env-core` existed is refused by name. Detail: `src/main/launcher/CLAUDE.md` → "A `--env-core
-rust` run under the launcher"; design, gates and measurements in `designs/training/rust_collector.md`
+the Rust env core's flags existed is refused by name. Detail: `src/main/launcher/CLAUDE.md` → "A Rust-core
+run under the launcher"; design, gates and measurements in `designs/training/rust_collector.md`
 and `designs/research_state/measurements/m5_laneG/PROGRESS.md`.
 
 ### Bot evaluation

@@ -48,7 +48,7 @@ LEVERS: Dict[str, Any] = {
     # inside the FIXED update (no ragged tail) — the mask key is still a lever.
     # (The python-core fork row left with L4/L5: the python arm is deleted and a fork on the python core is
     # refused, `combination_checks` `fork_python_core_unavailable`.)
-    "fork_rust": (["--env-core", "rust", "--fork-fraction", "0.01"], {"fork_pg_mask": True, "key": "fork_pg_m"}),
+    "fork_rust": (["--fork-fraction", "0.01"], {"fork_pg_mask": True, "key": "fork_pg_m"}),
 }
 
 
@@ -61,7 +61,7 @@ def _lever_args(name: str) -> Any:
     a = parser.parse_args(list(PRODUCTION_ARGV) + extra)
     with contextlib.redirect_stdout(io.StringIO()):
         resolve_config(a, parser)
-    a.use_bridge, a.bridge_impl, a.use_showdown_bridge = "rust", "rust", True
+    a.bridge_impl, a.use_showdown_bridge = "rust", True
     return a
 
 

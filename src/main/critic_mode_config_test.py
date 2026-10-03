@@ -64,7 +64,7 @@ def test_the_flagless_namespace_is_the_WINPROB_critic():
     assert a.draw_penalty == 0.0
     assert a.win_prob_mode == "shaping"
     assert a.gamma == 1.0
-    assert a.env_core == "rust"
+    assert not hasattr(a, "env_core")       # the only core is not a namespace attribute (P11b)
 
 
 def test_an_explicit_winprob_is_the_same_namespace_as_no_flag():

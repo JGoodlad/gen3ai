@@ -13,9 +13,9 @@
 | | trainer flags | launcher flags | total |
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
-| DELETED by P11 so far | 12 | 0 | 12 |
-| NOW | 190 | 9 | 199 |
-| verdicts NOW | KEEP 163 · DELETE 0 · ONE-VALUED 8 · NEEDS-OWNER 19 | KEEP 9 | |
+| DELETED by P11 so far | 14 | 0 | 14 |
+| NOW | 188 | 9 | 197 |
+| verdicts NOW | KEEP 163 · DELETE 0 · ONE-VALUED 6 · NEEDS-OWNER 19 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -34,6 +34,8 @@
 * `--eval-workers` (B4) — the Python eval-worker pool size; read only on the `env_core != "rust"` eval branch no production run reaches
 * `--eval-device` (B4) — the same Python eval worker pool
 * `--eval-concurrency-per-worker` (B4) — the same Python eval worker pool
+* `--env-core` (P11b (a)) — the Rust env core is the only core (the Python one was deleted in U3); the flag was one-valued. The recorded `env_core` stamp and the D4 shaped-checkpoint refusal stay, keyed on the record
+* `--use-bridge` (P11b (a)) — the trainer's transport is the in-process Rust core and nothing else; no reader but `production_args.py`
 
 **Planned, not yet shipped:** (none left in the DELETE column — the remaining work is the ONE-VALUED sweep and the NEEDS-OWNER rows below, sized in the manifest's P11 hand-off)
 
@@ -62,14 +64,12 @@
 
 ## 3. ONE-VALUED
 
-* `--use-bridge` — the only legal value is `rust` (`retired_choice`, U3); NO code is left behind it (its only reader is `production_args.py`). Deletion is a doc sweep, not a code deletion: ~15 prose spots name it as the transport (root, `src/rust_sim`, `CONTRIBUTING.md`, `docs/RUNNING.md`, `bootstrap.sh`), and the freshness gate resolves the prober / rust_sim leaves' `--use-bridge` claims against THIS flag, so deleting it surfaces those stale claims too — deferred to the hand-off
 * `--gamma` — `winprob_critic_needs_unit_gamma` refuses any value but 1.0 under the only trainable critic; in `recipe.fresh` as 1.0
 * `--draw-penalty` — the winprob critic REQUIRES 0.0 (`winprob_critic_refuses_draw_penalty`); `recipe.fresh` 0.0
 * `--critic` — the only legal value is `winprob` (`retired_choice`, deletion pass U3); `recipe.fresh` `winprob`
 * `--victory-value` — the winprob critic REQUIRES 1.0 (`winprob_critic_needs_unit_victory_value`); `recipe.fresh` 1.0
 * `--terminal-indicator` — the winprob critic REQUIRES it ON (`winprob_critic_needs_the_indicator_terminal`); `recipe.fresh` true
 * `--win-prob-mode` — the winprob critic REQUIRES `shaping` (`winprob_critic_needs_a_head`); production_config `shaping`
-* `--env-core` — the only legal value is `rust` (`retired_choice`, deletion pass U3); `recipe.sizing.env_core`
 
 ## 4. The table — every flag, in `--help` order
 
@@ -86,7 +86,6 @@
 | `--debug-eval` | false | 0 / 0 | the root `CLAUDE.md` smoke names it as the way to exercise the eval path; read by `callbacks._run_eval` | **KEEP** |
 | `--n-envs` | 32 | 268 / 39 | `recipe.sizing.n_envs` (256) in `--arch production` | **KEEP** |
 | `--device` | auto | 272 / 39 | every launch (`--device cuda`) | **KEEP** |
-| `--use-bridge` | rust | 186 / 34 | the only legal value is `rust` (`retired_choice`, U3); NO code is left behind it (its only reader is `production_args.py`). Deletion is a doc sweep, not a code deletion: ~15 prose spots name it as the transport (root, `src/rust_sim`, `CONTRIBUTING.md`, `docs/RUNNING.md`, `bootstrap.sh`), and the freshness gate resolves the prober / rust_sim leaves' `--use-bridge` claims against THIS flag, so deleting it surfaces those stale claims too — deferred to the hand-off | **ONE-VALUED** |
 | `--tb-inherit` | true | 0 / 0 | a fork copies its parent's scalar TB events (`tb_inherit.py`, `main.tb_inherit`, root `CLAUDE.md`'s fork notes); `--no-tb-inherit` is the documented fleet opt-out | **KEEP** |
 | `--seed` | 42 | 172 / 39 | every launch (`recipe`-adjacent reproducibility; the Rust core's `segment_seed`) | **KEEP** |
 | `--log-level` | periodic | 192 / 39 | root `CLAUDE.md` / launcher (`--log-level periodic`) | **KEEP** |
@@ -285,7 +284,6 @@
 
 | flag | default | typed (all / last 40) | live user | verdict |
 |---|---|---|---|---|
-| `--env-core` | rust | 5 / 5 | the only legal value is `rust` (`retired_choice`, deletion pass U3); `recipe.sizing.env_core` | **ONE-VALUED** |
 | `--rollout-trigger` | — | 0 / 0 | `window` is the python-parity schedule; only tests select it, but it is the collector's `store` / `trigger` mode, so deleting it reaches the rollout internals | **NEEDS-OWNER** |
 | `--rollout-target-samples` | — | 0 / 0 | `--arch production`: `recipe.sizing.rollout_target_samples` = `98304`; `recipe.sizing.rollout_target_samples` (98,304) | **KEEP** |
 | `--rollout-target-band` | — | 0 / 0 | an adaptive-target hook with no controller; the sizing study fixed the target; `rust_env_setup` reads it for the trigger band and arena size | **NEEDS-OWNER** |

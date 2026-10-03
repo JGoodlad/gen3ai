@@ -1336,7 +1336,7 @@ because a frozen forward never reads the reward.
 
 ### 6.4 Runtime knobs (never versioned, must be re-passed on every resume)
 
-`--use-bridge rust` and `--env-core rust` (one legal value each since deletion pass U3, which deleted the Python env core; `designs/production_config.json` `recipe.sizing`, the M5 switch `gen3_env_core_switch_v1`; on a `--model` launch a python-era checkpoint (produced on `python`, or before `--env-core` existed) moves onto `rust`, announced as a CORE SWITCH, and one that trained the SHAPED critic is REFUSED (`FATAL_CONFIG` — run it pinned; deletion pass D4)) · `--compile-trainer` (ON by default for cuda) · `--grad-accum-steps` at whatever `--batch-size` the run
+The Rust bridge and the Rust env core (the only transport and the only core since deletion pass U3 deleted the Python env core; their flags `--use-bridge` / `--env-core` were deleted, P11b, so there is nothing to re-pass; `designs/production_config.json` `recipe.sizing` holds the sizes, the M5 switch `gen3_env_core_switch_v1`; on a `--model` launch a python-era checkpoint (produced on `python`, or before the core was stamped) moves onto `rust`, announced as a CORE SWITCH, and one that trained the SHAPED critic is REFUSED (`FATAL_CONFIG` — run it pinned; deletion pass D4)) · `--compile-trainer` (ON by default for cuda) · `--grad-accum-steps` at whatever `--batch-size` the run
 uses · `--grad-checkpointing`. **Matmul precision is not a knob: fp32 `highest` (full
 FP32, no TF32 — PyTorch's default) is the only precision** (TF32 was retired and `--matmul-precision` deleted,
 deletion pass K2); `metadata.json` records the realized value as provenance, every parity gate refuses any
@@ -1425,8 +1425,8 @@ key in the table above is computed in the core from both sides' readings and the
 by the host (`label_inventory.py` says which, per key), and the leak-safety property is unchanged — the
 forward reads `obs["observation"]` alone.
 
-**Which env runs the rollout:** the Rust env core, the only one (`--env-core rust`,
-`designs/production_config.json` `recipe.sizing`; the M5 switch `gen3_env_core_switch_v1` made it the
+**Which env runs the rollout:** the Rust env core, the only one (no flag selects it;
+`designs/production_config.json` `recipe.sizing` holds its sizes; the M5 switch `gen3_env_core_switch_v1` made it the
 production core, ledger *THE M5 SWITCH*, and deletion pass U3 deleted the Python core). Its label keys come
 from the core, the host or a refusal (the inventory of record: `src/utils/rust_env/label_inventory.py`,
 `designs/rust_sim/env_labels.md`).

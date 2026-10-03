@@ -1,7 +1,7 @@
-"""Pins for the trainer's `--env-core` wiring (M5 Lane G, unit 2): python stays the DEFAULT and
-untouched; the collector flags resolve to their stated defaults only after the refusal sweep; the
-floor roster maps onto Lane F's ported bots; a restart's run seed differs from the first segment's;
-every save records the env core."""
+"""Pins for the trainer's Rust env core wiring (M5 Lane G, unit 2): the collector flags resolve to their
+stated defaults only after the refusal sweep; the floor roster maps onto Lane F's ported bots; a restart's
+run seed differs from the first segment's; every save records the env core. (There is no `--env-core` flag:
+the Rust core is the only one, deletion pass P11b.)"""
 from __future__ import annotations
 
 import importlib
@@ -17,9 +17,9 @@ def _args(*argv):
     return build_parser().parse_args(["--steps", "1", *argv])
 
 
-def test_rust_is_the_default_and_every_collector_flag_is_untyped():
+def test_every_collector_flag_is_untyped_and_the_core_is_no_namespace_attribute():
     a = _args()
-    assert a.env_core == "rust"           # the bare-argv flip (deletion pass D2, 2026-10-02)
+    assert not hasattr(a, "env_core")     # the only core is not a choice (deletion pass P11b)
     for d in ("rollout_trigger", "rollout_target_samples", "rust_env_front", "version_pinning",
               "opponent_sampling", "behaviour_check", "trainee_slots"):
         assert getattr(a, d) is None, d
@@ -28,15 +28,15 @@ def test_rust_is_the_default_and_every_collector_flag_is_untyped():
 
 
 def test_the_rust_core_resolves_to_the_stated_defaults():
-    a = _args("--env-core", "rust")
+    a = _args()
     resolve_env_core_args(a)
     assert (a.rollout_trigger, a.rust_env_front, a.rust_env_profile, a.version_pinning, a.trainee_slots,
             a.behaviour_check, a.rollout_target_samples, a.opponent_sampling) == (
         "complete_game", "proc", "release", "off", 1, "fatal", 0, "keyed")
-    b = _args("--env-core", "rust", "--version-pinning", "per_game")
+    b = _args("--version-pinning", "per_game")
     resolve_env_core_args(b)
     assert b.trainee_slots == 3
-    c = _args("--env-core", "rust", "--behaviour-check", "warn", "--trainee-slots", "4")
+    c = _args("--behaviour-check", "warn", "--trainee-slots", "4")
     resolve_env_core_args(c)
     assert (c.behaviour_check, c.trainee_slots) == ("warn", 4)
 
@@ -88,7 +88,7 @@ def test_every_save_records_the_env_core():
 
 def test_startup_builds_this_checkouts_env_core_before_anything_else(monkeypatch):
     """F-LG-6: the launcher's PINNED worktree is a fresh checkout with no ``src/rust_env/target``, so every
-    ``--env-core rust`` launch through ``main.launcher`` died ~10 s in (``rust_env_proc does not exist``).
+    Rust-core launch through ``main.launcher`` died ~10 s in (``rust_env_proc does not exist``).
     ``build_rust_vec_env`` now builds THIS checkout's core, for the declared profile, first."""
     import utils.rust_env.build as B
     from main.train.rust_env_setup import build_rust_vec_env
@@ -103,8 +103,7 @@ def test_startup_builds_this_checkouts_env_core_before_anything_else(monkeypatch
         raise _Built(profile)
 
     monkeypatch.setattr(B, "ensure_built", _fake)
-    for argv, profile in ((("--env-core", "rust"), "release"),
-                          (("--env-core", "rust", "--rust-env-profile", "selfcheck"), "selfcheck")):
+    for argv, profile in (((), "release"), (("--rust-env-profile", "selfcheck"), "selfcheck")):
         with pytest.raises(_Built):
             build_rust_vec_env(_args(*argv), mappings=None, trainee_teambuilder=None, opponent_teambuilder=None,
                                opponent_classes=[], bot_weights=None, fixed_opponents=[], exploiter_entry=None,
@@ -114,8 +113,8 @@ def test_startup_builds_this_checkouts_env_core_before_anything_else(monkeypatch
 
 
 def test_a_resume_that_switches_env_core_is_announced_never_silent(tmp_path):
-    """An UNTYPED `--env-core` on a `--model` launch INHERITS the checkpoint's core (the M5 switch,
-    `resolve_env_core_default`); a PYTHON-ERA checkpoint moves onto rust, and `env_core_switch_line` names
+    """A `--model` launch is judged off the checkpoint's RECORDED core (the M5 switch,
+    `recorded_env_core`); a PYTHON-ERA checkpoint moves onto rust, and `env_core_switch_line` names
     it (the trainer emits it at startup; `--dry-run` prints it)."""
     import json
 
@@ -128,11 +127,8 @@ def test_a_resume_that_switches_env_core_is_announced_never_silent(tmp_path):
     (run / "checkpoints" / "checkpoint_512_steps.json").write_text(json.dumps({"env_core": {"env_core": "rust"}}))
     (run / "metadata.json").write_text(json.dumps({"env_core": {"env_core": "python"}}))
     assert recorded_env_core(str(ckpt)) == "rust"             # the sidecar is the checkpoint's own record
-    from main.train.rust_env_setup import resolve_env_core_default
     untyped = _args("--model", str(ckpt))
-    assert resolve_env_core_default(untyped) is not None and untyped.env_core == "rust"
-    assert env_core_switch_line(untyped) is None              # inherited: no switch
-    assert env_core_switch_line(_args("--model", str(ckpt), "--env-core", "rust")) is None
+    assert env_core_switch_line(untyped) is None              # a rust-recorded checkpoint: no switch
     assert env_core_switch_line(_args()) is None              # a fresh run has nothing to switch from
     (run / "checkpoints" / "checkpoint_512_steps.json").unlink()
     assert recorded_env_core(str(ckpt)) == "python"           # falls back to the run's metadata.json

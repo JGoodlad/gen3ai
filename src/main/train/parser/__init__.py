@@ -21,7 +21,7 @@ order, and `build_parser()` calls them in the original order; `--help` is byte-i
     distillation.py      `# --- the RANK TRIPWIRE ---` + the aux/belief heads and arch switches declared under it
                          (the file's NAME is historical: the distillation flags were deleted in pass L3)
     eval_subprocess.py   `# --- Subprocess eval ---` (workers, self-play pool, exploiter, teams)
-    env_core.py          `# --- THE ENV CORE (M5 Lane G) ---` (--env-core, the complete-game collector)
+    env_core.py          `# --- THE ENV CORE (M5 Lane G) ---` (the complete-game collector, T2, the eval core)
 
 Adding a flag means editing ONE family module — and appending it at the end of that family's
 function, since the position inside a family is the position in `--help`.

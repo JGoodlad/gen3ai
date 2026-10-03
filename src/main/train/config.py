@@ -464,20 +464,18 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
     for _d, _v, _src in _restored:
         emit(f"[Recipe] same-run restart of an --arch production run: {_d}={_v!r} from {_src}")
-    # THE M5 SWITCH (gen3_env_core_switch_v1) + deletion pass D4: an UNTYPED --env-core on a resume —
-    # the checkpoint's own core, a python-era one moved onto the Rust core (announced); a checkpoint
-    # that trained the SHAPED critic is REFUSED (run it pinned). Before the combination sweep, which
-    # judges the core's refusals.
-    from main.train.rust_env_setup import PythonEraShapedCheckpoint, resolve_env_core_default
+    # Deletion pass D4: a checkpoint that trained the SHAPED critic is REFUSED (run it pinned) — read off the
+    # checkpoint's RECORD (there is no `--env-core` / `--critic` to type any more, deletion pass P11b). A
+    # python-era checkpoint that trained winprob moves onto the Rust core, announced as a CORE SWITCH
+    # (`env_core_switch_line`, below). Before the combination sweep.
+    from main.train.rust_env_setup import PythonEraShapedCheckpoint, refuse_python_era_checkpoint
     try:
-        _core = resolve_env_core_default(args, saved_ver=_saved_ver)
+        refuse_python_era_checkpoint(args.model, saved_ver=_saved_ver)
     except PythonEraShapedCheckpoint as e:
         from main.exit_codes import TrainExitCode
         print(f"\n{e}", file=sys.stderr, flush=True)
         emit(str(e))
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
-    if _core:
-        emit(f"🦀 [ENV CORE] --env-core {_core[0]} (untyped) — {_core[1]}")
     # ...and the run's PROVENANCE tags with it: `arch_source` (model_config.json) and `recipe_source`
     # (metadata.json:cli_args) are stamped only by the `--arch` branch the restart stripped, and every
     # later save records the namespace's — so a first restart used to null them.

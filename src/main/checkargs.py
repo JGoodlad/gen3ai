@@ -373,12 +373,12 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
             inherit_on_restart(ns, run_dir, saved, model=model)
     except RecipeRestartError as e:
         recipe_refusal = str(e)
-    # THE M5 SWITCH: the launch's own resolution of an UNTYPED --env-core (same order as the child).
-    # Deletion pass D4: a shaped-critic checkpoint is REFUSED there (FATAL_CONFIG) — reported here.
-    from main.train.rust_env_setup import PythonEraShapedCheckpoint, resolve_env_core_default
+    # Deletion pass D4: a shaped-critic checkpoint is REFUSED (FATAL_CONFIG) by the launch's own
+    # record-keyed check (same order as the child) — reported here.
+    from main.train.rust_env_setup import PythonEraShapedCheckpoint, refuse_python_era_checkpoint
     env_core_refusal = None
     try:
-        resolve_env_core_default(ns, run_dir=run_dir, model=model, saved_ver=saved)
+        refuse_python_era_checkpoint(model, saved_ver=saved)
     except PythonEraShapedCheckpoint as e:
         env_core_refusal = str(e)
     # THE CRITIC MODE with the parent's recorded config — the launch's order (`resolve_config`:
@@ -538,6 +538,26 @@ def pin_predates_commit(sha: str | None, last_commit: str) -> bool | None:
     return None
 
 
+def _without_deleted_flags(argv: List[str], unknown_flags: List[str]) -> List[str] | None:
+    """`argv` with every DELETED flag (and its value tokens) removed, or None when any of
+    `unknown_flags` is not a deleted one (a typo or a flag from the future: nothing to build)."""
+    from main.train.parser.base import deleted_flag_reasons
+
+    names = {f.split("=", 1)[0] for f in unknown_flags}
+    gone = {n for n in names if deleted_flag_reasons([n])}
+    if gone != names:
+        return None
+    out: List[str] = []
+    skipping = False
+    for tok in argv:
+        if tok.startswith("--"):
+            skipping = tok.split("=", 1)[0] in gone
+        if skipping:
+            continue
+        out.append(tok)
+    return out
+
+
 def check(argv: List[str], *, advisory: bool = False) -> dict:
     """Every flag in `argv` classified against the live parser. Pure — unit-testable.
 
@@ -564,12 +584,21 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
            "arch": None, "recipe": None, "recipe_refusal": None, "env_core_refusal": None,
            "shaped_reward": shaped_reward_finding(argv),
            "retired_levers": retired_levers_finding(argv)}
+    effective_argv = argv
     if unknown:
         # A stale flag makes the effective namespace unbuildable (argparse refuses the argv) and,
-        # more to the point, the reader has to fix that first. Report it alone.
-        return res
+        # more to the point, the reader has to fix that first. Report it alone — EXCEPT when every
+        # unknown flag is a DELETED one (`designs/deleted_flags.md`): a recorded argv of an old run
+        # types those routinely (the one-valued flags P11b deleted, e.g. `--critic winprob`), the run
+        # resumes PINNED to a commit whose parser has them, and reporting the effective config
+        # (inherited vs typed, the ARCH / RECIPE surfaces, a same-run restart's route) is exactly what
+        # the reader of such an argv needs. They are still listed in `res["unknown"]` — the verdict
+        # stays the caller's — and only the NAMESPACE is built without them.
+        effective_argv = _without_deleted_flags(argv, [f for f, _ in unknown])
+        if effective_argv is None:
+            return res
 
-    resolution = resolve_against_parent(argv)
+    resolution = resolve_against_parent(effective_argv)
     res["resolution"] = resolution
     if not resolution or resolution.get("ns") is None:
         return res

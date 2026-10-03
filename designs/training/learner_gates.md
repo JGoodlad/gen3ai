@@ -392,5 +392,5 @@ the card).
 **ASSUMED, UNVERIFIED:**
 
 - a live run's floor wobble and callbacks behave like this harness, which ran no callbacks and no T2;
-- under `--env-core rust`, T2's declared slots and the in-process eval cycle share the trainer's card
+- on the Rust core (the only core), T2's declared slots and the in-process eval cycle share the trainer's card
   and are seen only through the ceiling.

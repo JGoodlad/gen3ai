@@ -110,7 +110,6 @@
       "weight_decay": 1e-05
     },
     "sizing": {
-      "env_core": "rust",
       "n_envs": 256,
       "n_steps": 384,
       "rollout_target_samples": 98304,

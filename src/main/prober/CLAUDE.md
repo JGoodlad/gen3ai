@@ -573,8 +573,8 @@ not apply there. Detail: `src/agents/training/CLAUDE.md` → Compiled CPU oppone
 
 ## `--impl {node,rust}` (which sim engine the search/replay children run)
 
-`python -m main.prober.query --impl rust <cmd> …` — the **offline analogue of the trainer's
-`--use-bridge={node,rust}`**, and like `--compile` it is a global flag placed BEFORE the subcommand.
+`python -m main.prober.query --impl rust <cmd> …` — the **offline analogue of the (now fixed)
+training transport**, and like `--compile` it is a global flag placed BEFORE the subcommand.
 Default `node` = today's behavior byte-for-byte.
 
 It picks the child process the re-roll-backed probes exec — `better-line` / `lookahead` / `falsify`

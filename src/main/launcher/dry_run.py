@@ -323,17 +323,12 @@ def dry_run(
             where = "INHERITED" if dest in inherited else "from the argv"
             out(f"      --{dest.replace('_', '-'):<20} {getattr(ns, dest)!r:<12} ({where})")
 
-    # 6b. The ENV CORE (M5; THE SWITCH, gen3_env_core_switch_v1): typed, the production core
-    # (recipe.sizing — `--arch production`), or the checkpoint's own core on a `--model` launch.
+    # 6b. The ENV CORE: the Rust core is the only one (no `--env-core` flag since deletion pass P11b); what a
+    # `--model` launch can add is a CORE SWITCH — a python-era checkpoint moving onto it, keyed on the record.
     if ns is not None:
-        from main.train.recipe_surface import typed_dests
         from main.train.rust_env_setup import env_core_switch_line, recorded_env_core
         rec = recorded_env_core(model_path) if model_path else None
-        how = ("TYPED" if "env_core" in typed_dests(ns)
-               else "inherited from the checkpoint" if model_path
-               else "production core, recipe.sizing" if getattr(ns, "arch", None) == "production"
-               else "parser default (bare argv)")
-        out(f"  env core    : {getattr(ns, 'env_core', 'python')}  [{how}]"
+        out("  env core    : rust  [the only core]"
             + (f"  (the checkpoint was produced on {rec})" if rec else ""))
         switch = env_core_switch_line(ns)
         if switch:

@@ -149,6 +149,22 @@ def test_check_reports_both_failure_kinds_in_one_pass():
     assert res["unsatisfiable"], "the dependency half must not be masked by the unknown-flag half"
 
 
+def test_a_DELETED_flag_does_not_blind_the_effective_config_but_a_typo_still_does():
+    """A recorded argv of an old run types flags later deleted (P11b's one-valued ones among them); it
+    resumes PINNED, so they are ADVISORY — and the effective config (the ARCH / RECIPE surfaces) is still
+    built from the rest of the argv. A flag that is NOT a deleted one still reports alone."""
+    res = check(["--steps", "100", "--arch", "production", "--pubval-mode", "none"])
+    assert [f for f, _ in res["unknown"]] == ["--pubval-mode"]          # still listed: the verdict is the caller's
+    assert res["resolution"] is not None and res["arch"] is not None and res["recipe"] is not None
+    typo = check(["--steps", "100", "--arch", "production", "--no-such-flag", "1"])
+    assert typo["resolution"] is None and typo["arch"] is None
+    both = check(["--steps", "100", "--arch", "production", "--pubval-mode", "none", "--no-such-flag"])
+    assert both["resolution"] is None                                   # one non-deleted flag: nothing built
+    from main.checkargs import _without_deleted_flags
+    assert _without_deleted_flags(["--steps", "1", "--pubval-mode", "none", "--pubval-coef=0.1", "--device", "cpu"],
+                                  ["--pubval-mode", "--pubval-coef=0.1"]) == ["--steps", "1", "--device", "cpu"]
+
+
 # ---------------------------------------- an ARGV IS NOT A CONFIG: resolving against the parent
 #
 # The third instance of one class: `checkargs` passes, the launch fails. C1 (2026-09-01) forked a
@@ -650,7 +666,7 @@ def test_argv_from_run_and_the_argv_flag_agree(tmp_path) -> None:
 
 
 def test_a_resume_of_a_winprob_rust_run_inherits_its_critic_and_is_not_refused(tmp_path):
-    """THE M5 SWITCH made an untyped `--env-core` on `--model` inherit the checkpoint's core; a
+    """THE M5 SWITCH made an untyped core on `--model` follow the checkpoint's; a
     checker that filled `--critic`'s parser default (`shaped`) BEFORE reading the parent then refused
     every same-run resume of a production (winprob, rust) run — "--env-core rust requires --critic
     winprob" — in `checkargs` and `--dry-run`, while the launch inherited `winprob` and ran (the M5
@@ -664,7 +680,7 @@ def test_a_resume_of_a_winprob_rust_run_inherits_its_critic_and_is_not_refused(t
                  ["--model", ckpt, "--run-name", "child_run", "--steps", "1000"]):   # fork
         res = check(argv)
         ns = res["resolution"]["ns"]
-        assert (ns.env_core, ns.critic) == ("rust", "winprob"), argv
+        assert ns.critic == "winprob" and not hasattr(ns, "env_core"), argv
         assert res["resolution"]["inherited"]["critic"] == "winprob"
         names = [c.name for c, _ in res["combinations"]]
         assert "env_core_rust_needs_the_winprob_critic" not in names, names

@@ -4,8 +4,8 @@ A from-scratch Rust reimplementation of the Pokémon Showdown battle simulator,
 scoped first to **Gen 3 OU singles**, whose hard requirement is **bit-for-bit
 identical** output to upstream Showdown given the same seed + teams + choices.
 
-**`sim_bridge` is now the DEFAULT training/eval transport** (`--use-bridge` defaults to `rust`,
-2026-08-14): every trainer run is serverless: `--use-bridge` has ONE legal value, `rust`, and the trainer refuses `node` and `off` at parse time (deletion pass U3). The node bridge survives only as the explicit A/B arm of the standalone harnesses and benchmarks (`--bridge node`), and the websocket server only for `play.py` / the ladder. See the root `CLAUDE.md` → In-process bridge transport.
+**`sim_bridge` is the ONLY training/eval transport** (the default since
+2026-08-14): every trainer run is serverless, and a typed `--use-bridge` is refused at parse time with the reason (deletion passes U3, P11b). The node bridge survives only as the explicit A/B arm of the standalone harnesses and benchmarks (`--bridge node`), and the websocket server only for `play.py` / the ladder. See the root `CLAUDE.md` → In-process bridge transport.
 
 The engine is **live and bit-for-bit through full battles**: every layer in the
 module map below is differentially validated against the real Showdown (PRNG →
@@ -245,7 +245,7 @@ is the spec.
 
 ## Clone-and-branch: the SNAPSHOT primitive (`gen3_bridge_clone_branch_v1`)
 
-The last surface `--use-bridge=rust` was missing for the prober's SEARCH path
+The last surface the Rust bridge was missing for the prober's SEARCH path
 (`better-line`'s CRN-anchored beam, which branches a paused mid-battle state by CLONING it).
 The Node search server does this with `State.serializeBattle`/`deserializeBattle`; the port's
 answer is **`BridgeSession::snapshot()` — a derived `Clone`**, and the reason a byte format is
@@ -291,7 +291,7 @@ parses stdout; anything else runs the persistent `{id, cmd}` search loop (`open_
 
 **It already replaces node in `better_line`** — `search_session.py` has the `impl` switch and
 `search_clone_parity_fuzz_test` takes `--impl rust`. (The trainer-side composition that once ran the
-search teacher on it was deleted with the search teacher, deletion pass L3.) `--use-bridge=node` remains the fallback.
+search teacher on it was deleted with the search teacher, deletion pass L3.) The node driver (`--impl node`) remains the fallback.
 
 | gate | needs node? | what it proves |
 |---|---|---|
@@ -538,7 +538,7 @@ the live definition of when the gate may pass; edit them only with an injection 
 residual; otherwise the field is ABSENT and the divergence is a hard failure. Both live entries share
 one root — the unmodeled turn-0 CONSTRUCTION speed-tie Fisher-Yates shuffle, the project-wide seed
 convention every committed golden depends on — and both are **seed=None-invisible, so ZERO production
-impact under `--use-bridge=rust`** (at `seed=None` the port is the sole oracle, and
+impact under the Rust bridge (the only training transport)** (at `seed=None` the port is the sole oracle, and
 `event::run_start_switchins` falls back to a DETERMINISTIC side-order at a raw-Speed tie, drawing
 nothing).
 

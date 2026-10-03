@@ -1,9 +1,10 @@
 """The Python env core's flags (deletion pass U3, manifest R1 / R6): deleted, or reduced to ONE legal value
-that REFUSES the deleted one at PARSE time with the reason.
+that REFUSES the deleted one at PARSE time with the reason. (P11b then deleted `--env-core` and `--use-bridge`
+outright: they are in `census_deleted_flags_test`, and nothing of them is left on the namespace.)
 
 A silent no-op is the failure this file exists to rule out. After U3 the trainer has one env core, so a
-typed `--env-core python` / `--use-bridge node` / `--critic shaped` would otherwise parse, change nothing,
-and read as a run on the core the command named. Each case below fails on a revert of the piece it names.
+typed `--critic shaped` would otherwise parse, change nothing, and read as a run on the critic the command
+named. Each case below fails on a revert of the piece it names.
 """
 from __future__ import annotations
 
@@ -19,8 +20,7 @@ _DELETED = ["--" + n for n in ("async-rollout", "obs-source", "compile-opponents
                                "compile-opponents-preload", "compile-opponents-strict")]
 
 
-@pytest.mark.parametrize("flag,value", [("--env-core", "python"), ("--use-bridge", "node"),
-                                        ("--use-bridge", "off"), ("--critic", "shaped")])
+@pytest.mark.parametrize("flag,value", [("--critic", "shaped")])
 def test_a_deleted_value_is_refused_at_parse_time_with_the_reason(flag, value, capsys):
     with pytest.raises(SystemExit) as e:
         build_parser().parse_args(["--steps", "1", flag, value])
@@ -30,7 +30,7 @@ def test_a_deleted_value_is_refused_at_parse_time_with_the_reason(flag, value, c
     assert "U3" in err, err                                    # names the pass, so the reader can find why
 
 
-@pytest.mark.parametrize("flag,value", [("--env-core", "rust"), ("--use-bridge", "rust"), ("--critic", "winprob")])
+@pytest.mark.parametrize("flag,value", [("--critic", "winprob")])
 def test_the_one_legal_value_still_parses(flag, value):
     ns = build_parser().parse_args(["--steps", "1", flag, value])
     assert getattr(ns, flag[2:].replace("-", "_")) == value
@@ -44,8 +44,10 @@ def test_a_deleted_flag_is_unrecognised(flag, capsys):
 
 
 def test_the_defaults_are_the_one_core():
+    """The one env core is not a namespace attribute at all: nothing can type it and nothing reads it."""
     ns = build_parser().parse_args(["--steps", "1"])
-    assert ns.env_core == "rust" and ns.use_bridge == "rust" and ns.critic is None   # None = resolve_critic_mode
+    assert not hasattr(ns, "env_core") and not hasattr(ns, "use_bridge")      # deleted outright (P11b)
+    assert ns.critic is None                                                  # None = resolve_critic_mode
 
 
 def test_the_trainable_critics_are_a_strict_subset_of_the_loadable_ones():

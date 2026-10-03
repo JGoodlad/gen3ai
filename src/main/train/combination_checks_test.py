@@ -252,11 +252,11 @@ ARGVS: dict[str, list[str]] = {
     "anneal_start_needs_min_lr": ["--anneal-lr-start-steps", "5"],
     "anneal_start_below_steps": ["--anneal-lr-start-steps", "500", "--anneal-min-lr", "1e-6"],
     # gen3_fork_rust_v1 — the fork arm on the Rust core (forks.md §14.7)
-    "fork_rust_needs_keyed_opponent_sampling": ["--env-core", "rust", *_WP, "--fork-fraction", "0.02",
+    "fork_rust_needs_keyed_opponent_sampling": [*_WP, "--fork-fraction", "0.02",
                                                 "--opponent-sampling", "generator"],
-    "fork_rust_needs_complete_game_trigger": ["--env-core", "rust", *_WP, "--fork-fraction", "0.02",
+    "fork_rust_needs_complete_game_trigger": [*_WP, "--fork-fraction", "0.02",
                                               "--rollout-trigger", "window"],
-    "rollout_target_on_the_quantum": ["--env-core", "rust", *_WP, "--n-envs", "48", "--batch-size", "2048",
+    "rollout_target_on_the_quantum": [*_WP, "--n-envs", "48", "--batch-size", "2048",
                                       "--rollout-target-samples", "100000"],
     # T6 SPRT promotion
     "promotion_sprt_needs_self_play": ["--promotion-sprt"],

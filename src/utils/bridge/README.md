@@ -37,7 +37,7 @@ server as `*_fuzz_e2e_test.py` — e.g. `effectiveness_fuzz_e2e_test`.)
 
 #### Node vs Rust sim bridge (the `impl={node,rust}` argument)
 
-> **Deletion pass U3:** the Python RL transport (`bridge_session.py`, `BridgeSession` / `attach_bridge_transport`, the Python `Gen3Env` it fed) is DELETED, and the trainer's `--use-bridge` has ONE legal value, `rust` (`node` / `off` are refused at parse time). Training and eval run on the Rust env core. `BridgeSession` in the Rust-side passages below is `src/rust_sim/src/bridge.rs`'s struct and is live; passages that still describe the Python session (`_dispatch`, `_child_error`, `_recycle_child`, the fatal-report latch) are RECORDED INCIDENT HISTORY of the deleted code.
+> **Deletion pass U3:** the Python RL transport (`bridge_session.py`, `BridgeSession` / `attach_bridge_transport`, the Python `Gen3Env` it fed) is DELETED, and the trainer's `--use-bridge` flag is DELETED (the Rust bridge is the only training transport; a typed one is refused at parse time with the reason). Training and eval run on the Rust env core. `BridgeSession` in the Rust-side passages below is `src/rust_sim/src/bridge.rs`'s struct and is live; passages that still describe the Python session (`_dispatch`, `_child_error`, `_recycle_child`, the fatal-report latch) are RECORDED INCIDENT HISTORY of the deleted code.
 
 The bridge child that speaks the `local_sim_bridge.js` stdin/stdout protocol has **two
 implementations**, selected by an `impl` argument (`run_local_battles`, the offline drivers, the harnesses and benchmarks):
@@ -714,5 +714,5 @@ await run_local_battles(my_player, opponent, n_battles=40)   # no `npm run showd
 ```
 
 ### Impl selection (`run_local_battles(..., impl=…)`)
-The trainer's `--use-bridge` has ONE legal value, `rust` (since U3 — `node` and `off` are refused at parse time, and the Python RL transport that took `node` is deleted). `node` remains an explicit `impl` for the A/B arm and the parity harness; the websocket server is only for `play.py` / the ladder. The deprecated `--use-showdown-bridge` boolean alias is DELETED.
+The trainer has no transport flag (the Rust bridge is the only one; `--use-bridge` was deleted, P11b, after U3 deleted the Python RL transport that took `node`). `node` remains an explicit `impl` for the A/B arm and the parity harness; the websocket server is only for `play.py` / the ladder. The deprecated `--use-showdown-bridge` boolean alias is DELETED.
 `run_local_battles(..., impl=…)` takes the impl for the eval driver.

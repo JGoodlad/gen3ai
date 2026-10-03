@@ -51,7 +51,7 @@ order. `src/poke_env_fork_gate_test.py` guards both.
 
 ## Training — no server required
 
-Training is **serverless by default**: `--use-bridge` defaults to `rust`, which runs battles
+Training is **serverless**: the in-process Rust bridge is the only transport, and runs battles
 through an in-process reimplementation of the Gen 3 battle engine. Quick smoke (~1 minute, CPU):
 
 ```bash
@@ -140,7 +140,7 @@ python src/agents/training/poke_env_gaps/transition_fuzz_test.py 50
 
 ## The Showdown server (optional)
 
-Only the live-server paths need it — ladder play, `--use-bridge off`, and `*_e2e_test.py`
+Only the live-server paths need it — ladder play and `*_e2e_test.py`
 scripts:
 
 ```bash

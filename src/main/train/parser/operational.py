@@ -6,7 +6,7 @@ keep their original relative order, which is the order `--help` renders.
 """
 import argparse
 
-from main.train.parser.base import BoolFlag, retired_choice
+from main.train.parser.base import BoolFlag
 
 
 def add_operational_flags(parser: argparse.ArgumentParser) -> None:
@@ -31,20 +31,6 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "(non-debug) runs, which always eval.")
     parser.add_argument("--n-envs", type=int, default=32, help="Number of parallel environments")
     parser.add_argument("--device", type=str, default="auto", help="Device to use (cpu, cuda, or auto)")
-    parser.add_argument("--use-bridge", type=retired_choice(
-                            "--use-bridge", ("rust",),
-                            "the Python env core was deleted — deletion pass U3, 2026-10-02 — and with it the "
-                            "node and websocket ('off') transports for TRAINING; the Rust env core is "
-                            "serverless and in-process"),
-                        default="rust", choices=["rust"],
-                        help="The battle transport of training AND eval: 'rust' = the byte-compatible "
-                             "src/rust_sim sim_bridge binary / the Rust env core (built via cargo; override "
-                             "with POKESIM_SIM_BRIDGE_BIN) — in-process, no Showdown server, no port, no "
-                             "/challenge storm, deterministic, fail-loud on an unmodeled move. The ONLY legal "
-                             "value since the Python env core was deleted (deletion pass U3, 2026-10-02): "
-                             "'node' and 'off' (the websocket transport) are refused at parse time. The "
-                             "offline tools (`main.prober`, the eval worker, the search drivers) keep their "
-                             "own transport choice.")
     parser.add_argument(
         "--tb-inherit",
         action=BoolFlag,

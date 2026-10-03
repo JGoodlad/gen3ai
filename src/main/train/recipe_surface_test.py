@@ -91,9 +91,9 @@ def test_checkargs_refuses_a_fresh_argv_whose_untyped_recipe_differs():
     silent = {d.dest for d in rep.silent}
     assert {"n_envs", "batch_size", "grad_accum_steps", "n_epochs", "ent_coef", "clip_range_vf",
             "self_play", "opp_intent_coef"} <= silent
-    # the bare-argv flip (deletion pass D2): the critic, its three reward values and the env core
+    # the bare-argv flip (deletion pass D2): the critic and its three reward values
     # now AGREE with the recipe untyped, so none of them is a silent difference any more
-    assert not {"critic", "terminal_indicator", "victory_value", "draw_penalty", "env_core",
+    assert not {"critic", "terminal_indicator", "victory_value", "draw_penalty",
                 "gamma"} & silent
     assert any("--ent-coef" in line for line in rs.report_lines(rep))
 

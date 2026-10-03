@@ -554,14 +554,14 @@ asks the trainee to move** (`gen3_no_phantom_decision_v1`, a TRAINING-INPUT chan
 trackers used to take a decision there (5.0% of steps); a `wait` request reaching the record RAISES. 🚨 **The OPPONENT is polled only when its order will be SENT** (`gen3_no_phantom_opponent_poll_v1`, M5 Lane E, the opponent twin): `SingleAgentWrapper.step` asked `choose_move` on steps whose p2 order was dropped, so a self-play `RLPlayer` recorded a phantom decision (progress clock one step high) and drew a sample, and a bot drew from its RNG.
 Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` §3.
 
-## The env core — `--env-core rust` (the ONLY core; the M5 switch, M5 Lane G)
+## The env core — the Rust core (the ONLY core; the M5 switch, M5 Lane G)
 
-🚨 **`rust` is the ONLY env core** (`gen3_env_core_switch_v1`; the Python core was deleted in the deletion pass, U3). The flag stays with ONE legal value: a typed `--env-core python` is refused at parse time with the reason. Every run SIZE is declared in ONE block, `designs/production_config.json` `recipe.sizing`.
-An UNTYPED `--env-core` resolves to rust everywhere: fresh (`--arch production` or a bare argv — the bare argv is `--critic winprob` + its three reward values, which the Rust core serves); `--model` (a restart or a fork) → the core the checkpoint was produced on when that is rust, and a PYTHON-ERA checkpoint (produced on python, or before `--env-core` existed) that trained the WINPROB critic moves onto rust, announced as a CORE SWITCH. A checkpoint that trained the SHAPED critic is REFUSED on a resume or fork whatever the core (`FATAL_CONFIG`, D4 `PythonEraShapedCheckpoint`: run it pinned to its own commit); it still LOADS as an opponent, in the meters and in the prober.
-One resolver: `main.train.rust_env_setup.resolve_env_core_default`, called by `resolve_config` and
-`checkargs`; pinned by `main/train/env_core_switch_test.py`. Runbook: `designs/ops/training_runbook.md`.
+🚨 **`rust` is the ONLY env core** (`gen3_env_core_switch_v1`; the Python core was deleted in the deletion pass, U3, and the one-valued `--env-core` flag with it, P11b: a typed one is refused at parse time with the reason, and no `env_core` attribute is left on the namespace). Every run SIZE is declared in ONE block, `designs/production_config.json` `recipe.sizing`.
+Every launch runs on rust (a fresh `--arch production` or bare argv — the bare argv is `--critic winprob` + its three reward values, which the Rust core serves). What stays keyed on the RECORD: a `--model` checkpoint produced on rust runs on it silently, and a PYTHON-ERA checkpoint (produced on python, or before the core was stamped) that trained the WINPROB critic moves onto rust, announced as a CORE SWITCH (`rust_env_setup.env_core_switch_line`, read off `metadata.json`'s `env_core` stamp). A checkpoint that trained the SHAPED critic is REFUSED on a resume or fork whatever the core (`FATAL_CONFIG`, D4 `PythonEraShapedCheckpoint`: run it pinned to its own commit); it still LOADS as an opponent, in the meters and in the prober.
+One refusal: `main.train.rust_env_setup.refuse_python_era_checkpoint`, called by `resolve_config` and
+`checkargs` (read off the checkpoint's recorded critic); pinned by `main/train/env_core_switch_test.py`. Runbook: `designs/ops/training_runbook.md`.
 
-`--env-core rust` runs the rollout on the M5 Rust env core: N envs in ONE core (process front end by
+The trainer runs the rollout on the M5 Rust env core: N envs in ONE core (process front end by
 default, `--rust-env-front`), the trainee and every policy opponent forwarded through the inference
 service in ONE flush, the scripted bots played inside the core, and the COMPLETE-GAME collector
 (`--rollout-trigger complete_game`, the default there): a game's rows are buffered until it ends, GAE
@@ -590,12 +590,11 @@ and the win label run on the complete game (every row `win_mask` 1), and an upda
   derives a new segment seed and re-stages; past the budget it is fatal.
 - `rollout/collect_ms` + `rollout/collect_decisions` are logged (the A/B reads them);
   `rust_env/*` is the collector's per-phase read. `metadata.json` records `env_core` on every save.
-- ⚠️ A launcher RESUME pins to the checkpoint's commit. A commit before Lane G has no `--env-core`
-  and is refused by name. The trainer builds its checkout's env core at startup
-  (`utils.rust_env.build`), because a pin worktree has no `target/`. An untyped `--env-core` on a
-  `--model` launch INHERITS the checkpoint's recorded core (an `--arch production` restart's from
-  `cli_args`). Detail: `src/main/launcher/CLAUDE.md` → "A `--env-core rust` run under the
-  launcher".
+- ⚠️ A launcher RESUME pins to the checkpoint's commit. A commit before Lane G has no env core flag
+  and is refused by name (`NOT IN PINNED TREE`, for the collector flags the argv types). The trainer builds its checkout's env core at startup
+  (`utils.rust_env.build`), because a pin worktree has no `target/`. A `--model` launch is judged off
+  the checkpoint's RECORDED core (`metadata.json` / the sidecar's `env_core` stamp). Detail:
+  `src/main/launcher/CLAUDE.md` → "A Rust-core run under the launcher".
 - **EVAL runs on the core too** (M5 Lane H, `rust_eval/`): both eval callbacks write the same plan and
   manifest, then play the cycle IN PROCESS and BLOCKING on a declared eval core (`--rust-eval-envs`) and
   declared eval T2 slots, publish the workers' own shard records, and collect them with the unchanged
@@ -1278,7 +1277,7 @@ went with the Python env core's workers — it was a no-op on the Rust env, dele
 
 ## Showdown port threading (the `server_config` seam) — the flag is GONE (deletion pass P11)
 
-`--showdown-port` was deleted: with `--use-bridge rust` as the only transport nothing connects to a Showdown server, and
+`--showdown-port` was deleted: with the Rust bridge as the only transport nothing connects to a Showdown server, and
 `train_rl_agent` no longer builds a `ServerConfiguration` at all. The eval callbacks still ACCEPT a `server_config` (and the
 Python eval-worker knobs — `n_workers`, `eval_device`, `eval_concurrency`, `use_showdown_bridge`, `bridge_impl`) for the
 `env_core != "rust"` branch that only tests drive (manifest finding 12(c), a follow-up unit); the trainer passes none of them.
