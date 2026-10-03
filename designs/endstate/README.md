@@ -22,6 +22,7 @@ and why each fork was taken.
 | 8 | [`design_own_ppo_loop.md`](design_own_ppo_loop.md) | Owning the PPO loop: every SB3 / sb3-contrib touchpoint on the production path, the staged plan to take SB3's loop off it (identity first, then declared hooks), the equivalence plan, the estimate, and the eval-dump KL-skip finding |
 | 9 | [`era_plan_post_m5.md`](era_plan_post_m5.md) | What the first era on the Rust stack is FOR, and in what order: baseline → population loop → discrimination → exploration → ladder stages (lightweight) |
 | 10 | [`design_evaluation.md`](design_evaluation.md) | How we evaluate: the questions (plateau, promotion, eviction/cycling, rating, gap, anchors, discrimination), the evidence tiers, the statistics with references, the infrastructure, the budget, and the week-one assumptions to re-ground (skeleton + TODOs) |
+| 11 | [`design_plateau.md`](design_plateau.md) | How "plateaued" is decided (< 2 Elo per training GPU-hour): the first-draft test, its open gaps (repeated testing, a decelerating curve, self-reference), the literature to review, a candidate design to validate (skeleton + TODOs) |
 
 Ranked work lives outside this directory: experiments in
 [`../research_state/EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md), build tasks in

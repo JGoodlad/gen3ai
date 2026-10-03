@@ -25,7 +25,7 @@ more plain training. The owner checks back in; nothing else needs to happen.
 - **Two kinds of lever:**
   - SPEED levers (epochs, batch, lr, architecture efficiency) are tested on fresh runs, per GPU-hour.
   - PLATEAU-BREAKERS (forks, exploration, exploiters, discrimination, team curriculum) are tested ONLY from a plateaued parent.
-- **The plateau test, one registered decision:**
+- **The plateau test** (DECIDED in [`design_plateau.md`](design_plateau.md); the draft below has OPEN GAPS G1–G6 there, repeated testing first):
   - once per 10M steps, the newest snapshot plays the snapshot from W ≈ 7 GPU-hours back (≈ 50M steps at N = 256);
   - it plays on mirrored pairs, as a GSPRT with H0 p ≤ 0.50 vs H1 p ≥ 0.52. 2 Elo/h × 7 h ≈ 14 Elo ≈ 2 pp;
   - that is ≈ 3–7k games, a few minutes on the eval core;
