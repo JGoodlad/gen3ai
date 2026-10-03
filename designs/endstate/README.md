@@ -24,6 +24,7 @@ and why each fork was taken.
 | 10 | [`design_evaluation.md`](design_evaluation.md) | The eval SYSTEM: the append-only count ledger, reuse rules, one scheduler, the evidence tiers, the statistics with references, the infrastructure, the budget, and the week-one assumptions to re-ground (skeleton + TODOs) |
 | 11 | [`design_league_decisions.md`](design_league_decisions.md) | The three POPULATION decisions — promotion, eviction (the cycling defence) and plateau — and how to measure strength in a non-transitive game (skeleton + TODOs) |
 | 12 | [`design_x5_belief_tokens.md`](design_x5_belief_tokens.md) | X5's build spec and registered A/B (REVISED after independent review; M2 / M3 open for the owner): fixed-mass hypothesis tokens + OTHER, presence semantics for every opponent reduction, the flat opponent pointer, the K9 golden re-bake, role calibration, the KL early stop's analysis (OFF, kept for X28), and the group-sequential head-to-head design with its simulated power |
+| 12b | [`design_x5_tradeoffs.md`](design_x5_tradeoffs.md) | What X5's chosen semantics (M2 = C, M3 = (c)) give up, how each limitation will be detected, and the richer options to revisit once X5 has run |
 
 Ranked work lives outside this directory: experiments in
 [`../research_state/EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md), build tasks in

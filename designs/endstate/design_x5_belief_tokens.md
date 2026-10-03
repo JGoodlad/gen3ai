@@ -1098,6 +1098,8 @@ work.
 
 ## 9. For the owner: three choices (brainstorm, 2026-10-03 ~17:00)
 
+> **ANSWERED 2026-10-03 (owner): M2 = C, M3 = (c).** Margin (orchestrator, under the owner's "reasonable richness vs budget"): 3.5 pp if P0's σ_h ≤ 2.5, else 4.5 pp. The limitations and the triggers for revisiting each are in [`design_x5_tradeoffs.md`](design_x5_tradeoffs.md).
+
 Each choice gates U3. Recommendations are mine; the costs are MEASURED or ESTIMATED as tagged above.
 
 ### M2: what a MAX over uncertain opponents means
@@ -1178,3 +1180,4 @@ the safe default, but would leave X5 unadopted for reasons of noise.
 | 2026-10-03 | **M7 outside panel (ORCHESTRATOR)** | **REPORTED, not gated; a HARM flag to the owner if its point estimate is worse by more than 2δ = 7 pp.** Reason: a second gated NI test would cut the joint power at σ = 3.43 from 0.57 to about 0.25–0.32. | The panel as a guard that must itself be non-inferior | §7.4; `m7.log` |
 | 2026-10-03 | **M8 purpose-metric inference (ORCHESTRATOR)** | **Across seeds: one value per run, two-sample t over seeds, tested at the stopping look's group-sequential boundary.** Reason: a battle-clustered CI omits the run term (F-X5-6's error again), Agarwal 2021 does not ground it, and testing a secondary at full α at the crossing look inflates its error (Hung et al. 2007; Tamhane et al. 2010). | A battle-clustered bootstrap as the inference | §7.4 |
 | 2026-10-03 | **M2 / M3 (OPEN, owner brainstorm)** | Recommendations: M2 option C (today's presence-scaled max, no second lever), M3 option (c) (OTHER priced by the tail-averaged construction) | §9's tables | §9 |
+| 2026-10-03 | **M2 / M3 (OWNER) + margin rule (ORCHESTRATOR)** | **M2 = C** (presence-scaled max); **M3 = (c)** (OTHER priced as the averaged tail); **margin = 3.5 pp if P0 σ_h ≤ 2.5, else 4.5 pp** at ≤ 41 GPU-h, fixed before P0 reports. U3 is unblocked. | M2 A / B / D; M3 (a) / (b) / (d); 3.5 pp at power ≈ 0.57 | §9; [`design_x5_tradeoffs.md`](design_x5_tradeoffs.md) |
