@@ -23,6 +23,7 @@ and why each fork was taken.
 | 9 | [`era_plan_post_m5.md`](era_plan_post_m5.md) | What the first era on the Rust stack is FOR, and in what order: baseline → population loop → discrimination → exploration → ladder stages (lightweight) |
 | 10 | [`design_evaluation.md`](design_evaluation.md) | The eval SYSTEM: the append-only count ledger, reuse rules, one scheduler, the evidence tiers, the statistics with references, the infrastructure, the budget, and the week-one assumptions to re-ground (skeleton + TODOs) |
 | 11 | [`design_league_decisions.md`](design_league_decisions.md) | The three POPULATION decisions — promotion, eviction (the cycling defence) and plateau — and how to measure strength in a non-transitive game (skeleton + TODOs) |
+| 12 | [`design_x5_belief_tokens.md`](design_x5_belief_tokens.md) | X5's build spec and A/B pre-research (PROPOSAL, for owner review): fixed-mass hypothesis tokens + OTHER, the flat opponent pointer, the bundled KL early stop, the K9 golden re-bake, role calibration, and the A/B's variance decomposition and sizing |
 
 Ranked work lives outside this directory: experiments in
 [`../research_state/EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md), build tasks in

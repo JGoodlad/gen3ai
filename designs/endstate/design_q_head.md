@@ -48,6 +48,8 @@ at the North Star 1 retrain boundary. They are judged on intent prediction, OTHE
 belief metrics (X8) and a strength guard. Their value to the Q interaction term (I) is read later, if
 X4 returns.
 
+**Build spec: [`design_x5_belief_tokens.md`](design_x5_belief_tokens.md) (PROPOSAL, 2026-10-03, for owner review).** It refines this section: presence by iterative capped πps (Σ = k exactly) instead of `min(1, k·q)`, and the production sequence is 61 tokens, not 29, so X5 takes it to 62 (OTHER_move re-uses the active's E5 seat). Its §3.9 lists every departure and why.
+
 Two groups of concrete entity tokens replace today's blob belief slots. **Token budgets are fixed;
 each group's probability MASS equals the real count, OTHER included.**
 
