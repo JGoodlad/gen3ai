@@ -290,8 +290,7 @@ async def main():
         snapshot_dir=str(_snapshot_dir) if _snapshot_dir is not None else None,
         opponent_version=_opp_version, self_play_fraction=_initial_self_play_fraction, n_envs=n_envs,
         eval_trainee_team_str=_specialist_team_str)
-    # NOTE: the subprocess watchdog is started LATER, just before model.learn() — nothing steps
-    # the env before then (model construction/load only reads its spaces).
+    # Nothing steps the env before learn(): model construction / load only reads its spaces.
 
     def _maybe_seed_pool(model):
         """Seed the pool from the loaded weights iff self-play is active (fraction>0 → win rate

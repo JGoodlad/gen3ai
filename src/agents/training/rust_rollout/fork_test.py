@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 import torch as th
 from gymnasium import spaces
-from sb3_contrib.common.maskable.buffers import MaskableDictRolloutBuffer
+from agents.training.rollout_buffer import RolloutBuffer
 
 from agents.training.lever_supply import DryStreakGuard, LeverConfigError, LeverStarvedError
 from agents.training.rust_rollout import fork as FK
@@ -152,7 +152,7 @@ def test_the_fill_hands_the_pg_mask_to_the_learner_and_the_term_renormalises():
     for b in f.branches:
         _branch_rows(col, p, f, b, [0.5, 0.5])
     p._inject(col, [f], FK.PassReport())
-    buf = MaskableDictRolloutBuffer(8, _space(), spaces.Discrete(11), device="cpu", gamma=GAMMA, gae_lambda=LAM,
+    buf = RolloutBuffer(8, _space(), spaces.Discrete(11), device="cpu", gamma=GAMMA, gae_lambda=LAM,
                                     n_envs=1)
     S.fill_complete(buf, col.log, 8, current_version=3)
     m = buf.observations["fork_pg_m"].reshape(-1)

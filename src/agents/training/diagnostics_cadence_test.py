@@ -162,7 +162,7 @@ def test_the_process_latch_never_rides_a_checkpoint():
 def _real_gen3_ppo(device: str = "cpu"):
     import gymnasium as gym
     from gymnasium import spaces
-    from stable_baselines3.common.vec_env import DummyVecEnv
+    from agents.training.rust_rollout.testkit import ToyVecEnv
 
     from agents.action.constants import ACTION_SPACE_SIZE
     from agents.model.policy import Gen3DualHeadMaskablePolicy
@@ -214,7 +214,7 @@ def _real_gen3_ppo(device: str = "cpu"):
     th.manual_seed(0)
     model = InstrumentedMaskablePPO(
         Gen3DualHeadMaskablePolicy,
-        DummyVecEnv([(lambda s=s: _Env(layout["total_dim"], s)) for s in range(2)]),
+        ToyVecEnv([(lambda s=s: _Env(layout["total_dim"], s)) for s in range(2)]),
         n_steps=8, batch_size=4, n_epochs=2, device=device, seed=0, policy_kwargs=pk)
     from agents.training.rust_rollout.testkit import attach_vec_collector
     attach_vec_collector(model)         # the rollout comes from the toy VecEnv (the Rust collector is production's)

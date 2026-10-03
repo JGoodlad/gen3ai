@@ -45,7 +45,7 @@ import dataclasses
 import math
 from typing import Optional, Set, Tuple
 
-from stable_baselines3.common.callbacks import BaseCallback
+from agents.training.loop_callbacks import BaseCallback
 
 #: The hard floor the loop enforces on K regardless of `--adaptive-batch-min-accum`. The
 #: noise-scale estimator needs gradient norms at TWO batch sizes and gets the second one from the

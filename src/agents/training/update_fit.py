@@ -332,9 +332,9 @@ def dry_update(model: Any, *, epochs: int = 1) -> FitReading:
     t0 = time.perf_counter()
     with preserved_learner(model):
         if getattr(model, "_logger", None) is None:
-            # at startup sb3's logger does not exist yet (`_setup_learn` makes it): a null one for the dry
-            # update, removed with every other attribute the dry update created
-            from stable_baselines3.common.logger import configure
+            # at startup the learner's logger does not exist yet (`_setup_learn` makes it): a null one for
+            # the dry update, removed with every other attribute the dry update created
+            from agents.training.train_logger import configure
             model._logger = configure(None, [])
         model.rollout_buffer = buf
         model.n_epochs = int(epochs)

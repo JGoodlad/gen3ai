@@ -1,6 +1,7 @@
 """K8 — the DEVICE-RESIDENT MICRO-BATCH (`gen3_device_batches_v1`, M5 Lane K8 fix #4).
 
-sb3's `RolloutBuffer.get(batch_size)` draws ONE `np.random.permutation` per epoch and builds every
+The learner's `RolloutBuffer.get(batch_size)` (`agents/training/rollout_buffer.py`, ours since deletion pass
+U4; sb3-contrib's before, with the same `get`) draws ONE `np.random.permutation` per epoch and builds every
 micro-batch with `_get_samples(indices)`: numpy fancy indexing over the flattened host arrays, then
 `th.tensor(...)` — a host gather and an H2D copy of every field, every micro-batch, every epoch
 (10 epochs x 48 micro-batches of a 2,761-float observation at production shape: ~11 GB of H2D per
@@ -8,18 +9,17 @@ update, and the K8 inventory's `batch` phase, 2.95 s of a 53 s update).
 
 `install(buffer)` (at the top of `train()`; `uninstall` after its epoch loop) puts an INSTANCE-level
 `_get_samples` on the buffer that gathers from a copy of the flattened arrays made ONCE on the
-buffer's device (where sb3's `to_torch` puts every micro-batch) at the first micro-batch (after the buffer's own `get()` flattened them). Everything else is the buffer's own `get()`: the SAME
+buffer's device (where the buffer's `to_torch` puts every micro-batch) at the first micro-batch (after the buffer's own `get()` flattened them). Everything else is the buffer's own `get()`: the SAME
 permutation draw from the SAME global numpy RNG, the same slicing into micro-batches, the same
-`MaskableDictRolloutBufferSamples` type — and a gather is exact, so every micro-batch is
+`RolloutSamples` type — and a gather is exact, so every micro-batch is
 BIT-IDENTICAL to the host path's (`device_batches_test`). `uninstall` removes the instance
 attribute and drops the device copy, and `install` always replaces a previous gather (so an update
 that raised mid-loop cannot leave a stale copy serving the next), so the learner's quiescent CUDA floor between updates (what
 K6's memory trend reads) is unchanged; the update's PEAK grows by the copy (~1.1 GB at production
 shape).
 
-Only a buffer of sb3-contrib's maskable dict layout on a CUDA device is served (``force`` is the
-CPU test seam); anything else — a CPU buffer, the rust core's host-side buffer — keeps the host path
-untouched.
+Only the learner's `RolloutBuffer` on a CUDA device is served (``force`` is the CPU test seam); anything
+else — a CPU buffer — keeps the host path untouched.
 """
 from __future__ import annotations
 
@@ -29,16 +29,14 @@ from typing import Any, Dict, Iterator, Optional
 import numpy as np
 import torch
 
+from agents.training.rollout_buffer import RolloutBuffer, RolloutSamples
+
 #: The flat per-row arrays `_get_samples` reads beside the observation dict, and how it shapes each.
-_FLAT = ("actions", "values", "log_probs", "advantages", "returns", "action_masks")
+_FLAT = RolloutBuffer.FLAT
 
 
 def _servable(buffer: Any) -> bool:
-    try:
-        from sb3_contrib.common.maskable.buffers import MaskableDictRolloutBuffer
-    except Exception:                                    # pragma: no cover — sb3-contrib is a dependency
-        return False
-    return isinstance(buffer, MaskableDictRolloutBuffer) and all(t in buffer.__dict__ for t in _FLAT)
+    return isinstance(buffer, RolloutBuffer) and all(t in buffer.__dict__ for t in _FLAT)
 
 
 class _DeviceGather:
@@ -55,7 +53,7 @@ class _DeviceGather:
 
     def _materialise(self) -> None:
         b = self.buffer
-        # `th.tensor(array)` — what sb3's `to_torch` does — keeps the numpy dtype; so does this.
+        # `th.tensor(array)` — what the buffer's `to_torch` does — keeps the numpy dtype; so does this.
         self.obs = {k: torch.as_tensor(np.ascontiguousarray(v)).to(self.device)
                     for k, v in b.observations.items()}
         self.flat = {t: torch.as_tensor(np.ascontiguousarray(b.__dict__[t])).to(self.device)
@@ -64,14 +62,13 @@ class _DeviceGather:
         self.nbytes = (sum(int(v.numel()) * v.element_size() for v in self.obs.values())
                        + sum(int(v.numel()) * v.element_size() for v in self.flat.values()))
 
-    def __call__(self, batch_inds: np.ndarray, env: Any = None) -> Any:
-        from sb3_contrib.common.maskable.buffers import MaskableDictRolloutBufferSamples
+    def __call__(self, batch_inds: np.ndarray, env: Any = None) -> RolloutSamples:
         if self.obs is None:
             self._materialise()
         assert self.obs is not None
         idx = torch.as_tensor(np.asarray(batch_inds, dtype=np.int64)).to(self.device)
         f = self.flat
-        return MaskableDictRolloutBufferSamples(
+        return RolloutSamples(
             observations={k: v.index_select(0, idx) for k, v in self.obs.items()},
             actions=f["actions"].index_select(0, idx),
             old_values=f["values"].index_select(0, idx).flatten(),
@@ -132,8 +129,7 @@ class _StagedGather:
             return out
         return ({k: take(v) for k, v in b.observations.items()}, {t: take(b.__dict__[t]) for t in _FLAT})
 
-    def _serve(self, fut: Any) -> Any:
-        from sb3_contrib.common.maskable.buffers import MaskableDictRolloutBufferSamples
+    def _serve(self, fut: Any) -> RolloutSamples:
         obs, f = fut.result()
         if self.cuda:
             # on the CURRENT (compute) stream: its cache serves every micro-batch of every update
@@ -144,7 +140,7 @@ class _StagedGather:
              + sum(int(v.numel()) * v.element_size() for v in f.values()))
         self.nbytes = max(self.nbytes, 2 * n)
         self.copies += 1
-        return MaskableDictRolloutBufferSamples(
+        return RolloutSamples(
             observations=obs, actions=f["actions"], old_values=f["values"].flatten(),
             old_log_prob=f["log_probs"].flatten(), advantages=f["advantages"].flatten(),
             returns=f["returns"].flatten(),
@@ -171,8 +167,8 @@ class _StagedGather:
 #: serves BIT-IDENTICAL micro-batches from the same permutation draw; they differ only in memory and
 #: time. ``resident`` = one device copy of the whole flattened buffer per update (K8.6, +~1.1 GB of
 #: update peak at 98k rows); ``staged`` = a prefetch thread gathers each micro-batch on the host and it
-#: is copied non-blocking on the compute stream (~2 micro-batches on the card); ``host`` = sb3's own per-micro-batch
-#: host gather + blocking copy.
+#: is copied non-blocking on the compute stream (~2 micro-batches on the card); ``host`` = the buffer's own
+#: per-micro-batch host gather + blocking copy.
 MODES = ("resident", "staged", "host")
 DEFAULT_MODE = "staged"
 
@@ -180,7 +176,7 @@ DEFAULT_MODE = "staged"
 def install(buffer: Any, *, force: bool = False, mode: str = DEFAULT_MODE) -> Any:
     """Serve ``buffer``'s micro-batches by ``mode`` (`MODES`) until `uninstall`. Always replaces any
     previous gather first, so a stale copy can never serve a later update. Returns the gather (None
-    when the host path is kept: mode ``host``, not a maskable dict buffer, or a CPU buffer without
+    when the host path is kept: mode ``host``, not the learner's `RolloutBuffer`, or a CPU buffer without
     ``force``)."""
     uninstall(buffer)
     if mode not in MODES:

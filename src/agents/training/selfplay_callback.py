@@ -32,7 +32,7 @@ import subprocess
 import sys
 import time
 
-from stable_baselines3.common.callbacks import BaseCallback
+from agents.training.loop_callbacks import BaseCallback
 from poke_env.ps_client import LocalhostServerConfiguration
 
 from agents.model.snapshot import record_eval_results, arch_toggles_from_model

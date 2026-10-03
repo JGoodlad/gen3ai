@@ -121,7 +121,7 @@ import os
 from datetime import datetime, timezone
 
 import numpy as np
-from stable_baselines3.common.callbacks import BaseCallback
+from agents.training.loop_callbacks import BaseCallback
 
 from agents.model.critic_mode import CRITIC_UNRECORDED, is_winprob
 from agents.observation.constants import (

@@ -72,7 +72,7 @@ def test_the_buffer_shuffle_keeps_opp_class_paired_with_its_label():
     they ever decoupled, the weight would land on the wrong rows and every metric would still
     read normally."""
     from gymnasium import spaces
-    from sb3_contrib.common.maskable.buffers import MaskableDictRolloutBuffer
+    from agents.training.rollout_buffer import RolloutBuffer
 
     n_steps, n_envs = 8, 3
     space = spaces.Dict({
@@ -80,7 +80,7 @@ def test_the_buffer_shuffle_keeps_opp_class_paired_with_its_label():
         "opp_action_num": spaces.Box(low=0, high=9999, shape=(1,), dtype=np.int64),
         "opp_class": spaces.Box(low=0, high=3, shape=(1,), dtype=np.int64),
     })
-    buf = MaskableDictRolloutBuffer(n_steps, space, spaces.Discrete(2), n_envs=n_envs)
+    buf = RolloutBuffer(n_steps, space, spaces.Discrete(2), n_envs=n_envs)
 
     rng = np.random.default_rng(0)
     for t in range(n_steps):

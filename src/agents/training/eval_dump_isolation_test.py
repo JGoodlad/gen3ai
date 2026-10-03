@@ -11,23 +11,26 @@ from typing import Any, Dict, List, Tuple
 from unittest.mock import MagicMock
 
 import pytest
-from stable_baselines3.common.logger import KVWriter, Logger
 
 from agents.training import eval_callback as ec
 from agents.training import logger_scope as LS
 from agents.training.eval_callback import PerOpponentEvalCallback
 from agents.training.eval_sharding import ShardResult
 from agents.training.eval_sharding.pool import ShardedEvalPool
+from agents.training.train_logger import Logger
 
 KL = 0.0123
 
 
-class _Rec(KVWriter):
+class _Rec:
     def __init__(self) -> None:
         self.dumps: List[Tuple[int, Dict[str, Any]]] = []
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Any], step: int = 0) -> None:
         self.dumps.append((int(step), dict(key_values)))
+
+    def write_sequence(self, _seq: Any) -> None:
+        pass
 
     def close(self) -> None:
         pass

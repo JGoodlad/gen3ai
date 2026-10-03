@@ -1,4 +1,4 @@
-"""SB3 callback that sends rollout metrics to the launcher via a pipe fd.
+"""The training callback that sends rollout metrics to the launcher via a pipe fd.
 
 When run without the launcher (LAUNCHER_METRICS_FD absent), this is a no-op.
 Safe to include unconditionally in the callbacks list.
@@ -6,7 +6,9 @@ Safe to include unconditionally in the callbacks list.
 
 import time
 
-from stable_baselines3.common.callbacks import BaseCallback
+import numpy as np
+
+from agents.training.loop_callbacks import BaseCallback
 from main.launcher.ipc import init as init_pipe, send_metrics, close as close_pipe
 
 
@@ -32,10 +34,9 @@ class MetricsExporterCallback(BaseCallback):
         }
         buf = getattr(self.model, "ep_info_buffer", None)
         if buf:
-            from stable_baselines3.common.utils import safe_mean
-            payload["rollout/ep_rew_mean"] = float(safe_mean([ep["r"] for ep in buf]))
-            payload["rollout/ep_len_mean"] = float(safe_mean([ep["l"] for ep in buf]))
-        # SB3 logs time/fps and time/total_timesteps after on_rollout_end fires,
+            payload["rollout/ep_rew_mean"] = float(np.mean([ep["r"] for ep in buf]))
+            payload["rollout/ep_len_mean"] = float(np.mean([ep["l"] for ep in buf]))
+        # The loop logs time/fps and time/total_timesteps after on_rollout_end fires,
         # so they're never in name_to_value — compute them here instead.
         payload["time/total_timesteps"] = float(self.num_timesteps)
         if self._start_time is not None:

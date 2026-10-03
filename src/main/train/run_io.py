@@ -9,7 +9,7 @@ import sys
 from datetime import datetime
 from typing import Optional
 
-from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
+from agents.training.loop_callbacks import BaseCallback
 
 from agents.model.snapshot import record_checkpoint
 from agents.training.dose import dose_block
@@ -203,22 +203,21 @@ def _write_latest_txt(model_dir: str, name: str) -> None:
 
 
 def _attach_run_tb_logger(model, model_dir: str) -> str:
-    """Route SB3's logger to ``<model_dir>/tb/`` (stdout + tensorboard).
+    """Route the learner's logger (`agents.training.train_logger`) to ``<model_dir>/tb/`` (stdout +
+    tensorboard).
 
-    SB3's ``learn(tb_log_name=...)`` always appends a ``_<N>`` run-id, so it can't
-    write a bare ``tb/`` dir. Configuring the logger ourselves and ``set_logger``-ing
-    it bypasses that (``_custom_logger`` makes ``learn`` skip its own logger setup),
-    landing the run's TensorBoard data inside its own model dir — co-located with the
+    ``set_logger`` marks it custom, so ``learn``'s setup keeps it (the owned loop serves no
+    ``tensorboard_log`` run-id directories), landing the run's TensorBoard data inside its own model dir — co-located with the
     checkpoints (NOT a separate top-level ``tensorboard/`` tree). The path is
     cwd-relative via ``model_dir``, the same basis the checkpoints use, so it lands in
     the main repo even under the launcher's worktree pin; and promoting a run to a
     golden (``mv models/run_X models/_goldens/<name>``) carries its curves along. Point
     ``tensorboard --logdir models`` to see every run + golden, each named by its dir.
     """
-    from stable_baselines3.common.logger import configure as _sb3_configure
+    from agents.training.train_logger import configure
     tb_dir = os.path.join(model_dir, "tb")
     fmts = ["stdout", "tensorboard"] if model.verbose >= 1 else ["tensorboard"]
-    model.set_logger(_sb3_configure(tb_dir, fmts))
+    model.set_logger(configure(tb_dir, fmts))
     return tb_dir
 
 
@@ -265,16 +264,15 @@ class DoseLogCallback(BaseCallback):
         return True
 
 
-class _TrackingCheckpointCallback(CheckpointCallback):
+class _TrackingCheckpointCallback(BaseCallback):
     """The periodic checkpointer: saves at TOTAL-ENV-STEP boundaries, keeps latest.txt up to date
     and writes per-checkpoint metadata.
 
-    🚨 IT DOES NOT USE SB3's `n_calls % save_freq`. A callback call is N env steps on the sync Python
-    core, N trainee decisions on the Rust collector, and a WAVE of however many envs were ready
-    (< N) under `--async-rollout` — so a call count is a different interval on each. The save lands
-    at the first call whose `num_timesteps` reaches the next multiple of `interval_env_steps`
-    (`constants.checkpoint_due`), the rule the eval callbacks use; `save_freq` is left at 0 and never
-    read. A fresh sync run saves at exactly the same steps as the old call count (k x 2.4M at N = 48).
+    🚨 IT DOES NOT COUNT CALLS (sb3's `CheckpointCallback`, its base until deletion pass U4, saved on
+    `n_calls % save_freq`). A callback call was N env steps on the deleted sync Python core, a WAVE
+    under the deleted async collector, and is N trainee decisions on the Rust collector — a different
+    interval on each. The save lands at the first call whose `num_timesteps` reaches the next multiple
+    of `interval_env_steps` (`constants.checkpoint_due`), the rule the eval callbacks use.
 
     ON A RESTART the boundaries are GLOBAL multiples of the interval: the anchor is the step the
     process resumed at (`_on_training_start`), so the next save is the next multiple above it, not
@@ -283,7 +281,9 @@ class _TrackingCheckpointCallback(CheckpointCallback):
 
     def __init__(self, *, interval_env_steps: int, save_path: str, name_prefix: str = "checkpoint",
                  verbose: int = 0):
-        super().__init__(save_freq=0, save_path=save_path, name_prefix=name_prefix, verbose=verbose)
+        super().__init__(verbose)
+        self.save_path = save_path
+        self.name_prefix = name_prefix
         self.interval_env_steps = max(1, int(interval_env_steps))
         # The `num_timesteps` the last boundary test saw; set at `learn()` start (a resume's step).
         self._last_step: Optional[int] = None
@@ -291,7 +291,7 @@ class _TrackingCheckpointCallback(CheckpointCallback):
         self._current_epochs_fn = None
         # Optional: returns the current TwoPhaseLR handoff_lr (or None).
         self._handoff_lr_fn = None
-        # SB3 writes the .zip into self.save_path, which we point at <run>/checkpoints/.
+        # The .zip goes into self.save_path, which we point at <run>/checkpoints/.
         # latest.txt + metadata.json are run-LEVEL, so derive the run root (the parent
         # of the checkpoints/ subdir; == save_path if it isn't one, e.g. legacy/tests).
         self._run_dir = (
@@ -299,6 +299,10 @@ class _TrackingCheckpointCallback(CheckpointCallback):
             if os.path.basename(os.path.normpath(self.save_path)) == "checkpoints"
             else self.save_path
         )
+
+    def _init_callback(self) -> None:
+        if self.save_path is not None:
+            os.makedirs(self.save_path, exist_ok=True)
 
     def _on_training_start(self) -> None:
         self._last_step = int(self.model.num_timesteps)

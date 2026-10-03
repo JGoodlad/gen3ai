@@ -1,6 +1,6 @@
 import math
 
-from stable_baselines3.common.callbacks import BaseCallback
+from agents.training.loop_callbacks import BaseCallback
 
 
 class TwoPhaseLRCallback(BaseCallback):

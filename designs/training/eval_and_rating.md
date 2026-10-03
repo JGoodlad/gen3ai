@@ -551,8 +551,8 @@ in the trainer). Behaviors:
   loaded one, so the clamp never bites) and the clamp announces itself with an `anchor is AHEAD`
   event that states the FACT rather than asserting a cause — a crash-restart that rewound past a
   completed eval reads identically to a fork.
-  ⚠️ It reads **`self.model.num_timesteps`**, not `BaseCallback.num_timesteps` — the latter is a
-  mirror SB3 only syncs inside `_on_step`, so at `_init_callback` time it is still `0` even on a 9M
+  ⚠️ It reads **`self.model.num_timesteps`**, not the callback's own `num_timesteps` (`loop_callbacks.BaseCallback`) — the latter is a
+  mirror the protocol only syncs at `training_start` and every `step`, so at `_init_callback` time it is still `0` even on a 9M
   resume, and reading it would clamp every restart to 0 and re-eval on step 1 (observed live before
   the fix, as `this model is at 0`). Same family as `_warn_if_fork_pool_empty`: a fork inherits the
   base's weights but none of its run-directory state, and the silent failures live in that gap.

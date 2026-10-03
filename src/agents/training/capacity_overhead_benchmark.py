@@ -42,7 +42,7 @@ import gymnasium as gym
 import numpy as np
 import torch as th
 from gymnasium import spaces
-from stable_baselines3.common.vec_env import DummyVecEnv
+from agents.training.rust_rollout.testkit import ToyVecEnv
 
 from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.policy import Gen3DualHeadMaskablePolicy
@@ -91,7 +91,7 @@ def main() -> None:
     obs_dim = enc.dimension
     print(f"obs_dim={obs_dim}  n_steps={N_STEPS} n_envs={N_ENVS} batch={BATCH} epochs={EPOCHS}")
 
-    venv = DummyVecEnv([(lambda: _RandEnv(obs_dim)) for _ in range(N_ENVS)])
+    venv = ToyVecEnv([(lambda: _RandEnv(obs_dim)) for _ in range(N_ENVS)])
     model = InstrumentedMaskablePPO(
         Gen3DualHeadMaskablePolicy, venv,
         policy_kwargs={"features_extractor_class": Gen3FeaturesExtractor,

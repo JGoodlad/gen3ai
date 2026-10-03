@@ -23,7 +23,7 @@ Rust core's equivalent of the Python core's post-collect window (the win-prob la
 frozen-φ, in callbacks and ``RolloutProbes``; the Python core's fork-arm callback is deleted): on this core the labels and GAE are
 already per game, and the fork must precede the fill because the update's buffer has a fixed shape.
 
-``collect`` repeats host steps until the trigger fires, firing the SB3 callbacks once per ``n_envs``
+``collect`` repeats host steps until the trigger fires, firing the training callbacks' ``step`` event (``loop_callbacks``) once per ``n_envs``
 trainee decisions (a "vec step"; every step-counted cadence compares ``num_timesteps`` against a
 boundary, so a ragged host step does not move it), then fills the learner's buffer. ``after_update`` LOADS the new weights into T2 (a
 declared in-place load, parity-verified) and bumps the version; with PER-GAME VERSION PINNING
@@ -388,8 +388,7 @@ class RustCollector:
                 self._pending_decisions -= self.n
                 infos, self._infos = self._infos, []
                 dones = np.ones(len(infos), dtype=bool)
-                callback.update_locals({"infos": infos, "dones": dones, "env": getattr(model, "env", None),
-                                        "rollout_buffer": None, "n_steps": None})
+                callback.update_locals({"infos": infos, "dones": dones})   # loop_callbacks.STEP_LOCALS
                 if not callback.on_step():
                     return False
                 model._update_info_buffer(infos, dones)
@@ -446,8 +445,8 @@ class RustCollector:
 
     def _ensure_buffer(self, model: Any) -> None:
         """The learner's buffer is ``[n_steps, n_envs]`` for THIS update (complete-game: target / n_envs;
-        the adaptive-batch hook may have moved the target). A new size is a new sb3 buffer object —
-        sb3 itself re-allocates every array at every rollout's ``reset()``."""
+        the adaptive-batch hook may have moved the target). A new size is a new buffer object (the
+        learner's `rollout_buffer.RolloutBuffer`, whose ``reset()`` re-allocates every array anyway)."""
         trig = self.cfg.trigger
         n_steps = trig.n_steps if isinstance(trig, WindowTrigger) else trig.take() // self.n
         micro = int(getattr(model, "batch_size", 0) or 0)

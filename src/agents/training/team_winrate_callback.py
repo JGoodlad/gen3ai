@@ -31,7 +31,7 @@ import time
 
 from pathlib import Path
 
-from stable_baselines3.common.callbacks import BaseCallback
+from agents.training.loop_callbacks import BaseCallback
 
 from agents.model.opp_intent import OPP_CLASS_NAMES
 from agents.model.snapshot import record_team_win_rates

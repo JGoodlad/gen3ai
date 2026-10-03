@@ -107,7 +107,7 @@ def _rng_state():
 
 
 def _build(ridealong: dict):
-    from stable_baselines3.common.vec_env import DummyVecEnv
+    from agents.training.rust_rollout.testkit import ToyVecEnv
 
     from agents.model.compile_parity_fixture import load_parity_rows
     from agents.model.parity_probe import perturb_
@@ -123,7 +123,7 @@ def _build(ridealong: dict):
     np.random.seed(0)
     random.seed(0)
     model = InstrumentedMaskablePPO(
-        Gen3DualHeadMaskablePolicy, DummyVecEnv([(lambda s=s: env_cls(s)) for s in range(2)]),
+        Gen3DualHeadMaskablePolicy, ToyVecEnv([(lambda s=s: env_cls(s)) for s in range(2)]),
         n_steps=8, batch_size=4, n_epochs=2, device="cpu", seed=0, policy_kwargs=pk)
     from agents.training.rust_rollout.testkit import attach_vec_collector
     attach_vec_collector(model)         # the rollout comes from the toy VecEnv (the Rust collector is production's)

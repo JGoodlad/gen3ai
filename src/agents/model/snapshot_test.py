@@ -2,6 +2,7 @@ import dataclasses
 import json
 import os
 import tempfile
+from typing import Any
 
 import numpy as np
 import pytest
@@ -946,6 +947,15 @@ def _make_vec_env(total_dim: int) -> DummyVecEnv:
     return DummyVecEnv([_TrivialEnv])
 
 
+def _trainer_env(vec: DummyVecEnv) -> Any:
+    """The same gym envs as the learner's env (`ToyVecEnv`): a model is SAVED by plain sb3 over ``vec``
+    (an sb3-written zip — its recorded buffer class is sb3-contrib's) and LOADED as the trainee, whose
+    env must be a `TrainerVecEnv` (deletion pass U4)."""
+    from agents.training.rust_rollout.testkit import ToyVecEnv
+
+    return ToyVecEnv([(lambda e=e: e) for e in vec.envs])
+
+
 def _make_vec_env_extra_key(total_dim: int) -> DummyVecEnv:
     """Like `_make_vec_env` but with an EXTRA training-only obs key (`win_margin`) the saved policy
     predates — mimics resuming a win-prob run after that key was added to the env."""
@@ -989,7 +999,7 @@ def test_load_tolerates_extra_training_only_obs_key(layout, version, mappings):
         save_model_snapshot(tmpdir, version, git_hash="test")
         # The resume env now HAS win_margin — would raise ValueError("Observation spaces do not match")
         # without the tolerance in load_model_snapshot.
-        loaded = load_model_snapshot(zip_path + ".zip", env=_make_vec_env_extra_key(total_dim),
+        loaded = load_model_snapshot(zip_path + ".zip", env=_trainer_env(_make_vec_env_extra_key(total_dim)),
                                      current_version=version, device="cpu")
     assert "win_margin" in loaded.observation_space.spaces  # tolerated + loaded
 
@@ -1026,7 +1036,7 @@ def test_snapshot_save_load_roundtrip(layout, version, mappings):
 
         loaded = load_model_snapshot(
             zip_path + ".zip",
-            env=vec_env,
+            env=_trainer_env(vec_env),
             current_version=version,
             device="cpu",
         )
@@ -1072,16 +1082,16 @@ def test_load_model_snapshot_enforce_vf_coef(layout, mappings):
 
         # Resuming with a different vf_coef is a hard error (before the model even loads).
         with pytest.raises(ModelVersionError) as exc_info:
-            load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=saved_version,
+            load_model_snapshot(zip_path + ".zip", env=_trainer_env(vec_env), current_version=saved_version,
                                 enforce_vf_coef=0.5, device="cpu")
         assert "vf_coef" in str(exc_info.value)
 
         # Matching value loads fine.
-        load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=saved_version,
+        load_model_snapshot(zip_path + ".zip", env=_trainer_env(vec_env), current_version=saved_version,
                             enforce_vf_coef=0.3, device="cpu")
 
         # Frozen-snapshot load (no enforcement) ignores vf_coef even when it would differ.
-        load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=saved_version, device="cpu")
+        load_model_snapshot(zip_path + ".zip", env=_trainer_env(vec_env), current_version=saved_version, device="cpu")
 
 
 def test_load_model_snapshot_finds_config_in_parent_when_zip_in_checkpoints(layout, mappings, version):
@@ -1113,10 +1123,10 @@ def test_load_model_snapshot_finds_config_in_parent_when_zip_in_checkpoints(layo
         # (if it weren't found, load would print the "legacy model" warning and succeed).
         bad = dataclasses.replace(version, arch_signature="some_other_arch")
         with pytest.raises(ModelVersionError):
-            load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=bad, device="cpu")
+            load_model_snapshot(zip_path + ".zip", env=_trainer_env(vec_env), current_version=bad, device="cpu")
 
         # The matching version loads cleanly through that same parent-fallback path.
-        assert load_model_snapshot(zip_path + ".zip", env=vec_env, current_version=version, device="cpu") is not None
+        assert load_model_snapshot(zip_path + ".zip", env=_trainer_env(vec_env), current_version=version, device="cpu") is not None
 
 
 def test_load_saved_version_finds_config_in_parent_when_zip_in_checkpoints(version):

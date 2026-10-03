@@ -46,7 +46,7 @@ Scripted bots are played INSIDE the core (Lane F); p2 decisions on a bot route a
 The update fires when the FIFO holds at least the TARGET rows (`trigger.SampleTrigger`) and consumes
 EXACTLY the target, FIFO by completion; the one game straddling the D-th row is split and its tail
 stays at the FIFO head for the next update. The rows are laid column-major into the model's own
-`[D / N, N]` `MaskableDictRolloutBuffer`, so `train()` and every buffer reader are unchanged.
+`[D / N, N]` buffer (`rollout_buffer.RolloutBuffer` — owned since deletion pass U4, the layout of sb3-contrib's `MaskableDictRolloutBuffer`), so `train()` and every buffer reader are unchanged.
 
 **No row is ever dropped or down-weighted for AGE, and there is no truncation by default** (owner):
 PPO's per-row ratio π/μ corrects a stale row. The only rows that leave without being trained on are a

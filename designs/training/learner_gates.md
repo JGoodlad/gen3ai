@@ -62,15 +62,14 @@ it and the golden be re-recorded.
 
 Before any optimizer step of every update, the learner's recomputed log π(a|s) must equal the stored
 behaviour log-prob: max |Δ| < 1e-4, else `BehaviourMismatch` (`rust_rollout/consistency.py` — one type,
-one bar). WHICH implementation runs is decided once per `train()` by `learner_gates.behaviour_gate_mode`:
-
-* **the buffer carries per-row policy versions** (`--env-core rust`): Lane G's pre-loop probe — its own
-  forward on one micro-batch while the buffer is still `[n_steps, n_envs]`, so current rows are held to
-  the bar and older rows are age-bucketed into `staleness/*` (`rust_collector.md`);
-* **it does not** (the `in_loop` mode — every row played by the weights the learner holds; a trainer launch no longer reaches it since the Python env core was deleted in U3, but the code path stays in `instrumented_ppo/ppo.py`): the
-  IN-LOOP gate — the FIRST micro-batch of epoch 0's own `evaluate_actions` output against
-  `rollout_data.old_log_prob`, before `values.flatten()`. No second forward; one host read per update.
-  Never both.
+one bar). ONE implementation runs it (`learner_gates.behaviour_gate_mode` says only whether): Lane G's
+pre-loop probe — its own forward on one micro-batch while the buffer is still `[n_steps, n_envs]`, so
+current rows are held to the bar and older rows are age-bucketed into `staleness/*` (`rust_collector.md`);
+a buffer with no version record (a test's toy learner, the startup dry update's fixture) is judged as every
+row current. **The python core's IN-LOOP variant is DELETED** (deletion pass U4, 2026-10-02): it compared the
+first micro-batch's own forward in the loop for a buffer with no versions, which only the Python env core
+produced; with that core gone, keeping it meant a second K9(b) implementation that only tests reached.
+Its tests now judge through the probe and the shared enforcement (`learner_gates_test`).
 
 It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current`, `rows_current`,
 `rows_probed`, one `behaviour/bar_<statistic>` per condition and
@@ -78,7 +77,7 @@ It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current`, `r
 `max_abs_dlogp_excluded` and `tie_eps` (and the Rust probe `probe_forward_ms`).
 
 **The gate is ONE table, at fp32 matmul precision `highest` — the only precision** (`consistency.BEHAVIOUR_GATE`,
-read by Lane G's probe and by the in-loop gate through `judge_behaviour`; TF32 was retired, deletion pass
+read by Lane G's probe through `judge_behaviour`; TF32 was retired, deletion pass
 K2, and a process at any other precision is refused by `consistency.behaviour_gate()` with a typed
 `UndeclaredPrecision`). Every condition must hold on the micro-batch's current rows:
 
@@ -114,8 +113,7 @@ Two artifacts are written beside it:
 - `behaviour_violation_u<n>_policy.pt`: the weights that played them, for the first 3 violations of a
   process.
 
-A clean update pays nothing. The Python-core in-loop gate dumps what it has (index, |Δ|, action,
-mask); its buffer carries no collection provenance.
+A clean update pays nothing.
 
 **The fp32 rule is DETERMINISTIC (`gen3_behaviour_tie_exclusion_v1`, owner 2026-10-01; every number
 from [`measurements/k9_behaviour_exclusion/result.json`](../research_state/measurements/k9_behaviour_exclusion/result.json)).**
@@ -171,7 +169,7 @@ training, every one of 3,538,944 rows of 36 fills through the probe forward; tor
 | excluded share | **3.70 %** (largest 1,024-row block 6.25 %) | 2.0 % dominant-move `argmax` exact ties with the gate open, 0.6 % fixed damage == current HP exactly, the rest near-ties of the candidate `topk` / its cutoff |
 | `FP32_EXCLUDED_CEILING` | **0.15** | the smallest of 0.02 / 0.05 / 0.10 / 0.15 / … at ≥ 3 × the pooled share and ≥ 1.5 × the largest block; fresh, 4.0M and 75M (N0 final) weights read 4.2 / 3.9 / 4.2 % at epsilon (CPU, 4,096 of A2's real rows) |
 | planted faults (the real probe, at epsilon) | **all FATAL on the FIRST update** | one-step-stale weights (an Adam-sized 2.8e-5 step on every weight); ONE wrong-action row at margin 0.128; one env's obs / mask column shifted by one decision. The unmodified buffer passes, before and after |
-| cost | **+27.7 ms** on a 62.6 ms probe forward of 2,048 rows | ~0.07 % of an update (~40 s); the Python path adds one no-grad forward (~0.25 %) |
+| cost | **+27.7 ms** on a 62.6 ms probe forward of 2,048 rows | ~0.07 % of an update (~40 s) |
 
 *The teeth, stated.* A fault confined to ONE row is missed only if that row is excluded: P ≈ 0.037 at
 the healthy share. A fault that moves many rows is caught by its judged rows, or by the ceiling.
@@ -229,7 +227,7 @@ code is kernel choice (`nn.TransformerEncoderLayer`'s eval fast path, gradient c
 ALONE") and is inside the healthy distribution the bar is set from. No real mode fault can be
 constructed; a future dropout / batch-norm layer would be one, and this gate is what would see it.
 
-**Measured on the python path at fp32 (CPU):** the `--debug` smoke (2,048-row micro-batches): |Δ| = 0
+**Measured at fp32 (CPU), on the deleted python-core path:** the `--debug` smoke (2,048-row micro-batches): |Δ| = 0
 on update 1 (a fresh pointer head is uniform) and 2.38e-7 after; the learner golden's buffer (Rust T2
 eager log-probs vs the learner): 3.6e-7. Lane G's GPU read on the Rust path (compiled learner vs T2
 graph): 1.45e-5.

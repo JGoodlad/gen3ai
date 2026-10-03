@@ -3,7 +3,7 @@
 import os
 import time
 
-from stable_baselines3.common.callbacks import BaseCallback
+from agents.training.loop_callbacks import BaseCallback
 
 from main.launcher.ipc import send_event
 

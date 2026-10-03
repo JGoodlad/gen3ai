@@ -507,13 +507,6 @@ def worker_main(cfg_path: str) -> None:
     lb.install_worker_hooks(InstrumentedMaskablePPO, tool_train=_inventory_train,
                             buffer_collect=lb._bench_collect)
     _W["orig_train"] = lb._WORKER["_orig_train"]
-    from main.train import model_build as _mb
-    _orig_wd = _mb.start_subprocess_watchdog
-
-    def _wd(env: Any, label: str = "env", shutdown_event: Any = None) -> Any:
-        lb._WORKER["_watchdog_event"] = shutdown_event
-        return _orig_wd(env, label=label, shutdown_event=shutdown_event)
-    _mb.start_subprocess_watchdog = _wd
     trainer = importlib.import_module("main." + lb._TRAINER_LITERAL)
     sys.argv = ["compile_inventory[worker]"] + list(cfg["trainer_argv"])
     asyncio.run(trainer.main())

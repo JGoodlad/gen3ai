@@ -111,6 +111,11 @@ STEP_MODULES: Dict[str, str] = {
                                                    "per update (a TorchFunctionMode; no learner object)",
     "agents/model/opp_intent.py": "the opponent-intent loss functions + label matching, per minibatch",
     "agents/model/ridealong_heads.py": "the ride-along heads' forward + loss, per minibatch (epoch 0)",
+    "agents/training/rollout_buffer.py": "the learner's rollout buffer (gen3_owned_rollout_buffer_v1): reset / "
+                                         "add / GAE per rollout, get per epoch; numpy storage, no learner object",
+    "agents/training/train_logger.py": "the learner's logger (gen3_owned_logger_v1): record / dump every update",
+    "agents/training/loop_callbacks.py": "the callback protocol (gen3_owned_callbacks_v1): its dispatch runs "
+                                         "every step / rollout event",
 }
 
 #: Packages / modules scanned for the ``cuda_resource`` kind only, each with why it is a step path.
@@ -139,17 +144,19 @@ NOT_STEP_MODULES: Dict[str, str] = {
                                            "builds in; wraps seeding functions, builds no module",
     "agents/model/arch_constants.py": "architecture constants only",
     "agents/training/lifecycle_decl.py": "the `@startup_builder` marker itself; builds nothing",
+    "agents/training/trainer_env.py": "the learner env's declared base (gen3_owned_trainer_env_v1): an abstract "
+                                      "surface; its seed / reset run at setup and the subclasses own the rest",
     "agents/model/compile_regions.py": "the compile regions' install / gate / prewarm run once at startup; "
                                        "the per-update `check_r1_declared` compares R1's inputs to the "
                                        "startup declaration and builds nothing",
 }
 
-#: The PER-STEP SB3 callback hooks. ``_on_training_start`` / ``_init_callback`` are startup.
+#: The PER-STEP callback hooks (`agents.training.loop_callbacks`, sb3's names). ``_on_training_start`` / ``_init_callback`` are startup.
 CALLBACK_STEP_METHODS = frozenset({"_on_step", "_on_rollout_start", "_on_rollout_end", "on_step",
                                    "on_rollout_start", "on_rollout_end", "_on_training_end"})
 #: Where a callback class is looked for.
 CALLBACK_ROOTS: Tuple[str, ...] = ("agents/training", "main/train")
-#: SB3 callback base names (the transitive resolution starts here).
+#: Callback base names — the owned protocol's and sb3's (the transitive resolution starts here).
 CALLBACK_SEEDS = frozenset({"BaseCallback", "EventCallback", "CallbackList", "EvalCallback",
                             "CheckpointCallback", "EveryNTimesteps", "MaskableEvalCallback",
                             "StopTrainingOnRewardThreshold", "ProgressBarCallback"})

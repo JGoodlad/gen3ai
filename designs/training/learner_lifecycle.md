@@ -35,8 +35,8 @@ The table itself FREEZES at `learn()`'s training start: a hook registered later 
 (FATAL_CONFIG), and so are an undeclared owner and a duplicate. `_learner_freeze` and the table
 (`_loop_hooks`) are in `_excluded_save_params`, so no checkpoint carries them. A duck-typed model with
 no table (a test stub, a tool driving `collect_rollouts` / `train` itself) gets the SAME hook bodies as
-instance-attribute wrappers (`loop_hooks.install`). The `sb3_reference` seam applies the table too, so
-both arms of the loop's equivalence A/B run under the same guards (`loop_hooks_test.py`).
+instance-attribute wrappers (`loop_hooks.install`). (`loop_hooks_test.py`; the `sb3_reference` seam the
+table also served was deleted with PPO stage 3, deletion pass U4.)
 
 **What is frozen — the learner's object graph** (`learner_objects`): `model.policy`'s whole module
 tree (extractor, pointer head, aux heads, the ride-along heads) plus every `nn.Module` / `Optimizer`

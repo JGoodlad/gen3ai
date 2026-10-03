@@ -227,6 +227,14 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
         """
         shutdown_event.set()
         print(f"\n[ABORT] {reason}")
+        # The pending scalars (P3, gen3_final_update_dump_v1): the loop dumps BEFORE each update, so the
+        # last update's `train/*` are still pending — at a rollout boundary (the graceful restart) this
+        # IS that iteration's dump, at the step the rollout reached (`OwnedLoop.dump_logs`). Best effort:
+        # from a signal or an eval thread mid-update the pending values can be in flux.
+        try:
+            model.dump_logs()
+        except Exception as e:
+            print(f"[ABORT] pending-scalar dump failed: {e}")
         try:
             path = os.path.join(model_dir, "final_model_interrupted")
             model.save(path)

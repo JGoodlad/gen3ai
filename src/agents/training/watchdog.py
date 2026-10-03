@@ -3,40 +3,6 @@ import time
 import threading
 
 
-def start_subprocess_watchdog(vec_env, label="env", shutdown_event=None):
-    """Kill the main process immediately if any SubprocVecEnv worker dies unexpectedly.
-
-    SubprocVecEnv workers that crash leave the main process hanging on a pipe
-    recv forever. This daemon thread detects the death and calls os._exit(1).
-
-    Pass a threading.Event as shutdown_event and set it before a graceful exit
-    to prevent the watchdog from firing during planned shutdown.
-    """
-    processes = getattr(vec_env, "processes", None)
-    if not processes:
-        return
-
-    def _watch():
-        while True:
-            # Checked FIRST: once the caller says training is over, a worker that dies in teardown
-            # (SIGTERM'd → exitcode -15 as the env/eval shuts down) is not a crash. Checking the
-            # workers before the event let a -15 in the same poll turn every clean finish into
-            # `exit 1` → a spurious launcher "crash #1" at every run end (2026-09-27..29).
-            if shutdown_event is not None and shutdown_event.is_set():
-                return
-            for p in processes:
-                if not p.is_alive() and p.exitcode not in (0, None):
-                    print(f"\n🛑 [{label}] Worker PID {p.pid} died (exitcode={p.exitcode}). Exiting.")
-                    os._exit(1)
-            if shutdown_event is not None:
-                if shutdown_event.wait(timeout=1):
-                    return
-            else:
-                time.sleep(1)
-
-    threading.Thread(target=_watch, daemon=True).start()
-
-
 def start_orphan_watchdog(label="debug", poll_seconds=2.0, shutdown_event=None):
     """Exit if our parent process dies and we get reparented (orphaned).
 
@@ -49,9 +15,8 @@ def start_orphan_watchdog(label="debug", poll_seconds=2.0, shutdown_event=None):
 
     Detection is by PPID *change* (capture the launching parent's PID up front,
     compare each poll) rather than `== 1`, so it works under PID-namespace
-    subreapers where init is not the reaper. Unlike the SubprocVecEnv worker
-    watchdog above, this needs no worker processes, so it protects the
-    DummyVecEnv (`--debug`) path that has no other liveness guard.
+    subreapers where init is not the reaper. (The SubprocVecEnv worker watchdog
+    that sat beside it went with the Python env core's workers, deletion pass U4.)
 
     Pass a threading.Event as shutdown_event and set it before a graceful exit
     so the thread stops cleanly instead of polling through teardown.

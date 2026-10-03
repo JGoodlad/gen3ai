@@ -463,15 +463,9 @@ def _write_json(path: Path, obj: Any) -> None:
 
 
 def _exit_worker(code: int) -> None:
-    """Leave without the trainer's teardown: stand the env-worker watchdog down FIRST (it would
-    otherwise see the killed workers and `os._exit(1)` over our code), then terminate every
-    descendant by explicit pid, then exit."""
+    """Leave without the trainer's teardown: terminate every descendant by explicit pid, then exit."""
     sys.stdout.flush()
     sys.stderr.flush()
-    ev = _WORKER.get("_watchdog_event")
-    if ev is not None:
-        ev.set()
-        time.sleep(1.5)                    # the watchdog polls on a 1 s wait of this event
     terminate_pids(descendants(os.getpid()))
     os._exit(code)
 
@@ -870,15 +864,6 @@ def worker_main(cfg_path: str) -> None:
     if not cfg.get("buffer_in") and cfg.get("tiny"):
         InstrumentedMaskablePPO.learn = _tiny_learn(InstrumentedMaskablePPO.learn)
     import importlib
-    # `model_build` holds its OWN binding of the watchdog starter (a from-import), so the wrapper
-    # goes on that module: it records the shutdown event `_exit_worker` must set.
-    from main.train import model_build as _mb
-    _orig_wd = _mb.start_subprocess_watchdog
-
-    def _wd(env, label="env", shutdown_event=None):
-        _WORKER["_watchdog_event"] = shutdown_event
-        return _orig_wd(env, label=label, shutdown_event=shutdown_event)
-    _mb.start_subprocess_watchdog = _wd
     trainer = importlib.import_module("main." + _TRAINER_LITERAL)
     sys.argv = ["learner_benchmark[worker]"] + list(cfg["trainer_argv"])
     asyncio.run(trainer.main())

@@ -24,7 +24,6 @@ from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.training.adaptive_lr_callback import TwoPhaseLRCallback
 from agents.training.dose import kl_controller_snapshot
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
-from agents.training.watchdog import start_subprocess_watchdog
 from main.exit_codes import TrainExitCode, exit_code_for
 from main.launcher.ipc import emit, send_event
 from main.train.constants import _ABORT_EVAL_DRAIN_SEC
@@ -486,9 +485,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
 
         # Seed the pool from these weights iff self-play is active and the pool is empty
         # (no env rebuild — workers re-scan the dir on demand). No-op when below threshold
-        # or the pool already has snapshots. Then start the worker watchdog before rollouts.
+        # or the pool already has snapshots.
         _maybe_seed_pool(model)
-        start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
 
         _attach_run_tb_logger(model, model_dir)  # TB → <model_dir>/tb/ (resumes append to it)
         try:
@@ -516,8 +514,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             _write_latest_txt(model_dir, "final_model_exception.zip")
             raise
 
-        # Training is over: stand the worker watchdog down BEFORE the final save/eval, so a
-        # train-env worker SIGTERM'd in teardown (exitcode -15) is not an `exit 1` crash.
+        # Training is over: say so (the abort path and every waiter on the event read it).
         _shutdown_event.set()
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)
@@ -667,9 +664,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         graceful_restart_callback.abort_fn = _abort_fn
 
         # Seed the pool from these weights iff self-play is active and the pool is empty
-        # (no env rebuild — workers re-scan the dir on demand). Then start the worker watchdog.
+        # (no env rebuild — workers re-scan the dir on demand).
         _maybe_seed_pool(model)
-        start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
 
         _attach_run_tb_logger(model, model_dir)  # TB → <model_dir>/tb/
         try:
@@ -691,7 +687,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             # literal 1 here turned every FATAL raised inside a FRESH run's learn() into a restart.
             os._exit(exit_code_for(e))
 
-        # Training is over: stand the worker watchdog down (see the resume path's note).
+        # Training is over (see the resume path's note).
         _shutdown_event.set()
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)

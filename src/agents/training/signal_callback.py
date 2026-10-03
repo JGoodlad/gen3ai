@@ -4,24 +4,18 @@ The other half (advantage density, `signal/adv_*`) is read inside `train()` off 
 buffer; see `instrumented_ppo/signal_metrics.py` for the module docstring that explains why the
 two must be read TOGETHER (the mirror paradox), and the units caveat.
 
-**Where the outcomes come from.** `MaskableAgentWrapper.step` already publishes
-``info["win_outcome"]`` (1.0 win / 0.0 loss-or-tie) and ``info["opponent_class"]`` at every episode
-end. This callback watches the `done` infos as they stream past during collection and pushes them
-into rolling per-kind windows — no extra battles, no `env_method` round trip, no env state.
-
-**Both rollout paths are covered.** The stock `collect_rollouts` publishes ``infos``/``dones`` in
-the callback locals; `collect_rollouts_async` (`--async-rollout`) publishes ``wave_infos`` /
-``wave_dones`` instead (a wave is a macro-step over whichever envs came ready). We read whichever
-pair is present. Unlike `WinProbLabelCallback` — which needs the (step, env) BUFFER ROW and so
-cannot use the wave batching — outcome entropy is a per-episode aggregate with no row alignment, so
-the wave form carries everything it needs.
+**Where the outcomes come from.** The Rust collector publishes each finished game's
+``info["win_outcome"]`` (1.0 win / 0.0 loss-or-tie), ``info["win_draw"]`` and ``info["opponent_class"]``
+in the step's declared locals (``infos`` / ``dones``, `loop_callbacks.STEP_LOCALS`). This callback
+watches the `done` infos as they stream past during collection and pushes them into rolling per-kind
+windows — no extra battles, no `env_method` round trip, no env state.
 
 ALWAYS ON: three numpy means over ≤200-element deques, once per rollout. No flag.
 """
 from __future__ import annotations
 
 
-from stable_baselines3.common.callbacks import BaseCallback
+from agents.training.loop_callbacks import BaseCallback
 
 from agents.training.instrumented_ppo.signal_metrics import (   # noqa: F401 — declared re-export
     OPP_CLASS_SUFFIX,
@@ -56,7 +50,7 @@ class SignalMetricsCallback(BaseCallback):
                 continue
             kind = OPP_CLASS_SUFFIX.get(info.get("opponent_class"))
             self.tracker.observe(float(info["win_outcome"]) >= 0.5, kind)
-            # `win_draw` is published beside `win_outcome` by `MaskableAgentWrapper` — a draw or
+            # `win_draw` is published beside `win_outcome` by the Rust collector — a draw or
             # the 250-turn timeout, i.e. `battle.won is None`. It is SCORED as a not-win by
             # decision, never dropped, and this is the tag that makes that decision's frequency a
             # fact rather than an inference. An older wrapper that predates the key is read as 0
@@ -65,12 +59,9 @@ class SignalMetricsCallback(BaseCallback):
             self._draws += int(float(info.get("win_draw", 0.0)) >= 0.5)
 
     def _on_step(self) -> bool:
-        # SYNC keys first; the async collector's wave batching uses different names (see docstring).
+        # the step's declared locals (`loop_callbacks.STEP_LOCALS`), supplied by the Rust collector
         infos = self.locals.get("infos")
         dones = self.locals.get("dones")
-        if infos is None or dones is None:
-            infos = self.locals.get("wave_infos")
-            dones = self.locals.get("wave_dones")
         if infos is not None and dones is not None:
             self._consume(infos, dones)
         return True

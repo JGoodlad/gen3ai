@@ -121,7 +121,7 @@ def _optimizer(f: Frame) -> bool:
 
 def _logging(f: Frame) -> bool:
     p = _p(f)
-    return p.endswith("/stable_baselines3/common/logger.py") or "/utils/logging/" in p
+    return p.endswith("/agents/training/train_logger.py") or "/utils/logging/" in p
 
 
 def _loss(f: Frame) -> bool:

@@ -40,7 +40,7 @@ def _build(ridealong: Dict[str, Any], seed: int) -> Tuple[Any, Any, Dict[str, An
     """A CPU `InstrumentedMaskablePPO` (the trainee's class) at the production surface, plus its
     `ModelVersion`."""
     import gymnasium as gym
-    from stable_baselines3.common.vec_env import DummyVecEnv
+    from agents.training.rust_rollout.testkit import ToyVecEnv
 
     from agents.model.model_version import ModelVersion
     from agents.model.policy import Gen3DualHeadMaskablePolicy
@@ -66,7 +66,7 @@ def _build(ridealong: Dict[str, Any], seed: int) -> Tuple[Any, Any, Dict[str, An
             return self.reset()[0], 0.0, False, False, {}
 
     th.manual_seed(seed)
-    model = InstrumentedMaskablePPO(Gen3DualHeadMaskablePolicy, DummyVecEnv([_E]), n_steps=8,
+    model = InstrumentedMaskablePPO(Gen3DualHeadMaskablePolicy, ToyVecEnv([_E]), n_steps=8,
                                     batch_size=4, device="cpu", seed=seed, policy_kwargs=pk,
                                     vf_coef=args.vf_coef)
     version = ModelVersion.from_layout_and_policy_kwargs(layout, pk, vf_coef=args.vf_coef)

@@ -101,9 +101,9 @@ class TrainSetup:
     def _behaviour_probe(self) -> None:
         # +K9(b) BEHAVIOUR-POLICY CONSISTENCY + the STALENESS probe (M5 Lane G): one learner forward
         # on one micro-batch, BEFORE any optimizer step and while the buffer is still [n_steps, n_envs]
-        # (the rows' policy versions are aligned to that layout). Called by `train()` only for a buffer
-        # that carries per-row versions (`learner_gates.behaviour_gate_mode` == "probe"); a python-core
-        # buffer takes the in-loop first-micro-batch gate instead. See `rust_rollout/consistency.py`.
+        # (the rows' policy versions are aligned to that layout). Called by `train()` whenever
+        # `learner_gates.behaviour_gate_mode` == "probe" (every check but off); a buffer with no version
+        # record is judged as every row current. See `rust_rollout/consistency.py`.
         if str(getattr(self, "behaviour_check", "off") or "off") != "off":
             from agents.training.rust_rollout.consistency import behaviour_probe
             behaviour_probe(self)

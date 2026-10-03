@@ -194,9 +194,9 @@ class PpoHyperparameters:
         # rebuilt by every process's startup. `_rust_fill` / `_rust_row_versions` / `_rust_version` /
         # `_behaviour_probe_metrics` are the last update's staleness record — transient like the buffer.
         # `_env_core_stamp` is written to metadata.json by `_model_hparams` on every save instead.
-        # `_ppo_loop_mode` (gen3_owned_ppo_loop_v1) is which loop THIS process's `learn()` ran — the
-        # owned one or the `GEN3AI_PPO_LOOP=sb3_reference` test seam — resolved per call; a checkpoint
-        # must not carry it, so the `.zip`'s `data` stays exactly what it was before the loop moved.
+        # `rollout_buffer_class` (gen3_owned_rollout_buffer_v1) is FORCED to the owned buffer by every
+        # `_setup_model` (`OwnedLoop`), so a `.zip` never needs to name one — and a reader that loads with
+        # plain sb3 builds sb3's own buffer, exactly as before the buffer moved.
         # `_loop_hooks` (gen3_declared_loop_hooks_v1) is the loop's hook TABLE — closures over this
         # process's freeze guard and compile sentinel; built fresh by every `_setup_model`.
         # `_rust_row_provenance` is the last fill's per-row provenance (K9(b)'s dump) — transient too.
@@ -208,4 +208,4 @@ class PpoHyperparameters:
                                                   "collect_rollouts",
                                                   "train", "learn", "_compile_control",
                                                   "_learner_freeze", "_compiled_micro_step",
-                                                  "_ppo_loop_mode", "_loop_hooks"]
+                                                  "rollout_buffer_class", "_loop_hooks"]

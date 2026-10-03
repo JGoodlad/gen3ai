@@ -1,21 +1,13 @@
-"""K9(b) on the PYTHON env core and K9(c) — the learner's in-loop GIGO gates (M5 Lane K).
+"""K9(b)'s dispatch and K9(c) — the learner's in-loop GIGO gates (M5 Lane K).
 
-**K9(b) BEHAVIOUR-POLICY CONSISTENCY, python path** (`--behaviour-check`, default ``fatal`` on both
-env cores). Lane G's probe (``rust_rollout/consistency.py``) runs its OWN learner forward before the
-epoch loop because a Rust-collected buffer carries rows of OLDER policy versions, which only the
-``[n_steps, n_envs]`` layout (before ``get()`` shuffles it) can tell apart. A buffer that carries no
-version record — every python-core rollout — is played entirely by the weights the learner holds, so
-the check needs no forward of its own: it reads the FIRST micro-batch's ``evaluate_actions`` output
-(epoch 0, before any optimizer step can have run) against the rollout's stored ``old_log_prob`` — one
-host read per update — and a failure is a typed `BehaviourMismatch`. The STATISTIC and its bar are
-``consistency.BEHAVIOUR_GATE`` (measured — ``designs/training/learner_gates.md``), at fp32 matmul
-precision 'highest', the only precision: DETERMINISTIC — the rows whose forward sits within a rounding
-error of a discrete selection / threshold cutoff are excluded (`behaviour_margins_first_micro`: one
-no-grad eager forward of the micro-batch under `tie_margins.TieMargins`, before its own forward), every
-other row must have ``|Δ|`` < 1e-4 (FATAL at once; the offending rows are dumped to
-``<run_dir>/behaviour_violations.jsonl``), and the excluded share must stay under its ceiling. One table
-and one enforcement (``consistency.enforce_behaviour``), read by both implementations. Which implementation runs is decided
-ONCE per ``train()`` by `behaviour_gate_mode`, so a buffer never pays both.
+**K9(b) BEHAVIOUR-POLICY CONSISTENCY** (`--behaviour-check`, default ``fatal``) has ONE implementation:
+Lane G's pre-loop probe (``rust_rollout/consistency.py``), its own learner forward before the epoch loop
+on the ``[n_steps, n_envs]`` layout, age-bucketed by the rows' policy versions (a buffer with no version
+record is judged as every row current). `behaviour_gate_mode` says whether ``train()`` runs it. The
+python env core's variant — the FIRST micro-batch's own forward compared in the loop, for a buffer with
+no versions — was deleted with that core's last user (deletion pass U4): every buffer now comes from
+the Rust collector, which stamps versions. The statistic, its bar and the tie exclusion are
+``consistency.BEHAVIOUR_GATE`` / ``consistency.enforce_behaviour`` (``designs/training/learner_gates.md``).
 
 **K9(c) FAIL-CLOSED NON-FINITE LOSS / GRADIENT.** Before this, nothing in ``train()`` looked: a NaN
 loss back-propagated NaN gradients, ``clip_grad_norm_`` (``error_if_nonfinite=False``) scaled every
@@ -47,7 +39,6 @@ from typing import Any, Dict, List
 import numpy as np
 import torch as th
 
-from agents.training.rust_rollout.consistency import behaviour_statistic, enforce_behaviour
 from main.exit_codes import NonFiniteLearnerError
 
 
@@ -66,60 +57,9 @@ def nonfinite(message: str) -> NonFiniteLearnerError:
 
 
 def behaviour_gate_mode(model: Any) -> str:
-    """``"probe"`` (Lane G's pre-loop probe: the buffer carries per-row policy versions), ``"in_loop"``
-    (every row is current: the first micro-batch's forward is compared), or ``"off"``."""
+    """``"probe"`` (Lane G's pre-loop probe — every ``--behaviour-check`` but ``off``) or ``"off"``."""
     mode = str(getattr(model, "behaviour_check", "off") or "off")
-    if mode == "off":
-        return "off"
-    return "probe" if getattr(model, "_rust_row_versions", None) is not None else "in_loop"
-
-
-def behaviour_margins_first_micro(model: Any, observations: Any, actions: Any, masks: Any) -> Any:
-    """K9(b), python path: the first micro-batch's TIE MARGINS (`tie_margins.selection_gaps`: one no-grad,
-    eager, train-mode forward of the learner under the recorder) — called BEFORE that micro-batch's own
-    forward, so the stashes the fold reads afterwards are that forward's, and before any optimizer step,
-    so the weights are the ones that played the rows."""
-    from agents.training.rust_rollout.consistency import checked_margins
-    from agents.training.rust_rollout.tie_margins import TieMargins
-
-    acts = actions.reshape(-1).long()
-    rec = TieMargins(int(acts.shape[0]))
-    was = model.policy.training
-    model.policy.set_training_mode(True)
-    try:
-        with th.no_grad(), rec:
-            model.policy.evaluate_actions(observations, acts, action_masks=masks)
-    finally:
-        model.policy.set_training_mode(was)
-    checked_margins(model, rec)
-    return rec.margin, rec.site
-
-
-def check_behaviour_first_micro(model: Any, log_prob: th.Tensor, old_log_prob: th.Tensor,
-                                actions: Any = None, masks: Any = None, margins: Any = None) -> float:
-    """K9(b), python path (module docs): the first micro-batch's recomputed log-probs vs the stored
-    behaviour log-probs, judged and enforced by the ONE gate
-    (``consistency.enforce_behaviour`` — the tie exclusion, the row dump, FATAL / warn).
-    ``margins`` is `behaviour_margins_first_micro`'s ``(margin, site)`` — required. Records
-    ``behaviour/*``; ``actions`` / ``masks`` (the micro-batch's) are read only for a dump. Returns the max |Δ|."""
-    d = (log_prob.detach().reshape(-1).double() - old_log_prob.detach().reshape(-1).double()).abs()
-    a = d.cpu().numpy()                                   # the one host read (a micro-batch of floats)
-    worst = float(a.max()) if a.size else 0.0
-    metrics = {"behaviour/max_abs_dlogp_current": worst,
-               "behaviour/p99_abs_dlogp_current": behaviour_statistic(a, "p99"),
-               "behaviour/rows_current": float(a.size), "behaviour/rows_probed": float(a.size)}
-    logger = getattr(model, "logger", None)
-    try:
-        metrics.update(enforce_behaviour(
-            model, a, where=f"the first micro-batch ({a.size} rows, every one played by the weights the "
-                            "learner holds now)", actions=actions, masks=masks,
-            margins=None if margins is None else margins[0], sites=None if margins is None else margins[1]))
-    finally:
-        if logger is not None:
-            for k, v in metrics.items():
-                logger.record(k, v)
-        model._behaviour_probe_metrics = metrics
-    return worst
+    return "off" if mode == "off" else "probe"
 
 
 def _nonfinite(t: Any) -> bool:

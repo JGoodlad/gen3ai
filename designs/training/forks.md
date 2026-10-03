@@ -284,7 +284,7 @@ rate). An obs key the fill table does not know is refused at setup, never guesse
 ### The buffer
 
 `ForkRolloutBuffer` is a MIXIN over whichever buffer the algorithm selected (today
-`MaskableDictRolloutBuffer`). Raising `buffer_size` to make room would resize the NEXT rollout's
+`rollout_buffer.RolloutBuffer`, sb3-contrib's layout). Raising `buffer_size` to make room would resize the NEXT rollout's
 arrays; padding to a whole multiple of `n_envs` would put fabricated transitions in the objective.
 So the rows live beside the collected ones in their own flat arrays and `get()` yields minibatches
 over the concatenation. `reset()` drops them, an empty fork set makes `get()` upstream's generator

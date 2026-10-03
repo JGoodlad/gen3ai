@@ -1,6 +1,6 @@
 """Pins for ``RustVecEnv``'s env surface (M5 Lane G): every ``env_method`` a training callback calls is
 SERVED (``SURFACE``); the routing reaches the collector's pieces; an unmapped call is a typed
-refusal, and ``has_attr`` answers False instead of crashing."""
+refusal, and it carries no sb3 ``VecEnv`` surface (deletion pass U4: it is a ``TrainerVecEnv``)."""
 from __future__ import annotations
 
 import ast
@@ -82,6 +82,6 @@ def test_unmapped_calls_are_typed_refusals():
         env.env_method("set_team_pfsp_weights", [1.0])      # a DELETED lever's method: still a typed refusal
     with pytest.raises(R.RustEnvSurfaceError, match="not stepped"):
         env.step_async(np.zeros(2))
-    assert env.has_attr("action_masks") is False
+    assert not hasattr(env, "action_masks") and not hasattr(env, "get_attr")   # no sb3 VecEnv surface
     with pytest.raises(R.RustEnvSurfaceError, match="twice"):
         env.startup(SimpleNamespace())

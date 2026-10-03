@@ -2,13 +2,15 @@
 
 * ``build_selfcheck()`` — THIS checkout's self-check cdylib + process binary (the build every pytest
   session runs; ``cargo`` into ``src/rust_env/target``, never main's);
-* ``production_spaces()`` — the trainee ``Gen3Env``'s observation / action space at the PRODUCTION
+* ``production_spaces()`` — the trainee's observation / action space at the PRODUCTION
   surface (``production_args()``), i.e. every production label key;
 * ``fresh_model(...)`` — an ``InstrumentedMaskablePPO`` at the production policy kwargs over a
   ``RustVecEnv``, its weights a SEEDED PERTURBATION of the fresh init (a fresh pointer head is exactly
   uniform, which would make every sampled-action comparison vacuous);
 * ``collector_for(model, env, ...)`` — the collector on seeded pool teams, p1 = the trainee through T2
-  (eager, CPU), p2 on an EXTERNAL route answered by a seeded random policy the harness records.
+  (eager, CPU), p2 on an EXTERNAL route answered by a seeded random policy the harness records;
+* ``ToyVecEnv`` + ``VecEnvCollector`` / ``attach_vec_collector`` — a toy learner's env and rollout (the
+  ``train()``-fold unit tests).
 """
 from __future__ import annotations
 
@@ -19,6 +21,8 @@ from collections import deque
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
+
+from agents.training.trainer_env import TrainerVecEnv
 
 FEATURES = ("--profile", "selfcheck", "--features", "emission-selfcheck")
 
@@ -84,9 +88,101 @@ def fresh_model(env: Any, *, n_steps: int, batch_size: int, n_epochs: int = 1, s
     return model
 
 
+class ToyVecEnv(TrainerVecEnv):
+    """A TEST env for a toy learner: ``n`` gym envs stepped in lockstep (what sb3's ``DummyVecEnv`` did for
+    these tests until deletion pass U4): a finished env is reset at once, its last observation in
+    ``info["terminal_observation"]`` and ``info["TimeLimit.truncated"]`` set; ``reset`` passes each env
+    the seed ``seed(s)`` recorded (``s + i``), once. ``action_masks()`` stacks every env's masks. Never
+    imported by training."""
+
+    def __init__(self, env_fns: Sequence[Callable[[], Any]]):
+        self.envs = [fn() for fn in env_fns]
+        e0 = self.envs[0]
+        super().__init__(len(self.envs), e0.observation_space, e0.action_space)
+        self._keys = list(self.observation_space.spaces)
+
+    def _stack(self, obs: Sequence[Dict[str, np.ndarray]]) -> Dict[str, np.ndarray]:
+        return {k: np.stack([np.asarray(o[k], dtype=self.observation_space[k].dtype) for o in obs])
+                for k in self._keys}
+
+    def reset(self) -> Dict[str, np.ndarray]:
+        obs = [env.reset(seed=s)[0] for env, s in zip(self.envs, self._seeds)]
+        self._seeds = [None] * self.num_envs
+        return self._stack(obs)
+
+    def step(self, actions: np.ndarray) -> Tuple[Dict[str, np.ndarray], np.ndarray, np.ndarray, List[dict]]:
+        obs, rews, dones, infos = [], np.zeros(self.num_envs, np.float32), np.zeros(self.num_envs, bool), []
+        for i, env in enumerate(self.envs):
+            o, r, terminated, truncated, info = env.step(actions[i])
+            info = dict(info)
+            rews[i], dones[i] = r, terminated or truncated
+            info["TimeLimit.truncated"] = truncated and not terminated
+            if dones[i]:
+                info["terminal_observation"] = o
+                o, _ = env.reset()
+            obs.append(o)
+            infos.append(info)
+        return self._stack(obs), rews, dones, infos
+
+    def action_masks(self) -> np.ndarray:
+        return np.stack([np.asarray(env.action_masks()) for env in self.envs])
+
+    def env_method(self, method_name: str, *method_args: Any, indices: Any = None, **method_kwargs: Any) -> List[Any]:
+        return [getattr(self.envs[i], method_name)(*method_args, **method_kwargs) for i in self._indices(indices)]
+
+
+class ScriptedVecEnv(TrainerVecEnv):
+    """A deterministic TEST env over the production spaces that serves the K9 golden buffer's real rows
+    (``data`` = the ``np.load`` of ``learner_golden.BUFFER_PATH``), row ``t % n_rows`` at step ``t``; games
+    end on a fixed schedule (env ``e`` at every ``t`` with ``(t + e) % 7 == 0``), each with
+    ``info["episode"]`` and a win outcome, env 1's every other end a truncation. For loop-level tests
+    (the hook nesting, the dump order) that need a production-surface learner and a real rollout."""
+
+    def __init__(self, obs_space: Any, act_space: Any, data: Dict[str, np.ndarray], n_envs: int):
+        super().__init__(n_envs, obs_space, act_space)
+        self.data = data
+        self.keys = sorted(obs_space.spaces)
+        self.n_rows = int(data["actions"].shape[0])
+        self.t = 0
+
+    def _obs(self) -> Dict[str, np.ndarray]:
+        r = self.t % self.n_rows
+        return {k: self.data["obs:" + k][r].copy() for k in self.keys}
+
+    def reset(self) -> Dict[str, np.ndarray]:
+        self.t = 0
+        return self._obs()
+
+    def step(self, actions: np.ndarray) -> Tuple[Dict[str, np.ndarray], np.ndarray, np.ndarray, List[dict]]:
+        prev = self._obs()
+        self.t += 1
+        rewards = np.zeros(self.num_envs, dtype=np.float32)
+        dones = np.array([(self.t + e) % 7 == 0 for e in range(self.num_envs)])
+        infos: List[dict] = []
+        for e in range(self.num_envs):
+            info: dict = {}
+            if dones[e]:
+                won = float((self.t + e) % 2)
+                rewards[e] = won
+                info["episode"] = {"r": won, "l": 7, "t": 0.0}
+                info["win_outcome"] = won
+                if e == 1 and (self.t // 7) % 2 == 1:
+                    info["TimeLimit.truncated"] = True
+                    info["terminal_observation"] = {k: v[e] for k, v in prev.items()}
+            infos.append(info)
+        return self._obs(), rewards, dones, infos
+
+    def action_masks(self) -> np.ndarray:
+        r = self.t % self.n_rows
+        return np.stack([self.data["action_masks"][r, e].astype(bool) for e in range(self.num_envs)])
+
+    def env_method(self, method_name: str, *method_args: Any, indices: Any = None, **method_kwargs: Any) -> List[Any]:
+        raise AttributeError(f"ScriptedVecEnv serves no env_method ({method_name!r})")
+
+
 class VecEnvCollector:
-    """A TEST double for the Rust collector: fills the learner's rollout buffer from the model's own toy
-    SB3 ``VecEnv``, written from the requirements rather than copied from sb3 (the vendored copy of
+    """A TEST double for the Rust collector: fills the learner's rollout buffer from the model's own
+    `ToyVecEnv`, written from the requirements rather than copied from sb3 (the vendored copy of
     upstream's collect that used to serve this was deleted with the Python env core, deletion pass U3).
 
     The production rollout is the Rust collector's: ``RolloutProbes.collect_rollouts`` refuses a learner
@@ -96,10 +192,10 @@ class VecEnvCollector:
     ``seen_updates``).
 
     What it does, and nothing more: ``n_steps`` vector steps, the policy acting under the env's action
-    masks; ``on_step`` fires BEFORE the row is added (a callback reads ``rollout_buffer.pos`` as the row about
-    to be written) with ``locals`` carrying the fields the callbacks under test read; then the buffer's own
-    GAE. It models no truncation bootstrap and no complete-game window — those are the Rust collector's
-    business and are pinned by ``rust_rollout/store_test.py``. Never imported by training."""
+    masks; the ``step`` event fires BEFORE the row is added, with the declared step locals
+    (``loop_callbacks.STEP_LOCALS``); then the buffer's own window GAE. It models no truncation bootstrap
+    and no complete-game window — those are the Rust collector's business and are pinned by
+    ``rust_rollout/store_test.py``. Never imported by training."""
 
     seen_updates = None
 
@@ -108,24 +204,24 @@ class VecEnvCollector:
 
     def collect(self, model: Any, callback: Any, rollout_buffer: Any) -> bool:
         import torch as th
-        from sb3_contrib.common.maskable.utils import get_action_masks
-        from stable_baselines3.common.utils import obs_as_tensor
 
         env = model.env
         assert model._last_obs is not None, "the learner was not set up (learn() runs _setup_learn first)"
+
+        def as_tensor(obs: Dict[str, np.ndarray]) -> Dict[str, Any]:
+            return {k: th.as_tensor(v, device=model.device) for k, v in obs.items()}
+
         model.policy.set_training_mode(False)
         rollout_buffer.reset()
         callback.on_rollout_start()
         for _ in range(model.n_steps):
             with th.no_grad():
-                masks = get_action_masks(env)
-                actions, values, log_probs = model.policy(obs_as_tensor(model._last_obs, model.device),
-                                                          action_masks=masks)
+                masks = env.action_masks()
+                actions, values, log_probs = model.policy(as_tensor(model._last_obs), action_masks=masks)
             actions = actions.cpu().numpy()
             new_obs, rewards, dones, infos = env.step(actions)
             model.num_timesteps += env.num_envs
-            callback.update_locals({"rollout_buffer": rollout_buffer, "infos": infos, "dones": dones,
-                                    "rewards": rewards, "actions": actions, "new_obs": new_obs})
+            callback.update_locals({"infos": infos, "dones": dones})
             if not callback.on_step():
                 return False
             model._update_info_buffer(infos, dones)
@@ -133,7 +229,7 @@ class VecEnvCollector:
                                values, log_probs, action_masks=masks)
             model._last_obs, model._last_episode_starts = new_obs, dones
         with th.no_grad():
-            last_values = model.policy.predict_values(obs_as_tensor(model._last_obs, model.device))
+            last_values = model.policy.predict_values(as_tensor(model._last_obs))
         rollout_buffer.compute_returns_and_advantage(last_values=last_values, dones=model._last_episode_starts)
         callback.on_rollout_end()
         return True
@@ -144,6 +240,29 @@ def attach_vec_collector(model: Any) -> Any:
     Rust collector); returns the model. A loaded model lost its collector (it is never saved): re-attach."""
     model._rust_collector = VecEnvCollector()
     return model
+
+
+def record_dumps(model: Any) -> List[Dict[str, Any]]:
+    """Give ``model`` a logger (`train_logger.Logger`) whose every dump is appended, as a ``dict`` with its
+    step under ``"_step"``, to the returned list. ``learn()``'s FINAL dump (the last update's scalars, P3)
+    clears the pending values, so a test reads what an update logged from here, not from
+    ``logger.name_to_value`` after ``learn()``."""
+    from agents.training.train_logger import Logger
+
+    out: List[Dict[str, Any]] = []
+
+    class _Recorder:
+        def write(self, kv: Dict[str, Any], _excluded: Dict[str, Any], step: int = 0) -> None:
+            out.append({**kv, "_step": int(step)})
+
+        def write_sequence(self, _seq: Any) -> None:
+            return None
+
+        def close(self) -> None:
+            return None
+
+    model.set_logger(Logger(None, [_Recorder()]))
+    return out
 
 
 class RandomP2:
@@ -185,7 +304,7 @@ def collector_for(model: Any, obs_space: Any, *, decl: Any, p2: Optional[Callabl
 
 
 class NullCallback:
-    """The minimum of SB3's callback contract ``collect`` drives (counts the vec-step calls)."""
+    """The minimum of the callback protocol ``collect`` drives (``loop_callbacks``; counts the step events)."""
 
     def __init__(self) -> None:
         self.steps = 0

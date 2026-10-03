@@ -45,7 +45,7 @@ class TestTrackingCheckpointCallback:
         mock_model = MagicMock()
         mock_model.num_timesteps = start
         cb.init_callback(mock_model)
-        cb.on_training_start({}, {})
+        cb.on_training_start()
         return cb
 
     def _advance(self, cb, steps):

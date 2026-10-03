@@ -139,9 +139,9 @@ def build_learner(env: Any = None, args: Any = None) -> Any:
     instead — its spaces (`trainee_spaces`), its policy kwargs and its training hparams — with the
     same seeds and recipe overrides (the lever tests' learner; the golden itself passes None)."""
     import torch as th
-    from stable_baselines3.common.logger import configure
 
     from agents.training.rust_rollout import testkit as TK
+    from agents.training.train_logger import configure
     from agents.training.rust_vec_env import RustVecEnv
     from main.train.production_args import production_args
     from main.train.model_build import apply_training_hparams

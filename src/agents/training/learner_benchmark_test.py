@@ -77,8 +77,8 @@ class _CounterDictEnv(gym.Env):
 
 @pytest.fixture
 def tiny_model():
-    from stable_baselines3.common.vec_env import DummyVecEnv
-    venv = DummyVecEnv([(lambda: _CounterDictEnv()) for _ in range(4)])
+    from agents.training.rust_rollout.testkit import ToyVecEnv
+    venv = ToyVecEnv([(lambda: _CounterDictEnv()) for _ in range(4)])
     model = InstrumentedMaskablePPO("MultiInputPolicy", venv, n_steps=8, batch_size=4,
                                     n_epochs=2, ent_coef=0.0, vf_coef=0.5, device="cpu", seed=0)
     from agents.training.rust_rollout.testkit import attach_vec_collector

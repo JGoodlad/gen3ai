@@ -1,12 +1,15 @@
-"""K9(b) on the python env core and K9(c) fail-closed non-finite — pins (``learner_gates`` module docs).
+"""K9(b) through ``train()`` and K9(c) fail-closed non-finite — pins (``learner_gates`` module docs).
 
 All on the learner golden's production-surface learner and its committed real buffer (``learner_golden``),
 through the REAL ``train()``:
 
-* the normal path passes the behaviour gate (the stored log-probs are the seeded learner's own, from the
-  Rust collector's eager inference at a different batch composition: |Δ| at float rounding);
+* the normal path passes the behaviour probe (the stored log-probs are the seeded learner's own, from the
+  Rust collector's eager inference at a different batch composition: |Δ| at float rounding) — the golden
+  buffer carries no version record, so the probe judges every row as current;
 * STALE weights (the parameters moved between the rollout and the update) FATAL before any optimizer step;
-* a buffer that carries per-row policy versions takes Lane G's pre-loop probe instead, never both;
+* every check but ``off`` is Lane G's probe — the ONE implementation (the python core's in-loop variant
+  was deleted, U4); the gate's table and its enforcement (``consistency.enforce_behaviour``) are pinned
+  directly;
 * a NaN win-prob LABEL / an Inf return is refused at the BUFFER, before PopArt's advance or any forward;
 * a non-finite TERM (a poisoned win-prob head) → a typed FATAL before its backward, naming it;
 * a NaN input row is refused by the action distribution's own validation, before any step;
@@ -44,17 +47,18 @@ def _train(model):
         model.train()
 
 
-def test_normal_python_path_passes_the_behaviour_gate_on_the_first_micro_batch():
+def test_the_normal_path_passes_the_behaviour_probe():
     model = _learner("fatal")
-    assert G.behaviour_gate_mode(model) == "in_loop"
+    assert G.behaviour_gate_mode(model) == "probe"
     _train(model)
     worst = model.logger.name_to_value["behaviour/max_abs_dlogp_current"]
     assert worst < 1e-5, worst          # measured ~1e-6 (batch-composition rounding), 100x under the bar
-    assert model.logger.name_to_value["behaviour/rows_current"] == L.GOLDEN_OVERRIDES["batch_size"]
+    rows = min(L.GOLDEN_OVERRIDES["batch_size"], L.N_STEPS * L.N_ENVS)
+    assert model.logger.name_to_value["behaviour/rows_current"] == rows
     from agents.training.rust_rollout import consistency as K   # fp32: the margins came from a real forward
     excl = model.logger.name_to_value["behaviour/excluded_frac"]
     assert 0.0 <= excl < K.FP32_EXCLUDED_CEILING
-    assert model.logger.name_to_value["behaviour/rows_judged"] == round((1 - excl) * L.GOLDEN_OVERRIDES["batch_size"])
+    assert model.logger.name_to_value["behaviour/rows_judged"] == round((1 - excl) * rows)
 
 
 def test_rollout_weights_one_optimizer_step_stale_are_fatal_before_any_step():
@@ -69,7 +73,7 @@ def test_rollout_weights_one_optimizer_step_stale_are_fatal_before_any_step():
     model.n_epochs, model.batch_size, model.grad_accum_steps = L.GOLDEN_OVERRIDES["n_epochs"], L.GOLDEN_OVERRIDES["batch_size"], 1
     model.behaviour_check = "fatal"
     before = _params(model)
-    with pytest.raises(BehaviourMismatch, match=r"first micro-batch.*fp32"):
+    with pytest.raises(BehaviourMismatch, match=r"CURRENT policy version.*fp32"):
         _train(model)
     assert th.equal(before, _params(model)), "the gate must fire before any optimizer step"
 
@@ -78,17 +82,17 @@ def test_warn_reports_and_off_skips():
     model = _learner("off")
     assert G.behaviour_gate_mode(model) == "off"
     model.behaviour_check = "warn"
-    model.rollout_buffer.log_probs += 1e-3
-    worst = G.check_behaviour_first_micro(
-        model, th.as_tensor(model.rollout_buffer.log_probs[0] - 1e-3), th.as_tensor(model.rollout_buffer.log_probs[0]),
-        margins=_no_tie(model.rollout_buffer.log_probs[0].size))
-    assert worst == pytest.approx(1e-3, rel=1e-3)
+    n = model.rollout_buffer.log_probs[0].size
+    out = _judge(model, th.full((n,), 1e-3, dtype=th.float64))       # over the bar: warns, never raises
+    assert out["behaviour/max_abs_dlogp_judged"] == pytest.approx(1e-3, rel=1e-6)
 
 
-def test_a_versioned_buffer_takes_lane_g_probe_not_the_in_loop_gate():
+def test_every_check_but_off_is_the_probe_with_or_without_a_version_record():
     model = _learner("fatal")
+    assert G.behaviour_gate_mode(model) == "probe"
     model._rust_row_versions = np.zeros((L.N_STEPS, L.N_ENVS), np.int64)
     assert G.behaviour_gate_mode(model) == "probe"
+    assert not hasattr(G, "check_behaviour_first_micro") and not hasattr(G, "behaviour_margins_first_micro")
 
 
 def test_a_nan_label_is_refused_at_the_buffer_before_popart_or_any_forward():
@@ -178,8 +182,7 @@ def test_check_loss_finite_names_every_non_finite_term():
 
 
 def test_the_gate_is_ONE_fp32_table_and_a_process_at_any_other_precision_is_refused():
-    """ONE table (`consistency.BEHAVIOUR_GATE`), ONE enforcement (`enforce_behaviour`), read by BOTH
-    implementations: fp32 = DETERMINISTIC — max < 1e-4 over the rows not at a tie, single-shot, and the
+    """ONE table (`consistency.BEHAVIOUR_GATE`), ONE enforcement (`enforce_behaviour`): fp32 = DETERMINISTIC — max < 1e-4 over the rows not at a tie, single-shot, and the
     excluded share under its ceiling. fp32 'highest' is the only precision (TF32 retired, K2): a process
     at any other — 'high' included — is refused, never judged at a bar measured elsewhere."""
     from agents.training.rust_rollout import consistency as K
@@ -197,9 +200,9 @@ def test_the_gate_is_ONE_fp32_table_and_a_process_at_any_other_precision_is_refu
             with pytest.raises(K.UndeclaredPrecision, match=f"'{other}'"):
                 K.behaviour_gate()
             with pytest.raises(K.UndeclaredPrecision, match=f"'{other}'"):
-                G.check_behaviour_first_micro(model, mid, th.zeros(2048), margins=_no_tie(2048))
+                _judge(model, mid)
     with pytest.raises(BehaviourMismatch, match="fp32"):
-        G.check_behaviour_first_micro(model, mid, th.zeros(2048), margins=_no_tie(2048))   # single-shot
+        _judge(model, mid)                                                                  # single-shot
 
 
 class _precision:
@@ -223,16 +226,25 @@ def _fp32(bad_rows: int, value: float = 1e-3):
 
 
 def _no_tie(n, tied=()):
-    """`behaviour_margins_first_micro`'s shape: every row far from a cutoff, except ``tied`` (exact ties)."""
+    """Tie margins (`tie_margins`) of ``n`` rows: every row far from a cutoff, except ``tied`` (exact ties)."""
     m = np.ones(n)
     m[list(tied)] = 0.0
     return m, ["test" for _ in range(n)]
 
 
+def _judge(model, d, margins=None, *, with_margins=True):
+    """The ONE enforcement (`consistency.enforce_behaviour`) on per-row |Δ| ``d`` — what the probe calls on
+    its current rows. Returns its metrics."""
+    from agents.training.rust_rollout import consistency as K
+
+    m = (margins if margins is not None else _no_tie(d.numel())) if with_margins else (None, None)
+    return K.enforce_behaviour(model, d.detach().abs().double().numpy(), where="the test's rows",
+                               actions=th.arange(d.numel()) % 11, masks=th.ones(d.numel(), 11),
+                               margins=m[0], sites=m[1])
+
+
 def _step(model, d, margins=None):
-    G.check_behaviour_first_micro(model, d, th.zeros(d.numel()),
-                                  actions=th.arange(d.numel()) % 11, masks=th.ones(d.numel(), 11),
-                                  margins=margins if margins is not None else _no_tie(d.numel()))
+    return _judge(model, d, margins)
 
 
 def test_a_violation_is_fatal_at_once_and_dumps_the_offending_rows_first(tmp_path, capsys):
@@ -257,7 +269,7 @@ def test_a_violation_is_fatal_at_once_and_dumps_the_offending_rows_first(tmp_pat
 
 
 def test_the_fp32_rule_is_deterministic_and_a_nan_is_always_fatal():
-    """fp32 on the Python path (`gen3_behaviour_tie_exclusion_v1`): ONE judged row over 1e-4 is FATAL on the
+    """fp32 (`gen3_behaviour_tie_exclusion_v1`): ONE judged row over 1e-4 is FATAL on the
     FIRST update; the same row AT a tie is excluded (no violation); too many tied rows FATAL; a NaN — even
     on an excluded row — is never rounding; and fp32 without margins is refused, never judged blind."""
     from agents.training.rust_rollout import consistency as K
@@ -270,8 +282,8 @@ def test_the_fp32_rule_is_deterministic_and_a_nan_is_always_fatal():
     bad = int(th.argmax(d))
     with pytest.raises(BehaviourMismatch, match=r"max 0\.001 NOT < 0\.0001"):
         _step(model, d)                                                # not at a tie: FATAL at once
-    _step(model, d, margins=_no_tie(2048, tied=[bad]))                 # the same row AT a tie: excluded
-    assert model.logger.name_to_value["behaviour/rows_excluded"] == 1.0
+    out = _step(model, d, margins=_no_tie(2048, tied=[bad]))           # the same row AT a tie: excluded
+    assert out["behaviour/rows_excluded"] == 1.0
     nan = _fp32(bad_rows=0)
     nan[5] = float("nan")
     with pytest.raises(BehaviourMismatch, match="NON-FINITE"):
@@ -280,15 +292,14 @@ def test_the_fp32_rule_is_deterministic_and_a_nan_is_always_fatal():
     with pytest.raises(BehaviourMismatch, match="TOO MANY rows sit at a tie"):
         _step(model, _fp32(bad_rows=0), margins=_no_tie(2048, tied=many))
     with pytest.raises(TieMarginError):
-        G.check_behaviour_first_micro(model, _fp32(bad_rows=0), th.zeros(2048))
+        _judge(model, _fp32(bad_rows=0), with_margins=False)
 
 
 def _wide_learner(n_steps: int = 64):
     """The golden learner at a 256-row buffer (the 64 real rows tiled), one 256-row micro-batch, lr 0
     so every update sees the same weights — a "fresh rollout" each update with the SAME fault."""
-    from stable_baselines3.common.logger import configure
-
     from agents.training.rust_rollout import testkit as TK
+    from agents.training.train_logger import configure
     from agents.training.rust_vec_env import RustVecEnv
     from main.train.production_args import production_args
     from main.train.model_build import apply_training_hparams
@@ -311,8 +322,6 @@ def _wide_learner(n_steps: int = 64):
 def _fill(m, rows, corrupt):
     """Fresh buffer from ``rows``: behaviour log-probs from THIS policy (eval, the rollout's mode), then
     the corrupted rows' actions pointed at their LEAST likely other legal action (a wrong action index)."""
-    from stable_baselines3.common.utils import obs_as_tensor
-
     rb = m.rollout_buffer
     rb.reset()
     for k in rb.observations:
@@ -325,7 +334,8 @@ def _fill(m, rows, corrupt):
     acts = rb.actions.reshape(n).astype(np.int64)
     m.policy.set_training_mode(False)
     with th.no_grad():
-        dist = m.policy.get_distribution(obs_as_tensor(obs, m.device), action_masks=masks)
+        dist = m.policy.get_distribution({k: th.as_tensor(v, device=m.device) for k, v in obs.items()},
+                                         action_masks=masks)
         lp = dist.log_prob(th.as_tensor(acts)).numpy()
         probs = dist.distribution.probs.numpy()
     for i in corrupt:

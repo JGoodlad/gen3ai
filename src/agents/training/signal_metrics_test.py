@@ -260,18 +260,6 @@ def test_sync_locals_are_consumed_and_recorded_under_the_signal_prefix():
     assert all(k.startswith("signal/") for k in cb.model.logger.rows)
 
 
-def test_async_wave_locals_are_consumed():
-    """`--async-rollout` publishes wave_infos/wave_dones instead of infos/dones — the outcome meter
-    covers it, because it needs no (step, env) buffer row (unlike WinProbLabelCallback)."""
-    cb = _cb()
-    cb.locals = {"wave_infos": [_done_info(True, 1), _done_info(True, 1)],
-                 "wave_dones": [True, True]}
-    cb._on_step()
-    cb._on_rollout_end()
-    assert cb.model.logger.rows["signal/outcome_entropy_pool"] == pytest.approx(0.0)
-    assert cb.model.logger.rows["signal/outcome_n"] == 2.0
-
-
 def test_a_non_done_step_contributes_nothing():
     cb = _cb()
     cb.locals = {"infos": [_done_info(True, 0)], "dones": [False]}

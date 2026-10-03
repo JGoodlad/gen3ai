@@ -143,12 +143,12 @@ def _hand_gae(lam: float) -> np.ndarray:
 def _buffer_advantages(lam: float) -> np.ndarray:
     """The advantages the REAL rollout buffer class computes at this λ over the fixed rollout."""
     from gymnasium import spaces
-    from sb3_contrib.common.maskable.buffers import MaskableRolloutBuffer
-    buf = MaskableRolloutBuffer(len(_REWARDS), spaces.Box(-1, 1, (1,), np.float32),
-                                spaces.Discrete(2), device="cpu", gamma=_GAMMA, gae_lambda=lam,
-                                n_envs=1)
+
+    from agents.training.rollout_buffer import RolloutBuffer
+    buf = RolloutBuffer(len(_REWARDS), spaces.Dict({"observation": spaces.Box(-1, 1, (1,), np.float32)}),
+                        spaces.Discrete(2), device="cpu", gamma=_GAMMA, gae_lambda=lam, n_envs=1)
     for t in range(len(_REWARDS)):
-        buf.add(np.zeros((1, 1), np.float32), np.zeros((1, 1)), _REWARDS[t:t + 1],
+        buf.add({"observation": np.zeros((1, 1), np.float32)}, np.zeros((1, 1)), _REWARDS[t:t + 1],
                 _STARTS[t:t + 1], th.tensor([_VALUES[t]]), th.zeros(1),
                 action_masks=np.ones((1, 2), np.float32))
     buf.compute_returns_and_advantage(last_values=th.tensor([_LAST_V]),
@@ -202,10 +202,10 @@ def test_metadata_records_the_realized_precision():
 
 # ── per-epoch PPO diagnostics ────────────────────────────────────────────────────────────────
 def _tiny_ppo(n_epochs, target_kl=None):
-    from stable_baselines3.common.vec_env import DummyVecEnv
+    from agents.training.rust_rollout.testkit import ToyVecEnv
     from agents.training.instrumented_ppo import InstrumentedMaskablePPO
     from agents.training.instrumented_ppo_test import _CounterDictEnv
-    venv = DummyVecEnv([(lambda: _CounterDictEnv()) for _ in range(2)])
+    venv = ToyVecEnv([(lambda: _CounterDictEnv()) for _ in range(2)])
     from agents.training.rust_rollout.testkit import attach_vec_collector
     return attach_vec_collector(InstrumentedMaskablePPO(
         "MultiInputPolicy", venv, n_steps=8, batch_size=4, n_epochs=n_epochs, learning_rate=3e-3,
@@ -219,8 +219,10 @@ def _epoch_rows(logged, family):
 
 def test_per_epoch_scalars_appear_once_per_epoch_and_REUSE_the_loop_numbers():
     model = _tiny_ppo(n_epochs=3)
+    from agents.training.rust_rollout.testkit import record_dumps
+    dumps = record_dumps(model)
     model.learn(total_timesteps=16)                # one rollout (8 steps × 2 envs), one train()
-    logged = model.logger.name_to_value
+    logged = dumps[-1]                             # the train()'s scalars: learn()'s final dump (P3)
     kl = _epoch_rows(logged, "approx_kl")
     cf = _epoch_rows(logged, "clip_fraction")
     assert kl == [f"train/approx_kl_epoch_{k}" for k in range(3)]
@@ -235,8 +237,10 @@ def test_per_epoch_scalars_appear_once_per_epoch_and_REUSE_the_loop_numbers():
 
 def test_a_KL_early_stop_records_only_the_epochs_that_ran():
     model = _tiny_ppo(n_epochs=5, target_kl=1e-12)   # trips on the first minibatch past epoch 0's
+    from agents.training.rust_rollout.testkit import record_dumps
+    dumps = record_dumps(model)
     model.learn(total_timesteps=16)
-    logged = model.logger.name_to_value
+    logged = dumps[-1]                             # the train()'s scalars: learn()'s final dump (P3)
     n = len(_epoch_rows(logged, "approx_kl"))
     assert 1 <= n < 5
     assert len(_epoch_rows(logged, "clip_fraction")) == n

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from stable_baselines3.common.callbacks import BaseCallback
+from agents.training.loop_callbacks import BaseCallback
 
 from agents.training.reward_term_stats import merge_drained, reward_term_metrics
 

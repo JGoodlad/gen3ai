@@ -10,9 +10,9 @@ import math
 import types
 
 import pytest
-from stable_baselines3.common.logger import Logger
 
 from agents.training.rank_tripwire import RankTripwireCallback
+from agents.training.train_logger import Logger
 
 SKIP = RankTripwireCallback.W_SKIP
 BASE = RankTripwireCallback.W_BASE

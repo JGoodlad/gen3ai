@@ -131,15 +131,29 @@ export (`metrics_export`) and the per-rollout probes (`rollout_probes`).
 🚨 **THE LOOP AROUND `train()` IS OURS TOO** (`gen3_owned_ppo_loop_v1`, `src/agents/training/instrumented_ppo/loop.py`;
 [`designs/endstate/design_own_ppo_loop.md`](../../../designs/endstate/design_own_ppo_loop.md)): `learn()`
 is the declared `LOOP_PHASES` table, and `_setup_learn` / `dump_logs` are
-vendored from sb3 operation for operation (hash-pinned). Three things an edit must not break: the
-**dump stays BEFORE the update** (update k's `train/*` is stamped after rollout k+1 — the archive's TB
-convention and the KL controller's logger read); **`learn` > `collect` | `update` are the DECLARED
-HOOK POINTS** (`agents/training/loop_hooks.py`, `gen3_declared_loop_hooks_v1`: K6's freeze guard and
-the compile sentinel REGISTER there, outermost first by `HOOK_OWNERS`; the table freezes at training
-start and a late, duplicate or undeclared hook is FATAL_CONFIG — never reassign a learner's bound
-method to hook it); the **Python collect keeps sb3's local names and
-fires `on_step` before `rollout_buffer.add`** (`self.locals`, `buf.pos`). `own_ppo_loop_test.py` holds
-it EXACT against upstream; `GEN3AI_PPO_LOOP=sb3_reference` is the A/B test seam. 🚨 **REGIME BOUNDARY
+vendored from sb3 operation for operation (hash-pinned). **PPO stage 3 (deletion pass U4) took the rest of
+sb3's RUNTIME off it — each owned module holds sb3's arithmetic for our one layout and REFUSES any other:**
+the rollout buffer (`rollout_buffer.py`, `gen3_owned_rollout_buffer_v1`: host numpy, sb3's `get()`
+permutation — the K9 golden is its bar), the logger (`train_logger.py`, `gen3_owned_logger_v1`: the same
+tags, steps, stdout table and `name_to_value` bus), the callback protocol (`loop_callbacks.py`,
+`gen3_owned_callbacks_v1`: declared events, and the per-step locals declared in `STEP_LOCALS` — an
+undeclared key, an sb3 callback or a bare function is refused) and the env base (`trainer_env.py`: the
+learner's env must be a `TrainerVecEnv` — `RustVecEnv`, or `testkit.ToyVecEnv` in a test). The
+`GEN3AI_PPO_LOOP=sb3_reference` seam and its lockstep test against upstream are gone with it. Four things
+an edit must not break: the **dump stays BEFORE the update** (update k's `train/*` is stamped after
+rollout k+1 — the archive's TB convention); the **final dump** (`gen3_final_update_dump_v1`, P3) writes the
+LAST update's pending scalars at `learn()`'s end, at the current step (so on a normal end the `train/*`
+tags carry two points at the final step — update k-1's, then update k's), and the abort / graceful-restart
+path (`main/train/lifecycle.py`) runs the loop's own `dump_logs()` before it saves — so a test reads what
+an update logged from a recorded dump (`testkit.record_dumps`), never from `name_to_value` after `learn()`;
+**`learn` > `collect` | `update` are the DECLARED HOOK POINTS** (`agents/training/loop_hooks.py`,
+`gen3_declared_loop_hooks_v1`: K6's freeze guard and the compile sentinel REGISTER there, outermost first
+by `HOOK_OWNERS`; the table freezes at training start and a late, duplicate or undeclared hook is
+FATAL_CONFIG — never reassign a learner's bound method to hook it); and the **`step` event fires before
+the buffer row is written**, with the declared step locals (`infos`, `dones`). `owned_loop_test.py` pins
+the dump order, the final dump, the env refusal and the protocol; `rollout_buffer_test.py` /
+`train_logger_test.py` hold the buffer and the logger EXACT against sb3's while sb3 is installed (stage 4
+drops it — `design_own_ppo_loop.md` §3.4). 🚨 **REGIME BOUNDARY
 (`gen3_eval_dump_isolation_v1`, 2026-10-01):** an eval cycle's mid-rollout `logger.dump(step)` used to
 CLEAR the previous update's `train/*`, so the KL→LR controller (and RankTripwire) skipped one reading per eval cycle — 5% of N0's updates. Both eval callbacks'
 `_collect_pending` now run under `logger_scope.isolated_dump`, so the cycle dumps only its own scalars.
@@ -1241,18 +1255,10 @@ never recorded fields, so a run's recorded argv fails argparse on an unpinned re
 
 ## Process liveness guards (`watchdog.py`)
 
-Two daemon-thread watchdogs keep a hung/abandoned run from lingering:
+A daemon-thread watchdog keeps an abandoned smoke from lingering (the SubprocVecEnv worker watchdog that sat beside it
+went with the Python env core's workers — it was a no-op on the Rust env, deletion pass U4):
 
-- **`start_subprocess_watchdog`** — for a vec env that exposes worker `processes` (a no-op for one that exposes none). A crashed worker leaves the
-  parent blocked on a pipe `recv` forever; this thread polls `processes` and `os._exit(1)`s the
-  moment a worker dies with a nonzero exitcode. Started *after* env construction (and, in
-  self-play, after `_maybe_engage_self_play` rebuilds the env), right before `learn()`, and
-  **stood down the moment `learn()` returns** (`model_build` sets its shutdown event before the
-  final save/eval; the thread checks the event before the workers). Without that, a worker
-  SIGTERM'd in teardown (exitcode −15) turned every clean finish into a launcher "crash #1"
-  (`watchdog_teardown_test.py`). It is a **no-op on the `--debug` path** (no worker
-  processes to watch).
-- **`start_orphan_watchdog`** — for the `--debug` smoke path, which has no worker watchdog. A
+- **`start_orphan_watchdog`** — for the `--debug` smoke path. A
   smoke run is a child of the launching shell/agent; if that parent dies the run is orphaned
   (PPID changes) and a hung smoke (e.g. a vanished `9XXX` server) would otherwise sit as a
   multi-GB zombie indefinitely. This thread captures the launching PPID up front and `os._exit`s

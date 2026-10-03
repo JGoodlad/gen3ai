@@ -26,8 +26,8 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
-from stable_baselines3.common.callbacks import BaseCallback, CallbackList
 
+from agents.training.loop_callbacks import BaseCallback, CallbackList
 from main.train_rl_agent import build_parser
 
 N_PRODUCTION = 48
@@ -133,7 +133,7 @@ def test_the_rust_collector_checkpoints_at_total_step_boundaries(tmp_path, n_env
                                        name_prefix="checkpoint")
     cbs = CallbackList([ckpt, _StopAfter(stop_at=10 * interval)])
     cbs.init_callback(model)
-    cbs.on_training_start({}, {})
+    cbs.on_training_start()
     col = _counting_collector(n_envs, script)
     assert col.collect(model, cbs, rollout_buffer=None) is False
     saved = [int(os.path.basename(c.args[0]).split("_")[1]) for c in model.save.call_args_list]

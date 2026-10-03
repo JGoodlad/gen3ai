@@ -1,54 +1,54 @@
-"""`OwnedLoop` — THE PPO LOOP IS OURS (`gen3_owned_ppo_loop_v1`; `designs/endstate/design_own_ppo_loop.md` stage 1).
+"""`OwnedLoop` — THE PPO LOOP IS OURS (`gen3_owned_ppo_loop_v1`; `designs/endstate/design_own_ppo_loop.md` stages 1-3).
 
-Before this module, `InstrumentedMaskablePPO.train()` was ours (vendored, hash-pinned) but the loop
-AROUND it was still sb3's: `MaskablePPO.learn`, `BaseAlgorithm._setup_learn`,
-`OnPolicyAlgorithm.dump_logs`, `_update_current_progress_remaining` and `_update_info_buffer`. They are
-vendored here, each one OPERATION FOR OPERATION, so stage 1 is IDENTITY: the same calls in the same
-order, on the same objects, with the same RNG draws. (`MaskablePPO.collect_rollouts` was vendored too,
-as the Python env core's collection; it went with that core — deletion pass U3 — and the rollout is the
-Rust collector's, `RolloutProbes._collect_rust`. `own_ppo_loop_test`, which drove it, was retired
-with it: the bar for the owned loop is the K9 learner golden and the Rust-core real-run A/B.)
+Before stage 1, `InstrumentedMaskablePPO.train()` was ours (vendored, hash-pinned) but the loop AROUND
+it was sb3's: `MaskablePPO.learn`, `BaseAlgorithm._setup_learn`, `OnPolicyAlgorithm.dump_logs`,
+`_update_current_progress_remaining` and `_update_info_buffer`. They are vendored here, each one
+operation for operation (stage 1 was IDENTITY, proved against upstream by a lockstep differential and a
+real-run A/B). Stage 3 (deletion pass U4) took the rest of sb3's RUNTIME off the loop: the rollout
+buffer (`agents/training/rollout_buffer.py`), the logger (`agents/training/train_logger.py`), the
+callback protocol (`agents/training/loop_callbacks.py`) and the env base (`agents/training/trainer_env.py`)
+are ours, and the `GEN3AI_PPO_LOOP=sb3_reference` test seam that ran upstream's `learn` is deleted with
+nothing left to compare against. What is still sb3 (stage 4, a separate owner decision): the constructor
+and `_setup_model` (which this mixin extends), the policy base classes and their init, and the `.zip`.
 
 **The loop, as a declared table (`LOOP_PHASES`).** One `learn()` call is
 
-    setup -> training_start -> [collect -> progress -> dump -> update]* -> training_end
+    setup -> training_start -> [collect -> progress -> dump -> update]* -> training_end -> final_dump
 
-and nothing else. `collect` includes the post-collect window (the win-prob labels and the fork arm in
-their `on_rollout_end`, PBRS / frozen-phi in `RolloutProbes.collect_rollouts`), unchanged.
+and nothing else. `collect` includes the post-collect window (the fork arm and the value sidecar in
+their `on_rollout_end`), unchanged.
 
-Three properties are CONTRACTS, each load-bearing for something outside this file:
+Four properties are CONTRACTS, each load-bearing for something outside this file:
 
 * **`dump` comes BEFORE `update`.** `train()`'s `train/*` scalars sit in the logger until the NEXT
   iteration's dump, so update k's statistics are stamped at the step after rollout k+1. Every
-  TensorBoard series in the archive has that convention, and the KL->LR controller reads
-  `train/approx_kl` from `logger.name_to_value` at that next `on_rollout_end`. Moving the dump after
-  the update would shift every `train/*` series by one rollout. (The eval callbacks' mid-rollout
-  `dump(step)` clears that value on eval cycles — design §2.1 — and that defect is PRESERVED here
-  bit-for-bit; stage 2 fixes it as a labelled behaviour change.)
+  TensorBoard series in the archive has that convention. Moving the dump after the update would shift
+  every `train/*` series by one rollout. (The eval callbacks' mid-rollout dump holds the update's
+  scalars aside — `logger_scope.isolated_dump`, stage 2.)
+* **`final_dump` writes the LAST update's scalars** (P3, `gen3_final_update_dump_v1`): with the dump
+  before each update, the last `train()`'s `train/*` were still pending when `learn()` returned and were
+  never written — one update per process, so one per launcher restart. After `training_end` whatever is
+  pending is dumped at the current `num_timesteps`. On a normal end that is the step the last iteration's
+  dump already used, so the `train/*` tags carry TWO points at the final step (update k-1's, then update
+  k's, in that order in the event file); on a stop from inside a collection (the graceful restart) it is
+  a later step.
 * **`collect` and `update` are called THROUGH ATTRIBUTE LOOKUP** (`self.collect_rollouts`,
-  `self.train`). K6's freeze guard (`learner_lifecycle`) and the compile sentinel (`compile_control`)
-  wrap them as instance attributes; a direct call would bypass both, silently.
+  `self.train`), inside their DECLARED HOOK POINTS (`loop_hooks.HOOK_POINTS`: learn > collect | update).
+  K6's freeze guard and the compile sentinel register there; a tool that wraps the methods as instance
+  attributes (`learner_benchmark`) still intercepts.
 * **The rollout is the Rust collector's** (`RolloutProbes.collect_rollouts` → `_collect_rust`), the
-  only env core; the loop below calls it through the attribute and never steps a VecEnv itself.
-
-**What is still sb3 after stage 1** (design §3.1): the constructor / `_setup_model`, the policy base
-classes and their init, the buffer class (its `reset` / `add` / `get` / GAE), `BaseCallback` /
-`CallbackList` (driven from here), the logger, the VecEnv classes and the `.zip`.
-
-**The reference seam.** `GEN3AI_PPO_LOOP=sb3_reference` (read ONCE per `learn()` call) runs
-upstream's `learn` instead (its `self.collect_rollouts` still resolves to the Rust collector's entry) —
-the A/B arm of the real-run equivalence check (design §4 E3). It is a test seam, deleted in stage 3
-(deletion pass U4); any other value refuses.
+  only env core; the loop calls it through the attribute and never steps an env itself. The env the
+  learner holds is a `TrainerVecEnv` (`_wrap_env` refuses anything else).
 
 **Drift.** Each vendored upstream source is hash-pinned (`UPSTREAM_SOURCE_SHA256`) and checked at
-import, like `train()`'s pin in the hub: an sb3 upgrade that changes one of them is a loud error
-naming the method, not a silent fork.
+import, like `train()`'s pin in the hub: the sb3 constructor that still builds the learner sets the
+attributes these methods read, so an sb3 upgrade that changes one of them is a loud error naming the
+method, not a silent fork.
 """
 from __future__ import annotations
 
 import hashlib
 import inspect
-import os
 import random
 import sys
 import time
@@ -62,24 +62,25 @@ from stable_baselines3.common import utils as _sb3_utils
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
 
+from agents.training.loop_callbacks import init_callback
 from agents.training.loop_hooks import LoopHooks
+from agents.training.rollout_buffer import RolloutBuffer
+from agents.training.train_logger import configure
+from agents.training.trainer_env import TrainerVecEnv
 
-#: The loop, in order. `learn()` below is this table written out; `own_ppo_loop_test` pins both.
+#: The loop, in order. `learn()` below is this table written out; `owned_loop_test` pins both.
 LOOP_PHASES: Tuple[str, ...] = (
-    "setup",            # _setup_learn: counters, ep-info buffers, env reset if needed, callback init
-    "training_start",   # callback.on_training_start(locals(), globals())
+    "setup",            # _setup_learn: counters, ep-info buffers, env reset if needed, logger, callback init
+    "training_start",   # callback.on_training_start()
     "collect",          # self.collect_rollouts(...) — on_rollout_start, on_step x n, on_rollout_end
     "progress",         # iteration += 1; _current_progress_remaining
     "dump",             # dump_logs(iteration) — BEFORE the update (the TB step contract)
     "update",           # self.train()
     "training_end",     # callback.on_training_end()
+    "final_dump",       # the last update's pending scalars, at num_timesteps (P3; module docstring)
 )
 #: The phases that repeat, once per iteration, in this order.
 LOOP_ITERATION: Tuple[str, ...] = ("collect", "progress", "dump", "update")
-
-#: `GEN3AI_PPO_LOOP` values: unset / "owned" = this module; "sb3_reference" = upstream (test seam).
-LOOP_ENV = "GEN3AI_PPO_LOOP"
-LOOP_OWNED, LOOP_REFERENCE = "owned", "sb3_reference"
 
 #: sha256 of `inspect.getsource(...)` of every upstream method vendored here (sb3 / sb3-contrib 2.8.0).
 UPSTREAM_SOURCE_SHA256: Dict[str, str] = {
@@ -125,24 +126,9 @@ def verify_upstream_loop_unchanged() -> None:
 verify_upstream_loop_unchanged()
 
 
-def loop_mode() -> str:
-    """Which loop `learn()` runs — `GEN3AI_PPO_LOOP`, read once per call. An unknown value REFUSES."""
-    v = os.environ.get(LOOP_ENV, "").strip() or LOOP_OWNED
-    if v not in (LOOP_OWNED, LOOP_REFERENCE):
-        raise ValueError(f"${LOOP_ENV}={v!r}: want {LOOP_OWNED!r} (the default) or {LOOP_REFERENCE!r} "
-                         "(the upstream sb3 loop — a test seam for the equivalence A/B)")
-    return v
-
-
 class OwnedLoop:
     """Mixin: the PPO loop. Mixed in AFTER `RolloutProbes` and BEFORE `MaskablePPO`, so
     `RolloutProbes.collect_rollouts` (the Rust collector's entry) still wins."""
-
-    def _reference_loop(self) -> bool:
-        """True only inside a `learn()` the `GEN3AI_PPO_LOOP=sb3_reference` seam selected: then EVERY
-        vendored method below defers to its upstream original, so the reference arm is upstream
-        end to end (its `learn` calls `self._setup_learn` / `self.dump_logs` / … through the MRO)."""
-        return getattr(self, "_ppo_loop_mode", LOOP_OWNED) == LOOP_REFERENCE
 
     # ------------------------------------------------------------------ learn
     def learn(  # type: ignore[override]
@@ -155,18 +141,12 @@ class OwnedLoop:
         use_masking: bool = True,
         progress_bar: bool = False,
     ) -> Any:
-        """`LOOP_PHASES`, written out. Vendored from `MaskablePPO.learn` — the local names are
-        unchanged (`on_training_start` hands `locals()` to every callback, so this body binds NO new
-        local: the hook table is reached through `self`). The three DECLARED HOOK POINTS
-        (`loop_hooks.HOOK_POINTS`: learn > collect | update) are opened here, in that nesting, with
-        the owners in `loop_hooks.HOOK_OWNERS` order (gen3_declared_loop_hooks_v1)."""
-        self._ppo_loop_mode = loop_mode()
+        """`LOOP_PHASES`, written out (vendored from `MaskablePPO.learn`, plus `final_dump`). The three
+        DECLARED HOOK POINTS (`loop_hooks.HOOK_POINTS`: learn > collect | update) are opened here, in that
+        nesting, with the owners in `loop_hooks.HOOK_OWNERS` order (gen3_declared_loop_hooks_v1)."""
         # the hook table is complete at training start: a later registration is a typed FATAL
         self._loop_hooks.freeze("learn() — training start")
         with self._loop_hooks.around("learn"):
-            if self._ppo_loop_mode == LOOP_REFERENCE:
-                return self._reference_learn(total_timesteps, callback, log_interval, tb_log_name,
-                                             reset_num_timesteps, use_masking, progress_bar)
             iteration = 0
 
             # setup
@@ -179,7 +159,7 @@ class OwnedLoop:
             )
 
             # training_start
-            callback.on_training_start(locals(), globals())
+            callback.on_training_start()
 
             assert self.env is not None
 
@@ -207,44 +187,39 @@ class OwnedLoop:
             # training_end
             callback.on_training_end()
 
+            # final_dump — the last update's scalars (P3; module docstring)
+            self._final_dump()
+
             return self
 
-    def _reference_learn(self, total_timesteps: int, callback: Any, log_interval: int, tb_log_name: str,
-                         reset_num_timesteps: bool, use_masking: bool, progress_bar: bool) -> Any:
-        """The `sb3_reference` seam: upstream's `learn`, with the loop's collect / update hooks applied
-        the only way upstream can see them — as instance wrappers, for this call only."""
-        print(f"[PPO LOOP] ${LOOP_ENV}={LOOP_REFERENCE}: running the UPSTREAM sb3 loop (test seam)", flush=True)
-        hooks = self._loop_hooks
-        saved = {n: vars(self).get(n) for n in ("collect_rollouts", "train")}
-        orig_collect, orig_train = self.collect_rollouts, self.train
-
-        def collect_rollouts(*a: Any, **k: Any) -> Any:
-            with hooks.around("collect"):
-                return orig_collect(*a, **k)
-
-        def train(*a: Any, **k: Any) -> Any:
-            with hooks.around("update"):
-                return orig_train(*a, **k)
-
-        self.collect_rollouts, self.train = collect_rollouts, train  # type: ignore[method-assign]
-        try:
-            return MaskablePPO.learn(self, total_timesteps, callback=callback,  # type: ignore[arg-type]
-                                     log_interval=log_interval, tb_log_name=tb_log_name,
-                                     reset_num_timesteps=reset_num_timesteps, use_masking=use_masking,
-                                     progress_bar=progress_bar)
-        finally:
-            for n, v in saved.items():
-                if v is None:
-                    vars(self).pop(n, None)
-                else:
-                    setattr(self, n, v)
+    def _final_dump(self) -> None:
+        """Dump whatever is still pending — the last `train()`'s scalars and anything recorded after the
+        last dump — at the current step. Nothing pending (no update since the last dump) writes nothing."""
+        logger = getattr(self, "_logger", None)
+        if logger is not None and len(logger.name_to_value) > 0:
+            logger.dump(step=self.num_timesteps)
 
     # ------------------------------------------------------------------ the hook table
     def _setup_model(self) -> None:
-        """sb3's model setup, then the loop's HOOK TABLE (startup; `loop_hooks`). Runs on a fresh build
-        and on `load`, so every learner object has exactly one, empty until its owners register."""
+        """sb3's model setup with OUR rollout buffer (`rollout_buffer.RolloutBuffer` — forced, so a `.zip`
+        that recorded sb3-contrib's buffer class still loads onto ours), then the loop's HOOK TABLE
+        (startup; `loop_hooks`). Runs on a fresh build and on `load`, so every learner object has exactly
+        one, empty until its owners register."""
+        self.rollout_buffer_class = RolloutBuffer
         super()._setup_model()   # type: ignore[misc]
         self._loop_hooks = LoopHooks()
+
+    # ------------------------------------------------------------------ the env
+    @staticmethod
+    def _wrap_env(env: Any, verbose: int = 0, monitor_wrapper: bool = True) -> Any:
+        """sb3's constructor / ``load`` / ``set_env`` hook for the env: a `TrainerVecEnv` (the Rust env, a
+        test's toy env) is the learner's env AS IS; anything else REFUSES — sb3 would wrap it in a
+        ``DummyVecEnv`` + ``Monitor`` that nothing here steps."""
+        if not isinstance(env, TrainerVecEnv):
+            raise TypeError(f"the learner's env must be a `agents.training.trainer_env.TrainerVecEnv`, not "
+                            f"{type(env).__module__}.{type(env).__name__} (the Rust env is `RustVecEnv`; a test's "
+                            "toy env is `rust_rollout.testkit.ToyVecEnv`)")
+        return env
 
     # ------------------------------------------------------------------ setup
     def _setup_learn(
@@ -257,10 +232,7 @@ class OwnedLoop:
     ) -> Tuple[int, Any]:
         """Vendored from `BaseAlgorithm._setup_learn`. 🚨 With ``reset_num_timesteps=False`` the
         target is RELATIVE (`total_timesteps += num_timesteps`): the resume site passes the REMAINING
-        budget (`model_build.py`)."""
-        if self._reference_loop():
-            return BaseAlgorithm._setup_learn(self, total_timesteps, callback,  # type: ignore[arg-type]
-                                              reset_num_timesteps, tb_log_name, progress_bar)
+        budget (`model_build.py`). The logger and the callbacks are OURS (`train_logger`, `loop_callbacks`)."""
         self.start_time = time.time_ns()
 
         if self.ep_info_buffer is None or reset_num_timesteps:
@@ -289,29 +261,29 @@ class OwnedLoop:
             if self._vec_normalize_env is not None:
                 self._last_original_obs = self._vec_normalize_env.get_original_obs()
 
-        # Configure logger's outputs if no logger was passed (the logger is still sb3's — stage 3)
+        # The logger, if none was set (`set_logger`; a run's is `run_io._attach_run_tb_logger`): the stdout
+        # table at verbose >= 1, else the null logger. sb3's `tensorboard_log` run-id directories are not served.
         if not self._custom_logger:
-            self._logger = _sb3_utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name,
-                                                       reset_num_timesteps)
+            if self.tensorboard_log is not None:
+                raise ValueError("tensorboard_log is not served: set the run's logger with set_logger "
+                                 "(main.train.run_io._attach_run_tb_logger writes <run>/tb)")
+            self._logger = configure(None, ["stdout"] if self.verbose >= 1 else [])
 
-        # Callback init (BaseCallback / CallbackList are still sb3's — stage 3)
-        callback = self._init_callback(callback, progress_bar)
+        # Callback init (the `init` event of `loop_callbacks`)
+        if progress_bar:
+            raise ValueError("progress_bar is not served by the owned loop")
+        callback = init_callback(self, callback)
 
         return total_timesteps, callback
 
     # ------------------------------------------------------------------ progress / info
     def _update_current_progress_remaining(self, num_timesteps: int, total_timesteps: int) -> None:
         """Vendored from `BaseAlgorithm`: 1.0 at the start -> 0.0 at the end (the schedules' input)."""
-        if self._reference_loop():
-            return BaseAlgorithm._update_current_progress_remaining(self, num_timesteps,  # type: ignore[arg-type]
-                                                                    total_timesteps)
         self._current_progress_remaining = 1.0 - float(num_timesteps) / float(total_timesteps)
 
     def _update_info_buffer(self, infos: Any, dones: Any = None) -> None:
-        """Vendored from `BaseAlgorithm`: Monitor's ``info["episode"]`` (and the Rust collector's) into
-        the 100-episode window `dump_logs` reads."""
-        if self._reference_loop():
-            return BaseAlgorithm._update_info_buffer(self, infos, dones)  # type: ignore[arg-type]
+        """Vendored from `BaseAlgorithm`: the Rust collector's ``info["episode"]`` into the 100-episode
+        window `dump_logs` reads."""
         assert self.ep_info_buffer is not None
         assert self.ep_success_buffer is not None
 
@@ -342,7 +314,7 @@ class OwnedLoop:
         np.random.seed(seed)
         th.manual_seed(seed)
         self.action_space.seed(seed)
-        # self.env is always a VecEnv
+        # self.env is always a TrainerVecEnv (`_wrap_env`)
         if self.env is not None:
             self.env.seed(seed)
 
@@ -351,8 +323,6 @@ class OwnedLoop:
         """Vendored from `OnPolicyAlgorithm.dump_logs`. The tag names are read BY NAME by
         `main.ops.killbar` / `tb_read` / `restart_startup` / `stall_exhibit`, the launcher's
         `format.py` and `utils/plot_tb.py` — never rename one."""
-        if self._reference_loop():
-            return OnPolicyAlgorithm.dump_logs(self, iteration)  # type: ignore[arg-type]
         assert self.ep_info_buffer is not None
         assert self.ep_success_buffer is not None
 

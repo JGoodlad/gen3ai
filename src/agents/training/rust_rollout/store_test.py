@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 import torch as th
 from gymnasium import spaces
-from sb3_contrib.common.maskable.buffers import MaskableDictRolloutBuffer
+from agents.training.rollout_buffer import RolloutBuffer
 
 from agents.training.rust_rollout import store as S
 
@@ -32,7 +32,7 @@ def _space():
 
 
 def _buf(n_steps, n_envs, gamma=GAMMA, lam=LAM):
-    return MaskableDictRolloutBuffer(n_steps, _space(), spaces.Discrete(11), device="cpu", gamma=gamma,
+    return RolloutBuffer(n_steps, _space(), spaces.Discrete(11), device="cpu", gamma=gamma,
                                      gae_lambda=lam, n_envs=n_envs)
 
 

@@ -271,6 +271,6 @@ per-row vector, `label_bot_frac`, the stratified metrics unmoved, the CLI/ModelV
 legs) and `agents/training/opp_class_plumbing_test.py` (the whole `opp_class` chain, which nothing
 covered before it became load-bearing: the two hand-mirrored class tables agreeing, the wrapper tag
 per opponent kind, the reset-time push onto the env, the env emission, the one-ahead shift, the
-episode-boundary drop, buffer shuffle-alignment on a real `MaskableDictRolloutBuffer`, and the
+episode-boundary drop, buffer shuffle-alignment on a real rollout buffer (sb3-contrib's `MaskableDictRolloutBuffer` then; the owned `rollout_buffer.RolloutBuffer`, the same layout, since deletion pass U4), and the
 train-loop call site).
 

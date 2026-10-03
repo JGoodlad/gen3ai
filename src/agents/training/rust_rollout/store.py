@@ -10,12 +10,12 @@ there until an update consumes it. A row carries what PPO needs AND what stalene
 * the ``reward`` (terminal alone), the episode-start flag, and — once its game ends — the game's
   outcome, and (complete-game mode) its GAE advantage and return.
 
-TWO FILLS of the model's own ``MaskableDictRolloutBuffer`` (``[n_steps, n_envs]``, unchanged, so
-``train()`` and every buffer reader are untouched):
+TWO FILLS of the model's own buffer (``agents/training/rollout_buffer.RolloutBuffer``, ``[n_steps, n_envs]``,
+the layout sb3-contrib's ``MaskableDictRolloutBuffer`` had, so ``train()`` and every buffer reader are untouched):
 
 * ``fill_window`` — TODAY'S SCHEDULE: column ``i`` = env ``i``'s next ``n_steps`` rows in play order;
-  GAE by sb3's own ``compute_returns_and_advantage`` with the bootstrap V of each env's NEXT row;
-  the win labels by the SAME back-fill ``WinProbLabelCallback`` runs (``backfill_terminal_labels``) (a game unfinished at the edge
+  GAE by the buffer's own ``compute_returns_and_advantage`` (sb3's arithmetic) with the bootstrap V of each env's
+  NEXT row; the win labels by ``win_prob_callback.backfill_terminal_labels`` (a game unfinished at the edge
   gets ``win_mask`` 0). It exists so the collector is proven against today's path (the rollout-level
   slice N) before it changes the schedule. Rows beyond a column's ``n_steps`` carry to the next window.
 * ``fill_complete`` — ORDER CONSTRAINT 6: completed games only, FIFO by completion; exactly ``D`` rows

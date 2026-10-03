@@ -1,10 +1,11 @@
-"""``RustVecEnv`` — the trainer's VecEnv when ``--env-core rust`` (M5 Lane G).
+"""``RustVecEnv`` — the trainer's env (M5 Lane G; the Rust env core is the only env core).
 
-The PPO model holds a VecEnv for three things: its SPACES (the model's observation / action space,
+The PPO model holds an env for three things: its SPACES (the model's observation / action space,
 checked on a load), ``num_envs`` (the buffer's columns), and the ENV SURFACE its callbacks call
-(``env_method`` pushes and pulls). It does NOT step it: under ``--env-core rust`` the rollout is
-``RustCollector.collect`` (``InstrumentedMaskablePPO.collect_rollouts`` routes there), so
-``step_async`` / ``step_wait`` are a typed refusal.
+(``env_method`` pushes and pulls). It does NOT step it: the rollout is ``RustCollector.collect``
+(``InstrumentedMaskablePPO.collect_rollouts`` routes there), so ``step_async`` / ``step_wait`` are a typed
+refusal. It is a `trainer_env.TrainerVecEnv` — the learner's declared env surface — and no longer an sb3
+``VecEnv`` (deletion pass U4): nothing here is sb3's.
 
 STARTUP is two-phase, both before the first rollout (the DECLARED LIFECYCLE): the constructor fixes
 the spaces and N (what the model needs to be built or loaded); ``startup(model)`` then builds the
@@ -31,19 +32,15 @@ ladder's rung push, team-PFSP's pulls — were deleted with those flags, deletio
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
-from stable_baselines3.common.vec_env.base_vec_env import VecEnv
+
+from agents.training.trainer_env import TrainerVecEnv
 
 
 class RustEnvSurfaceError(RuntimeError):
     """A VecEnv call the Rust env does not serve (named)."""
-
-
-class RustEnvAttributeError(RustEnvSurfaceError, AttributeError):
-    """``get_attr`` of an attribute the Rust env does not serve — an ``AttributeError`` too, so SB3's
-    ``has_attr`` (``is_masking_supported``) answers False instead of crashing."""
 
 
 #: method -> what serves it (the table of record; see the module docstring).
@@ -60,7 +57,7 @@ SURFACE: Dict[str, str] = {
 }
 
 
-class RustVecEnv(VecEnv):
+class RustVecEnv(TrainerVecEnv):
     """See the module docstring. ``build(model) -> RustCollector`` does the startup's heavy half."""
 
     def __init__(self, *, n_envs: int, observation_space: Any, action_space: Any,
@@ -80,16 +77,16 @@ class RustVecEnv(VecEnv):
         model._rust_collector = col
         return col
 
-    # ---- the VecEnv contract
+    # ---- the TrainerVecEnv contract
     def reset(self) -> Dict[str, np.ndarray]:
-        """SB3's ``_setup_learn`` asks for a first observation it never uses here (the collector owns
-        every row); the core's RESET is part of ``startup``. Zeros of the declared spaces."""
+        """``_setup_learn`` asks for a first observation it never uses here (the collector owns every
+        row); the core's RESET is part of ``startup``. Zeros of the declared spaces."""
         return {k: np.zeros((self.num_envs, *sp.shape), dtype=sp.dtype)
                 for k, sp in self.observation_space.spaces.items()}
 
     def step_async(self, actions: np.ndarray) -> None:
-        raise RustEnvSurfaceError("RustVecEnv is not stepped by SB3: the rollout is RustCollector.collect "
-                                  "(InstrumentedMaskablePPO.collect_rollouts routes there under --env-core rust)")
+        raise RustEnvSurfaceError("RustVecEnv is not stepped: the rollout is RustCollector.collect "
+                                  "(InstrumentedMaskablePPO.collect_rollouts routes there)")
 
     def step_wait(self) -> Any:
         raise RustEnvSurfaceError("RustVecEnv.step_wait: see step_async")
@@ -98,28 +95,10 @@ class RustVecEnv(VecEnv):
         if self.collector is not None:
             self.collector.close()
 
-    def get_attr(self, attr_name: str, indices: Any = None) -> List[Any]:
-        if attr_name == "render_mode":
-            return [None] * len(self._indices(indices))
-        raise RustEnvAttributeError(f"RustVecEnv.get_attr({attr_name!r}) is not served (only render_mode)")
-
-    def set_attr(self, attr_name: str, value: Any, indices: Any = None) -> None:
-        raise RustEnvSurfaceError(f"RustVecEnv.set_attr({attr_name!r}) is not served")
-
-    def env_is_wrapped(self, wrapper_class: Any, indices: Any = None) -> List[bool]:
-        return [False] * len(self._indices(indices))
-
-    def _indices(self, indices: Any) -> Sequence[int]:
-        if indices is None:
-            return range(self.num_envs)
-        if isinstance(indices, int):
-            return [indices]
-        return list(indices)
-
     # ---- the env surface
     def env_method(self, method_name: str, *method_args: Any, indices: Any = None, **method_kwargs: Any) -> List[Any]:
         if method_name not in SURFACE:
-            raise RustEnvSurfaceError(f"RustVecEnv.env_method({method_name!r}) is not served under --env-core rust "
+            raise RustEnvSurfaceError(f"RustVecEnv.env_method({method_name!r}) is not served "
                                       f"(served: {sorted(SURFACE)}); map it in rust_vec_env.SURFACE first")
         col = self.collector
         if col is None:

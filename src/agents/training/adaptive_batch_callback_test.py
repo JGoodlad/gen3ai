@@ -229,7 +229,7 @@ def _fake_model(ratio, samples=500, accum=2, batch_size=1024):
 
 def _attach(cb, model):
     cb.init_callback(model)
-    cb.on_training_start({}, {})
+    cb.on_training_start()
     return cb
 
 

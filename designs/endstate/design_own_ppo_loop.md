@@ -10,13 +10,19 @@ SB3's loop is off the production path, and equivalence is held as identity (§4:
 on the Rust core; the readout is
 [`research_state/measurements/own_ppo_loop/`](../research_state/measurements/own_ppo_loop/README.md)).
 Stage 1 was scoped at 1.6 agent-days (range 1.3–1.9), under the 2-day bar, and was GO.
-**2026-10-02 (deletion pass U3):** the PYTHON CORE is gone, and with it two things this plan scheduled for stage 3 — the vendored Python collect (`OwnedLoop._collect_python`) and the async collector (`async_vec_env.py`); `RolloutProbes.collect_rollouts` is the Rust collector's entry and refuses a learner without one. **E2 (`own_ppo_loop_parity_test.py`) was DELETED** (it replayed through `Gen3Env`). **E1 survives** on a TOY collector (`rust_rollout/testkit.VecEnvCollector`, attached to both arms), so it now holds the LOOP (`learn`, `_setup_learn`, `dump_logs`, the progress / info updates, the hook points) against upstream, not the collection; stage 3 retires it, with the K9 golden + the Rust-core E3 as the bar.
+**2026-10-02 (deletion pass U3):** the PYTHON CORE is gone, and with it two things this plan scheduled for stage 3 — the vendored Python collect (`OwnedLoop._collect_python`) and the async collector (`async_vec_env.py`); `RolloutProbes.collect_rollouts` is the Rust collector's entry and refuses a learner without one. **E2 (`own_ppo_loop_parity_test.py`) was DELETED** (it replayed through `Gen3Env`). E1 survived U3 on a TOY collector (`rust_rollout/testkit.VecEnvCollector`, attached to both arms), so it held the LOOP (`learn`, `_setup_learn`, `dump_logs`, the progress / info updates, the hook points) against upstream, not the collection; stage 3 retired it (U4), with the K9 golden + the Rust-core E3 as the bar.
 **STAGE 2 BUILT 2026-10-01** (owner-approved in full). It shipped as three units:
 - the eval-dump KL-skip fix (a regime boundary for runs with a live controller);
 - the declared hook table (identity);
 - owned seeding (a nominal regime boundary on CUDA).
 
 It lands before the X26 ride-along baseline. Stages 3 and 4 run after the switch.
+**STAGE 3 BUILT 2026-10-02** (deletion pass U4; §3.3 has what was built and where it differs from the plan):
+the rollout buffer, the logger, the callback protocol and the env base are OURS (`agents/training/rollout_buffer.py`,
+`train_logger.py`, `loop_callbacks.py`, `trainer_env.py`); the `GEN3AI_PPO_LOOP` seam and E1 are deleted; the
+last update's scalars are dumped (P3, a labelled addition). Equivalence: the K9 golden IDENTICAL, and the Rust-core
+real-run A/B (E3) base vs stage 3 — every base point identical and `policy.pth` equal, the only change the final
+dump's extra points (§4). **Stage 4 is DEFERRED by the owner** — not started.
 
 ---
 
@@ -29,20 +35,18 @@ Most of the PPO loop is **already ours**:
 - **The micro-batch** is device-resident.
 - **Rollouts on the Rust core**, GAE included, are collected by Lane G's complete-game collector.
 
-What SB3 still **executes** each iteration:
-- `learn()`, which is about 35 lines;
-- `_setup_learn`, `dump_logs`, `_update_current_progress_remaining`, `_update_learning_rate` and
-  `_update_info_buffer`;
-- the Python core's `collect_rollouts`;
-- the rollout buffer's `reset` / `add` / `get` and its window-mode GAE;
-- `CallbackList` dispatch;
-- `Logger.record` / `dump`.
+What SB3 still **executes** each iteration **after stage 3**: only methods of the classes stage 4 would
+retire — `BaseAlgorithm._update_learning_rate` (called by `train()`), the clip-range `FloatSchedule`, the
+policy base classes' own methods (`set_training_mode`, `predict_values`, `obs_to_tensor`) and two utilities
+(`explained_variance`, `obs_as_tensor`). Before stage 3 the list also held `learn()` and its helpers (ours
+since stage 1), the Python core's `collect_rollouts` (deleted, U3), the rollout buffer's `reset` / `add` /
+`get` and window GAE, `CallbackList` dispatch and `Logger.record` / `dump` (ours since stage 3).
 
 What SB3 provides **at rest**:
-- the constructor and `_setup_model`, including `set_random_seed` and the policy's ortho-init;
+- the constructor and `_setup_model`, including the policy's ortho-init (seeding is ours, stage 2);
 - the `.zip` save and load, which about 30 readers depend on;
-- the policy base classes and the optimizer construction;
-- the VecEnv base classes, `Monitor` and `BaseCallback`.
+- the policy base classes and the optimizer construction.
+(The VecEnv base classes, `Monitor` and `BaseCallback` left the production path in stage 3.)
 
 **Stage 1** moves SB3's control flow into code we own, as a declared phase table. It keeps
 bit-identical behaviour, the `.zip` format, the policy `nn.Module`, the callbacks and the logger.
@@ -83,8 +87,8 @@ Risk is the risk of replacing a touchpoint without changing behaviour.
 
 | touchpoint | where | what it does | risk |
 |---|---|---|---|
-| `MaskableDictRolloutBuffer` | built by `_setup_model`; rebuilt at a new size by the Rust collector (`collector.py:395`) | The container: `[n_steps, n_envs]` arrays, `reset` / `add`, and `get(batch_size)` (one `np.random.permutation` per epoch, flatten-swap) | **med**. It is the contract between ~10 writers and `train()`; the K9 golden and `device_batches` are keyed on it |
-| `compute_returns_and_advantage` | SB3's stock collect; async `:284`; `rust_rollout/store.py:393` (window mode); PBRS and frozen-φ re-run it | Window GAE | low. The complete-game path already uses our `store.game_gae`, which repeats SB3's arithmetic operation for operation |
+| `MaskableDictRolloutBuffer` — **OWNED, stage 3 (U4)**: `agents/training/rollout_buffer.RolloutBuffer` | built by `_setup_model` (`OwnedLoop` forces the class, so an sb3-written `.zip` loads onto it); rebuilt at a new size by the Rust collector (`_ensure_buffer`) | The container: `[n_steps, n_envs]` arrays, `reset` / `add`, and `get(batch_size)` (one `np.random.permutation` per epoch, flatten-swap) | It is the contract between ~10 writers and `train()`; the K9 golden and `device_batches` are keyed on it — held bit-identical (golden IDENTICAL; `rollout_buffer_test` against sb3-contrib's while it is installed) |
+| `compute_returns_and_advantage` — **OWNED, stage 3** (the buffer's method) | `rust_rollout/store.py` `fill_window` (window mode) and the toy collector in tests (the stock collect, async and PBRS / frozen-φ callers are deleted) | Window GAE | low. The complete-game path uses our `store.game_gae`, which repeats the same arithmetic operation for operation |
 | advantage normalisation | `micro_step.py:227` (ours) | Per micro-batch | — |
 | the post-collect window | `rollout_probes.py` (PBRS, frozen-φ), WinProb `on_rollout_end` (terminal-outcome labels), Fork `on_rollout_end` (appends rows), ValueSidecar | Everything that rewrites the buffer between collection and `train()`. **The order is a contract:** WinProb before ValueSidecar and before Fork, both enforced only by list order in `main/train/callbacks.py` | **med** |
 
@@ -107,6 +111,11 @@ Risk is the risk of replacing a touchpoint without changing behaviour.
 
 ### 1.5 Callbacks — 23 classes (26 before deletion pass L3 removed `DistillAnchorCallback`, `DistillStopCallback` and `SearchTeacherCallback`), all built in `main/train/callbacks.py:92` (`build_callbacks`)
 
+**Stage 3 (U4): they subclass OUR protocol** (`agents/training/loop_callbacks.BaseCallback` / `CallbackList`; the
+periodic checkpointer no longer subclasses sb3's `CheckpointCallback`). The events are declared (`CALLBACK_EVENTS`),
+the per-step locals are declared (`STEP_LOCALS` = `infos`, `dones` — an undeclared key is refused), and an sb3
+callback or a bare function handed to the loop is refused instead of wrapped.
+
 About 11 are on by default:
 - **Always on:** `_TrackingCheckpointCallback`, the LR controller, `MetricsExporterCallback`, `_HparamLogCallback`, `DoseLogCallback`, `GracefulRestartCallback`, `SignalMetricsCallback`, `RewardTermMetricsCallback`.
 - **On by default:** `RankTripwireCallback` and `TeamWinRateCallback`.
@@ -119,7 +128,7 @@ The rest are flag-gated:
 - The value sidecar and the fork arm (team PFSP and the cf supply guard were deleted in deletion pass L4).
 
 **What couples a callback to SB3:**
-- **`self.locals`:** reads in `signal_callback.py` (with an async fallback to `wave_infos`) and `win_prob_callback.py`, all `.get()` (the third file, `dense_aux_callback.py`, is deleted).
+- **`self.locals`:** read only by `signal_callback.py` (`infos` / `dones`, `.get()`); its async `wave_infos` fallback and `win_prob_callback.py`'s reads went with the Python core, so the declared `STEP_LOCALS` are exactly those two.
 - **The logger as a bus:** 4 readers of `logger.name_to_value` (6 before L3 deleted DistillAnchor and DistillStop) — the two LR controllers, RankTripwire and MetricsExporter — plus `compile_control.py:816`.
 - **Model attributes written by callbacks:** `lr_schedule`, `grad_accum_steps` and the `_win_*` / `_fork_metrics` stashes.
 - **`env_method` / `get_attr`:** in selfplay, the exploiter callbacks, team win rate and reward terms.
@@ -138,10 +147,11 @@ keep intercepting. Stage 2 folds them into the declared hook table.
 
 ### 1.6 Logger → TensorBoard
 
-- **Setup:** `_attach_run_tb_logger` (`main/train/run_io.py:222`) calls SB3's `configure(<run>/tb, ["stdout"?, "tensorboard"])`. There is no CSV or JSON output.
+- **OWNED, stage 3 (U4):** `agents/training/train_logger.py` — sb3's `Logger`, `HumanOutputFormat` and `TensorBoardOutputFormat` written out for the two outputs used (stdout + tensorboard; any other is refused), held byte- and call-identical to sb3's by `train_logger_test` while sb3 is installed.
+- **Setup:** `_attach_run_tb_logger` (`main/train/run_io.py`) calls the owned `configure(<run>/tb, ["stdout"?, "tensorboard"])`; `_setup_learn` without one builds the null logger (`tensorboard_log` run-id directories are not served). There is no CSV or JSON output.
 - **Volume:** 204 `logger.record` call sites; 129 literal keys plus 38 f-string families.
 - **Usage:** `exclude=` appears once (`train/n_updates`); `record_mean` is never used.
-- **Three explicit `dump(step)` calls:** `_HparamLog` and the two eval callbacks (**in the middle of a rollout**, §2.1). (A fourth, `final_eval`'s, was deleted in deletion pass P6, 2026-10-02.)
+- **Three explicit `dump(step)` calls:** `_HparamLog` and the two eval callbacks (**in the middle of a rollout**, §2.1). (A fourth, `final_eval`'s, was deleted in deletion pass P6, 2026-10-02.) Plus the loop's own: `dump_logs` before each update, the `final_dump` phase after `training_end` (P3, stage 3) and the abort path's `dump_logs()` (`main/train/lifecycle.py`).
 - **The tools** (`tb_curate`, `tb_inherit`, and the readers in §1.1) depend on the tag names and the `<run>/tb` event layout, not on SB3 itself.
 
 ### 1.7 VecEnv
@@ -150,20 +160,21 @@ keep intercepting. Stage 2 folds them into the declared hook table.
 |---|---|---|
 | `--env-core python` — **DELETED, U3** | `SubprocVecEnv` (spawn) over `Monitor(MaskableAgentWrapper(Gen3Env))` (`main/train/env_factory.py`) | `step_async` / `step_wait`, `reset`, `get_action_masks` via `env_method("action_masks")`, `Monitor`'s `info["episode"]` |
 | `--async-rollout` — **DELETED, U3** | `AsyncSubprocVecEnv(SubprocVecEnv)` | its own collect loop |
-| `--debug` | `DummyVecEnv` | as for the Python core |
-| `--env-core rust` | `RustVecEnv(VecEnv)` (`rust_vec_env.py:71`): a stub whose `env_method` is a declared dispatch onto `_m_<name>`; stepping raises | only the interface type |
+| `--debug` (Python core) — **DELETED, U3** | `DummyVecEnv` | as for the Python core |
+| the Rust core (the only one) | `RustVecEnv(TrainerVecEnv)` (`rust_vec_env.py`; **no sb3 base since stage 3, U4**): a stub whose `env_method` is a declared dispatch onto `_m_<name>`; stepping raises | the declared surface of `agents/training/trainer_env.TrainerVecEnv` (spaces, `num_envs`, `reset`, `seed`, `env_method`, `close`); `OwnedLoop._wrap_env` refuses any other env |
+| a test's toy learner | `rust_rollout/testkit.ToyVecEnv` / `ScriptedVecEnv` (TrainerVecEnvs) | the toy collector steps them |
 
 ### 1.8 Save / load and the `.zip` format
 
 - **What gets written.** `model.save` writes `data` (about 130 keys, cloudpickled where not plain), `policy.pth`, `policy.optimizer.pth` and `pytorch_variables.pth`; `_excluded_save_params` (`instrumented_ppo/hparams.py:511`) keeps about 25 process-local fields out.
-- **What it embeds as code.** Each zip pickles our `policy_class` and `policy_kwargs` (162 KB), sb3-contrib's buffer class, and **two lambdas from our own modules** (`lr_schedule` and `clip_range`; the latter carries the argparse object).
+- **What it embeds as code.** Each zip pickles our `policy_class` and `policy_kwargs` (162 KB) and (until stage 3, which excluded `rollout_buffer_class` from the save: the class is forced on load) sb3-contrib's buffer class, and **two lambdas from our own modules** (`lr_schedule` and `clip_range`; the latter carries the argparse object).
 - **Who reads it.** Every reader goes through `MaskablePPO.load` / `InstrumentedMaskablePPO.load`, including `agents/model/snapshot.py:934` `load_model_snapshot` and `:1141` `load_foreign_opponent`. That covers:
   - resume (**high** — it restores `num_timesteps`, `_n_updates`, the optimizer state, and therefore the KL-annealed LR that makes `--lr` inert on a resume);
   - the pool, baselines, play, eval workers, eval-trace generation, the prober (2 sites plus a side read through `load_from_zip_file`), counterfactuals, search, cf producers, `winprob_finetune` (which loads AND saves), the Rust eval and the inference service.
 - **No policy-only loader exists.** Every reader except resume needs only `policy_kwargs` + `policy.pth`.
 - **Not traced:** `main.elo` and `main.anchors` are assumed to route through `eval_worker` / `snapshot_ladder` / `load_foreign_opponent`. This is **UNVERIFIED**.
 
-**Stages 1–3 do not touch any of this.**
+**Stages 1–3 do not touch any of this** — except that stage 3 stopped writing `rollout_buffer_class` into `data` (every learner forces the owned buffer; a plain sb3 reader builds sb3's own, as before).
 
 ---
 
@@ -340,17 +351,56 @@ before `MaskablePPO` in `InstrumentedMaskablePPO`'s bases. It owns:
 - **Not in stage 2:** replacing `self.locals` with a typed per-step event. It lands with the Python
   core's deletion, because only the Python-core callbacks read it.
 
-### 3.3 Stage 3 — with the deletion pass (after the switch)
+### 3.3 Stage 3 — with the deletion pass (after the switch) — **BUILT 2026-10-02 (deletion pass U4)**
 
-- **The buffer is ours.** Flat device tensors, written by the Rust collector directly, with window
-  GAE as `store.game_gae`'s sibling. It is held to SB3's `get()` permutation, so the K9 golden stays
-  bit-identical.
-- **Deleted with the Python core:** the vendored Python collect and `async_vec_env.py` (287) — DONE in U3;
-  still to go in stage 3: the `DummyVecEnv` / `SubprocVecEnv` / `Monitor` wiring, `RustVecEnv`'s SB3 base, and
-  `device_batches`' SB3 sample type.
-- **The logger is ours.** A thin `SummaryWriter` writer with the same tags, the same step convention
-  and the same `<run>/tb` layout, plus the launcher pipe.
-- **`BaseCallback` → hook protocol** for the surviving callbacks.
+The plan, and what was built against each line:
+
+- **The buffer is ours.** *Plan:* flat device tensors, written by the Rust collector directly, window GAE as
+  `store.game_gae`'s sibling, held to SB3's `get()` permutation. *Built:* `agents/training/rollout_buffer.RolloutBuffer`
+  (`gen3_owned_rollout_buffer_v1`) — sb3-contrib's `MaskableDictRolloutBuffer` written out operation for operation
+  for the learner's one layout (a Dict of Box / MultiBinary keys, a Discrete action; anything else REFUSED), the
+  same `get()` permutation and window GAE. **It stays HOST-resident numpy, not device tensors** (a deliberate
+  departure): `device_batches`' default `staged` mode gathers each micro-batch on the host so the card holds ~2
+  micro-batches instead of the whole flattened buffer (`gen3_device_batch_mode_v1`, the memory fix), and a device
+  buffer would undo that. The Rust collector's fills write its arrays in place, as before. `OwnedLoop._setup_model`
+  forces the class (so an sb3-written `.zip` loads onto it) and `rollout_buffer_class` is no longer saved.
+  `device_batches`' sample type is the owned `RolloutSamples`.
+- **Deleted with the Python core:** the vendored Python collect and `async_vec_env.py` (287) — DONE in U3. Stage 3
+  removed the rest: `RustVecEnv`'s sb3 `VecEnv` base (it is a `trainer_env.TrainerVecEnv`, and
+  `OwnedLoop._wrap_env` refuses any other env), the remaining SB3 `configure` sites (the run logger, `_setup_learn`,
+  the K9 golden, the startup dry update), the no-op SubprocVecEnv worker watchdog (`start_subprocess_watchdog` and
+  the two tools' hooks on it) and, in tests and `capacity_overhead_benchmark.py`, `DummyVecEnv` for the trainee
+  (`testkit.ToyVecEnv`). Not removed: `main/fresh_checkpoint.py`'s `DummyVecEnv` stub and the plain-`MaskablePPO`
+  test fixtures (stage 4's).
+- **The logger is ours.** *Built:* `agents/training/train_logger.py` (`gen3_owned_logger_v1`) — sb3's `Logger` + its
+  stdout and TensorBoard writers, same tags, same step convention, same `<run>/tb` layout, same stdout table (the
+  launcher pipe reads `name_to_value`, which keeps sb3's `defaultdict` semantics).
+- **`BaseCallback` → hook protocol.** *Built:* `agents/training/loop_callbacks.py` (`gen3_owned_callbacks_v1`) — the
+  same event methods (so the 17 callback classes changed only their base import), with the events and the per-step
+  locals DECLARED (`CALLBACK_EVENTS`, `STEP_LOCALS`); `on_training_start()` no longer receives `learn()`'s frame,
+  there is no `globals`, and an sb3 callback / bare function is refused. The periodic checkpointer owns its two
+  fields instead of subclassing sb3's `CheckpointCallback`.
+- **The `GEN3AI_PPO_LOOP` seam is deleted** (`loop_mode`, `_reference_loop`, `_reference_learn`), and with it **E1**
+  (`own_ppo_loop_test.py`, the lockstep differential against upstream `learn` — nothing upstream is comparable any
+  more). Its loop-level coverage moved to `owned_loop_test.py` (the dump order, the final dump, the env refusal, the
+  callback protocol) and `loop_hooks_test.py` (the hook nesting, on `testkit.ScriptedVecEnv`).
+- **Added: the final dump (P3, `gen3_final_update_dump_v1`).** `LOOP_PHASES` ends `training_end -> final_dump`: what
+  is still pending (the last `train()`'s scalars) is dumped at `num_timesteps`. On a normal end that is the step the
+  last iteration's dump used, so the `train/*` tags carry TWO points at the final step (update k-1's, then update
+  k's); the abort / graceful-restart path (`main/train/lifecycle.py`) runs the loop's own `dump_logs()` before it
+  saves, which IS that iteration's conventional dump. A labelled addition, not identity: E3 below shows it is the
+  only change.
+- **Decided (U3's flag): K9(b)'s python-core `in_loop` variant is DELETED.** Every buffer comes from the Rust
+  collector, which stamps per-row versions, and Lane G's probe already judges a version-less buffer as all-current;
+  keeping the in-loop branch meant a second K9(b) implementation only tests reached. `behaviour_gate_mode` is
+  `probe` or `off` (`designs/training/learner_gates.md`).
+
+**Equivalence (stage 3 is identity except the labelled final dump):** E0, the K9 learner golden, IDENTICAL on the
+owned buffer and logger; E3 re-run as base (`8347bdba`, pre-stage-3) vs stage 3 on the root `--debug --steps
+10000 --seed 42` smoke (the Rust core; §2.3's recipe no longer controls the rollout size) — the base-vs-base
+control identical on every non-wall series and `policy.pth`; base vs stage 3: every base point of all 211 tags
+identical, `final_model.zip`'s `policy.pth` equal (`79c20d51…`), and the only addition one final-step point on
+the 145 tags the last update records (§4).
 
 ### 3.4 Stage 4 — the checkpoint and the dependency (a separate decision, not proposed now)
 
@@ -371,9 +421,10 @@ costs nothing per update, while the `.zip` is the most widely read contract in t
 | check | what | bar | tier |
 |---|---|---|---|
 | **E0** | The K9 LEARNER GOLDEN (`agents.training.learner_golden`) | bit-identical. **Necessary, not sufficient:** it calls `train()` directly and does not exercise `learn()` | routine (exists) |
-| **E1** (`own_ppo_loop_test.py`, PASS; mutation-checked) | **Lockstep differential** (new, CPU, seconds): a seeded scripted VecEnv over the production spaces, serving rows of the golden's buffer, with dones on a fixed schedule, one `TimeLimit.truncated` + `terminal_observation` (the bootstrap branch) and `info["episode"]` dicts. Real callbacks that need no live env are registered — `AdaptivePPOCallback`, `SignalMetricsCallback`, a mid-rollout `dump(step)` stand-in for eval (pinning §2.1's preserved quirk) — plus a RECORDING callback. Three iterations of upstream `MaskablePPO.learn(model, …)` (still callable unbound while sb3 is installed) vs `OwnedLoop.learn`, from the same seeded learner | EXACT: the hook trace (name, `num_timesteps`, `n_calls`, locals keys, `buf.pos`), every buffer array at each rollout end, `name_to_value` before every dump and each dump's step, params sha after each update, `_n_updates`, `_current_progress_remaining`, `ep_info_buffer` | routine |
+| **E1** (`own_ppo_loop_test.py`, PASS; mutation-checked) — **RETIRED, stage 3 (U4): its reference arm (upstream `learn` via the seam) is gone; the dump order, the final dump and the protocol moved to `owned_loop_test.py`** | **Lockstep differential** (new, CPU, seconds): a seeded scripted VecEnv over the production spaces, serving rows of the golden's buffer, with dones on a fixed schedule, one `TimeLimit.truncated` + `terminal_observation` (the bootstrap branch) and `info["episode"]` dicts. Real callbacks that need no live env are registered — `AdaptivePPOCallback`, `SignalMetricsCallback`, a mid-rollout `dump(step)` stand-in for eval (pinning §2.1's preserved quirk) — plus a RECORDING callback. Three iterations of upstream `MaskablePPO.learn(model, …)` (still callable unbound while sb3 is installed) vs `OwnedLoop.learn`, from the same seeded learner | EXACT: the hook trace (name, `num_timesteps`, `n_calls`, locals keys, `buf.pos`), every buffer array at each rollout end, `name_to_value` before every dump and each dump's step, params sha after each update, `_n_updates`, `_current_progress_remaining`, `ep_info_buffer` | routine |
 | **E2** (`own_ppo_loop_parity_test.py`, PASS; mutation-checked) — **DELETED, U3 (owner D3: it replayed through `Gen3Env`)** | **Rollout level on REAL games**: `rust_rollout.parity`'s record/replay machinery (the same games, keyed trainee draws). The Python-core side is filled by the stock collect and by the owned collect, in one process with the same weights | buffers byte-EXACT on every field (tighter than parity's 1e-5 bars, which compare different batch compositions) | integration (`sim`) |
 | **E3** | **Short real-run A/B** at matched seed: `train_rl_agent --debug` (CPU) for ≥ 3 updates, under each loop, on BOTH env cores. The stock loop is selected through a TEST SEAM env var (`GEN3AI_PPO_LOOP=sb3_reference`), deleted in stage 3. **The control is run FIRST:** stock vs stock | If stock-vs-stock is identical (§2.3's Rust half): every non-wall TB series identical (tag set, step grid, values) and `policy.pth` bytes equal. Otherwise: the same tag set and step grid, and divergence onset and magnitude no earlier or larger than stock-vs-stock, declared before reading | one-off, recorded in `measurements/own_ppo_loop/`; the control is MEASURED (§2.3): **Rust core identical, so identity is the bar there**; Python core not reproducible, so it gets the bound. **RESULT (2026-10-01):** Rust — 342 / 342 non-wall series identical, and `policy.pth` equal in both arms AND to the pre-stage-1 control; Python — the same tag set and step grid, with values diverging from the first dump exactly as stock-vs-stock does |
+| **E3′ (stage 3, 2026-10-02)** | The same A/B for stage 3, Rust core only: base `8347bdba` vs stage 3 on the root smoke (`--debug --steps 10000 --seed 42`); a base-vs-base control first | control: identical (only wall clocks differ, `policy.pth` equal). Stage 3: every base point of 211 tags identical, `policy.pth` `79c20d51…` equal; the ONLY difference is the final dump's one extra final-step point on 145 tags (P3, labelled) | one-off, recorded in `measurements/own_ppo_loop/` §6 (`stage3_ab.sh`, `stage3_read.py`) |
 | **E4** | The sizing study's carry-over | nothing extra: E0–E2 make stage 1 identity at the update and rollout level, so the arms' verdicts (run pinned on today's loop) transfer by construction | — |
 
 Stage 2 is **not** identity on purpose (§2.1 and the seeding fix). It is gated by its fail-on-revert
@@ -388,7 +439,7 @@ and the TB step of `train/*` on eval cycles).
 |---|---|---|---|
 | **1** | the loop module + phase table + upstream pins (0.3); E1 (0.35); E2 (0.2); E3 incl. control (0.35); docs: training `CLAUDE.md`, `designs/training/ppo_step.md`, `learner_lifecycle.md`, program §4 deletion list, this doc (0.2); rebase onto in-flight work + full routine gate + ship (0.2) | **1.6** (1.3–1.9) | now; must precede the deletion pass, need not precede the switch |
 | **2** | update-result handoff + eval no-clear (0.35); per-core fail-on-revert tests (0.25); hook table absorbing K6 / compile wrappers (0.35); seeding (0.15, plus a GPU benchmark read under the GPU lock); docs + ledger paragraph (0.15) | **1.25** (1.0–1.6) | straight after stage 1, after the K6+K8 canary work lands; before the X26 ride-along baseline |
-| 3 | own buffer, logger, callback protocol; delete the Python collect / async / VecEnv glue | 2–3 | in the deletion pass |
+| 3 | own buffer, logger, callback protocol; delete the Python collect / async / VecEnv glue | 2–3 | **BUILT 2026-10-02** (U4; the collect / async went in U3) |
 | 4 | policy-only loader, owned writer, drop sb3 | 3–5 | separate decision |
 
 **Stages 1 + 2 together are about 2.85 agent-days (2.3–3.5), which exceeds the 2-day bar.** Stage 1
@@ -420,7 +471,7 @@ separately (orchestrator's rule: tell, don't trim).
 **What becomes dead** (program §4):
 - **Stage 1:** the stock `MaskablePPO.collect_rollouts` / `learn` paths become unreachable in
   production; the `GEN3AI_PPO_LOOP` seam becomes deletable in stage 3.
-- **Stage 3:** `Monitor` / `DummyVecEnv` / `SubprocVecEnv` use and `RustVecEnv`'s SB3 base (`async_vec_env.py`
+- **Stage 3 (DONE, U4):** `Monitor` / `DummyVecEnv` / `SubprocVecEnv` use and `RustVecEnv`'s SB3 base (`async_vec_env.py`
   and the Python collect went in deletion pass U3).
 - **Stage 4:** the sb3 / sb3-contrib dependency.
 
@@ -440,3 +491,6 @@ separately (orchestrator's rule: tell, don't trim).
 | 2026-10-01 | The eval-dump KL skip | Preserved bit-for-bit in stage 1; fixed in stage 2 with per-core fail-on-revert tests, before X26 **(orchestrator)** | Fixing it inside stage 1 (that would make stage 1 non-identity and its verdict un-transferable) | §2.1: 37/739 N0 updates (5.0%), 1 per eval cycle in every run scanned |
 | 2026-10-02 | Deletion pass L3 removes three callbacks from the inventory (§1.5) | `DistillAnchorCallback`, `DistillStopCallback` and `SearchTeacherCallback` are deleted with distillation and the search teacher (owner: "delete all, port none"), so the logger bus has 4 readers, not 6, and the stage-2 `post_update` result value feeds only the KL controller and RankTripwire | Porting them onto the declared hooks first (nothing consumes them; a port is ~1-2 agent-days if X15 is scheduled) | `designs/ops/deletion_pass_manifest.md` §2; `designs/deleted_flags.md` |
 | 2026-10-02 | The post-training `final_eval` is deleted (deletion pass P6, D5) | One fewer explicit `logger.dump(step)` caller (§1.6: three, not four) and no `eval_final/*` tags; the last periodic eval cycle is the end-of-run readout. Nothing about the stage-2 logger-bus or hook contract changes | Porting it onto the owned loop's logger (nothing read its output) | `designs/ops/deletion_pass_manifest.md` D5 / P6 |
+| 2026-10-02 | Stage 3 built (deletion pass U4) | The buffer, logger, callback protocol and env base owned (sb3's arithmetic, refusing any other layout); the `GEN3AI_PPO_LOOP` seam and E1 deleted; the bar is the K9 golden (IDENTICAL) + a Rust-core real-run A/B (every base point identical, same `policy.pth`) | A device-resident buffer (the plan's sketch: it would undo `device_batches`' staged host gather, the memory fix); keeping sb3's `CheckpointCallback` as a base (it pulled sb3's protocol back in); keeping the seam (nothing upstream to compare against once the protocol is ours) | §3.3; `owned_loop_test`, `rollout_buffer_test`, `train_logger_test` |
+| 2026-10-02 | The last update's scalars are dumped (P3) — a labelled ADDITION, not identity | A `final_dump` phase after `training_end` at `num_timesteps` (two `train/*` points at the final step on a normal end), and the abort / restart path's `dump_logs()` before its save | Stamping the last update at a synthetic later step (a step no rollout reached); dumping only on the restart path (a normal end would still lose the last update) | `owned_loop_test` fails on revert; E3′ |
+| 2026-10-02 | K9(b)'s python-core `in_loop` variant deleted (U3's flag, decided in U4) | ONE implementation: Lane G's probe, which judges a version-less buffer as all-current | Keeping it (a second implementation that only tests reached once the Python core was gone) | `learner_gates_test` (ported onto the probe + `enforce_behaviour`) |

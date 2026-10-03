@@ -50,10 +50,8 @@ from agents.training.instrumented_ppo.calibration import (   # the MODULE path, 
 from agents.training.instrumented_ppo.constants import _WIN_CONTESTED_TAU
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
 from agents.training.instrumented_ppo.loop import OwnedLoop   # gen3_owned_ppo_loop_v1: the loop is ours
-from agents.training.instrumented_ppo.learner_gates import (   # K9(b) python path + K9(c)
+from agents.training.instrumented_ppo.learner_gates import (   # K9(b) dispatch + K9(c)
     behaviour_gate_mode,
-    behaviour_margins_first_micro,
-    check_behaviour_first_micro,
     check_buffer_finite,
     check_kl_finite,
     check_loss_finite,
@@ -203,14 +201,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # (`learner_gates`).
         check_buffer_finite(self.rollout_buffer)
         # +K9(b) / STALENESS (M5 Lane G): before any optimizer step; a no-op unless --behaviour-check.
-        # A buffer that carries per-row policy versions (the Rust collector) gets Lane G's pre-loop
-        # probe (its own forward, age-bucketed); one that does not (python env core: every row is
-        # current) gets the in-loop gate on the FIRST micro-batch's own forward — never both
-        # (`learner_gates.behaviour_gate_mode`).
-        _bgate_mode = behaviour_gate_mode(self)
-        if _bgate_mode == "probe":
+        # Lane G's pre-loop probe (its own forward, age-bucketed by the rows' policy versions; a buffer
+        # with no version record is judged as every row current) — the ONE implementation
+        # (`learner_gates.behaviour_gate_mode`; the python core's in-loop variant went with it, U4).
+        if behaviour_gate_mode(self) == "probe":
             self._behaviour_probe()
-        _bgate_pending = _bgate_mode == "in_loop"
 
         # Compute current clip range
         clip_range = self.clip_range(self._current_progress_remaining)  # type: ignore[operator]
@@ -352,11 +347,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # (`micro_step.micro_step`), in exactly this source order inside it. Compiled as one
                 # `fullgraph=True` region under --compile-trainer (`self._micro_region`), eager
                 # otherwise; the steps after 3a below are the DECLARED EAGER TAIL, in contract order.
-                # +K9(b), python path: the first micro-batch's TIE MARGINS, from one no-grad eager forward
-                # BEFORE R1's (so every stash the fold reads below is R1's own; no optimizer step yet).
-                _bgate_margins = (behaviour_margins_first_micro(self, rollout_data.observations,
-                                                                rollout_data.actions, rollout_data.action_masks)
-                                  if _bgate_pending else None)
                 _mo = self._micro_region()(self.policy, rollout_data.observations,
                                          rollout_data.actions, rollout_data.action_masks,
                                          rollout_data.old_log_prob, rollout_data.old_values,
@@ -364,7 +354,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                          _micro_var, _micro_st)
                 actions = (rollout_data.actions.long().flatten() if _micro_st.discrete
                            else rollout_data.actions)
-                values, log_prob = _mo.values, _mo.log_prob
+                values = _mo.values
                 advantages = _mo.advantages
                 loss = _mo.loss
                 # The ride-along readers' stash, built OUTSIDE the region.
@@ -410,14 +400,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # the probes — can see them. A no-op (one attribute read) when the policy has no heads.
                 self._ridealong_update(rollout_data, values, actions, epoch, ridealong_acc)
                 if _ph is not None: _ph("ridealong")
-
-                # +K9(b), python path: the first micro-batch of epoch 0 runs before any optimizer step,
-                # so its recomputed log π must equal the rollout's stored behaviour log-prob (one host
-                # read per update, no forward of its own; `learner_gates` module docs).
-                if _bgate_pending:
-                    check_behaviour_first_micro(self, log_prob, rollout_data.old_log_prob,
-                                                actions, rollout_data.action_masks, margins=_bgate_margins)
-                    _bgate_pending = False
 
                 # +SCAFFOLDING GAUGE (registered 2026-08-29): the two value readouts this tree
                 # carries answer DIFFERENT questions — the critic estimates the SHAPED return (in

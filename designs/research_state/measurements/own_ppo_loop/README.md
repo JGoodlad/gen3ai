@@ -69,3 +69,20 @@ The script now restores counters (`learner_benchmark.restore_model_state`) and c
 order (`--order TFFT`). It was not re-run: the orchestrator ruled the zero-kernel count decisive and
 the GPU queue the bottleneck. The sizing study and the K8 perf guard would surface a real update-time
 regression.
+
+## 6. Stage 3 (deletion pass U4, 2026-10-02) — the owned buffer / logger / callbacks, real-run A/B
+
+Design §3.3 / §4 E3′. Rust core only (the only core), CPU, `gen3ai_torch28`, the ROOT smoke
+(`--debug --steps 10000 --seed 42`; §1's `--arch production --n-envs 4 --n-steps 256` recipe no longer
+controls the rollout size — the production recipe's 98,304-row trigger would not fire on one CPU env).
+`stage3_ab.sh <worktree> <run-name>` runs one arm into `$GEN3AI_MODELS_DIR`; `stage3_read.py <base> <arm>`
+reads it: every base point must be identical (non-wall tags) and the arm may add ONLY points at the final
+step.
+
+| pair | result |
+|---|---|
+| control: base `8347bdba` vs base | identical — only wall clocks differ (13 tags: `*_ms`, `time/fps`, `trainee_decisions_per_s`); `final_model.zip` `policy.pth` `79c20d5159c78cfc…` both |
+| base vs stage 3 (U4 tree) | **every base point of all 211 tags identical**; `policy.pth` `79c20d5159c78cfc…` (equal); the only difference is ONE extra point at the final step (10,251) on 145 tags — the last update's scalars, written by the new `final_dump` (P3, a labelled addition). The stdout tables are identical but for the final dump's table |
+
+The K9 learner golden (E0) is IDENTICAL on the owned buffer and logger (`python -m agents.training.learner_golden check`).
+
