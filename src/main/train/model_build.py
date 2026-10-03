@@ -27,7 +27,6 @@ from agents.training.dose import kl_controller_snapshot
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from main.exit_codes import TrainExitCode, exit_code_for
 from main.launcher.ipc import emit, send_event
-from main.train.constants import _ABORT_EVAL_DRAIN_SEC
 from main.train.checkpoint_state import _validate_or_reset_optimizer_state
 from main.train.fork_lr import apply_fork_lr_pin, read_recorded_pin, resolve_fork_lr
 from main.train.lifecycle import (
@@ -428,13 +427,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                 (lambda: lr_callback.handoff_lr)
                 if isinstance(lr_callback, TwoPhaseLRCallback) else None
             ),
-            eval_drain_fn=(
-                (lambda: eval_callback.drain(timeout=_ABORT_EVAL_DRAIN_SEC))
-                if (eval_callback is not None and hasattr(eval_callback, "drain")) else None
-            ),
         )
         if eval_callback is not None:
-            eval_callback.abort_fn = _abort_fn
             # P10-A2: the in-process Rust eval cycle's own safe points (every host step).
             eval_callback.safe_point_fn = _abort_fn.safe_point
         graceful_restart_callback.abort_fn = _abort_fn
@@ -619,13 +613,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                 (lambda: lr_callback.handoff_lr)
                 if isinstance(lr_callback, TwoPhaseLRCallback) else None
             ),
-            eval_drain_fn=(
-                (lambda: eval_callback.drain(timeout=_ABORT_EVAL_DRAIN_SEC))
-                if (eval_callback is not None and hasattr(eval_callback, "drain")) else None
-            ),
         )
         if eval_callback is not None:
-            eval_callback.abort_fn = _abort_fn
             # P10-A2: the in-process Rust eval cycle's own safe points (every host step).
             eval_callback.safe_point_fn = _abort_fn.safe_point
         graceful_restart_callback.abort_fn = _abort_fn

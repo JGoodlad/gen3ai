@@ -11,7 +11,6 @@ never observes, an error class mapped to CRASH, a streak that resets at a launch
 """
 from __future__ import annotations
 
-import json
 import os
 import types
 
@@ -125,31 +124,28 @@ class _SummaryPool:
 
 
 def _selfplay(tmp_path, monkeypatch, *, store, n_sentinels=0, bot_win=0.40, sentinel_win=0.0,
-              pfsp_scale=0.0, popen=None):
-    from agents.training import eval_callback as ec
+              pfsp_scale=0.0, fail=False, kinds=None):
     from agents.training.selfplay_callback import SelfPlayCallback
-    from agents.training.selfplay_callback_test import _fake_selfplay_popen
+    from agents.training.selfplay_callback_test import attach_fake_evaluator
     from unittest.mock import MagicMock
     pool = _SummaryPool(n_sentinels, store).mock
-    cb = SelfPlayCallback(pool=pool, model_dir=str(tmp_path), server_config=MagicMock(),
-                          showdown_port=9999, n_workers=1, n_sentinels=max(1, n_sentinels),
+    cb = SelfPlayCallback(pool=pool, model_dir=str(tmp_path), n_sentinels=max(1, n_sentinels),
                           pfsp_scale=pfsp_scale)
     cb.model = MagicMock()
     cb.model.save = lambda base: open(base + ".zip", "w").close()
+    cb.model.gamma = 0.99
     cb._logger = MagicMock()
     cb.model.get_env.return_value.env_method.return_value = [(100, 5, 2)]
     cb.num_timesteps = 0
     cb._init_callback()
-    monkeypatch.setattr(ec.subprocess, "Popen", popen or _fake_selfplay_popen(
-        ec, bot_win=bot_win, sentinel_win=sentinel_win))
+    attach_fake_evaluator(cb, monkeypatch, bot_win=bot_win, sentinel_win=sentinel_win, fail=fail, kinds=kinds)
     return cb, pool
 
 
 def _cycle(cb, k):
-    """Launch + collect eval cycle k (the fake workers finish at once)."""
+    """Launch + collect eval cycle k (the cycle plays blocking, in process, in one step)."""
     cb.num_timesteps = 2_000_000 * k + 1
-    cb._on_step()                 # launch
-    cb._on_step()                 # collect
+    cb._on_step()
 
 
 def test_an_EMPTY_pool_for_its_floor_of_eval_cycles_is_FATAL_SUPPLY(tmp_path, monkeypatch):
@@ -186,18 +182,8 @@ def test_a_FORKS_inherited_parent_counters_are_not_its_own(tmp_path, monkeypatch
 
 
 def test_FAILED_eval_cycles_count_toward_the_floor(tmp_path, monkeypatch):
-    class _FailProc:
-        returncode = 1
-
-        def poll(self):
-            return 1
-
-        def wait(self, timeout=None):
-            return 1
-
     store = {}
-    cb, _ = _selfplay(tmp_path, monkeypatch, store=store, bot_win=0.9,
-                      popen=lambda *a, **k: _FailProc())
+    cb, _ = _selfplay(tmp_path, monkeypatch, store=store, bot_win=0.9, fail=True)
     _cycle(cb, 1)
     _cycle(cb, 2)
     with pytest.raises(LeverStarvedError) as ei:
@@ -216,39 +202,25 @@ def test_a_seeded_pool_never_trips_and_the_summary_says_so(tmp_path, monkeypatch
     assert all("ZERO" not in line for line in cb.supply_summary_lines())
 
 
-def test_a_graceful_drain_records_but_never_turns_a_finished_run_into_a_FATAL(tmp_path,
-                                                                              monkeypatch, capsys):
+def test_the_end_of_segment_summary_is_loud_at_zero_and_raises_nothing(tmp_path, monkeypatch, capsys):
+    """Training ending is not a judge: `_on_training_end` only PRINTS the supply summary (there is no
+    in-flight cycle to collect — the cycle is blocking), so a finished run is never turned into a FATAL
+    from inside its own shutdown path."""
     store = {}
     cb, _ = _selfplay(tmp_path, monkeypatch, store=store)
     _cycle(cb, 1)
-    _cycle(cb, 2)
-    cb.num_timesteps = 6_000_001
-    cb._on_step()                 # launch cycle 3 …
-    cb._on_training_end()         # … and training ends: the drain collects it
-    assert cb._pool_guard.streak == 3
+    _cycle(cb, 2)                 # the pool is still empty after two cycles (floor 3): no FATAL yet
+    cb._on_training_end()
+    assert cb._pool_guard.streak == 2
     assert "🚨🚨 [SUPPLY] ZERO" in capsys.readouterr().out
 
 
 def test_PFSP_with_sentinels_but_no_measured_win_rate_is_FATAL(tmp_path, monkeypatch):
-    from agents.training.selfplay_callback_test import _publish_fake_selfplay_shards
     from agents.training.eval_sharding import BOT
-
-    class _P:
-        returncode = 0
-
-        def poll(self):
-            return 0
-
-        def wait(self, timeout=None):
-            return 0
-
-    def popen(argv, **_kw):
-        _publish_fake_selfplay_shards(json.load(open(argv[-1])), bot_win=0.8, kinds={BOT})
-        return _P()
 
     store = {}
     cb, _ = _selfplay(tmp_path, monkeypatch, store=store, n_sentinels=3, pfsp_scale=1.0,
-                      popen=popen)
+                      bot_win=0.8, kinds={BOT})
     _cycle(cb, 1)
     _cycle(cb, 2)
     with pytest.raises(LeverStarvedError) as ei:

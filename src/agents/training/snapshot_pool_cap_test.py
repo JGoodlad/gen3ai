@@ -84,7 +84,7 @@ def test_owner_scan_deletes_the_surplus(tmp_path):
 
 
 def test_rescan_applies_the_window_again(tmp_path):
-    # MaskableAgentWrapper / RustEnvOpponents re-scan the SAME pool object on each generation bump.
+    # RustEnvOpponents (and the deleted Python wrapper before it) re-scan the SAME pool object on each generation bump.
     _zips(tmp_path, STEPS25[:3])
     pool = _pool(tmp_path, max_snapshots=3)
     _zips(tmp_path, STEPS25[3:5])

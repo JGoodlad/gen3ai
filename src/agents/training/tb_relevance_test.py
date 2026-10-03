@@ -33,13 +33,16 @@ CONSUMER-SIDE guard against any future flat margin (the G3 block below is what p
 simply no longer fires on this composition. ⚠️ A run pinned BEFORE `b87604cd` still carries the
 degenerate series — read those six as absent there, per the training leaf's era column.
 
-The two `slow` smokes at the bottom are the end-to-end statement: a real `--critic winprob` debug run
-writes none of the NOISE tags and all of the LIVE ones, and a real `shaped` run's tag set is
-BYTE-IDENTICAL to what it was before any of this landed (measured 2026-09-06: 172 tags, diff empty).
+The `slow` smoke at the bottom is the end-to-end statement: a real win-prob debug run writes none of the
+NOISE tags and all of the LIVE ones. (Its twin, a real `shaped` run whose tag set had to stay BYTE-IDENTICAL
+to what it was before any of this landed — measured 2026-09-06: 172 tags, diff empty — is DELETED: the shaped
+critic is gone, `--critic` is a constant of the namespace since P11b, and the twin's argv
+`--win-prob-mode read_only` had been a win-prob run since the bare-argv flip of 2026-10-02, so its
+`train/scaffolding_*` assertions could only fail. Deletion pass P10-F2.)
 
 Run:
     pytest src/agents/training/tb_relevance_test.py -q
-    pytest src/agents/training/tb_relevance_test.py -q -m slow      # the two real runs
+    pytest src/agents/training/tb_relevance_test.py -q -m slow      # the real run
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
@@ -311,7 +314,6 @@ CRITIC_MODE_TAGS = (
 )
 
 _WINPROB_ARGV = []      # the bare argv IS the win-prob run (the critic and its reward are constants, P11b)
-_SHAPED_ARGV = ["--win-prob-mode", "read_only"]
 
 
 def _run_smoke(tmp_path, name, extra):
@@ -333,8 +335,12 @@ def _run_smoke(tmp_path, name, extra):
     (tmp_path / "models").mkdir(exist_ok=True)
     env["GEN3AI_MODELS_DIR"] = str(tmp_path / "models")
     argv = [sys.executable, str(src_path("main", "train_rl_agent.py")),
-            "--debug", "--steps", "3000", "--n-steps", "256", "--batch-size", "128",
-            "--n-epochs", "2", "--run-name", name, *extra]
+            # The root CLAUDE.md smoke (`--debug --steps 10000`, four updates at the Rust core's >= 2,048
+            # completed-game rows). The old `--steps 3000 --n-steps 256 --batch-size 128 --n-epochs 2` was
+            # an SB3-era shape: `--n-steps` does not size the Rust core's rollout, so the FIRST update ran on
+            # 108 rows and tripped K9(b)'s `excluded_frac < 0.15` bar (0.194, bit-reproducible, also on
+            # main at 900de5e2 — P10-F2), a hard FATAL that has nothing to do with tags.
+            "--debug", "--steps", "10000", "--run-name", name, *extra]
     proc = subprocess.run(argv, cwd=str(tmp_path), env=env, capture_output=True, text=True)
     assert proc.returncode == 0, f"smoke failed:\n{proc.stdout[-4000:]}\n{proc.stderr[-4000:]}"
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
@@ -364,24 +370,6 @@ def test_a_winprob_run_emits_no_noise_tag_and_every_live_tag(tmp_path):
     assert frac and min(frac) < 1.0, (
         f"contested_frac never leaves 1.0 (min {min(frac) if frac else 'n/a'}) — every decision "
         "read as 'contested', which is what a CONSTANT win_margin looks like")
-
-
-@pytest.mark.slow
-def test_a_shaped_run_keeps_every_tag_the_gates_touch(tmp_path):
-    """The shaped tag set must not move: every gated family has its source ON here.
-
-    Byte-identical was verified by measurement (2026-09-06: 172 tags, empty diff before/after);
-    this pins the half that could regress, which is a gate firing where its source is live.
-    """
-    tags, _series = _run_smoke(tmp_path, "tbrel_shaped", _SHAPED_ARGV)
-    for tag in ("train/scaffolding_gauge", "train/scaffolding_rho", "train/scaffolding_n",
-                *MARGIN_TAGS):
-        assert tag in tags, f"{tag} lost on a SHAPED run — a gate fired where its source is live"
-    missing = sorted(t for t in LIVE_TAGS if t not in tags)
-    assert not missing, f"shaped run missing: {missing}"
-    # The critic's own Murphy split belongs to the OTHER mode, and its absence here is the
-    # CONDITIONAL half of the contract — not something the gates took away.
-    assert not [t for t in CRITIC_MODE_TAGS if t in tags]
 
 
 # ════════════════════════════════════════════ the census stays honest ══

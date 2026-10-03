@@ -89,11 +89,8 @@ def _make_callback(tmp_path, *, pool=None, promote_threshold=0.65,
     cb = SelfPlayCallback(
         pool=pool or _mock_pool(n_sentinels),
         model_dir=str(tmp_path),
-        server_config=MagicMock(),
-        showdown_port=9999,
         best_model_save_path=best_dir,
         promote_threshold=promote_threshold,
-        n_workers=3,
         n_sentinels=n_sentinels,
         debug=debug,
     )
@@ -103,45 +100,61 @@ def _make_callback(tmp_path, *, pool=None, promote_threshold=0.65,
     # `training_env` is a read-only property reading model.get_env(); configure the env
     # there. opponent_default_stats telemetry: (decisions, defaults, redecides) per env.
     cb.model.get_env.return_value.env_method.return_value = [(100, 5, 2)]
+    cb.model.gamma = 0.99
     cb.num_timesteps = 2_000_000  # first eval boundary is now 2M
     return cb
 
 
-def _publish_fake_selfplay_shards(cfg, *, bot_win=0.8, sentinel_win=0.7, fixed_win=0.5,
-                                  reward=1.0, ep_len=20.0, kinds=None):
-    """Mimic the real eval_worker: read the cycle plan, claim every shard UNIT, and publish a raw
-    ShardResult (win rate keyed by kind). ``kinds`` restricts which kinds get a result — units of
-    other kinds are still claimed (locked) but left unreported, simulating a hang on those (e.g.
-    sentinels)."""
-    from agents.training.eval_sharding import ShardedEvalPool, ShardResult, BOT, SENTINEL, FIXED
-    wins = {BOT: bot_win, SENTINEL: sentinel_win, FIXED: fixed_win}
-    pool = ShardedEvalPool.from_plan(cfg["result_dir"])
-    while (unit := pool.claim_next(cfg["claim_dir"])) is not None:
-        if kinds is not None and unit.kind not in kinds:
-            continue
-        n = unit.n_games
-        pool.publish(cfg["result_dir"], ShardResult(
-            unit_id=unit.unit_id, item_key=unit.item_key, worker_id=cfg["worker_id"],
-            n_won=round(wins[unit.kind] * n), n_finished=n, sum_reward=reward * n, n_episodes=n,
-            sum_ep_len=ep_len * n, duration_sec=5.0, td_residuals=[]))
+class _Stats:
+    def __init__(self, n):
+        self.n = n
+
+    def as_dict(self):
+        return {"games": self.n, "units": self.n, "host_steps": 1, "trainee_decisions": 10 * self.n,
+                "p2_policy_decisions": 0, "traces": 0, "near_ties": 0,
+                "seconds": {k: 0.0 for k in ("load", "stage", "submit", "drain", "act", "core", "finish", "trace",
+                                             "total")}, "lifecycle": {}}
 
 
-def _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7):
-    """Fake Popen whose 'worker' work-steals BOTH bots and sentinels (as shard units) from the
-    plan and publishes per-shard results, exactly like the real eval_worker."""
-    class _FakeProc:
-        returncode = 0
-        def poll(self):
-            return 0
-        def wait(self, timeout=None):
-            return 0
+class _FakeEvaluator:
+    """What ``RustEvalCore`` does for the callback: plays the cycle's plan IN PROCESS and publishes one raw
+    ShardResult per unit (win rate keyed by kind). ``kinds`` restricts which kinds get a result — units of
+    other kinds are left unreported, simulating a cycle that measured no sentinel. ``fail`` raises the
+    eval core's own cycle error (a QUARANTINED battle), which the callback logs as missing results."""
 
-    def fake_popen(argv, stdout=None, stderr=None, env=None):
-        import json as _json
-        _publish_fake_selfplay_shards(_json.load(open(argv[-1])),
-                                      bot_win=bot_win, sentinel_win=sentinel_win)
-        return _FakeProc()
-    return fake_popen
+    def __init__(self, *, bot_win=0.8, sentinel_win=0.7, fixed_win=0.5, reward=1.0, ep_len=20.0,
+                 kinds=None, fail=False):
+        from agents.training.eval_sharding import BOT, SENTINEL, FIXED
+        self.wins = {BOT: bot_win, SENTINEL: sentinel_win, FIXED: fixed_win}
+        self.reward, self.ep_len, self.kinds, self.fail = reward, ep_len, kinds, fail
+        self.calls = []
+
+    def run_cycle(self, pool, run_dir, **kw):
+        from agents.training.eval_sharding import ShardResult
+        self.calls.append(kw)
+        if self.fail:
+            from agents.training.rust_eval.executor import EvalCoreError
+            raise EvalCoreError("a battle was QUARANTINED")
+        for u in pool.units:
+            if self.kinds is not None and u.kind not in self.kinds:
+                continue
+            n = u.n_games
+            pool.publish(run_dir, ShardResult(
+                unit_id=u.unit_id, item_key=u.item_key, worker_id=0,
+                n_won=round(self.wins[u.kind] * n), n_finished=n, sum_reward=self.reward * n, n_episodes=n,
+                sum_ep_len=self.ep_len * n, duration_sec=5.0, td_residuals=[]))
+        return _Stats(len(pool.units))
+
+
+def attach_fake_evaluator(cb, monkeypatch, **kw):
+    """Give the callback's model a declared eval core that plays the cycle with the fake (win rates by
+    kind) and stub the sentinel snapshot loads (the mock pool's snapshot paths are not files)."""
+    from types import SimpleNamespace
+    from agents.training.rust_eval import launch as rust_launch
+    ev = _FakeEvaluator(**kw)
+    cb.model._rust_collector = SimpleNamespace(evaluator=ev, cfg=SimpleNamespace(run_seed=5))
+    monkeypatch.setattr(rust_launch, "load_sentinels", lambda *_a, **_k: {})
+    return ev
 
 
 # ── _check_bot_regression (edge-triggered warn) ───────────────────────────────
@@ -236,15 +249,15 @@ def test_n_sentinels_defaults_to_five():
     assert cb._n_sentinels == 5
 
 
-def test_n_sentinels_threads_into_pool_sentinel_selection(tmp_path):
+def test_n_sentinels_threads_into_pool_sentinel_selection(tmp_path, monkeypatch):
     # --n-sentinels N must drive how many evenly-spaced pool snapshots the eval requests (the set
-    # PFSP gets fresh win-rates for). Drive the real _launch_eval with the subprocess spawn stubbed.
+    # PFSP gets fresh win-rates for). Drive the real _launch_eval on the fake eval core.
     cb = _make_callback(tmp_path, n_sentinels=9)
     assert cb._n_sentinels == 9
     cb._init_callback()
+    attach_fake_evaluator(cb, monkeypatch)
     cb.num_timesteps = 2_000_000
-    with patch("agents.training.selfplay_callback.spawn_eval_workers", return_value=[]):
-        cb._launch_eval()
+    cb._launch_eval()
     cb._pool.sentinel_entries.assert_called_once_with(n=9)
 
 
@@ -256,18 +269,6 @@ def test_triggers_at_freq_boundary(tmp_path):
         cb._on_step()
         mock_launch.assert_called_once()
     assert cb._last_eval_step == 2_000_000
-
-
-def test_skips_launch_while_previous_eval_running(tmp_path):
-    cb = _make_callback(tmp_path)
-    cb._init_callback()
-    cb.num_timesteps = 2_000_000
-    cb._pending = {"step": 1_000_000,
-                   "procs": [{"proc": MagicMock(**{"poll.return_value": None})}]}
-    with patch.object(cb, "_launch_eval") as mock_launch:
-        cb._on_step()
-        mock_launch.assert_not_called()  # previous cycle still running → skip
-    assert cb._last_eval_step == 2_000_000  # boundary consumed
 
 
 # ── force-eval (launcher button → SIGUSR2) shares the eval_callback mixin ───────
@@ -284,41 +285,21 @@ def test_force_eval_launches_off_cadence_when_idle(tmp_path):
     assert cb._last_eval_step == 1_234_567
 
 
-def test_force_eval_rejected_while_running(tmp_path):
-    cb = _make_callback(tmp_path)
-    cb._init_callback()
-    cb.num_timesteps = 1_234_567
-    cb._pending = {"step": 1_000_000,
-                   "procs": [{"proc": MagicMock(**{"poll.return_value": None})}]}
-    ec.request_forced_eval()           # event isolation: _isolate_force_eval_event (autouse)
-    with patch.object(cb, "_launch_eval") as mock_launch, \
-         patch("agents.training.eval_callback.send_event") as mock_event:
-        cb._on_step()
-        mock_launch.assert_not_called()
-    assert any("rejected" in str(c.args[0]).lower() for c in mock_event.call_args_list)
-
-
 # ── full lifecycle: launch → collect → promote / best ─────────────────────────
 
 def test_lifecycle_collect_records_promotes_and_saves_best(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
     best_dir = tmp_path / "best"
     pool = _mock_pool(n_sentinels=3)
     cb = _make_callback(tmp_path, pool=pool, best_dir=str(best_dir),
                         promote_threshold=0.65)
     cb._init_callback()
     # sentinel win 0.70 > 0.65 threshold → promotion; bot win 0.80 → best model.
-    monkeypatch.setattr(ec.subprocess, "Popen",
-                        _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7))
+    ev = attach_fake_evaluator(cb, monkeypatch, bot_win=0.8, sentinel_win=0.7)
+    snapshot = str(tmp_path / ".eval_runs" / "step_2000000" / "snapshot.zip")   # the cycle's frozen file
 
-    cb._on_step()                              # boundary → spawn workers (non-blocking)
-    assert cb._pending is not None and cb._pending["step"] == 2_000_000
-    snapshot = cb._pending["snapshot"]
+    cb._on_step()                              # boundary → play + merge + record + promote + best
 
-    cb.num_timesteps = 2_000_001
-    cb._on_step()                              # all done → merge + record + promote + best
-
-    assert cb._pending is None
+    assert len(ev.calls) == 1 and ev.calls[0]["step"] == 2_000_000
     # Promotion: the FROZEN snapshot (not the live model) is added at the trigger step.
     pool.add_from_path.assert_called_once()
     assert pool.add_from_path.call_args[0][0] == snapshot
@@ -351,18 +332,14 @@ def test_lifecycle_collect_records_promotes_and_saves_best(tmp_path, monkeypatch
 def test_collect_pushes_sentinel_reward_and_step_to_tui(tmp_path, monkeypatch):
     """The TUI builds the reward column from eval/mean_reward_vs_<opp> and labels sentinels
     from eval/sentinel_step_<i> — both must be pushed live (were missing → '—' / no step)."""
-    from agents.training import eval_callback as ec
     from agents.training import selfplay_callback as sp
     pool = _mock_pool(n_sentinels=3)
     cb = _make_callback(tmp_path, pool=pool)
     cb._init_callback()
     captured: dict = {}
     monkeypatch.setattr(sp, "send_metrics", lambda d: captured.update(d))
-    monkeypatch.setattr(ec.subprocess, "Popen",
-                        _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7))
+    attach_fake_evaluator(cb, monkeypatch, bot_win=0.8, sentinel_win=0.7)
 
-    cb._on_step()
-    cb.num_timesteps = 2_000_001
     cb._on_step()
 
     # Sentinel reward + step surfaced to the TUI...
@@ -375,18 +352,13 @@ def test_collect_pushes_sentinel_reward_and_step_to_tui(tmp_path, monkeypatch):
 
 
 def test_lifecycle_no_promotion_below_threshold(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
     pool = _mock_pool(n_sentinels=3)
     cb = _make_callback(tmp_path, pool=pool, promote_threshold=0.65)
     cb._init_callback()
-    monkeypatch.setattr(ec.subprocess, "Popen",
-                        _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.50))
+    attach_fake_evaluator(cb, monkeypatch, bot_win=0.8, sentinel_win=0.50)
 
-    cb._on_step()
-    cb.num_timesteps = 2_000_001
-    cb._on_step()
+    cb._on_step()                              # launches AND collects (blocking, in process)
 
-    assert cb._pending is None
     pool.add_from_path.assert_not_called()      # 0.50 ≤ 0.65 → no promotion
     recorded = {c.args[0] for c in cb.logger.record.call_args_list}
     assert "train/selfplay_promoted_steps" not in recorded
@@ -395,78 +367,29 @@ def test_lifecycle_no_promotion_below_threshold(tmp_path, monkeypatch):
 
 def test_lifecycle_no_sentinels_handled(tmp_path, monkeypatch):
     """Pool with only the (newly seeded) step-0 entry still evals bots; pool win=0 → no promote."""
-    from agents.training import eval_callback as ec
     pool = _mock_pool(n_sentinels=1)
     cb = _make_callback(tmp_path, pool=pool, promote_threshold=0.65)
     cb._init_callback()
-    monkeypatch.setattr(ec.subprocess, "Popen",
-                        _fake_selfplay_popen(ec, bot_win=0.9, sentinel_win=0.4))
+    attach_fake_evaluator(cb, monkeypatch, bot_win=0.9, sentinel_win=0.4)
 
-    cb._on_step()
-    cb.num_timesteps = 2_000_001
-    cb._on_step()
+    cb._on_step()                              # launches AND collects (blocking, in process)
 
-    assert cb._pending is None
     recorded = {c.args[0] for c in cb.logger.record.call_args_list}
     assert "eval/win_rate_vs_bots" in recorded
     pool.add_from_path.assert_not_called()
 
 
-def test_lifecycle_worker_failure_logs_and_continues(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
+def test_lifecycle_failed_cycle_logs_and_continues(tmp_path, monkeypatch):
     pool = _mock_pool(n_sentinels=3)
     cb = _make_callback(tmp_path, pool=pool, best_dir=str(tmp_path / "best"))
     cb._init_callback()
+    attach_fake_evaluator(cb, monkeypatch, fail=True)       # the eval core fails the cycle: nothing published
 
-    class _FailProc:
-        returncode = 1
-        def poll(self):
-            return 1
-        def wait(self, timeout=None):
-            return 1
+    cb._on_step()                               # cycle failed → no record, no crash
 
-    monkeypatch.setattr(ec.subprocess, "Popen", lambda *a, **k: _FailProc())  # writes nothing
-
-    cb._on_step()
-    cb.num_timesteps = 2_000_001
-    cb._on_step()                               # all workers failed → no record, no crash
-
-    assert cb._pending is None
     pool.add_from_path.assert_not_called()
     assert cb._best_aggregate_win_rate == -1.0
     assert not cb.logger.dump.called
-
-
-def test_drain_waits_for_inflight_then_collects(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
-    pool = _mock_pool(n_sentinels=3)
-    cb = _make_callback(tmp_path, pool=pool)
-    cb._init_callback()
-
-    waited = {"n": 0}
-
-    class _SlowProc:
-        returncode = 0
-        def poll(self):
-            return None                          # looks alive until wait() is called
-        def wait(self, timeout=None):
-            waited["n"] += 1
-            return 0
-
-    def fake_popen(argv, stdout=None, stderr=None, env=None):
-        import json as _json
-        _publish_fake_selfplay_shards(_json.load(open(argv[-1])),
-                                      bot_win=0.5, sentinel_win=0.5, reward=0.0, ep_len=10.0)
-        return _SlowProc()
-
-    monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)
-
-    cb._on_step()                                # launch; poll()=None → stays pending
-    assert cb._pending is not None
-    cb.drain(timeout=5)                          # graceful shutdown blocks then collects
-    assert cb._pending is None
-    assert waited["n"] >= 1
-    assert cb.logger.record.called
 
 
 def test_resume_restores_eval_step_no_immediate_re_eval(tmp_path):
@@ -521,15 +444,11 @@ def _env_method_calls(cb, name):
 
 
 def test_collect_pushes_live_self_play_target(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
     pool = _mock_pool(n_sentinels=3)
     cb = _make_callback(tmp_path, pool=pool, promote_threshold=0.65)
     cb._init_callback()
-    monkeypatch.setattr(ec.subprocess, "Popen",
-                        _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7))
-    cb._on_step()
-    cb.num_timesteps = 2_000_001
-    cb._on_step()
+    attach_fake_evaluator(cb, monkeypatch, bot_win=0.8, sentinel_win=0.7)
+    cb._on_step()                              # launches AND collects (blocking, in process)
     # The live fraction (1 - heuristic_fraction(0.8) = 0.90) is pushed to the envs each eval.
     pushes = _env_method_calls(cb, "set_self_play_target")
     assert pushes, "expected a set_self_play_target env_method push"
@@ -539,118 +458,43 @@ def test_collect_pushes_live_self_play_target(tmp_path, monkeypatch):
 
 
 def test_collect_seeds_pool_when_crossing_threshold(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
     pool = _mock_pool(n_sentinels=0)          # empty pool → no sentinels yet
     pool.is_empty.return_value = True
     pool.sentinel_entries.return_value = []
     cb = _make_callback(tmp_path, pool=pool)
     cb._init_callback()
-    monkeypatch.setattr(ec.subprocess, "Popen",
-                        _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.0))
-    cb._on_step()
-    cb.num_timesteps = 2_000_001
-    cb._on_step()
+    attach_fake_evaluator(cb, monkeypatch, bot_win=0.8, sentinel_win=0.0)
+    cb._on_step()                              # launches AND collects (blocking, in process)
     # Win rate 0.8 ≥ threshold → fraction > 0 with an empty pool → seed from the frozen snapshot.
     pool.add_from_path.assert_called_once()
     assert pool.add_from_path.call_args[0][1] == 2_000_000   # at the trigger step
 
 
 def test_collect_does_not_seed_below_threshold(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
     pool = _mock_pool(n_sentinels=0)
     pool.is_empty.return_value = True
     pool.sentinel_entries.return_value = []
     cb = _make_callback(tmp_path, pool=pool)
     cb._init_callback()
     # Bot win 0.40 < SELF_PLAY_START (0.55) → fraction 0 → no seed, push fraction 0.
-    monkeypatch.setattr(ec.subprocess, "Popen",
-                        _fake_selfplay_popen(ec, bot_win=0.40, sentinel_win=0.0))
-    cb._on_step()
-    cb.num_timesteps = 2_000_001
-    cb._on_step()
+    attach_fake_evaluator(cb, monkeypatch, bot_win=0.40, sentinel_win=0.0)
+    cb._on_step()                              # launches AND collects (blocking, in process)
     pool.add_from_path.assert_not_called()
     pushes = _env_method_calls(cb, "set_self_play_target")
     assert pushes and pushes[-1].args[1] == pytest.approx(0.0)
 
 
 def test_collect_persists_summary(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
     pool = _mock_pool(n_sentinels=3)
     cb = _make_callback(tmp_path, pool=pool)
     cb._init_callback()
-    monkeypatch.setattr(ec.subprocess, "Popen",
-                        _fake_selfplay_popen(ec, bot_win=0.8, sentinel_win=0.7))
-    cb._on_step()
-    cb.num_timesteps = 2_000_001
-    cb._on_step()
+    attach_fake_evaluator(cb, monkeypatch, bot_win=0.8, sentinel_win=0.7)
+    cb._on_step()                              # launches AND collects (blocking, in process)
     pool.persist_summary.assert_called()
     kw = pool.persist_summary.call_args.kwargs
     assert set(kw) >= {"win_rate_vs_bots", "self_play_fraction", "last_eval_step",
                        "seeded", "pool_generation"}
     assert kw["self_play_fraction"] == pytest.approx(0.90, abs=1e-6)
-
-
-# ── eval-cycle watchdog (the live-run failure: a hung sentinel wedged eval) ────
-
-def test_cycle_tag_carries_process_nonce(tmp_path, monkeypatch):
-    # spawn_eval_workers is imported into the selfplay_callback namespace — patch it there
-    # (patching eval_callback's copy wouldn't intercept the call and would spawn real procs).
-    from agents.training import selfplay_callback as sp
-    cb = _make_callback(tmp_path)
-    cb._init_callback()
-    captured = []
-    monkeypatch.setattr(sp, "spawn_eval_workers",
-                        lambda run_dir, base_cfg, n: captured.append(base_cfg["cycle_tag"]) or [])
-    cb.num_timesteps = 2_000_000
-    cb._launch_eval()
-    assert captured[0].startswith(cb._eval_run_nonce)
-    # NOT the step-derived tag that collided across restarts.
-    assert captured[0] != f"{2_000_000 // 100 % 10000:04d}"
-
-
-def test_watchdog_aborts_hung_selfplay_cycle(tmp_path, monkeypatch):
-    """Reproduces the live wedge: bots finish but a sentinel hangs → without the watchdog
-    `_pending` is pinned forever. The watchdog kills + collects partial so eval resumes."""
-    from agents.training import eval_callback as ec
-    pool = _mock_pool(n_sentinels=3)
-    cb = _make_callback(tmp_path, pool=pool)
-    cb._init_callback()
-
-    killed = {"n": 0}
-
-    class _HungProc:
-        returncode = None
-        def poll(self):
-            return None
-        def kill(self):
-            self.returncode = -9
-            killed["n"] += 1
-        def wait(self, timeout=None):
-            return -9
-
-    def fake_popen(argv, stdout=None, stderr=None, env=None):
-        import json as _json
-        from agents.training.eval_sharding import BOT
-        # Bots finish; sentinels never report (the real hang was on a sentinel/opponent).
-        _publish_fake_selfplay_shards(_json.load(open(argv[-1])), bot_win=0.7, kinds={BOT})
-        return _HungProc()
-
-    monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)
-
-    cb._on_step()                                 # launch; procs hung (poll None)
-    assert cb._pending is not None
-    # Read the SCALED bound, not the raw constant: on a loaded box the effective
-    # timeout is larger, so `raw + 1` seconds ago is not yet overdue and this test
-    # would fail for the exact contention reason the helper exists to remove.
-    cb._pending["launched_at"] = ec.time.monotonic() - (ec.eval_cycle_timeout() + 1)
-    cb.num_timesteps = 2_000_001
-    cb._on_step()                                 # watchdog → kill + collect partial
-
-    assert killed["n"] >= 1
-    assert cb._pending is None                     # unwedged
-    recorded = {c.args[0] for c in cb.logger.record.call_args_list}
-    assert "eval/win_rate_vs_bots" in recorded     # bot results recorded despite the hang
-    pool.add_from_path.assert_not_called()         # no pool win rate → no promotion
 
 
 # ── gen3_tb_relevance_v1: NO SENTINEL MEASURED ⇒ NO POOL CURVE ───────────────────────────────
@@ -662,29 +506,12 @@ def test_watchdog_aborts_hung_selfplay_cycle(tmp_path, monkeypatch):
 
 def _cycle_recorded_tags(tmp_path, monkeypatch, *, n_sentinels, kinds=None):
     """Run ONE full eval cycle and return the set of tags it recorded."""
-    from agents.training import eval_callback as ec
     pool = _mock_pool(n_sentinels=n_sentinels)
     cb = _make_callback(tmp_path, pool=pool)
     cb._init_callback()
-
-    class _DoneProc:
-        returncode = 0
-        def poll(self):
-            return 0
-        def wait(self, timeout=None):
-            return 0
-
-    def fake_popen(argv, stdout=None, stderr=None, env=None):
-        import json as _json
-        _publish_fake_selfplay_shards(_json.load(open(argv[-1])),
-                                      bot_win=0.6, sentinel_win=0.5, kinds=kinds)
-        return _DoneProc()
-
-    monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)
-    cb._on_step()                       # launch (workers publish synchronously in the fake Popen)
-    cb.num_timesteps += 1
-    cb._on_step()                       # the next step sees poll()==0 and COLLECTS
-    assert cb._pending is None, "the cycle did not collect — the harness, not the gate, is wrong"
+    ev = attach_fake_evaluator(cb, monkeypatch, bot_win=0.6, sentinel_win=0.5, kinds=kinds)
+    cb._on_step()                       # launches AND collects (blocking, in process)
+    assert len(ev.calls) == 1, "the cycle did not run — the harness, not the gate, is wrong"
     return {c.args[0] for c in cb.logger.record.call_args_list}
 
 
@@ -714,7 +541,7 @@ def test_single_sentinel_publishes_pool_but_not_monotonicity(tmp_path, monkeypat
 
 
 # ── opponent-mix reporting fractions (pool / stable / nonbot) — pure, no battles ──
-# These mirror MaskableAgentWrapper._select_episode_opponent (wrappers.py) for REPORTING only.
+# These mirror rust_env_opponents.EpisodeOpponentSampler's draw for REPORTING only.
 
 def _fo(label):
     """A stand-in FixedOpponentEntry — the fraction helper reads only `.label`."""
@@ -822,14 +649,14 @@ def test_stable_mastery_streak_resets_on_dip(tmp_path):
 # measurement of that pair, so the two conditions are asserted separately rather than as a pair.
 
 def test_sentinel_regime_is_greedy_and_symmetric_by_default(tmp_path):
-    cb = SelfPlayCallback(pool=_mock_pool(1), model_dir=str(tmp_path), server_config=MagicMock(),
-                          showdown_port=9999, eval_sentinel_greedy=True)
+    cb = SelfPlayCallback(pool=_mock_pool(1), model_dir=str(tmp_path),
+                          eval_sentinel_greedy=True)
     assert cb._sentinel_regime() == {"greedy": True, "symmetric_teams": True}
 
 
 def test_sentinel_regime_is_neither_under_no_eval_sentinel_greedy(tmp_path):
-    cb = SelfPlayCallback(pool=_mock_pool(1), model_dir=str(tmp_path), server_config=MagicMock(),
-                          showdown_port=9999, eval_sentinel_greedy=False)
+    cb = SelfPlayCallback(pool=_mock_pool(1), model_dir=str(tmp_path),
+                          eval_sentinel_greedy=False)
     assert cb._sentinel_regime() == {"greedy": False, "symmetric_teams": False}
 
 
@@ -837,8 +664,8 @@ def test_a_SPECIALIST_run_is_greedy_but_NOT_ladder_symmetric(tmp_path):
     """`--trainee-team` draws BOTH players from the taught team — symmetric between the players,
     but not the LADDER's draw (full pool, 0.1 sample bias). So the pair is not reusable, and the
     row must say so rather than let the ladder infer symmetry from the greedy half."""
-    cb = SelfPlayCallback(pool=_mock_pool(1), model_dir=str(tmp_path), server_config=MagicMock(),
-                          showdown_port=9999, eval_sentinel_greedy=True,
+    cb = SelfPlayCallback(pool=_mock_pool(1), model_dir=str(tmp_path),
+                          eval_sentinel_greedy=True,
                           trainee_team_str="Tyranitar @ Leftovers\n")
     assert cb._sentinel_regime() == {"greedy": True, "symmetric_teams": False}
 
@@ -855,7 +682,21 @@ def test_the_detached_ladder_updater_never_sees_the_gpu(tmp_path, monkeypatch):
         seen.update(kw, argv=argv)
         return MagicMock()
     monkeypatch.setattr(sc.subprocess, "Popen", fake_popen)
-    me = types.SimpleNamespace(_model_dir=str(tmp_path), _ladder_games=4, _bridge_impl="rust",
-                               _use_showdown_bridge=True)
+    me = types.SimpleNamespace(_model_dir=str(tmp_path), _ladder_games=4)
     sc.SelfPlayCallback._spawn_snapshot_ladder_update(me, 1000)
     assert seen["env"]["CUDA_VISIBLE_DEVICES"] == "" and "--promote" in seen["argv"]
+
+
+def test_the_detached_ladder_updater_plays_on_the_rust_bridge(tmp_path, monkeypatch):
+    """The updater's round-robin plays through `snapshot_ladder --impl`, whose own default is `node`. The
+    callback used to forward `--use-bridge`'s resolved impl (rust); when P11 B4 deleted that plumbing the
+    argument fell back to its `node` default, so every live promotion spawned a NODE-bridge updater
+    (found by P10-F2). It is the Rust bridge, by name."""
+    import types
+    from agents.training import selfplay_callback as sc
+    seen = {}
+    monkeypatch.setattr(sc.subprocess, "Popen", lambda argv, **kw: seen.update(argv=argv) or MagicMock())
+    sc.SelfPlayCallback._spawn_snapshot_ladder_update(
+        types.SimpleNamespace(_model_dir=str(tmp_path), _ladder_games=4), 1000)
+    argv = seen["argv"]
+    assert argv[argv.index("--impl") + 1] == "rust"

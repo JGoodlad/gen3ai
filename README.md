@@ -33,7 +33,7 @@ the generation rewards genuine strategic understanding rather than raw damage ou
   Showdown battle engine**: byte-for-byte protocol parity with the reference implementation,
   validated move-by-move; no server, no websockets, deterministic replay from recorded seeds.
 - **Training** — PPO self-play with a frozen-opponent pool and promotion gates, a
-  **win-probability critic** whose value output *is* P(win), non-blocking evaluation workers, and
+  **win-probability critic** whose value output *is* P(win), an in-process evaluation cycle (~1.5% of wall), and
   an **anchored Bradley–Terry ELO** that makes model generations comparable across runs. Twelve
   design eras and counting.
 - **The prober** — a forensic replay inspector (web UI): for any lost game it can attribute the

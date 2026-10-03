@@ -15,7 +15,7 @@ FOUR PIECES, each testable alone:
   target's slots, then one route per scripted BOT (Lane F's bots, played INSIDE the core with a
   declared seed rule — :func:`bot_stream_seed`; their decisions are never exposed).
 * :class:`EpisodeOpponentSampler` — one env's per-episode draw, **rule for rule
-  ``MaskableAgentWrapper._select_episode_opponent``** (exploiter / keep-bots / the self-play coin /
+  the draw of the deleted Python wrapper (``MaskableAgentWrapper._select_episode_opponent``, U3)** (exploiter / keep-bots / the self-play coin /
   the challenge bucket with its capped stable share and stable PFSP / the floor bucket with
   ``--bot-weights`` and mastered stables / one pool snapshot per env per GENERATION through
   ``SnapshotPool.sample``'s recency x PFSP weights), from the SAME per-env ``random.Random(idx)``
@@ -335,7 +335,7 @@ class PoolRoster:
 
 
 class EpisodeOpponentSampler:
-    """One env's per-episode opponent draw — ``MaskableAgentWrapper._select_episode_opponent`` rule for
+    """One env's per-episode opponent draw — the deleted Python wrapper's ``_select_episode_opponent`` rule for
     rule (see the module docs), returning a ROUTE index. ``rng_seed`` is the wrapper's (``idx``);
     ``pool_rng_seed`` the per-env pool stream (``SnapshotPool(rng_seed=…)``'s)."""
 

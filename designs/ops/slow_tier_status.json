@@ -321,14 +321,6 @@
    "contention": 1.38,
    "detail": ""
   },
-  "src/agents/training/tb_relevance_test.py::test_a_shaped_run_keeps_every_tag_the_gates_touch": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 50.32,
-   "contention": 1.85,
-   "detail": ""
-  },
   "src/agents/training/tb_relevance_test.py::test_a_winprob_run_emits_no_noise_tag_and_every_live_tag": {
    "status": "pass",
    "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",

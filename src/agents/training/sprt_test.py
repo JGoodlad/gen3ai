@@ -141,7 +141,7 @@ def test_a_candidate_with_any_record_is_never_tested_again_and_an_interrupted_on
 def test_the_pool_is_split_evenly_and_a_batch_that_played_nothing_abandons_the_test():
     assert SP.split_pairs(40, ["s0", "s1", "s2"]) == {"s0": 14, "s1": 13, "s2": 13}
     job = SP.SprtJob(step=1, snapshot="x", sentinels=[{"label": "sentinel_0", "path": "p", "step": 0}],
-                     cfg=S.SprtConfig(), run_seed=0, sf=1.0)
+                     cfg=S.SprtConfig(), run_seed=0)
     items = job.plan_items(40)
     assert [(it.key, it.n_games) for it in items] == [("sentinel_0", 80)]  # pairs → games, even
     assert job.fold({"pairs": {}}) == S.REJECT and job.state.reason == "abandoned"
@@ -158,7 +158,7 @@ class _Pool:
         self.summary.update(kw)
 
 
-def _cb(tmp_path, *, env_core="rust"):
+def _cb(tmp_path):
     from agents.training.sprt_promotion import SprtPromotionMixin
 
     rec = {}
@@ -167,7 +167,6 @@ def _cb(tmp_path, *, env_core="rust"):
     cb._sprt_cfg = S.SprtConfig(min_pairs=0, batch_pairs=40, max_pairs=200)
     cb._model_dir = str(tmp_path)
     cb._eval_root = str(tmp_path / ".eval_runs")
-    cb._env_core = env_core
     cb._pool = _Pool()
     cb._pool_generation = 0
     cb.model = SimpleNamespace(seed=3)
@@ -193,7 +192,7 @@ def test_the_rust_path_tests_ONLY_its_own_fresh_pairs_and_promotes_on_accept(tmp
         return {"pairs": {"sentinel_0": [0, 0, 0, 0, n // 2], "sentinel_1": [0, 0, 0, 0, n - n // 2]}}
 
     cb._sprt_play_rust = play
-    assert cb._sprt_begin(6_000_000, _pending(tmp_path), sf=0.9) is False
+    cb._sprt_begin(6_000_000, _pending(tmp_path))
     assert cb._pool.added == [6_000_000] and rec["ladder"] == 6_000_000 and cb._pool_generation == 1
     assert all(pool == [2_000_000, 4_000_000] for _b, pool in seen)      # rule 1: the pool frozen at start
     assert rec["eval/sprt_promoted"] == 1.0
@@ -201,15 +200,15 @@ def test_the_rust_path_tests_ONLY_its_own_fresh_pairs_and_promotes_on_accept(tmp
     assert [r["event"] for r in log] == ["start", "verdict"] and log[-1]["promoted"] is True
     # rule 3: the same candidate is never tested twice
     cb._sprt_play_rust = lambda job: pytest.fail("a decided candidate was re-tested")
-    cb._sprt_begin(6_000_000, _pending(tmp_path), sf=0.9)
+    cb._sprt_begin(6_000_000, _pending(tmp_path))
 
 
 def test_a_rejected_candidate_is_not_promoted_and_an_empty_pool_tests_nothing(tmp_path):
     cb, rec = _cb(tmp_path)
     cb._sprt_play_rust = lambda job: {"pairs": {"sentinel_0": [20, 0, 0, 0, 0], "sentinel_1": [20, 0, 0, 0, 0]}}
-    cb._sprt_begin(8_000_000, _pending(tmp_path), sf=0.9)
+    cb._sprt_begin(8_000_000, _pending(tmp_path))
     assert cb._pool.added == [] and rec["eval/sprt_promoted"] == 0.0
-    assert cb._sprt_begin(9_000_000, {"snapshot": "x", "sentinels": []}, sf=0.9) is False
+    cb._sprt_begin(9_000_000, {"snapshot": "x", "sentinels": []})
     assert SP.already_tested(str(tmp_path), 9_000_000) is None
 
 
@@ -222,34 +221,3 @@ def test_the_shipped_schedule_is_the_one_the_committed_monte_carlo_chose():
     assert (cfg.batch_pairs, cfg.min_pairs, cfg.max_pairs, cfg.bounds_mode) == (
         res["batch_pairs"], res["chosen"]["min_pairs"], res["cap_pairs"], res["chosen"]["bounds_mode"])
     assert (res["p0"], res["p1"], res["alpha"], res["beta"]) == (S.P0, S.P1, S.ALPHA, S.BETA)
-
-
-def test_the_python_path_chains_batches_and_promotes_with_its_own_pushes(tmp_path, monkeypatch):
-    from agents.training import eval_collect
-
-    cb, rec = _cb(tmp_path, env_core="python")
-    launched = []
-    cb._sprt_launch_python = lambda job: launched.append(job.batch)
-    cb._push_self_play_target = lambda sf: rec.__setitem__("pushed", sf)
-    cb._prune_and_push_pfsp = lambda: rec.__setitem__("pfsp", True)
-    assert cb._sprt_begin(6_000_000, _pending(tmp_path), sf=0.7) is True       # a batch is in flight
-    assert launched == [0] and SP.already_tested(str(tmp_path), 6_000_000)["event"] == "start"
-    batches = iter([{"pairs": {"sentinel_0": [5, 5, 10, 0, 0], "sentinel_1": [0, 0, 10, 5, 5]}},
-                    {"pairs": {"sentinel_0": [0, 0, 0, 0, 20], "sentinel_1": [0, 0, 0, 0, 20]}}])
-    monkeypatch.setattr(eval_collect, "merge_eval_results", lambda run_dir, names: (next(batches), []))
-    for _ in range(2):
-        cb._pending = {"kind": "sprt", "procs": [], "run_dir": str(tmp_path / "b"), "names": ["sentinel_0"]}
-        cb._sprt_collect_python()
-    assert launched == [0, 1]                                                  # one more batch, then a verdict
-    assert cb._pool.added == [6_000_000] and rec["pushed"] == 0.7 and rec["pfsp"]
-    assert cb._pool.summary["pool_generation"] == 1 and cb._sprt_job is None and cb._pending is None
-
-
-def test_a_test_cut_off_by_shutdown_is_recorded_ABANDONED(tmp_path):
-    cb, rec = _cb(tmp_path, env_core="python")
-    cb._sprt_launch_python = lambda job: None
-    cb._sprt_begin(6_000_000, _pending(tmp_path), sf=0.7)
-    cb._sprt_abandon_in_flight("the drain budget ran out")
-    last = SP.read_log(str(tmp_path))[-1]
-    assert last["event"] == "verdict" and last["promoted"] is False and "abandoned" in last["reason"]
-    assert cb._pool.added == []

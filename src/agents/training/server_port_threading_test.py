@@ -1,4 +1,4 @@
-"""Regression guard: every training-path component that creates Showdown clients
+"""Regression guard: every component that creates Showdown clients
 must thread the configured server (a `server_config` argument), NOT hardcode
 the default :8000 ``LocalhostServerConfiguration``.
 
@@ -30,25 +30,15 @@ def test_single_constructor_overrides_port():
     assert "ws://localhost:9999/showdown/websocket" == cfg.websocket_url
 
 
-# Every training-path callback that builds players must (a) accept a server_config
-# param and (b) build its players from the stored config, never from a bare
-# LocalhostServerConfiguration. We assert this structurally on the player-creating
-# method's source so the guard holds without standing up a full callback + server.
-@pytest.mark.parametrize("cls", [PerOpponentEvalCallback, SelfPlayCallback])
-def test_callback_accepts_server_config_param(cls):
-    sig = inspect.signature(cls.__init__)
-    assert "server_config" in sig.parameters, (
-        f"{cls.__name__}.__init__ must accept server_config so the port can be threaded"
-    )
-
-
 def test_callback_has_no_in_process_player_creation():
-    """Both eval callbacks now delegate ALL player creation to the eval subprocess
-    (frozen-snapshot, non-blocking) — neither constructs players in-process anymore.
+    """Neither eval callback constructs a player: the cycle plays on the Rust eval core
+    (`rust_eval.launch`) and the standalone `main.eval_worker` builds its own.
 
-    This guards the new contract: if a future change re-adds an in-process
-    ``server_configuration=`` player on a callback, it would dodge the subprocess design
-    (and the work-stealing/port threading below) — fail loudly so it's reconsidered."""
+    This guards the contract: if a future change re-adds an in-process
+    ``server_configuration=`` player on a callback, it would dodge the eval core (and the
+    port threading below) — fail loudly so it's reconsidered. (The callbacks' own
+    ``server_config`` parameter, which this file used to require, was deleted with the Python
+    worker branch — deletion pass P10-F2.)"""
     for cls in (PerOpponentEvalCallback, SelfPlayCallback):
         n_read = 0
         for name, fn in inspect.getmembers(cls, predicate=inspect.isfunction):
@@ -71,10 +61,10 @@ def test_callback_has_no_in_process_player_creation():
         )
 
 
-# The subprocess eval path builds players via these functions: build_eval_* for the trainee + bot
-# opponents, and _play_unit (eval_worker) for the per-shard matchup — which additionally builds the
-# pool-sentinel / stable-opponent RLPlayer. All take server_config and must thread it (the worker
-# rebuilds it from the port the trainer passed — now always the default). Same anti-:8000-hardcode guard.
+# The standalone eval worker (the Python oracle of the Rust eval) builds players via these functions:
+# build_eval_* for the trainee + bot opponents, and _play_unit (eval_worker) for the per-shard matchup —
+# which additionally builds the pool-sentinel / stable-opponent RLPlayer. All take server_config and must
+# thread it. Same anti-:8000-hardcode guard.
 @pytest.mark.parametrize("fn", [build_eval_opponents, build_eval_players, _play_unit])
 def test_eval_builders_thread_server_config_param(fn):
     sig = inspect.signature(fn)

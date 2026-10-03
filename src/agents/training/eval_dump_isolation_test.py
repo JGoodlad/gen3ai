@@ -1,5 +1,5 @@
 """`gen3_eval_dump_isolation_v1` — an eval cycle's logger dump no longer takes the last update's
-`train/*` with it, on BOTH env cores (`designs/endstate/design_own_ppo_loop.md` §2.1, stage 2).
+`train/*` with it (`designs/endstate/design_own_ppo_loop.md` §2.1, stage 2).
 
 Each test below FAILS on revert (drop `@isolated_dump` from `_collect_pending`): the eval dump would
 carry `train/approx_kl` at the eval step and leave the bus empty for the KL controller.
@@ -12,11 +12,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agents.training import eval_callback as ec
 from agents.training import logger_scope as LS
 from agents.training.eval_callback import PerOpponentEvalCallback
 from agents.training.eval_sharding import ShardResult
-from agents.training.eval_sharding.pool import ShardedEvalPool
 from agents.training.train_logger import Logger
 
 KL = 0.0123
@@ -66,15 +64,14 @@ class _FakeEvaluator:
         return _Stats(len(pool.units))
 
 
-def _cb(tmp_path: Any, env_core: str, logger: Logger) -> PerOpponentEvalCallback:
-    cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock(), env_core=env_core,
+def _cb(tmp_path: Any, logger: Logger) -> PerOpponentEvalCallback:
+    cb = PerOpponentEvalCallback(model_dir=str(tmp_path),
                                  best_model_save_path=str(tmp_path / "best"), eval_games=8)
     cb.model = MagicMock()
     cb.model.logger = logger
     cb.model.save = lambda base: open(base + ".zip", "w").close()
     cb.model.gamma = 0.99
-    if env_core == "rust":
-        cb.model._rust_collector = SimpleNamespace(evaluator=_FakeEvaluator(), cfg=SimpleNamespace(run_seed=5))
+    cb.model._rust_collector = SimpleNamespace(evaluator=_FakeEvaluator(), cfg=SimpleNamespace(run_seed=5))
     cb.num_timesteps = 2_000_000
     cb._init_callback()
     return cb
@@ -90,30 +87,11 @@ def _assert_isolated(rec: _Rec, logger: Logger) -> None:
         "the last update's approx_kl did not survive the eval cycle for the KL controller"
 
 
-def test_rust_core_the_blocking_in_process_cycle_keeps_the_update_scalars(tmp_path: Any, monkeypatch: Any) -> None:
-    monkeypatch.setattr(ec, "spawn_eval_workers", lambda *_a, **_k: pytest.fail("rust spawned workers"))
+def test_the_blocking_in_process_cycle_keeps_the_update_scalars(tmp_path: Any) -> None:
     logger, rec = _logger()
-    cb = _cb(tmp_path, "rust", logger)
+    cb = _cb(tmp_path, logger)
     logger.record("train/approx_kl", KL)          # the previous update's scalar, pending on the bus
     cb._on_step()                                  # launches AND collects (blocking) in this step
-    assert cb._pending is None
-    _assert_isolated(rec, logger)
-
-
-def test_python_core_the_worker_cycle_keeps_the_update_scalars(tmp_path: Any, monkeypatch: Any) -> None:
-    def spawn(run_dir: str, base_cfg: Any, n_workers: int) -> list:
-        _publish_all(ShardedEvalPool.from_plan(run_dir), run_dir)   # the workers' results, already in
-        return []                                                     # no procs -> done at next on_step
-
-    monkeypatch.setattr(ec, "spawn_eval_workers", spawn)
-    logger, rec = _logger()
-    cb = _cb(tmp_path, "python", logger)
-    cb._on_step()                                  # launches (non-blocking)
-    assert cb._pending is not None
-    logger.record("train/approx_kl", KL)          # an update ran while the workers played
-    cb.num_timesteps += 98_304
-    cb._on_step()                                  # collects mid-rollout
-    assert cb._pending is None
     _assert_isolated(rec, logger)
 
 

@@ -194,7 +194,8 @@ class SnapshotPool:
     ):
         # ── The pool draw — per-instance RNG (OPT-IN)  [gen3_pool_sample_rng_v1] ──
         # GLOBAL-RANDOM COUPLING, and an INTERNAL INCONSISTENCY besides: the only caller of
-        # `sample()` is `MaskableAgentWrapper`, which already owns a per-env `random.Random(
+        # `sample()` was `MaskableAgentWrapper` (the Python env core, deleted in U3; today's caller is
+        # `rust_env_opponents.EpisodeOpponentSampler`), which already owned a per-env `random.Random(
         # rng_seed)` for *which bucket* it picks ("per-env seed → envs don't pick in lockstep") —
         # and then reached into the process-wide `random` module for *which snapshot*. So a
         # wrapper that looks seeded is not reproducible, and two paired arms that interleave
@@ -274,7 +275,7 @@ class SnapshotPool:
         """Promote an already-saved snapshot file (frozen weights) as a new pool entry.
 
         Like ``add()``, but COPIES an existing ``.zip`` instead of re-saving a live model.
-        The non-blocking self-play eval freezes the trainee's weights to disk at the
+        The self-play eval freezes the trainee's weights to disk at the
         trigger step, then promotes THAT bit-exact snapshot after the (later) collect —
         by which point the live model has advanced, so re-saving it would promote the
         wrong weights. Evicts the oldest non-pinned entry if the pool would exceed

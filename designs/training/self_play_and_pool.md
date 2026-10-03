@@ -16,34 +16,36 @@ training opponents become frozen snapshots of the agent itself, drawn from a dir
 `SnapshotPool` (`snapshot_pool.py`; state reconstructed from `<run_dir>/snapshots/` on every
 restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
 
-- **Eval + promotion are NON-BLOCKING (frozen-snapshot subprocess), mirroring
-  `PerOpponentEvalCallback`.** Self-play eval no longer runs in-process on the training thread.
-  On a trigger step `SelfPlayCallback` freezes the live weights to disk (`model.save`) and
-  spawns 2× the eval workers (default 10; `--eval-workers`, deleted in P11) `main.eval_worker` subprocesses that **work-steal BOTH
-  the bot roster AND up to `--n-sentinels` pool sentinels** (default 5; all split into shard units)
-  from one shared pool (the
-  worker's `_play_unit` SENTINEL branch plays the frozen trainee greedy vs each sentinel stochastic);
-  training continues immediately. On a later
-  `_on_step` poll the parent merges per-opponent + per-sentinel results → `win_rate_vs_bots` /
+- **Eval + promotion are BLOCKING and IN PROCESS (the Rust eval core), mirroring
+  `PerOpponentEvalCallback`.** On a trigger step `SelfPlayCallback` freezes the live weights to disk
+  (`model.save`), writes the plan — the bot roster AND up to `--n-sentinels` pool sentinels (default 5;
+  all split into shard units) — and `rust_eval.launch` plays it between two host steps of the collector
+  (the SENTINEL units play the frozen trainee greedy vs each sentinel, sampled at `--self-play-temp`
+  unless `eval_sentinel_greedy`); the cycle is collected in the SAME `_on_step`. It costs training its wall
+  time (~1.5% of wall at N=256, `designs/research_state/measurements/m5_sizing/PROGRESS.md` O9). The
+  collect merges per-opponent + per-sentinel results → `win_rate_vs_bots` /
   `win_rate_vs_pool` / `sentinel_monotonicity`, records to TensorBoard + the TUI + metadata.json
   (with the `pool` block), persists `win_rate_vs_bots` (feeds `heuristic_fraction` next run),
   saves best by **copying** the frozen snapshot, and — if `win_rate_vs_pool > --promote-threshold`
   — **promotes the FROZEN snapshot into the pool by file-copy** (`SnapshotPool.add_from_path`):
-  the live model has advanced since launch, so re-saving `self.model` would promote the wrong
-  weights. Sentinels load via `load_opponent_snapshot` (inference-only, the ride-along keys ignored —
+  the file the cycle actually played, never a re-save of `self.model`. Sentinels load via
+  `load_opponent_snapshot` (inference-only, the ride-along keys ignored —
   `gen3_opponent_inference_load_v1`) against the pool's shared `model_config.json` (a WRITE-ONCE record,
   `gen3_pool_arch_record_v1`: below)
   using `current_model_version(mappings)` — a stale-arch snapshot fails with `ModelVersionError`,
-  never loads silently. The **only** training-thread work per cycle is the `model.save` freeze +
-  one cheap `opponent_default_stats` IPC at collect; all battles / model loads / inference run in
-  the worker processes, and the trainer holds no live eval connections (the worker rebuilds
-  opponents/teambuilders/mappings itself). Skip-while-running, worker-crash-logged-and-continued,
-  graceful-shutdown `drain()`, and resume-republish all behave exactly as the bot path above. The
-  launch→poll→collect→drain mechanics are the **shared** `eval_launch.spawn_eval_workers` /
+  never loads silently. A failed cycle is logged-and-continued (and counts as a failed supply cycle),
+  resume-republish behaves exactly as the bot path above, and there is no drain, no skip-while-running
+  rule and no hung-cycle watchdog (all were the Python worker pool's, deleted in P10-F2). The
+  launch→collect mechanics are the **shared** `eval_launch.launch_rust_eval_cycle` /
   `eval_collect.merge_eval_results` / `persist_eval_snapshot` / `prune_eval_*` / `eval_record.replay_last_eval_to_tui`
-  helpers, so the two non-blocking paths can't drift. `--debug --self-play --debug-eval` uses a
+  helpers, so the two paths can't drift. `--debug --self-play --debug-eval` uses a
   fast eval cadence (every 4k steps, 3 games) so a short CPU smoke exercises seed → pool eval →
   promotion (a plain `--debug` smoke skips all eval by default — see `--debug-eval`).
+- **The promotion's snapshot-ladder update is a DETACHED subprocess on the Rust bridge**
+  (`SelfPlayCallback._spawn_snapshot_ladder_update` → `python -m agents.training.snapshot_ladder … --impl rust`,
+  CPU only). 🚨 From P11 B4 (`9a92a491`) until P10-F2 it passed no `--impl`, so it fell back to the tool's
+  own default `node` and every live promotion's round-robin ran on the NODE bridge; it is `rust` by name now
+  (`selfplay_callback_test.test_the_detached_ladder_updater_plays_on_the_rust_bridge`).
 - **Curriculum: thresholded ramp + LIVE per-episode fraction.** `heuristic_fraction`
   (`snapshot_pool.py`) is **0% self-play below `SELF_PLAY_START` (0.55)** — a weak model trains
   100% vs bots, no cycles wasted on a useless self-opponent — then smoothsteps `0.55→0.80` up to

@@ -11,8 +11,8 @@ THE THREE DISCIPLINE RULES, and how each is made true here rather than intended:
 
 1. **The pool is FROZEN at the test's start.** The test plays the sentinels the CANDIDATE's own cycle
    launched against (captured at launch), every batch. The pool cannot move during it: promotion and
-   seeding happen only at an eval collect, and no eval cycle launches while the test is pending (the
-   callback's skip-while-running rule covers the test's batches exactly like a cycle).
+   seeding happen only at an eval collect, and the test runs to its verdict INSIDE the candidate's own
+   collect (blocking, in process), so no other cycle can launch, promote or seed in between.
 2. **Selection games never pool into the decision.** The cycle's own pool games (``win_rate_vs_pool``)
    are telemetry; the test plays its OWN fresh mirrored pairs on a seed namespace disjoint from every
    cycle's (``sprt_seed``: salted with the batch index), and only those enter the LLR.
@@ -104,14 +104,12 @@ def abandon_unfinished(model_dir: Optional[str], emit=print) -> List[int]:
 class SprtJob:
     """One candidate's test in flight."""
 
-    def __init__(self, *, step: int, snapshot: str, sentinels: List[dict], cfg: S.SprtConfig, run_seed: int,
-                 sf: float):
+    def __init__(self, *, step: int, snapshot: str, sentinels: List[dict], cfg: S.SprtConfig, run_seed: int):
         self.step = int(step)
         self.snapshot = snapshot
         self.sentinels = list(sentinels)          # [{"label", "path", "step"}], frozen at test start
         self.state = S.SprtState(cfg)
         self.run_seed = int(run_seed)
-        self.sf = float(sf)
         self.batch = 0
         self.t0 = time.monotonic()
 
@@ -161,11 +159,9 @@ def cleanup_snapshot(path: Optional[str], run_dir: Optional[str] = None) -> None
 
 class SprtPromotionMixin:
     """``SelfPlayCallback``'s T6 promotion path. Reads the callback's eval plumbing (``_pool``,
-    ``_model_dir``, ``_eval_root``, ``_env_core``, worker knobs, ``model``, ``logger``) and owns
-    ``_sprt_job`` — the one test in flight. On the RUST eval core a test runs to its verdict inside the
-    candidate's own collect (blocking, like the cycle; the live weights ARE the candidate's until training
-    resumes). On the PYTHON core each batch is a non-blocking worker round in ``_pending`` (``kind:
-    "sprt"``), so the skip-while-running rule holds every new cycle off until the verdict."""
+    ``_model_dir``, ``_eval_root``, ``model``, ``logger``) and owns ``_sprt_job`` — the one test in
+    flight. A test runs to its verdict inside the candidate's own collect (blocking, in process, on the
+    Rust eval core; the live weights ARE the candidate's until training resumes)."""
 
     def _init_sprt(self, enabled: bool) -> None:
         self._sprt_on = bool(enabled)
@@ -190,38 +186,33 @@ class SprtPromotionMixin:
         return int(s) if isinstance(s, int) else 0
 
     # ------------------------------------------------------------------ the candidate's test
-    def _sprt_begin(self, step: int, pending: dict, sf: float) -> bool:
-        """Start candidate ``step``'s test. Returns True when a Python-core batch is now IN FLIGHT (the
-        caller must keep the candidate's snapshot — it was copied here — and not touch ``_pending``)."""
+    def _sprt_begin(self, step: int, pending: dict) -> None:
+        """Run candidate ``step``'s test to its verdict (promoting the candidate's frozen snapshot on ACCEPT)."""
         sentinels = list(pending.get("sentinels") or [])
         if not sentinels:
-            return False                 # the pool was empty at launch: nothing to test against
+            return                       # the pool was empty at launch: nothing to test against
         prior = already_tested(self._model_dir, step)
         if prior is not None:
             print(f"⚖️  [SPRT] candidate @{step:,} already has a test on record ({prior.get('event')}) — "
                   "never re-run (T6 rule 3)", flush=True)
-            return False
+            return
         snap_dir = os.path.join(self._eval_root, f"sprt_{step}")
         os.makedirs(snap_dir, exist_ok=True)
         snap = os.path.join(snap_dir, "candidate.zip")
         shutil.copy2(pending["snapshot"], snap)
         job = SprtJob(step=step, snapshot=snap, sentinels=sentinels, cfg=self._sprt_cfg,
-                      run_seed=self._sprt_run_seed(), sf=sf)
+                      run_seed=self._sprt_run_seed())
         append_log(self._model_dir, {"event": "start", "step": step, "schema": S.SCHEMA,
                                      "pool": [s["step"] for s in sentinels], "config": self._sprt_cfg.to_json(),
                                      "selection_games": "the cycle's own pool games are NOT in this test"})
         self._sprt_job = job
-        if self._env_core == "rust":
-            while job.state.verdict == S.CONTINUE:
-                merged = self._sprt_play_rust(job)
-                if merged is None:
-                    job.state.verdict, job.state.reason = S.REJECT, "abandoned"
-                    break
-                job.fold(merged)
-            self._sprt_finish(job, in_collect=True)
-            return False
-        self._sprt_launch_python(job)
-        return True
+        while job.state.verdict == S.CONTINUE:
+            merged = self._sprt_play_rust(job)
+            if merged is None:
+                job.state.verdict, job.state.reason = S.REJECT, "abandoned"
+                break
+            job.fold(merged)
+        self._sprt_finish(job)
 
     def _sprt_batch_pool(self, job: SprtJob):
         from agents.training.eval_sharding import ShardedEvalPool
@@ -251,57 +242,9 @@ class SprtPromotionMixin:
         shutil.rmtree(run_dir, ignore_errors=True)
         return merged
 
-    def _sprt_launch_python(self, job: SprtJob) -> None:
-        from agents.model.snapshot import arch_toggles_from_model
-        from agents.training.eval_launch import _b36, spawn_eval_workers
-
-        pool, items, run_dir = self._sprt_batch_pool(job)
-        self._eval_cycle += 1
-        base_cfg = {
-            "snapshot": job.snapshot, "port": self._showdown_port,
-            "use_showdown_bridge": self._use_showdown_bridge, "compile_extractor": self._compile_extractor,
-            "bridge_impl": self._bridge_impl,
-            # no model_dir: an SPRT game writes no forensic trace (it is a decision game, not a sample)
-            "model_dir": None, "step": job.step, "self_play_temp": self._self_play_temp,
-            "eval_sentinel_greedy": self._eval_sentinel_greedy,
-            "claim_dir": os.path.join(run_dir, "claims"), "result_dir": run_dir,
-            "concurrency": self._eval_concurrency, "device": self._eval_device,
-            "cycle_tag": f"{self._eval_run_nonce}{_b36(self._eval_cycle, 1)}",
-            "gamma": float(self.model.gamma), "forensic_quota": {"win": 0, "loss": 0, "draw": 0},
-            "arch_toggles": arch_toggles_from_model(self.model), "trainee_team_str": self._trainee_team_str,
-            "seed_rule": "per_game", "seed_base": sprt_seed(job.run_seed, job.step, job.batch),
-        }
-        procs = spawn_eval_workers(run_dir, base_cfg, max(1, min(self._n_workers, pool.n_units)))
-        self._pending = {"kind": "sprt", "step": job.step, "procs": procs, "run_dir": run_dir,
-                         "names": [it.key for it in items], "launched_at": time.monotonic()}
-
-    def _sprt_collect_python(self) -> None:
-        from agents.training.eval_collect import merge_eval_results
-
-        pending, job = self._pending, self._sprt_job
-        self._pending = None
-        for w in pending["procs"]:
-            w["log"].close()
-        merged, _missing = merge_eval_results(pending["run_dir"], pending["names"])
-        shutil.rmtree(pending["run_dir"], ignore_errors=True)
-        if job is None:
-            return
-        if job.fold(merged) == S.CONTINUE:
-            self._sprt_launch_python(job)
-            return
-        self._sprt_finish(job, in_collect=False)
-
-    def _sprt_abandon_in_flight(self, why: str) -> None:
-        """Training is ending (or a batch hung past its budget) with a test in flight: record it ABANDONED."""
-        job = self._sprt_job
-        if job is None:
-            return
-        job.state.verdict, job.state.reason = S.REJECT, f"abandoned: {why}"
-        self._sprt_finish(job, in_collect=False)
-
-    def _sprt_finish(self, job: SprtJob, *, in_collect: bool) -> None:
-        """Record the verdict; on ACCEPT promote the candidate's FROZEN snapshot. Inside the candidate's own
-        collect (the Rust core) the collect's own pushes + summary write follow; otherwise they are done here."""
+    def _sprt_finish(self, job: SprtJob) -> None:
+        """Record the verdict; on ACCEPT promote the candidate's FROZEN snapshot. This runs inside the
+        candidate's own collect, whose own pushes + summary write follow."""
         st = job.state
         record_verdict(self, job)
         promoted = st.verdict == S.ACCEPT
@@ -312,9 +255,5 @@ class SprtPromotionMixin:
             self._pool_generation += 1
             self.logger.record("train/selfplay_promoted_steps", float(job.step))
             self._spawn_snapshot_ladder_update(job.step)
-            if not in_collect:
-                self._push_self_play_target(job.sf)
-                self._prune_and_push_pfsp()
-                self._pool.persist_summary(pool_generation=self._pool_generation, seeded=True)
         self._sprt_job = None
         cleanup_snapshot(None, os.path.join(self._eval_root, f"sprt_{job.step}"))

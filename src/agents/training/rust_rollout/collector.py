@@ -108,8 +108,7 @@ class RustCollector:
 
     def __init__(self, cfg: CollectorConfig, *, core: Any, obs_space: Any, svc: Any, trainee_slots: Sequence[int],
                  opponents: Any, server: Any, stager: TeamStager,
-                 external_p2: Optional[Callable[[Mapping[str, np.ndarray], np.ndarray], np.ndarray]] = None,
-                 load_trainee: Optional[Callable[[int, Any, str], None]] = None):
+                 external_p2: Optional[Callable[[Mapping[str, np.ndarray], np.ndarray], np.ndarray]] = None):
         from agents.training.reward_term_stats import RewardTermAccumulator
 
         self.cfg = cfg
@@ -126,7 +125,6 @@ class RustCollector:
                                    "and the one games in progress still play)")
         self.opponents, self.server, self.stager = opponents, server, stager
         self.external_p2 = external_p2
-        self._load_trainee = load_trainee
         self.obs_space = obs_space
         self.sources = S.obs_key_sources(obs_space, cfg.label_keys)
         self.store = S.RowStore(obs_space, cfg.capacity, fork=bool(cfg.fork))
@@ -478,10 +476,7 @@ class RustCollector:
                     f"per-game version pinning: every trainee slot {self.trainee_slots} holds a version a game "
                     "in progress still plays; declare more trainee slots")
             target = free[0]
-        if self._load_trainee is not None:
-            self._load_trainee(target, model.policy, f"trainee:v{self.version}")
-        else:
-            self.svc.load(target, model.policy, f"trainee:v{self.version}")
+        self.svc.load(target, model.policy, f"trainee:v{self.version}")
         self.slot_version[target] = self.version
         self.current_slot = target
         if self.cfg.version_pinning:

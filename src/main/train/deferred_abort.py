@@ -1,7 +1,7 @@
 """THE DEFERRED ABORT (`gen3_deferred_abort_v1`; P10 review F1): a stop signal is honoured at a SAFE POINT.
 
 Before this module the SIGINT / SIGTERM / SIGHUP handlers ran the whole abort — the pending-scalar dump,
-the checkpoint save, the eval drain, `os._exit(15)` — INSIDE the handler, i.e. at whatever bytecode
+the checkpoint save, `os._exit(15)` — INSIDE the handler, i.e. at whatever bytecode
 boundary the main thread happened to be on. Three defects followed from that one shape:
 
 * **F1 (confirmed): the dump deadlocked.** TensorBoard's `_AsyncWriter` takes a NON-reentrant lock in
@@ -16,7 +16,7 @@ boundary the main thread happened to be on. Three defects followed from that one
 
 **The shape now.** A handler only RECORDS the request (`request`: plain attribute stores, one
 `os.write` to stderr, one byte to a wake pipe — no Python lock, no buffered stream). The main thread
-runs the abort (`abort`: dump + save + drain + exit 15) at the next SAFE POINT — the run's
+runs the abort (`abort`: dump + save + exit 15) at the next SAFE POINT — the run's
 `GracefulRestartCallback` calls `safe_point()` at every callback event the loop fires
 (`training_start`, `rollout_start`, every collector `step`, `rollout_end`, `training_end`), none of
 which runs inside an update or inside a logger dump. A signal that lands mid-update therefore lets the
@@ -87,7 +87,7 @@ def _write_stderr(msg: str) -> None:
 class DeferredAbort:
     """The stop request, the safe point and the bounded fallback (module docstring).
 
-    ``commit(reason)`` is the abort's body (dump, save, drain) and RETURNS; ``abort`` then calls
+    ``commit(reason)`` is the abort's body (dump, save) and RETURNS; ``abort`` then calls
     ``exit_fn(TrainExitCode.INTERRUPTED)``. ``wait_fn(seconds)`` is how the watchdog waits out the
     deadline (default: an interruptible wait on the close event); a test injects one it controls."""
 
@@ -188,7 +188,7 @@ class DeferredAbort:
         return note
 
     def abort(self, reason: str) -> None:
-        """THE canonical abort: dump + save + drain, then exit 15. Main thread, at a safe point only (the
+        """THE canonical abort: dump + save, then exit 15. Main thread, at a safe point only (the
         graceful restart's rollout end, or `safe_point`). Does not return."""
         if not self._claim("safe point"):
             self._park()

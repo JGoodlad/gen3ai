@@ -1,11 +1,13 @@
 """The eval cycle's LAUNCH mechanics — split out of ``eval_callback.py`` (2026-10-01).
 
-Shared by BOTH eval callbacks (``PerOpponentEvalCallback``, ``SelfPlayCallback``) so the bot-eval and
-self-play-eval cycles spawn identically: the per-cycle manifest (``write_eval_manifest`` — which model,
-which regime, which selection rule), the per-process account nonce, the hung-cycle bound, the Rust
-eval core's in-process cycle (``launch_rust_eval_cycle``) and the Python worker subprocesses
-(``spawn_eval_workers`` / ``kill_eval_workers``). ``eval_callback`` re-exports every public name here;
-a test that STUBS ``subprocess.Popen`` for the workers reaches it through THIS module's ``subprocess``.
+Shared by BOTH eval callbacks (``PerOpponentEvalCallback``, ``SelfPlayCallback``): the per-cycle
+manifest (``write_eval_manifest`` — which model, which regime, which selection rule), the mirrored-pair
+game count and the Rust eval core's in-process cycle (``launch_rust_eval_cycle``). ``spawn_eval_workers``
+/ ``kill_eval_workers`` are NOT the callbacks' any more (they play in process); they stay for the
+standalone callers that run ``main.eval_worker`` directly — the Python oracle of the Rust eval
+(``rust_eval.parity`` / ``eval_benchmark``) and ``main.ops.eval_trace_gen``. ``eval_callback``
+re-exports every public name here; a test that STUBS ``subprocess.Popen`` for the workers reaches it
+through THIS module's ``subprocess``.
 """
 import hashlib
 import json
@@ -18,7 +20,6 @@ from datetime import datetime, timezone
 from agents.training.eval_player import ForensicQuota, _rule_for
 from agents.training.trace_selection import SELECTION_SCHEMA
 from main.launcher.ipc import send_event
-from utils.contention import scale_timeout
 from utils.git import get_git_hash
 
 EVAL_MANIFEST_NAME = "eval_manifest.json"
@@ -139,70 +140,6 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
     return manifest
 
 
-# In-flight watchdog: if a cycle's workers don't all finish within this wall-clock
-# budget, the cycle is presumed HUNG (e.g. a Showdown battle that never completes —
-# a worker blocked on a websocket await), so the parent kills the workers, collects
-# whatever results landed, and clears `_pending`. Without this a single hung worker
-# pins `_pending` forever and every later eval boundary is silently skipped — i.e. eval
-# never recovers for the rest of the run. Set generously above a healthy CPU cycle
-# (the full roster — all bots + sentinels at EVAL_GAMES each — runs well under this) so it
-# never trips a slow-but-live eval; only a true hang reaches it.
-_EVAL_CYCLE_TIMEOUT_SEC = 1800.0
-
-
-def eval_cycle_timeout() -> float:
-    """The hung-cycle bound, scaled by measured CPU contention.
-
-    Eval is the path MOST exposed to contention in the whole system: it deliberately runs
-    concurrently with training (that is the point of the subprocess design), so it is under load
-    100% of the time — and the docs already note "on CPU an eval can outlast its interval".
-
-    The cost of firing early is not a lost cycle, it is BIASED NUMBERS: `_abort_pending_cycle`
-    kills the workers and collects PARTIAL results, which flow into `win_rate_vs_bots` (the
-    curriculum ramp), `win_rate_vs_pool` (the promotion gate) and the ELO fit. A truncated sample
-    is not a random subsample either — it is whichever shards happened to get scheduled. So a
-    merely-slow cycle must never be mistaken for a hung one.
-
-    Read at CALL time (both callbacks go through this), so the bound tracks load as it develops.
-    """
-    return scale_timeout(_EVAL_CYCLE_TIMEOUT_SEC)
-
-
-# ── Shared subprocess-eval mechanics (used by BOTH eval callbacks) ─────────────
-# These keep the bot-eval and self-play-eval cycles spawning / merging / grooming
-# identically, so the two non-blocking paths can't drift.
-
-_B36 = "0123456789abcdefghijklmnopqrstuvwxyz"
-_NONCE_COUNTER = 0
-
-
-def _b36(n: int, width: int) -> str:
-    """Fixed-width base-36 encoding of `abs(n)` (low digits; wraps at 36**width)."""
-    n = abs(int(n))
-    out = []
-    for _ in range(width):
-        out.append(_B36[n % 36])
-        n //= 36
-    return "".join(reversed(out))
-
-
-def eval_run_nonce() -> str:
-    """A short (3 base-36 char) per-PROCESS nonce for eval account names.
-
-    Eval account names are ``<prefix><cycle_tag><wid><claim_seq>``; ``cycle_tag`` used to
-    be ``step // 100 % 10000``, which is NOT unique across launcher restarts — the resume
-    re-eval always fires at ~the same step, so every restart reused the same account names
-    and collided with the previous (killed) process's lingering Showdown challenges
-    (``There's already a challenge between you and ...``) → the battle never starts and the
-    worker hangs forever. Mixing the pid + wall-clock (+ a process-global counter so
-    successive calls differ) makes the tag unique per process while staying ≤4 chars, so
-    the full account name comfortably fits Showdown's 18-char username cap.
-    """
-    global _NONCE_COUNTER
-    _NONCE_COUNTER += 1
-    return _b36(os.getpid() * 1_000_003 + int(time.time()) + _NONCE_COUNTER * 7919, 3)
-
-
 def launch_rust_eval_cycle(cb, pool, run_dir: str, step: int) -> None:
     """M5 Lane H: play this cycle's plan on the Rust eval core (``rust_eval.launch``), in process and
     blocking, publishing the same shard results a Python worker would. A cycle failure is logged and
@@ -266,20 +203,3 @@ def mirrored_eval_games(n_games: int) -> int:
     UP — a pair is two games, and half a pair is not a measurement)."""
     n = int(n_games)
     return n + (n % 2)
-
-
-def eval_cycle_seed(model, step: int) -> int:
-    """The Python eval path's per-game seed base for one cycle (``rust_eval.launch.cycle_seed`` over the
-    model's own seed — 0 when SB3 recorded none). The Rust eval core derives its own from the collector's
-    run seed; both are a pure function of (run, step), so a re-eval at a step replays its games."""
-    from agents.training.rust_eval.launch import cycle_seed
-
-    s = getattr(model, "seed", None)
-    return cycle_seed(int(s) if isinstance(s, int) else 0, int(step))
-
-
-def mirrored_worker_cfg(model, step: int) -> dict:
-    """The eval-worker cfg keys a MIRRORED cycle adds on the Python path: the per-GAME seed rule (a pair's
-    two games share one battle seed, so every game is seeded) and the cycle's seed base. The worker refuses
-    a mirrored plan without it."""
-    return {"seed_rule": "per_game", "seed_base": eval_cycle_seed(model, step)}

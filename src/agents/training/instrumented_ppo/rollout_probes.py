@@ -65,7 +65,7 @@ class RolloutProbes:
         """`win_prob/start_*` — the head's P(win) at each EPISODE-START row of this rollout, paired
         with that episode's own realized outcome (`gen3_winprob_calibration_export_v1`).
 
-        The pairing is the point. `win_target` is back-filled by `WinProbLabelCallback` from the
+        The pairing is the point. `win_target` is written by the Rust collector's fill (`rust_rollout.store`) from the
         episode's outcome to EVERY step of that episode, so at an episode-start row it IS what that
         game went on to do — the prediction and the realization come from one set of episodes, and
         `start_gap` is a paired difference rather than the difference of two independent windows.

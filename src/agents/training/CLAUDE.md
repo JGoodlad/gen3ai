@@ -304,13 +304,19 @@ recorded generation, so an unmarked pre-generation node is an error. `python -m 
 check --load` runs it for real.
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md).**
 
-## Bot evaluation (subprocess, non-blocking)
+## Bot evaluation (in process on the Rust eval core, BLOCKING)
 
-**Flat schedule, full roster, non-blocking.** Eval fires every `EVAL_FREQ_STEPS` (2M) for
+**Flat schedule, full roster, blocking.** Eval fires every `EVAL_FREQ_STEPS` (2M) for
 `EVAL_GAMES` (100) games per opponent (`--eval-games N` overrides), uniformly over the eight
 archetype bots plus `random` and every self-play sentinel — no maturity tiers, no per-opponent
-caps, no roster flag. It **skips a cycle while the previous one is still running**, so a heavier
-roster self-throttles instead of needing tuned ceilings.
+caps, no roster flag. 🚨 **The cycle plays in the trainer's own process between two host steps of the
+collector and is collected in the same step** (`eval_callback._launch_eval` →
+`eval_launch.launch_rust_eval_cycle` → `_collect_pending`): ~1.5% of wall at N=256
+(`designs/research_state/measurements/m5_sizing/PROGRESS.md` O9). There is no worker pool, no skipped
+cycle, no hung-cycle watchdog and no drain (the Python worker branch, `--eval-workers` and
+`PerOpponentEvalCallback.drain` were deleted in P10-F2); a stop signal is honoured INSIDE the cycle at its
+safe points (`safe_point_fn`). `eval_launch.spawn_eval_workers` survives only for the standalone Python
+oracle (`rust_eval.parity`, `eval_benchmark`, `main.ops.eval_trace_gen`).
 
 🚨 **THE FORENSIC TRACE'S RESULT VOCABULARY is `WIN` | `LOSS` | `DRAW`** (`gen3_trace_result_v2`,
 `trace_result.py`); a `DRAW` carries `meta.draw_kind` (`timeout` vs `tie`), and an unknown result is

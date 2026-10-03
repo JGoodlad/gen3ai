@@ -138,7 +138,6 @@ def test_random_opponent_name_constant_matches_function():
 def _make_callback(best_model_save_path=None, model_dir=None):
     cb = PerOpponentEvalCallback(
         model_dir=model_dir,
-        server_config=MagicMock(),
         best_model_save_path=best_model_save_path,
     )
     cb.model = MagicMock()
@@ -205,17 +204,6 @@ def test_no_double_trigger_within_interval():
         mock_run.assert_not_called()
 
 
-def test_skips_launch_while_previous_eval_running():
-    cb = _make_callback()
-    cb.num_timesteps = 2_000_000
-    cb._pending = {"step": 1_000_000,
-                   "procs": [{"proc": MagicMock(**{"poll.return_value": None})}]}
-    with patch.object(cb, '_launch_eval') as mock_run:
-        cb._on_step()
-        mock_run.assert_not_called()  # previous cycle still running → skip
-    assert cb._last_eval_step == 2_000_000  # but the boundary is consumed
-
-
 def test_updates_last_eval_step_on_trigger():
     cb = _make_callback()
     cb.num_timesteps = 2_000_000  # first boundary is now 2M
@@ -244,18 +232,6 @@ def test_force_eval_launches_off_cadence_when_idle():
         mock_launch.assert_called_once()     # off-cadence launch, purely from the request
     assert cb._last_eval_step == 1_234_567   # current cadence bucket consumed (no double-launch)
     assert not consume_forced_eval_request()  # the request was cleared
-
-
-def test_force_eval_rejected_while_a_cycle_is_running():
-    cb = _make_forceable_callback()
-    cb._pending = {"step": 1_000_000,
-                   "procs": [{"proc": MagicMock(**{"poll.return_value": None})}]}
-    request_forced_eval()
-    with patch.object(cb, "_launch_eval") as mock_launch, \
-         patch("agents.training.eval_callback.send_event") as mock_event:
-        cb._on_step()
-        mock_launch.assert_not_called()      # already running → reject, don't launch
-    assert any("rejected" in str(c.args[0]).lower() for c in mock_event.call_args_list)
 
 
 def test_force_eval_request_persists_until_first_real_step():
@@ -358,263 +334,6 @@ def test_read_latest_eval_block_missing_or_empty():
     assert read_latest_eval_block("/no/such/metadata.json") is None
 
 
-# ── orchestrator: work-stealing launch → collect → best-model (stubbed Popen) ──
-
-def _publish_fake_shards(cfg, *, win=0.8, reward=1.0, ep_len=20.0, only=None, skip=()):
-    """Mimic the real eval_worker: read the cycle plan, claim every shard UNIT, and publish a
-    raw ShardResult for it (round(win·shard_games) wins). `only` restricts to a set of item keys
-    and `skip` excludes some — both simulate partial coverage (a crashed/hung opponent)."""
-    from agents.training.eval_sharding import ShardedEvalPool, ShardResult
-    pool = ShardedEvalPool.from_plan(cfg["result_dir"])
-    while (unit := pool.claim_next(cfg["claim_dir"])) is not None:
-        if unit.item_key in skip or (only is not None and unit.item_key not in only):
-            continue
-        n = unit.n_games
-        pool.publish(cfg["result_dir"], ShardResult(
-            unit_id=unit.unit_id, item_key=unit.item_key, worker_id=cfg["worker_id"],
-            n_won=round(win * n), n_finished=n, sum_reward=reward * n, n_episodes=n,
-            sum_ep_len=ep_len * n, duration_sec=5.0, td_residuals=[]))
-
-
-def _fake_worker_popen(ec, win=0.8):
-    """A fake Popen whose 'worker' work-steals shard units from the plan and publishes
-    per-shard results, exactly like the real eval_worker."""
-    class _FakeProc:
-        returncode = 0
-        def poll(self): return 0
-        def wait(self, timeout=None): return 0
-
-    def fake_popen(argv, stdout=None, stderr=None, env=None):
-        import json as _json
-        _publish_fake_shards(_json.load(open(argv[-1])), win=win)
-        return _FakeProc()
-    return fake_popen
-
-
-def test_orchestrator_workstealing_collect_and_promote_best(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
-    best_dir = tmp_path / "best"
-    cb = PerOpponentEvalCallback(
-        model_dir=str(tmp_path), server_config=MagicMock(),
-        best_model_save_path=str(best_dir),
-        n_workers=3, showdown_port=9999,
-    )
-    cb.model = MagicMock()
-    cb.model.save = lambda base: open(base + ".zip", "w").close()
-    cb._logger = MagicMock()
-    cb.num_timesteps = 2_000_000       # first eval boundary is now 2M
-    cb._init_callback()
-    monkeypatch.setattr(ec.subprocess, "Popen", _fake_worker_popen(ec, win=0.8))
-
-    cb._on_step()                      # boundary → spawn work-stealing workers
-    assert cb._pending is not None and cb._pending["step"] == 2_000_000
-
-    cb.num_timesteps = 2_000_001
-    cb._on_step()                      # all done → merge per-opponent results + promote
-
-    assert cb._pending is None
-    assert (best_dir / "best_model.zip").exists()
-    assert cb._best_aggregate_win_rate == pytest.approx(0.8)
-    # Every opponent's win-rate made it into the recorded metrics.
-    recorded = {c.args[0] for c in cb.logger.record.call_args_list}
-    for name in eval_opponent_names():
-        assert f"eval/win_rate_vs_{name}" in recorded
-
-
-def test_orchestrator_worker_failure_logs_and_continues(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
-    cb = PerOpponentEvalCallback(
-        model_dir=str(tmp_path), server_config=MagicMock(),
-        best_model_save_path=str(tmp_path / "best"),
-        n_workers=2, showdown_port=9999,
-    )
-    cb.model = MagicMock()
-    cb.model.save = lambda base: open(base + ".zip", "w").close()
-    cb._logger = MagicMock()
-    cb.num_timesteps = 2_000_000       # first eval boundary is now 2M
-    cb._init_callback()
-
-    class _FailProc:
-        returncode = 1
-        def poll(self): return 1
-        def wait(self, timeout=None): return 1
-
-    monkeypatch.setattr(ec.subprocess, "Popen", lambda *a, **k: _FailProc())  # no results written
-
-    cb._on_step()
-    cb.num_timesteps = 2_000_001
-    cb._on_step()                      # all workers failed → no record, no crash
-
-    assert cb._pending is None
-    assert cb._best_aggregate_win_rate == -1.0
-    assert not cb.logger.dump.called
-
-
-def test_drain_waits_for_inflight_eval_then_collects(tmp_path, monkeypatch):
-    """Graceful shutdown: drain() must wait on the workers and still record."""
-    from agents.training import eval_callback as ec
-    cb = PerOpponentEvalCallback(
-        model_dir=str(tmp_path), server_config=MagicMock(),
-        best_model_save_path=str(tmp_path / "best"),
-        n_workers=1, showdown_port=9999,
-    )
-    cb.model = MagicMock()
-    cb.model.save = lambda base: open(base + ".zip", "w").close()
-    cb._logger = MagicMock()
-    cb.num_timesteps = 2_000_000       # first eval boundary is now 2M
-    cb._init_callback()
-
-    waited = {"n": 0}
-
-    class _SlowProc:
-        returncode = 0
-        def poll(self): return None            # looks alive until wait() is called
-        def wait(self, timeout=None): waited["n"] += 1; return 0
-
-    def fake_popen(argv, stdout=None, stderr=None, env=None):
-        import json as _json
-        _publish_fake_shards(_json.load(open(argv[-1])), win=0.5, reward=0.0, ep_len=10.0)
-        return _SlowProc()
-
-    monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)
-
-    cb._on_step()                              # launch; poll()=None so it stays pending
-    assert cb._pending is not None
-    cb.drain(timeout=5)                        # graceful shutdown blocks then collects
-    assert cb._pending is None
-    assert waited["n"] >= 1                     # actually waited on the worker
-    assert cb.logger.record.called
-
-
-# ── process-unique eval account nonce / cycle_tag (the restart-collision fix) ──
-
-def test_eval_run_nonce_is_short_and_varies():
-    from agents.training.eval_callback import eval_run_nonce
-    a, b = eval_run_nonce(), eval_run_nonce()
-    assert len(a) == 3 and len(b) == 3
-    assert a != b  # per-process counter guarantees successive calls differ
-
-
-def test_eval_account_names_within_showdown_18_char_limit():
-    # The bug was account-name COLLISION; this guards the other constraint — that the
-    # process-unique tag still fits Showdown's 18-char username cap for every prefix.
-    from agents.training.eval_callback import eval_run_nonce, _b36, _EVAL_OPPONENT_SPECS
-    cycle_tag = eval_run_nonce() + _b36(35, 1)          # nonce(3) + cycle(1) = 4
-    tag = f"{cycle_tag}913"                              # pessimistic wid=9, claim_seq=13
-    for (_name, _cls, prefix) in _EVAL_OPPONENT_SPECS:
-        assert len(prefix + tag) <= 18, (prefix, prefix + tag)
-    assert len(f"RLEv{tag}9") <= 18   # trainee player
-    assert len(f"SPtr{tag}") <= 18    # self-play sentinel trainee
-    assert len(f"SPse{tag}") <= 18    # self-play sentinel opponent
-
-
-def test_cycle_tag_is_process_unique_not_step_derived(tmp_path, monkeypatch):
-    """cycle_tag must come from the per-process nonce + per-cycle counter, NOT the step —
-    the resume re-eval fires at the same step every restart, so a step tag collided."""
-    from agents.training import eval_callback as ec
-    cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock(),
-                                 n_workers=1, showdown_port=9999)
-    cb.model = MagicMock()
-    cb.model.save = lambda b: open(b + ".zip", "w").close()
-    cb._logger = MagicMock()
-    cb._init_callback()
-
-    captured = []
-    monkeypatch.setattr(ec, "spawn_eval_workers",
-                        lambda run_dir, base_cfg, n: captured.append(base_cfg["cycle_tag"]) or [])
-
-    cb.num_timesteps = 2_000_000
-    cb._launch_eval()
-    cb._pending = None
-    cb.num_timesteps = 4_000_000
-    cb._launch_eval()
-
-    assert captured[0].startswith(cb._eval_run_nonce)   # carries the process nonce
-    assert captured[0] != captured[1]                   # per-cycle counter advances
-    # Two launches at the SAME step (the resume-collision scenario) still differ:
-    cb._pending = None
-    cb.num_timesteps = 2_000_000
-    cb._launch_eval()
-    assert captured[2] != captured[0]
-    # And it is NOT the old step-derived tag.
-    assert captured[0] != f"{2_000_000 // 100 % 10000:04d}"
-
-
-# ── eval-cycle watchdog (a hung worker must not wedge eval forever) ───────────
-
-def _hung_proc_factory(killed):
-    class _HungProc:
-        returncode = None
-        def poll(self):
-            return None                       # never finishes on its own
-        def kill(self):
-            self.returncode = -9
-            killed["n"] += 1
-        def wait(self, timeout=None):
-            return -9
-    return _HungProc
-
-
-def test_watchdog_aborts_hung_cycle_and_collects_partial(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
-    cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock(),
-                                 best_model_save_path=str(tmp_path / "best"),
-                                 n_workers=2, showdown_port=9999)
-    cb.model = MagicMock()
-    cb.model.save = lambda b: open(b + ".zip", "w").close()
-    cb._logger = MagicMock()
-    cb.num_timesteps = 2_000_000
-    cb._init_callback()
-
-    killed = {"n": 0}
-    HungProc = _hung_proc_factory(killed)
-
-    def fake_popen(argv, stdout=None, stderr=None, env=None):
-        import json as _json
-        cfg = _json.load(open(argv[-1]))
-        # Partial: only the first two opponents reported before the (simulated) hang.
-        _publish_fake_shards(cfg, win=0.5, reward=0.0, ep_len=10.0,
-                             only=set(eval_opponent_names()[:2]))
-        return HungProc()
-
-    monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)
-
-    cb._on_step()                                 # launch; procs report poll()=None
-    assert cb._pending is not None
-    # Make the cycle look overdue, then step again → watchdog fires.
-    # Read the SCALED bound, not the raw constant: on a loaded box the effective
-    # timeout is larger, so `raw + 1` seconds ago is not yet overdue and this test
-    # would fail for the exact contention reason the helper exists to remove.
-    cb._pending["launched_at"] = ec.time.monotonic() - (ec.eval_cycle_timeout() + 1)
-    cb.num_timesteps = 2_000_001                  # same freq bucket → no relaunch
-    cb._on_step()
-
-    assert killed["n"] >= 1                        # the hung workers were killed
-    assert cb._pending is None                     # cleared → eval can resume
-    assert cb.logger.record.called                 # partial results were still recorded
-
-
-def test_watchdog_leaves_a_fresh_cycle_running(tmp_path, monkeypatch):
-    from agents.training import eval_callback as ec
-    cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock(),
-                                 n_workers=1, showdown_port=9999)
-    cb.model = MagicMock()
-    cb.model.save = lambda b: open(b + ".zip", "w").close()
-    cb._logger = MagicMock()
-    cb.num_timesteps = 2_000_000
-    cb._init_callback()
-
-    killed = {"n": 0}
-    HungProc = _hung_proc_factory(killed)
-    monkeypatch.setattr(ec.subprocess, "Popen", lambda *a, **k: HungProc())
-
-    cb._on_step()                                 # launch; launched_at = now
-    assert cb._pending is not None
-    cb.num_timesteps = 2_000_001
-    cb._on_step()                                 # not overdue → no abort
-    assert killed["n"] == 0 and cb._pending is not None
-
-
 def test_latest_recorded_eval_step():
     from agents.training.eval_callback import latest_recorded_eval_step
     assert latest_recorded_eval_step(None, None) == 0
@@ -656,7 +375,7 @@ def test_replay_last_eval_publishes_to_tui_on_init(tmp_path, monkeypatch):
 
     sent = {}
     monkeypatch.setattr(eval_record, "send_metrics", lambda d: sent.update(d))
-    cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock())
+    cb = PerOpponentEvalCallback(model_dir=str(tmp_path))
     cb._init_callback()
 
     assert sent.get("eval/win_rate_vs_random") == 0.7

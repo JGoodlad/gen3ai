@@ -1,6 +1,7 @@
-"""The eval callbacks under ``--env-core rust`` (M5 Lane H): the cycle plays IN PROCESS on the model's
-declared eval core — never on Python workers — publishes the workers' shard records, and the
-UNCHANGED collect records every metric; a run without a declared eval core is REFUSED."""
+"""The eval callback's cycle (M5 Lane H): it plays IN PROCESS on the model's declared eval core, BLOCKING,
+publishes one shard record per unit, and the collect records every metric in the same step; a run without
+a declared eval core is REFUSED. (The Python-worker cycle these tests used to sit beside is gone, deletion
+pass P10-F2; the collect / best-model / failure cases the Python tests drove now run through here.)"""
 from __future__ import annotations
 
 import json
@@ -44,7 +45,7 @@ class _FakeEvaluator:
 
 
 def _cb(tmp_path, evaluator):
-    cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock(), env_core="rust",
+    cb = PerOpponentEvalCallback(model_dir=str(tmp_path),
                                  best_model_save_path=str(tmp_path / "best"), eval_games=8)
     cb.model = MagicMock()
     cb.model.save = lambda base: open(base + ".zip", "w").close()
@@ -56,28 +57,23 @@ def _cb(tmp_path, evaluator):
     return cb
 
 
-def test_a_rust_cycle_runs_in_process_and_the_unchanged_collect_records_it(tmp_path, monkeypatch):
-    def no_workers(*_a, **_k):
-        raise AssertionError("--env-core rust spawned Python eval workers")
-
-    monkeypatch.setattr(ec, "spawn_eval_workers", no_workers)
+def test_a_rust_cycle_runs_in_process_and_the_unchanged_collect_records_it(tmp_path):
     ev = _FakeEvaluator()
     cb = _cb(tmp_path, ev)
-    cb._on_step()
-    assert cb._pending is None, "the blocking cycle is collected in the same step"
+    cb._on_step()                  # launches AND collects (blocking) in this one step
     assert len(ev.calls) == 1 and ev.calls[0]["step"] == 2_000_000
     recorded = {c.args[0]: c.args[1] for c in cb.logger.record.call_args_list}
     for name in eval_opponent_names():
         assert recorded[f"eval/win_rate_vs_{name}"] == pytest.approx(0.75)
     assert recorded["eval/win_rate_vs_bots"] == pytest.approx(0.75)
+    assert cb._best_aggregate_win_rate == pytest.approx(0.75)
     assert "rust_eval/cycle_wall_s" in recorded
     man = json.loads((tmp_path / "eval_traces" / "step_2000000" / "eval_manifest.json").read_text())
-    assert man["selection"] is not None, "the trace selection is recorded at collect, as on the Python path"
+    assert man["selection"] is not None, "the trace selection is recorded at collect"
     assert (tmp_path / "best" / "best_model.zip").exists()
 
 
-def test_a_rust_run_without_a_declared_eval_core_is_refused(tmp_path, monkeypatch):
-    monkeypatch.setattr(ec, "spawn_eval_workers", lambda *_a, **_k: [])
+def test_a_run_without_a_declared_eval_core_is_refused(tmp_path):
     cb = _cb(tmp_path, None)
     with pytest.raises(RustEvalUnavailable):
         cb._on_step()
@@ -95,6 +91,7 @@ def test_a_failed_rust_cycle_is_logged_as_missing_results_not_raised(tmp_path, m
     monkeypatch.setattr(eval_launch, "send_event", sent.append)  # launch_rust_eval_cycle's failure line
     cb = _cb(tmp_path, _Broken())
     cb._on_step()
-    assert cb._pending is None
     assert any("Rust eval cycle failed" in s for s in sent)
     assert any("failed (no results)" in s for s in sent)
+    assert cb._best_aggregate_win_rate == -1.0
+    assert not cb.logger.dump.called          # nothing was recorded for a cycle with no results

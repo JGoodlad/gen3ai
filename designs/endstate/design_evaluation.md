@@ -106,8 +106,10 @@ ledger. TODO: the value-of-information rule (ResponseGraphUCB-style for the matr
   without growing GPU memory. BUILT; TODO wire it to an eval scheduler.
 - **Pool larger than the GPU's active set:** snapshots already live on the CPU, so the pool may grow while PFSP picks
   the per-rollout active set (the AlphaStar league pattern). TODO.
-- TODO, verify: whether the Rust eval core's cycle BLOCKS training today. The `--eval-freq` help text says
-  non-blocking and self-skipping; the sizing O9 read says blocking. Settle it before T19's design.
+- **SETTLED (2026-10-03, P10-F2): the Rust eval core's cycle BLOCKS training.** `_launch_eval` plays it and
+  `_collect_pending`s in the same `_on_step`; ~1.5% of wall at N=256 (`measurements/m5_sizing/PROGRESS.md` O9). The
+  `--eval-freq` help text and the callbacks' docs said "non-blocking and self-skipping" — they described the Python
+  worker pool, deleted in P10-F2 — and now say blocking. T19's design starts from a blocking cycle.
 
 ## 5. The eval budget
 - **Today:** an eval cycle every 2M steps (`EVAL_FREQ_STEPS`), **100 games per opponent per cycle**

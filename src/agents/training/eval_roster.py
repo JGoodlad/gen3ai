@@ -24,20 +24,10 @@ _EVAL_CONCURRENCY = 100
 # opponent, all gathered. Cap the AGGREGATE in-flight battles so N opponents don't
 
 
-# Per-opponent in-flight battles in the subprocess eval worker. ONE game at a time.
-# Eval inference is single-threaded (one Python thread does every forward in this
-# process), so overlapping battles never parallelizes the bottleneck — it only piles
-# on contention: extra Node sim procs on the bridge / extra load on the shared
-# Showdown server, both fighting training's CPU-saturated env workers. Overlap
-# measured slower, not faster. Cross-opponent parallelism still comes from the
-# eval-worker subprocesses (3, the deleted `--eval-workers` default) work-stealing the pool; each plays serially.
-_EVAL_SUBPROCESS_CONCURRENCY = 1
-
 # Flat eval schedule — one cadence, one game count, applied uniformly to every bot
-# AND every self-play sentinel. No maturity tiers, no per-opponent caps: eval runs
-# non-blocking in a subprocess and skips a cycle whenever the previous one is still
-# running, so a heavier roster self-throttles (cadence just goes sparser) instead of
-# needing hand-tuned ceilings.
+# AND every self-play sentinel. No maturity tiers, no per-opponent caps. The cycle plays blocking
+# in the trainer's process (~1.5% of wall at N=256, m5_sizing PROGRESS.md O9), so the cadence is
+# what bounds its cost.
 EVAL_FREQ_STEPS = 2_000_000
 EVAL_GAMES = 100
 

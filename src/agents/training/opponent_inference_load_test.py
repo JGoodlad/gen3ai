@@ -393,7 +393,6 @@ def test_the_strict_reader_load_is_otherwise_a_plain_MaskablePPO_load(world: Dic
     # the learner's own weights are what was saved, bit for bit
     sd_l = world["off"].policy.state_dict()
     assert all(torch_.equal(sd_s[k], sd_l[k]) for k in sd_l)
-    assert not getattr(strict, "inference_only", False)
 
 
 def test_the_reader_surfaces_refuse_a_dropped_submodule_and_the_prober_still_DIAGNOSES(

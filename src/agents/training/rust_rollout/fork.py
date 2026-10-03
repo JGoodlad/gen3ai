@@ -55,7 +55,7 @@ ROW_BUDGET_MULTIPLE = 1.0
 #: unpaired across branches, and never a training stream (0 / 1) or a respawn's (11).
 FORK_STREAM_BASE = 16
 
-#: ``MaskableAgentWrapper.OPP_CLASS_POOL`` — the label of a row played against a SUBSTITUTED
+#: ``opponent_classes.OPP_CLASS_POOL`` — the label of a row played against a SUBSTITUTED
 #: (self-like) opponent (``fork_buffer.FILL``'s rule).
 OPP_CLASS_POOL = 1
 

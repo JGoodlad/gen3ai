@@ -203,7 +203,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
 
 
 def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn,
-                           handoff_lr_fn=None, eval_drain_fn=None, *, exit_fn=os._exit, wait_fn=None,
+                           handoff_lr_fn=None, *, exit_fn=os._exit, wait_fn=None,
                            start_watchdog=True):
     """Wire SIGINT/SIGTERM/SIGHUP/SIGUSR1/SIGUSR2. Returns the run's `DeferredAbort`
     (`main.train.deferred_abort`, gen3_deferred_abort_v1): CALLED with a reason it is the canonical
@@ -217,11 +217,6 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
     callback's current handoff_lr (or None while still in Phase 1) so the
     cosine starting LR is persisted alongside the SIGTERM checkpoint.
 
-    ``eval_drain_fn`` is optional; when present it is called AFTER the checkpoint
-    is safely saved to wait (briefly, bounded) for an in-flight subprocess eval so
-    its results land before exit. Bounded so the child still exits inside the
-    launcher's SIGKILL grace — the checkpoint is already safe regardless.
-
     ``exit_fn`` / ``wait_fn`` / ``start_watchdog`` are the test seams (`DeferredAbort`'s).
     """
 
@@ -232,7 +227,8 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
         """The abort's body — at a safe point, on the main thread (`DeferredAbort.abort` claims the exit
         first, then exits 15 after this returns).
 
-        Saves a full checkpoint (with metadata + latest.txt), then drains an in-flight eval.
+        Saves a full checkpoint (with metadata + latest.txt). There is no eval to drain: the eval cycle is
+        blocking and in process, and a stop signal inside it abandons the partial cycle at its safe point.
         """
         shutdown_event.set()
         print(f"\n[ABORT] {reason}", flush=True)
@@ -255,14 +251,6 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             print(f"[ABORT] Checkpoint saved → {path}.zip")
         except Exception as e:
             print(f"[ABORT] Save failed: {e}")
-        # Checkpoint is safe; now wait for any in-flight eval to FINISH so its results
-        # land in metadata.json before we exit (bounded by _ABORT_EVAL_DRAIN_SEC, which
-        # fits inside the scheduled-restart grace window).
-        if eval_drain_fn is not None:
-            try:
-                eval_drain_fn()
-            except Exception as e:
-                print(f"[ABORT] eval drain failed: {e}")
         sys.stdout.flush()
 
     def _forced_checkpoint() -> None:

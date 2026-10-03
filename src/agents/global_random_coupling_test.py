@@ -353,8 +353,8 @@ def _samples(pool, jitter_seed, n=40):
 
 
 class TestSnapshotPoolRng:
-    """An INTERNAL INCONSISTENCY as much as a coupling: the only caller of `sample()` is
-    `MaskableAgentWrapper`, which already owns a per-env `random.Random(rng_seed)` for *which
+    """An INTERNAL INCONSISTENCY as much as a coupling: the only caller of `sample()` was
+    `MaskableAgentWrapper` (the Python env core, deleted in U3), which already owned a per-env `random.Random(rng_seed)` for *which
     bucket* it picks — and then reached into the global module for *which snapshot*. So a wrapper
     that looks seeded was not reproducible."""
 

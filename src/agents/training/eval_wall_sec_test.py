@@ -1,18 +1,14 @@
 """`gen3_eval_wall_sec_v1` — `eval/wall_sec` is the eval cycle's WALL time; `eval/duration_sec` is the
 SUMMED UNIT TIME (every shard's own duration added up), which concurrent units inflate far past the
 wall. With fake units that each report 1 s and play "concurrently" (instantly), the wall must come out
-far BELOW the summed time, on both env cores. FAILS on revert (no `eval/wall_sec` recorded).
+far BELOW the summed time. FAILS on revert (no `eval/wall_sec` recorded).
 """
 from __future__ import annotations
 
 import inspect
 from typing import Any, Dict
 
-import pytest
-
-from agents.training import eval_callback as ec
-from agents.training.eval_dump_isolation_test import _cb, _logger, _publish_all
-from agents.training.eval_sharding.pool import ShardedEvalPool
+from agents.training.eval_dump_isolation_test import _cb, _logger
 
 
 def _eval_dump(rec: Any) -> Dict[str, Any]:
@@ -29,24 +25,9 @@ def _check(d: Dict[str, Any]) -> None:
     assert 0.0 <= d["eval/wall_sec"] < d["eval/duration_sec"], (d["eval/wall_sec"], d["eval/duration_sec"])
 
 
-def test_rust_core_wall_is_below_the_summed_unit_time(tmp_path: Any, monkeypatch: Any) -> None:
-    monkeypatch.setattr(ec, "spawn_eval_workers", lambda *_a, **_k: pytest.fail("rust spawned workers"))
+def test_the_cycle_wall_is_below_the_summed_unit_time(tmp_path: Any) -> None:
     logger, rec = _logger()
-    cb = _cb(tmp_path, "rust", logger)
-    cb._on_step()
-    _check(_eval_dump(rec))
-
-
-def test_python_core_wall_is_below_the_summed_unit_time(tmp_path: Any, monkeypatch: Any) -> None:
-    def spawn(run_dir: str, base_cfg: Any, n_workers: int) -> list:
-        _publish_all(ShardedEvalPool.from_plan(run_dir), run_dir)
-        return []
-
-    monkeypatch.setattr(ec, "spawn_eval_workers", spawn)
-    logger, rec = _logger()
-    cb = _cb(tmp_path, "python", logger)
-    cb._on_step()
-    cb.num_timesteps += 98_304
+    cb = _cb(tmp_path, logger)
     cb._on_step()
     _check(_eval_dump(rec))
 

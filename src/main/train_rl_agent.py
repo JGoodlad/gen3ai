@@ -11,7 +11,7 @@ original kept as a hub.
 
 THE MODULE MAP (`main/train/`, and `main/train/__init__.py` repeats it):
 
-    constants.py        BATTLE_FORMAT / the abort drain bound
+    constants.py        CLIP_RANGE_DEFAULT / the checkpoint-cadence conversions
     parser/             `build_parser()` behind a hub, one module per FLAG FAMILY in `--help`
                         order; `base.py` holds `BoolFlag` / `str2bool` / `optional_float`
     compile_flags.py    the `--compile-trainer` default resolvers
@@ -77,7 +77,7 @@ from main.launcher.ipc import emit
 # and the rest are all live re-exports, the same contract `features_extractor.py` keeps for its
 # own phase split.
 from main.train.constants import (   # noqa: F401 — re-export hub
-    BATTLE_FORMAT, CLIP_RANGE_DEFAULT, _ABORT_EVAL_DRAIN_SEC,
+    CLIP_RANGE_DEFAULT,
 )
 from main.train.parser import (   # noqa: F401 — re-export hub
     BoolFlag, build_parser, optional_float, str2bool, _BOOL_FALSE, _BOOL_TRUE,

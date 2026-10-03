@@ -52,7 +52,7 @@ is one of four codes — bot / pool / stable / exploiter. The finer identities a
 for are deliberately NOT here, and each for a reason rather than an omission:
 
 * the **bot's archetype name** and the **pool snapshot's step** are chosen per EPISODE inside
-  `MaskableAgentWrapper._select_episode_opponent` and never reach the observation; adding them
+  `rust_env_opponents.EpisodeOpponentSampler` and never reach the observation; adding them
   would mean a new obs key per identity, and the class is what every existing consumer
   (`opp_intent/*`, the per-class calibration split) is already keyed on.
 * an opponent **ladder rating** does not exist at training time at all. Nothing in the training

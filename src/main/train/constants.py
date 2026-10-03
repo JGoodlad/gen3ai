@@ -10,7 +10,6 @@ the step, and phase 1 importing phase 4 would make the phase order load-bearing.
 """
 from typing import Optional
 
-BATTLE_FORMAT = "gen3ou"
 CLIP_RANGE_DEFAULT = 0.15
 
 # --- CHECKPOINT CADENCE ---------------------------------------------------------------------
@@ -49,14 +48,3 @@ def checkpoint_due(last_step: int, now_step: int, interval_env_steps: int) -> bo
     one callback call advanced (N, a wave, a ragged Rust host step) or on where this process started."""
     interval = max(1, int(interval_env_steps))
     return int(now_step) // interval > int(last_step) // interval
-
-
-# Wait for an in-flight subprocess eval to FINISH on a graceful restart so its
-# results land before exit. A scheduled restart is self-initiated by
-# GracefulRestartCallback at a rollout boundary, and the launcher won't force-kill
-# until the child overruns the deadline by --restart-grace-minutes (20 min default),
-# so a 10-min drain fits. The checkpoint is saved first either way, so even the
-# pathological forced-SIGTERM case (child already overran → ~90s SIGKILL) is safe —
-# it only risks losing the in-flight eval, never the checkpoint.
-_ABORT_EVAL_DRAIN_SEC = 600.0
-

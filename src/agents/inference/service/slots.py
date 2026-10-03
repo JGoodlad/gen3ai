@@ -139,7 +139,6 @@ class SlotGroup:
         self.policies = replicas
         self.modules = [DecisionModule(r).eval() for r in replicas]
         self.model_ids: List[str] = ["<template>"] * self.n_slots
-        self.template_weights = {k: v.detach().to("cpu").clone() for k, v in tsd.items()}
 
     def storage_bytes(self) -> int:
         return sum(t.numel() * t.element_size() for t in self.stacked.values())

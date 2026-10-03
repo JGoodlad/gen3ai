@@ -57,7 +57,7 @@ _ADV_DEGENERATE_STD = 1e-12
 # by a common one.
 _OUTCOME_WINDOW = 200
 
-# `MaskableAgentWrapper.OPP_CLASS_*` → the TB suffix. Canonical HERE rather than in
+# `opponent_classes.OPP_CLASS_*` → the TB suffix. Canonical HERE rather than in
 # `signal_callback` because both consumers need it and one of them is `instrumented_ppo.ppo`
 # (the `win_prob/start_*` per-class split): importing it from the callback would put a back-edge
 # from this package into a module that imports the package. Kept as a literal map rather than read

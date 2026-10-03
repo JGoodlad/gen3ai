@@ -31,7 +31,7 @@ THE EPISODE-START READ (`win_prob/start_*`) IS A PAIRED CALIBRATION, NOT TWO WIN
 "What does the head predict at the start of a self-play game, and does that match the realized
 self-play win rate?" is a question about the LEAST-informed state, where a miscalibration cannot be
 excused by a lost position. It is answered from ONE set of rows: the episode-start rows of the
-rollout, whose ``win_target`` (back-filled by `WinProbLabelCallback` from the episode's own
+rollout, whose ``win_target`` (written by the Rust collector's fill, `rust_rollout.store`, from the episode's own
 outcome) IS the realized outcome of the episode that starts there. So `start_pred_mean` and
 `start_realized_mean` are computed over the same episodes, and `start_gap` is a paired difference —
 not the difference of two independently-windowed averages, which would carry the two windows'
@@ -241,7 +241,7 @@ def critic_reliability(rollout_buffer) -> Dict[str, float]:
     """The Murphy split of the ROLLOUT's own critic values against the realized outcome.
 
     Under the win-prob critic the buffer's `values` ARE `sigmoid(win-prob logit)`, and
-    `win_target` / `win_mask` are the Monte-Carlo outcome `WinProbLabelCallback` back-fills for
+    `win_target` / `win_mask` are the Monte-Carlo outcome the Rust collector's fill (`rust_rollout.store`) writes for
     every step whose episode finished inside this buffer. So this needs no forward at all: both
     columns are already there, in probability units, for the exact states GAE bootstrapped from.
 

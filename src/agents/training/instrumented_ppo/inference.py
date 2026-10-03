@@ -62,8 +62,6 @@ _INFERENCE_PARAMS = ("policy",)
 class InferenceMaskablePPO(InstrumentedMaskablePPO):
     """Policy weights only — the class every opponent / reader load builds (module docs)."""
 
-    inference_only = True
-
     def _setup_model(self) -> None:
         from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 

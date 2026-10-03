@@ -101,7 +101,7 @@ entry either loads or raises the typed error naming the fix; its `integration` h
 the bare path still fails where `baselines.load` succeeds, so a "simplification" back to
 `MaskablePPO.load` fails red.
 
-## Bot evaluation (subprocess, non-blocking)
+## Bot evaluation (in process on the Rust eval core, BLOCKING)
 
 **Flat schedule, full roster.** Eval fires every `EVAL_FREQ_STEPS` (2M steps) and plays
 `EVAL_GAMES` (100) games per opponent — overridable per run with `--eval-games N` (threaded to both
@@ -113,11 +113,14 @@ roster is the full set of eight archetype bots — both the v1 and v2 of each
 `setup_sweep`/`setup_sweep_v2`) — plus `random` as the eval-only "is-the-model-broken"
 floor (excluded from `win_rate_vs_bots`). All nine are the single source of truth in
 `_EVAL_OPPONENT_SPECS` / `eval_opponent_names()`, shared by the bot path, the self-play
-path, and the worker. There is no roster flag — every bot always plays, because they play
-differently and the playstyle diversity is the point. The flat numbers are safe precisely
-because eval is non-blocking and **skips a cycle while the previous one is still running**
-(below): a heavier roster self-throttles to a sparser cadence instead of needing tuned
-ceilings.
+path, and the standalone `main.eval_worker` tools. There is no roster flag — every bot always plays,
+because they play differently and the playstyle diversity is the point. 🚨 **The cycle is BLOCKING**:
+it plays in the trainer's own process between two host steps of the collector and is collected in the
+same step (`eval_callback._launch_eval` → `eval_launch.launch_rust_eval_cycle` → `_collect_pending`),
+so it costs training its wall time — **~1.5% of wall at N=256** (`designs/research_state/measurements/m5_sizing/PROGRESS.md`
+O9: 9.6-16.3 s per cycle at the production roster). The earlier "non-blocking subprocess workers that
+skip a cycle while the previous one runs" model died with the Python eval branch (deletion pass
+P10-F2); no cycle is ever "still running" when the next step begins, so nothing is skipped.
 
 🚨 **BOT ERA BOUNDARY — F-LF-1, fixed 2026-09-29.** Until then the SETUP step of `heuristic`,
 `heuristic2`, `setup_sweep` and `setup_sweep_v2` never fired (each compared poke-env's `Target`
@@ -330,12 +333,15 @@ whole CI sits above — while the absolute numbers are still computed and printe
 targets that gate nothing, and every row names which clause decided it beside the baseline value it
 was decided against. G1 and G4 are unchanged.
 
-`PerOpponentEvalCallback` (non-self-play path) does **not** eval in-process. On each
-scheduled step it snapshots the live weights (`model.save`) and spawns the eval workers
-(default 5; `--eval-workers`, deleted in P11 — production runs the in-process Rust eval core) `main.eval_worker` subprocesses that **work-steal at battle granularity** from a
-shared pool, load the **frozen** snapshot, and play against the shared Showdown server (or the
-in-process bridge) **without pausing training**. **The trainee's eval teambuilder follows the
-run's `--trainee-team` pin** (`trainee_team_str` in the worker cfg → `agents.training.eval_teams.build_trainee_tb`, shared by the Python eval worker and the Rust eval core;
+`PerOpponentEvalCallback` (non-self-play path) evals IN PROCESS on the Rust eval core, blocking (see
+the section heading; until P10-F2 (2026-10-03) it also had a Python branch that spawned `main.eval_worker`
+subprocesses which **work-steal at battle granularity** and played beside training — that branch, its
+`--eval-workers` / `--eval-device` / `--eval-concurrency-per-worker` knobs (deleted in P11) and the
+paragraphs below that still describe a "worker" now describe the STANDALONE `main.eval_worker` — the Python oracle
+of the Rust eval, run by `rust_eval.parity`, `eval_benchmark` and `main.ops.eval_trace_gen` — and the shard
+mechanics both cores share). On each scheduled step it snapshots the live weights (`model.save`) and the
+cycle plays against the **frozen** snapshot. **The trainee's eval teambuilder follows the
+run's `--trainee-team` pin** (`trainee_team_str` → `agents.training.eval_teams.build_trainee_tb`, shared by the Python eval worker and the Rust eval core;
 threaded by BOTH callbacks): a specialist run is measured piloting ITS OWN team. The worker used to
 hardcode the default full-pool builder, so every specialist eval (win rates / ELO / `vs_ext`
 verdicts) measured the model piloting random teams it never trained on — pure OOD; the
@@ -452,7 +458,7 @@ three sit alongside a per-cycle
 **`eval_manifest.json`** (`write_eval_manifest`) recording exactly which model produced them
 — `num_timesteps`, `git_hash` + `arch_signature` (read from the run's `metadata.json` /
 `model_config.json`), and a `snapshot` pointer. The eval snapshot is normally ephemeral
-(`model.save` → workers load → deleted in `_cleanup`) and the eval `step` rarely lines up with
+(`model.save` → the cycle loads it → deleted in `_cleanup`) and the eval `step` rarely lines up with
 a persisted `<run>/checkpoints/checkpoint_<N>_steps.zip`, so the prober can't reload the *exact* weights unless
 they're retained: `--keep-eval-snapshots N` copies the snapshot into
 `eval_traces/step_<N>/snapshot.zip` (keeping the N most-recent) and points the manifest at it.
@@ -488,46 +494,34 @@ embedded block keeps its own `step`, so storing it under a possibly-newer checkp
 mislabels which weights were measured (`snapshot._read_latest_eval` reads it; the union
 builder `_build_snapshot_entry` keeps sidecar + history in lockstep).
 
-The frozen snapshot makes parallel eval correct (a worker can't read mutating in-memory
-weights), and the fresh process returns all eval memory to the OS on exit (no fragmentation
-in the trainer). Behaviors:
-- A trigger that fires while the previous cycle still runs is **skipped** (logged) — on CPU
-  an eval can outlast its interval; cadence just goes sparser.
-- A worker crash is **logged-and-continued**, never fatal (its opponents are just missing
-  for that cycle).
-- **The hung-cycle watchdog is CONTENTION-SCALED** (`eval_cycle_timeout()` =
-  `scale_timeout(_EVAL_CYCLE_TIMEOUT_SEC)`, 30 min baseline, shared by BOTH callbacks;
-  `gen3_contention_robust_timeouts_v1`). Eval is the path most exposed to load — it runs
-  concurrently with training *by design*, so it is contended 100% of the time, and the bullet
-  above already concedes "an eval can outlast its interval". Firing early does **not** merely
-  lose a cycle: `_abort_pending_cycle` kills the workers and collects **PARTIAL** results, which
-  feed `win_rate_vs_bots` (the curriculum ramp), `win_rate_vs_pool` (the promotion gate) and the
-  ELO fit — and the survivors are whichever shards got scheduled, not a random subsample. So a
-  merely-slow cycle must never be mistaken for a hung one. The partial-coverage warning no longer
-  asserts "worker crash mid-opponent" as the cause either (an overrun-kill produces an identical
-  shortfall); it states the fact and appends `describe_contention()` so the reader can tell which
-  happened. ⚠️ **Tests must read `eval_cycle_timeout()`, never the raw constant** — the two
-  hung-cycle tests built a past timestamp from `_EVAL_CYCLE_TIMEOUT_SEC` and so passed on an idle
-  box while failing on a loaded one; `GEN3AI_TIMEOUT_SCALE=6 pytest src/ -m "not integration and
-  not e2e"` is the check that catches that class.
+The frozen snapshot (`model.save` at the cycle's launch) is what the prober reloads and what the best-model
+copy and a pool promotion take — each cycle evaluates the model exactly as it was at the snapshot step.
+Behaviors:
+- **A failed cycle is logged-and-continued**, never fatal: an `EvalCoreError` (e.g. a QUARANTINED
+  battle) leaves the shard files absent, the collect reads the opponents as missing, and a cycle with
+  no results records nothing (`eval_callback_rust_test`). A lifecycle violation and a missing eval core
+  RAISE (`RustEvalUnavailable`).
+- **There is no hung-cycle watchdog and no skip-while-running rule** (both belonged to the Python
+  worker pool, deleted in P10-F2 with `eval_cycle_timeout()` / `_abort_pending_cycle`). A stop signal
+  is honoured INSIDE the cycle at its safe points (`safe_point_fn`, `gen3_deferred_abort_v1`, P10-A2),
+  and the abort's 120 s deadline bounds a cycle that never reaches one.
 - **An operator can force an off-cadence eval** from the launcher's `f` button (confirm →
   SIGUSR2). The signal handler (`train_rl_agent._setup_signal_handlers`) only flags a
   process-global `request_forced_eval()`; whichever eval callback is active CONSUMES it on its
   next `_on_step` (the shared `eval_callback._ForcedEvalMixin._maybe_force_eval`, mixed into BOTH
-  callbacks so the path can't drift) and launches a cycle immediately. A request that arrives
-  while a cycle is already in flight is **rejected** and reported to the launcher Events panel —
-  the same skip-while-running rule as the normal cadence. The forced launch consumes the current
+  callbacks so the path can't drift) and launches a cycle immediately. The cycle is blocking, so a
+  request is never consumed "while a cycle is in flight"; one flagged DURING a cycle is consumed at
+  the next step and launches another cycle straight after it (the old "rejected while running" rule
+  was the Python workers'). The forced launch consumes the current
   cadence bucket (`_last_eval_step = num_timesteps`) so the schedule check can't double-launch the
   same step; the next boundary still fires normally. Tests: `eval_callback_test.py` /
   `selfplay_callback_test.py` (`test_force_eval_*`).
-- **Graceful shutdown waits for eval to finish**: a scheduled restart is self-initiated by
-  `GracefulRestartCallback` at a rollout boundary and the launcher won't force-kill until the
-  child overruns the deadline by `--restart-grace-minutes` (20 min), so the drain budget is a
-  full `_ABORT_EVAL_DRAIN_SEC` (10 min) AFTER the checkpoint is saved — long enough for a CPU
-  eval to complete. Even the pathological forced-SIGTERM case (already overran → a 150 s SIGKILL)
-  is safe: the checkpoint is saved first, only the in-flight eval can be lost. (The in-process Rust
-  eval cycle has a SAFE POINT at every host step, P10-A2 — a stop signal during it saves within one
-  host step and abandons the partial cycle — it is never collected, so no partial eval is recorded.)
+- **Graceful shutdown has no eval to wait for.** A scheduled restart is self-initiated by
+  `GracefulRestartCallback` at a rollout boundary; the cycle is blocking, so there is never an
+  in-flight eval to drain (`PerOpponentEvalCallback.drain`, `eval_drain_fn` and
+  `_ABORT_EVAL_DRAIN_SEC` were deleted in P10-F2). A stop signal during a cycle saves within one host
+  step (the cycle's SAFE POINT, P10-A2) and abandons the partial cycle — it is never collected, so no
+  partial eval is recorded.
 - **On resume the last eval is re-published to the TUI** from the resumed checkpoint's
   `metadata.json` (`replay_last_eval_to_tui`), so the eval panel isn't blank until the next
   cycle. This covers the **self-play `pool` block too** — the aggregate (`win_rate_vs_pool`,
@@ -584,7 +578,7 @@ paid for V(s)), pooled per opponent (one `EvalRLPlayer` per matchup → `td_tail
 rides the exact win-rate plumbing — worker `shard__<unit_id>.json` (raw δ pooled across shards) → `merge_eval_results` →
 `eval/td_resid_tail_vs_<opponent>` + `eval/td_resid_tail_mean` (TB + TUI), the `metadata.json`
 `latest_eval` block (per-opponent + pool aggregate), and the append-only `eval_results.jsonl`. The
-run's `model.gamma` is threaded into the worker (`base_cfg["gamma"]`) so the live δ matches the
+run's `model.gamma` is threaded into the cycle (`run_rust_eval_cycle(gamma=…)`; the standalone worker reads `cfg["gamma"]`) so the live δ matches the
 prober's offline recompute (guarded by `td_residual_parity_fuzz_test.py`). More-negative = the critic
 got blindsided more often — the **leading indicator for the critic-coverage obs work** (it moves in a
 cycle or two, where saturated win-rate / gate-pinned `win_rate_vs_pool` / wide-CI ELO don't).
@@ -597,7 +591,7 @@ only overlaps the time a worker is *blocked* on the bridge subprocess / websocke
 another battle's forward. The ceiling is **one core of compute**: a single-core bridge benchmark
 (`/tmp/eval_concurrency_bench.py`, NN trainee vs bot and vs NN sentinel) measured ~**2.0× decisions/sec
 at conc=3** on spare cores (plateau ~3; bot eval ≈2.0×, the heavier NN-vs-NN ≈1.8×) — i.e. about half
-the per-decision wall-time at conc=1 was bridge I/O wait. **The old `_EVAL_SUBPROCESS_CONCURRENCY` = 1
+the per-decision wall-time at conc=1 was bridge I/O wait. **The old `_EVAL_SUBPROCESS_CONCURRENCY` = 1 (deleted, P10-F2)
 default and its "measured slower" note were the *saturated* regime** (eval contending with training's
 64 env workers for already-full cores — there the extra event-loop overhead nets negative); on **spare
 cores (idle box / the cycle tail)** it's a clean ~2×. So the live gain runs between 1× and 2×
@@ -657,9 +651,9 @@ yours") cancels inside the pair instead of riding the win rate as noise. Trainin
 **One rule, both eval paths** (`rust_eval.seeds.pair_game`): unmirrored, a game's key is its own
 `(cycle seed, opponent, game)`; mirrored, games `2k` and `2k+1` both take the key of game `2k` and the
 second is `swapped`. The Rust eval core (`executor._make_game`) and the Python worker's per-GAME seed
-rule (`eval_worker._per_game_teams` / `_play_per_game`) both call it. On the Python path a mirrored
-cycle therefore plays every game seeded (`seed_rule = "per_game"`, `eval_launch.mirrored_worker_cfg`),
-which needs one game in flight per worker; a
+rule (`eval_worker._per_game_teams` / `_play_per_game`) both call it. The standalone Python worker plays a mirrored
+plan only under `seed_rule = "per_game"` (its cfg key; the callbacks' `eval_launch.mirrored_worker_cfg`, which wrote it,
+was deleted in P10-F2), which needs one game in flight per worker; a
 worker handed a mirrored plan without the per-game rule raises. (The `mirrored_pairs_need_*` combination rows, which refused `--use-bridge off` and a concurrency other than 1, were removed in U3 — the bridge is the only transport.)
 
 **Counts are even by construction.** An odd `--eval-games` is rounded UP (`mirrored_eval_games`; the
@@ -772,20 +766,18 @@ Operating characteristics (20k runs per cell, τ = 0/1/2 team effects):
 
 **The three discipline rules, made true rather than intended:**
 1. **The pool is FROZEN at the test's start.** The test plays the sentinels the candidate's own cycle
-   launched against, in every batch. No cycle launches while a test is pending: the skip-while-running
-   rule covers its batches.
+   launched against, in every batch. The test runs to its verdict inside the candidate's own collect, so no
+   other cycle can launch, promote or seed while it is pending.
 2. **Selection games never pool into the decision.** The cycle's own pool games are telemetry. The test
    plays its OWN fresh pairs on a seed namespace disjoint from every cycle's (`sprt_seed`, pinned by a
    test), with no forensic trace and no `rust_eval/*` scalar.
 3. **A failed test is never re-run.** `<run>/sprt_promotion.jsonl` holds the start and verdict lines,
    append-only. A candidate step with ANY line is never retested. A test the process died in is recorded
-   `abandoned` at the next start, as are a batch that played nothing and a drain that ran out of budget;
-   abandoned means not promoted.
+   `abandoned` at the next start, as is a batch that played nothing; abandoned means not promoted.
 
-**Where it runs.** On the RUST eval core the whole test runs inside the candidate's own collect,
-blocking like the cycle, so the live weights ARE the candidate's. On the PYTHON core each batch is a
-non-blocking worker round in `_pending` (`kind: "sprt"`), and it needs the in-process bridge and one
-game in flight (`combination_checks`: `promotion_sprt_*`).
+**Where it runs.** The whole test runs inside the candidate's own collect on the Rust eval core,
+blocking like the cycle, so the live weights ARE the candidate's. (The Python-core variant — each batch a
+non-blocking worker round in `_pending`, `kind: "sprt"` — was deleted in P10-F2.)
 
 **What it records.** On ACCEPT the candidate's frozen snapshot is promoted exactly as before (pool,
 generation, `train/selfplay_promoted_steps`, the detached ladder update). TensorBoard gets
@@ -805,11 +797,10 @@ default stays OFF while the M5 sizing arms are compared. The orchestrator flips 
     `[8000]`; candidate @16,000 after 80 pairs against `[12000, 8000]`. Both tests ran inside their
     cycle's collect (cycle wall 31 s and 40 s at CPU speed), and each pentanomial includes draw-bearing
     categories.
-  - **Python core:** candidate @8,000 was ACCEPTED after 800 pairs in 20 non-blocking batches (LLR
-    trail −1.84 → +3.91). The three later cycles were skipped while the test ran, which is the frozen
-    pool working as designed. Its last batch was collected by the shutdown drain.
-- ⚠️ **The cost is real:** a long test blocks training (Rust core) or holds the next eval cycles off
-  (Python core) until its verdict.
+  - **Python core (deleted in P10-F2; kept as the recorded evidence):** candidate @8,000 was ACCEPTED
+    after 800 pairs in 20 non-blocking batches (LLR trail −1.84 → +3.91). The three later cycles were
+    skipped while the test ran, which is the frozen pool working as designed.
+- ⚠️ **The cost is real:** a long test blocks training until its verdict.
 - Owed: one GPU confirmation, which rides a planned launch.
 
 ### Eval on the Rust env core (the only trainer core, M5 Lane H — `agents/training/rust_eval/`)

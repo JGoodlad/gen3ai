@@ -174,7 +174,7 @@ class RolloutBuffer:
         if not self.generator_ready:
             for key, obs in self.observations.items():
                 self.observations[key] = self.swap_and_flatten(obs)
-            for tensor in ("actions", "values", "log_probs", "advantages", "returns", "action_masks"):
+            for tensor in self.FLAT:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
             self.generator_ready = True
         if batch_size is None:

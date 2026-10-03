@@ -168,7 +168,7 @@ class Gen3Teambuilder(Teambuilder):
         self._last_pool_idx = None
         # ── Per-team win-rate TRACKING (--team-wr-tracking; pure instrumentation) ──
         # Counts EVERY episode and is on by default. Per pool team, per opponent
-        # class (``MaskableAgentWrapper.OPP_CLASS_*``), so a raw win rate can always be split back
+        # class (``agents.training.opponent_classes.OPP_CLASS_*``), so a raw win rate can always be split back
         # out by who it was measured against — a bot-heavy curriculum phase otherwise reads ~0.99
         # for every team. Windowed: drained (and zeroed) by the callback's periodic pull.
         self._twr_wins: "dict[int, list[float]]" = {}    # pool idx → wins per opp class

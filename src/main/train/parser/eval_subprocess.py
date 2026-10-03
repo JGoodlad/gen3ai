@@ -52,13 +52,13 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "3M exploiter-gate fork at the 2M default gets 1-2 cycles, which cannot meet a "
                              ">=4-cycle reading discipline; --eval-freq 750000 gives 4. Applies to BOTH the "
                              "per-opponent bot eval and the self-play eval, so their cadences cannot drift. "
-                             "Eval is non-blocking and skips a cycle while the previous one is still running, "
-                             "so a too-small value self-throttles rather than stalling training.")
+                             "Eval is BLOCKING (the cycle plays in the trainer's process, ~1.5%% of wall at N=256, "
+                             "m5_sizing PROGRESS.md O9), so a too-small value costs training its wall time.")
     parser.add_argument("--eval-games", "--eval_games", dest="eval_games", type=int, default=None,
                         help="Games per OPPONENT per eval cycle (default: the module EVAL_GAMES, 100). "
                              "Per-cell 95%% CI: n=100 -> +/-0.098, n=200 -> +/-0.069 — raise for tighter "
-                             "sentinel/promotion reads at proportionally more eval compute (work-stolen "
-                             "across the eval workers, off the training path). Shards per opponent = "
+                             "sentinel/promotion reads at proportionally more eval compute (the cycle is "
+                             "BLOCKING, so it is training wall time). Shards per opponent = "
                              "eval-games / --eval-shard-games.")
     parser.add_argument("--snapshot-ladder-games", "--snapshot_ladder_games",
                         dest="snapshot_ladder_games", type=int, default=100,
@@ -245,8 +245,7 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "cycle (default 5). Each gets a FRESH win-rate, which is what --pfsp-scale "
                              "weights the pool by — so a higher count re-prioritises MORE of the pool per "
                              "cycle (cuts the 'only ~¼ of the pool re-measured' staleness on a deep pool). "
-                             "Cost: each extra sentinel is +100 games/cycle, work-stolen by the doubled "
-                             "eval pool; eval is non-blocking + skip-while-running so it self-throttles. "
+                             "Cost: each extra sentinel is +100 games/cycle of BLOCKING eval wall time. "
                              "The pool window itself is SnapshotPool.DEFAULT_MAX_SNAPSHOTS (20) — no flag sets it. "
                              "Training-only (not version-locked).")
     parser.add_argument("--pool-spread", "--pool_spread", dest="pool_spread",

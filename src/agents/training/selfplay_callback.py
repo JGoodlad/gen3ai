@@ -1,24 +1,24 @@
-"""Self-play callback: non-blocking bot + pool eval with snapshot promotion.
+"""Self-play callback: bot + pool eval with snapshot promotion.
 
-Mirrors ``PerOpponentEvalCallback``'s frozen-snapshot **subprocess** pattern so eval never
-pauses training, extended with pool sentinels + promotion. On the training thread, per
-cycle, it only freezes the live weights (`model.save`), picks the sentinels, spawns the
-workers, and — at collect — does one cheap `opponent_default_stats` IPC. Everything else
-(battles, sentinel model loads, inference) runs in the worker processes.
+Mirrors ``PerOpponentEvalCallback``'s frozen-snapshot cycle, extended with pool sentinels +
+promotion. The cycle plays IN THE TRAINER'S PROCESS on the declared Rust eval core, BLOCKING
+(~1.5% of wall at N=256, ``designs/research_state/measurements/m5_sizing/PROGRESS.md`` O9): per cycle
+it freezes the live weights (`model.save`), picks the sentinels, plays every shard unit on the eval
+core and collects the published results in the same step.
 
-  1. **Launch** (trigger step): `model.save` the live weights to disk and spawn
-     N `main.eval_worker` subprocesses that **work-steal** BOTH the bot
-     roster AND up to 5 pool sentinels from one shared pool. Training continues immediately.
-  2. **Collect** (a later poll, when all workers finish): merge per-opponent +
+  1. **Launch** (trigger step): `model.save` the live weights to disk, write the plan (the bot
+     roster AND up to 5 pool sentinels as shard units) and play it on the eval core.
+  2. **Collect** (the same step): merge per-opponent +
      per-sentinel results → ``win_rate_vs_bots`` / ``win_rate_vs_pool`` /
      ``sentinel_monotonicity``; record to TensorBoard + the TUI + metadata.json; then
        - persist ``win_rate_vs_bots`` (feeds ``heuristic_fraction`` next run),
        - save best model (copy the frozen snapshot),
        - **promote** the FROZEN snapshot into the pool if ``win_rate_vs_pool`` clears the
-         threshold (the live model has advanced since launch — promoting it would capture
-         the wrong weights).
-  3. **Drain**: graceful shutdown waits for the in-flight cycle and records it (`drain()`),
-     wired exactly like the bot path.
+         threshold (the live weights are those of the launch step, but the copy is the
+         frozen file the cycle actually played).
+
+A stop signal is honoured INSIDE the cycle at its safe points (``safe_point_fn``, P10-A2): the partial
+cycle is abandoned and never collected.
 
 Emits launcher events on promotion and bot-regression warnings (⚠️).
 """
@@ -33,30 +33,24 @@ import sys
 import time
 
 from agents.training.loop_callbacks import BaseCallback
-from poke_env.ps_client import LocalhostServerConfiguration
 
-from agents.model.snapshot import record_eval_results, arch_toggles_from_model
+from agents.model.snapshot import record_eval_results
 from agents.training.logger_scope import isolated_dump
 from agents.training.eval_callback import (
-    eval_cycle_timeout,
     record_cycle_wall,
-    _EVAL_SUBPROCESS_CONCURRENCY,
     _ForcedEvalMixin,
     EVAL_FREQ_STEPS,
     EVAL_GAMES,
     EVAL_SHARD_GAMES,
     ForensicQuota,
     RANDOM_OPPONENT_NAME,
-    _b36,
     bot_mean,
     build_bot_eval_block,
     build_externals_block,
     copy_run_config_to_best_model,
     write_best_model_sidecar,
     eval_opponent_names,
-    eval_run_nonce,
     external_aggregate,
-    kill_eval_workers,
     record_elo,
     record_external_elos,
     record_per_opponent,
@@ -65,12 +59,10 @@ from agents.training.eval_callback import (
     prune_eval_traces,
     record_eval_selection,
     replay_last_eval_to_tui,
-    spawn_eval_workers,
     launch_rust_eval_cycle,
     opponent_pins_of,
     write_eval_manifest,
     mirrored_eval_games,
-    mirrored_worker_cfg,
     mirrored_pairs_block,
     record_pair_scores,
 )
@@ -123,19 +115,17 @@ def _monotonicity_score(win_rates: list[float]) -> float:
 
 
 class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
-    """Non-blocking bot + pool eval callback with snapshot promotion.
+    """Blocking in-process bot + pool eval callback with snapshot promotion.
 
     Args:
         pool: The SnapshotPool to promote into and eval against.
         model_dir: Run directory (snapshot scratch under ``.eval_runs``, forensic traces,
             metadata.json). None disables eval (nowhere to snapshot/collect).
-        server_config / showdown_port: threaded to the eval workers.
         best_model_save_path: directory to copy the best frozen snapshot into.
         promote_threshold: ``win_rate_vs_pool`` threshold to trigger promotion.
         self_play_temp: sampling temperature for the (stochastic) sentinel opponents —
             kept equal to the training opponents' ``--self-play-temp`` so eval sentinels
             behave EXACTLY as in training.
-        n_workers / eval_device / eval_concurrency: subprocess eval-pool knobs.
         n_sentinels: number of evenly-spaced pool snapshots eval'd as sentinels each cycle
             (``--n-sentinels``, default 5). Higher = PFSP re-prioritises more of the pool with
             fresh win-rates per cycle (less staleness), at +EVAL_GAMES games/cycle each.
@@ -144,20 +134,11 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
             promotion (the real schedule's 1M-step floor never fires in a 20k smoke).
     """
 
-    # Wait for in-flight workers on a graceful shutdown (10 min) — long enough for a full
-    # CPU eval; the restart grace window (--restart-grace-minutes, 20 min) covers it.
-    _DRAIN_TIMEOUT_SEC = 600
-
     def __init__(
         self,
         pool: SnapshotPool,
         *,
         model_dir: str | None = None,
-        server_config=LocalhostServerConfiguration,
-        showdown_port: int | None = None,
-        use_showdown_bridge: bool = False,
-        compile_extractor: bool = False,
-        bridge_impl: str = "node",
         best_model_save_path: str | None = None,
         promote_threshold: float = 0.65,
         self_play_temp: float = 1.0,
@@ -165,9 +146,6 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         heuristic_floor: float = HEURISTIC_FLOOR,
         self_play_start_wr: float = SELF_PLAY_START,
         self_play_full_wr: float = SELF_PLAY_FULL,
-        n_workers: int = 3,
-        eval_device: str = "cpu",
-        eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
         eval_shard_games: int = EVAL_SHARD_GAMES,
         eval_games: int | None = None,
         eval_freq: int | None = None,
@@ -188,7 +166,6 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         debug: bool = False,
         trainee_team_str: "str | list[str] | None" = None,
         snapshot_ladder_games: int = 100,
-        env_core: str = "python",
         pool_starve_cycles: int = LEVERS["self_play_pool"].default_cycles,
         pfsp_starve_cycles: int = LEVERS["pfsp"].default_cycles,
         eval_mirrored_pairs: bool = False,
@@ -204,8 +181,6 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         # bot AND pool eval play every team pairing from both sides on one battle seed; even counts; the
         # PAIR is the unit of every interval. Training games are untouched. A REGIME (recorded per run/row).
         self._mirrored = bool(eval_mirrored_pairs)
-        # M5 Lane H: on the Rust env core the cycle plays IN PROCESS on the declared eval core.
-        self._env_core = env_core
         # Per-opponent games per eval cycle (--eval-games; None → EVAL_GAMES). Sentinel cells at
         # n=100 carry ±0.098 95% CIs; 200 tightens to ±0.069 (~2× eval cost, work-stolen).
         self._eval_games = int(eval_games) if eval_games else EVAL_GAMES
@@ -218,7 +193,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         self._ladder_games = int(snapshot_ladder_games)
         self._pool = pool
         # SPECIALIST eval alignment (--trainee-team): the raw Showdown-export team string the trainee
-        # is pinned to, threaded into every eval-worker cfg so eval measures the model piloting the
+        # is pinned to, so eval measures the model piloting the
         # team it actually trains (None = the default pool builder; see eval_teams.build_trainee_tb).
         self._trainee_team_str = trainee_team_str
         # Stable cross-run opponents (FixedOpponentEntry list) — an extra ext_ eval matchup each
@@ -234,7 +209,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         self._stable_wr_ema: dict[str, float] = {}
         # Reporting-only inputs for the per-episode opponent-mix fractions (train/selfplay_fraction
         # = pool share, train/stable_fraction, train/nonbot_fraction). They let the callback REPORT
-        # the exact split MaskableAgentWrapper._select_episode_opponent (wrappers.py) implies WITHOUT
+        # the exact split the Rust env core's `EpisodeOpponentSampler` (`rust_env_opponents.py`) implies WITHOUT
         # touching it: the capped stable challenge share, the bot sampling-weight vector (None =
         # uniform), and the floor bot-roster size (len(OPPONENT_CLASSES) — excludes eval-only
         # `random`, so it's NOT len(bot_names)). See _opponent_mix_fractions.
@@ -242,13 +217,6 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         self._bot_weight_vec = list(bot_weight_vec) if bot_weight_vec else None
         self._floor_roster_count = int(floor_roster_count)
         self._model_dir = model_dir
-        self._server_config = server_config
-        self._showdown_port = showdown_port
-        # Bridge eval: workers play in-process via run_local_battles (no server connection).
-        self._use_showdown_bridge = use_showdown_bridge
-        self._compile_extractor = compile_extractor
-        # Which bridge child the workers spawn when use_showdown_bridge: "node" | "rust".
-        self._bridge_impl = bridge_impl
         self.best_model_save_path = best_model_save_path
         self._promote_threshold = promote_threshold
         self._self_play_temp = self_play_temp
@@ -264,9 +232,6 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         self._heuristic_floor = heuristic_floor
         self._self_play_start_wr = self_play_start_wr
         self._self_play_full_wr = self_play_full_wr
-        self._n_workers = max(1, n_workers)
-        self._eval_device = eval_device
-        self._eval_concurrency = eval_concurrency
         # Games per work-steal shard unit (battle-level work-stealing); see EVAL_SHARD_GAMES.
         self._eval_shard_games = max(1, eval_shard_games)
         self._forensic_quota = ForensicQuota.coerce(forensic_quota).clamped()
@@ -280,19 +245,9 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
 
         self._last_eval_step = 0
         self._best_aggregate_win_rate = -1.0
-        # The in-flight eval cycle, or None.
-        self._pending: dict | None = None
         self._eval_root: str | None = None
-        # Per-PROCESS account-name nonce (+ per-cycle counter) so two launcher restarts
-        # never reuse Showdown account names. The old step-derived tag collided across
-        # restarts (the resume re-eval always fires at the same step) and hung a worker on a
-        # lingering challenge — wedging self-play eval permanently (the hang pins _pending).
-        self._eval_run_nonce = eval_run_nonce()
-        self._eval_cycle = 0
-        # Parent-side fatal errors only; worker crashes log-and-continue (bot-path parity).
-        self.abort_fn = None
-        # The run's `DeferredAbort.safe_point` (wired with abort_fn; P10-A2): the in-process Rust eval
-        # cycle calls it every host step, so a stop signal / forced checkpoint is honoured mid-cycle.
+        # The run's `DeferredAbort.safe_point` (P10-A2): the in-process Rust eval cycle calls it every
+        # host step, so a stop signal / forced checkpoint is honoured mid-cycle.
         self.safe_point_fn = None
 
         # Shared state: written by collect, read by env factory on next restart.
@@ -313,8 +268,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         # Number of evenly-spaced pool snapshots eval'd as sentinels per cycle. Each gets a FRESH
         # win-rate, which is exactly what PFSP (`pfsp_scale>0`) weights the pool by — so a higher
         # count re-prioritises MORE of the pool per cycle (less of the "only ¼-of-pool re-measured"
-        # staleness). Cost: each extra sentinel is +EVAL_GAMES games/cycle, work-stolen by the
-        # (doubled) eval pool; eval is non-blocking + skip-while-running so it self-throttles.
+        # staleness). Cost: each extra sentinel is +EVAL_GAMES games/cycle of BLOCKING eval wall time.
         self._n_sentinels = max(1, int(n_sentinels))
         self._pfsp_winrate_ema: dict[int, float] = {}
         if self._pfsp_scale > 0.0:
@@ -405,30 +359,16 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         return bool(getattr(self, "_mirrored", False))
 
     def _on_step(self) -> bool:
-        if self._pending is not None:
-            now = time.monotonic()
-            if self._all_done(self._pending):
-                self._collect_pending()
-            elif now - self._pending.get("launched_at", now) > eval_cycle_timeout():
-                self._abort_pending_cycle()   # hung worker → don't wedge eval forever
         if self.num_timesteps == 0:
             return True
-        self._maybe_force_eval()   # launcher "force eval" button (SIGUSR2); rejects if running
+        self._maybe_force_eval()   # launcher "force eval" button (SIGUSR2)
         freq, _ = self._schedule()
         if (self.num_timesteps // freq) > (self._last_eval_step // freq):
             self._last_eval_step = self.num_timesteps
-            if self._pending is not None:
-                print(f"[SELFPLAY EVAL] step {self.num_timesteps:,}: previous eval "
-                      f"(step {self._pending['step']:,}) still running — skipping this cycle")
-            else:
-                self._launch_eval()
+            self._launch_eval()
         return True
 
     # ── Launch ───────────────────────────────────────────────────────────────
-
-    @staticmethod
-    def _all_done(pending: dict) -> bool:
-        return all(w["proc"].poll() is not None for w in pending["procs"])
 
     def _launch_eval(self) -> None:
         if self._eval_root is None:
@@ -440,8 +380,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         # Clear any crash-leftover from a prior run at this step (re-evals on resume) so no stale
         # plan/shard/lock files from an aborted cycle are mistaken for this one's.
         shutil.rmtree(run_dir, ignore_errors=True)
-        claim_dir = os.path.join(run_dir, "claims")
-        os.makedirs(claim_dir, exist_ok=True)
+        os.makedirs(run_dir, exist_ok=True)
 
         snapshot_base = os.path.join(run_dir, "snapshot")
         self.model.save(snapshot_base)  # freeze live weights; SB3 appends .zip
@@ -473,90 +412,21 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
                             trainee_team_str=self._trainee_team_str,
                             opponent_pins=opponent_pins_of(self._fixed_opponents),
                             quota=self._forensic_quota, mirrored_pairs=self._mirrored)
-        # Process-unique account tag (per-process nonce + per-cycle counter), NOT the step:
-        # the resume re-eval fires at the same step every restart, so a step tag collided
-        # across restarts and hung a worker on a lingering challenge (wedging eval forever).
-        self._eval_cycle += 1
-        cycle_tag = f"{self._eval_run_nonce}{_b36(self._eval_cycle, 1)}"
-        # Cap by UNITS, not opponents — sharding yields many more units, so the full pool can drain
-        # the tail (sentinel matchups infer for both players, so the pool is doubled upstream).
-        n_workers = max(1, min(self._n_workers, pool.n_units))
-        base_cfg = {
-            "snapshot": snapshot_zip,
-            "port": self._showdown_port,
-            "use_showdown_bridge": self._use_showdown_bridge,
-            "compile_extractor": self._compile_extractor,
-            "bridge_impl": self._bridge_impl,
-            "model_dir": self._model_dir,
-            "step": step,
-            "self_play_temp": self._self_play_temp,
-            "eval_sentinel_greedy": self._eval_sentinel_greedy,
-            "claim_dir": claim_dir,
-            "result_dir": run_dir,             # plan.json lives here; workers write shard__<unit>.json
-            "concurrency": self._eval_concurrency,
-            "device": self._eval_device,
-            "cycle_tag": cycle_tag,
-            # Run's discount → the recorder's δ uses the real γ; live td-residual tail matches
-            # the prober's offline _td at the same γ.
-            "gamma": float(self.model.gamma),
-            # The forensic capture quota crosses the process boundary HERE, so the worker
-            # enforces the run's quota rather than the module default.
-            "forensic_quota": self._forensic_quota._asdict(),
-            # This run's arch toggles → the worker's current_model_version gates SENTINEL snapshots
-            # (loaded via check_compatible) against the RUN's real arch; without it a belief-ON
-            # self-play run FATALs on its own sentinels (current_version would default toggle-OFF).
-            "arch_toggles": arch_toggles_from_model(self.model),
-            # --trainee-team pin (None = default pool): eval measures the trainee ON ITS OWN TEAM.
-            "trainee_team_str": self._trainee_team_str,
-            # MIRRORED pairs: every game seeded by the per-GAME rule (a pair shares one battle seed).
-            **(mirrored_worker_cfg(self.model, step) if self._mirrored else {}),
-        }
-        if self._env_core == "rust":
-            procs = []
-            launch_rust_eval_cycle(self, pool, run_dir, step)
-        else:
-            procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
-
-        self._pending = {
+        # The cycle plays now, IN PROCESS and BLOCKING (rust_eval.launch), publishing one shard result
+        # per unit; the collect below merges them.
+        launch_rust_eval_cycle(self, pool, run_dir, step)
+        self._collect_pending({
             "step": step, "bot_names": bot_names, "sentinels": sentinels,
             "fixed_labels": fixed_labels,
-            "sentinel_entries": sentinel_entries, "procs": procs,
+            "sentinel_entries": sentinel_entries,
             "snapshot": snapshot_zip, "run_dir": run_dir, "n_games": n_games,
-            "launched_at": time.monotonic(), "t_launch": t_launch,
-        }
-        if self._env_core == "rust":
-            self._collect_pending()      # the cycle already played (blocking, in process)
-            return
-        print(f"[SELFPLAY EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
-              f"{self._eval_device} ({len(bot_names)} bots + {len(sentinels)} sentinels, "
-              f"{pool.n_units} shard units, conc {self._eval_concurrency}) — non-blocking")
-        send_event(f"🧪 Self-play eval @ {step:,}: started "
-                   f"({len(bot_names)} bots + {len(sentinels)} sentinels, "
-                   f"{pool.n_units} units, {n_workers} worker(s))")
-
-    def _abort_pending_cycle(self) -> None:
-        """A cycle overran `_EVAL_CYCLE_TIMEOUT_SEC` → presumed hung (e.g. a Showdown battle
-        that never completes). Kill its workers and collect whatever results landed, clearing
-        `_pending` so eval resumes — a hung self-play eval otherwise pins `_pending` forever
-        and silently skips every later boundary."""
-        pending = self._pending
-        elapsed = time.monotonic() - pending["launched_at"]
-        print(f"⚠️ [SELFPLAY EVAL] step {pending['step']:,}: eval cycle hung "
-              f"({elapsed:.0f}s > {eval_cycle_timeout():.0f}s) — killing workers, "
-              f"collecting partial results")
-        send_event(f"⚠️ Self-play eval @ {pending['step']:,}: hung — killed after "
-                   f"{elapsed:.0f}s, partial")
-        kill_eval_workers(pending["procs"])
-        self._collect_pending()
+            "t_launch": t_launch,
+        })
 
     # ── Collect ────────────────────────────────────────────────────────────────
 
     @isolated_dump   # gen3_eval_dump_isolation_v1: this cycle's dump must not take the last update's train/*
-    def _collect_pending(self) -> None:
-        if (self._pending or {}).get("kind") == "sprt":
-            return self._sprt_collect_python()      # a T6 test's batch, not an eval cycle
-        pending = self._pending
-        self._pending = None
+    def _collect_pending(self, pending: dict) -> None:
         step = pending["step"]
         run_dir = pending["run_dir"]
         bot_names = pending["bot_names"]
@@ -564,18 +434,12 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         sentinel_entries = pending["sentinel_entries"]
         fixed_labels = pending.get("fixed_labels", [])
 
-        for w in pending["procs"]:
-            w["log"].close()
-        bad_exits = [w for w in pending["procs"] if w["proc"].returncode not in (0, None)]
-
         all_names = bot_names + [s["label"] for s in sentinels] + fixed_labels
         merged, missing = merge_eval_results(run_dir, all_names)
 
         if missing:
             print(f"⚠️ [SELFPLAY EVAL] step {step:,}: missing results for {missing} "
-                  f"(worker crash mid-item?) — see {run_dir}/worker_*.log")
-        for w in bad_exits:
-            print(f"⚠️ [SELFPLAY EVAL] worker exited {w['proc'].returncode}; see {w['log_path']}")
+                  f"(the eval cycle failed mid-item?) — see {run_dir}")
 
         # Bot-only sub-dicts (sentinels are aggregated separately into win_rate_vs_pool).
         wr = merged["win_rates"]
@@ -586,7 +450,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         bot_td = {n: _td_tails[n] for n in bot_names if n in _td_tails}
 
         if not wr:
-            print(f"⚠️ [SELFPLAY EVAL] step {step:,}: no results (all workers failed); skipping record")
+            print(f"⚠️ [SELFPLAY EVAL] step {step:,}: no results (the eval cycle failed); skipping record")
             send_event(f"⚠️ Self-play eval @ {step:,}: failed (no results)")
             self._cleanup(pending, keep_logs=True)
             # A FAILED cycle is a supply cycle too: it cannot seed the pool or measure a sentinel,
@@ -764,7 +628,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         # Worker count for the TUI. duration_sec is the SUMMED UNIT TIME (every shard's own
         # duration, added up — concurrent on the Rust core), never wall time: that is eval/wall_sec,
         # recorded at the end of this collection (record_cycle_wall, gen3_eval_wall_sec_v1).
-        tui["eval/n_workers"] = float(max(1, len(pending["procs"])))
+        tui["eval/n_workers"] = 1.0
 
         # Opponent default-rate telemetry — queried on THIS (training) thread; safe because
         # env_method is an IPC round-trip to the SubprocVecEnv we own. Self-play workers
@@ -870,7 +734,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         # vs the sentinels this cycle launched against; this cycle's pool games (win_rate_vs_pool, the
         # SELECTION games) never enter it. On the Rust core it runs to its verdict right here.
         if self._sprt_on:
-            self._sprt_begin(step, pending, sf)
+            self._sprt_begin(step, pending)
         elif win_rate_vs_pool > self._promote_threshold:
             self._pool.add_from_path(pending["snapshot"], step)
             self._pool_generation += 1
@@ -921,7 +785,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         persist_eval_snapshot(self._model_dir, step, pending["snapshot"], self._keep_eval_snapshots)
         prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)
         prune_run_artifacts(self._model_dir, self._keep_stalls, self._keep_crashes)  # bound stalls/ + crashes/
-        self._cleanup(pending, keep_logs=bool(missing or bad_exits))
+        self._cleanup(pending, keep_logs=bool(missing))
         record_cycle_wall(self, pending, merged, tag="SELFPLAY EVAL")
         # LAST, so a FATAL here leaves this cycle fully recorded (metrics, summary.json, traces).
         self._judge_supply()
@@ -957,7 +821,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
             subprocess.Popen(
                 [sys.executable, "-m", "agents.training.snapshot_ladder", self._model_dir,
                  "--promote", str(int(step)), "--n-games", str(self._ladder_games),
-                 "--impl", self._bridge_impl if self._use_showdown_bridge else "node"],
+                 "--impl", "rust"],
                 stdout=logf, stderr=subprocess.STDOUT, start_new_session=True,
                 # gen3_ladder_off_gpu_v1: the updater plays on the CPU (`snapshot_ladder` loads with
                 # device="cpu"), but its imports still opened a CUDA context: 330 MiB of the TRAINING
@@ -1081,7 +945,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
 
     def _opponent_mix_fractions(self, sf: float, pool_ready: bool) -> "tuple[float, float, float]":
         """The INTENDED per-episode opponent-mix probabilities the curriculum implies, for REPORTING
-        only — a faithful mirror of ``MaskableAgentWrapper._select_episode_opponent`` (wrappers.py),
+        only — a faithful mirror of ``rust_env_opponents.EpisodeOpponentSampler``'s draw,
         which it does NOT change. Returns ``(self_play, stable, nonbot)`` = P(pool), P(any stable),
         and their sum (= 1 − P(bot)).
 
@@ -1153,8 +1017,8 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
 
     def _cleanup(self, pending: dict, keep_logs: bool) -> None:
         # Drop the (large) transient run-dir snapshot; persist_eval_snapshot has already
-        # copied it into eval_traces/ when retention is on. Keep the run dir only if a
-        # worker failed, so its log survives for debugging.
+        # copied it into eval_traces/ when retention is on. Keep the run dir only if results
+        # went missing, so its plan / shards survive for debugging.
         try:
             if os.path.exists(pending["snapshot"]):
                 os.remove(pending["snapshot"])
@@ -1166,41 +1030,8 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
     # ── Graceful shutdown ──────────────────────────────────────────────────────
 
     def _on_training_end(self) -> None:
-        # A drain collects a cycle AFTER training finished: record its supply verdict, but never
-        # turn a completed run into a FATAL from inside the shutdown path.
-        self._draining = True
-        self.drain()
         for line in self.supply_summary_lines():
             loud(line)
-
-    def drain(self, timeout: float | None = None) -> None:
-        """Block (up to `timeout` TOTAL seconds) for the in-flight eval cycle, then record it.
-
-        Called on graceful shutdown so an eval in flight is never orphaned. Idempotent
-        (no-op if nothing pending). `timeout` is a total budget across all workers.
-        """
-        if self._pending is None:
-            return
-        budget = self._DRAIN_TIMEOUT_SEC if timeout is None else timeout
-        deadline = time.monotonic() + budget
-        print(f"[SELFPLAY EVAL] graceful shutdown — waiting up to {budget:.0f}s for eval worker(s)...")
-        # A T6 test launches its next batch from inside a collect, so drain until NOTHING is pending —
-        # inside the one budget. A test still running when it runs out is recorded ABANDONED.
-        while self._pending is not None:
-            for w in self._pending["procs"]:
-                remaining = max(0.0, deadline - time.monotonic())
-                try:
-                    w["proc"].wait(timeout=remaining)
-                except subprocess.TimeoutExpired:
-                    w["proc"].kill()
-            out_of_budget = time.monotonic() >= deadline
-            self._collect_pending()
-            if self._pending is not None and out_of_budget:
-                kill_eval_workers(self._pending["procs"])
-                for w in self._pending["procs"]:
-                    w["log"].close()
-                self._pending = None
-                self._sprt_abandon_in_flight("the drain budget ran out")
 
     # ── Bot regression guard ─────────────────────────────────────────────────
 

@@ -26,7 +26,7 @@ from agents.training.fork_arm import PG_MASK_KEY
 from agents.training.opp_intent_labels import KIND_UNKNOWN, SWITCH_SLOT_NONE
 
 #: Injected rows are played against a SELF-LIKE opponent (the current snapshot), which is the
-#: `MaskableAgentWrapper.OPP_CLASS_POOL` population. Naming it POOL rather than the parent
+#: `opponent_classes.OPP_CLASS_POOL` population. Naming it POOL rather than the parent
 #: episode's real class is the honest label: the class tags WHO THE ROW WAS PLAYED AGAINST, and
 #: these rows were not played against the parent's opponent.
 _OPP_CLASS_POOL = 1

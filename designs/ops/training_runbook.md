@@ -470,21 +470,21 @@ and `designs/research_state/measurements/m5_laneG/PROGRESS.md`.
 
 ### Bot evaluation
 
-Bot eval runs in **frozen-snapshot subprocesses** (the Python eval-worker pool — `--eval-workers`, default 5, deleted in P11; production runs the in-process Rust eval core) that
-**work-steal at battle granularity** from a shared pool and play the live server (or the bridge)
-**without pausing training**; results merge into TensorBoard + TUI + best-model and land in
-`metadata.json` as a top-level `latest_eval` block. Each opponent's `EVAL_GAMES` are split into
+Bot eval plays **IN PROCESS on the Rust eval core, BLOCKING** (`rust_eval.launch`, between two host steps
+of the collector): the cycle is collected in the same step and costs training its wall time — **~1.5% of wall
+at N=256** (`designs/research_state/measurements/m5_sizing/PROGRESS.md` O9, 9.6-16.3 s per cycle at the
+production roster). It is NOT a background pipeline: there is no worker pool (`--eval-workers` and the
+Python worker branch were deleted in P11 / P10-F2), no skipped cycle and no hung-cycle watchdog; a stop
+signal is honoured inside the cycle at its safe points. Results merge into TensorBoard + TUI + best-model
+and land in `metadata.json` as a top-level `latest_eval` block. Each opponent's `EVAL_GAMES` are split into
 **shard units** (`--eval-shard-games`, default 25 → 4 shards/opponent; per-opponent game count
-overridable with `--eval-games`) so any idle worker drains a
-straggler's remaining games instead of one worker grinding a whole opponent — the long eval tail
-collapses to one shard. The mechanism lives in the well-encapsulated **`eval_sharding/` package**
+overridable with `--eval-games`); the same exact aggregation serves the standalone `main.eval_worker` tools. The mechanism lives in the well-encapsulated **`eval_sharding/` package**
 (deep `ShardedEvalPool` interface; aggregation is **exact** — Σwon/Σfinished etc., raw δ pooled then
 one CVaR), with a documented **`rating.py` seam** (`MatchRecord` / `RatingModel` / `BradleyTerryRating`)
 ready for a future Glicko-2/TrueSkill without touching the live ELO path. **`--self-play` eval shares
-this exact non-blocking pipeline** (with the worker pool doubled to 10, since sentinel matchups infer
-for both players) — the workers additionally work-steal the pool sentinels' shards, and a winning
+this exact blocking cycle** — it additionally plays the pool sentinels' shards, and a winning
 cycle promotes its frozen snapshot into the pool by file-copy (`SnapshotPool.add_from_path`). The full
-design (battle-level work-stealing, exact aggregation, graceful-shutdown drain, resume re-publish,
+design (exact aggregation, resume re-publish,
 sentinels + promotion, `--eval-shard-games`) is in
 `src/agents/training/CLAUDE.md`.
 

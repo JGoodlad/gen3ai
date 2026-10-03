@@ -13,7 +13,7 @@ that staging for training:
   SEEDED by declaration (today's builders draw from each worker's unseeded global ``random`` — a
   declared change of stream, not of distribution, like F-LE-3); the draw is the builder's own
   ``yield_team`` (block episodes, bias, PFSP weights all compose). The opponent's team follows the
-  episode's ROUTE exactly as ``MaskableAgentWrapper._apply_opponent_team`` does (its pin, else the
+  episode's ROUTE exactly as the deleted Python wrapper's ``_apply_opponent_team`` did (its pin, else the
   pool builder).
 * the SEED of env ``e``'s episode ``k`` is four 16-bit words of the keyed hash
   ``(run seed, STREAM_BATTLE, e, k, 0)`` — a pure function, so a replay reproduces it.

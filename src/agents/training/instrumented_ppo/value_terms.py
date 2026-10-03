@@ -33,7 +33,7 @@ class ValueTerms:
         **THE VOCABULARY IS THE FOUR `opp_class` CODES** — `bot` / `pool` / `stable` / `exploiter`
         (`agents.model.opp_intent.OPP_CLASS_NAMES`), which is ALL the env knows per step. Per-BOT
         identity is not available and its absence is a design decision, not an oversight: the bot
-        archetype is drawn per EPISODE inside `MaskableAgentWrapper._select_episode_opponent` and
+        archetype is drawn per EPISODE inside the Rust env core's `EpisodeOpponentSampler` (`rust_env_opponents.py`) and
         never reaches the observation (`value_sidecar.py` declines it for the same reason). So this
         lever balances the between-CLASS share, and the residual heterogeneity WITHIN the bot class
         is left in episode proportion — stated here because it bounds what the arm can move.
@@ -124,7 +124,7 @@ class ValueTerms:
         """Supervised BCE loss for the auxiliary WIN-PROBABILITY head (``last_win_prob_logits`` [B,1]).
 
         ``target`` [B,1] = the Monte-Carlo episode OUTCOME (win=1 / loss=0) propagated to every step of
-        the episode by the ``WinProbLabelCallback`` (it overwrites the obs-dict placeholder post-collection);
+        the episode by the Rust collector's fill (`rust_rollout.store`, before ``train()``);
         ``mask`` [B,1] = 1 where that label is KNOWN (the step's episode finished within the rollout buffer)
         and 0 for the trailing in-progress episode (no outcome yet) — those transitions are excluded so the
         head is never trained toward a fabricated label. BCE-with-logits, masked-mean. Returns

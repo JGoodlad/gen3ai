@@ -2,7 +2,7 @@
 
 The LR controller (adaptive, or the two-phase KL->cosine schedule), the checkpointer, the
 exploiter temperature curriculum, the label back-fillers, and the one
-non-blocking eval callback — `SelfPlayCallback` under `--self-play`, `PerOpponentEvalCallback`
+blocking in-process eval callback — `SelfPlayCallback` under `--self-play`, `PerOpponentEvalCallback`
 otherwise, neither under a plain `--debug` smoke.
 
 Each optional callback is registered ONLY when its flag is on, so an off run adds no callback and
@@ -245,13 +245,12 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
             _resume_meta = os.path.join(_ckpt_dir, "metadata.json")
 
     if args.self_play and _pool is not None and _run_eval:
-        # Self-play eval mirrors the bot-eval frozen-snapshot SUBPROCESS pattern
-        # (non-blocking): the workers work-steal the bot roster AND up to 5 pool sentinels,
-        # play a frozen snapshot, and the parent collects + promotes on a later poll. The
-        # worker rebuilds opponents / teambuilders / mappings itself from the data dir, so
-        # nothing live is constructed here. Under --debug it runs only with --debug-eval
-        # (fast eval cadence), so `--self-play --debug --debug-eval` against a 9XXX server
-        # exercises seed → pool eval → promotion; a plain --debug smoke skips it.
+        # Self-play eval mirrors the bot-eval cycle (in process on the Rust eval core, BLOCKING):
+        # it plays the bot roster AND up to 5 pool sentinels from a frozen snapshot, then collects
+        # + promotes in the same step. Opponents / teambuilders are built there from the data dir,
+        # so nothing live is constructed here. Under --debug it runs only with --debug-eval
+        # (fast eval cadence), so `--self-play --debug --debug-eval` exercises
+        # seed → pool eval → promotion; a plain --debug smoke skips it.
         eval_callback = SelfPlayCallback(
             pool=_pool,
             eval_games=args.eval_games,
@@ -295,7 +294,6 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
             debug=args.debug,
             # --trainee-team pin → eval measures the trainee ON ITS OWN TEAM (None = default pool).
             trainee_team_str=_specialist_team_str,
-            env_core="rust",
             # gen3_supply_guard_v2: the pool and PFSP supply floors (lever_supply.LEVERS).
             pool_starve_cycles=starve_cycles_for(args, "self_play_pool"),
             pfsp_starve_cycles=starve_cycles_for(args, "pfsp"),
@@ -306,9 +304,9 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
         )
         callbacks.append(eval_callback)
     elif _run_eval:
-        # Bot eval runs in a frozen-snapshot subprocess (non-blocking, CPU). The
-        # worker rebuilds opponents/teambuilders/mappings itself from the data
-        # dir, so nothing live is constructed here.
+        # Bot eval plays in process on the declared Rust eval core, BLOCKING (rust_eval.launch);
+        # opponents / teambuilders are built there from the data dir, so nothing live is
+        # constructed here.
         eval_callback = PerOpponentEvalCallback(
             model_dir=model_dir,
             eval_games=args.eval_games,
@@ -326,7 +324,6 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
             fixed_opponents=_fixed_opponents,
             # --trainee-team pin → eval measures the trainee ON ITS OWN TEAM (None = default pool).
             trainee_team_str=_specialist_team_str,
-            env_core="rust",
             # T17 mirrored team pairs (resolved: argv, else the run's recorded regime, else OFF).
             eval_mirrored_pairs=bool(getattr(args, "eval_mirrored_pairs", False)),
         )

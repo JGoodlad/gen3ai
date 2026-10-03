@@ -178,15 +178,18 @@ class PpoHyperparameters:
         # `_vf_scale_announced`: the first update of every process runs every optional probe, so
         # the compile lock (taken after that update) has seen their signatures. Pickled, a
         # restarted process would skip them on its first update and reach them after the lock.
-        # `collect_rollouts` / `train` / `learn` / `_compile_control` (gen3_compile_sentinel_v1) are the compile
-        # sentinel's INSTANCE wrappers (`CompileControl.attach`): closures over a process-local
-        # CompileControl holding a logging handler and dynamo callbacks. Pickled, every save after
-        # the first update would carry (or fail on) them, and a loaded model would re-install a
+        # `_compile_control` (gen3_compile_sentinel_v1) is the compile sentinel's handle
+        # (`CompileControl.attach`): a process-local CompileControl holding a logging handler and dynamo
+        # callbacks. On a real model the sentinel is an OWNER in the loop's `_loop_hooks` table (no
+        # instance attribute is replaced); only a duck-typed model with NO table (a test double) gets
+        # instance-attribute wrappers named `collect_rollouts` / `train` / `learn` — closures over the
+        # same process-local state, which is why those three names stay excluded. Pickled, every save
+        # after the first update would carry (or fail on) them, and a loaded model would re-install a
         # dead process's sentinel. Re-attached fresh by every process that compiles.
         # `_learner_freeze` (gen3_learner_freeze_v1, K6) is the declared-lifecycle FREEZE GUARD
         # (`learner_lifecycle.attach`): it holds identity snapshots, torch's global registration
         # hooks and an optimizer step hook — process-local, re-attached by every process; it also
-        # owns the `collect_rollouts` / `train` / `learn` wrappers above when it is the outermost.
+        # owns the (table or duck-typed fallback) wrappers above when it is the outermost.
         # `_compiled_micro_step` (K8 region R1, `compile_regions.install`) is a process-local compiled
         # callable — re-installed by every process that compiles, never pickled.
         # `_rust_collector` (M5 Lane G, the Rust env core) is the live env core + inference service
