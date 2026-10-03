@@ -30,7 +30,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import torch
 
 from agents.inference.service.decision import DecisionModule
-from agents.inference.service.spec import NonFiniteWeights, SlotArchMismatch, SlotGroupSpec
+from agents.inference.service.spec import (CopyParityFailure, NonFiniteWeights, SlotArchMismatch,
+                                           SlotGroupSpec)
 
 #: Constructor parameters that do not change the forward (the optimizer and the schedule).
 _NOT_FORWARD = frozenset({"lr_schedule", "optimizer_class", "optimizer_kwargs"})
@@ -85,6 +86,11 @@ def require_finite(sd: Dict[str, torch.Tensor], where: str) -> None:
     if bad:
         raise NonFiniteWeights(f"{where}: {len(bad)} weight tensor(s) hold NaN / Inf (e.g. {bad[:3]}) "
                                "— refused before any slot was touched")
+
+
+def _host_bytes(t: torch.Tensor) -> torch.Tensor:
+    """``t``'s bytes, flat, on the HOST (a device-to-host copy allocates nothing on the card)."""
+    return t.detach().to("cpu").contiguous().reshape(-1).view(torch.uint8)
 
 
 def _tensor_at(module: torch.nn.Module, key: str) -> torch.Tensor:
@@ -165,3 +171,29 @@ class SlotGroup:
         with torch.no_grad():
             for keys in self._alias_groups:
                 self.stacked[keys[0]][slot].copy_(sd[keys[0]], non_blocking=False)
+
+    def verify_copy(self, slot: int, sd: Dict[str, torch.Tensor], where: str) -> None:
+        """BIT-EXACT: slot ``slot``'s storage equals ``sd`` on EVERY key, each alias included, byte for
+        byte (P10 F3, `gen3_slot_copy_verify_v1`). A copy has no tolerance, so neither does this. It is
+        the only check that ties a slot to the weight set a ``load`` was given: the parity gate's eager
+        reference is the slot's own replica, whose parameters are views into this same storage, so a
+        copy that missed (or copied the wrong source) passes parity with |dV| 0. `CopyParityFailure`
+        names the keys. Compared on the host: it allocates nothing on the card."""
+        bad: List[str] = []
+        with torch.no_grad():
+            for keys in self._alias_groups:
+                held = _host_bytes(self.stacked[keys[0]][slot])
+                seen: Dict[Tuple[Any, ...], bool] = {}      # a source alias shares its tensor: copy it once
+                for k in keys:
+                    v = sd[k]
+                    ck = (v.data_ptr(), tuple(v.shape), tuple(v.stride()), str(v.dtype), str(v.device))
+                    if ck not in seen:
+                        seen[ck] = torch.equal(held, _host_bytes(v))
+                    if not seen[ck]:
+                        bad.append(k)
+        if bad:
+            raise CopyParityFailure(
+                f"{where}: slot group {self.name!r} slot {slot} is NOT bit-exact with the weight set it was "
+                f"loaded from on {len(bad)} key(s) (e.g. {bad[:3]}) — the slot would serve weights other "
+                "than the ones named; refused (the parity gate's reference reads the slot itself and "
+                "cannot see this)")

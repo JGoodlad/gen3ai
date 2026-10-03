@@ -126,6 +126,10 @@ def verify_upstream_loop_unchanged() -> None:
 verify_upstream_loop_unchanged()
 
 
+class StrictLoadError(RuntimeError):
+    """A checkpoint whose state dict does not match the model it loads into (`OwnedLoop.set_parameters`)."""
+
+
 class OwnedLoop:
     """Mixin: the PPO loop. Mixed in AFTER `RolloutProbes` and BEFORE `MaskablePPO`, so
     `RolloutProbes.collect_rollouts` (the Rust collector's entry) still wins."""
@@ -208,6 +212,36 @@ class OwnedLoop:
         self.rollout_buffer_class = RolloutBuffer
         super()._setup_model()   # type: ignore[misc]
         self._loop_hooks = LoopHooks()
+
+    # ------------------------------------------------------------------ the weights
+    def set_parameters(self, load_path_or_dict: Any, exact_match: bool = True,
+                       device: Any = "auto") -> None:
+        """sb3's ``set_parameters``, ALWAYS STRICT (`gen3_strict_checkpoint_load_v1`): every module's
+        state dict must match the checkpoint key for key — a MISSING key and an UNEXPECTED key both
+        raise. ``exact_match=False`` is REFUSED rather than honoured.
+
+        Why (P10 review, F4): sb3's ``BaseAlgorithm.load`` retries with ``exact_match=False`` whenever
+        the strict error mentions ``pi_features_extractor`` (its "SB3 < 1.7.0" patch). Our extractor is
+        registered under three aliases, so ANY extractor key missing from a checkpoint names it — and the
+        retry loaded the rest, leaving that submodule at FRESH INIT behind one warning. A checkpoint with
+        ``alpha_head``'s keys deleted loaded "normally" as the trainee and as an opponent. Every learner
+        and every opponent / reader load (``InferenceMaskablePPO``) goes through here.
+
+        No declared non-strict exception exists (survey 2026-10-03: no caller passes
+        ``exact_match=False``; the deleted-kwarg sanitizers in ``snapshot`` pop only kwargs that build
+        no parameters and REFUSE the rest, so they never need a key dropped). A future one is declared
+        HERE, with its reason — never a silent fallback."""
+        if exact_match:
+            super().set_parameters(load_path_or_dict, exact_match=True, device=device)  # type: ignore[misc]
+            return
+        try:
+            super().set_parameters(load_path_or_dict, exact_match=True, device=device)  # type: ignore[misc]
+        except (RuntimeError, ValueError) as exc:
+            raise StrictLoadError(
+                "a NON-STRICT checkpoint load was requested and REFUSED (gen3_strict_checkpoint_load_v1): "
+                "the checkpoint's state dict does not match this model's, and a non-strict load would "
+                "leave every missing tensor at FRESH INIT (sb3's 'SB3 < 1.7.0' retry fires on any missing "
+                f"extractor key). The strict error: {exc}") from exc
 
     # ------------------------------------------------------------------ the env
     @staticmethod

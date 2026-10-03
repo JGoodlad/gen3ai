@@ -72,7 +72,6 @@ def test_graph_backend_parity_weight_swap_and_a_frozen_steady_state(fresh_compil
             assert float((d.value - ref[1]).abs().max()) < 1e-4
         assert float((t2.result().value - b_cuda[1][:3]).abs().max()) < 1e-4
     _assert_back_to_back_flushes_do_not_race(svc, (s0, a), (s1, b), (svc.slot("pool", 2), a))
-    svc.canary()
     st = svc.stats()
     assert (st["compiles_after_freeze"], st["captures_after_freeze"],
             st["cuda_segments_after_freeze"]) == (0, 0, 0)
@@ -124,7 +123,6 @@ def test_two_lanes_replaying_concurrently_serve_their_own_slots(fresh_compile_ca
             fin = torch.isfinite(ref[0])
             assert float((t.result().logp - ref[0])[fin].abs().max()) < 1e-3
             assert float((t.result().value - ref[1]).abs().max()) < 1e-4
-    svc.canary()
 
 
 def test_the_double_buffer_wait_stops_a_repack_before_the_queued_copy_reads_it(

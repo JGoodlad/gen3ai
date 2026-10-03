@@ -267,3 +267,83 @@ def test_the_T2_slot_identity_ignores_the_heads_in_either_direction(world: Dict[
     assert on.ridealong is not None, "the template was mutated"
     back = SlotGroup(SlotGroupSpec(name="u", n_slots=1, template=off), th.device("cpu"))
     back.check_loadable(on)
+
+
+# ---------------------------------------------------------------- gen3_strict_checkpoint_load_v1 (P10 F4)
+def _rewrite_policy(src: Path, dst_dir: Path, edit: Any) -> Path:
+    """A copy of the run at ``src`` (zip + its ``model_config.json``) whose ``policy.pth`` is ``edit(sd)``."""
+    import io
+    import shutil
+    import zipfile
+
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy(src.parent / "model_config.json", dst_dir / "model_config.json")
+    dst = dst_dir / "final_model.zip"
+    with zipfile.ZipFile(src) as zin, zipfile.ZipFile(dst, "w") as zout:
+        for name in zin.namelist():
+            data = zin.read(name)
+            if name == "policy.pth":
+                sd = th.load(io.BytesIO(data), map_location="cpu")
+                edit(sd)
+                buf = io.BytesIO()
+                th.save(sd, buf)
+                data = buf.getvalue()
+            zout.writestr(name, data)
+    return dst
+
+
+def _drop(submodule: str) -> Any:
+    def edit(sd: Dict[str, Any]) -> None:
+        gone = [k for k in sd if f".{submodule}." in k]
+        # precondition: the submodule is an EXTRACTOR submodule, so the strict error names
+        # `pi_features_extractor` — exactly sb3's "SB3 < 1.7.0" non-strict retry trigger
+        assert gone and any(k.startswith("pi_features_extractor.") for k in gone), submodule
+        for k in gone:
+            del sd[k]
+    return edit
+
+
+@pytest.mark.parametrize("submodule", ["alpha_head", "win_head"])
+def test_a_checkpoint_MISSING_an_extractor_submodule_is_refused_by_every_load(
+        world: Dict[str, Any], tmp_path: Path, submodule: str) -> None:
+    """P10 F4: sb3's `load` retried with `exact_match=False` whenever the strict error mentioned
+    `pi_features_extractor` (any missing extractor key does, via the alias), so a checkpoint with a
+    submodule's keys deleted loaded "normally" with that submodule at FRESH INIT. The opponent path
+    (pool / sentinel / foreign) and the trainee's resume must all REFUSE it."""
+    from agents.model.snapshot import load_foreign_opponent, load_model_snapshot, load_opponent_snapshot
+    from agents.training.instrumented_ppo.loop import StrictLoadError
+
+    bad = _rewrite_policy(world["zip_off"], tmp_path / "dropped", _drop(submodule))
+    with pytest.raises(StrictLoadError, match=submodule):
+        load_opponent_snapshot(str(bad), current_version=world["v_off"])
+    with pytest.raises(StrictLoadError, match=submodule):
+        load_foreign_opponent(str(bad), current_version=world["v_off"])
+    with pytest.raises(StrictLoadError, match=submodule):
+        load_model_snapshot(str(bad), env=None, current_version=world["v_off"])
+
+
+def test_a_checkpoint_with_an_UNEXPECTED_key_is_refused(world: Dict[str, Any], tmp_path: Path) -> None:
+    from agents.model.snapshot import load_model_snapshot, load_opponent_snapshot
+
+    def extra(sd: Dict[str, Any]) -> None:
+        sd["features_extractor.alpha_head.not_a_parameter"] = th.zeros(3)
+
+    bad = _rewrite_policy(world["zip_off"], tmp_path / "extra", extra)
+    with pytest.raises(RuntimeError, match="not_a_parameter"):
+        load_opponent_snapshot(str(bad), current_version=world["v_off"])
+    with pytest.raises(RuntimeError, match="not_a_parameter"):
+        load_model_snapshot(str(bad), env=None, current_version=world["v_off"])
+
+
+def test_set_parameters_REFUSES_exact_match_False_on_a_mismatch(world: Dict[str, Any]) -> None:
+    from agents.training.instrumented_ppo.loop import StrictLoadError
+
+    m = world["off"]
+    sd = {k: v.clone() for k, v in m.policy.state_dict().items()}
+    _drop("alpha_head")(sd)
+    with pytest.raises(StrictLoadError, match="alpha_head"):
+        m.set_parameters({"policy": sd}, exact_match=False)
+    # a MATCHING set loads either way (the refusal is about the mismatch, not the flag)
+    full = {k: v.clone() for k, v in m.policy.state_dict().items()}
+    m.set_parameters({"policy": full, "policy.optimizer": m.policy.optimizer.state_dict()},
+                     exact_match=False)

@@ -45,6 +45,13 @@ class ParityFailure(ServiceError):
     """The served decision disagrees with the eager reference beyond the compile gate's bars."""
 
 
+class CopyParityFailure(ParityFailure):
+    """A ``load`` left a slot's storage NOT bit-exact with the weight set it was given (P10 F3,
+    `gen3_slot_copy_verify_v1`). The parity gate cannot see this on its own — its eager reference is the
+    slot's own replica, whose parameters are views into the same storage the served forward reads — so
+    the copy is checked directly, byte for byte, on every alias of every tensor. Poisons the service."""
+
+
 class VacuousParity(ParityFailure):
     """The parity comparison cannot bite: the eager reference's legal log-probs are constant per row
     (a FRESH policy — zero-init pointer head) or its V is constant across rows (a COLLAPSED win-prob
@@ -100,8 +107,6 @@ class ServiceSpec:
     max_rows_per_flush: int = 1024
     #: Bucket batches of EVAL / FILLER work one ``flush()`` may add after the ROLLOUT rows.
     filler_batches_per_flush: int = 1
-    #: The bucket every ``load`` and ``canary`` verifies at (default: the smallest).
-    verify_bucket: Optional[int] = None
     #: Concurrency LANES (CUDA streams, each with its own graph pool and static inputs); slot s
     #: runs on lane s % lanes. 1 on CPU.
     lanes: int = 1
@@ -160,9 +165,3 @@ class ServiceSpec:
         if caps and (len(caps) != n_slots or min(caps) < b[0]):
             raise ValueError(f"ServiceSpec: slot_bucket_caps must name one cap >= the smallest bucket "
                              f"{b[0]} per declared slot ({n_slots}), got {self.slot_bucket_caps}")
-        if self.verify_bucket is not None and int(self.verify_bucket) not in b:
-            raise ValueError(f"ServiceSpec: verify_bucket {self.verify_bucket} is not a declared bucket")
-
-    @property
-    def verify_at(self) -> int:
-        return int(self.verify_bucket) if self.verify_bucket is not None else int(self.buckets[0])

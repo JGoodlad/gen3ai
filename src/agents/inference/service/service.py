@@ -120,9 +120,11 @@ class InferenceService:
         self.batches_by_bucket: Dict[int, int] = {b: 0 for b in self.buckets}
         self.startup_reports: List[ParityReport] = []
         #: How many parity verdicts each PATH produced (``ParityReport.path``: the perturbed rung's
-        #: seed and scale kept) — startup, loads, canaries. In ``stats()``.
+        #: seed and scale kept) — startup and loads. In ``stats()``.
         self.parity_paths: Dict[str, int] = {}
         self.startup_seconds: Dict[str, float] = {}
+        #: Wall seconds every ``load`` spent (copy + both copy checks + the every-bucket gate), summed.
+        self.load_seconds = 0.0
         self._pending: List[Ticket] = []
         self._seq = 0
         self._epoch = 0
@@ -231,43 +233,46 @@ class InferenceService:
         return self._slots[int(slot)]
 
     def load(self, slot: int, policy: Any, model_id: str) -> ParityReport:
-        """Copy ``policy``'s weights into ``slot`` (in place) and parity-verify the slot at the
-        verify bucket. A mismatch is `SlotArchMismatch` (the slot is untouched); a parity failure
-        POISONS the service (the weights are in the slot and disagree with eager)."""
+        """Copy ``policy``'s weights into ``slot`` (in place), then VERIFY the slot twice over:
+
+        1. the slot's storage is BIT-EXACT with ``policy``'s state dict on every key and alias
+           (`SlotGroup.verify_copy`, P10 F3, `gen3_slot_copy_verify_v1`) — the parity gate's eager
+           reference is the slot's own replica, whose parameters are views into the same storage the
+           served forward reads, so parity alone cannot tie the slot to ``policy``;
+        2. the parity gate at EVERY bucket the slot serves (P10 F8, `gen3_load_gates_every_bucket_v1`)
+           — a miscompile can be weight-dependent, so a bucket the new weights were never judged at
+           is not proven; then the copy is checked again, which also proves the perturbed rungs
+           restored the slot bit-exactly.
+
+        A mismatch is `SlotArchMismatch` (the slot is untouched); a copy or parity failure POISONS the
+        service (the weights are in the slot and disagree with what was asked for, or with eager).
+        Returns the first REAL-weights report (the smallest bucket's)."""
         self._require("FROZEN")
         gi, i = self._slot(slot)
         group = self.groups[gi]
         sd = group.check_loadable(policy)
-        with self._frozen_guard(f"load(slot {slot})"):
-            group.copy_in(i, sd)
+        where = f"load(slot {slot}, {model_id!r})"
+        t0 = time.perf_counter()
+        try:
+            with self._frozen_guard(where):
+                group.copy_in(i, sd)
+                group.verify_copy(i, sd, where)
+        except ParityFailure as exc:
+            self._die(f"{where} failed: {exc}")
+            raise
         group.model_ids[i] = str(model_id)
         self.counters["loads"] += 1
+        reports: List[ParityReport] = []
         try:
-            reports = self._gate(gi, i, self.spec.verify_at)
+            for b in self.engine.slot_buckets[slot]:
+                reports.extend(self._gate(gi, i, b))
+            with self._frozen_guard(where):
+                group.verify_copy(i, sd, f"{where} after its parity gate")
         except ParityFailure as exc:
-            self._die(f"load(slot {slot}, {model_id!r}) failed parity: {exc}")
+            self._die(f"{where} failed parity: {exc}")
             raise
+        self.load_seconds += time.perf_counter() - t0
         return reports[0]
-
-    def canary(self, slot: Optional[int] = None) -> List[ParityReport]:
-        """The K6 IN-RUN CANARY: re-run the parity gate at the verify bucket on one slot (or all).
-        A failure poisons the service."""
-        self._require("FROZEN")
-        out: List[ParityReport] = []
-        for s in ([int(slot)] if slot is not None else range(len(self._slots))):
-            gi, i = self._slot(s)
-            try:
-                out.extend(self._gate(gi, i, self.spec.verify_at))
-            except ParityFailure as exc:
-                self._die(f"canary(slot {s}) failed: {exc}")
-                raise
-        if slot is None:
-            try:
-                out.extend(self._gate_concurrent(self.spec.verify_at))
-            except ParityFailure as exc:
-                self._die(f"canary(concurrent) failed: {exc}")
-                raise
-        return out
 
     def _gate_concurrent(self, b: int) -> List[ParityReport]:
         """ONE flush carrying every slot's fixture rows (a full chunk of bucket ``b``), so every
@@ -508,5 +513,6 @@ class InferenceService:
         out["packages"] = len(eng.packages) if eng is not None else 0
         out["lanes"] = eng.n_lanes if eng is not None else 0
         out["startup_seconds"] = dict(self.startup_seconds)
+        out["load_seconds"] = float(self.load_seconds)
         out["parity_paths"] = dict(self.parity_paths)
         return out

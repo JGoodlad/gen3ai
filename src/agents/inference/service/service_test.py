@@ -16,7 +16,7 @@ import pytest
 import torch
 
 from agents.inference.service import (
-    CallerError, DecisionModule, InferenceService, LifecycleViolation, ParityFailure, Priority,
+    CallerError, CopyParityFailure, DecisionModule, InferenceService, LifecycleViolation, ParityFailure, Priority,
     ServiceSpec, SlotArchMismatch, SlotGroupSpec, UnservableArchitecture, policy_reference,
 )
 from agents.inference.service.decision import _refuse_extra_obs_keys
@@ -85,7 +85,6 @@ def test_an_extra_obs_key_architecture_is_refused(monkeypatch):
     (dict(backend="graph"), "CUDA only"),
     (dict(backend="aot"), "CUDA only"),
     (dict(lanes=2), "lanes"),
-    (dict(verify_bucket=4), "not a declared bucket"),
     (dict(max_rows_per_flush=4), "largest bucket"),
 ])
 def test_the_declaration_is_validated(policies, kw, match):
@@ -236,6 +235,58 @@ def test_a_foreign_architecture_or_forward_config_is_refused(policies):
     with pytest.raises(SlotArchMismatch, match="FORWARD fingerprint"):
         svc.load(0, config, "config")
     assert svc.state == "FROZEN" and svc.model_id(0) == "<template>"
+
+
+# ---------------------------------------------------------------- a load is tied to its source (P10 F3 / F8)
+def test_a_load_whose_copy_MISSED_is_refused_and_poisons(policies, monkeypatch):
+    """P10 F3 (`gen3_slot_copy_verify_v1`). The parity gate's eager reference is the slot's OWN replica
+    (views into the same stacked storage), so with `copy_in` a no-op, `load(slot, B)` used to pass
+    parity at |dV| 0 and record "policy-B" while serving A. The bit-exact copy check refuses it."""
+    a, b = policies
+    svc = _service(a, n_slots=1, buckets=(2,))
+    group = svc.groups[0]
+    monkeypatch.setattr(group, "copy_in", lambda slot, sd: None)
+    with pytest.raises(CopyParityFailure, match="NOT bit-exact"):
+        svc.load(0, b, "policy-B")
+    assert svc.state == "POISONED" and svc.model_id(0) == "<template>"
+
+
+def test_the_parity_gate_ALONE_is_blind_to_a_missed_copy(policies, monkeypatch):
+    """The precondition of the test above: with the copy check disabled too, the no-op load PASSES the
+    parity gate — so the copy check is what bites, not parity."""
+    a, b = policies
+    svc = _service(a, n_slots=1, buckets=(2,))
+    group = svc.groups[0]
+    monkeypatch.setattr(group, "copy_in", lambda slot, sd: None)
+    monkeypatch.setattr(group, "verify_copy", lambda slot, sd, where: None)
+    report = svc.load(0, b, "policy-B")
+    assert report.value_max == 0.0 and svc.model_id(0) == "policy-B"   # "B", serving A
+
+
+def test_a_load_that_copied_the_WRONG_source_is_refused(policies, monkeypatch):
+    a, b = policies
+    svc = _service(a, n_slots=2, buckets=(2,))
+    group = svc.groups[0]
+    real_copy = group.copy_in
+    a_sd = group.check_loadable(a)
+    monkeypatch.setattr(group, "copy_in", lambda slot, sd: real_copy(slot, a_sd))
+    with pytest.raises(CopyParityFailure, match="slot 1"):
+        svc.load(1, b, "policy-B")
+    assert svc.state == "POISONED"
+
+
+def test_a_load_is_gated_at_EVERY_bucket_the_slot_serves(policies):
+    """P10 F8 (`gen3_load_gates_every_bucket_v1`): a miscompile can be weight-dependent, so a load is
+    judged at every bucket the slot serves (full + partial rows each), not only the smallest. Slot 0 is
+    capped at bucket 2 (2 verdicts), slot 1 serves 2 and 8 (4). Revert to the smallest bucket ⇒ slot 1
+    adds 2."""
+    a, b = policies
+    svc = _service(a, n_slots=2, buckets=(2, 8), slot_bucket_caps=(2, 8))
+    for slot, want in ((0, 2), (1, 4)):
+        before = svc.parity_paths.get("real", 0)
+        svc.load(slot, b, f"policy-B@{slot}")
+        assert svc.parity_paths.get("real", 0) - before == want, (slot, svc.parity_paths)
+    assert svc.stats()["load_seconds"] > 0.0
 
 
 # ---------------------------------------------------------------- the gate's teeth

@@ -842,7 +842,10 @@ opponents, exploiter targets, `main.anchors`, the offline readers) is an
 no rollout buffer. It refuses `learn` / `train` / `save`. Before this fix a pool load after the freeze
 pre-stepped a ride-along Adam, and K6 FATALed the X26 launch at its first pool seeding. An opponent may
 differ from the trainee ONLY in the declared ride-along keys (`RIDEALONG_FLAGS`), in either direction
-(F-MEM); the trainee's own resume stays strict. Detail: `designs/training/learner_lifecycle.md`. The step is
+(F-MEM); the trainee's own resume stays strict. 🚨 **Every learner and opponent load is STRICT on state-dict
+keys** (`gen3_strict_checkpoint_load_v1`): `OwnedLoop.set_parameters` refuses sb3's non-strict "SB3 < 1.7.0"
+retry (`StrictLoadError`), which used to load a checkpoint missing an extractor submodule with that
+submodule at fresh init. Detail: `designs/training/learner_lifecycle.md`. The step is
 K8's candidate compile region R-ride; it stays eager. **The RND variants**
 (`--ridealong-rnd-variants all`, v127: `fast` / `decay` / `small` / `feat`, beside the unchanged base
 RND) each step on their own Adam after the four heads. A non-finite variant disables ITSELF

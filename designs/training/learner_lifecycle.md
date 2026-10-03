@@ -242,7 +242,12 @@ allocated / 9.49 GiB reserved, 1.14 GiB of it the then-resident device batch; th
   sizing arm A.
 - A pool weight source found on the card is a typed `LazyAcquisitionError`.
 - Every route's slot load goes through `rust_rollout.build.checked_slot_load`, which refuses a load
-  that leaves more than 1 MiB newly allocated (`declared_slot_load_test`).
+  that leaves more than 1 MiB newly allocated (`declared_slot_load_test`). It reads ALLOCATED, not
+  reserved, memory. Measured 2026-10-03 (P10 F7, buckets 8 / 64 / 256): an opponent load (CPU
+  source) grows neither; its transient peak (~27 MiB: the eager reference forward and the served
+  clones) comes from the cache. A replica keeps its LAST eager reference forward's activation
+  stash (`ExtractorStashes`; 17 MiB at 255 rows) until its next forward — bounded, replaced not
+  added.
 - `SnapshotPool`'s default device is the CPU, and `snapshot_pool_device_test` pins EVERY construction
   in `src/` and `tools/` (tests included) to it with one AST scan. The sizing harness's own pool was
   missed by the first fix and died on the runtime refusal (fixed in `95af710e`). The one declared
@@ -451,6 +456,17 @@ stream is bit-identical before and after the load ("No global reseed after the f
   consensus warm-start's student is the one caller.
 - **Not this class, and not affected:** the prober, `play.py` and the search workers load with a bare
   sb3 `MaskablePPO.load`, which has no ride-along acquisition. None of them runs inside a frozen learner.
+
+**Every load is STRICT (`gen3_strict_checkpoint_load_v1`, P10 F4, 2026-10-03).** sb3's `load` retries
+with `exact_match=False` whenever the strict error mentions `pi_features_extractor` (its "SB3 < 1.7.0"
+patch), and our extractor is registered under three aliases, so ANY missing extractor key named it: a
+checkpoint with `alpha_head`'s keys deleted loaded as the trainee AND as an opponent with the head at
+fresh init, behind one warning. `OwnedLoop.set_parameters` (under `InstrumentedMaskablePPO` and
+`InferenceMaskablePPO` alike) always loads strictly — a MISSING and an UNEXPECTED key both raise — and
+answers a non-strict request with `StrictLoadError` naming the strict error. No declared non-strict
+exception exists (the deleted-kwarg sanitizers pop only kwargs that build no parameters and refuse
+the rest); a future one is declared there, with its reason. The bare sb3 `MaskablePPO.load` callers
+(the prober, `play.py`, the search workers, a few offline tools) still carry sb3's retry.
 
 **F-MEM: an opponent may differ from the trainee in the ride-along keys alone.** The gate is
 `ModelVersion.check_opponent_snapshot_compatible`: `check_compatible` with the declared key set

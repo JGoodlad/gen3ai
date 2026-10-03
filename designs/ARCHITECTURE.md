@@ -973,7 +973,8 @@ an OPPONENT load (the self-play pool, eval sentinels, stable / exploiter / teach
 `InferenceMaskablePPO`, with policy weights only and no optimizer of any kind. It may differ from the
 trainee in the ride-along keys (`RIDEALONG_FLAGS`) alone, in either direction, and the T2 slot identity
 and every served replica leave the heads out. The trainee's resume stays strict on every ride-along
-key (`designs/training/learner_lifecycle.md`). The heads' step is the K8 inventory's candidate compile region
+key, and every learner and opponent load is strict on state-dict keys — a missing or unexpected key raises
+(`gen3_strict_checkpoint_load_v1`; `designs/training/learner_lifecycle.md`). The heads' step is the K8 inventory's candidate compile region
 R-ride; it stays EAGER. `family=CRITIC`, so they are off the ARCH surface; §6's table carries them
 OFF. The pre-registered baseline that turns them on is EXPERIMENT_BACKLOG's X26.
 
