@@ -62,7 +62,7 @@
 
 ## 3. ONE-VALUED
 
-* `--use-bridge` — the only legal value is `rust` (`retired_choice`, deletion pass U3); read only by `production_args.py`
+* `--use-bridge` — the only legal value is `rust` (`retired_choice`, U3); NO code is left behind it (its only reader is `production_args.py`). Deletion is a doc sweep, not a code deletion: ~15 prose spots name it as the transport (root, `src/rust_sim`, `CONTRIBUTING.md`, `docs/RUNNING.md`, `bootstrap.sh`), and the freshness gate resolves the prober / rust_sim leaves' `--use-bridge` claims against THIS flag, so deleting it surfaces those stale claims too — deferred to the hand-off
 * `--gamma` — `winprob_critic_needs_unit_gamma` refuses any value but 1.0 under the only trainable critic; in `recipe.fresh` as 1.0
 * `--draw-penalty` — the winprob critic REQUIRES 0.0 (`winprob_critic_refuses_draw_penalty`); `recipe.fresh` 0.0
 * `--critic` — the only legal value is `winprob` (`retired_choice`, deletion pass U3); `recipe.fresh` `winprob`
@@ -86,7 +86,7 @@
 | `--debug-eval` | false | 0 / 0 | the root `CLAUDE.md` smoke names it as the way to exercise the eval path; read by `callbacks._run_eval` | **KEEP** |
 | `--n-envs` | 32 | 268 / 39 | `recipe.sizing.n_envs` (256) in `--arch production` | **KEEP** |
 | `--device` | auto | 272 / 39 | every launch (`--device cuda`) | **KEEP** |
-| `--use-bridge` | rust | 186 / 34 | the only legal value is `rust` (`retired_choice`, deletion pass U3); read only by `production_args.py` | **ONE-VALUED** |
+| `--use-bridge` | rust | 186 / 34 | the only legal value is `rust` (`retired_choice`, U3); NO code is left behind it (its only reader is `production_args.py`). Deletion is a doc sweep, not a code deletion: ~15 prose spots name it as the transport (root, `src/rust_sim`, `CONTRIBUTING.md`, `docs/RUNNING.md`, `bootstrap.sh`), and the freshness gate resolves the prober / rust_sim leaves' `--use-bridge` claims against THIS flag, so deleting it surfaces those stale claims too — deferred to the hand-off | **ONE-VALUED** |
 | `--tb-inherit` | true | 0 / 0 | a fork copies its parent's scalar TB events (`tb_inherit.py`, `main.tb_inherit`, root `CLAUDE.md`'s fork notes); `--no-tb-inherit` is the documented fleet opt-out | **KEEP** |
 | `--seed` | 42 | 172 / 39 | every launch (`recipe`-adjacent reproducibility; the Rust core's `segment_seed`) | **KEEP** |
 | `--log-level` | periodic | 192 / 39 | root `CLAUDE.md` / launcher (`--log-level periodic`) | **KEEP** |

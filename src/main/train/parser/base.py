@@ -5,7 +5,8 @@
 """
 import argparse
 
-__all__ = ["optional_float", "str2bool", "BoolFlag", "retired_choice", "_BOOL_TRUE", "_BOOL_FALSE"]
+__all__ = ["optional_float", "str2bool", "BoolFlag", "retired_choice", "deleted_flag_reasons",
+           "ExplainingParser", "_BOOL_TRUE", "_BOOL_FALSE"]
 
 
 def optional_float(s: str) -> float | None:
@@ -87,3 +88,43 @@ class BoolFlag(argparse.Action):
             setattr(namespace, self.dest, True)
         else:                           # `--foo <value>` / `--foo=<value>`
             setattr(namespace, self.dest, str2bool(values))
+
+
+def deleted_flag_reasons(flags) -> list:
+    """One line per DELETED flag among ``flags``: the pass that deleted it and the first sentence of its
+    reason, from ``designs/deleted_flags.md`` (the list the freshness gate reads) — so a typed flag that no
+    longer exists is refused WITH the reason instead of a bare `unrecognized arguments`. Empty when none is
+    listed (a typo) or the file cannot be read: this runs on an error path and must never raise."""
+    import re
+
+    try:
+        from utils.paths import repo_path
+
+        text = repo_path("designs", "deleted_flags.md").read_text(encoding="utf-8")
+    except Exception:                                         # noqa: BLE001 — an error path
+        return []
+
+    def head(note: str, n: int = 200) -> str:
+        first = re.split(r"(?<=\.)\s", note.strip(), maxsplit=1)[0]
+        return first if len(first) <= n else first[:n - 1].rstrip() + "…"
+
+    rows = {}
+    for m in re.finditer(r"^\| `(--[a-z0-9][a-z0-9-]*)` \| (.*?) \| (.*) \|$", text, flags=re.M):
+        if m.group(1) not in rows:
+            cite = re.sub(r"\s*\(.*$", "", m.group(2)).strip(" ,;")
+            rows[m.group(1)] = f"{cite}: {head(m.group(3))}"
+    return [f"  {f} was DELETED — {rows[f]}  [designs/deleted_flags.md]" for f in dict.fromkeys(flags) if f in rows]
+
+
+class ExplainingParser(argparse.ArgumentParser):
+    """An `ArgumentParser` whose `unrecognized arguments` refusal names the reason for every DELETED flag it
+    sees (:func:`deleted_flag_reasons`). Everything else — the exit code, the usage line, the message's first
+    line — is argparse's own, so a caller that matches on `unrecognized arguments` still does."""
+
+    def parse_args(self, args=None, namespace=None):
+        ns, extras = self.parse_known_args(args, namespace)
+        if extras:
+            msg = "unrecognized arguments: " + " ".join(extras)
+            why = deleted_flag_reasons(t.split("=", 1)[0] for t in extras if t.startswith("--"))
+            self.error(msg + ("\n" + "\n".join(why) if why else ""))
+        return ns

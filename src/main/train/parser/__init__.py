@@ -29,7 +29,7 @@ function, since the position inside a family is the position in `--help`.
 import argparse
 
 from main.train.parser.base import (   # noqa: F401 — re-export hub
-    BoolFlag, optional_float, str2bool, _BOOL_FALSE, _BOOL_TRUE,
+    BoolFlag, ExplainingParser, optional_float, str2bool, _BOOL_FALSE, _BOOL_TRUE,
 )
 from main.train.parser.capacity import add_capacity_flags
 from main.train.parser.clean_world import add_clean_world_flags
@@ -68,7 +68,7 @@ def build_parser() -> argparse.ArgumentParser:
     # the survivor — `--eval-concurrency 100` (deleted) would have set `--eval-concurrency-per-worker 100`,
     # and `--hp-type-belief learned` already made `--hp-type-belief-coef` refuse a string. A typed flag now
     # means exactly that flag or is refused. The launcher's checkpoint parser and its own parser agree.
-    parser = argparse.ArgumentParser(description="Train or Evaluate Gen 3 OU RL Agent", allow_abbrev=False)
+    parser = ExplainingParser(description="Train or Evaluate Gen 3 OU RL Agent", allow_abbrev=False)
 
     add_operational_flags(parser)
     add_hyperparameter_flags(parser)

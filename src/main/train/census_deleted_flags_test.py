@@ -35,7 +35,10 @@ def test_a_census_deleted_flag_is_refused(flag, value, capsys):
     with pytest.raises(SystemExit) as e:
         build_parser().parse_args([flag, *value])
     assert e.value.code == 2
-    assert "unrecognized arguments" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "unrecognized arguments" in err
+    # ... and the refusal names the REASON (designs/deleted_flags.md, via `ExplainingParser`), not just the typo
+    assert f"{flag.split('=')[0]} was DELETED" in err, err[-400:]
 
 
 def test_no_census_deleted_flag_is_still_an_option():
