@@ -241,14 +241,6 @@
    "contention": 1.0,
    "detail": ""
   },
-  "src/agents/training/cf_supply_integration_test.py::test_a_producer_that_dies_mid_run_stops_the_trainer_with_fatal_supply": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 38.5,
-   "contention": 1.41,
-   "detail": ""
-  },
   "src/agents/training/instrumented_ppo_device_batches_test.py::test_on_cuda_the_device_batches_equal_the_host_batches": {
    "status": "pass",
    "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",

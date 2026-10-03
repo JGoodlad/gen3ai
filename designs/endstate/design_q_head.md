@@ -12,6 +12,11 @@ and diagnostics. Monte-Carlo playout labels (the grounded option) and X6 are DEF
 down (§5.0, §9). The cost model is re-measured (§8.1), and the turn mechanics are corrected at the
 source (§5.1a).
 
+**Deletion pass L4 (2026-10-02):** the extractor-built per-action win-probability head of config v107
+(`q_winprob_mode`) and the counterfactual-label training that fed it were DELETED, so nothing in the tree
+trains a joint Q head today; `QWinProbHead` survives only as the shared-scorer class the detached
+ride-along A head is built from (§5.4). A joint Q head here is a NEW build.
+
 🚨 **ALWAYS-CURRENT WHILE BEING IMPLEMENTED (owner, 2026-09-27).** This doc is the spec the builds
 follow. Any implementation that differs from it UPDATES this doc in the same commit, stating what
 changed and why. [`../ARCHITECTURE.md`](../ARCHITECTURE.md) remains the doc of record for what the

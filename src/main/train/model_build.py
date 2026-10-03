@@ -24,7 +24,6 @@ from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.training.adaptive_lr_callback import TwoPhaseLRCallback
 from agents.training.dose import kl_controller_snapshot
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
-from agents.training.reward_manager import reward_config_digest
 from agents.training.watchdog import start_subprocess_watchdog
 from main.exit_codes import TrainExitCode, exit_code_for
 from main.launcher.ipc import emit, send_event
@@ -40,75 +39,6 @@ from main.train.run_io import (
     _attach_run_tb_logger, _model_hparams, _run_arch_toggles, _run_lineage, _write_latest_txt,
 )
 from utils.logging.levels import LogLevel
-
-
-def attach_cf_labels(model, *, args, _cf_labels_dir, reward_config):
-    """Attach the counterfactual label buffer + its coefficients (both build paths).
-
-    The coefficients are set UNCONDITIONALLY (they are class defaults otherwise, and a resume
-    must be able to turn the term OFF as well as on); the BUFFER is only built when the coef is
-    live, so an off run never touches the filesystem. Training-only: RECORDED in
-    `model_config.json` for provenance + flagless-resume read-back since config v100
-    (`gen3_cf_coef_provenance_v1`), never checked by `check_compatible`.
-
-    `cf_records` / `cf_records_keep` are set here too even though the RING is built in the env
-    workers, not off `model` — `lifecycle._run_roundtrip_test` stamps its ModelVersion off the
-    model object, so a field only argparse knows about would record as its default there."""
-    model.cf_records = bool(args.cf_records)
-    model.cf_records_keep = int(args.cf_records_keep)
-    model.cf_winprob_coef = float(args.cf_winprob_coef or 0.0)
-    model.cf_head_only = bool(args.cf_head_only)
-    model.cf_label_lag_steps = int(args.cf_label_lag_steps)
-    model.cf_label_likelihood = str(args.cf_label_likelihood)
-    model.cf_evidential_coef = float(args.cf_evidential_coef or 0.0)
-    model.cf_evidential_reg = float(args.cf_evidential_reg or 0.0)
-    model.cf_twin_coef = float(args.cf_twin_coef or 0.0)
-    model.cf_shadow_coef = float(args.cf_shadow_coef or 0.0)
-    # gen3_q_winprob_head_v1 (v107): the per-action Q head's two coefficients. Set on the MODEL
-    # unconditionally, BEFORE the `_cf_labels_dir` early-out, for the reason the block above is
-    # ordered this way: `run_io`/`lifecycle` read them off the model into `model_config.json`, so a
-    # field only argparse knows about would record as its default there.
-    model.q_winprob_coef = float(args.q_winprob_coef or 0.0)
-    model.q_winprob_onpolicy_coef = float(args.q_winprob_onpolicy_coef or 0.0)
-    if not _cf_labels_dir:
-        return
-    from agents.training.cf_label_buffer import CfLabelBuffer
-    os.makedirs(_cf_labels_dir, exist_ok=True)
-    _obs_space = model.observation_space["observation"]
-    # gen3_cf_twin_heads_v1: the SHADOW critic's `mc_return` labels are SHAPED returns, so they
-    # are only this run's labels if the producer used this run's reward. The digest is handed to
-    # the buffer, which drops a mismatching `mc_return` (never the row) and counts it. Passed
-    # ONLY when the shadow head is live — a run without one has nothing to protect and should
-    # not reject rows over a field it does not read.
-    _cf_reward_sha1 = (reward_config_digest(reward_config)
-                       if float(args.cf_shadow_coef or 0.0) > 0 else None)
-    model._cf_buffer = CfLabelBuffer(
-        _cf_labels_dir, obs_dim=int(_obs_space.shape[0]),
-        lag_bound=int(args.cf_label_lag_steps), reward_sha1=_cf_reward_sha1)
-    if model.cf_winprob_coef > 0:
-        emit(f"🎯 [CF] win-prob grounding ON: coef={model.cf_winprob_coef:g} "
-             f"likelihood={model.cf_label_likelihood} head_only={model.cf_head_only} "
-             f"lag={model.cf_label_lag_steps} ← {_cf_labels_dir}")
-    if model.cf_evidential_coef > 0:
-        emit(f"🎲 [CF] EVIDENTIAL Beta head ON: coef={model.cf_evidential_coef:g} "
-             f"reg={model.cf_evidential_reg:g} (always-detached readout) "
-             f"← {_cf_labels_dir}")
-    if model.cf_twin_coef > 0:
-        emit(f"👯 [CF] TWIN win-prob heads ON: coef={model.cf_twin_coef:g} "
-             f"(A=control / B=single-outcome / C=tight-MC, head-only always) "
-             f"← {_cf_labels_dir}. Read cf/twin_b_coverage FIRST — a producer shipping no "
-             f"outcome_label makes B==A and turns C−B into C−A with no other tell.")
-    if model.cf_shadow_coef > 0:
-        emit(f"🩻 [CF] SHADOW critic ON: coef={model.cf_shadow_coef:g} "
-             f"(passive mc_return readout — no advantage, no GAE) "
-             f"reward_sha1={(_cf_reward_sha1 or '')[:12]} ← {_cf_labels_dir}")
-    if model.q_winprob_coef > 0 or model.q_winprob_onpolicy_coef > 0:
-        emit(f"🎯 [Q] PER-ACTION win-prob head ON: cf_coef={model.q_winprob_coef:g} "
-             f"onpolicy_coef={model.q_winprob_onpolicy_coef:g} (read_only — every input "
-             f"detached) ← {_cf_labels_dir}. Read q_winprob/label_coverage FIRST: a producer "
-             f"shipping no per-action `q_labels` trains the head on nothing, and if the on-policy "
-             f"coefficient is the only live one the head learns ONLY where the policy already "
-             f"goes — the starvation trap (p≈0.002 preferred-alternative rate).")
 
 
 # ── The training-hparam passthroughs: ONE declared table, applied on BOTH build paths ──
@@ -161,7 +91,7 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
 )
 
 
-def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
+def apply_training_hparams(model, args, *, mappings) -> None:
     """Apply every training-only hparam to `model`. Called from BOTH build paths, identically.
 
     The table above covers the passthroughs. The things that follow it are NOT
@@ -210,9 +140,6 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     model.rank_probe_every_update = getattr(args, "rank_tripwire", "warn") != "off"
     model.noise_terms_every_update = getattr(args, "adaptive_batch", "off") not in ("off", "total")
 
-    # gen3_cf_label_plumbing_v1: counterfactual win-prob grounding (coef 0 = byte-identical).
-    attach_cf_labels(model)
-
     # gen3_fork_v1: the FORK ARM injects branch transitions into the rollout buffer, which the
     # stock buffer has nowhere to put — `get()` iterates exactly `buffer_size * n_envs`. Installed
     # HERE because this function is the one place both build paths meet and it runs AFTER
@@ -238,7 +165,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                           _shutdown_event, _run_eval, _effective_max_lr,
                           callbacks, eval_callback, lr_callback, adaptive_ppo_callback,
                           graceful_restart_callback,
-                          _attach_cf_labels, _maybe_seed_pool, evaluate_model_random) -> None:
+                          _maybe_seed_pool, evaluate_model_random) -> None:
     """Load or construct the model, then run (and finish) the training job."""
     # THE FORK PARENT, captured BEFORE the consensus warm-start may re-point `args.model` at
     # `<run>/warmstart/…` — that init is built FROM the parent, so recording it would make the run
@@ -347,18 +274,6 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             fork_contested_absv=args.fork_contested_absv,
             fork_max_per_battle=args.fork_max_per_battle,
             fork_crn=args.fork_crn,
-            cf_records=args.cf_records,
-            cf_records_keep=args.cf_records_keep,
-            cf_winprob_coef=args.cf_winprob_coef,
-            cf_head_only=args.cf_head_only,
-            cf_label_lag_steps=args.cf_label_lag_steps,
-            cf_label_likelihood=args.cf_label_likelihood,
-            cf_evidential_coef=args.cf_evidential_coef,
-            cf_evidential_reg=args.cf_evidential_reg,
-            cf_twin_coef=args.cf_twin_coef,
-            cf_shadow_coef=args.cf_shadow_coef,
-            q_winprob_coef=args.q_winprob_coef,
-            q_winprob_onpolicy_coef=args.q_winprob_onpolicy_coef,
             # gen3_eval_sentinel_greedy_default_v1 (v112): the EVAL REGIME + the gate it
             # derives, so a flagless resume reads its own regime back instead of crossing
             # an opponent-regime boundary. Both are RESOLVED by `resolve_config`.
@@ -406,8 +321,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         _validate_or_reset_optimizer_state(model, model_path)
         model.ent_coef = args.ent_coef          # resume-only: the fresh path passes it to the ctor
         # Every training-only hparam, from the one table shared with the fresh path below.
-        apply_training_hparams(model, args, mappings=mappings,
-                               attach_cf_labels=_attach_cf_labels)
+        apply_training_hparams(model, args, mappings=mappings)
         # K9(b): where a behaviour violation's row dump is appended (`consistency.VIOLATION_DUMP`).
         model.behaviour_dump_dir = model_dir
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
@@ -685,8 +599,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         )
 
         # Every training-only hparam, from the one table shared with the resume path above.
-        apply_training_hparams(model, args, mappings=mappings,
-                               attach_cf_labels=_attach_cf_labels)
+        apply_training_hparams(model, args, mappings=mappings)
         model.behaviour_dump_dir = model_dir   # K9(b) row dumps (as on the resume path above)
         model._dose_kl = kl_controller_snapshot(lr_callback)   # plain data, never the callback
         model._fork_lr_pin = None          # a FRESH run cannot be pinned — `--fork-lr` is refused there
@@ -713,18 +626,6 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             fork_contested_absv=args.fork_contested_absv,
             fork_max_per_battle=args.fork_max_per_battle,
             fork_crn=args.fork_crn,
-            cf_records=args.cf_records,
-            cf_records_keep=args.cf_records_keep,
-            cf_winprob_coef=args.cf_winprob_coef,
-            cf_head_only=args.cf_head_only,
-            cf_label_lag_steps=args.cf_label_lag_steps,
-            cf_label_likelihood=args.cf_label_likelihood,
-            cf_evidential_coef=args.cf_evidential_coef,
-            cf_evidential_reg=args.cf_evidential_reg,
-            cf_twin_coef=args.cf_twin_coef,
-            cf_shadow_coef=args.cf_shadow_coef,
-            q_winprob_coef=args.q_winprob_coef,
-            q_winprob_onpolicy_coef=args.q_winprob_onpolicy_coef,
             # gen3_eval_sentinel_greedy_default_v1 (v112): the EVAL REGIME + the gate it
             # derives, so a flagless resume reads its own regime back instead of crossing
             # an opponent-regime boundary. Both are RESOLVED by `resolve_config`.

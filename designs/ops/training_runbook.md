@@ -274,7 +274,7 @@ async-wave and restart streams).
 | periodic checkpoint (`--checkpoint-every-steps`) | `num_timesteps` boundary | yes — and under async waves |
 | eval cycle (`--eval-freq`, `EVAL_FREQ_STEPS` 2M) — and the snapshot-pool add and opponent-pool refresh it drives | `num_timesteps` | yes |
 | plasticity canary (`--canary-reset-steps`) | `num_timesteps` | yes |
-| `--diagnostics-every`, compile canary (every 25 updates), `--adaptive-batch-every`, KL lr controller, team PFSP / team win-rate pulls (3 rollouts), exploiter-ladder persist (20), `--capacity-*-every`, CUDA memory-trend horizon (25 updates) | UPDATES / rollouts | only while the rollout `n_steps × n_envs` is fixed (production 2048 × 48 = 98,304) — a sizing change of N must restate `n_steps` or `--rollout-target-samples`, or every one of these moves |
+| `--diagnostics-every`, compile canary (every 25 updates), `--adaptive-batch-every`, KL lr controller, team win-rate pulls (3 rollouts), `--capacity-*-every`, CUDA memory-trend horizon (25 updates) | UPDATES / rollouts | only while the rollout `n_steps × n_envs` is fixed (production 2048 × 48 = 98,304) — a sizing change of N must restate `n_steps` or `--rollout-target-samples`, or every one of these moves |
 | launcher restart, graceful restart, `--log-level periodic` lines | wall clock / episodes | n/a |
 
 ### WHICH readout is the critic — `--critic {shaped,winprob}` (default `winprob`)
@@ -323,10 +323,10 @@ at the production ~10/90 mix: `1.0` gives a 44/56 split, not 50/50.** Read `win_
 **The critic-ladder target levers are DELETED (deletion pass L2).** `--win-prob-lambda` / `--win-prob-lambda-truncated` (a λ-return BCE target), `--win-prob-rollout-target` / `-r` / `-mode` / `-weight` (R-rollout Monte-Carlo targets and their anchor weight) and `--win-prob-dense-aux` (25 dense end-of-battle targets) no longer exist: the win-prob BCE's target is always the episode's terminal outcome, and a checkpoint recorded with `dense_aux` ON is refused on every load (a training-only lever refuses a resume/fork naming the pin 475bd817). Why and where recoverable: [`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
 
 **`--fork-fraction <0..1>`** (default `0.0` = OFF and bit-identical — no module, no obs key, no
-callback, no row; **requires `--critic winprob` AND `--cf-records`** (the second on the python core only), and REFUSES
+callback, no row; **requires `--critic winprob`**, is UNAVAILABLE on `--env-core python` (the Python arm replayed from a `cf_records` ring that deletion pass L4 deleted; the arm itself goes in L5), and REFUSES
 `--win-prob-strata-weight`) is **THE FORK ARM**: the
 fraction of the buffer's decisions that are FORKED. At a contested decision the episode is replayed
-out of the `cf_records` ring to that turn and `--fork-branches` continuations — the policy's top-2
+out of the Rust core's finished input log to that turn and `--fork-branches` continuations — the policy's top-2
 plus ONE uniformly random legal action — are played to a terminal by the current policy; their
 transitions enter the SAME buffer, the fork step masked out of the policy term and the shared prefix
 counted once. It is the ONLY knob on this loss that adds STATES rather than re-pricing, re-weighting
@@ -334,9 +334,7 @@ or re-aiming the ones collection happened to visit — registered because the pr
 successors one move apart at **0.5169**, a coin, while a frozen-trunk refit on exactly this data
 reaches **0.6032**.
 
-🚨 **PASS `--cf-records-keep` WELL ABOVE THE DEFAULT 512.** The ring is pruned GLOBALLY while a
-production rollout finishes ~2,400 episodes, so at 512 the forks that resolve are the rollout's LATE
-ones — a SELECTION BIAS, not just a shortfall. Watch `fork/records_missing`. 🚨 **The cost is real, and the ROW BUDGET is what actually caps it:**
+(The Python arm's ring-cap hazard — `cf-records-keep`, `fork/records_missing` — is history; the Rust arm needs no ring, `designs/training/forks.md` §14.) 🚨 **The cost is real, and the ROW BUDGET is what actually caps it:**
 `fork/sim_steps_share` is `forks × branches × remaining decisions` over the trainee's own decisions,
 paid as a STALL between collection and `train()` (`fork/seconds`). Fraction 0.02 ASKS for ~2.1×, but
 the injection is capped at one buffer's worth of rows (~790 forks at the production shape), so above

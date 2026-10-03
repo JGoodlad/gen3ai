@@ -92,11 +92,9 @@ def battle_seed(key: Tuple[int, str, int]) -> List[int]:
 
 def draw_team(builder: Any, key: Tuple[int, str, int], side: str) -> str:
     """One ``yield_team()`` of ``builder`` with its draw RNG re-seeded for ``(key, side)``. The builder
-    must carry no per-yield state (``team_pfsp`` off, block episodes 1 — eval's own builders)."""
+    must carry no per-yield state (block episodes 1 — eval's own builders)."""
     if int(getattr(builder, "_block_episodes", 1) or 1) > 1:
         raise ValueError("draw_team: a block-episodes builder carries state across yields; eval builders do not")
-    if getattr(builder, "_team_pfsp", "off") != "off":
-        raise ValueError("draw_team: a team-PFSP builder carries state across yields; eval builders do not")
     builder._rng = random.Random(derived_seed(key, side))
     return builder.yield_team()
 

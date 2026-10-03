@@ -86,10 +86,8 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "multiple of this, under every collector (sync, rust, --async-rollout "
                              "waves); the multiples are global, so a resumed run saves next at the "
                              "first multiple above its resume step. Lower it "
-                             "when an out-of-process consumer reloads the newest checkpoint (the "
-                             "cf label producer): --cf-label-lag-steps divided by this is the "
-                             "label DUTY CYCLE the launch announces, and a value under 25%% is "
-                             "refused. A train-loop knob (not version-locked); pass it on every "
+                             "when an out-of-process consumer reloads the newest checkpoint. "
+                             "A train-loop knob (not version-locked); pass it on every "
                              "resume like --batch-size.")
     parser.add_argument("--n-epochs", type=int, default=5, help="PPO optimization epochs")
     parser.add_argument("--lr", type=float, default=3e-4, help="Initial learning rate (AdaptiveLRCallback adjusts from here)")
@@ -168,8 +166,7 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                         help="Run the OPTIONAL learner telemetry on every Nth PPO update only "
                              "(gen3_diagnostics_cadence_v1): the per-term noise-scale probe "
                              "(train/noise_scale_{ratio_,share_,}<group>, train/noise_per_term_ms), "
-                             "the grad-balance probe (grad/*, train/cf_grad_share, "
-                             "train/cf_evidential_grad_share), rank/* and edge/* + cell/*. A skipped "
+                             "the grad-balance probe (grad/*), rank/* and edge/* + cell/*. A skipped "
                              "update writes NONE of those tags (a gap, never a stale value); the "
                              "first update of every process always runs them. Loss terms, KL, clip "
                              "fractions, train/noise_scale (total) and train_ms stay every update. "

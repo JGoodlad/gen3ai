@@ -34,7 +34,7 @@ the line is *present*. `test_cli_flags_argparse_default_is_none` closes the REAC
 found **five live flags** in exactly that state (2026-08-22): `value_threat_inject` (ON in the gen-17
 production config) and `opp_intent_coef` (which the structural `opp_intent` is DERIVED from) — either
 of which would have made a flagless resume of PRODUCTION FATAL at `check_compatible` — plus
-`cf_evidential` / `cf_twin_heads` / `cf_shadow_critic`. Use `default=None` with `action=BoolFlag` for
+`cf_evidential` / `cf_twin_heads` / `cf_shadow_critic` (all three since deleted, deletion pass L4). Use `default=None` with `action=BoolFlag` for
 a bool, so `--no-<flag>` can still turn one off explicitly on a resume, and let `_resolve` supply the
 OFF value for a fresh run. **That gate asserts against the BUILT parser, not the source text** — a
 default can be an expression, so only the constructed object knows what it is.

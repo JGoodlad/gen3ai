@@ -8,8 +8,8 @@ the refusal and respawn budgets, the inference backend, buckets and lanes, and v
 ``build_collector`` acquires it all and returns a ``RustCollector`` ready for ``start()``.
 
 T2 SLOT GROUPS (F-LE-7): one group per ARCHITECTURE, in the route table's slot order, so a global T2
-slot id IS the plan's slot id: the policy routes (pool, each stable, the exploiter — two slots under
-``--exploiter-ladder``, F-LE-6) and then the trainee's slot(s); consecutive routes whose weights share
+slot id IS the plan's slot id: the policy routes (pool, each stable, the exploiter) and then the
+trainee's slot(s); consecutive routes whose weights share
 a state-dict signature and forward fingerprint share a group (and its compiled buckets), so the
 production pool + trainee is ONE group. Every template holds REAL weights (the trainee's own policy;
 a stable / exploiter checkpoint), as T2's parity gate asks.

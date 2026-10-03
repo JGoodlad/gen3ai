@@ -1,30 +1,25 @@
-"""The checkpoint CADENCE and the counterfactual DUTY-CYCLE refusal.
+"""The checkpoint CADENCE.
 
 The periodic checkpoint fires when `num_timesteps` crosses each multiple of a TOTAL-ENV-STEP
 interval (`constants.checkpoint_due`; the callback is `run_io._TrackingCheckpointCallback`, whose
 trigger tests live in `main/train_rl_agent_test.py`). It used to be SB3's `n_calls % save_freq`, a
-CALL count: a hardcoded 50000 read as "50k steps" for the whole R1 counterfactual work while at
-`--n-envs 48` it was 2,400,000 env steps against a 150,000-step label staleness bound — 93.75% of
-the labels expired on arrival (`ai_v9_29_rev1_0823`: 6 ingested against 255 expired in two hours).
+CALL count: a hardcoded 50000 read as "50k steps" while at `--n-envs 48` it was 2,400,000 env steps.
 
 Pinned here:
 
 * **THE INTERVAL.** Unset `--checkpoint-every-steps` = 2.4M total env steps (the N = 48 value) at
   every N; a value is taken as total env steps, as asked — no rounding to a call count.
-* **The guard**: with both halves of the cf label path on, the duty cycle is COMPUTED, PRINTED, and
-  refused below the floor — because a number nobody computes is exactly how this shipped.
+* A non-positive `--checkpoint-every-steps` is refused by the parser check.
 
-Fast and unmarked: the cadence half is pure arithmetic, and the guard half calls `resolve_config`
+Fast and unmarked: the cadence half is pure arithmetic, and the build half calls `resolve_config`
 in-process under `--use-bridge node` (which skips the rust binary's cargo build).
 """
 from __future__ import annotations
 
 import pytest
 
-from main.exit_codes import TrainExitCode
 from main.train.constants import (
-    CF_DUTY_CYCLE_FLOOR, DEFAULT_CHECKPOINT_EVERY_ENV_STEPS, cf_label_duty_cycle,
-    checkpoint_due, checkpoint_interval_env_steps,
+    DEFAULT_CHECKPOINT_EVERY_ENV_STEPS, checkpoint_due, checkpoint_interval_env_steps,
 )
 from main.train_rl_agent import build_parser
 
@@ -64,21 +59,6 @@ class TestBoundary:
                 saves += checkpoint_due(t, t + step, 2_400)
                 t += step
             assert saves == t // 2_400, step
-
-
-class TestDutyCycle:
-    def test_the_measured_starvation_reproduces(self):
-        duty = cf_label_duty_cycle(150_000, checkpoint_interval_env_steps(None))
-        assert duty == pytest.approx(0.0625)
-        assert duty < CF_DUTY_CYCLE_FLOOR
-
-    def test_the_fix_clears_the_floor(self):
-        duty = cf_label_duty_cycle(150_000, checkpoint_interval_env_steps(150_000))
-        assert duty == pytest.approx(1.0)
-
-    def test_never_expire_is_unbounded_not_zero_and_not_a_divide_by_zero(self):
-        assert cf_label_duty_cycle(0, 2_400_000) == float("inf")
-        assert cf_label_duty_cycle(None, 2_400_000) == float("inf")
 
 
 # ---------------------------------------------------------------------------
@@ -123,87 +103,10 @@ class TestDefaultPreservation:
 
 
 # ---------------------------------------------------------------------------
-# The guard
+# The parser check
 # ---------------------------------------------------------------------------
 
-_CF_ON = ["--use-bridge", "node", "--cf-records", "--win-prob-mode", "read_only",
-          "--cf-twin-heads", "--cf-twin-coef", "0.1"]
-
-
-def _resolve(*flags):
-    from main.train.config import resolve_config
-
-    p = build_parser()
-    # the python env core, typed: the cf ring runs only there (bare argv = rust since D2, 2026-10-02)
-    args = p.parse_args(["--steps", "1", "--env-core", "python", *flags])
-    resolve_config(args, p)
-    return args
-
-
-class TestDutyCycleGuard:
-    def test_a_starved_config_exits_FATAL_CONFIG(self):
-        with pytest.raises(SystemExit) as exc:
-            _resolve(*_CF_ON, "--n-envs", "48")
-        assert exc.value.code == int(TrainExitCode.FATAL_CONFIG), (
-            "restarting hits the identical config every time — the launcher must give up, not loop")
-
-    def test_the_refusal_message_carries_the_numbers_and_both_remedies(self, capsys):
-        with pytest.raises(SystemExit):
-            _resolve(*_CF_ON, "--n-envs", "48")
-        cap = capsys.readouterr()
-        msg = cap.out + cap.err
-        assert "150,000" in msg, "the lag bound"
-        assert "2,400,000" in msg, "the checkpoint interval in env steps"
-        assert "48" in msg, "the n_envs multiplier that hid it"
-        assert "6.2%" in msg or "6.3%" in msg, "the computed duty cycle"
-        assert "--checkpoint-every-steps" in msg and "--cf-label-lag-steps" in msg, "both remedies"
-
-    def test_a_healthy_config_PRINTS_the_duty_cycle_rather_than_staying_silent(self, capsys):
-        args = _resolve(*_CF_ON, "--n-envs", "48", "--checkpoint-every-steps", "150000")
-        msg = capsys.readouterr().out
-        assert "DUTY CYCLE" in msg and "100.0%" in msg
-        assert args.checkpoint_every_steps == 150_000
-
-    def test_debug_is_exempt_but_still_prints(self, capsys):
-        """A smoke's duty cycle is an artifact of the smoke; refusing one would make `--debug`
-        unusable for exercising this path at all."""
-        _resolve(*_CF_ON, "--debug", "--n-envs", "48")
-        msg = capsys.readouterr().out
-        assert "DUTY CYCLE" in msg and "the floor is not enforced" in msg
-
-    def test_a_run_with_no_cf_consumer_is_untouched(self, capsys):
-        """Off is off: no computation, no line, no refusal — the flagless production case."""
-        _resolve("--use-bridge", "node", "--n-envs", "48")
-        assert "DUTY CYCLE" not in capsys.readouterr().out
-
-    def test_records_off_is_untouched_even_with_a_live_coefficient(self, capsys):
-        """Without `--cf-records` this run rings nothing to label, so the duty cycle has no opinion.
-        Since gen3_supply_guard_v1 that combination is only LEGAL with an EXTERNAL supply declared
-        (the trainer-spawned producer would have nothing to label — refused, see below)."""
-        _resolve("--use-bridge", "node", "--win-prob-mode", "read_only",
-                 "--cf-winprob-coef", "0.5", "--n-envs", "48", "--cf-label-supply", "external")
-        assert "DUTY CYCLE" not in capsys.readouterr().out
-
-    def test_records_off_with_the_default_supply_is_refused_as_no_supply(self, capsys):
-        """`ai_v12_12_ladder_cflabels`' class: a live coefficient whose producer cannot exist."""
-        with pytest.raises(SystemExit) as exc:
-            _resolve("--use-bridge", "node", "--win-prob-mode", "read_only",
-                     "--cf-winprob-coef", "0.5", "--n-envs", "48")
-        assert exc.value.code == int(TrainExitCode.FATAL_CONFIG)
-        out = capsys.readouterr()
-        assert "[SUPPLY] FATAL" in out.out + out.err and "DUTY CYCLE" not in out.out + out.err
-
-    def test_the_winprob_consumer_is_guarded_too(self):
-        with pytest.raises(SystemExit) as exc:
-            _resolve("--use-bridge", "node", "--cf-records", "--win-prob-mode", "read_only",
-                     "--cf-winprob-coef", "0.5", "--n-envs", "48")
-        assert exc.value.code == int(TrainExitCode.FATAL_CONFIG)
-
-    def test_a_wider_staleness_bound_is_the_other_remedy(self, capsys):
-        """The message offers two fixes; both must actually work, or it is advice, not a remedy."""
-        _resolve(*_CF_ON, "--n-envs", "48", "--cf-label-lag-steps", "600000")
-        assert "DUTY CYCLE" in capsys.readouterr().out
-
+class TestIntervalRefusal:
     def test_a_nonpositive_interval_is_refused_by_the_parser_check(self):
         p = build_parser()
         args = p.parse_args(["--steps", "1", "--checkpoint-every-steps", "0"])

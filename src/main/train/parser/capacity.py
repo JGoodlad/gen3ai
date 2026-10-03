@@ -16,7 +16,7 @@ def add_capacity_flags(parser: argparse.ArgumentParser) -> None:
     # FEATURE VELOCITY. All TRAINING-only and, uniquely, not even a loss weight — nothing here
     # enters `loss` or writes `.grad`, so the policy's updates are bit-identical on or off. They
     # are recorded on `ModelVersion` for PROVENANCE and `_resolve`-inherited on a flagless resume
-    # (the `td_aux_coef` / `cf_records` class), never gated. Detail:
+    # (the `td_aux_coef` class), never gated. Detail:
     # `agents/training/capacity_telemetry.py` and `src/agents/training/CLAUDE.md`.
     parser.add_argument("--capacity-telemetry", "--capacity_telemetry", dest="capacity_telemetry",
                         action=BoolFlag, default=None,

@@ -1,5 +1,5 @@
-"""The RETIRED LEVERS (deletion pass L1, config v131; L2, config v132; L3, config v133; K2, TF32 — a
-metadata.json runtime knob, no config bump) — what a recorded config / a pickled zip that still names one
+"""The RETIRED LEVERS (deletion pass L1, config v131; L2, config v132; L3, config v133; L4, config v134;
+K2, TF32 — a metadata.json runtime knob, no config bump) — what a recorded config / a pickled zip that still names one
 does on every path that reads it.
 
 `model_version.retired_levers` is the ONE table; this file drives each consumer of it:
@@ -36,6 +36,7 @@ from agents.model.model_version.retired_levers import (
     LAST_COMMIT_L1,
     LAST_COMMIT_L2,
     LAST_COMMIT_L3,
+    LAST_COMMIT_L4,
     RETIRED,
     RETIRED_FIELD_FLAGS,
     check_no_retired_levers,
@@ -59,6 +60,13 @@ _OFF = {
     # L3 (config v133): distillation's recorded loss knobs and the search teacher's scan width
     "distill_target": "kl", "distill_topk": 1, "distill_gate": "none", "distill_gate_tau": 0.0,
     "distill_beta": 1.0, "teacher_scan_limit": 60,
+
+    # L4 (config v134): the cf / Q head toggles, their coefficients, the ring tap and its inert knobs
+    "cf_evidential": False, "cf_twin_heads": False, "cf_shadow_critic": False,
+    "q_winprob_mode": "none", "cf_records": False, "cf_winprob_coef": 0.0,
+    "cf_evidential_coef": 0.0, "cf_twin_coef": 0.0, "cf_shadow_coef": 0.0, "q_winprob_coef": 0.0,
+    "q_winprob_onpolicy_coef": 0.0, "cf_records_keep": 512, "cf_head_only": True,
+    "cf_label_lag_steps": 150_000, "cf_label_likelihood": "binomial", "cf_evidential_reg": 1e-3,
 }
 
 
@@ -92,7 +100,10 @@ def test_a_v130_config_migrates_to_the_current_schema_and_stays_constructible():
 @pytest.mark.parametrize("field,value", [("use_popart", True), ("value_dist_mode", "shaping"),
                                          ("value_dist_mode", "read_only"),
                                          ("value_from_dist", True),
-                                         ("value_true_team", True), ("dense_aux", True)])
+                                         ("value_true_team", True), ("dense_aux", True),
+                                         ("cf_evidential", True), ("cf_twin_heads", True),
+                                         ("cf_shadow_critic", True),
+                                         ("q_winprob_mode", "read_only")])
 def test_a_STRUCTURAL_lever_recorded_ON_is_refused_on_every_load(field, value):
     cfg = {**_current_config(), field: value}
     with pytest.raises(ModelVersionError, match=RETIRED_FIELD_FLAGS[field].lstrip("-")):
@@ -107,7 +118,11 @@ def test_a_STRUCTURAL_lever_recorded_ON_is_refused_on_every_load(field, value):
                                          ("win_prob_rollout_weight", 64.0),
                                          ("win_prob_dense_aux", 0.1),
                                          ("distill_target", "action"), ("distill_gate", "advantage"),
-                                         ("teacher_scan_limit", 200)])
+                                         ("teacher_scan_limit", 200),
+                                         ("cf_records", True), ("cf_winprob_coef", 1.0),
+                                         ("cf_evidential_coef", 0.5), ("cf_twin_coef", 2.0),
+                                         ("cf_shadow_coef", 0.75), ("q_winprob_coef", 0.1),
+                                         ("q_winprob_onpolicy_coef", 0.05)])
 def test_a_TRAINING_ONLY_lever_recorded_ON_still_LOADS_it_just_cannot_resume(field, value):
     """A frozen forward (an eval opponent, a pool snapshot, the prober) never reads these, so the
     migration pops them silently — the refusal belongs to the resume / fork path below."""
@@ -199,6 +214,93 @@ def test_the_OFF_boundary_of_each_L3_lever_is_not_a_finding():
     assert [r.field for r in retired_lever_evidence({"teacher_scan_limit": 61})] == [
         "teacher_scan_limit"]
     assert [r.field for r in retired_lever_evidence({"distill_target": "action"})] == ["distill_target"]
+
+
+# ----------------------------------------------------------------------------- L4 (config v134)
+
+_L4_STRUCTURAL = [("cf_evidential", True), ("cf_twin_heads", True), ("cf_shadow_critic", True),
+                  ("q_winprob_mode", "read_only")]
+_L4_TRAINING_ONLY = [("cf_records", True), ("cf_winprob_coef", 1.0), ("cf_evidential_coef", 0.5),
+                     ("cf_twin_coef", 2.0), ("cf_shadow_coef", 0.75), ("q_winprob_coef", 0.1),
+                     ("q_winprob_onpolicy_coef", 0.05)]
+_L4_INERT = {"cf_records_keep": 64, "cf_head_only": False, "cf_label_lag_steps": 4_242,
+             "cf_label_likelihood": "bce", "cf_evidential_reg": 0.25}
+
+
+@pytest.mark.parametrize("field,value", _L4_STRUCTURAL)
+def test_an_L4_STRUCTURAL_toggle_is_refused_on_every_load_naming_unit_version_and_pin(field, value):
+    """The refusal text states the deletion unit, the config version and the pin that still has the head."""
+    with pytest.raises(ModelVersionError) as ei:
+        _migrate_config({**_current_config(), field: value})
+    msg = str(ei.value)
+    assert "deletion pass L4, config v134" in msg
+    assert RETIRED_FIELD_FLAGS[field].lstrip("-") in msg and LAST_COMMIT_L4[:8] in msg
+
+
+@pytest.mark.parametrize("field,value", _L4_STRUCTURAL)
+def test_an_L4_STRUCTURAL_toggle_is_a_structural_row_and_its_OFF_value_is_not_evidence(field, value):
+    row = next(r for r in RETIRED if r.field == field)
+    assert row.structural is True and row.unit == "L4" and row.version == 134
+    assert row.last_commit == LAST_COMMIT_L4
+    assert [r.field for r in retired_lever_evidence({field: value}, structural_only=True)] == [field]
+    assert retired_lever_evidence({field: _OFF[field]}) == []
+    assert retired_lever_evidence({field: None}) == []
+    assert retired_lever_evidence({}) == []
+
+
+@pytest.mark.parametrize("field,value", _L4_TRAINING_ONLY)
+def test_an_L4_TRAINING_ONLY_lever_still_LOADS_but_refuses_a_resume_naming_flag_and_L4_pin(
+        tmp_path, field, value):
+    """Loads (a frozen forward never reads a loss coefficient), refuses a resume / fork. Both halves, so
+    reverting the row to `structural` (breaks the first) or dropping it (breaks the second) fails here."""
+    out = _migrate_config({**_current_config(), field: value})
+    assert field not in out
+    ModelVersion(**out)
+    run = _write(tmp_path, **{field: value})
+    with pytest.raises(RetiredLeverCheckpointError) as ei:
+        check_no_retired_levers(str(run / "model_config.json"))
+    msg = str(ei.value)
+    assert RETIRED_FIELD_FLAGS[field] in msg and LAST_COMMIT_L4[:8] in msg and "--pin-commit" in msg
+    assert ei.value.last_commit == LAST_COMMIT_L4
+
+
+@pytest.mark.parametrize("field,value", _L4_STRUCTURAL)
+def test_an_L4_STRUCTURAL_toggle_also_refuses_a_resume_naming_the_L4_pin(tmp_path, field, value):
+    run = _write(tmp_path, **{field: value})
+    with pytest.raises(RetiredLeverCheckpointError) as ei:
+        check_no_retired_levers(str(run / "model_config.json"))
+    assert RETIRED_FIELD_FLAGS[field] in str(ei.value) and ei.value.last_commit == LAST_COMMIT_L4
+
+
+def test_the_L4_INERT_fields_alone_are_not_a_finding_and_are_popped_silently():
+    """The ring's cap, the head-only switch, the label staleness bound, the likelihood form and the
+    evidential KL weight are read only by the retired terms, so at any value without one they say
+    nothing — but `ModelVersion` has no such field any more, so the migration must still pop them."""
+    assert retired_lever_evidence(_L4_INERT) == []
+    out = _migrate_config({**_current_config(), **_L4_INERT})
+    assert not (set(out) & set(_L4_INERT))
+    ModelVersion(**out)
+
+
+def test_every_L4_field_is_in_RETIRED_FIELDS_and_off_ModelVersion():
+    import dataclasses
+
+    l4 = {f for f, _ in _L4_STRUCTURAL} | {f for f, _ in _L4_TRAINING_ONLY} | set(_L4_INERT)
+    assert len(l4) == 16 and l4 <= set(RETIRED_FIELDS)
+    assert not (l4 & {f.name for f in dataclasses.fields(ModelVersion)}), \
+        "an L4 field is back on ModelVersion — its row would pop a LIVE value"
+
+
+def test_the_OFF_boundary_of_each_L4_coefficient_is_not_a_finding():
+    for field in ("cf_winprob_coef", "cf_evidential_coef", "cf_twin_coef", "cf_shadow_coef",
+                  "q_winprob_coef", "q_winprob_onpolicy_coef"):
+        for raw in ({}, {field: 0.0}, {field: None}):
+            assert retired_lever_evidence(raw) == [], (field, raw)
+        assert [r.field for r in retired_lever_evidence({field: 1e-6})] == [field]
+    assert retired_lever_evidence({"cf_records": False}) == []
+    assert [r.field for r in retired_lever_evidence({"cf_records": True})] == ["cf_records"]
+    for off in ("none", "", None):
+        assert retired_lever_evidence({"q_winprob_mode": off}) == []
 
 
 def test_an_L2_STRUCTURAL_refusal_names_its_own_unit_and_version():
@@ -332,9 +434,17 @@ def _pre_deletion_zip(tmp_path):
     model, _args, _pk = build_fresh_model(seed=3)
     fek = dict(model.policy_kwargs["features_extractor_kwargs"])
     fek.update(value_dist_mode="none", value_dist_bins=0, value_dist_vmin=0.0, value_dist_vmax=0.0,
-               value_true_team=False, dense_aux=False)
+               value_true_team=False, dense_aux=False,
+               cf_evidential=False, cf_twin_heads=False, cf_shadow_critic=False,
+               q_winprob_mode="none")
     model.policy_kwargs = {**model.policy_kwargs, "features_extractor_kwargs": fek,
                            "use_popart": False, "value_from_dist": False}
+    # L4: the cf / Q head toggles ride in `features_extractor_kwargs` (set just above), and the trainer's
+    # cf hyperparameters pickled as plain instance attributes like L3's.
+    for _name, _val in (("cf_winprob_coef", 0.0), ("cf_evidential_coef", 0.0), ("cf_twin_coef", 0.0),
+                        ("cf_shadow_coef", 0.0), ("q_winprob_coef", 0.0),
+                        ("q_winprob_onpolicy_coef", 0.0), ("cf_records", False)):
+        setattr(model, _name, _val)
     # L3: every pre-deletion trainer pickled the distillation / search-teacher hyperparameters it
     # had set on the model as plain instance attributes; a load must tolerate them (they are inert).
     for _name, _val in (("distill_coef", 0.0), ("distill_value_coef", 0.0), ("distill_target", "kl"),
@@ -363,7 +473,8 @@ def test_a_checkpoint_written_before_the_deletion_still_loads_through_the_loader
     from main.prober.model import sanitized_load_custom_objects
     custom, dropped = sanitized_load_custom_objects(zip_path)
     assert {"use_popart", "value_from_dist", "value_dist_mode", "value_true_team",
-            "dense_aux"} <= set(dropped)
+            "dense_aux", "cf_evidential", "cf_twin_heads", "cf_shadow_critic",
+            "q_winprob_mode"} <= set(dropped)
     assert MaskablePPO.load(zip_path, env=None, device="cpu", custom_objects=custom) is not None
     # the pickled L3 hyperparameters ride in as inert instance attributes — loading must not choke
     assert getattr(model, "search_teacher_coef", 0.0) == 0.0
@@ -399,8 +510,11 @@ def test_a_pre_deletion_checkpoint_that_had_a_lever_ON_is_REFUSED_not_loaded(tmp
         historical_load_kwargs(str(zip_path) + ".zip")
 
 
-@pytest.mark.parametrize("dead", ["value_true_team", "dense_aux"])
-def test_a_pre_deletion_checkpoint_that_had_an_L2_structural_lever_ON_is_REFUSED(tmp_path, dead):
+@pytest.mark.parametrize("dead,on", [("value_true_team", True), ("dense_aux", True),
+                                     ("cf_evidential", True), ("cf_twin_heads", True),
+                                     ("cf_shadow_critic", True), ("q_winprob_mode", "read_only")])
+def test_a_pre_deletion_checkpoint_that_had_an_L2_or_L4_structural_lever_ON_is_REFUSED(
+        tmp_path, dead, on):
     """The pickled extractor kwarg recorded ON names a module in the state_dict the surviving
     extractor has no home for — refused with the re-read diagnosis, never a bare TypeError."""
     from agents.model.snapshot import historical_load_kwargs
@@ -408,7 +522,7 @@ def test_a_pre_deletion_checkpoint_that_had_an_L2_structural_lever_ON_is_REFUSED
 
     model, _args, _pk = build_fresh_model(seed=3)
     fek = dict(model.policy_kwargs["features_extractor_kwargs"])
-    fek[dead] = True
+    fek[dead] = on
     model.policy_kwargs = {**model.policy_kwargs, "features_extractor_kwargs": fek}
     zip_path = tmp_path / f"{dead}_on"
     model.save(str(zip_path))

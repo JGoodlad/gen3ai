@@ -46,6 +46,12 @@ L3 is the same shape for most of its flags: `--distill-coef`, `--distill-teacher
 `--opd-coef` and the rest were never recorded fields either. Only the distillation TARGET / GATE knobs
 and `teacher_scan_limit` were, so a run that distilled with the default KL target leaves no trace in
 `model_config.json`; its recorded argv fails argparse on an unpinned resume instead.
+
+L4 is the same shape: the cf / Q COEFFICIENTS, the ring tap `cf_records` and the four head toggles are
+recorded fields (tabled below, the toggles as STRUCTURAL); `--team-pfsp` / `--team-pfsp-cap` /
+`--team-pfsp-floor`, `--exploiter-ladder` and its three knobs, `--cf-label-supply`, `--cf-producer-args`
+and `--cf-supply-starve-{cycles,minutes}` were NEVER recorded, so a run that used them leaves no trace in
+`model_config.json` (its recorded argv fails argparse on an unpinned resume instead).
 """
 from __future__ import annotations
 
@@ -90,6 +96,16 @@ LAST_COMMIT_L3 = "615a764fdb7e05abfcc1575797e2c83eb61c3ea1"
 
 #: The first config version written WITHOUT the L3 fields.
 L3_DELETION_VERSION = 133
+
+
+#: The last commit whose tree still has the L4 levers (the counterfactual TRAINING half — the reconstruction
+#: ring tap, the label buffer and every consumer term, the four cf / Q head toggles — plus team-PFSP and the
+#: exploiter ladder) — the tip when deletion unit L4 branched, which is the commit that shipped L3
+#: (`cbd20111`). Any commit at or before it can resume a run that used one.
+LAST_COMMIT_L4 = "cbd20111aae48d6a53f6305166560f4c9acb473a"
+
+#: The first config version written WITHOUT the L4 fields.
+L4_DELETION_VERSION = 134
 
 
 class RetiredLever(NamedTuple):
@@ -206,6 +222,47 @@ RETIRED: tuple = (
                                  is not None else 60) != 60, False,
                  "teacher_scan_limit != 60 (a configured search-teacher selection scan width)",
                  LAST_COMMIT_L3, "L3", L3_DELETION_VERSION),
+
+    # ---- deletion pass L4 (config v134) -----------------------------------------------------
+    # The counterfactual TRAINING half. The FOUR head toggles are STRUCTURAL (their ON value built
+    # modules in the state_dict that the surviving extractor has no home for); the coefficients and the
+    # ring tap are training-only. `--team-pfsp`, `--exploiter-ladder`, `--cf-label-supply` and
+    # `--cf-producer-args` were never recorded fields — see the module docstring.
+    RetiredLever("cf_evidential", "cf-evidential", _truthy("cf_evidential"), True,
+                 "cf_evidential=True (the evidential Beta head: a CfEvidentialHead in the state_dict)",
+                 LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
+    RetiredLever("cf_twin_heads", "cf-twin-heads", _truthy("cf_twin_heads"), True,
+                 "cf_twin_heads=True (the twin win-prob heads B / C: two extra WinProbHeads in the "
+                 "state_dict)", LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
+    RetiredLever("cf_shadow_critic", "cf-shadow-critic", _truthy("cf_shadow_critic"), True,
+                 "cf_shadow_critic=True (the passive shadow critic: a ShadowValueHead in the state_dict)",
+                 LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
+    RetiredLever("q_winprob_mode", "q-winprob-mode",
+                 lambda raw: str(raw.get("q_winprob_mode", "none") or "none") != "none", True,
+                 "q_winprob_mode != 'none' (the per-action win-prob head: a QWinProbHead in the "
+                 "state_dict)", LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
+    RetiredLever("cf_records", "cf-records", _truthy("cf_records"), False,
+                 "cf_records=True (the bridge reconstruction-record ring tap, <run>/cf_records/)",
+                 LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
+    RetiredLever("cf_winprob_coef", "cf-winprob-coef", _nonzero("cf_winprob_coef"), False,
+                 "cf_winprob_coef != 0 (counterfactual win-prob grounding of the win-prob head)",
+                 LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
+    RetiredLever("cf_evidential_coef", "cf-evidential-coef", _nonzero("cf_evidential_coef"), False,
+                 "cf_evidential_coef != 0 (the evidential Beta head's counterfactual NLL)",
+                 LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
+    RetiredLever("cf_twin_coef", "cf-twin-coef", _nonzero("cf_twin_coef"), False,
+                 "cf_twin_coef != 0 (the twin win-prob heads' counterfactual folds)",
+                 LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
+    RetiredLever("cf_shadow_coef", "cf-shadow-coef", _nonzero("cf_shadow_coef"), False,
+                 "cf_shadow_coef != 0 (the shadow critic's mc_return regression)",
+                 LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
+    RetiredLever("q_winprob_coef", "q-winprob-coef", _nonzero("q_winprob_coef"), False,
+                 "q_winprob_coef != 0 (the per-action head's counterfactual likelihood)",
+                 LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
+    RetiredLever("q_winprob_onpolicy_coef", "q-winprob-onpolicy-coef",
+                 _nonzero("q_winprob_onpolicy_coef"), False,
+                 "q_winprob_onpolicy_coef != 0 (the per-action head's taken-action fallback)",
+                 LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
 )
 
 #: Recorded fields that left the config but are INERT without one of the levers above (an atom count,
@@ -218,7 +275,12 @@ INERT_RETIRED_FIELDS: tuple = ("value_dist_bins", "value_dist_vmin", "value_dist
                                "win_prob_rollout_mode",
                                # L3: the top-K / gate threshold / AWR temperature are read only by the
                                # (retired) action-form target and gate above.
-                               "distill_topk", "distill_gate_tau", "distill_beta")
+                               "distill_topk", "distill_gate_tau", "distill_beta",
+                               # L4: the ring's cap, the head-only switch, the label staleness bound and
+                               # the likelihood form, and the evidential KL weight are read only by the
+                               # (retired) cf terms above.
+                               "cf_records_keep", "cf_head_only", "cf_label_lag_steps",
+                               "cf_label_likelihood", "cf_evidential_reg")
 
 #: Every field `_migrate_config` pops, however its value reads.
 RETIRED_FIELDS: tuple = tuple(r.field for r in RETIRED) + INERT_RETIRED_FIELDS

@@ -18,7 +18,7 @@ therefore every `state_dict` key — exactly where it has always been:
     features_extractor.py  `Gen3FeaturesExtractor` — the class, and `forward`
 
 `forward` lives HERE, on the concrete class, deliberately: both compile flags patch the BOUND
-`fe.forward`, `cf_terms` calls `type(fe).forward` for its always-eager pass, and
+`fe.forward`, the capacity probe calls `type(fe).forward` for its always-eager pass, and
 `instrumented_ppo_test` ASSIGNS `type(fe).forward` — an attribute defined on a base would be
 shadowed by that assignment and never restored to where it came from.
 
@@ -117,15 +117,11 @@ from agents.model.belief_heads import (  # noqa: F401
     SpreadBelief, _BELIEF_SUPERVISION_KEYS, _EV_DELTA_SCALE, _HP_PRESENCE_OFF_LOGIT,
     _REVEAL_LOGIT, mask_typeless_hp,
 )
-from agents.model.aux_value_heads import (  # noqa: F401
-    CfEvidentialHead, ShadowValueHead, WinProbHead,
-)
+from agents.model.aux_value_heads import WinProbHead  # noqa: F401
 from agents.model.pointer_head import (  # noqa: F401
     EntityMoveSeats, PointerNativeActionHead, _request_order_move_tokens,
 )
-from agents.model.q_winprob_head import (  # noqa: F401
-    Q_WINPROB_MODES, QWinProbHead,
-)
+from agents.model.q_winprob_head import QWinProbHead  # noqa: F401
 from agents.model.value_readouts import UnifiedValueReadout  # noqa: F401
 
 

@@ -164,7 +164,6 @@ ARGVS: dict[str, list[str]] = {
     "adaptive_batch_every_min": ["--adaptive-batch", "total", "--adaptive-batch-every", "0"],
     "exploiter_excludes_self_play": ["--exploiter", "models/t", "--self-play"],
     "pfsp_scale_needs_self_play": ["--pfsp-scale", "1.0"],
-    "team_pfsp_needs_self_play_or_exploiter": ["--team-pfsp", "var"],
     "supply_starve_cycles_parses": ["--supply-starve-cycles", "no_such_lever=3"],
     "exploiter_keep_bots_needs_exploiter": ["--exploiter-keep-bots"],
     "warmstart_consensus_needs_exploiter": ["--warmstart-consensus", "models/a,models/b"],
@@ -184,24 +183,10 @@ ARGVS: dict[str, list[str]] = {
     "exploiter_temp_ratchet_start_above_end": [
         "--exploiter", "models/t", "--exploiter-temp-start", "0.5",
         "--exploiter-temp-mode", "ratchet", "--exploiter-temp-end", "1.0"],
-    "exploiter_ladder_needs_exploiter": ["--exploiter-ladder", "auto:2"],
-    "exploiter_ladder_gate_range": ["--exploiter", "models/t", "--exploiter-ladder", "auto:2",
-                                    "--exploiter-ladder-gate", "1.5"],
-    "exploiter_ladder_window_min": ["--exploiter", "models/t", "--exploiter-ladder", "auto:2",
-                                    "--exploiter-ladder-window", "0"],
-    "exploiter_ladder_rungs_min": ["--exploiter", "models/t", "--exploiter-ladder", "auto:2",
-                                   "--exploiter-ladder-rungs", "0"],
-    "exploiter_ladder_rungs_min_no_ladder": ["--exploiter-ladder-rungs", "0"],
     "exploiter_temp_ratchet_needs_start": ["--exploiter", "models/t",
                                            "--exploiter-temp-mode", "ratchet"],
     "fork_lr_is_resume_only": ["--fork-lr", "1e-5"],
     "fork_lr_freeze_needs_fork_lr": ["--fork-lr-freeze"],
-    "cf_winprob_coef_needs_win_prob_mode": ["--cf-winprob-coef", "0.1", "--win-prob-mode", "none"],
-    "cf_evidential_coef_needs_head": ["--cf-evidential-coef", "0.1", "--no-cf-evidential"],
-    "cf_twin_coef_needs_heads": ["--cf-twin-coef", "0.1", "--no-cf-twin-heads"],
-    "cf_twin_heads_need_win_prob_mode": ["--cf-twin-heads", "--win-prob-mode", "none"],
-    "cf_shadow_coef_needs_critic": ["--cf-shadow-coef", "0.1", "--no-cf-shadow-critic"],
-    "q_winprob_coef_needs_mode": ["--q-winprob-coef", "0.1", "--q-winprob-mode", "none"],
     # ---- gen3_winprob_critic_mode_v1. `_WP` is the composition `--critic winprob` REQUIRES, so a
     # row below trips its own rule rather than the three "you did not pass the reward flags" ones.
     # The three requirement rows themselves each OMIT exactly one member of `_WP`.
@@ -211,15 +196,13 @@ ARGVS: dict[str, list[str]] = {
     # exactly the configuration it refuses.
     "winprob_strata_needs_the_winprob_critic": [*_SH, "--win-prob-strata-weight", "1.0"],
     # gen3_fork_v1 — the fork arm's three: a treatment that means nothing without the critic it
-    # re-aims, one that resolves nothing without the record ring, and the strata weight (a branch
-    # row has no material margin to stratify on).
+    # re-aims, one the Python core can no longer run (its replay ring, `--cf-records`, was deleted
+    # with the cf training half — deletion pass L4), and the strata weight (a branch row has no
+    # material margin to stratify on).
     "fork_needs_the_winprob_critic": [*_SH, "--fork-fraction", "0.02"],
-    "fork_needs_cf_records": _WP + [*_PY, "--fork-fraction", "0.02"],
-    # gen3_supply_guard_v1 — a live cf-buffer coefficient whose (trainer-spawned) producer would
-    # have no ring to label: `_WP` does not carry --cf-records.
-    "cf_consumer_needs_label_supply": _WP + ["--cf-winprob-coef", "0.5"],
+    "fork_python_core_unavailable": _WP + [*_PY, "--fork-fraction", "0.02"],
     "fork_refuses_strata_weight":
-        _WP + ["--cf-records", "--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"],
+        _WP + ["--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"],
     "rnd_variants_need_the_base_rnd_head": ["--ridealong-rnd-variants", "all"],
     "winprob_critic_refuses_draw_penalty": ["--critic", "winprob",
                                             "--terminal-indicator", "--victory-value", "1.0",
@@ -230,11 +213,7 @@ ARGVS: dict[str, list[str]] = {
     "winprob_critic_needs_unit_victory_value": ["--critic", "winprob",
                                                 "--terminal-indicator", "--victory-value", "7.5",
                                                 "--draw-penalty", "0"],
-    "cf_records_needs_bridge": ["--cf-records", "--use-bridge", "off"],
     "obs_source_core_needs_rust_bridge": ["--obs-source", "core", "--use-bridge", "node"],
-    "cf_label_duty_cycle_floor": ["--cf-records", "--cf-winprob-coef", "0.1",
-                                  "--win-prob-mode", "read_only", "--cf-label-lag-steps", "10",
-                                  "--n-envs", "48"],
     "move_belief_hidden_needs_species_belief": ["--move-belief-mode", "both",
                                                 "--opp-belief-aux-coef", "0"],
     "damage_op_needs_revealed_move_belief": [*OFF, "--damage-op", "--move-belief-mode", "off",
@@ -281,7 +260,7 @@ ARGVS: dict[str, list[str]] = {
                                                 "--no-compile-opponents"],
     # M5 Lane G — `--env-core rust`
     "env_core_rust_needs_the_winprob_critic": ["--env-core", "rust", "--critic", "shaped"],
-    "env_core_rust_unported_paths": ["--env-core", "rust", *_WP, "--team-pfsp", "var"],
+    "env_core_rust_unported_paths": ["--env-core", "rust", *_WP, "--async-rollout"],
     "env_core_flags_need_the_rust_core": [*_PY, "--rollout-trigger", "window"],
     # gen3_fork_rust_v1 — the fork arm on the Rust core (forks.md §14.7)
     "fork_rust_needs_keyed_opponent_sampling": ["--env-core", "rust", *_WP, "--fork-fraction", "0.02",

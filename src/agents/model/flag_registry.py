@@ -105,7 +105,7 @@ class Family(str, Enum):
     `Klass` already separates the reward / training-coefficient / runtime families from the
     architecture: they are `training_coef` and `runtime`, and the guard drops them by class. The one
     split `Klass` cannot express is inside `structural`: the CRITIC READOUTS (`win_prob_mode`, the
-    four counterfactual heads, `q_winprob_mode`) build modules exactly the
+    ride-along heads) build modules exactly the
     way an entity seat does, but they are the quantity an experiment is deliberately CHANGING —
     `--critic winprob` implies one of them — so a guard that demanded they
     match the production mirror would refuse every critic arm it exists to protect.
@@ -437,83 +437,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="requires spread_belief + damage_op. Forward-math only (no state_dict "
                    "change): the version gate is the ONLY thing rejecting a mismatched resume.",
               requires=("spread_belief", "damage_op")),
-    ModelFlag("cf_evidential", False, Tier.CLI, Klass.STRUCTURAL, 98,
-              "the EVIDENTIAL Beta readout over P(win|state) off value_pooled — (α, β) via "
-              "softplus+1, trained by the Beta-Binomial marginal likelihood of the counterfactual "
-              "factory's rollout COUNTS",
-              note="IN the registry because it is a `Gen3FeaturesExtractor` constructor kwarg that "
-                   "builds a MODULE — the win_prob_mode precedent exactly, and "
-                   "the registry's declared scope is 'the things that pass through "
-                   "build_extractor_arch_kwargs'. Its two coefficients (--cf-evidential-coef / "
-                   "--cf-evidential-reg) are NOT: they are training-only loss weights in the "
-                   "--td-aux-coef / --cf-winprob-coef class, set on the MODEL rather than the "
-                   "extractor. Stronger than its two precedents in one way: there is no "
-                   "read_only/shaping split, because the head's input is detached "
-                   "UNCONDITIONALLY — it is a pure supervised readout that feeds nothing forward "
-                   "and is not even CALLED by the forward pass. So OFF is byte-identical AND "
-                   "ON-at-coef-0 is bit-identical in pi/vf (it is built LAST, so no earlier "
-                   "module's init RNG draw moves). No `requires`: it reads `value_pooled`, which "
-                   "is unconditional.",
-              family=Family.CRITIC),
-    ModelFlag("cf_twin_heads", False, Tier.CLI, Klass.STRUCTURAL, 99,
-              "the TWIN win-prob heads B and C off value_pooled — B trained on the cf-labelled "
-              "states with SINGLE-OUTCOME labels, C on the same states with TIGHT-MC labels, both "
-              "additionally carrying head A's on-policy BCE",
-              note="The owner-authorized amendment to the signed R1 pre-registration (ledger "
-                   "2026-08-22 evening, 'Three owner sign-offs' item 3): the arm's primary "
-                   "comparison becomes a WITHIN-RUN paired head difference instead of a run-vs-run "
-                   "one, so B-A isolates coverage and C-B isolates pure variance reduction on an "
-                   "identical trunk over identical states. IN the registry for the "
-                   "`cf_evidential`/`win_prob_mode` reason: a Gen3FeaturesExtractor constructor "
-                   "kwarg that builds MODULES. Its coefficient (--cf-twin-coef) is NOT — a "
-                   "training-only loss weight in the --td-aux-coef class. Head-only ALWAYS in v1 "
-                   "(both twins read a DETACHED value_pooled in every term), so this measures the "
-                   "LABEL effect on a trunk frozen with respect to them; trunk exposure stays a "
-                   "cross-run question. Never called by the forward, built LAST: OFF byte-identical, "
-                   "ON-at-coef-0 bit-identical in pi/vf. No `requires` on cf_evidential (orthogonal "
-                   "readouts of the same unconditional value_pooled). It DOES require "
-                   "`win_prob_mode`, and that is declared rather than left to the CLI: head A is "
-                   "`win_head`, so `--win-prob-mode none` leaves the factorial with no control arm "
-                   "— and `checkargs` walks this column, so without it an operator validating a "
-                   "recorded launcher_command gets exit 0 on a command the child then refuses, "
-                   "which is the launch-crash-fix loop checkargs exists to end.",
-              requires=("win_prob_mode",),
-              family=Family.CRITIC),
-    ModelFlag("cf_shadow_critic", False, Tier.CLI, Klass.STRUCTURAL, 99,
-              "the passive SHADOW CRITIC off value_pooled — a value twin trained on tight-MC "
-              "`mc_return` labels (the run's own return), which never "
-              "computes an advantage and never enters GAE",
-              note="The staged PROMOTION PATH for critic surgery, not the surgery: swapping the "
-                   "live critic for an MC-grounded one is a critic ROUTE change and owes the C4 "
-                   "offline gate, so this head accumulates the evidence (shadow-vs-live-V "
-                   "divergence on the same minibatch states) as a published number instead of an "
-                   "argument. The `pubval` structural precedent. Detached ALWAYS — there is no "
-                   "read_only/shaping split — and never called by the forward, so OFF is "
-                   "byte-identical and ON-at-coef-0 is bit-identical in pi/vf. Its coefficient "
-                   "(--cf-shadow-coef) is training-only, the --td-aux-coef class. No `requires`: it "
-                   "reads value_pooled, which is unconditional.",
-              family=Family.CRITIC),
-    ModelFlag("q_winprob_mode", "none", Tier.CLI, Klass.STRUCTURAL, 107,
-              "the PER-ACTION win-probability readout over the pointer head's own action tokens "
-              "(none|read_only) — one forward, eleven P(win|s,a): the amortized one-ply search "
-              "leaf",
-              note="E5 step 1 (ledger 229e9f1 / 5edbd05). STRUCTURAL in the win_prob_mode mould — "
-                   "a Gen3FeaturesExtractor constructor kwarg that builds a MODULE, so its params "
-                   "are the state_dict delta and a bool-ish compare in check_compatible is the "
-                   "only thing that can reject a resume that flips it. TWO values, not three: "
-                   "there is deliberately NO `shaping`, because a per-action readout carrying a "
-                   "COUNTERFACTUAL label is a strictly larger leak surface than a per-state one, "
-                   "so trunk exposure is a later decision that owes its own gate. `read_only` "
-                   "detaches EVERY input (context, tokens and cells alike), so pi/vf are "
-                   "bit-identical at any coefficient; `none` does not build the module at all, so "
-                   "OFF is byte-for-byte the baseline and no earlier module's init RNG draw moves "
-                   "(built LAST). Unlike the four cf readouts the forward DOES call it — eleven Q "
-                   "values are only useful if the forward that chose the action can publish them. "
-                   "Its two coefficients (--q-winprob-coef, --q-winprob-onpolicy-coef) are NOT "
-                   "here: training-only loss weights in the --cf-winprob-coef class. No "
-                   "`requires` — it reads `value_pooled` and `stash.pointer_inputs`, both "
-                   "unconditional.",
-              family=Family.CRITIC),
     ModelFlag("ridealong_ensemble", 0, Tier.CLI, Klass.STRUCTURAL, 126,
               "K DETACHED win-prob heads on value_pooled (bootstrap masks + randomized priors): "
               "their disagreement is V's EPISTEMIC uncertainty (0 = off)",

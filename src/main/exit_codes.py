@@ -16,11 +16,11 @@ class TrainExitCode(IntEnum):
                                  # class as FATAL_CONFIG: a restart resumes the checkpoint that
                                  # produced it and replays the same update, so a persistent NaN
                                  # would crash-loop until the budget runs out. The launcher STOPS.
-    FATAL_SUPPLY = 5             # a LIVE coefficient's EXTERNAL SUPPLY is dead or starved in flight
-                                 # (`SupplyStarvedError` — e.g. `--cf-winprob-coef` > 0 and no cf
-                                 # label accepted for N cycles, or the label producer exited). A
-                                 # restart would train the same run on the same missing supply, so
-                                 # the launcher STOPS and names the supplier.
+    FATAL_SUPPLY = 5             # a LIVE lever's SUPPLY is dead or starved in flight
+                                 # (`SupplyStarvedError` — e.g. `--self-play` with a pool that never
+                                 # seeds, or `--pfsp-scale` with no sentinel win-rate measured for N
+                                 # cycles). A restart would train the same run on the same missing
+                                 # supply, so the launcher STOPS and names the supplier.
     FATAL_CUDA_LEAK = 6          # the learner's CUDA memory TREND stopped the run (`CudaMemoryLeakError`,
                                  # K6's memory half): a SUSTAINED growth of live CUDA memory projected
                                  # an OOM inside the declared horizon, and the trainer checkpointed
@@ -58,11 +58,12 @@ class FatalConfigError(RuntimeError):
 
 
 class SupplyStarvedError(RuntimeError):
-    """A live coefficient's EXTERNAL SUPPLY delivered nothing — fail CLOSED (`gen3_supply_guard_v1`).
+    """A live lever's SUPPLY delivered nothing — fail CLOSED (`gen3_supply_guard_v1`).
 
-    The class this closes: `ai_v12_12_ladder_cflabels` trained 10M steps at `--cf-winprob-coef 0.5`
-    and received ZERO labels, because the producer is a separate program nobody started and every
-    counter that could have said so was a scalar nobody thresholded. The in-flight guard raises this
+    The class this closes: `ai_v12_12_ladder_cflabels` trained 10M steps at a live cf coefficient
+    and received ZERO labels, because the producer was a separate program nobody started and every
+    counter that could have said so was a scalar nobody thresholded (the cf lever itself was deleted in
+    deletion pass L4; the guard stands for the levers that remain). The in-flight guard raises this
     (or a subclass); the trainer's handlers map it to ``TrainExitCode.FATAL_SUPPLY`` and the
     launcher gives up instead of restarting into the same starvation."""
 

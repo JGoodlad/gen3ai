@@ -164,7 +164,7 @@ def build_learner(env: Any = None, args: Any = None) -> Any:
                            normalize_advantage=RECIPE["normalize_advantage"], target_kl=RECIPE["target_kl"],
                            policy_args=policy_args)
     apply_training_hparams(model, production_args() if policy_args is None else policy_args,
-                           mappings=None, attach_cf_labels=lambda _m: None)
+                           mappings=None)
     _unset_to_class_defaults(model)
     model.grad_accum_steps = int(RECIPE["grad_accum_steps"])
     # K9(b) is its own gate (`learner_gates_test`); the golden pins the update's arithmetic.

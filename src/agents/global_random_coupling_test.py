@@ -251,7 +251,7 @@ class TestPlayerChoiceRng:
 # Seam 2 — the team draw (gen3_team_draw_rng_v1)
 # ---------------------------------------------------------------------------
 
-def _builder(seed=None, n=12, bias=None, bias_prob=0.0, pfsp="off"):
+def _builder(seed=None, n=12, bias=None, bias_prob=0.0):
     """A `Gen3Teambuilder` past its constructor's team VALIDATION (which shells out to the node
     validator and is not what this file is about). Only the draw path is populated — and the RNG
     goes in through `_install_team_rng`, the same and only writer `__init__` uses."""
@@ -260,8 +260,6 @@ def _builder(seed=None, n=12, bias=None, bias_prob=0.0, pfsp="off"):
     tb._pool_index_by_packed = {t: i for i, t in enumerate(tb.packed_teams)}
     tb.bias_packed_teams = list(bias) if bias else []
     tb.bias_prob = bias_prob
-    tb._team_pfsp = pfsp
-    tb._tp_weights = None
     tb._last_pool_idx = None
     tb._block_episodes = 1
     tb._block_cached = None
@@ -289,7 +287,7 @@ class TestTeamDrawRng:
         assert "_rng" not in _builder().__dict__
 
     def test_the_unseeded_uniform_draw_is_byte_identical(self):
-        """The `team_pfsp="off"` branch is the documented byte-identity baseline: exactly one RNG
+        """The uniform pool draw is the documented byte-identity baseline: exactly one RNG
         call, the same `random.choice`, on the same stream."""
         tb = _builder()
         random.seed(4)
@@ -320,11 +318,6 @@ class TestTeamDrawRng:
         """REVERT-VERIFICATION — and the sharpest statement of the stake: unseeded, the two arms
         are handed different teams."""
         assert _draws(_builder(), 0) != _draws(_builder(), 999)
-
-    def test_the_pfsp_weighted_branch_is_seeded_too(self):
-        arm_a, arm_b = _builder(seed=5, pfsp="var"), _builder(seed=5, pfsp="var")
-        arm_a._tp_weights = arm_b._tp_weights = [1.0 + i for i in range(12)]
-        assert _draws(arm_a, 0) == _draws(arm_b, 999)
 
     def test_the_env_hook_reaches_a_builder_built_without_a_seed_kwarg(self):
         with patch.dict(os.environ, {"GEN3AI_TEAM_SEED": "44"}):

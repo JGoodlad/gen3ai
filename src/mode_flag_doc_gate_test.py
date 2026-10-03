@@ -111,9 +111,6 @@ _CLAIMS: Tuple[Claim, ...] = (
     Claim("win_prob_mode",
           r"`win_head`\s*\|\s*`win_prob_mode`\s*\*\*`(?P<value>\w+)`\*\*",
           "§3.4 the side-readout table"),
-    Claim("q_winprob_mode",
-          r"`q_winprob_mode`\s*`\"(?P<value>\w+)\"`\s*/\s*OFF",
-          "§3.4 'the LATENT readout' closing sentence"),
     Claim("move_belief_mode",
           r"`move_belief_mode`\s*=\s*`\"(?P<value>\w+)\"`",
           "§3.2 the MoveBelief step"),
@@ -203,7 +200,6 @@ _CLAIMS: Tuple[Claim, ...] = (
 _REQUIRED_COVERAGE = frozenset({
     "belief_grad_mode", "opp_intent_grad_mode", "critic", "hp_belief_mode",
     "terminal_indicator", "win_prob_mode", "move_belief_mode",
-    "q_winprob_mode",
     # each head's on/off coefficient
     "vf_coef", "opp_belief_aux_coef", "move_belief_coef",
     "item_belief_coef",
@@ -378,11 +374,18 @@ def test_the_mirror_declares_inert_keys_and_the_prose_agrees():
     """
     text = doc_text()
     keys = inert_keys(text)
-    assert keys, (
-        "§6's generated flag table lists no INERT rows. Either the table's format changed (this "
-        "parser reads `| `key` | value | STATUS |`) or the generator stopped emitting the status "
-        "— both make this check silently vacuous. Regenerate with "
-        "`python -m agents.model.arch_tables`."
+    # Deletion pass L4 removed the only two keys the mirror ever marked INERT (the cf coefficients
+    # gated by a head the production config does not build), so an EMPTY set is now a legitimate
+    # reading — "no key is INERT today". What must not happen is the PARSER going blind, which would
+    # make the loop below vacuous for the day one reappears: the table must still parse into status
+    # rows, and `test_the_inert_parser_reads_a_planted_row` proves the INERT reading itself.
+    status_rows = [ln for ln in generated_block(text, "flag-table").splitlines()
+                   if len([c for c in ln.split("|")]) >= 5 and ln.split("|")[3].strip()
+                   in ("ACTIVE", "OFF")]
+    assert status_rows, (
+        "§6's generated flag table parses into no `| `key` | value | STATUS |` rows. Either the "
+        "table's format changed or the generator stopped emitting the status — both make this "
+        "check silently vacuous. Regenerate with `python -m agents.model.arch_tables`."
     )
 
     # PARAGRAPH granularity, not line: this prose hard-wraps, so "`some_key`\nstays
@@ -400,6 +403,20 @@ def test_the_mirror_declares_inert_keys_and_the_prose_agrees():
         + "\n".join(bad)
         + "\n\nSay INERT on the line, or move the mention into a sentence that does."
     )
+
+
+@_SKIP
+def test_the_inert_parser_reads_a_planted_row():
+    """Non-vacuity for the INERT half: with no INERT row in the real table, a ROW PLANTED into a copy
+    of it must still be read as INERT, and the prose check must still fire on a paragraph that names
+    the key without saying so."""
+    text = doc_text()
+    row = next(ln for ln in generated_block(text, "flag-table").splitlines()
+               if ln.startswith("| `td_aux_coef`"))
+    planted = text.replace(row, "| `td_aux_coef` | `0.0` | INERT — planted |")
+    assert planted != text
+    assert "td_aux_coef" in inert_keys(planted)
+    assert "td_aux_coef" not in inert_keys(text)
 
 
 @_SKIP

@@ -380,15 +380,6 @@ def test_train_computes_the_weights_ONCE_PER_BUFFER_and_gates_on_the_winprob_cri
     assert "self.rollout_buffer.observations" in src.split("_win_prob_strata_weights(")[0][-800:]
 
 
-def test_the_counterfactual_callers_stay_UNWEIGHTED():
-    """`cf_terms` scores FOREIGN recorded states whose opponent mix is the label factory's, not the
-    rollout's — reweighting them by the rollout's frequencies would be a category error."""
-    import agents.training.cf_terms as cf_terms
-    src = inspect.getsource(cf_terms)
-    assert "_win_prob_loss(head(pooled.detach()), target, mask, margin)" in src
-    assert "strata" not in src
-
-
 def test_the_metric_names_a_read_depends_on_are_all_emitted():
     """A TB read is a contract: `designs/training/critic_and_value_losses.md` names these keys."""
     c, m = _buffer([100, 700, 150, 50])

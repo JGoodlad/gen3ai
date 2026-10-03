@@ -44,17 +44,12 @@ N_ENVS, BATCH = 4, 16
 LEVERS: Dict[str, Any] = {
     "production": ([], {}),
     "strata": (["--win-prob-strata-weight", "0.5"], {"strata": True}),
-    "fork": (["--cf-records", "--fork-fraction", "0.01"], {"fork_pg_mask": True, "key": "fork_pg_m"}),
     # gen3_fork_rust_v1 (forks.md §14): on the Rust core the branch rows ride the complete-game FIFO
-    # inside the FIXED update (no ragged tail, no ForkRolloutBuffer) — the mask key is still a lever
+    # inside the FIXED update (no ragged tail, no ForkRolloutBuffer) — the mask key is still a lever.
+    # (The python-core fork row left with L4: `--cf-records` is deleted and a fork on the python core is
+    # refused, `combination_checks` `fork_python_core_unavailable`.)
     "fork_rust": (["--env-core", "rust", "--fork-fraction", "0.01"], {"fork_pg_mask": True, "key": "fork_pg_m"}),
 }
-
-
-#: The levers the production env core (rust, `recipe.sizing` — the M5 switch) does not serve yet: their
-#: rows run the learner on the PYTHON env core (`combination_checks._ENV_CORE_UNPORTED`). R1 is the same
-#: region on both cores, so the declaration is what is tested either way.
-PYTHON_CORE_ONLY = frozenset({"fork"})
 
 
 def _lever_args(name: str) -> Any:
@@ -63,8 +58,6 @@ def _lever_args(name: str) -> Any:
     from main.train.parser import build_parser
     parser = build_parser()
     extra = list(LEVERS[name][0])
-    if name in PYTHON_CORE_ONLY:
-        extra += ["--env-core", "python"]       # the Rust env core refuses these paths by name (M5 switch)
     a = parser.parse_args(list(PRODUCTION_ARGV) + extra)
     with contextlib.redirect_stdout(io.StringIO()):
         resolve_config(a, parser)
@@ -97,17 +90,6 @@ def _fill(model: Any, *, mixed_classes: bool, seed: int) -> None:
         getattr(rb, f)[...] = data[f]
     rb.full, rb.pos = True, LG.N_STEPS
     model._current_progress_remaining = 1.0
-    if hasattr(rb, "add_fork_rows"):                        # the fork arm: injected rows -> RAGGED tail
-        from agents.training.fork_buffer import build_branch_rows
-        n = 5
-        obs = data["obs:observation"].reshape(-1, data["obs:observation"].shape[-1])[:n]
-        masks = data["action_masks"].reshape(-1, data["action_masks"].shape[-1])[:n]
-        block = build_branch_rows(
-            obs=obs, masks=masks, actions=data["actions"].reshape(-1)[:n],
-            values=data["values"].reshape(-1)[:n], log_probs=data["log_probs"].reshape(-1)[:n],
-            outcome=1.0, gamma=float(model.gamma), gae_lambda=float(model.gae_lambda),
-            obs_keys=list(rb.observations), mask_dims=int(masks.shape[-1]))
-        assert rb.add_fork_rows(block) == n
 
 
 @pytest.fixture

@@ -192,12 +192,7 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     _ets = matchup.eval_trainee_teams
     _specialist_team_str = (list(_ets.pin_strs) if _ets.kind == "pin_multi" and _ets.pin_strs
                             else _ets.pin_str)
-    # Team-side PFSP threads ONLY into the TRAINEE builder (opponent teams aren't win-rate-sampled);
-    # "off" (default) is byte-identical construction.
-    trainee_teambuilder = matchup.trainee_teams.build(
-        all_teams, sample_teams,
-        team_pfsp=args.team_pfsp, team_pfsp_cap=args.team_pfsp_cap,
-        team_pfsp_floor=args.team_pfsp_floor)
+    trainee_teambuilder = matchup.trainee_teams.build(all_teams, sample_teams)
     # Team-blocked episodes: hold each drawn trainee team for N consecutive episodes — the
     # per-team gradient-density counter to the measured FiLM sample starvation. Trainee side ONLY
     # (opponent draws stay per-episode); 1 = off, byte-identical. Training-only, not version-locked.
@@ -382,35 +377,6 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
         if _exploiter_entry.team_str:
             emit(f"   target pilots ITS OWN pinned team ({os.path.basename(_exploiter_entry.team_file)}) "
                  "— the fold-back contract")
-
-        # gen3_exploiter_pool_ladder_v1: resolve the POOL-LADDER rungs HERE, next to the target they
-        # end at, so an unresolvable rung / a foreign-generation rung FATALs once up front instead of
-        # crashing every env worker (the same reason the target's own weights are load-validated
-        # above). The resolved list rides on `args` — a private attr — because `build_callbacks` takes
-        # `args` and not the MatchupSetup.
-        args._exploiter_ladder_rungs = None
-        if args.exploiter_ladder:
-            from agents.training.exploiter_ladder import build_ladder_rungs
-            try:
-                _rungs = build_ladder_rungs(
-                    args.exploiter_ladder, _exploiter_entry, _cv_expl,
-                    n_auto_rungs=args.exploiter_ladder_rungs, temperature=_expl_temp0)
-                for _r in _rungs:
-                    load_foreign_opponent(_r.zip_path, current_version=_cv_expl, device="cpu",
-                                          config_path=_r.config_path)  # validate weights load
-            except (ModelVersionError, FileNotFoundError, ValueError) as e:
-                print(f"\n[ExploiterLadder] FATAL: {e}")
-                sys.stdout.flush()
-                os._exit(int(TrainExitCode.FATAL_CONFIG))
-            except Exception as e:  # noqa: BLE001 — a corrupt/unreadable rung weights zip
-                print(f"\n[ExploiterLadder] FATAL: failed to load ladder rung weights: {e}")
-                sys.stdout.flush()
-                os._exit(int(TrainExitCode.FATAL_CONFIG))
-            args._exploiter_ladder_rungs = _rungs
-            emit(f"🪜 [EXPLOITER-LADDER] {len(_rungs)} rungs, weakest→strongest, promoting when the "
-                 f"training win-rate vs the CURRENT rung ≥ {args.exploiter_ladder_gate:.0%} over "
-                 f"{args.exploiter_ladder_window} games (one-way; the last rung is the target): "
-                 + " → ".join(r.label for r in _rungs))
 
     # Opponent-parity Proposal A: the exploiter target AUTO-registers as an eval opponent, so the
     # verdict metric (eval/win_rate_vs_ext_<target>) exists without remembering to duplicate the

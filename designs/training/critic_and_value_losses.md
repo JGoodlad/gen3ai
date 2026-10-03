@@ -307,10 +307,11 @@ from a plumbing break**, which is why the inactive case reports rather than vani
 
 ### What it is NOT applied to
 
-The counterfactual and twin-head callers of `_win_prob_loss` (`cf_terms.py`,
-`_cf_twin_onpolicy_terms`) stay **unweighted**, and a test pins that: they score FOREIGN recorded
-states whose opponent mix belongs to the label factory, not to this rollout, so reweighting them by
-this rollout's frequencies would be a category error.
+The counterfactual and twin-head callers of `_win_prob_loss` (the cf terms, deleted in deletion pass L4)
+were **unweighted**, and a test pinned that: they scored FOREIGN recorded states whose opponent mix
+belonged to the label factory, not to this rollout, so reweighting them by this rollout's frequencies
+would have been a category error. Any future caller that scores recorded states from another
+distribution inherits the same rule.
 
 ### Recording and resume
 
@@ -320,7 +321,7 @@ by `check_compatible` or any `check_*` — it reweights a loss and touches no fo
 shape, and gating a frozen eval/pool opponent on it would be a false rejection. A pre-v115
 config migrates to `0.0`, which is a RECORD and not a guess: the field did not exist. It is **not** a
 `flag_registry.py` row — that registry declares EXTRACTOR toggles, and this builds no module (the
-`td_aux_coef` / `cf_*_coef` / `intent_label_bot_weight` precedent). It IS declared in
+`td_aux_coef` / `intent_label_bot_weight` precedent). It IS declared in
 `arch_tables._COEF_MODULE` (→ `win_head`) so a production config that ever adopts it cannot be
 silently dropped from the generated table the way `intent_label_bot_weight` was from v97.
 

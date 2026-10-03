@@ -27,10 +27,6 @@ from main.train.combination_checks import refuse_first
 from main.train.compile_flags import (
     resolve_compile_opponents_preload, resolve_compile_trainer_auto,
 )
-from main.train.constants import (
-    CF_DUTY_CYCLE_FLOOR, cf_label_duty_cycle,
-    checkpoint_interval_env_steps,
-)
 from poke_env import LocalhostServerConfiguration
 from poke_env.ps_client.server_configuration import localhost_server_configuration
 from utils.logging.levels import LogLevel
@@ -106,48 +102,6 @@ def _adaptive_batch_guards(args, parser) -> None:
         parser.error("--adaptive-batch policy steers by train/noise_scale_ratio_policy, which only "
                      "the PER-TERM noise-scale probe emits — and $GEN3AI_NOISE_SCALE_PER_TERM is "
                      f"set to {env!r}, which disables it. Unset it, or use --adaptive-batch total.")
-
-
-def _announce_cf_duty_cycle(args) -> None:
-    """PRINT the counterfactual label DUTY CYCLE, and REFUSE a starved one.
-
-    THE DEFECT THIS MAKES UNREPRESENTABLE (`ai_v9_29_rev1_0823`, 2026-08-23). The label producer
-    can only stamp labels with the step of the newest `checkpoints/` zip, and `cf_label_buffer`
-    expires a row more than `--cf-label-lag-steps` behind the live policy. So the two flags define
-    a fraction — and NOBODY WAS COMPUTING IT. At the then-hardcoded 50 000 VEC-CALL cadence and
-    `--n-envs 48` the checkpoint interval was 2 400 000 env steps (today's default, now a TOTAL-env-
-    step quantity at every N) against a 150 000-step bound: a
-    6.25% duty cycle, observed as **6 labels ingested against 255 expired in two hours**, with
-    every counter on both sides reading healthy (the producer was producing; the buffer was
-    expiring; neither knew about the other's number).
-
-    So the number is now PRINTED on every launch that has both halves on, healthy or not — a
-    quantity nobody computes is how this shipped — and refused below the floor. A refusal exits
-    `FATAL_CONFIG` rather than `parser.error`, because restarting would hit the identical config
-    every time and the launcher must give up rather than loop.
-
-    `--debug` is exempt: a smoke has one env and runs for thousands of steps, so its duty cycle is
-    an artifact of the smoke rather than a statement about the recipe.
-    """
-    on = bool((args.cf_twin_coef and args.cf_twin_coef > 0)
-              or (args.cf_winprob_coef and args.cf_winprob_coef > 0))
-    if not (on and args.cf_records):
-        return
-    n_envs = 1 if args.debug else int(args.n_envs)
-    every = getattr(args, "checkpoint_every_steps", None)
-    interval = checkpoint_interval_env_steps(every)
-    duty = cf_label_duty_cycle(args.cf_label_lag_steps, interval)
-    shown = "unbounded (--cf-label-lag-steps 0 = labels never expire)" if duty == float("inf") \
-        else f"{duty:.1%}"
-    line = (f"🧾 [CF] label DUTY CYCLE {shown} — --cf-label-lag-steps "
-            f"{args.cf_label_lag_steps:,} / {interval:,} env-steps between checkpoints "
-            f"(TOTAL env steps over all {n_envs} envs)")
-    if args.debug:
-        emit(line + "  [--debug: the floor is not enforced]")
-        return
-    if duty >= CF_DUTY_CYCLE_FLOOR:
-        emit(line)
-        return
 
 
 def enforce_not_shaped_parent(model_path: str) -> None:
@@ -701,32 +655,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("intent_conditional", False)      # v85 structural, version-checked (gen3_intent_conditional_v1)
     _resolve("op_drop_renders", False)         # v86 structural, version-checked (gen3_op_lean_forward_v1)
     _resolve("op_believed_lean", False)        # v86 structural, version-checked (gen3_op_lean_forward_v1)
-    # THE COUNTERFACTUAL FAMILY — structural heads AND their coefficients, all inherited.
-    # The three STRUCTURAL bools are version-checked; the ten coefficients below are the
-    # td_aux_coef class (config v100, gen3_cf_coef_provenance_v1): recorded for provenance,
-    # never gated, and read back here so a flagless resume keeps the arm it was launched as.
-    # ⚠️ Every one of these argparse entries MUST default to None or the `_resolve` line is a
-    # no-op — that is exactly how these three sat here reading False for two versions.
-    # `flag_registry_test.test_cli_flags_argparse_default_is_none` is now that gate.
-    _resolve("cf_evidential", False)           # v98 structural, version-checked (gen3_cf_evidential_head_v1)
-    _resolve("cf_twin_heads", False)           # v99 structural, version-checked (gen3_cf_twin_heads_v1)
-    _resolve("cf_shadow_critic", False)        # v99 structural, version-checked (gen3_cf_twin_heads_v1)
-    _resolve("cf_records", False)              # v100 training-only (inherited like td_aux_coef)
-    _resolve("cf_records_keep", 512)           # v100 training-only
-    _resolve("cf_winprob_coef", 0.0)           # v100 training-only
-    _resolve("cf_head_only", True)             # v100 training-only
-    _resolve("cf_label_lag_steps", 150_000)    # v100 training-only
-    _resolve("cf_label_likelihood", "binomial")  # v100 training-only
-    _resolve("cf_evidential_coef", 0.0)        # v100 training-only
-    _resolve("cf_evidential_reg", 1e-3)        # v100 training-only
-    _resolve("cf_twin_coef", 0.0)              # v100 training-only
-    _resolve("cf_shadow_coef", 0.0)            # v100 training-only
-    # gen3_q_winprob_head_v1 (v107) — the per-action Q head. The MODE is structural and
-    # version-checked; the two coefficients are the td_aux_coef class (recorded, never gated) and
-    # are read back here so a flagless resume keeps the arm it was launched as.
-    _resolve("q_winprob_mode", "none")         # v107 structural, version-checked
-    _resolve("q_winprob_coef", 0.0)            # v107 training-only
-    _resolve("q_winprob_onpolicy_coef", 0.0)   # v107 training-only
     # gen3_capacity_telemetry_v1 — the live saturation early-warnings. The td_aux_coef class:
     # recorded for provenance, never gated, and read back here so a flagless resume (or a
     # hand-typed one between launcher restarts) keeps logging the run's own `capacity/*` series.
@@ -857,13 +785,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
                      "0 = off, and off is what the registered endpoint assumes)")
     if args.fork_max_per_battle is not None and args.fork_max_per_battle < 1:
         parser.error("--fork-max-per-battle must be >= 1 (forks per episode slice)")
-    # gen3_cf_label_plumbing_v1 — training-only, so these parser checks are the ONLY gate.
-    if args.cf_winprob_coef is not None and args.cf_winprob_coef < 0.0:
-        parser.error("--cf-winprob-coef must be >= 0 (0 = off)")
-    if args.cf_label_lag_steps is not None and args.cf_label_lag_steps < 0:
-        parser.error("--cf-label-lag-steps must be >= 0 (0 = never expire)")
-    if args.cf_records_keep is not None and args.cf_records_keep < 1:
-        parser.error("--cf-records-keep must be >= 1")
     # gen3_capacity_telemetry_v1 — training-only diagnostics, so these parser checks are the ONLY
     # gate. A reset interval of 0 would re-seed a target on EVERY minibatch, which is not a slower
     # canary but a different (and meaningless) instrument, so it is refused rather than clamped.
@@ -875,29 +796,9 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--capacity-cosine-every must be >= 0 (0 = skip the half-batch cosine)")
     if args.capacity_velocity_every is not None and args.capacity_velocity_every < 0:
         parser.error("--capacity-velocity-every must be >= 0 (0 = skip the feature-velocity probe)")
-    # gen3_cf_evidential_head_v1 — the coefficients are training-only, so (as above) these parser
-    # checks are the ONLY gate. `--cf-evidential` itself IS version-gated, hence not checked here.
-    if args.cf_evidential_coef is not None and args.cf_evidential_coef < 0.0:
-        parser.error("--cf-evidential-coef must be >= 0 (0 = off)")
-    if args.cf_evidential_reg is not None and args.cf_evidential_reg < 0.0:
-        parser.error("--cf-evidential-reg must be >= 0 (0 = no KL pull toward Beta(1,1))")
-    # gen3_cf_twin_heads_v1 — the coefficients are training-only (parser checks are the ONLY gate);
-    # the two structural flags are version-gated, so only their CROSS-flag requirements land here.
-    if args.cf_twin_coef is not None and args.cf_twin_coef < 0.0:
-        parser.error("--cf-twin-coef must be >= 0 (0 = off)")
-    if args.cf_shadow_coef is not None and args.cf_shadow_coef < 0.0:
-        parser.error("--cf-shadow-coef must be >= 0 (0 = off)")
-    # gen3_q_winprob_head_v1 (v107) — the two coefficients are training-only, so these parser
-    # checks are their ONLY gate. `--q-winprob-mode` itself is version-gated, so only its
-    # cross-flag requirements land here.
-    if args.q_winprob_coef is not None and args.q_winprob_coef < 0.0:
-        parser.error("--q-winprob-coef must be >= 0 (0 = off)")
-    if args.q_winprob_onpolicy_coef is not None and args.q_winprob_onpolicy_coef < 0.0:
-        parser.error("--q-winprob-onpolicy-coef must be >= 0 (0 = off)")
     if getattr(args, "checkpoint_every_steps", None) is not None and args.checkpoint_every_steps < 1:
         parser.error("--checkpoint-every-steps must be >= 1 (it is an ENV-STEP interval; there is "
                      "no 'off' value — omit the flag for the 2,400,000-env-step default)")
-    _announce_cf_duty_cycle(args)
     if not (0.0 < args.rank_tripwire_drop < 1.0):
         parser.error("--rank-tripwire-drop must be in (0, 1) — a fractional drop from baseline")
     if args.damage_candidate_k and args.damage_candidate_k < 0:

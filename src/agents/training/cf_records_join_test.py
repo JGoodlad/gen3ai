@@ -10,22 +10,21 @@ from __future__ import annotations
 import inspect
 import os
 
-from agents.training.cf_records import CfRecordRing, index_records, record_key
+from agents.training.cf_records import index_records, record_key, safe_tag
+from utils.bridge.reconstruction import RECON_SUFFIX
 
 
-def test_the_handle_and_the_ring_filename_use_the_SAME_sanitiser(tmp_path):
+def test_the_handle_and_the_record_filename_use_the_SAME_sanitiser(tmp_path):
     """Two spellings of the sanitiser would make the join silently miss on exactly the tags that
-    needed sanitising."""
-    ring = CfRecordRing(tmp_path)
+    needed sanitising. A record file is named `<ns:019d>_<pid>_<safe_tag(tag)>_reconstruction.json`."""
     tag = "battle-gen3ou-7/odd"
-    path = ring.write_record(tag, {"log": []})
-    assert path is not None
+    name = f"{1:019d}_{os.getpid()}_{safe_tag(tag)}{RECON_SUFFIX}"
+    (tmp_path / name).write_text("{}")
     idx = index_records(tmp_path)
-    assert idx[record_key(os.getpid(), tag)] == str(path)
+    assert idx[record_key(os.getpid(), tag)] == str(tmp_path / name)
 
 
 def test_the_newest_record_WINS_for_a_reused_key(tmp_path):
-    from utils.bridge.reconstruction import RECON_SUFFIX
     for ns in ("0000000000000000001", "0000000000000000002"):
         (tmp_path / f"{ns}_99_battle-x{RECON_SUFFIX}").write_text("{}")
     idx = index_records(tmp_path)

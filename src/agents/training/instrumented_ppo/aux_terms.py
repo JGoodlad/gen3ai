@@ -5,19 +5,15 @@ binding behind so every call site and every `model._<name>` test resolves unchan
 
 * `belief_bank` — the five supervised belief losses, as one declarative fold (one ROW per head).
 * `td_aux` — the Bellman-residual consistency term (`_td_aux_term` keeps the coefficient here).
-* `cf_terms` — the counterfactual vertical: sample label rows, apply a head to the stashed
-  `value_pooled`, return `(term, metrics)`.
 """
 import numpy as np
 import torch as th
 
 from agents.training import belief_bank as _belief_bank
-from agents.training import cf_terms as _cf
-from agents.training import q_winprob_terms as _q
 
 
 class AuxTerms:
-    """The belief-bank, TD-aux and counterfactual delegates."""
+    """The belief-bank and TD-aux delegates."""
 
     # ALL FIVE supervised belief losses now live in `belief_bank` (the declarative fold);
     # these aliases keep every existing call site and test resolving unchanged.
@@ -92,44 +88,3 @@ class AuxTerms:
             return None, {}
         td_loss, metrics = out
         return self.td_aux_coef * td_loss, metrics
-
-    # ---- COUNTERFACTUAL terms (gen3_cf_label_plumbing_v1 / _twin_heads_v1) -------------------
-    # The bodies live in `agents/training/cf_terms.py`: a self-contained VERTICAL (read label rows
-    # off `_cf_buffer`, apply a head to the stashed `value_pooled`, return `(term, metrics)`) that
-    # touches the PPO update only through the `loss = loss + term` lines below. Same split as
-    # `belief_bank` / `td_aux`, and the file-size ratchet is what asked for it. These delegates
-    # exist so the call sites and every `model._cf_*` test read unchanged.
-
-    _cf_binomial_nll = staticmethod(_cf.cf_binomial_nll)
-
-    def _cf_sample_and_forward(self):
-        return _cf.cf_sample_and_forward(self)
-
-    def _cf_winprob_term(self, ctx):
-        return _cf.cf_winprob_term(self, ctx)
-
-    def _cf_evidential_term(self, ctx):
-        return _cf.cf_evidential_term(self, ctx)
-
-    def _cf_twin_onpolicy_terms(self, rollout_data):
-        return _cf.cf_twin_onpolicy_terms(self, rollout_data)
-
-    def _cf_twin_terms(self, ctx):
-        return _cf.cf_twin_terms(self, ctx)
-
-    def _cf_shadow_term(self, ctx):
-        return _cf.cf_shadow_term(self, ctx)
-
-    def _cf_live_values(self, ctx):
-        return _cf.cf_live_values(self, ctx)
-
-    # gen3_q_winprob_head_v1: the PER-ACTION head's two folds. Same vertical split as the cf
-    # family and for the same reason — they read the cf sample, apply `q_winprob_head` to the same
-    # forward's pointer stash, and touch the update only through `loss = loss + term`.
-    _q_masked_binomial_nll = staticmethod(_q.q_masked_binomial_nll)
-
-    def _q_winprob_term(self, ctx):
-        return _q.q_winprob_term(self, ctx)
-
-    def _q_winprob_onpolicy_term(self, ctx):
-        return _q.q_winprob_onpolicy_term(self, ctx)

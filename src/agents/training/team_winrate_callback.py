@@ -19,15 +19,11 @@ windowed per-team, per-opponent-class count; this callback drains every worker a
 boundary. That is what makes it correct under BOTH ``SubprocVecEnv`` and ``--async-rollout``:
 ``env_method`` is drain-safe on ``AsyncSubprocVecEnv`` (it stashes in-flight step results before the
 barrier RPC), whereas an info-dict route would have to reconstruct which buffer row a terminal
-landed on, which the async collector alone knows. It is also the shape the team-PFSP precedent
-already uses for the same reason.
+landed on, which the async collector alone knows.
 
-**Distinct from ``--team-pfsp`` and deliberately NOT coupled to it.** That one measures only
-self-play POOL battles (bots wash out its weighting signal), is off by default, keys per pool INDEX
-and EMA-smooths a rate to drive sampling weights. This one counts every episode, is on by default,
-keys per ``team_sha`` and keeps RAW counts (a rate with no denominator cannot serve as a headroom
-denominator). The two share the builder's "which team did I just yield" draw index and nothing else
-— separate counter tables, separate artifacts.
+**Instrumentation only.** It counts every episode, is on by default, keys per ``team_sha`` and keeps
+RAW counts (a rate with no denominator cannot serve as a headroom denominator). (Team-PFSP, which
+used the same per-draw-index attribution to drive sampling weights, was deleted in deletion pass L4.)
 """
 import json
 import os
@@ -43,7 +39,7 @@ from agents.model.snapshot import record_team_win_rates
 #: The table rides metadata.json as the top-level ``team_win_rates`` block (the owner's
 #: recording rule: beside ``latest_eval``'s per-opponent records, NO TensorBoard emission —
 #: design_flywheel_tick_tock.md §6b). Deliberately NOT a standalone ``team_winrates.json`` —
-#: that name belongs to ``--team-pfsp``'s own differently-keyed snapshot.
+#: that name belonged to the deleted ``--team-pfsp``'s differently-keyed snapshot.
 
 _CONFOUND_NOTE = (
     "RAW per-team win rate conflates PILOT COMPETENCE with TEAM STRENGTH (the ai_v8 team-PFSP "

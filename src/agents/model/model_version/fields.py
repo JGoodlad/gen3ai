@@ -414,22 +414,6 @@ class ModelVersionFields:
     # as the four toggles above: the variants' predictors are the state_dict delta, and nothing
     # downstream would catch a flip.
     ridealong_rnd_variants: str = "off"
-    # ---- gen3_cf_coef_provenance_v1 (config v100) — THE COUNTERFACTUAL COEFFICIENT FAMILY -------
-    # Ten TRAINING-only knobs, ONE family. Each shapes a LOSS computed in the PPO step; none is
-    # read by the extractor forward, none changes a weight shape ⇒ the td_aux_coef class exactly:
-    # recorded for PROVENANCE + flagless-resume read-back (`_resolve` reads these fields), NEVER
-    # compared by check_compatible. Not registry rows — that registry declares EXTRACTOR toggles
-    # and none of these builds a module. The v100 header comment carries the full why.
-    cf_records: bool = False
-    cf_records_keep: int = 512
-    cf_winprob_coef: float = 0.0
-    cf_head_only: bool = True
-    cf_label_lag_steps: int = 150_000
-    cf_label_likelihood: str = "binomial"
-    cf_evidential_coef: float = 0.0
-    cf_evidential_reg: float = 1e-3
-    cf_twin_coef: float = 0.0
-    cf_shadow_coef: float = 0.0
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the td_aux_coef class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at
@@ -494,39 +478,6 @@ class ModelVersionFields:
     # v43 TRAINING-ONLY loss coefficient for the pubval head. Scales the soft-target
     # BCE aux loss, affects no forward pass → recorded for provenance but NOT version-locked
     # (resume-mutable, inherited on a flagless resume).
-    # v98 STRUCTURAL bool (gen3_cf_evidential_head_v1, the win_prob_mode pattern): the EVIDENTIAL Beta
-    # readout over P(win|state) off value_pooled — the counterfactual factory's uncertainty confession.
-    # False = no module (baseline byte-for-byte; it is never in pi/vf and never even called by the
-    # forward, so the projection dims AND the forward outputs are unchanged). True builds a
-    # CfEvidentialHead, whose params ARE the state_dict delta — so it is gated in check_compatible with
-    # a bool compare. There is no read_only/shaping split by design: the head's input is detached
-    # UNCONDITIONALLY, so no coefficient can make it shape the trunk. NO ARCH_SIGNATURE bump.
-    cf_evidential: bool = False
-    # v99 STRUCTURAL bools (gen3_cf_twin_heads_v1, the v98 pattern twice over). `cf_twin_heads`
-    # builds the two extra `WinProbHead`s (B = coverage arm, C = tight-MC arm) that make the R1
-    # comparison a WITHIN-RUN paired head difference instead of a run-vs-run one;
-    # `cf_shadow_critic` builds the passive `ShadowValueHead` trained on tight-MC `mc_return`
-    # labels — the staged promotion path for critic surgery, which never computes an advantage and
-    # never enters GAE. Neither is called by the forward, so False is byte-for-byte the baseline and
-    # True is bit-identical in pi/vf; the params are the entire delta. NO ARCH_SIGNATURE bump.
-    cf_twin_heads: bool = False
-    cf_shadow_critic: bool = False
-    # ---- gen3_q_winprob_head_v1 (config v107) — THE PER-ACTION WIN-PROB READOUT ----------------
-    # v107 STRUCTURAL string (the win_prob_mode pattern, one value short): the Q head over the
-    # pointer head's own action tokens — one forward, eleven P(win|s,a). 'none' = no module
-    # (baseline byte-for-byte). 'read_only' builds a QWinProbHead whose params ARE the state_dict
-    # delta, so a STRING compare in check_compatible is the gate. There is deliberately no
-    # 'shaping' value: every input is detached unconditionally, so no coefficient can make it
-    # shape the trunk and pi/vf are bit-identical whenever it is built. NO ARCH_SIGNATURE bump.
-    q_winprob_mode: str = "none"
-    # v107 TRAINING-only loss coefficients (the cf_winprob_coef class exactly): recorded for
-    # provenance + flagless-resume read-back, NEVER gated. `q_winprob_coef` weights the masked
-    # per-action counterfactual likelihood; `q_winprob_onpolicy_coef` weights the WEAK
-    # taken-action-only fallback and defaults to 0.0 for the reason stated at its flag — an
-    # on-policy Q label covers one action out of eleven and is biased toward the policy's own
-    # choices, which is the starvation trap this head exists to avoid.
-    q_winprob_coef: float = 0.0
-    q_winprob_onpolicy_coef: float = 0.0
     # ---- gen3_winprob_critic_mode_v1 (config v109) — WHICH READOUT IS THE CRITIC ---------------
     # v109 STRUCTURAL string (the win_prob_mode pattern): 'shaped' (what an ABSENT record means,
     # `critic_mode.CRITIC_UNRECORDED`) routes `policy._critic_value` to the scalar `value_net`.

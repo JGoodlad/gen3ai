@@ -1112,7 +1112,17 @@ _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
                     # extractor has no home for them, so ON is refused (the v75 rule); OFF built
                     # nothing and pops. The reachable half: every v121+ checkpoint pickles both bools
                     # (`snapshot.snapshot_extractor_kwargs` always wrote them).
-                    ("value_true_team", False), ("dense_aux", False))
+                    ("value_true_team", False), ("dense_aux", False),
+                    # v134 (deletion pass L4): the four counterfactual HEADS are deleted — the evidential
+                    # Beta head (`CfEvidentialHead`), the twin win-prob heads B / C, the passive shadow
+                    # critic and the per-action Q head (`QWinProbHead`). Each ON value built modules
+                    # whose parameters are in the state_dict and the surviving extractor has no home
+                    # for them, so ON is refused (the v75 rule); OFF built nothing and pops. The
+                    # reachable half: every v98+ checkpoint pickles `cf_evidential` / `cf_twin_heads` /
+                    # `cf_shadow_critic` and every v107+ one `q_winprob_mode`
+                    # (`snapshot.snapshot_extractor_kwargs` always wrote them).
+                    ("cf_evidential", False), ("cf_twin_heads", False), ("cf_shadow_critic", False),
+                    ("q_winprob_mode", "none"))
 
 # POLICY kwargs (`policy_kwargs[...]`, NOT the extractor's) that left `Gen3DualHeadMaskablePolicy.__init__`
 # at v131 (deletion pass L1). SB3 splats the zip's pickled `policy_kwargs` into the policy constructor, so a
@@ -1363,10 +1373,6 @@ def current_model_version(
     td_aux_coef: float = 0.0,
     hp_belief_mode: str = "composed",
     belief_grad_mode: str = "shaping",
-    cf_evidential: bool = False,
-    cf_twin_heads: bool = False,
-    cf_shadow_critic: bool = False,
-    q_winprob_mode: str = "none",
     ridealong_ensemble: int = 0,
     ridealong_rnd: bool = False,
     ridealong_adv: int = 0,
@@ -1415,18 +1421,6 @@ def current_model_version(
     ext_kwargs["edge_bias_families"] = edge_bias_families
     ext_kwargs["entity_tail_seats"] = entity_tail_seats
     ext_kwargs["win_prob_mode"] = win_prob_mode
-    # gen3_cf_evidential_head_v1 (v98): a state_dict-changing head, so a frozen eval/pool opponent's
-    # gate must see it — otherwise a cf-evidential run FATALs loading its OWN sentinels.
-    ext_kwargs["cf_evidential"] = cf_evidential
-    # gen3_cf_twin_heads_v1 (v99): the same reason, twice — the twin win-prob heads and the shadow
-    # critic are state_dict-changing modules the forward never calls, so a frozen eval/pool
-    # opponent's gate must see them or a twin-heads run FATALs loading its OWN sentinels.
-    ext_kwargs["cf_twin_heads"] = cf_twin_heads
-    ext_kwargs["cf_shadow_critic"] = cf_shadow_critic
-    # gen3_q_winprob_head_v1 (v107): the per-action Q head's params are a state_dict delta whose
-    # ONLY output is a stash, so nothing downstream would fail on a mismatch — a frozen eval/pool
-    # opponent's gate must see the toggle or a Q-head run FATALs loading its OWN sentinels.
-    ext_kwargs["q_winprob_mode"] = q_winprob_mode
     # gen3_ridealong_heads_v1 (v126): same category — the heads' params are in the (policy's)
     # state_dict and nothing consumes their output, so the recorded toggles are all a load gate can
     # compare; a frozen eval/pool opponent's gate must see them or a baseline run FATALs loading its
@@ -1515,16 +1509,6 @@ def arch_toggles_from_model(model: Any) -> dict:
         "edge_bias_families": str(getattr(fe, "edge_bias_families", "off")),
         "entity_tail_seats": bool(getattr(fe, "entity_tail_seats", False)),
         "win_prob_mode": str(getattr(fe, "win_prob_mode", "none")),
-        # gen3_cf_evidential_head_v1 (v98): state_dict-changing head, invisible to the forward —
-        # the recorded toggle is the only thing a load gate can compare.
-        "cf_evidential": bool(getattr(fe, "cf_evidential", False)),
-        # gen3_cf_twin_heads_v1 (v99): same category — params in the state_dict, invisible to the
-        # forward, so the recorded toggle is the only thing a load gate can compare.
-        "cf_twin_heads": bool(getattr(fe, "cf_twin_heads", False)),
-        "cf_shadow_critic": bool(getattr(fe, "cf_shadow_critic", False)),
-        # gen3_q_winprob_head_v1 (v107): same category — params in the state_dict whose only
-        # output is a side stash, so the recorded toggle is all a load gate can compare.
-        "q_winprob_mode": str(getattr(fe, "q_winprob_mode", "none")),
         # gen3_ridealong_heads_v1 (v126): same category — the declarations the policy built from.
         "ridealong_ensemble": int(getattr(fe, "ridealong_ensemble", 0) or 0),
         "ridealong_rnd": bool(getattr(fe, "ridealong_rnd", False)),

@@ -505,56 +505,6 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "nothing in the weights would catch it.\n"
                 "Resume with the matching --species-prior-fusion setting, or start a fresh training run."
             )
-        # gen3_cf_evidential_head_v1 (v98): the evidential Beta readout's params are the state_dict
-        # delta — a resume that flips this has either no weights for the head or weights with no
-        # home. The head is never called by the forward, so NOTHING else would catch it: a mismatch
-        # would load "successfully" and the term would silently supervise a freshly-random head (or
-        # not exist at all) for the rest of the run.
-        if self.cf_evidential != saved.cf_evidential:
-            raise ModelVersionError(
-                f"cf_evidential mismatch: saved={saved.cf_evidential}, current={self.cf_evidential}.\n"
-                "The counterfactual EVIDENTIAL head is fixed for a run's lifetime: adding or removing "
-                "it changes the state_dict, and because it is never called by the forward there is no "
-                "shape error downstream that would catch the mismatch.\n"
-                "Resume with the matching --cf-evidential setting, or start a fresh training run."
-            )
-        # gen3_cf_twin_heads_v1 (v99): the same argument as v98, twice. A head the forward never
-        # calls produces NO shape error anywhere, so this bool compare is the only thing between a
-        # flipped flag and a run that silently supervises freshly-random twins — or that loses the
-        # within-run paired comparison the whole amendment exists for — for the rest of its life.
-        if self.cf_twin_heads != saved.cf_twin_heads:
-            raise ModelVersionError(
-                f"cf_twin_heads mismatch: saved={saved.cf_twin_heads}, current={self.cf_twin_heads}.\n"
-                "The counterfactual TWIN win-prob heads are fixed for a run's lifetime: building them "
-                "changes the state_dict, and because they are never called by the forward there is no "
-                "shape error downstream that would catch the mismatch. The arm's primary comparison is "
-                "a WITHIN-RUN paired head difference, which a mid-run flip destroys.\n"
-                "Resume with the matching --cf-twin-heads setting, or start a fresh training run."
-            )
-        if self.cf_shadow_critic != saved.cf_shadow_critic:
-            raise ModelVersionError(
-                f"cf_shadow_critic mismatch: saved={saved.cf_shadow_critic}, "
-                f"current={self.cf_shadow_critic}.\n"
-                "The SHADOW critic head is fixed for a run's lifetime: building it changes the "
-                "state_dict, and because it is never called by the forward there is no shape error "
-                "downstream that would catch the mismatch.\n"
-                "Resume with the matching --cf-shadow-critic setting, or start a fresh training run."
-            )
-        # gen3_q_winprob_head_v1 (v107): the PER-ACTION win-prob head's params are the state_dict
-        # delta. Unlike the four cf readouts above this one IS called by the forward — but it
-        # writes only a STASH, so a mismatch still produces no shape error anywhere in pi/vf: a
-        # resume that dropped the flag would load "successfully" and quietly stop publishing the
-        # readout (and stop training it), while a resume that ADDED it would supervise a freshly
-        # random head as if it were the run's trained one. A string compare is the only gate.
-        if self.q_winprob_mode != saved.q_winprob_mode:
-            raise ModelVersionError(
-                f"q_winprob_mode mismatch: saved={saved.q_winprob_mode!r}, "
-                f"current={self.q_winprob_mode!r}.\n"
-                "The PER-ACTION win-probability head is fixed for a run's lifetime: building it "
-                "changes the state_dict, and because it only writes a side stash there is no shape "
-                "error downstream that would catch the mismatch.\n"
-                "Resume with the matching --q-winprob-mode setting, or start a fresh training run."
-            )
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —
         # a resume that dropped one would silently delete a trained baseline head, one that added

@@ -109,8 +109,8 @@ last snapshot is what the metrics already measure.
 `agents.training.fixed_opponent_pool.resolve_model_ref(path, step=None)` → a `ResolvedModel`
 (`zip_path`, `config_path`, `run_base`, `run_dir`, `rung`, `rule`, `num_timesteps`). The flags it
 serves: **`--stable-opponents`** and **`--exploiter`** (via `resolve_stable_opponents`),
-**`--exploiter-ladder`** (`exploiter_ladder.py`) and **`--warmstart-consensus`** (`warmstart.py`)
-(`--distill-teacher`, `--distill-anchor-parent` and `--win-prob-pbrs-source` were the others until they
+and **`--warmstart-consensus`** (`warmstart.py`)
+(`--exploiter-ladder`, `--distill-teacher`, `--distill-anchor-parent` and `--win-prob-pbrs-source` were the others until they
 were deleted). `run_spec_test.py` holds the census that fails, naming the file and its flags, when one
 of them stops.
 

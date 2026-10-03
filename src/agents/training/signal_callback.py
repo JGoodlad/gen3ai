@@ -94,9 +94,6 @@ class SignalMetricsCallback(BaseCallback):
             self.logger.record("signal/n_terminals", float(self._terminals))
         self._draws = self._terminals = 0
 
-    # `signal/outcome_entropy_rung` is NOT emitted here. It is emitted by `ExploiterLadderCallback`,
-    # which owns the number: the ladder SWAPS the target's weights mid-run, so the `_target` window
-    # above straddles two different opponents across a promotion, whereas the ladder's own `_last_wr`
-    # is by construction the window it zeroes on every swap — the rung being fought NOW. Reaching
-    # across the CallbackList for it would also be a lie about the callback graph (SB3 sets `.parent`
-    # only under an EventCallback, never inside a plain CallbackList).
+    # `signal/outcome_entropy_rung` (the entropy of the exploiter-ladder rung being fought NOW) was emitted
+    # by `ExploiterLadderCallback`, which was DELETED with the ladder (deletion pass L4); the series is
+    # retired with it.

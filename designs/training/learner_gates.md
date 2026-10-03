@@ -301,12 +301,10 @@ a NaN in the stashes they read is also in PPO's loss, where `check_loss_finite` 
 **TELEMETRY only (never a gradient / weight / LR):** `calibration.py`, `signal_metrics.py`,
 `scaffolding.py`, `value_terms._masked_auc`, the NaN-omitting metric folds in `ppo.py`, the fork-arm
 rate functions, the `try/except` telemetry blocks in
-`noise_scale*`, `rollout_probes`, `capacity_terms`, `cf_terms`; `consistency.py`'s own bar (`not worst
+`noise_scale*`, `rollout_probes`, `capacity_terms`; `consistency.py`'s own bar (`not worst
 < BAR` also fails on NaN).
 
-**OPEN — off in production, recorded rather than changed:** `cf_label_buffer.py` rejects non-finite
-external labels at ingest and COUNTS them (`cf/labels_skipped_total`) — whether an external producer's
-bad row is fatal is a policy call; `keyed_draw.py` reports a NaN logit row as "no legal action" (fail-closed, misleading message);
+**OPEN — off in production, recorded rather than changed:** `keyed_draw.py` reports a NaN logit row as "no legal action" (fail-closed, misleading message);
 `--target-kl nan` parses (no finiteness validation in the parser).
 
 **The exit side (cutover-prep, `743008c1`).** Every K9(c) raise is `main.exit_codes.NonFiniteLearnerError`

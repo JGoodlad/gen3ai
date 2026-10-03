@@ -196,8 +196,6 @@ def _builder(teams: str, n_teams: int, offset: int) -> Any:
             self._pool_index_by_packed = {p: i for i, p in enumerate(packed)}
             self.bias_packed_teams = []
             self.bias_prob = 0.0
-            self._team_pfsp = "off"
-            self._tp_weights = None
             self._last_pool_idx = None
             self._twr_wins, self._twr_games = {}, {}
             self._block_episodes, self._block_cached, self._block_cached_idx, self._block_left = 1, None, None, 0
@@ -457,7 +455,7 @@ def learner_check(rec: Dict[str, Any], rust_buf: Dict[str, Any], py_buf: Dict[st
         venv = RustVecEnv(n_envs=n, observation_space=obs, action_space=act, build=lambda m: None)
         model = TK.fresh_model(venv, n_steps=n_steps, batch_size=micro, n_epochs=n_epochs,
                                seed=int(rec["model_seed"]), perturb_seed=int(rec["perturb_seed"]))
-        apply_training_hparams(model, args, mappings=None, attach_cf_labels=lambda _m: None)
+        apply_training_hparams(model, args, mappings=None)
         _unset_to_class_defaults(model)
         model.n_epochs = n_epochs
         model.batch_size = micro

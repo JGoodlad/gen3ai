@@ -1,6 +1,5 @@
 """Pins for ``RustVecEnv``'s env surface (M5 Lane G): every ``env_method`` a training callback calls is
-either SERVED (``SURFACE``) or reachable only under a flag ``--env-core rust`` refuses at startup
-(``REFUSED_WITH_FLAG``); the routing reaches the collector's pieces; an unmapped call is a typed
+SERVED (``SURFACE``); the routing reaches the collector's pieces; an unmapped call is a typed
 refusal, and ``has_attr`` answers False instead of crashing."""
 from __future__ import annotations
 
@@ -33,19 +32,11 @@ def _callers():
     return names
 
 
-def test_every_env_method_a_callback_calls_is_served_or_refused_by_flag():
+def test_every_env_method_a_callback_calls_is_served():
     names = _callers()
     assert "set_self_play_target" in names and "drain_team_wr_counts" in names  # the scan works
-    unmapped = {n: w for n, w in names.items() if n not in R.SURFACE and n not in R.REFUSED_WITH_FLAG}
-    assert not unmapped, f"env_method(s) neither served nor refused under --env-core rust: {unmapped}"
-
-
-def test_every_refused_method_names_a_flag_the_startup_refuses():
-    from main.train import combination_checks as CC
-
-    reasons = " ".join(why for _d, _p, why in CC._ENV_CORE_UNPORTED)
-    for method, flag in R.REFUSED_WITH_FLAG.items():
-        assert flag in reasons, (method, flag)
+    unmapped = {n: w for n, w in names.items() if n not in R.SURFACE}
+    assert not unmapped, f"env_method(s) a callback calls that --env-core rust does not serve: {unmapped}"
 
 
 class _Opp:
@@ -88,7 +79,7 @@ def test_the_surface_routes_to_the_collector():
 def test_unmapped_calls_are_typed_refusals():
     env, _col, _t = _env()
     with pytest.raises(R.RustEnvSurfaceError, match="set_team_pfsp_weights"):
-        env.env_method("set_team_pfsp_weights", [1.0])
+        env.env_method("set_team_pfsp_weights", [1.0])      # a DELETED lever's method: still a typed refusal
     with pytest.raises(R.RustEnvSurfaceError, match="not stepped"):
         env.step_async(np.zeros(2))
     assert env.has_attr("action_masks") is False

@@ -126,7 +126,7 @@ this definition.
 
 Every game is **(our team) × (who the opponent is) × (the opponent's team)**. Today one 719-team
 pool and a set of accreted flags (`--heuristic-floor`, `--stable-opponent-selfplay-share`,
-`--team-pfsp`, `--team-block-episodes`, `--pool-spread`, `--pfsp-scale`) serve all three draws at
+`--team-pfsp` (deleted in deletion pass L4, 2026-10-02; the one PLR sampler below replaces it, a new build), `--team-block-episodes`, `--pool-spread`, `--pfsp-scale`) serve all three draws at
 once. That is the root of several confounds this month, the unregistered `--team-block-episodes`
 lever among them.
 

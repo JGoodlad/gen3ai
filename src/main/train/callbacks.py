@@ -62,41 +62,11 @@ def _value_sidecar_on(args) -> bool:
     return is_winprob(getattr(args, "critic", None) or CRITIC_DEFAULT)
 
 
-def _arg_or(args, name, default):
-    """`args.<name>`, or ``default`` when it is absent/None — WITHOUT collapsing a falsy value.
-
-    `getattr(args, name, d) or d` is the idiom everywhere else in this file and it is wrong for any
-    knob whose 0 / 0.0 means something: it would rewrite the value the operator typed into the
-    default and the run would report the arm it was not.
-    """
-    got = getattr(args, name, None)
-    return default if got is None else got
-
-
-def team_pfsp_live_probe(args, pool):
-    """gen3_supply_guard_v2 — when must `--team-pfsp` be receiving team games? Always under
-    `--exploiter` (every target battle counts), so ``None`` (= always live); under `--self-play`
-    only once the pool is seeded AND the curriculum's persisted self_play_fraction is > 0 — a fresh
-    run below the seeding gate legitimately plays no pool battle."""
-    if getattr(args, "exploiter", None):
-        return None
-
-    def _probe() -> bool:
-        if pool is None or pool.is_empty():
-            return False
-        return float(pool.load_summary().get("self_play_fraction") or 0.0) > 0.0
-    return _probe
-
-
 def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
                     _fixed_opponents, _bot_weight_vec, OPPONENT_CLASSES,
                     _specialist_team_str, _promote_threshold,
-                    _heuristic_floor, _sp_start_wr, _sp_full_wr,
-                    _cf_supply=None) -> CallbackBundle:
-    """Build every `learn()`-time callback this run's flags ask for.
-
-    ``_cf_supply`` is the cf label supply `main()` acquired at startup
-    (`agents.training.cf_supply.start_cf_label_supply`), or None."""
+                    _heuristic_floor, _sp_start_wr, _sp_full_wr) -> CallbackBundle:
+    """Build every `learn()`-time callback this run's flags ask for."""
     # --- Callback Setup (Shared) ---
     # Periodic checkpoints land in <run>/checkpoints/ (SB3 makedirs it); the callback
     # keeps latest.txt + metadata.json at the run root (derived from save_path).
@@ -105,9 +75,8 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     # callback call whose `num_timesteps` reaches the next multiple of the interval (`run_io.
     # _TrackingCheckpointCallback`, `constants.checkpoint_due`), so it means the same thing at any
     # `--n-envs` and under every collector — sync, Rust, `--async-rollout` waves. Counting calls
-    # cost twice: 50 000 calls read as "50k steps" starved the cf label producer (2.4M env steps at
-    # N = 48), and was ~102M env steps at N = 2048 (F-SZ-3). The interval lives in
-    # `main.train.constants` because `config`'s duty-cycle refusal must agree with it, and phase 1
+    # cost twice: 50 000 calls read as "50k steps" at N = 48 (2.4M env steps), and was ~102M env
+    # steps at N = 2048 (F-SZ-3). The interval lives in `main.train.constants` because phase 1
     # cannot import phase 4. Unset `--checkpoint-every-steps` = DEFAULT_CHECKPOINT_EVERY_ENV_STEPS.
     checkpoint_callback = _TrackingCheckpointCallback(
         interval_env_steps=checkpoint_interval_env_steps(
@@ -244,18 +213,6 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             callbacks.append(ExploiterTempAnnealCallback(
                 temp_start=args.exploiter_temp_start, temp_end=args.exploiter_temp_end,
                 anneal_frac=args.exploiter_temp_anneal_frac))
-    # gen3_exploiter_pool_ladder_v1: the OTHER difficulty axis — swap the exploiter target's WEIGHTS
-    # up a ladder of frozen opponents (weakest → the --exploiter target) as the trainee's training
-    # win-rate vs the LIVE rung clears the gate. Orthogonal to the temperature curriculum above (that
-    # one varies stochasticity, this one varies strength) and composable with it. The rungs were
-    # resolved + arch-gated in phase 2 (main.train.matchup_setup); registered ONLY when they exist →
-    # an off run adds no callback and makes no env_method call (byte-identical). Training-only.
-    _ladder_rungs = getattr(args, "_exploiter_ladder_rungs", None)
-    if _ladder_rungs:
-        from agents.training.exploiter_ladder import ExploiterLadderCallback
-        callbacks.append(ExploiterLadderCallback(
-            rungs=_ladder_rungs, gate=args.exploiter_ladder_gate,
-            window=args.exploiter_ladder_window, run_dir=model_dir))
     # Win-probability head: captures each episode's win/loss outcome during collection + back-fills the
     # rollout buffer's MC label before train() (only when the head is on → a default run pays nothing).
     # M5 Lane G: under `--env-core rust` the COLLECTOR fills `win_target` / `win_mask` (complete
@@ -290,41 +247,13 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             and getattr(args, "env_core", "python") != "rust"):
         from agents.training.fork_callback import ForkArmCallback
         callbacks.append(ForkArmCallback(
-            records_dir=(os.path.join(model_dir, "cf_records")
-                         if getattr(args, "cf_records", False) else None),
             impl=str(getattr(args, "bridge_impl", "rust") or "rust"),
             starve_cycles=starve_cycles_for(args, "fork")))
-    # Team-side PFSP: variance-weighted TEAM sampling by self-play win-rate. Registered ONLY when on
-    # → an off run adds no callback and makes no env_method calls (byte-identical). Training-only.
-    if args.team_pfsp != "off":
-        from agents.training.team_pfsp_callback import TeamPFSPCallback
-        callbacks.append(TeamPFSPCallback(cap=args.team_pfsp_cap, floor=args.team_pfsp_floor,
-                                          mode=args.team_pfsp, persist_dir=model_dir,
-                                          live_probe=team_pfsp_live_probe(args, _pool),
-                                          starve_cycles=starve_cycles_for(args, "team_pfsp")))
     # PER-TEAM WIN-RATE TRACKING (default ON): instrumentation only — sparse TB summaries + a
-    # restart-safe <run>/team_win_rates.json full table. Independent of --team-pfsp (different key,
-    # different opponent scope, separate counter table); the two only share the builder's draw index.
+    # restart-safe <run>/team_win_rates.json full table.
     if getattr(args, "team_wr_tracking", True):
         from agents.training.team_winrate_callback import TeamWinRateCallback
         callbacks.append(TeamWinRateCallback(run_dir=model_dir))
-    # CF SUPPLY GUARD (gen3_supply_guard_v1): a live cf-buffer coefficient whose label stream
-    # accepts nothing for --cf-supply-starve-cycles train() cycles AND --cf-supply-starve-minutes
-    # (once a checkpoint exists) is FATAL_SUPPLY (5); a spawned producer that exits is FATAL at
-    # once. No live consumer → no callback (byte-identical).
-    from agents.training.cf_supply import live_cf_consumers
-    _cf_consumers = live_cf_consumers(args)
-    if _cf_consumers:
-        from agents.training.cf_supply import (DEFAULT_STARVE_CYCLES, DEFAULT_STARVE_MINUTES,
-                                               CfSupplyGuard)
-        from agents.training.cf_supply_callback import CfSupplyCallback
-        callbacks.append(CfSupplyCallback(
-            CfSupplyGuard(
-                _cf_consumers,
-                starve_cycles=_arg_or(args, "cf_supply_starve_cycles", DEFAULT_STARVE_CYCLES),
-                starve_minutes=_arg_or(args, "cf_supply_starve_minutes", DEFAULT_STARVE_MINUTES),
-                supply=_cf_supply),
-            run_dir=model_dir, supply=_cf_supply))
     eval_callback = None
     # A --debug smoke run skips ALL eval by default — the periodic eval callback below AND the
     # final win-rate eval — so it needs no eval opponents / Showdown eval connection and stays

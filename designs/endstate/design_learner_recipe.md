@@ -674,7 +674,7 @@ matches its control at the SAME dose is its secondary read.
   - Snapshots enter by promotion.
   - Bots get at least 10 % of games.
   - `stable_opponent_selfplay_share` 0.2.
-  - `pfsp_scale` 0, `team_pfsp` off.
+  - `pfsp_scale` 0 (and `team_pfsp` was off — team-PFSP was deleted in deletion pass L4).
   - `exploiter_bot_fraction` is 0.5 but INERT (it acts only with `--exploiter-keep-bots`).
   - The 20 and the 0.3 are hardcoded and undocumented in `designs/training/`.
 - **Ledger.**

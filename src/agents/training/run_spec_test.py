@@ -142,7 +142,6 @@ def test_resolve_zip_and_config_splits_the_step_for_a_stepless_caller():
 # Showdown team EXPORT line ("Skarmory @ Leftovers"), which is not a run spec.
 _RUN_SPEC_MODULES = (
     "agents/training/fixed_opponent_pool.py",
-    "agents/training/exploiter_ladder.py",
     "agents/training/matchup_spec.py",
     "agents/training/warmstart.py",
     "main/train/model_build.py",
@@ -213,7 +212,6 @@ _RESOLVER_CONSUMERS = {
     "main/train/model_build.py": "--warmstart-consensus",
     "main/train/matchup_setup.py": "--stable-opponents, --exploiter",
     "agents/training/warmstart.py": "--warmstart-consensus (the standalone CLI)",
-    "agents/training/exploiter_ladder.py": "--exploiter-ladder",
 }
 
 #: Filenames a consumer must not construct for itself — the rungs the resolver owns.

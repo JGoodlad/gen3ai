@@ -4,7 +4,7 @@ WHY THIS MODULE EXISTS. `agents.model.flag_registry`'s `requires` graph expresse
 dependency — *flag A must be ENABLED for flag B to be enabled* — and `main.checkargs` reads it, so
 an unsatisfiable structural combination is reported offline instead of crashing inside
 `Gen3FeaturesExtractor.__init__`. But some launch-time refusals are not that shape: they are
-value-conditional (*`--q-winprob-coef` > 0 requires `--q-winprob-mode`*), they lived in
+value-conditional (*`--pfsp-scale` > 0 requires `--self-play`*), they lived in
 `main.train.config.resolve_config` as `parser.error` lines, and nothing outside that function knew
 them.
 
@@ -30,8 +30,8 @@ own exit style; `main.checkargs` calls `failing_checks` on the EFFECTIVE namespa
 on the fork parent's recorded config) and reports every one. Neither owns the rule.
 
 WHAT BELONGS HERE: a refusal that reads two or more RESOLVED values and says one combination is
-incoherent — including a range check that only applies in a mode (`--exploiter-ladder-gate` under
-`--exploiter-ladder`), because "which flag turns this on" is itself a cross-flag fact. What does
+incoherent — including a range check that only applies in a mode (`--exploiter-temp-ratchet-wr`
+under `--exploiter-temp-mode ratchet`), because "which flag turns this on" is itself a cross-flag fact. What does
 NOT: a range check on a single value (`--rank-tripwire-drop` in (0, 1)), which argparse's caller can
 answer from the one value it has; and anything needing the parser, a torch import, an env var, or a
 filesystem — those stay in `resolve_config`, which has them, and are listed with
@@ -146,11 +146,6 @@ def _belief_mode(args) -> str:
     return _val(args, "move_belief_mode", "off")
 
 
-def _q_live(args) -> bool:
-    return ((getattr(args, "q_winprob_coef", None) or 0.0) > 0.0
-            or (getattr(args, "q_winprob_onpolicy_coef", None) or 0.0) > 0.0)
-
-
 def _adaptive_on(args) -> bool:
     return _val(args, "adaptive_batch", "off") != "off"
 
@@ -177,54 +172,6 @@ def _fams(args, wanted: set) -> bool:
     return bool(fams and (fams & wanted))
 
 
-#: The cf-buffer consumers — the SAME tuple `agents.training.cf_supply` guards (pinned by
-#: `cf_supply_test`); a literal here keeps this module import-light for `checkargs`.
-_CF_CONSUMER_COEFS: Tuple[str, ...] = (
-    "cf_winprob_coef", "cf_evidential_coef", "cf_twin_coef", "cf_shadow_coef",
-    "q_winprob_coef", "q_winprob_onpolicy_coef")
-
-
-def _cf_duty_cycle_starved(args) -> bool:
-    """The counterfactual label path is starved BY CONSTRUCTION — see `_announce_cf_duty_cycle`."""
-    on = (_positive(getattr(args, "cf_twin_coef", None))
-          or _positive(getattr(args, "cf_winprob_coef", None)))
-    if not (on and getattr(args, "cf_records", None)) or getattr(args, "debug", False):
-        return False
-    from main.train.constants import (CF_DUTY_CYCLE_FLOOR, cf_label_duty_cycle,
-                                      checkpoint_interval_env_steps)
-    interval = checkpoint_interval_env_steps(getattr(args, "checkpoint_every_steps", None))
-    return cf_label_duty_cycle(args.cf_label_lag_steps, interval) < CF_DUTY_CYCLE_FLOOR
-
-
-def _cf_duty_cycle_message(args) -> str:
-    from main.train.constants import (CF_DUTY_CYCLE_FLOOR, cf_label_duty_cycle,
-                                      checkpoint_interval_env_steps)
-    n_envs = int(args.n_envs)
-    every = getattr(args, "checkpoint_every_steps", None)
-    interval = checkpoint_interval_env_steps(every)
-    duty = cf_label_duty_cycle(args.cf_label_lag_steps, interval)
-    shown = ("unbounded (--cf-label-lag-steps 0 = labels never expire)" if duty == float("inf")
-             else f"{duty:.1%}")
-    return (
-        f"\n[CF] FATAL: the counterfactual label path is STARVED BY CONSTRUCTION.\n"
-        f"  --cf-label-lag-steps         : {args.cf_label_lag_steps:,} env steps\n"
-        f"  checkpoint interval          : {interval:,} env steps "
-        f"(TOTAL env steps over all {n_envs} envs)\n"
-        f"  --checkpoint-every-steps     : "
-        f"{'(unset — the 2,400,000-env-step default)' if every is None else format(every, ',')}\n"
-        f"  => DUTY CYCLE                : {shown}  (floor {CF_DUTY_CYCLE_FLOOR:.0%})\n"
-        f"  The producer stamps every label with the newest checkpoint's step, so outside that\n"
-        f"  window EVERY label it writes is expired by the buffer on arrival. Two remedies, and\n"
-        f"  either alone is enough:\n"
-        # Both remedies are printed WITHOUT thousands separators: they are copy-pasteable argv
-        # values, and `--checkpoint-every-steps 600,000` is an argparse error.
-        f"    * checkpoint MORE OFTEN: --checkpoint-every-steps "
-        f"{max(1, int(args.cf_label_lag_steps / CF_DUTY_CYCLE_FLOOR))} or less\n"
-        f"    * widen the staleness bound: --cf-label-lag-steps "
-        f"{max(1, int(CF_DUTY_CYCLE_FLOOR * interval))} or more (a label then supervises a\n"
-        f"      policy further from the one that produced it — the cost this bound exists to cap)\n")
-
-
 # --------------------------------------------------------------------------------------------
 # THE LIST. Declaration order is the source order these refusals had inside `resolve_config`.
 # --------------------------------------------------------------------------------------------
@@ -238,10 +185,6 @@ def _rust_core(args) -> bool:
 #: What `--env-core rust` does not serve yet, as (dest, predicate, reason). Each is a path the Python
 #: env or a Python-only callback owns today; the collector refuses rather than silently dropping it.
 _ENV_CORE_UNPORTED: Tuple[Tuple[str, Callable[[Any], bool], str], ...] = (
-    ("cf_records", lambda a: bool(_val(a, "cf_records", False)), "--cf-records (a bridge reconstruction tap)"),
-    ("team_pfsp", lambda a: _val(a, "team_pfsp", "off") != "off", "--team-pfsp (per-worker PFSP pulls)"),
-    ("exploiter_ladder", lambda a: bool(_val(a, "exploiter_ladder", None)),
-     "--exploiter-ladder (the rung loader is not wired to T2 yet)"),
     ("async_rollout", lambda a: bool(_val(a, "async_rollout", False)),
      "--async-rollout (a SubprocVecEnv scheduling mode)"),
 )
@@ -376,20 +319,17 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "(+V / -V / --draw-penalty), which the branch builder does not reproduce. Pass --critic "
         "winprob, or drop the flag."),
     CombinationCheck(
-        # THE EXPENSIVE SILENT NO-OP: without the ring there is no replayable episode.
-        # PYTHON CORE ONLY: on --env-core rust a fork replays the core's own finished input log
-        # (`rust_rollout/fork.py`, forks.md §14), and --cf-records is refused there.
-        "fork_needs_cf_records", ("fork_fraction", "cf_records"),
-        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0 and not _rust_core(a)
-                   and not bool(_val(a, "cf_records", False))),
-        "--fork-fraction > 0 requires --cf-records. A fork REPLAYS its episode to the forked turn "
-        "and diverges there, and the replayable record lives in the `<run>/cf_records/` ring that "
-        "--cf-records switches on; training otherwise keeps a single-slot stash it overwrites "
-        "every episode. Without the ring every fork would fail to resolve and the run would be the "
-        "unforked one under a forked name. ⚠️ Raise --cf-records-keep too: the ring is pruned "
-        "GLOBALLY to the newest N while a production rollout finishes ~2,400 episodes, so at the "
-        "default 512 the forks that DO resolve are the rollout's LATE ones — a selection bias, not "
-        "just a shortfall. Pass --cf-records, or drop the flag."),
+        # THE PYTHON CORE'S FORK ARM IS UNREACHABLE: it replayed its episode from the `<run>/cf_records/`
+        # ring, and the ring (`--cf-records`) was deleted with the cf training half (deletion pass L4).
+        # The arm's own code goes in L5. On --env-core rust a fork replays the core's finished input log
+        # (`rust_rollout/fork.py`, forks.md §14) and needs no ring.
+        "fork_python_core_unavailable", ("fork_fraction", "env_core"),
+        lambda a: float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0 and not _rust_core(a),
+        "--fork-fraction > 0 on --env-core python is UNAVAILABLE: the Python core's fork arm "
+        "replayed its episode from the `<run>/cf_records/` ring, and that ring (--cf-records) was "
+        "DELETED with the counterfactual training half (deletion pass L4; the arm itself goes in "
+        "L5). The Rust core forks from its own finished input log — use --env-core rust (the "
+        "default)."),
     CombinationCheck(
         "fork_refuses_strata_weight", ("fork_fraction", "win_prob_strata_weight"),
         lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
@@ -459,19 +399,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
                    f"--self-play, or drop --pfsp-scale."),
         exit_style="fatal_config"),
     CombinationCheck(
-        # `--team-pfsp` measures per-team win-rates ONLY on self-play POOL battles or EXPLOITER
-        # target battles (wrappers._maybe_record_team_pfsp — bots are excluded by design). With
-        # neither on, not one game is ever counted and team sampling stays uniform.
-        "team_pfsp_needs_self_play_or_exploiter", ("team_pfsp", "self_play", "exploiter"),
-        lambda a: (_val(a, "team_pfsp", "off") != "off"
-                   and not bool(_val(a, "self_play", False)) and not getattr(a, "exploiter", None)),
-        lambda a: (f"\n[SUPPLY] FATAL: --team-pfsp {_val(a, 'team_pfsp', 'off')} counts per-team "
-                   f"games ONLY on self-play pool battles or exploiter-target battles (bots are "
-                   f"excluded), and this run has neither --self-play nor --exploiter — no team "
-                   f"win-rate would ever be measured and sampling would stay uniform. Pass "
-                   f"--self-play, or drop --team-pfsp."),
-        exit_style="fatal_config"),
-    CombinationCheck(
         "supply_starve_cycles_parses", ("supply_starve_cycles",),
         lambda a: _starve_spec_error(a) is not None,
         lambda a: str(_starve_spec_error(a))),
@@ -537,29 +464,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "--exploiter-temp-mode ratchet needs --exploiter-temp-start > "
         "--exploiter-temp-end (it ratchets the temp DOWN from start toward end)."),
     CombinationCheck(
-        "exploiter_ladder_needs_exploiter", ("exploiter_ladder", "exploiter"),
-        lambda a: bool(a.exploiter_ladder) and not a.exploiter,
-        "--exploiter-ladder only applies in exploiter mode — pass --exploiter "
-        "<target> too (the ladder's TERMINAL rung IS that target; without it the "
-        "curriculum has no destination)."),
-    CombinationCheck(
-        "exploiter_ladder_gate_range", ("exploiter_ladder", "exploiter_ladder_gate"),
-        lambda a: bool(a.exploiter_ladder) and not 0.0 < a.exploiter_ladder_gate < 1.0,
-        "--exploiter-ladder-gate must be a win-rate in (0, 1)."),
-    CombinationCheck(
-        "exploiter_ladder_window_min", ("exploiter_ladder", "exploiter_ladder_window"),
-        lambda a: bool(a.exploiter_ladder) and a.exploiter_ladder_window < 1,
-        "--exploiter-ladder-window must be >= 1."),
-    CombinationCheck(
-        "exploiter_ladder_rungs_min", ("exploiter_ladder", "exploiter_ladder_rungs"),
-        lambda a: bool(a.exploiter_ladder) and a.exploiter_ladder_rungs < 1,
-        "--exploiter-ladder-rungs must be >= 1 (the number of auto: rungs drawn "
-        "BEFORE the --exploiter target is appended)."),
-    CombinationCheck(
-        "exploiter_ladder_rungs_min_no_ladder", ("exploiter_ladder", "exploiter_ladder_rungs"),
-        lambda a: not a.exploiter_ladder and a.exploiter_ladder_rungs < 1,
-        "--exploiter-ladder-rungs must be >= 1."),
-    CombinationCheck(
         "exploiter_temp_ratchet_needs_start", ("exploiter_temp_start", "exploiter_temp_mode"),
         lambda a: a.exploiter_temp_start is None and a.exploiter_temp_mode == "ratchet",
         "--exploiter-temp-mode ratchet requires --exploiter-temp-start (the initial/max "
@@ -578,80 +482,11 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "--fork-lr-freeze needs --fork-lr: it freezes the KL controller AT the pinned "
         "rate, and without a pin there is no rate to freeze at (pass --fork-lr <value>)."),
 
-    # ---- the counterfactual label family -----------------------------------------------------
-    CombinationCheck(
-        "cf_winprob_coef_needs_win_prob_mode", ("cf_winprob_coef", "win_prob_mode"),
-        lambda a: _positive(a.cf_winprob_coef)
-        and _val(a, "win_prob_mode", "none") == "none",
-        "--cf-winprob-coef > 0 requires --win-prob-mode read_only|shaping — the "
-        "counterfactual labels supervise the WIN-PROB head, which 'none' does not build"),
-    CombinationCheck(
-        "cf_evidential_coef_needs_head", ("cf_evidential_coef", "cf_evidential"),
-        lambda a: _positive(a.cf_evidential_coef) and not a.cf_evidential,
-        "--cf-evidential-coef > 0 requires --cf-evidential — the evidential term "
-        "supervises a head that flag BUILDS, and it is a structural (version-gated) "
-        "toggle that cannot be turned on mid-run"),
-    CombinationCheck(
-        "cf_twin_coef_needs_heads", ("cf_twin_coef", "cf_twin_heads"),
-        lambda a: _positive(a.cf_twin_coef) and not a.cf_twin_heads,
-        "--cf-twin-coef > 0 requires --cf-twin-heads — the twin heads are a "
-        "state_dict change (v99, version-gated) and cannot be added to a run that "
-        "did not start with them."),
-    CombinationCheck(
-        "cf_twin_heads_need_win_prob_mode", ("cf_twin_heads", "win_prob_mode"),
-        lambda a: bool(a.cf_twin_heads) and _val(a, "win_prob_mode", "none") == "none",
-        "--cf-twin-heads requires --win-prob-mode read_only|shaping — the twins "
-        "mirror head A's on-policy BCE, and --win-prob-mode none builds no head A, so "
-        "the arm's control arm would not exist."),
-    CombinationCheck(
-        "cf_shadow_coef_needs_critic", ("cf_shadow_coef", "cf_shadow_critic"),
-        lambda a: _positive(a.cf_shadow_coef) and not a.cf_shadow_critic,
-        "--cf-shadow-coef > 0 requires --cf-shadow-critic — the shadow head is a "
-        "state_dict change (v99, version-gated) and cannot be added to a run that "
-        "did not start with it."),
-    CombinationCheck(
-        "q_winprob_coef_needs_mode",
-        ("q_winprob_coef", "q_winprob_onpolicy_coef", "q_winprob_mode"),
-        lambda a: _q_live(a) and _val(a, "q_winprob_mode", "none") == "none",
-        "--q-winprob-coef / --q-winprob-onpolicy-coef > 0 requires --q-winprob-mode "
-        "read_only — the term supervises a head that flag BUILDS, and it is a "
-        "structural (version-gated) toggle that cannot be turned on mid-run."),
     CombinationCheck(
         "obs_source_core_needs_rust_bridge", ("obs_source", "use_bridge"),
         lambda a: _val(a, "obs_source", None) == "core" and _val(a, "use_bridge", "rust") != "rust",
         "--obs-source core requires --use-bridge rust — the core that builds the row lives in "
         "the rust sim_bridge child (gen3_core_obs_source_v1)"),
-    CombinationCheck(
-        "cf_records_needs_bridge", ("cf_records", "use_bridge"),
-        lambda a: bool(a.cf_records) and _val(a, "use_bridge", "rust") == "off",
-        "--cf-records requires the in-process bridge (--use-bridge node|rust) — the "
-        "reconstruction record is a bridge frame; a websocket run emits none"),
-    CombinationCheck(
-        # gen3_supply_guard_v1 — THE CLASS `ai_v12_12_ladder_cflabels` fell into (10M steps at
-        # --cf-winprob-coef 0.5, ZERO labels): a live cf-buffer coefficient whose supplier cannot
-        # exist. The trainer-spawned producer labels the `cf_records/` ring; without the tap it has
-        # nothing to label, so the coefficient would fold nothing for the whole run.
-        "cf_consumer_needs_label_supply",
-        ("cf_winprob_coef", "cf_evidential_coef", "cf_twin_coef", "cf_shadow_coef",
-         "q_winprob_coef", "q_winprob_onpolicy_coef", "cf_records", "cf_label_supply"),
-        lambda a: (any(_positive(_val(a, c, 0.0)) for c in _CF_CONSUMER_COEFS)
-                   and (_val(a, "cf_label_supply", "producer") or "producer") == "producer"
-                   and not bool(_val(a, "cf_records", False))),
-        lambda a: (
-            f"\n[SUPPLY] FATAL: {', '.join(c for c in _CF_CONSUMER_COEFS if _positive(_val(a, c, 0.0)))}"
-            f" is live, but its label SUPPLY cannot exist: the cf label producer (which "
-            f"--cf-label-supply producer starts at launch) labels the reconstruction records "
-            f"--cf-records rings into <run>/cf_records/, and --cf-records is off. The coefficient "
-            f"would fold NOTHING for the whole run (ai_v12_12_ladder_cflabels: 10M steps, 0 labels). "
-            f"Pass --cf-records, or set the coefficient(s) to 0."),
-        exit_style="fatal_config"),
-    CombinationCheck(
-        # gen3_cf_label_duty_cycle_v1 — a quantity nobody was computing. FATAL_CONFIG, not
-        # parser.error: a restart would hit the identical config, so the launcher must give up.
-        "cf_label_duty_cycle_floor",
-        ("cf_twin_coef", "cf_winprob_coef", "cf_records", "cf_label_lag_steps",
-         "checkpoint_every_steps", "n_envs"),
-        _cf_duty_cycle_starved, _cf_duty_cycle_message, exit_style="fatal_config"),
 
     # ---- the belief stack ---------------------------------------------------------------------
     CombinationCheck(

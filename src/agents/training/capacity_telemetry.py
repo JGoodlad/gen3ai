@@ -315,7 +315,7 @@ def halfbatch_trunk_cosine(model, rollout_data, actions, advantages, trunk_param
 def probe_features(model, probe_obs: th.Tensor) -> Optional[th.Tensor]:
     """One no_grad EAGER extractor forward on the frozen probe batch -> its ``value_pooled``.
 
-    EAGER (``type(fe).forward``) and observation-key-only, for the reasons `cf_terms` gives: the
+    EAGER (``type(fe).forward``) and observation-key-only: the
     compile flags patch the BOUND ``fe.forward``, and routing a second, differently-shaped obs dict
     through the compiled entry point would add a graph shape for a diagnostic.
     """

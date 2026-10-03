@@ -40,14 +40,6 @@ class FoldFlags(NamedTuple):
     scaffolding_on: Any
     policy_grad_coef: Any
     td_aux_on: Any
-    cf_buffer: Any
-    cf_winprob_on: Any
-    cf_evid_on: Any
-    cf_twin_on: Any
-    cf_shadow_on: Any
-    q_winprob_on: Any
-    q_onpolicy_on: Any
-    cf_any_on: Any
     fork_pg_mask_on: Any
 
 
@@ -117,8 +109,7 @@ class TrainSetup:
             behaviour_probe(self)
 
     def _resolve_fold_flags(self) -> FoldFlags:
-        """WHICH terms are live this call. Pure resolution plus ONE side effect — the counterfactual
-        buffer's single disk poll, which sits where it always did: right after `cf_any_on` is known."""
+        """WHICH terms are live this call. Pure resolution."""
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
         belief_aux_on = self.opp_belief_aux_coef > 0.0
         move_belief_on = self.move_belief_coef > 0.0  # +MOVE-BELIEF reinjection-head supervised loss
@@ -149,54 +140,6 @@ class TrainSetup:
         # buffer pairs. 0.0 → the block is skipped entirely (no sampler, no extra forward, loss
         # byte-identical to today). See `_td_aux_term`.
         td_aux_on = float(getattr(self, "td_aux_coef", 0.0)) > 0.0
-        # +CF-WINPROB (gen3_cf_label_plumbing_v1): the counterfactual MC win-prob grounding term.
-        # On when the coef is non-zero, a label buffer is attached, AND the extractor actually has a
-        # win-prob head to supervise (`--win-prob-mode` != none). 0.0 / no buffer / no head → the
-        # block is skipped entirely: no disk poll, no sample, no forward, loss byte-identical.
-        cf_buffer = getattr(self, "_cf_buffer", None)
-        cf_winprob_on = (
-            float(getattr(self, "cf_winprob_coef", 0.0)) != 0.0
-            and cf_buffer is not None
-            and getattr(self.policy.features_extractor, "win_head", None) is not None
-        )
-        # +CF-EVIDENTIAL (gen3_cf_evidential_head_v1): the Beta uncertainty readout, on the SAME
-        # labels and the SAME forward. Independent of the scalar term — either, both or neither may
-        # be live — but it needs the STRUCTURAL head (`--cf-evidential`), a launch-time decision.
-        cf_evid_on = (
-            float(getattr(self, "cf_evidential_coef", 0.0)) != 0.0
-            and cf_buffer is not None
-            and getattr(self.policy.features_extractor, "cf_evid_head", None) is not None
-        )
-        # +CF-TWIN (gen3_cf_twin_heads_v1): the twin win-prob heads B/C — the within-run paired
-        # comparison. Needs the STRUCTURAL heads (`--cf-twin-heads`) AND a live coefficient; at
-        # coefficient 0 the whole block is skipped INCLUDING the on-policy mirror, so a built-but-
-        # unused pair leaves every parameter update byte-identical to not building them.
-        cf_twin_on = (
-            float(getattr(self, "cf_twin_coef", 0.0)) != 0.0
-            and cf_buffer is not None
-            and getattr(self.policy.features_extractor, "cf_twin_head_b", None) is not None
-        )
-        # +CF-SHADOW (gen3_cf_twin_heads_v1): the passive value twin on `mc_return` labels.
-        cf_shadow_on = (
-            float(getattr(self, "cf_shadow_coef", 0.0)) != 0.0
-            and cf_buffer is not None
-            and getattr(self.policy.features_extractor, "cf_shadow_head", None) is not None
-        )
-        # +Q-WINPROB (gen3_q_winprob_head_v1, v107): the PER-ACTION win-prob head — the amortized
-        # one-ply search leaf (E5 step 2, GROUND). Two INDEPENDENT coefficients over one head: the
-        # counterfactual per-action likelihood, and the WEAK taken-action fallback whose bias is
-        # documented at its flag. Either being live turns the block on; both zero, no buffer or no
-        # head (`--q-winprob-mode none`) skips it entirely — no sample, no forward, loss
-        # byte-identical.
-        q_head_built = getattr(self.policy.features_extractor, "q_winprob_head", None) is not None
-        q_winprob_on = (
-            float(getattr(self, "q_winprob_coef", 0.0)) != 0.0
-            and cf_buffer is not None and q_head_built
-        )
-        q_onpolicy_on = (
-            float(getattr(self, "q_winprob_onpolicy_coef", 0.0)) != 0.0
-            and cf_buffer is not None and q_head_built
-        )
         # +FORK-MASK (gen3_fork_v1): is the fork step's POLICY-TERM mask live for this call? The
         # predicate is the OBS KEY's presence and not the flag's value, deliberately: the key is
         # declared only when `--fork-fraction > 0`, and reading it is what the fold actually
@@ -206,20 +149,12 @@ class TrainSetup:
         fork_pg_mask_on = (
             isinstance(self.rollout_buffer.observations, dict)
             and FORK_PG_MASK_KEY in self.rollout_buffer.observations)
-        cf_any_on = (cf_winprob_on or cf_evid_on or cf_twin_on or cf_shadow_on
-                     or q_winprob_on or q_onpolicy_on)
-        if cf_any_on:
-            # ONE disk poll per train() (= per rollout), not per minibatch: the producer writes at
-            # its own pace and re-globbing a directory 240 times an update buys nothing.
-            cf_buffer.poll(int(self.num_timesteps))
         return FoldFlags(
             belief_aux_on=belief_aux_on, move_belief_on=move_belief_on, move_latent_on=move_latent_on,
             spread_belief_on=spread_belief_on, hp_type_belief_on=hp_type_belief_on, item_belief_on=item_belief_on,
             critic_winprob=critic_winprob, win_prob_on=win_prob_on, scaffolding_on=scaffolding_on,
-            policy_grad_coef=policy_grad_coef, td_aux_on=td_aux_on, cf_buffer=cf_buffer,
-            cf_winprob_on=cf_winprob_on, cf_evid_on=cf_evid_on, cf_twin_on=cf_twin_on,
-            cf_shadow_on=cf_shadow_on, q_winprob_on=q_winprob_on, q_onpolicy_on=q_onpolicy_on,
-            cf_any_on=cf_any_on, fork_pg_mask_on=fork_pg_mask_on,
+            policy_grad_coef=policy_grad_coef, td_aux_on=td_aux_on,
+            fork_pg_mask_on=fork_pg_mask_on,
         )
 
     def _train_probe_setup(self) -> ProbeSetup:

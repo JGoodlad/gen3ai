@@ -72,8 +72,7 @@ recorded in `metadata.json`'s `cli_args`, so it cannot be mirrored here.
 `value_entity_pool_full` and `value_threat_inject`, which SURVIVE the swap: they inject additively
 into `value_pooled`, which is exactly what the win head reads.
 
-The v97 → v109 migration adds 39 keys that did not exist in gen-17's config (the `cf_*` family, the
-`q_winprob_*` family, `policy_grad_coef`, `rank_tripwire`, … — and a distillation block that deletion pass L3 has since removed). All take the
+The v97 → v109 migration added 39 keys that did not exist in gen-17's config (`policy_grad_coef`, `rank_tripwire`, … — and a distillation block that deletion pass L3 has since removed; the `cf_*` family (13 keys) and the `q_winprob_*` family (3 keys) were removed from the mirror with their levers by deletion pass L4, which took 16 keys out of it). All take the
 migration's defaults, and all read OFF or INERT in §6's generated table.
 
 ### One flag a hand-built relaunch argv will drop

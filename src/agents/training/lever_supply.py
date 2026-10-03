@@ -1,10 +1,10 @@
 """Every OTHER live lever's supply as a DECLARED resource — `gen3_supply_guard_v2` (2026-09-30).
 
-`gen3_supply_guard_v1` (`agents.training.cf_supply`) closed the cf label producer: a coefficient
-that was ON while its supplier was absent trained a whole run on nothing, and every counter that
-could have said so was a scalar nobody thresholded. The supply inventory of the same day found the
-same SHAPE in six more places — a flag that is set, a mechanism that silently delivers nothing, and
-a run that then reads as a result about the lever:
+`gen3_supply_guard_v1` closed the cf label producer (deleted with the cf training half, deletion pass
+L4): a coefficient that was ON while its supplier was absent trained a whole run on nothing, and every
+counter that could have said so was a scalar nobody thresholded. The supply inventory of the same day
+found the same SHAPE in more places — a flag that is set, a mechanism that silently delivers nothing,
+and a run that then reads as a result about the lever (the ones still live):
 
 =====================  ===========================================  ==================================
 lever (``key``)        what silently happened instead               measured victim
@@ -14,8 +14,6 @@ lever (``key``)        what silently happened instead               measured vic
                                                                      `ai_v6_10_unified_obs_0618`
 ``pfsp``               `--pfsp-scale` with no sentinel win-rate:     (inventory)
                        the pool sample stays uniform / stale
-``team_pfsp``          `--team-pfsp` with no self-play team games:   (inventory)
-                       team sampling stays uniform
 ``fork``               `--fork-fraction` whose arm disables itself   (inventory)
                        or forks nothing, with a print
 =====================  ===========================================  ==================================
@@ -101,8 +99,6 @@ LEVERS: Dict[str, Lever] = {lv.key: lv for lv in (
     Lever("pfsp", "--pfsp-scale", "eval cycle", "a measured sentinel win-rate",
           "PFSP has nothing to weight — the pool sample stays uniform (or frozen at stale rates)",
           3),
-    Lever("team_pfsp", "--team-pfsp", "team-PFSP update", "a self-play/exploiter team game",
-          "team sampling stays uniform — no per-team win-rate is ever measured", 5),
     Lever("fork", "--fork-fraction", "rollout", "an injected fork row",
           "the buffer is exactly what collection made it — the arm forks nothing", 5),
 )}

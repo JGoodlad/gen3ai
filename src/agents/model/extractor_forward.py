@@ -13,7 +13,7 @@ checked:
   cells) → T3 (the pools, the value routes, the side readouts). A consumer moved above its
   producer does not crash; it silently reads a stash from the PREVIOUS forward.
 * **`forward` itself stays on `Gen3FeaturesExtractor`**, not here. Both compile flags patch the
-  BOUND `fe.forward` and `cf_terms` calls `type(fe).forward` for a deliberately-eager pass, and
+  BOUND `fe.forward` and a deliberately-eager pass calls `type(fe).forward`, and
   `instrumented_ppo_test` ASSIGNS `type(fe).forward` — so the concrete class is where that
   attribute has to live for a restore to put it back where it came from.
 """
@@ -733,30 +733,6 @@ class ExtractorForward(ExtractorApi):
         if self.win_head is not None:
             wp_in = value_pooled if self.win_prob_mode == "shaping" else value_pooled.detach()
             self.stash.win_prob_logits = self.win_head(wp_in)
-        # gen3_q_winprob_head_v1: the PER-ACTION win-probability readout — the amortized one-ply
-        # search leaf (E5 step 1). It scores the SAME per-action tokens the pointer head scores, so
-        # it is computed here, AFTER `stash.pointer_inputs` is written and after every value route
-        # has landed in `value_pooled` (the head's context is the FINAL summary, the same tensor
-        # the win head reads).
-        #
-        # EVERY input is detached — the tokens, the cells and the context alike. `read_only` is the
-        # only live mode and there is no `shaping` counterpart, so this head trains its own
-        # parameters and provably cannot perturb the trunk: pi/vf are bit-identical at any
-        # coefficient, not merely equal in shape. Computed on every forward (one small MLP over 11
-        # slots) so a rollout, an eval and the prober can all read P(win|s,a) from the forward that
-        # chose the action — which is the entire point of amortizing the search leaf.
-        if self.q_winprob_head is not None:
-            _pi_in = self.stash.pointer_inputs
-            if _pi_in is None:                       # pragma: no cover - structurally unreachable
-                raise RuntimeError(
-                    "q_winprob_head is built but pointer_inputs was not stashed by this forward — "
-                    "the Q head scores the pointer head's own action tokens, so a missing stash "
-                    "means the two are wired to different forwards.")
-            self.stash.q_winprob_logits = self.q_winprob_head(
-                value_pooled.detach(),
-                _pi_in.move_tokens.detach(), _pi_in.move_valid.detach(),
-                _pi_in.team_tokens.detach(), _pi_in.move_cells.detach(),
-                _pi_in.switch_cells.detach())
         out: Tuple[torch.Tensor, torch.Tensor] = self.assembler(
                              our_team_pooled, their_team_pooled, our_active_refined, value_pooled,
                              ctx, belief)

@@ -120,3 +120,43 @@ def test_inert_fields_are_popped_regardless_of_value():
             fek = {dead: value}
             assert sanitize_dead_extractor_kwargs(fek) is True
             assert fek == {}
+
+
+# ---- deletion pass L4 (config v134): the four cf / Q head toggles ------------------------------------
+# Every v98+ zip pickles `cf_evidential` / `cf_twin_heads` / `cf_shadow_critic` and every v107+ one
+# `q_winprob_mode` into `features_extractor_kwargs`. Each ON value built a module in the state_dict the
+# surviving extractor has no home for, so ON is REFUSED and OFF pops. The generic parametrized tests above
+# cover whatever `_DEAD_FEK_JUDGED` holds; these name the four with REALISTIC recorded values (a string
+# mode's ON value is `"read_only"`, not `not "none"`) and pin that the entries exist at all, so deleting
+# one cannot make the generic tests quietly shrink.
+_L4_JUDGED = (("cf_evidential", False, True), ("cf_twin_heads", False, True),
+              ("cf_shadow_critic", False, True), ("q_winprob_mode", "none", "read_only"))
+
+
+def test_the_L4_names_are_judged_entries_with_the_OFF_value_as_the_supported_one():
+    judged = dict(_DEAD_FEK_JUDGED)
+    for name, off, _on in _L4_JUDGED:
+        assert name in judged, f"{name} lost its _DEAD_FEK_JUDGED entry — old zips TypeError again"
+        assert judged[name] == off, name
+        assert name not in _DEAD_FEK_INERT, f"{name} is INERT-listed: its ON value would pop silently"
+
+
+@pytest.mark.parametrize("name,off,on", _L4_JUDGED)
+def test_an_L4_toggle_recorded_ON_in_a_zip_is_refused_and_OFF_is_popped(name, off, on):
+    fek = {"d_model": 128, name: on}
+    with pytest.raises(ModelVersionError, match=name):
+        sanitize_dead_extractor_kwargs(fek)
+    assert fek[name] == on, "a refusal must not have consumed the evidence"
+    fek = {"d_model": 128, name: off}
+    assert sanitize_dead_extractor_kwargs(fek) is True
+    assert fek == {"d_model": 128}
+
+
+@pytest.mark.parametrize("name,off,on", _L4_JUDGED)
+def test_an_L4_toggle_in_a_config_at_the_floor_is_refused_ON_and_popped_OFF(name, off, on):
+    """Unlike the pre-floor names, these CAN appear in a config at or above MIGRATION_FLOOR (v121+ writers
+    recorded them OFF), so `_migrate_config` owns the config half through `retired_levers`."""
+    with pytest.raises(ModelVersionError, match=name.replace("_", "[-_]")):
+        _migrate_config({"config_version": MIGRATION_FLOOR, name: on})
+    out = _migrate_config({"config_version": MIGRATION_FLOOR, name: off})
+    assert name not in out

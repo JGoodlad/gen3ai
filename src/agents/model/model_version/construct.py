@@ -38,16 +38,6 @@ class ModelVersionConstruction(ModelVersionFields):
         fork_contested_absv: float = 0.0,
         fork_max_per_battle: int = 1,
         fork_crn: str = "dice_and_draws",
-        cf_records: bool = False,
-        cf_records_keep: int = 512,
-        cf_winprob_coef: float = 0.0,
-        cf_head_only: bool = True,
-        cf_label_lag_steps: int = 150_000,
-        cf_label_likelihood: str = "binomial",
-        cf_evidential_coef: float = 0.0,
-        cf_evidential_reg: float = 1e-3,
-        cf_twin_coef: float = 0.0,
-        cf_shadow_coef: float = 0.0,
         eval_sentinel_greedy: bool = True,
         promote_threshold: float = 0.55,
         capacity_telemetry: bool = False,
@@ -56,8 +46,6 @@ class ModelVersionConstruction(ModelVersionFields):
         capacity_velocity_every: int = 50,
         rank_tripwire: str = "warn",
         rank_tripwire_drop: float = 0.20,
-        q_winprob_coef: float = 0.0,
-        q_winprob_onpolicy_coef: float = 0.0,
         policy_gae_lambda: float = 0.80,
         diagnostics_every: int = 1,
         opp_intent_coef: float = 0.0,
@@ -223,18 +211,6 @@ class ModelVersionConstruction(ModelVersionFields):
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
             ),
-            cf_evidential=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("cf_evidential", False)
-            ),
-            cf_twin_heads=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("cf_twin_heads", False)
-            ),
-            cf_shadow_critic=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("cf_shadow_critic", False)
-            ),
-            q_winprob_mode=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("q_winprob_mode", "none")
-            ),
             # gen3_ridealong_heads_v1 (v126): the four ride-along declarations ride the extractor
             # kwargs (the policy builds the heads from them).
             ridealong_ensemble=int(
@@ -279,16 +255,6 @@ class ModelVersionConstruction(ModelVersionFields):
             fork_contested_absv=float(fork_contested_absv or 0.0),
             fork_max_per_battle=int(fork_max_per_battle or 1),
             fork_crn=str(fork_crn or "dice_and_draws"),
-            cf_records=bool(cf_records),
-            cf_records_keep=int(cf_records_keep),
-            cf_winprob_coef=float(cf_winprob_coef),
-            cf_head_only=bool(cf_head_only),
-            cf_label_lag_steps=int(cf_label_lag_steps),
-            cf_label_likelihood=str(cf_label_likelihood),
-            cf_evidential_coef=float(cf_evidential_coef),
-            cf_evidential_reg=float(cf_evidential_reg),
-            cf_twin_coef=float(cf_twin_coef),
-            cf_shadow_coef=float(cf_shadow_coef),
             eval_sentinel_greedy=bool(eval_sentinel_greedy),
             promote_threshold=float(promote_threshold),
             capacity_telemetry=bool(capacity_telemetry),
@@ -297,8 +263,6 @@ class ModelVersionConstruction(ModelVersionFields):
             capacity_velocity_every=int(capacity_velocity_every),
             rank_tripwire=str(rank_tripwire),
             rank_tripwire_drop=float(rank_tripwire_drop),
-            q_winprob_coef=float(q_winprob_coef),
-            q_winprob_onpolicy_coef=float(q_winprob_onpolicy_coef),
             policy_gae_lambda=float(policy_gae_lambda),
             diagnostics_every=int(diagnostics_every),
             opp_intent_coef=float(opp_intent_coef),

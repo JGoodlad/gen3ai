@@ -10903,3 +10903,62 @@ if a lazy build is reintroduced.
   `exploiter_and_distillation.md` now a HISTORY note; `search_teacher.md` a tombstone), `designs/ops/*`,
   `designs/rust_sim/*`, `designs/model/*`, `designs/prober/*`, the endstate notes, the training / launcher / prober /
   rust_sim / model leaf `CLAUDE.md`s, `deleted_flags.md`, the manifest (L3 SHIPPED, P9 MOOT).
+
+## v134 — 2026-10-02 — the COUNTERFACTUAL TRAINING HALF, TEAM-PFSP and the EXPLOITER LADDER are DELETED: the `cf_records` ring tap, the label buffer, every cf / Q consumer term, the cf supply guard, the evidential / twin / shadow / per-action-Q heads, `--team-pfsp`, `--exploiter-ladder` and `REFUSED_WITH_FLAG` (deletion pass L4, `gen3_retired_levers_l4_v1`)
+
+Manifest R2's fourth slice, owner-approved 2026-10-02 (D1: delete all, port none; D6: the OFFLINE cf stack that reads old
+runs' rings stays). Evidence the manifest carries: only 3 runs ever ingested a cf label and `ai_v12_12_ladder_cflabels` never
+received one (ledger 2026-09-30); the cf-labels arm and the leaf battery (2026-09-12) found no lever that moves leaf quality;
+team-PFSP is OFF in the recipe (probe P, ledger 2026-08-30); the exploiter ladder was built 2026-08-28 and never read for strength.
+
+- **Flags (27 + 5 generated `--no-` forms, `designs/deleted_flags.md` has each with its citation).** cf: `--cf-records`,
+  `--cf-records-keep`, `--cf-winprob-coef`, `--cf-head-only`, `--cf-label-lag-steps`, `--cf-label-likelihood`,
+  `--cf-label-supply`, `--cf-producer-args`, `--cf-supply-starve-cycles`, `--cf-supply-starve-minutes`; the four structural
+  heads' flags and coefficients `--cf-evidential{,-coef,-reg}`, `--cf-twin-{heads,coef}`, `--cf-shadow-{critic,coef}`,
+  `--q-winprob-{mode,coef,onpolicy-coef}`; `--team-pfsp{,-cap,-floor}`; `--exploiter-ladder{,-gate,-window,-rungs}`.
+  Manifest finding 5 (`--cf-label-supply external` passed the launch checks on Rust and would have starved in flight) is closed:
+  the flag no longer parses.
+- **Config.** `MODEL_CONFIG_VERSION` 134 is stamp-only (no `ARCH_SIGNATURE` bump, `MIGRATION_FLOOR` unchanged). 16 `ModelVersion`
+  fields are gone: ten cf coefficients (`cf_records`, `cf_records_keep`, `cf_winprob_coef`, `cf_head_only`, `cf_label_lag_steps`,
+  `cf_label_likelihood`, `cf_evidential_coef`, `cf_evidential_reg`, `cf_twin_coef`, `cf_shadow_coef`), two Q coefficients, and the
+  FOUR STRUCTURAL head toggles `cf_evidential`, `cf_twin_heads`, `cf_shadow_critic`, `q_winprob_mode`. `_migrate_config` POPs them
+  from any vintage; `designs/production_config.json` lost the 16 keys. Every v121+ run on record recorded all of them OFF.
+- **Retired-lever machinery** (`model_version/retired_levers.py`, the table APPENDED, `LAST_COMMIT_L4 = cbd20111`): the four
+  head toggles are STRUCTURAL (recorded ON → refused on EVERY load; `snapshot._DEAD_FEK_JUDGED` carries the four pickled extractor
+  kwargs, ON refused / OFF popped); `cf_records` and the six coefficients are TRAINING-ONLY (a resume or fork of a run that recorded
+  one live is refused naming the pin); `cf_records_keep` / `cf_head_only` / `cf_label_lag_steps` / `cf_label_likelihood` /
+  `cf_evidential_reg` are INERT retired fields. `--team-pfsp`, `--exploiter-ladder`, `--cf-label-supply`, `--cf-producer-args` and the
+  starve floors were never recorded, so a run that used them leaves no trace in `model_config.json` (its recorded argv fails argparse
+  on an unpinned resume). `retired_levers_test` gained the L4 cases and its real pre-deletion zip now pickles the four cf extractor
+  kwargs and still loads through the sanitizing loaders; `dead_kwargs_sanitize_test` pins the four JUDGED entries.
+- **Deleted.** Training: `cf_label_buffer.py`, `cf_terms.py`, `q_winprob_terms.py`, `cf_supply.py`, `cf_supply_callback.py`,
+  `team_pfsp_callback.py`, `exploiter_ladder.py`; the cf / Q folds in `train()` (the CF-twin on-policy mirror and the whole
+  counterfactual block), `_record_cf_metrics` and the `train/cf_*`, `cf/*`, `q_winprob/*`, `grad/cf_*_share`,
+  `grad/q_winprob_share` series, the cf fields of `FoldFlags` and `PpoHyperparameters`, `attach_cf_labels` and the cf `_resolve` /
+  validation lines, the duty-cycle refusal (`CF_DUTY_CYCLE_FLOOR`, `cf_label_duty_cycle`), the env-worker ring tap and
+  `BridgeSession`'s `recon_sink`, the wrapper's rung loader and team-PFSP methods, `Gen3Teambuilder`'s weighting / accumulator
+  methods, `ExploiterSpec.ladder` and the Rust opponents' two-slot exploiter plan, `rust_vec_env.REFUSED_WITH_FLAG`. Model:
+  `CfEvidentialHead`, `ShadowValueHead`, the extractor's four kwargs / modules / forward block, the `q_winprob_logits` stash,
+  `Q_WINPROB_MODES`, the four flag-registry rows and their `tier_contract` / `arch_tables` entries; `main/q_amortization.py`
+  (the meter of the Q head, deleted with it) and the prober's `q_winprob_at`. Parser: `cf_grounding.py`, `value_heads.py` and the
+  team-PFSP / ladder flags of `eval_subprocess.py`. 15 `combination_checks` rows and 3 `_ENV_CORE_UNPORTED` rows;
+  `lever_supply.LEVERS` is now {self_play_pool, pfsp, fork}.
+- **Kept / moved.** `QWinProbHead` survives only as the scorer class of the detached ride-along A head. The OFFLINE cf stack
+  stays (D6): `cf_producer*`, `cf_audit*`, `cf_q_labels.py`, `cf_mc_return.py`, `harvest*`, `winprob_finetune`, `critic_read`,
+  `utils/bridge/counterfactual.py`, the prober's counterfactual views — the producer's lock moved from `cf_supply.py` to the new
+  `cf_producer_lock.py`. `cf_records.py` shrank to `safe_tag` / `record_key` / `index_records` for the Python fork arm, which is now
+  UNREACHABLE (`--fork-fraction > 0` on `--env-core python` is refused by `fork_python_core_unavailable`, replacing
+  `fork_needs_cf_records`) and goes in L5. `--team-wr-tracking` and `--team-block-episodes` stay; `--exploiter`, `--exploiter-temp-*`,
+  `--stable-opponents` and `--pfsp-scale` are served on the Rust core and untouched.
+- **Tests.** Deleted with their levers: `cf_label_buffer_test`, `q_winprob_terms_test`, `cf_supply_test`,
+  `cf_supply_integration_test`, `team_pfsp_callback_test`, `exploiter_ladder_test`, `cf_coef_provenance_test`,
+  `cf_evidential_head_test`, `cf_twin_heads_test`, `main/cf_flags_test`, `q_amortization_test`, ~900 lines of cf units in
+  `instrumented_ppo_test`, the duty-cycle half of `checkpoint_cadence_test`, and the lever cases of ~25 files. Rewritten PRODUCER-side:
+  `cf_producer_test`'s per-action wire class and `cf_producer_integration_test` (`-m sim`: 6 pass). New:
+  `cf_producer_lock_test`. `mode_flag_doc_gate_test`'s INERT check now proves its reading on a planted row (the only two INERT keys
+  were the deleted cf coefficients).
+- **The K9 learner golden files are untouched and green:** the production win-prob + Rust path is numerically unchanged.
+- **Docs.** ARCHITECTURE (flag table regenerated, fork and per-action-readout prose), `flag_registry.md` (generated),
+  `designs/training/*` (`cf_grounding.md` is a tombstone over the kept offline sections), `designs/model/*`, `designs/ops/*`,
+  `designs/endstate/*`, `production_config.README.md`, the training / model / launcher leaf `CLAUDE.md`s, `deleted_flags.md`, the
+  manifest (L4 SHIPPED, finding 5 closed, the L5 hand-off).

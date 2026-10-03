@@ -33,11 +33,13 @@ _WP = ["--critic", "winprob", "--terminal-indicator", "--victory-value",
        "1.0", "--draw-penalty", "0", "--steps", "1000"]
 
 
-def _resolved(argv):
+def _resolved(argv, core="python"):
+    """`core="python"` types the python env core (bare argv = rust since D2); `core=None` leaves the bare
+    default — the rust core, the only one a `--fork-fraction > 0` argv can resolve on since deletion
+    pass L4 removed the Python fork arm's replay ring (`--cf-records`)."""
     from main.train.config import resolve_config
     p = build_parser()
-    # the python env core, typed: the Python fork arm runs only there (bare argv = rust since D2)
-    args = p.parse_args(["--env-core", "python", *argv])
+    args = p.parse_args([*(["--env-core", core] if core else []), *argv])
     resolve_config(args, p)
     return args
 
@@ -65,9 +67,9 @@ def test_the_off_defaults_are_what_resolve_config_fills_in():
 
 
 def test_a_flagged_argv_keeps_its_values():
-    args = _resolved(_WP + ["--cf-records", "--fork-fraction", "0.02", "--fork-branches", "2",
+    args = _resolved(_WP + ["--fork-fraction", "0.02", "--fork-branches", "2",
                             "--fork-contested-gap", "0.25", "--fork-max-per-battle", "2",
-                            "--fork-crn", "dice"])
+                            "--fork-crn", "dice"], core=None)
     assert args.fork_fraction == 0.02 and args.fork_branches == 2
     assert args.fork_contested_gap == 0.25 and args.fork_max_per_battle == 2
     assert args.fork_crn == "dice"
@@ -174,21 +176,22 @@ def test_the_fraction_is_in_the_arch_table_so_a_headless_run_reads_INERT():
 
 
 # ── the refusals ─────────────────────────────────────────────────────────────────────────────
-@pytest.mark.parametrize("extra,needle", [
-    (["--critic", "shaped", "--steps", "1000", "--fork-fraction", "0.02"], "requires --critic winprob"),
-    (_WP + ["--fork-fraction", "0.02"], "requires --cf-records"),
-    (_WP + ["--cf-records", "--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"],
-     "strata-weight"),
+@pytest.mark.parametrize("extra,core,needle", [
+    (["--critic", "shaped", "--steps", "1000", "--fork-fraction", "0.02"], "python",
+     "requires --critic winprob"),
+    # deletion pass L4: the Python core's replay ring is gone, so a fork argv on it is UNAVAILABLE
+    (_WP + ["--fork-fraction", "0.02"], "python", "UNAVAILABLE"),
+    (_WP + ["--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"], None, "strata-weight"),
 ])
-def test_the_three_refusals_fire_with_their_own_text(extra, needle, capsys):
+def test_the_three_refusals_fire_with_their_own_text(extra, core, needle, capsys):
     argv = extra if extra[0].startswith("--critic") else ["--steps", "1000"] + extra
     with pytest.raises(SystemExit):
-        _resolved(argv)
+        _resolved(argv, core=core)
     assert needle in capsys.readouterr().err
 
 
 def test_a_complete_forked_argv_is_ACCEPTED():
-    args = _resolved(_WP + ["--cf-records", "--fork-fraction", "0.02"])
+    args = _resolved(_WP + ["--fork-fraction", "0.02"], core=None)
     assert args.fork_fraction == 0.02
 
 

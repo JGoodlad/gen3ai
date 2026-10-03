@@ -91,7 +91,7 @@ class MaskableAgentWrapper(SingleAgentWrapper):
                  stable_challenge_share=STABLE_CHALLENGE_SHARE, exploiter_player=None,
                  exploiter_keep_bots=False, exploiter_bot_fraction=0.5,
                  stable_teams=None, exploiter_team=None, opponent_pool_team=None,
-                 stable_pfsp=False, team_wr_tracking=True, exploiter_rung_loader=None,
+                 stable_pfsp=False, team_wr_tracking=True,
                  critic=CRITIC_UNRECORDED):
         # Back-compat: a single positional `opponent` (legacy / tests) becomes a 1-bot roster.
         roster = list(heuristic_opponents) if heuristic_opponents else (
@@ -194,19 +194,6 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         # temperature — the signal the fixed schedule lacks. Inert unless an exploiter is set.
         self._exploiter_games = 0
         self._exploiter_wins = 0.0
-        # gen3_exploiter_pool_ladder_v1 (--exploiter-ladder): the target's WEIGHTS are swapped up a
-        # ladder of frozen opponents as the trainee clears a win-rate gate. `exploiter_rung_loader`
-        # is the worker-side `(zip_path, config_path) -> model` closure (it owns the arch gate,
-        # device and opponent-compile settings; the wrapper stays free of model-loading policy) and
-        # is None off the ladder path, which makes every branch below inert. The swap is DEFERRED to
-        # the next `reset()` so an episode is never scored against two different opponents, and the
-        # per-rung counters below reset with it — that is what makes the gate's win-rate a
-        # per-rung quantity rather than a pooled one.
-        self._exploiter_rung_loader = exploiter_rung_loader
-        self._exploiter_rung_index = None    # None until the first push (those episodes count for no rung)
-        self._exploiter_rung_games = 0
-        self._exploiter_rung_wins = 0.0
-        self._pending_exploiter_rung = None  # (index, zip_path, config_path)
         self._self_play_fraction = float(self_play_fraction)
         self._target_generation = 0
         self._scanned_generation = -1   # -1 forces a pool re-scan on the first pool selection
@@ -230,43 +217,6 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         if self._exploiter_player is not None:
             self._exploiter_player._temperature = float(temperature)
 
-    def set_exploiter_rung(self, index: int, zip_path: str, config_path: str) -> None:
-        """Live update of WHICH frozen opponent the exploiter target is (pushed via
-        ``VecEnv.env_method`` by ``ExploiterLadderCallback`` on each promotion — the
-        ``set_self_play_target`` idiom).
-
-        The load is DEFERRED to the next ``reset()`` rather than done here, for two reasons: the
-        episode in flight must not have its opponent's brain replaced mid-battle, and its outcome
-        must be attributed to the rung it was actually played against. No-op when this env has no
-        exploiter player or no rung loader (i.e. every non-ladder run — byte-identical)."""
-        if self._exploiter_player is None or self._exploiter_rung_loader is None:
-            return
-        self._pending_exploiter_rung = (int(index), str(zip_path), str(config_path))
-
-    def _apply_pending_exploiter_rung(self) -> None:
-        """Swap a promoted rung's weights into the persistent exploiter player, between episodes.
-
-        Mirrors ``_ensure_pool_model``'s "load once, assign to the persistent player" mechanism (a
-        promotion happens a handful of times per run, so the ~27 MB load is far rarer than the
-        once-per-generation pool reload). The team pin, temperature and bot fraction are deliberately
-        NOT touched: the ladder varies opponent STRENGTH and nothing else."""
-        if self._pending_exploiter_rung is None:
-            return
-        idx, zip_path, config_path = self._pending_exploiter_rung
-        self._pending_exploiter_rung = None
-        if idx == self._exploiter_rung_index:
-            return
-        self._exploiter_player.model = self._exploiter_rung_loader(zip_path, config_path)
-        self._exploiter_rung_index = idx
-        self._exploiter_rung_games = 0     # a new rung is a new measurement — never pool across rungs
-        self._exploiter_rung_wins = 0.0
-
-    def exploiter_rung_totals(self):
-        """``(rung_index, games, wins)`` vs the CURRENT ladder rung — read via ``VecEnv.env_method``
-        by ``ExploiterLadderCallback``, which drops rows whose index isn't the live one (a worker
-        that hasn't reset since the push). ``(None, 0, 0.0)`` off the ladder path."""
-        return (self._exploiter_rung_index, self._exploiter_rung_games, self._exploiter_rung_wins)
-
     def _record_exploiter_outcome(self, won: float) -> None:
         """Count an episode outcome vs the EXPLOITER target (ratchet-mode WR signal). Only counts
         when THIS episode's opponent was the exploiter target (bot episodes under
@@ -274,36 +224,13 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         if self._exploiter_player is not None and self.opponent is self._exploiter_player:
             self._exploiter_games += 1
             self._exploiter_wins += float(won)
-            # …and against the LIVE LADDER RUNG, when a ladder is running. `_exploiter_rung_index`
-            # is None before the first push, so the handful of episodes in flight at training start
-            # are counted for no rung at all rather than mis-attributed to rung 0.
-            if self._exploiter_rung_index is not None:
-                self._exploiter_rung_games += 1
-                self._exploiter_rung_wins += float(won)
-
-    def _maybe_record_team_pfsp(self, won: float) -> None:
-        """Record the trainee's team outcome for ``--team-pfsp``, but ONLY on SELF-PLAY POOL battles
-        (``opponent is _pool_player``) OR EXPLOITER-TARGET battles (``opponent is _exploiter_player``)
-        — bots are excluded either way (we win ~0.99 vs bots, which washes out the per-team variance
-        signal). In EXPLOITER mode this is what lets ``--team-pfsp`` weight a multi-team
-        (``--trainee-teams``/pin_multi) exploiter toward the teams it is LOSING with vs the target
-        (concentrate the per-team budget on the laggards). No-op off / vs bots / on a bias-team yield
-        (the builder's own guards); ``_exploiter_player`` is None off the exploiter path, so a self-play
-        run is byte-identical. Aggregated centrally by ``TeamPFSPCallback``."""
-        if self.opponent is self._pool_player or (
-                self._exploiter_player is not None and self.opponent is self._exploiter_player):
-            _tb = self._trainee_teambuilder()
-            if _tb is not None and hasattr(_tb, "record_team_pfsp_outcome"):
-                _tb.record_team_pfsp_outcome(won)
 
     def _maybe_record_team_wr(self, won: float) -> None:
         """Record the trainee's team outcome for ``--team-wr-tracking`` (pure instrumentation).
 
-        Deliberately UNLIKE ``_maybe_record_team_pfsp`` above in both of its restrictions: every
-        opponent class counts (stratified by ``_opponent_class``, so a bot-heavy curriculum phase
-        never reads as a per-team win rate), and it is on by default. The two share only the
-        builder's "which team did I just yield" index — never a counter table. No-op on a
-        bias yield (the builder's own guard) or a non-Gen3 builder."""
+        Every opponent class counts (stratified by ``_opponent_class``, so a bot-heavy curriculum
+        phase never reads as a per-team win rate), and it is on by default. No-op on a bias yield
+        (the builder's own guard) or a non-Gen3 builder."""
         if not self._team_wr_tracking:
             return
         _tb = self._trainee_teambuilder()
@@ -358,29 +285,6 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         rm = getattr(self.env, "reward_manager", None)
         drain = getattr(rm, "drain_reward_terms", None)
         return drain() if drain is not None else None
-
-    def drain_team_pfsp_counts(self):
-        """Team-side PFSP pull (read via ``VecEnv.env_method`` by ``TeamPFSPCallback`` each window):
-        drain-and-zero this worker's per-team self-play win/loss accumulators. ``None`` when the
-        trainee builder isn't PFSP-capable (off runs / a non-Gen3 builder)."""
-        _tb = self._trainee_teambuilder()
-        return _tb.drain_team_pfsp_counts() if (
-            _tb is not None and hasattr(_tb, "drain_team_pfsp_counts")) else None
-
-    def set_team_pfsp_weights(self, weights) -> None:
-        """Team-side PFSP push (``VecEnv.env_method`` from ``TeamPFSPCallback``): set the trainee
-        builder's per-team sampling weights. No-op when the builder isn't PFSP-capable."""
-        _tb = self._trainee_teambuilder()
-        if _tb is not None and hasattr(_tb, "set_team_pfsp_weights"):
-            _tb.set_team_pfsp_weights(weights)
-
-    def get_team_pfsp_keys(self):
-        """Team-side PFSP identity pull (``VecEnv.env_method``, ONCE): this worker's per-pool-team
-        fingerprints, so the callback can verify the per-index team identity matches across workers.
-        ``None`` when the trainee builder isn't PFSP-capable."""
-        _tb = self._trainee_teambuilder()
-        return _tb.get_team_pfsp_keys() if (
-            _tb is not None and hasattr(_tb, "get_team_pfsp_keys")) else None
 
     def set_stable_mastered(self, mastered_labels) -> None:
         """Pushed by the eval callback each cycle (via ``env_method``): the labels of stable
@@ -529,9 +433,6 @@ class MaskableAgentWrapper(SingleAgentWrapper):
                 id(self.opponent), self._opponent_pool_team)
 
     def reset(self, *, seed=None, options=None):
-        # A promoted ladder rung lands BETWEEN episodes (see `set_exploiter_rung`). Inert — one
-        # `is None` test — on every run that isn't using --exploiter-ladder.
-        self._apply_pending_exploiter_rung()
         self._select_episode_opponent()
         self._apply_opponent_team()
         # Push the class down for the intent metrics. Same direction as `_apply_opponent_team`
@@ -610,7 +511,6 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             # so nothing downstream changes; the class is the one selected for THIS episode at reset.
             info["opponent_class"] = int(getattr(self, "_opponent_class", self.OPP_CLASS_BOT))
             self._record_exploiter_outcome(won)   # ratchet-mode WR signal (no-op off / vs bots)
-            self._maybe_record_team_pfsp(won)     # team-side PFSP per-team WR (pool + exploiter-target)
             self._maybe_record_team_wr(won)       # per-team win-rate tracking (all classes, default ON)
             # gen3_winprob_critic_mode_v1 (B6). LAST, so every outcome consumer above still sees the
             # flags the sim produced — this re-labels only what the LEARNER is told, and only under

@@ -75,8 +75,6 @@ from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
 from agents.training.pool_seed import prepare_pool
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
-from agents.training.cf_supply import (CfSupplyConfigError, live_cf_consumers,
-                                       preflight_cf_label_supply, start_cf_label_supply)
 from main.exit_codes import TrainExitCode, exit_code_for
 from main.launcher.ipc import emit
 
@@ -113,7 +111,7 @@ from main.train.config import resolve_config
 from main.train.matchup_setup import build_matchup_and_opponents
 from main.train.callbacks import build_callbacks
 from main.train.fork_lr import enforce_inherited_fork_lr
-from main.train.model_build import attach_cf_labels, build_and_train
+from main.train.model_build import build_and_train
 from main.train.final_eval import evaluate_model_random
 
 
@@ -194,14 +192,6 @@ async def main():
     # — the first moment `model_dir` is known — and BEFORE the directory is created, so a refusal
     # leaves nothing behind. `--allow-inherited-fork-lr` is the deliberate opt-in.
     enforce_inherited_fork_lr(args, model_dir)
-    # gen3_supply_guard_v1: an EXTERNAL cf label supply that is not running is refused HERE, before
-    # the directory exists, for the same leave-nothing-behind reason.
-    try:
-        preflight_cf_label_supply(args, model_dir)
-    except CfSupplyConfigError as _e:
-        print(str(_e), file=sys.stderr)
-        sys.exit(int(TrainExitCode.FATAL_CONFIG))
-
     os.makedirs(model_dir, exist_ok=True)
     # K3: the run's OWN compile cache, declared before anything compiles or spawns (lifecycle.py).
     _declare_compile_cache(args, model_dir)
@@ -215,32 +205,6 @@ async def main():
     if not args.run_dir:
         with open(os.path.join(model_dir, "command.txt"), "w") as f:
             f.write(" ".join(sys.argv))
-        
-    # gen3_cf_label_plumbing_v1 — the two counterfactual-factory directories under the run root.
-    # `cf_records/` is WRITTEN by the env workers (opt-in); `cf_labels/` is READ from whatever an
-    # out-of-process producer left there. Both are None/unused unless the flags ask for them, so a
-    # default run creates neither and is FILE-identical to today.
-    _cf_records_dir = os.path.join(model_dir, "cf_records") if args.cf_records else None
-    # ANY consumer wants the buffer: every one of these terms reads the SAME label rows, so gating
-    # the directory on the scalar coefficient alone would silently starve an evidential-only run —
-    # and, since v105, a Q-head-only one. A term whose coefficient is live but whose buffer was
-    # never created folds nothing, forever, with no error and no counter to say so.
-    # The consumer list is `cf_supply.CF_CONSUMER_COEFS` — ONE list for the buffer gate, the
-    # startup supply check and the in-flight guard.
-    _cf_labels_dir = (os.path.join(model_dir, "cf_labels")
-                      if live_cf_consumers(args) else None)
-    if _cf_records_dir:
-        os.makedirs(_cf_records_dir, exist_ok=True)
-        emit(f"🧾 [CF] reconstruction-record tap ON → {_cf_records_dir} "
-             f"(newest {args.cf_records_keep})")
-    # gen3_supply_guard_v1 — the LABEL SUPPLY is a DECLARED startup resource: a live consumer
-    # either gets a producer this process STARTS (and owns — it dies with us), or a verified
-    # external one, or the launch is REFUSED here. Never a run whose lever quietly folds nothing.
-    try:
-        _cf_supply = start_cf_label_supply(args, model_dir, emit=emit)
-    except CfSupplyConfigError as _e:
-        print(str(_e), file=sys.stderr)
-        sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
     stall_cfg = StallConfig(output_dir=os.path.join(model_dir, "stalls"))
     # Per-run reward config (design §1). gamma MUST == the PPO gamma (asserted post-build below); the
@@ -280,12 +244,6 @@ async def main():
     else:
         emit(f"🎯 [CRITIC] shaped — V(s) = value_net in raw return units, gamma="
              f"{args.gamma:g}; the win-prob head is an auxiliary BCE.")
-    # Bound to the run's reward config here rather than in `model_build`, because the SHADOW
-    # critic's `mc_return` labels are only this run's labels if the producer used this run's
-    # reward — the digest is what the label buffer checks them against.
-    _attach_cf_labels = functools.partial(
-        attach_cf_labels, args=args, _cf_labels_dir=_cf_labels_dir, reward_config=reward_config)
-
     # Running parallel environments
     n_envs = 1 if args.debug else args.n_envs
     # --async-rollout swaps the barriered SubprocVecEnv for AsyncSubprocVecEnv (per-env in-flight
@@ -401,7 +359,6 @@ async def main():
                 heuristic_weights=_bot_weight_vec,
                 stable_opponents=_fixed_opponents,
                 exploiter_entry=_exploiter_entry,
-                cf_records_dir=_cf_records_dir,
                 # What used to be closure state when the factory lived inside `main()`.
                 args=args, mappings=mappings, log_level=log_level,
                 trainee_teambuilder=trainee_teambuilder,
@@ -450,8 +407,7 @@ async def main():
         annealing_mode=annealing_mode, _pool=_pool, _fixed_opponents=_fixed_opponents,
         _bot_weight_vec=_bot_weight_vec, OPPONENT_CLASSES=OPPONENT_CLASSES,
         _specialist_team_str=_specialist_team_str, _promote_threshold=_promote_threshold,
-        _heuristic_floor=_heuristic_floor, _sp_start_wr=_sp_start_wr, _sp_full_wr=_sp_full_wr,
-        _cf_supply=_cf_supply)
+        _heuristic_floor=_heuristic_floor, _sp_start_wr=_sp_start_wr, _sp_full_wr=_sp_full_wr)
 
     # --- Phase 5: the model, and the training job itself ---
     await build_and_train(
@@ -463,7 +419,7 @@ async def main():
         callbacks=_cb.callbacks, eval_callback=_cb.eval_callback, lr_callback=_cb.lr_callback,
         adaptive_ppo_callback=_cb.adaptive_ppo_callback,
         graceful_restart_callback=_cb.graceful_restart_callback,
-        _attach_cf_labels=_attach_cf_labels, _maybe_seed_pool=_maybe_seed_pool,
+        _maybe_seed_pool=_maybe_seed_pool,
         evaluate_model_random=_evaluate_model_random)
 
 

@@ -1,32 +1,32 @@
-"""THE COMPOSITION TEST — the label path end to end, both halves, on a battle it plays itself.
+"""THE COMPOSITION TEST — the PRODUCER's half of the label path end to end, on a battle it plays itself.
 
     pytest -m sim src/agents/training/cf_producer_integration_test.py
 
-Producer and consumer are separate processes that share only a file format, and this tree has now
-shipped **two** contract bugs into exactly that gap — the buffer keyed its byte offsets on filename
-alone (a recreated file silently dropped rows), and the buffer's `obs_npz` path ignored
-`decision_idx`, which made `cf_audit`'s DEFAULT output 100% unconsumable while both halves' own
-unit tests were green. The method lesson from the second one is the reason this file exists:
-*both halves were tested, and neither test ever ran the other half's real output.*
+⚠️ **The CONSUMER half was deleted (deletion pass L4):** the trainer's `CfLabelBuffer`, the ring writer
+`CfRecordRing` and every term that folded a label are gone, so this file no longer feeds the producer's
+label files to a buffer — it asserts on the rows themselves (schema, ecology, digests, stamps, the
+per-action wire shape). The producer is kept for OLD runs' `cf_records/` rings (manifest D6).
 
-So this runs the REAL composition, in order:
+Producer and consumer were separate processes that shared only a file format, and this tree shipped
+**two** contract bugs into exactly that gap before the consumer was deleted. What the file still runs,
+in order:
 
 1. play a REAL gen3ou battle in-process through the bridge (no server);
-2. ring its reconstruction record through the REAL `CfRecordRing`, in the shape the TRAINING tap
-   writes — i.e. with **no `trainee_username`**, which is the fact that makes a training record
+2. write its reconstruction record into a ring directory in the shape the (deleted) TRAINING tap
+   wrote — i.e. with **no `trainee_username`**, which is the fact that makes a training record
    different from an eval sibling and the one a producer must survive;
 3. run ONE REAL `cf_producer` cycle over that ring — real anchor, real replay, real materialized
    obs, real bridge rollouts;
-4. feed the label files it wrote to the REAL `CfLabelBuffer` and assert every row is INGESTED with
-   ZERO skips, digests verifying, sane values and the right `policy_step`.
+4. assert on the label files it wrote: every row is the shared v1 schema, digests verify, values are
+   sane and carry the right `policy_step`.
 
-What is real and what is substituted, stated plainly: the battle, the record, the ring, the
-scan, the anchor, the divergence, the rollouts, the label files and the buffer are all real. The
-POLICY is not — a current-architecture checkpoint is not something a test can conjure — so the
-`snapshot_loader` seam returns a stub that plays `RandomPlayer` on both sides and scores with fixed
-numbers. That substitutes exactly one thing (which net picks the move, and which net's win-prob
-head ranks the decisions) and leaves the whole label path under test. It is the same single
-substitution `cf_audit_integration_test` makes.
+What is real and what is substituted, stated plainly: the battle, the record, the scan, the anchor,
+the divergence, the rollouts and the label files are all real. The POLICY is not — a
+current-architecture checkpoint is not something a test can conjure — so the `snapshot_loader` seam
+returns a stub that plays a seeded-random policy on both sides and scores with fixed numbers. That
+substitutes exactly one thing (which net picks the move, and which net's win-prob head ranks the
+decisions) and leaves the whole label path under test. It is the same single substitution
+`cf_audit_integration_test` makes.
 
 The driver is **node** here rather than the production `rust` default, deliberately: a fresh
 worktree's first rust-backed test pays for a `cargo build --release` that saturates every core and
@@ -52,11 +52,10 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from agents.battle.gen3_battle import Gen3Battle
 from agents.inference.player import Gen3Player
 from agents.training import cf_producer as P
-from agents.training.cf_label_buffer import CfLabelBuffer
-from agents.training.cf_records import CfRecordRing
+from agents.training.cf_records import safe_tag
 from agents.training.obs_roundtrip_fuzz_test import RecordingFuzzPlayer
 from utils.bridge.local_battle_runner import run_local_battles
-from utils.bridge.reconstruction import ReconstructionRecord
+from utils.bridge.reconstruction import RECON_SUFFIX, ReconstructionRecord
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
@@ -146,8 +145,19 @@ class _RandomPolicySnapshot:
 # Fixture: a real battle → a real ring record in the TRAINING tap's shape
 # ---------------------------------------------------------------------------
 
+def _write_ring_record(ring_dir: str, tag: str, raw: dict) -> str:
+    """What the deleted `CfRecordRing.write_record` laid down: `<ns:019d>_<pid>_<safe tag>` +
+    `_reconstruction.json`, an atomic tmp-then-rename, the payload `{**raw, "battle_tag": tag}`."""
+    os.makedirs(ring_dir, exist_ok=True)
+    path = os.path.join(ring_dir, f"{time.time_ns():019d}_{os.getpid()}_{safe_tag(tag)}{RECON_SUFFIX}")
+    with open(path + ".tmp", "w") as f:
+        json.dump({**raw, "battle_tag": tag}, f)
+    os.replace(path + ".tmp", path)
+    return path
+
+
 def _play_and_ring(run_dir: str) -> "tuple[str, str]":
-    """Play one real DECIDED battle; ring its record the way `--cf-records` does. Returns
+    """Play one real DECIDED battle; ring its record the way `--cf-records` did. Returns
     ``(ring_path, trace_prefix)`` — the trace prefix is kept only so the test can cross-check the
     producer's materialized obs against the ones the LIVE player actually saw.
 
@@ -188,10 +198,8 @@ def _play_and_ring(run_dir: str) -> "tuple[str, str]":
     # is what makes this a training record rather than an eval one — and it is the fact
     # `_trainee_side` (BridgeSession seats agent1 on p1) exists to answer.
     raw.pop("trainee_username", None)
-    ring = CfRecordRing(os.path.join(run_dir, P.RECORDS_DIRNAME), keep=8)
-    path = ring.write_record(tag, raw)
-    assert path is not None, "the ring refused a record it was handed"
-    assert "trainee_username" not in json.loads(path.read_text())
+    path = _write_ring_record(os.path.join(run_dir, P.RECORDS_DIRNAME), tag, raw)
+    assert "trainee_username" not in json.loads(open(path).read())
     # The producer will read this side; assert the transport invariant it relies on holds here.
     rec = ReconstructionRecord.load(str(path))
     assert rec.side_of(trainee.username) == "p1", (
@@ -219,7 +227,7 @@ def _obs_dim() -> int:
 # THE test
 # ---------------------------------------------------------------------------
 
-def test_the_whole_label_path_composes_ring_to_buffer(tmp_path):
+def test_the_whole_producer_path_composes_ring_to_labels(tmp_path):
     run = _mk_run(tmp_path)
     ring_path, prefix = _play_and_ring(run)
     snaps: "list[_RandomPolicySnapshot]" = []
@@ -283,28 +291,17 @@ def test_the_whole_label_path_composes_ring_to_buffer(tmp_path):
             f"decision {r['decision_idx']}: the producer's replayed obs differs from the one the "
             f"live player encoded — the inverted action history desynced the trackers")
 
-    # -- (4) THE CONSUMER. The real buffer, at the real obs width, at the real step. -
-    buf = CfLabelBuffer(labels_dir, obs_dim=_obs_dim(), lag_bound=150_000)
-    accepted = buf.poll(STEP)
-    assert accepted == len(rows), f"buffer accepted {accepted} of {len(rows)} rows"
-    assert buf.skipped_total == 0, (
-        f"the consumer REJECTED rows the producer wrote: {buf.skip_reasons}")
-    assert buf.expired_total == 0 and buf.future_total == 0
-    assert len(buf) == len(rows)
-    stats = buf.stats(STEP)
-    assert stats["cf/labels_ingested_total"] == len(rows)
-    assert stats["cf/label_age_steps_p50"] == 0.0, "age must be 0 at the stamping step"
-
-    # The rows the buffer resolved are the rows the producer measured — digest-verified end to end
-    # (the buffer recomputes `obs_sha1` from the bytes it loaded, never copies the declared one).
-    by_digest = {row.obs_sha1: row for row in buf.sample(len(rows))}
+    # -- (4) the digests verify: `obs_sha1` is the sha1 of the inline obs bytes it travels with.
+    #        (The deleted consumer recomputed it from the bytes it loaded and never trusted the
+    #        declared one; the producer's half of that contract is that the two agree.)
+    from agents.training.cf_audit import obs_digest
     for r in rows:
-        assert r["obs_sha1"] in by_digest
-        assert by_digest[r["obs_sha1"]].label == pytest.approx(r["label"])
-        assert by_digest[r["obs_sha1"]].policy_step == STEP
-        assert by_digest[r["obs_sha1"]].obs.shape == (_obs_dim(),)
+        got = np.frombuffer(base64.b64decode(r["obs_inline"]), dtype=np.float32)
+        assert got.shape == (_obs_dim(),)
+        assert r["obs_sha1"] == obs_digest(got), "the declared digest disagrees with the obs bytes"
+    assert len({r["obs_sha1"] for r in rows}) == len(rows), "the producer double-shipped a state"
 
-    # -- (4b) THE TWIN STREAMS, through the SAME real buffer (gen3_cf_twin_heads_v1) ----
+    # -- (4b) THE TWIN STREAMS' wire fields (gen3_cf_twin_heads_v1) ----
     # The both-halves composition rule: a producer-side unit test alone is exactly how the last
     # two contract bugs shipped, and these two fields are consumed by heads that produce no shape
     # error when starved. `outcome_label` must be present and in range on EVERY row (it is free —
@@ -318,28 +315,6 @@ def test_the_whole_label_path_composes_ring_to_buffer(tmp_path):
     assert any(r.get("mc_return") is not None for r in rows), (
         "the producer shipped no mc_return at all — the shadow critic would train on nothing while "
         "every other counter read healthy")
-    for row in buf.sample(len(rows)):
-        assert row.outcome_label is not None, (
-            "the buffer dropped the outcome_label the producer wrote — head B would silently "
-            "become a copy of head A and C-B would silently become C-A")
-    cov = buf.stats(STEP)
-    assert cov["cf/outcome_label_coverage"] == pytest.approx(1.0)
-    assert cov["cf/mc_return_coverage"] > 0.0
-    assert cov["cf/labels_mc_return_rejected_total"] == 0.0
-
-    # And the GIGO guard from the other side: a buffer configured with a DIFFERENT reward digest
-    # must refuse the same rows' mc_return while keeping their win-prob labels.
-    foreign = CfLabelBuffer(labels_dir, obs_dim=_obs_dim(), lag_bound=150_000,
-                            reward_sha1="a-different-reward")
-    assert foreign.poll(STEP) == len(rows)
-    assert foreign.mc_return_rejected_total > 0
-    assert all(row.mc_return is None for row in foreign.sample(len(rows)))
-    assert foreign.skipped_total == 0, "a reward mismatch must not cost the row its win-prob label"
-
-    # -- (5) a SECOND poll must be a no-op (the incremental reader's offsets) -------
-    assert buf.poll(STEP) == 0
-    assert buf.replaced_total == 0, "the producer double-shipped a state within one cycle"
-
     # -- (6) a second producer CYCLE over the unchanged ring produces nothing new ---
     rc2 = P.main([run, "--rollouts", "2", "--top-n", "2", "--records-per-cycle", "1",
                   "--cycles", "1", "--cycle-seconds", "0", "--impl", IMPL],
@@ -349,7 +324,7 @@ def test_the_whole_label_path_composes_ring_to_buffer(tmp_path):
     assert again == files, "a restarted producer re-labelled a record it had already done"
 
 
-def test_a_new_checkpoint_mid_run_restamps_the_labels_and_the_buffer_takes_both(tmp_path):
+def test_a_new_checkpoint_mid_run_restamps_the_labels(tmp_path):
     """THE MULTI-CYCLE seam: a checkpoint lands between cycles, and the labels move with it.
 
     The single-cycle test above holds the snapshot fixed, so the whole refresh leg — resolve the
@@ -398,30 +373,6 @@ def test_a_new_checkpoint_mid_run_restamps_the_labels_and_the_buffer_takes_both(
     assert stamps == [STEP, step2], f"labels were not re-stamped across the refresh: {stamps}"
     assert {r["battle"] for r in rows} == {ring_a, ring_b}, "the two cycles took the same record"
     assert any(f.startswith(f"labels_cf_producer_{step2}_") for f in files)
-
-    # -- the CONSUMER holds both vintages, and their ages differ by the refresh ------
-    buf = CfLabelBuffer(labels_dir, obs_dim=_obs_dim(), lag_bound=150_000)
-    assert buf.poll(step2) == len(rows)
-    assert buf.skipped_total == 0, f"the consumer refused the producer's rows: {buf.skip_reasons}"
-    assert buf.expired_total == 0 and buf.future_total == 0 and buf.replaced_total == 0
-    ages = sorted({step2 - row.policy_step for row in buf.sample(len(rows))})
-    assert ages == [0, step2 - STEP], (
-        f"the buffer collapsed two vintages into one age: {ages} — the older rows are what the "
-        f"staleness bound exists to expire")
-
-    # -- the GIGO refusal, beside GOOD rows, through the same real buffer ------------
-    # `labels_skipped_total` must PARTITION the input with `labels_ingested_total`: one poisoned
-    # row costs exactly itself, never the file and never the run.
-    poisoned = dict(rows[0])
-    poisoned["obs_sha1"] = "0" * 40                     # disagrees with its own bytes
-    poisoned["decision_idx"] = int(poisoned["decision_idx"]) + 10_000   # a fresh dedup identity
-    with open(os.path.join(labels_dir, "labels_zz_poisoned_0_0.jsonl"), "w") as f:
-        f.write(json.dumps(poisoned) + "\n")
-    before = len(buf)
-    assert buf.poll(step2) == 0, "a row whose digest disagrees with its bytes was ACCEPTED"
-    assert buf.skipped_total == 1, f"the poisoned row was not counted: {buf.skip_reasons}"
-    assert len(buf) == before, "a poisoned row evicted a good one"
-    assert buf.stats(step2)["cf/labels_skipped_total"] == 1.0
 
 
 def test_a_rollout_that_reaches_the_TURN_CAP_is_a_draw_on_either_seat(tmp_path):
@@ -524,15 +475,13 @@ def test_a_record_the_replay_cannot_reproduce_refuses_to_produce(tmp_path):
 # The PER-ACTION stream, composed the same way (gen3_cf_q_labels_v1)
 # ---------------------------------------------------------------------------
 
-def test_the_PER_ACTION_stream_composes_ring_to_buffer(tmp_path):
-    """`--q-labels` end to end: real record → real choice map → real paired rollouts → the REAL
-    `CfLabelBuffer`'s per-action columns.
+def test_the_PER_ACTION_stream_composes_ring_to_labels(tmp_path):
+    """`--q-labels` end to end: real record → real choice map → real paired rollouts → the wire
+    shape of the per-action block (the deleted `CfLabelBuffer` used to read it back into columns).
 
-    The v107 Q head landed as a trained consumer of a stream nothing wrote, so the failure this
-    guards against is the one that already happened once in this gap: two halves each green on
-    their own, neither ever run against the other's real output. Everything here is real except the
-    policy — the choice strings come from the live mapper at a replayed decision, the sibling arms
-    are real bridge battles, and the pairing assertion is live inside the sweep.
+    Everything here is real except the policy — the choice strings come from the live mapper at a
+    replayed decision, the sibling arms are real bridge battles, and the pairing assertion is live
+    inside the sweep.
     """
     run = _mk_run(tmp_path)
     _ring_path, _prefix = _play_and_ring(run)
@@ -570,27 +519,6 @@ def test_the_PER_ACTION_stream_composes_ring_to_buffer(tmp_path):
         assert rec["label"] == pytest.approx(r["label"]), (
             "the recorded arm was reused, so its q-label must EQUAL the row's own label")
         assert rec["n_rollouts"] == r["n_rollouts"]
-
-    # -- and the REAL consumer reads it -------------------------------------------
-    buf = CfLabelBuffer(os.path.join(run, P.LABELS_DIRNAME), obs_dim=_obs_dim(), lag_bound=0)
-    assert buf.poll(STEP) == len(rows)
-    assert buf.skipped_total == 0 and buf.field_skipped_total == 0
-    stats = buf.stats(STEP)
-    assert stats["cf/q_label_coverage"] > 0.0, (
-        "the launch-window counter that separates a live factory from a dead one")
-    assert stats["cf/q_labels_per_row"] > 1.0, (
-        "at most one label per row is the ON-POLICY TRICKLE the Q head exists to escape")
-
-    from agents.training.cf_label_buffer import batch_tensors
-    resident = [r for r in buf.sample(len(buf)) if r.q_labels]
-    b = batch_tensors(resident, "cpu")
-    for i, row in enumerate(resident):
-        for action, value, n in row.q_labels:
-            assert b.q_mask[i, action].item() == 1.0
-            assert b.q_label[i, action].item() == pytest.approx(value, abs=1e-6)
-            assert b.q_n[i, action].item() == n
-        assert int(b.q_mask[i].sum().item()) == len(row.q_labels), \
-            "an action nobody swept must stay masked OFF, not inherit a neighbour's column"
 
 
 def test_scan_record_recovers_the_FULL_choice_map_at_every_decision(tmp_path):

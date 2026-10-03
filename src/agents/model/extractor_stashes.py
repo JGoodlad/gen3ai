@@ -51,11 +51,6 @@ class ExtractorStashes:
     # --- value-side readouts ------------------------------------------------------------------
     value_pooled: Optional[torch.Tensor] = None        # [B,D_MODEL] the FitNets HINT layer
     win_prob_logits: Optional[torch.Tensor] = None     # [B,1] P(win) logit (aux BCE + prober)
-    # gen3_q_winprob_head_v1: PER-ACTION P(win|s,a) logits, indexed by the ACTION SPACE
-    # ([switch x6, move x4, struggle]) — the amortized one-ply search leaf. A side readout like
-    # every other field here: the aux loss, the offline probe and the prober read it; the forward
-    # never feeds it anywhere.
-    q_winprob_logits: Optional[torch.Tensor] = None    # [B,ACTION_SPACE_SIZE]
     # --- representation readouts for the effective-rank probe (`agents.training.rank_metrics`) -
     # K6 (gen3_rank_probe_stash_v1): the probe used to capture these with FORWARD HOOKS on the
     # TeamTransformer and the CLS pool — and a hook on a compiled module is a dynamo guard

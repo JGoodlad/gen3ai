@@ -534,11 +534,9 @@ regenerates it exactly.
   tag: the demux calls `offer_record`, the forensic writer calls `register_trace_prefix`, and
   whichever lands second writes `<prefix>_reconstruction.json` next to the trace. (`BridgeSession`
   instead keeps a single-slot `last_recon` — training persists no traces.) `attach_bridge_transport`
-  additionally takes an OPT-IN `recon_sink` callable (default `None` = the historical behaviour,
-  nothing written) that receives `(battle_tag, b64_payload)` for every episode; the counterfactual
-  label factory's record tap (`--cf-records` → `agents.training.cf_records`) is the one consumer. A
-  callable, not a directory, so this package keeps no dependency on the training package — and a
-  sink that raises is caught and logged rather than retiring the reader task.
+  no longer takes a `recon_sink`: the counterfactual training half's record tap (the opt-in callable
+  that wrote each episode's record into a `cf_records/` ring) was deleted in deletion pass L4, so a
+  training episode's record is no longer persisted anywhere.
 - **`replay_battle(record)`** — re-runs the battle verbatim (`replay_driver.js`, batch
   JSON-over-stdio, no server) and returns the regenerated per-side protocol chunks +
   the final omniscient outcome. Byte-identical to the live streams modulo `|t:|` wall-clock

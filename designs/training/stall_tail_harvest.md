@@ -183,10 +183,10 @@ consumer's `split_by_battle` calls `assert_battle_disjoint` on its own result be
 
 `winprob_finetune` runs in two phases: a no-grad forward of the frozen trunk caching `value_pooled`
 (the `WinProbHead`'s only input, via `ProbeModel._value_pooled_batch` so the numbers stay comparable
-with live `cf/*` scalars), then an Adam fit over `head.parameters()` alone. The trunk is not frozen,
+with the `cf/*` scalars the since-deleted cf training half logged, deletion pass L4), then an Adam fit over `head.parameters()` alone. The trunk is not frozen,
 it is **absent** from phase 2 — and `_assert_head_only` raises if any param group holds anything
 else. Loss is the binomial NLL `k·softplus(−z) + (n−k)·softplus(z)`, slice-weighted and normalized
-by `Σ w·n`, asserted exactly equal to the live trainer's `cf_terms.cf_binomial_nll` and to mean BCE
+by `Σ w·n`, pinned equal to mean BCE
 at `n ≡ 1`. Slice weights are inverse-frequency over declared edges (`SLICE_EDGES = (60, 80, 100,
 130, 170, 250)`, `SLICE_VERSION`), rescaled to mean 1 so the learning rate means the same thing
 across datasets. **Best epoch is chosen by the PLAIN val NLL**, not the re-weighted one — the

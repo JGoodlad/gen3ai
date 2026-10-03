@@ -16,7 +16,6 @@ class _Builder:
         self.teams = list(teams)
         self._rng = random.Random(0)
         self._block_episodes = 1
-        self._team_pfsp = "off"
 
     def yield_team(self):
         return self._rng.choice(self.teams)
@@ -46,9 +45,6 @@ def test_a_stateful_builder_is_refused():
     b = _Builder(["a", "b"])
     b._block_episodes = 3
     with pytest.raises(ValueError, match="block-episodes"):
-        SD.draw_team(b, SD.game_key(0, "x", 0), SD.TRAINEE)
-    b._block_episodes, b._team_pfsp = 1, "weighted"
-    with pytest.raises(ValueError, match="team-PFSP"):
         SD.draw_team(b, SD.game_key(0, "x", 0), SD.TRAINEE)
 
 

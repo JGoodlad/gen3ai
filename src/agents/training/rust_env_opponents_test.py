@@ -199,16 +199,16 @@ def test_a_slot_in_use_is_never_loaded_over_and_capacity_is_typed():
 
 def test_the_plan_declares_the_route_table():
     plan = E.OpponentPlan(pool_slots=3, stable=(E.StableSpec("x", 0.8, ("T",)),),
-                          exploiter=E.ExploiterSpec(temperature=1.3, ladder=True), bots=("heuristic",))
+                          exploiter=E.ExploiterSpec(temperature=1.3), bots=("heuristic",))
     rows = plan.spec_rows()
     assert rows == [{"kind": "policy", "slot": 0}, {"kind": "policy", "slot": 1}, {"kind": "policy", "slot": 2},
-                    {"kind": "policy", "slot": 3}, {"kind": "policy", "slot": 4}, {"kind": "policy", "slot": 5},
-                    {"kind": "bot", "bot": "heuristic", "seed": 6}]
+                    {"kind": "policy", "slot": 3}, {"kind": "policy", "slot": 4},
+                    {"kind": "bot", "bot": "heuristic", "seed": 5}]
     assert plan.spec_rows(bots="external")[-1] == {"kind": "external"}
     r = plan.routes()
-    assert [x.klass for x in r] == [1, 1, 1, 2, 3, 3, 0]
-    assert r[3].temperature == 0.8 and r[3].team_strs == ("T",) and r[4].player == r[5].player == "exploiter"
-    assert plan.n_policy_slots == 6
+    assert [x.klass for x in r] == [1, 1, 1, 2, 3, 0]
+    assert r[3].temperature == 0.8 and r[3].team_strs == ("T",) and r[4].player == "exploiter"
+    assert plan.n_policy_slots == 5
     with pytest.raises(ValueError):
         E.OpponentPlan(pool_slots=2)            # no floor bucket
 
@@ -217,7 +217,7 @@ def test_from_args_mirrors_env_factory():
     from types import SimpleNamespace as NS
 
     args = NS(self_play=True, self_play_temp=1.0, stable_opponent_selfplay_share=0.2, stable_opponent_pfsp=True,
-              exploiter_keep_bots=False, exploiter_bot_fraction=0.5, exploiter_ladder=None)
+              exploiter_keep_bots=False, exploiter_bot_fraction=0.5)
     plan = E.OpponentPlan.from_args(args, bot_names=("heuristic", "staller"),
                                     stable_entries=[NS(label="ext", temperature=0.9, team_strs=())])
     assert plan.pool_slots == 20 + E.DEFAULT_POOL_SPARE and plan.stable[0].temperature == 0.9 and plan.stable_pfsp

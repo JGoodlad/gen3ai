@@ -135,6 +135,22 @@ the rest were never recorded fields**, so a run that used them with the default 
 `model_config.json`: its recorded argv fails argparse on an UNPINNED resume instead. Flag list:
 `designs/deleted_flags.md`; history: [`../training/exploiter_and_distillation.md`](../training/exploiter_and_distillation.md).
 
+🚨 **The COUNTERFACTUAL TRAINING HALF left the config at v134** (deletion pass L4, `gen3_retired_levers_l4_v1`,
+owner-approved 2026-10-02: "delete all, port none"; stamp-only, no `ARCH_SIGNATURE` bump). Removed `ModelVersion`
+fields (16): `cf_records`, `cf_records_keep`, `cf_winprob_coef`, `cf_head_only`, `cf_label_lag_steps`,
+`cf_label_likelihood`, `cf_evidential_coef`, `cf_evidential_reg`, `cf_twin_coef`, `cf_shadow_coef`,
+`q_winprob_coef`, `q_winprob_onpolicy_coef`, and the FOUR STRUCTURAL head toggles `cf_evidential`, `cf_twin_heads`,
+`cf_shadow_critic`, `q_winprob_mode`. The toggles are the first STRUCTURAL levers since L2: an ON value built modules
+(`CfEvidentialHead`, two extra `WinProbHead`s, `ShadowValueHead`, a `QWinProbHead`) that the surviving extractor has no
+home for, so `retired_levers.refuse_structural` refuses a config recording one ON on EVERY load and
+`snapshot._DEAD_FEK_JUDGED` carries the four pickled extractor kwargs (OFF pops, ON is refused). The coefficients and
+`cf_records` are TRAINING-ONLY retired levers (a resume or fork of a run that recorded one live is refused, pin
+`LAST_COMMIT_L4 = cbd20111…`); `cf_records_keep` / `cf_head_only` / `cf_label_lag_steps` / `cf_label_likelihood` /
+`cf_evidential_reg` are INERT retired fields. `--team-pfsp` / `--exploiter-ladder` / `--cf-label-supply` /
+`--cf-producer-args` / `--cf-supply-starve-*` were never recorded fields. Every v121+ run on record recorded all of it
+OFF (2026-10-02 archive scan). `QWinProbHead` survives as the ride-along A head's scorer class only. Flag list:
+`designs/deleted_flags.md`; the producer / audit stack that reads old runs' rings is kept (manifest D6).
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

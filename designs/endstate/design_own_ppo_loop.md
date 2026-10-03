@@ -113,16 +113,15 @@ About 11 are on by default:
 
 The rest are flag-gated:
 - Adaptive batch.
-- The exploiter temperature and ladder.
+- The exploiter temperature anneal / ratchet (the exploiter ladder was deleted in deletion pass L4).
 - `WinProbLabelCallback` (Python core only; the dense-aux callback it once sat beside is deleted, deletion pass L2).
-- The value sidecar, the fork arm and team PFSP.
-- cf supply.
+- The value sidecar and the fork arm (team PFSP and the cf supply guard were deleted in deletion pass L4).
 
 **What couples a callback to SB3:**
 - **`self.locals`:** reads in `signal_callback.py` (with an async fallback to `wave_infos`) and `win_prob_callback.py`, all `.get()` (the third file, `dense_aux_callback.py`, is deleted).
 - **The logger as a bus:** 4 readers of `logger.name_to_value` (6 before L3 deleted DistillAnchor and DistillStop) — the two LR controllers, RankTripwire and MetricsExporter — plus `compile_control.py:816`.
 - **Model attributes written by callbacks:** `lr_schedule`, `grad_accum_steps` and the `_win_*` / `_fork_metrics` stashes.
-- **`env_method` / `get_attr`:** in selfplay, the exploiter callbacks, team PFSP, team win rate and reward terms.
+- **`env_method` / `get_attr`:** in selfplay, the exploiter callbacks, team win rate and reward terms.
 - **`model.save`:** in checkpoint, selfplay and eval (the search teacher, a fourth, is deleted).
 
 `self.globals` is never read. `self.parent` was read once, by DistillAnchor, which is deleted (deletion pass L3).

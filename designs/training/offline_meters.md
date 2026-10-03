@@ -34,10 +34,7 @@ convention (TensorBoard drops NaN, so a degenerate slice leaves a GAP in the liv
 bootstrap is strictly more general — it resamples ROW INDICES and evaluates an arbitrary `stat_fn`,
 which is what lets `reliability_table` compose with it. `winprob_finetune.label_noise_variance`
 subtracts the same `p̂(1−p̂)/(n−1)` identity but PER ROW with a heterogeneous `n`.
-`main/q_amortization.spearman` is the one true duplicate — same shape, same `None` convention, an
-exact `std() == 0` flatness test instead of the relative-tolerance one here — and moving its call
-site is a behaviour change (a *near*-flat row starts refusing instead of reporting float noise)
-that wants its own pass and its own evidence. `hodge.py` and `elo.py` carry no general-purpose
+`main/q_amortization.spearman` was the one true duplicate; it went with the E5 step-5 amortization meter (deletion pass L4), so `stats.py` now has no near-duplicate of `spearman` left in the tree. `hodge.py` and `elo.py` carry no general-purpose
 statistics at all; everything in them is bound to the rating model.
 
 ## `replay_imputation_probe` — the own-side imputation meter (`replay_imputation_probe.py`)

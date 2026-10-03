@@ -21,7 +21,7 @@ What lives here
 
 Related statistics elsewhere in this package, and why they are NOT merged here
 -----------------------------------------------------------------------------
-Three near-siblings exist and each one differs in a way that is load-bearing rather than
+Two near-siblings exist and each one differs in a way that is load-bearing rather than
 accidental, so folding them together would silently change a shipped instrument's output:
 
 * ``scaffolding.py`` — ``spearman_rho`` and its own ``cluster_bootstrap_ci``. Both use the **NaN**
@@ -34,10 +34,6 @@ accidental, so folding them together would silently change a shipped instrument'
 * ``winprob_finetune.label_noise_variance`` — the same ``p̂(1−p̂)/(n−1)`` identity
   :func:`sd_true_excess` subtracts, but PER ROW with a heterogeneous ``n`` per row, and it excludes
   ``n < 2`` rows rather than refusing the whole cell.
-* ``main/q_amortization.spearman`` — the same shape as :func:`spearman` with an exact
-  ``std() == 0`` flatness test instead of the relative-tolerance ``_is_flat`` here. Its call site
-  should move to this module, but that is a behaviour change (a *near*-flat row starts refusing
-  instead of reporting float noise) and belongs in its own pass with its own evidence.
 
 ``hodge.py`` and ``elo.py`` carry no general-purpose statistics — everything in them is
 Bradley-Terry or Hodge-decomposition machinery bound to the rating model.

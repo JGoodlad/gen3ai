@@ -18,7 +18,7 @@ name it ever exported still resolves from `agents.training.instrumented_ppo`.
     hparams.py        every after-construction knob `train_rl_agent` sets, with its rationale
     noise_scale.py    the McCandlish gradient-noise-scale estimator + the NSR advisor
     value_terms.py    the win-prob BCE and its opponent-stratified weights
-    aux_terms.py      the `belief_bank` / `td_aux` / `cf_terms` delegates
+    aux_terms.py      the `belief_bank` / `td_aux` delegates
     capacity_terms.py the `--capacity-telemetry` delegates — the ONE `*_terms` module that folds
                       NOTHING into `loss` (see its docstring)
     constants.py      the four module-level tuning constants
@@ -68,7 +68,6 @@ import pathlib
 
 from sb3_contrib import MaskablePPO
 
-from agents.training import cf_terms as _cf
 from agents.training.instrumented_ppo.constants import (
     _NOISE_SCALE_EMA_DECAY,
     _WIN_CONTESTED_TAU,
@@ -116,16 +115,11 @@ def _verify_upstream_unchanged() -> None:
 
 
 _verify_upstream_unchanged()
-#: Re-exported so historical `from agents.training.instrumented_ppo import CfForward`
-#: still resolves after the cf terms moved to their own module.
-CfForward = _cf.CfForward
-
 from agents.training.instrumented_ppo.ppo import InstrumentedMaskablePPO   # noqa: E402
 from agents.training.instrumented_ppo.inference import (   # noqa: E402
     InferenceMaskablePPO, InferenceOnlyModelError)
 
 __all__ = [
-    "CfForward",
     "InferenceMaskablePPO",
     "InferenceOnlyModelError",
     "InstrumentedMaskablePPO",

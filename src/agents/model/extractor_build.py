@@ -27,8 +27,7 @@ from agents.model.arch_constants import (
     INTENT_THRESH_MOVE_DIM, PAIR_OUTCOME_MOVE_DIM, PAIR_OUTCOME_SWITCH_DIM,
     PAIR_VALUE_ROUTE_DIM, PROJECTION_DIM, ROLE_TOKEN_SIZE, SWITCH_BRANCH_MOVE_DIM,
 )
-from agents.model.aux_value_heads import (
-    CfEvidentialHead, ShadowValueHead, WinProbHead)
+from agents.model.aux_value_heads import WinProbHead
 from agents.model.belief_heads import (
     BELIEF_GRAD_MODES, BeliefHead, BeliefSlots, HPTypeBelief, ItemBelief, MoveBelief, SpreadBelief)
 from agents.model.conditional_threat import ConditionalThreatCell
@@ -45,7 +44,6 @@ from agents.model.pair_outcome import PairOutcomeMoveCell, PairOutcomeSwitchCell
 from agents.model.pointer_head import EntityMoveSeats
 from agents.model.pools import CLSPool, HiddenOppBeliefPool
 from agents.model.projection import ProjectionAssembler, compute_projection_widths
-from agents.model.q_winprob_head import Q_WINPROB_MODES, QWinProbHead
 from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.t0_species import T0SpeciesPrior
 from agents.model.team_transformer import EdgeBias, EventSeats, TeamTransformer
@@ -105,9 +103,6 @@ class ExtractorBuild(torch.nn.Module):
                  edge_bias_families: str = "off",
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  hp_belief_mode: str = "composed", belief_grad_mode: str = "shaping",
-                 cf_evidential: bool = False,
-                 cf_twin_heads: bool = False, cf_shadow_critic: bool = False,
-                 q_winprob_mode: str = "none",
                  ridealong_ensemble: int = 0,
                  ridealong_rnd: bool = False,
                  ridealong_adv: int = 0,
@@ -871,93 +866,6 @@ class ExtractorBuild(torch.nn.Module):
             self.beta_head = BetaSwitchHead(D_MODEL, _intent_ctx)
         # (alpha/beta stashes: read ONLY by the aux loss + the prober; never fed forward — see
         # ExtractorStashes.)
-
-        # gen3_cf_evidential_head_v1 (v98): the EVIDENTIAL Beta readout over P(win|state), for the
-        # counterfactual label factory's rung R1 (designs/ai_v10/design_counterfactual_value_
-        # grounding.md). STRUCTURAL — the module's params are in the state_dict or they are not —
-        # but nothing else: it is NOT called from this forward at all. The training-side loss
-        # (`instrumented_ppo._cf_evidential_term`) applies it to the STASHED `value_pooled`,
-        # always detached, so pi/vf are bit-identical whether or not it is built.
-        # Built LAST, after the intent heads and before the identity snapshot, for the same reason
-        # they are: SB3 restores optimizer state POSITIONALLY (the ai_v6_13 "128 vs 5" crash), and
-        # building it here also leaves every earlier module's init RNG draw untouched — which is
-        # what makes ON-at-coefficient-0 bit-identical to OFF and not merely equal in shape.
-        self.cf_evidential = bool(cf_evidential)
-        self.cf_evid_head = CfEvidentialHead() if self.cf_evidential else None
-
-        # gen3_cf_twin_heads_v1 (v99): the TWIN WIN-PROB HEADS and the SHADOW CRITIC — the
-        # owner-authorized amendment to the R1 pre-registration (ledger 2026-08-22 evening, "Three
-        # owner sign-offs", item 3). Both are STRUCTURAL in exactly the `cf_evidential` sense: their
-        # params are the state_dict delta and nothing else, because neither is called from this
-        # forward. The training-side terms apply them to the STASHED `value_pooled`.
-        #
-        # WHY TWINS. R1's primary comparison was two RUNS (arm vs control). Two runs differ in every
-        # random draw they ever make, and the meter's own measured floor is ~40% of its variance —
-        # so a run-to-run difference has to clear noise the design cannot control. Three heads on
-        # ONE trunk delete that variance by construction: identical trunk, identical states, and
-        # the ONLY difference is which label stream trains each head.
-        #   head A = `win_head` above (the CONTROL — the existing on-policy single-outcome BCE, and
-        #            it is not touched by any of this: A is not new)
-        #   head B = A's loss PLUS the cf-labelled states with SINGLE-OUTCOME labels  → COVERAGE
-        #   head C = A's loss PLUS the same states with TIGHT-MC labels               → +PRECISION
-        # B−A isolates prioritization/coverage; C−B isolates pure variance reduction. Both twins are
-        # `WinProbHead` — the SAME module class and the same capacity as A — because a difference of
-        # architectures would be a second explanation for a difference of scores.
-        #
-        # HEAD-ONLY ALWAYS in v1: both twins read a detached `value_pooled` in every term they take,
-        # so this measures the LABEL effect on a trunk that is frozen with respect to them. Trunk
-        # exposure and policy transfer stay CROSS-RUN questions (runbook §0a, unamended).
-        self.cf_twin_heads = bool(cf_twin_heads)
-        if self.cf_twin_heads and self.win_head is None:
-            # DECLARED in flag_registry (`requires=("win_prob_mode",)`) and enforced here, which is
-            # the registry's contract: a dependency that only the CLI knows is invisible to
-            # `checkargs`, so an operator validating a recorded launcher_command would get exit 0 on
-            # a command the child then refuses. Head A IS `win_head`; without it the twins have no
-            # control objective to mirror and the factorial has no control arm at all — the arm
-            # would run and its primary comparison would silently not exist.
-            raise ValueError(
-                "cf_twin_heads requires win_prob_mode != 'none': heads B and C mirror head A's "
-                "on-policy win-prob BCE, and head A is `win_head`, which win_prob_mode='none' does "
-                "not build. Set --win-prob-mode read_only|shaping, or drop --cf-twin-heads.")
-        self.cf_twin_head_b = WinProbHead() if self.cf_twin_heads else None
-        self.cf_twin_head_c = WinProbHead() if self.cf_twin_heads else None
-        # The SHADOW CRITIC: a passive value twin on tight-MC `mc_return` labels. Never computes an
-        # advantage, never enters GAE, never feeds the forward — the staged promotion path for
-        # critic surgery (which owes C4), not the surgery. See `ShadowValueHead`.
-        self.cf_shadow_critic = bool(cf_shadow_critic)
-        self.cf_shadow_head = ShadowValueHead() if self.cf_shadow_critic else None
-
-        # gen3_q_winprob_head_v1 (v107): the PER-ACTION win-probability readout — E5 step 1, the
-        # amortized one-ply search leaf (ledger 229e9f1 / 5edbd05). Unlike the four cf readouts
-        # above it IS called by the forward, because eleven Q values are only useful if a rollout
-        # / an eval / the prober can read them from the same forward that chose the action. What it
-        # shares with them is the safety contract: `read_only` is the ONLY live mode, every input
-        # is stop-grad, the logits are stashed and never concatenated into pi/vf, so the forward's
-        # (pi, vf) pair is bit-identical whether or not this is built.
-        #
-        # Built LAST — after every cf head and before the identity snapshot — for the two reasons
-        # this position always carries: SB3 restores optimizer state POSITIONALLY (the ai_v6_13
-        # "128 vs 5" crash), so a module is APPENDED and never inserted; and appending here leaves
-        # every earlier module's initialization RNG draw untouched, which is what makes OFF
-        # byte-identical rather than merely equal in shape.
-        #
-        # It reads the POINTER CELL WIDTHS, so it must be built after every module that widens
-        # them (the op, the intent cells, the pair-outcome cells, the switch branch, the
-        # conditional threat) — which "last" already guarantees, and which is the second reason the
-        # position is not free.
-        if q_winprob_mode not in Q_WINPROB_MODES:
-            raise ValueError(
-                f"q_winprob_mode must be one of {Q_WINPROB_MODES}, got {q_winprob_mode!r}. There "
-                f"is deliberately no 'shaping' value: a per-action readout carrying a "
-                f"counterfactual label is a larger leak surface than a per-state one, so trunk "
-                f"exposure is a separate decision that owes its own gate.")
-        self.q_winprob_mode = str(q_winprob_mode)
-        self.q_winprob_head = (
-            QWinProbHead(move_token_dim=cast("ExtractorApi", self).pointer_move_token_dim, d_model=D_MODEL,
-                         ctx_dim=D_MODEL,
-                         move_cell_dim=cast("ExtractorApi", self).pointer_move_cell_dim,
-                         switch_cell_dim=cast("ExtractorApi", self).pointer_switch_cell_dim)
-            if self.q_winprob_mode != "none" else None)
 
         # gen3_ridealong_heads_v1 (v126) — the DETACHED RIDE-ALONG heads' DECLARATION. The extractor
         # builds NOTHING for them: it records the four kwargs (so the flag registry's five surfaces,

@@ -1,6 +1,6 @@
 """The CAPACITY-TELEMETRY delegates (`gen3_capacity_telemetry_v1`).
 
-Same split as `aux_terms` -> `cf_terms`: the bodies live in `agents/training/capacity_telemetry.py`
+Same split as `aux_terms` -> `belief_bank` / `td_aux`: the bodies live in `agents/training/capacity_telemetry.py`
 as a self-contained vertical, and these thin methods are what `train()` calls, so every call site
 and every `model._capacity_*` test resolves against one name.
 

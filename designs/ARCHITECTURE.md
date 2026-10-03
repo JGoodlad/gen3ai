@@ -888,11 +888,11 @@ it. Mechanics: `designs/training/critic_and_value_losses.md`.
 **`--fork-fraction` FORKS CONTESTED STATES INTO THE BUFFER** (`gen3_fork_v1`, config v120 — THE
 FORK ARM). Default **`0.0` = OFF and BIT-identical**: no module is imported, no obs key is declared,
 no callback is attached, the stock rollout buffer is used and no row is injected. `--critic winprob`
-**and** `--cf-records` are both REQUIRED (the second on the Python core only), and
-`--win-prob-strata-weight` is REFUSED alongside it. Above 0.0 it is the FRACTION of the buffer's
+is REQUIRED, and `--win-prob-strata-weight` is REFUSED alongside it. It runs on the Rust core only (`--fork-fraction > 0` on
+`--env-core python` is refused: the Python arm replayed from a `<run>/cf_records/` ring that no run writes). Above 0.0 it is the FRACTION of the buffer's
 decisions that are FORKED: at a CONTESTED decision (a move round, turn 2-40, ≥3 legal actions, top-2
 masked-logit gap under the `--fork-contested-gap` quantile of this rollout's own candidate pool) the
-episode is replayed out of the `cf_records` ring to that turn and `--fork-branches` continuations —
+episode is replayed to that turn (on the Rust core, from its own finished input log) and `--fork-branches` continuations —
 the policy's top-2 candidates plus ONE uniformly random legal action — are played to a terminal by
 the CURRENT policy on both sides at temperature 1.0. Their transitions enter the SAME PPO buffer,
 with the branch's own GAE and its own outcome as `win_target`. **Plain BCE, no ranking
@@ -935,19 +935,14 @@ form is the TD residual GAE already turns into the advantage, and the frozen-φ 
 registered but never read. `designs/deleted_flags.md` carries the citations; UNDERSTANDING keeps the
 open question "do we need PBRS?".
 
-**One more readout EXISTS in the code and is OFF here — `q_winprob_mode` (`QWinProbHead`).** It is
-the only member of this family that does not hang off `value_pooled` alone: it scores each of the
-eleven actions from the token of the entity that action selects — the SAME per-action tokens the
-pointer head scores (`stash.pointer_inputs`) — with `value_pooled` as its context, and stashes
-`last_q_winprob_logits [B, 11]`. One forward, eleven `P(win | s, a)`; the point is to amortize the
-eleven simulator re-rolls a per-action win probability otherwise costs (ledger 229e9f1 / 5edbd05).
-It is also the only readout here with no `shaping` value: every input is detached inside the
-forward, so `pi`/`vf` are bit-identical whenever it is built and `grad/q_winprob_share` is 0 by
-construction. **LATENT — not enabled in any run.** The head is a state_dict delta gated by
-`check_compatible`, and its two training coefficients (`--q-winprob-coef`, the per-action
-counterfactual likelihood; `--q-winprob-onpolicy-coef`, the weak and biased taken-action fallback)
-default to 0, so nothing about it is live until a run turns it on. §6's table carries it as
-`q_winprob_mode` `"none"` / OFF.
+**`QWinProbHead` is the per-action scorer the ride-along A head is built from — and nothing else.** It
+scores each of the eleven actions from the token of the entity that action selects — the SAME per-action
+tokens the pointer head scores (`stash.pointer_inputs`) — with `value_pooled` as its context, one shared
+zero-init scorer over the eleven slots. The extractor has NO per-action win-probability head of its own
+(no `q_winprob_mode`), and no evidential Beta head, twin win-prob heads or shadow critic (no
+`cf_evidential` / `cf_twin_heads` / `cf_shadow_critic`): each was a state_dict delta whose only trainer
+was a counterfactual-label loss, and no run writes those labels. A checkpoint that recorded one of the
+four is refused on load; `designs/deleted_flags.md` carries the flags and the pin that still has them.
 
 **The DETACHED RIDE-ALONG heads EXIST in the code and are OFF here** (`gen3_ridealong_heads_v1`,
 config v126; owner 2026-09-30, EXPERIMENT_BACKLOG X25 / X4a; `agents/model/ridealong_heads.py`).
@@ -1257,9 +1252,6 @@ does nothing given another setting.
 |---|---|---|
 | `attend_unrevealed_opponents` | `true` | ACTIVE |
 | `belief_grad_mode` | `"shaping"` | ACTIVE |
-| `cf_evidential` | `false` | OFF |
-| `cf_shadow_critic` | `false` | OFF |
-| `cf_twin_heads` | `false` | OFF |
 | `conditional_threat_cell` | `true` | ACTIVE |
 | `consequence_topk` | `6` | ACTIVE |
 | `damage_candidate_k` | `0` | OFF |
@@ -1290,7 +1282,6 @@ does nothing given another setting.
 | `pair_outcome_cell` | `true` | ACTIVE |
 | `pair_outcome_switch` | `true` | ACTIVE |
 | `pair_value_route` | `false` | OFF |
-| `q_winprob_mode` | `"none"` | OFF |
 | `ridealong_adv` | `0` | OFF |
 | `ridealong_ensemble` | `0` | OFF |
 | `ridealong_opp` | `0` | OFF |
@@ -1305,11 +1296,6 @@ does nothing given another setting.
 | `value_entity_pool_full` | `true` | ACTIVE |
 | `value_threat_inject` | `true` | ACTIVE |
 | `win_prob_mode` | `"shaping"` | ACTIVE |
-| `cf_evidential_coef` | `0.0` | OFF |
-| `cf_evidential_reg` | `0.001` | INERT — no `cf_evid_head` |
-| `cf_shadow_coef` | `0.0` | OFF |
-| `cf_twin_coef` | `0.0` | OFF |
-| `cf_winprob_coef` | `0.0` | INERT — coef 0, `win_head` built |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |
 | `intent_label_bot_weight` | `0.25` | ACTIVE |
 | `item_belief_coef` | `0.05` | ACTIVE |
@@ -1317,8 +1303,6 @@ does nothing given another setting.
 | `move_belief_latent_coef` | `0.05` | ACTIVE |
 | `opp_belief_aux_coef` | `0.05` | ACTIVE |
 | `policy_grad_coef` | `1.0` | ACTIVE |
-| `q_winprob_coef` | `0.0` | OFF |
-| `q_winprob_onpolicy_coef` | `0.0` | OFF |
 | `spread_belief_coef` | `0.05` | ACTIVE |
 | `td_aux_coef` | `0.0` | OFF |
 | `vf_coef` | `0.5` | ACTIVE |

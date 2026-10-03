@@ -63,7 +63,7 @@ one-key dict, killed at env init) is re-armed by any future obs-key-adding route
 reads a new Dict key needs a row there and nothing else.** Adoption is partial by design: the offline
 audit / probe CLIs still hand-build (`designs/ops/TECH_DEBT_BACKLOG.md`).
 
-## `WinProbHead`, `CfEvidentialHead` and the three v99 additions
+## `WinProbHead`
 
 A separate `WinProbHead` (`win_prob_mode != none`) reads `value_pooled` *after* the pools and stashes
 a `last_win_prob_logits` [B,1]. It never enters the pi/vf CONCAT, so projection dims are unchanged
@@ -73,78 +73,31 @@ returns `sigmoid` of these logits and the head's BCE is the value loss at `vf_co
 feeds it a STOP-GRAD `value_pooled` (head trains its own params only); `shaping` feeds it live (the
 win objective also shapes the trunk), and `winprob` implies `shaping`.
 
-`CfEvidentialHead` (`--cf-evidential`, v98) is a third readout off the same `value_pooled`, and
-v99 adds THREE more there (`gen3_cf_twin_heads_v1`): the two `WinProbHead` TWINS
-(`--cf-twin-heads` — heads B and C, the within-run paired R1 comparison) and the passive
-`ShadowValueHead` (`--cf-shadow-critic`, an MC-grounded value twin that never computes an
-advantage). All four share the evidential head's three properties — built LAST, never called by
-the forward, input detached unconditionally — so the count off `value_pooled` is now SIX heads
-and only `win_head` is in the forward at all (the distributional `value_dist_head` was deleted,
-deletion pass L1, leaving `win_head` alone, as the critic). It is
-the one that breaks the pattern in two ways worth knowing about. It emits a **Beta posterior** (α, β)
-over P(win|state) rather than a point estimate — the counterfactual factory's uncertainty confession,
-since G0 convicted the scalar head of RESOLUTION, not of an optimism offset. And it is **not called by
-the forward at all**: the training-side term (`instrumented_ppo._cf_evidential_term`) applies it to the
-STASHED `value_pooled`, always detached, so there is no `read_only`/`shaping` split to make and the
-rollout pays nothing. Built LAST in `__init__`, so ON-at-coefficient-0 is BIT-identical to OFF in pi/vf
-— not merely equal in shape, which is all the two heads above claim. Training half + the pre-registered
-read: `designs/training/cf_grounding.md` → *The EVIDENTIAL Beta head*.
+`WinProbHead` is the ONE readout off `value_pooled` that remains in the extractor: the evidential Beta
+head, the twin win-prob heads B/C and the passive shadow critic (v98–v99) were deleted with the
+counterfactual training half (deletion pass L4; a checkpoint that recorded one ON is refused on every
+load, `model_version/retired_levers.py`), and the distributional `value_dist_head` was deleted in
+deletion pass L1. `win_head` is the only one of them the forward calls.
 
 ## `DenseAuxHead` — DELETED (deletion pass L2)
 
 `--win-prob-dense-aux` (v117, `gen3_dense_aux_v1`, the critic ladder's arm 9) was a 25-output head on
 `value_pooled` (survival and final HP of the twelve slots plus turns-left) with a LIVE, un-detached
 input, so its gradient reached the shared trunk; it was the SEVENTH readout off `value_pooled` and
-the one exception to the cf readouts' detached-input pattern. It was deleted with the critic-ladder
+the one exception to the (since deleted) cf readouts' detached-input pattern. It was deleted with the critic-ladder
 levers (the arm read no gain on the one-bit terminal target, ledger *THE ARMS AT 400 GAMES*);
 recoverable at pin <= 475bd817. Its structural `dense_aux` / `value_true_team` flags recorded ON are
-refused on every load (`model_version/retired_levers.py`). Six readouts off `value_pooled` remain.
+refused on every load (`model_version/retired_levers.py`). `WinProbHead` is the one readout off `value_pooled` that remains.
 
-## `QWinProbHead` — the one readout that is NOT off `value_pooled`
+## `QWinProbHead` — the per-action Q head is DELETED; the CLASS survives as the A head's scorer
 
-### `QWinProbHead` (`--q-winprob-mode`, v107) — the one readout that is NOT off `value_pooled`
-
-`gen3_q_winprob_head_v1`. Every other readout in this package evaluates a STATE, which is why "what
-is my win probability if I click Rock Slide?" costs eleven simulator re-rolls rather than a read.
-This head scores each of the eleven actions **from the token of the entity that action selects** —
-the SAME per-action tokens `PointerNativeActionHead` scores, taken off `stash.pointer_inputs` — with
-`value_pooled` as the board CONTEXT, and stashes `last_q_winprob_logits [B, 11]` in action-space
-order. One forward, eleven `P(win|s,a)`: the amortized one-ply search leaf (ledger 229e9f1 /
-5edbd05).
-
-**Four properties, and each one is a constraint rather than a style choice:**
-
-1. **ONE shared scorer** over all eleven slots. Three input projections exist only because the three
-   families carry different WIDTHS; everything after them is shared, so the readout is
-   permutation-equivariant within a family — permute our team and the six switch Q values permute
-   with it. The pointer head's own lesson applies verbatim: a flat `Linear(ctx, 11)` learns "slot 0
-   is usually right" from an ordering that means nothing, and a Q head that did so would be useless
-   as a search leaf. (The pointer head's THREE scorers are correct there, where each family's logit
-   has its own semantics; here every slot answers the same question.)
-2. **ZERO-INIT scorer** (weight and bias) ⇒ every logit exactly 0 ⇒ `P = 0.5` everywhere ⇒ the
-   untrained ranking is a total tie, which is the honest state of knowledge for a head that has seen
-   no label. It is covered by `restore_identity_init`'s by-observation capture set automatically —
-   and `q_winprob_head_test` proves the automatic coverage actually reached it on a REAL
-   `MaskablePPO` build, because "it should be picked up" is what the M1 bug was made of.
-3. **NO `shaping` mode.** Every input is detached INSIDE the forward, so `pi`/`vf` are bit-identical
-   whenever the head is built and `grad/q_winprob_share` reads exactly 0.0 by construction. That is
-   the `CfEvidentialHead` contract rather than `WinProbHead`'s tri-state, deliberately: a per-action
-   readout carrying a COUNTERFACTUAL label is a strictly larger leak surface than a per-state one,
-   so trunk exposure is a later decision that owes its own gate.
-4. **The forward DOES call it** — the one place it departs from the four cf readouts. Eleven Q
-   values are only useful if the forward that chose the action publishes them, so the contract is
-   not "never runs" but "runs and publishes only".
-
-**Built LAST in `__init__` for TWO reasons, and the second is specific to it.** The usual one is the
-append-never-insert rule (SB3 restores optimizer state positionally; appending also leaves every
-earlier module's init RNG draw untouched, which is what makes OFF byte-identical rather than merely
-equal in shape). The specific one: it sizes its projections from `pointer_move_cell_dim` /
-`pointer_switch_cell_dim`, so it must be constructed after every module that widens a pointer cell —
-the op, the intent cells, the pair-outcome cells, the switch branch, the conditional threat.
-
-Its two coefficients (`--q-winprob-coef`, `--q-winprob-onpolicy-coef`) are TRAINING-only and appear
-nowhere in this package; the fold and the starvation caveat that governs the second one live in
-`designs/training/cf_grounding.md` → *The PER-ACTION Q WIN-PROB HEAD*.
+The extractor-built per-action win-prob head (`q-winprob-mode`, v107; it scored each of the eleven action
+slots from the entity token the slot selects, with `value_pooled` as context, and stashed
+`last_q_winprob_logits`) was deleted with the counterfactual training half (deletion pass L4): the extractor
+no longer builds a `q_winprob_head` or stashes those logits, and a checkpoint that recorded the mode ON is
+refused on every load. `QWinProbHead` (`agents/model/q_winprob_head.py`) survives ONLY as the shared-scorer
+class the detached ride-along **A head** (`ridealong_heads.AdvantageEnsemble`, `--ridealong-adv`; next section)
+is built from — ONE scorer shared across the eleven slots, a zero-init scorer, action-space column order.
 
 ## The DETACHED RIDE-ALONG heads — on the POLICY, not off the extractor (`gen3_ridealong_heads_v1`, v126)
 

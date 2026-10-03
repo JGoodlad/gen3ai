@@ -110,8 +110,8 @@ Read it **beside `train/grad_norm`**: weights moving while functions do not is t
 network burning gradient on a representation that has stopped changing. `feature_velocity_rel`
 divides by the representation's own norm, because a falling raw velocity can also mean the features
 merely shrank. The forward is the EAGER `type(fe).forward` with an observation-key-only dict, for
-the reasons `cf_terms` gives (the compile flags patch the BOUND `fe.forward`, and a second obs
-shape through the compiled entry point would add a graph for a diagnostic).
+the same reason any off-path forward uses it (the compile flags patch the BOUND `fe.forward`, and a
+second obs shape through the compiled entry point would add a graph for a diagnostic).
 
 ### Where it sits in `train()`, and the flag's class
 
@@ -119,11 +119,11 @@ shape through the compiled entry point would add a graph for a diagnostic).
 fold, after `loss.backward()`, after the optimizer step — so nothing they do can reach `loss` or
 `.grad`, and the placement is the proof. The one thing taken from inside the fold is a SNAPSHOT of
 this minibatch's `value_pooled`, grabbed right after `evaluate_actions` for the same reason steps
-2-4 of the fold sit where they do: the TD-aux / counterfactual folds run their own forward and
-REPLACE the stash. A stale or missing snapshot is a **skip** (row-count checked), counted in
+2-4 of the fold sit where they do: the TD-aux fold runs its own forward and
+REPLACES the stash. A stale or missing snapshot is a **skip** (row-count checked), counted in
 `capacity/canary_steps` rather than silently mis-pairing features with observations.
 
-The flag is the **`training_coef` class** (`td_aux_coef` / `cf_records`): an argparse entry
+The flag is the **`training_coef` class** (`td_aux_coef`): an argparse entry
 defaulting to `None`, a `_resolve` line, and a recorded `ModelVersion` field (config **v101**,
 `gen3_capacity_telemetry_v1`) — never in `check_compatible`. It is NOT `structural` (no module in
 the policy tree, no `state_dict` key, forward bit-identical), NOT `resume_immutable` (changing it
@@ -182,7 +182,6 @@ a handful of numpy means per rollout.
 | `signal/outcome_entropy` | `signal_callback.py::SignalMetricsCallback` | `p(1−p)` over a rolling 200-episode window, POOLED |
 | `signal/outcome_entropy_{bots,pool,stable,target}` | same | the same, split by `agents.training.opponent_classes.OPP_CLASS_*` |
 | `signal/outcome_win_rate`, `signal/outcome_n[_<kind>]` | same | the window's `p` and its depth — so a thin split is visible as thin |
-| `signal/outcome_entropy_rung` | `exploiter_ladder.py::ExploiterLadderCallback._record` | `p(1−p)` of the LIVE `--exploiter-ladder` rung's gate window |
 
 ### Why the pair — the MIRROR PARADOX
 
@@ -291,7 +290,7 @@ something worth curving. A run with no head publishes **no key at all**, so the 
 rather than flat at zero.
 
 **Where it is read, and why there.** Inside the minibatch loop, right after the win-prob block and
-BEFORE the cf-twin fold clobbers the extractor stashes: that is the one place both readouts exist
+BEFORE any later fold that re-forwards the extractor can clobber its stashes: that is the one place both readouts exist
 for the SAME states from the SAME forward (`evaluate_actions` produced `values` and stashed
 `last_win_prob_logits`). **Epoch 0 only** — by epoch 3 the policy that produced a pair is not the
 policy the pair would be attributed to. The logit is NOT sigmoided: the sigmoid is monotone, so ρ
@@ -426,11 +425,11 @@ sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 | `grad/` | (dynamic) | 16 | **every `--diagnostics-every` update** (fresh default 10; a skipped update is a GAP) | unitless shares | LIVE — `win_prob_*` **NOISE (gated)**: it IS the value term, and counting it twice deflated every share | `grad_balance` |
 | `rank/` | 6 | 18 | per rollout under `--rank-tripwire` (production), else every `--diagnostics-every` update | unitless | CONDITIONAL (needs the rank probe); `tripwire_no_reading` correctly reports its own blindness | `rank_tripwire`, `rank_metrics` |
 | `belief/` | 1 | 8 | per rollout | accuracy / CE | LIVE (unchanged by the critic mode) | `belief_bank` |
-| `cf/` | 5 | — | per rollout | probability + counts | CONDITIONAL — silent, no `--cf-records` | `cf_terms`, `cf_label_buffer` |
-| `team_pfsp/` · `hparams/` · `capacity/` · `td_aux/` · `q_winprob/` | 19 | — | per rollout | see each section | CONDITIONAL — all silent (flag-off); `popart/` and `value_dist/` were deleted with PopArt / the dist head | their own callbacks |
+| `hparams/` · `capacity/` · `td_aux/` | 19† | — | per rollout | see each section | CONDITIONAL — all silent (flag-off); `popart/` and `value_dist/` were deleted with PopArt / the dist head | their own callbacks |
 
-**The diagnostics cadence (`gen3_diagnostics_cadence_v1`, config v124):** `grad/*` (with
-`train/cf_grad_share` / `train/cf_evidential_grad_share`), `edge/*`, `cell/*`, the per-term
+† The 19 sites were counted 2026-09-06 and also covered the `team_pfsp/`, `cf/` and `q_winprob/` families, which deletion pass L4 (2026-10-02) removed together with their callbacks; recount before quoting.
+
+**The diagnostics cadence (`gen3_diagnostics_cadence_v1`, config v124):** `grad/*`, `edge/*`, `cell/*`, the per-term
 `train/noise_scale_{,ratio_,share_}<g>` and `train/noise_per_term_ms` are written only on an update
 `--diagnostics-every` runs (fresh default 10; a pre-v124 run stays at 1), and `rank/*` too unless
 `--rank-tripwire` is on. A skipped update is a GAP, never a repeat. The rule, the exemptions and the
@@ -648,8 +647,7 @@ number.
   group for no reading.
 * **The opponent's identity beyond its CLASS.** Only the `OPP_CLASS_*` integer crosses the env-worker
   pipe, so `_bots` / `_pool` / `_stable` / `_target` are real and finer identity (which heuristic,
-  which pool snapshot) is not. `signal/outcome_entropy_rung` is the one finer split, and it exists
-  only because `ExploiterLadderCallback` keeps its own per-rung window in the parent process.
+  which pool snapshot) is not. (`signal/outcome_entropy_rung`, the one finer split, was deleted with the exploiter ladder, deletion pass L4.)
 
 
 ## Gradient-balance + value-scale diagnostics (`grad_balance.py`)

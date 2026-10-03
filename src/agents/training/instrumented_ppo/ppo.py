@@ -104,7 +104,6 @@ def train_step_source() -> str:
         TrainMetricsExport._record_noise_scale_metrics,
         TrainMetricsExport._record_head_metrics,
         TrainMetricsExport._record_term_metrics,
-        TrainMetricsExport._record_cf_metrics,
         TrainMetricsExport._record_capacity_metrics,
     ))
 
@@ -159,19 +158,17 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
              value term keep their own coefficients))
           2. the BELIEF bank — species/moves aux, opponent-intent (+ the set-valued beta term),
              move belief, spread belief, nature/EV, HP-type, item belief, move-latent
-          3. (3a) the WIN-PROB BCE — the last R1 term — then (3b, the tail's first) the CF-TWIN
-             on-policy mirror
-          7. TD-AUX (the Bellman-residual consistency term)
-          8. the COUNTERFACTUAL block — cf-winprob, cf-evidential, cf-twin, cf-shadow
+          3. (3a) the WIN-PROB BCE — the last R1 term
+          4. TD-AUX (the Bellman-residual consistency term) — the declared EAGER TAIL's one fold
 
-        **Why 7 and 8 are LAST, and in that order.** Steps 2-4 read the extractor STASHES that
-        this minibatch's `evaluate_actions` forward left behind (`last_win_prob_logits`,
-        `last_spread_belief`, …). Steps 7 and 8 each run their OWN extractor forward, which
-        CLOBBERS those stashes. So every stash-reading term must be folded before them, and the
-        CF block — which additionally samples foreign recorded states off disk — goes after
-        `_td_aux_term` for the same reason. Moving a stash-reading fold below step 7 does not
-        crash: it silently scores the wrong states. `instrumented_ppo_hub_contract_test.py`
-        pins the 7-before-8 half of this by reading the source.
+        **Why TD-AUX is LAST.** Steps 2-3 read the extractor STASHES that this minibatch's
+        `evaluate_actions` forward left behind (`last_win_prob_logits`, `last_spread_belief`, …).
+        TD-AUX runs its OWN extractor forward on its own contiguous sample, which CLOBBERS those
+        stashes. So every stash-reading term must be folded before it. Moving a stash-reading fold
+        below it does not crash: it silently scores the wrong states.
+        `instrumented_ppo_hub_contract_test.py` pins R1's order and that the R1 call precedes the
+        TD-AUX tail fold by reading the source. (The counterfactual block — cf-winprob, cf-evidential,
+        cf-twin, cf-shadow — used to follow it and was deleted in deletion pass L4.)
 
         The steps AFTER the loop (the grad-accum flush, the noise-scale fold, and the ~260 lines
         of `self.logger.record`) are diagnostics and carry no gradient.
@@ -255,9 +252,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         move_latent_on = _f.move_latent_on
         critic_winprob, win_prob_on = _f.critic_winprob, _f.win_prob_on
         scaffolding_on = _f.scaffolding_on
-        td_aux_on, cf_buffer, cf_winprob_on = _f.td_aux_on, _f.cf_buffer, _f.cf_winprob_on
-        cf_evid_on, cf_twin_on, cf_shadow_on = _f.cf_evid_on, _f.cf_twin_on, _f.cf_shadow_on
-        q_winprob_on, q_onpolicy_on, cf_any_on = _f.q_winprob_on, _f.q_onpolicy_on, _f.cf_any_on
+        td_aux_on = _f.td_aux_on
         # +WIN-PROB STRATA (gen3_winprob_strata_weight_v1) — the per-opponent-CLASS weights for the
         # win-prob BCE, computed ONCE here over the WHOLE rollout buffer and held constant for
         # every epoch and minibatch of this call. Per-BUFFER and not per-minibatch on purpose: the
@@ -301,14 +296,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             for _fk, _fv in _fork_metrics.items():
                 if float(_fv) == float(_fv):      # a NaN is an empty slice; omit, never log it
                     self.logger.record(f"fork/{_fk}", float(_fv))
-        cf_metrics: dict[str, list[float]] = {}
-        cf_evid_metrics: dict[str, list[float]] = {}
-        cf_twin_metrics: dict[str, list[float]] = {}     # +CF-TWIN (gen3_cf_twin_heads_v1)
-        cf_shadow_metrics: dict[str, list[float]] = {}   # +CF-SHADOW (gen3_cf_twin_heads_v1)
-        q_metrics: dict[str, list[float]] = {}           # +Q-WINPROB (gen3_q_winprob_head_v1)
         # +RIDE-ALONG (gen3_ridealong_heads_v1): the detached heads' `ridealong/*` sink.
         ridealong_acc = RideAlongAccumulator()
-        cf_rows_sampled = 0
 
         continue_training = True
 
@@ -474,21 +463,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         if _cmar is not None and _cmar.size == _cp.size:
                             calib_contested.observe(_cp, _cy, _ck_mask * _cmar)
 
-                # +CF-TWIN, half one of two (gen3_cf_twin_heads_v1): head A's OWN loss, mirrored
-                # onto twins B and C on THIS minibatch. It must run HERE, beside A's fold and
-                # BEFORE the cf block below clobbers the extractor stashes with its own forward —
-                # the twins read the same `value_pooled` A read, which is the entire premise of
-                # "identical trunk, identical states". Weighted at head A's own weight (1.0), so
-                # all three heads carry a bit-identical control objective; gated on `cf_twin_coef`
-                # so coefficient zero is byte-identical.
-                cf_twin_op_term = None
-                if cf_twin_on:
-                    cf_twin_op_term, _ctm = self._cf_twin_onpolicy_terms(rollout_data)
-                    if cf_twin_op_term is not None:
-                        loss = loss + _ntg.add("aux", cf_twin_op_term)
-                        for _ck, _cv in _ctm.items():
-                            cf_twin_metrics.setdefault(_ck, []).append(float(_cv))
-
                 # +TD-AUX: the TD-consistency auxiliary. Its OWN contiguous sample + its OWN critic
                 # forward (the minibatch is shuffled — it holds no adjacent pairs), so it must run
                 # AFTER every loss that reads an extractor stash from THIS minibatch's
@@ -503,78 +477,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         loss = loss + _ntg.add("aux", td_aux_term)
                         for _tdk, _tdv in _tdm.items():
                             td_aux_metrics.setdefault(_tdk, []).append(float(_tdv))
-
-                # +CF-WINPROB: ground-truth Monte-Carlo P(win) supervision of the win-prob head on
-                # OFF-DISTRIBUTION recorded states (its own sample + its own extractor forward, so
-                # it belongs here beside td_aux — after every loss that reads a
-                # stash from THIS minibatch's evaluate_actions forward, which its forward replaces).
-                # OFF / empty buffer → skipped (loss byte-identical).
-                cf_term = None
-                cf_evid_term = None
-                cf_twin_term = None
-                cf_shadow_term = None
-                q_term = None
-                q_op_term = None
-                if cf_any_on:
-                    # ONE sample + ONE extractor forward, shared by both readouts (see
-                    # `_cf_sample_and_forward`). With the evidential half off this is exactly the
-                    # call the scalar term used to make on its own, which is what keeps the
-                    # coefficient-zero byte-identity pins meaningful.
-                    _cf_ctx = self._cf_sample_and_forward()
-                    # Rows the fold actually CONSUMED this train(), summed over minibatches. Not a
-                    # duplicate of `cf/buffer_fill` (residency) nor of `cf/n` (the per-fold mean):
-                    # this is the only number that answers "how much label did this update eat",
-                    # which is what a starving producer starves — a buffer of 40 rows sampled by 40
-                    # minibatches still reports fill 40 while delivering 40x the same handful.
-                    if _cf_ctx is not None:
-                        cf_rows_sampled += int(_cf_ctx.n_rows)
-                    if cf_winprob_on:
-                        cf_term, _cfm = self._cf_winprob_term(_cf_ctx)
-                        if cf_term is not None:
-                            loss = loss + _ntg.add("aux", cf_term)
-                            for _cfk, _cfv in _cfm.items():
-                                cf_metrics.setdefault(_cfk, []).append(float(_cfv))
-                    if cf_evid_on:
-                        cf_evid_term, _cfem = self._cf_evidential_term(_cf_ctx)
-                        if cf_evid_term is not None:
-                            loss = loss + _ntg.add("aux", cf_evid_term)
-                            for _cek, _cev in _cfem.items():
-                                cf_evid_metrics.setdefault(_cek, []).append(float(_cev))
-                    # +CF-TWIN, half two of two (gen3_cf_twin_heads_v1): the folds that make B and
-                    # C DIFFER — the same states through the same shared forward, B on the recorded
-                    # SINGLE OUTCOME and C on the TIGHT-MC label. Riding the shared sample is not an
-                    # optimization here, it is the design: two samples would make the two arms
-                    # disagree about which states they scored, and the paired difference would stop
-                    # being paired.
-                    if cf_twin_on:
-                        cf_twin_term, _cftm = self._cf_twin_terms(_cf_ctx)
-                        if cf_twin_term is not None:
-                            loss = loss + _ntg.add("aux", cf_twin_term)
-                        for _ck, _cv in _cftm.items():
-                            cf_twin_metrics.setdefault(_ck, []).append(float(_cv))
-                    # +CF-SHADOW: the passive value twin on `mc_return`. Same sample, same forward.
-                    if cf_shadow_on:
-                        cf_shadow_term, _cfsm = self._cf_shadow_term(_cf_ctx)
-                        if cf_shadow_term is not None:
-                            loss = loss + _ntg.add("aux", cf_shadow_term)
-                        for _sk, _sv in _cfsm.items():
-                            cf_shadow_metrics.setdefault(_sk, []).append(float(_sv))
-                    # +Q-WINPROB (gen3_q_winprob_head_v1): the PER-ACTION head, on the SAME sample
-                    # and the SAME forward. Both halves collect metrics unconditionally — the
-                    # coverage columns are the starvation tell and must be published even (and
-                    # especially) on a minibatch where the term itself did not fold.
-                    if q_winprob_on:
-                        q_term, _qm = self._q_winprob_term(_cf_ctx)
-                        if q_term is not None:
-                            loss = loss + _ntg.add("aux", q_term)
-                        for _qk, _qv in _qm.items():
-                            q_metrics.setdefault(_qk, []).append(float(_qv))
-                    if q_onpolicy_on:
-                        q_op_term, _qom = self._q_winprob_onpolicy_term(_cf_ctx)
-                        if q_op_term is not None:
-                            loss = loss + _ntg.add("aux", q_op_term)
-                        for _qk, _qv in _qom.items():
-                            q_metrics.setdefault(_qk, []).append(float(_qv))
 
                 # Per-term auxiliary pull on the shared trunk, for the grad-balance probe — EVERY
                 # active scaffold competes with policy/value there, so each is broken out INDIVIDUALLY
@@ -604,37 +506,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # against `grad/value_share` is the read for "is the consistency term crowding out
                 # the level regression it is supposed to complement".
                 if td_aux_term is not None:        aux_probe_terms["td_aux"] = td_aux_term
-                # The CF term's trunk pull. Under `cf_head_only` (the default) its input is
-                # stop-grad'd, so `grad/cf_winprob_share` reads exactly 0.0 BY CONSTRUCTION — that
-                # is the correct value and the gate the head-only stage is verified by, not a bug.
-                if cf_term is not None:            aux_probe_terms["cf_winprob"] = cf_term
-                # The evidential term's input is detached UNCONDITIONALLY (no head_only switch), so
-                # `grad/cf_evidential_share` reads exactly 0.0 BY CONSTRUCTION — it is registered
-                # here precisely so that zero is PUBLISHED rather than assumed.
-                if cf_evid_term is not None:       aux_probe_terms["cf_evidential"] = cf_evid_term
-                # gen3_cf_twin_heads_v1: the twins and the shadow all read a DETACHED value_pooled
-                # unconditionally, so `grad/cf_twin_share` and `grad/cf_shadow_share` read exactly
-                # 0.0 BY CONSTRUCTION. Registered here for the evidential head's reason: the
-                # head-only contract is the arm's single most load-bearing claim, and a published
-                # zero is a live measurement of it where a docstring is not. (Both twin halves ride
-                # ONE probe entry — the on-policy mirror and the cf fold pull the same two heads.)
-                # `sum` rather than a length branch: the probe must not encode the arity, or a
-                # third twin term would silently drop out of a scalar published precisely to make
-                # the head-only contract a measurement instead of a docstring claim.
-                _twin_terms = [t for t in (cf_twin_op_term, cf_twin_term) if t is not None]
-                if _twin_terms:
-                    aux_probe_terms["cf_twin"] = sum(_twin_terms[1:], _twin_terms[0])
-                if cf_shadow_term is not None:     aux_probe_terms["cf_shadow"] = cf_shadow_term
-                # gen3_q_winprob_head_v1: the Q head's inputs are detached INSIDE the extractor
-                # forward (`q_winprob_mode` has no `shaping` value), so `grad/q_winprob_share`
-                # reads exactly 0.0 BY CONSTRUCTION. Registered for the evidential head's reason:
-                # "this readout cannot perturb the policy" is the flag's load-bearing claim, and a
-                # published zero is a live measurement of it where a docstring is not. Both halves
-                # ride ONE entry (they pull the same head) and are summed by the same arity-free
-                # `sum` the twins use.
-                _q_terms = [t for t in (q_term, q_op_term) if t is not None]
-                if _q_terms:
-                    aux_probe_terms["q_winprob"] = sum(_q_terms[1:], _q_terms[0])
                 aux_on = belief_aux_on or move_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
                 # wait for one so their shares aren't silently dropped from the single per-train() sample.
@@ -664,13 +535,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # call; when off, sample on the first minibatch as before.
                 if (shared_trunk and diag.grad_balance and not grad_balance
                         and (not aux_on or belief_present)
-                        and (not win_prob_on or win_prob_term is not None)   # don't drop grad/win_prob_share
-                        # …nor grad/cf_winprob_share. A STARVING buffer yields a None term on every
-                        # minibatch, so waiting for one would suppress the whole grad probe for the
-                        # rest of the run — the `len(cf_buffer) == 0` escape says "there are no
-                        # labels at all, sample anyway"; `cf/buffer_fill` is where that is read.
-                        and (not cf_any_on or cf_term is not None or cf_evid_term is not None
-                             or len(cf_buffer) == 0)):
+                        and (not win_prob_on or win_prob_term is not None)):   # don't drop grad/win_prob_share
                     grad_balance = grad_balance_metrics(
                         # +PG-COEF: the probe measures the terms AS FOLDED — `_policy_grad_term`, not the
                         # raw `policy_loss` (at the 1.0 default they are the same tensor).
@@ -837,10 +702,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         self._record_head_metrics(belief_metrics, win_prob_metrics, calib_all, calib_contested,
                                   critic_winprob, scaffolding_on, grad_balance)
         self._record_term_metrics(td_aux_metrics)
-        self._record_cf_metrics(cf_buffer, cf_any_on, cf_rows_sampled, cf_metrics, cf_winprob_on,
-                                cf_evid_metrics, cf_evid_on, cf_twin_metrics, cf_twin_on,
-                                cf_shadow_metrics, cf_shadow_on, q_metrics, q_winprob_on,
-                                q_onpolicy_on, grad_balance)
         self._record_capacity_metrics(capacity_metrics, aux_metrics)
         self._record_ridealong_metrics(ridealong_acc)
         # +INSTRUMENTATION: LAST line of train(), so it bounds the whole call — the honest

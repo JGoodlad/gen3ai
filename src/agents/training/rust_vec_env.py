@@ -25,7 +25,9 @@ against the callers):
     drain_team_wr_counts        → the per-env seeded teambuilders' tables (``TeamStager``)
 
 Anything else is a typed ``RustEnvSurfaceError`` naming the method — a callback that reaches for an
-unmapped method fails at the call, never silently gets ``None``.
+unmapped method fails at the call, never silently gets ``None``. (Every ``env_method`` a production
+callback calls is in ``SURFACE``: the methods only a Python-core-only flag called — the exploiter
+ladder's rung push, team-PFSP's pulls — were deleted with those flags, deletion pass L4.)
 """
 from __future__ import annotations
 
@@ -55,16 +57,6 @@ SURFACE: Dict[str, str] = {
     "exploiter_winrate_totals": "per env (games, wins) vs the exploiter class",
     "drain_reward_terms": "the collector's reward/ accumulator (the terminal is the one term)",
     "drain_team_wr_counts": "TeamStager.drain_team_wr_counts (per-env seeded teambuilders)",
-}
-
-#: env_method names a callback calls ONLY under a flag ``--env-core rust`` refuses at startup
-#: (``combination_checks``' ``env_core_rust_unported_paths``) — method -> that flag.
-REFUSED_WITH_FLAG: Dict[str, str] = {
-    "set_exploiter_rung": "--exploiter-ladder",
-    "exploiter_rung_totals": "--exploiter-ladder",
-    "get_team_pfsp_keys": "--team-pfsp",
-    "drain_team_pfsp_counts": "--team-pfsp",
-    "set_team_pfsp_weights": "--team-pfsp",
 }
 
 

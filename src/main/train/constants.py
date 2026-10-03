@@ -5,9 +5,8 @@ into help text, `env_factory` and `final_eval` both build players in `BATTLE_FOR
 constant imported from a phase module would make the phase order load-bearing.
 
 It also holds the two pure CHECKPOINT-CADENCE conversions, for exactly that reason: phase 1
-(`config`, which refuses a starved counterfactual duty cycle) and phase 4 (`callbacks`, which
-builds the checkpointer) must agree on the arithmetic to the step, and phase 1 importing phase 4
-would make the phase order load-bearing.
+(`config`) and phase 4 (`callbacks`, which builds the checkpointer) must agree on the arithmetic to
+the step, and phase 1 importing phase 4 would make the phase order load-bearing.
 """
 from typing import Optional
 
@@ -21,9 +20,8 @@ CLIP_RANGE_DEFAULT = 0.15
 # a sync `vec_env.step()` advances N envs, the Rust collector fires once per N trainee decisions, and
 # the `--async-rollout` collector fires once per WAVE of however many envs were ready (< N). Two
 # defects came from counting calls. (1) A hardcoded 50 000 calls was read as "50k steps" for the
-# whole R1 counterfactual work while at `--n-envs 48` it was **2 400 000** env steps, and the cf
-# label path was fresh for 6.25% of each interval (`ai_v9_29_rev1_0823`: 6 labels ingested against
-# 255 expired in two hours). (2) The same 50 000 calls was ~102M env steps at N = 2048 — a
+# whole R1 counterfactual work while at `--n-envs 48` it was **2 400 000** env steps
+# (`ai_v9_29_rev1_0823`). (2) The same 50 000 calls was ~102M env steps at N = 2048 — a
 # checkpointer that never fires at the sizes the M5 SIZING study sweeps — and checkpointed EARLY
 # under async waves (F-SZ-3, 2026-10-01). So `_TrackingCheckpointCallback` (`main.train.run_io`)
 # saves at the first call whose `num_timesteps` reaches the next multiple of the interval
@@ -32,12 +30,6 @@ CLIP_RANGE_DEFAULT = 0.15
 #: The DEFAULT checkpoint interval, in TOTAL ENV STEPS (summed over every env) — independent of
 #: `--n-envs` and of the collector's call shape. 2 400 000 = the historical N = 48 value.
 DEFAULT_CHECKPOINT_EVERY_ENV_STEPS = 2_400_000
-
-#: Below this fraction the counterfactual label path is starved by construction (see
-#: `cf_label_duty_cycle`). 0.25 = a label stays fresh for at least a quarter of the interval
-#: between the checkpoints the producer stamps its labels with.
-CF_DUTY_CYCLE_FLOOR = 0.25
-
 
 def checkpoint_interval_env_steps(checkpoint_every_steps: Optional[int]) -> int:
     """The env-step spacing of the periodic checkpoint BOUNDARIES: `--checkpoint-every-steps`, or
@@ -57,24 +49,6 @@ def checkpoint_due(last_step: int, now_step: int, interval_env_steps: int) -> bo
     one callback call advanced (N, a wave, a ragged Rust host step) or on where this process started."""
     interval = max(1, int(interval_env_steps))
     return int(now_step) // interval > int(last_step) // interval
-
-
-def cf_label_duty_cycle(cf_label_lag_steps: Optional[int], interval_env_steps: int) -> float:
-    """The fraction of a checkpoint interval during which a produced label is still ACCEPTED.
-
-    The producer stamps every label with the step of the newest checkpoint it could load, and the
-    consumer drops a row whose `policy_step` is more than `--cf-label-lag-steps` behind the live
-    policy. So the two flags define a duty cycle, and nobody was computing it: everything about
-    both halves reads healthy while ~94% of the produced labels expire in the buffer.
-
-    `--cf-label-lag-steps 0` means "never expire" and therefore has no duty cycle at all — infinity,
-    not a divide-by-zero and not a silent 0.
-    """
-    if not cf_label_lag_steps:
-        return float("inf")
-    if interval_env_steps <= 0:
-        return float("inf")
-    return float(cf_label_lag_steps) / float(interval_env_steps)
 
 
 # Wait for an in-flight subprocess eval to FINISH on a graceful restart so its

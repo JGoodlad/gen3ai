@@ -94,12 +94,10 @@ def _sentinel_tb(trainee_tb, opp_tb, sentinel_greedy: bool):
     always replayed by the ladder rather than reused.
 
     ⚠️ THE TWO PLAYERS SHARE ONE BUILDER OBJECT, which is safe only because this worker constructs
-    it with both of ``Gen3Teambuilder``'s stateful features at their defaults: ``team_pfsp`` is
-    "off" (so ``_draw_team`` is one ``_rng.choice`` and nothing here ever calls
-    ``record_team_pfsp_outcome``) and ``_block_episodes`` is 1 (``set_block_episodes`` is a
-    TRAINING-env call, never made here), so ``yield_team`` carries no per-player state. If either
-    ever reaches eval, give the sentinel its own instance — a shared block cache would hand both
-    players the SAME team and burn the block twice as fast."""
+    it with ``Gen3Teambuilder``'s stateful feature at its default: ``_block_episodes`` is 1
+    (``set_block_episodes`` is a TRAINING-env call, never made here), so ``yield_team`` carries no
+    per-player state. If it ever reaches eval, give the sentinel its own instance — a shared block
+    cache would hand both players the SAME team and burn the block twice as fast."""
     return trainee_tb if sentinel_greedy else opp_tb
 
 

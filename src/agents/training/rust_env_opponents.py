@@ -104,15 +104,13 @@ class StableSpec:
 
 @dataclass(frozen=True)
 class ExploiterSpec:
-    """The ``--exploiter`` target: temperature (live-mutable), keep-bots mix, team pin, and whether a
-    ``--exploiter-ladder`` will swap its weights (then it owns TWO slots, so a rung loads into the idle
-    one and no episode in flight changes opponent)."""
+    """The ``--exploiter`` target: temperature (live-mutable), keep-bots mix and team pin. It owns ONE
+    T2 slot."""
 
     temperature: float = 1.0
     keep_bots: bool = False
     bot_fraction: float = 0.5
     team_strs: Tuple[str, ...] = ()
-    ladder: bool = False
 
 
 @dataclass(frozen=True)
@@ -164,7 +162,7 @@ class OpponentPlan:
 
     @property
     def exploiter_slots(self) -> int:
-        return 0 if self.exploiter is None else (2 if self.exploiter.ladder else 1)
+        return 0 if self.exploiter is None else 1
 
     @property
     def n_policy_slots(self) -> int:
@@ -186,10 +184,9 @@ class OpponentPlan:
                 klass=OPP_CLASS_STABLE, slot=s, temperature=st.temperature, team_strs=st.team_strs)
             s += 1
         if self.exploiter is not None:
-            for _ in range(self.exploiter_slots):
-                add(kind="policy", family="exploiter", player="exploiter", klass=OPP_CLASS_EXPLOITER,
-                    slot=s, temperature=self.exploiter.temperature, team_strs=self.exploiter.team_strs)
-                s += 1
+            add(kind="policy", family="exploiter", player="exploiter", klass=OPP_CLASS_EXPLOITER,
+                slot=s, temperature=self.exploiter.temperature, team_strs=self.exploiter.team_strs)
+            s += 1
         for b in self.bots:
             add(kind="bot", family="bot", player=f"bot:{b}", klass=OPP_CLASS_BOT, bot=b)
         return tuple(out)
@@ -220,8 +217,7 @@ class OpponentPlan:
                   bot_seed: int = 0) -> "OpponentPlan":
         """The plan ``env_factory.create_training_env_random`` builds per worker today, from the SAME
         inputs: ``args`` (``self_play``, ``self_play_temp``, ``stable_opponent_selfplay_share``,
-        ``stable_opponent_pfsp``, ``exploiter_keep_bots``, ``exploiter_bot_fraction``,
-        ``exploiter_ladder``), the resolved stable entries and exploiter entry (``label`` /
+        ``stable_opponent_pfsp``, ``exploiter_keep_bots``, ``exploiter_bot_fraction``), the resolved stable entries and exploiter entry (``label`` /
         ``temperature`` / ``team_strs``), the floor roster's names and ``--bot-weights``.
         ``max_snapshots`` is the pool's window (``SnapshotPool``'s ``DEFAULT_MAX_SNAPSHOTS`` in production)."""
         self_play = bool(getattr(args, "self_play", False))
@@ -230,8 +226,7 @@ class OpponentPlan:
             ex = ExploiterSpec(temperature=float(exploiter_entry.temperature),
                                keep_bots=bool(getattr(args, "exploiter_keep_bots", False)),
                                bot_fraction=float(getattr(args, "exploiter_bot_fraction", 0.5)),
-                               team_strs=tuple(getattr(exploiter_entry, "team_strs", ()) or ()),
-                               ladder=bool(getattr(args, "exploiter_ladder", None)))
+                               team_strs=tuple(getattr(exploiter_entry, "team_strs", ()) or ()))
         return cls(
             pool_slots=(int(max_snapshots) + int(pool_spare)) if self_play else 0,
             stable=tuple(StableSpec(e.label, float(e.temperature), tuple(getattr(e, "team_strs", ()) or ()))
@@ -703,11 +698,6 @@ class RustEnvOpponents:
     def set_opponent_win_rates(self, rates: Any) -> None:
         if self.pool is not None:
             self.pool.pool.set_win_rates(rates)
-
-    def set_exploiter_rung(self, model_id: str) -> List[int]:
-        """``--exploiter-ladder``: LOAD the new rung into the exploiter's idle slot; episodes in flight
-        keep the old rung (its slot stays resident while any current / staged episode names it)."""
-        return self.families["exploiter"].admit([model_id], self._in_use(), self._load)
 
     # -- staging
     def _stage(self, cols: Mapping[str, np.ndarray], i: int) -> None:

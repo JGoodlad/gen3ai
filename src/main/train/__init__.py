@@ -7,8 +7,8 @@ re-exports every name that used to live in it, so no import path and no recorded
     constants.py        BATTLE_FORMAT / the smoke-eval scale / the abort drain bound
     parser/             `build_parser()` behind a hub, one module per FLAG FAMILY in `--help`
                         order (base + operational, hyperparameters, reward, clean_world,
-                        cf_grounding, value_heads, capacity, distillation,
-                        eval_subprocess); `base.py` holds the three custom argparse pieces
+                        capacity, distillation, eval_subprocess); `base.py` holds the three
+                        custom argparse pieces
     compile_flags.py    the `--compile-opponents` / `--compile-trainer` default resolvers
     checkpoint_state.py reading a checkpoint's saved arch; the by-NAME optimizer realign
     run_io.py           the run directory, latest.txt, the TB logger, the checkpoint callback

@@ -1111,7 +1111,7 @@ convert is not a safeguard.
 | reader | what it does with a stale stamp |
 |---|---|
 | `main.critic_gate --at-snapshots` | normally REFITS both sides, which makes the committed recipe irrelevant. On the FALLBACK path (no `games.jsonl`, so the committed numbers are the ones quoted) a stale stamp is a **`GateRefusal`**, not the old "⚠️ FELL BACK" label. Each side's `recipe_status` / `recipe` is reported either way |
-| `--exploiter-ladder auto:<run>` | **REFITS in memory** from `games.jsonl` (printing a loud line), and **REFUSES** when there is none. Rungs are picked BY ELO and the pre-fix inflation is non-uniform (+21..+29 on the newest nodes only), so a stale file builds a different curriculum |
+| *(the exploiter ladder's `auto:<run>` rung draw — deleted, deletion pass L4)* | it REFIT in memory from `games.jsonl` and REFUSED when there was none, because rungs were picked BY ELO and the pre-fix inflation is non-uniform (+21..+29 on the newest nodes only) |
 | `main.ops.plateau_signal` | its bias note now READS the stamp instead of asserting the bias unconditionally; a stale file is named as stale and pointed at `--fixed-fit` |
 | `snapshot_ladder.latest_promoted_elo` | **deliberately does NOT check it** — a WITHIN-RUN trend scalar (`eval/ladder_elo`) written moments earlier by the run's own pinned code. Refusing there would stop a live run logging its own curve, and no cross-run comparison is being made |
 | `agents.training.snapshot_ladder` CLI | prints `[ladder] recipe: …` beside every table it renders |

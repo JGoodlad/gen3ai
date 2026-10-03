@@ -34,7 +34,7 @@ builds through this module — the forkserver preload, the round-trip smoke, ``c
 and ``warmstart`` (the learner compile's gate and prewarm build every key of the policy's
 observation SPACE, ``compile_trainer._prewarm_obs``). The OFFLINE audit / probe CLIs still hand-build a one-key
 dict (``critic_route_audit``, ``edge_ablation_audit``, ``op_block_split_audit``,
-``capacity_probes``, ``concat_readout_probe``, ``feature_coverage/_support``, ``cf_terms``,
+``capacity_probes``, ``concat_readout_probe``, ``feature_coverage/_support``,
 ``cf_producer_snapshot``, ``capacity_telemetry``, ``instrumented_ppo/rollout_probes``,
 ``teacher/buffer``, ``search_dividend/{perf,search,ab_racing}``, ``harvest``,
 ``visualize_arch``, ``rust_sim/harness/g1_bakeoff``). Those fail in the first second at a terminal

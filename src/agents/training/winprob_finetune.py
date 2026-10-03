@@ -48,9 +48,9 @@ A harvest label is ``k`` of ``n``, not a bit. With ``q = sigmoid(z)``::
 which is exactly ``n_i`` per-observation cross-entropies, so a 32-rollout label pulls 32x a
 1-rollout one. That is not an emphasis choice — it is the likelihood of the data, and collapsing
 the row to BCE on ``k/n`` would throw away precisely the precision that makes a k/n label worth
-more than an outcome bit. At ``n == 1`` it reduces EXACTLY to BCE (pinned by a test, and
-cross-checked against the live trainer's :func:`agents.training.cf_terms.cf_binomial_nll`, which
-uses the same ``SUM NLL / SUM n`` normalization so a number here is comparable with one there).
+more than an outcome bit. At ``n == 1`` it reduces EXACTLY to BCE (pinned by a test). The
+normalization is ``SUM NLL / SUM n``, the one the (deleted) live trainer term used, so a number here
+stays comparable with an old run's `train/cf_loss`.
 Computed through ``softplus``: ``-log sigmoid(z) = softplus(-z)``, stable where ``log(sigmoid(z))``
 underflows.
 
@@ -168,8 +168,8 @@ def binomial_nll(logits: Any, wins: Any, n_rollouts: Any, weights: Any = None) -
     """``SUM w*NLL / SUM w*n`` — the weighted binomial NLL, in nats PER ROLLOUT.
 
     ``logits`` [B] or [B, 1]; ``wins`` (k) and ``n_rollouts`` (n) [B]. ``weights`` [B] or ``None``
-    (which is all-ones and reduces the formula to ``SUM NLL / SUM n``, matching
-    :func:`agents.training.cf_terms.cf_binomial_nll` exactly).
+    (which is all-ones and reduces the formula to ``SUM NLL / SUM n``, the normalization the deleted
+    live trainer term used).
 
     Stable form: ``-log sigmoid(z) = softplus(-z)`` and ``-log(1 - sigmoid(z)) = softplus(z)``.
     """

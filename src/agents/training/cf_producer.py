@@ -2,10 +2,17 @@
 
     python -m agents.training.cf_producer <run_dir> [--rollouts 8] [--top-n 3] ...
 
-**The piece that closes the loop.** `cf_records.py` rings a training episode's reconstruction
-record; `cf_label_buffer.py` consumes label rows off disk and folds them into the win-prob head's
+⚠️ **THE TRAINING HALF OF THIS LOOP WAS DELETED (deletion pass L4, `designs/ops/deletion_pass_manifest.md`
+R2).** The ring writer (`cf_records.CfRecordRing`, `--cf-records`), the label buffer (`cf_label_buffer`)
+and every consumer term (`cf_terms`, `q_winprob_terms`, the heads they supervised) are gone, so no
+run produces a `cf_records/` ring any more. This producer is KEPT (manifest D6: the offline cf stack
+reads OLD runs' rings) and still labels one; the prose below describes the loop as it was built, and
+the trainer-side names in it are history.
+
+**The piece that closed the loop.** `cf_records.py` rang a training episode's reconstruction
+record; `cf_label_buffer.py` consumed label rows off disk and folded them into the win-prob head's
 auxiliary loss; `cf_audit.py` manufactures labels from EVAL traces for the bias map. Nothing ran
-the loop from `<run>/cf_records/` to `<run>/cf_labels/`. This does.
+the loop from `<run>/cf_records/` to `<run>/cf_labels/`. This did.
 
 It is a **long-lived standalone process run BESIDE a live trainer** — the detached-sidecar pattern
 of `snapshot_ladder` / `bot_matchup_matrix`, launched by hand or by the R1 runbook's launch line.
@@ -221,8 +228,8 @@ from agents.training.cf_producer_snapshot import (Snapshot,  # noqa: F401 (re-ex
 from agents.training.cf_q_labels import (
     Q_SWEEP_VERSION, assert_paired_dice, q_arm_seeds, q_labels_block, q_provenance,
     recorded_arm_is_reusable, select_q_actions)
-from agents.training.cf_supply import (PRODUCER_EXIT_LOCK_HELD, acquire_producer_lock,
-                                       bind_to_parent, live_producer_pid)
+from agents.training.cf_producer_lock import (PRODUCER_EXIT_LOCK_HELD, acquire_producer_lock,
+                                              bind_to_parent, live_producer_pid)
 from agents.training.obs_materializer import RecordDecision, scan_record
 from utils.bridge.counterfactual import replay_counterfactual as _run_one
 from utils.bridge.reconstruction import RECON_SUFFIX, ReconstructionRecord, replay_battle
@@ -1419,12 +1426,12 @@ def build_parser() -> argparse.ArgumentParser:
                         "action index (a prefix of [switch x6, move x4, struggle] is a systematic "
                         "preference for switching). Declared as `cf_q_sweep_v1` on every row")
     p.add_argument("--parent-pid", "--parent_pid", dest="parent_pid", type=int, default=None,
-                   help="DIE WITH this process (gen3_supply_guard_v1): the trainer passes its own "
-                        "pid when it SPAWNS the producer as a declared startup resource. Sets "
+                   help="DIE WITH this process (gen3_supply_guard_v1): sets "
                         "PR_SET_PDEATHSIG(SIGTERM) and exits between cycles once the parent is "
-                        "gone, so a trainer that dies by any path takes its producer with it and "
-                        "the next segment starts a fresh one (state resumes from "
-                        "cf_producer_state.json). Omit it for an operator-run producer.")
+                        "gone (state resumes from cf_producer_state.json). The trainer used to "
+                        "pass its own pid when it spawned the producer; that spawner was deleted "
+                        "with the cf training half (deletion pass L4), so only an operator "
+                        "binding a producer to a shell uses it. Omit it otherwise.")
     p.add_argument("--cycles", type=int, default=0,
                    help="stop after N cycles (default 0 = run forever). --cycles 1 is the smoke")
     return p

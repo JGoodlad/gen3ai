@@ -52,7 +52,7 @@ _DIR = pathlib.Path(hub.__file__).parent
 # before the decomposition), recovered by AST, PLUS the six `belief_bank` constants it re-exported
 # under an explicit `# noqa: F401 (re-exports)` for older call sites.
 _PRE_SPLIT = (
-    "CfForward", "InstrumentedMaskablePPO", "_EXPECTED_UPSTREAM_TRAIN_HASH",
+    "InstrumentedMaskablePPO", "_EXPECTED_UPSTREAM_TRAIN_HASH",
     "_NOISE_SCALE_EMA_DECAY", "_WIN_CONTESTED_TAU",
     "_verify_upstream_unchanged",
     # the declared re-exports
@@ -83,15 +83,14 @@ def test_the_ppo_class_carries_every_term_family():
     for method in ("_win_prob_loss",
                    "_td_aux_term", "_belief_aux_loss",
                    "_move_belief_loss", "_spread_belief_loss", "_nature_ev_belief_loss",
-                   "_hp_type_belief_loss", "_move_belief_latent_loss", "_cf_winprob_term",
-                   "_cf_evidential_term", "_cf_twin_terms", "_cf_shadow_term",
+                   "_hp_type_belief_loss", "_move_belief_latent_loss",
                    "_noise_scale_estimate", "_global_grad_sq", "_emit_noise_scale_warnings",
                    "_capacity", "_capacity_snapshot_features", "_capacity_observe",
                    "_capacity_finish",
                    "_align_opp_intent_labels", "_resolve_fold_flags", "_train_probe_setup",
                    "_record_grad_balance_metrics", "_record_signal_metrics",
                    "_record_noise_scale_metrics", "_record_head_metrics", "_record_term_metrics",
-                   "_record_cf_metrics", "_record_capacity_metrics",
+                   "_record_capacity_metrics",
                    "_winprob_start_metrics",
                    "_excluded_save_params", "collect_rollouts", "train"):
         assert callable(getattr(hub.InstrumentedMaskablePPO, method, None)), (
@@ -119,7 +118,7 @@ def test_maskable_ppo_stays_last_in_the_mro():
         f"a mixin sits after MaskablePPO in the MRO: {[c.__name__ for c in mro]}")
     assert issubclass(hub.InstrumentedMaskablePPO, MaskablePPO)
     excluded = _ExcludeProbe()._excluded_save_params()
-    for name in ("_cf_buffer", "_capacity_state", "rollout_buffer"):
+    for name in ("_capacity_state", "rollout_buffer"):
         assert name in excluded, (
             f"{name!r} left `_excluded_save_params` — the last entry can only come from "
             f"upstream, so its absence means the `super()` chain no longer reaches MaskablePPO.")
@@ -133,9 +132,8 @@ def test_the_fold_sequence_is_two_straight_lines_R1_then_the_eager_tail():
 
     * inside R1: PPO loss -> belief bank `hidden_move` -> opponent intent -> `latent` -> `revealed`
       -> win-prob BCE;
-    * inside `train()`: the R1 call precedes every tail fold, and every stash-reading fold
-      precedes the counterfactual block, which CLOBBERS the minibatch's stashes (`_td_aux_term` is
-      the documented last one before it).
+    * inside `train()`: the R1 call precedes every tail fold (`_td_aux_term` is the one tail fold
+      that runs its own extractor forward, so it follows every stash-reading term).
     """
     from agents.training.instrumented_ppo import micro_step as ms
     r1 = inspect.getsource(ms.micro_step)
@@ -145,15 +143,12 @@ def test_the_fold_sequence_is_two_straight_lines_R1_then_the_eager_tail():
     assert at == sorted(at), f"R1's fold order moved: {list(zip(order, at))}"
     src = inspect.getsource(hub.InstrumentedMaskablePPO.train)
     assert inspect.getfile(hub.InstrumentedMaskablePPO.train) == str(_DIR / "ppo.py")
-    for marker in ("+INSTRUMENTATION", "+GRAD-ACCUM", "+R1", "+TD-AUX", "+CF-WINPROB",
+    for marker in ("+INSTRUMENTATION", "+GRAD-ACCUM", "+R1", "+TD-AUX",
                    "+NOISE-SCALE", "+CAPACITY"):
         assert marker in src, f"the `{marker}` block left `train()`"
     r1_call = src.index("self._micro_region()(")
-    for tail in ("self._td_aux_term()", "self._cf_winprob_term("):
+    for tail in ("self._td_aux_term()",):
         assert r1_call < src.index(tail), f"the tail fold `{tail}` now runs BEFORE region R1"
-    assert src.index("self._td_aux_term()") < src.index("self._cf_winprob_term("), (
-        "the counterfactual fold now runs BEFORE the TD-aux fold. The CF forward CLOBBERS the "
-        "minibatch's extractor stashes, so every term that reads one must be folded first.")
 
 
 def test_no_submodule_imports_its_own_hub():

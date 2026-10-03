@@ -298,7 +298,7 @@ def _wide_learner(n_steps: int = 64):
     env = RustVecEnv(n_envs=L.N_ENVS, observation_space=obs, action_space=act, build=lambda m: None)
     m = TK.fresh_model(env, n_steps=n_steps, batch_size=n_steps * L.N_ENVS, n_epochs=1, seed=L.MODEL_SEED,
                        perturb_seed=L.PERTURB_SEED, learning_rate=0.0)
-    apply_training_hparams(m, production_args(), mappings=None, attach_cf_labels=lambda _m: None)
+    apply_training_hparams(m, production_args(), mappings=None)
     _unset_to_class_defaults(m)
     m.grad_accum_steps, m.behaviour_check = 1, "fatal"
     m._logger = configure(None, [])
@@ -370,8 +370,9 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
     """The four paused learner-battery arms (none typing `--behaviour-check`) must still launch: K9(b)
     resolves to `fatal`, and no K9 rule refuses them. The launcher-only flags are stripped exactly as
     the launcher strips them, and so are the flags DELETED since the battery was recorded (deletion
-    passes L2 / L3: the recorded argvs carry the entropy-boost / true-team / distillation /
-    search-teacher defaults, every one at its OFF value; deletion pass K2: two of them type
+    passes L2 / L3 / L4: the recorded argvs carry the entropy-boost / true-team / distillation /
+    search-teacher defaults, every one at its OFF value; L4: `--team-pfsp`,
+    `--team-pfsp-cap`, `--team-pfsp-floor`; deletion pass K2: two of them type
     `--matmul-precision high`; a pinned launch is judged by its OWN commit's parser, so HEAD's
     parser never sees them — what K9 does with the REST of the argv is what this pins)."""
     import re
@@ -386,7 +387,9 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
     argv, i = [], 0
     dead_valued = {"--defensive-entropy-boost", "--defensive-entropy-anneal-frac",
                    "--bait-entropy-boost", "--bait-entropy-anneal-frac",
-                   "--matmul-precision", "--matmul_precision"}
+                   "--matmul-precision", "--matmul_precision",
+                   # L4: team-PFSP, each of which takes one value
+                   "--team-pfsp", "--team-pfsp-cap", "--team-pfsp-floor"}
     # L3: the distillation / search-teacher families, every flag of which takes one value here
     dead_l3 = re.compile(r"^--(distill-|opd-|search-teacher|teacher-|winprob-teacher-)")
     dead_bool = {"--value-true-team", "--no-value-true-team"}

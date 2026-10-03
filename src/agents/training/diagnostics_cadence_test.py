@@ -158,21 +158,6 @@ def test_the_process_latch_never_rides_a_checkpoint():
     assert "_diagnostics_ran_in_process" in m._excluded_save_params()
 
 
-def test_the_two_grad_share_scalars_are_gaps_on_a_skipped_update():
-    from agents.training.instrumented_ppo.metrics_export import TrainMetricsExport
-    rec: dict = {}
-    fake = types.SimpleNamespace(logger=types.SimpleNamespace(record=lambda k, v, *a, **kw:
-                                                               rec.__setitem__(k, v)))
-    kw = dict(cf_buffer=None, cf_any_on=False, cf_rows_sampled=0, cf_metrics={},
-              cf_winprob_on=True, cf_evid_metrics={}, cf_evid_on=True, cf_twin_metrics={},
-              cf_twin_on=False, cf_shadow_metrics={}, cf_shadow_on=False, q_metrics={},
-              q_winprob_on=False, q_onpolicy_on=False)
-    TrainMetricsExport._record_cf_metrics(fake, grad_balance={}, **kw)
-    assert "train/cf_grad_share" not in rec and "train/cf_evidential_grad_share" not in rec
-    TrainMetricsExport._record_cf_metrics(fake, grad_balance={"grad/cf_winprob_share": 0.25}, **kw)
-    assert rec["train/cf_grad_share"] == 0.25 and rec["train/cf_evidential_grad_share"] == 0.0
-
-
 # ── THE GUARANTEE: bit-identical learning, on a real Gen3 policy ─────────────────────────────
 def _real_gen3_ppo(device: str = "cpu"):
     import gymnasium as gym

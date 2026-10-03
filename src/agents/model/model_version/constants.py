@@ -402,7 +402,19 @@ from typing import Any, Dict
 #   DEFAULT knobs leaves no trace here (its recorded argv fails argparse on an unpinned resume
 #   instead). Every v121+ run on record recorded the knobs at their defaults: no ARCH_SIGNATURE
 #   bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 133
+# v134 (deletion pass L4, owner-approved 2026-10-02): the COUNTERFACTUAL TRAINING HALF leaves the config —
+#   the ten v100 cf coefficients (cf_records, cf_records_keep, cf_winprob_coef, cf_head_only,
+#   cf_label_lag_steps, cf_label_likelihood, cf_evidential_coef, cf_evidential_reg, cf_twin_coef,
+#   cf_shadow_coef), the two v107 Q coefficients (q_winprob_coef, q_winprob_onpolicy_coef) and the FOUR
+#   STRUCTURAL head toggles they supervised (cf_evidential v98, cf_twin_heads / cf_shadow_critic v99,
+#   q_winprob_mode v107). The coefficients are TRAINING-only: `_migrate_config` POPs them from any
+#   vintage and a RESUME or FORK of a run that recorded one live is refused by
+#   `model_version.retired_levers`. The four toggles named MODULES in the state_dict that the
+#   surviving extractor has no home for, so a config recording one ON is REFUSED on every load
+#   (`refuse_structural`) and `snapshot._DEAD_FEK_JUDGED` carries the pickled extractor kwargs.
+#   `--team-pfsp` and `--exploiter-ladder` were never recorded fields. Every v121+ run on record
+#   recorded all of it OFF: no ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 134
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

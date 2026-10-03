@@ -119,21 +119,6 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # `fork_contested_absv` SELECTOR thresholds; none is a coefficient, all five are inert at
     # fraction 0, and all five are reported through the `fork/` family.)
     "fork_fraction": "win_head",
-    # v100 gen3_cf_coef_provenance_v1 — the counterfactual family's coefficients. Each one IS
-    # gated by a module, and naming that module is what lets the table mark it INERT: a live
-    # coefficient whose head was never built does nothing, and that is precisely the confusion
-    # the R1 arms have to be able to rule out at a glance.
-    "cf_winprob_coef": "win_head",
-    "cf_evidential_coef": "cf_evid_head",
-    "cf_evidential_reg": "cf_evid_head",
-    "cf_twin_coef": "cf_twin_head_c",
-    "cf_shadow_coef": "cf_shadow_head",
-    # v107 gen3_q_winprob_head_v1 — the per-action Q head's two coefficients. Both are gated by the
-    # SAME module (`--q-winprob-mode`), so naming it is what lets the table mark a live coefficient
-    # with no head as INERT: the on-policy fallback in particular is the one an operator is most
-    # likely to set on a run whose mode is still 'none'.
-    "q_winprob_coef": "q_winprob_head",
-    "q_winprob_onpolicy_coef": "q_winprob_head",
 }
 
 _FALSY_STRINGS = {"none", "off", ""}
@@ -311,8 +296,7 @@ def flag_table_section(fe: Any, cfg: Dict[str, Any]) -> str:
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     # Selected by NAME SUFFIX **or** by membership in `_COEF_MODULE`. The suffix alone was the
     # whole rule, and it silently dropped every loss weight that is not spelled `*_coef`:
-    # `intent_label_bot_weight` was recorded from v97 and appeared in NO generated table, and
-    # `cf_evidential_reg` would have joined it. `_COEF_MODULE` now DECLARES the set rather than
+    # `intent_label_bot_weight` was recorded from v97 and appeared in NO generated table. `_COEF_MODULE` now DECLARES the set rather than
     # only annotating it — which is what its name always implied.
     coef_keys = sorted(k for k in cfg if k.endswith("_coef") or k in _COEF_MODULE)
     toggle_keys = sorted(k for k in cfg if k in sig and k not in coef_keys)

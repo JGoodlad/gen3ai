@@ -127,50 +127,6 @@ def test_critic_gate_load_ladder_records_the_stamp(tmp_path):
     assert critic_gate.load_ladder(str(tmp_path), what="run")["recipe_status"] == "current"
 
 
-def test_the_exploiter_auto_ladder_REFUSES_a_stale_file_it_cannot_refit(tmp_path):
-    """`--exploiter-ladder auto:` picks rungs BY ELO, and the pre-recipe inflation is
-    non-uniform (+21..+29 on the newest nodes only) — so a stale file builds a different
-    curriculum. With no `games.jsonl` there is nothing to refit from, and it stops."""
-    from agents.training import exploiter_ladder
-    run = str(tmp_path)
-    _write(run, pre_recipe_ladder())
-    with pytest.raises(ValueError) as exc:
-        exploiter_ladder._auto_rung_paths(run, 2)
-    assert "STALE LADDER RECIPE" in str(exc.value)
-    assert "explicit rung list" in str(exc.value)
-
-
-def test_the_exploiter_auto_ladder_REFITS_a_stale_file_when_it_can(tmp_path, monkeypatch, capsys):
-    from agents.training import exploiter_ladder
-    run = str(tmp_path)
-    _write(run, pre_recipe_ladder())
-    for step in (2000000, 4000000, 6000000):
-        os.makedirs(os.path.join(run, "snapshots"), exist_ok=True)
-        open(os.path.join(run, "snapshots", f"snapshot_{step:012d}.zip"), "w").close()
-    steps = [2000000, 4000000, 6000000]
-    for i, a in enumerate(steps):
-        for b in steps[i + 1:]:
-            sl._append_game(run, b, a, 65, 100)
-    monkeypatch.setattr(sl.elo_mod, "load_bot_anchors", lambda: None)
-    monkeypatch.setattr(sl.elo_mod, "load_rows", lambda run_dir, source="log": [])
-    paths = exploiter_ladder._auto_rung_paths(run, 2)
-    assert len(paths) == 2
-    out = capsys.readouterr().out
-    assert "STALE fit recipe" in out and "REFITTING" in out
-    # the committed file is NOT rewritten by a read
-    assert sl.recipe_status(json.load(open(sl.ladder_json_path(run))))[0] == "absent"
-
-
-def test_a_CURRENT_file_is_used_as_is_by_the_exploiter_ladder(tmp_path):
-    from agents.training import exploiter_ladder
-    run = str(tmp_path)
-    _write(run, current_ladder())
-    for step in (2000000, 4000000, 6000000):
-        os.makedirs(os.path.join(run, "snapshots"), exist_ok=True)
-        open(os.path.join(run, "snapshots", f"snapshot_{step:012d}.zip"), "w").close()
-    assert len(exploiter_ladder._auto_rung_paths(run, 3)) == 3   # no games.jsonl needed
-
-
 def test_latest_promoted_elo_does_NOT_check_the_stamp(tmp_path):
     """A WITHIN-RUN trend scalar written by the run's own pinned code. Refusing here would stop a
     live run logging its own curve, and no cross-run comparison is being made."""

@@ -65,27 +65,22 @@ class TeamSource:
             if self.pin_file is None and self.pin_files:
                 object.__setattr__(self, "pin_file", self.pin_files[0])
 
-    def build(self, all_teams, sample_teams, team_pfsp="off",
-              team_pfsp_cap=3.0, team_pfsp_floor=0.05):
+    def build(self, all_teams, sample_teams):
         """The side's Gen3Teambuilder. Parity contract: ``pool`` == the historical opponent
         builder, ``default_biased`` == the historical trainee builder, ``pinned`` == the
-        --trainee-team builder — each byte-for-byte (pinned by matchup_spec_test).
-
-        team_pfsp/cap/floor: threaded ONLY for the TRAINEE side (opponent teams are not
-        win-rate-sampled). Default "off" is byte-identical to the pre-PFSP construction."""
+        --trainee-team builder — each byte-for-byte (pinned by matchup_spec_test)."""
         from utils.teambuilder import Gen3Teambuilder
-        _tp = dict(team_pfsp=team_pfsp, team_pfsp_cap=team_pfsp_cap, team_pfsp_floor=team_pfsp_floor)
         if self.kind == "pool":
-            return Gen3Teambuilder(all_teams, **_tp)
+            return Gen3Teambuilder(all_teams)
         if self.kind == "default_biased":
-            return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=self.bias_prob, **_tp)
+            return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=self.bias_prob)
         if self.kind == "pinned":
-            return Gen3Teambuilder([self.pin_str], **_tp)
+            return Gen3Teambuilder([self.pin_str])
         if self.kind == "pin_multi":
             # the fixed set, sampled uniformly per episode (like a mini-pool of just these teams)
-            return Gen3Teambuilder(list(self.pin_strs), **_tp)
+            return Gen3Teambuilder(list(self.pin_strs))
         # pin_biased: the pinned team bias_prob of the time, else the full pool.
-        return Gen3Teambuilder(all_teams, bias_teams=[self.pin_str], bias_prob=self.bias_prob, **_tp)
+        return Gen3Teambuilder(all_teams, bias_teams=[self.pin_str], bias_prob=self.bias_prob)
 
     def describe(self) -> str:
         if self.kind == "pool":

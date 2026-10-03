@@ -113,7 +113,7 @@ class ProductionPythonArm:
             i, stall_config=StallConfig(), opponent_device="cpu", opponent_version=ver,
             snapshot_dir=str(self.mix.pool_dir), self_play_fraction=float(self.mix.self_play_fraction),
             self_play=True, heuristic_weights=None, stable_opponents=None, exploiter_entry=None,
-            cf_records_dir=None, args=args, mappings=mappings, log_level=LogLevel.QUIET,
+            args=args, mappings=mappings, log_level=LogLevel.QUIET,
             trainee_teambuilder=tb, opponent_teambuilder=tb, server_config=None,
             OPPONENT_CLASSES=training_bot_classes(),
             reward_factory=partial(Gen3RewardManager, config=RewardConfig.from_args(args)))

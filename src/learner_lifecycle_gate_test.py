@@ -100,8 +100,6 @@ STEP_MODULES: Dict[str, str] = {
     "agents/model/masked_categorical.py": "the functional masked distribution the micro-step evaluates per minibatch",
     "agents/model/region_calls.py": "the no-silent-eager route counters every region body and dispatcher touches per call",
     "agents/training/capacity_telemetry.py": "capacity telemetry the fold computes per update",
-    "agents/training/cf_terms.py": "counterfactual-grounding loss terms, per minibatch",
-    "agents/training/q_winprob_terms.py": "the Q / win-prob loss terms, per minibatch",
     "agents/training/td_aux.py": "the TD auxiliary loss, per minibatch",
     "agents/training/grad_balance.py": "gradient-balance metrics + shared-trunk parameter lists, per update",
     "agents/training/rank_metrics.py": "the rank probe, run on the update's features",
@@ -458,7 +456,7 @@ def test_the_scan_actually_walked_the_tree(tree_scan: Tuple[List[Hit], Dict[str,
     """A scan that found nothing because it looked at nothing reads exactly like a clean tree."""
     c = tree_scan[1]
     assert c["step_modules"] >= len(STEP_MODULES) + 15, c
-    assert c["callback_files"] >= 20 and c["callback_classes"] >= 20, c
+    assert c["callback_files"] >= 20 and c["callback_classes"] >= 19, c
     assert c["repo_modules"] >= 20, c
     assert c["cuda_scope_modules"] >= 15, c          # the T2 service + the rust collector / eval / env
     assert {"Linear", "LayerNorm", "ModuleList", "Sequential"} <= TORCH_NN_MODULES

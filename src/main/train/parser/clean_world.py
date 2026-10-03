@@ -467,8 +467,10 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "shape), so above ~0.008 this flag is INERT and the delivered count "
                              "is the budget's -- read fork/requested against fork/forks. Watch "
                              "fork/sim_steps_share, fork/branch_share, fork/rate and "
-                             "fork/pairwise_acc. REQUIRES --critic winprob AND --cf-records, and "
-                             "REFUSES --win-prob-strata-weight. TRAINING-only, resume-inherited.")
+                             "fork/pairwise_acc. REQUIRES --critic winprob, and REFUSES "
+                             "--win-prob-strata-weight (and --env-core python: the Python core's fork "
+                             "arm lost its replay ring with --cf-records, deletion pass L4). "
+                             "TRAINING-only, resume-inherited.")
     parser.add_argument("--fork-branches", "--fork_branches", dest="fork_branches",
                         type=int, choices=(2, 3), default=None,
                         help="How many branches a fork plays (default 3). 3 = the policy's top-2 "

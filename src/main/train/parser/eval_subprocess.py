@@ -1,5 +1,5 @@
 """The `# --- Subprocess eval ---` section: the eval workers, the self-play pool and
-promotion, the stable opponents, the exploiter/ladder, and the team pins.
+promotion, the stable opponents, the exploiter, and the team pins.
 
 Lifted VERBATIM out of the old single-file `parser.py` (lines 1597-1966); the flags
 keep their original relative order, which is the order `--help` renders.
@@ -169,9 +169,8 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "which the launcher does not restart. Keys (default N, cycle unit): "
                              "self_play_pool (3 eval cycles: --self-play with the pool still EMPTY — "
                              "failed eval cycles count), pfsp (3 eval cycles: --pfsp-scale with no "
-                             "sentinel win-rate measured while the pool has sentinels), team_pfsp (5 "
-                             "updates: --team-pfsp with no self-play/exploiter team game while self-play "
-                             "is live), fork (5 rollouts: --fork-fraction injecting nothing). "
+                             "sentinel win-rate measured while the pool has sentinels), fork (5 rollouts: "
+                             "--fork-fraction injecting nothing). "
                              "key=0 disables that lever's FATAL — ANNOUNCED at training start, and the "
                              "end-of-run summary is still LOUD at zero.")
     parser.add_argument("--promote-threshold", type=float, default=None,
@@ -271,31 +270,6 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "oldest + an even interior spread) instead of the oldest-evicted sliding "
                              "window, so PFSP (--pfsp-scale) has a real range of past selves to "
                              "up-weight. Default off = the legacy sliding window (byte-identical).")
-    # ── Team-side PFSP: variance-weighted TEAM sampling by self-play win-rate (OFF by default) ──
-    parser.add_argument("--team-pfsp", "--team_pfsp", dest="team_pfsp",
-                        choices=["off", "measure", "var", "onesided"], default="off",
-                        help="Per-team self-play win-rate tracking for the trainee's pool teams (default "
-                             "off = uniform random.choice, byte-identical). 'measure' TRACKS + persists "
-                             "the per-team self-play win-rate to <run>/team_winrates.json (the offline "
-                             "'which team is the generalist weakest on → next exploiter target' artifact) "
-                             "WITHOUT biasing sampling. 'var' additionally weights each pool team by floor "
-                             "+ p*(1-p) (p = the win-rate EMA, seed 0.5), capped at --team-pfsp-cap x the "
-                             "uniform share — so the trainee drills the teams it wins ~half the time (max "
-                             "variance) and stops over-sampling the ones it crushes / always loses. "
-                             "'onesided' keeps the LOSING side at MAX weight instead — w(p)=0.25 for p<0.5, "
-                             "else p*(1-p) (continuous at 0.5): every sub-50%% team stays maximally sampled "
-                             "and only mastery retires a team (under the z_arch/FiLM conditioning "
-                             "hypothesis the weak tail is the learnable headroom, so 'truly lost' is the "
-                             "claim under test, not a sampling prior). Measured on SELF-PLAY pool battles "
-                             "only (bots excluded). Training-only, NOT version-locked.")
-    parser.add_argument("--team-pfsp-cap", "--team_pfsp_cap", dest="team_pfsp_cap",
-                        type=float, default=3.0,
-                        help="Over-representation cap for --team-pfsp: no team is sampled more than "
-                             "this multiple of the uniform share (weight ≤ cap×mean(raw)). Default 3.0.")
-    parser.add_argument("--team-pfsp-floor", "--team_pfsp_floor", dest="team_pfsp_floor",
-                        type=float, default=0.05,
-                        help="Weight floor for --team-pfsp (raw_i = floor + p*(1-p)) so a fully-won / "
-                             "fully-lost team is never starved to zero. Default 0.05.")
     parser.add_argument("--team-block-episodes", "--team_block_episodes", dest="team_block_episodes",
                         type=int, default=1,
                         help="Hold each drawn TRAINEE team for N consecutive episodes before redrawing "
@@ -304,9 +278,8 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "~64 (~one rollout of episodes) per-update per-team density rises ~15x AND "
                              "blocks span an update boundary, so an env replays its team right after "
                              "that team's gradient landed (the exploiter-style learn-and-retest loop). "
-                             "Composes with --team-pfsp (weights apply at each redraw; outcomes "
-                             "attribute to the blocked team). Trainee side only; training-only, NOT "
-                             "version-locked, resume-forwarded.")
+                             "Trainee side only; training-only, NOT version-locked, "
+                             "resume-forwarded.")
     parser.add_argument("--team-wr-tracking", "--team_wr_tracking", dest="team_wr_tracking",
                         action=argparse.BooleanOptionalAction, default=True,
                         help="Track a running per-team win rate for the TRAINEE's piloted teams "
@@ -316,9 +289,8 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "and restart-safe. PURE INSTRUMENTATION — nothing prioritizes on it, and "
                              "nothing should without normalizing against a team-strength baseline "
                              "first (a raw per-team win rate conflates pilot competence with team "
-                             "strength). ON by default; --no-team-wr-tracking opts out. Distinct from "
-                             "--team-pfsp, which measures self-play POOL battles only in order to "
-                             "weight SAMPLING. Training-only, NOT version-locked, resume-forwarded.")
+                             "strength). ON by default; --no-team-wr-tracking opts out. "
+                             "Training-only, NOT version-locked, resume-forwarded.")
     # ── Stable (cross-run) opponents: load a model from ANOTHER run as a fixed opponent ──
     parser.add_argument("--stable-opponents", "--stable_opponents", dest="stable_opponents",
                         type=str, default=None,
@@ -444,39 +416,6 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                         type=int, default=500,
                         help="RATCHET mode: min target-games per decision window before a ratchet check (default 500 "
                              "— the noise guard; larger = smoother/slower).")
-    # gen3_exploiter_pool_ladder_v1 — the OTHER difficulty axis. --exploiter-temp-* makes ONE target
-    # play noisily; this swaps in genuinely WEAKER frozen opponents and promotes on a win-rate gate,
-    # ending at the --exploiter target itself. Training-only knob (never versioned).
-    parser.add_argument("--exploiter-ladder", dest="exploiter_ladder", type=str, default=None,
-                        help="EXPLOITER MODE (requires --exploiter): POOL-LADDER opponent curriculum — "
-                             "train against progressively STRONGER frozen snapshots, promoting a rung "
-                             "each time the trainee's training win-rate vs the CURRENT rung clears "
-                             "--exploiter-ladder-gate. Two forms: an ORDERED comma-separated list of "
-                             "checkpoint paths, weakest first (--stable-opponents grammar, "
-                             "path[@step][:label]); or 'auto:<run_dir>', which draws "
-                             "--exploiter-ladder-rungs evenly-ELO-spaced snapshots from that run's "
-                             "snapshot_ladder/ladder.json. The --exploiter target is ALWAYS appended as "
-                             "the terminal rung, and the ladder never demotes. Rung state survives a "
-                             "launcher restart via <run>/exploiter_ladder_state.json. Default None = OFF "
-                             "(byte-identical: the target is the sole opponent from step 0).")
-    parser.add_argument("--exploiter-ladder-gate", dest="exploiter_ladder_gate", type=float,
-                        default=0.55,
-                        help="--exploiter-ladder: the trainee TRAINING win-rate vs the CURRENT rung at "
-                             "which it is promoted to the next one (default 0.55 — keeps play near the "
-                             "~0.5 max-advantage-signal zone, matching --exploiter-temp-ratchet-wr). "
-                             "Measured per window of --exploiter-ladder-window games.")
-    parser.add_argument("--exploiter-ladder-window", dest="exploiter_ladder_window", type=int,
-                        default=500,
-                        help="--exploiter-ladder: min games vs the CURRENT rung per promotion check "
-                             "(default 500 — the same noise guard, and the same disjoint-window "
-                             "semantics, as --exploiter-temp-ratchet-games). Bot episodes under "
-                             "--exploiter-keep-bots do not count.")
-    parser.add_argument("--exploiter-ladder-rungs", dest="exploiter_ladder_rungs", type=int,
-                        default=4,
-                        help="--exploiter-ladder auto:<run_dir> ONLY: how many evenly-ELO-spaced "
-                             "snapshots to draw from that run's ladder (default 4), BEFORE the "
-                             "--exploiter target is appended — so the default auto ladder is 5 rungs. "
-                             "Ignored for an explicit rung list.")
     parser.add_argument("--trainee-team", dest="trainee_team", type=str, default=None,
                         help="SPECIALIST MODE: pin the TRAINEE's team pool to the ONE team in this file "
                              "(a Showdown EXPORT string, like data/teams/sample/*.txt), so the agent "

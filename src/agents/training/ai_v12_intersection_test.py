@@ -7,7 +7,9 @@ an entire critic chain was orphaned for four generations while every suite staye
 
 Groups 1 and 3 of the original five (the value-dist atom support against the terminal, and the
 `train/pbrs_reward_share` absent-never-zero rule) left with the distributional head and the
-win-prob PBRS (deletion pass L1). Three remain, each naming the pair it crosses:
+win-prob PBRS (deletion pass L1), and group 5 (the Q head x the cf-twin fold's stash clobbering)
+left with the counterfactual training half (deletion pass L4). Two remain, each naming the pair it
+crosses:
 
 2. **CLEAN WORLD × the TIMEOUT terminal.** The wave-A guard warns on ONE side of the ordering
    (draw better than a loss). A launch that types `--victory-value 1.0` and forgets
@@ -18,12 +20,6 @@ win-prob PBRS (deletion pass L1). Three remain, each naming the pair it crosses:
    This runs the whole chain on a fabricated v104 config AND on every REAL archived config in the
    models root, and asserts the result is a fully-populated, constructible `ModelVersion`.
 
-5. **THE Q HEAD × the CF-TWIN FOLD (stash clobbering).** Wave C added `q_winprob_*` to `cf_any_on`,
-   so a Q-head-only run now runs the cf sample+forward on minibatches where it never ran before —
-   and that forward CLOBBERS `last_value_pooled`, which the twin mirror reads. It is correct today
-   only because of statement ORDER inside one function, which is exactly the kind of fact that is
-   true until someone moves a block.
-
 Run:
     python -m pytest src/agents/training/ai_v12_intersection_test.py -q
     (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
@@ -31,7 +27,6 @@ Run:
 from __future__ import annotations
 
 import dataclasses
-import inspect
 import json
 import os
 
@@ -104,8 +99,7 @@ _WAVE_KEYS = {
     "victory_value": 30.0,
     # wave D (v106)
     "progress_decision_tense": False, "progress_switch_freeze": False,
-    # wave C (v107)
-    "q_winprob_mode": "none", "q_winprob_coef": 0.0, "q_winprob_onpolicy_coef": 0.0,
+    # wave C (v107) — its three q_winprob_* keys left the config at v134 (deletion pass L4)
 }
 
 
@@ -150,7 +144,7 @@ def test_the_three_migrations_stack_on_a_v104_config():
     """The v105 / v106 / v107 branches are FLOORED AWAY: gen3_event_record_v2 raised
     MIGRATION_FLOOR to 121 (all three archived verbatim in `_migrate_config`'s v97–v120 history),
     so the fabricated v104 config is pre-generation and is REFUSED with the diagnosis — a test may
-    not claim to cover a chain the floor makes unreachable. The surviving property: the wave's ten
+    not claim to cover a chain the floor makes unreachable. The surviving property: the wave's
     keys are recorded, at exactly those values, on a FRESH current config built through the
     project's own constructor, and the current chain passes them through."""
     from agents.model.model_version import ModelVersionError
@@ -217,15 +211,3 @@ def test_the_chain_runs_on_EVERY_real_archived_config_of_this_generation():
         seen += 1
     if seen == 0 and refused == 0:
         pytest.skip("no readable configs in the archive")
-
-
-# ──────────────────────────────────────────────────────────────────────────────────────────────
-# 5. THE Q HEAD × THE CF-TWIN FOLD — the cf forward clobbers the extractor stashes
-# ──────────────────────────────────────────────────────────────────────────────────────────────
-
-def test_the_cf_twin_fold_is_also_before_it():
-    """The same order, stated for the twin heads, whose own comment claims it. A claim in a
-    comment beside code nothing checks is how the first one shipped."""
-    from agents.training.instrumented_ppo import ppo as _ppo
-    src = inspect.getsource(_ppo.InstrumentedMaskablePPO.train)
-    assert src.index("_cf_twin_onpolicy_terms") < src.index("_cf_sample_and_forward()")

@@ -68,24 +68,13 @@ class Gen3Teambuilder(Teambuilder):
     #: `gen3_team_draw_rng_v1` above.
     _rng = random
 
-    def __init__(self, teams, bias_teams=None, bias_prob=0.0,
-                 team_pfsp="off", team_pfsp_cap=3.0, team_pfsp_floor=0.05,
-                 rng_seed=None):
+    def __init__(self, teams, bias_teams=None, bias_prob=0.0, rng_seed=None):
         """
         Initialize with a single team string or a list of team strings.
 
         bias_teams: optional secondary pool; when provided, yield_team picks from
                     it with probability bias_prob (and from the main pool otherwise).
         bias_prob:  float in [0, 1].  0.0 = always use main pool (default).
-
-        team_pfsp:  "off" (default) → yield_team is the byte-identical uniform
-                    ``random.choice(self.packed_teams)`` (no new RNG draws, no tracking).
-                    "var" → variance-weighted sampling over the pool teams by their
-                    self-play win-rate (weights pushed from TeamPFSPCallback). The
-                    teambuilder only ACCUMULATES per-team win/loss counts (drained by the
-                    callback) and STORES the pushed weights; the callback computes them.
-        team_pfsp_cap / team_pfsp_floor: the callback's cap / floor (stored here so the
-                    construction site is the single knob source; unused by the sampler itself).
         """
         if isinstance(teams, str):
             teams = [teams]
@@ -173,25 +162,12 @@ class Gen3Teambuilder(Teambuilder):
                       + "; ".join(f"{i}: {str((e or ['?'])[0])[:120]}"
                                   for i, e in self.bias_dropped[:5]), flush=True)
 
-        # ── Team-side PFSP state (all inert while team_pfsp == "off") ──
-        self._team_pfsp = str(team_pfsp)
-        self._team_pfsp_cap = float(team_pfsp_cap)
-        self._team_pfsp_floor = float(team_pfsp_floor)
-        # LOCAL windowed accumulators (per pool team) — drained (and zeroed) each pull.
-        self._tp_wins = [0.0] * len(self.packed_teams)
-        self._tp_games = [0.0] * len(self.packed_teams)
-        # Weights pushed from the callback (None → uniform sampling).
-        self._tp_weights = None
         # The pool index yielded for the CURRENT battle (None → not a pool team, i.e. a bias
-        # draw). Set on EVERY branch of ``_draw_team`` — it is the shared "which team did I just
-        # hand out" utility, read by BOTH the team-side PFSP accumulator and the (separate,
-        # always-on) per-team win-rate tracker below. The two keep their own COUNTER TABLES;
-        # only this draw index is shared.
+        # draw). Set on EVERY branch of ``_draw_team`` — it is the "which team did I just hand
+        # out" index the per-team win-rate tracker below reads.
         self._last_pool_idx = None
         # ── Per-team win-rate TRACKING (--team-wr-tracking; pure instrumentation) ──
-        # Deliberately a SEPARATE table from the ``_tp_*`` PFSP accumulators above: PFSP measures
-        # only self-play POOL battles (bots wash its weighting signal out) and is off by default,
-        # whereas this one counts EVERY episode and is on by default. Per pool team, per opponent
+        # Counts EVERY episode and is on by default. Per pool team, per opponent
         # class (``MaskableAgentWrapper.OPP_CLASS_*``), so a raw win rate can always be split back
         # out by who it was measured against — a bot-heavy curriculum phase otherwise reads ~0.99
         # for every team. Windowed: drained (and zeroed) by the callback's periodic pull.
@@ -240,75 +216,30 @@ class Gen3Teambuilder(Teambuilder):
     def _draw_team(self):
         """One fresh draw from the pool, biased toward bias_packed_teams if configured.
 
-        With team_pfsp in a biasing mode the pool draw is weighted (per-team win-rate) and the
-        yielded index is tracked so the battle outcome can be recorded. A bias-team battle is
-        never tracked (it uses a pinned bias team, not a pool team). "off" is the exact
-        legacy uniform ``random.choice`` — no extra RNG draws, no tracking (byte-identical)."""
+        A bias-team battle is never tracked (it uses a pinned bias team, not a pool team). The
+        pool draw is the uniform ``random.choice`` — one RNG call."""
         if self.bias_packed_teams and self._rng.random() < self.bias_prob:
             self._last_pool_idx = None
             return self._rng.choice(self.bias_packed_teams)
-        if self._team_pfsp == "off":
-            team = self._rng.choice(self.packed_teams)
-            # Recover the index by LOOKUP, never by re-drawing — the legacy uniform draw is the
-            # byte-identity baseline, so this branch must consume exactly one RNG call.
-            self._last_pool_idx = self._pool_index_by_packed.get(team)
-            return team
-        n = len(self.packed_teams)
-        w = self._tp_weights if self._tp_weights is not None else [1.0] * n
-        idx = self._rng.choices(range(n), weights=w, k=1)[0]
-        self._last_pool_idx = idx
-        return self.packed_teams[idx]
-
-    def record_team_pfsp_outcome(self, won: float) -> None:
-        """Record a battle outcome (win=1.0 / loss-or-tie=0.0) against the LAST yielded pool team.
-        No-op when off or when the last yield was a bias team / untracked (``_last_pool_idx`` None)."""
-        if self._team_pfsp == "off" or self._last_pool_idx is None:
-            return
-        idx = self._last_pool_idx
-        self._tp_games[idx] += 1.0
-        self._tp_wins[idx] += float(won)
-
-    def drain_team_pfsp_counts(self):
-        """Return ``(wins, games, n_pool)`` for this window and ZERO the local accumulators (each
-        pull is one window). ``n_pool`` lets the callback GIGO-guard pool-size agreement across
-        workers (a mismatch would silently corrupt the per-index win-rate contract)."""
-        wins = list(self._tp_wins)
-        games = list(self._tp_games)
-        n = len(self.packed_teams)
-        for i in range(n):
-            self._tp_wins[i] = 0.0
-            self._tp_games[i] = 0.0
-        return (wins, games, n)
-
-    def set_team_pfsp_weights(self, weights) -> None:
-        """Store the sampling weights pushed by the callback. Guarded: a None or wrong-length
-        vector is ignored (leaves the current weights / uniform), never partially applied."""
-        if weights is None or len(weights) != len(self.packed_teams):
-            return
-        self._tp_weights = [max(0.0, float(x)) for x in weights]
-
-    def get_team_pfsp_keys(self):
-        """The per-pool-team fingerprints (index i ↔ packed_teams[i]). The callback pulls these
-        ONCE to verify the per-index team identity is identical across all workers (the strong GIGO
-        guard) and to key the audit log of which teams are up/down-weighted."""
-        return self.get_pool_team_keys()
+        team = self._rng.choice(self.packed_teams)
+        # Recover the index by LOOKUP, never by re-drawing: the draw consumes exactly one RNG call.
+        self._last_pool_idx = self._pool_index_by_packed.get(team)
+        return team
 
     def get_pool_team_keys(self) -> "list[str]":
         """The per-pool-team ``team_sha`` fingerprints (index i ↔ ``packed_teams[i]``).
 
-        The generic accessor — ``get_team_pfsp_keys`` is the historical PFSP-named alias. Any
-        consumer that pulls per-INDEX data off the workers must pull these too and verify every
+        Any consumer that pulls per-INDEX data off the workers must pull these too and verify every
         worker reports the SAME list: same pool SIZE ≠ same pool ORDER, and a diverged order
         silently mis-attributes every per-team number."""
         return list(self._pool_keys)
 
-    # ── Per-team win-rate tracking (separate table from PFSP — see __init__) ──
+    # ── Per-team win-rate tracking (see __init__) ──
 
     def record_team_wr_outcome(self, won: float, opp_class: int, n_classes: int) -> None:
         """Record one finished episode's outcome against the LAST yielded pool team.
 
-        Unconditional (no ``team_pfsp`` gate) and counts EVERY opponent class — it is
-        instrumentation, not a sampling weight. A no-op when the last yield was a bias team
+        Counts EVERY opponent class — it is instrumentation, not a sampling weight. A no-op when the last yield was a bias team
         (``_last_pool_idx`` None), which is a pinned team and not a pool member."""
         idx = self._last_pool_idx
         if idx is None:

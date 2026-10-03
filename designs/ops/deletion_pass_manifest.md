@@ -137,7 +137,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | **L1** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l1_v1`, config v131, stamp-only; **lines removed: non-test code −2,663 / +677 (net −1,986), tests −2,497 / +405 (net −2,092)**, docs + data −718 / +330; 15 flags, 12 `ModelVersion` fields, 16 `combination_checks` rows; K9 golden files untouched and green) | shaped-only levers + self-PBRS + frozen-φ (R2): PopArt, the value-dist head, `value_from_dist`, the CVaR value-tail weight, `--win-prob-coef`, `--win-prob-pbrs-{coef,source,frozen}` | 1.0 | B | `combination_checks`, `config`, parser `clean_world` / `distillation` / `value_heads` | U1 |
 | **L2** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l2_v1`, config v132, stamp-only; **lines removed: non-test code −4,229 / +341 (net −3,888), tests −5,070 / +323 (net −4,747)**, docs + data −1,377 / +218; 12 flags, 9 `ModelVersion` fields, 7 `combination_checks` rows + 6 `_ENV_CORE_UNPORTED` rows, 7 label-inventory rows; K9 golden files untouched and green) | λ, rollout target, dense aux, true team, entropy boosts, `choice_band_tracker` (R2) | 1.0 | B | same + `hyperparameters`; `label_inventory` | L1 |
 | **L3** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l3_v1`, config v133, stamp-only; **lines removed: non-test code −6,674 / +313 (net −6,361), tests −6,603 / +203 (net −6,400)**, docs + data −1,342 / +436; 47 flags, 6 `ModelVersion` fields, ~30 `combination_checks` rows + 2 `_ENV_CORE_UNPORTED` rows, the `distill_mask` label row and the `refused` label kind; K9 golden files untouched and green) | distillation + search teacher (R2) | 1.0 | B | + parser `capacity` / `distillation` / `teacher`, `matchup_setup` | L2 |
-| **L4** | cf training half + team-PFSP + exploiter ladder + `REFUSED_WITH_FLAG` (R2) | 0.75 | B | + parser `cf_grounding` / `eval_subprocess`, `rust_vec_env` | L3 |
+| **L4** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l4_v1`, config v134, stamp-only; **lines removed: non-test code −5,621 / +421 (net −5,200), tests −5,887 / +480 (net −5,407)**, docs + data −1,214 / +426; 27 flags + 5 generated `--no-` forms, 16 `ModelVersion` fields (4 STRUCTURAL head toggles), 15 `combination_checks` rows + 3 `_ENV_CORE_UNPORTED` rows, `REFUSED_WITH_FLAG`; K9 golden files untouched and green) | cf training half + team-PFSP + exploiter ladder + `REFUSED_WITH_FLAG` (R2) | 0.75 | B | + parser `cf_grounding` / `value_heads` / `eval_subprocess`, `rust_vec_env` | L3 |
 | **L5** | the Python fork arm (R3) | 0.5 | B | `combination_checks`, `fork_*` | L4 |
 | **K1** ✅ **SHIPPED 2026-10-02** (`utils/torch_floor.py`; the cache-limit log detector KEPT — §6 finding 10) | torch < 2.8 refusal; 2.5.1 code + legacy compile gate (R7 + R8), the `hooks.py:179` fix | 1.25 | C | `compile_trainer`, `compile_control`, `team_transformer`, `lifecycle.py` | memory fix |
 | **K2** ✅ **SHIPPED 2026-10-02** (`gen3_tf32_retired_v1`, no config bump, stamp-less: `matmul_precision` was a `metadata.json` knob; **lines removed: non-test code −604 / +269 (net −335), tests −436 / +352 (net −84)**, docs + data −244 / +186 + this row; 1 flag, 1 `combination_checks` row, 1 `RETIRED` row added for the resume refusal; K9 golden files untouched and green) | RETIRE TF32 (R9) | 1.0 | C | parser `hyperparameters` (after L2 hands it off), `consistency.py`, `parity_probe`, one `combination_checks` row | K1, L2 |
@@ -224,6 +224,34 @@ commit, `-m "not slow and not e2e"` on a rerun of a failed subset, and rebuild t
 generated files. A deleted `slow` test leaves a stale row in `designs/ops/slow_tier_status.json`: this unit
 hand-removed the two (a textual edit — the file's own formatting is not `json.dumps`'s).
 
+**L4 hand-off (read before L5).** (1) **The Python fork arm is UNREACHABLE already, not yet deleted.** `--cf-records` (its replay
+ring) is gone, so `combination_checks`' `fork_needs_cf_records` became `fork_python_core_unavailable` (`--fork-fraction > 0` with
+`--env-core python` → refused, pinned by `combination_checks_test` and `fork_flags_test`); L5 deletes the row with the arm.
+`main/train/callbacks.py` still registers `ForkArmCallback` for that (now impossible) argv and passes it no `records_dir`; its own
+FATAL text and docstring still say "no cf_records ring". (2) **`agents/training/cf_records.py` is down to `safe_tag` /
+`record_key` / `index_records`** and its test `cf_records_join_test.py`; the only readers are `fork_callback.py` (`index_records`) and
+the decision-time handle capture (`wrappers.MaskableAgentWrapper.step`, `env_factory`'s `env._emit_wp_rollout_handle`,
+`win_prob_callback._handle_needed` / `_win_handle_*`, `async_vec_env`'s `wp_handle` write, `Gen3Env`'s side) — delete all of it with
+the arm, then the file. (3) `compile_trainer.eager_extractor` keeps `fork_callback` / `fork_driver` as its last callers (L3's note
+stands). (4) `lever_supply.LEVERS` = {self_play_pool, pfsp, fork}; `_ENV_CORE_UNPORTED` = {async_rollout} only (R1/U3's);
+`rust_vec_env.REFUSED_WITH_FLAG` is gone (`SURFACE` is the whole table). (5) `retired_levers.py`: L4's rows use `"L4", 134`,
+`LAST_COMMIT_L4 = cbd20111aae48d6a53f6305166560f4c9acb473a`; L5's append with `"L5", 135` and the commit that ships L4. Its recorded
+fields (if any) get a stamp-only `if version < 135` in `_migrate_config`. (6) **Manifest R2 mislabelled two modules as cf TRAINING
+half:** `cf_q_labels.py` and `cf_mc_return.py` are imported by the KEPT producer (`cf_producer.py`, D6), so they stay; the
+producer's lock helpers moved from the deleted `cf_supply.py` to the new `cf_producer_lock.py` (+ its test). `main/q_amortization.py`
+(+ test) was deleted with the Q head it measured (not named by D6). (7) **Dead-but-retained, census candidates (D6 forbids touching
+them here):** `main/prober/model.py` `cf_evidential_batch` / `cf_twin_batch` / `_value_pooled_batch` (return "no head" on every
+loadable checkpoint), the evidential / twin / shadow columns in `cf_audit.py`, `cf_audit_twin.py`, `cf_audit_render.py` and
+`main/harvest.py`. `winprob_finetune.py` lost its cross-check against `cf_terms.cf_binomial_nll`. (8) The tests that read a kept
+module through a deleted one were rewritten PRODUCER-SIDE: `cf_producer_test`'s per-action wire class and
+`cf_producer_integration_test` (`-m sim`, 6 pass) now assert on the label rows, not on a buffer. (9) Parser files: `cf_grounding.py` and
+`value_heads.py` are DELETED (`main/train/parser/__init__.py` calls neither); `eval_subprocess.py` lost the team-PFSP and ladder flags.
+(10) The paused learner-battery argvs (`measurements/learner_battery_2026-09-26/`) carry `--team-pfsp*`; `learner_gates_test` strips
+them like L2/L3's flags. (11) `mode_flag_doc_gate_test`'s INERT check had only the two cf keys to read; it now parses the table and
+proves its INERT reading on a planted row instead of requiring a real one. (12) Hygiene as L3's (9): absolute `PYTHONPATH`,
+`git checkout` the slow-tier JSON before a commit unless you removed a row on purpose (L4 hand-removed the one for the deleted
+`cf_supply_integration_test`), `-m "not slow and not e2e"` on a rerun.
+
 **Totals.** Lane A (spine) 6.25 · lane B (levers) 4.25 · lane C (compile / precision / paydown) 8.0 · census +
 milestone 2.25 → **≈ 21 agent-days (range 17–26)**. Program §2 M6 budgeted "~2 agent-days" for this pass; the
 difference is the lever list (R2, ≈ 8.8k lines + their checks and tests), stage 3, and the paydown — none of
@@ -273,8 +301,11 @@ calendar days with 3 lanes; 8 is the box**.
    "the bare-argv default" (`CRITIC_DEFAULT` = winprob) from "what an ABSENT record means" (`CRITIC_UNRECORDED` =
    shaped, the `_REWARD_IMMUTABLE_FIELDS` signed terminal): no checkpoint loads differently, so no `ARCH_SIGNATURE`
    bump (`designs/model/versioning.md`).
-5. **`--cf-label-supply external` passes launch checks on Rust and would starve in flight** — unverified at
-   runtime; R2/L4 deletes it.
+5. ✅ **CLOSED by L4 (2026-10-02):** `--cf-label-supply external` (and `producer`, `--cf-producer-args`, the starve floors and the
+   whole cf supply guard) no longer exists. `build_parser().parse_args(["--cf-label-supply", "external", "--cf-winprob-coef",
+   "0.5"])` is rejected by argparse (exit 2), and `designs/deleted_flags.md` lists every spelling, so
+   `claude_md_freshness_gate_test` fails if one comes back. The starvation itself was never reproduced at runtime; the
+   row was removed, not fixed.
 6. ✅ **`rust_core_m5/hooks.py:179` measured the legacy compile on 2.8, not production's R0 region** — FIXED by K1
    (`compile_regions.install_rollout_region`).
 7. **Program §4 is wrong in four places** (§7). Not a deletion, a correction; this doc carries them until the

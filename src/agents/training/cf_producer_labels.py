@@ -1,10 +1,11 @@
 """cf_producer_labels — the label ROW schema and the batch file it is written into.
 
-The row is a CONTRACT with a training-side consumer (`cf_label_buffer`) that knows nothing about
-this producer beyond a fixed key set, so the schema and the writer that lays it down belong
-together and apart from the loop that fills them. Both rules the writer carries are correctness
-ones rather than style: one NEW file per batch (never a rewrite, because the buffer keys its byte
-offsets on ``(name, inode)``) and a tmp-then-rename, so a half-written batch is never visible.
+The row was a CONTRACT with a training-side consumer (`cf_label_buffer`, DELETED in deletion pass
+L4) that knew nothing about this producer beyond a fixed key set, so the schema and the writer that
+lays it down belong together and apart from the loop that fills them. Both rules the writer carries
+are correctness ones rather than style: one NEW file per batch (never a rewrite, because a reader
+keys its byte offsets on ``(name, inode)``) and a tmp-then-rename, so a half-written batch is never
+visible.
 
 ⚠️ **THE ECOLOGY DECISION lives here too, as ``OPPONENT_LABEL``.** A training record carries no
 opponent identity — the tap's ``__RECON__`` frame holds the seed, both packed teams and the

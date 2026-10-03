@@ -190,20 +190,19 @@ Per minibatch (1 to 3a inside R1):
    class: recorded, `_resolve`-inherited on a flagless resume, never gated)
 2. the belief bank — species/moves aux, opponent intent (+ set-valued β), move / spread /
    nature-EV / HP-type / item belief, move-latent
-3. (3a) the win-prob BCE — the last R1 term; then (3b, the tail's first) the
-   CF-twin on-policy mirror
+3. (3a) the win-prob BCE — the last R1 term
 4. (retired — the value-dist HL-Gauss CE was deleted with the dist head; the numbering below is unchanged)
 5. (retired — the distill family was deleted with distillation, config v133; the numbering is unchanged)
 6. (retired — search-teacher AWR and OPD were deleted with the search teacher, config v133)
-7. **TD-AUX**
-8. **the counterfactual block** — cf-winprob, cf-evidential, cf-twin, cf-shadow, **q-winprob**
+7. **TD-AUX** — the declared eager tail's one fold
+8. (retired — the counterfactual block (cf-winprob, cf-evidential, cf-twin, cf-shadow, q-winprob) was deleted with the cf training half, config v134; the numbering is unchanged)
 
 **No flag combination reorders these.** Each term is guarded by its own `if <x>_on:`; a term that
-is off contributes nothing and moves no one. **Steps 7 and 8 are last because they each run their
-OWN extractor forward, which CLOBBERS the minibatch's stashes** (`last_win_prob_logits`,
-`last_spread_belief`, …) that steps 2-4 read. Moving a stash-reading fold below step 7 does not
-crash — it silently scores the wrong states. `instrumented_ppo_hub_contract_test.py` pins the
-7-before-8 half by reading the source, along with the mixin base list (a dropped mixin removes a
+is off contributes nothing and moves no one. **Step 7 is last because it runs its OWN extractor
+forward, which CLOBBERS the minibatch's stashes** (`last_win_prob_logits`, `last_spread_belief`, …)
+that steps 2-4 read. Moving a stash-reading fold below step 7 does not crash — it silently scores
+the wrong states. `instrumented_ppo_hub_contract_test.py` pins R1's order and that the R1 call
+precedes the TD-AUX tail fold by reading the source, along with the mixin base list (a dropped mixin removes a
 whole family of loss terms without breaking an import) and `MaskablePPO` staying LAST in the MRO
 (or `_excluded_save_params`'s `super()` stops reaching upstream and checkpoints start pickling a
 `threading.Lock`). It also walks the package's own import graph TRANSITIVELY from the hub, so a
@@ -323,7 +322,7 @@ read as a result about the lever. Now each such lever is judged once per cycle b
 `LeverConfigError` → **`FATAL_CONFIG` (3)**. Neither is restarted. Floors (`lever_supply.LEVERS`,
 override `--supply-starve-cycles key=N`, `key=0` = off and ANNOUNCED): `self_play_pool` 3 eval
 cycles (`--self-play` with the pool still EMPTY — failed cycles count; `ai_v12_27` trained 10M
-against bots), `pfsp` 3, `team_pfsp` 5 updates, `fork` 5 rollouts
+against bots), `pfsp` 3, `fork` 5 rollouts
 (its four DISABLE-with-a-print paths are now FATAL_CONFIG). The eval-cycle streak persists per RUN
 (`snapshots/summary.json` `supply_guard`), not per launcher segment. Every supply line goes
 through `lever_supply.loud` (the run's own log AND the launcher event stream — `emit` alone never
@@ -390,7 +389,7 @@ other rung even when it trained further.
 **Every consumer goes through ONE choke point** —
 `agents.training.fixed_opponent_pool.resolve_model_ref(path, step=None)` → a `ResolvedModel`
 carrying the rung, the rule and `num_timesteps`. It serves `--stable-opponents`, `--exploiter`,
-`--exploiter-ladder` and `--warmstart-consensus` (and, until deletion pass L1 / L3, the distillation
+`--warmstart-consensus` (and, until deletion pass L1 / L3 / L4, the exploiter ladder, the distillation
 and PBRS-source flags); `run_spec_test.py` holds the census that
 fails, naming the file and its flags, when one of them stops. 🚨 **EVERY TEACHER LOADED BEFORE
 2026-09-06 WENT THROUGH THE OLD RULE and recorded nothing about it** — `main.lineage` says so
@@ -429,21 +428,22 @@ is `ReplicateCollisionError`, naming both runs.
 
 **Full detail — in [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md).**
 
-## Team curriculum — team-side PFSP (`--team-pfsp`) and per-team win-rate tracking (`--team-wr-tracking`)
+## Team curriculum — per-team win-rate tracking (`--team-wr-tracking`) and team blocking (`--team-block-episodes`)
 
-Two independent instruments on the TEAM axis. **`--team-pfsp {off,measure,var,onesided}`** (default
-`off`, byte-identical) biases the TRAINEE's team sampling toward the pool teams it is weakest on,
-with a floor, a cap and `--team-block-episodes` for per-team gradient density.
 **`--team-wr-tracking`** (DEFAULT ON) is instrumentation only — a running per-`team_sha` record of
 wins/games stratified by opponent class, riding `metadata.json`'s `team_win_rates` block.
+`--team-block-episodes N` holds each drawn trainee team for N consecutive episodes (per-team gradient
+density; 1 = off). **Team-side PFSP (`team-pfsp`, which biased the trainee's team draw toward the pool
+teams it was weakest on) was DELETED in deletion pass L4** — `designs/deleted_flags.md` has the flags and
+citation.
 
 ⚠️ **A raw per-team win rate conflates PILOT COMPETENCE with TEAM STRENGTH** (the ai_v8 team-PFSP
 finding). Anything spending budget on this signal must normalize against a team-strength baseline
 first; the artifact carries that sentence in its own `notes` field. 🚨 **NO TensorBoard emission**
 (owner rule: per-team series are noisy spam), pinned by a test that fails on "just one scalar".
-🚨 **Same pool SIZE is not the same pool ORDER** — both aggregators verify per-index team identity
-across workers and the tracker RAISES on disagreement. Both are training-only, not version-locked,
-and both take an `env_method` PULL rather than an info-dict thread, because that is the seam that
+🚨 **Same pool SIZE is not the same pool ORDER** — the tracker verifies per-index team identity
+across workers and RAISES on disagreement. Both are training-only, not version-locked, and the
+tracker takes an `env_method` PULL rather than an info-dict thread, because that is the seam that
 works identically under `--async-rollout`.
 **Full detail — in [`designs/training/team_curriculum.md`](../../../designs/training/team_curriculum.md).**
 
@@ -480,7 +480,7 @@ OR REFITS WITHOUT IT** (`snapshot_ladder.recipe_status` → `current`/`absent`/`
 way: a file fitted before `3e6875a5` folded the eval-cycle sentinel edges in and read **+73.1
 Elo** above the current fit of the same 20 nodes, flipping the sign of a cross-run delta
 (2026-09-14). `main.critic_gate` refuses a stale committed file on its FALLBACK path (it refits
-otherwise); `--exploiter-ladder auto:` refits in memory or refuses; `latest_promoted_elo`
+otherwise); `latest_promoted_elo`
 deliberately does NOT check it (a within-run trend scalar). **Bump `LADDER_FITTER_VERSION`
 whenever the fit changes what a rating MEANS.**
 
@@ -581,8 +581,7 @@ a separate decision. Hazards an agent must know before touching it:
   deep-copies the policy as its slot templates, and a copy taken after the compile would carry the
   patched `forward` bound to the LEARNER's extractor.
 - 🚨 **Every flag whose path the Rust core does not serve is REFUSED at startup, by name**
-  (`combination_checks`' `env_core_rust_*`): `--cf-records`,
-  `--team-pfsp`, `--exploiter-ladder`, `--async-rollout`. The
+  (`combination_checks`' `env_core_rust_*`): today only `--async-rollout`. The
   collector flags typed on the python core are refused too (they would be silently inert).
 - **`WinProbLabelCallback` is not registered** under `rust`: the collector fills `win_target` /
   `win_mask` (the window fill calls the callback's own `backfill_terminal_labels`).
@@ -775,11 +774,12 @@ family is published whenever the flag is on, so 0 means "on, but one class prese
 ### `--fork-fraction` — THE FORK ARM, contested-state EXPLORING STARTS (`gen3_fork_v1`, v120)
 
 **Default `0.0` = OFF and BIT-identical** — no module imported, no obs key declared, no callback
-attached, no buffer installed, no row injected. **`--critic winprob` AND `--cf-records` are BOTH
-REQUIRED** (the second on the Python core only), and `--win-prob-strata-weight` is REFUSED alongside it. Detail:
+attached, no buffer installed, no row injected. **`--critic winprob` is REQUIRED**, and `--win-prob-strata-weight` is REFUSED
+alongside it; the arm runs on the Rust core only (`--fork-fraction > 0` on `--env-core python` is refused: its replay
+ring, `--cf-records`, was deleted in deletion pass L4, and the Python arm's code goes in L5). Detail:
 [`designs/training/forks.md`](../../../designs/training/forks.md).
 
-🚨 **TWO IMPLEMENTATIONS, and the Python one is LEGACY until the deletion pass.** Under
+🚨 **TWO IMPLEMENTATIONS, and the Python one is UNREACHABLE and goes in L5.** Under
 `--env-core rust` the arm is the COLLECTOR's fork phase (`rust_rollout/fork.py`,
 `gen3_fork_rust_v1`, forks.md §14) — DECLARED and OFF, deferred by the owner's one-ply scope
 (2026-10-01). It replays the core's finished input log on Lane I playout handles, keys every branch
@@ -819,8 +819,6 @@ byte-identical protocol on identical actions through the real bridge.
 opponent identity, so a branch is played against a SELF-LIKE opponent. Injected rows are labelled
 `opp_class = POOL` for that reason; `fork/branch_share` and `fork/bot_share` price it.
 
-⚠️ **RAISE `--cf-records-keep`** (the ring is pruned globally to the newest N while a rollout
-finishes ~2,400 episodes, so at 512 the forks that resolve are the LATE ones — a selection bias).
 🚨 **A fork dropped at the row budget has ALREADY BEEN PLAYED**, so the ask is bounded by the
 previous rollout's MEASURED `fork/rows_per_fork`. Read **`fork/rate`**, **`fork/branch_share`**,
 **`fork/tie_rate`**, **`fork/random_wins`**, **`fork/pairwise_acc`** (IN-SAMPLE; the endpoint is a
@@ -1156,9 +1154,8 @@ on a flagless resume**.
 `MIN_SUBCELL_N` floors. Pure NumPy in, floats out: no labels, no battles, no checkpoints, no
 filesystem, no torch, no RNG except an explicitly seeded bootstrap. That is the admission rule; a
 helper that has to know what a *decision* or a *bias map* is belongs beside the instrument that owns
-the concept. ⚠️ **Three near-siblings elsewhere are deliberately NOT merged into it** (the
-NaN-refusal pair in `scaffolding.py`, `winprob_finetune.label_noise_variance`,
-`main/q_amortization.spearman`) — the reasons are in the module docstring and in
+the concept. ⚠️ **Two near-siblings elsewhere are deliberately NOT merged into it** (the
+NaN-refusal pair in `scaffolding.py` and `winprob_finetune.label_noise_variance`) — the reasons are in the module docstring and in
 [`designs/training/offline_meters.md`](../../../designs/training/offline_meters.md), so nobody
 "de-duplicates" a shipped instrument's output by accident.
 
@@ -1207,28 +1204,27 @@ per-decision fork caches) and `core_successor.py` are DELETED (Rust Core deletio
 and `advance_window` are their bodies once the context and the event windows exist; `record` /
 `update_progress_clock` are the poke-env-battle wrappers.
 
-## Counterfactual win-prob grounding (`--cf-records` / `--cf-winprob-coef`, `gen3_cf_label_plumbing_v1`)
+## Counterfactual win-prob grounding — DELETED (the training half, deletion pass L4)
 
-The **trainer-side plumbing** for `designs/ai_v10/design_counterfactual_value_grounding.md` — its gate
-**G3**, which is explicitly "tap + buffer + flags at coefficient zero, byte-identity gated". Rung **R1**
-only: tight Monte-Carlo P(win) labels, delivered to the **win-prob head**. The label PRODUCER is a
-separate, out-of-process program (`cf_producer.py`, § *The label PRODUCER DRIVER* below);
-**nothing in this section produces a label**, and the two halves share only a file format.
+The **trainer-side half** of `designs/ai_v10/design_counterfactual_value_grounding.md` is gone: the
+reconstruction-record ring tap (`--cf-records`), the label buffer, every consumer term (cf-winprob,
+the evidential Beta head, the twin win-prob heads, the shadow critic, the per-action Q head and their
+coefficients), the supply guard that spawned / verified a producer (`--cf-label-supply`,
+`--cf-supply-starve-*`) and the label-lag duty-cycle refusal. Evidence for the deletion: only 3 runs
+ever ingested a cf label, `ai_v12_12_ladder_cflabels` never received one, and the cf-labels arm and the
+leaf battery found no lever that moves leaf quality; any future playout label (X4/X6) runs on the Rust
+search driver, not this ring. A checkpoint that recorded a structural head ON is REFUSED on every load,
+and one that recorded a live cf coefficient refuses resume / fork
+(`model_version/retired_levers.py`, pin `LAST_COMMIT_L4`); `designs/deleted_flags.md` has every flag.
 
-🚨 **THE LABEL SUPPLY IS A DECLARED STARTUP RESOURCE** (`gen3_supply_guard_v1`, `cf_supply.py` +
-`cf_supply_callback.py`, 2026-09-30). `ai_v12_12_ladder_cflabels` trained 10M steps at
-`--cf-winprob-coef 0.5` with ZERO labels because nobody started the producer. Now any live
-cf-buffer coefficient (`cf_supply.CF_CONSUMER_COEFS`: cf_winprob / cf_evidential / cf_twin /
-cf_shadow / q_winprob / q_winprob_onpolicy) makes the supply mandatory: under
-`--cf-label-supply producer` (default) **the trainer spawns `cf_producer` itself** (bound to it by
-`--parent-pid`, one per run by `<run>/cf_producer.lock`, `--q-labels` added when a Q coefficient
-is live, `--cf-producer-args` for the rest) and REFUSES without `--cf-records`; under `external` it
-REFUSES unless a producer holds the lock, printing the command. In flight, a stream that accepts
-nothing for `--cf-supply-starve-cycles` (5) cycles AND `--cf-supply-starve-minutes` (30) once a
-checkpoint exists — or a spawned producer that exits — raises `CfLabelSupplyError` → exit
-**`FATAL_SUPPLY` (5)**, which the launcher does not restart; the end-of-run summary is LOUD at zero.
-
-**Full detail — every flag, gate, measurement and hazard — is in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
+**KEPT (design decision D6 — the OFFLINE stack that reads OLD runs' `cf_records/` rings):**
+`cf_producer*` (the label producer — its single-instance lock is `cf_producer_lock.py`; nothing in
+training spawns it any more), `cf_audit*`, `cf_q_labels.py`, `cf_mc_return.py`, `harvest*`,
+`winprob_finetune`, `main/ops/critic_read.py`, `utils/bridge/counterfactual.py` and the prober's
+counterfactual views. They read finished artifacts; none needs a trainer. The prober's twin / evidential
+readers degrade to "no head" on any checkpoint at HEAD (those heads cannot be built).
+`cf_records.py` is down to the `record_key` / `index_records` join helpers the Python fork arm still
+imports (**delete it with the Python fork arm, L5**). History: [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).
 
 ## The STALL-TAIL HARVEST + head-repair pipeline (`main.harvest` → `winprob_finetune` → `main.harvest_meter`)
 

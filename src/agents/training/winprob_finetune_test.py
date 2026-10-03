@@ -162,16 +162,17 @@ def test_binomial_nll_equals_bce_when_n_is_one():
     assert torch.allclose(binomial_nll(z, k, n), bce, atol=1e-7)
 
 
-def test_it_agrees_with_the_live_trainers_cf_binomial_nll_at_unit_weights():
-    """Same normalization (SUM NLL / SUM n) as `cf_terms.cf_binomial_nll`, so an offline number
-    here is comparable with the live `cf/*` scalar rather than merely similar to it."""
-    from agents.training.cf_terms import cf_binomial_nll
-
+def test_it_agrees_with_the_naive_sigmoid_reference_at_unit_weights():
+    """Same normalization (SUM NLL / SUM n) as the deleted live trainer term, pinned against an
+    independent NAIVE reference (`-k log p - (n-k) log(1-p)` in float64, summed, over SUM n), so
+    the stable softplus form cannot drift from the definition it implements."""
     torch.manual_seed(1)
     z = torch.randn(50)
     n = torch.randint(1, 33, (50,)).to(torch.float32)
     k = torch.floor(torch.rand(50) * (n + 1)).clamp(max=n)
-    assert torch.allclose(binomial_nll(z, k, n), cf_binomial_nll(z, k / n, n), atol=1e-6)
+    p = torch.sigmoid(z.double())
+    ref = (-(k.double() * torch.log(p) + (n.double() - k.double()) * torch.log(1 - p))).sum() / n.double().sum()
+    assert torch.allclose(binomial_nll(z, k, n).double(), ref, atol=1e-6)
 
 
 def test_a_k_of_n_label_weighs_exactly_n_times_a_single_sample():

@@ -25,7 +25,7 @@ on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub
 | `noise_scale.py` | the McCandlish gradient-noise-scale estimator + the rate-limited NSR advisor + `noise_ratio_sample`, the read seam `--adaptive-batch` steers by |
 | `noise_scale_terms.py` | the PER-LOSS-TERM half of it — is the total reading the POLICY gradient's, or the auxiliary heads'? |
 | `value_terms.py` | the win-prob BCE |
-| `aux_terms.py` | the `belief_bank` / `td_aux` / `cf_terms` delegates |
+| `aux_terms.py` | the `belief_bank` / `td_aux` delegates |
 | `constants.py` | `_WIN_CONTESTED_TAU` · `_NOISE_SCALE_EMA_DECAY` |
 | `learner_gates.py` | **K9 — the learner's in-loop GIGO gates** (`designs/training/learner_gates.md`): the python-core behaviour gate on the first micro-batch's own forward (`behaviour_gate_mode` picks it or Lane G's pre-loop probe, never both) and the fail-closed non-finite checks — the buffer, the assembled loss per micro-batch (naming the term), the approx-KL, and `clip_grad_norm_checked` at every optimizer step. All raise before the optimizer moves anything |
 | `device_batches.py` | **K8 — HOW THE MICRO-BATCHES REACH THE DEVICE** (`gen3_device_batches_v1`, `gen3_device_batch_mode_v1`, `--device-batch`): `install(buffer, mode=...)` at the top of `train()`, `uninstall` after the epoch loop. `staged` (DEFAULT since 2026-10-01): the buffer's own `get()` is run unchanged (its `_get_samples` hands back the index slice), a prefetch thread gathers each slice on the host (`np.take` into a pinned block, 2 micro-batches ahead) and it is copied non-blocking on the COMPUTE stream (`gen3_staged_compute_stream_v1`: the old per-update side stream stranded +1.86 GiB of cache at N = 256 under `expandable_segments`, `learner_lifecycle.md` "The staged batch's stream") — ~2 micro-batches on the card. `resident` (K8.6): ONE device copy of the flattened arrays per update (made at the first micro-batch; +~1.1 GB of update peak at production shape). `host`: sb3's own path. Every mode draws the same permutation and serves BIT-IDENTICAL micro-batches (`instrumented_ppo_device_batches_test`, incl. a whole update per mode); the quiescent floor is unchanged. A CPU buffer keeps the host path |
@@ -100,7 +100,7 @@ number the optimizer sees, so they run on **every Nth update**; the module that 
 | gated probe | its tags (written ONLY on a diagnostics update — a skipped update leaves a GAP) |
 |---|---|
 | per-term noise sampler (`noise_scale_terms.py`) | `train/noise_scale_<g>`, `train/noise_scale_ratio_<g>`, `train/noise_scale_share_<g>`, `train/noise_per_term_ms` |
-| grad balance (`grad_balance_metrics`) | `grad/*`, and the two scalars read off it: `train/cf_grad_share`, `train/cf_evidential_grad_share` |
+| grad balance (`grad_balance_metrics`) | `grad/*` |
 | effective rank (`rank_probe`) | `rank/{trunk,value_cls,policy,vf_feat}_*` |
 | edge / cell liveness | `edge/*`, `cell/*` |
 

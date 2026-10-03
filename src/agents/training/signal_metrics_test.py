@@ -398,23 +398,3 @@ def test_the_signal_callback_is_registered_unconditionally():
         _sp_start_wr=0.5, _sp_full_wr=0.9)
     hits = [c for c in bundle.callbacks if isinstance(c, SignalMetricsCallback)]
     assert len(hits) == 1, f"expected exactly one SignalMetricsCallback, got {len(hits)}"
-
-
-def test_the_ladder_rung_entropy_rides_the_gate_window():
-    """`signal/outcome_entropy_rung` is emitted by the ladder callback (which owns the per-rung
-    window) and is exactly p(1−p) of the number its promotion gate reads."""
-    from agents.training.exploiter_ladder import ExploiterLadderCallback
-
-    from types import SimpleNamespace
-
-    cb = ExploiterLadderCallback.__new__(ExploiterLadderCallback)
-    cb._idx, cb._promotions, cb._last_wr = 1, [], 0.6
-    cb.model = SimpleNamespace(logger=_Logger())
-    cb._record()
-    assert cb.model.logger.rows["train/exploiter_rung_wr"] == pytest.approx(0.6)
-    assert cb.model.logger.rows["signal/outcome_entropy_rung"] == pytest.approx(0.24)
-
-    cb.model = SimpleNamespace(logger=_Logger())
-    cb._last_wr = float("nan")           # no completed window yet
-    cb._record()
-    assert "signal/outcome_entropy_rung" not in cb.model.logger.rows

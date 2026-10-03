@@ -44,10 +44,11 @@ _NON_FLAG_PARAMS = frozenset({"observation_space", "layout", "mappings", "log_le
 # v131 (deletion pass L1, the distributional value head): `value_dist_mode` is `_DEAD_FEK_JUDGED`
 # (refused ON, popped `"none"`), the other three `_DEAD_FEK_INERT`. `value_true_team` and `dense_aux`
 # LEFT it at v132 (deletion pass L2): both are `_DEAD_FEK_JUDGED` (refused ON, popped OFF).
+# `cf_evidential`, `cf_twin_heads`, `cf_shadow_critic` and `q_winprob_mode` LEFT it at v134 (deletion pass
+# L4, the cf / Q heads): all four are `_DEAD_FEK_JUDGED` (refused ON, popped OFF / `"none"`).
 # Sorted, so a diff reads as one line added or one line removed.
 CTOR_KWARGS_V96 = frozenset({
-    "attend_unrevealed_opponents", "belief_grad_mode", "cf_evidential", "cf_shadow_critic",
-    "cf_twin_heads", "consequence_topk",
+    "attend_unrevealed_opponents", "belief_grad_mode", "consequence_topk",
     "damage_candidate_k",
     "damage_matrices_incoming", "damage_matrices_outgoing", "damage_op", "damage_outgoing",
     "damage_topk_k", "edge_bias_families", "entity_tail_seats", "entity_topk_seats",
@@ -60,7 +61,7 @@ CTOR_KWARGS_V96 = frozenset({
     "opp_belief_slots", "opp_intent", "opp_intent_grad_mode", "species_prior_fusion",
     "spread_belief", "spread_belief_nature", "t0_species_prior",
     "value_entity_pool", "value_entity_pool_full", "value_threat_inject",
-    "win_prob_mode", "q_winprob_mode",
+    "win_prob_mode",
     "ridealong_ensemble", "ridealong_rnd", "ridealong_adv", "ridealong_opp",
     "ridealong_rnd_variants",
 })

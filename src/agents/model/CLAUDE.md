@@ -195,7 +195,7 @@ functions, why `__init__` is not split further, and the module-GLOBAL patching h
 must know: [`designs/model/file_layout.md`](../../../designs/model/file_layout.md).
 
 **⚠️ `forward` stays on `Gen3FeaturesExtractor`, and must.** Both compile flags patch the BOUND
-`fe.forward`; `cf_terms` calls `type(fe).forward` for a deliberately-EAGER pass; and
+`fe.forward`; the capacity probe calls `type(fe).forward` for a deliberately-EAGER pass; and
 `instrumented_ppo_test` ASSIGNS `type(fe).forward` and restores it. An attribute defined on a base
 would be SHADOWED by that assignment and the restore would leave the shadow in place forever.
 

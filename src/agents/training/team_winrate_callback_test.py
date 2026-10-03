@@ -40,16 +40,10 @@ def test_pool_keys_are_strip_normalized_like_the_artifact():
     assert _make_builder([TEAM_A + "\n\n"]).get_pool_team_keys() == [team_sha(TEAM_A)]
 
 
-def test_get_team_pfsp_keys_is_the_same_list():
-    """The PFSP-named accessor is kept as an alias — one key list, two readers."""
-    tb = _make_builder([TEAM_A, TEAM_B])
-    assert tb.get_team_pfsp_keys() == tb.get_pool_team_keys()
-
-
 # ── the builder accumulator ───────────────────────────────────────────────────
 
 def test_default_uniform_draw_is_rng_identical_with_tracking():
-    """The index is recovered by DICT LOOKUP, never by re-drawing — so the default (team_pfsp off)
+    """The index is recovered by DICT LOOKUP, never by re-drawing — so the default
     path consumes exactly the RNG it always did. This is the byte-identity claim."""
     tb = _make_builder([TEAM_A, TEAM_B])
     random.seed(4242)
@@ -117,16 +111,6 @@ def test_out_of_range_opp_class_is_dropped_not_mis_slotted():
     tb._last_pool_idx = 0
     tb.record_team_wr_outcome(1.0, 99, NCLS)
     assert tb.drain_team_wr_counts()[0] == {}
-
-
-def test_the_pfsp_table_and_the_tracking_table_are_independent():
-    """The two share the draw INDEX and nothing else — PFSP stays off-gated while tracking counts."""
-    tb = _make_builder([TEAM_A], team_pfsp="off")
-    tb._last_pool_idx = 0
-    tb.record_team_wr_outcome(1.0, POOL, NCLS)
-    tb.record_team_pfsp_outcome(1.0)                       # off ⇒ PFSP records nothing
-    assert tb.drain_team_pfsp_counts()[0] == [0.0]
-    assert tb.drain_team_wr_counts()[0][0][1][POOL] == 1.0  # tracking recorded it anyway
 
 
 # ── the wrapper hook ──────────────────────────────────────────────────────────

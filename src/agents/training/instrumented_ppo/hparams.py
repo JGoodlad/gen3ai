@@ -148,88 +148,6 @@ class PpoHyperparameters:
     # silent no-op). Training-only, resume-mutable; scales a loss, touches no forward pass.
     win_prob_strata_weight: float = 0.0
 
-    # COUNTERFACTUAL WIN-PROB GROUNDING (gen3_cf_label_plumbing_v1; G3 of
-    # designs/ai_v10/design_counterfactual_value_grounding.md, rung R1). A background producer
-    # re-rolls recorded training decisions to termination and drops tight Monte-Carlo P(win) labels
-    # as JSONL; `_cf_buffer` (an `agents.training.cf_label_buffer.CfLabelBuffer`, attached
-    # externally like `_async_rollout`) ingests them, and this coefficient folds
-    #     cf_winprob_coef * BCE( win_head(value_pooled(s)), MC_label(s) )
-    # over its OWN sample and its OWN extractor forward — the labelled states are OFF-DISTRIBUTION
-    # w.r.t. this rollout, so they cannot ride the minibatch.
-    #
-    # 0.0 = OFF and the whole block is skipped: no poll, no sample, no forward, loss byte-identical.
-    # TRAINING-only (a loss weight; no forward/weight-shape change) → NOT version-locked, NOT in
-    # check_compatible, resume-mutable — the `td_aux_coef` class.
-    cf_winprob_coef: float = 0.0
-    # THE SAFE STAGE, and the DEFAULT. True → the head's input `value_pooled` is stop-grad'd for
-    # this term, so it trains the win-prob head's own params ONLY and cannot perturb the trunk (a
-    # pure, risk-free delivery — `grad/cf_winprob_share` reads exactly 0.0 by construction). False
-    # → the ground-truth objective also shapes the shared trunk. Independent of the extractor's own
-    # `win_prob_mode` read_only/shaping split, which governs the ON-POLICY win-prob BCE, not this.
-    cf_head_only: bool = True
-    # Set by train_rl_agent alongside the buffer; the buffer itself owns the bound (this is the
-    # value it was constructed with, kept here only for the record).
-    cf_label_lag_steps: int = 0
-    # gen3_cf_binomial_likelihood_v1: WHICH likelihood the scalar cf term uses.
-    #   'binomial' (the DEFAULT) — the exact binomial NLL of the row's win COUNT:
-    #       w = round(label*n), NLL_i = -[w*log q + (n-w)*log(1-q)], folded as sum(NLL)/sum(n).
-    #     Each row is weighted by its evidence, so an R=16 label pulls 4x an R=4 label. That is not
-    #     a heuristic weighting — it is what the likelihood of the data actually is, and the flat
-    #     form was implicitly asserting every label carries one observation.
-    #   'bce' — the flat per-row BCE on the scalar `label`, i.e. the pre-2026-08-22 behaviour, kept
-    #     as the A/B arm. The two are EXACTLY equal when every n == 1 (a 1-rollout label is already
-    #     0 or 1, so the round is the identity and sum(n) == B).
-    # TRAINING-only (a loss FORM, no forward and no weight shape) -> not version-locked, not in
-    # check_compatible, NOT read back on a flagless resume: the `td_aux_coef` class.
-    cf_label_likelihood: str = "binomial"
-    # gen3_cf_evidential_head_v1: the EVIDENTIAL Beta term's weight. Folds
-    #     cf_evidential_coef * ( BetaBinomialNLL(alpha,beta; w,n)/sum(n)
-    #                            + cf_evidential_reg * mean KL(Beta(a,b) || Beta(1,1)) )
-    # over the SAME sampled rows and the SAME extractor forward as the scalar cf term. 0.0 = OFF and
-    # the whole block is skipped. TRAINING-only; the STRUCTURAL half is the extractor's
-    # `cf_evidential` kwarg (v98), which decides whether the head's params exist at all.
-    cf_evidential_coef: float = 0.0
-    # The evidential-overconfidence guard's weight, RELATIVE to the NLL (it sits inside the coef).
-    # Evidential heads inflate alpha+beta without bound on locally-consistent data; a small pull
-    # back toward the uninformative Beta(1,1) is the standard remedy.
-    cf_evidential_reg: float = 1e-3
-    # gen3_cf_twin_heads_v1: the TWIN win-prob heads' cf weight — the owner-authorized amendment to
-    # the signed R1 pre-registration (ledger 2026-08-22 evening, "Three owner sign-offs" item 3).
-    # ONE coefficient for BOTH twins on purpose: B and C must differ in their LABEL STREAM and in
-    # nothing else, and two knobs would eventually be set to two numbers.
-    #
-    #   head A (`win_head`)       : the on-policy single-outcome BCE ONLY — the CONTROL, untouched
-    #   head B (`cf_twin_head_b`) : A's loss + cf_twin_coef * NLL(B; SINGLE-OUTCOME labels, n=1)
-    #   head C (`cf_twin_head_c`) : A's loss + cf_twin_coef * NLL(C; TIGHT-MC labels, n=R)
-    #
-    # B−A isolates COVERAGE (the same loss form on extra states); C−B isolates pure VARIANCE
-    # REDUCTION (the same states, the same form, a tighter target). The twins' half of "A's loss" is
-    # folded at head A's own weight (1.0), not at this coefficient, so all three heads carry a bit-identical
-    # A-term. 0.0 = OFF and the WHOLE twin block is skipped (including the on-policy mirror), so a
-    # built-but-unused pair of heads leaves every parameter update byte-identical.
-    # TRAINING-only (a loss weight) → the `td_aux_coef` class; the STRUCTURAL half is the extractor's
-    # `cf_twin_heads` kwarg (v99), which decides whether the heads' params exist at all.
-    cf_twin_coef: float = 0.0
-    # gen3_cf_twin_heads_v1: the SHADOW CRITIC's weight. Folds
-    #     cf_shadow_coef * masked-MSE( shadow(value_pooled.detach()), normalize(mc_return) )
-    # over the same sampled rows and the same extractor forward. The head never computes an
-    # advantage and never enters GAE — it is the staged PROMOTION PATH for critic surgery (a critic
-    # ROUTE change owes C4), so what it produces is evidence, not a training change to the critic.
-    # 0.0 = OFF, whole block skipped. TRAINING-only; the STRUCTURAL half is `cf_shadow_critic` (v99).
-    cf_shadow_coef: float = 0.0
-    # ---- gen3_q_winprob_head_v1 — THE PER-ACTION WIN-PROB HEAD (`q_winprob/*`) -----------------
-    # The COUNTERFACTUAL term's weight. Folds
-    #     q_winprob_coef * masked-binomial-NLL( q_head(pointer tokens), q_labels ; Sum(mask*n) )
-    # over the same sampled rows and the same extractor forward as every cf term. 0.0 = OFF, whole
-    # block skipped. TRAINING-only; the STRUCTURAL half is `q_winprob_mode` (v107), which decides
-    # whether the head's params exist at all.
-    q_winprob_coef: float = 0.0
-    # The WEAK on-policy fallback's weight — SEPARATE on purpose. 🚨 It labels ONE action of
-    # eleven, drawn from the policy's own choices (measured preferred-alternative rate p≈0.002), so
-    # it teaches the head where the policy already goes and leaves it confidently wrong on the
-    # never-tried moves. That is the exact failure the counterfactual stream exists to avoid, which
-    # is why this defaults to 0.0 and why one coefficient could never have covered both.
-    q_winprob_onpolicy_coef: float = 0.0
     # ---- gen3_capacity_telemetry_v1 — LIVE CAPACITY TELEMETRY (`capacity/*`) -------------------
     # The master switch for all three probes (plasticity canary / half-batch trunk cosine / feature
     # velocity). TRAINING-only and, uniquely in this file, it is not even that: it folds NO term
@@ -249,9 +167,6 @@ class PpoHyperparameters:
     capacity_velocity_every: int = 50
 
     def _excluded_save_params(self):
-        # `_cf_buffer` is the TRANSIENT scaffolding genre (like SB3's `rollout_buffer`): refilled from disk by
-        # the producer, holding a threading.Lock cloudpickle can't serialize and hundreds of MB of obs if
-        # pickled. Excluded for both reasons; re-created on resume, empty.
         # `_capacity_state` (gen3_capacity_telemetry_v1) is excluded DELIBERATELY and the
         # consequence is documented rather than hidden: it holds the canary's head, its Adam state,
         # the projection matrix and the frozen probe batch, so a resume re-inits the canary and its
@@ -291,7 +206,6 @@ class PpoHyperparameters:
         return super()._excluded_save_params() + ["_rust_collector", "_rust_fill", "_rust_row_versions",
                                                   "_rust_row_provenance",
                                                   "_rust_version", "_behaviour_probe_metrics", "_env_core_stamp",
-                                                  "_cf_buffer",
                                                   "_capacity_state",
                                                   "_vf_scale_announced", "_diagnostics_ran_in_process",
                                                   "collect_rollouts",

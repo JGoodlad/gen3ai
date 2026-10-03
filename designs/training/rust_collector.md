@@ -181,14 +181,15 @@ core that global stream was also RE-SEEDED by every pool load until 2026-10-02, 
 
 `RustVecEnv.SURFACE` maps every `env_method` a production callback calls (self-play pushes → Lane E's
 `RustEnvOpponents`; `drain_team_wr_counts`, `drain_reward_terms`, `opponent_default_stats`,
-`exploiter_winrate_totals`, `set_exploiter_temperature`). `REFUSED_WITH_FLAG` names the ones reachable
-only under a flag the Rust core refuses at startup; `rust_vec_env_test.py` walks every `env_method`
-call in the training sources and fails on one in neither table.
+`exploiter_winrate_totals`, `set_exploiter_temperature`) and nothing else — a method outside
+`SURFACE` is a typed `RustEnvSurfaceError`; `rust_vec_env_test.py` walks every `env_method` call in
+the training sources and fails on one that is not in it. (The refused-method table
+`REFUSED_WITH_FLAG` is deleted with the flags it named, deletion pass L4.)
 
 ## T2 slot groups and buckets
 
-One slot group per ARCHITECTURE in the route table's slot order (pool, stables, exploiter — two slots
-under a ladder, F-LE-6), then the trainee's slot(s); consecutive same-architecture routes share a group
+One slot group per ARCHITECTURE in the route table's slot order (pool, stables, exploiter — ONE slot;
+the two-slot ladder plan of F-LE-6 was deleted with the exploiter ladder, deletion pass L4), then the trainee's slot(s); consecutive same-architecture routes share a group
 (F-LE-7). Default buckets `(8, N)`, plus 64 when N > 64 (`build.py` states why; decision: the program doc's
 Decision record). PER-SLOT CAPS (`gen3_slot_bucket_caps_v1`, `--t2-opponent-bucket-cap`, default 64): only the
 trainee's slot(s) capture the N-row bucket; every other slot (opponents, eval's) captures the buckets <= 64, rows

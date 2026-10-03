@@ -4,6 +4,15 @@
 before touching the arm; everything else is here, and this file carries the same always-current
 obligation as the leaf — update it in the same pass as the code.
 
+> **STATUS (deletion pass L4, 2026-10-02).** The PYTHON-core fork arm described in §§1–13 is
+> **UNREACHABLE**: it replayed its episode from the `<run>/cf_records/` ring, the ring and its flag
+> (`cf-records`) were deleted with the cf training half, and `--fork-fraction > 0` on
+> `--env-core python` is refused (combination row `fork_python_core_unavailable`). Its code is deleted
+> in unit L5. The **live arm is the Rust fork port (§14)**, which replays the core's own finished input
+> log and needs no ring. §§1–13 stay as the record of what was measured and built (the measurement in
+> §1, the draw pairing, the cost model and the endpoints all carry to the Rust port); wherever they name
+> the ring, `fork/records_missing` or the ring's cap, read it as history of the Python arm.
+
 ---
 
 ## 1. WHY — one measurement, and the conclusion it forces
@@ -261,7 +270,7 @@ belief label is a fact about the opponent's team read from `battle2` inside the 
 env, so those rows are masked out of their losses. The cost is supervision on those rows; the
 alternative cost is a belief head trained on fiction.
 
-The arm's refusals are THREE `combination_checks` rows: it needs the winprob critic, it needs `--cf-records` on the python core, and it refuses `--win-prob-strata-weight`
+The arm's refusals are THREE `combination_checks` rows: it needs the winprob critic, it is unavailable on the python core (`fork_python_core_unavailable`, deletion pass L4), and it refuses `--win-prob-strata-weight`
 (it prices rows by `win_margin`, which the env's reward manager computes — every injected row would
 carry the 0.0 fill and land in one stratum, making the delivered strata dose a function of the fork
 rate). An obs key the fill table does not know is refused at setup, never guessed (`fork_buffer`'s fill table; the `REFUSE_KEYS` set that held `distill_mask` was deleted with distillation, deletion pass L3). The privileged true-team and dense-aux flags the arm once also refused are deleted (deletion pass L2).
@@ -353,7 +362,7 @@ the arm disabled itself, which announces itself once) and nothing else.
 | **`sim_steps_share`** | **THE COST.** Branch decisions / the trainee's own collection decisions |
 | `fraction` / `branches` / `crn_draws` | the configuration, echoed so a plot is self-describing (`crn_draws` 1 ⇒ `dice_and_draws`) |
 | `eligible` / `pool` / `gap_threshold` | the selector's own state: how many rows were forkable, how many were scored, and where the quantile landed |
-| `requested` / `forks` / `failed` / `records_missing` | asked for, completed, lost, and lost specifically to a pruned `cf_records` ring |
+| `requested` / `forks` / `failed` / `records_missing` | asked for, completed, lost, and lost specifically to a pruned `cf_records` ring (Python arm only) |
 | `injected_rows` / `masked_rows` / `dropped_forks` | rows added, fork steps masked out of the policy term, forks dropped whole at the row budget |
 | `rows_per_fork` / `row_budget` | the MEASURED mean rows a fork contributes, and the budget it is bounded by. `rows_per_fork` is what caps the NEXT rollout's ask; a rising one on a lengthening run is the tell that the fork count is about to fall |
 | `seconds` / `worker_failures` / `branches_capped_frac` | the STALL this added to the training loop, killed children, and the share of branches that hit the 250-turn cap (those are dropped) |
@@ -363,18 +372,15 @@ the arm disabled itself, which announces itself once) and nothing else.
 
 ## 12. OPERATING IT
 
-**Both requirements are refused at launch, not discovered at runtime:** `--critic winprob` (§7) and
-`--cf-records` (a fork replays its episode, and the replayable record lives in the ring that flag
-switches on).
-
-🚨 **RAISE `--cf-records-keep`.** The ring is pruned GLOBALLY to the newest N while a production
-rollout finishes ~2,400 episodes, so at the default 512 the forks that DO resolve are the rollout's
-LATE ones — a **selection bias**, not just a shortfall. `fork/records_missing` is the tell; the
-refusal text names the flag. Set it above `n_envs × n_steps / mean_episode_length`.
-
-The registered launch is `ctrl10M`'s argv plus `--fork-fraction 0.02 --fork-branches 3 --seed 1001
---cf-records --cf-records-keep 4096`, i.e. the arm on top of the exact configuration whose 0.5169
-baseline it is being read against.
+**The Python-core operating recipe is HISTORY (deletion pass L4).** The Python arm needed a replayable
+record per forked episode, which lived in a ring (flag `cf-records`, pruned globally to the newest N by
+`cf-records-keep`); at the default 512 against a production rollout of ~2,400 finished episodes the forks
+that DID resolve were the rollout's LATE ones — a selection bias, with `fork/records_missing` as the
+tell — so the registered launch raised the cap to 4096: `ctrl10M`'s argv plus `--fork-fraction 0.02
+--fork-branches 3 --seed 1001` and the ring flags, i.e. the arm on top of the exact configuration whose
+0.5169 baseline it is being read against. None of that can be launched now: the ring flags are gone and
+the Python core refuses the arm. A Rust-core launch needs `--critic winprob` (§7) and the §14.7 refusals
+only.
 
 **Registered endpoints, in order** (from the measurement's orchestrator note):
 
@@ -396,7 +402,7 @@ population substitution, so `signal/stall_rate` and the entropy trace are read a
 
 ## 13. THE SMOKE, and what it measured
 
-`--debug --steps 10000 --fork-fraction 0.05 --cf-records --cf-records-keep 4096` on CPU, one
+(Python core, run before deletion pass L4 — not reproducible now.) `--debug --steps 10000 --fork-fraction 0.05` with the ring flags (`cf-records`, `cf-records-keep 4096`) on CPU, one
 `DummyVecEnv` at `n_steps` 2048, `--use-bridge rust`. **Training complete**, 0 `worker_failures`,
 0 `records_missing`.
 
@@ -555,8 +561,9 @@ Four tags are new:
 - `--opponent-sampling keyed` (§14.3);
 - `--rollout-trigger complete_game` (the window fill is the parity schedule).
 
-`--cf-records` is a Python-core requirement only; the core's finished logs replace the ring. Every
-other fork refusal holds on both cores: `winprob` and strata weight.
+The ring was a Python-core requirement only; the Rust core's finished logs replace it, and the Python
+core's arm is now refused outright (`fork_python_core_unavailable`, deletion pass L4). The other fork
+refusals hold: `winprob` and strata weight.
 
 ### 14.8 Gates (each FAILS on revert)
 

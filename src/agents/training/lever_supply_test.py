@@ -2,7 +2,7 @@
 
 Pins the shared guard (`agents.training.lever_supply`), the exit-code mapping of both error classes,
 the launcher's response to each code, and each lever's wiring: the self-play POOL and PFSP
-(`SelfPlayCallback`) and team-PFSP (`TeamPFSPCallback`). The fork arm is pinned in its own test
+(`SelfPlayCallback`). (Team-PFSP's guard was deleted with the lever, deletion pass L4.) The fork arm is pinned in its own test
 files; the real-trainer exits are in `lever_supply_integration_test.py`. (`--bot-weights` and the
 warm-start — FATAL_CONFIG, never CRASH — are `main/train/fatal_config_exits_test.py`.)
 
@@ -96,8 +96,10 @@ def test_the_overrides_parse_and_a_typo_is_refused():
     for bad in ("nope=3", "fork", "fork=-1", "fork=x"):
         with pytest.raises(ValueError):
             parse_starve_overrides(bad)
-    ns = types.SimpleNamespace(supply_starve_cycles="team_pfsp=9")
-    assert starve_cycles_for(ns, "team_pfsp") == 9
+    ns = types.SimpleNamespace(supply_starve_cycles="pfsp=9")
+    assert starve_cycles_for(ns, "pfsp") == 9
+    with pytest.raises(ValueError):
+        parse_starve_overrides("team_pfsp=3")        # the deleted lever's key is a typo now
     assert starve_cycles_for(ns, "fork") == LEVERS["fork"].default_cycles
 
 
@@ -253,55 +255,6 @@ def test_PFSP_with_sentinels_but_no_measured_win_rate_is_FATAL(tmp_path, monkeyp
         _cycle(cb, 3)
     assert "--pfsp-scale" in str(ei.value)
     assert cb._pool_guard.streak == 0, "the pool is seeded — only PFSP starved"
-
-
-# -- team-PFSP ---------------------------------------------------------------------------------
-
-def _team_cb(drain, live, starve=2):
-    from agents.training.team_pfsp_callback import TeamPFSPCallback
-    from agents.training.team_pfsp_callback_test import _FakeLogger, _FakeVecEnv
-    env = _FakeVecEnv(drain)
-    cb = TeamPFSPCallback(cap=3.0, floor=0.05, update_every=1, mode="var",
-                          live_probe=live, starve_cycles=starve, emit=_quiet)
-    cb.model = types.SimpleNamespace(logger=_FakeLogger(), get_env=lambda: env)
-    return cb
-
-
-def test_team_PFSP_with_live_self_play_and_no_team_game_is_FATAL():
-    cb = _team_cb([([0.0, 0.0], [0.0, 0.0], 2)], live=lambda: True)
-    cb._on_rollout_end()
-    with pytest.raises(LeverStarvedError) as ei:
-        cb._on_rollout_end()
-    assert "--team-pfsp" in str(ei.value)
-
-
-def test_team_PFSP_is_not_judged_while_self_play_is_not_live():
-    cb = _team_cb([([0.0, 0.0], [0.0, 0.0], 2)], live=lambda: False)
-    for _ in range(10):
-        cb._on_rollout_end()
-    assert cb._guard.streak == 0 and cb._guard.cycles == 10
-
-
-def test_team_PFSP_games_keep_it_alive():
-    cb = _team_cb([([1.0, 0.0], [2.0, 1.0], 2)], live=lambda: True)
-    for _ in range(10):
-        cb._on_rollout_end()
-    assert cb._guard.total == 30
-
-
-def test_the_live_probe_reads_the_pool_and_the_curriculum_fraction():
-    from unittest.mock import MagicMock
-    from main.train.callbacks import team_pfsp_live_probe
-    assert team_pfsp_live_probe(types.SimpleNamespace(exploiter="models/t"), None) is None
-    pool = MagicMock()
-    pool.is_empty.return_value = True
-    probe = team_pfsp_live_probe(types.SimpleNamespace(exploiter=None), pool)
-    assert probe() is False
-    pool.is_empty.return_value = False
-    pool.load_summary.return_value = {"self_play_fraction": 0.0}
-    assert probe() is False
-    pool.load_summary.return_value = {"self_play_fraction": 0.4}
-    assert probe() is True
 
 
 def test_every_lever_names_a_real_flag():

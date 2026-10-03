@@ -86,8 +86,8 @@ def kl_controller_snapshot(callback: Any) -> Optional[Dict[str, Any]]:
     cloudpickles the model's `__dict__`, and an LR callback holds a back-reference to the model and
     to SB3's `Logger` — which carries a `_contextvars.Context` and CANNOT be pickled. Stashing the
     live object on the model therefore breaks EVERY save in the run, at the pre-train round-trip
-    smoke (observed, 2026-09-01). Same hazard the `_cf_buffer` exclusion documents; here the
-    fix is not to hold the object at all, which needs no exclusion list to stay true.
+    smoke (observed, 2026-09-01). The fix is not to hold the object at all, which needs no
+    exclusion list to stay true.
 
     Read DUCK-TYPED rather than by class, so it covers `AdaptivePPOCallback`, `TwoPhaseLRCallback`
     and a test double alike. `anneal_start_steps` rides along because `phase` is a function of the

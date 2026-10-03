@@ -1,25 +1,25 @@
 # Supply guards — every live lever's supply is a DECLARED resource (`gen3_supply_guard_v2`)
 
 **Owner of:** `agents/training/lever_supply.py` (the shared guard), `agents/training/selfplay_supply.py`
-(the self-play pool + PFSP mixin), the guard wiring in `team_pfsp_callback.py`, `win_prob_callback.py`,
+(the self-play pool + PFSP mixin), the guard wiring in `win_prob_callback.py`
 and `fork_callback.py`, the `--bot-weights` / warm-start refusals
 in `main/train/matchup_setup.py` and `agents/training/warmstart.py`, and `main.exit_codes.FatalConfigError`.
-The cf label producer's own guard (`gen3_supply_guard_v1`) is
-[`cf_grounding.md`](cf_grounding.md) § *THE SUPPLY IS A DECLARED RESOURCE*; this doc is the rest.
+The cf label producer's own guard (`gen3_supply_guard_v1`) was deleted with the cf training half
+(deletion pass L4, 2026-10-02; history in [`cf_grounding.md`](cf_grounding.md)); this doc is the shared
+guard and the levers still live.
 
 ## Why
 
 The supply inventory of 2026-09-30 looked for one shape across the trainer: **a flag is set, the
 mechanism behind it silently delivers nothing, and the run then reads as a result about that
-lever.** v1 closed the cf label producer (`ai_v12_12_ladder_cflabels`: 10M steps at
-`--cf-winprob-coef 0.5`, zero labels). v2 closes the rest of that inventory (the `win_prob_rollout` lever it also covered was deleted with the R-rollout target, deletion pass L2, and the `search_teacher` lever with the search teacher, deletion pass L3):
+lever.** v1 closed the cf label producer (`ai_v12_12_ladder_cflabels`: 10M steps at a live cf win-prob
+coefficient of 0.5, zero labels; the guard went with the cf training half, deletion pass L4). v2 closes the rest of that inventory (the `win_prob_rollout` lever it also covered was deleted with the R-rollout target, deletion pass L2, the `search_teacher` lever with the search teacher, deletion pass L3, and the `team_pfsp` lever with team-PFSP, deletion pass L4):
 
 | lever (`--supply-starve-cycles` key) | what used to happen silently | declared floor |
 |---|---|---|
 | `self_play_pool` — `--self-play` | a pool that never seeds → every episode falls back to the BOT pool | 3 eval cycles |
 | `pfsp` — `--pfsp-scale` | no measured sentinel win-rate → the pool sample stays uniform (or stale) | 3 eval cycles |
-| `team_pfsp` — `--team-pfsp` | no self-play / exploiter team game → team sampling stays uniform | 5 updates |
-| `fork` — `--fork-fraction` | the arm DISABLED itself with a print (no fork buffer / missing obs key / no handle / no ring), or every pass failed | 5 rollouts |
+| `fork` — `--fork-fraction` | the arm DISABLED itself with a print (no fork buffer / missing obs key / no handle / no ring; the Python arm is unreachable and goes in L5, so the live arm is the Rust fork port), or every pass failed | 5 rollouts |
 
 Plus two STARTUP refusals that exited 1 (CRASH, which the launcher restarts into the same error)
 or did not exit at all:
@@ -29,8 +29,8 @@ or did not exit at all:
 | `--bot-weights` typo / non-number / negative / all-zero | `sys.exit(1)` or a bare `ValueError` → CRASH; the launcher restarted it until its rapid-crash breaker (3) | `BotWeightsRejected` → `FATAL_CONFIG` (3) |
 | `--warmstart-consensus` failure (teacher resolution, battles, BC) | an uncaught exception → CRASH. The warm-start is rebuilt from scratch on every restart, and one that failed AFTER the launcher's 10-minute rapid-crash window reset the breaker each time — **an unbounded crash loop** | `WarmstartFailed` → 3; a partial `warmstart_consensus.zip` is removed |
 
-And two startup refusals for a PFSP flag with no possible supply (`combination_checks`, so
-`checkargs` sees them): `pfsp_scale_needs_self_play`, `team_pfsp_needs_self_play_or_exploiter`.
+And a startup refusal for a PFSP flag with no possible supply (`combination_checks`, so
+`checkargs` sees it): `pfsp_scale_needs_self_play`.
 
 ## The mechanism
 
@@ -65,7 +65,6 @@ about that lever.` when a live lever delivered nothing, else its total.
 |---|---|---|---|
 | `self_play_pool` | one COLLECTED eval cycle (`SelfPlayCallback._collect_pending`), **failed cycles included** | 1 if the pool is non-empty after the cycle | always (`--self-play` is the declaration) |
 | `pfsp` | the same cycle | sentinel win-rates measured | the cycle launched ≥ 1 sentinel (an empty pool is the pool guard's job) |
-| `team_pfsp` | one `TeamPFSPCallback` update (every 3 rollouts) | team games counted on POOL teams | `--exploiter`: always. `--self-play`: the pool is seeded AND the persisted `self_play_fraction` > 0 (`callbacks.team_pfsp_live_probe`) |
 | `fork` | one rollout | fork rows injected (a failed pass = 0) | `--fork-fraction` > 0 |
 
 **Why the self-play floor counts a gate that never opens.** The pool seeds only when
@@ -82,7 +81,7 @@ steps; a launcher segment is ~3 h. A per-process streak would reset at every res
 of 3 could trip. So the self-play / PFSP counters ride the pool's `summary.json` (key
 `supply_guard`, stamped with THIS run dir — a fork's pool is seeded with its parent's summary, and
 inheriting the parent's streak would judge the fork by cycles it never ran). They are written BEFORE the judge raises. The rollout-cycle
-guards (`team_pfsp`, `fork`) are per process: their floors are ~0.5–1.5M steps.
+guard (`fork`) is per process: their floors are ~0.5–1.5M steps.
 
 **The FATAL is never raised from a graceful drain.** `SelfPlayCallback._on_training_end` drains the
 in-flight eval cycle with `_draining` set: the cycle is counted and the summary is loud, but a
@@ -91,22 +90,22 @@ completed run is not turned into exit 5 from inside its own shutdown path.
 ## TensorBoard
 
 `supply/selfplay_pool_dry_streak`, `supply/pfsp_dry_streak`, `eval/failed_cycles_total`,
-`supply/team_pfsp_dry_streak`, `supply/fork_dry_streak`.
+`supply/fork_dry_streak`.
 
 ## Honest limits
 
 * **Arrival, not quality.** A guard checks that the lever delivered SOMETHING; a fork arm injecting
   one row per rollout passes. The levers' own meters (`fork/*`,
-  `eval/pfsp_*`, `team_pfsp/n_measured`) still own quality.
+  `eval/pfsp_*`) still own quality.
 * **A pool that seeds and then regresses below the gate** (non-empty pool, `self_play_fraction` 0)
-  is the curriculum working as designed and is NOT a FATAL; it is not live for `team_pfsp` either.
+  is the curriculum working as designed and is NOT a FATAL.
 * **`--debug` without `--debug-eval` runs no eval**, so no `SelfPlayCallback` and no pool guard.
 
 ## Tests
 
 `agents/training/lever_supply_test.py` (the guard, the exit mapping, the launcher on 1/3/5, the pool
 and PFSP guards through a real `_collect_pending`, run-level persistence across a simulated restart,
-a fork's inherited counters ignored, failed cycles, the drain, team-PFSP liveness, `--bot-weights`, the warm-start wrap); the fork guard in
+a fork's inherited counters ignored, failed cycles, the drain, `--bot-weights`, the warm-start wrap); the fork guard in
 `fork_callback_test.py`; `agents/training/lever_supply_integration_test.py`
 with REAL processes — the trainer exits 3 on a `--bot-weights` typo (rc 1 on the parent commit), and (slow, sim) the
 `--debug` trainer exits 5 on a self-play run that can never seed.

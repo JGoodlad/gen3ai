@@ -54,7 +54,7 @@ Three ways a command fails, and it reports all three in one pass:
     expensive than an argparse error: the run dir exists, the child starts, and the traceback comes
     out of `Gen3FeaturesExtractor.__init__`.
   * a combination `resolve_config` refuses — `main.train.combination_checks`, the value-conditional
-    rules that are not `requires`-shaped (`--cf-winprob-coef > 0` needs `--win-prob-mode`).
+    rules that are not `requires`-shaped (`--pfsp-scale > 0` needs `--self-play`).
 
 ⚠️ AN ARGV IS NOT A CONFIG, and this tool believed it was for three launches. With `--model`, every
 flag the argv does NOT name is INHERITED from the checkpoint's recorded `model_config.json`
@@ -463,7 +463,7 @@ def _unmet_needs(combo, ns) -> List[str]:
 
 
 def _provenance(dest: str, ns, inherited: Dict[str, Any]) -> str:
-    """`--cf-winprob-coef 0.5 (INHERITED from the parent's model_config.json)` — one finding's
+    """`--opp-belief-aux-coef 0.05 (INHERITED from the parent's model_config.json)` — one finding's
     origin. The word INHERITED is what turns a puzzling refusal into an obvious one."""
     val = getattr(ns, dest, None)
     flag = "--" + dest.replace("_", "-")
