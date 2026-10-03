@@ -133,7 +133,10 @@ never reached 100), on the committed real-obs fixture
 and through DECLARED signatures only. Each run compares compiled against eager on two things:
 - the decision readout (masked legal log-probs, V) at the rollout signature (eval / no-grad / `n_envs`);
 - the train graph: on K8, region R1's loss and every policy gradient, with the per-parameter bar
-  chosen by `compile_regions.weights_regime`; on the legacy compile, the gate's probe loss.
+  chosen by `compile_regions.weights_regime`, on R1's gate rows — ALWAYS the K9 golden's labelled
+  buffer, a key it lacks at its declared placeholder (`compile_regions.r1_batch`; P10-C: before it, a
+  fork-shaped run's canary judged zero-label rows, with ~48 critic / intent / belief parameters
+  unjudged); on the legacy compile, the gate's probe loss.
 
 The train-graph check now runs at EVERY canary (`GRAD_EVERY` 1). It used to run every 4th. It costs
 0.65–0.71 s at the production shape: arm C's weights, CUDA, `n_envs` 48, B = 2048, R1 through the compiled region and eager. The decision readout alone costs 0.06–0.09 s. Against a 36 s update every 100 updates that is under 0.02% (`~/gen3ai_archive/k6_k8/r1bar/canary_cost.log`, 2026-10-01).

@@ -1197,9 +1197,20 @@ each compiled `fullgraph=True, dynamic=False`, so a graph break INSIDE a region 
 
 The sequence: reset → `install` (removes any instance-level compiled extractor forward, so every
 other caller of the extractor runs eager) → `gate_regions` holds R1 and R0 to eager on REAL rows (R1
-on the K9 golden's labelled buffer when the run's observation keys match it — the production surface
-— else the committed real-obs fixture with zero labels: the loss, the gradient over every policy
-parameter at the cosine and per-parameter bars; R0's decision readout, on a seeded perturbation when
+ALWAYS on the K9 golden's labelled buffer — `gen3_r1_golden_rows_always_v1`, P10-C: a key the run
+declares that the golden lacks takes its DECLARED placeholder (`compile_regions.fill_value`: the label
+inventory's `host_const` value — the fork arm's `fork_pg_m` = 1.0, a multiplier on the policy term — or
+the extra-obs-keys registry's zeros), a golden key the run does not declare is dropped (its term is off
+in that run), and anything else — a shape mismatch, an undeclared key, an unreadable buffer — is
+FATAL_CONFIG naming it; the old zero-label fallback blanked the critic / intent / belief losses, so
+every `--fork-fraction > 0` run judged 176 parameters where the golden rows judge 219, measured CPU
+B = 256 on the golden learner. When a key was filled, R1's judged parameter set is held to the golden
+rows' own on the same weights (one extra eager micro-step without the key, the static resolved from a
+buffer without it; `gen3_r1_judged_set_v1`): a parameter the golden rows judge CLEARLY (gradient-norm
+ratio > `JUDGED_SET_BAND` = 2x the floor) that the run's rows do not judge is FATAL_CONFIG — the band
+keeps a parameter a hair from the floor (the smallest judged one reads 1.01e-3) from ever deciding it.
+The gate line reads `R1 judged set >= the golden rows' own: all N parameters …`. The loss, the gradient
+over every policy parameter at the cosine and per-parameter bars; R0's decision readout, on a seeded perturbation when
 the weights are fresh; at fp32 `highest`, the only precision, a process at any other is refused)
 → prewarm exactly the declared signatures → LOCK (K6) → the canary every 100 updates (confirmed in the same update before it FATALs — `designs/training/learner_lifecycle.md`)
 (`compile_canary._regions`). The regions are the ONLY compiled learner surface: on torch 2.5.1

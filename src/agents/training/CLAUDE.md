@@ -618,7 +618,7 @@ DETERMINISTIC (`gen3_behaviour_tie_exclusion_v1`: the policy forward selects wit
 `designs/training/learner_gates.md`).
 🚨 **`--compile-trainer`'s startup gate (the REGION gate, `compile_regions.gate_regions`) runs on REAL
 obs rows**, never zeros. The rows are the committed fixture `src/agents/model/compile_parity_obs.npz`
-(R1 uses the K9 golden's labelled buffer on the production surface); regenerate the fixture with
+(R1 ALWAYS uses the K9 golden's labelled buffer — a key the run declares that the golden lacks, e.g. the fork arm's `fork_pg_m`, at its DECLARED placeholder (`compile_regions.fill_value`), an unfillable space FATAL_CONFIG, and a fill that shrinks R1's judged parameter set below the golden rows' own FATAL_CONFIG; P10-C — the old zero-label fallback left ~48 critic / intent / belief parameters unjudged on every fork run); regenerate the fixture with
 `python -m agents.model.compile_parity_fixture --write` after an obs-layout change, and a stale
 fixture REFUSES. It holds R0's decision readout (MASKED legal log-probs, V) and R1's loss and every
 policy gradient (cosine ≥ 0.9999 plus the per-parameter rule) to eager. **On FRESH weights** (a fresh

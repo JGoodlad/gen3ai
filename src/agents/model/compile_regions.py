@@ -39,9 +39,17 @@ TORCH. Regions are a torch 2.8 feature, and HEAD runs torch >= 2.8 only (`utils.
 the ONLY compiled learner surface (the 2.5.1 extractor-only compile was deleted 2026-10-02); a run
 trained on 2.5.1 resumes pinned to its own commit, which still carries that compile.
 
-THE GATE. `gate_regions` holds each compiled region to eager at startup on REAL rows (R1 on the K9
-learner golden's real labelled buffer when the run's observation keys match it — the production
-surface — else on the committed real-obs fixture with zero labels): R1's loss and the gradient over
+THE GATE. `gate_regions` holds each compiled region to eager at startup on REAL rows — R1 ALWAYS on
+the K9 learner golden's real labelled buffer (`gen3_r1_golden_rows_always_v1`, P10-C): a key this run
+declares that the golden lacks is filled with its DECLARED placeholder (`fill_value`: the label
+inventory's `host_const` value, e.g. the fork arm's `fork_pg_m` = 1.0, or the extra-obs-keys
+registry's zeros), a golden key this run does not declare is dropped (its term is off here), and
+anything else REFUSES. There is no zero-label fallback any more: it blanked the critic / intent /
+belief losses, so ~48 of their parameters fell under the per-parameter floor unjudged (176 judged vs
+219 on the golden rows) on every `--fork-fraction > 0` run. When a key was filled, R1's judged
+parameter set is ALSO held to the golden rows' own (the same weights, the filled keys removed and the
+static resolved without them): a parameter the golden judges CLEARLY that this run's rows do not judge
+is a FATAL (`judged_set_shrinkage`). R1's loss and the gradient over
 every policy parameter (cosine ≥ 0.9999 and the per-parameter rule), R0's decision readout (legal
 log-probs, V; on a seeded perturbation of FRESH weights, whose legal log-probs are constant). The
 gate runs at fp32 matmul precision 'highest' only — the one precision (TF32 was retired, deletion pass
@@ -261,70 +269,103 @@ class R1Batch(NamedTuple):
     advantages: torch.Tensor
     returns: torch.Tensor
     source: str
+    filled: Tuple[str, ...] = ()      # space keys the golden lacks, at their DECLARED placeholder
 
 
-def _neutral_one_keys() -> Tuple[str, ...]:
-    """Observation keys that MULTIPLY a loss term (the fork arm's policy-term mask): the fixture fills
-    them with the env's own placeholder, 1.0."""
-    from agents.training.fork_arm import PG_MASK_KEY
-    return (PG_MASK_KEY,)
+def fill_value(key: str, space: Any) -> Optional[np.ndarray]:
+    """ONE row of ``key``'s DECLARED placeholder (``space``'s shape and dtype), or None when nothing
+    declares one. The declarations: the training-label inventory's ``host_const`` rows (the constant
+    the env writes on every row — the fork arm's `fork_pg_m` = 1.0, a MULTIPLIER on the policy term,
+    so the golden rows' policy loss is unchanged) and the extra-obs-keys registry (the all-zero
+    block, the honest "unavailable" encoding a real emitter supplies)."""
+    from agents.model.extra_obs_keys import BY_KEY as EXTRA
+    from utils.rust_env.label_inventory import BY_KEY as LABELS
+    row = LABELS.get(key)
+    if row is not None and row.rust == "host_const" and row.const is not None:
+        return np.full(tuple(space.shape), row.const, dtype=space.dtype)
+    extra = EXTRA.get(key)
+    if extra is not None:
+        return np.asarray(extra.zeros(), dtype=space.dtype).reshape(tuple(space.shape))
+    return None
 
 
-def _golden_rows(model: Any) -> Optional[Dict[str, np.ndarray]]:
-    """The K9 learner golden's committed REAL buffer, when its observation keys and shapes match this
-    run's (the production surface) — else None."""
+class GoldenRows(NamedTuple):
+    data: Dict[str, np.ndarray]                # the committed buffer (``obs:<key>`` + the PPO fields)
+    filled: Dict[str, np.ndarray]              # space key the golden lacks -> one placeholder row
+    dropped: Tuple[str, ...]                   # golden obs keys this run's space does not declare
+
+
+def golden_rows(model: Any) -> GoldenRows:
+    """The K9 learner golden's committed REAL buffer, fitted to this run's observation space — or a
+    `CompileTrainerError` (FATAL_CONFIG) naming why it cannot be. R1 is never judged on other rows."""
+    from agents.training.learner_golden import BUFFER_PATH
     try:
-        from agents.training.learner_golden import BUFFER_PATH
         with np.load(BUFFER_PATH) as z:
             data = {k: z[k] for k in z.files}
-    except Exception:
-        return None
+    except Exception as exc:
+        raise ct.CompileTrainerError(
+            f"--compile-trainer: region R1's startup gate reads the K9 learner golden's buffer "
+            f"({BUFFER_PATH}) and could not: {type(exc).__name__}: {exc}") from exc
     space = model.policy.observation_space.spaces
     have = {k[4:]: data[k] for k in data if k.startswith("obs:")}
-    if set(have) != set(space) or any(
-            tuple(have[k].shape[2:]) != tuple(space[k].shape) for k in space):
-        return None
-    return data
+    bad = [f"{k}: golden {tuple(have[k].shape[2:])}, run {tuple(space[k].shape)}"
+           for k in sorted(set(have) & set(space)) if tuple(have[k].shape[2:]) != tuple(space[k].shape)]
+    filled: Dict[str, np.ndarray] = {}
+    undeclared: List[str] = []
+    for k in sorted(set(space) - set(have)):
+        v = fill_value(k, space[k])
+        if v is None:
+            undeclared.append(k)
+        else:
+            filled[k] = v
+    if bad or undeclared:
+        raise ct.CompileTrainerError(
+            "--compile-trainer: region R1's startup gate judges the compiled micro-step on the K9 "
+            "learner golden's REAL labelled rows, and this run's observation space does not fit them"
+            + (f" — shape mismatch ({'; '.join(bad)}): the observation layout changed without "
+               f"`python -m agents.training.learner_golden rebuild-buffer`" if bad else "")
+            + (f" — key(s) {undeclared} the golden lacks have NO declared placeholder (a "
+               f"`host_const` row in `utils.rust_env.label_inventory`, or an `extra_obs_keys` row): "
+               f"declare one, or rebuild the golden buffer with the key" if undeclared else "")
+            + ". Judging R1 on other rows (the old zero-label fallback) leaves the label-driven "
+              "terms' parameters unjudged (P10-C, gen3_r1_golden_rows_always_v1).")
+    return GoldenRows(data, filled, tuple(sorted(set(have) - set(space))))
 
 
 def r1_batch(model: Any, batch: int, slice_: int = 0) -> R1Batch:
     """A micro-batch shaped EXACTLY like `rollout_buffer.get(batch_size)`'s (every key of the
-    observation space, the buffer's dtypes): the golden's real labelled rows tiled to ``batch`` when
-    they fit this run, else the real-obs fixture with zero labels and seeded PPO quantities."""
+    observation space, the buffer's dtypes): the golden's real labelled rows tiled to ``batch``, a key
+    the golden lacks at its declared placeholder (`golden_rows`; a run they cannot fit REFUSES)."""
     dev = ct.resolve_device(model.policy.features_extractor)
     space = model.policy.observation_space.spaces
     # the buffer's own action dtype (a Discrete space stores int64): a different dtype is a different
     # signature — measured: the sentinel named `tensor 'actions' dtype mismatch` after the lock.
     adt = torch.as_tensor(np.zeros(1, dtype=model.rollout_buffer.actions.dtype)).dtype
-    data = _golden_rows(model)
-    if data is not None:
-        n = int(data["actions"].reshape(-1).shape[0])
-        idx = ct.fixture_index(int(batch), n, slice_)
+    g = golden_rows(model)
+    data = g.data
+    n = int(data["actions"].reshape(-1).shape[0])
+    idx = ct.fixture_index(int(batch), n, slice_)
 
-        def flat(a: np.ndarray) -> np.ndarray:
-            rows: np.ndarray = a.reshape(-1, *a.shape[2:])[idx]
-            return rows
-        obs = {k: torch.as_tensor(flat(data["obs:" + k]).astype(space[k].dtype), device=dev)
-               for k in space}
-        f = {k: torch.as_tensor(flat(data[k]), device=dev)
-             for k in ("actions", "log_probs", "values", "advantages", "returns", "action_masks")}
-        return R1Batch(obs, f["actions"].to(adt).reshape(-1, 1), f["action_masks"].float(),
-                       f["log_probs"].float().reshape(-1), f["values"].float().reshape(-1),
-                       f["advantages"].float().reshape(-1), f["returns"].float().reshape(-1),
-                       "the K9 learner golden's real labelled buffer")
-    obs = ct._prewarm_obs(model, int(batch), slice_)
-    for k in _neutral_one_keys():            # a MULTIPLIER key holds its env placeholder (1.0), not 0:
-        if k in obs:                         # a zero would blank the term the gate compares
-            obs[k] = torch.ones_like(obs[k])
-    _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), int(batch), dev, slice_)
-    m = torch.as_tensor(mask, device=dev)
-    g = torch.Generator(device="cpu").manual_seed(20260930)
-    acts = torch.argmax(m.float() + 0.01 * torch.rand(m.shape, generator=g).to(dev), dim=-1)
-    b = int(batch)
-    return R1Batch(obs, acts.to(adt).reshape(-1, 1), m.float(),
-                   (-torch.rand(b, generator=g) * 2.0).to(dev), torch.rand(b, generator=g).to(dev),
-                   torch.randn(b, generator=g).to(dev), torch.rand(b, generator=g).to(dev),
-                   "the committed real-obs fixture (zero labels)")
+    def flat(a: np.ndarray) -> np.ndarray:
+        rows: np.ndarray = a.reshape(-1, *a.shape[2:])[idx]
+        return rows
+    obs = {k: torch.as_tensor(flat(data["obs:" + k]).astype(space[k].dtype), device=dev)
+           for k in space if k not in g.filled}
+    for k, row in g.filled.items():
+        obs[k] = torch.as_tensor(np.broadcast_to(row, (len(idx), *row.shape)).copy(), device=dev)
+    obs = {k: obs[k] for k in space}                     # the space's key order
+    f = {k: torch.as_tensor(flat(data[k]), device=dev)
+         for k in ("actions", "log_probs", "values", "advantages", "returns", "action_masks")}
+    src = "the K9 learner golden's real labelled buffer"
+    if g.filled:
+        src += " + " + ", ".join(f"{k}={float(np.asarray(v).reshape(-1)[0]):g} (declared placeholder)"
+                                 for k, v in g.filled.items())
+    if g.dropped:
+        src += f"; golden keys not in this run's space: {list(g.dropped)}"
+    return R1Batch(obs, f["actions"].to(adt).reshape(-1, 1), f["action_masks"].float(),
+                   f["log_probs"].float().reshape(-1), f["values"].float().reshape(-1),
+                   f["advantages"].float().reshape(-1), f["returns"].float().reshape(-1),
+                   src, tuple(g.filled))
 
 
 class R1Declaration(NamedTuple):
@@ -451,6 +492,8 @@ def gate_regions(model: Any, *, n_envs: int, batch_size: int,
             comp = _r1_arm(model, model._compiled_micro_step, args)
             eager = _r1_arm(model, micro_step, args)
             rules.append("R1 " + _r1_verdict(eager, comp, names, regime) + f" [{b.source}]")
+            if b.filled:
+                rules.append("R1 " + _r1_judged_set_rule(model, b, eager, names))
             if regime == "fresh":
                 rules.append("R1 " + _r1_perturbed(model, args, names))
             # ---- R0: eval / no-grad / n_envs, the decision readout
@@ -463,6 +506,92 @@ def gate_regions(model: Any, *, n_envs: int, batch_size: int,
     line = "[CompileRegions] parity PASS (fp32) — " + " | ".join(rules)
     say(line)
     return rules
+
+
+# ------------------------------------------------------------- R1's judged set vs the golden's own
+#: The band around the per-parameter floor (`compile_trainer._PARAM_GRAD_FLOOR`, relative to the
+#: largest per-parameter gradient norm) inside which a parameter is NOT compared
+#: (`gen3_r1_judged_set_v1`, P10-C): the golden rows must judge it CLEARLY (ratio > band x floor) for
+#: its absence from this run's judged set (ratio <= floor) to count, so only a >= band-fold drop in
+#: its relative gradient can trip the check — never the rounding between two arithmetically equal
+#: expressions (the fork mask at 1.0 is `sum / n` where the golden's is `mean`). Measured on the
+#: production learner at the golden's seed (CPU, B = 256): the smallest judged ratio was 1.01e-3,
+#: one hair above the floor — exactly the parameter a bandless comparison would flip on.
+JUDGED_SET_BAND = 2.0
+
+
+def _grad_ratios(arm: Dict[str, torch.Tensor]) -> List[float]:
+    sizes = [int(x) for x in arm["grad_sizes"].tolist()]
+    norms = [float(g.norm()) for g in torch.split(arm["grad"].float(), sizes)]
+    top = max(norms) if norms else 0.0
+    return [n / top if top > 0.0 else 0.0 for n in norms]
+
+
+def judged_set_shrinkage(reference: Dict[str, torch.Tensor], run: Dict[str, torch.Tensor],
+                         names: List[str], *, floor: Optional[float] = None,
+                         band: float = JUDGED_SET_BAND) -> Tuple[List[str], int, int, int]:
+    """``(missing, clear, judged, banded)``: the parameters the REFERENCE arm judges clearly
+    (gradient-norm ratio > ``band`` x ``floor``) that the RUN arm does not judge at all (ratio <=
+    ``floor``, the per-parameter rule's own skip); how many the reference judges clearly; how many
+    the run judges; how many the reference judges inside the band (not compared). Eager arms of
+    `_r1_arm`."""
+    fl = float(ct._PARAM_GRAD_FLOOR if floor is None else floor)
+    ref, cur = _grad_ratios(reference), _grad_ratios(run)
+    if len(ref) != len(cur):
+        raise ct.CompileTrainerError("--compile-trainer region R1: the golden-alone reference and "
+                                     "this run's arm cover different parameter sets — mis-wired")
+    clear = [i for i, r in enumerate(ref) if r > band * fl]
+    missing = [names[i] if i < len(names) else f"#{i}" for i in clear if not cur[i] > fl]
+    banded = sum(1 for r in ref if fl < r <= band * fl)
+    return missing, len(clear), sum(1 for r in cur if r > fl), banded
+
+
+def _r1_reference_args(model: Any, b: R1Batch) -> Tuple[Any, ...]:
+    """R1's arguments on the golden rows ALONE: the filled keys removed from the batch, and the
+    static resolved as `train()` resolves it from a buffer that does not declare them (the fold's
+    predicates read the BUFFER's key set — the fork mask's is `fork_pg_m in observations`)."""
+    keys = set(b.filled)
+    buf = model.rollout_buffer
+    saved = buf.observations
+    try:
+        if isinstance(saved, dict):
+            buf.observations = {k: v for k, v in saved.items() if k not in keys}
+        st, var = _r1_static(model)
+    finally:
+        buf.observations = saved
+    obs = {k: v for k, v in b.obs.items() if k not in keys}
+    return (model.policy, obs, b.actions, b.action_masks,
+            b.old_log_prob, b.old_values, b.advantages, b.returns, var, st)
+
+
+def _r1_judged_set_rule(model: Any, b: R1Batch, run: Dict[str, torch.Tensor], names: List[str]) -> str:
+    """REFUSE when filling ``b.filled`` shrank R1's judged parameter set below the golden rows' own
+    (`judged_set_shrinkage`): a placeholder that blanks a term would leave its parameters unjudged —
+    the P10-C defect class. One extra EAGER micro-step, only on a run whose space the golden lacks a
+    key of (never on the production surface). Returns the gate-line rule."""
+    from agents.training.instrumented_ppo.micro_step import micro_step
+    try:
+        ref = _r1_arm(model, micro_step, _r1_reference_args(model, b))
+    except ct.CompileTrainerError:
+        raise
+    except Exception as exc:
+        raise ct.CompileTrainerError(
+            f"--compile-trainer region R1: cannot judge the golden rows ALONE (without the filled "
+            f"key(s) {list(b.filled)}) to compare R1's judged parameter set — {type(exc).__name__}: "
+            f"{exc}. A filled key whose term the fold does not gate on the buffer's key set needs its "
+            f"own reference (P10-C)") from exc
+    missing, clear, judged, banded = judged_set_shrinkage(ref, run, names)
+    if missing:
+        raise ct.CompileTrainerError(
+            f"--compile-trainer region R1: filling {list(b.filled)} with the declared placeholder "
+            f"SHRANK the judged parameter set — {len(missing)} parameter(s) the golden rows judge "
+            f"clearly (> {JUDGED_SET_BAND:g}x the floor) are not judged on this run's rows (e.g. "
+            f"{', '.join(missing[:8])}). The startup gate and the canary would pass a backward "
+            f"miscompile there unseen: refusing (P10-C, gen3_r1_judged_set_v1). Fix the placeholder "
+            f"(it must not blank a term) or rebuild the golden buffer with the key.")
+    return (f"judged set >= the golden rows' own: all {clear} parameters they judge clearly "
+            f"(> {JUDGED_SET_BAND:g}x floor) are judged here ({judged} judged; {banded} inside the "
+            f"band, not compared) [filled {list(b.filled)}]")
 
 
 # ------------------------------------------------------------------ R1's gradient bar, by regime
