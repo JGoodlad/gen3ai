@@ -322,6 +322,9 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         # Set by train_rl_agent after signal handlers are wired (kept for parity with
         # the old fail-fast path; the subprocess design logs-and-continues instead).
         self.abort_fn = None
+        # The run's `DeferredAbort.safe_point` (wired with abort_fn; P10-A2): the in-process Rust eval
+        # cycle calls it every host step, so a stop signal / forced checkpoint is honoured mid-cycle.
+        self.safe_point_fn = None
 
     def _schedule(self) -> tuple[int, int]:
         return self._eval_freq, self._eval_games

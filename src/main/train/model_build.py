@@ -435,6 +435,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         )
         if eval_callback is not None:
             eval_callback.abort_fn = _abort_fn
+            # P10-A2: the in-process Rust eval cycle's own safe points (every host step).
+            eval_callback.safe_point_fn = _abort_fn.safe_point
         graceful_restart_callback.abort_fn = _abort_fn
         # gen3_deferred_abort_v1: a stop signal only records the request; it runs at these safe points.
         graceful_restart_callback.safe_point_fn = _abort_fn.safe_point
@@ -463,6 +465,10 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             # crash as a clean completion (so the launcher saw exit-0 and never auto-restarted).
             # Re-raising surfaces it as a non-zero exit → launcher restarts from the last checkpoint
             # (resilience) instead of silently ending the run with a fake final win rate.
+            # Claim the exit first (P10-A2): a stop request pending when learn() raised must not let the
+            # deferred abort's fallback exit 15 into this save, nor turn the crash into a clean restart.
+            if not _abort_fn.stand_down("exception"):
+                threading.Event().wait()   # the fallback claimed the exit first and is ending the process
             print(f"Training interrupted by exception: {e}")
             traceback.print_exc()
             final_path = os.path.join(model_dir, "final_model_exception")
@@ -620,6 +626,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         )
         if eval_callback is not None:
             eval_callback.abort_fn = _abort_fn
+            # P10-A2: the in-process Rust eval cycle's own safe points (every host step).
+            eval_callback.safe_point_fn = _abort_fn.safe_point
         graceful_restart_callback.abort_fn = _abort_fn
         # gen3_deferred_abort_v1: a stop signal only records the request; it runs at these safe points.
         graceful_restart_callback.safe_point_fn = _abort_fn.safe_point
@@ -638,6 +646,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             # budget instead — see the note there.
             model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
         except Exception as e:
+            # Claim the exit (P10-A2; see the resume path): the crash's exit code, never the fallback's 15.
+            if not _abort_fn.stand_down("exception"):
+                threading.Event().wait()
             print("\n" + "🛑" * 30)
             print(f"🛑 TRAINING CRASHED: {e}")
             print("🛑" * 30)

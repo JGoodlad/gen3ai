@@ -243,10 +243,14 @@ class RustEvalCore:
     def run_cycle(self, pool: Any, result_dir: str, *, step: int, trainee_policy: Any,
                   sentinel_policies: Mapping[str, Any], forensic_root: Optional[str], quota: Any, gamma: float,
                   sentinel_greedy: bool, self_play_temp: float, cycle_seed: int,
-                  game_log: Optional[List[Dict[str, Any]]] = None) -> CycleStats:
+                  game_log: Optional[List[Dict[str, Any]]] = None,
+                  safe_point: Optional[Callable[[str], None]] = None) -> CycleStats:
         """Play every unit of ``pool`` (a ``ShardedEvalPool``) and publish one ``ShardResult`` per unit
         into ``result_dir``. ``sentinel_policies`` maps each SENTINEL item key to its loaded policy.
-        ``forensic_root`` = ``<run>/eval_traces/step_<N>`` (None = capture nothing)."""
+        ``forensic_root`` = ``<run>/eval_traces/step_<N>`` (None = capture nothing). ``safe_point`` (the
+        run's `DeferredAbort.safe_point`, P10-A2) is called at the top of EVERY host step — no T2 ticket
+        in flight, no learner state touched — so a stop signal / forced checkpoint never waits out the
+        whole cycle; it may not return (an abort exits the process there)."""
         from agents.inference.service.spec import Priority
         from agents.training.eval_callback import ForensicQuota, trace_filename_stem
         from utils.rust_env import ffi
@@ -319,7 +323,10 @@ class RustEvalCore:
 
         guard = 0
         limit = 4 * (sum(len(u.games) + 0 for u in units) + len(units)) * (2 * self.turn_limit + 16) + 1000
+        where = f"eval cycle (step {int(step):,})"
         while pending:
+            if safe_point is not None:
+                safe_point(where)
             guard += 1
             if guard > limit:
                 raise EvalCoreError(f"the eval cycle at step {step} did not finish in {limit} host steps")

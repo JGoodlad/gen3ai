@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 
 class RustEvalUnavailable(RuntimeError):
@@ -39,9 +39,10 @@ def evaluator_of(model: Any) -> Any:
     return ev
 
 
-def load_sentinels(pool: Any, model: Any) -> Dict[str, Any]:
+def load_sentinels(pool: Any, model: Any, safe_point: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
     """Each SENTINEL item's snapshot, loaded as the eval worker loads it (``load_opponent_snapshot`` gated
-    against THIS run's architecture), on CPU — T2 copies it into its declared slot."""
+    against THIS run's architecture), on CPU — T2 copies it into its declared slot. ``safe_point`` (the
+    run's `DeferredAbort.safe_point`, P10-A2) runs before each load."""
     from agents.model.snapshot import arch_toggles_from_model, current_model_version, load_opponent_snapshot
     from agents.observation.state_encoder import load_mappings
     from agents.training.eval_sharding import SENTINEL
@@ -52,6 +53,8 @@ def load_sentinels(pool: Any, model: Any) -> Dict[str, Any]:
     version = current_model_version(load_mappings(), **arch_toggles_from_model(model))
     out = {}
     for it in items:
+        if safe_point is not None:
+            safe_point(f"eval sentinel load ({it.key})")
         m = load_opponent_snapshot(it.path, current_version=version, device="cpu")
         out[it.key] = m.policy.eval()
     return out
@@ -74,15 +77,18 @@ def run_rust_eval_cycle(cb: Any, *, pool: Any, run_dir: str, step: int,
                      if (model_dir and forensic) else None)
     if seed is None:
         seed = cycle_seed(int(getattr(getattr(rc, "cfg", None), "run_seed", 0) or 0), step)
+    # P10-A2: the cycle is one long blocking stretch inside a collector step — the run's safe point runs
+    # between sentinel loads and at every host step (no learner state is mutated there).
+    safe_point = getattr(cb, "safe_point_fn", None)
     was_training = bool(model.policy.training)
     model.policy.eval()
     try:
         st = ev.run_cycle(pool, run_dir, step=step, trainee_policy=model.policy,
-                          sentinel_policies=load_sentinels(pool, model), forensic_root=forensic_root,
+                          sentinel_policies=load_sentinels(pool, model, safe_point), forensic_root=forensic_root,
                           quota=getattr(cb, "_forensic_quota", None), gamma=float(model.gamma),
                           sentinel_greedy=bool(getattr(cb, "_eval_sentinel_greedy", False)),
                           self_play_temp=float(getattr(cb, "_self_play_temp", 1.0)), cycle_seed=seed,
-                          game_log=game_log)
+                          game_log=game_log, safe_point=safe_point)
     finally:
         if was_training:
             model.policy.train()

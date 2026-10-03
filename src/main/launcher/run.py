@@ -70,10 +70,13 @@ from main.launcher.worktree import (
 # takes to bring up the SubprocVecEnv workers + Showdown connections.
 _FAST_CRASH_SECONDS = 600.0
 
-#: How long a SIGTERMed child gets before the supervisor SIGKILLs it. The child's deferred abort
-#: (`main.train.deferred_abort`) waits for a safe point for less than this, minus a save budget —
-#: `deferred_abort_test` pins the relation.
-KILL_GRACE_SECONDS = 90.0
+#: How long a SIGTERMed child gets before the launcher SIGKILLs it — the supervisor's escalation AND
+#: `_reap`'s (an abnormal app exit). The child's deferred abort (`main.train.deferred_abort`) waits for
+#: a safe point for `SAFE_POINT_DEADLINE_SEC` (120 s, ~2x the worst measured stretch without one),
+#: then may spend `SAVE_BUDGET_SEC` (15 s) saving; 15 s more is slack for the exit itself.
+#: `deferred_abort_test` pins DEADLINE + BUDGET <= this. Its only cost: a genuinely WEDGED child is
+#: SIGKILLed 150 s after the SIGTERM rather than 90 s.
+KILL_GRACE_SECONDS = 150.0
 
 
 # Substrings in the child's output that mark a deterministic, non-recoverable startup
@@ -748,14 +751,18 @@ def _supervise(
         state.view_mode = "dashboard"
 
 
-def _reap(proc_box: "list | None") -> None:
+def _reap(proc_box: "list | None", grace: float = KILL_GRACE_SECONDS) -> None:
     """Teardown safety net: ensure the child is dead before the process exits.
 
     Normal quit (q→y) already SIGTERMs + reaps inside ``_supervise``; this covers an
     abnormal app exit (ctrl-c handled by Textual, terminal closed) where the supervisor
     worker may still be blocked in ``proc.wait``. SIGTERM (give the child time to save its
     checkpoint), then SIGKILL. Reaping the child also unblocks the worker's ``proc.wait``
-    so the interpreter can shut its non-daemon worker thread down cleanly."""
+    so the interpreter can shut its non-daemon worker thread down cleanly.
+
+    The grace is the supervisor's own ``KILL_GRACE_SECONDS`` (P10-A2; it was 10 s): the child saves only
+    at its next SAFE POINT (`main.train.deferred_abort`), up to an update away, so a shorter grace
+    here SIGKILLed a child mid-update and lost everything since its last periodic checkpoint."""
     if not proc_box:
         return
     proc = proc_box[0]
@@ -771,16 +778,20 @@ def _reap(proc_box: "list | None") -> None:
         except ProcessLookupError:
             return
         start = time.monotonic()
-        for _ in range(10):   # up to a 10s graceful-save grace
+        last_note = start
+        while time.monotonic() - start < grace:
             try:
                 proc.wait(timeout=1)
-                print(f"✅ Child stopped & checkpoint saved ({time.monotonic() - start:.0f}s).",
+                print(f"✅ Child stopped ({time.monotonic() - start:.0f}s).",
                       file=sys.stderr, flush=True)
                 return
             except subprocess.TimeoutExpired:
-                print(f"   …still saving ({time.monotonic() - start:.0f}s)",
-                      file=sys.stderr, flush=True)
-        print("⚠ Child didn't stop within 10s — forcing kill (checkpoint may be partial).",
+                now = time.monotonic()
+                if now - last_note >= 10.0:     # narrate every ~10 s, not every second
+                    last_note = now
+                    print(f"   …waiting for its next safe point / save ({now - start:.0f}s of {grace:.0f}s)",
+                          file=sys.stderr, flush=True)
+        print(f"⚠ Child didn't stop within {grace:.0f}s — forcing kill (no checkpoint from this stop).",
               file=sys.stderr, flush=True)
         try:
             os.kill(proc.pid, signal.SIGKILL)

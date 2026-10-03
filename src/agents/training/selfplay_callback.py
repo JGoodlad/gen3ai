@@ -291,6 +291,9 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         self._eval_cycle = 0
         # Parent-side fatal errors only; worker crashes log-and-continue (bot-path parity).
         self.abort_fn = None
+        # The run's `DeferredAbort.safe_point` (wired with abort_fn; P10-A2): the in-process Rust eval
+        # cycle calls it every host step, so a stop signal / forced checkpoint is honoured mid-cycle.
+        self.safe_point_fn = None
 
         # Shared state: written by collect, read by env factory on next restart.
         self.win_rate_vs_bots: float = pool.load_persisted_win_rate()

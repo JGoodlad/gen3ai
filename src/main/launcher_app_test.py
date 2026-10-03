@@ -786,8 +786,9 @@ class TestReap:
         proc = MagicMock()
         proc.pid = 5
         proc.poll.return_value = None
-        # all 10 one-second grace polls time out → SIGKILL, then a final wait
-        proc.wait.side_effect = [subprocess.TimeoutExpired("c", 1)] * 10 + [0]
+        # an EXHAUSTED grace → SIGKILL, then a final wait (grace 0 exhausts it at once; the full
+        # KILL_GRACE_SECONDS arithmetic is `launcher/reap_grace_test`'s, on a fake clock — P10-A2)
+        proc.wait.side_effect = [0]
         with patch("main.launcher.run.os.kill") as k:
-            _reap([proc])
+            _reap([proc], grace=0.0)
         assert k.call_args_list == [call(5, signal.SIGTERM), call(5, signal.SIGKILL)]

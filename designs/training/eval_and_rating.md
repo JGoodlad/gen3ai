@@ -524,8 +524,10 @@ in the trainer). Behaviors:
   `GracefulRestartCallback` at a rollout boundary and the launcher won't force-kill until the
   child overruns the deadline by `--restart-grace-minutes` (20 min), so the drain budget is a
   full `_ABORT_EVAL_DRAIN_SEC` (10 min) AFTER the checkpoint is saved — long enough for a CPU
-  eval to complete. Even the pathological forced-SIGTERM case (already overran → ~90s SIGKILL)
-  is safe: the checkpoint is saved first, only the in-flight eval can be lost.
+  eval to complete. Even the pathological forced-SIGTERM case (already overran → a 150 s SIGKILL)
+  is safe: the checkpoint is saved first, only the in-flight eval can be lost. (The in-process Rust
+  eval cycle has a SAFE POINT at every host step, P10-A2 — a stop signal during it saves within one
+  host step and abandons the partial cycle — it is never collected, so no partial eval is recorded.)
 - **On resume the last eval is re-published to the TUI** from the resumed checkpoint's
   `metadata.json` (`replay_last_eval_to_tui`), so the eval panel isn't blank until the next
   cycle. This covers the **self-play `pool` block too** — the aggregate (`win_rate_vs_pool`,

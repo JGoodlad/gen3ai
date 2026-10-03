@@ -56,7 +56,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 
 #: A flip below ``NEAR_TIE_FACTOR x`` the tier's |Δ legal log-prob| bar is a TIE: 2 is the exact bound (each
@@ -180,8 +180,9 @@ def run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[st
              shard_games: int, step: int, cycle_seed: int, quota: Dict[str, int], device: str, backend: str,
              n_envs: int, buckets: Tuple[int, ...] = (8, 48), front: str = "ffi", profile: str = "selfcheck",
              lanes: int = 0, fixed: Optional[List[Dict[str, Any]]] = None, sentinel_greedy: bool = True,
-             self_play_temp: float = 1.0) -> Dict[str, Any]:
-    """The Rust path (module docs) — the production executor over a T2 service declared here."""
+             self_play_temp: float = 1.0, safe_point: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
+    """The Rust path (module docs) — the production executor over a T2 service declared here. ``safe_point``
+    is passed to ``run_cycle`` (the run's deferred-abort safe point; `safe_point_integration_test`)."""
     import torch
 
     # `MaskablePPO.load` re-seeds the loaded model (sb3's `set_random_seed`), which on CUDA sets
@@ -192,7 +193,8 @@ def run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[st
         return _run_rust(run_dir=run_dir, model_dir=model_dir, trainee=trainee, sentinels=sentinels, items=items,
                          shard_games=shard_games, step=step, cycle_seed=cycle_seed, quota=quota, device=device,
                          backend=backend, n_envs=n_envs, buckets=buckets, front=front, profile=profile, lanes=lanes,
-                         fixed=list(fixed or []), sentinel_greedy=sentinel_greedy, self_play_temp=self_play_temp)
+                         fixed=list(fixed or []), sentinel_greedy=sentinel_greedy, self_play_temp=self_play_temp,
+                         safe_point=safe_point)
     finally:
         torch.backends.cudnn.deterministic, torch.backends.cudnn.benchmark = cudnn
 
@@ -200,7 +202,8 @@ def run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[st
 def _run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[str], items: List[Any],
               shard_games: int, step: int, cycle_seed: int, quota: Dict[str, int], device: str, backend: str,
               n_envs: int, buckets: Tuple[int, ...], front: str, profile: str, lanes: int,
-              fixed: List[Dict[str, Any]], sentinel_greedy: bool, self_play_temp: float) -> Dict[str, Any]:
+              fixed: List[Dict[str, Any]], sentinel_greedy: bool, self_play_temp: float,
+              safe_point: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
     from sb3_contrib import MaskablePPO
 
     from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
@@ -268,7 +271,8 @@ def _run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[s
         st = ev.run_cycle(pool, str(run_dir), step=step, trainee_policy=model.policy, sentinel_policies=sent,
                           forensic_root=str(model_dir / "eval_traces" / f"step_{step}"),
                           quota=ForensicQuota(**quota), gamma=float(model.gamma), sentinel_greedy=bool(sentinel_greedy),
-                          self_play_temp=float(self_play_temp), cycle_seed=cycle_seed, game_log=glog)
+                          self_play_temp=float(self_play_temp), cycle_seed=cycle_seed, game_log=glog,
+                          safe_point=safe_point)
         ev.close()
         toggles = arch_toggles_from_model(model)
         return {"stats": st.as_dict(), "games": glog, "svc_startup_s": t_svc, "arch_toggles": toggles,

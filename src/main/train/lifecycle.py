@@ -1,8 +1,8 @@
 """Run LIFECYCLE: the things done to a live model once, around `learn()`.
 
 Grad checkpointing, the trainer compile, the save/reload round-trip smoke test, and the signal
-handlers (SIGINT/SIGTERM/SIGHUP checkpoint-and-exit at the next SAFE POINT — `deferred_abort` —,
-SIGUSR1 forced checkpoint, SIGUSR2 forced eval) that turn a kill into a clean, checkpoint-saving
+handlers (SIGINT/SIGTERM/SIGHUP checkpoint-and-exit and SIGUSR1 forced checkpoint, each at the next
+SAFE POINT — `deferred_abort` —, SIGUSR2 forced eval) that turn a kill into a clean, checkpoint-saving
 shutdown.
 """
 import os
@@ -210,7 +210,8 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
     "save a checkpoint and exit 15" path (the graceful restart's), and its `safe_point()` runs a
     signal-requested abort. Both run ONLY on the main thread at a safe point — the stop signals just
     record the request (P10 review F1: the old in-handler dump deadlocked on TensorBoard's lock, and
-    the in-handler save could tear a checkpoint mid-update).
+    the in-handler save could tear a checkpoint mid-update). SIGUSR1's forced checkpoint is recorded the
+    same way and saved at the next safe point, without an exit (P10-A2).
 
     ``handoff_lr_fn`` is optional; when present it returns the TwoPhaseLR
     callback's current handoff_lr (or None while still in Phase 1) so the
@@ -264,27 +265,35 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
                 print(f"[ABORT] eval drain failed: {e}")
         sys.stdout.flush()
 
-    abort = DeferredAbort(_commit_abort, exit_fn=exit_fn, wait_fn=wait_fn)
-
-    def _forced_checkpoint(sig, frame):
+    def _forced_checkpoint() -> None:
+        """SIGUSR1's save — at a safe point, on the main thread (`DeferredAbort.request_checkpoint`,
+        gen3_deferred_checkpoint_v1); training continues after it, and a failed save is REPORTED, never
+        raised into the loop (an operator's key must not end the run)."""
         step = model.num_timesteps
         name = f"checkpoint_forced_{step:010d}_{datetime.now().strftime('%H%M%S')}"
         # Forced checkpoints are resumable checkpoints → they live under checkpoints/
         # alongside the periodic ones; latest.txt records the run-relative path.
         ckpt_dir = os.path.join(model_dir, "checkpoints")
-        os.makedirs(ckpt_dir, exist_ok=True)
         ckpt = os.path.join(ckpt_dir, name)
-        model.save(ckpt)
-        _write_latest_txt(model_dir, os.path.join("checkpoints", name + ".zip"))
-        record_checkpoint(
-            model_dir,
-            ckpt + ".zip",
-            current_lr_fn(),
-            current_epochs_fn(),
-            hparams=_model_hparams(model),
-            handoff_lr=_handoff(),
-        )
-        print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
+        try:
+            os.makedirs(ckpt_dir, exist_ok=True)
+            model.save(ckpt)
+            _write_latest_txt(model_dir, os.path.join("checkpoints", name + ".zip"))
+            record_checkpoint(
+                model_dir,
+                ckpt + ".zip",
+                current_lr_fn(),
+                current_epochs_fn(),
+                hparams=_model_hparams(model),
+                handoff_lr=_handoff(),
+            )
+        except Exception as e:
+            print(f"\n💾 [CHECKPOINT] Forced save FAILED ({type(e).__name__}: {e}) — training continues",
+                  flush=True)
+            return
+        print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip", flush=True)
+
+    abort = DeferredAbort(_commit_abort, checkpoint=_forced_checkpoint, exit_fn=exit_fn, wait_fn=wait_fn)
 
     def _forced_eval(sig, frame):
         # Signal context: just flag the request (request_forced_eval is async-signal-safe).
@@ -304,7 +313,9 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
     # this is the in-code backstop for when it isn't.)
     if hasattr(signal, "SIGHUP"):
         signal.signal(signal.SIGHUP, lambda sig, frame: abort.request("SIGHUP received (terminal/window closed)"))
-    signal.signal(signal.SIGUSR1, _forced_checkpoint)
+    # SIGUSR1 = the launcher's "forced checkpoint" key — RECORDED, saved at the next safe point (P10-A2:
+    # the in-handler save could tear a checkpoint mid-update, exactly as the abort's could).
+    signal.signal(signal.SIGUSR1, lambda sig, frame: abort.request_checkpoint("SIGUSR1 received"))
     # SIGUSR2 = the launcher's "force eval" button — run an off-cadence eval cycle now.
     signal.signal(signal.SIGUSR2, _forced_eval)
     if start_watchdog:

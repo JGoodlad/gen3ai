@@ -377,9 +377,7 @@ def _read_child_stdout(proc: subprocess.Popen, state: LauncherState, log_file=No
                 except Exception:
                     pass
             if "[CHECKPOINT]" in line:
-                # Surface the save confirmation in the events panel too.
-                fname = line.split("→")[-1].strip() if "→" in line else line
-                state.add_event(f"💾 Checkpoint saved → {os.path.basename(fname)}")
+                state.add_event(checkpoint_event(line))
     except Exception:
         pass
     finally:
@@ -436,3 +434,15 @@ def _launch_child(
     threading.Thread(target=_read_child_stdout, args=(proc, state, log_file), daemon=True).start()
 
     return proc
+
+
+def checkpoint_event(line: str) -> str:
+    """The events-panel line for a child `[CHECKPOINT]` line. Only a line naming its file (`… → <path>`)
+    is a SAVE; SIGUSR1's request line (`gen3_deferred_checkpoint_v1`: the save waits for the next safe
+    point, up to an update) and a failed save are not — reading them as saves announced a checkpoint
+    that did not exist yet (P10-A2's pre-flight)."""
+    if "→" in line:
+        return f"💾 Checkpoint saved → {os.path.basename(line.split('→')[-1].strip())}"
+    if "FAILED" in line:
+        return "💾 Forced checkpoint FAILED — see the child log"
+    return "💾 Checkpoint requested — the child saves at its next safe point"
