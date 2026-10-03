@@ -1,6 +1,6 @@
-"""The SCAFFOLDING GAUGE — pinned on synthetic data with KNOWN answers, then on the live scalar.
+"""The SCAFFOLDING GAUGE (offline instrument) — pinned on synthetic data with KNOWN answers.
 
-Three things have to hold and none of them is checkable on real traces:
+Two things have to hold and none of them is checkable on real traces:
 
 1. **The math is right where the answer is known.** A perfectly rank-agreeing pair must read
    exactly 0, an inverted one exactly 1, an independent one ~0.5 — and a DEGENERATE slice must
@@ -10,35 +10,22 @@ Three things have to hold and none of them is checkable on real traces:
    is that ``readout_penalty`` tells a reader how much of ``rms`` is the affine family failing
    rather than the heads disagreeing. That is only true if the number behaves — so the two
    regimes (linear-in-V outcome vs a sharply nonlinear one) are constructed here and asserted.
-3. **The live scalar is OBSERVABILITY.** It must not perturb the update by a single bit, must
-   publish nothing at all when there is no win-prob head, and must survive NaNs.
+(A third section pinned the IN-TRAINING `train/scaffolding_*` scalar — byte-identical update, no key without a
+head, NaN-safe, epoch 0 only. It was RETIRED with the scalar in the flag census, P11d: under the win-prob critic
+V is `sigmoid(win_prob_logit)`, so the gauge was a tautology. This file keeps the offline instrument's math and
+`reliability_table`, which the win-prob calibration read still uses.)
 """
 from __future__ import annotations
 
-import copy
 import math
 
 import numpy as np
 import pytest
-import torch as th
 
 from agents.training.scaffolding import (
-    affine_gauge, cluster_bootstrap_ci, constancy_row, gauge_slice, live_gauge_metrics,
+    affine_gauge, cluster_bootstrap_ci, constancy_row, gauge_slice,
     rank_gauge, reliability_table, spearman_rho,
 )
-
-
-class _Logger:
-    """Captures `logger.record(key, value)` — the same stand-in `signal_metrics_test` uses."""
-
-    def __init__(self):
-        self.rows = {}
-
-    def record(self, key, value, exclude=None):
-        self.rows[key] = value
-
-    def __getattr__(self, _name):
-        return lambda *a, **k: None
 
 
 # ══ 1. RANK GAUGE — known relationships, known values ═════════════════════════
@@ -294,148 +281,6 @@ def test_gauge_slice_folds_all_three_blocks_with_intervals():
 def test_gauge_slice_refuses_non_parallel_arrays():
     with pytest.raises(ValueError):
         gauge_slice([1.0, 2.0], [0.1, 0.2], [1.0, 0.0], ["a"])
-
-
-# ══ 5. THE LIVE SCALAR — pure math half ══════════════════════════════════════
-
-
-def test_the_live_form_is_the_rank_form_over_LOGITS_and_matches_the_probabilities():
-    """The sigmoid is monotone, so passing logits must give bit-identical ρ to passing the
-    probabilities. This is what licenses skipping the conversion in the hot path."""
-    rng = np.random.default_rng(8)
-    v = rng.normal(size=500)
-    z = 0.8 * v + rng.normal(scale=0.4, size=500)
-    p = 1.0 / (1.0 + np.exp(-z))
-    assert live_gauge_metrics(v, z)["scaffolding_gauge"] == pytest.approx(
-        rank_gauge(v, p)["gauge"])
-
-
-def test_the_live_form_publishes_NOTHING_when_there_is_no_head():
-    """A run with `--win-prob-mode none` must leave the curve absent, not flat at zero."""
-    assert live_gauge_metrics(np.zeros(5), None) == {}
-    assert live_gauge_metrics(None, np.zeros(5)) == {}
-    assert live_gauge_metrics([], []) == {}
-    assert live_gauge_metrics(np.zeros(5), np.zeros(3)) == {}      # shape mismatch, not a crash
-
-
-def test_the_live_form_is_NaN_safe_and_reports_the_surviving_count():
-    v = np.array([1.0, 2.0, np.nan, 4.0, 5.0])
-    z = np.array([0.1, 0.2, 0.3, np.inf, 0.5])
-    m = live_gauge_metrics(v, z)
-    assert m["scaffolding_n"] == 3.0 and m["scaffolding_gauge"] == pytest.approx(0.0)
-    all_nan = live_gauge_metrics(np.full(5, np.nan), np.full(5, np.nan))
-    assert all_nan == {}                                          # nothing finite ⇒ no key at all
-    const = live_gauge_metrics(np.full(5, 1.0), np.arange(5.0))
-    assert np.isnan(const["scaffolding_gauge"]) and const["scaffolding_n"] == 5.0
-
-
-# ══ 6. THE LIVE SCALAR — inside train(), and it is OBSERVABILITY ═════════════
-
-
-def _attach_fake_win_head(model, *, mode="read_only", broken=False):
-    """Give the stock `MultiInputPolicy`'s extractor the two attributes the gauge reads.
-
-    A forward hook sets `last_win_prob_logits` per minibatch from the extractor's own OUTPUT, so
-    the pair varies across minibatches exactly as the real head's would — a constant stub would
-    make the whole rank read degenerate and the assertion vacuous. `broken=True` publishes NaNs,
-    which is the NaN-safety arm."""
-    fe = model.policy.features_extractor
-    fe.win_prob_mode = mode
-
-    def _hook(_mod, _inp, out):
-        n = out.shape[0]
-        if broken:
-            fe.last_win_prob_logits = th.full((n, 1), float("nan"))
-        else:
-            fe.last_win_prob_logits = out.detach().sum(dim=-1, keepdim=True) * 0.37
-    fe.register_forward_hook(_hook)
-    return fe
-
-
-def test_train_publishes_the_scaffolding_scalars_when_a_win_head_exists():
-    from agents.training.instrumented_ppo_test import _build_tiny_ppo
-
-    model, _ = _build_tiny_ppo(n_steps=16, n_envs=4)
-    model.learn(total_timesteps=16 * 4)
-    _attach_fake_win_head(model)
-    rows = _Logger()
-    model.set_logger(rows)
-    model.train()
-    assert "train/scaffolding_gauge" in rows.rows
-    assert "train/scaffolding_rho" in rows.rows
-    assert rows.rows["train/scaffolding_n"] == 64.0        # the whole rollout, epoch 0 only
-    g = rows.rows["train/scaffolding_gauge"]
-    assert np.isnan(g) or 0.0 <= g <= 1.0
-
-
-def test_train_publishes_NO_scaffolding_key_without_a_win_head():
-    """ALWAYS-ON means always-on WHEN THE HEAD EXISTS. A run without one must write no curve."""
-    from agents.training.instrumented_ppo_test import _build_tiny_ppo
-
-    model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
-    model.learn(total_timesteps=8 * 4)
-    rows = _Logger()
-    model.set_logger(rows)
-    model.train()
-    assert not any(k.startswith("train/scaffolding") for k in rows.rows)
-
-
-def test_a_NaN_win_head_leaves_a_GAP_and_never_crashes_train():
-    from agents.training.instrumented_ppo_test import _build_tiny_ppo
-
-    model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
-    model.learn(total_timesteps=8 * 4)
-    _attach_fake_win_head(model, broken=True)
-    rows = _Logger()
-    model.set_logger(rows)
-    model.train()                                          # must not raise
-    assert not any(k.startswith("train/scaffolding") for k in rows.rows)
-
-
-def test_train_is_byte_identical_with_and_without_the_scaffolding_read():
-    """It is a DIAGNOSTIC. Compared against the same train() with the estimator monkeypatched to a
-    no-op — the only difference between the arms is whether the read ran at all."""
-    # `metrics_export`, not `ppo` — the gauge is read where its keys are recorded.
-    from agents.training.instrumented_ppo import metrics_export as ppo_mod
-    from agents.training.instrumented_ppo_test import _build_tiny_ppo, _train_from_init
-
-    model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
-    _attach_fake_win_head(model)
-    # 🚨 The init snapshot MUST be taken BEFORE `learn()`, and that is not a style choice: after a
-    # train() the optimizer's Adam state is populated, `deepcopy`ing it hands `load_state_dict`
-    # tensors it aliases rather than copies, and the next train() mutates the very snapshot it was
-    # restored from. Two identical calls then drift by ~1e-3 and every byte-identity claim built on
-    # them is vacuous. Measured here before this test was believed; the `signal/` byte-identity
-    # test takes its snapshot before `learn()` for the same reason.
-    init_sd = copy.deepcopy(model.policy.state_dict())
-    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
-    model.learn(total_timesteps=8 * 4)
-
-    live = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
-    real = ppo_mod.live_gauge_metrics
-    try:
-        ppo_mod.live_gauge_metrics = lambda _v, _z: {}      # the diagnostic removed entirely
-        muted = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
-    finally:
-        ppo_mod.live_gauge_metrics = real
-
-    for k in live:
-        assert th.allclose(live[k], muted[k], atol=0.0), f"the scaffolding read perturbed {k}"
-
-
-def test_the_gauge_is_read_from_EPOCH_ZERO_only():
-    """Mixing epochs would attribute a pair to a policy that did not produce it. With n_epochs=3
-    the published `scaffolding_n` must still be one pass over the rollout."""
-    from agents.training.instrumented_ppo_test import _build_tiny_ppo
-
-    model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
-    model.n_epochs = 3
-    model.learn(total_timesteps=8 * 4)
-    _attach_fake_win_head(model)
-    rows = _Logger()
-    model.set_logger(rows)
-    model.train()
-    assert rows.rows["train/scaffolding_n"] == 32.0        # 8 x 4, once — not 96
 
 
 # ══ 5. RELIABILITY TABLE — Brier / skill / ECE / the Murphy split ═════════════

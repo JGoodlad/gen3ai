@@ -8,7 +8,7 @@ publishing, as confident constants and byte-identical duplicates, on the first a
 
 | family | what it published | why it is content-free |
 |---|---|---|
-| `train/scaffolding_{gauge,rho,n}` | ρ = 1.0, gauge = 5.5e-13, both flat | V IS `sigmoid(win_prob_logit)`; a rank gauge between a quantity and itself is a tautology |
+| `train/scaffolding_{gauge,rho,n}` | ρ = 1.0, gauge = 5.5e-13, both flat | V IS `sigmoid(win_prob_logit)`; a rank gauge between a quantity and itself is a tautology. **RETIRED entirely in P11d (no emitter exists), still asserted ABSENT by the smoke** |
 | `grad/win_prob_{share,norm_shared,policy_cosine}` | equal to `grad/value_*` to the last bit | the critic loss IS the win-prob BCE — the SAME tensor, reported twice AND double-counted in the shared denominator |
 | `win_prob/{brier,acc}_contested`, `contested_{frac,label_mean}`, `brier_material`, `skill_vs_material` | *(RECLASSIFIED 2026-09-07 — see below; these are LIVE)* | — |
 | `reward/{bias_refund,class_refund}_*` | six flat zeros | the refund is the BIAS class's mechanism and the composition has no bias term (since 2026-09-26 the whole BIAS class is DELETED, so these cannot appear on any run) |
@@ -40,6 +40,11 @@ critic is gone, `--critic` is a constant of the namespace since P11b, and the tw
 `--win-prob-mode read_only` had been a win-prob run since the bare-argv flip of 2026-10-02, so its
 `train/scaffolding_*` assertions could only fail. Deletion pass P10-F2.)
 
+**The win-prob smoke below is the P11d / P10-F2 finding 2 close-out:** it FAILED on a refresh before the in-training
+gauge was retired (the three `train/scaffolding_*` tags were published once on the root-smoke run, rho 1.0 / gauge 0.0 /
+n 2,048, because `scaffolding._same_ordering` compared float32 ranks of V and the logit), and its recorded `pass` row of
+2026-10-01 was stale-green. It was re-run for real after the retirement and its `slow_tier_status.json` row committed.
+
 Run:
     pytest src/agents/training/tb_relevance_test.py -q
     pytest src/agents/training/tb_relevance_test.py -q -m slow      # the real run
@@ -51,7 +56,6 @@ import os
 import subprocess
 import sys
 
-import numpy as np
 import pytest
 import torch as th
 
@@ -62,7 +66,6 @@ from agents.training.reward_term_stats import (
     term_class_map,
     tracked_terms,
 )
-from agents.training.scaffolding import live_gauge_metrics
 from utils.paths import repo_path, src_path
 
 # ═══════════════════════════════════════════════════ G1 — grad_balance: value counted ONCE ══
@@ -128,54 +131,15 @@ def test_a_distinct_aux_term_is_still_reported():
     assert out["grad/win_prob_norm_shared"] == pytest.approx(out["grad/value_norm_shared"])
 
 
-# ══════════════════════════════════════ G2 — the scaffolding gauge against itself ══
-
-
-def test_gauge_is_silent_when_V_is_a_monotone_map_of_the_logit():
-    """`--critic winprob`: V = sigmoid(z), so ρ = 1 by construction and there is nothing to read."""
-    rng = np.random.default_rng(0)
-    z = rng.normal(size=512)
-    v = 1.0 / (1.0 + np.exp(-z))            # exactly what `_critic_value` returns in that mode
-    assert live_gauge_metrics(v, z) == {}
-
-
-def test_gauge_is_silent_for_any_monotone_map_not_just_the_sigmoid():
-    rng = np.random.default_rng(1)
-    z = rng.normal(size=256)
-    assert live_gauge_metrics(np.exp(z), z) == {}
-    assert live_gauge_metrics(3.0 * z - 7.0, z) == {}
-
-
-def test_gauge_still_reads_two_genuinely_different_readouts():
-    """The negative control: a `shaped` run's V and win-prob head order states differently."""
-    rng = np.random.default_rng(2)
-    z = rng.normal(size=512)
-    v = z + rng.normal(size=512)            # correlated but not a monotone map
-    out = live_gauge_metrics(v, z)
-    assert set(out) == {"scaffolding_gauge", "scaffolding_rho", "scaffolding_n"}
-    assert 0.0 < out["scaffolding_rho"] < 1.0
-    assert out["scaffolding_n"] == 512.0
-
-
-def test_gauge_absence_is_still_reported_for_no_head_and_no_rows():
-    """The pre-existing silences are untouched — 'no head' and 'no rows' both leave a gap."""
-    assert live_gauge_metrics(None, None) == {}
-    assert live_gauge_metrics(np.array([]), np.array([])) == {}
-
-
-def test_a_tiny_monotone_sample_is_a_COINCIDENCE_and_is_still_published():
-    """The gate claims SAMENESS, so it needs enough rows for agreement to mean something.
-
-    Two unrelated readouts agree on the order of n distinct values with probability 1/n! — 1-in-6
-    at n=3. Suppressing there would silence a real (if thin) reading; a live rollout carries ~1e5
-    paired rows, so the floor costs the production path nothing. This is the case the NaN-safety
-    test in `scaffolding_test.py` exercises.
-    """
-    v = np.array([1.0, 2.0, 5.0])
-    z = np.array([0.1, 0.2, 0.5])
-    out = live_gauge_metrics(v, z)
-    assert out["scaffolding_n"] == 3.0
-    assert out["scaffolding_gauge"] == pytest.approx(0.0)
+# ══════════════════════════════════════ G2 — the scaffolding gauge: RETIRED, so absent ══
+#
+# The in-training `train/scaffolding_{gauge,rho,n}` scalar (a rank gauge between the shaped critic V and the
+# win-prob head) was RETIRED in the flag census (P11d), source and all: under the win-prob critic V IS
+# `sigmoid(win_prob_logit)`, so it could only ever publish a tautology — and it did, on every win-prob run,
+# because its identity guard compared float32 ranks that the sigmoid saturates into ties while the logits stay
+# distinct. The six tests that lived here pinned that guard against `live_gauge_metrics`, which is gone; the
+# claim they stood for ("a content-free tag leaves a GAP") is now the smoke's `NOISE_TAGS` assertion below,
+# which still names the three retired tags and fails if anything publishes them again.
 
 
 # ═══════════════════════════════════ G3 — a CONSTANT margin cannot stratify ══

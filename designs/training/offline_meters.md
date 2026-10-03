@@ -29,8 +29,8 @@ above was captured before the move and reproduced byte-for-byte after it.
 ⚠️ **Three near-siblings elsewhere in the tree are deliberately NOT merged into it**, and the module
 docstring carries the reasons so nobody "de-duplicates" a shipped instrument's output by accident.
 `scaffolding.py`'s `spearman_rho` and its own `cluster_bootstrap_ci` use the **NaN** refusal
-convention (TensorBoard drops NaN, so a degenerate slice leaves a GAP in the live
-`train/scaffolding_gauge` curve) where this module returns `None` for a JSON report, and its
+convention (TensorBoard drops NaN, so a degenerate slice left a GAP in the live
+`train/scaffolding_gauge` curve, retired in P11d; the convention stays with the offline readers) where this module returns `None` for a JSON report, and its
 bootstrap is strictly more general — it resamples ROW INDICES and evaluates an arbitrary `stat_fn`,
 which is what lets `reliability_table` compose with it. `winprob_finetune.label_noise_variance`
 subtracts the same `p̂(1−p̂)/(n−1)` identity but PER ROW with a heterogeneous `n`.

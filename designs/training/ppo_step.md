@@ -46,8 +46,8 @@ detail, and a pin that depends on it breaks on a move that changed nothing. Five
 docstring). **The fold's own ORDERING pins stay on `inspect.getsource(train)`**, where
 straight-line source order is the thing being checked. The same rule holds for a MONKEYPATCH: a
 test that stubs a diagnostic must patch the module that now owns the call
-(`train_setup.advantage_density_metrics` / `train_setup.shared_trunk_parameters` /
-`metrics_export.live_gauge_metrics`), because patching `ppo` would silently stub nothing and the
+(`train_setup.advantage_density_metrics` / `train_setup.shared_trunk_parameters`; the third example,
+`metrics_export.live_gauge_metrics`, was retired with the in-training scaffolding gauge, P11d), because patching `ppo` would silently stub nothing and the
 byte-identity test would then compare two identical arms and pass. Per minibatch:
 
 The upstream-drift hash check (`_verify_upstream_unchanged` + `_EXPECTED_UPSTREAM_TRAIN_HASH`)

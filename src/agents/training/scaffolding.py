@@ -55,7 +55,16 @@ and an i.i.d. interval on this data would be a fabricated tightness of roughly s
 
 Everything in this module is PURE — numpy in, floats out. No torch, no RNG except the explicitly
 seeded bootstrap, no filesystem. It is shared by the offline CLI (`python -m main.scaffolding_gauge`)
-and the live `train/scaffolding_gauge` scalar so the two can never drift apart.
+and the offline readers built on it (`stats`, `critic_gate`, `main/ops/*`), and `reliability_table` is also
+the win-prob calibration read's statistic (`instrumented_ppo/calibration.py`).
+
+**The IN-TRAINING `train/scaffolding_{gauge,rho,n}` scalar was RETIRED** (flag census P11d, orchestrator's call
+after P10-F2 finding 2): its source — the shaped critic V against the win-prob head — no longer exists. The
+win-prob critic is the only critic, so V is `sigmoid(win_prob_logit)` and a rank gauge between a quantity and
+itself is a tautology (rho 1.0, gauge 0.0); the live path's identity guard compared float32 ranks, which the
+sigmoid saturates into ties, so it published that tautology on every win-prob run anyway. The offline gauge
+(`rank_gauge`, `affine_gauge`, `gauge_slice`, `constancy_row`) is KEPT for what still reads it: the old SHAPED
+runs' eval traces, whose V and P(win) really are different readouts.
 """
 from __future__ import annotations
 
@@ -363,73 +372,6 @@ def gauge_slice(
     affine["ci_lo"], affine["ci_hi"] = cluster_bootstrap_ci(
         lambda idx: affine_gauge(v[idx], p[idx], y[idx])["rms"], b, n_boot=n_boot, seed=seed + 1)
     return {"rank": rank, "affine": affine, "constancy": const}
-
-
-# ══════════════════════════════════════════════════════════════════════ the live scalar ══
-
-#: Below this many paired rows, IDENTICAL orderings are a COINCIDENCE, not an identity, and
-#: `_same_ordering` refuses to conclude anything from them. Two unrelated readouts agree on the
-#: order of n distinct values with probability 1/n!: that is 1-in-6 at n = 3 and 1-in-2 at n = 2,
-#: but ~5e-14 at 16 — beyond any plausible accident, while a real rollout's paired read is ~1e5
-#: rows (`train/scaffolding_n` reads 131072 on `models/ai_v12_01_winprob_critic`). So the floor
-#: costs the production path nothing and keeps the gate from silencing a genuine tiny sample.
-_MIN_SAME_ORDERING_N = 16
-
-
-def _same_ordering(a: np.ndarray, b: np.ndarray) -> bool:
-    """Do these two arrays induce the IDENTICAL ranking (ties included)?
-
-    `gen3_tb_relevance_v1`. True ⟺ one is an exact monotone (non-decreasing) transform of the
-    other over at least `_MIN_SAME_ORDERING_N` rows — the condition under which a rank correlation
-    between them is 1.0 by construction and therefore content-free. Uses the same average-rank
-    convention the Spearman path does, so the answer agrees with "ρ would be exactly 1.0" rather
-    than approximating it, and it is a claim about SAMENESS of the two readouts, which is why the
-    sample floor is part of it rather than a separate guard.
-    """
-    if a.size < _MIN_SAME_ORDERING_N:
-        return False
-    return bool(np.array_equal(_rankdata(a), _rankdata(b)))
-
-
-def live_gauge_metrics(values, win_prob_logits) -> Dict[str, float]:
-    """`train/scaffolding_*` from one rollout's paired (V, win-prob-logit) reads.
-
-    The RANK form only — deliberately. The live path has no realized outcome labels at hand for
-    the states it is scoring (the win-prob target is a delayed MC label that only some rows carry),
-    so the calibrated-affine gauge is an OFFLINE instrument by construction; publishing a live
-    number labelled as if it were the calibrated one would be the worse error.
-
-    The logit is passed through unconverted: the sigmoid is monotone, so ρ over logits equals ρ
-    over probabilities exactly, and skipping it avoids saturating float32 ranks at ±1.
-
-    Returns keys WITHOUT the ``train/`` prefix (the caller adds it — the `signal/` idiom), and an
-    EMPTY dict when there is nothing to publish (no head, no rows), so a run without the win-prob
-    head writes no curve at all rather than a flat zero.
-
-    🚨 **AND an empty dict when the two readouts are THE SAME QUANTITY** (`gen3_tb_relevance_v1`).
-    Under the win-prob critic the deployed value IS ``sigmoid(win_prob_logit)``, so ρ is 1.0 and
-    the gauge is 0 *by construction* — a tautology, not a measurement, and it published one for
-    every rollout of the first win-prob arm (``train/scaffolding_rho`` a flat 1.0,
-    ``train/scaffolding_gauge`` a flat 5.5e-13). The test is the RANK VECTORS being identical,
-    which is exactly "V is an exact monotone map of the logit"; over a rollout's ~10⁵ paired rows
-    two genuinely different readouts do not produce it, and if they somehow did, the gauge would
-    have nothing to say either.
-    """
-    if values is None or win_prob_logits is None:
-        return {}
-    v = np.asarray(values, dtype=np.float64).ravel()
-    z = np.asarray(win_prob_logits, dtype=np.float64).ravel()
-    if v.size == 0 or v.size != z.size:
-        return {}
-    ok = np.isfinite(v) & np.isfinite(z)
-    n = int(ok.sum())
-    if n == 0:
-        return {}
-    if _same_ordering(v[ok], z[ok]):
-        return {}
-    g = rank_gauge(v[ok], z[ok])
-    return {"scaffolding_gauge": g["gauge"], "scaffolding_rho": g["rho"],
-            "scaffolding_n": float(n)}
 
 
 # ═══════════════════════════════ the RELIABILITY table (calibration of P(win) vs outcome) ══

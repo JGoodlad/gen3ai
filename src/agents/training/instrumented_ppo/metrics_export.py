@@ -17,7 +17,6 @@ from agents.training.instrumented_ppo.calibration import (
 )
 from agents.training.instrumented_ppo.constants import _NOISE_SCALE_EMA_DECAY
 from agents.training.instrumented_ppo.noise_scale import debiased_ema
-from agents.training.scaffolding import live_gauge_metrics
 
 
 class TrainMetricsExport:
@@ -45,8 +44,9 @@ class TrainMetricsExport:
         if grad_norms:
             self.logger.record("train/grad_norm", float(np.mean(grad_norms)))
 
-    def _record_signal_metrics(self, signal_metrics: dict, scaffold_v: list, scaffold_z: list) -> None:
-        """`signal/adv_*` (read off the RAW advantages in the setup) and `train/scaffolding_gauge`."""
+    def _record_signal_metrics(self, signal_metrics: dict) -> None:
+        """`signal/adv_*` (read off the RAW advantages in the setup). (`train/scaffolding_{gauge,rho,n}` was
+        the other half of this method until the in-training scaffolding gauge was retired, P11d.)"""
         # +SIGNAL (gen3_signal_rate_metrics_v1): the ADVANTAGE-DENSITY half of the `signal/` group,
         # measured above off the RAW pre-normalization advantages. `adv_raw_std` = how much the critic
         # thinks this rollout's actions mattered; `adv_raw_abs_mean` = its outlier-robust companion
@@ -57,22 +57,6 @@ class TrainMetricsExport:
         # density is the mirror paradox, not health. NaN on a degenerate (constant) rollout.
         for _sk, _sv in signal_metrics.items():
             self.logger.record(f"signal/{_sk}", float(_sv))
-
-        # +SCAFFOLDING GAUGE: `train/scaffolding_gauge` = (1 − Spearman ρ(V, P(win))) / 2 over
-        # epoch 0's paired reads. 0 = the shaped critic and the win-prob head order states
-        # identically (no scaffolding divergence visible in the ordering); 0.5 = independent.
-        # It should SHRINK as a generation matures, and that trajectory is the registered signal
-        # for annealing the shaping coefficients toward the pure game.
-        # ⚠️ ORDERING ONLY — it claims nothing about magnitude, and it goes AMBIGUOUS exactly
-        # where PBRS drives V_shaped toward a constant (the critic then has no variance left to
-        # rank with). Read it beside `train/value_std`; the magnitude question is the offline
-        # `python -m main.scaffolding_gauge`, which fits a per-checkpoint affine V→outcome map on
-        # realized outcomes. NaN on a degenerate rollout, and NO key at all when the run carries
-        # no win-prob head — a run without the head must leave a GAP, not a flat zero.
-        if scaffold_v:
-            for _gk, _gv in live_gauge_metrics(np.concatenate(scaffold_v),
-                                               np.concatenate(scaffold_z)).items():
-                self.logger.record(f"train/{_gk}", float(_gv))
 
     def _record_noise_scale_metrics(self, accum: int, noise_g_small_sq, noise_g_big_sq,
                                     _ns_terms) -> None:
@@ -130,7 +114,7 @@ class TrainMetricsExport:
 
     def _record_head_metrics(self, belief_metrics: dict, win_prob_metrics: dict,
                              calib_all, calib_contested, critic_winprob: bool,
-                             scaffolding_on: bool, grad_balance: dict) -> None:
+                             win_prob_on: bool, grad_balance: dict) -> None:
         """The supervised heads' own prefixes: `belief/`, `win_prob/`, and the critic's Murphy split."""
         # +BELIEF: hidden-opponent belief-aux diagnostics under their OWN `belief/` TB prefix (NOT
         # `train/`, which is crowded — matches the dedicated `grad/`/`win_prob/`/`eval/`
@@ -185,7 +169,7 @@ class TrainMetricsExport:
         # bound `fe.forward` for the capacity-probe's reason: both compile flags patch the bound
         # attribute, and a second obs shape through the compiled entry point would add a dynamo
         # graph for a diagnostic (`cache_size_limit` is 8).
-        for _sk2, _sv2 in self._winprob_start_metrics(scaffolding_on).items():
+        for _sk2, _sv2 in self._winprob_start_metrics(win_prob_on).items():
             self.logger.record(f"win_prob/{_sk2}", _sv2)
 
     def _record_capacity_metrics(self, capacity_metrics: dict, aux_metrics: dict) -> None:

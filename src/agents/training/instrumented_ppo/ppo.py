@@ -217,12 +217,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         vf_clip_fractions: list[float] = []  # +INSTRUMENTATION
         belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
         win_prob_metrics: dict[str, list[float]] = {}  # +WIN-PROB: per-minibatch diagnostics (dict of lists)
-        # +SCAFFOLDING GAUGE: paired (V, win-prob logit) reads for `train/scaffolding_gauge`. Two
-        # lists, filled ONLY during epoch 0 so the gauge describes ONE policy over the whole
-        # rollout rather than mixing epochs (by epoch 3 the policy that produced the pair is not
-        # the policy the pair is attributed to). Empty when the head is off → nothing published.
-        scaffold_v: list[np.ndarray] = []
-        scaffold_z: list[np.ndarray] = []
         # +WIN-PROB CALIBRATION: reliability-diagram BIN COUNTS over epoch 0, pooled and restricted
         # to material-EVEN decisions. Bin counts rather than per-minibatch ECEs because an ECE is
         # nonlinear in the populations (see `calibration.CalibrationAccumulator`).
@@ -241,7 +235,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         belief_aux_on, move_belief_on = _f.belief_aux_on, _f.move_belief_on
         move_latent_on = _f.move_latent_on
         critic_winprob, win_prob_on = _f.critic_winprob, _f.win_prob_on
-        scaffolding_on = _f.scaffolding_on
         # +FORK ARM (gen3_fork_v1) — computed in the Rust collector's fork pass
         # (`rust_rollout/fork.py`, which BLOCKS on the branch continuations before the epochs
         # begin) and stashed on the model. Recorded under its OWN `fork/` prefix rather than
@@ -366,25 +359,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 self._ridealong_update(rollout_data, values, actions, epoch, ridealong_acc)
                 if _ph is not None: _ph("ridealong")
 
-                # +SCAFFOLDING GAUGE (registered 2026-08-29): the two value readouts this tree
-                # carries answer DIFFERENT questions — the critic estimates the SHAPED return (in
-                # reward units, discounted), the win-prob head estimates the GAME. Their divergence
-                # is the reward scaffolding still doing work, and its trajectory is the registered
-                # signal for when shaping coefficients can begin annealing toward the pure game.
-                # Read here because this is the one place both readouts exist for the SAME states
-                # from the SAME forward: `evaluate_actions` above produced `values` and stashed
-                # `last_win_prob_logits`.
-                # 🚨 RANK FORM ONLY. V is a shaped return, so there is no unit
-                # conversion to a probability; the live path additionally has no realized outcome
-                # labels for these states, so the calibrated-affine gauge is OFFLINE by
-                # construction (`python -m main.scaffolding_gauge`). The logit is NOT sigmoided —
-                # the sigmoid is monotone, so the rank correlation is identical and float32 ranks
-                # never saturate. Read-only: detached clones, no gradient path, no RNG.
-                if scaffolding_on and epoch == 0:
-                    _wz = getattr(self.policy.features_extractor, "last_win_prob_logits", None)
-                    if _wz is not None:
-                        scaffold_v.append(values.detach().reshape(-1).cpu().numpy())
-                        scaffold_z.append(_wz.detach().reshape(-1).cpu().numpy())
+                # (The in-training SCAFFOLDING GAUGE — a paired (V, win-prob logit) rank read here — was
+                # RETIRED in P11d: under the win-prob critic V IS sigmoid(logit), a tautology. The offline
+                # `python -m main.scaffolding_gauge` still reads old shaped runs' traces.)
 
                 # +WIN-PROB CALIBRATION (gen3_winprob_calibration_export_v1): the reliability half
                 # of the head's diagnostics. Brier is a PROPER score and decomposes as
@@ -393,7 +370,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # COUNTS across the minibatches of EPOCH 0 (an ECE is nonlinear in the bin
                 # populations — the mean of per-minibatch ECEs is not the pooled ECE) and folded
                 # once at the end. Read-only: detached, no gradient, no RNG.
-                if scaffolding_on and epoch == 0:
+                if win_prob_on and epoch == 0:
                     _cz = getattr(self.policy.features_extractor, "last_win_prob_logits", None)
                     _ct = rollout_data.observations.get("win_target")
                     _cm = rollout_data.observations.get("win_mask")
@@ -623,10 +600,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
         self._record_grad_balance_metrics(grad_balance, rank_metrics, edge_metrics, cell_metrics,
                                           grad_norms)
-        self._record_signal_metrics(signal_metrics, scaffold_v, scaffold_z)
+        self._record_signal_metrics(signal_metrics)
         self._record_noise_scale_metrics(accum, noise_g_small_sq, noise_g_big_sq, _ns_terms)
         self._record_head_metrics(belief_metrics, win_prob_metrics, calib_all, calib_contested,
-                                  critic_winprob, scaffolding_on, grad_balance)
+                                  critic_winprob, win_prob_on, grad_balance)
         self._record_capacity_metrics(capacity_metrics, aux_metrics)
         self._record_ridealong_metrics(ridealong_acc)
         # +INSTRUMENTATION: LAST line of train(), so it bounds the whole call — the honest

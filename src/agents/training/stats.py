@@ -25,8 +25,8 @@ Two near-siblings exist and each one differs in a way that is load-bearing rathe
 accidental, so folding them together would silently change a shipped instrument's output:
 
 * ``scaffolding.py`` — ``spearman_rho`` and its own ``cluster_bootstrap_ci``. Both use the **NaN**
-  refusal convention (TensorBoard drops NaN, so a degenerate slice leaves a GAP in the live
-  ``train/scaffolding_gauge`` curve), where this module returns ``None`` for a JSON report. Its
+  refusal convention (TensorBoard drops NaN, so a degenerate slice left a GAP in the live
+  ``train/scaffolding_gauge`` curve, retired in P11d; the convention stays with the offline readers), where this module returns ``None`` for a JSON report. Its
   bootstrap is also strictly more general — it resamples ROW INDICES and evaluates an arbitrary
   ``stat_fn``, which is what lets ``reliability_table`` compose with it; the pair here is
   specialised to a mean and a difference of means. Two conventions, two return types, two

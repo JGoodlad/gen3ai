@@ -35,7 +35,6 @@ class FoldFlags(NamedTuple):
     item_belief_on: Any
     critic_winprob: Any
     win_prob_on: Any
-    scaffolding_on: Any
     policy_grad_coef: Any
     fork_pg_mask_on: Any
 
@@ -124,10 +123,6 @@ class TrainSetup:
         # term). The scalar `value_loss` survives as a diagnostic; its TERM is dropped.
         critic_winprob = is_winprob(getattr(self.policy, "_critic_mode", "shaped"))
         win_prob_on = getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
-        # +SCAFFOLDING GAUGE: gated on the HEAD's existence alone — the
-        # gauge is an observability read of whatever the head currently says. ALWAYS ON when the
-        # head exists; there is no flag, matching the `signal/` group.
-        scaffolding_on = getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
         # +PG-COEF (gen3_policy_grad_coef_v1, `--policy-grad-coef`): the PPO policy-gradient term's own weight.
         # 1.0 (default) takes the UNSCALED `policy_loss` tensor — the loss expression is then
         # byte-identical to upstream; 0.0 removes the policy-gradient contribution alone. Scales ONLY `policy_loss` — entropy and the value term
@@ -145,7 +140,7 @@ class TrainSetup:
         return FoldFlags(
             belief_aux_on=belief_aux_on, move_belief_on=move_belief_on, move_latent_on=move_latent_on,
             spread_belief_on=spread_belief_on, hp_type_belief_on=hp_type_belief_on, item_belief_on=item_belief_on,
-            critic_winprob=critic_winprob, win_prob_on=win_prob_on, scaffolding_on=scaffolding_on,
+            critic_winprob=critic_winprob, win_prob_on=win_prob_on,
             policy_grad_coef=policy_grad_coef,
             fork_pg_mask_on=fork_pg_mask_on,
         )

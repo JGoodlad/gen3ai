@@ -1026,13 +1026,16 @@ a handful of numpy means per rollout.
 
 **Full detail — every flag, gate, measurement and hazard — is in [`designs/training/telemetry_scalars.md`](../../../designs/training/telemetry_scalars.md).**
 
-## The SCAFFOLDING GAUGE — `train/scaffolding_gauge` + `python -m main.scaffolding_gauge`
+## The SCAFFOLDING GAUGE — OFFLINE ONLY: `python -m main.scaffolding_gauge` (the in-training `train/scaffolding_*` was RETIRED, P11d)
 
-🚨 **THIS GAUGE IS A SHAPED-CRITIC INSTRUMENT AND IS DEGENERATE ON THE PRODUCTION RUN.** It
-measures the divergence between TWO readouts; under the win-prob critic (the only critic) there is one — the win-prob
-head IS the critic, so the gauge compares a head with itself and its rank correlation is 1 by
-construction. Read it on an archived shaped run; do not read it as a scaffolding
-measurement of a terminal-only run, which has no scaffolding to measure.
+🚨 **THE IN-TRAINING SCALAR IS GONE; THE OFFLINE CLI READS OLD SHAPED RUNS.** The gauge measured the divergence between
+TWO readouts — the shaped critic V and the win-prob head. Under the win-prob critic (the only critic) there is one: V is
+`sigmoid(win_prob_logit)`, so a rank gauge between them is a tautology (rho 1, gauge 0) and it published exactly that on
+every run. `scaffolding.live_gauge_metrics`, `_same_ordering`, `ppo.py`'s paired epoch-0 reads and `metrics_export`'s publish
+are deleted; the offline math (`rank_gauge`, `affine_gauge`, `gauge_slice`, `constancy_row`, `reliability_table`,
+`spearman_rho`, `cluster_bootstrap_ci`) and the CLI stay for what reads them (`critic_gate`, `main/ops/*`, `stats.py`, the
+win-prob calibration read). Read the CLI on an archived shaped run; do not read it as a scaffolding measurement of a
+terminal-only run, which has no scaffolding to measure.
 
 **Full detail — every flag, gate, measurement and hazard — is in [`designs/training/telemetry_scalars.md`](../../../designs/training/telemetry_scalars.md).**
 

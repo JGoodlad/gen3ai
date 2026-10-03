@@ -254,48 +254,41 @@ sparse-vs-spread kurtosis discrimination at MATCHED std, scale-freeness, every d
 the rolling-window eviction, the kind routing, the rollout locals, the
 `OPP_CLASS_SUFFIX` ↔ opp-class-constant pin, and the byte-identity of `train()` with the read
 monkeypatched out.
-## The SCAFFOLDING GAUGE — `train/scaffolding_gauge` + `python -m main.scaffolding_gauge`
+## The SCAFFOLDING GAUGE — OFFLINE ONLY (`python -m main.scaffolding_gauge`); the in-training `train/scaffolding_{gauge,rho,n}` was RETIRED (P11d)
 
-🚨 **THIS GAUGE IS A SHAPED-CRITIC INSTRUMENT AND IS DEGENERATE ON THE PRODUCTION RUN.** It
-measures the divergence between TWO readouts; under the win-prob critic (the only critic) there is one — the win-prob
-head IS the critic, so the gauge compares a head with itself and its rank correlation is 1 by
-construction. Read it on an archived shaped run; do not read it as a scaffolding
-measurement of a terminal-only run, which has no scaffolding to measure.
+🚨 **THE IN-TRAINING SCALAR IS GONE, AND THE OFFLINE CLI READS OLD SHAPED RUNS.** The gauge measured the
+divergence between TWO readouts — the shaped critic V and the win-prob head. Under the win-prob critic (the only
+critic) there is one: V IS `sigmoid(win_prob_logit)`, so the gauge compared a head with itself and its rank
+correlation is 1 by construction. `gen3_tb_relevance_v1` gated that tautology on a rank-vector identity test
+(`scaffolding._same_ordering`), but the test compared float32 ranks of V — which the sigmoid saturates into TIES
+while the logits stay distinct — so it failed to fire and the three tags were published once per smoke (rho 1.0,
+gauge 0.0, n 2,048). The flag census (P11d, the orchestrator's call after P10-F2 finding 2) retired the scalar
+rather than patching the guard: `scaffolding.live_gauge_metrics` and `_same_ordering`, `ppo.py`'s paired
+`scaffold_v` / `scaffold_z` epoch-0 reads, `metrics_export`'s publish and `FoldFlags.scaffolding_on` (the
+calibration read and the episode-start read now key on `win_prob_on`, the same predicate) are deleted. `tb_relevance_test`'s
+`NOISE_TAGS` still names the three tags and the slow smoke fails if anything publishes them again. **KEPT:**
+`scaffolding.py`'s `rank_gauge` / `affine_gauge` / `gauge_slice` / `constancy_row` / `reliability_table` /
+`spearman_rho` / `cluster_bootstrap_ci` (offline readers: `main.scaffolding_gauge`, `critic_gate`, `main/ops/*`,
+`stats.py`; `reliability_table` is also the win-prob calibration read's statistic) and the CLI, which still reads
+the eval traces of old shaped runs (the only runs whose V and P(win) are different readouts). Do not read it as a
+scaffolding measurement of a terminal-only run, which has no scaffolding to measure.
 
-**How far apart are the two value readouts, and is the gap closing?** Under `shaped`, the critic
-estimates the **shaped** return (reward units, `gamma`-discounted) while the win-prob head estimates
+**How far apart are the two value readouts, and is the gap closing?** (a shaped-era question.) Under `shaped`, the
+critic estimated the **shaped** return (reward units, `gamma`-discounted) while the win-prob head estimates
 the **game** (outcome units, no discount distortion). Neither is a repair of the
 other — the two-head structure is the automatic consequence of choosing shaped rewards. What their DIVERGENCE
-measures is the reward scaffolding still doing work, and its trajectory is the registered signal
-for when shaping coefficients can begin annealing toward the pure game.
+measures is the reward scaffolding still doing work, and its trajectory was the registered signal
+for when shaping coefficients could begin annealing toward the pure game.
 
 Pure math in **`agents/training/scaffolding.py`** (numpy only, no torch, no filesystem), shared by
-the live scalar and the offline CLI so the two can never drift apart.
+the offline CLI and the offline readers built on it.
 
-| scalar | recorded by | is |
-|---|---|---|
-| `train/scaffolding_gauge` | `instrumented_ppo/ppo.py::train()` | `(1 − Spearman ρ(V, P(win))) / 2` over epoch 0's paired reads. 0 = identical ordering, 0.5 = independent, 1 = inverted |
-| `train/scaffolding_rho` | same | the raw ρ, so nothing is hidden by the transform |
-| `train/scaffolding_n` | same | rows the ρ was computed from |
-
-**ALWAYS ON when the win-prob head exists** (`--win-prob-mode != none`), flagless, gated on the
-head's EXISTENCE — a `read_only` head still says
-something worth curving. A run with no head publishes **no key at all**, so the curve is absent
-rather than flat at zero.
-
-**Where it is read, and why there.** Inside the minibatch loop, right after the win-prob block and
-BEFORE any later fold that re-forwards the extractor can clobber its stashes: that is the one place both readouts exist
-for the SAME states from the SAME forward (`evaluate_actions` produced `values` and stashed
-`last_win_prob_logits`). **Epoch 0 only** — by epoch 3 the policy that produced a pair is not the
-policy the pair would be attributed to. The logit is NOT sigmoided: the sigmoid is monotone, so ρ
-is identical and float32 ranks never saturate.
-
-### ⚠️ UNITS — the rank form is the ONLY one that is live-legal
+### ⚠️ UNITS — the rank form is the ONLY unit-free one
 
 Under the (no longer trainable) shaped critic `V` is a SHAPED return and there is no general unit
 conversion to a probability. (Under the win-prob critic (the only critic) the question dissolves: `V` IS the
 probability, which is the same fact that makes this gauge degenerate there.) The
-live scalar is therefore **rank-based and claims ORDERING only** — nothing about magnitude or
+rank gauge (the form the retired live scalar took) is therefore **rank-based and claims ORDERING only** — nothing about magnitude or
 calibration. It also goes **AMBIGUOUS at the PBRS constancy endpoint**: under a good frozen
 potential, all evaluative content migrates into the reward stream and `V_shaped` is driven toward a
 CONSTANT (ledger db9bb5c), at which point ρ degenerates into noise and a falling curve cannot be
@@ -383,8 +376,8 @@ must not render the same.
 Tests: `scaffolding_test.py` — the three known regimes (monotone ⇒ exactly 0, inverted ⇒ exactly 1,
 independent ⇒ ~0.5), affine-rescale invariance, the constant-axis NaN, the affine gauge's
 `readout_penalty` convicting the FAMILY on a constructed step function while a linear control
-collapses it, the cluster bootstrap beating an i.i.d. one by ~`sqrt(50)`, and the live scalar's
-byte-identity + NaN-safety + epoch-0-only read. For the reliability block: a calibrated forecaster
+collapses it, and the cluster bootstrap beating an i.i.d. one by ~`sqrt(50)` (the live scalar's
+byte-identity + NaN-safety + epoch-0-only pins went with it, P11d). For the reliability block: a calibrated forecaster
 reading REL→0 with RES>0, a base-rate one reading exactly 0 skill (the meter's whole point), the
 Murphy identity holding to its own reported residual, `p == 1.0` landing in the last bin rather than
 a phantom one, and uniform weights reproducing the unweighted table bit-for-bit.
@@ -411,7 +404,7 @@ sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 | group | sites | tags seen | cadence | currency | **era** (the win-prob critic (the only critic)) | computed in |
 |---|---:|---:|---|---|---|---|
 | `reward/` | 1 | 46 | **per rollout** | RAW REWARD | 14 emitted, of which **6 NOISE (gated)** + 5 REDUNDANT — a 1-term composition has nothing to apportion | `reward_term_callback` ← `reward_term_stats` |
-| `train/` | 53 | 23 | per rollout (`train()`) | MIXED — see per-tag below | LIVE, but `return_*` / `value_loss` / `explained_variance` **change currency to P(win)**; `scaffolding_*` **NOISE (gated)** | `instrumented_ppo/ppo.py`, `grad_balance`, `run_io` |
+| `train/` | 53 | 23 | per rollout (`train()`) | MIXED — see per-tag below | LIVE, but `return_*` / `value_loss` / `explained_variance` **change currency to P(win)**; `scaffolding_*` **RETIRED (P11d; the three tags are no longer emitted)** | `instrumented_ppo/ppo.py`, `grad_balance`, `run_io` |
 | `win_prob/` | 5 | 42 (+10 under the win-prob critic (the only critic)) | per rollout | PROBABILITY | **the era's core group.** The `critic_*` ten are LIVE and primary; the 19 `contested`/`material` tags are **NOISE** on a spread-free margin and are ALL gated (see below) | `ppo.py` ← `value_terms`, `calibration`, `scaffolding.reliability_table` |
 | `eval/` | 35 | — | **per EVAL CYCLE** | win rate / ELO / reward | LIVE — except **13 `mean_reward_*` REDUNDANT** (byte-identical to their `win_rate_*` twin under the indicator) | `eval_callback`, `selfplay_callback` |
 | `eval_final/` | 0 | — | — | — | **DELETED (P6, 2026-10-02)** — emitted only by the post-training final eval; runs before that date carry the tags | — |
@@ -451,7 +444,7 @@ byte-identical (verified: 172 tags, empty before/after diff):
 
 | gated | why it was content-free | gate lives in |
 |---|---|---|
-| `train/scaffolding_{gauge,rho,n}` | `V = sigmoid(win_prob_logit)`, so ρ ≡ 1.0 and the gauge ≡ 5.5e-13. A rank gauge between a quantity and **itself** | `scaffolding._same_ordering` — identical rank vectors ⇒ no keys |
+| `train/scaffolding_{gauge,rho,n}` | `V = sigmoid(win_prob_logit)`, so ρ ≡ 1.0 and the gauge ≡ 5.5e-13. A rank gauge between a quantity and **itself** | **RETIRED (P11d): no emitter exists.** (`scaffolding._same_ordering` gated it on identical rank vectors, which fp32 saturation defeated: the tags were published once per smoke.) The slow smoke asserts them ABSENT |
 | `grad/win_prob_{share,norm_shared,policy_cosine}` | the critic loss IS the win-prob BCE — the SAME tensor object, passed as `value_term` *and* as `aux_terms["win_prob"]` | `grad_balance_metrics` skips an aux term that `is value_term` |
 | `win_prob/{brier,acc}_contested` · `contested_{frac,label_mean}` · `brier_material` · `skill_vs_material` | **NO LONGER NOISE — the SOURCE was repaired 2026-09-06.** `win_margin` was identically 0.0 on the whole win-prob era (a MATERIAL-potential by-product whose compute the composition gated away), so `contested_frac` ≡ 1.0, every `*_contested` ≡ its pooled twin, `brier_material` ≡ 0.25 and `skill_vs_material` collapsed to `1 − 4·brier`. `gen3_obs_margin_unconditional_v1` computes Φ_mat unconditionally, so the margin now spreads and the six tags are LIVE — see *WHAT THE SHORT CIRCUIT MUST NEVER SKIP* below. ⚠️ A run started before that commit carries the degenerate series | `value_terms._win_prob_loss` treats a **spread-free** margin as absent — kept, as the consumer-side guard against any future flat margin |
 | `reward/{bias_refund,class_refund}_{mean,abs_mean,abs_share}` | the refund is the BIAS class's accumulate-and-refund MECHANISM; with no bias term it is structurally 0.0 | `reward_term_stats._has_bias` |
@@ -586,11 +579,10 @@ only alongside the opponent-intent labels (`--opp-intent-coef > 0`). Without it 
 still ships, and `signal/outcome_win_rate_<kind>` carries the realized per-class rate
 unconditionally — so the self-play realized rate is never missing, only its paired partner is.
 
-**`win_prob/vs_critic_divergence` does not exist under that name; the scalar is
+**`win_prob/vs_critic_divergence` never existed under that name; the scalar was
 `train/scaffolding_gauge`** — `(1 − Spearman ρ(V, P(win)))/2` over epoch 0's paired reads, with
-`train/scaffolding_rho` and `train/scaffolding_n` beside it. It is NOT renamed: the name is
-non-obvious but not misleading, it is the subject of a documented section and an offline CLI
-(`python -m main.scaffolding_gauge`), and dashboards read it. See *The SCAFFOLDING GAUGE* below.
+`train/scaffolding_rho` and `train/scaffolding_n` beside it. It was RETIRED in P11d (a tautology under the win-prob
+critic); the offline CLI (`python -m main.scaffolding_gauge`) remains. See *The SCAFFOLDING GAUGE* below.
 
 #### `signal/` — advantage density and the REALIZED per-class win rate
 
@@ -611,7 +603,7 @@ non-obvious but not misleading, it is the subject of a documented section and an
 | `value_loss` | the fitted loss | raw |
 | `policy_gradient_loss` · `entropy_loss` · `loss` · `approx_kl` · `clip_fraction` · `clip_range[_vf]` · `grad_norm` · `n_updates` | the stock PPO step | unitless / loss units |
 | `approx_kl_epoch_<k>` · `clip_fraction_epoch_<k>` | one pair per epoch the update ran, `k = 0…n_epochs−1` (fewer after a `target_kl` stop) — each epoch's mean of the SAME per-minibatch numbers the stock pair folds (`gen3_ppo_per_epoch_diag_v1`). ⚠️ stock `approx_kl` is the LAST epoch's mean; stock `clip_fraction` pools every epoch. Detail: [`ppo_step.md`](ppo_step.md) | unitless |
-| `scaffolding_gauge` · `scaffolding_rho` · `scaffolding_n` | the shaped critic vs the win-prob head — **DEGENERATE under the win-prob critic (the only critic)**, where the two readouts are one head | unitless (rank) |
+| `scaffolding_gauge` · `scaffolding_rho` · `scaffolding_n` | **RETIRED (P11d)** — the shaped critic vs the win-prob head, a tautology under the win-prob critic (the only critic); no run publishes them. The offline `main.scaffolding_gauge` remains | unitless (rank) |
 | `noise_scale[_ratio][_<term>]` · `dose_rate` · `effective_batch` · `grad_accum_steps` · `train_ms` | the step-size controllers | see their sections |
 
 🚨 **`train/explained_variance` is computed on the RAW return arrays** (`rollout_buffer.values` and `returns`).

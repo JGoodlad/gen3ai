@@ -104,7 +104,8 @@ STEP_MODULES: Dict[str, str] = {
     "agents/training/rank_metrics.py": "the rank probe, run on the update's features",
     "agents/training/opp_intent_labels.py": "the opponent-intent labels built per rollout/update",
     "agents/training/fork_arm.py": "the fork-arm PG mask read per minibatch",
-    "agents/training/scaffolding.py": "the live scaffolding gauge, computed per update",
+    "agents/training/scaffolding.py": "`reliability_table`, the win-prob calibration read's statistic "
+                                      "(`instrumented_ppo/calibration.py`), computed per update",
     "agents/training/rust_rollout/consistency.py": "the behaviour-policy consistency gate, per update",
     "agents/training/rust_rollout/tie_margins.py": "K9(b)'s tie-margin recorder around the probe forward, "
                                                    "per update (a TorchFunctionMode; no learner object)",
