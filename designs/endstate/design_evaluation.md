@@ -48,6 +48,12 @@ teams; we don't need the richest data ever").
 - **Auditable:** a schema gate validates every row; the readers declare which `purpose` and regime they consume.
 - **Today:** `eval_results.jsonl` is per run and per cycle (bot and sentinel win RATES, no counts by pair or team, no
   regime per row). The ledger supersedes it. TODO: a one-off backfill of what can be recovered.
+- **First writer (2026-10-03, X5 P0): `main.h2h`** — the checkpoint-vs-checkpoint mirrored head-to-head
+  (`designs/training/eval_and_rating.md`). BUILT: the row schema `gen3_eval_count_row_v1`, its validator, one shard
+  per writer process and the reader (`agents/training/eval_ledger.py`); rows go to a directory the CALLER names and
+  `models/` is refused. STILL TODO, and now concrete: the archive-level location (`models/_ledger/`), compression of
+  closed shards, the readers' declarations of `purpose` and regime, the backfill, and a `purpose` for a pre-registered
+  A/B read (§0b's closed list has none; `main.h2h` writes `audit`).
 
 ## 0c. Reuse rules (one ledger, many readers)
 1. **A sequential DECISION counts only rows produced FOR it, after it started.** That is SPRT's peeking rule. Older
@@ -143,6 +149,7 @@ ledger. TODO: the value-of-information rule (ResponseGraphUCB-style for the matr
 
 ## 7. TODO (fill in as implemented)
 - [ ] The ledger: schema, writer shards, the schema gate, the readers' declarations, the backfill (§0b–0c).
+  FIRST WRITER BUILT (`main.h2h`, 2026-10-03): schema + validator + per-writer shards + reader; the rest is open.
 - [ ] The scheduler's value-of-information rule (§0d).
 - [ ] Literature review (owner, required before the T20 build): the references in §3.
 - [ ] T19 background eval: design, capacity measurement, build.
@@ -161,4 +168,5 @@ ledger. TODO: the value-of-information rule (ResponseGraphUCB-style for the matr
 | 2026-10-02 | Performance checks **(owner)** | deterministic performance-SHAPE tests + an on-demand benchmark | a wall-clock perf guard | `48265bf8` |
 | 2026-10-02 | Pool defence against cycling **(owner)** | tiered matrix + Nash averaging + Hodge meter, validated against dense; grow the pool rather than evict harder when cycles are wide | hope; recency-only eviction | TASK_BACKLOG T20 |
 | 2026-10-02 | The eval LEDGER **(owner)** | append-only JSONL of COUNTS per (batch × matchup), with pentanomial pair counts and per-team counters, archive-level, one writer per file | a per-game ledger (richer than any planned reader needs) | §0b: counts are sufficient statistics for every planned estimator |
+| 2026-10-03 | The ledger's FIRST WRITER (X5 P0, orchestrator) | `main.h2h` writes one row per (batch × matchup) to a caller-named directory through `eval_ledger` (`gen3_eval_count_row_v1`: per-side team counters `{p, o}`, pentanomial, regime + `regime_id`, a `compute` block incl. a near-tie census); the writer refuses `models/` until the archive ledger exists | waiting for the archive ledger before measuring anything | the P0 pre-study needed a durable, auditable row format now; the schema is the §0b one |
 | 2026-10-02 | Doc split (orchestrator) | the SYSTEM here; the three population DECISIONS in `design_league_decisions.md` | one combined doc | separate use cases from implementation (owner's suggestion) |

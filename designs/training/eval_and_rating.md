@@ -724,6 +724,80 @@ nine bots AND a pool sentinel (`pairs_vs_pool` 2 at step 12,000); (3) `main.unta
 (4) `main.anchors --mirrored-pairs` vs `metamon:SmallRL`, 8 games → 4 pairs, all four VERIFIED (teams,
 order, shared seed). ⚠️ **Not yet seen on a GPU run** — one confirmation rides a planned launch.
 
+### The checkpoint-vs-checkpoint head-to-head (`main.h2h`, X5 §7.3 / U0 — `gen3_eval_count_row_v1`)
+
+**What it is.** The offline, SYMMETRIC read of one checkpoint against another: `python -m main.h2h play
+--player <ckpt.zip | run dir | run@step> --opponent <…> --pairs N --out <dir>` plays N MIRRORED team pairs on the
+Rust eval core and prints the player's win rate with its PAIR-clustered 95 % interval; `python -m main.h2h read
+<dir>` pools a directory's rows per edge. Nothing here is new machinery for the game: it declares ONE T2 service
+with two slots (the player's eval slot, one SENTINEL slot for the opponent) and ONE eval core, and plays the plan
+through `RustEvalCore.run_cycle` — the executor the in-loop eval and the SPRT promotion use — in BATCHES.
+(`main.h2h` is the first writer of design_evaluation.md §0b's COUNT ledger: `agents/training/eval_ledger.py` holds
+its row schema `gen3_eval_count_row_v1`, the validator, one shard per writer process and the reader.)
+
+**The regime — on every row, and readers refuse to mix it.** BOTH sides GREEDY (the eval regime); MIRRORED pairs
+(`rust_eval.seeds.pair_game`, `gen3_mirrored_pairs_v1`); the turn limit is `StallConfig().threshold` (a timeout is a
+DRAW); BOTH sides draw their teams from the PLAYER's eval team builder — the default pool with its 10 % sample-team
+bias, what `eval_builders(None, [])` builds and what a greedy sentinel draws from in the in-loop eval. A player whose
+run pinned its eval trainee team (`metadata.json` `matchup_history`) is REFUSED, as is a player whose
+`model_config.json` records `progress_decision_tense` / `progress_switch_freeze` ON (the env core no longer has those
+variants, P11d, so such a checkpoint cannot be played as it was trained). Both players
+load through `load_checkpoint_strict` with `historical_load_kwargs` (a kwarg deleted since the checkpoint was written —
+PopArt, the value-dist head — is stripped, an ON one refused) and are gated against the live architecture
+(`check_opponent_snapshot_compatible`).
+
+🚨 **THE MIRROR CANCELS TEAM LUCK, NOT SEAT LUCK, AND IT IS NOT AN EXACT MIRROR IMAGE.** A pair hands the teams over and
+KEEPS the player in seat p1 on one battle seed. So (1) a SEAT advantage `u` adds to every edge — a checkpoint against
+ITSELF reads `0.5 + u`, and the measurement carries it (`runfloor.seat_effect`, or the two directions of an edge:
+`d_ij + d_ji = 2u`); and (2) a player against itself is NOT exactly 0.5 per pair: the second game is the first with
+the seats relabelled, which is a mirror image only while the engine is seat-symmetric, and a speed tie is broken by the
+RNG in a seat-dependent order. Measured on seeded perturbed-fresh checkpoints, 64 pairs against itself: the mirrored
+decision margins agree to 5 digits until a seat-dependent event and jump after it; 3 of 64 pairs scored 0 or 4
+half-points (two LL, one WW — the same seat favoured in both games, which RAISES the within-pair correlation; the
+pair-clustered interval is the honest one). `play_test.py` pins the exact cancellation of the SCORING on a seat-symmetric
+toy engine; `play_mirror_integration_test.py` asserts it on the real engine only for the pairs that stayed mirror images
+decision for decision. A 4-game block (teams × seats) would cancel seat luck too — it needs the core to seat the
+sentinel at p1, which it does not (a FINDING, not built).
+
+**The rows.** One row per (batch × matchup), appended and fsynced when the batch ends: the player and opponent
+(`id` = `<run>@<step>`, the checkpoint's sha256, path, how `resolve_model_ref` chose it), the regime (+ `regime_id`), a
+`compute` block (device, backend, env count, the games per second, the load average and contention factor at the
+batch, and a NEAR-TIE CENSUS), `purpose` (default `audit`; §0b's closed list has no value for a pre-registered A/B read —
+a FINDING for the orchestrator), W / L / D, the pentanomial and per-team counters (`{team id: {p: [games, wins], o:
+[games, wins]}}`, team id = `t:` + blake2b-16 hex of the packed team), and the seed block. The schema validator
+(`eval_ledger.validate_row`) checks the shapes, the closed vocabularies and the arithmetic that ties the blocks
+together (W + L + D = 2 × pairs; half-points = 2W + D; the team counters sum to the games and the wins). `--out`
+under `models/` (main's archive, `$GEN3AI_MODELS_DIR`, this checkout's) is REFUSED until the archive ledger exists.
+
+**Reproducible by construction — and the one thing a re-run can change.** Every game's teams and battle seed are a pure
+function of `(schedule seed, schedule key, batch, game index)` (`play.cycle_seed` + `rust_eval.seeds`), never of the env,
+the env count, the thread count or the batch schedule. The default schedule key is a digest of the two checkpoints'
+content hashes, ORDER-INDEPENDENT: `A vs B` and `B vs A` draw the same team pairs. What can differ across devices,
+backends or batch shapes is the FORWARD: a greedy decision within a rounding error of a tie can flip. Every row therefore
+counts the decisions inside `NEAR_TIE` (2e-5, twice the CPU eager-vs-eager bar) and inside the GPU-bar margin (2e-3), the
+games that contain one, and the pairs with none (`clean_pairs`, `clean_pairs_off_center`) — the games whose outcome rests
+on a rounding error are COUNTED, never left to chance (standing rule 8). A re-run of one configuration reproduces every
+game bit for bit (tested, two cycles on one engine); a change of env count changes no game that is clear of a near-tie.
+
+**Resumable.** A re-run with the same arguments skips the batches already on disk (same players, schedule seed + key,
+regime) and plays the rest; a longer `--pairs` plays only the new batches; a different `--batch-pairs` over existing rows
+is REFUSED (the same batch index would replay the same games under another length).
+
+**Reading.** `stats.edge_summary` pools an edge's batches: the mean per-game score over PAIRS (a draw = ½; equals W / games
+with no draws), its pair-clustered normal interval (`mirrored_pairs.pair_score_ci`) and the unbiased pair SE. A reader
+refuses rows of two regimes or two edges. `runfloor.sigma_h` turns a complete round-robin into the run SD σ_h on this
+scale with the METER's variance subtracted exactly — the estimator, its exact chi-square interval and its limits are in
+the module's docstring; its unbiasedness is a deterministic identity test (all sign patterns of the edge noise).
+
+**Hardware.** On CUDA the tool takes the GPU lock itself (re-entrant under `scripts/ops/gpu_lock.sh`); a heavy job runs
+under `scripts/ops/mem_cap.sh`. T2 `graph` on the card compiles on a cold start (~2 min for the production model, 123 s
+measured 2026-10-03); the throughput numbers are in `designs/research_state/measurements/x5_p0_h2h_2026-10-03/README.md`.
+
+Tests: `agents/training/eval_ledger_test.py` (every schema rule has a row refused for exactly that rule),
+`main/h2h/play_test.py` (scoring, the toy-engine mirror, seeds, resume, the team-source refusal),
+`stats_test.py`, `runfloor_test.py`, and on the real engine `play_mirror_integration_test.py` /
+`play_edge_integration_test.py` (CPU, tiny, the in-process core).
+
 ### SPRT promotion (`--promotion-sprt`, T6 — `gen3_sprt_promotion_v1`, DEFAULT OFF)
 
 **What it replaces.** Without it, a snapshot is promoted the first cycle its `win_rate_vs_pool`
