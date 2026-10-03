@@ -323,10 +323,10 @@
   },
   "src/agents/training/tb_relevance_test.py::test_a_winprob_run_emits_no_noise_tag_and_every_live_tag": {
    "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 35.51,
-   "contention": 1.01,
+   "commit": "9de4590259b567b22142bbf495e0dd8bb24af244",
+   "at": "2026-10-03T22:27:44Z",
+   "duration_s": 123.03,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node]": {
@@ -994,5 +994,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-03T01:36:02Z"
+ "last_written": "2026-10-03T22:27:44Z"
 }
