@@ -15,12 +15,12 @@
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
 | DELETED by P11 so far | 12 | 0 | 12 |
 | NOW | 190 | 9 | 199 |
-| verdicts at the inventory commit | KEEP 163 · DELETE 0 · ONE-VALUED 8 · NEEDS-OWNER 19 | KEEP 9 | |
-| ENDING | _filled in by the last batch_ | | |
+| verdicts NOW | KEEP 163 · DELETE 0 · ONE-VALUED 8 · NEEDS-OWNER 19 | KEEP 9 | |
+| ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
 
-**Shipped** (each also has a row in [`deleted_flags.md`](../deleted_flags.md)):
+**Shipped** (each also has a row in [`deleted_flags.md`](../deleted_flags.md); batches B1-B5, commits in the manifest's P11 row):
 
 * `--eval-concurrency` (B1) — no reader since P6 deleted `final_eval`; an exact prefix of `--eval-concurrency-per-worker`, so its deletion needed `allow_abbrev=False`
 * `--self-play-use-cpu` (B2) — read nothing on the Rust core (two startup `emit()` lines and an unused local)
@@ -35,7 +35,7 @@
 * `--eval-device` (B4) — the same Python eval worker pool
 * `--eval-concurrency-per-worker` (B4) — the same Python eval worker pool
 
-**Planned, not yet shipped:**
+**Planned, not yet shipped:** (none left in the DELETE column — the remaining work is the ONE-VALUED sweep and the NEEDS-OWNER rows below, sized in the manifest's P11 hand-off)
 
 
 ## 2. NEEDS-OWNER

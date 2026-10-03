@@ -15,6 +15,7 @@ always-current obligation as this file — update the topic doc in the same pass
 
 | I am about to touch… | Read |
 |---|---|
+| **a trainer / launcher FLAG — adding, keeping or deleting one** | [`designs/ops/flag_census.md`](../../../designs/ops/flag_census.md): a flag survives only by naming a LIVE user in its row (`src/main/flag_census_test.py` fails without one); a deleted flag gets a `designs/deleted_flags.md` row, which is also the reason a typed one is refused with |
 | the reward registry, PBRS (deleted), the no-progress clock | [`designs/training/reward.md`](../../../designs/training/reward.md) |
 | the PPO package's module map or a source-level pin on `train()` | [`designs/training/ppo_step.md`](../../../designs/training/ppo_step.md) |
 | the learner's GIGO gates (K9): the LEARNER GOLDEN, behaviour-policy consistency, fail-closed non-finite, and the non-finite AUDIT; K6's CUDA memory TREND (`cuda_memory_trend.py`, a leak detector for a clean early stop, never a gate) | [`designs/training/learner_gates.md`](../../../designs/training/learner_gates.md) |
