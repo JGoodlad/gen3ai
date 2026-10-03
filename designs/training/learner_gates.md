@@ -28,8 +28,17 @@ scale, calibration) are NOT compared — a telemetry-only change must not move t
 that reaches the weights moves the parameter hash anyway. Rounded values were rejected: with 3M values
 some always sit on a rounding boundary, so rounding buys no portability and loses teeth.
 
-**Determinism and the torch key.** CPU, eager, fp32, `torch.set_num_threads(1)` for the update (a CPU
-reduction order can depend on the thread count), numpy + torch seeded before `train()`. Two processes
+**Determinism and the torch key.** CPU, eager, fp32, `torch.set_num_threads(1)` for the BUILD and the
+update (a CPU reduction order can depend on the thread count), numpy + torch seeded before `train()`.
+🚨 **The INIT depends on the thread count too, so `build_learner` pins one thread ITSELF** (F-X5-4, fixed
+2026-10-03): SB3's `_build` re-initialises every Linear with `orthogonal_`, a LAPACK QR whose blocked
+reduction order follows the BLAS thread count. The RNG draws are identical; the rounding is not (max
+|Δ| ~1.1e-6, ~95% of a 512×512 matrix's bytes differ). Built at 8 threads, 15 of the 41 parameter
+groups moved (init `ffc668b3…` vs the banked `f476942c…`). The routine test passed only because the
+root conftest sets `OMP_NUM_THREADS=1`; a learner built for a re-bake from a CLI shell recorded a
+different init. `build_learner` restores the caller's count; `rebuild-buffer` builds its learner at one
+thread the same way. Pinned by `learner_golden_threads_test.py` (an 8-thread and a 1-thread build in
+child interpreters must equal each other and the banked init; it FAILS on a revert). Two processes
 with different `PYTHONHASHSEED` reproduce it bit for bit. **Across torch builds the INIT is identical but
 the update is not** (measured 2026-09-30: `gen3ai_torch28` vs `gen3ai_stable` — every pinned loss within
 1.2e-7, every parameter group's bytes different), so the golden is KEYED BY `torch.__version__`

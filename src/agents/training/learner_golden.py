@@ -17,8 +17,10 @@ critic, every belief / intent / win-prob term the production mirror turns on, vi
   params = 12 MB); it is REBUILT from a fixed seed at test time, so the init hash separates "the
   model construction / seeding changed" from "the update changed".
 
-DETERMINISM. CPU, eager, fp32, ``torch.set_num_threads(1)`` for the update (a CPU matmul's reduction
-order can depend on the thread count), numpy + torch seeded before ``train()`` (the minibatch shuffle
+DETERMINISM. CPU, eager, fp32, ``torch.set_num_threads(1)`` for the BUILD and the update (a CPU
+matmul's reduction order can depend on the thread count, and so does the init: SB3's orthogonal
+re-init is a LAPACK QR, so ``build_learner`` pins one thread itself — F-X5-4, it used to rely on the
+test conftest's ``OMP_NUM_THREADS=1``), numpy + torch seeded before ``train()`` (the minibatch shuffle
 is ``np.random.permutation``). Exact bytes are only promised WITHIN one torch build, so the golden is
 KEYED BY ``torch.__version__``: the interpreter the tests run under (``gen3ai_torch28``; HEAD runs
 torch >= 2.8 only, so the 2.5.1 entry was dropped 2026-10-02 — its history rows stay) has its own
@@ -137,7 +139,17 @@ def build_learner(env: Any = None, args: Any = None) -> Any:
 
     ``args`` (a resolved training namespace, e.g. production + one lever) builds THAT surface
     instead — its spaces (`trainee_spaces`), its policy kwargs and its training hparams — with the
-    same seeds and recipe overrides (the lever tests' learner; the golden itself passes None)."""
+    same seeds and recipe overrides (the lever tests' learner; the golden itself passes None).
+
+    🚨 Built at ONE torch thread, whatever the caller's count (F-X5-4): SB3's `_build` re-initialises
+    every Linear with `orthogonal_`, a LAPACK QR whose blocked reduction order follows the BLAS thread
+    count — the same RNG draws give different init BYTES at 8 threads (15 of 41 parameter groups,
+    measured 2026-10-03). The caller's thread count is restored on return."""
+    with _one_thread():
+        return _build_learner(env, args)
+
+
+def _build_learner(env: Any, args: Any) -> Any:
     import torch as th
 
     from agents.training.rust_rollout import testkit as TK
@@ -384,9 +396,11 @@ def rebuild_buffer(reason: str) -> None:
                      build=lambda m: TK.collector_for(m, obs, decl=decl, p2=p2, builder=TK.pool_builder()))
     prev_threads = th.get_num_threads()
     try:
-        # The SAME seeded learner the golden rebuilds, so the stored log-probs are its behaviour policy.
-        model = TK.fresh_model(env, n_steps=RECORD_N_STEPS, batch_size=RECORD_N_STEPS, seed=MODEL_SEED,
-                               perturb_seed=PERTURB_SEED)
+        # The SAME seeded learner the golden rebuilds, so the stored log-probs are its behaviour policy —
+        # built at one thread as `build_learner` is (F-X5-4: the init bytes follow the thread count).
+        with _one_thread():
+            model = TK.fresh_model(env, n_steps=RECORD_N_STEPS, batch_size=RECORD_N_STEPS, seed=MODEL_SEED,
+                                   perturb_seed=PERTURB_SEED)
         col = env.startup(model)
         if not col.collect(model, TK.NullCallback(), model.rollout_buffer):
             raise LearnerGoldenError("the collector stopped")

@@ -637,9 +637,11 @@ How to read the table:
    - Coverage: the buffer holds 29/64 rows with all six opponent species known, but only **2/64** with an opponent mon
      with 4 revealed moves, so the OTHER_move-masked case is thin. Assert per-case counts ≥ 2, or rebuild the buffer
      (`rebuild-buffer --reason`, which invalidates every entry).
-5. **Harness hazard to fix first (F-X5-4).** A learner built outside `_one_thread` at 8 threads moves the INITIAL hash.
-   The test passes only because `conftest.py` pins threads. `build_learner` must enter `_one_thread` itself, or a
-   re-bake from a CLI shell records a different init.
+5. **Harness hazard (F-X5-4) — FIXED 2026-10-03.** A learner built outside `_one_thread` at 8 threads moved the
+   INITIAL hash (SB3's orthogonal re-init is a LAPACK QR whose rounding follows the thread count); the test passed only
+   because `conftest.py` pins threads. `build_learner` now enters `_one_thread` itself and restores the caller's count,
+   so a re-bake from a CLI shell records the same init. The banked golden was the 1-thread init, so its files did not
+   change.
 
 Not covered by the golden: compiled and CUDA numerics. Those belong to K8's regions, startup parity and the canary.
 X5 makes no observation change, so the obs golden must stay green untouched.
@@ -848,8 +850,8 @@ The X26 baseline launches on `fixed_mass` (§9 Q4).
 |---|---|
 | F-X5-1 | **Stale docs.** `ARCHITECTURE.md` §2.1 says 36 tokens and §2.3 says 29; production is 61 (32 event seats). It also says "132" while the code's `MODEL_CONFIG_VERSION` is 134. `delivery_graph.py:973` counts 29. `design_q_head.md` §1 says "29 → 31" (pointer added here). `HiddenOppBeliefPool` reaches the critic too. Out of scope to fix in this doc unit (standing rule 9); reported. |
 | F-X5-2 | The blob's physics harm (Jensen gap, attacker gate) is UNMEASURED. X5's justification rests on intent, calibration and Q / search, not on a measured physics loss. |
-| F-X5-3 | **FIXED 2026-10-03** (`gen3_label_lookup_guard_v1`; `CHANGELOG.md` "F-X5-3"). `rust_env/src/labels/belief.rs:79-81` silently dropped a species with no dex number, which would undercount OTHER labels. Every Rust label writer (belief, hp_type, item, spread, intent) now returns an `Err` (a FAULT) on a lookup it cannot make, and matches species by dex num (formes). It never fired: 0 skips over 34,001 measured episodes (5.8M decisions), so no run's labels were affected. Pinned by `src/rust_env/tests/label_lookup_guard_test.rs`. |
-| F-X5-4 | The K9 harness builds a different INIT at 8 threads; `build_learner` must pin threads itself (§6). |
+| F-X5-3 | **FIXED 2026-10-03 in `680edc36`** (`gen3_label_lookup_guard_v1`; `CHANGELOG.md` "F-X5-3"). `rust_env/src/labels/belief.rs:79-81` silently dropped a species with no dex number, which would undercount OTHER labels. Every Rust label writer (belief, hp_type, item, spread, intent) now returns an `Err` (a FAULT) on a lookup it cannot make, and matches species by dex num (formes). It never fired: 0 skips over 34,001 measured episodes (5.8M decisions), so no run's labels were affected. Pinned by `src/rust_env/tests/label_lookup_guard_test.rs`. |
+| F-X5-4 | **FIXED 2026-10-03** (`CHANGELOG.md` "F-X5-4"; F-X5-3 landed as `680edc36`). The K9 harness built a different INIT at 8 threads (SB3's orthogonal re-init is a thread-count-dependent LAPACK QR: 15 of 41 groups moved). `build_learner` (and `rebuild-buffer`'s learner) now build at one thread and restore the caller's count; the banked golden is the 1-thread init and is UNCHANGED. Pinned by `learner_golden_threads_test.py`. The production trainer's init has the same dependence (not fixed here; see the CHANGELOG entry). |
 | F-X5-5 | Two different untaught opponents carry the 3.69 and 4.90 floors; they are not one scale. |
 | F-X5-6 | The sizing and battery non-inferiority rules used a CI that omits run variance (§7.1). |
 | F-X5-7 | The anchors SOP's run floors at 100 games are mostly meter noise (SE ≈ 7 pp per cell). |
@@ -937,3 +939,4 @@ bump" understated the build. The token count is right; the physics, pointer and 
 | 2026-10-03 | Presence bias + pointer (ORCHESTRATOR) | Plain log-w bias (keeps I2 exact); the flat pointer BUNDLED with the tokens (one retrain boundary) | A learned scale; the pointer as a second arm | §9 Q5, Q6 |
 | 2026-10-03 | Order (OWNER) | T15, the bottleneck profile and P0 run DURING the X5 build, not after the A/B | Profiling after the A/B (X26 slips about a day) | owner 2026-10-03 |
 | 2026-10-03 | F-X5-3 label-writer guard (BUILT, GIGO unit) | Every Rust label writer returns an `Err` (a FAULT) on any lookup it cannot make; species match by DEX NUM (formes) | Throw only at `belief.rs:79-81` (the other writers carried the same skip); keep id matching (a forme read two ways would count as both revealed and hidden) | §3.8, §8.2; `CHANGELOG.md` "F-X5-3"; 0 skips over 34,001 measured episodes |
+| 2026-10-03 | F-X5-4 K9 harness thread pin (BUILT, GIGO unit) | `build_learner` builds inside `_one_thread()` and restores the caller's count; the banked golden (the 1-thread init) is unchanged | A thread-independent init (replace SB3's orthogonal QR: changes every init byte, so a re-bake — X5's U-unit, not this one) | §6 item 5, §8.2; `CHANGELOG.md` "F-X5-4" |
