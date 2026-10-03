@@ -772,8 +772,7 @@ builds one from `sprt.py` + the Rust eval core (about 0.5 agent-day).
 ### 7.4 Recommended design and pre-registered decision rule
 
 **Arms and order.**
-- Two arms, blob and fixed_mass, at ONE commit through the flag. Production recipe at N = 256, with the §5 stop (per
-  Q1) and the X26 ride-along heads ON in both (§9 Q4).
+- Two arms, blob and fixed_mass, at ONE commit through the flag. Production recipe at N = 256, with NO KL stop (owner 2026-10-03; Decision record) and the X26 ride-along heads ON in both (§9 Q4).
 - Seeds 1001, 1002, 1003, the SAME seed ids across arms, so team and opponent schedules are shared. Pairing is for
   blocking only; sizing assumes zero correlation.
 - Checkpoints every 1M from 12M.
@@ -894,6 +893,8 @@ bump" understated the build. The token count is right; the physics, pointer and 
 
 ## 9. Questions for the owner (real choices)
 
+> **ANSWERED 2026-10-03.** See the Decision record: the KL stop is OFF (X28 is the lever after X26); X26 continues from the winning arm; the budget is up to ~41 GPU-h; the threshold is set by the orchestrator (head-to-head δ 3.5 pp if P0 allows, else untaught δ 4.3 pp at K = 5 → 8); the plain bias; the pointer is bundled.
+
 1. **The KL stop:**
    - (a) an active trust region at 1.5 × 0.01, firing on 41–74 % of updates and cutting dose about 35–45 %;
    - (b) a rare safety guard, ≤ 5 % of updates, checked on the group mean;
@@ -928,3 +929,9 @@ bump" understated the build. The token count is right; the physics, pointer and 
 | 2026-10-03 | Token count (proposal) | 61 → 62: OTHER_species new; OTHER_move re-uses the active's E5 seat | +2 seats | §3.1 |
 | 2026-10-03 | A/B statistics (draft for the orchestrator) | Run-level SE (σ_run in the SE), P0 picks the primary meter, K = 3 → 5 two-look O'Brien–Fleming, matched-wall-clock rule | A meter-only CI (F-X5-6); a GSPRT on one seed pair as the population inference | §7 |
 | 2026-10-03 | KL stop (draft for the owner) | Recommend a safety guard on the group mean for the A/B; the active trust region as its own lever | Bundled as an active stop at 0.015 per micro-batch (the 2026-10-02 bundle) | §5; Q1 |
+| 2026-10-03 | KL stop (OWNER) | **OFF for the X5 A/B and for X26: no stop at all, not even a guard.** The owner's reason: "we need a more robust setup … 10 [epochs] is probably too much and we probably need a dynamic controller arm for managing the number of epochs". That is X28, the held-out-yield epoch controller, now the named lever after X26. §5's wiring is NOT built in the X5 units. | Active stop at 1.5 × target_kl (would fire on 41–74 % of updates, a dose change); a safety guard on the group mean | §5; owner 2026-10-03 |
+| 2026-10-03 | X26 by continuation (OWNER) | **YES.** The A/B arms carry the X26 ride-along heads from step 0, and the winning arm's seed-1001 run CONTINUES as the X26 baseline | A fresh X26 launch | §9 Q4; owner 2026-10-03 |
+| 2026-10-03 | A/B budget (OWNER) | **Up to ~41 GPU-h**, so the tight margin holds even if the head-to-head meter is noisy | Caps at 15 / 25 GPU-h | §7.2; owner 2026-10-03 |
+| 2026-10-03 | A/B threshold (ORCHESTRATOR, delegated by the owner) | **One-sided α = 0.05, power 0.8. P0 FIRST picks the primary meter.** (i) If P0's head-to-head run floor σ_h ≤ 1.5 pp, the primary is the mirrored head-to-head with δ = **3.5 pp**, K = 3 → 5 on the §7.4 two-look O'Brien–Fleming plan, and the outside panel (frozen pool snapshots, bots, SmallRL) as a GUARD that must itself be non-inferior at δ. (ii) Otherwise the primary is the untaught meter with δ = **4.3 pp**, K = 5 → 8 (two looks, information fraction 5/8, boundaries computed and committed at registration, before any arm launches). The §7.4 speed rule is unchanged. α = 0.05 rather than 0.025 because X5 is the intended end state: the test exists to catch HARM, and a false "non-inferior" costs at most δ, which X26 then measures anyway. | δ = 7 pp at K = 3 (too loose: the owner finds 5 pp "a lot"); a GSPRT on one seed pair (ignores run variance, F-X5-6) | §7; owner delegated 2026-10-03 |
+| 2026-10-03 | Presence bias + pointer (ORCHESTRATOR) | Plain log-w bias (keeps I2 exact); the flat pointer BUNDLED with the tokens (one retrain boundary) | A learned scale; the pointer as a second arm | §9 Q5, Q6 |
+| 2026-10-03 | Order (OWNER) | T15, the bottleneck profile and P0 run DURING the X5 build, not after the A/B | Profiling after the A/B (X26 slips about a day) | owner 2026-10-03 |
