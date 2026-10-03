@@ -20,8 +20,8 @@ lever (``key``)        what silently happened instead               measured vic
 
 **One mechanism, two failure classes.**
 
-* A **deterministic mis-wiring** (the fork arm's buffer is not a `ForkRolloutBuffer`, an obs key the
-  arm reads is missing) is the same on every restart, so
+* A **deterministic mis-wiring** (an obs key the fork pass's FILL table does not cover, a playout
+  handle the T2 service cannot serve) is the same on every restart, so
   it raises :class:`LeverConfigError` → ``FATAL_CONFIG`` (3) the first time it is seen.
 * A **dry streak** — the lever is LIVE (it is supposed to be delivering) and delivered ZERO units
   for ``N`` consecutive cycles — raises :class:`LeverStarvedError` → ``FATAL_SUPPLY`` (5). ``N`` is

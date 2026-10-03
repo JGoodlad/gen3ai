@@ -8,8 +8,7 @@ update, and the K8 inventory's `batch` phase, 2.95 s of a 53 s update).
 
 `install(buffer)` (at the top of `train()`; `uninstall` after its epoch loop) puts an INSTANCE-level
 `_get_samples` on the buffer that gathers from a copy of the flattened arrays made ONCE on the
-buffer's device (where sb3's `to_torch` puts every micro-batch) at the first micro-batch (after the buffer's own `get()` flattened them, and after
-a fork buffer concatenated its extra rows). Everything else is the buffer's own `get()`: the SAME
+buffer's device (where sb3's `to_torch` puts every micro-batch) at the first micro-batch (after the buffer's own `get()` flattened them). Everything else is the buffer's own `get()`: the SAME
 permutation draw from the SAME global numpy RNG, the same slicing into micro-batches, the same
 `MaskableDictRolloutBufferSamples` type — and a gather is exact, so every micro-batch is
 BIT-IDENTICAL to the host path's (`device_batches_test`). `uninstall` removes the instance

@@ -147,6 +147,19 @@ def test_our_side_scripts_then_substitutes_then_goes_live():
     assert p.live_calls == [4]
 
 
+def test_the_substitute_is_reported_as_the_string_that_was_sent():
+    """`state["substitute_resolved"]` (-> `replay_counterfactual`'s `result["substitute"]`) is the sim choice
+    sent at the divergence turn: the string itself, before and after the divergence is reached."""
+    p = _FakePlayer()
+    cmds = [("p1", "move 0"), ("p1", "move 1"), ("p1", "move 2")]
+    state = install_scripted_prefix(p, side="p1", record=_record(cmds), divergence_turn=2,
+                                    substitute_choice="move 7", is_our_side=True)
+    assert state["substitute_resolved"] == "move 7"
+    assert p.choose_move(_battle(1)).message == "/choose move 0"
+    assert p.choose_move(_battle(2)).message == "/choose move 7"
+    assert state["substitute_resolved"] == "move 7"
+
+
 def test_our_side_forced_switch_at_divergence_goes_live_off_script():
     # A FORCED SWITCH at the divergence turn is OFF-SCRIPT (the board diverged) → hand to the live
     # policy, NEVER pop the recorded command (which would desync the flat deque). Distinct from the

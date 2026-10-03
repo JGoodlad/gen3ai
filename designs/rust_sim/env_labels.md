@@ -73,7 +73,7 @@ The `rust` column says where the Rust env gets each key:
 | `opp_switch_species` | i64 `[1]` | intent | yes | `Gen3Env._opp_intent_labels` | `instrumented_ppo/ppo.py`, `train_setup.py` | `core` |
 | `fork_pg_m` | f32 `[1]` | fork | no | `Gen3Env._merge_training_keys` (1.0) | `fork_arm.py` | `host_const` |
 
-`fork_buffer.py` and SB3's rollout buffer CARRY every key, but neither is a consumer.
+`fork_buffer.py`'s FILL table and SB3's rollout buffer CARRY every key, but neither is a consumer.
 
 ## 2. Where each `core` family comes from in the Rust env
 

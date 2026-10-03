@@ -667,7 +667,7 @@ rollback point (`<run_dir>/canary_verdicts.jsonl`); unconfirmed ⇒ counted, and
 hook on a compiled module is a guard — the iteration-1 signature `8fc297a2` used to absorb). 🚨 **The learner compiles ONLY as DECLARED REGIONS** (K8, `agents/model/compile_regions.py`, `designs/training/compile_flags.md` "K8 — DECLARED COMPILE REGIONS"): R0 the rollout core and R1 the micro-step, each `fullgraph=True` at ONE declared signature (a ragged micro-batch and batch 1 take the declared eager route); the rank probe reads R1's stashes (no second forward, the spectra on the device); on a CUDA buffer every micro-batch is STAGED to the device by a prefetch thread (`--device-batch staged`, the default since 2026-10-01; `resident` = one device copy of the whole flattened buffer per update, +~1.1 GB of update peak; `instrumented_ppo/device_batches.py`, bit-identical batches in every mode, the same permutation). 🚨 **Startup RUNS one dry update** (`agents/training/update_fit.py`, `gen3_update_fit_v1`): one real `train()` epoch on a fixture rollout of the buffer's full shape, the learner restored bit-identically, and a first update that would not leave 1,024 MiB of device headroom (or OOMs) is `UpdateWontFit` (FATAL_CONFIG) — `designs/training/learner_lifecycle.md` "The update fit check". ONE startup gate per region (`gen3_one_gate_per_region_v1`); the trainer's compile step (`compile_trainer.preflight_compile_trainer`) compiles nothing and refuses a learner without the micro-step. 🚨 **No region runs eager silently** (`gen3_no_silent_eager_v1`): a compiled-route call whose Python body executes, a ragged tail past one per epoch, or dynamo disabled / errors suppressed / the stance moved under the lock is a typed FATAL; every update logs `lifecycle/compiled_region_calls`, `lifecycle/eager_fallback_calls`, `lifecycle/eager_share`, `lifecycle/update_wall_s` (`designs/training/compile_flags.md`). R1's startup gate and the canary judge its per-parameter gradient by WEIGHT REGIME (`compile_regions.weights_regime`: fresh vs trained, measured bars — `designs/training/compile_flags.md`). Code inside R1 must stay a static-shape program (the fold contract above). 🚨 **Every lever R1 reads is DECLARED at startup from the resolved config** (`gen3_r1_declared_levers_v1`): `TrainSetup._r1_levers` is the ONE predicate for the strata and rollout-weight levers (never a rollout's data — an idle strata lever gets neutral ones, bit-identical), and every compiled update is held to the declaration (`compile_regions.check_r1_declared`, a typed FATAL naming the field or key). A new R1 lever is declared there, never by relaxing the lock (`compile_flags.md` "R1's DECLARED LEVERS"). A NEW compiled signature is added to the region table (`compile_regions.REGIONS`)
 and its prewarm, never absorbed after the lock; a learner-process caller OUTSIDE the regions runs the
 extractor eager already (the regions compile functions over the module and never patch `fe.forward`,
-so `compile_trainer.eager_extractor(fe)` is now a no-op on the learner); batch 1 is ALWAYS
+so there is no eager-route wrapper any more — `eager_extractor` was deleted with the Python fork arm, its last caller); batch 1 is ALWAYS
 eager (`compile_trainer.EAGER_BATCHES`, `gen3_batch1_eager_v1` — torch 2.8 cannot lower a batch-1 CUDA graph) — the late-shape
 table in the doc lists every caller. An unknown torch or a drifted torch internal
 (`_SOURCE_HASHES`) REFUSES. TB: `compile/recompiles_after_lock` must stay 0.
@@ -774,14 +774,15 @@ family is published whenever the flag is on, so 0 means "on, but one class prese
 
 ### `--fork-fraction` — THE FORK ARM, contested-state EXPLORING STARTS (`gen3_fork_v1`, v120)
 
-**Default `0.0` = OFF and BIT-identical** — no module imported, no obs key declared, no callback
-attached, no buffer installed, no row injected. **`--critic winprob` is REQUIRED**, and `--win-prob-strata-weight` is REFUSED
+**Default `0.0` = OFF and BIT-identical** — no fork object built, no obs key declared, no row injected.
+**`--critic winprob` is REQUIRED**, and `--win-prob-strata-weight` is REFUSED
 alongside it; the arm runs on the Rust core only (`--fork-fraction > 0` on `--env-core python` is refused: its replay
-ring, `--cf-records`, was deleted in deletion pass L4, and the Python arm's code goes in L5). Detail:
+ring, `--cf-records`, was deleted in deletion pass L4 and the Python arm's code in L5; the refusal row stays until the Python core goes). Detail:
 [`designs/training/forks.md`](../../../designs/training/forks.md).
 
-🚨 **TWO IMPLEMENTATIONS, and the Python one is UNREACHABLE and goes in L5.** Under
-`--env-core rust` the arm is the COLLECTOR's fork phase (`rust_rollout/fork.py`,
+🚨 **ONE implementation: the Rust port** (the Python arm — callback, replay-ring child process,
+buffer subclass, decision-time handle capture — is DELETED, deletion pass L5; `fork_arm.py` keeps
+its selector and meters and `fork_buffer.py` its FILL table, which the port imports). The arm is the COLLECTOR's fork phase (`rust_rollout/fork.py`,
 `gen3_fork_rust_v1`, forks.md §14) — DECLARED and OFF, deferred by the owner's one-ply scope
 (2026-10-01). It replays the core's finished input log on Lane I playout handles, keys every branch
 draw on the PARENT's keyed-draw key (a parent-action branch IS the parent — gate
@@ -813,12 +814,13 @@ VALUE terms. Carrier: the `fork_pg_m` obs key.
 once per branch with a DIFFERENT action; that is the exploring start, not a duplicate.
 
 🚨 **`--fork-crn dice_and_draws` (default) pairs the DICE *and* the policy draws.** `cf_q_labels`
-paired only the dice — a concrete, testable account of its null — and `fork_crn_sim_test` proves
-byte-identical protocol on identical actions through the real bridge.
+paired only the dice — a concrete, testable account of its null — and
+`rust_rollout/fork_crn_integration_test.py` proves a parent-action branch reproduces the parent byte for byte.
 
-⚠️ **The ecology approximation is the arm's largest caveat:** a `__RECON__` record carries no
-opponent identity, so a branch is played against a SELF-LIKE opponent. Injected rows are labelled
-`opp_class = POOL` for that reason; `fork/branch_share` and `fork/bot_share` price it.
+⚠️ **The ecology approximation** (the Python arm's largest caveat; the Rust port shrinks it to the
+bot share): a branch is played against the parent's REAL policy opponent where its slot still serves
+it, else a SELF-LIKE one, and those rows are labelled `opp_class = POOL`; `fork/opp_substituted`,
+`fork/branch_share` and `fork/bot_share` price it.
 
 🚨 **A fork dropped at the row budget has ALREADY BEEN PLAYED**, so the ask is bounded by the
 previous rollout's MEASURED `fork/rows_per_fork`. Read **`fork/rate`**, **`fork/branch_share`**,
@@ -1224,8 +1226,7 @@ training spawns it any more), `cf_audit*`, `cf_q_labels.py`, `cf_mc_return.py`, 
 `winprob_finetune`, `main/ops/critic_read.py`, `utils/bridge/counterfactual.py` and the prober's
 counterfactual views. They read finished artifacts; none needs a trainer. The prober's twin / evidential
 readers degrade to "no head" on any checkpoint at HEAD (those heads cannot be built).
-`cf_records.py` is down to the `record_key` / `index_records` join helpers the Python fork arm still
-imports (**delete it with the Python fork arm, L5**). History: [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).
+`cf_records.py` (the `record_key` / `index_records` join of the Python fork arm) is DELETED with that arm (L5). History: [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).
 
 ## The STALL-TAIL HARVEST + head-repair pipeline (`main.harvest` → `winprob_finetune` → `main.harvest_meter`)
 

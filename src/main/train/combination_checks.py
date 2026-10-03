@@ -308,28 +308,30 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
     CombinationCheck(
         # 🚨 THE ONE THAT IS NOT A CONVENTION. Under `winprob` the reward stream is the TERMINAL
         # WIN INDICATOR alone, so a branch's ENTIRE reward sequence is reconstructible from its
-        # outcome bit — which is the only reason `fork_buffer.branch_rewards` can build one outside
-        # the env. Under `shaped` the terminal is the SIGNED one, which the builder does not make.
+        # outcome bit — which is the only reason the Rust fork pass can build one outside the env
+        # (`rust_rollout/fork.py`: the core's indicator rule). Under `shaped` the terminal is the
+        # SIGNED one, which the builder does not make.
         "fork_needs_the_winprob_critic", ("fork_fraction", "critic"),
         lambda a: float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0 and not _winprob(a),
         "--fork-fraction > 0 requires --critic winprob. A forked branch's transitions are built "
         "OUTSIDE the env, and only under this critic is a branch's reward sequence reconstructible "
         "from its outcome as the WIN INDICATOR (--terminal-indicator, --victory-value 1.0), which "
-        "is what `fork_buffer.branch_rewards` builds. Under `shaped` the terminal is SIGNED "
+        "is what the fork pass builds. Under `shaped` the terminal is SIGNED "
         "(+V / -V / --draw-penalty), which the branch builder does not reproduce. Pass --critic "
         "winprob, or drop the flag."),
     CombinationCheck(
-        # THE PYTHON CORE'S FORK ARM IS UNREACHABLE: it replayed its episode from the `<run>/cf_records/`
-        # ring, and the ring (`--cf-records`) was deleted with the cf training half (deletion pass L4).
-        # The arm's own code goes in L5. On --env-core rust a fork replays the core's finished input log
-        # (`rust_rollout/fork.py`, forks.md §14) and needs no ring.
+        # THE PYTHON CORE HAS NO FORK ARM: it replayed its episode from the `<run>/cf_records/` ring,
+        # the ring (`--cf-records`) was deleted with the cf training half (deletion pass L4) and the
+        # arm's code with it (L5). This row is what stops `--fork-fraction` being a SILENT no-op on the
+        # Python core (no callback, no buffer) — it goes with the Python core (U3). On --env-core rust
+        # a fork replays the core's finished input log (`rust_rollout/fork.py`, forks.md §14).
         "fork_python_core_unavailable", ("fork_fraction", "env_core"),
         lambda a: float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0 and not _rust_core(a),
         "--fork-fraction > 0 on --env-core python is UNAVAILABLE: the Python core's fork arm "
-        "replayed its episode from the `<run>/cf_records/` ring, and that ring (--cf-records) was "
-        "DELETED with the counterfactual training half (deletion pass L4; the arm itself goes in "
-        "L5). The Rust core forks from its own finished input log — use --env-core rust (the "
-        "default)."),
+        "replayed its episode from the `<run>/cf_records/` ring, that ring (--cf-records) was "
+        "DELETED with the counterfactual training half (deletion pass L4), and the arm's code was "
+        "deleted after it (L5). The Rust core forks from its own finished input log — use "
+        "--env-core rust (the default)."),
     CombinationCheck(
         "fork_refuses_strata_weight", ("fork_fraction", "win_prob_strata_weight"),
         lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0

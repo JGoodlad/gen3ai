@@ -242,7 +242,7 @@ among them) and resolve to `fatal` (`learner_gates_test`).
 `n_envs` rows, the learner a micro-batch (the healthy rows above); `--compile-trainer` — measured in
 both arms above; grad-checkpointing — the recompute is bit-exact
 (dropout 0, `use_reentrant=False`); fork-arm branch rows — their log-probs come from the parent's live
-policy (`fork_buffer.build_branch_rows`), i.e. the behaviour policy; `_align_opp_intent_labels` — rewrites label keys only, never a policy input.
+policy (the Python arm's `fork_buffer.build_branch_rows`, deleted in L5; the Rust pass re-serves row 0 from the current trainee slot, forks.md §14.5), i.e. the behaviour policy; `_align_opp_intent_labels` — rewrites label keys only, never a policy input.
 **UNVERIFIED:** a real CUDA python-core launch (no GPU training during the M5 halt) — the CUDA numbers
 are the production learner's forwards on real rollout rows, not a live rollout loop.
 

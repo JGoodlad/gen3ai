@@ -71,8 +71,8 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("policy_grad_coef",                       _PLAIN),   # policy-gradient term weight (1.0 = upstream)
     ("intent_label_bot_weight",       _PLAIN),   # gen3_intent_label_bot_weight_v1 (1.0 = off)
     ("win_prob_strata_weight",        _PLAIN),   # gen3_winprob_strata_weight_v1 (0.0 = bit-identical)
-    # gen3_fork_v1 — the FORK ARM. All six _PLAIN: they are read off the model by
-    # `ForkArmCallback` once per rollout and never enter a forward pass or a weight shape.
+    # gen3_fork_v1 — the FORK ARM. All six _PLAIN: the Rust collector's fork pass reads them once per
+    # collect and they never enter a forward pass or a weight shape.
     ("fork_fraction",                 _PLAIN),   # 0.0 = OFF and bit-identical
     ("fork_branches",                 _PLAIN),   # 3 = top-2 + one uniformly random legal action
     ("fork_contested_gap",            _PLAIN),   # the top-2 logit-gap QUANTILE (inert at 0.0)
@@ -139,15 +139,6 @@ def apply_training_hparams(model, args, *, mappings) -> None:
     model.device_batch_mode = str(getattr(args, "device_batch", None) or _devb_default_mode)
     model.rank_probe_every_update = getattr(args, "rank_tripwire", "warn") != "off"
     model.noise_terms_every_update = getattr(args, "adaptive_batch", "off") not in ("off", "total")
-
-    # gen3_fork_v1: the FORK ARM injects branch transitions into the rollout buffer, which the
-    # stock buffer has nowhere to put — `get()` iterates exactly `buffer_size * n_envs`. Installed
-    # HERE because this function is the one place both build paths meet and it runs AFTER
-    # `_setup_model` built the buffer being replaced. OFF ⇒ not even imported.
-    if (float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0
-            and getattr(args, "env_core", "python") != "rust"):   # rust: branch rows ride the FIFO (forks.md §14)
-        from agents.training.fork_buffer import install_fork_buffer
-        install_fork_buffer(model)
 
 
 def _start_rust_env(env, model) -> None:

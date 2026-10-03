@@ -4,11 +4,19 @@
 before touching the arm; everything else is here, and this file carries the same always-current
 obligation as the leaf — update it in the same pass as the code.
 
-> **STATUS (deletion pass L4, 2026-10-02).** The PYTHON-core fork arm described in §§1–13 is
+> **STATUS (deletion pass L5, 2026-10-02).** The PYTHON-core fork arm described in §§1–13 is
+> **DELETED** (L4 made it unreachable; L5 removed the code: `fork_callback.py`, `fork_driver.py`,
+> `fork_worker.py`, `fork_crn.py`, the `ForkRolloutBuffer` and the branch-row builder in `fork_buffer.py`,
+> `cf_records.py`, the decision-time handle capture in the wrapper / env factory / async collector /
+> `WinProbLabelCallback`, and `compile_trainer.eager_extractor`; the callable-substitute seam in
+> `utils/bridge/counterfactual.py` went with it). What the Rust port imports is KEPT: `fork_arm.py`
+> (selector, branch actions, meters) and `fork_buffer.FILL` / `unfillable_keys` / `refusal_text`. The
+> `--fork-fraction > 0` on `--env-core python` refusal row (`fork_python_core_unavailable`) stays until
+> the Python core itself is deleted, so the flag cannot be a silent no-op there. Before L5 the arm was
 > **UNREACHABLE**: it replayed its episode from the `<run>/cf_records/` ring, the ring and its flag
 > (`cf-records`) were deleted with the cf training half, and `--fork-fraction > 0` on
 > `--env-core python` is refused (combination row `fork_python_core_unavailable`). Its code is deleted
-> in unit L5. The **live arm is the Rust fork port (§14)**, which replays the core's own finished input
+> in unit L5 (done). The **live arm is the Rust fork port (§14)**, which replays the core's own finished input
 > log and needs no ring. §§1–13 stay as the record of what was measured and built (the measurement in
 > §1, the draw pairing, the cost model and the endpoints all carry to the Rust port); wherever they name
 > the ring, `fork/records_missing` or the ring's cap, read it as history of the Python arm.
@@ -143,7 +151,7 @@ than noted:
   opponent's, a correlation that is not in the training ecology and would be a second confound
   smuggled in under a fix for the first.
 
-**VERIFIED, not asserted.** `fork_crn_sim_test.py` (`sim`) plays real bridge battles in three cells:
+**VERIFIED, not asserted** (the Python arm's gate, `fork_crn_sim_test.py`, was deleted in L5; the Rust port's is `rust_rollout/fork_crn_integration_test.py`, §14.8). It played real bridge battles in three cells:
 same sim seed + same streams ⇒ **byte-identical protocol**; same sim seed + different streams ⇒ the
 lines diverge (the `cf_q_labels` shape reproduced); different sim seed ⇒ diverge (the control that
 proves the comparison can see a change).
@@ -202,13 +210,13 @@ the exploring start, not a duplicate: those rows differ in the action, the retur
 
 A branch is a complete episode from the fork step to a terminal, so its advantages and returns are
 `RolloutBuffer.compute_returns_and_advantage`'s recursion with no bootstrap
-(`fork_buffer.gae`, cross-checked against SB3's own arrays in `fork_buffer_test`). `win_target` is
+(the Python arm's `fork_buffer.gae`, cross-checked against SB3's own arrays — deleted in L5; the Rust pass uses `store.game_gae`, §14.5). `win_target` is
 the branch's own outcome bit and `win_mask` is 1.
 
 🚨 **Why the arm REFUSES any critic but `winprob`.** Under `--critic winprob` the reward stream is
 the **terminal win indicator alone** (`--terminal-indicator`, `--victory-value 1.0`,
 the terminal-only reward), so a branch's ENTIRE reward sequence is reconstructible from its outcome bit —
-which is the only reason `fork_buffer.branch_rewards` can build one outside the env. Under `shaped`
+which is the only reason a branch's reward can be built outside the env (the Python arm's `branch_rewards`, deleted in L5; the Rust pass applies the core's indicator rule, §14.5). Under `shaped`
 a per-turn reward is a PBRS/bias composition the env's `RewardManager` folds from a `TurnDelta` that
 no branch has, and the injected rows would silently carry zero reward, i.e. would teach the critic
 that a third of the buffer is inert.
@@ -220,19 +228,19 @@ points at every coefficient tested.
 
 ## 8. WHERE THE ROWS COME FROM, and what the parent does
 
-> ⚠️ **§8–§13 describe the PYTHON-core implementation — LEGACY until the M5 deletion pass**, which
-> deletes it now that the capability is ported (§14; the program doc's deletion manifest names the
-> files). The RULES in §2–§7 are shared by both.
+> ⚠️ **§8–§13 describe the PYTHON-core implementation, DELETED in deletion pass L5** (2026-10-02) now
+> that the capability is ported (§14). They are the record of what was built and measured; the files
+> named below no longer exist except where marked KEPT. The RULES in §2–§7 are shared by both.
 
 | piece | file |
 |---|---|
-| selector, meters, cost model, the flag constants | `agents/training/fork_arm.py` |
-| the CRN seed derivation | `agents/training/fork_crn.py` |
-| the child that PLAYS the branches | `agents/training/fork_worker.py` |
-| the parent fan-out + the batched scoring + the row assembly | `agents/training/fork_driver.py` |
-| the fill table, the GAE, `ForkRolloutBuffer` | `agents/training/fork_buffer.py` |
-| the rollout hook | `agents/training/fork_callback.py` |
-| the gates | `fork_arm_test.py`, `fork_buffer_test.py`, `fork_crn_test.py`, `fork_callback_test.py`, `fork_flags_test.py`, `fork_crn_sim_test.py` (`sim`) |
+| selector, meters, cost model, the flag constants | `agents/training/fork_arm.py` (KEPT — the Rust port imports it) |
+| the CRN seed derivation | `fork_crn.py` (DELETED, L5) |
+| the child that PLAYS the branches | `fork_worker.py` (DELETED, L5) |
+| the parent fan-out + the batched scoring + the row assembly | `fork_driver.py` (DELETED, L5) |
+| the fill table | `agents/training/fork_buffer.py` (KEPT: `FILL`, `unfillable_keys`, `refusal_text`; the GAE, the branch-row builder and `ForkRolloutBuffer` DELETED, L5) |
+| the rollout hook | `fork_callback.py` (DELETED, L5) |
+| the gates | KEPT: `fork_arm_test.py`, `fork_buffer_test.py` (the fill table), `fork_flags_test.py` (the flag surface); DELETED: `fork_crn_test.py`, `fork_callback_test.py`, `fork_crn_sim_test.py` (`sim`) |
 
 **Values and log-probs are computed in the PARENT**, by the live policy, in one batched forward.
 Not an optimisation: the parent's weights ARE the weights that collected the buffer, so
@@ -433,7 +441,7 @@ the model says — it does not prove the launch layer.
 > subsampled."* Playouts to a terminal are DEFERRED by the one-ply scope rule, so `--fork-fraction`
 > stays **0 = OFF** on both env cores; no recipe, baseline or arm turns it on. The port exists so the
 > tested rules above survive the M5 DELETION PASS, which removes the Python env core (§1–§13 are its
-> implementation — **LEGACY until that pass**).
+> implementation — **deleted in L5**).
 
 ### 14.1 Reused vs new
 
@@ -444,8 +452,8 @@ the model says — it does not prove the launch layer.
 | branch policy forwards | T2 (`svc.submit` / `flush`), the trainee's CURRENT slot and the parent's opponent slot | T2, unchanged |
 | the draws | `keyed_draw` (stream 0 trainee, stream 1 opponent), keyed by the PARENT's (run seed, env, episode) and the decision's frame index | Lane G, unchanged |
 | GAE, the arena, the complete-game FIFO | `store.game_gae`, `RowStore`, `GameLog.completed` | Lane G, unchanged |
-| selector, branch actions, meters, FILL table, branch reward rule | `fork_arm.*`, `fork_buffer.FILL` | the Python arm, verbatim |
-| the PG mask + renormalisation in the learner | `fork_pg_m` → `MicroStatic.fork_pg_mask` (R1 declares it) | the Python arm, unchanged |
+| selector, branch actions, meters, FILL table, branch reward rule | `fork_arm.*`, `fork_buffer.FILL` | the Python arm's modules, KEPT verbatim (the arm's other halves are deleted, L5) |
+| the PG mask + renormalisation in the learner | `fork_pg_m` → `MicroStatic.fork_pg_mask` (R1 declares it) | unchanged |
 | **new: the fork PASS** | `agents/training/rust_rollout/fork.py` | — |
 | **new: one additive FFI row** | `rust_env_playout_pending_n` — each pending decision's frame index `n` (the core's `dec_n`) | — |
 

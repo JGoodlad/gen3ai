@@ -24,9 +24,8 @@ in the policy module's weak registry (`policy._ROLLOUT_REGIONS`), never as a pat
 """
 from __future__ import annotations
 
-import contextlib
 import time
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -467,27 +466,3 @@ def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
          f"B={int(batch_size)}), at the startup gate's bars; a disagreement is confirmed before it FATALs")
     ctl.attach(model)
     return line
-
-
-@contextlib.contextmanager
-def eager_extractor(fe: Any) -> Iterator[None]:
-    """Route `fe` to its EAGER forward for the block (a compiled `fe.forward` is an INSTANCE
-    attribute over the class method; removing it for the block exposes the class method).
-
-    For the learner-process callers whose signature can FIRST appear after the lock and cannot be
-    pre-warmed — a different obs KEY SET or a batch that may be 1 (fork-arm
-    scoring). Same parameters, same autograd; eager numerics.
-
-    On the learner this is a NO-OP since the extractor-only compile was deleted (2026-10-02): the
-    declared regions compile functions OVER the module and never patch `fe.forward`, so those callers
-    already run eager. It still routes around an instance forward installed by anything else.
-    """
-    compiled = vars(fe).get("forward") if fe is not None and hasattr(fe, "__dict__") else None
-    if compiled is None:                          # not compiled (or no extractor): nothing to route
-        yield
-        return
-    del fe.forward
-    try:
-        yield
-    finally:
-        fe.forward = compiled

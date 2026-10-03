@@ -21,7 +21,7 @@ import torch as th
 from gymnasium import spaces
 from sb3_contrib.common.maskable.buffers import MaskableDictRolloutBuffer
 
-from agents.training.lever_supply import LeverConfigError
+from agents.training.lever_supply import DryStreakGuard, LeverConfigError, LeverStarvedError
 from agents.training.rust_rollout import fork as FK
 from agents.training.rust_rollout import store as S
 
@@ -294,3 +294,39 @@ def test_a_branch_plays_the_parents_REAL_policy_opponent_only_while_its_slot_ser
     assert not f.opp_real and f.opp_slot == 5 and f.opp_temperature == 1.0 and not f.opp_greedy
     f = fork(2, None)                                                  # a bot route
     assert not f.opp_real and f.opp_slot == 5
+
+
+def _guarded_pass(floor):
+    """A pass with no handles to play and a declared fork supply floor; `pending` is empty, so a pass
+    selects nothing (a DRY pass) unless a test stubs the injection."""
+    p = _pass()
+    p.pending, p.passes, p.last, p.rows_per_fork = [], 0, None, 0.0
+    p.handles = [object()]
+    p.guard = DryStreakGuard("fork", floor, emit=lambda _line: None)
+    return p
+
+
+def test_a_fork_pass_that_injects_NOTHING_for_its_floor_of_passes_is_FATAL_SUPPLY():
+    """The fork lever's supply guard (`gen3_supply_guard_v2`) on the Rust core: the Python arm's twin of
+    this test went with that arm (deletion pass L5). Without the guard a run with `--fork-fraction > 0`
+    that forks nothing trains on the plain buffer for its whole life, in silence."""
+    p = _guarded_pass(2)
+    col = _col()
+    p.run(col)
+    assert p.guard.streak == 1
+    with pytest.raises(LeverStarvedError, match="0 rows injected|no game ended"):
+        p.run(col)
+
+
+def test_a_fork_pass_that_injects_rows_resets_the_streak():
+    p = _guarded_pass(3)
+    col = _col()
+    p.run(col)
+    assert p.guard.streak == 1
+
+    def _inject(_col, _forks, rep):
+        rep.injected_rows = 7
+
+    p._inject = _inject
+    p.run(col)
+    assert p.guard.streak == 0 and p.guard.total == 7

@@ -52,7 +52,6 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from agents.battle.gen3_battle import Gen3Battle
 from agents.inference.player import Gen3Player
 from agents.training import cf_producer as P
-from agents.training.cf_records import safe_tag
 from agents.training.obs_roundtrip_fuzz_test import RecordingFuzzPlayer
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.bridge.reconstruction import RECON_SUFFIX, ReconstructionRecord
@@ -145,11 +144,16 @@ class _RandomPolicySnapshot:
 # Fixture: a real battle → a real ring record in the TRAINING tap's shape
 # ---------------------------------------------------------------------------
 
+def _safe_tag(battle_tag):
+    """The filename-safe battle tag of the deleted ring writer (alnum, `-`, `_`; 80 chars)."""
+    return "".join(c if (c.isalnum() or c in "-_") else "_" for c in str(battle_tag or "untagged"))[:80]
+
+
 def _write_ring_record(ring_dir: str, tag: str, raw: dict) -> str:
     """What the deleted `CfRecordRing.write_record` laid down: `<ns:019d>_<pid>_<safe tag>` +
     `_reconstruction.json`, an atomic tmp-then-rename, the payload `{**raw, "battle_tag": tag}`."""
     os.makedirs(ring_dir, exist_ok=True)
-    path = os.path.join(ring_dir, f"{time.time_ns():019d}_{os.getpid()}_{safe_tag(tag)}{RECON_SUFFIX}")
+    path = os.path.join(ring_dir, f"{time.time_ns():019d}_{os.getpid()}_{_safe_tag(tag)}{RECON_SUFFIX}")
     with open(path + ".tmp", "w") as f:
         json.dump({**raw, "battle_tag": tag}, f)
     os.replace(path + ".tmp", path)

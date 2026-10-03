@@ -207,7 +207,7 @@ def trainee_observation_space(layout: dict, vector_space: Any, g: LabelGates) ->
         # gen3_fork_v1: 1.0 = this row is in the clipped policy term, 0.0 = it is not.
         # Bounded in [0, 1] because it is a MASK and not a dose — the fork arm does not
         # re-weight the policy gradient, it excludes exactly the fork step (see
-        # `agents.training.fork_buffer`, THE MASK RULE).
+        # `agents.training.fork_buffer` and `rust_rollout/fork_test.py`, THE MASK RULE).
         base_obs[FORK_PG_MASK_KEY] = spaces.Box(
             low=0.0, high=1.0, shape=(1,), dtype=np.float32)
 

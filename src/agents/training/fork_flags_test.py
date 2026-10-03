@@ -7,14 +7,14 @@ is a run whose `model_config.json` says `fork_fraction 0.0` while the callback f
 that quietly halves the arm's simulation bill. Every one of those sites is pinned here.
 
 **And the OFF claim, which is the one an unflagged run depends on:** at `--fork-fraction 0` no obs
-key is declared, no callback is registered, the buffer is the stock one, and the policy term is the
-unmasked expression. That is checked here rather than asserted in a docstring.
+key is declared and the policy term is the unmasked expression. That is checked here rather than
+asserted in a docstring. (The Python arm's callback, buffer subclass and decision-time handle capture
+were deleted in deletion pass L5; the Rust fork pass is gated by `rust_rollout/fork_test.py`.)
 """
 from __future__ import annotations
 
 import inspect
 
-import numpy as np
 import pytest
 import torch as th
 
@@ -36,7 +36,7 @@ _WP = ["--critic", "winprob", "--terminal-indicator", "--victory-value",
 def _resolved(argv, core="python"):
     """`core="python"` types the python env core (bare argv = rust since D2); `core=None` leaves the bare
     default — the rust core, the only one a `--fork-fraction > 0` argv can resolve on since deletion
-    pass L4 removed the Python fork arm's replay ring (`--cf-records`)."""
+    passes L4 / L5 removed the Python fork arm (its replay ring, then its code)."""
     from main.train.config import resolve_config
     p = build_parser()
     args = p.parse_args([*(["--env-core", core] if core else []), *argv])
@@ -222,35 +222,11 @@ def test_a_collected_row_carries_the_ONE_placeholder():
     assert obs[PG_MASK_KEY].tolist() == [1.0]
 
 
-def test_env_factory_arms_the_obs_key_and_the_handle_from_the_fraction():
+def test_trainee_spaces_arms_the_obs_key_from_the_fraction():
     import agents.training.trainee_spaces as ts
-    import main.train.env_factory as ef
-    src = inspect.getsource(ef)
-    # the obs-key switch moved with `trainee_env_kwargs` to its env-free home (deletion pass U2)
+    # the obs-key switch lives in `trainee_env_kwargs`, the env-free home (deletion pass U2)
     assert ("emit_fork_pg_mask=(float(getattr(args, \"fork_fraction\", 0.0) or 0.0) > 0.0)"
             in inspect.getsource(ts))
-    assert ("env._emit_wp_rollout_handle = bool(\n"
-            "                float(getattr(args, \"fork_fraction\", 0.0) or 0.0) > 0.0)") in src, \
-        "the reconstruction HANDLE must be armed by --fork-fraction"
-
-
-def test_the_callback_is_registered_AFTER_the_win_prob_one():
-    """LOAD-BEARING ORDER: the fork selector reads `win_mask` to mean 'this episode terminated in
-    the buffer', and that plane is a placeholder of zeros until `WinProbLabelCallback` back-fills
-    it. Registered first, the arm would find nothing eligible, every rollout, in silence."""
-    import main.train.callbacks as cb
-    src = inspect.getsource(cb)
-    assert "ForkArmCallback" in src
-    assert src.index("WinProbLabelCallback") < src.index("ForkArmCallback")
-    assert 'getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0' in src
-
-
-def test_the_handle_scratch_is_gated_on_the_fork_flag():
-    """The ASYNC collector writes exactly one per-decision handle array inline; the fork arm is its
-    only reader now (the rollout-target arm that shared it was deleted, deletion pass L2)."""
-    from agents.training.win_prob_callback import WinProbLabelCallback
-    src = inspect.getsource(WinProbLabelCallback._handle_needed)
-    assert "fork_fraction" in src
 
 
 # ── the policy-term mask ─────────────────────────────────────────────────────────────────────
@@ -278,33 +254,3 @@ def test_renormalising_equals_the_mean_over_the_KEPT_rows():
     # ...and with nothing masked it IS the plain mean the unflagged run computes.
     ones = th.ones(4)
     assert float(-((per_row * ones).sum() / ones.sum())) == pytest.approx(float(-per_row.mean()))
-
-
-# ── the buffer install ───────────────────────────────────────────────────────────────────────
-def test_install_fork_buffer_is_idempotent_and_keeps_the_shape():
-    from gymnasium import spaces
-    from sb3_contrib.common.maskable.buffers import MaskableDictRolloutBuffer
-    from agents.training.fork_buffer import ForkRolloutBuffer, install_fork_buffer
-
-    class _M:
-        device = "cpu"
-        gamma = 1.0
-        gae_lambda = 0.95
-
-    space = spaces.Dict({"observation": spaces.Box(-1, 1, (4,), np.float32),
-                         "action_mask": spaces.Box(0, 1, (11,), np.float32)})
-    m = _M()
-    m.rollout_buffer = MaskableDictRolloutBuffer(8, space, spaces.Discrete(11), n_envs=3)
-    install_fork_buffer(m)
-    first = m.rollout_buffer
-    assert isinstance(first, ForkRolloutBuffer)
-    assert first.buffer_size == 8 and first.n_envs == 3
-    install_fork_buffer(m)
-    assert m.rollout_buffer is first
-
-
-def test_model_build_installs_it_only_when_the_arm_is_on():
-    import main.train.model_build as mb
-    src = inspect.getsource(mb.apply_training_hparams)
-    assert "install_fork_buffer" in src
-    assert 'getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0' in src

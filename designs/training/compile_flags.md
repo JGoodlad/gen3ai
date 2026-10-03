@@ -1101,7 +1101,6 @@ flag and read attributes (`grad_checkpointing`):
 | `rank_probe` (first minibatch of every update) | train · no-grad · `batch_size` | prewarm — HOOK-FREE since K6 (`gen3_rank_probe_stash_v1`): it reads `last_trunk_tokens` / `last_value_cls`. Its old forward hooks were a guard (`len(_forward_hooks) != 0`) — THE iteration-1 signature the `8fc297a2` lock absorbed (found 2026-09-30 on the real trainer with the lock moved before iteration 1); on 2.8 the hooks were instead silently SKIPPED inside the compiled frame, so `rank/trunk_*` and `rank/value_cls_*` vanished on every compiled 2.8 run |
 | capacity half-batch cosine (every 50 minibatches), td-aux | train · grad · other sizes ≥ 2 | prewarm at `batch_size // 2` makes the train graph dynamic |
 | truncated-episode `predict_values` under `--critic shaped` | eval · no-grad · **1** | EAGER (`EAGER_BATCHES`, `gen3_batch1_eager_v1`) — batch 1 never reaches the compiled graph |
-| fork-arm `_score_pool`, `fork_driver._score` | a different KEY SET and/or a variable batch that may be 1 | `compile_trainer.eager_extractor(fe)` — the EAGER forward for the block (same params, same autograd) |
 | cf terms, capacity velocity, win-prob episode-start read | — | already eager (`type(fe).forward(fe, …)`) |
 | eval, snapshot ladder, the opponents | — | other processes (fresh dynamo per process) |
 | `--debug` (DummyVecEnv) + `--compile-opponents` | opponents compile IN the learner process, on the learner's code objects, after the lock | **refused at startup** (`FATAL_CONFIG`): pass `--no-compile-opponents` |
@@ -1170,7 +1169,7 @@ signatures trip the detector → FATAL (also before the lock); after the lock a 
 typed FATAL at the call site; a SWALLOWED `RecompileError` and a late FIRST compile are still
 caught; the healthy two-shape alternation locks and runs clean; **the sentinel changes no numerics**
 (outputs + gradients bit-identical on vs off); `attach` locks after the first update and exits
-`FATAL_CONFIG`; `eager_extractor`; the version refusal and the hash tripwire; the contract tests;
+`FATAL_CONFIG`; the version refusal and the hash tripwire; the contract tests;
 (the CUDA lock-headroom test went with the extractor-only compile, K1).
 
 ### FUNCTIONAL MASKING — the K8 prerequisite (`gen3_functional_masking_v1`, 2026-09-30)

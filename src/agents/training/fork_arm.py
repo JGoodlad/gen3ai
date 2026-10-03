@@ -52,9 +52,9 @@ comparator.
 
 ``dice_and_draws`` (the DEFAULT) — that, PLUS both players' policy sampling streams seeded
 IDENTICALLY per branch, so branch A's k-th decision and branch B's k-th decision consume the SAME
-uniform (`agents.training.fork_crn`). The branches then differ in exactly one thing: the action at
-the fork. It is VERIFIABLE rather than asserted — `fork_crn_sim_test` replays two branches with
-IDENTICAL actions through the real bridge and asserts byte-identical protocol.
+uniform (on the Rust core: the keyed draw, `rust_rollout/fork.py`). The branches then differ in exactly one thing: the action at
+the fork. It is VERIFIABLE rather than asserted — `rust_rollout/fork_crn_integration_test` replays a branch taking
+the parent's action and asserts it reproduces the parent byte for byte.
 
 Sampling stays at temperature 1.0 on both sides. A greedy continuation would be a different
 ecology from the one the training actor plays in, and the prober measured that error at
@@ -73,6 +73,9 @@ At ``F = 0.02`` with 3 branches the expectation is ~1.5-2x a plain run's simulat
 
 THE ECOLOGY APPROXIMATION — this arm's largest declared caveat
 --------------------------------------------------------------
+(The deleted PYTHON arm's. The Rust port plays a branch against the parent's REAL policy opponent where it
+can and substitutes only the remainder — `designs/training/forks.md` §14.4.)
+
 A training ``__RECON__`` record carries the resolved seed, both packed teams and the committed
 choices, and **nothing that says which policy sat on the other side**. So a branch is played
 against a SELF-LIKE opponent (the current snapshot), not the episode's real one — right for the
@@ -80,10 +83,10 @@ against a SELF-LIKE opponent (the current snapshot), not the episode's real one 
 reads LOW against the bot classes). ``fork/branch_share`` prices how much of the buffer that population
 substitution now occupies, and ``fork/bot_share`` names how much of it replaced a BOT.
 
-Pure numpy and pure arithmetic — no torch, no subprocess, no bridge. The child that plays the
-branches is :mod:`agents.training.fork_worker`, the parent-side fan-out
-:mod:`agents.training.fork_driver`, the buffer surgery :mod:`agents.training.fork_buffer` and the
-loop hook :mod:`agents.training.fork_callback`.
+Pure numpy and pure arithmetic — no torch, no subprocess, no bridge. This module is the rules the
+Rust fork pass (:mod:`agents.training.rust_rollout.fork`) runs: the selector, the branch actions, the
+meters. The PYTHON arm that once shared it (a replay-ring child process, a rollout-buffer subclass, a
+callback) was deleted in deletion pass L5; :mod:`agents.training.fork_buffer` keeps only the fill table.
 """
 
 from __future__ import annotations
@@ -151,7 +154,7 @@ DEFAULT_CRN = "dice_and_draws"
 #: simulation — a GUARD RAIL and never an operating point.
 #:
 #: 🚨 **It is not what binds in practice, and neither is the fraction.** The ROW BUDGET
-#: (`fork_callback.ROW_BUDGET_MULTIPLE`) caps the injection at one buffer's worth of rows, i.e.
+#: (`rust_rollout.fork.ROW_BUDGET_MULTIPLE`) caps the injection at one buffer's worth of rows, i.e.
 #: ~98,304 / ~125 rows-per-fork ~= **790 forks** at the production shape — below the 1,966 that
 #: ``--fork-fraction 0.02`` asks for. So above ~0.008 the fraction is INERT and the delivered fork
 #: count is the budget's. Both numbers are published (`fork/requested` vs `fork/forks`,
@@ -535,13 +538,3 @@ def fork_metrics(*, forks: Sequence[dict], requested: int, eligible: int, pool: 
         out["bot_share"] = float((cls == 0).mean())
     return out
 
-
-def forks_per_battle(n_forks: int, episode_starts) -> float:
-    """``fork/rate`` — forks divided by the episodes that STARTED in this buffer.
-
-    Episode starts and not terminals: the buffer's ``episode_starts`` plane is the one count that
-    needs no outcome scan, and over a full rollout the two differ by at most one per env.
-    """
-    es = np.asarray(episode_starts, dtype=np.float64)
-    n_ep = float((es >= 0.5).sum())
-    return float(int(n_forks)) / n_ep if n_ep > 0 else float("nan")

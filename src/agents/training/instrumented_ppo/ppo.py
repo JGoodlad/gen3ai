@@ -283,9 +283,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # seeds), and R1 then gets the NEUTRAL weights (ones — `_micro_var`), bit-identical to the
         # unweighted expression, instead of a second signature.
         strata_declared = self._r1_levers(_f)
-        # +FORK ARM (gen3_fork_v1) — computed in `ForkArmCallback._on_rollout_end` (it needs the
-        # buffer's [n_steps, n_envs] shape and it BLOCKS on the branch continuations before the
-        # epochs begin) and stashed on the model. Recorded under its OWN `fork/` prefix rather than
+        # +FORK ARM (gen3_fork_v1) — computed in the Rust collector's fork pass
+        # (`rust_rollout/fork.py`, which BLOCKS on the branch continuations before the epochs
+        # begin) and stashed on the model. Recorded under its OWN `fork/` prefix rather than
         # folded into `win_prob/`: these are facts about the COLLECTION, not about the head's loss,
         # and the two families are read at different times by different people. Only when a pass
         # actually RAN: an absent `fork/*` family means --fork-fraction is 0.0 (or the arm

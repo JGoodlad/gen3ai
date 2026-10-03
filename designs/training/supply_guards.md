@@ -2,7 +2,7 @@
 
 **Owner of:** `agents/training/lever_supply.py` (the shared guard), `agents/training/selfplay_supply.py`
 (the self-play pool + PFSP mixin), the guard wiring in `win_prob_callback.py`
-and `fork_callback.py`, the `--bot-weights` / warm-start refusals
+and `rust_rollout/fork.py`, the `--bot-weights` / warm-start refusals
 in `main/train/matchup_setup.py` and `agents/training/warmstart.py`, and `main.exit_codes.FatalConfigError`.
 The cf label producer's own guard (`gen3_supply_guard_v1`) was deleted with the cf training half
 (deletion pass L4, 2026-10-02; history in [`cf_grounding.md`](cf_grounding.md)); this doc is the shared
@@ -106,6 +106,6 @@ completed run is not turned into exit 5 from inside its own shutdown path.
 `agents/training/lever_supply_test.py` (the guard, the exit mapping, the launcher on 1/3/5, the pool
 and PFSP guards through a real `_collect_pending`, run-level persistence across a simulated restart,
 a fork's inherited counters ignored, failed cycles, the drain, `--bot-weights`, the warm-start wrap); the fork guard in
-`fork_callback_test.py`; `agents/training/lever_supply_integration_test.py`
+`rust_rollout/fork_test.py` (a pass that injects nothing for its floor is FATAL_SUPPLY; one that injects resets the streak); `agents/training/lever_supply_integration_test.py`
 with REAL processes — the trainer exits 3 on a `--bot-weights` typo (rc 1 on the parent commit), and (slow, sim) the
 `--debug` trainer exits 5 on a self-play run that can never seed.

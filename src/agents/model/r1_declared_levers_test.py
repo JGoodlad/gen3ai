@@ -45,8 +45,8 @@ LEVERS: Dict[str, Any] = {
     "production": ([], {}),
     "strata": (["--win-prob-strata-weight", "0.5"], {"strata": True}),
     # gen3_fork_rust_v1 (forks.md §14): on the Rust core the branch rows ride the complete-game FIFO
-    # inside the FIXED update (no ragged tail, no ForkRolloutBuffer) — the mask key is still a lever.
-    # (The python-core fork row left with L4: `--cf-records` is deleted and a fork on the python core is
+    # inside the FIXED update (no ragged tail) — the mask key is still a lever.
+    # (The python-core fork row left with L4/L5: the python arm is deleted and a fork on the python core is
     # refused, `combination_checks` `fork_python_core_unavailable`.)
     "fork_rust": (["--env-core", "rust", "--fork-fraction", "0.01"], {"fork_pg_mask": True, "key": "fork_pg_m"}),
 }

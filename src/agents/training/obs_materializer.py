@@ -66,7 +66,7 @@ prefix cost it removes is the part that is linear in the turn.
 Reading a record that has NO trace beside it (:func:`scan_record`)
 -----------------------------------------------------------------
 An eval trace ships its obs and its action indices in ``states.npz``. A **training**
-reconstruction record — what the ``--cf-records`` tap (``agents.training.cf_records``) rings —
+reconstruction record — what the DELETED ``--cf-records`` tap (deletion pass L4) rang —
 ships neither: only the seed, both packed teams and the committed choice strings. So the only
 route to a training decision's observation is to replay the one-sided protocol AND recover the
 action history by inverting those choices through the real mapper. :func:`scan_record` does both
@@ -879,7 +879,7 @@ class RecordDecision:
     """One decision of a battle read back from its reconstruction record ALONE.
 
     The forensic path (``states.npz``) has the obs and the action indices already; a TRAINING
-    record has neither — the tap (``agents.training.cf_records``) writes only the seed, the teams
+    record has neither — the deleted ``--cf-records`` tap wrote only the seed, the teams
     and the committed choice strings. So everything here is recovered by replay: ``obs`` from the
     one-sided protocol, ``action`` by inverting ``choice`` through the real action mapper.
 

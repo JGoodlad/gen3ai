@@ -11000,3 +11000,27 @@ team-PFSP is OFF in the recipe (probe P, ledger 2026-08-30); the exploiter ladde
 - **Docs.** Root `CLAUDE.md` Smoke Test (measured: ~2 min; what a Rust-core success prints — `🏁 Episode Finished` is the python
   core's), `designs/ops/testing.md`, `designs/training/{compile_flags,learner_lifecycle}.md`, the training leaf,
   `program_rust_core.md`'s K8 decision row, the manifest.
+## 2026-10-02 — the PYTHON FORK ARM is DELETED; the Rust fork port is the only arm (deletion pass L5, manifest R3; no model change, no config bump, the K9 learner golden unchanged)
+
+- **No recorded field and no flag is removed**, so there is no `MODEL_CONFIG_VERSION` bump, no `RETIRED` row and no `_migrate_config`
+  stamp: all six `--fork-*` flags (`--fork-fraction`, `-branches`, `-contested-gap`, `-contested-absv`, `-max-per-battle`, `-crn`) are the Rust
+  port's surface (`rust_rollout/fork.py`, `designs/training/forks.md` §14, declared and OFF) and their `ModelVersion` fields stay.
+- **Deleted.** `fork_callback.py`, `fork_driver.py`, `fork_worker.py`, `fork_crn.py`; from `fork_buffer.py` the GAE, `branch_rewards`,
+  `build_branch_rows`, `concat_blocks`, `ForkRolloutBuffer`, `fork_buffer_class`, `install_fork_buffer` (it keeps `FILL`, `unfillable_keys`,
+  `refusal_text`); `fork_arm.forks_per_battle`; `cf_records.py` (`safe_tag` / `record_key` / `index_records`); the decision-time handle capture
+  (`wrappers.MaskableAgentWrapper.step`, `env_factory`'s `_emit_wp_rollout_handle`, `async_vec_env`'s `wp_handle` write,
+  `WinProbLabelCallback._handle_scratch` / `_handle_needed`); `ForkArmCallback`'s registration and `install_fork_buffer`'s call;
+  `compile_trainer.eager_extractor` (its last callers went with the arm); the callable-substitute seam of
+  `utils/bridge/counterfactual.install_scripted_prefix` / `replay_counterfactual` (the arm was its only user; a string substitute is unchanged).
+- **KEPT on purpose.** `fork_arm.py` and `fork_buffer.FILL` (the port imports them), `PG_MASK_KEY` (read by `micro_step` / `train_setup` /
+  `compile_regions`), the `fork` lever in `lever_supply.LEVERS`, and the combination row `fork_python_core_unavailable`: the Python core
+  has no callback or buffer now, so without the row `--fork-fraction > 0` would be a SILENT no-op there. It goes with the Python core (U3).
+- **Tests.** Deleted with the arm: `fork_callback_test`, `fork_crn_test` (incl. the three callable-substitute cases), `fork_crn_sim_test`,
+  `cf_records_join_test`, the GAE / row-builder / buffer cases of `fork_buffer_test`, four Python-arm cases of `fork_flags_test` (a fifth, the env-factory handle pin, was cut down to the obs-key switch), `forks_per_battle`'s case and
+  `compile_control_test`'s three `eager_extractor` cases. Added: the string-substitute report case in `counterfactual_test`, a fill-table case in
+  `fork_buffer_test`, and the fork lever's FATAL_SUPPLY / streak-reset cases in `rust_rollout/fork_test.py` (the Rust pass's guard was pinned only
+  by the deleted Python twin). The forks.md §5 mask rule stays pinned by `rust_rollout/fork_test.py` (fork-step `fork_pg_m` 0 for every branch,
+  renormalised term, value terms intact).
+- **Docs.** `forks.md` (status box, §8 file table), the training leaf `CLAUDE.md`, ARCHITECTURE's fork paragraph (a branch plays the parent's REAL
+  opponent where it can; branch rows compete for `D`), `compile_flags.md`, `supply_guards.md`, `learner_gates.md`, `cf_grounding.md`,
+  `env_labels.md`, `TRAINING_RUN_SOP.md`, `program_rust_core.md`, `deleted_flags.md` (one path row), the manifest (L5 SHIPPED).

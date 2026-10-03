@@ -1,8 +1,8 @@
 """THE FORK ARM ON THE RUST CORE (`gen3_fork_rust_v1`; ``designs/training/forks.md`` §14).
 
 A DECLARED-BUT-OFF capability (owner, 2026-10-01: in-loop additions are one ply and subsample-eligible;
-playouts to a terminal are DEFERRED). It ports the Python arm's tested rules (`fork_arm`, `fork_buffer`)
-onto the Rust collector so they survive the M5 deletion pass. ``--fork-fraction 0`` (the default
+playouts to a terminal are DEFERRED). It ported the Python arm's tested rules (`fork_arm`, `fork_buffer.FILL`)
+onto the Rust collector; the Python arm itself was deleted in deletion pass L5. ``--fork-fraction 0`` (the default
 everywhere) builds NOTHING: no pass, no handle, no ``fork_pg_m`` key, no arena row.
 
 THE PASS (``RustForkPass.run``) is the collector's ``fork`` phase, between the trigger firing and
@@ -48,7 +48,7 @@ FORK_RUST_ID = "gen3_fork_rust_v1"
 FORK_CONCURRENCY = 32
 
 #: The update-row budget of fork rows live in the arena, as a multiple of the trigger's target — the
-#: Python arm's ``ROW_BUDGET_MULTIPLE`` (``fork_callback``): branch rows may at most match own rows.
+#: deleted Python arm's rule too: branch rows may at most match own rows.
 ROW_BUDGET_MULTIPLE = 1.0
 
 #: ``dice`` (the control): branch ``b``'s side ``s`` draws on stream ``FORK_STREAM_BASE + 2 b + s`` —

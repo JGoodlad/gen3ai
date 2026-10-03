@@ -134,8 +134,7 @@ CUDA_RESOURCES = frozenset({"Stream", "ExternalStream", "CUDAGraph", "graph", "g
 #: ``agents`` modules ``instrumented_ppo`` imports that are NOT step paths, and why.
 NOT_STEP_MODULES: Dict[str, str] = {
     "agents/model/critic_mode.py": "a pure mode predicate (`is_winprob`) read at setup; builds nothing",
-    "agents/model/compile_trainer.py": "the compile wrapper, applied once at startup; the per-step "
-                                       "`eager_extractor` is a context manager over existing modules",
+    "agents/model/compile_trainer.py": "the compile wrapper, applied once at startup",
     "agents/observation/constants.py": "layout constants only",
     "agents/training/global_rng_guard.py": "the reseed guard + the isolated-RNG scope an INFERENCE load "
                                            "builds in; wraps seeding functions, builds no module",
@@ -456,7 +455,7 @@ def test_the_scan_actually_walked_the_tree(tree_scan: Tuple[List[Hit], Dict[str,
     """A scan that found nothing because it looked at nothing reads exactly like a clean tree."""
     c = tree_scan[1]
     assert c["step_modules"] >= len(STEP_MODULES) + 15, c
-    assert c["callback_files"] >= 20 and c["callback_classes"] >= 19, c
+    assert c["callback_files"] >= 20 and c["callback_classes"] >= 18, c   # 19 before L5 deleted ForkArmCallback
     assert c["repo_modules"] >= 20, c
     assert c["cuda_scope_modules"] >= 15, c          # the T2 service + the rust collector / eval / env
     assert {"Linear", "LayerNorm", "ModuleList", "Sequential"} <= TORCH_NN_MODULES

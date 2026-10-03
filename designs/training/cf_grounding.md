@@ -44,11 +44,10 @@ resume / fork (`agents/model/model_version/retired_levers.py`). Flag-by-flag cit
   counter reading healthy). The trainer's checkpoint cadence is now declared in env steps
   (`--checkpoint-every-steps`, `designs/ops/training_runbook.md`).
 
-**What the Python fork arm still reads (until unit L5).** `agents/training/cf_records.py` is reduced
-to the `safe_tag` / `record_key` / `index_records` join helpers; its only readers are the Python fork
-arm and the wrapper's decision-time handle capture, both unreachable now (`--fork-fraction > 0` on
-`--env-core python` is refused, combination row `fork_python_core_unavailable`) and deleted with L5.
-The Rust fork port needs no ring ([`forks.md`](forks.md) §14).
+**The Python fork arm was the last reader of the ring (deleted, unit L5).** `agents/training/cf_records.py`
+(the `safe_tag` / `record_key` / `index_records` join helpers) went with the arm and the wrapper's
+decision-time handle capture; `--fork-fraction > 0` on `--env-core python` stays refused (combination row
+`fork_python_core_unavailable`). The Rust fork port needs no ring ([`forks.md`](forks.md) §14).
 
 **What stays — the OFFLINE cf stack (design decision D6; nothing in training spawns or consumes it):**
 

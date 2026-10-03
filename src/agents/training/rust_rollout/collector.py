@@ -19,8 +19,8 @@ One host STEP:
 THE FORK PHASE (``COLLECT_PHASES``; declared only with ``--fork-fraction > 0``, ``fork.py``): after the
 trigger fires and BEFORE the fill, the fork arm branches contested decisions of the games that ended since
 its last pass and inserts each branch game into the completed-game FIFO right after its parent. It is the
-Rust core's equivalent of the Python core's post-collect window (the win-prob labels → the fork arm's
-callback → PBRS → frozen-φ, in callbacks and ``RolloutProbes``): on this core the labels and GAE are
+Rust core's equivalent of the Python core's post-collect window (the win-prob labels → PBRS →
+frozen-φ, in callbacks and ``RolloutProbes``; the Python core's fork-arm callback is deleted): on this core the labels and GAE are
 already per game, and the fork must precede the fill because the update's buffer has a fixed shape.
 
 ``collect`` repeats host steps until the trigger fires, firing the SB3 callbacks once per ``n_envs``

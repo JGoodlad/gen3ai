@@ -203,3 +203,4 @@ there.
 | path | citation | note |
 |---|---|---|
 | `data/gen3_pubval.json` | v88 `gen3_dead_flag_purge_v1` (CHANGELOG L4078) | the public-info value calibration artifact, deleted with the subsystem. Named as history in `designs/CLAUDE.md` and `src/agents/training/CLAUDE.md` |
+| `src/agents/training/cf_records.py` | deletion pass L5 (`designs/ops/deletion_pass_manifest.md` R3, 2026-10-02) | the `record_key` / `index_records` join of the Python fork arm's replay ring, deleted with the arm (the ring writer went in L4). Named as history in `src/agents/training/CLAUDE.md` and `designs/training/forks.md`. L5 deleted NO flag: every `--fork-*` flag is the Rust port's surface |

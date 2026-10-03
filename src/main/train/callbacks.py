@@ -233,22 +233,6 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
         callbacks.append(ValueSidecarCallback(
             model_dir, fraction=args.value_sidecar_fraction,
             seed=args.value_sidecar_seed, critic_mode=(args.critic or CRITIC_DEFAULT)))
-    # THE FORK ARM (gen3_fork_v1). Appended LAST of the buffer-touching callbacks, and the order
-    # against WinProbLabelCallback is LOAD-BEARING: the fork selector reads `win_mask` to mean
-    # "this episode TERMINATED inside the buffer" (which is also what makes the state replayable —
-    # the __RECON__ record is written at episode END), and that plane is a PLACEHOLDER OF ZEROS
-    # until the win callback back-fills it. Registered first, the arm would find nothing eligible,
-    # every rollout, in silence. It is after the value sidecar too, though nothing depends on that:
-    # the arm APPENDS rows and never writes the collected [n_steps, n_envs] planes the sidecar
-    # reads, so the sidecar's file describes the rollout the trainee actually played either way.
-    # Under `--env-core rust` the arm is the COLLECTOR's fork phase (`rust_rollout/fork.py`,
-    # gen3_fork_rust_v1, forks.md §14) — this callback is the Python core's (LEGACY until the deletion pass).
-    if (float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0
-            and getattr(args, "env_core", "python") != "rust"):
-        from agents.training.fork_callback import ForkArmCallback
-        callbacks.append(ForkArmCallback(
-            impl=str(getattr(args, "bridge_impl", "rust") or "rust"),
-            starve_cycles=starve_cycles_for(args, "fork")))
     # PER-TEAM WIN-RATE TRACKING (default ON): instrumentation only — sparse TB summaries + a
     # restart-safe <run>/team_win_rates.json full table.
     if getattr(args, "team_wr_tracking", True):

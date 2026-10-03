@@ -24,7 +24,7 @@ import torch
 from agents.model import compile_control as cc
 from agents.model.compile_control import (CompileControl, CompileSentinelError, TrainMsWatch,
                                           cache_entries_by_code, find_recompile_error)
-from agents.model.compile_trainer import CompileTrainerError, eager_extractor
+from agents.model.compile_trainer import CompileTrainerError
 
 
 def is_recompile_error(exc):
@@ -428,26 +428,6 @@ def test_the_typed_fatal_NAMES_the_failing_guard(sentinel, monkeypatch, capsys):
     assert exits
 
 
-def test_eager_extractor_routes_around_the_compiled_forward_and_restores_it(sentinel):
-    net = _compile_bound(_Net())
-    _one_iteration(net)
-    sentinel.lock("iteration 1")
-    compiled = vars(net)["forward"]
-    with sentinel.guard("late caller"), eager_extractor(net):
-        assert "forward" not in vars(net)
-        net({"observation": torch.rand(1, 16)})          # batch 1: would recompile if compiled
-        net({"observation": torch.rand(2, 3, 16)})       # a new rank: likewise
-    assert vars(net)["forward"] is compiled
-    assert sentinel.compiles_after_lock == 0
-
-
-def test_eager_extractor_is_a_noop_on_an_uncompiled_module():
-    net = _Net()
-    with eager_extractor(net):
-        net(_obs(3))
-    assert "forward" not in vars(net)
-
-
 def test_the_launcher_classifies_the_sentinel_FATAL_as_non_restartable():
     from main.launcher.run import _fatal_config_reason
     assert _fatal_config_reason(1, ["x", f"{cc.FATAL_TAG} at update end: ..."]) is not None
@@ -826,17 +806,3 @@ def test_the_lock_is_released_even_when_learn_raises(sentinel):
         m.learn()
     assert not sentinel.locked and torch._dynamo.config.error_on_recompile is False
     assert _stance() == "default"
-
-
-@pytest.mark.parametrize("module, needle, count", [
-    ("agents.training.fork_callback", "eager_extractor(", 1),
-    ("agents.training.fork_driver", "eager_extractor(", 1),
-])
-def test_the_late_signature_callers_stay_routed_to_eager(module, needle, count):
-    """The learner-process callers whose signature can FIRST appear after the lock (a different obs
-    key set, a batch that may be 1) run the EAGER forward. Unwrap one and the lock kills the run the
-    first time it fires — so the routing is pinned here, not left to a comment."""
-    import importlib
-    import inspect
-    src = inspect.getsource(importlib.import_module(module))
-    assert src.count(needle) >= count, f"{module}: expected {count}x {needle!r}"

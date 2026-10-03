@@ -886,10 +886,10 @@ weight — no forward pass, no weight shape, no `check_compatible` compare, **no
 it. Mechanics: `designs/training/critic_and_value_losses.md`.
 
 **`--fork-fraction` FORKS CONTESTED STATES INTO THE BUFFER** (`gen3_fork_v1`, config v120 — THE
-FORK ARM). Default **`0.0` = OFF and BIT-identical**: no module is imported, no obs key is declared,
-no callback is attached, the stock rollout buffer is used and no row is injected. `--critic winprob`
+FORK ARM). Default **`0.0` = OFF and BIT-identical**: no fork pass is built, no obs key is declared
+and no row is injected. `--critic winprob`
 is REQUIRED, and `--win-prob-strata-weight` is REFUSED alongside it. It runs on the Rust core only (`--fork-fraction > 0` on
-`--env-core python` is refused: the Python arm replayed from a `<run>/cf_records/` ring that no run writes). Above 0.0 it is the FRACTION of the buffer's
+`--env-core python` is refused: the Python core has no fork arm — its code, and the `<run>/cf_records/` ring it replayed from, are deleted). Above 0.0 it is the FRACTION of the buffer's
 decisions that are FORKED: at a CONTESTED decision (a move round, turn 2-40, ≥3 legal actions, top-2
 masked-logit gap under the `--fork-contested-gap` quantile of this rollout's own candidate pool) the
 episode is replayed to that turn (on the Rust core, from its own finished input log) and `--fork-branches` continuations —
@@ -918,13 +918,15 @@ only when the flag is on. **The shared PREFIX is counted ONCE** — a branch's r
 step; the fork STATE appears once per branch with a DIFFERENT action, which is the exploring start.
 🚨 **`--fork-crn dice_and_draws` (the default) pairs the sim dice AND both sides' policy sampling
 streams**, so branches differ in exactly the action at the fork; `dice` alone is the `cf_q_labels`
-regime and is kept as the control. ⚠️ A `__RECON__` record carries NO opponent identity, so every
-branch is played against a SELF-LIKE opponent — the arm's largest declared caveat, labelled on the
-row (`opp_class = POOL`) and priced by `fork/branch_share` / `fork/bot_share`. 🚨 **Cost is
+regime and is kept as the control. ⚠️ A branch is played against the parent's REAL policy opponent
+where that slot still serves the parent's model, else against a SELF-LIKE one (a bot parent, an
+external route, a reloaded slot) — labelled on the row (`opp_class = POOL`) and priced by
+`fork/opp_substituted` / `fork/branch_share` / `fork/bot_share`. 🚨 **Cost is
 `forks × branches × remaining decisions`** — ~1.5-2× a plain run's simulation at fraction 0.02 with
 3 branches — published as `fork/sim_steps_share`, and bounded by a fork cap, a row budget
-(the injection may at most DOUBLE the buffer) and, because a fork dropped at that budget has already
-been PLAYED, by the previous rollout's measured `fork/rows_per_fork`. The six are training-only — no
+(branch rows may at most match the rollout's own rows and COMPETE with them for the update's `D`) and,
+because a fork dropped at that budget has already been PLAYED, by the previous pass's measured
+`fork/rows_per_fork`. The six are training-only — no
 forward pass, no weight shape, no `check_compatible` compare, **not** `flag_registry.py` rows — so
 they do not appear in §6's flag table until a production config adopts them. Mechanics:
 `designs/training/forks.md`.

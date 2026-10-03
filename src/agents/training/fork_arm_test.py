@@ -1,8 +1,8 @@
 """Gates for the FORK ARM's selector and meters (`gen3_fork_v1`).
 
-The arithmetic half — what gets forked and what the `fork/*` family says about it. The buffer
-surgery is `fork_buffer_test`, the CRN pairing is `fork_crn_test` / `fork_crn_sim_test`, and the
-flag surface is `fork_flags_test`.
+The arithmetic half — what gets forked and what the `fork/*` family says about it. The fill table
+is `fork_buffer_test`, the CRN pairing is `rust_rollout/fork_crn_integration_test`, and the flag
+surface is `fork_flags_test`.
 
 **What these tests are FOR.** The selector is the arm's distribution: the registered endpoint is a
 held-out pairwise accuracy read against an offline baseline that was measured on one particular
@@ -18,7 +18,7 @@ from agents.action.constants import MOVE_START
 from agents.training.cf_producer_sampler import MIN_LABELABLE_TURN
 from agents.training.fork_arm import (
     BRANCH_NAMES, MAX_FORKABLE_TURN, MIN_LEGAL_ACTIONS, branch_actions, candidate_pool,
-    contested_select, contested_threshold, eligible_mask, fork_metrics, forks_per_battle,
+    contested_select, contested_threshold, eligible_mask, fork_metrics,
     is_move_round_mask, n_forks_for, pairwise_accuracy, pairwise_rows, pool_size_for,
     random_wins_rate, sim_steps_share, slice_ids, tie_rate, top2_gaps,
 )
@@ -199,11 +199,6 @@ def test_sim_steps_share_is_measured_against_the_trainees_own_decisions():
     forks = [{"branches": {"top1": {"decisions": 40.0}, "top2": {"decisions": 60.0}}}]
     assert sim_steps_share(forks, 10, 10) == pytest.approx(1.0)
     assert np.isnan(sim_steps_share(forks, 0, 0))
-
-
-def test_rate_is_forks_per_battle():
-    es = np.zeros((10, 2)); es[0] = 1.0; es[5, 0] = 1.0     # 3 episodes started
-    assert forks_per_battle(6, es) == pytest.approx(2.0)
 
 
 # ── the meters ───────────────────────────────────────────────────────────────────────────────

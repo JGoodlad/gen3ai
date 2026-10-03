@@ -76,41 +76,10 @@ class WinProbLabelCallback(BaseCallback):
             self.model._win_terminal_scratch = scr
         return scr
 
-    def _handle_scratch(self):
-        """``(keys, turns)`` — the per-row RECONSTRUCTION HANDLE, [n_steps, n_envs] each.
-
-        ``keys`` is an object array of ``"<pid>_<battle_tag>"`` (or None) and ``turns`` an int array
-        (-1 = none). Captured at DECISION time: the env publishes the turn it was ASKED at, not the
-        turn the step landed on, because the buffer row holds the observation the decision was made
-        from. Allocated only when the fork arm is on — a default run never touches this."""
-        n_steps = self.model.n_steps
-        n_envs = self.model.n_envs
-        keys = getattr(self.model, "_win_handle_keys", None)
-        turns = getattr(self.model, "_win_handle_turns", None)
-        if keys is None or keys.shape != (n_steps, n_envs):
-            keys = np.empty((n_steps, n_envs), dtype=object)
-            turns = np.full((n_steps, n_envs), -1, dtype=np.int64)
-            self.model._win_handle_keys = keys
-            self.model._win_handle_turns = turns
-        return keys, turns
-
     def _on_rollout_start(self) -> None:
         # Fresh scratch each rollout: NaN = "no terminal captured at this (step, env)". The async
         # collector writes into this same array inline (it runs after on_rollout_start).
         self._scratch().fill(np.nan)
-        if self._handle_needed():
-            keys, turns = self._handle_scratch()
-            keys.fill(None)
-            turns.fill(-1)
-
-    def _handle_needed(self) -> bool:
-        """True when a per-decision RECONSTRUCTION HANDLE must be captured for this run: only
-        `--fork-fraction` (`gen3_fork_v1`, which replays a contested decision's episode to FORK it)
-        reads one. Checked before ANY of the handle capture allocates or runs, so an unflagged run
-        pays exactly nothing. The async collector writes the handle inline into
-        `model._win_handle_keys` (`async_vec_env`) and there is exactly one such array, so a second
-        scratch would be a second thing that could silently fail to be filled on that path."""
-        return float(getattr(self.model, "fork_fraction", 0.0) or 0.0) > 0.0
 
     def _on_step(self) -> bool:
         # SYNC capture only — the async collector records terminals inline (it owns the per-env buffer
@@ -128,18 +97,12 @@ class WinProbLabelCallback(BaseCallback):
         if t >= self.model.n_steps:
             return True  # defensive: never index past the buffer
         scratch = self._scratch()
-        keys = turns = None
-        if self._handle_needed():
-            keys, turns = self._handle_scratch()
         for env_i, done in enumerate(dones):
             info = infos[env_i]
             if info is None:
                 continue
             if done and "win_outcome" in info:
                 scratch[t, env_i] = float(info["win_outcome"])
-            if keys is not None and info.get("wp_handle"):
-                keys[t, env_i] = str(info["wp_handle"])
-                turns[t, env_i] = int(info.get("wp_turn", -1))
         return True
 
     def _on_rollout_end(self) -> None:

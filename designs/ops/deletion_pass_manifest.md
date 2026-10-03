@@ -138,7 +138,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | **L2** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l2_v1`, config v132, stamp-only; **lines removed: non-test code −4,229 / +341 (net −3,888), tests −5,070 / +323 (net −4,747)**, docs + data −1,377 / +218; 12 flags, 9 `ModelVersion` fields, 7 `combination_checks` rows + 6 `_ENV_CORE_UNPORTED` rows, 7 label-inventory rows; K9 golden files untouched and green) | λ, rollout target, dense aux, true team, entropy boosts, `choice_band_tracker` (R2) | 1.0 | B | same + `hyperparameters`; `label_inventory` | L1 |
 | **L3** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l3_v1`, config v133, stamp-only; **lines removed: non-test code −6,674 / +313 (net −6,361), tests −6,603 / +203 (net −6,400)**, docs + data −1,342 / +436; 47 flags, 6 `ModelVersion` fields, ~30 `combination_checks` rows + 2 `_ENV_CORE_UNPORTED` rows, the `distill_mask` label row and the `refused` label kind; K9 golden files untouched and green) | distillation + search teacher (R2) | 1.0 | B | + parser `capacity` / `distillation` / `teacher`, `matchup_setup` | L2 |
 | **L4** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l4_v1`, config v134, stamp-only; **lines removed: non-test code −5,621 / +421 (net −5,200), tests −5,887 / +480 (net −5,407)**, docs + data −1,214 / +426; 27 flags + 5 generated `--no-` forms, 16 `ModelVersion` fields (4 STRUCTURAL head toggles), 15 `combination_checks` rows + 3 `_ENV_CORE_UNPORTED` rows, `REFUSED_WITH_FLAG`; K9 golden files untouched and green) | cf training half + team-PFSP + exploiter ladder + `REFUSED_WITH_FLAG` (R2) | 0.75 | B | + parser `cf_grounding` / `value_heads` / `eval_subprocess`, `rust_vec_env` | L3 |
-| **L5** | the Python fork arm (R3) | 0.5 | B | `combination_checks`, `fork_*` | L4 |
+| **L5** ✅ **SHIPPED 2026-10-02** (no config bump, stamp-less: no flag and no recorded field removed — every `--fork-*` flag is the Rust port's; **lines removed: non-test code −1,535 / +64 (net −1,471), tests −974 / +89 (net −885)**, docs ≈ +120 / −60; K9 golden files untouched and green) | the Python fork arm (R3) | 0.5 | B | `combination_checks`, `fork_*` | L4 |
 | **K1** ✅ **SHIPPED 2026-10-02** (`utils/torch_floor.py`; the cache-limit log detector KEPT — §6 finding 10) | torch < 2.8 refusal; 2.5.1 code + legacy compile gate (R7 + R8), the `hooks.py:179` fix | 1.25 | C | `compile_trainer`, `compile_control`, `team_transformer`, `lifecycle.py` | memory fix |
 | **K2** ✅ **SHIPPED 2026-10-02** (`gen3_tf32_retired_v1`, no config bump, stamp-less: `matmul_precision` was a `metadata.json` knob; **lines removed: non-test code −604 / +269 (net −335), tests −436 / +352 (net −84)**, docs + data −244 / +186 + this row; 1 flag, 1 `combination_checks` row, 1 `RETIRED` row added for the resume refusal; K9 golden files untouched and green) | RETIRE TF32 (R9) | 1.0 | C | parser `hyperparameters` (after L2 hands it off), `consistency.py`, `parity_probe`, one `combination_checks` row | K1, L2 |
 | **P1, P4, P5, P7** | small fixes | 1.25 | C | disjoint | — (P1 first) |
@@ -370,3 +370,23 @@ calendar days with 3 lanes; 8 is the box**.
 | M5: `gen3_env.py` + `wrappers.py` | "most of 1,711" | 1,779; UNBLOCKED by U2 (2026-10-02) — no production dependent left |
 | SKIPPED rows (trackers, assembler, memo) | blocked on training's opponents | the blocker MOVED: training no longer reaches them; `RLPlayer` (offline players) does → still M7. Only `choice_band_tracker.py` is free now |
 | M5 + fork port | the Python fork arm's tests | add `fork_crn_test.py` (138) |
+
+**L5 hand-off (read before U3).** (1) **`fork_python_core_unavailable` is KEPT** (reworded): L4's hand-off said L5 deletes it, but with the arm
+gone the Python core registers no fork callback and installs no fork buffer, so deleting the row would make `--fork-fraction > 0` on
+`--env-core python` a SILENT no-op. U3 deletes the row with `--env-core python` itself (`combination_checks_test`'s ARGVS entry and
+`fork_flags_test`'s `UNAVAILABLE` case go with it; `fork_needs_the_winprob_critic` / `fork_refuses_strata_weight` are Rust rows too and STAY).
+(2) **No flag, field or `RETIRED` row:** `--fork-fraction`, `-branches`, `-contested-gap`, `-contested-absv`, `-max-per-battle`, `-crn` are the Rust
+port's surface and stay, with their `ModelVersion` fields and `_TRAINING_HPARAMS` rows; `MODEL_CONFIG_VERSION` stays 134, `LAST_COMMIT_L4` is
+the latest pin. (3) The decision-time handle capture is gone from `wrappers.MaskableAgentWrapper.step`, `env_factory` (`_emit_wp_rollout_handle`),
+`async_vec_env` (the `wp_handle` write) and `WinProbLabelCallback` (`_handle_scratch`, `_handle_needed`): U3 deletes those files whole, so
+nothing of the fork arm remains for it to untangle; `Gen3Env` never carried a handle. `Gen3Env` still carries `emit_fork_pg_mask` / the
+`fork_pg_m` placeholder (`_merge_training_keys`), which `fork_flags_test`'s two `Gen3Env` cases pin — delete those cases with the env; the
+Rust side builds the key from `trainee_spaces` + `rust_rollout/store.py` and is pinned by `store_test` / `fork_test`. (4) `cf_records.py`,
+`cf_records_join_test.py`, `fork_callback*`, `fork_driver`, `fork_worker`, `fork_crn*` and `compile_trainer.eager_extractor` (+ its three
+`compile_control_test` cases) are deleted; `fork_arm.py` (selector, meters, `PG_MASK_KEY`) and `fork_buffer.FILL` / `unfillable_keys` /
+`refusal_text` are KEPT (the port imports them; `fork_buffer_test` now tests only the fill table). (5) Also deleted: the callable `substitute_choice`
+of `utils/bridge/counterfactual.py` (its only user was `fork_worker`; the string form is unchanged — `counterfactual_test` pins the report).
+(6) The Rust fork pass's `DryStreakGuard` was pinned only by the deleted Python twin; `rust_rollout/fork_test.py` gained the FATAL_SUPPLY and
+streak-reset cases. (7) Hygiene as L4's: absolute `PYTHONPATH`, build the env crate before the gate, no `slow_tier_status.json` row existed
+for anything L5 deleted. (8) The manifest's R3 note about forks.md §5's mask rule is CLOSED: `rust_rollout/fork_test.py::test_the_fill_hands_the_pg_mask_to_the_learner_and_the_term_renormalises`
+pins it (every branch's fork step 0, later rows 1, term renormalised by the kept count), and its hand-GAE test pins value terms on the fork step.

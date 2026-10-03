@@ -48,7 +48,7 @@ class LabelKey:
     gate: Tuple[Tuple[str, object], ...]   # Gen3Env kwargs that emit it (any ONE row of `alt_gates` also does)
     production: bool
     producer: str                  # the Python function that writes it
-    consumers: Tuple[str, ...]     # src-relative files that READ it (not the carriers: fork_buffer, the rollout buffer)
+    consumers: Tuple[str, ...]     # src-relative files that READ it (not the carriers: the fork FILL table, the rollout buffer)
     rust: str
     derivation: str
     const: Optional[float] = None  # host_const: the value

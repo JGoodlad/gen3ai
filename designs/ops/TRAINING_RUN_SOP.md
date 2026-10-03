@@ -439,8 +439,7 @@ wake. Re-create it on the next GO, written to this contract.
   EAGER, ~1.75x slower, silently), or runs on a torch whose internals drifted** — the child exits
   `FATAL_CONFIG` (3) and the launcher does NOT restart it (no checkpoint is written on that exit;
   resume from the last periodic one). It is a watch item: read the FATAL's `Frames:` / guard-failure
-  text, reproduce on a short fork with `TORCH_LOGS=recompiles`, fix the caller (prewarm it or route it
-  through `compile_trainer.eager_extractor`), relaunch. `⚠️ [COMPILE REGRESSION?]` (train_ms > 1.4x the
+  text, reproduce on a short fork with `TORCH_LOGS=recompiles`, fix the caller (add its signature to the region table and prewarm it — `compile_trainer.eager_extractor`, the old eager-route wrapper, is deleted), relaunch. `⚠️ [COMPILE REGRESSION?]` (train_ms > 1.4x the
   post-lock baseline for 3 updates; `compile/regression_flag`) is a WARN — check contention first.
   Detail: `designs/training/compile_flags.md` "The compile sentinel".
 - **Composition guard:** `reward/untracked_abs_mean` must read 0; the launch banner must match the
