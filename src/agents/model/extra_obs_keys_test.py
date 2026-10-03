@@ -117,7 +117,7 @@ def test_the_AST_of_the_forward_reads_no_UNDECLARED_obs_key():
     assert not undeclared, (
         f"extractor_forward reads obs key(s) {sorted(undeclared)} that agents.model.extra_obs_keys "
         "does not declare. Every synthetic-obs caller (the forkserver preload, the round-trip "
-        "smoke, compile_opponents, warmstart) builds its dict from that table, "
+        "smoke, compile_opponents, churn_probe) builds its dict from that table, "
         "so an undeclared key is a crash at the next launch that turns the flag on.")
     # …and the converse: a row for a key nothing reads would make every caller build dead weight.
     assert {e.key for e in EXTRA_OBS_KEYS} <= found
@@ -177,7 +177,7 @@ def test_the_synthetic_preload_obs_FORWARDS():
 
 
 def test_the_batch_and_device_arguments_are_honoured():
-    """A compile warm-up runs at a real batch and `warmstart` tops up a chunk of REAL obs — both
+    """A compile warm-up runs at a real batch and `churn_probe` tops up a chunk of REAL obs — both
     would produce a broadcast error, not a crash, if the block came back at batch 1."""
     fe, layout = _fe()
     obs = synthetic_obs(fe, int(layout["total_dim"]), batch=5, action_mask=True)
@@ -190,17 +190,17 @@ def test_the_batch_and_device_arguments_are_honoured():
 
 def test_the_round_trip_smoke_and_the_two_warmups_all_build_from_the_registry():
     """The three TRAINING-RUN synthetic-obs sites are the ones whose crash costs a GPU-hour. Pinned
-    by SOURCE because there is no cheap way to run `compile_opponents` / `warmstart` / the round-trip
+    by SOURCE because there is no cheap way to run `compile_opponents` / `churn_probe` / the round-trip
     smoke in a unit test — and a source check is exactly strong enough for the claim, which is 'this
     site does not hand-build its dict any more'. (The learner compile's site went with the
     extractor-only gate, K1 2026-10-02: the regions' gate and prewarm build every key of the
     policy's OBSERVATION SPACE — `compile_trainer._prewarm_obs` — so no key can be missing there.)"""
     from agents.model import compile_opponents
-    from agents.training import warmstart
+    from agents.training import churn_probe
     from main.train import lifecycle
 
     for mod, fn in ((compile_opponents, "zero_extra_obs"),
-                    (warmstart, "zero_extra_obs"), (lifecycle, "synthetic_obs")):
+                    (churn_probe, "zero_extra_obs"), (lifecycle, "synthetic_obs")):
         assert fn in inspect.getsource(mod), (
             f"{mod.__name__} no longer builds its synthetic obs from agents.model.extra_obs_keys "
             "— it is one obs-key flag away from the ai_v12_14_ladder_truevalue crash")

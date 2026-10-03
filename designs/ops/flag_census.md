@@ -13,9 +13,9 @@
 | | trainer flags | launcher flags | total |
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
-| DELETED by P11 so far | 5 | 0 | 5 |
-| NOW | 197 | 9 | 206 |
-| verdicts at the inventory commit | KEEP 163 · DELETE 7 · ONE-VALUED 8 · NEEDS-OWNER 19 | KEEP 9 | |
+| DELETED by P11 so far | 8 | 0 | 8 |
+| NOW | 194 | 9 | 203 |
+| verdicts at the inventory commit | KEEP 163 · DELETE 4 · ONE-VALUED 8 · NEEDS-OWNER 19 | KEEP 9 | |
 | ENDING | _filled in by the last batch_ | | |
 
 ## 1. The deletions this pass makes
@@ -27,6 +27,9 @@
 * `--predict-unrevealed-mon-moves` (B2) — a clarity alias of `--opp-belief-moves-weight 0` + `--move-belief-mode revealed`
 * `--snapshot-dir` (B2) — an unused override of the pool directory; no doc, no run typed it
 * `--allow-nonsample-trainee` (B2) — a research override for the closed FiLM capacity studies; the vetted-sample gate is now unconditional
+* `--warmstart-consensus` (B3) — consensus DISTILLATION of teacher exploiters into an init (`warmstart.py`); exploiters are opponents never teachers (L3); 0 of 275 recorded runs typed it
+* `--warmstart-battles` (B3) — the warm start's battle count
+* `--warmstart-bc-steps` (B3) — the warm start's BC steps
 
 **Planned, not yet shipped:**
 
@@ -34,9 +37,6 @@
 * `--eval-workers` — read only by `spawn_eval_workers` on the Python eval path (`env_core != "rust"`), which no production run reaches (manifest finding 12(c))
 * `--eval-device` — the same Python eval worker pool
 * `--eval-concurrency-per-worker` — the same Python eval worker pool
-* `--warmstart-consensus` — disagreement-gated CONSENSUS DISTILLATION of N teachers into an exploiter's init (`warmstart.py`); the era plan says exploiters are OPPONENTS, never teachers, and distillation was deleted (L3); 0 recorded runs typed it
-* `--warmstart-battles` — the warm start's dataset size
-* `--warmstart-bc-steps` — the warm start's BC steps
 
 ## 2. NEEDS-OWNER
 
@@ -272,9 +272,6 @@
 | `--stable-opponent-selfplay-share` | 0.2 | 191 / 20 | the stable-window share (0.40 in the new lineage) | **KEEP** |
 | `--stable-opponent-pfsp` | false | 17 / 5 | the PFSP selection inside the stable window | **KEEP** |
 | `--exploiter` | — | 94 / 12 | the exploiter of the population loop (era plan row 1; `main.best_response_gap`) | **KEEP** |
-| `--warmstart-consensus` | — | 0 / 0 | disagreement-gated CONSENSUS DISTILLATION of N teachers into an exploiter's init (`warmstart.py`); the era plan says exploiters are OPPONENTS, never teachers, and distillation was deleted (L3); 0 recorded runs typed it | **DELETE** |
-| `--warmstart-battles` | 200 | 184 / 34 | the warm start's dataset size | **DELETE** |
-| `--warmstart-bc-steps` | 4000 | 184 / 34 | the warm start's BC steps | **DELETE** |
 | `--exploiter-keep-bots` | false | 40 / 12 | the exploiter's bot-mix floor (`best_response_gap`) | **KEEP** |
 | `--exploiter-bot-fraction` | 0.5 | 114 / 34 | the exploiter's bot-mix fraction | **KEEP** |
 | `--exploiter-temp-start` | — | 23 / 0 | the exploiter temperature curriculum (anneal / ratchet, `exploiter_temp_callback.py`, 191 lines): 23 recorded runs typed it, none of the last 40; no backlog row; named only by `design_own_ppo_loop.md` as a callback in scope | **NEEDS-OWNER** |

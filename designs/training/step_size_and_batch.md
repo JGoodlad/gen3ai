@@ -330,8 +330,8 @@ resumed checkpoint lives — outside the run dir ⇒ FORK; `<run>/checkpoints/*.
 uses for its clobber guard and `launcher/checkpoint.resolve_fork_resume_model` uses to decide
 whether a restart re-inits from the source; the launcher SWAPS `--model` to the fork's own
 checkpoint once the fork has progress, so restart #2 of a fork reads RESTART for the same reason a
-plain resume does. `<run>/warmstart/…` is deliberately a FORK — the consensus warm-start is an INIT
-built from foreign teachers, not this run's own progress. A fresh run is REFUSED (use `--lr`).
+plain resume does. A nested run dir that is not `checkpoints/` is deliberately a FORK (`<run>/warmstart/…`
+was the case: the consensus warm-start, deleted in P11, was an INIT built from foreign teachers, not this run's own progress). A fresh run is REFUSED (use `--lr`).
 
 ### `--fork-lr-freeze` — a constant, recordable step size
 

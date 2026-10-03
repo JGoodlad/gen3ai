@@ -166,7 +166,7 @@ def parse_stable_opponents(spec: str) -> list[dict]:
 #
 # EVERY CONSUMER GOES THROUGH HERE. ``--stable-opponents`` and ``--exploiter`` (via
 # :func:`resolve_stable_opponents`), ``--exploiter-ladder`` and ``--warmstart-consensus``
-# (``agents/training/warmstart.py``) all call this function and no other (so did the deleted
+# (``agents/training/warmstart.py``, deleted in P11) all called this function and no other (so did the deleted
 # ``--distill-teacher`` / ``--distill-anchor-parent`` / ``--win-prob-pbrs-source``) — the census in
 # ``run_spec_test.py`` fails when one of them stops.
 #

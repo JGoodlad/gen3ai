@@ -2,8 +2,8 @@
 
 **Owner of:** `agents/training/lever_supply.py` (the shared guard), `agents/training/selfplay_supply.py`
 (the self-play pool + PFSP mixin), the guard wiring in `win_prob_callback.py`
-and `rust_rollout/fork.py`, the `--bot-weights` / warm-start refusals
-in `main/train/matchup_setup.py` and `agents/training/warmstart.py`, and `main.exit_codes.FatalConfigError`.
+and `rust_rollout/fork.py`, the `--bot-weights` refusal
+in `main/train/matchup_setup.py`, and `main.exit_codes.FatalConfigError`.
 The cf label producer's own guard (`gen3_supply_guard_v1`) was deleted with the cf training half
 (deletion pass L4, 2026-10-02; history in [`cf_grounding.md`](cf_grounding.md)); this doc is the shared
 guard and the levers still live.
@@ -27,7 +27,6 @@ or did not exit at all:
 | refusal | before | now |
 |---|---|---|
 | `--bot-weights` typo / non-number / negative / all-zero | `sys.exit(1)` or a bare `ValueError` → CRASH; the launcher restarted it until its rapid-crash breaker (3) | `BotWeightsRejected` → `FATAL_CONFIG` (3) |
-| `--warmstart-consensus` failure (teacher resolution, battles, BC) | an uncaught exception → CRASH. The warm-start is rebuilt from scratch on every restart, and one that failed AFTER the launcher's 10-minute rapid-crash window reset the breaker each time — **an unbounded crash loop** | `WarmstartFailed` → 3; a partial `warmstart_consensus.zip` is removed |
 
 And a startup refusal for a PFSP flag with no possible supply (`combination_checks`, so
 `checkargs` sees it): `pfsp_scale_needs_self_play`.

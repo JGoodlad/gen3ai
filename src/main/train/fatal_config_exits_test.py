@@ -5,10 +5,10 @@ anywhere on the startup path reaches the trainer's fail-fast handlers as exit 3 
 does not restart. Before it (verified 2026-09-30 on the parent commit):
 
 * a `--bot-weights` typo exited 1 — the launcher restarted it into the same typo until its
-  rapid-crash breaker gave up;
-* a failed `--warmstart-consensus` raised an uncaught exception → 1, and because the warm-start is
-  rebuilt from scratch on each restart and can run longer than the breaker's 10-minute window, the
-  loop had no bound.
+  rapid-crash breaker gave up.
+
+(A failed `--warmstart-consensus` was the second case here; the flag and its tests were deleted by the
+flag census, P11.)
 """
 from __future__ import annotations
 
@@ -61,33 +61,3 @@ def test_the_bot_weights_path_no_longer_exits_1():
               if isinstance(n, ast.FunctionDef) and n.name == "build_matchup_and_opponents")
     calls = {getattr(c.func, "id", None) for c in ast.walk(fn) if isinstance(c, ast.Call)}
     assert "resolve_bot_weights" in calls
-
-
-def test_a_failed_warmstart_is_FATAL_CONFIG_and_removes_a_partial_artifact(tmp_path):
-    from agents.training.warmstart import WarmstartFailed, warmstart_failed
-    partial = tmp_path / "warmstart_consensus.zip"
-    partial.write_text("half")
-    err = warmstart_failed(FileNotFoundError("no teacher at models/x"), str(partial))
-    assert isinstance(err, WarmstartFailed) and exit_code_for(err) == 3
-    assert "models/x" in str(err) and not partial.exists()
-    # the pre-fix exit for the same underlying error: CRASH, i.e. a restart
-    assert exit_code_for(FileNotFoundError("no teacher")) == int(TrainExitCode.CRASH)
-
-
-def test_the_warmstart_build_is_wrapped_in_the_typed_fatal():
-    """`run_consensus_warmstart` (and the teacher resolution before it) must sit inside a `try`
-    whose handler raises `warmstart_failed(...)` — revert the wrap and this fails."""
-    import main.train.model_build as mb
-    tree = ast.parse(open(mb.__file__, encoding="utf-8").read())
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Try):
-            continue
-        body_calls = {getattr(getattr(c, "func", None), "id", None)
-                      for b in node.body for c in ast.walk(b) if isinstance(c, ast.Call)}
-        if "run_consensus_warmstart" not in body_calls or "_ws_resolve" not in body_calls:
-            continue
-        raised = [r for h in node.handlers for r in ast.walk(h) if isinstance(r, ast.Raise)]
-        assert any(isinstance(r.exc, ast.Call) and getattr(r.exc.func, "id", "") ==
-                   "warmstart_failed" for r in raised)
-        return
-    pytest.fail("run_consensus_warmstart is not inside a try that raises warmstart_failed")

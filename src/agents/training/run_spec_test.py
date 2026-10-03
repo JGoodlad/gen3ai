@@ -114,8 +114,8 @@ def test_a_run_dir_with_no_metadata_is_empty_but_require_teams_says_so():
 
 
 def test_resolve_zip_and_config_splits_the_step_for_a_stepless_caller():
-    """The choke point: every run-spec caller that passes `step=None` (`--warmstart-consensus`, and
-    before the deletion pass the distillation flags) reaches the splitter here."""
+    """The choke point: every run-spec caller that passes `step=None` (before the deletion passes
+    `--warmstart-consensus` and the distillation flags) reaches the splitter here."""
     from agents.training.fixed_opponent_pool import _resolve_zip_and_config
     with tempfile.TemporaryDirectory() as tmp:
         run = os.path.join(tmp, "r")
@@ -143,8 +143,6 @@ def test_resolve_zip_and_config_splits_the_step_for_a_stepless_caller():
 _RUN_SPEC_MODULES = (
     "agents/training/fixed_opponent_pool.py",
     "agents/training/matchup_spec.py",
-    "agents/training/warmstart.py",
-    "main/train/model_build.py",
     "main/train/callbacks.py",
     "main/train/config.py",
     "main/checkargs.py",
@@ -209,9 +207,7 @@ _RESOLVER_ENTRY_POINTS = ("resolve_model_ref", "_resolve_zip_and_config", "resol
 
 #: module -> the flags whose file it resolves (for the failure message)
 _RESOLVER_CONSUMERS = {
-    "main/train/model_build.py": "--warmstart-consensus",
     "main/train/matchup_setup.py": "--stable-opponents, --exploiter",
-    "agents/training/warmstart.py": "--warmstart-consensus (the standalone CLI)",
 }
 
 #: Filenames a consumer must not construct for itself — the rungs the resolver owns.

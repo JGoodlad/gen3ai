@@ -2,7 +2,7 @@
 
 WHY THIS MODULE EXISTS (gen3_run_spec_split_v1, 2026-09-05). Several flags take a *run spec*
 (`models/<run>@<step>`) rather than a bare path: `--stable-opponents`, `--exploiter`, and — as of
-this module — `--warmstart-consensus` (and, until deletion pass L3 / L1, `--distill-teacher`,
+this module — `--warmstart-consensus` (until deletion pass P11; and, until L3 / L1, `--distill-teacher`,
 `--win-prob-pbrs-source` and `--distill-anchor-parent`). Only ONE of them ever split the `@step` off, and every other consumer
 handed the whole string to a reader that takes a *directory*::
 

@@ -23,9 +23,9 @@ the source or continue in place. The launcher additionally SWAPS `--model` to th
 checkpoint once the fork has made progress, so on restart #2 of a fork the rule reads RESTART for
 the same reason it reads RESTART for a plain resume.
 
-`<run>/warmstart/…` is deliberately NOT a same-run checkpoint even though it is inside the run dir:
-the consensus warm-start is an INIT built from foreign teachers, which is a fork by every meaning
-that matters here.
+A nested dir that is not `checkpoints/` (`<run>/warmstart/…` was the case, until deletion pass P11
+deleted the consensus warm start) is deliberately NOT a same-run checkpoint even though it is inside the
+run dir: an init built from foreign teachers is a fork by every meaning that matters here.
 
 THE FREEZE IS DIFFERENT. `--fork-lr` is a one-time event (pin the rate at the moment of forking,
 then let the controller work). `--fork-lr-freeze` is a PROPERTY OF THE RUN — a fold that wants a
@@ -56,8 +56,8 @@ def is_same_run_checkpoint(model_path: str, model_dir: str) -> bool:
 
     True for `<run>/checkpoints/<any>.zip` and for a bare `<run>/<name>.zip` (the legacy
     root-checkpoint layout, plus `final_model*.zip`). False for anything outside the run dir, and
-    false for a nested dir that is not `checkpoints/` — notably `<run>/warmstart/`, which holds a
-    freshly-built INIT rather than this run's own training progress.
+    false for a nested dir that is not `checkpoints/` (`<run>/warmstart/` was the case: a
+    freshly-built INIT rather than this run's own training progress).
     """
     if not model_path or not model_dir:
         return False

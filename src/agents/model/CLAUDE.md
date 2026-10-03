@@ -175,7 +175,7 @@ the mechanism + its drift gate stay). That mapping is DECLARED once
 in `extra_obs_keys.py` as `(extractor attribute -> key, shape, canonical zero block)`, keyed on the
 ATTRIBUTE the forward itself tests, and every synthetic-obs caller on a TRAINING path builds from it
 via `zero_extra_obs` / `synthetic_obs`: `main/train/lifecycle.py`'s round-trip
-smoke, `compile_trainer`, `compile_opponents`, `agents/training/warmstart.py`. **Never hand-build
+smoke, `compile_trainer`, `compile_opponents`, `agents/training/churn_probe.py`'s `masked_action_probs`. **Never hand-build
 `{"observation": zeros(1, D)}` on a path a run reaches** — that literal is what killed
 `ai_v12_14_ladder_truevalue` two minutes into its launch, and `extra_obs_keys_test.py` reproduces
 it plus an AST gate that fails on any obs key the table does not declare. The ~17 OFFLINE audit /

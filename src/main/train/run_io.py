@@ -85,9 +85,8 @@ def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None
     contributes nothing", and `save_model_snapshot` preserves whatever the run already recorded
     (the same existing-value-wins rule `original_command` uses).
 
-    `model_path` must be the PRE-WARM-START `--model`: the consensus warm-start re-points
-    `args.model` at `<run>/warmstart/warmstart_consensus.zip`, which is an INIT built from the real
-    parent, not the parent itself — recording it would make the run its own ancestor.
+    `model_path` must be the `--model` as PARSED (the fork parent), never a path a later step
+    re-pointed `args.model` at — recording a derived init would make the run its own ancestor.
 
     `pool_seeded_from` rides IN this block rather than beside it: the block is written once at fork
     creation and frozen thereafter (`save_model_snapshot`: the existing value always wins), and the

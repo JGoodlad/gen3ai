@@ -4,8 +4,8 @@
 The table of record for porting the scripted bots into the Rust env core (`src/rust_env/src/bots/`).
 `bot_inventory_test.py` (routine) derives every roster FROM THE CODE and fails when:
 
-* a class appears in a roster (the training pool, the eval roster,
-  the warm-start smoke) with no row here — a new bot must be inventoried before it plays;
+* a class appears in a roster (the training pool, the eval roster)
+  with no row here — a new bot must be inventoried before it plays;
 * a row's ``used_by`` disagrees with the rosters (a bot dropped from a pool reads as dropped here);
 * a ``Player`` subclass is defined in one of the bot modules with no row (defined-but-unused bots
   are listed with ``used_by=()`` so "not in any pool" is a stated fact, not an omission);
@@ -41,7 +41,6 @@ SITES = {
     "train_bait": "the training roster, ONLY with --bait-bot-share > 0 (`make_baitbot_class(--bait-bot-p)`)",
     "eval": "the eval roster — `agents/training/eval_roster.py` _EVAL_OPPONENT_SPECS (also "
             "`main.anchors` `bot:<name>` and the prober's replay, both through that table)",
-    "warmstart": "the warm-start smoke — `agents/training/warmstart.py`",
 }
 
 
@@ -61,7 +60,7 @@ ROWS: tuple = (
     BotRow("random", "poke_env.player.baselines.RandomPlayer", ("eval",), ("choice",),
            "valid_orders only — one choice draw per decision (its WHOLE policy)", "Random"),
     BotRow("heuristic", "poke_env.player.baselines.SimpleHeuristicsPlayer",
-           ("train", "eval", "warmstart"), ("choice",),
+           ("train", "eval"), ("choice",),
            "matchup (types, base spe, HP), _stat_estimation (base stats, boosts), own stats "
            "(_should_switch_out), hazards (side conditions), setup (self_setup_boosts: Target.SELF boosts or a "
            "non-Ghost's Curse — dead until the F-LF-1 fix, 2026-09-29), fallback draw", "Heuristic"),

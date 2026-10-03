@@ -21,7 +21,7 @@ always-current obligation as this file — update the topic doc in the same pass
 | the learner's DECLARED LIFECYCLE (K6): the FREEZE GUARD, optimizer state declared at startup, `@startup_builder` | [`designs/training/learner_lifecycle.md`](../../../designs/training/learner_lifecycle.md) |
 | bot eval, the untaught meter, the critic gate, ELO / the ladder / Hodge, the baseline registry | [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md) |
 | self-play, the snapshot pool, stable opponents | [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md) |
-| exploiter mode, the warm start, the rank tripwire (distillation + the off-slice anchor are DELETED, config v133) | [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md) |
+| exploiter mode, the rank tripwire (distillation, the off-slice anchor and the consensus warm start are DELETED, config v133 / P11) | [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md) |
 | team-side PFSP, per-team win-rate tracking | [`designs/training/team_curriculum.md`](../../../designs/training/team_curriculum.md) |
 | `--critic`, TD-aux, the 250-turn cap (PopArt, the value-tail weight and the value-dist head are DELETED, config v131) | [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md) |
 | the win-prob head (its PBRS routes were DELETED, config v131) | [`designs/training/winprob_head_and_pbrs.md`](../../../designs/training/winprob_head_and_pbrs.md) |
@@ -341,7 +341,7 @@ against bots), `pfsp` 3, `fork` 5 rollouts
 (`snapshots/summary.json` `supply_guard`), not per launcher segment. Every supply line goes
 through `lever_supply.loud` (the run's own log AND the launcher event stream — `emit` alone never
 reaches the child log). End of every segment: LOUD at zero. Also `FATAL_CONFIG`, never CRASH: a
-`--bot-weights` typo and a failed `--warmstart-consensus`. **Detail: [`designs/training/supply_guards.md`](../../../designs/training/supply_guards.md).**
+`--bot-weights` typo (a failed `--warmstart-consensus` was the second case until P11 deleted it). **Detail: [`designs/training/supply_guards.md`](../../../designs/training/supply_guards.md).**
 
 ## Self-play opponents (`--self-play`, gated behind pathology hunting)
 
@@ -402,9 +402,9 @@ other rung even when it trained further.
 
 **Every consumer goes through ONE choke point** —
 `agents.training.fixed_opponent_pool.resolve_model_ref(path, step=None)` → a `ResolvedModel`
-carrying the rung, the rule and `num_timesteps`. It serves `--stable-opponents`, `--exploiter`,
-`--warmstart-consensus` (and, until deletion pass L1 / L3 / L4, the exploiter ladder, the distillation
-and PBRS-source flags); `run_spec_test.py` holds the census that
+carrying the rung, the rule and `num_timesteps`. It serves `--stable-opponents` and `--exploiter`
+(and, until deletion pass L1 / L3 / L4 / P11, the exploiter ladder, the distillation, PBRS-source and
+consensus-warm-start flags); `run_spec_test.py` holds the census that
 fails, naming the file and its flags, when one of them stops. 🚨 **EVERY TEACHER LOADED BEFORE
 2026-09-06 WENT THROUGH THE OLD RULE and recorded nothing about it** — `main.lineage` says so
 rather than re-resolving under today's rule, because a current answer presented as history is worse
@@ -1248,7 +1248,7 @@ search teacher would be rebuilt on the Rust search driver. A run that recorded o
 PINNED to `model_version.retired_levers.LAST_COMMIT_L3` (a recorded `distill_target != "kl"`,
 `distill_gate != "none"` or `teacher_scan_limit != 60` is REFUSED on a resume or fork; the other flags were
 never recorded fields, so a run's recorded argv fails argparse on an unpinned resume). What stays: the
-**rank tripwire** (`--rank-tripwire`, `agents/training/rank_tripwire.py`), `--warmstart-consensus`, the
+**rank tripwire** (`--rank-tripwire`, `agents/training/rank_tripwire.py`), the
 `--allow-untaught-teacher` guard on a pinned trainee team, and the offline meters that read old runs.
 **Detail and the evidence — in [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md)
 (the exploiter half, plus a HISTORY note) and the tombstone [`designs/training/search_teacher.md`](../../../designs/training/search_teacher.md).**

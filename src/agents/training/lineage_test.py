@@ -563,8 +563,8 @@ def test_both_model_build_paths_write_the_lineage():
     assert src.count("_run_lineage(") == 2, "the RESUME and the FRESH path each build it once"
     assert src.count("lineage=_lineage") == 6, "every save on both paths must carry it"
     assert "_fork_source_model = args.model" in src, (
-        "the parent must be captured BEFORE --warmstart-consensus re-points args.model, or a "
-        "warm-started exploiter records itself as its own ancestor")
+        "the fork parent is `args.model` as parsed — the lineage block records it, never a path a "
+        "later step re-points `args.model` at")
     assert "is_same_run_checkpoint" in inspect.getsource(lineage_mod), (
         "fork-vs-restart is fork_lr\'s predicate, imported — never a second copy")
     assert "build_lineage" in inspect.getsource(run_io)

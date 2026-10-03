@@ -41,11 +41,11 @@ def test_a_checkpoint_from_ANOTHER_run_is_a_FORK(tmp_path):
     assert not is_same_run_checkpoint(str(tmp_path / "models" / "my_run_2" / "x.zip"), str(run))
 
 
-def test_the_consensus_WARMSTART_is_a_fork_even_though_it_lives_inside_the_run_dir(tmp_path):
-    """`--warmstart-consensus` re-points `--model` at `<run>/warmstart/warmstart_consensus.zip`.
-
-    That is an INIT built from foreign teachers, not this run's own training progress, so it must
-    read as a fork — otherwise a warm-started exploiter could never be pinned.
+def test_a_nested_non_checkpoints_dir_is_a_fork_even_though_it_lives_inside_the_run_dir(tmp_path):
+    """The (deleted, P11) consensus warm start re-pointed `--model` at
+    `<run>/warmstart/warmstart_consensus.zip` — an INIT built from foreign teachers, not this run's own
+    training progress. The rule that read it as a fork is generic (any nested dir that is not
+    `checkpoints/`) and stays pinned here.
     """
     run = tmp_path / "models" / "my_run"
     assert not is_same_run_checkpoint(

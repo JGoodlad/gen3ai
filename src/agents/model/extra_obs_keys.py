@@ -30,9 +30,9 @@ second term.
 flag therefore cannot reach a launch without a row in this table.
 
 ⚠️ **ADOPTION IS PARTIAL, and the boundary is deliberate.** Every site a TRAINING RUN reaches now
-builds through this module — the forkserver preload, the round-trip smoke, ``compile_opponents``
-and ``warmstart`` (the learner compile's gate and prewarm build every key of the policy's
-observation SPACE, ``compile_trainer._prewarm_obs``). The OFFLINE audit / probe CLIs still hand-build a one-key
+builds through this module — the forkserver preload, the round-trip smoke and ``compile_opponents``
+(the learner compile's gate and prewarm build every key of the policy's
+observation SPACE, ``compile_trainer._prewarm_obs``); so does ``churn_probe.masked_action_probs``. The OFFLINE audit / probe CLIs still hand-build a one-key
 dict (``critic_route_audit``, ``edge_ablation_audit``, ``op_block_split_audit``,
 ``capacity_probes``, ``concat_readout_probe``, ``feature_coverage/_support``,
 ``cf_producer_snapshot``, ``capacity_telemetry``, ``instrumented_ppo/rollout_probes``,
@@ -109,7 +109,7 @@ def zero_extra_obs(extractor: Any, batch: int = 1, device: Any = None) -> Dict[s
     The all-zero block is not a stand-in invented for synthetic callers: it is the encoding a REAL
     emitter supplies when the privileged view is unavailable, so a graph traced against it — or a
     policy-only forward run over it — is the one production runs. Use it to TOP UP an obs dict
-    whose `observation` came from real data (`warmstart`'s behaviour cloning is the case: the
+    whose `observation` came from real data (`churn_probe.masked_action_probs` is the case: the
     routes that read these keys are vf-only, so the policy logits it reads back are unaffected).
     """
     import torch                                      # local: keeps the registry import-light

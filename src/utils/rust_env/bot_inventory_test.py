@@ -66,28 +66,6 @@ def eval_roster() -> set:
     return _classes([tup.elts[1].id for tup in lst.elts], _imports(t))
 
 
-def _referenced_bots(t) -> set:
-    """Every imported scripted-bot class the module REFERENCES (a list literal, an ``append`` loop, a
-    call — any Load of the name), so a bot added by any construct is caught. ``RLPlayer`` and the
-    other policy players are not bots."""
-    from poke_env.player.player import Player
-
-    imports = _imports(t)
-    used = {n.id for n in ast.walk(t) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}
-    out = set()
-    for name in used & set(imports):
-        if not imports[name].startswith(("agents.opponents", "agents.baitbot", "poke_env.player")):
-            continue
-        obj = _resolve(imports[name])
-        if inspect.isclass(obj) and issubclass(obj, Player) and obj is not Player:
-            out.add(_canonical(obj))
-    return out
-
-
-def warmstart_roster() -> set:
-    return _referenced_bots(_tree("agents/training/warmstart.py"))
-
-
 def bait_roster() -> set:
     """`make_baitbot_class` returns a SUBCLASS of ``Gen3BaitBotPlayer`` named for its dial; its row is
     the base class's."""
@@ -100,8 +78,7 @@ def bait_roster() -> set:
 
 
 def rosters() -> dict:
-    return {"train": train_roster(), "train_bait": bait_roster(), "eval": eval_roster(),
-            "warmstart": warmstart_roster()}
+    return {"train": train_roster(), "train_bait": bait_roster(), "eval": eval_roster()}
 
 
 def test_every_roster_bot_has_a_row():
@@ -154,8 +131,9 @@ def test_rng_streams_are_the_known_three():
 
 
 def test_the_inventory_has_teeth(monkeypatch):
-    """A dropped row fails the roster check; a bot added to a pool by ANY construct (not only the
-    list literal) fails the used_by check."""
+    """A dropped row fails the roster check. (The second half of this test planted a bot into the
+    warm-start module to prove the census catches ANY construct, not only a list literal; the flag census,
+    P11, deleted that module — it was the only roster site derived that way.)"""
     import pytest
 
     monkeypatch.setattr(BI, "ROWS", tuple(r for r in BI.ROWS if r.name != "staller_v2"))
@@ -163,15 +141,3 @@ def test_the_inventory_has_teeth(monkeypatch):
         test_every_roster_bot_has_a_row()
     monkeypatch.undo()
 
-    real = _tree
-
-    def with_extra_bot(rel):
-        t = real(rel)
-        if rel != "agents/training/warmstart.py":
-            return t
-        return ast.parse(ast.unparse(t) + "\nfrom poke_env.player.baselines import MaxBasePowerPlayer\n"
-                                          "extra = []\nextra.append(MaxBasePowerPlayer)\n")
-
-    monkeypatch.setattr(__import__(__name__, fromlist=["_tree"]), "_tree", with_extra_bot)
-    with pytest.raises(AssertionError, match="max_base_power"):
-        test_used_by_matches_the_rosters()

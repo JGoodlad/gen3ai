@@ -45,8 +45,8 @@ def _declare_compile_cache(args, model_dir: str) -> None:
     when its stamp (code commit + torch + compile-config row) matches. Must run the moment the run
     dir exists: before any compile, env worker, forkserver, eval subprocess or T2 service, every one
     of which inherits the three environment variables it sets. `args.model` here is the ARGV's
-    (before a consensus warm-start re-points it at `<run>/warmstart/`, which is an init, not this
-    run's progress — `is_same_run_checkpoint` says so)."""
+    (the ARGV's `--model`, so `is_same_run_checkpoint` judges the checkpoint the user named, not a derived
+    path)."""
     from agents.model.compile_cache import CompileCacheError, prepare_run_cache
     from main.launcher.ipc import emit
     from main.train.fork_lr import is_same_run_checkpoint

@@ -108,10 +108,9 @@ last snapshot is what the metrics already measure.
 
 `agents.training.fixed_opponent_pool.resolve_model_ref(path, step=None)` → a `ResolvedModel`
 (`zip_path`, `config_path`, `run_base`, `run_dir`, `rung`, `rule`, `num_timesteps`). The flags it
-serves: **`--stable-opponents`** and **`--exploiter`** (via `resolve_stable_opponents`),
-and **`--warmstart-consensus`** (`warmstart.py`)
-(`--exploiter-ladder`, `--distill-teacher`, `--distill-anchor-parent` and `--win-prob-pbrs-source` were the others until they
-were deleted). `run_spec_test.py` holds the census that fails, naming the file and its flags, when one
+serves: **`--stable-opponents`** and **`--exploiter`** (via `resolve_stable_opponents`)
+(`--exploiter-ladder`, `--distill-teacher`, `--distill-anchor-parent`, `--win-prob-pbrs-source` and
+`--warmstart-consensus` were the others until they were deleted). `run_spec_test.py` holds the census that fails, naming the file and its flags, when one
 of them stops.
 
 **`_resolve_zip_and_config(path, step)` is a FROZEN 3-tuple wrapper over it** — the offline probe
@@ -181,9 +180,9 @@ re-derived on a restart would silently re-point the recorded parent at the DRIFT
 exact failure the (deleted) distill-anchor callback had a module of prose defending against. Belt and braces:
 `build_lineage` also returns `None` on a same-run restart, decided by
 **`main.train.fork_lr.is_same_run_checkpoint`, IMPORTED rather than re-derived** (a second
-predicate for the same question is a second answer waiting to disagree; `<run>/warmstart/…` is
-deliberately a FORK there, and the seam captures `args.model` BEFORE `--warmstart-consensus`
-re-points it, or a warm-started exploiter would record itself as its own ancestor).
+predicate for the same question is a second answer waiting to disagree; a nested run dir that is not
+`checkpoints/` is deliberately a FORK there — `<run>/warmstart/…` was the case until P11 deleted the
+consensus warm start; the seam captures `args.model` as parsed).
 
 **The FRESH form is explicit** (`fork_parent: null, role: "fresh", ancestry: []`) — "no block" and
 "no parent" are different facts and only one of them is a measurement.

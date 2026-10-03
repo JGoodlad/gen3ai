@@ -20,6 +20,9 @@ DELETED = [
     ("--no-predict-unrevealed-mon-moves", []),
     ("--snapshot-dir", ["/tmp/pool"]),
     ("--allow-nonsample-trainee", []),
+    ("--warmstart-consensus", ["models/a,models/b"]),                  # B3
+    ("--warmstart-battles", ["200"]),
+    ("--warmstart-bc-steps", ["4000"]),
 ]
 
 

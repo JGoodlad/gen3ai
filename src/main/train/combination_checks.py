@@ -374,14 +374,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "--exploiter-keep-bots only applies in exploiter mode — pass --exploiter <target> "
         "too (it mixes the bots in ALONGSIDE that target)."),
     CombinationCheck(
-        "warmstart_consensus_needs_exploiter", ("warmstart_consensus", "exploiter"),
-        lambda a: bool(a.warmstart_consensus) and not a.exploiter,
-        "--warmstart-consensus builds an EXPLOITER init (a disagreement-gated consensus of "
-        "teacher exploiters, sharp-on-agree / flat-on-disagree) and only applies in exploiter "
-        "mode — pass --exploiter <target>. It is deliberately NOT available for "
-        "generalist / self-play training, whose objective is to ABSORB per-team divergence, "
-        "the OPPOSITE of distilling the consensus."),
-    CombinationCheck(
         "exploiter_temp_start_needs_exploiter", ("exploiter_temp_start", "exploiter"),
         lambda a: _exploiter_temp_on(a) and not a.exploiter,
         "--exploiter-temp-start only applies in exploiter mode — pass --exploiter "

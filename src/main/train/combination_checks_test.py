@@ -168,7 +168,6 @@ ARGVS: dict[str, list[str]] = {
     "pfsp_scale_needs_self_play": ["--pfsp-scale", "1.0"],
     "supply_starve_cycles_parses": ["--supply-starve-cycles", "no_such_lever=3"],
     "exploiter_keep_bots_needs_exploiter": ["--exploiter-keep-bots"],
-    "warmstart_consensus_needs_exploiter": ["--warmstart-consensus", "models/a,models/b"],
     "exploiter_temp_start_needs_exploiter": ["--exploiter-temp-start", "2.0"],
     "exploiter_temp_positive": ["--exploiter", "models/t", "--exploiter-temp-start", "-1"],
     "exploiter_temp_anneal_frac": ["--exploiter", "models/t", "--exploiter-temp-start", "2.0",

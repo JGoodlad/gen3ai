@@ -342,22 +342,6 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "--self-play. Recommended: init the exploiter from a strong checkpoint "
                              "(--model <target's checkpoint>) so it has a baseline to exploit from. "
                              "Default None (off).")
-    parser.add_argument("--warmstart-consensus", "--warmstart_consensus", dest="warmstart_consensus",
-                        type=str, default=None,
-                        help="EXPLOITER MODE (requires --exploiter): before training, build a competent, "
-                             "archetype-NEUTRAL warm start by disagreement-gated CONSENSUS distillation of "
-                             "N mature teacher exploiters (comma-separated run-dirs) into --model (the "
-                             "generalist init), then init the exploiter from it. The BC target is SHARP "
-                             "where the teachers AGREE (universal decisions inherited) and FLAT where they "
-                             "DISAGREE (archetype forks left high-entropy → the new exploiter specializes "
-                             "FREELY, unbiased). Built ONCE into <run>/warmstart/ (idempotent across "
-                             "launcher restarts; skipped once a training checkpoint exists). Deliberately "
-                             "NOT valid for generalist/self-play runs (whose job is the opposite — absorb "
-                             "divergence). See agents.training.warmstart. Default off.")
-    parser.add_argument("--warmstart-battles", dest="warmstart_battles", type=int, default=200,
-                        help="On-policy battles to collect for the --warmstart-consensus BC dataset (200).")
-    parser.add_argument("--warmstart-bc-steps", dest="warmstart_bc_steps", type=int, default=4000,
-                        help="BC gradient steps for --warmstart-consensus (early-stops on gated-KL; 4000).")
     parser.add_argument("--exploiter-keep-bots", dest="exploiter_keep_bots", action="store_true",
                         help="EXPLOITER MODE (requires --exploiter): mix the heuristic bots BACK IN "
                              "alongside the exploiter target instead of playing the target as the sole "

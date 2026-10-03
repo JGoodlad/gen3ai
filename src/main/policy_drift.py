@@ -85,7 +85,7 @@ def _obs_layout():
 
 def make_probs_fn(device: str, obs: np.ndarray, mask: np.ndarray):
     from agents.model.snapshot import current_model_version, load_foreign_opponent
-    from agents.training.warmstart import masked_action_probs
+    from agents.training.churn_probe import masked_action_probs
     mappings, _ = _obs_layout()
     cv = current_model_version(mappings)
 

@@ -1,5 +1,8 @@
 """Unit tests for the churn probe's pure math (masked KL + roster grouping) — no models/bridge."""
+import types
+
 import numpy as np
+import pytest
 
 from agents.training.churn_probe import masked_kl
 
@@ -71,3 +74,63 @@ def test_roster_keys_groups_by_our_species():
     keys = roster_keys(obs, layout)
     assert keys[0] == keys[1]
     assert keys[0] != keys[2]
+
+
+# ---------------------------------------------------------------- device derivation (ai_v7_22 crash)
+
+class _DeviceProbeModel:
+    """Minimal model stub: params on a chosen device; records the obs device it is forwarded on."""
+
+    def __init__(self, device):
+        import torch as th
+
+        class _Dist:
+            pass
+
+        class _Policy:
+            def __init__(self, dev):
+                self._p = th.nn.Parameter(th.zeros(1, device=dev))
+                self.seen_devices = []
+                # A real SB3 policy always has one, and `masked_action_probs` reads it to top the
+                # obs dict up with the flag-gated Dict keys the extractor's forward demands
+                # (`agents.model.extra_obs_keys`). A bare object is the honest stand-in for this
+                # probe: no route attribute is set, so the registry asks for no extra key — which
+                # is the configuration a device probe is about.
+                self.features_extractor = types.SimpleNamespace()
+
+            def parameters(self):
+                return iter([self._p])
+
+            def get_distribution(self, ob):
+                self.seen_devices.append(ob["observation"].device)
+                d = _Dist()
+                inner = _Dist()
+                inner.logits = th.zeros(ob["observation"].shape[0], ob["action_mask"].shape[1],
+                                        device=ob["observation"].device)
+                d.distribution = inner
+                return d
+
+        self.policy = _Policy(device)
+
+
+def _run_device_probe(device):
+    from agents.training.churn_probe import masked_action_probs
+    m = _DeviceProbeModel(device)
+    obs = np.zeros((5, 7), np.float32)
+    mask = np.ones((5, 4), np.float32)
+    probs = masked_action_probs(m, obs, mask)
+    assert probs.shape == (5, 4)
+    assert all(str(d).startswith(device) for d in m.policy.seen_devices)
+
+
+def test_masked_action_probs_derives_device_from_model_cpu():
+    """ai_v7_22 launch-crash regression: tensors must be built on the MODEL's device, not a
+    caller-passed string — a cuda student + cpu-default teachers made any shared device wrong."""
+    _run_device_probe("cpu")
+
+
+def test_masked_action_probs_derives_device_from_model_cuda():
+    import torch as th
+    if not th.cuda.is_available():
+        pytest.skip("no CUDA")
+    _run_device_probe("cuda")

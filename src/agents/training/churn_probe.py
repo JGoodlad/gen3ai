@@ -30,12 +30,45 @@ import asyncio
 import numpy as np
 
 _EPS = 1e-12
+_CHUNK = 512
+
+
+def masked_action_probs(model, obs: np.ndarray, mask: np.ndarray,
+                        chunk: int = _CHUNK) -> np.ndarray:
+    """Forward a model over ``obs``/``mask`` in chunks → masked softmax action probs [len(obs), A].
+
+    The tensor device is derived FROM THE MODEL (``next(model.policy.parameters()).device``), not
+    a caller-passed string — the ai_v7_22 launch crash was exactly this drift: the student loaded
+    on ``--device cuda`` while the teachers took ``_load``'s cpu default, and a shared device
+    param could not be right for both. Deriving per-model makes any student/teacher device mix
+    correct by construction (CPU teachers stay VRAM-free; the CUDA student forwards on the GPU).
+
+    Lives here since the flag census (P11) deleted `warmstart.py`, its original home; torch is imported
+    inside so the pure-math half of this module stays import-light."""
+    import torch as th
+
+    from agents.model.extra_obs_keys import zero_extra_obs
+
+    dev = next(model.policy.parameters()).device
+    out = []
+    for i in range(0, len(obs), chunk):
+        mb = th.tensor(mask[i:i + chunk], device=dev)
+        ob = {"observation": th.tensor(obs[i:i + chunk], device=dev), "action_mask": mb}
+        # Behaviour cloning reads POLICY logits, but the forward still runs the whole extractor —
+        # including any vf-only route that reads its own Dict key and RAISES when it is missing.
+        # All-zero blocks are correct here as well as sufficient: those routes inject into
+        # `value_pooled`, which pi never sees, so the logits are bit-identical either way.
+        ob.update(zero_extra_obs(model.policy.features_extractor, batch=len(mb), device=dev))
+        with th.no_grad():
+            logits = model.policy.get_distribution(ob).distribution.logits
+        out.append(th.softmax(logits + (mb - 1.0) * 1e9, dim=-1).cpu().numpy())
+    return np.concatenate(out, 0)
 
 
 def masked_kl(pa: np.ndarray, pb: np.ndarray, mask: np.ndarray) -> np.ndarray:
     """Row-wise KL(pa ‖ pb) over LEGAL actions only. ``pa``/``pb`` [N, A] are masked action
     probability rows (illegal entries carry ~0 mass by construction — see
-    warmstart.masked_action_probs); ``mask`` [N, A] re-asserts legality so a numerically
+    masked_action_probs); ``mask`` [N, A] re-asserts legality so a numerically
     nonzero illegal remnant can never contribute. Returns [N] (nats), asymmetric by design
     (pa = the LATER policy: "how far did it move from pb's prediction")."""
     m = mask > 0.5
@@ -58,7 +91,6 @@ def churn(ckpt_a: str, ckpt_b: str, config_path: str, probe_npz: str, top_groups
     """KL(π_b ‖ π_a) on the frozen probe set (b = the LATER checkpoint) → overall + per-team."""
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     from agents.model.snapshot import current_model_version, load_foreign_opponent
-    from agents.training.warmstart import masked_action_probs
 
     z = np.load(probe_npz)
     obs, mask = z["obs"], z["mask"]
