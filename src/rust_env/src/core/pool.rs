@@ -176,7 +176,7 @@ impl Env {
         self.labels.clear();
         for side in 0..SIDES {
             self.chains[side] = Some(
-                BattleVersion::parse_root_unrecorded(side, &spec.names[side], Some(&self.log.teams[side]), spec.clock)
+                BattleVersion::parse_root_unrecorded(side, &spec.names[side], Some(&self.log.teams[side]), Default::default())
                     .map_err(core_err(&format!("root p{}", side + 1)))?,
             );
         }
@@ -446,7 +446,7 @@ impl Pool {
                 return Err(format!("spec: team {i}: the engine refuses it: {f}"));
             }
             for side in 0..SIDES {
-                BattleVersion::parse_root_unrecorded(side, &spec.names[side], Some(t), spec.clock)
+                BattleVersion::parse_root_unrecorded(side, &spec.names[side], Some(t), Default::default())
                     .map_err(|e| format!("spec: team {i}: the reading refuses it as p{}: {}", side + 1, e.message()))?;
             }
         }

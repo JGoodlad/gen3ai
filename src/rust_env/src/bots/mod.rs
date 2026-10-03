@@ -14,9 +14,9 @@
 //!
 //! RANDOMNESS (decided; see [`rng`]): each stream is CPython's MT19937 from the same seed, so a seeded
 //! Python bot and the Rust bot draw the same numbers. Production seeding is the host's (Lane E / G):
-//! the Python production bots draw from the unseeded process-wide `random` (and BaitBot from OS
-//! entropy), which no port can reproduce; the Rust env seeds every stream explicitly — a DECLARED
-//! change of stream, not of distribution. The Python training wrapper also consumes draws on
+//! the Python production bots draw from the unseeded process-wide `random`, which no port can
+//! reproduce; the Rust env seeds every stream explicitly — a DECLARED change of stream, not of
+//! distribution. The Python training wrapper also consumes draws on
 //! PHANTOM polls (`choose_move` on a step whose p2 order is never sent); the Rust env asks a bot
 //! only at a real decision (finding F-LF-2).
 
@@ -55,8 +55,6 @@ pub enum Kind {
     AggressiveV2,
     SetupSweep,
     SetupSweepV2,
-    /// `make_baitbot_class(p_bait)`.
-    BaitBot { p_bait: f64 },
 }
 
 impl Kind {
@@ -72,11 +70,10 @@ impl Kind {
             Kind::AggressiveV2 => "aggressive_v2",
             Kind::SetupSweep => "setup_sweep",
             Kind::SetupSweepV2 => "setup_sweep_v2",
-            Kind::BaitBot { .. } => "baitbot",
         }
     }
 
-    /// By display name (`baitbot` at the roster's default dial).
+    /// By display name.
     pub fn from_name(name: &str) -> Option<Kind> {
         Some(match name {
             "random" => Kind::Random,
@@ -88,7 +85,6 @@ impl Kind {
             "aggressive_v2" => Kind::AggressiveV2,
             "setup_sweep" => Kind::SetupSweep,
             "setup_sweep_v2" => Kind::SetupSweepV2,
-            "baitbot" => Kind::BaitBot { p_bait: tables::DEFAULT_P_BAIT },
             _ => return None,
         })
     }
@@ -97,7 +93,6 @@ impl Kind {
     pub fn streams(&self) -> &'static [Stream] {
         match self {
             Kind::Staller | Kind::StallerV2 => &[Stream::Choice, Stream::Protect],
-            Kind::BaitBot { .. } => &[Stream::Choice, Stream::Bait],
             _ => &[Stream::Choice],
         }
     }
@@ -110,8 +105,6 @@ pub enum Stream {
     Choice,
     /// The stallers' `_protect_rng`.
     Protect,
-    /// `Gen3BaitBotPlayer._rng`.
-    Bait,
 }
 
 impl Stream {
@@ -119,7 +112,6 @@ impl Stream {
         match self {
             Stream::Choice => "choice",
             Stream::Protect => "protect",
-            Stream::Bait => "bait",
         }
     }
 }
@@ -140,7 +132,6 @@ pub struct Bot {
     pub kind: Kind,
     pub choice: PyRandom,
     pub protect: PyRandom,
-    pub bait: PyRandom,
     /// The `logic.rs` source line of the return site that made the last decision (0 = RandomPlayer,
     /// whose whole policy is one site) — the gate's branch coverage.
     pub branch: u32,
@@ -148,15 +139,14 @@ pub struct Bot {
 
 impl Bot {
     /// Each stream seeded as `random.Random(seed)` (an unused stream is still built, never drawn).
-    pub fn new(kind: Kind, choice_seed: u64, protect_seed: u64, bait_seed: u64) -> Bot {
-        Bot { kind, choice: PyRandom::new(choice_seed), protect: PyRandom::new(protect_seed), bait: PyRandom::new(bait_seed), branch: 0 }
+    pub fn new(kind: Kind, choice_seed: u64, protect_seed: u64) -> Bot {
+        Bot { kind, choice: PyRandom::new(choice_seed), protect: PyRandom::new(protect_seed), branch: 0 }
     }
 
     pub fn stream(&self, s: Stream) -> &PyRandom {
         match s {
             Stream::Choice => &self.choice,
             Stream::Protect => &self.protect,
-            Stream::Bait => &self.bait,
         }
     }
 
@@ -164,7 +154,6 @@ impl Bot {
         match s {
             Stream::Choice => &mut self.choice,
             Stream::Protect => &mut self.protect,
-            Stream::Bait => &mut self.bait,
         }
     }
 
@@ -182,7 +171,6 @@ impl Bot {
             Kind::AggressiveV2 => logic::aggressive_v2(v, &mut self.choice, br),
             Kind::SetupSweep => logic::setup_sweep(v, &mut self.choice, br),
             Kind::SetupSweepV2 => logic::setup_sweep_v2(v, &mut self.choice, br),
-            Kind::BaitBot { p_bait } => logic::baitbot(v, p_bait, &mut self.choice, &mut self.bait, br),
         }
     }
 

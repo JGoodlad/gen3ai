@@ -1,4 +1,5 @@
-"""THE OBJECTIVE'S CONSTANTS — values that were trainer FLAGS until deletion pass P11b.
+"""THE OBJECTIVE'S CONSTANTS — values that were trainer FLAGS until deletion pass P11b (the no-progress clock's
+two switches, until P11d).
 
 Each had ONE legal value: the win-prob critic is the only trainable critic (`critic_mode`), and its
 identity `V(s) == P(win | s)` holds only at gamma 1 with the unit win-indicator terminal (indicator ON,
@@ -34,6 +35,11 @@ OBJECTIVE_CONSTANTS: Dict[str, Any] = {
     "victory_value": 1.0,
     "draw_penalty": 0.0,
     "gamma": WINPROB_GAMMA,
+    # the no-progress clock's two opt-in variants (P11d): OFF everywhere with 0 recorded runs, deleted with
+    # their Rust reads. They stay recorded RUN FIELDS (`RewardConfig` / `ModelVersion`, value-checked on a
+    # resume: a recorded True is refused), so `RewardConfig.from_args` still reads them off the namespace.
+    "progress_decision_tense": False,
+    "progress_switch_freeze": False,
 }
 
 

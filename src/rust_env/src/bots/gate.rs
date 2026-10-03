@@ -117,7 +117,6 @@ fn offsets(v: &Val, key: &str) -> Result<Vec<(Stream, u64)>, String> {
             let st = match k.as_ref() {
                 "choice" => Stream::Choice,
                 "protect" => Stream::Protect,
-                "bait" => Stream::Bait,
                 other => return Err(format!("corpus: unknown stream {other:?}")),
             };
             out.push((st, int(x, key)? as u64));
@@ -146,7 +145,7 @@ fn episode(rep: &mut Report, e: usize, ep: &Val) -> Result<(), String> {
     let kind = Kind::from_name(&bot_name).ok_or_else(|| format!("corpus: no Rust bot named {bot_name:?}"))?;
     let seeds = ep.get("rng_seeds").ok_or("corpus: missing rng_seeds")?;
     let seed_of = |k: &str| seeds.get(k).map_or(Ok(0), |v| int(v, k)).map(|n| n as u64);
-    let mut bot = Bot::new(kind, seed_of("choice")?, seed_of("protect")?, seed_of("bait")?);
+    let mut bot = Bot::new(kind, seed_of("choice")?, seed_of("protect")?);
     let names = arr(ep, "names")?;
     let teams = arr(ep, "teams")?;
     let str_of = |v: &Val| match v {

@@ -51,19 +51,10 @@ class SuccessorsError(SearchError):
     """A search / playout request the in-process core refused (the handle stays usable)."""
 
 
-def spec_json(*, decision_tense: Optional[bool] = None, switch_freeze: Optional[bool] = None,
-              max_nodes: int = DEFAULT_MAX_NODES, max_branches: int = DEFAULT_MAX_BRANCHES) -> str:
-    """A search handle's STARTUP declaration. The clock flags default to the PRODUCTION config's
-    (``progress_decision_tense`` / ``progress_switch_freeze``; both OFF, which is also what
-    ``search_driver`` always uses)."""
-    if decision_tense is None or switch_freeze is None:
-        from agents.training.baselines import production_config
-
-        pc = production_config()
-        decision_tense = bool(pc.get("progress_decision_tense", False)) if decision_tense is None else decision_tense
-        switch_freeze = bool(pc.get("progress_switch_freeze", False)) if switch_freeze is None else switch_freeze
-    return json.dumps({"clock": {"decision_tense": bool(decision_tense), "switch_freeze": bool(switch_freeze)},
-                       "max_nodes": int(max_nodes), "max_branches": int(max_branches)})
+def spec_json(*, max_nodes: int = DEFAULT_MAX_NODES, max_branches: int = DEFAULT_MAX_BRANCHES) -> str:
+    """A search handle's STARTUP declaration (the two capacities; the progress clock's two flags this
+    declaration once carried were deleted with the trainer's flags)."""
+    return json.dumps({"max_nodes": int(max_nodes), "max_branches": int(max_branches)})
 
 
 def _raise(lib: ctypes.CDLL) -> None:

@@ -47,12 +47,12 @@ class RewardConfig:
     # `terminal_indicator` (refused there by `main.train.combination_checks` unless 0).
     draw_penalty: float = -35.0
     gamma: float = 0.9999
-    # The no-progress clock's two intent-restoring fixes (both default OFF = byte-identical). The
-    # mechanism lives on `ProgressClock`; turning either ON changes the `turns_since_progress` OBS
-    # scalar — retrain-class (no dim moves, no ARCH_SIGNATURE bump), never a mid-run toggle.
-    #   `progress_decision_tense` (F1) — point both window gates at the decision being judged.
-    #   `progress_switch_freeze` (F2b) — a voluntary switch that fails the progress predicate
-    #       FREEZES the clock instead of advancing it.
+    # The no-progress clock's two intent-restoring variants — DELETED as flags and in the Python and Rust clocks
+    # (flag census, P11d: OFF everywhere, 0 recorded runs). The fields stay as RECORDED run facts, constants of
+    # every trainer namespace (`main/train/parser/objective.py`): a checkpoint that recorded `True` is refused on
+    # a resume (`ModelVersion.check_reward_config`: run it PINNED or start fresh).
+    #   `progress_decision_tense` (F1) — pointed both window gates at the decision being judged.
+    #   `progress_switch_freeze` (F2b) — froze the clock on a voluntary switch that fails the progress predicate.
     progress_decision_tense: bool = False
     progress_switch_freeze: bool = False
     # The TERMINAL magnitude. A win scores +victory_value; under the SIGNED terminal a decisive loss

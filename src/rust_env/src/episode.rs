@@ -424,7 +424,6 @@ mod tests {
             format_id: "gen3ou".into(),
             names: ["dpone".into(), "dptwo".into()],
             teams,
-            clock: Default::default(),
             // A forfeit at p1's first decision of turn 2, scored as the timeout (turn >= cap).
             turn_limit: Some(2),
             terminal: Terminal { victory_value: 30.0, indicator: false, draw_penalty: -35.0, timeout_turn_cap: 2 },

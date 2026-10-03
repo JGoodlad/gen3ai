@@ -60,8 +60,7 @@ def build_release() -> None:
 
 
 def ffi_shape(lib, teams, n, threads, blocks, steps, seed=1):
-    spec = P.spec_json(n=n, threads=threads, teams=teams, names=("bench1", "bench2"), decision_tense=False,
-                       switch_freeze=False, turn_limit=300, refusal_budget=64, bank_dir=None)
+    spec = P.spec_json(n=n, threads=threads, teams=teams, names=("bench1", "bench2"), turn_limit=300, refusal_budget=64, bank_dir=None)
     rng = np.random.default_rng(seed)
     nt = len(teams)
     with ffi.FfiCore(spec, lib=lib) as core:

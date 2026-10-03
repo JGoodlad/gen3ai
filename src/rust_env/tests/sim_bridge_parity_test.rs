@@ -74,20 +74,23 @@ fn sim_bridge_frames(bin: &str, log: &InputLog) -> (Vec<(usize, Val)>, usize) {
     sim_bridge_run(bin, log, false)
 }
 
-fn sim_bridge_frames_with(bin: &str, log: &InputLog, decision_tense: bool) -> Vec<(usize, Val)> {
-    let (frames, errs) = sim_bridge_run(bin, log, decision_tense);
+fn sim_bridge_frames_with(bin: &str, log: &InputLog, teeth: bool) -> Vec<(usize, Val)> {
+    let (frames, errs) = sim_bridge_run(bin, log, teeth);
     assert_eq!(errs, 0, "sim_bridge refused the core's input log:\n{}", log.script(""));
     frames
 }
 
-/// `decision_tense` is the clock flag handed to `sim_bridge` (the core ran with `false`): the teeth
-/// test replays with `true` and must see rows differ. Returns the frames and the `__ERR__` count.
-fn sim_bridge_run(bin: &str, log: &InputLog, decision_tense: bool) -> (Vec<(usize, Val)>, usize) {
-    let extra = format!(
-        "\"core_obs\":{{\"sides\":[\"p1\",\"p2\"],\"decision_tense\":{decision_tense},\"switch_freeze\":false}},"
-    );
-    let script = log.script(&extra) + "END\n";
-    let mut child = Command::new(bin).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().expect("spawn sim_bridge");
+/// `teeth` runs `sim_bridge` under its TEETH hook (`POKESIM_SIM_BRIDGE_TEETH=clock_start`: every chain's
+/// clock starts at `n` = 1; the core ran with the default): the teeth test replays with it and must see
+/// rows differ. Returns the frames and the `__ERR__` count.
+fn sim_bridge_run(bin: &str, log: &InputLog, teeth: bool) -> (Vec<(usize, Val)>, usize) {
+    let extra = "\"core_obs\":{\"sides\":[\"p1\",\"p2\"]},";
+    let script = log.script(extra) + "END\n";
+    let mut cmd = Command::new(bin);
+    if teeth {
+        cmd.env("POKESIM_SIM_BRIDGE_TEETH", "clock_start");
+    }
+    let mut child = cmd.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().expect("spawn sim_bridge");
     let mut sin = child.stdin.take().unwrap();
     let w = std::thread::spawn(move || sin.write_all(script.as_bytes()));
     let out = child.wait_with_output().unwrap();
@@ -258,8 +261,8 @@ fn the_cores_rows_are_sim_bridges_obs_rows_byte_for_byte() {
     );
 }
 
-/// TEETH: the comparison sees the cells a clock flag moves — `sim_bridge` replaying the same logs
-/// with `decision_tense = true` (the core ran `false`) must differ in some row.
+/// TEETH: the comparison sees the cells the clock moves — `sim_bridge` replaying the same logs
+/// under its `clock_start` TEETH hook (the core ran the default) must differ in some row.
 #[test]
 fn the_byte_comparison_has_teeth() {
     let bin = std::env::var("POKESIM_SIM_BRIDGE_BIN").expect("POKESIM_SIM_BRIDGE_BIN");
@@ -287,13 +290,13 @@ fn the_byte_comparison_has_teeth() {
     let log = if ended { env.prev_log.clone() } else { env.log.clone() };
     assert!(log.cmds.len() >= 20, "too short a battle for the teeth: {} commands", log.cmds.len());
     let same = sim_bridge_frames_with(&bin, &log, false);
-    let tense = sim_bridge_frames_with(&bin, &log, true);
-    assert_eq!(same.len(), tense.len());
+    let moved = sim_bridge_frames_with(&bin, &log, true);
+    assert_eq!(same.len(), moved.len());
     let differ = same
         .iter()
-        .zip(&tense)
+        .zip(&moved)
         .filter(|((_, a), (_, b))| a.get("frame").and_then(|f| f.str_at("b64")) != b.get("frame").and_then(|f| f.str_at("b64")))
         .count();
-    assert!(differ > 0, "decision_tense moved no row over {} frames — the gate could not see a clock divergence", same.len());
-    eprintln!("teeth: decision_tense moved {differ} of {} rows", same.len());
+    assert!(differ > 0, "the clock_start hook moved no row over {} frames — the gate could not see a clock divergence", same.len());
+    eprintln!("teeth: clock_start moved {differ} of {} rows", same.len());
 }

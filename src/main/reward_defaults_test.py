@@ -99,11 +99,9 @@ def test_model_version_default_reward_fields_match_reward_config():
 
 def test_no_immutable_reward_field_has_a_flag_any_more():
     """The resume refusal is only honest if it does not point at a flag: every immutable reward field is a
-    namespace CONSTANT (P11b), none an option."""
+    namespace CONSTANT (P11b; the no-progress clock's two switches, P11d), none an option."""
     known = build_parser()._option_string_actions
     for name in _REWARD_IMMUTABLE_FIELDS:
-        if name in ("progress_decision_tense", "progress_switch_freeze"):
-            continue                                    # the no-progress clock's two switches: still flags
         assert "--" + name.replace("_", "-") not in known, f"{name} has a flag again"
         assert hasattr(_args([]), name), f"{name} is not a constant of the namespace"
 
@@ -127,6 +125,22 @@ def test_a_production_run_resumed_under_the_defaults_is_a_hard_error():
     msg = str(exc.value)
     assert "terminal_indicator" in msg and "victory_value" in msg and "draw_penalty" in msg
     assert "start a fresh run" in msg
+
+
+@pytest.mark.parametrize("field", ["progress_decision_tense", "progress_switch_freeze"])
+def test_a_run_that_recorded_a_deleted_clock_variant_is_REFUSED_by_name(field):
+    """P11d deleted the no-progress clock's two opt-in variants (flags, Python clock, Rust clock). The
+    RECORDED run fields stay readable and value-checked: a checkpoint that trained under one cannot resume
+    on this code (its observation stream would silently change), and the refusal names the field and the way
+    out — the same pattern as P11b's reward cluster, with no RETIRED row and no version bump."""
+    saved = _version(terminal_indicator=True, victory_value=1.0, draw_penalty=0.0, **{field: True})
+    with pytest.raises(ModelVersionError) as exc:
+        saved.check_reward_config(RewardConfig.from_args(_args([])))
+    msg = str(exc.value)
+    assert field in msg and "saved=True, requested=False" in msg and "PINNED" in msg and "fresh run" in msg
+    # …and the production values of both fields resume
+    _version(terminal_indicator=True, victory_value=1.0, draw_penalty=0.0).check_reward_config(
+        RewardConfig.from_args(_args([])))
 
 
 def test_the_refusal_names_the_way_out_and_no_flag():

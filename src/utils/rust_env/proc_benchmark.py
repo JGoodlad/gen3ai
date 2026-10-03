@@ -54,8 +54,7 @@ def build_release() -> None:
 def run_shape(make, teams, n, threads, blocks, steps, seed):
     """One front end on one shape: per-block (wall µs/row, core µs/row, median xport µs/dispatch),
     and the CRC chain of every obs column after every STEP (the battles' identity)."""
-    spec = P.spec_json(n=n, threads=threads, teams=teams, names=("bench1", "bench2"), decision_tense=False,
-                       switch_freeze=False, turn_limit=300, refusal_budget=64, bank_dir=None)
+    spec = P.spec_json(n=n, threads=threads, teams=teams, names=("bench1", "bench2"), turn_limit=300, refusal_budget=64, bank_dir=None)
     rng = np.random.default_rng(seed)
     nt = len(teams)
     crc = 0

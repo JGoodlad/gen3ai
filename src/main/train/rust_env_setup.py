@@ -146,17 +146,12 @@ def env_core_switch_line(args: Any) -> Optional[str]:
 
 
 def _bot_names(opponent_classes: Sequence[Any]) -> List[str]:
-    """The floor roster's classes as Lane F's bot names (``bot_inventory``); BaitBot's per-run subclass
-    (``make_baitbot_class``) maps to ``baitbot``."""
-    from agents.baitbot import Gen3BaitBotPlayer
+    """The floor roster's classes as Lane F's bot names (``bot_inventory``)."""
     from utils.rust_env import bot_inventory as BI
 
     by_cls = BI.by_class()
     out = []
     for cls in opponent_classes:
-        if isinstance(cls, type) and issubclass(cls, Gen3BaitBotPlayer):
-            out.append("baitbot")
-            continue
         key = f"{cls.__module__}.{cls.__qualname__}"
         row = by_cls.get(key)
         if row is None or not row.rust:
@@ -214,8 +209,6 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
             micro_batch=int(model.batch_size), target=int(args.rollout_target_samples or 0),
             gamma=float(model.gamma), gae_lambda=float(model.gae_lambda), run_seed=run_seed,
             turn_limit=EP.stall_threshold(), terminal=EP.terminal_from_reward_config(RewardConfig.from_args(args)),
-            decision_tense=bool(getattr(args, "progress_decision_tense", False)),
-            switch_freeze=bool(getattr(args, "progress_switch_freeze", False)),
             refusal_budget=int(args.rust_env_refusal_budget), respawn_budget=int(args.rust_env_respawn_budget),
             device=device, backend=backend, buckets=buckets, lanes=int(args.t2_lanes or 0),
             opponent_bucket_cap=int(args.t2_opponent_bucket_cap),

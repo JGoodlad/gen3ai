@@ -50,7 +50,7 @@ def bot_stream_seeds(bot: str, words: List[int]) -> Dict[str, int]:
     from agents.training.rust_env_opponents import episode_bot_stream_seed
 
     s = bot_route_seed(bot)
-    return {name: episode_bot_stream_seed(s, words, k) for k, name in enumerate(("choice", "protect", "bait"))}
+    return {name: episode_bot_stream_seed(s, words, k) for k, name in enumerate(("choice", "protect"))}
 
 
 def _h(*parts: Any) -> int:

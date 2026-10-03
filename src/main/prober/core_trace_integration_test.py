@@ -68,8 +68,7 @@ def _play_core_games(lib, run_dir: str, n: int, *, turn_limit: int, seed: int, t
     from utils.teambuilder import Gen3Teambuilder
 
     teams = list(Gen3Teambuilder(TeamLoader().get_all_teams()).packed_teams)[:12]
-    spec = P.spec_json(n=2, threads=1, teams=teams, names=NAMES, decision_tense=False,
-                       switch_freeze=False, turn_limit=turn_limit, refusal_budget=4, bank_dir=None,
+    spec = P.spec_json(n=2, threads=1, teams=teams, names=NAMES, turn_limit=turn_limit, refusal_budget=4, bank_dir=None,
                        opponents=[{"kind": "bot", "bot": "heuristic", "seed": 3, "streams": "episode"}])
     core = ffi.FfiCore(spec, lib=lib)
     c = core.cols

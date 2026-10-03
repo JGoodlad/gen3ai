@@ -27,8 +27,6 @@ THE RANDOMNESS, per stream (the seed route is the PRODUCTION one; every stream i
   Seeded by ``rng_seed=`` or ``$GEN3AI_PLAYER_SEED``; production passes neither.
 * ``protect`` — the two stallers' Protect coin (``_protect_rng``): ``protect_seed=`` or
   ``$GEN3AI_STALLER_SEED``; production passes neither.
-* ``bait`` — ``Gen3BaitBotPlayer._rng = random.Random(seed)``; production ``seed=None`` ⇒ seeded
-  from OS entropy (NOT the global stream, and not reproducible at all).
 """
 from __future__ import annotations
 
@@ -38,7 +36,6 @@ from dataclasses import dataclass
 SITES = {
     "train": "the training floor roster — `main/train/matchup_setup.py` OPPONENT_CLASSES (also the "
              "exploiter --exploiter-keep-bots mix, mapped to the core's bots by `rust_env_setup._bot_names`)",
-    "train_bait": "the training roster, ONLY with --bait-bot-share > 0 (`make_baitbot_class(--bait-bot-p)`)",
     "eval": "the eval roster — `agents/training/eval_roster.py` _EVAL_OPPONENT_SPECS (also "
             "`main.anchors` `bot:<name>` and the prober's replay, both through that table)",
 }
@@ -49,7 +46,7 @@ class BotRow:
     name: str            # display name (`eval_callback.opponent_name`)
     cls: str             # dotted class path
     used_by: tuple       # keys of SITES
-    rng: tuple           # streams the bot can draw from ("choice", "protect", "bait")
+    rng: tuple           # streams the bot can draw from ("choice", "protect")
     reads: str           # what it reads off the Battle (beyond what every bot reads)
     rust: str            # the Rust bot (`bots::Kind::<X>`), or "" while not ported
 
@@ -81,9 +78,6 @@ ROWS: tuple = (
            "matchup, boosts, setup (Target.SELF or non-Ghost Curse; dead until the F-LF-1 fix), damage v1, switch v1", "SetupSweep"),
     BotRow("setup_sweep_v2", "agents.opponents.Gen3SetupSweepV2Player", ("train", "eval"), ("choice",),
            "KO calc, revealed opp damage, matchup, setup (Target.SELF or non-Ghost Curse; dead until the F-LF-1 fix), damage v2, switch v2", "SetupSweepV2"),
-    BotRow("baitbot", "agents.baitbot.Gen3BaitBotPlayer", ("train_bait",), ("choice", "bait"),
-           "revealed opp attacks × bench immunity (effective_multiplier), bait coin, damage v2, switch v2",
-           "BaitBot"),
     BotRow("max_base_power", "poke_env.player.baselines.MaxBasePowerPlayer", (), ("choice",),
            "max base_power; in NO pool (upstream poke-env baseline, defined only)", ""),
 )

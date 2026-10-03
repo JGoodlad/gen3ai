@@ -160,7 +160,6 @@ pub struct DeltaProjection {
     pub opp_damaging_event: Option<DamagingMove>,
     pub opp_target_hp_delta: Option<f32>,
     pub phase_is_forced_switch: bool,
-    pub decision_was_forced_switch: bool,
     /// `opp_dragged` / `opp_switch_is_replacement` / `opp_called_via` / `opp_choice_overridden` — the
     /// label's non-choice facts (`gen3_intent_label_semantics_fixes_v1`); `our_move_hit_delta` — our
     /// moves' OWN hits, clause (i)'s attribution (`gen3_progress_clock_attribution_fix_v1`).
@@ -206,7 +205,6 @@ impl DeltaProjection {
         };
         let (mut our_d, mut opp_d) = fold_hp_deltas(events, curr, prev);
         let forced = curr.forced_switch;
-        let decided_forced = prev.forced_switch;
         if events.is_empty() {
             for i in 0..6 {
                 our_d[i] = curr.our_hp[i] - prev.our_hp[i];
@@ -225,7 +223,6 @@ impl DeltaProjection {
                 we_fainted: curr.our_fainted > prev.our_fainted,
                 opp_fainted: curr.opp_fainted > prev.opp_fainted,
                 phase_is_forced_switch: forced,
-                decision_was_forced_switch: decided_forced,
                 ..Default::default()
             };
         }
@@ -258,7 +255,6 @@ impl DeltaProjection {
             our_damaging_event,
             opp_damaging_event,
             phase_is_forced_switch: forced,
-            decision_was_forced_switch: decided_forced,
             opp_dragged: opp.drag,
             opp_switch_is_replacement: opp.switched && opp.switched_to.is_some() && prev.opp_active_fainted,
             opp_called_via: opp.called_via.clone(),
@@ -286,12 +282,11 @@ impl DeltaProjection {
         o(out, "opp_status_applied", self.opp_status_applied.as_deref());
         out.push_str(&format!(
             ",\"we_fainted\":{},\"opp_fainted\":{},\"our_failed_to_move\":{},\"phase_is_forced_switch\":{},\
-             \"decision_was_forced_switch\":{},\"our_damaging\":{},\"opp_damaging\":{},\"opp_target_hp_delta\":",
+             \"our_damaging\":{},\"opp_damaging\":{},\"opp_target_hp_delta\":",
             self.we_fainted,
             self.opp_fainted,
             self.our_failed_to_move,
             self.phase_is_forced_switch,
-            self.decision_was_forced_switch,
             self.our_damaging_event.is_some(),
             self.opp_damaging_event.is_some()
         ));

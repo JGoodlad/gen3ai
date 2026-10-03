@@ -238,16 +238,6 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
         Gen3SetupSweepPlayer,
         Gen3SetupSweepV2Player,
     ]
-    # gen3_baitbot_roster_v1: BaitBot joins the roster only when a share is declared, so the
-    # default pool is byte-identical. It is appended BEFORE --bot-weights is parsed so a single
-    # code path builds the weight vector and the two cannot disagree.
-    _baitbot_cls = None
-    if getattr(args, "bait_bot_share", 0.0) > 0:
-        from agents.baitbot import make_baitbot_class
-        from agents.training.eval_callback import _OPPONENT_NAMES
-        _baitbot_cls = make_baitbot_class(args.bait_bot_p)
-        _OPPONENT_NAMES[_baitbot_cls] = "baitbot"   # TB keys / --bot-weights use the short name
-        OPPONENT_CLASSES.append(_baitbot_cls)
     print(f"[Opponents] training pool = {len(OPPONENT_CLASSES)} bots "
           f"({', '.join(opponent_name(c) for c in OPPONENT_CLASSES)})")
 
@@ -259,17 +249,6 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
                                               [opponent_name(c) for c in OPPONENT_CLASSES])
         print(f"[Opponents] heuristic weights = "
               f"{ {opponent_name(c): w for c, w in zip(OPPONENT_CLASSES, _bot_weight_vec)} }")
-
-    if _baitbot_cls is not None:
-        from agents.baitbot import weight_for_share
-        if _bot_weight_vec is None:
-            _bot_weight_vec = [1.0] * len(OPPONENT_CLASSES)
-        _others = [w for c, w in zip(OPPONENT_CLASSES, _bot_weight_vec) if c is not _baitbot_cls]
-        _w = weight_for_share(args.bait_bot_share, _others)
-        _bot_weight_vec[OPPONENT_CLASSES.index(_baitbot_cls)] = _w
-        _realized = _w / (sum(_others) + _w)
-        print(f"[Opponents] BaitBot p_bait={args.bait_bot_p} weight={_w:.4f} "
-              f"-> realized share {_realized:.4f} (declared {args.bait_bot_share})")
 
     # Resolve + VALIDATE --stable-opponents (cross-run fixed opponents) at startup. Each foreign
     # model must share THIS run's arch_signature (= observation layout) — a mismatch is a

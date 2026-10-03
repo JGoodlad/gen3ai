@@ -25,8 +25,8 @@ use crate::core::columns::{col_bytes, ColAddrs, N_COLUMNS, OBS_DIM};
 // Source of truth: the wire table in `src/utils/rust_env/proc.py`; pinned by `proc_test.py` (routine).
 
 /// `proc.wire_id()` — FNV-1a-64 of the wire's canonical text; compared at the handshake.
-pub const WIRE_ID: &str = "51113275d8e39d8c";
-pub const WIRE_ID_U64: u64 = 0x51113275d8e39d8c;
+pub const WIRE_ID: &str = "48a951315a66977f";
+pub const WIRE_ID_U64: u64 = 0x48a951315a66977f;
 /// Bytes before the first column (the header words live at its start).
 pub const HEADER_BYTES: usize = 4096;
 /// Every column's offset is a multiple of this.

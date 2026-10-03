@@ -60,8 +60,8 @@ class ModelVersionFields:
     # v105: the TERMINAL magnitude (a ±1 terminal reachable by flag).
     victory_value: float = 30.0
     # v105: the no-progress clock's two intent-restoring fixes (probe M/N, 2026-08-29). Both default
-    # OFF. They change what the clock counts — the `turns_since_progress` obs scalar — but no dim
-    # and no weight.
+    # OFF. They changed what the clock counts — the `turns_since_progress` obs scalar — but no dim
+    # and no weight. DELETED as flags and in both clocks (P11d); RECORDED here, value-checked on a resume.
     progress_decision_tense: bool = False   # gates read decision t, not t+1
     progress_switch_freeze: bool = False   # a voluntary switch freezes the clock
     # v109 (gen3_winprob_critic_mode_v1): the TERMINAL as a WIN INDICATOR.

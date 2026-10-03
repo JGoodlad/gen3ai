@@ -23,11 +23,11 @@
 //! # Core observation mode (`gen3_bridge_core_obs_v1`) — OPT-IN, default OFF
 //!
 //! `START`'s optional `core_obs` key,
-//! `{"sides": ["p1"] | ["p2"] | ["p1","p2"], "decision_tense": bool, "switch_freeze": bool}`
-//! (all three REQUIRED when the key is present; an unknown key, an empty / repeated / unknown
-//! side or a non-boolean flag is a LOUD `__ERR__`), turns on the Rust core's observation for the
-//! named sides. The two booleans are the progress clock's `ClockConfig` (training's
-//! `--progress-decision-tense` / `--progress-switch-freeze`). ABSENT (or `null`) ⇒ this binary's
+//! `{"sides": ["p1"] | ["p2"] | ["p1","p2"]}`
+//! (`sides` REQUIRED when the key is present; an unknown key — the two clock booleans the key
+//! once carried, `decision_tense` / `switch_freeze`, were deleted with their trainer flags — or an
+//! empty / repeated / unknown side is a LOUD `__ERR__`), turns on the Rust core's observation for
+//! the named sides. ABSENT (or `null`) ⇒ this binary's
 //! stdout is BYTE-IDENTICAL to the mode's absence (pinned by `tests/sim_bridge_core_obs_test.rs`).
 //!
 //! Per requested side the child keeps a PARSE-built version chain with trackers and no native
@@ -197,12 +197,11 @@ struct Session {
 /// A parsed `core_obs` START key.
 struct CoreObsSpec {
     sides: [bool; 2],
-    cfg: ClockConfig,
 }
 
 /// Parse START's `core_obs` key. Absent or `null` → `None` (the mode is OFF and nothing about
 /// this child's output changes). Present → every field is REQUIRED and checked: a mode flag is
-/// read, never assumed, so a typo or a missing clock boolean is a loud error rather than a
+/// read, never assumed, so a typo or a stale clock boolean is a loud error rather than a
 /// silently-default observation.
 fn parse_core_obs(v: &Json) -> Result<Option<CoreObsSpec>, String> {
     let Some(c) = v.get("core_obs").filter(|c| !c.is_null()) else {
@@ -210,7 +209,7 @@ fn parse_core_obs(v: &Json) -> Result<Option<CoreObsSpec>, String> {
     };
     let obj = c.as_object().ok_or("START: `core_obs` must be an object")?;
     for k in obj.keys() {
-        if !matches!(k.as_str(), "sides" | "decision_tense" | "switch_freeze") {
+        if k != "sides" {
             return Err(format!("START: `core_obs` has an unknown key {k:?}"));
         }
     }
@@ -233,13 +232,7 @@ fn parse_core_obs(v: &Json) -> Result<Option<CoreObsSpec>, String> {
         }
         sides[i] = true;
     }
-    let flag = |k: &str| -> Result<bool, String> {
-        c.get(k)
-            .and_then(Json::as_bool)
-            .ok_or_else(|| format!("START: `core_obs.{k}` must be present and a boolean"))
-    };
-    let cfg = ClockConfig { decision_tense: flag("decision_tense")?, switch_freeze: flag("switch_freeze")? };
-    Ok(Some(CoreObsSpec { sides, cfg }))
+    Ok(Some(CoreObsSpec { sides }))
 }
 
 /// The core observation state of ONE battle: per requested side, the PARSE-built version chain
@@ -257,14 +250,28 @@ struct CoreObs {
     failed: Option<String>,
 }
 
+/// The chains' `ClockConfig`: the default — except under the TEETH hook of a test / self-check build
+/// (`POKESIM_SIM_BRIDGE_TEETH=clock_start`), which starts every chain's clock at `n` = 1 so a gate that
+/// compares the bridge's rows with another route's (`core_events --obs`, the env core) can be seen to
+/// refuse a clock divergence (`tests/sim_bridge_core_obs_test.rs`, `rust_env`'s `sim_bridge_parity_test`).
+/// Compiled out of `--release`.
+fn core_obs_cfg() -> ClockConfig {
+    #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+    if std::env::var("POKESIM_SIM_BRIDGE_TEETH").as_deref() == Ok("clock_start") {
+        return ClockConfig { start_n: 1 };
+    }
+    ClockConfig::default()
+}
+
 impl CoreObs {
     fn new(spec: &CoreObsSpec, players: [&PlayerOptions; 2]) -> Result<CoreObs, String> {
+        let cfg = core_obs_cfg();
         let mut chains = [None, None];
         for side in 0..2 {
             if spec.sides[side] {
                 let p = players[side];
                 chains[side] = Some(
-                    BattleVersion::parse_root_unrecorded(side, &p.name, Some(&p.team.0), spec.cfg)
+                    BattleVersion::parse_root_unrecorded(side, &p.name, Some(&p.team.0), cfg)
                         .map_err(|e| format!("core_obs: p{} root: {}", side + 1, e.message()))?,
                 );
             }

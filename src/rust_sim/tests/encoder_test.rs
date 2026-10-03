@@ -167,7 +167,7 @@ fn the_parse_encode_gate_refuses_a_parse_chain_whose_trackers_fold_differently()
     let (n, ok) = run(ClockConfig::default());
     assert!(n >= 10, "only {n} decisions");
     assert!(ok.is_empty(), "the unperturbed parse chain was refused: {ok:?}");
-    let (_, bad) = run(ClockConfig { decision_tense: true, switch_freeze: true });
+    let (_, bad) = run(ClockConfig { start_n: 1 });
     assert!(!bad.is_empty(), "a parse chain folded with another clock config was never refused");
     assert!(bad.iter().all(|e| e.contains("the parse-built row differs") && e.contains("first cell")), "{bad:?}");
     assert!(bad[0].contains("reactive+") || bad[0].contains("global+"), "the clock lives in the reactive/global blocks: {}", bad[0]);

@@ -1,27 +1,21 @@
-"""``ProgressClock`` — the DEFAULT behaviour, pinned; and the two OPT-IN intent-restoring fixes.
+"""``ProgressClock`` — the shipped behaviour, pinned. (Its two OPT-IN intent-restoring variants,
+`--progress-decision-tense` and `--progress-switch-freeze`, were DELETED in the flag census, P11d: both OFF
+everywhere with 0 recorded runs. What was here for them — the F1 / F2b flip-with-the-flag tests and probe M's
+alignment discriminator — went with them; the measurement that motivated them is
+`designs/research_state/measurements/bias_tax_head_alignment_2026-08-29.md`.)
 
-Three things live here, and they answer different questions:
+Two things live here:
 
-1. **The default path is a CHECKSUM.** `SCENARIO` is a scripted 14-window episode and
-   `test_default_path_matches_the_recorded_trace` pins the exact `n` sequence it
-   produces. The literal was captured by running the SAME scenario against the pre-change clock
-   (`git show <pre>:src/agents/training/progress_clock.py`, loaded as a separate module — see
-   `_capture_reference_trace` in the docstring below), so it is a genuine A/B against the shipped
-   behaviour rather than a re-statement of the current code. Any default-path drift fails here.
+1. **The default path is a CHECKSUM.** `SCENARIO` is a scripted 15-window episode and
+   `test_default_path_matches_the_recorded_trace` pins the exact `n` sequence it produces. The literal was
+   captured by running the SAME scenario against the pre-change clock (`git show <pre>:src/agents/training/
+   progress_clock.py`, loaded as a separate module), so it is a genuine A/B against the shipped behaviour
+   rather than a re-statement of the current code. Any default-path drift fails here — and deleting the two
+   variants moved nothing: the trace below is the one captured before they were deleted.
 
-2. **Each fix flips exactly with its flag.** Every fix assertion runs the SAME synthetic window
-   through a flag-OFF clock and a flag-ON clock and asserts they differ in the stated way — which
-   is revert-verification stated as a test rather than as a procedure. A revert of the fix makes
-   the ON arm equal the OFF arm and the assertion fails.
-
-3. **The F1 window alignment, as probe M measured it.** `bias_tax_head_alignment_2026-08-29.md`
-   §1 discriminated the two candidate fold→window alignments with one statistic — "windows where
-   the clock nonetheless moved, among those the candidate says it should sit out": **0 / 10,442**
-   for the `t+1` (closing) reading against **8,710 / 10,424** for the `t` (opening) one, which is
-   how it concluded the shipped alignment is `t+1`. `test_the_alignment_discriminator_*` runs that
-   exact statistic over a synthetic decision sequence and asserts the same shape in BOTH flag
-   states: the clock's sit-out tracks the CLOSING request by default and the OPENING one under
-   `--progress-decision-tense`. That is the fix restated as the measurement that found it.
+2. **The two variants are GONE and the shipped readings are pinned by name**: the forced-switch sit-out is
+   read off the request that CLOSES the window (`phase_is_forced_switch`, decision ``t+1``), and a voluntary
+   switch that fails the progress predicate advances ``n`` like any other no-op.
 
 To re-capture the reference trace after a deliberate default-path change::
 
@@ -39,7 +33,6 @@ import pytest
 
 from agents.training.progress_clock import PROGRESS_CLOCK_CAP, ProgressClock
 from agents.training.reward_manager import RewardConfig
-
 
 
 # --------------------------------------------------------------------------- synthetic fixtures
@@ -68,7 +61,7 @@ def delta(**kw):
         our_failed_to_move=False, our_move_outcome="hit",
         our_status_applied=None, our_status_cured=None,
         opp_resolved_move_id=None, opp_fainted=False,
-        phase_is_forced_switch=False, decision_was_forced_switch=False,
+        phase_is_forced_switch=False,
         our_hp_delta=np.zeros(6, dtype=np.float32),
         opp_hp_delta=np.zeros(6, dtype=np.float32),
     )
@@ -80,10 +73,9 @@ def legal(switches=(1, 2)):
     return SimpleNamespace(switches=list(switches))
 
 
-def fold(clock, d, *, lv=None, lg=None, lg_prev=None):
+def fold(clock, d, *, lv=None, lg=None):
     """One window, returning `n` — the obs scalar's input (the reward no longer reads the clock)."""
-    clock.update(d, lv if lv is not None else live(), lg if lg is not None else legal(),
-                 legal_prev=lg_prev)
+    clock.update(d, lv if lv is not None else live(), lg if lg is not None else legal())
     return clock.n
 
 
@@ -111,14 +103,14 @@ SCENARIO = [
     ("trapped no-op", dict(), {}, dict(switches=())),
     ("voluntary switch", dict(our_move_id=None, our_switch_to="benchmon"), {}, {}),
     ("closing-forced window", dict(phase_is_forced_switch=True), {}, {}),
-    ("opening-forced window", dict(decision_was_forced_switch=True), {}, {}),
+    ("no-op after a replacement (opening-tense read is gone)", dict(), {}, {}),
     ("boost (setup)", dict(our_move_id="calmmind"), dict(our_boosts={"spa": 1, "spd": 1}), {}),
     ("plain no-op again", dict(), {}, {}),
 ]
 
 # CAPTURED from the pre-fix clock (`git show 4787d1e:src/agents/training/progress_clock.py`,
 # loaded as a standalone module and driven by `run_scenario`). This is the byte-identity claim for
-# the default path: with both flags OFF the clock produces the sequence it always produced.
+# the default path: the clock produces the sequence it always produced.
 REFERENCE_TRACE = [
     1,  # plain no-op — charged
     0,  # damaging move — PROGRESS, reset
@@ -132,7 +124,7 @@ REFERENCE_TRACE = [
     3,  # trapped — increments, charge suppressed
     4,  # voluntary switch — charged NO_OP
     4,  # window CLOSING on a forced switch — sit-out
-    5,  # window OPENING on a forced switch — charged (the off-by-one)
+    5,  # the window after a replacement — charged
     0,  # boost — setup PROGRESS, reset
     1,  # plain no-op — charged
 ]
@@ -158,181 +150,45 @@ def test_the_scenario_actually_exercises_every_outcome():
     assert len(SCENARIO) == len(REFERENCE_TRACE) == 15
 
 
-def test_both_fixes_default_off():
+def test_the_two_deleted_variants_are_gone():
+    """No constructor kwarg, no attribute, no `apply_reward_config` seam: the shipped reading is the only one."""
     c = ProgressClock()
-    assert c.decision_tense is False and c.switch_freeze is False
+    assert not hasattr(c, "decision_tense") and not hasattr(c, "switch_freeze")
+    assert not hasattr(c, "apply_reward_config")
+    with pytest.raises(TypeError):
+        ProgressClock(decision_tense=True)      # type: ignore[call-arg]
+    with pytest.raises(TypeError):
+        ProgressClock(switch_freeze=True)       # type: ignore[call-arg]
 
 
-def test_a_default_reward_config_leaves_the_clock_alone():
+# --------------------------------------------------------------------------- 2. the shipped readings
+
+def test_the_forced_window_is_read_off_the_CLOSING_request():
+    """A window that CLOSES on a forced switch sits out; one that merely OPENED on a forced switch (a
+    post-faint replacement was the decision) is charged like any other no-op — the closing tense is the
+    only one the clock has."""
+    assert fold(ProgressClock(), delta(phase_is_forced_switch=True)) == 0
+    assert fold(ProgressClock(), delta(our_move_id=None, our_switch_to="benchmon")) == 1
+
+
+def test_a_voluntary_no_progress_switch_advances_the_clock_like_any_other_no_op():
+    """No freeze: an accumulated clock keeps counting through a pivot."""
     c = ProgressClock()
-    c.apply_reward_config(RewardConfig())
-    assert (c.decision_tense, c.switch_freeze) == (False, False)
-    assert run_scenario(c) == REFERENCE_TRACE
+    assert fold(c, delta()) == 1
+    assert fold(c, delta()) == 2
+    assert fold(c, delta(our_move_id=None, our_switch_to="benchmon")) == 3
+    assert fold(c, delta()) == 4
 
 
-# --------------------------------------------------------------------------- 2. F1, the tense fix
-
-def _both(dkw, **fold_kw):
-    """The same window folded by an OFF clock and an ON clock. The ONLY difference is the flag, so
-    a revert of the fix collapses the two and every caller's assertion fails."""
-    off = ProgressClock()
-    on = ProgressClock(decision_tense=True)
-    return fold(off, delta(**dkw), **fold_kw), fold(on, delta(**dkw), **fold_kw)
-
-
-def test_a_window_opened_by_a_forced_switch_is_charged_off_and_sits_out_on():
-    """The zero-agency post-faint replacement: probe M measures it charged 63.9% of the time,
-    36.3% of all charges. No action available to it can satisfy the progress predicate."""
-    off, on = _both(dict(our_move_id=None, our_switch_to="benchmon",
-                         decision_was_forced_switch=True, phase_is_forced_switch=False))
-    assert off == 1
-    assert on == 0
-
-
-def test_a_window_closed_by_a_forced_switch_sits_out_off_and_is_charged_on():
-    """The mirror half — probe M's SITOUT class: 19,503 FULL-agency decisions exempted because our
-    mon happened to be KO'd on them. The costliest class in its corpus at −5.1pp."""
-    off, on = _both(dict(phase_is_forced_switch=True, decision_was_forced_switch=False))
-    assert off == 0
-    assert on == 1
-
-
-def test_the_two_flags_of_the_same_window_are_independent_facts():
-    """A window can be both (KO'd on a replacement turn) or neither; the fix is a choice of WHICH
-    one the clock reads, not a redefinition of either."""
-    both_true, _ = _both(dict(phase_is_forced_switch=True, decision_was_forced_switch=True))
-    assert both_true == 0
-    on = ProgressClock(decision_tense=True)
-    assert fold(on, delta(phase_is_forced_switch=True, decision_was_forced_switch=True)) == 0
-
-
-# ------------------------------------------------- probe M's alignment discriminator, as a test
-
-# A synthetic decision sequence: `True` = that decision is a forced switch (post-faint
-# replacement). Window k spans decision k → k+1, so the fold for window k carries
-# `decision_was_forced_switch = FORCED[k]` and `phase_is_forced_switch = FORCED[k+1]`.
-FORCED = [False, False, True, False, False, True, False, True, False, False]
-
-
-def _windows():
-    return [(FORCED[k], FORCED[k + 1]) for k in range(len(FORCED) - 1)]
-
-
-def _sitout_violations(clock_kwargs, *, candidate: str):
-    """Probe M's statistic: among windows the CANDIDATE alignment says the clock should sit out,
-    how many did the clock nonetheless move on? 0 means the clock's real behaviour IS that
-    alignment; a large fraction means it is the other one."""
-    n_candidate = moved = 0
-    for opening, closing in _windows():
-        clock = ProgressClock(**clock_kwargs)
-        before = clock.n
-        clock.update(delta(decision_was_forced_switch=opening, phase_is_forced_switch=closing),
-                     live(), legal(), legal_prev=legal())
-        says_sitout = opening if candidate == "opening" else closing
-        if says_sitout:
-            n_candidate += 1
-            if clock.n != before:
-                moved += 1
-    return n_candidate, moved
-
-
-def test_the_alignment_discriminator_default_clock_tracks_the_CLOSING_request():
-    """Reproduces the shape of probe M's table: 0 violations under the alignment the clock really
-    uses, a majority under the other. Default ⇒ the closing request (decision t+1)."""
-    n_closing, moved_closing = _sitout_violations({}, candidate="closing")
-    n_opening, moved_opening = _sitout_violations({}, candidate="opening")
-    assert n_closing == 3 and moved_closing == 0
-    assert n_opening == 3 and moved_opening == 3
-
-
-def test_the_alignment_discriminator_the_fix_tracks_the_OPENING_decision():
-    """…and the flag moves the 0 to the other column, which is the whole content of F1."""
-    on = {"decision_tense": True}
-    n_opening, moved_opening = _sitout_violations(on, candidate="opening")
-    n_closing, moved_closing = _sitout_violations(on, candidate="closing")
-    assert n_opening == 3 and moved_opening == 0
-    assert n_closing == 3 and moved_closing == 3
-
-
-# --------------------------------------------------------------------------- 3. F2b, switch freeze
-
-def _both_freeze(dkw, **fold_kw):
-    off = ProgressClock()
-    on = ProgressClock(switch_freeze=True)
-    return fold(off, delta(**dkw), **fold_kw), fold(on, delta(**dkw), **fold_kw)
-
-
-def test_a_voluntary_no_progress_switch_is_charged_off_and_frozen_on():
-    """42.7% of all charges. `_is_progress` is offense-only — none of its eight clauses can be
-    satisfied BY a switch — so the tax prices the action KIND, not the choice within it."""
-    off, on = _both_freeze(dict(our_move_id=None, our_switch_to="benchmon"))
-    assert off == 1
-    assert on == 0
-
-
-def test_a_frozen_switch_freezes_rather_than_resets():
-    """FREEZE, not PROGRESS: an accumulated clock must survive a pivot, or a switch would launder
-    a stall into a clean slate — the `switch_bouncing_tax` failure mode in a new spelling."""
-    on = ProgressClock(switch_freeze=True)
-    assert fold(on, delta()) == 1
-    assert fold(on, delta()) == 2
-    assert fold(on, delta(our_move_id=None, our_switch_to="benchmon")) == 2
-    assert fold(on, delta()) == 3
-
-
-def test_a_switch_that_IS_progress_still_resets_the_clock_under_the_flag():
-    """Probe M measures 27% of voluntary switches escaping via clauses ii/iv/v (the opponent also
-    committed, a residual is ticking). Those are RESETS today and must stay resets — the freeze is
-    placed after the classification precisely so it only replaces the NO_OP outcome."""
-    on = ProgressClock(switch_freeze=True)
-    assert fold(on, delta()) == 1
-    assert fold(on, delta(our_move_id=None, our_switch_to="benchmon",
-                          opp_switch_to="theirmon")) == 0
-
-
-def test_a_move_no_op_is_still_charged_under_the_flag():
-    """The anti-stall job is not removed, only re-aimed: a pivot-loop still pays on every move turn
-    between the pivots. If this ever passes for moves too, the term has been deleted by accident."""
-    on = ProgressClock(switch_freeze=True)
-    assert fold(on, delta()) == 1
-
-
-def test_the_freeze_does_not_rescue_a_forced_replacement_on_its_own():
-    """F1 and F2b are independent fixes to independent halves. A post-faint replacement is a switch
-    too, so F2b alone would freeze it — but only because it is a switch, not because the window had
-    no agency; that is F1's job, and the default clock still charges it here."""
-    off, on = _both_freeze(dict(our_move_id=None, our_switch_to="benchmon",
-                                decision_was_forced_switch=True))
-    assert off == 1
-    assert on == 0   # frozen for the WRONG reason — F1 is what makes it a sit-out
-
-
-def test_both_fixes_together_compose():
-    both = ProgressClock(decision_tense=True, switch_freeze=True)
-    assert fold(both, delta()) == 1                                    # move no-op: charged
-    assert fold(both, delta(our_move_id=None, our_switch_to="b")) == 1   # pivot: frozen
-    assert fold(both, delta(decision_was_forced_switch=True)) == 1       # replacement: sit-out
-    assert fold(both, delta(phase_is_forced_switch=True)) == 2         # KO turn: now charged
-
-
-# --------------------------------------------------------------------------- 4. the config seam
-
-def test_apply_reward_config_threads_both_knobs():
-    """One call, because hand-threading a config field is exactly how the eval path once measured a
-    different reward than training (RewardConfig's own note)."""
+def test_a_switch_that_IS_progress_still_resets_the_clock():
+    """Clauses ii/iv/v (the opponent also committed, a residual is ticking) reset on a voluntary switch."""
     c = ProgressClock()
-    c.apply_reward_config(RewardConfig(progress_decision_tense=True, progress_switch_freeze=True))
-    assert (c.decision_tense, c.switch_freeze) == (True, True)
+    assert fold(c, delta()) == 1
+    assert fold(c, delta(our_move_id=None, our_switch_to="benchmon", opp_switch_to="theirmon")) == 0
 
 
-def test_apply_reward_config_none_is_a_no_op():
-    c = ProgressClock(decision_tense=True)
-    c.apply_reward_config(None)
-    assert c.decision_tense is True
-
-
-def test_the_cap_still_bounds_the_counter_under_both_fixes():
-    c = ProgressClock(decision_tense=True, switch_freeze=True)
+def test_the_cap_still_bounds_the_counter():
+    c = ProgressClock()
     for _ in range(PROGRESS_CLOCK_CAP + 5):
         fold(c, delta())
     assert c.n == PROGRESS_CLOCK_CAP
@@ -340,4 +196,6 @@ def test_the_cap_still_bounds_the_counter_under_both_fixes():
 
 @pytest.mark.parametrize("field", ["progress_decision_tense", "progress_switch_freeze"])
 def test_the_reward_config_fields_default_off(field):
+    """The two RECORDED run fields stay (resume-immutable, value-checked); a recorded True is refused on a
+    resume (`reward_defaults_test`)."""
     assert getattr(RewardConfig(), field) is False

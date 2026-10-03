@@ -2,15 +2,16 @@
 //! DECLARED LIFECYCLE: STARTUP declares and acquires, STEADY STATE acquires nothing).
 //!
 //! A [`Spec`] is parsed from ONE JSON object ([`Spec::from_json`]) so both front ends build it the
-//! same way (the process front end receives the same text in a file). EVERY key is REQUIRED — the
-//! clock flags are read, never defaulted (`sim_bridge`'s `core_obs` rule) — and an unknown key is
-//! refused, so a typo can never select a default silently. `turn_limit` and `bank_dir` are present
+//! same way (the process front end receives the same text in a file). EVERY key is REQUIRED — a mode
+//! is read, never defaulted (`sim_bridge`'s `core_obs` rule) — and an unknown key is refused (the two
+//! clock keys, `decision_tense` / `switch_freeze`, were deleted with their trainer flags and are refused
+//! as unknown), so a typo can never select a default silently. `turn_limit` and `bank_dir` are present
 //! but may be `null`. `turn_limit` is the STALL FORFEIT threshold and `terminal` the terminal-reward
 //! declaration (M5 Lane D, `crate::episode`).
 //!
 //! ```text
 //! {"n": 48, "threads": 8, "format_id": "gen3ou", "names": ["p1name", "p2name"],
-//!  "teams": ["<packed>", …], "decision_tense": false, "switch_freeze": false,
+//!  "teams": ["<packed>", …],
 //!  "turn_limit": null | <int>,
 //!  "terminal": {"victory_value": <num>, "terminal_indicator": <bool>, "draw_penalty": <num>,
 //!               "timeout_turn_cap": <int>},
@@ -22,7 +23,6 @@
 use std::path::PathBuf;
 
 use pokesim::json::Json;
-use pokesim::trackers::clock::ClockConfig;
 
 /// See the module docs.
 #[derive(Clone, Debug, PartialEq)]
@@ -38,9 +38,6 @@ pub struct Spec {
     pub names: [String; 2],
     /// The TEAM TABLE — packed teams, indexed by the `ep_team` column. Validated (unpacked) at startup.
     pub teams: Vec<String>,
-    /// The progress clock's two flags (training's `--progress-decision-tense` /
-    /// `--progress-switch-freeze`).
-    pub clock: ClockConfig,
     /// The STALL FORFEIT threshold (`StallConfig().threshold` in production): at a p1 decision whose
     /// turn is `>=` it, p1 forfeits instead of acting (`FORCELOSE p1` in its input log; nothing else
     /// is fed that op). `None`: no forfeit (harnesses only). `crate::episode`.
@@ -98,7 +95,6 @@ impl Spec {
             .iter()
             .map(|t| t.as_str().map(str::to_string).ok_or("spec: every team must be a packed-team string".to_string()))
             .collect::<Result<Vec<_>, _>>()?;
-        let flag = |k: &str| v.get(k).and_then(Json::as_bool).ok_or_else(|| format!("spec: `{k}` must be a boolean"));
         let turn_limit = match v.get("turn_limit") {
             Some(j) if j.is_null() => None,
             _ => Some(uint(&v, "turn_limit")? as u32),
@@ -123,7 +119,6 @@ impl Spec {
             format_id: v.str_at("format_id").ok_or("spec: `format_id` must be a string")?.to_string(),
             names: [name(0)?, name(1)?],
             teams,
-            clock: ClockConfig { decision_tense: flag("decision_tense")?, switch_freeze: flag("switch_freeze")? },
             turn_limit,
             terminal: crate::episode::Terminal::from_json(v.get("terminal"))?,
             refusal_budget: uint(&v, "refusal_budget")? as usize,
@@ -175,16 +170,14 @@ impl Spec {
         let q = crate::core::refusal::json_str;
         let teams: Vec<String> = self.teams.iter().map(|t| q(t)).collect();
         format!(
-            "{{\"n\":{},\"threads\":{},\"format_id\":{},\"names\":[{},{}],\"teams\":[{}],\"decision_tense\":{},\
-             \"switch_freeze\":{},\"turn_limit\":{},\"terminal\":{},\"refusal_budget\":{},\"bank_dir\":{},\"labels\":[{}],\"opponents\":{}}}",
+            "{{\"n\":{},\"threads\":{},\"format_id\":{},\"names\":[{},{}],\"teams\":[{}],\
+             \"turn_limit\":{},\"terminal\":{},\"refusal_budget\":{},\"bank_dir\":{},\"labels\":[{}],\"opponents\":{}}}",
             self.n,
             self.threads,
             q(&self.format_id),
             q(&self.names[0]),
             q(&self.names[1]),
             teams.join(","),
-            self.clock.decision_tense,
-            self.clock.switch_freeze,
             self.turn_limit.map_or("null".to_string(), |t| t.to_string()),
             self.terminal.to_json(),
             self.refusal_budget,
@@ -206,7 +199,6 @@ mod tests {
             format_id: "gen3ou".into(),
             names: ["a\"b".into(), "c".into()],
             teams: vec!["X|||".into()],
-            clock: ClockConfig { decision_tense: true, switch_freeze: false },
             turn_limit: Some(300),
             terminal: crate::episode::Terminal { victory_value: 30.0, indicator: false, draw_penalty: -35.0, timeout_turn_cap: 250 },
             refusal_budget: 4,
@@ -232,7 +224,7 @@ mod tests {
     fn pairs() -> Vec<(&'static str, &'static str)> {
         vec![
             ("n", "3"), ("threads", "2"), ("format_id", "\"gen3ou\""), ("names", "[\"a\",\"b\"]"),
-            ("teams", "[\"X|||\"]"), ("decision_tense", "false"), ("switch_freeze", "true"), ("turn_limit", "null"),
+            ("teams", "[\"X|||\"]"), ("turn_limit", "null"),
             ("terminal", "{\"victory_value\":1,\"terminal_indicator\":true,\"draw_penalty\":0,\"timeout_turn_cap\":250}"),
             ("refusal_budget", "0"), ("bank_dir", "null"), ("labels", "[]"),
             ("opponents", "[{\"kind\":\"external\"}]"),
@@ -256,7 +248,14 @@ mod tests {
         let mut extra = full.clone();
         extra.push(("nn", "1"));
         assert!(Spec::from_json(&text(&extra)).unwrap_err().contains("unknown key"));
-        let bad: Vec<_> = full.iter().map(|&(k, v)| if k == "decision_tense" { (k, "1") } else { (k, v) }).collect();
-        assert!(Spec::from_json(&text(&bad)).unwrap_err().contains("decision_tense"));
+        // the deleted clock keys are refused by name, as every unknown key is
+        for stale in ["decision_tense", "switch_freeze"] {
+            let mut old = full.clone();
+            old.push((stale, "false"));
+            let e = Spec::from_json(&text(&old)).unwrap_err();
+            assert!(e.contains("unknown key") && e.contains(stale), "{stale}: {e}");
+        }
+        let bad: Vec<_> = full.iter().map(|&(k, v)| if k == "turn_limit" { (k, "\"x\"") } else { (k, v) }).collect();
+        assert!(Spec::from_json(&text(&bad)).unwrap_err().contains("turn_limit"));
     }
 }

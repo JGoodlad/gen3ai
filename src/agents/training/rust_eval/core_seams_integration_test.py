@@ -40,8 +40,7 @@ def _core(lib, teams, n, streams, front="ffi"):
     from utils.rust_env import ffi, proc
     from utils.rust_env import protocol as P
 
-    spec = P.spec_json(n=n, threads=min(n, 2), teams=teams, names=("rhone", "rhtwo"), decision_tense=False,
-                       switch_freeze=False, turn_limit=250, refusal_budget=4, bank_dir=None,
+    spec = P.spec_json(n=n, threads=min(n, 2), teams=teams, names=("rhone", "rhtwo"), turn_limit=250, refusal_budget=4, bank_dir=None,
                        opponents=[{"kind": "bot", "bot": "staller", "seed": 11, "streams": streams},
                                   {"kind": "bot", "bot": "random", "seed": 12, "streams": streams}])
     if front == "ffi":

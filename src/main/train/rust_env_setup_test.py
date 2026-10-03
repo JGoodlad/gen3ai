@@ -49,9 +49,6 @@ def test_the_training_floor_roster_maps_onto_ported_bots():
         classes.append(getattr(importlib.import_module(mod), name))
     names = _bot_names(classes)
     assert names == [r.name for r in BI.ROWS if "train" in r.used_by] and len(names) == 8
-    from agents.baitbot import make_baitbot_class
-
-    assert _bot_names([make_baitbot_class(0.6)]) == ["baitbot"]
 
 
 def test_an_unported_bot_is_refused_by_name():

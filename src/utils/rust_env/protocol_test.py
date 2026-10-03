@@ -7,10 +7,12 @@ from utils.rust_env import protocol as P
 
 
 def test_spec_json_names_every_key_and_nothing_else():
-    s = json.loads(P.spec_json(n=2, threads=1, teams=["a"], names=("x", "y"), decision_tense=False,
-                               switch_freeze=True, turn_limit=None, refusal_budget=3, bank_dir=None))
+    s = json.loads(P.spec_json(n=2, threads=1, teams=["a"], names=("x", "y"),
+                               turn_limit=None, refusal_budget=3, bank_dir=None))
     assert tuple(s) == P.SPEC_KEYS
-    assert s["turn_limit"] is None and s["switch_freeze"] is True
+    assert s["turn_limit"] is None
+    # the progress clock's two keys were deleted with their trainer flags (P11d): the core refuses them as unknown
+    assert "decision_tense" not in P.SPEC_KEYS and "switch_freeze" not in P.SPEC_KEYS
 
 
 def test_every_spec_key_reaches_the_rust_contract():

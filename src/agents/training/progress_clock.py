@@ -32,24 +32,16 @@ pseudo-attack — its trivial chip (and any incidental opp switch) is barred fro
 so it falls through to the NO_OP charge. A spin that genuinely clears our hazards (our side had spikes)
 or lands a KO IS real progress; a spin denied by RNG is still frozen by `_denial_kind`.
 
-**Two OPT-IN intent-restoring fixes (both default OFF — a flagless run is byte-identical to what
-every generation through gen-15 trained).** Their motivation is measured, not stylistic; the record
-is `designs/research_state/measurements/bias_tax_head_alignment_2026-08-29.md` (probe M, the
-census) and `.../no_progress_tax_review_2026-08-29.md` (probe N, the intent archaeology):
-
-  * ``--progress-decision-tense`` (F1) — both window gates currently describe decision ``t+1``
-    rather than the decision being charged. Consequence, both halves: the clock SITS OUT on 13.2%
-    of decisions that had full agency (probe M's costliest class, −5.1pp) and RUNS on the
-    zero-agency post-faint replacement, charging it 63.9% of the time (36.3% of all charges).
-  * ``--progress-switch-freeze`` (F2b) — a voluntary switch cannot satisfy `_is_progress` by its
-    own doing, so the tax prices the ACTION KIND rather than discriminating within it: −0.101
-    expected charge per voluntary switch against −0.010 per move, and within the switch branch the
-    discrimination is INVERTED (the charged switches are worth *more* win probability than the
-    exempt ones). 42.7% of all charges.
-
-Both are retrain-class when ON: the clock's ``n`` is the obs scalar as well as the charge basis, so
-turning either on changes the observation stream (no dim moves, no signature changes). Neither
-touches ``phase_is_forced_switch``, which several non-clock consumers read in its own tense.
+**Two opt-in intent-restoring variants were DELETED (flag census, P11d)** — `--progress-decision-tense`
+(read both window gates off the decision that OPENED the window, not the one that closes it) and
+`--progress-switch-freeze` (a voluntary switch that fails the progress predicate FREEZES the window
+instead of advancing it). Both were OFF everywhere with 0 recorded runs, so the clock below is the shipped
+reading: the forced-switch window is read off the request that CLOSES it (decision ``t+1``,
+``phase_is_forced_switch``), and a voluntary switch that fails the predicate advances ``n`` like any other
+no-op. Their measured motivation is in `designs/research_state/measurements/bias_tax_head_alignment_2026-08-29.md`
+(probe M) and `.../no_progress_tax_review_2026-08-29.md` (probe N); the recorded run fields
+(`RewardConfig.progress_decision_tense` / `progress_switch_freeze`) stay READABLE and a recorded ``True`` is
+refused on resume (`ModelVersion.check_reward_config`).
 """
 from __future__ import annotations
 
@@ -112,19 +104,8 @@ class ProgressClock:
     """Episode-scoped ``turns_since_progress`` counter. Owned by ``EpisodeTracker``; read by the obs
     encoder (:meth:`value`)."""
 
-    def __init__(self, *, decision_tense: bool = False, switch_freeze: bool = False) -> None:
+    def __init__(self) -> None:
         self.n: int = 0
-        # --- The two intent-restoring fixes, both OPT-IN (default False = today's behavior) ---
-        # F1 (`--progress-decision-tense`): read BOTH gates off the decision that OPENED the window
-        # instead of the one that follows it. See :meth:`_gates` below and
-        # `no_progress_tax_review_2026-08-29.md` §3.2/§3.3. Retrain-class when ON: it changes the
-        # `turns_since_progress` OBS scalar as well as the charge (the two key on ONE value by
-        # design, which is the point of the Markovian reward — a fix that moved only the reward
-        # would break that identity).
-        self.decision_tense: bool = decision_tense
-        # F2b (`--progress-switch-freeze`): a VOLUNTARY switch that fails the predicate FREEZES the
-        # window instead of charging it. See `_is_progress`'s note below and the review's §4/F2b.
-        self.switch_freeze: bool = switch_freeze
         self._prev_spikes: int = 0        # opp-side spike layers after last window (hazard-add check)
         self._prev_our_spikes: int = 0    # our-side spike layers after last window (filler-spin check)
         # gen3_setup_progress_v1 trackers: our active's Σ positive boost stages + whether it had a
@@ -155,52 +136,13 @@ class ProgressClock:
         turn clock). Saturating because the marginal of one more no-progress turn matters most early."""
         return math.log(1.0 + min(self.n, PROGRESS_CLOCK_CAP)) / _LOG_DENOM
 
-    def apply_reward_config(self, cfg) -> None:
-        """Adopt the per-run reward config's clock settings — the SINGLE place the two per-run
-        knobs are threaded, used by BOTH the training env and the server-free ``RewardTracker``.
-
-        It exists because this exact class of bug has already shipped here once: a hand-threaded
-        reward field was silently missed on the eval path and eval then measured a different
-        reward than training (``RewardConfig``'s own note says so). ``cfg is None`` ⇒ no-op, so a
-        standalone/inference clock keeps its constructor defaults."""
-        if cfg is None:
-            return
-        self.decision_tense = bool(getattr(cfg, "progress_decision_tense", self.decision_tense))
-        self.switch_freeze = bool(getattr(cfg, "progress_switch_freeze", self.switch_freeze))
-
-    def _gates(self, delta, legal, legal_prev):
-        """The two window GATES, in whichever tense this clock is configured for.
-
-        Returns ``(forced_window, switch_legal)``:
-          * ``forced_window`` — sit the clock out entirely (only switches were selectable);
-          * ``switch_legal``  — a switch was selectable, so a charge is escapable (the
-            trapped-vs-wall helplessness exemption).
-
-        DEFAULT (``decision_tense=False``) is the shipped reading: both come from the request that
-        CLOSES the window, i.e. decision ``t+1``. Under ``--progress-decision-tense`` both come
-        from the decision that OPENED it, which is what the design specified in both sentences
-        ("a forced window", "a switch being legal **this decision**").
-
-        ``legal_prev is None`` under the fix means the caller could not capture the opening
-        decision's legality (only ``RewardTrackingMixin``, which builds its contexts without a
-        ``legal`` snapshot). It degrades to ``legal`` — the pre-fix reading — rather than reading
-        as "trapped", which would silently zero every charge on that path."""
-        if self.decision_tense:
-            forced = bool(getattr(delta, "decision_was_forced_switch", False))
-            gate_legal = legal if legal_prev is None else legal_prev
-        else:
-            forced = bool(getattr(delta, "phase_is_forced_switch", False))
-            gate_legal = legal
-        switch_legal = gate_legal is not None and len(getattr(gate_legal, "switches", ()) or ()) > 0
-        return forced, switch_legal
-
-    def update(self, delta, live, legal, legal_prev=None) -> None:
+    def update(self, delta, live, legal) -> None:
         """Fold one resolved decision window: classify PROGRESS / DENIED / NO_OP and update ``n``.
 
-        ``legal_prev`` is the :class:`LegalActions` of the decision that OPENED this window; it is
-        read ONLY under ``--progress-decision-tense`` (see :meth:`_gates`)."""
-        # `switch_legal` gated only the deleted no-progress CHARGE; `n` never read it.
-        forced_window, _switch_legal = self._gates(delta, legal, legal_prev)
+        ``legal`` is the :class:`LegalActions` of the request that CLOSES the window; `n` never reads it
+        (it gated only the deleted no-progress CHARGE's trapped-vs-wall exemption)."""
+        # The forced-switch window is read off the request that CLOSES the window (decision ``t+1``).
+        forced_window = bool(getattr(delta, "phase_is_forced_switch", False))
         opp_spikes_now = self._opp_spikes(live)
         prev_spikes = self._prev_spikes
         self._prev_spikes = opp_spikes_now
@@ -224,7 +166,6 @@ class ProgressClock:
         self._update_rest_loop(delta, live)
 
         # Forced-switch / post-faint replacement: only switches were legal → the clock sits out.
-        # WHICH decision that describes is `_gates`' business (see the tense note there).
         if forced_window:
             return
 
@@ -293,22 +234,6 @@ class ProgressClock:
                 return
         else:
             self._heal_streak = 0   # a non-heal no-op breaks any heal-war run
-
-        # A VOLUNTARY SWITCH that reached here is a "no-progress" window only because `_is_progress`
-        # has no clause a switch can satisfy — every one of its eight clauses asks "did OUR ACTION
-        # advance the board", and a pivot's whole value (position, tempo, damage avoided) is a STATE
-        # fact the predicate never looks at. Charging it was DESIGNED, inside a composition where
-        # the same pivot also earned `switch_base +0.5` / `se_switch +0.2` / `escape_threat +0.25`;
-        # `928a00b` zeroed every one of those credits and kept the tax, so the sign of the net switch
-        # incentive flipped with nobody re-deriving the term. Under `--progress-switch-freeze` the
-        # window FREEZES (no increment, no charge) — the composition-corrected reading of the same
-        # intent. The anti-stall job survives: a pivot-loop still pays on every MOVE turn between
-        # the pivots, and the draw reward + the 250-turn forfeit remain the hard backstop. The honest
-        # cost is that a pure A↔B switch-loop becomes free; stall rate is the canary.
-        # (Placed AFTER the classification, so a switch that DOES reset the clock — clauses ii/iv/v,
-        # 27% of them empirically — still resets rather than merely freezing.)
-        if self.switch_freeze and getattr(delta, "our_switch_to", None) is not None:
-            return
 
         # NO_OP (deliberate wheel-spin) or a sustained heal-war → increment + charge, unless trapped
         # with no switch (helplessness must not be punished).

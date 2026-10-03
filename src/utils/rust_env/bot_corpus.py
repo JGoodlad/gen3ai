@@ -26,7 +26,10 @@ NAMES = ("bfpone", "bfptwo")
 
 
 #: THE COMMIT TIER — banked at `src/rust_env/tests/fixtures/bots/commit_corpus.json.gz` (frozen; the
-#: plan below is the record of which (bot, source, n, key) batches it holds).
+#: plan below is the record of which (bot, source, n, key) batches it holds). Deletion pass P11d removed
+#: BaitBot with its flags and DROPPED its five banked episodes from the bank (the gzip is byte-reproducible,
+#: so the other 50 episodes are the bank's own bytes); BaitBot was the LAST bot row with a user, so no
+#: remaining batch's key (`COMMIT_KEY + 1000 * bot index + …`) moved.
 COMMIT_BOTS = tuple(r.name for r in BI.ROWS if r.used_by)
 COMMIT_N = {"pool": 3, "ladder": 1, "procedural": 1}
 COMMIT_KEY = 80_000

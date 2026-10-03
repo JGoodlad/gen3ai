@@ -20,18 +20,20 @@ const HEAL_FREEZE_GRACE: i64 = 2;
 /// `gen3_mechanics.INVULNERABLE_MOVES`.
 const INVULNERABLE: [&str; 3] = ["protect", "detect", "endure"];
 
-/// The clock's two opt-in intent-restoring fixes (`--progress-decision-tense`,
-/// `--progress-switch-freeze`), both OFF in `designs/production_config.json`.
+/// The clock's build-time configuration. Its two opt-in intent-restoring variants (the trainer's
+/// `--progress-decision-tense` and `--progress-switch-freeze`, both OFF everywhere, 0 recorded runs) were
+/// DELETED in the flag census (P11d); what remains is the TEETH seam: `start_n` starts the clock at another
+/// `n`, so a gate can fold one chain differently from its twin and watch `parse_encode_matches_step` refuse
+/// (`tests/encoder_test.rs`, the `POKESIM_CORE_EVENTS_TEETH=parse_clock` hook of `core_events`). Production
+/// always builds [`ClockConfig::default`] (`start_n` 0).
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct ClockConfig {
-    pub decision_tense: bool,
-    pub switch_freeze: bool,
+    pub start_n: i64,
 }
 
 /// `ProgressClock` (the obs half).
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ProgressClock {
-    pub cfg: ClockConfig,
     pub n: i64,
     prev_spikes: i64,
     prev_our_spikes: i64,
@@ -71,21 +73,12 @@ fn winning_residual(d: &DeltaProjection, live: &OneSidedView) -> bool {
 
 impl ProgressClock {
     pub fn new(cfg: ClockConfig) -> ProgressClock {
-        ProgressClock { cfg, ..Default::default() }
+        ProgressClock { n: cfg.start_n, ..Default::default() }
     }
 
     /// `value()` — the obs scalar.
     pub fn value(&self) -> f64 {
         (1.0 + self.n.min(PROGRESS_CLOCK_CAP) as f64).ln() / (1.0 + PROGRESS_CLOCK_CAP as f64).ln()
-    }
-
-    /// `_gates` — only `forced_window` survives (`switch_legal` feeds the unported tax).
-    fn forced_window(&self, d: &DeltaProjection) -> bool {
-        if self.cfg.decision_tense {
-            d.decision_was_forced_switch
-        } else {
-            d.phase_is_forced_switch
-        }
     }
 
     fn update_rest_loop(&mut self, d: &DeltaProjection, live: &OneSidedView) {
@@ -158,7 +151,9 @@ impl ProgressClock {
 
     /// `update(delta, live, legal, legal_prev)` — `n` only (see the module docs).
     pub fn update(&mut self, d: &DeltaProjection, live: &OneSidedView, _legal: Option<&LegalActions>, dex: &Dex) {
-        let forced = self.forced_window(d);
+        // `_gates` — only the forced-switch window survives (`switch_legal` feeds the unported tax): it is
+        // read off the request that CLOSES the window, i.e. decision `t+1`.
+        let forced = d.phase_is_forced_switch;
         let opp_now = spikes(&live.opp);
         let prev_spikes = std::mem::replace(&mut self.prev_spikes, opp_now);
         let our_now = spikes(&live.ours);
@@ -201,9 +196,6 @@ impl ProgressClock {
                 }
             }
             _ => self.heal_streak = 0,
-        }
-        if self.cfg.switch_freeze && d.our_switch_to.is_some() {
-            return;
         }
         self.n = bump(self.n);
     }

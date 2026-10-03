@@ -1,7 +1,7 @@
 //! The bots' `choose_move`, one function per Python class, each branch in the Python order (M5 Lane F).
 //!
 //! Sources: `poke_env/player/baselines.py` (`RandomPlayer`, `SimpleHeuristicsPlayer`),
-//! `agents/opponents.py` (the eight `Gen3*Player`s), `agents/baitbot.py` (`Gen3BaitBotPlayer`).
+//! `agents/opponents.py` (the eight `Gen3*Player`s).
 //! A draw is taken exactly where Python takes it — `and` short-circuits included — because the
 //! gate checks the stream offset after every decision.
 
@@ -386,45 +386,6 @@ pub fn heuristic_v2(v: &View, choice: &mut PyRandom, br: &mut u32) -> R<Order> {
     }
     if let Some(s) = best_switch_v2(v)? {
         return Ok(hit(br, line!(), Order::Switch(s)));
-    }
-    Ok(hit(br, line!(), random_move(v, choice)))
-}
-
-/// `baitbot.blocks(move, defender)`.
-fn blocks(m: &super::view::MoveV, defender: &super::view::MonV) -> bool {
-    if m.bp == 0 {
-        return false;
-    }
-    effective_multiplier(m.typ, defender) == 0.0
-}
-
-/// `Gen3BaitBotPlayer.choose_move` (`p_bait` its dial; `bait` its `_rng`).
-pub fn baitbot(v: &View, p_bait: f64, choice: &mut PyRandom, bait: &mut PyRandom, br: &mut u32) -> R<Order> {
-    let (Some(_), Some(opp)) = (v.active_mon(), v.opp_active.as_ref()) else {
-        return Ok(hit(br, line!(), random_move(v, choice)));
-    };
-    if v.moves.is_empty() && !v.switches.is_empty() {
-        return Ok(hit(br, line!(), match best_switch_v2(v)? {
-            Some(s) => Order::Switch(s),
-            None => Order::Switch(v.switches[bait.choice(v.switches.len()).expect("non-empty")]),
-        }));
-    }
-    let attacks: Vec<&super::view::MoveV> = opp.moves.iter().filter(|m| m.bp > 0).collect();
-    let targets: Vec<usize> = if attacks.is_empty() {
-        Vec::new()
-    } else {
-        v.switches.iter().copied().filter(|&s| !v.team[s].fainted && attacks.iter().all(|m| blocks(m, &v.team[s]))).collect()
-    };
-    if !targets.is_empty() && !v.switches.is_empty() && bait.random() < p_bait {
-        let i = argmax(&targets, |&s| Ok(v.team[s].hp))?.expect("non-empty");
-        return Ok(hit(br, line!(), Order::Switch(targets[i])));
-    }
-    if let Some(i) = best_damage_move_v2(v)? {
-        return Ok(hit(br, line!(), Order::Move(i)));
-    }
-    if !v.moves.is_empty() {
-        let i = argmax(&v.moves, |m| Ok(m.bp as f64))?.expect("non-empty");
-        return Ok(hit(br, line!(), Order::Move(i)));
     }
     Ok(hit(br, line!(), random_move(v, choice)))
 }

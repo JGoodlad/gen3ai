@@ -29,23 +29,6 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "websocket) more connection churn; the in-process bridge (the only training transport) is "
                              "preferred for fine shards. >= the per-opponent game count disables sharding (one shard "
                              "per opponent = the original opponent-level behaviour).")
-    parser.add_argument("--bait-bot-share", "--bait_bot_share", dest="bait_bot_share",
-                        type=float, default=0.0,
-                        help="Add the scripted BaitBot to the TRAINING opponent roster with this "
-                             "share of the sampling mass (default 0.0 = ABSENT, byte-identical). "
-                             "BaitBot pivots into an immune bench mon with probability "
-                             "--bait-bot-p; it exists to put PUNISHMENT FREQUENCY on the bait habit "
-                             "on a controlled dial (the habit is exploration starvation at a "
-                             "saturated action, so punishment frequency is the one signal it cannot "
-                             "seal off). The weight is sized from the ACTUAL sum of the other "
-                             "roster weights, so the declared share stays exact even when "
-                             "--bot-weights re-weights the heuristics. Keep it a MINORITY share to "
-                             "avoid script-sniping.")
-    parser.add_argument("--bait-bot-p", "--bait_bot_p", dest="bait_bot_p", type=float, default=0.6,
-                        help="BaitBot's pivot probability when a bait is available (default 0.6). "
-                             "The gate's held-out generalization read uses a DIFFERENT value, so an "
-                             "arm cannot pass by memorising this one. Ignored unless "
-                             "--bait-bot-share > 0.")
     parser.add_argument("--eval-freq", "--eval_freq", dest="eval_freq", type=int, default=None,
                         help="TOTAL env steps (num_timesteps, independent of --n-envs) between eval cycles (default None = EVAL_FREQ_STEPS, 2,000,000 — "
                              "byte-identical to every pre-existing command). Lower it for SHORT arms: a "

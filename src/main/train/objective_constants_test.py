@@ -1,4 +1,4 @@
-"""The objective's CONSTANTS (deletion pass P11b): flags that had one legal value, now a namespace default.
+"""The objective's CONSTANTS (deletion pass P11b, and the no-progress clock's two switches in P11d): flags that had one legal value, now a namespace default.
 
 Pinned here, each failing on a revert of the piece it names:
 
@@ -21,7 +21,8 @@ from utils.paths import repo_path
 
 #: constant -> the deleted flag that used to type it (the census / `deleted_flags.md` name)
 _FLAG = {"critic": "--critic", "gamma": "--gamma", "victory_value": "--victory-value", "draw_penalty": "--draw-penalty",
-         "terminal_indicator": "--terminal-indicator"}
+         "terminal_indicator": "--terminal-indicator", "progress_decision_tense": "--progress-decision-tense",
+         "progress_switch_freeze": "--progress-switch-freeze"}
 
 
 def test_every_constant_is_on_every_namespace():

@@ -141,8 +141,7 @@ def build_eval_core(decl: EvalDecl, *, collector_decl: Any, svc: Any, extra_ids:
     for b in [trainee_builder, opp_builder, *fixed_builders.values()]:
         teams.add_builder(b)
     spec = P.spec_json(n=int(decl.n_envs), threads=int(collector_decl.threads), teams=list(teams.teams), names=NAMES,
-                       decision_tense=bool(collector_decl.decision_tense),
-                       switch_freeze=bool(collector_decl.switch_freeze), turn_limit=int(turn_limit),
+                       turn_limit=int(turn_limit),
                        refusal_budget=int(collector_decl.refusal_budget), bank_dir=None,
                        terminal=terminal, opponents=table.spec_rows())
     t0 = time.perf_counter()

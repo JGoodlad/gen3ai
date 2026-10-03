@@ -476,54 +476,35 @@ def test_no_item_used_is_zero():
 
 
 # ---------------------------------------------------------------------------
-# The two TENSES of "was this a forced switch" (gen3_progress_clock_intent_v1)
+# "was this a forced switch": the CLOSING request is the only tense (gen3_progress_clock_intent_v1)
 # ---------------------------------------------------------------------------
 # `phase_is_forced_switch` answers "did this window CLOSE on a forced-switch request" — the natural
-# read for the obs history slot it was minted for. `decision_was_forced_switch` answers "was the
-# decision that OPENED it forced" — the question `ProgressClock` was always asking and reading the
-# wrong field for (probe N, `no_progress_tax_review_2026-08-29.md` §3.2). Both are true statements
-# about the same delta, which is why no test caught the confusion for a year; these pin them apart.
+# read for the obs history slot it was minted for, and the one `ProgressClock` reads. Its sibling
+# `decision_was_forced_switch` ("was the decision that OPENED it forced") existed only for the opt-in
+# `--progress-decision-tense`, deleted in the flag census (P11d) with the field on both sides of the
+# Rust / Python parity; the dataclass has no such field now.
 
-@pytest.mark.parametrize("prev_phase,curr_phase,expect_decision,expect_phase", [
-    ("move_selection", "move_selection", False, False),
-    ("move_selection", "forced_switch", False, True),    # we were KO'd ON a full-agency decision
-    ("forced_switch", "move_selection", True, False),    # the zero-agency replacement itself
-    ("forced_switch", "forced_switch", True, True),      # a double KO chain
+@pytest.mark.parametrize("prev_phase,curr_phase,expect_phase", [
+    ("move_selection", "move_selection", False),
+    ("move_selection", "forced_switch", True),    # we were KO'd ON a full-agency decision
+    ("forced_switch", "move_selection", False),   # the zero-agency replacement itself
+    ("forced_switch", "forced_switch", True),     # a double KO chain
 ])
-def test_the_two_forced_switch_tenses_are_independent(prev_phase, curr_phase,
-                                                      expect_decision, expect_phase):
+def test_the_forced_switch_flag_reads_the_CLOSING_request(prev_phase, curr_phase, expect_phase):
     events = [ev(EventKind.MOVE, side=OURS, actor="zapdos", target="tyranitar",
                  move_id="thunderbolt")]
     d = TurnDelta.build_from_events(_zero_ctx(phase=prev_phase),
                                     _zero_ctx(turn=2, phase=curr_phase), action=6, events=events)
-    assert d.decision_was_forced_switch is expect_decision
     assert d.phase_is_forced_switch is expect_phase
+    assert not hasattr(d, "decision_was_forced_switch")
 
 
-def test_the_empty_delta_is_forced_in_neither_tense():
-    d = TurnDelta.empty()
-    assert d.decision_was_forced_switch is False and d.phase_is_forced_switch is False
+def test_the_empty_delta_is_not_forced():
+    assert TurnDelta.empty().phase_is_forced_switch is False
 
 
-def test_the_no_event_window_fold_carries_both_tenses_too():
+def test_the_no_event_window_fold_carries_the_closing_flag_too():
     """The events-less branch is a separate construction site; a field wired at one and missed at
     the other reads as a silent False on exactly the standalone/crafted-context path."""
-    d = TurnDelta.build_from_events(_zero_ctx(phase="forced_switch"),
-                                    _zero_ctx(turn=2), action=6, events=[])
-    assert d.decision_was_forced_switch is True and d.phase_is_forced_switch is False
-
-
-def test_the_new_tense_is_INVISIBLE_to_the_encoder():
-    """OBS-NEUTRALITY, asserted rather than argued. Nothing encodes `decision_was_forced_switch`:
-    the TurnDelta lag frames were deleted (gen3_frame_deletion_v1) so `TurnDeltaEncoder` no longer
-    feeds the observation at all, and even it — the strictest surviving reader of this dataclass —
-    emits a byte-identical vector with the field flipped. The clock is the field's only consumer."""
-    enc = _enc()
-    events = [ev(EventKind.MOVE, side=OURS, actor="zapdos", target="tyranitar",
-                 move_id="thunderbolt"),
-              ev(EventKind.DAMAGE, side=OPP, actor="tyranitar", amount=-0.4)]
-    off = TurnDelta.build_from_events(_zero_ctx(), _zero_ctx(turn=2), action=6, events=events)
-    on = TurnDelta.build_from_events(_zero_ctx(phase="forced_switch"), _zero_ctx(turn=2),
-                                     action=6, events=events)
-    assert off.decision_was_forced_switch is False and on.decision_was_forced_switch is True
-    assert enc.encode(off).tobytes() == enc.encode(on).tobytes()
+    d = TurnDelta.build_from_events(_zero_ctx(), _zero_ctx(turn=2, phase="forced_switch"), action=6, events=[])
+    assert d.phase_is_forced_switch is True

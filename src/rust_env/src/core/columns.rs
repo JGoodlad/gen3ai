@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// FNV-1a-64 of `columns.schema_text()`; a front end compares it with its own table at load.
-pub const SCHEMA_ID: &str = "2acdc9344f2d1256";
+pub const SCHEMA_ID: &str = "2ae0fdc6ace0d9bc";
 
 // ---- dims
 pub const SIDES: usize = 2;
@@ -15,7 +15,7 @@ pub const NCOUNTERS: usize = 11;
 pub const OBS_DIM: usize = pokesim::encoder::OBS_DIM;
 
 /// The startup declaration's keys (`protocol.SPEC_KEYS`): every one required, no other accepted.
-pub const SPEC_KEYS: [&str; 13] = ["n", "threads", "format_id", "names", "teams", "decision_tense", "switch_freeze", "turn_limit", "terminal", "refusal_budget", "bank_dir", "labels", "opponents"];
+pub const SPEC_KEYS: [&str; 11] = ["n", "threads", "format_id", "names", "teams", "turn_limit", "terminal", "refusal_budget", "bank_dir", "labels", "opponents"];
 
 // ---- ops (`core::dispatch`'s first argument)
 pub mod op {

@@ -181,8 +181,7 @@ out = {}
 for kind in (0, 1):
     out[f"probe{kind}"] = [lib.rust_env_panic_probe(None, kind), type(err()).__name__, err().message]
 teams = sys.argv[1:]
-spec = P.spec_json(n=2, threads=2, teams=teams, names=("pa", "pb"), decision_tense=False, switch_freeze=False,
-                   turn_limit=300, refusal_budget=4, bank_dir=None)
+spec = P.spec_json(n=2, threads=2, teams=teams, names=("pa", "pb"), turn_limit=300, refusal_budget=4, bank_dir=None)
 core = ffi.FfiCore(spec, lib=lib)
 core.cols["ep_team"][:] = [[0, 1], [1, 0]]
 core.cols["ep_seed"][:] = [[1, 2, 3, 4], [5, 6, 7, 8]]
@@ -216,8 +215,7 @@ def test_gate_2_a_panic_across_the_boundary_is_a_typed_error_not_a_crash(lib_pat
 def _small_core(lib, n=2):
     from utils.ladder_corpus import teams
 
-    spec = P.spec_json(n=n, threads=1, teams=teams("commit")[:3], names=("la", "lb"), decision_tense=False,
-                       switch_freeze=False, turn_limit=300, refusal_budget=4, bank_dir=None)
+    spec = P.spec_json(n=n, threads=1, teams=teams("commit")[:3], names=("la", "lb"), turn_limit=300, refusal_budget=4, bank_dir=None)
     return ffi.FfiCore(spec, lib=lib)
 
 

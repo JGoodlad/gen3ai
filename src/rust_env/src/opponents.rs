@@ -12,18 +12,17 @@
 //!     default, and the default of `protocol.spec_json`);
 //!   - `{"kind": "policy", "slot": k}` — the caller answers p2 from T2 slot `k` (the `opp_slot`
 //!     column names it, so the host groups rows by slot without bookkeeping of its own);
-//!   - `{"kind": "bot", "bot": "<name>", "seed": s}` (+ `"p_bait": p` for `baitbot`, its
-//!     `--bait-bot-p`, declared — never defaulted) — a Lane-F bot the CORE plays: its p2 decisions
+//!   - `{"kind": "bot", "bot": "<name>", "seed": s}` — a Lane-F bot the CORE plays: its p2 decisions
 //!     are never exposed (`need` = 0) and it is asked ONLY at a real decision (never on a phantom
 //!     poll, F-LF-2; never at p1's stall forfeit, F-LF-5).
 //!
 //!   The table is fixed for the pool's life. Two policy routes naming the same slot are refused (a
 //!   slot IS a route: one-to-one, so `opp_route` and `opp_slot` can never disagree about who played).
-//! * **Bot RANDOMNESS** (F-LF-3: production Python bots draw from the unseeded process-wide `random`,
-//!   BaitBot from OS entropy — no port can reproduce that stream). DECLARED instead: env `e`'s bot on
+//! * **Bot RANDOMNESS** (F-LF-3: production Python bots draw from the unseeded process-wide `random`
+//!   — no port can reproduce that stream). DECLARED instead: env `e`'s bot on
 //!   a route with seed `s` owns one `Bot` for the pool's life (the one `Player` object per roster
 //!   class a worker holds today, its streams running across episodes), each stream `k` (choice 0,
-//!   protect 1, bait 2) seeded `random.Random(`[`stream_seed`]`(s, e, k))`. Same distribution, a
+//!   protect 1) seeded `random.Random(`[`stream_seed`]`(s, e, k))`. Same distribution, a
 //!   declared stream; `rust_env_opponents.bot_stream_seed` is the Python twin.
 //! * **The per-episode input** is the caller-staged `ep_opp` column (a route index), read WITH
 //!   `ep_team` / `ep_seed` at RESET and at every auto-reset — so it is the NEXT episode's opponent,
@@ -82,7 +81,7 @@ fn splitmix64(mut z: u64) -> u64 {
     z ^ (z >> 31)
 }
 
-/// The seed of env `env`'s bot stream `stream` (choice 0, protect 1, bait 2) on a route declared with
+/// The seed of env `env`'s bot stream `stream` (choice 0, protect 1) on a route declared with
 /// `seed` — `random.Random(stream_seed(...))`. Python twin: `rust_env_opponents.bot_stream_seed`.
 pub fn stream_seed(seed: u64, env: usize, stream: u64) -> u64 {
     splitmix64(seed ^ splitmix64(((env as u64) << 2) | stream))
@@ -93,7 +92,7 @@ pub fn pack_seed_words(words: &[u32]) -> u64 {
     words.iter().take(4).enumerate().fold(0u64, |acc, (i, w)| acc | ((*w as u64 & 0xFFFF) << (16 * i)))
 }
 
-/// The seed of stream `stream` (choice 0, protect 1, bait 2) of a `"streams": "episode"` bot route
+/// The seed of stream `stream` (choice 0, protect 1) of a `"streams": "episode"` bot route
 /// declared with `seed`, for the episode whose staged battle seed packs to `episode_key`
 /// ([`pack_seed_words`]) — `random.Random(episode_stream_seed(...))`. Python twin:
 /// `rust_env_opponents.episode_bot_stream_seed`.
@@ -122,7 +121,6 @@ impl Routes {
             let allowed: &[&str] = match kind {
                 "external" => &["kind"],
                 "policy" => &["kind", "slot"],
-                "bot" if bot == Some("baitbot") => &["kind", "bot", "seed", "p_bait", "streams"],
                 "bot" => &["kind", "bot", "seed", "streams"],
                 other => return Err(format!("spec: opponents[{i}]: unknown kind {other:?} (one of {KINDS:?})")),
             };
@@ -148,13 +146,9 @@ impl Routes {
                 "policy" => Route::Policy { slot: uint("slot", 1.0e6)? as u32 },
                 _ => {
                     let name = bot.ok_or_else(|| format!("spec: opponents[{i}].bot must be a bot name"))?;
-                    let mut k = Kind::from_name(name).ok_or_else(|| {
+                    let k = Kind::from_name(name).ok_or_else(|| {
                         format!("spec: opponents[{i}]: bot {name:?} is not one this core plays (Lane F's `bots::Kind` names)")
                     })?;
-                    if let Kind::BaitBot { p_bait } = &mut k {
-                        let p = r.get("p_bait").and_then(Json::as_f64).filter(|p| (0.0..=1.0).contains(p));
-                        *p_bait = p.ok_or_else(|| format!("spec: opponents[{i}].p_bait must be a number in [0, 1] (the run's --bait-bot-p)"))?;
-                    }
                     let per_episode = match r.get("streams") {
                         None => false,
                         Some(v) => match v.as_str() {
@@ -234,12 +228,7 @@ impl Routes {
         match self.0.get(route as usize) {
             Some(Route::Bot { kind, seed, per_episode: true }) => {
                 let key = pack_seed_words(words);
-                Some(Bot::new(
-                    *kind,
-                    episode_stream_seed(*seed, key, 0),
-                    episode_stream_seed(*seed, key, 1),
-                    episode_stream_seed(*seed, key, 2),
-                ))
+                Some(Bot::new(*kind, episode_stream_seed(*seed, key, 0), episode_stream_seed(*seed, key, 1)))
             }
             _ => None,
         }
@@ -251,7 +240,7 @@ impl Routes {
             .iter()
             .map(|r| match r {
                 Route::Bot { kind, seed, .. } => {
-                    Some(Bot::new(*kind, stream_seed(*seed, env, 0), stream_seed(*seed, env, 1), stream_seed(*seed, env, 2)))
+                    Some(Bot::new(*kind, stream_seed(*seed, env, 0), stream_seed(*seed, env, 1)))
                 }
                 _ => None,
             })
@@ -266,9 +255,6 @@ impl Routes {
             .map(|r| match r {
                 Route::External => "{\"kind\":\"external\"}".to_string(),
                 Route::Policy { slot } => format!("{{\"kind\":\"policy\",\"slot\":{slot}}}"),
-                Route::Bot { kind: Kind::BaitBot { p_bait }, seed, per_episode } => {
-                    format!("{{\"kind\":\"bot\",\"bot\":\"baitbot\",\"seed\":{seed},\"p_bait\":{p_bait:?}{}}}", streams_key(*per_episode))
-                }
                 Route::Bot { kind, seed, per_episode } => {
                     format!("{{\"kind\":\"bot\",\"bot\":\"{}\",\"seed\":{seed}{}}}", kind.name(), streams_key(*per_episode))
                 }
@@ -394,7 +380,6 @@ mod tests {
             format_id: "gen3ou".into(),
             names: ["eone".into(), "etwo".into()],
             teams,
-            clock: Default::default(),
             turn_limit: None,
             terminal: Terminal::PRODUCTION,
             refusal_budget: 4,
@@ -422,18 +407,17 @@ mod tests {
     }
 
     #[test]
-    fn a_bot_route_declares_its_seed_and_bait_dial() {
-        let r = p(r#"[{"kind":"bot","bot":"staller","seed":5},{"kind":"bot","bot":"baitbot","seed":9,"p_bait":0.25}]"#).unwrap();
+    fn a_bot_route_declares_its_seed() {
+        let r = p(r#"[{"kind":"bot","bot":"staller","seed":5},{"kind":"bot","bot":"setup_sweep","seed":9}]"#).unwrap();
         assert_eq!(r.0[0], Route::Bot { kind: Kind::Staller, seed: 5, per_episode: false });
-        assert_eq!(r.0[1], Route::Bot { kind: Kind::BaitBot { p_bait: 0.25 }, seed: 9, per_episode: false });
+        assert_eq!(r.0[1], Route::Bot { kind: Kind::SetupSweep, seed: 9, per_episode: false });
         assert_eq!(p(&r.to_json()).unwrap(), r);
         assert!(r.is_bot(0) && !r.p2_stall_forfeits(0) && r.slot_of(1) == -1);
         for (text, needle) in [
             (r#"[{"kind":"bot","bot":"nope","seed":1}]"#, "not one this core plays"),
             (r#"[{"kind":"bot","bot":"staller"}]"#, "missing key \"seed\""),
-            (r#"[{"kind":"bot","bot":"baitbot","seed":1}]"#, "missing key \"p_bait\""),
             (r#"[{"kind":"bot","bot":"staller","seed":1,"p_bait":0.5}]"#, "unknown key \"p_bait\""),
-            (r#"[{"kind":"bot","bot":"baitbot","seed":1,"p_bait":1.5}]"#, "p_bait"),
+            (r#"[{"kind":"bot","bot":"baitbot","seed":1}]"#, "not one this core plays"),
         ] {
             let e = p(text).unwrap_err();
             assert!(e.contains(needle), "{text}: {e}");
@@ -441,10 +425,11 @@ mod tests {
         let b = r.build_bots(3);
         assert!(b[0].is_some() && b[1].is_some());
         // distinct streams per env and per stream index (the declared seed rule)
-        let seeds: std::collections::BTreeSet<u64> = (0..4).flat_map(|e| (0..3).map(move |k| stream_seed(5, e, k))).collect();
-        assert_eq!(seeds.len(), 12);
+        let seeds: std::collections::BTreeSet<u64> = (0..4).flat_map(|e| (0..2).map(move |k| stream_seed(5, e, k))).collect();
+        assert_eq!(seeds.len(), 8);
         assert_eq!(stream_seed(5, 3, 1), stream_seed(5, 3, 1));
-        // the Python twin (`rust_env_opponents.bot_stream_seed`) pins the same three values
+        // the Python twin (`rust_env_opponents.bot_stream_seed`) pins the same three values (the third is the
+        // mixing function at stream index 2, which no bot draws any more — it still keys the splitmix input)
         assert_eq!(
             [stream_seed(5, 0, 0), stream_seed(11, 2, 1), stream_seed((1u64 << 53) - 1, 47, 2)],
             [4517933670823692284, 5390792918547426617, 17462041922349011332]

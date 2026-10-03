@@ -206,8 +206,7 @@ def test_the_three_way_comparison_has_teeth(lib, tmp_path):
 def _small_spec(n=2, threads=1, turn_limit=300):
     from utils.ladder_corpus import teams
 
-    return P.spec_json(n=n, threads=threads, teams=teams("commit")[:3], names=("la", "lb"), decision_tense=False,
-                       switch_freeze=False, turn_limit=turn_limit, refusal_budget=4, bank_dir=None)
+    return P.spec_json(n=n, threads=threads, teams=teams("commit")[:3], names=("la", "lb"), turn_limit=turn_limit, refusal_budget=4, bank_dir=None)
 
 
 def _stage(core, seed=0):
@@ -488,8 +487,7 @@ def test_gate_3_no_leak_after_a_normal_close_an_error_a_poison_and_a_sigkill(bui
 _PARENT = r"""
 import os, sys, time
 from utils.rust_env import proc, protocol as P
-spec = P.spec_json(n=2, threads=1, teams=sys.argv[1:], names=("la", "lb"), decision_tense=False,
-                   switch_freeze=False, turn_limit=300, refusal_budget=4, bank_dir=None)
+spec = P.spec_json(n=2, threads=1, teams=sys.argv[1:], names=("la", "lb"), turn_limit=300, refusal_budget=4, bank_dir=None)
 core = proc.ProcCore(spec, nan_poison=True)
 core.cols["ep_team"][:] = [[0, 1], [1, 2]]
 core.cols["ep_seed"][:] = [[1, 2, 3, 4], [5, 6, 7, 8]]

@@ -337,13 +337,14 @@ fn parse_gate(v: &BattleVersion, parsed: &[Option<BattleVersion>; 2]) -> Result<
 }
 
 /// The parse chain's `ClockConfig`: the step chain's — except under the TEETH hook of a test /
-/// self-check build (`POKESIM_CORE_EVENTS_TEETH=parse_clock`), which flips `decision_tense` on the
-/// parse chain alone so a test can see the parse-encode gate refuse (`tests/core_obs_gate_test.rs`).
+/// self-check build (`POKESIM_CORE_EVENTS_TEETH=parse_clock`), which starts the parse chain's clock at
+/// another `n` (`start_n`) so a test can see the parse-encode gate refuse
+/// (`tests/sim_bridge_core_obs_test.rs`).
 /// Compiled out of `--release`.
 fn parse_cfg(cfg: Option<ClockConfig>) -> Option<ClockConfig> {
     #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
     if std::env::var("POKESIM_CORE_EVENTS_TEETH").as_deref() == Ok("parse_clock") {
-        return cfg.map(|c| ClockConfig { decision_tense: !c.decision_tense, ..c });
+        return cfg.map(|c| ClockConfig { start_n: c.start_n + 1 });
     }
     cfg
 }

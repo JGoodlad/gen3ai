@@ -4,7 +4,6 @@
 
 use pokesim_env::core::columns::{col, counter, ACT, SIDES};
 use pokesim_env::core::{Core, OwnedCols, Spec};
-use pokesim::trackers::clock::ClockConfig;
 
 pub const NAMES: [&str; 2] = ["m5p1", "m5p2"];
 
@@ -34,7 +33,6 @@ pub fn spec(n: usize, threads: usize, teams: Vec<String>) -> Spec {
         format_id: "gen3ou".into(),
         names: [NAMES[0].into(), NAMES[1].into()],
         teams,
-        clock: ClockConfig::default(),
         turn_limit: Some(300),
         terminal: pokesim_env::episode::Terminal::PRODUCTION,
         refusal_budget: 64,

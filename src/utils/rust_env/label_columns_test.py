@@ -40,8 +40,7 @@ def test_the_family_map_partitions_the_core_columns_and_is_rendered():
 
 
 def test_the_spec_declares_label_families_and_the_schema_covers_them():
-    s = json.loads(P.spec_json(n=1, threads=1, teams=["a"], names=("x", "y"), decision_tense=False,
-                               switch_freeze=False, turn_limit=None, refusal_budget=0, bank_dir=None,
+    s = json.loads(P.spec_json(n=1, threads=1, teams=["a"], names=("x", "y"), turn_limit=None, refusal_budget=0, bank_dir=None,
                                labels=("belief",)))
     assert s["labels"] == ["belief"] and tuple(s) == P.SPEC_KEYS
     assert "labelfamily belief belief_species belief_moves known_moves" in C.schema_text()

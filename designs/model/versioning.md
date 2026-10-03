@@ -78,7 +78,8 @@ an arch error. To add another such hparam, follow the optional-feature playbook 
 The **reward-config** hparams are the same kind, bundled into one check: `victory_value`, `terminal_indicator`, `draw_penalty` (their flags `--victory-value` / `--terminal-indicator` / `--draw-penalty` are DELETED, P11b batch (c) — constants of the trainer namespace, still RECORDED;
 the DRAW/250-turn-timeout score of the SIGNED terminal — −35.0 is what an UNRECORDED field means; the
 production value is 0.0 with the indicator terminal / victory 1.0), and the no-progress
-clock's two OBS switches `progress_decision_tense` / `progress_switch_freeze`. All are recorded on
+clock's two OBS switches `progress_decision_tense` / `progress_switch_freeze` (their flags and both clocks' branches are
+DELETED, P11d — constants of the trainer namespace, False, still RECORDED; a recorded True is refused). All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift; there is no flag to re-pass, so the error says: run it PINNED to its own commit, or start a fresh run), excluded from `check_compatible` because a frozen eval / pool
 forward never reads the reward. They are reward-VALUE changes — **no `ARCH_SIGNATURE` bump**.
 

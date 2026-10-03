@@ -66,19 +66,8 @@ def eval_roster() -> set:
     return _classes([tup.elts[1].id for tup in lst.elts], _imports(t))
 
 
-def bait_roster() -> set:
-    """`make_baitbot_class` returns a SUBCLASS of ``Gen3BaitBotPlayer`` named for its dial; its row is
-    the base class's."""
-    t = _tree("main/train/matchup_setup.py")
-    assert "make_baitbot_class" in ast.unparse(t), "the conditional BaitBot roster entry moved"
-    from agents.baitbot import Gen3BaitBotPlayer, make_baitbot_class
-
-    assert issubclass(make_baitbot_class(0.6), Gen3BaitBotPlayer)
-    return {_canonical(Gen3BaitBotPlayer)}
-
-
 def rosters() -> dict:
-    return {"train": train_roster(), "train_bait": bait_roster(), "eval": eval_roster()}
+    return {"train": train_roster(), "eval": eval_roster()}
 
 
 def test_every_roster_bot_has_a_row():
@@ -101,7 +90,7 @@ def test_every_player_class_in_the_bot_modules_has_a_row():
     from poke_env.player.player import Player
 
     rows = BI.by_class()
-    for mod in ("agents.opponents", "agents.baitbot", "poke_env.player.baselines"):
+    for mod in ("agents.opponents", "poke_env.player.baselines"):
         m = importlib.import_module(mod)
         for _, cls in inspect.getmembers(m, inspect.isclass):
             if cls.__module__ == mod and issubclass(cls, Player):
@@ -125,9 +114,9 @@ def test_a_ported_row_names_a_rust_bot():
         assert re.search(rf"\b{row.rust}\b", text), f"{row.name}: Kind::{row.rust} is not defined in {mod}"
 
 
-def test_rng_streams_are_the_known_three():
+def test_rng_streams_are_the_known_two():
     for row in BI.ROWS:
-        assert row.rng and set(row.rng) <= {"choice", "protect", "bait"}, row
+        assert row.rng and set(row.rng) <= {"choice", "protect"}, row
 
 
 def test_the_inventory_has_teeth(monkeypatch):

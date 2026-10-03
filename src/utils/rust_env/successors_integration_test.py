@@ -283,5 +283,7 @@ def test_errors_are_typed_and_do_not_poison(lib, logs):
         # still usable after every refusal
         assert S.play_out(logs[0], 0, "p1", policy=_greedy_hash, seeds=["1,1,1,1"], core=core).branches
     with pytest.raises(P.CallerError, match="unknown key"):
+        S.SearchCore(lib=lib, spec=json.dumps({"max_nodes": 1, "max_branches": 1, "x": 1}))
+    with pytest.raises(P.CallerError, match="unknown key"):     # the deleted progress-clock declaration
         S.SearchCore(lib=lib, spec=json.dumps({"clock": {"decision_tense": False, "switch_freeze": False},
-                                                "max_nodes": 1, "max_branches": 1, "x": 1}))
+                                                "max_nodes": 1, "max_branches": 1}))

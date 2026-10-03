@@ -92,13 +92,16 @@ other length before touching it. Pins: `core_obs_test.py`, `tests/encoder_test.r
 The training env talks to the `sim_bridge` / env core over its stdin/stdout pipe (the Python session that used to do this, `bridge_session.py`, was deleted in U3). The mode is OPT-IN per battle: START's `core_obs` key
 
 ```text
-"core_obs": {"sides": ["p1"] | ["p2"] | ["p1","p2"], "decision_tense": <bool>, "switch_freeze": <bool>}
+"core_obs": {"sides": ["p1"] | ["p2"] | ["p1","p2"]}
 ```
 
-(all three keys REQUIRED when the key is present — the two booleans are the progress clock's
-`ClockConfig`, training's `--progress-decision-tense` / `--progress-switch-freeze`, read and never
-defaulted; an unknown key, an empty / repeated / unknown side, a non-boolean flag is a loud
-`__ERR__`). **Absent or `null`, the child's stdout is BYTE-identical to the pre-mode binary.**
+(`sides` REQUIRED when the key is present; an unknown key — the two clock booleans the key once carried,
+`decision_tense` / `switch_freeze`, were deleted with training's `--progress-decision-tense` /
+`--progress-switch-freeze` in the flag census, P11d, and are refused like any unknown key — or an empty /
+repeated / unknown side is a loud `__ERR__`). The chains are built with `ClockConfig::default()`; the one
+exception is a TEETH hook of a test / self-check build, `POKESIM_SIM_BRIDGE_TEETH=clock_start` (every chain's
+clock starts at `n` = 1; compiled out of `--release`), which a gate that compares the bridge's rows with another
+route's uses to prove it can SEE a clock divergence. **Absent or `null`, the child's stdout is BYTE-identical to the pre-mode binary.**
 
 **The observation comes through the parser** (program §6c). Per requested side the child keeps a
 PARSE-built version chain with trackers and NO native record (`BattleVersion::parse_root_unrecorded(side,

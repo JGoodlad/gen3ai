@@ -37,21 +37,19 @@ use pokesim::trackers::clock::ClockConfig;
 /// (the env spec's rule):
 ///
 /// ```text
-/// {"clock": {"decision_tense": <bool>, "switch_freeze": <bool>},
-///  "max_nodes": <int >= 1>, "max_branches": <int >= 1>}
+/// {"max_nodes": <int >= 1>, "max_branches": <int >= 1>}
 /// ```
 ///
-/// `clock` is the progress clock's two flags (training's `--progress-decision-tense` /
-/// `--progress-switch-freeze`; both OFF in production and in `search_driver`, which uses
-/// `ClockConfig::default()`).
+/// (A `clock` key, the progress clock's two flags, was deleted with the trainer's
+/// `--progress-decision-tense` / `--progress-switch-freeze`; it is refused as unknown. Every search
+/// builds [`ClockConfig::default`], as `search_driver` does.)
 #[derive(Clone, Debug, PartialEq)]
 pub struct SearchSpec {
-    pub clock: ClockConfig,
     pub max_nodes: usize,
     pub max_branches: usize,
 }
 
-pub const SEARCH_SPEC_KEYS: [&str; 3] = ["clock", "max_nodes", "max_branches"];
+pub const SEARCH_SPEC_KEYS: [&str; 2] = ["max_nodes", "max_branches"];
 
 fn count(v: &Json, key: &str) -> Result<usize, String> {
     let x = v.get(key).and_then(Json::as_f64).ok_or_else(|| format!("search spec: `{key}` must be a positive integer"))?;
@@ -75,15 +73,7 @@ impl SearchSpec {
                 return Err(format!("search spec: missing key {k:?} (every key is required)"));
             }
         }
-        let c = v.get("clock").and_then(|c| c.as_object().map(|_| c)).ok_or("search spec: `clock` must be an object")?;
-        for k in c.as_object().expect("object").keys() {
-            if k != "decision_tense" && k != "switch_freeze" {
-                return Err(format!("search spec: `clock` has an unknown key {k:?}"));
-            }
-        }
-        let flag = |k: &str| c.get(k).and_then(Json::as_bool).ok_or_else(|| format!("search spec: `clock.{k}` must be a boolean"));
         Ok(SearchSpec {
-            clock: ClockConfig { decision_tense: flag("decision_tense")?, switch_freeze: flag("switch_freeze")? },
             max_nodes: count(&v, "max_nodes")?,
             max_branches: count(&v, "max_branches")?,
         })
@@ -102,8 +92,8 @@ impl SearchCore {
     pub fn new(spec: SearchSpec) -> SearchCore {
         let _ = dex();
         SearchCore {
-            tree: tree::Tree::new(spec.clock, spec.max_nodes),
-            playouts: playout::Playouts::new(spec.clock, spec.max_branches),
+            tree: tree::Tree::new(ClockConfig::default(), spec.max_nodes),
+            playouts: playout::Playouts::new(ClockConfig::default(), spec.max_branches),
             spec,
         }
     }
@@ -128,15 +118,16 @@ mod tests {
 
     #[test]
     fn the_spec_is_strict() {
-        let ok = r#"{"clock":{"decision_tense":false,"switch_freeze":true},"max_nodes":10,"max_branches":4}"#;
+        let ok = r#"{"max_nodes":10,"max_branches":4}"#;
         let s = SearchSpec::from_json(ok).unwrap();
-        assert!(s.clock.switch_freeze && !s.clock.decision_tense);
         assert_eq!((s.max_nodes, s.max_branches), (10, 4));
-        assert!(SearchSpec::from_json(r#"{"clock":{"decision_tense":false,"switch_freeze":false},"max_nodes":10}"#)
+        assert!(SearchSpec::from_json(r#"{"max_nodes":10}"#).unwrap_err().contains("max_branches"));
+        // the deleted `clock` key is refused as unknown
+        assert!(SearchSpec::from_json(r#"{"clock":{"decision_tense":false,"switch_freeze":false},"max_nodes":10,"max_branches":4}"#)
             .unwrap_err()
-            .contains("max_branches"));
+            .contains("unknown key"));
         assert!(SearchSpec::from_json(&ok.replace("\"max_nodes\"", "\"max_node\"")).unwrap_err().contains("unknown key"));
         assert!(SearchSpec::from_json(&ok.replace(":10", ":0")).unwrap_err().contains("positive"));
-        assert!(SearchSpec::from_json(&ok.replace("true}", "true,\"x\":1}")).unwrap_err().contains("unknown key"));
+        assert!(SearchSpec::from_json(&ok.replace("4}", "4,\"x\":1}")).unwrap_err().contains("unknown key"));
     }
 }

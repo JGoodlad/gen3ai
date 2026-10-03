@@ -60,8 +60,6 @@ class RustEnvDecl:
     run_seed: int = 0
     turn_limit: int = 250
     terminal: Optional[Dict[str, Any]] = None
-    decision_tense: bool = False
-    switch_freeze: bool = False
     refusal_budget: int = 64
     respawn_budget: int = 2
     bank_dir: Optional[str] = None
@@ -343,7 +341,6 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
                         team_wr_tracking=team_wr_tracking)
     terminal = decl.terminal if decl.terminal is not None else EP.PRODUCTION_TERMINAL
     spec = P.spec_json(n=n, threads=int(decl.threads), teams=list(table.teams), names=NAMES,
-                       decision_tense=bool(decl.decision_tense), switch_freeze=bool(decl.switch_freeze),
                        turn_limit=int(decl.turn_limit), refusal_budget=int(decl.refusal_budget),
                        bank_dir=decl.bank_dir, labels=fams, terminal=terminal,
                        opponents=plan.spec_rows(bots="external" if external_p2 is not None else "core"))

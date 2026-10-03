@@ -89,18 +89,20 @@ NO_OP (increment, capped at `PROGRESS_CLOCK_CAP`). **Its reward half is deleted*
 ("a charged no-op") survives in the code comments and test names and means "the clock advances".
 The trapped-vs-wall `switch_legal` gate gated only the charge, so it no longer affects anything.
 
-**The clock's two intent-restoring fixes — `--progress-decision-tense` / `--progress-switch-freeze`.**
-Both default OFF (a flagless run's clock is byte-identical to every generation's —
-`progress_clock_test.py`'s recorded `n` trace). They are resume-immutable `RewardConfig` fields
-(recorded, value-checked, no `ARCH_SIGNATURE` bump) because they change the `turns_since_progress`
-OBS scalar; they are threaded onto the clock by ONE call, `ProgressClock.apply_reward_config(cfg)`
-from the env (formerly the deleted `gen3_env.py`). `--progress-decision-tense` points the forced-switch sit-out gate at the decision
-that OPENED the window (`TurnDelta.decision_was_forced_switch`) instead of the one after it;
-`--progress-switch-freeze` makes a voluntary switch that fails the (offense-only) progress predicate
-FREEZE the clock instead of advancing it. Their motivating measurements (probes M and N,
+**The clock's two intent-restoring fixes — `--progress-decision-tense` / `--progress-switch-freeze` — are DELETED (flag census, P11d).**
+Both were OFF everywhere with 0 recorded runs and no live row (`designs/deleted_flags.md`), but the Rust env declaration
+read them, so the deletion removed the Rust branches too: `ClockConfig`'s two fields, `forced_window`'s opening-tense arm,
+the `switch_freeze` early return in `rust_sim/src/trackers/clock.rs`, the `core_obs` / env-spec / search-spec keys, the Python
+reference clock's attributes, `_gates` and `ProgressClock.apply_reward_config`, and `TurnDelta` / `DeltaProjection`
+`.decision_was_forced_switch` (read by nothing else). The clock now has ONE reading — the forced-switch sit-out is read off the
+request that CLOSES the window (`phase_is_forced_switch`, decision `t+1`), and a voluntary switch that fails the progress
+predicate advances `n` like any other no-op — pinned by `progress_clock_test.py`'s recorded `n` trace (unchanged by the
+deletion: both fixes were OFF). `RewardConfig.progress_decision_tense` / `progress_switch_freeze` stay as RECORDED,
+resume-immutable, value-checked run fields (constants of every trainer namespace, `parser/objective.py`): a checkpoint
+that recorded `True` is REFUSED on a resume by `ModelVersion.check_reward_config` (run it pinned to its own commit, or start
+fresh). Their motivating measurements (probes M and N,
 `designs/research_state/measurements/bias_tax_head_alignment_2026-08-29.md` and
-`no_progress_tax_review_2026-08-29.md`) were taken on the TAX; what they change today is the obs
-scalar alone.
+`no_progress_tax_review_2026-08-29.md`) were taken on the TAX; what they changed was the obs scalar alone.
 
 ---
 

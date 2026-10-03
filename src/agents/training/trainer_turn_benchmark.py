@@ -396,7 +396,7 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
           f"obs-assembler {'ON' if use_assembler else 'OFF'}, "
           f"battles {'PINNED' if pin else 'random'}, bridge {bridge}, obs source {obs_source})",
           flush=True)
-    start_extra = ({"core_obs": {"sides": ["p1"], "decision_tense": False, "switch_freeze": False}}
+    start_extra = ({"core_obs": {"sides": ["p1"]}}
                    if obs_source == "core" else None)
     # The reward arm is part of the measurement, so it is printed with the run header rather
     # than left implicit — `format_reward_composition` is the SAME announcer a launch prints.

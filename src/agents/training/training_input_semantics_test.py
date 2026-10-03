@@ -234,7 +234,6 @@ def _clock_delta(**kw):
                 opp_status_applied=None, opp_switch_to=None, our_failed_to_move=False,
                 our_move_outcome="hit", our_status_applied=None, our_status_cured=None,
                 opp_resolved_move_id=None, opp_fainted=False, phase_is_forced_switch=False,
-                decision_was_forced_switch=False,
                 our_hp_delta=np.zeros(6, dtype=np.float32), opp_hp_delta=np.zeros(6, dtype=np.float32))
     base.update(kw)
     return SimpleNamespace(**base)

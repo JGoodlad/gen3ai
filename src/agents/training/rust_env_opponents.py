@@ -141,10 +141,8 @@ class OpponentPlan:
     self_play_temp: float = 1.0
     stable_challenge_share: float = STABLE_CHALLENGE_SHARE
     stable_pfsp: bool = False
-    #: The bots' declared seed (F-LF-3: today's production bots are unseeded) and BaitBot's dial
-    #: (``--bait-bot-p``).
+    #: The bots' declared seed (F-LF-3: today's production bots are unseeded).
     bot_seed: int = 0
-    bait_bot_p: float = 0.6
 
     def __post_init__(self) -> None:
         if self.pool_slots < 0:
@@ -193,7 +191,7 @@ class OpponentPlan:
 
     def spec_rows(self, *, bots: str = "core") -> List[Dict[str, Any]]:
         """The spec's ``opponents`` array. ``bots="core"`` declares each bot route as a Lane-F bot the
-        core plays (seed ``bot_seed + route index``, BaitBot's ``p_bait``); ``"external"`` (harnesses
+        core plays (seed ``bot_seed + route index``); ``"external"`` (harnesses
         only) declares them external, i.e. the CALLER answers p2."""
         if bots not in ("core", "external"):
             raise ValueError(bots)
@@ -204,10 +202,7 @@ class OpponentPlan:
             elif bots == "external":
                 rows.append({"kind": "external"})
             else:
-                row: Dict[str, Any] = {"kind": "bot", "bot": r.bot, "seed": int(self.bot_seed) + r.index}
-                if r.bot == "baitbot":
-                    row["p_bait"] = float(self.bait_bot_p)
-                rows.append(row)
+                rows.append({"kind": "bot", "bot": r.bot, "seed": int(self.bot_seed) + r.index})
         return rows
 
     @classmethod
@@ -236,7 +231,7 @@ class OpponentPlan:
             self_play_temp=float(getattr(args, "self_play_temp", 1.0)),
             stable_challenge_share=float(getattr(args, "stable_opponent_selfplay_share", STABLE_CHALLENGE_SHARE)),
             stable_pfsp=bool(getattr(args, "stable_opponent_pfsp", False)),
-            bot_seed=int(bot_seed), bait_bot_p=float(getattr(args, "bait_bot_p", 0.6)))
+            bot_seed=int(bot_seed))
 
 
 def _splitmix64(z: int) -> int:
@@ -248,7 +243,7 @@ def _splitmix64(z: int) -> int:
 
 
 def bot_stream_seed(seed: int, env: int, stream: int) -> int:
-    """``opponents::stream_seed`` — env ``env``'s bot stream ``stream`` (choice 0, protect 1, bait 2)
+    """``opponents::stream_seed`` — env ``env``'s bot stream ``stream`` (choice 0, protect 1)
     is ``random.Random(bot_stream_seed(route seed, env, stream))`` (the declared seed rule, F-LF-3)."""
     return _splitmix64(int(seed) ^ _splitmix64(((int(env) << 2) | int(stream)) & 0xFFFFFFFFFFFFFFFF))
 
@@ -259,7 +254,7 @@ def pack_seed_words(words: Sequence[int]) -> int:
 
 
 def episode_bot_stream_seed(seed: int, words: Sequence[int], stream: int) -> int:
-    """``opponents::episode_stream_seed`` — stream ``stream`` (choice 0, protect 1, bait 2) of a bot route
+    """``opponents::episode_stream_seed`` — stream ``stream`` (choice 0, protect 1) of a bot route
     declared ``"streams": "episode"`` (M5 Lane H), for the episode staged with battle seed ``words``: the
     bot's streams are ``random.Random(episode_bot_stream_seed(route seed, words, stream))``, re-seeded at
     every episode start, so a game's bot draws are a function of the game alone."""

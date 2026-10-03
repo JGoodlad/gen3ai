@@ -26,7 +26,7 @@ from utils.rust_env import bot_inventory as BI
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
 FEATURES = ("--profile", "selfcheck", "--features", "emission-selfcheck")
-DRAWING = ("random", "staller", "staller_v2", "baitbot")   # the bots whose streams must be exercised
+DRAWING = ("random", "staller", "staller_v2")   # the bots whose streams must be exercised
 
 
 def _cargo() -> str:

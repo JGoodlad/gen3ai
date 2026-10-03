@@ -14,12 +14,13 @@
 //!   one-side request (`["p1"]` / `["p2"]`) ships exactly that side's frames;
 //! * the mode ABSENT (or `null`) ships BYTE-identical stdout, and ON it ships exactly those bytes
 //!   plus the `__OBS__` lines;
-//! * the two clock booleans reach the rows (they equal an in-process parse chain built with that
+//! * the bridge's rows equal an in-process parse chain's, and the TEETH hook
+//!   (`POKESIM_SIM_BRIDGE_TEETH=clock_start`) reaches them (rows equal a chain built with that
 //!   `ClockConfig`, and differ from the default somewhere);
 //! * a malformed `core_obs` key is a LOUD `__ERR__`;
 //! * `core_events` REFUSES a battle whose parse-chain row differs from its step-chain row (the
-//!   `POKESIM_CORE_EVENTS_TEETH=parse_clock` hook of a test build: the parse chain alone runs the
-//!   other `decision_tense`).
+//!   `POKESIM_CORE_EVENTS_TEETH=parse_clock` hook of a test build: the parse chain alone starts its
+//!   clock at another `n`).
 //!
 //! `bench_core_obs_cost` (ignored) is the cost measurement: `cargo test --release --test
 //! sim_bridge_core_obs_test -- --ignored --nocapture bench_core_obs_cost`; `bench_core_obs_stages`
@@ -83,12 +84,9 @@ impl Battle {
     }
 }
 
-/// `core_obs` START key for `sides` with the given clock flags.
-fn core_obs(sides: &str, cfg: ClockConfig) -> String {
-    format!(
-        "\"core_obs\":{{\"sides\":{sides},\"decision_tense\":{},\"switch_freeze\":{}}},",
-        cfg.decision_tense, cfg.switch_freeze
-    )
+/// `core_obs` START key for `sides`.
+fn core_obs(sides: &str) -> String {
+    format!("\"core_obs\":{{\"sides\":{sides}}},")
 }
 const BOTH: &str = "[\"p1\",\"p2\"]";
 
@@ -136,6 +134,12 @@ fn run(bin: &str, args: &[&str], env: &[(&str, &str)], input: String) -> String 
 
 fn sim_bridge(input: String) -> String {
     run(env!("CARGO_BIN_EXE_sim_bridge"), &[], &[], input)
+}
+
+/// [`sim_bridge`] under the TEETH hook of a test / self-check build (`POKESIM_SIM_BRIDGE_TEETH=clock_start`:
+/// every core-observation chain's clock starts at `n` = 1).
+fn sim_bridge_teeth(input: String) -> String {
+    run(env!("CARGO_BIN_EXE_sim_bridge"), &[], &[("POKESIM_SIM_BRIDGE_TEETH", "clock_start")], input)
 }
 
 // ------------------------------------------------------------ the in-process driver + policy
@@ -412,7 +416,7 @@ fn fixture() -> &'static Fixture {
     static F: OnceLock<Fixture> = OnceLock::new();
     F.get_or_init(|| {
         let battles = battles(8);
-        let both = sim_bridge(bridge_script(&battles, &core_obs(BOTH, ClockConfig::default())));
+        let both = sim_bridge(bridge_script(&battles, &core_obs(BOTH)));
         let ce = core_events(&battles, &[]);
         Fixture { battles, both, ce }
     })
@@ -530,7 +534,7 @@ fn recycling_leaks_nothing_and_a_one_side_request_ships_that_side_only() {
     let per = parse_bridge(&f.both);
     for (k, b) in f.battles.iter().enumerate() {
         for (side, sides) in [(0usize, "[\"p1\"]"), (1usize, "[\"p2\"]")] {
-            let alone = sim_bridge(bridge_script(std::slice::from_ref(b), &core_obs(sides, ClockConfig::default())));
+            let alone = sim_bridge(bridge_script(std::slice::from_ref(b), &core_obs(sides)));
             let alone = parse_bridge(&alone);
             assert_eq!(alone.len(), 1);
             assert!(obs_of(&alone[0], 1 - side).is_empty(), "{} {sides}: frames for the other side", b.label);
@@ -564,7 +568,7 @@ fn without_core_obs_the_stdout_is_byte_identical() {
     let (on_b, off_b) = (per_battle(&f.both), per_battle(&absent));
     let mut mixed = String::new();
     for (k, b) in f.battles.iter().enumerate() {
-        let extra = if k % 2 == 0 { core_obs(BOTH, ClockConfig::default()) } else { String::new() };
+        let extra = if k % 2 == 0 { core_obs(BOTH) } else { String::new() };
         mixed.push_str(&bridge_script(std::slice::from_ref(b), &extra).replace("END\n", "").trim_end_matches('\n'));
         mixed.push('\n');
     }
@@ -577,26 +581,25 @@ fn without_core_obs_the_stdout_is_byte_identical() {
     }
 }
 
-/// The two booleans ARE the progress clock's `ClockConfig`: the rows equal an in-process parse chain
-/// built with that config (the library road), and each flag moves some row off the default.
+/// The bridge's rows ARE an in-process parse chain's (the library road), and the TEETH hook reaches them:
+/// under `POKESIM_SIM_BRIDGE_TEETH=clock_start` the rows equal an in-process chain whose clock started at
+/// `n` = 1 and differ from the default rows somewhere.
 #[test]
-fn the_clock_flags_reach_the_rows() {
+fn the_bridge_rows_are_the_in_process_parse_chains_and_the_teeth_hook_reaches_them() {
     let f = fixture();
     let default_rows = rows_of(&parse_bridge(&f.both));
-    for cfg in [ClockConfig { decision_tense: true, switch_freeze: false }, ClockConfig { decision_tense: false, switch_freeze: true }] {
-        let got = rows_of(&parse_bridge(&sim_bridge(bridge_script(&f.battles, &core_obs(BOTH, cfg)))));
-        let mut differs = 0;
-        for (k, b) in f.battles.iter().enumerate() {
-            let want = reference_rows(b, cfg);
-            assert!(got[k] == want, "{} {cfg:?}: the bridge rows differ from the in-process parse chain", b.label);
-            differs += (0..2).map(|s| got[k][s].iter().zip(&default_rows[k][s]).filter(|(x, y)| x != y).count()).sum::<usize>();
-        }
-        assert!(differs > 0, "{cfg:?} moved no row — the flag does not reach the clock (or the corpus never exercises it)");
-    }
-    // …and the default config's rows are the library road's too
     for (k, b) in f.battles.iter().enumerate() {
         assert!(default_rows[k] == reference_rows(b, ClockConfig::default()), "{}: default rows vs the in-process chain", b.label);
     }
+    let cfg = ClockConfig { start_n: 1 };
+    let got = rows_of(&parse_bridge(&sim_bridge_teeth(bridge_script(&f.battles, &core_obs(BOTH)))));
+    let mut differs = 0;
+    for (k, b) in f.battles.iter().enumerate() {
+        let want = reference_rows(b, cfg);
+        assert!(got[k] == want, "{} {cfg:?}: the bridge rows differ from the in-process parse chain", b.label);
+        differs += (0..2).map(|s| got[k][s].iter().zip(&default_rows[k][s]).filter(|(x, y)| x != y).count()).sum::<usize>();
+    }
+    assert!(differs > 0, "{cfg:?} moved no row — the hook does not reach the clock");
 }
 
 fn rows_of(per: &[Vec<Frame>]) -> Vec<[Vec<Vec<u8>>; 2]> {
@@ -628,12 +631,13 @@ fn reference_rows(b: &Battle, cfg: ClockConfig) -> [Vec<Vec<u8>>; 2] {
 fn a_malformed_core_obs_key_is_refused_loudly() {
     let b = &fixture().battles[0];
     for (bad, why) in [
-        ("{\"sides\":[],\"decision_tense\":false,\"switch_freeze\":false}", "is empty"),
-        ("{\"sides\":[\"p3\"],\"decision_tense\":false,\"switch_freeze\":false}", "not \"p1\""),
-        ("{\"sides\":[\"p1\",\"p1\"],\"decision_tense\":false,\"switch_freeze\":false}", "twice"),
-        ("{\"sides\":[\"p1\"],\"decision_tense\":false}", "switch_freeze"),
-        ("{\"sides\":[\"p1\"],\"decision_tense\":1,\"switch_freeze\":false}", "decision_tense"),
-        ("{\"sides\":[\"p1\"],\"decision_tense\":false,\"switch_freeze\":false,\"side\":1}", "unknown key"),
+        ("{\"sides\":[]}", "is empty"),
+        ("{\"sides\":[\"p3\"]}", "not \"p1\""),
+        ("{\"sides\":[\"p1\",\"p1\"]}", "twice"),
+        // the deleted clock booleans are refused as unknown keys, not read and ignored
+        ("{\"sides\":[\"p1\"],\"decision_tense\":false,\"switch_freeze\":false}", "unknown key"),
+        ("{\"sides\":[\"p1\"],\"switch_freeze\":false}", "switch_freeze"),
+        ("{\"sides\":[\"p1\"],\"side\":1}", "unknown key"),
         ("[\"p1\"]", "must be an object"),
     ] {
         let out = sim_bridge(format!("{}END\n", b.start(&format!("\"core_obs\":{bad},"))));
@@ -647,7 +651,7 @@ fn a_malformed_core_obs_key_is_refused_loudly() {
 }
 
 /// `core_events --obs` REFUSES a battle whose PARSE-chain row differs from its step-chain row. The
-/// test build's `POKESIM_CORE_EVENTS_TEETH=parse_clock` flips `decision_tense` on the parse chain
+/// test build's `POKESIM_CORE_EVENTS_TEETH=parse_clock` starts the parse chain's clock at another `n`
 /// alone: the reading, the events and the view still agree (the M2 gate cannot see it) — only the
 /// row does.
 #[test]
@@ -684,8 +688,8 @@ fn bench_core_obs_cost() {
     }
     let off = bridge_script(&bs, "");
     std::fs::write(concat!(env!("CARGO_TARGET_TMPDIR"), "/core_obs_off.txt"), &off).unwrap();
-    std::fs::write(concat!(env!("CARGO_TARGET_TMPDIR"), "/core_obs_p1.txt"), bridge_script(&bs, &core_obs("[\"p1\"]", ClockConfig::default()))).unwrap();
-    let modes = [("off", off.clone()), ("p1", bridge_script(&bs, &core_obs("[\"p1\"]", ClockConfig::default()))), ("both", bridge_script(&bs, &core_obs(BOTH, ClockConfig::default())))];
+    std::fs::write(concat!(env!("CARGO_TARGET_TMPDIR"), "/core_obs_p1.txt"), bridge_script(&bs, &core_obs("[\"p1\"]"))).unwrap();
+    let modes = [("off", off.clone()), ("p1", bridge_script(&bs, &core_obs("[\"p1\"]"))), ("both", bridge_script(&bs, &core_obs(BOTH)))];
     let mut times: Vec<Vec<f64>> = vec![Vec::new(); modes.len()];
     let mut frames = [0usize; 3];
     for _ in 0..reps {

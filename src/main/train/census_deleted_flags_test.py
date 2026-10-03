@@ -50,6 +50,12 @@ DELETED = [
     ("--no-pair-value-route", []),
     ("--td-aux-coef", ["1.0"]),
     ("--win-prob-strata-weight", ["0.5"]),
+    ("--bait-bot-share", ["0.1"]),                                     # P11d: the four Rust crossings
+    ("--bait-bot-p", ["0.6"]),
+    ("--progress-decision-tense", []),
+    ("--no-progress-decision-tense", []),
+    ("--progress-switch-freeze", []),
+    ("--no-progress-switch-freeze", []),
 ]
 
 

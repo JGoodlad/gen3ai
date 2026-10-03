@@ -13,9 +13,9 @@
 | | trainer flags | launcher flags | total |
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
-| DELETED by P11 so far | 33 | 0 | 33 |
-| NOW | 169 | 9 | 178 |
-| verdicts NOW | KEEP 165 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 4 | KEEP 9 | |
+| DELETED by P11 (the whole census: B1-B5, P11b, P11c, P11d) | 37 | 0 | 37 |
+| NOW (**CENSUS CLOSED**, P11d) | 165 | 9 | 174 |
+| verdicts NOW | KEEP 165 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -56,15 +56,16 @@
 * `--td-aux-coef` (P11c batch 2) — ladder arm `ai_v12_13_ladder_tdaux` NOT DETECTED at matched 10M; 9 older recorded runs; OFF in `production_config.json`; no live row names it (config v135, training-only row)
 * `--win-prob-strata-weight` (P11c batch 2) — ladder arm 7 NOT DETECTED and its replicate did not confirm it; 2 recorded runs; no workflow, backlog row, era step or end-state doc uses it (the runbook only documents it and the fork arm refused it) (config v135, training-only row; R1's declared-lever machinery went with it)
 
-**Planned, not yet shipped:** (none left in the DELETE column — the remaining work is the ONE-VALUED sweep and the NEEDS-OWNER rows below, sized in the manifest's P11 hand-off)
+* `--bait-bot-share` (P11d) — BaitBot was reachable ONLY through this flag (no eval roster, anchor or sentinel names it: `bot_inventory.py` listed it at the one site `train_bait`); 3 older recorded runs, none of the last 40; the bait hunt is CLOSED. The Python class, the Rust bot (`Kind::BaitBot`, `Stream::Bait`, `logic::baitbot`), the `p_bait` route key, the third RNG stream, the inventory row and BaitBot's five banked corpus episodes went with it
+* `--bait-bot-p` (P11d) — BaitBot's pivot probability; deleted with `--bait-bot-share`
+* `--progress-decision-tense` (P11d) — the no-progress clock's F1 variant: OFF everywhere, 0 recorded runs, no live row; read by the Rust env declaration, so the deletion crossed into `rust_sim` / `rust_env` (`ClockConfig`, the `core_obs` key, `SearchSpec.clock`, the env spec keys, `DeltaProjection.decision_was_forced_switch`). The recorded `progress_decision_tense` field stays (value-checked; a recorded `True` is refused on a resume)
+* `--progress-switch-freeze` (P11d) — the clock's F2b variant; same story, same sites, same recorded-field rule
 
+**Planned, not yet shipped:** (none — the census is CLOSED: the DELETE column, the ONE-VALUED sweep and every NEEDS-OWNER row are done; a flag that arrives later arrives with a row naming its live user, `flag_census_test.py`)
 
 ## 2. NEEDS-OWNER
 
-* `--progress-decision-tense` — no-progress-clock fix (`designs/training/reward.md`), OFF in `production_config.json`, 0 recorded runs; read by the RUST env decl (`RustEnvDecl.decision_tense`), so deleting it reaches `src/rust_env`
-* `--progress-switch-freeze` — the sibling no-progress-clock fix; same Rust reach (`RustEnvDecl.switch_freeze`), OFF, 0 recorded runs
-* `--bait-bot-share` — BaitBot joins the training roster; the bait hunt is CLOSED, but BaitBot is also a RUST bot (`rust_env/src/bots/`, `bots_gate_test`, the Python class is its oracle), so deleting it is a Rust crossing
-* `--bait-bot-p` — BaitBot's pivot probability, same Rust reach as `--bait-bot-share`
+(none left — the owner decided all twenty on 2026-10-03 (the rule: keep a flag only if something LIVE names it): P11c batch 1 deleted eleven and batch 2 three (`--win-prob-strata-weight`, `--td-aux-coef`, `--pair-value-route`, with their recorded-field rows) and KEPT `--grad-checkpointing` and `--win-prob-mode` with their evidence in §4; P11d deleted the last four, the Rust crossings: `--bait-bot-share`, `--bait-bot-p`, `--progress-decision-tense`, `--progress-switch-freeze`. 11 + 3 + 2 + 4 = 20.)
 
 ## 3. ONE-VALUED
 
@@ -132,8 +133,6 @@
 | `--value-sidecar` | auto | 0 / 0 | the training-side value sidecar (`main.ops.value_sidecar_read`, `training_runbook.md`); `auto` = on under winprob | **KEEP** |
 | `--value-sidecar-fraction` | 0.015625 | 1 / 0 | the sidecar's sampling share (`training_runbook.md`) | **KEEP** |
 | `--value-sidecar-seed` | 0 | 0 / 0 | the sidecar's sampler seed (`training_runbook.md`) | **KEEP** |
-| `--progress-decision-tense` | false | 0 / 0 | no-progress-clock fix (`designs/training/reward.md`), OFF in `production_config.json`, 0 recorded runs; read by the RUST env decl (`RustEnvDecl.decision_tense`), so deleting it reaches `src/rust_env` | **NEEDS-OWNER** |
-| `--progress-switch-freeze` | false | 0 / 0 | the sibling no-progress-clock fix; same Rust reach (`RustEnvDecl.switch_freeze`), OFF, 0 recorded runs | **NEEDS-OWNER** |
 | `--clip-range` | 0.15 | 261 / 34 | `--arch production`: `recipe.fresh.clip_range` = `0.15` | **KEEP** |
 | `--clip-range-vf` | 0.5 | 263 / 34 | `--arch production`: `recipe.fresh.clip_range_vf` = `null` (the production value is OFF / zero: an arch toggle held for ablations, see FINDINGS) | **KEEP** |
 | `--opp-belief-cls-k` | — | 186 / 34 | `--arch production`: `production_config.json` `opp_belief_cls_k` = `6` | **KEEP** |
@@ -222,8 +221,6 @@
 | flag | default | typed (all / last 40) | live user | verdict |
 |---|---|---|---|---|
 | `--eval-shard-games` | 25 | 184 / 34 | sizes the Rust eval core's shard units (`rust_eval`, `training_runbook.md`) | **KEEP** |
-| `--bait-bot-share` | 0.0 | 3 / 0 | BaitBot joins the training roster; the bait hunt is CLOSED, but BaitBot is also a RUST bot (`rust_env/src/bots/`, `bots_gate_test`, the Python class is its oracle), so deleting it is a Rust crossing | **NEEDS-OWNER** |
-| `--bait-bot-p` | 0.6 | 3 / 0 | BaitBot's pivot probability, same Rust reach as `--bait-bot-share` | **NEEDS-OWNER** |
 | `--eval-freq` | — | 5 / 0 | the eval cadence (every real run) | **KEEP** |
 | `--eval-games` | — | 26 / 0 | games per opponent per eval cycle (`design_ladder_campaign.md` types `--eval-games 200`) | **KEEP** |
 | `--snapshot-ladder-games` | 100 | 184 / 34 | the per-promotion ladder tax (`ladder.json` is the headline ELO) | **KEEP** |

@@ -84,7 +84,6 @@ def delta_projection(d) -> dict:
         "we_fainted": bool(d.we_fainted), "opp_fainted": bool(d.opp_fainted),
         "our_failed_to_move": bool(d.our_failed_to_move),
         "phase_is_forced_switch": bool(d.phase_is_forced_switch),
-        "decision_was_forced_switch": bool(d.decision_was_forced_switch),
         "our_damaging": d.our_damaging_event is not None, "opp_damaging": d.opp_damaging_event is not None,
         "opp_target_hp_delta": None if d.opp_target_hp_delta is None else float(np.float32(d.opp_target_hp_delta)),
         # the label's non-choice facts and clause (i)'s own-hit attribution

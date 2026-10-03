@@ -92,13 +92,13 @@ COUNTERS: Tuple[Counter, ...] = (
 #: where the doc allows), an unknown one is refused. Rendered into ``columns.rs`` as ``SPEC_KEYS``,
 #: which ``spec.rs`` reads, so the two languages cannot disagree about the spec's shape.
 SPEC_KEYS: Tuple[str, ...] = (
-    "n", "threads", "format_id", "names", "teams", "decision_tense", "switch_freeze", "turn_limit",
+    "n", "threads", "format_id", "names", "teams", "turn_limit",
     "terminal", "refusal_budget", "bank_dir", "labels", "opponents",
 )
 
 
 def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, str]",
-              decision_tense: bool, switch_freeze: bool, turn_limit: Optional[int],
+              turn_limit: Optional[int],
               refusal_budget: int, bank_dir: Optional[str], format_id: str = "gen3ou",
               labels: "tuple[str, ...]" = (), terminal: "Optional[dict]" = None,
               opponents: "Optional[list[dict]]" = None) -> str:
@@ -120,7 +120,7 @@ def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, st
 
     spec = {
         "n": n, "threads": threads, "format_id": format_id, "names": list(names), "teams": list(teams),
-        "decision_tense": bool(decision_tense), "switch_freeze": bool(switch_freeze), "turn_limit": turn_limit,
+        "turn_limit": turn_limit,
         "terminal": term, "refusal_budget": refusal_budget, "bank_dir": bank_dir, "labels": list(labels),
         "opponents": [dict(r) for r in (opponents if opponents is not None else ({"kind": "external"},))],
     }

@@ -246,7 +246,7 @@ def install_opponent_log(player, keyed: bool) -> None:
 
 
 #: The stream attribute of each bot RNG (``bot_inventory``'s streams → the player's attribute).
-_BOT_STREAM_ATTR = {"choice": "_choice_rng", "protect": "_protect_rng", "bait": "_rng"}
+_BOT_STREAM_ATTR = {"choice": "_choice_rng", "protect": "_protect_rng"}
 
 
 def _play_per_game(unit, pool, trainee, opponent, item, seed_base, bridge_impl, game_log_path=None):

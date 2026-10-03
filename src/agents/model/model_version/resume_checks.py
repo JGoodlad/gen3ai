@@ -130,7 +130,9 @@ class ModelVersionResumeChecks(ModelVersionFields):
         Call as: saved_version.check_reward_config(args_reward_config).
 
         Since deletion pass P11b no reward field has a CLI flag (the terminal is a constant of the trainer's
-        namespace: the win indicator alone, victory 1.0, draw 0.0), so there is nothing to "re-pass": a
+        namespace: the win indicator alone, victory 1.0, draw 0.0; P11d took the no-progress clock's two
+        switches, `progress_decision_tense` / `progress_switch_freeze`, the same way: both constants of the
+        namespace, False), so there is nothing to "re-pass": a
         checkpoint recorded on ANY other reward cannot resume on this code. The error says so and names the
         way out (run it PINNED to its own commit, or start fresh). A checkpoint that recorded the DELETED
         shaped reward never reaches this check — the resume path refuses it first
@@ -156,7 +158,8 @@ class ModelVersionResumeChecks(ModelVersionFields):
                 "(changing them silently shifts the reward / objective):\n" + "\n".join(problems) +
                 f"\n\nThis run recorded {recorded}.\n"
                 "The trainer's reward is the win indicator alone (victory_value 1.0, draw_penalty 0.0, "
-                "terminal_indicator ON) and none of it is a flag any more (deletion pass P11b), so a run "
+                "terminal_indicator ON, the no-progress clock's two variants OFF) and none of it is a flag any more "
+                "(deletion pass P11b / P11d), so a run "
                 "recorded on any other reward cannot resume on this code. Fix: run it PINNED to its own "
                 "commit (the launcher's default for a resume — never --no-pin / --sync-to-main), or start a "
                 "fresh run."

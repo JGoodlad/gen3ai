@@ -112,8 +112,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     pool_load_s = time.perf_counter() - t1
     server = E.PolicyOpponentServer(plan, svc, n, policy_seed=17, seed_stride=1, force_greedy=a.mode == "greedy")
     teams = packed_teams("pool")
-    spec = P.spec_json(n=n, threads=a.threads, teams=list(teams), names=("benone", "bentwo"), decision_tense=False,
-                       switch_freeze=False, turn_limit=EP.stall_threshold(), refusal_budget=64, bank_dir=None,
+    spec = P.spec_json(n=n, threads=a.threads, teams=list(teams), names=("benone", "bentwo"), turn_limit=EP.stall_threshold(), refusal_budget=64, bank_dir=None,
                        opponents=plan.spec_rows(bots="core"))
     lib = ffi.load(ffi.default_path(a.profile), nan_poison=a.profile == "selfcheck")
     rng = np.random.default_rng(3)
