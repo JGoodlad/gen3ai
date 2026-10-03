@@ -153,10 +153,10 @@ def _start_rust_env(env, model) -> None:
 
 async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level, n_envs,
                           reward_config, reward_composition, annealing_mode,
-                          _shutdown_event, _run_eval, _effective_max_lr,
+                          _shutdown_event, _effective_max_lr,
                           callbacks, eval_callback, lr_callback, adaptive_ppo_callback,
                           graceful_restart_callback,
-                          _maybe_seed_pool, evaluate_model_random) -> None:
+                          _maybe_seed_pool) -> None:
     """Load or construct the model, then run (and finish) the training job."""
     # THE FORK PARENT, captured BEFORE the consensus warm-start may re-point `args.model` at
     # `<run>/warmstart/…` — that init is built FROM the parent, so recording it would make the run
@@ -419,122 +419,116 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # instrumented update branch on `clip_range_vf is None`, and a callable is not None.
         model.clip_range_vf = None if args.clip_range_vf is None else (lambda _: args.clip_range_vf)
 
-        if args.eval_only:
-            await evaluate_model_random(model)
-            return
-        else:
-            remaining_steps = args.steps - model.num_timesteps
-            if remaining_steps <= 0:
-                print(f"Training already complete ({model.num_timesteps:,} / {args.steps:,} steps)")
-                sys.exit(TrainExitCode.COMPLETE)
-            print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail}))")
-            # gen3_winprob_critic_mode_v1: `--gamma` is INERT ON A RESUME, exactly like `--lr` —
-            # SB3 restores the checkpoint's own gamma, so the argv's value never reaches GAE. STATE
-            # it rather than let a resumed run silently discount differently from what its command
-            # says, and RE-POINT the reward config's copy at the value actually in force (it is
-            # recorded, and hashed into `reward_config_digest`).
-            if abs(float(reward_config.gamma) - float(model.gamma)) > 1e-12:
-                print(f"[Resume] gamma: using the checkpoint's {float(model.gamma):g} "
-                      f"(arg --gamma={float(reward_config.gamma):g} ignored on resume, like --lr); "
-                      f"the reward config's copy follows it.")
-                reward_config.gamma = float(model.gamma)
-            _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes
-            _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer's compile step
-            _ledger.mark("rust env core (T2 slots, staging, arena)")
-            _maybe_compile_trainer(model, args)
-            _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
-            _apply_grad_checkpointing(model, args.grad_checkpointing)
-            _arm_compile_sentinel(model, args)   # gen3_compile_sentinel_v1: reset, prewarm, lock
-            _ledger.mark("compiled regions: gate + prewarm + lock")
-            _arm_learner_lifecycle(model, args)  # K6 gen3_learner_freeze_v1: declare, then freeze guard
-            _ledger.mark("optimizer state declared (Adam m, v) + lifecycle")
-            _ledger.report(model_dir)
-            # gen3_update_fit_v1: RUN one dry update (restored exactly) and refuse a first update that
-            # would not fit with the declared headroom — at startup, never an OOM at update 1.
-            _fit = _update_fit.check_update_fits(model, model_dir)
-            if _fit:
-                print(_fit, flush=True)
-            # gen3_run_lineage_v1 — written ONCE at fork creation and preserved by every later save.
-            # `None` on a same-run restart, which is what keeps the recorded parent immutable.
-            _lineage = _run_lineage(args, model_dir, model_path=_fork_source_model,
-                                    fork_step=int(getattr(model, "num_timesteps", 0) or 0))
-            save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args,
-                                reward_composition=reward_composition, lineage=_lineage)
-            # gen3_tb_inherit_v1 — a FORK inherits its parent's scalar curves (steps <= fork_step),
-            # so its TensorBoard reads from step 0 instead of starting mid-air. Driven off the very
-            # block just recorded above: `_lineage` is non-None ONLY on a fork (build_lineage returns
-            # None on a same-run restart via `fork_lr.is_same_run_checkpoint`), and the parent +
-            # fork_step are read out of it — so the curve a fork inherits and the parent it claims
-            # cannot disagree. Runs BEFORE _attach_run_tb_logger so the prefix is in place before the
-            # run's own writer opens. Never raises: it returns a reason instead (see the module).
-            from agents.training.tb_inherit import inherit_from_lineage as _inherit_tb
-            print(_inherit_tb(model_dir, _lineage,
-                              enabled=bool(getattr(args, "tb_inherit", True))).describe())
+        remaining_steps = args.steps - model.num_timesteps
+        if remaining_steps <= 0:
+            print(f"Training already complete ({model.num_timesteps:,} / {args.steps:,} steps)")
+            sys.exit(TrainExitCode.COMPLETE)
+        print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail}))")
+        # gen3_winprob_critic_mode_v1: `--gamma` is INERT ON A RESUME, exactly like `--lr` —
+        # SB3 restores the checkpoint's own gamma, so the argv's value never reaches GAE. STATE
+        # it rather than let a resumed run silently discount differently from what its command
+        # says, and RE-POINT the reward config's copy at the value actually in force (it is
+        # recorded, and hashed into `reward_config_digest`).
+        if abs(float(reward_config.gamma) - float(model.gamma)) > 1e-12:
+            print(f"[Resume] gamma: using the checkpoint's {float(model.gamma):g} "
+                  f"(arg --gamma={float(reward_config.gamma):g} ignored on resume, like --lr); "
+                  f"the reward config's copy follows it.")
+            reward_config.gamma = float(model.gamma)
+        _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes
+        _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer's compile step
+        _ledger.mark("rust env core (T2 slots, staging, arena)")
+        _maybe_compile_trainer(model, args)
+        _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
+        _apply_grad_checkpointing(model, args.grad_checkpointing)
+        _arm_compile_sentinel(model, args)   # gen3_compile_sentinel_v1: reset, prewarm, lock
+        _ledger.mark("compiled regions: gate + prewarm + lock")
+        _arm_learner_lifecycle(model, args)  # K6 gen3_learner_freeze_v1: declare, then freeze guard
+        _ledger.mark("optimizer state declared (Adam m, v) + lifecycle")
+        _ledger.report(model_dir)
+        # gen3_update_fit_v1: RUN one dry update (restored exactly) and refuse a first update that
+        # would not fit with the declared headroom — at startup, never an OOM at update 1.
+        _fit = _update_fit.check_update_fits(model, model_dir)
+        if _fit:
+            print(_fit, flush=True)
+        # gen3_run_lineage_v1 — written ONCE at fork creation and preserved by every later save.
+        # `None` on a same-run restart, which is what keeps the recorded parent immutable.
+        _lineage = _run_lineage(args, model_dir, model_path=_fork_source_model,
+                                fork_step=int(getattr(model, "num_timesteps", 0) or 0))
+        save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args,
+                            reward_composition=reward_composition, lineage=_lineage)
+        # gen3_tb_inherit_v1 — a FORK inherits its parent's scalar curves (steps <= fork_step),
+        # so its TensorBoard reads from step 0 instead of starting mid-air. Driven off the very
+        # block just recorded above: `_lineage` is non-None ONLY on a fork (build_lineage returns
+        # None on a same-run restart via `fork_lr.is_same_run_checkpoint`), and the parent +
+        # fork_step are read out of it — so the curve a fork inherits and the parent it claims
+        # cannot disagree. Runs BEFORE _attach_run_tb_logger so the prefix is in place before the
+        # run's own writer opens. Never raises: it returns a reason instead (see the module).
+        from agents.training.tb_inherit import inherit_from_lineage as _inherit_tb
+        print(_inherit_tb(model_dir, _lineage,
+                          enabled=bool(getattr(args, "tb_inherit", True))).describe())
 
-            _abort_fn = _setup_signal_handlers(
-                model, model_dir, _shutdown_event, current_version,
-                lambda: model.policy.optimizer.param_groups[0]["lr"],
-                lambda: model.n_epochs,
-                handoff_lr_fn=(
-                    (lambda: lr_callback.handoff_lr)
-                    if isinstance(lr_callback, TwoPhaseLRCallback) else None
-                ),
-                eval_drain_fn=(
-                    (lambda: eval_callback.drain(timeout=_ABORT_EVAL_DRAIN_SEC))
-                    if (eval_callback is not None and hasattr(eval_callback, "drain")) else None
-                ),
-            )
-            if eval_callback is not None:
-                eval_callback.abort_fn = _abort_fn
-            graceful_restart_callback.abort_fn = _abort_fn
+        _abort_fn = _setup_signal_handlers(
+            model, model_dir, _shutdown_event, current_version,
+            lambda: model.policy.optimizer.param_groups[0]["lr"],
+            lambda: model.n_epochs,
+            handoff_lr_fn=(
+                (lambda: lr_callback.handoff_lr)
+                if isinstance(lr_callback, TwoPhaseLRCallback) else None
+            ),
+            eval_drain_fn=(
+                (lambda: eval_callback.drain(timeout=_ABORT_EVAL_DRAIN_SEC))
+                if (eval_callback is not None and hasattr(eval_callback, "drain")) else None
+            ),
+        )
+        if eval_callback is not None:
+            eval_callback.abort_fn = _abort_fn
+        graceful_restart_callback.abort_fn = _abort_fn
 
-            # Seed the pool from these weights iff self-play is active and the pool is empty
-            # (no env rebuild — workers re-scan the dir on demand). No-op when below threshold
-            # or the pool already has snapshots. Then start the worker watchdog before rollouts.
-            _maybe_seed_pool(model)
-            start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
+        # Seed the pool from these weights iff self-play is active and the pool is empty
+        # (no env rebuild — workers re-scan the dir on demand). No-op when below threshold
+        # or the pool already has snapshots. Then start the worker watchdog before rollouts.
+        _maybe_seed_pool(model)
+        start_subprocess_watchdog(env, label="train_env", shutdown_event=_shutdown_event)
 
-            _attach_run_tb_logger(model, model_dir)  # TB → <model_dir>/tb/ (resumes append to it)
-            try:
-                # `remaining_steps`, NOT `args.steps`. SB3's `_setup_learn` does
-                # `total_timesteps += self.num_timesteps` whenever `reset_num_timesteps=False`, so
-                # passing the ABSOLUTE target here re-adds the steps already trained and silently
-                # doubles the budget: a resume at 24.08M with --steps 25M retargeted to ~49M. The run
-                # printed "915,520 remaining of 25,000,000" and kept going 1M steps past the target —
-                # the message was computed correctly and then not used. gen-9 hit this too (it was at
-                # 26M against a 25M budget and had to be killed by hand); gen-10 reached 26.05M.
-                model.learn(total_timesteps=remaining_steps, callback=callbacks,
-                            reset_num_timesteps=False)
-            except Exception as e:
-                # A genuine training error (NOT the graceful restart — that path os._exit(15)s and
-                # never reaches here). Print the FULL traceback so the crash is diagnosable, save the
-                # exception weights for forensics, then RE-RAISE: the old code swallowed the error and
-                # fell through to the normal save + "Training complete" + final eval, masking a fatal
-                # crash as a clean completion (so the launcher saw exit-0 and never auto-restarted).
-                # Re-raising surfaces it as a non-zero exit → launcher restarts from the last checkpoint
-                # (resilience) instead of silently ending the run with a fake final win rate.
-                print(f"Training interrupted by exception: {e}")
-                traceback.print_exc()
-                final_path = os.path.join(model_dir, "final_model_exception")
-                model.save(final_path)
-                _write_latest_txt(model_dir, "final_model_exception.zip")
-                raise
-
-            # Training is over: stand the worker watchdog down BEFORE the final save/eval, so a
-            # train-env worker SIGTERM'd in teardown (exitcode -15) is not an `exit 1` crash.
-            _shutdown_event.set()
-            final_path = os.path.join(model_dir, "final_model")
+        _attach_run_tb_logger(model, model_dir)  # TB → <model_dir>/tb/ (resumes append to it)
+        try:
+            # `remaining_steps`, NOT `args.steps`. SB3's `_setup_learn` does
+            # `total_timesteps += self.num_timesteps` whenever `reset_num_timesteps=False`, so
+            # passing the ABSOLUTE target here re-adds the steps already trained and silently
+            # doubles the budget: a resume at 24.08M with --steps 25M retargeted to ~49M. The run
+            # printed "915,520 remaining of 25,000,000" and kept going 1M steps past the target —
+            # the message was computed correctly and then not used. gen-9 hit this too (it was at
+            # 26M against a 25M budget and had to be killed by hand); gen-10 reached 26.05M.
+            model.learn(total_timesteps=remaining_steps, callback=callbacks,
+                        reset_num_timesteps=False)
+        except Exception as e:
+            # A genuine training error (NOT the graceful restart — that path os._exit(15)s and
+            # never reaches here). Print the FULL traceback so the crash is diagnosable, save the
+            # exception weights for forensics, then RE-RAISE: the old code swallowed the error and
+            # fell through to the normal save + "Training complete", masking a fatal
+            # crash as a clean completion (so the launcher saw exit-0 and never auto-restarted).
+            # Re-raising surfaces it as a non-zero exit → launcher restarts from the last checkpoint
+            # (resilience) instead of silently ending the run with a fake final win rate.
+            print(f"Training interrupted by exception: {e}")
+            traceback.print_exc()
+            final_path = os.path.join(model_dir, "final_model_exception")
             model.save(final_path)
-            _write_latest_txt(model_dir, "final_model.zip")
-            save_model_snapshot(os.path.dirname(final_path), current_version, hparams=_model_hparams(model), cli_args=cli_args,
-                                reward_composition=reward_composition, lineage=_lineage)
-            print(f"Training complete. Model saved to {final_path}")
-            best_model_dir = os.path.join(model_dir, "best_model")
-            if os.path.isdir(best_model_dir):
-                save_model_snapshot(best_model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args,
-                                reward_composition=reward_composition, lineage=_lineage)
-            if _run_eval and getattr(args, "final_eval", False):
-                await evaluate_model_random(model)
+            _write_latest_txt(model_dir, "final_model_exception.zip")
+            raise
+
+        # Training is over: stand the worker watchdog down BEFORE the final save/eval, so a
+        # train-env worker SIGTERM'd in teardown (exitcode -15) is not an `exit 1` crash.
+        _shutdown_event.set()
+        final_path = os.path.join(model_dir, "final_model")
+        model.save(final_path)
+        _write_latest_txt(model_dir, "final_model.zip")
+        save_model_snapshot(os.path.dirname(final_path), current_version, hparams=_model_hparams(model), cli_args=cli_args,
+                            reward_composition=reward_composition, lineage=_lineage)
+        print(f"Training complete. Model saved to {final_path}")
+        best_model_dir = os.path.join(model_dir, "best_model")
+        if os.path.isdir(best_model_dir):
+            save_model_snapshot(best_model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args,
+                            reward_composition=reward_composition, lineage=_lineage)
     else:
         print(f"Starting NEW Training (Parallel x{n_envs}, Batch: {args.batch_size}, Epochs: {args.n_epochs})")
         # model_dir and unique_id are now pre-defined earlier in main()
@@ -711,5 +705,3 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         if os.path.isdir(best_model_dir):
             save_model_snapshot(best_model_dir, version, hparams=_model_hparams(model), cli_args=cli_args,
                                 reward_composition=reward_composition, lineage=_lineage)
-        if _run_eval and getattr(args, "final_eval", False):
-            await evaluate_model_random(model)

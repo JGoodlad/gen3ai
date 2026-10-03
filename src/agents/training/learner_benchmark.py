@@ -34,8 +34,8 @@ a real `train()` on a fixture buffer before `learn()`) is NOT intercepted — `l
 never rescaled. A cuda run REFUSES a GPU that holds any compute process or a box running a trainer.
 
 Worker exit: the driver writes its JSON, then terminates its own descendants (env workers, the
-forkserver, bridges) by explicit PID and `os._exit`s — the trainer's own teardown (final save,
-final eval) is never reached.
+forkserver, bridges) by explicit PID and `os._exit`s — the trainer's own teardown (final save)
+is never reached.
 """
 from __future__ import annotations
 

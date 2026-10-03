@@ -6,7 +6,6 @@ keep their original relative order, which is the order `--help` renders.
 """
 import argparse
 
-from main.train.constants import SMOKE_EVAL_BATTLES, SMOKE_STEPS
 from main.train.parser.base import BoolFlag, retired_choice
 
 
@@ -22,7 +21,6 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "of that name (pick another, or --model to resume it). Ignored when "
                              "--run-dir is set (launcher resume). For --exploiter, defaults to "
                              "'exploiter_vs_<target>' if you don't name it.")
-    parser.add_argument("--eval-only", action=BoolFlag, default=False, help="Skip training and only evaluate")
     parser.add_argument("--steps", type=int, default=100000, help="Total training timesteps")
     parser.add_argument("--debug", action=BoolFlag, default=False, help="Use DummyVecEnv (1 env) for debugging")
     parser.add_argument("--debug-eval", "--debug_eval", dest="debug_eval", action=BoolFlag, default=False,
@@ -60,21 +58,6 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
              "which would otherwise OOM the GPU at high --n-envs. Opponent inference is batch-1 "
              "no_grad, so CPU is plenty fast. Pass --no-self-play-use-cpu to load them on --device.",
     )
-    parser.add_argument(
-        "--final-eval",
-        action=BoolFlag,
-        default=False,
-        help="Run the legacy POST-TRAINING evaluation (main/train/final_eval.py: 9 bots x "
-             "--eval-battles, greedy, batch-1 through the per-game path; ~20 min) after `Training "
-             "complete`. Default OFF (owner 2026-10-01): it dates from the project's first day, nothing "
-             "reads its output, and the in-run eval cycles already measure the same bots. "
-             "`--eval-only` still runs it. A robust replacement is a TECH_DEBT row.")
-    parser.add_argument("--eval-battles", type=int, default=None,
-                        help="Battles per FINAL-evaluation opponent. Default 100, but AUTO-SCALED "
-                             f"down to {SMOKE_EVAL_BATTLES} when --steps < {SMOKE_STEPS:,} (a smoke "
-                             "run), because a 9-opponent x 100-battle final eval costs many minutes "
-                             "and a 2k-step policy produces no signal worth that. An explicit value "
-                             "always wins.")
     parser.add_argument(
         "--tb-inherit",
         action=BoolFlag,

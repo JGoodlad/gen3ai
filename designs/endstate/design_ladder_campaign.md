@@ -77,7 +77,7 @@ owner GO 2026-09-26.
   recipe with them added and is read at matched snapshot count (EXPERIMENT_BACKLOG X9). The repair must
   not change any file a live pinned run reads from `data/`.
 - **The population loop carries over**, with both power levers registered before round 1: readers at
-  `--eval-battles 200` (800 games each) and a **POOLED read over R = 4 rounds**
+  `--eval-games 200` (800 games each; this row wrote `--eval-battles 200`, which sized only the deleted post-training final eval and never a live eval cycle — corrected in P6, 2026-10-02) and a **POOLED read over R = 4 rounds**
   (D = mean_r[gap(RB_r) − gap(RC_r)], one verdict, no per-round verdict, no extension; detection needs
   D ≲ −7.4 pp). The stable set is a WINDOW {A′, A2′, the most recent reader} at share 0.40, so each
   specialist's exposure stays at 0.12. KILL guards: the untaught 8 against `untaught_meter_opponent_v14`
@@ -272,3 +272,4 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-09-27 | Research priority **(owner)** | Q right first; memorization chipped in parallel; pool memorization is a SUCCESS milestone, then generalize (on-pool reported first) | Root-causing memorization before Q | EXPERIMENT_BACKLOG header (`93745a66`) |
 | 2026-09-27 | Exploiter breadth | Archetype exploiters from repaired ladder teams inside the pooled loop (proposed, X10) | — | EXPERIMENT_BACKLOG X10 |
 | 2026-10-02 | Distillation (the exploiter fold) and the search teacher DELETED (deletion pass L3, owner: "delete all, port none") | The stages no longer have a built distillation route: stage 3 (exploiters) feeds the generalist only through the opponent POOL (the population loop), and stage 5 (search) has no training-side teacher consumer. Distillation was the only BUILT route to X15 (expert iteration); a Rust port is ~1-2 agent-days if X15 is ever scheduled | Porting either onto the Rust core first (nothing is scheduled to use them) | `designs/deleted_flags.md`; `designs/training/exploiter_and_distillation.md` HISTORY |
+| 2026-10-02 | The 200-game reader's flag is `--eval-games`, not `--eval-battles` (deletion pass P6) | The power lever of the readers is `--eval-games 200` — the flag that sizes every live eval cycle. `--eval-battles` sized ONLY the post-training final eval, which is deleted (D5), so the flag is gone and an argv carrying it is refused | Keeping `--eval-battles` as a no-op alias (a lever that silently sets nothing is how a registered power lever goes unapplied) | `src/main/train/callbacks.py` read `args.eval_battles` only into `final_eval`; the live callbacks read `args.eval_games` |

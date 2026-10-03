@@ -21,7 +21,7 @@ and replaces the first `train()` with one of two stages.
           segments as `record_function` ranges; the trace is exported for `trace_classify`.
 
 The worker EXITS through `learner_benchmark._exit_worker` (terminates its own descendants by
-explicit PID) — the trainer's teardown, saves and final eval are never reached.
+explicit PID) — the trainer's teardown and saves are never reached.
 """
 from __future__ import annotations
 

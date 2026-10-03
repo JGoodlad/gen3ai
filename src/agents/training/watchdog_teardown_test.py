@@ -1,6 +1,6 @@
 """The train-env worker watchdog must not turn a clean finish into a crash.
 
-2026-09-27..29, every run end (N0, L95, C_fix, K2, K3): after the final save and the final eval, a
+2026-09-27..29, every run end (N0, L95, C_fix, K2, K3): after the final save (and, then, the final eval), a
 SubprocVecEnv worker died in teardown with exitcode -15, the watchdog called `os._exit(1)`, and the
 launcher logged "🛑 Child crashed (exit 1) … crash #1" and auto-restarted a run whose steps were all
 done. Two changes close it, and each has a test that fails on revert:

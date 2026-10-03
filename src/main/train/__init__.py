@@ -4,7 +4,7 @@
 re-exports every name that used to live in it, so no import path and no recorded
 `launcher_command` changed. The phases live here, one module per concern:
 
-    constants.py        BATTLE_FORMAT / the smoke-eval scale / the abort drain bound
+    constants.py        BATTLE_FORMAT / the abort drain bound
     parser/             `build_parser()` behind a hub, one module per FLAG FAMILY in `--help`
                         order (base + operational, hyperparameters, reward, clean_world,
                         capacity, distillation, eval_subprocess); `base.py` holds the three
@@ -18,7 +18,6 @@ re-exports every name that used to live in it, so no import path and no recorded
     rust_env_setup.py   phase 3 — the Rust env core's `RustVecEnv` (the only env core)
     callbacks.py        phase 4 — everything that runs during `learn()`
     model_build.py      phase 5 — the resume + fresh model paths, and `learn()` itself
-    final_eval.py       the post-training win-rate evaluation
 
 **`entry_source()` is the seam for source-scanning gates.** Several tests assert about the
 training entry point by READING it (the flag-registry surface check, the `--edge-bias-families`

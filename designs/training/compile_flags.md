@@ -804,7 +804,7 @@ force, which is not the same revert-must-fail.)
 The K1 finding: on torch 2.8.0+cu126 a **batch-1 CUDA eval/no-grad** graph of the production extractor
 fails to LOWER — Triton `CompilationError` (`'constexpr_type' object has no attribute 'is_block'` on a
 fully-constant `tl.broadcast_to` index); batch 2 and 4 compile. Batch 1 reaches the learner process
-only off the hot path (a `--debug` single-env rollout; the in-process final evaluation). The rule
+only off the hot path (a `--debug` single-env rollout; the trainer's in-process final evaluation, DELETED in P6 — historical at the 2026-09-30 smoke below). The rule
 today: region R0's dispatcher (`compile_regions._make_r0`) runs a batch in
 `compile_trainer.EAGER_BATCHES` (= {1}) through the EAGER rollout core, every other batch through the
 compiled one; the batch test is Python, outside the graph, and the declared signature table
@@ -816,9 +816,9 @@ CPU). (Until 2026-10-02 the extractor-only compile routed batch 1 the same way, 
 the batch-1 call equalled eager bit-for-bit, and reverting the routing raised the
 `CompilationError`.) SMOKE (2026-09-30, the same
 GPU, torch 2.8.0+cu126, `--device cuda --compile-trainer --arch production --steps 256 --n-envs 2
---n-steps 64 --batch-size 64 --n-epochs 2 --eval-battles 2`): parity gate PASS → prewarm → lock →
+--n-steps 64 --batch-size 64 --n-epochs 2 --eval-battles 2`, a flag deleted with the final evaluation): parity gate PASS → prewarm → lock →
 two iterations with 0 compiles after the lock → `Training complete` → the in-process FINAL
-EVALUATION at batch 1 ran all 18 games (`Final aggregate win rate: 11.1%`), exit 0
+EVALUATION (deleted since) at batch 1 ran all 18 games (`Final aggregate win rate: 11.1%`), exit 0
 (`~/gen3ai_archive/k6_k8/smoke28_b1.log`). Before the fix that call was the batch-1 CUDA compile the
 reverted-routing test shows raising.
 
@@ -1108,7 +1108,7 @@ object (limit 8, headroom 4)` — iteration 1 added one signature the prewarm di
 2026-09-30, K6: the rank probe's forward hooks — now hook-free, and the lock moved before iteration 1)
 → iterations 2-3 clean (`train_ms`
 12.8 s → 2.8 s), checkpoint saves after the lock fine, `Training complete`. It then exposed the
-final-eval defect `release()` fixes; **the fix is unit-tested, not re-run on the card** (the card
+final-eval defect `release()` fixes (the final eval is deleted; `release()` stays); **the fix is unit-tested, not re-run on the card** (the card
 was handed back to a live benchmark). Nothing toggles TF32 /
 matmul precision / autocast after startup.
 

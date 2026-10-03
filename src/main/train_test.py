@@ -31,8 +31,8 @@ _HUB = "main.train_rl_agent"
 # Every module-level name `src/main/train_rl_agent.py` defined at 586e682, the commit before the
 # decomposition. Recovered by AST, not by hand, and transcribed here verbatim.
 _PRE_SPLIT_EXPORTS = (
-    "BATTLE_FORMAT", "BoolFlag", "CLIP_RANGE_DEFAULT", "DEFAULT_EVAL_BATTLES",
-    "SMOKE_EVAL_BATTLES", "SMOKE_STEPS", "_ABORT_EVAL_DRAIN_SEC", "_BOOL_FALSE", "_BOOL_TRUE",
+    "BATTLE_FORMAT", "BoolFlag", "CLIP_RANGE_DEFAULT",
+    "_ABORT_EVAL_DRAIN_SEC", "_BOOL_FALSE", "_BOOL_TRUE",
     "_HparamLogCallback", "_TrackingCheckpointCallback",
     "_apply_grad_checkpointing", "_attach_run_tb_logger", "_load_saved_version",
     "_maybe_compile_trainer", "_model_hparams", "_read_saved_optimizer_state",

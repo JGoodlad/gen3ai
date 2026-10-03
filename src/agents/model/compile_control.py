@@ -722,7 +722,7 @@ class CompileControl:
         """Hook the loop's `collect` and `update` points (the `compile_sentinel` owner of the DECLARED
         hook table, `agents/training/loop_hooks.py`; instance-attribute wrappers on a duck-typed model)
         and its `learn` point (to RELEASE the lock when training ends —
-        the final evaluation runs in-process on the compiled forward): guard both, record the
+        a forward after `learn()` is a new signature by design): guard both, record the
         `compile/*` scalars and the train_ms backstop at the update cadence, and turn any violation
         into `os._exit(FATAL_CONFIG)` — an exception inside `learn()` would be a restartable CRASH
         (`model_build`'s generic `except`), and a restart would replay the same failure.
@@ -771,10 +771,10 @@ class CompileControl:
 
         @contextlib.contextmanager
         def learn() -> Any:
-            # The lock's scope is TRAINING. After `learn()` the trainer runs its FINAL EVALUATION
-            # in-process on the same compiled forward (batch 1, no-grad — new signatures by
-            # design); measured 2026-09-28: the locked sentinel broke it with RecompileError. So
-            # release on the way out, however `learn()` ends.
+            # The lock's scope is TRAINING. A forward after `learn()` on the same compiled module
+            # (batch 1, no-grad — a new signature by design; the in-process final evaluation, since
+            # deleted, was the case measured 2026-09-28: the locked sentinel broke it with
+            # RecompileError). So release on the way out, however `learn()` ends.
             try:
                 yield
             finally:

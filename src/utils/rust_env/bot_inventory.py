@@ -4,7 +4,7 @@
 The table of record for porting the scripted bots into the Rust env core (`src/rust_env/src/bots/`).
 `bot_inventory_test.py` (routine) derives every roster FROM THE CODE and fails when:
 
-* a class appears in a roster (the training pool, the eval roster, the post-training final eval,
+* a class appears in a roster (the training pool, the eval roster,
   the warm-start smoke) with no row here — a new bot must be inventoried before it plays;
 * a row's ``used_by`` disagrees with the rosters (a bot dropped from a pool reads as dropped here);
 * a ``Player`` subclass is defined in one of the bot modules with no row (defined-but-unused bots
@@ -15,7 +15,7 @@ The table of record for porting the scripted bots into the Rust env core (`src/r
 * a row marked PORTED names a Rust bot the crate does not define.
 
 THE STATE a bot reads is ONE object: the opponent side's poke-env ``Battle`` (in training
-``env.battle2``, agent2's own battle; in eval / anchors / final eval the bot player's own battle).
+``env.battle2``, agent2's own battle; in eval / anchors the bot player's own battle).
 The Rust port reads the env core's ``BoardReading`` for that side — the port of that object — through
 the bot VIEW (`utils.rust_env.bot_view`), whose equality is checked at every banked decision.
 
@@ -41,7 +41,6 @@ SITES = {
     "train_bait": "the training roster, ONLY with --bait-bot-share > 0 (`make_baitbot_class(--bait-bot-p)`)",
     "eval": "the eval roster — `agents/training/eval_roster.py` _EVAL_OPPONENT_SPECS (also "
             "`main.anchors` `bot:<name>` and the prober's replay, both through that table)",
-    "final_eval": "the post-training evaluation — `main/train/final_eval.py`",
     "warmstart": "the warm-start smoke — `agents/training/warmstart.py`",
 }
 
@@ -59,29 +58,29 @@ class BotRow:
 #: Every bot the fallbacks share: ``choose_random_move`` reads ``valid_orders`` (``wait``,
 #: ``trapped``, ``force_switch``, ``available_switches``, ``available_moves``) and draws one ``choice``.
 ROWS: tuple = (
-    BotRow("random", "poke_env.player.baselines.RandomPlayer", ("eval", "final_eval"), ("choice",),
+    BotRow("random", "poke_env.player.baselines.RandomPlayer", ("eval",), ("choice",),
            "valid_orders only — one choice draw per decision (its WHOLE policy)", "Random"),
     BotRow("heuristic", "poke_env.player.baselines.SimpleHeuristicsPlayer",
-           ("train", "eval", "final_eval", "warmstart"), ("choice",),
+           ("train", "eval", "warmstart"), ("choice",),
            "matchup (types, base spe, HP), _stat_estimation (base stats, boosts), own stats "
            "(_should_switch_out), hazards (side conditions), setup (self_setup_boosts: Target.SELF boosts or a "
            "non-Ghost's Curse — dead until the F-LF-1 fix, 2026-09-29), fallback draw", "Heuristic"),
-    BotRow("heuristic2", "agents.opponents.Gen3HeuristicV2Player", ("train", "eval", "final_eval"), ("choice",),
+    BotRow("heuristic2", "agents.opponents.Gen3HeuristicV2Player", ("train", "eval"), ("choice",),
            "damage calc (base stats, boosts, HP, ability, status FRZ), revealed opp moves, own bench movesets, "
            "hazards, recovery, setup (Target.SELF or non-Ghost Curse; dead until the F-LF-1 fix), status immunity", "HeuristicV2"),
-    BotRow("staller", "agents.opponents.Gen3StallerPlayer", ("train", "eval", "final_eval"), ("choice", "protect"),
+    BotRow("staller", "agents.opponents.Gen3StallerPlayer", ("train", "eval"), ("choice", "protect"),
            "opp status, Protect coin when TOX, recovery, side_conditions (any), best damage v1, best switch v1",
            "Staller"),
-    BotRow("staller_v2", "agents.opponents.Gen3StallerV2Player", ("train", "eval", "final_eval"), ("choice", "protect"),
+    BotRow("staller_v2", "agents.opponents.Gen3StallerV2Player", ("train", "eval"), ("choice", "protect"),
            "+ revealed opp damage (pivot), status immunity, last_move (is_last_used), damage v2, switch v2",
            "StallerV2"),
-    BotRow("aggressive", "agents.opponents.Gen3AggressivePlayer", ("train", "eval", "final_eval"), ("choice",),
+    BotRow("aggressive", "agents.opponents.Gen3AggressivePlayer", ("train", "eval"), ("choice",),
            "damage v1 over damaging moves, forced-switch by base atk/spa", "Aggressive"),
-    BotRow("aggressive_v2", "agents.opponents.Gen3AggressiveV2Player", ("train", "eval", "final_eval"), ("choice",),
+    BotRow("aggressive_v2", "agents.opponents.Gen3AggressiveV2Player", ("train", "eval"), ("choice",),
            "KO calc, matchup, immunity escape, damage v2, switch v2", "AggressiveV2"),
-    BotRow("setup_sweep", "agents.opponents.Gen3SetupSweepPlayer", ("train", "eval", "final_eval"), ("choice",),
+    BotRow("setup_sweep", "agents.opponents.Gen3SetupSweepPlayer", ("train", "eval"), ("choice",),
            "matchup, boosts, setup (Target.SELF or non-Ghost Curse; dead until the F-LF-1 fix), damage v1, switch v1", "SetupSweep"),
-    BotRow("setup_sweep_v2", "agents.opponents.Gen3SetupSweepV2Player", ("train", "eval", "final_eval"), ("choice",),
+    BotRow("setup_sweep_v2", "agents.opponents.Gen3SetupSweepV2Player", ("train", "eval"), ("choice",),
            "KO calc, revealed opp damage, matchup, setup (Target.SELF or non-Ghost Curse; dead until the F-LF-1 fix), damage v2, switch v2", "SetupSweepV2"),
     BotRow("baitbot", "agents.baitbot.Gen3BaitBotPlayer", ("train_bait",), ("choice", "bait"),
            "revealed opp attacks × bench immunity (effective_multiplier), bait coin, damage v2, switch v2",

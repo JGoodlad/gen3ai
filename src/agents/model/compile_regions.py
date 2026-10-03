@@ -13,8 +13,8 @@ THE TABLE (`REGIONS`):
   R0  rollout_forward      `Gen3DualHeadMaskablePolicy.rollout_core`: extractor + MLP towers +
                            pointer head + critic read + FUNCTIONAL masking -> (values, masked log-
                            probs). eval / no-grad / batch n_envs. The action draw stays eager (the
-                           same `multinomial` call, the same RNG stream). Batch 1 (the in-process
-                           final evaluation) runs the eager core (`gen3_batch1_eager_v1`). Serves the
+                           same `multinomial` call, the same RNG stream). Batch 1 (an off-hot-path
+                           forward, e.g. a `--debug` single-env rollout) runs the eager core (`gen3_batch1_eager_v1`). Serves the
                            python env core's rollout; on `--env-core rust` T2 serves rollouts.
   R1  learner_micro_step   `instrumented_ppo.micro_step.micro_step`: `evaluate_actions` + fold steps
                            1–3a (`gen3_learner_micro_step_v1`). train / grad / batch batch_size; its

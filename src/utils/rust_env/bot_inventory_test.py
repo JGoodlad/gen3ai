@@ -84,10 +84,6 @@ def _referenced_bots(t) -> set:
     return out
 
 
-def final_eval_roster() -> set:
-    return _referenced_bots(_tree("main/train/final_eval.py"))
-
-
 def warmstart_roster() -> set:
     return _referenced_bots(_tree("agents/training/warmstart.py"))
 
@@ -105,7 +101,7 @@ def bait_roster() -> set:
 
 def rosters() -> dict:
     return {"train": train_roster(), "train_bait": bait_roster(), "eval": eval_roster(),
-            "final_eval": final_eval_roster(), "warmstart": warmstart_roster()}
+            "warmstart": warmstart_roster()}
 
 
 def test_every_roster_bot_has_a_row():
@@ -171,7 +167,7 @@ def test_the_inventory_has_teeth(monkeypatch):
 
     def with_extra_bot(rel):
         t = real(rel)
-        if rel != "main/train/final_eval.py":
+        if rel != "agents/training/warmstart.py":
             return t
         return ast.parse(ast.unparse(t) + "\nfrom poke_env.player.baselines import MaxBasePowerPlayer\n"
                                           "extra = []\nextra.append(MaxBasePowerPlayer)\n")

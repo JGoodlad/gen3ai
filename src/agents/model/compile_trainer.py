@@ -314,8 +314,8 @@ def resolve_device(fe: Any) -> "torch.device":
 #: WHY batch 1. On torch 2.8.0+cu126 a batch-1 CUDA eval/no-grad graph of the production extractor
 #: does not LOWER (Triton `CompilationError`, "'constexpr_type' object has no attribute 'is_block'" on
 #: a fully-constant `tl.broadcast_to` index — the K1 finding; batch 2 and 4 compile). Batch 1 reaches
-#: the learner process only OFF the hot path (a `--debug` single-env rollout; the trainer's in-process
-#: final evaluation). Eager costs ~18 ms per batch-1 forward and nothing else. So batch 1 is never a
+#: the learner process only OFF the hot path (a `--debug` single-env rollout; the trainer's former
+#: in-process final evaluation is deleted). Eager costs ~18 ms per batch-1 forward and nothing else. So batch 1 is never a
 #: compiled signature, and the declared signature table (`compile_regions.prewarm_calls`) contains
 #: none; `compile_regions_test` pins the route.
 EAGER_BATCHES = frozenset({1})

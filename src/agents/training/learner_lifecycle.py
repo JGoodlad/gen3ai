@@ -571,7 +571,7 @@ def attach(model: Any, *, emit: Optional[Callable[[str], None]] = None,
         and `learn()`'s own `_on_training_start` have all run);
       * every `collect_rollouts` and `train` exit CHECKS (`LazyAcquisitionError`, a
         `FatalConfigError`: the trainer's fail-fast handler exits FATAL_CONFIG, not restarted);
-      * `learn()`'s exit RELEASES (the in-process final evaluation is not the steady state);
+      * `learn()`'s exit RELEASES (what runs after `learn()` is not the steady state);
       * on CUDA, the MEMORY half (`CudaMemoryWatch`) starts at the freeze and samples after every
         rollout and update — a projected OOM is `CudaMemoryLeakError` (exit FATAL_CUDA_LEAK after
         the trainer's handler saved `final_model_exception.zip`; the launcher restarts it, capped).

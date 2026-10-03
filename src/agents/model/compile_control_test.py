@@ -736,10 +736,11 @@ def test_the_attached_wrappers_are_excluded_from_every_checkpoint():
     assert set(vars(m)) <= set(excluded), set(vars(m)) - set(excluded)
 
 
-def test_the_lock_is_RELEASED_when_learn_returns_so_the_in_process_final_eval_can_compile(sentinel):
-    """MEASURED on the real trainer (2026-09-28 end-to-end smoke): after `learn()` the trainer runs
-    its FINAL EVALUATION in-process on the same compiled forward at batch 1 / no-grad, and the
-    still-locked sentinel raised RecompileError there. The lock's scope is training."""
+def test_the_lock_is_RELEASED_when_learn_returns_so_a_post_learn_forward_can_compile(sentinel):
+    """MEASURED on the real trainer (2026-09-28 end-to-end smoke, when the trainer still ran its
+    in-process FINAL EVALUATION — deleted since): a forward after `learn()` on the same compiled
+    module at batch 1 / no-grad, and the still-locked sentinel raised RecompileError there. The
+    lock's scope is training."""
     net = _compile_bound(_Net())
 
     class _Model:
@@ -768,7 +769,7 @@ def test_the_lock_is_RELEASED_when_learn_returns_so_the_in_process_final_eval_ca
     assert _stance() == "default"
     net.eval()
     with torch.no_grad():
-        net({"observation": torch.rand(1, 16)})       # the final eval's batch-1 call: compiles
+        net({"observation": torch.rand(1, 16)})       # a post-learn batch-1 call: compiles
     assert sentinel.compiles_after_lock == 0
 
 

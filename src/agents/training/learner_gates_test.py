@@ -372,7 +372,7 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
     passes L2 / L3 / L4 / U3: the recorded argvs carry the entropy-boost / true-team / distillation /
     search-teacher defaults, every one at its OFF value; L4: `--team-pfsp`,
     `--team-pfsp-cap`, `--team-pfsp-floor`; deletion pass K2: two of them type
-    `--matmul-precision high`; a pinned launch is judged by its OWN commit's parser, so HEAD's
+    `--matmul-precision high`; deletion pass P6: all four type `--eval-battles 100`; a pinned launch is judged by its OWN commit's parser, so HEAD's
     parser never sees them — what K9 does with the REST of the argv is what this pins)."""
     import re
     import shlex
@@ -390,7 +390,9 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
                    # L4: team-PFSP, each of which takes one value
                    "--team-pfsp", "--team-pfsp-cap", "--team-pfsp-floor",
                    # U3: the trainer's obs-source flag (the Python env's row source)
-                   "--obs-source"}
+                   "--obs-source",
+                   # P6: the deleted final eval's battle count (every recorded argv types it)
+                   "--eval-battles"}
     # L3: the distillation / search-teacher families, every flag of which takes one value here
     dead_l3 = re.compile(r"^--(distill-|opd-|search-teacher|teacher-|winprob-teacher-)")
     # U3 / R6: the `--compile-opponents` family (bare booleans here; recorded commands carry the flags

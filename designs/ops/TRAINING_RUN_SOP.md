@@ -433,8 +433,8 @@ wake. Re-create it on the next GO, written to this contract.
   code object (limit 8, headroom H) …` — grep the child log for `COMPILE LOCK`; headroom at the
   shipped config is 5. TB `compile/recompiles_after_lock` and
   `compile/cache_limit_hits` must read 0 for the life of the process; the child's last word on it is
-  `🧊 [COMPILE LOCK] released — learn() returned; 0 compile(s) after the lock` (the final eval runs
-  after the release, unlocked, by design). **A `[CompileSentinel] FATAL`
+  `🧊 [COMPILE LOCK] released — learn() returned; 0 compile(s) after the lock` (the lock's scope is
+  training; nothing compiled runs after `learn()` now that the final eval is deleted). **A `[CompileSentinel] FATAL`
   line means the learner recompiled after the lock, hit dynamo's cache limit (it would have run
   EAGER, ~1.75x slower, silently), or runs on a torch whose internals drifted** — the child exits
   `FATAL_CONFIG` (3) and the launcher does NOT restart it (no checkpoint is written on that exit;

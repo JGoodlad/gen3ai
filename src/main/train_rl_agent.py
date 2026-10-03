@@ -11,7 +11,7 @@ original kept as a hub.
 
 THE MODULE MAP (`main/train/`, and `main/train/__init__.py` repeats it):
 
-    constants.py        BATTLE_FORMAT / the smoke-eval scale / the abort drain bound
+    constants.py        BATTLE_FORMAT / the abort drain bound
     parser/             `build_parser()` behind a hub, one module per FLAG FAMILY in `--help`
                         order; `base.py` holds `BoolFlag` / `str2bool` / `optional_float`
     compile_flags.py    the `--compile-trainer` default resolvers
@@ -23,7 +23,6 @@ THE MODULE MAP (`main/train/`, and `main/train/__init__.py` repeats it):
     rust_env_setup.py   phase 3 — the Rust env core's `RustVecEnv` (the only env core)
     callbacks.py        phase 4 — everything that runs during `learn()`
     model_build.py      phase 5 — the resume + fresh model paths, and `learn()` itself
-    final_eval.py       the post-training win-rate evaluation
 
 What is left HERE is the glue those phases hand things to each other through: the run directory,
 the reward config, the vec-env, the self-play pool, and the order the five phases run in.
@@ -31,7 +30,6 @@ the reward config, the vec-env, the self-play pool, and the order the five phase
 import multiprocessing
 import os as _os
 import traceback
-import functools
 
 # ── BLAS THREAD PINNING — must run BEFORE torch is imported anywhere ──────────────────────────
 # Every CPU helper process (the Rust env core's front end, an eval worker) would otherwise run with
@@ -79,8 +77,7 @@ from main.launcher.ipc import emit
 # and the rest are all live re-exports, the same contract `features_extractor.py` keeps for its
 # own phase split.
 from main.train.constants import (   # noqa: F401 — re-export hub
-    BATTLE_FORMAT, CLIP_RANGE_DEFAULT, DEFAULT_EVAL_BATTLES, SMOKE_EVAL_BATTLES, SMOKE_STEPS,
-    _ABORT_EVAL_DRAIN_SEC,
+    BATTLE_FORMAT, CLIP_RANGE_DEFAULT, _ABORT_EVAL_DRAIN_SEC,
 )
 from main.train.parser import (   # noqa: F401 — re-export hub
     BoolFlag, build_parser, optional_float, str2bool, _BOOL_FALSE, _BOOL_TRUE,
@@ -105,7 +102,6 @@ from main.train.matchup_setup import build_matchup_and_opponents
 from main.train.callbacks import build_callbacks
 from main.train.fork_lr import enforce_inherited_fork_lr
 from main.train.model_build import build_and_train
-from main.train.final_eval import evaluate_model_random
 
 
 async def main():
@@ -310,11 +306,6 @@ async def main():
             emit(f"🌱 [SELFPLAY] Seeded pool from current weights "
                  f"(win rate ≥ threshold → self_play_fraction={_initial_self_play_fraction:.0%})")
 
-    _evaluate_model_random = functools.partial(
-        evaluate_model_random, args=args, mappings=mappings,
-        trainee_teambuilder=trainee_teambuilder, opponent_teambuilder=opponent_teambuilder,
-        server_config=server_config)
-
     # --- Phase 4: everything that runs during learn() ---
     _cb = build_callbacks(
         args=args, model_dir=model_dir, server_config=server_config,
@@ -329,12 +320,11 @@ async def main():
         log_level=log_level, n_envs=n_envs, reward_config=reward_config,
         reward_composition=reward_composition, annealing_mode=annealing_mode,
         _shutdown_event=_shutdown_event,
-        _run_eval=_cb.run_eval, _effective_max_lr=_cb.effective_max_lr,
+        _effective_max_lr=_cb.effective_max_lr,
         callbacks=_cb.callbacks, eval_callback=_cb.eval_callback, lr_callback=_cb.lr_callback,
         adaptive_ppo_callback=_cb.adaptive_ppo_callback,
         graceful_restart_callback=_cb.graceful_restart_callback,
-        _maybe_seed_pool=_maybe_seed_pool,
-        evaluate_model_random=_evaluate_model_random)
+        _maybe_seed_pool=_maybe_seed_pool)
 
 
 if __name__ == "__main__":

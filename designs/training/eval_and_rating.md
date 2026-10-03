@@ -872,7 +872,7 @@ for draw. What those rows do NOT prove is in the lane's PROGRESS (F-LH-10).
 
 ### OFFLINE generation of an eval cycle (`main.ops.eval_trace_gen`) — and the PROVENANCE marker
 
-A live eval cycle is sized for a training run: `--eval-battles` games (100 by default) per opponent,
+A live eval cycle is sized for a training run: `--eval-games` games (100 by default; the old `--eval-battles` was the deleted final eval's knob and never sized a live cycle) per opponent,
 with a per-opponent OUTCOME QUOTA persisting only ~200 traced battles a side. That is right for a
 run — the traces are a loss-forensics sample and the disk is the trainer's — and wrong for a
 MEASUREMENT, because every conditioning and identity row an offline read computes is a statistic of

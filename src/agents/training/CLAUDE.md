@@ -620,7 +620,7 @@ FATAL.** `src/agents/model/compile_control.py` is the ONLY runtime module that t
 `torch._dynamo` — add nothing that does elsewhere. Phases: `torch._dynamo.reset()` → install + gate
 the DECLARED REGIONS → prewarm every DECLARED signature (`compile_regions.prewarm_calls` is the
 declaration) → LOCK at the END OF STARTUP, before the first real
-iteration (K6; `🧊 [COMPILE LOCK]`) → RELEASE when `learn()` returns (the final eval runs in-process).
+iteration (K6; `🧊 [COMPILE LOCK]`) → RELEASE when `learn()` returns (the lock's scope is training).
 While locked, any recompile, late first compile or cache-limit hit exits `[CompileSentinel] FATAL` /
 `FATAL_CONFIG` (not restarted), and the message NAMES the failing guard (`UNDECLARED SIGNATURE — the
 failing guard(s): …`). At update 10 and then every 100 updates the IN-RUN PARITY CANARY (`agents/model/compile_canary.py`) holds

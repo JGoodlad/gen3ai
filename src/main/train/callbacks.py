@@ -22,9 +22,7 @@ from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from agents.training.signal_callback import SignalMetricsCallback
 from agents.training.selfplay_callback import SelfPlayCallback
 from agents.training.lever_supply import starve_cycles_for
-from main.train.constants import (
-    DEFAULT_EVAL_BATTLES, SMOKE_EVAL_BATTLES, SMOKE_STEPS, checkpoint_interval_env_steps,
-)
+from main.train.constants import checkpoint_interval_env_steps
 from main.train.run_io import DoseLogCallback, _HparamLogCallback, _TrackingCheckpointCallback
 
 
@@ -38,7 +36,6 @@ class CallbackBundle:
     adaptive_ppo_callback: Any
     graceful_restart_callback: Any
     effective_max_lr: float
-    run_eval: bool
 
 
 
@@ -230,22 +227,10 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
         from agents.training.team_winrate_callback import TeamWinRateCallback
         callbacks.append(TeamWinRateCallback(run_dir=model_dir))
     eval_callback = None
-    # A --debug smoke run skips ALL eval by default — the periodic eval callback below AND the
-    # final win-rate eval — so it needs no eval opponents / Showdown eval connection and stays
-    # light on CPU. --debug-eval opts back in. Real (non-debug) runs are unaffected (always True).
+    # A --debug smoke run skips ALL eval by default — the periodic eval callback below — so it
+    # needs no eval opponents / Showdown eval connection and stays light on CPU. --debug-eval
+    # opts back in. Real (non-debug) runs are unaffected (always True).
     _run_eval = (not args.debug) or args.debug_eval
-    # gen3_smoke_eval_scale_v1: resolve --eval-battles. An explicit value ALWAYS wins; otherwise a
-    # short run gets the smoke count. Keyed on --steps rather than on a new --smoke flag so it needs
-    # nothing remembered at the call site, and it cannot quietly weaken a real run: at 15M steps the
-    # condition is false and the default stays 100.
-    if args.eval_battles is None:
-        _smoke = int(getattr(args, "steps", 0) or 0) < SMOKE_STEPS
-        args.eval_battles = SMOKE_EVAL_BATTLES if _smoke else DEFAULT_EVAL_BATTLES
-        if _smoke and _run_eval:
-            print(f"[SmokeEval] --steps {args.steps:,} < {SMOKE_STEPS:,}: final eval scaled to "
-                  f"{SMOKE_EVAL_BATTLES} battles/opponent (pass --eval-battles N to override). "
-                  f"These win rates are NOT a measurement — they only prove the eval path runs.")
-
     # On resume, the last eval lives in the resumed checkpoint's metadata.json (a different
     # dir from this fresh run) — point the eval callback at it so the TUI shows the most
     # recent eval immediately instead of a blank panel until the next cycle.
@@ -370,4 +355,4 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
         callbacks=callbacks, eval_callback=eval_callback, lr_callback=lr_callback,
         adaptive_ppo_callback=adaptive_ppo_callback,
         graceful_restart_callback=graceful_restart_callback,
-        effective_max_lr=_effective_max_lr, run_eval=_run_eval)
+        effective_max_lr=_effective_max_lr)
