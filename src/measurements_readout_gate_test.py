@@ -53,6 +53,9 @@ REGISTRY = [
     ("x5_p0_h2h_2026-10-03/scripts/analyze.py",
      "X5 P0: the head-to-head round-robin's §0b count rows, the four runs' provenance, the banked untaught read "
      "and the registered design's simulator -> sigma_h, the seat effect, the power at sigma_h"),
+    ("x5_tier0_oracle_2026-10-03/scripts/tier0.py",
+     "X5 Tier 0: the Lane S bank (both true teams per battle), the pool archetypes and the m1m3 belief fits -> "
+     "the OTHER-physics oracle counterfactual (feature error, OTHER/Jensen share, flips, recovery by budget)"),
 ]
 
 _MEAS = repo_path("designs", "research_state", "measurements")
@@ -99,7 +102,7 @@ def test_registered_readout_resolves_its_inputs(rel: str, why: str) -> None:
 #: keeps retiring — and a registry that quietly SHRINKS is the same failure at partial strength.
 #: Lowering this number is a legal move only in the same commit that deletes a readout, and the
 #: commit message says which one.
-_REGISTRY_FLOOR = 6
+_REGISTRY_FLOOR = 7
 
 
 def test_registry_does_not_silently_shrink() -> None:

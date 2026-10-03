@@ -1,0 +1,23 @@
+{
+ "P0_t0_vs_prior_maxabs": 4.2063973512695974e-08,
+ "P1_R0_high_maxabs": 0.0,
+ "P1_R0_ko_real_is_zero": 0.0,
+ "P1_n_hidden_cells": 4248,
+ "P2_onehot_high_maxabs": 0.0,
+ "P3_tail_high_maxabs": 0.0,
+ "P4_n_revealed": 2010,
+ "P4_types_mismatch_revealed": 0,
+ "P5_frac_nonzero": 0.895480215549469,
+ "P5_hyp_attacker_maxabs": 0.0,
+ "P5_n_cells": 1062,
+ "P6_frac_nonzero": 0.9262295365333557,
+ "P6_n_cells": 488,
+ "P6_revealed_attacker_maxabs": 0.0,
+ "sample": {
+  "n": 512,
+  "rows_gate": true,
+  "seed": 0
+ },
+ "tolerance_abs": 2e-05,
+ "verdict": "PASS"
+}
