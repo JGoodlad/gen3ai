@@ -94,6 +94,18 @@ The owner's frame is **richness against training budget**. Both choices are the 
 plateau-first rule in `era_plan_post_m5.md`. It is promoted only when its §1 / §2 diagnostic shows the limitation
 binding AND the upgrade's strength-per-GPU-hour is non-inferior.
 
+
+## 4. Evidence: X5 Tier 0, the physics-channel oracle (2026-10-03, `cda60edb`)
+
+`measurements/x5_tier0_oracle_2026-10-03/`; the ledger entry of the same date. Cold-start Smogon beliefs, the Lane S bank, the production op.
+- **M3 (c) at 1:1 is CONFIRMED.** It captures **76–100 %** of what any budget reaches on the threat reads. It halves the expected-threat error against the blob (24.1 → 12.0 pp of HP) and halves the KO-race flips (18.8 → 9.4 %). It is never worse on the defender side, where no budget helps.
+- **The budget upgrade (a) is real but small.** At k+6: race flips −0.97 pp [−1.34, −0.65], expected threat −2.9 pp. Defender reads get slightly WORSE (+0.3–0.8 pp).
+- **Under M2 = C the worst-case channel ignores the budget** (22.9 pp at every budget). Option A (noisy-OR) cuts it to 16.1 pp at 1:1. So **after X26, M2 option A outranks the budget**.
+- **Most of the "perfect OTHER" ceiling is information, not pricing.** A perfect OTHER reaches 4.7 pp (expected threat) and 3.3 % (race flips). Closing that needs a SHARPER BELIEF, not a richer OTHER.
+- On real states the 1:1 list recalls only 14–33 % of the true hidden mons, lower than the random-reveal estimate.
+- **Open for U3 (F4):** how OTHER's averaged attacker is built; how OTHER's mass, which exceeds 1 on 73.6 % of decisions at 1:1, enters a max-type site (Tier 0 capped its presence at 1).
+- **Follow-up lever ranking:** belief sharpness > M2 option A > budget +6.
+
 ## Decision record
 
 | date | decision | chosen | rejected / alternatives | evidence |
@@ -101,3 +113,4 @@ binding AND the upgrade's strength-per-GPU-hour is non-inferior.
 | 2026-10-03 | M2 worst-case semantics (OWNER) | C, the presence-scaled max | A noisy-OR expected max (a second lever; queued after X26); B threshold (rule 8); D soft max (a hyperparameter) | `design_x5_belief_tokens.md` §9 |
 | 2026-10-03 | M3 OTHER physics (OWNER) | (c) the averaged tail (hybrid) | (a) +6 budget (the follow-up lever); (b) a pessimistic tail; (d) no physics (a regression) | §9; `measurements/x5_revision_2026-10-03/` |
 | 2026-10-03 | A/B margin (ORCHESTRATOR, under the owner's "reasonable richness vs budget") | 3.5 pp if P0's σ_h ≤ 2.5, else 4.5 pp at ≤ 41 GPU-h; fixed before P0 reports | 3.5 pp at power ≈ 0.57; raising the budget | §9 power table |
+| 2026-10-03 | Tier 0 read (ORCHESTRATOR) | M3 (c) at 1:1 CONFIRMED; follow-ups ranked belief sharpness > M2 option A > budget +6 | budget +6 now (≈ 1 pp of race flips for ≈ +7 % FLOPs) | §4; `cda60edb` |

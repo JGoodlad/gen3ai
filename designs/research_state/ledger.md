@@ -21888,3 +21888,26 @@ Levels: U is A2 45.8, B 43.1, A′ 40.9, C 32.5. G-A is A2 43.7 %, B 43.8 %, A�
 **BOUNDARY.** Fresh `--arch production` runs launch at N = 256 from the commit that adds this entry. A run before it ran at 48, so throughput, staleness and per-update wall do not compare across it. Per-sample learning reads show no detected difference.
 
 Tag: **VERDICT · N\* = 256 (U −2.71 [−4.50, −0.94], G-A +0.2; NO LOSS DETECTED, run floor 4.90 > bar) · E10 STAYS (E5 −10.56 [−13.12, −7.94], G-A −9.58) · `recipe.sizing` 256 × 384 × 98,304 · BOUNDARY for fresh production runs**
+
+### 2026-10-03 · MEASUREMENT · X5 TIER 0, the physics-channel oracle counterfactual: OTHER priced as the averaged tail (M3 (c)) at a 1:1 budget already captures 76–100 % of what ANY hypothesis budget reaches on the threat reads; most of the "perfect OTHER" ceiling is missing INFORMATION (belief sharpness), not OTHER's pricing (`cda60edb`)
+
+**Data.** The M5 Lane S bank: 20,712 decisions, 580 battles, both full teams per battle (G-4 verified: 19,964 rows re-encode byte-equal), so no fresh games were needed. 13,853 decisions have ≥ 1 hidden opponent mon. The op is the PRODUCTION op on CPU; the vectorised kernels match `_outgoing_matrix` and the D4 incoming kernel exactly in 7 parity checks. Two full runs give byte-equal output. Beliefs are the cold-start Smogon prior. On-pool only, and the bank over-samples losses.
+
+**Results**, representation vs truth (pp of HP / flip %):
+- **Expected threat on our active:** blob 24.1 → (c) 1:1 12.0 → +6 9.2 → all named 8.1; a perfect OTHER gives 4.7.
+- **Worst threat** (M2 = C, the presence-scaled max): blob 35.2 → (c) 22.9, and no budget moves it (F3: presence-scaling floors it). M2 option A (noisy-OR) gives 16.1.
+- **Defender side** (our damage on a switch-in): no budget helps (15.2 → 15.4 … 16.3); (d), no physics, is 28.1, a regression, as expected.
+- **Flips:** the KO race goes 18.8 (blob) → 9.4 ((c) 1:1) → 8.4 (+6), with a perfect OTHER at 3.3; "safe to stay in" (the C max) goes 10.5 → 8.1.
+- **Budget k+6, paired against 1:1:** race flips −0.97 pp [−1.34, −0.65].
+
+**Readings.**
+- (c) at 1:1 is never worse than the blob on defender reads, halves the threat error and halves the race flips.
+- The OTHER share of (c)'s remaining error is 43–71 %, but only part of it is averaging error a budget can fix (33 % on expected threat, about 0 on the defender side). The rest is information.
+- **Ranking of follow-up levers:** belief sharpness > M2 option A > budget +6.
+- **F2:** on REAL states the 1:1 list recalls only 14–33 % of the true hidden mons. The revision's random-reveal figure of 34–43 % was optimistic.
+
+**Limits.** Cold-start beliefs only (the trained head is unverified); on-pool only; OTHER_move is not measured; "truth" means species only, not sets. It measures INFORMATION in the physics channel, not strength (cf. L17103's privileged critic).
+
+**Found here.** F8: fixed-damage moves are priced as unusable on the outgoing op side. A GIGO unit is dispatched; a separate entry follows when it is fixed.
+
+Tag: **MEASUREMENT · M3 (c) at 1:1 CONFIRMED for the X5 A/B (76–100 % of budget-reachable gain); follow-ups ranked belief sharpness > M2 option A (worst threat 22.9 → 16.1) > budget +6 (race flips −0.97 pp) · F8 fixed-damage GIGO found**
