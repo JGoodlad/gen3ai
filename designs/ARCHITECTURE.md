@@ -10,7 +10,7 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **122** in the mirror this file is gated against (the `gen3_event_record_v2` signature-bump window, row 3: the mirror follows the code, so the obs-architecture batch's surface — 2761-dim obs, the reshaped event rows — and the shaped-reward deletion's field removal are what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_event_record_v2`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), `pair_value_route` stays OFF pending the C4 offline gate, and all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
+| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **122** in the mirror this file is gated against (the `gen3_event_record_v2` signature-bump window, row 3: the mirror follows the code, so the obs-architecture batch's surface — 2761-dim obs, the reshaped event rows — and the shaped-reward deletion's field removal are what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_event_record_v2`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
 | Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 132 / `gen3_event_record_v2`) |
 | `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited, and carrying its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax, so the record cannot live in the file). The `gen3_event_record_v2` **signature-bump window is OPEN** (2026-09-26, the observation-architecture batch): the production run records `gen3_critic_route_wave_v1`, HEAD builds `gen3_event_record_v2`, so the mirror follows the CODE until the first run at the new signature exists — then it closes and the mirror tracks that run. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
@@ -347,7 +347,7 @@ happens to be written.
 |---|---|---|
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
-| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat`; `cls_pool` additionally owns the two token-content critic injections (`value_threat_proj`, and `pair_value_proj` opt-in/off) |
+| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat`; `cls_pool` additionally owns the token-content critic injection (`value_threat_proj`) |
 | **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head` |
 
 The contract asserts two things per forward: tier-declared entry points are entered in
@@ -704,42 +704,6 @@ token), and invariant at the pool — unlike the deleted flat concat, whose mean
 a PRESENCE belief where the design wants a supervised USAGE belief** — deliberately, so a null
 indicts the delivery route rather than the belief.
 
-**Available but OFF: `pair_value_route`** (v95, `gen3_pair_value_route_v1` —
-`design_opponent_intent.md` §7a(2)'s **PV**). The SAME token-content mechanism carrying a DIFFERENT
-object: Phase A's **unified** `pair_in` row (`PAIR_VALUE_ROUTE_DIM` = `_PAIR_OUTCOME_RAW` = **14**),
-whose last eight coordinates are the six status identities, `neutralization` and `tempo_cost`. This
-is the first per-entity route by which the CRITIC reads that currency at all — incoming status
-otherwise reaches vf only as the `s3` edge family's softmax-normalised **RATIO**
-(`design_pair_reduction.md` §2.1). It is a SECOND zero-init `Linear(14, 128)` on the same local copy
-inside `CLSPool`, so the two injections stack additively and independently and vf-only holds at any
-weight for both.
-
-**It is NOT in the `_value_pooled_routes` seam, on structure rather than taste.** A seam route
-yields one `[B, D_MODEL]` vector added AFTER pooling, so it would have to collapse the `J` axis
-itself — and the only equivariant collapse is a sum, which cannot tell *one mon about to lose 90% of
-its bar* from *six mons losing 15% each*. Token content does not collapse: the row rides the token
-that also carries the mon's identity, HP and typing, and `value_cls`'s attention decides the
-weighting (§2b.2 — *you can only preserve an axis you have output slots for*; here the tokens ARE
-the slots). Cost of that choice: the seam's gradient guard does not cover it by construction, so
-`value_route_gradient_test.py` was extended with a dedicated cell for **both** token-content
-injections under both critic parameterizations.
-
-⚠️ **α here is the R1 `belief_mean` rung UNCONDITIONALLY — ORDERING, not preference.** `value_cls`
-pools at T2 *before* the α/β heads are scored, so the publication does not exist yet; it is not a
-fallback that fires when a head is absent, and the gate asserts the injected rows are byte-identical
-with `--opp-intent` ON. §7a(2) pre-registers exactly this substitution as the way to test the
-DELIVERY claim apart from the DISTRIBUTION claim.
-
-⚠️ **The C4 RE-ENTRY CONDITION governs ENABLING it, not building it**: *any α/β-critic route may be
-BUILT opt-in but its ENABLING owes the C4-style offline gate first.* Ledger **C6** failed
-2026-08-17 with route liveness PROVEN — all five v89 routes trained off zero and `entity_pool`
-carried decisively (dV 6.28 = 110% of all-off), yet the critic's stall-loss over-confidence did not
-move (gen-13 confident-band gap +0.358, CI [0.23, 0.50]) — and the delivery line was declared
-EXHAUSTED — and the critic-route deletion wave then executed the four route deletions that verdict
-licensed. Requires `damage_op`. Width-neutral (additive), so the version gate is the ONLY thing
-that rejects a mismatched resume. `critic_route_audit` carries a **`pair_value` arm** (and includes
-it in `all_off`), so that gate is runnable the moment a checkpoint carries the route.
-
 ### 3.3 The action head is the pointer head — there is no flat `action_net`
 
 `Gen3DualHeadMaskablePolicy._build` replaces SB3's flat `Linear(latent, 11)` with a **raising stub**
@@ -799,8 +763,7 @@ logit is exactly 0 at step 0 ⇒ uniform-over-legal.
 `forward_critic(vf_features) → _critic_value`, which never touches it. So the per-action `cell`
 channel exists for the actor and **not** for the critic — the critic's op-physics routes are the
 entity pool's injection into `value_pooled` (dV 5.490 — 97% of the whole critic route joint),
-`--value-threat-inject`'s token content on the value pool's copy (1.0686), and, when on, PV's
-unified-row sibling beside it — all vf-only, all reading the op through `OpTensors` views rather
+`--value-threat-inject`'s token content on the value pool's copy (1.0686) — both vf-only, both reading the op through `OpTensors` views rather
 than flat offsets.
 
 ### 3.4 Side readouts
@@ -861,25 +824,9 @@ ONE flag is IMPLIED by the win-prob critic (the only critic; `resolve_critic_mod
 representable and an implication can never overwrite a typed value. The discount (`WINPROB_GAMMA` = 1.0) and the win-indicator terminal (indicator, victory 1.0, draw 0.0) are not flags: `--gamma`, `--victory-value`, `--draw-penalty` and `--terminal-indicator` are DELETED (P11b batch (c)) and are CONSTANTS of every trainer namespace (`src/main/train/parser/objective.py`, `parser.set_defaults`); a typed one is refused with its reason (`designs/deleted_flags.md`), and a resume whose recorded reward is not the production one is REFUSED by `check_reward_config`. `resolve_critic_mode` runs BEFORE the resume-inheritance sweep, so the implied value lands on the `None` sentinel before `_resolve` can inherit a recorded one (a fork of a `shaped` parent never gets that far: it is REFUSED, D4). Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](ai_v12/design_winprob_only_critic.md).
 
-**`--win-prob-strata-weight` re-prices this BCE's opponent MIX** (`gen3_winprob_strata_weight_v1`,
-config v115, the critic ladder's arm 7). Default **`0.0` = OFF and the loss is BIT-identical**;
-it runs on the win-prob critic (the only critic). Each state's BCE term is multiplied by its opponent CLASS's weight
-`w_c ∝ freq_c ** (−s)`, capped at 8× and renormalised so the mean weight over the rollout buffer is
-exactly 1 — so it moves the mix and not the loss SCALE. It exists because only **10.2 % / 14.4 %**
-of the terminal 0/1 label's variance lies BETWEEN (cycle, opponent) cells
-([`winprob_head_refit_2026-09-09`](research_state/measurements/winprob_head_refit_2026-09-09/README.md)
-§6), so a head minimising a proper scoring rule buys its resolution from the board and its own team
-and never conditions on the opponent — a TARGET defect, not a head defect, and the same head on a
-target with a higher between-cell share does condition. The vocabulary is the four `opp_class` codes
-(`bot` / `pool` / `stable` / `exploiter`), which is all the env knows per step; per-BOT identity is
-drawn per episode inside the wrapper and never reaches the observation. It is a training-only loss
-weight — no forward pass, no weight shape, no `check_compatible` compare, **not** a
-`flag_registry.py` row — so it does not appear in §6's flag table until a production config adopts
-it. Mechanics: `designs/training/critic_and_value_losses.md`.
-
 **`--fork-fraction` FORKS CONTESTED STATES INTO THE BUFFER** (`gen3_fork_v1`, config v120 — THE
 FORK ARM). Default **`0.0` = OFF and BIT-identical**: no fork pass is built, no obs key is declared
-and no row is injected. It runs on the win-prob critic (the only critic), and `--win-prob-strata-weight` is REFUSED alongside it. It runs on the Rust core (the only env core). Above 0.0 it is the FRACTION of the buffer's
+and no row is injected. It runs on the win-prob critic (the only critic). It runs on the Rust core (the only env core). Above 0.0 it is the FRACTION of the buffer's
 decisions that are FORKED: at a CONTESTED decision (a move round, turn 2-40, ≥3 legal actions, top-2
 masked-logit gap under the `--fork-contested-gap` quantile of this rollout's own candidate pool) the
 episode is replayed to that turn (on the Rust core, from its own finished input log) and `--fork-branches` continuations —
@@ -1276,7 +1223,6 @@ does nothing given another setting.
 | `opp_intent_grad_mode` | `"detached"` | ACTIVE |
 | `pair_outcome_cell` | `true` | ACTIVE |
 | `pair_outcome_switch` | `true` | ACTIVE |
-| `pair_value_route` | `false` | OFF |
 | `ridealong_adv` | `0` | OFF |
 | `ridealong_ensemble` | `0` | OFF |
 | `ridealong_opp` | `0` | OFF |
@@ -1299,7 +1245,6 @@ does nothing given another setting.
 | `opp_belief_aux_coef` | `0.05` | ACTIVE |
 | `policy_grad_coef` | `1.0` | ACTIVE |
 | `spread_belief_coef` | `0.05` | ACTIVE |
-| `td_aux_coef` | `0.0` | OFF |
 | `vf_coef` | `0.5` | ACTIVE |
 <!-- END GENERATED: flag-table -->
 

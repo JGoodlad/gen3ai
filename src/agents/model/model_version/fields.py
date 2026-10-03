@@ -288,13 +288,10 @@ class ModelVersionFields:
     pair_outcome_switch: bool = False
     switch_branch_cell: bool = False
 
-    # v95 STRUCTURAL (gen3_conditional_threat_v1 / gen3_pair_value_route_v1, substrate Phase C):
-    # `conditional_threat_cell` is OA1 — the SECOND widener of the pointer SWITCH cell (state_dict
-    # AND switch-cell width). `pair_value_route` is PV — one zero-init D_MODEL projection inside
-    # CLSPool (state_dict only; it injects ADDITIVELY, so no projection width moves and the version
-    # gate is the ONLY thing that rejects a mismatched resume). Both shape/gate-caught below.
+    # v95 STRUCTURAL (gen3_conditional_threat_v1, substrate Phase C): `conditional_threat_cell` is
+    # OA1 — the SECOND widener of the pointer SWITCH cell (state_dict AND switch-cell width).
+    # Shape-caught below.
     conditional_threat_cell: bool = False
-    pair_value_route: bool = False
 
     # v86 STRUCTURAL (gen3_op_lean_forward_v1): drop_renders shrinks out_gain (state_dict
     # shape); believed_lean changes the d3 forward math (no shape — the version gate is the
@@ -349,42 +346,25 @@ class ModelVersionFields:
     # TRAINING-ONLY coefficient (gen3_item_belief_v1, NOT version-locked): the item CE aux weight.
     # Recorded for provenance + flagless-resume read-back. Only meaningful under item_belief=True.
     item_belief_coef: float = 0.0
-    # v90 TRAINING-ONLY coefficient (gen3_td_consistency_aux_v1, NOT version-locked): the weight of the
-    # Bellman-residual consistency term (V(s_t) − r_t − γ·V(s_{t+1}))² over contiguous rollout pairs.
-    # 0.0 = OFF (loss byte-identical). Scales a loss and touches no forward pass, so it is the
-    # opp_belief_aux_coef class: recorded here for PROVENANCE and for flagless-resume read-back
-    # (`_resolve` reads this field), never compared by check_compatible or any check_*.
-    td_aux_coef: float = 0.0
     # v102 TRAINING-ONLY coefficient (gen3_policy_grad_coef_v1, NOT version-locked): the weight on the PPO
     # policy-gradient term itself — `policy_grad_coef * policy_loss` in the loss fold, scaling ONLY the
     # clipped surrogate (never entropy, never the value term, never an aux). 1.0 = the upstream
     # expression, byte-identical (the unscaled tensor is used); 0.0 = the pure-distill/aux phase
-    # (arm F). The td_aux_coef class exactly: it scales a loss, touches no forward pass, so it is
+    # (arm F). The training-only provenance class exactly: it scales a loss, touches no forward pass, so it is
     # recorded here for PROVENANCE and for flagless-resume read-back (`_resolve` reads this field)
     # and is never compared by check_compatible or any check_*.
     policy_grad_coef: float = 1.0
     # gen3_intent_label_bot_weight_v1 (config v97): per-sample weight on the opponent-intent
     # (alpha/beta) label rows whose opponent was a heuristic BOT (`opp_class == 0`); every other
     # class stays 1.0. 1.0 = OFF (the unweighted cross_entropy call is taken unchanged, so the loss
-    # is bit-identical). The td_aux_coef class exactly: it scales a loss, touches no forward pass,
+    # is bit-identical). The training-only provenance class exactly: it scales a loss, touches no forward pass,
     # so it is recorded for PROVENANCE and for flagless-resume read-back (`_resolve` reads this
     # field) and is never compared by check_compatible or any check_*.
     intent_label_bot_weight: float = 1.0
-    # gen3_winprob_strata_weight_v1 (config v115): OPPONENT-STRATIFIED weighting of the WIN-PROB
-    # BCE — each state's BCE term is multiplied by its opponent CLASS's inverse-frequency weight
-    # (capped, renormalised to mean 1 over the rollout buffer), so classes contribute to the
-    # objective in balanced rather than episode proportion. 0.0 = OFF (the unweighted masked mean
-    # is taken unchanged, so the loss is bit-identical). The td_aux_coef class exactly: it
-    # reweights a loss, touches no forward pass and no weight shape, so it is recorded for
-    # PROVENANCE and for flagless-resume read-back (`_resolve` reads this field) and is never
-    # compared by check_compatible or any check_*. RECORDED rather than left to `cli_args` for the
-    # v100 reason: an arm resumed without re-typing it would keep training and silently stop
-    # applying the only thing it was launched to measure.
-    win_prob_strata_weight: float = 0.0
     # gen3_fork_v1 (config v120): the FORK ARM — contested-state EXPLORING STARTS whose branch
     # continuations enter the SAME PPO buffer. `fork_fraction` 0.0 = OFF and a default build is
     # BIT-identical (no module imported, no obs key declared, no callback attached, no row
-    # injected); the five below it are INERT at 0.0. The `td_aux_coef` class: they steer a post-collection callback and a buffer injection, touch no
+    # injected); the five below it are INERT at 0.0. The training-only provenance class: they steer a post-collection callback and a buffer injection, touch no
     # forward pass and no weight shape, so they are recorded for PROVENANCE and flagless-resume
     # read-back and never compared by check_compatible or any check_*.
     #
@@ -415,7 +395,7 @@ class ModelVersionFields:
     # downstream would catch a flip.
     ridealong_rnd_variants: str = "off"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
-    # Two EVAL-only knobs, the td_aux_coef class and then some: neither is read by any forward, no
+    # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at
     # all — so they are recorded for PROVENANCE + flagless-resume read-back (`_resolve` reads these
     # fields) and NEVER compared by check_compatible.
@@ -435,7 +415,7 @@ class ModelVersionFields:
     promote_threshold: float = 0.55
     # ---- gen3_capacity_telemetry_v1 (config v101) — LIVE CAPACITY TELEMETRY --------------------
     # Four TRAINING-only diagnostic knobs (the plasticity canary / half-batch trunk cosine /
-    # feature velocity). They are the td_aux_coef class and then some: td_aux_coef at least scales
+    # feature velocity). They are the training-only provenance class and then some: a loss coefficient at least scales
     # a LOSS, while these fold nothing into `loss` and write no `.grad` at all, so the policy's
     # parameter updates are bit-identical on or off. Recorded for PROVENANCE + flagless-resume
     # read-back (`_resolve` reads these fields), NEVER compared by check_compatible — a frozen
@@ -449,8 +429,8 @@ class ModelVersionFields:
     # ---- the RANK TRIPWIRE (gen3_distill_target_gate_v1, config v103) ----------------------------
     # Two TRAINING-only knobs that configure a pure DIAGNOSTIC callback (v101's class — no loss, no
     # grad; "abort" may STOP learn(), which changes when training ends, never what a step computes).
-    # Neither is read by the extractor forward, neither changes a weight shape => the td_aux_coef
-    # class exactly: recorded for PROVENANCE + flagless-resume read-back (`_resolve` reads these
+    # Neither is read by the extractor forward, neither changes a weight shape => the training-only
+    # provenance class exactly: recorded for PROVENANCE + flagless-resume read-back (`_resolve` reads these
     # fields), NEVER compared by check_compatible.
     rank_tripwire: str = "warn"
     rank_tripwire_drop: float = 0.20
@@ -508,7 +488,7 @@ class ModelVersionFields:
     # you WHAT it built; no field told you whether anybody had chosen it.
     arch_source: Optional[str] = None
     # ---- gen3_policy_gae_lambda_v1 (config v123) — the PPO POLICY's GAE λ --------------------
-    # TRAINING-only, the td_aux_coef class exactly: it sets how the rollout buffer turns rewards and
+    # TRAINING-only, the training-only provenance class exactly: it sets how the rollout buffer turns rewards and
     # recorded values into ADVANTAGES (and the scalar critic's `returns`), touches no forward pass
     # and no weight shape, so it is recorded for PROVENANCE and for flagless-resume read-back
     # (`_resolve` reads this field) and is never compared by check_compatible or any check_*. 0.80
@@ -527,7 +507,7 @@ class ModelVersionFields:
     # ---- gen3_opp_intent_coef_recorded_v1 (config v125) — the DOSE that ENABLES opp_intent -------
     # `--opp-intent-coef`: the weight of the alpha/beta intent supervision AND the enable signal of the
     # derived `opp_intent` toggle (coef > 0 builds the heads; `flag_registry`'s `source_arg`). The
-    # td_aux_coef class — a loss weight, no forward, no weight shape, never compared by
+    # training-only provenance class — a loss weight, no forward, no weight shape, never compared by
     # check_compatible — RECORDED for flagless-resume read-back: before v125 only the BOOL was, so a
     # launcher RESTART of a fresh `--arch production` run (which strips the FRESH-only `--arch`) read
     # the coefficient's OFF default, built no heads and FATALed at check_compatible (F-LG-6 run,

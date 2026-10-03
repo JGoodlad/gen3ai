@@ -281,7 +281,7 @@ can move anything (so a crash-save holds the last finite weights):
 
 **Reach the total — covered by the loss / gradient checks:** the clipped surrogate, the value MSE (plain /
 clipped), entropy; the win-prob BCE and dense aux (multiplicative masks: NaN x 0 = NaN); the
-TD-aux, the cf binomial / beta-binomial / shadow losses; the belief bank
+the cf binomial / beta-binomial / shadow losses; the belief bank
 (index selection: a selected NaN propagates); the switch-branch / intent-conditional weights
 (`clamp` keeps NaN); SB3's and the Rust collector's GAE (no checks of their own — the buffer check
 covers their output); the noise-scale EMA (reads the same `.grad`); a NaN INPUT row (torch's `Categorical` argument

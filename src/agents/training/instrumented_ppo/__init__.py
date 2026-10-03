@@ -18,7 +18,7 @@ name it ever exported still resolves from `agents.training.instrumented_ppo`.
     hparams.py        every after-construction knob `train_rl_agent` sets, with its rationale
     noise_scale.py    the McCandlish gradient-noise-scale estimator + the NSR advisor
     value_terms.py    the win-prob BCE and its opponent-stratified weights
-    aux_terms.py      the `belief_bank` / `td_aux` delegates
+    aux_terms.py      the `belief_bank` delegates
     capacity_terms.py the `--capacity-telemetry` delegates — the ONE `*_terms` module that folds
                       NOTHING into `loss` (see its docstring)
     constants.py      the four module-level tuning constants

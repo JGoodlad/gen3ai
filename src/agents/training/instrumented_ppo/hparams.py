@@ -56,8 +56,7 @@ class PpoHyperparameters:
     # expression is byte-identical to upstream; 0.0 removes the policy-gradient contribution
     # entirely (every other term keeps its own coefficient).
     # TRAINING-only (scales a loss, never a forward pass) -> NOT version-locked / NOT in
-    # check_compatible; recorded on ModelVersion for provenance + flagless-resume read-back,
-    # like td_aux_coef.
+    # check_compatible; recorded on ModelVersion for provenance + flagless-resume read-back.
     policy_grad_coef: float = 1.0
 
     # Set by train_rl_agent after construction. The hidden-opponent belief
@@ -106,24 +105,6 @@ class PpoHyperparameters:
     # move_latent arch toggle.
     move_belief_latent_coef: float = 0.0
 
-    # TD-CONSISTENCY AUXILIARY (gen3_td_consistency_aux_v1; the live-training half of
-    # designs/research_state/levers/td_consistency_aux.md, ledger C5). The per-state value MSE never
-    # constrains ADJACENT-state differences, so ΔV inherits ~2x the state noise exactly where the truth
-    # is nearly constant. This adds an explicit Bellman residual over CONTIGUOUS pairs drawn from the
-    # rollout buffer's own [n_steps, n_envs] structure (PPO's minibatches are shuffled and contain no
-    # adjacent pairs at all):
-    #     td_aux_coef * mean[ ( V(s_t) - r_t - gamma*V(s_{t+1}) )^2 ]
-    # 0.0 = OFF and the whole block is skipped (loss byte-identical to today — `_td_aux_term` is not
-    # even called, so a broken sampler could not perturb an off run). Rung-1's pre-registered band is
-    # 1.0-3.0; lambda <= 0.1 measured WORSE than control, so do not use the small-coef regime.
-    # TRAINING-only (scales the loss, never a forward pass) -> NOT version-locked / NOT in
-    # check_compatible; recorded on ModelVersion for provenance + flagless-resume read-back, like
-    # opp_belief_aux_coef.
-    td_aux_coef: float = 0.0
-    # Process-local RNG for the contiguous-pair sampler, seeded from the global numpy stream at first
-    # use so a seeded run stays reproducible. Not saved (like _noise_ema_*).
-    _td_aux_rng = None
-
     opp_intent_coef: float = 0.0
     # SET-VALUED partial credit on beta's belief-miss rows (see `set_valued_switch_loss`). Scales
     # ON TOP of opp_intent_coef, so it is a share of the intent budget rather than a second one.
@@ -135,15 +116,6 @@ class PpoHyperparameters:
     # resume-mutable. Applies to the INTENT losses only — never to the BeliefBank rows, which are
     # team truth rather than behaviour. See `agents.model.opp_intent.intent_losses`.
     intent_label_bot_weight: float = 1.0
-    # gen3_winprob_strata_weight_v1: OPPONENT-STRATIFIED weighting of the WIN-PROB BCE, in [0, 1].
-    # 0.0 = OFF and the loss is bit-identical (the unweighted masked mean is taken unchanged);
-    # 1.0 = each opponent CLASS contributes to the objective in equal proportion rather than in
-    # episode proportion (inverse-frequency `f ** -s`, capped, renormalised so the mean weight over
-    # the buffer is 1). It exists because only ~10-14% of the terminal label's variance lies BETWEEN
-    # (cycle, opponent) cells, so the head buys its resolution from the board instead
-    # (`winprob_head_refit_2026-09-09`). Requires the win-prob critic (refused otherwise, never a
-    # silent no-op). Training-only, resume-mutable; scales a loss, touches no forward pass.
-    win_prob_strata_weight: float = 0.0
 
     # ---- gen3_capacity_telemetry_v1 — LIVE CAPACITY TELEMETRY (`capacity/*`) -------------------
     # The master switch for all three probes (plasticity canary / half-batch trunk cosine / feature

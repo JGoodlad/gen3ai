@@ -103,9 +103,9 @@ read `by_class`: a pre-self-play curriculum phase is ~all `bot` episodes, where 
 - **Flag class: training-runtime.** Never reaches the extractor, scales no loss,
   changes no weight shape ⇒ **no `ARCH_SIGNATURE` bump, not in `model_config.json`/`ModelVersion`,
   not in `check_compatible`, and deliberately not in `agents/model/flag_registry.py`** (that
-  registry's scope is extractor architecture toggles — the `--td-aux-coef` /
-  `--intent-label-bot-weight` precedent, which are recorded on `ModelVersion` only because they
-  scale a loss and want flagless-resume inheritance; this one does neither). Forwarded verbatim by
+  registry's scope is extractor architecture toggles — the `--intent-label-bot-weight`
+  precedent, which is recorded on `ModelVersion` only because it
+  scales a loss and want flagless-resume inheritance; this one does neither). Forwarded verbatim by
   the launcher like any non-launcher flag. `--no-team-wr-tracking` opts out (no callback, no
   `env_method`, the wrapper hook returns immediately).
 - **Verified end to end** by a `--debug --steps 4000` CPU smoke: **96 teams / 103 games** recorded,

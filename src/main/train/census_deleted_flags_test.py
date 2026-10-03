@@ -46,6 +46,10 @@ DELETED = [
     ("--rollout-trigger", ["window"]),
     ("--opponent-sampling", ["generator"]),
     ("--version-pinning", ["per_game"]),
+    ("--pair-value-route", []),
+    ("--no-pair-value-route", []),
+    ("--td-aux-coef", ["1.0"]),
+    ("--win-prob-strata-weight", ["0.5"]),
 ]
 
 

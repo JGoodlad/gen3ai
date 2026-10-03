@@ -38,8 +38,8 @@ THE TABLE (`REGIONS`):
                            keyed on lr would be a new signature per update (or need lr as a tensor and
                            AdamW's capturable path) for no measurable gain.
   *   eager, declared      the batch build, label alignment, the per-micro host read, the EAGER TAIL
-                           of the fold (the CF-twin mirror, TD-aux, the counterfactual block — none on the
-                           production surface), every diagnostic probe, logging.
+                           of the fold (the ride-along update; no loss term is left in it), every
+                           diagnostic probe, logging.
 
 TORCH. Regions are a torch 2.8 feature, and HEAD runs torch >= 2.8 only (`utils.torch_floor`): on
 2.5.1 `forward_guard`'s weakref lookup and other constructs break `fullgraph=True`. The regions are
@@ -308,34 +308,27 @@ def r1_batch(model: Any, batch: int, slice_: int = 0) -> R1Batch:
 
 class R1Declaration(NamedTuple):
     """R1's DECLARED signature beyond the batch's shapes (`gen3_r1_declared_levers_v1`): the static
-    flags (`MicroStatic`), the observation KEY set and the per-update tensor KEY set. Resolved from
-    the run's config and its buffer's key set at startup (`r1_declaration`) — the same calls
-    `train()` makes — and recorded on the model by `install`; `check_r1_declared` holds every
-    update to it."""
+    flags (`MicroStatic`) and the observation KEY set. Resolved from the run's config and its buffer's
+    key set at startup (`r1_declaration`) — the same call `train()` makes — and recorded on the model
+    by `install`; `check_r1_declared` holds every update to it."""
     static: Any
     obs_keys: Tuple[str, ...]
-    var_keys: Tuple[str, ...]
 
 
-def _r1_static(model: Any) -> Tuple[Any, Dict[str, torch.Tensor]]:
-    """``(MicroStatic, var)`` exactly as `train()` resolves them, with every DECLARED lever at its
-    run-long value (`TrainSetup._r1_levers`) and the strata weights at their neutral default."""
-    f = model._resolve_fold_flags()
-    strata = model._r1_levers(f)
-    st = model._micro_static(f, strata)
-    return st, model._micro_var(st, None)
+def _r1_static(model: Any) -> Any:
+    """The `MicroStatic` exactly as `train()` resolves it (`TrainSetup._micro_static`)."""
+    return model._micro_static(model._resolve_fold_flags())
 
 
 def r1_declaration(model: Any) -> R1Declaration:
-    st, var = _r1_static(model)
-    return R1Declaration(st, tuple(sorted(model.policy.observation_space.spaces)), tuple(var))
+    return R1Declaration(_r1_static(model), tuple(sorted(model.policy.observation_space.spaces)))
 
 
-def check_r1_declared(model: Any, st: Any, var: Dict[str, Any]) -> None:
+def check_r1_declared(model: Any, st: Any) -> None:
     """Raise `CompileSentinelError` (a typed FATAL; `compile_control.attach` turns it into
-    FATAL_CONFIG) when THIS update's R1 inputs are not the startup declaration — a lever, a coefficient,
-    an observation key or a per-update tensor that moved. Never relaxed into a recompile: the fix is
-    to DECLARE the lever (`TrainSetup._r1_levers`, a neutral default in `_micro_var`)."""
+    FATAL_CONFIG) when THIS update's R1 inputs are not the startup declaration — a lever, a coefficient
+    or an observation key that moved. Never relaxed into a recompile: the fix is to resolve the value
+    in `TrainSetup._micro_static`, from the config and the buffer's key set, before the lock."""
     decl: Optional[R1Declaration] = getattr(model, "_r1_declared", None)
     if decl is None:
         return
@@ -346,21 +339,18 @@ def check_r1_declared(model: Any, st: Any, var: Dict[str, Any]) -> None:
     if obs_keys != decl.obs_keys:
         diffs.append(f"observation keys: undeclared {sorted(set(obs_keys) - set(decl.obs_keys))}, "
                      f"missing {sorted(set(decl.obs_keys) - set(obs_keys))}")
-    if tuple(var) != decl.var_keys:
-        diffs.append(f"per-update tensors: declared {list(decl.var_keys)}, this update {list(var)}")
     if diffs:
         from agents.model.compile_control import CompileSentinelError
         raise CompileSentinelError(
             "R1 learner_micro_step: this update's signature is NOT the one declared at startup "
             "(gen3_r1_declared_levers_v1) — " + "; ".join(diffs) + ". Every lever a run will ever "
-            "turn on is declared from its resolved config before the compile lock: declare it "
-            "(`TrainSetup._r1_levers`, a neutral default in `_micro_var`), never relax the lock.")
+            "turn on is declared from its resolved config before the compile lock: resolve it in "
+            "`TrainSetup._micro_static`, never relax the lock.")
 
 
 def _r1_args(model: Any, b: R1Batch) -> Tuple[Any, ...]:
-    st, var = _r1_static(model)
     return (model.policy, b.obs, b.actions, b.action_masks,
-            b.old_log_prob, b.old_values, b.advantages, b.returns, var, st)
+            b.old_log_prob, b.old_values, b.advantages, b.returns, _r1_static(model))
 
 
 def _r1_arm(model: Any, fn: Callable[..., Any], args: Tuple[Any, ...]) -> Dict[str, torch.Tensor]:
@@ -490,12 +480,12 @@ def _r1_reference_args(model: Any, b: R1Batch) -> Tuple[Any, ...]:
     try:
         if isinstance(saved, dict):
             buf.observations = {k: v for k, v in saved.items() if k not in keys}
-        st, var = _r1_static(model)
+        st = _r1_static(model)
     finally:
         buf.observations = saved
     obs = {k: v for k, v in b.obs.items() if k not in keys}
     return (model.policy, obs, b.actions, b.action_masks,
-            b.old_log_prob, b.old_values, b.advantages, b.returns, var, st)
+            b.old_log_prob, b.old_values, b.advantages, b.returns, st)
 
 
 def _r1_judged_set_rule(model: Any, b: R1Batch, run: Dict[str, torch.Tensor], names: List[str]) -> str:

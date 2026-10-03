@@ -91,9 +91,7 @@ def train_step_source() -> str:
         InstrumentedMaskablePPO.train,
         _ms.micro_step,                       # K8 region R1: fold steps 1-3a (gen3_learner_micro_step_v1)
         _ms.win_prob_terms,
-        TrainSetup._r1_levers,
         TrainSetup._micro_static,
-        TrainSetup._micro_var,
         TrainSetup._align_opp_intent_labels,
         TrainSetup._resolve_fold_flags,
         TrainSetup._train_probe_setup,
@@ -101,7 +99,6 @@ def train_step_source() -> str:
         TrainMetricsExport._record_signal_metrics,
         TrainMetricsExport._record_noise_scale_metrics,
         TrainMetricsExport._record_head_metrics,
-        TrainMetricsExport._record_term_metrics,
         TrainMetricsExport._record_capacity_metrics,
     ))
 
@@ -155,16 +152,17 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
           2. the BELIEF bank — species/moves aux, opponent-intent (+ the set-valued beta term),
              move belief, spread belief, nature/EV, HP-type, item belief, move-latent
           3. (3a) the WIN-PROB BCE — the last R1 term
-          4. TD-AUX (the Bellman-residual consistency term) — the declared EAGER TAIL's one fold
 
-        **Why TD-AUX is LAST.** Steps 2-3 read the extractor STASHES that this minibatch's
-        `evaluate_actions` forward left behind (`last_win_prob_logits`, `last_spread_belief`, …).
-        TD-AUX runs its OWN extractor forward on its own contiguous sample, which CLOBBERS those
-        stashes. So every stash-reading term must be folded before it. Moving a stash-reading fold
-        below it does not crash: it silently scores the wrong states.
-        `instrumented_ppo_hub_contract_test.py` pins R1's order and that the R1 call precedes the
-        TD-AUX tail fold by reading the source. (The counterfactual block — cf-winprob, cf-evidential,
-        cf-twin, cf-shadow — used to follow it and was deleted in deletion pass L4.)
+        The declared EAGER TAIL after R1 folds NO loss term: what follows (the ride-along heads'
+        update, the capacity probes, the rank probe) READS the extractor STASHES that this
+        minibatch's `evaluate_actions` forward left behind (`last_win_prob_logits`,
+        `last_value_pooled`, …) and writes no `.grad` into the policy. Any future tail fold that
+        runs its OWN extractor forward would CLOBBER those stashes, so it must follow every
+        stash reader — moving a reader below it does not crash, it silently scores the wrong
+        states. `instrumented_ppo_hub_contract_test.py` pins R1's order and that the R1 call
+        precedes the tail's readers by reading the source. (The TD-consistency auxiliary and the
+        counterfactual block — cf-winprob, cf-evidential, cf-twin, cf-shadow — were the tail's
+        own-forward folds; deleted in deletion passes P11c and L4.)
 
         The steps AFTER the loop (the grad-accum flush, the noise-scale fold, and the ~260 lines
         of `self.logger.record`) are diagnostics and carry no gradient.
@@ -233,7 +231,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # Shared sink for the per-minibatch aux diagnostics that already carry their OWN full TB
         # key (`opp_intent/*`), so they are recorded verbatim rather than under a prefix.
         aux_metrics: dict[str, list[float]] = {}
-        td_aux_metrics: dict[str, list[float]] = {}      # +TD-AUX: Bellman-residual diagnostics
         # Compute once: WHICH terms this call folds — and, for the counterfactual family, the one
         # per-rollout buffer poll. Every flag is read by exactly the guard of the term it names,
         # and the reasoning for each sits beside its computation in `train_setup._resolve_fold_flags`.
@@ -245,37 +242,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         move_latent_on = _f.move_latent_on
         critic_winprob, win_prob_on = _f.critic_winprob, _f.win_prob_on
         scaffolding_on = _f.scaffolding_on
-        td_aux_on = _f.td_aux_on
-        # +WIN-PROB STRATA (gen3_winprob_strata_weight_v1) — the per-opponent-CLASS weights for the
-        # win-prob BCE, computed ONCE here over the WHOLE rollout buffer and held constant for
-        # every epoch and minibatch of this call. Per-BUFFER and not per-minibatch on purpose: the
-        # normalisation that makes the mean weight 1 is only meaningful over the population the
-        # frequencies were measured on, and a per-minibatch recomputation would make the class
-        # balance itself a sampling-noise term. Read here rather than in `_resolve_fold_flags`
-        # because it needs the buffer, and `_align_opp_intent_labels` above has already run — the
-        # only writer of `opp_class` in this call (a semantic no-op: the class is constant within
-        # an episode). Under the win-prob critic only; every other configuration passed None and
-        # takes the unweighted expression unchanged.
-        strata_w = None
-        if win_prob_on and critic_winprob and float(getattr(self, "win_prob_strata_weight", 0.0)) > 0.0:
-            _sb = self.rollout_buffer.observations
-            _sout = self._win_prob_strata_weights(
-                _sb.get("opp_class"), _sb.get("win_mask"), float(self.win_prob_strata_weight))
-            if _sout is not None:
-                # `_smetrics` arrives even when no weighting applies (one class present, labels
-                # not filled yet), carrying `strata_active` 0/1 — so an ABSENT `win_prob/strata_*`
-                # family means the flag is off and cannot be confused with a plumbing break.
-                strata_w, _smetrics = _sout
-                for _sk, _sv in _smetrics.items():
-                    win_prob_metrics.setdefault(_sk, []).append(float(_sv))
-        # K8 (gen3_r1_declared_levers_v1): the strata weighting is an R1 lever, resolved by ONE
-        # predicate (`TrainSetup._r1_levers`) from the config and the buffer's KEY SET — the same
-        # call the startup declaration makes, so the compiled region's signature is fixed at
-        # startup. The strata lever is declared from its flag, NEVER from whether this rollout's
-        # data produced weights: `strata_w` is None on a one-class rollout (any run before the pool
-        # seeds), and R1 then gets the NEUTRAL weights (ones — `_micro_var`), bit-identical to the
-        # unweighted expression, instead of a second signature.
-        strata_declared = self._r1_levers(_f)
         # +FORK ARM (gen3_fork_v1) — computed in the Rust collector's fork pass
         # (`rust_rollout/fork.py`, which BLOCKS on the branch continuations before the epochs
         # begin) and stashed on the model. Recorded under its OWN `fork/` prefix rather than
@@ -309,15 +275,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # — no extra forward, no extra device sync. An early KL stop leaves fewer than n_epochs rows.
         epoch_approx_kl: list[float] = []
         epoch_clip_fraction: list[float] = []
-        # +R1 (gen3_learner_micro_step_v1): the region's static flags + per-update tensors, resolved
-        # ONCE, and the per-update lists its diagnostics are routed into (by name).
-        _micro_st = self._micro_static(_f, strata_declared)
-        _micro_var = self._micro_var(_micro_st, strata_w)
+        # +R1 (gen3_learner_micro_step_v1): the region's static flags, resolved ONCE, and the
+        # per-update lists its diagnostics are routed into (by name).
+        _micro_st = self._micro_static(_f)
         if getattr(self, "_compiled_micro_step", None) is not None:
             # K8: the compiled R1 runs ONLY at its startup declaration; a lever that moved since is
             # a typed FATAL naming the field (the sentinel's guard dump is the backstop).
             from agents.model.compile_regions import check_r1_declared
-            check_r1_declared(self, _micro_st, _micro_var)
+            check_r1_declared(self, _micro_st)
         _ppo_lists = {"pg_losses": pg_losses, "clip_fractions": clip_fractions,
                       "value_losses": value_losses, "entropy_losses": entropy_losses,
                       "vf_clip_fractions": vf_clip_fractions}
@@ -351,7 +316,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                          rollout_data.actions, rollout_data.action_masks,
                                          rollout_data.old_log_prob, rollout_data.old_values,
                                          rollout_data.advantages, rollout_data.returns,
-                                         _micro_var, _micro_st)
+                                         _micro_st)
                 actions = (rollout_data.actions.long().flatten() if _micro_st.discrete
                            else rollout_data.actions)
                 values = _mo.values
@@ -363,7 +328,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # +INSTRUMENTATION: effective rank of the trunk / value_cls / policy / vf reps, ONCE per
                 # train() (first minibatch) — read from R1's OWN forward's stashes (K8,
                 # gen3_rank_device_v1: no second forward; the spectra on the device, one host read).
-                # HERE, before the tail: TD-aux and the cf block re-forward and overwrite the stashes.
+                # HERE, before the tail: a tail fold that re-forwards would overwrite the stashes.
                 if shared_trunk and diag.rank and not rank_metrics:
                     rank_metrics = rank_probe_from_stash(self.policy.features_extractor)
                 # THE ONE host read of this micro-batch's diagnostics (every metric + presence + the
@@ -386,8 +351,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 _policy_grad_term, _ent_term = _mo.terms["policy"], _mo.terms["entropy"]
                 _vf_term = _mo.terms.get("value", 0.0)
 
-                # +CAPACITY: snapshot THIS forward's `value_pooled` before the TD-aux / CF folds
-                # replace the stash. Detached in the snapshot itself, so nothing downstream can
+                # +CAPACITY: snapshot THIS forward's `value_pooled` before any later forward
+                # replaces the stash. Detached in the snapshot itself, so nothing downstream can
                 # accidentally hand the canary a live graph.
                 cap_features = (
                     self._capacity_snapshot_features(self.policy.features_extractor,
@@ -443,21 +408,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         if _cmar is not None and _cmar.size == _cp.size:
                             calib_contested.observe(_cp, _cy, _ck_mask * _cmar)
 
-                # +TD-AUX: the TD-consistency auxiliary. Its OWN contiguous sample + its OWN critic
-                # forward (the minibatch is shuffled — it holds no adjacent pairs), so it must run
-                # AFTER every loss that reads an extractor stash from THIS minibatch's
-                # evaluate_actions forward: the forward below replaces those stashes. Placed here,
-                # beside the other own-forward folds, for exactly that reason.
-                # The rank probe reads R1's stashes right after R1 (above), so it is unaffected.
-                # OFF → skipped (loss byte-identical).
-                td_aux_term = None
-                if td_aux_on:
-                    td_aux_term, _tdm = self._td_aux_term()
-                    if td_aux_term is not None:
-                        loss = loss + _ntg.add("aux", td_aux_term)
-                        for _tdk, _tdv in _tdm.items():
-                            td_aux_metrics.setdefault(_tdk, []).append(float(_tdv))
-
                 # Per-term auxiliary pull on the shared trunk, for the grad-balance probe — EVERY
                 # active scaffold competes with policy/value there, so each is broken out INDIVIDUALLY
                 # (not lumped into one "belief" norm) and the probe puts them on one common denominator
@@ -482,10 +432,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # which is the correct and expected value, not a bug. It only becomes informative
                 # under `shaping`, which is precisely when you need to know.
                 if opp_intent_term is not None:    aux_probe_terms["opp_intent"] = opp_intent_term
-                # The TD term pulls the trunk through the CRITIC path only, so `grad/td_aux_share`
-                # against `grad/value_share` is the read for "is the consistency term crowding out
-                # the level regression it is supposed to complement".
-                if td_aux_term is not None:        aux_probe_terms["td_aux"] = td_aux_term
                 aux_on = belief_aux_on or move_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
                 # wait for one so their shares aren't silently dropped from the single per-train() sample.
@@ -681,7 +627,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         self._record_noise_scale_metrics(accum, noise_g_small_sq, noise_g_big_sq, _ns_terms)
         self._record_head_metrics(belief_metrics, win_prob_metrics, calib_all, calib_contested,
                                   critic_winprob, scaffolding_on, grad_balance)
-        self._record_term_metrics(td_aux_metrics)
         self._record_capacity_metrics(capacity_metrics, aux_metrics)
         self._record_ridealong_metrics(ridealong_acc)
         # +INSTRUMENTATION: LAST line of train(), so it bounds the whole call — the honest

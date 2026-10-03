@@ -1,6 +1,6 @@
 """The CAPACITY-TELEMETRY delegates (`gen3_capacity_telemetry_v1`).
 
-Same split as `aux_terms` -> `belief_bank` / `td_aux`: the bodies live in `agents/training/capacity_telemetry.py`
+Same split as `aux_terms` -> `belief_bank`: the bodies live in `agents/training/capacity_telemetry.py`
 as a self-contained vertical, and these thin methods are what `train()` calls, so every call site
 and every `model._capacity_*` test resolves against one name.
 
@@ -64,8 +64,8 @@ class CapacityTerms:
     def _capacity_snapshot_features(features_extractor, n_rows: int) -> Optional[th.Tensor]:
         """This minibatch's ``value_pooled``, DETACHED, or ``None`` if it is absent or stale.
 
-        Taken immediately after `evaluate_actions` because the TD-aux / counterfactual folds each
-        run their own extractor forward and REPLACE the stash. The row-count check is what makes a
+        Taken immediately after `evaluate_actions` because any later extractor forward REPLACES
+        the stash. The row-count check is what makes a
         stale read a skip rather than a silent mis-pairing of features with observations.
         """
         pooled = getattr(features_extractor, "last_value_pooled", None)

@@ -159,12 +159,6 @@ ARGVS: dict[str, list[str]] = {
     # ---- gen3_winprob_critic_mode_v1. The bare argv IS the win-prob composition (the critic is a
     # constant of the namespace, deletion pass P11b), so a row below trips its own rule.
     "winprob_critic_needs_a_head": ["--win-prob-mode", "none"],
-    # gen3_fork_v1 — the fork arm's refusal that survives: the strata weight (a branch row has no
-    # material margin to stratify on). "The fork needs the winprob critic" and "the strata weight needs
-    # the winprob critic" can no longer fire (there is no other critic: P11b) and are gone, with the
-    # Python core's fork arm (UNAVAILABLE, U3).
-    "fork_refuses_strata_weight":
-        ["--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"],
     "rnd_variants_need_the_base_rnd_head": ["--ridealong-rnd-variants", "all"],
     "move_belief_hidden_needs_species_belief": ["--move-belief-mode", "both",
                                                 "--opp-belief-aux-coef", "0"],

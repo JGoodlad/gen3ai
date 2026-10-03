@@ -414,7 +414,15 @@ from typing import Any, Dict
 #   (`refuse_structural`) and `snapshot._DEAD_FEK_JUDGED` carries the pickled extractor kwargs.
 #   `--team-pfsp` and `--exploiter-ladder` were never recorded fields. Every v121+ run on record
 #   recorded all of it OFF: no ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 134
+# v135 (deletion pass P11c, owner rule 2026-10-03: a flag with no live user is deleted): THREE recorded fields
+#   leave the config — `pair_value_route` (v95, STRUCTURAL: a zero-init `PairValueInject` projection inside
+#   CLSPool, a state_dict key), `td_aux_coef` (v90) and `win_prob_strata_weight` (v115), both TRAINING-only
+#   loss knobs. `_migrate_config` POPs all three from any vintage; a config recording `pair_value_route`
+#   ON is REFUSED on every load (`refuse_structural`) and `snapshot._DEAD_FEK_JUDGED` carries the pickled
+#   extractor kwarg; a RESUME or FORK of a run that recorded a non-zero `td_aux_coef` /
+#   `win_prob_strata_weight` is refused by `model_version.retired_levers`. Every v121+ run on record
+#   recorded all three OFF: no ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 135
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

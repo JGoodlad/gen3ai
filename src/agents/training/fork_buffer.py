@@ -63,7 +63,8 @@ FILL: Dict[str, Tuple[Any, str]] = {
     "win_margin": (_const_block(0.0, (1,), np.float32),
                    "Phi_mat lives in the env's reward manager and a branch has none. 0.0 is the "
                    "CONTESTED stratum, which is where a contested fork's rows belong anyway — but "
-                   "it is a FILL, so `--win-prob-strata-weight` is REFUSED alongside this arm"),
+                   "it is a FILL, so the margin-stratified win-prob diagnostics read a fork's rows "
+                   "as CONTESTED"),
     "belief_species": (_const_block(-1, (6,), np.int64), "PAD/not-scored sentinel"),
     "belief_moves": (_const_block(-1, (6, 4), np.int64), "PAD/not-scored sentinel"),
     "known_moves": (_const_block(-1, (6, 4), np.int64), "PAD/not-scored sentinel"),

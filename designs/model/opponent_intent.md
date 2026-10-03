@@ -88,10 +88,9 @@ hidden-slot set — the pointer was fine; the label beside it was a different he
 
 ## The nine α consumers
 
-Nine modules now contract α against the op's physics — `IntentValueReduce`, `IntentMoveCell`,
+Eight modules now contract α against the op's physics — `IntentValueReduce`, `IntentMoveCell`,
 `IntentThresholdMoveCell`, `IntentConditionalMoveCell`, `PairOutcomeMoveCell`, the v94 pair
-`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`, and the v95 pair `ConditionalThreatCell` /
-`PairValueInject`. They share four conventions, and each one exists because breaking it fails
+`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`, and the v95 pair `ConditionalThreatCell`. They share four conventions, and each one exists because breaking it fails
 silently:
 
 ## The two conventions `pair_outcome.py` added
@@ -109,27 +108,24 @@ silently:
 
 ## Where a consumer sits, and the critic-side gradient guard
 
-**⚠️ WHERE a consumer sits in the phase chain decides WHICH α it can have — and v95's PV is the
-case where that is not a choice at all.** Every consumer above runs at the pointer stash, i.e. after
-the α/β heads are scored, so "read the PUBLICATION" is available to them. `PairValueInject` runs
-inside `CLSPool`, which pools at T2 **before** those heads exist, so it takes the R1 `belief_mean`
-rung **unconditionally — even with `--opp-intent` ON**. Say ORDERING, not "fallback": a fallback is
-something that fires when a head is absent, and calling this one that would invite a future edit to
-"upgrade" it to the publication, which is unbuildable without moving the pool. The gate asserts the
-injected rows are byte-identical across the intent flag AND that the two rungs genuinely differ on
-that seed, so the claim is live rather than vacuous. **The general rule: before choosing an α rung,
-locate the consumer in the tier chain — the answer may already be fixed.**
+**⚠️ WHERE a consumer sits in the phase chain decides WHICH α it can have.** Every consumer above
+runs at the pointer stash, i.e. after the α/β heads are scored, so "read the PUBLICATION" is
+available to them. A consumer inside `CLSPool` would pool at T2 **before** those heads exist and
+could only take the R1 `belief_mean` rung — unconditionally, even with `--opp-intent` ON; that is
+ORDERING, not a fallback, and "upgrading" it to the publication is unbuildable without moving the
+pool. (No such consumer exists today; the pair-value critic route that was one is deleted.) **The
+general rule: before choosing an α rung, locate the consumer in the tier chain — the answer may
+already be fixed.**
 
 **A critic-facing α consumer owes its own gradient guard.** `value_route_gradient_test.py` iterates
 `_value_pooled_routes` — since the deletion wave a ONE-member seam (`value_entity_pool`), kept
 generic precisely because its value is covering the NEXT route the day it is written, which is
 exactly what did not happen for the four it lost. A route added to that seam is covered by
-construction; the two token-content injections (`value_threat_proj` v64, `pair_value_proj` v95)
-are NOT in the seam, by
+construction; the token-content injection (`value_threat_proj`) is NOT in the seam, by
 design: a post-pool additive route must collapse the team axis, and the only equivariant collapse is
-a sum, which cannot tell one mon losing 90% of its bar from six losing 15%. Both are zero-init, so a
+a sum, which cannot tell one mon losing 90% of its bar from six losing 15%. It is zero-init, so a
 disconnected one is indistinguishable from one that learned nothing — the exact gen-12 dead-tail
-failure, one level up. The guard therefore carries a dedicated cell for them, and its real claim is
+failure, one level up. The guard therefore carries a dedicated cell for it, and its real claim is
 *every zero-init projection the critic depends on receives critic gradient*, not *every seam entry
 does*. **When you add a critic-side enrichment anywhere other than the seam, extend that test in the
 same pass.**

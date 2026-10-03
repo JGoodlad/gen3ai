@@ -87,7 +87,7 @@ def test_the_field_block_still_lives_on_the_dataclass():
     """The fields are declared on `ModelVersionFields` and INHERITED. Their ORDER is the
     constructor's positional order and `asdict()`'s key order, so it is part of the contract."""
     fields = dataclasses.fields(hub.ModelVersion)
-    assert len(fields) > 100, f"only {len(fields)} fields — the field block did not come across"
+    assert len(fields) > 90, f"only {len(fields)} fields — the field block did not come across"
     assert fields[0].name == "config_version" and fields[1].name == "arch_signature", (
         "the first two fields are the schema identity and must stay first")
     assert dataclasses.is_dataclass(hub.ModelVersion)

@@ -162,7 +162,7 @@ Rules to preserve:
 | the phases | `extractor_ctx.py` · `encoders.py` · `team_transformer.py` · `pools.py` · `belief_heads.py` · `projection.py` |
 | the op | `damage_op.py` · `damage_op_layout.py` · `damage_op_pairwise.py` · `damage_op_blocks.py` |
 | the lookup tables, in LAYER order | `damage_tables.py` → `belief_tables.py` → `dex_ids.py` |
-| the readouts and the critic routes | `aux_value_heads.py` · `q_winprob_head.py` · `value_readouts.py` · `value_threat_inject.py` · `pair_value_route.py` |
+| the readouts and the critic routes | `aux_value_heads.py` · `q_winprob_head.py` · `value_readouts.py` · `value_threat_inject.py` |
 | the pointer head and the per-action cells | `pointer_head.py` · `pair_outcome.py` · `switch_branch.py` · `conditional_threat.py` |
 | versioning, snapshots, the compile path, the critic modes | `model_version/` · `snapshot.py` · `compile_opponents.py` · `critic_mode.py` |
 | the DICT obs keys the forward reads beyond `observation` | `extra_obs_keys.py` |

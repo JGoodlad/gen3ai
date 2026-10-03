@@ -243,16 +243,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "--ridealong-rnd-variants requires --ridealong-rnd: the observation variants share base's "
         "frozen target and normalisation, and base is the reference every variant is compared "
         "with. Pass --ridealong-rnd, or drop the variants."),
-    # --- gen3_fork_v1: the FORK ARM's three refusals. ---------------------------------------
-    CombinationCheck(
-        "fork_refuses_strata_weight", ("fork_fraction", "win_prob_strata_weight"),
-        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
-                   and float(_val(a, "win_prob_strata_weight", 0.0) or 0.0) != 0.0),
-        "--fork-fraction > 0 is incompatible with --win-prob-strata-weight != 0. The strata weight "
-        "prices rows by `win_margin`, the normalised material margin the env's reward manager "
-        "computes; a branch has no env, so every injected row carries the 0.0 FILL and would land "
-        "in one stratum. The delivered strata dose would then be a function of the fork rate "
-        "rather than of the flag. Drop one of the two."),
     # ---- the distributional critic --------------------------------------------------------
 
     # ---- gen3_supply_guard_v2: a PFSP lever with no possible supply ---------------------------

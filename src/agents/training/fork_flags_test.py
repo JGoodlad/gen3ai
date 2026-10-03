@@ -173,18 +173,8 @@ def test_the_fraction_is_in_the_arch_table_so_a_headless_run_reads_INERT():
     assert _COEF_MODULE["fork_fraction"] == "win_head"
 
 
-# ── the refusals ─────────────────────────────────────────────────────────────────────────────
-@pytest.mark.parametrize("extra,needle", [
-    # (`--fork-fraction` needing the win-prob critic is gone: it is the only critic — P11b; a typed
-    # `--critic shaped` is refused as a DELETED flag by `census_deleted_flags_test`)
-    (_WP + ["--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"], "strata-weight"),
-])
-def test_the_refusals_fire_with_their_own_text(extra, needle, capsys):
-    with pytest.raises(SystemExit):
-        _resolved(extra)
-    assert needle in capsys.readouterr().err
-
-
+# ── the refusals: none left (the fork needing the win-prob critic went with the shaped critic, P11b;
+# its refusal of `--win-prob-strata-weight` went with that flag, P11c) ─────────────────────────────
 def test_a_complete_forked_argv_is_ACCEPTED():
     args = _resolved(_WP + ["--fork-fraction", "0.02"])
     assert args.fork_fraction == 0.02

@@ -100,7 +100,6 @@ STEP_MODULES: Dict[str, str] = {
     "agents/model/masked_categorical.py": "the functional masked distribution the micro-step evaluates per minibatch",
     "agents/model/region_calls.py": "the no-silent-eager route counters every region body and dispatcher touches per call",
     "agents/training/capacity_telemetry.py": "capacity telemetry the fold computes per update",
-    "agents/training/td_aux.py": "the TD auxiliary loss, per minibatch",
     "agents/training/grad_balance.py": "gradient-balance metrics + shared-trunk parameter lists, per update",
     "agents/training/rank_metrics.py": "the rank probe, run on the update's features",
     "agents/training/opp_intent_labels.py": "the opponent-intent labels built per rollout/update",

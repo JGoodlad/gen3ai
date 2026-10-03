@@ -24,7 +24,7 @@ always-current obligation as this file — update the topic doc in the same pass
 | self-play, the snapshot pool, stable opponents | [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md) |
 | exploiter mode, the rank tripwire (distillation, the off-slice anchor and the consensus warm start are DELETED, config v133 / P11) | [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md) |
 | team-side PFSP, per-team win-rate tracking | [`designs/training/team_curriculum.md`](../../../designs/training/team_curriculum.md) |
-| the win-prob critic, TD-aux, the 250-turn cap (PopArt, the value-tail weight and the value-dist head are DELETED, config v131) | [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md) |
+| the win-prob critic, the 250-turn cap (PopArt, the value-tail weight and the value-dist head are DELETED, config v131) | [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md) |
 | the win-prob head (its PBRS routes were DELETED, config v131) | [`designs/training/winprob_head_and_pbrs.md`](../../../designs/training/winprob_head_and_pbrs.md) |
 | the training-side value sidecar, its two flags, its cost, `main.ops.value_sidecar_read` | [`designs/training/value_sidecar.md`](../../../designs/training/value_sidecar.md) |
 | any supervised belief loss, or the opponent-class label weight | [`designs/training/belief_losses.md`](../../../designs/training/belief_losses.md) |
@@ -126,7 +126,7 @@ diagnostics in ONE host read (`micro_step.pack`). The belief losses' static twin
 `belief_bank` / `opp_intent` functions stay as the REFERENCE they are pinned equal to (float64 to
 1e-12). A new term on the production surface belongs in R1, written to these rules; anything else
 joins the tail in contract order. What moved out of `train()` before K8 is everything AROUND the
-sequence: the pre-loop setup (`train_setup`, incl. R1's static flags `_micro_static` and its declared levers `_r1_levers`), the metrics
+sequence: the pre-loop setup (`train_setup`, incl. R1's static flags `_micro_static`), the metrics
 export (`metrics_export`) and the per-rollout probes (`rollout_probes`).
 
 🚨 **THE LOOP AROUND `train()` IS OURS TOO** (`gen3_owned_ppo_loop_v1`, `src/agents/training/instrumented_ppo/loop.py`;
@@ -205,7 +205,7 @@ Per minibatch (1 to 3a inside R1):
 1. the upstream PPO loss (`policy_grad_coef·policy_loss + ent_coef·entropy + vf_term` — `--policy-grad-coef`
    scales ONLY the clipped surrogate, never entropy/value/aux; at the 1.0 default the UNSCALED
    `policy_loss` tensor is used, byte-identical to upstream, and 0.0 removes the policy-gradient
-   term alone. Training-only, the `td_aux_coef` provenance
+   term alone. Training-only, the `training_coef` provenance
    class: recorded, `_resolve`-inherited on a flagless resume, never gated)
 2. the belief bank — species/moves aux, opponent intent (+ set-valued β), move / spread /
    nature-EV / HP-type / item belief, move-latent
@@ -213,15 +213,15 @@ Per minibatch (1 to 3a inside R1):
 4. (retired — the value-dist HL-Gauss CE was deleted with the dist head; the numbering below is unchanged)
 5. (retired — the distill family was deleted with distillation, config v133; the numbering is unchanged)
 6. (retired — search-teacher AWR and OPD were deleted with the search teacher, config v133)
-7. **TD-AUX** — the declared eager tail's one fold
+7. (retired — the TD-consistency auxiliary was deleted, P11c; the numbering is unchanged)
 8. (retired — the counterfactual block (cf-winprob, cf-evidential, cf-twin, cf-shadow, q-winprob) was deleted with the cf training half, config v134; the numbering is unchanged)
 
 **No flag combination reorders these.** Each term is guarded by its own `if <x>_on:`; a term that
-is off contributes nothing and moves no one. **Step 7 is last because it runs its OWN extractor
-forward, which CLOBBERS the minibatch's stashes** (`last_win_prob_logits`, `last_spread_belief`, …)
-that steps 2-4 read. Moving a stash-reading fold below step 7 does not crash — it silently scores
+is off contributes nothing and moves no one. **A tail fold that runs its OWN extractor
+forward CLOBBERS the minibatch's stashes** (`last_win_prob_logits`, `last_spread_belief`, …)
+that steps 2-4 read. Moving a stash-reading fold below such a fold does not crash — it silently scores
 the wrong states. `instrumented_ppo_hub_contract_test.py` pins R1's order and that the R1 call
-precedes the TD-AUX tail fold by reading the source, along with the mixin base list (a dropped mixin removes a
+precedes every eager-tail fold by reading the source, along with the mixin base list (a dropped mixin removes a
 whole family of loss terms without breaking an import) and `MaskablePPO` staying LAST in the MRO
 (or `_excluded_save_params`'s `super()` stops reaching upstream and checkpoints start pickling a
 `threading.Lock`). It also walks the package's own import graph TRANSITIVELY from the hub, so a
@@ -658,7 +658,7 @@ R1 (the compiled micro-step) to eager on the K9 golden's real labelled rows at t
 (loss + every policy gradient — EVERY canary; there is no decision-only canary). A disagreement is CONFIRMED in the same update (the same rows + an
 independent slice of them, eager recomputed): confirmed ⇒ checkpoint + `[CompileCanary] FATAL` naming the safe
 rollback point (`<run_dir>/canary_verdicts.jsonl`); unconfirmed ⇒ counted, and two consecutive ⇒ FATAL. The rank probe is HOOK-FREE (a forward
-hook on a compiled module is a guard — the iteration-1 signature `8fc297a2` used to absorb). 🚨 **The learner compiles ONLY as its DECLARED REGION** (K8, `agents/model/compile_regions.py`, `designs/training/compile_flags.md` "K8 — DECLARED COMPILE REGIONS"): R1 the micro-step, `fullgraph=True` at ONE declared signature (`batch_size` rows: a ragged micro-batch is REFUSED by the dispatcher, `gen3_r1_no_ragged_v1` — the collector refuses an update that does not divide by the micro-batch, and `check_shape_stability` judges the REAL update size, `--rollout-target-samples`, at startup). The compiled rollout region R0, its eager batch-1 route and `install_rollout_region` are DELETED (P10-E, owner-approved 2026-10-03: the Rust collector serves rollouts through T2, so R0 was never called, yet it was compiled, gated, prewarmed and canaried every launch); the rank probe reads R1's stashes (no second forward, the spectra on the device); on a CUDA buffer every micro-batch is STAGED to the device by a prefetch thread (`--device-batch staged`, the default since 2026-10-01; `resident` = one device copy of the whole flattened buffer per update, +~1.1 GB of update peak; `instrumented_ppo/device_batches.py`, bit-identical batches in every mode, the same permutation). 🚨 **Startup RUNS one dry update** (`agents/training/update_fit.py`, `gen3_update_fit_v1`): one real `train()` epoch on a fixture rollout of the buffer's full shape, the learner restored bit-identically, and a first update that would not leave 1,024 MiB of device headroom (or OOMs) is `UpdateWontFit` (FATAL_CONFIG) — `designs/training/learner_lifecycle.md` "The update fit check". ONE startup gate per region (`gen3_one_gate_per_region_v1`); the trainer's compile step (`compile_trainer.preflight_compile_trainer`) compiles nothing and refuses a learner without the micro-step. 🚨 **No region runs eager silently** (`gen3_no_silent_eager_v1`): a compiled-route call whose Python body executes, a ragged micro-batch, or dynamo disabled / errors suppressed / the stance moved under the lock is a typed FATAL; every update logs `lifecycle/compiled_region_calls`, `lifecycle/eager_fallback_calls`, `lifecycle/eager_share`, `lifecycle/update_wall_s` (`designs/training/compile_flags.md`). R1's startup gate and the canary judge its per-parameter gradient by WEIGHT REGIME (`compile_regions.weights_regime`: fresh vs trained, measured bars — `designs/training/compile_flags.md`). Code inside R1 must stay a static-shape program (the fold contract above). 🚨 **Every lever R1 reads is DECLARED at startup from the resolved config** (`gen3_r1_declared_levers_v1`): `TrainSetup._r1_levers` is the ONE predicate for the strata and rollout-weight levers (never a rollout's data — an idle strata lever gets neutral ones, bit-identical), and every compiled update is held to the declaration (`compile_regions.check_r1_declared`, a typed FATAL naming the field or key). A new R1 lever is declared there, never by relaxing the lock (`compile_flags.md` "R1's DECLARED LEVERS"). A NEW compiled signature is added to the region table (`compile_regions.REGIONS`)
+hook on a compiled module is a guard — the iteration-1 signature `8fc297a2` used to absorb). 🚨 **The learner compiles ONLY as its DECLARED REGION** (K8, `agents/model/compile_regions.py`, `designs/training/compile_flags.md` "K8 — DECLARED COMPILE REGIONS"): R1 the micro-step, `fullgraph=True` at ONE declared signature (`batch_size` rows: a ragged micro-batch is REFUSED by the dispatcher, `gen3_r1_no_ragged_v1` — the collector refuses an update that does not divide by the micro-batch, and `check_shape_stability` judges the REAL update size, `--rollout-target-samples`, at startup). The compiled rollout region R0, its eager batch-1 route and `install_rollout_region` are DELETED (P10-E, owner-approved 2026-10-03: the Rust collector serves rollouts through T2, so R0 was never called, yet it was compiled, gated, prewarmed and canaried every launch); the rank probe reads R1's stashes (no second forward, the spectra on the device); on a CUDA buffer every micro-batch is STAGED to the device by a prefetch thread (`--device-batch staged`, the default since 2026-10-01; `resident` = one device copy of the whole flattened buffer per update, +~1.1 GB of update peak; `instrumented_ppo/device_batches.py`, bit-identical batches in every mode, the same permutation). 🚨 **Startup RUNS one dry update** (`agents/training/update_fit.py`, `gen3_update_fit_v1`): one real `train()` epoch on a fixture rollout of the buffer's full shape, the learner restored bit-identically, and a first update that would not leave 1,024 MiB of device headroom (or OOMs) is `UpdateWontFit` (FATAL_CONFIG) — `designs/training/learner_lifecycle.md` "The update fit check". ONE startup gate per region (`gen3_one_gate_per_region_v1`); the trainer's compile step (`compile_trainer.preflight_compile_trainer`) compiles nothing and refuses a learner without the micro-step. 🚨 **No region runs eager silently** (`gen3_no_silent_eager_v1`): a compiled-route call whose Python body executes, a ragged micro-batch, or dynamo disabled / errors suppressed / the stance moved under the lock is a typed FATAL; every update logs `lifecycle/compiled_region_calls`, `lifecycle/eager_fallback_calls`, `lifecycle/eager_share`, `lifecycle/update_wall_s` (`designs/training/compile_flags.md`). R1's startup gate and the canary judge its per-parameter gradient by WEIGHT REGIME (`compile_regions.weights_regime`: fresh vs trained, measured bars — `designs/training/compile_flags.md`). Code inside R1 must stay a static-shape program (the fold contract above). 🚨 **Every lever R1 reads is DECLARED at startup from the resolved config** (`gen3_r1_declared_levers_v1`): R1's declaration is its static flags (`MicroStatic`, resolved by `TrainSetup._micro_static`) plus the observation key set (never a rollout's data; R1 takes no per-update tensor dict), and every compiled update is held to the declaration (`compile_regions.check_r1_declared`, a typed FATAL naming the field or key). A new R1 lever is declared in that static, never by relaxing the lock (`compile_flags.md` "R1's DECLARATION"). A NEW compiled signature is added to the region table (`compile_regions.REGIONS`)
 and its prewarm, never absorbed after the lock; a learner-process caller OUTSIDE the regions runs the
 extractor eager already (the regions compile functions over the module and never patch `fe.forward`,
 so there is no eager-route wrapper any more — `eager_extractor` was deleted with the Python fork arm, its last caller); the learner process's rollout forward (`policy.forward` / `rollout_core`, for `predict`-class callers) is ALWAYS eager — the late-shape
@@ -739,37 +739,10 @@ a cap forfeit used to arrive as `truncated`, so SB3 bootstrapped `V(s_last)` ont
 the Python env wrapper's `resolve_episode_end` (deleted with that core in U3; the Rust collector's complete-game rule serves it now), under `winprob` only. **`gamma` is a constant of the namespace (1.0; no flag), and SB3 restores a checkpoint's own gamma on a
 resume like `--lr`.**
 
-### `--win-prob-strata-weight` — the BCE's opponent MIX (`gen3_winprob_strata_weight_v1`, v115)
-
-**Default `0.0` = OFF and the loss is BIT-identical; it runs on the win-prob critic (the only critic)** (the BCE IS the value loss). Each state's
-BCE term is multiplied by its opponent CLASS's weight `w_c ∝ freq_c ** (−s)`, capped at **8×** and
-renormalised so the **mean weight over the rollout buffer is exactly 1** — it re-prices the MIX
-without moving the loss SCALE, so an arm cannot confound "re-weighted the classes" with "raised the
-critic's learning rate". At `s = 1` every class contributes equally; `s` interpolates.
-
-🚨 **WHY, and it is arithmetic rather than a hunch.** Only **10.2 % / 14.4 %** of the terminal 0/1
-label's variance lies BETWEEN (cycle, opponent) cells, so a head minimising BCE buys its resolution
-from the board and its own team — which is cheaper — and never conditions on the opponent. The head
-refit proved the fault is the TARGET, not the head, on both substrates
-([`winprob_head_refit_2026-09-09`](../../../designs/research_state/measurements/winprob_head_refit_2026-09-09/README.md)
-§6/§11). This raises that share directly, with **no new labels and no rollout cost**.
-
-🚨 **THE VOCABULARY IS THE FOUR `opp_class` CODES** — `bot` / `pool` / `stable` / `exploiter` — and
-per-BOT identity is **not available**: the archetype is drawn per EPISODE in
-the per-episode opponent draw (`rust_env_opponents.EpisodeOpponentSampler`) and never reaches the observation. So the lever
-balances the between-CLASS share and leaves within-class heterogeneity in episode proportion.
-⚠️ **THE CAP BINDS AT THE PRODUCTION MIX, deliberately**: at ~10 % bots / ~90 % self-play, `s = 1`
-asks for 10× and gets 8×, so the objective splits **44/56, not 50/50** — a 4.4× re-pricing with a
-bounded per-row weight. Read `win_prob/strata_share_*`, `strata_w_entropy` (1.0 = balanced) and
-`loss` vs `loss_unweighted`. 🚨 **`strata_active` 0 vs an ABSENT family are different facts**: the
-family is published whenever the flag is on, so 0 means "on, but one class present / no labels yet"
-(every `--debug` run and any run before the pool seeds) and ABSENT means the flag is off.
-
 ### `--fork-fraction` — THE FORK ARM, contested-state EXPLORING STARTS (`gen3_fork_v1`, v120)
 
 **Default `0.0` = OFF and BIT-identical** — no fork object built, no obs key declared, no row injected.
-**It runs on the win-prob critic (the only critic)**, and `--win-prob-strata-weight` is REFUSED
-alongside it; the arm's replay
+**It runs on the win-prob critic (the only critic)**; the arm's replay
 ring, `--cf-records`, was deleted in deletion pass L4 and the Python arm's code in L5. Detail:
 [`designs/training/forks.md`](../../../designs/training/forks.md).
 
@@ -828,7 +801,6 @@ announcement and every value-side flag below — is in
 | flag | default | what it does, and the one thing to know |
 |---|---|---|
 | `--vf-coef` | `0.5` | multiplies a BCE under `winprob`, an MSE on a shaped return under `shaped` — **the 0.5 default carries no information about the first**. The startup announcement prints the raw BCE and the value/policy shared-trunk gradient RATIO (`10 ** grad/value_policy_logratio`); it never divides by `|policy loss|`, which is ≈0 by construction on epoch 1. Fixed for a run's lifetime |
-| `--td-aux-coef` | `0.0` | the Bellman identity as an explicit loss over CONTIGUOUS pairs the PPO permutation destroys. 🚨 **Pre-registered band 1.0–3.0; `λ ≤ 0.1` measured significantly WORSE than control** — the small-coef regime is to be avoided, not treated as "a bit of the effect". Episode boundaries DROP the pair, never zero it |
 
 ## The DETACHED RIDE-ALONG heads (`--ridealong-ensemble` · `--ridealong-rnd` · `--ridealong-adv` · `--ridealong-opp` · `--ridealong-rnd-variants`)
 

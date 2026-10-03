@@ -301,7 +301,7 @@ def test_the_flag_parses_the_whole_intended_range(value):
 
 
 def test_the_weight_is_recorded_and_inherited_on_a_flagless_resume():
-    """The `td_aux_coef` class exactly: recorded on ModelVersion for provenance AND so
+    """The training-only provenance class exactly: recorded on ModelVersion for provenance AND so
     `train_rl_agent`'s `_resolve` (a `getattr(saved_version, name, default)`) reads it back when a
     launcher restart forwards no flag. A weight that is NOT a ModelVersion field would silently
     revert to 1.0 — i.e. OFF — on every 3-hour restart."""
@@ -323,7 +323,7 @@ def test_the_weight_is_recorded_and_inherited_on_a_flagless_resume():
     other.check_compatible(v)
 
     # THE v97 MIGRATION LEG IS NOW UNREACHABLE, and asserting the refusal is the honest form (the
-    # td_aux_coef / v92 precedent). gen3_event_record_v2 bumped ARCH_SIGNATURE and raised
+    # v92 precedent). gen3_event_record_v2 bumped ARCH_SIGNATURE and raised
     # MIGRATION_FLOOR to 121 in the same commit, so v97's `setdefault("intent_label_bot_weight",
     # 1.0)` sits below the floor (archived verbatim in `_migrate_config`'s v97–v120 history). A
     # config that lacks the field is a pre-generation one and is REFUSED with a diagnosis.

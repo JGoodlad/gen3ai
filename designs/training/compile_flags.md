@@ -1097,7 +1097,7 @@ flag and read attributes (`grad_checkpointing`):
 | rollout `policy(obs)`, end-of-rollout `predict_values`, frozen-φ / PBRS (the learner-process forwards; the Rust collector's rollout is T2's own `DecisionModule`) | eval · no-grad · any batch | EAGER at every batch since P10-E (no compiled rollout region R0: it was never called); takes no region route and compiles nothing |
 | `evaluate_actions` | train · grad · `batch_size` | prewarm |
 | `rank_probe` (first minibatch of every update) | train · no-grad · `batch_size` | prewarm — HOOK-FREE since K6 (`gen3_rank_probe_stash_v1`): it reads `last_trunk_tokens` / `last_value_cls`. Its old forward hooks were a guard (`len(_forward_hooks) != 0`) — THE iteration-1 signature the `8fc297a2` lock absorbed (found 2026-09-30 on the real trainer with the lock moved before iteration 1); on 2.8 the hooks were instead silently SKIPPED inside the compiled frame, so `rank/trunk_*` and `rank/value_cls_*` vanished on every compiled 2.8 run |
-| capacity half-batch cosine (every 50 minibatches), td-aux | train · grad · other sizes ≥ 2 | prewarm at `batch_size // 2` makes the train graph dynamic |
+| capacity half-batch cosine (every 50 minibatches) | train · grad · other sizes ≥ 2 | prewarm at `batch_size // 2` makes the train graph dynamic |
 | truncated-episode `predict_values` (a shaped-critic-era caller; the shaped critic is no longer trainable) | eval · no-grad · **1** | EAGER (no compiled rollout region) |
 | cf terms, capacity velocity, win-prob episode-start read | — | already eager (`type(fe).forward(fe, …)`) |
 | eval, snapshot ladder, the opponents | — | other processes (fresh dynamo per process) |
@@ -1422,29 +1422,26 @@ B = 2048 costs ~11 s on the CPU, so time is not the obstacle. Two other things a
   vs fp64 where CUDA eager's is 1.0e-5 but CPU eager's is also 1.3e-3. Those are two correct fp32
   implementations 100x apart, so the rule needs CPU eager in its envelope as well.
 
-**R1's DECLARED LEVERS (`gen3_r1_declared_levers_v1`, 2026-10-01).** R1's signature is more than the
-batch's shapes: dynamo specialises on its static flags (`MicroStatic`) and guards the observation
-dict's KEYS and the per-update tensor dict (`var`). All three are DECLARED at startup from the
-resolved config and held to that declaration every update:
+**R1's DECLARATION (`gen3_r1_declared_levers_v1`).** R1's signature is more than the batch's shapes:
+dynamo specialises on its static flags (`MicroStatic`) and guards the observation dict's KEYS. Both
+are DECLARED at startup from the resolved config and held to that declaration every update. R1 takes
+NO per-update tensor dict: every value it multiplies by is a static flag or coefficient.
 
 | lever | flag | in the batch | how it is declared |
 |---|---|---|---|
-| strata | `--win-prob-strata-weight > 0` (the win-prob critic) | `var["strata_w"]` `[4]` + `var["strata_active"]` | from the FLAG (`TrainSetup._r1_levers`); a rollout with fewer than two opponent classes among its labelled rows gets the NEUTRAL weights (ones, `strata_active` False) — bit-identical to the unweighted BCE (`x * 1.0 == x`, forward and backward; `r1_declared_levers_test`), its row-weight diagnostics absent as before |
 | fork mask | `--fork-fraction > 0` | `fork_pg_m` (obs key) | the key is in the env's obs space at startup; injected rows make a RAGGED last micro-batch, which runs eager by declaration |
 | label keys | `--move-belief-mode` | `known_moves` | in the obs space at startup (they ride the dict; the forward reads none) |
 
-`compile_regions.install` records the declaration (`R1Declaration`: static flags, obs keys, `var`
-keys); `check_r1_declared` runs at every compiled `train()` and raises a typed `CompileSentinelError`
-(FATAL_CONFIG via `compile_control.attach`) naming the field or key that moved — the dynamo
-sentinel's guard dump stays the backstop. The gate, the prewarm and the canary build R1's arguments
-through the same `_r1_static`. **Before this, the gate built R1 with its row-weight levers OFF**:
-an anchor-weight arm (the lever is deleted) died at its first update, and a `--win-prob-strata-weight` arm at
-the first update after its self-play pool seeded (the strata weights are None on a one-class rollout,
-so the signature flipped on DATA). No recipe (`recipe.fresh`, `recipe.fork`) or registered baseline
-uses the strata lever. `r1_declared_levers_test` (routine, CPU, dynamo `eager`): per inventory row, the
-learner built from that config, the real startup lifecycle, two real updates (one opponent class,
-then two) — 0 compiles after the lock; reverting the declaration fails the strata
-row with the sentinel's UNDECLARED SIGNATURE FATAL.
+`compile_regions.install` records the declaration (`R1Declaration`: static flags, obs keys);
+`check_r1_declared(model, st)` runs at every compiled `train()` and raises a typed
+`CompileSentinelError` (FATAL_CONFIG via `compile_control.attach`) naming the field or key that
+moved — the dynamo sentinel's guard dump stays the backstop. The gate, the prewarm and the canary
+build R1's arguments through the same `_r1_static`. `r1_declared_levers_test` (routine, CPU, dynamo
+`eager`): per inventory row, the learner built from that config, the real startup lifecycle, two real
+updates — 0 compiles after the lock; a second test holds that an undeclared lever or key after the
+lock is the sentinel's UNDECLARED SIGNATURE FATAL. (A row-weight lever whose weights were None on a
+one-class rollout once flipped the signature on DATA; that lever, the strata weight, was deleted in
+the P11c pass, and with it the per-update `var` dict.)
 
 ### Every non-training model can use it
 

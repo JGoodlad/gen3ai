@@ -299,22 +299,12 @@ mode SUBSUMES is refused rather than ignored. `python -m main.checkargs` reports
 
 **`--win-prob-pbrs-frozen`, `--win-prob-pbrs-coef` and `--win-prob-pbrs-source` were DELETED** (L1, config v131; the actor-only frozen potential was the one PBRS route buildable under `winprob`). **The recorded `critic` is STRUCTURAL and resume-immutable.**
 
-**`--win-prob-strata-weight <0..1>`** (default `0.0` = OFF, bit-identical; **requires
-the win-prob critic (the only critic)**) re-prices WHICH OPPONENTS the value loss is bought from: each state's BCE term
-is weighted by its opponent CLASS's inverse frequency (`bot` / `pool` / `stable` / `exploiter`),
-capped at 8× and renormalised so the mean weight over the buffer is 1 — the mix moves, the loss
-scale does not. It exists because only ~10–14 % of the terminal label's variance lies BETWEEN
-(cycle, opponent) cells, so the head buys its resolution from the board instead. ⚠️ **The cap BINDS
-at the production ~10/90 mix: `1.0` gives a 44/56 split, not 50/50.** Read `win_prob/strata_share_*`,
-`strata_w_entropy` and **`strata_active`** — the family is published whenever the flag is on, so
-`strata_active 0` means "on but idle" (one opponent class present) and an ABSENT family means off. Mechanics:
-[`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
+**`--win-prob-strata-weight` was DELETED** (deletion pass P11c, config v135): the opponent-CLASS inverse-frequency re-pricing of the win-prob BCE's mix read NOT DETECTED on ladder arm 7 and did not replicate; no workflow, backlog row or era step used it. A checkpoint that recorded a non-zero value is refused on a resume / fork (run it pinned to `0da1be4a`).
 
 **The critic-ladder target levers are DELETED (deletion pass L2).** `--win-prob-lambda` / `--win-prob-lambda-truncated` (a λ-return BCE target), `--win-prob-rollout-target` / `-r` / `-mode` / `-weight` (R-rollout Monte-Carlo targets and their anchor weight) and `--win-prob-dense-aux` (25 dense end-of-battle targets) no longer exist: the win-prob BCE's target is always the episode's terminal outcome, and a checkpoint recorded with `dense_aux` ON is refused on every load (a training-only lever refuses a resume/fork naming the pin 475bd817). Why and where recoverable: [`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
 
 **`--fork-fraction <0..1>`** (default `0.0` = OFF and bit-identical — no module, no obs key, no
-callback, no row; runs on the win-prob critic (the only critic), and REFUSES
-`--win-prob-strata-weight`) is **THE FORK ARM**: the
+callback, no row; runs on the win-prob critic, the only critic) is **THE FORK ARM**: the
 fraction of the buffer's decisions that are FORKED. At a contested decision the episode is replayed
 out of the Rust core's finished input log to that turn and `--fork-branches` continuations — the policy's top-2
 plus ONE uniformly random legal action — are played to a terminal by the current policy; their
@@ -429,6 +419,10 @@ which is why it announces itself at startup when the auto default resolves to on
 `--no-compile-trainer` opts out. Full detail — the four refusals, the
 `state_dict` hazard, the measurement table — is in `src/agents/training/CLAUDE.md` → Compiled GPU
 trainer.
+
+### Memory headroom — `--grad-checkpointing` (operator knob)
+
+`--grad-checkpointing` is the EXACT memory lever for the learner: it gradient-checkpoints the team transformer's encoder layers and the damage operator (`TeamTransformer`, `DamageOperator`) during the PPO update, trading ONE extra forward in the backward pass — on a GPU that is otherwise idle there — for about **5 GB less activation VRAM**. It is **bit-exact** (dropout 0, non-reentrant checkpointing), so a run on it trains the same numbers as a run without; it is a runtime knob (never in `check_compatible`, never in the saved checkpoint), so it is set fresh from the argv on every launch and **a flagless resume does NOT inherit it** — re-pass it on every resume of an arm that needs it. It is OFF by default and the production recipe does not use it. Reach for it when a launch dies with a CUDA out-of-memory in the update (a larger `--batch-size`, `--n-envs`, or the X5 belief-token architecture, whose tokens grow the transformer's activations), BEFORE shrinking the batch: shrinking the batch changes the dose, this does not. It must run before `--compile-trainer` patches the forward (the launch order handles that); the startup line `[GradCheckpoint] enabled on N transformer block(s)` is the confirmation.
 
 ### The Rust env core — THE ONLY ENV CORE (the M5 switch)
 

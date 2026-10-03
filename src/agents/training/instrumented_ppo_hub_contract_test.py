@@ -81,7 +81,7 @@ def test_the_ppo_class_carries_every_term_family():
             f"`{base}` is gone from `InstrumentedMaskablePPO`'s bases (MRO is {mro}). The class "
             f"would still construct and still train — just without that family of loss terms.")
     for method in ("_win_prob_loss",
-                   "_td_aux_term", "_belief_aux_loss",
+                   "_belief_aux_loss",
                    "_move_belief_loss", "_spread_belief_loss", "_nature_ev_belief_loss",
                    "_hp_type_belief_loss", "_move_belief_latent_loss",
                    "_noise_scale_estimate", "_global_grad_sq", "_emit_noise_scale_warnings",
@@ -89,7 +89,7 @@ def test_the_ppo_class_carries_every_term_family():
                    "_capacity_finish",
                    "_align_opp_intent_labels", "_resolve_fold_flags", "_train_probe_setup",
                    "_record_grad_balance_metrics", "_record_signal_metrics",
-                   "_record_noise_scale_metrics", "_record_head_metrics", "_record_term_metrics",
+                   "_record_noise_scale_metrics", "_record_head_metrics",
                    "_record_capacity_metrics",
                    "_winprob_start_metrics",
                    "_excluded_save_params", "collect_rollouts", "train"):
@@ -132,8 +132,8 @@ def test_the_fold_sequence_is_two_straight_lines_R1_then_the_eager_tail():
 
     * inside R1: PPO loss -> belief bank `hidden_move` -> opponent intent -> `latent` -> `revealed`
       -> win-prob BCE;
-    * inside `train()`: the R1 call precedes every tail fold (`_td_aux_term` is the one tail fold
-      that runs its own extractor forward, so it follows every stash-reading term).
+    * inside `train()`: the R1 call precedes every tail reader (`_ridealong_update` reads the
+      extractor stashes R1's forward leaves behind, so it must follow R1).
     """
     from agents.training.instrumented_ppo import micro_step as ms
     r1 = inspect.getsource(ms.micro_step)
@@ -143,11 +143,11 @@ def test_the_fold_sequence_is_two_straight_lines_R1_then_the_eager_tail():
     assert at == sorted(at), f"R1's fold order moved: {list(zip(order, at))}"
     src = inspect.getsource(hub.InstrumentedMaskablePPO.train)
     assert inspect.getfile(hub.InstrumentedMaskablePPO.train) == str(_DIR / "ppo.py")
-    for marker in ("+INSTRUMENTATION", "+GRAD-ACCUM", "+R1", "+TD-AUX",
+    for marker in ("+INSTRUMENTATION", "+GRAD-ACCUM", "+R1",
                    "+NOISE-SCALE", "+CAPACITY"):
         assert marker in src, f"the `{marker}` block left `train()`"
     r1_call = src.index("self._micro_region()(")
-    for tail in ("self._td_aux_term()",):
+    for tail in ("self._ridealong_update(",):
         assert r1_call < src.index(tail), f"the tail fold `{tail}` now runs BEFORE region R1"
 
 

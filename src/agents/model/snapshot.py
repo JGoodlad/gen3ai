@@ -1122,7 +1122,13 @@ _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
                     # `cf_shadow_critic` and every v107+ one `q_winprob_mode`
                     # (`snapshot.snapshot_extractor_kwargs` always wrote them).
                     ("cf_evidential", False), ("cf_twin_heads", False), ("cf_shadow_critic", False),
-                    ("q_winprob_mode", "none"))
+                    ("q_winprob_mode", "none"),
+                    # v135 (deletion pass P11c): the PAIR-VALUE route is deleted — its ON value built a
+                    # zero-init D_MODEL projection (`PairValueInject`) inside CLSPool, a state_dict key
+                    # the surviving extractor has no home for, so ON is refused (the v75 rule); OFF
+                    # built nothing and pops. The reachable half: every v95+ checkpoint pickles
+                    # `pair_value_route` (`snapshot.snapshot_extractor_kwargs` always wrote it).
+                    ("pair_value_route", False))
 
 # POLICY kwargs (`policy_kwargs[...]`, NOT the extractor's) that left `Gen3DualHeadMaskablePolicy.__init__`
 # at v131 (deletion pass L1). SB3 splats the zip's pickled `policy_kwargs` into the policy constructor, so a
@@ -1385,7 +1391,6 @@ def current_model_version(
     pair_outcome_switch: bool = False,
     switch_branch_cell: bool = False,
     conditional_threat_cell: bool = False,
-    pair_value_route: bool = False,
     op_drop_renders: bool = False,
     op_believed_lean: bool = False,
     value_clock: bool = False,
@@ -1395,7 +1400,6 @@ def current_model_version(
     damage_matrices_incoming: bool = False,
     hp_type_belief_coef: float = 0.0,
     item_belief_coef: float = 0.0,
-    td_aux_coef: float = 0.0,
     hp_belief_mode: str = "composed",
     belief_grad_mode: str = "shaping",
     ridealong_ensemble: int = 0,
@@ -1472,7 +1476,6 @@ def current_model_version(
     ext_kwargs["pair_outcome_switch"] = pair_outcome_switch
     ext_kwargs["switch_branch_cell"] = switch_branch_cell
     ext_kwargs["conditional_threat_cell"] = conditional_threat_cell
-    ext_kwargs["pair_value_route"] = pair_value_route
     ext_kwargs["op_drop_renders"] = op_drop_renders
     ext_kwargs["op_believed_lean"] = op_believed_lean
     ext_kwargs["value_clock"] = value_clock
@@ -1497,7 +1500,6 @@ def current_model_version(
         move_belief_latent_coef=move_belief_latent_coef,
         spread_belief_coef=spread_belief_coef,
         hp_type_belief_coef=hp_type_belief_coef, item_belief_coef=item_belief_coef,
-        td_aux_coef=td_aux_coef,
     )
 
 
@@ -1578,13 +1580,10 @@ def arch_toggles_from_model(model: Any) -> dict:
         # (state_dict + pointer switch/move cell widths), both gated.
         "pair_outcome_switch": bool(getattr(fe, "pair_outcome_switch", None) is not None),
         "switch_branch_cell": bool(getattr(fe, "switch_branch", None) is not None),
-        # gen3_conditional_threat_v1 / gen3_pair_value_route_v1 (v95): the Phase C projections —
-        # OA1 widens the pointer SWITCH cell; PV adds a zero-init injection inside CLSPool (no
-        # width moves at all, so the gate is the only thing that can see it). Both read off the
-        # BUILT module, never off a stored bool, so a config that lies about itself cannot survive.
+        # gen3_conditional_threat_v1 (v95): the Phase C projection — OA1 widens the pointer SWITCH
+        # cell. Read off the BUILT module, never off a stored bool, so a config that lies about
+        # itself cannot survive.
         "conditional_threat_cell": bool(getattr(fe, "conditional_threat", None) is not None),
-        "pair_value_route": bool(
-            getattr(getattr(fe, "cls_pool", None), "pair_value_proj", None) is not None),
         # gen3_op_lean_forward_v1 (v86): out_gain shape / d3 forward math, both gated.
         "op_drop_renders": bool(getattr(getattr(fe, "damage_op", None), "drop_renders", False)),
         "op_believed_lean": bool(getattr(getattr(fe, "damage_op", None), "believed_lean", False)),

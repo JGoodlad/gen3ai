@@ -71,7 +71,7 @@ from agents.model.arch_constants import (
     INTENT_THRESH_MOVE_DIM, INTENT_COND_MOVE_DIM,
     INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
     PAIR_OUTCOME_MOVE_DIM, PAIR_OUTCOME_SWITCH_DIM, SWITCH_BRANCH_MOVE_DIM,
-    CONDITIONAL_THREAT_SWITCH_DIM, PAIR_VALUE_ROUTE_DIM,
+    CONDITIONAL_THREAT_SWITCH_DIM,
     UVR_K, UVR_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
       # noqa: F401  (re-export
     ROLE_TOKEN_SIZE,
@@ -155,7 +155,6 @@ from agents.model.pair_outcome import (
     PairOutcomeMoveCell, PairOutcomeSwitchCell, pair_alpha, reduce_pair_in, reduce_pair_in_all)
 from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.conditional_threat import ConditionalThreatCell
-from agents.model.pair_value_route import PairValueInject  # noqa: F401  (re-export)
 from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     DamageOperator,
     OpTensors,

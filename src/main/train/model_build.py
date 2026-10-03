@@ -67,10 +67,8 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("spread_belief_coef",            _PLAIN),   # spread-belief speed supervision (0.0 = off)
     ("hp_type_belief_coef",           _PLAIN),   # HP-type CE (0.0 = no direct CE)
     ("item_belief_coef",              _PLAIN),   # item CE (0.0 = no direct CE)
-    ("td_aux_coef",                   _PLAIN),   # TD-consistency aux (0.0 = byte-identical)
     ("policy_grad_coef",                       _PLAIN),   # policy-gradient term weight (1.0 = upstream)
     ("intent_label_bot_weight",       _PLAIN),   # gen3_intent_label_bot_weight_v1 (1.0 = off)
-    ("win_prob_strata_weight",        _PLAIN),   # gen3_winprob_strata_weight_v1 (0.0 = bit-identical)
     # gen3_fork_v1 — the FORK ARM. All six _PLAIN: the Rust collector's fork pass reads them once per
     # collect and they never enter a forward pass or a weight shape.
     ("fork_fraction",                 _PLAIN),   # 0.0 = OFF and bit-identical
@@ -235,11 +233,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             spread_belief_coef=args.spread_belief_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
             item_belief_coef=args.item_belief_coef,
-            td_aux_coef=args.td_aux_coef,
             arch_source=getattr(args, "arch_source", None),
             policy_grad_coef=args.policy_grad_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
-            win_prob_strata_weight=args.win_prob_strata_weight,
             policy_gae_lambda=args.policy_gae_lambda,
             diagnostics_every=args.diagnostics_every,
             opp_intent_coef=float(args.opp_intent_coef or 0.0),
@@ -567,11 +563,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             spread_belief_coef=args.spread_belief_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
             item_belief_coef=args.item_belief_coef,
-            td_aux_coef=args.td_aux_coef,
             arch_source=getattr(args, "arch_source", None),
             policy_grad_coef=args.policy_grad_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
-            win_prob_strata_weight=args.win_prob_strata_weight,
             policy_gae_lambda=args.policy_gae_lambda,
             diagnostics_every=args.diagnostics_every,
             opp_intent_coef=float(args.opp_intent_coef or 0.0),

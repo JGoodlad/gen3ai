@@ -188,20 +188,6 @@ class TrainMetricsExport:
         for _sk2, _sv2 in self._winprob_start_metrics(scaffolding_on).items():
             self.logger.record(f"win_prob/{_sk2}", _sv2)
 
-    def _record_term_metrics(self, td_aux_metrics: dict) -> None:
-        """The per-term prefixes (`td_aux/*`)."""
-
-        # +TD-AUX: Bellman-residual diagnostics under their OWN `td_aux/` TB prefix. `resid_rms` is
-        # the headline — the quantity the term minimises, and the live counterpart of the offline
-        # ΔV-dispersion instrument the rung-1 gate used; it should FALL. `resid_mean` (SIGNED) is the
-        # no-harm watch: rung 1's decomposition says this is dispersion suppression, so a bias that
-        # drifts away from ~0 means the residual-gradient (Baird) term is shifting the level rather
-        # than tightening it — read it beside `train/explained_variance`. `pair_drop_frac` is the
-        # fraction of candidate pairs lost to episode boundaries. Empty (off) → not logged.
-        if td_aux_metrics:
-            for _tdk, _tdvals in td_aux_metrics.items():
-                self.logger.record(f"td_aux/{_tdk}", float(np.mean(_tdvals)))
-
     def _record_capacity_metrics(self, capacity_metrics: dict, aux_metrics: dict) -> None:
         """The capacity battery and the pre-keyed `aux_metrics` sink."""
         # +CAPACITY TELEMETRY (gen3_capacity_telemetry_v1). Read them as TRENDS, never as levels —

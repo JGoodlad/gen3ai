@@ -119,11 +119,11 @@ second obs shape through the compiled entry point would add a graph for a diagno
 fold, after `loss.backward()`, after the optimizer step — so nothing they do can reach `loss` or
 `.grad`, and the placement is the proof. The one thing taken from inside the fold is a SNAPSHOT of
 this minibatch's `value_pooled`, grabbed right after `evaluate_actions` for the same reason steps
-2-4 of the fold sit where they do: the TD-aux fold runs its own forward and
-REPLACES the stash. A stale or missing snapshot is a **skip** (row-count checked), counted in
+2-4 of the fold sit where they do: a fold step that runs its own forward would
+REPLACE the stash. A stale or missing snapshot is a **skip** (row-count checked), counted in
 `capacity/canary_steps` rather than silently mis-pairing features with observations.
 
-The flag is the **`training_coef` class** (`td_aux_coef`): an argparse entry
+The flag is the **`training_coef` class** (a TRAINING-only recorded field): an argparse entry
 defaulting to `None`, a `_resolve` line, and a recorded `ModelVersion` field (config **v101**,
 `gen3_capacity_telemetry_v1`) — never in `check_compatible`. It is NOT `structural` (no module in
 the policy tree, no `state_dict` key, forward bit-identical), NOT `resume_immutable` (changing it
@@ -419,7 +419,7 @@ sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 | `grad/` | (dynamic) | 16 | **every `--diagnostics-every` update** (fresh default 10; a skipped update is a GAP) | unitless shares | LIVE — `win_prob_*` **NOISE (gated)**: it IS the value term, and counting it twice deflated every share | `grad_balance` |
 | `rank/` | 6 | 18 | per rollout under `--rank-tripwire` (production), else every `--diagnostics-every` update | unitless | CONDITIONAL (needs the rank probe); `tripwire_no_reading` correctly reports its own blindness | `rank_tripwire`, `rank_metrics` |
 | `belief/` | 1 | 8 | per rollout | accuracy / CE | LIVE (unchanged by the critic mode) | `belief_bank` |
-| `hparams/` · `capacity/` · `td_aux/` | 19† | — | per rollout | see each section | CONDITIONAL — all silent (flag-off); `popart/` and `value_dist/` were deleted with PopArt / the dist head | their own callbacks |
+| `hparams/` · `capacity/` | 19† | — | per rollout | see each section | CONDITIONAL — all silent (flag-off); `popart/` and `value_dist/` were deleted with PopArt / the dist head | their own callbacks |
 
 † The 19 sites were counted 2026-09-06 and also covered the `team_pfsp/`, `cf/` and `q_winprob/` families, which deletion pass L4 (2026-10-02) removed together with their callbacks; recount before quoting.
 

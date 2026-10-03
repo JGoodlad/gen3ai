@@ -164,8 +164,6 @@ _CLAIMS: Tuple[Claim, ...] = (
     Claim("conditional_threat_cell",
           r"\*\*LIVE \((?P<value>ON|OFF) in the gen-17 base\): `conditional_threat_cell`\*\*",
           "§3.2 pointer cells"),
-    Claim("pair_value_route",
-          r"\*\*Available but (?P<value>ON|OFF): `pair_value_route`\*\*", "§3.3 critic routes"),
 
     # ---- the op block's gates (§4) ----------------------------------------------------------
     Claim("op_drop_renders",
@@ -412,11 +410,11 @@ def test_the_inert_parser_reads_a_planted_row():
     the key without saying so."""
     text = doc_text()
     row = next(ln for ln in generated_block(text, "flag-table").splitlines()
-               if ln.startswith("| `td_aux_coef`"))
-    planted = text.replace(row, "| `td_aux_coef` | `0.0` | INERT — planted |")
+               if ln.startswith("| `policy_grad_coef`"))
+    planted = text.replace(row, "| `policy_grad_coef` | `1.0` | INERT — planted |")
     assert planted != text
-    assert "td_aux_coef" in inert_keys(planted)
-    assert "td_aux_coef" not in inert_keys(text)
+    assert "policy_grad_coef" in inert_keys(planted)
+    assert "policy_grad_coef" not in inert_keys(text)
 
 
 @_SKIP

@@ -284,28 +284,6 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "representation; A/B it vs read_only). STRUCTURAL + resume-IMMUTABLE "
                              "(version-checked: any change FATALs on resume). The head is a SIDE readout "
                              "(never in pi/vf — leak-safe).")
-    # --- gen3_winprob_strata_weight_v1 (2026-09-09, the critic ladder's arm 7): OPPONENT-STRATIFIED
-    #     weighting of the win-prob BCE. Declared beside the head's own coefficient because it is a
-    #     second knob on the SAME loss — one scales it, this one re-prices its MIX. ---
-    parser.add_argument("--win-prob-strata-weight", "--win_prob_strata_weight",
-                        dest="win_prob_strata_weight", type=float, default=None,
-                        help="OPPONENT-STRATIFIED weighting of the win-prob BCE, in [0, 1]. 0.0 "
-                             "(the DEFAULT) = OFF and the loss is bit-identical. 1.0 = every "
-                             "opponent CLASS (bot / pool / stable / exploiter, the `opp_class` "
-                             "label key) contributes to the objective in EQUAL proportion instead "
-                             "of in episode proportion; intermediate values interpolate the "
-                             "exponent (w = freq ** -s), capped at 8x and renormalised so the mean "
-                             "weight over the rollout buffer is 1 -- so it moves the MIX without "
-                             "moving the loss scale. WHY: only 10-14%% of the terminal 0/1 label's "
-                             "variance lies BETWEEN (cycle, opponent) cells, so a head minimising "
-                             "BCE buys its resolution from the board and its own team and never "
-                             "conditions on the opponent; the refit showed the same head on a "
-                             "target with a higher between-cell share DOES condition "
-                             "(designs/research_state/measurements/winprob_head_refit_2026-09-09/). "
-                             "This raises that share directly, with no new labels and no rollout "
-                             "cost. The BCE it reweights IS the value loss (the win-prob critic is "
-                             "the only critic). Watch win_prob/strata_share_*, strata_w_entropy and "
-                             "loss vs loss_unweighted. TRAINING-only, resume-inherited.")
     # --- gen3_ridealong_heads_v1 (2026-09-30, owner): the DETACHED RIDE-ALONG baseline heads.
     #     Each OFF by default; the baseline argv turns all four on. None of them can change what the
     #     run learns (detached inputs, their own optimizer, a private init RNG) — they OBSERVE. ---
@@ -375,7 +353,7 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "shape), so above ~0.008 this flag is INERT and the delivered count "
                              "is the budget's -- read fork/requested against fork/forks. Watch "
                              "fork/sim_steps_share, fork/branch_share, fork/rate and "
-                             "fork/pairwise_acc. REFUSES --win-prob-strata-weight. "
+                             "fork/pairwise_acc. "
                              "TRAINING-only, resume-inherited.")
     parser.add_argument("--fork-branches", "--fork_branches", dest="fork_branches",
                         type=int, choices=(2, 3), default=None,

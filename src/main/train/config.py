@@ -479,17 +479,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("edge_bias_families", "off")      # v56 structural str (version-checked, fresh-only)
     _resolve("entity_tail_seats", False)       # v57 structural bool (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
-    _resolve("td_aux_coef", 0.0)               # v90 training-only (inherited like opp_belief_aux_coef)
-    _resolve("policy_grad_coef", 1.0)               # v102 training-only (inherited like td_aux_coef; 1.0 = upstream)
+    _resolve("policy_grad_coef", 1.0)               # v102 training-only (inherited like opp_belief_aux_coef; 1.0 = upstream)
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
     _resolve("intent_label_bot_weight", 1.0)   # v97 training-only (inherited like opp_belief_aux_coef)
-    # gen3_winprob_strata_weight_v1 (v115) training-only, inherited for the reason every loss
-    # coefficient here is: a launcher RESTART re-invokes the original argv, and a flagless resume
-    # that dropped this would silently return the arm to the un-stratified objective it exists to
-    # contest, under the same run name and the same TB series.
-    _resolve("win_prob_strata_weight", 0.0)
     # gen3_fork_v1 — the FORK ARM. TRAINING-only and inherited, for the sharpest version of that
     # reason yet: the fraction is what the run COSTS, and a flagless restart that dropped it would
     # halve the run's simulation bill mid-arm while every argv, model_config and ledger line still
@@ -520,12 +514,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("pair_outcome_switch", False)  # v94 structural, version-checked (gen3_pair_outcome_switch_v1)
     _resolve("switch_branch_cell", False)   # v94 structural, version-checked (gen3_switch_branch_v1)
     _resolve("conditional_threat_cell", False)  # v95 structural, version-checked (gen3_conditional_threat_v1)
-    _resolve("pair_value_route", False)     # v95 structural, version-checked (gen3_pair_value_route_v1)
     _resolve("intent_threshold", False)        # v84 structural, version-checked (gen3_intent_threshold_v1)
     _resolve("intent_conditional", False)      # v85 structural, version-checked (gen3_intent_conditional_v1)
     _resolve("op_drop_renders", False)         # v86 structural, version-checked (gen3_op_lean_forward_v1)
     _resolve("op_believed_lean", False)        # v86 structural, version-checked (gen3_op_lean_forward_v1)
-    # gen3_capacity_telemetry_v1 — the live saturation early-warnings. The td_aux_coef class:
+    # gen3_capacity_telemetry_v1 — the live saturation early-warnings. The training-only provenance class:
     # recorded for provenance, never gated, and read back here so a flagless resume (or a
     # hand-typed one between launcher restarts) keeps logging the run's own `capacity/*` series.
     _resolve("capacity_telemetry", False)      # v101 training-only diagnostic (no loss, no grad)
@@ -534,7 +527,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("capacity_velocity_every", 50)    # v101 training-only
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
-    # gen3_distill_target_gate_v1 (config v103) — the rank tripwire. The td_aux_coef class: recorded
+    # gen3_distill_target_gate_v1 (config v103) — the rank tripwire. The training-only provenance class: recorded
     # for provenance, never gated, read back here so a flagless resume keeps the arm it was launched as.
     _resolve("rank_tripwire", "warn")          # v103 training-only diagnostic (§4.1; no loss, no grad)
     _resolve("rank_tripwire_drop", 0.20)       # v103 training-only TRIP threshold (fractional drop)
@@ -587,10 +580,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--opp-belief-aux-coef must be >= 0 (0 = off)")
     if args.move_belief_coef is not None and args.move_belief_coef < 0.0:
         parser.error("--move-belief-coef must be >= 0 (0 = off)")
-    if args.td_aux_coef is not None and args.td_aux_coef < 0.0:
-        # A negative coef would INVERT the consistency gradient (train the critic to MAXIMISE its own
-        # Bellman residual). td_aux_coef is training-only (not version-locked), so guard it here.
-        parser.error("--td-aux-coef must be >= 0 (0 = off)")
     if args.policy_grad_coef is not None and args.policy_grad_coef < 0.0:
         # A negative coef would ASCEND the PPO surrogate — train the policy to be maximally wrong.
         # 0.0 is the intended floor. policy_grad_coef is training-only
@@ -602,15 +591,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # of "train on them less". 0.0 (ignore bot rows entirely) is the intended floor.
         # Training-only (not version-locked), so this parser check is the only gate.
         parser.error("--intent-label-bot-weight must be >= 0 (0 = train on no bot rows; 1 = off)")
-    if args.win_prob_strata_weight is not None and not (0.0 <= args.win_prob_strata_weight <= 1.0):
-        # A single-value RANGE check, so it stays here rather than in `combination_checks` (which
-        # owns the cross-flag half — `winprob_strata_needs_the_winprob_critic`). The bounds are the
-        # exponent's meaning: 0 = episode proportion (OFF), 1 = equal per class. Above 1 would
-        # INVERT the mix, paying the rarest class more than parity, which is not a stronger version
-        # of the lever but a different and unmotivated one; below 0 upweights what is already
-        # dominant, i.e. the defect this flag exists to remove.
-        parser.error("--win-prob-strata-weight must be in [0, 1] "
-                     "(0 = off / episode proportion; 1 = every opponent class weighted equally)")
     if args.diagnostics_every < 1:
         parser.error("--diagnostics-every must be >= 1 (1 = the optional telemetry every update)")
     if not (0.0 <= args.policy_gae_lambda <= 1.0):

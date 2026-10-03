@@ -13,10 +13,10 @@ modules out of the extractor and the layout out of the op; `gen3_extractor_class
 2026-08-23 carved the orchestrator CLASS itself into the base-class chain below). The critic-route
 deletion wave then
 REMOVED two files rather than reshuffling any — `value_routes.py` (`ValueClockRoute` /
-`ValueIntentRoute`) and `intent_value_reduce.py` — plus `seed_diagnostics.py`. **The five
-surviving critic-side files stay as they are**: three distinct delivery MECHANISMS (the v89 seam
-in `value_readouts.py`; the two `CLSPool` token-content injections in `value_threat_inject.py` and
-`pair_value_route.py`) plus the two producers (`pair_outcome.py`, `conditional_threat.py`).
+`ValueIntentRoute`) and `intent_value_reduce.py` — plus `seed_diagnostics.py`. **The four
+surviving critic-side files stay as they are**: two distinct delivery MECHANISMS (the v89 seam
+in `value_readouts.py`; the `CLSPool` token-content injection in `value_threat_inject.py`) plus the
+two producers (`pair_outcome.py`, `conditional_threat.py`).
 Merging any of them would put two mechanisms behind one filename, which is the property this
 table exists to prevent:
 
@@ -43,7 +43,6 @@ table exists to prevent:
 | `damage_op_blocks.py` | `DamageOperatorBlocks` MIXIN — the outgoing/incoming/status flat-block builders (incl. the OAX kernel = d2's engine) |
 | `switch_branch.py` | `gen3_switch_branch_v1` — OA2 (E[our move \| they SWITCH], β-contracted, kept DECORRELATED from the stay branch), the Rapid-Spin spinblock (the Pursuit mirror) and Protect's α-derived attack mass. `SWITCH_BRANCH_COORDS` is the contract; each coordinate's §9a admission answer is in the module docstring |
 | `conditional_threat.py` | `gen3_conditional_threat_v1` — **OA1**, the conditional THREAT cell (the defensive pivot): the four α-contracted coordinates the reduced outcome row structurally cannot carry (`e_pko_acc`, `e_type_mult`, `margin_high`, `margin_crit`), on the pointer SWITCH cell. `CONDITIONAL_THREAT_COORDS` is the contract; the module docstring holds the **substitution table** for the three §1.2 clauses that are superseded (no `λ`, no re-emitted row coordinates, `--damage-matrices-outgoing-all` void) plus each coordinate's §9a admission answer |
-| `pair_value_route.py` | `gen3_pair_value_route_v1` — **PV**, the pair-VALUE CRITIC route: Phase A's unified row as TOKEN CONTENT on our mon j's token, injected inside `CLSPool` on the value pool's copy. The docstring carries the **C4 re-entry condition**, why the v89 seam was rejected (a post-pool route must collapse the J axis), and why α is R1 by ORDERING |
 | `pair_outcome.py` | the UNIFIED per-pair OUTCOME VECTOR's contract — `PAIR_OUTCOME_COORDS` (the coordinate table, with each one's §9a admission answer), `pair_alpha` (the publication read + the R1 fallback), `reduce_pair_in` (Contract W's one line), `PairOutcomeMoveCell`, plus Phase B's `reduce_pair_in_all` (Contract W at EVERY defender), `pair_alpha_full` (the three-way α split a SWITCH-branch consumer needs) and `PairOutcomeSwitchCell` (the FIRST module to widen the pointer SWITCH cell). Its op-side producer is `DamageOperatorBlocks.pair_outcome_coords` |
 | `extractor_stashes.py` | `ExtractorStashes` — the per-forward side-value container (`gen3_extractor_stashes_v1`) |
 | `projection.py` | `compute_projection_widths` (the STATIC width arithmetic) + `ProjectionAssembler` (the concat it describes) |

@@ -135,7 +135,7 @@ LABELS: Tuple[LabelKey, ...] = (
              "the normalized MATERIAL MARGIN of the side's LiveView at this decision (`material_margin.py`: "
              "HP + alive over the declared team size, unrevealed opp mons full-HP-alive); 0.0 at reset"),
     LabelKey("opp_class", "i64", (1,), "opp_class", _WIN, True, "Gen3Env._merge_training_keys / _opp_intent_labels",
-             (_PPO, "agents/training/value_sidecar.py"), "host_episode",
+             (_INTENT_FOLD, _SETUP, "agents/training/value_sidecar.py"), "host_episode",
              "WHICH kind of opponent this episode faces (bot / pool / stable / exploiter), set by the "
              "wrapper at reset — the host's per-episode routing state",
              alt_gates=(_INTENT,)),

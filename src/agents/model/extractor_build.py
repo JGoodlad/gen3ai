@@ -25,7 +25,7 @@ from gymnasium import spaces
 from agents.model.arch_constants import (
     CONDITIONAL_THREAT_SWITCH_DIM, D_MODEL, INTENT_COND_MOVE_DIM, INTENT_MOVE_CELL_DIM,
     INTENT_THRESH_MOVE_DIM, PAIR_OUTCOME_MOVE_DIM, PAIR_OUTCOME_SWITCH_DIM,
-    PAIR_VALUE_ROUTE_DIM, PROJECTION_DIM, ROLE_TOKEN_SIZE, SWITCH_BRANCH_MOVE_DIM,
+    PROJECTION_DIM, ROLE_TOKEN_SIZE, SWITCH_BRANCH_MOVE_DIM,
 )
 from agents.model.aux_value_heads import WinProbHead
 from agents.model.belief_heads import (
@@ -88,7 +88,6 @@ class ExtractorBuild(torch.nn.Module):
                  pair_outcome_switch: bool = False,
                  switch_branch_cell: bool = False,
                  conditional_threat_cell: bool = False,
-                 pair_value_route: bool = False,
                  op_drop_renders: bool = False,
                  op_believed_lean: bool = False,
                  value_entity_pool: bool = False,
@@ -223,14 +222,7 @@ class ExtractorBuild(torch.nn.Module):
         # (SB3 restores optimizer state positionally — reordering to suit this feature would corrupt
         # every resume). A post-construction assert below ties the two together.
         _vti_dim = value_threat_inject_dim() if bool(value_threat_inject) else 0
-        # gen3_pair_value_route_v1 (v95, PV): the SECOND token-content injection on the value pool's
-        # local copy — Phase A's unified outcome row, which is what the critic has never had in any
-        # per-entity currency. Built here (not through the v89 `_value_pooled_routes` seam) because
-        # a post-pool additive route would have to collapse the J axis, and the only equivariant
-        # collapse is a sum — see `pair_value_route.py` for the whole argument.
-        self.cls_pool = CLSPool(layout, value_threat_inject_dim=_vti_dim,
-                                pair_value_row_dim=(PAIR_VALUE_ROUTE_DIM
-                                                    if bool(pair_value_route) else 0))
+        self.cls_pool = CLSPool(layout, value_threat_inject_dim=_vti_dim)
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
         # In-place hidden-opponent belief (the live design): distinct learned unknown-mon tokens fill
         # the un-revealed opp slots + a species/moves aux head supervises them. OFF reproduces the
@@ -421,18 +413,10 @@ class ExtractorBuild(torch.nn.Module):
                     "damage_matrices_incoming=True — the incoming matrix is the only producer of "
                     "the per-(our defender, their seat) type multiplier and of the top-K selection "
                     "α's seats align to; nothing else computes either.")
-        # gen3_pair_value_route_v1 (v95, Phase C): PV — the same unified outcome row as TOKEN
-        # CONTENT on the CRITIC's copy of our tokens (design_opponent_intent.md §7a(2)). The module
-        # itself lives on `cls_pool` (so the augmented tensor stays a local and vf-only is
-        # structural); this flag records the decision and enforces the dependency.
-        #
         # ⚠️ C4 RE-ENTRY CONDITION: any α/β-critic route may be BUILT opt-in but its ENABLING owes
-        # the C4-style offline gate first (ledger C6 — the delivery line is EXHAUSTED).
-        self.pair_value_route = bool(pair_value_route)
-        if self.pair_value_route and not damage_op:
-            raise ValueError(
-                "pair_value_route=True requires damage_op=True — the injected row IS the op's "
-                "unified `pair_in` outcome vector, and nothing else computes it.")
+        # the C4-style offline gate first (ledger C6 — the delivery line is EXHAUSTED). (The PAIR-VALUE
+        # route, the second token-content injection on the value pool's copy, was deleted with
+        # `--pair-value-route`, deletion pass P11c.)
         # (v87's two direct critic routes — `--value-clock` and `--value-intent` — are DELETED in
         # the critic-route deletion wave. `value_intent` read dV 0.156 against a 0.39 bar; its
         # RE-ENTRY CONDITION SURVIVES THE DELETION: any future α/β-to-critic proposal passes the
@@ -640,15 +624,14 @@ class ExtractorBuild(torch.nn.Module):
         # contributing zeros, since a silent no-op reads exactly like a null.
         if (self.intent_threshold_move is not None
                 or self.intent_conditional is not None or self.pair_outcome_move is not None
-                or self.pair_outcome_switch is not None or self.conditional_threat is not None
-                or self.pair_value_route):
+                or self.pair_outcome_switch is not None or self.conditional_threat is not None):
             self.damage_op.stash_pair_cells = True  # type: ignore[union-attr]
         # gen3_pair_outcome_v1: and the eight extra coordinates on top of them. Set together with
         # `stash_pair_cells` above, never alone — the damage cells ARE the vector's first six
         # coordinates, so a lone `stash_pair_outcome` would build a narrower vector than
         # `PAIR_OUTCOME_COORDS` declares.
         if (self.pair_outcome_move is not None or self.pair_outcome_switch is not None
-                or self.conditional_threat is not None or self.pair_value_route):
+                or self.conditional_threat is not None):
             self.damage_op.stash_pair_outcome = True  # type: ignore[union-attr]
         # gen3_switch_branch_v1: the per-opp-slot GHOST marginal the spinblock contracts β against.
         if self.switch_branch is not None:

@@ -53,7 +53,7 @@ def test_build_parser_is_importable_without_running_main():
 def test_known_option_strings_covers_a_live_flag():
     known = known_option_strings()
     assert "--steps" in known and known["--steps"] == "steps"
-    assert "--pair-value-route" in known, "a v95 flag should be present on a v96 tree"
+    assert "--conditional-threat-cell" in known, "a v95 flag should be present on a v96 tree"
 
 
 # ------------------------------------------------------------------ the checker itself

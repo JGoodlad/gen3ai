@@ -1,7 +1,9 @@
 """LEVERS THAT WERE DELETED IN THE POST-SWITCH DELETION PASS, recognised in a recorded config.
 
 `designs/ops/deletion_pass_manifest.md` §2 (owner-approved 2026-10-02: delete with the Python core,
-port none), plus K2's retired TF32 (R9, owner 2026-10-01). Each lever below left `ModelVersion` — `_migrate_config` POPs its recorded field from any
+port none), plus K2's retired TF32 (R9, owner 2026-10-01) and P11c's three flag-census levers (owner
+rule 2026-10-03: a flag with no live user is deleted — the pair-value critic route, the TD-consistency
+auxiliary, the opponent-stratified win-prob weight). Each lever below left `ModelVersion` — `_migrate_config` POPs its recorded field from any
 config, whatever vintage wrote it (`cls(**data)` TypeErrors on a stale key) — and this module is where
 the deletion is JUDGED, in the shape `shaped_reward.py` set for the deleted shaped reward:
 
@@ -106,6 +108,15 @@ LAST_COMMIT_L4 = "cbd20111aae48d6a53f6305166560f4c9acb473a"
 
 #: The first config version written WITHOUT the L4 fields.
 L4_DELETION_VERSION = 134
+
+#: The last commit whose tree still has the P11c levers (the pair-value critic route `--pair-value-route`,
+#: the TD-consistency auxiliary `--td-aux-coef`, the opponent-stratified win-prob weight
+#: `--win-prob-strata-weight`) — the tip when deletion unit P11c's second batch branched, which is the
+#: commit that shipped its first (`0da1be4a`). Any commit at or before it can resume a run that used one.
+LAST_COMMIT_P11C = "0da1be4abb00836ba20084bf9677ae76e1eac24a"
+
+#: The first config version written WITHOUT the P11c fields.
+P11C_DELETION_VERSION = 135
 
 
 class RetiredLever(NamedTuple):
@@ -263,6 +274,23 @@ RETIRED: tuple = (
                  _nonzero("q_winprob_onpolicy_coef"), False,
                  "q_winprob_onpolicy_coef != 0 (the per-action head's taken-action fallback)",
                  LAST_COMMIT_L4, "L4", L4_DELETION_VERSION),
+
+    # ---- deletion pass P11c (config v135) ---------------------------------------------------
+    # The flag census's NEEDS-OWNER levers the owner's rule deleted: the pair-value critic route is
+    # STRUCTURAL (its ON value built a `PairValueInject` projection inside CLSPool — a state_dict key
+    # the surviving extractor has no home for); the TD-consistency auxiliary and the opponent-stratified
+    # win-prob weight only scaled / re-priced a loss (training-only).
+    RetiredLever("pair_value_route", "pair-value-route", _truthy("pair_value_route"), True,
+                 "pair_value_route=True (the pair-value critic route: a zero-init `PairValueInject` "
+                 "projection inside CLSPool's value pool, a key in the state_dict)",
+                 LAST_COMMIT_P11C, "P11c", P11C_DELETION_VERSION),
+    RetiredLever("td_aux_coef", "td-aux-coef", _nonzero("td_aux_coef"), False,
+                 "td_aux_coef != 0 (the TD-consistency auxiliary: a Bellman-residual loss over "
+                 "contiguous rollout pairs)", LAST_COMMIT_P11C, "P11c", P11C_DELETION_VERSION),
+    RetiredLever("win_prob_strata_weight", "win-prob-strata-weight",
+                 _nonzero("win_prob_strata_weight"), False,
+                 "win_prob_strata_weight != 0 (the win-prob BCE re-priced by opponent CLASS: inverse-"
+                 "frequency row weights)", LAST_COMMIT_P11C, "P11c", P11C_DELETION_VERSION),
 )
 
 #: Recorded fields that left the config but are INERT without one of the levers above (an atom count,

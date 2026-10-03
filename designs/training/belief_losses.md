@@ -260,9 +260,8 @@ the steps that matter, the arm is not worth a generation slot.
 **Class: `training_coef`.** It scales a loss and touches no forward pass ⇒ no `ARCH_SIGNATURE`
 bump, not in `check_compatible`, no `check_*` of its own; recorded on `ModelVersion`
 (`MODEL_CONFIG_VERSION` v97) for provenance and so a **flagless resume inherits it** via `_resolve`,
-exactly like `--td-aux-coef`. It is deliberately NOT in `agents/model/flag_registry.py` — that
-registry's scope is extractor architecture toggles, and this reaches the extractor not at all
-(same call as `--td-aux-coef`).
+like every `training_coef`-class flag. It is deliberately NOT in `agents/model/flag_registry.py` — that
+registry's scope is extractor architecture toggles, and this reaches the extractor not at all.
 
 Tests: `agents/model/intent_label_bot_weight_test.py` (bit-identity at 1.0 on every mix, the
 hand-computed weighted mean, the all-bot scale-down, non-bot classes never discounted, W=0 killing

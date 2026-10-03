@@ -1,5 +1,5 @@
 """The RETIRED LEVERS (deletion pass L1, config v131; L2, config v132; L3, config v133; L4, config v134;
-K2, TF32 — a metadata.json runtime knob, no config bump) — what a recorded config / a pickled zip that still names one
+P11c, config v135; K2, TF32 — a metadata.json runtime knob, no config bump) — what a recorded config / a pickled zip that still names one
 does on every path that reads it.
 
 `model_version.retired_levers` is the ONE table; this file drives each consumer of it:
@@ -37,6 +37,7 @@ from agents.model.model_version.retired_levers import (
     LAST_COMMIT_L2,
     LAST_COMMIT_L3,
     LAST_COMMIT_L4,
+    LAST_COMMIT_P11C,
     RETIRED,
     RETIRED_FIELD_FLAGS,
     check_no_retired_levers,
@@ -67,6 +68,10 @@ _OFF = {
     "cf_evidential_coef": 0.0, "cf_twin_coef": 0.0, "cf_shadow_coef": 0.0, "q_winprob_coef": 0.0,
     "q_winprob_onpolicy_coef": 0.0, "cf_records_keep": 512, "cf_head_only": True,
     "cf_label_lag_steps": 150_000, "cf_label_likelihood": "binomial", "cf_evidential_reg": 1e-3,
+
+    # P11c (config v135): the pair-value critic route, the TD-consistency auxiliary, the
+    # opponent-stratified win-prob weight
+    "pair_value_route": False, "td_aux_coef": 0.0, "win_prob_strata_weight": 0.0,
 }
 
 
@@ -103,7 +108,8 @@ def test_a_v130_config_migrates_to_the_current_schema_and_stays_constructible():
                                          ("value_true_team", True), ("dense_aux", True),
                                          ("cf_evidential", True), ("cf_twin_heads", True),
                                          ("cf_shadow_critic", True),
-                                         ("q_winprob_mode", "read_only")])
+                                         ("q_winprob_mode", "read_only"),
+                                         ("pair_value_route", True)])
 def test_a_STRUCTURAL_lever_recorded_ON_is_refused_on_every_load(field, value):
     cfg = {**_current_config(), field: value}
     with pytest.raises(ModelVersionError, match=RETIRED_FIELD_FLAGS[field].lstrip("-")):
@@ -122,7 +128,8 @@ def test_a_STRUCTURAL_lever_recorded_ON_is_refused_on_every_load(field, value):
                                          ("cf_records", True), ("cf_winprob_coef", 1.0),
                                          ("cf_evidential_coef", 0.5), ("cf_twin_coef", 2.0),
                                          ("cf_shadow_coef", 0.75), ("q_winprob_coef", 0.1),
-                                         ("q_winprob_onpolicy_coef", 0.05)])
+                                         ("q_winprob_onpolicy_coef", 0.05),
+                                         ("td_aux_coef", 1.0), ("win_prob_strata_weight", 0.5)])
 def test_a_TRAINING_ONLY_lever_recorded_ON_still_LOADS_it_just_cannot_resume(field, value):
     """A frozen forward (an eval opponent, a pool snapshot, the prober) never reads these, so the
     migration pops them silently — the refusal belongs to the resume / fork path below."""
@@ -528,3 +535,70 @@ def test_a_pre_deletion_checkpoint_that_had_an_L2_or_L4_structural_lever_ON_is_R
     model.save(str(zip_path))
     with pytest.raises(ModelVersionError, match=dead):
         historical_load_kwargs(str(zip_path) + ".zip")
+
+
+# ----------------------------------------------------------------------------- P11c (config v135)
+
+_P11C_STRUCTURAL = [("pair_value_route", True)]
+_P11C_TRAINING_ONLY = [("td_aux_coef", 1.0), ("win_prob_strata_weight", 0.5)]
+
+
+@pytest.mark.parametrize("field,value", _P11C_STRUCTURAL)
+def test_a_P11C_STRUCTURAL_toggle_is_refused_on_every_load_naming_unit_version_and_pin(field, value):
+    """The refusal text states the deletion unit, the config version and the pin that still has the route."""
+    with pytest.raises(ModelVersionError) as ei:
+        _migrate_config({**_current_config(), field: value})
+    msg = str(ei.value)
+    assert "deletion pass P11c, config v135" in msg
+    assert RETIRED_FIELD_FLAGS[field].lstrip("-") in msg and LAST_COMMIT_P11C[:8] in msg
+
+
+@pytest.mark.parametrize("field,value", _P11C_STRUCTURAL)
+def test_a_P11C_STRUCTURAL_toggle_is_a_structural_row_and_its_OFF_value_is_not_evidence(field, value):
+    row = next(r for r in RETIRED if r.field == field)
+    assert row.structural is True and row.unit == "P11c" and row.version == 135
+    assert row.last_commit == LAST_COMMIT_P11C
+    assert [r.field for r in retired_lever_evidence({field: value}, structural_only=True)] == [field]
+    assert retired_lever_evidence({field: False}) == []
+    assert retired_lever_evidence({field: None}) == []
+    assert retired_lever_evidence({}) == []
+
+
+@pytest.mark.parametrize("field,value", _P11C_TRAINING_ONLY)
+def test_a_P11C_TRAINING_ONLY_lever_still_LOADS_but_refuses_a_resume_naming_flag_and_pin(
+        tmp_path, field, value):
+    """Loads (a frozen forward never reads a loss coefficient), refuses a resume / fork. Both halves, so
+    reverting the row to `structural` (breaks the first) or dropping it (breaks the second) fails here."""
+    out = _migrate_config({**_current_config(), field: value})
+    assert field not in out
+    ModelVersion(**out)
+    run = _write(tmp_path, **{field: value})
+    with pytest.raises(RetiredLeverCheckpointError) as ei:
+        check_no_retired_levers(str(run / "model_config.json"))
+    msg = str(ei.value)
+    assert RETIRED_FIELD_FLAGS[field] in msg and LAST_COMMIT_P11C[:8] in msg and "--pin-commit" in msg
+    assert ei.value.last_commit == LAST_COMMIT_P11C
+
+
+@pytest.mark.parametrize("field,value", _P11C_STRUCTURAL)
+def test_a_P11C_STRUCTURAL_toggle_also_refuses_a_resume_naming_the_pin(tmp_path, field, value):
+    run = _write(tmp_path, **{field: value})
+    with pytest.raises(RetiredLeverCheckpointError) as ei:
+        check_no_retired_levers(str(run / "model_config.json"))
+    assert RETIRED_FIELD_FLAGS[field] in str(ei.value) and ei.value.last_commit == LAST_COMMIT_P11C
+
+
+def test_every_P11C_field_is_in_RETIRED_FIELDS_and_off_ModelVersion():
+    import dataclasses
+
+    p11c = {f for f, _ in _P11C_STRUCTURAL} | {f for f, _ in _P11C_TRAINING_ONLY}
+    assert len(p11c) == 3 and p11c <= set(RETIRED_FIELDS)
+    assert not (p11c & {f.name for f in dataclasses.fields(ModelVersion)}), \
+        "a P11c field is back on ModelVersion — its row would pop a LIVE value"
+
+
+def test_the_OFF_boundary_of_each_P11C_training_only_lever_is_not_a_finding():
+    for field in ("td_aux_coef", "win_prob_strata_weight"):
+        for raw in ({}, {field: 0.0}, {field: None}):
+            assert retired_lever_evidence(raw) == [], (field, raw)
+        assert [r.field for r in retired_lever_evidence({field: 1e-6})] == [field]

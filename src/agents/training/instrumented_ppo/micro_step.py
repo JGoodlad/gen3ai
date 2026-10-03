@@ -12,8 +12,8 @@ of the FOLD ORDER contract (`ppo.train`'s docstring; `src/agents/training/CLAUDE
   3a. the WIN-PROB BCE (the value loss under the win-prob critic, else an aux term).
 
 in that order, as ONE straight line — the float-addition order of the inline fold is preserved term
-by term. Everything after 3a (the CF-twin mirror, TD-aux, the counterfactual block) is the DECLARED EAGER TAIL, folded in contract
-order by `train()` onto this region's loss; none of it is on the production surface.
+by term. Everything after 3a (the ride-along heads' own-forward update, the capacity probes) is the DECLARED EAGER TAIL, folded in
+contract order by `train()` onto this region's loss.
 
 WHY ONE FUNCTION. `train()` handed to dynamo is 514–646 graphs (the K8 inventory); this function is
 written so it traces as ONE `fullgraph=True` graph: static shapes only (`belief_bank_static`,
@@ -74,7 +74,6 @@ class MicroStatic(NamedTuple):
     setvalued_coef: float
     bot_label_weight: float
     win_prob_on: bool
-    strata: bool
 
 
 class MicroOut(NamedTuple):
@@ -99,17 +98,10 @@ def _m(v: th.Tensor, w: Optional[th.Tensor] = None) -> Metric:
 
 
 def win_prob_terms(logits: Optional[th.Tensor], target: Optional[th.Tensor],
-                   mask: Optional[th.Tensor], margin: Optional[th.Tensor],
-                   strata_w: Optional[th.Tensor], opp_class: Optional[th.Tensor],
-                   strata_active: Optional[th.Tensor] = None
+                   mask: Optional[th.Tensor], margin: Optional[th.Tensor]
                    ) -> Tuple[th.Tensor, th.Tensor, Dict[str, Metric]]:
     """`ValueTerms._win_prob_loss`, static: (loss, present, metrics). Absent inputs (a static fact)
-    -> present False and no metrics; nothing scored (a data fact) -> present False, loss 0.0.
-
-    ``strata_active`` (0-d bool, given whenever the strata lever is DECLARED) says whether
-    ``strata_w`` is this update's real weights or the NEUTRAL ones (`TrainSetup._micro_var`): the
-    loss is the same expression either way (``x * 1.0 == x``), and the row-weight diagnostics are
-    PRESENT only where a weighting applies — exactly the tags the undeclared path published."""
+    -> present False and no metrics; nothing scored (a data fact) -> present False, loss 0.0."""
     if logits is None or target is None or mask is None:
         z = th.zeros(())
         return z, th.zeros((), dtype=th.bool), {}
@@ -120,14 +112,7 @@ def win_prob_terms(logits: Optional[th.Tensor], target: Optional[th.Tensor],
     present = n_known > 0
     nk = n_known.clamp(min=1)                  # == n_known whenever present (a 0/1 mask)
     per = F.binary_cross_entropy_with_logits(logits, target, reduction="none")
-    row_w = None
-    if strata_w is not None and opp_class is not None:
-        sw = strata_w.to(logits.device)
-        row_w = sw[opp_class.to(logits.device).reshape(-1).long().clamp(0, sw.numel() - 1)]
-    if row_w is None:
-        loss = (per * mask).sum() / nk
-    else:
-        loss = (per * mask * row_w).sum() / nk
+    loss = (per * mask).sum() / nk
     loss = th.where(present, loss, loss.new_zeros(()))
     wp = present
     mets: Dict[str, Metric] = {}
@@ -142,13 +127,6 @@ def win_prob_terms(logits: Optional[th.Tensor], target: Optional[th.Tensor],
         mets["pred_mean"] = _m((p * mask).sum() / nk, wp)
         mets["label_mean"] = _m((target * mask).sum() / nk, wp)
         mets["coverage"] = _m(n_known / mask.numel(), wp)
-        if row_w is not None:
-            # the strata weighting APPLIES unless the declared lever is idle this update
-            s_on = wp if strata_active is None else wp & strata_active.to(wp.device)
-            mets["loss_unweighted"] = _m((per.detach() * mask).sum() / nk, s_on)
-            mets["row_w_mean"] = _m((row_w * mask).sum() / nk, s_on)
-            if strata_w is not None and opp_class is not None:
-                mets["strata_row_w_mean"] = _m(mets["row_w_mean"][0], s_on)
         if margin is not None:
             mg = margin.to(logits.device).reshape(-1)
             spread = (mg.max() - mg.min()) > 0.0
@@ -172,10 +150,8 @@ def win_prob_terms(logits: Optional[th.Tensor], target: Optional[th.Tensor],
 
 def micro_step(policy: Any, obs: Dict[str, th.Tensor], actions: th.Tensor,
                action_masks: Optional[th.Tensor], old_log_prob: th.Tensor, old_values: th.Tensor,
-               advantages: th.Tensor, returns: th.Tensor, var: Dict[str, th.Tensor],
-               st: MicroStatic) -> MicroOut:
-    """R1 — see the module docstring. ``var`` carries the per-update tensors (the strata
-    weights); ``st`` every static flag and coefficient."""
+               advantages: th.Tensor, returns: th.Tensor, st: MicroStatic) -> MicroOut:
+    """R1 — see the module docstring. ``st`` carries every static flag and coefficient."""
     note_eager_body("R1")      # a no-op under a dynamo trace; counts an EAGER run (gen3_no_silent_eager_v1)
     fe = policy.features_extractor
     mets: Dict[str, Metric] = {}
@@ -269,9 +245,7 @@ def micro_step(policy: Any, obs: Dict[str, th.Tensor], actions: th.Tensor,
     if st.win_prob_on:
         wl, wpres, wm = win_prob_terms(
             fe.last_win_prob_logits, obs.get("win_target"), obs.get("win_mask"),
-            obs.get("win_margin"), var.get("strata_w") if st.strata else None,
-            obs.get("opp_class") if st.strata else None,
-            var.get("strata_active") if st.strata else None)
+            obs.get("win_margin"))
         if wm:
             if st.critic_winprob:
                 wterm, grp = st.vf_coef * wl, "value"

@@ -155,8 +155,7 @@ class TestEpisodeStartRows:
         assert sorted(episode_start_rows(ep, n_steps, n_envs).tolist()) == [0, 6, 11]
 
     def test_a_flattened_input_RAISES_rather_than_mis_pairing(self):
-        # At n_envs > 1 a flattened array would silently pair a start flag with the wrong row —
-        # the class `td_aux`'s own fail-loud guard exists for.
+        # At n_envs > 1 a flattened array would silently pair a start flag with the wrong row.
         with pytest.raises(ValueError, match="n_steps, n_envs"):
             episode_start_rows(np.zeros(12), 4, 3)
 

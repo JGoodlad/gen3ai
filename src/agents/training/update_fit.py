@@ -4,7 +4,7 @@ the learner's CUDA memory: does the first real PPO update fit on this card, with
 WHY. `gen3_cuda_ledger_v1`'s device-batch check was a LOWER bound (the regions gate's one R1 step,
 4.3 GiB at B = 2048) and had a measured false pass: N = 256 with the X26 ride-along heads passed it
 and then ran OUT OF MEMORY in its first update (10.19 GiB allocated on an 11.63 GiB card). The real
-update needs the R1 step PLUS the eager tail's forwards (ride-along heads, TD-aux, the cf block), the
+update needs the R1 step PLUS the eager tail's work (the ride-along heads' update, the probes), the
 first-update diagnostics, the micro-batch staging and the optimizer step. No sum of startup rows
 predicts that, so this check RUNS it.
 

@@ -423,17 +423,6 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "is fixed for a run's lifetime.\n"
                 "Resume with the matching --conditional-threat-cell, or start a fresh run."
             )
-        # gen3_pair_value_route_v1 (v95): one zero-init D_MODEL projection inside CLSPool. It
-        # injects ADDITIVELY, so NO width moves anywhere and nothing shape-based can see the
-        # difference except the extra state_dict key — the version gate carries this one.
-        if self.pair_value_route != saved.pair_value_route:
-            raise ModelVersionError(
-                f"pair_value_route mismatch: saved={saved.pair_value_route}, "
-                f"current={self.pair_value_route}.\n"
-                "PV adds a zero-init injection into the critic's copy of our team tokens, so the "
-                "flag is fixed for a run's lifetime.\n"
-                "Resume with the matching --pair-value-route, or start a fresh run."
-            )
         # gen3_intent_threshold_v1 (v84): two zero-init projections + width changes (state_dict).
         if self.intent_threshold != saved.intent_threshold:
             raise ModelVersionError(

@@ -571,19 +571,6 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                            pooled=True, zero_init=True,
                            note="an attention VALUE carries a magnitude where an attention BIAS "
                                 "cannot — 'this mon is about to lose 62% of its HP', per entity"))
-    # gen3_pair_value_route_v1 (v95, PV): the SAME mechanism carrying Phase A's UNIFIED outcome row
-    # — the first per-entity route by which the critic reads status / neutralization / tempo at all.
-    # It lives under `cls_pool` too, and is NOT in the v89 `_value_pooled_routes` seam: a post-pool
-    # additive route would have to collapse the J axis, and the only equivariant collapse is a sum.
-    if getattr(fe.cls_pool, "pair_value_proj", None) is not None:
-        edges.append(_edge("damage_op", "vf_projection", "content",
-                           fx.PAIR_VALUE_ROUTE_DIM, "PAIR_VALUE_ROUTE_DIM",
-                           via="CLSPool.pair_value_proj (one SHARED Linear over the six rows) — "
-                               "token CONTENT on the value pool's copy of our mons",
-                           pooled=True, zero_init=True,
-                           note="design_opponent_intent SS7a(2): alpha-reduced pair_in per our mon "
-                                "j on mon j's own token. alpha is the R1 belief_mean rung by "
-                                "ORDERING (value_cls pools before the alpha head is scored)"))
     # gen3_value_pooled_routes_v1 (v89): every value route is an ADDITIVE zero-init injection
     # into `value_pooled` — which, since the critic-route deletion wave, IS `vf_combined`. There
     # is no vf CONCAT left to draw: the seed window, the hidden-opp vf half and the nmr vf part

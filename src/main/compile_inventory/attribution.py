@@ -3,7 +3,7 @@ scan of the one frame dynamo cannot enter (`train()`'s own fold loop).
 
 A COMPONENT is decided from a Python STACK (outermost frame first), by the FIRST rule in `RULES`
 that any frame of the stack satisfies. The order is the point: an op inside the extractor that a
-loss term reached through `features_extractor(obs)` (TD-aux, the CF block) is an EXTRACTOR op
+loss term reached through `features_extractor(obs)` is an EXTRACTOR op
 called from the loss, so the extractor rule is tested before the loss rule; the masking code sits
 under the policy's `evaluate_actions`, so the distribution rule is tested before the heads rule.
 

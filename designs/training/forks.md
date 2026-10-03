@@ -178,7 +178,7 @@ ONLY when the flag is on. The env emits a 1.0 placeholder on every COLLECTED row
 Under `--compile-trainer` (torch 2.8) the key is part of the compile region R1's DECLARED signature
 from startup (it is in the env's obs space; the injected rows make a ragged last micro-batch, which
 runs eager by declaration) — verified 2026-10-01 by `r1_declared_levers_test`'s `fork` row
-(`compile_flags.md` "R1's DECLARED LEVERS").
+(`compile_flags.md` "R1's DECLARATION").
 
 🚨 **The masked term is RENORMALISED, never just zeroed:**
 
@@ -276,10 +276,7 @@ belief label is a fact about the opponent's team read from `battle2` inside the 
 env, so those rows are masked out of their losses. The cost is supervision on those rows; the
 alternative cost is a belief head trained on fiction.
 
-The arm's refusals are THREE `combination_checks` rows: it needs the winprob critic, it is unavailable on the python core (`fork_python_core_unavailable`, deletion pass L4), and it refuses `--win-prob-strata-weight`
-(it prices rows by `win_margin`, which the env's reward manager computes — every injected row would
-carry the 0.0 fill and land in one stratum, making the delivered strata dose a function of the fork
-rate). An obs key the fill table does not know is refused at setup, never guessed (`fork_buffer`'s fill table; the `REFUSE_KEYS` set that held `distill_mask` was deleted with distillation, deletion pass L3). The privileged true-team and dense-aux flags the arm once also refused are deleted (deletion pass L2).
+The arm has NO `combination_checks` refusal rows (the winprob critic and the Rust core are the only ones there are). An obs key the fill table does not know is refused at setup, never guessed (`fork_buffer`'s fill table; the `REFUSE_KEYS` set that held `distill_mask` was deleted with distillation, deletion pass L3). The privileged true-team and dense-aux flags the arm once also refused are deleted (deletion pass L2).
 
 ### The buffer
 
@@ -564,9 +561,7 @@ Four tags are new:
 
 `--fork-fraction` leaves the Rust core's unported list. On the Rust core (the only core) it has no extra flag requirement: the keyed draw (§14.3) and the complete-game trigger are the only ones.
 
-The ring was a Python-core requirement only; the Rust core's finished logs replace it, and the Python
-core's arm is now refused outright (`fork_python_core_unavailable`, deletion pass L4). The other fork
-refusals hold: `winprob` and strata weight.
+The ring was a Python-core requirement only; the Rust core's finished logs replace it.
 
 ### 14.8 Gates (each FAILS on revert)
 

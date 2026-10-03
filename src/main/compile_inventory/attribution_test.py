@@ -13,7 +13,7 @@ VT = "/repo/src/agents/training/instrumented_ppo/value_terms.py"
 
 
 def test_extractor_beats_loss_when_a_loss_term_runs_its_own_forward():
-    stack = [Frame(PPO, 1, "train"), Frame(VT, 2, "_td_aux_term"), Frame(FE, 3, "forward")]
+    stack = [Frame(PPO, 1, "train"), Frame(VT, 2, "_win_prob_loss"), Frame(FE, 3, "forward")]
     assert classify(stack) == "extractor"
 
 

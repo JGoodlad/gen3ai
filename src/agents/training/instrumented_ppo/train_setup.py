@@ -12,8 +12,6 @@ written against and the loop body is unchanged.
 """
 from typing import Any, NamedTuple
 
-import torch as th
-
 from agents.model.critic_mode import is_winprob
 from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
 from agents.training.grad_balance import shared_trunk_parameters
@@ -39,7 +37,6 @@ class FoldFlags(NamedTuple):
     win_prob_on: Any
     scaffolding_on: Any
     policy_grad_coef: Any
-    td_aux_on: Any
     fork_pg_mask_on: Any
 
 
@@ -136,10 +133,6 @@ class TrainSetup:
         # byte-identical to upstream; 0.0 removes the policy-gradient contribution alone. Scales ONLY `policy_loss` — entropy and the value term
         # keep their own coefficients (`ent_coef`, `vf_coef`).
         policy_grad_coef = float(getattr(self, "policy_grad_coef", 1.0))
-        # +TD-AUX (gen3_td_consistency_aux_v1): the Bellman-residual consistency term over CONTIGUOUS
-        # buffer pairs. 0.0 → the block is skipped entirely (no sampler, no extra forward, loss
-        # byte-identical to today). See `_td_aux_term`.
-        td_aux_on = float(getattr(self, "td_aux_coef", 0.0)) > 0.0
         # +FORK-MASK (gen3_fork_v1): is the fork step's POLICY-TERM mask live for this call? The
         # predicate is the OBS KEY's presence and not the flag's value, deliberately: the key is
         # declared only when `--fork-fraction > 0`, and reading it is what the fold actually
@@ -153,7 +146,7 @@ class TrainSetup:
             belief_aux_on=belief_aux_on, move_belief_on=move_belief_on, move_latent_on=move_latent_on,
             spread_belief_on=spread_belief_on, hp_type_belief_on=hp_type_belief_on, item_belief_on=item_belief_on,
             critic_winprob=critic_winprob, win_prob_on=win_prob_on, scaffolding_on=scaffolding_on,
-            policy_grad_coef=policy_grad_coef, td_aux_on=td_aux_on,
+            policy_grad_coef=policy_grad_coef,
             fork_pg_mask_on=fork_pg_mask_on,
         )
 
@@ -222,33 +215,11 @@ class TrainSetup:
         )
 
     # ------------------------------------------------------------------ K8 region R1's setup
-    def _r1_levers(self, f: FoldFlags) -> bool:
-        """``strata`` — R1's win-prob ROW-WEIGHT lever, DECLARED (`gen3_r1_declared_levers_v1`): a
-        pure function of the run's config and its rollout buffer's KEY SET, both fixed at startup,
-        and NEVER of a rollout's data. ONE predicate for `train()` and for the compile lifecycle's
-        startup declaration (`compile_regions._r1_static`), so the compiled region's signature is
-        known before the lock.
-
-        `--win-prob-strata-weight > 0` under the win-prob critic with the `opp_class` / `win_mask`
-        keys the weights are computed from. Declared from the FLAG: whether a given rollout yields
-        weights (two or more opponent classes among its labelled rows) is data, and R1 gets the
-        neutral ones when it does not (`_micro_var`).
-
-        Before this was declared the startup gate built R1 with it OFF while `train()` turned it
-        on: an undeclared signature at the first update (the K6+K8 FINDING, 2026-10-01)."""
-        obs = self.rollout_buffer.observations if isinstance(
-            self.rollout_buffer.observations, dict) else {}
-        winprob_value = bool(f.win_prob_on and f.critic_winprob)
-        return bool(winprob_value
-                    and float(getattr(self, "win_prob_strata_weight", 0.0) or 0.0) > 0.0
-                    and "opp_class" in obs and "win_mask" in obs)
-
-    def _micro_static(self, f: FoldFlags, strata: bool) -> Any:
+    def _micro_static(self, f: FoldFlags) -> Any:
         """The learner micro-step's STATIC flags and coefficients (`micro_step.MicroStatic`) for this
         `train()` call — every value R1 branches on or multiplies by that does not change within a
         run (`gen3_learner_micro_step_v1`). Read from the same attributes and buffer keys the inline
-        fold read, at the same moment (once per call). ``strata`` is the DECLARED lever
-        (`_r1_levers`)."""
+        fold read, at the same moment (once per call)."""
         from gymnasium import spaces
 
         from agents.training.instrumented_ppo.micro_step import MicroStatic
@@ -277,35 +248,7 @@ class TrainSetup:
             setvalued_coef=float(getattr(self, "beta_setvalued_coef", 0.0)),
             bot_label_weight=float(getattr(self, "intent_label_bot_weight", 1.0)),
             win_prob_on=bool(f.win_prob_on),
-            strata=bool(strata),
         )
-
-    def _micro_var(self, st: Any, strata_w: Any) -> dict:
-        """R1's PER-UPDATE tensors: when the strata lever is DECLARED (`st.strata`), the per-class
-        weights and whether they APPLY.
-
-        THE NEUTRAL DEFAULT (`gen3_r1_declared_levers_v1`). A rollout whose labelled rows hold fewer
-        than two opponent classes yields no weights (`strata_w` None); R1 then gets ones and
-        `strata_active` False — the SAME signature as an active update. Exact, not approximate: the
-        row weight multiplies the BCE as ``per * mask * w`` and ``x * 1.0 == x`` in IEEE arithmetic
-        (forward, and the backward's ``g * 1.0``), so the loss and every gradient are bit-identical
-        to the unweighted expression (`r1_declared_levers_test`); `strata_active` keeps the
-        row-weight diagnostics ABSENT on such an update, as before. Always ``float32`` on the
-        learner's device, ``[len(OPP_CLASS_NAMES)]``."""
-        out: dict = {}
-        if st.strata:
-            from agents.model.opp_intent import OPP_CLASS_NAMES
-            active = strata_w is not None
-            w = th.as_tensor(strata_w) if active else th.ones(len(OPP_CLASS_NAMES))
-            if tuple(w.shape) != (len(OPP_CLASS_NAMES),):
-                raise ValueError(f"strata weights of shape {tuple(w.shape)}; R1 declares "
-                                 f"[{len(OPP_CLASS_NAMES)}] (one per opponent class)")
-            out["strata_w"] = w.to(device=self.device, dtype=th.float32)
-            out["strata_active"] = th.tensor(active, device=self.device)
-        elif strata_w is not None:
-            raise ValueError("strata weights for a run whose strata lever is not declared "
-                             "(`_r1_levers`) — they would be silently dropped")
-        return out
 
     def _micro_region(self) -> Any:
         """R1 as installed: the compiled region under --compile-trainer (K8), else the function."""

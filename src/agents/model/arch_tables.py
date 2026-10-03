@@ -94,24 +94,12 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # here while `production_config.json` sat at v97; the win-prob run (v109) is the first
     # production config that carries it, and the generator refused rather than guess.
     "policy_grad_coef": None,
-    # v90 gen3_td_consistency_aux_v1 — a core train-loop term (the Bellman-residual consistency
-    # loss). No gating module: it reads the critic through `policy.predict_values`, so there is
-    # nothing in the extractor that could make it INERT.
-    "td_aux_coef": None,
     # v97 gen3_intent_label_bot_weight_v1 — a per-sample weight on the alpha/beta LABEL rows whose
     # opponent was a bot. It reweights an existing loss rather than gating a module, so like
-    # td_aux_coef there is nothing that could render it INERT. (It was recorded from v97 but
+    # policy_grad_coef there is nothing that could render it INERT. (It was recorded from v97 but
     # missing here, so the generated table simply did not show it.)
     "intent_label_bot_weight": None,
-    # v115 gen3_winprob_strata_weight_v1 — the OPPONENT-STRATIFIED weight on the win-prob BCE.
-    # Named to `win_head` rather than None because it CAN be inert in the way this column exists to
-    # show: a live weight with no win-prob head reweights a loss that is not being computed. (The
-    # cross-flag half — it also needs the win-prob critic — is a `combination_checks` REFUSAL, so it
-    # cannot reach a config; the head is the part a config can get wrong.) Declared here rather
-    # than relying on the `*_coef` suffix, which is exactly how `intent_label_bot_weight` above
-    # stayed out of every generated table from v97.
-    "win_prob_strata_weight": "win_head",
-    # v120 gen3_fork_v1 — the FORK FRACTION. Named to `win_head` for strata's reason: an injected
+    # v120 gen3_fork_v1 — the FORK FRACTION. Named to `win_head` because an injected
     # branch row carries a `win_target` of its own branch's outcome, so with no win-prob head the
     # arm would pay its whole simulation bill to add rows to a loss that is
     # not being computed — the most expensive INERT this column can show. (`fork_branches` and

@@ -423,31 +423,10 @@ class ExtractorForward(ExtractorApi):
         #
         # CLS pools — derived ONCE, on the final team tokens, so the policy
         # pools, the value pool, and the side/aux readouts below ALL reflect the same state.
-        # gen3_pair_value_route_v1 (v95, PV — design_opponent_intent.md §7a(2)): the α-reduced
-        # unified outcome row per OUR mon j, as TOKEN CONTENT on the value pool's copy of mon j's
-        # token. ⚠️ α is the R1 `belief_mean` rung UNCONDITIONALLY, and that is ORDERING rather than
-        # preference: the α/β heads are scored BELOW this line, so the publication does not exist
-        # yet. §7a(2) pre-registers exactly this substitution, which separates the DELIVERY claim
-        # from the DISTRIBUTION claim — and `pair_alpha` documents loudly that a presence belief and
-        # a usage belief are not the same object.
-        _pv_rows = None
-        if self.pair_value_route:
-            _pv_pin = self.damage_op.last_pair_in if self.damage_op is not None else None
-            _pv_w = self.damage_op.last_topk_w if self.damage_op is not None else None
-            if _pv_pin is None or _pv_w is None:
-                raise RuntimeError(
-                    "pair_value_route is on but the op stashed no unified outcome vector (or no "
-                    "top-K belief weights) — the route would silently contribute nothing, which is "
-                    "indistinguishable from a null RESULT. Requires damage_topk_k>0 (and the "
-                    "incoming matrix that computes it).")
-            _pv_rows = reduce_pair_in_all(
-                pair_alpha(None, _pv_w, self.damage_op.last_pair_seat_live),  # type: ignore[union-attr]
-                _pv_pin, self.damage_op.last_pair_gate)  # type: ignore[arg-type,union-attr]
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx,
             threat_rows=(self.damage_op.last_reduced_extra  # type: ignore[union-attr]
                          if self.value_threat_inject else None),
-            pair_rows=_pv_rows,
         )
         # gen3_rank_probe_stash_v1 (K6): the CLS pool's value readout BEFORE the value routes inject
         # below — what the rank probe's `rank/value_cls_*` has always measured.

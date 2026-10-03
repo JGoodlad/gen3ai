@@ -27,11 +27,9 @@ class ModelVersionConstruction(ModelVersionFields):
         spread_belief_coef: float = 0.0,
         hp_type_belief_coef: float = 0.0,
         item_belief_coef: float = 0.0,
-        td_aux_coef: float = 0.0,
         arch_source: "str | None" = None,
         policy_grad_coef: float = 1.0,
         intent_label_bot_weight: float = 1.0,
-        win_prob_strata_weight: float = 0.0,
         fork_fraction: float = 0.0,
         fork_branches: int = 3,
         fork_contested_gap: float = 0.40,
@@ -196,10 +194,6 @@ class ModelVersionConstruction(ModelVersionFields):
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "conditional_threat_cell", False)
             ),
-            pair_value_route=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get(
-                    "pair_value_route", False)
-            ),
             op_drop_renders=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "op_drop_renders", False)
@@ -244,11 +238,9 @@ class ModelVersionConstruction(ModelVersionFields):
             critic=str(policy_kwargs.get("critic", "shaped")),
             hp_type_belief_coef=float(hp_type_belief_coef),
             item_belief_coef=float(item_belief_coef),
-            td_aux_coef=float(td_aux_coef),
             arch_source=(str(arch_source) if arch_source else None),
             policy_grad_coef=float(policy_grad_coef),
             intent_label_bot_weight=float(intent_label_bot_weight),
-            win_prob_strata_weight=float(win_prob_strata_weight),
             fork_fraction=float(fork_fraction or 0.0),
             fork_branches=int(fork_branches or 3),
             fork_contested_gap=float(fork_contested_gap or 0.40),

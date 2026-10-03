@@ -131,8 +131,7 @@ def episode_start_rows(episode_starts, n_steps: int, n_envs: int) -> np.ndarray:
     episode, from the buffer's un-flattened ``[n_steps, n_envs]`` ``episode_starts``.
 
     Raises on a flattened input rather than indexing it: at ``n_envs > 1`` a flattened array would
-    silently pair a start flag with the wrong row, which is the class of defect `td_aux`'s own
-    fail-loud guard exists for."""
+    silently pair a start flag with the wrong row, a defect class this guard exists to make loud."""
     ep = np.asarray(episode_starts)
     if ep.ndim != 2 or ep.shape != (n_steps, n_envs):
         raise ValueError(

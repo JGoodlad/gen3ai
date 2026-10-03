@@ -40,12 +40,6 @@ bit-identical at ANY weight — gated against a large random projection, not jus
 in both axes (α has no defender index by Contract W; the row rides mon j's token; attention pooling
 is permutation-invariant). `W_inj` sits in the `restore_identity_init()` capture set (M1) and that
 is gated on a REAL `MaskablePPO` build. Structural + version-checked, off = no module).
-**v95 adds its SIBLING on the same local copy — `--pair-value-route` (PV,
-`design_opponent_intent.md` §7a(2)) — carrying Phase A's UNIFIED 14-coordinate `pair_in` row
-instead of v64's 13-wide damage summary, so the critic gets the six status identities,
-`neutralization` and `tempo_cost` per entity for the first time (they otherwise reach vf only as
-the `s3` edge family's softmax-normalised RATIO). The two stack additively and independently.
-⚠️ Its ENABLING owes the C4-style offline gate first (ledger C6); BUILDING it is free.
 
 ## The PRIVILEGED route — DELETED (deletion pass L2)
 

@@ -3,8 +3,7 @@
 `train/noise_scale` (`noise_scale.py`) estimates McCandlish's critical batch
 `B_simple = tr(Σ)/|G|²` from the TOTAL gradient. On this tree the total gradient is not the PPO
 policy gradient: it is the policy term plus the value term plus the entropy bonus plus a dozen
-DENSE supervised auxiliaries (belief heads, win-prob, spread/nature/HP-type, value-dist, TD-aux,
-the counterfactual family). A supervised head's per-example
+DENSE supervised auxiliaries (belief heads, win-prob, spread/nature/HP-type, opponent intent). A supervised head's per-example
 gradients AGREE far more than a policy-gradient's do (its target is a label, not an advantage), so
 a large aux share DEFLATES the measured `tr(Σ)/|G|²` — and the run reads "over-batched" while the
 term you actually care about is starved. That confound is the whole reason this module exists.
@@ -14,7 +13,7 @@ already uses for free (one micro-batch `B = batch_size`, and the accumulated fir
 `B = batch_size·accum`), it accumulates the gradient of each GROUP of loss terms separately and
 feeds the two squared norms through the SAME pure `_noise_scale_estimate` two-point solve. Four
 groups: `policy` (the clipped surrogate as folded), `value` (`vf_coef·value_loss`), `entropy`
-(`ent_coef·ent_loss_used`), `aux` (every belief / win-prob / TD-aux / counterfactual term).
+(`ent_coef·ent_loss_used`), `aux` (every belief / win-prob / intent term).
 
 HOW IT IS WIRED, and why it cannot change the update. The tagger is threaded through the fold as
 `loss = loss + _ntg.add("aux", term)`: `add` RETURNS ITS ARGUMENT UNCHANGED, so the loss

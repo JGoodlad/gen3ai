@@ -459,8 +459,7 @@ separately (orchestrator's rule: tell, don't trim).
 - **The K6+K8 agent** (R1 regime bar → canary persistence → "no silent eager fallback"): touches
   `compile_canary` / `compile_regions` / `compile_control`. Stage 1 does not touch them. Stage 2's
   hook table lands **after** them.
-- **The R1 declared-levers agent** (`k8-r1-declared-keys`: `TrainSetup._r1_levers` /
-  `check_r1_declared`, then F-SZ-3's env-step checkpoint cadence): shares `ppo.py` (stage 1 adds one
+- **The R1 declared-levers agent** (`k8-r1-declared-keys`: `check_r1_declared`, then F-SZ-3's env-step checkpoint cadence): shares `ppo.py` (stage 1 adds one
   base class) and `learner_golden.py` (untouched). Stage 1 rebases onto it. F-SZ-3 changes
   `_TrackingCheckpointCallback`'s `n_calls` semantics, which E1's trace records; whichever lands
   second updates the trace.

@@ -152,7 +152,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | **P6** ✅ **SHIPPED 2026-10-02** (see the §3 row) | final-eval deletion | 0.5 | A or B | parser `operational`, `final_eval.py` | U0 (any gap in lane A/B) |
 | **P10** | independent code review | 0.75 | C | read-only → fixes as units | U4 |
 | **P8** | **OUT OF THE BOX (orchestrator default 2026-10-02, owner may override): stays in TECH_DEBT_BACKLOG** — test-speed rows (re-measured first) | 3.0 | C | test files, `utils/bridge/team_validator.py` | U3 |
-| **P11** ✅ **SHIPPED IN PART 2026-10-03** (inventory + B1–B5; 12 flags deleted, 211 → 199) + **P11b** (the one-valued flags: 7 more, 199 → 192; hand-offs at the end of this file) + **P11c** (the 20 NEEDS-OWNER flags, decided by the owner's rule 2026-10-03: batch 1 — 11 deleted, 192 → 181; the rest in flight) | FLAG CENSUS | 2.0 | A | everything | every unit above |
+| **P11** ✅ **SHIPPED IN PART 2026-10-03** (inventory + B1–B5; 12 flags deleted, 211 → 199) + **P11b** (the one-valued flags: 7 more, 199 → 192; hand-offs at the end of this file) + **P11c** (the 20 NEEDS-OWNER flags, decided by the owner's rule 2026-10-03: batch 1 — 11 deleted, 192 → 181; batch 2 — 3 recorded-field flags deleted (config v135) and 2 kept, 181 → 178; the Rust crossings and the scaffolding instrument are the P11c hand-off at the end of this file) | FLAG CENSUS | 2.0 | A | everything | every unit above |
 | **GATE** | slow tier as the MILESTONE run (`-m slow -n 2`, refreshes `slow_tier_status.json`) | ~1 wall-hour, 0.25 | — | — | P11 |
 
 **L1 hand-off (read before L2).** (1) `agents/model/model_version/retired_levers.py` is where a deleted lever is

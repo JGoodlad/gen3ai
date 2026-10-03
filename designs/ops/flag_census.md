@@ -13,9 +13,9 @@
 | | trainer flags | launcher flags | total |
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
-| DELETED by P11 so far | 30 | 0 | 30 |
-| NOW | 172 | 9 | 181 |
-| verdicts NOW | KEEP 163 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 9 | KEEP 9 | |
+| DELETED by P11 so far | 33 | 0 | 33 |
+| NOW | 169 | 9 | 178 |
+| verdicts NOW | KEEP 165 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 4 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -52,6 +52,9 @@
 * `--rollout-trigger` (P11c batch 1) — the window trigger was the python-parity schedule: only tests selected it and its oracle (the Python core's collect) is deleted; the complete-game trigger is a constant
 * `--opponent-sampling` (P11c batch 1) — `generator` was the Python core's RLPlayer stream; production and the fork arm are `keyed` only; 0 recorded runs
 * `--version-pinning` (P11c batch 1) — the first staleness remedy, OFF by owner decision 2026-09-29; no backlog row revisits it; 0 recorded runs
+* `--pair-value-route` (P11c batch 2) — `ARCHITECTURE.md`'s 'available but OFF' structural critic route, 0 recorded runs, its C4 re-entry gate never met; no live row names it (config v135, STRUCTURAL row in `retired_levers`)
+* `--td-aux-coef` (P11c batch 2) — ladder arm `ai_v12_13_ladder_tdaux` NOT DETECTED at matched 10M; 9 older recorded runs; OFF in `production_config.json`; no live row names it (config v135, training-only row)
+* `--win-prob-strata-weight` (P11c batch 2) — ladder arm 7 NOT DETECTED and its replicate did not confirm it; 2 recorded runs; no workflow, backlog row, era step or end-state doc uses it (the runbook only documents it and the fork arm refused it) (config v135, training-only row; R1's declared-lever machinery went with it)
 
 **Planned, not yet shipped:** (none left in the DELETE column — the remaining work is the ONE-VALUED sweep and the NEEDS-OWNER rows below, sized in the manifest's P11 hand-off)
 
@@ -60,13 +63,8 @@
 
 * `--progress-decision-tense` — no-progress-clock fix (`designs/training/reward.md`), OFF in `production_config.json`, 0 recorded runs; read by the RUST env decl (`RustEnvDecl.decision_tense`), so deleting it reaches `src/rust_env`
 * `--progress-switch-freeze` — the sibling no-progress-clock fix; same Rust reach (`RustEnvDecl.switch_freeze`), OFF, 0 recorded runs
-* `--win-prob-strata-weight` — opponent-stratified win-prob BCE; documented in `training_runbook.md` as an arm of the fork experiment; 2 recorded runs, not in the backlog
-* `--pair-value-route` — "available but OFF" in `designs/ARCHITECTURE.md` (v95, 14-dim pair route into the critic); 0 recorded runs; a STRUCTURAL toggle (extractor module + `ModelVersion` field), so retiring it is an L4-shaped unit with a config bump
-* `--td-aux-coef` — the TD-consistency aux (`td_aux.py`); ladder arm `ai_v12_13_ladder_tdaux` (`--td-aux-coef 1.0`) NOT DETECTED at matched 10M (ledger 2026-09-09); a recorded `ModelVersion` field, OFF in `production_config.json`; 9 older recorded runs
-* `--grad-checkpointing` — a bit-exact memory lever read by the compile sentinel (`lifecycle`); no recipe row, no runbook workflow, 67 older recorded runs
 * `--bait-bot-share` — BaitBot joins the training roster; the bait hunt is CLOSED, but BaitBot is also a RUST bot (`rust_env/src/bots/`, `bots_gate_test`, the Python class is its oracle), so deleting it is a Rust crossing
 * `--bait-bot-p` — BaitBot's pivot probability, same Rust reach as `--bait-bot-share`
-* `--win-prob-mode` — **NOT one-valued** (the P11 hand-off's "the winprob critic REQUIRES `shaping`" was wrong): the only refusal is `none` (`winprob_critic_needs_a_head`), so `read_only` (the win-prob head on a STOP-GRAD value pool: the critic's gradient does not reach the trunk) is a legal winprob arm. It is a registered open question — `designs/ai_v12/design_winprob_only_critic.md` §3 "keep the flag, drop `none`" and open question 5 ("whether `--win-prob-mode read_only` is the interesting arm"), a `Family.CRITIC` row of `flag_registry.py` that `arch_surface` deliberately leaves unapplied "because an experiment varies it", a recorded `ModelVersion` field, and `ARCHITECTURE.md` §3.4 names `read_only` as the stop-grad alternative; no recorded winprob run used it (all 69 recorded `critic: winprob` configs read `shaping`; the 16 `read_only` configs are shaped-era). Deleting it removes the only trunk-exposure lever of the critic, so the owner decides; left in place by P11b
 
 ## 3. ONE-VALUED
 
@@ -156,8 +154,7 @@
 | `--entity-tail-seats` | — | 186 / 34 | `--arch production`: `production_config.json` `entity_tail_seats` = `true` | **KEEP** |
 | `--edge-bias-families` | — | 186 / 34 | `--arch production`: `production_config.json` `edge_bias_families` = `"d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r"` | **KEEP** |
 | `--damage-candidate-k` | — | 184 / 34 | `--arch production`: `production_config.json` `damage_candidate_k` = `0` (the production value is OFF / zero: an arch toggle held for ablations, see FINDINGS) | **KEEP** |
-| `--win-prob-mode` | — | 252 / 34 | NOT one-valued: winprob refuses only `none`, so `read_only` is a legal arm — design_winprob_only_critic §3 + open question 5, a `Family.CRITIC` registry row, a recorded `ModelVersion` field; the owner decides (section 2) | **NEEDS-OWNER** |
-| `--win-prob-strata-weight` | — | 2 / 0 | opponent-stratified win-prob BCE; documented in `training_runbook.md` as an arm of the fork experiment; 2 recorded runs, not in the backlog | **NEEDS-OWNER** |
+| `--win-prob-mode` | — | 252 / 34 | NOT one-valued: winprob refuses only `none`, so `read_only` (the win-prob head on a stop-grad value pool) is a legal arm — `design_winprob_only_critic.md` §3 + open question 5 ("whether `--win-prob-mode read_only` is the interesting arm"), a `Family.CRITIC` registry row, a recorded `ModelVersion` field. **Owner delegation 2026-10-03: KEEP** — open question 5 is the live name | **KEEP** |
 | `--ridealong-ensemble` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_ensemble` = `0`; X26's ride-along baseline heads (`EXPERIMENT_BACKLOG.md`, `main.ridealong_read`) | **KEEP** |
 | `--ridealong-rnd` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_rnd` = `false`; X26's RND novelty head | **KEEP** |
 | `--ridealong-adv` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_adv` = `0`; X26's per-action A heads | **KEEP** |
@@ -191,7 +188,6 @@
 | `--pair-outcome-switch` | — | 171 / 34 | `--arch production`: `production_config.json` `pair_outcome_switch` = `true` | **KEEP** |
 | `--switch-branch-cell` | — | 171 / 34 | `--arch production`: `production_config.json` `switch_branch_cell` = `true` | **KEEP** |
 | `--conditional-threat-cell` | — | 171 / 34 | `--arch production`: `production_config.json` `conditional_threat_cell` = `true` | **KEEP** |
-| `--pair-value-route` | — | 0 / 0 | "available but OFF" in `designs/ARCHITECTURE.md` (v95, 14-dim pair route into the critic); 0 recorded runs; a STRUCTURAL toggle (extractor module + `ModelVersion` field), so retiring it is an L4-shaped unit with a config bump | **NEEDS-OWNER** |
 | `--intent-threshold` | — | 180 / 34 | `--arch production`: `production_config.json` `intent_threshold` = `true` | **KEEP** |
 | `--op-drop-renders` | — | 180 / 34 | `--arch production`: `production_config.json` `op_drop_renders` = `true` | **KEEP** |
 | `--op-believed-lean` | — | 180 / 34 | `--arch production`: `production_config.json` `op_believed_lean` = `true` | **KEEP** |
@@ -203,7 +199,6 @@
 | `--intent-label-bot-weight` | — | 171 / 34 | `--arch production`: `production_config.json` `intent_label_bot_weight` = `0.25`; `--arch production`: `recipe.fresh.intent_label_bot_weight` = `0.25` | **KEEP** |
 | `--opp-intent-coef` | — | 185 / 34 | `--arch production`: `recipe.fresh.opp_intent_coef` = `0.05` | **KEEP** |
 | `--value-threat-inject` | — | 186 / 34 | `--arch production`: `production_config.json` `value_threat_inject` = `true` | **KEEP** |
-| `--td-aux-coef` | — | 9 / 0 | the TD-consistency aux (`td_aux.py`); ladder arm `ai_v12_13_ladder_tdaux` (`--td-aux-coef 1.0`) NOT DETECTED at matched 10M (ledger 2026-09-09); a recorded `ModelVersion` field, OFF in `production_config.json`; 9 older recorded runs | **NEEDS-OWNER** |
 | `--policy-grad-coef` | — | 3 / 0 | `--arch production`: `production_config.json` `policy_grad_coef` = `1.0` | **KEEP** |
 | `--move-latent` | — | 184 / 34 | `--arch production`: `production_config.json` `move_latent` = `true` | **KEEP** |
 | `--move-belief-latent-coef` | — | 184 / 34 | `--arch production`: `production_config.json` `move_belief_latent_coef` = `0.05`; `--arch production`: `recipe.fresh.move_belief_latent_coef` = `0.05` | **KEEP** |
@@ -219,7 +214,7 @@
 | `--allow-belief-grad-mode-change` | false | 0 / 0 | the documented escape of the v41 belief-grad-mode resume gate (`designs/training/belief_losses.md`) | **KEEP** |
 | `--belief-grad-mode` | — | 237 / 34 | `--arch production`: `production_config.json` `belief_grad_mode` = `"shaping"` | **KEEP** |
 | `--n-steps` | 2048 | 266 / 36 | `--arch production`: `recipe.sizing.n_steps` = `384`; `recipe.sizing.n_steps` (384) | **KEEP** |
-| `--grad-checkpointing` | false | 67 / 0 | a bit-exact memory lever read by the compile sentinel (`lifecycle`); no recipe row, no runbook workflow, 67 older recorded runs | **NEEDS-OWNER** |
+| `--grad-checkpointing` | false | 67 / 0 | an exact memory lever (bit-exact, dropout 0 + non-reentrant: ~5 GB less activation VRAM for one extra transformer forward in the backward; X5's belief tokens may need the headroom), read by the compile sentinel (`lifecycle`); 67 older recorded runs. **Owner delegation 2026-10-03: KEEP**, documented as an operator knob in `training_runbook.md` so it names a live user | **KEEP** |
 | `--weight-decay` | 1e-05 | 184 / 34 | `--arch production`: `recipe.fresh.weight_decay` = `1e-05`; `recipe.fresh.weight_decay` | **KEEP** |
 
 ### eval_subprocess

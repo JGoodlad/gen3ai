@@ -161,157 +161,16 @@ and `_vf_scale_announced` is in `_excluded_save_params`, so a launcher restart r
 the startup `[CRITIC]` banner. It is a PRINT, not a scalar: past the first reading the right
 instrument is `grad/value_policy_logratio` (0 = balanced). Reading rule: design §5.4.
 
-## `--win-prob-strata-weight` — OPPONENT-STRATIFIED weighting of the win-prob BCE
+## `--win-prob-strata-weight` — DELETED (deletion pass P11c)
 
-`gen3_winprob_strata_weight_v1`, config **v115**, landed 2026-09-09 as **arm 7 of the critic
-ladder**. Default **0.0 = OFF and the loss is BIT-identical**; it runs on the win-prob critic (the only critic).
-Code:
-`instrumented_ppo/value_terms.py::_win_prob_strata_weights` + `_win_prob_loss`, called once per
-rollout from `ppo.train()`. Gate: `src/agents/training/winprob_strata_weight_test.py`.
-
-**Compiled (`--compile-trainer`, torch 2.8): DECLARED** (`gen3_r1_declared_levers_v1`). The lever is
-part of the compile region R1's signature from the FLAG; a rollout whose labelled rows hold one
-opponent class (any run before the pool seeds) feeds R1 neutral weights (ones) — bit-identical to
-the unweighted BCE. Before 2026-10-01 such an arm died at its first post-seed update.
-`designs/training/compile_flags.md` "R1's DECLARED LEVERS".
-
-### The defect it targets, and why the treatment is on the LOSS rather than the head
-
-[`winprob_head_refit_2026-09-09`](../research_state/measurements/winprob_head_refit_2026-09-09/README.md)
-refit the win head alone on a FROZEN `value_pooled`, out of fold and HT-reweighted, on two
-substrates. Against the **terminal 0/1 target the online head actually trains on** it reproduced the
-online failure exactly (turn-1–3 between-opponent spread ratio 0.149 → 0.000 on arm A, 0.066 → 0.068
-on the ladder control, both deltas straddling zero); against the same label with its per-episode
-variance removed the **same head, same features, same optimiser** recovered a DETECTED part
-(0.149 → 0.323, 0.066 → 0.259). A head initialised FROM the online weights lands where a scratch
-head lands under both targets, so the head is **not in a basin** and the head-side-optimisation
-treatment class (value replay, periodic refit, head-specific lr) is RULED OUT.
-
-**The mechanism is arithmetic** (§6 of that measurement, `variance_shares.json`):
-
-| | total variance of the label | share BETWEEN (cycle, opponent) cells |
-|---|---|---|
-| arm A · terminal 0/1 | 0.1649 | **10.2 %** |
-| CTRL · terminal 0/1 | 0.1595 | **14.4 %** |
-| arm A · conditional | 0.0367 | 24.0 % |
-| CTRL · conditional | 0.0341 | 58.8 % |
-
-Nine-tenths of the terminal label is per-episode noise plus within-cell board state, so a head
-minimising a proper scoring rule buys its resolution wherever it is cheapest — the board and its
-own team — and the opponent component is ~10 % of the objective **at any sample size**. That
-statement is scale-free, which is what carries it across the 2,500× gap between the offline 951
-battles and the online head's ~2.4 M episodes. §11 names this lever as *"the highest ratio of
-expected effect to cost on this list"*: it raises the between-cell share **directly**, needing no
-new labels, no new machinery and no extra rollout cost, where counterfactual labels buy the same
-re-pricing at the cost of producing them.
-
-### The arithmetic
-
-Over the rollout buffer's **KNOWN** rows (`win_mask == 1`), with per-class counts `n_c`, frequencies
-`f_c = n_c / N` and `s` = the flag:
-
-```
-raw_c = min(f_c ** (-s), CAP)          CAP = 8.0   (_STRATA_WEIGHT_CAP)
-w_c   = raw_c / Z,   Z = (Σ_c n_c · raw_c) / N     ⇒  mean(w) over the known rows == 1
-loss  = Σ_i BCE_i · mask_i · w_{c(i)} / N
-```
-
-Three properties, each of which a test pins:
-
-* **`s = 0` returns no vector at all**, so the caller takes the original masked mean UNCHANGED and
-  the loss is bit-identical — not "approximately equal". Every archived arm is that baseline.
-* **The mean weight is exactly 1**, so `s` re-prices the MIX without rescaling the value gradient.
-  Without this, an arm confounds "balanced the classes" with "raised the critic's step size".
-* **At `s = 1` and no clipping, `n_c · w_c` is constant in `c`** — each class contributes `N / C` to
-  the objective. `s` interpolates the exponent, monotonically.
-
-The **DENOMINATOR stays `N`**, not `Σ mask·w`. Dividing by the weighted count would renormalise per
-minibatch and undo the buffer-level balance the weights were computed to produce.
-
-**Computed ONCE per rollout, over the whole buffer, and held constant for every epoch and
-minibatch.** Per-minibatch frequencies would make the class balance itself a sampling-noise term,
-and the mean-weight-1 normalisation is only meaningful over the population the frequencies came
-from. It is read after `_align_opp_intent_labels`, the only writer of `opp_class` in the call (a
-semantic no-op — the class is constant within an episode).
-
-### The VOCABULARY, and the option that was rejected
-
-**Shipped: the four `opp_class` codes** — `bot` / `pool` / `stable` / `exploiter`
-(`agents.model.opp_intent.OPP_CLASS_NAMES`). That is the label key the trainee's obs space (`trainee_spaces`) declares under the
-win-prob gate, and it is **all the env knows per step**.
-
-🚨 **REJECTED — one class per BOT NAME plus a single `selfplay` class**, which is the finer
-stratification the measurement's 14-opponent cell structure would suggest. It is not available:
-the bot archetype and the pool snapshot's step are drawn per EPISODE inside
-the opponent draw (`rust_env_opponents.EpisodeOpponentSampler`) and **never reach the observation**; shipping it
-would mean a new obs key per identity, which `value_sidecar.py` had already declined for the same
-reason. **The consequence is stated rather than buried: this lever balances the between-CLASS
-share, and the residual heterogeneity WITHIN the bot class (random vs. the heuristics) stays in
-episode proportion.** It bounds what the arm can move, and it is the first thing to revisit if arm 7
-moves the meters part-way.
-
-The two-way `bot` / `selfplay` collapse was also considered and NOT taken: `stable` and `exploiter`
-are genuinely different opponent populations when they are present at all, and collapsing them
-would silently re-price a `--stable-opponents` or `--exploiter` run's mix in a way its operator
-never asked for. Four codes is what the env records, so four codes is what the objective is
-stratified by.
-
-### 🚨 THE CAP BINDS AT THE PRODUCTION MIX, DELIBERATELY
-
-Uncapped, a class holding 1/1000 of the buffer would ask for 1000× and one rollout's handful of rows
-would carry the whole value gradient. `CAP = 8.0` binds at `f < 1/8` when `s = 1`, and at the
-measured post-promotion mix it **does** bind:
-
-| | frequency | raw (uncapped) | raw (capped) | `w_c` | share of the objective |
-|---|---|---|---|---|---|
-| `bot` | 0.10 | 10.0 | **8.0** | 4.444 | **0.444** |
-| `pool` | 0.90 | 1.111 | 1.111 | 0.617 | **0.556** |
-
-So `s = 1` delivers **44/56, not 50/50** — a **4.4×** re-pricing of the between-class signal instead
-of 5×, in exchange for a hard bound on the per-row gradient weight. A reader comparing
-`strata_share_*` against parity has to know this, so `winprob_strata_weight_test.py` pins the exact
-numbers and this table is what it pins them against.
-
-### The TB read — `win_prob/strata_*`, once per rollout
-
-| key | what it says |
-|---|---|
-| `strata_weight` · `strata_rows` · `strata_n_classes` | the `s` in force, the KNOWN rows it was computed over, how many classes were present |
-| `strata_w_<class>` | the per-class weight vector — the lever itself, one series per class |
-| `strata_frac_<class>` | the class's raw episode proportion — the BEFORE picture |
-| `strata_share_<class>` | its share of the objective AFTER weighting — the AFTER picture |
-| `strata_w_entropy` | normalised entropy of that share distribution; **1.0 = perfectly balanced**, and the one number that says the lever landed |
-| `strata_w_min` / `strata_w_max` / `strata_capped` | the spread, and how many classes hit the cap |
-| `loss` vs `loss_unweighted` (per minibatch) | what the objective actually minimised, vs what it would have been unweighted — this separates "the weights moved the loss" from "the head got better" |
-| `strata_row_w_mean` (per minibatch) | the realised mean weight; ≈1 or the normalisation is broken |
-| `strata_active` | **1 = the weights were applied; 0 = they were not, and the row beside it says why** |
-
-🚨 **AN ABSENT `strata_*` FAMILY MEANS THE FLAG IS OFF, AND NOTHING ELSE.** Whenever the flag is on
-the family is published EVEN WHEN NO WEIGHTING APPLIES, carrying `strata_active = 0` with
-`strata_n_classes` and `strata_rows` saying why — one class present (a bot-only curriculum: every
-`--debug` run, and any run before the self-play pool seeds), or a rollout whose labels were never
-back-filled. **This build's first smoke landed in exactly that state and could not be told apart
-from a plumbing break**, which is why the inactive case reports rather than vanishing.
-
-### What it is NOT applied to
-
-The counterfactual and twin-head callers of `_win_prob_loss` (the cf terms, deleted in deletion pass L4)
-were **unweighted**, and a test pinned that: they scored FOREIGN recorded states whose opponent mix
-belonged to the label factory, not to this rollout, so reweighting them by this rollout's frequencies
-would have been a category error. Any future caller that scores recorded states from another
-distribution inherits the same rule.
-
-### Recording and resume
-
-`win_prob_strata_weight` is a **v115 `ModelVersion` field of the `td_aux_coef` class**: recorded in
-`model_config.json` for provenance and for flagless-resume read-back (`_resolve`), **never** compared
-by `check_compatible` or any `check_*` — it reweights a loss and touches no forward pass or weight
-shape, and gating a frozen eval/pool opponent on it would be a false rejection. A pre-v115
-config migrates to `0.0`, which is a RECORD and not a guess: the field did not exist. It is **not** a
-`flag_registry.py` row — that registry declares EXTRACTOR toggles, and this builds no module (the
-`td_aux_coef` / `intent_label_bot_weight` precedent). It IS declared in
-`arch_tables._COEF_MODULE` (→ `win_head`) so a production config that ever adopts it cannot be
-silently dropped from the generated table the way `intent_label_bot_weight` was from v97.
+`gen3_winprob_strata_weight_v1` (v115, the critic ladder's arm 7) re-weighted the win-prob BCE by
+inverse opponent-class frequency (`s` the exponent, weights capped at 8.0) to stop the bot-heavy mix
+dominating the head's objective. It read NOT DETECTED / NOT CONFIRMED (its replicate reversed sign;
+`designs/research_state/winprob_critic_ladder_2026-09-08.md`) and no recipe, backlog or end-state row
+named it, so it was deleted with `_win_prob_strata_weights`, the `win_prob/strata_*` tags, its R1
+per-update `var` tensors (`TrainSetup._r1_levers`) and the `ModelVersion` field. A config recording a
+non-zero value is refused on every load (`model_version/retired_levers.py`). The BCE is plain and
+unweighted across opponent classes. Detail and history: `designs/deleted_flags.md`.
 
 ## `--win-prob-lambda` — DELETED (deletion pass L2)
 
@@ -336,89 +195,15 @@ this depth (−0.0107 [−0.0249, +0.0028], NOT DETECTED). It also touches the P
 step is masked out of it) and the BUFFER (injected rows), which is why it does not live here:
 [`designs/training/forks.md`](forks.md).
 
-🚨 It REFUSES `--win-prob-strata-weight` — that flag prices rows by `win_margin`, which the env's
-reward manager computes and an injected row cannot supply.
-
 ## `--win-prob-rollout-weight` — DELETED (deletion pass L2)
 
 The R-rollout ANCHOR loss weight (`gen3_winprob_rollout_weight_v1`, v119) multiplied the per-row BCE of the rows the R-rollout target had anchored (the `win_row_w` obs key) so a treatment on ~0.12 % of the loss mass could move the head. It went with the target it weighted; the arithmetic (anchored share `f·k / (1 + f·(k−1))`) is in the ledger. Recoverable at pin <= 475bd817; `win_row_w` no longer exists as an obs key, an env-core label or a compile-declared lever.
 
-## TD-consistency auxiliary (`--td-aux-coef`, `td_aux.py`)
+## TD-consistency auxiliary (`--td-aux-coef`) — DELETED (deletion pass P11c)
 
-**What it fixes.** The critic's only signal is a PER-STATE regression, `MSE(V(s_t), G_t)`. That
-constrains each state's LEVEL and says nothing about the DIFFERENCE between two adjacent states — so
-independent per-state noise ε in V arrives in `ΔV` at `2·Var(ε)`, exactly where the truth is nearly
-constant. Since ΔV is what GAE reads, that is injected advantage noise on **every** transition, not
-just the dramatic ones. `--td-aux-coef λ` adds the Bellman identity the critic already owes, as an
-explicit loss:
-
-```
-loss += λ · mean_pairs[ ( V(s_t) − r_t − γ·V(s_{t+1}) )² ]
-```
-
-Both residual ends carry gradient (the residual-gradient / Baird form — see the *Cons* in the
-pre-registration). `λ = 0.0` is the default and the whole block is skipped, so an OFF run is
-byte-identical. **Pre-registered band: 1.0–3.0, 3.0 the favourite; `λ ≤ 0.1` measured significantly
-WORSE than control offline, so the small-coef regime is to be avoided, not treated as "a bit of the
-effect".** Full pre-registration (rung-1 evidence, the honest ceiling, the rung-2 gates):
-`designs/research_state/levers/td_consistency_aux.md` (ledger C5). Do not edit that file — it is the
-pre-registration.
-
-**Where the pairs come from — this is the whole engineering problem.** `RolloutBuffer.get()` yields
-a RANDOM PERMUTATION, so a PPO minibatch contains **no adjacent pairs at all**; the pairs have to be
-drawn from the buffer's surviving `[n_steps, n_envs]` structure. `td_aux.sample_contiguous_pairs`
-draws `TD_AUX_STATES` (512) rows as contiguous per-env runs of `TD_AUX_SEG_LEN` (16) and pairs their
-adjacent rows. Four facts make it correct:
-
-- **Row convention.** After the first `get()`, `observations` are `swap_and_flatten`ed to ENV-MAJOR
-  (`row = env·n_steps + t`), so temporal adjacency survives; the sampler returns rows in exactly
-  that convention and `_td_aux_term` **raises** if `generator_ready` is False rather than indexing
-  an un-flattened array (which would silently mis-pair states with rewards at any `n_envs > 1`).
-- **`rewards` / `episode_starts` are NOT in `get()`'s flatten list**, so they stay `[n_steps,
-  n_envs]` and are read in their native shape (rewards are swapped to env-major at use).
-- **Episode boundaries DROP the pair, never zero it.** `episode_starts[t+1] == 1` means the
-  successor begins a new episode, so (t, t+1) is not a transition; zeroing would train
-  `V(s_t) → r_t` at every battle end. This also disposes of SB3's time-limit bootstrap (which folds
-  `γ·V(s_term)` into the stored reward at the done step): that row's successor always starts an
-  episode, so the pair never forms.
-- **Segments, not random pairs.** L contiguous states serve L−1 pairs off L forwards — the
-  "K+1 forwards serve K pairs" economy the pre-registration calls for, ~2× cheaper per pair than
-  independent pair sampling. Rung 1 also found whole-battle batching beat a random-permutation
-  control by 12%, so the within-segment correlation is a feature.
-
-**It runs per MINIBATCH, with its own sample and its own critic forward** — modelled on the
-`_td_aux_term` / cf folds, not on the once-per-`train()` diagnostic probes. Those are read-only;
-this one carries gradient, and a once-per-`train()` fold would give it ONE contribution against the
-value loss's `n_epochs × n_minibatches` (~240 in production), so λ would have to be ~240× rung-1's
-band to mean the same thing. Cost is bounded by `TD_AUX_STATES`, not by `batch_size`: one extra
-512-state critic forward per minibatch, ≈10% of the train step at production shapes.
-
-**The value path is `policy.predict_values`, never a hand-rolled one.** That method is what routes
-to the run's critic (`critic_mode`) — reading `value_net` directly would train a critic the run does not use.
-
-**Units.** `predict_values` returns REAL-unit values and the buffer's rewards are real-unit, so the
-residual is real-unit — the same space the value loss trains in (the PopArt σ division this term once
-carried is deleted with PopArt).
-
-**Metrics (`td_aux/` prefix).** `resid_rms` is the headline — the quantity being minimised, the live
-counterpart of the offline ΔV-dispersion instrument, and it should FALL. `resid_mean` (SIGNED) is
-the no-harm watch: rung 1's decomposition says this is dispersion suppression, so a bias drifting
-away from ~0 means the residual-gradient term is shifting the LEVEL rather than tightening it — read
-it beside `train/explained_variance`. Also `loss`, `n_pairs` and `pair_drop_frac` (share of candidate pairs lost to episode boundaries). The
-shared-trunk pull rides `grad/td_aux_share` + `grad/td_aux_policy_cosine`; the term reaches the trunk
-through the CRITIC path only, so `td_aux_share` against `value_share` is the read for "is the
-consistency term crowding out the level regression it is meant to complement".
-
-**Class: `training_coef`.** Scales a loss, touches no forward pass ⇒ NO `ARCH_SIGNATURE` bump, NOT in
-`check_compatible` and no `check_*` of its own; recorded on `ModelVersion` (`MODEL_CONFIG_VERSION`
-v90) purely for provenance and so a **flagless resume inherits it** via `_resolve`, exactly like
-`--opp-belief-aux-coef`. It is deliberately NOT in `agents/model/flag_registry.py` — that registry's
-scope is extractor architecture toggles, and this reaches the extractor not at all.
-
-Tests: `td_aux_test.py` — the sampler (env-major row convention, (t, t+1) adjacency, boundary pairs
-DROPPED not zeroed, the all-boundary degenerate → `None` not 0.0, the segment economy, fail-loud on a
-flattened `episode_starts`), the residual math on a hand-built case, both
-ends carrying gradient, and on a REAL `train()`: coef-0 byte-identity (asserted twice — identical
-parameters AND the sampler monkeypatched to raise, so a future sampler change cannot perturb an off
-run), coef>0 moving the update and logging every metric, gradient landing on `value_net`, and the
-un-flattened-buffer refusal.
+A Bellman-residual auxiliary over contiguous rollout pairs (`gen3_td_consistency_aux_v1`, v92;
+`td_aux.py`, `_td_aux_term`, the `td_aux/*` tags and `grad/td_aux_share`) that penalised the
+critic's `ΔV` between adjacent states. The ladder's `tdaux` arm read NOT DETECTED
+(`designs/research_state/levers/td_consistency_aux.md`), and nothing live named it, so it was
+deleted. A resume or fork of a run that recorded a non-zero value is refused by
+`model_version/retired_levers.py`. Detail: `designs/deleted_flags.md`.

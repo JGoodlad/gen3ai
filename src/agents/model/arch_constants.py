@@ -144,14 +144,6 @@ SWITCH_BRANCH_MOVE_DIM = _SWITCH_BRANCH_RAW
 _CONDITIONAL_THREAT_RAW = 4
 CONDITIONAL_THREAT_SWITCH_DIM = _CONDITIONAL_THREAT_RAW
 
-# gen3_pair_value_route_v1 (v95, Phase C — design_opponent_intent.md §7a(2), the equivariant CRITIC
-# route): the α-reduced unified outcome row for our mon j, injected as TOKEN CONTENT on mon j's own
-# token inside `CLSPool`, on the VALUE pool's copy only. Width == `_PAIR_OUTCOME_RAW`, because the
-# object delivered IS Phase A's row — the point is that the critic has never had the status /
-# neutralization / tempo currency in any per-entity form at all.
-PAIR_VALUE_ROUTE_DIM = _PAIR_OUTCOME_RAW
-
-
 # gen3_value_direct_routes_v1 (v87): two direct CRITIC routes appended at the vf tail, both
 # zero-init. VALUE_CLOCK_DIM — the deadline clock's 3 raw scalars projected for the critic (the
 # v67 clock fix was validated for exactly this reader, and the audit read its surviving

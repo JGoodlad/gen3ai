@@ -328,14 +328,15 @@ def _migrate_config(data: dict) -> dict:
     from agents.model.model_version.shaped_reward import DELETED_SHAPED_REWARD_FIELDS
     for _dead in DELETED_SHAPED_REWARD_FIELDS:
         data.pop(_dead, None)
-    # v131 (deletion pass L1) + v132 (L2) + v133 (L3) + v134 (L4): the RETIRED LEVERS (self-PBRS, frozen-phi PBRS,
+    # v131 (deletion pass L1) + v132 (L2) + v133 (L3) + v134 (L4) + v135 (P11c): the RETIRED LEVERS (self-PBRS, frozen-phi PBRS,
     # PopArt, the distributional value head, value_from_dist, the CVaR value-tail weight, the win-prob
     # aux-BCE coefficient; then the lambda-return / R-rollout targets, the dense auxiliary head and the
     # privileged true-team route; then the distillation loss knobs and the search teacher's scan
     # width; then the counterfactual training half — the cf / Q coefficients and the four cf head
-    # toggles) left the config. A recorded ON value of one that named PARAMETERS or a critic route
-    # (use_popart, value_dist_mode, value_from_dist, dense_aux, value_true_team, cf_evidential,
-    # cf_twin_heads, cf_shadow_critic, q_winprob_mode) is REFUSED on EVERY load — popping it would hand
+    # toggles; then the pair-value critic route, the TD-consistency auxiliary and the opponent-
+    # stratified win-prob weight) left the config. A recorded ON value of one that named PARAMETERS or
+    # a critic route (use_popart, value_dist_mode, value_from_dist, dense_aux, value_true_team,
+    # cf_evidential, cf_twin_heads, cf_shadow_critic, q_winprob_mode, pair_value_route) is REFUSED on EVERY load — popping it would hand
     # SB3 an unplaceable state_dict or run a checkpoint under a critic it was not trained with. The
     # TRAINING-only ones pop silently (a frozen forward never reads them); a RESUME or FORK that would
     # keep training without one is refused BEFORE this runs, from the raw file
@@ -416,6 +417,11 @@ def _migrate_config(data: dict) -> dict:
     # toggles left as FIELDS; their POP (and the structural refusal) is the version-independent block above.
     if version < 134:
         data["config_version"] = 134
+    # v135 (deletion pass P11c) — THE STAMP ONLY, v134's shape: `pair_value_route`, `td_aux_coef` and
+    # `win_prob_strata_weight` left as FIELDS; their POP (and the structural refusal of
+    # `pair_value_route`) is the version-independent block above.
+    if version < 135:
+        data["config_version"] = 135
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

@@ -2,7 +2,7 @@
 
 `--policy-grad-coef` multiplies ONLY the clipped PPO surrogate (`policy_grad_coef * policy_loss`) in the loss
 fold; 1.0 (the default) is the upstream expression byte-for-byte and 0.0 removes the
-policy-gradient term alone (the pure-aux phase the flag was built for). It is the `td_aux_coef` provenance genre exactly:
+policy-gradient term alone (the pure-aux phase the flag was built for). It is the training-only provenance genre exactly:
 TRAINING-only, recorded on `ModelVersion` for provenance, `_resolve`-inherited on a flagless
 resume, and NEVER gated by `check_compatible` — a frozen eval/pool opponent runs no
 loss at all, so gating a loss coefficient there would be a false rejection.

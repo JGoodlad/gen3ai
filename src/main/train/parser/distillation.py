@@ -13,7 +13,7 @@ from main.train.parser.base import BoolFlag
 
 def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their original order."""
-    # --- the RANK TRIPWIRE (gen3_distill_target_gate_v1, config v103). TRAINING-only, the td_aux_coef
+    # --- the RANK TRIPWIRE (gen3_distill_target_gate_v1, config v103). TRAINING-only, the
     # provenance class: argparse default None so `_resolve` can inherit on a flagless resume;
     # recorded on ModelVersion for provenance; never gated. Defaults are byte-identical to today.
     parser.add_argument("--rank-tripwire", "--rank_tripwire", dest="rank_tripwire",
@@ -136,26 +136,6 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "contraction) and NOT --pair-outcome-switch (two quantities, one "
                              "sink, attributable separately). Zero-init projection so ON-at-init "
                              "is bit-identical. STRUCTURAL, version-checked.")
-    parser.add_argument("--pair-value-route", "--pair_value_route",
-                        dest="pair_value_route", action=BoolFlag, default=None,
-                        help="gen3_pair_value_route_v1 (v95, substrate Phase C, "
-                             "design_opponent_intent.md §7a(2) = PV): the α-reduced unified "
-                             "outcome row for our mon j injected as TOKEN CONTENT on mon j's own "
-                             "token inside CLSPool, on the VALUE pool's copy ONLY — so pi is "
-                             "bit-identical at ANY weight. It is the first per-entity route by "
-                             "which the CRITIC reads the status / neutralization / tempo currency "
-                             "at all (today incoming status reaches vf only as the s3 edge "
-                             "family's softmax-normalised RATIO). Token content rather than the "
-                             "v89 value-route seam: a post-pool additive route must collapse the "
-                             "team axis, and the only equivariant collapse is a sum — which "
-                             "cannot tell one mon losing 90%% of its bar from six losing 15%%. "
-                             "⚠️ α is the R1 belief_mean rung UNCONDITIONALLY — ORDERING, not "
-                             "preference: value_cls pools BEFORE the α/β heads are scored. "
-                             "⚠️ C4 RE-ENTRY CONDITION: any α/β-critic route may be BUILT opt-in "
-                             "but its ENABLING owes the C4-style offline gate first (ledger C6 — "
-                             "the delivery line is EXHAUSTED). Requires --damage-op and "
-                             "--damage-topk-k>0. Zero-init so ON-at-init is bit-identical. "
-                             "STRUCTURAL, version-checked.")
     parser.add_argument("--intent-threshold", "--intent_threshold",
                         dest="intent_threshold", action=BoolFlag, default=None,
                         help="gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 "
@@ -280,19 +260,6 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "pair reduction to the R1 belief_mean rung (hard_max builds no reducer "
                              "and would leave nothing to inject). Zero-init => ON starts identical "
                              "to OFF. STRUCTURAL + version-checked: fixed for a run's lifetime.")
-    parser.add_argument("--td-aux-coef", "--td_aux_coef", dest="td_aux_coef",
-                        type=float, default=None,
-                        help="TD-CONSISTENCY auxiliary weight (gen3_td_consistency_aux_v1): add "
-                             "coef * mean[(V(s_t) - r_t - gamma*V(s_t+1))^2] over CONTIGUOUS rollout "
-                             "pairs, on top of the per-state value loss. The per-state MSE never "
-                             "constrains adjacent-state DIFFERENCES, so dV inherits ~2x the state "
-                             "noise where the truth is nearly constant; this is the Bellman identity "
-                             "the critic already owes, made explicit. 0.0 = OFF (loss byte-identical). "
-                             "Pre-registered band 1.0-3.0 (3.0 is the favourite); coef <= 0.1 measured "
-                             "WORSE than control offline, so avoid the small-coef regime. TRAINING-only "
-                             "(not version-locked; inherited on a flagless resume). Costs one extra "
-                             "512-state critic forward per minibatch. Watch td_aux/resid_rms fall and "
-                             "td_aux/resid_mean stay near 0.")
     parser.add_argument("--policy-grad-coef", "--policy_grad_coef", dest="policy_grad_coef",
                         type=float, default=None,
                         help="POLICY-GRADIENT term weight (gen3_policy_grad_coef_v1): multiplies ONLY the "
@@ -304,7 +271,7 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "this loss): every other term keeps "
                              "training while PPO's own policy pull is off. TRAINING-only (not "
                              "version-locked; recorded for provenance and inherited on a flagless "
-                             "resume, the td_aux_coef class). Watch grad/policy_share read ~0 at "
+                             "resume). Watch grad/policy_share read ~0 at "
                              "0.0 — the live confirmation the term is actually gone.")
     parser.add_argument("--move-latent", "--move_latent", dest="move_latent",
                         action=BoolFlag, default=None,
