@@ -68,14 +68,14 @@ pub fn write(
                 row,
                 &mut c.hp_type_label[side * T..(side + 1) * T],
                 &mut c.hp_type_mask[side * T..(side + 1) * T],
-            ),
+            )?,
             "item" => per_slot::write_item(
                 own,
                 truth,
                 row,
                 &mut c.item_label[side * T..(side + 1) * T],
                 &mut c.item_mask[side * T..(side + 1) * T],
-            ),
+            )?,
             "spread" => {
                 let n = spread::N_SPREAD;
                 spread::write(
@@ -91,7 +91,7 @@ pub fn write(
                 )?
             }
             "intent" => {
-                let [kind, num, slot, species] = intent::label(own_trk, truth);
+                let [kind, num, slot, species] = intent::label(own_trk, truth)?;
                 c.opp_action_kind[side] = kind;
                 c.opp_action_num[side] = num;
                 c.opp_switch_slot[side] = slot;

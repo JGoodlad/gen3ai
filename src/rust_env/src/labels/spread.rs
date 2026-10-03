@@ -3,15 +3,18 @@
 //! `build_known_nature_ev_labels`, `belief_tables.true_nature_ev_label`), rule for rule.
 //!
 //! * `belief_spread`: each revealed slot gets its species' TRUE derived stats (atk, def, spa, spd,
-//!   spe) from the OTHER side's own reading (`mon.stats`, the request's `baseStoredStats`); a mon
-//!   with any of the five unknown is omitted (mask 0). A later same-species mon overrides.
+//!   spe) from the OTHER side's own reading (`mon.stats`, the request's `baseStoredStats`). A later
+//!   same-species mon overrides.
 //! * `belief_nature` / `belief_ev` (`gen3_true_spread_labels_v1`): the truth mon's DECLARED spread,
 //!   which the reading backfills from the side's packed team exactly as poke-env does — the
 //!   nature's num and the EVs at their stat-effective `4·⌊ev/4⌋`. A THROWING guard: the declared
 //!   spread, at L100 with its TRUE IVs, must reproduce the five derived stats (else `Err`, which the
 //!   caller makes a FAULT — the Python env raises `SpreadLabelError`). A missing spread or an
-//!   unknown nature is an `Err` too. A mon with an unknown stat or no dex row is omitted (mask 0).
-//!   Read per decision, never cached (F-LC-6: a species-set-keyed cache served stale labels).
+//!   unknown nature is an `Err` too. Read per decision, never cached (F-LC-6: a species-set-keyed
+//!   cache served stale labels).
+//! * 🚨 **No lookup skips** (F-X5-3): a truth mon with an unknown stat or no dex row, and a revealed
+//!   species absent from the truth team, are each an `Err` (they were a silent mask 0). Species are
+//!   matched by DEX NUM (`belief::revealed_nums`: a forme shares its base species' num).
 //!
 //! The nature table is read from the SAME `data/pokemon/gen3_natures.json` the Python facade reads,
 //! from the directory the build's stamp names (the port's compile-time data path), at STARTUP when
@@ -26,7 +29,7 @@ use pokesim::json::Json;
 use pokesim::present::board_reading::BoardReading;
 use pokesim::present::dex::to_id;
 
-use super::belief::{revealed_species, species_known};
+use super::belief::{revealed_nums, species_known, species_num};
 
 pub const N_SPREAD: usize = 5;
 /// `SPREAD_STAT_ORDER` as indices into poke-env's `STAT_KEYS` (hp, atk, def, spa, spd, spe).
@@ -118,28 +121,31 @@ pub fn true_label(
     Ok((num, out))
 }
 
-fn truth_stats(m: &pokesim::present::mon::PMon) -> Option<[i64; N_SPREAD]> {
+/// The truth mon's five derived stats; an unknown one is an `Err` (F-X5-3: it was a silent mask 0).
+fn truth_stats(m: &pokesim::present::mon::PMon) -> Result<[i64; N_SPREAD], String> {
     let mut out = [0i64; N_SPREAD];
     for (j, &i) in STAT_IDX.iter().enumerate() {
-        out[j] = m.stats[i]?;
+        out[j] = m.stats[i].ok_or_else(|| format!("spread labels: truth mon {:?} has no stats ({:?})", m.species, m.stats))?;
     }
-    Some(out)
+    Ok(out)
 }
 
-fn nature_ev_map(truth: &BoardReading) -> Result<Vec<(String, (i64, [i64; N_SPREAD]))>, String> {
-    let mut out: Vec<(String, (i64, [i64; N_SPREAD]))> = Vec::new();
+/// `species num -> (nature num, EVs)` over the truth team, a later same-species mon overriding.
+fn nature_ev_map(truth: &BoardReading) -> Result<Vec<(i64, (i64, [i64; N_SPREAD]))>, String> {
+    let mut out: Vec<(i64, (i64, [i64; N_SPREAD]))> = Vec::new();
     for (_, m) in &truth.team {
-        let Some(derived) = truth_stats(m) else { continue };
+        let derived = truth_stats(m)?;
         let sid = to_id(&m.species);
-        let Some(sd) = tables().species.get(&sid) else { continue };
+        let num = species_num(&sid)?;
+        let sd = tables().species.get(&sid).expect("species_num checked the row");
         let base: [i64; N_SPREAD] = match sd.base_stats {
             Some(b) => std::array::from_fn(|j| b[STAT_IDX[j]].round() as i64),
             None => [0; N_SPREAD],
         };
         let r = true_label(&sid, derived, base, m.nature.as_deref(), m.evs.as_deref(), m.ivs.as_deref())?;
-        match out.iter_mut().find(|(k, _)| *k == sid) {
+        match out.iter_mut().find(|(k, _)| *k == num) {
             Some(e) => e.1 = r,
-            None => out.push((sid, r)),
+            None => out.push((num, r)),
         }
     }
     Ok(out)
@@ -164,35 +170,33 @@ pub fn write(
     ev.fill(0.0);
     ev_mask.fill(0.0);
     let known = species_known(row);
-    let revealed: Vec<String> = revealed_species(own).into_iter().map(to_id).collect();
-    // species -> TRUE derived stats (a later same-species mon overrides)
-    let mut stats: Vec<(String, [i64; N_SPREAD])> = Vec::new();
+    let revealed = revealed_nums(own, truth)?; // each one on the truth team, by num
+    // species num -> TRUE derived stats (a later same-species mon overrides)
+    let mut stats: Vec<(i64, [i64; N_SPREAD])> = Vec::new();
     for (_, m) in &truth.team {
-        if let Some(s) = truth_stats(m) {
-            let sid = to_id(&m.species);
-            match stats.iter_mut().find(|(k, _)| *k == sid) {
-                Some(e) => e.1 = s,
-                None => stats.push((sid, s)),
-            }
+        let s = truth_stats(m)?;
+        let num = species_num(&to_id(&m.species))?;
+        match stats.iter_mut().find(|(k, _)| *k == num) {
+            Some(e) => e.1 = s,
+            None => stats.push((num, s)),
         }
     }
     let ne = nature_ev_map(truth)?;
     let slots = (0..TEAM_SIZE).filter(|&i| known[i] >= 0.5);
-    for (slot, sp) in slots.zip(revealed.iter()) {
-        if let Some((_, s)) = stats.iter().find(|(k, _)| k == sp) {
-            for j in 0..N_SPREAD {
-                spread[slot * N_SPREAD + j] = s[j] as f32;
-            }
-            spread_mask[slot] = 1.0;
+    for (slot, &sp) in slots.zip(revealed.iter()) {
+        // every truth mon is in both maps (an omission is an `Err` above) and `sp` is on the team
+        let (_, s) = stats.iter().find(|(k, _)| *k == sp).ok_or_else(|| format!("spread labels: no truth stats for num {sp}"))?;
+        for j in 0..N_SPREAD {
+            spread[slot * N_SPREAD + j] = s[j] as f32;
         }
-        if let Some((_, (num, evs))) = ne.iter().find(|(k, _)| k == sp) {
-            nature[slot] = *num;
-            nature_mask[slot] = 1.0;
-            for j in 0..N_SPREAD {
-                ev[slot * N_SPREAD + j] = evs[j] as f32;
-            }
-            ev_mask[slot] = 1.0;
+        spread_mask[slot] = 1.0;
+        let (_, (num, evs)) = ne.iter().find(|(k, _)| *k == sp).ok_or_else(|| format!("spread labels: no truth spread for num {sp}"))?;
+        nature[slot] = *num;
+        nature_mask[slot] = 1.0;
+        for j in 0..N_SPREAD {
+            ev[slot * N_SPREAD + j] = evs[j] as f32;
         }
+        ev_mask[slot] = 1.0;
     }
     Ok(())
 }

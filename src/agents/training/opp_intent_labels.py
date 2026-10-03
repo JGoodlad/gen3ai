@@ -49,6 +49,10 @@ LABEL_IS_FOR_PREVIOUS_DECISION = True
 SWITCH_SLOT_NONE = -100
 
 
+class IntentLabelError(RuntimeError):
+    """An intent-label lookup that cannot be made (F-X5-3) — never a silent UNKNOWN / species 0."""
+
+
 def build_opp_intent_label(
     delta,
     move_num_of,
@@ -79,6 +83,10 @@ def build_opp_intent_label(
 
     `move_num` is 0 unless `kind == KIND_MOVE`. `switch_slot` is `SWITCH_SLOT_NONE` unless the
     switch-in was REVEALED; `switch_species` is 0 unless `kind == KIND_SWITCH`.
+
+    A move or switch-in species the injected lookup cannot name RAISES `IntentLabelError` (F-X5-3,
+    `gen3_label_lookup_guard_v1`): it was a silent UNKNOWN label / species 0. The Rust writer
+    (`rust_env/src/labels/intent.rs`) is the production one and raises the same way.
     """
     if delta is None:
         return KIND_UNKNOWN, 0, SWITCH_SLOT_NONE, 0
@@ -104,15 +112,19 @@ def build_opp_intent_label(
                 or getattr(delta, "opp_switch_is_replacement", False)):
             return KIND_UNKNOWN, 0, SWITCH_SLOT_NONE, 0
         slot = opp_slot_of_species(switch_to)
-        sp = None if species_num_of is None else species_num_of(switch_to)
+        sp = 0
+        if species_num_of is not None:
+            sp = species_num_of(switch_to)
+            if sp is None:
+                raise IntentLabelError(f"switch-in species {switch_to!r} has no num (F-X5-3)")
         return (KIND_SWITCH, 0,
                 (SWITCH_SLOT_NONE if slot is None else int(slot)),
-                (0 if sp is None else int(sp)))
+                int(sp))
 
     if move_id:
         num = move_num_of(move_id)
         if num is None:
-            return KIND_UNKNOWN, 0, SWITCH_SLOT_NONE, 0   # unnameable ⇒ masked, never guessed
+            raise IntentLabelError(f"move {move_id!r} has no num (F-X5-3: it was a silent UNKNOWN label)")
         return KIND_MOVE, int(num), SWITCH_SLOT_NONE, 0
 
     return KIND_UNKNOWN, 0, SWITCH_SLOT_NONE, 0

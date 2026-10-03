@@ -6,14 +6,23 @@
 //!   Mimic-resolved, `Move._id`, a Hidden Power TYPED).
 //! * READING: `species_known` read from the side's OWN row (the cells `BeliefSlots` keys on), and
 //!   the revealed mons in encoder slot order (`reading.opp`, the list the encoder packs).
-//! * `assign_hidden_to_slots`: hidden = truth team minus the revealed species (a species with no
-//!   num skipped), STABLE-sorted by species num; the j-th fills the j-th believed slot
-//!   (`species_known < 0.5`); the rest PAD (-1). Moves: up to 4 nums in set order, an id with no
-//!   num skipped.
+//! * `assign_hidden_to_slots`: hidden = truth team minus the revealed species, STABLE-sorted by
+//!   species num; the j-th fills the j-th believed slot (`species_known < 0.5`); the rest PAD (-1).
+//!   Moves: up to 4 nums in set order.
 //! * `known_moves`: each revealed slot (the leading-contiguous block, in order) gets its species'
 //!   FULL truth moveset (the first truth mon of that species).
-//! * A revealed block that is NOT leading-contiguous is a FAULT (the Python env raises
-//!   `RuntimeError` there: crash over mis-slotted supervision).
+//! * A revealed species is matched to its truth mon by DEX NUM, never by id: a forme SHARES its
+//!   base species' num (`gen3_data.species.base_form_ids`; `gen3_species.json` carries every gen-3
+//!   forme under its base num, and Species Clause is by num), so a forme the two readings spell
+//!   differently still matches.
+//!
+//! 🚨 **Every lookup THROWS** (F-X5-3, `gen3_label_lookup_guard_v1`). A species or move with no dex
+//! num, a revealed species absent from the truth team, more hidden truth mons than believed slots,
+//! and a revealed block that is NOT leading-contiguous are each an `Err` — a FAULT, which fails the
+//! batch and poisons the pool (`core::refusal`). The writer used to SKIP the first three in
+//! silence, which would undercount a label (and X5's OTHER label) with nothing to show for it.
+//! Measured dormant before the guard (2026-10-03): 0 skips over 4,001 pool + corpus episodes
+//! (572,451 decisions) and 30,000 ladder-corpus episodes (5,253,432 decisions).
 
 use pokesim::encoder::data::tables;
 use pokesim::encoder::layout::{OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_SPECIES_KNOWN_OFFSET, TEAM_SIZE};
@@ -33,30 +42,62 @@ pub fn revealed_species(own: &BoardReading) -> Vec<&str> {
     own.opp.iter().map(|(_, m)| m.species.as_str()).collect()
 }
 
-fn species_num(id: &str) -> Option<i64> {
-    tables().species.get(id).map(|r| r.num as i64)
-}
-
-fn move_num(id: &str) -> Option<i64> {
-    tables().moves.get(id).map(|r| r.num)
-}
-
-/// Up to `MOVE_SLOTS` move nums of one truth mon, in set order, unknown ids skipped.
-fn move_nums(mon: &pokesim::present::mon::PMon, out: &mut [i64]) {
-    let mut m = 0;
-    for (_, mv) in mon.moves.moves_ref() {
-        if m >= MOVE_SLOTS {
-            break;
-        }
-        if let Some(n) = move_num(&to_id(&mv.id)) {
-            out[m] = n;
-            m += 1;
-        }
+/// The dex num of a species id — an `Err` when `gen3_species.json` has no row for it, or a row
+/// whose num is not positive (the table reads a missing `num` as 0). Never a skip (F-X5-3).
+pub fn species_num(id: &str) -> Result<i64, String> {
+    match tables().species.get(id) {
+        Some(r) if r.num >= 1.0 => Ok(r.num as i64),
+        Some(r) => Err(format!("label: species {id:?} has dex num {} in gen3_species.json (not a valid num)", r.num)),
+        None => Err(format!(
+            "label: species {id:?} has no row in gen3_species.json — a label lookup never skips a species (F-X5-3)"
+        )),
     }
 }
 
-/// Write the side's three columns (`bs` 6, `bm` 6×4, `km` 6×4). `Err` = the revealed block is not
-/// leading-contiguous (the caller turns it into a FAULT).
+/// The dex num of a move id — an `Err` when `gen3_moves.json` has no row for it, or a non-positive
+/// num. Never a skip (F-X5-3).
+pub fn move_num(id: &str) -> Result<i64, String> {
+    match tables().moves.get(id) {
+        Some(r) if r.num >= 1 => Ok(r.num),
+        Some(r) => Err(format!("label: move {id:?} has dex num {} in gen3_moves.json (not a valid num)", r.num)),
+        None => Err(format!("label: move {id:?} has no row in gen3_moves.json — a label lookup never skips a move (F-X5-3)")),
+    }
+}
+
+/// The truth-team index of the FIRST mon whose species has dex num `num` (a forme shares its base
+/// species' num), or an `Err` naming the truth team: a species the OTHER side does not field is a
+/// broken reading, never a slot left PAD in silence.
+pub fn truth_index(truth: &BoardReading, num: i64, what: &str) -> Result<usize, String> {
+    for (i, (_, m)) in truth.team.iter().enumerate() {
+        if species_num(&to_id(&m.species))? == num {
+            return Ok(i);
+        }
+    }
+    let team: Vec<String> = truth.team.iter().map(|(_, m)| to_id(&m.species)).collect();
+    Err(format!("label: {what} (dex num {num}) is not on the truth team {team:?}"))
+}
+
+/// The revealed species' dex nums, in encoder slot order, each checked to be on the truth team.
+pub fn revealed_nums(own: &BoardReading, truth: &BoardReading) -> Result<Vec<i64>, String> {
+    let mut out = Vec::with_capacity(TEAM_SIZE);
+    for sp in revealed_species(own) {
+        let num = species_num(&to_id(sp))?;
+        truth_index(truth, num, &format!("revealed species {sp:?}"))?;
+        out.push(num);
+    }
+    Ok(out)
+}
+
+/// Up to `MOVE_SLOTS` move nums of one truth mon, in set order; a move with no num is an `Err`.
+fn move_nums(mon: &pokesim::present::mon::PMon, out: &mut [i64]) -> Result<(), String> {
+    for (m, (_, mv)) in mon.moves.moves_ref().into_iter().take(MOVE_SLOTS).enumerate() {
+        out[m] = move_num(&to_id(&mv.id)).map_err(|e| format!("{e} (truth mon {:?})", mon.species))?;
+    }
+    Ok(())
+}
+
+/// Write the side's three columns (`bs` 6, `bm` 6×4, `km` 6×4). `Err` = a broken label invariant
+/// (module docs; the caller turns it into a FAULT).
 pub fn write(own: &BoardReading, truth: &BoardReading, row: &[f32], bs: &mut [i64], bm: &mut [i64], km: &mut [i64]) -> Result<(), String> {
     bs.fill(PAD);
     bm.fill(PAD);
@@ -69,31 +110,33 @@ pub fn write(own: &BoardReading, truth: &BoardReading, row: &[f32], bs: &mut [i6
              packing changed, breaking the believed-slot alignment with the model's BeliefSlots"
         ));
     }
-    let revealed: Vec<String> = revealed_species(own).into_iter().map(to_id).collect();
+    let revealed = revealed_nums(own, truth)?;
     // ---- belief_species / belief_moves (the unknown slots)
     let mut hidden: Vec<(i64, usize)> = Vec::with_capacity(TEAM_SIZE);
     for (idx, (_, m)) in truth.team.iter().enumerate() {
-        let sp = to_id(&m.species);
-        if revealed.contains(&sp) {
-            continue;
-        }
-        if let Some(num) = species_num(&sp) {
+        let num = species_num(&to_id(&m.species))?;
+        if !revealed.contains(&num) {
             hidden.push((num, idx));
         }
     }
     hidden.sort_by_key(|t| t.0); // stable, as Python's sort
-    let believed = (0..TEAM_SIZE).filter(|&i| known[i] < 0.5);
-    for (j, slot) in believed.enumerate() {
-        let Some(&(num, idx)) = hidden.get(j) else { break };
+    let believed: Vec<usize> = (0..TEAM_SIZE).filter(|&i| known[i] < 0.5).collect();
+    if hidden.len() > believed.len() {
+        return Err(format!(
+            "belief labels: {} hidden truth mons but only {} believed slots — a hidden mon would go unlabelled",
+            hidden.len(),
+            believed.len()
+        ));
+    }
+    for (&slot, &(num, idx)) in believed.iter().zip(&hidden) {
         bs[slot] = num;
-        move_nums(&truth.team[idx].1, &mut bm[slot * MOVE_SLOTS..(slot + 1) * MOVE_SLOTS]);
+        move_nums(&truth.team[idx].1, &mut bm[slot * MOVE_SLOTS..(slot + 1) * MOVE_SLOTS])?;
     }
     // ---- known_moves (the revealed slots): the species' first truth mon
     let revealed_slots = (0..TEAM_SIZE).filter(|&i| known[i] >= 0.5);
-    for (slot, sp) in revealed_slots.zip(revealed.iter()) {
-        if let Some((_, m)) = truth.team.iter().find(|(_, m)| to_id(&m.species) == *sp) {
-            move_nums(m, &mut km[slot * MOVE_SLOTS..(slot + 1) * MOVE_SLOTS]);
-        }
+    for (slot, &num) in revealed_slots.zip(revealed.iter()) {
+        let idx = truth_index(truth, num, "a revealed species")?;
+        move_nums(&truth.team[idx].1, &mut km[slot * MOVE_SLOTS..(slot + 1) * MOVE_SLOTS])?;
     }
     Ok(())
 }

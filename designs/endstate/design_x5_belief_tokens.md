@@ -412,8 +412,9 @@ A reduction that fails either test is a bug: a token that "counts as a whole mon
   through `snapshot._DEAD_FEK_*`, as the P11b deletions do.
 
 **Rust.** No runtime observation or label change.
-- One label-writer guard: `labels/belief.rs:79-81` silently drops a species with no dex number, which would undercount
-  an OTHER label. Make it throw (F-X5-3).
+- One label-writer guard: `labels/belief.rs:79-81` silently dropped a species with no dex number, which would undercount
+  an OTHER label (F-X5-3). **FIXED 2026-10-03** (`gen3_label_lookup_guard_v1`): every Rust label writer now returns an
+  `Err` (a FAULT) on a lookup it cannot make, and species match by dex num; measured dormant before the fix (0 skips).
 - The dex-row table's generator uses the existing encoder.
 - The obs-golden linchpin and the Rust observation-parity gates are untouched by construction. Rerunning them is the
   check.
@@ -847,7 +848,7 @@ The X26 baseline launches on `fixed_mass` (§9 Q4).
 |---|---|
 | F-X5-1 | **Stale docs.** `ARCHITECTURE.md` §2.1 says 36 tokens and §2.3 says 29; production is 61 (32 event seats). It also says "132" while the code's `MODEL_CONFIG_VERSION` is 134. `delivery_graph.py:973` counts 29. `design_q_head.md` §1 says "29 → 31" (pointer added here). `HiddenOppBeliefPool` reaches the critic too. Out of scope to fix in this doc unit (standing rule 9); reported. |
 | F-X5-2 | The blob's physics harm (Jensen gap, attacker gate) is UNMEASURED. X5's justification rests on intent, calibration and Q / search, not on a measured physics loss. |
-| F-X5-3 | `rust_env/src/labels/belief.rs:79-81` silently drops a species with no dex number, which would undercount OTHER labels. Make it throw (U1). |
+| F-X5-3 | **FIXED 2026-10-03** (`gen3_label_lookup_guard_v1`; `CHANGELOG.md` "F-X5-3"). `rust_env/src/labels/belief.rs:79-81` silently dropped a species with no dex number, which would undercount OTHER labels. Every Rust label writer (belief, hp_type, item, spread, intent) now returns an `Err` (a FAULT) on a lookup it cannot make, and matches species by dex num (formes). It never fired: 0 skips over 34,001 measured episodes (5.8M decisions), so no run's labels were affected. Pinned by `src/rust_env/tests/label_lookup_guard_test.rs`. |
 | F-X5-4 | The K9 harness builds a different INIT at 8 threads; `build_learner` must pin threads itself (§6). |
 | F-X5-5 | Two different untaught opponents carry the 3.69 and 4.90 floors; they are not one scale. |
 | F-X5-6 | The sizing and battery non-inferiority rules used a CI that omits run variance (§7.1). |
@@ -935,3 +936,4 @@ bump" understated the build. The token count is right; the physics, pointer and 
 | 2026-10-03 | A/B threshold (ORCHESTRATOR, delegated by the owner) | **One-sided α = 0.05, power 0.8. P0 FIRST picks the primary meter.** (i) If P0's head-to-head run floor σ_h ≤ 1.5 pp, the primary is the mirrored head-to-head with δ = **3.5 pp**, K = 3 → 5 on the §7.4 two-look O'Brien–Fleming plan, and the outside panel (frozen pool snapshots, bots, SmallRL) as a GUARD that must itself be non-inferior at δ. (ii) Otherwise the primary is the untaught meter with δ = **4.3 pp**, K = 5 → 8 (two looks, information fraction 5/8, boundaries computed and committed at registration, before any arm launches). The §7.4 speed rule is unchanged. α = 0.05 rather than 0.025 because X5 is the intended end state: the test exists to catch HARM, and a false "non-inferior" costs at most δ, which X26 then measures anyway. | δ = 7 pp at K = 3 (too loose: the owner finds 5 pp "a lot"); a GSPRT on one seed pair (ignores run variance, F-X5-6) | §7; owner delegated 2026-10-03 |
 | 2026-10-03 | Presence bias + pointer (ORCHESTRATOR) | Plain log-w bias (keeps I2 exact); the flat pointer BUNDLED with the tokens (one retrain boundary) | A learned scale; the pointer as a second arm | §9 Q5, Q6 |
 | 2026-10-03 | Order (OWNER) | T15, the bottleneck profile and P0 run DURING the X5 build, not after the A/B | Profiling after the A/B (X26 slips about a day) | owner 2026-10-03 |
+| 2026-10-03 | F-X5-3 label-writer guard (BUILT, GIGO unit) | Every Rust label writer returns an `Err` (a FAULT) on any lookup it cannot make; species match by DEX NUM (formes) | Throw only at `belief.rs:79-81` (the other writers carried the same skip); keep id matching (a forme read two ways would count as both revealed and hidden) | §3.8, §8.2; `CHANGELOG.md` "F-X5-3"; 0 skips over 34,001 measured episodes |

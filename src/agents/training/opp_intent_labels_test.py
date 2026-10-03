@@ -8,7 +8,7 @@ un-interpretable, because the denominator would silently include rows where no d
 import pytest
 
 from agents.training.opp_intent_labels import (KIND_MOVE, KIND_SWITCH, KIND_UNKNOWN,
-                                               SWITCH_SLOT_NONE, build_opp_intent_label)
+                                               SWITCH_SLOT_NONE, IntentLabelError, build_opp_intent_label)
 
 _NUMS = {"thunderbolt": 85, "icebeam": 58, "roar": 46}
 _SLOTS = {"blissey": 3, "skarmory": 5}
@@ -61,8 +61,15 @@ def test_a_forced_switch_window_carries_no_decision():
     assert build_opp_intent_label(_D(move="thunderbolt", forced=True), _num, _slot, _spnum)[0] == KIND_UNKNOWN
 
 
-def test_an_unnameable_move_is_masked_not_guessed():
-    assert build_opp_intent_label(_D(move="somethingnew"), _num, _slot, _spnum)[0] == KIND_UNKNOWN
+def test_an_unnameable_move_RAISES_never_a_silent_unknown():
+    """F-X5-3: a move the lookup cannot name was a silent UNKNOWN label; it is a typed error now."""
+    with pytest.raises(IntentLabelError, match="somethingnew"):
+        build_opp_intent_label(_D(move="somethingnew"), _num, _slot, _spnum)
+
+
+def test_an_unnameable_switch_species_RAISES_never_a_silent_zero():
+    with pytest.raises(IntentLabelError, match="nomon"):
+        build_opp_intent_label(_D(switch="nomon"), _num, _slot, _spnum)
 
 
 def test_a_switch_to_an_unaddressable_slot_is_masked():

@@ -101,12 +101,28 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
 
 | family | keys | the Rust derivation |
 |---|---|---|
-| belief | `belief_species`, `belief_moves`, `known_moves` | `assign_hidden_to_slots`: hidden = truth team minus the revealed species (skipping a species with no num), sorted by species num; the j-th fills the j-th believed slot (`species_known < 0.5`). Moves are num-mapped in set order, max 4, unknown ids skipped. `known_moves` gives each revealed slot its species' full truth moveset. Nums come from `mappings.json`'s `species` / `moves` `num`, the same tables the encoder's embeddings index |
+| belief | `belief_species`, `belief_moves`, `known_moves` | `assign_hidden_to_slots`: hidden = truth team minus the revealed species, MATCHED BY DEX NUM (a forme shares its base species' num), sorted by species num; the j-th fills the j-th believed slot (`species_known < 0.5`). Moves are num-mapped in set order, max 4. `known_moves` gives each revealed slot its species' full truth moveset. Nums come from `mappings.json`'s `species` / `moves` `num`, the same tables the encoder's embeddings index |
 | spread | the 6 spread keys | the truth `stats` in (atk, def, spa, spd, spe) order. Nature / EVs are the truth mon's DECLARED spread (`nature`, `evs`, `ivs`, which the reading backfills from the side's packed team exactly as poke-env's `backfill_spread_from_teambuilder` does): the nature's num and the EVs at `4·⌊ev/4⌋` — `belief_tables.true_nature_ev_label`, rule for rule (`gen3_true_spread_labels_v1`). A THROWING guard: the declared spread at L100 with its true IVs must reproduce the five stats, or the label write is an `Err` (a FAULT; Python raises `SpreadLabelError`). Read per decision, never cached |
 | hp_type | `hp_type_label`, `hp_type_mask` | the first `hiddenpower<type>` move of the truth mon → the index in `belief_labels.HP_TYPE_NAMES` |
-| item | `item_label`, `item_mask` | the truth mon's CURRENT item (`None` / "" ⇒ 0) → the item num (`gen3_data.items`); an unknown id is absent (mask 0) |
+| item | `item_label`, `item_mask` | the truth mon's CURRENT item (`None` / "" ⇒ 0) → the item num (`gen3_data.items`); an unknown id is an `Err` |
 | margin | `win_margin` | `material_margin(live)` on the side's `present()` view. **Timing:** Python computes it in `calc_reward` on the same board the obs describes, and 0.0 at reset |
-| intent | the 4 intent keys | the port's `trackers::IntentLabel` (slice T already gates it against the Python label), num-mapped. Hidden Power resolves to the attacker's truth typed num (`_intent_move_num_resolver`). `opp_switch_slot` uses the PREVIOUS decision's revealed-slot map (`_opp_slot_map_prev`); `SWITCH_SLOT_NONE` and the zero label come from `opp_intent_labels.py` |
+| intent | the 4 intent keys | the port's `trackers::IntentLabel` (slice T already gates it against the Python label), num-mapped. Hidden Power resolves to the attacker's truth typed num (`_intent_move_num_resolver`). `opp_switch_slot` uses the PREVIOUS decision's revealed-slot map (`_opp_slot_map_prev`); `SWITCH_SLOT_NONE` and the zero label come from `opp_intent_labels.py`. A move or switch-in with no num, or a Hidden Power attacker off the truth team, is an `Err` |
+
+**🚨 No lookup ever SKIPS (F-X5-3, `gen3_label_lookup_guard_v1`, 2026-10-03).** Every `core` family's
+writer returns an `Err` — a FAULT, which fails the batch and poisons the pool — when a lookup cannot
+be made: a species, move or item with no num; a revealed species that is not on the truth team
+(matched by DEX NUM in every family, so a forme the two readings spell differently still matches);
+a truth mon with an unknown stat; more hidden truth mons than believed slots. Until then the
+writers SKIPPED each of these in silence (a shorter hidden list, a mask 0, a silent UNKNOWN / 237 /
+species 0), which would undercount a label with nothing to show for it. The only absences left are
+legitimate ones: a revealed mon that runs no Hidden Power, and believed slots beyond a SHORT team.
+**Measured dormant before the guard:** 0 skips over 4,001 pool + bridge-corpus episodes (572,451
+decisions) and 30,000 ladder-corpus episodes (5,253,432 decisions), random policy, every family
+declared; the guarded writers then ran 4,001 + 30,000 fresh-seed episodes with 0 FAULTs. No
+production label row was ever dropped. Pinned by `src/rust_env/tests/label_lookup_guard_test.rs`
+(seven of its eight cases fail on a revert of the guard). The Python reference builders
+(`agents/observation/belief_labels.py`, `agents/training/opp_intent_labels.py`) raise
+`BeliefLabelError` / `IntentLabelError` the same way.
 
 ## 3. Hazards the (since-deleted) parity gate had to decide
 

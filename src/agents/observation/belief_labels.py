@@ -19,6 +19,16 @@ a separate Dict-obs key consumed only by the aux loss), so it cannot leak into t
 
 Pure + dependency-free (caller injects the name->num maps and a normaliser) so it unit-tests with
 synthetic data and stays off the obs hot path unless belief is enabled.
+
+Since deletion pass U3 the Rust env core (`src/rust_env/src/labels/`) is the ONLY production writer
+of these labels; this module is the REFERENCE definition its docs cite, rule for rule.
+
+🚨 **A lookup that cannot be made RAISES `BeliefLabelError`** (F-X5-3, `gen3_label_lookup_guard_v1`):
+a species or move with no num, a revealed species absent from the privileged team, more hidden
+mons than believed slots, and (for the per-slot builders) a revealed species with no value in the
+caller's map. These used to be skipped / left PAD "for robustness on the hot path", which silently
+undercounts a label. The legitimate absences stay absences: a revealed mon that runs no Hidden
+Power, and believed slots beyond a SHORT team (fewer than six mons).
 """
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 import numpy as np
@@ -27,6 +37,17 @@ from agents.observation.constants import TEAM_SIZE
 
 BELIEF_MOVE_SLOTS = 4  # moves labelled per hidden mon (Gen 3 mons have <= 4 moves)
 PAD = -1
+
+
+class BeliefLabelError(RuntimeError):
+    """A label lookup that cannot be made (F-X5-3) — never a silently skipped species, move or slot."""
+
+
+def _num(table: Dict[str, int], name: str, normalize: Callable[[str], str], what: str) -> int:
+    num = table.get(normalize(name))
+    if num is None:
+        raise BeliefLabelError(f"{what} {name!r} ({normalize(name)!r}) has no num — a label lookup never skips (F-X5-3)")
+    return int(num)
 
 
 def assign_hidden_to_slots(
@@ -43,30 +64,28 @@ def assign_hidden_to_slots(
 
     Returns a list of (encoder_opp_slot, team_index) pairs in believed-slot order — `team_index` is
     the index into `team_species` (and the caller's parallel team/mon lists) of the hidden mon
-    assigned to that slot. Mirrors the prior in-line logic exactly: hidden = full team minus revealed
-    (skipping species not in the num map), sorted by species num ascending; believed slots = the
-    trailing un-revealed opp slots (species_known < 0.5) in encoder order; the j-th sorted hidden mon
-    fills the j-th believed slot. Slots beyond a clean 1-1 assignment are dropped (left to the caller
-    to PAD)."""
-    revealed = {normalize(s) for s in revealed_species}
-    hidden: List[Tuple[int, int]] = []   # (species_num, team_index)
-    for idx, sp in enumerate(team_species):
-        sp_norm = normalize(sp)
-        if sp_norm in revealed:
-            continue
-        num = species_to_num.get(sp_norm)
-        if num is None:
-            continue
-        hidden.append((num, idx))
-    hidden.sort(key=lambda t: t[0])
+    assigned to that slot. hidden = full team minus the revealed species, MATCHED BY NUM (a forme
+    shares its base species' num), sorted by species num ascending; believed slots = the trailing
+    un-revealed opp slots (species_known < 0.5) in encoder order; the j-th sorted hidden mon fills
+    the j-th believed slot. Believed slots beyond a SHORT team stay unassigned (the caller PADs them).
+
+    Raises `BeliefLabelError` (F-X5-3) on a species with no num, a revealed species absent from the
+    team, or more hidden mons than believed slots — each was a silent skip / truncation."""
+    team_nums = [_num(species_to_num, sp, normalize, "species") for sp in team_species]
+    revealed = set()
+    for sp in revealed_species:
+        num = _num(species_to_num, sp, normalize, "revealed species")
+        if num not in team_nums:
+            raise BeliefLabelError(f"revealed species {sp!r} (num {num}) is not on the privileged team {list(team_species)}")
+        revealed.add(num)
+    hidden: List[Tuple[int, int]] = sorted(
+        ((num, idx) for idx, num in enumerate(team_nums) if num not in revealed), key=lambda t: t[0])
 
     believed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] < 0.5]
-    assignment: List[Tuple[int, int]] = []
-    for j, slot in enumerate(believed_slots):
-        if j >= len(hidden):
-            break  # fewer hidden mons than believed slots (parse mismatch) — leave the rest PAD
-        assignment.append((slot, hidden[j][1]))
-    return assignment
+    if len(hidden) > len(believed_slots):
+        raise BeliefLabelError(f"{len(hidden)} hidden mons but only {len(believed_slots)} believed slots — "
+                               "a hidden mon would go unlabelled")
+    return [(slot, hidden[j][1]) for j, slot in enumerate(believed_slots[:len(hidden)])]
 
 
 def build_belief_labels(
@@ -86,8 +105,8 @@ def build_belief_labels(
     species_to_num / move_to_num : name(normalised) -> embedding-index num.
     normalize                 : id-normaliser applied to every name before map lookup.
 
-    Unknown names (not in a map) are skipped/padded rather than raising — robustness on the hot path.
-    Slots/mons beyond a clean 1-1 assignment stay PAD (not scored)."""
+    A name with no num RAISES `BeliefLabelError` (F-X5-3). Believed slots beyond a short team stay
+    PAD (not scored)."""
     belief_species = np.full(TEAM_SIZE, PAD, dtype=np.int64)
     belief_moves = np.full((TEAM_SIZE, BELIEF_MOVE_SLOTS), PAD, dtype=np.int64)
 
@@ -97,15 +116,8 @@ def build_belief_labels(
         team_species, revealed_species, species_known, species_to_num, normalize
     ):
         belief_species[slot] = species_to_num[normalize(team_species[team_idx])]
-        m = 0
-        for mv in team_moves[team_idx]:
-            if m >= BELIEF_MOVE_SLOTS:
-                break
-            mv_num = move_to_num.get(normalize(mv))
-            if mv_num is None:
-                continue
-            belief_moves[slot, m] = mv_num
-            m += 1
+        for m, mv in enumerate(list(team_moves[team_idx])[:BELIEF_MOVE_SLOTS]):
+            belief_moves[slot, m] = _num(move_to_num, mv, normalize, "move")
 
     return belief_species, belief_moves
 
@@ -134,7 +146,9 @@ def build_known_move_labels(
     species_known                  : per encoder opp-slot 0/1 (1 revealed, 0 believed).
     move_to_num / normalize        : name(normalised) -> embedding-num map + id-normaliser.
 
-    Unknown names are skipped/padded (never raises — hot path)."""
+    A revealed species absent from the privileged team, or a move with no num, RAISES
+    `BeliefLabelError` (F-X5-3; both were skipped). The Rust writer matches species by num; this
+    reference matches by normalised name (it is given no species map)."""
     known_moves = np.full((TEAM_SIZE, BELIEF_MOVE_SLOTS), PAD, dtype=np.int64)
     # privileged species_norm -> full moveset (first occurrence; Gen-3 OU species-clause ⇒ unique).
     full_by_species: Dict[str, List[str]] = {}
@@ -148,16 +162,9 @@ def build_known_move_labels(
     for slot, sp in zip(revealed_slots, revealed_species_in_slot_order):
         moves = full_by_species.get(normalize(sp))
         if moves is None:
-            continue
-        m = 0
-        for mv in moves:
-            if m >= BELIEF_MOVE_SLOTS:
-                break
-            mv_num = move_to_num.get(normalize(mv))
-            if mv_num is None:
-                continue
-            known_moves[slot, m] = mv_num
-            m += 1
+            raise BeliefLabelError(f"revealed species {sp!r} is not on the privileged team {list(team_species)}")
+        for m, mv in enumerate(list(moves)[:BELIEF_MOVE_SLOTS]):
+            known_moves[slot, m] = _num(move_to_num, mv, normalize, "move")
     return known_moves
 
 
@@ -190,8 +197,8 @@ def build_known_spread_labels(
     once the species is revealed) — so the DamageOperator computes damage against the opponent's REAL bulk/
     offense/speed instead of sitting at the usage-mean prior. `mask`=1 only where a valid true spread is
     present (revealed slot whose species maps to a complete 5-stat tuple); believed / pad / incomplete
-    slots stay mask=0 and are NOT scored. Never raises (hot path) — an unmappable/incomplete slot is
-    silently left mask=0.
+    slots stay mask=0 and are NOT scored. A revealed slot whose species has no complete tuple RAISES
+    `BeliefLabelError` (F-X5-3; it was a silent mask 0).
 
     species_to_spread : {normalised species -> (atk,def,spa,spd,spe)} (a complete tuple, or absent/None to
                         skip). Caller computes the TRUE derived stats (e.g. from agent2's own team's
@@ -202,7 +209,7 @@ def build_known_spread_labels(
     for slot, sp in zip(revealed_slots, revealed_species_in_slot_order):
         st = species_to_spread.get(normalize(sp))
         if st is None or len(st) != N_SPREAD_STATS or any(v is None for v in st):
-            continue
+            raise BeliefLabelError(f"revealed species {sp!r} has no complete true spread ({st!r})")
         spread[slot] = np.asarray(st, dtype=np.float32)
         mask[slot] = 1.0
     return spread, mask
@@ -226,8 +233,8 @@ def build_known_nature_ev_labels(
 
     Each REVEALED opp slot (species_known==1) whose species maps to a `(nature_num, [ev×5])` label (the
     caller reads agent2's TRUE declared spread via `belief_tables.true_nature_ev_label`) gets the true
-    nature index + EVs + mask 1; unmappable/believed/pad slots stay mask 0 (NOT scored). Never raises (hot
-    path). The labels ride a training-only Dict-obs key read ONLY by the nature/EV loss — never the forward.
+    nature index + EVs + mask 1; believed/pad slots stay mask 0 (NOT scored). A revealed slot with no
+    valid label RAISES `BeliefLabelError` (F-X5-3; it was a silent mask 0). The labels ride a training-only Dict-obs key read ONLY by the nature/EV loss — never the forward.
 
     species_to_nature_ev : {normalised species -> (nature_num, [atk,def,spa,spd,spe] EVs)} (absent → skip)."""
     nature = np.zeros(TEAM_SIZE, dtype=np.int64)
@@ -237,11 +244,9 @@ def build_known_nature_ev_labels(
     revealed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] >= 0.5]
     for slot, sp in zip(revealed_slots, revealed_species_in_slot_order):
         ne = species_to_nature_ev.get(normalize(sp))
-        if ne is None:
-            continue
+        if ne is None or ne[0] is None or ne[1] is None or len(ne[1]) != N_SPREAD_STATS:
+            raise BeliefLabelError(f"revealed species {sp!r} has no valid nature/EV label ({ne!r})")
         nnum, evs = ne
-        if nnum is None or evs is None or len(evs) != N_SPREAD_STATS:
-            continue
         nature[slot] = int(nnum)
         nmask[slot] = 1.0
         ev[slot] = np.asarray(evs, dtype=np.float32)
@@ -292,7 +297,7 @@ def build_hp_type_labels(
     HP type even once it fires, so this is a hindsight-privileged (agent2-team) label — training-only, it
     never enters the obs vector / the pi-vf forward, so it cannot leak. `mask`=1 only at a revealed slot
     whose species maps to a valid HP type; revealed-no-HP / believed / pad slots stay mask=0 (NOT scored).
-    Never raises (hot path).
+    A mapped type outside 0..15 RAISES `BeliefLabelError` (F-X5-3); absence is legitimate (no HP).
 
     species_to_hp_type : {normalised species -> HP type idx 0..15} (absent ⇒ that species has no HP)."""
     label = np.full(TEAM_SIZE, PAD, dtype=np.int64)
@@ -300,8 +305,10 @@ def build_hp_type_labels(
     revealed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] >= 0.5]
     for slot, sp in zip(revealed_slots, revealed_species_in_slot_order):
         t = species_to_hp_type.get(normalize(sp))
-        if t is None or not (0 <= t < N_HP_TYPES_LABEL):
-            continue
+        if t is None:
+            continue   # the revealed mon runs no Hidden Power — a legitimate mask 0
+        if not (0 <= t < N_HP_TYPES_LABEL):
+            raise BeliefLabelError(f"revealed species {sp!r} maps to HP type index {t} (outside 0..15)")
         label[slot] = int(t)
         mask[slot] = 1.0
     return label, mask
@@ -326,14 +333,15 @@ def build_item_labels(
     ticks, a Berry fires, Trick) and NEVER reveals Choice Band directly, so this is a
     hindsight-privileged, training-only label — read ONLY by the item CE loss, never in the
     pi/vf forward. Item num 0 (`nothing`) is a legitimate class, not a pad — PAD is -1.
-    `mask`=1 at every revealed slot whose species maps to a recorded item num. Never raises."""
+    `mask`=1 at every revealed slot. A revealed species with no recorded item num (the caller records
+    0 for no item) RAISES `BeliefLabelError` (F-X5-3; it was a silent mask 0)."""
     label = np.full(TEAM_SIZE, PAD, dtype=np.int64)
     mask = np.zeros(TEAM_SIZE, dtype=np.float32)
     revealed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] >= 0.5]
     for slot, sp in zip(revealed_slots, revealed_species_in_slot_order):
         num = species_to_item_num.get(normalize(sp))
         if num is None or num < 0:
-            continue
+            raise BeliefLabelError(f"revealed species {sp!r} has no item num ({num!r})")
         label[slot] = int(num)
         mask[slot] = 1.0
     return label, mask
