@@ -104,6 +104,7 @@ binding AND the upgrade's strength-per-GPU-hour is non-inferior.
 - **Most of the "perfect OTHER" ceiling is information, not pricing.** A perfect OTHER reaches 4.7 pp (expected threat) and 3.3 % (race flips). Closing that needs a SHARPER BELIEF, not a richer OTHER.
 - On real states the 1:1 list recalls only 14–33 % of the true hidden mons, lower than the random-reveal estimate.
 - **Open for U3 (F4):** how OTHER's averaged attacker is built; how OTHER's mass, which exceeds 1 on 73.6 % of decisions at 1:1, enters a max-type site (Tier 0 capped its presence at 1).
+  **RESOLVED (ORCHESTRATOR, 2026-10-04, for U3):** (a) the renormalised tail's EXPECTED attacker stats — the `P_tail @ tables` construction the blob uses for the defender; (b) OTHER enters a max-type site with presence 1 − Π_tail(1 − π) (exact under independent Bernoulli presences, in [0, 1], continuous), never its mass. Built as `HypothesisSet.other_any` / `other_tail_probs`; wiring them into the op is U3 part 3 (`design_x5_belief_tokens.md` §8.3, U3 hand-off).
 - **Follow-up lever ranking:** belief sharpness > M2 option A > budget +6.
 
 ## Decision record
@@ -114,3 +115,4 @@ binding AND the upgrade's strength-per-GPU-hour is non-inferior.
 | 2026-10-03 | M3 OTHER physics (OWNER) | (c) the averaged tail (hybrid) | (a) +6 budget (the follow-up lever); (b) a pessimistic tail; (d) no physics (a regression) | §9; `measurements/x5_revision_2026-10-03/` |
 | 2026-10-03 | A/B margin (ORCHESTRATOR, under the owner's "reasonable richness vs budget") | 3.5 pp if P0's σ_h ≤ 2.5, else 4.5 pp at ≤ 41 GPU-h; fixed before P0 reports | 3.5 pp at power ≈ 0.57; raising the budget | §9 power table |
 | 2026-10-03 | Tier 0 read (ORCHESTRATOR) | M3 (c) at 1:1 CONFIRMED; follow-ups ranked belief sharpness > M2 option A > budget +6 | budget +6 now (≈ 1 pp of race flips for ≈ +7 % FLOPs) | §4; `cda60edb` |
+| 2026-10-04 | Tier-0 F4 (a) / (b) (ORCHESTRATOR) | (a) the tail's expected attacker stats (`P_tail @ tables`); (b) max-site presence 1 − Π(1 − π) | (b) the mass capped at 1 (Tier 0's stand-in) | §4; `design_x5_belief_tokens.md` Decision record |
