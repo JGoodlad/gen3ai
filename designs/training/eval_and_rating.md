@@ -808,7 +808,8 @@ W / L / D are the full game log's, and the shard results are identical with and 
 --player <ckpt.zip | run dir | run@step> --opponent <…> --pairs N [--out <root>]` plays N MIRRORED team pairs on the
 Rust eval core and prints the player's win rate with its PAIR-clustered 95 % interval; `python -m main.h2h read
 [<root>]` pools a ledger's h2h rows per edge, one regime at a time. Nothing here is new machinery for the game: it declares ONE T2 service
-with two slots (the player's eval slot, one SENTINEL slot for the opponent) and ONE eval core, and plays the plan
+with two slots (the player's eval slot, one SENTINEL slot for the opponent) and ONE eval core — or, when the player and the
+opponent are TWO architectures (the X5 cross), one slot group per architecture with the slot its side needs (below) —, and plays the plan
 through `RustEvalCore.run_cycle` — the executor the in-loop eval and the SPRT promotion use — in BATCHES.
 (`main.h2h` writes the COUNT ledger above, protocol `gen3_eval_protocol_v1_h2h`: by default to the archive's
 `<archive>/_ledger/`, or to a root `--out` names outside `models/`; every batch under a claim for a REQUEST — by default
@@ -895,12 +896,24 @@ on the same seeds (proved: `play_many_integration_test.py`, and on the P0 produc
 LOOK: `--purpose ab --family F --request <look>`); without it each cell keeps its own default request, so single-cell
 `play` and `play-many` on the same arguments resume each other's rows. A re-run skips every recorded batch of every cell
 and builds no engine when nothing is left.
-- 🚨 **ONE ARCHITECTURE PER ENGINE.** A PRE-FLIGHT checks every side of every cell to play against the first cell's player
-  (`play.EngineArch`: the architecture toggles, the model version, the served state-dict signature, the forward
-  fingerprint, and the player's terminal) BEFORE any engine is built: a foreign cell is `CellArchMismatch`, naming both.
-  **So the X5 A/B cross itself (`fixed_mass` seed × `blob` seed) cannot be played** — by `play-many` or by single-cell
-  `play`, which refuses two architectures the same way. It needs a two-slot-group engine (FINDING F-U6-1, not built).
-- 🚨 **HOT-SWAP SAFETY.** Every cycle loads both slots through `InferenceService.load` (an in-place copy, the bit-exact copy
+- 🚨 **UP TO TWO ARCHITECTURES PER ENGINE (F-U6-1 closed, 2026-10-04; `main/h2h/arch.py`).** A PRE-FLIGHT sorts every side
+  of every cell to play into at most TWO architectures (`arch.declare_engine`, comparing the architecture toggles, the model
+  version, the served state-dict signature and the forward fingerprint; a player's terminal against its group's first
+  player's) BEFORE any engine is built, and DECLARES the engine from them: one T2 slot group per architecture, each with
+  ONLY the slots its cells need (`player` = an eval slot, `opponent` = a sentinel slot), and one eval core per (player
+  group, opponent group) the cells use (a core's route table names the opponent's slot when it opens). The X5 cross
+  (`--players <fixed_mass seeds> --opponents <blob seeds>`) is therefore ONE engine of two one-slot groups and one core —
+  as many slots as a single-architecture engine. Single-cell `play` declares from its one cell, so it plays a cross cell
+  too. A THIRD architecture, a side with no slot in its group, or an undeclared combination is `CellArchMismatch`, naming
+  what differs from each group. **A same-architecture cell plays on the two-group engine exactly the games it plays on the
+  single-group one**, in either group (proved: `play_cross_integration_test.py`, and on the P0 finals beside a
+  `fixed_mass` checkpoint, `designs/research_state/measurements/h2h_cross_2026-10-04/` — 8 / 8 rows and every game's
+  `outcome_digest_all`); a cross cell replays exactly on the same seeds, also with its groups declared the other way
+  round. GPU memory is ESTIMATED there (the cross: ≈ today's engine; 4 slots worst case ≈ 2×), UNMEASURED.
+- 🚨 **THE TEAM POOL IS READ FROM THE WORKING DIRECTORY** (`utils.team_loader.TeamLoader`: `./data/teams`), so `main.h2h`
+  REFUSES any cwd whose `data/teams` is not this checkout's (`play.check_team_pool`) — before, it loaded NO team, recorded
+  the empty pool's team-set id and died on an `IndexError` in the eval core. Run it from the repo root.
+- 🚨 **HOT-SWAP SAFETY (each slot group alike).** Every cycle loads the cell's two slots through `InferenceService.load` (an in-place copy, the bit-exact copy
   check, the parity gate at every bucket, the copy check again; a failure POISONS the service, so no later cell is served),
   and after every cycle the engine checks both slots bit-exact against THIS cell's checkpoints (`H2HEngine.verify_slots`):
   a skipped load and a copy that did nothing are both caught before the batch is scored, and no row is written (tested).
@@ -915,7 +928,9 @@ Tests: `agents/training/eval_ledger/` (above),
 `stats_test.py`, `runfloor_test.py`, and on the real engine `play_mirror_integration_test.py` /
 `play_edge_integration_test.py` (CPU, tiny, the in-process core); `many_test.py` and `play_many_integration_test.py`
 (the multi-cell engine: rows equal single-cell rows, a swapped cell equals a fresh engine game for game, resume, the family
-read, the foreign-cell refusal, the stale-slot checks).
+read, the third-architecture refusal, the stale-slot checks); `play_cross_integration_test.py` (the two-architecture
+engine: a cross cell's valid rows, same-architecture identity on the two-group engine in either group, cross replay,
+resume, the family read, the refusals, a stale slot caught in EACH group).
 
 ### SPRT promotion (`--promotion-sprt`, T6 — `gen3_sprt_promotion_v1`, DEFAULT OFF)
 

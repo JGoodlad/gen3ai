@@ -1,0 +1,34 @@
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-python3-2462137.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 6 cell(s) x 100 pairs in batches of 50; 6 with batches to play (12 batch(es)), 0 already recorded; purpose audit under /tmp/h2h_cross_0i974hoy/look
+[h2h] pre-flight: 6 cell(s), 4 checkpoint(s) — 2 architecture(s): eval declared from sizing_A2_n48_e10_s1001@8130046 (slots ['player', 'opponent']); eval_b declared from run_x5_fixed_mass_fresh@0 (slots ['player']); eval core(s) for (player group, opponent group) [(0, 0), (1, 0)] in 3.1s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 7.7 s (/home/goodlad/dev/gen3ai-wt/h2hcross/src/rust_env/target/release)
+[h2h] engine up in 6.8s: sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 2), ('eval_b', 1)], 2 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/6: sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352 — 2 batch(es) to play, 0 recorded; request h2h:41c3b73ed74f6170; swap 0.00s
+[h2h] batch 1/2: 50 pairs / 100 games in 21.2s (4.72 games/s); W/L/D 54/46/0; pair counts [8, 0, 30, 0, 12]; near-tie games 1; digest a258a2e2dc00
+[h2h] batch 2/2: 50 pairs / 100 games in 23.5s (4.26 games/s); W/L/D 56/42/2; pair counts [8, 1, 25, 1, 15]; near-tie games 0; digest 81c582ecca2d
+[h2h] cell 2/6: sizing_Ap_n48_e10_s1002@8062352 vs sizing_B_n256_e10_s1001@8068077 — 2 batch(es) to play, 0 recorded; request h2h:80d024b54bd08aa1; swap 1.25s
+[h2h] batch 1/2: 50 pairs / 100 games in 24.8s (4.04 games/s); W/L/D 56/44/0; pair counts [12, 0, 20, 0, 18]; near-tie games 0; digest 843c7c0246f9
+[h2h] batch 2/2: 50 pairs / 100 games in 16.0s (6.25 games/s); W/L/D 53/45/2; pair counts [11, 2, 21, 0, 16]; near-tie games 0; digest c96de652f376
+[h2h] cell 3/6: sizing_B_n256_e10_s1001@8068077 vs sizing_A2_n48_e10_s1001@8130046 — 2 batch(es) to play, 0 recorded; request h2h:1131c8f7505365b6; swap 0.30s
+[h2h] batch 1/2: 50 pairs / 100 games in 25.0s (4.00 games/s); W/L/D 49/51/0; pair counts [12, 0, 27, 0, 11]; near-tie games 1; digest b7e4482e4cf5
+[h2h] batch 2/2: 50 pairs / 100 games in 23.8s (4.21 games/s); W/L/D 46/53/1; pair counts [13, 0, 27, 1, 9]; near-tie games 0; digest b6e7294df417
+[h2h] cell 4/6: sizing_Ap_n48_e10_s1002@8062352 vs sizing_A2_n48_e10_s1001@8130046 — 2 batch(es) to play, 0 recorded; request h2h:fd731c46f7715c13; swap 0.40s
+[h2h] batch 1/2: 50 pairs / 100 games in 19.8s (5.06 games/s); W/L/D 46/54/0; pair counts [13, 0, 28, 0, 9]; near-tie games 1; digest 849bc2e1b413
+[h2h] batch 2/2: 50 pairs / 100 games in 25.0s (4.01 games/s); W/L/D 43/55/2; pair counts [14, 1, 26, 1, 8]; near-tie games 0; digest ae1c5e70f873
+[h2h] cell 5/6: run_x5_fixed_mass_fresh@0 vs sizing_A2_n48_e10_s1001@8130046 — 2 batch(es) to play, 0 recorded; request h2h:cac3305fd2120812; swap 0.22s
+[h2h] batch 1/2: 50 pairs / 100 games in 17.3s (5.79 games/s); W/L/D 0/100/0; pair counts [50, 0, 0, 0, 0]; near-tie games 4; digest ad5c1efb026c
+[h2h] batch 2/2: 50 pairs / 100 games in 11.6s (8.64 games/s); W/L/D 0/100/0; pair counts [50, 0, 0, 0, 0]; near-tie games 1; digest 41002380032b
+[h2h] cell 6/6: run_x5_fixed_mass_fresh@0 vs sizing_B_n256_e10_s1001@8068077 — 2 batch(es) to play, 0 recorded; request h2h:e2ab011797b67fb7; swap 0.23s
+[h2h] batch 1/2: 50 pairs / 100 games in 21.4s (4.68 games/s); W/L/D 0/100/0; pair counts [50, 0, 0, 0, 0]; near-tie games 4; digest 2eb0f188a12b
+[h2h] batch 2/2: 50 pairs / 100 games in 12.7s (7.86 games/s); W/L/D 1/99/0; pair counts [49, 0, 1, 0, 0]; near-tie games 1; digest fe458d43a8a7
+[h2h] play-many: 2 cell(s) x 100 pairs in batches of 50; 2 with batches to play (4 batch(es)), 0 already recorded; purpose audit under /tmp/h2h_cross_0i974hoy/rerun
+[h2h] pre-flight: 2 cell(s), 3 checkpoint(s) — 2 architecture(s): eval declared from run_x5_fixed_mass_fresh@0 (slots ['player']); eval_b declared from sizing_A2_n48_e10_s1001@8130046 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 2.7s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hcross/src/rust_env/target/release)
+[h2h] engine up in 5.3s: run_x5_fixed_mass_fresh@0 vs sizing_A2_n48_e10_s1001@8130046; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/2: run_x5_fixed_mass_fresh@0 vs sizing_A2_n48_e10_s1001@8130046 — 2 batch(es) to play, 0 recorded; request h2h:cac3305fd2120812; swap 0.00s
+[h2h] batch 1/2: 50 pairs / 100 games in 17.2s (5.82 games/s); W/L/D 0/100/0; pair counts [50, 0, 0, 0, 0]; near-tie games 4; digest ad5c1efb026c
+[h2h] batch 2/2: 50 pairs / 100 games in 12.3s (8.16 games/s); W/L/D 0/100/0; pair counts [50, 0, 0, 0, 0]; near-tie games 1; digest 41002380032b
+[h2h] cell 2/2: run_x5_fixed_mass_fresh@0 vs sizing_B_n256_e10_s1001@8068077 — 2 batch(es) to play, 0 recorded; request h2h:e2ab011797b67fb7; swap 1.42s
+[h2h] batch 1/2: 50 pairs / 100 games in 21.1s (4.74 games/s); W/L/D 0/100/0; pair counts [50, 0, 0, 0, 0]; near-tie games 4; digest 2eb0f188a12b
+[h2h] batch 2/2: 50 pairs / 100 games in 12.7s (7.90 games/s); W/L/D 1/99/0; pair counts [49, 0, 1, 0, 0]; near-tie games 1; digest fe458d43a8a7
+[mem_cap] done: gen3ai-capped-python3-2462137.scope exit 0 · peak 1.13 GB of cap 24.00 GB (5%) · not OOM-killed

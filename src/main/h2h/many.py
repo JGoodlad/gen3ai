@@ -5,25 +5,29 @@ fresh engine per edge, and on the GPU the T2 graphs compile and capture for ever
 ~17 s of play per 1,000-pair cell (F-P0-4, ``designs/research_state/measurements/x5_p0_h2h_2026-10-03/``). The X5 A/B
 needs 9 / 25 / 64 cells per look, and the cycle monitor and the plateau check need many edges per check.
 
-WHAT IS REUSED, EXACTLY. One :class:`main.h2h.play.H2HEngine` — one T2 service with its two declared slots, one eval
-core — serves every cell; a cell only changes which checkpoints the next cycles LOAD into those slots
-(``H2HEngine.set_cell``). Everything that decides a game is the single-cell tool's, unchanged: the plan per cell
+WHAT IS REUSED, EXACTLY. One :class:`main.h2h.play.H2HEngine` — one T2 service with its declared slots (two for one
+architecture), one eval core per (player architecture, opponent architecture) — serves every cell; a cell only changes
+which checkpoints the next cycles LOAD into its two slots (``H2HEngine.set_cell``). Everything that decides a game is the single-cell tool's, unchanged: the plan per cell
 (``play.plan_edge``: the request, the batches recorded, the refusal of another batch size), the per-batch play and
 row (``play.play_planned``: the claim, ``cycle_seed(schedule seed, the cell's schedule key, batch)``, the scoring, the
 §0b v2 row, protocol ``gen3_eval_protocol_v1_h2h``). STORAGE AND ENGINE REUSE ONLY: the games of a cell are
 byte-identical to single-cell ``main.h2h play`` on the same seeds — proved by the outcome digests
 (``play_many_integration_test.py`` and ``designs/research_state/measurements/h2h_multicell_2026-10-04/``).
 
-HOT-SWAP SAFETY. Every cycle loads both slots through ``InferenceService.load`` (an in-place copy, the bit-exact copy
-check, the parity gate at every bucket the slot serves, the copy check again; a failure POISONS the service), and
+HOT-SWAP SAFETY (in each slot group alike). Every cycle loads the cell's two slots through ``InferenceService.load``
+(an in-place copy, the bit-exact copy check, the parity gate at every bucket the slot serves, the copy check again; a failure POISONS the service), and
 after every cycle the engine checks both slots bit-exact against THIS cell's checkpoints (``H2HEngine.verify_slots``)
 — a slot never carries the previous cell's weights into a row.
 
-ONE ARCHITECTURE PER ENGINE. Every side of every cell to play is checked against the first cell's player
-(``play.EngineArch``: toggles, model version, served state-dict signature, forward fingerprint, and the player's
-terminal) in a PRE-FLIGHT, before any engine is built or any game played: a foreign-architecture cell is a typed
-:class:`main.h2h.play.CellArchMismatch` naming both. (So an X5 ``fixed_mass``-vs-``blob`` cell — two architectures —
-is refused here exactly as single-cell ``play`` refuses it; FINDING F-U6-1.)
+UP TO TWO ARCHITECTURES PER ENGINE. A PRE-FLIGHT, before any engine is built or any game played, sorts every side of
+every cell to play into at most two architectures (``main.h2h.arch.declare_engine``: toggles, model version, served
+state-dict signature, forward fingerprint; and each player's terminal against its group's first player's) and declares
+the engine from them: one T2 slot group per architecture, each with only the slots its cells need (a player's eval
+slot, an opponent's sentinel slot), and one eval core per (player group, opponent group) the cells use. So the X5 A/B's
+cross — every ``fixed_mass`` seed against every ``blob`` seed — is ONE engine of two one-slot groups and one core
+(F-U6-1 closed). A side whose architecture is a THIRD one is a typed :class:`main.h2h.play.CellArchMismatch` naming it
+and what differs from each group. A same-architecture cell plays on the two-group engine exactly the games it plays on
+a single-group one (``play_cross_integration_test.py``).
 
 RESUMABLE. Each cell's rows resume as a single-cell edge's do (the request's uniqueness), so a re-run skips every
 recorded batch of every cell and builds no engine at all when nothing is left to play.
@@ -90,31 +94,27 @@ def resolve_cells(specs: Sequence[Tuple[str, str]]) -> List[Cell]:
     return cells
 
 
-def preflight(cells: Sequence[Cell], emit: Callable[[str], None] = lambda _m: None) -> PL.EngineArch:
-    """Check EVERY side of every cell against the first cell's player BEFORE any engine exists: the deleted core
-    variants and the team source (as ``play`` does) and the architecture (:class:`main.h2h.play.EngineArch`). Loads
-    each distinct checkpoint once on the CPU and drops it."""
+def preflight(cells: Sequence[Cell], emit: Callable[[str], None] = lambda _m: None) -> PL.EngineDecl:
+    """Check EVERY side of every cell BEFORE any engine exists — the deleted core variants and the team source (as
+    ``play`` does) — and DECLARE the engine (``main.h2h.arch.declare_engine``: at most two architectures, a third is
+    :class:`main.h2h.play.CellArchMismatch`). Loads each distinct checkpoint once on the CPU and drops it."""
     if not cells:
         raise PL.H2HError("no cell to check")
     t0 = time.perf_counter()
-    sides: Dict[str, Tuple[PL.PlayerRef, set]] = {}
+    seen: Dict[str, PL.PlayerRef] = {}
     for p, o in cells:
-        sides.setdefault(p.sha256, (p, set()))[1].add("player")
-        sides.setdefault(o.sha256, (o, set()))[1].add("opponent")
-    arch: Optional[PL.EngineArch] = None
-    for ref, roles in sides.values():                 # dict order: the first cell's player first
-        PL.check_core_flags(ref)
-        PL.check_team_source(ref)
-        model = PL._load_host(ref)
-        if arch is None:
-            arch = PL.EngineArch.of(ref, model)
-        for side in sorted(roles, reverse=True):      # "player" (the terminal binds it) before "opponent"
-            arch.check(ref, model, side)
-        del model
-    assert arch is not None
-    emit(f"[h2h] pre-flight: {len(cells)} cell(s), {len(sides)} checkpoint(s) — one architecture "
-         f"(declared from {arch.source}) in {time.perf_counter() - t0:.1f}s")
-    return arch
+        for ref in (p, o):
+            if ref.sha256 not in seen:
+                seen[ref.sha256] = ref
+                PL.check_core_flags(ref)
+                PL.check_team_source(ref)
+    decl = PL.declare_engine(cells, PL._load_host)
+    groups = "; ".join(f"{PL.GROUP_NAMES[i]} declared from {a.source} (slots {list(decl.roles[i])})"
+                       for i, a in enumerate(decl.archs))
+    emit(f"[h2h] pre-flight: {len(cells)} cell(s), {len(seen)} checkpoint(s) — {len(decl.archs)} architecture(s): "
+         f"{groups}; eval core(s) for (player group, opponent group) {list(decl.combos)} in "
+         f"{time.perf_counter() - t0:.1f}s")
+    return decl
 
 
 @dataclass
@@ -131,10 +131,12 @@ class EngineReport:
     startup_s: Optional[float] = None
     preflight_s: Optional[float] = None
     cells: List[CellTiming] = field(default_factory=list)
+    #: the engine's declaration (``EngineDecl.block``: its slot groups and eval cores); None when nothing was played
+    decl: Optional[Dict[str, Any]] = None
 
     def block(self) -> Dict[str, Any]:
         return {"startup_s": self.startup_s, "preflight_s": self.preflight_s,
-                "cells": [vars(c) for c in self.cells]}
+                "cells": [vars(c) for c in self.cells], "decl": self.decl}
 
 
 def play_cells(out_dir: Optional[str], cells: Sequence[Cell], *, pairs: int,
@@ -164,11 +166,12 @@ def play_cells(out_dir: Optional[str], cells: Sequence[Cell], *, pairs: int,
     rep = EngineReport()
     if todo:
         t0 = time.perf_counter()
-        preflight([(ep.player, ep.opponent) for ep in todo], emit)
+        decl = preflight([(ep.player, ep.opponent) for ep in todo], emit)
         rep.preflight_s = round(time.perf_counter() - t0, 3)
+        rep.decl = decl.block()
         commit = PL.current_commit()
         with PL.engine_lock(compute):
-            eng = PL.H2HEngine(todo[0].player, todo[0].opponent, compute, emit)
+            eng = PL.H2HEngine(todo[0].player, todo[0].opponent, compute, emit, decl=decl)
             rep.startup_s = round(eng.startup_s, 3)
             try:
                 if eng.regime["regime_id"] != regime["regime_id"]:

@@ -205,6 +205,31 @@ def test_the_digest_lists_a_wide_near_tie_game_by_index_instead_of_hashing_it():
     g2[3]["near_ties_wide"] = 1
     g2[3]["end_turn"] = 99                       # a near-tie game's details do not enter the digest
     assert PL.score_games(g2, TEAMS, 5).outcome_digest == sc.outcome_digest
+    assert PL.score_games(g2, TEAMS, 5).outcome_digest_all != sc.outcome_digest_all, \
+        "the all-games digest covers the near-tie game too"
+
+
+def test_the_row_carries_the_all_games_digest_over_every_game(tmp_path):
+    a, b = _players(tmp_path)
+    w = L.LedgerWriter(tmp_path / "ledger", producer="h2h")
+    req = w.open_request("rq", kind="adhoc", purpose="audit", protocol=PL.PROTOCOL)
+    row = _row(w, a, b, 0, 10, req)
+    assert row["compute"]["outcome_digest_all"] == L.outcome_digest(PL.outcome_vector(toy_games(10)))
+
+
+def test_the_team_pool_is_refused_outside_the_repo_root_instead_of_loading_an_empty_pool(tmp_path, monkeypatch):
+    """``TeamLoader`` reads ``./data/teams``: from another directory it loads NO team (the team-set id silently became
+    the empty pool's, then the eval core died on an IndexError). The tool now refuses, naming the repo root."""
+    from utils.paths import repo_path, repo_root
+
+    assert PL.check_team_pool() == repo_path("data", "teams")
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(PL.H2HError, match="run `python -m main.h2h` from the repo root") as ei:
+        PL.eval_team_set()
+    assert str(repo_root()) in str(ei.value) and "missing" in str(ei.value)
+    (tmp_path / "data" / "teams").mkdir(parents=True)
+    with pytest.raises(PL.H2HError, match="another checkout's"):
+        PL.check_team_pool()
 
 
 def test_resume_finds_the_requests_batches_of_this_edge_only(tmp_path):

@@ -13,9 +13,10 @@ regime (module ``play`` says exactly what is mirrored, what is not, and how a re
 by default the run archive's ``<archive>/_ledger/``, else the root ``--out`` names outside ``models/``. It prints
 the pooled win rate with its PAIR-clustered 95 % interval. ``read`` pools a ledger's h2h rows per edge, one regime
 at a time, through a declared read (a legacy flat directory of v1 rows is read upgraded).
-``play-many`` (module ``many``) plays MANY cells on ONE engine (one architecture; weights loaded into the declared slots
-per cell, every load byte-checked and parity-gated), each cell exactly as ``play`` plays it — the same games, the same
-rows. ``runfloor`` (module) turns a round-robin of edges into the run-to-run SD on this scale.
+``play-many`` (module ``many``) plays MANY cells on ONE engine (weights loaded into the declared slots per cell, every
+load byte-checked and parity-gated), each cell exactly as ``play`` plays it — the same games, the same rows. An engine
+serves up to TWO architectures (module ``arch``: one slot group each, the X5 cross), so ``play`` and ``play-many`` both
+play a ``fixed_mass``-vs-``blob`` cell. Run from the repo root (the team pool is read cwd-relative; elsewhere refused). ``runfloor`` (module) turns a round-robin of edges into the run-to-run SD on this scale.
 
 Detail: ``designs/training/eval_and_rating.md`` "The checkpoint-vs-checkpoint head-to-head".
 """

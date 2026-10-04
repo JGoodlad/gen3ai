@@ -8,7 +8,9 @@ reused, and what is new:
   rule (``rust_eval.seeds.pair_game``, ``gen3_mirrored_pairs_v1``), the eval team builders
   (``rust_eval.build.eval_builders``), the strict checkpoint loader.
 * NEW: the host that declares ONE T2 service holding TWO slots (the player's eval slot, one SENTINEL slot
-  for the opponent) and ONE eval core over them, plays the plan in BATCHES, scores each batch from the
+  for the opponent) and ONE eval core over them — or, when the player and the opponent are two architectures (the X5
+  A/B's cross), one slot group per architecture holding the slot its side needs and the core over those
+  (``main.h2h.arch``) —, plays the plan in BATCHES, scores each batch from the
   executor's game log into a §0b COUNT row (``agents.training.eval_ledger``, ``gen3_eval_count_row_v2``) and
   appends it durably, under a CLAIM, for a REQUEST (§0b.4).
 
@@ -67,6 +69,9 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 from agents.training import eval_ledger as L
 from agents.training import mirrored_pairs as MP
 from agents.training.rust_eval import seeds as SD
+from main.h2h.arch import (GROUP_NAMES, MAX_GROUPS, ROLES, CellArchMismatch, EngineArch, EngineDecl,  # noqa: F401
+                           _historical, _load_host, _terminal_of, declare_engine)
+from main.h2h.errors import H2HError
 
 #: The opponent's key in the eval plan (the executor's per-game seed key is ``(cycle seed, key, game)``).
 ITEM_KEY = "h2h"
@@ -109,14 +114,10 @@ def eval_team_set() -> str:
     default pool with its 10 % sample-team bias): the digest of the ordered team lists and the builder parameters."""
     from utils.team_loader import TeamLoader
 
+    check_team_pool()
     loader = TeamLoader()
     return L.team_set_id({"builder": "Gen3Teambuilder", "kind": "default_biased", "bias_prob": 0.1,
                           "teams": list(loader.get_all_teams()), "bias_teams": list(loader.get_sample_teams())})
-
-
-class H2HError(RuntimeError):
-    """A head-to-head read that cannot be run honestly (incompatible players, a pinned-team run, a refused
-    resume, a game log that does not score)."""
 
 
 # ---------------------------------------------------------------------------------------------- players
@@ -239,6 +240,9 @@ class BatchScore:
     #: :data:`DIGEST_MARGIN`, and the indices of the games that had one
     outcome_digest: Optional[str] = None
     near_tie_idx: Optional[List[int]] = None
+    #: the same digest over EVERY game, near-ties included (the in-loop cycle ledger's ``compute.outcome_digest_all``):
+    #: a same-device replay must reproduce it exactly
+    outcome_digest_all: Optional[str] = None
 
     def clean_pairs(self, wide: bool = False) -> int:
         """Pairs with NO decision inside the near-tie margin (narrow, or the GPU-bar ``wide`` one)."""
@@ -303,12 +307,13 @@ def score_games(games: Sequence[Mapping[str, Any]], team_packed: Sequence[str], 
     detail = [(int(pts[2 * k]), int(pts[2 * k + 1]), nt[2 * k] + nt[2 * k + 1], ntw[2 * k] + ntw[2 * k + 1])  # type: ignore[arg-type]
               for k in range(n_pairs)]
     near = sorted(k for k, x in ntw.items() if x)
-    digest = L.outcome_digest(outcome_vector(games), near)
+    vec = outcome_vector(games)
+    digest = L.outcome_digest(vec, near)
     return BatchScore(w=w, l=l, d=d, pair_counts=MP.pair_counts(pts), n_pairs=n_pairs, teams=teams,
                       near_tie_decisions=sum(nt.values()), near_tie_games=sum(1 for x in nt.values() if x),
                       mirror_checked=n_pairs, near_tie_decisions_wide=sum(ntw.values()),
                       near_tie_games_wide=sum(1 for x in ntw.values() if x), pair_detail=detail,
-                      outcome_digest=digest, near_tie_idx=near)
+                      outcome_digest=digest, near_tie_idx=near, outcome_digest_all=L.outcome_digest(vec))
 
 
 def outcome_vector(games: Sequence[Mapping[str, Any]]) -> List[Tuple[int, str, Optional[int]]]:
@@ -367,112 +372,47 @@ def regime_for(turn_limit: int, team_set: Optional[str] = None) -> Dict[str, Any
         "team_set": team_set or eval_team_set()})
 
 
-class CellArchMismatch(H2HError):
-    """A cell whose checkpoint is not the ENGINE's architecture: one engine declares ONE slot group (one state-dict
-    signature and one forward fingerprint), so a foreign-architecture cell cannot be served by it."""
+def check_team_pool() -> Path:
+    """REFUSE unless the WORKING DIRECTORY's ``data/teams`` is this checkout's (``utils.paths.repo_path``). The team
+    pool loader (``utils.team_loader.TeamLoader``, shared with training) reads ``./data/teams`` and resolves every
+    manifest entry under ``./data``: from any other directory it loads NO team, the team-set id silently becomes the
+    empty pool's and the eval core dies on an ``IndexError`` at its first draw."""
+    from utils.paths import repo_path, repo_root
 
-
-def _load_host(ref: PlayerRef) -> Any:
-    """``ref``'s checkpoint through the strict loader (``gen3_strict_checkpoint_load_v1``), on the CPU, eval mode.
-    ``historical_load_kwargs`` strips the policy / extractor kwargs DELETED since the checkpoint was written (PopArt,
-    the value-dist head) and REFUSES an ON one — a run trained at an older pin still loads at HEAD. The host copy is
-    only the SOURCE of a slot load (T2 copies it into its slot in place): it is never served."""
-    from agents.model.snapshot import historical_load_kwargs, load_checkpoint_strict
-
-    m = load_checkpoint_strict(ref.zip_path, device="cpu", **historical_load_kwargs(ref.zip_path))
-    m.policy.eval()
-    return m
-
-
-def _historical(ref: PlayerRef) -> List[str]:
-    from agents.model.snapshot import historical_load_kwargs
-
-    return sorted((historical_load_kwargs(ref.zip_path).get("custom_objects") or {}))
-
-
-def _terminal_of(ref: PlayerRef) -> Any:
-    """The core's terminal block as the player's reward config declares it (the eval core is opened with it)."""
-    from agents.training.reward_config import RewardConfig
-    from utils.rust_env import episode as EP
-
-    return EP.terminal_from_reward_config(RewardConfig.from_dict(_read_json(ref.config_path)))
-
-
-@dataclass(frozen=True)
-class EngineArch:
-    """The ONE architecture an engine serves, declared from its first cell's player: the architecture TOGGLES, the
-    model version they build, the served state-dict SIGNATURE and FORWARD FINGERPRINT (the slot group's own two
-    identities, ``agents.inference.service.slots``) and the core's TERMINAL (declared from the player's reward
-    config when the core opens)."""
-
-    source: str
-    toggles: Mapping[str, Any]
-    version: Any
-    signature: Any
-    fingerprint: str
-    terminal: Any
-
-    @classmethod
-    def of(cls, ref: PlayerRef, model: Any) -> "EngineArch":
-        from agents.model.snapshot import arch_toggles_from_model, current_model_version
-        from agents.observation.state_encoder import load_mappings
-        from agents.training.rust_rollout.build import _arch_key
-
-        toggles = arch_toggles_from_model(model)
-        sig, fp = _arch_key(model.policy)
-        return cls(source=ref.id, toggles=toggles, version=current_model_version(load_mappings(), **toggles),
-                   signature=sig, fingerprint=fp, terminal=_terminal_of(ref))
-
-    def check(self, ref: PlayerRef, model: Any, side: str) -> None:
-        """:class:`CellArchMismatch` naming the cell's side, its checkpoint, the engine's source and WHAT differs,
-        unless ``ref`` (loaded as ``model``) is this architecture. The terminal binds the PLAYER only (the core's
-        terminal is the player's)."""
-        from agents.model.snapshot import ModelVersion, arch_toggles_from_model
-        from agents.training.rust_rollout.build import _arch_key
-
-        def refuse(what: str) -> None:
-            raise CellArchMismatch(f"cell {side} {ref.id}: {what} differs from the engine's (declared from "
-                                   f"{self.source}) — one engine serves ONE architecture; play this cell on an "
-                                   "engine of its own")
-
-        toggles = arch_toggles_from_model(model)
-        if toggles != dict(self.toggles):
-            diff = sorted(k for k in set(toggles) | set(self.toggles) if toggles.get(k) != self.toggles.get(k))
-            refuse(f"the architecture toggles { {k: (toggles.get(k), self.toggles.get(k)) for k in diff} }")
-        try:
-            self.version.check_opponent_snapshot_compatible(ModelVersion.from_json_file(ref.config_path))
-        except Exception as e:                                       # noqa: BLE001 - re-raised typed
-            refuse(f"the model version ({e})")
-        sig, fp = _arch_key(model.policy)
-        if sig != self.signature:
-            refuse("the served state-dict signature")
-        if fp != self.fingerprint:
-            refuse(f"the forward fingerprint ({fp[:12]} vs {self.fingerprint[:12]})")
-        if side == "player":
-            term = _terminal_of(ref)
-            if term != self.terminal:
-                refuse(f"the terminal ({term} vs {self.terminal})")
+    want, here = repo_path("data", "teams"), Path.cwd() / "data" / "teams"
+    if not here.is_dir() or here.resolve() != want.resolve():
+        state = "missing" if not here.is_dir() else f"another checkout's (it resolves to {here.resolve()})"
+        raise H2HError(f"the team pool is read relative to the working directory ({Path.cwd()}): {here} is {state}, "
+                       f"not this checkout's {want} — run `python -m main.h2h` from the repo root {repo_root()}")
+    return want
 
 
 class H2HEngine:
-    """ONE T2 service (two slots: the player's eval slot, one SENTINEL slot) and ONE eval core, for ONE
-    architecture. Build once; play any number of batches (each a ``RustEvalCore.run_cycle``) of any number of CELLS
-    (:meth:`set_cell` swaps the (player, opponent) pair); close. The declared lifecycle holds: every SERVED resource
-    (the slot group, its compiled / captured forwards, the core) is acquired here, and a cycle only LOADS weights into
-    the two declared slots — ``InferenceService.load``: an in-place copy, the bit-exact copy check
-    (``gen3_slot_copy_verify_v1``) and the parity gate at every bucket the slot serves, then the copy check again; a
-    failure POISONS the service, so no later cell is served by it. A cell whose checkpoint is another architecture
-    is :class:`CellArchMismatch` before anything is loaded."""
+    """ONE T2 service and one eval core PER (player architecture, opponent architecture) the plan uses, built once
+    (:class:`EngineDecl`). A single-architecture plan is today's engine exactly: one slot group of two slots (the
+    player's eval slot, one SENTINEL slot) and one eval core. A two-architecture plan (the X5 cross) declares a second
+    slot group, with only the slots its cells need, and one more eval core per combination. Play any number of batches
+    (each a ``RustEvalCore.run_cycle`` on the current cell's core) of any number of CELLS (:meth:`set_cell` swaps the
+    (player, opponent) pair; each side goes to its own architecture's group); close.
+
+    The declared lifecycle holds: every SERVED resource (the slot groups, their compiled / captured forwards, the
+    cores) is acquired here, and a cycle only LOADS weights into the cell's two declared slots —
+    ``InferenceService.load``: an in-place copy, the bit-exact copy check (``gen3_slot_copy_verify_v1``) and the parity
+    gate at every bucket the slot serves, then the copy check again; a failure POISONS the service, so no later cell
+    is served by it — and after every cycle :meth:`verify_slots` checks both slots bit-exact against the cell. A cell
+    the declaration cannot serve is :class:`CellArchMismatch` before anything is loaded."""
 
     def __init__(self, player: PlayerRef, opponent: PlayerRef, compute: Compute,
-                 emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True)):
+                 emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True),
+                 decl: Optional[EngineDecl] = None):
         import torch
 
         from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
-        from agents.training.rust_eval.build import EvalDecl, build_eval_core, eval_builders, eval_extra_slots
+        from agents.training.rust_eval.build import EvalDecl, build_eval_core, eval_builders
         from agents.training.rust_rollout.build import RustEnvDecl
 
         self.compute, self.emit = compute, emit
+        check_team_pool()
         check_core_flags(player)
         check_core_flags(opponent)
         # THIS checkout's env core, built (incrementally) before anything loads — the trainer's own startup step
@@ -489,39 +429,64 @@ class H2HEngine:
         #: across a row and a column); bounded by :attr:`host_cache` entries, least recently used evicted
         self._hosts: Dict[str, Any] = {}
         self.host_cache = 4
+        self.cores: Dict[Tuple[int, int], Any] = {}
         try:
             if compute.torch_threads:
                 torch.set_num_threads(int(compute.torch_threads))
             t0 = time.perf_counter()
-            # THE ENGINE'S ARCHITECTURE: the first cell's player. Every cell (this one too) is checked against it
-            self.arch = EngineArch.of(player, self._host(player))
+            # THE ENGINE'S ARCHITECTURES: the plan's (default: this one cell's); group 0 = the first cell's player's
+            self.decl = decl if decl is not None else declare_engine([(player, opponent)], self._host)
+            self.archs = self.decl.archs
             self.set_cell(player, opponent)
             n = int(compute.n_envs)
-            decl = EvalDecl(n_envs=n, n_sentinels=1)
-            extra = eval_extra_slots(decl, self.pm.policy, {})
-            n_slots = len(extra)
             cdecl = RustEnvDecl(n_envs=n, threads=int(compute.threads), front=compute.front, profile=compute.profile,
                                 device=compute.device,
                                 backend=compute.resolved_backend, turn_limit=self.turn_limit)
             buckets = cdecl.resolved_buckets
+            n_slots = self.decl.n_slots
             lanes = min(n_slots, 8) if compute.device.startswith("cuda") else 1
+            # each group's TEMPLATE (its startup weights, the parity gate's): its source checkpoint — for group 0
+            # the first cell's player, as the single-architecture engine declares it
+            groups = tuple(SlotGroupSpec(GROUP_NAMES[gi], len(self.decl.roles[gi]), self._host(src).policy)
+                           for gi, src in enumerate(self.decl.sources))
             self.svc = InferenceService(ServiceSpec(
-                groups=(SlotGroupSpec("eval", n_slots, self.pm.policy),), device=compute.device,
+                groups=groups, device=compute.device,
                 backend=compute.resolved_backend, buckets=buckets, lanes=lanes,
                 max_rows_per_flush=max(1024, n_slots * max(buckets), 4 * n))).startup()
             tb, flat, fixed = eval_builders(None, [])
-            self.ev = build_eval_core(decl, collector_decl=cdecl, svc=self.svc, extra_ids=list(range(n_slots)),
-                                      trainee_builder=tb, opp_builder=flat, fixed_builders=fixed,
-                                      turn_limit=self.turn_limit, terminal=self.arch.terminal, emit=lambda _m: None)
-            self.team_packed: List[str] = list(self.ev.team_table.teams)
+            for gp, go in self.decl.combos:
+                self.cores[(gp, go)] = build_eval_core(
+                    EvalDecl(n_envs=n, n_sentinels=1), collector_decl=cdecl, svc=self.svc,
+                    extra_ids=[self.decl.slot_of(gp, "player"), self.decl.slot_of(go, "opponent")],
+                    trainee_builder=tb, opp_builder=flat, fixed_builders=fixed, turn_limit=self.turn_limit,
+                    terminal=self.archs[gp].terminal, emit=lambda _m: None)
+            packed = {c: tuple(ev.team_table.teams) for c, ev in self.cores.items()}
+            if len(set(packed.values())) != 1:
+                raise H2HError(f"the eval cores' team tables differ ({sorted(packed)}) — one plan, one team table")
+            first = next(iter(self.cores.values()))
+            self.team_packed: List[str] = list(first.team_table.teams)
             self.startup_s = time.perf_counter() - t0
             self.torch_version = torch.__version__
-            self.core_stamp = str(getattr(self.ev.core, "stamp", "") or "")
+            self.core_stamp = str(getattr(first.core, "stamp", "") or "")
             emit(f"[h2h] engine up in {self.startup_s:.1f}s: {player.id} vs {opponent.id}; {n} envs, "
-                 f"T2 {compute.resolved_backend} on {compute.device}; regime {self.regime['regime_id']}")
+                 f"T2 {compute.resolved_backend} on {compute.device}; {len(groups)} slot group(s) "
+                 f"{[(g.name, g.n_slots) for g in groups]}, {len(self.cores)} eval core(s); regime "
+                 f"{self.regime['regime_id']}")
         except BaseException:
+            for ev in self.cores.values():
+                ev.close()
             torch.set_num_threads(self._threads0)
             raise
+
+    @property
+    def arch(self) -> EngineArch:
+        """Group 0's architecture (the first cell's player's)."""
+        return self.archs[0]
+
+    @property
+    def ev(self) -> Any:
+        """The CURRENT cell's eval core (its player's group x its opponent's group)."""
+        return self.cores[self.combo]
 
     # ------------------------------------------------------------------------------------------ cells
     def _host(self, ref: PlayerRef) -> Any:
@@ -533,19 +498,45 @@ class H2HEngine:
             del self._hosts[next(iter(self._hosts))]
         return m
 
+    def _group(self, ref: PlayerRef, model: Any, side: str) -> int:
+        """The slot group ``ref`` (loaded as ``model``) plays ``side`` from: the group of its architecture, which
+        must declare a ``side`` slot (and, for a player, the group's terminal). :class:`CellArchMismatch` otherwise."""
+        why = []
+        for gi, a in enumerate(self.archs):
+            d = a.differs(ref, model)
+            if d is None:
+                if side not in self.decl.roles[gi]:
+                    raise CellArchMismatch(f"cell {side} {ref.id}: its architecture is slot group {gi}'s "
+                                           f"({GROUP_NAMES[gi]}, declared from {a.source}), which declares no {side} "
+                                           f"slot (its slots: {list(self.decl.roles[gi])}) — declare the plan's "
+                                           "cells when the engine is built")
+                t = a.terminal_differs(ref) if side == "player" else None
+                if t is not None:
+                    raise CellArchMismatch(f"cell player {ref.id}: {t} differs from slot group {gi}'s (declared from "
+                                           "its first player) — one eval core serves ONE terminal")
+                return gi
+            why.append(f"group {gi} (declared from {a.source}): {d}")
+        raise CellArchMismatch(f"cell {side} {ref.id}: its architecture matches none of the engine's "
+                               f"{len(self.archs)} slot group(s) — {'; '.join(why)}; play this cell on an engine of "
+                               "its own")
+
     def set_cell(self, player: PlayerRef, opponent: PlayerRef) -> float:
         """Make (``player``, ``opponent``) the cell the next batches play; returns the seconds it took. Checks both
-        sides (:meth:`EngineArch.check`, the core flags, the team source) BEFORE the cell becomes current, so a refused
-        cell leaves the engine on its previous one. The slots are loaded by the next cycle (``run_cycle`` loads the
-        player's and the opponent's weights every cycle, verified as the class says)."""
+        sides (their group, the core flags, the team source) and that the engine declared an eval core for their
+        (player group, opponent group) BEFORE the cell becomes current, so a refused cell leaves the engine on its
+        previous one. The slots are loaded by the next cycle (``run_cycle`` loads the player's and the opponent's
+        weights every cycle, verified as the class says)."""
         t0 = time.perf_counter()
         check_core_flags(player)
         check_core_flags(opponent)
         team_check = {player.id: check_team_source(player), opponent.id: check_team_source(opponent)}
         pm, om = self._host(player), self._host(opponent)
-        self.arch.check(player, pm, "player")
-        self.arch.check(opponent, om, "opponent")
-        self.player, self.opponent, self.pm, self.om = player, opponent, pm, om
+        combo = (self._group(player, pm, "player"), self._group(opponent, om, "opponent"))
+        if combo not in self.decl.combos:
+            raise CellArchMismatch(f"cell {player.id} vs {opponent.id}: slot groups {combo} (player, opponent) have no "
+                                   f"eval core — the engine declared {list(self.decl.combos)}; declare the plan's "
+                                   "cells when the engine is built")
+        self.player, self.opponent, self.pm, self.om, self.combo = player, opponent, pm, om, combo
         self.team_check = team_check
         self.historical = {player.id: _historical(player), opponent.id: _historical(opponent)}
         return time.perf_counter() - t0
@@ -581,26 +572,29 @@ class H2HEngine:
         return list(sink), out
 
     def verify_slots(self, where: str) -> None:
-        """BIT-EXACT: the player's eval slot holds THIS cell's player and the sentinel slot THIS cell's opponent
-        (``SlotGroup.verify_copy``, ``gen3_slot_copy_verify_v1``). ``InferenceService.load`` already checks each copy
-        twice; this is the engine's own check, after every cycle, that the games just played were served by the
-        cell's weights and not by a previous cell's (a load that was skipped or missed would pass parity: the
-        parity reference reads the slot itself). ``CopyParityFailure`` names the keys."""
+        """BIT-EXACT: the player's eval slot (in the player's group) holds THIS cell's player and the sentinel slot (in
+        the opponent's group) THIS cell's opponent (``SlotGroup.verify_copy``, ``gen3_slot_copy_verify_v1``).
+        ``InferenceService.load`` already checks each copy twice; this is the engine's own check, after every cycle,
+        that the games just played were served by the cell's weights and not by a previous cell's (a load that was
+        skipped or missed would pass parity: the parity reference reads the slot itself). ``CopyParityFailure`` names
+        the keys."""
         from agents.inference.service.slots import served_state_dict
 
-        group = self.svc.groups[0]
         tb = self.ev.table
         for slot, model, who in ((int(tb.trainee_slot), self.pm, self.player),
                                  (int(tb.sentinel_slots[0]), self.om, self.opponent)):
-            group.verify_copy(slot, served_state_dict(model.policy), f"{where}: slot {slot} ({who.id})")
+            gi, i = self.decl.local(slot)
+            self.svc.groups[gi].verify_copy(i, served_state_dict(model.policy),
+                                            f"{where}: slot {slot} ({GROUP_NAMES[gi]}[{i}], {who.id})")
 
     def close(self) -> None:
-        """Close the eval core (the service has no teardown of its own: it ends with the process) and hand
-        back the torch thread count this engine changed."""
+        """Close every eval core (the service has no teardown of its own: it ends with the process) and hand back
+        the torch thread count this engine changed."""
         import torch
 
         try:
-            self.ev.close()
+            for ev in self.cores.values():
+                ev.close()
         finally:
             torch.set_num_threads(self._threads0)
 
@@ -642,7 +636,7 @@ def build_row(*, writer: L.LedgerWriter, run_label: str, commit: str, a: PlayerR
                "trainee_decisions": executor.get("trainee_decisions"),
                "p2_policy_decisions": executor.get("p2_policy_decisions"),
                "outcome_digest": score.outcome_digest, "near_tie_games": list(score.near_tie_idx or []),
-               "digest_margin": DIGEST_MARGIN}
+               "digest_margin": DIGEST_MARGIN, "outcome_digest_all": score.outcome_digest_all}
     return {
         "schema": L.SCHEMA, "row_id": writer.next_row_id(), "supersedes": None, "ts": L.utc_now(),
         "t_start": t_start, "t_end": t_end, "run": run_label, "commit": commit,

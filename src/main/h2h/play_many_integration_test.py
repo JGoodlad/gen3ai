@@ -1,7 +1,7 @@
 """``main.h2h play-many`` (``main.h2h.many``) on the REAL engine (CPU, tiny): many cells on ONE engine play the SAME
 games as single-cell ``play`` on the same seeds (row for row, outcome digest for outcome digest, and on the engine
 itself game for game), a re-run skips every recorded batch and builds no engine, a longer plan plays only the new
-batches, a family reads across the cells, a foreign-architecture cell is refused before anything plays, and a slot
+batches, a family reads across the cells, a third-architecture cell is refused before anything plays, and a slot
 can never serve the previous cell's weights (a skipped load and a failed copy are both caught, and no row is written).
 
 Seeded PERTURBED-fresh checkpoints (``conftest``): the numbers are not the point, the identity is. The plays are MODULE
@@ -112,7 +112,7 @@ def test_one_engine_served_every_cell_and_a_swap_costs_no_engine_start(played):
 
 
 def test_a_rerun_skips_every_recorded_batch_and_builds_no_engine(played):
-    assert played["again"]["engine"] == {"startup_s": None, "preflight_s": None, "cells": []}
+    assert played["again"]["engine"] == {"startup_s": None, "preflight_s": None, "cells": [], "decl": None}
     assert len(played["rows_again"]) == len(played["rows_first"]) == 3
 
 
@@ -136,14 +136,19 @@ def test_the_family_reads_across_the_cells_of_its_look(played):
 
 
 # ------------------------------------------------------------------------------------------------ refusals
-def test_a_foreign_architecture_cell_is_refused_before_any_engine_or_game(built, checkpoints, foreign, tmp_path):
+def test_a_third_architecture_cell_is_refused_before_any_engine_or_game(built, checkpoints, foreign, third,
+                                                                        tmp_path):
+    """Two architectures (``blob`` and X5's ``fixed_mass``) make one engine (``play_cross_integration_test.py``); a
+    THIRD is refused in the pre-flight, naming it and what differs from each group, before anything plays."""
     a, b = checkpoints
     out = tmp_path / "ledger"
     with pytest.raises(PL.CellArchMismatch) as ei:
-        MANY.play_cells(str(out), MANY.resolve_cells([(a, b), (a, foreign)]), pairs=2, batch_pairs=2,
+        MANY.play_cells(str(out), MANY.resolve_cells([(a, b), (a, foreign), (third, b)]), pairs=2, batch_pairs=2,
                         run_label="s", compute=COMPUTE, **QUIET)
     msg = str(ei.value)
-    assert PL.resolve_player(foreign).id in msg and PL.resolve_player(a).id in msg and "belief_tokens" in msg
+    assert PL.resolve_player(third).id in msg and PL.resolve_player(a).id in msg
+    assert PL.resolve_player(foreign).id in msg and "move_prior_fusion" in msg and "belief_tokens" in msg
+    assert "matches neither" in msg
     assert rows_of(out) == [], "nothing was played"
 
 
@@ -168,7 +173,7 @@ def test_a_load_that_never_reached_the_slots_is_caught_and_writes_no_row(built, 
 @pytest.fixture(scope="module")
 def swapped(built, checkpoints, foreign):
     """ONE engine, driven by hand: cells (a, b) → (b, a) → (a, a) one batch each at the single-cell seeds, then a
-    refused foreign cell, then a cell whose slot copy silently does nothing (the service must refuse it and stay
+    refused foreign cell (another architecture than the ONE this engine declared), then a cell whose slot copy silently does nothing (the service must refuse it and stay
     refused). Records everything; the tests read it."""
     a, b = checkpoints
     (pa, pb), (pb2, pa2), (paa, paa2) = cells = MANY.resolve_cells(specs(a, b))

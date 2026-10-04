@@ -365,8 +365,10 @@ batch under a claim, resumable per request, any other root under `models/` refus
 `u` rides every edge (a checkpoint against itself reads 0.5 + u) and a self-play pair is NOT exactly 0.5 (the speed-tie RNG
 order is seat-dependent); read a pair-clustered interval, never a per-game one. `python -m main.h2h play-many` plays MANY
 cells on ONE engine (eval U6 / X5 U0): the same games and rows as single-cell `play`, one engine start instead of one per
-cell; 🚨 **one ARCHITECTURE per engine** — a foreign cell is refused before anything plays, so the X5 cross (`fixed_mass` ×
-`blob`) is NOT playable on it (F-U6-1).
+cell; 🚨 **up to TWO architectures per engine** (`main/h2h/arch.py`, F-U6-1 closed): one T2 slot group per architecture
+with only the slots its cells need and one eval core per (player group, opponent group), so the X5 cross (`fixed_mass` ×
+`blob`) plays on one engine — a THIRD architecture is refused before anything plays. Run it from the repo root (the team
+pool is read cwd-relative; any other cwd is refused).
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)** (its
 "The eval COUNT ledger" and "The checkpoint-vs-checkpoint head-to-head" sections).
 

@@ -11626,3 +11626,33 @@ their pin's code and are unaffected. No run is live.
 - **Finding F-U6-1:** one engine serves ONE architecture, and so does single-cell `play` — the X5 A/B cross (`fixed_mass`
   seed × `blob` seed) is a two-architecture cell that NEITHER tool can play. It needs a two-slot-group engine before look 1
   (not built, standing rule 9).
+
+## 2026-10-04 — F-U6-1 closed: the TWO-ARCHITECTURE head-to-head engine (`main/h2h/arch.py`; engine only, no model change, no config bump, h2h protocol unchanged)
+
+- **What.** One `main.h2h` engine now serves up to TWO architectures, so the X5 A/B cross (`fixed_mass` seed × `blob`
+  seed, design_x5 §7.4) plays on it, through `play-many` and single-cell `play` alike. `arch.declare_engine` sorts every
+  side of the plan's cells into at most two architectures (toggles, model version, served signature, forward fingerprint;
+  a player's terminal against its group's first player's) and returns an `EngineDecl`: one T2 slot group per architecture
+  (`eval`, `eval_b`), each holding ONLY the slots its cells need (`player` = an eval slot, `opponent` = a sentinel slot),
+  and one eval core per (player group, opponent group) used — the cross is two one-slot groups and one core. Group 0 is
+  the first cell's player's, so a single-architecture plan declares exactly the old engine (one group of two slots, one
+  core). `H2HEngine(…, decl=)` builds it; `set_cell` routes each side to its group, and refuses (`CellArchMismatch`) a
+  third architecture, a side with no slot in its group, or an undeclared combination; `verify_slots` checks the cell's
+  two slots in their own groups. `many.preflight` returns the declaration (the engine block reports it as `decl`).
+  `EngineArch` / `CellArchMismatch` / the host loader moved to `main/h2h/arch.py` (re-exported by `play`), `H2HError` to
+  `main/h2h/errors.py`. Rows gain `compute.outcome_digest_all` (every game, as the cycle ledger's) — storage only.
+- **Also fixed:** `main.h2h` read the team pool relative to the cwd (`TeamLoader`: `./data/teams`) and, elsewhere, loaded
+  NO team — recording the empty pool's team-set id — then died on an `IndexError`. It now refuses any cwd whose
+  `data/teams` is not this checkout's (`play.check_team_pool`), naming the repo root.
+- **Proof** (`designs/research_state/measurements/h2h_cross_2026-10-04/`, CPU, the P0 finals beside a perturbed-fresh
+  `fixed_mass` checkpoint): U6's four blob cells on a two-group engine = U6's single-cell rows (8 / 8: counts, pentanomial,
+  team counters, seed block, outcome digest) and = U6's fresh single-group engine on every game (`outcome_digest_all`,
+  8 / 8, 800 games); the two cross cells replay exactly on an engine declared the other way round (4 / 4 rows, 400
+  games). GPU memory ESTIMATED (the cross ≈ today's engine: 2 slots, 11.7 + 12.0 MiB of weights, 2 lanes); the GPU start
+  and memory are DEFERRED to the GPU owner (commands in the README).
+- **Tests:** `main/h2h/play_cross_integration_test.py` (a cross cell's valid v2 rows; same-architecture identity on the
+  two-group engine in group 0 (rows) and group 1 (game for game); cross replay; resume; the family read across the look;
+  the declaration; a third architecture and an undeclared combination refused; a stale slot caught in EACH group; a
+  no-op copy in group 1 poisons; a no-op load writes no row for the stale cell); `play_many_integration_test.py`'s
+  refusal now needs a THIRD architecture (`conftest.third`: production with `--move-prior-fusion` off); `play_test.py`
+  (the all-games digest, the cwd refusal — fails on revert).

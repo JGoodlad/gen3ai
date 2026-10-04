@@ -1,0 +1,165 @@
+{
+ "blob_rows_compared": 8,
+ "blob_rows_digest_all_compared": 8,
+ "cross_rows_compared": 4,
+ "cross_win_rates": {
+  "run_x5_fixed_mass_fresh@0 vs sizing_A2_n48_e10_s1001@8130046 b0": {
+   "aborted": 0,
+   "d": 0,
+   "l": 100,
+   "w": 0
+  },
+  "run_x5_fixed_mass_fresh@0 vs sizing_A2_n48_e10_s1001@8130046 b1": {
+   "aborted": 0,
+   "d": 0,
+   "l": 100,
+   "w": 0
+  },
+  "run_x5_fixed_mass_fresh@0 vs sizing_B_n256_e10_s1001@8068077 b0": {
+   "aborted": 0,
+   "d": 0,
+   "l": 100,
+   "w": 0
+  },
+  "run_x5_fixed_mass_fresh@0 vs sizing_B_n256_e10_s1001@8068077 b1": {
+   "aborted": 0,
+   "d": 0,
+   "l": 99,
+   "w": 1
+  }
+ },
+ "games_compared": 1200,
+ "look_engine": {
+  "cells": [
+   {
+    "cell": "sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352",
+    "load_s": 1.042,
+    "play_s": 44.698,
+    "rows": 2,
+    "set_cell_s": 0.0
+   },
+   {
+    "cell": "sizing_Ap_n48_e10_s1002@8062352 vs sizing_B_n256_e10_s1001@8068077",
+    "load_s": 1.202,
+    "play_s": 40.765,
+    "rows": 2,
+    "set_cell_s": 1.252
+   },
+   {
+    "cell": "sizing_B_n256_e10_s1001@8068077 vs sizing_A2_n48_e10_s1001@8130046",
+    "load_s": 1.055,
+    "play_s": 48.766,
+    "rows": 2,
+    "set_cell_s": 0.304
+   },
+   {
+    "cell": "sizing_Ap_n48_e10_s1002@8062352 vs sizing_A2_n48_e10_s1001@8130046",
+    "load_s": 1.061,
+    "play_s": 44.717,
+    "rows": 2,
+    "set_cell_s": 0.399
+   },
+   {
+    "cell": "run_x5_fixed_mass_fresh@0 vs sizing_A2_n48_e10_s1001@8130046",
+    "load_s": 1.416,
+    "play_s": 28.838,
+    "rows": 2,
+    "set_cell_s": 0.218
+   },
+   {
+    "cell": "run_x5_fixed_mass_fresh@0 vs sizing_B_n256_e10_s1001@8068077",
+    "load_s": 1.414,
+    "play_s": 34.104,
+    "rows": 2,
+    "set_cell_s": 0.226
+   }
+  ],
+  "decl": {
+   "combos": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "groups": [
+    {
+     "fingerprint": "95047ea9b6e8",
+     "name": "eval",
+     "roles": [
+      "player",
+      "opponent"
+     ],
+     "source": "sizing_A2_n48_e10_s1001@8130046"
+    },
+    {
+     "fingerprint": "4b191ca0f325",
+     "name": "eval_b",
+     "roles": [
+      "player"
+     ],
+     "source": "run_x5_fixed_mass_fresh@0"
+    }
+   ]
+  },
+  "preflight_s": 3.103,
+  "startup_s": 6.811
+ },
+ "near_tie_games_wide": {
+  "blob": 126,
+  "cross": 319
+ },
+ "ok": true,
+ "problems": [],
+ "rerun_engine": {
+  "cells": [
+   {
+    "cell": "run_x5_fixed_mass_fresh@0 vs sizing_A2_n48_e10_s1001@8130046",
+    "load_s": 1.432,
+    "play_s": 29.445,
+    "rows": 2,
+    "set_cell_s": 0.0
+   },
+   {
+    "cell": "run_x5_fixed_mass_fresh@0 vs sizing_B_n256_e10_s1001@8068077",
+    "load_s": 1.651,
+    "play_s": 33.781,
+    "rows": 2,
+    "set_cell_s": 1.422
+   }
+  ],
+  "decl": {
+   "combos": [
+    [
+     0,
+     1
+    ]
+   ],
+   "groups": [
+    {
+     "fingerprint": "4b191ca0f325",
+     "name": "eval",
+     "roles": [
+      "player"
+     ],
+     "source": "run_x5_fixed_mass_fresh@0"
+    },
+    {
+     "fingerprint": "95047ea9b6e8",
+     "name": "eval_b",
+     "roles": [
+      "opponent"
+     ],
+     "source": "sizing_A2_n48_e10_s1001@8130046"
+    }
+   ]
+  },
+  "preflight_s": 2.744,
+  "startup_s": 5.322
+ },
+ "wall_look_s": 262.0,
+ "wall_rerun_s": 72.9
+}

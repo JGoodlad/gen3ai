@@ -49,3 +49,29 @@ def foreign(tmp_path_factory):
     (dst / "model_config.json").write_text(
         current_model_version(load_mappings(), **arch_toggles_from_model(model)).to_json())
     return str(path)
+
+
+@pytest.fixture(scope="session")
+def third(tmp_path_factory):
+    """A seeded PERTURBED-fresh checkpoint of a THIRD architecture — the production (``blob``) surface with
+    ``--move-prior-fusion`` OFF (a forward toggle: the same state-dict signature, another forward fingerprint) — in its
+    own ``run_h2h_third/``: an engine of the two X5 architectures cannot serve it."""
+    from agents.model.parity_probe import PERTURB_SCALE, perturb_
+    from agents.model.snapshot import arch_toggles_from_model, current_model_version
+    from agents.observation.state_encoder import load_mappings
+    from agents.training.rust_eval import parity as PAR
+    from main.fresh_checkpoint import build_fresh_model
+    from main.train.production_args import production_args
+
+    dst = tmp_path_factory.mktemp("h2h_third") / "run_h2h_third"
+    dst.mkdir()
+    args = production_args()
+    args.move_prior_fusion = False
+    with PAR.declared_torch_state(1):
+        model, _, _ = build_fresh_model(9, args=args)
+        perturb_(model.policy, seed=2900, scale=PERTURB_SCALE)
+        path = dst / "snapshot_000000009000.zip"
+        model.save(str(path))
+    (dst / "model_config.json").write_text(
+        current_model_version(load_mappings(), **arch_toggles_from_model(model)).to_json())
+    return str(path)
