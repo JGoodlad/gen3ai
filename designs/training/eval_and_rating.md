@@ -882,12 +882,40 @@ under `scripts/ops/mem_cap.sh`. Measured 2026-10-03 on the production model (X5 
 gates), but the ENGINE START is 114–167 s per edge (the T2 graphs compile again for every engine), so a 1,000-pair cell is
 ~17 s of play after ~2.5 min of start; T2 `eager` on the CPU — 4.77 games/s (8 torch threads, load average 6–10), a
 2,000-game cell ≈ 7 min. CPU eager and GPU graph played identical games (200 games: the same W/L/D, pentanomial and per-team
-counters). A multi-cell engine (one architecture, weights loaded per cell) is NOT built.
+counters). The engine start is what the multi-cell engine below removes from every cell after the first.
+
+**Many cells on ONE engine (`main.h2h play-many`, `main/h2h/many.py` — eval U6 / X5 U0, 2026-10-04).** `python -m main.h2h
+play-many --cells <cells.json> | --players P1 P2 … --opponents O1 O2 … --pairs N [the play flags]` plays every cell
+(`--players`/`--opponents` = the CROSS, players outer) on ONE engine: one T2 service, its two declared slots, one eval
+core, built once; a cell only changes which checkpoints the next cycles LOAD into the slots (`H2HEngine.set_cell`). Each
+cell is planned and played by the single-cell code itself (`play.plan_edge` / `play.play_planned`: the request, the
+claims, the seeds, the row), so it is STORAGE AND ENGINE REUSE ONLY — the games are byte-identical to single-cell `play`
+on the same seeds (proved: `play_many_integration_test.py`, and on the P0 production checkpoints
+`designs/research_state/measurements/h2h_multicell_2026-10-04/`). `--request R` puts EVERY cell into one request (an X5
+LOOK: `--purpose ab --family F --request <look>`); without it each cell keeps its own default request, so single-cell
+`play` and `play-many` on the same arguments resume each other's rows. A re-run skips every recorded batch of every cell
+and builds no engine when nothing is left.
+- 🚨 **ONE ARCHITECTURE PER ENGINE.** A PRE-FLIGHT checks every side of every cell to play against the first cell's player
+  (`play.EngineArch`: the architecture toggles, the model version, the served state-dict signature, the forward
+  fingerprint, and the player's terminal) BEFORE any engine is built: a foreign cell is `CellArchMismatch`, naming both.
+  **So the X5 A/B cross itself (`fixed_mass` seed × `blob` seed) cannot be played** — by `play-many` or by single-cell
+  `play`, which refuses two architectures the same way. It needs a two-slot-group engine (FINDING F-U6-1, not built).
+- 🚨 **HOT-SWAP SAFETY.** Every cycle loads both slots through `InferenceService.load` (an in-place copy, the bit-exact copy
+  check, the parity gate at every bucket, the copy check again; a failure POISONS the service, so no later cell is served),
+  and after every cycle the engine checks both slots bit-exact against THIS cell's checkpoints (`H2HEngine.verify_slots`):
+  a skipped load and a copy that did nothing are both caught before the batch is scored, and no row is written (tested).
+- The host copies of the checkpoints (the load SOURCE, never served) go through `load_checkpoint_strict` on the CPU, an LRU of 4.
+- **Cost (CPU, measured 2026-10-04 on the P0 finals):** a swap to the next cell is 0.27 s (both checkpoints cached) to 1.1 s
+  (one loaded for the first time), against a 4.7–5.5 s CPU engine start per cell before; the slot loads (copy-checked and
+  parity-gated) stay per BATCH, ~0.47 s. On the GPU the engine start it removes is 114–167 s — the GPU per-cell time is
+  **UNVERIFIED** (DEFERRED to the GPU owner; the commands are in the measurement README).
 
 Tests: `agents/training/eval_ledger/` (above),
 `main/h2h/play_test.py` (scoring, the toy-engine mirror, seeds, the digest, resume, the team-source refusal),
 `stats_test.py`, `runfloor_test.py`, and on the real engine `play_mirror_integration_test.py` /
-`play_edge_integration_test.py` (CPU, tiny, the in-process core).
+`play_edge_integration_test.py` (CPU, tiny, the in-process core); `many_test.py` and `play_many_integration_test.py`
+(the multi-cell engine: rows equal single-cell rows, a swapped cell equals a fresh engine game for game, resume, the family
+read, the foreign-cell refusal, the stale-slot checks).
 
 ### SPRT promotion (`--promotion-sprt`, T6 — `gen3_sprt_promotion_v1`, DEFAULT OFF)
 

@@ -367,60 +367,135 @@ def regime_for(turn_limit: int, team_set: Optional[str] = None) -> Dict[str, Any
         "team_set": team_set or eval_team_set()})
 
 
+class CellArchMismatch(H2HError):
+    """A cell whose checkpoint is not the ENGINE's architecture: one engine declares ONE slot group (one state-dict
+    signature and one forward fingerprint), so a foreign-architecture cell cannot be served by it."""
+
+
+def _load_host(ref: PlayerRef) -> Any:
+    """``ref``'s checkpoint through the strict loader (``gen3_strict_checkpoint_load_v1``), on the CPU, eval mode.
+    ``historical_load_kwargs`` strips the policy / extractor kwargs DELETED since the checkpoint was written (PopArt,
+    the value-dist head) and REFUSES an ON one — a run trained at an older pin still loads at HEAD. The host copy is
+    only the SOURCE of a slot load (T2 copies it into its slot in place): it is never served."""
+    from agents.model.snapshot import historical_load_kwargs, load_checkpoint_strict
+
+    m = load_checkpoint_strict(ref.zip_path, device="cpu", **historical_load_kwargs(ref.zip_path))
+    m.policy.eval()
+    return m
+
+
+def _historical(ref: PlayerRef) -> List[str]:
+    from agents.model.snapshot import historical_load_kwargs
+
+    return sorted((historical_load_kwargs(ref.zip_path).get("custom_objects") or {}))
+
+
+def _terminal_of(ref: PlayerRef) -> Any:
+    """The core's terminal block as the player's reward config declares it (the eval core is opened with it)."""
+    from agents.training.reward_config import RewardConfig
+    from utils.rust_env import episode as EP
+
+    return EP.terminal_from_reward_config(RewardConfig.from_dict(_read_json(ref.config_path)))
+
+
+@dataclass(frozen=True)
+class EngineArch:
+    """The ONE architecture an engine serves, declared from its first cell's player: the architecture TOGGLES, the
+    model version they build, the served state-dict SIGNATURE and FORWARD FINGERPRINT (the slot group's own two
+    identities, ``agents.inference.service.slots``) and the core's TERMINAL (declared from the player's reward
+    config when the core opens)."""
+
+    source: str
+    toggles: Mapping[str, Any]
+    version: Any
+    signature: Any
+    fingerprint: str
+    terminal: Any
+
+    @classmethod
+    def of(cls, ref: PlayerRef, model: Any) -> "EngineArch":
+        from agents.model.snapshot import arch_toggles_from_model, current_model_version
+        from agents.observation.state_encoder import load_mappings
+        from agents.training.rust_rollout.build import _arch_key
+
+        toggles = arch_toggles_from_model(model)
+        sig, fp = _arch_key(model.policy)
+        return cls(source=ref.id, toggles=toggles, version=current_model_version(load_mappings(), **toggles),
+                   signature=sig, fingerprint=fp, terminal=_terminal_of(ref))
+
+    def check(self, ref: PlayerRef, model: Any, side: str) -> None:
+        """:class:`CellArchMismatch` naming the cell's side, its checkpoint, the engine's source and WHAT differs,
+        unless ``ref`` (loaded as ``model``) is this architecture. The terminal binds the PLAYER only (the core's
+        terminal is the player's)."""
+        from agents.model.snapshot import ModelVersion, arch_toggles_from_model
+        from agents.training.rust_rollout.build import _arch_key
+
+        def refuse(what: str) -> None:
+            raise CellArchMismatch(f"cell {side} {ref.id}: {what} differs from the engine's (declared from "
+                                   f"{self.source}) — one engine serves ONE architecture; play this cell on an "
+                                   "engine of its own")
+
+        toggles = arch_toggles_from_model(model)
+        if toggles != dict(self.toggles):
+            diff = sorted(k for k in set(toggles) | set(self.toggles) if toggles.get(k) != self.toggles.get(k))
+            refuse(f"the architecture toggles { {k: (toggles.get(k), self.toggles.get(k)) for k in diff} }")
+        try:
+            self.version.check_opponent_snapshot_compatible(ModelVersion.from_json_file(ref.config_path))
+        except Exception as e:                                       # noqa: BLE001 - re-raised typed
+            refuse(f"the model version ({e})")
+        sig, fp = _arch_key(model.policy)
+        if sig != self.signature:
+            refuse("the served state-dict signature")
+        if fp != self.fingerprint:
+            refuse(f"the forward fingerprint ({fp[:12]} vs {self.fingerprint[:12]})")
+        if side == "player":
+            term = _terminal_of(ref)
+            if term != self.terminal:
+                refuse(f"the terminal ({term} vs {self.terminal})")
+
+
 class H2HEngine:
-    """ONE T2 service (two slots) and ONE eval core for one (player, opponent) edge. Build once; play any
-    number of batches (each a ``RustEvalCore.run_cycle``); close. The declared lifecycle holds: every
-    resource is acquired here, and a cycle only LOADS weights into the two slots."""
+    """ONE T2 service (two slots: the player's eval slot, one SENTINEL slot) and ONE eval core, for ONE
+    architecture. Build once; play any number of batches (each a ``RustEvalCore.run_cycle``) of any number of CELLS
+    (:meth:`set_cell` swaps the (player, opponent) pair); close. The declared lifecycle holds: every SERVED resource
+    (the slot group, its compiled / captured forwards, the core) is acquired here, and a cycle only LOADS weights into
+    the two declared slots — ``InferenceService.load``: an in-place copy, the bit-exact copy check
+    (``gen3_slot_copy_verify_v1``) and the parity gate at every bucket the slot serves, then the copy check again; a
+    failure POISONS the service, so no later cell is served by it. A cell whose checkpoint is another architecture
+    is :class:`CellArchMismatch` before anything is loaded."""
 
     def __init__(self, player: PlayerRef, opponent: PlayerRef, compute: Compute,
                  emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True)):
         import torch
 
         from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
-        from agents.model.snapshot import (ModelVersion, arch_toggles_from_model, current_model_version,
-                                           historical_load_kwargs, load_checkpoint_strict)
-        from agents.observation.state_encoder import load_mappings
-        from agents.training.reward_config import RewardConfig
         from agents.training.rust_eval.build import EvalDecl, build_eval_core, eval_builders, eval_extra_slots
-        from agents.training.rust_rollout.build import RustEnvDecl, _arch_key
-        from utils.rust_env import episode as EP
+        from agents.training.rust_rollout.build import RustEnvDecl
 
-        self.player, self.opponent, self.compute, self.emit = player, opponent, compute, emit
+        self.compute, self.emit = compute, emit
         check_core_flags(player)
         check_core_flags(opponent)
         # THIS checkout's env core, built (incrementally) before anything loads — the trainer's own startup step
         # (`rust_env_setup`, F-LG-6); the loaders' stamp check refuses a build that is not this tree's, so a stale
         # `target/` (a rebase moved the wire) is "missing / stale" turned into "current", never another checkout's
         from utils.rust_env.build import ensure_built
+        from utils.rust_env import episode as EP
 
         ensure_built(compute.profile, emit=emit)
-        self.team_check = {player.id: check_team_source(player), opponent.id: check_team_source(opponent)}
         self.turn_limit = EP.stall_threshold()
         self.regime = regime_for(self.turn_limit)
         self._threads0 = torch.get_num_threads()
+        #: host copies of the checkpoints this engine has loaded, by content hash (a cross reuses each run's snapshot
+        #: across a row and a column); bounded by :attr:`host_cache` entries, least recently used evicted
+        self._hosts: Dict[str, Any] = {}
+        self.host_cache = 4
         try:
             if compute.torch_threads:
                 torch.set_num_threads(int(compute.torch_threads))
             t0 = time.perf_counter()
-            # the strict loader, for BOTH (`gen3_strict_checkpoint_load_v1`); the opponent stays on the CPU (T2
-            # copies it into its slot — a source on the card would be a second copy of it)
-            # `historical_load_kwargs` strips the policy / extractor kwargs DELETED since the checkpoint was written
-            # (PopArt, the value-dist head) and REFUSES an ON one — a run trained at an older pin still loads at HEAD
-            self.historical = {player.id: sorted((historical_load_kwargs(player.zip_path).get("custom_objects") or {})),
-                               opponent.id: sorted((historical_load_kwargs(opponent.zip_path).get("custom_objects") or {}))}
-            self.pm = load_checkpoint_strict(player.zip_path, device=compute.device,
-                                             **historical_load_kwargs(player.zip_path))
-            self.om = load_checkpoint_strict(opponent.zip_path, device="cpu", **historical_load_kwargs(opponent.zip_path))
-            self.pm.policy.eval()
-            self.om.policy.eval()
-            toggles = arch_toggles_from_model(self.pm)
-            if arch_toggles_from_model(self.om) != toggles:
-                raise H2HError("the two players' architecture toggles differ — one T2 slot group serves one architecture")
-            version = current_model_version(load_mappings(), **toggles)
-            for ref in (player, opponent):
-                version.check_opponent_snapshot_compatible(ModelVersion.from_json_file(ref.config_path))
-            if _arch_key(self.pm.policy) != _arch_key(self.om.policy):
-                raise H2HError("the two players' weight signatures differ — they cannot share one T2 slot group")
+            # THE ENGINE'S ARCHITECTURE: the first cell's player. Every cell (this one too) is checked against it
+            self.arch = EngineArch.of(player, self._host(player))
+            self.set_cell(player, opponent)
             n = int(compute.n_envs)
             decl = EvalDecl(n_envs=n, n_sentinels=1)
             extra = eval_extra_slots(decl, self.pm.policy, {})
@@ -434,11 +509,10 @@ class H2HEngine:
                 groups=(SlotGroupSpec("eval", n_slots, self.pm.policy),), device=compute.device,
                 backend=compute.resolved_backend, buckets=buckets, lanes=lanes,
                 max_rows_per_flush=max(1024, n_slots * max(buckets), 4 * n))).startup()
-            terminal = EP.terminal_from_reward_config(RewardConfig.from_dict(_read_json(player.config_path)))
             tb, flat, fixed = eval_builders(None, [])
             self.ev = build_eval_core(decl, collector_decl=cdecl, svc=self.svc, extra_ids=list(range(n_slots)),
                                       trainee_builder=tb, opp_builder=flat, fixed_builders=fixed,
-                                      turn_limit=self.turn_limit, terminal=terminal, emit=lambda _m: None)
+                                      turn_limit=self.turn_limit, terminal=self.arch.terminal, emit=lambda _m: None)
             self.team_packed: List[str] = list(self.ev.team_table.teams)
             self.startup_s = time.perf_counter() - t0
             self.torch_version = torch.__version__
@@ -448,6 +522,33 @@ class H2HEngine:
         except BaseException:
             torch.set_num_threads(self._threads0)
             raise
+
+    # ------------------------------------------------------------------------------------------ cells
+    def _host(self, ref: PlayerRef) -> Any:
+        m = self._hosts.pop(ref.sha256, None)
+        if m is None:
+            m = _load_host(ref)
+        self._hosts[ref.sha256] = m                     # most recently used last
+        while len(self._hosts) > self.host_cache:
+            del self._hosts[next(iter(self._hosts))]
+        return m
+
+    def set_cell(self, player: PlayerRef, opponent: PlayerRef) -> float:
+        """Make (``player``, ``opponent``) the cell the next batches play; returns the seconds it took. Checks both
+        sides (:meth:`EngineArch.check`, the core flags, the team source) BEFORE the cell becomes current, so a refused
+        cell leaves the engine on its previous one. The slots are loaded by the next cycle (``run_cycle`` loads the
+        player's and the opponent's weights every cycle, verified as the class says)."""
+        t0 = time.perf_counter()
+        check_core_flags(player)
+        check_core_flags(opponent)
+        team_check = {player.id: check_team_source(player), opponent.id: check_team_source(opponent)}
+        pm, om = self._host(player), self._host(opponent)
+        self.arch.check(player, pm, "player")
+        self.arch.check(opponent, om, "opponent")
+        self.player, self.opponent, self.pm, self.om = player, opponent, pm, om
+        self.team_check = team_check
+        self.historical = {player.id: _historical(player), opponent.id: _historical(opponent)}
+        return time.perf_counter() - t0
 
     def play_batch(self, pairs: int, seed: int, step: int = 0, sink: Optional[List[Dict[str, Any]]] = None
                    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
@@ -471,12 +572,27 @@ class H2HEngine:
             merged, missing = pool.collect(run_dir)
         finally:
             shutil.rmtree(run_dir, ignore_errors=True)
+        self.verify_slots(f"after a cycle of {self.player.id} vs {self.opponent.id}")
         if missing:
             raise H2HError(f"the eval core published no result for {missing}")
         pc = ((merged.get("pairs") or {}).get(ITEM_KEY))
         out = st.as_dict()
         out["executor_pair_counts"] = list(pc) if pc is not None else None
         return list(sink), out
+
+    def verify_slots(self, where: str) -> None:
+        """BIT-EXACT: the player's eval slot holds THIS cell's player and the sentinel slot THIS cell's opponent
+        (``SlotGroup.verify_copy``, ``gen3_slot_copy_verify_v1``). ``InferenceService.load`` already checks each copy
+        twice; this is the engine's own check, after every cycle, that the games just played were served by the
+        cell's weights and not by a previous cell's (a load that was skipped or missed would pass parity: the
+        parity reference reads the slot itself). ``CopyParityFailure`` names the keys."""
+        from agents.inference.service.slots import served_state_dict
+
+        group = self.svc.groups[0]
+        tb = self.ev.table
+        for slot, model, who in ((int(tb.trainee_slot), self.pm, self.player),
+                                 (int(tb.sentinel_slots[0]), self.om, self.opponent)):
+            group.verify_copy(slot, served_state_dict(model.policy), f"{where}: slot {slot} ({who.id})")
 
     def close(self) -> None:
         """Close the eval core (the service has no teardown of its own: it ends with the process) and hand
@@ -542,31 +658,41 @@ def build_row(*, writer: L.LedgerWriter, run_label: str, commit: str, a: PlayerR
         "flags": [], "provenance": None}
 
 
-def play_edge(out_dir: Optional[str], player: PlayerRef, opponent: PlayerRef, *, pairs: int,
-              batch_pairs: int = DEFAULT_BATCH_PAIRS, schedule_seed: int = 0, schedule_key: Optional[str] = None,
-              purpose: str = DEFAULT_PURPOSE, run_label: str, compute: Compute, request_id: Optional[str] = None,
-              family: Optional[str] = None, request_kind: Optional[str] = None,
-              emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True)) -> Dict[str, Any]:
-    """Play ``pairs`` mirrored pairs of ``player`` vs ``opponent`` in batches, one §0b row per batch appended under
-    its claim to the ledger root ``out_dir`` (``None`` = the run archive's ``_ledger``; any other root under
-    ``models/`` is refused), for the request ``request_id`` (default: :func:`default_request_id`). Skips the batches
-    the request already holds. Returns the edge's pooled summary (``main.h2h.stats.edge_summary``)."""
-    from main.h2h import stats as ST
-    from utils.git import get_git_hash
+@dataclass
+class EdgePlan:
+    """One cell's plan inside a request: its batches, which are recorded, which are to play."""
 
+    player: PlayerRef
+    opponent: PlayerRef
+    key: str
+    plan: List[int]
+    rid: str
+    req: Dict[str, Any]
+    done: Dict[int, int]
+    todo: List[int]
+    kind: str
+
+
+def open_writer(out_dir: Optional[str], purpose: str) -> Tuple[Path, L.LedgerWriter]:
+    """The ledger root (``None`` = the run archive's ``_ledger``; any other root under ``models/`` is refused) and a
+    writer on it, after checking ``purpose`` against the closed list."""
     if purpose not in L.PURPOSES:
         raise H2HError(f"purpose {purpose!r} not in {L.PURPOSES}")
     root = L.check_write_root(out_dir) if out_dir is not None else L.archive_ledger_root()
+    return Path(root), L.LedgerWriter(root, producer=PRODUCER)
+
+
+def plan_edge(writer: L.LedgerWriter, root: Path, regime: Mapping[str, Any], player: PlayerRef, opponent: PlayerRef,
+              *, pairs: int, batch_pairs: int, schedule_seed: int, schedule_key: Optional[str], purpose: str,
+              request_id: Optional[str], family: Optional[str], request_kind: Optional[str]) -> EdgePlan:
+    """Open (idempotently) the cell's request and read what it already holds; REFUSES a plan that would replay a
+    recorded batch index under another length."""
     key = schedule_key or schedule_key_of(player, opponent)
     plan = batch_plan(pairs, batch_pairs)
     check_core_flags(player)
     check_core_flags(opponent)
-    from utils.rust_env import episode as EP
-
-    regime = regime_for(EP.stall_threshold())
     rid = request_id or default_request_id(player, opponent, regime["regime_id"], key, schedule_seed)
     kind = request_kind or ("ab_cell" if purpose == "ab" else "adhoc")
-    writer = L.LedgerWriter(root, producer=PRODUCER)
     try:
         req = writer.open_request(rid, kind=kind, purpose=purpose, family=family, protocol=PROTOCOL,
                                   spec={"producer": PRODUCER, "batch_pairs": int(batch_pairs),
@@ -583,64 +709,110 @@ def play_edge(out_dir: Optional[str], player: PlayerRef, opponent: PlayerRef, *,
                            f"is {plan[:3]}... — a different batch size over existing rows would replay the same "
                            "batch index under another length; use the same --batch-pairs / a new --request")
     todo = [b_i for b_i in range(len(plan)) if b_i not in done]
-    emit(f"[h2h] {player.id} vs {opponent.id}: {pairs} pairs in {len(plan)} batch(es) of {batch_pairs}; "
-         f"{len(done)} already recorded, {len(todo)} to play; schedule {key} seed {schedule_seed}; request {rid} "
-         f"({kind}, purpose {purpose}{f', family {family}' if family else ''}) under {root}")
-    if todo:
-        from utils.contention import cpu_contention_factor
+    return EdgePlan(player=player, opponent=opponent, key=key, plan=plan, rid=rid, req=req, done=done, todo=todo,
+                    kind=kind)
 
-        lock = contextlib.nullcontext()
-        if compute.device.startswith("cuda"):
-            from utils.gpu_lock import gpu_lock
 
-            lock = gpu_lock(what="main.h2h")
+def engine_lock(compute: Compute) -> Any:
+    """The GPU lease for a CUDA engine (``utils.gpu_lock``), else nothing."""
+    if compute.device.startswith("cuda"):
+        from utils.gpu_lock import gpu_lock
+
+        return gpu_lock(what="main.h2h")
+    return contextlib.nullcontext()
+
+
+def current_commit() -> str:
+    from utils.git import get_git_hash
+
+    try:
+        return get_git_hash() or "unknown"
+    except Exception:                                                # noqa: BLE001 - a read still runs
+        return "unknown"
+
+
+def play_planned(eng: "H2HEngine", writer: L.LedgerWriter, ep: EdgePlan, *, schedule_seed: int, purpose: str,
+                 run_label: str, commit: str, emit: Callable[[str], None]) -> int:
+    """Play ``ep``'s missing batches on ``eng`` (whose current cell must be ``ep``'s), one claimed row each.
+    Returns the number of rows appended."""
+    from utils.contention import cpu_contention_factor
+
+    if (eng.player.sha256, eng.opponent.sha256) != (ep.player.sha256, ep.opponent.sha256):
+        raise H2HError(f"the engine's cell is {eng.player.id} vs {eng.opponent.id}, not {ep.player.id} vs "
+                       f"{ep.opponent.id}")
+    regime_id = eng.regime["regime_id"]
+    last_wall: Optional[float] = None
+    wrote = 0
+    for b_i in ep.todo:
+        n = ep.plan[b_i]
         try:
-            commit = get_git_hash()
-        except Exception:                                            # noqa: BLE001 - a read still runs
-            commit = "unknown"
-        with lock:
+            claim = writer.claim(ep.rid, batch=b_i, player=ep.player.sha256, opponent=ep.opponent.sha256,
+                                 regime_id=regime_id, expected_wall_s=last_wall or 2 * n / EXPECTED_GAMES_PER_S)
+        except L.AlreadyRecordedError as e:
+            emit(f"[h2h] batch {b_i}: {e} — skipped")
+            continue
+        cseed = cycle_seed(schedule_seed, ep.key, b_i)
+        load0, t0 = _loadavg(), time.perf_counter()
+        t_start = L.utc_now()
+        games, st = eng.play_batch(n, cseed)
+        wall = time.perf_counter() - t0
+        last_wall = wall
+        t_end = L.utc_now()
+        score = score_games(games, eng.team_packed, n)
+        if st.get("executor_pair_counts") is not None and list(st["executor_pair_counts"]) != score.pair_counts:
+            raise H2HError(f"batch {b_i}: the executor's pentanomial {st['executor_pair_counts']} != the "
+                           f"game log's {score.pair_counts}")
+        row = build_row(writer=writer, run_label=run_label, commit=commit, a=ep.player, b=ep.opponent,
+                        eng=eng, purpose=purpose, key=ep.key, sched_seed=schedule_seed, batch=b_i,
+                        cseed=cseed, score=score, t_start=t_start, t_end=t_end, wall_s=wall,
+                        load={"start": load0, "end": _loadavg(), "contention": cpu_contention_factor(refresh=True)},
+                        executor=st, request=ep.req)
+        try:
+            writer.append_row(row, claim)
+        except L.ClaimVoidedError as e:
+            emit(f"[h2h] batch {b_i}: {e}")
+            continue
+        wrote += 1
+        emit(f"[h2h] batch {b_i + 1}/{len(ep.plan)}: {n} pairs / {2 * n} games in {wall:.1f}s "
+             f"({2 * n / wall:.2f} games/s); W/L/D {score.w}/{score.l}/{score.d}; pair counts "
+             f"{score.pair_counts}; near-tie games {score.near_tie_games}; digest "
+             f"{(score.outcome_digest or '')[:12]}")
+    return wrote
+
+
+def play_edge(out_dir: Optional[str], player: PlayerRef, opponent: PlayerRef, *, pairs: int,
+              batch_pairs: int = DEFAULT_BATCH_PAIRS, schedule_seed: int = 0, schedule_key: Optional[str] = None,
+              purpose: str = DEFAULT_PURPOSE, run_label: str, compute: Compute, request_id: Optional[str] = None,
+              family: Optional[str] = None, request_kind: Optional[str] = None,
+              emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True)) -> Dict[str, Any]:
+    """Play ``pairs`` mirrored pairs of ``player`` vs ``opponent`` in batches, one §0b row per batch appended under
+    its claim to the ledger root ``out_dir`` (``None`` = the run archive's ``_ledger``; any other root under
+    ``models/`` is refused), for the request ``request_id`` (default: :func:`default_request_id`). Skips the batches
+    the request already holds. Returns the edge's pooled summary (``main.h2h.stats.edge_summary``). Many cells on
+    ONE engine: ``main.h2h.many.play_cells``."""
+    from main.h2h import stats as ST
+    from utils.rust_env import episode as EP
+
+    root, writer = open_writer(out_dir, purpose)
+    regime = regime_for(EP.stall_threshold())
+    ep = plan_edge(writer, root, regime, player, opponent, pairs=pairs, batch_pairs=batch_pairs,
+                   schedule_seed=schedule_seed, schedule_key=schedule_key, purpose=purpose, request_id=request_id,
+                   family=family, request_kind=request_kind)
+    emit(f"[h2h] {player.id} vs {opponent.id}: {pairs} pairs in {len(ep.plan)} batch(es) of {batch_pairs}; "
+         f"{len(ep.done)} already recorded, {len(ep.todo)} to play; schedule {ep.key} seed {schedule_seed}; request "
+         f"{ep.rid} ({ep.kind}, purpose {purpose}{f', family {family}' if family else ''}) under {root}")
+    if ep.todo:
+        commit = current_commit()
+        with engine_lock(compute):
             eng = H2HEngine(player, opponent, compute, emit)
             try:
                 if eng.regime["regime_id"] != regime["regime_id"]:
                     raise H2HError("the engine's regime differs from the one planned")
-                last_wall: Optional[float] = None
-                for b_i in todo:
-                    n = plan[b_i]
-                    try:
-                        claim = writer.claim(rid, batch=b_i, player=player.sha256, opponent=opponent.sha256,
-                                             regime_id=regime["regime_id"],
-                                             expected_wall_s=last_wall or 2 * n / EXPECTED_GAMES_PER_S)
-                    except L.AlreadyRecordedError as e:
-                        emit(f"[h2h] batch {b_i}: {e} — skipped")
-                        continue
-                    cseed = cycle_seed(schedule_seed, key, b_i)
-                    load0, t0 = _loadavg(), time.perf_counter()
-                    t_start = L.utc_now()
-                    games, st = eng.play_batch(n, cseed)
-                    wall = time.perf_counter() - t0
-                    last_wall = wall
-                    t_end = L.utc_now()
-                    score = score_games(games, eng.team_packed, n)
-                    if st.get("executor_pair_counts") is not None and list(st["executor_pair_counts"]) != score.pair_counts:
-                        raise H2HError(f"batch {b_i}: the executor's pentanomial {st['executor_pair_counts']} != the "
-                                       f"game log's {score.pair_counts}")
-                    row = build_row(writer=writer, run_label=run_label, commit=commit, a=player, b=opponent,
-                                    eng=eng, purpose=purpose, key=key, sched_seed=schedule_seed, batch=b_i,
-                                    cseed=cseed, score=score, t_start=t_start, t_end=t_end, wall_s=wall,
-                                    load={"start": load0, "end": _loadavg(), "contention": cpu_contention_factor(refresh=True)},
-                                    executor=st, request=req)
-                    try:
-                        writer.append_row(row, claim)
-                    except L.ClaimVoidedError as e:
-                        emit(f"[h2h] batch {b_i}: {e}")
-                        continue
-                    emit(f"[h2h] batch {b_i + 1}/{len(plan)}: {n} pairs / {2 * n} games in {wall:.1f}s "
-                         f"({2 * n / wall:.2f} games/s); W/L/D {score.w}/{score.l}/{score.d}; pair counts "
-                         f"{score.pair_counts}; near-tie games {score.near_tie_games}; digest "
-                         f"{(score.outcome_digest or '')[:12]}")
+                play_planned(eng, writer, ep, schedule_seed=schedule_seed, purpose=purpose, run_label=run_label,
+                             commit=commit, emit=emit)
             finally:
                 eng.close()
     writer.close()
-    got = L.read(H2H_RESUME, root=root, request_id=rid, regime_id=regime["regime_id"],
+    got = L.read(H2H_RESUME, root=root, request_id=ep.rid, regime_id=regime["regime_id"],
                  players=[player.sha256], opponents=[opponent.sha256])
     return ST.edge_summary(list(got.rows))

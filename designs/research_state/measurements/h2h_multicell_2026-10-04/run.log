@@ -1,0 +1,50 @@
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-python3-2265270.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 5.5s: sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 4.7s: sizing_Ap_n48_e10_s1002@8062352 vs sizing_B_n256_e10_s1001@8068077; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 4.8s: sizing_B_n256_e10_s1001@8068077 vs sizing_A2_n48_e10_s1001@8130046; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 5.4s: sizing_Ap_n48_e10_s1002@8062352 vs sizing_A2_n48_e10_s1001@8130046; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 4.8s: sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+[mem_cap] done: gen3ai-capped-python3-2265270.scope exit 0 · peak 1.32 GB of cap 24.00 GB (6%) · not OOM-killed
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-python3-2270064.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352: 100 pairs in 2 batch(es) of 50; 0 already recorded, 2 to play; schedule h2h:ceaea6a7513323e9 seed 0; request h2h:41c3b73ed74f6170 (adhoc, purpose audit) under /tmp/h2h_multicell_20ppmove/single
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 5.5s: sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+[h2h] batch 1/2: 50 pairs / 100 games in 16.9s (5.92 games/s); W/L/D 54/46/0; pair counts [8, 0, 30, 0, 12]; near-tie games 1; digest a258a2e2dc00
+[h2h] batch 2/2: 50 pairs / 100 games in 20.3s (4.93 games/s); W/L/D 56/42/2; pair counts [8, 1, 25, 1, 15]; near-tie games 0; digest 81c582ecca2d
+[h2h] sizing_Ap_n48_e10_s1002@8062352 vs sizing_B_n256_e10_s1001@8068077: 100 pairs in 2 batch(es) of 50; 0 already recorded, 2 to play; schedule h2h:6bbb7e3ee2f815de seed 0; request h2h:80d024b54bd08aa1 (adhoc, purpose audit) under /tmp/h2h_multicell_20ppmove/single
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 4.8s: sizing_Ap_n48_e10_s1002@8062352 vs sizing_B_n256_e10_s1001@8068077; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+[h2h] batch 1/2: 50 pairs / 100 games in 20.3s (4.92 games/s); W/L/D 56/44/0; pair counts [12, 0, 20, 0, 18]; near-tie games 0; digest 843c7c0246f9
+[h2h] batch 2/2: 50 pairs / 100 games in 14.0s (7.15 games/s); W/L/D 53/45/2; pair counts [11, 2, 21, 0, 16]; near-tie games 0; digest c96de652f376
+[h2h] sizing_B_n256_e10_s1001@8068077 vs sizing_A2_n48_e10_s1001@8130046: 100 pairs in 2 batch(es) of 50; 0 already recorded, 2 to play; schedule h2h:8870a02c92f5746d seed 0; request h2h:1131c8f7505365b6 (adhoc, purpose audit) under /tmp/h2h_multicell_20ppmove/single
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 4.8s: sizing_B_n256_e10_s1001@8068077 vs sizing_A2_n48_e10_s1001@8130046; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+[h2h] batch 1/2: 50 pairs / 100 games in 20.7s (4.84 games/s); W/L/D 49/51/0; pair counts [12, 0, 27, 0, 11]; near-tie games 1; digest b7e4482e4cf5
+[h2h] batch 2/2: 50 pairs / 100 games in 20.6s (4.86 games/s); W/L/D 46/53/1; pair counts [13, 0, 27, 1, 9]; near-tie games 0; digest b6e7294df417
+[h2h] sizing_Ap_n48_e10_s1002@8062352 vs sizing_A2_n48_e10_s1001@8130046: 100 pairs in 2 batch(es) of 50; 0 already recorded, 2 to play; schedule h2h:ceaea6a7513323e9 seed 0; request h2h:fd731c46f7715c13 (adhoc, purpose audit) under /tmp/h2h_multicell_20ppmove/single
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 4.7s: sizing_Ap_n48_e10_s1002@8062352 vs sizing_A2_n48_e10_s1001@8130046; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+[h2h] batch 1/2: 50 pairs / 100 games in 17.0s (5.87 games/s); W/L/D 46/54/0; pair counts [13, 0, 28, 0, 9]; near-tie games 1; digest 849bc2e1b413
+[h2h] batch 2/2: 50 pairs / 100 games in 20.4s (4.90 games/s); W/L/D 43/55/2; pair counts [14, 1, 26, 1, 8]; near-tie games 0; digest ae1c5e70f873
+[h2h] play-many: 4 cell(s) x 100 pairs in batches of 50; 4 with batches to play (8 batch(es)), 0 already recorded; purpose audit under /tmp/h2h_multicell_20ppmove/many
+[h2h] pre-flight: 4 cell(s), 3 checkpoint(s) — one architecture (declared from sizing_A2_n48_e10_s1001@8130046) in 2.4s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 4.7s: sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+[h2h] cell 1/4: sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352 — 2 batch(es) to play, 0 recorded; request h2h:41c3b73ed74f6170; swap 0.00s
+[h2h] batch 1/2: 50 pairs / 100 games in 17.0s (5.90 games/s); W/L/D 54/46/0; pair counts [8, 0, 30, 0, 12]; near-tie games 1; digest a258a2e2dc00
+[h2h] batch 2/2: 50 pairs / 100 games in 20.5s (4.88 games/s); W/L/D 56/42/2; pair counts [8, 1, 25, 1, 15]; near-tie games 0; digest 81c582ecca2d
+[h2h] cell 2/4: sizing_Ap_n48_e10_s1002@8062352 vs sizing_B_n256_e10_s1001@8068077 — 2 batch(es) to play, 0 recorded; request h2h:80d024b54bd08aa1; swap 1.11s
+[h2h] batch 1/2: 50 pairs / 100 games in 20.4s (4.91 games/s); W/L/D 56/44/0; pair counts [12, 0, 20, 0, 18]; near-tie games 0; digest 843c7c0246f9
+[h2h] batch 2/2: 50 pairs / 100 games in 14.0s (7.12 games/s); W/L/D 53/45/2; pair counts [11, 2, 21, 0, 16]; near-tie games 0; digest c96de652f376
+[h2h] cell 3/4: sizing_B_n256_e10_s1001@8068077 vs sizing_A2_n48_e10_s1001@8130046 — 2 batch(es) to play, 0 recorded; request h2h:1131c8f7505365b6; swap 0.27s
+[h2h] batch 1/2: 50 pairs / 100 games in 20.9s (4.79 games/s); W/L/D 49/51/0; pair counts [12, 0, 27, 0, 11]; near-tie games 1; digest b7e4482e4cf5
+[h2h] batch 2/2: 50 pairs / 100 games in 20.5s (4.87 games/s); W/L/D 46/53/1; pair counts [13, 0, 27, 1, 9]; near-tie games 0; digest b6e7294df417
+[h2h] cell 4/4: sizing_Ap_n48_e10_s1002@8062352 vs sizing_A2_n48_e10_s1001@8130046 — 2 batch(es) to play, 0 recorded; request h2h:fd731c46f7715c13; swap 0.28s
+[h2h] batch 1/2: 50 pairs / 100 games in 17.1s (5.86 games/s); W/L/D 46/54/0; pair counts [13, 0, 28, 0, 9]; near-tie games 1; digest 849bc2e1b413
+[h2h] batch 2/2: 50 pairs / 100 games in 20.4s (4.90 games/s); W/L/D 43/55/2; pair counts [14, 1, 26, 1, 8]; near-tie games 0; digest ae1c5e70f873
+[mem_cap] done: gen3ai-capped-python3-2270064.scope exit 0 · peak 1.00 GB of cap 24.00 GB (4%) · not OOM-killed

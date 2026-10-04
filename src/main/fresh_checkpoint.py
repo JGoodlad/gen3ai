@@ -51,9 +51,10 @@ def _production_policy_kwargs(args: Any = None) -> Tuple[Any, Dict[str, Any], Di
     return args, fek["layout"], pk
 
 
-def build_fresh_model(seed: int, *, num_timesteps: int = 0) -> Tuple[Any, Any, Dict[str, Any]]:
+def build_fresh_model(seed: int, *, num_timesteps: int = 0, args: Any = None) -> Tuple[Any, Any, Dict[str, Any]]:
     """``(model, args, policy_kwargs)``: a seeded, untrained ``MaskablePPO`` +
-    ``Gen3DualHeadMaskablePolicy`` at the production surface, on CPU. Same ``seed`` ⇒ same weights."""
+    ``Gen3DualHeadMaskablePolicy`` at the production surface, on CPU. Same ``seed`` ⇒ same weights.
+    ``args`` (a resolved training namespace) builds at that surface instead (``_production_policy_kwargs``)."""
     import gymnasium as gym
     import numpy as np
     import torch
@@ -63,7 +64,7 @@ def build_fresh_model(seed: int, *, num_timesteps: int = 0) -> Tuple[Any, Any, D
     from agents.model.policy import Gen3DualHeadMaskablePolicy
     from utils.torch_state_guard import single_thread_build
 
-    args, layout, pk = _production_policy_kwargs()
+    args, layout, pk = _production_policy_kwargs(args)
     total_dim = layout["total_dim"]
     obs_space = gym.spaces.Dict({
         "observation": gym.spaces.Box(-np.inf, np.inf, (total_dim,), np.float32),

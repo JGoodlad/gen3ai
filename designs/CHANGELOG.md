@@ -11602,3 +11602,27 @@ their pin's code and are unaffected. No run is live.
 - **ORCHESTRATOR decisions built.** F-X5-26: the opponent ACTIVE's move reinjection soft-embeds its row by the DETACHED fixed-mass presence π_m (M10) — the move head keeps its BCE, the PPO → move-head route through the active's reinjection is the stated cost. F-X5-27: `BeliefSlots` is NOT built under fixed_mass (its init draw still runs, so every other initial byte equals blob's); blob keeps it.
 - **Not built (hand-off, FINDING).** OTHER edges for C2 / S1 / T / X / G (averaged type / ability reads); OTHER in the α / β consumers (`out_cells`, `opp_p_ghost`, `switch_branch`, …) — U4.
 - **Measured.** Blob byte-identical: state_dict, pi / vf features, logits, values and one backward's gradients hash equal to `ecf9eeca`'s on the K9 golden buffer. CPU Inductor compile of the fixed_mass extractor matches eager to 4.8e-6 (pi) / 2.2e-6 (vf) on 64 golden rows, 0 near-tie rows, 142 s cold (part 1: 100 s). Tier-0-style sanity read on the golden fixture: hypothesis attacker atk / spa = the species formula (fp32 rounding), STAB from the hypothesis context = the species table on every candidate, hypothesis e_mult = SPECIES_EXP_MULT[s] exactly, P(KO) > 0 on 14 hypothesis cells; OTHER's atk / spa / STAB / e_mult = the fp64 tail averages (≤ 1.6e-4 on ~300, ≤ 4e-7), min OTHER e_mult 0.571, OTHER P(KO) 0. Tests: `src/agents/model/x5_opp_mon_axis_test.py` (15; every revert of a gate, the order, the presence scaling, Beat Up, the reinjection, the rule-8 cut, OTHER's defender / attacker / edge / max-site presence fails one).
+## 2026-10-04 — eval U6 / X5 U0: the MULTI-CELL offline head-to-head engine (`main.h2h play-many`, `main/h2h/many.py`; storage and engine reuse only, no model change, no config bump, h2h protocol unchanged)
+
+- **What.** `python -m main.h2h play-many --cells <json> | --players … --opponents …` plays many cells on ONE engine (one T2
+  service with its two declared slots, one eval core). `H2HEngine.set_cell` swaps the (player, opponent) pair; each cycle
+  loads the cell's weights into the slots (`InferenceService.load`: in-place copy, bit-exact copy check, parity at every
+  bucket, a failure poisons the service), and the engine checks both slots bit-exact against the cell's checkpoints after
+  every cycle (`H2HEngine.verify_slots`, new). `play_edge` was split into `plan_edge` / `play_planned` (+ `open_writer`,
+  `engine_lock`, `current_commit`) so both tools plan and play a cell with the same code; `--request` puts every cell
+  into one request (an X5 look), without it each cell keeps its single-cell default request. `play.EngineArch` declares
+  the engine's ONE architecture (toggles, model version, served signature, forward fingerprint, the player's terminal);
+  a pre-flight refuses a foreign cell before any engine exists (`CellArchMismatch`). Host copies of the checkpoints now
+  load on the CPU in both tools (an LRU of 4); T2 copies them into its slots either way.
+  `main.fresh_checkpoint.build_fresh_model` takes an optional `args` (the test's foreign-architecture checkpoint).
+- **Proof** (`designs/research_state/measurements/h2h_multicell_2026-10-04/`, CPU, the P0 sizing finals, 4 cells × 200
+  games): fresh-engine vs swapped-engine game logs identical (800 / 800 games, `digest_all` equal), single-cell vs
+  multi-cell rows equal (counts, pentanomial, team counters, seed block, outcome digest; 8 / 8). CPU swap 0.27–1.1 s vs a
+  4.7–5.5 s engine start; the GPU per-cell time is DEFERRED to the GPU owner.
+- **Tests:** `main/h2h/many_test.py`, `main/h2h/play_many_integration_test.py` (rows = single-cell rows; a swapped cell =
+  a fresh engine game for game; resume skips recorded batches and builds no engine; the family read across the look's cells;
+  a `fixed_mass` cell refused before anything plays; a skipped load and a no-op slot copy both caught, no row written —
+  the skipped-load test fails with `verify_slots` removed).
+- **Finding F-U6-1:** one engine serves ONE architecture, and so does single-cell `play` — the X5 A/B cross (`fixed_mass`
+  seed × `blob` seed) is a two-architecture cell that NEITHER tool can play. It needs a two-slot-group engine before look 1
+  (not built, standing rule 9).

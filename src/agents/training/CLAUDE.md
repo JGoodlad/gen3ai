@@ -363,7 +363,10 @@ protocol `gen3_eval_protocol_v1_h2h`, by default to the archive's `_ledger/`). I
 eval core through the same `run_cycle`, GREEDY both sides, MIRRORED, teams from the player's eval builder; one valid row per
 batch under a claim, resumable per request, any other root under `models/` refused. 🚨 **The mirror hands the TEAMS over and keeps the player in seat p1** — a seat effect
 `u` rides every edge (a checkpoint against itself reads 0.5 + u) and a self-play pair is NOT exactly 0.5 (the speed-tie RNG
-order is seat-dependent); read a pair-clustered interval, never a per-game one.
+order is seat-dependent); read a pair-clustered interval, never a per-game one. `python -m main.h2h play-many` plays MANY
+cells on ONE engine (eval U6 / X5 U0): the same games and rows as single-cell `play`, one engine start instead of one per
+cell; 🚨 **one ARCHITECTURE per engine** — a foreign cell is refused before anything plays, so the X5 cross (`fixed_mass` ×
+`blob`) is NOT playable on it (F-U6-1).
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)** (its
 "The eval COUNT ledger" and "The checkpoint-vs-checkpoint head-to-head" sections).
 

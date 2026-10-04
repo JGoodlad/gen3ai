@@ -544,7 +544,7 @@ its request and batch.
 | How strong is it? (**rating**) | `snapshot_ladder/ladder.json` (dense BT, recipe-stamped) at run end, matched snapshot count | BUILT (`main.elo`); U7 re-points its fit at the ledger |
 | Is the loop working? (**exploiter gap**) | `main.best_response_gap`: must FALL round over round | BUILT; U3b moves its reads to the ledger |
 | Against the outside world? (**anchors**) | `main.anchors` (SmallRL at milestones; Kakuna/Foul Play at run end), greedy vs greedy, mirrored | BUILT; cadence TODO (T18); U3b writes rows |
-| Is one arm non-inferior to another? (**pre-registered A/B**) | the X5 cross design (`design_x5_belief_tokens.md` §7.4) as one request FAMILY | BUILT as `main.h2h`; purpose `ab`; multi-cell engine U6 |
+| Is one arm non-inferior to another? (**pre-registered A/B**) | the X5 cross design (`design_x5_belief_tokens.md` §7.4) as one request FAMILY | BUILT as `main.h2h`; purpose `ab`; multi-cell engine U6 BUILT (one architecture per engine — the cross's two-architecture cells need F-U6-1's follow-up) |
 | Does the value tell states apart? (**discrimination**) | TODO | TODO (era step 3) |
 
 ## 2. T20, the reference mixture, eviction, and the cycle monitor
@@ -961,7 +961,7 @@ The two-tier plateau plus the monitor are 2.7–4.0 % of that.
       gap onto the ledger; U3c the `eval_results.jsonl` readers.
 - [ ] U4 the scheduler + generalized window (+ its first measurement); U4a slot-direct snapshot loads; U4b SPRT resume.
 - [ ] U5 the cycle monitor (+ its offline driver); U9 the two-tier plateau check.
-- [ ] U6 the multi-cell offline engine.
+- [x] U6 the multi-cell offline engine — BUILT 2026-10-04 (`main.h2h play-many`, `main/h2h/many.py`): ONE architecture per engine; the X5 cross's foreign-architecture cells are NOT playable on it (F-U6-1, §10 U6 row).
 - [ ] U7 T20 estimators; U7a retire the ladder updater; U7b eviction operating characteristics; U8 §2.7's validation
       + the N0 back-test (references and plateau).
 - [ ] U10 the Rust p1 policy route (balanced seats).
@@ -1117,7 +1117,7 @@ adds the monitor and the plateau unit).
 | 2 | **U2 — DONE 2026-10-04** (real-launch gate DONE 2026-10-04 by the GPU agent at `ecf9eeca`: PASS, `measurements/x5_u2_gpu_checks_2026-10-04/` §4) | in-loop migration: cycle rows dual-written beside `eval_results.jsonl` (exact W/L/D, team counters, digest); SPRT rows per batch + decision rows (resume NOT here); ~~ladder dual-write~~ (moved out by the brief: the updater is left as is until U7 / U7a). Gate: the routine gate + the `--debug --debug-eval` smoke + **the first two minutes of a real launch, which needs the GPU owner's cooperation** (the training agent runs it under its lease) | 1.5 | opus-high | U1 | no (the training loop) |
 | 3 | **U0** | F-ED-2: resolve the ladder's sub-binomial noise: a seeded replicate experiment (one edge × 20 replays × 100 games, CPU), then the cause | 0.5 | opus-medium | — | no (GIGO hunt) |
 | 4 | **U3** | backfill per §0b.6 | 1.0 | sonnet-xhigh | U1 | **yes**, with §0b.6 as the mapping |
-| 5 | **U6** | the multi-cell offline engine (P5's lane; X5 look cells; dense audits; back-fills) | 1.0 | opus-medium | — | no (GPU engine) |
+| 5 | **U6 — DONE 2026-10-04** (CPU; the GPU per-cell time DEFERRED to the GPU owner) | the multi-cell offline engine (P5's lane; X5 look cells; dense audits; back-fills). AS BUILT: `python -m main.h2h play-many` — one T2 service + one eval core built once, each cell (player, opponent) LOADS its weights into the two declared slots (`InferenceService.load`: in-place copy, bit-exact copy check, parity at every bucket; plus the engine's own after-cycle slot check `verify_slots`); each cell planned and played by `main.h2h play`'s own code, so the games are byte-identical to single-cell `play` (outcome-digest proof, `measurements/h2h_multicell_2026-10-04/`); resumable per batch; a cell list or a cross; `--request` = one request for every cell (an X5 look). **ONE ARCHITECTURE PER ENGINE** (a pre-flight refuses a foreign cell, `CellArchMismatch`) — so the X5 A/B cross (`fixed_mass` × `blob`) and §4's "foreign-architecture cells" of P5 are NOT servable yet: they need a two-slot-group engine (**F-U6-1**, a follow-up unit, not built) | 1.0 | opus-medium | — | no (GPU engine) |
 | 6 | **U4** | the scheduler + window: request store, claims, allocation and yields (§0d), budgets and c_gpu, the window spread over ≤ 5 windows, **the frozen-vs-frozen executor change** (a frozen player in the trainee eval slot, ≤ 5 opponents per pass), the replay audit. **First deliverable: the in-window measurement** (SPRT batch wall incl. `load_sentinels`, games/s, per-window overhead) that fixes c_gpu | 3.0 | opus-high | U2 | no |
 | 7 | **U4a** | slot-direct snapshot loads (F-ED-11): state dicts go straight into the declared slots via `slots.copy_in`, with no per-cycle `nn.Module` build in `load_sentinels`; `rust_eval/launch.py` added to the learner-lifecycle gate's scope if it is not already | 0.5 | opus-high | U4 | no |
 | 8 | **U4b** | SPRT resume across restarts (Q7) + snapshot files pinned while a request is open | 0.5 | opus-high | U4 | no |

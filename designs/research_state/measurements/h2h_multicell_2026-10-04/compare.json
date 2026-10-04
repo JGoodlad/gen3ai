@@ -1,0 +1,59 @@
+{
+ "cells": 4,
+ "games_compared": 800,
+ "near_tie_games_wide": 126,
+ "ok": true,
+ "problems": [],
+ "rows_compared": 8,
+ "rows_engine": {
+  "cells": [
+   {
+    "cell": "sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352",
+    "load_s": 0.947,
+    "play_s": 37.447,
+    "rows": 2,
+    "set_cell_s": 0.0
+   },
+   {
+    "cell": "sizing_Ap_n48_e10_s1002@8062352 vs sizing_B_n256_e10_s1001@8068077",
+    "load_s": 0.946,
+    "play_s": 34.434,
+    "rows": 2,
+    "set_cell_s": 1.112
+   },
+   {
+    "cell": "sizing_B_n256_e10_s1001@8068077 vs sizing_A2_n48_e10_s1001@8130046",
+    "load_s": 0.947,
+    "play_s": 41.428,
+    "rows": 2,
+    "set_cell_s": 0.271
+   },
+   {
+    "cell": "sizing_Ap_n48_e10_s1002@8062352 vs sizing_A2_n48_e10_s1001@8130046",
+    "load_s": 0.949,
+    "play_s": 37.491,
+    "rows": 2,
+    "set_cell_s": 0.275
+   }
+  ],
+  "preflight_s": 2.359,
+  "startup_s": 4.69
+ },
+ "timing": {
+  "fresh_startup_s": [
+   5.5,
+   4.72,
+   4.8,
+   5.37
+  ],
+  "swap_s": [
+   0.0,
+   1.047,
+   0.274,
+   0.272
+  ],
+  "swapped_startup_s": 4.83
+ },
+ "wall_many_s": 159.6,
+ "wall_single_s": 170.7
+}

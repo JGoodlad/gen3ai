@@ -23,3 +23,29 @@ def checkpoints(tmp_path_factory):
     with PAR.declared_torch_state(1):
         trainee, sentinels, _cfg = PAR.build_models(dst, n_sentinels=1)
     return trainee, sentinels[0]
+
+
+@pytest.fixture(scope="session")
+def foreign(tmp_path_factory):
+    """A seeded PERTURBED-fresh checkpoint of ANOTHER architecture — the production surface with X5's
+    ``--belief-tokens fixed_mass`` (a structural toggle: another state-dict signature and forward fingerprint) — in
+    its own ``run_h2h_foreign/`` beside its ``model_config.json``. The X5 A/B's own arm pair."""
+    from agents.model.parity_probe import PERTURB_SCALE, perturb_
+    from agents.model.snapshot import arch_toggles_from_model, current_model_version
+    from agents.observation.state_encoder import load_mappings
+    from agents.training.rust_eval import parity as PAR
+    from main.fresh_checkpoint import build_fresh_model
+    from main.train.production_args import production_args
+
+    dst = tmp_path_factory.mktemp("h2h_foreign") / "run_h2h_foreign"
+    dst.mkdir()
+    args = production_args()
+    args.belief_tokens = "fixed_mass"
+    with PAR.declared_torch_state(1):
+        model, _, _ = build_fresh_model(7, args=args)
+        perturb_(model.policy, seed=2700, scale=PERTURB_SCALE)
+        path = dst / "snapshot_000000007000.zip"
+        model.save(str(path))
+    (dst / "model_config.json").write_text(
+        current_model_version(load_mappings(), **arch_toggles_from_model(model)).to_json())
+    return str(path)

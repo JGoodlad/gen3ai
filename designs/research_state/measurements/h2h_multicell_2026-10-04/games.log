@@ -1,0 +1,12 @@
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-python3-2265270.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 5.5s: sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 4.7s: sizing_Ap_n48_e10_s1002@8062352 vs sizing_B_n256_e10_s1001@8068077; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 4.8s: sizing_B_n256_e10_s1001@8068077 vs sizing_A2_n48_e10_s1001@8130046; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 5.4s: sizing_Ap_n48_e10_s1002@8062352 vs sizing_A2_n48_e10_s1001@8130046; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/h2hmulti/src/rust_env/target/release)
+[h2h] engine up in 4.8s: sizing_A2_n48_e10_s1001@8130046 vs sizing_Ap_n48_e10_s1002@8062352; 64 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+[mem_cap] done: gen3ai-capped-python3-2265270.scope exit 0 · peak 1.32 GB of cap 24.00 GB (6%) · not OOM-killed
