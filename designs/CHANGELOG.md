@@ -11397,3 +11397,12 @@ cache misses." The GPU lock was a queue (a kernel-blocked flock); it is now a le
 - **Docs.** Root `CLAUDE.md` standing rule 5 + the GPU row, `designs/ops/testing.md`, `ORCHESTRATOR_SOP.md` §2 (the
   orchestrator grants one lease at a time and names the agent), `scripts/ops/README.md`. Tests:
   `src/utils/gpu_lease_test.py` (CPU, real holder processes on a temp lock).
+
+## 2026-10-03 — Rustboro-era bot anchors INSTALLED (`data/gen3_bot_elo_anchors.json`)
+
+- **What changed:** the bot Elo anchors every ladder pins to are replaced with the Rustboro-era base ratings (`designs/research_state/measurements/bot_base_ratings_2026-10-03/`, `3ccef556`).
+  - Played with the FIXED bots: setup branch `f885ad8f`, Curse as setup.
+  - 259,200 mirrored games, every bot within ±9 Elo (95 %), `random` pinned at 1000.
+- **ERA BOUNDARY:** every bot-anchored ladder headline fitted before this commit used the broken-bot anchors. Pre-era ladders stay as history (owner 2026-10-03: no retroactive re-bake).
+- **Format:** the new file's win matrix counts a draw as half a win, and its SEs come from a pair bootstrap.
+- No run was live; `data/` changed with no pinned run.
