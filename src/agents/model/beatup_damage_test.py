@@ -209,7 +209,11 @@ def test_unrevealed_defender_prices_the_expected_damage_exactly(op):
         e_maxhp += float(p[s]) * (2.0 * float(op.BASE_STATS[s, 0]) + 31.0 + 110.0)
     cell = op._outgoing_matrix(ctx)[0, 0:5]                                   # move 0 x opp slot 0 (hidden)
     assert cell[1].item() * e_maxhp == pytest.approx(want_hp, rel=2e-3)
-    assert cell[4].item() == pytest.approx(1.0, abs=1e-6)                     # typeless: the E[mult] column is 1
+    # typeless: the E[mult] column is 1 up to fp32 SUMMATION rounding over the species axis — bounded by
+    # n * 2^-24 (n terms, the fp32 unit roundoff), never a fixed 1e-6: the weighted species-usage marginal
+    # (F-X5-47, 2026-10-04) reads 1 + 1.07e-6 here (9 ulps). A real defect (a type chart applied: Gengar's
+    # Ghost share alone is 0.044) sits orders of magnitude above the bound.
+    assert cell[4].item() == pytest.approx(1.0, abs=p.numel() * 2.0 ** -24)
     assert cell[3].item() == 0.0                                              # P(KO) stays NULLED at a hidden slot
 
 

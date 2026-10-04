@@ -435,6 +435,14 @@ The concrete steps:
    load on a table that breaks that identity. Every run before 2026-10-04 trained on a DEFLATED prior
    (over the unweighted `Raw count`: a species-dependent ×0.10–0.94, Skarmory Spikes 0.547 vs 0.997,
    sums 0.41–3.75; F-X5-41); a pre-fix checkpoint reads the corrected prior at HEAD.
+   **The Smogon SPECIES-USAGE marginal is each species' share of the same RATING-WEIGHTED W**
+   (`gen3_smogon_species_usage_weighted_v1`: `gen3_data.priors.species_usage()` → `build_species_usage_prior`,
+   read by the op's `SPECIES_USAGE_PRIOR`, the `T0SpeciesPrior` / `BeliefHead` log-marginal and the
+   co-occurrence lift's independence baseline, whose numerator — the chaos `Teammates` conditional — is
+   weighted too). The facade THROWS on a marginal that is not W (checked against `Σ Abilities` and
+   `Σ Moves / 4`). Every run before 2026-10-04 trained on the UNWEIGHTED `Raw count` share (F-X5-47: new /
+   old share ×0.19–×1.75 over the 216 covered species, ×0.92–×1.19 over the top 25, Tyranitar 0.078 → 0.086,
+   Shuckle ×0.19); a pre-fix checkpoint reads the corrected marginal at HEAD.
    **A HIDDEN slot does not read that flat row** (E10, `gen3_hidden_slot_move_mixture_v1`): its
    prior is the parameter-free Smogon mixture `P(m | hidden) = Σ_s P_T0(s | revealed) · P(m | s)` —
    the `T0SpeciesPrior` team-composition posterior (step 0 of this chain, Species Clause applied)

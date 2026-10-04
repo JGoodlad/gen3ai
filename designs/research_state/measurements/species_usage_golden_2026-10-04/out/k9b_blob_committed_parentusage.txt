@@ -1,0 +1,14 @@
+🎯 [CRITIC] winprob — --vf-coef 0.5 scale readout (first non-degenerate update): BCE 0.8673 (ln 2 ~ 0.693 = chance; lower = the head already calls lopsided games). SHARED-TRUNK GRADIENT: ||g_value|| 6.366 / ||g_policy|| 1.092 -> 5.83x. READING: >>1 the value gradient dominates the trunk, cut --vf-coef by that factor; <<1 raise it. ⚠️ this is a ratio of GRADIENTS, not of losses — on epoch 1 the clipped surrogate sits at its stationary point (ratio == 1), so |policy loss| ~ 0 and a loss ratio against it is an artifact. And --vf-coef now multiplies a BCE, not the shaped-return MSE 0.5 was tuned for, which on a +-30 return was O(100). Confirm with grad/value_policy_logratio (log10 of this ratio) — see designs/ai_v12/design_winprob_only_critic.md 5.4.
+{
+ "arm": "blob",
+ "hold": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a7fef02b0396c4799/designs/research_state/measurements/species_usage_golden_2026-10-04/out/parent_species_usage.json",
+ "k9b": "PASS",
+ "max_abs_dlogp_current": 4.76837158203125e-07,
+ "max_abs_dlogp_judged": 4.76837158203125e-07,
+ "excluded_frac": 0.0,
+ "rows_excluded": 0.0,
+ "rows_judged": 16.0,
+ "rows_current": 16.0,
+ "max_abs_dlogp_excluded": 0.0,
+ "tie_eps": 0.0002
+}

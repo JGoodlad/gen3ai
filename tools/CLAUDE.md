@@ -14,6 +14,8 @@ split.
 | `pokemon_data_extractor/sync.py` | poke-env pokedex + static moves/natures/`learnset.json` + `GenData` type chart; Showdown `abilities.ts` / `items.ts` / `aliases.ts` | `data/pokemon/gen3_{species,moves,abilities,items,type_chart,natures,learnset,move_aliases}.json` |
 | `smogon_stats_downloader/sync.py` | Smogon monthly chaos JSON (12-month window) | `data/pokemon/gen3_smogon_stats.json` |
 | `smogon_stats_downloader/compute_priors.py` | the aggregated stats + pokedex | `data/pokemon/gen3_{ability,hidden_power,move,item,spread,teammate}_priors.json` |
+| `sample_team_downloader/sync.py` | Smogon forum sample-team thread | `data/teams/sample/` |
+| `others_team_downloader/sync.py` | PokePaste dumps | `data/teams/others/` |
 
 🚨 **A Smogon chaos record mixes ONE unweighted field with rating-WEIGHTED ones — never divide across
 them** (`gen3_smogon_prior_denominator_v1`, F-X5-41). `Raw count` is the UNWEIGHTED set count;
@@ -24,9 +26,15 @@ once per SLOT, an empty one under `""`), so the first four share one total W and
 2026-10-04 it was `/ Raw count`, deflated ×0.10–0.94 by species. `compute_priors.check_priors`
 THROWS before any write on an output that breaks its invariant (a distribution summing to 1; a move
 prior summing with the empty-slot mass to exactly 4); `weighted_count` THROWS on a record whose
-weighted fields disagree. The facade re-checks at load (`gen3_data.priors`).
-| `sample_team_downloader/sync.py` | Smogon forum sample-team thread | `data/teams/sample/` |
-| `others_team_downloader/sync.py` | PokePaste dumps | `data/teams/others/` |
+weighted fields disagree. The facade re-checks at load (`gen3_data.priors`). The SPECIES-USAGE marginal is the same W
+(`gen3_smogon_species_usage_weighted_v1`, F-X5-47): the facade's `priors.species_usage()` reads each
+species' `Σ Abilities` (it was `Raw count`, ×0.19–×1.75 off by species) and THROWS on a table that is
+not W. No tool writes it — it is derived at call time from `gen3_smogon_stats.json`.
+**The 12-month merge keeps W consistent** (`sync.py` `_merge_species`): `Raw count` and every
+weighted field (`Moves`, `Abilities`, `Items`, `Spreads`, `Happiness`, `Teammates`) are summed
+element-wise across months, so the merged W is `Σ_months W_m` and every identity above holds on the
+aggregated file (0 of 216 records off, 1.2e-14). Only `usage`, `Viability Ceiling` and `Checks and
+Counters` are latest-month (not summable) — never read `usage` as a count or a 12-month share.
 
 ⚠️ **`data/teams/sample/` has a SECOND writer that is not in this table.**
 `python -m main.promote_teams` promotes a seed-recorded random draw of already-downloaded pool teams

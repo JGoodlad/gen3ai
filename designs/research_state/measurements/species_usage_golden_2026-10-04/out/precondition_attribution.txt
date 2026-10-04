@@ -1,0 +1,10 @@
+Two routine-gate tests failed on this tree before their edits; scripts/precondition_attrib.py ran each with the
+species-usage marginal HELD at out/parent_species_usage.json (passed, both) and at this tree's (failed, both):
+- rust_rollout/consistency_test.py::test_a_row_near_a_tie_is_excluded_not_judged — `(g < eps).sum() == 1` read 3:
+  the probe's minimum tie margin 3.70297525e-05 is shared EXACTLY by rows (4,1), (4,2), (4,3) under the weighted
+  marginal (a unique minimum under the parent's). The test now takes the tie group k = |{g == min}| (3 of 16 rows),
+  asserts every member sits below eps and k < half the probe, and expects rows_excluded == k.
+- model/beatup_damage_test.py::test_unrevealed_defender_prices_the_expected_damage_exactly — the typeless E[mult]
+  column read 1.000001072883606 against abs=1e-6 (fp32 summation rounding over the species axis, 9 ulps). The bound
+  is now n * 2^-24 (n = the prior's length), the fp32 accumulation bound.
+After the edits both pass under EITHER marginal (re-run with the parent's held: passed, both).

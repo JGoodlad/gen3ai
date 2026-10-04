@@ -550,7 +550,11 @@ NONFORMULA_LEVEL = 100
 #: gen3_smogon_prior_denominator_v1 (F-X5-41, 2026-10-04): the op's believed opponent moves fuse the Smogon
 #: move prior (`belief_tables.build_move_prior_logits`), whose values moved from Moves / Raw count (deflated) to
 #: Moves / W, so a recording made under gen3_beatup_exact_v1 is not reproducible here either.
-OP_SEMANTICS = "gen3_smogon_prior_denominator_v1"   # (was gen3_beatup_exact_v1: the move prior was deflated)
+#: gen3_smogon_species_usage_weighted_v1 (F-X5-47, 2026-10-04): `SPECIES_USAGE_PRIOR` (the OUTGOING kernel's
+#: expected-latent defender) and the T0 species marginal / co-occurrence lift moved from the UNWEIGHTED Raw count
+#: share to the RATING-WEIGHTED W share, so a recording made under gen3_smogon_prior_denominator_v1 is not
+#: reproducible here either.
+OP_SEMANTICS = "gen3_smogon_species_usage_weighted_v1"   # (was gen3_smogon_prior_denominator_v1: usage was Raw count)
 DAMAGE_MODELS: Dict[str, Tuple[str, float, str]] = {
     # --- fixed / level: `getDamage` → `move.damage === 'level'` → source.level, else `move.damage` ---
     "seismictoss": ("fixed", float(NONFORMULA_LEVEL), "data/moves.ts seismictoss: damage 'level'"),

@@ -11784,3 +11784,35 @@ their pin's code and are unaffected. No run is live.
   `> 200` to `> 150`: the seeded run records 188 distinct trainee rows, 219 with the parent prior held.
   `x5_opp_mon_axis_test`'s tie plant is now relative to the natural tie set: the rebuilt blob buffer carries 7 / 64
   exact-tie rows under either prior.
+
+## 2026-10-04 — TRAINING-INPUT CHANGE: the Smogon SPECIES-USAGE marginal is the rating-weighted W, not the unweighted `Raw count` (F-X5-47 GIGO fix, `gen3_smogon_species_usage_weighted_v1`; no ARCH_SIGNATURE / config bump)
+
+- **The defect.** `gen3_data.priors.species_usage()` weighted each species by the chaos `Raw count`, the UNWEIGHTED set
+  count (every rating weight 1), while every other Smogon prior is rating-weighted. Over the 216 covered species the
+  normalised share moves ×0.19–×1.75 (new / old; median ×0.69), and ×0.92–×1.19 over the top 25 (Tyranitar 0.0781 →
+  0.0863, Jirachi ×1.16, Gengar ×0.94). The low-rated tail was inflated most: Shuckle ×0.19, Manectric ×0.21, Altaria
+  ×0.25. The co-occurrence lift `log P(s | t) / P(s)` divided a WEIGHTED teammate conditional by that UNWEIGHTED share.
+- **The fix.** `species_usage()` reads each species' W through the facade's existing `_weighted_count` (`Σ Abilities`,
+  Smogon's `p.raw.weight`). The latest-month `usage` fallback is gone (that field is a share, not a count).
+  `priors._checked_species_usage` THROWS `PriorInvariantError` (naming F-X5-47) unless every entry equals both
+  `Σ Abilities` and `Σ Moves / 4` of its record, over exactly the chaos species set. The marginal is derived at call
+  time and nothing in `data/` changed: the tool regenerates all seven Smogon files byte-identically.
+- **Moves.** `build_species_usage_prior`: the op's `SPECIES_USAGE_PRIOR` (`OP_SEMANTICS` =
+  `gen3_smogon_species_usage_weighted_v1`), the `T0SpeciesPrior` / `BeliefHead` log-marginal and lift baseline
+  (`build_species_cooccur_prior`), and the `main.belief_roles` usage. The role set goes from 29 roles to 28 (Ice Punch
+  0.2565 → under the 0.25 bar, nothing joins), substitute pairs 3,030 → 2,798, sha `daba9995…` → `823b27be…`. It does
+  NOT move the observation, the Rust encoder or `data/`.
+- **K9 golden.** K9(b) failed on both committed buffers (blob 0.0054, fixed_mass 0.0077) and passes with the parent's
+  marginal held, so both buffers were rebuilt. They are the SAME games: obs, actions, masks and rewards are
+  byte-identical, and only the behaviour columns moved. Both arms were re-recorded (blob post `09222426…`, fixed_mass
+  `50659234…`; fixed_mass K9(b) excluded share 6.25 % → 0 %, coverage unchanged). A three-step proof shows every moved
+  element is the marginal's (`research_state/measurements/species_usage_golden_2026-10-04/`).
+- **Tests.** `src/agents/gen3_data/priors_species_usage_test.py` (5): values are W and never `Raw count`, the slot
+  prior's ratios, the co-occurrence baseline, a planted Raw-count / latest-`usage` table and one planted species throw.
+  Reverting `priors.py` to the parent fails 5 / 5; reverting only the weight line (guard kept) fails 5 / 5.
+- **Boundary.** Every prior run trained on the unweighted marginal. Pre-fix checkpoints read the corrected marginal at
+  HEAD (non-persistent buffers).
+- **Two test preconditions re-based (each attributed first: both pass with the parent's marginal held).**
+  `consistency_test`'s tie-exclusion test now excludes the minimum-margin TIE GROUP (three probe rows share it exactly
+  under the weighted marginal). `beatup_damage_test`'s typeless E[mult] bound goes from `abs=1e-6` to the fp32
+  summation bound `n * 2^-24` (it reads 1 + 1.07e-6).

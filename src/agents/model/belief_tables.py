@@ -510,7 +510,9 @@ def build_species_cooccur_prior(n_species: int) -> Tuple[torch.Tensor, torch.Ten
 
     **Sourced from SMOGON, never the pool** (owner rule 2026-08-15 — priors are always
     Smogon-based; the 719-team pool measures structure but never ships as a prior). The marginal
-    is the same normalized usage share `build_species_usage_prior` emits; the lift comes from the
+    is the same normalized usage share `build_species_usage_prior` emits (the RATING-WEIGHTED W
+    share, `gen3_smogon_species_usage_weighted_v1` — the SAME population as the weighted teammate
+    conditional it divides; until 2026-10-04 an UNWEIGHTED ``Raw count`` share, F-X5-47); the lift comes from the
     chaos ``Teammates`` field (``gen3_data.priors.teammates`` — the ONE species×species joint
     Smogon publishes, ~2.5M gen3ou battles): ``P(s | t)`` is the per-slot teammate conditional,
     and the independence baseline renormalizes the usage share to exclude ``t`` itself

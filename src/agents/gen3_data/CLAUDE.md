@@ -178,8 +178,14 @@ set-level joint we own) but never ships as a prior:
   (`Σ Abilities`), never the UNWEIGHTED `Raw count`** (`gen3_smogon_prior_denominator_v1`; F-X5-41:
   the `Raw count` table was deflated ×0.10–0.94). Per species `Σ_m P + Moves[""] / W == 4` exactly;
   the load THROWS `PriorInvariantError` otherwise (`priors._checked_moves`), and every other prior
-  file must load as a distribution (sum 1) or THROWS the same way. ⚠️ `priors.species_usage()` is
-  still `Raw count` (UNWEIGHTED) — F-X5-47.
+  file must load as a distribution (sum 1) or THROWS the same way.
+  🚨 **`priors.species_usage()` is each species' W (`_weighted_count`), never `Raw count`**
+  (`gen3_smogon_species_usage_weighted_v1`; F-X5-47: the `Raw count` share was off ×0.19–×1.75 by
+  species — the co-occurrence lift divided a WEIGHTED teammate conditional by an UNWEIGHTED share).
+  It is computed from `gen3_smogon_stats.json` at call time (no file of its own) and THROWS
+  `PriorInvariantError` (`priors._checked_species_usage`) unless every entry equals both `Σ Abilities`
+  and `Σ Moves / 4` of its record. W is read ONE way on this side (`_weighted_count`); the tool's
+  `weighted_count` is its acquisition-side twin and additionally refuses an inconsistent record.
 
 Pool-derived (a committed calibration artifact, same pattern):
 - `data/teams/gen3_team_archetypes.json` — every pool team labeled by PACE class

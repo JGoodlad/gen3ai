@@ -1,0 +1,57 @@
+species: 216; Raw count total 3.13819e+07, W total 1.67797e+07 (W / Raw count overall 0.5347)
+log(new share / old share) over all 216: min -1.648 median -0.372 max +0.562; ratio min x0.192 max x1.753
+over the top-25 by new share: log ratio -0.085 .. +0.172
+
+top-25 by new share: species  old_share -> new_share  (ratio)   6*new_share vs Smogon latest-month usage
+  tyranitar    0.07815 -> 0.08636  (x1.105)   0.5181 vs 0.5071
+  metagross    0.06279 -> 0.06803  (x1.084)   0.4082 vs 0.4129
+  swampert     0.05607 -> 0.05939  (x1.059)   0.3564 vs 0.3624
+  skarmory     0.05500 -> 0.05645  (x1.026)   0.3387 vs 0.3335
+  salamence    0.04744 -> 0.05107  (x1.077)   0.3064 vs 0.2930
+  zapdos       0.04134 -> 0.04518  (x1.093)   0.2711 vs 0.2611
+  gengar       0.04723 -> 0.04426  (x0.937)   0.2656 vs 0.2605
+  blissey      0.04415 -> 0.04380  (x0.992)   0.2628 vs 0.2698
+  celebi       0.03951 -> 0.04105  (x1.039)   0.2463 vs 0.2351
+  snorlax      0.03609 -> 0.03887  (x1.077)   0.2332 vs 0.2282
+  suicune      0.03520 -> 0.03882  (x1.103)   0.2329 vs 0.2211
+  dugtrio      0.03363 -> 0.03371  (x1.002)   0.2022 vs 0.2066
+  aerodactyl   0.03122 -> 0.03221  (x1.032)   0.1932 vs 0.1891
+  magneton     0.03378 -> 0.03191  (x0.945)   0.1915 vs 0.1867
+  starmie      0.03021 -> 0.03084  (x1.021)   0.1850 vs 0.2083
+  jirachi      0.02190 -> 0.02529  (x1.155)   0.1517 vs 0.1345
+  claydol      0.02395 -> 0.02465  (x1.029)   0.1479 vs 0.1628
+  forretress   0.01664 -> 0.01665  (x1.000)   0.0999 vs 0.1008
+  jolteon      0.01567 -> 0.01476  (x0.942)   0.0886 vs 0.1016
+  heracross    0.01430 -> 0.01371  (x0.959)   0.0823 vs 0.0917
+  charizard    0.01421 -> 0.01306  (x0.919)   0.0783 vs 0.0835
+  flygon       0.01077 -> 0.01079  (x1.002)   0.0647 vs 0.0593
+  gyarados     0.01103 -> 0.01051  (x0.952)   0.0630 vs 0.0759
+  medicham     0.01098 -> 0.01026  (x0.935)   0.0616 vs 0.0573
+  raikou       0.00840 -> 0.00998  (x1.187)   0.0599 vs 0.0619
+
+biggest movers DOWN (all species):
+  shuckle      0.000206 -> 0.000040  (x0.192)
+  manectric    0.000170 -> 0.000035  (x0.205)
+  seviper      0.000008 -> 0.000002  (x0.206)
+  togetic      0.000078 -> 0.000018  (x0.237)
+  mightyena    0.000056 -> 0.000013  (x0.239)
+  altaria      0.000297 -> 0.000073  (x0.245)
+  lickitung    0.000046 -> 0.000012  (x0.253)
+  ninetales    0.000272 -> 0.000071  (x0.262)
+  sneasel      0.000113 -> 0.000030  (x0.268)
+  primeape     0.000274 -> 0.000084  (x0.308)
+biggest movers UP (all species):
+  marshtomp    0.000003 -> 0.000004  (x1.753)
+  meditite     0.000005 -> 0.000009  (x1.709)
+  doduo        0.000001 -> 0.000001  (x1.670)
+  gastly       0.000007 -> 0.000011  (x1.570)
+  porygon      0.000004 -> 0.000006  (x1.562)
+  sunkern      0.000002 -> 0.000002  (x1.489)
+  abra         0.000007 -> 0.000010  (x1.486)
+  delcatty     0.000007 -> 0.000011  (x1.427)
+  minun        0.000034 -> 0.000048  (x1.415)
+  wingull      0.000002 -> 0.000002  (x1.311)
+
+build_species_usage_prior(387): max |d| 0.008201 over 386 of 387 nums; L1 0.0856; Tyranitar 0.07814 -> 0.08634
+top-25 |6*old_share - latest usage| / latest usage: median 0.064, max 0.186
+top-25 |6*new_share - latest usage| / latest usage: median 0.038, max 0.169

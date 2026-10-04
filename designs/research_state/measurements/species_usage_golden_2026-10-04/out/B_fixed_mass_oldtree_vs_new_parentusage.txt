@@ -1,0 +1,7 @@
+{
+ "a": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a7fef02b0396c4799/designs/research_state/measurements/species_usage_golden_2026-10-04/out/B_fixed_mass_old_tree.json",
+ "b": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a7fef02b0396c4799/designs/research_state/measurements/species_usage_golden_2026-10-04/out/B_fixed_mass_new_parentusage.json",
+ "identical_fields": 99,
+ "moved": [],
+ "not_compared": []
+}

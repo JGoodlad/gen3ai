@@ -78,8 +78,8 @@ def _hp_typed_nums() -> Tuple[int, ...]:
 
 
 # gen3_unrevealed_outgoing_prior_v1: the FLOOR a real species with no usage entry gets, applied on the
-# NORMALIZED usage scale (so it means "1-in-a-million teams", not "1e-6 raw sets" — the raw counts run to
-# millions and a raw-scale floor would be indistinguishable from the hard zero it exists to prevent).
+# NORMALIZED usage scale (so it means "1-in-a-million teams", not "1e-6 weighted sets" — the weighted counts W
+# run to millions and a count-scale floor would be indistinguishable from the hard zero it exists to prevent).
 _USAGE_PRIOR_FLOOR = 1e-6
 
 
@@ -89,7 +89,9 @@ def build_species_usage_prior(n_species: int) -> torch.Tensor:
     (gen3_unrevealed_outgoing_prior_v1: the expected-latent defender for the OUTGOING kernel's
     unrevealed columns, marginalized through ``SPECIES_EXP_MULT`` / ``SPECIES_SPREAD_PRIOR``).
 
-    Sourced from `gen3_data.priors.species_usage()` (the Smogon ``Raw count`` weights). The sentinel
+    Sourced from `gen3_data.priors.species_usage()` — each species' RATING-WEIGHTED set total W
+    (``Σ Abilities``, `gen3_smogon_species_usage_weighted_v1`; until 2026-10-04 the UNWEIGHTED
+    ``Raw count``, F-X5-47 — the facade now THROWS on a Raw-count table). The sentinel
     species (num 0) gets EXACTLY 0; every real base form absent from the usage data gets the tiny
     `_USAGE_PRIOR_FLOOR` (never a hard zero — in-battle Species-Clause renormalization must always
     be able to fall back to *something*), then the whole vector is renormalized to sum 1. BASE forms

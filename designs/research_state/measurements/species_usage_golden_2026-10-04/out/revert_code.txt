@@ -1,0 +1,7 @@
+mode=code
+FAILED src/agents/gen3_data/priors_species_usage_test.py::test_species_usage_is_the_weighted_set_total_not_raw_count
+FAILED src/agents/gen3_data/priors_species_usage_test.py::test_the_slot_prior_is_the_weighted_share
+FAILED src/agents/gen3_data/priors_species_usage_test.py::test_the_cooccur_baseline_divides_by_the_weighted_share
+FAILED src/agents/gen3_data/priors_species_usage_test.py::test_the_guard_raises_on_a_planted_raw_count_table
+FAILED src/agents/gen3_data/priors_species_usage_test.py::test_the_guard_raises_on_a_single_raw_count_species
+5 failed in 0.73s

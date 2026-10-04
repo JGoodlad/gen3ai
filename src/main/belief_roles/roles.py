@@ -4,7 +4,7 @@ A role ρ is "carries move m". The role set is DATA-DRIVEN and pre-registered: e
 expected carriers per team, ``Σ_s usage(s) · P(m | s)``, is at least :data:`ROLE_BAR` (0.25), where
 
 * ``usage(s)`` = 6 × the normalised Smogon usage share (``dex_ids.build_species_usage_prior``, from the
-  chaos ``Raw count``) — the expected number of copies of ``s`` per team, the T0 prior's own marginal;
+  chaos RATING-WEIGHTED set total W = ``Σ Abilities``) — the expected number of copies of ``s`` per team, the T0 prior's own marginal;
 * ``P(m | s)`` = ``gen3_data.priors.moves(s)`` — the chaos ``Moves`` per species (§4.1's "from
   ``priors.moves``"). The 16 typed Hidden Powers collapse into ONE role, num 237 ("carries Hidden
   Power"), as ``build_move_prior_logits`` sums them into the 237 presence channel: a set runs at most one.
@@ -28,7 +28,9 @@ RATING-WEIGHTED chaos ``Moves`` by the UNWEIGHTED ``Raw count`` (Skarmory Spikes
 0.41–3.75). It is now ``Moves / W`` (Spikes 0.997, sums 4 less the empty-slot mass), and the role set moved
 from 15 roles (sha ``4e3ab394…``) to 29 (``daba9995…``; Rapid Spin, Baton Pass, Recover, Softboiled, … join,
 none leave). The role set is stamped with its sha, so ``infer`` refuses to pool a read across the fix.
-⚠️ ``usage(s)`` is still the UNWEIGHTED ``Raw count`` share (F-X5-47, open).
+F-X5-47 FIXED (2026-10-04, ``gen3_smogon_species_usage_weighted_v1``): ``usage(s)`` was the UNWEIGHTED
+``Raw count`` share (Shuckle's share ×5.2 too high, Tyranitar's 10 % too low); it is now the W share, so the role
+set's sha moved again (``infer`` refuses to pool across it).
 """
 from __future__ import annotations
 

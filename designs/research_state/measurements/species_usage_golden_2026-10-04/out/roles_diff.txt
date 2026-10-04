@@ -1,0 +1,36 @@
+role set sha daba99951949 (29 roles) -> 823b27be8894 (28 roles)
+ADDED   []
+DROPPED ['icepunch']
+substitute pairs 3030 -> 2798
+excluded before {'roles_near_bar': [], 'species_near_carry': [], 'pairs_near_lift': []}
+excluded after  {'roles_near_bar': [], 'species_near_carry': [], 'pairs_near_lift': []}
+expected carriers per team (role: before -> after, ratio):
+  hiddenpower    2.476 -> 2.458  (x0.993)
+  earthquake     1.9629 -> 2.0369  (x1.038)
+  rockslide      1.2498 -> 1.2941  (x1.035)
+  thunderbolt    1.1004 -> 1.0951  (x0.995)
+  icebeam        0.9821 -> 0.9853  (x1.003)
+  explosion      0.853 -> 0.8652  (x1.014)
+  toxic          0.7463 -> 0.742  (x0.994)
+  roar           0.6574 -> 0.6774  (x1.030)
+  protect        0.6412 -> 0.6546  (x1.021)
+  substitute     0.623 -> 0.6099  (x0.979)
+  calmmind       0.5175 -> 0.5514  (x1.066)
+  surf           0.5357 -> 0.541  (x1.010)
+  spikes         0.4977 -> 0.5012  (x1.007)
+  focuspunch     0.5025 -> 0.4973  (x0.990)
+  thunderwave    0.4905 -> 0.4864  (x0.992)
+  brickbreak     0.4245 -> 0.4274  (x1.007)
+  dragondance    0.4023 -> 0.4273  (x1.062)
+  rapidspin      0.4191 -> 0.4188  (x0.999)
+  meteormash     0.3715 -> 0.4025  (x1.083)
+  psychic        0.3982 -> 0.4006  (x1.006)
+  hydropump      0.3761 -> 0.3866  (x1.028)
+  batonpass      0.3742 -> 0.373  (x0.997)
+  fireblast      0.3587 -> 0.3541  (x0.987)
+  rest           0.3178 -> 0.3265  (x1.028)
+  shadowball     0.3302 -> 0.3198  (x0.968)
+  doubleedge     0.2998 -> 0.3042  (x1.015)
+  softboiled     0.2609 -> 0.2581  (x0.989)
+  icepunch       0.2565 -> None
+  recover        0.2532 -> 0.2527  (x0.998)

@@ -24,7 +24,8 @@ _LOAD_RTOL = 1e-6
 
 class PriorInvariantError(ValueError):
     """A committed Smogon prior broke an invariant that holds exactly when it is derived correctly
-    (``tools/smogon_stats_downloader/compute_priors.py``, ``gen3_smogon_prior_denominator_v1``)."""
+    (``tools/smogon_stats_downloader/compute_priors.py``, ``gen3_smogon_prior_denominator_v1``) — or a
+    species-usage marginal not at the weighted population (``gen3_smogon_species_usage_weighted_v1``)."""
 
 
 def _checked_distributions(filename: str, table: Dict[str, Any], values: Any) -> Dict[str, Any]:
@@ -39,8 +40,46 @@ def _checked_distributions(filename: str, table: Dict[str, Any], values: Any) ->
 
 
 def _weighted_count(rec: Dict[str, Any]) -> float:
-    """The species' RATING-WEIGHTED set total W (Smogon's ``p.raw.weight``) = ``Σ Abilities``."""
+    """The species' RATING-WEIGHTED set total W (Smogon's ``p.raw.weight``) = ``Σ Abilities``.
+    The ONE facade-side reading of W: the move prior's denominator (``_checked_moves``) and the
+    species-usage marginal (``species_usage``) both go through it."""
     return float(sum((rec.get("Abilities") or {}).values()))
+
+
+def _species_id(name: str) -> str:
+    """A chaos species name as a normalized Showdown id (lowercase alnum, the acquisition layer's
+    ``_to_id``)."""
+    return "".join(c for c in name.lower() if c.isalnum())
+
+
+def _checked_species_usage(table: Dict[str, float]) -> Dict[str, float]:
+    """THROWS unless ``table`` is the species-usage marginal at the RATING-WEIGHTED population: one
+    entry per chaos species, each equal to that species' W read from TWO independent weighted fields
+    of its record — ``Σ Abilities`` and ``Σ Moves / MOVE_SLOTS`` (equal on a correct record, to
+    1.2e-14 on the committed window). A table of the UNWEIGHTED ``Raw count`` (F-X5-47; W / Raw count
+    runs 0.10-0.94 by species, so every species is >= 6 % off) — or of the latest-month ``usage``
+    share — fails it on every species, so an unweighted marginal can never reach a model."""
+    stats: Dict[str, Dict[str, Any]] = {}
+    for name, rec in smogon_stats_raw().get("data", {}).items():
+        sid = _species_id(name)
+        if sid in stats:
+            raise PriorInvariantError(f"gen3_smogon_stats.json: two chaos records normalize to {sid!r}")
+        stats[sid] = rec
+    if set(table) != {s for s, r in stats.items() if _weighted_count(r) > 0.0}:
+        raise PriorInvariantError(
+            f"species usage: the species set differs from the chaos records' "
+            f"({len(table)} vs {len(stats)}) — regenerate it from gen3_smogon_stats.json (F-X5-47)")
+    for sid, v in table.items():
+        rec = stats[sid]
+        w = _weighted_count(rec)
+        w_moves = float(sum((rec.get("Moves") or {}).values())) / MOVE_SLOTS
+        if not (v > 0.0) or abs(v - w) > _LOAD_RTOL * w or abs(v - w_moves) > _LOAD_RTOL * w:
+            raise PriorInvariantError(
+                f"species usage[{sid}] = {v!r}, but the species' RATING-WEIGHTED set total is "
+                f"W = sum(Abilities) = {w!r} (sum(Moves) / {MOVE_SLOTS} = {w_moves!r}) — the marginal "
+                f"is not the weighted population every other Smogon prior uses (an UNWEIGHTED Raw "
+                f"count table, F-X5-47)")
+    return table
 
 
 def _checked_moves(table: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, float]]:
@@ -128,21 +167,24 @@ def teammates(species: str) -> Dict[str, float]:
 
 @functools.lru_cache(maxsize=1)
 def species_usage() -> Dict[str, float]:
-    """``{species_id: raw usage weight}`` — how often each species appears in gen3ou, from the
-    aggregated Smogon stats (``gen3_smogon_stats.json`` → per-species ``Raw count``). ⚠️ ``Raw count``
-    is the UNWEIGHTED set count (every rating, weight 1 — pkmn/stats ``p.raw.count++``), NOT the
-    rating-weighted total every other Smogon prior uses (F-X5-41's class; the co-occurrence lift divides
-    a WEIGHTED teammate conditional by this share — reported as F-X5-47, not changed here). Keys are normalized Showdown
-    ids (lowercase alnum, mirroring the acquisition layer's ``_to_id``). Weights are NOT
-    normalized — the consumer picks its own floor/normalization. A species absent from the
-    stats simply has no entry."""
+    """``{species_id: W}`` — how often each species appears in gen3ou, as its RATING-WEIGHTED set
+    total W (``_weighted_count`` = ``Σ Abilities``, Smogon's ``p.raw.weight``) from the aggregated
+    Smogon stats (``gen3_smogon_stats.json``): the same population every other Smogon prior is
+    weighted by — in particular the teammate conditional the co-occurrence lift divides by this
+    share (``gen3_smogon_species_usage_weighted_v1``). Until 2026-10-04 it was the UNWEIGHTED
+    ``Raw count`` (every rating weight 1, pkmn/stats ``p.raw.count++``; F-X5-47 — W / Raw count runs
+    0.10-0.94 by species, so low-rated play inflated e.g. Shuckle's share ×5.2), checked at build
+    (``_checked_species_usage`` THROWS on a Raw-count table). Keys are normalized Showdown ids
+    (lowercase alnum, mirroring the acquisition layer's ``_to_id``). Weights are NOT normalized —
+    the consumer picks its own floor/normalization. A species absent from the stats simply has no
+    entry."""
     out: Dict[str, float] = {}
     for name, sp_data in smogon_stats_raw().get("data", {}).items():
-        sid = "".join(c for c in name.lower() if c.isalnum())
-        w = float(sp_data.get("Raw count") or sp_data.get("usage") or 0.0)
+        sid = _species_id(name)
+        w = _weighted_count(sp_data)
         if sid and w > 0.0:
-            out[sid] = out.get(sid, 0.0) + w
-    return out
+            out[sid] = w
+    return _checked_species_usage(out)
 
 
 def gen3_stat(base: int, ev: int, mult: float, iv: int = 31) -> int:

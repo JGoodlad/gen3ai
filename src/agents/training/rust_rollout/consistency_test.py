@@ -242,13 +242,17 @@ def test_a_row_near_a_tie_is_excluded_not_judged(monkeypatch):
     t, e, g = _probe_margins(m)
     i = int(np.argmin(g))
     nxt = np.sort(g[g > g[i]])
-    assert nxt.size and np.isfinite(g[i]), "the fixture's probe needs rows with distinct, finite margins"
+    assert nxt.size and np.isfinite(g[i]), "the fixture's probe needs a finite minimum margin below another row's"
     eps = float(np.sqrt(max(g[i], 1e-300) * nxt[0]))
-    assert (g < eps).sum() == 1
+    # The minimum may be an exact TIE GROUP: since the species-usage marginal was weighted (F-X5-47, 2026-10-04)
+    # three probe rows share it exactly (0 under the parent's marginal). Every row of the group sits below eps
+    # and is excluded; the jump is planted on one of them.
+    k = int((g == g[i]).sum())
+    assert (g < eps).sum() == k and k < g.size / 2
     monkeypatch.setattr(K, "BEHAVIOUR_GATE", _gate(eps, ceiling=0.5))
     m.rollout_buffer.log_probs[t[i], e[i]] += 0.0389
     out = K.behaviour_probe(m)                                          # judged rows clean: no raise
-    assert out["behaviour/rows_excluded"] == 1.0 and out["behaviour/excluded_frac"] == pytest.approx(1 / g.size)
+    assert out["behaviour/rows_excluded"] == float(k) and out["behaviour/excluded_frac"] == pytest.approx(k / g.size)
     assert out["behaviour/max_abs_dlogp_excluded"] == pytest.approx(0.0389, rel=1e-3)
     assert out["behaviour/max_abs_dlogp_judged"] < 1e-4 and out["behaviour/violations_total_max"] == 0.0
 

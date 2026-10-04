@@ -1,0 +1,18 @@
+🛑 [K9(b)] BEHAVIOUR-POLICY MISMATCH: on 16 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 0.00542 NOT < 0.0001, excluded_frac 0 < 0.15; judged 16 of 16 rows — 0 excluded within a relative margin 0.0002 of a selection / threshold cutoff; largest |d log pi| over every current row 0.00542) before any optimizer step — stale rollout weights, an eval-vs-train-mode difference, a rollout/learner observation mismatch, or (a localized fault) misaligned rows, a wrong action index or a mask mismatch [max: violated (single-shot, FATAL at once)]
+    row     4  |d log pi| 0.005419  action 0  mask 11011111110  log mu -2.19804 -> log pi -2.19262  p 0.112  env None ep None dec None slot None  margin 0.0399 (pointer_head.py:177 ge)
+    row    11  |d log pi| 0.002801  action 9  mask 10101111110  log mu -2.09799 -> log pi -2.10079  p 0.122  env None ep None dec None slot None  margin 0.0326 (pointer_head.py:177 ge)
+    row     1  |d log pi| 0.002426  action 5  mask 11101111110  log mu -2.36921 -> log pi -2.36678  p 0.0938  env None ep None dec None slot None  margin 0.000635 (pointer_head.py:177 ge)
+    row     0  |d log pi| 0.002028  action 6  mask 10111111110  log mu -1.96906 -> log pi -1.97109  p 0.139  env None ep None dec None slot None  margin 0.0259 (pointer_head.py:176 topk)
+    row     3  |d log pi| 0.001348  action 2  mask 11110111110  log mu -2.19343 -> log pi -2.19478  p 0.111  env None ep None dec None slot None  margin 0.0385 (pointer_head.py:177 ge)
+    row    15  |d log pi| 0.0003431  action 2  mask 01111111110  log mu -2.27839 -> log pi -2.27873  p 0.102  env None ep None dec None slot None  margin 0.00111 (pointer_head.py:176 topk)
+    row    10  |d log pi| 5.126e-06  action 5  mask 10101111110  log mu -1.93148 -> log pi -1.93148  p 0.145  env None ep None dec None slot None  margin 0.0098 (pointer_head.py:177 ge)
+    row     7  |d log pi| 1.192e-06  action 4  mask 01111111110  log mu -2.16491 -> log pi -2.16491  p 0.115  env None ep None dec None slot None  margin 0.00102 (pointer_head.py:176 topk)
+    row     9  |d log pi| 4.768e-07  action 6  mask 00110111110  log mu -2.23803 -> log pi -2.23803  p 0.107  env None ep None dec None slot None  margin 0.0158 (damage_op.py:924 argmax)
+    row    12  |d log pi| 4.768e-07  action 9  mask 10110111110  log mu -2.09527 -> log pi -2.09527  p 0.123  env None ep None dec None slot None  margin 0.0327 (damage_op.py:924 argmax)
+    full-buffer scan: 25 of 64 current rows over 0.0001 (24 of them judged — not at a tie; max 0.006704, p99 0.00589, excluded 0.0156)
+{
+ "arm": "blob",
+ "hold": null,
+ "k9b": "FAIL",
+ "error": "BehaviourMismatch: [K9(b)] BEHAVIOUR-POLICY MISMATCH: on 16 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 0.00542 NOT < 0.0001, excluded_frac 0 < 0.15; judged 16 of 16 rows \u2014 0 excluded within a relative margin 0.0002 of a selection / threshold cutoff; largest |d log pi| over every current row 0.00542) before any optimizer step \u2014 stale rollout weights, an eval-vs-train-mode difference, a rollout/learner observation mismatch, or (a localized fault) misaligned rows, a wrong action index or a mask mismatch [max: violated (single-shot, FATAL at once)]"
+}

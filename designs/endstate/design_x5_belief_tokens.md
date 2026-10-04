@@ -861,9 +861,11 @@ Optional: a count DISTRIBUTION read with the nonrandomized PIT (Czado et al. 200
 - **R2's variance** sums p(1 − p) over every contributing indicator (a revealed mon, a hypothesis π·P̂, each tail species
   π_s·P(m | s)).
 - **The role set is derived at READ time** from the facade (`roles.SOURCES`; a fresh-interpreter audit-hook test fails
-  any other data file) and stamped (`role_set_sha256`): 29 roles and 3,030 substitute pairs on the corrected prior
-  (F-X5-41 fixed 2026-10-04; sha `daba9995…`) — Spikes 0.498 expected carriers, Rapid Spin 0.419 and Baton Pass 0.374
-  pass, Wish (0.162) and Heal Bell (0.052) do not. Under the deflated prior it was 15 roles and 18 pairs (`4e3ab394…`).
+  any other data file) and stamped (`role_set_sha256`): 28 roles and 2,798 substitute pairs on the corrected move
+  prior AND the rating-weighted usage marginal (F-X5-41 and F-X5-47, both fixed 2026-10-04; sha `823b27be…`) — Spikes
+  0.501 expected carriers, Rapid Spin 0.419 and Baton Pass 0.373 pass; Ice Punch (0.246), Wish (0.166) and Heal Bell
+  (0.045) do not. With the move prior fixed but the usage still `Raw count` it was 29 roles / 3,030 pairs (`daba9995…`,
+  Ice Punch 0.257); under the deflated move prior, 15 roles and 18 pairs (`4e3ab394…`).
 
 ---
 
@@ -1340,7 +1342,7 @@ The fixed_mass seeds later type the same list with `--belief-tokens fixed_mass` 
 | F-X5-44 | **FIXED in U6 (byte-identical).** OTHER's averaged move presence (`other_roster`) ran its fixed-size construction and its stable ORDER over every legal move even on a row whose OTHER is DEAD (every opponent species known: `P_tail` = 0, so the mixture is UNIFORM). The uniform π's exact ties were counted by the declared `sort_head` site as rule-8 near-ties: 29 of the golden buffer's 64 rows, a K9(b) excluded share of 37.5 % on a 16-row micro-batch against the 0.15 ceiling (FATAL). The order is read only through `where(hyp, …)` and the Pursuit presence only times `other_any` = 0 there, so the candidates are now masked by `other_live`. The six hashes (state_dict, features, logits, values, log-probs, gradients) are unchanged in both arms; the excluded share went from 30 / 64 to 1 / 64. Reverting it fails `learner_golden_fixed_mass_test`. |
 | F-X5-45 | **A golden buffer's rebuild is not bit-reproducible in its behaviour columns.** Rebuilding the blob buffer today replays the SAME games (obs, actions, masks and rewards byte-identical), but `values` / `log_probs` / `advantages` / `returns` differ by ≤ 7.2e-7. That is rounding in the collector's T2 forward, pre-existing and not X5's. A `rebuild-buffer` therefore moves a golden even with no code change, so re-record after every rebuild (the harness already requires it). The fixed_mass buffer rebuilt byte-identically twice in one session. |
 | F-X5-46 | **FIXED 2026-10-04** (the F-X5-41 re-record wrote blob's `init_group_sha256`, 41 groups). WAS: **The blob entry has no `init_group_sha256`** (it was recorded before U6, and U6 left it untouched). `diff` compares the field only where it is recorded, and the next deliberate blob re-record adds it automatically. Until then, a blob INIT move is named only by the whole-model hash. |
-| F-X5-47 | **The species USAGE marginal is UNWEIGHTED** (F-X5-41's class, found in its fix; not changed — out of that unit's scope). `gen3_data.priors.species_usage()` reads the chaos `Raw count` (every rating, weight 1), while every other Smogon prior is rating-weighted. It feeds `build_species_usage_prior`: the op's `SPECIES_USAGE_PRIOR`, the T0 marginal, and the `belief_roles` usage. The co-occurrence LIFT `log P(s \| t) / P(s)` divides a WEIGHTED teammate conditional by it. On the 2025-05 .. 2026-04 window, log(weighted share / raw share) runs −0.08 .. +0.14 over the top-25 species (Tyranitar +0.10) and −1.65 .. +0.56 over all 216 (Shuckle −1.65). The weighted count is `Σ Abilities`, which agrees with Smogon's latest-month weighted `usage` within ~5 % for the top species. A fix moves the T0 prior, the op and the role set, so it needs its own golden proof. |
+| F-X5-47 | **FIXED 2026-10-04** (`gen3_smogon_species_usage_weighted_v1`): `species_usage()` is each species' W (`Σ Abilities`, the facade's `_weighted_count`), checked at build against `Σ Abilities` and `Σ Moves / 4` (`PriorInvariantError` on a Raw-count table); new / old share ×0.19–×1.75 over all 216, ×0.92–×1.19 over the top 25 (Tyranitar 0.078 → 0.086, Shuckle ×0.19); both K9 golden arms re-recorded on rebuilt buffers holding the SAME games, with proof (`research_state/measurements/species_usage_golden_2026-10-04/`); role set 29 → 28 (Ice Punch drops). WAS: **The species USAGE marginal is UNWEIGHTED** (F-X5-41's class, found in its fix; not changed — out of that unit's scope). `gen3_data.priors.species_usage()` reads the chaos `Raw count` (every rating, weight 1), while every other Smogon prior is rating-weighted. It feeds `build_species_usage_prior`: the op's `SPECIES_USAGE_PRIOR`, the T0 marginal, and the `belief_roles` usage. The co-occurrence LIFT `log P(s \| t) / P(s)` divides a WEIGHTED teammate conditional by it. On the 2025-05 .. 2026-04 window, log(weighted share / raw share) runs −0.08 .. +0.14 over the top-25 species (Tyranitar +0.10) and −1.65 .. +0.56 over all 216 (Shuckle −1.65). The weighted count is `Σ Abilities`, which agrees with Smogon's latest-month weighted `usage` within ~5 % for the top species. A fix moves the T0 prior, the op and the role set, so it needs its own golden proof. |
 | G-1 | σ_run at 15M, the H2H run floor and snapshot jitter are unmeasured (P0 measures the last two). |
 | G-2 | Negative evidence (an opponent NOT switching to X) is not modelled; X12. |
 | G-3 | OTHER's embedding: `design_q_head.md` §10, logged by U8 (OTHER's attention share). The budget question is now §9 M3. |
@@ -1638,7 +1640,18 @@ behaviour learner reads the prior. PROOF (`research_state/measurements/move_prio
 (A) on the parent's buffers, this tree with the move prior held at the parent's values equals the recorded goldens on
 every field; (B) on the rebuilt buffers, the parent tree equals this tree holding the parent's prior; (C) a rebuild
 holding the parent's prior replays the parent's buffers (fixed_mass byte-identical; blob's behaviour columns within
-F-X5-45's 7.2e-7). Open: F-X5-47 (the UNWEIGHTED species-usage marginal).
+F-X5-45's 7.2e-7). Open: F-X5-47 (the UNWEIGHTED species-usage marginal) — FIXED the same day, below.
+
+**F-X5-47 fix (2026-10-04, `gen3_smogon_species_usage_weighted_v1`).** The species-usage marginal is each species'
+rating-weighted W. Both K9 arms were re-recorded (blob post `09222426…`, fixed_mass `50659234…`) on REBUILT buffers,
+because K9(b) failed on both committed buffers (blob max |Δ log π| 0.0054, fixed_mass 0.0077; both pass with the
+parent's marginal held). The rebuilt buffers hold the SAME games (obs, actions, masks and rewards byte-identical); only
+the behaviour columns moved (blob 29 / 64 rows, fixed_mass 36 / 64). PROOF
+(`research_state/measurements/species_usage_golden_2026-10-04/`), three steps: (A) on the parent's buffers, this tree
+with the marginal held at the parent's values equals both recorded goldens on every field (103 / 99); (B) on the rebuilt
+buffers, the parent tree equals this tree holding the parent's marginal (103 / 99); (C) a rebuild holding the parent's
+marginal replays the parent's buffers byte-identically (both arms). fixed_mass's K9(b) excluded share went 6.25 % → 0 %;
+coverage is unchanged (OTHER_species live 36 / dead 28, OTHER_move 60 / 4).
 
 ### 8.4 Where each review item landed
 
