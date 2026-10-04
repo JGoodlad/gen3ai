@@ -12,7 +12,7 @@ history (``PRE_ERA``): reading it never guesses, and a resume never stamps one o
 Journey order (the main-story order in Pokemon Ruby / Sapphire / Emerald; Littleroot, Oldale and
 Petalburg precede Rustboro and are not eras): Rustboro -> Dewford -> Slateport -> Mauville ->
 Verdanturf -> Fallarbor -> Lavaridge -> Fortree -> Lilycove -> Mossdeep -> Sootopolis ->
-Pacifidog -> Ever Grande. Codes are two letters and unique (a code is only ever read as ``<code>_`` at the start of a run
+Pacifidlog -> Ever Grande. Codes are two letters and unique (a code is only ever read as ``<code>_`` at the start of a run
 name).
 
 To start the next era: move ``CURRENT_ERA`` down this table (one edit) and record the boundary in
@@ -50,7 +50,7 @@ ERAS: Sequence[Era] = (
     Era(9, "Lilycove", "lc"),
     Era(10, "Mossdeep", "md"),
     Era(11, "Sootopolis", "st"),
-    Era(12, "Pacifidog", "pd"),
+    Era(12, "Pacifidlog", "pd"),
     Era(13, "Ever Grande", "eg"),
 )
 

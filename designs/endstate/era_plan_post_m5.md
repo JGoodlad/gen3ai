@@ -8,7 +8,7 @@ order or the shape updates this doc and its Decision record in the same commit.
 Eras are named after Hoenn towns in journey order. **The Rustboro era (`rb`) starts with the X5 A/B and X26**;
 every earlier run is pre-era history. The table (`src/utils/era.py`, the one source): Rustboro `rb` · Dewford
 `dw` · Slateport `sp` · Mauville `mv` · Verdanturf `vt` · Fallarbor `fb` · Lavaridge `lv` · Fortree `ft` ·
-Lilycove `lc` · Mossdeep `md` · Sootopolis `st` · Pacifidog `pd` · Ever Grande `eg`. A run's name carries its code
+Lilycove `lc` · Mossdeep `md` · Sootopolis `st` · Pacifidlog `pd` · Ever Grande `eg`. A run's name carries its code
 (`rb_x26_s1001`) and its `metadata.json` records an immutable `era` block; a boundary is where ratings or
 anchors stop being comparable (Rustboro's is the fixed bots + the Rustboro anchor base), and the readers warn
 across it. Starting the next era is one edit (`CURRENT_ERA`) plus a Decision row here.
