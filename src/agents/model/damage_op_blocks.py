@@ -1018,6 +1018,16 @@ class DamageOperatorBlocks:
         type_mult = fm.mix_seats(type_mult_e, dim=2)                               # [B,6,K]
         if self.stash_pair_type_mult:
             self.stash.pair_type_mult = type_mult.detach()
+            if fm.other_u is not None:
+                # X5 U4 (§3.7): OTHER_move's multiplier column — E_tail[mult] is linear in the tail's
+                # move-TYPE distribution, so contract the tail onto types first ([B,T]) and read the
+                # per-defender chart once (never an IMMUNE 0 unless every tail move is immune).
+                T = self.CHART.shape[-1]
+                p_t = fm.other_u.to(type_mult_e.dtype) @ torch.nn.functional.one_hot(
+                    self.MOVE_TYPE_IDX.long(), T).to(type_mult_e.dtype)                # [B,T]
+                mult_t = self.CHART[t1d] * self.CHART[t2d] * amul                       # [B,6,T]
+                self.stash.pair_type_mult_other = torch.einsum(
+                    "bjt,bt->bj", mult_t, p_t).unsqueeze(-1).detach()                   # [B,6,1]
         slot_live = fm.seat_on.to(low_e.dtype)                                     # [B,K] structural
         self.stash.pair_seat_live = slot_live.detach()
         header_e = torch.cat([latent, fm.w_ext[..., None].to(latent.dtype), acc_e[..., None],

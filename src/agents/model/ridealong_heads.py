@@ -55,10 +55,12 @@ THE FOUR HEADS (each its own STRUCTURAL flag, all OFF by default):
     the opponent's actual action is named in that support (α's label, `match_seats_to_move_num`).
     Because a and b are chosen simultaneously, E[adv | s, b] = B(s, b) once A is centred under π and
     B under α, so A and B are identified by two MARGINAL regressions on one label. This is the
-    SIMPLE parameterisation that does not need X5; it is to be RE-BASED onto X5's flat opponent
-    pointer (seats + switch targets + OTHER) when X5 lands. Its declared limit: a move outside the
-    believed seats (α's mask rate) is not a label, so B is conditional on the opponent choosing a
-    listed option.
+    SIMPLE parameterisation that does not need X5 (the blob arm). Its declared limit: a move outside
+    the believed seats (α's mask rate) is not a label, so B is conditional on the opponent choosing a
+    listed option. Under `--belief-tokens fixed_mass` (X5 U4) B is RE-BASED onto the FLAT opponent
+    pointer (`FlatOppEffectEnsemble`: seats by move id, switch targets by SPECIES, OTHER_move /
+    OTHER_species as learned vectors; labels from `flat_intent.flat_intent_targets`), so a belief miss
+    is a row and switch targets are told apart.
 
 Q = V + A(a) + B(b) is a DERIVED readout (no I term); losses are MSE, linear in the labels
 (`design_q_head.md` §5.1's M = 1 rule).
@@ -277,6 +279,9 @@ class RideAlongSpec:
     opp: int = 0
     #: The RND VARIANTS beside base (`RND_VARIANTS` names, canonical order; () = none).
     rnd_variants: Tuple[str, ...] = ()
+    #: X5 U4 (`gen3_x5_flat_pointer_v1`): B's columns are the FLAT opponent pointer's (K move seats,
+    #: OTHER_move, six switch targets, OTHER_species) — the K here; 0 = α's support (the blob arm).
+    opp_flat_k: int = 0
 
     @property
     def any(self) -> bool:
@@ -288,7 +293,9 @@ class RideAlongSpec:
                    rnd=bool(getattr(fe, "ridealong_rnd", False)),
                    adv=int(getattr(fe, "ridealong_adv", 0) or 0),
                    opp=int(getattr(fe, "ridealong_opp", 0) or 0),
-                   rnd_variants=parse_rnd_variants(getattr(fe, "ridealong_rnd_variants", None)))
+                   rnd_variants=parse_rnd_variants(getattr(fe, "ridealong_rnd_variants", None)),
+                   opp_flat_k=(int(getattr(fe, "entity_topk_seats", 0) or 0)
+                               if getattr(fe, "flat_intent_head", None) is not None else 0))
 
 
 def validate_spec(spec: RideAlongSpec) -> None:
@@ -611,6 +618,67 @@ class OppEffectEnsemble(torch.nn.Module):
                             for m, p in zip(self.members, self.priors)], dim=1)   # [B, K, S+1]
 
 
+class _FlatOppScorer(torch.nn.Module):
+    """One B member over the FLAT opponent pointer's columns (X5 U4, design §3.7): a move seat scored
+    from its concrete MOVE ID, a switch target from its concrete SPECIES (the revealed mon's, or the
+    hypothesis the slot holds — B now tells switch targets apart), OTHER_move and OTHER_species from
+    a learned vector each — so a belief miss is a ROW, not a masked label. Same shared-scorer shape as
+    `_OppScorer`: one context projection, one candidate projection, a move-kind and a switch-kind
+    score (zero-init)."""
+
+    def __init__(self, n_moves: int, n_species: int, k: int, hidden: int = POINTER_HIDDEN) -> None:
+        super().__init__()
+        self.n_moves, self.n_species, self.k = int(n_moves), int(n_species), int(k)
+        self.ctx_proj = torch.nn.Linear(D_MODEL, hidden)
+        self.move_emb = torch.nn.Embedding(self.n_moves, RIDEALONG_OPP_MOVE_EMB)
+        self.species_emb = torch.nn.Embedding(self.n_species, RIDEALONG_OPP_MOVE_EMB)
+        self.other_move = torch.nn.Parameter(torch.randn(RIDEALONG_OPP_MOVE_EMB) * 0.02)
+        self.other_species = torch.nn.Parameter(torch.randn(RIDEALONG_OPP_MOVE_EMB) * 0.02)
+        self.cand_proj = torch.nn.Linear(RIDEALONG_OPP_MOVE_EMB, hidden)
+        self.move_score = torch.nn.Linear(hidden, 1)
+        self.switch_score = torch.nn.Linear(hidden, 1)
+        for lin in (self.move_score, self.switch_score):
+            torch.nn.init.zeros_(lin.weight)
+            torch.nn.init.zeros_(lin.bias)
+
+    def forward(self, ctx: torch.Tensor, flat_ids: torch.Tensor) -> torch.Tensor:
+        """`ctx` [B,D] · `flat_ids` [B,K+8] (seat move nums · 0 · slot species nums · 0) → [B,K+8]."""
+        k = self.k
+        B = flat_ids.shape[0]
+        c = self.ctx_proj(ctx)                                                  # [B,H]
+        ids = flat_ids.long()
+        mv = self.move_emb(ids[:, :k].clamp(0, self.n_moves - 1))               # [B,K,E]
+        sp = self.species_emb(ids[:, k + 1:k + 7].clamp(0, self.n_species - 1))  # [B,6,E]
+        om = self.other_move.expand(B, 1, -1)
+        osp = self.other_species.expand(B, 1, -1)
+        emb = torch.cat([mv, om, sp, osp], dim=1)                               # [B,K+8,E]
+        h = torch.tanh(self.cand_proj(emb) + c[:, None, :])
+        return torch.cat([self.move_score(h[:, :k + 1]).squeeze(-1),
+                          self.switch_score(h[:, k + 1:]).squeeze(-1)], dim=-1)  # [B,K+8]
+
+
+class FlatOppEffectEnsemble(torch.nn.Module):
+    """B's K members (+ randomized priors) over the flat pointer's columns — `OppEffectEnsemble`'s
+    structure, a private seed per member."""
+
+    def __init__(self, k_members: int, n_moves: int, n_species: int, k_seats: int) -> None:
+        super().__init__()
+        self.k = int(k_members)
+        self.members = torch.nn.ModuleList()
+        self.priors = torch.nn.ModuleList()
+        for j in range(self.k):
+            torch.manual_seed(RIDEALONG_INIT_SEED + 10007 * (j + 1))
+            self.members.append(_FlatOppScorer(n_moves, n_species, k_seats))
+            prior = _FlatOppScorer(n_moves, n_species, k_seats)
+            for lin in (prior.move_score, prior.switch_score):
+                torch.nn.init.normal_(lin.weight, 0.0, 1.0 / math.sqrt(POINTER_HIDDEN))
+            self.priors.append(freeze_to_buffers(prior))
+
+    def forward(self, ctx: torch.Tensor, flat_ids: torch.Tensor) -> torch.Tensor:
+        return torch.stack([m(ctx, flat_ids) + RIDEALONG_PRIOR_SCALE_Q * p(ctx, flat_ids)
+                            for m, p in zip(self.members, self.priors)], dim=1)   # [B, K, F]
+
+
 # ── the batch, the readout and the losses ────────────────────────────────────────────────────────
 @dataclass
 class RideAlongBatch:
@@ -631,6 +699,12 @@ class RideAlongBatch:
     alpha_seat_nums: Optional[torch.Tensor] = None  # [B, K]
     opp_kind: Optional[torch.Tensor] = None     # [B] long (0 move, 1 switch, 2 unknown)
     opp_num: Optional[torch.Tensor] = None      # [B] long
+    # X5 U4 (fixed_mass): the FLAT pointer's support instead of α's — its logits (B's centring
+    # distribution), the concrete ids B scores, and the label column (`flat_intent_targets`, the SAME
+    # function the intent loss uses; INTENT_IGNORE where the row has no label).
+    flat_logits: Optional[torch.Tensor] = None  # [B, K+8]
+    flat_ids: Optional[torch.Tensor] = None     # [B, K+8] long
+    flat_target: Optional[torch.Tensor] = None  # [B] long
 
     @staticmethod
     def detached(**kw: object) -> "RideAlongBatch":
@@ -660,7 +734,7 @@ class RideAlongHeads(torch.nn.Module):
 
     def __init__(self, spec: RideAlongSpec, *, obs_dim: int, move_token_dim: int,
                  move_cell_dim: int, switch_cell_dim: int, n_moves: int,
-                 block_edges: Optional[Sequence[int]] = None) -> None:
+                 block_edges: Optional[Sequence[int]] = None, n_species: int = 400) -> None:
         super().__init__()
         validate_spec(spec)
         self.spec = spec
@@ -673,7 +747,10 @@ class RideAlongHeads(torch.nn.Module):
         self.adv = (AdvantageEnsemble(spec.adv, move_token_dim=move_token_dim,
                                       move_cell_dim=move_cell_dim,
                                       switch_cell_dim=switch_cell_dim) if spec.adv else None)
-        self.opp = OppEffectEnsemble(spec.opp, n_moves) if spec.opp else None
+        self.opp: Optional[torch.nn.Module] = (
+            None if not spec.opp
+            else OppEffectEnsemble(spec.opp, n_moves) if not spec.opp_flat_k
+            else FlatOppEffectEnsemble(spec.opp, n_moves, n_species, spec.opp_flat_k))
         # gen3_ridealong_rnd_variants_v1 (v127): built LAST, each from its own private seed (or a
         # deep copy of base's predictor), so every head above is bit-identical with or without them.
         self.rnd_variants: Optional[torch.nn.ModuleDict] = (
@@ -779,7 +856,17 @@ class RideAlongHeads(torch.nn.Module):
             n_legal = legal.sum(-1, keepdim=True).clamp(min=1.0)
             uni = raw - (raw * legal).sum(-1, keepdim=True) / n_legal
             out["adv_std"] = uni.std(1, unbiased=False)
-        if (self.opp is not None and b.alpha_logits is not None
+        if (isinstance(self.opp, FlatOppEffectEnsemble) and b.flat_logits is not None
+                and b.flat_ids is not None):
+            # X5 U4: B over the FLAT pointer's columns, centred under the flat α (stop-grad: the
+            # batch is detached). A padding row's all-zero logits centre under a uniform α — its
+            # target is INTENT_IGNORE, so it trains nothing.
+            alpha = torch.softmax(b.flat_logits.float(), dim=-1)                 # [B,F]
+            raw = self.opp(b.pooled, b.flat_ids)                                 # [B,K,F]
+            centred = raw - (raw * alpha[:, None, :]).sum(-1, keepdim=True)
+            out["opp"] = centred
+            out["opp_mean"] = centred.mean(1)
+        elif (isinstance(self.opp, OppEffectEnsemble) and b.alpha_logits is not None
                 and b.alpha_seat_nums is not None):
             alpha = torch.softmax(b.alpha_logits.float(), dim=-1)                # [B,S+1]
             raw = self.opp(b.pooled, b.alpha_seat_nums)                          # [B,K,S+1]
@@ -814,7 +901,19 @@ class RideAlongHeads(torch.nn.Module):
             w = bootstrap_mask(h, self.spec.adv, _BITS_A)
             se = (pred - y[:, None]).pow(2)
             losses["adv"] = ((se * w).sum(0) / w.sum(0).clamp(min=1.0)).sum()
-        if ("opp" in out and b.advantages is not None and b.opp_kind is not None
+        if "opp" in out and b.advantages is not None and b.flat_target is not None:
+            # X5 U4: the label column is precomputed by `flat_intent_targets` (OTHER rows included).
+            idx = b.flat_target.long().reshape(-1)
+            ok = (idx != INTENT_IGNORE).float()
+            if bool(ok.any()):
+                safe = torch.where(idx == INTENT_IGNORE, torch.zeros_like(idx), idx)
+                pred = out["opp"].gather(
+                    -1, safe[:, None, None].expand(-1, self.spec.opp, 1)).squeeze(-1)
+                y = _flat(b.advantages).float()
+                w = bootstrap_mask(h, self.spec.opp, _BITS_B) * ok[:, None]
+                se = (pred - y[:, None]).pow(2)
+                losses["opp"] = ((se * w).sum(0) / w.sum(0).clamp(min=1.0)).sum()
+        elif ("opp" in out and b.advantages is not None and b.opp_kind is not None
                 and b.opp_num is not None and b.alpha_seat_nums is not None):
             n_seats = int(b.alpha_seat_nums.shape[-1])
             idx = match_seats_to_move_num(b.alpha_seat_nums, b.opp_num.long().reshape(-1),
@@ -850,6 +949,8 @@ def build_ridealong(fe: object, *, obs_dim: int,
     layout = getattr(fe, "layout", None) or {}
     # α's seat nums index the extractor's own move table (`layout['max_moves']` rows).
     n_moves = int(layout.get("max_moves", 400)) if isinstance(layout, dict) else 400
+    # X5 U4: the flat B's switch targets index the species table (`layout['max_species']` rows).
+    n_species = int(layout.get("max_species", 400)) if isinstance(layout, dict) else 400
     with torch.random.fork_rng(devices=[]):
         return RideAlongHeads(
             spec, obs_dim=int(obs_dim),
@@ -858,7 +959,8 @@ def build_ridealong(fe: object, *, obs_dim: int,
             switch_cell_dim=int(getattr(fe, "pointer_switch_cell_dim", 0)),
             n_moves=n_moves,
             block_edges=obs_block_edges(layout if isinstance(layout, dict) else None,
-                                        int(obs_dim)))
+                                        int(obs_dim)),
+            n_species=n_species)
 
 
 __all__ = ["RIDEALONG_FLAGS", "RIDEALONG_ATTR", "RIDEALONG_STATE_PREFIX",
@@ -867,4 +969,4 @@ __all__ = ["RIDEALONG_FLAGS", "RIDEALONG_ATTR", "RIDEALONG_STATE_PREFIX",
            "ACTION_SPACE_SIZE", "RND_VARIANTS", "RND_VARIANT_DECLS", "RND_VARIANT_BY_NAME",
            "RND_FAST_LR_MULT", "RND_DECAY_HALF_LIFE_UPDATES", "RndVariantDecl", "RndObsVariant",
            "parse_rnd_variants", "canonical_rnd_variants", "obs_block_edges", "block_chimera",
-           "build_rnd_variants"]
+           "build_rnd_variants", "FlatOppEffectEnsemble"]

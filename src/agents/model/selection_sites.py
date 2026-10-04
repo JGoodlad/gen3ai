@@ -45,7 +45,7 @@ from typing import Dict, FrozenSet, List, NamedTuple, Optional, Tuple
 FORWARD_MODULES: Tuple[str, ...] = (
     "aux_value_heads", "belief_heads", "conditional_threat", "damage_kinds", "damage_op", "damage_op_blocks",
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
-    "hypothesis_set", "hypothesis_tokens",
+    "flat_intent", "hypothesis_set", "hypothesis_tokens",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
     "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "switch_branch",
     "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
@@ -63,7 +63,9 @@ LABEL_FUNCS: FrozenSet[Tuple[str, str]] = frozenset({
     ("hypothesis_set", f) for f in (
         "label_multi_hot", "set_bce", "belief_head_team_scores", "hypothesis_moves_bce", "near_tie_rows",
         # gen3_x5_belief_tokens_v1 (U3): the hypothesis-seat move TARGETS (a label builder)
-        "hypothesis_moves_targets")})
+        "hypothesis_moves_targets")} | {
+    # gen3_x5_flat_pointer_v1 (X5 U4): the flat pointer's LABEL builder and its human render.
+    ("flat_intent", f) for f in ("flat_intent_targets", "render_flat")})
 
 
 class Rule(NamedTuple):
@@ -184,7 +186,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "opp_cond.sum(-1) > 0.5", "opp_cond.sum(dim=1) > 0.5", "opp_hp_frac > 0", "opp_para > 0.5",
                 "our_burn > 0.5", "our_cb > 0.5", "our_cond.sum(-1) > 0.5", "our_para > 0.5",
                 "(~ctx.opp_believed_mask).long()"),
-        "TABLE": ("has_cure > 0.5", "has_other_cleric > 0.5",
+        "TABLE": ("has_cure > 0.5", "has_other_cleric > 0.5", "self.MOVE_TYPE_IDX.long()",
                   "live_cleric.sum(dim=-1, keepdim=True) - live_cleric > 0.5"),
         "SELECTED": ("bp_k > 0", "ded.sum(dim=-1, keepdim=True) > 0.5", "sec_tot > eps"),
         "INT": ("ctx.all_move_ids[ar, opp_act] > 0", "ctx.item_ids[:, our] == self.cb_item_num",
@@ -260,7 +262,19 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "INT": ("(candidate_mask > 0.5).sum(dim=-1) == 0",),
     },
     "pair_outcome": {
-        "INT": ("our_type1 == GHOST_TYPE_IDX", "our_type2 == GHOST_TYPE_IDX", "topk_nums[..., None] == self.spin_num"),
+        "INT": ("our_type1 == GHOST_TYPE_IDX", "our_type2 == GHOST_TYPE_IDX", "topk_nums[..., None] == self.spin_num",
+                # X5 U4 (`seat_in_set`): move-num membership + its index cast
+                "nums[..., None] == set_nums", "set_nums.long()"),
+    },
+    # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass): the flat pointer's candidate set — integer ids, the
+    # hypothesis set's structural counts / ranks, and the observation's active flag. No selection: the
+    # move seats come from THE one order (its boundaries are already `near_tie_rows`'), OTHER_move /
+    # OTHER_species are whole sets.
+    "flat_intent": {
+        "OBS": ("opp_active_flag < 0.5",),
+        "INT": ("hs.slot_species.long()", "opp_species_ids.long()", "mv.seat_nums == _HP_NUM",
+                "hs.slot_species > 0", "fm.seat_nums.long()", "hs.rank >= sp.k.unsqueeze(-1)", "sp.k > 0",
+                "torch.arange(F, device=tokens.device) <= other_move_col(k)"),
     },
     "pointer_head": {
         "ID": ("match.float().argmax(-1)", "move_valid < 0.5"),

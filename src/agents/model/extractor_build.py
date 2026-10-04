@@ -40,6 +40,7 @@ from agents.model.intent_conditional import IntentConditionalMoveCell
 from agents.model.intent_move_cell import IntentMoveCell
 from agents.model.intent_threshold import IntentThresholdMoveCell
 from agents.model.opp_intent import AlphaIntentHead, BetaSwitchHead
+from agents.model.flat_intent import FlatIntentHead
 from agents.model.pair_outcome import PairOutcomeMoveCell, PairOutcomeSwitchCell
 from agents.model.pointer_head import EntityMoveSeats
 from agents.model.pools import CLSPool, HiddenOppBeliefPool
@@ -210,6 +211,7 @@ class ExtractorBuild(torch.nn.Module):
         # `forward_internal` reads these attributes unconditionally, so they must always exist.
         self.alpha_head: Optional[AlphaIntentHead] = None
         self.beta_head: Optional[BetaSwitchHead] = None
+        self.flat_intent_head: Optional[FlatIntentHead] = None   # X5 U4, fixed_mass only
         # gen3_edge_bias_trunk_v1 (v56, Stage 2): computed physics as per-pair per-head attention
         # BIASES (see EdgeBias). "off" builds no module (no state_dict change beyond the layer swap);
         # the maps are zero-init so an ON run is byte-identical to OFF at init. Requirement
@@ -936,6 +938,19 @@ class ExtractorBuild(torch.nn.Module):
                                  "candidate axis; the seats come from the move group, not a truncation).")
             self.hypothesis_builder = HypothesisBuilder(
                 layout, self.team_transformer._global_token_input_dim, self.entity_topk_seats)
+            # gen3_x5_flat_pointer_v1 (X5 U4, design §3.7): the FLAT opponent pointer replaces α / β in
+            # this arm. OTHER_move's token is the opponent active's E5 tail seat, so the E5 seats must
+            # exist (refused here, where `flag_requires_test` can see it). Built from its OWN private
+            # seed out of `IsolatedLinear`s, appended after the hypothesis builder (no position moves).
+            # α / β are still CONSTRUCTED above and still see SB3's orthogonal re-init (their draws keep
+            # the global stream — every later module's initial bytes — equal to blob's); the policy then
+            # RETIRES them (`retire_superseded_intent_heads`, called from `_build` before the optimizer
+            # is made), so they hold no state_dict key and no optimizer slot.
+            if not self.entity_seats.tail_seats:
+                raise ValueError(
+                    "belief_tokens=fixed_mass requires entity_tail_seats=True: OTHER_move (a flat-pointer "
+                    "candidate) re-uses the opponent active's E5 tail seat as its token.")
+            self.flat_intent_head = FlatIntentHead(D_MODEL, _intent_ctx)
             cast("ExtractorApi", self)._stamp_belief_grad_flags()
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See

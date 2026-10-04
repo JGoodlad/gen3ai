@@ -118,7 +118,7 @@ class Columns:
     adv_mean: np.ndarray     # [N, 11]
     adv_std: np.ndarray      # [N, 11] member spread of A CENTRED under π (the heads' readout)
     adv_raw_std: np.ndarray  # [N, 11] member spread of the UNCENTRED A (no π-dependent term)
-    opp_mean: np.ndarray     # [N, S+1]
+    opp_mean: np.ndarray     # [N, S+1] (blob: α's support) | [N, K+8] (fixed_mass: the flat pointer)
     #: Per RND VARIANT present: ``rndv_<name>_err`` / ``rndv_<name>_z`` [N] (empty: no variants).
     rndv: Dict[str, np.ndarray] = field(default_factory=dict)
 
@@ -169,7 +169,9 @@ def attach_heads(policy: Any, obs_dim: int, rows: np.ndarray,
                 "rnd_stats": "the checkpoint's own running statistics"}
         own.eval()
         return own, prov
-    spec = RideAlongSpec(**BASELINE_SPEC_KW)
+    # X5 U4: a fixed_mass checkpoint's B is over the FLAT pointer's columns (0 = α's support).
+    spec = RideAlongSpec(**BASELINE_SPEC_KW,
+                         opp_flat_k=RideAlongSpec.from_extractor(policy.features_extractor).opp_flat_k)
     heads = build_ridealong(policy.features_extractor, obs_dim=obs_dim, spec=spec)
     if heads is None:
         raise RuntimeError("build_ridealong returned None for a non-empty spec")
@@ -237,7 +239,10 @@ def forward_columns(model: Any, heads: Any, rows: np.ndarray, masks: np.ndarray,
                 obs=ob["observation"], pooled=fe.last_value_pooled,
                 pointer=tuple(fe.last_pointer_inputs), pi=pi, logits=logits,
                 legal=torch.from_numpy(mk.astype(bool)), values=v,
-                alpha_logits=fe.last_alpha_logits, alpha_seat_nums=fe.last_alpha_seat_nums)
+                alpha_logits=fe.last_alpha_logits, alpha_seat_nums=fe.last_alpha_seat_nums,
+                flat_logits=getattr(fe, "last_flat_intent_logits", None),
+                flat_ids=(fe.last_flat_intent.cand_ids
+                          if getattr(fe, "last_flat_intent", None) is not None else None))
             out = heads.readout(b)
             adv_mod = getattr(heads, "adv", None)
             raw_sd = (adv_mod(b.pooled, b.pointer).std(1, unbiased=False)

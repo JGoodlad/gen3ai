@@ -236,6 +236,8 @@ _BELIEF_SUPERVISION_KEYS = frozenset({
     "move_belief_logits", "hp_type_logits",
     "spread_belief", "spread_nature_logits", "spread_ev",
     "alpha_logits", "beta_logits", "item_logits",
+    # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass): the flat opponent pointer replaces α / β there.
+    "flat_intent_logits",
 })
 
 # Logit at which a REVEALED (certain) move is pinned under prior fusion: sigmoid(10) ≈ 0.99995 ≈ P 1.

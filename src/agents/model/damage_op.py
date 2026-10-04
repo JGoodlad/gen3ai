@@ -97,6 +97,12 @@ class OpStashes:
     # `opp_addressable`, hypothesis species, per-mon fixed-mass move presence, the hidden-team marginal
     # (`hypothesis_tokens.OpRoster`). Every opponent-axis kernel reads it; None (blob): byte-identical.
     x5: Optional[Any] = None
+    # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass only): OTHER_move's seat-axis COLUMN for every α-seat
+    # consumer — each per-candidate coordinate on the FULL candidate axis contracted with the
+    # renormalised tail `FixedMassMoves.other_u` (E_tail[f(m)], never a zero row). None under blob.
+    pair_cells_other: Optional[torch.Tensor] = None      # [B,J,1,6]
+    pair_in_other: Optional[torch.Tensor] = None         # [B,J,1,_PAIR_OUTCOME_RAW]
+    pair_type_mult_other: Optional[torch.Tensor] = None  # [B,J,1]
     # gen3_conditional_threat_v1 (v95, OA1): the per-(our defender j, their believed seat k) TYPE
     # MULTIPLIER — the one channel `_incoming_matrix` computes at exactly alpha's seat alignment
     # and then spends only on the flat render. It is NOT a coordinate of `pair_in`, deliberately:
@@ -1070,6 +1076,12 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
             self.stash.pair_cells = (_dmg_g if (_mix is None or fixed_moves is None)
                                      else fixed_moves.mix_seats(_dmg_g, dim=2))  # [B,J,K,F]
             self.stash.pair_gate = _pr_gate_raw
+            # X5 U4 (§3.7): OTHER_move's damage column — the FULL candidate axis (fixed_mass prices
+            # every move: damage_candidate_k == 0) contracted with the renormalised tail.
+            _ou = fixed_moves.other_u if (_mix is not None and fixed_moves is not None) else None
+            if _ou is not None:
+                self.stash.pair_cells_other = torch.einsum(
+                    "bjcf,bc->bjf", _pr_cells_raw, _ou.to(_pr_cells_raw.dtype)).unsqueeze(2)  # [B,J,1,6]
             # gen3_pair_outcome_v1: the UNIFIED outcome vector. The damage cells just aligned to
             # alpha's seat axis are its first six coordinates; the eight status / neutralization /
             # tempo coordinates are computed on the SAME `last_topk_idx` selection and concatenated,
@@ -1098,6 +1110,17 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                         our_spe, opp_spe, opp_spe_std, d_base)
                     self.stash.pair_in = fixed_moves.mix_seats(
                         torch.cat([_dmg_g, _ext], dim=-1), dim=2)              # [B,J,K,RAW]
+                    if _ou is not None and self.stash.pair_cells_other is not None:
+                        # X5 U4: OTHER_move's status / tempo coordinates on the FULL axis, then the
+                        # same tail contraction (the damage prefix is `pair_cells_other`).
+                        _full = torch.arange(_pr_cells_raw.shape[2], device=_pr_cells_raw.device
+                                             ).expand(_pr_cells_raw.shape[0], -1)
+                        _ext_f = self.pair_outcome_coords(
+                            ctx, _full, _pr_cells_raw[..., PAIR_OUTCOME_IDX["high"]],
+                            our_spe, opp_spe, opp_spe_std, d_base)                 # [B,J,M,8]
+                        _co = torch.einsum("bjcf,bc->bjf", _ext_f, _ou.to(_ext_f.dtype))
+                        self.stash.pair_in_other = torch.cat(
+                            [self.stash.pair_cells_other[:, :, 0], _co], dim=-1).unsqueeze(2)
                 # (`pair_seat_live` — the unmodeled-seat mask alpha must spend no mass on — is
                 # stashed by `_incoming_matrix`, which is where the meaningful-K gate is already
                 # computed. One computation, one home.)

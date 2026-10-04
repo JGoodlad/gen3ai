@@ -198,7 +198,11 @@ class RideAlongAccumulator:
                     if v_ is not None:
                         q = v_[:, None] + out["adv_mean"]
                         self.add("q_out_of_range", float(((q < 0) | (q > 1))[legal].float().mean()))
-            if ("opp" in out and b.opp_kind is not None and b.opp_num is not None
+            if "opp" in out and b.flat_target is not None:
+                from agents.model.opp_intent import INTENT_IGNORE
+                # X5 U4: the share of rows B trains on — OTHER rows included (a belief miss is a label)
+                self.add("opp_label_rate", float((b.flat_target != INTENT_IGNORE).float().mean()))
+            elif ("opp" in out and b.opp_kind is not None and b.opp_num is not None
                     and b.alpha_seat_nums is not None):
                 from agents.model.opp_intent import INTENT_IGNORE, match_seats_to_move_num
                 idx = match_seats_to_move_num(b.alpha_seat_nums, b.opp_num.long().reshape(-1),
@@ -366,6 +370,16 @@ class RideAlongTerms:
             legal = pi > 0
             logits = dist.distribution.logits
         opp_on = float(getattr(self, "opp_intent_coef", 0.0) or 0.0) > 0.0   # labels ALIGNED
+        # X5 U4 (fixed_mass): B reads the FLAT pointer — its logits, its candidate ids and the label
+        # column from THE target function the intent loss uses (so B and the loss name one column).
+        _fi = getattr(fe, "last_flat_intent", None) if opp_on else None
+        _flat_kw: Dict[str, Any] = {}
+        if _fi is not None and "opp_action_kind" in obs:
+            from agents.model.flat_intent import flat_intent_targets
+            _ft, _ = flat_intent_targets(_fi, obs["opp_action_kind"], obs["opp_action_num"],
+                                         obs["opp_switch_slot"], obs["opp_switch_species"])
+            _flat_kw = dict(flat_logits=fe.last_flat_intent_logits, flat_ids=_fi.cand_ids,
+                            flat_target=_ft)
         b = RideAlongBatch.detached(
             obs=obs["observation"], pooled=fe.last_value_pooled,
             pointer=tuple(fe.last_pointer_inputs) if fe.last_pointer_inputs is not None else None,
@@ -375,7 +389,7 @@ class RideAlongTerms:
             alpha_logits=fe.last_alpha_logits if opp_on else None,
             alpha_seat_nums=fe.last_alpha_seat_nums if opp_on else None,
             opp_kind=obs.get("opp_action_kind") if opp_on else None,
-            opp_num=obs.get("opp_action_num") if opp_on else None)
+            opp_num=obs.get("opp_action_num") if opp_on else None, **_flat_kw)
         if b.pooled is None:
             return
         rnd = getattr(heads, "rnd", None)

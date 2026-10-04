@@ -65,7 +65,7 @@ Seat-permutation invariant by construction: the only seat-indexed computation is
 """
 from __future__ import annotations
 
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import torch
 
@@ -101,6 +101,7 @@ _KO_RAMP_WINDOW = 0.15       # the op's own modal-roll KO-ramp window (see damag
 
 def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
                     pair_gate: torch.Tensor, our_active_idx: torch.Tensor,
+                    seat_live: Optional[torch.Tensor] = None,
                     ) -> ThresholdProbs:
     """`(published α logits [B,K+1], op pair cells [B,6,K,6], gate [B,6,1], our_active [B])`
     → `(p_ko, p_sub_broken, p_fp_broken)`, each `[B, 1]`. Pure — no parameters, no state.
@@ -109,6 +110,9 @@ def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
     (`intent_axis_alignment_test`), so a mismatch means one was reconfigured independently —
     silently broadcasting would pair each α weight with the wrong opponent move while every shape
     check still passed (the named `op move-order` bug class).
+
+    ``seat_live`` `[B,K]` (X5 U4, F-X5-15): the meaningful-K gate `pair_alpha` applies — mask, never
+    renormalise. Passed under fixed_mass only, so blob is byte-identical.
     """
     k = alpha_logits.shape[-1] - 1                                     # last class is SWITCH
     if pair_cells.shape[2] != k:
@@ -130,6 +134,8 @@ def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
         (high_k - _SUB_HP_FRAC) / (_KO_RAMP_WINDOW * high_k + 1e-6), 0.0, 1.0)
     # UNRENORMALIZED move slice — the missing SWITCH mass correctly reads "no damage this turn".
     alpha = torch.softmax(alpha_logits.float(), dim=-1)[:, :k].to(pair_cells.dtype)   # [B,K]
+    if seat_live is not None:
+        alpha = alpha * seat_live.to(alpha.dtype)
     p_ko = (alpha * ko_k).sum(dim=-1, keepdim=True) * gate             # [B,1]
     p_sub = (alpha * break_sub_k).sum(dim=-1, keepdim=True) * gate
     p_fp = (alpha * break_fp_k).sum(dim=-1, keepdim=True) * gate

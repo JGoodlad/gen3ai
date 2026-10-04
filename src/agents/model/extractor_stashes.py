@@ -9,6 +9,7 @@ from typing import Dict, Optional, Tuple
 import torch
 
 from agents.model.extractor_ctx import PointerInputs
+from agents.model.flat_intent import FlatConsumerOps, FlatIntentInputs
 from agents.model.hypothesis_set import HypothesisSet
 from agents.model.intent_threshold import ThresholdProbs
 
@@ -35,6 +36,11 @@ class ExtractorStashes:
     alpha_logits: Optional[torch.Tensor] = None      # [B,K+1] which believed move (or SWITCH)
     alpha_seat_nums: Optional[torch.Tensor] = None   # [B,K] seat move NUMS (detached; loss labels)
     beta_logits: Optional[torch.Tensor] = None       # [B,6] if they switch, to whom
+    # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass only — α / β are retired there): the FLAT opponent
+    # pointer's publication [B,K+8] and its detached label-side description (`flat_intent.py`).
+    flat_intent_logits: Optional[torch.Tensor] = None
+    flat_intent: Optional["FlatIntentInputs"] = None
+    flat_consumer_ops: Optional["FlatConsumerOps"] = None   # the consumers' operands (read-only; tests / readers)
     thresh_probs: Optional[ThresholdProbs] = None    # T2-computed, read by the vf route at T3
     # --- belief bank (publications; the LIVE views live in `belief_supervision`) -------------
     belief_logits: Optional[Dict[str, torch.Tensor]] = None  # species/moves aux dict (refined opp)

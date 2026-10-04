@@ -368,6 +368,8 @@ def test_supervision_keys_are_exactly_what_the_forward_registers():
     not_built = set()
     if fe.alpha_head is None:
         not_built |= {"alpha_logits", "beta_logits"}     # need --opp-intent-coef
+    if fe.flat_intent_head is None:
+        not_built |= {"flat_intent_logits"}              # X5 U4: --belief-tokens fixed_mass only
     if fe.spread_belief is None:
         not_built |= {"spread_belief", "spread_nature_logits", "spread_ev"}
     if fe.item_belief_head is None:

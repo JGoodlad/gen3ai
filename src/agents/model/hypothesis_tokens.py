@@ -146,6 +146,11 @@ class FixedMassMoves:
     other_log_mass: torch.Tensor  # [B]
     other_live: torch.Tensor   # [B] bool
     beyond: torch.Tensor       # [B,M] bool — OTHER_move's members
+    # X5 U4 (§3.7, the flat pointer): OTHER_move's PRICING weights — the renormalised tail
+    # u_m = π_m·[m ∈ beyond] / Σ_beyond π (0 when OTHER_move is masked). Every per-candidate quantity
+    # computed on the op's FULL candidate axis contracts with it into OTHER_move's seat-axis column:
+    # E_tail[f(m)], the move-side twin of OTHER_species' `other_tail_probs` (M3 (c)).
+    other_u: Optional[torch.Tensor] = None   # [B,M]
 
     def mix_seats(self, x: torch.Tensor, dim: int) -> torch.Tensor:
         """Contract ``x``'s extended seat axis (size K+16 at ``dim``) onto the K seats."""
@@ -191,10 +196,17 @@ def fixed_mass_moves(moves: Any, active_typed_logits: torch.Tensor) -> FixedMass
     eye = torch.eye(K, K + len(_TYPED_HP), dtype=dt, device=dev).expand(B, -1, -1)
     hp_row = torch.cat([torch.zeros(B, K, dtype=dt, device=dev), p_t], dim=1)    # [B,K+16]
     mix = torch.where(hp_seat.unsqueeze(-1), hp_row.unsqueeze(1), eye)
+    # OTHER_move's pricing weights (U4): the tail's own presences, renormalised. A live OTHER_move has
+    # Σ_beyond π > 0 (π never reaches 0 on a live candidate), so the division is exact; a masked one
+    # reads 0 — a structural gate (`other_live`), never a float comparison.
+    tw = torch.where(moves.beyond, w_all, torch.zeros_like(w_all))
+    tiny = torch.finfo(dt).tiny
+    other_u = torch.where(moves.other_live.unsqueeze(-1),
+                          tw / tw.sum(-1, keepdim=True).clamp(min=tiny), torch.zeros_like(tw))
     return FixedMassMoves(w_all=w_all, seat_nums=moves.seat_nums, seat_w=seat_w, seat_logp=seat_logp,
                           seat_on=seat_on, idx_ext=idx_ext, w_ext=w_ext, mix=mix,
                           other_mass=moves.other_mass, other_log_mass=moves.other_log_mass,
-                          other_live=moves.other_live, beyond=moves.beyond)
+                          other_live=moves.other_live, beyond=moves.beyond, other_u=other_u)
 
 
 def other_move_cells(fm: FixedMassMoves, move_bp: torch.Tensor, move_acc: torch.Tensor,

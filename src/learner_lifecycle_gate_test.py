@@ -110,6 +110,8 @@ STEP_MODULES: Dict[str, str] = {
     "agents/training/rust_rollout/tie_margins.py": "K9(b)'s tie-margin recorder around the probe forward, "
                                                    "per update (a TorchFunctionMode; no learner object)",
     "agents/model/opp_intent.py": "the opponent-intent loss functions + label matching, per minibatch",
+    "agents/model/flat_intent.py": "X5 U4: the flat opponent pointer's label targets + re-expression, per "
+                                   "minibatch (its head is built in `__init__`)",
     "agents/model/ridealong_heads.py": "the ride-along heads' forward + loss, per minibatch (epoch 0)",
     "agents/training/rollout_buffer.py": "the learner's rollout buffer (gen3_owned_rollout_buffer_v1): reset / "
                                          "add / GAE per rollout, get per epoch; numpy storage, no learner object",

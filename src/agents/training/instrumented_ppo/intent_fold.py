@@ -374,6 +374,11 @@ def intent_fold(fe: Any, obs: Mapping[str, Tensor], *, intent_coef: Coef, setval
                 setvalued_on: bool, bot_label_weight: float) -> Optional[IntentFoldOut]:
     """The legacy block's reads, then `intent_fold_tensors`. `None` ⇔ the legacy block was SKIPPED
     (no α logits, no seat nums, or no `opp_action_kind` label in the obs) — a STATIC fact."""
+    # gen3_x5_flat_pointer_v1 (X5 U4): under fixed_mass the FLAT pointer replaces α / β — its own fold.
+    fl = fe.belief_supervision("flat_intent_logits")
+    if fl is not None:
+        from agents.training.instrumented_ppo.flat_intent_fold import flat_intent_fold
+        return flat_intent_fold(fe, obs, fl, intent_coef=intent_coef, bot_label_weight=bot_label_weight)
     al = fe.belief_supervision("alpha_logits")
     bl = fe.belief_supervision("beta_logits")
     sn = fe.last_alpha_seat_nums

@@ -198,3 +198,10 @@ RIDEALONG_INIT_SEED = 20260930
 # so the fixed_mass arm leaves every non-X5 parameter's initial bytes equal to the blob arm's.
 HYPOTHESIS_DELTA_HIDDEN = 96
 HYPOTHESIS_INIT_SEED = 20261003
+
+# gen3_x5_flat_pointer_v1 (X5 build unit U4, `--belief-tokens fixed_mass` only; design §3.7): the FLAT
+# opponent pointer that replaces the α / β heads in that arm. FLAT_INTENT_HIDDEN is its one shared
+# scorer's width (α's and β's scorers were 64 wide); FLAT_INTENT_INIT_SEED its PRIVATE init seed (built
+# inside `torch.random.fork_rng` from `IsolatedLinear`s, so no non-X5 initial byte moves).
+FLAT_INTENT_HIDDEN = 64
+FLAT_INTENT_INIT_SEED = 20261004

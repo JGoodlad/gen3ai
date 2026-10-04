@@ -126,7 +126,10 @@ and rescale the trunk's; **(3)** every input goes through `RideAlongBatch.detach
 network (RND target, randomized prior) is a BUFFER (`freeze_to_buffers`), never a
 `requires_grad=False` parameter. **The RND VARIANTS** (`ridealong_rnd_variants`, v127,
 `RND_VARIANT_DECLS`) are built LAST in `RideAlongHeads`, each from its own private seed or a deep copy
-of base's predictor, so adding one never changes another head's init. They are excluded from
+of base's predictor, so adding one never changes another head's init. Under `--belief-tokens
+fixed_mass` B is RE-BASED onto the X5 flat opponent pointer (`FlatOppEffectEnsemble`; labels from
+`flat_intent.flat_intent_targets`) — still detached, pinned bit-identical to learning by
+`ridealong_update_test`'s fixed_mass arm. They are excluded from
 `trainable_parameters()`: each has its own optimizer (`variant_parameters(name)`). The observation
 variants share base's target and normaliser, so they must never own copies of them. Detail: [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md).
 

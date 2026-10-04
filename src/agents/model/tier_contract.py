@@ -92,6 +92,8 @@ TIER_OF: Dict[str, int] = {
     "cls_pool": 2,
     "alpha_head": 2,
     "beta_head": 2,
+    # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass): the flat opponent pointer — α / β's T2 slot.
+    "flat_intent_head": 2,
     # gen3_intent_move_cell_v1: the POLICY-side alpha consumer — weights the op's T1 c2 operand
     # stash by the T2 alpha publication into the pointer MOVE cell. T2 by the same logic as
     # `alpha_head` itself: it answers "what are my moves worth", post-attention.

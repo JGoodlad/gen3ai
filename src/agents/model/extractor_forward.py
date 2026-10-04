@@ -28,11 +28,12 @@ from agents.model.extractor_api import ExtractorApi
 from agents.model.extractor_ctx import (ExtractorContext, PointerInputs, TOKEN_TYPE_HISTORY,
                                         TOKEN_TYPE_THEIR_TEAM)
 from agents.model.extractor_stashes import ExtractorStashes
+from agents.model.flat_intent import FlatConsumerOps, append_other, compat_intent_logits, flat_candidates
 from agents.model.hypothesis_set import HypothesisSet
 from agents.model.hypothesis_tokens import (FixedMassMoves, OppPresence, OpRoster, build_op_roster,
                                             fixed_mass_moves, hypothesis_ctx, key_log_presence,
-                                            other_roster, splice_hypothesis_tokens)
-from agents.model.damage_op_layout import _SB_SPE
+                                            other_column, other_roster, splice_hypothesis_tokens)
+from agents.model.damage_op_layout import _DMG_OMX_IDX_PKO, _SB_SPE
 from agents.model.intent_threshold import threshold_probs
 from agents.model.pair_outcome import pair_alpha, reduce_pair_in, reduce_pair_in_all
 from agents.model.pointer_head import _request_order_move_tokens
@@ -317,7 +318,6 @@ class ExtractorForward(ExtractorApi):
         every hidden slot holds the renormalised tail's AVERAGED defender and attacker), read at a hidden
         slot. The op's per-forward roster is restored afterwards (a `finally`), so no later kernel can read
         the OTHER-mode one."""
-        from agents.model.hypothesis_tokens import other_column
         op = self.damage_op
         assert op is not None and ro.other is not None and ro.other_col is not None
         mb = self.last_move_belief_logits
@@ -341,6 +341,50 @@ class ExtractorForward(ExtractorApi):
         finally:
             op.stash.x5 = ro
         return out
+
+    def _flat_consumer_ops(self, flat: torch.Tensor, k: int, fm: FixedMassMoves, hs: HypothesisSet,
+                           ro: Optional[OpRoster], opctx: ExtractorContext,
+                           other_d1: Optional[torch.Tensor]) -> FlatConsumerOps:
+        """X5 U4 (§3.7): the α / β consumers' operands under the flat pointer — α / β re-expressed from
+        the PUBLICATION (`compat_intent_logits`), and each op stash a live consumer reads with OTHER's
+        column appended: OTHER_move's (the op's tail contraction, `FixedMassMoves.other_u`) on the seat
+        axis, OTHER_species' (the OTHER-mode D1 pass — computed here only when the edge families did
+        not — and P(Ghost | OTHER) = `other_tail_probs @ SPECIES_IS_GHOST`, linear and exact) on the
+        mon axis. Never a zero row."""
+        op = self.damage_op
+        assert op is not None and fm.other_u is not None
+        alpha, beta = compat_intent_logits(flat, k)
+        st = op.stash
+        seat_live = torch.cat([op.last_pair_seat_live if op.last_pair_seat_live is not None
+                               else fm.seat_on.to(flat.dtype),
+                               fm.other_live.to(flat.dtype).unsqueeze(-1)], dim=-1)
+        out_cells = out_pko = None
+        if st.out_cells is not None:
+            if other_d1 is None:
+                assert ro is not None and ro.other is not None and ro.other_col is not None
+                op.stash.x5 = ro.other
+                try:
+                    other_d1 = other_column(op.pairwise_outgoing(
+                        opctx, self.last_spread_belief, species_probs=ro.other.species_probs),
+                        ro.other_col, 2)
+                finally:
+                    op.stash.x5 = ro
+            assert other_d1 is not None
+            out_cells = append_other(st.out_cells, other_d1[..., :st.out_cells.shape[-1]], 2, "out_cells")
+            assert out_cells is not None
+            out_pko = out_cells[..., _DMG_OMX_IDX_PKO]
+        ghost = None
+        if st.opp_p_ghost is not None:
+            ghost = append_other(st.opp_p_ghost, (hs.other_tail_probs.to(op.SPECIES_IS_GHOST.dtype)
+                                                  @ op.SPECIES_IS_GHOST).unsqueeze(-1), 1, "opp_p_ghost")
+        topk_w = (torch.cat([st.topk_w, fm.other_mass.to(st.topk_w.dtype).unsqueeze(-1)], dim=-1)
+                  if st.topk_w is not None else None)
+        return FlatConsumerOps(
+            alpha=alpha, beta=beta, seat_live=seat_live, other_u=fm.other_u, topk_w=topk_w,
+            pair_cells=append_other(st.pair_cells, st.pair_cells_other, 2, "pair_cells"),
+            pair_in=append_other(st.pair_in, st.pair_in_other, 2, "pair_in"),
+            type_mult=append_other(st.pair_type_mult, st.pair_type_mult_other, 2, "pair_type_mult"),
+            out_cells=out_cells, out_pko=out_pko, opp_p_ghost=ghost)
 
     def forward_internal(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
@@ -480,6 +524,7 @@ class ExtractorForward(ExtractorApi):
         # candidate selection the E4 seats just stashed) and delivered to every layer as per-pair
         # per-head additive logit biases via the closure. Zero-init maps ⇒ identity at init.
         _edge_fn = None
+        _other_d1: Optional[torch.Tensor] = None     # X5 U4: OTHER_species' D1 cells, reused by out_cells
         if self.edge_bias is not None:
             _fams = self.edge_bias.families
             # The T0 stack computed the spread belief THIS forward, pre-trunk (gen3_tiered_pipeline_v1
@@ -578,6 +623,7 @@ class ExtractorForward(ExtractorApi):
             _olive: Optional[torch.Tensor] = None
             if _x5r is not None and _x5r.other is not None:
                 _ocells = self._other_edge_cells(_opctx, _x5r, _sb, _fams)
+                _other_d1 = _ocells.get("d1")
                 _oidx = self.team_transformer._total_tokens + self.entity_seats.n_seats
                 _olive = _x5r.other_live
             _edge_fn = lambda bias: self.edge_bias(  # noqa: E731
@@ -595,7 +641,9 @@ class ExtractorForward(ExtractorApi):
             _imc_ops = self.damage_op.pointer_intent_status_operands(  # type: ignore[union-attr]
                 _opctx, self.last_move_belief_logits, self.last_spread_belief,  # type: ignore[arg-type]
                 k_cand=self.consequence_topk, c2_cells=_c2_edge_cells,
-                species_probs=_sp)
+                species_probs=_sp,
+                # X5 U4 (fixed_mass): + OTHER_move's column (the flat pointer's (K+1)-th seat)
+                other_u=(_fm.other_u if (_fm is not None and self.flat_intent_head is not None) else None))
         # gen3_x5_belief_tokens_v1 (fixed_mass): OTHER_species joins the trunk as ONE extra seat right
         # after the entity seats (E3/E4/E5 stay front-indexed; the event seats stay LAST, which the
         # `r` edge family's slice requires), typed THEIR_TEAM, key-masked iff OTHER is masked
@@ -733,6 +781,32 @@ class ExtractorForward(ExtractorApi):
                 their_team_out.detach(), _ictx, candidate_mask=_beta_mask)
             self.stash.belief_supervision["beta_logits"] = _beta_live
             self.stash.beta_logits = self._publish_belief(_beta_live)
+        # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass only; design §3.7): the FLAT opponent pointer —
+        # one list (their move seats, OTHER_move, each switch target, OTHER_species), one softmax, the
+        # detached log π as the logit bias (M10). α / β are retired in this arm. The consumers below
+        # read its RE-EXPRESSION (`_x5i`): α over the K seats + OTHER_move (a priced (K+1)-th seat) +
+        # the total switch mass, β over the six slots + OTHER_species, and every seat-axis / mon-axis
+        # operand with OTHER's column appended — never a zero row.
+        _x5i: Optional[FlatConsumerOps] = None
+        if self.flat_intent_head is not None:
+            assert _hs is not None and _fm is not None and _presence is not None and _seat_out is not None
+            _K = self.entity_topk_seats
+            _keep = self.opp_intent_grad_mode == "shaping"
+            _ictx = torch.cat([our_team_pooled, their_team_pooled], dim=-1)
+            _ftok, _fi = flat_candidates(
+                _seat_out, _K, their_team_out, _presence.other_out, _fm, _hs, ctx.opp_addressable,
+                ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1], ctx.opp_active_local,
+                ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE])
+            if not _keep:
+                _ftok, _ictx = _ftok.detach(), _ictx.detach()
+            _flat = self.flat_intent_head(_ftok, _ictx, _fi.log_pi, _fi.live, _K)
+            self.stash.belief_supervision["flat_intent_logits"] = _flat
+            _flat_pub = self._publish_belief(_flat)
+            assert _flat_pub is not None
+            self.stash.flat_intent_logits = _flat_pub
+            self.stash.flat_intent = _fi
+            _x5i = self._flat_consumer_ops(_flat_pub, _K, _fm, _hs, _x5r, _opctx, _other_d1)
+            self.stash.flat_consumer_ops = _x5i
         _tok_req = _seat_out[:, :4, :]
         if self.damage_op is not None and damage_block is not None:
             _mcells, _scells = self.damage_op.pointer_cells(damage_block)
@@ -745,42 +819,49 @@ class ExtractorForward(ExtractorApi):
         # The consumer reads `last_alpha_logits` — the PUBLICATION, stop-grad under
         # `belief_grad_mode=label_only` — never a raw stash, so label_only keeps cutting the
         # PPO→alpha_head route through this path exactly as it does for every other consumer.
+        _al = self.last_alpha_logits if _x5i is None else _x5i.alpha
+        _bl = self.last_beta_logits if _x5i is None else _x5i.beta
         if self.intent_move_cell is not None:
-            if self.last_alpha_logits is None or _imc_ops is None:
+            if _al is None or _imc_ops is None:
                 raise RuntimeError(
                     "intent_move_cell is on but alpha produced no logits or the op stashed no c2 "
                     "operands — the cell would silently contribute nothing, which is "
                     "indistinguishable from a null RESULT.")
-            _mcells = torch.cat([_mcells, self.intent_move_cell(
-                self.last_alpha_logits, *_imc_ops)], dim=2)
+            _mcells = torch.cat([_mcells, (self.intent_move_cell(_al, *_imc_ops) if _x5i is None
+                                           else self.intent_move_cell(_al, *_imc_ops,
+                                                                      seat_live=_x5i.seat_live))], dim=2)
         # gen3_intent_threshold_v1 (v84): the α-weighted threshold operator, computed ONCE here
         # (the first point where α exists) and consumed by BOTH heads — the move-cell block joins
         # the pointer cells now; the vf block reads the stashed probs at the value tail (a
         # T2-produced tensor read at T3 — the allowed direction). The consumer reads
         # `last_alpha_logits` — the PUBLICATION, stop-grad under `belief_grad_mode=label_only`.
         if self.intent_threshold_move is not None:
-            _pair_cells = self.damage_op.last_pair_cells if self.damage_op is not None else None
-            if self.last_alpha_logits is None or _pair_cells is None:
+            _pair_cells = ((self.damage_op.last_pair_cells if self.damage_op is not None else None)
+                           if _x5i is None else _x5i.pair_cells)
+            if _al is None or _pair_cells is None:
                 raise RuntimeError(
                     "intent_threshold is on but alpha produced no logits or the op stashed no "
                     "pair cells — the thresholds would silently contribute nothing, which is "
                     "indistinguishable from a null RESULT. Requires damage_topk_k>0 (and the "
                     "incoming matrix that computes it).")
             _tp = threshold_probs(
-                self.last_alpha_logits, _pair_cells, self.damage_op.last_pair_gate,  # type: ignore[arg-type,union-attr]
-                ctx.our_active_idx)
+                _al, _pair_cells, self.damage_op.last_pair_gate,  # type: ignore[arg-type,union-attr]
+                ctx.our_active_idx, **({} if _x5i is None else {"seat_live": _x5i.seat_live}))
             self.stash.thresh_probs = _tp
             _mcells = torch.cat([_mcells, self.intent_threshold_move(
                 *_tp, ctx.our_active_req_move_ids)], dim=2)
         # gen3_intent_conditional_v1 (v85): the Counter/flinch/Explosion/Pursuit cells — same
         # T1-producer/T2-consumer split, same publication read.
         if self.intent_conditional is not None:
-            _pc = self.damage_op.last_pair_cells if self.damage_op is not None else None
+            _pc = ((self.damage_op.last_pair_cells if self.damage_op is not None else None)
+                   if _x5i is None else _x5i.pair_cells)
             _ot = self.damage_op.last_tensors if self.damage_op is not None else None
-            _ready = (self.last_alpha_logits is not None and _pc is not None
+            _opko = ((self.damage_op.last_out_pko if self.damage_op is not None else None)
+                     if _x5i is None else _x5i.out_pko)
+            _ready = (_al is not None and _pc is not None
                       and _ot is not None and _ot.out_per_move is not None
-                      and self.damage_op.last_out_pko is not None  # type: ignore[union-attr]
-                      and self.last_beta_logits is not None
+                      and _opko is not None
+                      and _bl is not None
                       and self.damage_op.last_topk_idx is not None)  # type: ignore[union-attr]
             if not _ready:
                 raise RuntimeError(
@@ -795,13 +876,15 @@ class ExtractorForward(ExtractorApi):
             # stash — honest probabilities, present in both render modes (the flat render
             # is serialization, not a source).
             _mcells = torch.cat([_mcells, self.intent_conditional(
-                self.last_alpha_logits, _pc, self.damage_op.last_pair_gate,  # type: ignore[union-attr]
+                _al, _pc, self.damage_op.last_pair_gate,  # type: ignore[union-attr]
                 ctx.our_active_idx, self.damage_op.last_topk_idx,  # type: ignore[union-attr]
                 _ot.out_per_move[..., 1], _ot.out_p_outspeed,  # type: ignore[index,union-attr]
                 _ot.out_secondary[..., _OUT_SEC_FLINCH_COL],  # type: ignore[index,union-attr]
                 ctx.our_active_req_move_ids, _po,
-                self.last_beta_logits, self.damage_op.last_out_pko,  # type: ignore[union-attr]
-                ctx.opp_active_local)], dim=2)
+                _bl, _opko,
+                ctx.opp_active_local,
+                **({} if _x5i is None else {"seat_live": _x5i.seat_live, "other_u": _x5i.other_u}))],
+                dim=2)
         # gen3_pair_outcome_v1 (v93): the UNIFIED outcome vector, α-contracted. The T1 producer
         # (the op) built `pair_in` over the (our mon, their believed seat) grid; here at T2 — the
         # first point where α exists — ONE distribution reduces it, and the row for our ACTIVE
@@ -812,16 +895,19 @@ class ExtractorForward(ExtractorApi):
         # enableable, and `pair_alpha` documents loudly that presence-belief and usage-belief are
         # NOT the same object — the second is the whole point of the intent head.
         if self.pair_outcome_move is not None:
-            _pin = self.damage_op.last_pair_in if self.damage_op is not None else None
-            _pw = self.damage_op.last_topk_w if self.damage_op is not None else None
+            _pin = ((self.damage_op.last_pair_in if self.damage_op is not None else None)
+                    if _x5i is None else _x5i.pair_in)
+            _pw = ((self.damage_op.last_topk_w if self.damage_op is not None else None)
+                   if _x5i is None else _x5i.topk_w)
             if _pin is None or _pw is None:
                 raise RuntimeError(
                     "pair_outcome_cell is on but the op stashed no unified outcome vector (or no "
                     "top-K belief weights) — the cell would silently contribute nothing, which is "
                     "indistinguishable from a null RESULT. Requires damage_topk_k>0 (and the "
                     "incoming matrix that computes it).")
-            _alpha = pair_alpha(self.last_alpha_logits, _pw,
-                                self.damage_op.last_pair_seat_live)  # type: ignore[union-attr]
+            _alpha = pair_alpha(_al, _pw,
+                                (self.damage_op.last_pair_seat_live  # type: ignore[union-attr]
+                                 if _x5i is None else _x5i.seat_live))
             _row = reduce_pair_in(
                 _alpha, _pin, self.damage_op.last_pair_gate,  # type: ignore[arg-type,union-attr]
                 ctx.our_active_idx)
@@ -831,8 +917,10 @@ class ExtractorForward(ExtractorApi):
         # α (no J axis ⇒ D3 stays a shape error) producing six rows, each riding its own mon's
         # logit, so the module is equivariant in our team axis by construction.
         if self.pair_outcome_switch is not None:
-            _pin_s = self.damage_op.last_pair_in if self.damage_op is not None else None
-            _pw_s = self.damage_op.last_topk_w if self.damage_op is not None else None
+            _pin_s = ((self.damage_op.last_pair_in if self.damage_op is not None else None)
+                      if _x5i is None else _x5i.pair_in)
+            _pw_s = ((self.damage_op.last_topk_w if self.damage_op is not None else None)
+                     if _x5i is None else _x5i.topk_w)
             _tn_s = self.damage_op.last_topk_idx if self.damage_op is not None else None
             if _pin_s is None or _pw_s is None or _tn_s is None:
                 raise RuntimeError(
@@ -840,8 +928,9 @@ class ExtractorForward(ExtractorApi):
                     "top-K belief weights / move nums) — the cell would silently contribute "
                     "nothing, which is indistinguishable from a null RESULT. Requires "
                     "damage_topk_k>0 (and the incoming matrix that computes it).")
-            _alpha_s = pair_alpha(self.last_alpha_logits, _pw_s,
-                                  self.damage_op.last_pair_seat_live)  # type: ignore[union-attr]
+            _alpha_s = pair_alpha(_al, _pw_s,
+                                  (self.damage_op.last_pair_seat_live  # type: ignore[union-attr]
+                                   if _x5i is None else _x5i.seat_live))
             _rows = reduce_pair_in_all(
                 _alpha_s, _pin_s, self.damage_op.last_pair_gate)  # type: ignore[arg-type,union-attr]
             _scells = torch.cat([_scells, self.pair_outcome_switch(
@@ -849,7 +938,8 @@ class ExtractorForward(ExtractorApi):
                 ctx.type1_ids[:, :TEAM_SIZE], ctx.type2_ids[:, :TEAM_SIZE],
                 # index 1 of the hazard pair is THEIR side — the layers WE set, which is exactly
                 # what their Rapid Spin would remove and a Ghost switch-in would preserve.
-                ctx.spikes_feature[:, 1:2])], dim=2)
+                ctx.spikes_feature[:, 1:2],
+                **({} if _x5i is None else {"other_u": _x5i.other_u}))], dim=2)
         # gen3_conditional_threat_v1 (v95): OA1 — the SECOND widener of the switch cell. Same α
         # ladder, same (defender, seat) grid, DIFFERENT quantities: the accuracy-folded P(this mon
         # dies) (§0.2(2) — a thin tanh scorer cannot multiply two of its own inputs), the
@@ -857,9 +947,12 @@ class ExtractorForward(ExtractorApi):
         # and the two §0.2(3) MARGINS against our own HP. §1.2's λ-weighted `w` is NOT built — see
         # the substitution table in `conditional_threat.py`.
         if self.conditional_threat is not None:
-            _ct_pin = self.damage_op.last_pair_in if self.damage_op is not None else None
-            _ct_w = self.damage_op.last_topk_w if self.damage_op is not None else None
-            _ct_tm = self.damage_op.last_pair_type_mult if self.damage_op is not None else None
+            _ct_pin = ((self.damage_op.last_pair_in if self.damage_op is not None else None)
+                       if _x5i is None else _x5i.pair_in)
+            _ct_w = ((self.damage_op.last_topk_w if self.damage_op is not None else None)
+                     if _x5i is None else _x5i.topk_w)
+            _ct_tm = ((self.damage_op.last_pair_type_mult if self.damage_op is not None else None)
+                      if _x5i is None else _x5i.type_mult)
             if _ct_pin is None or _ct_w is None or _ct_tm is None:
                 raise RuntimeError(
                     "conditional_threat_cell is on but the op stashed no unified outcome vector / "
@@ -867,19 +960,23 @@ class ExtractorForward(ExtractorApi):
                     "nothing, which is indistinguishable from a null RESULT. Requires "
                     "damage_topk_k>0 and the incoming matrix that computes both.")
             _scells = torch.cat([_scells, self.conditional_threat(
-                pair_alpha(self.last_alpha_logits, _ct_w,
-                           self.damage_op.last_pair_seat_live),  # type: ignore[union-attr]
+                pair_alpha(_al, _ct_w,
+                           (self.damage_op.last_pair_seat_live  # type: ignore[union-attr]
+                            if _x5i is None else _x5i.seat_live)),
                 _ct_pin, _ct_tm, self.damage_op.last_pair_gate,  # type: ignore[union-attr]
                 ctx.hp_and_active[:, :TEAM_SIZE, 0])], dim=2)
         # gen3_switch_branch_v1 (v94): OA2 + the Rapid-Spin spinblock + Protect's α-conditioning —
         # the per-request-slot content of the branch in which the OPPONENT switches. The last
         # move-cell rider, and the only one that consumes β forward-side besides v85's boom trade.
         if self.switch_branch is not None:
-            _oc = self.damage_op.last_out_cells if self.damage_op is not None else None
-            _pg = self.damage_op.last_opp_p_ghost if self.damage_op is not None else None
+            _oc = ((self.damage_op.last_out_cells if self.damage_op is not None else None)
+                   if _x5i is None else _x5i.out_cells)
+            _pg = ((self.damage_op.last_opp_p_ghost if self.damage_op is not None else None)
+                   if _x5i is None else _x5i.opp_p_ghost)
             _tn_b = self.damage_op.last_topk_idx if self.damage_op is not None else None
-            _sl_b = self.damage_op.last_pair_seat_live if self.damage_op is not None else None
-            if (self.last_alpha_logits is None or self.last_beta_logits is None
+            _sl_b = ((self.damage_op.last_pair_seat_live if self.damage_op is not None else None)
+                     if _x5i is None else _x5i.seat_live)
+            if (_al is None or _bl is None
                     or _oc is None or _pg is None or _tn_b is None or _sl_b is None):
                 raise RuntimeError(
                     "switch_branch_cell is on but α/β produced no logits or the op stashed no "
@@ -891,11 +988,12 @@ class ExtractorForward(ExtractorApi):
                 torch.arange(ctx.batch_size, device=ctx.device), ctx.our_active_idx,
                 POKEMON_PROTECT_OFFSET][:, None]
             _mcells = torch.cat([_mcells, self.switch_branch(
-                self.last_alpha_logits, self.last_beta_logits, _sl_b, _tn_b, _oc, _pg,
+                _al, _bl, _sl_b, _tn_b, _oc, _pg,
                 ctx.opp_active_local, ctx.our_active_req_move_ids, _po_b,
                 # index 0 of the hazard pair is OUR side — what OUR Rapid Spin would remove, and
                 # therefore the stake a spinblock destroys.
-                ctx.spikes_feature[:, 0:1])], dim=2)
+                ctx.spikes_feature[:, 0:1],
+                **({} if _x5i is None else {"other_u": _x5i.other_u}))], dim=2)
         self.stash.pointer_inputs = PointerInputs(
             move_tokens=_tok_req, move_valid=_move_valid, team_tokens=our_team_out,
             move_cells=_mcells, switch_cells=_scells)

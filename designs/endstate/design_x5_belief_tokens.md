@@ -1,9 +1,10 @@
 # X5: discrete fixed-mass belief tokens + OTHER, design note and A/B pre-research
 
 **Status: REVISED after independent review (2026-10-03); M2 / M3 decided by the owner (§9, Decision record). Build
-units U1 (the dex-row table), U2 (the T0 hypothesis builder, the `--belief-tokens` flag) and U3 (parts 1–3: the class-E
-half, the opponent active's move axis, the op's opponent-MON axis and OTHER's physics — §8.3, U3 part-3 hand-off) are
-BUILT; the rest is not.** The first version (`00cdf0c2`, decisions `81578969`) was reviewed SOUND WITH FIXES with ten must-fix items
+units U1 (the dex-row table), U2 (the T0 hypothesis builder, the `--belief-tokens` flag), U3 (parts 1–3: the class-E
+half, the opponent active's move axis, the op's opponent-MON axis and OTHER's physics — §8.3, U3 part-3 hand-off) and
+U4 (the flat opponent pointer, OTHER labels, the re-expressed cells, the B re-base — §3.7 "As built (U4)", the U4
+hand-off) are BUILT; the rest is not.** The first version (`00cdf0c2`, decisions `81578969`) was reviewed SOUND WITH FIXES with ten must-fix items
 (M1–M10). This revision resolves each one: M1 and M4–M10 by orchestrator decision or measurement, M2 and M3 as two real
 choices for the owner. Each item names where it landed (§8.4).
 
@@ -561,7 +562,10 @@ seat" exceptions), and listed every opponent-slot `hp > 0` gate F-X5-12 named pl
   output unchanged (the ToMe identity) — the copies' total MASS equals the whole's. As tested (U3): a hypothesis slot
   holding OTHER's token at w/2 plus OTHER at w/2 equals OTHER at w with that slot masked, through each site's real
   forward API (1e-12 fp64, 1e-5 fp32; I1 bit-exact in both). For the **flat pointer**, I2 reads: the probability of each EVENT (the sum
-  over its copies) and of every other candidate is unchanged; the per-candidate output vector changes shape.
+  over its copies) and of every other candidate is unchanged; the per-candidate output vector changes shape. As
+  tested (U4, `flat_intent_test::test_I2_for_the_pointer_the_mass_of_copies`): a move seat of presence w split into
+  two copies of w/2 through the head's real forward (one more seat) gives P(event) = the copies' sum and every other
+  candidate's probability unchanged, 1e-12 in fp64; I1 (π = 0 equals the candidate masked) likewise.
 - A class-E reduction that fails either test is a bug: a token that "counts as a whole mon".
 - **Why class M cannot have both.** For a max, I1 needs π to scale the value before the max; I2 then fails, because
   max(w/2 · v, w/2 · v) = w/2 · v ≠ w · v. No max-type rule is both a function of presence-weighted copies and
@@ -606,6 +610,16 @@ seat" exceptions), and listed every opponent-slot `hp > 0` gate F-X5-12 named pl
   C3 / D4 (the same tensor shapes as the blob, whose hidden columns were computed then zeroed) — no new shape, but no
   longer zeroed work. (4) OTHER's edge writes: one `Linear(cell → 2·heads)` per OTHER family over `[B, 4 or 6, 1]`
   (≈ 0). MEASURED on CPU only: the fixed_mass extractor's cold Inductor compile rose 100 s (part 1) → 142 s (part 3).
+- **What U4 ADDS (not measured on the GPU, not optimised — U8 / the cost pass own it).** (1) OTHER_move's seat-axis
+  column prices every per-candidate quantity on the FULL move axis and contracts it with the tail weights: the eight
+  status / tempo coordinates (`pair_outcome_coords`) over `[B, 6, M = 400]` (the K-seat path prices `[B, 6, K + 16]`),
+  a second `_damage_rolls` pair over `[B, M]` for the c2 operands (our active as the defender), a `[B, M] @ [M, T]`
+  type contraction, and `[B, 6, M, 6]`-sized einsums over the damage cells the op already holds. (2) The flat head:
+  one shared 2-layer scorer over K + 8 = 14 candidates (24,833 parameters at width 64, against α + β's 65,923, which
+  are retired). (3) When the edge families do not include `d1`, one more OTHER-mode outgoing pass for `out_cells`
+  (production includes `d1`, so 0 there). MEASURED on CPU: the fixed_mass extractor's cold Inductor compile 145 s
+  (part 3: 142 s; one run each, not a controlled A/B) and compiled = eager to 2.4e-6 (pi) / 1.3e-6 (vf) / 6.3e-7 (the
+  flat logits; identical −inf pattern) on 64 golden rows, 0 near-tie rows. F-X5-37.
 
 ### 3.7 The opponent pointer, and the A and B heads re-based
 
@@ -654,6 +668,52 @@ seat" exceptions), and listed every opponent-slot `hp > 0` gate F-X5-12 named pl
     parameterisation go.
   - `build_ridealong`'s `requires opp_intent` and `RideAlongBatch.alpha_seat_nums` move to the new pointer's stash in
     the SAME unit, otherwise the X26 heads break.
+
+**As built (U4, `gen3_x5_flat_pointer_v1`; `agents/model/flat_intent.py`; fixed_mass only, blob byte-identical).**
+- **The list.** Columns for K seats: `[0, K)` the active's move seats (THE one order's), `K` OTHER_move (token: the
+  active's E5 seat — so `fixed_mass` now REQUIRES `entity_tail_seats`, a registry `requires` and a constructor
+  refusal), `K+1 .. K+6` a switch to their slot j (a revealed mon, or the hypothesis a hidden slot holds; live iff
+  addressable, not the active, revealed-or-holding-a-hypothesis), `K+7` OTHER_species (its refined trunk token).
+  Scoring: one shared 2-layer scorer over (token ⊕ both team pools ⊕ a move / switch KIND one-hot), plus the candidate's
+  log π — π_m (0 revealed), OTHER_move's log-mass, a hypothesis's log π (0 revealed), OTHER's log-mass — DETACHED at
+  the source and again in the head (M10); a masked candidate is −inf; a row with no live candidate (padding only) is
+  left all-zero so the CE cannot be NaN. Built from its own private seed (`FLAT_INTENT_INIT_SEED`) out of
+  `IsolatedLinear`s.
+- **α / β retired.** They are still CONSTRUCTED and still see SB3's orthogonal re-init (both draw from the global RNG),
+  then `Gen3DualHeadMaskablePolicy._build` drops them (`retire_superseded_intent_heads`) BEFORE the optimizer is
+  built: no state_dict key, no optimizer slot, every non-X5 initial byte equal to blob's (pinned:
+  `hypothesis_set_test`). A standalone extractor (the delivery-graph / viewer tools) keeps them unused.
+- **Labels** (`flat_intent_targets`, the ONE function the loss, B and the readers call; no Rust change — the intent
+  label already carries the switch-in species num and the TRUE typed Hidden Power num): a move in the seats → its seat;
+  a typed Hidden Power label → a REVEALED Hidden Power's seat (num 237, priced as its typed mixture; before U4 that
+  click was a masked α row); a move that is an OTHER_move MEMBER (`beyond`) → OTHER_move; a revealed switch → its slot;
+  a hidden switch-in → the hypothesis slot holding its species, else OTHER_species when it is in the tail. Masked:
+  non-choices, a label on a dead candidate (the `reach` rule), and a choice outside every candidate's support
+  (Struggle, a learnset gap, a species outside V) — counted as `flat_unmodeled_rate`, never guessed (F-X5-34).
+- **The loss and the metric.** One CE over the list (`instrumented_ppo/flat_intent_fold.py`, static, traced
+  `fullgraph=True`), `--intent-label-bot-weight` as in the blob fold; the set-valued partial credit is superseded (the
+  OTHER_species label is that statement made exact). **`opp_intent/other_label_rate`** (F-X5-8) = of the opponent's
+  CHOICES, the share labelled OTHER; split `other_move_label_rate` / `other_species_label_rate`; pooled and per
+  opponent class. On the K9 golden buffer at cold start: 0.19 (moves 0.26, switches 0.16), unmodeled 0.
+- **The cells, re-expressed exactly.** `compat_intent_logits`: α = [K seats, OTHER_move, log α_SWITCH] (a GUARDED
+  logsumexp: the plain one is NaN in gradient on a row with no switch target, and `threshold_probs`,
+  `IntentMoveCell` and `IntentConditionalMoveCell` do not detach α), β = [six slots, OTHER_species]; softmax of each
+  is the flat distribution's own numbers. Every operand gains OTHER's column (`FlatConsumerOps`, `append_other` —
+  LOUD when a stash lacks it): OTHER_move's seat-axis column is the op's per-candidate cells on the FULL move axis
+  contracted with `FixedMassMoves.other_u` = π_m·[beyond] / Σ_beyond π (`pair_cells` / `pair_in` incl. the eight
+  status coordinates, `pair_type_mult`, the c2 operands; num tables via `pair_outcome.seat_num_table` /
+  `seat_in_set`) — E_tail[f(m)], the move-side twin of OTHER_species' `other_tail_probs`; OTHER_species' `out_cells`
+  column is the OTHER-mode D1 pass (the tail-averaged defender, never IMMUNE, P(KO) nulled) and its `opp_p_ghost` is
+  `other_tail_probs @ SPECIES_IS_GHOST`. Pinned against independent per-move oracles (MOVE_ACCURACY, MOVE_PHYS, the
+  per-move type chart) in `flat_intent_test`.
+- **`seat_live` consistent (F-X5-15).** `threshold_probs`, `IntentMoveCell` and `IntentConditionalMoveCell` take
+  `seat_live` (the seats' meaningful-K gate + OTHER_move's liveness) and mask α by it, as `pair_alpha` does — under
+  fixed_mass only, so blob is byte-identical (F-X5-35).
+- **B re-based** (`FlatOppEffectEnsemble`): columns = the flat list; a move seat scored from its move ID, a switch
+  target from its SPECIES (revealed or hypothesis), OTHER_move / OTHER_species from learned vectors; centred under
+  the flat α; regressed at `flat_intent_targets`' column (OTHER rows included). `RideAlongSpec.opp_flat_k`
+  selects it; still built from the private seed, outside `policy.optimizer`, every input detached — pinned
+  bit-identical to learning by `ridealong_update_test`'s fixed_mass arm.
 
 ### 3.8 Versioning, Rust, gates
 
@@ -1153,6 +1213,13 @@ winning arm's seed-1001 run CONTINUES as the X26 baseline (owner).
 | F-X5-31 | **Two constructions price a hypothesis's bulk / speed.** D1 (and C1's outgoing worlds) use the expected-latent one-hot (the Smogon spread-prior means, SPECIES_EXP_MULT's expected ability immunity), as the brief specifies; V / C2's paralysis delta read the spread head's prediction at the hypothesis seat (unsupervised there, F-X5-16) and S1 / T / X / G the dex row's ability id, as for a revealed mon at first appearance. Consistent with the blob's revealed-vs-hidden split, but two numbers for one mon's speed. |
 | F-X5-32 | **OTHER's attacker moves are parameter-free** (the E10 Smogon mixture over the tail), while hypotheses' are MoveBelief's learned rows: OTHER's threat cannot learn. Deliberate (M3 (c) = the blob's construction), recorded. |
 | F-X5-33 | **The per-mon order ranks a revealed Hidden Power's 16 typed channels by P(t)**; tracker-narrowed equal P(t) can put a near-tie at a per-mon cut, so `near_tie_rows` may exclude more rows with a revealed HP (conservative; 0 on the golden buffer). The bench rows' move REINJECTION still uses sigmoid weights (F-X5-26 covers the active only). |
+| F-X5-34 | **OTHER_move is a label only for one of its MEMBERS** (U4 decision). §3.7 says "a move outside the seats → OTHER_move"; as built, a move outside the seats that is not in the presence construction's candidate set (Struggle, a learnset gap — π = 0 in the model) is MASKED and counted (`flat_unmodeled_rate`; 0 on the K9 golden buffer, 0–4.0 % of choices across the fixed_mass smoke's five updates against bots), so OTHER_move's label means exactly what its mass means (Σ_beyond π) and its calibration reads by linearity. Same rule for OTHER_species (a hidden switch-in outside V's tail). **The composition of the unmodeled rows is UNVERIFIED** (candidates: Struggle, moves copied by Transform / Mimic, learnset-table gaps); U7 should break it down before it is read as a belief property. |
+| F-X5-35 | **`seat_live` consistency (F-X5-15) is applied under fixed_mass ONLY.** The three consumers take an optional `seat_live`; the blob arm passes none, so production stays byte-identical and keeps the pre-existing inconsistency until the losing arm is deleted. |
+| F-X5-36 | **No human render of the flat pointer in traces.** `RLPlayer._opp_intent` and `main.search_dividend.alpha` read α / β only, so a fixed_mass trace carries no `opp_intent` block and the search-dividend α reader returns None. `flat_intent.render_flat` exists; wiring it into the player / prober is a follow-up (out of U4's scope). |
+| F-X5-37 | **U4's added cost is UNMEASURED on the GPU** (§3.6 "What U4 ADDS"): OTHER_move's full-move-axis pricing (the status coordinates over `[B, 6, 400]`, a second `[B, 400]` damage-roll pair, the einsums). CPU compile 145 s cold vs 142 s (one run each). If U8's budget binds, the status coordinates can be computed on the tail's TYPE / category marginals instead of per move — a semantics change (orchestrator decision). |
+| F-X5-38 | **The blob β's no-candidate rows read UNIFORM to its consumers** (pre-existing, blob only): `BetaSwitchHead` sets a row with no legal switch-in to all-zero logits (NaN-safety for the CE), so `has_cand` is true and `switch_branch` / the boom cell read a uniform arrival where there is none. The flat re-expression gives −inf there (zero switch mass). Reported, not fixed (standing rule 9; production byte-identity). |
+| F-X5-39 | **The fixed_mass arm logs `opp_intent/flat_*`, not `alpha_*` / `beta_*` / `beta_setvalued_*`**; an arm-vs-arm intent read must map the keys (`flat_move_recall_top1` ↔ `alpha_move_recall_top1`, `flat_switch_target_recall_top1` ↔ `beta_recall_top1`, …). |
+| F-X5-40 | **Two degenerate rows, both finite and massless.** A MASKED OTHER_species' `out_cells` column reads the slot `other_col` falls back to (β puts −inf there); a row with NO live flat candidate (padding / an all-zero observation only) gets all-zero logits, so its re-expressed α / β are uniform to the consumers. Neither reaches a real decision. |
 | G-1 | σ_run at 15M, the H2H run floor and snapshot jitter are unmeasured (P0 measures the last two). |
 | G-2 | Negative evidence (an opponent NOT switching to X) is not modelled; X12. |
 | G-3 | OTHER's embedding: `design_q_head.md` §10, logged by U8 (OTHER's attention share). The budget question is now §9 M3. |
@@ -1172,7 +1239,7 @@ Sizes are in agent-days. A "tier" is the gate a unit must pass before it lands. 
 | U1 | **DONE 2026-10-03** (`gen3_x5_dex_rows_v1`; `CHANGELOG.md` "X5 U1"). Dex-row table generator (Rust encoder) + committed artifact + `sim`-tier byte gate + the real-state cross-check (§3.4). (The `belief.rs` guard is DONE, `680edc36`.) Hand-off below | 1 | `sim` + cargo + static | opus-high |
 | U2 | **DONE 2026-10-03** (`gen3_x5_hypothesis_set_v1`, config v136; `CHANGELOG.md` "X5 U2"). T0 hypothesis builder: δ_θ, the fixed-size construction (bisection, structural k = 0 / k = n, logsumexp OTHER), the single stable ordering, set BCE, BeliefHead re-target, moves; the `--belief-tokens` flag, versioning, registry; compile-time cost of the unrolled bisection (§3.6). Hand-off below | 2.5 | routine gate; tier contract; flag gates; the construction's tests | opus-high |
 | U3 | **DONE 2026-10-04** (`gen3_x5_belief_tokens_v1`; part 3 = the op's opponent-MON axis + OTHER's physics, `CHANGELOG.md` "X5 U3 part 3", the U3 part-3 hand-off below). Parts 1–2 (`be6ba590`, `5697c762`; `CHANGELOG.md` "X5 U3 part 1 / part 2"): census re-run (§3.5); hypothesis tokens, OTHER's trunk seat, log-π bias in the trunk and the four class-E pools (float masks, CPU compile checked), species-specific T0 heads, MoveBelief's hypothesis-seat rule; the active's move axis (one order, the presence-scaled max, the revealed-HP seat, OTHER_move). **Part 3 NOT built** — the op's opponent-MON axis (hypothesis defenders / attackers, "alive" from `opp_addressable`, OTHER's physics per M3 (c), class M over mons): see the U3 hand-off. Tokens into the chain: re-run the 41-site census on the built code; log-π bias in the transformer and every class-E pool (float masks, compile check first); class-M semantics per §9 M2; the op with hypothesis defenders and attackers, "alive" from `opp_addressable`; OTHER's physics per §9 M3; E5 owner bias; aux heads on hypothesis seats (§3.4); I1 / I2 and class-M / class-S tests per site | 3 | routine gate; invariance tests; obs golden untouched | opus-xhigh (GIGO risk; the orchestrator dispatches it) |
-| U4 | Flat α pointer + OTHER labels; re-expressed cells with OTHER priced and `seat_live` consistent (§3.7); B ride-along re-base; `other_label_rate` | 2 | routine gate; `ridealong_update_test` bit-identity | opus-high |
+| U4 | **DONE 2026-10-04** (`gen3_x5_flat_pointer_v1`; `CHANGELOG.md` "X5 U4"; the U4 hand-off below; §3.7 "As built (U4)"). Flat α pointer + OTHER labels; re-expressed cells with OTHER priced and `seat_live` consistent (§3.7); B ride-along re-base; `other_label_rate` | 2 | routine gate; `ridealong_update_test` bit-identity | opus-high |
 | U6 | K9 golden: `init_group_sha256`, second entry, fp64 references, teeth test. (The thread pins are DONE: harness `0c25a1f4`, production fresh build `50fdfdc2`.) | 0.75 | routine gate | opus-high |
 | U7 | Readers: `main.belief_roles` (R1–R4) + the intent / presence / OTHER purpose reads on the Lane S bank, per-run values for §7.4's across-seed inference | 1.25 | targeted + static | opus-high |
 | U8 | Smoke + the first-two-minutes real launch + GPU cost budget (§3.6) via `gpu_lock`; build thread count recorded | 0.75 | `--debug` smoke, real launch, learner benchmark | opus-high |
@@ -1370,6 +1437,35 @@ production stays `blob`, byte-identical (the six K9-golden-buffer hashes equal `
   are in the CHANGELOG entry.
 - **Smoke.** U2's recipe, unchanged.
 
+**U4 hand-off (read before U6 / U7 / U8).** Built in `gen3_x5_flat_pointer_v1` (`CHANGELOG.md` "X5 U4"); production
+stays `blob`, byte-identical (the six K9-golden-buffer hashes — state_dict, pi / vf features, logits, values, one
+backward's gradients — equal `889add9d`'s). No config bump, no `ARCH_SIGNATURE` bump (D-L1 pending, decoupled).
+
+- **What exists.** `agents/model/flat_intent.py`: `FlatIntentHead` on the extractor as `flat_intent_head` (T2;
+  fixed_mass only), `fe.last_flat_intent_logits` [B, K+8] (the publication; `belief_supervision("flat_intent_logits")`
+  is the LIVE view), `fe.last_flat_intent` (`FlatIntentInputs`: `live`, `cand_ids`, `log_pi` and the label-side
+  tensors) and `fe.stash.flat_consumer_ops` (`FlatConsumerOps`: the consumers' α / β and OTHER-extended operands).
+  Column helpers `flat_width` / `other_move_col` / `slot_col` / `other_species_col`. Labels ONLY through
+  `flat_intent_targets` (it returns the label class too: `LABEL_*`). α / β are retired in this arm
+  (`last_alpha_logits` / `last_beta_logits` are None there).
+- **For U6 (the K9 fixed_mass golden).** New parameter groups: `features_extractor.flat_intent_head.{hidden,out}`;
+  α / β's groups are ABSENT in that arm (retired after the ortho draws — the non-X5 init bytes still equal blob's). New
+  loss key in the fold: `opp_intent/flat_loss` (+ `other_label_rate`); `beta_setvalued_*` are not emitted. The flat
+  fold is pure (no RNG). Coverage on the 64-row golden buffer: OTHER_move live on 62 rows, OTHER_species on 35; at
+  cold start (aligned labels, one `train()`) `other_label_rate` 0.19, `flat_unmodeled_rate` 0.
+- **For U7 (readers).** `other_label_rate` is the belief-miss share of CHOICES; the OTHER labels make the pointer's
+  calibration on OTHER readable (P(OTHER_species) vs its label rate). `render_flat` names the options for a trace.
+  `main.ridealong_read` passes the flat fields to B (`RideAlongSpec.opp_flat_k`).
+- **For U8 (cost).** §3.6 "What U4 ADDS" (F-X5-37). The OTHER_move column is the one full-move-axis computation U4 adds;
+  the flat head replaces α + β (24,833 vs 65,923 parameters).
+- **Decisions in force.** π detached into the pointer (M10; the flat loss reaches the head, never δ_θ —
+  `flat_intent_test`). OTHER_move / OTHER_species labels only for members (F-X5-34). `seat_live` in the three
+  consumers under fixed_mass only (F-X5-35). The set-valued partial credit is superseded in that arm.
+- **Open (findings).** F-X5-36 (no trace render), F-X5-37 (GPU cost), F-X5-38 (blob β's uniform dead rows, pre-existing),
+  F-X5-39 (metric key mapping across arms), F-X5-40 (two degenerate, massless rows).
+- **Smoke.** U2's recipe, unchanged (`--debug … --belief-tokens fixed_mass --allow-nonproduction-arch --n-envs 1
+  --batch-size 384 --rollout-target-samples 2304 --grad-accum-steps 1 --n-epochs 2`).
+
 ### 8.4 Where each review item landed
 
 | item | resolution | where |
@@ -1478,3 +1574,4 @@ the safe default, but would leave X5 unadopted for reasons of noise.
 | 2026-10-04 | **U3 part 3 (BUILT)** | The op runs on the HYPOTHESIS context with an `OpRoster`: hypothesis DEFENDERS as the per-slot one-hot expected-latent read, **P(KO) UN-nulled** (a pristine concrete species; only OTHER's averaged defender keeps the null); every live mon an ATTACKER on its own fixed-mass move presence (k = 4 − r) in one stable per-mon order; "alive" = `opp_addressable` in every opponent-slot gate; `p_pur_vs_us` presence-scaled over mons with OTHER at `other_any`; Beat Up by π / k; bench E5 seats presence-aware; the per-mon cuts in `near_tie_rows`. OTHER = an OTHER-mode pass of the same kernels on the tail's `P_tail @ tables` (defender, E[base], E[STAB], E[speed], E10 moves at k = 4), written to its seat's edges for D1 / C1 / C3 / D4 / V. Blob byte-identical. | P(KO) nulled for hypotheses (discards the species-exact KO); π-scaling per-(seat, mon) cells (double-counts the key bias); a separate OTHER physics kernel (a second copy of the physics — drift risk); OTHER's mass at a max site; OTHER edges via zero cells (the map would turn them into its learned bias) | §3.4, §3.5, §8.2 F-X5-29..33, U3 part-3 hand-off; `CHANGELOG.md` "X5 U3 part 3" |
 | 2026-10-04 | **U3 parts 1–2 (BUILT)** | Hypothesis tokens = THE `PokemonEncoder` on the hypothesis context (dex rows in the hidden slots, every mask REAL) + `hypothesis_marker`; OTHER_species one extra trunk seat after the entity seats; log π (detached) on every opponent key in the trunk and the four class-E pools (FLOAT masks); MoveBelief's unrevealed population supervised iff the hypothesis species is present; the active's move axis from ONE order with the fixed-mass presence as the op's class-M weights; a revealed Hidden Power's seat priced as its typed mixture through an extended seat axis; K < 4, a K mismatch and candidate truncation refused under fixed_mass. Blob byte-identical. | Re-encoding through a torch-side row builder (a second encoder); OTHER inserted between the team block and the global token (shifts every edge offset); 237 priced as a move (BP 0, typeless); the dominant typed channel as the HP seat (a selection on a continuous weight) | §3.4, §3.5, U3 hand-off; `CHANGELOG.md` "X5 U3 part 1 / part 2" |
 | 2026-10-04 | **F-U6-1 closed: the cross's engine (h2h agent)** | the X5 cross plays on ONE engine of two T2 slot groups (one per arm), each declared with only the slot its side needs, and one eval core per (player arm, opponent arm); the h2h game protocol unchanged | two full groups (both roles each: twice the slots and lanes for no cell); an executor change to route one core to either group (shared with training eval) | `measurements/h2h_cross_2026-10-04/` |
+| 2026-10-04 | **U4 the flat opponent pointer (BUILT)** | One list (K seats · OTHER_move · six switch targets · OTHER_species), one shared scorer + the DETACHED log π, one softmax; α / β retired in the fixed_mass arm by the policy's `_build` AFTER SB3's ortho draws (no non-X5 init byte moves, no state_dict key, no optimizer slot); labels from the existing intent label (OTHER for members only, F-X5-34; a typed HP label names a revealed HP's seat); the cells re-expressed exactly (guarded logsumexp; OTHER_move priced by the tail contraction on the full move axis; OTHER_species by the OTHER-mode D1 pass and the tail's P(Ghost)); `seat_live` in all four consumers under fixed_mass (F-X5-35); B re-based (`FlatOppEffectEnsemble`); `opp_intent/other_label_rate`; `fixed_mass` requires `entity_tail_seats`. Blob byte-identical. | Not building α / β at all (their missing ortho draws would shift every later initial byte); keeping them built (parameters with no gradient, F-X5-27's rule); OTHER_move priced as a zero row or by a top-N tail (a selection boundary); labelling every out-of-seat move OTHER (a label OTHER's mass cannot carry); `seat_live` in both arms (moves production) | §3.5, §3.6, §3.7 "As built (U4)", §8.2 F-X5-34..40, U4 hand-off; `CHANGELOG.md` "X5 U4" |

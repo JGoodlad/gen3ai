@@ -5,6 +5,40 @@ the same ALWAYS-CURRENT obligation as that leaf — update it in the same pass a
 [`../ARCHITECTURE.md`](../ARCHITECTURE.md) is the doc of record for what the model IS; where the
 two disagree, ARCHITECTURE.md wins.
 
+## Under `--belief-tokens fixed_mass`: ONE flat pointer replaces α / β (X5 U4)
+
+Everything below describes the **blob** arm (production). In the X5 `fixed_mass` arm
+(`gen3_x5_flat_pointer_v1`, [`../endstate/design_x5_belief_tokens.md`](../endstate/design_x5_belief_tokens.md)
+§3.7) α / β are RETIRED — constructed, re-initialised by SB3, then dropped by the policy's `_build`
+before the optimizer is made (`ExtractorApi.retire_superseded_intent_heads`), so no non-X5 initial byte
+moves — and `agents/model/flat_intent.py` holds ONE pointer over a fixed column layout for K seats:
+`[0, K)` the active's move seats (THE one order), `K` OTHER_move, `K+1 .. K+6` a switch to each of their
+slots (a revealed mon, or the HYPOTHESIS a hidden slot holds), `K+7` OTHER_species. One shared scorer
+(token ⊕ the two team pools ⊕ the candidate's kind) plus the candidate's DETACHED log π, one softmax;
+masks are structural; the input is detached under `--opp-intent-grad-mode detached` as α's was.
+
+* **Labels** (`flat_intent_targets`, from the same Rust label — no label change): a move in the seats →
+  its seat (a typed Hidden Power label → a REVEALED HP's seat, num 237); a move beyond the seats →
+  OTHER_move; a revealed switch → its slot; a hidden switch-in → the hypothesis slot holding its species,
+  else OTHER_species when it is in the tail. **A belief miss is supervised as an OTHER label**, so the
+  set-valued partial credit is superseded in that arm. Masked: non-choices, and a choice outside every
+  candidate's support (Struggle, a learnset gap, a species outside V) — counted as `flat_unmodeled_rate`.
+* **Metrics** (`instrumented_ppo/flat_intent_fold.py`, static, `fullgraph`-traced): `flat_*` (loss, mask
+  rate, accuracy, info gain, the kind decision both ways, which move / which target), pooled and per
+  opponent class, and **`opp_intent/other_label_rate`** — of the opponent's CHOICES, the share labelled
+  OTHER (F-X5-8: the belief-miss share `alpha_mask_rate` mixed with non-choices), split
+  `other_move_label_rate` / `other_species_label_rate`.
+* **Consumers** read a re-expression (`compat_intent_logits` + `FlatConsumerOps`): α over the K seats +
+  OTHER_move + log α_SWITCH (a guarded logsumexp — the unguarded one has a NaN gradient on a row with no
+  switch target, and three consumers do not detach α), β over the six slots + OTHER_species. OTHER is
+  PRICED, never a zero row: OTHER_move's seat-axis column is each per-candidate cell on the op's FULL
+  move axis contracted with the renormalised tail (`FixedMassMoves.other_u`); OTHER_species' `out_cells`
+  column is the OTHER-mode D1 pass (the tail-averaged defender, P(KO) nulled), its `opp_p_ghost` the
+  tail's P(Ghost); num-table reads use `pair_outcome.seat_num_table` / `seat_in_set`. All four
+  per-seat consumers apply the meaningful-K gate (`seat_live`, F-X5-15) in that arm.
+* **Rendering**: `render_flat` names the options; `RLPlayer._opp_intent` still renders only α / β, so a
+  fixed_mass trace carries no `opp_intent` block yet (U4 FINDING).
+
 ## The two heads
 
 - **`α`** — a distribution over the opponent's K believed threat-move seats (the refined **E4**

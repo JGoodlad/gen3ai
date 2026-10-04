@@ -323,6 +323,35 @@ def pair_alpha(alpha_logits: Optional[torch.Tensor], w_topk: torch.Tensor,
     return alpha
 
 
+def seat_num_table(table: torch.Tensor, nums: torch.Tensor,
+                   other_u: Optional[torch.Tensor] = None) -> torch.Tensor:
+    """A per-move-NUM table read on α's seat axis: ``table[nums]`` `[B,K]`, and — X5 U4, fixed_mass
+    only (`gen3_x5_flat_pointer_v1`, design §3.7) — OTHER_move's column appended when ``other_u``
+    `[B,M]` (the renormalised tail, `FixedMassMoves.other_u`) is given: ``Σ_m u_m · table[m]`` →
+    `[B,K+1]`. A table shorter than the move vocabulary reads 0 past its end (no data = not in the
+    class), exactly as the clamp-free seats never index there. ``None`` is byte-identical to the
+    pre-X5 read."""
+    v = table[nums.clamp(min=0, max=table.shape[0] - 1)]
+    if other_u is None:
+        return v
+    M = other_u.shape[-1]
+    t = table.to(other_u.dtype)
+    t = t[:M] if t.shape[0] >= M else torch.cat([t, t.new_zeros(M - t.shape[0])])
+    return torch.cat([v, (other_u @ t).to(v.dtype)[:, None]], dim=-1)
+
+
+def seat_in_set(set_nums: torch.Tensor, nums: torch.Tensor,
+                other_u: Optional[torch.Tensor] = None, dtype: torch.dtype = torch.float32
+                ) -> torch.Tensor:
+    """``1[nums ∈ set_nums]`` on α's seat axis `[B,K]`, plus (X5 U4) OTHER_move's column — the tail's
+    probability mass on the set, ``Σ_{m ∈ set} u_m`` — when ``other_u`` is given (→ `[B,K+1]`)."""
+    v = (nums[..., None] == set_nums).any(-1).to(dtype)
+    if other_u is None:
+        return v
+    o = other_u.index_select(-1, set_nums.long()).sum(-1, keepdim=True).to(dtype)
+    return torch.cat([v, o], dim=-1)
+
+
 def reduce_pair_in(alpha: torch.Tensor, pair_in: torch.Tensor, gate: torch.Tensor,
                    our_active_idx: torch.Tensor) -> torch.Tensor:
     """Contract W's one line, at our ACTIVE defender: `Σ_k α_k · pair_in[k, active, :]` → `[B,F]`.
@@ -432,26 +461,33 @@ class PairOutcomeSwitchCell(torch.nn.Module):
 
     def forward(self, rows: torch.Tensor, alpha: torch.Tensor, topk_nums: torch.Tensor,
                 our_type1: torch.Tensor, our_type2: torch.Tensor,
-                their_side_hazards: torch.Tensor) -> torch.Tensor:
+                their_side_hazards: torch.Tensor,
+                other_u: Optional[torch.Tensor] = None) -> torch.Tensor:
         """`rows` `[B,6,F]` (the α-reduced outcome row per OUR mon j) · `alpha` `[B,K]` (the move
         slice, already masked + stop-grad) · `topk_nums` `[B,K]` (the seats' move NUMS) ·
         `our_type1`/`our_type2` `[B,6]` (TypeEncoder ids of our six mons) · `their_side_hazards`
         `[B,1]` (the Spikes fraction WE have on THEIR side — what their spin would remove).
 
         Fails loud on a row-width mismatch (`PAIR_OUTCOME_SWITCH_COORDS` and the producer drifting
-        apart) and on a seat-axis mismatch (the named `op move-order` bug class)."""
+        apart) and on a seat-axis mismatch (the named `op move-order` bug class).
+
+        ``other_u`` `[B,M]` (X5 U4, fixed_mass): α carries OTHER_move as a (K+1)-th seat, whose spin
+        indicator is the tail's mass on Rapid Spin (`seat_in_set`)."""
         if rows.shape[-1] != self.in_dim - 1:
             raise ValueError(
                 f"PairOutcomeSwitchCell was built for a {self.in_dim - 1}-wide outcome row but got "
                 f"{rows.shape[-1]} — PAIR_OUTCOME_SWITCH_COORDS and the op's producer have drifted.")
-        if alpha.shape[-1] != topk_nums.shape[-1]:
+        n_nums = topk_nums.shape[-1] + (1 if other_u is not None else 0)
+        if alpha.shape[-1] != n_nums:
             raise ValueError(
-                f"alpha carries {alpha.shape[-1]} seats but the op stashed {topk_nums.shape[-1]} "
+                f"alpha carries {alpha.shape[-1]} seats but the op stashed {n_nums} "
                 "candidate nums — the SAME axis (the `op move-order` bug class).")
         # α_spin: the ONE α contraction here, identical in shape to `intent_conditional`'s
         # `e_reflect` / `e_status_avoided`. `is_ghost` is our own OBSERVED typing (our six mons are
         # never hidden), so no belief enters the defender side at all.
-        is_spin_k = (topk_nums[..., None] == self.spin_num).any(-1).to(rows.dtype)     # [B,K]
+        is_spin_k = (seat_in_set(self.spin_num, topk_nums, other_u, rows.dtype)
+                     if other_u is not None
+                     else (topk_nums[..., None] == self.spin_num).any(-1).to(rows.dtype))  # [B,K(+1)]
         a_spin = (alpha * is_spin_k).sum(-1, keepdim=True)                             # [B,1]
         is_ghost = ((our_type1 == GHOST_TYPE_IDX) | (our_type2 == GHOST_TYPE_IDX)
                     ).to(rows.dtype)                                                   # [B,6]

@@ -19,6 +19,7 @@ from agents.model.arch_constants import (
 from agents.model.belief_heads import BELIEF_GRAD_MODES, _BELIEF_SUPERVISION_KEYS
 from agents.model.extractor_build import ExtractorBuild
 from agents.model.extractor_ctx import PointerInputs
+from agents.model.flat_intent import FlatIntentInputs
 from agents.model.hypothesis_set import HypothesisSet
 from agents.model.intent_threshold import ThresholdProbs
 
@@ -62,6 +63,22 @@ class ExtractorApi(ExtractorBuild):
                     torch.nn.init.zeros_(mod.bias)
                 n += 1
         return n
+
+    def retire_superseded_intent_heads(self) -> bool:
+        """X5 U4 (`gen3_x5_flat_pointer_v1`, design §3.7): under ``--belief-tokens fixed_mass`` the
+        flat opponent pointer REPLACES the α / β heads — drop them. Returns True when it dropped them.
+
+        Called by `Gen3DualHeadMaskablePolicy._build` AFTER SB3's orthogonal re-init and BEFORE the
+        optimizer is built: the heads were constructed (their init draws) and re-initialised (their
+        orthogonal draws) exactly as in the blob arm, so the global RNG stream — every later module's
+        initial bytes, the mlp_extractor and the value / action heads included — is unchanged, while
+        the retired heads hold no state_dict key, no optimizer slot and no forward use (F-X5-27's rule
+        for `BeliefSlots`: a parameter that never gets a gradient is not kept). ``blob``: a no-op."""
+        if self.flat_intent_head is None or self.alpha_head is None:
+            return False
+        self.alpha_head = None
+        self.beta_head = None
+        return True
 
     def set_belief_grad_mode(self, mode: str) -> None:
         """Apply a belief-grad-mode at RUNTIME (the --allow-belief-grad-mode-change migration path).
@@ -137,6 +154,10 @@ class ExtractorApi(ExtractorBuild):
     def last_alpha_seat_nums(self) -> Optional[torch.Tensor]: return self.stash.alpha_seat_nums
     @property
     def last_beta_logits(self) -> Optional[torch.Tensor]: return self.stash.beta_logits
+    @property
+    def last_flat_intent_logits(self) -> Optional[torch.Tensor]: return self.stash.flat_intent_logits
+    @property
+    def last_flat_intent(self) -> Optional["FlatIntentInputs"]: return self.stash.flat_intent
     @property
     def last_belief_logits(self) -> Optional[Dict[str, torch.Tensor]]: return self.stash.belief_logits
     @property

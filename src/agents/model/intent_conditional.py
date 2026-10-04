@@ -50,13 +50,14 @@ Seat-permutation invariant: the only seat-indexed computation is `Σ_k α_k · f
 """
 from __future__ import annotations
 
-from typing import cast
+from typing import Optional, cast
 
 import torch
 
 from agents.gen3_data.moves import MoveData
 
 from agents.model.arch_constants import _INTENT_COND_RAW
+from agents.model.pair_outcome import seat_in_set, seat_num_table
 
 # Gate move NUMS (gen3_data.moves, read 2026-08-16): counter 68, mirrorcoat 243, explosion 153,
 # selfdestruct 120, pursuit 228. Protect/Detect/Endure = the op's _PROTECT_NUMS (182/197/203).
@@ -138,7 +139,9 @@ class IntentConditionalMoveCell(torch.nn.Module):
                 p_outspeed: torch.Tensor, sec_flinch: torch.Tensor,
                 req_move_ids: torch.Tensor, protect_odds: torch.Tensor,
                 beta_logits: torch.Tensor, out_pko_mj: torch.Tensor,
-                opp_active_local: torch.Tensor) -> torch.Tensor:
+                opp_active_local: torch.Tensor,
+                seat_live: Optional[torch.Tensor] = None,
+                other_u: Optional[torch.Tensor] = None) -> torch.Tensor:
         """`alpha_logits` [B,K+1] (last class = SWITCH) · `pair_cells` [B,6,K,6] (the op's
         [low,high,crit,ko,acc,is_phys] per (defender, seat candidate)) · `pair_gate` [B,6,1] ·
         `our_active_idx` [B] · `topk_nums` [B,K] (the seat candidates' move NUMS) · `out_high`
@@ -148,9 +151,16 @@ class IntentConditionalMoveCell(torch.nn.Module):
         PUBLISHED β, -inf-masked to legal switch-ins) · `out_pko_mj` [B,4,6] (the outgoing
         matrix's per-(our move, their mon) pko) · `opp_active_local` [B] → [B,4,out].
 
-        Fails loud on a seat-axis width mismatch (the `op move-order` bug class)."""
+        Fails loud on a seat-axis width mismatch (the `op move-order` bug class).
+
+        X5 U4 (fixed_mass only; `gen3_x5_flat_pointer_v1`): α arrives re-expressed from the flat
+        pointer — K seats + OTHER_move (a (K+1)-th seat, priced: `pair_cells` carries its tail
+        column) + the total switch mass — and β over the six slots + OTHER_species (`out_pko_mj`
+        carries OTHER's column). ``seat_live`` `[B,K+1]` masks α (F-X5-15); ``other_u`` `[B,M]` gives
+        OTHER_move's num-table columns (`seat_num_table` / `seat_in_set`). Both None: blob, unchanged."""
         k = alpha_logits.shape[-1] - 1                                 # last class is SWITCH
-        if pair_cells.shape[2] != k or topk_nums.shape[-1] != k:
+        n_nums = topk_nums.shape[-1] + (1 if other_u is not None else 0)
+        if pair_cells.shape[2] != k or n_nums != k:
             raise ValueError(
                 f"alpha has {k} move seats but the op stashed {pair_cells.shape[2]} candidate "
                 f"channels / {topk_nums.shape[-1]} candidate nums. These must be the SAME axis "
@@ -163,11 +173,15 @@ class IntentConditionalMoveCell(torch.nn.Module):
         high_k = cells[..., 1]                                         # [B,K]
         is_phys_k = cells[..., 5]                                      # [B,K]
         dmg_k = (high_k > 0).float()                                   # damaging (status/immune = 0)
-        is_protect_k = (topk_nums[..., None] == self.protect_nums).any(-1).float()   # [B,K]
+        is_protect_k = (seat_in_set(self.protect_nums, topk_nums, other_u)
+                        if other_u is not None
+                        else (topk_nums[..., None] == self.protect_nums).any(-1).float())   # [B,K]
         # Full α (renormalized would be wrong everywhere here): the SWITCH mass carries meaning
         # in every one of these cells, which is exactly what the v77 c2 cell could not express.
         alpha_full = torch.softmax(alpha_logits.float(), dim=-1).to(pair_cells.dtype)
         alpha = alpha_full[:, :k]                                      # [B,K] move seats
+        if seat_live is not None:
+            alpha = alpha * seat_live.to(alpha.dtype)
         a_switch = alpha_full[:, -1:]                                  # [B,1]
         # --- the α-weighted category sums (Counter / Mirror Coat / Explosion) ---
         e_phys = (alpha * is_phys_k * dmg_k * high_k).sum(-1, keepdim=True) * gate      # [B,1]
@@ -177,11 +191,13 @@ class IntentConditionalMoveCell(torch.nn.Module):
         p_blocked = (alpha * is_protect_k).sum(-1, keepdim=True) * gate                 # [B,1]
         # Protect's two α-weighted quantities: the damage a successful Protect avoids, and the
         # α mass on STATUS seats (data-typed, so an immune damaging seat cannot masquerade).
-        is_status_k = self.status_num[topk_nums.clamp(min=0, max=self.status_num.shape[0] - 1)]
+        is_status_k = (seat_num_table(self.status_num, topk_nums, other_u) if other_u is not None
+                       else self.status_num[topk_nums.clamp(min=0, max=self.status_num.shape[0] - 1)])
         e_dmg_avoided = (alpha * high_k).sum(-1, keepdim=True) * gate                   # [B,1]
         e_status_avoided = (alpha * is_status_k).sum(-1, keepdim=True) * gate           # [B,1]
-        is_refl_k = self.reflectable_num[
-            topk_nums.clamp(min=0, max=self.reflectable_num.shape[0] - 1)]
+        is_refl_k = (seat_num_table(self.reflectable_num, topk_nums, other_u) if other_u is not None
+                     else self.reflectable_num[
+                         topk_nums.clamp(min=0, max=self.reflectable_num.shape[0] - 1)])
         e_reflect = (alpha * is_refl_k).sum(-1, keepdim=True) * gate                    # [B,1]
         # --- the boom trade's branch-dependent KO probability (the β half) ---
         a_stay = alpha.sum(-1, keepdim=True)                                            # [B,1]

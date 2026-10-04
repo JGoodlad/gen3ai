@@ -47,6 +47,8 @@ and a width mismatch is a LOUD ValueError (the named `op move-order` bug class),
 """
 from __future__ import annotations
 
+from typing import Optional
+
 import torch
 
 from agents.model.arch_constants import _INTENT_MOVE_CELL_RAW
@@ -72,7 +74,8 @@ class IntentMoveCell(torch.nn.Module):
 
     def forward(self, alpha_logits: torch.Tensor, base: torch.Tensor,
                 d_burn_k: torch.Tensor, d_slp_k: torch.Tensor,
-                is_brn: torch.Tensor, is_slp: torch.Tensor) -> torch.Tensor:
+                is_brn: torch.Tensor, is_slp: torch.Tensor,
+                seat_live: Optional[torch.Tensor] = None) -> torch.Tensor:
         """`alpha_logits` [B,K+1] (last class = SWITCH) · `base` [B,4,4]
         ([is_status, d_their_outspeed, d_sched, e_slp_free] vs their active) · `d_burn_k`/`d_slp_k`
         [B,K] (per-seat-candidate consequence columns) · `is_brn`/`is_slp` [B,4] → [B,4,out_dim].
@@ -80,6 +83,9 @@ class IntentMoveCell(torch.nn.Module):
         Fails loud when K != the operand candidate width: α's seats and the op's top-K are the SAME
         axis (`intent_axis_alignment_test`), so a mismatch means one was reconfigured independently
         — silently broadcasting there would mis-weight every term while every shape check passed.
+
+        ``seat_live`` `[B,K]` (X5 U4, F-X5-15): the meaningful-K gate, applied as `pair_alpha` does
+        (mask, never renormalise); fixed_mass only, so blob is byte-identical.
         """
         k = alpha_logits.shape[-1] - 1                       # last class is SWITCH
         if d_burn_k.shape[-1] != k or d_slp_k.shape[-1] != k:
@@ -91,6 +97,8 @@ class IntentMoveCell(torch.nn.Module):
         # UNRENORMALIZED move slice — see the module docstring: the missing SWITCH mass is the
         # correct statement that a switching opponent neither attacks nor receives the status.
         alpha = torch.softmax(alpha_logits.float(), dim=-1)[:, :k].to(base.dtype)     # [B,K]
+        if seat_live is not None:
+            alpha = alpha * seat_live.to(alpha.dtype)
         e_burn = (alpha * d_burn_k).sum(dim=-1, keepdim=True) * is_brn                # [B,4]
         e_slp = (alpha * d_slp_k).sum(dim=-1, keepdim=True) * is_slp                  # [B,4]
         # The decorrelated stay-mass channel, masked to status slots so a damage move's extra cell

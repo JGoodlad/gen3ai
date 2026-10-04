@@ -390,7 +390,21 @@ worst case). OTHER_species gets the blob's AVERAGED construction on the renormal
 E_tail[speed], moves = the parameter-free E10 mixture over the tail through the k = 4 construction; its
 edge column is written for D1, C1, C3, D4 and V (`EdgeBias.OTHER_FAMILIES`; C2 / S1 / T / X / G carry
 no OTHER edge), and at the Pursuit max it enters with presence 1 − Π_tail(1 − π). `BeliefSlots` is not
-built in that arm. The opponent pointer (α / β) and its consumers still read the blob's construction there.
+built in that arm. The opponent pointer there is ONE flat list (`gen3_x5_flat_pointer_v1`,
+`agents/model/flat_intent.py`, T2): the opponent active's K move seats, OTHER_move (token: the active's E5
+seat), a switch to each of their six slots (a revealed mon, or the hypothesis a hidden slot holds) and
+OTHER_species (its refined trunk token), scored by one shared scorer plus each candidate's DETACHED log π,
+one softmax; masks are structural. It REPLACES α / β in that arm (they are constructed and see SB3's
+orthogonal re-init, then the policy's `_build` retires them before the optimizer is made, so no non-X5
+initial byte moves). Its labels come from the existing intent label: a move beyond the seats is an
+OTHER_move label, a hidden switch-in not among the hypotheses an OTHER_species label (a belief miss is
+supervised, never masked); a typed Hidden Power label names a revealed HP's seat. The seven α consumers
+read its re-expression: α over the K seats + OTHER_move (a PRICED (K+1)-th seat — every seat-axis operand
+gets OTHER_move's column, the op's per-candidate cells on the full move axis contracted with the
+renormalised tail weights `FixedMassMoves.other_u`) + the total switch mass, β over the six slots +
+OTHER_species (`out_cells` gets OTHER's column from the OTHER-mode D1 pass, `opp_p_ghost` the tail's
+P(Ghost)); `threshold_probs`, `IntentMoveCell` and `IntentConditionalMoveCell` now apply the seats'
+meaningful-K gate as `pair_alpha` does. The ride-along B head (when on) is re-based onto the flat list.
 Config v136, no `ARCH_SIGNATURE` change while both arms build.
 
 The concrete steps:

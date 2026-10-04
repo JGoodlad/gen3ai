@@ -495,7 +495,8 @@ class DamageOperatorPairwise:
                                        spread_belief: Optional[torch.Tensor] = None,
                                        k_cand: int = 6,
                                        c2_cells: Optional[torch.Tensor] = None,
-                                       species_probs: Optional[torch.Tensor] = None
+                                       species_probs: Optional[torch.Tensor] = None,
+                                       other_u: Optional[torch.Tensor] = None,
                                        ) -> Tuple[torch.Tensor, ...]:
         """gen3_intent_move_cell_v1 (G3): the RAW operands for the alpha-conditioned c2
         re-delivery through the pointer MOVE cell (`agents.model.intent_move_cell` weights them
@@ -523,7 +524,11 @@ class DamageOperatorPairwise:
         `intent_axis_alignment_test` pins element-wise to alpha's seats — so alignment is by
         construction rather than by convention. Fails loud when the top-K stash is missing (no
         `damage_matrices_incoming`/`damage_topk_k`): silently substituting a different candidate
-        selection would mis-weight every term (the named `op move-order` bug class)."""
+        selection would mis-weight every term (the named `op move-order` bug class).
+
+        ``other_u`` [B,M] (X5 U4, fixed_mass only — `FixedMassMoves.other_u`): append OTHER_move's
+        column to ``d_burn_k`` / ``d_slp_k`` (→ [B,K+1]): the same kernel on the FULL candidate axis,
+        contracted with the renormalised tail (E_tail, never a zero column)."""
         B, device, eps = ctx.batch_size, ctx.device, 1e-6
         ar = torch.arange(B, device=device)
         nums = self.last_topk_idx                                                    # [B,K] move NUMS
@@ -597,6 +602,23 @@ class DamageOperatorPairwise:
         if _mix is not None:                                                         # [B,K+16] → [B,K]
             d_burn_k = torch.einsum("be,bke->bk", d_burn_k, _mix.to(d_burn_k.dtype))
             d_slp_k = torch.einsum("be,bke->bk", d_slp_k, _mix.to(d_slp_k.dtype))
+        if other_u is not None and _mix is not None:
+            # X5 U4: OTHER_move's column — the SAME kernel over every move num, the tail contraction.
+            nums_f = torch.arange(other_u.shape[-1], device=device).expand(B, -1)   # [B,M]
+            bp_k = gather_bp(self, nums_f, opp_hp_frac[:, None])
+            mty_k = self.MOVE_TYPE_IDX[nums_f]
+            phys_k = self.MOVE_PHYS[nums_f]
+            acc_k = self.MOVE_ACCURACY[nums_f]
+            nf_k = gather_nonformula(self, nums_f)
+            weather_k = self._field_bp_mult(ctx, mty_k)
+            bu_k = gather_beatup(self, nums_f)
+            hf_f = _high(atk)
+            hh_f = _high(atk * 0.5)
+            u = other_u.to(hf_f.dtype)
+            d_burn_o = ((hh_f - hf_f) * gate * u).sum(-1, keepdim=True)                # [B,1]
+            d_slp_o = (-hf_f * gate * u).sum(-1, keepdim=True)
+            d_burn_k = torch.cat([d_burn_k, d_burn_o.to(d_burn_k.dtype)], dim=-1)      # [B,K+1]
+            d_slp_k = torch.cat([d_slp_k, d_slp_o.to(d_slp_k.dtype)], dim=-1)
         return base, d_burn_k, d_slp_k, is_brn, is_slp
 
     def pairwise_boost_incoming(self, ctx: 'ExtractorContext',

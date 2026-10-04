@@ -128,7 +128,7 @@ permutation").
 """
 from __future__ import annotations
 
-from typing import Tuple, cast
+from typing import Optional, Tuple, cast
 
 import torch
 
@@ -136,7 +136,7 @@ from agents.gen3_data.moves import MoveData
 
 from agents.model.arch_constants import _SWITCH_BRANCH_RAW
 from agents.model.damage_op_layout import (_DMG_OMX_IDX_HIGH, _DMG_OMX_IDX_MULT, _DMG_OMX_IDX_PKO)
-from agents.model.pair_outcome import pair_alpha_full, rapid_spin_num
+from agents.model.pair_outcome import pair_alpha_full, rapid_spin_num, seat_num_table
 
 #: The raw coordinate names, in order — the contract the consumers and the tests read. Never
 #: re-spell an index; `switch_branch_test` asserts this tuple against `_SWITCH_BRANCH_RAW`.
@@ -208,7 +208,8 @@ class SwitchBranchMoveCell(torch.nn.Module):
                 seat_live: torch.Tensor, topk_nums: torch.Tensor,
                 omx_cells: torch.Tensor, opp_p_ghost: torch.Tensor,
                 opp_active_local: torch.Tensor, req_move_ids: torch.Tensor,
-                protect_odds: torch.Tensor, our_side_hazards: torch.Tensor) -> torch.Tensor:
+                protect_odds: torch.Tensor, our_side_hazards: torch.Tensor,
+                other_u: Optional[torch.Tensor] = None) -> torch.Tensor:
         """`alpha_logits` `[B,K+1]` (last class = SWITCH) · `beta_logits` `[B,6]` (the PUBLISHED β,
         `-inf`-masked to legal switch-ins) · `seat_live` `[B,K]` (the meaningful-K gate) ·
         `topk_nums` `[B,K]` (the seats' move NUMS) · `omx_cells` `[B,4,6,5]` (the op's outgoing
@@ -221,9 +222,16 @@ class SwitchBranchMoveCell(torch.nn.Module):
 
         Fails loud on a seat-axis width mismatch — α's seats and the op's top-K are the SAME axis,
         and a silent broadcast would pair each α weight with the wrong opponent move while every
-        shape check still passed (the named `op move-order` bug class)."""
+        shape check still passed (the named `op move-order` bug class).
+
+        X5 U4 (fixed_mass only): α arrives re-expressed from the flat pointer (K seats + OTHER_move +
+        the total switch mass; ``seat_live`` `[B,K+1]`), β over the six slots + OTHER_species, and
+        ``omx_cells`` / ``opp_p_ghost`` carry OTHER_species' column (the tail-averaged defender,
+        never IMMUNE). ``other_u`` `[B,M]` prices OTHER_move's damaging indicator (`seat_num_table`).
+        None: blob, unchanged."""
         k = alpha_logits.shape[-1] - 1
-        if topk_nums.shape[-1] != k or seat_live.shape[-1] != k:
+        n_nums = topk_nums.shape[-1] + (1 if other_u is not None else 0)
+        if n_nums != k or seat_live.shape[-1] != k:
             raise ValueError(
                 f"alpha has {k} move seats but the op stashed {topk_nums.shape[-1]} candidate nums "
                 f"/ {seat_live.shape[-1]} liveness flags. These must be the SAME axis "
@@ -264,8 +272,9 @@ class SwitchBranchMoveCell(torch.nn.Module):
         is_spin = (req_move_ids[..., None] == self.spin_num).any(-1).to(dt)                # [B,4]
         p_spin_blocked = is_spin * p_blocked                                               # [B,4]
         # --- Protect: the mass the decay multiplies ---
-        is_dmg_k = self.damaging_num[topk_nums.clamp(min=0,
-                                                     max=self.damaging_num.shape[0] - 1)]  # [B,K]
+        is_dmg_k = (seat_num_table(self.damaging_num, topk_nums, other_u) if other_u is not None
+                    else self.damaging_num[topk_nums.clamp(min=0,
+                                                           max=self.damaging_num.shape[0] - 1)])  # [B,K]
         attack_mass = (alpha * is_dmg_k.to(dt)).sum(-1, keepdim=True)                      # [B,1]
         is_prot = (req_move_ids[..., None] == self.protect_nums).any(-1).to(dt)            # [B,4]
         prot_mass = is_prot * attack_mass                                                  # [B,4]

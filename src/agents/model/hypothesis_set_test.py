@@ -374,17 +374,25 @@ def test_fixed_mass_leaves_every_non_x5_initial_byte_equal_to_blob(arms):
     m_blob, m_fm = arms
     sd0, sd1 = m_blob.policy.state_dict(), m_fm.policy.state_dict()
     extra = sorted(k for k in sd1 if k not in sd0)
-    assert extra and all(".hypothesis_builder." in k for k in extra)
-    # F-X5-27 (U3 part 3): fixed_mass does NOT build BeliefSlots (never called there) — the ONLY blob
-    # key it lacks; its init draw still ran, so every other byte is unmoved (asserted next).
+    assert extra and all((".hypothesis_builder." in k or ".flat_intent_head." in k) for k in extra)
+    assert any(".flat_intent_head." in k for k in extra)
+    # F-X5-27 (U3 part 3): fixed_mass does NOT build BeliefSlots (never called there); X5 U4 RETIRES the
+    # α / β heads there (the flat pointer replaces them) AFTER SB3's orthogonal re-init. Those are the
+    # ONLY blob keys it lacks; their init AND re-init draws still ran, so every other byte is unmoved.
+    retired = (".belief_slots.", ".alpha_head.", ".beta_head.")
     missing = sorted(k for k in sd0 if k not in sd1)
-    assert missing and all(".belief_slots." in k for k in missing), missing
+    assert missing and all(any(r in k for r in retired) for k in missing), missing
+    assert any(".alpha_head." in k for k in missing) and any(".beta_head." in k for k in missing)
     moved = [k for k in sd0 if k in sd1 and not torch.equal(sd0[k], sd1[k])]
     assert moved == [], moved
     # every non-X5 parameter keeps its optimizer position RELATIVE to the others
-    n0 = [n for n, _ in m_blob.policy.named_parameters() if ".belief_slots." not in n]
-    n1 = [n for n, _ in m_fm.policy.named_parameters() if ".hypothesis_builder." not in n]
+    n0 = [n for n, _ in m_blob.policy.named_parameters() if not any(r in n for r in retired)]
+    n1 = [n for n, _ in m_fm.policy.named_parameters()
+          if ".hypothesis_builder." not in n and ".flat_intent_head." not in n]
     assert n0 == n1
+    # ...and the retired heads hold no optimizer slot (the optimizer is built after the retirement)
+    opt_ids = {id(p) for g in m_fm.policy.optimizer.param_groups for p in g["params"]}
+    assert opt_ids == {id(p) for p in m_fm.policy.parameters()}
 
 
 def test_cold_start_presence_is_exactly_the_priors_fixed_size_marginal_on_a_real_policy(arms):

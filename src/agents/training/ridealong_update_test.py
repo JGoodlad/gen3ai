@@ -46,7 +46,14 @@ RIDEALONG_ON = {**RIDEALONG_CORE, "ridealong_rnd_variants": "all"}
 VARIANTS = ("fast", "decay", "small", "feat")
 
 
-def _env_cls(rows, masks):
+#: X5 U4 (fixed_mass): a label mix that exercises the FLAT pointer's every label class — a common move
+#: (a seat or OTHER_move, by row), a revealed switch, a second move, a HIDDEN switch-in by species (a
+#: hypothesis slot or OTHER_species, by row). Secret Power (290) and Mudkip (258) sit beyond the seats / in
+#: the tail on most of the committed parity rows, so OTHER rows are present by construction.
+_FLAT_LABELS = ((0, 89, -100, 0), (1, 0, 1, 0), (0, 290, -100, 0), (1, 0, -100, 258))
+
+
+def _env_cls(rows, masks, flat_labels: bool = False):
     import gymnasium as gym
     from gymnasium import spaces
 
@@ -81,11 +88,18 @@ def _env_cls(rows, masks):
                     "win_mask": np.array([1.0], np.float32),
                     "win_margin": np.array([0.0], np.float32),
                     # SWITCH (kind 1) on alternate rows: always inside α's support, so B has labels.
-                    "opp_action_kind": np.array([self._t % 2], np.int64),
-                    "opp_action_num": np.array([0], np.int64),
-                    "opp_switch_slot": np.array([1], np.int64),
-                    "opp_switch_species": np.array([0], np.int64),
+                    **(self._flat() if flat_labels else {
+                        "opp_action_kind": np.array([self._t % 2], np.int64),
+                        "opp_action_num": np.array([0], np.int64),
+                        "opp_switch_slot": np.array([1], np.int64),
+                        "opp_switch_species": np.array([0], np.int64)}),
                     "opp_class": np.array([self._seed % 2], np.int64)}
+
+        def _flat(self):
+            kd, nm, sl, sp = _FLAT_LABELS[(self._t + self._seed) % len(_FLAT_LABELS)]
+            return {"opp_action_kind": np.array([kd], np.int64), "opp_action_num": np.array([nm], np.int64),
+                    "opp_switch_slot": np.array([sl], np.int64),
+                    "opp_switch_species": np.array([sp], np.int64)}
 
         def reset(self, **kw):
             self._t = 0
@@ -106,7 +120,7 @@ def _rng_state():
     return th.get_rng_state().clone(), np.random.get_state(), random.getstate()
 
 
-def _build(ridealong: dict):
+def _build(ridealong: dict, belief_tokens: str = "blob"):
     from agents.training.rust_rollout.testkit import ToyVecEnv
 
     from agents.model.compile_parity_fixture import load_parity_rows
@@ -116,9 +130,10 @@ def _build(ridealong: dict):
     from main.fresh_checkpoint import _production_policy_kwargs
 
     _args, layout, pk = _production_policy_kwargs()
-    pk = {**pk, "features_extractor_kwargs": {**pk["features_extractor_kwargs"], **ridealong}}
+    pk = {**pk, "features_extractor_kwargs": {**pk["features_extractor_kwargs"], **ridealong,
+                                              "belief_tokens": belief_tokens}}
     rows, masks = load_parity_rows(layout["total_dim"])
-    env_cls = _env_cls(rows, masks)
+    env_cls = _env_cls(rows, masks, flat_labels=belief_tokens == "fixed_mass")
     th.manual_seed(0)
     np.random.seed(0)
     random.seed(0)
@@ -153,6 +168,62 @@ def _build(ridealong: dict):
     return dict(model=model, built_rng=built_rng, pre=pre, post=post, buf=buf, opt=opt_t,
                 logged=dict(model.logger.name_to_value), rng=_rng_state(), names=names,
                 acquired=acquired, after=_acquired(model))
+
+
+@pytest.fixture(scope="module")
+def fm_arms():
+    """X5 U4: the fixed_mass arm — B re-based onto the FLAT opponent pointer — OFF and ON."""
+    return _build({}, "fixed_mass"), _build({"ridealong_opp": 2}, "fixed_mass")
+
+
+def test_fixed_mass_B_on_the_FLAT_pointer_is_BIT_IDENTICAL_to_learning(fm_arms):
+    """X5 U4 (design §3.7): B's columns are the flat pointer's (K seats, OTHER_move, six switch targets,
+    OTHER_species), its labels `flat_intent_targets`' — and heads ON learns exactly what heads OFF
+    learns: building B draws nothing, the rollouts are identical, the policy / trunk / V / PPO optimizer
+    state / scalars / RNG are bit-identical after one update. Revert (feed B a live `flat_logits`, fold
+    its loss into PPO's, or put it in `policy.optimizer`): it fails."""
+    off, on = fm_arms
+    from agents.model.ridealong_heads import FlatOppEffectEnsemble
+    assert isinstance(on["model"].policy.ridealong.opp, FlatOppEffectEnsemble)
+    assert on["model"].policy.features_extractor.alpha_head is None
+    assert th.equal(off["built_rng"][0], on["built_rng"][0])
+    for k in off["buf"]:
+        assert np.array_equal(off["buf"][k], on["buf"][k]), f"rollout key {k} differs"
+    core_on = _core(on["post"])
+    assert core_on.keys() == off["post"].keys()
+    for k in core_on:
+        assert th.equal(core_on[k], off["post"][k]), f"B changed {k}"
+    assert off["opt"].keys() == on["opt"].keys() and off["opt"]
+    for k in off["opt"]:
+        assert th.equal(off["opt"][k], on["opt"][k]), f"B changed PPO optimizer state {k}"
+    for tag, v in off["logged"].items():
+        if tag.endswith("_ms"):
+            continue
+        assert on["logged"][tag] == v or (v != v and on["logged"][tag] != on["logged"][tag]), tag
+    assert th.equal(off["rng"][0], on["rng"][0]) and off["rng"][2] == on["rng"][2]
+    assert np.array_equal(off["rng"][1][1], on["rng"][1][1])
+
+
+def test_fixed_mass_B_trains_on_OTHER_rows_and_the_flat_loss_ran(fm_arms):
+    """B is not vacuous on the flat pointer: its parameters moved, its label rate is logged, and the
+    rollout's labels hold OTHER rows B trains on (a belief miss is a ROW, not a masked label); the
+    flat intent loss ran with `other_label_rate` logged (F-X5-8)."""
+    _off, on = fm_arms
+    from agents.model.flat_intent import (LABEL_OTHER_MOVE, LABEL_OTHER_SPECIES, flat_intent_targets)
+    keys = [n for n in on["names"] if n.startswith("ridealong.opp.")]
+    assert keys and [k for k in keys if not th.equal(on["post"][k], on["pre"][k])]
+    assert "ridealong/opp_label_rate" in on["logged"] and on["logged"]["ridealong/opp_label_rate"] > 0
+    for tag in ("aux/opp_intent/flat_loss", "aux/opp_intent/other_label_rate"):
+        assert any(t.endswith(tag.split("/", 1)[1]) for t in on["logged"]), tag
+    pol = on["model"].policy
+    buf = on["buf"]
+    obs = {k: th.as_tensor(v).reshape(-1, *v.shape[2:]) for k, v in buf.items() if not k.startswith("__")}
+    with th.no_grad():
+        pol.extract_features(obs)
+    fe = pol.features_extractor
+    _t, cls = flat_intent_targets(fe.last_flat_intent, obs["opp_action_kind"], obs["opp_action_num"],
+                                  obs["opp_switch_slot"], obs["opp_switch_species"])
+    assert bool(((cls == LABEL_OTHER_MOVE) | (cls == LABEL_OTHER_SPECIES)).any())
 
 
 def _acquired(model) -> dict:

@@ -120,6 +120,10 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         super()._build(lr_schedule)
         from agents.model.features_extractor import PointerNativeActionHead  # local: avoid import cycle
         fe = cast("Gen3FeaturesExtractor", self.features_extractor)
+        # X5 U4 (fixed_mass): retire α / β AFTER the ortho-init draws above and BEFORE the optimizer
+        # below (`ExtractorApi.retire_superseded_intent_heads`); blob: a no-op.
+        if hasattr(fe, "retire_superseded_intent_heads"):
+            fe.retire_superseded_intent_heads()
         self.action_net = _NoFlatActionNet()
         self.pointer_head = PointerNativeActionHead(
             # gen3_entity_move_seats_v1: move tokens are the REFINED E3 trunk seats (d_model-wide),
