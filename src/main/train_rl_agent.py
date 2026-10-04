@@ -104,6 +104,12 @@ from main.train.fork_lr import enforce_inherited_fork_lr
 from main.train.model_build import build_and_train
 
 
+def _cuda_available() -> bool:
+    """`torch.cuda.is_available()` — a device-count query, creates no CUDA context."""
+    import torch
+    return bool(torch.cuda.is_available())
+
+
 async def main():
     # --- Pre-flight Checks ---
     # THE TORCH FLOOR (deletion pass K1): HEAD has no torch-2.5.1 code path left; a 2.5.1 run resumes
@@ -154,6 +160,19 @@ async def main():
     _cfg = resolve_config(args, parser)
     annealing_mode, log_level = _cfg.annealing_mode, _cfg.log_level
 
+    # T23 — THE DESKTOP-GPU REFUSAL: a CUDA run does not start while a display process holds the card
+    # (`utils.desktop_gpu`; NVML read, no CUDA context). Before any directory exists, so a refusal
+    # leaves nothing behind. FATAL_CONFIG: the launcher must not restart into the same refusal.
+    from utils.desktop_gpu import check_for_run as _desktop_gpu_check
+    _desktop_gpu = _desktop_gpu_check(
+        args.device, debug=args.debug, allow=args.allow_desktop_gpu, cuda_available=_cuda_available)
+    if _desktop_gpu.refused:
+        print("\n🛑 [DesktopGpu] FATAL: this run will not start — the GPU is not clean.", file=sys.stderr, flush=True)
+    for _l in _desktop_gpu.lines():
+        print(f"[DesktopGpu] {_l}", file=sys.stderr if _desktop_gpu.refused else sys.stdout, flush=True)
+    if _desktop_gpu.refused:
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+
     # --- Phase 2: teams, the matchup, and every opponent source ---
     _mu = build_matchup_and_opponents(args)
     matchup, mappings = _mu.matchup, _mu.mappings
@@ -188,6 +207,7 @@ async def main():
     # Matchup provenance (designs/ai_v8/design_matchup_config.md): the DECLARED matchup + its hash
     # ride into metadata.json beside the flags, so a run's measurement regime is auditable — two
     # eras with different hashes (e.g. the pre-fix OOD-eval era) are not metric-comparable.
+    cli_args["_desktop_gpu"] = _desktop_gpu.to_record()    # T23: what the desktop check saw / tolerated
     cli_args["_matchup_spec"] = matchup.to_dict()
     cli_args["_matchup_spec_hash"] = matchup.spec_hash()
     if not args.run_dir:

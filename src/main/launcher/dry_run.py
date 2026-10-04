@@ -392,6 +392,24 @@ def dry_run(
         out(("  ℹ️  advisory (CURRENT tree, NOT the pinned one): " if _d4_advisory else "  ✗ REFUSED: ")
             + res["env_core_refusal"])
 
+    # 7d. T23 THE DESKTOP-GPU REFUSAL — `utils.desktop_gpu.check_for_run`, the very function the
+    #     trainer calls at its startup, on the resolved device / debug / opt-out. NVML is read, no CUDA
+    #     context is made. ADVISORY when the child runs a pinned OTHER commit: that commit's trainer
+    #     carries this check only if it is newer than T23 (and its parser may not know the flag).
+    from utils.desktop_gpu import check_for_run as _desktop_check
+    _dev = getattr(ns, "device", None) if ns is not None else None
+    if _dev is None:
+        _dev = _peek_arg(child_args, "--device") or "auto"
+    _dbg = bool(getattr(ns, "debug", False)) if ns is not None else ("--debug" in child_args)
+    _allow = (bool(getattr(ns, "allow_desktop_gpu", False)) if ns is not None
+              else "--allow-desktop-gpu" in child_args)
+    desktop = _desktop_check(_dev, debug=_dbg, allow=_allow)
+    _dg_advisory = pinned is not None and pinned.available
+    for i, line in enumerate(desktop.lines()):
+        if desktop.refused and _dg_advisory and i == 0:
+            line = line.replace("✗ REFUSED", "ℹ️  advisory (CURRENT tree, NOT the pinned one)", 1)
+        out(f"  {line}")
+
     # 8. The refusals. Same three families `main.checkargs` reports, on the same resolved namespace
     #    — but read against the CURRENT tree. When the pin names another commit AND we managed to
     #    ask that commit's parser (3b), these are ADVISORY: they describe rules the child will not
@@ -430,6 +448,8 @@ def dry_run(
     if res.get("env_core_refusal") and not _d4_advisory:
         failed = True
     if torch_res.refusal:                 # printed with the interpreter line above
+        failed = True
+    if desktop.refused and not _dg_advisory:      # printed at 7d
         failed = True
 
     if failed:

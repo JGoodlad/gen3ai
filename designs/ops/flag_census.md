@@ -14,8 +14,8 @@
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
 | DELETED by P11 (the whole census: B1-B5, P11b, P11c, P11d) | 37 | 0 | 37 |
-| NOW (**CENSUS CLOSED**, P11d) | 165 | 9 | 174 |
-| verdicts NOW | KEEP 165 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
+| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05) | 166 | 9 | 175 |
+| verdicts NOW | KEEP 166 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -92,6 +92,7 @@
 | `--arch` | — | 6 / 6 | THE production surface (root `CLAUDE.md`, `checkargs`) | **KEEP** |
 | `--allow-nonproduction-arch` | false | 0 / 0 | the consent for a deliberate ablation (`arch_surface`, `training_runbook.md`) | **KEEP** |
 | `--allow-nonproduction-recipe` | false | 0 / 0 | the consent for an untyped non-production recipe knob (`recipe_surface`, `training_runbook.md`) | **KEEP** |
+| `--allow-desktop-gpu` | false | 0 / 0 | the consent for a CUDA run while a display process holds the GPU (T23, `utils/desktop_gpu.py`; `TRAINING_RUN_SOP.md` §1; dev / short runs) | **KEEP** |
 
 ### hyperparameters
 

@@ -11747,3 +11747,15 @@ their pin's code and are unaffected. No run is live.
 - **Findings.** F-X5-45 (a buffer rebuild moves the behaviour columns by ≤ 7.2e-7, T2 rounding, pre-existing) and
   F-X5-46 (the blob entry predates `init_group_sha256`) — `design_x5_belief_tokens.md` §8.2 and the U6 hand-off.
 
+
+## 2026-10-05 — T23: a CUDA training run refuses to start while the desktop holds the GPU (`utils/desktop_gpu.py`; no model change, no config bump, no ARCH_SIGNATURE bump)
+
+- **Why.** `gnome-shell` held 811 MiB of the 12 GiB card on 2026-10-05, about 40 % of the measured D-6 headroom at N = 256. Owner: "a basic check to ensure when training runs the GUI is off. Fail loud."
+- **What.**
+  - At the trainer's startup, right after the config resolves and before any directory exists, a CUDA run reads NVML (`nvidia-smi -q -x`: graphics AND compute clients; no `pynvml`, no CUDA context). A process on the declared `DISPLAY_PROCESS_NAMES` list exits `FATAL_CONFIG` (the launcher does not restart it) with its name, pid, VRAM and the fix (`sudo systemctl stop gdm.service`, allowed by `/etc/sudoers.d/gen3ai-gpu` once installed; restore with `sudo systemctl start gdm.service` or a reboot).
+  - NVML unreadable (no `nvidia-smi`, a driver error, an unparseable report) refuses a CUDA run, stating why.
+  - `--allow-desktop-gpu` (dev / short runs) tolerates it and is recorded in `metadata.json` (`cli_args.allow_desktop_gpu` and `cli_args._desktop_gpu`, with the tolerated holders). `--debug` resolves to CPU and is exempt; an explicit `--debug --device cuda` is checked.
+  - The launcher's `--dry-run` calls the same `check_for_run` and prints a `desktop GPU :` line.
+  - Flag census row added (166 trainer flags); root `CLAUDE.md`, the launcher leaf and `TRAINING_RUN_SOP.md` §1 (0b) updated.
+- **Tests.** `utils/desktop_gpu_test.py` (56: the XML reader, every declared name, the verdicts, a fake `nvidia-smi` on PATH, the trainer's `main()` for refused / clean / opted-out / `--debug` / NVML-unavailable, the metadata stamp) and `launcher/dry_run_test.py` (h) (5; the `isolated` fixture now pins a desktop-free listing).
+

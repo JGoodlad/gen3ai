@@ -29,6 +29,7 @@ import pytest
 from main.exit_codes import TrainExitCode
 import main.launcher.dry_run as dry_run_mod
 import main.launcher.worktree as wt
+from utils import desktop_gpu as desktop_gpu_mod
 
 launcher_run = importlib.import_module("main.launcher.run")
 
@@ -71,6 +72,7 @@ def isolated(repo, tmp_path, monkeypatch):
     work = tmp_path / "work"
     work.mkdir()
     monkeypatch.chdir(work)
+    # (T23: the root conftest already pins a desktop-free NVML listing; the (h) tests override it.)
     # Runs land in the RUN ARCHIVE (`utils.paths.run_archive_dir`), never a cwd-relative models/ —
     # and the root conftest SEALS the real one — so the scratch dir's own models/ IS the archive.
     (work / "models").mkdir()
@@ -456,3 +458,49 @@ def test_g_a_refusal_whose_message_is_a_renderer_prints_the_TEXT(isolated, monke
     assert refused, out
     assert not any("<function" in ln for ln in refused), refused
     assert any("--rollout-target-samples" in ln for ln in refused), refused
+
+
+# ---------------------------------------------------------------------------------------
+# (h) T23: the dry run reports the desktop-GPU verdict the trainer would act on
+# ---------------------------------------------------------------------------------------
+
+_GNOME = desktop_gpu_mod.GpuProcess(0, "RTX 3080 Ti", 7568, "G", "/usr/bin/gnome-shell", 811)
+
+
+def test_h_a_cuda_dry_run_with_the_desktop_up_is_refused_naming_the_fix(isolated, monkeypatch, capsys):
+    monkeypatch.setattr(desktop_gpu_mod, "list_gpu_processes", lambda *a, **k: [_GNOME])
+    _dry_run(["--steps", "1000", "--device", "cuda", *_ARCH_OK], monkeypatch,
+             expect=int(TrainExitCode.FATAL_CONFIG))
+    out = capsys.readouterr().out
+    assert "desktop GPU : ✗ REFUSED" in out and "gnome-shell" in out and "811 MiB" in out
+    assert "sudo systemctl stop gdm.service" in out and "would NOT launch" in out
+
+
+def test_h_a_cuda_dry_run_with_the_desktop_down_passes(isolated, monkeypatch, capsys):
+    _dry_run(["--steps", "1000", "--device", "cuda", *_ARCH_OK], monkeypatch)
+    out = capsys.readouterr().out
+    assert "desktop GPU : ✓" in out and "would launch" in out
+
+
+def test_h_the_opt_out_flag_turns_the_refusal_into_a_note(isolated, monkeypatch, capsys):
+    monkeypatch.setattr(desktop_gpu_mod, "list_gpu_processes", lambda *a, **k: [_GNOME])
+    _dry_run(["--steps", "1000", "--device", "cuda", "--allow-desktop-gpu", *_ARCH_OK], monkeypatch)
+    out = capsys.readouterr().out
+    assert "tolerated under --allow-desktop-gpu" in out and "would launch" in out
+
+
+def test_h_a_debug_dry_run_is_exempt_and_never_reads_nvml(isolated, monkeypatch, capsys):
+    def _boom(*a, **k):
+        raise AssertionError("a --debug (CPU) run must not read NVML")
+    monkeypatch.setattr(desktop_gpu_mod, "list_gpu_processes", _boom)
+    _dry_run(["--steps", "1000", "--debug", *_ARCH_OK], monkeypatch)
+    assert "desktop GPU : exempt" in capsys.readouterr().out
+
+
+def test_h_nvml_unavailable_refuses_a_cuda_dry_run(isolated, monkeypatch, capsys):
+    def _gone(*a, **k):
+        raise desktop_gpu_mod.NvmlUnavailable("`nvidia-smi` is not on PATH (no NVIDIA driver?)")
+    monkeypatch.setattr(desktop_gpu_mod, "list_gpu_processes", _gone)
+    _dry_run(["--steps", "1000", "--device", "cuda", *_ARCH_OK], monkeypatch,
+             expect=int(TrainExitCode.FATAL_CONFIG))
+    assert "NVML is unavailable" in capsys.readouterr().out

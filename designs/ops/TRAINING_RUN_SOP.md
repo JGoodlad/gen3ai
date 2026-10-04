@@ -85,6 +85,15 @@ the lease is what keeps every other agent (whose `gpu_lock.sh` is refused AT ONC
 An offline GPU meter the training session itself runs goes through `scripts/ops/gpu_lock.sh`, which passes
 on the same token.
 
+**0b. The desktop is OFF (T23, owner 2026-10-05).** `gnome-shell` held 811 MiB of the 12 GiB card (~40 % of the
+N=256 headroom). A CUDA run now REFUSES to start (`FATAL_CONFIG`, no restart) while a display process holds the GPU
+(`utils/desktop_gpu.py`: NVML via `nvidia-smi -q -x`, graphics AND compute clients; NVML unreadable is a refusal
+too). Before the launch: `sudo systemctl stop gdm.service` (passwordless through `/etc/sudoers.d/gen3ai-gpu` once the
+owner has installed it); when the run is over `sudo systemctl start gdm.service` or reboot. `--dry-run` prints the same
+verdict (`desktop GPU :` line). `--allow-desktop-gpu` is the dev / short-run opt-out, recorded in `metadata.json`;
+`--debug` (CPU) is exempt. ⚠️ The default target stays graphical, so a reboot brings the desktop BACK: the launcher's
+next restart of a run then exits `FATAL_CONFIG` at once — stop gdm again before relaunching.
+
 Ledger `81016942` (2026-09-06): an arm ran ~7 GPU-hours with 31 architecture flags silently at their
 OFF defaults while `checkargs`, `resolve_config` and `--dry-run` all passed. Every check below
 answers one of the two questions; do both.

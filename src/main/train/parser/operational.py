@@ -86,3 +86,13 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "launcher, naming every untyped knob. A TYPED differing value never "
                              "needs it — typing is how an arm states its lever. Recorded in "
                              "metadata's cli_args. A fork/restart never needs it.")
+    # --- T23 THE DESKTOP-GPU REFUSAL (utils.desktop_gpu) ----------------------------------------
+    parser.add_argument("--allow-desktop-gpu", action="store_true",
+                        help="Consent to a CUDA run while a display process (gnome-shell, Xorg, "
+                             "Xwayland, a display manager, ...) holds the GPU. Without it such a "
+                             "launch exits FATAL_CONFIG naming the process, its VRAM and the fix "
+                             "(`sudo systemctl stop gdm.service`); the launcher's --dry-run reports "
+                             "the same verdict. For dev / short runs only: the desktop's VRAM "
+                             "(~0.8 GiB) is gone from the run. Recorded in metadata.json "
+                             "(cli_args.allow_desktop_gpu + cli_args._desktop_gpu). `--debug` (CPU) "
+                             "is exempt without it.")

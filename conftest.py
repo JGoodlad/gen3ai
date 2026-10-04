@@ -909,3 +909,15 @@ def run_archive(tmp_path, monkeypatch):
     archive.mkdir(exist_ok=True)
     monkeypatch.setenv(MODELS_DIR_ENV_VAR, str(archive))
     return archive
+
+
+@pytest.fixture(autouse=True)
+def _the_desktop_gpu_check_never_reads_the_real_box(monkeypatch):
+    """T23: no test reads the box's REAL display state. `--device auto` resolves to CPU for the
+    desktop-GPU check (`utils.desktop_gpu.nvidia_gpu_visible` reads `nvidia-smi`) and the NVML listing
+    is empty, so an in-process `--dry-run` / trainer test passes on a GPU box with the desktop up.
+    A test of the check itself stubs the listing it wants; the reader proper is `read_nvidia_smi`."""
+    import utils.desktop_gpu as desktop_gpu
+    monkeypatch.setattr(desktop_gpu, "nvidia_gpu_visible", lambda: False)
+    monkeypatch.setattr(desktop_gpu, "list_gpu_processes", lambda *a, **k: [])
+

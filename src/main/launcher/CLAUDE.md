@@ -754,6 +754,16 @@ So a 2.5.1 run resumes only PINNED (its own commit's `src/`, the selected `gen3a
 `--no-pin` / `--sync-to-main` the child is HEAD code on 2.5.1 and refuses at startup — drop the flag,
 or switch the run to 2.8 with `--allow-torch-switch`.
 
+🚨 **THE DESKTOP-GPU REFUSAL (T23, 2026-10-05).** A CUDA run does not start while a display process (gnome-shell,
+Xorg, Xwayland, a display manager, … — the declared `utils.desktop_gpu.DISPLAY_PROCESS_NAMES`) holds the GPU: the
+trainer exits `FATAL_CONFIG` (the launcher does not restart it) naming the process, pid, VRAM and the fix
+(`sudo systemctl stop gdm.service`). `--dry-run` calls the SAME `check_for_run` on the resolved `--device` /
+`--debug` / `--allow-desktop-gpu` and prints a `desktop GPU :` line (✓ / exempt / tolerated / ✗ REFUSED; the refusal
+fails the dry run, FATAL_CONFIG, and is ADVISORY when the child runs a pinned other commit, whose trainer may not
+carry the check). `--debug` (CPU) is exempt; NVML unreadable is a refusal for a CUDA run. `--allow-desktop-gpu`
+rides to the child verbatim (restarts keep it) and is recorded in `metadata.json` (`cli_args`). Gate:
+`utils/desktop_gpu_test.py`, `dry_run_test.py` (h).
+
 Underneath, `child.resolve_child_python()` — the FRESH default — in precedence order:
 
 | # | Source | Notes |
