@@ -72,6 +72,9 @@ TIER_OF: Dict[str, int] = {
     # gen3_item_belief_v1 (v83): the hidden-item posterior — a resolve step exactly like the
     # species/spread/HP-type beliefs; the op (T1) consumes its p_cb publication.
     "item_belief_head": 0,
+    # gen3_x5_hypothesis_set_v1 (X5 U2, `--belief-tokens fixed_mass` only): δ_θ + the fixed-size
+    # presence + the hypothesis selection + OTHER read the T0 prior and PRE-trunk tokens only.
+    "hypothesis_builder": 0,
     # T1 REASON — physics over the resolved state, then attention over tokens that carry it.
     "damage_op": 1,
     "entity_seats": 1,

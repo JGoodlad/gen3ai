@@ -422,6 +422,11 @@ def _migrate_config(data: dict) -> dict:
     # `pair_value_route`) is the version-independent block above.
     if version < 135:
         data["config_version"] = 135
+    # v136 (gen3_x5_hypothesis_set_v1, X5 U2) — `belief_tokens`, defaulted rather than refused: "blob"
+    # is the only possible past (the hypothesis builder did not exist).
+    if version < 136:
+        data.setdefault("belief_tokens", "blob")
+        data["config_version"] = 136
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

@@ -1125,6 +1125,9 @@ are TEAM TRUTH, which does not depend on who is piloting, so discounting a bot's
 throw away valid labels. Only INTENT is behaviour; at 1.0 the loss is **bit-identical**. Every
 structural toggle is version-checked and fresh-only; every `*_coef` is training-only and **read back
 on a flagless resume**.
+🧩 **Under `--belief-tokens fixed_mass` (X5) the hidden-team row is `hidden_team_set`** — the set BCE
+(presence + BeliefHead re-targeted + hypothesis-seat moves), gated EXCLUSIVELY against the Hungarian
+`hidden_team` row on the same coefficient; `blob` never enables it.
 **Full detail — in [`designs/training/belief_losses.md`](../../../designs/training/belief_losses.md).**
 
 ## `stats.py` — the package's SHARED small-sample statistics

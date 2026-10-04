@@ -25,7 +25,7 @@ Grouped into the four tiers the contract asserts:
 
 | tier | question | modules |
 |---|---|---|
-| **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in) |
+| **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in), `hypothesis_builder` (X5, `--belief-tokens fixed_mass` only: runs after `move_belief`; in U2 its output is stashed as `last_hypothesis` and read only by the `hidden_team_set` belief row) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `history_events` (H-B event seats, opt-in), `edge_bias`, `team_transformer` |
 | **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool` (which also owns the two token-content critic injections), `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat` (opt-in) |
 | **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head` |

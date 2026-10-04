@@ -46,6 +46,7 @@ from agents.model.pools import CLSPool, HiddenOppBeliefPool
 from agents.model.projection import ProjectionAssembler, compute_projection_widths
 from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.t0_species import T0SpeciesPrior
+from agents.model.hypothesis_set import BELIEF_TOKEN_MODES, HypothesisBuilder
 from agents.model.team_transformer import EdgeBias, EventSeats, TeamTransformer
 from agents.model.value_readouts import UnifiedValueReadout
 from agents.model.value_threat_inject import (
@@ -107,6 +108,7 @@ class ExtractorBuild(torch.nn.Module):
                  ridealong_adv: int = 0,
                  ridealong_opp: int = 0,
                  ridealong_rnd_variants: str = "off",
+                 belief_tokens: str = "blob",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -878,6 +880,41 @@ class ExtractorBuild(torch.nn.Module):
             raise ValueError(
                 "ridealong_opp requires opp_intent (--opp-intent-coef > 0): B's columns are alpha's "
                 "support (their believed move seats + SWITCH) and its centring reads alpha.")
+
+        # gen3_x5_hypothesis_set_v1 (X5 build unit U2, `--belief-tokens`): `blob` (the default and
+        # production until the X5 A/B rules) builds NOTHING, so the blob arm is byte-identical to the
+        # pre-X5 model. `fixed_mass` builds the T0 HYPOTHESIS BUILDER (`agents.model.hypothesis_set`):
+        # δ_θ, the fixed-size presence, the one stable ordering, OTHER and the active's move group.
+        # It is built LAST (no existing parameter position moves) from a PRIVATE seed inside
+        # `fork_rng`, out of `IsolatedLinear`s SB3's orthogonal re-init skips — so every NON-X5
+        # parameter's initial bytes equal the blob arm's. In U2 its output is only STASHED
+        # (`last_hypothesis`) and supervised by the presence BCE; tokens entering the trunk and the
+        # op are U3. The dependencies are enforced HERE, where `flag_requires_test` can see them.
+        if belief_tokens not in BELIEF_TOKEN_MODES:
+            raise ValueError(f"belief_tokens must be one of {BELIEF_TOKEN_MODES}, got {belief_tokens!r}")
+        self.belief_tokens = belief_tokens
+        self.hypothesis_builder: Optional[HypothesisBuilder] = None
+        if belief_tokens == "fixed_mass":
+            if not t0_species_prior:
+                raise ValueError(
+                    "belief_tokens=fixed_mass requires t0_species_prior=True: the hypothesis scores are "
+                    "log P_T0(s | revealed) + a learned delta, and P_T0 is the T0 species prior.")
+            if move_belief_mode == "off":
+                raise ValueError(
+                    "belief_tokens=fixed_mass requires move_belief_mode != off: the opponent active's "
+                    "move group is built from the MoveBelief posterior.")
+            if not self.opp_intent:
+                raise ValueError(
+                    "belief_tokens=fixed_mass requires opp_intent=True: X5 re-bases the opponent "
+                    "pointer (alpha's seats) onto the hypothesis set.")
+            if not opp_belief_slots:
+                raise ValueError(
+                    "belief_tokens=fixed_mass requires opp_belief_slots=True (--opp-belief-aux-coef > 0): "
+                    "the presence BCE that trains the learned delta and BeliefHead's re-targeted set BCE "
+                    "both ride that coefficient.")
+            self.hypothesis_builder = HypothesisBuilder(
+                layout, self.team_transformer._global_token_input_dim, self.entity_topk_seats)
+            cast("ExtractorApi", self)._stamp_belief_grad_flags()
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

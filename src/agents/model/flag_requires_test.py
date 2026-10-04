@@ -32,7 +32,7 @@ import numpy as np
 import pytest
 
 from agents.model.features_extractor import Gen3FeaturesExtractor
-from agents.model.flag_registry import BY_NAME, REGISTRY, is_enabled, requirement_closure
+from agents.model.flag_registry import BY_NAME, OFF_STRINGS, REGISTRY, is_enabled, requirement_closure
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 # ------------------------------------------------------------------- the ON/OFF values under test
@@ -50,13 +50,15 @@ _ON_OVERRIDE: Dict[str, object] = {
     "damage_candidate_k": 2,
     # gen3_ridealong_rnd_variants_v1: a comma-list string; `True` is not a legal value.
     "ridealong_rnd_variants": "all",
+    # gen3_x5_hypothesis_set_v1 (v136): a two-value mode string; 'blob' is OFF.
+    "belief_tokens": "fixed_mass",
 }
 
 
 def _off_value(name: str) -> object:
     d = BY_NAME[name].default
     if isinstance(d, str):
-        return d if d in ("off", "none") else "off"
+        return d if d in OFF_STRINGS else "off"
     if isinstance(d, bool):
         return False
     if isinstance(d, int):

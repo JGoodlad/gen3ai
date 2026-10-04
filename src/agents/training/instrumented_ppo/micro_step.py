@@ -74,6 +74,10 @@ class MicroStatic(NamedTuple):
     setvalued_coef: float
     bot_label_weight: float
     win_prob_on: bool
+    # gen3_x5_hypothesis_set_v1 (X5 U2): the extractor is `--belief-tokens fixed_mass`, so the
+    # hidden-team supervision is the set BCE row (`hidden_team_set`), not the Hungarian one. LAST,
+    # with a default, so every existing construction is unchanged.
+    belief_set_on: bool = False
 
 
 class MicroOut(NamedTuple):
@@ -220,7 +224,10 @@ def micro_step(policy: Any, obs: Dict[str, th.Tensor], actions: th.Tensor,
         return loss
 
     # ---- 2. the belief bank (hidden_move) -> opponent intent -> latent -> revealed ---------------
-    _bank("hidden_move", {"hidden_team": st.belief_aux_on, "move_belief": st.move_belief_on})
+    # gen3_x5_hypothesis_set_v1: `hidden_team` (blob) and `hidden_team_set` (fixed_mass) are EXCLUSIVE.
+    _bank("hidden_move", {"hidden_team": st.belief_aux_on and not st.belief_set_on,
+                          "hidden_team_set": st.belief_aux_on and st.belief_set_on,
+                          "move_belief": st.move_belief_on})
     io = (intent_fold(fe, obs, intent_coef=st.intent_coef, setvalued_coef=st.setvalued_coef,
                       setvalued_on=st.setvalued_on, bot_label_weight=st.bot_label_weight)
           if st.intent_on else None)                     # None <=> the inline block was skipped

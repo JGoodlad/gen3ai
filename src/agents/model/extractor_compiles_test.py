@@ -266,6 +266,22 @@ def test_production_arch_compiles_to_one_graph():
 
 
 @_skip_compile
+def test_x5_fixed_mass_arch_compiles_to_one_graph():
+    """X5 U2 (`--belief-tokens fixed_mass`): the hypothesis builder — the 64-step bisection unrolled,
+    the stable argsort, the frozen-dataclass stash — keeps the production forward ONE graph with no
+    break, so `--compile-trainer`'s fullgraph region still holds in that arm. (The CPU codegen cost of
+    the unrolled bisection is measured in the X5 note §3.6; the GPU cell is U8's.)"""
+    torch._dynamo.reset()
+    torch._dynamo.config.suppress_errors = False
+    fe, layout = _build_production_extractor(belief_tokens="fixed_mass")   # SUBJECT: the X5 arm
+    assert fe.hypothesis_builder is not None
+    obs = {"observation": torch.zeros(_BATCH, layout["total_dim"])}
+    explained = torch._dynamo.explain(fe.forward)(obs)
+    assert explained.graph_break_count == 0, explained.break_reasons
+    assert explained.graph_count == 1
+
+
+@_skip_compile
 # `slow` since K3 (gen3_hermetic_compile_cache_v1, 2026-09-30): every pytest process compiles into a
 # FRESH cache, so the first CPU codegen of the production extractor in a process is COLD — 88 s in
 # the -n 2 routine gate (was ~15 s against the retired box-wide warm cache). Same cost class, and
@@ -429,7 +445,10 @@ def test_pair_outcome_fallback_arch_compiles_to_one_graph():
 
     # (If `pair_outcome_cell` ever GAINS an opp_intent requirement this raises a duplicate-kwarg
     # TypeError rather than quietly turning off the very cell under test — the loud direction.)
-    off = {f.name: False for f in REGISTRY if "opp_intent" in (f.requires or ())}
+    # A mode STRING's OFF value is its default (every such row defaults OFF: `belief_tokens` = 'blob'),
+    # never the bool False the constructor would refuse.
+    off = {f.name: (f.default if isinstance(f.default, str) else False)
+           for f in REGISTRY if "opp_intent" in (f.requires or ())}
     assert off, "no registry row requires opp_intent — this probe has lost its subject"
     fe, layout = _build_production_extractor(
         pair_outcome_cell=True, opp_intent=False, **off)

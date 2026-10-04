@@ -495,6 +495,18 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "nothing in the weights would catch it.\n"
                 "Resume with the matching --species-prior-fusion setting, or start a fresh training run."
             )
+        # gen3_x5_hypothesis_set_v1 (v136): X5's belief representation. `fixed_mass` adds the hypothesis
+        # builder's parameters and re-means the hidden-team belief supervision; nothing in the policy /
+        # value output's SHAPE differs, so this compare is the only gate (design §3.8: no ARCH_SIGNATURE
+        # bump while both arms build at one commit).
+        if self.belief_tokens != saved.belief_tokens:
+            raise ModelVersionError(
+                f"belief_tokens mismatch: saved={saved.belief_tokens!r}, "
+                f"current={self.belief_tokens!r}.\n"
+                "X5's belief representation is fixed for a run's lifetime: `fixed_mass` builds the "
+                "hypothesis builder and supervises a different belief target than `blob`.\n"
+                "Resume with the matching --belief-tokens setting (a flagless resume inherits it), or "
+                "start a fresh training run.")
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —
         # a resume that dropped one would silently delete a trained baseline head, one that added

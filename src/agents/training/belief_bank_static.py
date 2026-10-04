@@ -370,9 +370,61 @@ def belief_aux_terms(bl: Optional[Dict[str, th.Tensor]], sp_labels: Optional[th.
     return StaticTerm(aux, present, metrics)
 
 
+def hypothesis_set_terms(hs: Any, bl: Optional[Dict[str, th.Tensor]], sp_labels: Optional[th.Tensor],
+                         mv_labels: Optional[th.Tensor], moves_weight: float = 1.0) -> StaticTerm:
+    """X5's hidden-team supervision under ``--belief-tokens fixed_mass`` (`gen3_x5_hypothesis_set_v1`,
+    design §3.2 "Supervision"; the `hidden_team` row's replacement — the two are gated exclusively):
+
+      * the PRESENCE BCE — the set BCE on the T0 construction's exact logit ``a + τ`` (``hs.species``),
+        the ONLY gradient δ_θ receives (M10);
+      * BeliefHead RE-TARGETED to the same set BCE: its per-slot species logits reduced to one team
+        score (`belief_head_team_scores`), through the same fixed-size construction over the same V;
+      * ``moves_weight`` × BeliefHead's MOVES BCE on the hypothesis seats, supervised iff the seat's
+        hypothesis species IS on the true unseen team (§3.4; the Hungarian matching is retired).
+
+    No slot matching anywhere (unseen slots are exchangeable in gen 3). Static-shape: every row is
+    scored by mask. ``present`` iff some row was scored by either set BCE."""
+    from agents.model.hypothesis_set import (belief_head_team_scores, fixed_mass_presence,
+                                             hypothesis_moves_bce, label_multi_hot, set_bce)
+    if hs is None or bl is None or sp_labels is None or mv_labels is None:
+        return _absent(th.zeros(()))
+    pres = hs.species
+    logits = pres.logits
+    S = logits.shape[-1]
+    y = label_multi_hot(sp_labels, S, logits)
+    p_loss, p_n, p_bad = set_bce(logits, pres, y)
+    believed = hs.slot_is_hypothesis
+    team = belief_head_team_scores(bl["species"], believed)                       # [B,S] graph → BeliefHead
+    bh = fixed_mass_presence(team, pres.cand, pres.k)
+    b_loss, b_n, _ = set_bce(bh.logits, bh, y)
+    m_loss, m_n = hypothesis_moves_bce(bl["moves"], hs.slot_species, believed, sp_labels, mv_labels)
+    aux = p_loss + b_loss + moves_weight * m_loss
+    present = (p_n > 0) | (b_n > 0)
+    w = _w(present)
+    with th.no_grad():
+        B = logits.shape[0]
+        live = pres.live
+        nl = live.sum().clamp(min=1).to(th.float32)
+        in_list = ((y > 0.5) & (hs.rank < pres.k.unsqueeze(-1)) & pres.cand).sum(-1).to(th.float32)
+        recall = th.where(live, in_list / pres.k.clamp(min=1).to(th.float32), th.zeros_like(in_list)).sum() / nl
+        k_f = pres.k.clamp(min=1).to(th.float32)
+        other_share = th.where(live, hs.other_mass.float() / k_f, th.zeros_like(k_f)).sum() / nl
+        metrics = {
+            "presence_bce": (p_loss.detach().float(), w),
+            "beliefhead_set_bce": (b_loss.detach().float(), w),
+            "hyp_moves_bce": (m_loss.detach().float(), w),
+            "hyp_recall": (recall, w),
+            "other_share": (other_share, w),
+            "presence_label_mismatch": ((p_bad / max(B, 1)).float(), w),
+            "hyp_moves_supervised": (m_n.float(), w),
+        }
+    return StaticTerm(aux, present, metrics)
+
+
 #: row name -> its static twin (the registry walk below dispatches on it).
 _STATIC_FNS = {
     "hidden_team": belief_aux_terms,
+    "hidden_team_set": hypothesis_set_terms,
     "move_belief": move_belief_terms,
     "move_latent": move_latent_terms,
     "spread": spread_terms,

@@ -452,6 +452,18 @@ def item_belief_loss(logits, item_label, item_mask):
                   "mask_rate": float(mask.float().mean().item())}    # uniform: see spread
 
 
+def hypothesis_set_loss(hs, bl, sp_labels, mv_labels, moves_weight: float = 1.0):
+    """X5's hidden-team supervision under ``--belief-tokens fixed_mass`` — the EAGER-surface wrapper
+    over the one implementation, `belief_bank_static.hypothesis_set_terms` (which is static-shape
+    already, so there is no second copy of the arithmetic to drift). Returns (aux, metrics) or None
+    exactly like the other rows' loss functions."""
+    from agents.training.belief_bank_static import hypothesis_set_terms
+    t = hypothesis_set_terms(hs, bl, sp_labels, mv_labels, moves_weight)
+    if not t.metrics or not bool(t.present):
+        return None
+    return t.loss, {k: float(v.item()) for k, (v, _w) in t.metrics.items()}
+
+
 @dataclass(frozen=True)
 class BeliefHeadRow:
     """One supervised belief head: everything the train loop needs to fold it.
@@ -485,6 +497,15 @@ ROWS: Tuple[BeliefHeadRow, ...] = (
         coef="opp_belief_aux_coef", loss_fn=belief_aux_loss, site="hidden_move",
         loss_key="aux_loss",
         args=(("attr", "last_belief_logits"), ("obs", "belief_species"),
+              ("obs", "belief_moves"), ("param", "moves_weight"))),
+    # gen3_x5_hypothesis_set_v1 (X5 U2): the `hidden_team` row's replacement under
+    # `--belief-tokens fixed_mass` — the two are gated EXCLUSIVELY (micro_step), so at most one of them
+    # adds a term and the blob arm's float-addition sequence is untouched.
+    BeliefHeadRow(
+        name="hidden_team_set", probe="species_belief_set", prefix="set_", gate="hidden_team_set",
+        coef="opp_belief_aux_coef", loss_fn=hypothesis_set_loss, site="hidden_move",
+        loss_key="aux_loss",
+        args=(("attr", "last_hypothesis"), ("attr", "last_belief_logits"), ("obs", "belief_species"),
               ("obs", "belief_moves"), ("param", "moves_weight"))),
     BeliefHeadRow(
         name="move_belief", probe="move_belief", prefix="move_", gate="move_belief",

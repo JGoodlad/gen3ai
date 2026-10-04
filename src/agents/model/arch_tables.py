@@ -74,6 +74,7 @@ _TOGGLE_MODULE: Dict[str, str] = {
     "value_threat_inject": "cls_pool.value_threat_proj",
     "value_entity_pool": "value_entity_pool",
     "value_entity_pool_full": "value_entity_pool",
+    "belief_tokens": "hypothesis_builder",
 }
 
 # Training-loss coefficient -> the module that consumes it. THE INERT LOGIC LIVES HERE, in one
@@ -109,7 +110,8 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     "fork_fraction": "win_head",
 }
 
-_FALSY_STRINGS = {"none", "off", ""}
+# "blob" is `belief_tokens`' OFF state (X5, v136; `flag_registry.OFF_STRINGS`).
+_FALSY_STRINGS = {"none", "off", "", "blob"}
 
 
 def _is_off(value: Any) -> bool:

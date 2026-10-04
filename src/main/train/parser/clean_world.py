@@ -159,6 +159,19 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "is one coherent posterior (priors ⊕ prediction unified), anchored at the "
                              "prior at cold-start. Forward-behavior toggle (no weight-shape change; "
                              "version-checked, fresh-only). REQUIRES --move-belief-mode != off. Off by default.")
+    from agents.model.hypothesis_set import BELIEF_TOKEN_MODES
+    parser.add_argument("--belief-tokens", "--belief_tokens", dest="belief_tokens",
+                        choices=BELIEF_TOKEN_MODES, default=None,
+                        help="X5's opponent-belief representation (gen3_x5_hypothesis_set_v1, v136; "
+                             "designs/endstate/design_x5_belief_tokens.md). 'blob' (default; production "
+                             "until the X5 A/B rules): today's model, byte-identical. 'fixed_mass': build "
+                             "the T0 hypothesis builder — concrete species hypotheses with logistic "
+                             "fixed-size presence (Σπ = 6 − revealed), a learned state-dependent delta "
+                             "on the Smogon prior trained by a set BCE, and an OTHER token. STRUCTURAL, "
+                             "version-checked, fresh-only. Requires --t0-species-prior, "
+                             "--move-belief-mode != off, --opp-intent-coef > 0 and "
+                             "--opp-belief-aux-coef > 0. In build unit U2 the hypothesis set is built "
+                             "and supervised but does not yet enter the trunk or the op (U3).")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

@@ -74,7 +74,7 @@ def test_sites_partition_the_registry():
     for row in bb.ROWS:
         by_site.setdefault(row.site, []).append(row.name)
     assert by_site == {
-        "hidden_move": ["hidden_team", "move_belief"],
+        "hidden_move": ["hidden_team", "hidden_team_set", "move_belief"],
         "latent": ["move_latent"],
         "revealed": ["spread", "nature_ev", "hp_type", "item"],
     }

@@ -45,6 +45,7 @@ from typing import Dict, FrozenSet, List, NamedTuple, Optional, Tuple
 FORWARD_MODULES: Tuple[str, ...] = (
     "aux_value_heads", "belief_heads", "conditional_threat", "damage_kinds", "damage_op", "damage_op_blocks",
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
+    "hypothesis_set",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
     "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "switch_branch",
     "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
@@ -56,7 +57,11 @@ LABEL_FUNCS: FrozenSet[Tuple[str, str]] = frozenset({
     ("opp_intent", f) for f in (
         "match_seats_to_move_num", "resolve_believed_slot_by_content", "info_gain_nats",
         "intent_label_weights", "set_valued_switch_loss", "intent_losses", "_alpha_subset_metrics",
-        "_beta_subset_metrics", "switch_coverage_metrics", "render_alpha")})
+        "_beta_subset_metrics", "switch_coverage_metrics", "render_alpha")} | {
+    # gen3_x5_hypothesis_set_v1 (X5 U2): the set-supervision loss + label helpers and the rule-8
+    # near-tie READER (`near_tie_rows`, a check-side helper, never the forward).
+    ("hypothesis_set", f) for f in (
+        "label_multi_hot", "set_bce", "belief_head_team_scores", "hypothesis_moves_bce", "near_tie_rows")})
 
 
 class Rule(NamedTuple):
@@ -243,6 +248,27 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     "switch_branch": {
         "INT": ("req_move_ids[..., None] == self.protect_nums", "req_move_ids[..., None] == self.spin_num"),
+    },
+    # gen3_x5_hypothesis_set_v1 (X5 U2, `--belief-tokens fixed_mass` only — the module never runs on the
+    # production `blob` surface). In U2 the hypothesis set is STASHED and read only by the presence BCE
+    # and the readers, so its three float-operand discrete ops are NOT_LOGP. 🚨 U3 wires the tokens into
+    # the trunk / the op — log π then reads them, and these three MUST be re-declared: the selection
+    # argsort as a MARGIN rule on the k-th / (k+1)-th π gap (§3.1's rule-8 exclusion,
+    # `hypothesis_set.near_tie_rows`, including OTHER's tail-mean cutoff and the move seats); the
+    # bisection's `total > k_t` is NOT a discontinuity (τ converges to the same root either way, to the
+    # dtype's resolution) and needs a reason of its own; `denom > 0` is a structural-count gate.
+    "hypothesis_set": {
+        "NOT_LOGP": ("torch.argsort(neg, dim=-1, stable=True)", "total > k_t", "denom > 0"),
+        "TABLE": ("logits > cut",),
+        "INT": ("k.long()", "opp_species_ids.clamp(0, S - 1).long()", "opp_believed_mask.bool().sum(-1).long()",
+                "revealed_ids.clamp(0, M - 1).long()", "revealed_ids > 0", "revealed.sum(-1).long()",
+                "n > 0", "k > 0", "k < n", "k >= n", "at > 0", "at < n_avail", "ids > 0",
+                "num >= TYPED_HP_NUMS[0]", "num <= TYPED_HP_NUMS[-1]", "num != HIDDEN_POWER_MOVE_NUM",
+                "j.unsqueeze(0) < k.unsqueeze(-1)", "species.clamp(0, self.n_species - 1).long()",
+                "jj.unsqueeze(0) < torch.minimum(n_seatable, torch.full_like(n_seatable, K)).unsqueeze(-1)",
+                "jj.unsqueeze(0) < r.unsqueeze(-1)", "opp_species_ids > 0",
+                "rank < (k + OTHER_TAIL_MEAN_N).unsqueeze(-1)", "rank >= k.unsqueeze(-1)", "rank >= K",
+                "k_m > 0", "r < K", "believed.long()"),
     },
     "t0_species": {
         "OBS": ("onehot > 0",),

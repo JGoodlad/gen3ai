@@ -19,6 +19,7 @@ from agents.model.arch_constants import (
 from agents.model.belief_heads import BELIEF_GRAD_MODES, _BELIEF_SUPERVISION_KEYS
 from agents.model.extractor_build import ExtractorBuild
 from agents.model.extractor_ctx import PointerInputs
+from agents.model.hypothesis_set import HypothesisSet
 from agents.model.intent_threshold import ThresholdProbs
 
 
@@ -100,7 +101,7 @@ class ExtractorApi(ExtractorBuild):
         """
         _item = getattr(self, "item_belief_head", None)
         for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head,
-                    _item, self.belief_head):
+                    _item, self.belief_head, getattr(self, "hypothesis_builder", None)):
             if _bh is not None:
                 _bh.detach_read = self._belief_detach
         for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head,
@@ -138,6 +139,8 @@ class ExtractorApi(ExtractorBuild):
     def last_beta_logits(self) -> Optional[torch.Tensor]: return self.stash.beta_logits
     @property
     def last_belief_logits(self) -> Optional[Dict[str, torch.Tensor]]: return self.stash.belief_logits
+    @property
+    def last_hypothesis(self) -> Optional[HypothesisSet]: return self.stash.hypothesis
     @property
     def last_opp_believed_mask(self) -> Optional[torch.Tensor]: return self.stash.opp_believed_mask
     @property

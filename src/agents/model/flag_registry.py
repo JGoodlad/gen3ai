@@ -451,6 +451,12 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="The X26 RND strategy comparison (owner, 2026-09-30: \"ensemble RND, toss one a different learning rate or something, so we knock them out all at once\"). `fast` = base's predictor at 10x the rate; `decay` = base's predictor pulled toward its init with a 10-update half-life; `small` = a 32-unit one-hidden-layer predictor; `feat` = base's shapes over the detached value_pooled. Declarations: `agents.model.ridealong_heads.RND_VARIANT_DECLS`. The observation variants share base's target and normalisation (paired). DETACHED exactly like the four heads (pinned bit-for-bit by `ridealong_update_test`, base itself included). STRUCTURAL: the variants' parameters are the state_dict delta. family=CRITIC: never on the production ARCH surface. It REQUIRES ridealong_rnd: base is the shared target and the reference.",
               requires=("ridealong_rnd",),
               family=Family.CRITIC),
+    ModelFlag("belief_tokens", "blob", Tier.CLI, Klass.STRUCTURAL, 136,
+              "X5's opponent-belief representation: 'blob' (today's constant hidden-slot tokens) or "
+              "'fixed_mass' (concrete species hypotheses with logistic fixed-size presence, a learned "
+              "delta on the Smogon prior trained by a set BCE, and an OTHER token)",
+              note="X5 (designs/endstate/design_x5_belief_tokens.md §3.8). Production stays 'blob' until the X5 A/B rules; both arms build at ONE commit, so there is no ARCH_SIGNATURE bump until the losing arm is deleted. 'blob' builds nothing (byte-identical to the pre-X5 model). 'fixed_mass' builds `agents.model.hypothesis_set.HypothesisBuilder` from a private seed (no non-X5 init byte moves) and re-targets the hidden-team belief supervision to the set BCE. Build unit U2 stashes the hypothesis set; tokens entering the trunk and the op are U3, the flat pointer U4. It REQUIRES t0_species_prior (the scores are log P_T0 + delta), move_belief_mode (the active's move group), opp_intent (the pointer it re-bases) and opp_belief_slots (the presence BCE and BeliefHead's set BCE ride --opp-belief-aux-coef).",
+              requires=("t0_species_prior", "move_belief_mode", "opp_intent", "opp_belief_slots")),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}
@@ -475,6 +481,11 @@ for _f in REGISTRY:                                  # a self-requirement can ne
 OFF_VALUES = (False, 0, "off", "none")
 
 
+#: The OFF spellings of a MODE string. ``'blob'`` is `belief_tokens`' OFF state (X5, v136): the
+#: pre-X5 representation, which builds nothing — so ``requires`` binds only ``'fixed_mass'``.
+OFF_STRINGS: Tuple[str, ...] = ("off", "none", "blob")
+
+
 def is_enabled(value: Any) -> bool:
     """Is this flag value the ON state, for the purpose of ``requires``?
 
@@ -485,7 +496,7 @@ def is_enabled(value: Any) -> bool:
     not a switch, and nothing depends on it.
     """
     if isinstance(value, str):
-        return value not in ("off", "none")
+        return value not in OFF_STRINGS
     return bool(value)
 
 

@@ -71,6 +71,31 @@ The training half of the in-place belief feature (model side in `src/agents/mode
   `agents/model/belief_slots_test.py` (incl. end-to-end gradient flow through the stash to the belief
   params + shared trunk). **Fuzz:** `poke_env_gaps/belief_labels_fuzz_test.py` (real bridge battles against the Python env's emitted labels) was DELETED with the Python env core (U3); the label contract is held by the Rust label gates (`rust_env_label_inventory_test.py`, `utils/rust_env/label_columns_test.py`).
 
+## X5's set supervision (`--belief-tokens fixed_mass`, the `hidden_team_set` row)
+
+`gen3_x5_hypothesis_set_v1` (X5 U2; design: `designs/endstate/design_x5_belief_tokens.md` §3.2). Under
+`--belief-tokens fixed_mass` the hidden-team supervision is a DIFFERENT row, gated EXCLUSIVELY against
+`hidden_team` (`MicroStatic.belief_set_on`, read off the extractor) and riding the same
+`--opp-belief-aux-coef`, so the blob arm's float-addition sequence is untouched. It folds three terms:
+- **the presence BCE**: one binary indicator per candidate species (V = the dex table's valid nums
+  minus the revealed), on the T0 construction's EXACT logit `a + τ` (no clamp), summed over V and
+  divided by k (per unseen mon), averaged over the scored rows. It is δ_θ's ONLY gradient (π is
+  detached everywhere else). τ is computed under `no_grad`, which is the exact implicit gradient
+  because the labels count k;
+- **BeliefHead re-targeted** to the same set BCE: its per-slot species logits reduced to the
+  hidden-slot MEAN, then the same fixed-size construction over the same V;
+- **`moves_weight` × BeliefHead's moves BCE on hypothesis seats**: the seat holding hypothesis
+  species `h` is supervised iff `h` is on the true unseen team, against that mon's moveset
+  (`belief_moves`). No slot matching anywhere.
+
+A row is scored iff 0 < k < n and its labels are consistent (every true unseen species is a
+candidate and they count exactly k); a live row with inconsistent labels is DROPPED and counted in
+`belief/set_presence_label_mismatch` (an under-6 team would land here). Metrics `belief/set_*`:
+`presence_bce`, `beliefhead_set_bce`, `hyp_moves_bce`, `hyp_recall` (the share of the true hidden mons
+the hypothesis list holds), `other_share` (OTHER's mass / k), `hyp_moves_supervised`, `aux_loss`. The
+arithmetic lives ONCE, static-shape, in `belief_bank_static.hypothesis_set_terms`;
+`belief_bank.hypothesis_set_loss` is its eager wrapper. Tests: `src/agents/model/hypothesis_set_test.py`.
+
 ## Move-belief reinjection loss (`--move-belief-mode` / `--move-belief-coef`)
 
 The training half of the move-belief feature (model side: `src/agents/model/CLAUDE.md` → MoveBelief,

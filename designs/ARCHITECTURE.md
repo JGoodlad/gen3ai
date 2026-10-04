@@ -361,6 +361,16 @@ new phase cannot escape it.
 are the one deliberate split: `BeliefHead` is a **training-only side readout** whose output is
 stashed for the aux loss and never fed forward, which is exactly what its T2 declaration records.
 
+**`--belief-tokens` (X5) is `blob` in production**: the representation described here, and nothing
+of X5 is built. The `fixed_mass` arm (`gen3_x5_hypothesis_set_v1`,
+[`endstate/design_x5_belief_tokens.md`](endstate/design_x5_belief_tokens.md)) adds one T0 module,
+`HypothesisBuilder` (`agents/model/hypothesis_set.py`), run after `MoveBelief`: concrete species
+hypotheses with logistic fixed-size presence (Σπ = 6 − revealed), a learned delta on the T0 prior,
+OTHER, and the opponent active's move group. Its output is stashed (`last_hypothesis`) and supervised
+(the `hidden_team_set` belief row replaces the Hungarian one); it does not yet enter the trunk, the op
+or any head, so that arm's policy and value outputs equal `blob`'s for the shared weights. Config v136,
+no `ARCH_SIGNATURE` change while both arms build.
+
 The concrete steps:
 
 1. **`ObsUnpack`** — slices the 2761-dim vector into `ExtractorContext` (~30 named tensors:
@@ -1241,6 +1251,7 @@ does nothing given another setting.
 |---|---|---|
 | `attend_unrevealed_opponents` | `true` | ACTIVE |
 | `belief_grad_mode` | `"shaping"` | ACTIVE |
+| `belief_tokens` | `"blob"` | OFF |
 | `conditional_threat_cell` | `true` | ACTIVE |
 | `consequence_topk` | `6` | ACTIVE |
 | `damage_candidate_k` | `0` | OFF |

@@ -218,6 +218,9 @@ class ModelVersionConstruction(ModelVersionFields):
             ridealong_rnd_variants=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("ridealong_rnd_variants",
                                                                        "off")),
+            # gen3_x5_hypothesis_set_v1 (v136): X5's belief representation.
+            belief_tokens=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("belief_tokens", "blob")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

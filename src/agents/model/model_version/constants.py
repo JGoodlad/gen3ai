@@ -422,7 +422,14 @@ from typing import Any, Dict
 #   extractor kwarg; a RESUME or FORK of a run that recorded a non-zero `td_aux_coef` /
 #   `win_prob_strata_weight` is refused by `model_version.retired_levers`. Every v121+ run on record
 #   recorded all three OFF: no ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 135
+# v136 (gen3_x5_hypothesis_set_v1, X5 build unit U2; designs/endstate/design_x5_belief_tokens.md §3.8):
+#   `belief_tokens` — `--belief-tokens {blob,fixed_mass}`. STRUCTURAL: `fixed_mass` builds the T0
+#   hypothesis builder (δ_θ, OTHER — the state_dict delta) and re-targets the hidden-team belief
+#   supervision to the set BCE; `blob` (the default, production until the X5 A/B rules) builds nothing
+#   and is byte-identical to v135. A pre-v136 config migrates to "blob" (the only possible past). No
+#   ARCH_SIGNATURE bump while both arms build at one commit — it comes with the losing arm's deletion
+#   (design §3.8). No MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 136
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

@@ -4,6 +4,7 @@
   "arch_signature": "gen3_event_record_v2",
   "attend_unrevealed_opponents": true,
   "belief_grad_mode": "shaping",
+  "belief_tokens": "blob",
   "canary_reset_steps": 1000000,
   "capacity_cosine_every": 50,
   "capacity_telemetry": false,

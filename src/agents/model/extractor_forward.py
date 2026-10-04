@@ -27,6 +27,7 @@ from agents.model.belief_heads import mask_typeless_hp
 from agents.model.extractor_api import ExtractorApi
 from agents.model.extractor_ctx import ExtractorContext, PointerInputs, TOKEN_TYPE_HISTORY
 from agents.model.extractor_stashes import ExtractorStashes
+from agents.model.hypothesis_set import HypothesisSet
 from agents.model.intent_threshold import threshold_probs
 from agents.model.pair_outcome import pair_alpha, reduce_pair_in, reduce_pair_in_all
 from agents.model.pointer_head import _request_order_move_tokens
@@ -68,6 +69,32 @@ class ExtractorForward(ExtractorApi):
             ctx.hp_probs[:, TEAM_SIZE:],                     # [B,6,16] tracker narrowing (OPP slots)
             ctx.all_move_ids[:, TEAM_SIZE:, :])              # [B,6,4] revealed ids (rule-out)
         return typed, presence, hp_post, hp_logits
+
+    def _build_hypothesis_set(self, ctx: ExtractorContext, role_pre_belief: torch.Tensor) -> HypothesisSet:
+        """gen3_x5_hypothesis_set_v1 (X5 U2): run the T0 hypothesis builder on this forward's state.
+
+        Inputs, all T0: the T0 species prior's LOG-probabilities (recomputed from the same buffers as
+        `t0_species_probs`, so the blob path's tensor is untouched), the pre-belief opponent role
+        tokens (δ_θ pools the revealed ones), the TeamTransformer global token's RAW input (δ_θ's own
+        projection of it — the transformer's `global_proj` is T1), and the opponent ACTIVE's typed
+        move posterior + species + revealed moves for the move group."""
+        from agents.model.t0_species import species_team_prior_logits
+        hb = self.hypothesis_builder
+        t0 = self.t0_species_prior
+        assert hb is not None and t0 is not None
+        opp_ids = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
+        t0_logp = species_team_prior_logits(
+            t0.species_prior_log_marginal, t0.species_prior_log_lift, opp_ids, ctx.opp_believed_mask)
+        global_input = torch.cat([ctx.our_ctx_raw, ctx.opp_ctx_raw, ctx.non_matchup_rest], dim=1)
+        bidx = torch.arange(ctx.batch_size, device=ctx.device)
+        act = ctx.opp_active_local
+        mb = self.last_move_belief_logits
+        hs: HypothesisSet = hb(t0_logp, opp_ids, ctx.opp_believed_mask, role_pre_belief[:, TEAM_SIZE:],
+                  global_input, self.embeddings.species_embedding,
+                  active_move_logits=(mb[bidx, act] if mb is not None else None),
+                  active_species=opp_ids[bidx, act],
+                  active_revealed_moves=ctx.all_move_ids[:, TEAM_SIZE:, :][bidx, act])
+        return hs
 
     def _apply_move_belief(self, opp_tokens: torch.Tensor,
                            ctx: ExtractorContext) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -246,6 +273,8 @@ class ExtractorForward(ExtractorApi):
         self.stash.opp_believed_mask = ctx.opp_believed_mask
         self.stash.opp_active_local = ctx.opp_active_local   # for the prober's belief-row decode
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
+        # gen3_x5_hypothesis_set_v1: δ_θ reads the PRE-belief opponent role tokens (the revealed ones).
+        _role_pre_belief = role_tokens
         # In-place hidden-opponent belief: replace the un-revealed opp slots with distinct learned
         # unknown-mon tokens BEFORE the transformer, so the body refines them and every readout
         # attends over them as party members (flag-guarded; None ⇒ baseline zeros).
@@ -261,6 +290,11 @@ class ExtractorForward(ExtractorApi):
                 role_tokens[:, TEAM_SIZE:], ctx)
             self.stash.move_belief_logits = _mb_logits
             role_tokens = torch.cat([role_tokens[:, :TEAM_SIZE], opp_role], dim=1)
+        # T0 RESOLVE — X5's hypothesis set (gen3_x5_hypothesis_set_v1, `--belief-tokens fixed_mass`
+        # only; None under `blob`, which runs nothing here). U2 STASHES it: no policy / value tensor
+        # reads it yet (U3 wires the tokens into the trunk and the op).
+        if self.hypothesis_builder is not None:
+            self.stash.hypothesis = self._build_hypothesis_set(ctx, _role_pre_belief)
         # T0 RESOLVE (spread/HP-type) → T1 REASON (the op). Run the WHOLE physics stack ONCE, here,
         # PRE-attention: the spread + HP-type beliefs read the raw opp role tokens (the move belief
         # already did, just above), the FULL DamageOperator runs on that belief, and its per-OUR-mon

@@ -394,6 +394,11 @@ class ModelVersionFields:
     # as the four toggles above: the variants' predictors are the state_dict delta, and nothing
     # downstream would catch a flip.
     ridealong_rnd_variants: str = "off"
+    # gen3_x5_hypothesis_set_v1 (config v136, X5 U2): `--belief-tokens {blob,fixed_mass}`. STRUCTURAL:
+    # `fixed_mass` builds the T0 hypothesis builder (δ_θ + OTHER — the state_dict delta) and re-targets
+    # the belief supervision to the set BCE; `blob` builds nothing. No ARCH_SIGNATURE bump while both
+    # arms must build at one commit (design §3.8) — the string compare in check_compatible is the gate.
+    belief_tokens: str = "blob"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at
