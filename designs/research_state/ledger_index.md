@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,077-line file. **The ledger itself is append-only and is never edited by this**;
+22,086-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**751 headings · 696 dated · 2026-08-01 → 2026-10-04 · ledger 22,077 lines.**
+**752 headings · 697 dated · 2026-08-01 → 2026-10-04 · ledger 22,086 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -771,3 +771,4 @@ rename.
   - `L22046` · `2026-10-04` · FINDING + FIX · **`scripts/land.sh`'s GATES COULD NEVER FAIL A LANDING — bash ignores `set -e` on the left of `||`, so `( ruff; mypy; pytest; echo OK ) || exit 1` exited with the closing `echo`'s status; FIXED with an explicit check per gate, pinned by a test that fails on revert**
   - `L22051` · `2026-10-04` · FINDING + FIX · **THE SMOGON SPECIES-USAGE MARGINAL WAS UNWEIGHTED — the chaos `Raw count` share, while every other Smogon prior (and the teammate conditional the lift divides by it) is rating-WEIGHTED (new / old ×0.19–×1.75 by species; Shuckle ×0.19, Tyranitar 0.078 → 0.086); FIXED as the W share with a throwing guard (`gen3_smogon_species_usage_weighted_v1`), a TRAINING-INPUT BOUNDARY**
   - `L22070` · `2026-10-04` · REGISTRATION · **X5 A/B Amendment 2: two ORACLE REFERENCE arms, the ceiling (owner) — oracle-species and oracle-full, the facts written into the observation's opponent block (the shared trunk), played in the same mirrored cross, reported as the ceiling C and the headroom captured H = Δ / C, never gated**
+  - `L22078` · `2026-10-04` · REGISTRATION · **X5 A/B Amendment 3 — the oracle cells in TWO modes (one-sided clairvoyance primary; both-sided reveal secondary, out of distribution for the non-oracle side), and the purpose metric made fair: CONDITIONAL log loss over blob's named set with both arms renormalised, coverage reported separately (the owner found the bias); observability adopted as a design criterion**
