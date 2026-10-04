@@ -65,7 +65,8 @@ def _resolved(tmp_path, n_envs: int) -> Dict[str, Any]:
     }
 
 
-def test_every_step_counted_cadence_is_the_same_total_env_steps_at_N48_and_N2048(tmp_path):
+def test_every_step_counted_cadence_is_the_same_total_env_steps_at_N48_and_N2048(tmp_path, run_archive):
+    # `run_archive`: the eval callback's ledger writer (eval U2) is built at assembly, on the run archive
     a = _resolved(tmp_path, N_PRODUCTION)
     b = _resolved(tmp_path, N_SWEEP)
     assert a["checkpoint"] == DEFAULT_CHECKPOINT_ENV_STEPS, "the N = 48 value is the default"

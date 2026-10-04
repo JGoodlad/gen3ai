@@ -1,0 +1,519 @@
+{
+ "commit": "e5f393cb1b51eaffeda04e703859e687dc3fcee0",
+ "cycle_seed": 3011727946530064913,
+ "cycles": [
+  {
+   "full_log": {
+    "ext_fixed0": {
+     "digest": "3cabff957935edab3cf091e801a73f932186dc0dd3177a8298da02669e229536",
+     "near_tie_games": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "outcomes": [
+      [
+       0,
+       "W",
+       66
+      ],
+      [
+       1,
+       "D",
+       250
+      ],
+      [
+       2,
+       "D",
+       250
+      ],
+      [
+       3,
+       "D",
+       250
+      ]
+     ]
+    },
+    "heuristic": {
+     "digest": "8ae43a5088f99691cc51a767f82b4134a9c5ad21195f4ea80b9f7185d404f4a1",
+     "near_tie_games": [
+      1,
+      2,
+      3
+     ],
+     "outcomes": [
+      [
+       0,
+       "L",
+       16
+      ],
+      [
+       1,
+       "L",
+       28
+      ],
+      [
+       2,
+       "L",
+       26
+      ],
+      [
+       3,
+       "L",
+       66
+      ]
+     ]
+    },
+    "heuristic2": {
+     "digest": "da4f5fb4575d6c681b9b3bc8ccad02ad8957eda77d89244c4c12b11a6ab05a13",
+     "near_tie_games": [
+      0,
+      3
+     ],
+     "outcomes": [
+      [
+       0,
+       "L",
+       48
+      ],
+      [
+       1,
+       "L",
+       48
+      ],
+      [
+       2,
+       "L",
+       15
+      ],
+      [
+       3,
+       "L",
+       75
+      ]
+     ]
+    },
+    "random": {
+     "digest": "3cabff957935edab3cf091e801a73f932186dc0dd3177a8298da02669e229536",
+     "near_tie_games": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "outcomes": [
+      [
+       0,
+       "L",
+       50
+      ],
+      [
+       1,
+       "L",
+       157
+      ],
+      [
+       2,
+       "L",
+       38
+      ],
+      [
+       3,
+       "L",
+       73
+      ]
+     ]
+    },
+    "sentinel_0": {
+     "digest": "21a1ebaeee77e76042bdf9b3b9cf12ce3ed58cdafc173ed03a847b17f6b118c6",
+     "near_tie_games": [
+      0,
+      1,
+      3
+     ],
+     "outcomes": [
+      [
+       0,
+       "L",
+       47
+      ],
+      [
+       1,
+       "L",
+       26
+      ],
+      [
+       2,
+       "L",
+       51
+      ],
+      [
+       3,
+       "L",
+       41
+      ]
+     ]
+    },
+    "sentinel_1": {
+     "digest": "3cabff957935edab3cf091e801a73f932186dc0dd3177a8298da02669e229536",
+     "near_tie_games": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "outcomes": [
+      [
+       0,
+       "L",
+       24
+      ],
+      [
+       1,
+       "W",
+       147
+      ],
+      [
+       2,
+       "W",
+       52
+      ],
+      [
+       3,
+       "L",
+       31
+      ]
+     ]
+    }
+   },
+   "merged": {
+    "ext_fixed0": {
+     "counts": [
+      1,
+      4
+     ],
+     "draws": 3,
+     "pairs": null
+    },
+    "heuristic": {
+     "counts": [
+      0,
+      4
+     ],
+     "draws": 0,
+     "pairs": null
+    },
+    "heuristic2": {
+     "counts": [
+      0,
+      4
+     ],
+     "draws": 0,
+     "pairs": null
+    },
+    "random": {
+     "counts": [
+      0,
+      4
+     ],
+     "draws": 0,
+     "pairs": null
+    },
+    "sentinel_0": {
+     "counts": [
+      0,
+      4
+     ],
+     "draws": 0,
+     "pairs": null
+    },
+    "sentinel_1": {
+     "counts": [
+      2,
+      4
+     ],
+     "draws": 0,
+     "pairs": null
+    }
+   },
+   "mirrored": false,
+   "sentinel_greedy": true
+  },
+  {
+   "full_log": {
+    "ext_fixed0": {
+     "digest": "3cabff957935edab3cf091e801a73f932186dc0dd3177a8298da02669e229536",
+     "near_tie_games": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "outcomes": [
+      [
+       0,
+       "W",
+       66
+      ],
+      [
+       1,
+       "D",
+       250
+      ],
+      [
+       2,
+       "D",
+       250
+      ],
+      [
+       3,
+       "D",
+       250
+      ]
+     ]
+    },
+    "heuristic": {
+     "digest": "8ae43a5088f99691cc51a767f82b4134a9c5ad21195f4ea80b9f7185d404f4a1",
+     "near_tie_games": [
+      1,
+      2,
+      3
+     ],
+     "outcomes": [
+      [
+       0,
+       "L",
+       16
+      ],
+      [
+       1,
+       "L",
+       23
+      ],
+      [
+       2,
+       "L",
+       26
+      ],
+      [
+       3,
+       "L",
+       73
+      ]
+     ]
+    },
+    "heuristic2": {
+     "digest": "e017fae4de18e4a49ace79c3bd582bfc0f4e0bde196805a0634a0ceb2566538e",
+     "near_tie_games": [
+      0,
+      1
+     ],
+     "outcomes": [
+      [
+       0,
+       "L",
+       48
+      ],
+      [
+       1,
+       "L",
+       33
+      ],
+      [
+       2,
+       "L",
+       15
+      ],
+      [
+       3,
+       "L",
+       15
+      ]
+     ]
+    },
+    "random": {
+     "digest": "3cabff957935edab3cf091e801a73f932186dc0dd3177a8298da02669e229536",
+     "near_tie_games": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "outcomes": [
+      [
+       0,
+       "L",
+       50
+      ],
+      [
+       1,
+       "W",
+       28
+      ],
+      [
+       2,
+       "L",
+       38
+      ],
+      [
+       3,
+       "L",
+       37
+      ]
+     ]
+    },
+    "sentinel_0": {
+     "digest": "3cabff957935edab3cf091e801a73f932186dc0dd3177a8298da02669e229536",
+     "near_tie_games": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "outcomes": [
+      [
+       0,
+       "L",
+       130
+      ],
+      [
+       1,
+       "L",
+       103
+      ],
+      [
+       2,
+       "L",
+       74
+      ],
+      [
+       3,
+       "W",
+       91
+      ]
+     ]
+    },
+    "sentinel_1": {
+     "digest": "3cabff957935edab3cf091e801a73f932186dc0dd3177a8298da02669e229536",
+     "near_tie_games": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "outcomes": [
+      [
+       0,
+       "W",
+       123
+      ],
+      [
+       1,
+       "L",
+       80
+      ],
+      [
+       2,
+       "L",
+       87
+      ],
+      [
+       3,
+       "W",
+       56
+      ]
+     ]
+    }
+   },
+   "merged": {
+    "ext_fixed0": {
+     "counts": [
+      1,
+      4
+     ],
+     "draws": 3,
+     "pairs": [
+      0,
+      0,
+      1,
+      1,
+      0
+     ]
+    },
+    "heuristic": {
+     "counts": [
+      0,
+      4
+     ],
+     "draws": 0,
+     "pairs": [
+      2,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    "heuristic2": {
+     "counts": [
+      0,
+      4
+     ],
+     "draws": 0,
+     "pairs": [
+      2,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    "random": {
+     "counts": [
+      1,
+      4
+     ],
+     "draws": 0,
+     "pairs": [
+      1,
+      0,
+      1,
+      0,
+      0
+     ]
+    },
+    "sentinel_0": {
+     "counts": [
+      1,
+      4
+     ],
+     "draws": 0,
+     "pairs": [
+      1,
+      0,
+      1,
+      0,
+      0
+     ]
+    },
+    "sentinel_1": {
+     "counts": [
+      2,
+      4
+     ],
+     "draws": 0,
+     "pairs": [
+      0,
+      0,
+      2,
+      0,
+      0
+     ]
+    }
+   },
+   "mirrored": true,
+   "sentinel_greedy": false
+  }
+ ]
+}

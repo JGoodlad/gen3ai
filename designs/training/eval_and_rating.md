@@ -767,6 +767,38 @@ Tests: `agents/training/eval_ledger/schema_test.py` (every v2 rule refused for e
 `reader_test.py` (declarations, scopes, `as_of`, selection, a planted duplicate, X5's family read, the audit),
 `producers_contract_test.py` (the bot round robin's builder; the banked v1 rows read upgraded).
 
+### The in-loop eval on the ledger (`agents/training/cycle_ledger.py`, eval U2 — DUAL WRITE)
+
+🚨 **The trainer's in-loop eval cycle and the SPRT promotion write ledger rows BESIDE their old files.** The trainer
+builds ONE `CycleLedger.for_run(model_dir)` at startup (`main/train/callbacks.py`, only when eval runs; the
+`📒 [EVAL LEDGER]` line names the root) and hands it to the eval callback; rows land in
+`run_archive_dir()/_ledger/rows/inloop/`, protocol `gen3_eval_protocol_v1_inloop`. `eval_results.jsonl`,
+`metadata.json`'s eval block and `sprt_promotion.jsonl` are written EXACTLY as before and every existing reader
+(TensorBoard / TUI, `main.elo`, `best_response_gap`, the supply guards) still reads them — moving those readers and
+retiring the file is eval U3c. Nothing about a game changed (storage only; the before / after outcome-digest proof is
+`designs/research_state/measurements/eval_ledger_u2_2026-10-04/`).
+
+- **The cycle:** purpose `cycle`, request kind `cycle`, ONE request per (cycle step × regime)
+  (`<run>:cycle:<step>:<regime_id>` — bots, sentinels and each fixed opponent are different regimes), one row per
+  opponent (`request.batch` 0): exact W / L / D (a draw is COUNTED — `eval_results.jsonl` still has no draw column),
+  per-team counters, the pentanomial under `--eval-mirrored-pairs`, the outcome digest (GPU bar 2e-3) and
+  `compute.outcome_digest_all` (every game). `seat_rule = fixed_p1`; the trainee greedy; a bot `sampled` /
+  `bot_native`; a sentinel greedy under `eval_sentinel_greedy`, else sampled at `--self-play-temp`.
+- **The SPRT** (`--promotion-sprt`): ONE request per candidate (`<run>:sprt:<step>`, kind `sprt`, purpose
+  `promotion`), one row per (batch × sentinel) with `request.batch` = the test's batch index, and ONE decision row at
+  the verdict (`promotion`, subject = the candidate's sha256, verdict `accept` / `reject` / `abandoned`).
+- **How it is kept honest:** claims are taken BEFORE the cycle plays; after it, every row is checked against the
+  executor's published shard results (a mismatch RAISES — `CycleLedgerError`) before any row is appended. A stop at a
+  safe point exits inside the cycle and writes nothing; a cycle that fails on the core writes nothing and CANCELS its
+  requests; a re-eval at the same step re-opens the same request and replays only what is missing.
+- ⚠️ **Cost grows with the archive** (design_evaluation.md F-ED-22): every claim / append re-folds the archive's whole
+  requests stream (~7 µs per event) — milliseconds today, ~0.34 s per cycle per run already in the archive.
+
+Tests: `agents/training/cycle_ledger_test.py` (a fake executor: both callbacks' cycles, regime-split requests, draws,
+the dual write, an abort + restart, a failed cycle, the GIGO refusal, the trainer's startup wiring, SPRT rows +
+duplicate refusal + decision) and `cycle_ledger_integration_test.py` (`sim` + `slow`, the REAL core: each row's digest and
+W / L / D are the full game log's, and the shard results are identical with and without the ledger).
+
 ### The checkpoint-vs-checkpoint head-to-head (`main.h2h`, X5 §7.3 / U0 — ledger v2 since eval U1)
 
 **What it is.** The offline, SYMMETRIC read of one checkpoint against another: `python -m main.h2h play

@@ -77,7 +77,9 @@ FLAGS = ("draws_folded", "teams_unrecorded", "seed_unrecorded", "sha_unrecorded"
 #: protocol; a pinned family freezes one (§0c rule 6). ``v1_<writer>`` names the protocol a v1 writer played — and
 #: the two migrated writers KEEP playing it (U1 is storage-only; the h2h outcome-digest proof is in
 #: ``designs/research_state/measurements/eval_ledger_u1_2026-10-03/``).
-PROTOCOLS = ("gen3_eval_protocol_v1_h2h", "gen3_eval_protocol_v1_bot_rr")
+#: ``v1_inloop`` (eval U2) is the trainer's in-loop eval cycle and its SPRT promotion on the Rust eval core
+#: (``agents.training.cycle_ledger``).
+PROTOCOLS = ("gen3_eval_protocol_v1_h2h", "gen3_eval_protocol_v1_bot_rr", "gen3_eval_protocol_v1_inloop")
 #: The protocol a v1 row is upgraded to, by its writer (§0b.2's upgrade rule).
 V1_WRITER_PROTOCOL = {"h2h": "gen3_eval_protocol_v1_h2h", "bot_rr": "gen3_eval_protocol_v1_bot_rr"}
 

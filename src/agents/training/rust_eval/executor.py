@@ -195,7 +195,8 @@ class RustEvalCore:
         self.last_stats: Optional[CycleStats] = None
 
     # ------------------------------------------------------------------ the per-game inputs
-    def _opp_builder_for(self, item: Any, sentinel_greedy: bool) -> Any:
+    def opponent_builder(self, item: Any, sentinel_greedy: bool) -> Any:
+        """The teambuilder the OPPONENT of ``item`` draws from (also the ledger rows' ``team_set``, ``cycle_ledger``)."""
         if item.kind == SENTINEL:
             return self.trainee_builder if sentinel_greedy else self.opp_builder
         if item.kind == FIXED:
@@ -224,7 +225,7 @@ class RustEvalCore:
         key, swapped = SD.pair_game(cycle_seed, item.key, g, mirrored)
         t = self.team_table
         p1 = t.index(SD.draw_team(self.trainee_builder, key, SD.TRAINEE), f"eval {item.key} game {g} trainee")
-        p2 = t.index(SD.draw_team(self._opp_builder_for(item, sentinel_greedy), key, SD.OPPONENT),
+        p2 = t.index(SD.draw_team(self.opponent_builder(item, sentinel_greedy), key, SD.OPPONENT),
                      f"eval {item.key} game {g} opponent")
         return _Game(u=u, g=g, key=key, route=self._route_for(item, sentinel_index),
                      teams=(p2, p1) if swapped else (p1, p2), swapped=swapped,

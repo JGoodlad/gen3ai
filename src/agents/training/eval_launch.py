@@ -140,23 +140,51 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
     return manifest
 
 
-def launch_rust_eval_cycle(cb, pool, run_dir: str, step: int) -> None:
+def launch_rust_eval_cycle(cb, pool, run_dir: str, step: int, snapshot: "str | None" = None) -> None:
     """M5 Lane H: play this cycle's plan on the Rust eval core (``rust_eval.launch``), in process and
     blocking, publishing the same shard results a Python worker would. A cycle failure is logged and
     leaves the shard files absent (the collect then reads it as missing, like a crashed worker); a
-    lifecycle violation or a missing eval core is RAISED."""
-    from agents.training.rust_eval.executor import EvalCoreError
-    from agents.training.rust_eval.launch import run_rust_eval_cycle
+    lifecycle violation or a missing eval core is RAISED.
 
+    THE LEDGER (eval U2, ``cycle_ledger``): when the callback carries a ``_cycle_ledger`` (the trainer
+    builds one at startup) and the cycle's ``snapshot`` is named, the cycle's requests are opened and one
+    cell per opponent CLAIMED before it plays; a :class:`~agents.training.cycle_ledger.GameSink` records
+    each finished game; after the cycle the rows are scored, checked against the published shard results
+    and appended — beside ``eval_results.jsonl`` (the collect's, unchanged). A failed cycle writes no row
+    and cancels its requests; an abort at a safe point exits inside the cycle and writes nothing."""
+    from agents.training.rust_eval.executor import EvalCoreError
+    from agents.training.rust_eval.launch import evaluator_of, run_rust_eval_cycle, run_seed_of
+
+    led = getattr(cb, "_cycle_ledger", None)
+    batch = sink = ev = None
+    if led is not None and snapshot is not None:
+        from agents.training.cycle_ledger import GameSink
+
+        ev = evaluator_of(cb.model)
+        batch = led.open_cycle(ev, pool, step=step, snapshot=snapshot, mirrored=bool(getattr(pool, "mirrored", False)),
+                               sentinel_greedy=bool(getattr(cb, "_eval_sentinel_greedy", False)),
+                               self_play_temp=float(getattr(cb, "_self_play_temp", 1.0)))
+        sink = GameSink()
     t0 = time.monotonic()
     try:
-        st = run_rust_eval_cycle(cb, pool=pool, run_dir=run_dir, step=step)
+        st = run_rust_eval_cycle(cb, pool=pool, run_dir=run_dir, step=step, game_log=sink)
     except EvalCoreError as e:
         print(f"⚠️ [EVAL] step {step:,}: the Rust eval cycle failed — {e}")
         send_event(f"⚠️ Eval @ {step:,}: Rust eval cycle failed ({type(e).__name__})")
+        if batch is not None:
+            led.cancel(batch, f"the eval cycle failed on the core: {type(e).__name__}: {e}")
         return
     print(f"[EVAL] step {step:,}: Rust eval core played {st['games']:,} games in {time.monotonic() - t0:.1f}s "
           f"({st['trainee_decisions']:,} trainee decisions, {st['traces']} traces, {st['near_ties']} near-ties)")
+    if batch is not None:
+        from agents.training.eval_collect import merge_eval_results
+
+        merged, _missing = merge_eval_results(run_dir, [it.key for it in pool.items])
+        rows = led.commit(batch, sink, merged, team_packed=list(ev.team_table.teams), run_seed=run_seed_of(cb.model),
+                          cycle_seed=int(st["cycle_seed"]),
+                          compute={"eval_core_envs": int(ev.n), "cycle_games": int(st["games"]),
+                                   "cycle_wall_s": round(float(st["seconds"]["total"]), 3)})
+        print(f"📒 [EVAL LEDGER] step {step:,}: {len(rows)} cycle row(s) appended under {led.root}")
 
 
 

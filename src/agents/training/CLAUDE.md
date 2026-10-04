@@ -341,6 +341,12 @@ failed or interrupted test un-rerunnable. Eval-only fields like this one are REC
 `eval_ledger.read` with a spelled-out `ReaderDecl` (purposes, regime, requests, selection, flags_ok, inference) — the static
 gate `src/eval_ledger_reader_gate_test.py` (EMPTY allowlist) fails anything else, and every read refuses a duplicate batch
 or seed block. v1 rows are upgraded on read, never rewritten. `python -m main.eval_ledger audit` checks it.
+🚨 **THE IN-LOOP EVAL WRITES THE LEDGER TOO — a DUAL WRITE (`cycle_ledger.py`, eval U2).** The trainer builds ONE
+`CycleLedger` at startup (`main/train/callbacks.py`) and the eval cycle (`eval_launch.launch_rust_eval_cycle`) and the
+SPRT promotion append rows (protocol `gen3_eval_protocol_v1_inloop`; purposes `cycle` / `promotion`; one request per
+(cycle × regime), one per SPRT candidate + a decision row) to the archive's `_ledger/rows/inloop/` — BESIDE
+`eval_results.jsonl` / `sprt_promotion.jsonl`, which every existing reader still reads until eval U3c. Storage only:
+the games are unchanged (digest-proved). A row that disagrees with the published shard results RAISES.
 🚨 **`python -m main.h2h` is the OFFLINE checkpoint-vs-checkpoint mirrored head-to-head** (X5 §7 / P0; writes the ledger,
 protocol `gen3_eval_protocol_v1_h2h`, by default to the archive's `_ledger/`). It plays two checkpoints on the Rust
 eval core through the same `run_cycle`, GREEDY both sides, MIRRORED, teams from the player's eval builder; one valid row per

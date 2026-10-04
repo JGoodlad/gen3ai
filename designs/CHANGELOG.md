@@ -11542,3 +11542,28 @@ their pin's code and are unaffected. No run is live.
 - **Refusals.** `fixed_mass` refuses `entity_topk_seats < 4` (a fourth revealed move would have no seat — the U2 hand-off), `damage_topk_k != entity_topk_seats` (the op's seat axis IS the move group's) and `damage_candidate_k > 0`.
 - **Not changed (FINDING).** MoveBelief's reinjection soft-embed still weights each move by its own sigmoid inclusion probability (already a presence-weighted sum); switching the active's to π_m would also cut the PPO → move-head route there (M10's logic) — left for the orchestrator. The c1b / c2 / c3 attacker block still top-Ks the active's row by sigmoid (the opponent-MON axis, a later part).
 - **Measured.** Blob byte-identity re-proved (same six hashes as part 1). Tests: `src/agents/model/hypothesis_moves_test.py` (the HP mixture rows / weights / contraction, seat presence + structural liveness, OTHER_move's cells, class M: I1 bit-exact and I2 DECLARED FALSE and pinned, the one order across E4 / op / α on a real policy, the extended axis's identity contraction, the K < 4 refusal).
+## 2026-10-04 — eval U2: the IN-LOOP eval producers on the COUNT ledger (`agents/training/cycle_ledger.py`; storage only, no model change, no config bump)
+
+- **The cycle** of both eval callbacks (`eval_launch.launch_rust_eval_cycle`, now taking the cycle's `snapshot=`) writes
+  one `gen3_eval_count_row_v2` row per opponent to `run_archive_dir()/_ledger/rows/inloop/` — protocol
+  `gen3_eval_protocol_v1_inloop` (added to `schema.PROTOCOLS` and design_evaluation.md §0b.2), purpose `cycle`, ONE
+  request per (cycle step × regime) — with exact W / L / D (draws counted, F-ED-8), per-team counters, the pentanomial
+  when mirrored, the outcome digest at 2e-3 and `compute.outcome_digest_all`. **DUAL WRITE:** `eval_results.jsonl`,
+  `metadata.json`'s eval block and every reader of them are unchanged (U3c moves the readers).
+- **The SPRT promotion** writes one row per (batch × sentinel) under ONE request per candidate (`sprt`, purpose
+  `promotion`, `request.batch` = the test's batch) and ONE decision row at the verdict; `sprt_promotion.jsonl` is
+  unchanged. Resume across a restart stays U4b.
+- **Discipline:** one `CycleLedger` per trainer process, built at startup (`main/train/callbacks.py`) and passed as
+  `cycle_ledger=` to `SelfPlayCallback` / `PerOpponentEvalCallback` (closed at `_on_training_end`); claims before the
+  cycle plays (a `GameSink` records each finished game as the executor's `game_log`), rows after it, each checked
+  against the published shard results first (`CycleLedgerError` on a mismatch); a failed cycle cancels its requests;
+  an abort at a safe point writes nothing. `RustEvalCore._opp_builder_for` → the public `opponent_builder`;
+  `rust_eval.launch.run_seed_of`.
+- **Proof (storage only):** the same seeded in-loop cycle (6 opponents, unmirrored + mirrored, 48 games) played at
+  `e5f393cb` and at U2: identical shard results, identical per-game outcome vectors, and every U2 row's digests and
+  W / L / D equal its opponent's full game log (`measurements/eval_ledger_u2_2026-10-04/`).
+- **Not done:** the snapshot-ladder dual-write (moved out of U2 by its brief; U7 / U7a). The real-launch gate is
+  DEFERRED to the GPU owner (design_evaluation.md "U2 hand-off").
+- **Findings:** F-ED-22 (every claim / append re-folds the archive's whole requests stream, ~7 µs per event — the
+  per-cycle cost grows with every run in the archive), F-ED-23 (the margin-filtered digest covers almost nothing on an
+  early policy).

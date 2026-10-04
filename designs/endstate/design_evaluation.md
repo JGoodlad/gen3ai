@@ -161,7 +161,7 @@ checked from a primary source. Every row ends with what the reference implies FO
   per-batch OUTCOME DIGEST and the near-tie game indices (§0b.2), so a replay can be checked game for game without
   storing the games.
 
-### 0b.1 What exists (BUILT: v1 2026-10-03 X5 P0 `54b78aed`; v2 2026-10-03 eval U1)
+### 0b.1 What exists (BUILT: v1 2026-10-03 X5 P0 `54b78aed`; v2 2026-10-03 eval U1; the in-loop producers 2026-10-04 eval U2)
 **The package `agents/training/eval_ledger/`** (v1's single module became it; the CLI is `python -m main.eval_ledger`):
 
 | module | what |
@@ -185,6 +185,27 @@ checked from a primary source. Every row ends with what the reference implies FO
   (`mirror_rule: gen3_mirrored_pairs_v1+seat_alternating_by_pair`, `seat_rule: balanced`). Its seats can alternate
   because BOTH sides are Rust-native bots. A POLICY player cannot alternate today (§9.3). New runs write v2 rows
   (protocol `gen3_eval_protocol_v1_bot_rr`, request kind `anchor_read`).
+
+**The in-loop producers write v2 since eval U2 (2026-10-04; storage-only, digest-proved,
+`measurements/eval_ledger_u2_2026-10-04/`)** — `agents/training/cycle_ledger.py`, protocol
+`gen3_eval_protocol_v1_inloop`, producer `inloop` (`_ledger/rows/inloop/`):
+- **The eval cycle** of both callbacks (`eval_launch.launch_rust_eval_cycle`): purpose `cycle`, request kind `cycle`,
+  ONE request per (cycle step × regime) — `<run>:cycle:<step>:<regime_id>` — because a request holds one regime and a
+  cycle's opponents are not one (a bot plays `sampled` / `bot_native`, a sentinel greedy or at `--self-play-temp`, a
+  fixed opponent greedy on its pinned teams); one row per opponent, `request.batch` 0; the request is `done` once its
+  rows are down. **DUAL WRITE:** `eval_results.jsonl` and `metadata.json`'s eval block are written exactly as before
+  and every existing reader still reads them (U3c moves the readers).
+- **The SPRT promotion** (`sprt_promotion.py`): purpose `promotion`, request kind `sprt`, ONE request per candidate
+  (`<run>:sprt:<step>`, its spec carries the candidate's sha256), one row per (batch × sentinel) with `request.batch` =
+  the test's batch index, and ONE decision row at the verdict (kind `promotion`, subject = the candidate's sha256,
+  consuming its own request's rows; verdict `accept` / `reject` / `abandoned`). `sprt_promotion.jsonl` is still
+  written; an interrupted test leaves its request OPEN with its finished batches' rows (U4b resumes it).
+- Regime: `seat_rule = fixed_p1`, the trainee greedy, `team_set` = the digest of the trainee's AND the opponent's eval
+  team builders. Rows carry exact W / L / D (draws counted, F-ED-8), `aborted` 0, the pentanomial when mirrored,
+  per-team counters, the outcome digest at the GPU bar 2e-3 AND `compute.outcome_digest_all` over every game. Every
+  row is checked against the executor's published shard results before ANY row of the batch is appended (a mismatch
+  RAISES). Claims are taken before the cycle plays; an abort at a safe point writes nothing (its claims are voided by
+  the void rule once the pid is dead); a cycle that fails on the core writes nothing and CANCELS its requests.
 
 ### 0b.2 The schema, v2 (`gen3_eval_count_row_v2`)
 v2 keeps every v1 field and meaning. **A v1 row is never rewritten:** the reader upgrades it on read, with the
@@ -215,7 +236,7 @@ the owner's or the orchestrator's to add, in both places in one commit.
 | `PLAYER_KINDS` | `checkpoint`, `bot`, `external` |
 | `SEAT_RULES` | `fixed_p1`, `balanced` |
 | `FLAGS` | `draws_folded`, `teams_unrecorded`, `seed_unrecorded`, `sha_unrecorded`, `eval_core_unrecorded`, `digest_unrecorded` |
-| `PROTOCOLS` | `gen3_eval_protocol_v1_h2h`, `gen3_eval_protocol_v1_bot_rr` |
+| `PROTOCOLS` | `gen3_eval_protocol_v1_h2h`, `gen3_eval_protocol_v1_bot_rr`, `gen3_eval_protocol_v1_inloop` |
 | `DECISION_KINDS` | `promotion`, `eviction`, `plateau`, `ab_verdict`, `cycle_flag` |
 | `GROUP_SEQUENTIAL_KINDS` | `ab_verdict`, `plateau` |
 | `EVENT_KINDS` | `open`, `family`, `claim`, `void`, `row`, `done`, `cancel` |
@@ -317,9 +338,9 @@ so this is a cheap guard, not a hot path. It costs a claim id and an audit.
 
 | producer | what it writes today | v2 purpose / request kind | migration (unit, §10) |
 |---|---|---|---|
-| In-loop eval cycle (`eval_callback`, `selfplay_callback` → `rust_eval/`) | `<run>/eval_results.jsonl`: rates and `[won, finished]` per opponent; **no draw count** | `cycle` / `cycle` | **U2:** DUAL-write a ledger row per opponent with exact W/L/D and team counters. **U3c:** move `eval_results.jsonl`'s readers (TensorBoard/TUI, `main.elo`, `best_response_gap`, the supply guards) to the ledger, then retire the file |
-| SPRT promotion (`sprt_promotion.py`) | `<run>/sprt_promotion.jsonl` (state only). **No run has one** | `promotion` / `sprt` | **U2:** rows per batch + a decision row. **U4b:** RESUME instead of abandon (§4.4) |
-| Snapshot ladder (`snapshot_ladder.py`, run by the DETACHED updater `_spawn_snapshot_ladder_update`) | `<run>/snapshot_ladder/games.jsonl`: `{a, b, wins_a, games, source}` | `ladder` (backfill) / `matrix` (new rows, `matrix_dense`) | **U2:** dual-write. **U7:** the window plays the pool rows (T3) and the FIT reads the ledger. **U7a:** retire the detached updater |
+| In-loop eval cycle (`eval_callback`, `selfplay_callback` → `rust_eval/`) | `<run>/eval_results.jsonl`: rates and `[won, finished]` per opponent; **no draw count** — AND, since U2, ledger rows | `cycle` / `cycle` | **U2 DONE (2026-10-04):** DUAL-writes a ledger row per opponent with exact W/L/D, team counters and the digest (§0b.1). **U3c:** move `eval_results.jsonl`'s readers (TensorBoard/TUI, `main.elo`, `best_response_gap`, the supply guards) to the ledger, then retire the file |
+| SPRT promotion (`sprt_promotion.py`) | `<run>/sprt_promotion.jsonl` (state only). **No run has one** — AND, since U2, ledger rows + a decision row | `promotion` / `sprt` | **U2 DONE (2026-10-04):** rows per (batch × sentinel) + a decision row. **U4b:** RESUME instead of abandon (§4.4) |
+| Snapshot ladder (`snapshot_ladder.py`, run by the DETACHED updater `_spawn_snapshot_ladder_update`) | `<run>/snapshot_ladder/games.jsonl`: `{a, b, wins_a, games, source}` | `ladder` (backfill) / `matrix` (new rows, `matrix_dense`) | **NOT dual-written** (moved out of U2 by its brief, 2026-10-04: the updater is left as is). **U7:** the window plays the pool rows (T3) and the FIT reads the ledger. **U7a:** retire the detached updater |
 | `main.h2h` | v2 rows under claims, archive default (v1 before U1) | as the caller declares (`ab` / `ab_cell` for X5) | **U1 DONE:** archive default, requests, `--purpose ab`, `--family`. **Storage-only, digest-proved** (§0c rule 6) |
 | bot round robin (`bot_rr.py`) | v2 rows under claims, archive default (1,296 v1 rows banked) | `anchor` / `anchor_read` | **U1 DONE**, storage-only (rows replayed equal) |
 | `main.anchors` | per-GAME `games.jsonl` + `summary.json` | `anchor` / `anchor_read` | **U3b** |
@@ -1061,7 +1082,7 @@ adds the monitor and the plateau unit).
 | # | unit | what | size | tier | depends on | Sonnet-safe? |
 |---|---|---|---|---|---|---|
 | 1 | **U1 — DONE 2026-10-03** | ledger v2 core: schema v2 (+ `request.batch` / `family`, outcome digest, `monitor` purpose) + validator, v1 upgrade-on-read, archive location, decisions / requests / references streams, the claim lock + void rule, duplicate refusal in every reader, `ReaderDecl` (incl. `requests="family"`) + static and closed-list gates, pair-level estimator helpers, `audit / verify / show`; `main.h2h` archive default + `--purpose ab` (storage-only, digest-proved) | 2.5 | opus-high | — | no (core schema; GIGO risk) |
-| 2 | **U2** | in-loop migration: cycle rows dual-written beside `eval_results.jsonl` (exact W/L/D, team counters, digest); SPRT rows per batch + decision rows (resume NOT here); ladder dual-write. Gate: the routine gate + the `--debug --debug-eval` smoke + **the first two minutes of a real launch, which needs the GPU owner's cooperation** (the training agent runs it under its lease) | 1.5 | opus-high | U1 | no (the training loop) |
+| 2 | **U2 — DONE 2026-10-04** (real-launch gate DEFERRED to the GPU owner, U2 hand-off) | in-loop migration: cycle rows dual-written beside `eval_results.jsonl` (exact W/L/D, team counters, digest); SPRT rows per batch + decision rows (resume NOT here); ~~ladder dual-write~~ (moved out by the brief: the updater is left as is until U7 / U7a). Gate: the routine gate + the `--debug --debug-eval` smoke + **the first two minutes of a real launch, which needs the GPU owner's cooperation** (the training agent runs it under its lease) | 1.5 | opus-high | U1 | no (the training loop) |
 | 3 | **U0** | F-ED-2: resolve the ladder's sub-binomial noise: a seeded replicate experiment (one edge × 20 replays × 100 games, CPU), then the cause | 0.5 | opus-medium | — | no (GIGO hunt) |
 | 4 | **U3** | backfill per §0b.6 | 1.0 | sonnet-xhigh | U1 | **yes**, with §0b.6 as the mapping |
 | 5 | **U6** | the multi-cell offline engine (P5's lane; X5 look cells; dense audits; back-fills) | 1.0 | opus-medium | — | no (GPU engine) |
@@ -1114,6 +1135,44 @@ adds the monitor and the plateau unit).
 
 **What changed for the rest of the plan.** U3 shrinks (D-L4, §0b.6). `models_retention_policy.md` still needs its one
 "the ledger is never deleted" line (explicit-only doc; the orchestrator's call).
+
+### U2 hand-off (read before U3c, U4 and U4b)
+**What exists.** `agents/training/cycle_ledger.py` (`CycleLedger`, `GameSink`, `SprtLedger`, the row builder, the
+GIGO cross-check). The trainer builds ONE `CycleLedger.for_run(model_dir)` at startup (`main/train/callbacks.py`, only
+when eval runs) and passes it as `cycle_ledger=` to `SelfPlayCallback` / `PerOpponentEvalCallback`; the callback's
+`_on_training_end` closes (gzips) its shard. `eval_launch.launch_rust_eval_cycle(cb, pool, run_dir, step,
+snapshot=...)` opens the requests, claims, plays with a `GameSink` as the executor's `game_log`, merges the shard
+results, checks, appends and closes the requests; `sprt_promotion` does the same per batch and writes the decision in
+`_sprt_finish`. A callback built without a ledger (tests, tools) writes no row. `RustEvalCore._opp_builder_for` became
+the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed_of(model)` is the cycle seed's input.
+1. **Reading cycle rows (U3c).** A reader declares `purposes=frozenset({"cycle"})`, protocol
+   `gen3_eval_protocol_v1_inloop`, and reads ONE regime per call (`read_by_regime` for a cycle's whole roster). The
+   player is the cycle's frozen snapshot (`rung: eval_cycle_snapshot`, `step` = the cycle step; its `path` is the
+   transient `.eval_runs/step_<N>/snapshot.zip`, deleted after the collect unless `--keep-eval-snapshots` kept a
+   copy — the sha256 is the identity). Bots are `id: bot:<name>`, `kind: bot`, sha256 over the name + the Rust bot
+   sources (`src/rust_env/src/bots/*.rs`, `opponents.rs`) — NOT `bot_rr`'s Python-bot sha, so the two never pool.
+   Sentinels are `id: <run>:pool@<step>`; fixed opponents `id: ext:<label>`. A run-step `as_of` is still not built: a
+   cycle row's `player.step` with the request's `opened` gives the step → time map it needs.
+2. **Errors.** Schema / GIGO errors RAISE into the training loop (they are bugs); the protocol's own refusals
+   (`AlreadyRecordedError` / `ClaimHeldError` at a claim, `RequestSpecError` at an open — e.g. a re-eval at the same
+   step under a different plan — and `ClaimVoidedError` / `DuplicateBatchError` at an append) print one
+   `📒 [EVAL LEDGER]` line and drop that row; `eval_results.jsonl` is unaffected either way.
+3. **Restarts.** A re-eval at the same step (a restart rewound past a cycle) re-opens the same request (idempotent on
+   the same plan): a recorded cell is skipped, a dead writer's live claim is voided and replayed (tested), and a seed
+   block already recorded is refused. An interrupted SPRT leaves its request open (U4b).
+4. **The real-launch gate is DEFERRED** (U2's agent is CPU-only). The GPU owner runs, under its lease, a production
+   launch to its first eval cycle (`--eval-freq` small enough to reach one in minutes) with `$GEN3AI_MODELS_DIR` on a
+   scratch archive, and checks: the `📒 [EVAL LEDGER]` startup line and one `... cycle row(s) appended` line per cycle;
+   `python -m main.eval_ledger audit --root <scratch>/_ledger` OK; the rows' W / finished equal that cycle's
+   `eval_results.jsonl` `counts`; `rust_eval/cycle_wall_s` within noise of a pre-U2 launch (the `GameSink` makes the
+   executor compute each policy opponent decision's top-2 margin: estimated ≤ 0.3 s per production cycle, UNMEASURED);
+   and, with `--promotion-sprt`, one decision row per tested candidate.
+5. **Hazards.** (a) Every claim and append FOLDS the whole requests stream of the ARCHIVE (F-ED-22): ~7 µs per event
+   measured, and a cycle does ~2 × (opponents) + 2 × (regimes) folds; at today's size it is milliseconds, but the stream is shared by
+   every run, so it grows without bound — an incremental fold or an index is needed before the archive holds tens of
+   runs' cycles. (b) The margin-filtered digest covers almost nothing on an early policy (F-ED-23); the all-games
+   digest is the same-device replay's check. (c) Each trainer process (every launcher restart) opens its own row shard
+   and events file: many small files over a long run.
 
 ## 11. Open gaps, owner questions, findings
 
@@ -1234,6 +1293,22 @@ adds the monitor and the plateau unit).
   diffuse excess cyclic SD of ≈ 1.7 pp or a single hole of ≈ 6.5 pp. Geometric thinning alone is blind to a hole at
   an unplayed lag (§2.5).
 
+- **F-ED-22 (MEASURED, eval U2): the ledger writer's cost per claim / append grows with the WHOLE archive's requests
+  stream.** Every `claim` and `append_row` re-folds every `requests/events.*.jsonl` of the archive under the lock: 11.9
+  ms per claim at 1,700 events (5 files) and 37.1 ms at 5,100 (10 files), ≈ 7 µs per event, linear. The in-loop
+  producers do ≈ 36 folds per cycle (15 opponents in 3 regimes) and add ≈ 36 events per cycle, ≈ 1,400 per 75M run,
+  so the per-cycle cost is ≈ 0.34 s × (runs already in the archive): ~0.3 s during X26's first run, ~3 s after 10
+  runs, ~10 s after 30 (a 10–15 s production cycle doubled). Every `read` likewise scans every row shard (~10 KB per
+  100-game cycle row; the SPRT decision reads its own request through it). **Not fixed in U2** (the writer and reader
+  are U1's shared code; standing rule 9): an incremental fold (per-file byte offsets; seq is assigned under the lock,
+  so new events always fold after old ones) and a per-request row index are the fix, needed before the archive holds
+  ~10 runs' cycles. Measured with `measurements/eval_ledger_u2_2026-10-04/foldbench.py`.
+- **F-ED-23 (MEASURED, eval U2): the margin-filtered outcome digest covers almost nothing on an early policy.** In the
+  `--debug --debug-eval` smoke all 1,800 games had a decision inside the GPU bar (2e-3), so every row's
+  `outcome_digest` hashed an EMPTY vector; on the digest proof's perturbed fresh policies 40 of 48 games were excluded.
+  The in-loop rows therefore also carry `compute.outcome_digest_all` (every game), which a SAME-device replay checks.
+  The coverage on trained checkpoints is UNMEASURED; a cross-device replay audit (U4) should report its coverage.
+
 ## Decision record
 
 | date | decision | chosen | rejected / alternatives | evidence |
@@ -1263,3 +1338,4 @@ adds the monitor and the plateau unit).
 | 2026-10-03 | **F-ED-18 (ORCHESTRATOR, provisional)** | the X5 A/B arms run with the snapshot-ladder updater OFF (`--ladder-games 0` or the equivalent), so the registered speed rule stays clean; the A/B reads its strength from `main.h2h`, not the ladder; X26's continuation re-enables it | the updater ON in both arms (symmetric, but unregistered CPU load) | F-ED-18; X5 §7.4 (its registration should carry the same line — the X5 owner's edit) |
 | 2026-10-03 | **D-L4, the backfill shrinks (ORCHESTRATOR, provisional)** | drop the general backfill (265 runs' `eval_results.jsonl`, 104 ladder files); keep v1 upgrade-on-read for the verbatim copies (P0's 120, the bot round robin's 1,296) and the committed anchors; N0's ladder only if the plateau back-test asks; no general backfill machinery in U1 | §0b.6's full backfill | `designs/ops/legacy_removal_manifest.md` D-L4 |
 | 2026-10-03 | **U1 build decisions (eval U1 agent)** | (1) the SEED BLOCK is a second uniqueness key, exempt for `audit_replay` (the batch key alone lets a second request re-record the same games); (2) two more event kinds, `family` (registration + pinned protocol) and `row` (a recorded unit, so the fold needs no row scan); the void rule also checks the claimant's own shard (a writer killed between row and event is repaired, not replayed); (3) protocols named `gen3_eval_protocol_v1_<writer>`, KEPT by the two migrated writers (storage-only); (4) a new row's `team_set` digests the ordered team lists + builder parameters, while an upgraded row's digests its `team_source` label, so v1 and v2 rows of one writer are different regimes and never pooled; (5) the outcome digest's near-tie margin is the GPU bar (2e-3) for h2h, `null` for bots; (6) v1 h2h's integer `compute.near_tie_games` moves to `near_tie_game_count` on read (v2's `near_tie_games` is an index list); (7) every `ReaderDecl` field is required, plus `decision_kind` for a family read; `read_by_regime` for listings; (8) a per-process counter in the writer id | the batch key alone; a row scan per claim; a `gen3_eval_protocol_v2` for storage-only rows; label-digest team sets for new rows | §0b.2, §0b.4, §0b.7; `measurements/eval_ledger_u1_2026-10-03/` |
+| 2026-10-04 | **U2 build decisions (eval U2 agent)** | (1) ONE request per (cycle step × REGIME) — `<run>:cycle:<step>:<regime_id>` — because a request holds one regime and a cycle's opponents are three or more (the U1 hand-off's one request per cycle could not hold them); the SPRT is one request per candidate (its sentinels are one regime); (2) purpose `cycle` for the in-loop cycle (§0b.5), NOT `monitor` (that names the cycle MONITOR's rows, §2.5); (3) ONE protocol `gen3_eval_protocol_v1_inloop` for the cycle and the SPRT (same executor, seeds, seats, teams); (4) a roster bot's identity is its name + the RUST bot sources (`rust_env/src/bots`, `opponents.rs`), so it never pools with `bot_rr`'s Python bots; (5) `team_set` digests BOTH builders (trainee + opponent); (6) claims before the cycle plays, rows after it, every row checked against the published shard results first (a mismatch RAISES); a failed cycle CANCELS its requests; the protocol's own refusals drop one row with a printed line; (7) `compute.outcome_digest_all` beside the margin-filtered digest (F-ED-23); (8) the snapshot-ladder dual-write NOT built (moved out by the brief; U7 / U7a) | one request per cycle (refused: one regime per request); purpose `monitor`; a protocol per producer; best-effort (swallowed) ledger errors | §0b.1, §0b.5, U2 hand-off; `measurements/eval_ledger_u2_2026-10-04/` |

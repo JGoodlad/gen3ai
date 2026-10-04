@@ -29,6 +29,11 @@ def cycle_seed(run_seed: int, step: int) -> int:
     return int.from_bytes(d, "big") & ((1 << 62) - 1)
 
 
+def run_seed_of(model: Any) -> int:
+    """The collector's run seed — the cycle seed's input (:func:`cycle_seed`) and a ledger row's ``schedule_seed``."""
+    return int(getattr(getattr(getattr(model, "_rust_collector", None), "cfg", None), "run_seed", 0) or 0)
+
+
 def evaluator_of(model: Any) -> Any:
     rc = getattr(model, "_rust_collector", None)
     ev = getattr(rc, "evaluator", None)
@@ -71,12 +76,11 @@ def run_rust_eval_cycle(cb: Any, *, pool: Any, run_dir: str, step: int,
     batch is neither a trace sample nor the cycle's cost)."""
     model = cb.model
     ev = evaluator_of(model)
-    rc = model._rust_collector
     model_dir = getattr(cb, "_model_dir", None)
     forensic_root = (os.path.join(model_dir, "eval_traces", f"step_{step}")
                      if (model_dir and forensic) else None)
     if seed is None:
-        seed = cycle_seed(int(getattr(getattr(rc, "cfg", None), "run_seed", 0) or 0), step)
+        seed = cycle_seed(run_seed_of(model), step)
     # P10-A2: the cycle is one long blocking stretch inside a collector step — the run's safe point runs
     # between sentinel loads and at every host step (no learner state is mutated there).
     safe_point = getattr(cb, "safe_point_fn", None)

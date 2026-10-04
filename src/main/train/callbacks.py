@@ -227,6 +227,14 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
         if _ckpt_dir:
             _resume_meta = os.path.join(_ckpt_dir, "metadata.json")
 
+    # THE EVAL LEDGER (eval U2, `agents.training.cycle_ledger`): ONE writer per trainer process, built HERE at
+    # startup (the declared lifecycle) and handed to whichever eval callback runs. Its rows go to the ARCHIVE
+    # ledger `run_archive_dir()/_ledger/rows/inloop/`, BESIDE `eval_results.jsonl` (dual write until eval U3c).
+    _cycle_ledger = None
+    if _run_eval and model_dir:
+        from agents.training.cycle_ledger import CycleLedger
+        _cycle_ledger = CycleLedger.for_run(model_dir)
+
     if args.self_play and _pool is not None and _run_eval:
         # Self-play eval mirrors the bot-eval cycle (in process on the Rust eval core, BLOCKING):
         # it plays the bot roster AND up to 5 pool sentinels from a frozen snapshot, then collects
@@ -284,6 +292,7 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
             eval_mirrored_pairs=bool(getattr(args, "eval_mirrored_pairs", False)),
             # T6 SPRT promotion (resolved: argv, else the run's recorded regime, else OFF).
             promotion_sprt=bool(getattr(args, "promotion_sprt", False)),
+            cycle_ledger=_cycle_ledger,
         )
         callbacks.append(eval_callback)
     elif _run_eval:
@@ -309,6 +318,7 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
             trainee_team_str=_specialist_team_str,
             # T17 mirrored team pairs (resolved: argv, else the run's recorded regime, else OFF).
             eval_mirrored_pairs=bool(getattr(args, "eval_mirrored_pairs", False)),
+            cycle_ledger=_cycle_ledger,
         )
         callbacks.append(eval_callback)
 

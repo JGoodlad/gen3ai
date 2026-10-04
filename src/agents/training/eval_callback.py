@@ -17,7 +17,10 @@ import os
 import time
 import shutil
 import threading
-from typing import Any  # noqa: F401 — kept for the historical import surface
+from typing import TYPE_CHECKING, Any  # noqa: F401 — Any is kept for the historical import surface
+
+if TYPE_CHECKING:
+    from agents.training.cycle_ledger import CycleLedger
 
 from agents.training.loop_callbacks import BaseCallback
 
@@ -220,9 +223,14 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         fixed_opponents: "list | None" = None,
         trainee_team_str: "str | list[str] | None" = None,
         eval_mirrored_pairs: bool = False,
+        cycle_ledger: "CycleLedger | None" = None,
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # THE EVAL LEDGER (eval U2, `cycle_ledger`): the trainer builds ONE `CycleLedger` at startup and every
+        # cycle writes its COUNT rows through it, BESIDE eval_results.jsonl (dual write until eval U3c).
+        # None = no ledger rows (a test / tool that builds the callback by hand).
+        self._cycle_ledger = cycle_ledger
         # MIRRORED TEAM PAIRS (T17, `gen3_mirrored_pairs_v1`, `--eval-mirrored-pairs`, default OFF): every
         # team pairing is played from BOTH sides on ONE battle seed, the per-opponent count is EVEN, and the
         # PAIR is the statistical unit of every interval recorded. A REGIME — recorded per run and per row.
@@ -334,7 +342,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
                             quota=self._forensic_quota, mirrored_pairs=self._mirrored)
         # The cycle plays now, IN PROCESS and BLOCKING (rust_eval.launch), publishing one shard result
         # per unit; the collect below merges them.
-        launch_rust_eval_cycle(self, pool, run_dir, step)
+        launch_rust_eval_cycle(self, pool, run_dir, step, snapshot=snapshot_zip)
         self._collect_pending({"step": step, "names": names, "snapshot": snapshot_zip, "run_dir": run_dir,
                                "n_games": n_games, "t_launch": t_launch})
 
@@ -526,6 +534,10 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
             pass
         if not keep_logs:
             shutil.rmtree(pending["run_dir"], ignore_errors=True)
+
+    def _on_training_end(self) -> None:
+        if self._cycle_ledger is not None:
+            self._cycle_ledger.close()      # a clean exit gzips this writer's row shard (§0b.3)
 
     # ------------------------------------------------------------- TUI resume
 

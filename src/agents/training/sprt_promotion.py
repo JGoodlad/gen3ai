@@ -112,6 +112,8 @@ class SprtJob:
         self.run_seed = int(run_seed)
         self.batch = 0
         self.t0 = time.monotonic()
+        #: the test's request on the eval LEDGER (eval U2, ``cycle_ledger.SprtLedger``), None = no ledger
+        self.ledger: Optional[Any] = None
 
     def plan_items(self, n_pairs: int):
         from agents.training.eval_sharding import SENTINEL, EvalItem
@@ -205,6 +207,18 @@ class SprtPromotionMixin:
         append_log(self._model_dir, {"event": "start", "step": step, "schema": S.SCHEMA,
                                      "pool": [s["step"] for s in sentinels], "config": self._sprt_cfg.to_json(),
                                      "selection_games": "the cycle's own pool games are NOT in this test"})
+        led = getattr(self, "_cycle_ledger", None)
+        if led is not None:
+            # eval U2: ONE ledger request per candidate; each batch's rows are claimed before it plays and
+            # appended after it; the verdict is one decision row (`_sprt_finish`).
+            from agents.training.eval_sharding import SENTINEL, EvalItem
+            from agents.training.rust_eval.launch import evaluator_of
+
+            job.ledger = led.open_sprt(
+                evaluator_of(self.model), step=step, snapshot=snap,
+                sentinel_items=[EvalItem(s["label"], SENTINEL, 2, path=s["path"], step=s["step"]) for s in sentinels],
+                mirrored=True, sentinel_greedy=bool(getattr(self, "_eval_sentinel_greedy", False)),
+                self_play_temp=float(getattr(self, "_self_play_temp", 1.0)), config=self._sprt_cfg.to_json())
         self._sprt_job = job
         while job.state.verdict == S.CONTINUE:
             merged = self._sprt_play_rust(job)
@@ -228,17 +242,28 @@ class SprtPromotionMixin:
     def _sprt_play_rust(self, job: SprtJob) -> Optional[dict]:
         from agents.training.eval_collect import merge_eval_results
         from agents.training.rust_eval.executor import EvalCoreError
-        from agents.training.rust_eval.launch import run_rust_eval_cycle
+        from agents.training.rust_eval.launch import evaluator_of, run_rust_eval_cycle
 
         pool, items, run_dir = self._sprt_batch_pool(job)
+        seed = sprt_seed(job.run_seed, job.step, job.batch)
+        lb = sink = None
+        if job.ledger is not None:              # eval U2: claim this batch's cells BEFORE it plays
+            from agents.training.cycle_ledger import GameSink
+
+            lb, sink = job.ledger.claim_batch(items, job.batch), GameSink()
         try:
-            run_rust_eval_cycle(self, pool=pool, run_dir=run_dir, step=job.step,
-                                seed=sprt_seed(job.run_seed, job.step, job.batch), forensic=False, record=False)
+            st = run_rust_eval_cycle(self, pool=pool, run_dir=run_dir, step=job.step, seed=seed, forensic=False,
+                                     record=False, game_log=sink)
         except EvalCoreError as e:
             print(f"⚠️ [SPRT] candidate @{job.step:,}: batch {job.batch} failed on the eval core — {e}; the test "
                   "is ABANDONED (not promoted, never re-run)", flush=True)
             return None
         merged, _missing = merge_eval_results(run_dir, [it.key for it in items])
+        if lb is not None:
+            ev = evaluator_of(self.model)
+            job.ledger.led.commit(lb, sink, merged, team_packed=list(ev.team_table.teams), run_seed=job.run_seed,
+                                  cycle_seed=seed, compute={"eval_core_envs": int(ev.n), "cycle_games": int(st["games"]),
+                                                            "cycle_wall_s": round(float(st["seconds"]["total"]), 3)})
         shutil.rmtree(run_dir, ignore_errors=True)
         return merged
 
@@ -247,6 +272,9 @@ class SprtPromotionMixin:
         candidate's own collect, whose own pushes + summary write follow."""
         st = job.state
         record_verdict(self, job)
+        if job.ledger is not None:              # eval U2: the test's ONE decision row, over its own rows
+            job.ledger.decide(verdict="abandoned" if st.reason == "abandoned" else str(st.verdict), rule=S.SCHEMA,
+                              config=self._sprt_cfg.to_json())
         promoted = st.verdict == S.ACCEPT
         print(f"⚖️  [SPRT] candidate @{job.step:,}: {st.verdict.upper()} ({st.reason}) after {st.n_pairs} pairs "
               f"in {job.batch} batch(es), LLR {st.llr:+.3f}" + (" — PROMOTED" if promoted else ""), flush=True)

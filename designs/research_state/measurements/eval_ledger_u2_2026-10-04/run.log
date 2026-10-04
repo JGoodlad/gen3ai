@@ -1,0 +1,13 @@
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-u2before-1598486.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[EVAL] step 4,000: Rust eval core played 24 games in 39.6s (1,982 trainee decisions, 0 traces, 0 near-ties)
+[EVAL] step 4,000: Rust eval core played 24 games in 42.7s (2,063 trainee decisions, 0 traces, 0 near-ties)
+wrote /tmp/u2proof/before.json at e5f393cb1b51eaffeda04e703859e687dc3fcee0
+[mem_cap] done: gen3ai-capped-u2before-1598486.scope exit 0 · peak 0.97 GB of cap 16.00 GB (6%) · not OOM-killed
+---
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-u2after2-1709678.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[EVAL] step 4,000: Rust eval core played 24 games in 34.8s (1,982 trainee decisions, 0 traces, 0 near-ties)
+📒 [EVAL LEDGER] step 4,000: 6 cycle row(s) appended under /tmp/u2_digest_u0svfxuf/ledger
+[EVAL] step 4,000: Rust eval core played 24 games in 51.9s (2,063 trainee decisions, 0 traces, 0 near-ties)
+📒 [EVAL LEDGER] step 4,000: 6 cycle row(s) appended under /tmp/u2_digest_u0svfxuf/ledger
+wrote /tmp/u2proof/after_final.json at e5f393cb1b51eaffeda04e703859e687dc3fcee0
+[mem_cap] done: gen3ai-capped-u2after2-1709678.scope exit 0 · peak 0.83 GB of cap 16.00 GB (5%) · not OOM-killed

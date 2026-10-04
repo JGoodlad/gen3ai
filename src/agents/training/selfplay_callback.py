@@ -31,6 +31,10 @@ import shutil
 import subprocess
 import sys
 import time
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from agents.training.cycle_ledger import CycleLedger
 
 from agents.training.loop_callbacks import BaseCallback
 
@@ -170,9 +174,14 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         pfsp_starve_cycles: int = LEVERS["pfsp"].default_cycles,
         eval_mirrored_pairs: bool = False,
         promotion_sprt: bool = False,
+        cycle_ledger: "CycleLedger | None" = None,
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # THE EVAL LEDGER (eval U2, `cycle_ledger`): the trainer builds ONE `CycleLedger` at startup and every
+        # cycle writes its COUNT rows through it, BESIDE eval_results.jsonl (dual write until eval U3c).
+        # None = no ledger rows (a test / tool that builds the callback by hand).
+        self._cycle_ledger = cycle_ledger
         # T6 SPRT PROMOTION (`--promotion-sprt`, `gen3_sprt_promotion_v1`, DEFAULT OFF): each eval-cycle
         # snapshot is a candidate decided by its own sequential test on fresh mirrored pairs vs the pool
         # frozen at its launch — `--promote-threshold` is then not read (`sprt_promotion.py`).
@@ -414,7 +423,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
                             quota=self._forensic_quota, mirrored_pairs=self._mirrored)
         # The cycle plays now, IN PROCESS and BLOCKING (rust_eval.launch), publishing one shard result
         # per unit; the collect below merges them.
-        launch_rust_eval_cycle(self, pool, run_dir, step)
+        launch_rust_eval_cycle(self, pool, run_dir, step, snapshot=snapshot_zip)
         self._collect_pending({
             "step": step, "bot_names": bot_names, "sentinels": sentinels,
             "fixed_labels": fixed_labels,
@@ -1032,6 +1041,8 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
     def _on_training_end(self) -> None:
         for line in self.supply_summary_lines():
             loud(line)
+        if getattr(self, "_cycle_ledger", None) is not None:
+            self._cycle_ledger.close()      # a clean exit gzips this writer's row shard (§0b.3)
 
     # ── Bot regression guard ─────────────────────────────────────────────────
 
