@@ -132,6 +132,14 @@ before the fix measured the BROKEN bots and is not comparable with a later one (
 Curse became a setup move for all four (owner: "allow Curse"; a Ghost's Curse never is) — the same
 boundary, no second one.
 
+**The anchor after the boundary — Rustboro-era bot base ratings (2026-10-03):** a mirrored, per-game-seeded
+bot-vs-bot round robin of the nine eval bots with the FIXED bots (259,200 games, 3,600 pairs/edge, every bot
+±9 Elo at 95 %, `random` pinned at 1000; HodgeRank excess width 12 Elo, p = 0.003, no significant 3-cycle) is
+banked in `designs/research_state/measurements/bot_base_ratings_2026-10-03/` with its anchor file in this
+format. 🚨 **`data/gen3_bot_elo_anchors.json` still holds the PRE-FIX anchor until that file is installed** (a
+separate decision: it re-scales every ladder's bot-anchored headline); until then a ladder fitted today pins the
+bots to the broken bots' ratings.
+
 ### ⚠️ GLOBAL-RANDOM COUPLING — the five seeds a paired-arm design must set
 
 A drawer that reaches into a **process-wide** RNG couples itself to every other drawer in the

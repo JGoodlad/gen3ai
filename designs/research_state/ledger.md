@@ -21926,3 +21926,51 @@ Tag: **MEASUREMENT · M3 (c) at 1:1 CONFIRMED for the X5 A/B (76–100 % of budg
 **Still unpriced at their true value:** multi-hit moves, Weather Ball, Facade, Revenge, Pursuit, Explosion's gen-3 Defence halving and Hidden Power's IV-dependent power (all priced at their dex BP); the CPU `incoming_damage` block (prober + legacy reward) and the pointer head's E5 tail score.
 
 Tag: **FINDING + FIX · non-formula moves priced 0 (outgoing: 1,975 / 1,975 Lane S pairs; 23 dex-damaging BP-0 moves) · `DAMAGE_MODELS` + throwing guard, every kernel · golden re-baked with a neutralisation proof · TRAINING-INPUT BOUNDARY**
+
+### 2026-10-03 · ERA BOUNDARY + MEASUREMENT · **Rustboro-era bot anchor base ratings — the nine eval bots re-rated with the FIXED bots (F-LF-1 setup step + Curse-as-setup): heuristic2 1664 · setup_sweep_v2 1656 · aggressive_v2 1656 · setup_sweep 1635 · heuristic 1619 · staller 1577 · staller_v2 1559 · aggressive 1550 · random 1000 (pinned), every bot ±9 Elo at 95 %; the pre-fix bot anchors (`data/gen3_bot_elo_anchors.json`, 2026-06-06 `1081a8e0`) are the OLD era's**
+
+Owner (via the orchestrator, 2026-10-03): T15 re-scoped to a new base rating for the bots only, with no re-bake of old ladders, Hodge baselines or batteries. Era name RUSTBORO.
+
+**Design.** A mirrored, per-game-seeded round robin of the nine `eval_opponent_names()` bots: all 36 edges, **3,600 mirrored pairs per edge, 259,200 games**. The size was set from a precision target: a 95 % CI of ±10 for every free bot under the ladder's `random` = 1000 pin. A 200-pair pilot implied 3,001 pairs; we chose 3,600 for margin; 2,906 would do on the final data.
+- **Teams:** the trainee's eval team distribution (the default pool, 10 % sample bias), drawn by the Rust eval core's per-game seed rule.
+- **Pairs and seats:** `gen3_mirrored_pairs_v1`, with the seat alternating by pair.
+- **Bot streams:** the p2 bot is seeded exactly as the core seeds a p2 bot route; the p1 bot uses the same rule on route seed + 0x100.
+- **Turn limit:** the core's stall rule, so a game at the cap is a DRAW. A draw counts as half a win.
+- **Sim and code:** the Rust sim over the in-process bridge, at pin `aecccb23`, CPU only.
+
+The bots are the PYTHON bots, the reference the Rust port is gated against at 0 mismatches. The Rust env core cannot seat a bot at p1: its route table covers p2 only, so a bot-vs-bot game cannot run inside it.
+
+**Fit.** `elo.fit_pairwise` with `random` pinned at 1000, the convention of the existing anchor; the ladder then pins all nine. The CI is a pair bootstrap with 1,000 replicates, and it agrees with the Hessian (SE 4.4–4.6).
+- Fit quality: mean |Δ| 0.0069, max 0.0274.
+- HodgeRank: spine 656 Elo; width 12.6 raw against a 4.1 null, so **excess 12.0 Elo, p = 0.0033** (the bootstrap floor). Cyclic energy is 0.9 % excess. **There is no individually significant 3-cycle**: the ensemble is about 99 % transitive, with a real but diffuse residue.
+- Game counts: 6,592 draws, 264 turn-limit timeouts, 0 voided pairs.
+- Determinism: a replayed unit is identical, and the refit from the banked rows reproduces `result.json` exactly.
+
+**Old → new**, both on the `random` = 1000 pin:
+
+| bot | old | new | Δ |
+|---|---|---|---|
+| heuristic2 | 1638.8 | 1664.2 | +25.4 |
+| setup_sweep_v2 | 1618.7 | 1656.4 | +37.7 |
+| aggressive_v2 | 1630.1 | 1656.0 | +25.9 |
+| setup_sweep | 1597.8 | 1635.0 | +37.2 |
+| heuristic | 1577.5 | 1619.2 | +41.7 |
+| staller | 1570.9 | 1577.2 | +6.3 |
+| staller_v2 | 1554.9 | 1558.8 | +3.9 |
+| aggressive | 1511.7 | 1549.9 | +38.2 |
+
+**The Δ is NOT the bot fix alone.** The protocol changed too:
+
+| | old | new |
+|---|---|---|
+| sim | Node | Rust |
+| seeding | unseeded | seeded |
+| pairs | unmirrored | mirrored |
+| turn cap | none | the stall rule |
+| draws | went to the SECOND-named bot of each result | half a win |
+
+Unchanged bots moved as well (aggressive +38, aggressive_v2 +26, the stallers +4 to +6). Read the old→new column as an era step, never as a per-bot fix effect.
+
+**What it implies.** The new anchor file, `gen3_bot_elo_anchors.rustboro.json` (the `data/` format), is banked but **NOT installed**. Installing it is a separate decision: it re-scales every ladder's bot-anchored headline, and it is a `data/` change that must wait until no pinned run is live. Until then, every ladder fitted in the tree pins the bots to the broken bots' ratings.
+
+Tag: **ERA BOUNDARY (Rustboro bot anchor) + MEASUREMENT · 259,200 games · every bot ±9 Elo (95 %) · Hodge excess 12 Elo, p = 0.003, no significant cycle · anchor banked, not installed**. Evidence: `designs/research_state/measurements/bot_base_ratings_2026-10-03/` (README, `result.json`, 1,296 §0b rows).

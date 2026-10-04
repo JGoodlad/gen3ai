@@ -1,0 +1,716 @@
+{
+ "schema": "gen3_bot_base_ratings_v1",
+ "era": "Rustboro",
+ "computed_at": "2026-10-04T02:58:15.469620+00:00",
+ "commits": [
+  "aecccb231f1e1e58c9f968ca1a23e6ed660d6adb"
+ ],
+ "regime": {
+  "eval_core": "rust_sim_bridge+python_bots(per_game_seed)",
+  "mirror_rule": "gen3_mirrored_pairs_v1+seat_alternating_by_pair",
+  "mirrored": true,
+  "opponent_play": "sampled",
+  "play": "sampled",
+  "regime_id": "c93b27af04745db9",
+  "seed_rule": "gen3_eval_game_seed_v1",
+  "team_source": "rust_eval.build.eval_builders trainee builder default_biased(bias_prob=0.1) for BOTH seats; seat A draws side 'trainee', seat B side 'opponent'",
+  "turn_limit": 250
+ },
+ "n_rows": 1296,
+ "anchor": {
+  "pinned": {
+   "random": 1000.0
+  },
+  "rule": "the ladder's anchor convention: random pinned at base 1000 (bot_elo_calibration._fit_and_write); the ladder then pins all nine bots to these ratings"
+ },
+ "draws": "half a win (fit over half-points)",
+ "bootstrap": 1000,
+ "seed": 0,
+ "converged": true,
+ "pairs_per_edge": {
+  "random:heuristic2": 3600,
+  "heuristic:setup_sweep_v2": 3600,
+  "staller_v2:aggressive": 3600,
+  "random:aggressive": 3600,
+  "staller_v2:aggressive_v2": 3600,
+  "random:staller": 3600,
+  "heuristic2:setup_sweep": 3600,
+  "staller_v2:setup_sweep": 3600,
+  "random:setup_sweep": 3600,
+  "heuristic2:setup_sweep_v2": 3600,
+  "aggressive:setup_sweep_v2": 3600,
+  "random:heuristic": 3600,
+  "heuristic:setup_sweep": 3600,
+  "staller:setup_sweep": 3600,
+  "heuristic:aggressive_v2": 3600,
+  "staller:setup_sweep_v2": 3600,
+  "heuristic:staller_v2": 3600,
+  "staller:aggressive_v2": 3600,
+  "aggressive_v2:setup_sweep": 3600,
+  "heuristic:staller": 3600,
+  "random:setup_sweep_v2": 3600,
+  "heuristic2:staller_v2": 3600,
+  "aggressive_v2:setup_sweep_v2": 3600,
+  "heuristic2:staller": 3600,
+  "staller_v2:setup_sweep_v2": 3600,
+  "heuristic:heuristic2": 3600,
+  "staller:aggressive": 3600,
+  "aggressive:aggressive_v2": 3600,
+  "heuristic2:aggressive": 3600,
+  "random:staller_v2": 3600,
+  "heuristic2:aggressive_v2": 3600,
+  "aggressive:setup_sweep": 3600,
+  "random:aggressive_v2": 3600,
+  "staller:staller_v2": 3600,
+  "setup_sweep:setup_sweep_v2": 3600,
+  "heuristic:aggressive": 3600
+ },
+ "games_total": 259200,
+ "timeouts_total": 264,
+ "draws_total": 6592,
+ "table": [
+  {
+   "bot": "heuristic2",
+   "rating": 1664.2,
+   "se_boot": 4.4,
+   "ci95": [
+    1656.2,
+    1673.2
+   ],
+   "se_hessian": 4.5,
+   "old_rating": 1638.8,
+   "delta": 25.4
+  },
+  {
+   "bot": "setup_sweep_v2",
+   "rating": 1656.4,
+   "se_boot": 4.5,
+   "ci95": [
+    1648.1,
+    1665.6
+   ],
+   "se_hessian": 4.5,
+   "old_rating": 1618.7,
+   "delta": 37.7
+  },
+  {
+   "bot": "aggressive_v2",
+   "rating": 1656.0,
+   "se_boot": 4.4,
+   "ci95": [
+    1648.1,
+    1665.1
+   ],
+   "se_hessian": 4.5,
+   "old_rating": 1630.1,
+   "delta": 25.9
+  },
+  {
+   "bot": "setup_sweep",
+   "rating": 1635.0,
+   "se_boot": 4.4,
+   "ci95": [
+    1627.1,
+    1644.3
+   ],
+   "se_hessian": 4.5,
+   "old_rating": 1597.8,
+   "delta": 37.2
+  },
+  {
+   "bot": "heuristic",
+   "rating": 1619.2,
+   "se_boot": 4.4,
+   "ci95": [
+    1611.1,
+    1628.4
+   ],
+   "se_hessian": 4.5,
+   "old_rating": 1577.5,
+   "delta": 41.7
+  },
+  {
+   "bot": "staller",
+   "rating": 1577.2,
+   "se_boot": 4.5,
+   "ci95": [
+    1569.0,
+    1586.1
+   ],
+   "se_hessian": 4.5,
+   "old_rating": 1570.9,
+   "delta": 6.3
+  },
+  {
+   "bot": "staller_v2",
+   "rating": 1558.8,
+   "se_boot": 4.6,
+   "ci95": [
+    1550.2,
+    1567.9
+   ],
+   "se_hessian": 4.5,
+   "old_rating": 1554.9,
+   "delta": 3.9
+  },
+  {
+   "bot": "aggressive",
+   "rating": 1549.9,
+   "se_boot": 4.5,
+   "ci95": [
+    1541.8,
+    1559.2
+   ],
+   "se_hessian": 4.5,
+   "old_rating": 1511.7,
+   "delta": 38.2
+  },
+  {
+   "bot": "random",
+   "rating": 1000.0,
+   "se_boot": 0.0,
+   "ci95": [
+    1000.0,
+    1000.0
+   ],
+   "se_hessian": 0.0,
+   "old_rating": 1000.0,
+   "delta": 0.0
+  }
+ ],
+ "fit_quality": {
+  "mean_abs_err": 0.0069,
+  "max_abs_err": 0.0274,
+  "n_pairs": 36
+ },
+ "hodge": {
+  "spine_spread_elo": 655.8,
+  "width_rms_raw_elo": 12.64,
+  "width_rms_null_elo": 4.05,
+  "width_rms_excess_elo": 11.97,
+  "p_value": 0.0033222591362126247,
+  "cyclic_energy_fraction": 0.0103,
+  "cyclic_energy_fraction_excess": 0.0092,
+  "n_triangles": 84,
+  "n_width_edges": 36,
+  "n_bootstrap": 300,
+  "cycles": [],
+  "caveats": []
+ },
+ "sizing": {
+  "target_ci95_halfwidth": 10.0,
+  "worst_free_ci95_halfwidth_now": 8.98,
+  "pairs_per_edge_now": 3600,
+  "pairs_per_edge_needed": 2906
+ },
+ "edges": {
+  "random:heuristic2": {
+   "w": 145,
+   "l": 7047,
+   "d": 8,
+   "pentanomial": [
+    3448,
+    8,
+    143,
+    0,
+    1
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 3
+  },
+  "heuristic:setup_sweep_v2": {
+   "w": 3051,
+   "l": 3921,
+   "d": 228,
+   "pentanomial": [
+    808,
+    134,
+    2180,
+    76,
+    402
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 0
+  },
+  "staller_v2:aggressive": {
+   "w": 3794,
+   "l": 3241,
+   "d": 165,
+   "pentanomial": [
+    628,
+    73,
+    1916,
+    84,
+    899
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 8
+  },
+  "random:aggressive": {
+   "w": 187,
+   "l": 6949,
+   "d": 64,
+   "pentanomial": [
+    3355,
+    59,
+    182,
+    1,
+    3
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 6
+  },
+  "staller_v2:aggressive_v2": {
+   "w": 2602,
+   "l": 4511,
+   "d": 87,
+   "pentanomial": [
+    1296,
+    50,
+    1872,
+    31,
+    351
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 14
+  },
+  "random:staller": {
+   "w": 205,
+   "l": 6939,
+   "d": 56,
+   "pentanomial": [
+    3346,
+    49,
+    200,
+    3,
+    2
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 16
+  },
+  "heuristic2:setup_sweep": {
+   "w": 3771,
+   "l": 3255,
+   "d": 174,
+   "pentanomial": [
+    521,
+    88,
+    2130,
+    76,
+    785
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 2
+  },
+  "staller_v2:setup_sweep": {
+   "w": 2761,
+   "l": 4300,
+   "d": 139,
+   "pentanomial": [
+    1187,
+    82,
+    1846,
+    53,
+    432
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 7
+  },
+  "random:setup_sweep": {
+   "w": 128,
+   "l": 7044,
+   "d": 28,
+   "pentanomial": [
+    3445,
+    27,
+    127,
+    1,
+    0
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 4
+  },
+  "heuristic2:setup_sweep_v2": {
+   "w": 3592,
+   "l": 3475,
+   "d": 133,
+   "pentanomial": [
+    458,
+    50,
+    2516,
+    69,
+    507
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 5
+  },
+  "aggressive:setup_sweep_v2": {
+   "w": 2505,
+   "l": 4456,
+   "d": 239,
+   "pentanomial": [
+    1168,
+    166,
+    1960,
+    61,
+    245
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 0
+  },
+  "random:heuristic": {
+   "w": 126,
+   "l": 7049,
+   "d": 25,
+   "pentanomial": [
+    3450,
+    25,
+    124,
+    0,
+    1
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 5
+  },
+  "heuristic:setup_sweep": {
+   "w": 3269,
+   "l": 3582,
+   "d": 349,
+   "pentanomial": [
+    453,
+    106,
+    2639,
+    105,
+    297
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 0
+  },
+  "staller:setup_sweep": {
+   "w": 2846,
+   "l": 3979,
+   "d": 375,
+   "pentanomial": [
+    885,
+    209,
+    2028,
+    110,
+    368
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 7
+  },
+  "heuristic:aggressive_v2": {
+   "w": 3088,
+   "l": 3886,
+   "d": 226,
+   "pentanomial": [
+    818,
+    124,
+    2134,
+    86,
+    438
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 2
+  },
+  "staller:setup_sweep_v2": {
+   "w": 2676,
+   "l": 4229,
+   "d": 295,
+   "pentanomial": [
+    1078,
+    185,
+    1900,
+    86,
+    351
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 4
+  },
+  "heuristic:staller_v2": {
+   "w": 4210,
+   "l": 2843,
+   "d": 147,
+   "pentanomial": [
+    463,
+    70,
+    1850,
+    71,
+    1146
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 10
+  },
+  "staller:aggressive_v2": {
+   "w": 2619,
+   "l": 4297,
+   "d": 284,
+   "pentanomial": [
+    1137,
+    179,
+    1853,
+    87,
+    344
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 11
+  },
+  "aggressive_v2:setup_sweep": {
+   "w": 3692,
+   "l": 3307,
+   "d": 201,
+   "pentanomial": [
+    527,
+    90,
+    2168,
+    101,
+    714
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 0
+  },
+  "heuristic:staller": {
+   "w": 3846,
+   "l": 2993,
+   "d": 361,
+   "pentanomial": [
+    430,
+    105,
+    2056,
+    200,
+    809
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 7
+  },
+  "random:setup_sweep_v2": {
+   "w": 133,
+   "l": 7052,
+   "d": 15,
+   "pentanomial": [
+    3456,
+    14,
+    126,
+    1,
+    3
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 3
+  },
+  "heuristic2:staller_v2": {
+   "w": 4742,
+   "l": 2387,
+   "d": 71,
+   "pentanomial": [
+    281,
+    23,
+    1808,
+    36,
+    1452
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 22
+  },
+  "aggressive_v2:setup_sweep_v2": {
+   "w": 3506,
+   "l": 3539,
+   "d": 155,
+   "pentanomial": [
+    462,
+    49,
+    2587,
+    64,
+    438
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 1
+  },
+  "heuristic2:staller": {
+   "w": 4367,
+   "l": 2615,
+   "d": 218,
+   "pentanomial": [
+    320,
+    67,
+    1911,
+    145,
+    1157
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 12
+  },
+  "staller_v2:setup_sweep_v2": {
+   "w": 2541,
+   "l": 4571,
+   "d": 88,
+   "pentanomial": [
+    1310,
+    57,
+    1897,
+    25,
+    311
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 9
+  },
+  "heuristic:heuristic2": {
+   "w": 3073,
+   "l": 3974,
+   "d": 153,
+   "pentanomial": [
+    896,
+    83,
+    2101,
+    66,
+    454
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 3
+  },
+  "staller:aggressive": {
+   "w": 3796,
+   "l": 2962,
+   "d": 442,
+   "pentanomial": [
+    441,
+    162,
+    1936,
+    244,
+    817
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 15
+  },
+  "aggressive:aggressive_v2": {
+   "w": 2380,
+   "l": 4568,
+   "d": 252,
+   "pentanomial": [
+    1236,
+    167,
+    1937,
+    69,
+    191
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 1
+  },
+  "heuristic2:aggressive": {
+   "w": 4598,
+   "l": 2393,
+   "d": 209,
+   "pentanomial": [
+    252,
+    53,
+    1843,
+    142,
+    1310
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 3
+  },
+  "random:staller_v2": {
+   "w": 459,
+   "l": 6710,
+   "d": 31,
+   "pentanomial": [
+    3132,
+    24,
+    422,
+    7,
+    15
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 17
+  },
+  "heuristic2:aggressive_v2": {
+   "w": 3628,
+   "l": 3449,
+   "d": 123,
+   "pentanomial": [
+    507,
+    54,
+    2388,
+    55,
+    596
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 8
+  },
+  "aggressive:setup_sweep": {
+   "w": 2603,
+   "l": 4183,
+   "d": 414,
+   "pentanomial": [
+    1013,
+    249,
+    1934,
+    113,
+    291
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 0
+  },
+  "random:aggressive_v2": {
+   "w": 163,
+   "l": 7011,
+   "d": 26,
+   "pentanomial": [
+    3419,
+    21,
+    153,
+    3,
+    4
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 14
+  },
+  "staller:staller_v2": {
+   "w": 3494,
+   "l": 3482,
+   "d": 224,
+   "pentanomial": [
+    641,
+    124,
+    2084,
+    84,
+    667
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 42
+  },
+  "setup_sweep:setup_sweep_v2": {
+   "w": 3271,
+   "l": 3697,
+   "d": 232,
+   "pentanomial": [
+    679,
+    111,
+    2239,
+    99,
+    472
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 2
+  },
+  "heuristic:aggressive": {
+   "w": 4065,
+   "l": 2780,
+   "d": 355,
+   "pentanomial": [
+    366,
+    118,
+    1952,
+    193,
+    971
+   ],
+   "player_p1_games": 3600,
+   "timeouts": 1
+  }
+ },
+ "old_anchor": {
+  "git_hash": "1081a8e03d685bce42d89ab11caf58f7281cb623",
+  "computed_at": "2026-06-06T02:52:15.919297+00:00"
+ }
+}

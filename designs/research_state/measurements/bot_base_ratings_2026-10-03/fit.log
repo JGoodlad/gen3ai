@@ -1,0 +1,16 @@
+[mem_cap] cap 8.00 GB (swap 0) · unit gen3ai-capped-python3-586300.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[fit] 259200 games, 36 edges, min 3600 pairs/edge; regime c93b27af04745db9; commits ['aecccb231f1e1e58c9f968ca1a23e6ed660d6adb']
+             bot   rating            95% CI se_boot se_hess      old   delta
+      heuristic2   1664.2 [ 1656.2, 1673.2]     4.4     4.5   1638.8    25.4
+  setup_sweep_v2   1656.4 [ 1648.1, 1665.6]     4.5     4.5   1618.7    37.7
+   aggressive_v2   1656.0 [ 1648.1, 1665.1]     4.4     4.5   1630.1    25.9
+     setup_sweep   1635.0 [ 1627.1, 1644.3]     4.4     4.5   1597.8    37.2
+       heuristic   1619.2 [ 1611.1, 1628.4]     4.4     4.5   1577.5    41.7
+         staller   1577.2 [ 1569.0, 1586.1]     4.5     4.5   1570.9     6.3
+      staller_v2   1558.8 [ 1550.2, 1567.9]     4.6     4.5   1554.9     3.9
+      aggressive   1549.9 [ 1541.8, 1559.2]     4.5     4.5   1511.7    38.2
+          random   1000.0 [ 1000.0, 1000.0]     0.0     0.0   1000.0     0.0
+[fit] fit quality {'mean_abs_err': 0.0069, 'max_abs_err': 0.0274, 'n_pairs': 36}; hodge {"spine_spread_elo": 655.8, "width_rms_raw_elo": 12.64, "width_rms_null_elo": 4.05, "width_rms_excess_elo": 11.97, "p_value": 0.0033222591362126247, "cyclic_energy_fraction": 0.0103, "cyclic_energy_fraction_excess": 0.0092, "n_triangles": 84, "n_width_edges": 36, "n_bootstrap": 300, "caveats": []}
+[fit] cycles: []
+[fit] sizing: worst free-bot CI half-width 8.98 at 3600 pairs/edge -> 2906 pairs/edge for +-10.0
+[mem_cap] done: gen3ai-capped-python3-586300.scope exit 0 · peak 0.42 GB of cap 8.00 GB (5%) · not OOM-killed
