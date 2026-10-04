@@ -318,6 +318,7 @@ class TeamTransformer(torch.nn.Module):
                 embeddings: Embeddings,
                 extra: "Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]" = None,
                 edge_bias_fn: "Optional[Callable[[torch.Tensor], torch.Tensor]]" = None,
+                key_log_presence: Optional[torch.Tensor] = None,
                 ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
         """`extra` (gen3_entity_move_seats_v1): optional `(tokens [B,n,d_model], types [n] long,
         pad [B,n] bool)` — additional entity seats appended AFTER the global token, so every
@@ -326,7 +327,13 @@ class TeamTransformer(torch.nn.Module):
 
         `edge_bias_fn` (gen3_edge_bias_trunk_v1): optional callable receiving the float attention
         bias [B, H, n, n] ALREADY carrying the key-padding addend, returning it with the edge
-        families written in (see `EdgeBias`). The bias is built ONCE and shared by every layer."""
+        families written in (see `EdgeBias`). The bias is built ONCE and shared by every layer.
+
+        `key_log_presence` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only): optional
+        [B, n] per-KEY log-presence (`hypothesis_tokens.key_log_presence`) added to every query's
+        logit in every head — ToMe's proportional attention, so a hypothesis key at presence π weighs
+        as π of a token. A MASKED key keeps exactly its −1e9 addend (its log-presence is not added).
+        None (blob) adds nothing: byte-identical."""
         batch_size = ctx.batch_size
         device = ctx.device
 
@@ -360,8 +367,11 @@ class TeamTransformer(torch.nn.Module):
         # stock masked layer's math) AND, when `edge_bias_fn` is given, the computed edge families.
         # Built once, shared by every layer (the edges are pre-attention facts, constant per forward).
         n_tok = tokens.shape[1]
-        attn_bias = (key_padding_mask[:, None, None, :].float() * _KEY_PAD_NEG).expand(
+        attn_bias = (key_padding_mask[:, None, None, :].to(tokens.dtype) * _KEY_PAD_NEG).expand(
             batch_size, TRANSFORMER_N_HEADS, n_tok, n_tok).contiguous()
+        if key_log_presence is not None:
+            lp = torch.where(key_padding_mask, torch.zeros_like(key_log_presence), key_log_presence)
+            attn_bias = attn_bias + lp[:, None, None, :].to(attn_bias.dtype)
         if edge_bias_fn is not None:
             attn_bias = edge_bias_fn(attn_bias)
 

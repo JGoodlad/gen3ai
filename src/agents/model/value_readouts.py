@@ -13,7 +13,9 @@ missing axis — which is why both pressures applied to it (VICReg v62, quantile
 themselves deleted at v78.
 """
 import torch
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+if TYPE_CHECKING:
+    from agents.model.hypothesis_tokens import OppPresence
 from agents.model.arch_constants import (UVR_K, UVR_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
     D_MODEL,
 )
@@ -71,14 +73,27 @@ class UnifiedValueReadout(torch.nn.Module):
                 op_rows: Optional[torch.Tensor] = None,
                 op_alive: Optional[torch.Tensor] = None,
                 global_row: Optional[torch.Tensor] = None,
-                belief_rows: Optional[torch.Tensor] = None) -> torch.Tensor:
+                belief_rows: Optional[torch.Tensor] = None,
+                presence: Optional["OppPresence"] = None) -> torch.Tensor:
         """our/their_team_out [B,6,D_MODEL]; all_fainted [B,12] bool (True = masked);
         op_rows [B,6,per_mon] + op_alive [B,6] float when the op exists; under `full`:
         global_row [B,D_MODEL] (required — never masked) and belief_rows [B,K,D_MODEL]
-        (optional — present only with a HiddenOppBeliefPool) → [B, D_MODEL], added into `value_pooled`."""
+        (optional — present only with a HiddenOppBeliefPool) → [B, D_MODEL], added into `value_pooled`.
+
+        `presence` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only): the pool is a
+        class-E reduction over opponent tokens, so OTHER_species joins the THEIR-team source (row
+        after their six) and every opponent row's logit carries its log-presence (added BEFORE the
+        mask fill, so a masked row keeps exactly −1e9). None (blob): byte-identical."""
         rows = [self.token_proj(our_team_out) + self.source_emb[0],
                 self.token_proj(their_team_out) + self.source_emb[1]]
         masks = [all_fainted]
+        logp: Optional[list] = None
+        if presence is not None:
+            rows.append(self.token_proj(presence.other_out)[:, None, :] + self.source_emb[1])
+            masks.append((~presence.other_live)[:, None])
+            B6 = our_team_out.shape[:2]
+            logp = [our_team_out.new_zeros(B6), presence.slot_log_pi.to(our_team_out.dtype),
+                    presence.other_log_mass.to(our_team_out.dtype)[:, None]]
         if self.op_proj is not None:
             if op_rows is None or op_alive is None:
                 raise ValueError(
@@ -87,6 +102,8 @@ class UnifiedValueReadout(torch.nn.Module):
                     "exactly like a working pool.")
             rows.append(self.op_proj(op_rows) + self.source_emb[2])
             masks.append(op_alive.clamp(max=1.0) < 0.5)
+            if logp is not None:
+                logp.append(op_alive.new_zeros(op_alive.shape))
         if self.full:
             if global_row is None:
                 raise ValueError(
@@ -95,13 +112,19 @@ class UnifiedValueReadout(torch.nn.Module):
             rows.append(self.token_proj(global_row)[:, None, :] + self.source_emb[3])
             masks.append(torch.zeros(global_row.shape[0], 1, dtype=torch.bool,
                                      device=global_row.device))
+            if logp is not None:
+                logp.append(global_row.new_zeros(global_row.shape[0], 1))
             if belief_rows is not None:
                 rows.append(self.token_proj(belief_rows) + self.source_emb[4])
                 masks.append(torch.zeros(belief_rows.shape[0], belief_rows.shape[1],
                                          dtype=torch.bool, device=belief_rows.device))
+                if logp is not None:
+                    logp.append(belief_rows.new_zeros(belief_rows.shape[0], belief_rows.shape[1]))
         kv = torch.cat(rows, dim=1)                                        # [B, N, dim]
         masked = torch.cat(masks, dim=1)                                   # [B, N] bool
         att = torch.einsum("kd,bnd->bkn", self.queries, kv) * (UVR_DIM ** -0.5)
+        if logp is not None:
+            att = att + torch.cat(logp, dim=1)[:, None, :].to(att.dtype)
         att = att.masked_fill(masked[:, None, :], -1e9)
         att = torch.softmax(att, dim=-1)                                   # [B, K, N]
         self.last_att = att

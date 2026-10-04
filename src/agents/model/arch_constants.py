@@ -192,11 +192,9 @@ RIDEALONG_INIT_SEED = 20260930
 # gen3_x5_hypothesis_set_v1 (X5 build unit U2, `--belief-tokens fixed_mass`;
 # `designs/endstate/design_x5_belief_tokens.md` §3.2-§3.3). HYPOTHESIS_DELTA_HIDDEN is δ_θ's MLP
 # width: the Deep-Sets pool over the revealed opponent role tokens ⊕ the global projection
-# (2 × D_MODEL) → this → the species logits. OTHER_TAIL_MEAN_N is how many tail candidates (after the
-# k hypotheses, in the one selection order) OTHER_species' embedding averages over (§3.3: "the next
-# 32"). HYPOTHESIS_INIT_SEED is the PRIVATE init seed: every X5 module is built inside
+# (2 × D_MODEL) → this → the species logits. (OTHER_species' embedding averages the WHOLE tail since
+# U3 — the "next 32" cut and its constant are gone, F-X5-23.) HYPOTHESIS_INIT_SEED is the PRIVATE init seed: every X5 module is built inside
 # `torch.random.fork_rng` from it (and from `IsolatedLinear`, which SB3's orthogonal re-init skips),
 # so the fixed_mass arm leaves every non-X5 parameter's initial bytes equal to the blob arm's.
 HYPOTHESIS_DELTA_HIDDEN = 96
-OTHER_TAIL_MEAN_N = 32
 HYPOTHESIS_INIT_SEED = 20261003

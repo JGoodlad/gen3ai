@@ -168,6 +168,7 @@ Rules to preserve:
 | the DICT obs keys the forward reads beyond `observation` | `extra_obs_keys.py` |
 | X5's dex-row table (a hypothesised opponent mon's per-mon obs row, per species; the generator, the loader, the committed artifact) | `hypothesis_dex_rows.py` + `hypothesis_dex_rows.json` |
 | X5's T0 hypothesis builder (`--belief-tokens fixed_mass`: δ_θ, the fixed-size presence, the one stable ordering, OTHER, the active's move group; the set-BCE helpers) | `hypothesis_set.py` |
+| X5's hypothesis TOKENS in the chain (the hypothesis context, the spliced tokens, the per-key log-presence, the class-E pools' float masks) | `hypothesis_tokens.py` |
 
 🚨 **THE FORWARD HAS TWO PUBLIC SURFACES: the constructor signature, and the obs DICT's KEY SET.**
 `forward` is normally a pure function of `obs["observation"]` — but a route may read a flag-gated
@@ -252,6 +253,18 @@ fails on an undeclared or stale entry, on a line mixing the two classes (the rec
 LINE — split it), and when a site declared EXACT moves under a few-ulp weight jitter; at run time an
 undeclared op on a float operand is a typed FATAL at the first update. The keys are source text, so
 editing a declared line means re-declaring it.
+
+## 🚨 X5 (`--belief-tokens fixed_mass`): every reduction over OPPONENT tokens declares its presence semantics
+
+Under `fixed_mass` a hidden opponent slot holds a hypothesis at presence π < 1 and OTHER_species
+holds the tail's mass (`designs/endstate/design_x5_belief_tokens.md` §3.5). A reduction that reads
+them as whole mons is the "counts as a whole mon" bug, and it fails no shape check. **An
+EXPECTATION-type reduction (softmax attention, a pool, a weighted sum) takes the per-key log π**
+(`hypothesis_tokens.OppPresence` / `key_log_presence`; a FLOAT key mask in an `nn` pool, `−inf` on a
+masked key) **and gets its I1 / I2 test in `hypothesis_tokens_test.py`** (π = 0 ≡ masked, bit-exact;
+two copies at w/2 ≡ one at w). A max-type reduction is class M (presence-scaled max, §9 M2 = C). π is
+DETACHED wherever it weights the policy or critic (M10). Blob must stay byte-identical: every X5 read
+sits behind `hypothesis_builder is not None` with the blob code path untouched.
 
 ## ⚠️ One op's SPELLING is load-bearing for `torch.compile` (`gen3_species_posterior_spelling_v1`)
 

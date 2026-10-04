@@ -27,8 +27,10 @@ WHAT IT BUILDS, at every decision, from the current observation (no recurrent st
 * **OTHER_species** (§3.3): the tail's mass ``Σ_tail π`` (summed directly), its log-mass
   ``logsumexp_tail(logsigmoid(a + τ))`` (finite whenever the tail is non-empty, so no floor), and its
   embedding — a learned "rest" vector plus a linear map of the π-weighted mean SPECIES embedding over
-  the next ``OTHER_TAIL_MEAN_N`` (32) tail candidates. Masked STRUCTURALLY: iff ``k = 0`` (r = 6) or
-  the tail is empty.
+  the WHOLE tail (U3, ORCHESTRATOR decision on F-X5-23: U2's "next 32" cut was a second selection
+  boundary; the whole-tail mean removes it and matches M3 (c)'s physics, which also reads the whole
+  renormalised tail ``P_tail = π·[tail] / Σ_tail π``, exposed as `other_tail_probs`). Masked
+  STRUCTURALLY: iff ``k = 0`` (r = 6) or the tail is empty.
 * **The opponent active's moves** (§3.1 / §3.2, "Moves"): the same construction at
   ``k_m = 4 − r_m`` over the active species' LEGAL moves minus its revealed moves; the ``K`` seats are
   the ``r_m`` revealed moves (pinned at 1) then the top ``K − r_m`` unrevealed by ``π_m``; OTHER_move
@@ -62,18 +64,21 @@ built from every consumer-facing output puts exactly zero gradient into δ_θ.
 RULE 8 AT THE SELECTION BOUNDARY (§3.1). Which species takes the last seat is a discontinuous
 function of ``π``. Every check that compares two computations of the selection EXCLUDES a row whose
 ``π`` at a selection boundary differs by less than ``SELECTION_TIE_EPS`` (1e-6, absolute) across it,
-and reports the excluded count: `near_tie_rows`. The boundaries are the seat boundary (``k``-th vs
-``(k+1)``-th), OTHER's tail-mean cutoff (``(k+32)``-th vs ``(k+33)``-th — a second boundary §3.1
-did not name), and the move seats' boundary.
+and reports the excluded count: `near_tie_rows`. Since U3 the boundaries are EVERY adjacent pair of the
+order up to and across the seat boundary (``i``-th vs ``(i+1)``-th for ``i < k``): hypothesis rank
+``j`` sits in the ``j``-th hidden slot, so a swap INSIDE the selection moves a token between slots —
+also a log π change once the tokens are read (U3). Likewise the move seats (their seat order is the
+E4 seat order). OTHER's tail mean no longer has a cutoff (the whole tail, U3).
 
-WHAT IS NOT HERE (U3 / U4). The hypothesis TOKENS (``pokemon_encoder`` on the dex rows +
-``hypothesis_marker``), the log-π key bias, the op's hypothesis defenders / attackers and OTHER's
-physics, the E4 / E5 seat re-wiring, the flat pointer. In U2 the extractor builds this module under
-``--belief-tokens fixed_mass``, runs it at T0 and STASHES its output (`last_hypothesis`); nothing in
-the policy / value forward reads it yet.
+WHERE IT IS READ (U3, `agents.model.hypothesis_tokens`). The species half (`species_set`) runs at T0
+BEFORE the move belief: its dex rows are encoded by THE `pokemon_encoder` (+ ``hypothesis_marker``)
+into the hidden opponent slots, so every T0 belief head reads a species-specific token; the move
+group (`with_moves`) is added after the move belief. The log-π key bias, OTHER's token and the class-E
+pools read ``slot_log_pi`` / ``other_log_mass`` / ``other_token``. The flat pointer is U4.
 """
 from __future__ import annotations
 
+import dataclasses
 import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, Tuple
@@ -81,8 +86,7 @@ from typing import TYPE_CHECKING, Optional, Tuple
 import torch
 import torch.nn.functional as F
 
-from agents.model.arch_constants import (D_MODEL, HYPOTHESIS_DELTA_HIDDEN,
-                                         HYPOTHESIS_INIT_SEED, OTHER_TAIL_MEAN_N)
+from agents.model.arch_constants import D_MODEL, HYPOTHESIS_DELTA_HIDDEN, HYPOTHESIS_INIT_SEED
 from agents.observation.constants import TEAM_SIZE
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 
@@ -195,6 +199,22 @@ def ranks_of(order: torch.Tensor) -> torch.Tensor:
     return torch.empty_like(order).scatter_(-1, order, pos)
 
 
+def order_gap(sorted_pi: torch.Tensor, at: torch.Tensor, n_avail: torch.Tensor,
+              start: Optional[torch.Tensor] = None) -> torch.Tensor:
+    """[B] the SMALLEST gap ``sorted_pi[i] − sorted_pi[i+1]`` over ``start <= i < at`` with ``i + 1 <
+    n_avail`` — every adjacent pair of the order up to and across the selection boundary ``at`` (the
+    count selected). ``+inf`` where there is no such pair. ``start`` (default 0) skips a structural
+    prefix (the move group's revealed seats, pinned ahead of every π). U3: a swap inside the selection
+    moves a hypothesis between slots (or a move between E4 seats), so those pairs are boundaries too."""
+    N = sorted_pi.shape[-1]
+    i = torch.arange(N - 1, device=sorted_pi.device).unsqueeze(0)              # [1,N-1]
+    lo = torch.zeros_like(at) if start is None else start
+    use = (i >= lo.unsqueeze(-1)) & (i < at.unsqueeze(-1)) & (i + 1 < n_avail.unsqueeze(-1))
+    gaps = sorted_pi[:, :-1] - sorted_pi[:, 1:]
+    gaps = torch.where(use, gaps, torch.full_like(gaps, math.inf))
+    return gaps.amin(-1)
+
+
 def boundary_gap(sorted_pi: torch.Tensor, at: torch.Tensor, n_avail: torch.Tensor) -> torch.Tensor:
     """[B] the gap ``sorted_pi[at-1] − sorted_pi[at]`` across the selection boundary ``at`` (the count
     selected), or ``+inf`` where there is no boundary (``at <= 0`` or ``at >= n_avail``: nothing on one
@@ -227,10 +247,11 @@ class HypothesisSet:
     other_mass: torch.Tensor            # [B] Σ_tail π
     other_log_mass: torch.Tensor        # [B] logsumexp_tail log π; MASKED_LOG_PRESENCE when masked
     other_live: torch.Tensor            # [B] bool — k > 0 and the tail is non-empty (structural)
-    other_tail_mean: torch.Tensor       # [B,species_emb] π-weighted mean species embedding, next 32 tail
+    other_tail_probs: torch.Tensor      # [B,S] the RENORMALISED tail P_tail = π·[tail] / Σ_tail π (0 when masked)
+    other_tail_mean: torch.Tensor       # [B,species_emb] π-weighted mean species embedding over the WHOLE tail
     other_token: torch.Tensor           # [B,D_MODEL] the OTHER_species embedding (rest + map(tail mean))
-    species_tie_gap: torch.Tensor       # [B] π gap across the seat boundary (+inf: none)
-    tail_tie_gap: torch.Tensor          # [B] π gap across OTHER's tail-mean cutoff (+inf: none)
+    other_any: torch.Tensor             # [B] P(at least one tail species present) = 1 − Π_tail(1 − π) ∈ [0,1]
+    species_tie_gap: torch.Tensor       # [B] smallest adjacent π gap up to and across the seat boundary (+inf: none)
     moves: Optional["MovePresence"]     # the opponent ACTIVE's move group (None: no move belief)
 
 
@@ -248,15 +269,17 @@ class MovePresence:
     other_mass: torch.Tensor            # [B] Σ π_m beyond the seats
     other_log_mass: torch.Tensor        # [B] its logsumexp log-mass; MASKED_LOG_PRESENCE when masked
     other_live: torch.Tensor            # [B] bool — k_m > 0 and some unrevealed candidate is beyond the seats
-    tie_gap: torch.Tensor               # [B] π_m gap across the seat boundary (+inf: none)
+    beyond: torch.Tensor                # [B,M] bool — OTHER_move's members (unrevealed candidates past the seats)
+    tie_gap: torch.Tensor               # [B] smallest adjacent π_m gap among the unrevealed seats and across the seat boundary
 
 
 def near_tie_rows(hs: HypothesisSet, eps: float = SELECTION_TIE_EPS) -> torch.Tensor:
     """[B] bool — the rows §3.1's rule-8 exclusion drops from every check that compares two
     computations of the selection (eager vs compiled, CPU vs CUDA, a golden, a reader): a π gap under
-    ``eps`` across ANY selection boundary (the seats, OTHER's tail-mean cutoff, the move seats).
-    Callers report ``int(near_tie_rows(hs).sum())`` beside the verdict."""
-    bad = (hs.species_tie_gap < eps) | (hs.tail_tie_gap < eps)
+    ``eps`` between ANY adjacent pair of the order up to and across a selection boundary (the
+    hypothesis seats and their slot order; the move seats and their seat order). Callers report
+    ``int(near_tie_rows(hs).sum())`` beside the verdict."""
+    bad = hs.species_tie_gap < eps
     if hs.moves is not None:
         bad = bad | (hs.moves.tie_gap < eps)
     return bad
@@ -399,6 +422,10 @@ class HypothesisBuilder(torch.nn.Module):
             # OTHER_species: a learned rest vector + a linear map of the tail-mean species embedding.
             self.other_rest = torch.nn.Parameter(torch.randn(D_MODEL) * 0.02)
             self.other_map = IsolatedLinear(species_emb_dim, D_MODEL)
+            # U3 (§3.4): the learned marker added to a hypothesis seat's encoded token, as E5's
+            # `tail_marker` is (the token-type table is NOT grown — that would change every
+            # state_dict). Drawn LAST in this private stream, so no earlier X5 init byte moves.
+            self.hypothesis_marker = torch.nn.Parameter(torch.randn(D_MODEL) * 0.02)
         self.detach_read = False      # stamped by `_stamp_belief_grad_flags` (belief_grad_mode)
 
     # ------------------------------------------------------------------ δ_θ
@@ -419,11 +446,32 @@ class HypothesisBuilder(torch.nn.Module):
                 active_move_logits: Optional[torch.Tensor] = None,
                 active_species: Optional[torch.Tensor] = None,
                 active_revealed_moves: Optional[torch.Tensor] = None) -> HypothesisSet:
-        """``t0_log_prior`` [B,S] log P_T0(s | revealed) (`species_team_prior_logits`);
+        """The whole set in one call (`species_set` then `with_moves`) — the readers' and the tests'
+        entry. The extractor calls the two halves separately (U3): the species half must run BEFORE
+        the move belief (its dex rows become the hidden slots' tokens), the move group AFTER it.
+        ``t0_log_prior`` [B,S] log P_T0(s | revealed) (`species_team_prior_logits`);
         ``opp_species_ids`` [B,6]; ``opp_believed_mask`` [B,6] bool; ``opp_role_tokens`` [B,6,D];
         ``global_input`` [B,G]; the active's move group from ``active_move_logits`` [B,M] (the typed
         MoveBelief posterior at the opponent active), ``active_species`` [B] and
         ``active_revealed_moves`` [B,4] (all three or none)."""
+        hs = self.species_set(t0_log_prior, opp_species_ids, opp_believed_mask, opp_role_tokens,
+                              global_input, species_embedding)
+        if active_move_logits is None:
+            return hs
+        assert active_species is not None and active_revealed_moves is not None
+        return self.with_moves(hs, active_move_logits, active_species, active_revealed_moves)
+
+    def with_moves(self, hs: HypothesisSet, active_move_logits: torch.Tensor,
+                   active_species: torch.Tensor, active_revealed_moves: torch.Tensor) -> HypothesisSet:
+        """``hs`` with the opponent active's move group attached (`move_group`)."""
+        return dataclasses.replace(
+            hs, moves=self.move_group(active_move_logits, active_species, active_revealed_moves))
+
+    def species_set(self, t0_log_prior: torch.Tensor, opp_species_ids: torch.Tensor,
+                    opp_believed_mask: torch.Tensor, opp_role_tokens: torch.Tensor,
+                    global_input: torch.Tensor, species_embedding: torch.nn.Embedding) -> HypothesisSet:
+        """The species half: δ_θ, the fixed-size presence, the one order, the hypotheses and their
+        slots, OTHER (``moves`` is None)."""
         believed = opp_believed_mask.bool()
         cand, k = species_candidates(self.species_valid, opp_species_ids, believed)
         revealed_slots = (opp_species_ids > 0) & ~believed
@@ -449,29 +497,33 @@ class HypothesisBuilder(torch.nn.Module):
         # ---- OTHER_species: the tail (rank >= k) — structural
         in_tail = cand & (rank >= k.unsqueeze(-1)) & (k > 0).unsqueeze(-1)
         other_live = in_tail.any(-1)
-        other_mass = torch.where(in_tail, pi, zero).sum(-1)
+        w_tail = torch.where(in_tail, pi, zero)                                      # [B,S] detached
+        other_mass = w_tail.sum(-1)
         neg_inf = torch.full((), -math.inf, dtype=pi.dtype, device=pi.device)
         lse = torch.logsumexp(torch.where(in_tail, pres.log_pi, neg_inf), dim=-1)
         other_log_mass = torch.where(other_live, lse,
                                      torch.full_like(lse, MASKED_LOG_PRESENCE))
-        tail32 = in_tail & (rank < (k + OTHER_TAIL_MEAN_N).unsqueeze(-1))
-        w32 = torch.where(tail32, pi, zero)                                          # [B,S] detached
-        denom = w32.sum(-1, keepdim=True)
-        w32n = torch.where(denom > 0, w32 / denom.clamp(min=torch.finfo(pi.dtype).tiny), w32)
-        tail_mean = w32n.to(species_embedding.weight.dtype) @ species_embedding.weight  # [B,E]
+        # The renormalised tail (M3 (c), F-X5-23): the WHOLE tail, π-weighted — no second cutoff. A
+        # live OTHER has Σ_tail π > 0 (π never reaches 0 on a live row), so the division is exact; a
+        # masked one reads 0 (structural gate, `other_live`, never a float comparison).
+        tiny = torch.finfo(pi.dtype).tiny
+        p_tail = torch.where(other_live.unsqueeze(-1),
+                             w_tail / other_mass.clamp(min=tiny).unsqueeze(-1), torch.zeros_like(w_tail))
+        tail_mean = p_tail.to(species_embedding.weight.dtype) @ species_embedding.weight  # [B,E]
         other_token = (self.other_rest + self.other_map(tail_mean)) * other_live.unsqueeze(-1).to(tail_mean.dtype)
-        species_gap = boundary_gap(sorted_pi, k, n_avail)
-        tail_gap = boundary_gap(sorted_pi, torch.where(k > 0, k + OTHER_TAIL_MEAN_N, k), n_avail)
-        moves = None
-        if active_move_logits is not None:
-            assert active_species is not None and active_revealed_moves is not None
-            moves = self.move_group(active_move_logits, active_species, active_revealed_moves)
+        # P(at least one tail species present) under the I-projection's independent Bernoullis
+        # (ORCHESTRATOR, Tier-0 F4 (b)): 1 − Π(1 − π) = −expm1(Σ log1p(−π)) — in [0, 1], continuous,
+        # and OTHER's MASS (an expected count, often > 1) never scales a threat directly.
+        other_any = torch.where(other_live, -torch.expm1(torch.log1p(-w_tail).sum(-1)),
+                                torch.zeros_like(other_mass))
+        species_gap = order_gap(sorted_pi, k, n_avail)
         return HypothesisSet(
             species=pres, order=order, rank=rank, hyp_species=hyp_species, hyp_live=hyp_live,
             hyp_pi=hyp_pi, slot_species=slot_species, slot_is_hypothesis=believed,
             slot_log_pi=slot_log_pi, slot_rows=slot_rows, other_mass=other_mass,
-            other_log_mass=other_log_mass, other_live=other_live, other_tail_mean=tail_mean,
-            other_token=other_token, species_tie_gap=species_gap, tail_tie_gap=tail_gap, moves=moves)
+            other_log_mass=other_log_mass, other_live=other_live, other_tail_probs=p_tail,
+            other_tail_mean=tail_mean, other_token=other_token, other_any=other_any,
+            species_tie_gap=species_gap, moves=None)
 
     def move_group(self, move_logits: torch.Tensor, species: torch.Tensor,
                    revealed_ids: torch.Tensor) -> MovePresence:
@@ -503,14 +555,14 @@ class HypothesisBuilder(torch.nn.Module):
         neg_inf = torch.full((), -math.inf, dtype=pi.dtype, device=pi.device)
         lse = torch.logsumexp(torch.where(beyond, pres.log_pi, neg_inf), dim=-1)
         other_log_mass = torch.where(other_live, lse, torch.full_like(lse, MASKED_LOG_PRESENCE))
-        # The seat boundary: position K-1 vs K of the one order. Revealed moves fill positions < r, so
-        # with k_m > 0 and r < K both sides of the boundary are unrevealed π_m (else: no π boundary).
-        gap = boundary_gap(key.gather(-1, order), torch.full_like(r, K), n_seatable)
+        # Every adjacent pair of unrevealed seats and the seat boundary (positions r .. K of the one
+        # order; revealed moves fill positions < r, pinned ahead of every π — a structural prefix).
+        gap = order_gap(key.gather(-1, order), torch.full_like(r, K), n_seatable, start=r)
         gap = torch.where((k_m > 0) & (r < K), gap, torch.full_like(gap, math.inf))
         return MovePresence(presence=pres, seat_nums=seat_nums, seat_live=seat_live,
                             seat_revealed=seat_revealed, seat_pi=seat_pi, r=r,
                             other_mass=other_mass, other_log_mass=other_log_mass,
-                            other_live=other_live, tie_gap=gap)
+                            other_live=other_live, beyond=beyond, tie_gap=gap)
 
 
 # ============================================================================ the loss terms
@@ -556,18 +608,20 @@ def belief_head_team_scores(species_logits: torch.Tensor, believed: torch.Tensor
     return (species_logits * w).sum(1) / w.sum(1).clamp(min=1)
 
 
-def hypothesis_moves_bce(move_logits: torch.Tensor, slot_species: torch.Tensor,
-                         slot_is_hyp: torch.Tensor, belief_species: torch.Tensor,
-                         belief_moves: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-    """BeliefHead's MOVES term on hypothesis seats (§3.4's rule, the Hungarian matching retired): the
-    seat holding hypothesis species ``h`` is supervised IFF ``h`` IS on the true unseen team, against
-    that mon's true moveset (`belief_moves` exists for unrevealed mons); a hypothesis not on the team is
-    masked. Structural, no threshold. ``move_logits`` [B,6,M]; labels [B,6] / [B,6,4]. Returns
-    (per-slot-mean BCE 0-d, n_supervised 0-d). A seat whose matched mon has no labeled move is not
-    supervised (never toward "no moves")."""
-    B, T, M = move_logits.shape
-    lab = belief_species.long().to(move_logits.device)
-    mv = belief_moves.long().to(move_logits.device)
+def hypothesis_moves_targets(slot_species: torch.Tensor, slot_is_hyp: torch.Tensor,
+                             belief_species: torch.Tensor, belief_moves: torch.Tensor,
+                             n_moves: int, like: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    """(multi-hot [B,6,M], supervised [B,6] bool) for a per-slot move head on HYPOTHESIS seats (§3.4's
+    rule): the seat holding hypothesis species ``h`` is supervised IFF ``h`` IS on the true unseen team,
+    against that mon's true moveset; a hypothesis not on the team is masked. Structural, no threshold.
+    A seat whose matched mon has no labeled move is not supervised (never toward "no moves"). Shared by
+    BeliefHead's moves term (`hypothesis_moves_bce`) and, since U3, MoveBelief's unrevealed population
+    (`belief_bank.move_belief_loss` under fixed_mass — the hypothesis seat's move head now reads a
+    species-specific token, so the blob's Hungarian slot matching would supervise one species with
+    another's moveset)."""
+    B, T = slot_species.shape
+    lab = belief_species.long().to(like.device)
+    mv = belief_moves.long().to(like.device)
     h = slot_species.long()
     match = (lab.unsqueeze(1) == h.unsqueeze(-1)) & (lab.unsqueeze(1) >= 0) & (h > 0).unsqueeze(-1) \
         & slot_is_hyp.unsqueeze(-1)                                              # [B,T,6]
@@ -577,10 +631,20 @@ def hypothesis_moves_bce(move_logits: torch.Tensor, slot_species: torch.Tensor,
     first = (match.long() * wts).argmax(-1)                                      # [B,T]
     ids = mv.gather(1, first.unsqueeze(-1).expand(B, T, mv.shape[-1]))           # [B,T,4]
     okm = ids >= 0
-    mh = torch.zeros(B, T, M, dtype=move_logits.dtype, device=move_logits.device)
-    mh.scatter_add_(2, ids.clamp(0, M - 1), okm.to(move_logits.dtype))
-    mh = (mh > 0).to(move_logits.dtype)
-    sup = present & okm.any(-1)
+    mh = torch.zeros(B, T, n_moves, dtype=like.dtype, device=like.device)
+    mh.scatter_add_(2, ids.clamp(0, n_moves - 1), okm.to(like.dtype))
+    mh = (mh > 0).to(like.dtype)
+    return mh, present & okm.any(-1)
+
+
+def hypothesis_moves_bce(move_logits: torch.Tensor, slot_species: torch.Tensor,
+                         slot_is_hyp: torch.Tensor, belief_species: torch.Tensor,
+                         belief_moves: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    """BeliefHead's MOVES term on hypothesis seats (§3.4's rule, the Hungarian matching retired; the
+    targets are `hypothesis_moves_targets`). ``move_logits`` [B,6,M]; labels [B,6] / [B,6,4]. Returns
+    (per-slot-mean BCE 0-d, n_supervised 0-d)."""
+    mh, sup = hypothesis_moves_targets(slot_species, slot_is_hyp, belief_species, belief_moves,
+                                       move_logits.shape[-1], move_logits)
     per = F.binary_cross_entropy_with_logits(move_logits, mh, reduction="none").mean(-1)  # [B,T]
     per = torch.where(sup, per, torch.zeros_like(per))
     n = sup.sum().to(per.dtype)

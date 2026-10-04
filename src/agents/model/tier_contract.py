@@ -150,6 +150,9 @@ UNTIERED_CHILDREN = frozenset({
 _NAMED_ENTRY_POINTS: Dict[str, Tuple[str, ...]] = {
     "move_belief": ("move_logits", "reinject_moves"),
     "hp_type_belief_head": ("compose_typed_hp", "reinject"),
+    # gen3_x5_belief_tokens_v1 (X5 U3): the extractor calls the builder's two HALVES — the species
+    # half before the move belief, the move group after it — never `__call__`.
+    "hypothesis_builder": ("species_set", "with_moves"),
     "spread_belief": (),
     "damage_op": ("refine_candidates", "discrete_outgoing_status", "discrete_incoming_status",
                   "pointer_intent_status_operands"),

@@ -187,8 +187,10 @@ def _multi_hot(ids: th.Tensor, n: int, like: th.Tensor) -> th.Tensor:
 
 
 def move_belief_terms(ml: Optional[th.Tensor], known_moves: Optional[th.Tensor],
-                      belief_moves: Optional[th.Tensor], mode: str) -> StaticTerm:
-    """`belief_bank.move_belief_loss`, static (its vocab RAISE is `check_label_vocab`'s)."""
+                      belief_moves: Optional[th.Tensor], mode: str,
+                      hypothesis: Any = None, belief_species: Optional[th.Tensor] = None) -> StaticTerm:
+    """`belief_bank.move_belief_loss`, static (its vocab RAISE is `check_label_vocab`'s). Under
+    fixed_mass (``hypothesis`` given) the unrevealed population is §3.4's iff-present rule."""
     if ml is None:
         return _absent(th.zeros(()))
     dev = ml.device
@@ -216,7 +218,26 @@ def move_belief_terms(ml: Optional[th.Tensor], known_moves: Optional[th.Tensor],
             tp = tp + (pp & mb).sum().to(ml.dtype)
             pred_pos = pred_pos + pp.sum().to(ml.dtype)
             true_pos = true_pos + mb.sum().to(ml.dtype)
-    if mode in ("unrevealed", "both") and belief_moves is not None:
+    if mode in ("unrevealed", "both") and belief_moves is not None and hypothesis is not None:
+        # gen3_x5_belief_tokens_v1: hypothesis seats, supervised iff the species is present
+        from agents.model.hypothesis_set import hypothesis_moves_targets
+        if belief_species is None:
+            raise ValueError("move_belief_terms under fixed_mass needs belief_species")
+        mh, sup = hypothesis_moves_targets(hypothesis.slot_species, hypothesis.slot_is_hypothesis,
+                                           belief_species, belief_moves, M, ml)
+        per_slot = F.binary_cross_entropy_with_logits(ml, mh, reduction="none").mean(-1)
+        total = total + th.where(sup, per_slot, per_slot.new_zeros(())).sum()
+        cnt = sup.sum().to(ml.dtype)
+        count = count + cnt
+        n_unrev = n_unrev + cnt
+        with th.no_grad():
+            sel = sup.unsqueeze(-1)
+            pp = (ml > 0.0) & sel
+            mb = (mh > 0.5) & sel
+            tp = tp + (pp & mb).sum().to(ml.dtype)
+            pred_pos = pred_pos + pp.sum().to(ml.dtype)
+            true_pos = true_pos + mb.sum().to(ml.dtype)
+    elif mode in ("unrevealed", "both") and belief_moves is not None:
         bm = belief_moves.long().to(dev)                                    # [B,6,4]
         slot_has = (bm >= 0).any(-1)                                        # [B,6]
         counts = slot_has.sum(1)                                            # [B]

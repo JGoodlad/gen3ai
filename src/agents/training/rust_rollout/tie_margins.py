@@ -64,6 +64,17 @@ def site_margin(rule: SS.Rule, name: str, args: Tuple[Any, ...], kwargs: Dict[st
             return None
         v = th.topk(x, k + 1, dim=dim, largest=largest).values
         return _rel(v.narrow(dim, k - 1, 1), v.narrow(dim, k, 1))
+    if rule.kind == "sort_head":           # X5's one order: adjacent genuine -π keys among the first `head`
+        dim = int(_arg(args, kwargs, 1, "dim", -1))
+        if x.shape[dim] < 2:
+            return None
+        v = th.sort(x, dim=dim).values.narrow(dim, 0, min(int(rule.head), x.shape[dim]))
+        a, b = v.narrow(dim, 0, v.shape[dim] - 1), v.narrow(dim, 1, v.shape[dim] - 1)
+        genuine = (a >= -1.0) & (a <= 0.0) & (b >= -1.0) & (b <= 0.0)
+        if rule.zero_exact:
+            genuine = genuine & ~((a == 0) & (b == 0))
+        g = _rel(a, b)
+        return th.where(genuine, g, th.full_like(g, float("inf")))
     if rule.kind == "argmax":
         dim = _arg(args, kwargs, 1, "dim", None)
         if dim is None:

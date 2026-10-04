@@ -10,8 +10,7 @@ What each test pins, and what reverting it would break:
   387–399 the T0 prior floors — F-X5-21);
 * the ONE stable ordering, ties to the lower number, and §3.1's rule-8 near-tie exclusion;
 * the blob arm builds nothing and its forward / params are unchanged; the fixed_mass arm's
-  non-X5 INITIAL bytes equal the blob arm's (private seed, `IsolatedLinear`) and its policy / value
-  outputs are bit-identical to blob's with the shared weights (U2 only STASHES the set);
+  non-X5 INITIAL bytes equal the blob arm's (private seed, `IsolatedLinear`);
 * M10: no policy / value / consumer-facing output puts gradient into δ_θ; the presence BCE does;
 * the flag: registry, checkargs' requires graph, the migration, the version gate, production stays blob.
 """
@@ -406,25 +405,10 @@ def test_cold_start_presence_is_exactly_the_priors_fixed_size_marginal_on_a_real
     assert torch.equal(ref.pi, hs.species.pi)
 
 
-def test_fixed_mass_policy_and_value_outputs_equal_blobs_with_the_shared_weights(arms):
-    """U2 only STASHES the hypothesis set: with blob's weights loaded into the shared parameters,
-    the fixed_mass arm's (pi, vf) features and its action logits are BIT-identical to blob's."""
-    m_blob, m_fm = arms
-    pol_b = copy.deepcopy(m_blob.policy).eval()
-    pol_f = copy.deepcopy(m_fm.policy).eval()
-    missing, unexpected = pol_f.load_state_dict(pol_b.state_dict(), strict=False)
-    assert unexpected == [] and all(".hypothesis_builder." in k for k in missing)
-    obs = _obs_from_golden()
-    with torch.no_grad():
-        fb = pol_b.features_extractor(obs)
-        ff = pol_f.features_extractor(obs)
-        assert torch.equal(fb[0], ff[0]) and torch.equal(fb[1], ff[1])
-        db = pol_b.get_distribution(obs).distribution.logits
-        df = pol_f.get_distribution(obs).distribution.logits
-        assert torch.equal(db, df)
-        assert torch.equal(pol_b.predict_values(obs), pol_f.predict_values(obs))
-    assert pol_b.features_extractor.last_hypothesis is None
-    assert pol_f.features_extractor.last_hypothesis is not None
+# (U2's "fixed_mass outputs == blob's with the shared weights" test is RETIRED by U3: the hypothesis
+# set is now READ by the trunk, the pools and the T0 belief heads, so the arms differ by design. The
+# blob arm's byte-identity is pinned by the K9 learner golden and `hypothesis_tokens_test`; the
+# fixed_mass reads by `hypothesis_tokens_test` — the class-E invariances, the M10 gradient path.)
 
 
 def _delta_grads(hb):

@@ -45,7 +45,7 @@ from typing import Dict, FrozenSet, List, NamedTuple, Optional, Tuple
 FORWARD_MODULES: Tuple[str, ...] = (
     "aux_value_heads", "belief_heads", "conditional_threat", "damage_kinds", "damage_op", "damage_op_blocks",
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
-    "hypothesis_set",
+    "hypothesis_set", "hypothesis_tokens",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
     "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "switch_branch",
     "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
@@ -61,7 +61,9 @@ LABEL_FUNCS: FrozenSet[Tuple[str, str]] = frozenset({
     # gen3_x5_hypothesis_set_v1 (X5 U2): the set-supervision loss + label helpers and the rule-8
     # near-tie READER (`near_tie_rows`, a check-side helper, never the forward).
     ("hypothesis_set", f) for f in (
-        "label_multi_hot", "set_bce", "belief_head_team_scores", "hypothesis_moves_bce", "near_tie_rows")})
+        "label_multi_hot", "set_bce", "belief_head_team_scores", "hypothesis_moves_bce", "near_tie_rows",
+        # gen3_x5_belief_tokens_v1 (U3): the hypothesis-seat move TARGETS (a label builder)
+        "hypothesis_moves_targets")})
 
 
 class Rule(NamedTuple):
@@ -77,14 +79,21 @@ class Rule(NamedTuple):
                      an exact 0 mask / table entry / observation), not a tie;
     * ``threshold_self`` — a ``x >= t`` whose ``t`` is one of ``x``'s own values (a top-k cutoff):
                      the element(s) that ARE ``t`` are skipped unless ``t`` occurs more than once
-                     (two candidates exactly at the cutoff are a tie)."""
+                     (two candidates exactly at the cutoff are a tie);
+    * ``sort_head`` — an ascending (stable) SORT whose first ``head`` positions are consumed in
+                     order (X5's one ordering, gen3_x5_belief_tokens_v1): the smallest gap between
+                     ADJACENT sorted keys among the first ``head``, counting only pairs whose BOTH
+                     keys are genuine ``−π`` values in ``[−1, 0]`` — a pair touching a structural key
+                     (``+inf`` non-candidate, ``−2`` pinned revealed move) cannot flip — and, with
+                     ``zero_exact``, not two exact zeros (a structural π = 0 row)."""
     kind: str
     gate: float = 0.0
     zero_exact: bool = False
     why: str = ""
+    head: int = 0
 
 
-RULE_KINDS = ("topk", "argmax", "threshold", "threshold_self")
+RULE_KINDS = ("topk", "argmax", "threshold", "threshold_self", "sort_head")
 
 #: Every MARGIN site: (module, source) -> rule.
 MARGIN: Dict[Tuple[str, str], Rule] = {
@@ -123,6 +132,14 @@ MARGIN: Dict[Tuple[str, str], Rule] = {
     #     and a computed max HP; a fixed-damage KO at exactly the remaining HP is a genuine near-tie)
     #     gen3_nonformula_damage_v1: ONE site now — every kernel reaches it through damage_kinds.
     ("damage_kinds", "fixed >= tgt_cur_hp"): Rule("threshold", zero_exact=True),
+    # --- gen3_x5_belief_tokens_v1 (X5 U3, `--belief-tokens fixed_mass` only): THE one stable order of
+    #     the hypothesis set (species, and the active's move group — one source line). Since U3 log π
+    #     reads it: hypothesis rank j fills the j-th hidden slot (k <= 5, so positions 0..5) and the
+    #     move seats are positions 0..K-1 (K = 6): every adjacent pair among the first 7 is a boundary
+    #     (`hypothesis_set.near_tie_rows` is the same rule, at the module's own eps).
+    ("hypothesis_set", "torch.argsort(neg, dim=-1, stable=True)"): Rule(
+        "sort_head", head=7, zero_exact=True,
+        why="X5's one order: hypothesis slots / move seats in order, the seat boundary"),
 }
 
 #: Why an EXACT site's operands are bit-identical in every forward of the same row.
@@ -138,6 +155,10 @@ REASONS: Dict[str, str] = {
     "PYTHON": "a Python scalar comparison (a config value), not a tensor op",
     "NOT_LOGP": "does not reach log pi(a|s) (the greedy-action readout)",
     "LABEL": "a loss / label / metric helper (`LABEL_FUNCS`), not the policy forward",
+    "BISECT": "a fixed-step bisection's direction test under no_grad (X5's fixed-size construction): "
+              "either branch keeps the root inside the bracket, so a flip at a rounding error moves the "
+              "converged root by at most the final bracket width — a continuous, ulp-scale change, never a "
+              "log pi jump",
 }
 
 #: Every EXACT site: module -> reason -> sources.
@@ -258,7 +279,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # bisection's `total > k_t` is NOT a discontinuity (τ converges to the same root either way, to the
     # dtype's resolution) and needs a reason of its own; `denom > 0` is a structural-count gate.
     "hypothesis_set": {
-        "NOT_LOGP": ("torch.argsort(neg, dim=-1, stable=True)", "total > k_t", "denom > 0"),
+        "BISECT": ("total > k_t",),
         "TABLE": ("logits > cut",),
         "INT": ("k.long()", "opp_species_ids.clamp(0, S - 1).long()", "opp_believed_mask.bool().sum(-1).long()",
                 "revealed_ids.clamp(0, M - 1).long()", "revealed_ids > 0", "revealed.sum(-1).long()",
@@ -267,8 +288,9 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "j.unsqueeze(0) < k.unsqueeze(-1)", "species.clamp(0, self.n_species - 1).long()",
                 "jj.unsqueeze(0) < torch.minimum(n_seatable, torch.full_like(n_seatable, K)).unsqueeze(-1)",
                 "jj.unsqueeze(0) < r.unsqueeze(-1)", "opp_species_ids > 0",
-                "rank < (k + OTHER_TAIL_MEAN_N).unsqueeze(-1)", "rank >= k.unsqueeze(-1)", "rank >= K",
-                "k_m > 0", "r < K", "believed.long()"),
+                "rank >= k.unsqueeze(-1)", "rank >= K",
+                "k_m > 0", "r < K", "believed.long()",
+                "i >= lo.unsqueeze(-1)", "i < at.unsqueeze(-1)", "i + 1 < n_avail.unsqueeze(-1)"),
     },
     "t0_species": {
         "OBS": ("onehot > 0",),

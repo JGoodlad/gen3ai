@@ -7,6 +7,7 @@ from agents.model.extractor_ctx import ExtractorContext
 import torch
 from typing import Dict, Any, Optional, Tuple
 from agents.model.value_threat_inject import (ValueThreatInject)
+from agents.model.hypothesis_tokens import OppPresence, float_key_mask
 from agents.model.arch_constants import (D_MODEL,
     TRANSFORMER_N_HEADS,
     TRANSFORMER_FFN_DIM,
@@ -54,17 +55,28 @@ class CLSPool(torch.nn.Module):
 
     def forward(self, our_team_out: torch.Tensor, their_team_out: torch.Tensor,
                 ctx: ExtractorContext,
-                threat_rows: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+                threat_rows: Optional[torch.Tensor] = None,
+                presence: Optional[OppPresence] = None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """our/their_team_out [B,6,D_MODEL]; `threat_rows` the op's reduced per-mon rows (required
         only when value_threat_inject is built) → `(our_team_pooled, their_team_pooled,
-        our_active_refined, value_pooled)`, each [B, D_MODEL]."""
+        our_active_refined, value_pooled)`, each [B, D_MODEL].
+
+        `presence` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only): `their_cls` and
+        `value_cls` are class-E reductions over opponent tokens, so OTHER_species joins their keys and
+        every opponent key carries its log-presence through a FLOAT key-padding mask (F-X5-14:
+        `−inf` masked, ``log π`` otherwise). None (blob) is the original bool-mask path, byte-identical."""
         batch_size = ctx.batch_size
         our_cls_q   = self.our_cls.expand(batch_size, -1, -1)
         their_cls_q = self.their_cls.expand(batch_size, -1, -1)
         our_pool_out, _   = self.our_cls_attn(our_cls_q,   our_team_out,   our_team_out,
                                               key_padding_mask=ctx.fainted_mask_ours)
-        their_pool_out, _ = self.their_cls_attn(their_cls_q, their_team_out, their_team_out,
-                                                key_padding_mask=ctx.fainted_mask_opp)
+        if presence is None:
+            their_pool_out, _ = self.their_cls_attn(their_cls_q, their_team_out, their_team_out,
+                                                    key_padding_mask=ctx.fainted_mask_opp)
+        else:
+            their_kv, their_mask = opp_keys_with_other(their_team_out, ctx.fainted_mask_opp, presence)
+            their_pool_out, _ = self.their_cls_attn(their_cls_q, their_kv, their_kv,
+                                                    key_padding_mask=their_mask)
         our_team_pooled   = self.norm_pool_our(our_pool_out).squeeze(1)             # [B, 128]
         their_team_pooled = self.norm_pool_their(their_pool_out).squeeze(1)         # [B, 128]
 
@@ -87,8 +99,13 @@ class CLSPool(torch.nn.Module):
             our_for_value = self.value_threat_proj(our_team_out, threat_rows)
         all_team_out = torch.cat([our_for_value, their_team_out], dim=1)            # [B, 12, 128]
         value_cls_q  = self.value_cls.expand(batch_size, -1, -1)
-        value_pool_out, _ = self.value_cls_attn(value_cls_q, all_team_out, all_team_out,
-                                                key_padding_mask=ctx.all_fainted)
+        if presence is None:
+            value_pool_out, _ = self.value_cls_attn(value_cls_q, all_team_out, all_team_out,
+                                                    key_padding_mask=ctx.all_fainted)
+        else:
+            all_kv, all_mask = team_keys_with_other(all_team_out, ctx.all_fainted, presence)
+            value_pool_out, _ = self.value_cls_attn(value_cls_q, all_kv, all_kv,
+                                                    key_padding_mask=all_mask)
         value_pooled = self.norm_pool_value(value_pool_out).squeeze(1)              # [B, 128]
 
         return our_team_pooled, their_team_pooled, our_active_refined, value_pooled
@@ -137,12 +154,42 @@ class HiddenOppBeliefPool(torch.nn.Module):
         self.norm = torch.nn.LayerNorm(D_MODEL)
 
     def forward(self, all_team_out: torch.Tensor, all_fainted: torch.Tensor,
-                batch_size: int) -> torch.Tensor:
+                batch_size: int, presence: Optional[OppPresence] = None) -> torch.Tensor:
         """all_team_out [B, 12, D_MODEL], all_fainted [B, 12] bool key-mask → [B, K*D_MODEL].
 
         `all_fainted` always has >=2 False entries (our + opp active are force-unmasked in
-        ObsUnpack), so no memory row is fully masked → no attention NaN."""
+        ObsUnpack), so no memory row is fully masked → no attention NaN.
+
+        `presence` (gen3_x5_belief_tokens_v1, fixed_mass only): the cross-attention is a class-E
+        reduction over opponent tokens — OTHER_species joins the memory and every opponent key carries
+        its log-presence (a FLOAT memory key-padding mask). None (blob): byte-identical."""
         queries = self.queries.expand(batch_size, -1, -1)                         # [B, K, D_MODEL]
+        if presence is not None:
+            mem, mem_mask = team_keys_with_other(all_team_out, all_fainted, presence)
+            belief = self.decoder(queries, mem, memory_key_padding_mask=mem_mask)
+            belief = self.norm(belief)
+            return belief.reshape(batch_size, self.k * D_MODEL)  # type: ignore[no-any-return]
         belief = self.decoder(queries, all_team_out, memory_key_padding_mask=all_fainted)
         belief = self.norm(belief)                                                # [B, K, D_MODEL]
         return belief.reshape(batch_size, self.k * D_MODEL)  # type: ignore[no-any-return]  # [B, K*D_MODEL]
+
+
+def opp_keys_with_other(their_team_out: torch.Tensor, fainted_mask_opp: torch.Tensor,
+                        presence: OppPresence) -> Tuple[torch.Tensor, torch.Tensor]:
+    """(keys [B,7,D], FLOAT mask [B,7]) for a class-E pool over the opponent team: the 6 opponent
+    tokens + OTHER_species, each key carrying its log-presence (fixed_mass, gen3_x5_belief_tokens_v1)."""
+    kv = torch.cat([their_team_out, presence.other_out.unsqueeze(1)], dim=1)
+    lp = torch.cat([presence.slot_log_pi, presence.other_log_mass.unsqueeze(1)], dim=1).to(kv.dtype)
+    masked = torch.cat([fainted_mask_opp, (~presence.other_live).unsqueeze(1)], dim=1)
+    return kv, float_key_mask(masked, lp)
+
+
+def team_keys_with_other(all_team_out: torch.Tensor, all_fainted: torch.Tensor,
+                         presence: OppPresence) -> Tuple[torch.Tensor, torch.Tensor]:
+    """(keys [B,13,D], FLOAT mask [B,13]) for a class-E pool over both teams: our 6 (log-presence 0),
+    their 6 + OTHER_species (their log-presence) — fixed_mass, gen3_x5_belief_tokens_v1."""
+    kv = torch.cat([all_team_out, presence.other_out.unsqueeze(1)], dim=1)
+    zeros = torch.zeros_like(presence.slot_log_pi)
+    lp = torch.cat([zeros, presence.slot_log_pi, presence.other_log_mass.unsqueeze(1)], dim=1).to(kv.dtype)
+    masked = torch.cat([all_fainted, (~presence.other_live).unsqueeze(1)], dim=1)
+    return kv, float_key_mask(masked, lp)

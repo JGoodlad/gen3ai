@@ -25,9 +25,12 @@ from torch.utils.checkpoint import checkpoint
 from agents.model.arch_constants import D_MODEL
 from agents.model.belief_heads import mask_typeless_hp
 from agents.model.extractor_api import ExtractorApi
-from agents.model.extractor_ctx import ExtractorContext, PointerInputs, TOKEN_TYPE_HISTORY
+from agents.model.extractor_ctx import (ExtractorContext, PointerInputs, TOKEN_TYPE_HISTORY,
+                                        TOKEN_TYPE_THEIR_TEAM)
 from agents.model.extractor_stashes import ExtractorStashes
 from agents.model.hypothesis_set import HypothesisSet
+from agents.model.hypothesis_tokens import (OppPresence, hypothesis_ctx, key_log_presence,
+                                            splice_hypothesis_tokens)
 from agents.model.intent_threshold import threshold_probs
 from agents.model.pair_outcome import pair_alpha, reduce_pair_in, reduce_pair_in_all
 from agents.model.pointer_head import _request_order_move_tokens
@@ -70,14 +73,15 @@ class ExtractorForward(ExtractorApi):
             ctx.all_move_ids[:, TEAM_SIZE:, :])              # [B,6,4] revealed ids (rule-out)
         return typed, presence, hp_post, hp_logits
 
-    def _build_hypothesis_set(self, ctx: ExtractorContext, role_pre_belief: torch.Tensor) -> HypothesisSet:
-        """gen3_x5_hypothesis_set_v1 (X5 U2): run the T0 hypothesis builder on this forward's state.
+    def _build_hypothesis_species(self, ctx: ExtractorContext, role_pre_belief: torch.Tensor) -> HypothesisSet:
+        """gen3_x5_hypothesis_set_v1 (X5 U2) / gen3_x5_belief_tokens_v1 (U3): the T0 hypothesis
+        builder's SPECIES half, run BEFORE the move belief (its dex rows become the hidden slots'
+        tokens, which the T0 belief heads then read).
 
         Inputs, all T0: the T0 species prior's LOG-probabilities (recomputed from the same buffers as
         `t0_species_probs`, so the blob path's tensor is untouched), the pre-belief opponent role
-        tokens (δ_θ pools the revealed ones), the TeamTransformer global token's RAW input (δ_θ's own
-        projection of it — the transformer's `global_proj` is T1), and the opponent ACTIVE's typed
-        move posterior + species + revealed moves for the move group."""
+        tokens (δ_θ pools the revealed ones), and the TeamTransformer global token's RAW input (δ_θ's
+        own projection of it — the transformer's `global_proj` is T1)."""
         from agents.model.t0_species import species_team_prior_logits
         hb = self.hypothesis_builder
         t0 = self.t0_species_prior
@@ -86,18 +90,27 @@ class ExtractorForward(ExtractorApi):
         t0_logp = species_team_prior_logits(
             t0.species_prior_log_marginal, t0.species_prior_log_lift, opp_ids, ctx.opp_believed_mask)
         global_input = torch.cat([ctx.our_ctx_raw, ctx.opp_ctx_raw, ctx.non_matchup_rest], dim=1)
-        bidx = torch.arange(ctx.batch_size, device=ctx.device)
-        act = ctx.opp_active_local
-        mb = self.last_move_belief_logits
-        hs: HypothesisSet = hb(t0_logp, opp_ids, ctx.opp_believed_mask, role_pre_belief[:, TEAM_SIZE:],
-                  global_input, self.embeddings.species_embedding,
-                  active_move_logits=(mb[bidx, act] if mb is not None else None),
-                  active_species=opp_ids[bidx, act],
-                  active_revealed_moves=ctx.all_move_ids[:, TEAM_SIZE:, :][bidx, act])
+        hs: HypothesisSet = hb.species_set(t0_logp, opp_ids, ctx.opp_believed_mask,
+                                           role_pre_belief[:, TEAM_SIZE:], global_input,
+                                           self.embeddings.species_embedding)
         return hs
 
-    def _apply_move_belief(self, opp_tokens: torch.Tensor,
-                           ctx: ExtractorContext) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _attach_move_group(self, ctx: ExtractorContext, hs: HypothesisSet) -> HypothesisSet:
+        """The opponent ACTIVE's move group (U2), after the move belief: its typed posterior at the
+        active + the active's species + revealed moves (the active is always revealed)."""
+        hb = self.hypothesis_builder
+        assert hb is not None
+        mb = self.last_move_belief_logits
+        if mb is None:
+            return hs
+        opp_ids = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
+        bidx = torch.arange(ctx.batch_size, device=ctx.device)
+        act = ctx.opp_active_local
+        return hb.with_moves(hs, mb[bidx, act], opp_ids[bidx, act],
+                             ctx.all_move_ids[:, TEAM_SIZE:, :][bidx, act])
+
+    def _apply_move_belief(self, opp_tokens: torch.Tensor, ctx: ExtractorContext,
+                           hctx: Optional[ExtractorContext] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         """Predict + reinject the opp moveset into the given opp tokens [B, 6, D] → (enriched, logits).
         ONE call site: PRE-transformer, T0 RESOLVE (gen3_tiered_pipeline_v1 — the POST-transformer
         placement is deleted). The mask selects the slots per move_belief_mode; the
@@ -106,7 +119,14 @@ class ExtractorForward(ExtractorApi):
         gen3_typed_hp_belief_v1: the HP-type head + the typed composition run HERE, between the move
         head's read and the reinjection, so the posterior that leaves this method — and therefore the
         one every consumer reads (`last_move_belief_logits`) — is already typed. The reinjection then
-        soft-embeds REAL typed moves rather than the typeless 237 row."""
+        soft-embeds REAL typed moves rather than the typeless 237 row.
+
+        `hctx` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only): the hypothesis context —
+        a hidden slot holds a CONCRETE species hypothesis, so the move head's prior is THAT species'
+        Smogon row (the E10 mixture over the T0 posterior is the blob's stand-in for a hidden slot and
+        is not used), and the HP-type head reads the same species. The slot-selection mask and the
+        revealed-only HP reinjection read the REAL `ctx`."""
+        sctx = hctx if hctx is not None else ctx                 # where the SPECIES / move ids come from
         if self.move_belief_mode == "revealed":
             mb_mask = ~ctx.opp_believed_mask                 # revealed-species slots
         elif self.move_belief_mode == "unrevealed":
@@ -115,13 +135,14 @@ class ExtractorForward(ExtractorApi):
             mb_mask = torch.ones_like(ctx.opp_believed_mask)
         raw = self.move_belief.move_logits(  # type: ignore[union-attr]
             opp_tokens,
-            ctx.species_ids[:, TEAM_SIZE:],                                  # [B, 6]
-            ctx.all_move_ids[:, TEAM_SIZE:, :],                              # [B, 6, 4]
+            sctx.species_ids[:, TEAM_SIZE:],                                 # [B, 6]
+            sctx.all_move_ids[:, TEAM_SIZE:, :],                             # [B, 6, 4]
             # gen3_hidden_slot_move_mixture_v1 (E10): the hidden slots' prior is the Smogon mixture
             # over the T0 species posterior (None when `t0_species_prior` is off ⇒ the flat row).
-            hidden_species_probs=self.stash.t0_species_probs,
-            opp_believed_mask=ctx.opp_believed_mask)
-        logits, presence, hp_post, hp_logits = self._typed_hp_posterior(opp_tokens, ctx, raw)
+            # X5: a hypothesis slot's species is concrete, so no mixture (its own species row).
+            hidden_species_probs=(self.stash.t0_species_probs if hctx is None else None),
+            opp_believed_mask=(ctx.opp_believed_mask if hctx is None else None))
+        logits, presence, hp_post, hp_logits = self._typed_hp_posterior(opp_tokens, sctx, raw)
         # gen3_belief_label_only_v1: register the LIVE tensors for the supervised losses BEFORE
         # publishing. `logits` is the TYPED posterior, so it carries BOTH the move head's and the
         # HP-type head's gradient — which is why the move BCE and the HP CE both keep training under
@@ -143,7 +164,9 @@ class ExtractorForward(ExtractorApi):
                 enriched, hp_post, presence, (~ctx.opp_believed_mask).float(), self.embeddings)  # type: ignore[arg-type]
         return enriched, logits
 
-    def _spread_hp_damage(self, opp_tokens: torch.Tensor, ctx: ExtractorContext
+    def _spread_hp_damage(self, opp_tokens: torch.Tensor, ctx: ExtractorContext,
+                          hctx: Optional[ExtractorContext] = None,
+                          hs: Optional[HypothesisSet] = None,
                           ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """The spread + HP-type belief legs and the FULL DamageOperator, in ONE place.
 
@@ -160,9 +183,15 @@ class ExtractorForward(ExtractorApi):
         # its hand-coded spread constants) + the speed-supervision loss. Enriches the opp tokens before the
         # CLS pools, like MoveBelief. Hidden slots aren't enriched (their species num 0 → flat prior) and the
         # op only reads the (revealed) active slot.
+        # gen3_x5_belief_tokens_v1 (fixed_mass): a hypothesis seat is a CONCRETE species, so the spread
+        # and item heads read it with its species (`hctx`) — the spread head enriches revealed AND
+        # hypothesis seats (§3.4; unsupervised on hypothesis seats, F-X5-16).
+        sctx = hctx if hctx is not None else ctx
+        spread_mask = (~ctx.opp_believed_mask if hs is None
+                       else (~ctx.opp_believed_mask) | hs.slot_is_hypothesis)
         if self.spread_belief is not None:
             (opp_tokens, _believed, _nat_logits, _ev) = self.spread_belief(
-                opp_tokens, ~ctx.opp_believed_mask, ctx.species_ids[:, TEAM_SIZE:])
+                opp_tokens, spread_mask, sctx.species_ids[:, TEAM_SIZE:])
             # gen3_belief_label_only_v1: the LIVE tensors for the supervised losses, then publish.
             # Cutting `believed` cuts `nature_head`/`ev_head` too — in the generative arm they reach the
             # forward ONLY through it (nat_logits → e_mult → believed → the op; and delta, which the
@@ -182,7 +211,7 @@ class ExtractorForward(ExtractorApi):
         # exactness gating stays op-side); the logits feed the bank's seventh CE row.
         if self.item_belief_head is not None:
             _item_logits, _item_post = self.item_belief_head(
-                opp_tokens, ctx.species_ids[:, TEAM_SIZE:])
+                opp_tokens, sctx.species_ids[:, TEAM_SIZE:])
             self.stash.belief_supervision["item_logits"] = _item_logits
             _item_pub = self._publish_belief(_item_logits)
             self.stash.item_logits = _item_pub
@@ -273,12 +302,27 @@ class ExtractorForward(ExtractorApi):
         self.stash.opp_believed_mask = ctx.opp_believed_mask
         self.stash.opp_active_local = ctx.opp_active_local   # for the prober's belief-row decode
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
-        # gen3_x5_hypothesis_set_v1: δ_θ reads the PRE-belief opponent role tokens (the revealed ones).
-        _role_pre_belief = role_tokens
+        # gen3_x5_belief_tokens_v1 (X5 U3, `--belief-tokens fixed_mass` only; blob runs NONE of this):
+        # the hypothesis set's SPECIES half (δ_θ reads the PRE-belief opponent role tokens — the
+        # revealed ones), then the hypothesis TOKENS: THE `pokemon_encoder` on the hypothesis context
+        # (hidden slots' rows = their dex rows; every mask the REAL one) + `hypothesis_marker`,
+        # spliced into the hidden opponent slots. `BeliefSlots` is retired in this arm (its constant
+        # per-position token is exactly what X5 replaces); the module stays built so both arms share
+        # every non-X5 parameter, and it receives no gradient here.
+        _hs: Optional[HypothesisSet] = None
+        _hctx: Optional[ExtractorContext] = None
+        if self.hypothesis_builder is not None:
+            _hs = self._build_hypothesis_species(ctx, role_tokens)
+            _hctx = hypothesis_ctx(ctx, _hs, self.layout)
+            _move_tok_real = self.pokemon_encoder.last_move_tokens
+            _role_hyp = self.pokemon_encoder(_hctx, self.embeddings)
+            self.pokemon_encoder.last_move_tokens = _move_tok_real   # OUR move tokens: the real pass's
+            role_tokens = splice_hypothesis_tokens(role_tokens, _role_hyp, _hs,
+                                                   self.hypothesis_builder.hypothesis_marker)
         # In-place hidden-opponent belief: replace the un-revealed opp slots with distinct learned
         # unknown-mon tokens BEFORE the transformer, so the body refines them and every readout
         # attends over them as party members (flag-guarded; None ⇒ baseline zeros).
-        if self.belief_slots is not None:
+        elif self.belief_slots is not None:
             role_tokens = self.belief_slots(role_tokens, ctx.opp_believed_mask)
         # T0 RESOLVE — the move belief (gen3_tiered_pipeline_v1). Reinject the predicted opp moveset
         # into the opp ROLE tokens BEFORE the transformer, so the believed moves co-refine with the
@@ -287,21 +331,21 @@ class ExtractorForward(ExtractorApi):
         # `last_move_belief_logits`. There is no second placement.
         if self.move_belief is not None:
             opp_role, _mb_logits = self._apply_move_belief(
-                role_tokens[:, TEAM_SIZE:], ctx)
+                role_tokens[:, TEAM_SIZE:], ctx, _hctx)
             self.stash.move_belief_logits = _mb_logits
             role_tokens = torch.cat([role_tokens[:, :TEAM_SIZE], opp_role], dim=1)
-        # T0 RESOLVE — X5's hypothesis set (gen3_x5_hypothesis_set_v1, `--belief-tokens fixed_mass`
-        # only; None under `blob`, which runs nothing here). U2 STASHES it: no policy / value tensor
-        # reads it yet (U3 wires the tokens into the trunk and the op).
-        if self.hypothesis_builder is not None:
-            self.stash.hypothesis = self._build_hypothesis_set(ctx, _role_pre_belief)
+        # T0 RESOLVE — X5's hypothesis set: the opponent ACTIVE's move group joins the species half
+        # (fixed_mass only; None under blob).
+        if _hs is not None:
+            _hs = self._attach_move_group(ctx, _hs)
+            self.stash.hypothesis = _hs
         # T0 RESOLVE (spread/HP-type) → T1 REASON (the op). Run the WHOLE physics stack ONCE, here,
         # PRE-attention: the spread + HP-type beliefs read the raw opp role tokens (the move belief
         # already did, just above), the FULL DamageOperator runs on that belief, and its per-OUR-mon
         # INCOMING rows are injected onto our role tokens through the zero-init `prefuse_proj` — so
         # attention reasons over the physics. `damage_block` is None only when the op is off, in which
         # case there is nothing to inject (and `prefuse_proj` was never built).
-        opp_role, damage_block = self._spread_hp_damage(role_tokens[:, TEAM_SIZE:], ctx)
+        opp_role, damage_block = self._spread_hp_damage(role_tokens[:, TEAM_SIZE:], ctx, _hctx, _hs)
         if damage_block is not None:
             # gen3_op_tensors_views_v1: the op's typed views (set by the forward that just ran)
             # replace every flat-offset slice on the consumer side.
@@ -445,10 +489,38 @@ class ExtractorForward(ExtractorApi):
                 ctx, self.last_move_belief_logits, self.last_spread_belief,  # type: ignore[arg-type]
                 k_cand=self.consequence_topk, c2_cells=_c2_edge_cells,
                 species_probs=self.stash.t0_species_probs)
+        # gen3_x5_belief_tokens_v1 (fixed_mass): OTHER_species joins the trunk as ONE extra seat right
+        # after the entity seats (E3/E4/E5 stay front-indexed; the event seats stay LAST, which the
+        # `r` edge family's slice requires), typed THEIR_TEAM, key-masked iff OTHER is masked
+        # (structural). Every opponent key carries its log-presence (`key_log_presence`).
+        _klp = None
+        _other_idx = -1
+        if _hs is not None:
+            _n_ent = self.entity_seats.n_seats
+            _other_idx = self.team_transformer._total_tokens + _n_ent
+            _seat_tokens = torch.cat([_seat_tokens[:, :_n_ent], _hs.other_token.unsqueeze(1).to(_seat_tokens.dtype),
+                                      _seat_tokens[:, _n_ent:]], dim=1)
+            _seat_pad = torch.cat([_seat_pad[:, :_n_ent], (~_hs.other_live).unsqueeze(1),
+                                   _seat_pad[:, _n_ent:]], dim=1)
+            _seat_types = torch.cat([
+                _seat_types[:_n_ent],
+                torch.full((1,), TOKEN_TYPE_THEIR_TEAM, dtype=torch.long, device=ctx.device),
+                _seat_types[_n_ent:]], dim=0)
+            _e5_off = (self.team_transformer._total_tokens + 4 + self.entity_topk_seats
+                       if self.entity_seats.tail_seats else None)
+            _klp = key_log_presence(2 * TEAM_SIZE + 1 + _seat_tokens.shape[1], _hs, _other_idx,
+                                    e5_offset=_e5_off)
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, _seat_types, _seat_pad),
-            edge_bias_fn=_edge_fn)
+            edge_bias_fn=_edge_fn, key_log_presence=_klp)
+        _presence: Optional[OppPresence] = None
+        if _hs is not None:
+            assert _seat_out is not None
+            _presence = OppPresence(
+                slot_log_pi=_hs.slot_log_pi,
+                other_out=_seat_out[:, _other_idx - self.team_transformer._total_tokens, :],
+                other_log_mass=_hs.other_log_mass, other_live=_hs.other_live)
         # gen3_rank_probe_stash_v1 (K6): the rank probe's trunk readout, by reference (no copy).
         self.stash.trunk_tokens = (our_team_out, their_team_out)
         # Aux belief logits over the refined opp tokens — stashed for the PPO aux loss, NOT fed back
@@ -467,6 +539,7 @@ class ExtractorForward(ExtractorApi):
             our_team_out, their_team_out, ctx,
             threat_rows=(self.damage_op.last_reduced_extra  # type: ignore[union-attr]
                          if self.value_threat_inject else None),
+            presence=_presence,
         )
         # gen3_rank_probe_stash_v1 (K6): the CLS pool's value readout BEFORE the value routes inject
         # below — what the rank probe's `rank/value_cls_*` has always measured.
@@ -719,7 +792,8 @@ class ExtractorForward(ExtractorApi):
             # NaN-safety invariant and is single-sourced on the context). Computed BEFORE the value
             # routes because the entity pool's `full` rider reads the belief rows.
             all_team_out = torch.cat([our_team_out, their_team_out], dim=1)                 # [B, 12, D]
-            belief = self.hidden_opp_belief(all_team_out, ctx.all_fainted, ctx.batch_size)
+            belief = self.hidden_opp_belief(all_team_out, ctx.all_fainted, ctx.batch_size,
+                                            presence=_presence)
         # ============================================================================
         # gen3_value_pooled_routes_v1 (v89): the value routes INJECT into `value_pooled` —
         # the tensor the dist-head critic actually reads — instead of the post-assembler vf
@@ -736,7 +810,7 @@ class ExtractorForward(ExtractorApi):
         # ============================================================================
         for _route_name, _contrib in self._value_pooled_routes(ctx, our_team_out,
                                                                their_team_out, belief,
-                                                               damage_block):
+                                                               damage_block, _presence):
             value_pooled = value_pooled + _contrib
         # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
         # 128-dim value-CLS hint layer). Read by the capacity probes, the ride-along heads and the cf
@@ -759,7 +833,8 @@ class ExtractorForward(ExtractorApi):
 
     def _value_pooled_routes(self, ctx: ExtractorContext, our_team_out: torch.Tensor,
                              their_team_out: torch.Tensor, belief: Optional[torch.Tensor],
-                             damage_block: Optional[torch.Tensor]
+                             damage_block: Optional[torch.Tensor],
+                             presence: "Optional[OppPresence]" = None,
                              ) -> Iterator[Tuple[str, torch.Tensor]]:
         """Yield `(name, [B, D_MODEL] contribution)` for every enabled value route
         (gen3_value_pooled_routes_v1). THE route registry: the gradient-connectivity guard
@@ -781,7 +856,9 @@ class ExtractorForward(ExtractorApi):
                         if (self.damage_op is not None and damage_block is not None) else None)
             _op_alive = ((ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
                          if _op_rows is not None else None)
-            _uvr_kw = {}
+            _uvr_kw: Dict[str, object] = {}
+            if presence is not None:
+                _uvr_kw["presence"] = presence           # X5 fixed_mass: OTHER row + log-π (class E)
             if self.value_entity_pool.full:
                 _uvr_kw["global_row"] = self.team_transformer.last_global_out
                 if belief is not None:

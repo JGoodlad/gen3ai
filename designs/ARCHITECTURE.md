@@ -362,14 +362,18 @@ are the one deliberate split: `BeliefHead` is a **training-only side readout** w
 stashed for the aux loss and never fed forward, which is exactly what its T2 declaration records.
 
 **`--belief-tokens` (X5) is `blob` in production**: the representation described here, and nothing
-of X5 is built. The `fixed_mass` arm (`gen3_x5_hypothesis_set_v1`,
-[`endstate/design_x5_belief_tokens.md`](endstate/design_x5_belief_tokens.md)) adds one T0 module,
-`HypothesisBuilder` (`agents/model/hypothesis_set.py`), run after `MoveBelief`: concrete species
-hypotheses with logistic fixed-size presence (Σπ = 6 − revealed), a learned delta on the T0 prior,
-OTHER, and the opponent active's move group. Its output is stashed (`last_hypothesis`) and supervised
-(the `hidden_team_set` belief row replaces the Hungarian one); it does not yet enter the trunk, the op
-or any head, so that arm's policy and value outputs equal `blob`'s for the shared weights. Config v136,
-no `ARCH_SIGNATURE` change while both arms build.
+of X5 is built. The `fixed_mass` arm ([`endstate/design_x5_belief_tokens.md`](endstate/design_x5_belief_tokens.md))
+adds `HypothesisBuilder` (`agents/model/hypothesis_set.py`, T0) — concrete species hypotheses with
+logistic fixed-size presence (Σπ = 6 − revealed), a learned delta on the T0 prior, OTHER and the
+opponent active's move group — and READS it (`gen3_x5_belief_tokens_v1`,
+`agents/model/hypothesis_tokens.py`): each hidden opponent slot holds its hypothesis's dex row encoded
+by THE `PokemonEncoder` + a learned `hypothesis_marker` (replacing `BeliefSlots`' constant token, which
+that arm does not call); the T0 belief heads read those seats with their species; OTHER_species joins
+the trunk as one extra seat after the entity seats; and every expectation-type reduction over opponent
+tokens — the trunk's attention, `their_cls`, `value_cls`, `HiddenOppBeliefPool`, `value_entity_pool` —
+adds log π of each opponent key (detached; FLOAT key masks in the three `nn` pools). The damage op,
+E4 / E5 seat selection and the opponent pointer still read the blob's construction in that arm (X5
+build units U3 part 2 onward). Config v136, no `ARCH_SIGNATURE` change while both arms build.
 
 The concrete steps:
 

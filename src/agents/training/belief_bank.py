@@ -151,7 +151,7 @@ def hp_type_belief_loss(logits, hp_type_label, hp_type_mask):
                   "mask_rate": float(mask.float().mean().item())}    # uniform: see spread
 
 
-def move_belief_loss(ml, known_moves, belief_moves, mode: str):
+def move_belief_loss(ml, known_moves, belief_moves, mode: str, hypothesis=None, belief_species=None):
     """Supervised loss for the MoveBelief REINJECTION head (``last_move_belief_logits`` [B,6,M]).
 
     Two DISJOINT slot populations, selected by ``mode``:
@@ -169,7 +169,14 @@ def move_belief_loss(ml, known_moves, belief_moves, mode: str):
 
     The two label tensors PAD each other's slots (known_moves PADs believed slots; belief_moves
     PADs revealed slots), so 'both' simply scores each population with its own rule. A slot whose
-    moveset is all-PAD (unknown moves) is NOT supervised. Returns (loss, metrics) or None
+    moveset is all-PAD (unknown moves) is NOT supervised.
+
+    ``hypothesis`` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only): the hidden slots
+    hold CONCRETE species hypotheses whose move head reads a species-specific token, so the
+    UNREVEALED population is supervised by §3.4's rule instead of the Hungarian matching — a
+    hypothesis seat is scored IFF its species is on the true unseen team, against THAT mon's moveset
+    (`hypothesis_set.hypothesis_moves_targets`; needs ``belief_species``). None (blob): unchanged.
+    Returns (loss, metrics) or None
     (off / labels absent / nothing scorable). FAILS LOUD on an out-of-vocab move id. Pure + static
     (unit-tests without a full PPO)."""
     if ml is None:
@@ -207,8 +214,27 @@ def move_belief_loss(ml, known_moves, belief_moves, mode: str):
                 mv_tp += int((pp & mh).sum()); mv_pred_pos += int(pp.sum()); mv_true_pos += int(mh.sum())
             n_revealed += int(slot_has.sum())
 
+    # ---- UNREVEALED, X5 fixed_mass: hypothesis seats, supervised iff the species is present ----
+    if mode in ("unrevealed", "both") and belief_moves is not None and hypothesis is not None:
+        from agents.model.hypothesis_set import hypothesis_moves_targets
+        if belief_species is None:
+            raise ValueError("move_belief_loss under fixed_mass needs belief_species (the hypothesis "
+                             "seats are supervised iff their species is on the true unseen team)")
+        bm = belief_moves.long().to(device)
+        _vocab_check(bm[bm >= 0])
+        mh, sup = hypothesis_moves_targets(hypothesis.slot_species, hypothesis.slot_is_hypothesis,
+                                           belief_species, belief_moves, n_moves, ml)
+        if bool(sup.any()):
+            per_slot = F.binary_cross_entropy_with_logits(ml, mh, reduction="none").mean(-1)  # [B, 6]
+            terms.append(per_slot[sup].reshape(-1))
+            with th.no_grad():
+                sel = sup.unsqueeze(-1)
+                pp = (ml > 0.0) & sel
+                mb_ = mh.bool() & sel
+                mv_tp += int((pp & mb_).sum()); mv_pred_pos += int(pp.sum()); mv_true_pos += int(mb_.sum())
+            n_unrevealed += int(sup.sum())
     # ---- UNREVEALED: order-invariant (Hungarian) multi-label BCE over the believed slots ----
-    if mode in ("unrevealed", "both") and belief_moves is not None:
+    elif mode in ("unrevealed", "both") and belief_moves is not None:
         bm = belief_moves.long().to(device)                                    # [B, 6, 4]
         valid = bm >= 0
         _vocab_check(bm[valid])
@@ -511,7 +537,9 @@ ROWS: Tuple[BeliefHeadRow, ...] = (
         name="move_belief", probe="move_belief", prefix="move_", gate="move_belief",
         coef="move_belief_coef", loss_fn=move_belief_loss, site="hidden_move",
         args=(("stash", "move_belief_logits"), ("obs", "known_moves"),
-              ("obs", "belief_moves"), ("attr", "move_belief_mode"))),
+              ("obs", "belief_moves"), ("attr", "move_belief_mode"),
+              # gen3_x5_belief_tokens_v1: None under blob (the Hungarian path, unchanged)
+              ("attr", "last_hypothesis"), ("obs", "belief_species"))),
     BeliefHeadRow(
         name="move_latent", probe="move_latent", prefix="movelatent_", gate="move_latent",
         coef="move_belief_latent_coef", loss_fn=move_belief_latent_loss, site="latent",
