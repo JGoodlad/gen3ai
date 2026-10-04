@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,051-line file. **The ledger itself is append-only and is never edited by this**;
+22,069-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**749 headings · 694 dated · 2026-08-01 → 2026-10-04 · ledger 22,051 lines.**
+**750 headings · 695 dated · 2026-08-01 → 2026-10-04 · ledger 22,069 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -769,3 +769,4 @@ rename.
   - `L22009` · `2026-10-04` · FINDING + FIX · **THE SMOGON MOVE PRIOR WAS DEFLATED — rating-WEIGHTED chaos `Moves` over the UNWEIGHTED `Raw count` (×0.10–0.94 by species; Skarmory Spikes 0.547 vs 0.997); FIXED as `Moves / W` with throwing guards (`gen3_smogon_prior_denominator_v1`), a TRAINING-INPUT BOUNDARY**
   - `L22030` · `2026-10-04` · REGISTRATION · **X5 A/B Amendment 1, the blob arm runs FIRST: seeds 1001–1003 at production + the X26 heads, 15M each, snapshot-ladder updater off; the fixed_mass seeds follow after their cost fixes, under a blob-path identity precondition; s from a paired benchmark**
   - `L22046` · `2026-10-04` · FINDING + FIX · **`scripts/land.sh`'s GATES COULD NEVER FAIL A LANDING — bash ignores `set -e` on the left of `||`, so `( ruff; mypy; pytest; echo OK ) || exit 1` exited with the closing `echo`'s status; FIXED with an explicit check per gate, pinned by a test that fails on revert**
+  - `L22051` · `2026-10-04` · FINDING + FIX · **THE SMOGON SPECIES-USAGE MARGINAL WAS UNWEIGHTED — the chaos `Raw count` share, while every other Smogon prior (and the teammate conditional the lift divides by it) is rating-WEIGHTED (new / old ×0.19–×1.75 by species; Shuckle ×0.19, Tyranitar 0.078 → 0.086); FIXED as the W share with a throwing guard (`gen3_smogon_species_usage_weighted_v1`), a TRAINING-INPUT BOUNDARY**
