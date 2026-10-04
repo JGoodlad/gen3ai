@@ -1,0 +1,6 @@
+drive fmA4 start 1791122174.899644792 args: --arch production --device cuda --steps 6000000 --eval-freq 50000000 --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all --belief-tokens fixed_mass --allow-nonproduction-arch --behaviour-check warn
+wrapper pid 2878117
+trainer pid 2878138
+reached 13 update rows at i=585
+SIGTERM -> 2878138 at 1791123931.845533522
+end 1791123933.857287037; wrapper alive: no

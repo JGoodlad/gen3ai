@@ -1,0 +1,21 @@
+{
+ "arm": "no_hypatk",
+ "pieces_removed": [
+  "hypatk"
+ ],
+ "batch": 2048,
+ "torch": "2.8.0+cu126",
+ "first_call_compile_s": 127.8,
+ "compiled_ms_blocks": [
+  89.102,
+  89.147,
+  89.238,
+  89.346,
+  89.369
+ ],
+ "compiled_ms_median": 89.238,
+ "peak_alloc_mib": 3958.6,
+ "graph_breaks": {},
+ "unique_graphs": 1,
+ "cache_root": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_3599401_g4qwvcm6"
+}

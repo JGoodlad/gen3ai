@@ -1,0 +1,53 @@
+{
+ "arm": "no_hypatk",
+ "pieces_removed": [
+  "hypatk"
+ ],
+ "batch": 2048,
+ "torch": "2.8.0+cu126",
+ "first_call_compile_s": 131.6,
+ "compiled_ms_blocks": [
+  89.092,
+  89.14,
+  89.162,
+  89.311,
+  89.358
+ ],
+ "compiled_ms_median": 89.162,
+ "peak_alloc_mib": 3958.6,
+ "t2_graph_replay_ms": {
+  "8": {
+   "blocks": [
+    1.875,
+    1.8317,
+    1.8317,
+    1.8316,
+    1.8315
+   ],
+   "median": 1.8317
+  },
+  "64": {
+   "blocks": [
+    2.7149,
+    2.6353,
+    2.6433,
+    2.6457,
+    2.6456
+   ],
+   "median": 2.6456
+  },
+  "256": {
+   "blocks": [
+    5.6267,
+    5.6238,
+    5.6249,
+    5.6289,
+    5.6309
+   ],
+   "median": 5.6267
+  }
+ },
+ "graph_breaks": {},
+ "unique_graphs": 4,
+ "cache_root": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_3402631_05p_h3sv"
+}

@@ -62,6 +62,10 @@ REGISTRY = [
     ("x5_u2_gpu_checks_2026-10-04/scripts/summarize.py",
      "X5 U2 GPU checks: the four production launches' per-launch reads (results/x5{blob,fm}_{a,b}.json) and their "
      "phase / CPU-sampler rows (results/raw) -> the quiet-update medians, bootstrap CIs, T2 and memory deltas"),
+    ("x5_cost_ablation_2026-10-04/scripts/summarize.py",
+     "X5 U8 cost read at 889add9d with the X26 heads: the six production launches' per-launch reads (results/<launch>.json) "
+     "and their phase / CPU-sampler rows (results/raw), and the 22 ablation-arm reads (results/ablate_<arm>_r<k>.json) -> "
+     "the budget deltas (train_ms, T2 service, D-6 headroom) and the per-piece ablation table"),
 ]
 
 _MEAS = repo_path("designs", "research_state", "measurements")
@@ -108,7 +112,7 @@ def test_registered_readout_resolves_its_inputs(rel: str, why: str) -> None:
 #: keeps retiring — and a registry that quietly SHRINKS is the same failure at partial strength.
 #: Lowering this number is a legal move only in the same commit that deletes a readout, and the
 #: commit message says which one.
-_REGISTRY_FLOOR = 9
+_REGISTRY_FLOOR = 10
 
 
 def test_registry_does_not_silently_shrink() -> None:

@@ -1,0 +1,21 @@
+{
+ "arm": "no_keybias",
+ "pieces_removed": [
+  "keybias"
+ ],
+ "batch": 2048,
+ "torch": "2.8.0+cu126",
+ "first_call_compile_s": 125.1,
+ "compiled_ms_blocks": [
+  89.281,
+  89.303,
+  89.384,
+  89.416,
+  89.511
+ ],
+ "compiled_ms_median": 89.384,
+ "peak_alloc_mib": 3958.1,
+ "graph_breaks": {},
+ "unique_graphs": 1,
+ "cache_root": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_3619250_ti4_ya3q"
+}

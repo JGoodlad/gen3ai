@@ -1,0 +1,21 @@
+{
+ "arm": "no_bisect",
+ "pieces_removed": [
+  "bisect"
+ ],
+ "batch": 2048,
+ "torch": "2.8.0+cu126",
+ "first_call_compile_s": 147.4,
+ "compiled_ms_blocks": [
+  88.213,
+  88.285,
+  88.329,
+  88.402,
+  88.531
+ ],
+ "compiled_ms_median": 88.329,
+ "peak_alloc_mib": 3958.6,
+ "graph_breaks": {},
+ "unique_graphs": 1,
+ "cache_root": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_3679322_04vtlaxb"
+}

@@ -1,0 +1,7 @@
+drive fmB start 1791114654.587810919 args: --arch production --device cuda --steps 6000000 --eval-freq 50000000 --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all --belief-tokens fixed_mass --allow-nonproduction-arch
+wrapper pid 2401540
+trainer pid 2401561
+reached 13 update rows at i=442
+SIGTERM -> 2401561 at 1791115981.298648085
+orphan 2461147: /bin/bash -c source /home/goodlad/.claude/shell-snapshots/snapshot-bash-1790812735900-gj58kr.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builti
+end 1791115983.323511338; wrapper alive: no

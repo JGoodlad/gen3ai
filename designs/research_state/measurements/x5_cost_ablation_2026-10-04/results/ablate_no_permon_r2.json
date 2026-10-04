@@ -1,0 +1,21 @@
+{
+ "arm": "no_permon",
+ "pieces_removed": [
+  "permon"
+ ],
+ "batch": 2048,
+ "torch": "2.8.0+cu126",
+ "first_call_compile_s": 124.7,
+ "compiled_ms_blocks": [
+  89.032,
+  89.091,
+  89.293,
+  89.424,
+  89.431
+ ],
+ "compiled_ms_median": 89.293,
+ "peak_alloc_mib": 3960.4,
+ "graph_breaks": {},
+ "unique_graphs": 1,
+ "cache_root": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_3579390_kscic_q3"
+}

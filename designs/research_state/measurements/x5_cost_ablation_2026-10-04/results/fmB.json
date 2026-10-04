@@ -1,0 +1,931 @@
+{
+ "tag": "fmB",
+ "argv": [
+  "--run-name",
+  "fmB",
+  "--arch",
+  "production",
+  "--device",
+  "cuda",
+  "--steps",
+  "6000000",
+  "--eval-freq",
+  "50000000",
+  "--ridealong-ensemble",
+  "5",
+  "--ridealong-rnd",
+  "--ridealong-adv",
+  "5",
+  "--ridealong-opp",
+  "5",
+  "--ridealong-rnd-variants",
+  "all",
+  "--belief-tokens",
+  "fixed_mass",
+  "--allow-nonproduction-arch"
+ ],
+ "startup_wall_s_start_to_first_collect": 633.3,
+ "startup_wall_s_start_to_dry_update_end": 633.2,
+ "T2_up_s": "428.1",
+ "T2_line": "\ud83e\udd80 [RUST ENV] T2 up in 428.1s: 1 slot group(s) [('pool0', 31)], trainee slot(s) [24], buckets (8, 64, 256) (non-trainee slots <= 64), lanes 8, backend graph on cuda",
+ "R1_prewarm_s": "175.2",
+ "R1_prewarm_line": "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 4 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 175.2s",
+ "compile_lock_line": "\ud83e\uddca [COMPILE LOCK] after the end of startup (the region gate, the reset and the prewarm of every declared signature): max 1 cache entries per code object (limit 8, headroom 7) at micro_step (micro_step.py:155); 1 code objects hold 1 entries; 4 graphs compiled in this process (incl. the gate's); mode stance. Any further dynamo compile or a cache-limit hit now stops the run with a typed exit.",
+ "compile_regions_parity": "[CompileRegions] parity PASS (fp32) \u2014 R1 [fresh weights] loss rel 0.00e+00 <= 0.0001; train features: fp32 max|compiled-eager| 0.00e+00 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.17e-05 (features_extractor.history_events.status_emb.weight) over 147 params <= 0.1004 [the K9 learner golden's real labelled buffer] | R1 [fresh weights, seeded perturbation scale=0.05 seed+0] loss rel 0.00e+00 <= 0.",
+ "dry_update_line": "\ud83e\uddee [UpdateFit] dry first update (98,304 fixture rows, 1 epoch, device batch staged, 21.4s): demand (peak reserved) 9,680 MiB, peak allocated 7,153, floor 1,757; card for this process 10,236 (reserved 9,680 + free 556) -> headroom 556 MiB vs the declared 256; peak segment 'batch'",
+ "ledger": [
+  "weights on the card (policy + ride-along heads)            alloc       57 (     +57)  reserved       66 (     +66)  peak       58  free    10690",
+  "rust env core (T2 slots, staging, arena)                   alloc     1252 (   +1196)  reserved     2956 (   +2890)  peak     1656  free     7346",
+  "compiled regions: gate + prewarm + lock                    alloc     1732 (    +480)  reserved     7896 (   +4940)  peak     5357  free     2378",
+  "optimizer state declared (Adam m, v) + lifecycle           alloc     1757 (     +25)  reserved     7896 (      +0)  peak     1794  free     2378"
+ ],
+ "t2_gate_lines": [],
+ "arch_source": "arch_source.",
+ "fatal_or_error_lines": [
+  "\u26a1 --compile-trainer ON by default (device=cuda) \u2014 ~1.75x on the PPO train step. --no-compile-trainer opts out. Compile failure is FATAL by design.",
+  "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs",
+  "\ud83d\udea8 [K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 0 < 0.0001, excluded_frac 0.473 NOT < 0.15; judged 1080 of 2048 rows \u2014 968 excluded within a relative margin 0.0002 of a selection /",
+  "\ud83d\udee1\ufe0f  [SUPPLY] --self-play: must deliver self-play opponent (a seeded pool) within 3 consecutive live eval cycles, else FATAL_SUPPLY (5)"
+ ],
+ "startup_max_contention_factor": 2.2296944099267355,
+ "startup_windows_ge_1.05": 37,
+ "startup_windows": 314,
+ "tb_tags": 508,
+ "updates": [
+  {
+   "i": 0,
+   "dur_s": 21.26,
+   "max_factor": 1.0002497902449339,
+   "excluded": "warm-up (startup dry update / first real update)"
+  },
+  {
+   "i": 1,
+   "dur_s": 56.14,
+   "max_factor": 1.263414022024042,
+   "excluded": "warm-up (startup dry update / first real update)"
+  },
+  {
+   "i": 2,
+   "dur_s": 49.07,
+   "max_factor": 1.5292408173639067,
+   "excluded": "contended (max factor 1.5292408173639067)"
+  },
+  {
+   "i": 3,
+   "dur_s": 47.76,
+   "max_factor": 1.0012180685326002,
+   "excluded": null
+  },
+  {
+   "i": 4,
+   "dur_s": 47.54,
+   "max_factor": 1.000278034819092,
+   "excluded": null
+  },
+  {
+   "i": 5,
+   "dur_s": 47.53,
+   "max_factor": 1.0011983428797513,
+   "excluded": null
+  },
+  {
+   "i": 6,
+   "dur_s": 48.71,
+   "max_factor": 1.000059211078603,
+   "excluded": null
+  },
+  {
+   "i": 7,
+   "dur_s": 48.03,
+   "max_factor": 2.0392971257114954,
+   "excluded": "contended (max factor 2.0392971257114954)"
+  },
+  {
+   "i": 8,
+   "dur_s": 47.8,
+   "max_factor": 1.0012090218375589,
+   "excluded": null
+  },
+  {
+   "i": 9,
+   "dur_s": 47.96,
+   "max_factor": 1.0014205994077576,
+   "excluded": null
+  },
+  {
+   "i": 10,
+   "dur_s": 57.04,
+   "max_factor": 1.0008280815555952,
+   "excluded": "compile-canary update"
+  },
+  {
+   "i": 11,
+   "dur_s": 47.98,
+   "max_factor": 1.054734839526917,
+   "excluded": "contended (max factor 1.054734839526917)"
+  },
+  {
+   "i": 12,
+   "dur_s": 47.8,
+   "max_factor": 1.0012456662826263,
+   "excluded": null
+  }
+ ],
+ "update_wall_s_steady": {
+  "n": 7,
+  "values": [
+   47.76,
+   47.54,
+   47.53,
+   48.71,
+   47.8,
+   47.96,
+   47.8
+  ],
+  "median": 47.8,
+  "mean": 47.871
+ },
+ "tb_update_rows": 12,
+ "tb": {
+  "train/train_ms": {
+   "all": [
+    56132.3438,
+    49062.9531,
+    47754.2617,
+    47538.7227,
+    47533.6016,
+    48709.9609,
+    48029.6523,
+    47800.2812,
+    47952.8906,
+    57040.8906,
+    47973.2539,
+    47803.3867
+   ],
+   "steady_kept": [
+    47754.2617,
+    47538.7227,
+    47533.6016,
+    48709.9609,
+    47800.2812,
+    47952.8906,
+    47803.3867
+   ],
+   "median_steady": 47800.2812
+  },
+  "lifecycle/update_wall_s": {
+   "all": [
+    56.1323,
+    49.063,
+    47.7543,
+    47.5387,
+    47.5336,
+    48.71,
+    48.0297,
+    47.8003,
+    47.9529,
+    57.0409,
+    47.9733,
+    47.8034
+   ],
+   "steady_kept": [
+    47.7543,
+    47.5387,
+    47.5336,
+    48.71,
+    47.8003,
+    47.9529,
+    47.8034
+   ],
+   "median_steady": 47.8003
+  },
+  "rust_env/flush_ms_per_host_step": {
+   "all": [
+    0.6872,
+    1.0058,
+    4.6898,
+    0.5823,
+    0.5594,
+    0.5521,
+    0.8964,
+    0.7968,
+    0.7123,
+    0.8222,
+    0.6887,
+    0.7398
+   ],
+   "steady_kept": [
+    4.6898,
+    0.5823,
+    0.5594,
+    0.5521,
+    0.7968,
+    0.7123,
+    0.7398
+   ],
+   "median_steady": 0.7123
+  },
+  "rust_env/gpu_wait_ms_per_host_step": {
+   "all": [
+    5.928,
+    5.8854,
+    5.8783,
+    5.6303,
+    5.6371,
+    5.6381,
+    5.9414,
+    5.8883,
+    5.9049,
+    5.899,
+    5.9296,
+    5.91
+   ],
+   "steady_kept": [
+    5.8783,
+    5.6303,
+    5.6371,
+    5.6381,
+    5.8883,
+    5.9049,
+    5.91
+   ],
+   "median_steady": 5.8783
+  },
+  "rust_env/core_ms_per_host_step": {
+   "all": [
+    9.1837,
+    17.3127,
+    10.5119,
+    6.9334,
+    6.7984,
+    6.3979,
+    12.6432,
+    10.7229,
+    9.9985,
+    11.2959,
+    9.9664,
+    10.5882
+   ],
+   "steady_kept": [
+    10.5119,
+    6.9334,
+    6.7984,
+    6.3979,
+    10.7229,
+    9.9985,
+    10.5882
+   ],
+   "median_steady": 9.9985
+  },
+  "rust_env/host_steps": {
+   "all": [
+    404.0,
+    386.0,
+    384.0,
+    386.0,
+    383.0,
+    382.0,
+    383.0,
+    385.0,
+    387.0,
+    380.0,
+    385.0,
+    383.0
+   ],
+   "steady_kept": [
+    384.0,
+    386.0,
+    383.0,
+    382.0,
+    385.0,
+    387.0,
+    383.0
+   ],
+   "median_steady": 384.0
+  },
+  "rust_env/trainee_rows_per_host_step": {
+   "all": [
+    256.0,
+    256.0,
+    256.0,
+    256.0,
+    256.0,
+    256.0,
+    256.0,
+    256.0,
+    256.0,
+    256.0,
+    256.0,
+    256.0
+   ],
+   "steady_kept": [
+    256.0,
+    256.0,
+    256.0,
+    256.0,
+    256.0,
+    256.0,
+    256.0
+   ],
+   "median_steady": 256.0
+  },
+  "rust_env/p2_policy_decisions": {
+   "all": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "steady_kept": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "median_steady": 0.0
+  },
+  "rust_env/submit_ms_per_host_step": {
+   "all": [
+    0.2438,
+    0.4538,
+    0.2711,
+    0.1849,
+    0.1802,
+    0.1793,
+    0.2805,
+    0.3012,
+    0.2507,
+    0.3117,
+    0.2427,
+    0.2687
+   ],
+   "steady_kept": [
+    0.2711,
+    0.1849,
+    0.1802,
+    0.1793,
+    0.3012,
+    0.2507,
+    0.2687
+   ],
+   "median_steady": 0.2507
+  },
+  "rust_env/post_ms_per_host_step": {
+   "all": [
+    0.7722,
+    1.0941,
+    0.829,
+    0.6965,
+    0.6782,
+    0.6351,
+    0.9332,
+    0.904,
+    0.8413,
+    0.9046,
+    0.821,
+    0.893
+   ],
+   "steady_kept": [
+    0.829,
+    0.6965,
+    0.6782,
+    0.6351,
+    0.904,
+    0.8413,
+    0.893
+   ],
+   "median_steady": 0.829
+  },
+  "rust_env/fill_ms": {
+   "all": [
+    240.8986,
+    273.1858,
+    256.5113,
+    240.9795,
+    242.3561,
+    243.1635,
+    253.5717,
+    261.044,
+    259.5913,
+    262.9916,
+    254.2574,
+    261.9702
+   ],
+   "steady_kept": [
+    256.5113,
+    240.9795,
+    242.3561,
+    243.1635,
+    261.044,
+    259.5913,
+    261.9702
+   ],
+   "median_steady": 256.5113
+  },
+  "rust_env/draw_ms_per_host_step": {
+   "all": [
+    0.223,
+    0.3294,
+    0.2428,
+    0.1953,
+    0.191,
+    0.1928,
+    0.2705,
+    0.2516,
+    0.231,
+    0.2628,
+    0.2306,
+    0.2406
+   ],
+   "steady_kept": [
+    0.2428,
+    0.1953,
+    0.191,
+    0.1928,
+    0.2516,
+    0.231,
+    0.2406
+   ],
+   "median_steady": 0.231
+  },
+  "rust_env/opp_draw_ms_per_host_step": {
+   "all": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "steady_kept": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "median_steady": 0.0
+  },
+  "rust_env/write_ms_per_host_step": {
+   "all": [
+    0.5074,
+    0.7658,
+    0.5824,
+    0.4759,
+    0.4734,
+    0.4744,
+    0.6392,
+    0.6407,
+    0.5726,
+    0.6503,
+    0.5624,
+    0.5858
+   ],
+   "steady_kept": [
+    0.5824,
+    0.4759,
+    0.4734,
+    0.4744,
+    0.6407,
+    0.5726,
+    0.5858
+   ],
+   "median_steady": 0.5726
+  },
+  "rust_env/trainee_decisions_per_s": {
+   "all": [
+    14020.7568,
+    9232.1455,
+    10754.2285,
+    16609.3516,
+    16800.8906,
+    17308.4336,
+    11429.2432,
+    12598.8252,
+    13263.4902,
+    12202.0107,
+    13321.626,
+    12777.8848
+   ],
+   "steady_kept": [
+    10754.2285,
+    16609.3516,
+    16800.8906,
+    17308.4336,
+    12598.8252,
+    13263.4902,
+    12777.8848
+   ],
+   "median_steady": 13263.4902
+  },
+  "lifecycle/cuda_floor_mib": {
+   "all": [
+    1568.2275,
+    1568.1611,
+    1568.3311,
+    1567.7144,
+    1330.8525
+   ],
+   "steady_kept": [
+    1568.3311,
+    1567.7144,
+    1330.8525
+   ],
+   "median_steady": 1567.7144
+  },
+  "lifecycle/cuda_demand_mib": {
+   "all": [
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0
+   ],
+   "steady_kept": [
+    9680.0,
+    9680.0,
+    9680.0
+   ],
+   "median_steady": 9680.0
+  },
+  "lifecycle/cuda_device_free_mib": {
+   "all": [
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5
+   ],
+   "steady_kept": [
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5,
+    555.5
+   ],
+   "median_steady": 555.5
+  },
+  "lifecycle/cuda_update_peak_reserved_mib": {
+   "all": [
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0
+   ],
+   "steady_kept": [
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0
+   ],
+   "median_steady": 9680.0
+  },
+  "lifecycle/cuda_update_peak_alloc_mib": {
+   "all": [
+    6684.4902,
+    5252.8916,
+    5254.4551,
+    5259.2881,
+    5254.5146,
+    5254.7861,
+    5256.4419,
+    5254.3574,
+    5254.7803,
+    6728.0566,
+    5252.7959,
+    5256.9614
+   ],
+   "steady_kept": [
+    5254.4551,
+    5259.2881,
+    5254.5146,
+    5254.7861,
+    5254.3574,
+    5254.7803,
+    5256.9614
+   ],
+   "median_steady": 5254.7803
+  },
+  "lifecycle/cuda_rollout_peak_reserved_mib": {
+   "all": [
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0
+   ],
+   "steady_kept": [
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0
+   ],
+   "median_steady": 9680.0
+  },
+  "lifecycle/cuda_reserved_mib": {
+   "all": [
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0
+   ],
+   "steady_kept": [
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0,
+    9680.0
+   ],
+   "median_steady": 9680.0
+  },
+  "lifecycle/compiled_region_calls": {
+   "all": [
+    528.0,
+    480.0,
+    480.0,
+    480.0,
+    480.0,
+    480.0,
+    480.0,
+    480.0,
+    480.0,
+    481.0,
+    480.0,
+    480.0
+   ],
+   "steady_kept": [
+    480.0,
+    480.0,
+    480.0,
+    480.0,
+    480.0,
+    480.0,
+    480.0
+   ],
+   "median_steady": 480.0
+  },
+  "compile/graphs_total": {
+   "all": [
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0
+   ],
+   "steady_kept": [
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0
+   ],
+   "median_steady": 4.0
+  },
+  "compile/recompiles_after_lock": {
+   "all": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "steady_kept": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "median_steady": 0.0
+  },
+  "compile/cache_limit_hits": {
+   "all": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "steady_kept": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "median_steady": 0.0
+  },
+  "compile/locked": {
+   "all": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "steady_kept": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "median_steady": 1.0
+  },
+  "compile/train_ms_vs_lock_baseline": {
+   "all": [
+    1.0058,
+    1.001,
+    1.0042,
+    1.1945,
+    1.0046,
+    1.001
+   ],
+   "steady_kept": [
+    1.0042,
+    1.1945,
+    1.0046,
+    1.001
+   ],
+   "median_steady": 1.0044
+  },
+  "lifecycle/eager_fallback_calls": {
+   "all": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "steady_kept": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "median_steady": 0.0
+  },
+  "lifecycle/eager_share": {
+   "all": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "steady_kept": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "median_steady": 0.0
+  },
+  "time/fps": {
+   "all": [
+    13952.0,
+    2700.0,
+    2248.0,
+    2125.0,
+    2057.0,
+    2014.0,
+    1962.0,
+    1932.0,
+    1913.0,
+    1893.0,
+    1849.0,
+    1840.0,
+    1722.0
+   ],
+   "steady_kept": [
+    2248.0,
+    2125.0,
+    2057.0,
+    2014.0,
+    1932.0,
+    1913.0,
+    1840.0
+   ],
+   "median_steady": 2014.0
+  }
+ },
+ "smi_memory_used_mib_max": 11368.0,
+ "smi_memory_used_mib_median": 11355.0
+}

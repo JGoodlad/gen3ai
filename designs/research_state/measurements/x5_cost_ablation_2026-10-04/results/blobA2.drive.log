@@ -1,0 +1,6 @@
+drive blobA2 start 1791119376.045581090 args: --arch production --device cuda --steps 6000000 --eval-freq 50000000 --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all
+wrapper pid 2722091
+trainer pid 2722117
+reached 13 update rows at i=388
+SIGTERM -> 2722117 at 1791120541.040947168
+end 1791120543.056772268; wrapper alive: no
