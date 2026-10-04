@@ -310,3 +310,7 @@ never thin `tb/`) is not retired — it **is** the standing policy, and it is th
 What this document adds is the grading, the snapshots rule, and the pre-v8 keep-list. Disk is still
 not the constraint (a ~1 TB volume with hundreds of GB free); this is housekeeping under an explicit
 owner instruction, not need — say so before proposing any further deletions.
+
+## The eval ledger is never deleted (owner, 2026-10-05)
+
+`<archive>/_ledger/` (`design_evaluation.md` §0b) is EXEMPT from every tier: it is the append-only evidence base that later questions are answered from without new runs. If it ever becomes HUGE, the response is COMPRESSION (e.g. gzip the closed shards, or compact superseded rows into a digest-verified archive file), never deletion (owner: "shouldn't be deleted unless it is huge, and then we can have a more compressed approach"). At about 2.4 MB compressed per 10M training steps (the design's estimate), that is far off. The `.ledger_index/` SQLite cache is the one derived part: it is rebuildable from the streams and may be deleted freely.
