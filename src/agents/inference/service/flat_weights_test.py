@@ -14,8 +14,11 @@ still refuses. Every verdict records its PATH. NaN / Inf weights are refused bef
 touched.
 
 The COLLAPSED fixture reproduces fresh3's shape on a fresh production policy (seed 0): the win
-head's final bias −9 and its weight ×0.01 — vacuous on V through rung (0.1, 2), informative at
-(0.1, 3) on the gate's 8/7/2/1-row fills (CPU). The DEEP fixture (bias −12) is beyond every rung and
+head's final bias −9 and its weight ×0.01 — vacuous on V at the real weights and the first rung; on
+the gate's 8/7/2/1-row fills (CPU) the 8-row bucket turns informative at rung (0.05, 3) and the 2-row
+bucket at (0.1, 0) (measured 2026-10-03 after gen3_nonformula_damage_v1 moved the fixture rows' op
+features; before it, (0.1, 3)) — WHICH rung is first is a property of the fixture's features, so no
+test below depends on it. The DEEP fixture (bias −12) is beyond every rung and
 must be refused. Each test names what its revert does.
 """
 from __future__ import annotations
@@ -80,16 +83,28 @@ def _service(template, *, n_slots=1, buckets=(2, 8), **kw):
     return InferenceService(spec).startup()
 
 
+#: How much the planted value-coupling defect AMPLIFIES each row's logit deviation from the batch mean.
+#: Chosen so the catch is DETERMINISTIC at ANY informative rung (standing rule 8), not at whichever rung
+#: the fixture happens to reach: a rung is informative iff V's across-row spread s > the 1e-4 bar, and
+#: some row deviates from the mean by >= s/2, so the defect moves that row's V by >= (C - 1)·s/2 (V is
+#: linear in the logit on a saturated head). C = 4 ⇒ >= 1.5·s > 1.5 × the bar. (C = 2 — a DOUBLING —
+#: moves it by only >= s/2, which an informative rung can pass: on 2026-10-03 the first informative
+#: rungs read 5.8e-5 and 9.0e-5 < 1e-4, and the slot was SERVED. That gap is the gate's, reported as a
+#: finding: "informative" (spread > bar) does not imply a coupling defect smaller than ~2x the spread
+#: is visible.)
+_COUPLING_GAIN = 4.0
+
+
 def _value_coupling_bug(real):
-    """A served path that DOUBLES each row's win-prob logit deviation from the batch mean — a
-    batch-coupled value miscompile (a wrong reduction across rows). On a collapsed critic every row
-    has the same logit, so V barely moves (invisible to the real-weights comparison); on an
-    informative rung the rows differ and V moves by more than the 1e-4 bar."""
+    """A served path that AMPLIFIES (x `_COUPLING_GAIN`) each row's win-prob logit deviation from the
+    batch mean — a batch-coupled value miscompile (a wrong reduction across rows). On a collapsed
+    critic every row has the same logit, so V barely moves (invisible to the real-weights comparison);
+    on ANY informative rung the rows differ and V moves by more than 1.5x the 1e-4 bar."""
     def decide(module, obs, mask):
         logp, value, greedy = real(module, obs, mask)
         lg = torch.logit(value.clamp(1e-12, 1 - 1e-12))
         mean = lg.mean()
-        return logp, torch.sigmoid(mean + 2.0 * (lg - mean)), greedy
+        return logp, torch.sigmoid(mean + _COUPLING_GAIN * (lg - mean)), greedy
     return decide
 
 

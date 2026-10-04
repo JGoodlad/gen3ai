@@ -339,10 +339,11 @@ def test_three_roll_relationship():
     # each row's own top-K of the move belief, so a shared 1-D buffer no longer describes it.
     bp = torch.tensor([[100.0]]); mty = torch.tensor([[5]], dtype=torch.long); phys = torch.tensor([[1.0]])
     acc = torch.tensor([[1.0]])                                  # 100%-accurate → pko undiscounted
-    fixed = torch.zeros(1, 1)                                    # not a fixed-damage move
+    nf = (torch.zeros(1, 1),) * 3                                # not a non-formula move
     weather = torch.ones(B, 1)                                   # no weather
     high, low, crit, pko, _hcb, _kcb = op._damage_rolls(atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp,
-                                            t1d, t2d, ability1, reflect, light, bp, mty, phys, acc, fixed, weather)
+                                            t1d, t2d, ability1, reflect, light, bp, mty, phys, acc, nf,
+                                            torch.zeros(B), weather)
     h = high[0, 0, 0].item()
     assert 0.0 < h < 1.5                                          # unclamped (relationship is clean)
     assert low[0, 0, 0].item() == pytest.approx(0.85 * h, rel=1e-5)

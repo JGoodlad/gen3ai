@@ -105,6 +105,23 @@ class MoveData:
     # Showdown's movedex). The reading of a `|move|` line whose target field the protocol left
     # EMPTY (`[still]`) is resolved from it — `agents.battle.battle_event.implied_move_target`.
     target: str = "normal"
+    # gen3_nonformula_damage_v1: the DEX category verbatim ("Physical" / "Special" / "Status").
+    # NOT the gen-3 category — gen 1-3 split physical/special by TYPE, which `category` above
+    # derives. Read it ONLY for Status-vs-damaging: Seismic Toss / Super Fang / Return / Counter
+    # are damaging moves with base power 0, which `category` (and `is_damaging`) call STATUS.
+    # The damage op's table build refuses any damaging BP-0 move it has no declared model for.
+    dex_category: str = ""
+
+    @property
+    def is_dex_damaging(self) -> bool:
+        """The dex calls this a damaging move (category Physical/Special), whatever its base
+        power. Raises when the data predates the `category` field — a guard keyed on it must
+        never pass vacuously."""
+        if self.dex_category not in ("Physical", "Special", "Status"):
+            raise ValueError(
+                f"move {self.id!r} has no dex category ({self.dex_category!r}) — regenerate "
+                "data/pokemon/gen3_moves.json with tools/pokemon_data_extractor/sync.py --datasets moves")
+        return self.dex_category != "Status"
 
     def secondary_chance(self, col: str) -> float:
         """Trigger probability (0..1) of secondary effect `col` (e.g. ``"par"``, ``"flinch"``),
@@ -155,6 +172,7 @@ def _build(raw: Dict[str, dict]) -> Dict[str, MoveData]:
                 sorted((str(k), int(s)) for k, s in (v.get("selfBoosts") or {}).items())
             ),
             target=str(v.get("target", "normal")),
+            dex_category=str(v.get("category") or ""),
         )
     return dex
 

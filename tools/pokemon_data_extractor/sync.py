@@ -766,6 +766,13 @@ def build_moves(gen):
             "num": _HP_TYPE_NUMS.get(move_id, entry.get("num")),
             "type": entry.get("type"),
             "basePower": entry.get("basePower"),
+            # gen3_nonformula_damage_v1: the DEX category verbatim ("Physical" / "Special" /
+            # "Status"). Gen 1-3 split physical/special by TYPE, so the facade still DERIVES
+            # the gen3 phys/spec category from the type; this field is read ONLY for the
+            # Status-vs-damaging distinction, which `basePower` cannot carry — Seismic Toss,
+            # Super Fang, Return, Counter, … are damaging moves with basePower 0. The damage
+            # op's table build refuses a damaging BP-0 move it has no declared model for.
+            "category": entry.get("category"),
             "target": entry.get("target"),
             "hasSecondary": bool(entry.get("secondary") or entry.get("secondaries")),
             "hasRecoil": bool(entry.get("recoil")),

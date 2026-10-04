@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,914-line file. **The ledger itself is append-only and is never edited by this**;
+21,929-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**742 headings · 687 dated · 2026-08-01 → 2026-10-03 · ledger 21,914 lines.**
+**743 headings · 688 dated · 2026-08-01 → 2026-10-03 · ledger 21,929 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -762,3 +762,4 @@ rename.
   - `L21823` · `2026-10-02` · FINDING + FIX · **EVERY OPPONENT LOAD RE-SEEDED THE GLOBAL RNG — the python core's team curriculum was a fixed, seed-determined skew; the Rust core replayed only the minibatch permutation (`gen3_no_global_reseed_v1`, the commit that adds this entry)**
   - `L21850` · `2026-10-02` · VERDICT · THE M5 SIZING VERDICT — N\* = 256 (Part L guard: NO LOSS DETECTED, n = 1 flagged); fresh-run epochs STAY 10 (E5 −10.56 pp); `recipe.sizing` 256 × 384
   - `L21892` · `2026-10-03` · MEASUREMENT · X5 TIER 0, the physics-channel oracle counterfactual: OTHER priced as the averaged tail (M3 (c)) at a 1:1 budget already captures 76–100 % of what ANY hypothesis budget reaches on the threat reads; most of the "perfect OTHER" ceiling is missing INFORMATION (belief sharpness), not OTHER's pricing (`cda60edb`)
+  - `L21914` · `2026-10-03` · FINDING + FIX · **THE DAMAGE OP PRICED EVERY NON-FORMULA MOVE AS DOING NOTHING — our Seismic Toss / Night Shade read UNUSABLE in every outgoing block; Return / Super Fang / Endeavor / Flail / OHKO read 0 on both sides (X5 Tier 0 F8); FIXED by `gen3_nonformula_damage_v1`, a TRAINING-INPUT BOUNDARY**

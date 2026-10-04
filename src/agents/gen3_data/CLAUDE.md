@@ -140,6 +140,11 @@ Reference data (deterministic) under `data/pokemon/`, all regenerable via
 - `gen3_moves.json` — move id → `{num, basePower, type, accuracy, never_miss, hasSecondary, hasRecoil,
   priority, secondaryEffects {col: percent}, drainFraction, recoilFraction, …}` (the structured
   secondary/priority/drain fields are `gen3_unified_move_system_v1` — GPU-side only, NOT in the obs vector).
+  `category` is the DEX category verbatim (`MoveData.dex_category` / `is_dex_damaging`,
+  `gen3_nonformula_damage_v1`) — read it ONLY for Status-vs-damaging, never for phys/spec (gen 3 splits
+  by TYPE; `MoveData.category` derives that, and calls every BP-0 move STATUS, so Seismic Toss / Super
+  Fang / Return read STATUS there). The damage op's table build refuses a damaging BP-0 move it has no
+  declared model for (`damage_tables.DAMAGE_MODELS`).
   **Typed Hidden Power has distinct nums** (`gen3_typed_hidden_power_ids_v1`): bare `hiddenpower`=237,
   the 16 typed variants=355-370 (Showdown ships them all at 237; the extractor tool overrides — see
   `tools/CLAUDE.md`). OUR known HP uses the distinct num; the opponent's unrevealed HP is the bare 237.

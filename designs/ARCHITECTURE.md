@@ -983,6 +983,30 @@ Explosion `pko`), and the `incoming_matrix` call is where `last_topk_idx` / `las
 — the seat axis α aligns to — are selected. Turning either matrix flag off deletes those; turning
 `op_drop_renders` off re-widens the flat block to 660 and changes nothing else.
 
+**Non-formula damage (`gen3_nonformula_damage_v1`).** Every move whose damage is not the gen-3
+base-power formula has ONE declared model in `damage_tables.DAMAGE_MODELS` (each row cites its
+`deps/pokemon-showdown` source), and every kernel — incoming, the three outgoing blocks, the d3
+refine, c1/c2/c3, the recovery cell and d4 — applies it through `damage_kinds.py`:
+
+| kind | moves | damage the op prices |
+|---|---|---|
+| `fixed` | Seismic Toss, Night Shade (the level, 100 — every pool team is L100), Dragon Rage 40, Sonic Boom 20, Psywave (its expectation, 100 — an approximation) | that HP, no roll / crit / screen |
+| `target_hp_frac` | Super Fang ½; Guillotine / Horn Drill / Fissure / Sheer Cold 1 (gen-3 OHKO = the target's current HP; 30% accuracy rides `MOVE_ACCURACY`; Sturdy NOT modelled) | that fraction of the target's CURRENT HP |
+| `endeavor` | Endeavor | `max(0, target HP − attacker HP)` |
+| `bp_flail` / `bp_hp_scaled` | Flail, Reversal (the gen-3 48-step table) / Eruption, Water Spout (150 × HP fraction) | the BP from the ATTACKER's HP fraction |
+| `bp` | Return, Frustration 102 (the set that maximises them — the obs has no happiness), Magnitude 71 and Present 52 (expectations; Present's heal branch priced 0) | the formula at that BP |
+| `table_bp_approx` | Beat Up (one 10-BP Dark special hit; the true multi-hit typeless move is approximated) | the formula at the dex BP |
+| `unmodelled` | Counter, Mirror Coat, Bide (need the turn's incoming damage), Low Kick (no weight in `data/`), Spit Up (no Stockpile count) | 0, BY DECLARATION |
+
+The non-formula kinds respect type / ability immunity (Fighting Seismic Toss into a Ghost is 0) and
+a kind's KO is `acc · [the hit KOs]` (an OHKO always, a fixed amount iff ≥ the remaining HP).
+`MOVE_BP` holds the BP at the attacker's full HP for every formula-priced move, and every
+dex-damaging move rides its TYPE's gen-3 channel in `MOVE_PHYS` (Return is physical). 🚨 **The table
+build RAISES on a damaging (dex category ≠ Status) move with base power 0 and no row** — the
+`category` field of `gen3_moves.json` exists for exactly this guard. The pointer head's E5 tail
+score (`w · BP/150 · acc`, defender-free) reads `MOVE_BP` only, so a non-formula move reads 0 THERE.
+Pinned by `src/agents/model/nonformula_damage_test.py`.
+
 **Field base-power modifiers.** Every damage kernel multiplies the candidate's base power by the
 gen-3 weather modifier (rain ×1.5 Water / ×0.5 Fire, sun the reverse) and by the **field sports**
 (`gen3_field_sport_slots_v1`): ×0.5 on an Electric move while EITHER active holds `mudsport`, ×0.5

@@ -11296,3 +11296,70 @@ team-PFSP is OFF in the recipe (probe P, ledger 2026-08-30); the exploiter ladde
 - **What ran, on `origin/main` `edc55c4e` + the fix below.** Routine gate 11,596 passed / 10 skipped / 15 xfailed / 0 failed; the slow tier as the MILESTONE run (`designs/ops/slow_tier_status.json` refreshed: 68 collected, 67 pass, 1 skip — `rust_core_parity_test`'s `[NOTSET]`, an empty `LADDER_KNOWN_DIVERGENCES` — 0 fail); both `--debug` smokes exit 0; one real `--arch production --device cuda` launch under the launcher (compile lock, canary at update 10 `canary_ok 1`, two eval cycles, SIGTERM -> `final_model_interrupted` -> exit 0). The census stands at 303 -> 174 flags. The manifest's section 5a has the timeline.
 - **One fix.** The slow GPU milestone `parity_test::test_milestone_gpu_graph_backend_vs_the_compiled_python_worker_on_a_real_pool` failed on `use_popart` (deletion pass L1): `rust_eval/parity.py` and `main/eval_worker.py` loaded an archived trainee with `load_checkpoint_strict` and no `historical_load_kwargs`. Both now pass the sanitizer. Three more callers with the same gap (`rust_eval/eval_benchmark.py` x2, `main/ops/eval_trace_gen.py`) are reported, not changed.
 - **Docs.** `designs/ops/deletion_pass_manifest.md` (status line + section 5a).
+## 2026-10-03 — TRAINING-INPUT CHANGE: the damage op prices every NON-FORMULA move, on both sides (`gen3_nonformula_damage_v1`; X5 Tier 0 finding F8; no version bump — dims and weight shapes unchanged; the K9 learner golden RE-BAKED with a proof)
+
+🚨 **Every run before this commit trained with these moves mispriced.** The outgoing blocks gated on
+`bp > 0`, so OUR Seismic Toss / Night Shade / Dragon Rage / Sonic Boom read UNUSABLE (the fixed-damage
+override behind the gate was dead code — 1,975 of 1,975 legal pairs on the Lane S bank priced 0), and
+Return / Frustration / Super Fang / Endeavor / Flail / Reversal / Magnitude / Present / the OHKO moves
+read 0 in EVERY kernel, incoming included; Return / Frustration also sat on the SPECIAL channel
+(`MOVE_PHYS` read the facade's derived STATUS category). Arms launched from this commit on read
+different op features and are NOT feature-identical to earlier arms; pinned runs execute their pin's
+code and are unaffected. No run is live.
+
+- **The class, enumerated from data and verified at the source.** `gen3_moves.json` gains the dex
+  `category` field (`tools/pokemon_data_extractor/sync.py`; a pure additive regenerate, every other byte
+  unchanged), read through `MoveData.dex_category` / `is_dex_damaging` — the facade's derived `category`
+  calls every BP-0 move STATUS, so nothing could tell a damaging BP-0 move from Protect. The damaging BP-0
+  moves are exactly 23; with Eruption / Water Spout / Beat Up they form `damage_tables.DAMAGE_MODELS`, one
+  row per move with its `deps/pokemon-showdown` citation (gen 3 = `data/mods/gen3` → gen4 → gen5 →
+  `data/moves.ts`; dispatch `sim/battle-actions.ts` `getDamage`). Kinds: `fixed` (Seismic Toss / Night
+  Shade = level 100, Dragon Rage 40, Sonic Boom 20, Psywave its expectation 100), `target_hp_frac` (Super
+  Fang ½; OHKO 1 — gen 3 deals `target.hp`), `endeavor`, `bp_flail` (the gen-3 48-step table),
+  `bp_hp_scaled` (Eruption / Water Spout), `bp` (Return / Frustration 102, Magnitude E = 71, Present
+  E = 52), `hidden_power` (the typed path), `table_bp_approx` (Beat Up), `unmodelled` (Counter, Mirror
+  Coat, Bide, Low Kick, Spit Up — priced 0 by declaration). Approximations are named in the table:
+  Psywave / Magnitude / Present expectations, happiness-maximising Return / Frustration, Beat Up as one
+  hit, Sturdy vs OHKO and Super Fang's 1-HP floor not modelled.
+- **One implementation.** `src/agents/model/damage_kinds.py` (`effective_bp`, `nonformula_rolls`, the
+  gather helpers) is applied by every kernel: the incoming forward (`_damage_rolls`), `_outgoing_block`,
+  `_outgoing_matrix`, `_outgoing_attacker_matrix`, the d3 refine (`discrete_incoming`), c2's status
+  consequence and its pointer operands, c1b's boost-incoming, the recovery cell and d4. `MOVE_BP` is the BP
+  at the attacker's full HP; `MOVE_PHYS` follows the TYPE for every dex-damaging move. Non-formula rolls
+  are immunity-gated, clamped like the formula rolls (the old incoming override was not — only a
+  Shedinja-sized max HP could tell), and KO = `acc · [the hit KOs]`.
+- **The throwing guard.** `check_damage_models` (run by every table build) RAISES on a damaging BP-0 move
+  with no row, on a row naming no move / an unknown kind / a Status move / a dex BP inconsistent with its
+  kind, or without a citation; `is_dex_damaging` raises on data without the `category` field, so the guard
+  can never pass vacuously.
+- **The K9 learner golden** (`learner_golden.json`, torch 2.8 — the only entry) moved: post
+  `bbfab0a0…` → `e3a9c53b…` on the old buffer (36 of 41 parameter groups, init unchanged). The buffer's
+  stored behaviour log-probs were the pre-fix op's, so K9(b)'s probe on it (`learner_gates_test`,
+  `update_fit_test`) failed; `rebuild-buffer` re-recorded it — the SAME games (obs / actions / masks /
+  rewards byte-identical), only values / log_probs / advantages / returns moved — and the golden is
+  re-recorded on it (post `ef8a1b7c…`). PROOF
+  (`designs/research_state/measurements/nonformula_damage_golden_2026-10-03/`): with the class tables
+  neutralised, the parent tree and this tree are BYTE-IDENTICAL on BOTH buffers (post `9a171336…` /
+  `3e394b62…`, every group, every loss), so every moved element is caused by a class-move table entry.
+  The buffer's forwards see Seismic Toss and Hidden Power in visible move slots and Counter / Endeavor /
+  Beat Up in the believed top-K.
+- **Lane S's reproduction check.** A HEAD read of a pre-fix checkpoint reads the corrected features, so
+  `bank_v1`'s recordings no longer reproduce (N0@74M max |Δp| 0.34). `damage_tables.OP_SEMANTICS` is the
+  op's feature-semantics identity; the bank builder stamps it (`op_semantics`), and
+  `policy_spectrum_integration_test` asserts determinism always, the reproduction only at matching
+  semantics — on a mismatch it asserts the reader SEES the difference (≥ the bar) and skips, never passes.
+- **Collateral, fixed.** `selection_sites.py`: `damage_kinds` joins `FORWARD_MODULES`; the four
+  `fixed >= cur_hp` MARGIN sites collapse into one (`damage_kinds`), the OHKO KO is tested on the table,
+  not as an exact equality. `flat_weights_test`'s value-coupling TEETH defect amplifies the deviation ×4
+  instead of ×2: a DOUBLING is guaranteed visible only above 2× the bar, and the moved fixture rows made
+  the first informative rungs read 5.8e-5 / 9.0e-5 < 1e-4 (the slot was SERVED); ×4 is caught at ANY
+  informative rung (1.88e-4 now).
+- **Not changed.** The CPU `agents.observation.incoming_damage` block (prober + legacy reward) keeps its
+  four-move `FIXED_DAMAGE`; the pointer head's E5 tail score reads `MOVE_BP` only (non-formula moves 0
+  there, declared). Multi-hit moves, Weather Ball, Facade, Revenge, Pursuit, Explosion's gen-3 Defence
+  halving, Hidden Power's IV-dependent power are still priced at their dex BP — reported, out of scope.
+- **Versioning.** No `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` bump, the training-input precedent
+  (2026-09-23 / 09-24): a bump would make the whole `gen3_event_record_v2` lineage — including the
+  `untaught_meter_opponent_v14` baseline and the ladder's reference node — unloadable at HEAD.
+- **Tests (each fails on its revert, checked: 13 of 15 fail on the parent's op).**
+  `src/agents/model/nonformula_damage_test.py`.

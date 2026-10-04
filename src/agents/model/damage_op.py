@@ -111,6 +111,7 @@ class OpStashes:
     tensors: Optional['OpTensors'] = None            # the post-gain typed views
 
 from agents.model.damage_op_blocks import DamageOperatorBlocks
+from agents.model.damage_kinds import gather_bp, gather_nonformula, nonformula_rolls, override_rolls
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
 from agents.model.pair_outcome import GHOST_TYPE_IDX as _GHOST_TIDX, PAIR_OUTCOME_IDX
 
@@ -512,8 +513,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                       cur_hp: torch.Tensor, t1d: torch.Tensor, t2d: torch.Tensor, ability1: torch.Tensor,
                       reflect: torch.Tensor, light_screen: torch.Tensor,
                       bp_all: torch.Tensor, mty_all: torch.Tensor, phys_all: torch.Tensor,
-                      acc_all: torch.Tensor, fixed_all: torch.Tensor, weather_mult: torch.Tensor,
-                      eps: float = 1e-6) -> Tuple[torch.Tensor, ...]:
+                      acc_all: torch.Tensor, nf_all: Tuple[torch.Tensor, ...], atk_cur_hp: torch.Tensor,
+                      weather_mult: torch.Tensor, eps: float = 1e-6) -> Tuple[torch.Tensor, ...]:
         """Role-parameterized gen3 single-hit damage per ``(defender, candidate)`` — the shared
         physics kernel every DIRECTION reuses (incoming opp→our-6, outgoing our→opp, safe-switch).
         Roles are passed in rather than hardcoded so the SAME math serves attacker/defender swaps.
@@ -521,8 +522,11 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         Shapes: ``atk``/``spa``/``at1``/``at2`` are ``[B]`` (one attacker); ``def_stat``/``spd_stat``/
         ``maxhp``/``cur_hp``/``t1d``/``t2d``/``ability1`` are ``[B, n_def]``; ``reflect``/``light_screen``
         are ``[B, 1]`` (the DEFENDER's side screens); ``bp_all``/``mty_all``/``phys_all`` are ``[C]``
-        (the candidate move axis incl. the 16 typed Hidden Powers); ``acc_all`` is ``[C]`` (per-candidate
-        base hit probability). Returns ``(high_frac, low_frac, crit_frac, ko_ramp)``, each ``[B, n_def,
+        (the candidate move axis incl. the 16 typed Hidden Powers) — ``bp_all`` is the EFFECTIVE BP
+        (`damage_kinds.gather_bp`, the attacker's HP resolved); ``acc_all`` is ``[C]`` (per-candidate
+        base hit probability); ``nf_all`` = ``(fixed, target_frac, endeavor)`` ``[B,C]`` each
+        (`damage_kinds.gather_nonformula`) and ``atk_cur_hp`` ``[B]`` the attacker's current HP —
+        gen3_nonformula_damage_v1. Returns ``(high_frac, low_frac, crit_frac, ko_ramp)``, each ``[B, n_def,
         C]``: the max-roll / 0.85-roll / ×2-crit damage as a fraction of the defender's MAX HP (clamped —
         damage IF it lands), and the **accuracy-discounted** modal no-crit P(KO) vs CURRENT HP
         (``acc · P(KO|hit)`` — so an inaccurate move reads a lower KO-this-turn risk). Pure /
@@ -569,10 +573,10 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # Final 3 rolls + accuracy-folded P(KO) via the shared formula (DRY — same as the outgoing block).
         high, low, crit, ko = self._rolls(dmg_ns, screen[:, None, :], maxhp[:, :, None], cur_hp[:, :, None],
                                           acc_all[:, None, :], eps)
-        # gen3_unified_op_physics_v1: FIXED-damage moves (Seismic Toss / Night Shade = 100, Dragon Rage 40,
-        # Sonic Boom 20) ignore Atk/Def/roll/crit but RESPECT type/ability immunity. Override the rolls with
-        # the constant fraction (all three rolls equal — no variance), gated to 0 where `eff<=0` (Fighting
-        # Seismic Toss → 0 vs Ghost; Ghost Night Shade → 0 vs Normal). Otherwise the BP-0 formula reads ~0.
+        # gen3_nonformula_damage_v1: the NON-FORMULA moves (`damage_tables.DAMAGE_MODELS` — Seismic Toss /
+        # Night Shade = level 100, Dragon Rage 40, Super Fang ½ HP, OHKO, Endeavor, …) ignore Atk/Def/roll/
+        # crit but RESPECT type/ability immunity; their rolls are replaced below (Fighting Seismic Toss → 0
+        # vs Ghost; Ghost Night Shade → 0 vs Normal). Otherwise the BP-0 formula reads ~0.
         # gen3_unified_choice_band_v1: the CB-CONDITIONAL physical rolls — recompute with the physical Atk
         # ×1.5 at the STAT level (A_cb), so `core = k·A+2`'s +2 floor isn't itself ×1.5'd (the exact physics,
         # consistent with the outgoing block which scales our_atk). Special candidates unchanged. Only `high_cb`
@@ -589,16 +593,14 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         high_cb = (dmg_cb * inv_cb).clamp(max=_DMG_CHIP_CAP)
         ko_cb = acc_all[:, None, :] * torch.clamp(
             (dmg_cb - cur_hp[:, :, None]) / (0.15 * dmg_cb + eps), 0.0, 1.0)
-        is_fixed = (fixed_all > 0)[:, None, :]                                         # [B,1,C]
-        not_immune = (eff > 0).float()                                                # [B,n,C] type+ability gate
-        fixed_frac = (fixed_all[:, None, :] / (maxhp[:, :, None] + eps)) * not_immune
-        fixed_ko = acc_all[:, None, :] * (fixed_all[:, None, :] >= cur_hp[:, :, None]).float() * not_immune
-        high = torch.where(is_fixed, fixed_frac, high)
-        low = torch.where(is_fixed, fixed_frac, low)
-        crit = torch.where(is_fixed, fixed_frac, crit)
-        ko = torch.where(is_fixed, fixed_ko, ko)
-        high_cb = torch.where(is_fixed, fixed_frac, high_cb)
-        ko_cb = torch.where(is_fixed, fixed_ko, ko_cb)
+        # gen3_nonformula_damage_v1: the declared non-formula kinds (fixed / level, fraction of the
+        # target's current HP, Endeavor) REPLACE the rolls — immunity-gated, CB- and screen-invariant.
+        nf = nonformula_rolls(tuple(t[:, None, :] for t in nf_all),
+                              cur_hp[:, :, None], maxhp[:, :, None], atk_cur_hp[:, None, None],
+                              eff, acc_all[:, None, :], eps)
+        high, low, crit, ko = override_rolls((high, low, crit, ko), nf)
+        high_cb = torch.where(nf[0], nf[1], high_cb)
+        ko_cb = torch.where(nf[0], nf[3], ko_cb)
         return high, low, crit, ko, high_cb, ko_cb
 
     def _p_outspeed(self, our_spe: torch.Tensor, opp_spe: torch.Tensor,
@@ -773,10 +775,12 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         mty_all = self.MOVE_TYPE_IDX                                                            # [n_moves]
         phys_all = self.MOVE_PHYS                                                               # [n_moves]
         acc_all = self.MOVE_ACCURACY                                                            # [n_moves]
-        fixed_all = self.MOVE_FIXED_DAMAGE                                                      # [n_moves]
-        # Fixed-damage moves read BP 0 → derived category STATUS → MOVE_PHYS 0; route them onto their TYPE's
-        # channel instead (Seismic Toss=Fighting=phys, Night Shade=Ghost=phys), matching the outgoing block.
-        phys_all = torch.where(fixed_all > 0, self.TYPE_IS_PHYS[mty_all], phys_all)             # [n_moves]
+        # gen3_nonformula_damage_v1: every dex-damaging move carries its TYPE's gen-3 channel in MOVE_PHYS
+        # (Seismic Toss / Return = Fighting / Normal = phys, Night Shade = Ghost = phys) — set at the table.
+        # The attacker (opp active) HP the HP-dependent kinds read: its obs fraction × the neutral max HP.
+        opp_hp_frac = ctx.hp_and_active[ar, opp_act, 0]                                        # [B]
+        opp_cur_hp_att = opp_hp_frac * (2.0 * self.BASE_STATS[ctx.species_ids[ar, opp_act], 0] + 31.0 + 110.0)
+        cand_all = torch.arange(bp_all.shape[0], device=bp_all.device)[None, :]                 # [1,n_moves]
         # gen3_unified_op_physics_v1: per-candidate WEATHER BP modifier (rain/sun × Water/Fire), [B,n_moves].
         # gen3_field_sport_slots_v1: × the field sports (Mud Sport Electric / Water Sport Fire).
         weather_mult = self._field_bp_mult(ctx, mty_all[None, :])                               # [B,n_moves]
@@ -797,20 +801,21 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         if self.damage_candidate_k > 0 and self.damage_candidate_k < w_all.shape[-1]:
             cand_nums = w_all.detach().topk(self.damage_candidate_k, dim=-1).indices          # [B,K]
             w_all = w_all.gather(-1, cand_nums)                                              # [B,K] differentiable
-            bp_all = bp_all[cand_nums]                                                       # [B,K]
+            cand_all = cand_nums                                                             # [B,K]
             mty_all = mty_all[cand_nums]
             phys_all = phys_all[cand_nums]
             acc_all = acc_all[cand_nums]
-            fixed_all = fixed_all[cand_nums]
             weather_mult = weather_mult.gather(-1, cand_nums)                                # [B,K]
         else:
             # No truncation: broadcast the 1-D buffers to the [B,C] contract `_damage_rolls` now takes.
             _B1 = w_all.shape[0]
-            bp_all = bp_all.expand(_B1, -1) if bp_all.dim() == 1 else bp_all
             mty_all = mty_all.expand(_B1, -1) if mty_all.dim() == 1 else mty_all
             phys_all = phys_all.expand(_B1, -1) if phys_all.dim() == 1 else phys_all
             acc_all = acc_all.expand(_B1, -1) if acc_all.dim() == 1 else acc_all
-            fixed_all = fixed_all.expand(_B1, -1) if fixed_all.dim() == 1 else fixed_all
+        # gen3_nonformula_damage_v1: the EFFECTIVE BP (Eruption ∝ HP, Flail's table) + the non-formula kinds.
+        # (Un-truncated: the [1,C] gathers BROADCAST — only the HP-resolved BP is materialised per row.)
+        bp_all = gather_bp(self, cand_all, opp_hp_frac[:, None])                                # [B,C]
+        nf_all = tuple(t.expand(bp_all.shape[0], -1) for t in gather_nonformula(self, cand_all))  # 3×[B,C]
 
         # --- gen3 damage per (defender, candidate), all differentiable in w (the shared physics
         # kernel — incoming roles: attacker = opp active, defenders = our 6, OUR-side screens) ---
@@ -819,7 +824,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         high_frac, low_frac, crit_frac, ko_ramp, high_cb, ko_cb = self._damage_rolls(
             atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp, t1d, t2d,
             ctx.ability1_ids[:, :TEAM_SIZE], our_reflect, our_light_screen,
-            bp_all, mty_all, phys_all, acc_all, fixed_all, weather_mult, eps)
+            bp_all, mty_all, phys_all, acc_all, nf_all, opp_cur_hp_att, weather_mult, eps)
 
         # --- per (defender, channel): HARD max of the belief-weighted roll/KO over the candidates ---
         # The dominant believed move owns each channel (the candidate-count-robust max, NOT a diluting

@@ -57,6 +57,9 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _TypeEncoder, _VOLATILE_SLOTS, _WATER_TIDX, _dmg_imx_dim, decode_damage_block,
 )
 
+from agents.model.damage_kinds import (gather_bp, gather_nonformula, is_priced, nonformula_rolls,
+                                       override_rolls)
+
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
     from agents.model.damage_op import OpStashes
@@ -110,6 +113,11 @@ class DamageOperatorBlocks:
         MOVE_BP: torch.Tensor
         MOVE_EFFECT_FLAGS: torch.Tensor
         MOVE_FIXED_DAMAGE: torch.Tensor
+        MOVE_TARGET_HP_FRAC: torch.Tensor
+        MOVE_ENDEAVOR: torch.Tensor
+        MOVE_NONFORMULA: torch.Tensor
+        MOVE_BP_FLAIL: torch.Tensor
+        MOVE_BP_HP_SCALED: torch.Tensor
         MOVE_CURES_SELF_STATUS: torch.Tensor
         MOVE_CURES_TEAM_STATUS: torch.Tensor
         MOVE_INFLICTS_STATUS: torch.Tensor
@@ -158,9 +166,13 @@ class DamageOperatorBlocks:
         is_hp = (move_ids == self.hp_num)
         bp = torch.where(is_hp, torch.full_like(move_ty, self.hp_bp, dtype=torch.float32),
                          self.MOVE_BP[move_ids])                     # [B,4] HP → 70 (else dex BP; status → 0)
+        # gen3_nonformula_damage_v1: Eruption ∝ our HP, Flail / Reversal's table; `usable` = legal AND the
+        # op has a damage model (formula BP > 0 OR a non-formula kind — Seismic Toss / Super Fang / …).
+        our_hp_frac = ctx.hp_and_active[ar, our_act, 0]            # [B]
+        bp = gather_bp(self, move_ids, our_hp_frac[:, None], bp=bp)  # [B,4] effective BP
         phys = self.TYPE_IS_PHYS[move_ty]                          # [B,4] gen3 category by resolved type
         acc = self.MOVE_ACCURACY[move_ids]                        # [B,4] (HP num → 1.0 default)
-        usable = legal * (bp > 0).float()                         # [B,4] gate to legal damaging moves
+        usable = legal * is_priced(self, move_ids, bp)            # [B,4] gate to legal damaging moves
 
         # --- our active attacker (real spread) ---
         a_base = self.BASE_STATS[ctx.species_ids[ar, our_act]]     # [B,6] [hp,atk,def,spa,spd,spe]
@@ -172,6 +184,7 @@ class DamageOperatorBlocks:
         our_atk = (2.0 * a_base[:, 1] + iv[:, 1] + ev[:, 1] / 4.0 + 5.0) * nat[:, 0]   # [B]
         our_spa = (2.0 * a_base[:, 3] + iv[:, 3] + ev[:, 3] / 4.0 + 5.0) * nat[:, 2]   # [B]
         our_spe = (2.0 * a_base[:, 5] + iv[:, 5] + ev[:, 5] / 4.0 + 5.0) * nat[:, 4]   # [B]
+        our_cur_hp = our_hp_frac * (2.0 * a_base[:, 0] + iv[:, 0] + ev[:, 0] / 4.0 + 110.0)  # [B] (Endeavor)
         # gen3_unified_op_physics_v1: OUR active's offensive + speed stat-stage boosts (we attack here) +
         # BURN (½ phys atk) + PARALYSIS (×0.25 speed).
         o_b_atk, o_b_def, o_b_spa, o_b_spd, o_b_spe = self._boost_stages(ctx.our_ctx_raw)
@@ -227,17 +240,12 @@ class DamageOperatorBlocks:
         opp_ls = ctx.screen_feature[:, 3:4]
         screen = 1.0 - 0.5 * (opp_reflect * phys + opp_ls * (1.0 - phys))             # [B,4]
         high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None], opp_cur_hp[:, None], acc, eps)
-        # gen3_unified_op_physics_v1: OUR fixed-damage moves (Seismic Toss into the opp), immunity-gated +
-        # legality-gated (usable). Mirrors the incoming kernel's override.
-        fixed = self.MOVE_FIXED_DAMAGE[move_ids] * usable                            # [B,4] (0 if illegal)
-        is_fixed = fixed > 0
-        not_immune = (eff > 0).float()                                               # [B,4] type+ability gate
-        fixed_frac = (fixed / (opp_maxhp[:, None] + eps)) * not_immune
-        fixed_ko = acc * (fixed >= opp_cur_hp[:, None]).float() * not_immune
-        high = torch.where(is_fixed, fixed_frac, high)
-        low = torch.where(is_fixed, fixed_frac, low)
-        crit = torch.where(is_fixed, fixed_frac, crit)
-        ko = torch.where(is_fixed, fixed_ko, ko)
+        # gen3_nonformula_damage_v1: OUR non-formula moves (Seismic Toss / Night Shade 100, Super Fang ½,
+        # Endeavor, OHKO …) replace the rolls — immunity-gated; × usable gates an illegal one (a formula
+        # cell is already 0 there, so the multiply is exact for it).
+        nf = nonformula_rolls(gather_nonformula(self, move_ids), opp_cur_hp[:, None], opp_maxhp[:, None],
+                              our_cur_hp[:, None], eff, acc, eps)
+        high, low, crit, ko = (r * usable for r in override_rolls((high, low, crit, ko), nf))
         opp_spe_std = self.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, opp_act], _SB_SPE, 1]   # [B] (#3)
         p_outspeed = self._p_outspeed(our_spe, opp_spe, opp_spe_std)                  # [B]
 
@@ -315,9 +323,11 @@ class DamageOperatorBlocks:
         is_hp = (move_ids == self.hp_num)
         bp = torch.where(is_hp, torch.full_like(move_ty, self.hp_bp, dtype=torch.float32),
                          self.MOVE_BP[move_ids])                                        # [B,4]
+        our_hp_frac = ctx.hp_and_active[ar, our_act, 0]                                 # [B]
+        bp = gather_bp(self, move_ids, our_hp_frac[:, None], bp=bp)                     # [B,4] gen3_nonformula_damage_v1
         phys = self.TYPE_IS_PHYS[move_ty]                                               # [B,4]
         acc = self.MOVE_ACCURACY[move_ids]                                              # [B,4]
-        usable = legal * (bp > 0).float()                                               # [B,4]
+        usable = legal * is_priced(self, move_ids, bp)                                  # [B,4]
 
         # --- our active attacker (real spread; CB ×1.5 phys, offensive boosts, burn) — same as _outgoing_block ---
         a_base = self.BASE_STATS[ctx.species_ids[ar, our_act]]
@@ -325,6 +335,7 @@ class DamageOperatorBlocks:
         iv = spr[:, 0:6] * 31.0; ev = spr[:, 6:12] * 252.0; nat = spr[:, 13:18]
         our_atk = (2.0 * a_base[:, 1] + iv[:, 1] + ev[:, 1] / 4.0 + 5.0) * nat[:, 0]
         our_spa = (2.0 * a_base[:, 3] + iv[:, 3] + ev[:, 3] / 4.0 + 5.0) * nat[:, 2]
+        our_cur_hp = our_hp_frac * (2.0 * a_base[:, 0] + iv[:, 0] + ev[:, 0] / 4.0 + 110.0)  # [B] (Endeavor)
         o_b_atk, _odf, o_b_spa, _osd, _ose = self._boost_stages(ctx.our_ctx_raw)
         if boost_delta is not None:
             # gen3_edge_bias_trunk_v1 (C1): price the HYPOTHETICAL post-setup world — advance the
@@ -411,14 +422,11 @@ class DamageOperatorBlocks:
         screen = (1.0 - 0.5 * (opp_reflect * phys + opp_ls * (1.0 - phys)))[:, :, None]   # [B,4,1]
         high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None, :],
                                           opp_cur_hp[:, None, :], acc[:, :, None], eps)    # each [B,4,6]
-        # fixed-damage moves (Seismic Toss into a defender): immunity + legality gated, CB-invariant.
-        fixed = (self.MOVE_FIXED_DAMAGE[move_ids] * usable)[:, :, None]                   # [B,4,1]
-        is_fixed = fixed > 0
-        not_immune = (eff > 0).float()                                                   # [B,4,6]
-        fixed_frac = (fixed / (opp_maxhp[:, None, :] + eps)) * not_immune
-        fixed_ko = acc[:, :, None] * (fixed >= opp_cur_hp[:, None, :]).float() * not_immune
-        high = torch.where(is_fixed, fixed_frac, high); low = torch.where(is_fixed, fixed_frac, low)
-        crit = torch.where(is_fixed, fixed_frac, crit); ko = torch.where(is_fixed, fixed_ko, ko)
+        # gen3_nonformula_damage_v1: non-formula moves into each defender — immunity + legality gated, CB-invariant.
+        nf = nonformula_rolls(tuple(t[:, :, None] for t in gather_nonformula(self, move_ids)),
+                              opp_cur_hp[:, None, :], opp_maxhp[:, None, :], our_cur_hp[:, None, None],
+                              eff, acc[:, :, None], eps)
+        high, low, crit, ko = (r * usable[:, :, None] for r in override_rolls((high, low, crit, ko), nf))
         ko = ko * revealed[:, None, :]        # gen3_unrevealed_outgoing_prior_v1: P(KO) NULLED at hidden slots
 
         cell = torch.stack([low, high, crit, ko, eff], dim=-1)                            # [B,4,6,_DMG_OMX_CELL]
@@ -457,9 +465,11 @@ class DamageOperatorBlocks:
         is_hp = (move_ids == self.hp_num)
         bp = torch.where(is_hp, torch.full_like(move_ty, self.hp_bp, dtype=torch.float32),
                          self.MOVE_BP[move_ids])                       # [B,6,4]
+        our_hp_frac = ctx.hp_and_active[:, our, 0]                     # [B,6]
+        bp = gather_bp(self, move_ids, our_hp_frac[:, :, None], bp=bp)  # [B,6,4] gen3_nonformula_damage_v1
         phys = self.TYPE_IS_PHYS[move_ty]                              # [B,6,4]
         acc = self.MOVE_ACCURACY[move_ids]                            # [B,6,4]
-        usable = legal * (bp > 0).float()                            # [B,6,4] legal damaging moves
+        usable = legal * is_priced(self, move_ids, bp)               # [B,6,4] legal damaging moves
 
         # --- our 6 attackers (real spread; CB ×1.5 phys, burn; boosts only on the active slot, bench reset) ---
         a_base = self.BASE_STATS[ctx.species_ids[:, our]]            # [B,6,6] [hp,atk,def,spa,spd,spe]
@@ -471,6 +481,7 @@ class DamageOperatorBlocks:
         our_atk = (2.0 * a_base[..., 1] + iv[..., 1] + ev[..., 1] / 4.0 + 5.0) * nat[..., 0]   # [B,6]
         our_spa = (2.0 * a_base[..., 3] + iv[..., 3] + ev[..., 3] / 4.0 + 5.0) * nat[..., 2]   # [B,6]
         our_spe = (2.0 * a_base[..., 5] + iv[..., 5] + ev[..., 5] / 4.0 + 5.0) * nat[..., 4]   # [B,6]
+        our_cur_hp = our_hp_frac * (2.0 * a_base[..., 0] + iv[..., 0] + ev[..., 0] / 4.0 + 110.0)  # [B,6]
         # Boosts: the ACTIVE row carries our_ctx_raw's stages; bench rows neutral (mult 1.0) — gen3 resets on
         # switch (mirrors _outgoing_matrix's defender-boost handling exactly). `inherit_stages`
         # (C5 Baton Pass) is the HYPOTHETICAL post-pass world: EVERY row gets the active's stages
@@ -537,14 +548,10 @@ class DamageOperatorBlocks:
         screen = 1.0 - 0.5 * (opp_reflect[:, :, None] * phys + opp_ls[:, :, None] * (1.0 - phys))  # [B,6,4]
         high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None, None],
                                           opp_cur_hp[:, None, None], acc, eps)           # each [B,6,4]
-        # fixed-damage moves (Seismic Toss into the opp active): immunity + legality gated, CB-invariant.
-        fixed = self.MOVE_FIXED_DAMAGE[move_ids] * usable                              # [B,6,4]
-        is_fixed = fixed > 0
-        not_immune = (eff > 0).float()                                                 # [B,6,4]
-        fixed_frac = (fixed / (opp_maxhp[:, None, None] + eps)) * not_immune
-        fixed_ko = acc * (fixed >= opp_cur_hp[:, None, None]).float() * not_immune
-        high = torch.where(is_fixed, fixed_frac, high); low = torch.where(is_fixed, fixed_frac, low)
-        crit = torch.where(is_fixed, fixed_frac, crit); ko = torch.where(is_fixed, fixed_ko, ko)
+        # gen3_nonformula_damage_v1: non-formula moves into the opp active — immunity + legality gated, CB-invariant.
+        nf = nonformula_rolls(gather_nonformula(self, move_ids), opp_cur_hp[:, None, None],
+                              opp_maxhp[:, None, None], our_cur_hp[:, :, None], eff, acc, eps)
+        high, low, crit, ko = (r * usable for r in override_rolls((high, low, crit, ko), nf))
 
         # --- p_outspeed per attacker (our_spe [B,6] vs the shared believed opp speed) ---
         opp_spe_std = self.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, opp_act], _SB_SPE, 1]   # [B]
@@ -971,7 +978,9 @@ class DamageOperatorBlocks:
         `discrete_incoming` verbatim so its refine consumer and the D3 edge-bias consumer
         (`pairwise_incoming`) price the SAME physics from the SAME candidate selection — one body, no
         drift. v1 semantics unchanged: LEGACY de-timid attacker offense (no spread belief / boost / burn /
-        weather / fixed-damage — the coarse signal; the full post-transformer op is authoritative).
+        weather — the coarse signal; the full post-transformer op is authoritative). The NON-FORMULA
+        moves (gen3_nonformula_damage_v1 — Seismic Toss, Super Fang, Endeavor, OHKO, Eruption ∝ HP,
+        Flail …) ARE priced, exactly as the full op prices them: no kernel calls a declared move 0.
 
         → `(high [B,6,K], ko [B,6,K], eff [B,6,K], phys_k [B,K], w_topk [B,K],
             defender_alive [B,6], has_opp [B])`."""
@@ -1014,7 +1023,6 @@ class DamageOperatorBlocks:
         # learned posterior → the prior FLOOR resolves the typed-HP belief, scattered onto 355-370; the bare
         # 237 is masked — gen3_opp_hp_typed_candidates_v1) ---
         # --- Candidate axis attributes: C = n_moves (the typed HP 355-370 carry real BP/type; no append) ---
-        bp_all = self.MOVE_BP                                                            # [n_moves]
         mty_all = self.MOVE_TYPE_IDX                                                     # [n_moves]
         phys_all = self.MOVE_PHYS                                                        # [n_moves]
         acc_all = self.MOVE_ACCURACY                                                     # [n_moves]
@@ -1022,7 +1030,8 @@ class DamageOperatorBlocks:
         # Reused from the caller when the sibling status kernel already built it (`refine_candidates`). ---
         topk_idx, w_topk = cand if cand is not None else self.refine_candidates(ctx, move_belief_logits)
         K = topk_idx.shape[1]
-        bp_k = bp_all[topk_idx]                                                          # [B,K]
+        opp_hp_frac = ctx.hp_and_active[ar, opp_act, 0]                                   # [B]
+        bp_k = gather_bp(self, topk_idx, opp_hp_frac[:, None])                           # [B,K] effective BP
         mty_k = mty_all[topk_idx]                                                        # [B,K] (long, TypeEncoder)
         phys_k = phys_all[topk_idx]                                                      # [B,K]
         acc_k = acc_all[topk_idx]                                                        # [B,K]
@@ -1043,6 +1052,13 @@ class DamageOperatorBlocks:
         screen = 1.0 - 0.5 * (reflect * phys_k + light_screen * (1.0 - phys_k))           # [B,K]
         high, _low, _crit, ko = self._rolls(dmg_ns, screen[:, None, :], maxhp[:, :, None],
                                             cur_hp[:, :, None], acc_k[:, None, :], eps)     # each [B,6,K]
+        # gen3_nonformula_damage_v1: the non-formula kinds replace the rolls (attacker HP = obs fraction ×
+        # the neutral max HP, the op's opp-HP convention).
+        atk_cur = opp_hp_frac * (2.0 * a_base[:, 0] + 31.0 + 110.0)                        # [B]
+        nf = nonformula_rolls(tuple(t[:, None, :] for t in gather_nonformula(self, topk_idx)),
+                              cur_hp[:, :, None], maxhp[:, :, None], atk_cur[:, None, None],
+                              eff, acc_k[:, None, :], eps)
+        high, _low, _crit, ko = override_rolls((high, _low, _crit, ko), nf)
         return high, ko, eff, phys_k, w_topk, defender_alive, has_opp
 
 

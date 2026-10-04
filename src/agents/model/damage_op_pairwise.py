@@ -57,6 +57,9 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _TypeEncoder, _VOLATILE_SLOTS, _WATER_TIDX, _dmg_imx_dim, decode_damage_block,
 )
 
+from agents.model.damage_kinds import (gather_bp, gather_nonformula, nonformula_rolls,
+                                       override_rolls)
+
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
 
@@ -118,6 +121,10 @@ class DamageOperatorPairwise:
         MOVE_BOOST_HP_COST: torch.Tensor
         MOVE_BP: torch.Tensor
         MOVE_FIXED_DAMAGE: torch.Tensor
+        MOVE_TARGET_HP_FRAC: torch.Tensor
+        MOVE_ENDEAVOR: torch.Tensor
+        MOVE_BP_FLAIL: torch.Tensor
+        MOVE_BP_HP_SCALED: torch.Tensor
         MOVE_HEAL_FRACTION: torch.Tensor
         MOVE_INFLICTS_STATUS: torch.Tensor
         MOVE_PHYS: torch.Tensor
@@ -264,27 +271,37 @@ class DamageOperatorPairwise:
         return cells * is_boost[:, :, None, None]
 
     def _believed_attackers(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
-                            k_cand: int) -> Tuple[torch.Tensor, ...]:
+                            k_cand: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor,
+                                                  torch.Tensor, torch.Tensor, torch.Tensor,
+                                                  torch.Tensor, torch.Tensor,
+                                                  Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+                                                  torch.Tensor]:
         """Shared C1b/C3 attacker block (the D4 recipe with the ACTIVE column KEPT): per opp mon
         j its top-`k_cand` most-believed candidates from ITS OWN slot of the composed posterior
         (selection detached, weights differentiable), de-timid offense, revealed+alive gate.
-        → (w_k, bp_k, mty_k, phys_k, acc_k [B,6,K]; atk_j, spa_j, att_gate [B,6])."""
+        → (w_k, bp_k, mty_k, phys_k, acc_k [B,6,K]; atk_j, spa_j, att_gate [B,6]; nf_k = 3×[B,6,K]
+        (fixed, target_frac, endeavor); atk_cur_j [B,6]). `bp_k` is the EFFECTIVE BP (each mon's HP
+        resolved) and `nf_k` / `atk_cur_j` feed `damage_kinds.nonformula_rolls` —
+        gen3_nonformula_damage_v1."""
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
         K = min(int(k_cand), w_all.shape[-1])
         topk_idx = w_all.detach().topk(K, dim=-1).indices                            # [B,6,K]
         w_k = w_all.gather(-1, topk_idx)                                             # diff'able
-        bp_k = self.MOVE_BP[topk_idx]
+        hp_j = ctx.hp_and_active[:, opp, 0]                                          # [B,6]
+        bp_k = gather_bp(self, topk_idx, hp_j[:, :, None])                           # [B,6,K] effective
         mty_k = self.MOVE_TYPE_IDX[topk_idx]
         phys_k = self.MOVE_PHYS[topk_idx]
         acc_k = self.MOVE_ACCURACY[topk_idx]
+        nf_k = gather_nonformula(self, topk_idx)                                     # 3×[B,6,K]
         a_base = self.BASE_STATS[ctx.species_ids[:, opp]]                            # [B,6,6]
         off_const = 31.0 + 252.0 / 4.0 + 5.0
         atk_j = (2.0 * a_base[..., _BS_ATK] + off_const) * 1.1                       # de-timid
         spa_j = (2.0 * a_base[..., _BS_SPA] + off_const) * 1.1
-        att_gate = ((1.0 - ctx.opp_believed_mask.float())
-                    * (ctx.hp_and_active[:, opp, 0] > 0).float())                    # [B,6]
-        return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate
+        atk_cur_j = hp_j * (2.0 * a_base[..., _BS_HP] + 31.0 + 110.0)                # neutral max HP
+        att_gate: torch.Tensor = ((1.0 - ctx.opp_believed_mask.float())
+                                  * (hp_j > 0).float())                              # [B,6]
+        return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate, nf_k, atk_cur_j
 
     def _active_defender(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, ...]:
         """Consequence-kernel defender block (C2; C1b/C3 keep inline variants — C1b needs the
@@ -374,7 +391,7 @@ class DamageOperatorPairwise:
         d_outspeed = (p_par - p_now)[:, None, :] * is_par[:, :, None]                # [B,4,6]
         # --- burn: mon j's worst believed PHYSICAL hit on our active, Atk halved ---
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
-         att_gate) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+         att_gate, nf_k, atk_cur_j) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         def_c, spd_c, maxhp, cur_hp, at1, at2, amul = self._active_defender(ctx)
         eff = (torch.gather(self.CHART[at1][:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k)
                * torch.gather(self.CHART[at2][:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k)
@@ -384,16 +401,21 @@ class DamageOperatorPairwise:
         reflect, ls = ctx.screen_feature[:, 0:1], ctx.screen_feature[:, 2:3]
         screen = (1.0 - 0.5 * (reflect[:, :, None] * phys_k
                                + ls[:, :, None] * (1.0 - phys_k)))                   # [B,6,K]
-        phys_mask = phys_k * (bp_k > 0).float()
-        dmg_mask = (bp_k > 0).float()
+        # gen3_nonformula_damage_v1: a non-formula move counts as damaging (Seismic Toss is a hit) and its
+        # rolls are the declared damage — Atk-independent, so burn moves it by exactly 0.
+        nf_any = (nf_k[0] + nf_k[1] + nf_k[2]) > 0                                   # [B,6,K]
+        phys_mask = phys_k * ((bp_k > 0) | nf_any).float()
+        dmg_mask = ((bp_k > 0) | nf_any).float()
+        nf = nonformula_rolls(nf_k, cur_hp[:, None, None], maxhp[:, None, None], atk_cur_j[:, :, None],
+                              eff, acc_k, eps)
 
         def _worst(atk_mult: float, mask: torch.Tensor) -> torch.Tensor:
             A = phys_k * atk_j[:, :, None] * atk_mult + (1.0 - phys_k) * spa_j[:, :, None]
             D = phys_k * def_c[:, None, None] + (1.0 - phys_k) * spd_c[:, None, None]
             core = 42.0 * bp_k * A / (D + eps) / 50.0 + 2.0
             dmg_ns = core * (1.0 + 0.5 * is_stab) * eff * 0.925 * (bp_k > 0).float()
-            high, _l, _c, _k = self._rolls(dmg_ns, screen, maxhp[:, None, None],
-                                           cur_hp[:, None, None], acc_k, eps)        # [B,6,K]
+            high, _l, _c, _k = override_rolls(self._rolls(dmg_ns, screen, maxhp[:, None, None],
+                                                          cur_hp[:, None, None], acc_k, eps), nf)  # [B,6,K]
             return (w_k * high * mask).amax(dim=-1)                                  # [B,6]
 
         d_in_phys = ((_worst(0.5, phys_mask) - _worst(1.0, phys_mask))[:, None, :]
@@ -497,13 +519,14 @@ class DamageOperatorPairwise:
         # --- defender = OUR ACTIVE (real spread, current def/spd stages folded) ---
         def_c, spd_c, maxhp, cur_hp, d_t1, d_t2, _amul = self._active_defender(ctx)
         our_abl = ctx.ability1_ids[ar, ctx.our_active_idx]                           # [B]
-        # --- the seat candidates' move data (fixed-damage recategorised like the forward) ---
-        bp_k = self.MOVE_BP[nums]                                                    # [B,K]
+        # --- the seat candidates' move data (effective BP + the non-formula kinds, like the forward) ---
+        opp_hp_frac = ctx.hp_and_active[ar, opp_act, 0]                              # [B]
+        bp_k = gather_bp(self, nums, opp_hp_frac[:, None])                           # [B,K]
         mty_k = self.MOVE_TYPE_IDX[nums]
         phys_k = self.MOVE_PHYS[nums]
         acc_k = self.MOVE_ACCURACY[nums]
-        fixed_k = self.MOVE_FIXED_DAMAGE[nums]
-        phys_k = torch.where(fixed_k > 0, self.TYPE_IS_PHYS[mty_k], phys_k)
+        nf_k = gather_nonformula(self, nums)                                         # 3×[B,K]
+        atk_cur = opp_hp_frac * (2.0 * a_base[:, 0] + 31.0 + 110.0)                  # [B] neutral max HP
         weather_k = self._field_bp_mult(ctx, mty_k)                                  # [B,K] × sports
         reflect = ctx.screen_feature[:, 0:1]                                         # [B,1] OUR side
         light_screen = ctx.screen_feature[:, 2:3]
@@ -511,7 +534,7 @@ class DamageOperatorPairwise:
             return self._damage_rolls(
                 atk_x, spa, at1, at2, def_c[:, None], spd_c[:, None], maxhp[:, None],
                 cur_hp[:, None], d_t1[:, None], d_t2[:, None], our_abl[:, None],
-                reflect, light_screen, bp_k, mty_k, phys_k, acc_k, fixed_k,
+                reflect, light_screen, bp_k, mty_k, phys_k, acc_k, nf_k, atk_cur,
                 weather_k, eps)[0][:, 0, :]                                          # [B,K]
         high_full = _high(atk)
         high_half = _high(atk * 0.5)
@@ -542,7 +565,7 @@ class DamageOperatorPairwise:
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         deltas, is_boost, hp_cost = self._setup_deltas(ctx)                          # [B,4,5], [B,4], [B,4]
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
-         att_gate) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+         att_gate, nf_k, atk_cur_j) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         # --- defender: OUR ACTIVE (real spread; CURRENT def/spd stages) ---
         d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
         spr = ctx.pokemon_part[ar, ctx.our_active_idx,
@@ -583,6 +606,12 @@ class DamageOperatorPairwise:
                                             maxhp[:, None, None, None],
                                             cur_hp[:, None, None, None],
                                             acc_k[:, None], eps)                     # [B,W,6,K]
+        # gen3_nonformula_damage_v1: the declared non-formula damage (Def-independent → identical in
+        # every world, so a defensive boost moves Seismic Toss by exactly 0 — the true physics).
+        nf = nonformula_rolls(tuple(t[:, None] for t in nf_k), cur_hp[:, None, None, None],
+                              maxhp[:, None, None, None], atk_cur_j[:, None, :, None],
+                              eff[:, None], acc_k[:, None], eps)
+        high, _low, _crit, ko = override_rolls((high, _low, _crit, ko), nf)
         worst_high = (w_k[:, None] * high).amax(dim=-1)                              # [B,W,6]
         worst_pko = (w_k[:, None] * ko).amax(dim=-1)
         d_high = worst_high[:, 1:] - worst_high[:, 0:1]                              # [B,4,6]
@@ -623,7 +652,7 @@ class DamageOperatorPairwise:
         w_frac = (2.0 / 3.0) * sun + 0.25 * other_w + 0.5 * (1.0 - sun - other_w)    # [B,1]
         frac = torch.where(wh > 0, w_frac.expand_as(frac), frac)
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
-         att_gate) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+         att_gate, nf_k, atk_cur_j) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         # --- defender: OUR ACTIVE (real spread; CURRENT stages — a heal changes no stage) ---
         d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
         spr = ctx.pokemon_part[ar, ctx.our_active_idx,
@@ -661,6 +690,12 @@ class DamageOperatorPairwise:
         _h, _l, _c, ko_w = self._rolls(dmg_ns[:, None], screen[:, None],
                                        maxhp[:, None, None, None],
                                        hp_w[:, :, None, None], acc_k[:, None], eps)  # [B,W,6,K]
+        # gen3_nonformula_damage_v1: the declared non-formula damage vs each world's post-heal HP
+        # (Super Fang / OHKO / Endeavor read the healed HP; Seismic Toss its fixed 100).
+        nf = nonformula_rolls(tuple(t[:, None] for t in nf_k), hp_w[:, :, None, None],
+                              maxhp[:, None, None, None], atk_cur_j[:, None, :, None],
+                              eff[:, None], acc_k[:, None], eps)
+        _h, _l, _c, ko_w = override_rolls((_h, _l, _c, ko_w), nf)
         worst_pko = (w_k[:, None] * ko_w).amax(dim=-1)                               # [B,W,6]
         d_pko = worst_pko[:, 1:] - worst_pko[:, 0:1]                                 # [B,4,6]
         # --- Rest's deterministic self-sleep cost (our OWN ability → exact, never a prior) ---
@@ -788,10 +823,12 @@ class DamageOperatorPairwise:
         K = min(int(k_bench), w_all.shape[-1])
         topk_idx = w_all.detach().topk(K, dim=-1).indices                              # [B,6,K] DETACHED
         w_k = w_all.gather(-1, topk_idx)                                               # [B,6,K] diff'able
-        bp_k = self.MOVE_BP[topk_idx]                                                  # [B,6,K]
+        hp_j = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0]                        # [B,6] attacker HP
+        bp_k = gather_bp(self, topk_idx, hp_j[:, :, None])                             # [B,6,K] effective
         mty_k = self.MOVE_TYPE_IDX[topk_idx]
         phys_k = self.MOVE_PHYS[topk_idx]
         acc_k = self.MOVE_ACCURACY[topk_idx]
+        nf_k = gather_nonformula(self, topk_idx)                                       # 3×[B,6,K]
         # --- attackers = the opp 6 (de-timid; revealed+alive-gated; active column zeroed) ---
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         a_base = self.BASE_STATS[ctx.species_ids[:, opp]]                              # [B,6,6]
@@ -840,6 +877,12 @@ class DamageOperatorPairwise:
         high, _low, _crit, ko = self._rolls(dmg_ns, screen[:, None, :, :],
                                             maxhp[:, :, None, None], cur_hp[:, :, None, None],
                                             acc_k[:, None, :, :], eps)                 # each [B,6i,6j,K]
+        # gen3_nonformula_damage_v1: the declared non-formula damage per (defender i, attacker j, cand c).
+        atk_cur_j = hp_j * (2.0 * a_base[..., 0] + 31.0 + 110.0)                       # [B,6j] neutral max HP
+        nf = nonformula_rolls(tuple(t[:, None] for t in nf_k), cur_hp[:, :, None, None],
+                              maxhp[:, :, None, None], atk_cur_j[:, None, :, None],
+                              eff, acc_k[:, None, :, :], eps)
+        high, _low, _crit, ko = override_rolls((high, _low, _crit, ko), nf)
         wb = w_k[:, None, :, :]
         pm = phys_k[:, None, :, :]
         cells = torch.stack([

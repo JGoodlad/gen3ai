@@ -335,6 +335,12 @@ def check_recorded(battle: BankBattle, decisions: list, rec: dict) -> dict:
     return {"decisions": len(decisions)}
 
 
+def op_semantics() -> str:
+    """This checkout's damage-op feature-semantics identity (`damage_tables.OP_SEMANTICS`)."""
+    from agents.model.damage_tables import OP_SEMANTICS
+    return OP_SEMANTICS
+
+
 def encoder_identity() -> dict:
     """What the recorded rows are a property of, at THIS checkout: the obs golden's hash (it moves
     with every deliberate encoder change), the obs width and the architecture signature. Gate ①'s
@@ -496,6 +502,9 @@ def build(models: Path, out: Path, sources: Sequence[Source] = SOURCES_V1, worke
                           "equal to the token the log played"},
         "counts": summarize(decisions),
         "encoder_identity": encoder_identity(),
+        # The forward's feature semantics the recorded logits were produced under is the RECORDING's,
+        # but a re-read on THIS checkout reproduces them only while the op's semantics are the same.
+        "op_semantics": op_semantics(),
         "content_sha256": content_sha(kept_battles, decisions),
     }
     write_bank(out, manifest, kept_battles, decisions)

@@ -43,7 +43,7 @@ from typing import Dict, FrozenSet, List, NamedTuple, Optional, Tuple
 #: production surface (every file a torch op of `evaluate_actions` was called from;
 #: `selection_sites_test` re-measures it and fails on a module outside this list).
 FORWARD_MODULES: Tuple[str, ...] = (
-    "aux_value_heads", "belief_heads", "conditional_threat", "damage_op", "damage_op_blocks",
+    "aux_value_heads", "belief_heads", "conditional_threat", "damage_kinds", "damage_op", "damage_op_blocks",
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
     "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "switch_branch",
@@ -116,10 +116,8 @@ MARGIN: Dict[Tuple[str, str], Rule] = {
         "threshold", zero_exact=True, why="landing damage breaks Focus Punch (0 exactly for status / immune)"),
     # --- THRESHOLDS on weight-free float arithmetic (the current HP is a product of an observed fraction
     #     and a computed max HP; a fixed-damage KO at exactly the remaining HP is a genuine near-tie)
-    ("damage_op", "fixed_all[:, None, :] >= cur_hp[:, :, None]"): Rule("threshold", zero_exact=True),
-    ("damage_op_blocks", "fixed >= opp_cur_hp[:, None]"): Rule("threshold", zero_exact=True),
-    ("damage_op_blocks", "fixed >= opp_cur_hp[:, None, :]"): Rule("threshold", zero_exact=True),
-    ("damage_op_blocks", "fixed >= opp_cur_hp[:, None, None]"): Rule("threshold", zero_exact=True),
+    #     gen3_nonformula_damage_v1: ONE site now — every kernel reaches it through damage_kinds.
+    ("damage_kinds", "fixed >= tgt_cur_hp"): Rule("threshold", zero_exact=True),
 }
 
 #: Why an EXACT site's operands are bit-identical in every forward of the same row.
@@ -145,7 +143,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     "damage_op": {
         "OBS": ("hp_frac > 0", "opp_burn > 0.5", "opp_para > 0.5", "our_para > 0.5", "s >= 0"),
-        "TABLE": ("bp_all > 0", "eff > 0", "fixed_all > 0", "phys_all > 0.5"),
+        "TABLE": ("bp_all > 0", "phys_all > 0.5"),
         "INT": ("(phys_all > 0.5).long()", "ctx.type1_ids[:, _og] == _GHOST_TIDX",
                 "ctx.type2_ids[:, _og] == _GHOST_TIDX", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
                 "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]", "opp_item == 0",
@@ -159,7 +157,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "opp_cond.sum(-1) > 0.5", "opp_cond.sum(dim=1) > 0.5", "opp_hp_frac > 0", "opp_para > 0.5",
                 "our_burn > 0.5", "our_cb > 0.5", "our_cond.sum(-1) > 0.5", "our_para > 0.5",
                 "(~ctx.opp_believed_mask).long()"),
-        "TABLE": ("bp > 0", "eff > 0", "fixed > 0", "has_cure > 0.5", "has_other_cleric > 0.5",
+        "TABLE": ("has_cure > 0.5", "has_other_cleric > 0.5",
                   "live_cleric.sum(dim=-1, keepdim=True) - live_cleric > 0.5"),
         "SELECTED": ("bp_k > 0", "ded.sum(dim=-1, keepdim=True) > 0.5", "sec_tot > eps"),
         "INT": ("ctx.all_move_ids[ar, opp_act] > 0", "ctx.item_ids[:, our] == self.cb_item_num",
@@ -175,10 +173,10 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0", "ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0",
                 "ctx.hp_and_active[:, opp, 0] > 0", "ctx.hp_and_active[:, sl, 0] > 0",
                 "ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0", "hp_frac > 0",
-                "hp_frac[:, None] > hp_cost", "leech_active > 0.5", "opp_burn > 0.5"),
+                "hp_frac[:, None] > hp_cost", "hp_j > 0", "leech_active > 0.5", "opp_burn > 0.5"),
         "TABLE": ("deltas.abs().sum(-1) > 0", "frac > 0", "hp_cost <= 0",
                   "self.TYPE_IS_GHOST[_at1] + self.TYPE_IS_GHOST[_at2] > 0.0", "wh > 0"),
-        "SELECTED": ("bp_k > 0", "fixed_k > 0"),
+        "SELECTED": ("bp_k > 0", "nf_k[0] + nf_k[1] + nf_k[2] > 0"),
         "INT": ("ctx.all_move_ids[:, :TEAM_SIZE] == pur", "ctx.our_active_req_move_ids == self.baton_num",
                 "ctx.our_active_req_move_ids == self.curse_num", "ctx.our_active_req_move_ids == self.rest_num",
                 "ctx.our_active_req_move_ids.long()", "ids == self.toxic_num", "items == LEFTOVERS_NUM",
@@ -186,6 +184,13 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "mty_k == ctx.type1_ids[:, opp][:, :, None]", "mty_k == ctx.type2_ids[:, opp][:, :, None]",
                 "opp_ab > 0", "opp_ability > 0", "sidx != LEECH_SEED_CAT", "sidx == 1", "sidx == 2", "sidx == 5",
                 "sidx == _SLP_STATUS_CAT", "sidx > 0", "types1 == ti", "types2 == ti"),
+    },
+    "damage_kinds": {
+        # gen3_nonformula_damage_v1: the declared non-formula / HP-dependent-BP kinds (the attacker's
+        # and the target's HP are observed fractions × computed max HP; the kinds are table bits).
+        "OBS": ("ratio < thr", "tgt_cur_hp > 0", "bp > 0"),
+        "TABLE": ("fixed + target_frac + endeavor > 0", "hp_scaled > 0", "flail > 0", "eff > 0",
+                  "nonformula > 0", "target_frac >= 1.0"),
     },
     "encoders": {
         "INT": ("ctx.all_move_ids == HIDDEN_POWER_MOVE_NUM",),

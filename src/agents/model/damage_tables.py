@@ -47,7 +47,7 @@ belief) and the proven torch port in the ai_v6 design.
 """
 from __future__ import annotations
 
-from typing import cast, Dict
+from typing import cast, Dict, Tuple
 
 import torch
 
@@ -221,6 +221,21 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         move_phys[num] = 1.0 if md.category == MoveCategory.PHYSICAL else 0.0
         move_accuracy[num] = 1.0 if md.never_miss else float(md.accuracy) / 100.0
 
+    # gen3_nonformula_damage_v1: the DECLARED damage model of every move the BP formula cannot price
+    # (`DAMAGE_MODELS`; the build RAISES on an undeclared damaging BP-0 move). The `bp` kind's declared
+    # value (Return / Frustration 102, Magnitude 71, Present 52) and Flail / Reversal's full-HP 20 land
+    # in MOVE_BP, so MOVE_BP is "the BP at the attacker's full HP" for every formula-priced move. Every
+    # dex-damaging move takes its gen-3 category from its TYPE (`MOVE_PHYS` above read the facade's
+    # derived category, which is STATUS for every BP-0 move — Return was on the SPECIAL channel).
+    nonformula = build_nonformula_tables(n_moves)
+    move_bp[nonformula["_BP_OVERRIDE_NUMS"]] = nonformula["_BP_OVERRIDE_VALS"]
+    for mid in gen3_data.moves.raw():
+        md = cast(MoveData, gen3_data.moves.get(mid))
+        if md.num == HIDDEN_POWER_NUM or not (0 <= md.num < n_moves) or md.base_power > 0:
+            continue
+        if md.is_dex_damaging:
+            move_phys[md.num] = 1.0 if md.type.name in _PHYSICAL_TYPE_NAMES else 0.0
+
     # Base stats by species num. SpeciesData.base_stats is keyed atk/def/hp/spa/spd/spe — index by
     # KEY, not positional order, into our [hp, atk, def, spa, spd, spe] layout.
     stat_order = ("hp", "atk", "def", "spa", "spd", "spe")
@@ -327,7 +342,6 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     move_priority = torch.zeros(n_moves, dtype=torch.float32)
     move_drain = torch.zeros(n_moves, dtype=torch.float32)
     move_recoil = torch.zeros(n_moves, dtype=torch.float32)
-    move_fixed_damage = build_move_fixed_damage(n_moves)        # gen3_unified_op_physics_v1
     for mid in gen3_data.moves.raw():
         md = cast(MoveData, gen3_data.moves.get(mid))
         num = md.num
@@ -388,7 +402,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         "MOVE_PRIORITY": move_priority,
         "MOVE_DRAIN": move_drain,
         "MOVE_RECOIL": move_recoil,
-        "MOVE_FIXED_DAMAGE": move_fixed_damage,
+        **{k: nonformula[k] for k in NONFORMULA_TABLE_KEYS},   # gen3_nonformula_damage_v1
         "ABILITY_SECONDARY_MULT": ability_secondary_mult,
         "ABILITY_SECONDARY_BLOCK": ability_secondary_block,
         # gen3_unified_status_landing_v1: the status-MOVE landing tables (merged in so the op registers them
@@ -500,23 +514,162 @@ def build_species_cb_prior(n_species: int) -> torch.Tensor:
     return prior
 
 
-# gen3_unified_op_physics_v1: FIXED-damage moves (constant damage at L100, ignoring Atk/Def/roll/crit but
-# RESPECTING type immunity). They read BP 0 in the dex so the formula gives ~0 — the op overrides with this
-# constant. Mirrors incoming_damage.FIXED_DAMAGE (the CPU block the GPU op must reach parity with — the
-# two must agree or the op and the obs encoder describe the same move differently).
-_FIXED_DAMAGE = {"seismictoss": 100, "nightshade": 100, "dragonrage": 40, "sonicboom": 20}
+# --- gen3_nonformula_damage_v1: the DECLARED damage model of every move the BP formula cannot price ---- #
+# ONE table, one row per move whose damage is not `formula(dex basePower)`. Every damaging (dex category
+# != Status) move with basePower 0 MUST appear here — `build_nonformula_tables` RAISES otherwise, so a new
+# move can never again be silently priced as "does nothing". (Before this table the outgoing blocks gated
+# on `bp > 0`, so OUR Seismic Toss / Night Shade / Dragon Rage / Sonic Boom read UNUSABLE, and Return /
+# Frustration / Super Fang / Endeavor / Flail / Reversal / Magnitude / Present read 0 on BOTH sides — X5
+# Tier 0 finding F8.) Showdown citations are `deps/pokemon-showdown` (gen 3 = data/mods/gen3 → gen4 → gen5
+# → data/moves.ts by `inherit`); the damage dispatch is `sim/battle-actions.ts` `getDamage`.
+#
+# kind              meaning (see `damage_kinds.py` for the arithmetic)
+#   fixed           constant HP                                   → MOVE_FIXED_DAMAGE
+#   target_hp_frac  fraction of the TARGET's CURRENT HP           → MOVE_TARGET_HP_FRAC
+#   endeavor        max(0, target HP − attacker HP)               → MOVE_ENDEAVOR
+#   bp              a DECLARED stationary base power              → MOVE_BP (replaces the dex 0)
+#   bp_flail        gen-3 Flail table on the attacker's HP        → MOVE_BP_FLAIL (+ MOVE_BP = 20, its full-HP BP)
+#   bp_hp_scaled    dex BP × the attacker's HP fraction           → MOVE_BP_HP_SCALED (dex BP kept)
+#   hidden_power    priced through the typed Hidden Power path (the 16 typed nums, BP 70) — not here
+#   table_bp_approx priced at its dex BP as ONE ordinary hit — a declared approximation
+#   unmodelled      priced 0 BY DECLARATION — the op has no state to model it
+#
+# Level: every pool team is level 100 (no `Level:` line in any of data/teams' 813 files; Showdown
+# `sim/teams.ts` and `src/rust_sim/src/team.rs` default an omitted level to 100) — gen-3 OU is L100.
+NONFORMULA_LEVEL = 100
+#: The damage op's FEATURE-SEMANTICS identity. A change to what the op computes from an unchanged
+#: observation (this table is one) is not caught by ARCH_SIGNATURE when the weight shapes and the
+#: signature stay (the training-input precedent), so a RECORDING of a policy's outputs stamps this
+#: value and a reader on a checkout with a different one knows it cannot reproduce the recording
+#: (`main.policy_spectrum` — the bank manifest's `op_semantics`). Change it with the op's semantics.
+OP_SEMANTICS = "gen3_nonformula_damage_v1"
+DAMAGE_MODELS: Dict[str, Tuple[str, float, str]] = {
+    # --- fixed / level: `getDamage` → `move.damage === 'level'` → source.level, else `move.damage` ---
+    "seismictoss": ("fixed", float(NONFORMULA_LEVEL), "data/moves.ts seismictoss: damage 'level'"),
+    "nightshade": ("fixed", float(NONFORMULA_LEVEL), "data/moves.ts nightshade: damage 'level'"),
+    "dragonrage": ("fixed", 40.0, "data/moves.ts dragonrage: damage 40"),
+    "sonicboom": ("fixed", 20.0, "data/moves.ts sonicboom: damage 20"),
+    # random: random(50,151)·level/100 → uniform 50..150 at L100. APPROXIMATION: its expectation, 100.
+    "psywave": ("fixed", float(NONFORMULA_LEVEL),
+                "data/moves.ts psywave damageCallback random(50,151)*level/100 (gen5 mod: acc 80); E = level"),
+    # --- fraction of the target's CURRENT hp ---
+    "superfang": ("target_hp_frac", 0.5, "data/moves.ts superfang damageCallback clampIntRange(target.hp/2, 1)"),
+    # OHKO: gen 3 deals target.hp (`getDamage`: `if (move.ohko) return gen === 3 ? target.hp : maxhp`);
+    # accuracy 30 at equal levels rides MOVE_ACCURACY. APPROXIMATION: Sturdy's OHKO immunity is not modelled.
+    "guillotine": ("target_hp_frac", 1.0, "data/moves.ts guillotine ohko; battle-actions getDamage gen3 target.hp"),
+    "horndrill": ("target_hp_frac", 1.0, "data/moves.ts horndrill ohko; battle-actions getDamage gen3 target.hp"),
+    "fissure": ("target_hp_frac", 1.0, "data/moves.ts fissure ohko; battle-actions getDamage gen3 target.hp"),
+    "sheercold": ("target_hp_frac", 1.0, "data/moves.ts sheercold ohko; battle-actions getDamage gen3 target.hp"),
+    # --- attacker-HP dependent ---
+    "endeavor": ("endeavor", 1.0,
+                 "data/moves.ts endeavor damageCallback target.hp - pokemon.hp; data/mods/gen4 onTry fails if not lower"),
+    "flail": ("bp_flail", 20.0, "data/mods/gen3/moves.ts flail basePowerCallback (ratio = floor(48*hp/maxhp))"),
+    "reversal": ("bp_flail", 20.0, "data/mods/gen3/moves.ts reversal basePowerCallback (ratio = floor(48*hp/maxhp))"),
+    "eruption": ("bp_hp_scaled", 150.0, "data/moves.ts eruption basePowerCallback basePower*hp/maxhp"),
+    "waterspout": ("bp_hp_scaled", 150.0, "data/moves.ts waterspout basePowerCallback basePower*hp/maxhp"),
+    # --- variable BP with a declared stationary value ---
+    # happiness: Showdown `sim/pokemon.ts` defaults an unset happiness to 255 → Return floor(255*10/25) = 102.
+    # Frustration is run at happiness 0 → 102 too. APPROXIMATION: the obs carries no happiness, so both
+    # are priced as the set that maximises them.
+    "return": ("bp", 102.0, "data/moves.ts return basePowerCallback floor(happiness*10/25); happiness 255"),
+    "frustration": ("bp", 102.0, "data/moves.ts frustration basePowerCallback floor((255-happiness)*10/25); happiness 0"),
+    # random BP. APPROXIMATION: the expectation. Magnitude 4..10 at 5/10/20/30/20/10/5 % → BP
+    # 10/30/50/70/90/110/150, E = 71. Present 40 % BP 40, 30 % BP 80, 10 % BP 120, 20 % heals the
+    # target ¼ (priced as 0 damage) → E = 52.
+    "magnitude": ("bp", 71.0, "data/moves.ts magnitude onModifyMove (random(100) bands); E[BP] = 71"),
+    "present": ("bp", 52.0, "data/moves.ts present onModifyMove (random(10) bands, 20% heal); E[BP] = 52"),
+    # --- priced elsewhere / approximated / declared unmodelled ---
+    "hiddenpower": ("hidden_power", 0.0,
+                    "data/mods/gen3/moves.ts hiddenpower (type + category by type); typed nums 355-370 at BP 70"),
+    # gen 3 Beat Up: typeless, one hit per healthy party member, each from that member's BASE Atk vs the
+    # target's BASE Def (data/mods/gen3/moves.ts beatup). APPROXIMATION: one 10-BP Dark special hit.
+    "beatup": ("table_bp_approx", 10.0, "data/mods/gen3/moves.ts beatup onModifyMove multihit = healthy allies"),
+    # reflective: 2× the damage taken this turn from a physical (Counter) / special (Mirror Coat) hit, or
+    # 2× the damage taken over Bide's 2 turns — needs the turn's incoming damage, which the op does not hold.
+    "counter": ("unmodelled", 0.0, "data/mods/gen3/moves.ts counter: 2x the physical damage taken this turn"),
+    "mirrorcoat": ("unmodelled", 0.0, "data/mods/gen3/moves.ts mirrorcoat: 2x the special damage taken this turn"),
+    "bide": ("unmodelled", 0.0, "data/mods/gen3/moves.ts bide: 2x the damage taken over its charge"),
+    # Low Kick's BP is a step function of the TARGET's weight — data/ carries no species weight.
+    "lowkick": ("unmodelled", 0.0, "data/moves.ts lowkick basePowerCallback by target weight (no weight in data/)"),
+    # Spit Up's BP is 100 × the user's Stockpile layers — the obs carries no Stockpile count.
+    "spitup": ("unmodelled", 0.0, "data/moves.ts spitup basePowerCallback stockpile layers*100"),
+}
+_DAMAGE_KINDS = frozenset({"fixed", "target_hp_frac", "endeavor", "bp", "bp_flail", "bp_hp_scaled",
+                           "hidden_power", "table_bp_approx", "unmodelled"})
+# The kinds whose dex basePower must be 0 (the declaration REPLACES it) vs > 0 (the dex BP is kept).
+_KINDS_DEX_BP_ZERO = frozenset({"fixed", "target_hp_frac", "endeavor", "bp", "bp_flail",
+                                "hidden_power", "unmodelled"})
+NONFORMULA_TABLE_KEYS = ("MOVE_FIXED_DAMAGE", "MOVE_TARGET_HP_FRAC", "MOVE_ENDEAVOR", "MOVE_NONFORMULA",
+                         "MOVE_BP_FLAIL", "MOVE_BP_HP_SCALED")
+
+
+def check_damage_models(models: Dict[str, Tuple[str, float, str]] = DAMAGE_MODELS) -> None:
+    """The THROWING guard. Raises unless (a) every damaging (dex category != Status) move with dex
+    basePower 0 has a row in `models`, and (b) every row names a real move, a known kind, and a dex
+    basePower consistent with that kind. Called by every table build."""
+    raw = gen3_data.moves.raw()
+    for mid, (kind, value, cite) in models.items():
+        md = gen3_data.moves.get(mid)
+        if md is None:
+            raise ValueError(f"DAMAGE_MODELS row {mid!r} names no move in gen3_moves.json")
+        if kind not in _DAMAGE_KINDS:
+            raise ValueError(f"DAMAGE_MODELS row {mid!r}: unknown kind {kind!r}")
+        if not md.is_dex_damaging:
+            raise ValueError(f"DAMAGE_MODELS row {mid!r}: the dex calls it a Status move")
+        if (md.base_power == 0) != (kind in _KINDS_DEX_BP_ZERO):
+            raise ValueError(
+                f"DAMAGE_MODELS row {mid!r}: kind {kind!r} expects dex basePower "
+                f"{'0' if kind in _KINDS_DEX_BP_ZERO else '> 0'}, the dex has {md.base_power}")
+        if not cite:
+            raise ValueError(f"DAMAGE_MODELS row {mid!r} carries no Showdown citation")
+    missing = sorted(
+        mid for mid in raw
+        if (md := gen3_data.moves.get(mid)) is not None and md.is_dex_damaging
+        and md.base_power == 0 and mid not in models)
+    if missing:
+        raise ValueError(
+            f"damaging move(s) with dex basePower 0 and NO declared damage model: {missing}. The op would "
+            "price them as doing nothing (X5 F8). Add each to damage_tables.DAMAGE_MODELS with its gen-3 "
+            "mechanic, verified in deps/pokemon-showdown — `unmodelled` is a legal, explicit answer.")
+
+
+def build_nonformula_tables(n_moves: int,
+                            models: Dict[str, Tuple[str, float, str]] = DAMAGE_MODELS
+                            ) -> Dict[str, torch.Tensor]:
+    """The per-move tables `damage_kinds` reads, from `models` (after `check_damage_models`):
+    MOVE_FIXED_DAMAGE / MOVE_TARGET_HP_FRAC / MOVE_ENDEAVOR (the non-formula damage), MOVE_NONFORMULA
+    (their union, 0/1), MOVE_BP_FLAIL / MOVE_BP_HP_SCALED (0/1), and `bp_override` — {num: BP} the
+    caller writes into MOVE_BP (the `bp` kind's declared value, the Flail full-HP 20)."""
+    check_damage_models(models)
+    t = {k: torch.zeros(n_moves, dtype=torch.float32) for k in NONFORMULA_TABLE_KEYS}
+    bp_override: Dict[int, float] = {}
+    for mid, (kind, value, _cite) in models.items():
+        num = cast(MoveData, gen3_data.moves.get(mid)).num
+        if not (0 <= num < n_moves):
+            continue
+        if kind == "fixed":
+            t["MOVE_FIXED_DAMAGE"][num] = value
+        elif kind == "target_hp_frac":
+            t["MOVE_TARGET_HP_FRAC"][num] = value
+        elif kind == "endeavor":
+            t["MOVE_ENDEAVOR"][num] = 1.0
+        elif kind == "bp":
+            bp_override[num] = value
+        elif kind == "bp_flail":
+            t["MOVE_BP_FLAIL"][num] = 1.0
+            bp_override[num] = value
+        elif kind == "bp_hp_scaled":
+            t["MOVE_BP_HP_SCALED"][num] = 1.0
+    t["MOVE_NONFORMULA"] = ((t["MOVE_FIXED_DAMAGE"] + t["MOVE_TARGET_HP_FRAC"] + t["MOVE_ENDEAVOR"]) > 0).float()
+    t["_BP_OVERRIDE_NUMS"] = torch.tensor(sorted(bp_override), dtype=torch.long)
+    t["_BP_OVERRIDE_VALS"] = torch.tensor([bp_override[n] for n in sorted(bp_override)], dtype=torch.float32)
+    return t
 
 
 def build_move_fixed_damage(n_moves: int) -> torch.Tensor:
-    """``[n_moves]`` L100 FIXED damage per move (Seismic Toss / Night Shade 100, Dragon Rage 40, Sonic
-    Boom 20), 0 for every other move. Non-persistent buffer. The op multiplies by the type-immunity gate so
-    Fighting Seismic Toss reads 0 vs Ghost (your named edge) and Ghost Night Shade 0 vs Normal."""
-    fd = torch.zeros(n_moves, dtype=torch.float32)
-    for mid, dmg in _FIXED_DAMAGE.items():
-        md = cast(MoveData, gen3_data.moves.get(mid))
-        if md is not None and 0 <= md.num < n_moves:
-            fd[md.num] = float(dmg)
-    return fd
+    """``[n_moves]`` the `fixed` kind's constant damage (Seismic Toss / Night Shade 100 at L100, Dragon
+    Rage 40, Sonic Boom 20, Psywave its expectation 100), 0 for every other move."""
+    return build_nonformula_tables(n_moves)["MOVE_FIXED_DAMAGE"]
 
 
 # --- gen3_unified_status_landing_v1: "will my STATUS move land vs THIS opponent" tables ------------- #
