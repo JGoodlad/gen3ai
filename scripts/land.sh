@@ -28,8 +28,9 @@
 # `src/utils/worktree_guard_test.py`, which drives this script end to end in a throwaway repo.
 #
 # WHY THE GATES ARE NOT PIPED. On 2026-09-06 a `pytest | tail` swallowed a ruff F811 and a
-# duplicate definition landed on main as `00772d05`. Every gate here runs unpiped under
-# `set -e -o pipefail`, and a failure prints "GATE FAILED — not pushing" and exits 1.
+# duplicate definition landed on main as `00772d05`. Every gate here runs unpiped, each one's exit
+# status is checked explicitly (never left to `set -e`, see the gate block), and a failure prints
+# "GATE FAILED (<gate>) — not pushing" and exits 1.
 #
 # WHY THE PATHS ARE DERIVED. The main checkout is `dirname` of `git rev-parse --git-common-dir`
 # (the same derivation `scripts/bootstrap.sh` uses), never a literal — a hardcoded
@@ -136,20 +137,31 @@ fi
 cd "$MAIN_CHECKOUT"
 
 # --- 1. the gates ----------------------------------------------------------------------------
+# 🚨 Every gate is checked EXPLICITLY (`|| gate_failed`). A `( … ) || { … }` block does NOT stop at
+# a failing command: bash IGNORES `set -e` inside any command that is the left side of `||`, so the
+# subshell's status was its LAST command's, the closing `echo … OK`. From the script's creation
+# until 2026-10-04 no gate here could fail a landing (found when pytest refused a bare worktree
+# with a UsageError and the step still printed OK). Pinned by `src/main/ops/land_gates_test.py`.
+gate_failed() { echo "GATE FAILED ($1) — not pushing"; exit 1; }
 if [ -n "$WORKTREE" ]; then
-    (
-        cd "$WORKTREE"
-        # MANDATORY in a worktree: `pip install -e .` names the MAIN checkout's src/, so without
-        # this a worktree's pytest imports main's code and every result is about a tree nobody
-        # edited (root CLAUDE.md → Python Environment).
-        export PYTHONPATH="${PYTHONPATH:-}:src"
-        "$PY" -m ruff check src/agents src/main src/utils \
-              --select F,E9 --exclude src/poke_env --exclude src/rust_sim
-        "$PY" -m mypy src/agents/model >/dev/null
-        "$PY" -m pytest src/*_gate_test.py -q -p no:cacheprovider >/dev/null
-        echo "gates: ruff + mypy + src/*_gate_test.py OK"
-    ) || { echo "GATE FAILED — not pushing"; exit 1; }
+    cd "$WORKTREE"
+    # MANDATORY in a worktree: `pip install -e .` names the MAIN checkout's src/, so without
+    # this a worktree's pytest imports main's code and every result is about a tree nobody
+    # edited (root CLAUDE.md → Python Environment).
+    GATE_PYTHONPATH="${PYTHONPATH:-}:src"
+    PYTHONPATH="$GATE_PYTHONPATH" "$PY" -m ruff check src/agents src/main src/utils \
+          --select F,E9 --exclude src/poke_env --exclude src/rust_sim || gate_failed ruff
+    PYTHONPATH="$GATE_PYTHONPATH" "$PY" -m mypy src/agents/model >/dev/null || gate_failed mypy
+    # The statics include Showdown-backed gates (the teambuilder pack guard), so a worktree without
+    # the submodule + the two build symlinks is REFUSED by the root conftest's deps guard, with the
+    # fix in its message (`./scripts/bootstrap.sh --skip-env`). Never skip that guard here.
+    PYTHONPATH="$GATE_PYTHONPATH" "$PY" -m pytest src/*_gate_test.py -q -p no:cacheprovider >/dev/null \
+        || gate_failed "src/*_gate_test.py"
+    echo "gates: ruff + mypy + src/*_gate_test.py OK"
+    cd "$MAIN_CHECKOUT"
 fi
+# A test seam: stop after the gates (nothing fetched, pushed or removed).
+[ -n "${_LAND_GATES_ONLY:-}" ] && exit 0
 
 # --- 2-4. land -------------------------------------------------------------------------------
 # THE PUSH GUARD (gen3_push_guard_v1): refuse a push whose tree would change, on main, a file this
