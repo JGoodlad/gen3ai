@@ -84,7 +84,11 @@ def base_kwargs():
 # not try to: "enabled" is a switch predicate, and these are value RELATIONS between two numbers.
 # (The one relation that once lived here — `value_dist_mode != 'none'` also needing
 # `value_dist_vmax > value_dist_vmin` — left with the distributional value head.)
-_VALUE_RELATIONS: Dict[str, Dict[str, object]] = {}
+_VALUE_RELATIONS: Dict[str, Dict[str, object]] = {
+    # gen3_x5_belief_tokens_v1 (X5 U3): the move group's revealed moves take the first seats, so
+    # fixed_mass needs at least four E4 seats (the constructor refuses fewer).
+    "belief_tokens": {"entity_topk_seats": 4},
+}
 
 
 def _config_for(flag: str) -> Dict[str, object]:
@@ -149,6 +153,16 @@ BESPOKE_COUPLINGS: Dict[FrozenSet[str], str] = {
         "per-FAMILY: d3/s3 ARE the E4 seats' bias rows; the other 15 families are indifferent.",
     frozenset({"edge_bias_families", "history_events"}):
         "per-FAMILY: only `r` (Tier H-C reference edges) rides the H-B event seats.",
+    # gen3_x5_belief_tokens_v1 (X5 U3): three per-VALUE relations of the fixed_mass arm's move axis.
+    frozenset({"belief_tokens", "entity_topk_seats"}):
+        "per-VALUE: fixed_mass needs entity_topk_seats >= 4 (revealed moves take the first seats); "
+        "`requires` can only say 'enabled' (`_VALUE_RELATIONS` supplies the magnitude).",
+    frozenset({"belief_tokens", "damage_op", "entity_topk_seats"}):
+        "per-VALUE: under fixed_mass the op's incoming-matrix K must EQUAL entity_topk_seats (its seat "
+        "axis IS the move group's seats) — a relation between two numbers, true only with the matrix on.",
+    frozenset({"belief_tokens", "damage_op"}):
+        "per-VALUE: fixed_mass needs damage_candidate_k == 0 (the full candidate axis); a value of the "
+        "op's truncation knob, not whether the op is on.",
 }
 
 

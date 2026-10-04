@@ -29,7 +29,8 @@ from agents.model.extractor_ctx import (ExtractorContext, PointerInputs, TOKEN_T
                                         TOKEN_TYPE_THEIR_TEAM)
 from agents.model.extractor_stashes import ExtractorStashes
 from agents.model.hypothesis_set import HypothesisSet
-from agents.model.hypothesis_tokens import (OppPresence, hypothesis_ctx, key_log_presence,
+from agents.model.hypothesis_tokens import (FixedMassMoves, OppPresence, fixed_mass_moves,
+                                            hypothesis_ctx, key_log_presence,
                                             splice_hypothesis_tokens)
 from agents.model.intent_threshold import threshold_probs
 from agents.model.pair_outcome import pair_alpha, reduce_pair_in, reduce_pair_in_all
@@ -167,6 +168,7 @@ class ExtractorForward(ExtractorApi):
     def _spread_hp_damage(self, opp_tokens: torch.Tensor, ctx: ExtractorContext,
                           hctx: Optional[ExtractorContext] = None,
                           hs: Optional[HypothesisSet] = None,
+                          fm: "Optional[FixedMassMoves]" = None,
                           ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """The spread + HP-type belief legs and the FULL DamageOperator, in ONE place.
 
@@ -267,12 +269,12 @@ class ExtractorForward(ExtractorApi):
             if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
                 damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
                                           self.last_spread_belief, move_latent_all,
-                                          self.stash.t0_species_probs, _item_cb_prob,
+                                          self.stash.t0_species_probs, _item_cb_prob, fm,
                                           use_reentrant=False)
             else:
                 damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief,
                                               move_latent_all, self.stash.t0_species_probs,
-                                              item_cb_prob=_item_cb_prob)
+                                              item_cb_prob=_item_cb_prob, fixed_moves=fm)
         # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
         self.stash.damage_block = damage_block
         return opp_tokens, damage_block
@@ -336,16 +338,23 @@ class ExtractorForward(ExtractorApi):
             role_tokens = torch.cat([role_tokens[:, :TEAM_SIZE], opp_role], dim=1)
         # T0 RESOLVE — X5's hypothesis set: the opponent ACTIVE's move group joins the species half
         # (fixed_mass only; None under blob).
+        _fm: Optional[FixedMassMoves] = None
         if _hs is not None:
             _hs = self._attach_move_group(ctx, _hs)
             self.stash.hypothesis = _hs
+            # X5 U3 part 2: the opponent active's move axis — ONE order for the E4 seats, the op's
+            # top-K / pair cells / α seats and the D3 / S3 cells; the fixed-mass π_m as the op's
+            # class-M candidate weights (DETACHED, M10).
+            if _hs.moves is not None and self.last_move_belief_logits is not None:
+                _bi = torch.arange(ctx.batch_size, device=ctx.device)
+                _fm = fixed_mass_moves(_hs.moves, self.last_move_belief_logits[_bi, ctx.opp_active_local])
         # T0 RESOLVE (spread/HP-type) → T1 REASON (the op). Run the WHOLE physics stack ONCE, here,
         # PRE-attention: the spread + HP-type beliefs read the raw opp role tokens (the move belief
         # already did, just above), the FULL DamageOperator runs on that belief, and its per-OUR-mon
         # INCOMING rows are injected onto our role tokens through the zero-init `prefuse_proj` — so
         # attention reasons over the physics. `damage_block` is None only when the op is off, in which
         # case there is nothing to inject (and `prefuse_proj` was never built).
-        opp_role, damage_block = self._spread_hp_damage(role_tokens[:, TEAM_SIZE:], ctx, _hctx, _hs)
+        opp_role, damage_block = self._spread_hp_damage(role_tokens[:, TEAM_SIZE:], ctx, _hctx, _hs, _fm)
         if damage_block is not None:
             # gen3_op_tensors_views_v1: the op's typed views (set by the forward that just ran)
             # replace every flat-offset slice on the consumer side.
@@ -366,7 +375,7 @@ class ExtractorForward(ExtractorApi):
         _seat_tokens, _seat_pad = self.entity_seats(
             _tok_req_raw, _move_valid, ctx, self.damage_op,
             self.last_move_belief_logits,
-            self.stash.entity_latent_table)
+            self.stash.entity_latent_table, fixed_moves=_fm)
         _seat_types = self.entity_seats.seat_types(ctx.device)
         # gen3_event_window_v1 (Tier H-B): the event seats join the extra seam LAST, so every
         # front-indexed seat slice (E3 [:4], E4 [4:4+K], the E5 tail) is position-stable, and
@@ -424,11 +433,16 @@ class ExtractorForward(ExtractorApi):
             if "d2" in _fams:
                 _cells["d2"] = self.damage_op.pairwise_bench_outgoing(ctx, _sb)  # type: ignore[union-attr]
             if "d3" in _fams:
+                # X5 (fixed_mass): priced on the EXTENDED seat axis and contracted onto the K seats
+                # (a revealed Hidden Power's seat is its typed mixture).
+                _d3_cand = (self.entity_seats.last_cand if _fm is None else (_fm.idx_ext, _fm.w_ext))
                 _cells["d3"] = self.damage_op.pairwise_incoming(  # type: ignore[union-attr]
-                    ctx, self.last_move_belief_logits, self.entity_seats.last_cand,  # type: ignore[arg-type]
+                    ctx, self.last_move_belief_logits, _d3_cand,  # type: ignore[arg-type]
                     spread_belief=(self.last_spread_belief
                                    if self.damage_op.believed_lean else None),  # type: ignore[union-attr]
                     species_probs=self.stash.t0_species_probs)
+                if _fm is not None:
+                    _cells["d3"] = _fm.mix_seats(_cells["d3"], dim=1)
             if "d4" in _fams:
                 _cells["d4"] = self.damage_op.pairwise_bench_incoming(  # type: ignore[union-attr]
                     ctx, self.last_move_belief_logits, k_bench=self.consequence_topk,  # type: ignore[arg-type]
@@ -508,8 +522,13 @@ class ExtractorForward(ExtractorApi):
                 _seat_types[_n_ent:]], dim=0)
             _e5_off = (self.team_transformer._total_tokens + 4 + self.entity_topk_seats
                        if self.entity_seats.tail_seats else None)
-            _klp = key_log_presence(2 * TEAM_SIZE + 1 + _seat_tokens.shape[1], _hs, _other_idx,
-                                    e5_offset=_e5_off)
+            _base_t = self.team_transformer._total_tokens
+            _klp = key_log_presence(
+                2 * TEAM_SIZE + 1 + _seat_tokens.shape[1], _hs, _other_idx, e5_offset=_e5_off,
+                e4=(_fm.seat_logp if (_fm is not None and self.entity_topk_seats > 0) else None),
+                e4_offset=_base_t + 4,
+                e5_active=(_fm.other_log_mass if _fm is not None else None),
+                opp_active_local=ctx.opp_active_local)
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, _seat_types, _seat_pad),
@@ -585,7 +604,9 @@ class ExtractorForward(ExtractorApi):
                 _seat_feats, _ictx = _seat_feats.detach(), _ictx.detach()
             _seat_nums = _cand[0]                                                  # [B,K] move NUMS
             self.stash.alpha_seat_nums = _seat_nums.detach()
-            _alpha = self.alpha_head(_seat_feats, _ictx, seat_valid=(_seat_nums > 0).float())
+            _seat_valid = ((_seat_nums > 0).float() if _fm is None
+                           else _fm.seat_on.float())        # X5: a seat that carries mass (structural)
+            _alpha = self.alpha_head(_seat_feats, _ictx, seat_valid=_seat_valid)
             # gen3_belief_label_only_v1: alpha is a pure readout UNTIL `--intent-value-reduce`, which
             # appends an alpha-weighted threat term to the CRITIC half (below) — that flag is what makes
             # the value gradient able to reach `alpha_head`, and therefore what puts alpha in the

@@ -912,6 +912,22 @@ class ExtractorBuild(torch.nn.Module):
                     "belief_tokens=fixed_mass requires opp_belief_slots=True (--opp-belief-aux-coef > 0): "
                     "the presence BCE that trains the learned delta and BeliefHead's re-targeted set BCE "
                     "both ride that coefficient.")
+            # gen3_x5_belief_tokens_v1 (U3, U2 hand-off): the move group puts the REVEALED moves first in
+            # the K seats, so K < 4 leaves a fourth revealed move without a seat; and the op's top-K seat
+            # axis IS the move group's seats, so the two K's must agree (the registry cannot express a
+            # per-value requirement — refused here, where `flag_requires_test` can see it).
+            if self.entity_topk_seats < 4:
+                raise ValueError(
+                    f"belief_tokens=fixed_mass requires entity_topk_seats >= 4 (got {self.entity_topk_seats}): "
+                    "revealed moves take the first seats, and a fourth revealed move would have none.")
+            if self.damage_op is not None and self.damage_op.matrices_incoming \
+                    and self.damage_op.matrices_incoming_k != self.entity_topk_seats:
+                raise ValueError(
+                    "belief_tokens=fixed_mass requires damage_topk_k == entity_topk_seats: the op's seat "
+                    "axis (alpha's seats, the pair cells) IS the move group's seats.")
+            if self.damage_op is not None and self.damage_op.damage_candidate_k > 0:
+                raise ValueError("belief_tokens=fixed_mass requires damage_candidate_k == 0 (the full "
+                                 "candidate axis; the seats come from the move group, not a truncation).")
             self.hypothesis_builder = HypothesisBuilder(
                 layout, self.team_transformer._global_token_input_dim, self.entity_topk_seats)
             cast("ExtractorApi", self)._stamp_belief_grad_flags()

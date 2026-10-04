@@ -888,7 +888,8 @@ class DamageOperatorBlocks:
                          high_frac: torch.Tensor, crit_frac: torch.Tensor, ko_ramp: torch.Tensor,
                          acc_all: torch.Tensor, phys_all: torch.Tensor, move_latent_all: torch.Tensor,
                          has_opp: torch.Tensor, defender_alive: torch.Tensor,
-                         matrix_k: int, cand_nums: Optional[torch.Tensor] = None) -> torch.Tensor:
+                         matrix_k: int, cand_nums: Optional[torch.Tensor] = None,
+                         fixed_moves: Optional[Any] = None) -> torch.Tensor:
         """gen3_per_move_matrices_v1: the INCOMING per-move DAMAGE MATRIX — the ENRICHED top-K block (replaces
         it). For the opp active's top-`matrix_k` most-believed candidates (selection DETACHED): a per-move
         HEADER [latent(32), belief w (→ sharpens the belief), accuracy, is_phys, EXPLICIT effect bits (6,
@@ -898,7 +899,16 @@ class DamageOperatorBlocks:
         worst-case block (so an immune pivot reads 0); type_mult is the effectiveness at OUR defender's types;
         status_lands reuses `_incoming_status_lands`. Decorrelated (belief gradient rides `w`, latent rides the
         gather). Meaningful-K gate (zero the 5th+ slot once all 4 opp moves are revealed). HP candidates carry
-        zero effect/secondary (extended with zeros). Output `[B, _dmg_imx_dim(matrix_k)]`."""
+        zero effect/secondary (extended with zeros). Output `[B, _dmg_imx_dim(matrix_k)]`.
+
+        `fixed_moves` (gen3_x5_belief_tokens_v1, fixed_mass only): the K seats are THE one order's
+        (`FixedMassMoves.seat_nums`, no `torch.topk`), the header / cells are built on the EXTENDED axis
+        (the seats ⊕ the 16 typed HP nums) and contracted, and the meaningful-K gate is the seat's
+        structural liveness (`seat_on`)."""
+        if fixed_moves is not None:
+            return self._incoming_matrix_fixed(ctx, low_frac, high_frac, crit_frac, ko_ramp, acc_all,
+                                               phys_all, move_latent_all, has_opp, defender_alive,
+                                               matrix_k, fixed_moves)
         B, device = ctx.batch_size, ctx.device
         K = matrix_k
         ar = torch.arange(B, device=device)
@@ -958,6 +968,58 @@ class DamageOperatorBlocks:
                             phys_topk[..., None], eff_flags, sec], dim=-1)          # [B,K,_DMG_IMX_HEADER]
         header = header * (has_opp[:, None, None] * slot_live[:, :, None])
         cell = torch.stack([low_topk, high_topk, crit_topk, pko_topk, type_mult, status_topk], dim=-1)  # [B,6,K,6]
+        cell = cell * (has_opp[:, None, None, None] * defender_alive[:, :, None, None]
+                       * slot_live[:, None, :, None])
+        return torch.cat([header.reshape(B, K * _DMG_IMX_HEADER),
+                          cell.reshape(B, TEAM_SIZE * K * _DMG_IMX_CELL)], dim=1)
+
+    def _incoming_matrix_fixed(self, ctx: 'ExtractorContext', low_frac: torch.Tensor,
+                               high_frac: torch.Tensor, crit_frac: torch.Tensor, ko_ramp: torch.Tensor,
+                               acc_all: torch.Tensor, phys_all: torch.Tensor,
+                               move_latent_all: torch.Tensor, has_opp: torch.Tensor,
+                               defender_alive: torch.Tensor, matrix_k: int,
+                               fm: Any) -> torch.Tensor:
+        """`_incoming_matrix` under fixed_mass (gen3_x5_belief_tokens_v1): the same header and cell,
+        priced on the EXTENDED seat axis (`fm.idx_ext`: the K seats ⊕ the 16 typed HP nums) and
+        contracted onto the K seats (`fm.mix_seats` — a revealed Hidden Power's seat reads its typed
+        mixture). The seats are THE one order's; the belief channel is the DETACHED seat presence."""
+        B = ctx.batch_size
+        K = matrix_k
+        if fm.seat_nums.shape[1] != K:
+            raise ValueError(f"fixed_mass: the move group has {fm.seat_nums.shape[1]} seats but the incoming "
+                             f"matrix K is {K} — entity_topk_seats and damage_topk_k must agree")
+        ie = fm.idx_ext                                                            # [B,K+16] move nums (C = n_moves)
+        E = ie.shape[1]
+        self.stash.topk_idx = fm.seat_nums.detach()
+        self.stash.topk_cand_idx = fm.seat_nums.detach()
+        self.stash.topk_w = fm.seat_w.detach()
+        self.stash.seat_ext_idx = ie.detach()
+        self.stash.seat_mix = fm.mix.detach()
+        latent = move_latent_all[ie]                                               # [B,E,32]
+        acc_e = acc_all.gather(-1, ie)
+        phys_e = phys_all.gather(-1, ie)
+        eff_flags = self.MOVE_EFFECT_FLAGS[ie]
+        sec = self.MOVE_SECONDARY[ie]
+        idxd = ie[:, None, :].expand(B, TEAM_SIZE, E)
+        low_e, high_e = low_frac.gather(-1, idxd), high_frac.gather(-1, idxd)
+        crit_e, pko_e = crit_frac.gather(-1, idxd), ko_ramp.gather(-1, idxd)
+        mty_e = self.MOVE_TYPE_IDX[ie]
+        idx2 = mty_e[:, None, :].expand(B, TEAM_SIZE, E)
+        t1d = ctx.type1_ids[:, :TEAM_SIZE]; t2d = ctx.type2_ids[:, :TEAM_SIZE]
+        amul = self.ABILITY_DAMAGE_MULT[ctx.ability1_ids[:, :TEAM_SIZE]]
+        type_mult_e = (torch.gather(self.CHART[t1d], 2, idx2) * torch.gather(self.CHART[t2d], 2, idx2)
+                       * torch.gather(amul, 2, idx2))                              # [B,6,E]
+        status_e = self._incoming_status_lands(ctx, ie, high_e)                    # [B,6,E]
+        type_mult = fm.mix_seats(type_mult_e, dim=2)                               # [B,6,K]
+        if self.stash_pair_type_mult:
+            self.stash.pair_type_mult = type_mult.detach()
+        slot_live = fm.seat_on.to(low_e.dtype)                                     # [B,K] structural
+        self.stash.pair_seat_live = slot_live.detach()
+        header_e = torch.cat([latent, fm.w_ext[..., None].to(latent.dtype), acc_e[..., None],
+                              phys_e[..., None], eff_flags, sec], dim=-1)           # [B,E,H]
+        header = fm.mix_seats(header_e, dim=1) * (has_opp[:, None, None] * slot_live[:, :, None])
+        cell_e = torch.stack([low_e, high_e, crit_e, pko_e, type_mult_e, status_e], dim=-1)  # [B,6,E,6]
+        cell = fm.mix_seats(cell_e, dim=2)
         cell = cell * (has_opp[:, None, None, None] * defender_alive[:, :, None, None]
                        * slot_live[:, None, :, None])
         return torch.cat([header.reshape(B, K * _DMG_IMX_HEADER),

@@ -107,8 +107,16 @@ class EntityMoveSeats(torch.nn.Module):
 
     def forward(self, tok_req: torch.Tensor, move_valid: torch.Tensor, ctx: 'ExtractorContext',
                 damage_op: Any, move_belief_logits: Optional[torch.Tensor],
-                latent_table: Optional[torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
-        """→ `(seats [B, 4+K, d_model], pad [B, 4+K] bool)` (pad True = masked, the key-mask sense)."""
+                latent_table: Optional[torch.Tensor],
+                fixed_moves: Optional[Any] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+        """→ `(seats [B, 4+K, d_model], pad [B, 4+K] bool)` (pad True = masked, the key-mask sense).
+
+        `fixed_moves` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only — a
+        `hypothesis_tokens.FixedMassMoves`): the E4 seats are the move group's seats in THE one order
+        (revealed first, then the top unrevealed by π_m; a revealed Hidden Power's seat rendered as its
+        typed mixture), each seat's belief channel its DETACHED presence, a seat that carries no mass
+        key-masked; the opponent ACTIVE's E5 seat is OTHER_move (`other_move_cells`), masked iff
+        OTHER_move is. None (blob): byte-identical."""
         seats = [self.move_seat_proj(tok_req)]                                # [B,4,D] (invalid = zeros)
         pads = [move_valid < 0.5]                                             # [B,4]
         if self.topk_seats > 0:
@@ -116,26 +124,41 @@ class EntityMoveSeats(torch.nn.Module):
                 "E4 threat seats need the pre-transformer move-belief logits + the move latent table "
                 "(guaranteed by the __init__ gate: damage_op + move_latent, and by the tiered order)"
             )
-            # gen3_op_candidate_dedup_v1: reuse the op forward's own candidate-weight build —
-            # the identical computation on the identical inputs, cleared at op-forward entry so
-            # a stale batch is unrepresentable (None ⇒ refine computes standalone).
-            idx, w = damage_op.refine_candidates(ctx, move_belief_logits, k=self.topk_seats,
-                                                 w_all=damage_op.last_w_all)              # [B,K]
-            # gen3_edge_bias_trunk_v1: stash the candidate selection so the D3 edge bias prices the
-            # SAME K moves the seats represent (seat c and bias row c must name the same move).
-            self.last_cand = (idx, w)
             has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1)            # [B] bool
-            hdr = torch.cat([
-                latent_table[idx],                                            # [B,K,32] typed-HP-aware identity
-                w[:, :, None],                                                # belief weight (differentiable)
-                damage_op.MOVE_ACCURACY[idx][:, :, None],
-                damage_op.MOVE_PHYS[idx][:, :, None],
-            ], dim=2)
+            if fixed_moves is None:
+                # gen3_op_candidate_dedup_v1: reuse the op forward's own candidate-weight build —
+                # the identical computation on the identical inputs, cleared at op-forward entry so
+                # a stale batch is unrepresentable (None ⇒ refine computes standalone).
+                idx, w = damage_op.refine_candidates(ctx, move_belief_logits, k=self.topk_seats,
+                                                     w_all=damage_op.last_w_all)              # [B,K]
+                # gen3_edge_bias_trunk_v1: stash the candidate selection so the D3 edge bias prices the
+                # SAME K moves the seats represent (seat c and bias row c must name the same move).
+                self.last_cand = (idx, w)
+                hdr = torch.cat([
+                    latent_table[idx],                                            # [B,K,32] typed-HP-aware identity
+                    w[:, :, None],                                                # belief weight (differentiable)
+                    damage_op.MOVE_ACCURACY[idx][:, :, None],
+                    damage_op.MOVE_PHYS[idx][:, :, None],
+                ], dim=2)
+                e4_pad = ~has_opp[:, None].expand(-1, self.topk_seats)
+            else:
+                # X5: THE one order's seats; the content is built on the extended axis (the seats ⊕
+                # the 16 typed HP nums) and contracted, so a revealed HP's seat reads E_t[row(HP_t)].
+                ie = fixed_moves.idx_ext
+                self.last_cand = (fixed_moves.seat_nums, fixed_moves.seat_w)
+                hdr_ext = torch.cat([
+                    latent_table[ie],
+                    fixed_moves.w_ext[:, :, None].to(latent_table.dtype),
+                    damage_op.MOVE_ACCURACY[ie][:, :, None],
+                    damage_op.MOVE_PHYS[ie][:, :, None],
+                ], dim=2)                                                         # [B,K+16,35]
+                hdr = fixed_moves.mix_seats(hdr_ext, dim=1)                       # [B,K,35]
+                e4_pad = ~(fixed_moves.seat_on & has_opp[:, None])
             # `threat_seat_proj` / `tail_proj` are built only when their seat count is > 0, which
             # is exactly the branch guard here — an invariant `__init__` owns, not the type.
             e4 = self.threat_seat_proj(hdr) * has_opp[:, None, None].float()  # type: ignore[misc]  # zeroed when no opp active
             seats.append(e4)
-            pads.append(~has_opp[:, None].expand(-1, self.topk_seats))
+            pads.append(e4_pad)
         if self.tail_seats:
             # E5: per opp mon j, the beyond-top-K tail of ITS OWN composed posterior. K = the same
             # entity_topk_seats the E4 seats use (one truncation definition). worst_* are BOUND-ish
@@ -155,9 +178,19 @@ class EntityMoveSeats(torch.nn.Module):
             revealed = 1.0 - ctx.opp_believed_mask.float()                        # [B,6]
             has_opp_t = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1)
             cells = torch.stack([p_tail, worst_phys, worst_spec, revealed], dim=-1)  # [B,6,4]
+            e5_pad = ~has_opp_t[:, None].expand(-1, TEAM_SIZE)
+            if fixed_moves is not None:
+                # X5: the ACTIVE's tail seat IS OTHER_move (mass beyond the one order's seats; a
+                # presence-scaled worst case over its members), masked iff OTHER_move is.
+                from agents.model.hypothesis_tokens import other_move_cells
+                act = torch.nn.functional.one_hot(ctx.opp_active_local, TEAM_SIZE).bool()   # [B,6]
+                om = other_move_cells(fixed_moves, damage_op.MOVE_BP, damage_op.MOVE_ACCURACY,
+                                      damage_op.MOVE_PHYS).to(cells.dtype)                  # [B,4]
+                cells = torch.where(act.unsqueeze(-1), om.unsqueeze(1), cells)
+                e5_pad = e5_pad | (act & ~fixed_moves.other_live.unsqueeze(-1))
             e5 = (self.tail_proj(cells) + self.tail_marker) * has_opp_t[:, None, None].float()  # type: ignore[misc]
             seats.append(e5)
-            pads.append(~has_opp_t[:, None].expand(-1, TEAM_SIZE))
+            pads.append(e5_pad)
         return torch.cat(seats, dim=1), torch.cat(pads, dim=1)
 
 

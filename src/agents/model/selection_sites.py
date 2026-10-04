@@ -292,6 +292,11 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "k_m > 0", "r < K", "believed.long()",
                 "i >= lo.unsqueeze(-1)", "i < at.unsqueeze(-1)", "i + 1 < n_avail.unsqueeze(-1)"),
     },
+    # gen3_x5_belief_tokens_v1 (X5 U3, fixed_mass only): structural integer tests on the move group
+    # (a seat's num is the revealed Hidden Power; the group's mass k_m is positive).
+    "hypothesis_tokens": {
+        "INT": ("moves.seat_nums == HP", "pres.k > 0"),
+    },
     "t0_species": {
         "OBS": ("onehot > 0",),
         "INT": ("ids > 0", "opp_species_ids.clamp(0, n_species - 1).long()"),

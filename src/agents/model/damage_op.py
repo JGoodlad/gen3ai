@@ -88,6 +88,11 @@ class OpStashes:
     # because one alpha cannot weight two (design_opponent_intent.md §5.1).
     pair_in: Optional[torch.Tensor] = None           # [B,J,K,_PAIR_OUTCOME_RAW]
     pair_seat_live: Optional[torch.Tensor] = None    # [B,K] the meaningful-K gate (unmodeled seats)
+    # gen3_x5_belief_tokens_v1 (`--belief-tokens fixed_mass` only): the seat axis's EXTENSION — the K
+    # seats ⊕ the 16 typed Hidden Power nums — and its contraction onto the K seats (a revealed HP's
+    # seat is its typed mixture). None under blob: every seat-axis consumer reads `topk_*` as before.
+    seat_ext_idx: Optional[torch.Tensor] = None      # [B,K+16] move nums (detached)
+    seat_mix: Optional[torch.Tensor] = None          # [B,K,K+16]
     # gen3_conditional_threat_v1 (v95, OA1): the per-(our defender j, their believed seat k) TYPE
     # MULTIPLIER — the one channel `_incoming_matrix` computes at exactly alpha's seat alignment
     # and then spends only on the flat render. It is NOT a coordinate of `pair_in`, deliberately:
@@ -727,11 +732,18 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                 spread_belief: Optional[torch.Tensor] = None,
                 move_latent_all: Optional[torch.Tensor] = None,
                 species_probs: Optional[torch.Tensor] = None,
-                item_cb_prob: Optional[torch.Tensor] = None) -> torch.Tensor:
+                item_cb_prob: Optional[torch.Tensor] = None,
+                fixed_moves: Optional[Any] = None) -> torch.Tensor:
         """Compute the full post-gain damage block [B, out_dim] from the beliefs. `move_belief_logits`
         [B,6,M] (already typed-HP composed), `spread_belief` [B,6,5] believed opp stats, `move_latent_all`
         [n_moves,MOVE_LATENT_DIM] (top-K identity source), `species_probs` [B,6,S] the T0 species prior,
-        `item_cb_prob` [B,6] P(Choice Band). Also populates every per-forward stash on `self.stash`."""
+        `item_cb_prob` [B,6] P(Choice Band). Also populates every per-forward stash on `self.stash`.
+
+        `fixed_moves` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only — a
+        `hypothesis_tokens.FixedMassMoves`): the opponent active's candidate weights are its FIXED-MASS
+        presence (π_m; 1 revealed; DETACHED, M10), so every incoming max is the presence-scaled max of
+        §9 M2 = C, and the top-K seat axis is THE one order's seats (no `torch.topk`, F-X5-13). None
+        (blob): byte-identical."""
         self.stash = OpStashes()          # gen3_op_stashes_v1: ONE reset, no stash can go stale
         B = ctx.batch_size
         device = ctx.device
@@ -802,7 +814,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         weather_mult = self._field_bp_mult(ctx, mty_all[None, :])                               # [B,n_moves]
         # gen3_typed_hp_belief_v1: the candidate belief weights — the typed HPs already carry
         # P(present)·P(type) from the composed posterior; only the bare-237 presence channel is masked.
-        w_all = self._opp_candidate_weights(ctx, move_belief_logits)                            # [B, n_moves]
+        w_all = (self._opp_candidate_weights(ctx, move_belief_logits) if fixed_moves is None
+                 else fixed_moves.w_all * self.HP_CAND_MASK[None, :])                           # [B, n_moves]
         self.stash.w_all = w_all                     # gen3_op_candidate_dedup_v1: same-forward reuse
 
         # gen3_topk_candidates_v1: TRUNCATE the candidate axis to the top-K of the MOVE BELIEF, no
@@ -814,6 +827,9 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # `cand_nums` maps reduced index -> real move-num, so the top-K / matrix blocks and the
         # prober's `last_topk_idx` keep reporting REAL moves. k=0 keeps the full sweep (byte-identical).
         cand_nums = None
+        if fixed_moves is not None and self.damage_candidate_k > 0:
+            raise ValueError("belief_tokens=fixed_mass prices the full candidate axis: damage_candidate_k "
+                             "must be 0 (the seat axis is the move group's, not a truncated top-K)")
         if self.damage_candidate_k > 0 and self.damage_candidate_k < w_all.shape[-1]:
             cand_nums = w_all.detach().topk(self.damage_candidate_k, dim=-1).indices          # [B,K]
             w_all = w_all.gather(-1, cand_nums)                                              # [B,K] differentiable
@@ -1015,7 +1031,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                                  "the extractor must build it (requires --move-latent).")
             _imx = self._incoming_matrix(
                 ctx, w_all, low_frac, high_frac, crit_frac, ko_ramp, acc_all, phys_all, move_latent_all,
-                has_opp, defender_alive, self.matrices_incoming_k, cand_nums=cand_nums)
+                has_opp, defender_alive, self.matrices_incoming_k, cand_nums=cand_nums,
+                fixed_moves=fixed_moves)
             # gen3_op_lean_forward_v1: under drop_renders the matrix's SELECTION side effects
             # (last_topk_idx / last_topk_cand_idx — the axis alpha's seats align to) are the whole
             # point of the call; only the flat render is dropped.
@@ -1031,10 +1048,16 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                     "stash_pair_cells is on but no top-K candidate index was recorded — the cells "
                     "cannot be aligned to alpha's seats. Step 6 requires damage_topk_k>0 (and the "
                     "incoming matrix that computes it).")
+            _mix = self.stash.seat_mix
+            if _mix is not None:                # X5: gather the EXTENDED seat axis, contracted below
+                _ci = self.stash.seat_ext_idx
+                assert _ci is not None and fixed_moves is not None
             _idx = _ci[:, None, :, None].expand(
                 _pr_cells_raw.shape[0], _pr_cells_raw.shape[1], _ci.shape[-1],
                 _pr_cells_raw.shape[-1])
-            self.stash.pair_cells = _pr_cells_raw.gather(2, _idx)              # [B,J,K,F]
+            _dmg_g = _pr_cells_raw.gather(2, _idx)                             # [B,J,K(+16),F]
+            self.stash.pair_cells = (_dmg_g if (_mix is None or fixed_moves is None)
+                                     else fixed_moves.mix_seats(_dmg_g, dim=2))  # [B,J,K,F]
             self.stash.pair_gate = _pr_gate_raw
             # gen3_pair_outcome_v1: the UNIFIED outcome vector. The damage cells just aligned to
             # alpha's seat axis are its first six coordinates; the eight status / neutralization /
@@ -1049,11 +1072,21 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                         "stash_pair_outcome is on but no top-K move-num selection was recorded — "
                         "the status coordinates have no seat axis to be computed on. Requires "
                         "damage_topk_k>0 (and the incoming matrix that computes it).")
-                _dmg = self.stash.pair_cells
-                _extra = self.pair_outcome_coords(
-                    ctx, _ti, _dmg[..., PAIR_OUTCOME_IDX["high"]],
-                    our_spe, opp_spe, opp_spe_std, d_base)
-                self.stash.pair_in = torch.cat([_dmg, _extra], dim=-1)         # [B,J,K,RAW]
+                if _mix is None:
+                    _dmg = self.stash.pair_cells
+                    _extra = self.pair_outcome_coords(
+                        ctx, _ti, _dmg[..., PAIR_OUTCOME_IDX["high"]],
+                        our_spe, opp_spe, opp_spe_std, d_base)
+                    self.stash.pair_in = torch.cat([_dmg, _extra], dim=-1)     # [B,J,K,RAW]
+                else:
+                    # X5: the status / tempo coordinates on the EXTENDED axis (num-keyed), then the
+                    # whole outcome vector contracted onto the K seats.
+                    assert fixed_moves is not None and self.stash.seat_ext_idx is not None
+                    _ext = self.pair_outcome_coords(
+                        ctx, self.stash.seat_ext_idx, _dmg_g[..., PAIR_OUTCOME_IDX["high"]],
+                        our_spe, opp_spe, opp_spe_std, d_base)
+                    self.stash.pair_in = fixed_moves.mix_seats(
+                        torch.cat([_dmg_g, _ext], dim=-1), dim=2)              # [B,J,K,RAW]
                 # (`pair_seat_live` — the unmodeled-seat mask alpha must spend no mass on — is
                 # stashed by `_incoming_matrix`, which is where the meaningful-K gate is already
                 # computed. One computation, one home.)

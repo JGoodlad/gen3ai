@@ -490,6 +490,9 @@ class DamageOperatorPairwise:
         B, device, eps = ctx.batch_size, ctx.device, 1e-6
         ar = torch.arange(B, device=device)
         nums = self.last_topk_idx                                                    # [B,K] move NUMS
+        _mix = self.stash.seat_mix         # X5 fixed_mass: price the EXTENDED seat axis, contract at the end
+        if _mix is not None:
+            nums = self.stash.seat_ext_idx
         if nums is None:
             raise RuntimeError(
                 "pointer_intent_status_operands needs the op's top-K candidate stash "
@@ -554,6 +557,9 @@ class DamageOperatorPairwise:
         gate = (has_opp * our_alive)[:, None]                                        # [B,1]
         d_burn_k = (high_half - high_full) * gate                                    # [B,K] ≤ 0
         d_slp_k = -high_full * gate                                                  # [B,K] ≤ 0
+        if _mix is not None:                                                         # [B,K+16] → [B,K]
+            d_burn_k = torch.einsum("be,bke->bk", d_burn_k, _mix.to(d_burn_k.dtype))
+            d_slp_k = torch.einsum("be,bke->bk", d_slp_k, _mix.to(d_slp_k.dtype))
         return base, d_burn_k, d_slp_k, is_brn, is_slp
 
     def pairwise_boost_incoming(self, ctx: 'ExtractorContext',

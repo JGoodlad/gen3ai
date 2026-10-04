@@ -371,9 +371,14 @@ by THE `PokemonEncoder` + a learned `hypothesis_marker` (replacing `BeliefSlots`
 that arm does not call); the T0 belief heads read those seats with their species; OTHER_species joins
 the trunk as one extra seat after the entity seats; and every expectation-type reduction over opponent
 tokens — the trunk's attention, `their_cls`, `value_cls`, `HiddenOppBeliefPool`, `value_entity_pool` —
-adds log π of each opponent key (detached; FLOAT key masks in the three `nn` pools). The damage op,
-E4 / E5 seat selection and the opponent pointer still read the blob's construction in that arm (X5
-build units U3 part 2 onward). Config v136, no `ARCH_SIGNATURE` change while both arms build.
+adds log π of each opponent key (detached; FLOAT key masks in the three `nn` pools). The opponent
+active's MOVE axis reads the move group (`FixedMassMoves`): ONE order (revealed first, then the top
+unrevealed by π_m) gives the E4 seats, the op's top-K seat axis (pair cells, α's seats), the D3 / S3
+cells and the intent operands (no `torch.topk`); the op's incoming maxes weight each candidate by its
+DETACHED fixed-mass presence (the presence-scaled max); a revealed Hidden Power's seat is priced as its
+typed mixture; the active's E5 seat is OTHER_move. The op's opponent-MON axis (hypothesis defenders /
+attackers, OTHER's physics) and the opponent pointer still read the blob's construction in that arm.
+Config v136, no `ARCH_SIGNATURE` change while both arms build.
 
 The concrete steps:
 
