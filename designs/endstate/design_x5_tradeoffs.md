@@ -104,7 +104,7 @@ binding AND the upgrade's strength-per-GPU-hour is non-inferior.
 - **Most of the "perfect OTHER" ceiling is information, not pricing.** A perfect OTHER reaches 4.7 pp (expected threat) and 3.3 % (race flips). Closing that needs a SHARPER BELIEF, not a richer OTHER.
 - On real states the 1:1 list recalls only 14–33 % of the true hidden mons, lower than the random-reveal estimate.
 - **Open for U3 (F4):** how OTHER's averaged attacker is built; how OTHER's mass, which exceeds 1 on 73.6 % of decisions at 1:1, enters a max-type site (Tier 0 capped its presence at 1).
-  **RESOLVED (ORCHESTRATOR, 2026-10-04, for U3):** (a) the renormalised tail's EXPECTED attacker stats — the `P_tail @ tables` construction the blob uses for the defender; (b) OTHER enters a max-type site with presence 1 − Π_tail(1 − π) (exact under independent Bernoulli presences, in [0, 1], continuous), never its mass. Built as `HypothesisSet.other_any` / `other_tail_probs`; wiring them into the op is U3 part 3 (`design_x5_belief_tokens.md` §8.3, U3 hand-off).
+  **RESOLVED (ORCHESTRATOR, 2026-10-04, for U3):** (a) the renormalised tail's EXPECTED attacker stats — the `P_tail @ tables` construction the blob uses for the defender; (b) OTHER enters a max-type site with presence 1 − Π_tail(1 − π) (exact under independent Bernoulli presences, in [0, 1], continuous), never its mass. Built as `HypothesisSet.other_any` / `other_tail_probs` and WIRED into the op in U3 part 3 (`hypothesis_tokens.other_roster`; `design_x5_belief_tokens.md` §8.3, U3 part-3 hand-off): OTHER's edges for D1 / C1 / C3 / D4 / V, `other_any` at the Pursuit max; C2 / S1 / T / X / G carry no OTHER edge yet (F-X5-29).
 - **Follow-up lever ranking:** belief sharpness > M2 option A > budget +6.
 
 ## Decision record

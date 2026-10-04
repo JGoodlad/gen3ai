@@ -207,7 +207,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "INT": ("ctx.all_move_ids[:, :TEAM_SIZE] == pur", "ctx.our_active_req_move_ids == self.baton_num",
                 "ctx.our_active_req_move_ids == self.curse_num", "ctx.our_active_req_move_ids == self.rest_num",
                 "ctx.our_active_req_move_ids.long()", "ids == self.toxic_num", "items == LEFTOVERS_NUM",
-                "move_ids == n", "mty_k == at1[:, :, None]", "mty_k == at2[:, :, None]",
+                "move_ids == n", "mty_k == at1[:, :, None]", "mty_k == at2[:, :, None]", "mty_k.long()",
                 "mty_k == ctx.type1_ids[:, opp][:, :, None]", "mty_k == ctx.type2_ids[:, opp][:, :, None]",
                 "opp_ab > 0", "opp_ability > 0", "sidx != LEECH_SEED_CAT", "sidx == 1", "sidx == 2", "sidx == 5",
                 "sidx == _SLP_STATUS_CAT", "sidx > 0", "types1 == ti", "types2 == ti"),
@@ -300,7 +300,11 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     "hypothesis_tokens": {
         "INT": ("moves.seat_nums == HP", "pres.k > 0", "species.clamp(0, S - 1).long()",
                 "num >= _TYPED_HP[0]", "num <= _TYPED_HP[-1]", "num != HP", "k > 0",
-                "ro.move_rank >= K"),
+                "ro.move_rank >= K",
+                # OTHER's tables (U3 part 3): the species-type table and the first hidden slot (an integer
+                # argmax over a bool mask — exact by type)
+                "species_type.long()", "t.unsqueeze(0) == st[:, 0:1]", "t.unsqueeze(0) == st[:, 1:2]",
+                "hyp.long()", "torch.argmax(hyp.long(), dim=-1)"),
     },
     "t0_species": {
         "OBS": ("onehot > 0",),

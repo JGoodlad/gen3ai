@@ -1,9 +1,9 @@
 # X5: discrete fixed-mass belief tokens + OTHER, design note and A/B pre-research
 
 **Status: REVISED after independent review (2026-10-03); M2 / M3 decided by the owner (§9, Decision record). Build
-units U1 (the dex-row table) and U2 (the T0 hypothesis builder, the `--belief-tokens` flag) are BUILT; U3 is PARTLY
-built (parts 1–2: the class-E half and the opponent active's move axis; part 3, the op's opponent-MON axis and OTHER's
-physics, is NOT — §8.3, U3 hand-off); the rest is not.** The first version (`00cdf0c2`, decisions `81578969`) was reviewed SOUND WITH FIXES with ten must-fix items
+units U1 (the dex-row table), U2 (the T0 hypothesis builder, the `--belief-tokens` flag) and U3 (parts 1–3: the class-E
+half, the opponent active's move axis, the op's opponent-MON axis and OTHER's physics — §8.3, U3 part-3 hand-off) are
+BUILT; the rest is not.** The first version (`00cdf0c2`, decisions `81578969`) was reviewed SOUND WITH FIXES with ten must-fix items
 (M1–M10). This revision resolves each one: M1 and M4–M10 by orchestrator decision or measurement, M2 and M3 as two real
 choices for the owner. Each item names where it landed (§8.4).
 
@@ -479,6 +479,19 @@ How to read it:
   - Each op row is then weighted by presence wherever it is reduced (§3.5). Effect: E[f(x)] replaces f(E[x]) for the
     hypotheses.
   - OTHER's physics: §9 M3.
+  - **As built (U3 part 3, `hypothesis_tokens.OpRoster` on `op.stash.x5`).** The op runs on the HYPOTHESIS context, so a
+    hidden slot is priced as its species at first appearance (full HP, no status, the dex row's ability prior). The
+    DEFENDER is the expected-latent read on a per-slot one-hot of the species (its own E[mult], E[def / spd / maxhp]).
+    **P(KO) is UN-nulled for hypotheses** (ORCHESTRATOR brief: decide and justify): the blob nulls it because the
+    AVERAGED defender's KO is a threshold of averaged stats, where the Jensen gap is worst; a hypothesis is one
+    pristine species, so P(KO | s, full HP, neutral spread) is a defined, species-exact quantity — and an OHKO on a frail
+    or 4×-weak switch-in is exactly the plan-relevant fact X5 exists to add. OTHER's averaged defender KEEPS the null.
+    "Alive" is `opp_addressable` in every opponent-slot gate. Every live opponent mon ATTACKS (C1b / C2 / C3 / D4) with
+    its own species' stats and STAB and its own fixed-mass move presence (k = 4 − revealed over its legal moves,
+    revealed pinned at 1; the active's row is the move group's `w_all`), its candidates the first K of one stable
+    per-mon order. A per-(seat, mon) cell is NOT scaled by the mon's π: it is "what this mon does if present", and its
+    presence is the trunk's log-π key bias — scaling both would count presence twice. The one max over MONS
+    (`p_pur_vs_us`) is presence-scaled (slot π; OTHER with `other_any`).
 - **Rejected:** a torch-side builder of synthetic observation rows. That is a second encoder and a drift risk. The
   synthetic-key registry exists because two encoders of one row drifted before.
 
@@ -522,15 +535,22 @@ seat" exceptions), and listed every opponent-slot `hp > 0` gate F-X5-12 named pl
   masked key). F-X5-14 checked FIRST on CPU Inductor: the three pools compile and match eager to ≤ 3.8e-6, and the
   WHOLE fixed_mass extractor compiles (100 s cold) and matches eager to 2.7e-6 (pi) / 1.3e-6 (vf) on 64 golden rows
   (0 near-tie rows excluded). GPU: DEFERRED (U8). NOT yet: Beat Up's party sum, `opp_p_ghost` (part 3); the α / β
-  consumers (U4).
+  consumers (U4). **Part 3:** Beat Up's party sum (π / k over every candidate) is BUILT; `opp_p_ghost` follows the
+  per-slot one-hots (the hypothesis's own Ghost bit).
 - *Class S, the active's moves — BUILT:* ONE order for the E4 seats, the op's seat axis, α's seats, D3 / S3 and the
   intent operands (no `torch.topk`; F-X5-13 closed for the active). NOT yet: the per-mon `_believed_attackers` /
-  d4 top-Ks and the bench E5 seats (still sigmoid top-K, as the blob).
+  d4 top-Ks and the bench E5 seats (still sigmoid top-K, as the blob). **Part 3: BUILT** — one stable per-mon order
+  over each mon's fixed-mass move presence feeds `_believed_attackers` (C1b / C2 / C3) and D4; the bench E5 seats'
+  tail is the moves beyond rank K of it; the cuts join `near_tie_rows` (`slot_moves_tie_gap`).
 - *Class M, the active's moves — BUILT (§9 M2 = C):* the op's 8 incoming amaxes, Choice Band and the argmax
   accuracy / provenance weight each candidate by its fixed-mass presence (π_m; 1 revealed); OTHER_move's
   `worst_phys` / `worst_spec` are presence-scaled maxes over its members. I1 exact, I2 DECLARED FALSE and pinned.
-  NOT yet: the max sites over opponent MONS (c1b / c2 / c3 / d4 / `p_pur_vs_us`, part 3), where OTHER enters with
-  presence `other_any` = 1 − Π_tail(1 − π) (ORCHESTRATOR; computed, not yet read).
+  **Part 3: BUILT** — the c1b / c2 / c3 / d4 maxes run over each mon's candidates at their per-mon fixed-mass
+  presence; the one max over the MONS, `p_pur_vs_us`, weights each slot by its π and takes OTHER with `other_any` =
+  1 − Π_tail(1 − π) (ORCHESTRATOR F4 (b)).
+- *OTHER's physics (M3 (c), F4 (a)) — BUILT in part 3:* `other_roster` (an OTHER-mode pass of the op's kernels, every
+  hidden slot holding the tail-averaged mon) gives OTHER's column for D1, C1, C3, D4 and V, written to its trunk seat's
+  edges (F-X5-28 closed). C2 / S1 / T / X / G carry no OTHER edge (F-X5-29).
 - *The revealed Hidden Power seat:* priced as E_t[f(HP_t)] through an extended seat axis (the K seats ⊕ the 16 typed
   nums) contracted by `mix` — never as the BP-0 typeless 237.
 
@@ -577,6 +597,15 @@ seat" exceptions), and listed every opponent-slot `hp > 0` gate F-X5-12 named pl
 - **X5 `train_ms` ≤ +5 %, T2 flush ≤ +3 %, steady-state D-6 headroom ≥ 1,024 MiB at N = 256 with the X26 heads.**
 - Over budget ⇒ STOP and report before any A/B GPU. The measured slowdown also enters §7's wall-clock rule.
 - **Early read, MEASURED 2026-10-04 at `e78884c4` (U3 part 1 only; two launches per arm, quiet updates; `designs/research_state/measurements/x5_u2_gpu_checks_2026-10-04/README.md`): `train_ms` 43.44 s vs 39.97 s = +8.7 % (over the +5 % line); trainee T2 GPU wait +11.7 % (4.32 → 4.84 ms at B = 256, regime B); `UpdateFit` headroom 2,143 → 1,963 MiB (−180; floor 1,024) WITHOUT the X26 heads (OFF in `--arch production` here, so the "with the X26 heads" figure is UNVERIFIED).** The extractor's compiled fwd+bwd rises 71.7 → 83.1 ms (GEMM +7.4, Triton +3.6, attention ±0; the bisection ≈ 0.4); the real U8 number comes after U3 parts 2–3 and the op.
+- **What U3 part 3 ADDS to that cost (not measured on the GPU, not optimised — the cost / ablation pass after U3
+  owns it; F-X5-30).** (1) The OTHER-MODE pass re-runs whole six-column kernels to read OTHER's one column: D1, C1's
+  five outgoing worlds + C1b, C3, D4 and V — roughly a second copy of those edge families' elementwise work.
+  (2) Two more fixed-size constructions per forward, both `no_grad`: the per-mon move presence over `[B, 6, 400]` (six
+  rows per decision, 64 bisection steps) and OTHER's averaged moves over `[B, 400]`, plus a stable `argsort` over
+  `[B, 6, 400]` for the per-mon order. (3) The op on the hypothesis context, every live mon an attacker in C1b / C2 /
+  C3 / D4 (the same tensor shapes as the blob, whose hidden columns were computed then zeroed) — no new shape, but no
+  longer zeroed work. (4) OTHER's edge writes: one `Linear(cell → 2·heads)` per OTHER family over `[B, 4 or 6, 1]`
+  (≈ 0). MEASURED on CPU only: the fixed_mass extractor's cold Inductor compile rose 100 s (part 1) → 142 s (part 3).
 
 ### 3.7 The opponent pointer, and the A and B heads re-based
 
@@ -609,6 +638,9 @@ seat" exceptions), and listed every opponent-slot `hp > 0` gate F-X5-12 named pl
   - α mass on OTHER_move falls outside the `[:k]` slice and reads like SWITCH mass ("no outcome this turn") in
     `pair_alpha`, `intent_threshold`, `intent_move_cell` and `intent_conditional`.
 
+  **U3 part 3 built OTHER's averaged rows for the EDGE families** (D1's `[low, high, crit, pko = 0, type_mult]` on the
+  tail, never immune); the op's `out_cells` / `opp_p_ghost` stashes these consumers read still have six columns, so
+  the 7th column there is U4's (it can reuse `ExtractorForward._other_edge_cells`' OTHER-mode D1 pass).
   The fix depends on §9 M3. Under option (c) OTHER has the tail-averaged rows, so every cell prices OTHER's share on
   today's semantics and P(Ghost | OTHER) is the tail marginal (linear, exact). Under a no-physics OTHER each cell would
   need an invented neutral value (`e_mult` = 1, `e_pko` = 0), which is itself unprincipled.
@@ -1114,7 +1146,13 @@ winning arm's seed-1001 run CONTINUES as the X26 baseline (owner).
 | F-X5-25 | **The census missed four sites and misclassified two** (U3 re-run, §3.5): Beat Up's party sum, `pair_alpha_full`, the α / β pointer heads; d4's top-K is class S, E5's `p_tail` class E. |
 | F-X5-26 | **MoveBelief's reinjection soft-embed under fixed_mass still weights each move by its own sigmoid inclusion probability** (a presence-weighted sum, but not the fixed-mass π_m). A π_m reinjection at the active would also cut the PPO → move-head route there (M10's logic) — a semantics change left for the orchestrator (U3). |
 | F-X5-27 | **`BeliefSlots` is built but never called under fixed_mass** (kept so both arms share every non-X5 parameter); its `unknown_slot_emb` gets no gradient in that arm. Deleted with the losing arm. |
-| F-X5-28 | **OTHER's trunk seat has no edge cells** (the edge families write the 6-slot block) and the op prices no OTHER column yet: until U3 part 3, OTHER reaches the trunk as content + log-mass only. |
+| F-X5-28 | **OTHER's trunk seat has no edge cells** (the edge families write the 6-slot block) and the op prices no OTHER column yet: until U3 part 3, OTHER reaches the trunk as content + log-mass only. **CLOSED in U3 part 3** for D1 / C1 / C3 / D4 / V (the rest: F-X5-29). |
+| F-X5-26 / 27 | **BUILT in U3 part 3 (ORCHESTRATOR).** F-X5-26: the active's reinjection reads the detached π_m (cost: no PPO → move-head gradient through that row; the BCE still trains the head). F-X5-27: `BeliefSlots` not built under fixed_mass (its init draw still runs, so non-X5 init bytes stay equal to blob's). |
+| F-X5-29 | **OTHER has no edge in C2, S1, T, X (its opp cell) and G.** Their per-slot reads are TYPE / ABILITY ones (status immunity, trap / Levitate priors, Dark effectiveness, weather immunity, Early Bird), which need a tail expectation of each per-species table, not the stat expectation the built families use. An absent edge is bias 0 ("no information") — not a zero cell, which the map would turn into its learned bias. Hand-off item. |
+| F-X5-30 | **The OTHER pass re-runs whole 6-column kernels to read one column** (D1, C1's five outgoing worlds + C1b, C3, D4, V). CPU compile of the fixed_mass extractor rose 100 s → 142 s (MEASURED, cold); the elementwise runtime cost is UNMEASURED (U8's budget). A one-column kernel variant is the fix if U8 binds. |
+| F-X5-31 | **Two constructions price a hypothesis's bulk / speed.** D1 (and C1's outgoing worlds) use the expected-latent one-hot (the Smogon spread-prior means, SPECIES_EXP_MULT's expected ability immunity), as the brief specifies; V / C2's paralysis delta read the spread head's prediction at the hypothesis seat (unsupervised there, F-X5-16) and S1 / T / X / G the dex row's ability id, as for a revealed mon at first appearance. Consistent with the blob's revealed-vs-hidden split, but two numbers for one mon's speed. |
+| F-X5-32 | **OTHER's attacker moves are parameter-free** (the E10 Smogon mixture over the tail), while hypotheses' are MoveBelief's learned rows: OTHER's threat cannot learn. Deliberate (M3 (c) = the blob's construction), recorded. |
+| F-X5-33 | **The per-mon order ranks a revealed Hidden Power's 16 typed channels by P(t)**; tracker-narrowed equal P(t) can put a near-tie at a per-mon cut, so `near_tie_rows` may exclude more rows with a revealed HP (conservative; 0 on the golden buffer). The bench rows' move REINJECTION still uses sigmoid weights (F-X5-26 covers the active only). |
 | G-1 | σ_run at 15M, the H2H run floor and snapshot jitter are unmeasured (P0 measures the last two). |
 | G-2 | Negative evidence (an opponent NOT switching to X) is not modelled; X12. |
 | G-3 | OTHER's embedding: `design_q_head.md` §10, logged by U8 (OTHER's attention share). The budget question is now §9 M3. |
@@ -1133,7 +1171,7 @@ Sizes are in agent-days. A "tier" is the gate a unit must pass before it lands. 
 | U0 | The checkpoint-vs-checkpoint mirrored H2H CROSS CLI (`sprt.py` + Rust eval core; the A/B's primary meter) + the P0 planning reads (§7.3) + its per-cell CPU cost | 1 | targeted + static; CPU under `mem_cap.sh` | opus-high |
 | U1 | **DONE 2026-10-03** (`gen3_x5_dex_rows_v1`; `CHANGELOG.md` "X5 U1"). Dex-row table generator (Rust encoder) + committed artifact + `sim`-tier byte gate + the real-state cross-check (§3.4). (The `belief.rs` guard is DONE, `680edc36`.) Hand-off below | 1 | `sim` + cargo + static | opus-high |
 | U2 | **DONE 2026-10-03** (`gen3_x5_hypothesis_set_v1`, config v136; `CHANGELOG.md` "X5 U2"). T0 hypothesis builder: δ_θ, the fixed-size construction (bisection, structural k = 0 / k = n, logsumexp OTHER), the single stable ordering, set BCE, BeliefHead re-target, moves; the `--belief-tokens` flag, versioning, registry; compile-time cost of the unrolled bisection (§3.6). Hand-off below | 2.5 | routine gate; tier contract; flag gates; the construction's tests | opus-high |
-| U3 | **PARTLY DONE 2026-10-04** (`gen3_x5_belief_tokens_v1`; `be6ba590` part 1, `5697c762` part 2; `CHANGELOG.md` "X5 U3 part 1 / part 2"): census re-run (§3.5); hypothesis tokens, OTHER's trunk seat, log-π bias in the trunk and the four class-E pools (float masks, CPU compile checked), species-specific T0 heads, MoveBelief's hypothesis-seat rule; the active's move axis (one order, the presence-scaled max, the revealed-HP seat, OTHER_move). **Part 3 NOT built** — the op's opponent-MON axis (hypothesis defenders / attackers, "alive" from `opp_addressable`, OTHER's physics per M3 (c), class M over mons): see the U3 hand-off. Tokens into the chain: re-run the 41-site census on the built code; log-π bias in the transformer and every class-E pool (float masks, compile check first); class-M semantics per §9 M2; the op with hypothesis defenders and attackers, "alive" from `opp_addressable`; OTHER's physics per §9 M3; E5 owner bias; aux heads on hypothesis seats (§3.4); I1 / I2 and class-M / class-S tests per site | 3 | routine gate; invariance tests; obs golden untouched | opus-xhigh (GIGO risk; the orchestrator dispatches it) |
+| U3 | **DONE 2026-10-04** (`gen3_x5_belief_tokens_v1`; part 3 = the op's opponent-MON axis + OTHER's physics, `CHANGELOG.md` "X5 U3 part 3", the U3 part-3 hand-off below). Parts 1–2 (`be6ba590`, `5697c762`; `CHANGELOG.md` "X5 U3 part 1 / part 2"): census re-run (§3.5); hypothesis tokens, OTHER's trunk seat, log-π bias in the trunk and the four class-E pools (float masks, CPU compile checked), species-specific T0 heads, MoveBelief's hypothesis-seat rule; the active's move axis (one order, the presence-scaled max, the revealed-HP seat, OTHER_move). **Part 3 NOT built** — the op's opponent-MON axis (hypothesis defenders / attackers, "alive" from `opp_addressable`, OTHER's physics per M3 (c), class M over mons): see the U3 hand-off. Tokens into the chain: re-run the 41-site census on the built code; log-π bias in the transformer and every class-E pool (float masks, compile check first); class-M semantics per §9 M2; the op with hypothesis defenders and attackers, "alive" from `opp_addressable`; OTHER's physics per §9 M3; E5 owner bias; aux heads on hypothesis seats (§3.4); I1 / I2 and class-M / class-S tests per site | 3 | routine gate; invariance tests; obs golden untouched | opus-xhigh (GIGO risk; the orchestrator dispatches it) |
 | U4 | Flat α pointer + OTHER labels; re-expressed cells with OTHER priced and `seat_live` consistent (§3.7); B ride-along re-base; `other_label_rate` | 2 | routine gate; `ridealong_update_test` bit-identity | opus-high |
 | U6 | K9 golden: `init_group_sha256`, second entry, fp64 references, teeth test. (The thread pins are DONE: harness `0c25a1f4`, production fresh build `50fdfdc2`.) | 0.75 | routine gate | opus-high |
 | U7 | Readers: `main.belief_roles` (R1–R4) + the intent / presence / OTHER purpose reads on the Lane S bank, per-run values for §7.4's across-seed inference | 1.25 | targeted + static | opus-high |
@@ -1228,7 +1266,7 @@ work.
   --rollout-target-samples 2304 --grad-accum-steps 1 --n-epochs 2` (exit 0 at U2: hypothesis recall 0.42, OTHER share
   0.61 — §3.3's cold-start range).
 
-**U3 hand-off (read before U4 — and before U3 part 3, which is NOT built).** U3 landed in two code parts
+**U3 hand-off (parts 1–2; part 3 is now BUILT — read the part-3 hand-off after it).** U3 landed in two code parts
 (`gen3_x5_belief_tokens_v1`; `CHANGELOG.md` "X5 U3 part 1" / "part 2"). Production stays `blob`,
 byte-identical (six hashes on the K9 golden buffer — state_dict, (pi, vf) features, action logits,
 values, one backward's gradients — equal `7b46d62f`'s after each part). What exists, and what does not:
@@ -1301,6 +1339,36 @@ values, one backward's gradients — equal `7b46d62f`'s after each part). What e
   --allow-nonproduction-arch --n-envs 1 --batch-size 384 --rollout-target-samples 2304
   --grad-accum-steps 1 --n-epochs 2`): exit 0 after each part; hypothesis recall 0.39–0.43, OTHER
   share 0.61–0.67.
+
+**U3 part-3 hand-off (read before U4).** Built in `gen3_x5_belief_tokens_v1` (`CHANGELOG.md` "X5 U3 part 3");
+production stays `blob`, byte-identical (the six K9-golden-buffer hashes equal `ecf9eeca`'s).
+
+- **What exists.** `hypothesis_tokens.OpRoster`, built per forward by `build_op_roster` (after the move belief) and
+  `other_roster`, stashed on the op as `op.stash.x5` (passed to `DamageOperator.forward` as `x5_roster`; the op and every
+  opponent-axis kernel then run on the HYPOTHESIS context `_opctx`, the defender belief `_sp` = the per-slot one-hots).
+  Fields U4 reads: `alive` (= `opp_addressable`), `hyp`, `slot_pi`, `species_probs`, `team_probs` (π / k), `move_w` /
+  `move_order` / `move_rank` (per-mon fixed-mass move presence and its one order), `other_live`, `other_any`,
+  `other_col`, `other_pursuit`, and `other` — the OTHER-MODE roster (every hidden slot = the tail-averaged mon:
+  `att_base`, `has_type`, `spe`, `spe_std`, `override`; `concrete` = 0 on its slots, so P(KO) stays nulled).
+- **OTHER's cells.** `ExtractorForward._other_edge_cells(_opctx, _x5r, sb, fams)` runs the op kernels under the
+  OTHER-mode roster and reads OTHER's column (`other_column`); `EdgeBias` writes D1 / C1 / C3 / D4 / V at the OTHER seat
+  (`EdgeBias.OTHER_FAMILIES`, zero when OTHER is masked). **U4's downstream cells** (`switch_branch`,
+  `intent_conditional`, `conditional_threat`, `pair_alpha` …) read `op.stash.out_cells` / `opp_p_ghost`, which are
+  STILL six columns: give them OTHER's 7th column from the same OTHER-mode D1 pass (`out_cells`) and
+  `other_tail_probs @ SPECIES_IS_GHOST` (P(Ghost | OTHER), linear and exact) — never a zero row (`e_mult` 0 = IMMUNE).
+- **Kernel contract.** A new opponent-axis kernel branches on `self.stash.x5`: alive from `roster.alive`, candidates
+  from `roster.move_order`, tail tables through `_x5_avg` / `_x5_stab`; add a row to `x5_opp_mon_axis_test.py`'s
+  "no hidden mon dropped" test, and to `OTHER_FAMILIES` + `_other_edge_cells` if OTHER should see it.
+- **Decisions in force.** P(KO) un-nulled for hypotheses, nulled for OTHER (§3.4 as built). Per-(seat, mon) cells are
+  not π-scaled (the key bias carries presence); only the max over mons is. OTHER enters a max site with `other_any`,
+  never its mass. F-X5-26 / F-X5-27 BUILT. No `ARCH_SIGNATURE` bump (D-L1 pending, decoupled).
+- **Open (findings).** F-X5-29 (OTHER edges for C2 / S1 / T / X / G), F-X5-30 (the OTHER pass's cost — U8), F-X5-31
+  (two bulk / speed constructions for a hypothesis), F-X5-32 (OTHER's moves are parameter-free), F-X5-33 (revealed-HP
+  typed channels at a per-mon cut; bench reinjection still sigmoid).
+- **Measured.** CPU Inductor compile of the fixed_mass extractor = eager to 4.8e-6 / 2.2e-6 on 64 golden rows (0
+  near-tie rows), 142 s cold. GPU compile and runtime: DEFERRED (U8). The Tier-0-style sanity read and the 15 tests
+  are in the CHANGELOG entry.
+- **Smoke.** U2's recipe, unchanged.
 
 ### 8.4 Where each review item landed
 
@@ -1406,4 +1474,6 @@ the safe default, but would leave X5 unadopted for reasons of noise.
 | 2026-10-03 | **U2 T0 hypothesis builder (BUILT)** | **`agents/model/hypothesis_set.py` under `--belief-tokens fixed_mass` (config v136, STRUCTURAL, default `blob`, production `blob`; no ARCH_SIGNATURE bump).** V = the dex table's valid nums minus the revealed (F-X5-21); τ by 64 fixed bisection steps on the provable bracket under `no_grad` (MEASURED max \|Σπ − k\| 2.7e-15 fp64 / 1.4e-6 fp32); k = 0 / k = n structural; one STABLE argsort of −π, ties to the lower num; hypothesis j → the j-th hidden slot; OTHER = the tail's mass, logsumexp log-mass and a rest + map(tail-mean) embedding; the active's move group at k_m = 4 − r_m over its legal moves, revealed pinned first. Supervision: the `hidden_team_set` row (presence BCE + BeliefHead's set BCE on its hidden-slot-mean logits + hypothesis-seat moves, supervised iff present), exclusive with `hidden_team`, same coefficient. Built from a private seed out of `IsolatedLinear`s, so non-X5 init bytes equal blob's. `requires` gains `opp_belief_slots`. In U2 the set is STASHED only (U3 wires it in). | `torch.topk` (unspecified tie order); a separate presence-BCE coefficient (a second knob, no evidence for one); Hungarian moves on hypothesis seats (the matching is retired); an `nn.Linear` δ_θ (SB3 re-draws it from the global RNG, moving every later init) | §3.2, §3.8, §8.3 U2 hand-off; `CHANGELOG.md` "X5 U2" |
 | 2026-10-03 | **U1 dex-row table (BUILT)** | **One SYNTHETIC input to the encoder's own slot writer** (`encoder::hypothesis::hypothesis_slot` → `slot::populated_slot`, the writer the real team loop uses): `PMon::from_species` + `100/100`, its `mon_view`, an empty `SideTrackers`. One row per BASE-FORM species at its num, committed as JSON beside the model code with a sha256 the loader re-derives; a `sim` byte gate; the real-state cross-check over the 386 species (constructed teams) and the bridge corpus. **The declared exclusion list is the mon's on-field state** (status, HP fraction, status counters, sleep belief, recency, last action, active) **plus an item / ability / move block the field revealed, by the real row's own flag** — wider than the first version's three entries, which missed blocks that differ legitimately at a real first appearance. | A torch-side row builder (a second encoder); a full synthetic battle state through `BattleVersion::encode` (far more synthetic surface for one slot); a tolerance on the cross-check (rule 8) | §3.4; `designs/rust_sim/encoder.md` §10; `CHANGELOG.md` "X5 U1" |
 | 2026-10-04 | **U3 open items (ORCHESTRATOR)** | **F-X5-23:** OTHER's embedding is the π-weighted mean over the WHOLE tail (no second selection boundary; consistent with M3 (c)). **Tier-0 F4 (a):** OTHER's averaged attacker is the renormalised tail's EXPECTED attacker stats, the `P_tail @ tables` construction the blob uses for the defender. **F4 (b):** at a max-type site OTHER enters with presence P(at least one tail mon present) = 1 − Π(1 − π_i), exact under the I-projection's independent Bernoullis, in [0, 1], continuous (Tier 0 capped the mass at 1). **F-X5-24:** MoveBelief keeps its per-move BCE; the move-side set BCE is a follow-up. **F-X5-22:** unchanged in U3 (U8 measures the GPU compile). **Versioning:** no `ARCH_SIGNATURE` bump in U3; the adoption break decouples the version floor from the signature (D-L1, provisional, PENDING). | A tail-32 mean (a second boundary); the mass capped at 1 at a max site; a move-side set BCE now | §3.3, §3.8, §8.2; `design_x5_tradeoffs.md` §4 |
+| 2026-10-04 | **U3 part 3 open items (ORCHESTRATOR)** | **F-X5-26:** under fixed_mass the opponent ACTIVE's MoveBelief reinjection uses the DETACHED π_m, not sigmoid weights (M10: RL cannot tune the belief as a gate there; the move head keeps its BCE; the lost RL gradient through that row is the stated cost). **F-X5-27:** `BeliefSlots` is not built under fixed_mass (a parameter that never gets a gradient); blob keeps it. **F-X5-28:** closed by part 3 (OTHER's edges + op column). **No `ARCH_SIGNATURE` bump** (D-L1 pending, decoupled). | Sigmoid reinjection at the active; building an unused `BeliefSlots` | §3.4, §8.2, U3 part-3 hand-off |
+| 2026-10-04 | **U3 part 3 (BUILT)** | The op runs on the HYPOTHESIS context with an `OpRoster`: hypothesis DEFENDERS as the per-slot one-hot expected-latent read, **P(KO) UN-nulled** (a pristine concrete species; only OTHER's averaged defender keeps the null); every live mon an ATTACKER on its own fixed-mass move presence (k = 4 − r) in one stable per-mon order; "alive" = `opp_addressable` in every opponent-slot gate; `p_pur_vs_us` presence-scaled over mons with OTHER at `other_any`; Beat Up by π / k; bench E5 seats presence-aware; the per-mon cuts in `near_tie_rows`. OTHER = an OTHER-mode pass of the same kernels on the tail's `P_tail @ tables` (defender, E[base], E[STAB], E[speed], E10 moves at k = 4), written to its seat's edges for D1 / C1 / C3 / D4 / V. Blob byte-identical. | P(KO) nulled for hypotheses (discards the species-exact KO); π-scaling per-(seat, mon) cells (double-counts the key bias); a separate OTHER physics kernel (a second copy of the physics — drift risk); OTHER's mass at a max site; OTHER edges via zero cells (the map would turn them into its learned bias) | §3.4, §3.5, §8.2 F-X5-29..33, U3 part-3 hand-off; `CHANGELOG.md` "X5 U3 part 3" |
 | 2026-10-04 | **U3 parts 1–2 (BUILT)** | Hypothesis tokens = THE `PokemonEncoder` on the hypothesis context (dex rows in the hidden slots, every mask REAL) + `hypothesis_marker`; OTHER_species one extra trunk seat after the entity seats; log π (detached) on every opponent key in the trunk and the four class-E pools (FLOAT masks); MoveBelief's unrevealed population supervised iff the hypothesis species is present; the active's move axis from ONE order with the fixed-mass presence as the op's class-M weights; a revealed Hidden Power's seat priced as its typed mixture through an extended seat axis; K < 4, a K mismatch and candidate truncation refused under fixed_mass. Blob byte-identical. | Re-encoding through a torch-side row builder (a second encoder); OTHER inserted between the team block and the global token (shifts every edge offset); 237 priced as a move (BP 0, typeless); the dominant typed channel as the HP seat (a selection on a continuous weight) | §3.4, §3.5, U3 hand-off; `CHANGELOG.md` "X5 U3 part 1 / part 2" |

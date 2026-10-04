@@ -189,9 +189,18 @@ class EdgeBias(torch.nn.Module):
         bias[:, :, rows, cols] = bias[:, :, rows, cols] + m[:, :H]
         bias[:, :, cols, rows] = bias[:, :, cols, rows] + m[:, H:].transpose(-1, -2)
 
+    #: X5 fixed_mass (U3 part 3, F-X5-28): the families whose OTHER_species column is priced — family →
+    #: whose seats its OTHER block pairs with ("e3": our move seats; "our": our six mons). C2 / S1 / T / X / G
+    #: carry NO OTHER edge yet (their averaged-type / ability reads are a hand-off item): an absent edge
+    #: is bias 0 — "no information", never a zero CELL (which the map would turn into its learned bias).
+    OTHER_FAMILIES = {"d1": "e3", "c1": "e3", "c3": "e3", "d4": "our", "v": "our"}
+
     def forward(self, bias: torch.Tensor, base_seats: int,
                 cells: "Dict[str, torch.Tensor]",
-                opp_active_onehot: Optional[torch.Tensor] = None) -> torch.Tensor:
+                opp_active_onehot: Optional[torch.Tensor] = None,
+                other_cells: "Optional[Dict[str, torch.Tensor]]" = None,
+                other_index: int = -1,
+                other_live: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Write the enabled families into `bias` [B, H, n, n] (already carrying the key-pad addend).
         `base_seats` = the seat count BEFORE the extra block (E3 starts there); `cells` maps family →
         its per-pair cell tensor (see _EDGE_FAMILIES); `opp_active_onehot` [B,6] locates the opp
@@ -272,6 +281,19 @@ class EdgeBias(torch.nn.Module):
             oh = opp_active_onehot[:, None, None, :]                           # [B,1,1,6] broadcast
             bias[:, :, our, opp] = bias[:, :, our, opp] + m[:, :H, :, None] * oh
             bias[:, :, opp, our] = bias[:, :, opp, our] + (m[:, H:, :, None] * oh).transpose(-1, -2)
+        if other_cells:
+            # X5 fixed_mass (U3 part 3): OTHER_species' column — the SAME family map applied to OTHER's
+            # tail-averaged cells, written at (the family's seats, the OTHER seat) + its transpose; zero
+            # where OTHER is masked (structural, `other_live`).
+            assert other_index >= 0 and other_live is not None
+            live = other_live.to(bias.dtype)[:, None, None, None]
+            oc = slice(other_index, other_index + 1)
+            for fam, side in self.OTHER_FAMILIES.items():
+                lin = getattr(self, f"{fam}_map")
+                if lin is None or other_cells.get(fam) is None:
+                    continue
+                rows = slice(e3, e3 + 4) if side == "e3" else our
+                self._write_block(bias, lin(other_cells[fam]) * live, rows, oc)
         return bias
 
 

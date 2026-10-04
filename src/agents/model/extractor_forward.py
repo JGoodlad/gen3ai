@@ -31,7 +31,8 @@ from agents.model.extractor_stashes import ExtractorStashes
 from agents.model.hypothesis_set import HypothesisSet
 from agents.model.hypothesis_tokens import (FixedMassMoves, OppPresence, OpRoster, build_op_roster,
                                             fixed_mass_moves, hypothesis_ctx, key_log_presence,
-                                            splice_hypothesis_tokens)
+                                            other_roster, splice_hypothesis_tokens)
+from agents.model.damage_op_layout import _SB_SPE
 from agents.model.intent_threshold import threshold_probs
 from agents.model.pair_outcome import pair_alpha, reduce_pair_in, reduce_pair_in_all
 from agents.model.pointer_head import _request_order_move_tokens
@@ -309,6 +310,38 @@ class ExtractorForward(ExtractorApi):
         self.stash.damage_block = damage_block
         return opp_tokens, damage_block
 
+    def _other_edge_cells(self, ctx: ExtractorContext, ro: OpRoster, sb: Optional[torch.Tensor],
+                          fams: "set[str]") -> Dict[str, torch.Tensor]:
+        """X5 fixed_mass (U3 part 3, M3 (c); ORCHESTRATOR F4 (a)): OTHER_species' cells for every family in
+        `EdgeBias.OTHER_FAMILIES` — the SAME kernels, run under the OTHER-MODE roster (`other_roster`:
+        every hidden slot holds the renormalised tail's AVERAGED defender and attacker), read at a hidden
+        slot. The op's per-forward roster is restored afterwards (a `finally`), so no later kernel can read
+        the OTHER-mode one."""
+        from agents.model.hypothesis_tokens import other_column
+        op = self.damage_op
+        assert op is not None and ro.other is not None and ro.other_col is not None
+        mb = self.last_move_belief_logits
+        assert mb is not None
+        sp, col, k = ro.other.species_probs, ro.other_col, self.consequence_topk
+        out: Dict[str, torch.Tensor] = {}
+        op.stash.x5 = ro.other
+        try:
+            if "d1" in fams:
+                out["d1"] = other_column(op.pairwise_outgoing(ctx, sb, species_probs=sp), col, 2)
+            if "c1" in fams:
+                out["c1"] = other_column(torch.cat([
+                    op.pairwise_boost(ctx, sb, species_probs=sp),
+                    op.pairwise_boost_incoming(ctx, mb, k_cand=k, species_probs=sp)], dim=-1), col, 2)
+            if "c3" in fams:
+                out["c3"] = other_column(op.pairwise_recovery(ctx, mb, k_cand=k, species_probs=sp), col, 2)
+            if "d4" in fams:
+                out["d4"] = other_column(op.pairwise_bench_incoming(ctx, mb, k_bench=k, species_probs=sp), col, 2)
+            if "v" in fams:
+                out["v"] = other_column(op.pairwise_speed(ctx, sb), col, 2)
+        finally:
+            op.stash.x5 = ro
+        return out
+
     def forward_internal(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
         # gen3_extractor_stashes_v1: replace the WHOLE stash container at ENTRY — no stash (nor a
@@ -387,6 +420,11 @@ class ExtractorForward(ExtractorApi):
             _x5r, _hs = build_op_roster(self.hypothesis_builder, ctx, _hctx, _hs, _fm,
                                         self.last_move_belief_logits,
                                         cuts=(self.consequence_topk, self.entity_topk_seats))
+            # OTHER_species' physics (M3 (c), F4 (a) / (b)): the OTHER-mode roster + its max-site presence.
+            _x5r = other_roster(_x5r, _hs, self.hypothesis_builder, self.move_belief,
+                                self.damage_op.BASE_STATS, self.damage_op.SPECIES_TYPE,
+                                self.damage_op.SPECIES_SPREAD_PRIOR, int(self.damage_op.CHART.shape[-1]),
+                                _SB_SPE)
             self.stash.hypothesis = _hs
         # T0 RESOLVE (spread/HP-type) → T1 REASON (the op). Run the WHOLE physics stack ONCE, here,
         # PRE-attention: the spread + HP-type beliefs read the raw opp role tokens (the move belief
@@ -532,7 +570,18 @@ class ExtractorForward(ExtractorApi):
                 _opp_oh = torch.zeros(ctx.batch_size, TEAM_SIZE, device=ctx.device)
                 _opp_oh[torch.arange(ctx.batch_size, device=ctx.device), ctx.opp_active_local] = 1.0
             _base = self.team_transformer._total_tokens
-            _edge_fn = lambda bias: self.edge_bias(bias, _base, _cells, _opp_oh)  # noqa: E731
+            # X5 fixed_mass (U3 part 3, M3 (c), F-X5-28): OTHER_species' edge column — the op's kernels run
+            # once more under the OTHER-MODE roster (every hidden slot holds the tail-averaged mon) and
+            # OTHER's cells are read at a hidden slot (`other_column`).
+            _ocells: Dict[str, torch.Tensor] = {}
+            _oidx = -1
+            _olive: Optional[torch.Tensor] = None
+            if _x5r is not None and _x5r.other is not None:
+                _ocells = self._other_edge_cells(_opctx, _x5r, _sb, _fams)
+                _oidx = self.team_transformer._total_tokens + self.entity_seats.n_seats
+                _olive = _x5r.other_live
+            _edge_fn = lambda bias: self.edge_bias(  # noqa: E731
+                bias, _base, _cells, _opp_oh, other_cells=_ocells, other_index=_oidx, other_live=_olive)
             _c2_edge_cells = _cells.get("c2")
         else:
             _c2_edge_cells = None

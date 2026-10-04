@@ -168,7 +168,7 @@ Rules to preserve:
 | the DICT obs keys the forward reads beyond `observation` | `extra_obs_keys.py` |
 | X5's dex-row table (a hypothesised opponent mon's per-mon obs row, per species; the generator, the loader, the committed artifact) | `hypothesis_dex_rows.py` + `hypothesis_dex_rows.json` |
 | X5's T0 hypothesis builder (`--belief-tokens fixed_mass`: δ_θ, the fixed-size presence, the one stable ordering, OTHER, the active's move group; the set-BCE helpers) | `hypothesis_set.py` |
-| X5's hypothesis TOKENS in the chain (the hypothesis context, the spliced tokens, the per-key log-presence, the class-E pools' float masks) | `hypothesis_tokens.py` |
+| X5's hypothesis TOKENS in the chain (the hypothesis context, the spliced tokens, the per-key log-presence, the class-E pools' float masks, the op's opponent-MON roster `OpRoster` + OTHER's averaged `other_roster`) | `hypothesis_tokens.py` |
 
 🚨 **THE FORWARD HAS TWO PUBLIC SURFACES: the constructor signature, and the obs DICT's KEY SET.**
 `forward` is normally a pure function of `obs["observation"]` — but a route may read a flag-gated
@@ -265,6 +265,16 @@ masked key) **and gets its I1 / I2 test in `hypothesis_tokens_test.py`** (π = 0
 two copies at w/2 ≡ one at w). A max-type reduction is class M (presence-scaled max, §9 M2 = C). π is
 DETACHED wherever it weights the policy or critic (M10). Blob must stay byte-identical: every X5 read
 sits behind `hypothesis_builder is not None` with the blob code path untouched.
+
+**The op's opponent-MON axis under `fixed_mass` reads `op.stash.x5` (an `OpRoster`), never a gate of
+its own.** Every opponent-slot kernel in `damage_op*.py` takes "alive" from `roster.alive`
+(`opp_addressable` — a hypothesis row reads HP 1.0, and no gate may depend on that), the per-mon
+candidates from `roster.move_order` / `move_w`, and (in an OTHER-mode pass) the tail-averaged tables
+through `_x5_avg` / `_x5_stab`. A NEW opponent-axis kernel must branch on `self.stash.x5` the same way,
+get a "no hidden mon dropped" row in `x5_opp_mon_axis_test.py`, and — if OTHER should see it — an entry
+in `EdgeBias.OTHER_FAMILIES` plus a call in `_other_edge_cells`. A per-(seat, mon) cell is "what this mon
+does IF present": never multiply it by π (the trunk's key bias carries presence); only a reduction over
+the MON axis is presence-scaled (`p_pur_vs_us`).
 
 ## ⚠️ One op's SPELLING is load-bearing for `torch.compile` (`gen3_species_posterior_spelling_v1`)
 

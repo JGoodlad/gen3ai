@@ -266,3 +266,151 @@ def test_the_active_reinjection_reads_its_detached_fixed_mass_presence(fm, monke
     out.sum().backward()
     assert float(lg.grad[bi, ctx.opp_active_local].abs().max()) == 0.0
     assert float(lg.grad[other].abs().max()) > 0.0
+
+
+# ============================================================================ OTHER_species' physics (M3 (c))
+
+def _other_cells(fm):
+    fe = fm["fe"]
+    return fe._other_edge_cells(fm["hctx"], fm["x5"], fe.last_spread_belief, fe.edge_bias.families)
+
+
+def test_other_any_is_one_minus_the_product_and_enters_the_pursuit_max(fm):
+    """F4 (b): OTHER's max-site presence is 1 − Π_tail(1 − π) (fp64 reference), in [0, 1], 0 when masked;
+    `p_pur_vs_us` takes it with OTHER's averaged Pursuit presence. Revert to the mass and it leaves [0,1]."""
+    from agents.model.damage_tables import _pursuit_num
+    hs, x5, op, fe = fm["hs"], fm["x5"], fm["op"], fm["fe"]
+    sp = hs.species
+    in_tail = sp.cand & (hs.rank >= sp.k.unsqueeze(-1)) & (sp.k > 0).unsqueeze(-1)
+    ref = 1.0 - torch.where(in_tail, 1.0 - sp.pi.double(), torch.ones_like(sp.pi.double())).prod(-1)
+    ref = torch.where(hs.other_live, ref, torch.zeros_like(ref))
+    assert torch.allclose(x5.other_any.double(), ref, atol=1e-6)
+    assert bool((x5.other_any >= 0).all()) and bool((x5.other_any <= 1).all())
+    assert bool((hs.other_mass[hs.other_live] > 1).any())             # the mass is NOT a presence
+    with torch.no_grad():
+        our, _ = _with_roster(op, x5).pairwise_entry(fm["hctx"], fe.last_move_belief_logits)
+    alive_i = (fm["hctx"].hp_and_active[:, :6, 0] > 0).float()
+    want = torch.maximum((x5.slot_pi * x5.move_w[:, :, _pursuit_num()] * x5.alive).amax(-1),
+                         x5.other_any * x5.other_pursuit)
+    assert torch.equal(our[..., 1], want[:, None] * alive_i)
+
+
+def test_other_defender_is_the_averaged_tail_construction_and_never_immune(fm):
+    """OTHER's D1 column = `_outgoing_matrix`'s expected-latent defender on P_tail: its type x ability
+    multiplier is P_tail @ SPECIES_EXP_MULT (never 0 = IMMUNE), its P(KO) NULLED (the blob's rule for an
+    averaged defender), its revealed bit 0. Revert OTHER's `species_probs` to a hypothesis one-hot and the
+    multiplier is that species', not the tail's."""
+    from agents.model.damage_kinds import gather_bp, is_priced, typeless_move_type
+    op, ctx, hs, x5 = fm["op"], fm["ctx"], fm["hs"], fm["x5"]
+    with torch.no_grad():
+        oc = _other_cells(fm)
+    assert set(oc) == {"d1", "c1", "c3", "d4", "v"}
+    assert fm["op"].stash.x5 is x5                                     # the per-forward roster is restored
+    d1 = oc["d1"][:, :, 0, :]                                          # [B,4,6] cells
+    ids = ctx.our_active_req_move_ids
+    mty = typeless_move_type(op, ids, ctx.our_active_req_move_type_ids)
+    ar = torch.arange(ctx.batch_size)
+    bp = torch.where(ids == op.hp_num, torch.full_like(mty, op.hp_bp, dtype=torch.float32), op.MOVE_BP[ids])
+    bp = gather_bp(op, ids, ctx.hp_and_active[ar, ctx.our_active_idx, 0][:, None], bp=bp)
+    usable = ctx.our_active_req_move_legal * is_priced(op, ids, bp)
+    gate = (ctx.hp_and_active[:, 6:, -1].any(1).float() * (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float())
+    em = hs.other_tail_probs @ op.SPECIES_EXP_MULT                     # [B,T]
+    want = em.gather(1, mty.long()) * usable * gate[:, None]
+    live = hs.other_live[:, None].expand_as(want)
+    assert torch.allclose(d1[..., 4][live], want[live], atol=1e-6, rtol=1e-5)
+    on = live & (usable * gate[:, None] > 0)
+    assert bool(on.any()) and bool((d1[..., 4][on] > 0).all())         # never IMMUNE
+    lr = hs.other_live                                                 # (a masked OTHER's edge is zeroed by EdgeBias)
+    assert float(d1[lr][..., 3].abs().max()) == 0.0                    # P(KO) nulled (averaged defender)
+    assert float(d1[lr][..., 5].abs().max()) == 0.0                    # not revealed
+
+
+def test_other_is_a_strict_refinement_one_hot_tail_equals_the_species_column(fm):
+    """The averaged construction's PARITY: with P_tail = ONE species s′ — deliberately NOT the hypothesis in
+    OTHER's column — and OTHER's moves = that column's move row, OTHER's attacker (D4) and defender (D1, but
+    its nulled P(KO)) columns equal the column computed with s′ AS the hypothesis there (its dex row in the
+    hypothesis context). So E_tail[base], E_tail[STAB] and the averaged defender are the species-exact
+    computation on a one-hot, and agree with the hypothesis context's types / stats. Revert the attacker's
+    base stats or STAB to the slot's gathered values and D4 reads the slot's species s, not s′."""
+    from agents.model.hypothesis_tokens import other_column, other_roster
+    op, ctx, hs, x5, fe = fm["op"], fm["ctx"], fm["hs"], fm["x5"], fm["fe"]
+    col = x5.other_col
+    bi = torch.arange(ctx.batch_size)
+    S = hs.other_tail_probs.shape[-1]
+    s = hs.slot_species[bi, col]
+    valid = fe.hypothesis_builder.species_valid
+    s2 = torch.where(valid[(s % 386) + 1], (s % 386) + 1, torch.full_like(s, 143))      # a different species
+    s2 = torch.where(s2 == s, torch.full_like(s, 248), s2)
+    # the reference: s′ as the hypothesis in OTHER's column (its dex row; every mask the real one)
+    oh_col = torch.nn.functional.one_hot(col, 6).bool()
+    hs_ref = dataclasses.replace(hs, slot_species=torch.where(oh_col, s2[:, None], hs.slot_species),
+                                 slot_rows=torch.where(oh_col[..., None], fe.hypothesis_builder.dex_rows[s2][:, None],
+                                                       hs.slot_rows))
+    hctx_ref = hypothesis_ctx(ctx, hs_ref, fe.layout)
+    sp_ref = torch.where(oh_col[..., None], torch.nn.functional.one_hot(s2, S).to(x5.species_probs.dtype)[:, None],
+                         x5.species_probs)
+    ro_ref = dataclasses.replace(x5, species_probs=sp_ref)
+    # OTHER on the ORIGINAL hypothesis context, tail = s′, moves = the column's move row
+    hs1 = dataclasses.replace(hs, other_tail_probs=torch.nn.functional.one_hot(s2, S).to(hs.other_tail_probs.dtype))
+    o = other_roster(x5, hs1, fe.hypothesis_builder, fe.move_belief, op.BASE_STATS, op.SPECIES_TYPE,
+                     op.SPECIES_SPREAD_PRIOR, int(op.CHART.shape[-1]), 4).other
+    h3 = x5.hyp.unsqueeze(-1)
+    o = dataclasses.replace(o, move_w=torch.where(h3, x5.move_w[bi, col].unsqueeze(1), o.move_w),
+                            move_order=torch.where(h3, x5.move_order[bi, col].unsqueeze(1), o.move_order))
+    mb, sb, live = fe.last_move_belief_logits, fe.last_spread_belief, hs.other_live
+    with torch.no_grad():
+        d4_r = other_column(_with_roster(op, ro_ref).pairwise_bench_incoming(hctx_ref, mb, k_bench=6), col, 2)
+        d1_r = other_column(op.pairwise_outgoing(hctx_ref, sb, species_probs=sp_ref), col, 2)
+        d4_o = other_column(_with_roster(op, o).pairwise_bench_incoming(fm["hctx"], mb, k_bench=6,
+                                                                        species_probs=o.species_probs), col, 2)
+        d1_o = other_column(op.pairwise_outgoing(fm["hctx"], sb, species_probs=o.species_probs), col, 2)
+    _with_roster(op, x5)
+    assert bool(live.any()) and bool((s2 != s).all())
+    assert torch.allclose(d4_o[live], d4_r[live], atol=1e-5, rtol=1e-5)
+    assert not torch.allclose(d4_o[live], other_column(op.pairwise_bench_incoming(fm["hctx"], mb, k_bench=6),
+                                                       col, 2)[live], atol=1e-5)   # and differs from species s
+    keep = [0, 1, 2, 4]                                                # low, high, crit, type_mult (not pko / revealed)
+    assert torch.allclose(d1_o[live][..., keep], d1_r[live][..., keep], atol=1e-5, rtol=1e-5)
+    # OTHER's P(KO) is nulled by construction: the OTHER-mode roster marks its slots NOT concrete
+    assert float(x5.other.concrete[x5.hyp].abs().max()) == 0.0
+    assert torch.equal(x5.other.concrete[~x5.hyp], torch.ones_like(x5.other.concrete[~x5.hyp]))
+
+
+def test_other_alone_can_carry_the_pursuit_max(fm):
+    """With no slot carrying Pursuit, `p_pur_vs_us` IS OTHER's other_any · P(Pursuit | OTHER). Revert
+    (OTHER out of the max) and it reads 0."""
+    from agents.model.damage_tables import _pursuit_num
+    op, hctx, x5, fe = fm["op"], fm["hctx"], fm["x5"], fm["fe"]
+    pur = _pursuit_num()
+    mw = x5.move_w.clone()
+    mw[:, :, pur] = 0.0
+    with torch.no_grad():
+        our, _ = _with_roster(op, dataclasses.replace(x5, move_w=mw)).pairwise_entry(hctx, fe.last_move_belief_logits)
+    _with_roster(op, x5)
+    alive_i = (hctx.hp_and_active[:, :6, 0] > 0).float()
+    want = (x5.other_any * x5.other_pursuit)[:, None] * alive_i
+    assert torch.equal(our[..., 1], want) and float(want.max()) > 0
+
+
+def test_other_edges_are_written_at_the_other_seat_and_gated_by_liveness():
+    """EdgeBias writes OTHER's cells with the family's OWN map at (the family's seats, the OTHER seat) and
+    the transpose; a masked OTHER contributes exactly 0. Revert (no OTHER loop) and the column stays 0."""
+    from agents.model.team_transformer import EdgeBias, _EDGE_FAMILIES
+    from agents.model.arch_constants import TRANSFORMER_N_HEADS as H
+    torch.manual_seed(0)
+    eb = EdgeBias("d1,d4")
+    for lin in (eb.d1_map, eb.d4_map):
+        torch.nn.init.normal_(lin.weight)
+        torch.nn.init.normal_(lin.bias)
+    B, n, base, oi = 3, 40, 13, 30
+    oc = {"d1": torch.randn(B, 4, 1, _EDGE_FAMILIES["d1"]), "d4": torch.randn(B, 6, 1, _EDGE_FAMILIES["d4"])}
+    live = torch.tensor([True, False, True])
+    with torch.no_grad():
+        out = eb(torch.zeros(B, H, n, n), base, {}, None, other_cells=oc, other_index=oi, other_live=live)
+        m1 = eb.d1_map(oc["d1"]).permute(0, 3, 1, 2)                   # [B,2H,4,1]
+        m4 = eb.d4_map(oc["d4"]).permute(0, 3, 1, 2)                   # [B,2H,6,1]
+    lv = live.float()[:, None, None, None]
+    assert torch.allclose(out[:, :, base:base + 4, oi:oi + 1], m1[:, :H] * lv)
+    assert torch.allclose(out[:, :, oi:oi + 1, base:base + 4], (m1[:, H:] * lv).transpose(-1, -2))
+    assert torch.allclose(out[:, :, 0:6, oi:oi + 1], m4[:, :H] * lv)
+    assert float(out[1].abs().max()) == 0.0

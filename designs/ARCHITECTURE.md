@@ -376,8 +376,21 @@ active's MOVE axis reads the move group (`FixedMassMoves`): ONE order (revealed 
 unrevealed by π_m) gives the E4 seats, the op's top-K seat axis (pair cells, α's seats), the D3 / S3
 cells and the intent operands (no `torch.topk`); the op's incoming maxes weight each candidate by its
 DETACHED fixed-mass presence (the presence-scaled max); a revealed Hidden Power's seat is priced as its
-typed mixture; the active's E5 seat is OTHER_move. The op's opponent-MON axis (hypothesis defenders /
-attackers, OTHER's physics) and the opponent pointer still read the blob's construction in that arm.
+typed mixture; the active's E5 seat is OTHER_move — and the active's move REINJECTION soft-embeds its
+row by that detached presence (the other slots keep sigmoid weights). The op's opponent-MON axis reads an
+`OpRoster` (`hypothesis_tokens.py`): the op runs on the HYPOTHESIS context, so a hidden slot is priced as
+its concrete species at first appearance (full HP, no status); "alive" is `opp_addressable`, never an HP
+cell; a hypothesis DEFENDER is the expected-latent read on a per-slot one-hot (its own species, P(KO)
+defined — not nulled); every live opponent mon is an ATTACKER (C1b / C2 / C3 / D4) on its own fixed-mass
+move presence (k = 4 − revealed, revealed moves pinned at 1), selected by one stable per-mon order;
+`p_pur_vs_us` is a presence-scaled max over the mons; Beat Up's opponent party sum reads π / k over every
+candidate; the bench E5 seats are presence-aware (tail beyond rank K, summed presence, presence-scaled
+worst case). OTHER_species gets the blob's AVERAGED construction on the renormalised tail
+(`other_roster`): defender `P_tail @ tables` with P(KO) nulled, attacker E_tail[base stats], E_tail[STAB],
+E_tail[speed], moves = the parameter-free E10 mixture over the tail through the k = 4 construction; its
+edge column is written for D1, C1, C3, D4 and V (`EdgeBias.OTHER_FAMILIES`; C2 / S1 / T / X / G carry
+no OTHER edge), and at the Pursuit max it enters with presence 1 − Π_tail(1 − π). `BeliefSlots` is not
+built in that arm. The opponent pointer (α / β) and its consumers still read the blob's construction there.
 Config v136, no `ARCH_SIGNATURE` change while both arms build.
 
 The concrete steps:

@@ -251,6 +251,18 @@ class OpRoster:
     move_order: torch.Tensor     # [B,6,M] long — per-mon ONE order over the selectable moves (rest last)
     move_rank: torch.Tensor      # [B,6,M] long — its inverse
     move_tie_gap: torch.Tensor   # [B] smallest gap at a per-mon selection boundary (alive mons; +inf: none)
+    # --- OTHER_species (M3 (c), ORCHESTRATOR F4 (a) / (b)); None on an OTHER-mode roster itself
+    other_live: Optional[torch.Tensor] = None     # [B] bool — OTHER is a real key (structural)
+    other_any: Optional[torch.Tensor] = None      # [B] P(≥ 1 tail species present) = 1 − Π(1 − π): its max-site presence
+    other_col: Optional[torch.Tensor] = None      # [B] long — a hidden slot: where an OTHER-mode pass's column is read
+    other_pursuit: Optional[torch.Tensor] = None  # [B] OTHER's Pursuit presence (its averaged move presence)
+    other: Optional["OpRoster"] = None            # the OTHER-MODE roster (`other_roster`)
+    # --- set ONLY on an OTHER-mode roster: every hidden slot holds the tail-AVERAGED mon
+    override: Optional[torch.Tensor] = None       # [B,6] bool — the slots holding OTHER in this pass
+    att_base: Optional[torch.Tensor] = None       # [B,6,6] E_tail[base stats] (exact: the stat formulas are linear)
+    has_type: Optional[torch.Tensor] = None       # [B,6,T] E_tail[1(type t is one of the species' types)]
+    spe: Optional[torch.Tensor] = None            # [B,6] E_tail[speed] — the spread prior's mean (as the averaged bulk)
+    spe_std: Optional[torch.Tensor] = None        # [B,6] E_tail[the spread prior's speed std]
 
 
 def slot_move_presence(hb: Any, move_logits: torch.Tensor, species: torch.Tensor,
@@ -357,3 +369,70 @@ def bench_tail_cells(ro: OpRoster, K: int, move_bp: torch.Tensor, move_acc: torc
     worst_phys = (score * move_phys).amax(-1)
     worst_spec = (score * (1.0 - move_phys)).amax(-1)
     return torch.stack([tw.sum(-1), worst_phys, worst_spec], dim=-1)               # [B,6,3]
+
+
+def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, base_stats: torch.Tensor,
+                 species_type: torch.Tensor, spread_prior: torch.Tensor, n_types: int,
+                 spe_col: int) -> OpRoster:
+    """``ro`` with OTHER attached (M3 (c); ORCHESTRATOR F4 (a) / (b)) and its OTHER-MODE roster: a copy in
+    which EVERY hidden slot holds OTHER — the renormalised tail ``P_tail`` (`HypothesisSet.other_tail_probs`)
+    priced by the blob's own AVERAGED construction, ``P_tail @ tables``:
+
+    * defender: ``species_probs`` = ``P_tail`` — `_outgoing_matrix`'s expected-latent read (E[def], E[spd],
+      E[maxhp], E[type x ability multiplier]); ``concrete`` = 0 there, so P(KO) stays NULLED (the averaged
+      defender's KO is a threshold of averaged stats — exactly the blob);
+    * attacker: ``att_base`` = E[base stats] (atk / spa / max-HP are linear in them, so f(E[base]) = E[f]),
+      ``has_type`` = E[STAB indicator] per move type, ``spe`` / ``spe_std`` = E over the spread prior;
+    * moves: the PARAMETER-FREE E10 mixture over ``P_tail`` (`MoveBelief.hidden_slot_prior_logits`, the
+      blob's hidden-slot prior) through the same k = 4 fixed-size construction and one order as every mon.
+
+    OTHER is never immune by construction: its multiplier is an expectation over the tail, 0 only if every
+    tail species is immune. At a max-type site OTHER enters with ``other_any`` (F4 (b)), never its mass."""
+    from agents.model.hypothesis_set import fixed_mass_presence, move_candidates, ranks_of, stable_order
+    pt = hs.other_tail_probs.to(base_stats.dtype)                                       # [B,S]
+    B = pt.shape[0]
+    hyp = ro.hyp
+    dt = ro.move_w.dtype
+    # ---- OTHER's averaged move presence (k = 4; nothing revealed; 237 is never a candidate)
+    mix_logits = move_belief.hidden_slot_prior_logits(pt)                               # [B,M]
+    M = mix_logits.shape[-1]
+    legal = hb.move_valid.unsqueeze(0).expand(B, M)
+    cand, _rev, _r = move_candidates(legal, hb.move_valid, torch.zeros(B, 4, dtype=torch.long, device=pt.device))
+    k4 = torch.full((B,), 4, dtype=torch.long, device=pt.device)
+    pres = fixed_mass_presence(mix_logits.detach(), cand, k4)
+    w_o = pres.pi.to(dt)                                                                # [B,M]
+    order_o = stable_order(w_o, cand)
+    rank_o = ranks_of(order_o)
+    h3 = hyp.unsqueeze(-1)
+    move_w = torch.where(h3, w_o.unsqueeze(1), ro.move_w)
+    move_order = torch.where(h3, order_o.unsqueeze(1), ro.move_order)
+    move_rank = torch.where(h3, rank_o.unsqueeze(1), ro.move_rank)
+    # ---- the tail's expected attacker / speed tables
+    t = torch.arange(n_types, device=pt.device)
+    st = species_type.long()
+    has = ((t.unsqueeze(0) == st[:, 0:1]) | (t.unsqueeze(0) == st[:, 1:2])).to(pt.dtype)   # [S,T]
+    e_base = pt @ base_stats                                                            # [B,6]
+    e_has = pt @ has                                                                    # [B,T]
+    e_spe = pt @ spread_prior[:, spe_col, 0]                                            # [B]
+    e_std = pt @ spread_prior[:, spe_col, 1]
+    sp_other = pt.unsqueeze(1).expand(-1, hyp.shape[1], -1) * hyp.unsqueeze(-1).to(pt.dtype)
+    from agents.model.damage_tables import _pursuit_num
+    other = dataclasses.replace(
+        ro, concrete=(~hyp).to(ro.concrete.dtype), species_probs=sp_other.to(ro.species_probs.dtype),
+        slot_pi=torch.where(hyp, hs.other_any.unsqueeze(-1).to(ro.slot_pi.dtype), ro.slot_pi),
+        move_w=move_w, move_order=move_order, move_rank=move_rank, override=hyp,
+        att_base=e_base.unsqueeze(1).expand(-1, hyp.shape[1], -1),
+        has_type=e_has.unsqueeze(1).expand(-1, hyp.shape[1], -1),
+        spe=e_spe.unsqueeze(-1).expand(-1, hyp.shape[1]), spe_std=e_std.unsqueeze(-1).expand(-1, hyp.shape[1]))
+    col = torch.argmax(hyp.long(), dim=-1)                                              # the first hidden slot
+    return dataclasses.replace(ro, other_live=hs.other_live, other_any=hs.other_any.to(dt), other_col=col,
+                               other_pursuit=w_o[:, _pursuit_num()], other=other)
+
+
+def other_column(cells: torch.Tensor, col: torch.Tensor, axis: int) -> torch.Tensor:
+    """OTHER's cells out of an OTHER-mode pass: the opponent-mon axis ``axis`` of ``cells`` read at the
+    hidden slot ``col`` [B] (every hidden slot holds OTHER there), kept as a size-1 axis."""
+    shape = [1] * cells.dim()
+    shape[0] = cells.shape[0]
+    idx = col.view(shape).expand(*[cells.shape[i] if i != axis else 1 for i in range(cells.dim())])
+    return cells.gather(axis, idx)

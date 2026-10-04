@@ -141,6 +141,25 @@ class DamageOperatorPairwise:
         TYPE_IS_PHYS: torch.Tensor
         TYPE_IS_STEEL: torch.Tensor
 
+    def _x5_avg(self, gathered: torch.Tensor, field: str) -> torch.Tensor:
+        """X5 fixed_mass, an OTHER-MODE pass only (`hypothesis_tokens.other_roster`): the slots holding
+        OTHER read the tail-AVERAGED table ``field`` (``att_base`` [B,6,6], ``spe`` / ``spe_std`` [B,6])
+        in place of the per-slot ``gathered`` value. Any other pass (and blob): ``gathered`` itself."""
+        x5 = self.stash.x5
+        if x5 is None or x5.override is None:
+            return gathered
+        ov = x5.override.view(*x5.override.shape, *([1] * (gathered.dim() - 2)))
+        return torch.where(ov, getattr(x5, field).to(gathered.dtype), gathered)
+
+    def _x5_stab(self, is_stab: torch.Tensor, mty_k: torch.Tensor) -> torch.Tensor:
+        """``is_stab`` [B,6,K] with the OTHER slots' STAB the tail's EXPECTED indicator E[1(type(m) ∈
+        types(s))] (OTHER-mode pass only; otherwise unchanged)."""
+        x5 = self.stash.x5
+        if x5 is None or x5.override is None:
+            return is_stab
+        e = torch.gather(x5.has_type.to(is_stab.dtype), 2, mty_k.long())             # [B,6,K]
+        return torch.where(x5.override.unsqueeze(-1), e, is_stab)
+
     def pairwise_outgoing(self, ctx: 'ExtractorContext',
                           spread_belief: Optional[torch.Tensor] = None,
                           boost_delta: Optional[torch.Tensor] = None,
@@ -245,16 +264,17 @@ class DamageOperatorPairwise:
             opp_spe = spread_belief[..., _SB_SPE]
         else:
             opp_spe = 2.0 * self.BASE_STATS[opp_species][..., _BS_SPE] + 31.0 + 5.0  # neutral 0-EV
+        opp_spe = self._x5_avg(opp_spe, "spe")                                      # X5: OTHER's averaged speed
         opp_para = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
         opp_spe = opp_spe * (1.0 - 0.75 * opp_para)                                  # [B,6]
-        opp_std = self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1]                 # [B,6]
+        opp_std = self._x5_avg(self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1], "spe_std")   # [B,6]
         p_base = self._p_outspeed((act_spe * self._boost_mult(cur_spe_stage))[:, None],
                                   opp_spe, opp_std)                                  # [B,6]
         revealed = (~ctx.opp_believed_mask).float()                                  # [B,6]
         alive_j = (ctx.hp_and_active[:, opp, 0] > 0).float()
         _x5 = self.stash.x5
-        if _x5 is not None:     # X5 (U3 part 3): a hypothesis's speed is its species'; alive by addressability
-            revealed, alive_j = _x5.concrete, _x5.alive
+        if _x5 is not None:     # X5 (U3 part 3): every live mon's speed is priced (a hypothesis's species',
+            revealed, alive_j = torch.ones_like(_x5.alive), _x5.alive   # OTHER's tail average); alive by addressability
         our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()
         spd_gate = revealed * alive_j * our_alive[:, None]                           # [B,6]
         # --- the 4 hypothetical worlds: slot k's deltas, everything else identical ---
@@ -310,7 +330,7 @@ class DamageOperatorPairwise:
         phys_k = self.MOVE_PHYS[topk_idx]
         acc_k = self.MOVE_ACCURACY[topk_idx]
         nf_k = gather_nonformula(self, topk_idx)                                     # 3×[B,6,K]
-        a_base = self.BASE_STATS[ctx.species_ids[:, opp]]                            # [B,6,6]
+        a_base = self._x5_avg(self.BASE_STATS[ctx.species_ids[:, opp]], "att_base")  # [B,6,6] (X5: OTHER = E_tail)
         off_const = 31.0 + 252.0 / 4.0 + 5.0
         atk_j = (2.0 * a_base[..., _BS_ATK] + off_const) * 1.1                       # de-timid
         spa_j = (2.0 * a_base[..., _BS_SPA] + off_const) * 1.1
@@ -633,6 +653,7 @@ class DamageOperatorPairwise:
              + (1.0 - phys_k)[:, None] * spd_w[:, :, None, None])                    # [B,W,6,K]
         is_stab = ((mty_k == ctx.type1_ids[:, opp][:, :, None])
                    | (mty_k == ctx.type2_ids[:, opp][:, :, None])).float()           # [B,6,K]
+        is_stab = self._x5_stab(is_stab, mty_k)                                      # X5: OTHER's E[STAB]
         # gen3_beatup_exact_v1: Beat Up ignores the defender's stat stages (its Def is the species BASE Def,
         # `event.modifier = 1`), so a defensive setup move moves it by exactly 0 across the worlds.
         bu_S, bu_N = beatup_party_opp(self, ctx, species_probs)                      # [B], [B]
@@ -726,6 +747,7 @@ class DamageOperatorPairwise:
         D = phys_k * def_c[:, None, None] + (1.0 - phys_k) * spd_c[:, None, None]    # [B,6,K]
         is_stab = ((mty_k == ctx.type1_ids[:, opp][:, :, None])
                    | (mty_k == ctx.type2_ids[:, opp][:, :, None])).float()
+        is_stab = self._x5_stab(is_stab, mty_k)                                      # X5: OTHER's E[STAB]
         # gen3_beatup_exact_v1: the opp party's Σ base Atk / hit count vs OUR active's BASE Def.
         bu_S, bu_N = beatup_party_opp(self, ctx, species_probs)                      # [B], [B]
         A, D, plus2 = beatup_swap(bu_k, A, D, bu_S[:, None, None],
@@ -841,10 +863,11 @@ class DamageOperatorPairwise:
         else:
             opp_base = self.BASE_STATS[opp_species]                                        # [B,6,6]
             opp_spe = 2.0 * opp_base[..., _BS_SPE] + 31.0 + 5.0                            # neutral 0-EV
+        opp_spe = self._x5_avg(opp_spe, "spe")                                             # X5: OTHER's averaged speed
         opp_para = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE,
                                     POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
         opp_spe = opp_spe * (1.0 - 0.75 * opp_para)                                        # [B,6]
-        opp_std = self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1]                       # [B,6]
+        opp_std = self._x5_avg(self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1], "spe_std")   # [B,6]
         p = self._p_outspeed(our_spe[:, :, None], opp_spe[:, None, :], opp_std[:, None, :])  # [B,6,6]
         alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()                        # [B,6]
         alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()           # [B,6]
@@ -891,7 +914,7 @@ class DamageOperatorPairwise:
         bu_k = gather_beatup(self, topk_idx)                                           # [B,6,K] gen3_beatup_exact_v1
         # --- attackers = the opp 6 (de-timid; revealed+alive-gated; active column zeroed) ---
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
-        a_base = self.BASE_STATS[ctx.species_ids[:, opp]]                              # [B,6,6]
+        a_base = self._x5_avg(self.BASE_STATS[ctx.species_ids[:, opp]], "att_base")    # [B,6,6] (X5: OTHER = E_tail)
         off_const = 31.0 + 252.0 / 4.0 + 5.0
         atk_j = (2.0 * a_base[..., 1] + off_const) * 1.1                               # [B,6]
         spa_j = (2.0 * a_base[..., 3] + off_const) * 1.1
@@ -929,6 +952,7 @@ class DamageOperatorPairwise:
         D = (phys_k[:, None, :, :] * def_stat[:, :, None, None]
              + (1.0 - phys_k)[:, None, :, :] * spd_stat[:, :, None, None])             # [B,6i,6j,K]
         is_stab = ((mty_k == at1[:, :, None]) | (mty_k == at2[:, :, None])).float()    # [B,6j,K]
+        is_stab = self._x5_stab(is_stab, mty_k)                                        # X5: OTHER's E[STAB]
         stab = (1.0 + 0.5 * is_stab)[:, None, :, :]
         # gen3_beatup_exact_v1: the opp party's Σ base Atk / hit count (the SIDE, whichever mon j uses it) vs
         # each of OUR six defenders' BASE Def.
@@ -1100,6 +1124,8 @@ class DamageOperatorPairwise:
             # π a hypothesis).
             alive_j = _x5.alive
             p_pur_vs_us = (_x5.slot_pi * _x5.move_w[:, :, pur] * alive_j).amax(dim=-1, keepdim=True)
+            if _x5.other_any is not None:   # OTHER enters the max with presence 1 − Π(1 − π) (F4 (b))
+                p_pur_vs_us = torch.maximum(p_pur_vs_us, (_x5.other_any * _x5.other_pursuit)[:, None])
         we_have_pur = ((ctx.all_move_ids[:, :TEAM_SIZE] == pur).any(-1).float()
                        * alive_i).amax(dim=-1, keepdim=True)                      # [B,1]
         eff_i = self.CHART[ctx.type1_ids[:, :TEAM_SIZE]][..., dark]                 * self.CHART[ctx.type2_ids[:, :TEAM_SIZE]][..., dark]             # [B,6]
