@@ -1,0 +1,193 @@
+{
+ "phase": "update",
+ "windows": 3,
+ "wall_s_per_window": 41.223775026333335,
+ "kernel_s_per_window": 38.00068448166667,
+ "distinct_kernels": 1231,
+ "top": [
+  {
+   "name": "fmha_cutlassB_f32_aligned_64x64_k32_sm80",
+   "calls_per_window": 1920.0,
+   "total_s_per_window": 3.865205208666667,
+   "mean_us": 2013.1277128472223,
+   "share_of_kernel_time": 0.10171409440088967
+  },
+  {
+   "name": "ampere_sgemm_128x64_tn",
+   "calls_per_window": 13007.0,
+   "total_s_per_window": 3.413118078,
+   "mean_us": 262.40624878911353,
+   "share_of_kernel_time": 0.08981727893997936
+  },
+  {
+   "name": "ampere_sgemm_128x128_nt",
+   "calls_per_window": 2880.0,
+   "total_s_per_window": 2.4607646456666665,
+   "mean_us": 854.4321686342593,
+   "share_of_kernel_time": 0.06475579793447817
+  },
+  {
+   "name": "ampere_sgemm_128x64_nn",
+   "calls_per_window": 12000.0,
+   "total_s_per_window": 2.1343112630000003,
+   "mean_us": 177.8592719166667,
+   "share_of_kernel_time": 0.05616507418516877
+  },
+  {
+   "name": "fmha_cutlassF_f32_aligned_64x64_rf_sm80",
+   "calls_per_window": 1928.0,
+   "total_s_per_window": 1.6204755013333332,
+   "mean_us": 840.4955919778699,
+   "share_of_kernel_time": 0.04264332401999568
+  },
+  {
+   "name": "void cutlass::Kernel2<cutlass_80_simt_sgemm_128x64_8x5_nt_align1>",
+   "calls_per_window": 9600.0,
+   "total_s_per_window": 1.0515897903333333,
+   "mean_us": 109.54060315972221,
+   "share_of_kernel_time": 0.027672917071814067
+  },
+  {
+   "name": "triton_per_fused_add_clamp_min_div_gt_index_put_logsumexp_mul_neg_sigmoid_backward_sum_where_360",
+   "calls_per_window": 480.0,
+   "total_s_per_window": 0.8290509693333333,
+   "mean_us": 1727.1895194444446,
+   "share_of_kernel_time": 0.02181673779411281,
+   "num_gb": 0.266790464,
+   "achieved_GBs": 154.46507809161204,
+   "frac_of_measured_dram": 0.1871565661708258
+  },
+  {
+   "name": "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_338",
+   "calls_per_window": 480.0,
+   "total_s_per_window": 0.7653525583333334,
+   "mean_us": 1594.4844965277778,
+   "share_of_kernel_time": 0.020140494014063766,
+   "num_gb": 1.21929728,
+   "achieved_GBs": 764.6968550996872,
+   "frac_of_measured_dram": 0.9265397676308738
+  },
+  {
+   "name": "triton_red_fused__to_copy_add_bitwise_or_clamp_div_eq_gather_ge_gt_index_le_logical_and_logsumexp_mul_neg_reciprocal_rsu",
+   "calls_per_window": 480.0,
+   "total_s_per_window": 0.6977298816666666,
+   "mean_us": 1453.603920138889,
+   "share_of_kernel_time": 0.018360981945030087
+  },
+  {
+   "name": "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_320",
+   "calls_per_window": 480.0,
+   "total_s_per_window": 0.6825622746666666,
+   "mean_us": 1422.0047388888888,
+   "share_of_kernel_time": 0.01796184158198432,
+   "num_gb": 1.097367552,
+   "achieved_GBs": 771.7045674949364,
+   "frac_of_measured_dram": 0.9350306149137121
+  },
+  {
+   "name": "triton_poi_fused_add_clone_constant_pad_nd_copy_slice_backward_zeros_like_306",
+   "calls_per_window": 480.0,
+   "total_s_per_window": 0.5103985183333334,
+   "mean_us": 1063.3302465277777,
+   "share_of_kernel_time": 0.013431298022528352,
+   "num_gb": 0.853508096,
+   "achieved_GBs": 802.6745207211629,
+   "frac_of_measured_dram": 0.9725551490796415
+  },
+  {
+   "name": "ampere_sgemm_32x128_tn",
+   "calls_per_window": 24092.0,
+   "total_s_per_window": 0.48317597966666664,
+   "mean_us": 20.055453248657923,
+   "share_of_kernel_time": 0.012714928329771894
+  },
+  {
+   "name": "triton_poi_fused_add_select_backward_235",
+   "calls_per_window": 960.0,
+   "total_s_per_window": 0.4675340133333334,
+   "mean_us": 487.0145972222223,
+   "share_of_kernel_time": 0.012303305051225956,
+   "num_gb": 0.383778816,
+   "achieved_GBs": 788.023230081713,
+   "frac_of_measured_dram": 0.9548030119627722
+  },
+  {
+   "name": "triton_per_fused_add_native_layer_norm_native_layer_norm_backward_378",
+   "calls_per_window": 1440.0,
+   "total_s_per_window": 0.4490167973333334,
+   "mean_us": 311.81722037037036,
+   "share_of_kernel_time": 0.01181601867066264,
+   "num_gb": 0.256353792,
+   "achieved_GBs": 822.12839847494,
+   "frac_of_measured_dram": 0.9961263083609939
+  },
+  {
+   "name": "ampere_sgemm_32x128_nn",
+   "calls_per_window": 26407.0,
+   "total_s_per_window": 0.3927928213333333,
+   "mean_us": 14.874571944307695,
+   "share_of_kernel_time": 0.010336467005557104
+  }
+ ],
+ "triton_bytes_coverage": {
+  "kernel_time_with_num_gb": 16.311967011000014,
+  "weighted_frac_of_measured_dram": 0.7494145530372958
+ },
+ "gemm_ops": [],
+ "attention_ops": [
+  {
+   "op": "aten::_scaled_dot_product_efficient_attention",
+   "shapes": "[[2048, 4, 61, 32], [2048, 4, 61, 32], [2048, 4, 61, 32], [2048, 4, 61, 61], [], [], [], []]",
+   "count": 962,
+   "self_cuda_us": 0
+  },
+  {
+   "op": "aten::_efficient_attention_forward",
+   "shapes": "[[2048, 61, 4, 32], [2048, 61, 4, 32], [2048, 61, 4, 32], [2048, 4, 61, 61], [], [], [], [], [], [], [], [], [], []]",
+   "count": 962,
+   "self_cuda_us": 0
+  },
+  {
+   "op": "aten::_scaled_dot_product_efficient_attention",
+   "shapes": "[[2048, 4, 6, 32], [2048, 4, 6, 32], [2048, 4, 6, 32], [], [], [], [], []]",
+   "count": 481,
+   "self_cuda_us": 0
+  },
+  {
+   "op": "aten::_efficient_attention_forward",
+   "shapes": "[[2048, 6, 4, 32], [2048, 6, 4, 32], [2048, 6, 4, 32], [], [], [], [], [], [], [], [], [], [], []]",
+   "count": 481,
+   "self_cuda_us": 0
+  },
+  {
+   "op": "aten::_scaled_dot_product_efficient_attention",
+   "shapes": "[[2048, 4, 6, 32], [2048, 4, 12, 32], [2048, 4, 12, 32], [2048, 4, 6, 12], [], [], [], []]",
+   "count": 481,
+   "self_cuda_us": 0
+  },
+  {
+   "op": "aten::_efficient_attention_forward",
+   "shapes": "[[2048, 6, 4, 32], [2048, 12, 4, 32], [2048, 12, 4, 32], [2048, 4, 6, 12], [], [], [], [], [], [], [], [], [], []]",
+   "count": 481,
+   "self_cuda_us": 0
+  },
+  {
+   "op": "aten::_scaled_dot_product_efficient_attention_backward",
+   "shapes": "[[2048, 4, 6, 32], [2048, 4, 6, 32], [2048, 4, 12, 32], [2048, 4, 12, 32], [2048, 4, 6, 12], [2048, 4, 6, 32], [2048, 4, 32], [], [], [], [], [], []]",
+   "count": 480,
+   "self_cuda_us": 0
+  },
+  {
+   "op": "aten::_efficient_attention_backward",
+   "shapes": "[[2048, 6, 4, 32], [2048, 6, 4, 32], [2048, 12, 4, 32], [2048, 12, 4, 32], [2048, 4, 6, 12], [2048, 6, 4, 32], [], [], [], [], [2048, 4, 32], [], [], [], [], [], [], [], [], []]",
+   "count": 480,
+   "self_cuda_us": 0
+  }
+ ],
+ "peaks": {
+  "spec_fp32_tflops": 34.1,
+  "spec_dram_GBs": 912.0,
+  "measured_fp32_gemm_tflops": 24.867799227377283,
+  "measured_dram_GBs": 825.3254547886136
+ }
+}

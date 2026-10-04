@@ -1,0 +1,1334 @@
+{
+ "n_kernels_total": 7434385,
+ "phases": {
+  "update": {
+   "n_windows": 3,
+   "wall_s": 137.921255954,
+   "kernels": 3284165,
+   "kernels_in_graphs": 0,
+   "kernel_sum_s": 120.552491054,
+   "gpu_busy_union_s": 120.552491054,
+   "gpu_busy_frac": 0.8740675265762307,
+   "kernels_per_s_of_wall": 23811.884377672333,
+   "mean_kernel_us": 36.70719682293673,
+   "busiest_stream_gap_us": {
+    "n": 3284162,
+    "p50": 0.704,
+    "p90": 10.784,
+    "p99": 38.304,
+    "idle_frac_of_stream_span": 0.12553731194297593
+   },
+   "api_top": [
+    [
+     "cudaMemcpyAsync_v3020",
+     58669,
+     33.606236329
+    ],
+    [
+     "cuLaunchKernel",
+     943248,
+     12.562930786
+    ],
+    [
+     "cudaLaunchKernel_v7000",
+     392055,
+     5.089347988
+    ],
+    [
+     "cudaStreamSynchronize_v3020",
+     2909,
+     2.339041768
+    ],
+    [
+     "cudaMemsetAsync_v3020",
+     11857,
+     0.100411112
+    ],
+    [
+     "cuLaunchKernelEx",
+     10080,
+     0.087513699
+    ],
+    [
+     "cudaEventRecordWithFlags_v11010",
+     41760,
+     0.060357995
+    ],
+    [
+     "cudaStreamIsCapturing_v10000",
+     47604,
+     0.035667447
+    ],
+    [
+     "cuKernelGetFunction",
+     2928,
+     0.007449762
+    ],
+    [
+     "cudaEventQuery_v3020",
+     3422,
+     0.005238549
+    ]
+   ],
+   "memcpy": {
+    "H2D": {
+     "n": 42309,
+     "MB": 35825.082324,
+     "s": 1.422206146
+    },
+    "D2H": {
+     "n": 2360,
+     "MB": 9.267488,
+     "s": 0.003084876
+    },
+    "D2D": {
+     "n": 34514,
+     "MB": 5010.444188,
+     "s": 0.058598702
+    }
+   },
+   "by_class": {
+    "gemm": {
+     "n": 443886,
+     "s": 51.95366965,
+     "share_of_kernel_time": 0.4309630534862029
+    },
+    "triton_pointwise": {
+     "n": 1173318,
+     "s": 34.958443912,
+     "share_of_kernel_time": 0.28998524714301255
+    },
+    "triton_reduction": {
+     "n": 752286,
+     "s": 21.728347913,
+     "share_of_kernel_time": 0.1802397256417294
+    },
+    "other": {
+     "n": 139046,
+     "s": 7.943082709,
+     "share_of_kernel_time": 0.06588899689714411
+    },
+    "elementwise": {
+     "n": 571015,
+     "s": 2.174576283,
+     "share_of_kernel_time": 0.018038418484657655
+    },
+    "reduction": {
+     "n": 181003,
+     "s": 1.4193365,
+     "share_of_kernel_time": 0.011773597439510609
+    },
+    "copy_index": {
+     "n": 21331,
+     "s": 0.332929442,
+     "share_of_kernel_time": 0.002761696909696112
+    },
+    "optimizer": {
+     "n": 2280,
+     "s": 0.042104645,
+     "share_of_kernel_time": 0.0003492639980466247
+    }
+   },
+   "top_kernels": [
+    {
+     "name": "fmha_cutlassB_f32_aligned_64x64_k32_sm80",
+     "class": "gemm",
+     "n": 6312,
+     "total_s": 12.583375935,
+     "mean_us": 1993.563994771863,
+     "share_of_kernel_time": 0.10438088690646327
+    },
+    {
+     "name": "ampere_sgemm_128x64_tn",
+     "class": "gemm",
+     "n": 39021,
+     "total_s": 10.196141306,
+     "mean_us": 261.29882130135053,
+     "share_of_kernel_time": 0.08457843730025259
+    },
+    {
+     "name": "ampere_sgemm_128x128_nt",
+     "class": "gemm",
+     "n": 9468,
+     "total_s": 8.040193364,
+     "mean_us": 849.1965952682721,
+     "share_of_kernel_time": 0.06669454354450871
+    },
+    {
+     "name": "ampere_sgemm_128x64_nn",
+     "class": "gemm",
+     "n": 39450,
+     "total_s": 6.970262367,
+     "mean_us": 176.68599155893534,
+     "share_of_kernel_time": 0.05781931427595102
+    },
+    {
+     "name": "Kernel2",
+     "class": "other",
+     "n": 70782,
+     "total_s": 5.680852406,
+     "mean_us": 80.25843301969428,
+     "share_of_kernel_time": 0.0471234758927987
+    },
+    {
+     "name": "fmha_cutlassF_f32_aligned_64x64_rf_sm80",
+     "class": "gemm",
+     "n": 5784,
+     "total_s": 4.826265428,
+     "mean_us": 834.4165677731673,
+     "share_of_kernel_time": 0.04003455578398736
+    },
+    {
+     "name": "triton_per_fused_add_clamp_min_611...",
+     "class": "triton_reduction",
+     "n": 1578,
+     "total_s": 2.728107062,
+     "mean_us": 1728.8384423320658,
+     "share_of_kernel_time": 0.022630034752064793
+    },
+    {
+     "name": "triton_poi_fused_add_clone_cop_601...",
+     "class": "triton_pointwise",
+     "n": 1578,
+     "total_s": 2.518508263,
+     "mean_us": 1596.0128409378963,
+     "share_of_kernel_time": 0.02089138300652672
+    },
+    {
+     "name": "triton_red_fused__to_copy_add__562...",
+     "class": "triton_reduction",
+     "n": 1578,
+     "total_s": 2.254531457,
+     "mean_us": 1428.7271590621037,
+     "share_of_kernel_time": 0.018701657985566722
+    },
+    {
+     "name": "triton_poi_fused_add_clone_cop_595...",
+     "class": "triton_pointwise",
+     "n": 1578,
+     "total_s": 2.241496624,
+     "mean_us": 1420.4668086185043,
+     "share_of_kernel_time": 0.01859353219831807
+    },
+    {
+     "name": "vectorized_elementwise_kernel",
+     "class": "elementwise",
+     "n": 503398,
+     "total_s": 1.918101431,
+     "mean_us": 3.810308008772383,
+     "share_of_kernel_time": 0.015910923235429537
+    },
+    {
+     "name": "triton_poi_fused_add_clone_con_592...",
+     "class": "triton_pointwise",
+     "n": 1578,
+     "total_s": 1.678707152,
+     "mean_us": 1063.8194879594425,
+     "share_of_kernel_time": 0.013925113760179736
+    },
+    {
+     "name": "triton_poi_fused_add_select_ba_549...",
+     "class": "triton_pointwise",
+     "n": 3156,
+     "total_s": 1.535972256,
+     "mean_us": 486.68322433460077,
+     "share_of_kernel_time": 0.012741107567092746
+    },
+    {
+     "name": "kernel",
+     "class": "other",
+     "n": 52626,
+     "total_s": 1.5332697,
+     "mean_us": 29.135212632539048,
+     "share_of_kernel_time": 0.012718689482021494
+    },
+    {
+     "name": "ampere_sgemm_32x128_tn",
+     "class": "gemm",
+     "n": 72690,
+     "total_s": 1.435084383,
+     "mean_us": 19.742528312009906,
+     "share_of_kernel_time": 0.0119042283610479
+    },
+    {
+     "name": "triton_per_fused_add_native_la_310...",
+     "class": "triton_reduction",
+     "n": 4320,
+     "total_s": 1.347708678,
+     "mean_us": 311.9696013888889,
+     "share_of_kernel_time": 0.011179434503732573
+    },
+    {
+     "name": "ampere_sgemm_32x128_nn",
+     "class": "gemm",
+     "n": 86397,
+     "total_s": 1.285554024,
+     "mean_us": 14.87961415326921,
+     "share_of_kernel_time": 0.010663852839209701
+    },
+    {
+     "name": "triton_poi_fused_logsumexp_thr_546...",
+     "class": "triton_pointwise",
+     "n": 3156,
+     "total_s": 1.107301457,
+     "mean_us": 350.85597496831434,
+     "share_of_kernel_time": 0.009185222531021761
+    },
+    {
+     "name": "triton_poi_fused_relu_threshol_309...",
+     "class": "triton_pointwise",
+     "n": 2880,
+     "total_s": 1.011305592,
+     "mean_us": 351.147775,
+     "share_of_kernel_time": 0.008388923224713773
+    },
+    {
+     "name": "triton_per_fused_add_native_la_548...",
+     "class": "triton_reduction",
+     "n": 3156,
+     "total_s": 0.949664844,
+     "mean_us": 300.9077452471483,
+     "share_of_kernel_time": 0.00787760448330022
+    },
+    {
+     "name": "ampere_sgemm_64x32_sliced1x4_n_458...",
+     "class": "gemm",
+     "n": 17358,
+     "total_s": 0.915739037,
+     "mean_us": 52.75602241041595,
+     "share_of_kernel_time": 0.007596185105704751
+    },
+    {
+     "name": "triton_poi_fused_add_copy_358",
+     "class": "triton_pointwise",
+     "n": 2880,
+     "total_s": 0.860131776,
+     "mean_us": 298.65686666666664,
+     "share_of_kernel_time": 0.007134914994122474
+    },
+    {
+     "name": "ampere_sgemm_32x32_sliced1x4_n_461...",
+     "class": "gemm",
+     "n": 53652,
+     "total_s": 0.842472453,
+     "mean_us": 15.702535842093491,
+     "share_of_kernel_time": 0.006988428406864068
+    },
+    {
+     "name": "gemmk1_kernel",
+     "class": "gemm",
+     "n": 25248,
+     "total_s": 0.791785572,
+     "mean_us": 31.360328422053232,
+     "share_of_kernel_time": 0.006567973544780003
+    },
+    {
+     "name": "triton_poi_fused_div_mul_scatt_520...",
+     "class": "triton_pointwise",
+     "n": 1578,
+     "total_s": 0.769824209,
+     "mean_us": 487.8480411913815,
+     "share_of_kernel_time": 0.00638580092596483
+    }
+   ]
+  },
+  "eval": {
+   "n_windows": 1,
+   "wall_s": 37.783468438,
+   "kernels": 3352852,
+   "kernels_in_graphs": 3167038,
+   "kernel_sum_s": 9.581672452,
+   "gpu_busy_union_s": 7.580655913,
+   "gpu_busy_frac": 0.20063419866916984,
+   "kernels_per_s_of_wall": 88738.59755627763,
+   "mean_kernel_us": 2.8577677905257968,
+   "busiest_stream_gap_us": {
+    "n": 599850,
+    "p50": 0.064,
+    "p90": 0.096,
+    "p99": 2.368,
+    "idle_frac_of_stream_span": 0.9252046221512893
+   },
+   "api_top": [
+    [
+     "cudaGraphLaunch_v10000",
+     5516,
+     7.230874174
+    ],
+    [
+     "cudaEventSynchronize_v3020",
+     6594,
+     0.980409519
+    ],
+    [
+     "cudaLaunchKernel_v7000",
+     185814,
+     0.626671167
+    ],
+    [
+     "cudaMemcpyAsync_v3020",
+     42077,
+     0.449665711
+    ],
+    [
+     "cudaEventCreateWithFlags_v3020",
+     12134,
+     0.103656543
+    ],
+    [
+     "cudaEventDestroy_v3020",
+     12134,
+     0.102646422
+    ],
+    [
+     "cudaEventRecordWithFlags_v11010",
+     13236,
+     0.058936154
+    ],
+    [
+     "cudaStreamSynchronize_v3020",
+     8486,
+     0.057708084
+    ],
+    [
+     "cudaStreamWaitEvent_v3020",
+     11032,
+     0.024017447
+    ],
+    [
+     "cudaStreamIsCapturing_v10000",
+     29885,
+     0.018071738
+    ],
+    [
+     "cudaMemsetAsync_v3020",
+     205,
+     0.001317127
+    ]
+   ],
+   "memcpy": {
+    "D2H": {
+     "n": 8693,
+     "MB": 211.740542,
+     "s": 0.018313089
+    },
+    "D2D": {
+     "n": 66717,
+     "MB": 908.861591,
+     "s": 0.09382101
+    },
+    "H2D": {
+     "n": 5279,
+     "MB": 713.680982,
+     "s": 0.031935486
+    }
+   },
+   "by_class": {
+    "gemm": {
+     "n": 707204,
+     "s": 4.052503657,
+     "share_of_kernel_time": 0.42294324683934625
+    },
+    "triton_pointwise": {
+     "n": 1965516,
+     "s": 3.659075208,
+     "share_of_kernel_time": 0.3818827272932122
+    },
+    "elementwise": {
+     "n": 232684,
+     "s": 0.430648871,
+     "share_of_kernel_time": 0.044945062895581436
+    },
+    "triton_reduction": {
+     "n": 154448,
+     "s": 0.427978014,
+     "share_of_kernel_time": 0.0446663164644777
+    },
+    "reduction": {
+     "n": 115624,
+     "s": 0.368959157,
+     "share_of_kernel_time": 0.03850675952954189
+    },
+    "copy_index": {
+     "n": 53340,
+     "s": 0.361793055,
+     "share_of_kernel_time": 0.03775886274681434
+    },
+    "other": {
+     "n": 124036,
+     "s": 0.28071449,
+     "share_of_kernel_time": 0.029297024231026175
+    }
+   },
+   "top_kernels": [
+    {
+     "name": "ampere_sgemm_32x32_sliced1x4_t_14...",
+     "class": "gemm",
+     "n": 250362,
+     "total_s": 1.55497125,
+     "mean_us": 6.210891628921322,
+     "share_of_kernel_time": 0.16228599524662607
+    },
+    {
+     "name": "gemmSN_NN_kernel",
+     "class": "gemm",
+     "n": 82146,
+     "total_s": 0.458938181,
+     "mean_us": 5.586859749713924,
+     "share_of_kernel_time": 0.04789750258100348
+    },
+    {
+     "name": "gemmSN_TN_kernel",
+     "class": "gemm",
+     "n": 102462,
+     "total_s": 0.420080981,
+     "mean_us": 4.099870986316879,
+     "share_of_kernel_time": 0.04384213540010082
+    },
+    {
+     "name": "ampere_sgemm_128x32_tn",
+     "class": "gemm",
+     "n": 118934,
+     "total_s": 0.400713402,
+     "mean_us": 3.3692081490574606,
+     "share_of_kernel_time": 0.04182082032206792
+    },
+    {
+     "name": "ampere_sgemm_32x128_tn",
+     "class": "gemm",
+     "n": 70248,
+     "total_s": 0.330823117,
+     "mean_us": 4.709359939072999,
+     "share_of_kernel_time": 0.03452665687094602
+    },
+    {
+     "name": "fmha_cutlassF_f32_aligned_64x64_rf_sm80",
+     "class": "gemm",
+     "n": 16644,
+     "total_s": 0.324585657,
+     "mean_us": 19.501661679884645,
+     "share_of_kernel_time": 0.03387567865902665
+    },
+    {
+     "name": "gatherTopK",
+     "class": "copy_index",
+     "n": 38804,
+     "total_s": 0.323628442,
+     "mean_us": 8.340079424801566,
+     "share_of_kernel_time": 0.033775778040967
+    },
+    {
+     "name": "kernel",
+     "class": "other",
+     "n": 108194,
+     "total_s": 0.242623209,
+     "mean_us": 2.2424830304822816,
+     "share_of_kernel_time": 0.025321592886360544
+    },
+    {
+     "name": "elementwise_kernel",
+     "class": "elementwise",
+     "n": 105788,
+     "total_s": 0.205224382,
+     "mean_us": 1.9399589934586154,
+     "share_of_kernel_time": 0.02141843013608372
+    },
+    {
+     "name": "bitonicSortKVInPlace",
+     "class": "reduction",
+     "n": 38804,
+     "total_s": 0.188898001,
+     "mean_us": 4.868003324399547,
+     "share_of_kernel_time": 0.01971451246599136
+    },
+    {
+     "name": "ampere_sgemm_64x32_sliced1x4_t_36...",
+     "class": "gemm",
+     "n": 24878,
+     "total_s": 0.18887638,
+     "mean_us": 7.592104670793472,
+     "share_of_kernel_time": 0.019712255970571763
+    },
+    {
+     "name": "ampere_sgemm_32x32_sliced1x4_n_46...",
+     "class": "gemm",
+     "n": 17538,
+     "total_s": 0.166529589,
+     "mean_us": 9.495358022579541,
+     "share_of_kernel_time": 0.017380012710123478
+    },
+    {
+     "name": "triton_poi_fused_ones_like_19",
+     "class": "triton_pointwise",
+     "n": 126868,
+     "total_s": 0.145774458,
+     "mean_us": 1.1490246397830817,
+     "share_of_kernel_time": 0.01521388449983721
+    },
+    {
+     "name": "vectorized_elementwise_kernel",
+     "class": "elementwise",
+     "n": 94164,
+     "total_s": 0.136259973,
+     "mean_us": 1.4470495412259463,
+     "share_of_kernel_time": 0.014220896579652774
+    },
+    {
+     "name": "ampere_sgemm_128x64_tn",
+     "class": "gemm",
+     "n": 3664,
+     "total_s": 0.135605628,
+     "mean_us": 37.01026965065502,
+     "share_of_kernel_time": 0.014152605265868255
+    },
+    {
+     "name": "splitKreduce_kernel",
+     "class": "reduction",
+     "n": 50008,
+     "total_s": 0.106886954,
+     "mean_us": 2.1373970964645657,
+     "share_of_kernel_time": 0.011155354614286496
+    },
+    {
+     "name": "triton_red_fused__to_copy_add__747...",
+     "class": "triton_reduction",
+     "n": 4606,
+     "total_s": 0.048620267,
+     "mean_us": 10.555854754667823,
+     "share_of_kernel_time": 0.005074298588640588
+    },
+    {
+     "name": "ampere_sgemm_128x32_nn",
+     "class": "gemm",
+     "n": 11092,
+     "total_s": 0.047578463,
+     "mean_us": 4.289439505950234,
+     "share_of_kernel_time": 0.0049655697623089655
+    },
+    {
+     "name": "index_elementwise_kernel",
+     "class": "elementwise",
+     "n": 14328,
+     "total_s": 0.044250389,
+     "mean_us": 3.0883856085985486,
+     "share_of_kernel_time": 0.0046182322785166315
+    },
+    {
+     "name": "triton_poi_fused_zeros_22",
+     "class": "triton_pointwise",
+     "n": 38612,
+     "total_s": 0.043414742,
+     "mean_us": 1.1243846990572879,
+     "share_of_kernel_time": 0.004531019215850774
+    },
+    {
+     "name": "reduce_kernel",
+     "class": "reduction",
+     "n": 10106,
+     "total_s": 0.041360089,
+     "mean_us": 4.092627053235701,
+     "share_of_kernel_time": 0.004316583478218026
+    },
+    {
+     "name": "triton_per_fused_add_native_la_114...",
+     "class": "triton_reduction",
+     "n": 14728,
+     "total_s": 0.034819238,
+     "mean_us": 2.364152498642042,
+     "share_of_kernel_time": 0.0036339415873824945
+    },
+    {
+     "name": "CatArrayBatchedCopy_alignedK_contig",
+     "class": "copy_index",
+     "n": 13096,
+     "total_s": 0.032999679,
+     "mean_us": 2.5198288790470373,
+     "share_of_kernel_time": 0.0034440416498595625
+    },
+    {
+     "name": "transform_bias_rescale_qkv_kernel",
+     "class": "other",
+     "n": 11056,
+     "total_s": 0.028870555,
+     "mean_us": 2.611302007959479,
+     "share_of_kernel_time": 0.00301310185091683
+    },
+    {
+     "name": "triton_poi_fused_add_copy_241",
+     "class": "triton_pointwise",
+     "n": 10122,
+     "total_s": 0.028310727,
+     "mean_us": 2.796949911084766,
+     "share_of_kernel_time": 0.002954674890195255
+    }
+   ]
+  },
+  "play": {
+   "n_windows": 4,
+   "wall_s": 26.026225948,
+   "kernels": 553076,
+   "kernels_in_graphs": 449660,
+   "kernel_sum_s": 3.710918105,
+   "gpu_busy_union_s": 3.705970421,
+   "gpu_busy_frac": 0.1423936927468651,
+   "kernels_per_s_of_wall": 21250.71845241939,
+   "mean_kernel_us": 6.709598870679617,
+   "busiest_stream_gap_us": {
+    "n": 412807,
+    "p50": 0.064,
+    "p90": 9.664,
+    "p99": 28.096,
+    "idle_frac_of_stream_span": 0.8501681488070929
+   },
+   "api_top": [
+    [
+     "cudaEventSynchronize_v3020",
+     1551,
+     2.354960995
+    ],
+    [
+     "cudaGraphLaunch_v10000",
+     782,
+     1.661689473
+    ],
+    [
+     "cudaLaunchKernel_v7000",
+     103417,
+     0.365929463
+    ],
+    [
+     "cudaMemcpyAsync_v3020",
+     14613,
+     0.206140852
+    ],
+    [
+     "cudaStreamSynchronize_v3020",
+     5864,
+     0.039449124
+    ],
+    [
+     "cudaEventRecordWithFlags_v11010",
+     3128,
+     0.015805973
+    ],
+    [
+     "cudaStreamWaitEvent_v3020",
+     1564,
+     0.008291946
+    ],
+    [
+     "cudaEventCreateWithFlags_v3020",
+     2346,
+     0.007210805
+    ],
+    [
+     "cudaStreamIsCapturing_v10000",
+     5526,
+     0.005646385
+    ],
+    [
+     "cudaEventDestroy_v3020",
+     2346,
+     0.004828917
+    ],
+    [
+     "cudaMemsetAsync_v3020",
+     116,
+     0.000787729
+    ]
+   ],
+   "memcpy": {
+    "D2H": {
+     "n": 7222,
+     "MB": 133.737232,
+     "s": 0.012735122
+    },
+    "D2D": {
+     "n": 10326,
+     "MB": 2659.53504,
+     "s": 0.021037152
+    },
+    "H2D": {
+     "n": 2539,
+     "MB": 2205.387934,
+     "s": 0.089004341
+    }
+   },
+   "by_class": {
+    "gemm": {
+     "n": 100928,
+     "s": 1.84498699,
+     "share_of_kernel_time": 0.4971780399880315
+    },
+    "triton_pointwise": {
+     "n": 279946,
+     "s": 1.042004114,
+     "share_of_kernel_time": 0.28079415511650047
+    },
+    "copy_index": {
+     "n": 9039,
+     "s": 0.262159038,
+     "share_of_kernel_time": 0.07064533104268007
+    },
+    "triton_reduction": {
+     "n": 21896,
+     "s": 0.213225055,
+     "share_of_kernel_time": 0.05745884144215034
+    },
+    "elementwise": {
+     "n": 102856,
+     "s": 0.177665302,
+     "share_of_kernel_time": 0.04787637370941119
+    },
+    "other": {
+     "n": 18450,
+     "s": 0.094340503,
+     "share_of_kernel_time": 0.025422415782468472
+    },
+    "reduction": {
+     "n": 19961,
+     "s": 0.076537103,
+     "share_of_kernel_time": 0.02062484291875797
+    }
+   },
+   "top_kernels": [
+    {
+     "name": "ampere_sgemm_128x64_tn",
+     "class": "gemm",
+     "n": 7794,
+     "total_s": 0.659785725,
+     "mean_us": 84.65303117782909,
+     "share_of_kernel_time": 0.17779581934481953
+    },
+    {
+     "name": "ampere_sgemm_32x128_tn",
+     "class": "gemm",
+     "n": 39203,
+     "total_s": 0.405857012,
+     "mean_us": 10.352702905389894,
+     "share_of_kernel_time": 0.10936835589369602
+    },
+    {
+     "name": "fmha_cutlassF_f32_aligned_64x64_rf_sm80",
+     "class": "gemm",
+     "n": 2398,
+     "total_s": 0.308767355,
+     "mean_us": 128.76036488740618,
+     "share_of_kernel_time": 0.08320511158248803
+    },
+    {
+     "name": "gatherTopK",
+     "class": "copy_index",
+     "n": 5577,
+     "total_s": 0.244751556,
+     "mean_us": 43.885880580957505,
+     "share_of_kernel_time": 0.06595444821868415
+    },
+    {
+     "name": "ampere_sgemm_32x32_sliced1x4_t_14...",
+     "class": "gemm",
+     "n": 17933,
+     "total_s": 0.125338023,
+     "mean_us": 6.98923900072492,
+     "share_of_kernel_time": 0.033775475355040205
+    },
+    {
+     "name": "ampere_sgemm_32x32_sliced1x4_n_46...",
+     "class": "gemm",
+     "n": 11004,
+     "total_s": 0.10066353,
+     "mean_us": 9.147903489640132,
+     "share_of_kernel_time": 0.02712631406884685
+    },
+    {
+     "name": "gemmSN_TN_kernel",
+     "class": "gemm",
+     "n": 4889,
+     "total_s": 0.096045114,
+     "mean_us": 19.645145019431375,
+     "share_of_kernel_time": 0.025881765989551525
+    },
+    {
+     "name": "kernel",
+     "class": "other",
+     "n": 16774,
+     "total_s": 0.080523347,
+     "mean_us": 4.800485692142602,
+     "share_of_kernel_time": 0.021699036389810064
+    },
+    {
+     "name": "vectorized_elementwise_kernel",
+     "class": "elementwise",
+     "n": 55823,
+     "total_s": 0.073979962,
+     "mean_us": 1.3252595166866703,
+     "share_of_kernel_time": 0.019935757110975103
+    },
+    {
+     "name": "triton_per_fused_add_native_la_115...",
+     "class": "triton_reduction",
+     "n": 2331,
+     "total_s": 0.068498692,
+     "mean_us": 29.385968253968255,
+     "share_of_kernel_time": 0.01845869137012389
+    },
+    {
+     "name": "triton_poi_fused_relu_252",
+     "class": "triton_pointwise",
+     "n": 1554,
+     "total_s": 0.062189272,
+     "mean_us": 40.018836550836554,
+     "share_of_kernel_time": 0.01675845983133061
+    },
+    {
+     "name": "elementwise_kernel",
+     "class": "elementwise",
+     "n": 31513,
+     "total_s": 0.059006217,
+     "mean_us": 1.8724404848792562,
+     "share_of_kernel_time": 0.015900705790434035
+    },
+    {
+     "name": "triton_poi_fused_add_copy_243",
+     "class": "triton_pointwise",
+     "n": 1554,
+     "total_s": 0.058594863,
+     "mean_us": 37.70583204633205,
+     "share_of_kernel_time": 0.015789856133189985
+    },
+    {
+     "name": "ampere_sgemm_64x32_sliced1x4_t_36...",
+     "class": "gemm",
+     "n": 5536,
+     "total_s": 0.054417555,
+     "mean_us": 9.82976065751445,
+     "share_of_kernel_time": 0.014664175673044124
+    },
+    {
+     "name": "triton_poi_fused__scaled_dot_p_113...",
+     "class": "triton_pointwise",
+     "n": 777,
+     "total_s": 0.049205829,
+     "mean_us": 63.32796525096525,
+     "share_of_kernel_time": 0.013259745326554438
+    },
+    {
+     "name": "triton_red_fused__to_copy_add__106...",
+     "class": "triton_reduction",
+     "n": 777,
+     "total_s": 0.047791255,
+     "mean_us": 61.5074066924067,
+     "share_of_kernel_time": 0.012878552866905695
+    },
+    {
+     "name": "triton_poi_fused_clone_235",
+     "class": "triton_pointwise",
+     "n": 777,
+     "total_s": 0.042194628,
+     "mean_us": 54.30454054054054,
+     "share_of_kernel_time": 0.011370401287796676
+    },
+    {
+     "name": "triton_poi_fused_add_copy_241",
+     "class": "triton_pointwise",
+     "n": 787,
+     "total_s": 0.037797424,
+     "mean_us": 48.027222363405336,
+     "share_of_kernel_time": 0.010185464332687019
+    },
+    {
+     "name": "triton_poi_fused_add_copy_240",
+     "class": "triton_pointwise",
+     "n": 782,
+     "total_s": 0.035773099,
+     "mean_us": 45.74565089514066,
+     "share_of_kernel_time": 0.009639959165846371
+    },
+    {
+     "name": "triton_poi_fused_add_copy_242",
+     "class": "triton_pointwise",
+     "n": 782,
+     "total_s": 0.033376103,
+     "mean_us": 42.68043861892583,
+     "share_of_kernel_time": 0.00899402844676897
+    },
+    {
+     "name": "gemmSN_NN_kernel",
+     "class": "gemm",
+     "n": 3284,
+     "total_s": 0.030026174,
+     "mean_us": 9.143171132764921,
+     "share_of_kernel_time": 0.008091306019268782
+    },
+    {
+     "name": "triton_poi_fused_add_copy_244",
+     "class": "triton_pointwise",
+     "n": 777,
+     "total_s": 0.029899235,
+     "mean_us": 38.480353925353924,
+     "share_of_kernel_time": 0.008057099120488406
+    },
+    {
+     "name": "bitonicSortKVInPlace",
+     "class": "reduction",
+     "n": 5577,
+     "total_s": 0.029841958,
+     "mean_us": 5.350897973821051,
+     "share_of_kernel_time": 0.008041664395609183
+    },
+    {
+     "name": "splitKreduce_kernel",
+     "class": "reduction",
+     "n": 7260,
+     "total_s": 0.026815573,
+     "mean_us": 3.693605096418733,
+     "share_of_kernel_time": 0.0072261290174712705
+    },
+    {
+     "name": "ampere_sgemm_64x64_tn",
+     "class": "gemm",
+     "n": 773,
+     "total_s": 0.024231922,
+     "mean_us": 31.347893919793016,
+     "share_of_kernel_time": 0.006529899424983403
+    }
+   ]
+  },
+  "c_prepare": {
+   "n": 1150,
+   "total_s": 9.834843847,
+   "mean_ms": 8.552038127826087
+  },
+  "c_core": {
+   "n": 1150,
+   "total_s": 22.90562308,
+   "mean_ms": 19.91793311304348
+  },
+  "c_post": {
+   "n": 1151,
+   "total_s": 1.464657357,
+   "mean_ms": 1.272508563857515
+  },
+  "t2_flush": {
+   "n": 1150,
+   "total_s": 3.959301761,
+   "mean_ms": 3.442871096521739
+  },
+  "c_prepare_gpu": {
+   "n_windows": 1150,
+   "wall_s": 9.834843847,
+   "kernels": 661250,
+   "kernels_in_graphs": 661250,
+   "kernel_sum_s": 5.204888485,
+   "gpu_busy_union_s": 5.197567058,
+   "gpu_busy_frac": 0.5284849600927274,
+   "kernels_per_s_of_wall": 67235.43457191811,
+   "mean_kernel_us": 7.871286933837429,
+   "busiest_stream_gap_us": {
+    "n": 560430,
+    "p50": 0.064,
+    "p90": 0.096,
+    "p99": 1.472,
+    "idle_frac_of_stream_span": 0.01695447829614394
+   },
+   "api_top": [
+    [
+     "cudaEventSynchronize_v3020",
+     2300,
+     3.521278927
+    ],
+    [
+     "cudaGraphLaunch_v10000",
+     1150,
+     2.425846003
+    ],
+    [
+     "cudaMemcpyAsync_v3020",
+     11500,
+     0.229516358
+    ],
+    [
+     "cudaEventRecordWithFlags_v11010",
+     4600,
+     0.02313574
+    ],
+    [
+     "cudaStreamWaitEvent_v3020",
+     2300,
+     0.012365773
+    ],
+    [
+     "cudaEventCreateWithFlags_v3020",
+     3450,
+     0.01047746
+    ],
+    [
+     "cudaStreamIsCapturing_v10000",
+     8050,
+     0.008319088
+    ],
+    [
+     "cudaEventDestroy_v3020",
+     3450,
+     0.006618427
+    ]
+   ],
+   "memcpy": {
+    "H2D": {
+     "n": 2300,
+     "MB": 3254.592,
+     "s": 0.129720645
+    },
+    "D2D": {
+     "n": 13800,
+     "MB": 3876.3648,
+     "s": 0.029251449
+    },
+    "D2H": {
+     "n": 3450,
+     "MB": 16.4864,
+     "s": 0.004348681
+    }
+   },
+   "by_class": {
+    "gemm": {
+     "n": 146050,
+     "s": 2.707553964,
+     "share_of_kernel_time": 0.520194423339312
+    },
+    "triton_pointwise": {
+     "n": 411700,
+     "s": 1.543470832,
+     "share_of_kernel_time": 0.29654253620382803
+    },
+    "copy_index": {
+     "n": 10350,
+     "s": 0.379012382,
+     "share_of_kernel_time": 0.0728185403188326
+    },
+    "triton_reduction": {
+     "n": 32200,
+     "s": 0.31633313,
+     "share_of_kernel_time": 0.060776158972789214
+    },
+    "other": {
+     "n": 26450,
+     "s": 0.137860535,
+     "share_of_kernel_time": 0.026486741338897293
+    },
+    "reduction": {
+     "n": 21850,
+     "s": 0.090450757,
+     "share_of_kernel_time": 0.01737803936831127
+    },
+    "elementwise": {
+     "n": 12650,
+     "s": 0.030206885,
+     "share_of_kernel_time": 0.0058035604580296786
+    }
+   },
+   "top_kernels": [
+    {
+     "name": "ampere_sgemm_128x64_tn",
+     "class": "gemm",
+     "n": 11500,
+     "total_s": 0.973999132,
+     "mean_us": 84.69557669565216,
+     "share_of_kernel_time": 0.18713160422302497
+    },
+    {
+     "name": "ampere_sgemm_32x128_tn",
+     "class": "gemm",
+     "n": 57500,
+     "total_s": 0.596153826,
+     "mean_us": 10.367892626086956,
+     "share_of_kernel_time": 0.11453729080230236
+    },
+    {
+     "name": "fmha_cutlassF_f32_aligned_64x64_rf_sm80",
+     "class": "gemm",
+     "n": 3450,
+     "total_s": 0.454745652,
+     "mean_us": 131.81033391304348,
+     "share_of_kernel_time": 0.08736895195940014
+    },
+    {
+     "name": "gatherTopK",
+     "class": "copy_index",
+     "n": 8050,
+     "total_s": 0.362038053,
+     "mean_us": 44.97367118012422,
+     "share_of_kernel_time": 0.06955731213903231
+    },
+    {
+     "name": "ampere_sgemm_32x32_sliced1x4_t_14...",
+     "class": "gemm",
+     "n": 25300,
+     "total_s": 0.17810473,
+     "mean_us": 7.039712648221343,
+     "share_of_kernel_time": 0.03421874080746996
+    },
+    {
+     "name": "ampere_sgemm_32x32_sliced1x4_n_46...",
+     "class": "gemm",
+     "n": 16100,
+     "total_s": 0.147468468,
+     "mean_us": 9.159532173913043,
+     "share_of_kernel_time": 0.028332685402384754
+    },
+    {
+     "name": "gemmSN_TN_kernel",
+     "class": "gemm",
+     "n": 6900,
+     "total_s": 0.140998897,
+     "mean_us": 20.434622753623188,
+     "share_of_kernel_time": 0.027089705650052944
+    },
+    {
+     "name": "kernel",
+     "class": "other",
+     "n": 24150,
+     "total_s": 0.117812886,
+     "mean_us": 4.878380372670807,
+     "share_of_kernel_time": 0.022635045177149458
+    },
+    {
+     "name": "triton_per_fused_add_native_la_115...",
+     "class": "triton_reduction",
+     "n": 3450,
+     "total_s": 0.101761108,
+     "mean_us": 29.495973333333332,
+     "share_of_kernel_time": 0.01955106402246003
+    },
+    {
+     "name": "triton_poi_fused_relu_252",
+     "class": "triton_pointwise",
+     "n": 2300,
+     "total_s": 0.092402793,
+     "mean_us": 40.17512739130435,
+     "share_of_kernel_time": 0.01775307833516437
+    },
+    {
+     "name": "triton_poi_fused_add_copy_243",
+     "class": "triton_pointwise",
+     "n": 2300,
+     "total_s": 0.087078974,
+     "mean_us": 37.86042347826087,
+     "share_of_kernel_time": 0.016730228563196586
+    },
+    {
+     "name": "ampere_sgemm_64x32_sliced1x4_t_36...",
+     "class": "gemm",
+     "n": 8050,
+     "total_s": 0.079169405,
+     "mean_us": 9.834708695652175,
+     "share_of_kernel_time": 0.015210586207208625
+    },
+    {
+     "name": "triton_poi_fused__scaled_dot_p_113...",
+     "class": "triton_pointwise",
+     "n": 1150,
+     "total_s": 0.073117996,
+     "mean_us": 63.58086608695652,
+     "share_of_kernel_time": 0.014047946696786915
+    },
+    {
+     "name": "triton_red_fused__to_copy_add__106...",
+     "class": "triton_reduction",
+     "n": 1150,
+     "total_s": 0.071061177,
+     "mean_us": 61.792327826086954,
+     "share_of_kernel_time": 0.013652776078640617
+    },
+    {
+     "name": "triton_poi_fused_clone_235",
+     "class": "triton_pointwise",
+     "n": 1150,
+     "total_s": 0.062689589,
+     "mean_us": 54.51268608695652,
+     "share_of_kernel_time": 0.012044367363617014
+    },
+    {
+     "name": "triton_poi_fused_add_copy_241",
+     "class": "triton_pointwise",
+     "n": 1150,
+     "total_s": 0.056182404,
+     "mean_us": 48.85426434782609,
+     "share_of_kernel_time": 0.010794160943488494
+    },
+    {
+     "name": "triton_poi_fused_add_copy_240",
+     "class": "triton_pointwise",
+     "n": 1150,
+     "total_s": 0.053194885,
+     "mean_us": 46.25642173913043,
+     "share_of_kernel_time": 0.010220177656697672
+    },
+    {
+     "name": "triton_poi_fused_add_copy_242",
+     "class": "triton_pointwise",
+     "n": 1150,
+     "total_s": 0.049588729,
+     "mean_us": 43.12063391304348,
+     "share_of_kernel_time": 0.009527337452648613
+    },
+    {
+     "name": "triton_poi_fused_add_copy_244",
+     "class": "triton_pointwise",
+     "n": 1150,
+     "total_s": 0.044438814,
+     "mean_us": 38.64244695652174,
+     "share_of_kernel_time": 0.008537899347520795
+    },
+    {
+     "name": "gemmSN_NN_kernel",
+     "class": "gemm",
+     "n": 4600,
+     "total_s": 0.043324205,
+     "mean_us": 9.418305434782608,
+     "share_of_kernel_time": 0.008323752780651554
+    },
+    {
+     "name": "bitonicSortKVInPlace",
+     "class": "reduction",
+     "n": 8050,
+     "total_s": 0.043305331,
+     "mean_us": 5.379544223602485,
+     "share_of_kernel_time": 0.00832012657423918
+    },
+    {
+     "name": "splitKreduce_kernel",
+     "class": "reduction",
+     "n": 10350,
+     "total_s": 0.039098465,
+     "mean_us": 3.777629468599034,
+     "share_of_kernel_time": 0.00751187371500429
+    },
+    {
+     "name": "ampere_sgemm_64x64_tn",
+     "class": "gemm",
+     "n": 1150,
+     "total_s": 0.036082411,
+     "mean_us": 31.37600956521739,
+     "share_of_kernel_time": 0.0069324080821301206
+    },
+    {
+     "name": "triton_poi_fused_stack_220",
+     "class": "triton_pointwise",
+     "n": 1150,
+     "total_s": 0.035697265,
+     "mean_us": 31.0411,
+     "share_of_kernel_time": 0.006858411107726163
+    },
+    {
+     "name": "triton_per_fused_add_native_la_114...",
+     "class": "triton_reduction",
+     "n": 1150,
+     "total_s": 0.033034983,
+     "mean_us": 28.726072173913042,
+     "share_of_kernel_time": 0.006346914654406856
+    }
+   ]
+  }
+ }
+}

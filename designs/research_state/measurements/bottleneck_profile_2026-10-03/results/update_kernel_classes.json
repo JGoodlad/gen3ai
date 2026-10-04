@@ -1,0 +1,42 @@
+{
+ "aten_elementwise": {
+  "n_per_update": 176671.0,
+  "s_per_update": 0.6689421996666667,
+  "share": 0.017603425011709885
+ },
+ "other": {
+  "n_per_update": 16342.0,
+  "s_per_update": 0.3879131356666667,
+  "share": 0.010208056537871426
+ },
+ "aten_reduce": {
+  "n_per_update": 51278.0,
+  "s_per_update": 0.402929372,
+  "share": 0.010603213534071794
+ },
+ "gemm": {
+  "n_per_update": 174604.0,
+  "s_per_update": 13.198861615333334,
+  "share": 0.3473322071790862
+ },
+ "attention": {
+  "n_per_update": 3848.0,
+  "s_per_update": 5.4856807100000005,
+  "share": 0.14435741842088537
+ },
+ "triton_poi": {
+  "n_per_update": 377280.0,
+  "s_per_update": 11.013925783666666,
+  "share": 0.28983493149920253
+ },
+ "triton_red": {
+  "n_per_update": 237120.0,
+  "s_per_update": 6.828382656666666,
+  "share": 0.1796910437221467
+ },
+ "optimizer": {
+  "n_per_update": 760.0,
+  "s_per_update": 0.014049008666666666,
+  "share": 0.0003697040950260929
+ }
+}
