@@ -499,8 +499,9 @@ hourly LLM check caught them. Three layers now stand, cheapest first:
    only that job (exit 86). Say so in every brief that runs one. The owner set the user manager's
    `DefaultOOMPolicy=continue` the same day (`~/.config/systemd/user.conf.d/oom.conf`), so a scope
    now survives an OOM kill of one child — but a global OOM still kills whatever the kernel picks.
-2. **The 15-minute mechanical watchdog** — `python3 /home/goodlad/dev/gen3ai/scripts/ops/idle_waiter_watchdog.py`
-   on this session's cron (`*/15`). Silent + exit 0 when all is well; one line per flag (pid, age,
+2. **RETIRED as a cron (owner, 2026-10-04: *"more of a problem than a helper"*) — do NOT schedule it.** The script
+   stays as an on-demand diagnostic; what it checks, when run by hand: `python3 /home/goodlad/dev/gen3ai/scripts/ops/idle_waiter_watchdog.py`
+   (formerly on this session's `*/15` cron). Silent + exit 0 when all is well; one line per flag (pid, age,
    Claude session pid + cwd, command, reason) + exit 1 otherwise. It flags a lock SELF-DEADLOCK on
    the first run and an IDLE-WAITER (a >10-min poll loop / flock / lock wait under a Claude session
    whose subtree CPU and wait targets have not moved since the last run), and a DUPLICATE-WAITER
@@ -519,8 +520,8 @@ hourly LLM check caught them. Three layers now stand, cheapest first:
    **Every finding gets a CLASS fix** (a hook, a helper, a gate), not just the instance killed.
 
 **Crons are session-only**: a `CronCreate` job dies with the session and expires after 7 days.
-After any orchestrator restart or handoff, RE-CREATE both the :07 hourly check and the */15
-watchdog cron — nothing else will notice they are gone.
+After any orchestrator restart or handoff, RE-CREATE the :07 hourly check — nothing else will
+notice it is gone. (The */15 watchdog cron is retired, layer 2.)
 
 ### 7.x — 2026-09-09 · THE STALLS ARE FIRST-BYTE HANGS, AND THE 09-06 FIX NEVER COVERED THAT PATH (measured)
 
