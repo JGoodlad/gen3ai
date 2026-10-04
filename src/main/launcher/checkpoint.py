@@ -250,7 +250,7 @@ def _resolve_fresh_run_dir(args: list, timestamp: str) -> str:
     """Run dir for a fresh (no --model) launcher run — ALWAYS an absolute path, ALWAYS checked.
 
     Honour a user-supplied ``--run-dir`` (made absolute) — the folder the run should write into;
-    only mint ``<archive>/run_<timestamp>`` when none was given, where ``<archive>`` is
+    only mint ``<archive>/<era>_run_<timestamp>`` (``utils.era``) when none was given, where ``<archive>`` is
     ``utils.paths.run_archive_dir()`` (``$GEN3AI_MODELS_DIR`` or the MAIN checkout's ``models/``) —
     never a cwd-relative ``models/``, which from a worktree is deleted silently with it
     (2026-09-23, eight runs). Without the ``--run-dir`` branch the launcher always overwrote the
@@ -258,6 +258,7 @@ def _resolve_fresh_run_dir(args: list, timestamp: str) -> str:
     wrong place. Every branch ends in ``checked_run_dir``: an explicit dir inside a linked
     worktree's own ``models/`` is a typed ``RunArchiveError`` (FATAL_CONFIG), and no archive is the
     same refusal (naming ``$GEN3AI_MODELS_DIR``)."""
+    from utils.era import prefixed
     from utils.paths import checked_run_dir, new_run_dir
     user_run_dir = _peek_arg(args, "--run-dir")
     if user_run_dir:
@@ -265,8 +266,11 @@ def _resolve_fresh_run_dir(args: list, timestamp: str) -> str:
     run_name = _peek_arg(args, "--run-name") or _peek_arg(args, "--run_name")
     if run_name:
         # A memorable name → <archive>/<name>/ (basename-sanitized so it can't path-escape the archive).
-        return new_run_dir(os.path.basename(run_name.rstrip("/")) or f"run_{timestamp}")
-    return new_run_dir(f"run_{timestamp}")
+        leaf = os.path.basename(run_name.rstrip("/"))
+        # accepted AS TYPED — this resolver is pure and called more than once per launch, so the
+        # no-prefix warning (utils.era.run_name_warning) is the TRAINER's, printed once at start.
+        return new_run_dir(leaf or prefixed(f"run_{timestamp}"))
+    return new_run_dir(prefixed(f"run_{timestamp}"))
 
 
 def resolve_launch_run_dir(args: list, timestamp: str) -> str:

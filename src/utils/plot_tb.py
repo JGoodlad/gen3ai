@@ -70,9 +70,9 @@ def find_tb_dir_for_run(run_dir: str) -> str | None:
 
     # --- legacy fallback: old top-level tensorboard/ tree, matched by run_ timestamp ---
     run_name = os.path.basename(run_dir.rstrip("/\\"))
-    if not run_name.startswith("run_"):
+    if "run_" not in run_name:
         return None
-    timestamp = run_name[len("run_"):]  # e.g. "20260521_091605"
+    timestamp = run_name.split("run_", 1)[1]   # also the era-prefixed default `rb_run_<ts>`  # e.g. "20260521_091605"
 
     try:
         repo_root = get_main_repo_root()

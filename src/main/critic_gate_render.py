@@ -81,6 +81,9 @@ def render_markdown(doc: Dict[str, Any]) -> str:
                    f"{lad['comparability']}")
         out.append("")
         out.append(f"Fit size: {lad['fit_size_note']}")
+        if lad.get("era_warning"):
+            out.append("")
+            out.append(f"**{lad['era_warning']}**")
     else:
         out.append("_not read_")
     out.append("")
@@ -248,6 +251,8 @@ def render_text(doc: Dict[str, Any]) -> str:
                    f"[{lad['delta_ci95'][0]:+.0f}, {lad['delta_ci95'][1]:+.0f}]")
         out.append(f"    {lad['comparability']}")
         out.append(f"    fit size: {lad['fit_size_note']}")
+        if lad.get("era_warning"):
+            out.append(f"    {lad['era_warning']}")
     else:
         out.append("    not read")
     out.append("")

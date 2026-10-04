@@ -63,6 +63,7 @@ from agents.training import baselines
 from agents.training import elo as elo_mod
 from agents.training import hodge as hodge_mod
 from agents.training import snapshot_ladder as sl
+from utils.era import era_label, read_run_era
 
 
 def _ci95(se: float) -> float:
@@ -422,8 +423,8 @@ def ladder_headline(run_dir: str) -> str:
     rel_txt = (f"   |   {rel:+.0f} vs the {ref / 1e6:g}M reference (frozen-only column)"
                if rel is not None and ref is not None else "")
     return (f"[ladder] HEADLINE (dense): {step / 1e6:.1f}M → ELO {elo:.0f} ± "
-            f"{_ci95(se):.0f}{rel_txt}   [{detail}]   — the star fit below is the ±29 read, "
-            f"not this one.")
+            f"{_ci95(se):.0f}{rel_txt}   [{detail}]   [era: {era_label(read_run_era(run_dir))}]"
+            f"   — the star fit below is the ±29 read, not this one.")
 
 
 def main() -> int:

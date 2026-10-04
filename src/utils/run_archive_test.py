@@ -209,9 +209,9 @@ def test_the_trainer_from_a_worktree_lands_in_mains_models(from_worktree):
     from main.train.run_io import _resolve_fresh_model_dir, _resolve_model_dir
     main, wt = from_worktree
     assert _resolve_fresh_model_dir("exp1", None, None) == str(main / "models" / "exp1")
-    assert _resolve_fresh_model_dir(None, "ext_tgt", None) == str(main / "models" / "exploiter_vs_tgt")
+    assert _resolve_fresh_model_dir(None, "ext_tgt", None) == str(main / "models" / "rb_exploiter_vs_tgt")
     minted = _resolve_fresh_model_dir(None, None, None)
-    assert Path(minted).parent == main / "models" and Path(minted).name.startswith("run_")
+    assert Path(minted).parent == main / "models" and Path(minted).name.startswith("rb_run_")
     assert _resolve_model_dir(None, "exp2", None, None) == str(main / "models" / "exp2")
     assert not (wt / "models").exists(), "nothing may have been made under the worktree"
 
@@ -263,7 +263,7 @@ def test_planned_run_dir_agrees_with_the_directory_the_trainer_will_pick(from_wo
 def test_the_launcher_from_a_worktree_lands_in_mains_models(from_worktree):
     from main.launcher.checkpoint import _resolve_fresh_run_dir, resolve_launch_run_dir
     main, wt = from_worktree
-    assert resolve_launch_run_dir(["--debug"], TS) == str(main / "models" / f"run_{TS}")
+    assert resolve_launch_run_dir(["--debug"], TS) == str(main / "models" / f"rb_run_{TS}")
     assert resolve_launch_run_dir(["--run-name", "named"], TS) == str(main / "models" / "named")
     assert _resolve_fresh_run_dir(["--run-name=named"], TS) == str(main / "models" / "named")
     assert not (wt / "models").exists()

@@ -47,6 +47,7 @@ import os
 import sys
 from typing import Any, Dict, List, Optional
 
+from utils.era import era_label, read_run_era
 from agents.training.lineage import (
     ancestry_from_parent, build_lineage_from_command, check_links, fork_parent, read_block,
     read_num_timesteps, read_original_command, role_of,
@@ -87,6 +88,8 @@ def read_run(run_dir: str) -> Dict[str, Any]:
     # HOW FAR THIS RUN TRAINED. A run that predates the key reads None => "unknown" — this is a
     # JSON-only tool and will not open a checkpoint zip to guess.
     out["num_timesteps"] = read_num_timesteps(run_dir)
+    # THE ERA (utils.era): the immutable recorded block, or None => pre-era. Never derived.
+    out["era"] = read_run_era(run_dir)
     block = read_block(run_dir)
     out["recorded"] = block is not None
     # warn=True: this is THE accessor's legacy path, and its whole point is that a derived answer
@@ -192,7 +195,8 @@ def render(row: Dict[str, Any]) -> str:
         tag = "recorded ⚠ DERIVED from original_command" if row["derived_self"] else "recorded"
     else:
         tag = ("⚠ DERIVED from original_command" if row["derived"] else "no lineage recorded")
-    lines.append(f"{row['run']}   role={row.get('role') or '—'}   [{tag}]")
+    lines.append(f"{row['run']}   role={row.get('role') or '—'}   era={era_label(row.get('era'))}"
+                 f"   [{tag}]")
     # The two step facts side by side: where this run STARTED (its fork point, from the immutable
     # lineage block) and how far it GOT (the latest `num_timesteps`). "unknown" is a real answer —
     # a legacy run recorded neither, and 0 would be a claim.

@@ -4,6 +4,15 @@
 Rust stack is FOR and in what order. Detail lives in the docs each step points to. A decision that changes the
 order or the shape updates this doc and its Decision record in the same commit.
 
+## The era label (owner, 2026-10-03)
+Eras are named after Hoenn towns in journey order. **The Rustboro era (`rb`) starts with the X5 A/B and X26**;
+every earlier run is pre-era history. The table (`src/utils/era.py`, the one source): Rustboro `rb` · Dewford
+`dw` · Slateport `sp` · Mauville `mv` · Verdanturf `vt` · Fallarbor `fb` · Lavaridge `lv` · Fortree `ft` ·
+Lilycove `lc` · Mossdeep `md` · Sootopolis `st` · Pacifidog `pd` · Ever Grande `eg`. A run's name carries its code
+(`rb_x26_s1001`) and its `metadata.json` records an immutable `era` block; a boundary is where ratings or
+anchors stop being comparable (Rustboro's is the fixed bots + the Rustboro anchor base), and the readers warn
+across it. Starting the next era is one edit (`CURRENT_ERA`) plus a Decision row here.
+
 ## The principle
 **One lever at a time, on top of one baseline, sized to the noise.** Two short fresh runs that differ only in
 seed land about 4.9 pp apart on untaught (sizing F-SZ-10). So every lever arm gets a pre-registered meter and
@@ -57,3 +66,4 @@ more plain training. The owner checks back in; nothing else needs to happen.
 | 2026-10-02 | Discrimination before exploration (orchestrator) | define and move the discrimination meter before enabling forks | forks first | exploring more pays only once the value tells the new states apart |
 | 2026-10-02 | A basin probe **(owner)** | X29 queued after the loop is running | — | tests for a local optimum of PPO + exploiters |
 | 2026-10-02 | Plateau first **(owner: "2 elo per hour feels right")** | plateau = < 2 Elo per training GPU-hour, by a registered head-to-head GSPRT (W ≈ 7 GPU-h, H1 0.52) plus an outside panel, checked once per 10M steps; plateau-breakers fork from the plateau with paired controls | plateau-breaker arms on fresh or still-climbing runs; a 0.51 band per 10M steps (too fine for the window) | the price of an experiment = the baseline gain it displaces |
+| 2026-10-03 | Eras are named for Hoenn towns; the Rustboro era (`rb`) starts with the X5 A/B and X26 **(owner)** | one table in `src/utils/era.py` (name, two-letter code, order) + `CURRENT_ERA`; default run names minted `rb_…`; an explicit `--run-name` ACCEPTED AS TYPED with a warning when it lacks the prefix; an immutable `metadata.json` `era` block written at the creation save and never changed by a resume; a run without it is pre-era; `main.lineage`, the ELO headline and the critic gate's ladder read it and warn across eras | silently prefixing an explicit name (the directory would differ from the typed name quoted in scripts and the ledger); refusing an unprefixed name (breaks every convention); deriving the era from the name or a date (the record is the truth); stamping a resumed pre-era run | owner, 2026-10-03; `src/utils/era_test.py` |

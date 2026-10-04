@@ -24,7 +24,7 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
   main thread **before** the screen opens — a pin failure `sys.exit`s with a clean message.
   **Run-dir resolution** (`checkpoint.resolve_launch_run_dir`, three cases): a **fresh** run (no
   `--model`) honours `--run-dir` (made absolute), then `--run-name <name>` (→ `<archive>/<name>`,
-  basename-sanitized — a memorable name without the full path), else a timestamped `<archive>/run_<ts>`.
+  basename-sanitized — a memorable name without the full path), else a timestamped `<archive>/rb_run_<ts>` (era-prefixed, `utils/era.py`; an explicit name is accepted as typed).
   🚨 **`<archive>` is `utils.paths.run_archive_dir()` — `$GEN3AI_MODELS_DIR`, else the MAIN checkout's
   `models/` — never a cwd-relative `models/`** (from a worktree that directory is deleted silently with
   it; 2026-09-23). Every resolved dir is ABSOLUTE and passes `checked_run_dir`: an explicit `--run-dir`

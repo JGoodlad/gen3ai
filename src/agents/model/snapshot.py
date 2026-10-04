@@ -223,6 +223,7 @@ def save_model_snapshot(
     existing_launcher_command = None
     existing_original_command = None
     existing_lineage = None
+    existing_era = None
     existing_matchup_history = []
     existing_reward_composition = None
     existing_pin_history = None
@@ -239,6 +240,7 @@ def save_model_snapshot(
             existing_launcher_command = existing.get("launcher_command")
             existing_original_command = existing.get("original_command")
             existing_lineage = existing.get("lineage")
+            existing_era = existing.get("era")
             existing_matchup_history = existing.get("matchup_history", [])
             existing_reward_composition = existing.get("reward_composition")
             existing_pin_history = existing.get("pin_history")
@@ -319,6 +321,16 @@ def save_model_snapshot(
     )
     if original:
         metadata["original_command"] = original
+    # ERA — IMMUTABLE (`utils.era`), like original_command: stamped ONCE at the run's CREATION save
+    # and then carried verbatim. "Creation" = the first save that finds neither an `original_command`
+    # nor `cli_args` on disk (an early `record_eval_results` may already have made the file, so
+    # "no file" is not the test). A run that already HAS a record but no `era` is PRE-ERA history:
+    # a resume under today's code must never stamp the current era onto it.
+    if existing_era is not None:
+        metadata["era"] = existing_era
+    elif existing_original_command is None and existing_cli_args is None:
+        from utils.era import creation_era_block
+        metadata["era"] = creation_era_block()
     # LINEAGE — IMMUTABLE, exactly like original_command above: the existing block always wins, so a
     # restart preserves the fork parent recorded at creation instead of re-deriving it from the
     # checkpoint the launcher swapped in. See agents.training.lineage.

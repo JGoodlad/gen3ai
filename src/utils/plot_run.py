@@ -33,7 +33,8 @@ def _find_latest_run_dir() -> str | None:
 
     models_root = os.path.join(repo_root, "models")
     candidates = [
-        m for m in glob.glob(os.path.join(models_root, "run_*"))
+        m for m in (glob.glob(os.path.join(models_root, "run_*"))
+                    + glob.glob(os.path.join(models_root, "??_run_*")))   # `rb_run_<ts>` (utils.era)
         if os.path.isdir(m)
     ]
     if not candidates:

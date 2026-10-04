@@ -72,6 +72,7 @@ from main.critic_gate_design import (BASELINE_ARTIFACT, DEFAULT_BASELINE_DIR,
                                      STALL_RATE_SOURCE_NOTE, Z95)
 from main.critic_gate_render import render_markdown, render_text
 from agents.training import baselines
+from utils.era import cross_era_warning
 from utils.paths import src_root
 
 #: The FAMINE PRE-TEST's comparator, BY NAME out of `designs/baselines.json`
@@ -376,6 +377,9 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
                    "node_at_count": {"step": b[0], "elo": b[1], "se": b[2], "ci95": Z95 * b[2]},
                    "finished": pfinished},
         "delta_elo": d, "delta_se": se, "delta_ci95": [d - Z95 * se, d + Z95 * se],
+        # a WARNING, never a refusal: the two runs' recorded eras (utils.era) differ => the delta
+        # crosses an era boundary (anchors / regimes changed) and is descriptive only.
+        "era_warning": cross_era_warning(run["run_dir"], parent["run_dir"]),
         "refit_at_count": refit,
         "refit_fallbacks": fallbacks,
         "matched_fit_size": matched_fit_size,

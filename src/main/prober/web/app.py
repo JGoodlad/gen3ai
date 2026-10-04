@@ -1301,8 +1301,8 @@ def _group_runs(rows: "list[dict]") -> "list[tuple]":
         m = _re.match(r"^(ai_v\d+)", name)
         if m:
             key = m.group(1)
-        elif _re.match(r"^run_(\d{4})(\d{2})\d{2}", name):
-            m2 = _re.match(r"^run_(\d{4})(\d{2})\d{2}", name)
+        elif _re.match(r"^(?:[a-z]{2}_)?run_(\d{4})(\d{2})\d{2}", name):
+            m2 = _re.match(r"^(?:[a-z]{2}_)?run_(\d{4})(\d{2})\d{2}", name)
             key = f"run {m2.group(1)}-{m2.group(2)}"
         else:
             key = "other"

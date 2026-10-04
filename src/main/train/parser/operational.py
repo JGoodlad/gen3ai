@@ -16,11 +16,13 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--run-dir", type=str, help="Run folder to write checkpoints into (set by launcher on resume)")
     parser.add_argument("--run-name", "--run_name", dest="run_name", type=str, default=None,
                         help="A MEMORABLE name for a fresh run → writes to models/<name>/ instead of "
-                             "a date-stamped models/run_<timestamp>/. Must be a single name "
+                             "a date-stamped models/<era>_run_<timestamp>/ (<era> = the two-letter era code, e.g. rb; "
+                             "utils.era). Take the era prefix yourself (rb_x26_s1001): a name without it is "
+                             "accepted as typed with a warning. Must be a single name "
                              "(letters/digits/._-, no slashes). Refuses to overwrite an existing run "
                              "of that name (pick another, or --model to resume it). Ignored when "
                              "--run-dir is set (launcher resume). For --exploiter, defaults to "
-                             "'exploiter_vs_<target>' if you don't name it.")
+                             "'<era>_exploiter_vs_<target>' if you don't name it.")
     parser.add_argument("--steps", type=int, default=100000, help="Total training timesteps")
     parser.add_argument("--debug", action=BoolFlag, default=False, help="Use DummyVecEnv (1 env) for debugging")
     parser.add_argument("--debug-eval", "--debug_eval", dest="debug_eval", action=BoolFlag, default=False,

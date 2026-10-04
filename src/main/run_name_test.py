@@ -1,6 +1,6 @@
 """Tests for `--run-name` run-dir resolution (`_resolve_fresh_model_dir`).
 
-A memorable name → `models/<name>/` instead of a date-stamped `models/run_<ts>/`; the exploiter
+A memorable name → `models/<name>/` instead of a date-stamped `models/rb_run_<ts>/`; the exploiter
 mode gets a derived default; and a fresh NAMED run refuses to clobber an existing run's dir."""
 
 import pytest
@@ -21,13 +21,13 @@ def test_run_name_maps_to_models_subdir(run_archive):
 
 def test_no_name_falls_back_to_timestamp(run_archive):
     d = _resolve_fresh_model_dir(None, None, None)
-    assert d.startswith(str(run_archive / "run_"))          # the legacy date-stamped default
+    assert d.startswith(str(run_archive / "rb_run_"))       # the date-stamped default, era-prefixed
 
 
 def test_exploiter_label_derives_a_default_name(run_archive):
-    # ext_ prefix stripped → a readable <archive>/exploiter_vs_<target> default when unnamed.
+    # ext_ prefix stripped → a readable <archive>/rb_exploiter_vs_<target> default when unnamed.
     d = _resolve_fresh_model_dir(None, "ext_ai_v6_13_outgoing_dmg_0620", None)
-    assert d == str(run_archive / "exploiter_vs_ai_v6_13_outgoing_dmg_0620")
+    assert d == str(run_archive / "rb_exploiter_vs_ai_v6_13_outgoing_dmg_0620")
 
 
 def test_explicit_name_beats_exploiter_default(run_archive):

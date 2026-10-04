@@ -263,7 +263,7 @@ class TestResolveFreshRunDir:
         self.archive = run_archive
 
     def test_mints_timestamped_dir_when_no_run_dir(self):
-        assert _resolve_fresh_run_dir(["--debug"], self.TS) == str(self.archive / "run_20260608_120000")
+        assert _resolve_fresh_run_dir(["--debug"], self.TS) == str(self.archive / "rb_run_20260608_120000")
 
     def test_honours_user_run_dir(self):
         args = ["--debug", "--run-dir", "models/ai_v5_6_stable_N_0608"]
@@ -307,7 +307,7 @@ class TestResolveLaunchRunDir:
         self.archive = run_archive
 
     def test_fresh_no_model_mints_timestamp(self):
-        assert resolve_launch_run_dir(["--debug"], self.TS) == str(self.archive / "run_20260608_120000")
+        assert resolve_launch_run_dir(["--debug"], self.TS) == str(self.archive / "rb_run_20260608_120000")
 
     def test_plain_resume_continues_checkpoint_dir(self):
         # A --model resume with NO fork signal → write into the checkpoint's own run dir (continue).

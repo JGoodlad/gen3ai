@@ -11480,3 +11480,11 @@ their pin's code and are unaffected. No run is live.
   explicit E[damage] sum, incoming = outgoing on the same configuration, the hidden-ally convention and the T0
   belief hand-off, and the d3 / d4 / c1b / c2 / c3 / intent-operand kernels each against the hand value),
   `beatup_sim_parity_test.py` (`sim`; the real engine).
+
+## 2026-10-03 — the ERA label: Hoenn-town eras (Rustboro first), a two-letter run-name prefix and an immutable `era` block in `metadata.json` (`utils/era.py`; no model change, no config bump)
+
+- **The table.** `src/utils/era.py` is the ONE source: Rustboro `rb`, Dewford `dw`, Slateport `sp`, Mauville `mv`, Verdanturf `vt`, Fallarbor `fb`, Lavaridge `lv`, Fortree `ft`, Lilycove `lc`, Mossdeep `md`, Sootopolis `st`, Pacifidog `pd`, Ever Grande `eg`; `CURRENT_ERA` = Rustboro. The Rustboro era starts with the X5 A/B and X26; earlier runs are pre-era.
+- **Naming.** The trainer's default `run_<ts>` and the launcher's minted dir become `rb_run_<ts>`; the exploiter default `rb_exploiter_vs_<target>`. An explicit `--run-name` is accepted AS TYPED (the trainer prints `[Era] …` when it lacks the current prefix or carries another era's). Readers that keyed on a leading `run_` (`plot_run`, `plot_tb`'s legacy lookup, the prober's run grouping) accept the prefixed form.
+- **The record.** `save_model_snapshot` writes `era: {code, name, order}` ONCE, at the creation save (no `original_command` and no `cli_args` on disk), and carries it verbatim thereafter; a run with a record but no `era` is pre-era and a resume never stamps it.
+- **Readers.** `main.lineage` prints `era=`; `main.elo`'s dense headline tags `[era: …]`; the critic gate's ladder section carries `era_warning` (rendered) when the two runs' eras differ.
+- **Tests.** `src/utils/era_test.py`; `run_name_test`, `launcher_test`, `run_archive_test` updated for the prefix.

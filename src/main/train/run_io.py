@@ -20,8 +20,9 @@ from main.train.constants import checkpoint_due
 def _resolve_fresh_model_dir(run_name, exploiter_label, model_arg):
     """Pick the run directory for a run whose --run-dir is NOT set (i.e. not a launcher-managed
     resume). Precedence: an explicit --run-name → ``<archive>/<name>``; else, in exploiter mode, a
-    derived ``<archive>/exploiter_vs_<target>``; else a date-stamped ``<archive>/run_<timestamp>`` (the
-    legacy default). ``<archive>`` is ``utils.paths.run_archive_dir()`` — ``$GEN3AI_MODELS_DIR`` or the
+    derived ``<archive>/<era>_exploiter_vs_<target>``; else a date-stamped
+    ``<archive>/<era>_run_<timestamp>`` (``<era>_`` = ``utils.era.CURRENT_ERA``'s two-letter code, e.g.
+    ``rb_``; an explicit name is accepted as typed, with a warning when it lacks the era prefix). ``<archive>`` is ``utils.paths.run_archive_dir()`` — ``$GEN3AI_MODELS_DIR`` or the
     MAIN checkout's ``models/`` — NEVER a cwd-relative ``models/``: from a worktree that directory is
     deleted silently with the worktree (2026-09-23, eight runs). No archive → FATAL_CONFIG. A NAMED dir is
     validated as a single safe path component, and we refuse to start a FRESH run on top of an EXISTING
@@ -30,17 +31,22 @@ def _resolve_fresh_model_dir(run_name, exploiter_label, model_arg):
     clear FATAL. Pure given its args and the archive → unit-tested."""
     import re
     from main.exit_codes import TrainExitCode
+    from utils.era import prefixed, run_name_warning
     from utils.paths import RunArchiveError, new_run_dir
     if run_name:
         if not re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*$", run_name):
             print(f"\n[RunName] FATAL: --run-name {run_name!r} must be a single name "
                   f"(letters/digits/._-), with no slashes or path traversal.")
             sys.exit(1)
-        leaf = run_name
+        leaf = run_name   # accepted AS TYPED (utils.era.run_name_warning says why)
+        warning = run_name_warning(run_name)
+        if warning:
+            print(warning)
     elif exploiter_label:
-        leaf = "exploiter_vs_" + exploiter_label.removeprefix("ext_")
+        leaf = prefixed("exploiter_vs_" + exploiter_label.removeprefix("ext_"))
     else:
-        leaf = f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"   # always unique → no clobber guard
+        # always unique → no clobber guard; the era prefix is the DEFAULT name's (utils.era)
+        leaf = prefixed(f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
     try:
         model_dir = new_run_dir(leaf)
     except RunArchiveError as exc:
