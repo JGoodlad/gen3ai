@@ -141,7 +141,7 @@ pub fn present(reading: &BoardReading) -> R<OneSidedView> {
 }
 
 /// `LivePokemon.from_pokemon(mon, active, is_own)`.
-fn mon_view(m: &PMon, active: bool, own: bool) -> R<MonView> {
+pub(crate) fn mon_view(m: &PMon, active: bool, own: bool) -> R<MonView> {
     let mut moves: Vec<MoveView> = m
         .moves
         .moves_ref()

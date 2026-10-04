@@ -12,7 +12,7 @@ under its own flag, default OFF** — with the flag off, no training byte change
 
 | | |
 |---|---|
-| **Encoder** | `src/rust_sim/src/encoder/mod.rs` (`encode`, `encode_slice`, `prefill`, the active context, global env, board, pair history and event-window writers), `slot.rs` (the 122-dim per-mon slot), `data.rs` (the dex / prior tables, read from `data/pokemon/`), `layout.rs` (GENERATED), `wire.rs` (the row on the wire) |
+| **Encoder** | `src/rust_sim/src/encoder/mod.rs` (`encode`, `encode_slice`, `prefill`, the active context, global env, board, pair history and event-window writers), `slot.rs` (the 122-dim per-mon slot; `populated_slot` is the ONE writer of a populated slot), `hypothesis.rs` (X5's hypothesis row, §10), `data.rs` (the dex / prior tables, read from `data/pokemon/`), `layout.rs` (GENERATED), `wire.rs` (the row on the wire) |
 | **Version** | `BattleVersion::encode(side, &mut [f32; OBS_DIM])` — the side's reading, its view, its legality, its TRACKERS (required) |
 | **Python** | `agents/observation/rust_core_obs_layout.py` (the generator), `agents/battle/core_obs.py` (`wrap_row` / `check_row`), `agents/battle/rust_core_parity_obs.py` (slice O) |
 | **Bridge** | `src/rust_sim/src/bin/sim_bridge.rs` — the `core_obs` START key and the `__OBS__` frame (§5a) |
@@ -234,3 +234,48 @@ asserted byte-equal to the Python row before the time is printed (`--no-core` sk
 ## 9. Measurements
 
 Recorded in [`../research_state/measurements/rust_core_m4_2026-09-24/`](../research_state/measurements/rust_core_m4_2026-09-24/README.md).
+
+## 10. X5's hypothesis row — the one SYNTHETIC input (`gen3_x5_dex_rows_v1`)
+
+X5 (`designs/endstate/design_x5_belief_tokens.md` §3.4, build unit U1) gives each unrevealed opponent
+seat a CONCRETE species hypothesis, encoded from the per-mon row THIS encoder writes for "species s
+present, unrevealed set, full HP, no status". The encoder never meets that state on its own (an
+opponent mon enters the reading only by appearing), so `encoder::hypothesis::hypothesis_slot(species)`
+builds the smallest synthetic input and hands it to the SAME slot writer the team loop uses
+(`slot::populated_slot` — the real path and this one cannot render a mon differently):
+
+| input | built as |
+|---|---|
+| the raw reading | `PMon::from_species(s)` (poke-env's `Pokemon(species=…)`: the pokedex's stats, types and the one-ability inference, as a real switch-in builds it) + `set_hp_status("100/100")` |
+| the view | `present::view::mon_view(mon, active = false, own = false)` — what `present()` builds for an opponent mon |
+| the trackers | `SideTrackers::new` — a side that has seen nothing (recency saturated, no Hidden-Power evidence, no sleep source, no last action) |
+| the tail | not trapped, not active |
+
+Every cell is written (a test / self-check build NaN-prefills the slot; a leftover NaN is a FAULT).
+`core_events --dex-rows` prints the rows for the species ids on stdin; `python -m
+agents.model.hypothesis_dex_rows --write` renders them into the COMMITTED table
+`src/agents/model/hypothesis_dex_rows.json` (one row per base-form species, keyed by num; 386 rows).
+
+**The declared cell classes** (`hypothesis::CELLS`, tiling the 122 cells; the artifact carries them):
+`species` (species, types — depend on the species) · `default` (species_known, the opponent's empty
+spread, the Hidden-Power block, protect odds, the trapping bits — a fresh mon carries the same) ·
+`revealed_on_field` (item, ability, moves — zero / the Smogon prior here; the FIELD can reveal them,
+and the real row's own flag cell says when) · `on_field` (status, HP fraction, the status counters,
+the sleep belief, recency, last action, the active flag — the mon's state on the field).
+
+**Gates.**
+* `hypothesis_dex_rows_sim_test.py` (`sim`): the table regenerated through the encoder is BYTE-equal
+  to the committed file; and it runs the cross-check below in the self-check build.
+* `tests/hypothesis_dex_rows_test.rs` — the REAL-STATE cross-check: over a fixed seeded set of real
+  Rust battles, at each opponent mon's FIRST appearance (the first decision of the viewing side with
+  the mon in its reading, on the PARSE chain), the encoder's real slot equals `hypothesis_slot` of that
+  species byte for byte on every cell outside the `on_field` blocks and outside a `revealed_on_field`
+  block whose flag the real row set. COVERAGE: every one of the 386 base-form species (constructed teams
+  of six in num order, first pokedex ability, Leftovers, Roar / Toxic / Seismic Toss / Protect, a
+  switch-preferring seeded policy) — 33 battles, 388 first appearances, 38,301 cells compared, 0
+  differing; the field revealed 21 items and 12 abilities. REALISM: the bridge corpus's 21 real team
+  pairs — 252 first appearances of 52 species, 24,689 cells compared, 0 differing (85 items, 1 ability
+  revealed) (2026-10-03).
+* `encoder::hypothesis::tests` (`cargo test`): the cells tile the slot, a pristine row's fixed cells,
+  an unknown species refused, and the comparator's teeth (each compared class, a signed zero, an item
+  cell that differs without its reveal flag).

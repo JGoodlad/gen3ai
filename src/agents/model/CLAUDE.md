@@ -166,6 +166,7 @@ Rules to preserve:
 | the pointer head and the per-action cells | `pointer_head.py` · `pair_outcome.py` · `switch_branch.py` · `conditional_threat.py` |
 | versioning, snapshots, the compile path, the critic modes | `model_version/` · `snapshot.py` · `compile_opponents.py` · `critic_mode.py` |
 | the DICT obs keys the forward reads beyond `observation` | `extra_obs_keys.py` |
+| X5's dex-row table (a hypothesised opponent mon's per-mon obs row, per species; the generator, the loader, the committed artifact) | `hypothesis_dex_rows.py` + `hypothesis_dex_rows.json` |
 
 🚨 **THE FORWARD HAS TWO PUBLIC SURFACES: the constructor signature, and the obs DICT's KEY SET.**
 `forward` is normally a pure function of `obs["observation"]` — but a route may read a flag-gated

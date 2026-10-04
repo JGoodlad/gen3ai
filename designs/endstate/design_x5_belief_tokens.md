@@ -1,7 +1,7 @@
 # X5: discrete fixed-mass belief tokens + OTHER, design note and A/B pre-research
 
-**Status: REVISED after independent review (2026-10-03); M2 / M3 open for owner brainstorm (§9). Nothing here is
-built.** The first version (`00cdf0c2`, decisions `81578969`) was reviewed SOUND WITH FIXES with ten must-fix items
+**Status: REVISED after independent review (2026-10-03); M2 / M3 decided by the owner (§9, Decision record). Build
+unit U1 (the dex-row table) is BUILT (§8.3); the rest is not.** The first version (`00cdf0c2`, decisions `81578969`) was reviewed SOUND WITH FIXES with ten must-fix items
 (M1–M10). This revision resolves each one: M1 and M4–M10 by orchestrator decision or measurement, M2 and M3 as two real
 choices for the owner. Each item names where it landed (§8.4).
 
@@ -429,14 +429,23 @@ How to read it:
 
 - **Content.**
   - A hypothesis seat is a CONCRETE mon of species s, encoded by the SAME `pokemon_encoder` as a revealed one.
-  - Its per-mon observation row comes from a static **dex-row table [n_species, 122]**, produced by THE observation
-    encoder: the Rust `BattleVersion::encode` for "species s present, unrevealed set, full HP, no status".
+  - Its per-mon observation row comes from a static **dex-row table [max_species = 400, 122]**, one row per
+    BASE-FORM species at its national-dex num (386 rows, nums 1–386; the rest zero, with a `valid` mask),
+    produced by THE observation encoder: the Rust slot writer `BattleVersion::encode` calls per mon, fed the one
+    synthetic input "species s present, unrevealed set, full HP, no status" (`encoder::hypothesis::hypothesis_slot`,
+    BUILT in U1; `designs/rust_sim/encoder.md` §10).
   - An unseen gen-3 mon is pristine: it has never been on the field, so HP, status and boosts are exactly the defaults.
-  - The table is a **committed artifact beside the model code**, not under `data/`, so a pinned run isolates it.
-  - **Two gates (U1).** (i) A `sim`-tier gate regenerates the table with the encoder and requires byte equality.
+  - The table is a **committed artifact beside the model code** (`src/agents/model/hypothesis_dex_rows.json`, loaded by
+    `agents.model.hypothesis_dex_rows.load_hypothesis_dex_rows`), not under `data/`, so a pinned run isolates it.
+  - **Two gates (U1, BUILT).** (i) A `sim`-tier gate regenerates the table with the encoder and requires byte equality.
     (ii) A **real-state cross-check**: over a fixed seeded set of real Rust battles, at each opponent mon's first
-    appearance, its real encoded row must equal its dex row on every field except a DECLARED list of on-field fields
-    (the active flag, an ability announced on entry, the field position). Any other differing field FAILS, naming it.
+    appearance, its real encoded row must equal its dex row byte for byte on every cell outside a DECLARED list
+    (`encoder::hypothesis::CELLS`). As built, the list is the mon's ON-FIELD state — status, HP fraction, the status
+    counters, the sleep belief, recency, last action and the active flag — plus an item, ability or move block the
+    FIELD revealed before that decision, read from the real row's own reveal flag (Leftovers at the end of the entry
+    turn, an ability announced on entry). Any other differing cell FAILS, naming it. The first version listed only
+    "the active flag, an ability announced on entry, the field position"; the slot has no field-position cell, and the
+    other on-field blocks differ legitimately at a real first appearance (changed in U1, see the Decision record).
     This catches a synthetic state that the encoder renders differently from a real one.
   - No second encoder exists, and the runtime observation does not change.
   - A learned `hypothesis_marker` vector is added to the token (as E5's `tail_marker` is). The token-type table is not
@@ -1029,6 +1038,7 @@ winning arm's seed-1001 run CONTINUES as the X26 baseline (owner).
 | F-X5-4 | **FIXED 2026-10-03 in `0c25a1f4`** (`CHANGELOG.md` "F-X5-4"). The K9 harness built a different INIT at 8 threads (SB3's orthogonal re-init is a thread-count-dependent LAPACK QR: 15 of 41 groups moved). `build_learner` (and `rebuild-buffer`'s learner) now build at one thread and restore the caller's count; the banked golden is UNCHANGED. Pinned by `learner_golden_threads_test.py`. |
 | F-X5-5 | **FIXED 2026-10-03 in `50fdfdc2`** (`CHANGELOG.md` "F-X5-5"). The production trainer's fresh build had F-X5-4's thread dependence (state_dict sha `eb409f05` at 1 thread vs `ff9276ac` at 8). `construct_fresh_learner` and the fresh fixtures now build inside the one shared `single_thread_build`. Pinned by `src/main/train/fresh_build_threads_test.py`. |
 | F-X5-20 | Two different untaught opponents carry the 3.69 and 4.90 floors; they are not one scale. (This was "F-X5-5" in this note's first version; the CHANGELOG assigned F-X5-5 to the production thread pin, so it is renumbered here.) |
+| F-X5-21 | **The T0 species prior's axis holds 13 phantom nums.** It is `[max_species = 400]`; only nums 1–386 hold a species, and `build_species_cooccur_prior` gives 387–399 the floor marginal 1e-4. A fixed-size construction over V = {nums ≥ 1} would carry them; U2 takes V = the dex-row table's `valid` mask minus the revealed nums (§8.3 U1 hand-off). Found in U1. |
 | F-X5-6 | The sizing and battery non-inferiority rules used a CI that omits run variance (§7.1). |
 | F-X5-7 | The anchors SOP's run floors at 100 games are mostly meter noise (SE ≈ 7 pp per cell). |
 | F-X5-8 | `alpha_mask_rate` mixes non-choices with misses. No banked metric isolates the belief-miss share; U4 adds `opp_intent/other_label_rate`. |
@@ -1059,7 +1069,7 @@ Sizes are in agent-days. A "tier" is the gate a unit must pass before it lands. 
 | unit | what | size | tier / gates | agent |
 |---|---|---|---|---|
 | U0 | The checkpoint-vs-checkpoint mirrored H2H CROSS CLI (`sprt.py` + Rust eval core; the A/B's primary meter) + the P0 planning reads (§7.3) + its per-cell CPU cost | 1 | targeted + static; CPU under `mem_cap.sh` | opus-high |
-| U1 | Dex-row table generator (Rust encoder) + committed artifact + `sim`-tier byte gate + the real-state cross-check (§3.4). (The `belief.rs` guard is DONE, `680edc36`.) | 1 | `sim` + cargo + static | opus-high |
+| U1 | **DONE 2026-10-03** (`gen3_x5_dex_rows_v1`; `CHANGELOG.md` "X5 U1"). Dex-row table generator (Rust encoder) + committed artifact + `sim`-tier byte gate + the real-state cross-check (§3.4). (The `belief.rs` guard is DONE, `680edc36`.) Hand-off below | 1 | `sim` + cargo + static | opus-high |
 | U2 | T0 hypothesis builder: δ_θ, the fixed-size construction (bisection, structural k = 0 / k = n, logsumexp OTHER), the single stable ordering, set BCE, BeliefHead re-target, moves; the `--belief-tokens` flag, versioning, registry; compile-time cost of the unrolled bisection | 2.5 | routine gate; tier contract; flag gates; the construction's tests | opus-high |
 | U3 | Tokens into the chain: re-run the 41-site census on the built code; log-π bias in the transformer and every class-E pool (float masks, compile check first); class-M semantics per §9 M2; the op with hypothesis defenders and attackers, "alive" from `opp_addressable`; OTHER's physics per §9 M3; E5 owner bias; aux heads on hypothesis seats (§3.4); I1 / I2 and class-M / class-S tests per site | 3 | routine gate; invariance tests; obs golden untouched | opus-xhigh (GIGO risk; the orchestrator dispatches it) |
 | U4 | Flat α pointer + OTHER labels; re-expressed cells with OTHER priced and `seat_live` consistent (§3.7); B ride-along re-base; `other_label_rate` | 2 | routine gate; `ridealong_update_test` bit-identity | opus-high |
@@ -1080,6 +1090,32 @@ work.
 - U3 cannot start until the owner answers §9 M2 and M3.
 - No Rust core runtime change, so M5's parity gates are a re-run, not a rewrite.
 - The registration of §7.4, with P0's σ̂_h in its power line, is committed BEFORE any A/B game.
+
+**U1 hand-off (read before U2).**
+- **What exists.** `agents.model.hypothesis_dex_rows.load_hypothesis_dex_rows(layout["max_species"])` returns
+  `rows` `[400, 122]` float32 (READ-ONLY; take `.copy()` before `torch.from_numpy`, and register it as a
+  NON-persistent buffer: data-derived, never a saved weight), `valid` `[400]` bool, `species` (the id per num) and
+  `cells` (the declared cell classes) plus the table's `sha256`. Row index = national-dex num, the T0 prior's own
+  axis. The artifact is `src/agents/model/hypothesis_dex_rows.json` (386 rows, 263 KB); regenerate with
+  `python -m agents.model.hypothesis_dex_rows --write` when the `sim` byte gate says it is stale, and review the diff.
+- **V must be `valid` minus the revealed nums, structurally.** The T0 prior is `[400]` but only nums 1–386 hold a
+  species; `build_species_cooccur_prior` gives nums 387–399 the floor marginal 1e-4 like any rare species, and they
+  have no dex row. §3.2's "V = {species numbers ≥ 1}" read literally would put 13 nonexistent species into the
+  fixed-size construction (finding F-X5-21). With V = valid minus revealed, n = 386 − r.
+- **What a hypothesis row says.** It reads as a POPULATED mon of a known species: `species_known` = 1, HP fraction
+  1.0, recency saturated at 1.0 (never seen), protect odds 1.0, no item, no move, empty Hidden-Power block, not
+  active. A one-ability species carries that ability as KNOWN (`[num, 0, 1, 1]`, poke-env's inference, as the encoder
+  does for a real one); a two-ability species carries the Smogon top-2 prior. Today's hidden slot encodes HP 0 and
+  `species_known` 0, so nothing that reads those cells may treat a hypothesis as revealed: the `hypothesis_marker`
+  (§3.4) and "alive" from `opp_addressable` (F-X5-12) are what tell them apart.
+- **Formes.** One row per base form. Castform (351) enters in weather as a weather forme (Forecast), so its row (Normal
+  type) is the pre-entry hypothesis only; the Deoxys formes are Ubers; the Unown letters share stats and types.
+- **No dependence on the fixed-damage GIGO fix** running in parallel (`damage_op_blocks.py` / `MOVE_BP`): a hypothesis
+  row has no move cells and no damage-op column. A `data/pokemon` change that moves a species, ability-prior or item
+  row DOES move it, and the byte gate says so.
+- **Pin hazard.** The table is pinned with the code, but a pinned run's Rust encoder reads `data/` from MAIN at
+  runtime; a `data/pokemon` change while a pinned X5 run is live would let real rows and table rows drift apart
+  (standing rule 6 already forbids that change).
 
 ### 8.4 Where each review item landed
 
@@ -1182,3 +1218,4 @@ the safe default, but would leave X5 unadopted for reasons of noise.
 | 2026-10-03 | **M2 / M3 (OPEN, owner brainstorm)** | Recommendations: M2 option C (today's presence-scaled max, no second lever), M3 option (c) (OTHER priced by the tail-averaged construction) | §9's tables | §9 |
 | 2026-10-03 | **M2 / M3 (OWNER) + margin rule (ORCHESTRATOR)** | **M2 = C** (presence-scaled max); **M3 = (c)** (OTHER priced as the averaged tail); **margin = 3.5 pp if P0 σ_h ≤ 2.5, else 4.5 pp** at ≤ 41 GPU-h, fixed before P0 reports. U3 is unblocked. | M2 A / B / D; M3 (a) / (b) / (d); 3.5 pp at power ≈ 0.57 | §9; [`design_x5_tradeoffs.md`](design_x5_tradeoffs.md) |
 | 2026-10-03 | **Margin FIXED by the pre-committed rule (ORCHESTRATOR, after P0)** | **δ = 3.5 pp.** P0 (`df27f701`, `measurements/x5_p0_h2h_2026-10-03/`) measured σ_h = 0.33 (post-boundary {A2, A′, B}, 2 df, CI [0, 2.56]), 0.53 (the pure seed pair), 1.63 (all four, 3 df) and 2.12 (the conservative {A, A2, A′}); every point estimate is ≤ 2.5, so the rule gives 3.5 pp. Power at 3.5 pp: 0.905 at σ_h 2.12, about 1.0 at ≤ 0.53. The registered design already estimates σ in-experiment with t-boundaries, so a wide prior CI costs power, never the type-I error. P0 also found that the untaught meter's run-to-run differences do NOT transfer to the head-to-head (slope 0.26; A2 − A′ has opposite signs on the two scales), which supports the head-to-head as primary. OPEN for the build: a multi-cell h2h engine (one engine, weights loaded per cell) so the A/B's 9 / 25 / 64 cells don't each pay a 114–167 s engine start (F-P0-4); folded into U0 | 4.5 pp | P0 result.md; §7.4 |
+| 2026-10-03 | **U1 dex-row table (BUILT)** | **One SYNTHETIC input to the encoder's own slot writer** (`encoder::hypothesis::hypothesis_slot` → `slot::populated_slot`, the writer the real team loop uses): `PMon::from_species` + `100/100`, its `mon_view`, an empty `SideTrackers`. One row per BASE-FORM species at its num, committed as JSON beside the model code with a sha256 the loader re-derives; a `sim` byte gate; the real-state cross-check over the 386 species (constructed teams) and the bridge corpus. **The declared exclusion list is the mon's on-field state** (status, HP fraction, status counters, sleep belief, recency, last action, active) **plus an item / ability / move block the field revealed, by the real row's own flag** — wider than the first version's three entries, which missed blocks that differ legitimately at a real first appearance. | A torch-side row builder (a second encoder); a full synthetic battle state through `BattleVersion::encode` (far more synthetic surface for one slot); a tolerance on the cross-check (rule 8) | §3.4; `designs/rust_sim/encoder.md` §10; `CHANGELOG.md` "X5 U1" |

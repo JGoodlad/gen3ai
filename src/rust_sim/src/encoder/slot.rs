@@ -14,6 +14,7 @@ use crate::core_events::Rel;
 use crate::present::mon::PMon;
 use crate::present::view::MonView;
 use crate::trackers::history::Recency;
+use crate::trackers::SideTrackers;
 
 /// `RecencyTracker.values(side, species)` — (seen, acted, was_hit), each log-saturated.
 fn recency(r: &Recency, side: Rel, species: &str) -> [f64; 3] {
@@ -61,18 +62,31 @@ pub(super) fn team(inp: &Inputs, t: &Tables, own: bool, out: &mut [f32; OBS_DIM]
         };
         let live = live_get(side_view, &mon.species)
             .ok_or_else(|| fault(format!("encode: no view mon for {} slot {i} ({})", rel.as_str(), mon.species)))?;
-        let rec = recency(&inp.trackers.recency, rel, &mon.species);
         let is_active = if own { mon.active } else { live.active };
-        mon_vector(inp, t, mon, live, own, rec, if is_active { Some(&la) } else { None }, &mut s[..POKEMON_VECTOR_DIM])?;
         // the appended tail: our ACTIVE's trapping bits, then the active flag (LAST)
         let (trapped, maybe) = match (own && is_active, inp.legal) {
             (true, Some(l)) => (l.trapped, l.maybe_trapped),
             _ => (false, false),
         };
-        put(s, POKEMON_TRAPPED_OFFSET, if trapped { 1.0 } else { 0.0 });
-        put(s, POKEMON_MAYBE_TRAPPED_OFFSET, if maybe { 1.0 } else { 0.0 });
-        put(s, POKEMON_ACTIVE_OFFSET, if is_active { 1.0 } else { 0.0 });
+        populated_slot(inp.trackers, t, mon, live, own, is_active.then_some(&la), [trapped, maybe, is_active], s)?;
     }
+    Ok(())
+}
+
+/// ONE populated slot — the 119-dim vector, then the appended tail `[trapped, maybe_trapped,
+/// active]` — from the mon's raw reading, its view and the side's trackers. Everything a populated
+/// slot reads goes through here: the real team loop above and the X5 hypothesis row
+/// ([`super::hypothesis`]), so the two cannot render one mon differently.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn populated_slot(trk: &SideTrackers, t: &Tables, mon: &PMon, live: &MonView, own: bool,
+                             last: Option<&[f64; 6]>, tail: [bool; 3], s: &mut [f32]) -> CoreResult<()> {
+    let rel = if own { Rel::Ours } else { Rel::Opp };
+    let rec = recency(&trk.recency, rel, &mon.species);
+    mon_vector(trk, t, mon, live, own, rec, last, &mut s[..POKEMON_VECTOR_DIM])?;
+    let [trapped, maybe, active] = tail;
+    put(s, POKEMON_TRAPPED_OFFSET, if trapped { 1.0 } else { 0.0 });
+    put(s, POKEMON_MAYBE_TRAPPED_OFFSET, if maybe { 1.0 } else { 0.0 });
+    put(s, POKEMON_ACTIVE_OFFSET, if active { 1.0 } else { 0.0 });
     Ok(())
 }
 
@@ -84,7 +98,7 @@ fn status_idx(status: Option<&str>) -> usize {
 /// `PokemonEncoder.encode(mon, is_own, hp_probs, hp_known, live_mon, sleep_sources,
 /// recency_vals, last_action_vals)` — the 119-dim vector of one populated slot.
 #[allow(clippy::too_many_arguments)]
-fn mon_vector(inp: &Inputs, t: &Tables, mon: &PMon, live: &MonView, own: bool, rec: [f64; 3],
+fn mon_vector(trk: &SideTrackers, t: &Tables, mon: &PMon, live: &MonView, own: bool, rec: [f64; 3],
               last: Option<&[f64; 6]>, v: &mut [f32]) -> CoreResult<()> {
     zero(v, 0, POKEMON_VECTOR_DIM);
     species(t, live, &mut v[POKEMON_SPECIES_OFFSET..POKEMON_SPECIES_OFFSET + 1 + STATS_DIM])?;
@@ -104,7 +118,7 @@ fn mon_vector(inp: &Inputs, t: &Tables, mon: &PMon, live: &MonView, own: bool, r
     put(v, POKEMON_COUNTER_OFFSET, if is_slp { ctr.min(4) as f64 / 4.0 } else { 0.0 });
     put(v, POKEMON_COUNTER_OFFSET + 1, if is_tox { ctr.min(8) as f64 / 8.0 } else { 0.0 });
     if is_slp {
-        let (det, p_wake, reliable) = sleep_belief(inp, mon, own, ctr);
+        let (det, p_wake, reliable) = sleep_belief(trk, mon, own, ctr);
         put(v, POKEMON_SLEEP_BELIEF_OFFSET, det);
         put(v, POKEMON_SLEEP_BELIEF_OFFSET + 1, p_wake);
         put(v, POKEMON_SLEEP_BELIEF_OFFSET + 2, reliable);
@@ -122,7 +136,7 @@ fn mon_vector(inp: &Inputs, t: &Tables, mon: &PMon, live: &MonView, own: bool, r
         spread(t, live, &mut v[POKEMON_SPREAD_OFFSET..POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]);
         v[POKEMON_HP_REVEALED_OFFSET] = 1.0;
     } else {
-        let hp = &inp.trackers.hp;
+        let hp = &trk.hp;
         let known = hp.ruled_out.contains(&mon.species) || hp.state.contains_key(&mon.species);
         if known {
             v[POKEMON_HP_REVEALED_OFFSET] = 1.0;
@@ -296,10 +310,10 @@ fn protect_success_probability(k: i64) -> f64 {
 
 /// `sleep_belief.sleep_belief_features(counter, mon, is_own, sleep_sources)` →
 /// (sleep_is_deterministic, p_wake, sleep_counter_reliable).
-fn sleep_belief(inp: &Inputs, mon: &PMon, own: bool, counter: i64) -> (f64, f64, f64) {
+fn sleep_belief(trk: &SideTrackers, mon: &PMon, own: bool, counter: i64) -> (f64, f64, f64) {
     let t = data::tables();
     let side = if own { Rel::Ours } else { Rel::Opp };
-    let (is_rest, usable) = inp.trackers.sleep.sources.get(&(side, mon.species.as_str())).copied().unwrap_or((false, false));
+    let (is_rest, usable) = trk.sleep.sources.get(&(side, mon.species.as_str())).copied().unwrap_or((false, false));
     // `early_bird_probability(mon)`: the revealed ability exactly, else the species' Smogon prior.
     let p_eb = match mon.ability().filter(|a| !a.is_empty() && *a != UNKNOWN_ABILITY) {
         Some(a) => {

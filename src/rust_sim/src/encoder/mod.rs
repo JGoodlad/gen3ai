@@ -23,6 +23,7 @@
 //! `data/pokemon/` exactly as `agents.gen3_data` reads them.
 
 pub mod data;
+pub mod hypothesis;
 pub mod layout;
 mod slot;
 pub mod wire;

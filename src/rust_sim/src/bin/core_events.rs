@@ -58,6 +58,13 @@
 //! `present()` + encode (the COLD shape), reported as `"obs_bench"` with the row it timed — the core
 //! row of `agents/training/obs_build_benchmark.py`.
 //!
+//! `--dex-rows` instead prints X5's HYPOTHESIS ROWS (`gen3_x5_dex_rows_v1`,
+//! `encoder::hypothesis`): stdin is one poke-env species id per line; stdout is a header line
+//! `{"row_dim":122,"cells":[[name,lo,hi,class,flag|null],…]}` (the declared cell classes), then one
+//! `{"species":id,"row":<base64 of the slot's little-endian float32 bytes>}` per id, in input order.
+//! An id the encoder refuses is exit 1, naming it. The generator is `python -m
+//! agents.model.hypothesis_dex_rows --write`.
+//!
 //! `--record-dir DIR [--commit SHA]` also writes each side's persisted record
 //! (`DIR/<label>.p1.jsonl`, `…p2.jsonl`, `core_events::record`), re-reading every file it wrote
 //! and refusing unless it round-trips byte-identically and re-parses from its text.
@@ -588,6 +595,49 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
 /// is a protocol line of that side's stream (the parse path, exactly what a server sends). Prints
 /// ONE JSON object: `{"ok","error","view","legal","request"}` (+ `core_error` on a failure). The pin of every reading rule
 /// against poke-env itself (`agents/battle/rust_core_present_test.py`) runs through it.
+/// `--dex-rows`: X5's hypothesis rows for the species ids on stdin (see the module docs).
+fn dex_rows() -> i32 {
+    use pokesim::encoder::hypothesis::{class_name, hypothesis_slot, CellClass, CELLS};
+    use pokesim::encoder::layout::POKEMON_FULL_DIM;
+    use pokesim::encoder::wire;
+    let mut out = io::stdout().lock();
+    let cells: Vec<String> = CELLS
+        .iter()
+        .map(|(name, lo, hi, class)| {
+            let flag = match class {
+                CellClass::RevealedOnField { flag } => flag.to_string(),
+                _ => "null".to_string(),
+            };
+            format!("[\"{name}\",{lo},{hi},\"{}\",{flag}]", class_name(*class))
+        })
+        .collect();
+    let _ = writeln!(out, "{{\"row_dim\":{POKEMON_FULL_DIM},\"cells\":[{}]}}", cells.join(","));
+    for line in io::stdin().lock().lines() {
+        let id = match line {
+            Ok(l) => l.trim().to_string(),
+            Err(e) => {
+                eprintln!("core_events --dex-rows: stdin: {e}");
+                return 1;
+            }
+        };
+        if id.is_empty() {
+            continue;
+        }
+        match hypothesis_slot(&id) {
+            Ok(row) => {
+                let bytes: Vec<u8> = row.iter().flat_map(|x| x.to_le_bytes()).collect();
+                let _ = writeln!(out, "{{\"species\":\"{id}\",\"row\":\"{}\"}}", wire::base64(&bytes));
+            }
+            Err(e) => {
+                eprintln!("core_events --dex-rows: {id}: {}", e.message());
+                return 1;
+            }
+        }
+    }
+    let _ = out.flush();
+    0
+}
+
 fn present_stream() -> i32 {
     let stdin = io::stdin();
     let mut lines = stdin.lock().lines();
@@ -740,6 +790,9 @@ fn main() {
     }
     if args.get(1).map(String::as_str) == Some("--present-stream") {
         std::process::exit(present_stream());
+    }
+    if args.get(1).map(String::as_str) == Some("--dex-rows") {
+        std::process::exit(dex_rows());
     }
     let bench_rounds: Option<usize> = if args.get(1).map(String::as_str) == Some("--bench-parse") {
         Some(args.get(2).and_then(|s| s.parse().ok()).unwrap_or(5))
