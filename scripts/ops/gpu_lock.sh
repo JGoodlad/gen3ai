@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 #
-# gpu_lock.sh — run ONE command holding the box's GPU lock, RE-ENTRANTLY (utils.gpu_lock).
+# gpu_lock.sh — run ONE command holding the box's GPU lock, RE-ENTRANTLY and FAIL-FAST (utils.gpu_lock).
+#
+# The GPU is LEASED for an agent's lifetime (scripts/ops/gpu_lease.sh); this wrapper NEVER waits by
+# default: a lease held by someone else exits 6, a one-off holder exits 5, both AT ONCE. The caller's
+# GEN3AI_GPU_LEASE_TOKEN (or ..._TOKEN_FILE) matching the lease passes straight through.
 #
 # Replaces a bare `flock ~/.claude/jobs/gpu.lock <cmd>`. The difference is the class fix for the
 # 2026-09-30 self-deadlock: a bare flock exports nothing, so a command that takes the lock itself
@@ -14,18 +18,22 @@ source "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
 
 usage() {
     cat <<'USAGE_EOF'
-gpu_lock.sh — run a command while holding the box's GPU lock (re-entrant; see utils/gpu_lock.py)
+gpu_lock.sh — run a command while holding the box's GPU lock (re-entrant, FAIL-FAST; see utils/gpu_lock.py)
 
 USAGE
     scripts/ops/gpu_lock.sh <cmd> [args...]
-    scripts/ops/gpu_lock.sh --status          # who holds it now (pid + command line)
+    scripts/ops/gpu_lock.sh --wait <cmd>      # DELIBERATE kernel wait on a one-off holder (orchestrator / training launch only)
+    scripts/ops/gpu_lock.sh --status          # LEASED / BUSY / FREE, with owner or pid + command line
     scripts/ops/gpu_lock.sh timeout 3000 <cmd>  # a WALL TIMEOUT goes INSIDE (outside, it counts lock-wait)
 
 The lock is ~/.claude/jobs/gpu.lock ($GEN3AI_GPU_LOCK overrides). The command runs as a CHILD of
 the lock holder with GEN3AI_GPU_LOCK_HELD=<holder pid> exported, so any take of the same lock inside
-it is a verified no-op. While waiting, the holder's pid and command line are printed every 60 s; a
+it is a verified no-op. If the caller's GEN3AI_GPU_LEASE_TOKEN owns the lease the command runs without
+taking the flock. Otherwise: a lease held by someone else = exit 6 at once (even with --wait); a one-off
+holder = exit 5 at once unless --wait (then the holder's pid and command line are printed every 60 s); a
 holder that is this command's own ANCESTOR (a bare `flock` around it) is refused at once (exit 3).
-Exit status: the command's own (128+N if signal N killed it); 2 = no command; 3 = self-deadlock.
+Exit status: the command's own (128+N if signal N killed it); 2 = no command; 3 = self-deadlock;
+4 = --timeout-s expired; 5 = GPU busy (one-off holder); 6 = GPU leased to someone else.
 USAGE_EOF
 }
 
@@ -33,6 +41,7 @@ case "${1:-}" in
     -h|--help) usage; exit 0 ;;
     "") usage >&2; echo "REFUSING: gpu_lock.sh needs a command to run" >&2; exit 2 ;;
     --status) set -- --status ;;
+    --wait) shift; set -- --wait -- "$@" ;;
     *) set -- -- "$@" ;;
 esac
 

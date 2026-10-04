@@ -70,6 +70,21 @@ trap in particular applies directly to the watchers this session arms in §2 bel
 
 ## 1. Before launch — "it launches" and "it is the experiment" are INDEPENDENT checks
 
+**0. The GPU LEASE (owner, 2026-10-03: nobody blocks on the GPU).** Nothing in the launcher or the trainer
+takes `utils.gpu_lock` (grep, 2026-10-03: only `main.h2h` and `policy_spectrum truth` do), so a run does
+not protect itself from — or queue behind — other GPU users. The Training Run session therefore holds a
+LEASE for the run's lifetime, taken BEFORE the launch, exactly as any GPU-using agent does:
+`scripts/ops/gpu_lease.sh acquire --owner "Training O5.5" --note "<run>" --max-hours 96 --token-file ~/.claude/jobs/gpu_lease_training.token`
+(it fails AT ONCE, naming the holder, if the GPU is leased or a one-off job holds it — the orchestrator
+resolves that, the training agent never polls). After the launch, attach the launcher: re-run `acquire`
+with `GEN3AI_GPU_LEASE_TOKEN_FILE=<that file>` and `--watch-pid <launcher pid>` (a renewal that makes the
+lease end when the launcher dies). **Renew on every 55-minute cron wake** (`acquire` with the token is a
+no-op that resets the expiry; a lapsed lease silently frees the GPU to others) and `release` when the run
+ends (§4's relaunch re-acquires first). The launcher and trainer are NOT lease-aware and are not wrapped:
+the lease is what keeps every other agent (whose `gpu_lock.sh` is refused AT ONCE with exit 6) off the card.
+An offline GPU meter the training session itself runs goes through `scripts/ops/gpu_lock.sh`, which passes
+on the same token.
+
 Ledger `81016942` (2026-09-06): an arm ran ~7 GPU-hours with 31 architecture flags silently at their
 OFF defaults while `checkargs`, `resolve_config` and `--dry-run` all passed. Every check below
 answers one of the two questions; do both.
@@ -466,7 +481,9 @@ wake. Re-create it on the next GO, written to this contract.
    (`models/<run>.OOM_4096`) so the incident entry has its evidence; retention policy handles it later.
 4. Relaunch under the SAME run name and pin when the fix is a resource shape or an operational
    defect; a SCIENTIFIC change (a flag the read depends on) is a new arm with a new registration.
-5. Bank the incident in `designs/research_state/ledger.md` in the same hour: what died, the
+5. A killed arm's lease is released (`scripts/ops/gpu_lease.sh release`) once the GPU is verified free, or the
+   next holder is refused against a dead run; a relaunch takes it again first (§1, step 0).
+6. Bank the incident in `designs/research_state/ledger.md` in the same hour: what died, the
    traceback's call site, the evidence that was already on disk, the durable lesson. The Training
    Run session banks routine incidents on its own run; belief-changing ones go to the orchestrator.
 

@@ -95,7 +95,7 @@ def test_a_non_ancestor_holder_still_blocks(tmp_path, forged):
             env[G.HELD_ENV] = str(h.pid)          # a real holder — but NOT this waiter's ancestor
         w = subprocess.Popen(_py("""
             from utils.gpu_lock import gpu_lock
-            with gpu_lock(timeout_s=3, poll_s=0.1, report_every_s=0.5):
+            with gpu_lock(wait=True, timeout_s=3, poll_s=0.1, report_every_s=0.5):
                 print("ACQUIRED")
         """), env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         key = P.file_key(str(lock))

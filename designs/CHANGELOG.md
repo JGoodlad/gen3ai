@@ -11372,3 +11372,28 @@ code and are unaffected. No run is live.
 - **Gates.** `hypothesis_dex_rows_sim_test.py` (`sim`): the regenerated table is BYTE-equal to the committed file, and it runs `tests/hypothesis_dex_rows_test.rs` in the self-check build — the REAL-STATE cross-check: at each opponent mon's first appearance on the parse chain, the real slot equals the synthetic row byte for byte outside the declared on-field blocks. COVERAGE (all 386 species, constructed teams): 388 first appearances, 38,301 cells compared, 0 differing; REALISM (the bridge corpus's 21 pairs): 252 first appearances of 52 species, 24,689 cells, 0 differing. `hypothesis_dex_rows_test.py` (unmarked): shape against `Gen3ObservationEncoder.get_layout()`, one row per base form at its num, the cells on the layout's offsets, the renderer round trip, a hand-edited cell refused. `encoder::hypothesis::tests`: the comparator's teeth.
 - **Finding F-X5-21.** The T0 species prior's axis is `[400]`, but only nums 1–386 hold a species and 387–399 carry the floor marginal; U2 takes V = the table's `valid` mask minus the revealed nums.
 - **Docs.** `designs/rust_sim/encoder.md` §10, `src/rust_sim/CLAUDE.md` (the gate row), `src/agents/model/CLAUDE.md` + `designs/model/file_layout.md`, the X5 note (§3.4 as built, §8.2 F-X5-21, §8.3 U1 DONE + the U1 hand-off, the status line, the Decision record).
+## 2026-10-03 — the GPU is LEASED for an agent's lifetime; nobody waits (`utils.gpu_lease`, `utils.gpu_lock` fail-fast)
+
+Owner: "I would prefer subagents not block at all on the gpu ... Subagents waiting is painful for throughput and
+cache misses." The GPU lock was a queue (a kernel-blocked flock); it is now a lease with an immediate refusal.
+
+- **`scripts/ops/gpu_lease.sh acquire|release|status`** over `src/utils/gpu_lease.py`. `acquire` starts a DETACHED
+  holder that takes the same flock `gpu_lock` uses NON-BLOCKING and keeps it for the lease's lifetime (until
+  `release`, SIGTERM, `--max-hours` default 12, or `--watch-pid`'s death), writing `<lock>.lease.json` (owner, holder
+  pid + `/proc` start time, the token's SHA-256, never the token). It prints `export GEN3AI_GPU_LEASE_TOKEN=<token>`.
+  A held GPU fails AT ONCE naming owner, pid, command, since when (exit 6 leased / 5 one-off). A lease is VALID only
+  while its holder (pid AND start time) is listed holding the lock in `/proc/locks`; a dead or pid-reused holder is
+  STALE, cleared by `status` / `acquire` under a record mutex (a new holder writes its record under the same
+  mutex after it holds the flock, so a fresh lease is never cleared). `release` is idempotent, needs the token or
+  the orchestrator's `--force`, and returns only after the GPU is free; `acquire` with the token renews.
+- **`gpu_lock` never waits by default.** The owner's token passes straight through (re-entrant, no flock); a lease
+  held by someone else raises `GpuLeased` at once (always, `--wait` included); no lease and a free lock behaves as
+  before; a one-off holder raises `GpuBusy` at once unless `wait=True` / `--wait` (or a `timeout_s`, which implies
+  it) — the old kernel wait, now deliberate, and a lease appearing mid-wait ends it with `GpuLeased`.
+  `GpuLockSelfDeadlock` and child re-entrancy unchanged (the self-deadlock is now judged at first contention, not
+  after the first poll). Exit codes 5 / 6 added to 3 / 4.
+- **Training runs.** Nothing in the launcher or trainer takes the GPU lock, so none was changed; the Training Run
+  session takes a lease before a launch and renews it on its cron (`designs/ops/TRAINING_RUN_SOP.md` §1 step 0).
+- **Docs.** Root `CLAUDE.md` standing rule 5 + the GPU row, `designs/ops/testing.md`, `ORCHESTRATOR_SOP.md` §2 (the
+  orchestrator grants one lease at a time and names the agent), `scripts/ops/README.md`. Tests:
+  `src/utils/gpu_lease_test.py` (CPU, real holder processes on a temp lock).
