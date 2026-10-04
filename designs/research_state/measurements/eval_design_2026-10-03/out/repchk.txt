@@ -1,0 +1,1 @@
+('ladder', 'ladder') n 133 var(z) 0.817 mean z 0.088

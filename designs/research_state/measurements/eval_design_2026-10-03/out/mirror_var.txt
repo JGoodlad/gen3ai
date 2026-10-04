@@ -1,0 +1,12 @@
+self  sizing_A2_n48_e10_s1001@8130 vs sizing_A2_n48_e10_s1001@8130 pairs 5000 mean 0.4996 pairSD 0.1075 indepSD 0.3536 var_ratio 0.092
+cross sizing_A2_n48_e10_s1001@8130 vs sizing_A_n48_e10_s1001@80623 pairs 5000 mean 0.5247 pairSD 0.3312 indepSD 0.3531 var_ratio 0.880
+cross sizing_A2_n48_e10_s1001@8130 vs sizing_Ap_n48_e10_s1002@8062 pairs 5000 mean 0.4929 pairSD 0.3337 indepSD 0.3535 var_ratio 0.891
+cross sizing_A_n48_e10_s1001@80623 vs sizing_A2_n48_e10_s1001@8130 pairs 5000 mean 0.4752 pairSD 0.3320 indepSD 0.3531 var_ratio 0.884
+self  sizing_A_n48_e10_s1001@80623 vs sizing_A_n48_e10_s1001@80623 pairs 5000 mean 0.5012 pairSD 0.1147 indepSD 0.3536 var_ratio 0.105
+cross sizing_A_n48_e10_s1001@80623 vs sizing_Ap_n48_e10_s1002@8062 pairs 5000 mean 0.4533 pairSD 0.3276 indepSD 0.3520 var_ratio 0.866
+cross sizing_Ap_n48_e10_s1002@8062 vs sizing_A2_n48_e10_s1001@8130 pairs 5000 mean 0.5092 pairSD 0.3324 indepSD 0.3535 var_ratio 0.884
+cross sizing_Ap_n48_e10_s1002@8062 vs sizing_A_n48_e10_s1001@80623 pairs 5000 mean 0.5447 pairSD 0.3300 indepSD 0.3521 var_ratio 0.878
+self  sizing_Ap_n48_e10_s1002@8062 vs sizing_Ap_n48_e10_s1002@8062 pairs 5000 mean 0.4990 pairSD 0.1169 indepSD 0.3536 var_ratio 0.109
+cross sizing_B_n256_e10_s1001@8068 vs sizing_A2_n48_e10_s1001@8130 pairs 5000 mean 0.4975 pairSD 0.3292 indepSD 0.3535 var_ratio 0.867
+cross sizing_B_n256_e10_s1001@8068 vs sizing_A_n48_e10_s1001@80623 pairs 5000 mean 0.5232 pairSD 0.3363 indepSD 0.3532 var_ratio 0.907
+cross sizing_B_n256_e10_s1001@8068 vs sizing_Ap_n48_e10_s1002@8062 pairs 5000 mean 0.4940 pairSD 0.3345 indepSD 0.3535 var_ratio 0.895

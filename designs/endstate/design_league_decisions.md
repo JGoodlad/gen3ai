@@ -38,7 +38,8 @@ build or decision that differs updates this doc and its Decision record in the s
   - the **HodgeRank cyclic width** vs its noise floor is the cycling meter;
   - **when cycles are wide, GROW the pool** (CPU-resident, with a PFSP-chosen GPU active set, as in the AlphaStar
     league) rather than evicting harder.
-- TODO: literature review (owner) before the build; the pool cap from the measured cyclic width (spinning tops).
+- **The system design (2026-10-03, `design_evaluation.md` §2.4, PROPOSED) finds that zero Nash weight is the COMMON case in a near-transitive pool** (N0: the point Nash is pure on one node; F-ED-3), so "evict only when confidently zero weight" is a necessary condition that rarely binds and does not choose WHICH member leaves when the cap binds. Its proposed completion: among confidently zero-weight members, evict the one the trainee beats most (lowest PFSP weight); else grow. The DECISION is this section's (owner Q6 there).
+- The literature review is DONE (`design_evaluation.md` §0a). TODO: the pool cap from the measured cyclic width (spinning tops); no banked within-run pool shows cycles above noise (F-ED-1), the multi-lineage pool is unmeasured.
 
 ## C. Plateau — has plain training stopped paying?
 - **Definition (owner):** plateau = plain training gains < 2 Elo per training GPU-hour, measured as the slope of
@@ -69,8 +70,9 @@ build or decision that differs updates this doc and its Decision record in the s
   ladder curve flattens? How often does it false-alarm on climbing segments? Which plateau kind does it diagnose?
 
 ## TODO
-- [ ] Literature review (owner): spinning tops; Nash averaging; PSRO / exploitability; HodgeRank; α-Rank +
-  ResponseGraphUCB; learning-curve extrapolation; freeze-thaw BO; CUSUM; alpha-spending.
+- [x] Literature review (owner): spinning tops; Nash averaging; PSRO / exploitability; HodgeRank; α-Rank +
+  ResponseGraphUCB; learning-curve extrapolation; freeze-thaw BO; CUSUM; alpha-spending — DONE 2026-10-03 in
+  `design_evaluation.md` §0a (with confidence sequences added as G1's first candidate, §8).
 - [ ] Promotion vs the Nash mixture (§A).
 - [ ] T20 build with its validation gate (§B).
 - [ ] Plateau: choose G1's design, specify G3, the N0 backtest, then build.

@@ -1,0 +1,3 @@
+ai_v14_01_base observed 0.786 simulated mean 1.033 sd 0.143
+ai_v12_02_winprob_critic observed 0.666 simulated mean 1.012 sd 0.117
+ai_v13_02_flywheel_winprob observed 0.912 simulated mean 1.016 sd 0.138

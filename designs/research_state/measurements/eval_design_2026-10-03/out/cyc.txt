@@ -1,0 +1,73 @@
+ai_v12_01_winprob_critic                   K=11 edges= 55 games=  5500 BTspread=   418Elo  dev/df= 0.71 pearson/df= 0.71 p=0.924 excess-sd≈ 0.0pp
+ai_v12_02_winprob_critic                   K=20 edges=190 games= 19000 BTspread=    47Elo  dev/df= 0.67 pearson/df= 0.67 p=1 excess-sd≈ 0.0pp
+ai_v13_01_flywheel_shaped                  K=20 edges=139 games= 13900 BTspread=    78Elo  dev/df= 0.68 pearson/df= 0.68 p=0.997 excess-sd≈ 0.0pp
+ai_v13_02_flywheel_winprob                 K=20 edges=142 games= 14200 BTspread=    87Elo  dev/df= 0.91 pearson/df= 0.91 p=0.748 excess-sd≈ 0.0pp
+ai_v13_04_flywheel_winprob_b               K=20 edges=143 games= 14300 BTspread=    58Elo  dev/df= 0.85 pearson/df= 0.84 p=0.897 excess-sd≈ 0.0pp
+ai_v13_09_wcont                            K=20 edges= 65 games=  6500 BTspread=    92Elo  dev/df= 0.71 pearson/df= 0.71 p=0.931 excess-sd≈ 0.0pp
+ai_v13_11_split_lossoff                    K=20 edges= 99 games=  9900 BTspread=    81Elo  dev/df= 0.81 pearson/df= 0.81 p=0.891 excess-sd≈ 0.0pp
+ai_v13_12_plateau                          K=20 edges= 54 games=  5400 BTspread=    73Elo  dev/df= 0.80 pearson/df= 0.80 p=0.8 excess-sd≈ 0.0pp
+ai_v13_16_teach5_offense_dist              K=20 edges= 70 games=  7000 BTspread=    95Elo  dev/df= 0.61 pearson/df= 0.61 p=0.987 excess-sd≈ 0.0pp
+ai_v13_21_wcont_b                          K=20 edges= 76 games=  7600 BTspread=   108Elo  dev/df= 0.74 pearson/df= 0.74 p=0.931 excess-sd≈ 0.0pp
+ai_v13_22_popr1_loop                       K=20 edges= 29 games=  2900 BTspread=   142Elo  dev/df= 0.98 pearson/df= 0.98 p=0.456 excess-sd≈ 0.0pp
+ai_v13_23_popr1_ctrl                       K=20 edges= 42 games=  4200 BTspread=   103Elo  dev/df= 0.73 pearson/df= 0.73 p=0.825 excess-sd≈ 0.0pp
+ai_v13_27_popr2_loop                       K=20 edges= 54 games=  5400 BTspread=   122Elo  dev/df= 1.01 pearson/df= 1.01 p=0.455 excess-sd≈ 0.4pp
+ai_v13_28_popr2_ctrl                       K=20 edges= 29 games=  2900 BTspread=   161Elo  dev/df= 1.15 pearson/df= 1.15 p=0.319 excess-sd≈ 1.9pp
+ai_v13_33_core_burnin                      K=20 edges= 93 games=  9300 BTspread=    76Elo  dev/df= 0.77 pearson/df= 0.77 p=0.927 excess-sd≈ 0.0pp
+ai_v14_01_base                             K=20 edges=141 games= 14100 BTspread=   118Elo  dev/df= 0.79 pearson/df= 0.79 p=0.961 excess-sd≈ 0.0pp
+ai_v14_02_lbat_ctrl                        K=20 edges= 54 games=  5400 BTspread=   124Elo  dev/df= 0.56 pearson/df= 0.56 p=0.984 excess-sd≈ 0.0pp
+ai_v14_03_lbat_e5                          K=20 edges= 54 games=  5400 BTspread=    99Elo  dev/df= 1.10 pearson/df= 1.10 p=0.311 excess-sd≈ 1.6pp
+ai_v14_05_lbat_l95                         K=20 edges= 42 games=  4200 BTspread=   116Elo  dev/df= 0.76 pearson/df= 0.76 p=0.785 excess-sd≈ 0.0pp
+ai_v14_06_lbat_ctrl_fix                    K=20 edges= 70 games=  8600 BTspread=   118Elo  dev/df= 0.63 pearson/df= 0.62 p=0.984 excess-sd≈ 0.0pp
+ai_v14_07_g0p_k2                           K=20 edges= 70 games=  8600 BTspread=   147Elo  dev/df= 0.70 pearson/df= 0.70 p=0.952 excess-sd≈ 0.0pp
+ai_v14_08_g0p_k3                           K=20 edges= 70 games=  8600 BTspread=   138Elo  dev/df= 0.58 pearson/df= 0.58 p=0.993 excess-sd≈ 0.0pp
+ai_v8_03_zarch_control_0718                K=10 edges= 45 games=  9000 BTspread=    84Elo  dev/df= 1.44 pearson/df= 1.44 p=0.0428 excess-sd≈ 2.3pp
+ai_v9_09_gen8_beliefs_threat_inject_0811   K=13 edges= 78 games=  7800 BTspread=   391Elo  dev/df= 0.66 pearson/df= 0.66 p=0.984 excess-sd≈ 0.0pp
+ai_v9_10_gen9_intent_distcritic_0813       K=13 edges= 78 games=  7800 BTspread=   359Elo  dev/df= 0.78 pearson/df= 0.78 p=0.908 excess-sd≈ 0.0pp
+ai_v9_12_gen10_t0prior_0814                K=12 edges= 66 games=  6600 BTspread=   380Elo  dev/df= 0.94 pearson/df= 0.95 p=0.59 excess-sd≈ 0.0pp
+ai_v9_13_gen11_labelonly_winprob_0815      K=12 edges= 66 games=  6600 BTspread=   430Elo  dev/df= 0.94 pearson/df= 0.95 p=0.573 excess-sd≈ 0.0pp
+ai_v9_140_B2_0901                          K=16 edges= 29 games=  2900 BTspread=   378Elo  dev/df= 0.52 pearson/df= 0.52 p=0.925 excess-sd≈ 0.0pp
+ai_v9_141_C1_0901                          K=16 edges= 29 games=  2900 BTspread=   337Elo  dev/df= 0.88 pearson/df= 0.88 p=0.583 excess-sd≈ 0.0pp
+ai_v9_143_N2_0901 ERR float division by zero
+ai_v9_14_gen12_h_entitypool_shaping_0816   K=12 edges= 66 games=  6600 BTspread=   438Elo  dev/df= 0.75 pearson/df= 0.75 p=0.916 excess-sd≈ 0.0pp
+ai_v9_150_R4DOSE12_0901                    K=16 edges= 29 games=  2900 BTspread=   416Elo  dev/df= 0.76 pearson/df= 0.75 p=0.72 excess-sd≈ 0.0pp
+ai_v9_151_R4DOSE6_0901                     K=16 edges= 29 games=  2900 BTspread=   347Elo  dev/df= 0.34 pearson/df= 0.34 p=0.989 excess-sd≈ 0.0pp
+ai_v9_15_gen13_hb_events_stack_0817        K=12 edges= 66 games= 26400 BTspread=   402Elo  dev/df= 0.98 pearson/df= 0.98 p=0.514 excess-sd≈ 0.0pp
+ai_v9_160_TCFUNDA_0903                     K=16 edges= 29 games=  2900 BTspread=   327Elo  dev/df= 0.63 pearson/df= 0.63 p=0.847 excess-sd≈ 0.0pp
+ai_v9_161_TCFUNDB_0903                     K=16 edges= 29 games=  2900 BTspread=   315Elo  dev/df= 1.30 pearson/df= 1.30 p=0.197 excess-sd≈ 2.7pp
+ai_v9_162_TCUNFA_0903                      K=16 edges= 29 games=  2900 BTspread=   383Elo  dev/df= 0.81 pearson/df= 0.81 p=0.661 excess-sd≈ 0.0pp
+ai_v9_163_TCUNFB_0903                      K=16 edges= 29 games=  2900 BTspread=   365Elo  dev/df= 0.92 pearson/df= 0.92 p=0.533 excess-sd≈ 0.0pp
+ai_v9_16_gen14_framedel_v91_0817           K=12 edges= 66 games= 26400 BTspread=   320Elo  dev/df= 1.14 pearson/df= 1.14 p=0.22 excess-sd≈ 0.9pp
+ai_v9_170_TCUNFK6A_0904                    K=16 edges= 29 games=  2900 BTspread=   376Elo  dev/df= 0.76 pearson/df= 0.76 p=0.715 excess-sd≈ 0.0pp
+ai_v9_171_TCUNFK6B_0904                    K=16 edges= 29 games=  2900 BTspread=   326Elo  dev/df= 0.56 pearson/df= 0.56 p=0.896 excess-sd≈ 0.0pp
+ai_v9_172_G1SHORT_0905                     K=16 edges= 29 games=  2900 BTspread=   357Elo  dev/df= 0.42 pearson/df= 0.42 p=0.97 excess-sd≈ 0.0pp
+ai_v9_18_gen15_v8rewards_0818              K=12 edges= 66 games=  6600 BTspread=   344Elo  dev/df= 1.19 pearson/df= 1.19 p=0.162 excess-sd≈ 2.0pp
+ai_v9_19_gen16_mechanics_0819              K=12 edges= 66 games=  6600 BTspread=   298Elo  dev/df= 0.87 pearson/df= 0.87 p=0.734 excess-sd≈ 0.0pp
+ai_v9_20_tdaux_rung2_lam00_0820            K=14 edges= 19 games=  1900 BTspread=   307Elo  dev/df= 0.52 pearson/df= 0.52 p=0.792 excess-sd≈ 0.0pp
+ai_v9_20_tdaux_rung2_lam10_0820            K=14 edges= 20 games=  2000 BTspread=   333Elo  dev/df= 0.62 pearson/df= 0.62 p=0.74 excess-sd≈ 0.0pp
+ai_v9_20_tdaux_rung2_lam30_0820            K=14 edges= 20 games=  2000 BTspread=   300Elo  dev/df= 0.55 pearson/df= 0.54 p=0.801 excess-sd≈ 0.0pp
+ai_v9_21_gen17_pfspoff_0820                K=12 edges= 66 games=  6600 BTspread=   337Elo  dev/df= 0.93 pearson/df= 0.93 p=0.628 excess-sd≈ 0.0pp
+ai_v9_22_E1_substrate_on_0821              K=18 edges= 81 games=  8100 BTspread=   395Elo  dev/df= 1.15 pearson/df= 1.14 p=0.203 excess-sd≈ 1.8pp
+ai_v9_23_E2_substrate_on_0822              K=18 edges= 87 games=  8700 BTspread=   317Elo  dev/df= 0.97 pearson/df= 0.97 p=0.545 excess-sd≈ 0.0pp
+ai_v9_24_E3_substrate_on_0822              K=18 edges= 87 games=  8700 BTspread=   317Elo  dev/df= 0.82 pearson/df= 0.81 p=0.871 excess-sd≈ 0.0pp
+ai_v9_25_E4_baitbot_0822                   K=20 edges= 99 games=  9900 BTspread=    73Elo  dev/df= 0.72 pearson/df= 0.72 p=0.971 excess-sd≈ 0.0pp
+ai_v9_26_baitent_probe_0823                K=20 edges= 45 games=  4500 BTspread=   110Elo  dev/df= 0.40 pearson/df= 0.40 p=0.997 excess-sd≈ 0.0pp
+ai_v9_27_extremedial_probe_0823            K=20 edges= 28 games=  2800 BTspread=    91Elo  dev/df= 1.33 pearson/df= 1.33 p=0.218 excess-sd≈ 2.8pp
+ai_v9_29_rev1_0823                         K=12 edges= 66 games=  6600 BTspread=   405Elo  dev/df= 0.88 pearson/df= 0.87 p=0.735 excess-sd≈ 0.0pp
+ai_v9_34_tick1_0824                        K= 5 edges= 10 games=  1000 BTspread=     4Elo  dev/df= 1.50 pearson/df= 1.50 p=0.174 excess-sd≈ 3.5pp
+ai_v9_38_fdA_coef03_0825                   K=14 edges= 22 games=  2200 BTspread=   455Elo  dev/df= 0.55 pearson/df= 0.55 p=0.841 excess-sd≈ 0.0pp
+ai_v9_39_fdB_lossonly_0825                 K=14 edges= 22 games=  2200 BTspread=   306Elo  dev/df= 0.59 pearson/df= 0.59 p=0.807 excess-sd≈ 0.0pp
+ai_v9_40_fdC_ecology_0825                  K=14 edges= 19 games=  1900 BTspread=   365Elo  dev/df= 0.89 pearson/df= 0.88 p=0.505 excess-sd≈ 0.0pp
+ai_v9_42_fdE_single_0825                   K=14 edges= 22 games=  2200 BTspread=   362Elo  dev/df= 0.60 pearson/df= 0.60 p=0.799 excess-sd≈ 0.0pp
+ai_v9_45_fdF_p1_0826 ERR float division by zero
+ai_v9_48_G1_action_0826                    K=14 edges= 22 games=  2200 BTspread=   362Elo  dev/df= 0.31 pearson/df= 0.31 p=0.971 excess-sd≈ 0.0pp
+ai_v9_49_G2_advgate_0826                   K=14 edges= 23 games=  2300 BTspread=   407Elo  dev/df= 0.76 pearson/df= 0.76 p=0.665 excess-sd≈ 0.0pp
+ai_v9_50_fdF_p1c_0826 ERR float division by zero
+ai_v9_52_G1p_matched_0826                  K=14 edges= 23 games=  2300 BTspread=   343Elo  dev/df= 0.27 pearson/df= 0.27 p=0.988 excess-sd≈ 0.0pp
+ai_v9_59_R2ACTION_0827                     K=14 edges= 21 games=  2100 BTspread=   402Elo  dev/df= 0.76 pearson/df= 0.76 p=0.639 excess-sd≈ 0.0pp
+ai_v9_60_R2TOPK_0827                       K=14 edges= 22 games=  2200 BTspread=   319Elo  dev/df= 0.59 pearson/df= 0.59 p=0.806 excess-sd≈ 0.0pp
+ai_v9_61_R2KL_0827                         K=14 edges= 25 games=  2500 BTspread=   365Elo  dev/df= 0.64 pearson/df= 0.64 p=0.807 excess-sd≈ 0.0pp
+ai_v9_62_R2PLAIN_0827                      K=14 edges= 19 games=  1900 BTspread=   501Elo  dev/df= 0.82 pearson/df= 0.82 p=0.557 excess-sd≈ 0.0pp
+ai_v9_70_R3ACTION_0828                     K=16 edges= 29 games=  2900 BTspread=   389Elo  dev/df= 0.62 pearson/df= 0.62 p=0.855 excess-sd≈ 0.0pp
+ai_v9_71_R3ACTIONHI_0828                   K=16 edges= 29 games=  2900 BTspread=   408Elo  dev/df= 0.60 pearson/df= 0.60 p=0.867 excess-sd≈ 0.0pp
+ai_v9_76_R4ACTION_0830                     K=16 edges= 29 games=  2900 BTspread=   387Elo  dev/df= 1.03 pearson/df= 1.03 p=0.418 excess-sd≈ 0.8pp
+ai_v9_91_COMPFOLD_0831                     K=16 edges= 29 games=  2900 BTspread=   386Elo  dev/df= 1.02 pearson/df= 1.01 p=0.435 excess-sd≈ 0.6pp
