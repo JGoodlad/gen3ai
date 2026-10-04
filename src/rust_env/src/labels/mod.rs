@@ -34,7 +34,8 @@ impl EpisodeState {
 pub const BUILT: &[&str] = &["belief", "hp_type", "item", "spread", "intent", "margin"];
 
 /// Write every DECLARED family's columns for `side`'s open decision. `own` is the side's reading,
-/// `truth` the OTHER side's (its own team = `battle2.team`), `row` the row just encoded for `side`.
+/// `truth` the OTHER side's (its own team = `battle2.team`), `oracle` the ORACLE REVEAL's opponent team
+/// when the row states unseen species (`None` = the mode `off`), `row` the row just encoded for `side`.
 /// `Err` is a label invariant the Python env raises on (the caller makes it a FAULT).
 pub fn write(
     families: &[&'static str],
@@ -44,6 +45,7 @@ pub fn write(
     own_view: Option<&pokesim::present::view::OneSidedView>,
     dec_n: u32,
     truth: &BoardReading,
+    oracle: Option<&pokesim::encoder::oracle::Oracle>,
     row: &[f32],
     _st: &mut EpisodeState,
     c: &mut EnvCols,
@@ -56,6 +58,7 @@ pub fn write(
                 belief::write(
                     own,
                     truth,
+                    oracle,
                     row,
                     &mut c.belief_species[side * T..(side + 1) * T],
                     &mut c.belief_moves[side * T * m..(side + 1) * T * m],
@@ -65,6 +68,7 @@ pub fn write(
             "hp_type" => per_slot::write_hp_type(
                 own,
                 truth,
+                oracle,
                 row,
                 &mut c.hp_type_label[side * T..(side + 1) * T],
                 &mut c.hp_type_mask[side * T..(side + 1) * T],
@@ -72,6 +76,7 @@ pub fn write(
             "item" => per_slot::write_item(
                 own,
                 truth,
+                oracle,
                 row,
                 &mut c.item_label[side * T..(side + 1) * T],
                 &mut c.item_mask[side * T..(side + 1) * T],
@@ -81,6 +86,7 @@ pub fn write(
                 spread::write(
                     own,
                     truth,
+                    oracle,
                     row,
                     &mut c.belief_spread[side * T * n..(side + 1) * T * n],
                     &mut c.belief_spread_mask[side * T..(side + 1) * T],

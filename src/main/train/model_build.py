@@ -271,6 +271,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                 enforce_reward_config=reward_config,  # FATAL if victory_value/terminal_indicator/draw_penalty drift
                 enforce_belief_grad_mode=args.belief_grad_mode,  # FATAL if the belief-trunk-grad mode drifts (v41)
                 allow_belief_grad_mode_change=args.allow_belief_grad_mode_change,  # intentional migration
+                enforce_oracle_reveal=args.oracle_reveal,  # FATAL if the observation mode drifts (v137)
             )
             # gen3_belief_grad_mode_v1 MIGRATION FIX: SB3 reconstructs the extractor from the ZIP's
             # saved policy_kwargs, so the requested mode must be APPLIED to the live extractor

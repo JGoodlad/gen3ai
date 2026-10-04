@@ -110,6 +110,7 @@ class ExtractorBuild(torch.nn.Module):
                  ridealong_opp: int = 0,
                  ridealong_rnd_variants: str = "off",
                  belief_tokens: str = "blob",
+                 oracle_reveal: str = "off",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -901,6 +902,14 @@ class ExtractorBuild(torch.nn.Module):
         if belief_tokens not in BELIEF_TOKEN_MODES:
             raise ValueError(f"belief_tokens must be one of {BELIEF_TOKEN_MODES}, got {belief_tokens!r}")
         self.belief_tokens = belief_tokens
+        # gen3_oracle_reveal_v1 (v137): the DIAGNOSTIC observation mode this extractor's observations are built
+        # under (`encoder::oracle`, written into the observation by the Rust env core). INERT here: the forward
+        # reads the observation and nothing else, so no module is built and no weight moves. It is stored so the
+        # snapshot records it (`ModelVersion.oracle_reveal`) and every offline tool can read the run's own mode.
+        from utils.rust_env.protocol import ORACLE_REVEAL_LEVELS
+        if oracle_reveal not in ORACLE_REVEAL_LEVELS:
+            raise ValueError(f"oracle_reveal must be one of {ORACLE_REVEAL_LEVELS}, got {oracle_reveal!r}")
+        self.oracle_reveal = oracle_reveal
         self.hypothesis_builder: Optional[HypothesisBuilder] = None
         if belief_tokens == "fixed_mass":
             if not t0_species_prior:

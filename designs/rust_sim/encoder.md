@@ -12,7 +12,7 @@ under its own flag, default OFF** — with the flag off, no training byte change
 
 | | |
 |---|---|
-| **Encoder** | `src/rust_sim/src/encoder/mod.rs` (`encode`, `encode_slice`, `prefill`, the active context, global env, board, pair history and event-window writers), `slot.rs` (the 122-dim per-mon slot; `populated_slot` is the ONE writer of a populated slot), `hypothesis.rs` (X5's hypothesis row, §10), `data.rs` (the dex / prior tables, read from `data/pokemon/`), `layout.rs` (GENERATED), `wire.rs` (the row on the wire) |
+| **Encoder** | `src/rust_sim/src/encoder/mod.rs` (`encode`, `encode_slice`, `prefill`, the active context, global env, board, pair history and event-window writers), `slot.rs` (the 122-dim per-mon slot; `populated_slot` is the ONE writer of a populated slot), `hypothesis.rs` (X5's hypothesis row, §10), `oracle.rs` (the diagnostic ORACLE REVEAL, §11), `data.rs` (the dex / prior tables, read from `data/pokemon/`), `layout.rs` (GENERATED), `wire.rs` (the row on the wire) |
 | **Version** | `BattleVersion::encode(side, &mut [f32; OBS_DIM])` — the side's reading, its view, its legality, its TRACKERS (required) |
 | **Python** | `agents/observation/rust_core_obs_layout.py` (the generator), `agents/battle/core_obs.py` (`wrap_row` / `check_row`), `agents/battle/rust_core_parity_obs.py` (slice O) |
 | **Bridge** | `src/rust_sim/src/bin/sim_bridge.rs` — the `core_obs` START key and the `__OBS__` frame (§5a) |
@@ -279,3 +279,37 @@ the sleep belief, recency, last action, the active flag — the mon's state on t
 * `encoder::hypothesis::tests` (`cargo test`): the cells tile the slot, a pristine row's fixed cells,
   an unknown species refused, and the comparator's teeth (each compared class, a signed zero, an item
   cell that differs without its reveal flag).
+
+## 11. The ORACLE REVEAL — a diagnostic observation mode, never production (`gen3_oracle_reveal_v1`)
+
+`--oracle-reveal {off,species}` (`designs/endstate/design_x5_belief_tokens.md` §7.6 "As built"; backlog X32) writes
+the opponent's TRUE species into the opponent team block of the observation from turn 1, as if the game had a team
+preview. It enters the shared trunk through the row; it is not a side input to any head. The code is
+`src/rust_sim/src/encoder/oracle.rs`; the mode is the Rust env core's `Spec.oracle_reveal` (a REQUIRED spec key,
+`protocol.SPEC_KEYS`), and `off` leaves every row byte-identical to the encoder that had no reveal.
+
+| piece | is |
+|---|---|
+| `Oracle` | the OTHER side's packed team (`team::unpack`, species ids by `to_id`), built per episode and side by `rust_env`'s `Env::start` and held on that side's `SideStream` (`BattleVersion::with_oracle`; an `Arc`, so a fork shares it); `Inputs.oracle` carries it into `encode` |
+| the tail | `slot::team`, for the OPPONENT block only: after the seen mons (reveal order, `off`'s bytes) one slot per unseen mon in dex-num order, each `hypothesis_slot(species)` — the row the encoder writes for a never-seen mon, §10 — copied from the `OracleMon` built at episode start |
+| `Oracle::tail(revealed)` | the unseen mons: one oracle entry consumed per revealed mon, matched by DEX NUM (a forme shares its base species' num), a revealed mon the oracle team does not hold is a FAULT. The encoder AND the label writers call it, so the row and the labels share one slot order |
+| `SPECIES_SLOT_CELLS` + `check_species_slot` | the producer's THROWING guard: all 122 cells declared (`SpeciesDerived` / `Zero` / `One`; the declaration tiles the slot) and every built tail slot checked bit for bit |
+
+**What a tail slot carries.** The species' dex row (num, base stats, types) and the ability block (the Smogon prior,
+or the one ability of a one-ability species) — derived from the species alone — plus the pristine state of a mon that
+has never been on the field: `species_known` 1, HP fraction 1.0, recency "never seen", full Protect odds. Item, status,
+counters, moves, spread, the Hidden-Power block, the sleep belief, the last action and the trapped / active flags are
+exactly 0.0. A mon is never marked seen, acted or active by being listed. The pair-history block needs no change: an
+unseen slot's pair cells are the never-interacted values, bit-for-bit an absent slot's.
+
+**Scope.** The reveal exists on the Rust env core's chains (training, the in-loop eval core). `sim_bridge`'s `core_obs`
+mode, `core_events --obs` (slice O) and the search chains (`search_driver`, the env core's search, the fork arm) build
+`off` rows: the Python `Gen3ObservationEncoder` has no reveal, which is why slice O gates `off` only.
+
+**Gates.** `src/rust_env/tests/oracle_reveal_test.rs`: `off_is_inert` (the off obs / mask / label bytes pinned to a
+digest recorded on `e0d56693`, the commit before the build), the DIFFERENTIAL `species_differs_from_off_only_in_the_declared_cells`
+(real battles, `off` against `species`, every decision, both sides), the edge cases (formes, Species-Clause
+duplicates, a reveal in play, a revealed mon off the oracle team, a real Forecast battle through a forme change);
+`encoder::oracle::tests` (the cells tile the slot, the guard's teeth per block); `label_lookup_guard_test.rs` (the
+labels' consumer guard); `src/utils/rust_env/oracle_reveal_integration_test.py` (the real core from Python).
+

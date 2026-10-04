@@ -221,7 +221,7 @@ fn obs_bench(v: &BattleVersion, side: usize, reps: usize) -> Result<String, Stri
         let t = Instant::now();
         let view = pokesim::present::present(&s.board_reading).map_err(|e| e.message().to_string())?;
         let legal = pokesim::present::legal_actions(&s.board_reading);
-        let inp = Inputs { reading: &s.board_reading, view: &view, legal: legal.as_ref(), trackers: &trk.trackers };
+        let inp = Inputs { reading: &s.board_reading, view: &view, legal: legal.as_ref(), trackers: &trk.trackers, oracle: s.oracle.as_deref() };
         encoder::encode(&inp, &mut cold_row).map_err(|e| e.message().to_string())?;
         cold.push(t.elapsed().as_secs_f64() * 1e6);
     }

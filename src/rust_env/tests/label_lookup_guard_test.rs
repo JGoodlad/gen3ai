@@ -11,9 +11,12 @@
 //!   left the hidden set one too long and `known_moves` PAD.
 //! * one test per guard, each asserting the `Err` names its cause.
 
+use pokesim::dex::Dex;
 use pokesim::encoder::layout::{OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_SPECIES_KNOWN_OFFSET, TEAM_SIZE};
+use pokesim::encoder::oracle::{Level, Oracle};
 use pokesim::present::board_reading::BoardReading;
 use pokesim::present::mon::PMon;
+use pokesim::team::{pack, PokemonSet};
 use pokesim::trackers::clock::ClockConfig;
 use pokesim::trackers::{IntentLabel, SideTrackers, KIND_MOVE, KIND_SWITCH};
 use pokesim_env::core::columns::col;
@@ -57,9 +60,31 @@ fn board(revealed: &[&str]) -> (BoardReading, BoardReading, Vec<f32>) {
 }
 
 fn write(fams: &[&'static str], own: &BoardReading, truth: &BoardReading, row: &[f32], trk: Option<&SideTrackers>, cols: &mut OwnedCols) -> Result<(), String> {
+    write_with(fams, own, truth, None, row, trk, cols)
+}
+
+fn write_with(fams: &[&'static str], own: &BoardReading, truth: &BoardReading, oracle: Option<&Oracle>, row: &[f32], trk: Option<&SideTrackers>, cols: &mut OwnedCols) -> Result<(), String> {
     let a = cols.addrs();
     let mut c = unsafe { a.env(0) };
-    labels::write(fams, 0, own, trk, None, 0, truth, row, &mut EpisodeState::default(), &mut c)
+    labels::write(fams, 0, own, trk, None, 0, truth, oracle, row, &mut EpisodeState::default(), &mut c)
+}
+
+/// The ORACLE REVEAL's opponent team: the truth team's six species, packed.
+fn oracle_of_team() -> Oracle {
+    let dex = Dex::for_gen(3);
+    let sets: Vec<PokemonSet> = TEAM
+        .iter()
+        .map(|(sp, mv, it)| PokemonSet {
+            name: sp.to_string(),
+            species: sp.to_string(),
+            item: it.to_string(),
+            ability: "pressure".into(),
+            moves: mv.iter().map(|m| m.to_string()).collect(),
+            nature: "Hardy".into(),
+            ..Default::default()
+        })
+        .collect();
+    Oracle::new(Level::Species, &pack(&sets, &dex), &dex).expect("oracle")
 }
 
 fn snum(id: &str) -> i64 {
@@ -183,4 +208,49 @@ fn an_intent_lookup_that_cannot_be_made_is_an_err() {
         let e = err_of(write(&["intent"], &own, &truth, &row, Some(&trk), &mut OwnedCols::new(1)));
         assert!(e.contains(want), "want {want:?}: {e}");
     }
+}
+
+// ------------------------------------------------------------------ the ORACLE REVEAL's labels
+
+#[test]
+fn the_oracle_labels_every_stated_slot_in_the_encoders_order() {
+    // two seen (tyranitar, gengar), four unseen the row also states: dex-num order after the seen
+    let (own, truth, mut row) = board(&["tyranitar", "gengar"]);
+    for i in 2..TEAM_SIZE {
+        row[OFFSET_OPP_TEAM + i * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET] = 1.0;
+    }
+    let oracle = oracle_of_team();
+    let mut cols = OwnedCols::new(1);
+    write_with(&["belief", "hp_type", "item"], &own, &truth, Some(&oracle), &row, None, &mut cols).unwrap();
+    let bs = &cols.slice::<i64>(col::BELIEF_SPECIES)[..TEAM_SIZE];
+    assert!(bs.iter().all(|&x| x == -1), "every species is stated: nothing is believed, {bs:?}");
+    assert!(cols.slice::<i64>(col::BELIEF_MOVES)[..TEAM_SIZE * 4].iter().all(|&x| x == -1));
+    let mut unseen: Vec<&(&str, [&str; 4], &str)> = TEAM.iter().filter(|t| t.0 != "tyranitar" && t.0 != "gengar").collect();
+    unseen.sort_by_key(|t| snum(t.0));
+    let km = &cols.slice::<i64>(col::KNOWN_MOVES)[..TEAM_SIZE * 4];
+    assert_eq!(&km[..4], &TEAM[0].1.map(mnum));
+    assert_eq!(&km[4..8], &TEAM[5].1.map(mnum));
+    for (j, t) in unseen.iter().enumerate() {
+        let slot = 2 + j;
+        assert_eq!(&km[slot * 4..slot * 4 + 4], &t.1.map(mnum), "slot {slot} is {} (dex-num order)", t.0);
+    }
+    assert!(cols.slice::<f32>(col::ITEM_MASK)[..TEAM_SIZE].iter().all(|&m| m == 1.0), "every stated slot's item is labelled");
+}
+
+#[test]
+fn a_row_and_an_oracle_that_disagree_are_refused_not_labelled_a_slot_off() {
+    // the oracle names six species but the row states only the two seen: the producer and the
+    // consumer disagree about the opp-slot packing
+    let (own, truth, row) = board(&["tyranitar", "gengar"]);
+    let oracle = oracle_of_team();
+    let e = err_of(write_with(&["belief"], &own, &truth, Some(&oracle), &row, None, &mut OwnedCols::new(1)));
+    assert!(e.contains("drifted") && e.contains("2 opp species"), "{e}");
+    // ... and the reverse: the row states three, the reading + no oracle name two (a three-mon truth team,
+    // so the older hidden-count guard does not fire first)
+    let (own, mut truth, mut row) = board(&["tyranitar", "gengar"]);
+    truth.team.truncate(3);
+    truth.team.push(("p2: gengar".into(), mon("gengar", &TEAM[5].1, "leftovers")));
+    row[OFFSET_OPP_TEAM + 2 * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET] = 1.0;
+    let e = err_of(write(&["belief"], &own, &truth, &row, None, &mut OwnedCols::new(1)));
+    assert!(e.contains("drifted") && e.contains("3 opp species"), "{e}");
 }

@@ -878,6 +878,7 @@ def load_model_snapshot(
     enforce_reward_config: Any = None,   # duck-typed, like ModelVersion.build
     enforce_belief_grad_mode: Optional[str] = None,
     allow_belief_grad_mode_change: bool = False,
+    enforce_oracle_reveal: Optional[str] = None,
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
@@ -919,6 +920,8 @@ def load_model_snapshot(
         if enforce_belief_grad_mode is not None:
             saved_version.check_belief_grad_mode(enforce_belief_grad_mode,
                                                  allow_change=allow_belief_grad_mode_change)
+        if enforce_oracle_reveal is not None:
+            saved_version.check_oracle_reveal(enforce_oracle_reveal)   # v137: the observation's meaning is fixed
         arch_validated = True
     else:
         print(
@@ -1420,6 +1423,7 @@ def current_model_version(
     ridealong_opp: int = 0,
     ridealong_rnd_variants: str = "off",
     belief_tokens: str = "blob",
+    oracle_reveal: str = "off",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
 ) -> ModelVersion:
@@ -1475,6 +1479,9 @@ def current_model_version(
     # gen3_x5_hypothesis_set_v1 (v136): X5's belief representation — structural, so a frozen
     # opponent's gate must see it.
     ext_kwargs["belief_tokens"] = str(belief_tokens)
+    # gen3_oracle_reveal_v1 (v137): the diagnostic observation mode — resume-immutable, so not in
+    # `check_compatible`, but recorded so a worker / an offline tool reads the run's own value.
+    ext_kwargs["oracle_reveal"] = str(oracle_reveal)
     ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
@@ -1561,6 +1568,8 @@ def arch_toggles_from_model(model: Any) -> dict:
         # gen3_x5_hypothesis_set_v1 (v136): X5's belief representation (`fixed_mass` builds the
         # hypothesis builder — a state_dict delta — so a frozen opponent's gate must see it).
         "belief_tokens": str(getattr(fe, "belief_tokens", "blob") or "blob"),
+        # gen3_oracle_reveal_v1 (v137): the diagnostic observation mode the policy was built under.
+        "oracle_reveal": str(getattr(fe, "oracle_reveal", "off") or "off"),
         # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
         # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
         # gate must see it (else an inject-on run FATALs loading its own sentinels).

@@ -143,7 +143,9 @@ def build_eval_core(decl: EvalDecl, *, collector_decl: Any, svc: Any, extra_ids:
     spec = P.spec_json(n=int(decl.n_envs), threads=int(collector_decl.threads), teams=list(teams.teams), names=NAMES,
                        turn_limit=int(turn_limit),
                        refusal_budget=int(collector_decl.refusal_budget), bank_dir=None,
-                       terminal=terminal, opponents=table.spec_rows())
+                       terminal=terminal, opponents=table.spec_rows(),
+                       # the run's RECORDED observation mode (--oracle-reveal): in-loop eval plays at the same one
+                       oracle_reveal=collector_decl.oracle_reveal)
     t0 = time.perf_counter()
     core = open_core(collector_decl, spec)
     lib = ffi.load(ffi.default_path(collector_decl.profile))

@@ -39,6 +39,7 @@ pub fn spec(n: usize, threads: usize, teams: Vec<String>) -> Spec {
         bank_dir: None,
         labels: Vec::new(),
         opponents: pokesim_env::opponents::Routes::external(),
+        oracle_reveal: pokesim::encoder::oracle::Level::Off,
     }
 }
 

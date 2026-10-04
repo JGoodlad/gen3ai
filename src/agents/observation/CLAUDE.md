@@ -305,6 +305,13 @@ behind a flag OFF in `production_config.json`, program §3).
   encode, cold) against this directory's 0.157 ms production shape / 0.606 ms cold on the same
   decision (`research_state/measurements/rust_core_m4_2026-09-24/`).
 
+🚨 **The ORACLE REVEAL has NO Python mirror, by design.** `--oracle-reveal species` (a DIAGNOSTIC mode, never production;
+`designs/rust_sim/encoder.md` §11) writes the opponent's unseen species into the opponent block of the row the Rust env
+core builds — dex-num-ordered `hypothesis_slot` rows after the seen mons. This directory's encoder always encodes
+`off`, so slice O gates `off` only, and the prober / the Lane S bank cannot re-encode an oracle run's states. The mode
+is the run's recorded `oracle_reveal`; offline tools that build observations here refuse such a checkpoint
+(`agents.model.oracle_reveal`).
+
 ## ⚠️ A fuzz ORACLE binds to the layout too — by NAME, never by literal
 
 The positional-binding sweep (2026-08-18) found two live misbinds on this directory's *readers*,

@@ -122,6 +122,27 @@ class ModelVersionResumeChecks(ModelVersionFields):
                 "--allow-belief-grad-mode-change for an intentional migration, or start a fresh run."
             )
 
+    def check_oracle_reveal(self, requested: str) -> None:
+        """Raise ModelVersionError if `requested` (the resume `--oracle-reveal`) differs from this saved
+        config's oracle_reveal. Call as: saved_version.check_oracle_reveal(args.oracle_reveal).
+
+        gen3_oracle_reveal_v1 (v137): the reveal builds no module and moves no weight, so the FORWARD is
+        bit-identical and `check_compatible` does not read it (a frozen opponent of the same run is built
+        at the run's own mode). What the INPUT MEANS differs — a network trained on observations that state
+        the opponent's species is a different function of the observation — so, like vf_coef, it is fixed
+        for a run's lifetime and enforced ONLY on the training-resume path: flipping it mid-run silently
+        feeds the network a distribution it never trained on. No allow-change escape hatch: the oracle arms
+        start FRESH."""
+        if self.oracle_reveal != requested:
+            raise ModelVersionError(
+                f"oracle_reveal mismatch: saved={self.oracle_reveal!r}, requested={requested!r}.\n"
+                "The ORACLE REVEAL (a diagnostic observation mode: the opponent's true species written into "
+                "the observation) is fixed for a run's lifetime — a network trained under one mode is a "
+                "different function of the observation under another.\n"
+                f"Fix: resume with --oracle-reveal {self.oracle_reveal} (a flagless resume inherits it), or "
+                "start a fresh run."
+            )
+
     def check_reward_config(self, reward_config: Any) -> None:
         """Raise ModelVersionError if the resume `reward_config` differs from this saved config's
         reward hparams (victory_value / terminal_indicator / draw_penalty / …). Like check_vf_coef:

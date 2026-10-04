@@ -113,7 +113,7 @@ fn a_stream_without_trackers_refuses_and_a_wrong_length_row_is_refused() {
     let view = v.view(0).unwrap();
     let legal = v.legal(0);
     let trk = s.trk.as_ref().unwrap();
-    let inp = encoder::Inputs { reading: &s.board_reading, view, legal: legal.as_ref(), trackers: &trk.trackers };
+    let inp = encoder::Inputs { reading: &s.board_reading, view, legal: legal.as_ref(), trackers: &trk.trackers, oracle: None };
     let mut short = vec![0.0f32; OBS_DIM - 1];
     let err = encoder::encode_slice(&inp, &mut short).unwrap_err();
     assert!(err.message().contains(&format!("{} cells", OBS_DIM - 1)), "{err:?}");

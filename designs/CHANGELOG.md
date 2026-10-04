@@ -11816,3 +11816,29 @@ their pin's code and are unaffected. No run is live.
   `consistency_test`'s tie-exclusion test now excludes the minimum-margin TIE GROUP (three probe rows share it exactly
   under the weighted marginal). `beatup_damage_test`'s typeless E[mult] bound goes from `abs=1e-6` to the fp32
   summation bound `n * 2^-24` (it reads 1 + 1.07e-6).
+
+## 2026-10-04 — OBSERVATION MODE (diagnostic, never production): `--oracle-reveal {off,species}` (`gen3_oracle_reveal_v1`, config v137; `off` is byte-identical; no ARCH_SIGNATURE / MIGRATION_FLOOR change)
+
+- **What.** The X5 A/B's oracle-species reference arm (backlog X32a; `design_x5_belief_tokens.md` §7.6 "As built"). With
+  `species` the Rust encoder writes the opponent's TRUE species into the opponent block of the OBSERVATION from turn 1
+  (team-preview semantics), so the facts enter the shared trunk. The seen opponent mons keep their slots and bytes;
+  after them one slot per unseen mon in dex-num order, each `hypothesis_slot(species)` (the encoder's own row for a
+  never-seen mon). Nothing else moves; obs dims are unchanged.
+- **Mechanism.** `src/rust_sim/src/encoder/oracle.rs` (`Level`, `Oracle`, `SPECIES_SLOT_CELLS` + the throwing
+  `check_species_slot`); `Inputs.oracle`; `SideStream.oracle` / `BattleVersion::with_oracle`; the env core's `Spec.oracle_reveal`
+  (a required `SPEC_KEYS` entry; `columns.rs`, the FFI table and the process wire are regenerated); each side's chain is given
+  the OTHER side's team (symmetric; scripted bots unaffected); the belief / hp-type / item / spread labels follow the row
+  (`labels::belief::revealed_nums` calls the encoder's `Oracle::tail`; a stated-count mismatch THROWS).
+- **Flag.** A `resume_immutable` registry row (v137): recorded in `model_config.json` / `metadata.json`, inherited by a
+  flagless resume, a flip refused (`check_oracle_reveal`), shown by `main.checkargs` and a launch banner; `RustEnvDecl.oracle_reveal`
+  feeds the training pool AND the in-loop eval core. Refused with the fork arm (`oracle_reveal_vs_fork_arm`); `main.h2h`,
+  `main.anchors`, `main.play`, `main.belief_roles`, `main.policy_spectrum` refuse an oracle checkpoint
+  (`agents.model.oracle_reveal`).
+- **Gates.** INERT WHEN OFF: the obs / mask / label bytes over 27,333 real decisions are pinned to a digest recorded on
+  `e0d56693` (`rust_env/tests/oracle_reveal_test.rs::off_is_inert`). A differential over real battles, every decision of both
+  sides, requires `species` to differ from `off` only in the declared tail cells. Edge cases: formes, Species-Clause
+  duplicates, a reveal in play, a real Forecast battle. Python: the real core read from Python, the belief loss on the real
+  oracle labels, the record / resume gate / refusals.
+- **Deferred.** The per-side reveal in the h2h engine; the `full` level; the intent head's switch-slot target for an unseen
+  mon; search chains; a Python encoder mirror.
+

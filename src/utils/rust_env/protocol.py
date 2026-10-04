@@ -93,15 +93,21 @@ COUNTERS: Tuple[Counter, ...] = (
 #: which ``spec.rs`` reads, so the two languages cannot disagree about the spec's shape.
 SPEC_KEYS: Tuple[str, ...] = (
     "n", "threads", "format_id", "names", "teams", "turn_limit",
-    "terminal", "refusal_budget", "bank_dir", "labels", "opponents",
+    "terminal", "refusal_budget", "bank_dir", "labels", "opponents", "oracle_reveal",
 )
+
+#: The ORACLE REVEAL levels (``--oracle-reveal``; ``encoder::oracle::Level``): how much of the opponent's
+#: team the observation row is told. ``off`` is the production mode (the row is byte-identical to the
+#: build that had no reveal); the others are DIAGNOSTIC (``designs/endstate/design_x5_belief_tokens.md``
+#: §7.6). The ONE Python list — ``model_version`` / the parser read it, and a test pins it to Rust's.
+ORACLE_REVEAL_LEVELS: Tuple[str, ...] = ("off", "species")
 
 
 def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, str]",
               turn_limit: Optional[int],
               refusal_budget: int, bank_dir: Optional[str], format_id: str = "gen3ou",
               labels: "tuple[str, ...]" = (), terminal: "Optional[dict]" = None,
-              opponents: "Optional[list[dict]]" = None) -> str:
+              opponents: "Optional[list[dict]]" = None, oracle_reveal: str = "off") -> str:
     """The startup declaration as the core parses it (every key explicit in the JSON — nothing
     defaulted except ``format_id``, the one format the core runs, and ``labels``: the Lane-C label
     FAMILIES the core writes, ``label_inventory`` names; none by default), and ``terminal`` (M5 Lane
@@ -111,8 +117,14 @@ def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, st
     in production (``episode.stall_threshold()``); ``None`` = no forfeit (harnesses only).
     ``opponents`` (M5 Lane E) is the OPPONENT ROUTE TABLE the ``ep_opp`` column indexes
     (``{"kind": "external"}`` / ``{"kind": "policy", "slot": k}`` / ``{"kind": "bot", "bot": name}``);
-    default one EXTERNAL route, so a zeroed ``ep_opp`` is Lane 0's shape (the caller answers p2)."""
+    default one EXTERNAL route, so a zeroed ``ep_opp`` is Lane 0's shape (the caller answers p2).
+    ``oracle_reveal`` is the ORACLE REVEAL level (:data:`ORACLE_REVEAL_LEVELS`): ``off`` is the production
+    observation; a diagnostic level writes the opponent's true species into every side's opponent block
+    from turn 1 — the run's recorded mode, so the training pool and its eval core must be given the SAME one."""
     import json
+
+    if oracle_reveal not in ORACLE_REVEAL_LEVELS:
+        raise ValueError(f"oracle_reveal {oracle_reveal!r} is not one of {ORACLE_REVEAL_LEVELS}")
 
     from utils.rust_env import episode as EP
 
@@ -123,6 +135,7 @@ def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, st
         "turn_limit": turn_limit,
         "terminal": term, "refusal_budget": refusal_budget, "bank_dir": bank_dir, "labels": list(labels),
         "opponents": [dict(r) for r in (opponents if opponents is not None else ({"kind": "external"},))],
+        "oracle_reveal": oracle_reveal,
     }
     assert tuple(spec) == SPEC_KEYS, "spec_json and SPEC_KEYS drifted"
     return json.dumps(spec)

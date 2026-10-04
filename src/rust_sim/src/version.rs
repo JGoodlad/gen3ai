@@ -65,6 +65,9 @@ pub struct SideStream {
     /// [`SideStream::with_trackers`]). A fork clones the handle; the state is shared until the
     /// fork's own transition opens a decision.
     pub trk: Option<TrackerState>,
+    /// The ORACLE REVEAL (`encoder::oracle`, a diagnostic observation mode): the opponent team the
+    /// side's observation row is told. `None` is the mode `off`. A fork shares the handle.
+    pub oracle: Option<Arc<crate::encoder::oracle::Oracle>>,
 }
 
 impl SideStream {
@@ -77,6 +80,7 @@ impl SideStream {
             owners: OwnerScan::default(),
             lines: 0,
             trk: None,
+            oracle: None,
         })
     }
 
@@ -385,6 +389,17 @@ impl BattleVersion {
         Ok(Self::new(None, Origin::Parse, None, streams, [Vec::new(), Vec::new()], [0, 0]))
     }
 
+    /// Tell `side`'s stream the opponent team its observation row reveals (the ORACLE REVEAL,
+    /// `encoder::oracle`; a diagnostic mode). Before the first line; without it the row is the
+    /// side's own reading alone.
+    pub fn with_oracle(mut self, side: usize, oracle: Arc<crate::encoder::oracle::Oracle>) -> R<BattleVersion> {
+        match self.streams[side].as_mut() {
+            Some(s) => s.oracle = Some(oracle),
+            None => return Err(fault(format!("with_oracle: no stream for p{}", side + 1))),
+        }
+        Ok(self)
+    }
+
     fn only_side(&self) -> R<usize> {
         match (self.origin, &self.streams[0], &self.streams[1]) {
             (Origin::Parse, Some(_), None) => Ok(0),
@@ -506,6 +521,7 @@ impl BattleVersion {
             view: self.view(side)?,
             legal: legal.as_ref(),
             trackers: &trackers.trackers,
+            oracle: s.oracle.as_deref(),
         };
         crate::encoder::encode(&inputs, out)
     }

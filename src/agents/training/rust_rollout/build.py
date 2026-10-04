@@ -40,6 +40,7 @@ from agents.training.rust_rollout import store as S
 from agents.training.rust_rollout.collector import CollectorConfig, RustCollector
 from agents.training.rust_rollout.teams import TeamStager, TeamTable
 from agents.training.rust_rollout.trigger import trigger_for
+from utils.rust_env.protocol import ORACLE_REVEAL_LEVELS
 
 FRONTS = ("proc", "ffi")
 PROFILES = ("release", "selfcheck")
@@ -77,12 +78,21 @@ class RustEnvDecl:
     #: the fork arm's declaration (``fork.ForkDecl``; ``designs/training/forks.md`` §14). None = OFF —
     #: nothing of the arm is built, and the arena, the obs keys and the FIFO are exactly as without it.
     fork: Any = None
+    #: the ORACLE REVEAL level (``--oracle-reveal``; ``encoder::oracle``) the core's observations are built at:
+    #: the run's RECORDED mode, shared by the training pool and the eval core (``build_eval_core`` reads its
+    #: ``collector_decl``). ``off`` = the production observation, byte-identical.
+    oracle_reveal: str = "off"
 
     def __post_init__(self) -> None:
         if self.front not in FRONTS:
             raise ValueError(f"RustEnvDecl.front {self.front!r} not in {FRONTS}")
         if self.profile not in PROFILES:
             raise ValueError(f"RustEnvDecl.profile {self.profile!r} not in {PROFILES}")
+        if self.oracle_reveal not in ORACLE_REVEAL_LEVELS:
+            raise ValueError(f"RustEnvDecl.oracle_reveal {self.oracle_reveal!r} not in {ORACLE_REVEAL_LEVELS}")
+        if self.oracle_reveal != "off" and self.fork is not None:
+            raise ValueError("RustEnvDecl: the fork arm's successor rows are encoded by chains WITHOUT the oracle reveal, "
+                             "so --oracle-reveal != off cannot combine with --fork-fraction > 0")
 
     @property
     def resolved_buckets(self) -> Tuple[int, ...]:
@@ -343,7 +353,8 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
     spec = P.spec_json(n=n, threads=int(decl.threads), teams=list(table.teams), names=NAMES,
                        turn_limit=int(decl.turn_limit), refusal_budget=int(decl.refusal_budget),
                        bank_dir=decl.bank_dir, labels=fams, terminal=terminal,
-                       opponents=plan.spec_rows(bots="external" if external_p2 is not None else "core"))
+                       opponents=plan.spec_rows(bots="external" if external_p2 is not None else "core"),
+                       oracle_reveal=decl.oracle_reveal)
     t1 = time.perf_counter()
     core = open_core(decl, spec)
     emit(f"🦀 [RUST ENV] core up in {time.perf_counter() - t1:.1f}s: {n} envs x {decl.threads} threads "

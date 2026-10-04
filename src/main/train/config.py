@@ -504,6 +504,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("ridealong_opp", 0)
     _resolve("ridealong_rnd_variants", "off")      # v127 structural str (canonical comma list)
     _resolve("belief_tokens", "blob")              # v136 structural str (X5 U2; version-checked, fresh-only)
+    _resolve("oracle_reveal", "off")               # v137 RESUME-IMMUTABLE str (the diagnostic observation mode; flagless resume inherits)
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —
     #  no argparse dest to inherit FROM, so a resolve line would be dead. Frozen "detached".)
     _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)

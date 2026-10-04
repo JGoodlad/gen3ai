@@ -99,6 +99,15 @@ core just encoded, as the Python env reads it from `obs["observation"]`. The rev
 `board_reading.opp` in encoder slot order: the encoder's `get_team_list(is_opponent=True)` order is
 reveal order, and the Rust encoder indexes `reading.opp` directly.
 
+**Under the ORACLE REVEAL (`--oracle-reveal species`, a diagnostic mode; `encoder.md` §11) the row also states the
+unseen species**, so the stated slots are the seen mons (`reading.opp`) followed by the oracle's unseen tail in dex-num
+order (`labels::belief::revealed_nums(own, truth, oracle)` calls the SAME `Oracle::tail` the encoder calls). With
+every species stated there is no believed slot: `belief_species` / `belief_moves` are PAD, and `known_moves`,
+`hp_type`, `item` and the three spread families label EVERY stated slot (seen first, then the tail) with the
+species' true value. `belief::write` THROWS when the row's stated-species count differs from what the reading plus the
+oracle give. `opp_switch_slot` is unchanged (the switch-slot target stays in the seen frame; a switch to a mon not
+yet seen reads `SWITCH_SLOT_NONE`, exactly as under `off`). `off` (no oracle) is byte-identical.
+
 | family | keys | the Rust derivation |
 |---|---|---|
 | belief | `belief_species`, `belief_moves`, `known_moves` | `assign_hidden_to_slots`: hidden = truth team minus the revealed species, MATCHED BY DEX NUM (a forme shares its base species' num), sorted by species num; the j-th fills the j-th believed slot (`species_known < 0.5`). Moves are num-mapped in set order, max 4. `known_moves` gives each revealed slot its species' full truth moveset. Nums come from `mappings.json`'s `species` / `moves` `num`, the same tables the encoder's embeddings index |

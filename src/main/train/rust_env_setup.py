@@ -212,7 +212,8 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
             refusal_budget=int(args.rust_env_refusal_budget), respawn_budget=int(args.rust_env_respawn_budget),
             device=device, backend=backend, buckets=buckets, lanes=int(args.t2_lanes or 0),
             opponent_bucket_cap=int(args.t2_opponent_bucket_cap),
-            trainee_slots=int(args.trainee_slots), policy_seed=run_seed, fork=fork_decl_from_args(args))
+            trainee_slots=int(args.trainee_slots), policy_seed=run_seed, fork=fork_decl_from_args(args),
+            oracle_reveal=str(getattr(args, "oracle_reveal", None) or "off"))
         sources = OpponentSources(self_play_fraction=float(self_play_fraction))
         if plan.pool_slots and snapshot_dir is not None:
             # device="cpu" (gen3_declared_slot_load_v1): a pool snapshot is only a WEIGHT SOURCE that T2 copies

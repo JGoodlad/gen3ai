@@ -175,8 +175,11 @@ def load_policy(path: str, device: str):
     inline call. ``main.anchors`` swaps in ``agents.model.snapshot.load_foreign_opponent``, which
     verifies the ``arch_signature`` instead of trusting the kwargs.
     """
+    from agents.model.oracle_reveal import refuse_if_revealed
     from agents.model.snapshot import historical_load_kwargs, load_checkpoint_strict
 
+    # a websocket client builds its observation with the PYTHON encoder, which has no reveal
+    refuse_if_revealed(path, tool="main.play", reason="A websocket client builds its observation without the reveal.")
     # `historical_load_kwargs` strips the policy / extractor kwargs deleted since the checkpoint was
     # written (an ON one is REFUSED), so a current-lineage checkpoint written before a deletion
     # still plays — a ladder session plays the model it was handed or refuses it for a stated reason.

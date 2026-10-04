@@ -35,8 +35,12 @@ def _load_host(ref: PlayerRef) -> Any:
     ``historical_load_kwargs`` strips the policy / extractor kwargs DELETED since the checkpoint was written (PopArt,
     the value-dist head) and REFUSES an ON one — a run trained at an older pin still loads at HEAD. The host copy is
     only the SOURCE of a slot load (T2 copies it into its slot in place): it is never served."""
+    from agents.model.oracle_reveal import refuse_if_revealed
     from agents.model.snapshot import historical_load_kwargs, load_checkpoint_strict
 
+    # the engine's eval cores are built at `oracle_reveal = off` (the per-SIDE reveal is deferred, X5 A/B §7.7(a)):
+    # an oracle checkpoint would play observations it never trained on, so it is refused here, by name
+    refuse_if_revealed(ref.zip_path, tool="main.h2h", reason="The engine's eval cores are built at --oracle-reveal off.")
     m = load_checkpoint_strict(ref.zip_path, device="cpu", **historical_load_kwargs(ref.zip_path))
     m.policy.eval()
     return m

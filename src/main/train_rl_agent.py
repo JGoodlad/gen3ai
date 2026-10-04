@@ -244,6 +244,15 @@ async def main():
          f"{args.win_prob_mode!r}. At victory_value 1.0 and gamma 1.0, V(s) == P(win|s) "
          f"exactly. ⚠️ A [0,1] critic cannot express 'a timeout is worse than a loss' — stall "
          f"rate and mean episode length are PRIMARY endpoints on this arm.")
+    # gen3_oracle_reveal_v1 (v137): a DIAGNOSTIC observation mode must never pass unannounced — every metric keeps its
+    # name under it, and the arm's strength means "with the opponent's team told", not production play.
+    if getattr(args, "oracle_reveal", "off") != "off":
+        emit(f"🔮 [ORACLE REVEAL] {args.oracle_reveal} — a DIAGNOSTIC observation mode, NOT production: the observation's "
+             f"opponent block states the opponent's TRUE species from turn 1 (the shared trunk reads it; moves, item, "
+             f"ability, spread stay hidden until play reveals them). SYMMETRIC: the self-play opponents see the "
+             f"trainee's team too; the in-loop eval plays at this recorded mode; scripted bots are unaffected. "
+             f"The belief heads' species targets are now VISIBLE inputs, so their losses fall toward 0 — reported, "
+             f"not a defect.")
     # The env: the Rust core (the only core) — N envs in ONE core behind the
     # process (or FFI) front end; the trainee and every policy opponent forward through the inference
     # service (T2), the scripted bots play inside the core. `--debug` runs ONE env.

@@ -214,9 +214,11 @@ def foreign_loader(zip_path: str, device: str):
     """
     import os
 
+    from agents.model.oracle_reveal import refuse_if_revealed
     from agents.model.snapshot import current_model_version, load_foreign_opponent
     from agents.observation.state_encoder import load_mappings
 
+    refuse_if_revealed(zip_path, tool="main.anchors", reason="The anchor session builds its observation without the reveal.")
     cfg = None
     d = os.path.dirname(os.path.abspath(zip_path))
     for cand_dir in (d, os.path.dirname(d)):

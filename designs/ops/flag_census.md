@@ -161,6 +161,7 @@
 | `--ridealong-opp` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_opp` = `0`; X26's opponent-effect B heads | **KEEP** |
 | `--ridealong-rnd-variants` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_rnd_variants` = `"off"`; X26's RND variant ensemble | **KEEP** |
 | `--belief-tokens` | — | 0 / 0 | `--arch production`: `production_config.json` `belief_tokens` = `"blob"`; the X5 A/B's `fixed_mass` arm (`designs/endstate/design_x5_belief_tokens.md` §3.8, U2) | **KEEP** |
+| `--oracle-reveal` | — | 0 / 0 | a DIAGNOSTIC observation mode (`oracle_reveal`, config v137; `off` = production; `species` = the X5 A/B's oracle-species arm, `designs/endstate/design_x5_belief_tokens.md` §7.6) | **KEEP** |
 | `--fork-fraction` | — | 1 / 0 | the Rust fork arm (declared, OFF; `designs/training/forks.md` section 14 checklist gates enabling it; `designs/endstate/`) | **KEEP** |
 | `--fork-branches` | — | 1 / 0 | the Rust fork arm's branch count | **KEEP** |
 | `--fork-contested-gap` | — | 0 / 0 | the Rust fork arm's selector quantile | **KEEP** |

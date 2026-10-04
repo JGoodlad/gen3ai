@@ -25,6 +25,7 @@
 //! (572,451 decisions) and 30,000 ladder-corpus episodes (5,253,432 decisions).
 
 use pokesim::encoder::data::tables;
+use pokesim::encoder::oracle::Oracle;
 use pokesim::encoder::layout::{OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_SPECIES_KNOWN_OFFSET, TEAM_SIZE};
 use pokesim::present::board_reading::BoardReading;
 use pokesim::present::dex::to_id;
@@ -77,13 +78,23 @@ pub fn truth_index(truth: &BoardReading, num: i64, what: &str) -> Result<usize, 
     Err(format!("label: {what} (dex num {num}) is not on the truth team {team:?}"))
 }
 
-/// The revealed species' dex nums, in encoder slot order, each checked to be on the truth team.
-pub fn revealed_nums(own: &BoardReading, truth: &BoardReading) -> Result<Vec<i64>, String> {
+/// The dex nums of every opp slot whose species the OBSERVATION states (`species_known`), in encoder
+/// slot order, each checked to be on the truth team: the mons the side has SEEN (reveal order), then —
+/// under the ORACLE REVEAL (`pokesim::encoder::oracle`) — the unseen ones the encoder appends after them
+/// (`Oracle::tail`, the SAME function the encoder calls, so the label's slot order cannot drift from the
+/// row's). `oracle = None` (the mode `off`) is the seen mons alone.
+pub fn revealed_nums(own: &BoardReading, truth: &BoardReading, oracle: Option<&Oracle>) -> Result<Vec<i64>, String> {
     let mut out = Vec::with_capacity(TEAM_SIZE);
     for sp in revealed_species(own) {
         let num = species_num(&to_id(sp))?;
         truth_index(truth, num, &format!("revealed species {sp:?}"))?;
         out.push(num);
+    }
+    if let Some(o) = oracle {
+        for unseen in o.tail(&own.opp).map_err(|e| e.message().to_string())? {
+            truth_index(truth, unseen.num, &format!("oracle species {:?}", unseen.species))?;
+            out.push(unseen.num);
+        }
     }
     Ok(out)
 }
@@ -98,7 +109,7 @@ fn move_nums(mon: &pokesim::present::mon::PMon, out: &mut [i64]) -> Result<(), S
 
 /// Write the side's three columns (`bs` 6, `bm` 6×4, `km` 6×4). `Err` = a broken label invariant
 /// (module docs; the caller turns it into a FAULT).
-pub fn write(own: &BoardReading, truth: &BoardReading, row: &[f32], bs: &mut [i64], bm: &mut [i64], km: &mut [i64]) -> Result<(), String> {
+pub fn write(own: &BoardReading, truth: &BoardReading, oracle: Option<&Oracle>, row: &[f32], bs: &mut [i64], bm: &mut [i64], km: &mut [i64]) -> Result<(), String> {
     bs.fill(PAD);
     bm.fill(PAD);
     km.fill(PAD);
@@ -110,7 +121,7 @@ pub fn write(own: &BoardReading, truth: &BoardReading, row: &[f32], bs: &mut [i6
              packing changed, breaking the believed-slot alignment with the model's BeliefSlots"
         ));
     }
-    let revealed = revealed_nums(own, truth)?;
+    let revealed = revealed_nums(own, truth, oracle)?;
     // ---- belief_species / belief_moves (the unknown slots)
     let mut hidden: Vec<(i64, usize)> = Vec::with_capacity(TEAM_SIZE);
     for (idx, (_, m)) in truth.team.iter().enumerate() {
@@ -126,6 +137,15 @@ pub fn write(own: &BoardReading, truth: &BoardReading, row: &[f32], bs: &mut [i6
             "belief labels: {} hidden truth mons but only {} believed slots — a hidden mon would go unlabelled",
             hidden.len(),
             believed.len()
+        ));
+    }
+    // the consumer's twin of the encoder's producer guard: the species the row states and the species
+    // the label walks are the same list (a drift between the two would shift every label by a slot)
+    if revealed.len() != n_known {
+        return Err(format!(
+            "belief labels: the row states {n_known} opp species but the reading + oracle give {} — the encoder's opp-slot \
+             packing and the label's slot order drifted",
+            revealed.len()
         ));
     }
     for (&slot, &(num, idx)) in believed.iter().zip(&hidden) {

@@ -169,7 +169,7 @@ impl Game {
             }
         };
         let legal = legal_actions(&s.board_reading);
-        let inputs = pokesim::encoder::Inputs { reading: &s.board_reading, view, legal: legal.as_ref(), trackers: &trk.trackers };
+        let inputs = pokesim::encoder::Inputs { reading: &s.board_reading, view, legal: legal.as_ref(), trackers: &trk.trackers, oracle: s.oracle.as_deref() };
         pokesim::encoder::encode(&inputs, out).map_err(|e| format!("encode p{}: {e}", side + 1))?;
         *mask_out = legal.as_ref().map_or([0; ACT], mask);
         Ok(())

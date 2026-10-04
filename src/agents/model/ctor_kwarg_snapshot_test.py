@@ -65,6 +65,7 @@ CTOR_KWARGS_V96 = frozenset({
     "ridealong_ensemble", "ridealong_rnd", "ridealong_adv", "ridealong_opp",
     "ridealong_rnd_variants",
     "belief_tokens",
+    "oracle_reveal",
 })
 
 # The five names MEASURED as uncovered on 2026-08-17, with the run counts that made the case. Pinned

@@ -464,6 +464,17 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
                    "[n_steps, n_envs] shape"),
         exit_style="fatal_config"),
 
+    # ---- the ORACLE REVEAL (gen3_oracle_reveal_v1, v137): a diagnostic observation mode ---------------
+    # The fork arm's successor rows come from search chains the reveal is not given to, so a fork row would
+    # be an `off`-mode observation inside an oracle run — a silent input mismatch, refused by name.
+    CombinationCheck(
+        "oracle_reveal_vs_fork_arm", ("oracle_reveal", "fork_fraction"),
+        lambda a: _val(a, "oracle_reveal", "off") != "off" and _positive(getattr(a, "fork_fraction", 0.0)),
+        lambda a: (f"--oracle-reveal {_val(a, 'oracle_reveal', 'off')} cannot combine with --fork-fraction "
+                   f"{getattr(a, 'fork_fraction', 0.0)}: the fork arm's successor rows are encoded by search chains "
+                   "WITHOUT the reveal, so they would be `off`-mode observations inside an oracle run"),
+        exit_style="fatal_config"),
+
     # ---- T17 MIRRORED TEAM PAIRS (gen3_mirrored_pairs_v1): the Python eval path's prerequisites -----
     # A mirrored pair's two games share ONE battle seed, so the Python eval path plays every game under
     # the per-GAME seed rule — which only the in-process bridge, one game in flight, can honour.

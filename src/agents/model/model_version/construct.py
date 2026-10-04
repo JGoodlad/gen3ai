@@ -221,6 +221,9 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_x5_hypothesis_set_v1 (v136): X5's belief representation.
             belief_tokens=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("belief_tokens", "blob")),
+            # gen3_oracle_reveal_v1 (v137): the DIAGNOSTIC observation mode (resume-immutable).
+            oracle_reveal=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("oracle_reveal", "off")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

@@ -204,6 +204,8 @@ ARGVS: dict[str, list[str]] = {
     "anneal_start_below_steps": ["--anneal-lr-start-steps", "500", "--anneal-min-lr", "1e-6"],
     "rollout_target_on_the_quantum": ["--n-envs", "48", "--batch-size", "2048",
                                       "--rollout-target-samples", "100000"],
+    # the ORACLE REVEAL (gen3_oracle_reveal_v1)
+    "oracle_reveal_vs_fork_arm": ["--oracle-reveal", "species", "--fork-fraction", "0.1"],
     # T6 SPRT promotion
     "promotion_sprt_needs_self_play": ["--promotion-sprt"],
     "promotion_sprt_ignores_the_threshold": ["--promotion-sprt", "--self-play", "--promote-threshold", "0.6"],

@@ -158,6 +158,16 @@ once the species is narrowed or its four revealed moves hold no Hidden Power (pr
 Exposure (2026-09-25, `hp_belief` fix): 0 of the training pool's 1,912 HP users carry a type their
 row gives 0, 289 of the ladder corpus's 52,007 (all HP Dark).
 
+**The opponent block under `--oracle-reveal species` (a DIAGNOSTIC mode, NOT production; `off` is the production row).**
+The Rust env core can write the opponent's TRUE species into this block from turn 1 (team-preview semantics; the X5 A/B's
+oracle-species reference arm, `endstate/design_x5_belief_tokens.md` §7.6). The seen opponent mons keep their reveal-order
+slots and bytes; after them come one slot per UNSEEN mon, in dex-num order, each the encoder's own row for a never-seen mon
+(`species_known` 1, full HP, "never seen" recency, the dex row's stats / types and the ability prior; item, status, moves,
+spread, Hidden-Power block, sleep belief, last action, trapped and active flag all 0). A revealed mon leaves the tail and
+joins the seen prefix, matched by dex num. Nothing else in the row moves, and obs dims are unchanged. The model reads it
+through the shared trunk like any state of the block (with every species stated, no slot is "believed"); the Python encoder
+has no reveal. Mechanism, cells and gates: [`rust_sim/encoder.md`](rust_sim/encoder.md) §11.
+
 ### 1.3 Board (reactive) block — 17 dims
 
 **5 raw board scalars, then the request-ordered active moves.** Everything derived is gone
@@ -1355,6 +1365,13 @@ does nothing given another setting.
 | `spread_belief_coef` | `0.05` | ACTIVE |
 | `vf_coef` | `0.5` | ACTIVE |
 <!-- END GENERATED: flag-table -->
+
+**`--oracle-reveal {off,species}` is not a row of the generated table above:** it builds no module and moves no weight, so it is
+a `resume_immutable` OBSERVATION-MODE flag (config v137), `off` in production and never on the ARCH surface. It is recorded in
+`model_config.json` and `metadata.json`, inherited by a flagless resume, refused if a resume flips it (`check_oracle_reveal`),
+and shown by `main.checkargs` and the launch banner. `main.h2h`, `main.anchors`, `main.play`, `main.belief_roles` and
+`main.policy_spectrum` refuse a checkpoint that records `species` (they build observations without the reveal). It is refused
+with the fork arm. See §1.2 for what the row carries.
 
 ### 6.3 Reward config (resume-immutable, `check_reward_config`)
 

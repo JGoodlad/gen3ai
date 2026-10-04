@@ -17,8 +17,14 @@
 //!               "timeout_turn_cap": <int>},
 //!  "refusal_budget": <int>, "bank_dir": null | "<abs path>",
 //!  "labels": ["<family>", …],
-//!  "opponents": [{"kind": "external"} | {"kind": "policy", "slot": <int>} | {"kind": "bot", "bot": "<name>"}, …]}
+//!  "opponents": [{"kind": "external"} | {"kind": "policy", "slot": <int>} | {"kind": "bot", "bot": "<name>"}, …],
+//!  "oracle_reveal": "off" | "species"}
 //! ```
+//!
+//! `oracle_reveal` is the ORACLE REVEAL level (`pokesim::encoder::oracle`, a DIAGNOSTIC observation
+//! mode, `--oracle-reveal`): `off` is the production row; `species` tells each side's observation the
+//! other side's true species from turn 1. The run's recorded mode — the training pool and its eval core
+//! take the same value.
 
 use std::path::PathBuf;
 
@@ -55,6 +61,9 @@ pub struct Spec {
     pub labels: Vec<&'static str>,
     /// The OPPONENT ROUTE TABLE (M5 Lane E; `crate::opponents`): the `ep_opp` column indexes it.
     pub opponents: crate::opponents::Routes,
+    /// The ORACLE REVEAL level: how much of the other side's team each side's observation row is told
+    /// (`pokesim::encoder::oracle`). `Off` leaves every row byte-identical to the build without it.
+    pub oracle_reveal: pokesim::encoder::oracle::Level,
 }
 
 /// GENERATED from `protocol.SPEC_KEYS` (one table for both languages).
@@ -125,6 +134,10 @@ impl Spec {
             bank_dir,
             labels,
             opponents,
+            oracle_reveal: pokesim::encoder::oracle::Level::parse(
+                v.str_at("oracle_reveal").ok_or("spec: `oracle_reveal` must be a string")?,
+            )
+            .map_err(|e| format!("spec: {e}"))?,
         };
         spec.validate()?;
         Ok(spec)
@@ -171,7 +184,7 @@ impl Spec {
         let teams: Vec<String> = self.teams.iter().map(|t| q(t)).collect();
         format!(
             "{{\"n\":{},\"threads\":{},\"format_id\":{},\"names\":[{},{}],\"teams\":[{}],\
-             \"turn_limit\":{},\"terminal\":{},\"refusal_budget\":{},\"bank_dir\":{},\"labels\":[{}],\"opponents\":{}}}",
+             \"turn_limit\":{},\"terminal\":{},\"refusal_budget\":{},\"bank_dir\":{},\"labels\":[{}],\"opponents\":{},\"oracle_reveal\":{}}}",
             self.n,
             self.threads,
             q(&self.format_id),
@@ -184,6 +197,7 @@ impl Spec {
             self.bank_dir.as_ref().map_or("null".to_string(), |d| q(&d.to_string_lossy())),
             self.labels.iter().map(|f| q(f)).collect::<Vec<_>>().join(","),
             self.opponents.to_json(),
+            q(self.oracle_reveal.as_str()),
         )
     }
 }
@@ -208,6 +222,7 @@ mod tests {
                 crate::opponents::Route::External,
                 crate::opponents::Route::Policy { slot: 2 },
             ]),
+            oracle_reveal: pokesim::encoder::oracle::Level::Species,
         }
     }
 
@@ -227,7 +242,7 @@ mod tests {
             ("teams", "[\"X|||\"]"), ("turn_limit", "null"),
             ("terminal", "{\"victory_value\":1,\"terminal_indicator\":true,\"draw_penalty\":0,\"timeout_turn_cap\":250}"),
             ("refusal_budget", "0"), ("bank_dir", "null"), ("labels", "[]"),
-            ("opponents", "[{\"kind\":\"external\"}]"),
+            ("opponents", "[{\"kind\":\"external\"}]"), ("oracle_reveal", "\"off\""),
         ]
     }
 

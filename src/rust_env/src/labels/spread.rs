@@ -25,6 +25,7 @@ use std::sync::OnceLock;
 
 use pokesim::encoder::data::tables;
 use pokesim::encoder::layout::TEAM_SIZE;
+use pokesim::encoder::oracle::Oracle;
 use pokesim::json::Json;
 use pokesim::present::board_reading::BoardReading;
 use pokesim::present::dex::to_id;
@@ -155,6 +156,7 @@ fn nature_ev_map(truth: &BoardReading) -> Result<Vec<(i64, (i64, [i64; N_SPREAD]
 pub fn write(
     own: &BoardReading,
     truth: &BoardReading,
+    oracle: Option<&Oracle>,
     row: &[f32],
     spread: &mut [f32],
     spread_mask: &mut [f32],
@@ -170,7 +172,7 @@ pub fn write(
     ev.fill(0.0);
     ev_mask.fill(0.0);
     let known = species_known(row);
-    let revealed = revealed_nums(own, truth)?; // each one on the truth team, by num
+    let revealed = revealed_nums(own, truth, oracle)?; // each one on the truth team, by num
     // species num -> TRUE derived stats (a later same-species mon overrides)
     let mut stats: Vec<(i64, [i64; N_SPREAD])> = Vec::new();
     for (_, m) in &truth.team {

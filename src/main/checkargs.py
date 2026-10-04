@@ -944,6 +944,7 @@ def main(raw: List[str] | None = None) -> int:
         print("  unrecognized                   : 0")
 
     _print_resolution(res["resolution"])
+    _print_oracle_reveal(res.get("ns"))
     _print_fork_lr_inheritance(res["resolution"])
     shaped_fatal = _print_shaped_reward(res.get("shaped_reward"), argv, a.pin)
     shaped_fatal = _print_retired_levers(res.get("retired_levers"), argv, a.pin) or shaped_fatal
@@ -1168,6 +1169,20 @@ def _print_fork_lr_inheritance(resolution: dict | None) -> None:
         print("      independent checks.")
     else:
         print(f"  {verdict.line}")
+
+
+def _print_oracle_reveal(ns) -> None:
+    """The ORACLE REVEAL mode the launch would run at (gen3_oracle_reveal_v1, v137) — stated on every argv, the
+    way the critic and the eval regime are: a diagnostic observation mode changes what every metric MEANS and
+    nothing in a scalar's name would say so. The EFFECTIVE value: a flagless resume inherits the parent's."""
+    mode = getattr(ns, "oracle_reveal", None) or "off"
+    if mode == "off":
+        print("  oracle reveal                  : off (the production observation)")
+        return
+    print(f"  oracle reveal                  : {mode}  ⚠️  DIAGNOSTIC observation mode, NOT production — the "
+          "observation states the opponent's TRUE species from turn 1 (symmetric: the self-play opponents see "
+          "the trainee's team too; the in-loop eval plays at this mode). RESUME-IMMUTABLE: recorded in "
+          "model_config.json, inherited on a flagless resume, a flip is refused.")
 
 
 def _print_resolution(resolution: dict | None) -> None:

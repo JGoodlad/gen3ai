@@ -28,6 +28,7 @@ use std::sync::Arc;
 use pokesim::battle::{BattleOptions, PackedTeam, PlayerOptions};
 use pokesim::bridge::{parse_choice, BridgeSession, Cmd};
 use pokesim::dex::Dex;
+use pokesim::encoder::oracle::{Level, Oracle};
 use pokesim::present;
 use pokesim::prng::Prng;
 use pokesim::version::BattleVersion;
@@ -175,10 +176,18 @@ impl Env {
         self.open = [None, None];
         self.labels.clear();
         for side in 0..SIDES {
-            self.chains[side] = Some(
+            let mut chain =
                 BattleVersion::parse_root_unrecorded(side, &spec.names[side], Some(&self.log.teams[side]), Default::default())
-                    .map_err(core_err(&format!("root p{}", side + 1)))?,
-            );
+                    .map_err(core_err(&format!("root p{}", side + 1)))?;
+            // The ORACLE REVEAL (a diagnostic observation mode, `pokesim::encoder::oracle`): each side's
+            // chain is told the OTHER side's team, so the trainee and a policy opponent are symmetric.
+            // `off` builds nothing — the chain is the one the build without the reveal made.
+            if spec.oracle_reveal != Level::Off {
+                let oracle = Oracle::new(spec.oracle_reveal, &self.log.teams[1 - side], &ctx.dex)
+                    .map_err(core_err(&format!("oracle p{}", side + 1)))?;
+                chain = chain.with_oracle(side, Arc::new(oracle)).map_err(core_err(&format!("oracle p{}", side + 1)))?;
+            }
+            self.chains[side] = Some(chain);
         }
         let opts = BattleOptions {
             format_id: spec.format_id.clone(),
@@ -289,6 +298,7 @@ impl Env {
                     view,
                     self.decided[side],
                     &truth.board_reading,
+                    s.oracle.as_deref(),
                     &row_now,
                     &mut self.labels,
                     c,
@@ -448,6 +458,11 @@ impl Pool {
             for side in 0..SIDES {
                 BattleVersion::parse_root_unrecorded(side, &spec.names[side], Some(t), Default::default())
                     .map_err(|e| format!("spec: team {i}: the reading refuses it as p{}: {}", side + 1, e.message()))?;
+            }
+            // ... and, under the ORACLE REVEAL, the observation can be told it as the opponent's team.
+            if spec.oracle_reveal != Level::Off {
+                Oracle::new(spec.oracle_reveal, t, &dex)
+                    .map_err(|e| format!("spec: team {i}: the oracle reveal refuses it: {}", e.message()))?;
             }
         }
         if let Some(d) = &spec.bank_dir {

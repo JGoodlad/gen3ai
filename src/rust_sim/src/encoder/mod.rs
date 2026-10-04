@@ -25,6 +25,7 @@
 pub mod data;
 pub mod hypothesis;
 pub mod layout;
+pub mod oracle;
 mod slot;
 pub mod wire;
 
@@ -44,6 +45,10 @@ pub struct Inputs<'a> {
     pub view: &'a OneSidedView,
     pub legal: Option<&'a LegalActions>,
     pub trackers: &'a SideTrackers,
+    /// The ORACLE REVEAL (`oracle`, a diagnostic mode): the opponent team the observation is told
+    /// as well as what the side has seen. `None` is the mode `off` — the row is byte-identical to
+    /// the encoder that had no reveal.
+    pub oracle: Option<&'a oracle::Oracle>,
 }
 
 /// Fill the row before an encode: NaN in test / fuzz builds (a cell no branch wrote stays

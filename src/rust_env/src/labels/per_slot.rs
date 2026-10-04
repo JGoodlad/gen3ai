@@ -18,6 +18,7 @@
 
 use pokesim::encoder::data::tables;
 use pokesim::encoder::layout::TEAM_SIZE;
+use pokesim::encoder::oracle::Oracle;
 use pokesim::present::board_reading::BoardReading;
 use pokesim::present::dex::to_id;
 
@@ -40,6 +41,7 @@ pub fn hp_type_idx(move_id: &str) -> Option<i64> {
 fn fill(
     own: &BoardReading,
     truth: &BoardReading,
+    oracle: Option<&Oracle>,
     row: &[f32],
     label: &mut [i64],
     mask: &mut [f32],
@@ -49,7 +51,7 @@ fn fill(
     mask.fill(0.0);
     let known = species_known(row);
     let slots = (0..TEAM_SIZE).filter(|&i| known[i] >= 0.5);
-    for (slot, num) in slots.zip(revealed_nums(own, truth)?) {
+    for (slot, num) in slots.zip(revealed_nums(own, truth, oracle)?) {
         if let Some(v) = value(num)? {
             label[slot] = v;
             mask[slot] = 1.0;
@@ -80,13 +82,13 @@ fn lookup(map: &[(i64, i64)], num: i64) -> Option<i64> {
     map.iter().find(|(k, _)| *k == num).map(|(_, v)| *v)
 }
 
-pub fn write_hp_type(own: &BoardReading, truth: &BoardReading, row: &[f32], label: &mut [i64], mask: &mut [f32]) -> Result<(), String> {
+pub fn write_hp_type(own: &BoardReading, truth: &BoardReading, oracle: Option<&Oracle>, row: &[f32], label: &mut [i64], mask: &mut [f32]) -> Result<(), String> {
     let map = by_species(truth, |m| Ok(m.moves.moves_ref().iter().find_map(|(_, mv)| hp_type_idx(&mv.id))))?;
     // absent = the revealed mon runs no Hidden Power (a legitimate mask 0)
-    fill(own, truth, row, label, mask, |num| Ok(lookup(&map, num)))
+    fill(own, truth, oracle, row, label, mask, |num| Ok(lookup(&map, num)))
 }
 
-pub fn write_item(own: &BoardReading, truth: &BoardReading, row: &[f32], label: &mut [i64], mask: &mut [f32]) -> Result<(), String> {
+pub fn write_item(own: &BoardReading, truth: &BoardReading, oracle: Option<&Oracle>, row: &[f32], label: &mut [i64], mask: &mut [f32]) -> Result<(), String> {
     let map = by_species(truth, |m| match m.item.as_deref() {
         Some(id) if !id.is_empty() => match tables().items.get(&to_id(id)) {
             Some(n) if *n >= 1.0 => Ok(Some(*n as i64)),
@@ -98,7 +100,7 @@ pub fn write_item(own: &BoardReading, truth: &BoardReading, row: &[f32], label: 
         _ => Ok(Some(0)), // no item = the "nothing" class
     })?;
     // every truth mon has an entry and every revealed species is on the truth team (`fill`)
-    fill(own, truth, row, label, mask, |num| {
+    fill(own, truth, oracle, row, label, mask, |num| {
         lookup(&map, num).map(Some).ok_or_else(|| format!("item labels: no truth item for species num {num}"))
     })
 }

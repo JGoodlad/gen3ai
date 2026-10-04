@@ -186,6 +186,11 @@ def _model_hparams(model) -> dict:
     _ec = getattr(model, "_env_core_stamp", None)
     out["env_core"] = ({k: v for k, v in _ec.items() if k != "summary"} if isinstance(_ec, dict)
                        else {"env_core": "rust"})
+    # gen3_oracle_reveal_v1 (v137) — the OBSERVATION MODE this process's rows were built at (a diagnostic: `off` is
+    # production). model_config.json carries it as the version-gated field; this is the per-checkpoint provenance
+    # a reader of metadata.json sees beside `env_core`. The extractor holds the mode the policy was built under.
+    out["oracle_reveal"] = str(getattr(getattr(getattr(model, "policy", None), "features_extractor", None),
+                                       "oracle_reveal", "off") or "off")
     return out
 
 

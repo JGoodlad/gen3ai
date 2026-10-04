@@ -386,6 +386,7 @@ mod tests {
             bank_dir: None,
             labels: Vec::new(),
             opponents: Routes(vec![Route::External, Route::Policy { slot: 4 }, Route::Policy { slot: 1 }]),
+            oracle_reveal: pokesim::encoder::oracle::Level::Off,
         };
         let mut core = Core::new(spec).unwrap();
         let mut cols = OwnedCols::new(1);

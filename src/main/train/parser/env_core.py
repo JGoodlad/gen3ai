@@ -35,6 +35,22 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                              "--n-steps x --n-envs, today's rollout size. Must be a multiple of lcm("
                              "--batch-size, --n-envs) (no ragged micro-batch, and the buffer keeps its "
                              "[n_steps, n_envs] shape).")
+    from utils.rust_env.protocol import ORACLE_REVEAL_LEVELS
+    parser.add_argument("--oracle-reveal", "--oracle_reveal", dest="oracle_reveal", choices=ORACLE_REVEAL_LEVELS,
+                        default=None,
+                        help="DIAGNOSTIC observation mode, never production (gen3_oracle_reveal_v1, v137; "
+                             "designs/endstate/design_x5_belief_tokens.md §7.6, backlog X32): how much of the "
+                             "opponent's TRUE team the OBSERVATION states from turn 1. 'off' (default): the "
+                             "production observation, byte-identical. 'species': the six opponent species "
+                             "(team-preview semantics) — written by the Rust encoder into the opponent team "
+                             "block of the observation itself (the shared trunk, not a side input to any head): "
+                             "the seen mons keep their slots and bytes, the unseen ones follow in dex-num order "
+                             "as the encoder's own row for a never-seen mon; moves, item, ability, spread and "
+                             "Hidden-Power type stay hidden until play reveals them. SYMMETRIC: the trainee and "
+                             "its self-play opponents each see the other side's species; scripted bots are "
+                             "unaffected. The eval core plays at the run's recorded mode. RESUME-IMMUTABLE "
+                             "(recorded, a flagless resume inherits it, a flip is refused). Refused with the "
+                             "fork arm (--fork-fraction > 0: its successor rows are encoded without the reveal).")
     parser.add_argument("--rust-env-front", "--rust_env_front", dest="rust_env_front", choices=("proc", "ffi"),
                         default=None,
                         help="The Rust env's front end: 'proc' (DEFAULT, crash isolation: a core fault is a "

@@ -427,6 +427,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 136:
         data.setdefault("belief_tokens", "blob")
         data["config_version"] = 136
+    # v137 (gen3_oracle_reveal_v1) — `oracle_reveal`, defaulted rather than refused: "off" is the only
+    # possible past (the reveal did not exist).
+    if version < 137:
+        data.setdefault("oracle_reveal", "off")
+        data["config_version"] = 137
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

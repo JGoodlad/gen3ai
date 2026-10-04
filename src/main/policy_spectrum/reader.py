@@ -112,9 +112,12 @@ def inference_globals(threads: int, device: str = "cpu"):
 def load_checkpoint(zip_path: Path, device: str = "cpu"):
     """Inference load onto ``device``. Sets NO torch global: run it, and the forwards that use the
     model, inside :func:`inference_globals` (the thread count, and TF32 off on CUDA)."""
+    from agents.model.oracle_reveal import refuse_if_revealed
     from agents.model.snapshot import current_model_version, load_foreign_opponent
     from agents.observation.state_encoder import load_mappings
 
+    refuse_if_revealed(str(zip_path), tool="main.policy_spectrum",
+                       reason="The Lane S bank's rows are encoded without the reveal.")
     zip_path = Path(zip_path)
     if zip_path.is_dir() or zip_path.suffix != ".zip":
         raise ValueError(f"{zip_path}: name the checkpoint .zip — a bare run directory resolves to "

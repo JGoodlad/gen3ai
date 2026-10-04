@@ -53,11 +53,20 @@ pub(super) fn team(inp: &Inputs, t: &Tables, own: bool, out: &mut [f32; OBS_DIM]
         (&inp.reading.opp, &inp.view.opp, Rel::Opp, OFFSET_OPP_TEAM)
     };
     let la = last_action(inp, t, rel);
+    // The ORACLE REVEAL (`encoder::oracle`): after the SEEN opponent mons, one slot per mon the
+    // viewer has not seen, in dex-num order. `None` (the mode `off`) leaves every such slot zero.
+    let tail = match (own, inp.oracle) {
+        (false, Some(o)) => o.tail(roster)?,
+        _ => Vec::new(),
+    };
     for i in 0..TEAM_SIZE {
         let start = base + i * POKEMON_FULL_DIM;
         let s = &mut out[start..start + POKEMON_FULL_DIM];
         let Some((_, mon)) = roster.get(i) else {
-            zero(s, 0, POKEMON_FULL_DIM);
+            match tail.get(i - roster.len()) {
+                Some(unseen) => s.copy_from_slice(unseen.slot()),
+                None => zero(s, 0, POKEMON_FULL_DIM),
+            }
             continue;
         };
         let live = live_get(side_view, &mon.species)

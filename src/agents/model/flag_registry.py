@@ -458,6 +458,22 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="X5 (designs/endstate/design_x5_belief_tokens.md §3.8). Production stays 'blob' until the X5 A/B rules; both arms build at ONE commit, so there is no ARCH_SIGNATURE bump until the losing arm is deleted. 'blob' builds nothing (byte-identical to the pre-X5 model). 'fixed_mass' builds `agents.model.hypothesis_set.HypothesisBuilder` from a private seed (no non-X5 init byte moves) and re-targets the hidden-team belief supervision to the set BCE. Build unit U2 stashes the hypothesis set; tokens entering the trunk and the op are U3, the flat pointer U4. It REQUIRES t0_species_prior (the scores are log P_T0 + delta), move_belief_mode (the active's move group), opp_intent (the pointer it re-bases), opp_belief_slots (the presence BCE and BeliefHead's set BCE ride --opp-belief-aux-coef) and (U4, the flat pointer) entity_tail_seats (OTHER_move's token is the opponent active's E5 tail seat). Under 'fixed_mass' the FLAT opponent pointer (agents.model.flat_intent) REPLACES the alpha / beta heads (retired after SB3's orthogonal re-init, so no non-X5 init byte moves).",
               requires=("t0_species_prior", "move_belief_mode", "opp_intent", "opp_belief_slots",
                         "entity_tail_seats")),
+    ModelFlag("oracle_reveal", "off", Tier.CLI, Klass.RESUME_IMMUTABLE, 137,
+              "DIAGNOSTIC observation mode (X32; X5 A/B §7.6): how much of the opponent's true team the "
+              "OBSERVATION states from turn 1 ('off' = production; 'species' = the six species, "
+              "team-preview semantics)",
+              note="Never production. The Rust encoder writes the facts into the opponent team block of "
+                   "the observation itself (the shared trunk), not a side input to any head: the seen mons keep their "
+                   "reveal-order slots and bytes, the unseen ones follow in dex-num order as the encoder's own row "
+                   "for a never-seen mon (`encoder::oracle`). 'off' is byte-identical to the build without it. "
+                   "SYMMETRIC (the trainee and its self-play opponents each see the other side's team), the eval "
+                   "core uses the run's recorded mode, scripted bots are unaffected. RESUME_IMMUTABLE: the forward "
+                   "is bit-identical (no module, no weight) but what the input MEANS differs, so a resume that "
+                   "flips it is refused (`check_oracle_reveal`) and a flagless resume inherits it; it is excluded "
+                   "from `check_compatible` (a frozen opponent of the same run is built at the run's mode) and "
+                   "from the ARCH SURFACE by class. Offline tools that play a checkpoint without the reveal "
+                   "(`main.h2h`, `main.anchors`, `main.play`) REFUSE a recorded non-'off' mode "
+                   "(`agents.model.oracle_reveal.refuse_if_revealed`)."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

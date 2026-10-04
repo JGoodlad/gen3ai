@@ -92,8 +92,11 @@ def file_sha256(path: Path) -> str:
 def load_strict(zip_path: Path) -> Any:
     """The checkpoint through the strict loader, on the CPU, eval mode (a bare run dir is REFUSED: it
     would resolve to the run's last snapshot, which moves)."""
+    from agents.model.oracle_reveal import refuse_if_revealed
     from agents.model.snapshot import historical_load_kwargs, load_checkpoint_strict
 
+    refuse_if_revealed(str(zip_path), tool="main.belief_roles",
+                       reason="The Lane S bank's rows are encoded without the reveal.")
     zip_path = Path(zip_path)
     if zip_path.is_dir() or zip_path.suffix != ".zip":
         raise ValueError(f"{zip_path}: name the checkpoint .zip — a bare run directory resolves to the "
