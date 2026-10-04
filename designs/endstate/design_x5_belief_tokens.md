@@ -1239,6 +1239,38 @@ Rule 8: a t within 1e-9 of a boundary is NOT a crossing.
 **Deletion.** On adoption, the blob path is deleted in the next deletion unit, and the signature is bumped (§3.8). The
 winning arm's seed-1001 run CONTINUES as the X26 baseline (owner).
 
+### 7.5 Amendment 1 (2026-10-04, registered BEFORE any arm launched): the blob arm runs first
+
+These deviations from §7.4 were approved by the owner on 2026-10-04 and written down before the first launch. Anything
+in §7.4 not named here still stands: the meter, the statistic, δ = 3.5 pp, the boundaries, the outcomes, the secondary
+meters, the purpose metrics and the X26 continuation.
+
+**Why.** The fixed_mass arm can't launch today. It fails all three U8 budget lines and hits four startup refusals
+(`d7120efa`; F-XC-2..5). The blob arm is production and can launch now, so the owner chose to keep the GPU busy on
+it and grind the fixed_mass fixes afterwards (owner, 2026-10-04).
+
+| §7.4 says | Amendment 1 | what protects the comparison |
+|---|---|---|
+| Arms alternate by seed (X1 B1 B2 X2 …), both at ONE commit | **The blob arm's look-1 seeds 1001, 1002 and 1003 run FIRST, in that order, all pinned to one commit P_blob.** P_blob is the first main commit carrying F-X5-47's fix and this amendment. **The fixed_mass seeds run later, pinned to a later commit P_x5** after the cost fixes. Look 2's added seeds alternate again as §7.4 says. | **Blob-path identity across the two pins** is a PRECONDITION; breaking it makes look 1 INCONCLUSIVE, and the blob seeds re-run at P_x5. At P_x5: (i) the K9 golden's `arms.blob` entry is byte-identical to P_blob's; (ii) the sha256 of every `data/pokemon/` file the runtime reads is identical, and so are the obs golden, `OP_SEMANTICS` and the reward and critic constants. A blob-moving GIGO fix between the pins needs the owner's word and voids look 1's blob side. **`data/` is frozen while any arm is live:** a pin isolates code, not data. Box drift without interleaving moves WALL time, not strength at matched steps. Strength is read at the 15M checkpoint, so drift reaches only the speed rule (next row). |
+| Speed rule: s from the arms' own update-cycle walls | **s comes from a PAIRED BENCHMARK at P_x5:** blob and fixed_mass alternate in one session on a quiet box (desktop stopped, T23). Both use the same recipe and the X26 heads, and the read follows §7.4's reader rule. It runs as ABAB… blocks, at least 3 per arm, near the weekly quota reset. | The arms' own walls come from two commits and two box states, so their ratio would confound X5's cost with drift. F-XC-6 already shows such drift: the Rust core step rose 6.6 → 10.0 ms with no X5 code, cause unknown. The 5 % / 15 % thresholds and the matched-wall-clock checkpoint follow from this s, unchanged. |
+| Preconditions include "U8's cost budget passed" | **U8 gates the fixed_mass seeds' launch only.** | The blob arm IS production, so no cost question applies to it. The fixed_mass seeds don't launch until U8 passes or the owner revises the budget. |
+| (not stated) | **The snapshot-ladder updater is OFF in every arm on both sides:** `--snapshot-ladder-games 0` (F-ED-18). | Its `--promote` children outlive the trainer's SIGTERM at ~90 % CPU each (F-G-10). Those orphans would steal Rust-core CPU unevenly across arms. No arm reports or quotes a `ladder.json` ELO; the primary is the h2h cross, played offline at each look. |
+| (not stated) | **The h2h protocol is FROZEN for the A/B.** Every cell of every look is played on one h2h engine build and one game protocol, recorded on the look's eval-ledger rows. A change to either re-plays the look's cells under one protocol. | The eval review's A/B rule (M3); the ledger's protocol version on every row. |
+| (not stated) | **No CPU eval lane beside a live arm.** | It would contend with the Rust core. None is built today (eval U4 is paused), so this is a check, not a change. |
+
+**The experiment's surface.** Each blob seed types these levers on top of `--arch production` (the production ARCH
+surface + `recipe.fresh`, N = 256, no KL stop). This is a list of levers, NOT a launch command: the training agent
+builds and validates the argv per `TRAINING_RUN_SOP.md` §1 (`main.checkargs`, `--dry-run`).
+- `--belief-tokens blob` (explicit; it is also production's value);
+- `--steps 15000000`, `--seed <1001 | 1002 | 1003>`, run name `rb_x5ab_blob_s<seed>`;
+- the X26 ride-along heads, exactly X26's registered argv: `--ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5
+  --ridealong-opp 5 --ridealong-rnd-variants all`;
+- `--snapshot-ladder-games 0`;
+- `--checkpoint-every-steps 1000000` (§7.4's 1M checkpoints from 10M; this flag also saves the earlier ones).
+
+The fixed_mass seeds later type the same list with `--belief-tokens fixed_mass` and run names `rb_x5ab_fm_s<seed>`.
+`metadata.json`'s `init_num_threads` must be equal across all six look-1 runs (§7.4 precondition).
+
 ---
 
 ## 8. Risks, open gaps, build plan
@@ -1719,3 +1751,4 @@ the safe default, but would leave X5 unadopted for reasons of noise.
 | 2026-10-04 | **F-U6-1 closed: the cross's engine (h2h agent)** | the X5 cross plays on ONE engine of two T2 slot groups (one per arm), each declared with only the slot its side needs, and one eval core per (player arm, opponent arm); the h2h game protocol unchanged | two full groups (both roles each: twice the slots and lanes for no cell); an executor change to route one core to either group (shared with training eval) | `measurements/h2h_cross_2026-10-04/` |
 | 2026-10-04 | **U4 the flat opponent pointer (BUILT)** | One list (K seats · OTHER_move · six switch targets · OTHER_species), one shared scorer + the DETACHED log π, one softmax; α / β retired in the fixed_mass arm by the policy's `_build` AFTER SB3's ortho draws (no non-X5 init byte moves, no state_dict key, no optimizer slot); labels from the existing intent label (OTHER for members only, F-X5-34; a typed HP label names a revealed HP's seat); the cells re-expressed exactly (guarded logsumexp; OTHER_move priced by the tail contraction on the full move axis; OTHER_species by the OTHER-mode D1 pass and the tail's P(Ghost)); `seat_live` in all four consumers under fixed_mass (F-X5-35); B re-based (`FlatOppEffectEnsemble`); `opp_intent/other_label_rate`; `fixed_mass` requires `entity_tail_seats`. Blob byte-identical. | Not building α / β at all (their missing ortho draws would shift every later initial byte); keeping them built (parameters with no gradient, F-X5-27's rule); OTHER_move priced as a zero row or by a top-N tail (a selection boundary); labelling every out-of-seat move OTHER (a label OTHER's mass cannot carry); `seat_live` in both arms (moves production) | §3.5, §3.6, §3.7 "As built (U4)", §8.2 F-X5-34..40, U4 hand-off; `CHANGELOG.md` "X5 U4" |
 | 2026-10-04 | **U6 the K9 fixed_mass golden (BUILT)** | A second entry `arms.fixed_mass` beside the untouched blob entry: production + the lever, NAME-KEYED perturbation, its OWN Rust-collector buffer (the blob buffer's behaviour log-probs are blob's — K9(b) 0.51; run seed 18 for §6.4's coverage); `init_group_sha256`; an fp64 reference of one R1 micro-step (same code under `Fp64Mode`, rule-8 rows excluded, declared bars ≥ 10× measured); teeth = four X5 plants fail it and leave blob, one blob plant fails blob and leaves it; δ_θ / B isolation through the real update; F-X5-44 (the dead OTHER's uniform order counted as ties) fixed byte-identically | Reusing the blob buffer (K9(b) cannot pass: stale log-probs); order-keyed noise (no shared group comparable with blob); fp64 `train()` end to end (Adam's sign-like first step amplifies fp32 noise on near-zero gradients — not a fixed bar); widening the excluded-share ceiling instead of fixing the dead-OTHER order | §6 "As built (U6)", §8.2 F-X5-44..46, U6 hand-off; `CHANGELOG.md` "X5 U6"; `designs/training/learner_gates.md` |
+| 2026-10-04 | **A/B Amendment 1: blob arm first (OWNER-approved; registered before any launch)** | **The blob arm's look-1 seeds 1001–1003 run first at commit P_blob; the fixed_mass seeds follow at P_x5 after the cost fixes.** Preconditions: blob-path identity across the pins (the K9 `arms.blob` entry, the `data/pokemon/` hashes, the obs golden, `OP_SEMANTICS`, reward constants), else look 1 is INCONCLUSIVE; s from a paired ABAB benchmark at P_x5; U8 gates fixed_mass only; snapshot-ladder updater OFF in all arms (F-ED-18); h2h protocol frozen; no CPU eval lane. Reason: fixed_mass fails U8 and four launch refusals (`d7120efa`), and the blob arm is production. | Waiting for the fixed_mass fixes with the GPU idle; interleaving at one commit (impossible until the fixes land); s from the arms' own walls (confounded by drift, F-XC-6) | §7.5; owner 2026-10-04 |

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,029-line file. **The ledger itself is append-only and is never edited by this**;
+22,045-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**747 headings · 692 dated · 2026-08-01 → 2026-10-04 · ledger 22,029 lines.**
+**748 headings · 693 dated · 2026-08-01 → 2026-10-04 · ledger 22,045 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -767,3 +767,4 @@ rename.
   - `L21979` · `2026-10-03` · FINDING + FIX · **THE DAMAGE OP PRICED BEAT UP AS ONE 10-BP DARK SPECIAL HIT — 8.7 HP into a Blissey where the engine deals ~507; FIXED EXACTLY by `gen3_beatup_exact_v1` (typeless, one hit per healthy ally off its BASE Atk vs the target's BASE Def), a TRAINING-INPUT BOUNDARY**
   - `L21995` · `2026-10-04` · MEASUREMENT · **PRE-X26 BOTTLENECK PROFILE — the PPO update is 74 % of a 54 s cycle at N = 256 and GPU-bound (fp32 SIMT GEMMs at 46 % of the fp32 peak, memory-bound Triton at 75 % of the DRAM roof, ~8 % host bubbles); T2 inference is 16 % and small-kernel-latency-bound; the Rust core 5.5 % (CPU-bound); eval 1.8 %. Next lever: bf16 — but only after the R1 micro-step's host launches are cut (CUDA graphs), else the host wall arrives at ~1.4×**
   - `L22009` · `2026-10-04` · FINDING + FIX · **THE SMOGON MOVE PRIOR WAS DEFLATED — rating-WEIGHTED chaos `Moves` over the UNWEIGHTED `Raw count` (×0.10–0.94 by species; Skarmory Spikes 0.547 vs 0.997); FIXED as `Moves / W` with throwing guards (`gen3_smogon_prior_denominator_v1`), a TRAINING-INPUT BOUNDARY**
+  - `L22030` · `2026-10-04` · REGISTRATION · **X5 A/B Amendment 1, the blob arm runs FIRST: seeds 1001–1003 at production + the X26 heads, 15M each, snapshot-ladder updater off; the fixed_mass seeds follow after their cost fixes, under a blob-path identity precondition; s from a paired benchmark**

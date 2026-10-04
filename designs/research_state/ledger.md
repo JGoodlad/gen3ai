@@ -22026,3 +22026,19 @@ So every moved element, the new games included, is the prior's.
 **Open, same class (F-X5-47).** `gen3_data.priors.species_usage()` is still the UNWEIGHTED `Raw count` share. It feeds the T0 marginal, the op's `SPECIES_USAGE_PRIOR` and the co-occurrence lift, whose `log P(s | t) / P(s)` divides a WEIGHTED teammate conditional by it: −0.08 .. +0.14 nats over the top-25 species, −1.65 .. +0.56 over all. Not changed here; it needs its own golden proof.
 
 Tag: **FINDING + FIX · Smogon move prior deflated ×0.10–0.94 (weighted numerator, unweighted denominator) · Moves / W per Smogon's own denominator, tool + load guards throw · both K9 arms re-recorded with a three-step proof · role set 15 → 29 · TRAINING-INPUT BOUNDARY · F-X5-47 open**
+
+### 2026-10-04 · REGISTRATION · **X5 A/B Amendment 1, the blob arm runs FIRST: seeds 1001–1003 at production + the X26 heads, 15M each, snapshot-ladder updater off; the fixed_mass seeds follow after their cost fixes, under a blob-path identity precondition; s from a paired benchmark**
+
+What: the A/B between X5's discrete belief tokens (`fixed_mass`, the arm under test) and today's blob belief (`blob`, production), registered in `design_x5_belief_tokens.md` §7.4. This entry amends it before any arm launches (§7.5, the note's Decision record). The owner approved all four deviations on 2026-10-04, after the X5 cost read (`d7120efa`: all three U8 budget lines fail, four startup refusals) showed the fixed_mass arm can't launch yet.
+
+- **Order:** blob seeds 1001, 1002, 1003 first, in that order, pinned to P_blob, the first main commit carrying F-X5-47's fix (the species-usage marginal over the weighted count) and this amendment. The fixed_mass seeds come later, at P_x5.
+- **Precondition, blob-path identity across the pins:** the K9 golden's `arms.blob` entry, the `data/pokemon/` hashes, the obs golden, `OP_SEMANTICS` and the reward constants are identical at P_x5. Otherwise look 1 is INCONCLUSIVE and the blob seeds re-run at P_x5. `data/` is frozen while any arm is live.
+- **Speed:** s comes from a paired ABAB benchmark at P_x5 near the quota reset, not from the arms' own walls (F-XC-6 drift).
+- **U8** gates the fixed_mass launch only.
+- **Snapshot-ladder updater OFF** in every arm (`--snapshot-ladder-games 0`, F-ED-18 / F-G-10).
+- **The h2h protocol is frozen** for the A/B; no CPU eval lane beside an arm.
+- **Unchanged from §7.4:** the primary meter (the mirrored head-to-head cross at 15M), δ = 3.5 pp, one-sided α 0.05, look 1 / 2 / 3 at 3 / 5 / 8 seeds per arm with t-boundaries 5.761 / 2.683 / 1.874, the futility stop, INCONCLUSIVE / NOT DETECTED, the secondary and purpose metrics, and the seed-1001 continuation as X26.
+
+Surface per blob seed: `--arch production --belief-tokens blob --steps 15000000 --seed <s> --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all --snapshot-ladder-games 0 --checkpoint-every-steps 1000000`, run name `rb_x5ab_blob_s<s>`. Launched by the training agent under its GPU lease (`TRAINING_RUN_SOP.md` §1).
+
+Tag: **REGISTRATION · X5 A/B Amendment 1 · blob first at P_blob, fixed_mass later at P_x5 · blob-path identity precondition · paired speed benchmark · ladder updater off · design unchanged otherwise**
