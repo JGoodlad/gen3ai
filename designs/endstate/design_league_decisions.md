@@ -20,7 +20,11 @@ build or decision that differs updates this doc and its Decision record in the s
   - (b) **exploitability**, the best-response gap (`main.best_response_gap`): a treadmill keeps it high, real
     robustness shrinks it (the PSRO line, Lanctot et al. 2017);
   - (c) a cheap SHAPE signal: the win rate vs the snapshot k back, as a function of k. Monotone rising = transitive
-    progress; non-monotone (beats k = 1, loses to k = 5) = cycling.
+    progress; non-monotone (beats k = 1, loses to k = 5) = cycling. **Since 2026-10-03 this is the CYCLE MONITOR's lag
+    curve** (`design_evaluation.md` §2.5): a standing instrument that grows a thinned-archive matrix one row per 10M
+    check from step 0, with four signals (Hodge cyclic share, lag-curve non-monotonicity, intransitive triangles, Nash
+    support size), each against a parametric-bootstrap null (owner, 2026-10-03: "knowing whether we're cycling is
+    important outside of just the plateau").
 
 ## A. Promotion — who joins the pool
 - **Built:** GSPRT on mirrored pairs (Fishtest's pentanomial method + a minimum pair count), H0 0.50 / H1 0.55,
@@ -33,15 +37,36 @@ build or decision that differs updates this doc and its Decision record in the s
 - **Today:** a sliding window of the 20 most recent (oldest out), or opt-in spread retention. It has no cycling
   defence.
 - **Design (TASK_BACKLOG T20):**
-  - the tiered pool matrix (`design_evaluation.md` §3), validated against a dense audit before it is trusted;
+  - the tiered pool matrix (`design_evaluation.md` §2), validated against a dense audit before it is trusted;
   - **max-entropy Nash averaging** decides who stays: evict a member only when it confidently has zero weight;
   - the **HodgeRank cyclic width** vs its noise floor is the cycling meter;
   - **when cycles are wide, GROW the pool** (CPU-resident, with a PFSP-chosen GPU active set, as in the AlphaStar
     league) rather than evicting harder.
-- **The system design (2026-10-03, `design_evaluation.md` §2.4, PROPOSED) finds that zero Nash weight is the COMMON case in a near-transitive pool** (N0: the point Nash is pure on one node; F-ED-3), so "evict only when confidently zero weight" is a necessary condition that rarely binds and does not choose WHICH member leaves when the cap binds. Its proposed completion: among confidently zero-weight members, evict the one the trainee beats most (lowest PFSP weight); else grow. The DECISION is this section's (owner Q6 there).
+- **The system design (2026-10-03, `design_evaluation.md` §2.4, PROPOSED) finds that zero Nash weight is the COMMON case in a near-transitive pool** (N0: the point Nash is pure on one node; F-ED-3), so "evict only when confidently zero weight" is a necessary condition that rarely binds and does not choose WHICH member leaves.
+- **Proposed rule (revised after the independent review, M5; owner Q6 there): eviction is a DECLARED LEDGER READ.**
+  - It decides only when the active pool's matrix is DONE for every member involved, reading `as_of` the decision
+    time, with the consumed rows' digest recorded.
+  - Among members with posterior P(w > 0.01) < 0.05, evict the one with the HIGHEST posterior P(the newest pool member
+    beats it). Ties go to the oldest, then the lowest sha256. Grow if none qualifies.
+  - The first draft's PFSP-weight tie-break is REJECTED: `--pfsp-scale` defaults to 0, so it degenerated to "oldest",
+    and PFSP's p is a stateful EMA, not a ledger read.
+  - The eval CYCLE's rows are NOT an input (a moving, unmirrored player whose games select promotions).
+  - Evicting from the ACTIVE pool is not deleting from the ARCHIVE. Nothing a reference, an open request or the cycle
+    monitor names is ever deleted.
 - The literature review is DONE (`design_evaluation.md` §0a). TODO: the pool cap from the measured cyclic width (spinning tops); no banked within-run pool shows cycles above noise (F-ED-1), the multi-lineage pool is unmeasured.
 
 ## C. Plateau — has plain training stopped paying?
+- **PROPOSED TWO-TIER test (owner input 2026-10-03; `design_evaluation.md` §8; owner Q8 there).** It restores the
+  owner-registered head-to-head as the PRIMARY, because the reference slope needs twice the pairs (a difference of two
+  estimates) and inherits the Nash mixture's instability.
+  - **Tier 1:** the GSPRT newest vs the W-back snapshot (W ≈ 7 GPU-h), H0 0.50 / H1 0.52, mirrored, α = β = 0.05.
+    It costs E 3.2–5.5k games per check.
+  - **Tier 2:** a READ of the cycle monitor (§0(c)) plus the outside panel.
+  - **Plateau ONLY when Tier 1 is FLAT AND the monitor shows no cycling AND the panel is flat, at two consecutive
+    checks.** A confirmed cycle is reported as a TREADMILL, with its own levers.
+  - Strength vs a frozen reference mixture (§0(a)) is the REPORTED secondary and the kind diagnostic.
+
+  The definition below is the 2026-10-02 version that this proposal would amend.
 - **Definition (owner):** plateau = plain training gains < 2 Elo per training GPU-hour, measured as the slope of
   §0(a), strength vs the archive's Nash mixture, with §0(b) the gap NOT falling. Economic reading: on one GPU the
   price of an experiment is the baseline gain it displaces, plus the information lost on a still-climbing control.
@@ -59,12 +84,12 @@ build or decision that differs updates this doc and its Decision record in the s
 
 | # | gap | TODO |
 |---|---|---|
-| G1 | repeated monitoring: one test per 10M steps, dozens of times a run; false "plateau" risk accumulates | CUSUM with a declared average run length to false alarm, OR alpha-spending (Lan & DeMets 1983), OR a fresh two-stage confirmation |
+| G1 | repeated monitoring: one test per 10M steps, dozens of times a run; false "plateau" risk accumulates | PROPOSED: a fresh GSPRT per check + plateau only at two consecutive checks (`design_evaluation.md` §8.3); CUSUM or a confidence sequence can replace the 2-check rule later |
 | G2 | a window averages a decelerating curve, so the plateau is called late | add a fitted-curve CURRENT slope + the expected remaining gain (Domhan et al. 2015; freeze-thaw BO, Swersky et al. 2014) |
-| G3 | the archive's Nash mixture changes as snapshots are added | freeze a reference archive per check, or re-solve with care; specify |
+| G3 | the archive's Nash mixture changes as snapshots are added | moot for the proposed primary (a head-to-head); for the reported secondary, frozen references chosen by an N0 back-test (`design_evaluation.md` §2.3) |
 | G4 | Elo-per-hour assumes the logistic model | state the conversion and its range |
 | G5 | the noise floor AT the plateau is unknown (4.9 pp was fresh 8M runs) | the paired control continuations measure it on the first plateau |
-| G6 | combined error rates of the joint (a) + (b) rule | simulate the operating characteristics |
+| G6 | combined error rates of the joint (a) + (b) rule | simulate the operating characteristics of the two-tier rule (unit U9 in `design_evaluation.md` §10) |
 
 - **Validate before the build:** backtest on N0's full snapshot series. Does the design call the plateau where the
   ladder curve flattens? How often does it false-alarm on climbing segments? Which plateau kind does it diagnose?
@@ -75,7 +100,8 @@ build or decision that differs updates this doc and its Decision record in the s
   `design_evaluation.md` §0a (with confidence sequences added as G1's first candidate, §8).
 - [ ] Promotion vs the Nash mixture (§A).
 - [ ] T20 build with its validation gate (§B).
-- [ ] Plateau: choose G1's design, specify G3, the N0 backtest, then build.
+- [ ] Plateau: the owner answers Q8 (two-tier, `design_evaluation.md` §11.2); the N0 back-test; then build (U9).
+- [ ] The cycle monitor (`design_evaluation.md` §2.5, U5): a standing instrument, from step 0.
 - [ ] Validate the plateau-kind → lever mapping on the first real plateau.
 
 ## Decision record
@@ -86,4 +112,7 @@ build or decision that differs updates this doc and its Decision record in the s
 | 2026-10-02 | Pool defence against cycling **(owner)** | tiered matrix + Nash averaging + Hodge meter; grow rather than evict when cycles are wide | hope; recency-only eviction | TASK_BACKLOG T20 |
 | 2026-10-02 | The plateau rate **(owner)** | < 2 Elo per training GPU-hour | a band chosen without the economics | owner |
 | 2026-10-02 | The plateau MEASURE (orchestrator, owner discussion) | strength vs the archive's Nash mixture + the gap not falling, with the plateau KIND diagnosed | a head-to-head vs one past self (misses treadmills) | §0, §C |
+| 2026-10-03 | The plateau test: TWO TIERS **(owner input; PROPOSED, owner Q8 in `design_evaluation.md`)** | Tier 1 = the registered head-to-head GSPRT vs the W-back snapshot (primary); Tier 2 = a read of the cycle monitor + the panel; plateau only when both say so, twice; the reference slope REPORTED | the reference slope as the primary (2× the pairs, mixture instability; independent review M2) | `design_evaluation.md` §8, F-ED-16, F-ED-17 |
+| 2026-10-03 | The CYCLE MONITOR as a standing instrument **(owner input)** | a thinned-archive matrix grown one row per check from step 0, four signals with parametric-bootstrap nulls | cycling read only inside the plateau test | `design_evaluation.md` §2.5 |
+| 2026-10-03 | Eviction rule **(orchestrator, after review M5; PROPOSED, owner Q6)** | a declared ledger read at matrix DONE: among confidently zero-weight members, evict the one the newest member most surely beats; ties oldest, then id; grow otherwise; archive deletion separate | the PFSP-weight tie-break | `design_evaluation.md` §2.4 |
 | 2026-10-02 | Doc structure (orchestrator; the owner left it to the orchestrator) | ONE doc for the three population decisions (shared problem and machinery); the SYSTEM in `design_evaluation.md` | three separate docs | they share §0 and one machinery |

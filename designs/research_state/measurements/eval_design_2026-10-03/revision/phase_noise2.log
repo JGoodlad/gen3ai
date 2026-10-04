@@ -1,0 +1,4 @@
+sizing_B_n256_e10_s1001  train_ms             pairs=31 sd=0.0203 robust_sd=0.0061 n(normal,rob)=4 MC power(HL bound<=1%) {50: np.float64(0.9375), 100: np.float64(0.9975), 150: np.float64(1.0), 200: np.float64(1.0), 300: np.float64(1.0)}
+sizing_B_n256_e10_s1001  collect_ms/decision  pairs=31 sd=0.1789 robust_sd=0.0678 n(normal,rob)=399 MC power(HL bound<=1%) {50: np.float64(0.37), 100: np.float64(0.585), 150: np.float64(0.7225), 200: np.float64(0.7725), 300: np.float64(0.945)}
+sizing_C_n256_e5_s1001   train_ms             pairs=31 sd=0.0184 robust_sd=0.0015 n(normal,rob)=1 MC power(HL bound<=1%) {50: np.float64(1.0), 100: np.float64(1.0), 150: np.float64(1.0), 200: np.float64(1.0), 300: np.float64(1.0)}
+sizing_C_n256_e5_s1001   collect_ms/decision  pairs=31 sd=0.0582 robust_sd=0.0219 n(normal,rob)=42 MC power(HL bound<=1%) {50: np.float64(0.84), 100: np.float64(0.9875), 150: np.float64(0.9975), 200: np.float64(1.0), 300: np.float64(1.0)}

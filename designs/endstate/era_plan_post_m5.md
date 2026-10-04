@@ -34,7 +34,13 @@ more plain training. The owner checks back in; nothing else needs to happen.
 - **Two kinds of lever:**
   - SPEED levers (epochs, batch, lr, architecture efficiency) are tested on fresh runs, per GPU-hour.
   - PLATEAU-BREAKERS (forks, exploration, exploiters, discrimination, team curriculum) are tested ONLY from a plateaued parent.
-- **The plateau test** (DECIDED in [`design_league_decisions.md`](design_league_decisions.md) §C: the measure is strength vs the archive's NASH MIXTURE + the gap not falling, with the plateau KIND diagnosed; the head-to-head draft below is SUPERSEDED, see the gaps there):
+- **The plateau test.** The 2026-10-02 decision ([`design_league_decisions.md`](design_league_decisions.md) §C) measured strength vs the archive's NASH MIXTURE, with the gap not falling and the plateau KIND diagnosed. **2026-10-03, PROPOSED (owner Q8 in [`design_evaluation.md`](design_evaluation.md) §11.2): a TWO-TIER test.**
+  - The head-to-head below is restored as **Tier 1, the primary**.
+  - **Tier 2** is a read of the standing cycle monitor plus the panel.
+  - A plateau is declared only when both say so, at two consecutive checks.
+  - The Nash-mixture slope is reported (`design_evaluation.md` §8).
+
+  The registered head-to-head:
   - once per 10M steps, the newest snapshot plays the snapshot from W ≈ 7 GPU-hours back (≈ 50M steps at N = 256);
   - it plays on mirrored pairs, as a GSPRT with H0 p ≤ 0.50 vs H1 p ≥ 0.52. 2 Elo/h × 7 h ≈ 14 Elo ≈ 2 pp;
   - that is ≈ 3–7k games, a few minutes on the eval core;

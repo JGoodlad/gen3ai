@@ -1,0 +1,15 @@
+P0 cross pentanomial [0.2186 0.0062 0.5469 0.0068 0.2215] mean 0.5016 pairSD 0.3329 pairs 45000
+cap  6000 mu 0.490: P(accept H0 = plateau) 0.999  P(H1) 0.001  P(cap) 0.000  E[pairs]    890  E[games]   1780  q90 pairs 1520
+cap  6000 mu 0.500: P(accept H0 = plateau) 0.954  P(H1) 0.037  P(cap) 0.009  E[pairs]   1624  E[games]   3249  q90 pairs 3120
+cap  6000 mu 0.505: P(accept H0 = plateau) 0.793  P(H1) 0.170  P(cap) 0.036  E[pairs]   2181  E[games]   4362  q90 pairs 4444
+cap  6000 mu 0.510: P(accept H0 = plateau) 0.464  P(H1) 0.442  P(cap) 0.095  E[pairs]   2547  E[games]   5094  q90 pairs 5880
+cap  6000 mu 0.515: P(accept H0 = plateau) 0.160  P(H1) 0.798  P(cap) 0.043  E[pairs]   2200  E[games]   4399  q90 pairs 4560
+cap  6000 mu 0.520: P(accept H0 = plateau) 0.036  P(H1) 0.957  P(cap) 0.007  E[pairs]   1598  E[games]   3197  q90 pairs 3040
+cap  6000 mu 0.530: P(accept H0 = plateau) 0.002  P(H1) 0.999  P(cap) 0.000  E[pairs]    898  E[games]   1795  q90 pairs 1564
+cap  9000 mu 0.490: P(accept H0 = plateau) 0.999  P(H1) 0.002  P(cap) 0.000  E[pairs]    893  E[games]   1785  q90 pairs 1520
+cap  9000 mu 0.500: P(accept H0 = plateau) 0.961  P(H1) 0.039  P(cap) 0.000  E[pairs]   1590  E[games]   3181  q90 pairs 3080
+cap  9000 mu 0.505: P(accept H0 = plateau) 0.828  P(H1) 0.166  P(cap) 0.006  E[pairs]   2262  E[games]   4524  q90 pairs 4520
+cap  9000 mu 0.510: P(accept H0 = plateau) 0.475  P(H1) 0.501  P(cap) 0.024  E[pairs]   2738  E[games]   5477  q90 pairs 5840
+cap  9000 mu 0.515: P(accept H0 = plateau) 0.159  P(H1) 0.833  P(cap) 0.008  E[pairs]   2298  E[games]   4597  q90 pairs 4640
+cap  9000 mu 0.520: P(accept H0 = plateau) 0.043  P(H1) 0.957  P(cap) 0.001  E[pairs]   1602  E[games]   3204  q90 pairs 3044
+cap  9000 mu 0.530: P(accept H0 = plateau) 0.002  P(H1) 0.998  P(cap) 0.000  E[pairs]    884  E[games]   1769  q90 pairs 1520
