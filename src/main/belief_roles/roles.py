@@ -23,12 +23,12 @@ interpreter under an ``open`` audit hook and fails if any other data file is rea
 within :data:`BAR_EPS` of :data:`SUBSTITUTE_CARRY`, and a pair whose log-lift sits within :data:`BAR_EPS`
 of 0 are EXCLUDED (never decided by rounding) and listed in ``excluded``.
 
-⚠️ FINDING (U7, reported, not fixed here): ``gen3_move_priors.json`` divides the chaos ``Moves`` — which
-are RATING-WEIGHTED — by the UNWEIGHTED ``Raw count``, so ``P(m | s)`` is deflated by a species-dependent
-factor (Skarmory Spikes 0.547 against 0.997 normalised by Σ Moves / 4; Metagross Meteor Mash 0.571 vs
-0.986; per-species sums 0.41–3.75 where a set runs ~4). The role set and the prior column inherit it
-exactly as the network's move prior does; the role set is stamped with its sha so a read on a fixed
-prior cannot be pooled with one on this prior (``infer`` refuses mixed role sets).
+F-X5-41 FIXED (2026-10-04, ``gen3_smogon_prior_denominator_v1``): ``gen3_move_priors.json`` divided the
+RATING-WEIGHTED chaos ``Moves`` by the UNWEIGHTED ``Raw count`` (Skarmory Spikes 0.547; per-species sums
+0.41–3.75). It is now ``Moves / W`` (Spikes 0.997, sums 4 less the empty-slot mass), and the role set moved
+from 15 roles (sha ``4e3ab394…``) to 29 (``daba9995…``; Rapid Spin, Baton Pass, Recover, Softboiled, … join,
+none leave). The role set is stamped with its sha, so ``infer`` refuses to pool a read across the fix.
+⚠️ ``usage(s)`` is still the UNWEIGHTED ``Raw count`` share (F-X5-47, open).
 """
 from __future__ import annotations
 

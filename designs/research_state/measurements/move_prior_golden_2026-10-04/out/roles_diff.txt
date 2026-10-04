@@ -1,0 +1,5 @@
+before 15 4e3ab39493d1 after 29 daba99951949
+ADDED ['batonpass', 'brickbreak', 'doubleedge', 'dragondance', 'fireblast', 'hydropump', 'icepunch', 'meteormash', 'psychic', 'rapidspin', 'recover', 'rest', 'shadowball', 'softboiled']
+DROPPED []
+before set ['calmmind', 'earthquake', 'explosion', 'focuspunch', 'hiddenpower', 'icebeam', 'protect', 'roar', 'rockslide', 'spikes', 'substitute', 'surf', 'thunderbolt', 'thunderwave', 'toxic']
+pairs before/after 18 3030 excluded {'roles_near_bar': [], 'species_near_carry': [], 'pairs_near_lift': []} {'roles_near_bar': [], 'species_near_carry': [], 'pairs_near_lift': []}

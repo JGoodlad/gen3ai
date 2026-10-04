@@ -1,0 +1,14 @@
+elements 10864 species 216
+largest absolute rises:
+  seviper     earthquake     0.108 -> 0.978
+  shuckle     toxic          0.099 -> 0.963
+  seviper     sludgebomb     0.106 -> 0.964
+  seviper     flamethrower   0.099 -> 0.898
+  sneasel     brickbreak     0.131 -> 0.910
+  golem       earthquake     0.185 -> 0.954
+  ampharos    thunderbolt    0.198 -> 0.954
+  seaking     megahorn       0.245 -> 0.997
+top-12 usage species, scale factor (= Raw count / W):
+  tyranitar x1.69, metagross x1.73, swampert x1.77, skarmory x1.82, salamence x1.74, gengar x2.00, blissey x1.89, zapdos x1.71, celebi x1.80, snorlax x1.74, suicune x1.70, magneton x1.98
+factor range 1.07..9.72 median 2.71
+per-species sums old 0.41..3.75 (median 1.47) -> new 3.789..4.000 (median 4.000)

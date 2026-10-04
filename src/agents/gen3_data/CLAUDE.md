@@ -174,6 +174,12 @@ set-level joint we own) but never ships as a prior:
   belief's coupling prior; `gen3_data.priors.teammates`). Note chaos `Moves` are per-species
   MARGINALS — within-species move-pair couplings exist in the data we can measure (pool) but
   have no Smogon source, so they stay with in-battle evidence + learning.
+  🚨 **`gen3_move_priors.json` is `P(m in set)` = `Moves[m] / W`, W the RATING-WEIGHTED set total
+  (`Σ Abilities`), never the UNWEIGHTED `Raw count`** (`gen3_smogon_prior_denominator_v1`; F-X5-41:
+  the `Raw count` table was deflated ×0.10–0.94). Per species `Σ_m P + Moves[""] / W == 4` exactly;
+  the load THROWS `PriorInvariantError` otherwise (`priors._checked_moves`), and every other prior
+  file must load as a distribution (sum 1) or THROWS the same way. ⚠️ `priors.species_usage()` is
+  still `Raw count` (UNWEIGHTED) — F-X5-47.
 
 Pool-derived (a committed calibration artifact, same pattern):
 - `data/teams/gen3_team_archetypes.json` — every pool team labeled by PACE class

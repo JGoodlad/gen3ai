@@ -1,0 +1,2 @@
+{"prior": "tree", "rows": 188}
+{"prior": "/home/goodlad/dev/gen3ai-wt/prior/designs/research_state/measurements/move_prior_golden_2026-10-04/out/parent_gen3_move_priors.json", "rows": 219}

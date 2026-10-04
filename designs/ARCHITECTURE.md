@@ -429,6 +429,12 @@ The concrete steps:
    `move_candidate_floor` base, and a row about which nothing is known (national-dex num 0 — the
    unknown-species sentinel an unrevealed slot carries — or a dex gap) is the **flat floor**, never
    "no moves". Non-persistent, recomputed from `data/` at build.
+   **The Smogon usage is `P(m in set | s)` = the chaos `Moves[m]` over the species' RATING-WEIGHTED
+   set total W** (`gen3_smogon_prior_denominator_v1`: W = `Σ Abilities`, Smogon's own `p.raw.weight`;
+   per species `Σ_m P + empty-slot mass = 4` exactly — median 4.000, min 3.79). The facade THROWS at
+   load on a table that breaks that identity. Every run before 2026-10-04 trained on a DEFLATED prior
+   (over the unweighted `Raw count`: a species-dependent ×0.10–0.94, Skarmory Spikes 0.547 vs 0.997,
+   sums 0.41–3.75; F-X5-41); a pre-fix checkpoint reads the corrected prior at HEAD.
    **A HIDDEN slot does not read that flat row** (E10, `gen3_hidden_slot_move_mixture_v1`): its
    prior is the parameter-free Smogon mixture `P(m | hidden) = Σ_s P_T0(s | revealed) · P(m | s)` —
    the `T0SpeciesPrior` team-composition posterior (step 0 of this chain, Species Clause applied)

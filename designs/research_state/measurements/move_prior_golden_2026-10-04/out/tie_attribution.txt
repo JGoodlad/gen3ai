@@ -1,0 +1,4 @@
+{"buffer": "/tmp/prior_old/blob.npz", "prior": "tree", "near_tie_rows": 0, "min_gap": 0.00010465085506439209}
+{"buffer": "/tmp/prior_old/blob.npz", "prior": "/home/goodlad/dev/gen3ai-wt/prior/designs/research_state/measurements/move_prior_golden_2026-10-04/out/parent_gen3_move_priors.json", "near_tie_rows": 0, "min_gap": 8.174777030944824e-05}
+{"buffer": "/tmp/prior_old/rebuilt_blob.npz", "prior": "tree", "near_tie_rows": 7, "min_gap": 0.0}
+{"buffer": "/tmp/prior_old/rebuilt_blob.npz", "prior": "/home/goodlad/dev/gen3ai-wt/prior/designs/research_state/measurements/move_prior_golden_2026-10-04/out/parent_gen3_move_priors.json", "near_tie_rows": 7, "min_gap": 0.0}

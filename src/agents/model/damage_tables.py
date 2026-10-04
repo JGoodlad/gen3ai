@@ -547,7 +547,10 @@ NONFORMULA_LEVEL = 100
 #: signature stay (the training-input precedent), so a RECORDING of a policy's outputs stamps this
 #: value and a reader on a checkout with a different one knows it cannot reproduce the recording
 #: (`main.policy_spectrum` — the bank manifest's `op_semantics`). Change it with the op's semantics.
-OP_SEMANTICS = "gen3_beatup_exact_v1"       # (was gen3_nonformula_damage_v1: Beat Up was one 10-BP Dark special hit)
+#: gen3_smogon_prior_denominator_v1 (F-X5-41, 2026-10-04): the op's believed opponent moves fuse the Smogon
+#: move prior (`belief_tables.build_move_prior_logits`), whose values moved from Moves / Raw count (deflated) to
+#: Moves / W, so a recording made under gen3_beatup_exact_v1 is not reproducible here either.
+OP_SEMANTICS = "gen3_smogon_prior_denominator_v1"   # (was gen3_beatup_exact_v1: the move prior was deflated)
 DAMAGE_MODELS: Dict[str, Tuple[str, float, str]] = {
     # --- fixed / level: `getDamage` → `move.damage === 'level'` → source.level, else `move.damage` ---
     "seismictoss": ("fixed", float(NONFORMULA_LEVEL), "data/moves.ts seismictoss: damage 'level'"),

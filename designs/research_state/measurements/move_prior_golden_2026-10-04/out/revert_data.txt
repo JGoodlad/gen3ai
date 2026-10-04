@@ -1,0 +1,6 @@
+[31mFAILED[0m src/agents/gen3_data/priors_denominator_test.py::[1mtest_skarmory_spikes_is_near_certain[0m - agents.gen3_data.priors.PriorInvariantError: gen3_move_priors.json[abra]: s...
+[31mFAILED[0m src/agents/gen3_data/priors_denominator_test.py::[1mtest_every_species_move_mass_is_four_slots[0m - agents.gen3_data.priors.PriorInvariantError: gen3_move_priors.json[abra]: s...
+[31mFAILED[0m src/agents/gen3_data/priors_denominator_test.py::[1mtest_the_tool_reproduces_the_committed_move_prior[0m - AssertionError: tyranitar
+[31mFAILED[0m src/agents/gen3_data/priors_denominator_test.py::[1mtest_the_load_guard_raises_on_a_planted_deflated_table[0m - agents.gen3_data.priors.PriorInvariantError: gen3_move_priors.json[abr
+[31mFAILED[0m src/agents/gen3_data/priors_denominator_test.py::[1mtest_the_load_guard_raises_on_a_single_deflated_species[0m - agents.gen3_data.priors.PriorInvariantError: gen3_move_priors.json[ab
+[31m[31m[1m5 failed[0m, [32m3 passed[0m[31m in 1.08s[0m[0m

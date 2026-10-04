@@ -121,7 +121,9 @@ def test_the_trainees_keyed_draw_replays_from_its_key(spaces):
     r = _run("ffi", spaces)
     seed = r["col"].cfg.run_seed
     rows = list(r["rec"].rows.values())
-    assert len(rows) > 200
+    # a coverage floor, not a measurement: the seeded run records 188 distinct trainee row slots since the
+    # Smogon move prior was corrected (F-X5-41, 2026-10-04; 219 under the deflated prior) — deterministic
+    assert len(rows) > 150
     env = np.array([x["env"] for x in rows])
     ep = np.array([x["episode"] for x in rows])
     dec = np.array([x["dec_n"] for x in rows])

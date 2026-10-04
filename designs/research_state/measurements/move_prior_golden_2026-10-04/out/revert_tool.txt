@@ -1,0 +1,3 @@
+[31mFAILED[0m src/agents/gen3_data/priors_denominator_test.py::[1mtest_the_tool_reproduces_the_committed_move_prior[0m - AssertionError: tyranitar
+[31mFAILED[0m src/agents/gen3_data/priors_denominator_test.py::[1mtest_a_move_prior_above_one_throws_rather_than_clamping[0m - Failed: DID NOT RAISE <class 'tools.smogon_stats_downloader.compute_p
+[31m[31m[1m2 failed[0m, [32m6 passed[0m[31m in 1.09s[0m[0m

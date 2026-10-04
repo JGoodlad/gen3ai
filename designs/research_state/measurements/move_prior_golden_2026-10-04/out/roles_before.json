@@ -1,0 +1,295 @@
+{
+ "bar": 0.25,
+ "substitute_carry": 0.5,
+ "sha256": "4e3ab39493d158b2d9da17e2204fc20f37575b4fbcbbfd547546eacf5107ddff",
+ "roles": [
+  {
+   "num": 46,
+   "move": "roar",
+   "carriers": 0.362194901655
+  },
+  {
+   "num": 57,
+   "move": "surf",
+   "carriers": 0.289264862045
+  },
+  {
+   "num": 58,
+   "move": "icebeam",
+   "carriers": 0.52682826193
+  },
+  {
+   "num": 85,
+   "move": "thunderbolt",
+   "carriers": 0.585523544462
+  },
+  {
+   "num": 86,
+   "move": "thunderwave",
+   "carriers": 0.260072997193
+  },
+  {
+   "num": 89,
+   "move": "earthquake",
+   "carriers": 1.089129198073
+  },
+  {
+   "num": 92,
+   "move": "toxic",
+   "carriers": 0.396732932646
+  },
+  {
+   "num": 153,
+   "move": "explosion",
+   "carriers": 0.462638466201
+  },
+  {
+   "num": 157,
+   "move": "rockslide",
+   "carriers": 0.691952162106
+  },
+  {
+   "num": 164,
+   "move": "substitute",
+   "carriers": 0.326095601771
+  },
+  {
+   "num": 182,
+   "move": "protect",
+   "carriers": 0.350029703672
+  },
+  {
+   "num": 191,
+   "move": "spikes",
+   "carriers": 0.267988370398
+  },
+  {
+   "num": 237,
+   "move": "hiddenpower",
+   "carriers": 1.314269559012
+  },
+  {
+   "num": 264,
+   "move": "focuspunch",
+   "carriers": 0.265895697109
+  },
+  {
+   "num": 347,
+   "move": "calmmind",
+   "carriers": 0.29484355915
+  }
+ ],
+ "pairs": [
+  {
+   "s1": 92,
+   "s2": 145,
+   "name1": "gastly",
+   "name2": "zapdos",
+   "role": 85,
+   "carry1": 0.773811107393,
+   "carry2": 0.571246228071,
+   "log_lift_12": -3.687287330627,
+   "log_lift_21": -4.0
+  },
+  {
+   "s1": 145,
+   "s2": 243,
+   "name1": "zapdos",
+   "name2": "raikou",
+   "role": 85,
+   "carry1": 0.571246228071,
+   "carry2": 0.629817618426,
+   "log_lift_12": -0.308618575335,
+   "log_lift_21": -0.358517199755
+  },
+  {
+   "s1": 51,
+   "s2": 142,
+   "name1": "dugtrio",
+   "name2": "aerodactyl",
+   "role": 89,
+   "carry1": 0.535530966575,
+   "carry2": 0.54698791971,
+   "log_lift_12": -0.879882574081,
+   "log_lift_21": -0.906402587891
+  },
+  {
+   "s1": 51,
+   "s2": 232,
+   "name1": "dugtrio",
+   "name2": "donphan",
+   "role": 89,
+   "carry1": 0.535530966575,
+   "carry2": 0.5037019651,
+   "log_lift_12": -0.482325851917,
+   "log_lift_21": -0.391966283321
+  },
+  {
+   "s1": 51,
+   "s2": 330,
+   "name1": "dugtrio",
+   "name2": "flygon",
+   "role": 89,
+   "carry1": 0.535530966575,
+   "carry2": 0.526780881239,
+   "log_lift_12": -1.26110124588,
+   "log_lift_21": -1.237997889519
+  },
+  {
+   "s1": 51,
+   "s2": 375,
+   "name1": "dugtrio",
+   "name2": "metang",
+   "role": 89,
+   "carry1": 0.535530966575,
+   "carry2": 0.637479120775,
+   "log_lift_12": -2.107488870621,
+   "log_lift_21": -0.205563575029
+  },
+  {
+   "s1": 51,
+   "s2": 376,
+   "name1": "dugtrio",
+   "name2": "metagross",
+   "role": 89,
+   "carry1": 0.535530966575,
+   "carry2": 0.505680749999,
+   "log_lift_12": -0.132386416197,
+   "log_lift_21": -0.241166785359
+  },
+  {
+   "s1": 142,
+   "s2": 232,
+   "name1": "aerodactyl",
+   "name2": "donphan",
+   "role": 89,
+   "carry1": 0.54698791971,
+   "carry2": 0.5037019651,
+   "log_lift_12": -1.229940056801,
+   "log_lift_21": -1.113060593605
+  },
+  {
+   "s1": 142,
+   "s2": 330,
+   "name1": "aerodactyl",
+   "name2": "flygon",
+   "role": 89,
+   "carry1": 0.54698791971,
+   "carry2": 0.526780881239,
+   "log_lift_12": -0.224812999368,
+   "log_lift_21": -0.175189644098
+  },
+  {
+   "s1": 232,
+   "s2": 330,
+   "name1": "donphan",
+   "name2": "flygon",
+   "role": 89,
+   "carry1": 0.5037019651,
+   "carry2": 0.526780881239,
+   "log_lift_12": -1.678448081017,
+   "log_lift_21": -1.745704293251
+  },
+  {
+   "s1": 232,
+   "s2": 376,
+   "name1": "donphan",
+   "name2": "metagross",
+   "role": 89,
+   "carry1": 0.5037019651,
+   "carry2": 0.505680749999,
+   "log_lift_12": -0.794588029385,
+   "log_lift_21": -0.993727982044
+  },
+  {
+   "s1": 330,
+   "s2": 376,
+   "name1": "flygon",
+   "name2": "metagross",
+   "role": 89,
+   "carry1": 0.526780881239,
+   "carry2": 0.505680749999,
+   "log_lift_12": -0.694173932076,
+   "log_lift_21": -0.826057672501
+  },
+  {
+   "s1": 375,
+   "s2": 376,
+   "name1": "metang",
+   "name2": "metagross",
+   "role": 89,
+   "carry1": 0.637479120775,
+   "carry2": 0.505680749999,
+   "log_lift_12": -0.361792623997,
+   "log_lift_21": -2.172924995422
+  },
+  {
+   "s1": 375,
+   "s2": 376,
+   "name1": "metang",
+   "name2": "metagross",
+   "role": 153,
+   "carry1": 0.640962388777,
+   "carry2": 0.506787640622,
+   "log_lift_12": -0.361792623997,
+   "log_lift_21": -2.172924995422
+  },
+  {
+   "s1": 376,
+   "s2": 379,
+   "name1": "metagross",
+   "name2": "registeel",
+   "role": 153,
+   "carry1": 0.506787640622,
+   "carry2": 0.525535021291,
+   "log_lift_12": -0.408173620701,
+   "log_lift_21": -0.451245874166
+  },
+  {
+   "s1": 91,
+   "s2": 205,
+   "name1": "cloyster",
+   "name2": "forretress",
+   "role": 191,
+   "carry1": 0.501085562138,
+   "carry2": 0.525815581728,
+   "log_lift_12": -2.77148270607,
+   "log_lift_21": -2.832852125168
+  },
+  {
+   "s1": 91,
+   "s2": 227,
+   "name1": "cloyster",
+   "name2": "skarmory",
+   "role": 191,
+   "carry1": 0.501085562138,
+   "carry2": 0.547010177015,
+   "log_lift_12": -2.53774523735,
+   "log_lift_21": -2.665480136871
+  },
+  {
+   "s1": 205,
+   "s2": 227,
+   "name1": "forretress",
+   "name2": "skarmory",
+   "role": 191,
+   "carry1": 0.525815581728,
+   "carry2": 0.547010177015,
+   "log_lift_12": -2.441148519516,
+   "log_lift_21": -2.507514238358
+  }
+ ],
+ "excluded": {
+  "roles_near_bar": [],
+  "species_near_carry": [],
+  "pairs_near_lift": []
+ },
+ "sources": [
+  "gen3_move_priors.json",
+  "gen3_smogon_stats.json",
+  "gen3_teammate_priors.json",
+  "gen3_species.json",
+  "gen3_moves.json",
+  "gen3_type_chart.json"
+ ]
+}

@@ -1,0 +1,7 @@
+{
+ "a": "designs/research_state/measurements/move_prior_golden_2026-10-04/out/A_fixed_mass_new_parentprior.json",
+ "b": "/tmp/prior_old/learner_golden.json",
+ "identical_fields": 99,
+ "moved": [],
+ "not_compared": []
+}

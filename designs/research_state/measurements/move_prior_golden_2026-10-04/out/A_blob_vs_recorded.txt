@@ -1,0 +1,9 @@
+{
+ "a": "designs/research_state/measurements/move_prior_golden_2026-10-04/out/A_blob_new_parentprior.json",
+ "b": "/tmp/prior_old/learner_golden.json",
+ "identical_fields": 62,
+ "moved": [],
+ "not_compared": [
+  "init_group_sha256"
+ ]
+}

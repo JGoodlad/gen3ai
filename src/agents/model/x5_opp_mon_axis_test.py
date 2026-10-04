@@ -225,11 +225,18 @@ def test_bench_e5_seats_are_presence_aware(fm):
 
 def test_the_per_mon_selection_cut_joins_the_rule8_exclusion(fm):
     hs = fm["hs"]
-    assert hs.slot_moves_tie_gap is not None and not bool(near_tie_rows(hs).any())
+    assert hs.slot_moves_tie_gap is not None
+    # The golden obs carry their own exact ties (7 of 64 rows on the buffer rebuilt for F-X5-41, under either
+    # move prior; 0 on the one before) — plant on the first row that is NOT one, and require the cut to be
+    # exactly the natural set plus that row.
+    natural = near_tie_rows(hs)
+    free = [i for i, t in enumerate(natural.tolist()) if not t]
+    assert free, "every golden row is already a near tie: nothing to plant on"
+    k = free[0]
     tied = dataclasses.replace(hs, slot_moves_tie_gap=torch.where(
-        torch.arange(hs.slot_moves_tie_gap.shape[0]) == 3, torch.zeros_like(hs.slot_moves_tie_gap),
+        torch.arange(hs.slot_moves_tie_gap.shape[0]) == k, torch.zeros_like(hs.slot_moves_tie_gap),
         hs.slot_moves_tie_gap))
-    assert near_tie_rows(tied).tolist() == [i == 3 for i in range(hs.slot_moves_tie_gap.shape[0])]
+    assert near_tie_rows(tied).tolist() == [bool(t) or i == k for i, t in enumerate(natural.tolist())]
 
 
 def test_the_active_reinjection_reads_its_detached_fixed_mass_presence(fm, monkeypatch):

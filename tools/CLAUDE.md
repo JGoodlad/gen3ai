@@ -14,6 +14,17 @@ split.
 | `pokemon_data_extractor/sync.py` | poke-env pokedex + static moves/natures/`learnset.json` + `GenData` type chart; Showdown `abilities.ts` / `items.ts` / `aliases.ts` | `data/pokemon/gen3_{species,moves,abilities,items,type_chart,natures,learnset,move_aliases}.json` |
 | `smogon_stats_downloader/sync.py` | Smogon monthly chaos JSON (12-month window) | `data/pokemon/gen3_smogon_stats.json` |
 | `smogon_stats_downloader/compute_priors.py` | the aggregated stats + pokedex | `data/pokemon/gen3_{ability,hidden_power,move,item,spread,teammate}_priors.json` |
+
+🚨 **A Smogon chaos record mixes ONE unweighted field with rating-WEIGHTED ones — never divide across
+them** (`gen3_smogon_prior_denominator_v1`, F-X5-41). `Raw count` is the UNWEIGHTED set count;
+`Abilities` / `Items` / `Spreads` / `Happiness` / `Moves` add the rating weight once per set (`Moves`
+once per SLOT, an empty one under `""`), so the first four share one total W and `Σ Moves = 4 W`
+(pkmn/stats `stats/src/stats.ts` `updateStats`; Smogon's own report divides by that W,
+`reports.ts` L271). The move prior is `Moves[m] / W` (`compute_priors.weighted_count`); until
+2026-10-04 it was `/ Raw count`, deflated ×0.10–0.94 by species. `compute_priors.check_priors`
+THROWS before any write on an output that breaks its invariant (a distribution summing to 1; a move
+prior summing with the empty-slot mass to exactly 4); `weighted_count` THROWS on a record whose
+weighted fields disagree. The facade re-checks at load (`gen3_data.priors`).
 | `sample_team_downloader/sync.py` | Smogon forum sample-team thread | `data/teams/sample/` |
 | `others_team_downloader/sync.py` | PokePaste dumps | `data/teams/others/` |
 

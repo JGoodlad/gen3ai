@@ -1,0 +1,7 @@
+{
+ "a": "/home/goodlad/dev/gen3ai-wt/prior/designs/research_state/measurements/move_prior_golden_2026-10-04/out/B_fixed_mass_old_tree.json",
+ "b": "/home/goodlad/dev/gen3ai-wt/prior/designs/research_state/measurements/move_prior_golden_2026-10-04/out/B_fixed_mass_new_parentprior.json",
+ "identical_fields": 99,
+ "moved": [],
+ "not_compared": []
+}
