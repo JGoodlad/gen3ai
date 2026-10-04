@@ -156,8 +156,11 @@ half explicit ("set fallback cron (make this standard sop)"):
    (`/loop 55m <prompt>`, or a self-paced wake at 3300 s); if only a cron EXPRESSION is available,
    `3,58 * * * *` keeps every gap ≤ 55 min at the cost of one extra cached wake per hour. Off-minute
    alignment (never :00/:30). Longer gaps are fine when nothing needs checking that often — the rule
-   is "never 60 ± a few minutes", the worst point on the cost curve. Scheduling wakes ONLY to keep
-   the cache warm is still waste.
+   is "never 60 ± a few minutes", the worst point on the cost curve. **While a run is LIVE, keeping
+   this session's cache warm IS one of the cron's purposes, and a HEALTHY wake is SILENT and minimal
+   (owner, 2026-10-04):** one cheap status read, then end the turn. No message, no subagent, no push,
+   no new instrument. It acts only on a failure or an invalidating condition (below). Retire it when
+   the run ends. Outside a live run, scheduling wakes only to keep the cache warm is still waste.
 
 **Layers 1–2 are OS processes and keep the machine working if the session dies; layers 3–4 are
 session-scoped and are what reach the owner.** Say that asymmetry out loud on every handoff: the
