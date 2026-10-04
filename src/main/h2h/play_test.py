@@ -148,16 +148,19 @@ def test_team_source_check_refuses_a_pinned_team_run(tmp_path):
         PL.check_team_source(ref)
 
 
-def _row(writer, a, b, batch, n, key="h2h:k", seed=0, regime=None):
+TEAM_SET = L.team_set_id({"test": "teams"})
+
+
+def _row(writer, a, b, batch, n, req, key="h2h:k", seed=0, regime=None):
     sc = PL.score_games(toy_games(n), TEAMS, n)
 
     eng = types.SimpleNamespace(compute=PL.Compute(device="cpu"),    # only what build_row reads
-                                regime=regime or PL.regime_for(TL), torch_version="t",
+                                regime=regime or PL.regime_for(TL, TEAM_SET), torch_version="t",
                                 core_stamp="s", team_check={"a": "x"}, historical={"a": []})
     return PL.build_row(writer=writer, run_label="study", commit="c0ffee", a=a, b=b, eng=eng, purpose="audit",
                         key=key, sched_seed=seed, batch=batch, cseed=PL.cycle_seed(seed, key, batch), score=sc,
                         t_start=L.utc_now(), t_end=L.utc_now(), wall_s=2.0,
-                        load={"start": [0, 0, 0], "end": [0, 0, 0], "contention": 1.0}, executor={})
+                        load={"start": [0, 0, 0], "end": [0, 0, 0], "contention": 1.0}, executor={}, request=req)
 
 
 def _players(tmp_path):
@@ -167,29 +170,77 @@ def _players(tmp_path):
     return mk("a"), mk("b")
 
 
-def test_a_built_row_validates_and_resume_finds_its_batches(tmp_path):
+def _append(w, a, b, batch, n, req, **kw):
+    row = _row(w, a, b, batch, n, req, **kw)
+    c = w.claim(req["request_id"], batch=batch, player=a.sha256, opponent=b.sha256,
+                regime_id=row["regime"]["regime_id"], expected_wall_s=10)
+    w.append_row(row, c)
+    return row
+
+
+def test_a_built_row_is_v2_with_its_outcome_digest_and_validates(tmp_path):
     a, b = _players(tmp_path)
-    w = L.LedgerWriter(tmp_path, writer_id="t1")
-    row = _row(w, a, b, 0, 10)
+    w = L.LedgerWriter(tmp_path / "ledger", producer="h2h")
+    req = w.open_request("rq", kind="adhoc", purpose="audit", protocol=PL.PROTOCOL)
+    row = _row(w, a, b, 0, 10, req)
     assert L.validate_row(row) == []
-    w.append(row)
-    w.append(_row(w, a, b, 1, 10))
-    rid = PL.regime_for(TL)["regime_id"]
-    rows = L.read_rows(tmp_path)
-    assert PL.completed_batches(rows, a, b, rid, "h2h:k", 0) == {0: 10, 1: 10}
-    assert PL.completed_batches(rows, b, a, rid, "h2h:k", 0) == {}, "the reversed direction is another edge"
-    assert PL.completed_batches(rows, a, b, rid, "h2h:other", 0) == {}, "another schedule is not the same games"
-    assert PL.completed_batches(rows, a, b, rid, "h2h:k", 1) == {}, "another schedule seed neither"
-    other = PL.regime_for(TL + 1)["regime_id"]
-    assert PL.completed_batches(rows, a, b, other, "h2h:k", 0) == {}, "nor another regime"
+    assert row["regime"]["protocol"] == PL.PROTOCOL and row["regime"]["seat_rule"] == "fixed_p1"
+    assert row["request"] == {"id": "rq", "kind": "adhoc", "family": None, "opened": req["ts"], "batch": 0}
+    sc = PL.score_games(toy_games(10), TEAMS, 10)
+    assert row["compute"]["outcome_digest"] == sc.outcome_digest == L.outcome_digest(PL.outcome_vector(toy_games(10)))
+    assert row["compute"]["near_tie_games"] == [] and row["compute"]["digest_margin"] == PL.DIGEST_MARGIN
+
+
+def test_the_digest_lists_a_wide_near_tie_game_by_index_instead_of_hashing_it():
+    games = toy_games(5)
+    games[3]["near_ties_wide"] = 1
+    sc = PL.score_games(games, TEAMS, 5)
+    assert sc.near_tie_idx == [3]
+    flipped = toy_games(5)
+    flipped[3]["near_ties_wide"] = 1
+    flipped[3]["result"] = DRAW if flipped[3]["result"] != DRAW else WIN    # the near-tie game flipped
+    flipped[2]["result"], flipped[3]["result"] = flipped[3]["result"], flipped[2]["result"]  # keep the pair valid
+    assert PL.score_games(games, TEAMS, 5).outcome_digest != PL.score_games(flipped, TEAMS, 5).outcome_digest
+    g2 = toy_games(5)
+    g2[3]["near_ties_wide"] = 1
+    g2[3]["end_turn"] = 99                       # a near-tie game's details do not enter the digest
+    assert PL.score_games(g2, TEAMS, 5).outcome_digest == sc.outcome_digest
+
+
+def test_resume_finds_the_requests_batches_of_this_edge_only(tmp_path):
+    a, b = _players(tmp_path)
+    root = tmp_path / "ledger"
+    w = L.LedgerWriter(root, producer="h2h")
+    req = w.open_request("rq", kind="adhoc", purpose="audit", protocol=PL.PROTOCOL)
+    _append(w, a, b, 0, 10, req)
+    _append(w, a, b, 1, 10, req)
+    rid = PL.regime_for(TL, TEAM_SET)["regime_id"]
+    rows = L.read(PL.H2H_RESUME, root=root, request_id="rq", regime_id=rid).rows
+    assert PL.completed_batches(rows, a, b) == {0: 10, 1: 10}
+    assert PL.completed_batches(rows, b, a) == {}, "the reversed direction is another edge"
+    assert len(L.read(PL.H2H_RESUME, root=root, request_id="another")) == 0, "another request is not resumed"
+
+
+def test_the_default_request_is_a_function_of_players_regime_and_schedule(tmp_path):
+    a, b = _players(tmp_path)
+    r = PL.default_request_id(a, b, "reg", "h2h:k", 0)
+    assert r == PL.default_request_id(a, b, "reg", "h2h:k", 0) and r.startswith("h2h:")
+    assert len({r, PL.default_request_id(b, a, "reg", "h2h:k", 0), PL.default_request_id(a, b, "reg2", "h2h:k", 0),
+                PL.default_request_id(a, b, "reg", "h2h:k2", 0), PL.default_request_id(a, b, "reg", "h2h:k", 1)}) == 5
 
 
 def test_a_resume_with_another_batch_size_over_existing_rows_is_refused(tmp_path, monkeypatch):
     a, b = _players(tmp_path)
-    w = L.LedgerWriter(tmp_path, writer_id="t1")
-    w.append(_row(w, a, b, 0, 10))
+    root = tmp_path / "ledger"
+    monkeypatch.setattr(PL, "eval_team_set", lambda: TEAM_SET)
+    regime = PL.regime_for(TL)
+    rid = PL.default_request_id(a, b, regime["regime_id"], "h2h:k", 0)
+    w = L.LedgerWriter(root, producer="h2h")
+    req = w.open_request(rid, kind="adhoc", purpose="audit", protocol=PL.PROTOCOL,
+                         spec={"producer": "h2h", "batch_pairs": 10, "schedule_seed": 0})
+    _append(w, a, b, 0, 10, req)
     with pytest.raises(PL.H2HError, match="different batch size"):
-        PL.play_edge(str(tmp_path), a, b, pairs=40, batch_pairs=20, schedule_seed=0, schedule_key="h2h:k",
+        PL.play_edge(str(root), a, b, pairs=40, batch_pairs=20, schedule_seed=0, schedule_key="h2h:k",
                      run_label="study", compute=PL.Compute())
 
 

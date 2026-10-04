@@ -1,5 +1,6 @@
 """Reading the head-to-head rows: pool an edge's batches into one pentanomial, its win rate and a PAIR-clustered
-interval. Pure stdlib (``agents.training.mirrored_pairs`` for the pentanomial, ``eval_ledger`` for the rows).
+interval. Pure stdlib (``agents.training.mirrored_pairs`` for the pentanomial); the rows come from a declared
+``eval_ledger.read`` (v2 views: a v1 row's near-tie COUNT is ``compute.near_tie_game_count`` there).
 
 THE PAIR IS THE UNIT. The win rate of a mirrored read is the mean per-GAME score over PAIRS (a draw worth 1/2 —
 the Fishtest convention; it equals ``W / games`` when there are no draws, and the row says how many there are).
@@ -94,7 +95,7 @@ def edge_summary(rows: Sequence[Mapping[str, Any]]) -> Dict[str, Any]:
         "se_pp": 100.0 * se if se is not None else None,
         "pair_sd": pair_sd(counts),
         "wall_s": wall, "games_per_s": (games / wall) if wall > 0 else None,
-        "near_tie_games": sum(int(r["compute"].get("near_tie_games") or 0) for r in rows),
+        "near_tie_games": sum(int(r["compute"].get("near_tie_game_count") or 0) for r in rows),
         "near_tie_decisions": sum(int(r["compute"].get("near_tie_decisions") or 0) for r in rows),
         "devices": sorted({f"{r['compute'].get('device')}/{r['compute'].get('backend')}" for r in rows}),
     }

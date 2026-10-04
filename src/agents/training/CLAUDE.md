@@ -336,14 +336,19 @@ frozen at its launch (H0 0.50 / H1 0.55, α = β = 0.05, cap 1,680 pairs = rejec
 `sprt_promotion.py`), the cycle's own pool games never enter it, and `sprt_promotion.jsonl` makes a
 failed or interrupted test un-rerunnable. Eval-only fields like this one are RECORDED, `_resolve`-inherited and never compared by
 `check_compatible` — they are not `flag_registry` rows (that registry declares extractor toggles).
-🚨 **`python -m main.h2h` is the OFFLINE checkpoint-vs-checkpoint mirrored head-to-head** (X5 §7 / P0; the first writer of
-design_evaluation.md §0b's COUNT ledger: `eval_ledger.py`, `gen3_eval_count_row_v1`). It plays two checkpoints on the Rust
+🚨 **THE EVAL COUNT LEDGER is `eval_ledger/` (v2, `gen3_eval_count_row_v2`; eval U1).** Archive-level at
+`<archive>/_ledger/`; every batch row written under a CLAIM for a REQUEST (`LedgerWriter`); every consumer reads through
+`eval_ledger.read` with a spelled-out `ReaderDecl` (purposes, regime, requests, selection, flags_ok, inference) — the static
+gate `src/eval_ledger_reader_gate_test.py` (EMPTY allowlist) fails anything else, and every read refuses a duplicate batch
+or seed block. v1 rows are upgraded on read, never rewritten. `python -m main.eval_ledger audit` checks it.
+🚨 **`python -m main.h2h` is the OFFLINE checkpoint-vs-checkpoint mirrored head-to-head** (X5 §7 / P0; writes the ledger,
+protocol `gen3_eval_protocol_v1_h2h`, by default to the archive's `_ledger/`). It plays two checkpoints on the Rust
 eval core through the same `run_cycle`, GREEDY both sides, MIRRORED, teams from the player's eval builder; one valid row per
-batch, resumable, `models/` refused. 🚨 **The mirror hands the TEAMS over and keeps the player in seat p1** — a seat effect
+batch under a claim, resumable per request, any other root under `models/` refused. 🚨 **The mirror hands the TEAMS over and keeps the player in seat p1** — a seat effect
 `u` rides every edge (a checkpoint against itself reads 0.5 + u) and a self-play pair is NOT exactly 0.5 (the speed-tie RNG
 order is seat-dependent); read a pair-clustered interval, never a per-game one.
-**Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)** (and its
-"The checkpoint-vs-checkpoint head-to-head" section).
+**Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)** (its
+"The eval COUNT ledger" and "The checkpoint-vs-checkpoint head-to-head" sections).
 
 ## 🚨 Every live lever's SUPPLY is a declared resource (`gen3_supply_guard_v2`, `lever_supply.py`)
 

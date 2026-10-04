@@ -1,0 +1,45 @@
+{
+ "base_schema": [
+  true
+ ],
+ "batches": 2,
+ "digests": [
+  "b528c51acc3fea1526116a05d163156dea5e543d727fb7240c7e7544b62d087d",
+  "3e59cba0af3f4b64ddf7150f74ea8011979a3c51bf2cb374b7007c2a6e6a63a1"
+ ],
+ "games": 200,
+ "near_tie_games": [
+  15,
+  13
+ ],
+ "pair_counts": [
+  [
+   11,
+   0,
+   31,
+   0,
+   8
+  ],
+  [
+   12,
+   0,
+   31,
+   0,
+   7
+  ]
+ ],
+ "problems": [],
+ "verdict": "IDENTICAL",
+ "wld": [
+  [
+   47,
+   53,
+   0
+  ],
+  [
+   45,
+   55,
+   0
+  ]
+ ]
+}

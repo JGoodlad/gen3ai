@@ -19,9 +19,19 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--player", required=True, help="the MEASURED side: a .zip, a run dir (its last snapshot) or <run>@<step>")
     p.add_argument("--opponent", required=True, help="the other side (same spec forms)")
     p.add_argument("--pairs", type=int, required=True, help="mirrored team pairs (2 games each)")
-    p.add_argument("--out", required=True, help="directory for the ledger shard (REFUSED under models/)")
+    p.add_argument("--out", default=None,
+                   help="the ledger ROOT (default: the run archive's <archive>/_ledger; any other root under models/ "
+                        "is REFUSED)")
     p.add_argument("--label", default="h2h", help="the row's `run` (the study that produced it)")
     p.add_argument("--purpose", default=PL.DEFAULT_PURPOSE, choices=L.PURPOSES)
+    p.add_argument("--request", default=None,
+                   help="the request id (default: derived from the two players, the regime and the schedule, so a "
+                        "re-run resumes it)")
+    p.add_argument("--family", default=None,
+                   help="the request family (a registered group-sequential read, e.g. an X5 A/B: "
+                        "`python -m main.eval_ledger family-register` first)")
+    p.add_argument("--request-kind", default=None, choices=L.REQUEST_KINDS,
+                   help="default: ab_cell under --purpose ab, else adhoc")
     p.add_argument("--seed", type=int, default=0, help="the schedule seed (team pairs + battle seeds)")
     p.add_argument("--schedule-key", default=None,
                    help="default: a digest of the two checkpoints' hashes, ORDER-INDEPENDENT (A-vs-B and B-vs-A "
@@ -35,38 +45,57 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--torch-threads", type=int, default=4, help="intra-op threads of a CPU forward")
     p.add_argument("--front", default="proc", choices=("proc", "ffi"))
     p.add_argument("--profile", default="release", choices=("release", "selfcheck"))
-    r = sub.add_parser("read", help="pool a directory's rows per edge (validates every row; never mixes regimes)")
-    r.add_argument("dir")
+    r = sub.add_parser("read", help="pool a ledger's h2h rows per edge (validates every row; never mixes regimes)")
+    r.add_argument("dir", nargs="?", default=None,
+                   help="a ledger root, or a legacy flat directory of v1 shards (default: the run archive's ledger)")
     r.add_argument("--json", action="store_true")
     r.add_argument("--regime", default=None, help="pool only this regime_id")
     return ap
 
 
+#: ``read``: an ESTIMATE-style listing over every h2h row under the root (any request), one regime at a time. A v1
+#: row (P0's) lacks only its outcome digest, which a count read does not need.
+H2H_READ = L.ReaderDecl(
+    name="main.h2h.read", purposes=L.ALL_PURPOSES,
+    regime=L.RegimeFilter(protocol=PL.PROTOCOL, play="greedy", opponent_play="greedy", mirrored=True),
+    requests="any", selection="include", flags_ok=frozenset({"digest_unrecorded"}), inference="conditional")
+
+
 def cmd_play(a: argparse.Namespace) -> int:
-    L.refuse_under_models(a.out)
+    if a.out is not None:
+        L.check_write_root(a.out)
     player, opponent = PL.resolve_player(a.player), PL.resolve_player(a.opponent)
     compute = PL.Compute(device=a.device, backend=a.backend, n_envs=a.n_envs, threads=a.threads,
                          torch_threads=a.torch_threads, front=a.front, profile=a.profile)
     summ = PL.play_edge(a.out, player, opponent, pairs=a.pairs, batch_pairs=a.batch_pairs, schedule_seed=a.seed,
-                        schedule_key=a.schedule_key, purpose=a.purpose, run_label=a.label, compute=compute)
+                        schedule_key=a.schedule_key, purpose=a.purpose, run_label=a.label, compute=compute,
+                        request_id=a.request, family=a.family, request_kind=a.request_kind)
     print(ST.format_edge(summ))
     print(json.dumps(summ, sort_keys=True))
     return 0
 
 
 def cmd_read(a: argparse.Namespace) -> int:
-    if not Path(a.dir).exists():
-        print(f"[h2h] no such directory: {a.dir}", file=sys.stderr)
+    root = Path(a.dir) if a.dir is not None else L.archive_ledger_root()
+    if not root.exists():
+        print(f"[h2h] no such directory: {root}", file=sys.stderr)
         return 2
-    rows = L.read_rows(a.dir)
-    edges = ST.group_edges(rows, regime_id=a.regime)
-    out = [ST.edge_summary(rs) for _k, rs in sorted(edges.items(), key=lambda kv: (kv[1][0]["player"]["id"], kv[1][0]["opponent"]["id"]))]
+    reads = L.read_by_regime(H2H_READ, root=root)
+    if a.regime is not None:
+        reads = {k: v for k, v in reads.items() if k == a.regime}
+    rows = [r for got in reads.values() for r in got.rows]
+    out = []
+    for got in reads.values():
+        edges = ST.group_edges(list(got.rows))
+        out.extend(ST.edge_summary(rs) for _k, rs in edges.items())
+    out.sort(key=lambda s: (s["player"], s["opponent"], s["regime_id"]))
     if a.json:
         print(json.dumps(out, indent=1, sort_keys=True))
     else:
         for s in out:
             print(ST.format_edge(s))
-        print(f"[h2h] {len(rows)} rows, {len(out)} edge(s), all valid under {L.SCHEMA}")
+        print(f"[h2h] {len(rows)} rows, {len(out)} edge(s) in {len(reads)} regime(s), all valid under {L.SCHEMA} "
+              f"(v1 rows upgraded on read)")
     return 0
 
 

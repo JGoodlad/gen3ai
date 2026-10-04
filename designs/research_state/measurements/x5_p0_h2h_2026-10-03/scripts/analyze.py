@@ -66,7 +66,13 @@ def load():
 
     prov = json.loads((HERE / "provenance.json").read_text())
     sha2tag = {prov[t]["final_sha256"]: t for t in TAGS}
-    rows = L.read_rows(HERE / "rows")
+    # ledger v2 (eval U1): a declared read; the v1 rows are upgraded on read (regime ids recomputed, v1 id kept)
+    decl = L.ReaderDecl(name="x5_p0.analyze", purposes=frozenset({"audit"}),
+                        regime=L.RegimeFilter(protocol="gen3_eval_protocol_v1_h2h", play="greedy",
+                                              opponent_play="greedy", mirrored=True),
+                        requests="any", selection="include", flags_ok=frozenset({"digest_unrecorded"}),
+                        inference="conditional")
+    rows = list(L.read(decl, root=HERE / "rows").rows)
     unknown = {r["player"]["sha256"] for r in rows} | {r["opponent"]["sha256"] for r in rows}
     unknown -= set(sha2tag)
     if unknown:

@@ -17,7 +17,8 @@ def row(counts, w=None, l=None, d=0, a="a", b="b", regime="r1", wall=10.0, purpo
     return {"player": {"id": f"run_{a}@1", "sha256": a * 64}, "opponent": {"id": f"run_{b}@1", "sha256": b * 64},
             "regime": {"regime_id": regime}, "purpose": purpose, "counts": {"w": w, "l": l, "d": d},
             "pairs": {"counts": list(counts), "n_pairs": n, "voided": 0},
-            "compute": {"wall_s": wall, "near_tie_games": 1, "near_tie_decisions": 2, "device": "cpu", "backend": "eager"}}
+            "compute": {"wall_s": wall, "near_tie_game_count": 1, "near_tie_decisions": 2, "device": "cpu",
+                        "backend": "eager"}}
 
 
 def test_pair_se_matches_the_hand_computation_and_is_unbiased():

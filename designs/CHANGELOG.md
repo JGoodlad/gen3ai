@@ -11500,3 +11500,28 @@ their pin's code and are unaffected. No run is live.
 - **Tests.** `src/agents/model/hypothesis_set_test.py` (28): Σπ = k, π in (0, 1), the bracket, the iteration teeth, k = 0 / k = n, the BCE finite to scores ±1e4, ∂BCE/∂τ = 0, label-mismatch drop, V, ordering + ties, near-ties, slot placement, the move group, revealed Hidden Power, production = blob, init isolation, cold start = the prior's marginal on a real policy, blob/fixed_mass output identity, δ_θ gradient isolation, the row vs its wrapper, the tier contract, checkargs' requires graph, the migration and the version gate. Each of seven reverts (detach removed, V = nums ≥ 1, `torch.topk` ordering, k = n branch removed, `nn.Linear`, no private seed, the stash fed forward) fails it.
 - **Findings.** F-X5-22 (the unrolled bisection dominates the compile), F-X5-23 (OTHER's tail-mean cutoff is a second selection boundary), F-X5-24 (π_m is built over MoveBelief's logits while its loss stays per-move BCE). The note's "V = {nums ≥ 1}" and "n ≥ 382" are corrected.
 - **Docs.** The X5 note (status, §3.1 / §3.2 / §3.6 / §3.8 as built, §8.2, §8.3 U2 DONE + the U2 hand-off, the Decision record), `ARCHITECTURE.md`, `src/agents/model/CLAUDE.md`, `designs/model/file_layout.md`, `designs/training/belief_losses.md`, `designs/flag_registry.md` (generated).
+## 2026-10-03 — eval U1: the eval COUNT LEDGER v2 core (`gen3_eval_count_row_v2`, `agents/training/eval_ledger/`; no model change, no config bump)
+
+- **The package.** `agents/training/eval_ledger.py` (v1) became the package `agents/training/eval_ledger/` — `schema`
+  (the v2 row; the v1 row validated as written and UPGRADED ON READ, never rewritten; the companion records; the closed
+  lists; the batch key and the SEED BLOCK; the outcome digest), `store` (`<archive>/_ledger/`, `check_write_root`, the
+  one `flock`, the scans, closing a shard, `close-stale`), `queue` (the request queue as a fold of the requests stream;
+  the void rule), `writer` (`LedgerWriter`: requests, families, claims, claimed appends, decisions, references),
+  `reader` (`ReaderDecl` / `RegimeFilter` / `read` / `read_by_regime`), `cells` (per-cell INCONCLUSIVE, a family across
+  looks, the conditional pooled pair estimate), `audit` (`audit` / `verify` / `show`). CLI: `python -m main.eval_ledger`.
+- **v2 adds:** purposes `ab` / `ladder` (backfill only) / `untaught` / `gap` / `monitor`; `request {id, kind, family,
+  opened, batch}`; player / opponent `kind`; `regime.protocol` / `seat_rule` / `player_temp` / `opponent_temp` /
+  `team_set` (a digest; `team_source` stays as a label); `counts.aborted`; `compute.outcome_digest` /
+  `near_tie_games` / `digest_margin`; `flags`; `provenance`.
+- **Uniqueness:** the batch key `(request, batch, player, opponent, regime)` AND the seed block (a build decision:
+  the same games recorded under two requests), refused by the writer, every reader and `audit`. Claims and claimed
+  appends under one lock; a dead or expired writer's claim voided deterministically and replayed on the same seeds.
+- **The static gate** `src/eval_ledger_reader_gate_test.py` (EMPTY allowlist): every ledger read is declared and
+  spelled out; the closed lists equal design_evaluation.md §0b.2's new table.
+- **Writers migrated, storage-only:** `main.h2h` (archive default, requests, `--purpose ab`, `--family`; the same
+  seeded batches play byte-identical games before and after — `measurements/eval_ledger_u1_2026-10-03/`) and the bot
+  round robin (`bot_rr.py`; rows replayed equal). The 120 P0 and 1,296 bot rows stay v1 on disk and read upgraded; the
+  two historical readers (`x5_p0_h2h_2026-10-03/scripts/analyze.py`, `bot_base_ratings_2026-10-03/fit.py`) read through a
+  declaration and return identical numbers.
+- **Provisional calls recorded** (ORCHESTRATOR, for the owner on 10-04): Q1–Q9, F-ED-18 (the X5 arms run with the ladder
+  updater off), D-L4 (the general backfill dropped; U3 shrinks to the verbatim copies).

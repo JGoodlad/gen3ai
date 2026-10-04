@@ -9,7 +9,16 @@ reused, and what is new:
   (``rust_eval.build.eval_builders``), the strict checkpoint loader.
 * NEW: the host that declares ONE T2 service holding TWO slots (the player's eval slot, one SENTINEL slot
   for the opponent) and ONE eval core over them, plays the plan in BATCHES, scores each batch from the
-  executor's game log into a §0b COUNT row (``agents.training.eval_ledger``) and appends it durably.
+  executor's game log into a §0b COUNT row (``agents.training.eval_ledger``, ``gen3_eval_count_row_v2``) and
+  appends it durably, under a CLAIM, for a REQUEST (§0b.4).
+
+THE LEDGER (eval unit U1, 2026-10-03 — STORAGE ONLY: the games are unchanged, proved by an outcome-digest check in
+``designs/research_state/measurements/eval_ledger_u1_2026-10-03/``). Rows go to a ledger ROOT: by default the run
+archive's ``<archive>/_ledger/`` (``utils.paths.run_archive_dir``), else the root the caller names (outside
+``models/``). Every batch belongs to a REQUEST: by default one derived from (the two players, the regime, the
+schedule), so a re-run with the same arguments resumes it; ``--request`` / ``--family`` / ``--request-kind`` put the
+edge into a caller's request (an X5 look: ``--purpose ab --family <the A/B>``). The protocol is
+:data:`PROTOCOL` — a v1 h2h row upgraded on read carries the same one.
 
 THE REGIME (stated on every row; the readers refuse to mix it). Both sides play GREEDY (argmax of the served
 log-probs — the eval regime, ``eval_sentinel_greedy``); MIRRORED pairs; the game ends at the declared turn
@@ -35,10 +44,10 @@ shape. Every row therefore counts the decisions inside ``NEAR_TIE`` (``compute.n
 ``near_tie_games``) — the games whose outcome rests on a rounding error — rather than leaving them to
 chance (standing rule 8).
 
-DURABLE AND RESUMABLE. A batch is one row, appended (fsynced) when it ends; a re-run with the same
-arguments skips the batches already on disk (same players, schedule, regime and batch size) and plays the
-rest. A different batch size over existing rows is REFUSED: the same batch index would replay the same
-games under another length.
+DURABLE AND RESUMABLE. A batch is one row, appended (fsynced) when it ends, under its claim; a re-run with the
+same request skips the batches already recorded and plays the rest. A different batch size over an existing
+request is REFUSED (the request's spec pins it): the same batch index would replay the same games under another
+length. A batch is also never recorded twice across requests: the ledger refuses a second row on one SEED BLOCK.
 """
 from __future__ import annotations
 
@@ -75,8 +84,34 @@ NEAR_TIE_WIDE = 2e-3
 
 DEFAULT_BATCH_PAIRS = 500
 DEFAULT_PURPOSE = "audit"
+#: The game protocol this tool plays (``eval_ledger.schema.PROTOCOLS``). Storage-only changes keep it; a change to
+#: what a game measures (seats, teams, turn limit, the core's semantics) bumps it — and is REFUSED while a family
+#: pinned to it has no decision row (design_evaluation.md §0c rule 6).
+PROTOCOL = "gen3_eval_protocol_v1_h2h"
+PRODUCER = "h2h"
+#: The margin that defines a near-tie decision for the OUTCOME DIGEST: the GPU bar (``NEAR_TIE_WIDE``), so a game
+#: that could flip between CPU and GPU is listed by index instead of hashed and a cross-device replay still matches.
+DIGEST_MARGIN = 2e-3
+#: The first claim's expected batch wall, in games per second (CPU eager on the production model, P0: 4.77).
+EXPECTED_GAMES_PER_S = 4.0
 
 TEAM_SOURCE = "eval_builders default_biased(bias_prob=0.1): both sides draw from the player's eval team builder"
+
+#: The resume read: THIS request's rows (any purpose — a request has one), at this tool's protocol.
+H2H_RESUME = L.ReaderDecl(
+    name="main.h2h.resume", purposes=L.ALL_PURPOSES,
+    regime=L.RegimeFilter(protocol=PROTOCOL, play="greedy", opponent_play="greedy", mirrored=True),
+    requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
+
+
+def eval_team_set() -> str:
+    """The TEAM SET identity of the player's eval team builder (``eval_builders(None, [])``'s trainee builder: the
+    default pool with its 10 % sample-team bias): the digest of the ordered team lists and the builder parameters."""
+    from utils.team_loader import TeamLoader
+
+    loader = TeamLoader()
+    return L.team_set_id({"builder": "Gen3Teambuilder", "kind": "default_biased", "bias_prob": 0.1,
+                          "teams": list(loader.get_all_teams()), "bias_teams": list(loader.get_sample_teams())})
 
 
 class H2HError(RuntimeError):
@@ -200,6 +235,10 @@ class BatchScore:
     near_tie_games_wide: int = 0
     #: per pair, in order: ``(player half-points game 1, game 2, near-tie decisions in the pair, wide)``
     pair_detail: Optional[List[Tuple[int, int, int, int]]] = None
+    #: the §0b.2 audit pair: sha256 over the ``(game, W/L/D, turns)`` vector of the games with NO decision inside
+    #: :data:`DIGEST_MARGIN`, and the indices of the games that had one
+    outcome_digest: Optional[str] = None
+    near_tie_idx: Optional[List[int]] = None
 
     def clean_pairs(self, wide: bool = False) -> int:
         """Pairs with NO decision inside the near-tie margin (narrow, or the GPU-bar ``wide`` one)."""
@@ -263,10 +302,22 @@ def score_games(games: Sequence[Mapping[str, Any]], team_packed: Sequence[str], 
     ntw = {int(g["game"]): int(g.get("near_ties_wide", 0)) for g in games}
     detail = [(int(pts[2 * k]), int(pts[2 * k + 1]), nt[2 * k] + nt[2 * k + 1], ntw[2 * k] + ntw[2 * k + 1])  # type: ignore[arg-type]
               for k in range(n_pairs)]
+    near = sorted(k for k, x in ntw.items() if x)
+    digest = L.outcome_digest(outcome_vector(games), near)
     return BatchScore(w=w, l=l, d=d, pair_counts=MP.pair_counts(pts), n_pairs=n_pairs, teams=teams,
                       near_tie_decisions=sum(nt.values()), near_tie_games=sum(1 for x in nt.values() if x),
                       mirror_checked=n_pairs, near_tie_decisions_wide=sum(ntw.values()),
-                      near_tie_games_wide=sum(1 for x in ntw.values() if x), pair_detail=detail)
+                      near_tie_games_wide=sum(1 for x in ntw.values() if x), pair_detail=detail,
+                      outcome_digest=digest, near_tie_idx=near)
+
+
+def outcome_vector(games: Sequence[Mapping[str, Any]]) -> List[Tuple[int, str, Optional[int]]]:
+    """``(game, W/L/D, end turn)`` per game, from the PLAYER's side — the outcome digest's input."""
+    from agents.training.trace_result import DRAW, LOSS, WIN
+
+    letter = {WIN: "W", LOSS: "L", DRAW: "D"}
+    return [(int(g["game"]), letter[g["result"]], None if g.get("end_turn") is None else int(g["end_turn"]))
+            for g in games]
 
 
 class _GameSink(list):
@@ -307,10 +358,13 @@ class Compute:
                 "profile": self.profile}
 
 
-def regime_for(turn_limit: int) -> Dict[str, Any]:
+def regime_for(turn_limit: int, team_set: Optional[str] = None) -> Dict[str, Any]:
+    """The v2 regime block. ``team_set`` defaults to :func:`eval_team_set` (it reads the team pool)."""
     return L.with_regime_id({
         "play": "greedy", "opponent_play": "greedy", "mirrored": True, "mirror_rule": MP.SCHEMA,
-        "eval_core": "rust", "turn_limit": int(turn_limit), "seed_rule": SD.SCHEMA, "team_source": TEAM_SOURCE})
+        "eval_core": "rust", "turn_limit": int(turn_limit), "seed_rule": SD.SCHEMA, "team_source": TEAM_SOURCE,
+        "protocol": PROTOCOL, "seat_rule": "fixed_p1", "player_temp": None, "opponent_temp": None,
+        "team_set": team_set or eval_team_set()})
 
 
 class H2HEngine:
@@ -436,17 +490,17 @@ class H2HEngine:
 
 
 # ---------------------------------------------------------------------------------------------- the edge
-def _same_edge(r: Mapping[str, Any], a: PlayerRef, b: PlayerRef, regime_id: str, key: str, sched_seed: int) -> bool:
-    return (r["player"]["sha256"] == a.sha256 and r["opponent"]["sha256"] == b.sha256
-            and r["regime"]["regime_id"] == regime_id and r["seed"]["schedule_key"] == key
-            and r["seed"]["schedule_seed"] == sched_seed)
+def default_request_id(a: PlayerRef, b: PlayerRef, regime_id: str, key: str, sched_seed: int) -> str:
+    """The request a plain re-run resumes: a digest of (the two players, the regime, the schedule key and seed) —
+    NOT of the pair count (a longer plan extends the same request) nor the batch size (pinned in its spec)."""
+    d = hashlib.blake2b(f"{a.sha256}:{b.sha256}:{regime_id}:{key}:{int(sched_seed)}".encode(), digest_size=8)
+    return f"h2h:{d.hexdigest()}"
 
 
-def completed_batches(rows: Sequence[Mapping[str, Any]], a: PlayerRef, b: PlayerRef, regime_id: str, key: str,
-                      sched_seed: int) -> Dict[int, int]:
-    """``{batch index: pairs}`` already on disk for this edge, schedule and regime."""
-    return {int(r["seed"]["batch"]): int(r["pairs"]["n_pairs"]) for r in rows
-            if _same_edge(r, a, b, regime_id, key, sched_seed)}
+def completed_batches(rows: Sequence[Mapping[str, Any]], a: PlayerRef, b: PlayerRef) -> Dict[int, int]:
+    """``{batch index: pairs}`` of this edge among one request's rows."""
+    return {int(r["request"]["batch"]): int(r["pairs"]["n_pairs"]) for r in rows
+            if r["player"]["sha256"] == a.sha256 and r["opponent"]["sha256"] == b.sha256}
 
 
 def _loadavg() -> List[float]:
@@ -456,45 +510,53 @@ def _loadavg() -> List[float]:
 def build_row(*, writer: L.LedgerWriter, run_label: str, commit: str, a: PlayerRef, b: PlayerRef,
               eng: "H2HEngine", purpose: str, key: str, sched_seed: int, batch: int, cseed: int,
               score: BatchScore, t_start: str, t_end: str, wall_s: float, load: Dict[str, Any],
-              executor: Mapping[str, Any]) -> Dict[str, Any]:
+              executor: Mapping[str, Any], request: Mapping[str, Any]) -> Dict[str, Any]:
     n_games = 2 * score.n_pairs
     compute = {**eng.compute.block(), "torch": eng.torch_version, "core_stamp": eng.core_stamp,
                "wall_s": round(wall_s, 3), "games_per_s": round(n_games / wall_s, 3) if wall_s > 0 else None,
-               "near_tie_decisions": score.near_tie_decisions, "near_tie_games": score.near_tie_games,
+               "near_tie_decisions": score.near_tie_decisions, "near_tie_game_count": score.near_tie_games,
                "near_tie_decisions_wide": score.near_tie_decisions_wide,
-               "near_tie_games_wide": score.near_tie_games_wide, "near_tie_margin": NEAR_TIE,
+               "near_tie_game_count_wide": score.near_tie_games_wide, "near_tie_margin": NEAR_TIE,
                "near_tie_margin_wide": NEAR_TIE_WIDE, "clean_pairs": score.clean_pairs(),
                "clean_pairs_off_center": score.clean_pairs_off_center(),
                "clean_pairs_wide": score.clean_pairs(True),
-               "clean_pairs_off_center_wide": score.clean_pairs_off_center(True), "load_avg_start": load["start"], "load_avg_end": load["end"],
-               "contention": load["contention"], "team_check": eng.team_check,
+               "clean_pairs_off_center_wide": score.clean_pairs_off_center(True), "load_avg_start": load["start"],
+               "load_avg_end": load["end"], "contention": load["contention"], "team_check": eng.team_check,
                "sanitized_load": eng.historical,
                "trainee_decisions": executor.get("trainee_decisions"),
-               "p2_policy_decisions": executor.get("p2_policy_decisions")}
+               "p2_policy_decisions": executor.get("p2_policy_decisions"),
+               "outcome_digest": score.outcome_digest, "near_tie_games": list(score.near_tie_idx or []),
+               "digest_margin": DIGEST_MARGIN}
     return {
         "schema": L.SCHEMA, "row_id": writer.next_row_id(), "supersedes": None, "ts": L.utc_now(),
-        "t_start": t_start, "t_end": t_end, "run": run_label, "commit": commit, "player": a.block(),
-        "opponent": b.block(), "regime": dict(eng.regime), "compute": compute, "purpose": purpose,
-        "counts": {"w": score.w, "l": score.l, "d": score.d},
+        "t_start": t_start, "t_end": t_end, "run": run_label, "commit": commit,
+        "player": {**a.block(), "kind": "checkpoint"}, "opponent": {**b.block(), "kind": "checkpoint"},
+        "regime": dict(eng.regime), "compute": compute, "purpose": purpose,
+        "request": {"id": request["request_id"], "kind": request["kind"], "family": request["family"],
+                    "opened": request["ts"], "batch": int(batch)},
+        "counts": {"w": score.w, "l": score.l, "d": score.d, "aborted": 0},
         "pairs": {"counts": score.pair_counts, "n_pairs": score.n_pairs, "voided": 0},
         "teams": score.teams,
         "seed": {"rule": SD.SCHEMA, "schedule_seed": int(sched_seed), "schedule_key": key, "batch": int(batch),
-                 "cycle_seed": int(cseed), "item_key": ITEM_KEY, "game_lo": 0, "game_hi": n_games - 1}}
+                 "cycle_seed": int(cseed), "item_key": ITEM_KEY, "game_lo": 0, "game_hi": n_games - 1},
+        "flags": [], "provenance": None}
 
 
-def play_edge(out_dir: str, player: PlayerRef, opponent: PlayerRef, *, pairs: int,
+def play_edge(out_dir: Optional[str], player: PlayerRef, opponent: PlayerRef, *, pairs: int,
               batch_pairs: int = DEFAULT_BATCH_PAIRS, schedule_seed: int = 0, schedule_key: Optional[str] = None,
-              purpose: str = DEFAULT_PURPOSE, run_label: str, compute: Compute,
+              purpose: str = DEFAULT_PURPOSE, run_label: str, compute: Compute, request_id: Optional[str] = None,
+              family: Optional[str] = None, request_kind: Optional[str] = None,
               emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True)) -> Dict[str, Any]:
-    """Play ``pairs`` mirrored pairs of ``player`` vs ``opponent`` in batches, one §0b row per batch appended
-    to ``out_dir`` (refused under ``models/``). Skips the batches already on disk. Returns the edge's pooled
-    summary (``main.h2h.stats.edge_summary``)."""
+    """Play ``pairs`` mirrored pairs of ``player`` vs ``opponent`` in batches, one §0b row per batch appended under
+    its claim to the ledger root ``out_dir`` (``None`` = the run archive's ``_ledger``; any other root under
+    ``models/`` is refused), for the request ``request_id`` (default: :func:`default_request_id`). Skips the batches
+    the request already holds. Returns the edge's pooled summary (``main.h2h.stats.edge_summary``)."""
     from main.h2h import stats as ST
     from utils.git import get_git_hash
 
     if purpose not in L.PURPOSES:
         raise H2HError(f"purpose {purpose!r} not in {L.PURPOSES}")
-    L.refuse_under_models(out_dir)
+    root = L.check_write_root(out_dir) if out_dir is not None else L.archive_ledger_root()
     key = schedule_key or schedule_key_of(player, opponent)
     plan = batch_plan(pairs, batch_pairs)
     check_core_flags(player)
@@ -502,16 +564,28 @@ def play_edge(out_dir: str, player: PlayerRef, opponent: PlayerRef, *, pairs: in
     from utils.rust_env import episode as EP
 
     regime = regime_for(EP.stall_threshold())
-    existing = L.read_rows(out_dir) if Path(out_dir).exists() else []
-    done = completed_batches(existing, player, opponent, regime["regime_id"], key, schedule_seed)
+    rid = request_id or default_request_id(player, opponent, regime["regime_id"], key, schedule_seed)
+    kind = request_kind or ("ab_cell" if purpose == "ab" else "adhoc")
+    writer = L.LedgerWriter(root, producer=PRODUCER)
+    try:
+        req = writer.open_request(rid, kind=kind, purpose=purpose, family=family, protocol=PROTOCOL,
+                                  spec={"producer": PRODUCER, "batch_pairs": int(batch_pairs),
+                                        "schedule_seed": int(schedule_seed)})
+    except L.RequestSpecError as e:
+        raise H2HError(f"request {rid}: {e} — a different batch size (or schedule seed) over an existing request "
+                       "would replay the same batch index under another length; use the same --batch-pairs, or a "
+                       "new --request") from None
+    existing = L.read(H2H_RESUME, root=root, request_id=rid, regime_id=regime["regime_id"])
+    done = completed_batches(existing.rows, player, opponent)
     for b_i, n in done.items():
         if b_i >= len(plan) or plan[b_i] != n:
-            raise H2HError(f"{out_dir} already holds batch {b_i} of this edge with {n} pairs, but this call's plan "
+            raise H2HError(f"request {rid} already holds batch {b_i} of this edge with {n} pairs, but this call's plan "
                            f"is {plan[:3]}... — a different batch size over existing rows would replay the same "
-                           "batch index under another length; use the same --batch-pairs / a new --out")
+                           "batch index under another length; use the same --batch-pairs / a new --request")
     todo = [b_i for b_i in range(len(plan)) if b_i not in done]
     emit(f"[h2h] {player.id} vs {opponent.id}: {pairs} pairs in {len(plan)} batch(es) of {batch_pairs}; "
-         f"{len(done)} already on disk, {len(todo)} to play; schedule {key} seed {schedule_seed}")
+         f"{len(done)} already recorded, {len(todo)} to play; schedule {key} seed {schedule_seed}; request {rid} "
+         f"({kind}, purpose {purpose}{f', family {family}' if family else ''}) under {root}")
     if todo:
         from utils.contention import cpu_contention_factor
 
@@ -520,7 +594,6 @@ def play_edge(out_dir: str, player: PlayerRef, opponent: PlayerRef, *, pairs: in
             from utils.gpu_lock import gpu_lock
 
             lock = gpu_lock(what="main.h2h")
-        writer = L.LedgerWriter(out_dir)
         try:
             commit = get_git_hash()
         except Exception:                                            # noqa: BLE001 - a read still runs
@@ -530,13 +603,22 @@ def play_edge(out_dir: str, player: PlayerRef, opponent: PlayerRef, *, pairs: in
             try:
                 if eng.regime["regime_id"] != regime["regime_id"]:
                     raise H2HError("the engine's regime differs from the one planned")
+                last_wall: Optional[float] = None
                 for b_i in todo:
                     n = plan[b_i]
+                    try:
+                        claim = writer.claim(rid, batch=b_i, player=player.sha256, opponent=opponent.sha256,
+                                             regime_id=regime["regime_id"],
+                                             expected_wall_s=last_wall or 2 * n / EXPECTED_GAMES_PER_S)
+                    except L.AlreadyRecordedError as e:
+                        emit(f"[h2h] batch {b_i}: {e} — skipped")
+                        continue
                     cseed = cycle_seed(schedule_seed, key, b_i)
                     load0, t0 = _loadavg(), time.perf_counter()
                     t_start = L.utc_now()
                     games, st = eng.play_batch(n, cseed)
                     wall = time.perf_counter() - t0
+                    last_wall = wall
                     t_end = L.utc_now()
                     score = score_games(games, eng.team_packed, n)
                     if st.get("executor_pair_counts") is not None and list(st["executor_pair_counts"]) != score.pair_counts:
@@ -546,12 +628,19 @@ def play_edge(out_dir: str, player: PlayerRef, opponent: PlayerRef, *, pairs: in
                                     eng=eng, purpose=purpose, key=key, sched_seed=schedule_seed, batch=b_i,
                                     cseed=cseed, score=score, t_start=t_start, t_end=t_end, wall_s=wall,
                                     load={"start": load0, "end": _loadavg(), "contention": cpu_contention_factor(refresh=True)},
-                                    executor=st)
-                    writer.append(row)
+                                    executor=st, request=req)
+                    try:
+                        writer.append_row(row, claim)
+                    except L.ClaimVoidedError as e:
+                        emit(f"[h2h] batch {b_i}: {e}")
+                        continue
                     emit(f"[h2h] batch {b_i + 1}/{len(plan)}: {n} pairs / {2 * n} games in {wall:.1f}s "
                          f"({2 * n / wall:.2f} games/s); W/L/D {score.w}/{score.l}/{score.d}; pair counts "
-                         f"{score.pair_counts}; near-tie games {score.near_tie_games}")
+                         f"{score.pair_counts}; near-tie games {score.near_tie_games}; digest "
+                         f"{(score.outcome_digest or '')[:12]}")
             finally:
                 eng.close()
-    rows = [r for r in L.read_rows(out_dir) if _same_edge(r, player, opponent, regime["regime_id"], key, schedule_seed)]
-    return ST.edge_summary(rows)
+    writer.close()
+    got = L.read(H2H_RESUME, root=root, request_id=rid, regime_id=regime["regime_id"],
+                 players=[player.sha256], opponents=[opponent.sha256])
+    return ST.edge_summary(list(got.rows))

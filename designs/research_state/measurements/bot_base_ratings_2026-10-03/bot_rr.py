@@ -1,8 +1,8 @@
 """Rustboro-era BOT BASE RATINGS — the play half: a MIRRORED, PER-GAME-SEEDED bot-vs-bot round robin.
 
     export PYTHONPATH=<checkout>/src
-    python bot_rr.py play --pairs 2000 --batch-pairs 100 --workers 12 --out <dir>/ledger
-    python bot_rr.py plan --pairs 2000 --batch-pairs 100 --out <dir>/ledger     # what is left to play
+    python bot_rr.py play --pairs 2000 --batch-pairs 100 --workers 12 [--out <ledger root>]
+    python bot_rr.py plan --pairs 2000 --batch-pairs 100 [--out <ledger root>]     # what is left to play
 
 WHAT IS PLAYED. Every unordered pair of the nine eval-roster bots (``eval_opponent_names()``, the bots the
 ladder pins), ``--pairs`` mirrored PAIRS per edge (2 games each), in batches of ``--batch-pairs``.
@@ -31,11 +31,19 @@ p1 is always answered by the caller); there is no p1 bot route. The bots here ar
 (``agents.opponents`` / ``poke_env.player.baselines``) — the reference implementation the Rust port is gated
 against at 0 mismatches (``bots_gate_test``), driven by the Rust eval core's own seed rule.
 
-ROWS. One §0b COUNT row (``agents.training.eval_ledger``, ``gen3_eval_count_row_v1``) per (edge x batch),
-purpose ``anchor``; PLAYER = the edge's first bot in roster order (bot A), OPPONENT = bot B. A bot's ``sha256``
-is the digest of its name + the sources of the bot modules at this commit (a bot is code, not a checkpoint).
-Resumable: a (edge, batch) already on disk is skipped. Reproducible: every game is a pure function of
-``(schedule seed, edge, batch, game index)`` and the code.
+ROWS. One §0b COUNT row (``agents.training.eval_ledger``) per (edge x batch), purpose ``anchor``; PLAYER = the
+edge's first bot in roster order (bot A), OPPONENT = bot B (``kind: bot``). A bot's ``sha256`` is the digest of
+its name + the sources of the bot modules at this commit (a bot is code, not a checkpoint). Resumable: a (edge,
+batch) the request already holds is skipped. Reproducible: every game is a pure function of ``(schedule seed,
+edge, batch, game index)`` and the code.
+
+LEDGER v2 (eval unit U1, 2026-10-03 — STORAGE ONLY: the games, seeds, seats and bot streams are unchanged). The
+1,296 rows this study banked under ``ledger/`` are ``gen3_eval_count_row_v1`` and are read UPGRADED (protocol
+``gen3_eval_protocol_v1_bot_rr``, ``seat_rule: balanced``, both temperatures ``bot_native``); a new run writes
+``gen3_eval_count_row_v2`` rows to a ledger ROOT (default: the run archive's ``<archive>/_ledger``) under
+``rows/bot_rr/``, every batch under a CLAIM for one REQUEST (``--request``, default ``bot_rr:<label>:<seed>``,
+kind ``anchor_read``), with the per-batch OUTCOME DIGEST (no near-tie notion for a scripted bot:
+``digest_margin: null``, ``near_tie_games: []``).
 """
 from __future__ import annotations
 
@@ -92,19 +100,41 @@ def bot_block(name: str) -> Dict[str, Any]:
                 h.update(rel.encode())
                 h.update(f.read())
     return {"id": f"bot:{name}", "sha256": h.hexdigest(), "path": "src/" + BOT_SOURCES[0], "run": "scripted_bots",
-            "step": None, "rung": "scripted"}
+            "step": None, "rung": "scripted", "kind": "bot"}
+
+
+PROTOCOL = "gen3_eval_protocol_v1_bot_rr"
+PRODUCER = "bot_rr"
+#: A scripted bot's batch wall for the FIRST claim's expiry (the claim floor, 10 min, usually dominates).
+EXPECTED_GAMES_PER_S = 2.0
 
 
 def regime() -> Dict[str, Any]:
     from agents.training import eval_ledger as L
     from agents.training.rust_eval import seeds as SD
+    from main.h2h.play import eval_team_set
     from utils.rust_env import episode as EP
 
-    # §0b's PLAYS vocabulary is greedy|sampled; a scripted bot draws from its own seeded streams -> "sampled".
+    # §0b's PLAYS vocabulary is greedy|sampled; a scripted bot draws from its own seeded streams -> "sampled", at
+    # temperature "bot_native". Both seats draw from the trainee eval builder: the h2h meter's team set.
     return L.with_regime_id({"play": "sampled", "opponent_play": "sampled", "mirrored": True,
                              "mirror_rule": MIRROR_RULE, "eval_core": EVAL_CORE,
                              "turn_limit": int(EP.stall_threshold()), "seed_rule": SD.SCHEMA,
-                             "team_source": TEAM_SOURCE})
+                             "team_source": TEAM_SOURCE, "protocol": PROTOCOL, "seat_rule": "balanced",
+                             "player_temp": L.BOT_NATIVE_TEMP, "opponent_temp": L.BOT_NATIVE_TEMP,
+                             "team_set": eval_team_set()})
+
+
+def default_request_id(schedule_seed: int) -> str:
+    return f"bot_rr:{RUN_LABEL}:{int(schedule_seed)}"
+
+
+def _resume_decl():
+    from agents.training import eval_ledger as L
+
+    return L.ReaderDecl(name="bot_rr.resume", purposes=frozenset({"anchor"}),
+                        regime=L.RegimeFilter(protocol="gen3_eval_protocol_v1_bot_rr", mirrored=True),
+                        requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
 
 
 def batch_plan(pairs: int, batch_pairs: int) -> List[int]:
@@ -116,16 +146,12 @@ def batch_plan(pairs: int, batch_pairs: int) -> List[int]:
     return [batch_pairs] * full
 
 
-def done_units(out_dir: str, reg_id: str, schedule_seed: int) -> Dict[Tuple[str, int], int]:
+def done_units(root: Any, request_id: str, reg_id: str) -> Dict[Tuple[str, int], int]:
+    """``{(edge key, batch): pairs}`` the request already holds."""
     from agents.training import eval_ledger as L
 
-    if not os.path.isdir(out_dir):
-        return {}
-    out = {}
-    for r in L.read_rows(out_dir):
-        if r["regime"]["regime_id"] == reg_id and r["seed"]["schedule_seed"] == schedule_seed:
-            out[(r["seed"]["item_key"], int(r["seed"]["batch"]))] = int(r["pairs"]["n_pairs"])
-    return out
+    got = L.read(_resume_decl(), root=root, request_id=request_id, regime_id=reg_id)
+    return {(r["seed"]["item_key"], int(r["seed"]["batch"])): int(r["pairs"]["n_pairs"]) for r in got.rows}
 
 
 # ------------------------------------------------------------------------------------------------ worker
@@ -142,17 +168,21 @@ class _Staged:
         return self.team
 
 
-def _init_worker(out_dir: str) -> None:
+def _init_worker(root: str, request: Dict[str, Any]) -> None:
     import torch
 
     torch.set_num_threads(1)
+    from multiprocessing import util
+
     from agents.training import eval_ledger as L
     from agents.training.rust_eval.build import eval_builders
 
     tb_a, _flat, _ = eval_builders(None, [])
     tb_b, _flat2, _ = eval_builders(None, [])
     _W["tb"] = (tb_a, tb_b)
-    _W["writer"] = L.LedgerWriter(out_dir, writer_id=f"{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}-{os.getpid()}")
+    _W["writer"] = L.LedgerWriter(root, producer=PRODUCER)
+    _W["request"] = request
+    util.Finalize(None, _W["writer"].close, exitpriority=10)     # a clean worker exit closes (gzips) its shard
     _W["bots"] = {}
     _W["regime"] = regime()
     _W["blocks"] = {}
@@ -225,6 +255,16 @@ def play_unit(unit: Tuple[str, str, int, int, int]) -> Dict[str, Any]:
         t[side][0] += 1
         t[side][1] += int(won)
 
+    writer = _W["writer"]
+    if a not in _W["blocks"]:
+        _W["blocks"][a] = bot_block(a)
+    if b not in _W["blocks"]:
+        _W["blocks"][b] = bot_block(b)
+    req = _W["request"]
+    claim = writer.claim(req["request_id"], batch=batch, player=_W["blocks"][a]["sha256"],
+                         opponent=_W["blocks"][b]["sha256"], regime_id=_W["regime"]["regime_id"],
+                         expected_wall_s=2 * n_pairs / EXPECTED_GAMES_PER_S)
+    outcomes: List[Tuple[int, str, Any]] = []
     t_start, t0 = L.utc_now(), time.perf_counter()
     for g in range(2 * n_pairs):
         gk, swapped = SD.pair_game(cseed, key, g, True)
@@ -247,6 +287,7 @@ def play_unit(unit: Tuple[str, str, int, int, int]) -> Dict[str, Any]:
         if bt is None or not bt.finished:
             unfinished += 1
             pts.append(None)
+            outcomes.append((g, "A", None))
             continue
         res, kind = classify_result(won=bt.won, lost=bt.lost, finished=True, turn=bt.turn, turn_cap=limit)
         timeouts += int(kind == "timeout" or (res == DRAW and int(bt.turn or 0) >= limit))
@@ -254,6 +295,7 @@ def play_unit(unit: Tuple[str, str, int, int, int]) -> Dict[str, Any]:
         bump(L.team_id(team_a), "p", res == WIN)
         bump(L.team_id(team_b), "o", res == LOSS)
         w, l, d = w + (res == WIN), l + (res == LOSS), d + (res == DRAW)
+        outcomes.append((g, {WIN: "W", LOSS: "L", DRAW: "D"}[res], int(bt.turn or 0)))
     wall = time.perf_counter() - t0
     pc = MP.pair_counts(pts)
     voided = n_pairs - MP.n_pairs(pc)
@@ -261,28 +303,42 @@ def play_unit(unit: Tuple[str, str, int, int, int]) -> Dict[str, Any]:
         # a voided pair's finished half must leave the counts too: re-derive from the kept pairs only
         raise RuntimeError(f"{key} batch {batch}: {unfinished} unfinished games ({voided} voided pairs) — "
                            "refusing to write a row whose counts and pairs disagree")
-    writer = _W["writer"]
-    if a not in _W["blocks"]:
-        _W["blocks"][a] = bot_block(a)
-    if b not in _W["blocks"]:
-        _W["blocks"][b] = bot_block(b)
-    row = {
+    row = build_row(writer=writer, request=req, commit=_W["commit"], player=_W["blocks"][a],
+                    opponent=_W["blocks"][b], regime=_W["regime"], batch=batch, n_pairs=n_pairs,
+                    schedule_seed=schedule_seed, key=key, cseed=cseed, w=w, l=l, d=d, pc=pc, teams=teams,
+                    outcomes=outcomes, t_start=t_start, wall=wall, a_p1_games=a_p1_games, timeouts=timeouts)
+    writer.append_row(row, claim)
+    return {"edge": key, "batch": batch, "w": w, "l": l, "d": d, "wall": round(wall, 1), "timeouts": timeouts}
+
+
+def build_row(*, writer: Any, request: Dict[str, Any], commit: str, player: Dict[str, Any],
+              opponent: Dict[str, Any], regime: Dict[str, Any], batch: int, n_pairs: int, schedule_seed: int,
+              key: str, cseed: int, w: int, l: int, d: int, pc: List[int], teams: Dict[str, Any],
+              outcomes: List[Tuple[int, str, Any]], t_start: str, wall: float, a_p1_games: int,
+              timeouts: int) -> Dict[str, Any]:
+    """One (edge x batch) row, ``gen3_eval_count_row_v2`` (the contract test builds one from synthetic counts)."""
+    from agents.training import eval_ledger as L
+    from agents.training.rust_eval import seeds as SD
+
+    return {
         "schema": L.SCHEMA, "row_id": writer.next_row_id(), "supersedes": None, "ts": L.utc_now(),
-        "t_start": t_start, "t_end": L.utc_now(), "run": RUN_LABEL, "commit": _W["commit"],
-        "player": _W["blocks"][a], "opponent": _W["blocks"][b], "regime": dict(_W["regime"]),
+        "t_start": t_start, "t_end": L.utc_now(), "run": RUN_LABEL, "commit": commit,
+        "player": player, "opponent": opponent, "regime": dict(regime),
         "compute": {"device": "cpu", "workers_pid": os.getpid(), "wall_s": round(wall, 3),
                     "games_per_s": round(2 * n_pairs / wall, 3) if wall > 0 else None,
                     "player_p1_games": a_p1_games, "timeouts": timeouts, "p1_route_offset": P1_ROUTE_OFFSET,
-                    "load_avg": [round(x, 2) for x in os.getloadavg()]},
+                    "load_avg": [round(x, 2) for x in os.getloadavg()],
+                    "outcome_digest": L.outcome_digest(outcomes), "near_tie_games": [], "digest_margin": None},
         "purpose": "anchor",
-        "counts": {"w": w, "l": l, "d": d},
+        "request": {"id": request["request_id"], "kind": request["kind"], "family": request["family"],
+                    "opened": request["ts"], "batch": int(batch)},
+        "counts": {"w": w, "l": l, "d": d, "aborted": 0},
         "pairs": {"counts": pc, "n_pairs": n_pairs, "voided": 0},
         "teams": teams,
         "seed": {"rule": SD.SCHEMA, "schedule_seed": int(schedule_seed), "schedule_key": key, "batch": int(batch),
                  "cycle_seed": int(cseed), "item_key": key, "game_lo": 0, "game_hi": 2 * n_pairs - 1},
+        "flags": [], "provenance": None,
     }
-    writer.append(row)
-    return {"edge": key, "batch": batch, "w": w, "l": l, "d": d, "wall": round(wall, 1), "timeouts": timeouts}
 
 
 def main() -> int:
@@ -292,13 +348,18 @@ def main() -> int:
     ap.add_argument("--batch-pairs", type=int, default=100)
     ap.add_argument("--schedule-seed", type=int, default=0)
     ap.add_argument("--workers", type=int, default=8)
-    ap.add_argument("--out", required=True)
+    ap.add_argument("--out", default=None, help="the ledger root (default: the run archive's <archive>/_ledger)")
+    ap.add_argument("--request", default=None, help="the request id (default: bot_rr:<label>:<schedule seed>)")
     ap.add_argument("--edges", default="", help="comma-separated 'a:b' subset (default: all 36)")
     args = ap.parse_args()
 
+    from agents.training import eval_ledger as L
+
     plan = batch_plan(args.pairs, args.batch_pairs)
     reg = regime()
-    done = done_units(args.out, reg["regime_id"], args.schedule_seed)
+    root = str(L.check_write_root(args.out) if args.out is not None else L.archive_ledger_root())
+    rid = args.request or default_request_id(args.schedule_seed)
+    done = done_units(root, rid, reg["regime_id"])
     sel = edges()
     if args.edges:
         want = set(args.edges.split(","))
@@ -313,15 +374,20 @@ def main() -> int:
           f"{len(done)} units on disk, {len(units)} to play ({2 * args.batch_pairs * len(units)} games)", flush=True)
     if args.cmd == "plan" or not units:
         return 0
-    os.makedirs(args.out, exist_ok=True)
+    opener = L.LedgerWriter(root, producer=PRODUCER)
+    req = opener.open_request(rid, kind="anchor_read", purpose="anchor", regime_id=reg["regime_id"],
+                              protocol=PROTOCOL, spec={"producer": PRODUCER, "batch_pairs": int(args.batch_pairs),
+                                                       "schedule_seed": int(args.schedule_seed)})
     t0 = time.time()
     ctx = get_context("spawn")
-    with ctx.Pool(args.workers, initializer=_init_worker, initargs=(args.out,), maxtasksperchild=40) as pool:
+    with ctx.Pool(args.workers, initializer=_init_worker, initargs=(root, req), maxtasksperchild=40) as pool:
         for i, r in enumerate(pool.imap_unordered(play_unit, units), 1):
             el = time.time() - t0
             print(f"[botrr] {i}/{len(units)} {r['edge']} b{r['batch']}: W/L/D {r['w']}/{r['l']}/{r['d']} "
                   f"to {r['timeouts']} in {r['wall']}s; elapsed {el / 60:.1f} min, eta "
                   f"{el / i * (len(units) - i) / 60:.1f} min", flush=True)
+        pool.close()       # a CLEAN worker exit runs its finalizer (gzips its shard); the `with` exit would terminate
+        pool.join()
     return 0
 
 

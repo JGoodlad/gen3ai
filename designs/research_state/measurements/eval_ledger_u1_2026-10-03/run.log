@@ -1,0 +1,25 @@
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-u1proof-1210056.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 6.3 s (/home/goodlad/dev/gen3ai-wt/ledger-base/src/rust_env/target/release)
+[h2h] engine up in 5.1s: sizing_A_n48_e10_s1001@8062355 vs sizing_B_n256_e10_s1001@8068077; 16 envs, T2 eager on cpu; regime 191bb5810017ba85
+[proof] batch 0: cycle seed 2613418425258238150 W/L/D 47/53/0 pairs [11, 0, 31, 0, 8] near-wide 15 digest b528c51acc3f
+[proof] batch 1: cycle seed 2515323433090558758 W/L/D 45/55/0 pairs [12, 0, 31, 0, 7] near-wide 13 digest 3e59cba0af3f
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 6.4 s (/home/goodlad/dev/gen3ai-wt/ledger/src/rust_env/target/release)
+[h2h] engine up in 5.1s: sizing_A_n48_e10_s1001@8062355 vs sizing_B_n256_e10_s1001@8068077; 16 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+[proof] batch 0: cycle seed 2613418425258238150 W/L/D 47/53/0 pairs [11, 0, 31, 0, 8] near-wide 15 digest b528c51acc3f
+[proof] batch 1: cycle seed 2515323433090558758 W/L/D 45/55/0 pairs [12, 0, 31, 0, 7] near-wide 13 digest 3e59cba0af3f
+[h2h] sizing_A_n48_e10_s1001@8062355 vs sizing_B_n256_e10_s1001@8068077: 100 pairs in 2 batch(es) of 50; 0 already on disk, 2 to play; schedule h2h:3d63529f710c54da seed 7
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/ledger-base/src/rust_env/target/release)
+[h2h] engine up in 5.1s: sizing_A_n48_e10_s1001@8062355 vs sizing_B_n256_e10_s1001@8068077; 16 envs, T2 eager on cpu; regime 191bb5810017ba85
+[h2h] batch 1/2: 50 pairs / 100 games in 26.0s (3.85 games/s); W/L/D 47/53/0; pair counts [11, 0, 31, 0, 8]; near-tie games 0
+[h2h] batch 2/2: 50 pairs / 100 games in 21.1s (4.74 games/s); W/L/D 45/55/0; pair counts [12, 0, 31, 0, 7]; near-tie games 0
+sizing_A_n48_e10_s1001@8062355 vs sizing_B_n256_e10_s1001@8068077: score 46.00% [40.01, 51.99] (pair-clustered 95%), SE 3.072 pp over 100 pairs / 200 games; W/L/D 92/108/0; pentanomial [23, 0, 62, 0, 15]; 4.25 games/s
+{"batches": 2, "d": 0, "devices": ["cpu/eager"], "games": 200, "games_per_s": 4.24844931599966, "l": 108, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "sizing_B_n256_e10_s1001@8068077", "opponent_sha256": "cfdfb9f24d7a152da1bb97e4135c1d3ed2e01b855cd329ceafce0811aa2d0073", "pair_counts": [23, 0, 62, 0, 15], "pair_sd": 0.3071537633554802, "pairs": 100, "player": "sizing_A_n48_e10_s1001@8062355", "player_sha256": "808ad2756f5911e8d77dd29a17edb83ca32d7a0d77bc3a9000420c247c180f79", "purpose": ["audit"], "regime_id": "191bb5810017ba85", "score": 0.46, "score_ci95": [0.4000996293834504, 0.5199003706165496], "se_pp": 3.071537633554802, "w": 92, "wall_s": 47.076, "win_rate": 0.46}
+[h2h] sizing_A_n48_e10_s1001@8062355 vs sizing_B_n256_e10_s1001@8068077: 100 pairs in 2 batch(es) of 50; 0 already recorded, 2 to play; schedule h2h:3d63529f710c54da seed 7; request h2h:23e5cddd991b5d2d (adhoc, purpose audit) under /tmp/u1proof/u1_root
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/ledger/src/rust_env/target/release)
+[h2h] engine up in 5.1s: sizing_A_n48_e10_s1001@8062355 vs sizing_B_n256_e10_s1001@8068077; 16 envs, T2 eager on cpu; regime adfdbee824c9eb0a
+[h2h] batch 1/2: 50 pairs / 100 games in 25.8s (3.88 games/s); W/L/D 47/53/0; pair counts [11, 0, 31, 0, 8]; near-tie games 0; digest b528c51acc3f
+[h2h] batch 2/2: 50 pairs / 100 games in 20.9s (4.78 games/s); W/L/D 45/55/0; pair counts [12, 0, 31, 0, 7]; near-tie games 0; digest 3e59cba0af3f
+sizing_A_n48_e10_s1001@8062355 vs sizing_B_n256_e10_s1001@8068077: score 46.00% [40.01, 51.99] (pair-clustered 95%), SE 3.072 pp over 100 pairs / 200 games; W/L/D 92/108/0; pentanomial [23, 0, 62, 0, 15]; 4.28 games/s
+{"batches": 2, "d": 0, "devices": ["cpu/eager"], "games": 200, "games_per_s": 4.279905842071474, "l": 108, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "sizing_B_n256_e10_s1001@8068077", "opponent_sha256": "cfdfb9f24d7a152da1bb97e4135c1d3ed2e01b855cd329ceafce0811aa2d0073", "pair_counts": [23, 0, 62, 0, 15], "pair_sd": 0.3071537633554802, "pairs": 100, "player": "sizing_A_n48_e10_s1001@8062355", "player_sha256": "808ad2756f5911e8d77dd29a17edb83ca32d7a0d77bc3a9000420c247c180f79", "purpose": ["audit"], "regime_id": "adfdbee824c9eb0a", "score": 0.46, "score_ci95": [0.4000996293834504, 0.5199003706165496], "se_pp": 3.071537633554802, "w": 92, "wall_s": 46.730000000000004, "win_rate": 0.46}
+compare_exit=0
+[mem_cap] done: gen3ai-capped-u1proof-1210056.scope exit 0 · peak 1.02 GB of cap 16.00 GB (6%) · not OOM-killed

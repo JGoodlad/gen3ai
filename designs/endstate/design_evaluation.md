@@ -11,6 +11,9 @@
 
   Each must-fix item's resolution is in the Decision record. The design is still a PROPOSAL awaiting the owner's
   answers to §11.2. Nothing in it is built unless marked BUILT.
+- **U1, the ledger v2 core, is BUILT (2026-10-03):** §0b's schema, streams, claims, reader API, audit and static gate
+  (§0b.1, §10's U1 hand-off). The orchestrator's provisional answers to Q1–Q9 are in the Decision record, for the
+  owner's review on 10-04.
 
 This doc is the SYSTEM: how eval evidence is produced, stored, scheduled and estimated. The population DECISIONS (promotion, eviction, plateau) live in [`design_league_decisions.md`](design_league_decisions.md). A build or decision that differs from this doc updates it and its Decision record in the same commit. Era context: [`era_plan_post_m5.md`](era_plan_post_m5.md). The evidence behind the numbers measured on banked data is in [`measurements/eval_design_2026-10-03/`](../research_state/measurements/eval_design_2026-10-03/README.md); the revision's simulations are in its `revision/` folder.
 
@@ -158,21 +161,30 @@ checked from a primary source. Every row ends with what the reference implies FO
   per-batch OUTCOME DIGEST and the near-tie game indices (§0b.2), so a replay can be checked game for game without
   storing the games.
 
-### 0b.1 What exists (BUILT, 2026-10-03, X5 P0, `54b78aed`)
-`agents/training/eval_ledger.py` provides:
-- the row schema `gen3_eval_count_row_v1` and its validator (shapes, closed vocabularies, and the arithmetic tying the
-  blocks together: W + L + D = games; half-points = 2W + D; team counters sum to the games and wins);
-- one shard per writer process, with an fsync per row;
-- a globbing reader that validates every row and drops superseded ones;
-- a refusal of any output directory under `models/`.
+### 0b.1 What exists (BUILT: v1 2026-10-03 X5 P0 `54b78aed`; v2 2026-10-03 eval U1)
+**The package `agents/training/eval_ledger/`** (v1's single module became it; the CLI is `python -m main.eval_ledger`):
 
-**Two writers exist.**
-- `main.h2h`: 120 rows under `measurements/x5_p0_h2h_2026-10-03/rows/`, about 25 KB per row raw (a 530-team counter
-  map) and 3.7 KB gzipped.
-- The Rustboro-era bot round robin (`measurements/bot_base_ratings_2026-10-03/bot_rr.py`, `3ccef556`): 1,296 rows,
-  purpose `anchor`, bots as players (`id: bot:<name>`), sampled vs sampled, seat-balanced
-  (`mirror_rule: gen3_mirrored_pairs_v1+seat_alternating_by_pair`). Its seats can alternate because BOTH sides are
-  Rust-native bots. A POLICY player cannot alternate today (§9.3).
+| module | what |
+|---|---|
+| `schema` | the v2 row and its validator; the v1 row, validated AS WRITTEN, and its deterministic upgrade on read; the three companion records; the closed lists (§0b.2's table); the batch key and the seed block (§0b.4); the outcome digest |
+| `store` | `<archive>/_ledger/` and its layout, `check_write_root`, the one `flock`, the fsynced appends, the per-stream SCANS (the only code that opens a ledger file), closing a shard, `close-stale` |
+| `queue` | the request queue as a deterministic fold of the requests stream; the void rule |
+| `writer` | `LedgerWriter`: requests, families, claims, claimed row appends, decisions, references, `close` |
+| `reader` | `ReaderDecl` / `RegimeFilter` / `read` / `read_by_regime` (§0b.7) |
+| `cells` | per-cell INCONCLUSIVE, a family read across its looks, the pooled pair estimate (conditional only) |
+| `audit` | `audit` / `verify` / `show` |
+
+**Two writers exist, both migrated to v2 STORAGE-ONLY** (games unchanged; `measurements/eval_ledger_u1_2026-10-03/`):
+- `main.h2h`: writes to `<archive>/_ledger/` by default (or a root its caller names outside `models/`), every batch
+  under a claim for a request (default: derived from the players, the regime and the schedule, so a re-run resumes;
+  `--request` / `--family` / `--request-kind` / `--purpose ab` for an X5 look). Protocol `gen3_eval_protocol_v1_h2h`.
+  Its 120 P0 v1 rows under `measurements/x5_p0_h2h_2026-10-03/rows/` stay v1 on disk (about 25 KB per row raw, a
+  530-team counter map; 3.7 KB gzipped) and read upgraded.
+- The Rustboro-era bot round robin (`measurements/bot_base_ratings_2026-10-03/bot_rr.py`, `3ccef556`): 1,296 v1 rows,
+  purpose `anchor`, bots as players (`id: bot:<name>`, `kind: bot`), sampled vs sampled (`bot_native`), seat-balanced
+  (`mirror_rule: gen3_mirrored_pairs_v1+seat_alternating_by_pair`, `seat_rule: balanced`). Its seats can alternate
+  because BOTH sides are Rust-native bots. A POLICY player cannot alternate today (§9.3). New runs write v2 rows
+  (protocol `gen3_eval_protocol_v1_bot_rr`, request kind `anchor_read`).
 
 ### 0b.2 The schema, v2 (`gen3_eval_count_row_v2`)
 v2 keeps every v1 field and meaning. **A v1 row is never rewritten:** the reader upgrades it on read, with the
@@ -191,6 +203,30 @@ defaults below.
 | `compute.outcome_digest`, `compute.near_tie_games` | (`compute` has a near-tie census) | sha256 over the ordered per-game outcome vector `(game index, W/L/D, turns)` of the games WITHOUT a near-tie decision; the list of game indices that HAD one | **The replay audit works on count rows** (item 16, §9.2) |
 | `flags` | — | closed list: `draws_folded`, `teams_unrecorded`, `seed_unrecorded`, `sha_unrecorded`, `eval_core_unrecorded`, `digest_unrecorded` | Backfilled rows say exactly what they lack; a reader DECLARES which flags it accepts |
 | `provenance` | — | `{source_file, source_line, source_sha256, backfill_id}`, or `null` | Backfill auditability |
+
+**The closed lists, as built (U1, BUILT 2026-10-03).** `agents/training/eval_ledger/schema.py` holds them, and
+`src/eval_ledger_reader_gate_test.py` fails when the code and this table differ in either direction. A new value is
+the owner's or the orchestrator's to add, in both places in one commit.
+
+| list | values |
+|---|---|
+| `PURPOSES` | `promotion`, `plateau`, `matrix`, `audit`, `anchor`, `training`, `cycle`, `ab`, `ladder`, `untaught`, `gap`, `monitor` |
+| `REQUEST_KINDS` | `cycle`, `sprt`, `plateau_t1`, `monitor_row`, `monitor_topup`, `panel`, `matrix_dense`, `matrix_target`, `matrix_probe`, `ab_cell`, `anchor_read`, `untaught_read`, `gap_read`, `audit_replay`, `audit_dense`, `adhoc` |
+| `PLAYER_KINDS` | `checkpoint`, `bot`, `external` |
+| `SEAT_RULES` | `fixed_p1`, `balanced` |
+| `FLAGS` | `draws_folded`, `teams_unrecorded`, `seed_unrecorded`, `sha_unrecorded`, `eval_core_unrecorded`, `digest_unrecorded` |
+| `PROTOCOLS` | `gen3_eval_protocol_v1_h2h`, `gen3_eval_protocol_v1_bot_rr` |
+| `DECISION_KINDS` | `promotion`, `eviction`, `plateau`, `ab_verdict`, `cycle_flag` |
+| `GROUP_SEQUENTIAL_KINDS` | `ab_verdict`, `plateau` |
+| `EVENT_KINDS` | `open`, `family`, `claim`, `void`, `row`, `done`, `cancel` |
+
+- **`PROTOCOLS` holds only what exists.** `gen3_eval_protocol_v1_<writer>` names the protocol a v1 writer played,
+  and the two migrated writers KEEP playing it (U1 is storage-only, digest-proved for `main.h2h`). The in-loop cycle
+  rows (U2) add their own protocol value. The `gen3_eval_protocol_v2` in §0b.7's example is illustrative.
+- **`EVENT_KINDS` adds two to the design's five** (`open` / `claim` / `void` / `done` / `cancel`): `family`
+  registers a request family (its group-sequential decision kind, its rule, its pinned protocol and optional pinned
+  commit), and `row` records, under the lock, that a claimed unit's row is on disk. The fold then knows every
+  recorded unit without scanning the rows.
 
 **The v1 → v2 upgrade on read is deterministic.** It sets `request = null`; `kind = bot` when the id starts `bot:`,
 else `checkpoint`; `protocol = gen3_eval_protocol_v1_<writer>` (`h2h`, `bot_rr`); `seat_rule = balanced` when
@@ -213,14 +249,20 @@ pairs.voided`; `flags = ["digest_unrecorded"]`. `regime_id` is recomputed over t
   so cross-run questions need no new run. Pytest SEALS the archive (the `run_archive` fixture).
 - **Layout:** `_ledger/rows/<producer>/ledger.<writer_id>.jsonl` (gzipped once closed); `_ledger/decisions/`,
   `_ledger/requests/`, `_ledger/references/`; `_ledger/backfill/manifest.json`; `_ledger/README.md`.
-- **One writer per file.** `writer_id` = UTC time + host + pid + producer. Rows are fsynced per append.
+- **One writer per file.** `writer_id` = UTC time + a per-process counter + host + pid + producer
+  (`20261004T061142Z.0-<host>-<pid>-h2h`; the counter, added in the build, keeps two writers one process opens in one
+  second apart). Rows are fsynced per append. A legacy FLAT directory of v1 shards (`<dir>/ledger.*.jsonl`) is still
+  read, as producer `legacy`.
 - **Closing a shard:** the writer gzips its own shard at a clean exit; `python -m main.eval_ledger close-stale`
   closes a dead writer's shard only when its pid is dead AND the file has been idle 24 h.
-- **`refuse_under_models` changes meaning:** a ledger writer may write ONLY under `<archive>/_ledger/`.
-- **Retention:** the ledger is NEVER deleted (`models_retention_policy.md` gets one line). Size from §5's budget:
+- **`refuse_under_models` changes meaning (BUILT as `store.check_write_root`):** under any `models/` (main's archive,
+  `$GEN3AI_MODELS_DIR`, a checkout's own) a ledger writer may write ONLY to `<archive>/_ledger/` itself. A root the
+  caller names OUTSIDE `models/` (a measurement directory, a test's temp dir) is the caller's choice.
+- **Retention:** the ledger is NEVER deleted (`models_retention_policy.md` gets one line — NOT yet added: that doc is
+  explicit-only, so it is left to the orchestrator; U1 hand-off). Size from §5's budget:
   ~45k games per 10M steps in ~800 rows ≈ 20 MB raw / 3 MB compressed per 10M, ~22 MB compressed per 75M run.
 
-### 0b.4 The schema gate, and the no-duplicate-batch invariant
+### 0b.4 The schema gate, and the no-duplicate-batch invariant (BUILT, U1)
 **In one sentence (owner's framing):** two workers must never record the same seeded batch twice, because
 double-counted games make a decision look twice as certain as it is. The window-only design has ONE writer per run,
 so this is a cheap guard, not a hot path. It costs a claim id and an audit.
@@ -251,6 +293,26 @@ so this is a cheap guard, not a hot path. It costs a claim id and an audit.
    request kinds, flags, protocols) equal this section's tables, in the `recipe_doc_gate` pattern.
 7. **A contract test per producer:** each producer's row builder emits a synthetic row that passes `validate_row`.
 
+**As built (U1), and what the build added:**
+- **The SEED BLOCK is unique too** (a build decision, Decision record): `(player, opponent, regime_id, seed rule,
+  schedule seed, schedule key, item key, cycle seed)`. Two rows on one seed block are the same games whatever their
+  requests say — the batch key alone would let a second request record them again. A request of kind `audit_replay`
+  is exempt (replaying a seed block is its point; its purpose is `audit`). The game range is deliberately NOT in the
+  key: one cycle seed under two batch lengths overlaps. Writer, every reader and `audit` all refuse a duplicate of
+  either key.
+- **The claim unit** is `(request, batch, player, opponent, regime)`, the batch key itself, so one request can hold
+  many cells (an X5 look).
+- **A `row` event** is appended (under the lock, after the row) when a claimed row lands, so the fold knows every
+  recorded unit without scanning rows. **The void rule checks the claimant's own shard too**: a writer killed between
+  its row and its `row` event is REPAIRED (the event is written), never replayed.
+- **The writer refuses**, under the lock: a voided claim's row (`ClaimVoidedError`: the batch is dropped); a row whose
+  request block contradicts its `open` (kind / family / opened / purpose); a second regime in one request; a protocol
+  other than the request's or its family's pin; a request-less row unless the writer is a backfill writer
+  (`allow_unrequested=True`).
+- **The lock** is bounded (60 s, then `LedgerLockTimeout`; it is held for milliseconds) and re-entrant in a process.
+- **`void_reason`** is deterministic in (the clock, the host, a liveness oracle, the claimant's shard): a pid is
+  checked only on its own host; another host's claim is voided only by expiry, strictly after `expires_at`.
+
 ### 0b.5 Producers and their migration
 
 | producer | what it writes today | v2 purpose / request kind | migration (unit, §10) |
@@ -258,7 +320,8 @@ so this is a cheap guard, not a hot path. It costs a claim id and an audit.
 | In-loop eval cycle (`eval_callback`, `selfplay_callback` → `rust_eval/`) | `<run>/eval_results.jsonl`: rates and `[won, finished]` per opponent; **no draw count** | `cycle` / `cycle` | **U2:** DUAL-write a ledger row per opponent with exact W/L/D and team counters. **U3c:** move `eval_results.jsonl`'s readers (TensorBoard/TUI, `main.elo`, `best_response_gap`, the supply guards) to the ledger, then retire the file |
 | SPRT promotion (`sprt_promotion.py`) | `<run>/sprt_promotion.jsonl` (state only). **No run has one** | `promotion` / `sprt` | **U2:** rows per batch + a decision row. **U4b:** RESUME instead of abandon (§4.4) |
 | Snapshot ladder (`snapshot_ladder.py`, run by the DETACHED updater `_spawn_snapshot_ladder_update`) | `<run>/snapshot_ladder/games.jsonl`: `{a, b, wins_a, games, source}` | `ladder` (backfill) / `matrix` (new rows, `matrix_dense`) | **U2:** dual-write. **U7:** the window plays the pool rows (T3) and the FIT reads the ledger. **U7a:** retire the detached updater |
-| `main.h2h` | v1 rows to a caller-named directory, purpose `audit` | as the caller declares (`ab` for X5) | **U1:** archive default and `--purpose ab`. **Storage-only:** the game protocol is unchanged (§0c rule 6) |
+| `main.h2h` | v2 rows under claims, archive default (v1 before U1) | as the caller declares (`ab` / `ab_cell` for X5) | **U1 DONE:** archive default, requests, `--purpose ab`, `--family`. **Storage-only, digest-proved** (§0c rule 6) |
+| bot round robin (`bot_rr.py`) | v2 rows under claims, archive default (1,296 v1 rows banked) | `anchor` / `anchor_read` | **U1 DONE**, storage-only (rows replayed equal) |
 | `main.anchors` | per-GAME `games.jsonl` + `summary.json` | `anchor` / `anchor_read` | **U3b** |
 | `main.untaught_meter` | per-team cells + `_meta` | `untaught` / `untaught_read` | **U3b** |
 | `main.best_response_gap` | READS `eval_results.jsonl` externals | reader of `cycle` rows; `--play` writes `gap` | **U3b** |
@@ -266,7 +329,15 @@ so this is a cheap guard, not a hot path. It costs a claim id and an audit.
 | Bot round robin (`data/gen3_bot_elo_*`) | `data/` (source of truth) | not migrated | none |
 | Training games per team (`team_winrate_callback`) | `metadata.json` | `training` | not now |
 
-### 0b.6 The backfill (U3)
+### 0b.6 The backfill (U3) — SHRUNK (ORCHESTRATOR, provisional, D-L4)
+**The general backfill is DROPPED** (`designs/ops/legacy_removal_manifest.md` D-L4, under the owner's "leave legacy
+behind"): the 265 runs' `eval_results.jsonl` and the 104 ladder game files below are old bots, mixed regimes and folded
+draws, and no Rustboro decision reads them. **What remains of U3:** the verbatim copies (P0's 120 rows and the
+bot round robin's 1,296 — which already read upgraded in place, U1), the committed `measurements/anchors_*/` rows, and
+N0's ladder ONLY if the plateau back-test unit asks for it. U1 built no general backfill machinery: a backfill writer is
+a `LedgerWriter(..., allow_unrequested=True)` writing rows with `provenance`, and the `ladder` purpose requires
+`provenance`. The table below is kept as the record of what a general backfill would have meant.
+
 **One writer id (`backfill-<date>`), idempotent.** `_ledger/backfill/manifest.json` records each source file's sha256.
 A re-run refuses unless a source changed, and then it writes SUPERSEDING rows, never edits.
 
@@ -286,7 +357,7 @@ bot identity of its era (else `sha_unrecorded`); readers never pool bot eras. F-
 get their own protocol value. **No RUN's eval history holds pentanomial data**, so every backfilled run row is
 unmirrored.
 
-### 0b.7 The reader API
+### 0b.7 The reader API (BUILT, U1)
 Every estimator reads through ONE function and DECLARES what it consumes:
 
 ```
@@ -311,6 +382,25 @@ rows = eval_ledger.read(DECL, request_id=..., players=..., as_of=...)
   BACK-TEST or an eviction needs.
 - **`selection="exclude"`** implements "the games that selected a node do not rate it" through the decision stream.
 - **The static gate** (§0b.4) fails any read without a declaration.
+
+**As built (U1):**
+- `read(decl, *, root, request_id, family, players, opponents, purposes, regime_id, as_of) -> LedgerRead` (the rows
+  as v2 views, the single `regime_id`, the `digest` a decision records, `excluded`). `read_by_regime(...)` is the same
+  declared read split into one read PER regime (a listing such as `main.h2h read`).
+- **Every `ReaderDecl` field is required** (no defaults); `decision_kind` is required exactly when
+  `requests="family"`, must be group-sequential, and must equal the family's registration. A call outside its
+  declaration (a purpose it did not declare, a `request_id` on an `any` read) is `ReaderDeclError`.
+- **`players` / `opponents`** are sha256s (`id:<id>` for a sha-less side). `purposes=` and `regime_id=` narrow at call
+  time.
+- **`selection="exclude"`** drops the rows consumed by a SELECTING decision (`promotion`) whose subject is one of the
+  read's players or opponents (every promotion's, when the read names none), as of the read.
+- **`as_of`** is an aware timestamp. It restricts rows, corrections, family registrations and decisions. **A run-step
+  `as_of` is NOT built** (no row maps a step to a time until U2's cycle rows exist; U1 hand-off).
+- **Inference.** `cells.pooled_pairs` (the pooled pentanomial, pair-clustered CI) refuses a read declared
+  `across_runs` (`InferenceScopeError`): that error bar needs the run term, i.e. a seed-level estimator over cells.
+- **A family across looks** is `cells.looks(read)`: its requests in the order opened, each a list of `Cell`s with a
+  verdict (OK / INCONCLUSIVE + reasons, §9.1), so X5 §7.4's per-cell rule and its Δ̂ over cells are expressible
+  (tested in `reader_test.py`).
 
 ## 0c. Reuse rules (one ledger, many readers)
 1. **A sequential DECISION counts only rows produced FOR it, after it started:** its own request, or its own family
@@ -812,9 +902,10 @@ The two-tier plateau plus the monitor are 2.7–4.0 % of that.
 | the plateau measure | strength vs the archive's Nash mixture (league §C, 2026-10-02) | **CHANGE (proposed, Q8):** two tiers, with the owner-registered head-to-head as the primary | the reference read needs 2× the pairs (a difference of two estimates) and inherits the mixture's instability (F-ED-3) |
 
 ## 7. TODO (fill in as implemented)
-- [ ] U1 the ledger v2 core (§0b, §10).
-- [ ] U2 in-loop migration (cycle rows, SPRT rows + decisions, ladder dual-write, h2h archive default).
-- [ ] U3 backfill; U3b anchors / untaught / gap onto the ledger; U3c the `eval_results.jsonl` readers.
+- [x] U1 the ledger v2 core (§0b, §10) — BUILT 2026-10-03, incl. the h2h archive default and the bot round robin.
+- [ ] U2 in-loop migration (cycle rows, SPRT rows + decisions, ladder dual-write).
+- [ ] U3 backfill (SHRUNK by D-L4 to the verbatim copies + anchors, N0's ladder on request); U3b anchors / untaught /
+      gap onto the ledger; U3c the `eval_results.jsonl` readers.
 - [ ] U4 the scheduler + generalized window (+ its first measurement); U4a slot-direct snapshot loads; U4b SPRT resume.
 - [ ] U5 the cycle monitor (+ its offline driver); U9 the two-tier plateau check.
 - [ ] U6 the multi-cell offline engine.
@@ -969,7 +1060,7 @@ adds the monitor and the plateau unit).
 
 | # | unit | what | size | tier | depends on | Sonnet-safe? |
 |---|---|---|---|---|---|---|
-| 1 | **U1** | ledger v2 core: schema v2 (+ `request.batch` / `family`, outcome digest, `monitor` purpose) + validator, v1 upgrade-on-read, archive location, decisions / requests / references streams, the claim lock + void rule, duplicate refusal in every reader, `ReaderDecl` (incl. `requests="family"`) + static and closed-list gates, pair-level estimator helpers, `audit / verify / show`; `main.h2h` archive default + `--purpose ab` (storage-only, digest-proved) | 2.5 | opus-high | — | no (core schema; GIGO risk) |
+| 1 | **U1 — DONE 2026-10-03** | ledger v2 core: schema v2 (+ `request.batch` / `family`, outcome digest, `monitor` purpose) + validator, v1 upgrade-on-read, archive location, decisions / requests / references streams, the claim lock + void rule, duplicate refusal in every reader, `ReaderDecl` (incl. `requests="family"`) + static and closed-list gates, pair-level estimator helpers, `audit / verify / show`; `main.h2h` archive default + `--purpose ab` (storage-only, digest-proved) | 2.5 | opus-high | — | no (core schema; GIGO risk) |
 | 2 | **U2** | in-loop migration: cycle rows dual-written beside `eval_results.jsonl` (exact W/L/D, team counters, digest); SPRT rows per batch + decision rows (resume NOT here); ladder dual-write. Gate: the routine gate + the `--debug --debug-eval` smoke + **the first two minutes of a real launch, which needs the GPU owner's cooperation** (the training agent runs it under its lease) | 1.5 | opus-high | U1 | no (the training loop) |
 | 3 | **U0** | F-ED-2: resolve the ladder's sub-binomial noise: a seeded replicate experiment (one edge × 20 replays × 100 games, CPU), then the cause | 0.5 | opus-medium | — | no (GIGO hunt) |
 | 4 | **U3** | backfill per §0b.6 | 1.0 | sonnet-xhigh | U1 | **yes**, with §0b.6 as the mapping |
@@ -995,6 +1086,34 @@ adds the monitor and the plateau unit).
   - T20 (U7–U8) must be ready before era step 1.
 - **Each unit updates this doc,** its leaf `CLAUDE.md`, `eval_and_rating.md` and the Decision record in the same
   commit, and ships through `/gen3ai-ship` with green gates.
+
+### U1 hand-off (read before U2)
+**What U2 gets.** `from agents.training import eval_ledger as L`:
+1. **Write a cycle row.** One `L.LedgerWriter(None, producer="cycle")` per trainer process (root = the archive
+   ledger; a test passes a temp root or uses `run_archive`). Per eval cycle: `open_request(<run>:cycle:<step>,
+   kind="cycle", purpose="cycle", protocol=<the new in-loop protocol>, spec={...})`; per opponent: `claim(...,
+   batch=0, player=<trainee sha>, opponent=<sha or id:...>, regime_id=..., expected_wall_s=...)`, build the row
+   (`L.SCHEMA`, `request` block from the `open` event — `opened` = its `ts`), `append_row(row, claim)`.
+   `writer.close()` at a clean exit. `main/h2h/play.py` `build_row` / `play_edge` is the worked example.
+2. **Add the in-loop PROTOCOL** to `schema.PROTOCOLS` AND §0b.2's closed-list table in the same commit (the gate fails
+   otherwise). A sentinel or bot opponent is `kind: bot` / `checkpoint` with its own sha rule.
+3. **Exact W/L/D, aborted and the digest.** `counts.aborted` = games started and not finished; `compute` MUST carry
+   `outcome_digest` (`L.outcome_digest([(game, "W"/"L"/"D"/"A", turns)], near_tie_indices)`), `near_tie_games` and
+   `digest_margin`. Mirrored rows: `pairs.voided` pairs' games are counted nowhere; `voided <= aborted <= 2 voided`.
+4. **SPRT rows + decision rows.** A request of kind `sprt`, purpose `promotion`, one row per batch; the verdict is
+   `writer.append_decision(kind="promotion", subject=<sha>, consumed=L.read(DECL, request_id=...), ...)`. The
+   decision's consumed rows are what `selection="exclude"` later drops.
+5. **Readers.** Every new reader passes a module-level `L.ReaderDecl(...)` with every field spelled out
+   (`src/eval_ledger_reader_gate_test.py`); never open a ledger file.
+6. **Not built, and U2 should not need:** a run-step `as_of` (add it when cycle rows exist: map step → the cycle
+   request's `open` ts); verdict re-derivation in `verify` (`audit.RULES` is empty until a rule lands); an index for
+   large ledgers (every read scans the whole root — fine at today's size, revisit at archive scale, §2.6).
+7. **Hazards.** A pool worker that is TERMINATED (a `multiprocessing.Pool` context exit) never closes its shard —
+   join the pool (`bot_rr.py` does) or let `close-stale` gzip it after 24 h. The DEBUG smoke never exercises the GPU
+   window (U2's real-launch gate).
+
+**What changed for the rest of the plan.** U3 shrinks (D-L4, §0b.6). `models_retention_policy.md` still needs its one
+"the ledger is never deleted" line (explicit-only doc; the orchestrator's call).
 
 ## 11. Open gaps, owner questions, findings
 
@@ -1138,3 +1257,9 @@ adds the monitor and the plateau unit).
 | 2026-10-03 | **M5 eviction (ORCHESTRATOR; owner Q6)** | a declared ledger read at matrix DONE, `as_of` + digest recorded: among confidently zero-weight members, evict the one with the highest posterior P(newest member beats it); ties oldest, then id; cycle rows are NOT an input; active-pool eviction ≠ archive deletion, and nothing a reference / request / monitor names is deleted | the PFSP-weight tie-break (degenerates to "oldest" at the default `--pfsp-scale 0`; a stateful EMA, not a ledger read) | §2.4 |
 | 2026-10-03 | **M6 throughput test (ORCHESTRATOR)** | per-phase metrics, per-update alternation, Hodges–Lehmann bound, size 300 pairs from a power calculation on banked noise; pre-registered, but only needed if the optional CPU worker is built | the block-median rule (P(adopt a free lane) ≈ 0.09) | §4.5; F-ED-14, F-ED-15 |
 | 2026-10-03 | **Fix-during-build items 7–20 (ORCHESTRATOR)** | F-ED-3 corrected and F-ED-13 withdrawn; pair-level estimators + betting CSs (deviation from ResponseGraphUCB disclosed); the reference chosen by an N0 back-test; eviction at matrix DONE; scheduler yields, one SPRT in flight, the anti-starvation share per lane, P5's own lane; c_gpu for P2–P4 only, fixed by U4's first measurement; the ladder updater absorbed then retired (U7a); slot-direct loads (U4a); outcome digests; parametric-bootstrap floors; six literature corrections; resume wording and snapshot pinning; SPRT ≈ 6,000 games per 10M; §2.7's thresholds derived and its FAIL cost stated; the build plan re-sized with the missing units | — | this revision |
+| 2026-10-03 | **Q1–Q7 (ORCHESTRATOR, provisional, for the owner's review on 10-04)** | as provisionally set in §11.2: Q1 add `ab` / `ladder` (backfill only) / `untaught` / `gap` / `monitor`; Q2 GPU window only; Q3 c_gpu for P2–P4, provisionally 6 %; Q4 incremental dense for K ≤ 20; Q5 a frozen reference per read, chosen by the N0 back-test; Q6 the declared eviction read at matrix DONE; Q7 SPRT RESUME (U4b) | the alternatives listed in §11.2 | §11.2 |
+| 2026-10-03 | **Q8 the two-tier plateau (ORCHESTRATOR, provisional)** | Tier 1 = the head-to-head GSPRT (newest vs the W-back node) plus the panel; Tier 2 reads the cycle monitor; a plateau also needs a FLAT panel and TWO consecutive checks | (B) the reference slope as primary (REPORTED instead) | §8; F-ED-16, F-ED-17 |
+| 2026-10-03 | **Q9 the monitor's target (ORCHESTRATOR, provisional)** | ≈ 1.7 pp diffuse within one check, HYBRID thinning (aggregating two checks reaches ≈ 1.2 pp) | 1 pp within one check (~4× the row's games); uniform or geometric-only thinning | §2.5; F-ED-21 |
+| 2026-10-03 | **F-ED-18 (ORCHESTRATOR, provisional)** | the X5 A/B arms run with the snapshot-ladder updater OFF (`--ladder-games 0` or the equivalent), so the registered speed rule stays clean; the A/B reads its strength from `main.h2h`, not the ladder; X26's continuation re-enables it | the updater ON in both arms (symmetric, but unregistered CPU load) | F-ED-18; X5 §7.4 (its registration should carry the same line — the X5 owner's edit) |
+| 2026-10-03 | **D-L4, the backfill shrinks (ORCHESTRATOR, provisional)** | drop the general backfill (265 runs' `eval_results.jsonl`, 104 ladder files); keep v1 upgrade-on-read for the verbatim copies (P0's 120, the bot round robin's 1,296) and the committed anchors; N0's ladder only if the plateau back-test asks; no general backfill machinery in U1 | §0b.6's full backfill | `designs/ops/legacy_removal_manifest.md` D-L4 |
+| 2026-10-03 | **U1 build decisions (eval U1 agent)** | (1) the SEED BLOCK is a second uniqueness key, exempt for `audit_replay` (the batch key alone lets a second request re-record the same games); (2) two more event kinds, `family` (registration + pinned protocol) and `row` (a recorded unit, so the fold needs no row scan); the void rule also checks the claimant's own shard (a writer killed between row and event is repaired, not replayed); (3) protocols named `gen3_eval_protocol_v1_<writer>`, KEPT by the two migrated writers (storage-only); (4) a new row's `team_set` digests the ordered team lists + builder parameters, while an upgraded row's digests its `team_source` label, so v1 and v2 rows of one writer are different regimes and never pooled; (5) the outcome digest's near-tie margin is the GPU bar (2e-3) for h2h, `null` for bots; (6) v1 h2h's integer `compute.near_tie_games` moves to `near_tie_game_count` on read (v2's `near_tie_games` is an index list); (7) every `ReaderDecl` field is required, plus `decision_kind` for a family read; `read_by_regime` for listings; (8) a per-process counter in the writer id | the batch key alone; a row scan per claim; a `gen3_eval_protocol_v2` for storage-only rows; label-digest team sets for new rows | §0b.2, §0b.4, §0b.7; `measurements/eval_ledger_u1_2026-10-03/` |

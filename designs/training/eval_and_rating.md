@@ -732,16 +732,55 @@ nine bots AND a pool sentinel (`pairs_vs_pool` 2 at step 12,000); (3) `main.unta
 (4) `main.anchors --mirrored-pairs` vs `metamon:SmallRL`, 8 games → 4 pairs, all four VERIFIED (teams,
 order, shared seed). ⚠️ **Not yet seen on a GPU run** — one confirmation rides a planned launch.
 
-### The checkpoint-vs-checkpoint head-to-head (`main.h2h`, X5 §7.3 / U0 — `gen3_eval_count_row_v1`)
+### The eval COUNT ledger (`agents/training/eval_ledger/`, `gen3_eval_count_row_v2`, eval U1)
+
+**What it is.** design_evaluation.md §0b, built: ONE append-only, archive-level ledger of COUNTS — one row per
+(batch × matchup) — at `<archive>/_ledger/` (`utils.paths.run_archive_dir()`; `$GEN3AI_MODELS_DIR` is authoritative;
+pytest seals it, so a test uses the `run_archive` fixture or a temp root). Beside the rows: `requests/` (the claim
+queue, a deterministic fold of `open` / `family` / `claim` / `void` / `row` / `done` / `cancel` events), `decisions/`
+and `references/`. One writer per file, every append fsynced; under `models/` a writer may write ONLY to
+`<archive>/_ledger/` itself.
+
+🚨 **EVERY READ IS DECLARED.** `eval_ledger.read(ReaderDecl(name, purposes, regime, requests, selection, flags_ok,
+inference[, decision_kind]), ...)` — every field spelled out. It validates every row (a v1 row is upgraded ON READ,
+never rewritten), applies corrections, refuses ANY duplicate batch key or seed block anywhere in the ledger
+(`DuplicateBatchError`), filters by the declaration, returns ONE regime (`MixedRegimeError`) and honours `as_of`.
+`src/eval_ledger_reader_gate_test.py` (static, EMPTY allowlist) fails a module that reads the ledger any other way,
+or whose declaration is not spelled out, and checks the closed lists against design_evaluation.md §0b.2.
+
+🚨 **EVERY BATCH IS WRITTEN UNDER A CLAIM, FOR A REQUEST.** `LedgerWriter.claim` takes the unit `(request, batch,
+player, opponent, regime)` under one `flock`; a dead writer's claim (pid dead on this host, or expired) is voided
+deterministically and the batch replayed on the same seeds; a writer whose claim was voided DROPS its batch. A
+request pins its purpose, its spec and (once a row lands) its regime; a family pins its protocol (§0c rule 6).
+
+**Per-cell INCONCLUSIVE and family reads.** `cells.cells(read)` gives each (request, player, opponent) cell its
+verdict: INCONCLUSIVE when `4 × aborted > attempted` (integers: exactly 25 % is not) or below a registered pair
+minimum. `cells.looks(read)` reads a group-sequential FAMILY (X5's A/B) across its looks. `cells.pooled_pairs` is the
+conditional pair-clustered estimate and refuses a read declared `across_runs`.
+
+**Operate it:** `python -m main.eval_ledger audit | show | verify <decision> | void-dead | close-stale [--apply] |
+family-register | request-close`. `audit` exits 1 on any broken cross-record invariant (duplicates, unresolved
+requests / families / supersedes, a requested row without its claim, a decision whose rows or digest no longer match).
+
+Tests: `agents/training/eval_ledger/schema_test.py` (every v2 rule refused for exactly that rule; the v1 upgrade),
+`writer_test.py` (claims, voids, pins, the lock, closing — a hand-moved clock and a liveness oracle, no sleeps),
+`reader_test.py` (declarations, scopes, `as_of`, selection, a planted duplicate, X5's family read, the audit),
+`producers_contract_test.py` (the bot round robin's builder; the banked v1 rows read upgraded).
+
+### The checkpoint-vs-checkpoint head-to-head (`main.h2h`, X5 §7.3 / U0 — ledger v2 since eval U1)
 
 **What it is.** The offline, SYMMETRIC read of one checkpoint against another: `python -m main.h2h play
---player <ckpt.zip | run dir | run@step> --opponent <…> --pairs N --out <dir>` plays N MIRRORED team pairs on the
+--player <ckpt.zip | run dir | run@step> --opponent <…> --pairs N [--out <root>]` plays N MIRRORED team pairs on the
 Rust eval core and prints the player's win rate with its PAIR-clustered 95 % interval; `python -m main.h2h read
-<dir>` pools a directory's rows per edge. Nothing here is new machinery for the game: it declares ONE T2 service
+[<root>]` pools a ledger's h2h rows per edge, one regime at a time. Nothing here is new machinery for the game: it declares ONE T2 service
 with two slots (the player's eval slot, one SENTINEL slot for the opponent) and ONE eval core, and plays the plan
 through `RustEvalCore.run_cycle` — the executor the in-loop eval and the SPRT promotion use — in BATCHES.
-(`main.h2h` is the first writer of design_evaluation.md §0b's COUNT ledger: `agents/training/eval_ledger.py` holds
-its row schema `gen3_eval_count_row_v1`, the validator, one shard per writer process and the reader.)
+(`main.h2h` writes the COUNT ledger above, protocol `gen3_eval_protocol_v1_h2h`: by default to the archive's
+`<archive>/_ledger/`, or to a root `--out` names outside `models/`; every batch under a claim for a REQUEST — by default
+one derived from the players, the regime and the schedule, so a re-run resumes it; `--request` / `--family` /
+`--request-kind` / `--purpose ab` put the edge into a caller's request, e.g. an X5 look. The U1 migration was
+STORAGE-ONLY: the same seeded batches play byte-identical games before and after,
+`designs/research_state/measurements/eval_ledger_u1_2026-10-03/`.)
 
 **The regime — on every row, and readers refuse to mix it.** BOTH sides GREEDY (the eval regime); MIRRORED pairs
 (`rust_eval.seeds.pair_game`, `gen3_mirrored_pairs_v1`); the turn limit is `StallConfig().threshold` (a timeout is a
@@ -773,12 +812,13 @@ sentinel at p1, which it does not (a FINDING, not built).
 **The rows.** One row per (batch × matchup), appended and fsynced when the batch ends: the player and opponent
 (`id` = `<run>@<step>`, the checkpoint's sha256, path, how `resolve_model_ref` chose it), the regime (+ `regime_id`), a
 `compute` block (device, backend, env count, the games per second, the load average and contention factor at the
-batch, and a NEAR-TIE CENSUS), `purpose` (default `audit`; §0b's closed list has no value for a pre-registered A/B read —
-a FINDING for the orchestrator), W / L / D, the pentanomial and per-team counters (`{team id: {p: [games, wins], o:
+batch, and a NEAR-TIE CENSUS and the OUTCOME DIGEST — sha256 over the `(game, W/L/D, turns)` vector of the games with no decision
+inside 2e-3, plus the indices of those that had one), `purpose` (default `audit`; `ab` for a pre-registered A/B read),
+the `request` block, W / L / D / aborted, the pentanomial and per-team counters (`{team id: {p: [games, wins], o:
 [games, wins]}}`, team id = `t:` + blake2b-16 hex of the packed team), and the seed block. The schema validator
 (`eval_ledger.validate_row`) checks the shapes, the closed vocabularies and the arithmetic that ties the blocks
 together (W + L + D = 2 × pairs; half-points = 2W + D; the team counters sum to the games and the wins). `--out`
-under `models/` (main's archive, `$GEN3AI_MODELS_DIR`, this checkout's) is REFUSED until the archive ledger exists.
+under `models/` is REFUSED except the archive's own `_ledger/`.
 
 **Reproducible by construction — and the one thing a re-run can change.** Every game's teams and battle seed are a pure
 function of `(schedule seed, schedule key, batch, game index)` (`play.cycle_seed` + `rust_eval.seeds`), never of the env,
@@ -790,9 +830,10 @@ games that contain one, and the pairs with none (`clean_pairs`, `clean_pairs_off
 on a rounding error are COUNTED, never left to chance (standing rule 8). A re-run of one configuration reproduces every
 game bit for bit (tested, two cycles on one engine); a change of env count changes no game that is clear of a near-tie.
 
-**Resumable.** A re-run with the same arguments skips the batches already on disk (same players, schedule seed + key,
-regime) and plays the rest; a longer `--pairs` plays only the new batches; a different `--batch-pairs` over existing rows
-is REFUSED (the same batch index would replay the same games under another length).
+**Resumable.** A re-run with the same arguments resumes the same request: it skips the batches already recorded and
+plays the rest; a longer `--pairs` plays only the new batches; a different `--batch-pairs` over an existing request is
+REFUSED (its spec pins it: the same batch index would replay the same games under another length), and the ledger
+refuses a second row on one seed block under ANY request.
 
 **Reading.** `stats.edge_summary` pools an edge's batches: the mean per-game score over PAIRS (a draw = ½; equals W / games
 with no draws), its pair-clustered normal interval (`mirrored_pairs.pair_score_ci`) and the unbiased pair SE. A reader
@@ -808,8 +849,8 @@ gates), but the ENGINE START is 114–167 s per edge (the T2 graphs compile agai
 2,000-game cell ≈ 7 min. CPU eager and GPU graph played identical games (200 games: the same W/L/D, pentanomial and per-team
 counters). A multi-cell engine (one architecture, weights loaded per cell) is NOT built.
 
-Tests: `agents/training/eval_ledger_test.py` (every schema rule has a row refused for exactly that rule),
-`main/h2h/play_test.py` (scoring, the toy-engine mirror, seeds, resume, the team-source refusal),
+Tests: `agents/training/eval_ledger/` (above),
+`main/h2h/play_test.py` (scoring, the toy-engine mirror, seeds, the digest, resume, the team-source refusal),
 `stats_test.py`, `runfloor_test.py`, and on the real engine `play_mirror_integration_test.py` /
 `play_edge_integration_test.py` (CPU, tiny, the in-process core).
 

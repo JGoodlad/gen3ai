@@ -63,7 +63,13 @@ def check(ledger_dir: str) -> int:
 def load_edges(ledger_dir: str):
     from agents.training import eval_ledger as L
 
-    rows = L.read_rows(ledger_dir)
+    # ledger v2 (eval U1): a declared read; the v1 rows are upgraded on read (the `regime` block this returns is the
+    # v2 view — its `regime_id` is recomputed and the id this study recorded is kept as `v1_id`)
+    decl = L.ReaderDecl(name="bot_base_ratings.fit", purposes=frozenset({"anchor"}),
+                        regime=L.RegimeFilter(protocol="gen3_eval_protocol_v1_bot_rr", mirrored=True),
+                        requests="any", selection="include", flags_ok=frozenset({"digest_unrecorded"}),
+                        inference="conditional")
+    rows = list(L.read(decl, root=ledger_dir).rows)
     regimes = {r["regime"]["regime_id"] for r in rows}
     if len(regimes) != 1:
         raise SystemExit(f"refusing to pool {len(regimes)} regimes: {sorted(regimes)}")
