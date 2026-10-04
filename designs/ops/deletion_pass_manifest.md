@@ -1,6 +1,6 @@
 # The post-switch DELETION PASS + bounded tech-debt PAYDOWN — manifest
 
-**Status: APPROVED 2026-10-02 (owner: "I am happy just to delete and we don't need to keep the goldens").** Decisions as recorded in §0's APPROVED column. The 8-day box starts 2026-10-02. Model policy (owner): the mechanical DELETION units run on opus-medium; the structural units (U1, U2, U4) on opus-high.
+**Status: DONE 2026-10-03 — the closing GATE is green (§5a). APPROVED 2026-10-02 (owner: "I am happy just to delete and we don't need to keep the goldens").** Decisions as recorded in §0's APPROVED column. The 8-day box starts 2026-10-02. Model policy (owner): the mechanical DELETION units run on opus-medium; the structural units (U1, U2, U4) on opus-high.
 Scoped at `b2c09132` (THE M5 SWITCH, ledger 2026-10-02). Owner sequence (2026-10-01): validate Rust infra →
 switch (DONE) → **this pass** → slow tier → T15 re-bake → bottleneck profile → the X26 baseline. Reason: *one
 system to reason about.* Parent lists: `designs/endstate/program_rust_core.md` §4 (the per-milestone rows; this
@@ -280,6 +280,17 @@ calendar days with 3 lanes; 8 is the box**.
    milestone slow tier run regardless** (on whatever shipped); then the sequence moves on to T15. Exception that
    holds the box: if U3 has shipped and U4 has not, U4 finishes first — a deleted env core with SB3's VecEnv glue
    half-removed is not a state to start T15 on.
+
+### 5a. The closing GATE (2026-10-03; code gated: `2409d899`, on `origin/main` `edc55c4e`)
+
+**Verdict: DONE** — all four items of §5.2 green on the final code commit (the tree after it differs by `slow_tier_status.json` and docs alone).
+
+1. **Routine gate** (`scripts/ops/gate_lock.sh "$PY" -m pytest src/ -m "not slow and not e2e" -q -n 6`): **11,596 passed, 10 skipped, 15 xfailed, 0 failed** (5.3 min) on `2409d899` + the status commit; 11,594 / 10 / 15 at `c153396c` before the fix below (4.6-6.1 min).
+2. **Slow tier as the MILESTONE run** (`designs/ops/slow_tier_status.json` refreshed, no recorded FAIL): 68 `slow` tests collected, **67 pass, 1 skip, 0 fail, 0 inconclusive**. The CPU form `-m slow -q -n 2` (35 min, 49 pass + 19 skips) plus the 19 GPU-gated tests run serially under `GEN3AI_TEST_ALLOW_GPU=1` inside `gpu_lock.sh timeout N mem_cap.sh 48` (holds of 9.7 min, 20 min (cut by its own timeout while CPU-shaped tests ran; the GPU milestone was then run alone), and three of about 2-5 min). The one skip is `rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[NOTSET]`: `LADDER_KNOWN_DIVERGENCES` is EMPTY since the Rust deletion pass, so the parametrization is empty and pytest emits one permanent skip (correct, not a defect). The GPU slow tests do NOT take the lock themselves: they skip without `GEN3AI_TEST_ALLOW_GPU=1`, and the CALLER wraps them in `gpu_lock.sh` (as `designs/ops/testing.md` says).
+3. **Smokes** (scratch archive on disk): `--debug --steps 10000` exit 0 (`CRITIC winprob`, `ENV CORE rust`, round-trip PASSED, `LEARNER FREEZE released ... 10 checks passed`); `--debug --steps 10000 --debug-eval --eval-freq 4000` exit 0 (Rust eval cycles at steps 4,000 and 8,000, 900 games each).
+4. **Real-launch pre-flight** (`python -m main.launcher --arch production --device cuda --eval-freq 400000`, under `gpu_lock.sh` + `mem_cap.sh 48`, pinned at the pre-rebase `a6c0af81` = `2409d899`): the first `[COMPILE LOCK]` after startup (R1 parity PASS fp32), the first update at 103,424 steps, **`compile/canary_ok 1` at update 10 (988,416 steps)**, eval cycles at 400,128 and 800,000 steps (900 games each, 9.3 s and 7.8 s); SIGTERM to the launcher PID at step 1,086,464 -> `Quit requested` -> `[ABORT] Checkpoint saved -> final_model_interrupted.zip` -> `Quit complete` 16 s later, exit 0, no crash dir. The first attempt (`--eval-freq 20000`) ended `FATAL_SUPPLY` (5) after three eval cycles, BEFORE its first update (an update is 98,304 rows and a fresh trainee's win rate vs bots, 1%, is below the 0.55 seeding gate): the supply guard working as declared, and the reason the second launch spaced its evals. Startup (compile + prewarm + update-fit) took about 6 min.
+
+**One real failure found and fixed (the slow GPU milestone).** `parity_test.py::test_milestone_gpu_graph_backend_vs_the_compiled_python_worker_on_a_real_pool` TypeErrored (`MaskableMultiInputActorCriticPolicy.__init__() got an unexpected keyword argument 'use_popart'`) at `rust_eval/parity.py:220` and then `main/eval_worker.py:498`: both called `load_checkpoint_strict` on an ARCHIVED (pre-L1) run without `**historical_load_kwargs(path)`, the sanitizer deletion pass L1 made the CALLER's job. Fixed at those two sites (`2409d899`); the test passes (275-292 s). **FINDING (not widened): three more unsanitized callers remain** — `rust_eval/eval_benchmark.py:80,121` and `main/ops/eval_trace_gen.py:673` — and EVERY archived run in `models/` (all pre-date L1) fails `load_checkpoint_strict` without the sanitizer (`smoke_k9b_check`, `sizing_*`, `ai_v14_*` checked). They are tools, not the production path, but they fail on any real archive checkpoint.
 
 ---
 
