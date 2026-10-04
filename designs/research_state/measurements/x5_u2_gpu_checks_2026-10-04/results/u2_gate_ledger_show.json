@@ -1,0 +1,25 @@
+{
+ "by_producer": {
+  "inloop": 18
+ },
+ "by_purpose": {
+  "cycle": 18
+ },
+ "by_regime": {
+  "6090bd0330736bc9 (gen3_eval_protocol_v1_inloop)": 18
+ },
+ "by_schema_origin": {
+  "v2": 18
+ },
+ "decisions": 0,
+ "families": [],
+ "live_claims": 0,
+ "references": 0,
+ "requests_closed": [
+  "u2_gate:cycle:1000192:6090bd0330736bc9",
+  "u2_gate:cycle:500224:6090bd0330736bc9"
+ ],
+ "requests_open": [],
+ "root": "/home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/ledger_u2_gate_snapshot",
+ "rows": 18
+}

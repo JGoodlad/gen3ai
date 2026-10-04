@@ -1,0 +1,13 @@
+{
+ "arm": "blob",
+ "batch": 256,
+ "grad": false,
+ "bwd": false,
+ "torch": "2.8.0+cu126",
+ "first_call_compile_s": 52.5,
+ "compiled_ms_per_call": 4.544,
+ "eager_ms_per_call": 35.495,
+ "graph_breaks": {},
+ "unique_graphs": 1,
+ "cache_root": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_2024472_yvm9hgxl"
+}

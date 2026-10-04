@@ -1,0 +1,1 @@
+[audit] /home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/ledger_u2_gate_snapshot: {'rows': 18, 'live_rows': 18, 'requests': 2, 'families': 0, 'claims': 18, 'live_claims': 0, 'decisions': 0, 'references': 0} — OK

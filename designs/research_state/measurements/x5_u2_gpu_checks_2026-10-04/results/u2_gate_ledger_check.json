@@ -1,0 +1,367 @@
+{
+ "run": "u2_gate",
+ "cycles": {
+  "500224": {
+   "rows": 9,
+   "opponents_in_results": 9,
+   "cycle_wall_s": [
+    10.255
+   ],
+   "per_row": [
+    {
+     "opp": "aggressive",
+     "ledger": [
+      28,
+      100
+     ],
+     "results": [
+      28,
+      100
+     ],
+     "ok": true,
+     "d": 1,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 28,
+     "team_o_wins": 71,
+     "team_counters_consistent": true,
+     "digest_all": "e963e22478b6"
+    },
+    {
+     "opp": "aggressive_v2",
+     "ledger": [
+      20,
+      100
+     ],
+     "results": [
+      20,
+      100
+     ],
+     "ok": true,
+     "d": 1,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 20,
+     "team_o_wins": 79,
+     "team_counters_consistent": true,
+     "digest_all": "40255396557d"
+    },
+    {
+     "opp": "heuristic",
+     "ledger": [
+      19,
+      100
+     ],
+     "results": [
+      19,
+      100
+     ],
+     "ok": true,
+     "d": 3,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 19,
+     "team_o_wins": 78,
+     "team_counters_consistent": true,
+     "digest_all": "bef05cf3ea9d"
+    },
+    {
+     "opp": "heuristic2",
+     "ledger": [
+      21,
+      100
+     ],
+     "results": [
+      21,
+      100
+     ],
+     "ok": true,
+     "d": 1,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 21,
+     "team_o_wins": 78,
+     "team_counters_consistent": true,
+     "digest_all": "5c8e635a7ccf"
+    },
+    {
+     "opp": "random",
+     "ledger": [
+      96,
+      100
+     ],
+     "results": [
+      96,
+      100
+     ],
+     "ok": true,
+     "d": 0,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 96,
+     "team_o_wins": 4,
+     "team_counters_consistent": true,
+     "digest_all": "acc05719fbdc"
+    },
+    {
+     "opp": "setup_sweep",
+     "ledger": [
+      19,
+      100
+     ],
+     "results": [
+      19,
+      100
+     ],
+     "ok": true,
+     "d": 2,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 19,
+     "team_o_wins": 79,
+     "team_counters_consistent": true,
+     "digest_all": "df661f68f599"
+    },
+    {
+     "opp": "setup_sweep_v2",
+     "ledger": [
+      15,
+      100
+     ],
+     "results": [
+      15,
+      100
+     ],
+     "ok": true,
+     "d": 0,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 15,
+     "team_o_wins": 85,
+     "team_counters_consistent": true,
+     "digest_all": "02c51d08b7e1"
+    },
+    {
+     "opp": "staller",
+     "ledger": [
+      27,
+      100
+     ],
+     "results": [
+      27,
+      100
+     ],
+     "ok": true,
+     "d": 1,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 27,
+     "team_o_wins": 72,
+     "team_counters_consistent": true,
+     "digest_all": "c215fd07251e"
+    },
+    {
+     "opp": "staller_v2",
+     "ledger": [
+      34,
+      100
+     ],
+     "results": [
+      34,
+      100
+     ],
+     "ok": true,
+     "d": 1,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 34,
+     "team_o_wins": 65,
+     "team_counters_consistent": true,
+     "digest_all": "2077fcbc65dd"
+    }
+   ]
+  },
+  "1000192": {
+   "rows": 9,
+   "opponents_in_results": 9,
+   "cycle_wall_s": [
+    10.248
+   ],
+   "per_row": [
+    {
+     "opp": "aggressive",
+     "ledger": [
+      34,
+      100
+     ],
+     "results": [
+      34,
+      100
+     ],
+     "ok": true,
+     "d": 1,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 34,
+     "team_o_wins": 65,
+     "team_counters_consistent": true,
+     "digest_all": "f21e9c63e8a4"
+    },
+    {
+     "opp": "aggressive_v2",
+     "ledger": [
+      17,
+      100
+     ],
+     "results": [
+      17,
+      100
+     ],
+     "ok": true,
+     "d": 0,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 17,
+     "team_o_wins": 83,
+     "team_counters_consistent": true,
+     "digest_all": "aac6bf2009c5"
+    },
+    {
+     "opp": "heuristic",
+     "ledger": [
+      26,
+      100
+     ],
+     "results": [
+      26,
+      100
+     ],
+     "ok": true,
+     "d": 2,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 26,
+     "team_o_wins": 72,
+     "team_counters_consistent": true,
+     "digest_all": "2fcdad341e54"
+    },
+    {
+     "opp": "heuristic2",
+     "ledger": [
+      21,
+      100
+     ],
+     "results": [
+      21,
+      100
+     ],
+     "ok": true,
+     "d": 0,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 21,
+     "team_o_wins": 79,
+     "team_counters_consistent": true,
+     "digest_all": "30701d79ef94"
+    },
+    {
+     "opp": "random",
+     "ledger": [
+      95,
+      100
+     ],
+     "results": [
+      95,
+      100
+     ],
+     "ok": true,
+     "d": 1,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 95,
+     "team_o_wins": 4,
+     "team_counters_consistent": true,
+     "digest_all": "6f0485f82f44"
+    },
+    {
+     "opp": "setup_sweep",
+     "ledger": [
+      17,
+      100
+     ],
+     "results": [
+      17,
+      100
+     ],
+     "ok": true,
+     "d": 0,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 17,
+     "team_o_wins": 83,
+     "team_counters_consistent": true,
+     "digest_all": "bd27201df211"
+    },
+    {
+     "opp": "setup_sweep_v2",
+     "ledger": [
+      16,
+      100
+     ],
+     "results": [
+      16,
+      100
+     ],
+     "ok": true,
+     "d": 1,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 16,
+     "team_o_wins": 83,
+     "team_counters_consistent": true,
+     "digest_all": "85518482ecba"
+    },
+    {
+     "opp": "staller",
+     "ledger": [
+      34,
+      100
+     ],
+     "results": [
+      34,
+      100
+     ],
+     "ok": true,
+     "d": 0,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 34,
+     "team_o_wins": 66,
+     "team_counters_consistent": true,
+     "digest_all": "c0fb4013778a"
+    },
+    {
+     "opp": "staller_v2",
+     "ledger": [
+      24,
+      100
+     ],
+     "results": [
+      24,
+      100
+     ],
+     "ok": true,
+     "d": 2,
+     "aborted": 0,
+     "team_p_games": 100,
+     "team_p_wins": 24,
+     "team_o_wins": 74,
+     "team_counters_consistent": true,
+     "digest_all": "bd1e8fbf44ee"
+    }
+   ]
+  }
+ },
+ "mismatches": 0,
+ "cycles_checked": 2
+}

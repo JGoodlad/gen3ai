@@ -1,0 +1,6 @@
+drive x5blob_b start 1791104331.651850881 args: 
+wrapper pid 1834766
+trainer pid 1834799
+reached 12 update rows at i=181
+SIGTERM -> 1834799 at 1791105232.267229512
+end 1791105237.275354280; wrapper alive: no

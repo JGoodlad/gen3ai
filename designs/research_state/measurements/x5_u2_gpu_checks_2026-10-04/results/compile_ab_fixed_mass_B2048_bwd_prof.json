@@ -1,0 +1,168 @@
+{
+ "arm": "fixed_mass",
+ "batch": 2048,
+ "grad": true,
+ "bwd": true,
+ "torch": "2.8.0+cu126",
+ "first_call_compile_s": 97.0,
+ "compiled_ms_per_call": 83.05,
+ "eager_ms_per_call": 239.622,
+ "kernel_class_ms_per_step": {
+  "attention": [
+   11.36,
+   8.0
+  ],
+  "gemm": [
+   33.951,
+   484.0
+  ],
+  "memcpy": [
+   0.07,
+   46.0
+  ],
+  "other": [
+   1.958,
+   84.0
+  ],
+  "triton_pointwise": [
+   22.334,
+   729.0
+  ],
+  "triton_reduction": [
+   12.662,
+   368.0
+  ]
+ },
+ "kernel_total_ms_per_step": 82.336,
+ "kernel_launches_per_step": 1719.0,
+ "top_kernels_ms_per_step": [
+  [
+   "ampere_sgemm_128x128_nt",
+   8.839,
+   8.0
+  ],
+  [
+   "fmha_cutlassB_f32_aligned_64x64_k32_sm80(PyTorchMemEffAttention::AttentionBackwardKernel<cutlass::arch::Sm80, float, true, false, false, 64,",
+   8.034,
+   4.0
+  ],
+  [
+   "ampere_sgemm_128x64_tn",
+   7.378,
+   28.0
+  ],
+  [
+   "ampere_sgemm_128x64_nn",
+   4.667,
+   27.0
+  ],
+  [
+   "fmha_cutlassF_f32_aligned_64x64_rf_sm80(PyTorchMemEffAttention::AttentionKernel<float, cutlass::arch::Sm80, true, 64, 64, 64, true, true>::P",
+   3.326,
+   4.0
+  ],
+  [
+   "void cutlass::Kernel2<cutlass_80_simt_sgemm_128x64_8x5_nt_align1>(cutlass_80_simt_sgemm_128x64_8x5_nt_align1::Params)",
+   2.436,
+   20.0
+  ],
+  [
+   "triton_per_fused_add_clamp_min_div_gt_index_put_logsumexp_mul_neg_select_backward_sigmoid_backward_sum_where_302",
+   1.726,
+   1.0
+  ],
+  [
+   "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_282",
+   1.592,
+   1.0
+  ],
+  [
+   "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_265",
+   1.426,
+   1.0
+  ],
+  [
+   "triton_red_fused__to_copy_add_bitwise_or_clamp_div_eq_gather_ge_gt_index_le_logical_and_logsumexp_mul_neg_reciprocal_rsub_scatter_add_select",
+   1.377,
+   1.0
+  ],
+  [
+   "ampere_sgemm_32x128_tn",
+   1.189,
+   52.0
+  ],
+  [
+   "triton_poi_fused_add_clone_constant_pad_nd_copy_slice_backward_zeros_like_252",
+   1.084,
+   1.0
+  ],
+  [
+   "ampere_sgemm_32x128_nn",
+   1.066,
+   57.0
+  ],
+  [
+   "triton_poi_fused_add_select_backward_186",
+   0.989,
+   2.0
+  ],
+  [
+   "triton_per_fused_add_native_layer_norm_native_layer_norm_backward_318",
+   0.951,
+   3.0
+  ],
+  [
+   "triton_poi_fused_relu_threshold_backward_317",
+   0.715,
+   2.0
+  ],
+  [
+   "triton_poi_fused_logsumexp_threshold_backward_181",
+   0.715,
+   2.0
+  ],
+  [
+   "void gemmSN_NN_kernel<float, 128, 2, 4, 8, 4, 4, false, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float co",
+   0.694,
+   5.0
+  ],
+  [
+   "ampere_sgemm_64x32_sliced1x4_nt",
+   0.69,
+   12.0
+  ],
+  [
+   "ampere_sgemm_32x32_sliced1x4_nt",
+   0.67,
+   39.0
+  ],
+  [
+   "void cutlass::Kernel2<cutlass_80_simt_sgemm_128x128_8x4_nt_align1>(cutlass_80_simt_sgemm_128x128_8x4_nt_align1::Params)",
+   0.66,
+   2.0
+  ],
+  [
+   "triton_poi_fused_add_copy_305",
+   0.617,
+   2.0
+  ],
+  [
+   "triton_per_fused_add_native_layer_norm_backward_185",
+   0.611,
+   2.0
+  ],
+  [
+   "ampere_sgemm_64x64_nn",
+   0.526,
+   2.0
+  ],
+  [
+   "void at::native::vectorized_elementwise_kernel<4, at::native::BinaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<flo",
+   0.521,
+   4.0
+  ]
+ ],
+ "graph_breaks": {},
+ "unique_graphs": 1,
+ "cache_root": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_2061860_zwi4ltn9"
+}

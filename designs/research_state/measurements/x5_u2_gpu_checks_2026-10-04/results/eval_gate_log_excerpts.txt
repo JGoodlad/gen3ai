@@ -1,0 +1,33 @@
+===== u2_gate (command: drive u2_gate start 1791107396.360326077 args: --steps 3000000 --eval-freq 500000)
+⚖️  [EVAL REGIME] promotion: first win_rate_vs_pool > --promote-threshold (--no-promotion-sprt, source=default)
+⚖️  [EVAL REGIME] in-loop eval pairing: unpaired games (--no-eval-mirrored-pairs, source=default)
+⚖️  [EVAL REGIME] eval sentinels GREEDY + symmetric teams (--eval-sentinel-greedy, source=default); promote_threshold=0.55 (source=default)
+📒 [EVAL LEDGER] the in-loop eval writes COUNT rows (protocol gen3_eval_protocol_v1_inloop) to /home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/models/_ledger — beside eval_results.jsonl, which every existing reader still reads (dual write until eval U3c)
+🦀 [RUST ENV] T2 up in 251.8s: 1 slot group(s) [('pool0', 31)], trainee slot(s) [24], buckets (8, 64, 256) (non-trainee slots <= 64), lanes 8, backend graph on cuda
+[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 4 graphs in process, max 1 cache entries per code object (limit 8) — reset + prewarm took 142.6s
+🧮 [UpdateFit] dry first update (98,304 fixture rows, 1 epoch, device batch staged, 11.9s): demand (peak reserved) 8,058 MiB, peak allocated 6,388, floor 1,103; card for this process 10,202 (reserved 8,058 + free 2,144) -> headroom 2,144 MiB vs the declared 1,024; peak segment 'batch'
+[EVAL] step 500,224: Rust eval core played 900 games in 10.3s (27,816 trainee decisions, 182 traces, 125 near-ties)
+📒 [EVAL LEDGER] step 500,224: 9 cycle row(s) appended under /home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/models/_ledger
+[EVAL] step 1,000,192: Rust eval core played 900 games in 10.2s (27,000 trainee decisions, 179 traces, 14 near-ties)
+📒 [EVAL LEDGER] step 1,000,192: 9 cycle row(s) appended under /home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/models/_ledger
+===== u2_sprt (command: drive u2_sprt start 1791108363.466086984 args: --steps 3000000 --eval-freq 200000 --promotion-sprt --self-play-start-wr 0.0)
+⚖️  [EVAL REGIME] promotion: SPRT on fresh mirrored pairs (T6; --promote-threshold not read) (--promotion-sprt, source=argv)
+⚖️  [EVAL REGIME] in-loop eval pairing: unpaired games (--no-eval-mirrored-pairs, source=default)
+⚖️  [EVAL REGIME] eval sentinels GREEDY + symmetric teams (--eval-sentinel-greedy, source=default); promote_threshold=0.55 (source=default)
+📒 [EVAL LEDGER] the in-loop eval writes COUNT rows (protocol gen3_eval_protocol_v1_inloop) to /home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/models/_ledger — beside eval_results.jsonl, which every existing reader still reads (dual write until eval U3c)
+🦀 [RUST ENV] T2 up in 266.5s: 1 slot group(s) [('pool0', 31)], trainee slot(s) [24], buckets (8, 64, 256) (non-trainee slots <= 64), lanes 8, backend graph on cuda
+[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 4 graphs in process, max 1 cache entries per code object (limit 8) — reset + prewarm took 126.6s
+🧮 [UpdateFit] dry first update (98,304 fixture rows, 1 epoch, device batch staged, 11.9s): demand (peak reserved) 8,058 MiB, peak allocated 6,388, floor 1,103; card for this process 10,202 (reserved 8,058 + free 2,144) -> headroom 2,144 MiB vs the declared 1,024; peak segment 'batch'
+⚖️  [SPRT] promotion by SPRT (T6): H0 0.5 vs H1 0.55, alpha=beta=0.05, wald bounds [-2.944439, 2.944439], batches of 40 mirrored pairs, first decision at 40, cap 1680 pairs (= reject); --promote-threshold is not read
+[EVAL] step 200,192: Rust eval core played 900 games in 16.1s (40,564 trainee decisions, 154 traces, 326 near-ties)
+📒 [EVAL LEDGER] step 200,192: 9 cycle row(s) appended under /home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/models/_ledger
+📦 [SELFPLAY] Snapshot promoted at step 200,192 → snapshot_000000200192.zip (pool size: 1)
+🌱 [SELFPLAY] Win rate cleared the threshold — seeded the pool from the step 200,192 snapshot (self_play_fraction=1%)
+[EVAL] step 400,026: Rust eval core played 1,000 games in 15.2s (35,796 trainee decisions, 199 traces, 283 near-ties)
+📒 [EVAL LEDGER] step 400,026: 10 cycle row(s) appended under /home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/models/_ledger
+⚖️  [SPRT] candidate @400,026: ACCEPT (bound) after 40 pairs in 1 batch(es), LLR +3.332 — PROMOTED
+📦 [SELFPLAY] Snapshot promoted at step 400,026 → snapshot_000000400026.zip (pool size: 2)
+[EVAL] step 600,179: Rust eval core played 1,100 games in 15.5s (34,731 trainee decisions, 212 traces, 103 near-ties)
+📒 [EVAL LEDGER] step 600,179: 11 cycle row(s) appended under /home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/models/_ledger
+⚖️  [SPRT] candidate @600,179: ACCEPT (bound) after 40 pairs in 1 batch(es), LLR +3.199 — PROMOTED
+📦 [SELFPLAY] Snapshot promoted at step 600,179 → snapshot_000000600179.zip (pool size: 3)

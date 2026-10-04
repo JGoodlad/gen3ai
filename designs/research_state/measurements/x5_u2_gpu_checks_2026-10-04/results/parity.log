@@ -1,0 +1,77 @@
+[mem_cap] cap 32.00 GB (swap 0) · unit gen3ai-capped-python3-1678420.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[parity] 4096 real rows; torch 2.8.0+cu126; NVIDIA GeForce RTX 3080 Ti
+🧊 [CompileCache] PRIVATE /home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1678434_7b52w4dg for this process (x5 cuda parity) — no run declared a cache; deleted at exit [gen3_hermetic_compile_cache_v1]
+[parity] CPU eager ref cold: 1.3s; {'live_rows': 1284, 'pi_max': 0.6391928791999817, 'pi_row_max_std': 0.1308518350124359, 'other_mass_min': 0.4572035074234009, 'other_mass_max': 3.628202438354492, 'other_mass_std': 0.8624781370162964}
+[parity] CPU eager ref pert: 1.3s; {'live_rows': 1284, 'pi_max': 0.7469547390937805, 'pi_row_max_std': 0.13889510929584503, 'other_mass_min': 0.413207471370697, 'other_mass_max': 3.5639286041259766, 'other_mass_std': 0.8492818474769592}
+[parity] CPU eager ref stress: 1.3s; {'live_rows': 1284, 'pi_max': 0.9993502497673035, 'pi_row_max_std': 0.22455242276191711, 'other_mass_min': 0.11368870735168457, 'other_mass_max': 2.550446033477783, 'other_mass_std': 0.47863534092903137}
+[parity] cold cuda_eager_vs_cpu: PASS=True excluded=67
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+[parity] compiled B=8 grad=False: first call 57.7s
+[parity] cold/cuda_compiled_B8: vs cuda eager PASS=True (excl 67); vs cpu PASS=True
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  mask |= a_isnan and not b_isnan
+  mask |= a_isnan and not b_isnan
+  equal |= a_isnan and b_isnan
+  equal |= a_isnan and b_isnan
+[parity] compiled B=64 grad=False: first call 59.1s
+[parity] cold/cuda_compiled_B64: vs cuda eager PASS=True (excl 67); vs cpu PASS=True
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  mask |= a_isnan and not b_isnan
+  mask |= a_isnan and not b_isnan
+  equal |= a_isnan and b_isnan
+  equal |= a_isnan and b_isnan
+  mask |= a_isnan and not b_isnan
+  mask |= a_isnan and not b_isnan
+  equal |= a_isnan and b_isnan
+  equal |= a_isnan and b_isnan
+[parity] compiled B=256 grad=False: first call 64.1s
+[parity] cold/cuda_compiled_B256: vs cuda eager PASS=True (excl 67); vs cpu PASS=True
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  mask |= a_isnan and not b_isnan
+  mask |= a_isnan and not b_isnan
+  equal |= a_isnan and b_isnan
+  equal |= a_isnan and b_isnan
+  mask |= a_isnan and not b_isnan
+  mask |= a_isnan and not b_isnan
+  equal |= a_isnan and b_isnan
+  equal |= a_isnan and b_isnan
+[parity] compiled B=2048 grad=True: first call 66.1s
+[parity] cold/cuda_compiled_B2048_grad: vs cuda eager PASS=True (excl 67); vs cpu PASS=True
+[parity] pert cuda_eager_vs_cpu: PASS=True excluded=0
+[parity] pert/cuda_compiled_B8: vs cuda eager PASS=True (excl 0); vs cpu PASS=True
+[parity] pert/cuda_compiled_B64: vs cuda eager PASS=True (excl 0); vs cpu PASS=True
+[parity] pert/cuda_compiled_B256: vs cuda eager PASS=True (excl 0); vs cpu PASS=True
+[parity] pert/cuda_compiled_B2048_grad: vs cuda eager PASS=True (excl 0); vs cpu PASS=True
+[parity] stress cuda_eager_vs_cpu: PASS=True excluded=0
+[parity] stress/cuda_compiled_B8: vs cuda eager PASS=True (excl 0); vs cpu PASS=True
+[parity] stress/cuda_compiled_B64: vs cuda eager PASS=True (excl 0); vs cpu PASS=True
+[parity] stress/cuda_compiled_B256: vs cuda eager PASS=True (excl 0); vs cpu PASS=True
+[parity] stress/cuda_compiled_B2048_grad: vs cuda eager PASS=True (excl 0); vs cpu PASS=True
+[parity] ties: {'rows': 2048, 'live_rows': 1763, 'rows_with_boundary_inside_an_exact_tie_block': 1763, 'distinct_pi_values_per_row_median': 12.0, 'cpu_ties_resolve_to_lower_num': True, 'tie_compile_wall_s': 5.47, 'cuda_eager_order_equals_cpu': True, 'cuda_compiled_order_equals_cpu': True, 'cuda_eager_order_equals_cuda_compiled': True, 'cuda_eager_pi_maxdiff_vs_cpu': 6.332993507385254e-08, 'cuda_co
+[parity] ALL_PASS=True -> /home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/parity.json
+[mem_cap] done: gen3ai-capped-python3-1678420.scope exit 0 · peak 8.09 GB of cap 32.00 GB (25%) · not OOM-killed

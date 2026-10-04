@@ -1,0 +1,35 @@
+{
+ "by_producer": {
+  "inloop": 51
+ },
+ "by_purpose": {
+  "cycle": 48,
+  "promotion": 3
+ },
+ "by_regime": {
+  "6090bd0330736bc9 (gen3_eval_protocol_v1_inloop)": 45,
+  "dd3410667885171d (gen3_eval_protocol_v1_inloop)": 3,
+  "f464a780d74a3757 (gen3_eval_protocol_v1_inloop)": 3
+ },
+ "by_schema_origin": {
+  "v2": 51
+ },
+ "decisions": 2,
+ "families": [],
+ "live_claims": 0,
+ "references": 0,
+ "requests_closed": [
+  "u2_gate:cycle:1000192:6090bd0330736bc9",
+  "u2_gate:cycle:500224:6090bd0330736bc9",
+  "u2_sprt:cycle:200192:6090bd0330736bc9",
+  "u2_sprt:cycle:400026:6090bd0330736bc9",
+  "u2_sprt:cycle:400026:dd3410667885171d",
+  "u2_sprt:cycle:600179:6090bd0330736bc9",
+  "u2_sprt:cycle:600179:dd3410667885171d",
+  "u2_sprt:sprt:400026",
+  "u2_sprt:sprt:600179"
+ ],
+ "requests_open": [],
+ "root": "/home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/models/_ledger",
+ "rows": 51
+}

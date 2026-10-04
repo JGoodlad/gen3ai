@@ -1,0 +1,86 @@
+{
+ "run": "u2_sprt",
+ "verdict_lines": 2,
+ "decision_rows": 2,
+ "promotion_rows": 3,
+ "candidates": {
+  "400026": {
+   "decision_row": {
+    "decision_id": "20261004T100606Z.0-goodlad_desktop-2167682-inloop:d0",
+    "kind": "promotion",
+    "rule": "gen3_sprt_promotion_v1",
+    "verdict": "accept",
+    "request_id": "u2_sprt:sprt:400026"
+   },
+   "consumed_rows": 1,
+   "promotion_rows": 1,
+   "games_in_rows": 80,
+   "verdict_line": {
+    "verdict": "accept",
+    "reason": "bound",
+    "n_pairs": 40,
+    "llr": 3.331681,
+    "promoted": true,
+    "pair_counts": [
+     2,
+     0,
+     6,
+     0,
+     32
+    ]
+   },
+   "score_from_rows": 0.875,
+   "score_from_verdict_line": 0.875,
+   "ok": true
+  },
+  "600179": {
+   "decision_row": {
+    "decision_id": "20261004T100606Z.0-goodlad_desktop-2167682-inloop:d1",
+    "kind": "promotion",
+    "rule": "gen3_sprt_promotion_v1",
+    "verdict": "accept",
+    "request_id": "u2_sprt:sprt:600179"
+   },
+   "consumed_rows": 2,
+   "promotion_rows": 2,
+   "games_in_rows": 80,
+   "verdict_line": {
+    "verdict": "accept",
+    "reason": "bound",
+    "n_pairs": 40,
+    "llr": 3.199292,
+    "promoted": true,
+    "pair_counts": [
+     2,
+     1,
+     10,
+     0,
+     27
+    ]
+   },
+   "score_from_rows": 0.80625,
+   "score_from_verdict_line": 0.80625,
+   "ok": true
+  }
+ },
+ "decision_keys": [
+  "as_of",
+  "consumed",
+  "decision_id",
+  "family",
+  "kind",
+  "request_id",
+  "rule",
+  "rule_version",
+  "schema",
+  "subject",
+  "ts",
+  "verdict",
+  "writer_id"
+ ],
+ "decision_rows_per_candidate": {
+  "400026": 1,
+  "600179": 1
+ },
+ "problems": 0
+}

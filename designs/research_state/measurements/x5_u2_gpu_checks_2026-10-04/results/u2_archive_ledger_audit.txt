@@ -1,0 +1,1 @@
+[audit] /home/goodlad/.claude/jobs/9c36ca35/x5gpu_scratch/models/_ledger: {'rows': 51, 'live_rows': 51, 'requests': 9, 'families': 0, 'claims': 51, 'live_claims': 0, 'decisions': 2, 'references': 0} — OK

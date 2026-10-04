@@ -1,0 +1,13 @@
+{
+ "arm": "fixed_mass_tau_op",
+ "batch": 2048,
+ "grad": true,
+ "bwd": true,
+ "torch": "2.8.0+cu126",
+ "first_call_compile_s": 87.6,
+ "compiled_ms_per_call": 87.487,
+ "eager_ms_per_call": 239.681,
+ "graph_breaks": {},
+ "unique_graphs": 1,
+ "cache_root": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_2006710_u661n1m9"
+}

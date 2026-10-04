@@ -1,0 +1,6 @@
+drive x5fm_a start 1791102543.448214084 args: --belief-tokens fixed_mass --allow-nonproduction-arch
+wrapper pid 1714359
+trainer pid 1714377
+reached 9 update rows at i=175
+SIGTERM -> 1714377 at 1791103414.092661152
+end 1791103419.115620577; wrapper alive: no
