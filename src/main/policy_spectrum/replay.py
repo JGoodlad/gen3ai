@@ -36,6 +36,13 @@ class ReplayDecision:
     row: np.ndarray             # float32 [obs_dim], read-only view over the wire bytes
     request: dict               # the viewer's `|request|` JSON for this decision
     opp_fainted: int            # the viewer's opponent's faints seen so far
+    #: the trackers' intent label at THIS entry: what the opponent did at the viewer's PREVIOUS
+    #: decision (``trackers::IntentLabel``, the α/β label's source; `opp_intent_labels`).
+    label: Optional[dict] = None
+    #: the label of the NEXT obs-bearing entry (an unanswered final request included): what the
+    #: opponent did at THIS decision — the label training aligns to this row
+    #: (``align_labels_to_predictions``); None when this is the viewer's last entry.
+    next_label: Optional[dict] = None
 
 
 @dataclass
@@ -79,7 +86,10 @@ def _viewer_decisions(res: dict, viewer: int) -> List[ReplayDecision]:
                                f"{sorted(tokens)} disagree with the mask {mask.tolist()}")
         out.append(ReplayDecision(n=len(out), turn=turn, mask=mask, tokens=tokens,
                                   choice=entry.get("choice"), row=wrap_row(entry["obs"]),
-                                  request=request, opp_fainted=fainted))
+                                  request=request, opp_fainted=fainted,
+                                  label=(entry.get("trackers") or {}).get("label")))
+    for a, b in zip(out, out[1:]):
+        a.next_label = b.label
     return out
 
 

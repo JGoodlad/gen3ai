@@ -11676,3 +11676,42 @@ their pin's code and are unaffected. No run is live.
 - **Measured.** Bare invocation against `sizing_B_n256_e10_s1001`'s final: 8 games, 0 timeouts. Both X5 arm shapes (`--arch production --belief-tokens blob` and `fixed_mass`, built with `build_fresh_model(args=...)`, untrained, seed 7) load and play: 16 games, 0 timeouts.
 - **Tests (fail on revert, checked).** `src/main/untaught_meter_test.py`: default opponent not `era_checkout_only` and loads; bare defaults = v14 + `auto`; series identity; `--from-rows` refusal, consent and warn; a played artifact stamps its series.
 - **Docs.** `designs/training/eval_and_rating.md` (untaught recipe table, series paragraph), `src/agents/training/CLAUDE.md`, `designs/ops/legacy_removal_manifest.md` (B3 DONE, F-LR-2, L13, §2.1).
+## 2026-10-04 — X5 U7: the belief READERS (`main.belief_roles`; a reader only, no model change, no config bump)
+
+- **What.** `python -m main.belief_roles read --out <dir> --ckpt <zip>=<label> …` reads any checkpoint `.zip` of EITHER X5
+  arm (`blob` / `fixed_mass`, detected from the model) on the M5 Lane S bank (20,712 decisions, re-encoded at the reader's
+  commit, gate ① byte-checked), CPU forwards through the strict loader (`load_checkpoint_strict` +
+  `historical_load_kwargs`); `--out` under `models/` and a bare run directory are refused. Per checkpoint, against the
+  Smogon prior as a third column: **(1)** opponent-intent log loss on the COMMON EVENT SPACE (a move by num, every Hidden
+  Power one event; a switch-in by species), each arm's P(event) from its own heads' content — `blob`'s α / β, `fixed_mass`'s
+  U4 flat pointer (OTHER's content the renormalised tail) — a MISS its own column (never floored, with a breakdown),
+  Struggle excluded; **(2)** species-presence Brier / set log score / Murphy split / class-wise calibration
+  (`blob`'s presence = BeliefHead's hidden-slot mean through the same fixed-size construction); **(3)** OTHER calibration
+  R4 (a derived OTHER for `blob` and the prior; the `fixed_mass` read checked equal to the model's `other_mass`);
+  **(4)** roles R1–R3 (`roles.derive`: the moves with Smogon expected carriers ≥ 0.25 — 15 roles, 18 substitute pairs —
+  from Smogon data only, stamped `role_set_sha256`). One `per_run` value per metric (on-pool primary; off-pool n = 0 on
+  this bank). `python -m main.belief_roles infer --treat … --control … --boundary <t>` is design §7.4's across-seed
+  two-sample t (pooled variance, df = n_t + n_c − 2, rule 8 at the boundary), refusing mixed banks / role sets / arms, a
+  repeated checkpoint, n < 2, zero variance. `policy_spectrum.replay` / `reader` gain the trackers' intent label per
+  decision (`ReplayDecision.label` / `next_label`, `reencode_with_labels`; `reencode` unchanged).
+- **Sample read** (fresh checkpoints at the U4 tree, cold and perturbed, one per arm; CPU, 4 threads, beside a GPU job):
+  re-encode 32–44 s once, then 9–15 s of forwards per checkpoint (one cold `fixed_mass` read took 37 s under load), peak
+  5.1 GB for four. Cold `fixed_mass` and cold `blob` read the prior's presence exactly (Brier 2.2911 both); intent miss
+  rate `fixed_mass` 0 % (the flat pointer's OTHER candidates cover every modelled event), `blob` 4.9 % / 9.0 % (moves
+  outside its six seats); 225 Struggle labels excluded.
+- **Tests:** `main/belief_roles/roles_test.py` (a fresh-interpreter `open` audit hook: the derivation reads only the
+  declared Smogon / dex files, never `data/teams/`; the role bar and the Hidden Power collapse recomputed independently;
+  R3's pair rule), `metrics_test.py` (the miss column is never floored; the common event space by hand; Brier / OTHER by
+  hand; the OTHER teeth; rule 8), `infer_test.py` (the t against a hand computation and scipy; the 1e-9 boundary; every
+  refusal), `cli_test.py` (`models/` and a bare run dir refused), `belief_roles_integration_test.py` (both arms end to end
+  on a bank slice; the prior column checkpoint-independent; a cold `fixed_mass` reads the prior, a perturbed one does not).
+  Each fails on revert (a floored miss, a pool read, ddof 0, no boundary eps, no HP collapse, presence read off the prior,
+  typed-HP roles, the OTHER teeth removed).
+- **Findings** (design §8.2): **F-X5-41** the Smogon move prior is DEFLATED — `compute_priors.py` divides the
+  rating-weighted chaos `Moves` by the unweighted `Raw count` (Skarmory Spikes 0.547 vs 0.997, per-species sums
+  0.41–3.75 where a set runs ~4), reaching every consumer of `build_move_prior_logits`; not fixed (`data/`, out of scope).
+  **F-X5-42** `blob`'s α masks a Hidden Power click whose seat has the wrong type (41 of the bank's 735 at cold start;
+  pre-existing; U4 fixed it for `fixed_mass`). **F-X5-43** (U4's F-X5-34 request) the bank's only unmodeled intent rows
+  under the flat pointer are Struggle (225 labels, 1.8 %).
+- Built before U4 landed and rebased onto it: the `fixed_mass` intent read moved from α / β to the flat pointer in the
+  same unit.

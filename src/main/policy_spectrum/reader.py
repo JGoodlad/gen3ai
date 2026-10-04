@@ -41,6 +41,15 @@ def file_sha256(path: Path) -> str:
 
 def reencode(bank: Bank, workers: int = 2) -> Tuple[np.ndarray, np.ndarray, dict]:
     """``(rows [N, obs_dim] float32, masks [N, 11] bool, gate)`` in bank decision order."""
+    rows, masks, gate, _ = reencode_with_labels(bank, workers=workers)
+    return rows, masks, gate
+
+
+def reencode_with_labels(bank: Bank, workers: int = 2
+                         ) -> Tuple[np.ndarray, np.ndarray, dict, List[Optional[dict]]]:
+    """:func:`reencode` plus, per banked decision, the trackers' intent label of the viewer's NEXT entry
+    (``ReplayDecision.next_label``: what the opponent did at THIS decision; None at the viewer's last
+    entry) — the opponent-intent readers' ground truth (``main.belief_roles``)."""
     from main.policy_spectrum.replay import core_events_identity, replay
 
     results = replay([b.recorded() for b in bank.battles], workers=workers)
@@ -54,6 +63,7 @@ def reencode(bank: Bank, workers: int = 2) -> Tuple[np.ndarray, np.ndarray, dict
     n = len(bank.decisions)
     rows = None
     masks = np.zeros((n, 11), dtype=bool)
+    labels: List[Optional[dict]] = []
     checked = equal = 0
     drift: List[str] = []
     for i, row in enumerate(bank.decisions):
@@ -67,6 +77,7 @@ def reencode(bank: Bank, workers: int = 2) -> Tuple[np.ndarray, np.ndarray, dict
             rows = np.zeros((n, d.row.shape[0]), dtype=np.float32)
         rows[i] = d.row
         masks[i] = d.mask.astype(bool)
+        labels.append(d.next_label)
         if row["rec_obs_sha256"]:
             checked += 1
             if hashlib.sha256(d.row.tobytes()).hexdigest() == row["rec_obs_sha256"]:
@@ -76,7 +87,7 @@ def reencode(bank: Bank, workers: int = 2) -> Tuple[np.ndarray, np.ndarray, dict
     gate = {"recorded_rows_checked": checked, "byte_equal": equal,
             "obs_as_recorded": checked == equal, "first_drifted": drift,
             "encoder": core_events_identity()}
-    return rows, masks, gate
+    return rows, masks, gate, labels
 
 
 def _find_config(zip_path: Path) -> Path:

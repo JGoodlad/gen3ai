@@ -370,6 +370,13 @@ cell; 🚨 **up to TWO architectures per engine** (`main/h2h/arch.py`, F-U6-1 cl
 with only the slots its cells need and one eval core per (player group, opponent group), so the X5 cross (`fixed_mass` ×
 `blob`) plays on one engine — a THIRD architecture is refused before anything plays. Run it from the repo root (the team
 pool is read cwd-relative; any other cwd is refused).
+🚨 **`python -m main.belief_roles` is the X5 PURPOSE-METRIC reader** (U7; `designs/endstate/design_x5_belief_tokens.md` §4 / §7.4) — it plays
+NOTHING: any checkpoint `.zip` of either arm on the Lane S bank, CPU forwards only, output refused under `models/`. Its
+`per_run` block (on-pool primary) is the ONE value per run §7.4's adoption gate infers on, ACROSS SEEDS
+(`python -m main.belief_roles infer --treat … --control … --boundary <the stopping look's t>`); its battle-clustered intervals
+are descriptive only. 🚨 **The intent log loss is over the rows the arm's candidates COVER; the MISS rate is its own column** —
+compare the two arms on both, never on the log loss alone (`fixed_mass` reads U4's flat pointer, whose OTHER candidates
+cover every modelled event; `blob` misses the moves outside its six seats). The role set is derived from Smogon data at read time and stamped (`role_set_sha256`); `infer` refuses mixed sets.
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)** (its
 "The eval COUNT ledger" and "The checkpoint-vs-checkpoint head-to-head" sections).
 
