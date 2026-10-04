@@ -205,8 +205,8 @@ def _run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[s
               fixed: List[Dict[str, Any]], sentinel_greedy: bool, self_play_temp: float,
               safe_point: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
     from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
-    from agents.model.snapshot import (arch_toggles_from_model, current_model_version, load_checkpoint_strict,
-                                       load_foreign_opponent)
+    from agents.model.snapshot import (arch_toggles_from_model, current_model_version, historical_load_kwargs,
+                                       load_checkpoint_strict, load_foreign_opponent)
     from agents.observation.state_encoder import load_mappings
     from agents.training.eval_sharding import ShardedEvalPool
     from agents.training.fixed_opponent_pool import FixedOpponentEntry
@@ -217,7 +217,8 @@ def _run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[s
 
     with declared_torch_state(RUST_THREADS):
         t0 = time.perf_counter()
-        model = load_checkpoint_strict(trainee, device=device)
+        # an ARCHIVED trainee pickles the policy kwargs deletion pass L1 removed (`use_popart` ...)
+        model = load_checkpoint_strict(trainee, device=device, **historical_load_kwargs(trainee))
         model.policy.eval()
         # FIXED opponents as `rust_env_setup` loads and declares them (module docs).
         version = current_model_version(load_mappings(), **arch_toggles_from_model(model)) if fixed else None

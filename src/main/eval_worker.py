@@ -51,8 +51,8 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 from poke_env.ps_client.server_configuration import localhost_server_configuration
 
 from agents.inference.player import RLPlayer
-from agents.model.snapshot import (current_model_version, load_checkpoint_strict, load_opponent_snapshot,
-                                   load_foreign_opponent, maybe_compile_extractor)
+from agents.model.snapshot import (current_model_version, historical_load_kwargs, load_checkpoint_strict,
+                                   load_opponent_snapshot, load_foreign_opponent, maybe_compile_extractor)
 from agents.observation.state_encoder import load_mappings
 from agents.training.eval_callback import (
     BATTLE_FORMAT, build_eval_opponents, build_eval_players, episode_length_sum,
@@ -495,7 +495,8 @@ def _run(cfg: dict) -> None:
     cycle_tag = cfg["cycle_tag"]
 
     # Frozen trainee weights — inference only, so the base algorithm + env=None is enough.
-    model = load_checkpoint_strict(cfg["snapshot"], device=device)
+    # (an ARCHIVED trainee pickles the policy kwargs deletion pass L1 removed — `use_popart` ...)
+    model = load_checkpoint_strict(cfg["snapshot"], device=device, **historical_load_kwargs(cfg["snapshot"]))
     # The trainee plays EVERY eval game, so it is the hottest forward in this process. Same frozen
     # CPU B=1 shape as a training opponent => the same ~6.5x. Unlike an env worker this is a fresh
     # `Popen`d process (not forked from the trainer's forkserver), so it cannot inherit a compiled
