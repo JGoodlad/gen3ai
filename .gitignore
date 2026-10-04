@@ -44,3 +44,7 @@ tmp/
 # to no single run, so they live outside models/ (which probes treat as read-only) at the
 # run-agnostic root utils.paths.harvest_dir() resolves. $GEN3AI_HARVEST_DIR overrides.
 harvest/
+
+# The eval COUNT ledger's persisted indexes (F-ED-22): caches derived from the append-only streams, rebuilt on demand.
+# A ledger root can be a measurement directory under designs/ — the cache must never ride along into a commit.
+.ledger_index/

@@ -11567,3 +11567,30 @@ their pin's code and are unaffected. No run is live.
 - **Findings:** F-ED-22 (every claim / append re-folds the archive's whole requests stream, ~7 µs per event — the
   per-cycle cost grows with every run in the archive), F-ED-23 (the margin-filtered digest covers almost nothing on an
   early policy).
+## 2026-10-04 — F-ED-22 fixed: the eval ledger's claim / append / request-scoped read cost is FLAT in the archive's size (`agents/training/eval_ledger/`; ledger code only, no model change, no config bump, no row-schema change)
+
+- **The problem (eval U2's F-ED-22).** Every `claim` and `append_row` folded the WHOLE archive's requests stream under the
+  lock (~7 µs per event: 13 ms at 1.7k events, 0.5 s at 50k), and every `read` scanned and validated every row shard.
+- **The fix.** `event_index.py` keeps the fold in `<ledger>/.ledger_index/events.sqlite3` and each operation, under the same
+  file lock, first folds only the bytes beyond each events file's cursor, through `queue.apply_event` — the new single
+  implementation of what an event means, which `queue.fold` is now made of — on a state loaded for just the request / unit /
+  claim the event touches; the seed-block uniqueness check is a primary-key lookup. `row_index.py` serves `requests="own"` /
+  `"family"` reads from a per-row index (location, `ts`, request, family, `supersedes`, batch key, seed block, content sha)
+  and answers only when it can prove the scan would agree (else the reader scans, with its typed errors). `incremental.py`
+  holds the cursor machinery and the SQLite plumbing. The indexes are CACHES: rebuilt from the append-only streams, in one
+  transaction, when missing, corrupt, another format, stale (a file shrank / was rewritten at its tail / vanished) or when a
+  new event's `seq` is not above the indexed maximum; `python -m main.eval_ledger audit` re-folds every file up to its cursor
+  and compares (`event index:` / `row index:` problems), `audit --rebuild-index` rebuilds. `GEN3AI_LEDGER_INDEX=0` runs the old
+  full fold / scan. `.ledger_index/` is git-ignored.
+- **Unchanged (tested as a differential against the full fold / scan):** the uniqueness invariants (batch key AND seed block),
+  claims under the lock, dead-writer voiding, repair of a killed writer's row, corrections, `as_of`, the static reader gate
+  (`event_index` / `row_index` / `incremental` join its raw list), and every refusal's text. `LedgerWriter._state()` with no
+  arguments is still the whole state (O(archive); a tool or a test); the writer's own paths pass `scoped=True`.
+- **Measured** (`designs/research_state/measurements/eval_ledger_perf_2026-10-04/`; claim · append, ms, at 1.7k → 5.1k → 50k
+  events): tmpfs 12.8 · 12.8 → 37.1 · 37.1 → 473 · 489 BEFORE, **0.43 · 0.58 → 0.43 · 0.60 → 0.63 · 0.80** AFTER; the archive's
+  NVMe 18 · 23.5 → 43 · 48.6 → 501 · 522 BEFORE, **5.8 · 11.0 → 5.3 · 11.0 → 6.1 · 11.2** AFTER (the event's own fsync is the
+  rest); a request-scoped `read` at 50k events 1,241 → 2.3 ms. The first operation on an unindexed archive builds the index
+  once (0.84 s at 50k events).
+- **Findings:** F-ED-22 FIXED (design_evaluation.md §0b.4 / §0b.7 / §11.3). Left, stated: an in-place edit of an old
+  same-size region is invisible to the writer between audits; `audit`, `show`, `verify`, `any` reads and the decisions /
+  references streams are still full scans; the O(files) `stat` term grows with the number of writer processes.

@@ -14,7 +14,8 @@ id>.jsonl`` · ``README.md``. ONE WRITER PER FILE: ``writer id`` = UTC time + a 
 append is flushed and fsynced. A legacy FLAT directory of v1 shards (``<dir>/ledger.*.jsonl``, what ``main.h2h``
 and the bot round robin wrote before v2) is still scanned, as producer ``legacy``.
 
-The SCANS here are the only code that opens a ledger file for reading. Every consumer reads through
+The SCANS here (and the persisted indexes built on them, ``event_index`` / ``row_index`` — caches under
+``<root>/.ledger_index/``, F-ED-22) are the only code that opens a ledger file for reading. Every consumer reads through
 ``eval_ledger.read`` with a declaration (``reader.py``); ``src/eval_ledger_reader_gate_test.py`` holds the line.
 """
 from __future__ import annotations
@@ -56,11 +57,28 @@ README = """# The eval COUNT ledger (`gen3_eval_count_row_v2`)
 Append-only. One row per (batch x matchup). NEVER edit, move or delete a file here: a correction is a new row
 that `supersedes` the old one. Spec: `designs/endstate/design_evaluation.md` §0b. Code:
 `src/agents/training/eval_ledger/`. Check it: `python -m main.eval_ledger audit`.
+(`.ledger_index/` is the one exception: a CACHE derived from the streams, safe to delete and rebuilt on demand.)
 """
 
 
 class LedgerPathError(RuntimeError):
     """A ledger root this writer may not use."""
+
+
+@dataclass
+class IOStats:
+    """Process-global counters of what the ledger's readers PARSE — the performance-SHAPE tests assert on these
+    (F-ED-22): a claim or an append at any archive size parses the same handful of lines, and the full scans
+    (:func:`iter_jsonl`) count here too, so a regression to a whole-archive fold is visible as a count that grows."""
+
+    lines_parsed: int = 0
+    bytes_read: int = 0
+
+    def reset(self) -> None:
+        self.lines_parsed = self.bytes_read = 0
+
+
+IO = IOStats()
 
 
 class LedgerLockTimeout(RuntimeError):
@@ -215,6 +233,12 @@ def locked(root: Path, timeout_s: float = LOCK_TIMEOUT_S) -> Iterator[None]:
         os.close(fd)
 
 
+def lock_held(root: Path) -> bool:
+    """Does THIS process hold the ledger lock on ``root`` (the persisted indexes are updated only under it)?"""
+    with _LOCKS_GUARD:
+        return os.path.realpath(root) in _LOCKS
+
+
 # ------------------------------------------------------------------------------------------------ files
 def append_line(path: Path, obj: Any) -> None:
     """Append one canonical JSON line, flushed and fsynced (a batch is minutes of play: it must survive a kill)."""
@@ -232,6 +256,8 @@ def iter_jsonl(path: str) -> Iterator[Tuple[int, Any]]:
         for n, line in enumerate(f, 1):
             if not line.strip():
                 continue
+            IO.lines_parsed += 1
+            IO.bytes_read += len(line)
             try:
                 yield n, json.loads(line)
             except ValueError as e:
@@ -248,6 +274,11 @@ def one_per_stem(paths: List[str]) -> List[str]:
 def _files(d: Path, prefix: str) -> List[str]:
     return one_per_stem(glob.glob(os.path.join(str(d), f"{prefix}*{SHARD_SUFFIX}"))
                         + glob.glob(os.path.join(str(d), f"{prefix}*{SHARD_SUFFIX}.gz")))
+
+
+def event_files(root: Path) -> List[str]:
+    """Every requests-stream file under ``root`` (one per stem, the ``.gz`` when both exist), in scan order."""
+    return _files(root / REQUESTS, EVENTS_PREFIX)
 
 
 def row_shards(root: Path) -> List[Tuple[str, str]]:

@@ -168,11 +168,14 @@ checked from a primary source. Every row ends with what the reference implies FO
 |---|---|
 | `schema` | the v2 row and its validator; the v1 row, validated AS WRITTEN, and its deterministic upgrade on read; the three companion records; the closed lists (§0b.2's table); the batch key and the seed block (§0b.4); the outcome digest |
 | `store` | `<archive>/_ledger/` and its layout, `check_write_root`, the one `flock`, the fsynced appends, the per-stream SCANS (the only code that opens a ledger file), closing a shard, `close-stale` |
-| `queue` | the request queue as a deterministic fold of the requests stream; the void rule |
+| `queue` | the request queue as a deterministic fold of the requests stream (`fold`, built of `apply_event` — the ONE implementation of what an event means); the void rule |
+| `incremental` | reading an append-only stream incrementally: the per-file cursor (offset, lines, a tail digest, size, mtime), the stale-cursor refusal, the SQLite plumbing the two indexes share (F-ED-22) |
+| `event_index` | the persisted, INCREMENTAL fold of `requests/` (`<root>/.ledger_index/events.sqlite3`): the writer's claim / append state costs O(new events + this request's records), not O(archive) (F-ED-22; §0b.4) |
+| `row_index` | the persisted index of the row shards (`rows.sqlite3`): a read of ONE request / family costs its rows, with the ledger-wide duplicate guarantee kept (F-ED-22; §0b.7) |
 | `writer` | `LedgerWriter`: requests, families, claims, claimed row appends, decisions, references, `close` |
 | `reader` | `ReaderDecl` / `RegimeFilter` / `read` / `read_by_regime` (§0b.7) |
 | `cells` | per-cell INCONCLUSIVE, a family read across its looks, the pooled pair estimate (conditional only) |
-| `audit` | `audit` / `verify` / `show` |
+| `audit` | `audit` / `verify` / `show`; `audit` also re-folds the streams against the persisted indexes (`--rebuild-index` drops and rebuilds them) |
 
 **Two writers exist, both migrated to v2 STORAGE-ONLY** (games unchanged; `measurements/eval_ledger_u1_2026-10-03/`):
 - `main.h2h`: writes to `<archive>/_ledger/` by default (or a root its caller names outside `models/`), every batch
@@ -270,6 +273,10 @@ pairs.voided`; `flags = ["digest_unrecorded"]`. `regime_id` is recomputed over t
   so cross-run questions need no new run. Pytest SEALS the archive (the `run_archive` fixture).
 - **Layout:** `_ledger/rows/<producer>/ledger.<writer_id>.jsonl` (gzipped once closed); `_ledger/decisions/`,
   `_ledger/requests/`, `_ledger/references/`; `_ledger/backfill/manifest.json`; `_ledger/README.md`.
+- **`_ledger/.ledger_index/`** (F-ED-22) holds the two persisted indexes, `events.sqlite3` and `rows.sqlite3`. They are
+  CACHES derived from the append-only streams — never the record, safe to delete (the next operation rebuilds them), and
+  git-ignored (a measurement directory a writer was pointed at is not littered into a commit). A reader builds one only
+  for the archive's own ledger or a root that already has the directory; any other root is scanned.
 - **One writer per file.** `writer_id` = UTC time + a per-process counter + host + pid + producer
   (`20261004T061142Z.0-<host>-<pid>-h2h`; the counter, added in the build, keeps two writers one process opens in one
   second apart). Rows are fsynced per append. A legacy FLAT directory of v1 shards (`<dir>/ledger.*.jsonl`) is still
@@ -333,6 +340,21 @@ so this is a cheap guard, not a hot path. It costs a claim id and an audit.
 - **The lock** is bounded (60 s, then `LedgerLockTimeout`; it is held for milliseconds) and re-entrant in a process.
 - **`void_reason`** is deterministic in (the clock, the host, a liveness oracle, the claimant's shard): a pid is
   checked only on its own host; another host's claim is voided only by expiry, strictly after `expires_at`.
+- **The queue state is INCREMENTAL (F-ED-22 FIXED, 2026-10-04).** Claims and claimed appends used to fold the whole
+  archive's requests stream under the lock (~7 µs per event: 0.5 s per claim at 50,000 events). `event_index` keeps the
+  fold in `<root>/.ledger_index/events.sqlite3` and each operation, under the SAME lock, first folds only the bytes beyond
+  each events file's cursor, through `queue.apply_event` (the one function `queue.fold` is made of) on a state loaded for
+  just the keys the event touches (its request, unit, claim); the seed-block uniqueness check is a primary-key lookup.
+  So a claim or an append costs O(new events + this request's records) plus one `stat` per events file — flat in the
+  archive's size (measured, `measurements/eval_ledger_perf_2026-10-04/`) — and the uniqueness invariants (batch key AND seed
+  block), claims under the lock, dead-writer voiding, corrections and `as_of` behave exactly as before (the index is checked
+  event for event against the full fold, `index_test.py`; `GEN3AI_LEDGER_INDEX=0` runs the old full fold, the tests' oracle).
+  **The index is a CACHE, never trusted blindly** — rebuilt from the streams, in one transaction, when it is missing,
+  another format or corrupt (SQLite refuses it), when a tracked file shrank, was rewritten at its tail (a digest of the last
+  64 consumed bytes) or vanished, or when a new event's `seq` is not above the indexed maximum (the sorted from-scratch fold
+  must place it). A malformed event is the same typed `LedgerSchemaError` as before. **What it cannot see is an in-place edit
+  of an old, same-size region** (the streams are append-only: nothing does that): `python -m main.eval_ledger audit`
+  re-folds every file up to its cursor and compares (`event index:` / `row index:` problems; `--rebuild-index` rebuilds).
 
 ### 0b.5 Producers and their migration
 
@@ -422,6 +444,16 @@ rows = eval_ledger.read(DECL, request_id=..., players=..., as_of=...)
 - **A family across looks** is `cells.looks(read)`: its requests in the order opened, each a list of `Cell`s with a
   verdict (OK / INCONCLUSIVE + reasons, §9.1), so X5 §7.4's per-cell rule and its Δ̂ over cells are expressible
   (tested in `reader_test.py`).
+- **A read of ONE request or family costs its rows (F-ED-22 FIXED, 2026-10-04).** `requests="own"` / `"family"` reads
+  (the SPRT decision, a per-request resume, an X5 look) are served by `row_index` — per row: where it is (shard, line,
+  byte offset), its `row_id`, `ts`, request, family, `supersedes`, batch key, seed block and content sha — and an `any`
+  read still consumes the archive (nothing to save). **It answers only when it can prove the scan would agree, else the
+  reader runs the full scan, which raises its typed errors with their full messages:** a malformed row, a repeated
+  `row_id`, an unterminated shard line, or a batch key / seed block held by two LIVE rows as of the read (a correction's
+  extra row is not live: it passes, as in the scan) → scan; a row body that is not what was indexed → rebuild once. The
+  ledger-wide guarantees therefore hold unchanged (every returned row validated, a correction applied as of `as_of`, NO
+  duplicate anywhere, `as_of` restricting rows and corrections); they are tested as a differential against the scan over
+  every scope and every `as_of`, boundaries included (`index_test.py`).
 
 ## 0c. Reuse rules (one ledger, many readers)
 1. **A sequential DECISION counts only rows produced FOR it, after it started:** its own request, or its own family
@@ -1100,6 +1132,8 @@ adds the monitor and the plateau unit).
 | 17 | **U10** | the Rust p1 policy route (balanced seats) with parity gates; a protocol bump when it lands | 2.0 | opus-high | U1 (not blocking) | no (Rust core crossing) |
 | 18 | U11 *(optional)* | the CPU worker + §4.5's throughput test, ONLY if §4.5's trigger fires | 2.0 + ~9 h of a production run | opus-high | U4 | no |
 
+- **F-ED-22 unit — DONE 2026-10-04** (not a numbered unit: the fix U2 left to the ledger's own code, standing rule 9): the
+  persisted incremental indexes of §0b.4 / §0b.7. It landed before the X5 A/B and the first multi-run archive.
 - **Total ≈ 22.5 agent-days without U11** (+2 if it is triggered).
 - **The critical path to X26** is U1 → U2, ≈ 4 agent-days. U0, U3 and U6 run beside it.
 - **T19** (U4–U4b) and the cycle monitor + plateau (U5, U9) must be ready before X26's first plateau-relevant check.
@@ -1128,7 +1162,7 @@ adds the monitor and the plateau unit).
    (`src/eval_ledger_reader_gate_test.py`); never open a ledger file.
 6. **Not built, and U2 should not need:** a run-step `as_of` (add it when cycle rows exist: map step → the cycle
    request's `open` ts); verdict re-derivation in `verify` (`audit.RULES` is empty until a rule lands); an index for
-   large ledgers (every read scans the whole root — fine at today's size, revisit at archive scale, §2.6).
+   large ledgers (BUILT since — F-ED-22, `event_index` / `row_index`, §0b.4 / §0b.7; this item is the state at U1).
 7. **Hazards.** A pool worker that is TERMINATED (a `multiprocessing.Pool` context exit) never closes its shard —
    join the pool (`bot_rr.py` does) or let `close-stale` gzip it after 24 h. The DEBUG smoke never exercises the GPU
    window (U2's real-launch gate).
@@ -1167,10 +1201,9 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
    `eval_results.jsonl` `counts`; `rust_eval/cycle_wall_s` within noise of a pre-U2 launch (the `GameSink` makes the
    executor compute each policy opponent decision's top-2 margin: estimated ≤ 0.3 s per production cycle, UNMEASURED);
    and, with `--promotion-sprt`, one decision row per tested candidate.
-5. **Hazards.** (a) Every claim and append FOLDS the whole requests stream of the ARCHIVE (F-ED-22): ~7 µs per event
-   measured, and a cycle does ~2 × (opponents) + 2 × (regimes) folds; at today's size it is milliseconds, but the stream is shared by
-   every run, so it grows without bound — an incremental fold or an index is needed before the archive holds tens of
-   runs' cycles. (b) The margin-filtered digest covers almost nothing on an early policy (F-ED-23); the all-games
+5. **Hazards.** (a) ~~Every claim and append FOLDS the whole requests stream of the ARCHIVE (F-ED-22)~~ — **FIXED
+   2026-10-04** (the F-ED-22 unit: an incremental, persisted fold, §0b.4; a claim / append is flat in the archive's size —
+   measured 0.43 ms at 1.7k and 0.63 ms at 50k events on tmpfs, 5.8 and 6.1 ms on the archive's NVMe — against 13 and 473 ms). (b) The margin-filtered digest covers almost nothing on an early policy (F-ED-23); the all-games
    digest is the same-device replay's check. (c) Each trainer process (every launcher restart) opens its own row shard
    and events file: many small files over a long run.
 
@@ -1293,7 +1326,7 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
   diffuse excess cyclic SD of ≈ 1.7 pp or a single hole of ≈ 6.5 pp. Geometric thinning alone is blind to a hole at
   an unplayed lag (§2.5).
 
-- **F-ED-22 (MEASURED, eval U2): the ledger writer's cost per claim / append grows with the WHOLE archive's requests
+- **F-ED-22 (MEASURED, eval U2; FIXED 2026-10-04): the ledger writer's cost per claim / append grows with the WHOLE archive's requests
   stream.** Every `claim` and `append_row` re-folds every `requests/events.*.jsonl` of the archive under the lock: 11.9
   ms per claim at 1,700 events (5 files) and 37.1 ms at 5,100 (10 files), ≈ 7 µs per event, linear. The in-loop
   producers do ≈ 36 folds per cycle (15 opponents in 3 regimes) and add ≈ 36 events per cycle, ≈ 1,400 per 75M run,
@@ -1303,6 +1336,18 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
   are U1's shared code; standing rule 9): an incremental fold (per-file byte offsets; seq is assigned under the lock,
   so new events always fold after old ones) and a per-request row index are the fix, needed before the archive holds
   ~10 runs' cycles. Measured with `measurements/eval_ledger_u2_2026-10-04/foldbench.py`.
+  **FIXED 2026-10-04 (the F-ED-22 unit; §0b.4 and §0b.7 say what was built).** A persisted, incremental index of the requests
+  stream (`event_index`) serves the writer and one of the row shards (`row_index`) serves a request- or family-scoped read.
+  Measured with `measurements/eval_ledger_perf_2026-10-04/perfbench.py` (a fresh writer on an archive of 1.7k / 5.1k / 50k
+  events; claim · append, ms): **tmpfs 0.43 · 0.58 → 0.43 · 0.60 → 0.63 · 0.80** (before 12.8 · 12.8 → 37.1 · 37.1 → 473 · 489);
+  **NVMe (the archive's disk, fsync-bound) 5.8 · 11.0 → 5.3 · 11.0 → 6.1 · 11.2** (before 18.0 · 23.5 → 43.0 · 48.6 → 501 · 522;
+  the remaining ~5 ms is the event's own fsync). A request-scoped `read` at 50k events: 1,241 → 2.3 ms. The first operation on
+  an archive that has no index builds it once: 0.84 s at 50k events (17 µs per event). The residual growth is one `stat` per
+  events file. **Hazards left, stated:** (1) an in-place edit of an old, same-size region of a stream is invisible to the
+  writer between audits (`audit` re-folds against the index; the streams are append-only, nothing edits them); (2) `audit`
+  itself, `show`, `verify` and an `any` read are full scans by design; (3) `decisions/` and `references/` are still scanned
+  whole (one record per verdict / reference: small, not indexed); (4) one events file and one row shard per writer process
+  still accumulate (the per-file `stat` is the O(files) term).
 - **F-ED-23 (MEASURED, eval U2): the margin-filtered outcome digest covers almost nothing on an early policy.** In the
   `--debug --debug-eval` smoke all 1,800 games had a decision inside the GPU bar (2e-3), so every row's
   `outcome_digest` hashed an EMPTY vector; on the digest proof's perturbed fresh policies 40 of 48 games were excluded.

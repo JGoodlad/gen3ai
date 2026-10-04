@@ -12,7 +12,10 @@ The invariants (each a line in :attr:`AuditReport.problems` when broken):
   names a row on disk;
 * the requests stream folds without contradiction (``queue.fold``);
 * every decision's consumed rows exist (live) and their digest matches; its request / family resolves;
-* reference ids are unique.
+* reference ids are unique;
+* the persisted INDEXES (``.ledger_index/``, F-ED-22 — caches, never the record) are exactly what the streams fold to
+  as far as their cursors have read (``event_index.verify`` / ``row_index.verify``: every file re-read up to its
+  cursor and compared). ``rebuild_index=True`` (``audit --rebuild-index``) drops and rebuilds them first.
 
 ``verify`` re-checks one decision: its rows and digest. Re-deriving its VERDICT needs the decision's rule
 registered in :data:`RULES` — none is yet (the SPRT, plateau and A/B rules land with U4 / U9 / X5)."""
@@ -23,7 +26,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
+from agents.training.eval_ledger import event_index as EI
 from agents.training.eval_ledger import queue as Q
+from agents.training.eval_ledger import row_index as RI
 from agents.training.eval_ledger import schema as S
 from agents.training.eval_ledger import store as ST
 
@@ -42,7 +47,28 @@ class AuditReport:
         return not self.problems
 
 
-def audit(root: Path) -> AuditReport:
+def check_indexes(root: Path, *, rebuild: bool = False) -> List[str]:
+    """The persisted indexes' problems (empty = each is what the streams fold to up to its cursors, or absent).
+    ``rebuild`` drops and rebuilds both from the streams first (under the ledger lock). A root that cannot be
+    written, or a stream that does not parse, is reported — never raised."""
+    from agents.training.eval_ledger import incremental as INC
+    import sqlite3
+
+    out: List[str] = []
+    if rebuild:
+        try:
+            with ST.locked(root):
+                EI.EventIndex(root).rebuild()
+            RI.RowIndex(root).rebuild()
+        except (OSError, sqlite3.Error, INC.IndexUnavailable, S.LedgerSchemaError) as e:
+            out.append(f"index rebuild failed: {type(e).__name__}: {e}")
+            return out
+    out.extend(EI.EventIndex(root).verify())
+    out.extend(RI.RowIndex(root).verify())
+    return out
+
+
+def audit(root: Path, *, rebuild_index: bool = False) -> AuditReport:
     rep = AuditReport(root=str(root))
     if not root.exists():
         rep.counts = {"rows": 0}
@@ -141,6 +167,7 @@ def audit(root: Path) -> AuditReport:
             P.append(f"{where}: decision {d['decision_id']} names family {d['family']!r}, not registered")
     ref_ids = Counter(r["reference_id"] for r, _w in references)
     P.extend(f"reference {k} appears {n} times" for k, n in ref_ids.items() if n > 1)
+    P.extend(check_indexes(root, rebuild=rebuild_index))
     rep.counts = {"rows": len(scanned), "live_rows": len(live), "requests": len(st.requests),
                   "families": len(st.families), "claims": len(st.claims),
                   "live_claims": sum(1 for c in st.claims.values() if c.live), "decisions": len(decisions),

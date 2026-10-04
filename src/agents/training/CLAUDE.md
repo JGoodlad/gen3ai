@@ -341,6 +341,17 @@ failed or interrupted test un-rerunnable. Eval-only fields like this one are REC
 `eval_ledger.read` with a spelled-out `ReaderDecl` (purposes, regime, requests, selection, flags_ok, inference) — the static
 gate `src/eval_ledger_reader_gate_test.py` (EMPTY allowlist) fails anything else, and every read refuses a duplicate batch
 or seed block. v1 rows are upgraded on read, never rewritten. `python -m main.eval_ledger audit` checks it.
+🚨 **THE LEDGER'S COST IS FLAT IN THE ARCHIVE'S SIZE (F-ED-22 fixed; `event_index.py`, `row_index.py`, `incremental.py`).** A
+claim / append folds only the requests-stream bytes beyond each file's cursor, through the same `queue.apply_event` the full
+`queue.fold` is made of, under the one file lock; a request- / family-scoped `read` costs that request's rows. Both ride
+persisted SQLite indexes in `<ledger>/.ledger_index/` — CACHES, git-ignored, safe to delete: rebuilt from the append-only
+streams when missing, corrupt, stale (a file shrank / was rewritten at its tail / vanished) or out of `seq` order; an
+in-place edit of an old region is caught only by `audit` (re-folds against the index; `audit --rebuild-index` rebuilds). The
+row index answers only when it can prove the scan would agree, else the reader scans (typed errors, full messages), and it
+is built only for the archive's own ledger or a root that already has `.ledger_index/` — a measurement directory is never
+littered. **Never trust a speed claim here without the counts:** `store.IO` counts every line / byte parsed and
+`index_test.py` asserts the SHAPE (a cycle at 2 and 12 earlier cycles parses the same lines; the teeth case shows the
+pre-index fold growing). `GEN3AI_LEDGER_INDEX=0` runs the old full fold / scan (a debugging hatch, the tests' oracle).
 🚨 **THE IN-LOOP EVAL WRITES THE LEDGER TOO — a DUAL WRITE (`cycle_ledger.py`, eval U2).** The trainer builds ONE
 `CycleLedger` at startup (`main/train/callbacks.py`) and the eval cycle (`eval_launch.launch_rust_eval_cycle`) and the
 SPRT promotion append rows (protocol `gen3_eval_protocol_v1_inloop`; purposes `cycle` / `promotion`; one request per

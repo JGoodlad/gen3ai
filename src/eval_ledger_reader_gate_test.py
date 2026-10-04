@@ -9,7 +9,8 @@ rules — pooled regimes, a peeked request, a double-counted replay — and noth
 
 **The rules** (outside the ledger's own code, :data:`LEDGER_MODULES`; test files are exempt):
 
-1. NO RAW ACCESS: the ledger's internals (``store`` — the scans and files, ``queue`` — the fold, ``audit``, and the
+1. NO RAW ACCESS: the ledger's internals (``store`` — the scans and files, ``queue`` — the fold, ``audit``, the persisted
+   indexes ``event_index`` / ``row_index`` / ``incremental`` — F-ED-22 — and the
    reader's ``live_rows`` / ``_select``) are never imported or reached through an alias.
 2. EVERY READ IS DECLARED: a call to ``read`` / ``read_by_regime`` passes, as its first argument (or ``decl=``),
    a ``ReaderDecl(...)`` call or a name bound at MODULE level to one; and that call spells out EVERY field by
@@ -47,7 +48,7 @@ LEDGER_MODULES = ("agents/training/eval_ledger/", "main/eval_ledger.py")
 #: EMPTY by rule.
 ALLOWLIST: Tuple[str, ...] = ()
 PACKAGE = "agents.training.eval_ledger"
-RAW_SUBMODULES = frozenset({"store", "queue", "audit"})
+RAW_SUBMODULES = frozenset({"store", "queue", "audit", "event_index", "row_index", "incremental"})
 RAW_NAMES = frozenset({"live_rows", "_select", "scan_rows", "scan_events", "scan_decisions", "scan_references",
                        "iter_jsonl", "row_shards", "shard_has_unit"})
 READ_FUNCS = frozenset({"read", "read_by_regime"})
@@ -315,6 +316,8 @@ _GOOD_DECL = ('DECL = L.ReaderDecl(name="x", purposes=frozenset({"ab"}), regime=
     "from agents.training import eval_ledger as L\nrows = L.store.scan_rows(p)\n",
     "from agents.training.eval_ledger import reader as R\nrows = R.live_rows(p)\n",
     "from agents.training.eval_ledger.audit import audit\n",
+    "from agents.training.eval_ledger import row_index\n",
+    "from agents.training.eval_ledger.event_index import EventIndex\n",
     # undeclared reads
     "from agents.training import eval_ledger as L\nL.read(root='x')\n",
     "from agents.training import eval_ledger as L\ndef f(d):\n    return L.read(d)\n",

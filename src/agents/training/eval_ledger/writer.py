@@ -27,6 +27,7 @@ import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence
 
+from agents.training.eval_ledger import event_index as EI
 from agents.training.eval_ledger import queue as Q
 from agents.training.eval_ledger import schema as S
 from agents.training.eval_ledger import store as ST
@@ -101,8 +102,21 @@ class LedgerWriter:
     def _lock(self) -> Any:
         return ST.locked(self.root, self.lock_timeout_s)
 
-    def _state(self) -> Q.QueueState:
-        st = Q.fold(e for e, _w in ST.scan_events(self.root))
+    def _state(self, *, scoped: bool = False, request: Optional[str] = None, unit: Optional[Q.Unit] = None,
+               claim_seq: Optional[int] = None, live: bool = False) -> Q.QueueState:
+        """The queue state, under the lock (re-entrant). ``scoped=True`` is the writer's own path (F-ED-22): the
+        families, ``max_seq``, the fold's problems, the seed-block table and — loaded — only the records of
+        ``request`` / ``unit`` / ``claim_seq`` / (``live``) every live claim, read from the persisted index, which
+        first folds only the events appended since its last look: O(new events + this request's records), not
+        O(archive). With ``scoped=False`` it is the WHOLE state (O(archive); a tool or a test).
+        ``GEN3AI_LEDGER_INDEX=0`` folds the whole stream either way (the pre-index behaviour; the tests' oracle)."""
+        with self._lock():
+            if not EI.enabled():
+                st = Q.fold(e for e, _w in ST.scan_events(self.root))
+            elif scoped:
+                st = EI.EventIndex(self.root).state(request=request, unit=unit, claim_seq=claim_seq, live=live)
+            else:
+                st = EI.EventIndex(self.root).full_state()
         if st.problems:
             raise LedgerClaimError(f"the requests stream under {self.root} is inconsistent; run `python -m "
                                    "main.eval_ledger audit`:\n  " + "\n  ".join(st.problems[:10]))
@@ -121,7 +135,7 @@ class LedgerWriter:
         """Register a request FAMILY (idempotent; different terms are :class:`RequestSpecError`). Its ``protocol``
         is PINNED: the ledger refuses a row into the family at another one (§0c rule 6)."""
         with self._lock():
-            st = self._state()
+            st = self._state(scoped=True)
             new = {"family_id": family_id, "decision_kind": decision_kind, "rule": rule, "protocol": protocol,
                    "commit": commit}
             old = st.families.get(family_id)
@@ -139,7 +153,7 @@ class LedgerWriter:
         terms are :class:`RequestSpecError`, naming the fields). A family must be registered first; a request in a
         family inherits the family's pinned protocol, and may not name another."""
         with self._lock():
-            st = self._state()
+            st = self._state(scoped=True, request=request_id)
             if family is not None:
                 fam = st.families.get(family)
                 if fam is None:
@@ -162,7 +176,7 @@ class LedgerWriter:
     def finish_request(self, request_id: str, *, cancel_reason: Optional[str] = None) -> Dict[str, Any]:
         """``done`` (or ``cancel`` with a reason) for an open request."""
         with self._lock():
-            st = self._state()
+            st = self._state(scoped=True, request=request_id)
             if request_id not in st.requests:
                 raise RequestSpecError(f"request {request_id!r} was never opened")
             if cancel_reason is not None:
@@ -175,7 +189,7 @@ class LedgerWriter:
     def void_dead(self, now: Optional[_dt.datetime] = None) -> List[Dict[str, Any]]:
         """Apply the void rule to EVERY live claim (the scheduler's sweep); returns the ``void`` events written."""
         with self._lock():
-            st = self._state()
+            st = self._state(scoped=True, live=True)
             out = []
             for c in sorted(st.claims.values(), key=lambda c: c.seq):
                 why = Q.void_reason(c, now=now or self.clock(), host=self.host, alive=self.alive,
@@ -199,7 +213,7 @@ class LedgerWriter:
         sha-less side) exactly as the row's :func:`schema.batch_key` will spell them."""
         u: Q.Unit = (str(request_id), int(batch), str(player), str(opponent), str(regime_id))
         with self._lock():
-            st = self._state()
+            st = self._state(scoped=True, request=request_id, unit=u)
             req = st.requests.get(request_id)
             if req is None:
                 raise RequestSpecError(f"request {request_id!r} is not open")
@@ -260,7 +274,7 @@ class LedgerWriter:
         if u != claim.unit:
             raise LedgerClaimError(f"the row's unit {u} is not the claim's {claim.unit}")
         with self._lock():
-            st = self._state()
+            st = self._state(scoped=True, request=row["request"]["id"], unit=u, claim_seq=claim.seq)
             c = st.claims.get(claim.seq)
             if c is None or c.writer_id != self.writer_id or c.unit != u:
                 raise LedgerClaimError(f"claim seq {claim.seq} is not this writer's claim on {u}")

@@ -1,6 +1,9 @@
 """``python -m main.eval_ledger`` — the eval COUNT ledger's operator CLI (design_evaluation.md §0b; eval unit U1).
 
-    python -m main.eval_ledger audit [--root DIR] [--json]           # validate everything + every cross invariant
+    python -m main.eval_ledger audit [--root DIR] [--json] [--rebuild-index]
+                                                                     # validate everything + every cross invariant
+                                                                     #   (+ the persisted indexes; --rebuild-index
+                                                                     #   drops and rebuilds them from the streams)
     python -m main.eval_ledger show [--root DIR]                     # rows by producer / purpose / regime; the queue
     python -m main.eval_ledger verify <decision_id> [--root DIR]     # one decision's rows + digest (+ verdict)
     python -m main.eval_ledger void-dead [--root DIR]                # the void rule over every live claim
@@ -40,6 +43,10 @@ def _parser() -> argparse.ArgumentParser:
         p.add_argument("--root", default=None)
         if name in ("audit", "show"):
             p.add_argument("--json", action="store_true")
+        if name == "audit":
+            p.add_argument("--rebuild-index", action="store_true",
+                           help="drop and rebuild the persisted indexes (<root>/.ledger_index/, caches) from the "
+                                "streams, then verify them (writes only that directory)")
         if name == "close-stale":
             p.add_argument("--apply", action="store_true", help="gzip (default: report what would be closed)")
     v = sub.add_parser("verify")
@@ -63,7 +70,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     a = _parser().parse_args(argv)
     root = _root(a)
     if a.cmd == "audit":
-        rep = AU.audit(root)
+        rep = AU.audit(root, rebuild_index=a.rebuild_index)
         if a.json:
             print(json.dumps({"root": rep.root, "ok": rep.ok, "problems": rep.problems, "counts": rep.counts},
                              indent=1, sort_keys=True))

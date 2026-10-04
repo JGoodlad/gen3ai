@@ -31,11 +31,15 @@ from __future__ import annotations
 
 import datetime as _dt
 import os
+import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, FrozenSet, Iterable, Iterator, List, Mapping, Optional, Sequence, Tuple
 
+from agents.training.eval_ledger import event_index as EI
+from agents.training.eval_ledger import incremental as INC
 from agents.training.eval_ledger import queue as Q
+from agents.training.eval_ledger import row_index as RI
 from agents.training.eval_ledger import schema as S
 from agents.training.eval_ledger import store as ST
 from agents.training.eval_ledger.writer import DuplicateBatchError
@@ -199,6 +203,32 @@ def live_rows(root: Path, as_of: Optional[_dt.datetime] = None) -> List[ST.Scann
     return live
 
 
+def _scoped_rows(decl: ReaderDecl, root: Path, as_of: Optional[_dt.datetime], request_id: Optional[str],
+                 family: Optional[str]) -> Optional[List[ST.ScannedRow]]:
+    """The live rows of the ONE request / family a declared read names, from the persisted row index (F-ED-22) —
+    ``None`` whenever the full scan must answer (an ``any`` read, no usable index, or an index that cannot prove the
+    scan would agree: ``row_index`` module docstring)."""
+    if decl.requests == "any" or not RI.RowIndex.usable(root):
+        return None
+    try:
+        return RI.RowIndex(root).rows_for(request_id=request_id if decl.requests == "own" else None,
+                                          family=family if decl.requests == "family" else None, as_of=as_of)
+    except (OSError, sqlite3.Error, INC.IndexUnavailable):
+        return None
+
+
+def _family_of(path: Path, family: Optional[str], t: Optional[_dt.datetime]) -> Optional[Dict[str, Any]]:
+    """The family's registration as of ``t`` — from the event index when the root has (or may build) one, else by
+    folding the whole requests stream."""
+    if path.exists() and RI.RowIndex.usable(path):
+        try:
+            return EI.EventIndex(path).family_as_of(family, t)  # type: ignore[arg-type]
+        except (OSError, sqlite3.Error, INC.IndexUnavailable):
+            pass
+    st = Q.fold((e for e, _w in ST.scan_events(path)), as_of=t) if path.exists() else Q.QueueState()
+    return st.families.get(family)  # type: ignore[arg-type]
+
+
 def _select(decl: ReaderDecl, root: "str | os.PathLike[str] | None", request_id: Optional[str],
             family: Optional[str], players: Optional[Iterable[str]], opponents: Optional[Iterable[str]],
             purposes: Optional[Iterable[str]], regime_id: Optional[str], as_of: Any
@@ -217,12 +247,13 @@ def _select(decl: ReaderDecl, root: "str | os.PathLike[str] | None", request_id:
         raise ReaderDeclError(f"{decl.name}: purposes {sorted(want_p - decl.purposes)} are outside the declaration")
     t = _as_of(as_of)
     path = ST.resolve_root(root)
-    live = live_rows(path, t)
+    live = _scoped_rows(decl, path, t, request_id, family)
+    if live is None:
+        live = live_rows(path, t)
 
     fam: Optional[Dict[str, Any]] = None
     if decl.requests == "family":
-        st = Q.fold((e for e, _w in ST.scan_events(path)), as_of=t) if path.exists() else Q.QueueState()
-        fam = st.families.get(family)  # type: ignore[arg-type]
+        fam = _family_of(path, family, t)
         if fam is None:
             raise ReaderDeclError(f"{decl.name}: family {family!r} is not registered (as of {t}) — a family read "
                                   "needs the family to name its decision kind, rule and protocol")

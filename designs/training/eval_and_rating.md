@@ -791,8 +791,11 @@ retiring the file is eval U3c. Nothing about a game changed (storage only; the b
   executor's published shard results (a mismatch RAISES — `CycleLedgerError`) before any row is appended. A stop at a
   safe point exits inside the cycle and writes nothing; a cycle that fails on the core writes nothing and CANCELS its
   requests; a re-eval at the same step re-opens the same request and replays only what is missing.
-- ⚠️ **Cost grows with the archive** (design_evaluation.md F-ED-22): every claim / append re-folds the archive's whole
-  requests stream (~7 µs per event) — milliseconds today, ~0.34 s per cycle per run already in the archive.
+- **Cost is flat in the archive's size since F-ED-22 was fixed** (design_evaluation.md §0b.4 / §0b.7): the writer folds only
+  the requests-stream bytes beyond each file's cursor (a persisted index under `<ledger>/.ledger_index/`, a CACHE: rebuilt
+  from the streams when missing, corrupt or stale, checked by `python -m main.eval_ledger audit`, `--rebuild-index`), and a
+  request-scoped `read` (the SPRT decision) costs that request's rows. A claim / append is ~0.5 ms of CPU beyond its own fsync
+  at any archive size (it was 13 → 500 ms from 1.7k to 50k events). `GEN3AI_LEDGER_INDEX=0` runs the old full fold / scan.
 
 Tests: `agents/training/cycle_ledger_test.py` (a fake executor: both callbacks' cycles, regime-split requests, draws,
 the dual write, an abort + restart, a failed cycle, the GIGO refusal, the trainer's startup wiring, SPRT rows +

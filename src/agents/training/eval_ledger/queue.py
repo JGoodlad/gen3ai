@@ -79,80 +79,88 @@ def fold(events: Iterable[Mapping[str, Any]], as_of: Optional[_dt.datetime] = No
     naming no claim, a duplicate ``seq``) is recorded in ``problems`` — the audit reports them; the writer refuses
     to act on a state that has any."""
     st = QueueState()
-    evs = sorted(events, key=lambda e: int(e["seq"]))
     seen: Set[int] = set()
-    for e in evs:
-        seq = int(e["seq"])
-        if seq in seen:
-            st.problems.append(f"seq {seq} appears twice in the requests stream")
-            continue
-        seen.add(seq)
-        st.max_seq = max(st.max_seq, seq)
-        if as_of is not None and S.parse_ts(e["ts"]) > as_of:  # type: ignore[operator]
-            continue
-        kind = e["event"]
-        if kind == "family":
-            old = st.families.get(e["family_id"])
-            if old is not None and _family_ident(old) != _family_ident(e):
-                st.problems.append(f"family {e['family_id']!r} registered twice with different terms (seq {seq})")
-            elif old is None:
-                st.families[e["family_id"]] = dict(e)
-            continue
-        rid = e["request_id"]
-        if kind == "open":
-            old = st.requests.get(rid)
-            if old is not None and open_ident(old) != open_ident(e):
-                st.problems.append(f"request {rid!r} opened twice with different terms (seq {seq})")
-            elif old is None:
-                if e["family"] is not None and e["family"] not in st.families:
-                    st.problems.append(f"request {rid!r} names family {e['family']!r}, not registered before it")
-                st.requests[rid] = dict(e)
-            continue
-        if rid not in st.requests:
-            st.problems.append(f"{kind} event seq {seq} names request {rid!r}, which was never opened")
-            continue
-        if kind == "done":
-            st.done.add(rid)
-        elif kind == "cancel":
-            st.cancelled.add(rid)
-        elif kind == "claim":
-            u = unit_of(e)
-            if u in st.rows:
-                st.problems.append(f"claim seq {seq} on unit {u}, which already has a row")
-                continue
-            live = st.live_claims(u)
-            if live:
-                st.problems.append(f"claim seq {seq} on unit {u} while claim seq {live[0].seq} is live")
-                continue
-            exp = S.parse_ts(e["expires_at"])
-            assert exp is not None
-            st.claims[seq] = Claim(seq=seq, writer_id=e["writer_id"], producer=e["producer"], host=e["host"],
-                                   pid=int(e["pid"]), expires_at=exp, unit=u)
-            st.by_unit.setdefault(u, []).append(seq)
-        else:
-            c = st.claims.get(int(e["claim_seq"]))
-            if c is None or c.unit != unit_of(e):
-                st.problems.append(f"{kind} event seq {seq} names claim seq {e['claim_seq']}, which is not a claim "
-                                   "on its unit")
-                continue
-            if not c.live:
-                st.problems.append(f"{kind} event seq {seq} on claim seq {c.seq}, which is no longer live")
-                continue
-            if kind == "void":
-                c.void_seq, c.void_reason = seq, e["reason"]
-            else:
-                c.row_id = e["row_id"]
-                st.rows[c.unit] = dict(e)
-                st.request_regimes.setdefault(rid, set()).add(c.unit[4])
-                sk = e["seed_key"]
-                if sk is not None:
-                    t = tuple(sk)
-                    if t in st.seed_keys:
-                        st.problems.append(f"row event seq {seq}: its seed block was already recorded as "
-                                           f"{st.seed_keys[t]}")
-                    else:
-                        st.seed_keys[t] = e["row_id"]
+    for e in sorted(events, key=lambda e: int(e["seq"])):
+        apply_event(st, e, seen, as_of)
     return st
+
+
+def apply_event(st: QueueState, e: Mapping[str, Any], seen: Set[int], as_of: Optional[_dt.datetime] = None) -> None:
+    """ONE event's effect on ``st`` — the body of :func:`fold`'s loop, and the ONLY implementation of the fold's
+    semantics: the persisted index (``event_index``) applies each new event through it, on a state loaded for just
+    the keys the event touches (its request, its unit, its claim), so an incremental fold and a from-scratch fold
+    cannot disagree about what an event means. Events must arrive in ``seq`` order; ``seen`` holds every ``seq``
+    applied so far."""
+    seq = int(e["seq"])
+    if seq in seen:
+        st.problems.append(f"seq {seq} appears twice in the requests stream")
+        return
+    seen.add(seq)
+    st.max_seq = max(st.max_seq, seq)
+    if as_of is not None and S.parse_ts(e["ts"]) > as_of:  # type: ignore[operator]
+        return
+    kind = e["event"]
+    if kind == "family":
+        old = st.families.get(e["family_id"])
+        if old is not None and _family_ident(old) != _family_ident(e):
+            st.problems.append(f"family {e['family_id']!r} registered twice with different terms (seq {seq})")
+        elif old is None:
+            st.families[e["family_id"]] = dict(e)
+        return
+    rid = e["request_id"]
+    if kind == "open":
+        old = st.requests.get(rid)
+        if old is not None and open_ident(old) != open_ident(e):
+            st.problems.append(f"request {rid!r} opened twice with different terms (seq {seq})")
+        elif old is None:
+            if e["family"] is not None and e["family"] not in st.families:
+                st.problems.append(f"request {rid!r} names family {e['family']!r}, not registered before it")
+            st.requests[rid] = dict(e)
+        return
+    if rid not in st.requests:
+        st.problems.append(f"{kind} event seq {seq} names request {rid!r}, which was never opened")
+        return
+    if kind == "done":
+        st.done.add(rid)
+    elif kind == "cancel":
+        st.cancelled.add(rid)
+    elif kind == "claim":
+        u = unit_of(e)
+        if u in st.rows:
+            st.problems.append(f"claim seq {seq} on unit {u}, which already has a row")
+            return
+        live = st.live_claims(u)
+        if live:
+            st.problems.append(f"claim seq {seq} on unit {u} while claim seq {live[0].seq} is live")
+            return
+        exp = S.parse_ts(e["expires_at"])
+        assert exp is not None
+        st.claims[seq] = Claim(seq=seq, writer_id=e["writer_id"], producer=e["producer"], host=e["host"],
+                               pid=int(e["pid"]), expires_at=exp, unit=u)
+        st.by_unit.setdefault(u, []).append(seq)
+    else:
+        c = st.claims.get(int(e["claim_seq"]))
+        if c is None or c.unit != unit_of(e):
+            st.problems.append(f"{kind} event seq {seq} names claim seq {e['claim_seq']}, which is not a claim "
+                               "on its unit")
+            return
+        if not c.live:
+            st.problems.append(f"{kind} event seq {seq} on claim seq {c.seq}, which is no longer live")
+            return
+        if kind == "void":
+            c.void_seq, c.void_reason = seq, e["reason"]
+        else:
+            c.row_id = e["row_id"]
+            st.rows[c.unit] = dict(e)
+            st.request_regimes.setdefault(rid, set()).add(c.unit[4])
+            sk = e["seed_key"]
+            if sk is not None:
+                t = tuple(sk)
+                if t in st.seed_keys:
+                    st.problems.append(f"row event seq {seq}: its seed block was already recorded as "
+                                       f"{st.seed_keys[t]}")
+                else:
+                    st.seed_keys[t] = e["row_id"]
 
 
 def open_ident(e: Mapping[str, Any]) -> Tuple[Any, ...]:
