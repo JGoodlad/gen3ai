@@ -32,6 +32,33 @@ pure functions, no parameters, no state:
 
     They ignore Atk/Def, the roll, crits, screens and weather, and RESPECT type / ability immunity
     (``eff > 0``) — so all three rolls are one value and P(KO) is ``acc · [the hit KOs]``.
+
+``beatup_*`` (gen3_beatup_exact_v1) — gen-3 Beat Up, the ONE kind that is still the BP formula, with the
+    formula's inputs swapped (so it rides the kernels' own roll / screen / crit / P(KO) arithmetic, not
+    `nonformula_rolls`). `data/mods/gen3/moves.ts` beatup: the move is TYPELESS (``'???'`` — no STAB, no
+    effectiveness, no ability read) and SPECIAL (Light Screen halves it; Reflect and burn do not); it hits
+    once per ally in ``side.pokemon.filter(a => !a.fainted && !a.status)`` (the USER counts iff healthy);
+    hit *i* is the ordinary formula at BP 10 with ``A`` = ally *i*'s species BASE Atk and ``D`` = the
+    TARGET's species BASE Def (``event.modifier = 1``: no boost, item or ability reaches either stat). Every
+    hit's pre-roll damage is ``(42/50)·10·A_i/D + 2``, so the sum over the party is
+
+        core = (42/50) · 10 · S / D_base + 2 · N       with  S = Σ ally base Atk,  N = ally count
+
+    — `S` and `N` are all a kernel needs of the attacking side, and `D_base` all it needs of the target.
+    The kernels then multiply by the same ``0.925`` mean roll, apply the same screen, crit ×2 and KO ramp
+    as for any other move (a per-hit roll is independent in the sim; the op's one shared roll over the
+    summed damage over-states the spread of the KO ramp by ≈ √N — the P(KO) edges are exact, the middle is
+    smoother than the sim's).
+
+    *Our side* is fully known (our party's HP + status are in the obs). *The opponent's side*: a revealed
+    mon is eligible iff alive with no status; **an unrevealed slot is eligible with certainty** (a mon that
+    never entered the battle cannot have fainted or been statused) and contributes its EXPECTED base Atk
+    under the Species-Clause-filtered usage prior (`DamageOperator.unrevealed_species_probs` — the op's one
+    convention for a hidden mon). The expectation is exact for the sum (linearity), so E[damage] is exact
+    given those marginals; X5's U3 revisits hidden-mon handling. An unrevealed DEFENDER uses
+    ``D_eff = 1 / E[1 / D_base]`` (the harmonic mean), which makes the same formula return E[damage]
+    exactly. Declared limits: a forme reads its base species' stats (the op's num-keyed convention); Beat
+    Up into a Substitute and the per-hit crit roll are not modelled.
 """
 from __future__ import annotations
 
@@ -40,6 +67,15 @@ from typing import Any, Optional, Tuple
 import torch
 
 from agents.model.damage_op_layout import _DMG_CHIP_CAP, _DMG_CRIT_CAP
+from agents.observation.constants import CONDITION_DIM, POKEMON_CONDITION_OFFSET, TEAM_SIZE
+from agents.observation.types import TypeEncoder
+
+#: The TypeEncoder index of '???' — the type Beat Up has in battle (neutral row/column of every table).
+TYPELESS_TYPE_IDX = TypeEncoder.TYPE_TO_IDX["???"]
+# Condition one-hot [None, BRN, PAR, SLP, FRZ, PSN, TOX] — columns 1.. are the six MAJOR statuses
+# (`ally.status` in Showdown); the all-zero placeholder an unrevealed slot carries reads "no status".
+_STATUS_COLS = slice(POKEMON_CONDITION_OFFSET + 1, POKEMON_CONDITION_OFFSET + CONDITION_DIM)
+_BS_ATK_COL, _BS_DEF_COL = 1, 2             # BASE_STATS columns [hp, atk, def, spa, spd, spe]
 
 # Flail / Reversal (gen 3): ratio thresholds and the BP each band takes (`data/mods/gen3/moves.ts`).
 _FLAIL_RATIO_STEPS = (2.0, 5.0, 10.0, 17.0, 33.0)
@@ -125,3 +161,84 @@ def override_rolls(rolls: Tuple[torch.Tensor, ...], nf: Tuple[torch.Tensor, ...]
     high, low, crit, ko = rolls
     return (torch.where(is_nf, nf_high, high), torch.where(is_nf, nf_high, low),
             torch.where(is_nf, nf_crit, crit), torch.where(is_nf, nf_ko, ko))
+
+
+# --------------------------------------------------------------------------- gen3_beatup_exact_v1
+def gather_beatup(op: Any, idx: torch.Tensor) -> torch.Tensor:
+    """0/1 ``MOVE_BEATUP`` at move nums `idx` — the cells whose formula inputs `beatup_swap` replaces."""
+    flag: torch.Tensor = op.MOVE_BEATUP[idx]
+    return flag
+
+
+def typeless_move_type(op: Any, move_ids: torch.Tensor, move_ty: torch.Tensor) -> torch.Tensor:
+    """OUR move's TypeEncoder index as the battle resolves it: '???' for Beat Up, else `move_ty` (the obs'
+    resolved type — which is the DEX type, Dark, for Beat Up). The incoming kernels get the same fact from
+    the `MOVE_TYPE_IDX` row `build_damage_buffers` writes; the outgoing kernels read the obs type, so they
+    route it through here. → STAB, the chart, the ability multipliers and the weather / sport modifiers all
+    read neutral."""
+    return torch.where(op.MOVE_BEATUP[move_ids] > 0, torch.full_like(move_ty, TYPELESS_TYPE_IDX), move_ty)
+
+
+def beatup_base_def(op: Any, species_ids: torch.Tensor) -> torch.Tensor:
+    """The TARGET's species BASE Def (what Beat Up's ``onFoeModifySpD`` returns). ``clamp(min=1)`` keeps the
+    sentinel species 0 (an empty / unrevealed slot — always gated downstream) off a 1/0; every real species
+    has base Def ≥ 5, so the clamp never moves a real value."""
+    d: torch.Tensor = op.BASE_STATS[species_ids][..., _BS_DEF_COL]
+    return d.clamp(min=1.0)
+
+
+def beatup_opp_target_def(op: Any, ctx: Any, sp_probs: torch.Tensor) -> torch.Tensor:
+    """``[B,6]`` the base Def Beat Up meets at each of the six OPP slots. A revealed slot: that species'
+    base Def. An UNREVEALED slot: ``1 / E[1 / D_base]`` under `sp_probs` (``unrevealed_species_probs`` —
+    ``[B,S]`` prior or ``[B,6,S]`` override), the harmonic mean, so the kernel's ``… / D`` returns
+    E[damage] exactly. The expectation runs over the SAME marginal the other expected-latent reads use."""
+    revealed = beatup_base_def(op, ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE])              # [B,6]
+    inv_all = 1.0 / op.BASE_STATS[:, _BS_DEF_COL].clamp(min=1.0)                             # [S]
+    harmonic = 1.0 / (sp_probs @ inv_all).clamp(min=1e-12)                                   # [B] | [B,6]
+    harmonic = harmonic[:, None] if harmonic.dim() == 1 else harmonic                        # [B,1] | [B,6]
+    return torch.where(ctx.opp_believed_mask, harmonic, revealed)
+
+
+def _healthy(ctx: Any, sl: slice) -> torch.Tensor:
+    """``[B,6]`` 0/1: alive (HP fraction > 0) AND no major status — Beat Up's ally filter
+    ``!ally.fainted && !ally.status``. (An unrevealed opp slot encodes HP 0: the caller handles it.)"""
+    alive = (ctx.hp_and_active[:, sl, 0] > 0).float()
+    status = ctx.pokemon_part[:, sl, _STATUS_COLS].sum(dim=-1)
+    ok: torch.Tensor = alive * (status < 0.5).float()
+    return ok
+
+
+def beatup_party_ours(op: Any, ctx: Any) -> Tuple[torch.Tensor, torch.Tensor]:
+    """``(S, N)`` ``[B]`` each for OUR party as Beat Up's attacker: ``S`` = Σ base Atk over our healthy
+    mons, ``N`` = how many (the user included iff healthy — it is one of the six). Fully known."""
+    ours = slice(0, TEAM_SIZE)
+    ok = _healthy(ctx, ours)                                                      # [B,6]
+    atk = op.BASE_STATS[ctx.species_ids[:, ours]][..., _BS_ATK_COL]               # [B,6]
+    return (ok * atk).sum(dim=-1), ok.sum(dim=-1)
+
+
+def beatup_party_opp(op: Any, ctx: Any, species_probs: Optional[torch.Tensor] = None
+                     ) -> Tuple[torch.Tensor, torch.Tensor]:
+    """``(S, N)`` ``[B]`` each for the OPPONENT's party as Beat Up's attacker. A REVEALED mon counts iff alive
+    with no status; every UNREVEALED slot (`ctx.opp_believed_mask`) counts with certainty — a mon that never
+    entered the battle cannot have fainted or been statused — at its EXPECTED base Atk under the op's one
+    hidden-mon belief: `unrevealed_species_probs(ctx, species_probs)` — the Species-Clause usage prior, or the
+    T0 species belief the extractor hands every pricing site (``[B,S]`` team-level, or a per-slot
+    ``[B,6,S]``). The sum's expectation is exact (linear in the per-slot marginals)."""
+    opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+    hidden = ctx.opp_believed_mask.float()                                        # [B,6]
+    ok = _healthy(ctx, opp) * (1.0 - hidden)                                      # [B,6] revealed + eligible
+    atk = op.BASE_STATS[ctx.species_ids[:, opp]][..., _BS_ATK_COL]                # [B,6]
+    e_atk = op.unrevealed_species_probs(ctx, species_probs) @ op.BASE_STATS[:, _BS_ATK_COL]   # [B] | [B,6]
+    hidden_atk = hidden.sum(dim=-1) * e_atk if e_atk.dim() == 1 else (hidden * e_atk).sum(dim=-1)   # [B]
+    return (ok * atk).sum(dim=-1) + hidden_atk, ok.sum(dim=-1) + hidden.sum(dim=-1)
+
+
+def beatup_swap(is_bu: torch.Tensor, A: torch.Tensor, D: torch.Tensor, atk_sum: torch.Tensor,
+                defence: torch.Tensor, hits: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """The kernels' ``core = 42·bp·A/(D+eps)/50 + plus2`` inputs, with Beat Up's cells swapped: ``A`` → the
+    party's Σ base Atk, ``D`` → the target's base Def, ``plus2`` → ``2·hits`` (the formula's ``+2`` is per
+    hit). Every other cell keeps ``(A, D, 2.0)`` EXACTLY (a `where`, no arithmetic), so a table with no Beat
+    Up in it is bit-identical to the kernel before. All args broadcast to `A` / `D`'s shape."""
+    bu = is_bu > 0
+    return (torch.where(bu, atk_sum, A), torch.where(bu, defence, D), torch.where(bu, 2.0 * hits, 2.0))

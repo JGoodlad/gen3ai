@@ -89,9 +89,13 @@ def _fake_ctx(op, *, attacker_num, attacker_t1, attacker_t2,
     hp_probs = torch.zeros(B, n, 16)
     hp_probs[:, TEAM_SIZE + opp_active_local] = torch.tensor(hp_probs_active, dtype=torch.float32)
 
+    believed = torch.ones(B, TEAM_SIZE, dtype=torch.bool)       # every opp slot but the active is unrevealed
+    believed[:, opp_active_local] = False
+
     return types.SimpleNamespace(
         batch_size=B, device=torch.device("cpu"),
         opp_active_local=torch.full((B,), opp_active_local, dtype=torch.long),
+        opp_believed_mask=believed,
         species_ids=species, type1_ids=t1, type2_ids=t2,
         ability1_ids=torch.zeros(B, n, dtype=torch.long),       # no ability (mult 1.0) by default
         item_ids=torch.zeros(B, n, dtype=torch.long),           # no item (no Choice Band) by default
@@ -343,7 +347,8 @@ def test_three_roll_relationship():
     weather = torch.ones(B, 1)                                   # no weather
     high, low, crit, pko, _hcb, _kcb = op._damage_rolls(atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp,
                                             t1d, t2d, ability1, reflect, light, bp, mty, phys, acc, nf,
-                                            torch.zeros(B), weather)
+                                            torch.zeros(B), torch.zeros(1, 1),
+                                            (torch.zeros(B), torch.zeros(B), torch.ones(B, n)), weather)
     h = high[0, 0, 0].item()
     assert 0.0 < h < 1.5                                          # unclamped (relationship is clean)
     assert low[0, 0, 0].item() == pytest.approx(0.85 * h, rel=1e-5)
@@ -375,10 +380,13 @@ def _fake_ctx_out(*, our_species, our_t1, our_t2, our_moves, our_move_types,
     for k, (mid, mty) in enumerate(zip(our_moves, our_move_types)):
         all_move_ids[:, 0, k] = mid
         all_move_type_ids[:, 0, k] = mty
+    believed = torch.ones(B, TEAM_SIZE, dtype=torch.bool)       # every opp slot but the active is unrevealed
+    believed[:, 0] = False
     return types.SimpleNamespace(
         batch_size=B, device=torch.device("cpu"),
         our_active_idx=torch.zeros(B, dtype=torch.long),
         opp_active_local=torch.zeros(B, dtype=torch.long),
+        opp_believed_mask=believed,
         species_ids=species, type1_ids=t1, type2_ids=t2, ability1_ids=ability,
         item_ids=torch.zeros(B, n, dtype=torch.long),           # no item (no Choice Band) by default
         hp_and_active=hp_and_active, pokemon_part=pokemon_part,

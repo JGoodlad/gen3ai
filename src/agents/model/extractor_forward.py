@@ -328,14 +328,17 @@ class ExtractorForward(ExtractorApi):
                     self.damage_op.pairwise_boost(ctx, _sb, base=_cells.get("d1"),  # type: ignore[union-attr]
                                                   species_probs=self.stash.t0_species_probs),
                     self.damage_op.pairwise_boost_incoming(  # type: ignore[union-attr]
-                        ctx, self.last_move_belief_logits, k_cand=self.consequence_topk),  # type: ignore[arg-type]
+                        ctx, self.last_move_belief_logits, k_cand=self.consequence_topk,  # type: ignore[arg-type]
+                        species_probs=self.stash.t0_species_probs),
                 ], dim=-1)
             if "c3" in _fams:
                 _cells["c3"] = self.damage_op.pairwise_recovery(  # type: ignore[union-attr]
-                    ctx, self.last_move_belief_logits, k_cand=self.consequence_topk)  # type: ignore[arg-type]
+                    ctx, self.last_move_belief_logits, k_cand=self.consequence_topk,  # type: ignore[arg-type]
+                    species_probs=self.stash.t0_species_probs)
             if "c2" in _fams:
                 _cells["c2"] = self.damage_op.pairwise_status_consequence(  # type: ignore[union-attr]
-                    ctx, self.last_move_belief_logits, _sb, k_cand=self.consequence_topk)  # type: ignore[arg-type]
+                    ctx, self.last_move_belief_logits, _sb, k_cand=self.consequence_topk,  # type: ignore[arg-type]
+                    species_probs=self.stash.t0_species_probs)
             if "c5" in _fams:
                 _cells["c5"] = self.damage_op.pairwise_baton(ctx, _sb)  # type: ignore[union-attr]
             if "s1" in _fams:
@@ -346,10 +349,12 @@ class ExtractorForward(ExtractorApi):
                 _cells["d3"] = self.damage_op.pairwise_incoming(  # type: ignore[union-attr]
                     ctx, self.last_move_belief_logits, self.entity_seats.last_cand,  # type: ignore[arg-type]
                     spread_belief=(self.last_spread_belief
-                                   if self.damage_op.believed_lean else None))  # type: ignore[union-attr]
+                                   if self.damage_op.believed_lean else None),  # type: ignore[union-attr]
+                    species_probs=self.stash.t0_species_probs)
             if "d4" in _fams:
                 _cells["d4"] = self.damage_op.pairwise_bench_incoming(  # type: ignore[union-attr]
-                    ctx, self.last_move_belief_logits, k_bench=self.consequence_topk)  # type: ignore[arg-type]
+                    ctx, self.last_move_belief_logits, k_bench=self.consequence_topk,  # type: ignore[arg-type]
+                    species_probs=self.stash.t0_species_probs)
             if "g" in _fams:
                 _cells["g"] = self.damage_op.pairwise_schedule(ctx)  # type: ignore[union-attr]
             if "c4" in _fams:
@@ -404,7 +409,8 @@ class ExtractorForward(ExtractorApi):
         if self.intent_move_cell is not None and damage_block is not None:
             _imc_ops = self.damage_op.pointer_intent_status_operands(  # type: ignore[union-attr]
                 ctx, self.last_move_belief_logits, self.last_spread_belief,  # type: ignore[arg-type]
-                k_cand=self.consequence_topk, c2_cells=_c2_edge_cells)
+                k_cand=self.consequence_topk, c2_cells=_c2_edge_cells,
+                species_probs=self.stash.t0_species_probs)
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, _seat_types, _seat_pad),

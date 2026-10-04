@@ -11406,3 +11406,77 @@ cache misses." The GPU lock was a queue (a kernel-blocked flock); it is now a le
 - **ERA BOUNDARY:** every bot-anchored ladder headline fitted before this commit used the broken-bot anchors. Pre-era ladders stay as history (owner 2026-10-03: no retroactive re-bake).
 - **Format:** the new file's win matrix counts a draw as half a win, and its SEs come from a pair bootstrap.
 - No run was live; `data/` changed with no pinned run.
+
+
+## 2026-10-03 — TRAINING-INPUT CHANGE: the damage op models gen-3 BEAT UP exactly, on both sides (`gen3_beatup_exact_v1`; the X5 Tier 0 F8 residual; no version bump — dims and weight shapes unchanged; the K9 learner golden RE-BAKED with a proof)
+
+🚨 **Every run before this commit trained with Beat Up mispriced.** `gen3_nonformula_damage_v1` approximated it as
+ONE 10-BP Dark special hit, which runs the user's SpA against the target's SpD. The real move is typeless and
+special, one hit per healthy party member, each hit the formula at BP 10 with that ally's species BASE Atk
+against the target's species BASE Def — so against Blissey (base Def 10), the move that exists to beat it, the op
+read 8.7 HP of 651 (1.3 %) where the engine deals ~507 of 714 for a healthy six-mon party. Arms launched from
+this commit on read different op features and are NOT feature-identical to earlier arms; pinned runs execute
+their pin's code and are unaffected. No run is live.
+
+- **The mechanic, verified at the source** (`deps/pokemon-showdown/data/mods/gen3/moves.ts` `beatup`, gen4
+  `basePower 10`, `sim/battle-actions.ts` `getDamage`): `move.type = '???'` (no STAB, no effectiveness, `runImmunity`
+  passes), `move.category = 'Special'` (Light Screen halves it, Reflect and burn do not), `move.allies =
+  side.pokemon.filter(a => !a.fainted && !a.status)` (the user counts iff healthy), `multihit = allies.length`;
+  the volatile's `onModifySpA` returns that ALLY's `baseStats.atk` and `onFoeModifySpD` the target's
+  `baseStats.def`, both with `event.modifier = 1` (no stage, item or ability reaches either stat).
+- **One implementation.** `damage_tables.DAMAGE_MODELS["beatup"]` is now kind `beatup_party` (the per-hit BP
+  must equal the dex — a check, not a knob); the `table_bp_approx` kind, Beat Up's only user, is removed.
+  `MOVE_BEATUP` flags the move and `MOVE_TYPE_IDX[beatup]` is `'???'`. `damage_kinds.beatup_swap` swaps the
+  kernel formula's inputs for a Beat Up cell — `A → S` (the attacking side's Σ base Atk), `D →` the target's base
+  Def, `+2 → +2N` — and every kernel's roll / screen / crit / KO line is unchanged: the incoming forward
+  (`_damage_rolls`, via a third column of the A / 1/D gathers, so no new `[B,n,C]` op), `_outgoing_block`,
+  `_outgoing_matrix`, `_outgoing_attacker_matrix`, the d3 refine (`_incoming_rolls`), c2 and its pointer operands,
+  c1b, the recovery cell and d4. The outgoing kernels route the obs' resolved type (Dark) through
+  `typeless_move_type`. Non-Beat-Up cells read the exact value they read before (a `where` / gather, no
+  arithmetic).
+- **Hidden-mon convention.** Our party is fully known. The opponent's: a revealed mon counts iff alive and
+  unstatused; **an unrevealed slot counts with certainty** (it never entered, so it cannot have fainted or been
+  statused) at its EXPECTED base Atk under the op's one hidden-mon belief — the T0 species belief the extractor
+  hands every pricing site, else the Species-Clause usage prior. An unrevealed DEFENDER uses
+  `D = 1 / E[1/D_base]` under the same belief, which makes the kernel's `… / D` return E[damage] exactly. The
+  pricing sites that now take `species_probs` (the extractor passes `t0_species_probs`): c1b, c3, c2, d3, d4, the
+  intent operands (the forward and the outgoing matrix already did). X5's core unit (U3) will revisit hidden-mon
+  handling. Declared limits: a forme reads its base species' stats; Beat Up into a Substitute and the per-hit
+  crit roll are not modelled; the KO ramp is the op's one shared roll over the summed damage (≈ √N too wide in
+  the middle, exact at the ends).
+- **Rolls.** The op's `dmg_ns` carries the 0.925 mean roll, `low` is 0.85 of it, `crit` 2× the pre-screen total;
+  Beat Up follows exactly that (a Blissey into the pinned six-mon party: high 0.786, low 0.668, crit 1.571 of
+  651).
+- **Verified against the real sim** (`src/agents/model/beatup_sim_parity_test.py`, `damage_probe.js`, 11
+  constructed scenarios × 12–24 fixed seeds): the ally set and hit count are exactly the healthy party
+  (fainted, paralysed and sleeping allies and a paralysed user excluded), every non-crit hit lies in the integer
+  band of its ally's base Atk vs the target's base Def, the sim's mean sits on the integer-exact mean, and the
+  op's smooth mean is within 1.5 HP per hit of it (measured +0.9 to +1.0): Blissey 507.2 / 505.9 / 511.5 HP
+  (sim / integer / op).
+- **The K9 learner golden** (`learner_golden.json`, torch 2.8 — the only entry) moved: post `ef8a1b7c…` →
+  `9ca337f3…` on the committed buffer (36 of 41 groups, 15 of 19 losses; init unchanged) and was re-recorded on
+  the rebuilt buffer, post `50f12a23…`. The buffer's stored behaviour log-probs were the parent's, so K9(b)'s
+  probe failed on it (max |Δ log π| 2.46e-4 ≥ 1e-4) and `rebuild-buffer` re-recorded it — the SAME games (every
+  obs / action / mask / reward / episode start byte-identical), only values / log_probs / advantages / returns
+  moved. PROOF (`designs/research_state/measurements/beatup_golden_2026-10-03/`): with Beat Up's row neutralised
+  the parent tree and this tree are BYTE-IDENTICAL on BOTH buffers (post `623c9681…` / `bb7c20f7…`, every group,
+  every loss), so every moved element is caused by Beat Up. The buffer's forwards see Beat Up in our request
+  slots, the visible move slots and the believed top-K. CPU cost of the production forward + backward: +0.9 % /
+  +1.7 % (the GPU compiled path is UNVERIFIED — CPU only).
+- **Collateral, fixed.** `selection_sites.py` declares the new discrete ops (`is_bu > 0`, the ally filter's HP /
+  status reads, `op.MOVE_BEATUP[move_ids] > 0`, `bu_all > 0`, `is_bu.long()`); `unified_belief_test` / the
+  `damage_op_test` fake contexts gain `opp_believed_mask` (the incoming kernels now read it, as the real
+  `ExtractorContext` always carried it). `OP_SEMANTICS` becomes `gen3_beatup_exact_v1` (the Lane S bank was
+  already past the reproduction line; nothing else reads it).
+- **Not changed.** The pointer head's E5 tail score reads `MOVE_BP` only (Beat Up reads its per-hit 10 there);
+  the CPU `agents.observation.incoming_damage` block; Psywave / Magnitude / Present / Return keep their declared
+  expectations; the other multi-hit moves (Triple Kick, Fury Attack, …) are still priced at their dex BP.
+- **Versioning.** No `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` bump — the training-input precedent and the
+  orchestrator's standing deferral to the Rustboro era boundary.
+- **Tests (each fails on its revert, checked: 25 of the 26 fail on the parent's op code — the one that passes pins
+  the base-stat data).** `src/agents/model/beatup_damage_test.py` (25: the Blissey hand-computed sum on all
+  three outgoing kernels, fainted / statused / statused-user / no-ally exclusion, typeless into Ghost / Steel /
+  Dark / Psychic / Normal, Light Screen vs Reflect, stage and burn irrelevance, the unrevealed defender's
+  explicit E[damage] sum, incoming = outgoing on the same configuration, the hidden-ally convention and the T0
+  belief hand-off, and the d3 / d4 / c1b / c2 / c3 / intent-operand kernels each against the hand value),
+  `beatup_sim_parity_test.py` (`sim`; the real engine).

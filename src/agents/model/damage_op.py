@@ -111,7 +111,8 @@ class OpStashes:
     tensors: Optional['OpTensors'] = None            # the post-gain typed views
 
 from agents.model.damage_op_blocks import DamageOperatorBlocks
-from agents.model.damage_kinds import gather_bp, gather_nonformula, nonformula_rolls, override_rolls
+from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, gather_beatup, gather_bp,
+                                       gather_nonformula, nonformula_rolls, override_rolls)
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
 from agents.model.pair_outcome import GHOST_TYPE_IDX as _GHOST_TIDX, PAIR_OUTCOME_IDX
 
@@ -514,6 +515,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                       reflect: torch.Tensor, light_screen: torch.Tensor,
                       bp_all: torch.Tensor, mty_all: torch.Tensor, phys_all: torch.Tensor,
                       acc_all: torch.Tensor, nf_all: Tuple[torch.Tensor, ...], atk_cur_hp: torch.Tensor,
+                      bu_all: torch.Tensor, bu_party: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
                       weather_mult: torch.Tensor, eps: float = 1e-6) -> Tuple[torch.Tensor, ...]:
         """Role-parameterized gen3 single-hit damage per ``(defender, candidate)`` — the shared
         physics kernel every DIRECTION reuses (incoming opp→our-6, outgoing our→opp, safe-switch).
@@ -526,7 +528,11 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         (`damage_kinds.gather_bp`, the attacker's HP resolved); ``acc_all`` is ``[C]`` (per-candidate
         base hit probability); ``nf_all`` = ``(fixed, target_frac, endeavor)`` ``[B,C]`` each
         (`damage_kinds.gather_nonformula`) and ``atk_cur_hp`` ``[B]`` the attacker's current HP —
-        gen3_nonformula_damage_v1. Returns ``(high_frac, low_frac, crit_frac, ko_ramp)``, each ``[B, n_def,
+        gen3_nonformula_damage_v1; ``bu_all`` ``[B,C]`` the 0/1 Beat Up flag per candidate and
+        ``bu_party`` = ``(S [B], N [B], D_base [B,n_def])`` the attacker party's Σ base Atk / hit count and the
+        defenders' base Def (`damage_kinds.beatup_*`) — gen3_beatup_exact_v1: a Beat Up candidate reads
+        ``core = (42/50)·bp·S/D_base + 2N`` (typeless: its `mty_all` is '???') in the place of the single-hit
+        formula, and rides every roll / screen / crit / KO line below unchanged. Returns ``(high_frac, low_frac, crit_frac, ko_ramp)``, each ``[B, n_def,
         C]``: the max-roll / 0.85-roll / ×2-crit damage as a fraction of the defender's MAX HP (clamped —
         damage IF it lands), and the **accuracy-discounted** modal no-crit P(KO) vs CURRENT HP
         (``acc · P(KO|hit)`` — so an inaccurate move reads a lower KO-this-turn risk). Pure /
@@ -552,10 +558,17 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # Indexing a 2-wide stack instead is value-identical AND moves the DIVISION off the candidate
         # axis: the reciprocal is taken on [B,n,2] and gathered, rather than ~400 divides per
         # (batch, defender). The reciprocal-then-multiply is the one FP-ordering change here.
+        # gen3_beatup_exact_v1: a THIRD stack column is Beat Up's (the party's Σ base Atk / the target's base
+        # Def), selected by `pidx == 2` — the gather structure is unchanged, so no new [B,n,C] op appears
+        # and every non-Beat-Up cell reads the exact value it read before (a gather is exact).
+        bu_S, bu_N, bu_def = bu_party
+        is_bu = bu_all > 0                                                                      # [B,C]
         pidx = (phys_all > 0.5).long()                                                          # [B,C] 1=phys
-        A = torch.stack((spa, atk), dim=-1).gather(1, pidx)                                     # [B,C]
-        inv_d = (1.0 / (torch.stack((spd_stat, def_stat), dim=-1) + eps)) \
+        pidx = pidx + 2 * is_bu.long()                                                          # 2 = Beat Up
+        A = torch.stack((spa, atk, bu_S), dim=-1).gather(1, pidx)                               # [B,C]
+        inv_d = (1.0 / (torch.stack((spd_stat, def_stat, bu_def), dim=-1) + eps)) \
             .gather(2, pidx[:, None, :].expand(-1, n_def, -1))                                  # [B,n,C]
+        plus2 = torch.where(is_bu, 2.0 * bu_N[:, None], 2.0)                                    # [B,C] the +2 is per HIT
         is_stab = ((mty_all == at1[:, None]) | (mty_all == at2[:, None])).float()               # [B,C]
         stab = 1.0 + 0.5 * is_stab                                                              # [B,C]
         # DEFENDER-side screens: Reflect halves physical incoming, Light Screen halves special.
@@ -568,7 +581,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         bp_gate = (bp_all > 0).float()                                  # [B,C]; reused by the CB tail
         pre = stab * bp_gate * weather_mult * 0.925                     # [B,C] (weather: rain/sun BP)
         eff_pre = eff * pre[:, None, :]                                 # [B,n,C] shared by both cores
-        core = ((42.0 / 50.0) * bp_all * A)[:, None, :] * inv_d + 2.0   # [B,n,C]
+        core = ((42.0 / 50.0) * bp_all * A)[:, None, :] * inv_d + plus2[:, None, :]   # [B,n,C]
         dmg_ns = core * eff_pre                                         # [B,n,C] pre-screen
         # Final 3 rolls + accuracy-folded P(KO) via the shared formula (DRY — same as the outgoing block).
         high, low, crit, ko = self._rolls(dmg_ns, screen[:, None, :], maxhp[:, :, None], cur_hp[:, :, None],
@@ -582,12 +595,12 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # consistent with the outgoing block which scales our_atk). Special candidates unchanged. Only `high_cb`
         # / `ko_cb` are used (the op aggregates the PHYSICAL channel); the fixed-damage override below is
         # applied to them too (fixed damage is CB-independent → reads identically).
-        A_cb = torch.stack((spa, atk + 0.5 * atk), dim=-1).gather(1, pidx)              # [B,C] physical Atk ×1.5
+        A_cb = torch.stack((spa, atk + 0.5 * atk, bu_S), dim=-1).gather(1, pidx)        # [B,C] physical Atk ×1.5
         # Only `high_cb` + `ko_cb` are aggregated (the special channel is CB-invariant), so compute them
         # INLINE rather than via _rolls — skips the unused low/crit rolls (~2×[B,n,C] of activations the
         # grad-checkpoint backward recompute would otherwise double; matters at batch 16384). `dmg_cb` folds
         # the defender screen in (post-screen), matching _rolls' high/ko exactly.
-        dmg_cb = (((42.0 / 50.0) * bp_all * A_cb)[:, None, :] * inv_d + 2.0) \
+        dmg_cb = (((42.0 / 50.0) * bp_all * A_cb)[:, None, :] * inv_d + plus2[:, None, :]) \
             * eff_pre * screen[:, None, :]                              # [B,n,C] post-screen (reuses eff_pre)
         inv_cb = 1.0 / (maxhp[:, :, None] + eps)
         high_cb = (dmg_cb * inv_cb).clamp(max=_DMG_CHIP_CAP)
@@ -816,6 +829,11 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # (Un-truncated: the [1,C] gathers BROADCAST — only the HP-resolved BP is materialised per row.)
         bp_all = gather_bp(self, cand_all, opp_hp_frac[:, None])                                # [B,C]
         nf_all = tuple(t.expand(bp_all.shape[0], -1) for t in gather_nonformula(self, cand_all))  # 3×[B,C]
+        # gen3_beatup_exact_v1: the Beat Up flag per candidate + the opp party's Σ base Atk / hit count + our
+        # six defenders' BASE Def (the move ignores their real stats, boosts and the believed spread).
+        bu_all = gather_beatup(self, cand_all).expand(bp_all.shape[0], -1)                       # [B,C]
+        bu_S, bu_N = beatup_party_opp(self, ctx, species_probs)                                  # [B], [B]
+        bu_party = (bu_S, bu_N, beatup_base_def(self, ctx.species_ids[:, :TEAM_SIZE]))           # + [B,6]
 
         # --- gen3 damage per (defender, candidate), all differentiable in w (the shared physics
         # kernel — incoming roles: attacker = opp active, defenders = our 6, OUR-side screens) ---
@@ -824,7 +842,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         high_frac, low_frac, crit_frac, ko_ramp, high_cb, ko_cb = self._damage_rolls(
             atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp, t1d, t2d,
             ctx.ability1_ids[:, :TEAM_SIZE], our_reflect, our_light_screen,
-            bp_all, mty_all, phys_all, acc_all, nf_all, opp_cur_hp_att, weather_mult, eps)
+            bp_all, mty_all, phys_all, acc_all, nf_all, opp_cur_hp_att, bu_all, bu_party,
+            weather_mult, eps)
 
         # --- per (defender, channel): HARD max of the belief-weighted roll/KO over the candidates ---
         # The dominant believed move owns each channel (the candidate-count-robust max, NOT a diluting

@@ -1,0 +1,12 @@
+scenario | n_clean | hits | sim_mean_hp | integer_mean_hp | se_hp | op_smooth_mean_hp | op_minus_integer_mean | allies_ok | all_hits_in_band
+six_healthy_into_blissey | 21 | 6 | 507.238 | 505.875 | 2.207 | 511.488 | 5.613 | True | True
+typeless_into_gengar | 21 | 6 | 89.238 | 88.938 | 0.393 | 94.498 | 5.56 | True | True
+typeless_into_skarmory | 21 | 6 | 41.762 | 41.25 | 0.192 | 46.842 | 5.592 | True | True
+typeless_into_tyranitar | 21 | 6 | 51.19 | 50.75 | 0.232 | 56.59 | 5.84 | True | True
+typeless_into_alakazam | 21 | 6 | 118.667 | 118.375 | 0.523 | 122.297 | 3.922 | True | True
+light_screen_halves | 11 | 6 | 255.182 | 256.188 | 1.549 | 255.744 | -0.444 | True | True
+reflect_does_not | 11 | 6 | 503.727 | 505.875 | 3.049 | 511.488 | 5.613 | True | True
+stages_do_not_reach_it | 11 | 6 | 503.727 | 505.875 | 3.049 | 511.488 | 5.613 | True | True
+statused_allies_excluded | 16 | 4 | 314.062 | 314.375 | 1.958 | 318.2 | 3.825 | True | True
+fainted_ally_excluded | 15 | 5 | 455.0 | 454.562 | 2.535 | 459.133 | 4.57 | True | True
+statused_user_excluded | 5 | 5 | 453.2 | 454.562 | 4.391 | 459.133 | 4.57 | True | True

@@ -1,0 +1,7 @@
+scripts/perf.py --reps 25, OMP_NUM_THREADS=1, CPU eager fp32, the golden learner's production forward + backward
+on the golden buffer's 64 rows; parent (ed3a2bb5) and fix interleaved (2026-10-03, load average ~2.6 from other sessions):
+parent  median 177.8 ms  min 175.3 ms
+fix     median 179.4 ms  min 177.0 ms
+parent  median 178.0 ms  min 176.5 ms
+fix     median 181.1 ms  min 179.6 ms
+=> +0.9 % / +1.7 % on the median (min +1.0 % / +1.8 %). GPU / compiled path NOT measured (UNVERIFIED).

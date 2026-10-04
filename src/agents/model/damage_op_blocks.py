@@ -57,8 +57,10 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _TypeEncoder, _VOLATILE_SLOTS, _WATER_TIDX, _dmg_imx_dim, decode_damage_block,
 )
 
-from agents.model.damage_kinds import (gather_bp, gather_nonformula, is_priced, nonformula_rolls,
-                                       override_rolls)
+from agents.model.damage_kinds import (beatup_base_def, beatup_opp_target_def, beatup_party_ours,
+                                       beatup_party_opp, beatup_swap, gather_beatup, gather_bp,
+                                       gather_nonformula, is_priced, nonformula_rolls, override_rolls,
+                                       typeless_move_type)
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
@@ -110,6 +112,7 @@ class DamageOperatorBlocks:
         CHART: torch.Tensor
         MOVE_ACCURACY: torch.Tensor
         MOVE_BLOCKED_IF_STATUSED: torch.Tensor
+        MOVE_BEATUP: torch.Tensor
         MOVE_BP: torch.Tensor
         MOVE_EFFECT_FLAGS: torch.Tensor
         MOVE_FIXED_DAMAGE: torch.Tensor
@@ -161,7 +164,8 @@ class DamageOperatorBlocks:
         # sorted-by-id), so slot k's output ↔ action 6+k. `legal` is the CURRENT-decision choosability in
         # request order (was ctx.move_mask = prev-turn, sorted-by-id — a stale + misordered gate).
         move_ids = ctx.our_active_req_move_ids                       # [B,4] request order
-        move_ty = ctx.our_active_req_move_type_ids                   # [B,4] resolved type (incl our HP type)
+        # gen3_beatup_exact_v1: the resolved type, with Beat Up TYPELESS ('???' — the obs carries its dex type)
+        move_ty = typeless_move_type(self, move_ids, ctx.our_active_req_move_type_ids)   # [B,4] (incl our HP type)
         legal = ctx.our_active_req_move_legal                        # [B,4] currently-legal (Choice/Disable/PP)
         is_hp = (move_ids == self.hp_num)
         bp = torch.where(is_hp, torch.full_like(move_ty, self.hp_bp, dtype=torch.float32),
@@ -233,7 +237,12 @@ class DamageOperatorBlocks:
         D = phys * opp_def[:, None] + (1.0 - phys) * opp_spd[:, None]                 # [B,4]
         is_stab = ((move_ty == at1[:, None]) | (move_ty == at2[:, None])).float()
         stab = 1.0 + 0.5 * is_stab
-        core = 42.0 * bp * A / (D + eps) / 50.0 + 2.0
+        # gen3_beatup_exact_v1: Beat Up = one hit per healthy party member, each off THAT ally's BASE Atk vs the
+        # target's BASE Def — A → our party's Σ base Atk, D → the opp active's base Def, the +2 per hit.
+        bu_S, bu_N = beatup_party_ours(self, ctx)                                     # [B], [B]
+        A, D, plus2 = beatup_swap(gather_beatup(self, move_ids), A, D, bu_S[:, None],
+                                  beatup_base_def(self, ctx.species_ids[ar, opp_act])[:, None], bu_N[:, None])
+        core = 42.0 * bp * A / (D + eps) / 50.0 + plus2
         weather_mult = self._field_bp_mult(ctx, move_ty)                              # [B,4] rain/sun × sports
         dmg_ns = core * stab * eff * 0.925 * usable * weather_mult                    # [B,4] (non-usable → 0)
         opp_reflect = ctx.screen_feature[:, 1:2]                                      # OPP-side screens
@@ -318,7 +327,7 @@ class DamageOperatorBlocks:
         # --- our 4 moves in REQUEST-slot order (action 6+k), legality-masked (== _outgoing_block) ---
         # gen3_op_move_align_v1: request-ordered obs slice + current-decision legality (see _outgoing_block).
         move_ids = ctx.our_active_req_move_ids                                          # [B,4] request order
-        move_ty = ctx.our_active_req_move_type_ids                                      # [B,4]
+        move_ty = typeless_move_type(self, move_ids, ctx.our_active_req_move_type_ids)  # [B,4] Beat Up = '???'
         legal = ctx.our_active_req_move_legal                                           # [B,4]
         is_hp = (move_ids == self.hp_num)
         bp = torch.where(is_hp, torch.full_like(move_ty, self.hp_bp, dtype=torch.float32),
@@ -415,7 +424,14 @@ class DamageOperatorBlocks:
         D = phys[:, :, None] * opp_def[:, None, :] + (1.0 - phys)[:, :, None] * opp_spd[:, None, :]   # [B,4,6]
         is_stab = ((move_ty == at1[:, None]) | (move_ty == at2[:, None])).float()        # [B,4]
         stab = (1.0 + 0.5 * is_stab)[:, :, None]                                          # [B,4,1]
-        core = 42.0 * bp[:, :, None] * A[:, :, None] / (D + eps) / 50.0 + 2.0             # [B,4,6]
+        # gen3_beatup_exact_v1: Beat Up per defender — our party's Σ base Atk vs THAT defender's BASE Def. A hidden
+        # defender uses the harmonic-mean base Def 1 / E[1 / D_base] under the same Species-Clause prior (or
+        # `species_probs` override) the other expected-latent reads use — exact E[damage] through 1/D.
+        bu_S, bu_N = beatup_party_ours(self, ctx)                                         # [B], [B]
+        bu_def = beatup_opp_target_def(self, ctx, sp_probs)                               # [B,6]
+        A3, D, plus2 = beatup_swap(gather_beatup(self, move_ids)[:, :, None], A[:, :, None], D,
+                                   bu_S[:, None, None], bu_def[:, None, :], bu_N[:, None, None])
+        core = 42.0 * bp[:, :, None] * A3 / (D + eps) / 50.0 + plus2                      # [B,4,6]
         weather = self._field_bp_mult(ctx, move_ty)[:, :, None]                          # [B,4,1] × sports
         dmg_ns = core * stab * eff * 0.925 * usable[:, :, None] * weather                 # [B,4,6]
         opp_reflect = ctx.screen_feature[:, 1:2]; opp_ls = ctx.screen_feature[:, 3:4]     # OPP-side screens
@@ -462,6 +478,7 @@ class DamageOperatorBlocks:
         move_ids[ar, ctx.our_active_idx] = ctx.our_active_req_move_ids        # active → request order (parity)
         move_ty[ar, ctx.our_active_idx] = ctx.our_active_req_move_type_ids
         legal[ar, ctx.our_active_idx] = ctx.our_active_req_move_legal         # active → current-decision legality
+        move_ty = typeless_move_type(self, move_ids, move_ty)                 # gen3_beatup_exact_v1: Beat Up = '???'
         is_hp = (move_ids == self.hp_num)
         bp = torch.where(is_hp, torch.full_like(move_ty, self.hp_bp, dtype=torch.float32),
                          self.MOVE_BP[move_ids])                       # [B,6,4]
@@ -537,7 +554,13 @@ class DamageOperatorBlocks:
         D = phys * opp_def[:, None, None] + (1.0 - phys) * opp_spd[:, None, None]       # [B,6,4]
         is_stab = ((move_ty == at1[:, :, None]) | (move_ty == at2[:, :, None])).float() # [B,6,4]
         stab = 1.0 + 0.5 * is_stab
-        core = 42.0 * bp * A / (D + eps) / 50.0 + 2.0                                   # [B,6,4]
+        # gen3_beatup_exact_v1: any of our six mons' Beat Up — the party's Σ base Atk (the attacking SIDE's
+        # healthy count, not the user's own stats) vs the opp active's BASE Def.
+        bu_S, bu_N = beatup_party_ours(self, ctx)                                       # [B], [B]
+        A, D, plus2 = beatup_swap(gather_beatup(self, move_ids), A, D, bu_S[:, None, None],
+                                  beatup_base_def(self, ctx.species_ids[ar, opp_act])[:, None, None],
+                                  bu_N[:, None, None])
+        core = 42.0 * bp * A / (D + eps) / 50.0 + plus2                                 # [B,6,4]
         # gen3 weather BP modifier (== _weather_mult): sun/rain are [B,1] → broadcast as [B,1,1] over [B,6,4].
         is_water = (move_ty == _WATER_TIDX).float(); is_fire = (move_ty == _FIRE_TIDX).float()   # [B,6,4]
         sun = ctx.weather_feature[:, 1:2, None]; rain = ctx.weather_feature[:, 2:3, None]        # [B,1,1]
@@ -971,7 +994,8 @@ class DamageOperatorBlocks:
     def _incoming_rolls(self, ctx: 'ExtractorContext',
                         move_belief_logits: torch.Tensor,
                         cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-                        spread_belief: Optional[torch.Tensor] = None
+                        spread_belief: Optional[torch.Tensor] = None,
+                        species_probs: Optional[torch.Tensor] = None
                         ) -> Tuple[torch.Tensor, ...]:
         """The SHARED lean incoming physics (gen3_iterative_damage_v1 / gen3_edge_bias_trunk_v1): the opp
         active's top-K believed candidate moves vs our 6 defenders, PRE-collapse. Factored out of
@@ -1035,6 +1059,7 @@ class DamageOperatorBlocks:
         mty_k = mty_all[topk_idx]                                                        # [B,K] (long, TypeEncoder)
         phys_k = phys_all[topk_idx]                                                      # [B,K]
         acc_k = acc_all[topk_idx]                                                        # [B,K]
+        bu_k = gather_beatup(self, topk_idx)                                             # [B,K] gen3_beatup_exact_v1
         # --- gen3 damage for the K candidates × 6 defenders → [B,6,K] (the lean per-K mirror of _damage_rolls) ---
         idxd = mty_k[:, None, :].expand(B, TEAM_SIZE, K)                                  # [B,6,K] type indices
         eff = torch.gather(self.CHART[t1d], 2, idxd) * torch.gather(self.CHART[t2d], 2, idxd)  # [B,6,K]
@@ -1045,7 +1070,12 @@ class DamageOperatorBlocks:
              + (1.0 - phys_k)[:, None, :] * spd_stat[:, :, None])                         # [B,6,K]
         is_stab = ((mty_k == at1[:, None]) | (mty_k == at2[:, None])).float()             # [B,K]
         stab = 1.0 + 0.5 * is_stab                                                        # [B,K]
-        core = 42.0 * bp_k[:, None, :] * A[:, None, :] / (D + eps) / 50.0 + 2.0           # [B,6,K]
+        # gen3_beatup_exact_v1: the opp party's Σ base Atk / hit count vs OUR defenders' BASE Def.
+        bu_S, bu_N = beatup_party_opp(self, ctx, species_probs)                           # [B], [B]
+        A3, D, plus2 = beatup_swap(bu_k[:, None, :], A[:, None, :], D, bu_S[:, None, None],
+                                   beatup_base_def(self, ctx.species_ids[:, :TEAM_SIZE])[:, :, None],
+                                   bu_N[:, None, None])
+        core = 42.0 * bp_k[:, None, :] * A3 / (D + eps) / 50.0 + plus2                    # [B,6,K]
         dmg_ns = core * stab[:, None, :] * eff * 0.925                                    # [B,6,K] pre-screen
         dmg_ns = dmg_ns * (bp_k > 0).float()[:, None, :]                                  # kill the +2 floor on BP-0
         reflect, light_screen = ctx.screen_feature[:, 0:1], ctx.screen_feature[:, 2:3]    # [B,1] OUR-side screens

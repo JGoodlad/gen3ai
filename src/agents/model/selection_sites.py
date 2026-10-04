@@ -144,7 +144,8 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     "damage_op": {
         "OBS": ("hp_frac > 0", "opp_burn > 0.5", "opp_para > 0.5", "our_para > 0.5", "s >= 0"),
         "TABLE": ("bp_all > 0", "phys_all > 0.5"),
-        "INT": ("(phys_all > 0.5).long()", "ctx.type1_ids[:, _og] == _GHOST_TIDX",
+        "SELECTED": ("bu_all > 0",),            # gen3_beatup_exact_v1: the 0/1 Beat Up bit at the candidate index
+        "INT": ("(phys_all > 0.5).long()", "is_bu.long()", "ctx.type1_ids[:, _og] == _GHOST_TIDX",
                 "ctx.type2_ids[:, _og] == _GHOST_TIDX", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
                 "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]", "opp_item == 0",
                 "opp_item == self.cb_item_num"),
@@ -188,9 +189,13 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     "damage_kinds": {
         # gen3_nonformula_damage_v1: the declared non-formula / HP-dependent-BP kinds (the attacker's
         # and the target's HP are observed fractions × computed max HP; the kinds are table bits).
-        "OBS": ("ratio < thr", "tgt_cur_hp > 0", "bp > 0"),
+        "OBS": ("ctx.hp_and_active[:, sl, 0] > 0", "ratio < thr", "status < 0.5", "tgt_cur_hp > 0", "bp > 0"),
         "TABLE": ("fixed + target_frac + endeavor > 0", "hp_scaled > 0", "flail > 0", "eff > 0",
-                  "nonformula > 0", "target_frac >= 1.0"),
+                  "nonformula > 0", "op.MOVE_BEATUP[move_ids] > 0", "target_frac >= 1.0"),
+        # gen3_beatup_exact_v1: Beat Up's ally filter reads observed HP fractions and 0/1 condition flags
+        # (a fainted / hidden slot is exactly 0, a status flag exactly 0 or 1 — no near-tie), and the
+        # move flag is a 0/1 table bit gathered at an exact / already-declared index.
+        "SELECTED": ("is_bu > 0",),
     },
     "encoders": {
         "INT": ("ctx.all_move_ids == HIDDEN_POWER_MOVE_NUM",),

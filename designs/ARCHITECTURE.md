@@ -983,7 +983,7 @@ Explosion `pko`), and the `incoming_matrix` call is where `last_topk_idx` / `las
 — the seat axis α aligns to — are selected. Turning either matrix flag off deletes those; turning
 `op_drop_renders` off re-widens the flat block to 660 and changes nothing else.
 
-**Non-formula damage (`gen3_nonformula_damage_v1`).** Every move whose damage is not the gen-3
+**Non-formula damage (`gen3_nonformula_damage_v1`, Beat Up `gen3_beatup_exact_v1`).** Every move whose damage is not the gen-3
 base-power formula has ONE declared model in `damage_tables.DAMAGE_MODELS` (each row cites its
 `deps/pokemon-showdown` source), and every kernel — incoming, the three outgoing blocks, the d3
 refine, c1/c2/c3, the recovery cell and d4 — applies it through `damage_kinds.py`:
@@ -995,17 +995,40 @@ refine, c1/c2/c3, the recovery cell and d4 — applies it through `damage_kinds.
 | `endeavor` | Endeavor | `max(0, target HP − attacker HP)` |
 | `bp_flail` / `bp_hp_scaled` | Flail, Reversal (the gen-3 48-step table) / Eruption, Water Spout (150 × HP fraction) | the BP from the ATTACKER's HP fraction |
 | `bp` | Return, Frustration 102 (the set that maximises them — the obs has no happiness), Magnitude 71 and Present 52 (expectations; Present's heal branch priced 0) | the formula at that BP |
-| `table_bp_approx` | Beat Up (one 10-BP Dark special hit; the true multi-hit typeless move is approximated) | the formula at the dex BP |
+| `beatup_party` | Beat Up — EXACT (typeless `'???'`: no STAB, no effectiveness, no ability read; SPECIAL: Light Screen halves it, Reflect and burn do not) | one hit per healthy party member, `Σᵢ [(42/50)·10·Aᵢ/D + 2]` with `Aᵢ` = ally i's species BASE Atk and `D` = the target's species BASE Def (no stat stage, item or ability reaches either), then the op's usual mean roll / screen / crit / KO ramp |
 | `unmodelled` | Counter, Mirror Coat, Bide (need the turn's incoming damage), Low Kick (no weight in `data/`), Spit Up (no Stockpile count) | 0, BY DECLARATION |
 
-The non-formula kinds respect type / ability immunity (Fighting Seismic Toss into a Ghost is 0) and
-a kind's KO is `acc · [the hit KOs]` (an OHKO always, a fixed amount iff ≥ the remaining HP).
+The `fixed` / `target_hp_frac` / `endeavor` kinds respect type / ability immunity (Fighting Seismic
+Toss into a Ghost is 0) and a kind's KO is `acc · [the hit KOs]` (an OHKO always, a fixed amount iff ≥
+the remaining HP).
 `MOVE_BP` holds the BP at the attacker's full HP for every formula-priced move, and every
 dex-damaging move rides its TYPE's gen-3 channel in `MOVE_PHYS` (Return is physical). 🚨 **The table
 build RAISES on a damaging (dex category ≠ Status) move with base power 0 and no row** — the
 `category` field of `gen3_moves.json` exists for exactly this guard. The pointer head's E5 tail
-score (`w · BP/150 · acc`, defender-free) reads `MOVE_BP` only, so a non-formula move reads 0 THERE.
+score (`w · BP/150 · acc`, defender-free) reads `MOVE_BP` only, so a non-formula move reads 0 THERE and
+Beat Up reads its per-hit 10.
 Pinned by `src/agents/model/nonformula_damage_test.py`.
+
+**Beat Up (`gen3_beatup_exact_v1`).** The one kind that stays the BP formula with its inputs swapped
+(`damage_kinds.beatup_swap`): a Beat Up cell reads `A → S` (the attacking side's Σ base Atk over its healthy
+mons), `D → ` the target's base Def and `+2 → +2N` (one `+2` per hit, `N` = the healthy count; no eligible ally
+= no hit = 0), and rides every kernel's roll / screen / crit / KO line unchanged. The `MOVE_TYPE_IDX` row is
+`'???'` (the outgoing kernels, which read the obs' resolved type — Dark, the dex type — route it through
+`typeless_move_type`), so STAB, the chart, the ability multipliers and the weather / sport modifiers read
+neutral. **Who is an ally.** Ours is fully known: alive and no major status, the user counted iff healthy. The
+opponent's: a revealed mon counts iff alive and unstatused; **every unrevealed slot counts with certainty** (a
+mon that never entered cannot have fainted or been statused) at its EXPECTED base Atk under the op's one
+hidden-mon belief — the T0 species belief the extractor hands every pricing site (`t0_species_probs`), else the
+Species-Clause usage prior (`unrevealed_species_probs`); the sum's expectation is exact. An unrevealed
+DEFENDER (`_outgoing_matrix`) uses `D = 1 / E[1/D_base]` under the same belief, which returns E[damage]
+exactly. Declared limits: a forme reads its base species' stats (the op's num-keyed convention); Beat Up into a
+Substitute and the per-hit crit roll are not modelled; the KO ramp is the op's one shared roll over the summed
+damage, which over-states the spread by ≈ √N (the certain-KO / certain-no-KO ends are exact). Measured against
+the real sim (`src/agents/model/beatup_sim_parity_test.py`, 11 constructed scenarios, fixed seeds): the sim's
+mean total into a Blissey for the pinned six-mon party is 507.2 HP, the integer-exact mean 505.9, the op's
+smooth mean 511.5 — the op reads 0.9–1.0 HP per hit above the integer process (its documented smooth-vs-floor
+bias); the parent's one-hit price was 8.7 HP. Pinned by `src/agents/model/beatup_damage_test.py`; evidence
+`designs/research_state/measurements/beatup_golden_2026-10-03/`.
 
 **Field base-power modifiers.** Every damage kernel multiplies the candidate's base power by the
 gen-3 weather modifier (rain ×1.5 Water / ×0.5 Fire, sun the reverse) and by the **field sports**

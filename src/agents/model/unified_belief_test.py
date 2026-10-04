@@ -61,9 +61,12 @@ def _ctx(*, opp_species=0, opp_t1=0, opp_t2=0, defenders=None, opp_active=True,
         screen[:, 0] = 1.0
     if our_light_screen:
         screen[:, 2] = 1.0
+    believed = torch.ones(B, TEAM_SIZE, dtype=torch.bool)               # every opp slot but the active is hidden
+    believed[:, 0] = False
     return types.SimpleNamespace(
         batch_size=B, device=torch.device("cpu"),
         opp_active_local=torch.zeros(B, dtype=torch.long),
+        opp_believed_mask=believed,
         our_active_idx=torch.zeros(B, dtype=torch.long),
         species_ids=species, type1_ids=t1, type2_ids=t2, ability1_ids=ability1,
         item_ids=torch.zeros(B, 2 * TEAM_SIZE, dtype=torch.long),   # no Choice Band by default (gen3_unified_choice_band_v1)

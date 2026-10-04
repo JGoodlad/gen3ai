@@ -229,6 +229,9 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     # derived category, which is STATUS for every BP-0 move — Return was on the SPECIAL channel).
     nonformula = build_nonformula_tables(n_moves)
     move_bp[nonformula["_BP_OVERRIDE_NUMS"]] = nonformula["_BP_OVERRIDE_VALS"]
+    # gen3_beatup_exact_v1: Beat Up is TYPELESS in battle (move.type = '???') — the dex type (Dark) would hand
+    # it STAB, Dark effectiveness and a Ghost / Psychic read it does not have.
+    move_type_idx[nonformula["_TYPELESS_NUMS"]] = _T2I["???"]
     for mid in gen3_data.moves.raw():
         md = cast(MoveData, gen3_data.moves.get(mid))
         if md.num == HIDDEN_POWER_NUM or not (0 <= md.num < n_moves) or md.base_power > 0:
@@ -531,7 +534,9 @@ def build_species_cb_prior(n_species: int) -> torch.Tensor:
 #   bp_flail        gen-3 Flail table on the attacker's HP        → MOVE_BP_FLAIL (+ MOVE_BP = 20, its full-HP BP)
 #   bp_hp_scaled    dex BP × the attacker's HP fraction           → MOVE_BP_HP_SCALED (dex BP kept)
 #   hidden_power    priced through the typed Hidden Power path (the 16 typed nums, BP 70) — not here
-#   table_bp_approx priced at its dex BP as ONE ordinary hit — a declared approximation
+#   beatup_party    gen-3 Beat Up, EXACT: typeless, one hit per healthy party member, each hit = the gen-3
+#                   formula at BP 10 with A = THAT ally's BASE Atk and D = the target's BASE Def   → MOVE_BEATUP
+#                   (+ the move's type index → '???'; the party terms live in `damage_kinds.beatup_*`)
 #   unmodelled      priced 0 BY DECLARATION — the op has no state to model it
 #
 # Level: every pool team is level 100 (no `Level:` line in any of data/teams' 813 files; Showdown
@@ -542,7 +547,7 @@ NONFORMULA_LEVEL = 100
 #: signature stay (the training-input precedent), so a RECORDING of a policy's outputs stamps this
 #: value and a reader on a checkout with a different one knows it cannot reproduce the recording
 #: (`main.policy_spectrum` — the bank manifest's `op_semantics`). Change it with the op's semantics.
-OP_SEMANTICS = "gen3_nonformula_damage_v1"
+OP_SEMANTICS = "gen3_beatup_exact_v1"       # (was gen3_nonformula_damage_v1: Beat Up was one 10-BP Dark special hit)
 DAMAGE_MODELS: Dict[str, Tuple[str, float, str]] = {
     # --- fixed / level: `getDamage` → `move.damage === 'level'` → source.level, else `move.damage` ---
     "seismictoss": ("fixed", float(NONFORMULA_LEVEL), "data/moves.ts seismictoss: damage 'level'"),
@@ -581,9 +586,18 @@ DAMAGE_MODELS: Dict[str, Tuple[str, float, str]] = {
     # --- priced elsewhere / approximated / declared unmodelled ---
     "hiddenpower": ("hidden_power", 0.0,
                     "data/mods/gen3/moves.ts hiddenpower (type + category by type); typed nums 355-370 at BP 70"),
-    # gen 3 Beat Up: typeless, one hit per healthy party member, each from that member's BASE Atk vs the
-    # target's BASE Def (data/mods/gen3/moves.ts beatup). APPROXIMATION: one 10-BP Dark special hit.
-    "beatup": ("table_bp_approx", 10.0, "data/mods/gen3/moves.ts beatup onModifyMove multihit = healthy allies"),
+    # gen 3 Beat Up — EXACT (gen3_beatup_exact_v1; was a one-hit 10-BP Dark special approximation that ran the
+    # user's SpA against the target's SpD, ~1% of a Blissey where the real move is ~70%). `data/mods/gen3/moves.ts`
+    # beatup: onModifyMove sets move.type = '???' (typeless: no STAB, no effectiveness, no Wonder-Guard / Levitate /
+    # Thick Fat read), move.category = 'Special' (so Light Screen halves it, Reflect and burn do not), move.allies =
+    # the user's party filtered `!ally.fainted && !ally.status` (the user INCLUDED iff healthy) and multihit =
+    # that count; the volatile's onModifySpA returns that ALLY's species baseStats.atk and onFoeModifySpD the
+    # TARGET's species baseStats.def, both with `event.modifier = 1` (no boost / item / ability reaches either
+    # stat); gen4 mod: basePower 10, the callback returns 10 each hit. The value is the per-hit BP (must equal the dex).
+    "beatup": ("beatup_party", 10.0,
+               "data/mods/gen3/moves.ts beatup onModifyMove (type '???', category Special, allies = healthy party, "
+               "multihit = count) + condition onModifySpA / onFoeModifySpD (base Atk of each ally vs base Def of the "
+               "target, modifier 1); data/mods/gen4/moves.ts beatup basePower 10"),
     # reflective: 2× the damage taken this turn from a physical (Counter) / special (Mirror Coat) hit, or
     # 2× the damage taken over Bide's 2 turns — needs the turn's incoming damage, which the op does not hold.
     "counter": ("unmodelled", 0.0, "data/mods/gen3/moves.ts counter: 2x the physical damage taken this turn"),
@@ -595,12 +609,12 @@ DAMAGE_MODELS: Dict[str, Tuple[str, float, str]] = {
     "spitup": ("unmodelled", 0.0, "data/moves.ts spitup basePowerCallback stockpile layers*100"),
 }
 _DAMAGE_KINDS = frozenset({"fixed", "target_hp_frac", "endeavor", "bp", "bp_flail", "bp_hp_scaled",
-                           "hidden_power", "table_bp_approx", "unmodelled"})
+                           "hidden_power", "beatup_party", "unmodelled"})
 # The kinds whose dex basePower must be 0 (the declaration REPLACES it) vs > 0 (the dex BP is kept).
 _KINDS_DEX_BP_ZERO = frozenset({"fixed", "target_hp_frac", "endeavor", "bp", "bp_flail",
                                 "hidden_power", "unmodelled"})
 NONFORMULA_TABLE_KEYS = ("MOVE_FIXED_DAMAGE", "MOVE_TARGET_HP_FRAC", "MOVE_ENDEAVOR", "MOVE_NONFORMULA",
-                         "MOVE_BP_FLAIL", "MOVE_BP_HP_SCALED")
+                         "MOVE_BP_FLAIL", "MOVE_BP_HP_SCALED", "MOVE_BEATUP")
 
 
 def check_damage_models(models: Dict[str, Tuple[str, float, str]] = DAMAGE_MODELS) -> None:
@@ -620,6 +634,9 @@ def check_damage_models(models: Dict[str, Tuple[str, float, str]] = DAMAGE_MODEL
             raise ValueError(
                 f"DAMAGE_MODELS row {mid!r}: kind {kind!r} expects dex basePower "
                 f"{'0' if kind in _KINDS_DEX_BP_ZERO else '> 0'}, the dex has {md.base_power}")
+        if kind == "beatup_party" and value != float(md.base_power):
+            raise ValueError(f"DAMAGE_MODELS row {mid!r}: kind 'beatup_party' declares {value} BP per hit, "
+                             f"the dex has {md.base_power} (the declaration must match — it is a check, not a knob)")
         if not cite:
             raise ValueError(f"DAMAGE_MODELS row {mid!r} carries no Showdown citation")
     missing = sorted(
@@ -643,6 +660,7 @@ def build_nonformula_tables(n_moves: int,
     check_damage_models(models)
     t = {k: torch.zeros(n_moves, dtype=torch.float32) for k in NONFORMULA_TABLE_KEYS}
     bp_override: Dict[int, float] = {}
+    typeless_nums = []
     for mid, (kind, value, _cite) in models.items():
         num = cast(MoveData, gen3_data.moves.get(mid)).num
         if not (0 <= num < n_moves):
@@ -660,9 +678,16 @@ def build_nonformula_tables(n_moves: int,
             bp_override[num] = value
         elif kind == "bp_hp_scaled":
             t["MOVE_BP_HP_SCALED"][num] = 1.0
+        elif kind == "beatup_party":
+            t["MOVE_BEATUP"][num] = 1.0           # the dex BP (10) is KEPT in MOVE_BP — it is the per-hit BP
+            typeless_nums.append(num)             # in battle the move is '???' (see `_TYPELESS_NUMS`)
     t["MOVE_NONFORMULA"] = ((t["MOVE_FIXED_DAMAGE"] + t["MOVE_TARGET_HP_FRAC"] + t["MOVE_ENDEAVOR"]) > 0).float()
     t["_BP_OVERRIDE_NUMS"] = torch.tensor(sorted(bp_override), dtype=torch.long)
     t["_BP_OVERRIDE_VALS"] = torch.tensor([bp_override[n] for n in sorted(bp_override)], dtype=torch.float32)
+    # The moves whose in-battle TYPE is '???' (Beat Up): `build_damage_buffers` writes the '???' type index
+    # over their MOVE_TYPE_IDX row, so STAB, the effectiveness chart, the ability multipliers and the
+    # weather / sport BP modifiers all read neutral for them in every kernel that gathers the table.
+    t["_TYPELESS_NUMS"] = torch.tensor(sorted(typeless_nums), dtype=torch.long)
     return t
 
 

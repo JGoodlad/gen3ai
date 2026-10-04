@@ -57,8 +57,8 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _TypeEncoder, _VOLATILE_SLOTS, _WATER_TIDX, _dmg_imx_dim, decode_damage_block,
 )
 
-from agents.model.damage_kinds import (gather_bp, gather_nonformula, nonformula_rolls,
-                                       override_rolls)
+from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, beatup_swap, gather_beatup,
+                                       gather_bp, gather_nonformula, nonformula_rolls, override_rolls)
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
@@ -119,6 +119,7 @@ class DamageOperatorPairwise:
         HP_CAND_MASK: torch.Tensor
         MOVE_ACCURACY: torch.Tensor
         MOVE_BOOST_HP_COST: torch.Tensor
+        MOVE_BEATUP: torch.Tensor
         MOVE_BP: torch.Tensor
         MOVE_FIXED_DAMAGE: torch.Tensor
         MOVE_TARGET_HP_FRAC: torch.Tensor
@@ -275,14 +276,14 @@ class DamageOperatorPairwise:
                                                   torch.Tensor, torch.Tensor, torch.Tensor,
                                                   torch.Tensor, torch.Tensor,
                                                   Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-                                                  torch.Tensor]:
+                                                  torch.Tensor, torch.Tensor]:
         """Shared C1b/C3 attacker block (the D4 recipe with the ACTIVE column KEPT): per opp mon
         j its top-`k_cand` most-believed candidates from ITS OWN slot of the composed posterior
         (selection detached, weights differentiable), de-timid offense, revealed+alive gate.
         → (w_k, bp_k, mty_k, phys_k, acc_k [B,6,K]; atk_j, spa_j, att_gate [B,6]; nf_k = 3×[B,6,K]
-        (fixed, target_frac, endeavor); atk_cur_j [B,6]). `bp_k` is the EFFECTIVE BP (each mon's HP
-        resolved) and `nf_k` / `atk_cur_j` feed `damage_kinds.nonformula_rolls` —
-        gen3_nonformula_damage_v1."""
+        (fixed, target_frac, endeavor); atk_cur_j [B,6]; bu_k [B,6,K] the 0/1 Beat Up flag). `bp_k` is the
+        EFFECTIVE BP (each mon's HP resolved) and `nf_k` / `atk_cur_j` feed `damage_kinds.nonformula_rolls` —
+        gen3_nonformula_damage_v1; `bu_k` feeds `damage_kinds.beatup_swap` — gen3_beatup_exact_v1."""
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
         K = min(int(k_cand), w_all.shape[-1])
@@ -301,7 +302,8 @@ class DamageOperatorPairwise:
         atk_cur_j = hp_j * (2.0 * a_base[..., _BS_HP] + 31.0 + 110.0)                # neutral max HP
         att_gate: torch.Tensor = ((1.0 - ctx.opp_believed_mask.float())
                                   * (hp_j > 0).float())                              # [B,6]
-        return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate, nf_k, atk_cur_j
+        bu_k = gather_beatup(self, topk_idx)                                         # [B,6,K]
+        return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate, nf_k, atk_cur_j, bu_k
 
     def _active_defender(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, ...]:
         """Consequence-kernel defender block (C2; C1b/C3 keep inline variants — C1b needs the
@@ -330,7 +332,8 @@ class DamageOperatorPairwise:
     def pairwise_status_consequence(self, ctx: 'ExtractorContext',
                                     move_belief_logits: torch.Tensor,
                                     spread_belief: Optional[torch.Tensor] = None,
-                                    k_cand: int = 6) -> torch.Tensor:
+                                    k_cand: int = 6,
+                                    species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (C2): what LANDING our status move DOES — the consequence
         world behind S1's "will it land". Per (E3 status-move seat k, opp mon j) the cells
         `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched, d_in_all_slp,
@@ -391,8 +394,11 @@ class DamageOperatorPairwise:
         d_outspeed = (p_par - p_now)[:, None, :] * is_par[:, :, None]                # [B,4,6]
         # --- burn: mon j's worst believed PHYSICAL hit on our active, Atk halved ---
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
-         att_gate, nf_k, atk_cur_j) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+         att_gate, nf_k, atk_cur_j, bu_k) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         def_c, spd_c, maxhp, cur_hp, at1, at2, amul = self._active_defender(ctx)
+        # gen3_beatup_exact_v1: the opp party's Σ base Atk / hit count vs OUR active's BASE Def.
+        bu_S, bu_N = beatup_party_opp(self, ctx, species_probs)                      # [B], [B]
+        bu_def = beatup_base_def(self, ctx.species_ids[ar, ctx.our_active_idx])      # [B]
         eff = (torch.gather(self.CHART[at1][:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k)
                * torch.gather(self.CHART[at2][:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k)
                * torch.gather(amul[:, None, :].expand(B, TEAM_SIZE, -1), 2, mty_k))  # [B,6,K]
@@ -412,7 +418,9 @@ class DamageOperatorPairwise:
         def _worst(atk_mult: float, mask: torch.Tensor) -> torch.Tensor:
             A = phys_k * atk_j[:, :, None] * atk_mult + (1.0 - phys_k) * spa_j[:, :, None]
             D = phys_k * def_c[:, None, None] + (1.0 - phys_k) * spd_c[:, None, None]
-            core = 42.0 * bp_k * A / (D + eps) / 50.0 + 2.0
+            A, D, plus2 = beatup_swap(bu_k, A, D, bu_S[:, None, None], bu_def[:, None, None],
+                                      bu_N[:, None, None])
+            core = 42.0 * bp_k * A / (D + eps) / 50.0 + plus2
             dmg_ns = core * (1.0 + 0.5 * is_stab) * eff * 0.925 * (bp_k > 0).float()
             high, _l, _c, _k = override_rolls(self._rolls(dmg_ns, screen, maxhp[:, None, None],
                                                           cur_hp[:, None, None], acc_k, eps), nf)  # [B,6,K]
@@ -449,7 +457,8 @@ class DamageOperatorPairwise:
                                        move_belief_logits: torch.Tensor,
                                        spread_belief: Optional[torch.Tensor] = None,
                                        k_cand: int = 6,
-                                       c2_cells: Optional[torch.Tensor] = None
+                                       c2_cells: Optional[torch.Tensor] = None,
+                                       species_probs: Optional[torch.Tensor] = None
                                        ) -> Tuple[torch.Tensor, ...]:
         """gen3_intent_move_cell_v1 (G3): the RAW operands for the alpha-conditioned c2
         re-delivery through the pointer MOVE cell (`agents.model.intent_move_cell` weights them
@@ -492,7 +501,7 @@ class DamageOperatorPairwise:
         # --- the k-independent c2 columns vs the opp ACTIVE (c2's own row_gate already folds
         # our_alive + the active's revealed/alive gate; has_opp guards the no-active gather) ---
         c2 = c2_cells if c2_cells is not None else self.pairwise_status_consequence(
-            ctx, move_belief_logits, spread_belief, k_cand=k_cand)
+            ctx, move_belief_logits, spread_belief, k_cand=k_cand, species_probs=species_probs)
         row = c2[ar, :, ctx.opp_active_local, :]                                     # [B,4,7]
         base = torch.stack([row[..., 0], row[..., 2], row[..., 4], row[..., 6]],
                            dim=-1) * has_opp[:, None, None]                          # [B,4,4]
@@ -530,12 +539,16 @@ class DamageOperatorPairwise:
         weather_k = self._field_bp_mult(ctx, mty_k)                                  # [B,K] × sports
         reflect = ctx.screen_feature[:, 0:1]                                         # [B,1] OUR side
         light_screen = ctx.screen_feature[:, 2:3]
+        # gen3_beatup_exact_v1: the opp party's Σ base Atk / hit count vs OUR active's BASE Def.
+        bu_k = gather_beatup(self, nums)                                             # [B,K]
+        bu_S, bu_N = beatup_party_opp(self, ctx, species_probs)                      # [B], [B]
+        bu_party = (bu_S, bu_N, beatup_base_def(self, ctx.species_ids[ar, ctx.our_active_idx])[:, None])
         def _high(atk_x: torch.Tensor) -> torch.Tensor:
             return self._damage_rolls(
                 atk_x, spa, at1, at2, def_c[:, None], spd_c[:, None], maxhp[:, None],
                 cur_hp[:, None], d_t1[:, None], d_t2[:, None], our_abl[:, None],
                 reflect, light_screen, bp_k, mty_k, phys_k, acc_k, nf_k, atk_cur,
-                weather_k, eps)[0][:, 0, :]                                          # [B,K]
+                bu_k, bu_party, weather_k, eps)[0][:, 0, :]                          # [B,K]
         high_full = _high(atk)
         high_half = _high(atk * 0.5)
         gate = (has_opp * our_alive)[:, None]                                        # [B,1]
@@ -545,7 +558,8 @@ class DamageOperatorPairwise:
 
     def pairwise_boost_incoming(self, ctx: 'ExtractorContext',
                                 move_belief_logits: torch.Tensor,
-                                k_cand: int = 6) -> torch.Tensor:
+                                k_cand: int = 6,
+                                species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (C1b): the INCOMING half of the setup consequence — "after
         clicking slot k's boost, how much LESS does each of their mons hurt me". Per (E3 setup
         seat k, opp mon j) the DELTA cells `[d_in_high, d_in_pko]` `[B, 4, TEAM_SIZE, 2]`
@@ -565,7 +579,7 @@ class DamageOperatorPairwise:
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         deltas, is_boost, hp_cost = self._setup_deltas(ctx)                          # [B,4,5], [B,4], [B,4]
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
-         att_gate, nf_k, atk_cur_j) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+         att_gate, nf_k, atk_cur_j, bu_k) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         # --- defender: OUR ACTIVE (real spread; CURRENT def/spd stages) ---
         d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
         spr = ctx.pokemon_part[ar, ctx.our_active_idx,
@@ -596,7 +610,13 @@ class DamageOperatorPairwise:
              + (1.0 - phys_k)[:, None] * spd_w[:, :, None, None])                    # [B,W,6,K]
         is_stab = ((mty_k == ctx.type1_ids[:, opp][:, :, None])
                    | (mty_k == ctx.type2_ids[:, opp][:, :, None])).float()           # [B,6,K]
-        core = 42.0 * bp_k[:, None] * A[:, None] / (D + eps) / 50.0 + 2.0            # [B,W,6,K]
+        # gen3_beatup_exact_v1: Beat Up ignores the defender's stat stages (its Def is the species BASE Def,
+        # `event.modifier = 1`), so a defensive setup move moves it by exactly 0 across the worlds.
+        bu_S, bu_N = beatup_party_opp(self, ctx, species_probs)                      # [B], [B]
+        A4, D, plus2 = beatup_swap(bu_k[:, None], A[:, None], D, bu_S[:, None, None, None],
+                                   beatup_base_def(self, ctx.species_ids[ar, ctx.our_active_idx]
+                                                   )[:, None, None, None], bu_N[:, None, None, None])
+        core = 42.0 * bp_k[:, None] * A4 / (D + eps) / 50.0 + plus2                  # [B,W,6,K]
         dmg_ns = (core * ((1.0 + 0.5 * is_stab) * eff * 0.925)[:, None]
                   * (bp_k > 0).float()[:, None])
         reflect, ls = ctx.screen_feature[:, 0:1], ctx.screen_feature[:, 2:3]         # our side
@@ -622,7 +642,8 @@ class DamageOperatorPairwise:
 
     def pairwise_recovery(self, ctx: 'ExtractorContext',
                           move_belief_logits: torch.Tensor,
-                          k_cand: int = 6) -> torch.Tensor:
+                          k_cand: int = 6,
+                          species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (C3): the RECOVERY-FLIP consequence — "after clicking slot
         k's heal, does their believed hit still KO me". Per (E3 recovery seat k, opp mon j) the
         cells `[is_recovery, d_in_pko, rest_sleep_turns]` `[B, 4, TEAM_SIZE, 3]` (the delta ≤ 0,
@@ -652,7 +673,7 @@ class DamageOperatorPairwise:
         w_frac = (2.0 / 3.0) * sun + 0.25 * other_w + 0.5 * (1.0 - sun - other_w)    # [B,1]
         frac = torch.where(wh > 0, w_frac.expand_as(frac), frac)
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
-         att_gate, nf_k, atk_cur_j) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+         att_gate, nf_k, atk_cur_j, bu_k) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         # --- defender: OUR ACTIVE (real spread; CURRENT stages — a heal changes no stage) ---
         d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
         spr = ctx.pokemon_part[ar, ctx.our_active_idx,
@@ -682,7 +703,12 @@ class DamageOperatorPairwise:
         D = phys_k * def_c[:, None, None] + (1.0 - phys_k) * spd_c[:, None, None]    # [B,6,K]
         is_stab = ((mty_k == ctx.type1_ids[:, opp][:, :, None])
                    | (mty_k == ctx.type2_ids[:, opp][:, :, None])).float()
-        core = 42.0 * bp_k * A / (D + eps) / 50.0 + 2.0
+        # gen3_beatup_exact_v1: the opp party's Σ base Atk / hit count vs OUR active's BASE Def.
+        bu_S, bu_N = beatup_party_opp(self, ctx, species_probs)                      # [B], [B]
+        A, D, plus2 = beatup_swap(bu_k, A, D, bu_S[:, None, None],
+                                  beatup_base_def(self, ctx.species_ids[ar, ctx.our_active_idx])[:, None, None],
+                                  bu_N[:, None, None])
+        core = 42.0 * bp_k * A / (D + eps) / 50.0 + plus2
         dmg_ns = core * (1.0 + 0.5 * is_stab) * eff * 0.925 * (bp_k > 0).float()     # [B,6,K]
         reflect, ls = ctx.screen_feature[:, 0:1], ctx.screen_feature[:, 2:3]
         screen = (1.0 - 0.5 * (reflect[:, :, None] * phys_k
@@ -805,7 +831,8 @@ class DamageOperatorPairwise:
 
     def pairwise_bench_incoming(self, ctx: 'ExtractorContext',
                                 move_belief_logits: torch.Tensor,
-                                k_bench: int = 6) -> torch.Tensor:
+                                k_bench: int = 6,
+                                species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (D4): the MISSING quadrant — every OPP mon's believed threat to every
         OUR mon ("after I KO, what comes in and what does it threaten"). `[B, TEAM_SIZE(our i),
         TEAM_SIZE(opp j), 4]` = `[phys_high, spec_high, phys_pko, spec_pko]` per (defender i,
@@ -829,6 +856,7 @@ class DamageOperatorPairwise:
         phys_k = self.MOVE_PHYS[topk_idx]
         acc_k = self.MOVE_ACCURACY[topk_idx]
         nf_k = gather_nonformula(self, topk_idx)                                       # 3×[B,6,K]
+        bu_k = gather_beatup(self, topk_idx)                                           # [B,6,K] gen3_beatup_exact_v1
         # --- attackers = the opp 6 (de-timid; revealed+alive-gated; active column zeroed) ---
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         a_base = self.BASE_STATS[ctx.species_ids[:, opp]]                              # [B,6,6]
@@ -868,7 +896,13 @@ class DamageOperatorPairwise:
              + (1.0 - phys_k)[:, None, :, :] * spd_stat[:, :, None, None])             # [B,6i,6j,K]
         is_stab = ((mty_k == at1[:, :, None]) | (mty_k == at2[:, :, None])).float()    # [B,6j,K]
         stab = (1.0 + 0.5 * is_stab)[:, None, :, :]
-        core = 42.0 * bp_k[:, None, :, :] * A[:, None, :, :] / (D + eps) / 50.0 + 2.0
+        # gen3_beatup_exact_v1: the opp party's Σ base Atk / hit count (the SIDE, whichever mon j uses it) vs
+        # each of OUR six defenders' BASE Def.
+        bu_S, bu_N = beatup_party_opp(self, ctx, species_probs)                        # [B], [B]
+        A4, D, plus2 = beatup_swap(bu_k[:, None], A[:, None, :, :], D, bu_S[:, None, None, None],
+                                   beatup_base_def(self, ctx.species_ids[:, :TEAM_SIZE])[:, :, None, None],
+                                   bu_N[:, None, None, None])
+        core = 42.0 * bp_k[:, None, :, :] * A4 / (D + eps) / 50.0 + plus2
         dmg_ns = core * stab * eff * 0.925
         dmg_ns = dmg_ns * (bp_k > 0).float()[:, None, :, :]                            # kill the +2 floor
         reflect, light_screen = ctx.screen_feature[:, 0:1], ctx.screen_feature[:, 2:3]  # [B,1] our side
@@ -1089,7 +1123,8 @@ class DamageOperatorPairwise:
     def pairwise_incoming(self, ctx: 'ExtractorContext',
                           move_belief_logits: torch.Tensor,
                           cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-                          spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
+                          spread_belief: Optional[torch.Tensor] = None,
+                          species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (D3): the UN-collapsed per-(candidate, defender) incoming cells for the
         edge-bias delivery — `[B, K, TEAM_SIZE, 5]` = `[high, pko, eff, is_phys, w]` per (their believed
         move c, our mon i). The same `_incoming_rolls` physics and the same detached candidate selection as
@@ -1098,7 +1133,7 @@ class DamageOperatorPairwise:
         WHICH defender instead of the worst-case max. Decorrelated: physics is w-independent, `w` rides as
         its own channel (the belief gradient path). Gated to 0 with no opp active / per fainted defender."""
         high, ko, eff, phys_k, w_topk, defender_alive, has_opp = self._incoming_rolls(
-            ctx, move_belief_logits, cand, spread_belief=spread_belief)
+            ctx, move_belief_logits, cand, spread_belief=spread_belief, species_probs=species_probs)
         cells = torch.stack([
             high, ko, eff.clamp(max=4.0) / 4.0,
             phys_k[:, None, :].expand_as(high),
