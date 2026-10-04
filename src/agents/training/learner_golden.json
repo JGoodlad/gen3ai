@@ -260,5 +260,249 @@
   "model": 0,
   "perturb": 1234,
   "update": 123
+ },
+ "arms": {
+  "fixed_mass": {
+   "overrides": {
+    "belief_tokens": "fixed_mass"
+   },
+   "perturb": "name_keyed",
+   "buffer": {
+    "file": "learner_golden_buffer_fixed_mass.npz",
+    "n_steps": 16,
+    "n_envs": 4
+   },
+   "buffer_sha256": "681dc6b060c1a9b3fe32b98c28363eebb48cbe1991b7a7324ec31ec3a1b925b2",
+   "entries": {
+    "2.8.0+cu126": {
+     "init_params_sha256": "47c4c5fdde7b4dc171db6f758eda0da097ab2b44224e61fc44fd67a736d92f69",
+     "init_group_sha256": {
+      "features_extractor.belief_head": "d1c4020bfa97af74",
+      "features_extractor.cls_pool": "a67cd668850716a3",
+      "features_extractor.conditional_threat": "d40496ad20d1a49b",
+      "features_extractor.damage_op": "5c39c8bb45bc54b5",
+      "features_extractor.edge_bias": "5b240a2c9b26a86a",
+      "features_extractor.embeddings": "020db3ded25c4b1e",
+      "features_extractor.entity_seats": "a339473355ac3ae1",
+      "features_extractor.flat_intent_head": "4950e9d9a18b7222",
+      "features_extractor.hidden_opp_belief": "a4d3fd6d20e85e4f",
+      "features_extractor.history_events": "748c8576ab5dd4d3",
+      "features_extractor.hp_type_belief_head": "51237caf02a58ab4",
+      "features_extractor.hypothesis_builder": "45371e1a9d5a285f",
+      "features_extractor.intent_conditional": "67f794ab365abe2b",
+      "features_extractor.intent_move_cell": "cb250c188504dbb0",
+      "features_extractor.intent_threshold_move": "3d1462c92d0b5dba",
+      "features_extractor.item_belief_head": "e4c8cd679ce17d13",
+      "features_extractor.move_belief": "ba75f1d4f0e5499e",
+      "features_extractor.pair_outcome_move": "e696eddafeff3f60",
+      "features_extractor.pair_outcome_switch": "90e3a4a3b2f362ba",
+      "features_extractor.pokemon_encoder": "ffca53ce8514e6bf",
+      "features_extractor.pre_proj_norm": "5f1c962f68d6141a",
+      "features_extractor.prefuse_proj": "a7f2f21f9e8c1a24",
+      "features_extractor.projection": "9cc3ba7821cf6a0a",
+      "features_extractor.spread_belief": "a81604463c029f90",
+      "features_extractor.switch_branch": "cdf307945a532317",
+      "features_extractor.team_transformer": "3d7db3a7f1f6e9a5",
+      "features_extractor.value_entity_pool": "477efaadfe99e09c",
+      "features_extractor.value_pre_norm": "c6777ec7124aad24",
+      "features_extractor.value_projection": "4f56838435a824aa",
+      "features_extractor.win_head": "85a76bb0bcabb25f",
+      "mlp_extractor.policy_net": "461ba8a54fa00cdb",
+      "mlp_extractor.value_net": "cd34209eb911c893",
+      "pointer_head.ctx_proj": "86852fe015520e81",
+      "pointer_head.move_proj": "8f97d14c2b91a331",
+      "pointer_head.move_score": "b741a653649aa90e",
+      "pointer_head.struggle_score": "e0aa35bc0215b140",
+      "pointer_head.switch_proj": "bb9bb5f3e5ec8dec",
+      "pointer_head.switch_score": "8d7dc4a1a2fda3d3",
+      "value_net.bias": "0cfdd0bcaf4d0e92",
+      "value_net.weight": "3acda6666573adda"
+     },
+     "post_params_sha256": "e4f8dbab65182b98f9a75b8f617bff6690ffe2954ec85158e319ba6805f0d480",
+     "group_sha256": {
+      "features_extractor.belief_head": "8774964e79307bbe",
+      "features_extractor.cls_pool": "c63e1f3d7081a9dc",
+      "features_extractor.conditional_threat": "3daf1e186cf6da02",
+      "features_extractor.damage_op": "bbe5e0746b7b0968",
+      "features_extractor.edge_bias": "5052fce0eb2ca524",
+      "features_extractor.embeddings": "55d78aa07e5bb9cb",
+      "features_extractor.entity_seats": "9496873dddf87a67",
+      "features_extractor.flat_intent_head": "79cd8482a541c487",
+      "features_extractor.hidden_opp_belief": "ad4dd6475d5a9668",
+      "features_extractor.history_events": "e89301988466ba1d",
+      "features_extractor.hp_type_belief_head": "b4a24f45a3d7aedf",
+      "features_extractor.hypothesis_builder": "38b0eecaa4eea244",
+      "features_extractor.intent_conditional": "f189c52bc0df5076",
+      "features_extractor.intent_move_cell": "e00cede951eee3ab",
+      "features_extractor.intent_threshold_move": "ae01231733635609",
+      "features_extractor.item_belief_head": "aa88ce9396db6eba",
+      "features_extractor.move_belief": "17e220110763796e",
+      "features_extractor.pair_outcome_move": "7dc2839a6e2c9524",
+      "features_extractor.pair_outcome_switch": "300f4445d4fc897a",
+      "features_extractor.pokemon_encoder": "f56eb5e8f6e0baf9",
+      "features_extractor.pre_proj_norm": "3df14ccec190da1f",
+      "features_extractor.prefuse_proj": "ca515d222356748f",
+      "features_extractor.projection": "3c3a69806ee11c57",
+      "features_extractor.spread_belief": "7f09234fd47e3812",
+      "features_extractor.switch_branch": "8b8ec208323b9616",
+      "features_extractor.team_transformer": "49bde072309f348e",
+      "features_extractor.value_entity_pool": "f26ebe56f9994f88",
+      "features_extractor.value_pre_norm": "c6777ec7124aad24",
+      "features_extractor.value_projection": "4f56838435a824aa",
+      "features_extractor.win_head": "73c98d18279208f5",
+      "mlp_extractor.policy_net": "5ffbbecd7253a234",
+      "mlp_extractor.value_net": "cd34209eb911c893",
+      "pointer_head.ctx_proj": "bbe5de381754180d",
+      "pointer_head.move_proj": "c58cb376a8233341",
+      "pointer_head.move_score": "4d60bbb3b16d4a04",
+      "pointer_head.struggle_score": "ba5a46f153e55191",
+      "pointer_head.switch_proj": "4fc7599b9e0a3fd5",
+      "pointer_head.switch_score": "1b3766e0abbcc979",
+      "value_net.bias": "0cfdd0bcaf4d0e92",
+      "value_net.weight": "3acda6666573adda"
+     },
+     "losses": {
+      "belief/hptype_loss": 0.7051147222518921,
+      "belief/item_loss": 0.5759463310241699,
+      "belief/move_loss": 0.015457999426871538,
+      "belief/movelatent_loss": 0.5538115873932838,
+      "belief/natureev_loss": 2.171795591711998,
+      "belief/set_aux_loss": 5.068237125873566,
+      "belief/spread_loss": 0.041937002912163734,
+      "opp_intent/flat_loss": 0.5291595160961151,
+      "train/approx_kl": 0.0022721141576766968,
+      "train/clip_fraction": 0.015625,
+      "train/entropy_loss": -1.8291266709566116,
+      "train/explained_variance": -0.49067842960357666,
+      "train/loss": 0.617684543132782,
+      "train/n_updates": 2.0,
+      "train/policy_gradient_loss": -0.00755054596811533,
+      "train/value_loss": 0.026598048221785575,
+      "win_prob/loss": 0.7058394178748131
+     },
+     "fp64_reference": {
+      "rows_judged": 62,
+      "rows_excluded": 2,
+      "min_margin": 3.705593849054396e-06,
+      "terms_fp32": {
+       "policy": 4.999099090241543e-08,
+       "entropy": -0.09130830317735672,
+       "species_belief_set": 0.2578991949558258,
+       "move_belief": 0.0007732227095402777,
+       "opp_intent": 0.025726040825247765,
+       "move_latent": 0.027531186118721962,
+       "spread_belief": 0.002135512186214328,
+       "nature_ev": 0.110539510846138,
+       "hp_type": 0.03452771529555321,
+       "item_belief": 0.02884242869913578,
+       "win_prob": 0.38905608654022217,
+       "loss": 0.7857226133346558
+      },
+      "terms_fp64": {
+       "policy": 1.5240512221412833e-09,
+       "entropy": -0.09130830904268446,
+       "species_belief_set": 0.25789952172975256,
+       "move_belief": 0.0007732230792556571,
+       "opp_intent": 0.02572604070714521,
+       "move_latent": 0.02753118588592289,
+       "spread_belief": 0.0021355121824018475,
+       "nature_ev": 0.1105395037523544,
+       "hp_type": 0.03452771583125138,
+       "item_belief": 0.02884242296191067,
+       "win_prob": 0.38905602223777025,
+       "loss": 0.7857228408491316
+      },
+      "term_abs_err": {
+       "policy": 4.8466939680274147e-08,
+       "entropy": 5.865327737386572e-09,
+       "species_belief_set": 3.267739267509562e-07,
+       "move_belief": 3.6971537940508337e-10,
+       "opp_intent": 1.1810255551303328e-10,
+       "move_latent": 2.3279907168660685e-10,
+       "spread_belief": 3.812480279391517e-12,
+       "nature_ev": 7.0937836021967016e-09,
+       "hp_type": 5.356981733206645e-10,
+       "item_belief": 5.737225111657196e-09,
+       "win_prob": 6.430245191868522e-08,
+       "loss": 2.2751447581459416e-07
+      },
+      "grads": {
+       "features_extractor.hypothesis_builder.delta_out.weight": {
+        "norm_fp64": 0.07967367748368283,
+        "rel_err": 2.0792456426159796e-07
+       },
+       "features_extractor.hypothesis_builder.other_map.weight": {
+        "norm_fp64": 0.021922006192221368,
+        "rel_err": 5.432156705061222e-07
+       },
+       "features_extractor.hypothesis_builder.hypothesis_marker": {
+        "norm_fp64": 0.004944411267599536,
+        "rel_err": 1.5255521681250729e-06
+       },
+       "features_extractor.flat_intent_head.hidden.weight": {
+        "norm_fp64": 0.00891306881154169,
+        "rel_err": 9.479388326973889e-07
+       },
+       "features_extractor.belief_head.species_head.weight": {
+        "norm_fp64": 0.12977831324342548,
+        "rel_err": 3.1284999106333426e-07
+       },
+       "pointer_head.move_proj.weight": {
+        "norm_fp64": 0.17991020509709024,
+        "rel_err": 1.203572942893349e-06
+       },
+       "features_extractor.win_head.net.3.weight": {
+        "norm_fp64": 0.5912500335843737,
+        "rel_err": 3.7942043852408723e-07
+       }
+      },
+      "grads_absent": [],
+      "tolerances": {
+       "term_atol": 5e-06,
+       "term_rtol": 1e-05,
+       "grad_rtol": 5e-05
+      }
+     },
+     "behaviour": {
+      "max_abs_dlogp_current": 4.76837158203125e-07,
+      "max_abs_dlogp_judged": 4.76837158203125e-07,
+      "excluded_frac": 0.0625,
+      "rows_excluded": 1.0,
+      "rows_judged": 15.0,
+      "rows_current": 16.0,
+      "max_abs_dlogp_excluded": 2.384185791015625e-07,
+      "tie_eps": 0.0002
+     },
+     "coverage": {
+      "other_species_live": 36,
+      "other_species_dead": 28,
+      "other_move_live": 60,
+      "other_move_dead": 4,
+      "hypothesis_rows": 36,
+      "near_tie_rows": 0
+     },
+     "recorded_at_commit": "350fb83b272babfb7ed1a7d888c050e7e5c22c4e",
+     "recorded_on": "2026-10-04",
+     "reason": "X5 U6: the SECOND learner-golden entry, --belief-tokens fixed_mass (gen3_x5_flat_pointer_v1): production + the X5 lever on its own Rust-collector buffer (run seed 18, design \u00a76.4 coverage), name-keyed perturbation; init_group_sha256, the fp64 reference, the K9(b) read and the coverage counts recorded. The blob entry is untouched.",
+     "torch": "2.8.0+cu126",
+     "numpy": "2.4.3",
+     "python": "3.11.15"
+    }
+   },
+   "history": [
+    {
+     "recorded_at_commit": "350fb83b272babfb7ed1a7d888c050e7e5c22c4e",
+     "recorded_on": "2026-10-04",
+     "reason": "X5 U6: the SECOND learner-golden entry, --belief-tokens fixed_mass (gen3_x5_flat_pointer_v1): production + the X5 lever on its own Rust-collector buffer (run seed 18, design \u00a76.4 coverage), name-keyed perturbation; init_group_sha256, the fp64 reference, the K9(b) read and the coverage counts recorded. The blob entry is untouched.",
+     "torch": "2.8.0+cu126",
+     "numpy": "2.4.3",
+     "python": "3.11.15",
+     "post_params_sha256": "e4f8dbab65182b98f9a75b8f617bff6690ffe2954ec85158e319ba6805f0d480",
+     "changed": [
+      "(first entry)"
+     ]
+    }
+   ]
+  }
  }
 }

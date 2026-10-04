@@ -410,6 +410,12 @@ def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, bas
     M = mix_logits.shape[-1]
     legal = hb.move_valid.unsqueeze(0).expand(B, M)
     cand, _rev, _r = move_candidates(legal, hb.move_valid, torch.zeros(B, 4, dtype=torch.long, device=pt.device))
+    # A DEAD OTHER (no hidden slot / an empty tail: ``P_tail`` = 0, so the mixture is UNIFORM) has no move
+    # candidates. Its order is read only through ``where(hyp, …)`` (no hypothesis on such a row) and its
+    # Pursuit presence only times ``other_any`` = 0 there, so every output is byte-identical; masking it
+    # keeps the declared sort_head site from counting the uniform mixture's EXACT ties as rule-8 near-ties
+    # (X5 U6: 29 of the K9 golden buffer's 64 rows — a 47 % K9(b) excluded share vs its 0.15 ceiling).
+    cand = cand & hs.other_live.unsqueeze(-1)
     k4 = torch.full((B,), 4, dtype=torch.long, device=pt.device)
     pres = fixed_mass_presence(mix_logits.detach(), cand, k4)
     w_o = pres.pi.to(dt)                                                                # [B,M]

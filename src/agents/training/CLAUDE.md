@@ -177,7 +177,10 @@ every load re-seeded to the snapshot's seed, which replayed the minibatch permut
 🚨 **`learner_golden_test.py` pins what ONE update computes** — exact post-update parameter bytes and
 every loss, per torch build — so ANY change to the fold, a term, a coefficient default or the step
 fails the routine gate until someone re-records deliberately: `python -m agents.training.learner_golden
-record --reason "..."` under EVERY interpreter with an entry (never a routine step). Every non-finite
+record --reason "..."` under EVERY interpreter with an entry (never a routine step). **A SECOND entry
+pins `--belief-tokens fixed_mass`** (X5 U6: `arms.fixed_mass` with its own buffer, name-keyed perturbation and an fp64
+reference, `learner_golden_fixed_mass_test.py`). Any fixed_mass change that reaches the update moves it. Re-record it
+with `record --arm fixed_mass --reason "..."` (`learner_gates.md` "The SECOND entry"). Every non-finite
 loss / gradient / buffer value / KL is `main.exit_codes.NonFiniteLearnerError` (tagged `[Learner]
 FATAL`; exit 4, the launcher does NOT restart) BEFORE the optimizer moves anything
 (`instrumented_ppo/learner_gates.py`) — never a `nan_to_num`, a NaN-mask on a trained

@@ -69,7 +69,7 @@ def unset_to_class_defaults(model: Any) -> None:
 
 def fresh_model(env: Any, *, n_steps: int, batch_size: int, n_epochs: int = 1, seed: int = 0,
                 perturb_seed: int = 1234, gamma: float = 1.0, gae_lambda: float = 0.8,
-                policy_args: Any = None, **kw: Any) -> Any:
+                policy_args: Any = None, perturb_keyed: bool = False, **kw: Any) -> Any:
     import torch
 
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
@@ -84,7 +84,9 @@ def fresh_model(env: Any, *, n_steps: int, batch_size: int, n_epochs: int = 1, s
         model = InstrumentedMaskablePPO(Gen3DualHeadMaskablePolicy, env, n_steps=n_steps, batch_size=batch_size,
                                         n_epochs=n_epochs, gamma=gamma, gae_lambda=gae_lambda, device="cpu",
                                         seed=seed, policy_kwargs=pk, verbose=0, **kw)
-    perturb_(model.policy, seed=perturb_seed, scale=PERTURB_SCALE)
+    # ``perturb_keyed``: name-keyed noise (`parity_probe._keyed_noise`) — the K9 golden's non-blob arms,
+    # whose parameter list differs from blob's, so a shared parameter keeps its noise across arms.
+    perturb_(model.policy, seed=perturb_seed, scale=PERTURB_SCALE, keyed=perturb_keyed)
     model.ep_info_buffer = deque(maxlen=100)
     model.ep_success_buffer = deque(maxlen=100)
     return model

@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import contextlib
 import copy
+import hashlib
 from typing import Dict, Iterator, Mapping, Optional
 
 import torch
@@ -165,10 +166,27 @@ def _noise(module: torch.nn.Module, seed: int, scale: float) -> Dict[str, "torch
             for n, p in module.named_parameters()}
 
 
+def _keyed_noise(module: torch.nn.Module, seed: int, scale: float) -> Dict[str, "torch.Tensor"]:
+    """Deterministic per-parameter noise keyed by the parameter's NAME: each parameter draws from its own
+    private CPU generator seeded by ``sha256(f"{seed}:{name}")``, so a parameter's noise does not depend
+    on which other parameters exist or on their order (X5 U6: the K9 golden's ``fixed_mass`` arm adds and
+    retires parameter groups, and an order-keyed draw would move every later parameter's noise)."""
+    out: Dict[str, "torch.Tensor"] = {}
+    for n, p in module.named_parameters():
+        s = int.from_bytes(hashlib.sha256(f"{int(seed)}:{n}".encode()).digest()[:8], "little") & ((1 << 63) - 1)
+        g = torch.Generator().manual_seed(s)
+        out[n] = (torch.randn(p.shape, generator=g, dtype=torch.float32) * float(scale)).to(
+            device=p.device, dtype=p.dtype)
+    return out
+
+
 def perturb_(module: torch.nn.Module, *, seed: int = PERTURB_SEED,
-             scale: float = PERTURB_SCALE) -> torch.nn.Module:
-    """Add the seeded noise to every parameter of ``module`` IN PLACE (a copy you own). Returns it."""
-    noise = _noise(module, seed, scale)
+             scale: float = PERTURB_SCALE, keyed: bool = False) -> torch.nn.Module:
+    """Add the seeded noise to every parameter of ``module`` IN PLACE (a copy you own). Returns it.
+
+    ``keyed=False`` (every existing caller): one generator in ``named_parameters`` order. ``keyed=True``:
+    name-keyed noise (`_keyed_noise`) — a parameter's noise is independent of every other parameter."""
+    noise = (_keyed_noise if keyed else _noise)(module, seed, scale)
     with torch.no_grad():
         for n, p in module.named_parameters():
             p.add_(noise[n])

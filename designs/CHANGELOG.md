@@ -11715,3 +11715,35 @@ their pin's code and are unaffected. No run is live.
   under the flat pointer are Struggle (225 labels, 1.8 %).
 - Built before U4 landed and rebased onto it: the `fixed_mass` intent read moved from α / β to the flat pointer in the
   same unit.
+## 2026-10-04 — X5 U6: the K9 learner golden's SECOND entry, `--belief-tokens fixed_mass` (`arms.fixed_mass`; harness + tests; one byte-identical X5 fix; no config bump, no ARCH_SIGNATURE bump)
+
+- **What.**
+  - `learner_golden.ARMS` + `arm_args` / `build_arm_learner` / `arm_buffer` / `check_arm` / `arm_coverage` /
+    `record_arm`, and `--arm` on `check` / `record` / `rebuild-buffer`.
+  - The blob entries are untouched: every blob field of `learner_golden.json` is byte-for-byte equal, and
+    `learner_golden_test` passes unchanged.
+  - The arm = production + `belief_tokens = fixed_mass`, perturbed by NAME (`parity_probe.perturb_(…, keyed=True)`,
+    `testkit.fresh_model(…, perturb_keyed=True)`). It runs on its OWN buffer `learner_golden_buffer_fixed_mass.npz`.
+    That buffer uses the same Rust-collector recipe at run seed 18 (seed 17 gave no OTHER_move-dead row, design
+    §6.4). No observation key was missing: the blob buffer was unusable because its behaviour log-probs are blob's
+    (K9(b) 0.51).
+  - `compute()` also returns `init_group_sha256`; `diff` compares it where recorded.
+- **What proves it correct** (`learner_golden_fp64.py`, `learner_golden_fixed_mass_test.py`, 16 tests).
+  - **fp64 reference.** One R1 micro-step at fp32 vs a float64 copy under `Fp64Mode`, 2 of 64 rows excluded by
+    rule 8. Measured terms ≤ 3.3e-7 abs / 1.3e-6 rel and gradients ≤ 1.5e-6, against declared bars of 5e-6 + 1e-5·|t|
+    and 5e-5. An fp32-only defect fails it.
+  - **numpy fp64 construction checks.** Σπ = k, a direct bisection, OTHER −1e9 iff its tail is empty.
+  - **Shared init.** Every shared group's initial bytes equal blob's.
+  - **Teeth.** τ bias, log-π sign, OTHER column and flat mask each fail it and never move the init. Together they
+    leave blob byte-identical, and an α-head plant fails blob and leaves fixed_mass.
+  - **Isolation.** δ_θ does not move with the set BCE detached; B (`--ridealong-opp 2`) is bit-identical to learning.
+  - **K9(b).** Passes: max |Δ| 4.8e-7, excluded 6.25 % of 16 against the 0.15 ceiling.
+  - **Cross-process.** `PYTHONHASHSEED` 0 / 4242 at 1 / 8 threads give identical bytes.
+- **F-X5-44 FIXED** (`hypothesis_tokens.other_roster`). A DEAD OTHER's averaged move presence ran its construction
+  and stable order over a UNIFORM mixture. The declared `sort_head` site counted those exact ties as rule-8 near-ties
+  (29 of 64 rows; K9(b) excluded 37.5 % against 0.15 — FATAL). The candidates are now masked by `other_live`. The six
+  hashes (state_dict, features, logits, values, log-probs, gradients) are unchanged in both arms. Reverting it fails
+  the new tests.
+- **Findings.** F-X5-45 (a buffer rebuild moves the behaviour columns by ≤ 7.2e-7, T2 rounding, pre-existing) and
+  F-X5-46 (the blob entry predates `init_group_sha256`) — `design_x5_belief_tokens.md` §8.2 and the U6 hand-off.
+

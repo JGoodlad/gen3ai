@@ -54,3 +54,35 @@ def test_the_init_is_byte_identical_at_1_and_8_threads_and_is_the_recorded_one()
     if entry is None:
         pytest.fail(f"no golden recorded for torch {L.torch_key()}")
     assert one["init"] == entry["init_params_sha256"], "the pinned build must reproduce the BANKED init bytes"
+
+
+_ARM_PROBE = r"""
+import json, sys
+import torch as th
+from agents.training import learner_golden as L
+th.set_num_threads(int(sys.argv[1]))
+fp = L.compute(L.build_arm_learner(sys.argv[2]), buffer=L.arm_buffer(sys.argv[2]))
+print(json.dumps({"after": th.get_num_threads(), "init": fp["init_params_sha256"],
+                  "post": fp["post_params_sha256"], "losses": fp["losses"]}))
+"""
+
+
+def test_the_fixed_mass_golden_is_identical_across_processes_hash_seeds_and_thread_counts():
+    """X5 U6 / design §6.2: two processes with different ``PYTHONHASHSEED`` (one at 1 BLAS thread, one at
+    8) compute the SAME fixed_mass golden — initial and post-update bytes and every pinned loss — and it is
+    the recorded one. FAILS if the arm's build or update reads a hash-ordered set / dict iteration, or a
+    thread-count-dependent reduction outside the pinned single thread."""
+    runs = []
+    for threads, hseed in ((1, "0"), (8, "4242")):
+        env = dict(os.environ, PYTHONHASHSEED=hseed)
+        for v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+            env[v] = str(threads)
+        r = subprocess.run([sys.executable, "-c", _ARM_PROBE, str(threads), "fixed_mass"], env=env,
+                           capture_output=True, text=True, timeout=600)
+        assert r.returncode == 0, r.stderr[-3000:]
+        runs.append(json.loads(r.stdout.strip().splitlines()[-1]))
+    a, b = runs
+    assert (a["after"], b["after"]) == (1, 8), "compute must restore the caller's thread count"
+    assert a["init"] == b["init"] and a["post"] == b["post"] and a["losses"] == b["losses"]
+    entry = L.arm_entry("fixed_mass")
+    assert a["init"] == entry["init_params_sha256"] and a["post"] == entry["post_params_sha256"]

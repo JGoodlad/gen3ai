@@ -67,6 +67,60 @@ KL→LR controller and every other callback (outside `train()`), CUDA / compiled
 compile parity gate and K6's canary own those). When K10(a)'s recipe block lands, `RECIPE` should read
 it and the golden be re-recorded.
 
+### The SECOND entry: `--belief-tokens fixed_mass` (X5 U6, 2026-10-04)
+
+`learner_golden.ARMS` declares the non-default arms. Each is recorded under `arms.<name>` in `learner_golden.json`,
+beside the blob entries, which a non-default record never touches. `fixed_mass` = `production_args()` +
+`belief_tokens = fixed_mass`. It differs from blob in three deliberate ways, each forced:
+
+| | blob (top level) | `arms.fixed_mass` | why |
+|---|---|---|---|
+| perturbation | order-keyed (`parity_probe._noise`) | NAME-KEYED (`_keyed_noise`: one generator per parameter, seeded by `sha256(seed:name)`) | the arm adds X5 groups and retires α / β / `belief_slots`; an order-keyed draw would move every later parameter's noise, so no shared group could be compared with blob's |
+| buffer | `learner_golden_buffer.npz` | `learner_golden_buffer_fixed_mass.npz`, the same rollout recipe at run seed 18 | the observation spaces are IDENTICAL, but the blob buffer's behaviour log-probs are the blob learner's (K9(b) of the fixed_mass learner on it: max \|Δ\| 0.51). Seed 17 gave no OTHER_move-dead row (design §6.4: ≥ 2 rows per X5 case) |
+| recorded extras | — | `init_group_sha256`, `fp64_reference`, `behaviour` (the K9(b) read), `coverage` | design §6: what proves a re-bake correct, not merely new |
+
+    python -m agents.training.learner_golden check  --arm fixed_mass
+    python -m agents.training.learner_golden record --arm fixed_mass --reason "..."
+    python -m agents.training.learner_golden rebuild-buffer --arm fixed_mass --reason "..."
+
+**The fp64 reference** (`learner_golden_fp64.py`).
+- **What runs.** At the seeded INIT, on the arm's buffer with the intent labels aligned as `train()` aligns them:
+  ONE `micro_step` (region R1, every term of fold steps 1–3a), at fp32 and on a float64 copy under `Fp64Mode`. The
+  mode promotes every float32 operand of every torch op, and `.float()` means `.double()`.
+- **Rule 8.** Rows whose K9(b) tie margin is under `FP32_TIE_EPS` are excluded from both runs: 2 of 64.
+- **What is compared.** Every term within `5e-6 + 1e-5·|t64|`; seven key gradients (δ_θ, OTHER's map, the hypothesis
+  marker, the flat pointer, the set-BCE head, the policy, the critic) within relative L2 `5e-5`.
+- **Measured (recorded).** Terms ≤ 3.3e-7 abs and ≤ 1.3e-6 relative; gradients ≤ 1.5e-6.
+- **Exactness.** Both precisions reproduce EXACTLY within one torch build and one thread.
+- **Teeth.** An fp32-only 1e-3 logit shift fails it.
+- **Limit.** It is the same code at two precisions. The independent fp64 numpy checks of the construction
+  (Σπ = k, a direct bisection, OTHER's −1e9 iff its tail is empty) are tests of their own.
+
+**What `learner_golden_fixed_mass_test.py` pins (16 tests, ~26 s).**
+- **Reproduction.** The update reproduces exactly with K9(b) ON. The probe passes: max |Δ| 4.8e-7, excluded 6.25 %
+  (1 of 16) against the 0.15 ceiling. It needed the X5 fix F-X5-44: before it, 47 % of rows were excluded.
+- **Not vacuous.** The X5 loss keys are logged and nonzero, α / β's are absent, every X5 group moved.
+- **Shared init.** Every shared group's INITIAL bytes equal blob's built with the same keyed noise.
+- **Coverage.** OTHER_species live 36 / dead 28, OTHER_move live 60 / dead 4.
+- **Teeth.** Four planted X5 perturbations each FAIL it, moving 14–15 losses and 35 groups, both X5 groups among them,
+  never the INIT:
+  - τ + 1e-2 in the construction;
+  - the log-π key bias's sign;
+  - OTHER's column read at the next slot;
+  - OTHER_move masked out of the flat pointer.
+
+  All four together leave the blob golden byte-identical. A blob-only plant (α's head) fails blob and leaves
+  fixed_mass byte-identical.
+- **δ_θ isolation.** With every set BCE's logits detached, δ_θ's bytes do not move in the real update.
+- **B ride-along.** The arm + B (`--ridealong-opp 2`) equals the entry in every recorded group and loss.
+
+`learner_golden_threads_test` adds two processes at `PYTHONHASHSEED` 0 / 4242 and 1 / 8 BLAS threads: identical
+bytes, equal to the recorded entry.
+
+**Scope note.** A blob buffer rebuild replays the same games but moves the behaviour columns by ≤ 7.2e-7 (T2
+rounding, F-X5-45), so re-record after any rebuild. The blob entry predates `init_group_sha256` (F-X5-46). `diff`
+compares the field only where it is recorded, and the next blob re-record adds it.
+
 ## (b) Behaviour-policy consistency (`--behaviour-check`, default `fatal`)
 
 Before any optimizer step of every update, the learner's recomputed log π(a|s) must equal the stored

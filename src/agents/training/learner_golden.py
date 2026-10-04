@@ -77,6 +77,25 @@ MODEL_SEED, PERTURB_SEED, UPDATE_SEED = 0, 1234, 123
 #: The rollout the buffer is sliced from (``rebuild-buffer``).
 RECORD_N_STEPS, RECORD_RUN_SEED, RECORD_P2_SEED = 32, 17, 5
 
+#: The DEFAULT arm — the production surface, recorded at the JSON's top level (`entries`, `buffer_sha256`).
+ARM_DEFAULT = "blob"
+#: The NON-default arms (X5 U6): each the production surface plus a lever (``overrides``), with its OWN
+#: committed buffer (a real Rust-collector rollout of THAT arm's seeded learner, so its stored behaviour
+#: log-probs are that learner's and K9(b) can judge it) and NAME-KEYED perturbation noise
+#: (`parity_probe._keyed_noise`: the arm adds / retires parameter groups, and an order-keyed draw would move
+#: every later parameter's noise, so no non-lever group could be compared with blob's). Recorded under
+#: ``arms.<name>`` in `learner_golden.json`, beside — never inside — the blob entries.
+ARMS: Dict[str, Dict[str, Any]] = {
+    # ``record_run_seed``: the rollout's run seed (blob's `RECORD_RUN_SEED` = 17 gave this arm NO row whose
+    # opponent active has all four moves revealed — OTHER_move dead — against design §6.4's coverage rule of
+    # >= 2 rows per case; 18, the first seed tried after it, gives OTHER_species live 36 / dead 28 and
+    # OTHER_move live 60 / dead 4. Chosen on those coverage counts alone, before any golden was recorded.)
+    "fixed_mass": {"overrides": {"belief_tokens": "fixed_mass"},
+                   "buffer": "learner_golden_buffer_fixed_mass.npz", "record_run_seed": 18},
+}
+#: design §6.4: each X5 case must hold at least this many rows of an arm's buffer (`arm_coverage`).
+MIN_CASE_ROWS = 2
+
 #: The golden's TEST-SPECIFIC overrides — the only recipe values written here. The SHAPE is scaled
 #: down but keeps the live shape's structure: micro 16 x K 3 over 64 rows = one full accumulation group
 #: plus a RAGGED short group every epoch (the live 98,304 / 65,536 shape's half step), two epochs. The
@@ -134,7 +153,38 @@ def _spaces() -> Tuple[Any, Any, Any]:
     return TK.production_spaces()
 
 
-def build_learner(env: Any = None, args: Any = None) -> Any:
+def arm_args(arm: str) -> Any:
+    """The resolved training namespace of a non-default arm: `production_args()` + its ``overrides``."""
+    from main.train.production_args import production_args
+
+    if arm not in ARMS:
+        raise LearnerGoldenError(f"unknown learner-golden arm {arm!r} (arms: {[ARM_DEFAULT, *ARMS]})")
+    a = production_args()
+    for k, v in ARMS[arm]["overrides"].items():
+        if not hasattr(a, k):
+            raise LearnerGoldenError(f"arm {arm!r}: override {k!r} is not a training flag")
+        setattr(a, k, v)
+    return a
+
+
+def arm_buffer(arm: str) -> Path:
+    """The committed buffer an arm's golden is computed on."""
+    if arm == ARM_DEFAULT:
+        return BUFFER_PATH
+    if arm not in ARMS:
+        raise LearnerGoldenError(f"unknown learner-golden arm {arm!r}")
+    return Path(__file__).with_name(ARMS[arm]["buffer"])
+
+
+def build_arm_learner(arm: str, env: Any = None, args: Any = None) -> Any:
+    """The seeded learner of ``arm`` (``args`` defaults to `arm_args(arm)`; pass one to build that arm plus a
+    further change — e.g. the ride-along heads — under the arm's perturbation)."""
+    if arm == ARM_DEFAULT:
+        return build_learner(env, args)
+    return build_learner(env, arm_args(arm) if args is None else args, perturb_keyed=True)
+
+
+def build_learner(env: Any = None, args: Any = None, perturb_keyed: bool = False) -> Any:
     """The seeded production-surface learner (on a dummy env over the production spaces), the
     production training hparams applied exactly as a launch applies them, then `golden_recipe()`.
 
@@ -147,10 +197,10 @@ def build_learner(env: Any = None, args: Any = None) -> Any:
     count — the same RNG draws give different init BYTES at 8 threads (15 of 41 parameter groups,
     measured 2026-10-03). The caller's thread count is restored on return."""
     with _one_thread():
-        return _build_learner(env, args)
+        return _build_learner(env, args, perturb_keyed)
 
 
-def _build_learner(env: Any, args: Any) -> Any:
+def _build_learner(env: Any, args: Any, perturb_keyed: bool = False) -> Any:
     import torch as th
 
     from agents.training.rust_rollout import testkit as TK
@@ -174,7 +224,7 @@ def _build_learner(env: Any, args: Any) -> Any:
                            learning_rate=RECIPE["learning_rate"], ent_coef=RECIPE["ent_coef"],
                            clip_range=RECIPE["clip_range"], max_grad_norm=RECIPE["max_grad_norm"],
                            normalize_advantage=RECIPE["normalize_advantage"], target_kl=RECIPE["target_kl"],
-                           policy_args=policy_args)
+                           policy_args=policy_args, perturb_keyed=perturb_keyed)
     apply_training_hparams(model, production_args() if policy_args is None else policy_args,
                            mappings=None)
     TK.unset_to_class_defaults(model)
@@ -246,7 +296,8 @@ _one_thread = single_thread_build
 
 
 def compute(model: Optional[Any] = None,
-            before_train: Optional[Callable[[], Any]] = None) -> Dict[str, Any]:
+            before_train: Optional[Callable[[], Any]] = None,
+            buffer: Path = BUFFER_PATH) -> Dict[str, Any]:
     """Build (unless given), load the pinned buffer, run ONE ``train()``; return the fingerprint.
 
     ``before_train`` runs after the update's pinned seeding and immediately before ``train()`` — where
@@ -257,8 +308,9 @@ def compute(model: Optional[Any] = None,
     with _one_thread():
         if model is None:
             model = build_learner()
-        load_buffer_into(model)
+        load_buffer_into(model, buffer)
         init = params_sha256(model)
+        init_groups = group_sha256(model)
         np.random.seed(UPDATE_SEED)
         th.manual_seed(UPDATE_SEED)
         if before_train is not None:
@@ -267,8 +319,9 @@ def compute(model: Optional[Any] = None,
         logged = dict(model.logger.name_to_value)
     losses = {k: float(v) for k, v in sorted(logged.items())
               if _is_pinned_key(k) and isinstance(v, (int, float, np.floating, np.integer))}
-    return {"init_params_sha256": init, "post_params_sha256": params_sha256(model),
-            "group_sha256": group_sha256(model), "losses": losses}
+    return {"init_params_sha256": init, "init_group_sha256": init_groups,
+            "post_params_sha256": params_sha256(model), "group_sha256": group_sha256(model),
+            "losses": losses}
 
 
 # ---------------------------------------------------------------------------------------- compare
@@ -292,6 +345,12 @@ def diff(recorded: Dict[str, Any], now: Dict[str, Any]) -> List[str]:
         out.append("the INIT moved (model construction / seeding / perturbation changed — the update "
                    "itself may or may not have): init_params_sha256 "
                    f"{recorded['init_params_sha256'][:16]} -> {now['init_params_sha256'][:16]}")
+    ri = recorded.get("init_group_sha256")       # absent on an entry recorded before X5 U6 (blob's today)
+    if ri is not None:
+        ni = now.get("init_group_sha256", {})
+        imoved = sorted(g for g in set(ri) | set(ni) if ri.get(g) != ni.get(g))
+        if imoved:
+            out.append(f"parameter groups whose INITIAL bytes moved: {imoved}")
     rl, nl = recorded["losses"], now["losses"]
     for k in sorted(set(rl) | set(nl)):
         if k not in nl:
@@ -330,6 +389,66 @@ def check() -> Tuple[List[str], Dict[str, Any]]:
     return diff(entry, now), now
 
 
+def load_arm(arm: str, g: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """The recorded block of a non-default arm (``arms.<arm>``); missing FAILS, never skips."""
+    g = load_golden() if g is None else g
+    block = g.get("arms", {}).get(arm)
+    if block is None:
+        raise LearnerGoldenError(f"no learner golden recorded for arm {arm!r} — record it with "
+                                 f"`python -m agents.training.learner_golden record --arm {arm} --reason ...`")
+    return block
+
+
+def arm_entry(arm: str) -> Dict[str, Any]:
+    """THIS torch build's recorded entry for ``arm`` (after the schema / buffer / recipe checks)."""
+    g = load_golden()
+    if g.get("schema") != SCHEMA:
+        raise LearnerGoldenError(f"{GOLDEN_PATH}: schema {g.get('schema')!r}, expected {SCHEMA!r}")
+    block = load_arm(arm, g)
+    buf = arm_buffer(arm)
+    if not buf.exists():
+        raise LearnerGoldenError(f"arm {arm!r}: its buffer {buf} is missing — "
+                                 f"`rebuild-buffer --arm {arm} --reason ...`, then `record --arm {arm}`")
+    if block["buffer_sha256"] != buffer_sha256(buf):
+        raise LearnerGoldenError(f"arm {arm!r}: {buf.name} does not match the sha256 its golden was recorded on")
+    if block.get("overrides") != ARMS[arm]["overrides"]:
+        raise LearnerGoldenError(f"arm {arm!r}: recorded overrides {block.get('overrides')} != the declared "
+                                 f"{ARMS[arm]['overrides']} — re-record deliberately")
+    entry = block["entries"].get(torch_key())
+    if entry is None:
+        raise LearnerGoldenError(f"arm {arm!r}: no entry for torch {torch_key()} (recorded: "
+                                 f"{sorted(block['entries'])}) — record this build deliberately")
+    return entry
+
+
+def arm_coverage(arm: str) -> Dict[str, int]:
+    """design §6.4: per-case row counts of ``arm``'s buffer under its seeded learner (fixed_mass: OTHER_species
+    live / dead, OTHER_move live / dead, rows holding a hypothesis, rule-8 near-tie rows)."""
+    import torch as th
+
+    from agents.model.hypothesis_set import near_tie_rows
+    model = build_arm_learner(arm)
+    data = load_buffer_into(model, arm_buffer(arm))
+    n = N_STEPS * N_ENVS
+    obs = {k[4:]: th.as_tensor(v.reshape(n, *v.shape[2:])) for k, v in data.items() if k.startswith("obs:")}
+    fe = model.policy.features_extractor
+    with th.no_grad(), _one_thread():
+        fe(obs)
+    hs = fe.last_hypothesis
+    os_live, om_live = int(hs.other_live.sum()), int(hs.moves.other_live.sum())
+    return {"other_species_live": os_live, "other_species_dead": n - os_live, "other_move_live": om_live,
+            "other_move_dead": n - om_live, "hypothesis_rows": int(hs.slot_is_hypothesis.any(-1).sum()),
+            "near_tie_rows": int(near_tie_rows(hs).sum())}
+
+
+def check_arm(arm: str, model: Optional[Any] = None) -> Tuple[List[str], Dict[str, Any]]:
+    """``(differences, fingerprint)`` of ``arm``'s update against its recorded entry (``model``: a learner
+    already built for the arm — a caller planting a change or switching K9(b) on)."""
+    entry = arm_entry(arm)
+    now = compute(build_arm_learner(arm) if model is None else model, buffer=arm_buffer(arm))
+    return diff(entry, now), now
+
+
 # ---------------------------------------------------------------------------------------- recording
 def _commit() -> str:
     from utils.git import get_git_hash
@@ -338,6 +457,60 @@ def _commit() -> str:
         return str(get_git_hash())
     except Exception:  # noqa: BLE001 — provenance only
         return "unknown"
+
+
+def record_arm(arm: str, reason: str) -> Dict[str, Any]:
+    """Write THIS torch build's entry for a non-default arm (``arms.<arm>``), with its fp64 reference
+    (`learner_golden_fp64.reference`) and its K9(b) read, appending the arm's own history row. The blob
+    entries, recipe and seeds are left byte-for-byte as they are; the recipe must equal the recorded one."""
+    if not reason or not reason.strip():
+        raise SystemExit("record needs --reason: a re-record is a statement that the update is MEANT to change")
+    from agents.training import learner_golden_fp64 as F64
+
+    g = load_golden()
+    if g.get("recipe") != golden_recipe():
+        raise LearnerGoldenError("the blob golden's recorded recipe differs from golden_recipe(): re-record the "
+                                 "blob entry first (the arms share the recipe and seeds)")
+    buf = arm_buffer(arm)
+    if not buf.exists():
+        raise LearnerGoldenError(f"arm {arm!r}: {buf} is missing — `rebuild-buffer --arm {arm} --reason ...` first")
+    bsha = buffer_sha256(buf)
+    block = g.setdefault("arms", {}).get(arm) or {"entries": {}, "history": []}
+    if block.get("buffer_sha256") not in (None, bsha):
+        block["entries"] = {}
+    block.update({"overrides": dict(ARMS[arm]["overrides"]), "perturb": "name_keyed",
+                  "buffer": {"file": buf.name, "n_steps": N_STEPS, "n_envs": N_ENVS}, "buffer_sha256": bsha})
+    fp = compute(build_arm_learner(arm), buffer=buf)
+    ref = F64.reference(build_arm_learner(arm), buf)
+    beh = behaviour_read(arm)
+    import torch as th
+
+    meta = {"recorded_at_commit": _commit(), "recorded_on": _dt.date.today().isoformat(),
+            "reason": reason.strip(), "torch": str(th.__version__), "numpy": np.__version__,
+            "python": sys.version.split()[0]}
+    prev = block["entries"].get(torch_key())
+    block["entries"][torch_key()] = {**fp, "fp64_reference": ref, "behaviour": beh,
+                                     "coverage": arm_coverage(arm), **meta}
+    block.setdefault("history", []).append({**meta, "post_params_sha256": fp["post_params_sha256"],
+                                            "changed": diff(prev, fp) if prev else ["(first entry)"]})
+    # keep the arms' fields in a stable order; the blob fields are untouched
+    g["arms"][arm] = {k: block[k] for k in ("overrides", "perturb", "buffer", "buffer_sha256", "entries",
+                                            "history")}
+    GOLDEN_PATH.write_text(json.dumps(g, indent=1, sort_keys=False) + "\n")
+    return fp
+
+
+def behaviour_read(arm: str) -> Dict[str, float]:
+    """K9(b) on ``arm``'s learner and buffer: one real ``train()`` with ``--behaviour-check fatal`` (a
+    mismatch RAISES `BehaviourMismatch`), returning the probe's own read (`behaviour/*`)."""
+    model = build_arm_learner(arm)
+    model.behaviour_check = "fatal"
+    fp = compute(model, buffer=arm_buffer(arm))
+    del fp
+    nv = model.logger.name_to_value
+    keys = ("max_abs_dlogp_current", "max_abs_dlogp_judged", "excluded_frac", "rows_excluded", "rows_judged",
+            "rows_current", "max_abs_dlogp_excluded", "tie_eps")
+    return {k: float(nv[f"behaviour/{k}"]) for k in keys if f"behaviour/{k}" in nv}
 
 
 def record(reason: str) -> Dict[str, Any]:
@@ -369,8 +542,9 @@ def record(reason: str) -> Dict[str, Any]:
     return fp
 
 
-def rebuild_buffer(reason: str) -> None:
-    """Record a real complete-game rollout on the Rust collector and pin its first ``N_STEPS`` steps."""
+def rebuild_buffer(reason: str, arm: str = ARM_DEFAULT) -> None:
+    """Record a real complete-game rollout on the Rust collector and pin its first ``N_STEPS`` steps
+    (``arm``: that arm's seeded learner plays and serves the behaviour log-probs; its own file)."""
     if not reason or not reason.strip():
         raise SystemExit("rebuild-buffer needs --reason")
     import torch as th
@@ -380,10 +554,18 @@ def rebuild_buffer(reason: str) -> None:
     from agents.training.rust_vec_env import RustVecEnv
 
     TK.build_selfcheck()
-    _a, obs, act = _spaces()
+    if arm == ARM_DEFAULT:
+        _a, obs, act = _spaces()
+        policy_args, keyed = None, False
+    else:
+        from agents.training.rust_rollout.build import trainee_spaces
+        policy_args, keyed = arm_args(arm), True
+        obs, act = trainee_spaces(policy_args)
+    out_path = arm_buffer(arm)
+    run_seed = int(ARMS[arm].get("record_run_seed", RECORD_RUN_SEED)) if arm != ARM_DEFAULT else RECORD_RUN_SEED
     decl = RustEnvDecl(n_envs=N_ENVS, threads=2, front="ffi", profile="selfcheck",
                        n_steps=RECORD_N_STEPS, micro_batch=RECORD_N_STEPS, device="cpu", backend="eager",
-                       run_seed=RECORD_RUN_SEED, gamma=1.0, gae_lambda=0.8)
+                       run_seed=run_seed, gamma=1.0, gae_lambda=0.8)
     p2 = TK.RandomP2(RECORD_P2_SEED)
     env = RustVecEnv(n_envs=N_ENVS, observation_space=obs, action_space=act,
                      build=lambda m: TK.collector_for(m, obs, decl=decl, p2=p2, builder=TK.pool_builder()))
@@ -393,7 +575,7 @@ def rebuild_buffer(reason: str) -> None:
         # built at one thread as `build_learner` is (F-X5-4: the init bytes follow the thread count).
         with _one_thread():
             model = TK.fresh_model(env, n_steps=RECORD_N_STEPS, batch_size=RECORD_N_STEPS, seed=MODEL_SEED,
-                                   perturb_seed=PERTURB_SEED)
+                                   perturb_seed=PERTURB_SEED, policy_args=policy_args, perturb_keyed=keyed)
         col = env.startup(model)
         if not col.collect(model, TK.NullCallback(), model.rollout_buffer):
             raise LearnerGoldenError("the collector stopped")
@@ -405,21 +587,30 @@ def rebuild_buffer(reason: str) -> None:
     finally:
         env.close()
         th.set_num_threads(prev_threads)
-    np.savez_compressed(BUFFER_PATH, **out)
-    print(f"wrote {BUFFER_PATH} ({BUFFER_PATH.stat().st_size} bytes, {N_STEPS}x{N_ENVS} rows); reason: "
-          f"{reason.strip()}\nNow re-record the golden under every torch build: record --reason ...")
+    np.savez_compressed(out_path, **out)
+    print(f"wrote {out_path} ({out_path.stat().st_size} bytes, {N_STEPS}x{N_ENVS} rows); reason: "
+          f"{reason.strip()}\nNow re-record the golden under every torch build: record "
+          f"{'' if arm == ARM_DEFAULT else '--arm ' + arm + ' '}--reason ...")
 
 
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
+    arms = [ARM_DEFAULT, *ARMS]
     for name in ("record", "rebuild-buffer"):
         sp = sub.add_parser(name)
         sp.add_argument("--reason", required=True, help="why the pinned update / buffer is MEANT to change")
-    sub.add_parser("check", help="compare against the committed golden (what the test does), print the diff")
+        sp.add_argument("--arm", choices=arms, default=ARM_DEFAULT, help="which arm (default: blob)")
+    cp = sub.add_parser("check", help="compare against the committed golden (what the test does), print the diff")
+    cp.add_argument("--arm", choices=arms, default=ARM_DEFAULT)
     a = ap.parse_args(argv)
     if a.cmd == "rebuild-buffer":
-        rebuild_buffer(a.reason)
+        rebuild_buffer(a.reason, a.arm)
+        return 0
+    if a.cmd == "record" and a.arm != ARM_DEFAULT:
+        fp = record_arm(a.arm, a.reason)
+        print(f"recorded arm {a.arm} torch {torch_key()}: post {fp['post_params_sha256'][:16]}, "
+              f"{len(fp['losses'])} losses.")
         return 0
     if a.cmd == "record":
         fp = record(a.reason)
@@ -427,7 +618,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"recorded torch {torch_key()}: post {fp['post_params_sha256'][:16]}, {len(fp['losses'])} losses. "
               f"Entries now: {sorted(g['entries'])} — re-record under each of them if the update changed.")
         return 0
-    d, _now = check()
+    d, _now = check() if a.arm == ARM_DEFAULT else check_arm(a.arm)
     print("IDENTICAL" if not d else "DIFFERS:\n  " + "\n  ".join(d))
     return 0 if not d else 1
 
