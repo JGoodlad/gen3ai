@@ -293,6 +293,7 @@ last-snapshot rule below cannot move what a name points at while its run keeps t
 🚨 **A NEW OPPONENT IS A RE-MEASUREMENT, NOT A RENAME** — untaught-meter levels are not comparable
 across opponents, so `python -m main.baselines set <name> <file> --reason "<ledger title>"` is the
 only legal edit, and it PRINTS the ledger line to append rather than writing one.
+🚨 **The untaught meter's default opponent is `untaught_meter_opponent_v14` (INTERIM until the Rustboro opponent, legacy manifest D-L3) and its default config is `auto`** (B3, 2026-10-04: the old v101 defaults did not load at HEAD). A played artifact stamps `_meta.series`; `--from-rows` REFUSES artifacts that recorded different opponents (`--allow-opponent-mix` consents). Detail: `designs/training/eval_and_rating.md`.
 🚨 **LOAD a baseline with `baselines.load(name)`, NEVER a bare `MaskablePPO.load`** — the bare path
 rebuilds the extractor from the zip's own pickled kwargs and (measured 2026-09-22) raises
 `unexpected keyword argument 'threat_prob_outspeed'` on **all five** current-generation entries,

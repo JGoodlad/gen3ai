@@ -35,7 +35,7 @@ baselines.protected_files()                 # {run: [rel path]} — the grooming
 
 **Consumers in this package and its CLIs, all accepting a NAME wherever they accept a ref:**
 `main.untaught_meter`'s `--opponent` / `--config` (their literals are GONE — the engine exposes
-`default_opponent()` / `default_config()` and `resolve_ref` expands a name), `--baseline` and
+`default_opponent()` and `resolve_ref` expands a name; the config default is the literal `auto`), `--baseline` and
 `--control` through the same path; `main.critic_gate --parent` and its new
 `--famine-comparator` (default the `famine_comparator` baseline, whose `floor_elo` is the kill
 floor — and **an absent DEFAULT comparator is recorded as NOT READ rather than refusing the whole
@@ -218,12 +218,14 @@ cluster-bootstrapped win rate. Offline — no training, no launcher, no server, 
 |---|---|
 | teams | `--teams` a manifest JSON, **in order — the order IS the seed** (index = team seed offset). Default: the untaught 8 (`reuse_batch_2026-09-03/offline_collateral_kl/untaught_teams.json`). `--taught` swaps in the taught 16 (`teacher_content_2x2_2026-09-04/taught_teams.json`). Both `pin_sha` (raw bytes, the MatchupSpec convention) and `team_sha` (strip-normalized, the archetype-artifact join key) are recorded per team — they DIFFER on a file with a trailing newline |
 | refs | resolved through the **imported** `fixed_opponent_pool.resolve_model_ref` — the same call every checkpoint-reference flag (`--stable-opponents`, `--exploiter`) goes through. A bare run dir therefore means the run's **LAST SNAPSHOT**, and the resolved file + `rung` + `rule` + `num_timesteps` are printed per ref and stamped in the JSON, so no reader has to infer WHICH FILE was scored |
-| opponent | one fixed model piloting the **paired** pool draw — **BY NAME** out of the baseline registry (`untaught_meter_opponent`, rev-1's 24M snapshot). The string literal is GONE; `--opponent` also takes any other registry name or a raw ref |
-| module tree | one `model_config.json` for every model (**BY NAME**, `untaught_meter_config` — rev-1's snapshot config, what the probes used; `--config auto` resolves each model's own), observation debugger stripped, `device="cpu"` |
+| opponent | one fixed model piloting the **paired** pool draw — **BY NAME** out of the baseline registry: **`untaught_meter_opponent_v14`** (N0's 24M snapshot, config v121), an **INTERIM** default until the Rustboro opponent (legacy manifest D-L3 / R0). It was rev-1's 24M (`untaught_meter_opponent`, config v101) until 2026-10-04, which does not load at HEAD (F-LR-2, fixed in B3). `--opponent` also takes any other registry name or a raw ref |
+| module tree | **`--config auto` is the default** — each model's OWN `model_config.json`, the only value that loads a current checkpoint (the shared v101 `untaught_meter_config` is history: selectable by name, unloadable at HEAD). `device="cpu"` |
 | play | `stochastic=True` both sides · rust bridge · **`concurrency=1`** |
 | aggregation | equal-weight cluster mean over TEAMS, and **ONE fixed resampling index set shared by every ref and every contrast** so a ref-vs-ref difference is paired on the same team draws |
 
-**BOTH DEFAULTS ARE REGISTRY NAMES** (`gen3_baselines_registry_v1`), and the CLI prints `[baseline] --opponent default: …` naming the run before it resolves anything — see *THE BASELINE REGISTRY* above. 🚨 **A new opponent is a RE-MEASUREMENT, not a rename**: levels are not comparable across opponents, so re-pointing that entry is a `python -m main.baselines set` with a ledger title, never a module edit.
+**THE OPPONENT DEFAULT IS A REGISTRY NAME** (`gen3_baselines_registry_v1`), and the CLI prints `[baseline] --opponent default: …` naming the run before it resolves anything — see *THE BASELINE REGISTRY* above. 🚨 **A new opponent is a RE-MEASUREMENT, not a rename**: levels are not comparable across opponents, so re-pointing that entry is a `python -m main.baselines set` with a ledger title, never a module edit.
+
+🚨 **THE SERIES BOUNDARY IS RECORDED AND ENFORCED (B3, 2026-10-04).** Every played artifact stamps `_meta.series` (`opponent_run`, `opponent_file`, `opponent_num_timesteps`, `opponent_sha256`, `key`, `config_mode`) and `_meta.opponent.sha256`. `--from-rows` reads each artifact's recorded opponent (`engine.rows_artifact_series`) and **REFUSES a mix of different opponents** (`MeterError`, exit 1; a sha256 decides when both sides carry one, else `run/file`); `--allow-opponent-mix` reads them side by side knowingly and says the levels are on different scales; an artifact that records no opponent is warned about, never silently trusted. The v101 (rev-1) series and the v121 (`ai_v14_01_base`) series are two series: the B3 re-point to v14 opened NO new one, because every post-M5 read (sizing, P0, the X5 A/B) already used v14 with `--config auto`.
 
 **THE SEEDS.** Per team, all five global-RNG seams above are set from `--seed` + the team index;
 additionally both players' sampling generators are re-seeded **per battle** and the sim takes a

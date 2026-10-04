@@ -222,3 +222,103 @@ def test_the_markdown_report_is_written_and_carries_both_columns(tmp_path):
     assert "Δ vs baseline" in text and "Δ vs continuation control" in text
     assert "Per-team win rate" in text
     assert os.path.getsize(md) > 500
+
+
+# ---------------------------------------------------------------------------------------------
+# Legacy-manifest B3 (F-LR-2): the DEFAULT opponent must load at HEAD, and an opponent change is a
+# SERIES boundary that every reader sees
+# ---------------------------------------------------------------------------------------------
+
+def _rows_artifact(path, opponent, *, teams=("U_a", "U_b")):
+    doc = {k: {"wins": 3, "games": 10} for k in teams}
+    if opponent is not None:
+        doc["_meta"] = {"opponent": opponent}
+    path.write_text(json.dumps(doc))
+    return str(path)
+
+
+_OPP_A = {"resolved_file": "/m/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+          "run_base": "ai_v9_29_rev1_0823", "num_timesteps": 24000000}
+_OPP_B = {"resolved_file": "/m/ai_v14_01_base/snapshots/snapshot_000024000000.zip",
+          "run_base": "ai_v14_01_base", "num_timesteps": 24000000}
+
+
+def test_the_default_opponent_is_a_registry_entry_that_is_NOT_era_checkout_only():
+    """F-LR-2: the old default (`untaught_meter_opponent`, rev-1's 24M at config v101) is a
+    pre-generation checkpoint, so a bare `main.untaught_meter` died at its first model load. A default
+    that the registry itself marks unloadable at HEAD is the defect; this fails on revert."""
+    from agents.training import baselines
+    name = engine.DEFAULT_OPPONENT_BASELINE
+    assert baselines.is_name(name)
+    assert not baselines.get(name).era_checkout_only, (
+        f"{name} is marked era_checkout_only — it cannot load at HEAD")
+    assert baselines.get(name).config_version >= 121
+
+
+def test_the_default_opponent_LOADS_at_HEAD_through_the_sanitizing_loader():
+    from agents.training import baselines
+    from utils.paths import main_models_dir, models_skip_reason
+    if main_models_dir() is None:
+        pytest.skip(models_skip_reason())
+    assert baselines.load(engine.DEFAULT_OPPONENT_BASELINE) is not None
+
+
+def test_bare_defaults_resolve_the_v14_opponent_and_each_models_own_config():
+    args = cli.build_parser().parse_args(["R"])
+    lines = cli.apply_baseline_defaults(args)
+    assert args.config == "auto" and cli._config_override(args) is None
+    assert engine.DEFAULT_OPPONENT_BASELINE in " ".join(lines)
+    assert "INTERIM" in " ".join(lines)                    # named as interim until D-L3
+    assert args.opponent.startswith("ai_v14_01_base")
+
+
+def test_series_identity_prefers_the_sha_and_falls_back_to_run_and_file():
+    assert engine.series_identity({**_OPP_B, "sha256": "ab"})["key"] == "sha256:ab"
+    assert engine.series_identity(_OPP_B)["key"] == "ai_v14_01_base/snapshot_000024000000.zip"
+
+
+def test_from_rows_REFUSES_artifacts_played_against_different_opponents(tmp_path, capsys):
+    a = _rows_artifact(tmp_path / "a.json", _OPP_A)
+    b = _rows_artifact(tmp_path / "b.json", _OPP_B)
+    assert cli.main(["--from-rows", f"A={a}", "--baseline", f"B={b}", "--quiet"]) == 1
+    err = capsys.readouterr().err
+    assert "DIFFERENT opponents" in err and "--allow-opponent-mix" in err
+
+
+def test_from_rows_reads_a_mixed_series_only_when_the_flag_consents(tmp_path, capsys):
+    a = _rows_artifact(tmp_path / "a.json", _OPP_A)
+    b = _rows_artifact(tmp_path / "b.json", _OPP_B)
+    assert cli.main(["--from-rows", f"A={a}", "--baseline", f"B={b}", "--quiet",
+                     "--allow-opponent-mix"]) == 0
+    assert "NOT on one scale" in capsys.readouterr().err
+
+
+def test_from_rows_accepts_one_series_and_warns_on_an_artifact_that_names_no_opponent(tmp_path, capsys):
+    a = _rows_artifact(tmp_path / "a.json", _OPP_B)
+    b = _rows_artifact(tmp_path / "b.json", _OPP_B)
+    c = _rows_artifact(tmp_path / "c.json", None)
+    assert cli.main(["--from-rows", f"A={a}", "--baseline", f"B={b}", "--quiet"]) == 0
+    assert capsys.readouterr().err == ""
+    assert cli.main(["--from-rows", f"A={a}", "--baseline", f"C={c}", "--quiet"]) == 0
+    assert "records no opponent" in capsys.readouterr().err
+
+
+def test_a_played_artifact_stamps_its_series(tmp_path, monkeypatch):
+    """The play path writes `_meta.series` (opponent run, file, steps, sha256 + the config mode)."""
+    opp = _fake_run(tmp_path, "opp")
+    arm = _fake_run(tmp_path, "arm")
+    teams = _fake_teams(tmp_path)
+
+    def fake_shards(args, refs, baseline, controls, opponent, teams_, log):
+        return {r.label: {t.key: engine.Cell(wins=1, finished=2, attempted=2) for t in teams_}
+                for r in refs}
+    monkeypatch.setattr(cli, "_run_shards", fake_shards)
+    out = tmp_path / "o.json"
+    assert cli.main([arm, "--teams", teams, "--opponent", opp, "--quiet", "--json", str(out)]) == 0
+    meta = json.loads(out.read_text())["_meta"]
+    s = meta["series"]
+    assert s["opponent_file"] == "final_model.zip" and s["opponent_run"] == "opp"
+    assert s["opponent_sha256"] == engine.file_sha256(str(tmp_path / "opp" / "final_model.zip"))
+    assert s["config_mode"] == "auto"
+    # and a re-read of that artifact recovers the same identity, so the boundary is checkable
+    assert engine.rows_artifact_series(str(out))["key"] == s["key"]

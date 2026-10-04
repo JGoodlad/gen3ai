@@ -86,7 +86,8 @@ def build_parser() -> argparse.ArgumentParser:
                         f"{engine.DEFAULT_OPPONENT_BASELINE!r} baseline).")
     p.add_argument("--config", default=None, metavar="PATH|BASELINE",
                    help=f"the model_config.json every model is loaded against; 'auto' resolves each "
-                        f"model's own (default: the {engine.DEFAULT_CONFIG_BASELINE!r} baseline).")
+                        f"model's own (default: {engine.DEFAULT_CONFIG!r}, the only value that loads "
+                        f"a current checkpoint).")
     p.add_argument("--games-per-team", type=int, default=engine.DEFAULT_GAMES_PER_TEAM)
     p.add_argument("--seed", type=int, default=engine.DEFAULT_SEED,
                    help="seeds every stream; at 0 the dice reproduce the banked probes exactly.")
@@ -105,7 +106,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--bootstrap-draws", type=int, default=engine.DEFAULT_BOOTSTRAP_DRAWS)
     p.add_argument("--bootstrap-seed", type=int, default=engine.DEFAULT_BOOTSTRAP_SEED)
     p.add_argument("--from-rows", action="store_true",
-                   help="the refs are committed per-team artifacts, not models: no battles.")
+                   help="the refs are committed per-team artifacts, not models: no battles. "
+                        "Artifacts that recorded DIFFERENT opponents are REFUSED (a new opponent "
+                        "is a new series, F-X5-20).")
+    p.add_argument("--allow-opponent-mix", action="store_true",
+                   help="with --from-rows: read artifacts from different opponents side by side "
+                        "anyway. The levels are on different scales; the header says so.")
     p.add_argument("--json", dest="json_out", default=None, metavar="PATH")
     p.add_argument("--md", dest="md_out", default=None, metavar="PATH")
     p.add_argument("--check", action="store_true",
@@ -157,12 +163,19 @@ def apply_baseline_defaults(args, log=None) -> List[str]:
     module until ``gen3_baselines_registry_v1``.
     """
     lines: List[str] = []
-    for attr, name in (("opponent", engine.DEFAULT_OPPONENT_BASELINE),
-                       ("config", engine.DEFAULT_CONFIG_BASELINE)):
+    if args.config is None:
+        args.config = engine.DEFAULT_CONFIG
+        lines.append(f"[baseline] --config default: {engine.DEFAULT_CONFIG!r} (each model's own "
+                     f"model_config.json)")
+    elif baselines.is_name(args.config):
+        lines.append(f"[baseline] --config: {baselines.describe(args.config)}")
+        args.config = baselines.spec(args.config)
+    for attr, name in (("opponent", engine.DEFAULT_OPPONENT_BASELINE),):
         value = getattr(args, attr)
         if value is None:
             setattr(args, attr, baselines.spec(name))
-            lines.append(f"[baseline] --{attr} default: {baselines.describe(name)}")
+            lines.append(f"[baseline] --{attr} default: {baselines.describe(name)} "
+                         f"(INTERIM until the Rustboro opponent, D-L3)")
         elif baselines.is_name(value):
             setattr(args, attr, baselines.spec(value))
             lines.append(f"[baseline] --{attr}: {baselines.describe(value)}")
@@ -245,6 +258,16 @@ def load_from_rows(args) -> Tuple[Dict[str, Dict[str, engine.Cell]], List[str], 
         raise MeterError("--from-rows: missing artifact(s):\n  " + "\n  ".join(missing))
     for lab, (_, path) in zip(labels, raw):
         cells[lab] = engine.cells_from_rows_artifact(path)
+
+    # A new opponent is a new SERIES (F-X5-20): refuse artifacts that recorded different ones.
+    identities = [engine.rows_artifact_series(p) for _, p in raw]
+    if args.allow_opponent_mix:
+        notes = ["--allow-opponent-mix: artifacts from different opponents may be read together; "
+                 "their levels are NOT on one scale"]
+    else:
+        notes = engine.refuse_mixed_series(identities, labels)
+    for note in notes:
+        print(f"untaught_meter: WARNING {note}", file=sys.stderr)
 
     # The shared teams, in the artifacts' own sorted key order — the readouts' convention.
     shared = sorted(set.intersection(*(set(c) for c in cells.values())))
@@ -440,11 +463,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                       fh, indent=1)
         return 0
 
+    opp_json = opponent.to_json()
+    opp_json["sha256"] = engine.file_sha256(opponent.zip_path)
     meta = {
         "mode": "play",
         "teams_manifest": args.taught or args.teams or str(engine.DEFAULT_TEAMS_MANIFEST),
         "teams": [t.to_json() for t in teams],
-        "opponent": opponent.to_json(),
+        "opponent": opp_json,
+        # The SERIES this artifact belongs to: levels against another opponent are another scale.
+        "series": {**engine.series_identity(opp_json),
+                   "config_mode": "auto" if args.config in (None, "", "auto") else str(args.config)},
         "refs": [r.to_json() for r in refs],
         "baseline": baseline.to_json() if baseline else None,
         "controls": [c.to_json() for c in controls],

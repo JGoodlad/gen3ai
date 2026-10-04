@@ -86,15 +86,22 @@ DEFAULT_TEAMS_MANIFEST = repo_path(
 DEFAULT_TAUGHT_MANIFEST = repo_path(
     "designs/research_state/measurements/teacher_content_2x2_2026-09-04", "taught_teams.json")
 
-#: The fixed opponent and the ONE ``model_config.json`` every model in the series is loaded
-#: against, BY NAME out of ``designs/baselines.json`` (``gen3_baselines_registry_v1``). They were
-#: string literals here until 2026-09-06, which made "what is the meter's opponent?" a question
-#: answerable only by reading this module — and made re-pointing it an edit with no procedure, no
-#: validation and no ledger entry. **A new opponent is a RE-MEASUREMENT, not a rename**: levels are
-#: not comparable across opponents, so the registry entry is what carries that fact forward.
-#: ``--config auto`` resolves each model's own config instead.
-DEFAULT_OPPONENT_BASELINE = "untaught_meter_opponent"
-DEFAULT_CONFIG_BASELINE = "untaught_meter_config"
+#: The fixed opponent, BY NAME out of ``designs/baselines.json`` (``gen3_baselines_registry_v1``).
+#: **INTERIM (legacy-manifest B3, 2026-10-04):** the default was ``untaught_meter_opponent`` (rev-1's
+#: 24M snapshot, config v101), which does NOT load at HEAD (a pre-generation checkpoint), so a bare
+#: ``python -m main.untaught_meter`` died at its first model load (F-LR-2). It is now the v14
+#: opponent, N0's 24M snapshot (config v121, ``gen3_event_record_v2``), which loads and is the
+#: opponent every post-M5 untaught read (the X5 A/B's, P0's, the sizing study's) already used, so
+#: this re-point opens NO new series. It stays interim until the Rustboro opponent replaces it
+#: (``designs/ops/legacy_removal_manifest.md`` D-L3 / R0). **A new opponent is a RE-MEASUREMENT, not a
+#: rename**: levels are not comparable across opponents, so the registry entry carries that fact
+#: forward, and every artifact now stamps ``_meta["series"]`` (see :func:`series_identity`).
+DEFAULT_OPPONENT_BASELINE = "untaught_meter_opponent_v14"
+#: The module tree every model is loaded against. ``"auto"`` = each model's OWN ``model_config.json``,
+#: which is the only value that loads a CURRENT checkpoint (a shared config from another generation
+#: cannot) and is what every post-M5 read used. The v101 shared config (``untaught_meter_config``)
+#: remains in the registry as history and is still selectable with ``--config untaught_meter_config``.
+DEFAULT_CONFIG = "auto"
 
 
 def default_opponent() -> str:
@@ -102,9 +109,67 @@ def default_opponent() -> str:
     return baselines.spec(DEFAULT_OPPONENT_BASELINE)
 
 
-def default_config() -> str:
-    """The shared ``model_config.json``'s run spec, from the registry."""
-    return baselines.spec(DEFAULT_CONFIG_BASELINE)
+def series_identity(opponent_json: dict) -> dict:
+    """The identity of the measurement SERIES an artifact belongs to: which opponent it played.
+
+    ``opponent_json`` is a :meth:`ResolvedRef.to_json` (or a banked artifact's ``_meta.opponent``).
+    Untaught levels against different opponents are NOT one scale (F-X5-20), so this is what a
+    reader compares before putting two levels side by side. ``key`` is the sha256 when the artifact
+    recorded one (new artifacts do), else ``<run_base>/<file name>`` (every banked artifact has both).
+    """
+    f = opponent_json.get("resolved_file") or ""
+    run = opponent_json.get("run_base") or ""
+    sha = opponent_json.get("sha256")
+    return {"opponent_run": run, "opponent_file": os.path.basename(f),
+            "opponent_num_timesteps": opponent_json.get("num_timesteps"),
+            "opponent_sha256": sha,
+            "key": f"sha256:{sha}" if sha else f"{run}/{os.path.basename(f)}"}
+
+
+def file_sha256(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for block in iter(lambda: fh.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def rows_artifact_series(path: str) -> Optional[dict]:
+    """The series identity a committed per-team artifact recorded, or None when it names no opponent."""
+    with open(path) as fh:
+        raw = json.load(fh)
+    meta = raw.get("_meta") if isinstance(raw, dict) else None
+    opp = meta.get("opponent") if isinstance(meta, dict) else None
+    if not isinstance(opp, dict) or not (opp.get("resolved_file") or opp.get("run_base")):
+        return None
+    return series_identity(opp)
+
+
+def refuse_mixed_series(identities: Sequence[Optional[dict]], labels: Sequence[str]) -> List[str]:
+    """Refuse artifacts from DIFFERENT opponents; return warnings for artifacts that name none.
+
+    ``identities[i]`` is :func:`series_identity` of artifact ``i`` or None when it recorded no
+    opponent. Two recorded identities that disagree raise :class:`MeterError` (a sha256 beats a
+    file name when both sides carry one; a one-sided sha256 falls back to ``run/file``).
+    """
+    recorded = [(lab, i) for lab, i in zip(labels, identities) if i is not None]
+    warnings = [f"{lab}: artifact records no opponent — its series is UNKNOWN, not checked"
+                for lab, i in zip(labels, identities) if i is None]
+
+    def same(a: dict, b: dict) -> bool:
+        if a.get("opponent_sha256") and b.get("opponent_sha256"):
+            return a["opponent_sha256"] == b["opponent_sha256"]
+        return (a["opponent_run"], a["opponent_file"]) == (b["opponent_run"], b["opponent_file"])
+
+    for lab, i in recorded[1:]:
+        if not same(recorded[0][1], i):
+            raise MeterError(
+                f"these artifacts were played against DIFFERENT opponents — different measurement "
+                f"series, never one scale (F-X5-20): {recorded[0][0]} = {recorded[0][1]['key']}, "
+                f"{lab} = {i['key']}. Re-read one side against the other's opponent, or pass "
+                f"--allow-opponent-mix to read them side by side knowingly.")
+    return warnings
+
 
 DEFAULT_GAMES_PER_TEAM = 200
 DEFAULT_SEED = 0
