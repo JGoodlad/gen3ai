@@ -563,8 +563,11 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # and every non-Beat-Up cell reads the exact value it read before (a gather is exact).
         bu_S, bu_N, bu_def = bu_party
         is_bu = bu_all > 0                                                                      # [B,C]
-        pidx = (phys_all > 0.5).long()                                                          # [B,C] 1=phys
-        pidx = pidx + 2 * is_bu.long()                                                          # 2 = Beat Up
+        # gen3_beatup_pidx_bounded_v1: the column index is SELECTED, never summed. `phys + 2*bu` reads 3 on a
+        # row with both bits; no real move carries both (MOVE_PHYS[beatup] == 0), yet the T2 AOT package's
+        # Inductor kernel tripped its indirect-index assert (0 <= idx < 3) on that sum (2026-10-03; cause in
+        # the kernel UNVERIFIED). `where` keeps the index in {0, 1, 2} whatever the bits read.
+        pidx = torch.where(is_bu, 2, (phys_all > 0.5).long())                                   # [B,C] 0 spec / 1 phys / 2 Beat Up
         A = torch.stack((spa, atk, bu_S), dim=-1).gather(1, pidx)                               # [B,C]
         inv_d = (1.0 / (torch.stack((spd_stat, def_stat, bu_def), dim=-1) + eps)) \
             .gather(2, pidx[:, None, :].expand(-1, n_def, -1))                                  # [B,n,C]
