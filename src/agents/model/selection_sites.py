@@ -293,9 +293,14 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "i >= lo.unsqueeze(-1)", "i < at.unsqueeze(-1)", "i + 1 < n_avail.unsqueeze(-1)"),
     },
     # gen3_x5_belief_tokens_v1 (X5 U3, fixed_mass only): structural integer tests on the move group
-    # (a seat's num is the revealed Hidden Power; the group's mass k_m is positive).
+    # (a seat's num is the revealed Hidden Power; the group's mass k_m is positive). U3 part 3 (the op's
+    # opponent-MON roster): the per-mon candidate masks are num-range tests, the hidden-team marginal is
+    # gated on the integer count k, and the bench E5 tail is a RANK test on the one order — the order
+    # itself is `hypothesis_set.stable_order` (the declared sort_head MARGIN site, re-used, not copied).
     "hypothesis_tokens": {
-        "INT": ("moves.seat_nums == HP", "pres.k > 0"),
+        "INT": ("moves.seat_nums == HP", "pres.k > 0", "species.clamp(0, S - 1).long()",
+                "num >= _TYPED_HP[0]", "num <= _TYPED_HP[-1]", "num != HP", "k > 0",
+                "ro.move_rank >= K"),
     },
     "t0_species": {
         "OBS": ("onehot > 0",),

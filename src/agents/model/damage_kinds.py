@@ -224,11 +224,19 @@ def beatup_party_opp(op: Any, ctx: Any, species_probs: Optional[torch.Tensor] = 
     entered the battle cannot have fainted or been statused — at its EXPECTED base Atk under the op's one
     hidden-mon belief: `unrevealed_species_probs(ctx, species_probs)` — the Species-Clause usage prior, or the
     T0 species belief the extractor hands every pricing site (``[B,S]`` team-level, or a per-slot
-    ``[B,6,S]``). The sum's expectation is exact (linear in the per-slot marginals)."""
+    ``[B,6,S]``). The sum's expectation is exact (linear in the per-slot marginals).
+
+    X5 fixed_mass (U3 part 3, `op.stash.x5`): the hidden slots' marginal is the hidden-TEAM belief
+    ``π / k`` over EVERY candidate species (hypotheses AND the tail; `OpRoster.team_probs`), never the
+    per-slot hypothesis one-hots the defender kernels read — so the hidden part is ``Σ_s π_s ·
+    baseAtk(s)``, Beat Up's exact expectation under the fixed-mass belief (class E, linear)."""
     opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
     hidden = ctx.opp_believed_mask.float()                                        # [B,6]
     ok = _healthy(ctx, opp) * (1.0 - hidden)                                      # [B,6] revealed + eligible
     atk = op.BASE_STATS[ctx.species_ids[:, opp]][..., _BS_ATK_COL]                # [B,6]
+    x5 = getattr(getattr(op, "stash", None), "x5", None)
+    if x5 is not None:
+        species_probs = x5.team_probs.to(op.BASE_STATS.dtype)                     # [B,S] π / k
     e_atk = op.unrevealed_species_probs(ctx, species_probs) @ op.BASE_STATS[:, _BS_ATK_COL]   # [B] | [B,6]
     hidden_atk = hidden.sum(dim=-1) * e_atk if e_atk.dim() == 1 else (hidden * e_atk).sum(dim=-1)   # [B]
     return (ok * atk).sum(dim=-1) + hidden_atk, ok.sum(dim=-1) + hidden.sum(dim=-1)

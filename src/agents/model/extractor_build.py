@@ -435,6 +435,12 @@ class ExtractorBuild(torch.nn.Module):
         self.t0_species_prior = (T0SpeciesPrior(layout['max_species'])
                                  if t0_species_prior else None)
         self.belief_slots = BeliefSlots() if opp_belief_slots else None
+        if self.belief_slots is not None and belief_tokens == "fixed_mass":
+            # F-X5-27 (ORCHESTRATOR, X5 U3 part 3): the fixed_mass arm never calls BeliefSlots (a hidden
+            # slot holds its hypothesis's token), so it is NOT built there — a parameter that never gets a
+            # gradient. Its init draw above still RAN, so the global RNG stream (every later module's
+            # initial bytes) stays equal to the blob arm's; only the module is dropped. `blob` keeps it.
+            self.belief_slots = None
         self.belief_head = (
             BeliefHead(layout['max_species'], layout['max_moves'],
                        species_prior_fusion=species_prior_fusion) if opp_belief_slots else None

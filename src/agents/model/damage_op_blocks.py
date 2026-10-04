@@ -443,7 +443,12 @@ class DamageOperatorBlocks:
                               opp_cur_hp[:, None, :], opp_maxhp[:, None, :], our_cur_hp[:, None, None],
                               eff, acc[:, :, None], eps)
         high, low, crit, ko = (r * usable[:, :, None] for r in override_rolls((high, low, crit, ko), nf))
-        ko = ko * revealed[:, None, :]        # gen3_unrevealed_outgoing_prior_v1: P(KO) NULLED at hidden slots
+        # gen3_unrevealed_outgoing_prior_v1: P(KO) NULLED at hidden slots — the AVERAGED defender's KO is a
+        # threshold of averaged stats (the Jensen gap is worst there). X5 fixed_mass (U3 part 3): a hidden
+        # slot holds a CONCRETE pristine species (the per-slot one-hot `species_probs`), so P(KO | that
+        # species, full HP) is defined and UN-nulled; only OTHER's averaged defender keeps the null.
+        _x5 = self.stash.x5
+        ko = ko * (revealed if _x5 is None else _x5.concrete.to(ko.dtype))[:, None, :]
 
         cell = torch.stack([low, high, crit, ko, eff], dim=-1)                            # [B,4,6,_DMG_OMX_CELL]
         cell = cell * (usable[:, :, None, None] * target_gate[:, None, :, None])          # gate move-legal × target
@@ -1251,6 +1256,11 @@ class DamageOperatorBlocks:
         opp_species = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                          # [B,6]
         revealed_slot: torch.Tensor = (1.0 - ctx.opp_believed_mask.float())               # [B,6] 1 = revealed
         defender_alive = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()    # [B,6]
+        _x5 = self.stash.x5
+        if _x5 is not None:
+            # X5 fixed_mass (U3 part 3): a hypothesis slot's types / ability prior are its species'
+            # (`ctx` is the hypothesis context) and it is alive by addressability, never by its HP cell.
+            revealed_slot, defender_alive = _x5.concrete, _x5.alive
         ti_dm = ti[:, None, :, :].expand(B, TEAM_SIZE, 4, n_type)                          # [B,6,4,n_type]
         timm1 = torch.gather(ti_dm, 3, opp_t1[:, :, None, None].expand(B, TEAM_SIZE, 4, 1)).squeeze(-1)
         timm2 = torch.gather(ti_dm, 3, opp_t2[:, :, None, None].expand(B, TEAM_SIZE, 4, 1)).squeeze(-1)

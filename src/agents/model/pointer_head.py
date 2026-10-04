@@ -108,7 +108,8 @@ class EntityMoveSeats(torch.nn.Module):
     def forward(self, tok_req: torch.Tensor, move_valid: torch.Tensor, ctx: 'ExtractorContext',
                 damage_op: Any, move_belief_logits: Optional[torch.Tensor],
                 latent_table: Optional[torch.Tensor],
-                fixed_moves: Optional[Any] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+                fixed_moves: Optional[Any] = None,
+                x5_roster: Optional[Any] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         """→ `(seats [B, 4+K, d_model], pad [B, 4+K] bool)` (pad True = masked, the key-mask sense).
 
         `fixed_moves` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only — a
@@ -116,7 +117,11 @@ class EntityMoveSeats(torch.nn.Module):
         (revealed first, then the top unrevealed by π_m; a revealed Hidden Power's seat rendered as its
         typed mixture), each seat's belief channel its DETACHED presence, a seat that carries no mass
         key-masked; the opponent ACTIVE's E5 seat is OTHER_move (`other_move_cells`), masked iff
-        OTHER_move is. None (blob): byte-identical."""
+        OTHER_move is. None (blob): byte-identical.
+
+        `x5_roster` (U3 part 3, fixed_mass only — a `hypothesis_tokens.OpRoster`): every BENCH mon's E5
+        seat is presence-aware — its tail is its moves beyond rank K of ITS one order over its fixed-mass
+        move presence (`bench_tail_cells`: summed presence, a presence-scaled worst case)."""
         seats = [self.move_seat_proj(tok_req)]                                # [B,4,D] (invalid = zeros)
         pads = [move_valid < 0.5]                                             # [B,4]
         if self.topk_seats > 0:
@@ -165,16 +170,23 @@ class EntityMoveSeats(torch.nn.Module):
             # scores (w · BP/150 · acc, split by category) — defender-independent by design (a
             # token, not an edge); attention composes them with the mon tokens.
             assert move_belief_logits is not None
-            w_all = torch.sigmoid(move_belief_logits) * damage_op.HP_CAND_MASK[None, None, :]  # [B,6,M]
             K = max(self.topk_seats, 1)
-            topv = w_all.topk(K, dim=-1).values                                   # [B,6,K]
-            in_top = w_all >= topv[..., -1:].clamp(min=1e-9)                      # [B,6,M] (ties incl.)
-            tail_w = w_all * (~in_top).float()                                    # beyond-rank-K mass
-            p_tail = tail_w.sum(-1).clamp(max=1.0)                                # [B,6]
-            score = tail_w * (damage_op.MOVE_BP[None, None, :] / 150.0)                     * damage_op.MOVE_ACCURACY[None, None, :]
-            phys = damage_op.MOVE_PHYS[None, None, :]
-            worst_phys = (score * phys).amax(-1)                                  # [B,6]
-            worst_spec = (score * (1.0 - phys)).amax(-1)
+            if x5_roster is None:
+                w_all = torch.sigmoid(move_belief_logits) * damage_op.HP_CAND_MASK[None, None, :]  # [B,6,M]
+                topv = w_all.topk(K, dim=-1).values                                   # [B,6,K]
+                in_top = w_all >= topv[..., -1:].clamp(min=1e-9)                      # [B,6,M] (ties incl.)
+                tail_w = w_all * (~in_top).float()                                    # beyond-rank-K mass
+                p_tail = tail_w.sum(-1).clamp(max=1.0)                                # [B,6]
+                score = tail_w * (damage_op.MOVE_BP[None, None, :] / 150.0)                     * damage_op.MOVE_ACCURACY[None, None, :]
+                phys = damage_op.MOVE_PHYS[None, None, :]
+                worst_phys = (score * phys).amax(-1)                                  # [B,6]
+                worst_spec = (score * (1.0 - phys)).amax(-1)
+            else:
+                # X5 (U3 part 3): every mon's tail beyond rank K of ITS one order, presence-aware.
+                from agents.model.hypothesis_tokens import bench_tail_cells
+                bt = bench_tail_cells(x5_roster, K, damage_op.MOVE_BP, damage_op.MOVE_ACCURACY,
+                                      damage_op.MOVE_PHYS)                                  # [B,6,3]
+                p_tail, worst_phys, worst_spec = bt.unbind(-1)
             revealed = 1.0 - ctx.opp_believed_mask.float()                        # [B,6]
             has_opp_t = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1)
             cells = torch.stack([p_tail, worst_phys, worst_spec, revealed], dim=-1)  # [B,6,4]

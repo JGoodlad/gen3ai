@@ -382,8 +382,13 @@ class MoveBelief(torch.nn.Module):
 
     def reinject_moves(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor,
                        move_embedding: torch.nn.Embedding,
-                       move_logits: torch.Tensor) -> torch.Tensor:
+                       move_logits: torch.Tensor,
+                       weights: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Soft-embed a move posterior and residually enrich the opp tokens → [B,6,D].
+
+        ``weights`` (X5 fixed_mass, U3 part 3 — F-X5-26): explicit per-move weights [B,6,M] replacing
+        ``sigmoid(move_logits)`` (the opponent active's row is its DETACHED fixed-mass presence π_m).
+        None: byte-identical.
 
         Split out of `forward` (gen3_typed_hp_belief_v1) so the caller can interpose the typed-HP
         composition between the head read and the reinjection. That ordering matters: the soft-embed is
@@ -399,7 +404,8 @@ class MoveBelief(torch.nn.Module):
         # head that PREDICTED the moveset is isolated. `self.reinject` (the consumer-side adapter) likewise
         # trains normally. `getattr` default-False ⇒ unset == byte-identical.
         logits = move_logits.detach() if getattr(self, "publish_detach", False) else move_logits
-        soft_emb = torch.sigmoid(logits) @ move_embedding.weight                  # [B, 6, move_emb]
+        w = torch.sigmoid(logits) if weights is None else weights
+        soft_emb = w @ move_embedding.weight                                       # [B, 6, move_emb]
         enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(soft_emb)
         return self.norm(enriched)  # type: ignore[no-any-return]
 

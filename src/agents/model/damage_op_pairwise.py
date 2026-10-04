@@ -252,6 +252,9 @@ class DamageOperatorPairwise:
                                   opp_spe, opp_std)                                  # [B,6]
         revealed = (~ctx.opp_believed_mask).float()                                  # [B,6]
         alive_j = (ctx.hp_and_active[:, opp, 0] > 0).float()
+        _x5 = self.stash.x5
+        if _x5 is not None:     # X5 (U3 part 3): a hypothesis's speed is its species'; alive by addressability
+            revealed, alive_j = _x5.concrete, _x5.alive
         our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()
         spd_gate = revealed * alive_j * our_alive[:, None]                           # [B,6]
         # --- the 4 hypothetical worlds: slot k's deltas, everything else identical ---
@@ -283,12 +286,24 @@ class DamageOperatorPairwise:
         → (w_k, bp_k, mty_k, phys_k, acc_k [B,6,K]; atk_j, spa_j, att_gate [B,6]; nf_k = 3×[B,6,K]
         (fixed, target_frac, endeavor); atk_cur_j [B,6]; bu_k [B,6,K] the 0/1 Beat Up flag). `bp_k` is the
         EFFECTIVE BP (each mon's HP resolved) and `nf_k` / `atk_cur_j` feed `damage_kinds.nonformula_rolls` —
-        gen3_nonformula_damage_v1; `bu_k` feeds `damage_kinds.beatup_swap` — gen3_beatup_exact_v1."""
+        gen3_nonformula_damage_v1; `bu_k` feeds `damage_kinds.beatup_swap` — gen3_beatup_exact_v1.
+
+        X5 fixed_mass (U3 part 3, `self.stash.x5`): EVERY live opponent mon attacks — a hypothesis as
+        its species (`ctx` is the hypothesis context), "alive" from `opp_addressable`; each mon's
+        candidates are the first K of ITS one order over its fixed-mass move presence (no topk), the
+        weights that presence (DETACHED, M10), so every max over them is §9 M2 = C's presence-scaled
+        max."""
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
-        w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
-        K = min(int(k_cand), w_all.shape[-1])
-        topk_idx = w_all.detach().topk(K, dim=-1).indices                            # [B,6,K]
-        w_k = w_all.gather(-1, topk_idx)                                             # diff'able
+        _x5 = self.stash.x5
+        if _x5 is None:
+            w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
+            K = min(int(k_cand), w_all.shape[-1])
+            topk_idx = w_all.detach().topk(K, dim=-1).indices                            # [B,6,K]
+            w_k = w_all.gather(-1, topk_idx)                                             # diff'able
+        else:
+            K = min(int(k_cand), _x5.move_w.shape[-1])
+            topk_idx = _x5.move_order[..., :K]                                           # [B,6,K] one order
+            w_k = _x5.move_w.gather(-1, topk_idx)                                        # presence (detached)
         hp_j = ctx.hp_and_active[:, opp, 0]                                          # [B,6]
         bp_k = gather_bp(self, topk_idx, hp_j[:, :, None])                           # [B,6,K] effective
         mty_k = self.MOVE_TYPE_IDX[topk_idx]
@@ -302,6 +317,8 @@ class DamageOperatorPairwise:
         atk_cur_j = hp_j * (2.0 * a_base[..., _BS_HP] + 31.0 + 110.0)                # neutral max HP
         att_gate: torch.Tensor = ((1.0 - ctx.opp_believed_mask.float())
                                   * (hp_j > 0).float())                              # [B,6]
+        if _x5 is not None:
+            att_gate = _x5.alive
         bu_k = gather_beatup(self, topk_idx)                                         # [B,6,K]
         return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate, nf_k, atk_cur_j, bu_k
 
@@ -831,6 +848,9 @@ class DamageOperatorPairwise:
         p = self._p_outspeed(our_spe[:, :, None], opp_spe[:, None, :], opp_std[:, None, :])  # [B,6,6]
         alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()                        # [B,6]
         alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()           # [B,6]
+        _x5 = self.stash.x5
+        if _x5 is not None:      # X5 (U3 part 3): a hypothesis is alive by addressability (its speed: its species')
+            alive_j = _x5.alive
         both = alive_i[:, :, None] * alive_j[:, None, :]                                   # [B,6,6]
         revealed_j = (1.0 - ctx.opp_believed_mask.float())[:, None, :].expand_as(both)     # [B,6,6]
         return torch.stack([p * both, both, revealed_j * both], dim=-1)                    # [B,6,6,3]
@@ -852,10 +872,16 @@ class DamageOperatorPairwise:
         B, device, eps = ctx.batch_size, ctx.device, 1e-6
         ar = torch.arange(B, device=device)
         # --- per-slot candidate selection (the _opp_candidate_weights math, per opp mon j) ---
-        w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]   # [B,6,M]
-        K = min(int(k_bench), w_all.shape[-1])
-        topk_idx = w_all.detach().topk(K, dim=-1).indices                              # [B,6,K] DETACHED
-        w_k = w_all.gather(-1, topk_idx)                                               # [B,6,K] diff'able
+        _x5 = self.stash.x5
+        if _x5 is None:
+            w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]   # [B,6,M]
+            K = min(int(k_bench), w_all.shape[-1])
+            topk_idx = w_all.detach().topk(K, dim=-1).indices                              # [B,6,K] DETACHED
+            w_k = w_all.gather(-1, topk_idx)                                               # [B,6,K] diff'able
+        else:   # X5 (U3 part 3): the per-mon one order over the fixed-mass presence (`_believed_attackers`)
+            K = min(int(k_bench), _x5.move_w.shape[-1])
+            topk_idx = _x5.move_order[..., :K]
+            w_k = _x5.move_w.gather(-1, topk_idx)
         hp_j = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0]                        # [B,6] attacker HP
         bp_k = gather_bp(self, topk_idx, hp_j[:, :, None])                             # [B,6,K] effective
         mty_k = self.MOVE_TYPE_IDX[topk_idx]
@@ -876,6 +902,8 @@ class DamageOperatorPairwise:
         not_active_j = torch.ones(B, TEAM_SIZE, device=device)
         not_active_j[ar, ctx.opp_active_local] = 0.0
         att_gate = revealed_j * alive_j * not_active_j                                 # [B,6]
+        if _x5 is not None:      # every live bench mon attacks; a hypothesis as its species
+            att_gate = _x5.alive * not_active_j
         # --- defenders = our 6 (the _incoming_rolls real-spread recipe) ---
         d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]
         spread = ctx.pokemon_part[:, :TEAM_SIZE,
@@ -982,6 +1010,9 @@ class DamageOperatorPairwise:
                                  else weather, status, leech], dim=-1)            # [B,6,4]
             if not exact_side:
                 revealed = (1.0 - ctx.opp_believed_mask.float())[:, :, None]
+                _x5 = self.stash.x5
+                if _x5 is not None:      # X5 (U3 part 3): a hypothesis's types are its species'
+                    revealed, alive = _x5.concrete[:, :, None], _x5.alive
                 cells = cells * revealed
             return cells * alive[:, :, None]
 
@@ -1059,13 +1090,23 @@ class DamageOperatorPairwise:
         # --- Pursuit exposure ---
         alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
         alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()
-        w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
-        p_pur_vs_us = (w_all[:, :, pur] * alive_j).amax(dim=-1, keepdim=True)     # [B,1]
+        _x5 = self.stash.x5
+        if _x5 is None:
+            w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
+            p_pur_vs_us = (w_all[:, :, pur] * alive_j).amax(dim=-1, keepdim=True)     # [B,1]
+        else:
+            # X5 (U3 part 3): a class-M max over the opponent MONS (§9 M2 = C) — each live mon's Pursuit
+            # presence (its fixed-mass move presence; 1 revealed) scaled by the MON's presence (1 revealed,
+            # π a hypothesis).
+            alive_j = _x5.alive
+            p_pur_vs_us = (_x5.slot_pi * _x5.move_w[:, :, pur] * alive_j).amax(dim=-1, keepdim=True)
         we_have_pur = ((ctx.all_move_ids[:, :TEAM_SIZE] == pur).any(-1).float()
                        * alive_i).amax(dim=-1, keepdim=True)                      # [B,1]
         eff_i = self.CHART[ctx.type1_ids[:, :TEAM_SIZE]][..., dark]                 * self.CHART[ctx.type2_ids[:, :TEAM_SIZE]][..., dark]             # [B,6]
         eff_j = self.CHART[ctx.type1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]][..., dark]                 * self.CHART[ctx.type2_ids[:, TEAM_SIZE:2 * TEAM_SIZE]][..., dark]
         revealed_j = (1.0 - ctx.opp_believed_mask.float())
+        if _x5 is not None:      # a hypothesis's types (Dark eff, grounded) are its species'
+            revealed_j = _x5.concrete
         our_cells = torch.stack([
             chip_our, p_pur_vs_us.expand(-1, TEAM_SIZE), eff_i.clamp(max=4.0) / 4.0, gr_i,
         ], dim=-1) * alive_i[:, :, None]                                          # [B,6,4]
@@ -1091,6 +1132,9 @@ class DamageOperatorPairwise:
         ab_rev_j = (opp_ab > 0).float()                                            # [B,6] ability known
         alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
         alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()
+        _x5 = self.stash.x5
+        if _x5 is not None:      # X5 (U3 part 3): a hypothesis's species is known under it; alive by addressability
+            revealed_j, alive_j = _x5.concrete, _x5.alive
         both = alive_i[:, :, None] * alive_j[:, None, :]                           # [B,6i,6j]
 
         def _victim(steel_t1: torch.Tensor, steel_t2: torch.Tensor, fly_t1: torch.Tensor,

@@ -209,3 +209,151 @@ def other_move_cells(fm: FixedMassMoves, move_bp: torch.Tensor, move_acc: torch.
     worst_spec = (score * (1.0 - move_phys)).amax(-1)
     return torch.stack([fm.other_mass.to(score.dtype), worst_phys, worst_spec,
                         torch.ones_like(worst_phys)], dim=-1)
+
+
+# ============================================================================ the opponent-MON axis (U3 part 3)
+
+@dataclasses.dataclass(frozen=True)
+class OpRoster:
+    """The damage op's opponent-MON axis under fixed_mass (§3.4 "Physics", §3.5; U3 part 3). Every
+    tensor is DETACHED (M10: π weights no policy / critic route).
+
+    A hidden opponent slot holds a CONCRETE hypothesis, so the op prices it like a mon of that species
+    at its first appearance — pristine, full HP, no status, nothing revealed — by reading the HYPOTHESIS
+    CONTEXT (`hypothesis_ctx`: species, types and the ability prior from U1's dex row). Three things
+    change against the blob's gates, all structural:
+
+    * **"alive" is `ctx.opp_addressable`** (alive-and-revealed OR hidden — exact: a mon cannot faint
+      unrevealed), never the HP cell (F-X5-12). A hypothesis row reads HP 1.0, but no gate may depend
+      on that.
+    * **"species known"** (the gates that zeroed a slot because its types were unknown) holds on every
+      slot: each is revealed or holds a hypothesis (`concrete`).
+    * **the attacker's candidate moves** are its OWN fixed-mass move presence (`move_w`, §3.2: "a
+      hypothesis seat's own move posterior … uses the same construction at k = 4"; a revealed mon at
+      k = 4 − r, its revealed moves pinned at 1), selected by ONE per-mon order (`move_order`: revealed
+      first, then by presence, ties to the lower num — no `torch.topk`, F-X5-13). The ACTIVE's row IS
+      the move group's `FixedMassMoves.w_all` — the weights the op's incoming max already reads.
+
+    Presence enters ONLY where a reduction runs over the mon axis: a per-(seat, mon) edge cell is
+    "what this mon does IF present" and its presence is the trunk's log-π key bias (§3.5) — scaling the
+    cell by π too would count it twice. The one class-M site over mons, `p_pur_vs_us`, weights each
+    slot by `slot_pi` (§9 M2 = C). Beat Up's party sum (class E, linear) reads the hidden-team
+    marginal `team_probs` = π / k over EVERY candidate (hypotheses + tail), so its expectation is
+    exact.
+    """
+    alive: torch.Tensor          # [B,6] float — ctx.opp_addressable
+    concrete: torch.Tensor       # [B,6] float — revealed, or holding a hypothesis (species known under it)
+    hyp: torch.Tensor            # [B,6] bool — the slot holds a hypothesis
+    slot_pi: torch.Tensor        # [B,6] presence at a max site over mons: 1 revealed, π hypothesis
+    species_probs: torch.Tensor  # [B,6,S] one-hot(hypothesis species) on a hypothesis slot; 0 elsewhere
+    team_probs: torch.Tensor     # [B,S] π / k: one hidden slot's species marginal (0 when k = 0)
+    move_w: torch.Tensor         # [B,6,M] per-mon move presence (1 revealed; π_m; a revealed HP → P(t) on 355..370)
+    move_order: torch.Tensor     # [B,6,M] long — per-mon ONE order over the selectable moves (rest last)
+    move_rank: torch.Tensor      # [B,6,M] long — its inverse
+    move_tie_gap: torch.Tensor   # [B] smallest gap at a per-mon selection boundary (alive mons; +inf: none)
+
+
+def slot_move_presence(hb: Any, move_logits: torch.Tensor, species: torch.Tensor,
+                       revealed_ids: torch.Tensor) -> "tuple[torch.Tensor, torch.Tensor, torch.Tensor]":
+    """Per opponent mon, its FIXED-MASS move presence (§3.2 "Moves", applied to every slot):
+    ``(w [B,6,M], rev_move [B,6,M] bool, sel [B,6,M] bool)``.
+
+    The construction is `HypothesisBuilder.move_group`'s, per slot: candidates = the slot species'
+    legal moves minus its revealed ones (`move_candidates`), ``k_m = 4 − r``, π = the logistic
+    fixed-size marginals of the composed posterior ``move_logits`` [B,6,M] (read DETACHED). ``w`` is
+    `fixed_mass_moves`'s ``w_all`` rule per slot: 1 on a revealed move, π on an unrevealed candidate, a
+    revealed Hidden Power as its typed weights ``P(t)`` on 355..370, the typeless 237 at 0. ``key`` is
+    the order key (2 on a revealed non-HP move — structural, never a float compare with π — else
+    ``w``); ``sel`` the selectable moves (the candidates of a LIVE group, the revealed moves but 237, and
+    a revealed HP's typed channels; a mon whose four moves are all revealed has ``k_m = 0`` and no
+    candidate — structural, so a π ≡ 0 row never reads as a tie). The key is `slot_order_key`."""
+    from agents.observation.moves import HIDDEN_POWER_MOVE_NUM as HP
+    from agents.model.hypothesis_set import MOVE_GROUP_MASS, fixed_mass_presence, move_candidates
+    B, T, M = move_logits.shape
+    S = hb.n_species
+    sp = species.clamp(0, S - 1).long()                                              # [B,6]
+    legal = hb.move_legal[sp].reshape(B * T, M)
+    cand, revealed, r = move_candidates(legal, hb.move_valid, revealed_ids.reshape(B * T, -1))
+    cand, revealed, r = cand.reshape(B, T, M), revealed.reshape(B, T, M), r.reshape(B, T)
+    k_m = (MOVE_GROUP_MASS - r).clamp(min=0)
+    pres = fixed_mass_presence(move_logits.detach(), cand, k_m)                      # [B,6,M]
+    pi = pres.pi
+    dt = pi.dtype
+    hp_rev = revealed[..., HP]                                                       # [B,6]
+    typed = torch.sigmoid(move_logits.detach()[..., _TYPED_HP[0]:_TYPED_HP[-1] + 1].to(dt))
+    p_t = typed / typed.sum(-1, keepdim=True).clamp(min=torch.finfo(dt).tiny)       # [B,6,16]
+    one = torch.ones((), dtype=dt, device=pi.device)
+    w = torch.where(revealed, one, pi)
+    w = torch.cat([w[..., :_TYPED_HP[0]],
+                   torch.where(hp_rev.unsqueeze(-1), p_t, w[..., _TYPED_HP[0]:_TYPED_HP[-1] + 1]),
+                   w[..., _TYPED_HP[-1] + 1:]], dim=-1)
+    w = torch.cat([w[..., :HP], torch.zeros_like(w[..., HP:HP + 1]), w[..., HP + 1:]], dim=-1)
+    num = torch.arange(M, device=pi.device)
+    is_typed = (num >= _TYPED_HP[0]) & (num <= _TYPED_HP[-1])                        # [M]
+    rev_move = revealed & (num != HP)                                                # [B,6,M]
+    sel = (cand & pres.live.unsqueeze(-1)) | rev_move | (is_typed & hp_rev.unsqueeze(-1))
+    return w, rev_move, sel
+
+
+def slot_order_key(w: torch.Tensor, rev_move: torch.Tensor) -> torch.Tensor:
+    """The per-mon order key: 2 on a revealed (non-HP) move — STRUCTURAL, pinned ahead of every
+    presence, never a float compare with π — else the presence ``w`` (move_group's key rule)."""
+    return torch.where(rev_move, torch.full_like(w, 2.0), w)
+
+
+def build_op_roster(hb: Any, ctx: ExtractorContext, hctx: ExtractorContext, hs: HypothesisSet,
+                    fm: Optional[FixedMassMoves], move_logits: torch.Tensor,
+                    cuts: "tuple[int, ...]") -> "tuple[OpRoster, HypothesisSet]":
+    """The op's opponent-mon roster (`OpRoster`) for one forward, and ``hs`` with the per-mon
+    selection gap attached (`near_tie_rows` reads it). ``move_logits`` [B,6,M] is the composed move
+    posterior (`last_move_belief_logits`); ``cuts`` the per-mon selection sizes the op and the E5 seats
+    consume (`consequence_topk`, `entity_topk_seats`) — every one is a rule-8 boundary."""
+    from agents.model.hypothesis_set import boundary_gap, ranks_of, stable_order
+    B = ctx.batch_size
+    opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+    believed = ctx.opp_believed_mask.bool()
+    hyp = hs.slot_is_hypothesis
+    dt = hs.species.pi.dtype
+    alive = ctx.opp_addressable.to(dt)
+    concrete = ((~believed) | hyp).to(dt)
+    assert hs.slot_pi is not None
+    S = hs.species.pi.shape[-1]
+    species_probs = torch.nn.functional.one_hot(hs.slot_species.clamp(0, S - 1), S).to(dt) \
+        * hyp.unsqueeze(-1).to(dt)                                                   # [B,6,S]
+    k = hs.species.k
+    team_probs = torch.where((k > 0).unsqueeze(-1),
+                             hs.species.pi / k.clamp(min=1).unsqueeze(-1).to(dt),
+                             torch.zeros_like(hs.species.pi))
+    w, rev_move, sel = slot_move_presence(hb, move_logits, hctx.species_ids[:, opp], ctx.all_move_ids[:, opp, :])
+    if fm is not None:      # the ACTIVE's row IS the move group's weights (the op's incoming max reads them)
+        act = torch.nn.functional.one_hot(ctx.opp_active_local, TEAM_SIZE).bool().unsqueeze(-1)  # [B,6,1]
+        w = torch.where(act, fm.w_all.to(w.dtype).unsqueeze(1), w)
+    key = slot_order_key(w, rev_move)
+    order = stable_order(key, sel)                                                   # [B,6,M]
+    rank = ranks_of(order)
+    sorted_key = key.gather(-1, order)
+    n_sel = sel.sum(-1)                                                              # [B,6] structural count
+    gap = torch.full((B, TEAM_SIZE), float("inf"), dtype=dt, device=w.device)
+    for K in sorted(set(int(c) for c in cuts)):
+        gap = torch.minimum(gap, boundary_gap(sorted_key, torch.full_like(n_sel, K), n_sel))
+    gap = torch.where(ctx.opp_addressable, gap, torch.full_like(gap, float("inf"))).amin(-1)
+    roster = OpRoster(alive=alive, concrete=concrete, hyp=hyp, slot_pi=hs.slot_pi.to(dt),
+                      species_probs=species_probs, team_probs=team_probs, move_w=w,
+                      move_order=order, move_rank=rank, move_tie_gap=gap)
+    return roster, dataclasses.replace(hs, slot_moves_tie_gap=gap)
+
+
+def bench_tail_cells(ro: OpRoster, K: int, move_bp: torch.Tensor, move_acc: torch.Tensor,
+                     move_phys: torch.Tensor) -> torch.Tensor:
+    """[B,6,4] every opponent mon's E5 tail seat under fixed_mass (§3.1: "the bench mons' E5 seats keep
+    their features, from their own slot's move posterior"), made presence-aware: the tail is the mon's
+    moves BEYOND rank ``K`` of its one order (the E4 cut), ``p_tail`` their summed presence (an expected
+    count, unclamped — OTHER_move's rule), ``worst_*`` a presence-scaled max over them (class M, §9 M2 =
+    C), ``revealed`` the slot's revealed bit is filled by the caller. (The active's row is OTHER_move,
+    `other_move_cells`.)"""
+    tail = ro.move_rank >= K                                                        # [B,6,M]
+    tw = torch.where(tail, ro.move_w, torch.zeros_like(ro.move_w))
+    score = tw * (move_bp / 150.0) * move_acc
+    worst_phys = (score * move_phys).amax(-1)
+    worst_spec = (score * (1.0 - move_phys)).amax(-1)
+    return torch.stack([tw.sum(-1), worst_phys, worst_spec], dim=-1)               # [B,6,3]

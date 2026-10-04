@@ -93,6 +93,10 @@ class OpStashes:
     # seat is its typed mixture). None under blob: every seat-axis consumer reads `topk_*` as before.
     seat_ext_idx: Optional[torch.Tensor] = None      # [B,K+16] move nums (detached)
     seat_mix: Optional[torch.Tensor] = None          # [B,K,K+16]
+    # gen3_x5_belief_tokens_v1 (U3 part 3, fixed_mass only): the opponent-MON axis — "alive" from
+    # `opp_addressable`, hypothesis species, per-mon fixed-mass move presence, the hidden-team marginal
+    # (`hypothesis_tokens.OpRoster`). Every opponent-axis kernel reads it; None (blob): byte-identical.
+    x5: Optional[Any] = None
     # gen3_conditional_threat_v1 (v95, OA1): the per-(our defender j, their believed seat k) TYPE
     # MULTIPLIER — the one channel `_incoming_matrix` computes at exactly alpha's seat alignment
     # and then spends only on the flat render. It is NOT a coordinate of `pair_in`, deliberately:
@@ -733,7 +737,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                 move_latent_all: Optional[torch.Tensor] = None,
                 species_probs: Optional[torch.Tensor] = None,
                 item_cb_prob: Optional[torch.Tensor] = None,
-                fixed_moves: Optional[Any] = None) -> torch.Tensor:
+                fixed_moves: Optional[Any] = None,
+                x5_roster: Optional[Any] = None) -> torch.Tensor:
         """Compute the full post-gain damage block [B, out_dim] from the beliefs. `move_belief_logits`
         [B,6,M] (already typed-HP composed), `spread_belief` [B,6,5] believed opp stats, `move_latent_all`
         [n_moves,MOVE_LATENT_DIM] (top-K identity source), `species_probs` [B,6,S] the T0 species prior,
@@ -743,8 +748,14 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         `hypothesis_tokens.FixedMassMoves`): the opponent active's candidate weights are its FIXED-MASS
         presence (π_m; 1 revealed; DETACHED, M10), so every incoming max is the presence-scaled max of
         §9 M2 = C, and the top-K seat axis is THE one order's seats (no `torch.topk`, F-X5-13). None
-        (blob): byte-identical."""
+        (blob): byte-identical.
+
+        `x5_roster` (U3 part 3, fixed_mass only — a `hypothesis_tokens.OpRoster`; `ctx` is then the
+        HYPOTHESIS context): the opponent-MON axis every opponent-axis kernel reads from
+        `self.stash.x5` — hidden slots priced as their concrete hypotheses, "alive" from
+        `opp_addressable`, per-mon fixed-mass candidates. None (blob): byte-identical."""
         self.stash = OpStashes()          # gen3_op_stashes_v1: ONE reset, no stash can go stale
+        self.stash.x5 = x5_roster
         B = ctx.batch_size
         device = ctx.device
         eps = 1e-6

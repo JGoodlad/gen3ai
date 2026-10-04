@@ -29,8 +29,8 @@ from agents.model.extractor_ctx import (ExtractorContext, PointerInputs, TOKEN_T
                                         TOKEN_TYPE_THEIR_TEAM)
 from agents.model.extractor_stashes import ExtractorStashes
 from agents.model.hypothesis_set import HypothesisSet
-from agents.model.hypothesis_tokens import (FixedMassMoves, OppPresence, fixed_mass_moves,
-                                            hypothesis_ctx, key_log_presence,
+from agents.model.hypothesis_tokens import (FixedMassMoves, OppPresence, OpRoster, build_op_roster,
+                                            fixed_mass_moves, hypothesis_ctx, key_log_presence,
                                             splice_hypothesis_tokens)
 from agents.model.intent_threshold import threshold_probs
 from agents.model.pair_outcome import pair_alpha, reduce_pair_in, reduce_pair_in_all
@@ -96,12 +96,15 @@ class ExtractorForward(ExtractorApi):
                                            self.embeddings.species_embedding)
         return hs
 
-    def _attach_move_group(self, ctx: ExtractorContext, hs: HypothesisSet) -> HypothesisSet:
+    def _attach_move_group(self, ctx: ExtractorContext, hs: HypothesisSet,
+                           mb: Optional[torch.Tensor] = None) -> HypothesisSet:
         """The opponent ACTIVE's move group (U2), after the move belief: its typed posterior at the
-        active + the active's species + revealed moves (the active is always revealed)."""
+        active + the active's species + revealed moves (the active is always revealed). ``mb`` = the
+        published move posterior (default: `last_move_belief_logits`)."""
         hb = self.hypothesis_builder
         assert hb is not None
-        mb = self.last_move_belief_logits
+        if mb is None:
+            mb = self.last_move_belief_logits
         if mb is None:
             return hs
         opp_ids = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
@@ -111,7 +114,10 @@ class ExtractorForward(ExtractorApi):
                              ctx.all_move_ids[:, TEAM_SIZE:, :][bidx, act])
 
     def _apply_move_belief(self, opp_tokens: torch.Tensor, ctx: ExtractorContext,
-                           hctx: Optional[ExtractorContext] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+                           hctx: Optional[ExtractorContext] = None,
+                           hs: Optional[HypothesisSet] = None,
+                           ) -> Tuple[torch.Tensor, torch.Tensor, Optional[HypothesisSet],
+                                      Optional[FixedMassMoves]]:
         """Predict + reinject the opp moveset into the given opp tokens [B, 6, D] → (enriched, logits).
         ONE call site: PRE-transformer, T0 RESOLVE (gen3_tiered_pipeline_v1 — the POST-transformer
         placement is deleted). The mask selects the slots per move_belief_mode; the
@@ -126,7 +132,15 @@ class ExtractorForward(ExtractorApi):
         a hidden slot holds a CONCRETE species hypothesis, so the move head's prior is THAT species'
         Smogon row (the E10 mixture over the T0 posterior is the blob's stand-in for a hidden slot and
         is not used), and the HP-type head reads the same species. The slot-selection mask and the
-        revealed-only HP reinjection read the REAL `ctx`."""
+        revealed-only HP reinjection read the REAL `ctx`.
+
+        `hs` (fixed_mass, U3 part 3 — ORCHESTRATOR decision on F-X5-26): the opponent ACTIVE's move group
+        is built HERE, from the posterior just published, and the reinjection soft-embeds the active's row
+        by its DETACHED fixed-mass presence π_m (`FixedMassMoves.w_all`: 1 revealed, π_m, a revealed HP as
+        P(t)) instead of its sigmoid inclusion weights — M10's rule, so RL cannot tune the move belief as a
+        gate there. The move head keeps training through its own BCE; what is lost is the PPO → move-head
+        route through the ACTIVE's reinjection (the other slots' rows keep it). Returns the move-group-
+        attached set and its `FixedMassMoves` (None, None under blob)."""
         sctx = hctx if hctx is not None else ctx                 # where the SPECIES / move ids come from
         if self.move_belief_mode == "revealed":
             mb_mask = ~ctx.opp_believed_mask                 # revealed-species slots
@@ -152,8 +166,18 @@ class ExtractorForward(ExtractorApi):
         self.stash.belief_supervision["hp_type_logits"] = hp_logits
         self.stash.hp_type_logits = self._publish_belief(hp_logits)
         logits = self._publish_belief(logits)  # type: ignore[assignment]
+        hs_m: Optional[HypothesisSet] = None
+        fm: Optional[FixedMassMoves] = None
+        weights: Optional[torch.Tensor] = None
+        if hs is not None:
+            hs_m = self._attach_move_group(ctx, hs, logits)
+            if hs_m.moves is not None:
+                bi = torch.arange(ctx.batch_size, device=ctx.device)
+                fm = fixed_mass_moves(hs_m.moves, logits[bi, ctx.opp_active_local])
+                act = torch.nn.functional.one_hot(ctx.opp_active_local, TEAM_SIZE).bool().unsqueeze(-1)
+                weights = torch.where(act, fm.w_all.to(logits.dtype).unsqueeze(1), torch.sigmoid(logits))
         enriched = self.move_belief.reinject_moves(  # type: ignore[union-attr]
-            opp_tokens, mb_mask, self.embeddings.move_embedding, logits)
+            opp_tokens, mb_mask, self.embeddings.move_embedding, logits, weights=weights)
         # gen3_opp_hp_type_belief_v2: ALSO reinject the presence-gated expected TYPE embedding. This is
         # deliberately not redundant with the move soft-embed above: that one injects believed move
         # IDENTITY (the 355-370 rows), this one injects the believed TYPE in the shared type-embedding
@@ -163,12 +187,13 @@ class ExtractorForward(ExtractorApi):
         if self.hp_type_belief_head is not None:
             enriched = self.hp_type_belief_head.reinject(
                 enriched, hp_post, presence, (~ctx.opp_believed_mask).float(), self.embeddings)  # type: ignore[arg-type]
-        return enriched, logits
+        return enriched, logits, hs_m, fm
 
     def _spread_hp_damage(self, opp_tokens: torch.Tensor, ctx: ExtractorContext,
                           hctx: Optional[ExtractorContext] = None,
                           hs: Optional[HypothesisSet] = None,
                           fm: "Optional[FixedMassMoves]" = None,
+                          x5r: "Optional[OpRoster]" = None,
                           ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """The spread + HP-type belief legs and the FULL DamageOperator, in ONE place.
 
@@ -261,20 +286,25 @@ class ExtractorForward(ExtractorApi):
         # the opp active. Forward-only, leak-free; its gradient flows back into the move/spread belief heads
         # via last_move_belief_logits / last_spread_belief.
         damage_block = None
+        # X5 fixed_mass (U3 part 3): the op reads the HYPOTHESIS context — a hidden slot is priced as its
+        # concrete hypothesis — and the roster's per-slot one-hots replace the T0 marginal as its
+        # defender belief (the roster carries everything else: alive, per-mon candidates, Beat Up's π / k).
+        _opctx = sctx if x5r is not None else ctx
+        _sp = x5r.species_probs if x5r is not None else self.stash.t0_species_probs
         if self.damage_op is not None:
             # Optional gradient-checkpointing (same gate as the transformer): the op materialises several
             # [B,6,~416] activations → recompute in backward for ~GBs of VRAM. Bit-exact (no dropout/RNG);
             # a no-op under inference. ctx is a non-tensor arg (use_reentrant=False); the belief tensors carry
             # the grad. move_latent_all (built above) is the op's top-K identity source (None unless topk on).
             if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
-                damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
+                damage_block = checkpoint(self.damage_op, _opctx, self.last_move_belief_logits,
                                           self.last_spread_belief, move_latent_all,
-                                          self.stash.t0_species_probs, _item_cb_prob, fm,
+                                          _sp, _item_cb_prob, fm, x5r,
                                           use_reentrant=False)
             else:
-                damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief,
-                                              move_latent_all, self.stash.t0_species_probs,
-                                              item_cb_prob=_item_cb_prob, fixed_moves=fm)
+                damage_block = self.damage_op(_opctx, self.last_move_belief_logits, self.last_spread_belief,
+                                              move_latent_all, _sp,
+                                              item_cb_prob=_item_cb_prob, fixed_moves=fm, x5_roster=x5r)
         # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
         self.stash.damage_block = damage_block
         return opp_tokens, damage_block
@@ -332,29 +362,43 @@ class ExtractorForward(ExtractorApi):
         # downstream consumer (damage op, E4 seats, edge cells, aux loss) reads the same
         # `last_move_belief_logits`. There is no second placement.
         if self.move_belief is not None:
-            opp_role, _mb_logits = self._apply_move_belief(
-                role_tokens[:, TEAM_SIZE:], ctx, _hctx)
+            opp_role, _mb_logits, _hs_m, _fm_m = self._apply_move_belief(
+                role_tokens[:, TEAM_SIZE:], ctx, _hctx, _hs)
             self.stash.move_belief_logits = _mb_logits
             role_tokens = torch.cat([role_tokens[:, :TEAM_SIZE], opp_role], dim=1)
         # T0 RESOLVE — X5's hypothesis set: the opponent ACTIVE's move group joins the species half
         # (fixed_mass only; None under blob).
+        # X5 U3 part 2: the opponent active's move axis — ONE order for the E4 seats, the op's top-K /
+        # pair cells / α seats and the D3 / S3 cells; the fixed-mass π_m as the op's class-M candidate
+        # weights (DETACHED, M10). Built inside `_apply_move_belief` (part 3: the active's reinjection
+        # reads π_m, F-X5-26), from the same published posterior.
         _fm: Optional[FixedMassMoves] = None
         if _hs is not None:
-            _hs = self._attach_move_group(ctx, _hs)
+            if self.move_belief is not None:
+                assert _hs_m is not None
+                _hs, _fm = _hs_m, _fm_m
             self.stash.hypothesis = _hs
-            # X5 U3 part 2: the opponent active's move axis — ONE order for the E4 seats, the op's
-            # top-K / pair cells / α seats and the D3 / S3 cells; the fixed-mass π_m as the op's
-            # class-M candidate weights (DETACHED, M10).
-            if _hs.moves is not None and self.last_move_belief_logits is not None:
-                _bi = torch.arange(ctx.batch_size, device=ctx.device)
-                _fm = fixed_mass_moves(_hs.moves, self.last_move_belief_logits[_bi, ctx.opp_active_local])
+        # X5 U3 part 3: the op's opponent-MON axis (hidden slots as their hypotheses, "alive" from
+        # `opp_addressable`, per-mon fixed-mass candidates in ONE order, Beat Up's π / k). The per-mon
+        # selection cuts join the rule-8 exclusion (`near_tie_rows`).
+        _x5r: Optional[OpRoster] = None
+        if (_hs is not None and _hctx is not None and self.damage_op is not None
+                and self.last_move_belief_logits is not None):
+            _x5r, _hs = build_op_roster(self.hypothesis_builder, ctx, _hctx, _hs, _fm,
+                                        self.last_move_belief_logits,
+                                        cuts=(self.consequence_topk, self.entity_topk_seats))
+            self.stash.hypothesis = _hs
         # T0 RESOLVE (spread/HP-type) → T1 REASON (the op). Run the WHOLE physics stack ONCE, here,
         # PRE-attention: the spread + HP-type beliefs read the raw opp role tokens (the move belief
         # already did, just above), the FULL DamageOperator runs on that belief, and its per-OUR-mon
         # INCOMING rows are injected onto our role tokens through the zero-init `prefuse_proj` — so
         # attention reasons over the physics. `damage_block` is None only when the op is off, in which
         # case there is nothing to inject (and `prefuse_proj` was never built).
-        opp_role, damage_block = self._spread_hp_damage(role_tokens[:, TEAM_SIZE:], ctx, _hctx, _hs, _fm)
+        opp_role, damage_block = self._spread_hp_damage(role_tokens[:, TEAM_SIZE:], ctx, _hctx, _hs, _fm,
+                                                        _x5r)
+        # X5 U3 part 3: every op kernel below reads the hypothesis context + the roster's one-hots.
+        _opctx: ExtractorContext = _hctx if (_x5r is not None and _hctx is not None) else ctx
+        _sp = _x5r.species_probs if _x5r is not None else self.stash.t0_species_probs
         if damage_block is not None:
             # gen3_op_tensors_views_v1: the op's typed views (set by the forward that just ran)
             # replace every flat-offset slice on the consumer side.
@@ -375,7 +419,7 @@ class ExtractorForward(ExtractorApi):
         _seat_tokens, _seat_pad = self.entity_seats(
             _tok_req_raw, _move_valid, ctx, self.damage_op,
             self.last_move_belief_logits,
-            self.stash.entity_latent_table, fixed_moves=_fm)
+            self.stash.entity_latent_table, fixed_moves=_fm, x5_roster=_x5r)
         _seat_types = self.entity_seats.seat_types(ctx.device)
         # gen3_event_window_v1 (Tier H-B): the event seats join the extra seam LAST, so every
         # front-indexed seat slice (E3 [:4], E4 [4:4+K], the E5 tail) is position-stable, and
@@ -407,61 +451,61 @@ class ExtractorForward(ExtractorApi):
             _cells = {}
             if "d1" in _fams:
                 _cells["d1"] = self.damage_op.pairwise_outgoing(  # type: ignore[union-attr]
-                    ctx, _sb, species_probs=self.stash.t0_species_probs)
+                    _opctx, _sb, species_probs=_sp)
             if "c1" in _fams:
                 # C1 (outgoing) reuses D1's current-world cells as its delta base when both are
                 # on; C1b (incoming) appends the defensive halves — one 6-wide consequence cell.
                 _cells["c1"] = torch.cat([
-                    self.damage_op.pairwise_boost(ctx, _sb, base=_cells.get("d1"),  # type: ignore[union-attr]
-                                                  species_probs=self.stash.t0_species_probs),
+                    self.damage_op.pairwise_boost(_opctx, _sb, base=_cells.get("d1"),  # type: ignore[union-attr]
+                                                  species_probs=_sp),
                     self.damage_op.pairwise_boost_incoming(  # type: ignore[union-attr]
-                        ctx, self.last_move_belief_logits, k_cand=self.consequence_topk,  # type: ignore[arg-type]
-                        species_probs=self.stash.t0_species_probs),
+                        _opctx, self.last_move_belief_logits, k_cand=self.consequence_topk,  # type: ignore[arg-type]
+                        species_probs=_sp),
                 ], dim=-1)
             if "c3" in _fams:
                 _cells["c3"] = self.damage_op.pairwise_recovery(  # type: ignore[union-attr]
-                    ctx, self.last_move_belief_logits, k_cand=self.consequence_topk,  # type: ignore[arg-type]
-                    species_probs=self.stash.t0_species_probs)
+                    _opctx, self.last_move_belief_logits, k_cand=self.consequence_topk,  # type: ignore[arg-type]
+                    species_probs=_sp)
             if "c2" in _fams:
                 _cells["c2"] = self.damage_op.pairwise_status_consequence(  # type: ignore[union-attr]
-                    ctx, self.last_move_belief_logits, _sb, k_cand=self.consequence_topk,  # type: ignore[arg-type]
-                    species_probs=self.stash.t0_species_probs)
+                    _opctx, self.last_move_belief_logits, _sb, k_cand=self.consequence_topk,  # type: ignore[arg-type]
+                    species_probs=_sp)
             if "c5" in _fams:
-                _cells["c5"] = self.damage_op.pairwise_baton(ctx, _sb)  # type: ignore[union-attr]
+                _cells["c5"] = self.damage_op.pairwise_baton(_opctx, _sb)  # type: ignore[union-attr]
             if "s1" in _fams:
-                _cells["s1"] = self.damage_op.discrete_outgoing_status(ctx, per_pair=True)  # type: ignore[union-attr]
+                _cells["s1"] = self.damage_op.discrete_outgoing_status(_opctx, per_pair=True)  # type: ignore[union-attr]
             if "d2" in _fams:
-                _cells["d2"] = self.damage_op.pairwise_bench_outgoing(ctx, _sb)  # type: ignore[union-attr]
+                _cells["d2"] = self.damage_op.pairwise_bench_outgoing(_opctx, _sb)  # type: ignore[union-attr]
             if "d3" in _fams:
                 # X5 (fixed_mass): priced on the EXTENDED seat axis and contracted onto the K seats
                 # (a revealed Hidden Power's seat is its typed mixture).
                 _d3_cand = (self.entity_seats.last_cand if _fm is None else (_fm.idx_ext, _fm.w_ext))
                 _cells["d3"] = self.damage_op.pairwise_incoming(  # type: ignore[union-attr]
-                    ctx, self.last_move_belief_logits, _d3_cand,  # type: ignore[arg-type]
+                    _opctx, self.last_move_belief_logits, _d3_cand,  # type: ignore[arg-type]
                     spread_belief=(self.last_spread_belief
                                    if self.damage_op.believed_lean else None),  # type: ignore[union-attr]
-                    species_probs=self.stash.t0_species_probs)
+                    species_probs=_sp)
                 if _fm is not None:
                     _cells["d3"] = _fm.mix_seats(_cells["d3"], dim=1)
             if "d4" in _fams:
                 _cells["d4"] = self.damage_op.pairwise_bench_incoming(  # type: ignore[union-attr]
-                    ctx, self.last_move_belief_logits, k_bench=self.consequence_topk,  # type: ignore[arg-type]
-                    species_probs=self.stash.t0_species_probs)
+                    _opctx, self.last_move_belief_logits, k_bench=self.consequence_topk,  # type: ignore[arg-type]
+                    species_probs=_sp)
             if "g" in _fams:
-                _cells["g"] = self.damage_op.pairwise_schedule(ctx)  # type: ignore[union-attr]
+                _cells["g"] = self.damage_op.pairwise_schedule(_opctx)  # type: ignore[union-attr]
             if "c4" in _fams:
                 # gen3_entity_rehome_v1: protect odds live ON the mon slot now — gather OUR
                 # active's per-mon protect field (pokemon.py POKEMON_PROTECT_OFFSET).
                 _po = ctx.pokemon_part[
                     torch.arange(ctx.batch_size, device=ctx.device), ctx.our_active_idx,
                     POKEMON_PROTECT_OFFSET]
-                _cells["c4"] = self.damage_op.pairwise_protect(ctx, _po)  # type: ignore[union-attr]
+                _cells["c4"] = self.damage_op.pairwise_protect(_opctx, _po)  # type: ignore[union-attr]
             if "x" in _fams:
-                _cells["x"] = self.damage_op.pairwise_entry(ctx, self.last_move_belief_logits)  # type: ignore[arg-type,union-attr]
+                _cells["x"] = self.damage_op.pairwise_entry(_opctx, self.last_move_belief_logits)  # type: ignore[arg-type,union-attr]
             if "t" in _fams:
-                _cells["t"] = self.damage_op.pairwise_trap(ctx)  # type: ignore[union-attr]
+                _cells["t"] = self.damage_op.pairwise_trap(_opctx)  # type: ignore[union-attr]
             if "v" in _fams:
-                _cells["v"] = self.damage_op.pairwise_speed(ctx, _sb)  # type: ignore[union-attr]
+                _cells["v"] = self.damage_op.pairwise_speed(_opctx, _sb)  # type: ignore[union-attr]
             if "h" in _fams:
                 # Tier H-A2: the obs-fed pair-history TENDENCY cells — obs order is
                 # (opp i, our j); the mon×mon block convention is (our, opp), so permute.
@@ -482,7 +526,7 @@ class ExtractorForward(ExtractorApi):
                 _cells["r"] = _event_reference_cells(ctx.event_window, ctx.species_ids)
             if "s3" in _fams:
                 _cells["s3"] = self.damage_op.discrete_incoming_status(  # type: ignore[union-attr]
-                    ctx, self.last_move_belief_logits, self.entity_seats.last_cand, per_pair=True)  # type: ignore[arg-type]
+                    _opctx, self.last_move_belief_logits, self.entity_seats.last_cand, per_pair=True)  # type: ignore[arg-type]
             _opp_oh = None
             if "d2" in _fams:
                 _opp_oh = torch.zeros(ctx.batch_size, TEAM_SIZE, device=ctx.device)
@@ -500,9 +544,9 @@ class ExtractorForward(ExtractorApi):
         _imc_ops = None
         if self.intent_move_cell is not None and damage_block is not None:
             _imc_ops = self.damage_op.pointer_intent_status_operands(  # type: ignore[union-attr]
-                ctx, self.last_move_belief_logits, self.last_spread_belief,  # type: ignore[arg-type]
+                _opctx, self.last_move_belief_logits, self.last_spread_belief,  # type: ignore[arg-type]
                 k_cand=self.consequence_topk, c2_cells=_c2_edge_cells,
-                species_probs=self.stash.t0_species_probs)
+                species_probs=_sp)
         # gen3_x5_belief_tokens_v1 (fixed_mass): OTHER_species joins the trunk as ONE extra seat right
         # after the entity seats (E3/E4/E5 stay front-indexed; the event seats stay LAST, which the
         # `r` edge family's slice requires), typed THEIR_TEAM, key-masked iff OTHER is masked

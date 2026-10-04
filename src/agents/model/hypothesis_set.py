@@ -253,6 +253,12 @@ class HypothesisSet:
     other_any: torch.Tensor             # [B] P(at least one tail species present) = 1 − Π_tail(1 − π) ∈ [0,1]
     species_tie_gap: torch.Tensor       # [B] smallest adjacent π gap up to and across the seat boundary (+inf: none)
     moves: Optional["MovePresence"]     # the opponent ACTIVE's move group (None: no move belief)
+    # U3 part 3 (the op's opponent-MON axis): a slot's presence at a max-type site over MONS (§9 M2 = C)
+    # — 1 on a revealed slot, the hypothesis's π on a hidden one (the same gather as `slot_log_pi`).
+    slot_pi: Optional[torch.Tensor] = None          # [B,6]
+    # U3 part 3: the smallest gap at a PER-MON move-selection boundary (`hypothesis_tokens.OpRoster`:
+    # the attacker candidates of every live opponent mon and the bench E5 tail cut); +inf: none.
+    slot_moves_tie_gap: Optional[torch.Tensor] = None   # [B]
 
 
 @dataclass(frozen=True)
@@ -282,6 +288,8 @@ def near_tie_rows(hs: HypothesisSet, eps: float = SELECTION_TIE_EPS) -> torch.Te
     bad = hs.species_tie_gap < eps
     if hs.moves is not None:
         bad = bad | (hs.moves.tie_gap < eps)
+    if hs.slot_moves_tie_gap is not None:      # U3 part 3: the per-mon attacker / E5-tail cuts
+        bad = bad | (hs.slot_moves_tie_gap < eps)
     return bad
 
 
@@ -493,6 +501,7 @@ class HypothesisBuilder(torch.nn.Module):
         slot_species = torch.where(believed, hyp_species.gather(-1, hid_rank), torch.zeros_like(hid_rank))
         zero = torch.zeros((), dtype=pi.dtype, device=pi.device)
         slot_log_pi = torch.where(believed, hyp_log_pi.gather(-1, hid_rank), zero)
+        slot_pi = torch.where(believed, hyp_pi.gather(-1, hid_rank), torch.ones_like(slot_log_pi))
         slot_rows = self.dex_rows[slot_species] * believed.unsqueeze(-1).to(self.dex_rows.dtype)
         # ---- OTHER_species: the tail (rank >= k) — structural
         in_tail = cand & (rank >= k.unsqueeze(-1)) & (k > 0).unsqueeze(-1)
@@ -523,7 +532,7 @@ class HypothesisBuilder(torch.nn.Module):
             slot_log_pi=slot_log_pi, slot_rows=slot_rows, other_mass=other_mass,
             other_log_mass=other_log_mass, other_live=other_live, other_tail_probs=p_tail,
             other_tail_mean=tail_mean, other_token=other_token, other_any=other_any,
-            species_tie_gap=species_gap, moves=None)
+            species_tie_gap=species_gap, moves=None, slot_pi=slot_pi)
 
     def move_group(self, move_logits: torch.Tensor, species: torch.Tensor,
                    revealed_ids: torch.Tensor) -> MovePresence:

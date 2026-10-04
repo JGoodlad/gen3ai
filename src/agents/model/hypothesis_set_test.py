@@ -375,11 +375,14 @@ def test_fixed_mass_leaves_every_non_x5_initial_byte_equal_to_blob(arms):
     sd0, sd1 = m_blob.policy.state_dict(), m_fm.policy.state_dict()
     extra = sorted(k for k in sd1 if k not in sd0)
     assert extra and all(".hypothesis_builder." in k for k in extra)
-    assert set(sd0) <= set(sd1)
-    moved = [k for k in sd0 if not torch.equal(sd0[k], sd1[k])]
+    # F-X5-27 (U3 part 3): fixed_mass does NOT build BeliefSlots (never called there) — the ONLY blob
+    # key it lacks; its init draw still ran, so every other byte is unmoved (asserted next).
+    missing = sorted(k for k in sd0 if k not in sd1)
+    assert missing and all(".belief_slots." in k for k in missing), missing
+    moved = [k for k in sd0 if k in sd1 and not torch.equal(sd0[k], sd1[k])]
     assert moved == [], moved
     # every non-X5 parameter keeps its optimizer position RELATIVE to the others
-    n0 = [n for n, _ in m_blob.policy.named_parameters()]
+    n0 = [n for n, _ in m_blob.policy.named_parameters() if ".belief_slots." not in n]
     n1 = [n for n, _ in m_fm.policy.named_parameters() if ".hypothesis_builder." not in n]
     assert n0 == n1
 
