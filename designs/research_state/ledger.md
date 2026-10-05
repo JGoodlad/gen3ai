@@ -22114,3 +22114,21 @@ Tag: **BUILT · oracle reveal `full` · whole set as already-known facts · seen
 The owner approved filling the GPU gap before the fixed_mass fixes land. Look 1 says CONTINUE with high probability (NON-INFERIOR at look 1 is 0.01–0.03 by §7.4's simulation), so these seeds are almost certainly needed. A pre-declared seed list run early is not optional stopping. Same pin and surface as seeds 1001–1003; look 1 stays at 3 seeds per arm. Wasted only if look 1 stops for futility (about 4.6 GPU-h, about zero quota). `design_x5_belief_tokens.md` §7.8.
 
 Tag: **REGISTRATION · X5 A/B Amendment 4 · blob 1004–1005 early at e5e660dd · not read at look 1**
+
+### 2026-10-04 · BANK · **X5 A/B, blob arm, look-1 side COMPLETE: seeds 1001, 1002, 1003 at e5e660dd, all three 15M with 0 restarts and 0 crashes, none INCONCLUSIVE**
+
+The production blob belief + the X26 ride-along heads, the A/B's reference arm (`design_x5_belief_tokens.md` §7.4–§7.5), run by the training agent under its GPU lease.
+
+| seed | run | steps | wall | restarts | in-loop eval @ ~14.0M (greedy sentinels): bots · pool |
+|---|---|---|---|---|---|
+| 1001 | `rb_x5ab_blob_s1001` | 15,047,954 | 2 h 17 m | 0 (3 h interval; finished before one could fire) | 88.5 % · 66.4 % |
+| 1002 | `rb_x5ab_blob_s1002` | 15,047,525 | 2 h 17 m | 0 (6 h) | 91.0 % · 71.4 % |
+| 1003 | `rb_x5ab_blob_s1003` | 15,047,619 | 2 h 21 m | 0 (6 h) | 89.2 % · 71.8 % |
+
+- **Throughput:** about 1,830 env-steps/s end to end and about 1,910 in steady state (seed 1001), one 98,304-step cycle per about 51 s.
+- **Restart-interval protocol:** the 3 h vs 6 h difference is MOOT, since no seed restarted. The three blob seeds ran one protocol.
+- **`init_num_threads`:** not recorded in `metadata.json` (nothing writes it; a training-agent FINDING). Accepted "by construction" at one pin plus `single_thread_build`; the key is queued as its own fix before the fixed_mass seeds.
+- **Not a read.** The in-loop numbers are progress telemetry, not the A/B's meter. The verdict comes from the mirrored head-to-head cross at look 1, once the fixed_mass seeds exist.
+- **Next on the GPU:** oracle-species × 3 and oracle-full × 3 at 401873b5 (Amendments 2–3), then blob 1004–1005 at e5e660dd (Amendment 4).
+
+Tag: **BANK · X5 A/B blob look-1 seeds 1001–1003 complete · 0 restarts / 0 crashes · none INCONCLUSIVE · telemetry only, no read**
