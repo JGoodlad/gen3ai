@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,219-line file. **The ledger itself is append-only and is never edited by this**;
+22,237-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**762 headings · 707 dated · 2026-08-01 → 2026-10-05 · ledger 22,219 lines.**
+**763 headings · 708 dated · 2026-08-01 → 2026-10-05 · ledger 22,237 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -782,3 +782,4 @@ rename.
   - `L22179` · `2026-10-05` · BANK · **X5 A/B ORACLE-SPECIES reference arm COMPLETE: seeds 1001b, 1002, 1003 at 77245f51, all 15M, 0 restarts / 0 crashes / 0 canary FATAL; the CUDA confirmation of `gen3_r1_unmoved_init_v1`**
   - `L22196` · `2026-10-05` · DEVIATION · **X5 A/B oracle-full reference arm: K9(b) tie-share STOP at the first behaviour probe (excluded 0.220 vs the 0.15 ceiling, max |d log pi| exactly 0) → relaunched with `--behaviour-check warn` plus a strict mismatch stop; the arm-specific ceiling to be re-measured on CPU**
   - `L22206` · `2026-10-05` · FINDING + FIX · **K9(b) tie identity: the oracle-full stop was a FIRST-UPDATE artifact (zero-init action scorers, every one of 514 excluded rows value-identical); two declared rules now judge ties that provably cannot move log pi (`gen3_behaviour_tie_identity_v1`); the warn-path scan is a 4,096-row sample; no arm needs its own ceiling**
+  - `L22220` · `2026-10-05` · BANK · **X5 A/B ORACLE-FULL reference arm COMPLETE: seeds 1001b, 1002, 1003 at 77245f51 in `--behaviour-check warn` (the 2026-10-05 DEVIATION), all 15M, 0 restarts / 0 crashes; the mismatch stop never fired (max |d log pi| ≤ 2.36e-5 in every run)**

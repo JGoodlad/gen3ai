@@ -22216,3 +22216,21 @@ Tag: **DEVIATION · oracle-full K9(b) tie-share stop (coverage, not mismatch) ·
 - **Unclaimed coverage (FINDING):** two classes are value-identical under the flips but stay excluded, because no deterministic rule here proves them: the fixed_mass stable order's exact π ties (94 of 2,048 perturbed rows) and the `fixed >= current HP` exact ties (24 blob rows).
 
 Tag: **FINDING + FIX · K9(b) tie identity (payload + selection-free) · oracle-full stop = zero-init artifact · warn scan bounded · ceiling unchanged**
+
+### 2026-10-05 · BANK · **X5 A/B ORACLE-FULL reference arm COMPLETE: seeds 1001b, 1002, 1003 at 77245f51 in `--behaviour-check warn` (the 2026-10-05 DEVIATION), all 15M, 0 restarts / 0 crashes; the mismatch stop never fired (max |d log pi| ≤ 2.36e-5 in every run)**
+
+The production blob architecture + the X26 heads + `--oracle-reveal full` (the opponent's whole set, as already known, written into the observation; `design_x5_belief_tokens.md` §7.6–§7.7).
+
+| seed | run | steps | wall | in-loop eval @ ~14.0M (greedy): bots · pool | K9(b) excluded: first (update 0) · median · later range | max \|d log pi\| |
+|---|---|---|---|---|---|---|
+| 1001 (replacement) | `rb_x5ab_oracle_full_s1001b` | 15,046,904 | 2 h 20 m | 92.4 % · 61.6 % | 0.220 · 0.079 · 0.058–0.125 | 1.57e-5 |
+| 1002 | `rb_x5ab_oracle_full_s1002` | 15,047,676 | 2 h 18 m | 87.6 % · 64.4 % | 0.239 · 0.073 · 0.045–0.105 | 2.36e-5 |
+| 1003 | `rb_x5ab_oracle_full_s1003` | 15,047,595 | 2 h 18 m | 91.9 % · 68.6 % | 0.234 · 0.068 · 0.048–0.115 | 2.05e-5 |
+
+- **The update-0 over-ceiling probe in every seed** is the zero-scorer artifact found and FIXED at `e8008c2d` (ledger 2026-10-05). Every later probe was under 0.15, and the behaviour log-probs reproduced to ≤ 2.4e-5 throughout. These runs are pinned at `77245f51`, so the old rule applied; the arm's protocol is consistent across its three seeds.
+- **Compile canary:** update-10 compiled == eager with 17 unmoved parameters on the first seed; no FATAL in any run.
+- **Telemetry only, not a read.** The ceiling C is read on the mirrored head-to-head cross (one-sided clairvoyance primary), which still needs the h2h per-side reveal build.
+- **The GPU-trained side of the A/B now holds:** blob 1001–1005 (e5e660dd), oracle-species 1001b–1003 and oracle-full 1001b–1003 (77245f51). INCONCLUSIVE artifacts are kept: `rb_x5ab_oracle_sp_s1001`, `rb_x5ab_oracle_full_s1001`.
+- **The fixed_mass arm waits on the X5 cost-fix queue** (first unit dispatched 13:03).
+
+Tag: **BANK · oracle-full reference arm complete (warn deviation; the stop rule never fired) · the A/B's blob + oracle sides done · fixed_mass pending the cost fixes**
