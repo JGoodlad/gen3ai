@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,135-line file. **The ledger itself is append-only and is never edited by this**;
+22,148-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**756 headings · 701 dated · 2026-08-01 → 2026-10-04 · ledger 22,135 lines.**
+**757 headings · 702 dated · 2026-08-01 → 2026-10-04 · ledger 22,148 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -776,3 +776,4 @@ rename.
   - `L22099` · `2026-10-04` · BUILT · **THE ORACLE REVEAL, `full` LEVEL — `--oracle-reveal full`: the opponent's whole SET (four moves, item, ability, nature / EVs / IVs with `spread_known` 1) told to the observation from turn 1 as already-known facts; an unseen mon's slot is the row of an OWN mon of that set, a seen mon keeps everything play has revealed; verified against the OPPOSING chain's own-team slot of the same mon; `off` and `species` byte-identical**
   - `L22112` · `2026-10-04` · REGISTRATION · **X5 A/B Amendment 4: blob seeds 1004–1005 (look 2's added blob seeds) run early, at P_blob, after the oracle seeds; not read at look 1**
   - `L22118` · `2026-10-04` · BANK · **X5 A/B, blob arm, look-1 side COMPLETE: seeds 1001, 1002, 1003 at e5e660dd, all three 15M with 0 restarts and 0 crashes, none INCONCLUSIVE**
+  - `L22136` · `2026-10-04` · FINDING + FIX · **The oracle-species canary FATAL was fp32 NOISE on an UNMOVED zero-init head, not a miscompile: R1 now judges a parameter still exactly 0.0 at the FRESH bar, plus its own perturbed rung at the TRAINED bar (`gen3_r1_unmoved_param_v1`)**

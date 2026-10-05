@@ -134,7 +134,10 @@ never reached 100), on R1's gate rows — ALWAYS the K9 golden's labelled buffer
 declared placeholder (`compile_regions.r1_batch`; P10-C: before it, a fork-shaped run's canary judged
 zero-label rows, with ~48 critic / intent / belief parameters unjudged) — and through the DECLARED
 signature only. Every run compares compiled against eager on R1's loss and every policy gradient, with
-the per-parameter bar chosen by `compile_regions.weights_regime`. (Until P10-E a canary ALSO compared the
+the per-parameter bar chosen by `compile_regions.weights_regime`, through the startup gate's own rungs
+(`compile_regions.r1_rungs`): an UNMOVED zero-init parameter (exactly 0.0, e.g. the oracle arm's species
+head, whose labels are all PAD) is judged at the FRESH bar on the live weights and again, with only those
+parameters moved off zero, at the TRAINED bar (`gen3_r1_unmoved_param_v1`; `designs/training/compile_flags.md`). (Until P10-E a canary ALSO compared the
 decision readout of the compiled rollout region R0 at the rollout signature — a graph the learner process
 never ran, so its verdict checked nothing the run used; the arm, its `compile/canary_max_abs_<q>`
 scalars and the decision-only canary — the gradient ran every `GRAD_EVERY`-th canary — are deleted. EVERY
@@ -168,7 +171,8 @@ is untouched (pinned). TB scalars, written on canary updates only:
 - `compile/canary_ok` (1 pass, 0 unconfirmed);
 - `compile/canary_unconfirmed_disagreements`;
 - `compile/canary_seconds`;
-- `compile/canary_grad_cosine`.
+- `compile/canary_grad_cosine`;
+- `compile/canary_unmoved_params` (how many judged parameters are still exactly 0.0, `gen3_r1_unmoved_param_v1`).
 
 `compile_canary_test` fails on each of these: a BACKWARD-only drift, caught on the FIRST scheduled canary
 (R1's loss and gradient cosine cannot see it; the per-parameter rule does); a planted persistent R1 fault

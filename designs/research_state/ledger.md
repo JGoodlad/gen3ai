@@ -22132,3 +22132,16 @@ The production blob belief + the X26 ride-along heads, the A/B's reference arm (
 - **Next on the GPU:** oracle-species × 3 and oracle-full × 3 at 401873b5 (Amendments 2–3), then blob 1004–1005 at e5e660dd (Amendment 4).
 
 Tag: **BANK · X5 A/B blob look-1 seeds 1001–1003 complete · 0 restarts / 0 crashes · none INCONCLUSIVE · telemetry only, no read**
+
+### 2026-10-04 · FINDING + FIX · **The oracle-species canary FATAL was fp32 NOISE on an UNMOVED zero-init head, not a miscompile: R1 now judges a parameter still exactly 0.0 at the FRESH bar, plus its own perturbed rung at the TRAINED bar (`gen3_r1_unmoved_param_v1`)**
+
+`rb_x5ab_oracle_sp_s1001` (pin 401873b5, `--oracle-reveal species`) died at update 10: the canary read 1.40e-2 against the 9.88e-3 trained bar on `belief_head.species_head.weight`, reproduced on both slices.
+
+- **Cause.** Under the oracle every belief label is PAD, so the whole `belief_head` gets NO gradient in training. In the FATAL checkpoint `species_head` is still exactly 0.0 (zero-init under the species-prior fusion). The canary's golden rows (oracle-off) still supervise the head, so it judged a FRESH-weights gradient at the TRAINED bar. 1.40e-2 is that parameter's fresh reading: 8.39e-3 at this run's startup gate, and 1.0e-2 to 2.5e-2 in the r1_noise control. The blob seeds' trained head read at most 1.9e-5 at update 10.
+- **Noise, measured (CPU, B = 2048).** The training agent's "near-zero gradient" hypothesis is REFUTED. The gradient norm is 0.191 (blob @1.0M: 0.172), 0.075 of the top parameter's and 75x the floor, and it is a well-conditioned sum (κ 1.39). The error is fp32 EAGER's own: 1.51e-2 against float64 on the zero head, where the CPU compiled arm errs 4.4e-7. All of the error sits in 5 species columns of dL/dlogits. With only the zero parameters perturbed, eager reads 4.1e-7 (max over 198 params 1.2e-5). `measurements/oracle_canary_2026-10-04/`.
+- **Fix.** `compile_regions.unmoved_parameters` (categorical: every element == 0.0) and `r1_rungs`, shared by the startup gate and the canary. On the live weights an unmoved parameter is judged at the fresh bar. R1 then runs again with only those parameters moved off zero (name-keyed seeded noise, restored bit-exactly), with EVERY parameter at the trained bar there. TB `compile/canary_unmoved_params`. `compile_regions_unmoved_test` FAILS on revert (the noise plant FATALs) and FAILS if the rung is dropped (a planted miscompile between the bars passes).
+- **Consequences.** At 401873b5 every oracle seed (species AND full) FATALs at update 10 by construction, and a pinned resume of one FATALs at its startup gate, so the oracle seeds relaunch fresh at the fix commit (`design_x5_belief_tokens.md` Decision record). The blob path's training arithmetic is untouched.
+- **DEFERRED (GPU).** The CUDA twin: the R1 gate on the FATAL checkpoint, compiled vs float64, both rungs. Then the relaunch's first canary.
+- **F-XC-4.** This bears only weakly. Here the two sides were plainly independent (they differed 1.4e-2 on CUDA). It does not explain fixed_mass's exact 0.0. Fixed_mass parameters that never get a gradient are now judged by this rule.
+
+Tag: **FINDING + FIX · oracle canary FATAL = fp32 noise on an unmoved zero-init head · gen3_r1_unmoved_param_v1 · CUDA confirmation DEFERRED**

@@ -415,14 +415,11 @@ def gate_regions(model: Any, *, batch_size: int, say: Callable[[str], None] = pr
             b = r1_batch(model, int(batch_size))
             policy.set_training_mode(True)
             args = _r1_args(model, b)
-            from agents.training.instrumented_ppo.micro_step import micro_step
-            comp = _r1_arm(model, model._compiled_micro_step, args)
-            eager = _r1_arm(model, micro_step, args)
-            rules.append("R1 " + _r1_verdict(eager, comp, names, regime) + f" [{b.source}]")
+            eager, _, r1_rules = r1_rungs(model, args, names, regime, source=b.source)
+            rules.extend(r1_rules[:1])
             if b.filled:
                 rules.append("R1 " + _r1_judged_set_rule(model, b, eager, names))
-            if regime == "fresh":
-                rules.append("R1 " + _r1_perturbed(model, args, names))
+            rules.extend(r1_rules[1:])
     finally:
         policy.set_training_mode(was)
         for p in policy.parameters():
@@ -539,6 +536,81 @@ R1_BAR_K = 4.0
 R1_PARAM_BAR = {k: R1_BAR_K * v for k, v in R1_HEALTHY_MAX.items()}
 
 
+def unmoved_parameters(model: Any) -> List[str]:
+    """The judged parameters (`compile_trainer.grad_parameters`) whose value is BIT-EXACTLY zero —
+    a ZERO-INIT parameter that training has never moved (`gen3_r1_unmoved_param_v1`).
+
+    WHY. `weights_regime` classifies the MODEL; gradient CONDITIONING is a property of each parameter.
+    A zero-init head training has never moved still has FRESH-weights conditioning when the rest of
+    the model is trained, and the trained bar then reads its healthy fp32 noise as a miscompile. The
+    case that FATAL'd (2026-10-04, `rb_x5ab_oracle_sp_s1001`, update 10): under `--oracle-reveal` the
+    blob arm's species belief labels are all PAD, so `belief_head.species_head` (zero-init under the
+    species-prior fusion) receives NO gradient in training and stays exactly 0.0, while the gate's
+    golden rows still supervise it; its compiled-vs-eager reading, 1.40e-2, is the FRESH regime's own
+    (1.0-2.5e-2 on the zero-init head, where CPU EAGER fp32 itself errs 1.4-3.1e-2 against float64 —
+    `designs/research_state/measurements/k6_k8/r1_noise/`; the oracle measurement:
+    `designs/research_state/measurements/oracle_canary_2026-10-04/`).
+
+    DETERMINISTIC: "every element == 0.0" is categorical — no tolerance, so no input sits within a
+    rounding error of the rule's boundary. A parameter training has moved by any amount is judged at
+    the model's regime, as before."""
+    return [n for n, p in ct.grad_parameters(model, model.policy.features_extractor)
+            if p.numel() > 0 and not bool(p.detach().any())]
+
+
+def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *,
+             source: Optional[str] = None
+             ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], List[str]]:
+    """Region R1's verdict rungs, shared by the startup gate and the in-run canary. Returns the live
+    rung's EAGER and COMPILED arms (the judged-set rule and the canary's cosine read them) and one
+    rule line per rung; raises `CompileTrainerError` on a disagreement.
+
+      1. the LIVE weights at ``regime``'s bar — except the UNMOVED zero-init parameters
+         (`unmoved_parameters`), which are judged at the FRESH bar there (their conditioning is
+         fresh whatever the model's regime);
+      2. FRESH regime: every parameter perturbed (`_r1_perturbed`), judged at the TRAINED bar;
+      3. TRAINED regime with unmoved parameters: ONLY those perturbed off zero, by name-keyed seeded
+         noise (`parity_probe.perturbed_parameters(only=…)`, restored bit-exactly), and EVERY
+         parameter judged at the TRAINED bar (`_r1_unmoved_perturbed`) — so the unmoved parameters'
+         backward paths are still held to the tight bar, on weights where their gradient is
+         well-conditioned. A real miscompile there is caught by this rung.
+    """
+    from agents.training.instrumented_ppo.micro_step import micro_step
+    unmoved = unmoved_parameters(model) if regime != "fresh" else []
+    comp = _r1_arm(model, model._compiled_micro_step, args)
+    eager = _r1_arm(model, micro_step, args)
+    idx = {n: i for i, n in enumerate(names)}
+    excepted = {idx[n]: R1_PARAM_BAR["fresh"] for n in unmoved}
+    tail = f" [{source}]" if source else ""
+    rules = ["R1 " + _r1_verdict(eager, comp, names, regime, bar_by_index=excepted) + tail]
+    if regime == "fresh":
+        rules.append("R1 " + _r1_perturbed(model, args, names))
+    elif unmoved:
+        rules.append("R1 " + _r1_unmoved_perturbed(model, args, names, unmoved))
+    return eager, comp, rules
+
+
+def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
+                          unmoved: List[str]) -> str:
+    """TRAINED weights with unmoved zero-init parameters: R1 again with ONLY those parameters moved
+    off zero (the declared ladder's first rung, name-keyed noise; every other parameter at its live
+    value), EVERY parameter judged at the TRAINED bar (`gen3_r1_unmoved_param_v1`)."""
+    from agents.model.parity_probe import PERTURB_LADDER, perturbed_parameters, rung_seed
+    from agents.training.instrumented_ppo.micro_step import micro_step
+    scale, k = PERTURB_LADDER[0]
+    policy_names = [n for n, _ in model.policy.named_parameters()]
+    only = [n for n in unmoved if n in policy_names]
+    if len(only) != len(unmoved):
+        raise ct.CompileTrainerError("--compile-trainer region R1: an unmoved parameter is not a "
+                                     "parameter of the policy — mis-wired")
+    with perturbed_parameters(model.policy, seed=rung_seed(k), scale=scale, only=only):
+        comp = _r1_arm(model, model._compiled_micro_step, args)
+        eager = _r1_arm(model, micro_step, args)
+    return _r1_verdict(eager, comp, names, "trained",
+                       label=(f"trained weights, the {len(only)} unmoved zero-init param(s) perturbed "
+                              f"scale={scale:g} seed+{k} (e.g. {only[0]})"))
+
+
 def weights_regime(model: Any, rows: int = 8) -> str:
     """``"fresh"`` when the policy's legal log-probs on the committed real-obs fixture are constant
     within every row — the zero-init pointer head of a fresh launch — else ``"trained"`` (a resume,
@@ -575,7 +647,8 @@ def _r1_perturbed(model: Any, args: Tuple[Any, ...], names: List[str]) -> str:
 
 
 def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], names: List[str],
-                regime: str, label: Optional[str] = None) -> str:
+                regime: str, label: Optional[str] = None,
+                bar_by_index: Optional[Dict[int, float]] = None) -> str:
     e_loss, c_loss = float(eager["loss"]), float(comp["loss"])
     if not (np.isfinite(e_loss) and np.isfinite(c_loss)):
         raise ct.CompileTrainerError(f"--compile-trainer region R1: non-finite loss (eager {e_loss}, "
@@ -589,7 +662,8 @@ def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], n
     eager_t = {"features": eager["loss"], "grad": eager["grad"], "grad_sizes": eager["grad_sizes"]}
     comp_t = {"features": comp["loss"], "grad": comp["grad"], "grad_sizes": comp["grad_sizes"]}
     grad_rule = ct.train_verdict(eager=eager_t, compiled=comp_t, allow_vacuous=True,
-                                 param_names=names, param_bar=R1_PARAM_BAR[regime])
+                                 param_names=names, param_bar=R1_PARAM_BAR[regime],
+                                 param_bar_by_index=bar_by_index)
     return f"[{label or regime + ' weights'}] {loss_rule}; {grad_rule}"
 
 

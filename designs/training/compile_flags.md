@@ -1410,6 +1410,24 @@ How the bars are set:
   seeded perturbation, judged at the trained bar. Perturbed-fresh weights read at most 2.3e-5.
 - The in-run canary's R1 check uses the same selection. It had the same 1e-3 bar and would have
   FATAL'd every fp32 run at update 100.
+- **An UNMOVED zero-init parameter is judged by its OWN regime** (`gen3_r1_unmoved_param_v1`,
+  2026-10-04; `compile_regions.unmoved_parameters`, `r1_rungs`). `weights_regime` classifies the
+  MODEL, but conditioning belongs to each parameter. A judged parameter whose every element is
+  exactly 0.0 (categorical, with no tolerance, so no input sits near the rule's boundary) is judged at
+  the FRESH bar on the live weights. R1 then runs again with ONLY those parameters moved off zero
+  (name-keyed seeded noise, the ladder's first rung, restored bit-exactly), and EVERY parameter is
+  judged at the TRAINED bar on that rung, so a miscompile on their paths is still refused tightly.
+  The startup gate (a resume) and the canary share the rungs. The canary's TB scalar
+  `compile/canary_unmoved_params` counts them.
+  The case behind it: under `--oracle-reveal` the blob arm's species belief labels are all PAD, so
+  the zero-init `belief_head.species_head` gets no gradient in training, yet the golden rows still
+  supervise it. Under the old rule it FATAL'd `rb_x5ab_oracle_sp_s1001` at update 10 (1.40e-2 against
+  the 9.88e-3 trained bar). That was fp32 NOISE, not a miscompile. CPU EAGER fp32 errs 1.51e-2
+  against float64 on the zero head, all of it in 5 species columns of dL/dlogits, while the CPU
+  compiled arm errs 4.4e-7. Moving the head off zero takes CPU eager to 4.1e-7.
+  `designs/research_state/measurements/oracle_canary_2026-10-04/`.
+  The LIMIT is that a NON-zero-init parameter training never moved (the oracle's ortho-init
+  `moves_head.weight`) is still judged at the model's regime. None has tripped.
 
 `compile_regions_trained_cuda_test` (GPU tier) runs C's real weights through the real gate. The
 fp64-REFERENCED form of the gate (compiled no worse than k x eager's own error vs float64,

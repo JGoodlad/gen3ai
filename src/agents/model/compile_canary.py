@@ -257,13 +257,14 @@ class CompileCanary:
         """K8's declared region: R1 (compiled micro-step vs eager: loss + every policy gradient) on the
         same real labelled batch the startup gate uses (``slice_`` 1 = the independent half)."""
         from agents.model import compile_regions as cr
-        from agents.training.instrumented_ppo.micro_step import micro_step
         policy = model.policy
         policy.set_training_mode(True)
         args = cr._r1_args(model, cr.r1_batch(model, self.batch_size, slice_))
-        comp = cr._r1_arm(model, model._compiled_micro_step, args)
-        eager = cr._r1_arm(model, micro_step, args)
         names = [n for n, _ in ct.grad_parameters(model, policy.features_extractor)]
-        rules = ["R1 " + cr._r1_verdict(eager, comp, names, cr.weights_regime(model))]
+        # the startup gate's rungs (`compile_regions.r1_rungs`): the live weights at the regime's bar,
+        # an unmoved zero-init parameter at the FRESH bar there and on its own perturbed rung at the
+        # TRAINED bar (`gen3_r1_unmoved_param_v1`)
+        eager, comp, rules = cr.r1_rungs(model, args, names, cr.weights_regime(model))
         out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
+        out["compile/canary_unmoved_params"] = float(len(cr.unmoved_parameters(model)))
         return rules

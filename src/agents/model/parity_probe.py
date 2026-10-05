@@ -31,7 +31,7 @@ from __future__ import annotations
 import contextlib
 import copy
 import hashlib
-from typing import Dict, Iterator, Mapping, Optional
+from typing import Collection, Dict, Iterator, Mapping, Optional
 
 import torch
 
@@ -201,7 +201,8 @@ def perturbed_copy(module: torch.nn.Module, *, seed: int = PERTURB_SEED,
 
 @contextlib.contextmanager
 def perturbed_parameters(module: torch.nn.Module, *, seed: int = PERTURB_SEED,
-                         scale: float = PERTURB_SCALE) -> Iterator[None]:
+                         scale: float = PERTURB_SCALE,
+                         only: Optional[Collection[str]] = None) -> Iterator[None]:
     """Perturb ``module``'s parameters in place for the block, then restore them BIT-EXACTLY.
 
     For a gate that must test the graph it will actually ship (a compiled forward, a CUDA-graph
@@ -209,11 +210,27 @@ def perturbed_parameters(module: torch.nn.Module, *, seed: int = PERTURB_SEED,
     also on an exception — and is then VERIFIED with ``torch.equal`` per parameter; a mismatch
     raises rather than leaving a run on weights that are not its own. ``.grad`` is left to the
     caller (a gate zeroes it anyway); no optimizer state is read or written.
+
+    ``only`` (parameter names of ``module``): perturb THOSE alone, with NAME-KEYED noise
+    (`_keyed_noise`, so a parameter's draw does not depend on which others are perturbed); every
+    other parameter keeps its value. A name ``module`` does not have is a ``KeyError`` — never a
+    perturbation that silently covered nothing (region R1's unmoved-parameter rung,
+    `compile_regions.unmoved_parameters`).
     """
     params = dict(module.named_parameters())
+    if only is not None:
+        unknown = sorted(set(only) - set(params))
+        if unknown:
+            raise KeyError(f"perturbed_parameters(only=…): not parameters of this module: {unknown[:5]}")
     saved = {n: p.detach().clone() for n, p in params.items()}
     try:
-        perturb_(module, seed=seed, scale=scale)
+        if only is None:
+            perturb_(module, seed=seed, scale=scale)
+        else:
+            noise = _keyed_noise(module, seed, scale)
+            with torch.no_grad():
+                for n in only:
+                    params[n].add_(noise[n])
         yield
     finally:
         with torch.no_grad():

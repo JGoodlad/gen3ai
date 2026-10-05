@@ -230,11 +230,14 @@ def decision_verdicts(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "
 
 def _param_verdict(compiled: Dict[str, "torch.Tensor"], eager: Dict[str, "torch.Tensor"],
                    param_names: Optional[List[str]], *, allow_vacuous: bool = False,
-                   bar: Optional[float] = None) -> Optional[str]:
+                   bar: Optional[float] = None,
+                   bar_by_index: Optional[Dict[int, float]] = None) -> Optional[str]:
     """The per-parameter gradient rule (fp32 only). None when the arms carry no ``grad_sizes``
     (a hand-built verdict input). The ``bar`` is REQUIRED once they do: there is no default bar
     (`_PARAM_GRAD_FLOOR`'s comment), so a caller that forgot the regime-selected one is a typed
-    refusal, never a quietly stricter or looser gate."""
+    refusal, never a quietly stricter or looser gate. ``bar_by_index`` (parameter index -> bar) is a
+    caller-DECLARED per-parameter exception to ``bar`` (region R1's unmoved zero-init parameters,
+    `compile_regions.unmoved_parameters`, judged at the FRESH bar); the rule line counts them."""
     if "grad_sizes" not in eager or "grad_sizes" not in compiled:
         return None
     if bar is None:
@@ -254,13 +257,26 @@ def _param_verdict(compiled: Dict[str, "torch.Tensor"], eager: Dict[str, "torch.
             return None
         raise VacuousCompileParityError("--compile-trainer parity (train graph): no parameter's "
                                         "gradient is above the per-parameter floor")
-    worst_i, worst = max(errs, key=lambda t: (not (t[1] == t[1]), t[1]))   # NaN sorts worst
-    name = param_names[worst_i] if param_names and worst_i < len(param_names) else f"#{worst_i}"
-    rule = (f"per-param grad rel err max {worst:.2e} ({name}) over {len(errs)} params "
-            f"<= {bar:g}")
-    if not (worst <= bar):
-        bad = [(param_names[i] if param_names and i < len(param_names) else f"#{i}", e)
-               for i, e in errs if not (e <= bar)]
+    over = dict(bar_by_index or {})
+
+    def bar_of(i: int) -> float:
+        return float(over.get(i, bar))
+
+    def nm(i: int) -> str:
+        return param_names[i] if param_names and i < len(param_names) else f"#{i}"
+    main = [(i, e) for i, e in errs if i not in over]
+    excepted = [(i, e) for i, e in errs if i in over]
+    rule = ""
+    if main:
+        worst_i, worst = max(main, key=lambda t: (not (t[1] == t[1]), t[1]))   # NaN sorts worst
+        rule = (f"per-param grad rel err max {worst:.2e} ({nm(worst_i)}) over {len(main)} params "
+                f"<= {bar:g}")
+    if excepted:
+        xi, xw = max(excepted, key=lambda t: (not (t[1] == t[1]), t[1]))
+        rule = (rule + "; " if rule else "") + (
+            f"{len(excepted)} declared-exception param(s) max {xw:.2e} ({nm(xi)}) <= {bar_of(xi):g}")
+    bad = [(nm(i), e) for i, e in errs if not (e <= bar_of(i))]
+    if bad:
         raise CompileTrainerError(
             f"--compile-trainer: the compiled TRAIN graph's gradient DISAGREES with eager on "
             f"{len(bad)} parameter(s) — {rule} FAILED (e.g. "
@@ -272,7 +288,8 @@ def _param_verdict(compiled: Dict[str, "torch.Tensor"], eager: Dict[str, "torch.
 
 def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torch.Tensor"],
                   allow_vacuous: bool = False, param_names: Optional[List[str]] = None,
-                  param_bar: Optional[float] = None) -> str:
+                  param_bar: Optional[float] = None,
+                  param_bar_by_index: Optional[Dict[int, float]] = None) -> str:
     """The TRAIN-graph parity gate: forward features (the numerics rule) AND the gradient's cosine:
     cos(compiled_grad, eager_grad) >= 0.9999. The eager arm's features must vary across rows and its
     gradient must be non-zero (`VacuousCompileParityError` otherwise; an all-zero gradient has cosine 1.0
@@ -294,7 +311,7 @@ def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torc
             f"extractor's parameters. PPO would be stepping along the wrong direction. A "
             f"faster wrong model is not a win — investigate before re-enabling.")
     per_param = _param_verdict(compiled, eager, param_names, allow_vacuous=allow_vacuous,
-                               bar=param_bar)
+                               bar=param_bar, bar_by_index=param_bar_by_index)
     return "; ".join(x for x in (feat, f"grad cosine {cos:.6f} >= {_MIN_GRAD_COSINE}",
                                  per_param) if x)
 
