@@ -1,0 +1,15 @@
+{
+ "n_removals": 5809,
+ "first_bad_budget": 1974,
+ "culprit": {
+  "i": 1973,
+  "node": "alias_175",
+  "target": "aten.alias.default",
+  "args": [
+   "sigmoid_277"
+  ],
+  "src": "sigmoid_277",
+  "src_target": "aten.sigmoid.default",
+  "stack": "odel/damage_op_pairwise.py\", line 813, in pairwise_bench_outgoing\n    flat = self._outgoing_attacker_matrix(ctx, spread_belief, inherit_stages)         # [B, _DMG_OAX]\n  File \"/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a12467d9f7faa4fe4/src/agents/model/damage_op_blocks.py\", line 586, in _outgoing_attacker_matrix\n    p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None].expand(B, TEAM_SIZE),\n  File \"/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a12467d9f7faa4fe4/src/agents/model/damage_op.py\", line 652, in _p_outspeed\n    return torch.sigmoid((our_spe - opp_spe) / _DMG_SPEED_SCALE)\n"
+ }
+}

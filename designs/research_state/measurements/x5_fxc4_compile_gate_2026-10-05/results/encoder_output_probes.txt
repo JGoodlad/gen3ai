@@ -1,0 +1,2 @@
+PROBES {"eager_probe0": 0.025480598211288452, "eager_probe1": 0.002044038148596883, "compiled_probe0": NaN, "compiled_probe1": 0.0020440388470888138}
+PROBES {"eager_probe0": 0.025480598211288452, "eager_probe1": 0.002044038148596883, "eager_probe2": 0.0, "compiled_probe0": NaN, "compiled_probe1": 0.00204403861425817, "compiled_probe2": 0.0}

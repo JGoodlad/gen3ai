@@ -285,6 +285,14 @@ at any arm**; the excluded share after the rule:
 Oracle-full's live run read 4.98–8.11 % over its updates 1–11 under the rule before (its update 0 was the
 22.0 % stop), so no arm needs its own ceiling: `FP32_EXCLUDED_CEILING` stays 0.15 everywhere.
 
+*On the GPU, fixed_mass regime A (F-XC-5, 2026-10-05, at `e8008c2d`;
+[`measurements/x5_fxc4_compile_gate_2026-10-05/`](../research_state/measurements/x5_fxc4_compile_gate_2026-10-05/README.md)
+"F-XC-5"):* a seeded 20-snapshot self-play pool, the X26 heads, a fresh trainee — 0 at update 1 (selection-free),
+then 0.113, 0.094, 0.090, 0.107 on updates 2–5 (92–116 of ~1,024 current rows), max |Δ log π| exactly 0 on
+every row; `889add9d` read 0.54–0.58 there. Limits: the learner ran EAGER (`--no-compile-trainer`, because the
+compile gate refuses fixed_mass at HEAD), the pool was built from a one-update checkpoint, and it is 4
+informative updates of one launch.
+
 *UNVERIFIED:* the rounding scale is measured against EAGER T2-like variants and a weight jitter, not
 against T2's own compiled intermediate values (a `TorchFunctionMode` cannot see inside a compiled
 graph); the sweep's 4 real flips — all ~480× under epsilon — are the end-to-end check against the real

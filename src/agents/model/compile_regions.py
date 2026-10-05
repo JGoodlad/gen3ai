@@ -371,6 +371,42 @@ def _r1_arm(model: Any, fn: Callable[..., Any], args: Tuple[Any, ...]) -> Dict[s
             "grad_sizes": torch.tensor([g.numel() for g in gs], dtype=torch.long)}
 
 
+def _routes() -> Tuple[int, int]:
+    """(R1's eager-body executions, R1's compiled-route dispatches) so far — `region_calls`' counters."""
+    return int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_compiled", 0))
+
+
+def _r1_pair(model: Any, args: Tuple[Any, ...]) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+    """``(compiled, eager)`` arms of ONE R1 parity comparison, with their INDEPENDENCE proved
+    (`gen3_gate_independent_arms_v1`, F-XC-4): the compiled arm must go through the installed
+    dispatcher's COMPILED route exactly once and execute R1's Python body ZERO times, and the eager arm
+    must execute R1's Python body exactly once and dispatch the compiled route ZERO times. Anything else
+    — the compiled slot holding the eager function (a thing compared with itself), a dispatcher that
+    fell back to eager, an "eager" arm that dispatched the compiled graph — is a typed refusal, never a
+    verdict. Counters, not identities: they read what each arm actually EXECUTED (`region_calls`) —
+    so a wrapper around the installed dispatcher (a test's planted fault) is still the compiled arm,
+    and the bare eager function in the compiled slot is refused (it runs the eager body)."""
+    from agents.training.instrumented_ppo.micro_step import micro_step
+    fn = getattr(model, "_compiled_micro_step", None)
+    if fn is None:
+        raise ct.CompileTrainerError(
+            "--compile-trainer region R1: no compiled micro-step is installed, so the parity gate has no "
+            "COMPILED arm (gen3_gate_independent_arms_v1)")
+    e0, c0 = _routes()
+    comp = _r1_arm(model, fn, args)
+    e1, c1 = _routes()
+    eager = _r1_arm(model, micro_step, args)
+    e2, c2 = _routes()
+    if (e1 - e0, c1 - c0) != (0, 1) or (e2 - e1, c2 - c1) != (1, 0):
+        raise ct.CompileTrainerError(
+            f"--compile-trainer region R1: the parity gate's two arms are NOT independent — the "
+            f"compiled arm ran R1's eager body {e1 - e0}x and its compiled route {c1 - c0}x (want 0 / 1), "
+            f"the eager arm ran the eager body {e2 - e1}x and the compiled route {c2 - c1}x (want 1 / 0). "
+            f"A gate whose two sides share their arithmetic proves nothing: refusing "
+            f"(gen3_gate_independent_arms_v1)")
+    return comp, eager
+
+
 @contextlib.contextmanager
 def _fatal_compile_errors() -> Iterator[None]:
     """A region that cannot compile `fullgraph=True` — a graph break inside it — is a typed STARTUP
@@ -629,10 +665,8 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
          backward paths are still held to the tight bar, on weights where their gradient is
          well-conditioned. A real miscompile there is caught by this rung.
     """
-    from agents.training.instrumented_ppo.micro_step import micro_step
     unmoved = unmoved_parameters(model) if regime != "fresh" else []
-    comp = _r1_arm(model, model._compiled_micro_step, args)
-    eager = _r1_arm(model, micro_step, args)
+    comp, eager = _r1_pair(model, args)
     idx = {n: i for i, n in enumerate(names)}
     excepted = {idx[n]: R1_PARAM_BAR["fresh"] for n in unmoved}
     tail = f" [{source}]" if source else ""
@@ -653,7 +687,6 @@ def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
     parameter at its live value), EVERY parameter judged at the TRAINED bar
     (`gen3_r1_unmoved_param_v1`, `gen3_r1_unmoved_init_v1`)."""
     from agents.model.parity_probe import PERTURB_LADDER, perturbed_parameters, rung_seed
-    from agents.training.instrumented_ppo.micro_step import micro_step
     scale, k = PERTURB_LADDER[0]
     policy_names = [n for n, _ in model.policy.named_parameters()]
     only = [n for n in unmoved if n in policy_names]
@@ -661,8 +694,7 @@ def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
         raise ct.CompileTrainerError("--compile-trainer region R1: an unmoved parameter is not a "
                                      "parameter of the policy — mis-wired")
     with perturbed_parameters(model.policy, seed=rung_seed(k), scale=scale, only=only):
-        comp = _r1_arm(model, model._compiled_micro_step, args)
-        eager = _r1_arm(model, micro_step, args)
+        comp, eager = _r1_pair(model, args)
     return _r1_verdict(eager, comp, names, "trained",
                        label=(f"trained weights, the {len(only)} unmoved param(s) perturbed "
                               f"scale={scale:g} seed+{k} (e.g. {only[0]})"))
@@ -694,11 +726,9 @@ def _r1_perturbed(model: Any, args: Tuple[Any, ...], names: List[str]) -> str:
     heads) need the looser fresh bar, under which a backward defect could hide; the perturbed weights
     are trained-like and get the tight one (the deleted extractor gate's fresh-weights rule)."""
     from agents.model.parity_probe import PERTURB_LADDER, perturbed_parameters, rung_seed
-    from agents.training.instrumented_ppo.micro_step import micro_step
     scale, k = PERTURB_LADDER[0]
     with perturbed_parameters(model.policy, seed=rung_seed(k), scale=scale):
-        comp = _r1_arm(model, model._compiled_micro_step, args)
-        eager = _r1_arm(model, micro_step, args)
+        comp, eager = _r1_pair(model, args)
     return _r1_verdict(eager, comp, names, "trained",
                        label=f"fresh weights, seeded perturbation scale={scale:g} seed+{k}")
 

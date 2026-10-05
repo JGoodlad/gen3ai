@@ -1,0 +1,11 @@
+BISECT run 1: backend=eager subsystem=None finite=True
+BISECT run 2: backend=aot_eager subsystem=None finite=True
+BISECT run 3: backend=aot_eager_decomp_partition subsystem=None finite=True
+BISECT run 4: backend=aot_eager_decomp_partition_crossref subsystem=None finite=True
+BISECT run 5: backend=inductor subsystem=None finite=False
+BISECT run 6: backend=inductor subsystem=joint_graph_passes finite=True
+BISECT run 7: backend=inductor subsystem=joint_graph_passes finite=False
+BISECT run 8: backend=inductor subsystem=joint_graph_passes finite=False
+BISECT run 9: backend=inductor subsystem=joint_graph_passes finite=False
+RESULT BisectionResult(backend='inductor', subsystem='joint_graph_passes', bisect_number=0, debug_info='remove_noop_ops')
+RESULT_JSON {"backend": "inductor", "subsystem": "joint_graph_passes", "bisect_number": 0, "debug_info": "remove_noop_ops"}

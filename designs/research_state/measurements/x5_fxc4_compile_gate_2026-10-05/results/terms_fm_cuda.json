@@ -1,0 +1,101 @@
+{
+ "arm": "fixed_mass",
+ "dev": "cuda",
+ "B": 2048,
+ "secs": 147.8,
+ "loss_e": 0.9061657786369324,
+ "loss_c": 0.9061657190322876,
+ "loss_bits_equal": false,
+ "terms": {
+  "policy": {
+   "e": -0.006129574030637741,
+   "c": -0.006129615008831024,
+   "d": -4.0978193283081055e-08
+  },
+  "entropy": {
+   "e": -0.09331060945987701,
+   "c": -0.09331060945987701,
+   "d": 0.0
+  },
+  "species_belief_set": {
+   "e": 0.3281174898147583,
+   "c": 0.3281174898147583,
+   "d": 0.0
+  },
+  "move_belief": {
+   "e": 0.0009248328278772533,
+   "c": 0.0009248328278772533,
+   "d": 0.0
+  },
+  "opp_intent_setvalued": {
+   "e": 0.0,
+   "c": 0.0,
+   "d": 0.0
+  },
+  "opp_intent": {
+   "e": 0.021870724856853485,
+   "c": 0.021870722994208336,
+   "d": -1.862645149230957e-09
+  },
+  "move_latent": {
+   "e": 0.028184179216623306,
+   "c": 0.028184184804558754,
+   "d": 5.587935447692871e-09
+  },
+  "spread_belief": {
+   "e": 0.002569290343672037,
+   "c": 0.0025692901108413935,
+   "d": -2.3283064365386963e-10
+  },
+  "nature_ev": {
+   "e": 0.16093362867832184,
+   "c": 0.16093364357948303,
+   "d": 1.4901161193847656e-08
+  },
+  "hp_type": {
+   "e": 0.024309037253260612,
+   "c": 0.02430903911590576,
+   "d": 1.862645149230957e-09
+  },
+  "item_belief": {
+   "e": 0.017216218635439873,
+   "c": 0.017216218635439873,
+   "d": 0.0
+  },
+  "win_prob": {
+   "e": 0.42148059606552124,
+   "c": 0.42148053646087646,
+   "d": -5.960464477539063e-08
+  }
+ },
+ "log_prob_maxdiff": 7.152557373046875e-07,
+ "values_maxdiff": 4.172325134277344e-07,
+ "grad_cos": 0.0,
+ "grad_norm_e": 6.424288955666814,
+ "grad_norm_c": NaN,
+ "counters": {
+  "stats": {
+   "calls_captured": 21318,
+   "unique_graphs": 1
+  },
+  "inductor": {
+   "pattern_matcher_count": 1587,
+   "pattern_matcher_nodes": 1894,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 1988,
+   "removed_pointless_view_pair": 3,
+   "fxgraph_cache_miss": 2,
+   "async_compile_cache_miss": 1918,
+   "extern_calls": 495,
+   "async_compile_cache_hit": 959,
+   "triton_bundler_save_kernel": 15816,
+   "triton_bundler_save_static_autotuner": 2
+  },
+  "aot_autograd": {
+   "total": 1,
+   "autograd_cache_miss": 1,
+   "ok": 1,
+   "autograd_cache_bypass": 1
+  },
+  "graph_break": {}
+ }
+}

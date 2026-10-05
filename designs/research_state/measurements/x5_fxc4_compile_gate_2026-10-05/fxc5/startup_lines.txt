@@ -1,0 +1,4 @@
+🦀 [RUST ENV] T2 up in 439.2s: 1 slot group(s) [('pool0', 31)], trainee slot(s) [24], buckets (8, 64, 256) (non-trainee slots <= 64), lanes 8, backend graph on cuda
+🧮 [UpdateFit] dry first update (98,304 fixture rows, 1 epoch, device batch staged, 41.5s): demand (peak reserved) 8,524 MiB, peak allocated 6,335, floor 1,287; card for this process 11,072 (reserved 8,524 + free 2,548) -> headroom 2,548 MiB vs the declared 256; peak segment 'batch'
+🦀 [RUST ENV] T2 up in 435.9s: 1 slot group(s) [('pool0', 31)], trainee slot(s) [24], buckets (8, 64, 256) (non-trainee slots <= 64), lanes 8, backend graph on cuda
+🧮 [UpdateFit] dry first update (98,304 fixture rows, 1 epoch, device batch staged, 40.8s): demand (peak reserved) 8,530 MiB, peak allocated 6,345, floor 1,293; card for this process 11,072 (reserved 8,530 + free 2,542) -> headroom 2,542 MiB vs the declared 256; peak segment 'batch'

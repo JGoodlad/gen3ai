@@ -25,6 +25,7 @@ unchanged.
 """
 from __future__ import annotations
 
+import math
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -188,12 +189,58 @@ def _readout(model: Any, fe: Any, obs: Any, legal_mask: Any) -> Dict[str, "torch
 
 def _cos(a: "torch.Tensor", b: "torch.Tensor") -> float:
     """Cosine in FLOAT64: over ~10^7 fp32 entries an fp32 dot/norm reads > 1 (1.0005 measured on
-    the production policy's gradient), which would put the 0.9999 bar inside rounding noise."""
+    the production policy's gradient), which would put the 0.9999 bar inside rounding noise.
+
+    NaN when either side is non-finite (`gen3_gate_nonfinite_named_v1`): a NaN norm used to fall
+    through ``na > 0`` and read as cosine 0.0, so a non-finite compiled gradient was reported as an
+    ORTHOGONAL one (F-XC-4). `train_verdict` refuses non-finite arms by name before it gets here."""
     a, b = a.detach().double(), b.detach().double()
     na, nb = float(a.norm()), float(b.norm())
+    if not (math.isfinite(na) and math.isfinite(nb)):
+        return float("nan")
     if na == 0.0 and nb == 0.0:
         return 1.0
     return float(torch.dot(a, b) / (na * nb)) if na > 0 and nb > 0 else 0.0
+
+
+class NonFiniteGateArmError(CompileTrainerError):
+    """A parity arm carries a NaN / inf gradient (`gen3_gate_nonfinite_named_v1`). A compiled graph that
+    produces one is a miscompile whatever the bars say; an eager one is a defect of the gate's rows or
+    weights. Named — never reported as a disagreement in direction."""
+
+
+def nonfinite_grad_params(arm: Dict[str, "torch.Tensor"],
+                          param_names: Optional[List[str]] = None) -> List[str]:
+    """The parameters (names, or ``#i``) whose gradient segment in ``arm`` holds a NaN / inf; the
+    whole flat gradient as one entry when the arm carries no ``grad_sizes``."""
+    g = arm["grad"]
+    if "grad_sizes" not in arm:
+        return [] if bool(torch.isfinite(g).all()) else ["<the flat gradient>"]
+    sizes = [int(x) for x in arm["grad_sizes"].tolist()]
+    out = []
+    for i, seg in enumerate(torch.split(g, sizes)):
+        if not bool(torch.isfinite(seg).all()):
+            out.append(param_names[i] if param_names and i < len(param_names) else f"#{i}")
+    return out
+
+
+def require_finite_arms(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torch.Tensor"],
+                        param_names: Optional[List[str]] = None) -> None:
+    """Raise `NonFiniteGateArmError` naming every parameter whose gradient is non-finite on either
+    arm (the compiled arm first). Deterministic: a categorical test, no tolerance."""
+    for side, arm in (("COMPILED", compiled), ("EAGER", eager)):
+        bad = nonfinite_grad_params(arm, param_names)
+        if bad:
+            total = len(arm["grad_sizes"]) if "grad_sizes" in arm else 1
+            raise NonFiniteGateArmError(
+                f"--compile-trainer: the {side} arm's gradient is NON-FINITE (NaN / inf) on "
+                f"{len(bad)} of {total} parameter(s) (e.g. {', '.join(bad[:6])}). "
+                + ("A compiled backward that produces NaN where eager is finite is a MISCOMPILE "
+                   "(not a direction disagreement — the cosine of a NaN gradient is undefined). "
+                   if side == "COMPILED" else
+                   "The eager reference itself is non-finite on the gate's rows: the gate cannot judge "
+                   "anything against it. ")
+                + "Investigate before re-enabling (gen3_gate_nonfinite_named_v1).")
 
 
 def _require_informative(quantities: Dict[str, "torch.Tensor"], bars: Dict[str, float],
@@ -297,6 +344,9 @@ def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torc
 
     When the arms carry per-parameter sizes (``grad_sizes``, region R1's arms do), every parameter above
     the floor is ALSO held to ``param_bar`` (`_param_verdict`) — REQUIRED then, with no default."""
+    # FIRST: a non-finite gradient on either arm is named as such (gen3_gate_nonfinite_named_v1) —
+    # never read as a cosine (F-XC-4: a NaN compiled gradient FATAL'd as "cosine 0.000000").
+    require_finite_arms(eager=eager, compiled=compiled, param_names=param_names)
     if not allow_vacuous:
         _require_informative({"features": eager["features"], "grad": eager["grad"]},
                              {"features": _MAX_NUMERIC_DRIFT, "grad": 0.0},

@@ -1459,6 +1459,36 @@ How the bars are set:
   embedding's never-seen rows, a Linear's columns on an always-zero input) is judged at the model's
   regime. A run resumed from a checkpoint with no record does not see a dead non-zero-init
   parameter. Neither has tripped.
+- **Every comparison PROVES its two arms independent** (`gen3_gate_independent_arms_v1`, 2026-10-05,
+  F-XC-4; `compile_regions._r1_pair`, every rung of the gate and the canary). `region_calls`'
+  counters must show the compiled arm dispatching the compiled route ONCE while running R1's Python
+  body ZERO times, and the eager arm the reverse. Anything else is a typed refusal before any verdict: a gate whose two sides
+  share their arithmetic (the compiled slot holding an eager wrapper, an "eager" reference that
+  dispatches the graph) would read 0 everywhere and PASS. Counters, not identities: they record what
+  each arm EXECUTED.
+- **A non-finite gradient is NAMED, never read as a cosine** (`gen3_gate_nonfinite_named_v1`).
+  `train_verdict` refuses a NaN / inf gradient on either arm FIRST (`NonFiniteGateArmError`, naming
+  the parameters, compiled arm first), and `_cos` returns NaN, not 0.0, when either side is non-finite.
+  Before this, a NaN norm fell through `na > 0` and the gate FATAL'd "cosine 0.000000 < 0.9999".
+- **What the F-XC-4 readings were** (`designs/research_state/measurements/x5_fxc4_compile_gate_2026-10-05/`,
+  CUDA, HEAD `e8008c2d`). Every `--belief-tokens fixed_mass` gate read loss rel `0.00e+00`, and one
+  launch of four at `889add9d` FATAL'd at cosine 0. Neither meant the gate compared a thing with
+  itself: the arms are distinct callables with distinct outputs, and R1 under fixed_mass IS one
+  compiled graph (dynamo `unique_graphs` 1, no graph break, the inventory's one entry, the eager-body
+  guard silent). The cosine 0 was a **NON-FINITE compiled backward**: 41 parameters NaN (the
+  `PokemonEncoder`, the five embeddings and the belief heads that reinject into it), eager finite, on
+  every rep of every unmodified compile at HEAD (8 of 8 processes). `aot_eager` and
+  `aot_eager_decomp_partition` are finite; Inductor is not. `CompilerBisector` names the joint-graph
+  pass `remove_noop_ops`: with none of its 5,809 removals the gradient is finite, with the first 1,973
+  it is finite, and the 1,974th (an `aten.alias` of `DamageOperator._p_outspeed`'s sigmoid in
+  `_outgoing_attacker_matrix`, the D2 edge family) makes it NaN — yet keeping every alias is still NaN,
+  so the trigger is fusion-dependent, not one node. A torch 2.8 Inductor defect on the fixed_mass graph;
+  blob's graph does not trip it (the blob seeds' gates and canaries pass on CUDA). The bit-equal loss is the forward's own arithmetic (one fp32 scalar;
+  1 ulp apart in other runs), and the gate line's "train features" for R1 IS that loss, so it was one
+  observation, not two. **A fixed_mass launch with `--compile-trainer` at HEAD is refused at its
+  startup gate** — now by name. Making it compile is an arithmetic-touching change (`remove_noop_ops` off for
+  R1, which is finite; a respelling of the op that feeds the first NaN kernel; or a newer torch) and is
+  not made here.
 
 `compile_regions_trained_cuda_test` (GPU tier) runs C's real weights through the real gate. The
 fp64-REFERENCED form of the gate (compiled no worse than k x eager's own error vs float64,

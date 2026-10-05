@@ -1,0 +1,18 @@
+------------------------------------------------
+🧊 [LEARNER FREEZE] released — learn() returned; 3 checks passed.
+Traceback (most recent call last):
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a12467d9f7faa4fe4/src/main/train/model_build.py", line 654, in build_and_train
+    model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a12467d9f7faa4fe4/src/agents/training/instrumented_ppo/loop.py", line 184, in learn
+    self.dump_logs(iteration)
+  File "/home/goodlad/.cache/gen3ai/x5fxc4/fxc5/phase_probe_run.py", line 79, in wrapper
+    out = orig(*a, **k)
+          ^^^^^^^^^^^^^
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a12467d9f7faa4fe4/src/agents/training/instrumented_ppo/loop.py", line 344, in dump_logs
+    self.logger.dump(step=self.num_timesteps)
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a12467d9f7faa4fe4/src/agents/training/train_logger.py", line 193, in dump
+    fmt.write(self.name_to_value, self.name_to_excluded, step)
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a12467d9f7faa4fe4/src/agents/training/train_logger.py", line 87, in write
+    raise ValueError(f"Key '{key}' truncated to '{truncated_key}' that already exists. "
+ValueError: Key '   flat_switch_target_recall_top1_pool' truncated to '   flat_switch_target_recall_top1...' that already exists. Consider increasing `max_length`.
+[mem_cap] done: gen3ai-capped-python3-1599153.scope exit 1 · peak 13.64 GB of cap 48.00 GB (28%) · not OOM-killed
