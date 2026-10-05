@@ -1410,15 +1410,44 @@ How the bars are set:
   seeded perturbation, judged at the trained bar. Perturbed-fresh weights read at most 2.3e-5.
 - The in-run canary's R1 check uses the same selection. It had the same 1e-3 bar and would have
   FATAL'd every fp32 run at update 100.
-- **An UNMOVED zero-init parameter is judged by its OWN regime** (`gen3_r1_unmoved_param_v1`,
-  2026-10-04; `compile_regions.unmoved_parameters`, `r1_rungs`). `weights_regime` classifies the
-  MODEL, but conditioning belongs to each parameter. A judged parameter whose every element is
-  exactly 0.0 (categorical, with no tolerance, so no input sits near the rule's boundary) is judged at
-  the FRESH bar on the live weights. R1 then runs again with ONLY those parameters moved off zero
-  (name-keyed seeded noise, the ladder's first rung, restored bit-exactly), and EVERY parameter is
-  judged at the TRAINED bar on that rung, so a miscompile on their paths is still refused tightly.
-  The startup gate (a resume) and the canary share the rungs. The canary's TB scalar
+- **An UNMOVED parameter is judged by its OWN regime** (`gen3_r1_unmoved_param_v1` +
+  `gen3_r1_unmoved_init_v1`, 2026-10-04; `compile_regions.unmoved_parameters`, `r1_rungs`).
+  `weights_regime` classifies the MODEL, but conditioning belongs to each parameter. A judged
+  parameter is UNMOVED iff every element is BIT-IDENTICAL to its value at the run's fresh build, or
+  every element is exactly 0.0. Both tests are categorical (sha256 equality with the init record;
+  `== 0.0`), with no tolerance, so no input sits near the rule's boundary. An unmoved parameter is
+  judged at the FRESH bar on the live weights. R1 then runs again with ONLY the unmoved parameters
+  moved off their init (name-keyed seeded noise added, the ladder's first rung, restored bit-exactly),
+  and EVERY parameter is judged at the TRAINED bar on that rung, so a miscompile on their paths is
+  still refused tightly. The startup gate (a resume) and the canary share the rungs; the live rung's
+  rule line names the rule in force (`[unmoved rule: …]`). The canary's TB scalar
   `compile/canary_unmoved_params` counts them.
+  - **The INIT RECORD.** `compile_regions.record_param_init` (a `@startup_builder`) runs once, inside
+    the trainer's fresh construction (`model_build.construct_fresh_learner`), before anything trains.
+    It stores `{policy parameter name: sha256(dtype, shape, bytes)}` as the model attribute
+    `param_init_sha256`. That is plain JSON data, so SB3's `save` writes it into every checkpoint and
+    `load` restores it. Cost: 387 entries on the X5 blob arm with the X26 heads, about 87 KB of
+    Python strings on the CPU and 46 KB in each checkpoint. Nothing on the GPU is kept; a check copies
+    one parameter at a time to the host to hash it (the largest is 2.8 MB, 24 MB in all).
+  - **The RESUME rule.** The record travels with the WEIGHTS: a restart, resume or fork reads the
+    lineage's own fresh-build record from its checkpoint, and nothing ever recomputes it after a load
+    (a rebuild at the same seed is not trusted to be the run's init). A checkpoint with NO record
+    (saved before `gen3_r1_unmoved_init_v1`, or built outside the trainer's fresh construction, e.g.
+    the K9 golden or `main.fresh_checkpoint`) gets the zero rule alone, which is 8b8fbac0's behaviour.
+    The zero rule stays even with a record: an all-zero parameter has the fresh conditioning whatever
+    its history.
+  - **What the init rule adds.** In `rb_x5ab_oracle_sp_s1001`'s FATAL checkpoint (update 10, 987,904
+    steps), 17 of 387 parameters are bit-identical to the fresh build at seed 1001. Ten are the SB3
+    value tower that the win-prob critic never reads (dead in every arm: the blob seed at 15.0M has
+    the same ten, and R1 gives them no gradient, so they are never judged). Seven are the oracle's:
+    `belief_head.{species_head, moves_head}.{weight, bias}`, `belief_head.norm.{weight, bias}` and
+    `belief_slots.unknown_slot_emb`. The zero rule saw four of the seven. The init rule adds the
+    ortho-init `moves_head.weight`, the LayerNorm weight (1.0) and `unknown_slot_emb`
+    (`measurements/oracle_canary_2026-10-04/unmoved_init_species_fatal.json`). On the CPU, eager fp32
+    against float64 on the live weights reads 9.4e-4 on `moves_head.weight` and 6.4e-4 on
+    `unknown_slot_emb`, under the 9.88e-3 trained bar but over 1,000x a trained parameter's 4e-7.
+    On the init rule's unmoved rung each reads at most 6.5e-7, and the worst of 199 parameters reads
+    1.7e-5 (`unmoved_init_rungs_cpu_B2048.jsonl`).
   The case behind it: under `--oracle-reveal` the blob arm's species belief labels are all PAD, so
   the zero-init `belief_head.species_head` gets no gradient in training, yet the golden rows still
   supervise it. Under the old rule it FATAL'd `rb_x5ab_oracle_sp_s1001` at update 10 (1.40e-2 against
@@ -1426,8 +1455,10 @@ How the bars are set:
   against float64 on the zero head, all of it in 5 species columns of dL/dlogits, while the CPU
   compiled arm errs 4.4e-7. Moving the head off zero takes CPU eager to 4.1e-7.
   `designs/research_state/measurements/oracle_canary_2026-10-04/`.
-  The LIMIT is that a NON-zero-init parameter training never moved (the oracle's ortho-init
-  `moves_head.weight`) is still judged at the model's regime. None has tripped.
+  The LIMITS: the rule is per PARAMETER, so a parameter only PART of which never moves (an
+  embedding's never-seen rows, a Linear's columns on an always-zero input) is judged at the model's
+  regime. A run resumed from a checkpoint with no record does not see a dead non-zero-init
+  parameter. Neither has tripped.
 
 `compile_regions_trained_cuda_test` (GPU tier) runs C's real weights through the real gate. The
 fp64-REFERENCED form of the gate (compiled no worse than k x eager's own error vs float64,

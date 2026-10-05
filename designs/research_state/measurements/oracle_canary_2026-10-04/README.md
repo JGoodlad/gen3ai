@@ -72,7 +72,31 @@ A miscompile on the head's path between the two bars is caught by the unmoved ru
    that the unmoved rung reads under the trained bar on the real graph.
 2. Watch the first canary (update 10) of the oracle relaunch at the fix commit.
 
+## Follow-up: the INIT rule (`gen3_r1_unmoved_init_v1`)
+
+The zero rule above cannot see a dead parameter whose init is not zero. This follow-up generalises
+"unmoved" to bit-identical to the run's fresh-build init record, or exactly 0.0.
+
+- **The FATAL checkpoint against its rebuilt init** (seed 1001, from `original_command`, under
+  `single_thread_build`; `unmoved_init_species_fatal.json`). 17 of 387 parameters are bit-identical
+  to the rebuilt init.
+  - Ten are the SB3 value tower, which is dead in every arm: the blob seed has the same ten at
+    15.0M (`unmoved_init_blob_s1001_final.json`).
+  - Seven are the oracle's: `belief_head.{species_head, moves_head, norm}.{weight, bias}` and
+    `belief_slots.unknown_slot_emb`. The zero rule saw four of them.
+- **The rungs' CPU noise floor** (`unmoved_init_rungs_cpu_B2048.jsonl`).
+  - Live weights: `moves_head.weight` reads 9.4e-4 and `unknown_slot_emb` 6.4e-4 (eager vs float64).
+  - The init rule's unmoved rung: each of the seven reads at most 6.5e-7, and the worst of 199
+    judged parameters reads 1.7e-5.
+- **Oracle levels** (`unmoved_init_levels_fresh.json`). The fresh builds at `off`, `species` and
+  `full` are bit-identical, with the same 387 parameters. So `full`'s unmoved set is decided by its
+  no-op losses, which are `species`'s.
+
 ## Files
+
+- `unmoved_init.py`: `checkpoint <run_dir> <zip> <out>` lists the parameters bit-identical to the
+  rebuilt init; `predict <out>` compares the fresh builds across oracle levels.
+- `unmoved_init_rungs.py`: per-parameter eager-vs-float64 on the live rung and the init rule's rung.
 
 - `repro.py`: the matched-noise driver. Usage:
   `repro.py <out.jsonl> <B> [compile|eager] [live,all,unmoved] [states]`.

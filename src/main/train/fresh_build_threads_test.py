@@ -50,7 +50,14 @@ else:
 h = hashlib.sha256()
 for k, v in sorted(model.policy.state_dict().items()):
     h.update(k.encode()); h.update(v.detach().cpu().contiguous().numpy().tobytes())
-print(json.dumps({"asked": n, "after": torch.get_num_threads(), "sha": h.hexdigest()}))
+rec_ok = None
+if site == "trainer":   # gen3_r1_unmoved_init_v1: the fresh build records every parameter's init digest
+    from agents.model.compile_regions import INIT_RECORD_ATTR, param_sha256
+    rec = getattr(model, INIT_RECORD_ATTR, None)
+    named = dict(model.policy.named_parameters())
+    rec_ok = (isinstance(rec, dict) and set(rec) == set(named)
+              and all(rec[k] == param_sha256(p) for k, p in named.items()))
+print(json.dumps({"asked": n, "after": torch.get_num_threads(), "sha": h.hexdigest(), "rec_ok": rec_ok}))
 """
 
 
@@ -72,6 +79,11 @@ def test_a_fresh_production_build_is_byte_identical_at_1_and_8_threads(site: str
     assert one["sha"] == eight["sha"], (
         f"the {site} fresh build's init depends on the torch thread count (F-X5-4): "
         f"1 thread {one['sha'][:16]} vs 8 threads {eight['sha'][:16]}")
+    if site == "trainer":
+        assert one["rec_ok"] and eight["rec_ok"], (
+            "the trainer's fresh build must record every policy parameter's init digest, equal to the "
+            "fresh weights (`compile_regions.record_param_init`, gen3_r1_unmoved_init_v1) — the compile "
+            "gate and canary judge a parameter still at its init at the FRESH bar")
 
 
 def test_single_thread_build_restores_the_callers_count_even_on_an_exception() -> None:

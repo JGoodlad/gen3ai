@@ -1,0 +1,18 @@
+{
+ "seed": 1001,
+ "n_params": {
+  "off": 387,
+  "species": 387,
+  "full": 387
+ },
+ "same_names": {
+  "off": true,
+  "species": true,
+  "full": true
+ },
+ "differing_init_bytes": {
+  "off": [],
+  "species": [],
+  "full": []
+ }
+}

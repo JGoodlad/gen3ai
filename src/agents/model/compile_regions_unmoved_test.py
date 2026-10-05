@@ -134,7 +134,7 @@ def test_the_GATE_judges_an_unmoved_head_at_the_FRESH_bar_and_on_its_own_perturb
     _plant(monkeypatch, only_while_zero=True)
     rules = cr.gate_regions(oracle_like, batch_size=BATCH, say=lambda _m: None)
     assert any("declared-exception param(s)" in r and SP in r for r in rules), rules
-    assert any("unmoved zero-init param(s) perturbed" in r for r in rules), rules
+    assert any("unmoved param(s) perturbed" in r for r in rules), rules
 
 
 def test_the_GATE_still_catches_a_REAL_miscompile_on_the_unmoved_head(oracle_like, monkeypatch):

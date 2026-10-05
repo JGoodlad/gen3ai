@@ -135,9 +135,13 @@ declared placeholder (`compile_regions.r1_batch`; P10-C: before it, a fork-shape
 zero-label rows, with ~48 critic / intent / belief parameters unjudged) — and through the DECLARED
 signature only. Every run compares compiled against eager on R1's loss and every policy gradient, with
 the per-parameter bar chosen by `compile_regions.weights_regime`, through the startup gate's own rungs
-(`compile_regions.r1_rungs`): an UNMOVED zero-init parameter (exactly 0.0, e.g. the oracle arm's species
-head, whose labels are all PAD) is judged at the FRESH bar on the live weights and again, with only those
-parameters moved off zero, at the TRAINED bar (`gen3_r1_unmoved_param_v1`; `designs/training/compile_flags.md`). (Until P10-E a canary ALSO compared the
+(`compile_regions.r1_rungs`): an UNMOVED parameter (bit-identical to its value at the run's fresh build,
+or exactly 0.0; e.g. the oracle arm's belief head, whose labels are all PAD) is judged at the FRESH bar on
+the live weights and again, with only those parameters moved off their init, at the TRAINED bar
+(`gen3_r1_unmoved_param_v1`, `gen3_r1_unmoved_init_v1`; `designs/training/compile_flags.md`). The init
+record it reads is a DECLARED STARTUP acquisition: `compile_regions.record_param_init` (`@startup_builder`)
+runs in the trainer's fresh construction, before the first update, and the record (per-parameter sha256,
+CPU strings, about 87 KB) rides in every checkpoint, so a resume reads it and never derives it lazily. (Until P10-E a canary ALSO compared the
 decision readout of the compiled rollout region R0 at the rollout signature — a graph the learner process
 never ran, so its verdict checked nothing the run used; the arm, its `compile/canary_max_abs_<q>`
 scalars and the decision-only canary — the gradient ran every `GRAD_EVERY`-th canary — are deleted. EVERY

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,148-line file. **The ledger itself is append-only and is never edited by this**;
+22,164-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**757 headings · 702 dated · 2026-08-01 → 2026-10-04 · ledger 22,148 lines.**
+**758 headings · 703 dated · 2026-08-01 → 2026-10-04 · ledger 22,164 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -777,3 +777,4 @@ rename.
   - `L22112` · `2026-10-04` · REGISTRATION · **X5 A/B Amendment 4: blob seeds 1004–1005 (look 2's added blob seeds) run early, at P_blob, after the oracle seeds; not read at look 1**
   - `L22118` · `2026-10-04` · BANK · **X5 A/B, blob arm, look-1 side COMPLETE: seeds 1001, 1002, 1003 at e5e660dd, all three 15M with 0 restarts and 0 crashes, none INCONCLUSIVE**
   - `L22136` · `2026-10-04` · FINDING + FIX · **The oracle-species canary FATAL was fp32 NOISE on an UNMOVED zero-init head, not a miscompile: R1 now judges a parameter still exactly 0.0 at the FRESH bar, plus its own perturbed rung at the TRAINED bar (`gen3_r1_unmoved_param_v1`)**
+  - `L22149` · `2026-10-04` · FINDING + FIX · **R1's UNMOVED rule now reads the run's INIT RECORD: a parameter BIT-IDENTICAL to its fresh-build value (not only one still exactly 0.0) is judged at the FRESH bar plus its own perturbed rung at the TRAINED bar (`gen3_r1_unmoved_init_v1`); the record rides in every checkpoint, and a checkpoint without one keeps the zero rule**

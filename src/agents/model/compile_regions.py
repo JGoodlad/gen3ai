@@ -65,6 +65,7 @@ K2); a process at any other precision is refused. A disagreement is a `CompileTr
 from __future__ import annotations
 
 import contextlib
+import hashlib
 from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, Tuple
 
 import numpy as np
@@ -72,6 +73,7 @@ import torch
 
 from agents.model import compile_trainer as ct
 from agents.model import region_calls as RC
+from agents.training.lifecycle_decl import startup_builder
 
 
 class Signature(NamedTuple):
@@ -536,26 +538,78 @@ R1_BAR_K = 4.0
 R1_PARAM_BAR = {k: R1_BAR_K * v for k, v in R1_HEALTHY_MAX.items()}
 
 
+#: The model attribute holding the FRESH BUILD's per-parameter init fingerprints
+#: (`gen3_r1_unmoved_init_v1`): ``{policy parameter name: param_sha256(value at the fresh build)}``.
+#: Plain JSON data, so SB3's ``save`` writes it into every checkpoint's ``data`` and ``load`` restores it
+#: — it travels with the WEIGHTS (restart, resume, fork), and nothing ever recomputes it after a load.
+INIT_RECORD_ATTR = "param_init_sha256"
+
+
+def param_sha256(p: torch.Tensor) -> str:
+    """sha256 over a tensor's dtype, shape and raw bytes (device-independent: hashed from a CPU copy, one
+    parameter at a time). Equal digests <=> bit-identical values (``-0.0`` and ``0.0`` differ)."""
+    t = p.detach().cpu().contiguous().reshape(-1)          # host copy FIRST: no device allocation
+    h = hashlib.sha256(f"{t.dtype}|{tuple(p.shape)}|".encode())
+    h.update(t.view(torch.uint8).numpy().tobytes())
+    return h.hexdigest()
+
+
+@startup_builder
+def record_param_init(model: Any) -> Dict[str, str]:
+    """Record the FRESH BUILD's init fingerprint of every policy parameter on ``model``
+    (`INIT_RECORD_ATTR`) and return it. Called ONCE, by the trainer's fresh construction
+    (`main.train.model_build.construct_fresh_learner`), before anything trains — a declared startup
+    acquisition (K6), never a lazy one. CPU only (Python strings: ~0.1 KB per parameter; the GPU is not
+    touched beyond a transient per-parameter device-to-host copy)."""
+    rec = {n: param_sha256(p) for n, p in model.policy.named_parameters()}
+    setattr(model, INIT_RECORD_ATTR, rec)
+    return rec
+
+
+def init_record(model: Any) -> Optional[Dict[str, str]]:
+    """The run's init record, or None when its checkpoint carries none (saved before
+    `gen3_r1_unmoved_init_v1`, or built outside the trainer's fresh construction)."""
+    rec = getattr(model, INIT_RECORD_ATTR, None)
+    return rec if isinstance(rec, dict) and rec else None
+
+
+def unmoved_rule(model: Any) -> str:
+    """Which rule `unmoved_parameters` applies to ``model`` — named on every rule line it shapes."""
+    rec = init_record(model)
+    return ("bit-identical to the init record, or exactly 0.0" if rec is not None
+            else "exactly 0.0 only: no init record in this checkpoint")
+
+
 def unmoved_parameters(model: Any) -> List[str]:
-    """The judged parameters (`compile_trainer.grad_parameters`) whose value is BIT-EXACTLY zero —
-    a ZERO-INIT parameter that training has never moved (`gen3_r1_unmoved_param_v1`).
+    """The judged parameters (`compile_trainer.grad_parameters`) training has NEVER MOVED
+    (`gen3_r1_unmoved_param_v1`, generalised by `gen3_r1_unmoved_init_v1`): a parameter is UNMOVED iff
+
+      * every element is BIT-IDENTICAL to its value at the run's fresh build — its digest equals the
+        init record's (`INIT_RECORD_ATTR`, written by `record_param_init`, carried in the checkpoint), or
+      * every element is exactly 0.0 (the zero rule — the only rule on a checkpoint with no init record).
 
     WHY. `weights_regime` classifies the MODEL; gradient CONDITIONING is a property of each parameter.
-    A zero-init head training has never moved still has FRESH-weights conditioning when the rest of
-    the model is trained, and the trained bar then reads its healthy fp32 noise as a miscompile. The
-    case that FATAL'd (2026-10-04, `rb_x5ab_oracle_sp_s1001`, update 10): under `--oracle-reveal` the
-    blob arm's species belief labels are all PAD, so `belief_head.species_head` (zero-init under the
-    species-prior fusion) receives NO gradient in training and stays exactly 0.0, while the gate's
-    golden rows still supervise it; its compiled-vs-eager reading, 1.40e-2, is the FRESH regime's own
-    (1.0-2.5e-2 on the zero-init head, where CPU EAGER fp32 itself errs 1.4-3.1e-2 against float64 —
-    `designs/research_state/measurements/k6_k8/r1_noise/`; the oracle measurement:
-    `designs/research_state/measurements/oracle_canary_2026-10-04/`).
+    A head training has never moved still has FRESH-weights conditioning when the rest of the model is
+    trained, and the trained bar then reads its healthy fp32 noise as a miscompile. The case that
+    FATAL'd (2026-10-04, `rb_x5ab_oracle_sp_s1001`, update 10): under `--oracle-reveal` the blob arm's
+    species belief labels are all PAD, so `belief_head` receives NO gradient in training — its
+    zero-init `species_head` stays exactly 0.0, and so do its ortho-init `moves_head.weight`, its
+    LayerNorm and `belief_slots.unknown_slot_emb` (bit-identical to the fresh build at seed 1001;
+    `designs/research_state/measurements/oracle_canary_2026-10-04/`) — while the gate's golden rows
+    still supervise it. The species head's reading, 1.40e-2, was the FRESH regime's own.
 
-    DETERMINISTIC: "every element == 0.0" is categorical — no tolerance, so no input sits within a
-    rounding error of the rule's boundary. A parameter training has moved by any amount is judged at
-    the model's regime, as before."""
-    return [n for n, p in ct.grad_parameters(model, model.policy.features_extractor)
-            if p.numel() > 0 and not bool(p.detach().any())]
+    DETERMINISTIC: both tests are categorical (digest equality; every element == 0.0) — no tolerance,
+    so no input sits within a rounding error of the rule's boundary. A parameter training has moved by
+    any amount (weight decay included) is judged at the model's regime, as before. The zero rule
+    stays with a record: an all-zero parameter has the fresh conditioning whatever its history."""
+    rec = init_record(model) or {}
+    out: List[str] = []
+    for n, p in ct.grad_parameters(model, model.policy.features_extractor):
+        if p.numel() == 0:
+            continue
+        if not bool(p.detach().any()) or (n in rec and param_sha256(p) == rec[n]):
+            out.append(n)
+    return out
 
 
 def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *,
@@ -565,11 +619,11 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
     rung's EAGER and COMPILED arms (the judged-set rule and the canary's cosine read them) and one
     rule line per rung; raises `CompileTrainerError` on a disagreement.
 
-      1. the LIVE weights at ``regime``'s bar — except the UNMOVED zero-init parameters
-         (`unmoved_parameters`), which are judged at the FRESH bar there (their conditioning is
-         fresh whatever the model's regime);
+      1. the LIVE weights at ``regime``'s bar — except the UNMOVED parameters (`unmoved_parameters`:
+         bit-identical to the init record, or exactly 0.0), which are judged at the FRESH bar there
+         (their conditioning is fresh whatever the model's regime);
       2. FRESH regime: every parameter perturbed (`_r1_perturbed`), judged at the TRAINED bar;
-      3. TRAINED regime with unmoved parameters: ONLY those perturbed off zero, by name-keyed seeded
+      3. TRAINED regime with unmoved parameters: ONLY those perturbed off their init, by name-keyed seeded
          noise (`parity_probe.perturbed_parameters(only=…)`, restored bit-exactly), and EVERY
          parameter judged at the TRAINED bar (`_r1_unmoved_perturbed`) — so the unmoved parameters'
          backward paths are still held to the tight bar, on weights where their gradient is
@@ -582,6 +636,8 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
     idx = {n: i for i, n in enumerate(names)}
     excepted = {idx[n]: R1_PARAM_BAR["fresh"] for n in unmoved}
     tail = f" [{source}]" if source else ""
+    if unmoved:
+        tail += f" [unmoved rule: {unmoved_rule(model)}]"
     rules = ["R1 " + _r1_verdict(eager, comp, names, regime, bar_by_index=excepted) + tail]
     if regime == "fresh":
         rules.append("R1 " + _r1_perturbed(model, args, names))
@@ -592,9 +648,10 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
 
 def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
                           unmoved: List[str]) -> str:
-    """TRAINED weights with unmoved zero-init parameters: R1 again with ONLY those parameters moved
-    off zero (the declared ladder's first rung, name-keyed noise; every other parameter at its live
-    value), EVERY parameter judged at the TRAINED bar (`gen3_r1_unmoved_param_v1`)."""
+    """TRAINED weights with unmoved parameters: R1 again with ONLY those parameters moved off their
+    init (the declared ladder's first rung, name-keyed noise ADDED to the live value; every other
+    parameter at its live value), EVERY parameter judged at the TRAINED bar
+    (`gen3_r1_unmoved_param_v1`, `gen3_r1_unmoved_init_v1`)."""
     from agents.model.parity_probe import PERTURB_LADDER, perturbed_parameters, rung_seed
     from agents.training.instrumented_ppo.micro_step import micro_step
     scale, k = PERTURB_LADDER[0]
@@ -607,7 +664,7 @@ def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
         comp = _r1_arm(model, model._compiled_micro_step, args)
         eager = _r1_arm(model, micro_step, args)
     return _r1_verdict(eager, comp, names, "trained",
-                       label=(f"trained weights, the {len(only)} unmoved zero-init param(s) perturbed "
+                       label=(f"trained weights, the {len(only)} unmoved param(s) perturbed "
                               f"scale={scale:g} seed+{k} (e.g. {only[0]})"))
 
 

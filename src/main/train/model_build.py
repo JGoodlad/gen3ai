@@ -158,9 +158,15 @@ def construct_fresh_learner(args, env, policy_kwargs):
     follows the thread count, so the same `--seed` built at a different core count / `OMP_NUM_THREADS`
     gave byte-different starting weights (F-X5-4). The caller's thread count is restored on return, so
     the first rollout and update run at the training thread count. A resume / fork never reaches this:
-    `load_model_snapshot` is STRICT on every key, so the loaded weights overwrite the init."""
+    `load_model_snapshot` is STRICT on every key, so the loaded weights overwrite the init.
+
+    The fresh weights' per-parameter fingerprints are recorded here, before anything trains
+    (`compile_regions.record_param_init`, `gen3_r1_unmoved_init_v1`): the compile gate and canary judge
+    a parameter still bit-identical to its init at the FRESH bar. The record rides in every checkpoint,
+    so a resume / fork / restart reads the lineage's own fresh build, never a re-derived one."""
+    from agents.model.compile_regions import record_param_init
     with single_thread_build():
-        return InstrumentedMaskablePPO(
+        model = InstrumentedMaskablePPO(
             Gen3DualHeadMaskablePolicy,
             env,
             verbose=1,
@@ -178,6 +184,8 @@ def construct_fresh_learner(args, env, policy_kwargs):
             seed=args.seed,
             policy_kwargs=policy_kwargs
         )
+    record_param_init(model)
+    return model
 
 
 async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level, n_envs,
