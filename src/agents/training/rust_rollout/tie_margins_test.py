@@ -49,6 +49,56 @@ def test_a_threshold_at_its_own_kth_value_skips_that_value_unless_it_is_shared()
     assert g[0] == pytest.approx(1e-6, rel=1e-2) and g[1] == 0.0 and g[2] == pytest.approx(1 / 3)      # 0.9 is the nearest other value
 
 
+# ---------------------------------------------- gen3_behaviour_tie_identity_v1: an argmax's PAYLOAD identity
+_PAYLOAD_RULE = SS.Rule("argmax", gate=1e-6, payload=("p",))
+
+
+def _pm(x, payload):
+    out = x.argmax(dim=-1, keepdim=True)
+    g = T.site_margin(_PAYLOAD_RULE, "argmax", (x,), {"dim": -1, "keepdim": True}, payload, out)
+    return g.reshape(g.shape[0], -1).amin(1).numpy()
+
+
+def test_an_argmax_tie_between_payload_identical_candidates_is_not_a_tie():
+    """Two moves EXACTLY tied at the max that gather the same accuracy select the same value: the margin is
+    the gap to the nearest candidate whose payload DIFFERS (here 0.4 vs 0.1), never 0. Without the
+    payload (the rule before) the same row is an exact tie."""
+    x = th.tensor([[[0.4, 0.1, 0.4, 0.05]]], dtype=th.float64)
+    acc = th.tensor([[[1.0, 0.9, 1.0, 0.8]]], dtype=th.float64)
+    assert _pm(x, (acc,))[0] == pytest.approx(0.75)
+    assert _pm(x, None)[0] == 0.0
+    # a near tie (1e-7 apart) with an identical payload is not a tie either
+    xn = th.tensor([[[0.4, 0.1, 0.4 * (1 - 1e-7), 0.05]]], dtype=th.float64)
+    assert _pm(xn, (acc,))[0] == pytest.approx(0.75)
+
+
+def test_a_near_tie_between_distinct_candidates_IS_a_tie_and_every_payload_must_agree():
+    xn = th.tensor([[[0.4, 0.1, 0.4 * (1 - 1e-7), 0.05]]], dtype=th.float64)
+    acc = th.tensor([[[1.0, 0.9, 0.95, 0.8]]], dtype=th.float64)
+    g = _pm(xn, (acc,))[0]
+    assert g == pytest.approx(1e-7, rel=1e-3) and g < 2e-4
+    same = th.tensor([[[1.0, 0.9, 1.0, 0.8]]], dtype=th.float64)
+    w = th.tensor([[0.5, 0.2, 0.25, 0.1]], dtype=th.float64)       # a per-ROW payload, broadcast over the slot
+    assert _pm(xn, (same, w[:, None, :]))[0] == pytest.approx(1e-7, rel=1e-3)
+    nan = th.tensor([[[float("nan"), 0.9, float("nan"), 0.8]]], dtype=th.float64)
+    assert _pm(xn, (nan,))[0] == 0.0       # NaN never equals itself — not even the selected one: a tie
+
+
+def test_a_stale_payload_declaration_is_refused_not_read_as_no_payload():
+    class _F:
+        f_locals = {"q": th.zeros(2, 3)}
+
+    x = th.zeros(2, 6, 3)
+    with pytest.raises(T.TieMarginError, match="declares payload 'p'.*stale"):
+        T.payload_tensors(_PAYLOAD_RULE, _F(), x, "damage_op.py:1 argmax")
+    _F.f_locals = {"p": th.zeros(2, 4)}
+    with pytest.raises(T.TieMarginError, match="does not align"):
+        T.payload_tensors(_PAYLOAD_RULE, _F(), x, "damage_op.py:1 argmax")
+    _F.f_locals = {"p": th.ones(2, 3)}
+    (p,) = T.payload_tensors(_PAYLOAD_RULE, _F(), x, "damage_op.py:1 argmax")
+    assert p.shape == (2, 1, 3)
+
+
 @pytest.fixture(scope="module")
 def production():
     from stable_baselines3.common.utils import obs_as_tensor

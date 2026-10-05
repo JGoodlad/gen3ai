@@ -1,0 +1,157 @@
+{
+ "arm": "oracle_species",
+ "weights": "perturbed",
+ "seed": 1001,
+ "run_seed": 1001,
+ "rows": 2048,
+ "eps": 0.0002,
+ "excluded_before": 59,
+ "excluded_frac_before": 0.02880859375,
+ "cleared_identical": 21,
+ "excluded_after": 38,
+ "excluded_frac_after": 0.0185546875,
+ "rows_multi_call": 18,
+ "joint_identical_but_single_distinct": 0,
+ "determinism_failures_untouched_rows": 0,
+ "flip_noop_rows": 0,
+ "max_abs_dlogp_vs_stored": 7.152557373046875e-07,
+ "by_site": [
+  {
+   "sites": "damage_op.py:918 argmax",
+   "verdict": "distinct",
+   "rows": 19
+  },
+  {
+   "sites": "damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "verdict": "distinct",
+   "rows": 12
+  },
+  {
+   "sites": "damage_kinds.py:130 ge",
+   "verdict": "identical",
+   "rows": 7
+  },
+  {
+   "sites": "damage_op.py:924 argmax",
+   "verdict": "identical",
+   "rows": 4
+  },
+  {
+   "sites": "damage_op.py:918 argmax",
+   "verdict": "identical",
+   "rows": 4
+  },
+  {
+   "sites": "pointer_head.py:177 ge",
+   "verdict": "distinct",
+   "rows": 4
+  },
+  {
+   "sites": "pointer_head.py:177 ge",
+   "verdict": "identical",
+   "rows": 3
+  },
+  {
+   "sites": "damage_op.py:918 argmax + damage_op.py:924 argmax",
+   "verdict": "identical",
+   "rows": 3
+  },
+  {
+   "sites": "damage_op_blocks.py:1068 topk + damage_op_blocks.py:920 topk + damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "verdict": "distinct",
+   "rows": 2
+  },
+  {
+   "sites": "damage_op.py:918 argmax + damage_op.py:924 argmax",
+   "verdict": "distinct",
+   "rows": 1
+  }
+ ],
+ "by_site_class": [
+  {
+   "sites": "damage_op.py:918 argmax",
+   "class": "exact",
+   "verdict": "distinct",
+   "rows": 18
+  },
+  {
+   "sites": "damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "class": "near",
+   "verdict": "distinct",
+   "rows": 12
+  },
+  {
+   "sites": "damage_kinds.py:130 ge",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 7
+  },
+  {
+   "sites": "damage_op.py:924 argmax",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 4
+  },
+  {
+   "sites": "damage_op.py:918 argmax",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 4
+  },
+  {
+   "sites": "pointer_head.py:177 ge",
+   "class": "near",
+   "verdict": "distinct",
+   "rows": 4
+  },
+  {
+   "sites": "pointer_head.py:177 ge",
+   "class": "near",
+   "verdict": "identical",
+   "rows": 3
+  },
+  {
+   "sites": "damage_op.py:918 argmax + damage_op.py:924 argmax",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 3
+  },
+  {
+   "sites": "damage_op_blocks.py:1068 topk + damage_op_blocks.py:920 topk + damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "class": "near",
+   "verdict": "distinct",
+   "rows": 2
+  },
+  {
+   "sites": "damage_op.py:918 argmax + damage_op.py:924 argmax",
+   "class": "near",
+   "verdict": "distinct",
+   "rows": 1
+  },
+  {
+   "sites": "damage_op.py:918 argmax",
+   "class": "near",
+   "verdict": "distinct",
+   "rows": 1
+  }
+ ],
+ "new_rule": {
+  "excluded_payload_only": 48,
+  "excluded_frac_payload_only": 0.0234375,
+  "excluded": 48,
+  "excluded_frac": 0.0234375,
+  "payload_only_rows_by_flip_verdict": {
+   "identical": 10,
+   "distinct": 38
+  },
+  "payload_only_rows_by_min_site": {
+   "damage_op.py:918 argmax": 19,
+   "pointer_head.py:176 topk": 12,
+   "pointer_head.py:177 ge": 7,
+   "damage_kinds.py:130 ge": 7,
+   "damage_op_blocks.py:920 topk": 2,
+   "damage_op.py:924 argmax": 1
+  }
+ },
+ "torch": "2.8.0+cu126"
+}

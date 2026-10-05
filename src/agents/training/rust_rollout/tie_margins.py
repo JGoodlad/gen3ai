@@ -52,9 +52,16 @@ def _arg(args: Tuple[Any, ...], kwargs: Dict[str, Any], i: int, key: str, defaul
     return args[i] if len(args) > i else kwargs.get(key, default)
 
 
-def site_margin(rule: SS.Rule, name: str, args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Optional[th.Tensor]:
+def site_margin(rule: SS.Rule, name: str, args: Tuple[Any, ...], kwargs: Dict[str, Any],
+                payload: Optional[Tuple[th.Tensor, ...]] = None, out: Any = None) -> Optional[th.Tensor]:
     """The elementwise margin of one MARGIN op (float64, any shape whose leading dim is the op's rows), or
-    None when the op cannot cross a cutoff (fewer candidates than the selection keeps)."""
+    None when the op cannot cross a cutoff (fewer candidates than the selection keeps).
+
+    ``payload`` (an ``argmax`` rule that declares one, `selection_sites.Rule.payload`; ``out`` is the op's
+    own result): the tensors the selected index GATHERS, each aligned to the operand. The margin is then
+    the gap to the nearest candidate whose payload DIFFERS from the selected one's — a candidate whose
+    every payload value is bit-identical selects the same values, so a tie with it cannot move anything
+    the forward computes (`gen3_behaviour_tie_identity_v1`)."""
     x = args[0].detach().double()
     if rule.kind == "topk":
         k = int(_arg(args, kwargs, 1, "k", 1))
@@ -85,6 +92,8 @@ def site_margin(rule: SS.Rule, name: str, args: Tuple[Any, ...], kwargs: Dict[st
         v = th.topk(x, 2, dim=dim, largest=name in ("argmax", "max")).values
         top, second = v.narrow(dim, 0, 1), v.narrow(dim, 1, 1)
         g = _rel(top, second)
+        if payload is not None:
+            g = _payload_gap(x, dim, top, payload, out, name)
         if rule.gate > 0:          # a slot whose max is at or below the gate is masked by the gate site
             g = th.where(top > rule.gate, g, th.full_like(g, float("inf")))
         return g
@@ -103,6 +112,61 @@ def site_margin(rule: SS.Rule, name: str, args: Tuple[Any, ...], kwargs: Dict[st
         g = th.where(is_t, th.full_like(g, float("inf")), g)
         return th.where(mult > 1, th.zeros_like(g), g)
     raise TieMarginError(f"unknown margin rule {rule.kind!r}")
+
+
+def _payload_gap(x: th.Tensor, dim: int, top: th.Tensor, payload: Tuple[th.Tensor, ...], out: Any,
+                 name: str) -> th.Tensor:
+    """An argmax's margin to the nearest candidate whose PAYLOAD differs from the selected one's (``+inf``
+    when every candidate's does not). The selected index is the op's own result (``out``)."""
+    if name != "argmax" or not isinstance(out, th.Tensor):
+        raise TieMarginError(f"a payload rule needs an argmax and its index result (got {name})")
+    idx = out.long() if out.dim() == x.dim() else out.long().unsqueeze(dim)
+    idx = idx.to(x.device)
+    differs = th.zeros(x.shape, dtype=th.bool, device=x.device)
+    for p in payload:
+        pe = p.detach().to(x.device).expand(x.shape)
+        sel = th.gather(pe, dim, idx)
+        # NaN never equals itself: a NaN payload is DISTINCT (never cleared by identity)
+        differs |= ~(pe == sel)
+    g = _rel(top.expand(x.shape), x)
+    return th.where(differs, g, th.full_like(g, float("inf"))).amin(dim=dim, keepdim=True)
+
+
+def payload_tensors(rule: SS.Rule, frame: Any, operand: th.Tensor, site: str) -> Optional[Tuple[th.Tensor, ...]]:
+    """The declared payload of ``rule`` read from the issuing frame's locals, each ALIGNED to the operand: a
+    tensor of fewer dims is a per-row tensor broadcast over the operand's middle (slot) dims. None when the
+    rule declares no payload. A stale declaration (a missing local, a shape that does not align) is a
+    `TieMarginError` — never a silent "no payload"."""
+    if not rule.payload:
+        return None
+    loc = frame.f_locals if frame is not None else {}
+    out = []
+    for nm in rule.payload:
+        t = loc.get(nm)
+        if not isinstance(t, th.Tensor):
+            raise TieMarginError(f"[K9(b)] the MARGIN site {site} declares payload {nm!r}, but its frame holds no "
+                                 "such tensor — the declaration in agents/model/selection_sites.py is stale")
+        while t.dim() < operand.dim():
+            t = t.unsqueeze(1)
+        try:
+            t.expand(operand.shape)
+        except RuntimeError:
+            raise TieMarginError(f"[K9(b)] the payload {nm!r} of {site} has shape {tuple(t.shape)}, which does not "
+                                 f"align with the operand {tuple(operand.shape)} — the declaration is stale") from None
+        out.append(t)
+    return tuple(out)
+
+
+def _caller_frame() -> Any:
+    """The frame of the forward-module line that issued the op — the first frame outside torch and outside
+    every ``__torch_function__`` (a recorder subclass's included) — or None when that frame is not in
+    ``agents/model`` (a library-internal op)."""
+    f = sys._getframe(1)
+    while f is not None and (f.f_code.co_name == "__torch_function__" or f.f_code.co_filename.startswith(_TORCH_DIR)):
+        f = f.f_back
+    if f is None or os.path.dirname(f.f_code.co_filename) != _MODEL_DIR:
+        return None
+    return f
 
 
 def _caller() -> Optional[Tuple[str, int]]:
@@ -155,9 +219,10 @@ class TieMargins(TorchFunctionMode):
             if not (args[0].is_floating_point() and isinstance(out, th.Tensor)
                     and not out.is_floating_point() and out.dtype != th.bool):
                 return out            # not a float -> int cast
-        where = _caller()
-        if where is None:
+        frame = _caller_frame()
+        if frame is None:
             return out
+        where = (os.path.basename(frame.f_code.co_filename)[:-3], int(frame.f_lineno))
         res = SS.resolve(where[0], where[1], kind)
         if res is None or res.declared is None:
             key = f"{where[0]}.py:{where[1]} {name}"
@@ -166,8 +231,8 @@ class TieMargins(TorchFunctionMode):
         rule = res.declared.rule
         if rule is None:
             return out
-        g = site_margin(rule, name, args, kwargs)
         site = f"{where[0]}.py:{where[1]} {name}"
+        g = site_margin(rule, name, args, kwargs, payload_tensors(rule, frame, args[0], site), out)
         self.sites_seen[site] = self.sites_seen.get(site, 0) + 1
         if g is None:
             return out

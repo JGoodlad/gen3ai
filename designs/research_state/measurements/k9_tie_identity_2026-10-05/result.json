@@ -1,0 +1,352 @@
+{
+ "schema": "k9_tie_identity_v1",
+ "eps": 0.0002,
+ "arms": {
+  "blob/fresh": {
+   "rows": 2048,
+   "excluded_before": 106,
+   "excluded_frac_before": 0.0517578125,
+   "flip_identical": 106,
+   "flip_distinct": 0,
+   "excluded_after_payload_rule": 81,
+   "excluded_after": 0,
+   "excluded_frac_after": 0.0,
+   "after_payload_rule_by_flip_verdict": {
+    "identical": 81
+   },
+   "distinct_rows_cleared": 0,
+   "before_by_family": [
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "identical",
+     "rows": 50
+    },
+    {
+     "family": "belief-candidate top-K / its cutoff (pointer_head, damage_op_pairwise, damage_op_blocks)",
+     "verdict": "identical",
+     "rows": 40
+    },
+    {
+     "family": "fixed damage >= current HP (damage_kinds)",
+     "verdict": "identical",
+     "rows": 16
+    }
+   ],
+   "determinism_failures": 0,
+   "flip_noop_rows": 0,
+   "max_abs_dlogp_vs_stored": 0.0
+  },
+  "blob/perturbed": {
+   "rows": 2048,
+   "excluded_before": 70,
+   "excluded_frac_before": 0.0341796875,
+   "flip_identical": 60,
+   "flip_distinct": 10,
+   "excluded_after_payload_rule": 35,
+   "excluded_after": 35,
+   "excluded_frac_after": 0.01708984375,
+   "after_payload_rule_by_flip_verdict": {
+    "identical": 25,
+    "distinct": 10
+   },
+   "distinct_rows_cleared": 0,
+   "before_by_family": [
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "identical",
+     "rows": 36
+    },
+    {
+     "family": "fixed damage >= current HP (damage_kinds)",
+     "verdict": "identical",
+     "rows": 23
+    },
+    {
+     "family": "belief-candidate top-K / its cutoff (pointer_head, damage_op_pairwise, damage_op_blocks)",
+     "verdict": "distinct",
+     "rows": 6
+    },
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "distinct",
+     "rows": 4
+    },
+    {
+     "family": "dominant-move argmax (damage_op) + fixed damage >= current HP (damage_kinds)",
+     "verdict": "identical",
+     "rows": 1
+    }
+   ],
+   "determinism_failures": 0,
+   "flip_noop_rows": 0,
+   "max_abs_dlogp_vs_stored": 9.5367431640625e-07
+  },
+  "oracle_species/fresh": {
+   "rows": 2048,
+   "excluded_before": 102,
+   "excluded_frac_before": 0.0498046875,
+   "flip_identical": 102,
+   "flip_distinct": 0,
+   "excluded_after_payload_rule": 77,
+   "excluded_after": 0,
+   "excluded_frac_after": 0.0,
+   "after_payload_rule_by_flip_verdict": {
+    "identical": 77
+   },
+   "distinct_rows_cleared": 0,
+   "before_by_family": [
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "identical",
+     "rows": 50
+    },
+    {
+     "family": "belief-candidate top-K / its cutoff (pointer_head, damage_op_pairwise, damage_op_blocks)",
+     "verdict": "identical",
+     "rows": 36
+    },
+    {
+     "family": "fixed damage >= current HP (damage_kinds)",
+     "verdict": "identical",
+     "rows": 16
+    }
+   ],
+   "determinism_failures": 0,
+   "flip_noop_rows": 0,
+   "max_abs_dlogp_vs_stored": 0.0
+  },
+  "oracle_species/perturbed": {
+   "rows": 2048,
+   "excluded_before": 59,
+   "excluded_frac_before": 0.02880859375,
+   "flip_identical": 21,
+   "flip_distinct": 38,
+   "excluded_after_payload_rule": 48,
+   "excluded_after": 48,
+   "excluded_frac_after": 0.0234375,
+   "after_payload_rule_by_flip_verdict": {
+    "identical": 10,
+    "distinct": 38
+   },
+   "distinct_rows_cleared": 0,
+   "before_by_family": [
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "distinct",
+     "rows": 20
+    },
+    {
+     "family": "belief-candidate top-K / its cutoff (pointer_head, damage_op_pairwise, damage_op_blocks)",
+     "verdict": "distinct",
+     "rows": 18
+    },
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "identical",
+     "rows": 11
+    },
+    {
+     "family": "fixed damage >= current HP (damage_kinds)",
+     "verdict": "identical",
+     "rows": 7
+    },
+    {
+     "family": "belief-candidate top-K / its cutoff (pointer_head, damage_op_pairwise, damage_op_blocks)",
+     "verdict": "identical",
+     "rows": 3
+    }
+   ],
+   "determinism_failures": 0,
+   "flip_noop_rows": 0,
+   "max_abs_dlogp_vs_stored": 7.152557373046875e-07
+  },
+  "oracle_full/fresh": {
+   "rows": 2048,
+   "excluded_before": 514,
+   "excluded_frac_before": 0.2509765625,
+   "flip_identical": 514,
+   "flip_distinct": 0,
+   "excluded_after_payload_rule": 402,
+   "excluded_after": 0,
+   "excluded_frac_after": 0.0,
+   "after_payload_rule_by_flip_verdict": {
+    "identical": 402
+   },
+   "distinct_rows_cleared": 0,
+   "before_by_family": [
+    {
+     "family": "belief-candidate top-K / its cutoff (pointer_head, damage_op_pairwise, damage_op_blocks)",
+     "verdict": "identical",
+     "rows": 279
+    },
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "identical",
+     "rows": 181
+    },
+    {
+     "family": "belief-candidate top-K / its cutoff (pointer_head, damage_op_pairwise, damage_op_blocks) + dominant-move argmax (damage_op)",
+     "verdict": "identical",
+     "rows": 38
+    },
+    {
+     "family": "fixed damage >= current HP (damage_kinds)",
+     "verdict": "identical",
+     "rows": 16
+    }
+   ],
+   "determinism_failures": 0,
+   "flip_noop_rows": 0,
+   "max_abs_dlogp_vs_stored": 0.0
+  },
+  "oracle_full/perturbed": {
+   "rows": 2048,
+   "excluded_before": 129,
+   "excluded_frac_before": 0.06298828125,
+   "flip_identical": 75,
+   "flip_distinct": 54,
+   "excluded_after_payload_rule": 73,
+   "excluded_after": 73,
+   "excluded_frac_after": 0.03564453125,
+   "after_payload_rule_by_flip_verdict": {
+    "distinct": 54,
+    "identical": 19
+   },
+   "distinct_rows_cleared": 0,
+   "before_by_family": [
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "identical",
+     "rows": 73
+    },
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "distinct",
+     "rows": 43
+    },
+    {
+     "family": "belief-candidate top-K / its cutoff (pointer_head, damage_op_pairwise, damage_op_blocks)",
+     "verdict": "distinct",
+     "rows": 9
+    },
+    {
+     "family": "belief-candidate top-K / its cutoff (pointer_head, damage_op_pairwise, damage_op_blocks) + dominant-move argmax (damage_op)",
+     "verdict": "distinct",
+     "rows": 1
+    },
+    {
+     "family": "belief-candidate top-K / its cutoff (pointer_head, damage_op_pairwise, damage_op_blocks) + dominant-move argmax (damage_op)",
+     "verdict": "identical",
+     "rows": 1
+    },
+    {
+     "family": "fixed damage >= current HP (damage_kinds)",
+     "verdict": "distinct",
+     "rows": 1
+    },
+    {
+     "family": "belief-candidate top-K / its cutoff (pointer_head, damage_op_pairwise, damage_op_blocks)",
+     "verdict": "identical",
+     "rows": 1
+    }
+   ],
+   "determinism_failures": 0,
+   "flip_noop_rows": 0,
+   "max_abs_dlogp_vs_stored": 4.76837158203125e-07
+  },
+  "fixed_mass/fresh": {
+   "rows": 2048,
+   "excluded_before": 280,
+   "excluded_frac_before": 0.13671875,
+   "flip_identical": 280,
+   "flip_distinct": 0,
+   "excluded_after_payload_rule": 259,
+   "excluded_after": 0,
+   "excluded_frac_after": 0.0,
+   "after_payload_rule_by_flip_verdict": {
+    "identical": 259
+   },
+   "distinct_rows_cleared": 0,
+   "before_by_family": [
+    {
+     "family": "X5 stable order (hypothesis_set argsort)",
+     "verdict": "identical",
+     "rows": 214
+    },
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "identical",
+     "rows": 46
+    },
+    {
+     "family": "fixed damage >= current HP (damage_kinds)",
+     "verdict": "identical",
+     "rows": 15
+    },
+    {
+     "family": "X5 stable order (hypothesis_set argsort) + dominant-move argmax (damage_op)",
+     "verdict": "identical",
+     "rows": 4
+    },
+    {
+     "family": "X5 stable order (hypothesis_set argsort) + fixed damage >= current HP (damage_kinds)",
+     "verdict": "identical",
+     "rows": 1
+    }
+   ],
+   "determinism_failures": 0,
+   "flip_noop_rows": 0,
+   "max_abs_dlogp_vs_stored": 0.0
+  },
+  "fixed_mass/perturbed": {
+   "rows": 2048,
+   "excluded_before": 128,
+   "excluded_frac_before": 0.0625,
+   "flip_identical": 117,
+   "flip_distinct": 11,
+   "excluded_after_payload_rule": 105,
+   "excluded_after": 105,
+   "excluded_frac_after": 0.05126953125,
+   "after_payload_rule_by_flip_verdict": {
+    "identical": 94,
+    "distinct": 11
+   },
+   "distinct_rows_cleared": 0,
+   "before_by_family": [
+    {
+     "family": "X5 stable order (hypothesis_set argsort)",
+     "verdict": "identical",
+     "rows": 92
+    },
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "identical",
+     "rows": 24
+    },
+    {
+     "family": "X5 stable order (hypothesis_set argsort)",
+     "verdict": "distinct",
+     "rows": 5
+    },
+    {
+     "family": "fixed damage >= current HP (damage_kinds)",
+     "verdict": "distinct",
+     "rows": 3
+    },
+    {
+     "family": "dominant-move argmax (damage_op)",
+     "verdict": "distinct",
+     "rows": 3
+    },
+    {
+     "family": "fixed damage >= current HP (damage_kinds)",
+     "verdict": "identical",
+     "rows": 1
+    }
+   ],
+   "determinism_failures": 0,
+   "flip_noop_rows": 0,
+   "max_abs_dlogp_vs_stored": 5.960464477539062e-07
+  }
+ }
+}

@@ -255,7 +255,11 @@ otherwise (observation / table / integer / gathered at a declared selection). `s
 fails on an undeclared or stale entry, on a line mixing the two classes (the recorder resolves ops by
 LINE — split it), and when a site declared EXACT moves under a few-ulp weight jitter; at run time an
 undeclared op on a float operand is a typed FATAL at the first update. The keys are source text, so
-editing a declared line means re-declaring it.
+editing a declared line means re-declaring it. 🚨 **An `argmax` MARGIN rule may declare its `payload`**
+(`gen3_behaviour_tie_identity_v1`: the frame-local tensors its index gathers — a tie between candidates
+whose payloads are bit-identical is then no tie). The payload must be EVERYTHING the index reaches:
+`selection_sites_test` fails when the index is read anywhere but a `gather` of a declared payload, so a
+new consumer of a payload site's index means extending the declaration (or dropping it).
 
 ## 🚨 X5 (`--belief-tokens fixed_mass`): every reduction over OPPONENT tokens declares its presence semantics
 

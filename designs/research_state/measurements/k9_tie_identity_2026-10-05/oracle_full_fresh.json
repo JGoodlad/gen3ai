@@ -1,0 +1,132 @@
+{
+ "arm": "oracle_full",
+ "weights": "fresh",
+ "seed": 1001,
+ "run_seed": 1001,
+ "rows": 2048,
+ "eps": 0.0002,
+ "excluded_before": 514,
+ "excluded_frac_before": 0.2509765625,
+ "cleared_identical": 514,
+ "excluded_after": 0,
+ "excluded_frac_after": 0.0,
+ "rows_multi_call": 418,
+ "joint_identical_but_single_distinct": 0,
+ "determinism_failures_untouched_rows": 0,
+ "flip_noop_rows": 0,
+ "max_abs_dlogp_vs_stored": 0.0,
+ "by_site": [
+  {
+   "sites": "damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "verdict": "identical",
+   "rows": 246
+  },
+  {
+   "sites": "damage_op.py:918 argmax + damage_op.py:924 argmax",
+   "verdict": "identical",
+   "rows": 93
+  },
+  {
+   "sites": "damage_op.py:918 argmax",
+   "verdict": "identical",
+   "rows": 76
+  },
+  {
+   "sites": "damage_op.py:918 argmax + damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "verdict": "identical",
+   "rows": 33
+  },
+  {
+   "sites": "damage_op_blocks.py:1068 topk + damage_op_blocks.py:920 topk + damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "verdict": "identical",
+   "rows": 33
+  },
+  {
+   "sites": "damage_kinds.py:130 ge",
+   "verdict": "identical",
+   "rows": 16
+  },
+  {
+   "sites": "damage_op.py:924 argmax",
+   "verdict": "identical",
+   "rows": 12
+  },
+  {
+   "sites": "damage_op.py:918 argmax + damage_op.py:924 argmax + damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "verdict": "identical",
+   "rows": 5
+  }
+ ],
+ "by_site_class": [
+  {
+   "sites": "damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "class": "exact/exact(0.02)",
+   "verdict": "identical",
+   "rows": 246
+  },
+  {
+   "sites": "damage_op.py:918 argmax + damage_op.py:924 argmax",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 93
+  },
+  {
+   "sites": "damage_op.py:918 argmax",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 76
+  },
+  {
+   "sites": "damage_op.py:918 argmax + damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "class": "exact/exact(0.02)",
+   "verdict": "identical",
+   "rows": 33
+  },
+  {
+   "sites": "damage_op_blocks.py:1068 topk + damage_op_blocks.py:920 topk + damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "class": "exact/exact(0.02)",
+   "verdict": "identical",
+   "rows": 33
+  },
+  {
+   "sites": "damage_op.py:924 argmax",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 12
+  },
+  {
+   "sites": "damage_kinds.py:130 ge",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 8
+  },
+  {
+   "sites": "damage_kinds.py:130 ge",
+   "class": "near",
+   "verdict": "identical",
+   "rows": 8
+  },
+  {
+   "sites": "damage_op.py:918 argmax + damage_op.py:924 argmax + damage_op_pairwise.py:321 topk + damage_op_pairwise.py:924 topk + pointer_head.py:176 topk + pointer_head.py:177 ge",
+   "class": "exact/exact(0.02)",
+   "verdict": "identical",
+   "rows": 5
+  }
+ ],
+ "new_rule": {
+  "excluded_payload_only": 402,
+  "excluded_frac_payload_only": 0.1962890625,
+  "excluded": 0,
+  "excluded_frac": 0.0,
+  "payload_only_rows_by_flip_verdict": {
+   "identical": 402
+  },
+  "payload_only_rows_by_min_site": {
+   "pointer_head.py:176 topk": 267,
+   "damage_op.py:918 argmax": 86,
+   "damage_op_blocks.py:920 topk": 33,
+   "damage_kinds.py:130 ge": 16
+  }
+ },
+ "torch": "2.8.0+cu126"
+}

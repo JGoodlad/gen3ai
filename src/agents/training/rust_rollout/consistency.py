@@ -113,6 +113,36 @@ def excluded_rows(margins: Optional[np.ndarray], eps: float, n: int) -> np.ndarr
     return ~(m >= eps)
 
 
+#: The action head's SCORERS (`agents/model/pointer_head.PointerNativeActionHead`): the only modules
+#: through which the extractor reaches the logits.
+_SCORERS = ("move_score", "switch_score", "struggle_score")
+
+
+def selection_free(policy: Any) -> bool:
+    """True when no selection or threshold of the forward can move log pi (`gen3_behaviour_tie_identity_v1`):
+    every action-head SCORER's weight is exactly zero, so the logits are the scorers' biases times the
+    observation's exact ``move_valid`` — independent of everything the extractor computes, every declared
+    MARGIN site included. That is a fresh run's state at its first update (the scorers are zero-init); one
+    optimizer step ends it. Under it K9(b) excludes NO row: a tie there provably cannot change log pi, and
+    every row is judged. `consistency_test` holds the premise: with the scorers zeroed, perturbing every
+    other parameter leaves log pi bit-identical on real rows."""
+    ph = getattr(policy, "pointer_head", None)
+    if ph is None:
+        return False
+    for name in _SCORERS:
+        w = getattr(getattr(ph, name, None), "weight", None)
+        if w is None or bool((w != 0).any()):
+            return False
+    return True
+
+
+#: The warn path's full-buffer SCAN budget (`gen3_behaviour_tie_identity_v1`): under ``warn`` a violation
+#: recurs every update, and scanning every current row cost ≈ 6.5 s of a ≈ 41 s update (X5 cost ablation
+#: F-XC-5), so the warn scan reads at most this many current rows — a seeded, deterministic sample. The
+#: FATAL path scans every row (it runs once), and the verdict never reads the scan (`behaviour_probe`).
+SCAN_WARN_MAX_ROWS = 4096
+
+
 class UndeclaredPrecision(RuntimeError):
     """K9(b): this process's float32 matmul precision is not the one the gate was measured at."""
 
@@ -416,7 +446,7 @@ def _violation_details(model: Any, buf: Any, t: np.ndarray, e: np.ndarray, old: 
 _SCAN_KEEP = 32
 
 
-def scan_current(model: Any, ages: np.ndarray) -> Dict[str, Any]:
+def scan_current(model: Any, ages: np.ndarray, max_rows: Optional[int] = None) -> Dict[str, Any]:
     """EVERY current-version row of the buffer through the learner's forward (train mode, chunks of
     ``batch_size`` — the probe's own shape): how many exceed the gate's smallest bar, the max and
     the p99, and the worst `_SCAN_KEEP` rows in full (`row_detail` fields; their observations under
@@ -424,7 +454,9 @@ def scan_current(model: Any, ages: np.ndarray) -> Dict[str, Any]:
     under `tie_margins.TieMargins`: the scan also counts the rows over the bar that are JUDGED (not at a
     tie) and the excluded share. Per-row arrays (``_absd``, ``_margin``, ``_flat``) are kept for drivers.
     Run on a violation (one row, or many?) — or every update when ``model.behaviour_scan_all`` is set (a
-    diagnostic driver's switch, never a flag)."""
+    diagnostic driver's switch, never a flag). ``max_rows`` (the warn path, `SCAN_WARN_MAX_ROWS`) bounds
+    it to a seeded, deterministic sample of the current rows; ``rows_current`` then says how many there
+    were and ``sampled`` that the counts are the sample's."""
     import contextlib
 
     import torch as th
@@ -435,6 +467,10 @@ def scan_current(model: Any, ages: np.ndarray) -> Dict[str, Any]:
     buf = model.rollout_buffer
     n_envs = int(buf.n_envs)
     flat = np.flatnonzero(np.asarray(ages).reshape(-1) == 0)
+    n_current = int(flat.size)
+    if max_rows is not None and flat.size > int(max_rows):
+        rng = np.random.default_rng([int(getattr(model, "seed", 0) or 0), int(model.num_timesteps), 1])
+        flat = np.sort(rng.choice(flat, int(max_rows), replace=False))
     B = max(1, int(getattr(model, "batch_size", 0) or flat.size))
     bar = min(c.bar for c in behaviour_gate())
     absd = np.empty(flat.size)
@@ -443,6 +479,7 @@ def scan_current(model: Any, ages: np.ndarray) -> Dict[str, Any]:
     eps = tie_eps()
     margin = np.full(flat.size, np.inf)
     sites: List[str] = ["" for _ in range(flat.size)]
+    free = selection_free(model.policy)
     was_training = model.policy.training
     model.policy.set_training_mode(True)
     try:
@@ -458,8 +495,9 @@ def scan_current(model: Any, ages: np.ndarray) -> Dict[str, Any]:
                                                              action_masks=masks)
             if rec is not None:
                 rec.check()
-                margin[s:s + f.size] = rec.margin
-                sites[s:s + f.size] = rec.site
+                if not free:
+                    margin[s:s + f.size] = rec.margin
+                    sites[s:s + f.size] = rec.site
             newv[s:s + f.size] = lp.detach().double().cpu().numpy()
             fl = _stashed_logp(model.policy)
             if fl is not None:
@@ -477,7 +515,8 @@ def scan_current(model: Any, ages: np.ndarray) -> Dict[str, Any]:
         rows.append({"abs_dlogp": float(absd[worst[j]]), "action": int(d["action"][j]),
                      "mask": "".join("1" if x > 0.5 else "0" for x in m), **row_detail(d, j)})
     ex = excluded_rows(margin, eps, flat.size)
-    return {"rows": int(flat.size), "bar": float(bar), "over_bar": int((~(absd < bar)).sum()),
+    return {"rows": int(flat.size), "rows_current": n_current, "sampled": bool(flat.size < n_current),
+            "selection_free": free, "bar": float(bar), "over_bar": int((~(absd < bar)).sum()),
             "over_bar_judged": int((~(absd < bar) & ~ex).sum()), "excluded_frac": float(ex.mean()) if ex.size else 0.0,
             "_absd": absd, "_margin": margin, "_sites": sites, "_flat": flat,
             "max": float(np.nanmax(absd)) if absd.size else 0.0,
@@ -637,13 +676,18 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
     del _v, logp, _ent
     release_autograd_stashes(model.policy)        # gen3_probe_releases_graph_v1 (function docs)
     margins = sites = None
+    free = selection_free(model.policy)
     if rec is not None:
         checked_margins(model, rec)
         margins, sites = rec.margin, rec.site
+        if free:            # no tie can move log pi (`selection_free`): every row is judged
+            margins = np.full(rec.margin.shape, np.inf)
+            sites = ["" for _ in rec.site]
     d = new - old
     cur = age == 0
     out: Dict[str, float] = {"behaviour/rows_current": float(cur.sum()), "behaviour/rows_probed": float(flat.size),
-                             "behaviour/probe_forward_ms": 1e3 * (time.perf_counter() - t_rec)}
+                             "behaviour/probe_forward_ms": 1e3 * (time.perf_counter() - t_rec),
+                             "behaviour/selection_free": float(free)}
     worst = float(np.abs(d[cur]).max()) if cur.any() else float("nan")
     out["behaviour/max_abs_dlogp_current"] = worst
     clip = model.clip_range(model._current_progress_remaining) if callable(model.clip_range) else float(model.clip_range)
@@ -688,7 +732,11 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
                                              None if full_new is None else full_new[ci],
                                              buf.actions[t_idx[ci], e_idx[ci]].reshape(-1),
                                              {k: v[ci] for k, v in obs.items()})
-                details["scan"] = scan_current(model, ages)
+                full_scan = mode == "fatal" or bool(getattr(model, "behaviour_scan_all", False))
+                t_scan = time.perf_counter()
+                details["scan"] = scan_current(model, ages, None if full_scan else SCAN_WARN_MAX_ROWS)
+                out["behaviour/scan_ms"] = 1e3 * (time.perf_counter() - t_scan)
+                out["behaviour/scan_rows"] = float(details["scan"]["rows"])
                 out["behaviour/scan_rows_over_bar"] = float(details["scan"]["over_bar"])
                 out["behaviour/scan_max_abs_dlogp"] = float(details["scan"]["max"])
             out.update(enforce_behaviour(

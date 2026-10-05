@@ -47,6 +47,72 @@ def test_no_declaration_is_stale_and_every_rule_is_known() -> None:
     assert not dup, f"declared both MARGIN and EXACT: {dup}"
 
 
+def _root_name(n: Any) -> str:
+    import ast
+    while isinstance(n, (ast.Subscript, ast.Attribute, ast.Call)):
+        n = n.value if not isinstance(n, ast.Call) else n.func
+    return n.id if isinstance(n, ast.Name) else ""
+
+
+def _payload_violations(source: str, sel_src: str, payload: Tuple[str, ...]) -> List[str]:
+    """Every use of the selection's index other than as the INDEX of a ``torch.gather`` over a declared
+    payload (`gen3_behaviour_tie_identity_v1`: an undeclared consumer would make payload identity unsound)."""
+    import ast
+    tree = ast.parse(source)
+    out: List[str] = []
+    found = 0
+    for fn in ast.walk(tree):
+        if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        direct = [a for a in fn.body for a in ast.walk(a)]
+        for a in direct:
+            if not (isinstance(a, ast.Assign) and ast.unparse(a.value) == sel_src):
+                continue
+            if any(isinstance(inner, (ast.FunctionDef, ast.AsyncFunctionDef)) and inner is not fn
+                   and a in list(ast.walk(inner)) for inner in ast.walk(fn)):
+                continue                      # belongs to a nested function: judged there
+            found += 1
+            if len(a.targets) != 1 or not isinstance(a.targets[0], ast.Name):
+                out.append(f"{sel_src}: the index is not bound to one plain name")
+                continue
+            name = a.targets[0].id
+            ok_ids = set()
+            for c in ast.walk(fn):
+                if (isinstance(c, ast.Call) and ast.unparse(c.func) in ("torch.gather", "th.gather")
+                        and len(c.args) == 3 and isinstance(c.args[2], ast.Name) and c.args[2].id == name):
+                    if _root_name(c.args[0]) in payload:
+                        ok_ids.add(id(c.args[2]))
+                    else:
+                        out.append(f"{sel_src}: gathers {ast.unparse(c.args[0])!r}, not a declared payload {payload}")
+            for u in ast.walk(fn):
+                if (isinstance(u, ast.Name) and u.id == name and isinstance(u.ctx, ast.Load)
+                        and id(u) not in ok_ids):
+                    out.append(f"{sel_src}: its index {name!r} is read outside a declared payload gather "
+                               f"(line {u.lineno})")
+    if found == 0:
+        out.append(f"{sel_src}: no `<name> = {sel_src}` binding found")
+    return out
+
+
+def test_every_payload_sites_index_is_read_only_by_a_gather_of_its_declared_payload() -> None:
+    """A payload rule (identity clearance) is sound only if the payload is EVERYTHING the index reaches."""
+    rules = [(k, r) for k, r in SS.MARGIN.items() if r.payload]
+    assert rules, "no payload rule is declared — the identity clearance would be vacuous"
+    bad: List[str] = []
+    for (module, src), r in rules:
+        assert r.kind == "argmax", (module, src)
+        bad += _payload_violations(SS.module_path(module).read_text(), src, r.payload)
+    assert not bad, bad
+    # teeth: a second consumer of the index, or a gather of an undeclared tensor, is caught
+    planted = ("def f(wfc, acc, other):\n"
+               "    dom = wfc.argmax(dim=-1, keepdim=True)\n"
+               "    a = torch.gather(acc, -1, dom)\n"
+               "    b = torch.gather(other, -1, dom)\n"
+               "    return a + b + dom.float()\n")
+    v = _payload_violations(planted, "wfc.argmax(dim=-1, keepdim=True)", ("acc",))
+    assert any("not a declared payload" in x for x in v) and any("outside a declared payload" in x for x in v), v
+
+
 def test_no_line_mixes_a_margin_and_an_exact_op_of_one_kind() -> None:
     amb = [x for m in SS.FORWARD_MODULES for x in SS.ambiguous_lines(m)]
     assert not amb, f"the recorder resolves ops by LINE — split these lines: {amb}"

@@ -316,3 +316,111 @@ def test_the_fp32_rule_numbers_are_derived_from_the_banked_measurement():
     assert f["eps"] == K.FP32_TIE_EPS and not f["healthy"]["fatal"] and not f["healthy_after"]["fatal"]
     assert f["stale_one_adam_step"]["fatal"] and f["one_wrong_action_row"]["fatal"] and f["obs_mask_misaligned_one_env"]["fatal"]
     assert f["one_wrong_action_row"]["row_margin"] >= K.FP32_TIE_EPS          # the planted row was judged
+
+
+# ---------------------------- gen3_behaviour_tie_identity_v1 (2026-10-05): the SELECTION-FREE certificate
+def _zero_scorers(m):
+    ph = m.policy.pointer_head
+    with th.no_grad():
+        for name in K._SCORERS:
+            getattr(ph, name).weight.zero_()
+
+
+def _restored_logp(m):
+    """Re-store the behaviour log-probs as the policy's own (after a weight change), provenance included."""
+    buf = m.rollout_buffer
+    n_steps, n_envs = buf.log_probs.shape
+    n = n_steps * n_envs
+    obs = {k: th.as_tensor(v.reshape(n, *v.shape[2:])) for k, v in buf.observations.items()}
+    m.policy.set_training_mode(False)
+    with th.no_grad():
+        _v, lp, _e = m.policy.evaluate_actions(obs, th.as_tensor(buf.actions.reshape(-1)).long(),
+                                               action_masks=th.as_tensor(buf.action_masks.reshape(n, -1)))
+    buf.log_probs[...] = lp.numpy().reshape(n_steps, n_envs)
+    return _with_provenance(m)
+
+
+def test_with_zero_scorers_no_selection_reaches_log_pi_the_certificates_premise():
+    """`selection_free`'s premise, on real rows: with the action head's scorer WEIGHTS zero, perturbing every
+    other parameter (the whole extractor, every MARGIN site's operands) leaves the full masked log-probs
+    bit-identical — and with them nonzero, the same perturbation moves them (the probe has teeth)."""
+    from agents.model.parity_probe import perturb_
+
+    m = _model()
+    buf = m.rollout_buffer
+    n = buf.log_probs.size
+    obs = {k: th.as_tensor(v.reshape(n, *v.shape[2:])) for k, v in buf.observations.items()}
+    acts = th.as_tensor(buf.actions.reshape(-1)).long()
+    masks = th.as_tensor(buf.action_masks.reshape(n, -1))
+
+    def logits():
+        m.policy.set_training_mode(True)
+        with th.no_grad():
+            m.policy.evaluate_actions(obs, acts, action_masks=masks)
+        return K._stashed_logp(m.policy)
+
+    before_live = logits()
+    assert not K.selection_free(m.policy)
+    _zero_scorers(m)
+    assert K.selection_free(m.policy)
+    before = logits()
+    ph = m.policy.pointer_head
+    biases = {k: getattr(ph, k).bias.detach().clone() for k in K._SCORERS}
+    perturb_(m.policy, seed=4242, scale=1e-2)
+    _zero_scorers(m)
+    with th.no_grad():                      # the biases are the logits' only parameters left: keep them
+        for k, b in biases.items():
+            getattr(ph, k).bias.copy_(b)
+    assert np.array_equal(logits(), before, equal_nan=True)
+    m2 = _model()
+    perturb_(m2.policy, seed=4242, scale=1e-2)
+    m.policy.load_state_dict(m2.policy.state_dict())
+    assert not np.array_equal(logits(), before_live, equal_nan=True)
+
+
+def test_under_zero_scorers_every_row_is_judged_and_a_planted_mismatch_on_a_tied_row_is_FATAL(monkeypatch):
+    """At a fresh run's first update (zero-init scorers) a tie provably cannot move log pi, so NO row is
+    excluded: the row nearest a cutoff — excluded by the margin rule — is judged, and a 3e-4 jump on it
+    FATALs. (The rule before excluded it and passed.)"""
+    m = _with_provenance(_model())
+    _zero_scorers(m)
+    m = _restored_logp(m)
+    m.behaviour_check = "fatal"
+    t, e, g = _probe_margins(m)
+    i = int(np.argmin(g))
+    eps = float(np.sqrt(max(g[i], 1e-300) * np.sort(g[g > g[i]])[0]))
+    monkeypatch.setattr(K, "BEHAVIOUR_GATE", _gate(eps, ceiling=0.5))
+    out = K.behaviour_probe(m)                          # clean: every row judged, none excluded
+    assert out["behaviour/selection_free"] == 1.0 and out["behaviour/rows_excluded"] == 0.0
+    assert out["behaviour/rows_judged"] == out["behaviour/rows_current"]
+    m.rollout_buffer.log_probs[t[i], e[i]] += 3e-4
+    with pytest.raises(K.BehaviourMismatch, match=r"max 0\.0003 NOT < 0\.0001"):
+        K.behaviour_probe(m)
+
+
+def test_the_warn_scan_is_a_bounded_sample_and_the_fatal_scan_reads_every_row(tmp_path, monkeypatch):
+    """Under `warn` a violation recurs every update, so its full-buffer scan is bounded to
+    `SCAN_WARN_MAX_ROWS` seeded rows (it cost ≈ 6.5 s of a ≈ 41 s update); the FATAL path scans every row,
+    and the verdict is the probe's either way."""
+    import json
+
+    monkeypatch.setattr(K, "SCAN_WARN_MAX_ROWS", 16)
+    for mode in ("warn", "fatal"):
+        m = _with_provenance(_model())
+        m.behaviour_check = mode
+        (tmp_path / mode).mkdir()
+        m.behaviour_dump_dir = str(tmp_path / mode)
+        buf = m.rollout_buffer
+        rng = np.random.default_rng([int(m.seed or 0), int(m.num_timesteps)])
+        f = int(K.choose_rows(np.zeros(buf.log_probs.shape, np.int64), m.batch_size, rng)[0])
+        buf.log_probs[divmod(f, buf.n_envs)] += 0.0389
+        if mode == "warn":
+            out = K.behaviour_probe(m)
+            assert out["behaviour/scan_rows"] == 16.0 and out["behaviour/violations_total_max"] == 1.0
+        else:
+            with pytest.raises(K.BehaviourMismatch):
+                K.behaviour_probe(m)
+        rec = json.loads((tmp_path / mode / K.VIOLATION_DUMP).read_text().splitlines()[-1])
+        sc = rec["scan"]
+        assert sc["rows_current"] == buf.log_probs.size
+        assert (sc["rows"], sc["sampled"]) == ((16, True) if mode == "warn" else (buf.log_probs.size, False))

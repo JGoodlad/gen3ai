@@ -137,7 +137,8 @@ Its tests now judge through the probe and the shared enforcement (`learner_gates
 It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current`, `rows_current`,
 `rows_probed`, one `behaviour/bar_<statistic>` per condition and
 `behaviour/excluded_frac`, `rows_excluded`, `rows_judged`, `max_abs_dlogp_judged`,
-`max_abs_dlogp_excluded` and `tie_eps` (and the Rust probe `probe_forward_ms`).
+`max_abs_dlogp_excluded`, `tie_eps` and `selection_free` (and the Rust probe `probe_forward_ms`; on a
+violation `scan_ms` / `scan_rows`).
 
 **The gate is ONE table, at fp32 matmul precision `highest` — the only precision** (`consistency.BEHAVIOUR_GATE`,
 read by Lane G's probe through `judge_behaviour`; TF32 was retired, deletion pass
@@ -169,7 +170,11 @@ The record also carries:
 - the `route`: T2's backend, buckets, lanes and current slot, plus the keyed run seed (with
   env / episode / dec_n the row is replayable on the deterministic core);
 - a FULL-BUFFER `scan` (`consistency.scan_current`): every current row through the same forward, so one
-  row is told apart from many, with the worst 32 in full.
+  row is told apart from many, with the worst 32 in full. Under `--behaviour-check warn` a violation
+  recurs every update, so the scan reads a seeded sample of at most `SCAN_WARN_MAX_ROWS` = 4,096 current
+  rows (`rows_current` / `sampled` in the record): the full scan cost ≈ 6.5 s of a ≈ 41 s update
+  (F-XC-5), the sample ≈ 4,096 / 98,304 of that (≈ 0.27 s — a proportion, **UNVERIFIED** on the GPU).
+  The FATAL path scans every row (it runs once); the verdict never reads the scan.
 
 Two artifacts are written beside it:
 - `behaviour_violation_u<n>_rows.npz`: the violating rows' observations;
@@ -210,8 +215,13 @@ it; the flipped gaps were 5e-8 to 1.7e-7 in fp64 (`TECH_DEBT_BACKLOG.md` §2(b))
    it BEFORE R1's own forward (so every stash the fold reads is R1's; no optimizer step has run). The
    margin is RELATIVE (|a − b| / max(|a|, |b|): fp32 rounding scales with the values compared) — a
    `topk`'s k-th vs (k+1)-th, an `argmax`'s top-1 vs top-2, a threshold's distance — the minimum over
-   every MARGIN site. An EXACT tie is 0.
-3. **A row whose margin is below `FP32_TIE_EPS` = 2e-4 is EXCLUDED**; exact ties always.
+   every MARGIN site. An EXACT tie is 0. **A tie between VALUE-IDENTICAL candidates is no tie**
+   (`gen3_behaviour_tie_identity_v1`, 2026-10-05, below): an `argmax` that declares its PAYLOAD (the
+   tensors its index gathers — `Rule.payload`; the two dominant-move `argmax`es: the move's accuracy, the
+   move's belief weight) takes its margin to the nearest candidate whose payload DIFFERS.
+3. **A row whose margin is below `FP32_TIE_EPS` = 2e-4 is EXCLUDED**; exact ties always — except while the
+   forward is SELECTION-FREE (`consistency.selection_free`: every action-head scorer weight exactly zero,
+   a fresh run's first update), when no row is excluded.
 4. **Every other current row is JUDGED: any |Δ| ≥ 1e-4 is FATAL on the first update.** No persistence,
    no count. A judged row resolves every selection identically in both forwards, so its |Δ| is
    continuous fp32 noise.
@@ -238,11 +248,42 @@ training, every one of 3,538,944 rows of 36 fills through the probe forward; tor
 the healthy share. A fault that moves many rows is caught by its judged rows, or by the ceiling.
 `consistency_test` re-derives epsilon and the ceiling from `result.json` and fails on a changed constant.
 
-*Exact ties are excluded, per the owner's rule.* Most are flip-proof in practice — two candidates with
-bit-identical scores (a capped damage roll on a saturated / revealed belief weight; fixed damage equal to
-the remaining HP) resolved by the same lowest-index tie-break in eager and Inductor — but the rule does
-not try to prove that. A refinement that counts an argmax tie only when the tied candidates' gathered
-payloads differ would return ~2 points of teeth (not built).
+*Exact ties are excluded, per the owner's rule* — unless the tie provably cannot move log pi, which two
+DECLARED, deterministic rules decide (`gen3_behaviour_tie_identity_v1`, 2026-10-05; numbers from
+[`measurements/k9_tie_identity_2026-10-05/`](../research_state/measurements/k9_tie_identity_2026-10-05/README.md)):
+
+- **PAYLOAD IDENTITY** (`selection_sites.Rule.payload`, `tie_margins._payload_gap`). Two candidates whose
+  every gathered payload value is bit-identical select the same values, so the order between them is no
+  hazard; the margin is the gap to the nearest candidate whose payload DIFFERS, so a genuinely distinct
+  near-tie is still excluded. Declared on the two dominant-move `argmax`es (payload `acc_exp`, `w_all`).
+  Its soundness rests on the payload being EVERYTHING the index reaches: `selection_sites_test` reads the
+  source and fails when a payload site's index is read anywhere but a `gather` of a declared payload, and
+  `tie_identity_integration_test` flips every cleared tie on real rollout rows and requires the full masked
+  log-probs bit-identical (and that flipping a still-excluded tie moves them). A NaN payload never clears.
+  The `topk` sites gather many per-candidate tables, so they declare none: a tie between two distinct
+  moves stays a tie.
+- **SELECTION-FREE** (`consistency.selection_free`). While every action-head scorer WEIGHT is exactly zero
+  (the zero-init cold start, i.e. a fresh run's first update; one optimizer step ends it) the logits are
+  the scorers' biases times the observation's exact `move_valid`, so no MARGIN site reaches log pi and
+  every row is judged. `consistency_test` holds the premise on real rows (scorers zeroed: perturbing
+  every other parameter leaves the log-probs bit-identical; with them live it moves them). It logs
+  `behaviour/selection_free`.
+
+*The measurement* (CPU, a seeded 2,048-row Rust-collector rollout per arm, at the FRESH init of seed 1001
+and at the testkit's perturbed weights; every excluded row's ties resolved the other way and the full
+masked log-probs compared bit-for-bit): the rule before excluded 25.1 % of oracle-full's fresh rows
+(the live stop read 22.0 %), every one log-pi-invariant. **No row the flip proved DISTINCT is cleared,
+at any arm**; the excluded share after the rule:
+
+| arm | fresh: before → after | perturbed: before → after |
+|---|---|---|
+| blob | 5.2 % → 0 | 3.4 % → 1.7 % |
+| oracle_species | 5.0 % → 0 | 2.9 % → 2.3 % |
+| oracle_full | 25.1 % → 0 | 6.3 % → 3.6 % |
+| fixed_mass | 13.7 % → 0 | 6.3 % → 5.1 % |
+
+Oracle-full's live run read 4.98–8.11 % over its updates 1–11 under the rule before (its update 0 was the
+22.0 % stop), so no arm needs its own ceiling: `FP32_EXCLUDED_CEILING` stays 0.15 everywhere.
 
 *UNVERIFIED:* the rounding scale is measured against EAGER T2-like variants and a weight jitter, not
 against T2's own compiled intermediate values (a `TorchFunctionMode` cannot see inside a compiled

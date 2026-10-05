@@ -87,12 +87,21 @@ class Rule(NamedTuple):
                      ADJACENT sorted keys among the first ``head``, counting only pairs whose BOTH
                      keys are genuine ``−π`` values in ``[−1, 0]`` — a pair touching a structural key
                      (``+inf`` non-candidate, ``−2`` pinned revealed move) cannot flip — and, with
-                     ``zero_exact``, not two exact zeros (a structural π = 0 row)."""
+                     ``zero_exact``, not two exact zeros (a structural π = 0 row).
+
+    ``payload`` (``argmax`` only; `gen3_behaviour_tie_identity_v1`, 2026-10-05): the names of the issuing
+    frame's local tensors the selected index GATHERS — everything the selection reaches (a tensor of fewer
+    dims than the operand is per-row, broadcast over its slot dims). The margin is then the gap to the
+    nearest candidate whose payload DIFFERS: two candidates whose every payload value is bit-identical
+    select the same values, so a tie between them cannot move log pi. An undeclared consumer of the index
+    would make this unsound, so `selection_sites_test` reads the source and requires each payload site's
+    index to be consumed ONLY by a ``gather`` of a declared payload. ``()`` = no identity clearance."""
     kind: str
     gate: float = 0.0
     zero_exact: bool = False
     why: str = ""
     head: int = 0
+    payload: Tuple[str, ...] = ()
 
 
 RULE_KINDS = ("topk", "argmax", "threshold", "threshold_self", "sort_head")
@@ -110,10 +119,12 @@ MARGIN: Dict[Tuple[str, str], Rule] = {
     ("damage_op", "w_all.detach().topk(self.damage_candidate_k, dim=-1)"): Rule(
         "topk", why="the candidate-axis truncation (damage_candidate_k > 0 only)"),
     # --- the dominant-move ARGMAX (accuracy / provenance read at the max belief-weighted high roll)
+    #     gen3_behaviour_tie_identity_v1: each gathers ONE payload at its index (the move's accuracy; the
+    #     move's belief weight), so a tie between two moves with bit-identical payloads is not a hazard.
     ("damage_op", "wfc.argmax(dim=-1, keepdim=True)"): Rule(
-        "argmax", gate=1e-6, why="per-channel dominant move; masked when chan_max <= eps"),
+        "argmax", gate=1e-6, why="per-channel dominant move; masked when chan_max <= eps", payload=("acc_exp",)),
     ("damage_op", "wh.argmax(dim=-1, keepdim=True)"): Rule(
-        "argmax", gate=1e-6, why="overall dominant move; masked when wh.amax <= eps"),
+        "argmax", gate=1e-6, why="overall dominant move; masked when wh.amax <= eps", payload=("w_all",)),
     ("pair_reduce", "(w * ref).argmax(dim=-1, keepdim=True)"): Rule(
         "argmax", why="alpha_hard_max (Contract-W reducer; not the production path)"),
     # --- THRESHOLDS on scores
