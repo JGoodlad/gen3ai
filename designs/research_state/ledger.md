@@ -22161,3 +22161,17 @@ The gap (FINDING 1 of the `gen3_r1_unmoved_param_v1` entry above): the zero rule
 - **DEFERRED (GPU).** The CUDA twin of the rungs on the FATAL checkpoint (with an init record attached), and the first canary of an oracle-full seed launched at this commit. CPU numbers bear on the RULE, not on CUDA compile parity (the CPU-Inductor belief-path deviation stands).
 
 Tag: **FINDING + FIX · unmoved = bit-identical to the fresh-build init record, or exactly 0.0 · gen3_r1_unmoved_init_v1 · oracle-full's predicted unmoved set = species' (UNVERIFIED) · CUDA confirmation DEFERRED**
+
+### 2026-10-04 · BANK · **X5 A/B, blob look-2 seeds 1004 and 1005 COMPLETE at e5e660dd (Amendment 4), 0 restarts / 0 crashes; run BEFORE the oracle seeds, not after: a schedule swap only**
+
+| seed | run | steps | wall | restarts | in-loop eval @ ~14.0M (greedy): bots · pool |
+|---|---|---|---|---|---|
+| 1004 | `rb_x5ab_blob_s1004` | 15,047,200 | 2 h 20 m | 0 (6 h) | 89.9 % · 70.0 % |
+| 1005 | `rb_x5ab_blob_s1005` | 15,046,550 | 2 h 17 m | 0 (6 h) | 90.0 % · 65.2 % |
+
+- **Order deviation from Amendment 4's text** ("after the oracle seeds"): the first oracle-species seed died at its update-10 compile canary (a false alarm, FIXED `8b8fbac0` → `77245f51`), so the blob seeds ran first rather than idle the GPU. The design and the pin are unchanged; the order is schedule, not design.
+- **s1005 in-loop telemetry:** monotonicity 0.80 (the other four blob seeds 1.00). It is telemetry, not the A/B's meter. Recorded so a later look can see whether this seed is an outlier on the cross.
+- **The blob arm now holds 5 seeds (1001–1005), all at e5e660dd.** Look 1 reads 1001–1003; look 2 adds 1004–1005.
+- **Next on the GPU:** oracle-species (1001b, 1002, 1003) then oracle-full × 3, all at `77245f51`.
+
+Tag: **BANK · X5 A/B blob look-2 seeds 1004–1005 complete · order swap (schedule only) · telemetry only, no read**
