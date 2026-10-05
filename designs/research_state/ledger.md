@@ -22192,3 +22192,13 @@ The production blob architecture + the X26 heads + `--oracle-reveal species` (al
 - **Next on the GPU:** oracle-full × 3 at `77245f51` (seed 1001 started 05:47).
 
 Tag: **BANK · oracle-species reference arm complete (1001b, 1002, 1003) · canary fix CUDA-confirmed · telemetry only, no read**
+
+### 2026-10-05 · DEVIATION · **X5 A/B oracle-full reference arm: K9(b) tie-share STOP at the first behaviour probe (excluded 0.220 vs the 0.15 ceiling, max |d log pi| exactly 0) → relaunched with `--behaviour-check warn` plus a strict mismatch stop; the arm-specific ceiling to be re-measured on CPU**
+
+- **What happened:** `rb_x5ab_oracle_full_s1001` (77245f51, `--oracle-reveal full`) stopped at 05:54 at its FIRST behaviour probe, before update 10. `BehaviourMismatch [K9(b)]`: max |d log pi| was 0 (< 1e-4) over every checked row, but `excluded_frac` was 0.220 (450 of 2,048 rows within the 2e-4 relative margin of a selection cutoff), against the 0.15 ceiling. The ceiling exists so the check keeps its power: a policy whose healthy tie share grows past it must be re-measured (`measurements/k9_behaviour_exclusion/result.json`). The run is INCONCLUSIVE; its directory is kept.
+- **Read:** a COVERAGE limit of the check, not a mismatch. The policy reproduced its behaviour log-probs EXACTLY on all 1,598 checked rows. The probable cause is that stating whole sets puts many candidates exactly level at the selection cutoffs (UNVERIFIED). The species arm and blob logged about 0 near-ties.
+- **Decision** (pushed to the owner at 05:57; no reply, so the stated default was taken at 06:12): relaunch as `rb_x5ab_oracle_full_s1001b` / `_s1002` / `_s1003` at 77245f51 with `--behaviour-check warn`. The training agent STOPS the arm if max |d log pi| ≥ 1e-4 on any checked row at any probe, and reports `excluded_frac` per seed.
+- **Legitimacy:** a REFERENCE arm, never gated (§7.6); strength is read at matched steps, so the warn path's per-update scan (about +15 % wall) does not touch it.
+- **Queued:** CPU re-measure of the tie share under `full`, to set an arm-specific ceiling and to name which cutoff produces the ties.
+
+Tag: **DEVIATION · oracle-full K9(b) tie-share stop (coverage, not mismatch) · relaunched in warn mode with a strict mismatch stop · ceiling re-measure queued**
