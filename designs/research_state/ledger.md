@@ -22108,3 +22108,9 @@ The X5 A/B's oracle-full arm (`design_x5_belief_tokens.md` §7.6 "As built — t
 
 Tag: **BUILT · oracle reveal `full` · whole set as already-known facts · seen mons keep what play revealed · verified against the opposing chain's own row (117,607 + 11,849 slots) · off and species byte-identical**
 
+
+### 2026-10-04 · REGISTRATION · **X5 A/B Amendment 4: blob seeds 1004–1005 (look 2's added blob seeds) run early, at P_blob, after the oracle seeds; not read at look 1**
+
+The owner approved filling the GPU gap before the fixed_mass fixes land. Look 1 says CONTINUE with high probability (NON-INFERIOR at look 1 is 0.01–0.03 by §7.4's simulation), so these seeds are almost certainly needed. A pre-declared seed list run early is not optional stopping. Same pin and surface as seeds 1001–1003; look 1 stays at 3 seeds per arm. Wasted only if look 1 stops for futility (about 4.6 GPU-h, about zero quota). `design_x5_belief_tokens.md` §7.8.
+
+Tag: **REGISTRATION · X5 A/B Amendment 4 · blob 1004–1005 early at e5e660dd · not read at look 1**
