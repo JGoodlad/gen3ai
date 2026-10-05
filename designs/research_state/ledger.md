@@ -22175,3 +22175,20 @@ Tag: **FINDING + FIX · unmoved = bit-identical to the fresh-build init record, 
 - **Next on the GPU:** oracle-species (1001b, 1002, 1003) then oracle-full × 3, all at `77245f51`.
 
 Tag: **BANK · X5 A/B blob look-2 seeds 1004–1005 complete · order swap (schedule only) · telemetry only, no read**
+
+### 2026-10-05 · BANK · **X5 A/B ORACLE-SPECIES reference arm COMPLETE: seeds 1001b, 1002, 1003 at 77245f51, all 15M, 0 restarts / 0 crashes / 0 canary FATAL; the CUDA confirmation of `gen3_r1_unmoved_init_v1`**
+
+The production blob architecture + the X26 heads + `--oracle-reveal species` (all six opponent species written into the observation from turn 1, team-preview semantics; `design_x5_belief_tokens.md` §7.6–§7.7).
+
+| seed | run | steps | wall | in-loop eval @ ~14.0M (greedy sentinels): bots · pool |
+|---|---|---|---|---|
+| 1001 (replacement) | `rb_x5ab_oracle_sp_s1001b` | 15,048,446 | 2 h 17 m | 91.0 % · 66.6 % |
+| 1002 | `rb_x5ab_oracle_sp_s1002` | 15,047,736 | 2 h 17 m | 91.9 % · 65.0 % |
+| 1003 | `rb_x5ab_oracle_sp_s1003` | 15,046,289 | 2 h 17 m | 92.9 % · 64.4 % |
+
+- **Seed 1001's first run** (`rb_x5ab_oracle_sp_s1001`, pin `401873b5`) died at its update-10 compile canary, a FALSE ALARM. Root-caused and FIXED by `8b8fbac0` → `77245f51` (ledger 2026-10-04): a structurally dead, zero-init species head was judged at the trained bar. The run is INCONCLUSIVE and replaced by 1001b per the registration's rule; its directory is kept as the repro artifact.
+- **CUDA confirmation:** 1001b's update-10 canary found compiled == eager, with 17 unmoved parameters, exactly the CPU prediction: 10 from the dead SB3 value tower present in every arm, plus 7 dead under the oracle. The perturbed rung passed at the trained bar, and no FATAL occurred in any of the three runs.
+- **Telemetry only, not a read.** Against the blob arm at the same step, the bots rate is about 1–3 pp higher (91.0–92.9 vs 88.5–91.0) and the pool rate is similar (64.4–66.6 vs 65.2–71.8). The pool is each arm's OWN snapshots, so this column cannot compare arms. The oracle's ceiling C is read only on the mirrored head-to-head cross (one-sided clairvoyance primary, both-sided descriptive), which needs the h2h per-side reveal build (deferred) and runs at look 1.
+- **Next on the GPU:** oracle-full × 3 at `77245f51` (seed 1001 started 05:47).
+
+Tag: **BANK · oracle-species reference arm complete (1001b, 1002, 1003) · canary fix CUDA-confirmed · telemetry only, no read**
