@@ -11842,3 +11842,19 @@ their pin's code and are unaffected. No run is live.
 - **Deferred.** The per-side reveal in the h2h engine; the `full` level; the intent head's switch-slot target for an unseen
   mon; search chains; a Python encoder mirror.
 
+## 2026-10-04 — OBSERVATION MODE: `--oracle-reveal full` (the second level of `gen3_oracle_reveal_v1`; `off` and `species` byte-identical; no config / ARCH_SIGNATURE change)
+
+- **What.** The opponent's whole SET told to the observation from turn 1 as already-known facts: the four moves, the item,
+  the ability and the spread (`spread_known` 1) of every opponent mon (X5 A/B oracle-full arm, backlog X32b;
+  `design_x5_belief_tokens.md` §7.6 "As built — the `full` level").
+- **Mechanism.** `encoder::oracle`: `Level::Full`; an unseen mon's slot is `full_slot(set)` (the row of an OWN mon of that
+  set, built through the same `slot::populated_slot`; the slot writer's spread block and `hp_revealed` now follow the VIEW's
+  `spread_known`, unchanged for `off` / `species` / own); a seen mon is `Oracle::overlay`-ed (the item only while the reading's
+  is the unknown sentinel, the ability only while none is revealed, the true moves the reading has not seen added at full PP
+  with an observed move's tracked PP kept, a bare Hidden Power standing for the typed one, a transformed mon untouched, the
+  spread told). `FULL_SLOT_CELLS` + the throwing `check_slot`. The flag's levels are `("off", "species", "full")`.
+- **Gates.** The differential against the OPPOSING chain's own-team slot of the same mon (the independent oracle), every
+  decision of both sides over real battles; unit tests per overlay case; `off` and `species` pinned byte-identical,
+  `full` pinned. It found three real defects before passing (nature not lower-cased, a typed Hidden Power resolved to the
+  bare id, a consumed item overwritten).
+

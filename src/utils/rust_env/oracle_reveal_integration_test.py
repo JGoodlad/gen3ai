@@ -16,7 +16,9 @@ real self-check ``cdylib``:
 import numpy as np
 import pytest
 
-from agents.observation.constants import OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_SPECIES_KNOWN_OFFSET
+from agents.observation.constants import (
+    ITEM_ID_DIM, MOVE_SLOT_DIM, OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_HP_REVEALED_OFFSET, POKEMON_ITEMS_OFFSET,
+    POKEMON_MOVES_OFFSET, POKEMON_SPECIES_KNOWN_OFFSET, POKEMON_SPREAD_DIM, POKEMON_SPREAD_OFFSET)
 from utils.rust_env import ffi
 from utils.rust_env import protocol as P
 
@@ -61,16 +63,16 @@ def _known(obs_row):
 
 
 def test_the_levels_python_lists_are_the_levels_rust_parses(lib):
-    assert P.ORACLE_REVEAL_LEVELS == ("off", "species")
+    assert P.ORACLE_REVEAL_LEVELS == ("off", "species", "full")
     with pytest.raises(ValueError, match="oracle_reveal"):
         P.spec_json(n=1, threads=1, teams=["x"], names=("a", "b"), turn_limit=None, refusal_budget=0, bank_dir=None,
-                    oracle_reveal="full")
+                    oracle_reveal="everything")
     # the core refuses a level it does not know, by name (a hand-built spec past Python's own check)
     import json
 
     spec = json.loads(P.spec_json(n=1, threads=1, teams=_teams()[:2], names=("a", "b"), turn_limit=None,
                                   refusal_budget=0, bank_dir=None))
-    spec["oracle_reveal"] = "full"
+    spec["oracle_reveal"] = "everything"
     with pytest.raises(Exception, match="oracle_reveal"):
         ffi.FfiCore(json.dumps(spec), lib=lib)
 
@@ -90,6 +92,43 @@ def test_the_first_decision_states_the_whole_opponent_team_under_species_and_the
             tail = slice(OFFSET_OPP_TEAM + POKEMON_FULL_DIM, OFFSET_OPP_TEAM + 6 * POKEMON_FULL_DIM)
             assert (a[:tail.start] == b[:tail.start]).all() and (a[tail.stop:] == b[tail.stop:]).all()
             assert (a[tail] == 0).all() and (b[tail] != 0).any()
+
+
+def _slot(row, j):
+    return row[OFFSET_OPP_TEAM + j * POKEMON_FULL_DIM:OFFSET_OPP_TEAM + (j + 1) * POKEMON_FULL_DIM]
+
+
+def test_the_first_decision_under_full_states_every_opponent_set_and_differs_from_species_only_in_the_facts(lib):
+    obs_sp, _, need = _first_decision(lib, "species")
+    obs_fl, labels, _ = _first_decision(lib, "full")
+    for i in range(N):
+        for s in range(2):
+            if not need[i, s]:
+                continue
+            a, b = obs_sp[i, s], obs_fl[i, s]
+            assert _known(b) == [1, 1, 1, 1, 1, 1]
+            # outside the opponent block: identical to `species` (and so to `off`)
+            end = OFFSET_OPP_TEAM + 6 * POKEMON_FULL_DIM
+            assert (a[:OFFSET_OPP_TEAM] == b[:OFFSET_OPP_TEAM]).all() and (a[end:] == b[end:]).all()
+            for j in range(6):
+                sa, sb = _slot(a, j), _slot(b, j)
+                # the set's facts: the spread block is KNOWN (flag cell, `spread_known` 1), the Hidden-Power block is
+                # revealed, every item is known, and each of the (up to) four moves carries its `known` flag
+                assert sb[POKEMON_SPREAD_OFFSET + 12] == 1.0, "spread_known"
+                assert sb[POKEMON_HP_REVEALED_OFFSET] == 1.0, "hp_revealed"
+                moves = [sb[POKEMON_MOVES_OFFSET + m * MOVE_SLOT_DIM:POKEMON_MOVES_OFFSET + (m + 1) * MOVE_SLOT_DIM] for m in range(4)]
+                assert sum(1 for mv in moves if mv[0] != 0) >= 1 and all(mv[6] == 1.0 for mv in moves if mv[0] != 0)
+                if j >= 1:
+                    # an UNSEEN slot differs from the species-level row ONLY in the facts: item, ability, moves, spread, hp block
+                    facts = set(range(POKEMON_ITEMS_OFFSET, POKEMON_ITEMS_OFFSET + 3)) | set(range(12, 16)) \
+                        | set(range(POKEMON_MOVES_OFFSET, POKEMON_MOVES_OFFSET + 4 * MOVE_SLOT_DIM)) \
+                        | set(range(POKEMON_SPREAD_OFFSET, 106))
+                    diff = {c for c in range(POKEMON_FULL_DIM) if sa[c] != sb[c]}
+                    assert diff and diff <= facts, f"slot {j} differs from species outside the set's facts: {sorted(diff - facts)}"
+                    assert POKEMON_SPREAD_DIM == 18
+    # the labels are the species level's: every opponent species stated, nothing believed
+    assert (labels["belief_species"][:, 0] == -1).all() and (labels["belief_moves"][:, 0] == -1).all()
+    assert ITEM_ID_DIM == 1
 
 
 def test_the_belief_loss_on_the_real_oracle_labels_is_a_clean_none_and_off_still_trains(lib):

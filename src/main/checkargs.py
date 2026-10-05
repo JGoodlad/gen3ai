@@ -1179,8 +1179,9 @@ def _print_oracle_reveal(ns) -> None:
     if mode == "off":
         print("  oracle reveal                  : off (the production observation)")
         return
+    told = "TRUE species" if mode == "species" else "TRUE SET (moves, item, ability, spread)"
     print(f"  oracle reveal                  : {mode}  ⚠️  DIAGNOSTIC observation mode, NOT production — the "
-          "observation states the opponent's TRUE species from turn 1 (symmetric: the self-play opponents see "
+          f"observation states the opponent's {told} from turn 1 (symmetric: the self-play opponents see "
           "the trainee's team too; the in-loop eval plays at this mode). RESUME-IMMUTABLE: recorded in "
           "model_config.json, inherited on a flagless resume, a flip is refused.")
 

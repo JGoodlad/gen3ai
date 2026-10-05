@@ -430,11 +430,12 @@ from typing import Any, Dict
 #   ARCH_SIGNATURE bump while both arms build at one commit — it comes with the losing arm's deletion
 #   (design §3.8). No MIGRATION_FLOOR change.
 # v137 (gen3_oracle_reveal_v1, the X5 A/B's oracle reference arms; designs/endstate/design_x5_belief_tokens.md §7.6):
-#   `oracle_reveal` — `--oracle-reveal {off,species}`, a DIAGNOSTIC observation mode (never production). The Rust
+#   `oracle_reveal` — `--oracle-reveal {off,species,full}`, a DIAGNOSTIC observation mode (never production). The Rust
 #   encoder writes the opponent's true species into the opponent block of the OBSERVATION itself. RESUME-IMMUTABLE:
 #   no module and no weight, so the forward is bit-identical and `check_compatible` does not gate it; what the
 #   input MEANS differs, so `check_oracle_reveal` refuses a resume that flips it (a flagless resume inherits it).
 #   A pre-v137 config migrates to "off" (the only possible past). No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+#   The `full` level (the opponent's whole set) joined the same field without a bump: the recorded value is a string.
 MODEL_CONFIG_VERSION = 137
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings

@@ -337,7 +337,7 @@ All four in full, with the demotion history and the reachability gate that found
 the dead-`_resolve` state: [`designs/model/flag_registry_rules.md`](../../../designs/model/flag_registry_rules.md).
 
 🚨 **`oracle_reveal` (v137) is the registry's one OBSERVATION-MODE row** — a `resume_immutable` flag with no module and no
-weight: `--oracle-reveal {off,species}` makes the Rust encoder write the opponent's true species into the observation
+weight: `--oracle-reveal {off,species,full}` makes the Rust encoder write the opponent's true species (`full`: the whole set) into the observation
 (a DIAGNOSTIC for the X5 A/B's oracle arm, `designs/endstate/design_x5_belief_tokens.md` §7.6; never production). The
 extractor only stores it. It is recorded, inherited by a flagless resume and refused on a flip (`check_oracle_reveal`),
 kept off the ARCH surface and out of `check_compatible` by its class, and `oracle_reveal.py` is the reader a tool

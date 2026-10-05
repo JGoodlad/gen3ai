@@ -46,11 +46,15 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                              "block of the observation itself (the shared trunk, not a side input to any head): "
                              "the seen mons keep their slots and bytes, the unseen ones follow in dex-num order "
                              "as the encoder's own row for a never-seen mon; moves, item, ability, spread and "
-                             "Hidden-Power type stay hidden until play reveals them. SYMMETRIC: the trainee and "
-                             "its self-play opponents each see the other side's species; scripted bots are "
-                             "unaffected. The eval core plays at the run's recorded mode. RESUME-IMMUTABLE "
-                             "(recorded, a flagless resume inherits it, a flip is refused). Refused with the "
-                             "fork arm (--fork-fraction > 0: its successor rows are encoded without the reveal).")
+                             "Hidden-Power type stay hidden until play reveals them. 'full': the opponent's whole "
+                             "SET as already-known facts — the four moves, item, ability and spread (nature, EVs, "
+                             "IVs; spread_known 1) of every opponent mon, seen or not; whatever play has revealed "
+                             "(an observed move's tracked PP, a consumed item) is the reading's, never overwritten. "
+                             "SYMMETRIC: the trainee and its self-play opponents each see the other side's team; "
+                             "scripted bots are unaffected. The eval core plays at the run's recorded mode. "
+                             "RESUME-IMMUTABLE (recorded, a flagless resume inherits it, a flip is refused). "
+                             "Refused with the fork arm (--fork-fraction > 0: its successor rows are encoded "
+                             "without the reveal).")
     parser.add_argument("--rust-env-front", "--rust_env_front", dest="rust_env_front", choices=("proc", "ffi"),
                         default=None,
                         help="The Rust env's front end: 'proc' (DEFAULT, crash isolation: a core fault is a "

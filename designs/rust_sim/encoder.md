@@ -282,9 +282,9 @@ the sleep belief, recency, last action, the active flag — the mon's state on t
 
 ## 11. The ORACLE REVEAL — a diagnostic observation mode, never production (`gen3_oracle_reveal_v1`)
 
-`--oracle-reveal {off,species}` (`designs/endstate/design_x5_belief_tokens.md` §7.6 "As built"; backlog X32) writes
-the opponent's TRUE species into the opponent team block of the observation from turn 1, as if the game had a team
-preview. It enters the shared trunk through the row; it is not a side input to any head. The code is
+`--oracle-reveal {off,species,full}` (`designs/endstate/design_x5_belief_tokens.md` §7.6 "As built"; backlog X32) writes
+the opponent's TRUE species (`species`) or whole SET (`full`) into the opponent team block of the observation from turn 1,
+as if the game had a team preview. It enters the shared trunk through the row; it is not a side input to any head. The code is
 `src/rust_sim/src/encoder/oracle.rs`; the mode is the Rust env core's `Spec.oracle_reveal` (a REQUIRED spec key,
 `protocol.SPEC_KEYS`), and `off` leaves every row byte-identical to the encoder that had no reveal.
 
@@ -293,7 +293,8 @@ preview. It enters the shared trunk through the row; it is not a side input to a
 | `Oracle` | the OTHER side's packed team (`team::unpack`, species ids by `to_id`), built per episode and side by `rust_env`'s `Env::start` and held on that side's `SideStream` (`BattleVersion::with_oracle`; an `Arc`, so a fork shares it); `Inputs.oracle` carries it into `encode` |
 | the tail | `slot::team`, for the OPPONENT block only: after the seen mons (reveal order, `off`'s bytes) one slot per unseen mon in dex-num order, each `hypothesis_slot(species)` — the row the encoder writes for a never-seen mon, §10 — copied from the `OracleMon` built at episode start |
 | `Oracle::tail(revealed)` | the unseen mons: one oracle entry consumed per revealed mon, matched by DEX NUM (a forme shares its base species' num), a revealed mon the oracle team does not hold is a FAULT. The encoder AND the label writers call it, so the row and the labels share one slot order |
-| `SPECIES_SLOT_CELLS` + `check_species_slot` | the producer's THROWING guard: all 122 cells declared (`SpeciesDerived` / `Zero` / `One`; the declaration tiles the slot) and every built tail slot checked bit for bit |
+| `SPECIES_SLOT_CELLS` / `FULL_SLOT_CELLS` + `check_slot` | the producer's THROWING guard, per level: all 122 cells declared (`SpeciesDerived` / `SetFact` / `Zero` / `One`; each declaration tiles the slot) and every built tail slot checked bit for bit |
+| `full_slot` / `Oracle::overlay` | the `full` level: an UNSEEN mon's slot is the row of an OWN mon of that set (the same `populated_slot`, a `PMon` built like an own mon's reading, a view with `spread_known`); a SEEN mon's slot is the reading's with only the facts play has not revealed written on top |
 
 **What a tail slot carries.** The species' dex row (num, base stats, types) and the ability block (the Smogon prior,
 or the one ability of a one-ability species) — derived from the species alone — plus the pristine state of a mon that
@@ -302,14 +303,18 @@ counters, moves, spread, the Hidden-Power block, the sleep belief, the last acti
 exactly 0.0. A mon is never marked seen, acted or active by being listed. The pair-history block needs no change: an
 unseen slot's pair cells are the never-interacted values, bit-for-bit an absent slot's.
 
+**The `full` level.** Item, ability, the four moves (a bare Hidden Power typed from the set's declared type or its IVs, as the owner's request spells it) and the spread block (`PMon::backfill_spread`, the own mon's own backfill: nature lower-cased, `serious` if none) are written for every opponent mon, `hp_revealed` is 1 (probs 0, as for an own mon), and every other cell is the never-seen mon's. The slot writer's spread block and `hp_revealed` follow the view's `spread_known` (own: true; an opponent under `off` / `species`: false). A seen mon keeps what play revealed: the item only while the reading's is the unknown sentinel (`None` is a consumed / removed item, not an unknown one), the ability only while none is revealed, an observed move keeps its slot and tracked PP, a bare `hiddenpower` the reading learned stands for the typed one, a transformed mon gains no move. The independent oracle is the OPPOSING chain's own-team slot of the same mon in the same battle.
+
 **Scope.** The reveal exists on the Rust env core's chains (training, the in-loop eval core). `sim_bridge`'s `core_obs`
 mode, `core_events --obs` (slice O) and the search chains (`search_driver`, the env core's search, the fork arm) build
 `off` rows: the Python `Gen3ObservationEncoder` has no reveal, which is why slice O gates `off` only.
 
 **Gates.** `src/rust_env/tests/oracle_reveal_test.rs`: `off_is_inert` (the off obs / mask / label bytes pinned to a
-digest recorded on `e0d56693`, the commit before the build), the DIFFERENTIAL `species_differs_from_off_only_in_the_declared_cells`
-(real battles, `off` against `species`, every decision, both sides), the edge cases (formes, Species-Clause
-duplicates, a reveal in play, a revealed mon off the oracle team, a real Forecast battle through a forme change);
+digest recorded on `e0d56693`, the commit before the build), `species_bytes_are_pinned`, `full_bytes_are_pinned`, the
+DIFFERENTIALS `species_differs_from_off_only_in_the_declared_cells` and `full_differs_from_off_only_in_the_opponent_block_and_tells_the_true_set`
+(real battles, `off` against the level, every decision, both sides; `full` also against the opposing chain's own row), the
+edge cases (formes, Species-Clause duplicates, a reveal in play, a revealed mon off the oracle team, a real Forecast battle
+through a forme change at both levels);
 `encoder::oracle::tests` (the cells tile the slot, the guard's teeth per block); `label_lookup_guard_test.rs` (the
 labels' consumer guard); `src/utils/rust_env/oracle_reveal_integration_test.py` (the real core from Python).
 

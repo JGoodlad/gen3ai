@@ -247,11 +247,13 @@ async def main():
     # gen3_oracle_reveal_v1 (v137): a DIAGNOSTIC observation mode must never pass unannounced — every metric keeps its
     # name under it, and the arm's strength means "with the opponent's team told", not production play.
     if getattr(args, "oracle_reveal", "off") != "off":
+        _told = ("TRUE species from turn 1 (moves, item, ability, spread stay hidden until play reveals them)"
+                 if args.oracle_reveal == "species" else
+                 "TRUE SET from turn 1 (the four moves, item, ability and spread of every opponent mon, as already-known facts)")
         emit(f"🔮 [ORACLE REVEAL] {args.oracle_reveal} — a DIAGNOSTIC observation mode, NOT production: the observation's "
-             f"opponent block states the opponent's TRUE species from turn 1 (the shared trunk reads it; moves, item, "
-             f"ability, spread stay hidden until play reveals them). SYMMETRIC: the self-play opponents see the "
-             f"trainee's team too; the in-loop eval plays at this recorded mode; scripted bots are unaffected. "
-             f"The belief heads' species targets are now VISIBLE inputs, so their losses fall toward 0 — reported, "
+             f"opponent block states the opponent's {_told}; the shared trunk reads it. SYMMETRIC: the self-play "
+             f"opponents see the trainee's team too; the in-loop eval plays at this recorded mode; scripted bots are "
+             f"unaffected. The belief heads' targets are now VISIBLE inputs, so their losses fall toward 0 — reported, "
              f"not a defect.")
     # The env: the Rust core (the only core) — N envs in ONE core behind the
     # process (or FFI) front end; the trainee and every policy opponent forward through the inference

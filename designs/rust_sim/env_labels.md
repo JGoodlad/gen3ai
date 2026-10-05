@@ -99,7 +99,7 @@ core just encoded, as the Python env reads it from `obs["observation"]`. The rev
 `board_reading.opp` in encoder slot order: the encoder's `get_team_list(is_opponent=True)` order is
 reveal order, and the Rust encoder indexes `reading.opp` directly.
 
-**Under the ORACLE REVEAL (`--oracle-reveal species`, a diagnostic mode; `encoder.md` §11) the row also states the
+**Under the ORACLE REVEAL (`--oracle-reveal species` / `full`, a diagnostic mode; `encoder.md` §11) the row also states the
 unseen species**, so the stated slots are the seen mons (`reading.opp`) followed by the oracle's unseen tail in dex-num
 order (`labels::belief::revealed_nums(own, truth, oracle)` calls the SAME `Oracle::tail` the encoder calls). With
 every species stated there is no believed slot: `belief_species` / `belief_moves` are PAD, and `known_moves`,

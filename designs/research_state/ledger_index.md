@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,099-line file. **The ledger itself is append-only and is never edited by this**;
+22,111-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**753 headings · 698 dated · 2026-08-01 → 2026-10-04 · ledger 22,099 lines.**
+**754 headings · 699 dated · 2026-08-01 → 2026-10-04 · ledger 22,111 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -773,3 +773,4 @@ rename.
   - `L22070` · `2026-10-04` · REGISTRATION · **X5 A/B Amendment 2: two ORACLE REFERENCE arms, the ceiling (owner) — oracle-species and oracle-full, the facts written into the observation's opponent block (the shared trunk), played in the same mirrored cross, reported as the ceiling C and the headroom captured H = Δ / C, never gated**
   - `L22078` · `2026-10-04` · REGISTRATION · **X5 A/B Amendment 3 — the oracle cells in TWO modes (one-sided clairvoyance primary; both-sided reveal secondary, out of distribution for the non-oracle side), and the purpose metric made fair: CONDITIONAL log loss over blob's named set with both arms renormalised, coverage reported separately (the owner found the bias); observability adopted as a design criterion**
   - `L22087` · `2026-10-04` · BUILT · **THE ORACLE REVEAL, `species` LEVEL — `--oracle-reveal {off,species}` (`gen3_oracle_reveal_v1`, config v137): the Rust encoder writes the opponent's TRUE species into the observation's opponent block from turn 1 (the shared trunk), `off` is BYTE-IDENTICAL (pinned to a digest recorded before the build), a diagnostic that is never production**
+  - `L22099` · `2026-10-04` · BUILT · **THE ORACLE REVEAL, `full` LEVEL — `--oracle-reveal full`: the opponent's whole SET (four moves, item, ability, nature / EVs / IVs with `spread_known` 1) told to the observation from turn 1 as already-known facts; an unseen mon's slot is the row of an OWN mon of that set, a seen mon keeps everything play has revealed; verified against the OPPOSING chain's own-team slot of the same mon; `off` and `species` byte-identical**

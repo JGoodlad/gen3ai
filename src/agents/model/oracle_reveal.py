@@ -1,6 +1,6 @@
 """The ORACLE REVEAL's Python side: the recorded-mode reader and the refusal an offline tool takes.
 
-`--oracle-reveal {off,species}` (gen3_oracle_reveal_v1, config v137; `designs/endstate/design_x5_belief_tokens.md`
+`--oracle-reveal {off,species,full}` (gen3_oracle_reveal_v1, config v137; `designs/endstate/design_x5_belief_tokens.md`
 §7.6) is a DIAGNOSTIC observation mode: the Rust encoder writes the opponent's true species into the opponent
 block of the observation (`src/rust_sim/src/encoder/oracle.rs`). A checkpoint trained under it is a different
 function of the observation than a production one, and the reveal is made by the ENV CORE, so a tool that plays or

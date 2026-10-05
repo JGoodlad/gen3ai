@@ -461,11 +461,14 @@ REGISTRY: Tuple[ModelFlag, ...] = (
     ModelFlag("oracle_reveal", "off", Tier.CLI, Klass.RESUME_IMMUTABLE, 137,
               "DIAGNOSTIC observation mode (X32; X5 A/B §7.6): how much of the opponent's true team the "
               "OBSERVATION states from turn 1 ('off' = production; 'species' = the six species, "
-              "team-preview semantics)",
+              "team-preview semantics; 'full' = the whole set: moves, item, ability, spread)",
               note="Never production. The Rust encoder writes the facts into the opponent team block of "
                    "the observation itself (the shared trunk), not a side input to any head: the seen mons keep their "
                    "reveal-order slots and bytes, the unseen ones follow in dex-num order as the encoder's own row "
-                   "for a never-seen mon (`encoder::oracle`). 'off' is byte-identical to the build without it. "
+                   "for a never-seen mon (`encoder::oracle`); at 'full' the set's facts are written too (an unseen "
+                   "mon's slot is the row of an OWN mon of that set; a seen mon gains only the facts play has not "
+                   "revealed). 'off' is byte-identical to the build without it, and 'species' to the build that "
+                   "shipped it. "
                    "SYMMETRIC (the trainee and its self-play opponents each see the other side's team), the eval "
                    "core uses the run's recorded mode, scripted bots are unaffected. RESUME_IMMUTABLE: the forward "
                    "is bit-identical (no module, no weight) but what the input MEANS differs, so a resume that "

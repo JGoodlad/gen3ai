@@ -3,7 +3,7 @@
 //! * `off_is_inert` — the OFF path's bytes are PINNED to the value recorded on the commit BEFORE the
 //!   reveal existed (`e0d56693`): the obs, mask and every label column over a corpus of real battles.
 //!   A change to the off path fails here.
-//! * `species_bytes_are_pinned` — the `species` level's own bytes, pinned, so a later level cannot move them.
+//! * `full_bytes_are_pinned` — likewise for `full`.
 //! * `species_differs_from_off_only_in_the_declared_cells` — the DIFFERENTIAL FUZZ over real bridge
 //!   battles: two cores, one staging, one seeded policy (the actions are the `off` core's mask picks,
 //!   fed to both), `off` against `species`, at EVERY decision of every episode: the seen opponent mons'
@@ -18,7 +18,9 @@ mod common;
 use pokesim::dex::Dex;
 use pokesim::encoder::hypothesis::hypothesis_slot;
 use pokesim::encoder::layout::{
-    OBS_DIM, OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_SPECIES_KNOWN_OFFSET, POKEMON_SPECIES_OFFSET, TEAM_SIZE,
+    ITEM_ID_DIM, MOVE_SLOT_DIM, OBS_DIM, OFFSET_OPP_TEAM, OFFSET_OUR_TEAM, POKEMON_ABILITIES_OFFSET, POKEMON_CONDITION_OFFSET,
+    POKEMON_FULL_DIM, POKEMON_HP_REVEALED_OFFSET, POKEMON_ITEMS_OFFSET, POKEMON_MOVES_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET,
+    POKEMON_SPECIES_KNOWN_OFFSET, POKEMON_SPECIES_OFFSET, POKEMON_SPREAD_OFFSET, POKEMON_TYPES_OFFSET, TEAM_SIZE,
 };
 use pokesim::encoder::oracle::{species_num, Level, Oracle};
 use pokesim::present::dex::to_id;
@@ -111,6 +113,15 @@ fn species_bytes_are_pinned() {
     assert_eq!(got, SPECIES_DIGEST, "the `species` level's obs / mask / label bytes moved");
 }
 
+/// The `full` level's bytes, recorded when it was built (the same corpus and seeds as the two pins above).
+const FULL_DIGEST: [u64; 3] = [0xca6588ea5346cc81, 0xbe296c50b2391687, 0xdd62f412c287f835];
+
+#[test]
+fn full_bytes_are_pinned() {
+    let got = [11u64, 12, 13].map(|s| corpus_digest(Level::Full, 8, 2, s, 600));
+    assert_eq!(got, FULL_DIGEST, "the `full` level's obs / mask / label bytes moved");
+}
+
 // ------------------------------------------------------------------ the differential fuzz
 
 #[derive(Default, Debug)]
@@ -125,6 +136,15 @@ struct Seen {
     reveals: u64,
     /// ... rows where all of the team was seen (the tail is empty again).
     all_seen_rows: u64,
+    // ---- `full` coverage
+    /// seen-slot rows whose item play had already revealed (or consumed): the reading's, never the preview's.
+    item_known: u64,
+    /// seen-slot rows where the overlay added a move play had not revealed.
+    moves_added: u64,
+    /// seen slots compared against the opposing chain's own row.
+    seen_slots_checked: u64,
+    /// unseen (tail) slots compared against the opposing chain's own row.
+    tail_slots_checked: u64,
 }
 
 fn slot_of(row: &[f32], k: usize) -> &[f32] {
@@ -152,6 +172,43 @@ fn true_team(core: &Core, env: usize, side: usize, dex: &Dex) -> Vec<(String, i6
 struct Prev {
     known: Vec<usize>,
     episode: Vec<u32>,
+}
+
+/// The label columns of one decision row, `off` (A) against a revealing core (B): nothing is believed, the seen slots'
+/// labels are `off`'s, every STATED slot is labelled with its true value, and the intent / margin columns agree.
+fn check_labels(ctx: &str, k: usize, a: &OwnedCols, b: &OwnedCols, r: usize, n_tail: usize) {
+    let t = TEAM_SIZE;
+    let i64s = |c: &OwnedCols, name: usize, per: usize| c.slice::<i64>(name)[k * t * per..(k + 1) * t * per].to_vec();
+    let f32s = |c: &OwnedCols, name: usize, per: usize| -> Vec<u32> {
+        c.slice::<f32>(name)[k * t * per..(k + 1) * t * per].iter().map(|x| x.to_bits()).collect()
+    };
+    let n_b = r + n_tail;
+    assert!(i64s(b, col::BELIEF_SPECIES, 1).iter().all(|&x| x == -1), "{ctx}: with every species stated there is nothing left to believe");
+    assert!(i64s(b, col::BELIEF_MOVES, 4).iter().all(|&x| x == -1), "{ctx}: belief_moves must be PAD");
+    // the seen slots' labels are `off`'s
+    for (name, per) in [(col::KNOWN_MOVES, 4), (col::HP_TYPE_LABEL, 1), (col::ITEM_LABEL, 1), (col::BELIEF_NATURE, 1)] {
+        assert_eq!(i64s(a, name, per)[..r * per], i64s(b, name, per)[..r * per], "{ctx}: label column {name} differs on the seen slots");
+    }
+    for (name, per) in [(col::ITEM_MASK, 1), (col::HP_TYPE_MASK, 1), (col::BELIEF_SPREAD_MASK, 1), (col::BELIEF_NATURE_MASK, 1), (col::BELIEF_EV_MASK, 1), (col::BELIEF_SPREAD, 5), (col::BELIEF_EV, 5)] {
+        assert_eq!(f32s(a, name, per)[..r * per], f32s(b, name, per)[..r * per], "{ctx}: label column {name} differs on the seen slots");
+    }
+    // the unseen slots carry the true set's labels: every stated species has its moves, item and spread labelled
+    let km = i64s(b, col::KNOWN_MOVES, 4);
+    let item_mask: Vec<f32> = f32s(b, col::ITEM_MASK, 1).into_iter().map(f32::from_bits).collect();
+    let spread_mask: Vec<f32> = f32s(b, col::BELIEF_SPREAD_MASK, 1).into_iter().map(f32::from_bits).collect();
+    for j in 0..n_b {
+        assert!(km[j * 4] >= 1, "{ctx}: slot {j}'s known_moves are not labelled");
+        assert_eq!(item_mask[j], 1.0, "{ctx}: slot {j}'s item label is not masked in");
+        assert_eq!(spread_mask[j], 1.0, "{ctx}: slot {j}'s spread label is not masked in");
+    }
+    for j in n_b..t {
+        assert_eq!(km[j * 4], -1, "{ctx}: slot {j} past the oracle team has a known_moves label");
+    }
+    // the labels `off` and `species` agree on entirely
+    for name in [col::OPP_ACTION_KIND, col::OPP_ACTION_NUM, col::OPP_SWITCH_SLOT, col::OPP_SWITCH_SPECIES] {
+        assert_eq!(a.slice::<i64>(name)[k], b.slice::<i64>(name)[k], "{ctx}: intent column {name}");
+    }
+    assert_eq!(a.slice::<f32>(col::WIN_MARGIN)[k].to_bits(), b.slice::<f32>(col::WIN_MARGIN)[k].to_bits(), "{ctx}: win margin");
 }
 
 /// Compare one decision row of `off` (A) against `species` (B). Panics, naming the cell.
@@ -197,39 +254,7 @@ fn compare_row(env: usize, side: usize, a: &OwnedCols, b: &OwnedCols, core_a: &C
     nums_b.sort_unstable();
     nums_t.sort_unstable();
     assert_eq!(nums_b, nums_t, "{ctx}: the opponent block's species are not the true team");
-    // ---- the label columns
-    let t = TEAM_SIZE;
-    let i64s = |c: &OwnedCols, name: usize, per: usize| c.slice::<i64>(name)[k * t * per..(k + 1) * t * per].to_vec();
-    let f32s = |c: &OwnedCols, name: usize, per: usize| -> Vec<u32> {
-        c.slice::<f32>(name)[k * t * per..(k + 1) * t * per].iter().map(|x| x.to_bits()).collect()
-    };
-    let n_b = r + left.len();
-    assert!(i64s(b, col::BELIEF_SPECIES, 1).iter().all(|&x| x == -1), "{ctx}: with every species stated there is nothing left to believe");
-    assert!(i64s(b, col::BELIEF_MOVES, 4).iter().all(|&x| x == -1), "{ctx}: belief_moves must be PAD");
-    // the seen slots' labels are `off`'s
-    for (name, per) in [(col::KNOWN_MOVES, 4), (col::HP_TYPE_LABEL, 1), (col::ITEM_LABEL, 1), (col::BELIEF_NATURE, 1)] {
-        assert_eq!(i64s(a, name, per)[..r * per], i64s(b, name, per)[..r * per], "{ctx}: label column {name} differs on the seen slots");
-    }
-    for (name, per) in [(col::ITEM_MASK, 1), (col::HP_TYPE_MASK, 1), (col::BELIEF_SPREAD_MASK, 1), (col::BELIEF_NATURE_MASK, 1), (col::BELIEF_EV_MASK, 1), (col::BELIEF_SPREAD, 5), (col::BELIEF_EV, 5)] {
-        assert_eq!(f32s(a, name, per)[..r * per], f32s(b, name, per)[..r * per], "{ctx}: label column {name} differs on the seen slots");
-    }
-    // the unseen slots carry the true set's labels: every stated species has its moves, item and spread labelled
-    let km = i64s(b, col::KNOWN_MOVES, 4);
-    let item_mask: Vec<f32> = f32s(b, col::ITEM_MASK, 1).into_iter().map(f32::from_bits).collect();
-    let spread_mask: Vec<f32> = f32s(b, col::BELIEF_SPREAD_MASK, 1).into_iter().map(f32::from_bits).collect();
-    for j in 0..n_b {
-        assert!(km[j * 4] >= 1, "{ctx}: slot {j}'s known_moves are not labelled");
-        assert_eq!(item_mask[j], 1.0, "{ctx}: slot {j}'s item label is not masked in");
-        assert_eq!(spread_mask[j], 1.0, "{ctx}: slot {j}'s spread label is not masked in");
-    }
-    for j in n_b..t {
-        assert_eq!(km[j * 4], -1, "{ctx}: slot {j} past the oracle team has a known_moves label");
-    }
-    // the labels `off` and `species` agree on entirely
-    for name in [col::OPP_ACTION_KIND, col::OPP_ACTION_NUM, col::OPP_SWITCH_SLOT, col::OPP_SWITCH_SPECIES] {
-        assert_eq!(a.slice::<i64>(name)[k], b.slice::<i64>(name)[k], "{ctx}: intent column {name}");
-    }
-    assert_eq!(a.slice::<f32>(col::WIN_MARGIN)[k].to_bits(), b.slice::<f32>(col::WIN_MARGIN)[k].to_bits(), "{ctx}: win margin");
+    check_labels(&ctx, k, a, b, r, left.len());
     // ---- coverage bookkeeping
     seen.rows += 1;
     if r < team.len() {
@@ -251,13 +276,150 @@ fn compare_row(env: usize, side: usize, a: &OwnedCols, b: &OwnedCols, core_a: &C
     prev.known[k] = r;
 }
 
+/// The cells of a slot that are FACTS OF THE SET (the `full` level tells them): item, ability, moves, the spread block and
+/// the Hidden-Power block (`hp_revealed` 1, probs 0 — the moves determine the type, as for an own mon).
+fn is_fact_cell(c: usize) -> bool {
+    (POKEMON_ITEMS_OFFSET..POKEMON_TYPES_OFFSET).contains(&c)
+        || (POKEMON_ABILITIES_OFFSET..POKEMON_CONDITION_OFFSET).contains(&c)
+        || (POKEMON_MOVES_OFFSET..POKEMON_MOVES_OFFSET + 4 * MOVE_SLOT_DIM).contains(&c)
+        || (POKEMON_SPREAD_OFFSET..POKEMON_SLEEP_BELIEF_OFFSET).contains(&c)
+}
+
+fn block(slot: &[f32], lo: usize, hi: usize) -> Vec<u32> {
+    slot[lo..hi].iter().map(|x| x.to_bits()).collect()
+}
+
+/// The moves of a slot's move block as per-move cell groups (a group whose id cell is 0 is an empty slot).
+fn move_groups(slot: &[f32]) -> Vec<Vec<u32>> {
+    (0..4)
+        .map(|m| block(slot, POKEMON_MOVES_OFFSET + m * MOVE_SLOT_DIM, POKEMON_MOVES_OFFSET + (m + 1) * MOVE_SLOT_DIM))
+        .filter(|g| f32::from_bits(g[0]) != 0.0)
+        .collect()
+}
+
+/// Compare one decision row of `off` (A) against `full` (B) — see the module docs. The set's facts are checked against
+/// the OPPOSING chain's own-team slot of the same mon (the encoder's own row for a mon whose set it knows, in the same
+/// battle at the same decision): for a SEEN mon wherever play has not revealed the fact, for an UNSEEN mon everywhere.
+fn compare_row_full(env: usize, side: usize, a: &OwnedCols, b: &OwnedCols, core_a: &Core, dex: &Dex, seen: &mut Seen) {
+    let k = env * SIDES + side;
+    let ko = env * SIDES + (1 - side);
+    let ra = &a.slice::<f32>(col::OBS)[k * OBS_DIM..(k + 1) * OBS_DIM];
+    let rb = &b.slice::<f32>(col::OBS)[k * OBS_DIM..(k + 1) * OBS_DIM];
+    let ro = &b.slice::<f32>(col::OBS)[ko * OBS_DIM..(ko + 1) * OBS_DIM];
+    let both = b.slice::<u8>(col::NEED)[ko] == 1; // the opposing row is a LIVE row only when that side decided too
+    let ctx = format!("env {env} p{} episode {} turn {}", side + 1, a.slice::<u32>(col::EPISODE)[env], a.slice::<u32>(col::TURN)[env]);
+    let r = (0..TEAM_SIZE).filter(|&j| slot_of(ra, j)[POKEMON_SPECIES_KNOWN_OFFSET] >= 0.5).count();
+    // every cell outside the opponent block is bit-identical to `off`
+    let blk_lo = OFFSET_OPP_TEAM;
+    let blk_hi = OFFSET_OPP_TEAM + TEAM_SIZE * POKEMON_FULL_DIM;
+    for i in (0..blk_lo).chain(blk_hi..OBS_DIM) {
+        assert_eq!(ra[i].to_bits(), rb[i].to_bits(), "{ctx}: cell {i} ({}) differs outside the opponent block", pokesim::encoder::cell_name(i));
+    }
+    // the opposing chain's own slot of a mon, by dex num
+    let own_slot = |num: i64| -> Option<&[f32]> {
+        (0..TEAM_SIZE)
+            .map(|j| &ro[OFFSET_OUR_TEAM + j * POKEMON_FULL_DIM..OFFSET_OUR_TEAM + (j + 1) * POKEMON_FULL_DIM])
+            .find(|sl| sl[POKEMON_SPECIES_KNOWN_OFFSET] >= 0.5 && sl[POKEMON_SPECIES_OFFSET] as i64 == num)
+    };
+    // ---- the SEEN slots
+    for j in 0..r {
+        let (sa, sb) = (slot_of(ra, j), slot_of(rb, j));
+        for c in (0..POKEMON_FULL_DIM).filter(|&c| !is_fact_cell(c)) {
+            assert_eq!(sa[c].to_bits(), sb[c].to_bits(), "{ctx}: seen slot {j} cell {c} (not a set fact) differs from off");
+        }
+        let num = sa[POKEMON_SPECIES_OFFSET] as i64;
+        let own = if both { own_slot(num) } else { None };
+        let Some(own) = own else { continue };
+        // item: a fact play revealed (or consumed) is the reading's, else the true item
+        let item_known = sa[POKEMON_ITEMS_OFFSET + ITEM_ID_DIM] >= 0.5;
+        let want = if item_known { block(sa, POKEMON_ITEMS_OFFSET, POKEMON_TYPES_OFFSET) } else { block(own, POKEMON_ITEMS_OFFSET, POKEMON_TYPES_OFFSET) };
+        assert_eq!(block(sb, POKEMON_ITEMS_OFFSET, POKEMON_TYPES_OFFSET), want, "{ctx}: seen slot {j} item (known in play: {item_known})");
+        seen.item_known += item_known as u64;
+        // ability likewise
+        let ab_known = sa[POKEMON_CONDITION_OFFSET - 1] >= 0.5;
+        let want = if ab_known { block(sa, POKEMON_ABILITIES_OFFSET, POKEMON_CONDITION_OFFSET) } else { block(own, POKEMON_ABILITIES_OFFSET, POKEMON_CONDITION_OFFSET) };
+        assert_eq!(block(sb, POKEMON_ABILITIES_OFFSET, POKEMON_CONDITION_OFFSET), want, "{ctx}: seen slot {j} ability (known in play: {ab_known})");
+        // moves: every move play revealed keeps its tracked slot, the rest are the true set's, none duplicated or missing
+        let (ga, gb, go) = (move_groups(sa), move_groups(sb), move_groups(own));
+        let bare_hp = ga.iter().any(|g| f32::from_bits(g[0]) == 237.0);
+        let mut want: Vec<Vec<u32>> = ga.clone();
+        for g in &go {
+            if !ga.iter().any(|x| x[0] == g[0]) {
+                want.push(g.clone());
+            }
+        }
+        if bare_hp {
+            // a bare Hidden Power the reading learned stands for the set's typed one: the revealed slots are kept, no fifth move
+            assert!(gb.len() <= 4 && gb.len() >= ga.len(), "{ctx}: seen slot {j} hidden-power move count");
+            for g in &ga {
+                assert!(gb.contains(g), "{ctx}: seen slot {j} lost a move play revealed");
+            }
+        } else {
+            let (mut got, mut want) = (gb.clone(), want);
+            want.sort();
+            got.sort();
+            assert_eq!(got, want, "{ctx}: seen slot {j} moves are not (revealed + true) with the revealed slots untouched");
+        }
+        seen.moves_added += (gb.len() > ga.len()) as u64;
+        // the spread and the Hidden-Power block are the true set's
+        assert_eq!(
+            block(sb, POKEMON_SPREAD_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET),
+            block(own, POKEMON_SPREAD_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET),
+            "{ctx}: seen slot {j} spread / hp block"
+        );
+        seen.seen_slots_checked += 1;
+    }
+    // ---- the UNSEEN slots: the species-level row everywhere but the set's facts, which are the own chain's
+    let team = true_team(core_a, env, side, dex);
+    let mut left: Vec<&(String, i64)> = team.iter().collect();
+    for j in 0..r {
+        let num = slot_of(ra, j)[POKEMON_SPECIES_OFFSET] as i64;
+        let at = left.iter().position(|(_, n)| *n == num).unwrap_or_else(|| panic!("{ctx}: seen slot {j} num {num} is not on the true team {team:?}"));
+        left.remove(at);
+    }
+    left.sort_by_key(|(_, n)| *n);
+    for (j, (sp, num)) in left.iter().enumerate() {
+        let got = slot_of(rb, r + j);
+        assert_eq!(got[POKEMON_SPECIES_OFFSET] as i64, *num, "{ctx}: tail slot {j} is not the true unseen species {sp}");
+        let hyp = hypothesis_slot(sp).unwrap();
+        for c in (0..POKEMON_FULL_DIM).filter(|&c| !is_fact_cell(c)) {
+            assert_eq!(got[c].to_bits(), hyp[c].to_bits(), "{ctx}: tail slot {j} ({sp}) cell {c} (not a set fact) is not a never-seen mon's");
+        }
+        assert_eq!(got[POKEMON_HP_REVEALED_OFFSET], 1.0, "{ctx}: tail slot {j} ({sp}) hp_revealed");
+        if both {
+            let own = own_slot(*num).unwrap_or_else(|| panic!("{ctx}: the opposing chain's own team has no {sp}"));
+            for (lo, hi, what) in [
+                (POKEMON_ITEMS_OFFSET, POKEMON_TYPES_OFFSET, "item"),
+                (POKEMON_ABILITIES_OFFSET, POKEMON_CONDITION_OFFSET, "ability"),
+                (POKEMON_MOVES_OFFSET, POKEMON_MOVES_OFFSET + 4 * MOVE_SLOT_DIM, "moves"),
+                (POKEMON_SPREAD_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET, "spread / hp block"),
+            ] {
+                assert_eq!(block(got, lo, hi), block(own, lo, hi), "{ctx}: tail slot {j} ({sp}) {what} is not the opposing chain's own row of that mon");
+            }
+            seen.tail_slots_checked += 1;
+        }
+    }
+    for j in r + left.len()..TEAM_SIZE {
+        assert!(slot_of(rb, j).iter().all(|x| x.to_bits() == 0), "{ctx}: slot {j} past the oracle team is not zero");
+    }
+    check_labels(&ctx, k, a, b, r, left.len());
+    seen.rows += 1;
+    if r < team.len() {
+        seen.tail_rows += 1;
+    }
+}
+
 /// Play `steps` ops of ONE seeded policy over `off` and `species` cores built from `teams` and compare
 /// every decision. Returns what the corpus covered.
 fn differential(n: usize, seed: u64, steps: usize, teams: Vec<String>) -> Seen {
+    differential_at(Level::Species, n, seed, steps, teams)
+}
+
+fn differential_at(level: Level, n: usize, seed: u64, steps: usize, teams: Vec<String>) -> Seen {
     let nt = teams.len();
     let dex = Dex::for_gen(3);
     let mut ca = Core::new(spec_with(n, 1, teams.clone(), Level::Off)).expect("off core");
-    let mut cb = Core::new(spec_with(n, 1, teams, Level::Species)).expect("species core");
+    let mut cb = Core::new(spec_with(n, 1, teams, level)).expect("revealing core");
     let (mut a, mut b) = (OwnedCols::new(n), OwnedCols::new(n));
     let mut stage_rng = common::Rng(seed ^ 0x5157_A6E5);
     let mut act_rng = common::Rng(seed);
@@ -278,14 +440,18 @@ fn differential(n: usize, seed: u64, steps: usize, teams: Vec<String>) -> Seen {
     let mut seen = Seen::default();
     let mut step = |op: u8, ca: &mut Core, cb: &mut Core, a: &mut OwnedCols, b: &mut OwnedCols, seen: &mut Seen| {
         assert_eq!(ca.dispatch(op, aa), 0, "off: {:?}", ca.last_error().map(|e| e.json()));
-        assert_eq!(cb.dispatch(op, ab), 0, "species: {:?}", cb.last_error().map(|e| e.json()));
+        assert_eq!(cb.dispatch(op, ab), 0, "revealing core: {:?}", cb.last_error().map(|e| e.json()));
         for c in [col::MASK, col::NEED, col::DONE, col::EPISODE, col::DEC_N, col::TURN, col::REWARD, col::TERMINATED, col::TRUNCATED, col::REFUSED] {
-            assert_eq!(a.bytes(c), b.bytes(c), "column {c} differs between off and species");
+            assert_eq!(a.bytes(c), b.bytes(c), "column {c} differs between off and the revealing core");
         }
         for env in 0..n {
             for side in 0..SIDES {
                 if a.slice::<u8>(col::NEED)[env * SIDES + side] == 1 {
-                    compare_row(env, side, a, b, ca, &dex, &mut prev, seen);
+                    if level == Level::Full {
+                        compare_row_full(env, side, a, b, ca, &dex, seen);
+                    } else {
+                        compare_row(env, side, a, b, ca, &dex, &mut prev, seen);
+                    }
                 }
             }
         }
@@ -322,6 +488,26 @@ fn species_differs_from_off_only_in_the_declared_cells() {
     assert!(total.rows > 20_000, "{total:?}");
     assert!(total.first_rows >= 300, "{total:?}");
     assert!(total.tail_rows > 5_000 && total.reveals > 1_000 && total.all_seen_rows > 1_000, "{total:?}");
+}
+
+#[test]
+fn full_differs_from_off_only_in_the_opponent_block_and_tells_the_true_set() {
+    let mut total = Seen::default();
+    for seed in [41u64, 42, 43] {
+        let s = differential_at(Level::Full, 8, seed, 500, common::corpus_teams());
+        total.rows += s.rows;
+        total.tail_rows += s.tail_rows;
+        total.item_known += s.item_known;
+        total.moves_added += s.moves_added;
+        total.seen_slots_checked += s.seen_slots_checked;
+        total.tail_slots_checked += s.tail_slots_checked;
+    }
+    eprintln!("full differential: {total:?}");
+    // NON-VACUITY: unseen AND seen slots were checked against the opposing chain's own row, items play had revealed
+    // were kept, and the overlay added true moves to seen mons
+    assert!(total.rows > 20_000 && total.tail_rows > 5_000, "{total:?}");
+    assert!(total.tail_slots_checked > 10_000 && total.seen_slots_checked > 20_000, "{total:?}");
+    assert!(total.item_known > 1_000 && total.moves_added > 1_000, "{total:?}");
 }
 
 // ------------------------------------------------------------------ edge cases
@@ -433,7 +619,11 @@ fn a_real_forecast_battle_keeps_the_team_exact_through_a_forme_change() {
         set("metagross", &["meteormash", "earthquake", "explosion", "agility"], "leftovers", "clearbody"),
     ]);
     assert!(pokesim::team::unpack(&a, &dex).is_ok() && pokesim::team::unpack(&b, &dex).is_ok());
-    let s = differential(8, 31, 400, vec![a, b]);
+    let s = differential(8, 31, 400, vec![a.clone(), b.clone()]);
     eprintln!("forecast differential: {s:?}");
     assert!(s.rows > 2_000 && s.reveals > 100, "{s:?}");
+    // ... and at `full`: Castform's forme change leaves its set facts exact (a forme shares its base species' num)
+    let f = differential_at(Level::Full, 8, 32, 400, vec![a, b]);
+    eprintln!("forecast differential (full): {f:?}");
+    assert!(f.rows > 2_000 && f.seen_slots_checked > 5_000 && f.tail_slots_checked > 500, "{f:?}");
 }

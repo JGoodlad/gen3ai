@@ -399,7 +399,7 @@ class ModelVersionFields:
     # the belief supervision to the set BCE; `blob` builds nothing. No ARCH_SIGNATURE bump while both
     # arms must build at one commit (design §3.8) — the string compare in check_compatible is the gate.
     belief_tokens: str = "blob"
-    # gen3_oracle_reveal_v1 (config v137, the X5 A/B's oracle reference arms): `--oracle-reveal {off,species}`.
+    # gen3_oracle_reveal_v1 (config v137, the X5 A/B's oracle reference arms): `--oracle-reveal {off,species,full}`.
     # A DIAGNOSTIC observation mode — the opponent's true species written into the observation's opponent
     # block from turn 1 (`encoder::oracle`). RESUME-IMMUTABLE: builds nothing and moves no weight, so the
     # FORWARD is bit-identical and `check_compatible` does not read it (a frozen opponent of the same run is

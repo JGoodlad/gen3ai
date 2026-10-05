@@ -100,7 +100,7 @@ SPEC_KEYS: Tuple[str, ...] = (
 #: team the observation row is told. ``off`` is the production mode (the row is byte-identical to the
 #: build that had no reveal); the others are DIAGNOSTIC (``designs/endstate/design_x5_belief_tokens.md``
 #: §7.6). The ONE Python list — ``model_version`` / the parser read it, and a test pins it to Rust's.
-ORACLE_REVEAL_LEVELS: Tuple[str, ...] = ("off", "species")
+ORACLE_REVEAL_LEVELS: Tuple[str, ...] = ("off", "species", "full")
 
 
 def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, str]",
