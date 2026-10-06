@@ -289,7 +289,8 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 |---|---|---|
 | **inner loop** — you want the fastest true/false | `-m "not slow and not e2e and not sim and not integration"` | 6570 tests, **127 s** (~56 s at `-n 4`) |
 | **THE ROUTINE GATE** — before a commit | `-m "not slow and not e2e"` | 12,782 tests, **4 m 19 s at `-n 6`** on a quiet box (2026-10-01; table below) |
-| **before a `/gen3ai-ship`, and in CI** | `pytest src/` (everything) | 11,578 tests, **~47 m** serial (2026-09-29, nice 19, load ~3; the browser tier is ~19 s of it — the rest is corpus growth since 2026-08) |
+| **before a `/gen3ai-ship`** | the routine gate, OR a TARGETED set you choose (owner, 2026-10-05: "I prefer more targeted test suites") — see "Targeted sets before a ship" below | — |
+| **in CI, or on demand** | `pytest src/` (everything) | 11,578 tests, **~47 m** serial (2026-09-29, nice 19, load ~3; the browser tier is ~19 s of it — the rest is corpus growth since 2026-08) |
 | just the bridge | `-m sim` | ~100 s |
 | just the browser views | `-m browser` | **~19 s** (2026-09-29) |
 | **anything on the GPU** (a `GEN3AI_TEST_ALLOW_GPU=1` test, a cuda benchmark) | **Only under a GPU LEASE** the orchestrator granted you in your brief (owner, 2026-10-03: nobody blocks on the GPU). `scripts/ops/gpu_lease.sh acquire --owner <name>` (immediate typed refusal if leased or busy) prints `export GEN3AI_GPU_LEASE_TOKEN=<token>`; an agent's Bash tool keeps no exports between calls, so put `GEN3AI_GPU_LEASE_TOKEN=<token>` (or `--token-file F` once + `GEN3AI_GPU_LEASE_TOKEN_FILE=F`) in front of each call; `release` when done. Then `scripts/ops/gpu_lock.sh <cmd>` — **never a bare `flock ~/.claude/jobs/gpu.lock`** — passes straight through on your token and runs WITHOUT queueing. Everyone else is refused AT ONCE: exit **6** `GpuLeased` (names the owner, holder pid, since when), exit **5** `GpuBusy` (a one-off holder), never a wait; `--wait` / `wait=True` (kernel-blocked, a lease appearing ends it) is for the orchestrator or a training launch. **An agent with no lease never sets `GEN3AI_TEST_ALLOW_GPU=1`** (GPU tests skip without it, so the routine gate stays CPU-only). The helper (`src/utils/gpu_lock.py`, `src/utils/gpu_lease.py`) also exports `GEN3AI_GPU_LOCK_HELD=<pid>`, so a command that takes the lock itself (`policy_spectrum truth --lock`) re-enters instead of deadlocking on its own ancestor (2026-09-30: 15 min at 0% CPU); a bare-`flock` ancestor raises `GpuLockSelfDeadlock` at once. **A wall timeout goes INSIDE the lock** — `scripts/ops/gpu_lock.sh timeout 3000 <cmd>`; a stale lease (dead holder, reused pid) is detected and cleared by `status` / `acquire`; a crashed owner's lease is ended by the orchestrator (`release --force`), or expires at `--max-hours` (default 12) / when `--watch-pid` dies. Tests: `src/utils/gpu_lease_test.py`, `src/utils/gpu_lock_test.py` | — |
@@ -767,8 +768,11 @@ serial when you need `-s`, a debugger, or a readable single failure.
 > the conftest pin, anyone trying `-n auto` would measure a slowdown and conclude parallelism does
 > not work here.
 
+### Targeted sets before a ship (owner, 2026-10-05)
+The full serial suite is NOT required before every `/gen3ai-ship` — **"I prefer more targeted test suites."** An agent ships on the routine gate, or on a TARGETED set it chooses by judgment (the tests that cover what it changed, plus the static gates), **naming the scope and the reason in the commit body**. Shared infrastructure (conftest, the model, the training loop, compile, `data/`, the Rust core, the launcher) or any doubt means the full routine gate. The owner's 2026-09-30 rule still holds: the choice is the agent's, never an AUTOMATED test-selection framework.
+
 ### Everything, including the slow tiers (requires symlinked deps/pokemon-showdown + chrome)
-**Run this before a `/gen3ai-ship`, and in CI.** ~47 minutes serial (2026-09-29); the browser suite is ~19 s of it.
+**Run this in CI, or when a unit's blast radius warrants it** (not required before every `/gen3ai-ship`; see above). ~47 minutes serial (2026-09-29); the browser suite is ~19 s of it.
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m pytest src/ -q
 ```
