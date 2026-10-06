@@ -410,15 +410,12 @@ warns this epoch-1 instrument is defective (UNDERSTANDING §4.3). Owned by
 [`design_learner_recipe.md`](design_learner_recipe.md), not by this audit. *Bucket:* **BEHAVIOUR CHANGE** (recipe),
 cross-referenced only.
 
-**F21 · Documentation rot found in passing** (P3; each an EXACT doc fix, LOW, not made here — out of scope):
-ARCHITECTURE §2.1 step 9 says the trunk has 36 tokens (live 61: 29 + 32 event seats); §2.3's "29-token
-sequence" omits the 32 event seats production turns on; §5's seat indices (`global 19, E3 [20:24]`, …) are the
-pre-frame-deletion numbering (now 12, 13–16, …); the `Gen3FeaturesExtractor` class docstring
-(`features_extractor.py` ~line 255) still says the operator runs after the pools and appends to both
-projections (it runs before attention; the head concat is dead since v61); the learning note §6.9 still lists
-"history seats 12–18" and "`20 + offset`"; `designs/CLAUDE.md` calls `endstate/` explicit-only while root
-`CLAUDE.md` and `endstate/README.md` make it always-current, and its endstate table lists 6 of the 13 docs.
-*Bucket:* **EXACT REFACTOR** (docs).
+**F21 · Documentation rot found in passing** (P3). **FIXED in the follow-up docs unit (2026-10-05):**
+ARCHITECTURE §2.1 now states the 61-token trunk (13 base + 16 entity seats + 32 event seats), §2.3 lists the
+event seats, §5's seat indices are the live ones (global 12, E3 13–16, E4 17–22, E5 23–28, events 29–60); the
+`Gen3FeaturesExtractor` class docstring states the tier order (the operator before attention, no head concat);
+learning note §6.9 replaces the deleted history seats with the event seats; `designs/CLAUDE.md` calls
+`endstate/` always-current and lists every endstate doc. *Bucket:* **EXACT REFACTOR** (docs), done.
 
 **F22 · The architecture's evidence base is a gen-3 checkpoint.** ARCHITECTURE §4.1 (operator blocks) and §5.4
 (edge families) are `run_20260807_135637_gen3` at 9.6M steps, before the Baton Pass fix (08-23), the bot

@@ -2021,7 +2021,7 @@ deleted by accident. Three properties get called the same thing:
 |---|---|---|
 | **Invariance** | output *unchanged* under permutation | the CLS pools; OA2's column contracted over their bench |
 | **Equivariance** | output *permutes with* the input | the pointer logits — permute our team, the six switch logits permute |
-| **Position-dependence** | a learned weight bound to index *i* | history's turn embedding; and, if route 7a wins, the within-seat defender axis |
+| **Position-dependence** | a learned weight bound to index *i* | nothing in the production trunk (time reaches the event seats as a RECENCY column, i.e. content); if route 7a wins, the within-seat defender axis |
 
 Only the third is ever a defect, and only when the true function is genuinely symmetric in that
 axis. **The test is always the same: does relabeling the entities change the answer in a way the
@@ -2034,10 +2034,10 @@ inexpressible.
 | Thing | Status | Verdict |
 |---|---|---|
 | Token *types* (`OUR_TEAM` / `THEIR_TEAM` / `OUR_MOVE` / `THEIR_THREAT` / `HISTORY` / `GLOBAL`) | typing, not ordering | **correct** — a real asymmetry, promoted to content |
-| History seats 12–18 (positional embedding) | genuinely positional | **correct** — de-positioning time would exclude the true function. Part 4's ladder moves history onto *entities*; it never removes time's order |
+| Event seats 29–60 (the last 32 event records, `history_events`) | time as CONTENT, not position — each record carries a log-saturated recency column and its actor / target / REL mons, linked to the mon tokens by the structural `r` edges; no learned weight is bound to a seat index | **correct** — time's order is kept as a fact on each record, so the true (ordered) function stays expressible without a positional embedding. The old positional lag-frame seats were deleted with the frames (`gen3_frame_deletion_v1`) |
 | Pointer logits over our 6 switches | equivariant | **correct** — one shared scorer, indexed by content |
 | Action layout `[switch ×6, move ×4, struggle]` | an environment interface | **not a model property** — the head scores from the token, so the index binding is a relabeling both sides share |
-| Seat-index convention (`20 + offset`) | index arithmetic for stable slicing | **not positional** — no learned weight is bound to it |
+| Seat-index convention (`13 + offset`; the event seats always LAST) | index arithmetic for stable slicing | **not positional** — no learned weight is bound to it |
 | PV's *k* seeds | not slots | **not positional** — seed *s* is a *question*, applied identically to every entity (§ *Shaw et al. 2018*) |
 | Embedding tables (`table[species.num]`) | identity lookup | **content-addressed**, not positional |
 | **The within-seat defender axis** | **genuinely positional — if we take route 7a** | **the one open choice, below** |

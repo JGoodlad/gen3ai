@@ -488,9 +488,10 @@ The concrete steps:
    **added** to our 6 role tokens. Zero-init ⇒ exactly 0 at init.
 7. **`EntityMoveSeats`** — builds 16 extra seats (§2.3).
 8. **Edge cells** — 15 per-pair physics tensors computed here, pre-transformer (§5).
-9. **`TeamTransformer`** — 36 tokens, 2 `BiasedEncoderLayer`s, `d_model` 128, 4 heads, FFN 256,
-   post-LN. One `[B,4,36,36]` float bias carries both the key-padding addend (`-1e9`) and every
-   edge family; it is built once and shared by both layers.
+9. **`TeamTransformer`** — **61 tokens** (13 base + 16 entity seats + 32 event seats, §2.3), 2
+   `BiasedEncoderLayer`s, `d_model` 128, 4 heads, FFN 256, post-LN. One `[B,4,61,61]` float bias
+   carries both the key-padding addend (`-1e9`) and every edge family; it is built once and shared
+   by both layers.
 10. **`CLSPool`** — three learned queries: `our_cls` over our 6 refined tokens, `their_cls` over
     theirs, `value_cls` over **all 12**. Also extracts `our_active_refined`.
 11. **`ProjectionAssembler`** → `pre_proj_norm`/`projection`/ReLU (policy) and
@@ -513,7 +514,7 @@ The concrete steps:
 Embedding tables (`Embeddings`, registered exactly once, passed as a forward argument):
 species 400×32, move 400×16, item 600×16, ability 100×16, type 20×16.
 
-### 2.3 The 29-token sequence
+### 2.3 The 61-token sequence
 
 | Seats | Index range | Token type | Content |
 |---|---|---|---|
@@ -523,15 +524,14 @@ species 400×32, move 400×16, item 600×16, ability 100×16, type 20×16.
 | **E3** our active's moves | 13–16 | `TOKEN_TYPE_OUR_MOVE` | move token in **request order**, `move_seat_proj` 32→128 |
 | **E4** opp threat moves | 17–22 | `TOKEN_TYPE_THEIR_THREAT` | `threat_seat_proj([latent(32), w, acc, is_phys])`, K = `entity_topk_seats` = 6 |
 | **E5** tail threats | 23–28 | `TOKEN_TYPE_THEIR_THREAT` + `tail_marker` | per-opp-mon beyond-top-K residual `tail_proj([p_tail, worst_phys, worst_spec, revealed])` |
+| **event seats** (`history_events`, ON) | 29–60 | `TOKEN_TYPE_HISTORY` + `event_marker` | the event window's `EVENT_WINDOW_N` = 32 records, one seat each, most-recent LAST (`EventSeats`, `team_transformer.py`: per-column embeddings + scalars → `LayerNorm(proj(row))`); PAD rows are key-masked |
 
-There are **no `TOKEN_TYPE_HISTORY` seats in the base sequence** — the seven of them went with the
-lag frames (`gen3_frame_deletion_v1`), which is what took the sequence from 36 tokens to 29 and
-shifted every extra seat down by seven. `TOKEN_TYPE_HISTORY` itself survives in the token-type
-table and is what an opt-in event seat takes.
+The event seats join the extra seam LAST, so they are always the final `EVENT_WINDOW_N` tokens — the
+`r` edge family addresses them by that contract (§5). Under the X5 `fixed_mass` arm, OTHER_species
+is one more seat after the entity seats (62 tokens).
 
-`entity_seats.n_seats` = 16 (4 + 6 + 6). Base seat count = `2·TEAM_SIZE + 1` = 13 (the
-`N_HISTORY_TURNS` history seats went with the lag frames), so **every extra seat index is
-`13 + offset`** — that is what makes the base slices position-stable.
+`entity_seats.n_seats` = 16 (4 + 6 + 6). Base seat count = `2·TEAM_SIZE + 1` = 13, so **every
+extra seat index is `13 + offset`** — that is what makes the base slices position-stable.
 E5 deliberately reuses `TOKEN_TYPE_THEIR_THREAT` rather than adding a 7th token-type row (growing
 the table changes every model's state_dict).
 
@@ -1210,8 +1210,8 @@ in the production config. Each maps its per-pair cell through a **zero-init**
 `Linear(cell_width, 2 · n_heads)`: one head-set for `row→col`, one for `col→row`. Zero-init ⇒ the
 whole edge system is bitwise-identical to `off` at initialisation.
 
-Seat indices as in §2.3: our mons `[0:6]`, opp mons `[6:12]`, global `19`, E3 `[20:24]`,
-E4 `[24:30]`, E5 `[30:36]`.
+Seat indices as in §2.3: our mons `[0:6]`, opp mons `[6:12]`, global `12`, E3 `[13:17]`,
+E4 `[17:23]`, E5 `[23:29]`, event seats `[29:61]`.
 
 ### 5.1 The from × to grid
 
@@ -1223,7 +1223,7 @@ E4 `[24:30]`, E5 `[30:36]`.
 | **c2** | E3 seat *k* × opp mon *d* | 7 | `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched, d_in_all_slp, e_slp_free_turns]` — what *landing* would do |
 | **c3** | E3 seat *k* × opp mon *d* | 3 | `[is_recovery, d_in_pko, rest_sleep_turns]` — does healing beat their KO |
 | **c5** | E3 seat *k* × **our** mon *j* | 4 | `[is_bp, d_best_high, d_best_pko, d_outspeed]` — Baton-Pass receiver axis |
-| **c4** | E3 seat *k* × **global** (19) | 4 | `[is_protect, p_success, net_ours, net_theirs]` — the turn a successful Protect banks |
+| **c4** | E3 seat *k* × **global** (12) | 4 | `[is_protect, p_success, net_ours, net_theirs]` — the turn a successful Protect banks |
 | **d3** | E4 threat seat *c* × our mon *i* | 5 | `[high, pko, eff, is_phys, w]` — their believed move vs each of our mons |
 | **s3** | E4 seat *c* × our mon *i* | 3 | `[land, land·immob, w]` |
 | **d2** | our mon *i* × opp **ACTIVE** (one-hot column) | 4 | `[best_high, best_pko, p_outspeed, alive]` — our bench's offense vs their active |

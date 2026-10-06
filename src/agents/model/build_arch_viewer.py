@@ -220,11 +220,11 @@ DOC_SECTION = {
 }
 DOC_SECTION_PREFIX = [
     ("pointer.", "3.3 The action head is the pointer head — there is no flat `action_net`"),
-    ("E3_move", "2.3 The 29-token sequence"),
-    ("E4_threat", "2.3 The 29-token sequence"),
-    ("E5_tail", "2.3 The 29-token sequence"),
-    ("our_mon", "2.3 The 29-token sequence"),
-    ("opp_mon", "2.3 The 29-token sequence"),
+    ("E3_move", "2.3 The 61-token sequence"),
+    ("E4_threat", "2.3 The 61-token sequence"),
+    ("E5_tail", "2.3 The 61-token sequence"),
+    ("our_mon", "2.3 The 61-token sequence"),
+    ("opp_mon", "2.3 The 61-token sequence"),
     ("history", "1.6 Turn history — 7 slots × 159 dims"),
     ("loss.", "7. Training-only obs keys — the leak-safety list"),
 ]

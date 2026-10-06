@@ -246,18 +246,23 @@ from agents.model.extractor_forward import ExtractorForward, _OUT_SEC_FLINCH_COL
 
 
 class Gen3FeaturesExtractor(ExtractorForward):
-    """Orchestrates the phase modules. Data flow (bracketed phases are flag-gated; all off = the
-    baseline ObsUnpack → PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler):
-        ObsUnpack → PokemonEncoder → [BeliefSlots?] → TeamTransformer → [BeliefHead?] → [MoveBelief?]
-          → CLSPool → [HiddenOppBeliefPool?] → [DamageOperator?] → ProjectionAssembler
-    then a final pre-projection LayerNorm + Linear + ReLU head per side. `MoveBelief` reinjects the
-    believed moveset into the opp tokens BEFORE the pools (so it flows to the heads via cross-attention);
-    `DamageOperator` runs AFTER the pools and consumes the move-belief logits, appending its features to
-    both projection inputs (it does not enter the token stream). The optional `WinProbHead`
-    (`win_prob_mode`) reads `value_pooled` AFTER the pools and stashes a P(win) logit as a SIDE readout
-    (never in pi/vf — leak-safe). The embedding tables live in
-    `self.embeddings` (shared) and are passed into the phases that need them. See
-    `src/agents/model/CLAUDE.md` for the phase-module contract."""
+    """Orchestrates the phase modules in the asserted TIER order (`tier_contract.py`; the order of
+    record, step by step, is `designs/ARCHITECTURE.md` §2.1). Bracketed phases are flag-gated:
+        T0 RESOLVE  ObsUnpack → [T0SpeciesPrior] → PokemonEncoder → [MoveBelief (+ typed-HP compose),
+                    SpreadBelief, ItemBelief, BeliefSlots]
+        T1 REASON   [DamageOperator] → [prefuse_proj: the op's incoming rows added to our tokens]
+                    → [EntityMoveSeats E3/E4/E5] → [EventSeats] → edge cells → TeamTransformer
+        T2 DECIDE   CLSPool (+ [value_threat_inject] on the value pool's copy) → [BeliefHead (a
+                    training-only side readout)] → [α / β intent heads and the pointer-cell blocks]
+        T3 DELIVER  [HiddenOppBeliefPool] / [value_entity_pool] → ProjectionAssembler → [WinProbHead]
+    then a pre-projection LayerNorm + Linear + ReLU per side. The `DamageOperator` runs ONCE, before
+    attention, on the pre-attention tokens and the move-belief posterior; its output reaches the policy
+    through the pointer cells, the `prefuse_proj` token injection and the edge biases, and the critic
+    through `value_entity_pool` / `value_threat_inject` — it is in neither projection's concat. The
+    `WinProbHead` reads `value_pooled` and stashes a P(win) logit; under the win-prob critic that logit
+    IS the critic (`policy._critic_value`). The embedding tables live in `self.embeddings` (shared) and
+    are passed into the phases that need them. See `src/agents/model/CLAUDE.md` for the phase-module
+    contract."""
 
     def forward(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """Returns a (pi_features, vf_features) tuple — both [B, PROJECTION_DIM].

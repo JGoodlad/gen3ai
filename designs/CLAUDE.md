@@ -202,22 +202,30 @@ one tech-debt list; nothing on it is dispatched without the owner's word.
 bounded paydown: the owner's six decisions, the deletion rows, the Python-only LEVER list, the plan in lanes
 and the exit criterion (APPROVED by the owner 2026-10-02; each unit is marked SHIPPED in it as it lands).
 
-## `endstate/` — the END-STATE designs, explicit-only, not scheduled
+## `endstate/` — the END-STATE designs, ALWAYS-CURRENT
 
-Three END-STATE documents plus a backlog (two authored 2026-09-22, the ladder campaign 2026-09-23) at the owner's request, stating where the system is
-heading so the next profile has something to decide against — neither is a commitment; each
-carries an ordering with gates and a decision point — plus the owner-requested PROGRAM that
-schedules the environment one (2026-09-23). **Explicit-only** (like every `design_*.md`): update on
-the owner's word, never as a side effect of a landing.
+[`endstate/`](endstate/) states where the system is heading and why each fork was taken. 🚨 **Every doc in it is
+ALWAYS-CURRENT (owner, 2026-09-27)**, like a leaf: a decision or build that differs from one updates it in the same
+commit, saying what changed and why, and each doc ends with a **Decision record**. They are not commitments —
+each carries its gates and decision points. [`endstate/README.md`](endstate/README.md) is the index and the
+reading order for someone new; this table mirrors it.
 
 | file | states |
 |---|---|
-| [`endstate/design_three_tier_environment.md`](endstate/design_three_tier_environment.md) | the ENVIRONMENT end state — a Rust battle core (`BattleVersion`: omniscient board + per-side view + typed event history, persistent, buildable from the sim OR from a parsed log), one inference tier (bucketed, padded, timer-flushed), the learner unchanged; poke-env retires to a parity oracle; the crossing order, encoder last, with a decision point after D10 + `expand_many` |
-| [`endstate/program_rust_core.md`](endstate/program_rust_core.md) | the RUST CORE PROGRAM that implements the environment end state — build alongside, a three-tier continuous parity gate (commit / milestone / cutover), ONE cutover and ONE deletion pass; milestones M1 events → M2 versions + views (search adopts) → M3 trackers → M4 encoder → M5 N envs per process, the inference tier as an interleaving track, and the cutover's deletion manifest. Its Phase-0 baseline + event-attribution spike: [`research_state/measurements/rust_core_phase0_2026-09-23/`](research_state/measurements/rust_core_phase0_2026-09-23/README.md) |
-| [`endstate/design_ladder_campaign.md`](endstate/design_ladder_campaign.md) | the RESEARCH organisation — STAGES (environment → generalist → main agent on ~5 iconic sample teams → exploiters → value function → search → ladder), each with one artifact, one meter, a plateau test and a written un-plateau guess; an ERA = an upstream stage emitting a new artifact; one stage on the GPU at a time; the training ECOLOGY as three draws (our team × opponent × opponent's team) with pressure vs coverage opponents, the Smogon-only procedural team source, learnability-scored our-team sampling, and the strength/piloting split |
-| [`endstate/obs_enrichment_backlog.md`](endstate/obs_enrichment_backlog.md) | the OBSERVATION ENRICHMENT backlog for the Rust-core era — facts the 2,501-dim obs lacks because `LiveView`/`TurnDelta` made them expensive (E1 what the OPPONENT knows about us, from our own public lines; per-cause HP accounting; stall resources; …), each with visibility, hypothesis → meter and cost, under three rules: parity first (nothing before the cutover), the imperfect-information boundary as a TYPE, and every entry earns its place |
-| [`endstate/design_model_management.md`](endstate/design_model_management.md) | the MODEL end state — one complete record per model (the missing `optimisation` / `ecology` / `eval_regime` blocks), a registry with ROLES and admission policies as code (teacher ⇐ transfer gate, never head-to-head), the population loop with `main.best_response_gap` as its meter, the comparator rule made structural, ratings under one recipe, anchors with hazards attached; what exists today and the September gaps each part closes |
-| [`endstate/design_own_ppo_loop.md`](endstate/design_own_ppo_loop.md) | OWNING the PPO loop (2026-10-01, owner) — the inventory of every SB3 / sb3-contrib touchpoint on the production path, the four stages (1: the loop vendored as a declared phase table, bit-identical; 2: declared hooks + the eval-dump KL-skip fix; 3: buffer / logger / VecEnv with the deletion pass; 4: the `.zip` and the dependency, a separate decision), the equivalence plan (K9 golden, a lockstep differential, same-games buffer identity, a real-run A/B — identity on the Rust core, measured reproducible) and the estimate |
+| [`endstate/design_three_tier_environment.md`](endstate/design_three_tier_environment.md) | the ENVIRONMENT end state — a Rust battle core (`BattleVersion`: omniscient board + per-side view + typed event history, persistent, buildable from the sim OR from a parsed log), one inference tier, the learner unchanged; poke-env retires to a parity oracle |
+| [`endstate/program_rust_core.md`](endstate/program_rust_core.md) | the RUST CORE PROGRAM that implements it — build alongside, a continuous parity gate, ONE cutover and ONE deletion pass; the milestones, the deletion manifest, and where we are now |
+| [`endstate/design_model_management.md`](endstate/design_model_management.md) | the MODEL end state — one complete record per model, a registry with ROLES and admission policies as code, the population loop with `main.best_response_gap` as its meter, ratings under one recipe |
+| [`endstate/design_q_head.md`](endstate/design_q_head.md) | the VALUE side's end state — the Q decomposition (V + A + B + I), the opponent pointer, fixed-mass belief tokens, the offline omniscient twin |
+| [`endstate/obs_enrichment_backlog.md`](endstate/obs_enrichment_backlog.md) | the OBSERVATION ENRICHMENT backlog for the Rust-core era — facts the obs lacks, each with visibility, hypothesis → meter and cost |
+| [`endstate/design_ladder_campaign.md`](endstate/design_ladder_campaign.md) | the RESEARCH organisation — STAGES toward the ladder, each with one artifact, one meter and a plateau test; the training ECOLOGY as three draws |
+| [`endstate/design_learner_recipe.md`](endstate/design_learner_recipe.md) | the TRAINING RECIPE re-grounded knob by knob: live value, provenance, literature, recommendation; gated against `production_config.json` by `src/recipe_doc_gate_test.py` |
+| [`endstate/design_own_ppo_loop.md`](endstate/design_own_ppo_loop.md) | OWNING the PPO loop — every SB3 / sb3-contrib touchpoint, the four stages, the equivalence plan and the estimate |
+| [`endstate/era_plan_post_m5.md`](endstate/era_plan_post_m5.md) | what the first era on the Rust stack is FOR, in order: baseline → population loop → discrimination → exploration → ladder stages |
+| [`endstate/design_evaluation.md`](endstate/design_evaluation.md) | the EVAL SYSTEM — the append-only count ledger, one scheduler, background eval in the trainer's GPU window, the budget from precision, the cycle monitor, the two-tier plateau test |
+| [`endstate/design_league_decisions.md`](endstate/design_league_decisions.md) | the three POPULATION decisions — promotion, eviction, plateau — and strength in a non-transitive game |
+| [`endstate/design_x5_belief_tokens.md`](endstate/design_x5_belief_tokens.md) | X5's build spec and registered A/B — fixed-mass hypothesis tokens + OTHER, presence semantics for every opponent reduction, the flat opponent pointer, the group-sequential head-to-head |
+| [`endstate/design_x5_tradeoffs.md`](endstate/design_x5_tradeoffs.md) | what X5's chosen semantics give up, how each limitation is detected, and the richer options to revisit |
+| [`endstate/design_arch_audit.md`](endstate/design_arch_audit.md) | the ARCHITECTURE AUDIT (2026-10-05) — every major piece re-justified from first principles at our size, a top-down comparison with the literature, findings bucketed KEEP / EXACT REFACTOR / BEHAVIOUR CHANGE, the simple controls never trained, and the lead hypothesis (static Pokémon tokens, attention mixes the battle) |
 
 ## Folder conventions
 
