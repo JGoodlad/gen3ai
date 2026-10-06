@@ -1304,6 +1304,27 @@ unplayed ACTION. [MEASURED · NOT DETECTED at the action level · one checkpoint
 [`measurements/x4_preread/READOUT.md`](measurements/x4_preread/READOUT.md); the use rule:
 [`../endstate/design_q_head.md`](../endstate/design_q_head.md) §5.0 (`006156b7`)]
 
+
+### 4.5 The X5 belief A/B at look 1, and the value of perfect information (2026-10-06)
+
+**Hypothesis tokens (concrete guesses of the opponent's hidden Pokémon) vs the blob belief: NOT shown non-inferior at matched steps, and INFERIOR per GPU-hour.** Three seeds per arm, mirrored head-to-head cross, δ = 3.5 pp:
+
+| read | Δ̂ [95 %] | outcome |
+|---|---|---|
+| matched steps (15M vs 15M) | −1.31 pp [−6.09, +3.46] | CONTINUE (look 2 trains fixed_mass seeds 1004–1005) |
+| matched wall-time (fixed_mass at 12M, s = +16.7 %) | −6.78 pp [−9.28, −4.28] | FUTILITY STOP (non-binding), INFERIOR |
+
+The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the representation.
+
+[NOT DETECTED (steps) / DETECTED (wall-time, INFERIOR) · ledger 2026-10-06 *X5 A/B LOOK 1 read* (`662151d1`) · meas: [`measurements/x5ab_look1_2026-10-06/`](measurements/x5ab_look1_2026-10-06/)]
+
+**Perfect information about the opponent's team buys little strength at this budget.** A network TOLD the opponent's species beats blob by **+2.44 pp [+0.31, +4.57]**; told the whole set, **+2.18 pp [+0.53, +3.84]**; the set adds nothing measurable over the species (−0.26 [−1.92, +1.40]). Both C's are real (the intervals exclude 0) but sit below the 4.57 pp replicate floor. So the registered reading applies: belief representation has little strength leverage at 15M / this recipe. It bounds what ANY belief improvement (X5 included) can buy in strength here. The tokens' case therefore rests on observability and search enablement, not on strength.
+
+[DETECTED but WITHIN FLOOR · same entry; reference arms, never gated (§7.6–§7.7); caveat: a trained oracle can fall short of the true value of information (shortcut learning)]
+
+**Handing an untrained network a revealed team hurts it** (the both-sided cells, descriptive): blob told the opponent's full set fell −8.1 pp. This confirms the registered out-of-distribution caveat; information a network never trained with is not free.
+
+[DESCRIPTIVE · same entry]
 ---
 
 ## 5. Retired hypotheses
