@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,250-line file. **The ledger itself is append-only and is never edited by this**;
+22,265-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**764 headings · 709 dated · 2026-08-01 → 2026-10-05 · ledger 22,250 lines.**
+**765 headings · 710 dated · 2026-08-01 → 2026-10-05 · ledger 22,265 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -784,3 +784,4 @@ rename.
   - `L22206` · `2026-10-05` · FINDING + FIX · **K9(b) tie identity: the oracle-full stop was a FIRST-UPDATE artifact (zero-init action scorers, every one of 514 excluded rows value-identical); two declared rules now judge ties that provably cannot move log pi (`gen3_behaviour_tie_identity_v1`); the warn-path scan is a 4,096-row sample; no arm needs its own ceiling**
   - `L22220` · `2026-10-05` · BANK · **X5 A/B ORACLE-FULL reference arm COMPLETE: seeds 1001b, 1002, 1003 at 77245f51 in `--behaviour-check warn` (the 2026-10-05 DEVIATION), all 15M, 0 restarts / 0 crashes; the mismatch stop never fired (max |d log pi| ≤ 2.36e-5 in every run)**
   - `L22237` · `2026-10-05` · FINDING + FIX · **F-XC-4 root-caused: the fixed_mass "cosine 0.000000" was a NON-FINITE compiled backward (Inductor, CUDA), read as an orthogonal gradient; the gate's arms were independent and R1 IS compiled; the gate now names a non-finite gradient and proves its arms independent (`gen3_gate_nonfinite_named_v1`, `gen3_gate_independent_arms_v1`); F-XC-5 on the GPU 0.090–0.113 < 0.15; a NEW fixed_mass self-play blocker (logger key collision)**
+  - `L22251` · `2026-10-05` · FINDING + FIX · **F-XC-4 FIXED: fixed_mass's NaN compiled backward was `amax`'s tie-count backward over a tensor Inductor RECOMPUTES (Triton FMA contraction rounds the recompute differently, so no element equals the saved max: 0/0); fixed_mass now selects its ten incoming channel maxima BY INDEX (`gen3_fm_index_max_v1`); blob's compiled code byte-identical; the fixed_mass self-play logger crash fixed (`flat_switch_tgt_top1`); the canary no longer words an independence refusal as a CONFIRMED disagreement**

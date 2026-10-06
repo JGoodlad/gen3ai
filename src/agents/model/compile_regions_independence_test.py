@@ -163,3 +163,22 @@ def test_the_gate_REFUSES_an_eager_arm_that_dispatches_the_compiled_graph(fixed_
     monkeypatch.setattr(cr, "_r1_arm", arm)
     with pytest.raises(ct.CompileTrainerError, match="NOT independent"):
         cr.gate_regions(fixed_mass, batch_size=BATCH, say=lambda _m: None)
+
+
+def test_the_CANARY_names_a_dependent_pair_as_such_never_as_a_CONFIRMED_disagreement(fixed_mass, monkeypatch,
+                                                                                       capsys):
+    """F-XC-4 FINDING 6: the eager function in the compiled slot reached the canary's disagreement path,
+    which printed "compiled DISAGREES with eager — confirming now" and FATAL'd "the disagreement is
+    CONFIRMED" — a verdict about a comparison that was never made. It is FATAL at once, typed, and worded
+    as a dispatch fault (`GateArmsNotIndependentError`). Fails on revert."""
+    from agents.model.compile_canary import CompileCanary, CompileCanaryError
+    from agents.training.instrumented_ppo.micro_step import micro_step
+    monkeypatch.setattr(fixed_mass, "_compiled_micro_step", micro_step)
+    with pytest.raises(CompileCanaryError) as info:
+        CompileCanary(fixed_mass, batch_size=BATCH, every=1, saver=lambda p: None).after_update()
+    msg = str(info.value)
+    assert "NOT independent" in msg and "NO comparison was made" in msg, msg
+    assert isinstance(info.value.__cause__, ct.GateArmsNotIndependentError), repr(info.value.__cause__)
+    for wrong in ("DISAGREES", "CONFIRMED", "no longer equals eager"):
+        assert wrong not in msg, (wrong, msg)
+    assert "DISAGREES" not in capsys.readouterr().out

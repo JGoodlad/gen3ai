@@ -1,0 +1,225 @@
+[mem_cap] cap 28.00 GB (swap 0) · unit gen3ai-capped-python3-2262062.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+🧊 [CompileCache] PRIVATE /home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_2262071_wsszy4bm for this process (x5 nanfix codehash) — no run declared a cache; deleted at exit [gen3_hermetic_compile_cache_v1]
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp4j3lseoy/cuda_utils.c:5:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp4j3lseoy/cuda_utils.c:1:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/compile_fx.py:282: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning: 
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpr7g97kh8/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpr7g97kh8/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpzgw6ekss/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpzgw6ekss/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp4yd431wr/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp4yd431wr/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpmg9lx22p/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpmg9lx22p/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmppgk0t3ci/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmppgk0t3ci/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpbsa8wngp/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpbsa8wngp/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:150: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  mask |= a_isnan and not b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:150: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  mask |= a_isnan and not b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:152: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  equal |= a_isnan and b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:152: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  equal |= a_isnan and b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:150: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  mask |= a_isnan and not b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:150: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  mask |= a_isnan and not b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:152: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  equal |= a_isnan and b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:152: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  equal |= a_isnan and b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpoy2ngwuj/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpoy2ngwuj/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning: 
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpl4ms7fdk/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpl4ms7fdk/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmppch01171/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmppch01171/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpgomdnukp/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpgomdnukp/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpubupxmnm/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpubupxmnm/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpz5l9rn0m/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpz5l9rn0m/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpk64uanja/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpk64uanja/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:150: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  mask |= a_isnan and not b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:150: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  mask |= a_isnan and not b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:152: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  equal |= a_isnan and b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:152: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+  equal |= a_isnan and b_isnan
+UserWarning: Enable tracemalloc to get the object allocation traceback
+{"R1_grad_finite": false, "R1_dynamo_graphs": 1, "R1_inductor_modules": 16, "R1_combined_sha": "0eff0b945a63592dc0afea12c10e8326d67930389dd4027908ae06a77e97bfea", "T2_dynamo_graphs": 1, "T2_inductor_modules": 2, "T2_combined_sha": "fa85b2ad86d9628c90ec0163743c5d4d52ec2e89f5ea513535c41fb6acd5d25e"}
+[mem_cap] done: gen3ai-capped-python3-2262062.scope exit 0 · peak 6.46 GB of cap 28.00 GB (23%) · not OOM-killed
+exit 0

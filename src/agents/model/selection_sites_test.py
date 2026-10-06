@@ -113,6 +113,28 @@ def test_every_payload_sites_index_is_read_only_by_a_gather_of_its_declared_payl
     assert any("not a declared payload" in x for x in v) and any("outside a declared payload" in x for x in v), v
 
 
+def test_every_max_value_sites_index_is_read_only_by_a_gather_of_its_own_operand() -> None:
+    """A MAX_VALUE site (gen3_fm_index_max_v1) is EXACT only because its index selects the operand's own
+    maximum: any other consumer of the index — or a gather of a DIFFERENT tensor — would let a near-tie
+    flip reach log pi, so the site would have to be a MARGIN site."""
+    import ast
+    sites = [(m, src) for m, by in SS.EXACT.items() for src in by.get("MAX_VALUE", ())]
+    assert sites, "no MAX_VALUE site is declared — this check would be vacuous"
+    bad: List[str] = []
+    for module, src in sites:
+        call = ast.parse(src, mode="eval").body
+        assert isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute) \
+            and call.func.attr == "argmax", (module, src)
+        operand = _root_name(call.func.value)
+        bad += _payload_violations(SS.module_path(module).read_text(), src, (operand,))
+    assert not bad, bad
+    # teeth: the same index gathering ANOTHER tensor is caught
+    planted = ("def f(x, y):\n"
+               "    idx = x.detach().argmax(dim=-1, keepdim=True)\n"
+               "    return torch.gather(y, -1, idx).squeeze(-1)\n")
+    assert _payload_violations(planted, "x.detach().argmax(dim=-1, keepdim=True)", ("x",))
+
+
 def test_no_line_mixes_a_margin_and_an_exact_op_of_one_kind() -> None:
     amb = [x for m in SS.FORWARD_MODULES for x in SS.ambiguous_lines(m)]
     assert not amb, f"the recorder resolves ops by LINE — split these lines: {amb}"

@@ -293,6 +293,17 @@ production arch with suppression OFF; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out, `G
 for the CUDA cells). The Inductor diagnosis:
 [`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md).
 
+🚨 **A second load-bearing spelling: fixed_mass's incoming channel maxima are `max_by_index`, not `amax`**
+(`gen3_fm_index_max_v1`, F-XC-4). `amax`'s backward divides by `Σ(x == amax)`; when Inductor RECOMPUTES
+`x` in the backward kernel and Triton's FMA contraction rounds it differently from the forward kernel,
+no element equals the saved max and the compiled gradient is 0/0 = NaN (CUDA, 41 parameters, the
+400-wide sweep only fixed_mass prices). `damage_op.max_by_index` gathers at the detached argmax: the
+same value, a scatter backward. It sits behind `fixed_moves is not None` so blob keeps `amax` (its
+compiled code byte-identical, §7.5); its argmax is K9(b)'s one `MAX_VALUE` EXACT site (the index may
+only gather its own operand — `selection_sites_test` pins it). The class is LATENT at every other `amax`
+a compiled backward recomputes; the R1 gate's `NonFiniteGateArmError` names the next one, and the cure is
+the same spelling at that site, behind the arm that tripped it. Detail: `designs/training/compile_flags.md`.
+
 **The general lesson:** a backend that "can't compile our model" was one op, not a property of the
 architecture. Before reaching for a global suppression flag, bisect to the op — see
 `designs/training/compile_flags.md` → Compiled CPU opponents.

@@ -1,0 +1,24 @@
+{
+ "arm": "fixed_mass",
+ "cfg": {},
+ "n_nonfinite": 0,
+ "nonfinite": [],
+ "first_nan_events": [],
+ "wrapper_files": [
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/2f/c2f476llzsi7l2r2wbfzefkdnesh5jwcl5fiqzn76oetvy4jrsb7.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/3h/c3h5hzekt4fvo4pgwmzsvevkb5zlmj4yr37a6xi4l64semuikvgi.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/5t/c5tdkx32h52azkapiriu7ihntsfz4gg7yt427tmyu6nvtic4wet3.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/6k/c6knhd7zzddwm3p2eefzbson2vapg6xbt7nwfxmaolbkhfit74bu.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/cc/cccs7epgludawy7x27uujkttnxumtujcbdw4amzx2yqxj5e3gpaw.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/dd/cdd5cuofxfodehksmzulqszkqypxrbiefxfx5rswf46zdyia34w4.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/fn/cfn5qi5rzgsph6q7fgwxerow3y2egm6fzzapi4xzzjjtvf33dlfw.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/fq/cfqp7pz2bndkizzurilom7e7vxjihyxilzdff5l2ijmxqukvx6pt.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/fs/cfsv5lvh7df2s3axzt4u7a6ebpypebflo7u4zwvgi4lfatkjxh7e.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/il/cilipg6aasuoeg5xjlgs6gmeuzifeh3lt6k3q4m2sdxcuwb7jjcl.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/qt/cqttd2bzbvjxboaqoewjmjlqa6afoiglxl4454kxpj35l5v2r7tm.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/w6/cw6klulpeodsenarnv6l3u4izpfsywei4irers2zgurcwufbljfg.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/yh/cyh2fxqvj34ofjtbadpp435kivthjozqb753mbwyo3ajiv335gcd.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/yv/cyvw5ibbwkgxxma4js253cpcpahfakvyuc5nr2w2d6gk4oxwuahs.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1786520_p8mgq1ie/inductor/zk/czkqbzkv4amapvxlra4wfwkuhpm7kptaae3o7jb23ilvgvnfdxip.py"
+ ]
+}

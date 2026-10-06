@@ -1,0 +1,26 @@
+{
+ "R1": {
+  "files": [
+   32,
+   32
+  ],
+  "identical_after_comment_normalisation": true,
+  "identical_raw": false,
+  "combined_sha_a": "dee5ac1f16a8406234e144dc8a24bfa68a8e2e1b7a825d6b64f7b4f4962a246d",
+  "combined_sha_b": "dee5ac1f16a8406234e144dc8a24bfa68a8e2e1b7a825d6b64f7b4f4962a246d",
+  "only_in_a": 0,
+  "only_in_b": 0
+ },
+ "T2": {
+  "files": [
+   3,
+   3
+  ],
+  "identical_after_comment_normalisation": true,
+  "identical_raw": false,
+  "combined_sha_a": "4156f57a6ac85bbd1dff5fac03cb2d06c0ce51a717cd1dd4beca0070841ba1da",
+  "combined_sha_b": "4156f57a6ac85bbd1dff5fac03cb2d06c0ce51a717cd1dd4beca0070841ba1da",
+  "only_in_a": 0,
+  "only_in_b": 0
+ }
+}

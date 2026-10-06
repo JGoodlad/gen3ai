@@ -1485,10 +1485,32 @@ How the bars are set:
   so the trigger is fusion-dependent, not one node. A torch 2.8 Inductor defect on the fixed_mass graph;
   blob's graph does not trip it (the blob seeds' gates and canaries pass on CUDA). The bit-equal loss is the forward's own arithmetic (one fp32 scalar;
   1 ulp apart in other runs), and the gate line's "train features" for R1 IS that loss, so it was one
-  observation, not two. **A fixed_mass launch with `--compile-trainer` at HEAD is refused at its
-  startup gate** — now by name. Making it compile is an arithmetic-touching change (`remove_noop_ops` off for
-  R1, which is finite; a respelling of the op that feeds the first NaN kernel; or a newer torch) and is
-  not made here.
+  observation, not two.
+- **The mechanism, and the fixed_mass-only fix** (`gen3_fm_index_max_v1`, 2026-10-05,
+  `designs/research_state/measurements/x5_fxc4_nanfix_2026-10-05/`). A per-kernel NaN scan of the
+  generated code (a host count of NaN in every tensor argument before and after every Triton kernel;
+  codegen-only, so fusion is the real compile's) names the FIRST NaN-writing kernel: a backward
+  reduction kernel that RECOMPUTES fixed_mass's 400-wide incoming damage sweep (the full candidate
+  axis, which only fixed_mass prices; blob's is the top-6) from finite inputs and takes the
+  backward of its ten channel maxima. `amax`'s backward is `grad · (x == amax) / Σ(x == amax)`. The
+  partitioner recomputed `x` in the backward kernel, and Triton contracted its `a·b + c` chains into
+  FMAs differently there than in the forward kernel that took the max (a different fusion), so on some
+  rows NO element equalled the saved max: tie count 0, gradient 0/0 = NaN. With Triton's FMA
+  contraction off (`TRITON_DEFAULT_FP_FUSION=0`, a diagnostic only) the same graph is finite — that is
+  the mechanism; `remove_noop_ops` and the `_p_outspeed` alias only moved which nodes were recomputed.
+  **The fix:** under fixed_mass those ten maxima are selected BY INDEX (`damage_op.max_by_index`, a
+  gather at the detached argmax): the VALUE is bit-identical to `amax`, and the backward is a scatter
+  at the saved index — no float equality left to break. The blob arm keeps `amax`, and its R1 and T2
+  compiled code is byte-identical (hashed before / after in the measurement). The eager change is a
+  TIE rule: the whole gradient goes to the first maximal element where `amax` split it evenly; the
+  fixed_mass K9 golden did not move. On CUDA the fixed_mass startup gate now PASSES in 4 of 4 fresh
+  processes (per-parameter rel err ≤ 1.4e-5 against bars ≥ 0.0099; cosine ≥ 1 − 4e-10), and a compiled
+  regime-A launch passes its gate, the update-10 canary and 11 logger dumps.
+  ⚠️ **The class is latent wherever an `amax` / max-with-dim reduction's input is recomputed in a
+  compiled backward** — about fifty such reductions sit in the model, blob's included. It fires only
+  when the recompute rounds differently, and the startup gate's `NonFiniteGateArmError` and the
+  canary are what catch it. The next NaN FATAL of this shape gets the same cure (`max_by_index` at
+  the named site, behind the arm that tripped it), never a looser bar.
 
 `compile_regions_trained_cuda_test` (GPU tier) runs C's real weights through the real gate. The
 fp64-REFERENCED form of the gate (compiled no worse than k x eager's own error vs float64,

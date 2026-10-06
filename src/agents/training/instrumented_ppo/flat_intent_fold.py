@@ -72,7 +72,7 @@ def _flat_subset_metrics(sink: _Sink, logits: Tensor, tgt: Tensor, mask: Tensor,
     v, n_mv = _rate(mv_logits.argmax(dim=-1) == tgt, true_mv)
     sink.put(f"flat_move_recall_top1{sfx}", v, gate & (n_mv > 0))
     v, n_sw = _rate(sw_logits.argmax(dim=-1) == tgt, true_sw)
-    sink.put(f"flat_switch_target_recall_top1{sfx}", v, gate & (n_sw > 0))
+    sink.put(f"flat_switch_tgt_top1{sfx}", v, gate & (n_sw > 0))   # <= 33 chars with any class suffix (stdout table)
     sink.put(f"flat_info_gain_nats{sfx}", info_gain_nats_static(logits, tgt, mask, sink.odt), gate)
 
 

@@ -209,6 +209,13 @@ class NonFiniteGateArmError(CompileTrainerError):
     weights. Named — never reported as a disagreement in direction."""
 
 
+class GateArmsNotIndependentError(CompileTrainerError):
+    """The parity comparison has no two independent sides (`gen3_gate_independent_arms_v1`): the compiled
+    arm ran R1's eager body, the eager arm dispatched the compiled graph, or no compiled route is
+    installed. It is NOT a disagreement — there was nothing to compare — so no reader may word it as one
+    (the canary's "compiled DISAGREES … CONFIRMED" was that misreading, F-XC-4 FINDING 6)."""
+
+
 def nonfinite_grad_params(arm: Dict[str, "torch.Tensor"],
                           param_names: Optional[List[str]] = None) -> List[str]:
     """The parameters (names, or ``#i``) whose gradient segment in ``arm`` holds a NaN / inf; the

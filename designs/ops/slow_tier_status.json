@@ -193,6 +193,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda": {
+   "status": "pass",
+   "commit": "84f8569f3f8222d9112b26ab03ac3f2bebc1ca6d",
+   "at": "2026-10-05T23:13:16Z",
+   "duration_s": 142.79,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/model/compile_regions_trained_cuda_test.py::test_arm_Cs_trained_weights_pass_the_R1_gate_at_fp32_on_cuda": {
    "status": "pass",
    "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
@@ -1034,5 +1042,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-04T06:43:39Z"
+ "last_written": "2026-10-05T23:13:16Z"
 }

@@ -184,7 +184,7 @@ class CompileCanary:
             with contextlib.suppress(Exception):
                 self._emit(line[:500])
 
-    def _fatal(self, why: str, first: BaseException) -> None:
+    def _fatal(self, why: str, first: BaseException, *, compared: bool = True) -> None:
         run_dir = _run_dir(self.model)
         saved = "not written (no run directory declared)"
         if run_dir:
@@ -195,9 +195,12 @@ class CompileCanary:
             except Exception as exc:                          # the FATAL stands either way
                 saved = f"FAILED to write ({type(exc).__name__}: {exc})"
         self._record("fatal", f"{why} — {first}")
+        verdict = ("The COMPILED learner no longer equals eager on the committed real-obs fixture at the "
+                   "startup gate's bars" if compared else
+                   "NO comparison was made, so this says nothing about the compiled arithmetic — the "
+                   "learner's compiled route is not the one the gate certified")
         raise CompileCanaryError(
-            f"{CANARY_TAG} after update {self.updates}: {why}. The COMPILED learner no longer equals "
-            f"eager on the committed real-obs fixture at the startup gate's bars — {first}\n"
+            f"{CANARY_TAG} after update {self.updates}: {why}. {verdict} — {first}\n"
             f"Checkpoint: {saved}.\nSAFE ROLLBACK POINT: {rollback_point(run_dir)}.\n"
             f"Training on a wrong function is GIGO: fatal by design, the launcher does NOT restart it "
             f"(FATAL_CONFIG). See designs/training/learner_lifecycle.md (the canary).") from first
@@ -207,6 +210,13 @@ class CompileCanary:
         t0 = time.perf_counter()
         try:
             rules = self._check(0, out)
+        except ct.GateArmsNotIndependentError as first:
+            # Not a disagreement: the two arms were not independent (the compiled route ran eager, or
+            # the eager reference ran the compiled graph), so there is no verdict to CONFIRM. A dispatch
+            # fault is FATAL at once — never "compiled DISAGREES … CONFIRMED" (F-XC-4 FINDING 6).
+            self._fatal("the canary's two arms are NOT independent (a dispatch fault, not a "
+                        "disagreement)", first, compared=False)
+            raise                                            # unreachable: _fatal raises
         except ct.CompileTrainerError as first:
             # (1) warn + dump, then CONFIRM in the same update: the same rows again and an
             # independent slice, compiled and eager both re-computed.

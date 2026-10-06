@@ -1,0 +1,1070 @@
+{
+ "arm": "fixed_mass",
+ "cfg": {},
+ "n_nonfinite": 41,
+ "nonfinite": [
+  "features_extractor.embeddings.species_embedding.weight",
+  "features_extractor.embeddings.move_embedding.weight",
+  "features_extractor.embeddings.item_embedding.weight",
+  "features_extractor.embeddings.ability_embedding.weight",
+  "features_extractor.embeddings.type_embedding.weight",
+  "features_extractor.pokemon_encoder.move_latent_encoder.mlp.0.weight",
+  "features_extractor.pokemon_encoder.move_latent_encoder.mlp.0.bias",
+  "features_extractor.pokemon_encoder.move_latent_encoder.mlp.2.weight",
+  "features_extractor.pokemon_encoder.move_latent_encoder.mlp.2.bias",
+  "features_extractor.pokemon_encoder.move_network.0.weight",
+  "features_extractor.pokemon_encoder.move_network.0.bias",
+  "features_extractor.pokemon_encoder.move_network.2.weight",
+  "features_extractor.pokemon_encoder.move_network.2.bias",
+  "features_extractor.pokemon_encoder.move_self_attn.in_proj_weight",
+  "features_extractor.pokemon_encoder.move_self_attn.in_proj_bias",
+  "features_extractor.pokemon_encoder.move_self_attn.out_proj.weight",
+  "features_extractor.pokemon_encoder.move_self_attn.out_proj.bias",
+  "features_extractor.pokemon_encoder.move_self_norm.weight",
+  "features_extractor.pokemon_encoder.move_self_norm.bias",
+  "features_extractor.pokemon_encoder.role_encoder.0.weight",
+  "features_extractor.pokemon_encoder.role_encoder.0.bias",
+  "features_extractor.pokemon_encoder.role_encoder.2.weight",
+  "features_extractor.pokemon_encoder.role_encoder.2.bias",
+  "features_extractor.move_belief.move_head.weight",
+  "features_extractor.move_belief.move_head.bias",
+  "features_extractor.move_belief.reinject.weight",
+  "features_extractor.move_belief.reinject.bias",
+  "features_extractor.move_belief.norm.weight",
+  "features_extractor.move_belief.norm.bias",
+  "features_extractor.spread_belief.nature_head.weight",
+  "features_extractor.spread_belief.nature_head.bias",
+  "features_extractor.spread_belief.ev_head.weight",
+  "features_extractor.spread_belief.ev_head.bias",
+  "features_extractor.hp_type_belief_head.norm.weight",
+  "features_extractor.hp_type_belief_head.norm.bias",
+  "features_extractor.hp_type_belief_head.type_head.weight",
+  "features_extractor.hp_type_belief_head.type_head.bias",
+  "features_extractor.hp_type_belief_head.reinject_proj.weight",
+  "features_extractor.hp_type_belief_head.reinject_proj.bias",
+  "features_extractor.hp_type_belief_head.reinject_norm.weight",
+  "features_extractor.hp_type_belief_head.reinject_norm.bias"
+ ],
+ "first_nan_events": [
+  {
+   "file": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/ec/cecuozuefmz2bfnd33ebus53dgktw3yzlqlznyu3nzdhdp4guzh5.py",
+   "kernel": "triton_red_fused__to_copy_add_bitwise_or_clamp_div_eq_gather_ge_gt_index_le_logical_and_logsumexp_mul_neg_reciprocal_rsub_sub_sum_where_239",
+   "after": {
+    "buf1106": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1117": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1105": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1107": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1118": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1111": [
+     128,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1109": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "primals_110": null,
+    "convert_element_type_50": null,
+    "primals_88": [
+     0,
+     0,
+     [
+      19,
+      19
+     ]
+    ],
+    "convert_element_type_51": null,
+    "convert_element_type_48": null,
+    "primals_120": [
+     0,
+     0,
+     [
+      100,
+      19
+     ]
+    ],
+    "buf1076": [
+     0,
+     0,
+     [
+      2048,
+      400
+     ]
+    ],
+    "where_876": null,
+    "cat_39": [
+     0,
+     0,
+     [
+      2048,
+      3
+     ]
+    ],
+    "cat_40": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      3
+     ]
+    ],
+    "unsqueeze_410": [
+     0,
+     0,
+     [
+      2048,
+      1,
+      400
+     ]
+    ],
+    "buf1078": [
+     0,
+     0,
+     [
+      2048,
+      400
+     ]
+    ],
+    "slice_491": [
+     0,
+     0,
+     [
+      2048,
+      1
+     ]
+    ],
+    "primals_111": [
+     0,
+     0,
+     [
+      400
+     ]
+    ],
+    "slice_493": [
+     0,
+     0,
+     [
+      2048,
+      1
+     ]
+    ],
+    "select_112": [
+     0,
+     0,
+     [
+      2048,
+      6
+     ]
+    ],
+    "add_578": [
+     0,
+     0,
+     [
+      2048,
+      6
+     ]
+    ],
+    "iota_3": null,
+    "primals_116": [
+     0,
+     0,
+     [
+      400
+     ]
+    ],
+    "primals_117": [
+     0,
+     0,
+     [
+      400
+     ]
+    ],
+    "primals_118": [
+     0,
+     0,
+     [
+      400
+     ]
+    ],
+    "unsqueeze_430": [
+     0,
+     0,
+     [
+      2048,
+      1,
+      1
+     ]
+    ],
+    "cat_41": [
+     0,
+     0,
+     [
+      2048,
+      3
+     ]
+    ],
+    "mul_336": [
+     0,
+     0,
+     [
+      2048,
+      400
+     ]
+    ],
+    "primals_112": [
+     0,
+     0,
+     [
+      400
+     ]
+    ],
+    "view_1062": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1064": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1066": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1068": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1070": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1072": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1074": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1076": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1078": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1080": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "buf1023": [
+     0,
+     0,
+     [
+      2048,
+      138
+     ]
+    ],
+    "buf141": [
+     0,
+     0,
+     [
+      12288,
+      12
+     ]
+    ],
+    "buf1022": [
+     0,
+     0,
+     [
+      12288,
+      12
+     ]
+    ],
+    "primals_142": [
+     0,
+     0,
+     [
+      138
+     ]
+    ],
+    "any_7": null,
+    "buf1073": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      12
+     ]
+    ],
+    "buf1072": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400,
+      6
+     ]
+    ],
+    "buf1077": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1089": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1096": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1100": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1079": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ]
+   },
+   "before": {
+    "buf1106": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1117": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1105": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1107": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1118": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1111": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1109": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "primals_110": null,
+    "convert_element_type_50": null,
+    "primals_88": [
+     0,
+     0,
+     [
+      19,
+      19
+     ]
+    ],
+    "convert_element_type_51": null,
+    "convert_element_type_48": null,
+    "primals_120": [
+     0,
+     0,
+     [
+      100,
+      19
+     ]
+    ],
+    "buf1076": [
+     0,
+     0,
+     [
+      2048,
+      400
+     ]
+    ],
+    "where_876": null,
+    "cat_39": [
+     0,
+     0,
+     [
+      2048,
+      3
+     ]
+    ],
+    "cat_40": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      3
+     ]
+    ],
+    "unsqueeze_410": [
+     0,
+     0,
+     [
+      2048,
+      1,
+      400
+     ]
+    ],
+    "buf1078": [
+     0,
+     0,
+     [
+      2048,
+      400
+     ]
+    ],
+    "slice_491": [
+     0,
+     0,
+     [
+      2048,
+      1
+     ]
+    ],
+    "primals_111": [
+     0,
+     0,
+     [
+      400
+     ]
+    ],
+    "slice_493": [
+     0,
+     0,
+     [
+      2048,
+      1
+     ]
+    ],
+    "select_112": [
+     0,
+     0,
+     [
+      2048,
+      6
+     ]
+    ],
+    "add_578": [
+     0,
+     0,
+     [
+      2048,
+      6
+     ]
+    ],
+    "iota_3": null,
+    "primals_116": [
+     0,
+     0,
+     [
+      400
+     ]
+    ],
+    "primals_117": [
+     0,
+     0,
+     [
+      400
+     ]
+    ],
+    "primals_118": [
+     0,
+     0,
+     [
+      400
+     ]
+    ],
+    "unsqueeze_430": [
+     0,
+     0,
+     [
+      2048,
+      1,
+      1
+     ]
+    ],
+    "cat_41": [
+     0,
+     0,
+     [
+      2048,
+      3
+     ]
+    ],
+    "mul_336": [
+     0,
+     0,
+     [
+      2048,
+      400
+     ]
+    ],
+    "primals_112": [
+     0,
+     0,
+     [
+      400
+     ]
+    ],
+    "view_1062": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1064": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1066": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1068": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1070": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1072": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1074": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1076": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1078": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "view_1080": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      1
+     ]
+    ],
+    "buf1023": [
+     0,
+     0,
+     [
+      2048,
+      138
+     ]
+    ],
+    "buf141": [
+     0,
+     0,
+     [
+      12288,
+      12
+     ]
+    ],
+    "buf1022": [
+     0,
+     0,
+     [
+      12288,
+      12
+     ]
+    ],
+    "primals_142": [
+     0,
+     0,
+     [
+      138
+     ]
+    ],
+    "any_7": null,
+    "buf1073": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      12
+     ]
+    ],
+    "buf1072": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400,
+      6
+     ]
+    ],
+    "buf1077": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1089": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1096": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1100": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1079": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ]
+   }
+  },
+  {
+   "file": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/ec/cecuozuefmz2bfnd33ebus53dgktw3yzlqlznyu3nzdhdp4guzh5.py",
+   "kernel": "triton_poi_fused_add_gather_mul_new_zeros_reciprocal_scatter_add_sum_240",
+   "after": {
+    "buf1111": [
+     128,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1077": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1078": [
+     0,
+     0,
+     [
+      2048,
+      400
+     ]
+    ],
+    "where_876": null,
+    "cat_40": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      3
+     ]
+    ],
+    "buf1118": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      400
+     ]
+    ],
+    "buf1076": [
+     0,
+     0,
+     [
+      2048,
+      400
+     ]
+    ],
+    "buf1113": [
+     128,
+     0,
+     [
+      2048,
+      3
+     ]
+    ],
+    "buf1120": [
+     0,
+     0,
+     [
+      2048,
+      3
+     ]
+    ]
+   },
+   "before": null
+  },
+  {
+   "file": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/ec/cecuozuefmz2bfnd33ebus53dgktw3yzlqlznyu3nzdhdp4guzh5.py",
+   "kernel": "triton_poi_fused_add_div_index_put_lift_fresh_mul_neg_new_zeros_select_backward_sigmoid_backward_where_287",
+   "after": {
+    "iota": null,
+    "where_1": null,
+    "buf1054": [
+     0,
+     0,
+     [
+      2048,
+      45
+     ]
+    ],
+    "mul_4208": [
+     0,
+     0,
+     [
+      2048
+     ]
+    ],
+    "where_888": [
+     0,
+     0,
+     [
+      2048
+     ]
+    ],
+    "where_887": [
+     0,
+     0,
+     [
+      2048
+     ]
+    ],
+    "buf1062": [
+     0,
+     0,
+     [
+      2048
+     ]
+    ],
+    "buf1063": [
+     0,
+     0,
+     [
+      2048
+     ]
+    ],
+    "buf1075": [
+     0,
+     0,
+     [
+      2048
+     ]
+    ],
+    "buf1113": [
+     128,
+     0,
+     [
+      2048,
+      3
+     ]
+    ],
+    "buf1120": [
+     0,
+     0,
+     [
+      2048,
+      3
+     ]
+    ],
+    "where_865": [
+     0,
+     0,
+     [
+      2048
+     ]
+    ],
+    "gt_292": null,
+    "where_864": [
+     0,
+     0,
+     [
+      2048
+     ]
+    ],
+    "buf1064": [
+     0,
+     0,
+     [
+      2048,
+      6,
+      5
+     ]
+    ],
+    "buf1123": [
+     128,
+     0,
+     [
+      2048,
+      6,
+      5
+     ]
+    ]
+   },
+   "before": null
+  }
+ ],
+ "wrapper_files": [
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/3h/c3h5hzekt4fvo4pgwmzsvevkb5zlmj4yr37a6xi4l64semuikvgi.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/5t/c5tdkx32h52azkapiriu7ihntsfz4gg7yt427tmyu6nvtic4wet3.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/6k/c6knhd7zzddwm3p2eefzbson2vapg6xbt7nwfxmaolbkhfit74bu.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/cc/cccs7epgludawy7x27uujkttnxumtujcbdw4amzx2yqxj5e3gpaw.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/dd/cdd5cuofxfodehksmzulqszkqypxrbiefxfx5rswf46zdyia34w4.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/dz/cdzoo7eoyizo6fbyj3fczuczec3topomh5wxuieq37qo2eucmjbh.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/ec/cecuozuefmz2bfnd33ebus53dgktw3yzlqlznyu3nzdhdp4guzh5.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/fq/cfqp7pz2bndkizzurilom7e7vxjihyxilzdff5l2ijmxqukvx6pt.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/fs/cfsv5lvh7df2s3axzt4u7a6ebpypebflo7u4zwvgi4lfatkjxh7e.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/fz/cfz7zzib6bpp6auyhbhczbcgrrfqpcplknfysip4cmpgrubyrdot.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/i4/ci4ab6ivhedzhqaar7vgjg5qreleuxuphhfkras4fclo6xx6cnsr.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/il/cilipg6aasuoeg5xjlgs6gmeuzifeh3lt6k3q4m2sdxcuwb7jjcl.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/qt/cqttd2bzbvjxboaqoewjmjlqa6afoiglxl4454kxpj35l5v2r7tm.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/w6/cw6klulpeodsenarnv6l3u4izpfsywei4irers2zgurcwufbljfg.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/yh/cyh2fxqvj34ofjtbadpp435kivthjozqb753mbwyo3ajiv335gcd.py",
+  "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_1739164_hyg0xpey/inductor/yv/cyvw5ibbwkgxxma4js253cpcpahfakvyuc5nr2w2d6gk4oxwuahs.py"
+ ]
+}

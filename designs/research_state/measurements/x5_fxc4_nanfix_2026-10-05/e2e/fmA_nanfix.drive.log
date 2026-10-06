@@ -1,0 +1,6 @@
+drive fmA_nanfix start 1791244176.314801514 args: --arch production --device cuda --steps 6000000 --eval-freq 50000000 --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all --belief-tokens fixed_mass --allow-nonproduction-arch --behaviour-check warn
+wrapper pid 2297167
+trainer pid 2297188
+reached 12 update rows at i=520
+SIGTERM -> 2297188 at 1791245737.635105522
+end 1791245739.649125692; wrapper alive: no

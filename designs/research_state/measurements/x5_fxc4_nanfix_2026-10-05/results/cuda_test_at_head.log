@@ -1,0 +1,174 @@
+[mem_cap] cap 28.00 GB (swap 0) · unit gen3ai-capped-pytest-2045296.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[31mF[0m[31m                                                                        [100%][0m
+=================================== FAILURES ===================================
+[31m[1m_ test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda _[0m
+
+clean_dynamo = None
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x710dd7df8d90>
+
+    [0m[37m@_skip_cuda[39;49;00m[90m[39;49;00m
+    [37m@pytest[39;49;00m.mark.slow[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mtest_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda[39;49;00m(clean_dynamo, monkeypatch):[90m[39;49;00m
+        [94mfrom[39;49;00m[90m [39;49;00m[04m[96magents[39;49;00m[04m[96m.[39;49;00m[04m[96mmodel[39;49;00m[90m [39;49;00m[94mimport[39;49;00m parity_probe [94mas[39;49;00m PP[90m[39;49;00m
+        [94mfrom[39;49;00m[90m [39;49;00m[04m[96magents[39;49;00m[04m[96m.[39;49;00m[04m[96mtraining[39;49;00m[90m [39;49;00m[94mimport[39;49;00m learner_golden [94mas[39;49;00m LG[90m[39;49;00m
+        monkeypatch.setattr(PP, [33m"[39;49;00m[33mPERTURB_SCALE[39;49;00m[33m"[39;49;00m, [94m0.0[39;49;00m)          [90m# a FRESH launch's weights (zero-init pointer head)[39;49;00m[90m[39;49;00m
+        model = LG.build_arm_learner([33m"[39;49;00m[33mfixed_mass[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+        [94massert[39;49;00m model.policy.features_extractor.hypothesis_builder [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m      [90m# PRECONDITION: the X5 arm[39;49;00m[90m[39;49;00m
+        dev = torch.device([33m"[39;49;00m[33mcuda[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+        model.policy.to(dev)[90m[39;49;00m
+        model.device = dev[90m[39;49;00m
+        torch.set_float32_matmul_precision([33m"[39;49;00m[33mhighest[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+        model.batch_size = B[90m[39;49;00m
+        cc.control().install()[90m[39;49;00m
+        cr.install(model)[90m[39;49;00m
+        [94mtry[39;49;00m:[90m[39;49;00m
+            [94massert[39;49;00m cr.weights_regime(model) == [33m"[39;49;00m[33mfresh[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+            model.policy.set_training_mode([94mTrue[39;49;00m)[90m[39;49;00m
+            comp, eager = cr._r1_pair(model, cr._r1_args(model, cr.r1_batch(model, B)))[90m[39;49;00m
+            names = [n [94mfor[39;49;00m n, _ [95min[39;49;00m ct.grad_parameters(model, model.policy.features_extractor)][90m[39;49;00m
+            [94massert[39;49;00m ct.nonfinite_grad_params(eager, names) == []                      [90m# PRECONDITION: eager finite[39;49;00m[90m[39;49;00m
+>           [94massert[39;49;00m ct.nonfinite_grad_params(comp, names) == [], [33m"[39;49;00m[33mthe compiled R1 gradient is NON-FINITE[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+[1m[31mE           AssertionError: the compiled R1 gradient is NON-FINITE[0m
+[1m[31mE           assert ['features_ex....weight', ...] == [][0m
+[1m[31mE             [0m
+[1m[31mE             Left contains 41 more items, first extra item: [0m[33m'[39;49;00m[33mfeatures_extractor.embeddings.species_embedding.weight[39;49;00m[33m'[39;49;00m[90m[39;49;00m[0m
+[1m[31mE             Use -v to get more diff[0m
+
+[1m[31msrc/agents/model/compile_regions_fixed_mass_cuda_test.py[0m:60: AssertionError
+----------------------------- Captured stderr call -----------------------------
+⚠️  [BRIDGE=rust] POKESIM_EMISSION_SELFCHECK=1 — this process runs the EMISSION SELF-CHECK build (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a30fcd2b9887c1fda/src/rust_sim/target/selfcheck/sim_bridge), not the production release binary. Unset it for a real run.
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmple9g27q9/cuda_utils.c:5:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmple9g27q9/cuda_utils.c:1:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmptxpgo0dv/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmptxpgo0dv/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmpqoyhd2cl/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmpqoyhd2cl/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmpg8lwbvnv/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmpg8lwbvnv/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmpifa2n4tt/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmpifa2n4tt/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmp_3f69iin/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmp_3f69iin/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmp1408h4fs/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmp1408h4fs/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmpmque1itd/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /home/goodlad/.cache/gen3ai/tmp/tmpmque1itd/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+[33m=============================== warnings summary ===============================[0m
+src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda
+  /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/compile_fx.py:282: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+    warnings.warn(
+
+src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda
+  /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning: 
+  Online softmax is disabled on the fly since Inductor decides to
+  split the reduction. Cut an issue to PyTorch if this is an
+  important use case and you want to speed it up with online
+  softmax.
+  
+    warnings.warn(
+
+src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda
+src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda
+src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda
+src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda
+  /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:150: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+    mask |= a_isnan and not b_isnan
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda
+src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda
+src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda
+src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda
+  /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/runtime/triton_helpers.py:152: UserWarning: Logical operators 'and' and 'or' are deprecated for non-scalar tensors; please use '&' or '|' instead
+    equal |= a_isnan and b_isnan
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+slow-tier status: 1 row(s) recorded into /home/goodlad/.cache/gen3ai/x5pn/slow_status_revert.json
+[36m[1m=========================== short test summary info ============================[0m
+[31mFAILED[0m src/agents/model/compile_regions_fixed_mass_cuda_test.py::[1mtest_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda[0m - AssertionError: the compiled R1 gradient is NON-FINITE
+[31m[31m[1m1 failed[0m, [33m10 warnings[0m[31m in 145.00s (0:02:24)[0m[0m
+[mem_cap] done: gen3ai-capped-pytest-2045296.scope exit 1 · peak 7.04 GB of cap 28.00 GB (25%) · not OOM-killed
+exit 1

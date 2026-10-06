@@ -168,6 +168,10 @@ REASONS: Dict[str, str] = {
     "PYTHON": "a Python scalar comparison (a config value), not a tensor op",
     "NOT_LOGP": "does not reach log pi(a|s) (the greedy-action readout)",
     "LABEL": "a loss / label / metric helper (`LABEL_FUNCS`), not the policy forward",
+    "MAX_VALUE": "an argmax whose index is read ONLY by a gather of its OWN operand (`damage_op.max_by_index`, "
+                 "gen3_fm_index_max_v1): the gathered value is the operand's maximum, bit-identical to `amax` "
+                 "of it in every forward, so which near-tied candidate wins never reaches log pi — the site "
+                 "is exactly as continuous as the `amax` it spells (`selection_sites_test` pins the gather)",
     "BISECT": "a fixed-step bisection's direction test under no_grad (X5's fixed-size construction): "
               "either branch keeps the root inside the bracket, so a flip at a rounding error moves the "
               "converged root by at most the final bracket width — a continuous, ulp-scale change, never a "
@@ -184,6 +188,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("hp_frac > 0", "opp_burn > 0.5", "opp_para > 0.5", "our_para > 0.5", "s >= 0"),
         "TABLE": ("bp_all > 0", "phys_all > 0.5"),
         "SELECTED": ("bu_all > 0",),            # gen3_beatup_exact_v1: the 0/1 Beat Up bit at the candidate index
+        "MAX_VALUE": ("x.detach().argmax(dim=-1, keepdim=True)",),   # gen3_fm_index_max_v1 (fixed_mass only)
         "INT": ("(phys_all > 0.5).long()", "ctx.type1_ids[:, _og] == _GHOST_TIDX",
                 "ctx.type2_ids[:, _og] == _GHOST_TIDX", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
                 "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]", "opp_item == 0",

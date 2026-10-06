@@ -250,6 +250,31 @@ def test_other_label_rate_is_computed_over_choices_only():
     assert float(flat.grad[1, other_move_col(K)]) < 0.0 and float(flat.grad[5, other_species_col(K)]) < 0.0
 
 
+def test_every_flat_fold_key_of_every_opponent_class_renders_uniquely_in_the_stdout_table():
+    """F-XC-5's launch blocker: the stdout table (`train_logger.HumanOutputFormat`, sb3's, 36 columns)
+    truncates a key and RAISES when two truncate alike — `flat_switch_target_recall_top1_{bot,pool}` killed
+    every fixed_mass self-play run at its first dump. Every key the fold emits, with every opponent class
+    present, must render as a distinct row (the key is now `flat_switch_tgt_top1`)."""
+    import io
+
+    from agents.model.opp_intent import OPP_CLASS_NAMES
+    from agents.training import train_logger as TL
+    from agents.training.instrumented_ppo.flat_intent_fold import flat_intent_fold_tensors
+    rows = [(0, 57, -100, 0), (1, 0, 2, 0), (1, 0, -100, 227), (0, 94, -100, 0)] * (2 * len(OPP_CLASS_NAMES))
+    fi = _fi(len(rows))
+    kind, num, slot, sp = _labels(rows)
+    oc = torch.tensor(sorted(OPP_CLASS_NAMES) * (len(rows) // len(OPP_CLASS_NAMES)))
+    out = flat_intent_fold_tensors(torch.zeros(len(rows), flat_width(K)), fi, kind=kind, num=num,
+                                   switch_slot=slot, switch_species=sp, opp_class=oc, intent_coef=0.05,
+                                   bot_label_weight=1.0)
+    log = TL.Logger(None, [TL.HumanOutputFormat(io.StringIO())])
+    for key, (v, _w) in out.metrics.items():
+        log.record(key, float(v))
+    log.dump(step=1)                      # raises ValueError on a truncation collision
+    per_class = [k for k in out.metrics if k.endswith(tuple(f"_{n}" for n in OPP_CLASS_NAMES.values()))]
+    assert len(per_class) >= 4 * len(OPP_CLASS_NAMES), per_class      # every class's keys were rendered
+
+
 # --------------------------------------------------------------------- the real fixed_mass policy
 @pytest.fixture(scope="module")
 def fm():

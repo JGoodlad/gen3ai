@@ -389,7 +389,7 @@ def _r1_pair(model: Any, args: Tuple[Any, ...]) -> Tuple[Dict[str, torch.Tensor]
     from agents.training.instrumented_ppo.micro_step import micro_step
     fn = getattr(model, "_compiled_micro_step", None)
     if fn is None:
-        raise ct.CompileTrainerError(
+        raise ct.GateArmsNotIndependentError(
             "--compile-trainer region R1: no compiled micro-step is installed, so the parity gate has no "
             "COMPILED arm (gen3_gate_independent_arms_v1)")
     e0, c0 = _routes()
@@ -398,7 +398,7 @@ def _r1_pair(model: Any, args: Tuple[Any, ...]) -> Tuple[Dict[str, torch.Tensor]
     eager = _r1_arm(model, micro_step, args)
     e2, c2 = _routes()
     if (e1 - e0, c1 - c0) != (0, 1) or (e2 - e1, c2 - c1) != (1, 0):
-        raise ct.CompileTrainerError(
+        raise ct.GateArmsNotIndependentError(
             f"--compile-trainer region R1: the parity gate's two arms are NOT independent — the "
             f"compiled arm ran R1's eager body {e1 - e0}x and its compiled route {c1 - c0}x (want 0 / 1), "
             f"the eager arm ran the eager body {e2 - e1}x and the compiled route {c2 - c1}x (want 1 / 0). "
