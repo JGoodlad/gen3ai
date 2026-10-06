@@ -1287,6 +1287,21 @@ out on seeds the Q̂ did not use.
   opponent held at its recorded action).
 - S = 1 dice seed reads like 32: V's error, not the dice, is the limit.
 
+**A cleaner value LABEL does not fix it (CRN label refit, 2026-10-06).** The X5 blob arm's
+(`rb_x5ab_blob_s1001`, 15M) win-prob readout was refit, trunk frozen, on the mean of K = 1 / 4 / 8
+shared-dice rollouts to the end. Scored on held-out battles against 24 independent truth seeds:
+- held-out contested sibling pairs: BASE 0.593; REFIT-K8 0.579, **−0.014 [−0.032, +0.002]**
+  (a gain is excluded); the 8-rollout LEAF 0.670, **+0.077 [+0.035, +0.115]**;
+- K8 vs K1 label: no difference (−0.007, not detected);
+- the refit buys calibration (ECE 0.065 → 0.032), not resolution;
+- starved near-best pairs: BASE 0.450, refit +0.018 (detected, negligible), leaf 0.685.
+
+The information that orders siblings is in the playouts, not in the one-ply successor's
+`value_pooled`: the bound is the representation or coverage, not the label.
+[MEASURED · NOT DETECTED (gain excluded by the interval) · one checkpoint, greedy continuation,
+off-distribution bank states; ledger 2026-10-06 · *CRN LABEL REFIT*;
+[`measurements/crn_label_refit_2026-10-06/result.md`](measurements/crn_label_refit_2026-10-06/result.md)]
+
 **Novelty does not see them either (RND state-level read, 2026-09-30).** An RND novelty predictor on
 the raw observation (the X26 ride-along head's shapes) was trained offline on bank states. It
 tracks visitation (Spearman −0.34 vs a coarse state key's count) and flags off-distribution classes

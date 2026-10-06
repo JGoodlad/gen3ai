@@ -1,0 +1,21 @@
+{
+ "bank": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+ "ids": [
+  "ai_v14_01_base/step_36000000/random/win_s2_001#p1#30",
+  "ai_v14_01_base/step_36000000/random/win_s2_001#p1#34",
+  "ai_v14_01_base/step_36000000/random/win_s2_001#p1#42",
+  "ai_v14_01_base/step_36000000/heuristic/win_s0_001#p1#6",
+  "ai_v14_01_base/step_36000000/heuristic/win_s0_001#p1#23",
+  "ai_v14_01_base/step_36000000/heuristic/win_s0_001#p1#48",
+  "ai_v14_01_base/step_36000000/heuristic/win_s0_001#p1#49",
+  "ai_v14_01_base/step_36000000/heuristic/win_s0_002#p1#14",
+  "ai_v14_01_base/step_36000000/heuristic/draw_s3_005#p1#0",
+  "ai_v14_01_base/step_36000000/heuristic/draw_s3_005#p1#5",
+  "ai_v14_01_base/step_36000000/heuristic/draw_s3_005#p1#10",
+  "ai_v14_01_base/step_36000000/heuristic/draw_s3_005#p1#11",
+  "ai_v14_01_base/step_36000000/heuristic2/win_s0_001#p1#10",
+  "ai_v14_01_base/step_36000000/heuristic2/loss_s0_005#p1#13",
+  "ai_v14_01_base/step_36000000/heuristic2/loss_s3_003#p1#0",
+  "ai_v14_01_base/step_36000000/heuristic2/loss_s3_003#p1#16"
+ ]
+}

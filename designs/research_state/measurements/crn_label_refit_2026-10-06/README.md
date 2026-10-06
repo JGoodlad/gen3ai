@@ -1,7 +1,8 @@
 # CRN label refit (2026-10-06): is sibling discrimination limited by the value head's TRAINING LABEL?
 
-**Status: PRE-REGISTERED.** This file was committed before any outcome of this measurement was
-read. Amendments go BELOW the line at the end, dated, each one saying whether any outcome had been
+**Status: READ. Verdict NOT DETECTED, NOT SHOWN FLAT; the label is excluded as the binding
+constraint (see [`result.md`](result.md)).** §0-§6 were committed before any outcome of this
+measurement was read (`d909924f`). Amendments go BELOW the line at the end, dated, each one saying whether any outcome had been
 seen when it was written. The result is `result.md`.
 
 ## 0. The question
@@ -183,3 +184,25 @@ tested by re-running it (`6 turns done, 0 to go`).
 
 The pilot rows whose turns fall in the HELD-OUT subsample seed `rows/truth_held_S32.jsonl` (same
 code, checkpoint, seeds and continuation). The other pilot rows are not used.
+
+### Amendment 2 (2026-10-06, written AFTER the read; procedure only, no analysis change)
+
+- **A CUDA context, and the relaunch.** With the GPU visible, the CPU job's checkpoint load created
+  a CUDA context (330 MiB). SB3's `json_to_data` unpickles the checkpoint's ride-along optimizer
+  objects (`_ridealong_opt`, `_ridealong_opt_owner`, `_ridealong_vopts`, `_ridealong_vopts_owner`),
+  which were pickled with CUDA tensors. The held-out job was killed by PID at 409 of 563 durable
+  rows and relaunched with `CUDA_VISIBLE_DEVICES=` (empty) in every launcher. With the GPU hidden
+  those four objects fail to unpickle and are skipped; they are training-only state, and the
+  policy, critic and trunk loaded identically: the refit's load, with the GPU hidden, reproduces
+  the V stored by the capture, which loaded with the GPU visible, to 2e-7. Both legs are the same CPU computation. This was
+  done before any outcome was read.
+- **Plumbing smoke.** Before the read, `refit.py --smoke` / `score.py --smoke` ran the whole
+  analysis on FABRICATED random outcomes (the real truth never read) to test the code. Its outputs
+  were discarded.
+- **Committed form.** The truth rows are committed compact (`rows/*.compact.jsonl.gz`,
+  `truth.write_compact`) with the capture index (`rows/cap_index.jsonl.gz`). The full rows, the
+  capture's feature `.npz` files and the root read's `blob.probs.npz` are in
+  `~/gen3ai_archive/crn_label_refit_2026-10-06/rows/`. `refit.py` reads the compact form when the
+  full rows are absent; it needs `rows/cap/` copied back from the archive (or `capture.py` re-run,
+  which is deterministic).
+- `descriptive.py` computes the descriptive reads §3 registered (pair-class split, ECE).

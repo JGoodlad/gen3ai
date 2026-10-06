@@ -1,0 +1,93 @@
+{
+ "n_actions": {
+  "train": 3247,
+  "val": 713,
+  "held": 4018
+ },
+ "n_turns": {
+  "train": 454,
+  "val": 102,
+  "held": 563
+ },
+ "refused_capture": [],
+ "refused_truth": [],
+ "crn_alignment": {
+  "ended_branches": 1007,
+  "agree": 1007
+ },
+ "fits": [
+  {
+   "k": 1,
+   "seed": 0,
+   "val_bce_init": 0.5867213606834412,
+   "val_bce_best": 0.5599077343940735,
+   "best_epoch": 9,
+   "epochs_run": 30
+  },
+  {
+   "k": 1,
+   "seed": 1,
+   "val_bce_init": 0.5867213606834412,
+   "val_bce_best": 0.55841463804245,
+   "best_epoch": 8,
+   "epochs_run": 29
+  },
+  {
+   "k": 1,
+   "seed": 2,
+   "val_bce_init": 0.5867213606834412,
+   "val_bce_best": 0.5584117770195007,
+   "best_epoch": 12,
+   "epochs_run": 33
+  },
+  {
+   "k": 4,
+   "seed": 0,
+   "val_bce_init": 0.5791670680046082,
+   "val_bce_best": 0.5514124631881714,
+   "best_epoch": 7,
+   "epochs_run": 28
+  },
+  {
+   "k": 4,
+   "seed": 1,
+   "val_bce_init": 0.5791670680046082,
+   "val_bce_best": 0.5488925576210022,
+   "best_epoch": 11,
+   "epochs_run": 32
+  },
+  {
+   "k": 4,
+   "seed": 2,
+   "val_bce_init": 0.5791670680046082,
+   "val_bce_best": 0.5497514605522156,
+   "best_epoch": 6,
+   "epochs_run": 27
+  },
+  {
+   "k": 8,
+   "seed": 0,
+   "val_bce_init": 0.5669538378715515,
+   "val_bce_best": 0.5402951240539551,
+   "best_epoch": 6,
+   "epochs_run": 27
+  },
+  {
+   "k": 8,
+   "seed": 1,
+   "val_bce_init": 0.5669538378715515,
+   "val_bce_best": 0.5395346879959106,
+   "best_epoch": 9,
+   "epochs_run": 30
+  },
+  {
+   "k": 8,
+   "seed": 2,
+   "val_bce_init": 0.5669538378715515,
+   "val_bce_best": 0.5384190678596497,
+   "best_epoch": 6,
+   "epochs_run": 27
+  }
+ ],
+ "base_reproduction_max_abs": 2.1874237066121793e-07
+}

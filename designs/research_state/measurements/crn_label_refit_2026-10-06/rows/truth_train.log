@@ -1,0 +1,85 @@
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-crnrefit-749536.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/stable_baselines3/common/save_util.py:167: UserWarning: Could not deserialize object _ridealong_opt. Consider using `custom_objects` argument to replace this object.
+Exception: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/stable_baselines3/common/save_util.py:167: UserWarning: Could not deserialize object _ridealong_opt_owner. Consider using `custom_objects` argument to replace this object.
+Exception: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/stable_baselines3/common/save_util.py:167: UserWarning: Could not deserialize object _ridealong_vopts. Consider using `custom_objects` argument to replace this object.
+Exception: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/stable_baselines3/common/save_util.py:167: UserWarning: Could not deserialize object _ridealong_vopts_owner. Consider using `custom_objects` argument to replace this object.
+Exception: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.
+  warnings.warn(
+[truth] 0 turns already done, 556 to go (S = 8, blob_s1001_final greedy (both sides), 3 worker(s))
+[truth] 8/556 turns, 0.2 min, eta 10.8 min
+[truth] 16/556 turns, 0.4 min, eta 13.1 min
+[truth] 24/556 turns, 1.0 min, eta 23.2 min
+[truth] 32/556 turns, 1.5 min, eta 23.9 min
+[truth] 40/556 turns, 1.6 min, eta 20.9 min
+[truth] 48/556 turns, 1.8 min, eta 19.1 min
+[truth] 56/556 turns, 1.9 min, eta 16.9 min
+[truth] 64/556 turns, 2.2 min, eta 17.3 min
+[truth] 72/556 turns, 2.7 min, eta 18.4 min
+[truth] 80/556 turns, 3.0 min, eta 18.0 min
+[truth] 88/556 turns, 4.0 min, eta 21.3 min
+[truth] 96/556 turns, 4.6 min, eta 22.2 min
+[truth] 104/556 turns, 5.3 min, eta 23.0 min
+[truth] 112/556 turns, 5.6 min, eta 22.3 min
+[truth] 120/556 turns, 5.8 min, eta 21.0 min
+[truth] 128/556 turns, 6.4 min, eta 21.5 min
+[truth] 136/556 turns, 6.9 min, eta 21.2 min
+[truth] 144/556 turns, 7.2 min, eta 20.7 min
+[truth] 152/556 turns, 7.8 min, eta 20.7 min
+[truth] 160/556 turns, 8.1 min, eta 20.0 min
+[truth] 168/556 turns, 8.7 min, eta 20.1 min
+[truth] 176/556 turns, 8.9 min, eta 19.2 min
+[truth] 184/556 turns, 9.2 min, eta 18.7 min
+[truth] 192/556 turns, 9.6 min, eta 18.1 min
+[truth] 200/556 turns, 9.9 min, eta 17.7 min
+[truth] 208/556 turns, 10.2 min, eta 17.1 min
+[truth] 216/556 turns, 10.4 min, eta 16.3 min
+[truth] 224/556 turns, 10.5 min, eta 15.6 min
+[truth] 232/556 turns, 10.7 min, eta 15.0 min
+[truth] 240/556 turns, 11.0 min, eta 14.5 min
+[truth] 248/556 turns, 11.3 min, eta 14.0 min
+[truth] 256/556 turns, 12.2 min, eta 14.3 min
+[truth] 264/556 turns, 12.3 min, eta 13.6 min
+[truth] 272/556 turns, 12.4 min, eta 13.0 min
+[truth] 280/556 turns, 12.6 min, eta 12.4 min
+[truth] 288/556 turns, 13.4 min, eta 12.5 min
+[truth] 296/556 turns, 13.8 min, eta 12.2 min
+[truth] 304/556 turns, 14.7 min, eta 12.2 min
+[truth] 312/556 turns, 14.9 min, eta 11.7 min
+[truth] 320/556 turns, 15.2 min, eta 11.2 min
+[truth] 328/556 turns, 15.4 min, eta 10.7 min
+[truth] 336/556 turns, 16.0 min, eta 10.5 min
+[truth] 344/556 turns, 16.2 min, eta 10.0 min
+[truth] 352/556 turns, 16.6 min, eta 9.6 min
+[truth] 360/556 turns, 16.8 min, eta 9.1 min
+[truth] 368/556 turns, 17.3 min, eta 8.8 min
+[truth] 376/556 turns, 17.9 min, eta 8.6 min
+[truth] 384/556 turns, 18.6 min, eta 8.3 min
+[truth] 392/556 turns, 18.9 min, eta 7.9 min
+[truth] 400/556 turns, 19.4 min, eta 7.6 min
+[truth] 408/556 turns, 19.7 min, eta 7.1 min
+[truth] 416/556 turns, 20.1 min, eta 6.8 min
+[truth] 424/556 turns, 20.4 min, eta 6.3 min
+[truth] 432/556 turns, 20.8 min, eta 6.0 min
+[truth] 440/556 turns, 21.1 min, eta 5.6 min
+[truth] 448/556 turns, 21.8 min, eta 5.3 min
+[truth] 456/556 turns, 22.2 min, eta 4.9 min
+[truth] 464/556 turns, 22.7 min, eta 4.5 min
+[truth] 472/556 turns, 23.1 min, eta 4.1 min
+[truth] 480/556 turns, 23.3 min, eta 3.7 min
+[truth] 488/556 turns, 23.5 min, eta 3.3 min
+[truth] 496/556 turns, 23.6 min, eta 2.9 min
+[truth] 504/556 turns, 24.3 min, eta 2.5 min
+[truth] 512/556 turns, 24.5 min, eta 2.1 min
+[truth] 520/556 turns, 25.2 min, eta 1.7 min
+[truth] 528/556 turns, 25.6 min, eta 1.4 min
+[truth] 536/556 turns, 25.9 min, eta 1.0 min
+[truth] 544/556 turns, 26.0 min, eta 0.6 min
+[truth] 552/556 turns, 26.3 min, eta 0.2 min
+[truth] 556/556 turns, 26.4 min, eta 0.0 min
+[mem_cap] done: gen3ai-capped-crnrefit-749536.scope exit 0 · peak 1.23 GB of cap 12.00 GB (10%) · not OOM-killed

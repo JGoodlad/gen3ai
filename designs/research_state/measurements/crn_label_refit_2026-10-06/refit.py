@@ -37,13 +37,12 @@ def outcomes_of(row: dict) -> dict:
 
 
 def load_truth(path: Path, s: int) -> dict:
-    rows = {}
-    for line in path.read_text().splitlines():
-        if line.strip():
-            r = json.loads(line)
-            if len(r.get("seeds", [])) == s or r.get("n_seeds") == s:
-                rows[r["id"]] = r
-    return rows
+    """The full JSONL rows (the run's own output), else the committed compact ``.compact.jsonl.gz``."""
+    from main.policy_spectrum.truth import load_rows
+
+    if not path.exists():
+        path = path.with_name(path.name.replace(".jsonl", ".compact.jsonl.gz"))
+    return {r["id"]: r for r in load_rows(path) if len(r.get("seeds", [])) == s}
 
 
 def load_capture(cap: Path):

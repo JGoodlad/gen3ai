@@ -1,0 +1,88 @@
+[mem_cap] cap 10.00 GB (swap 0) · unit gen3ai-capped-crncap-544426.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[capture] 0 turns done, 1119 to go
+[capture] 16/1119 turns, 0.2 min, eta 11.0 min
+[capture] 32/1119 turns, 0.2 min, eta 6.2 min
+[capture] 48/1119 turns, 0.2 min, eta 4.6 min
+[capture] 64/1119 turns, 0.2 min, eta 3.8 min
+[capture] 80/1119 turns, 0.3 min, eta 3.4 min
+[capture] 96/1119 turns, 0.3 min, eta 3.1 min
+[capture] 112/1119 turns, 0.3 min, eta 2.8 min
+[capture] 128/1119 turns, 0.3 min, eta 2.6 min
+[capture] 144/1119 turns, 0.4 min, eta 2.5 min
+[capture] 160/1119 turns, 0.4 min, eta 2.3 min
+[capture] 176/1119 turns, 0.4 min, eta 2.2 min
+[capture] 192/1119 turns, 0.4 min, eta 2.1 min
+[capture] 208/1119 turns, 0.5 min, eta 2.1 min
+[capture] 224/1119 turns, 0.5 min, eta 2.0 min
+[capture] 240/1119 turns, 0.5 min, eta 1.9 min
+[capture] 256/1119 turns, 0.6 min, eta 1.9 min
+[capture] 272/1119 turns, 0.6 min, eta 1.8 min
+[capture] 288/1119 turns, 0.6 min, eta 1.8 min
+[capture] 304/1119 turns, 0.7 min, eta 1.8 min
+[capture] 320/1119 turns, 0.7 min, eta 1.7 min
+[capture] 336/1119 turns, 0.7 min, eta 1.7 min
+[capture] 352/1119 turns, 0.8 min, eta 1.6 min
+[capture] 368/1119 turns, 0.8 min, eta 1.6 min
+[capture] 384/1119 turns, 0.8 min, eta 1.6 min
+[capture] 400/1119 turns, 0.8 min, eta 1.5 min
+[capture] 416/1119 turns, 0.9 min, eta 1.5 min
+[capture] 432/1119 turns, 0.9 min, eta 1.4 min
+[capture] 448/1119 turns, 0.9 min, eta 1.4 min
+[capture] 464/1119 turns, 0.9 min, eta 1.3 min
+[capture] 480/1119 turns, 1.0 min, eta 1.3 min
+[capture] 496/1119 turns, 1.0 min, eta 1.3 min
+[capture] 512/1119 turns, 1.0 min, eta 1.2 min
+[capture] 528/1119 turns, 1.1 min, eta 1.2 min
+[capture] 544/1119 turns, 1.1 min, eta 1.1 min
+[capture] 560/1119 turns, 1.1 min, eta 1.1 min
+[capture] 576/1119 turns, 1.1 min, eta 1.1 min
+[capture] 592/1119 turns, 1.2 min, eta 1.0 min
+[capture] 608/1119 turns, 1.2 min, eta 1.0 min
+[capture] 624/1119 turns, 1.2 min, eta 1.0 min
+[capture] 640/1119 turns, 1.2 min, eta 0.9 min
+[capture] 656/1119 turns, 1.3 min, eta 0.9 min
+[capture] 672/1119 turns, 1.3 min, eta 0.9 min
+[capture] 688/1119 turns, 1.3 min, eta 0.8 min
+[capture] 704/1119 turns, 1.3 min, eta 0.8 min
+[capture] 720/1119 turns, 1.4 min, eta 0.7 min
+[capture] 736/1119 turns, 1.4 min, eta 0.7 min
+[capture] 752/1119 turns, 1.4 min, eta 0.7 min
+[capture] 768/1119 turns, 1.4 min, eta 0.7 min
+[capture] 784/1119 turns, 1.5 min, eta 0.6 min
+[capture] 800/1119 turns, 1.5 min, eta 0.6 min
+[capture] 816/1119 turns, 1.5 min, eta 0.6 min
+[capture] 832/1119 turns, 1.6 min, eta 0.5 min
+[capture] 848/1119 turns, 1.6 min, eta 0.5 min
+[capture] 864/1119 turns, 1.6 min, eta 0.5 min
+[capture] 880/1119 turns, 1.7 min, eta 0.4 min
+[capture] 896/1119 turns, 1.7 min, eta 0.4 min
+[capture] 912/1119 turns, 1.7 min, eta 0.4 min
+[capture] 928/1119 turns, 1.8 min, eta 0.4 min
+[capture] 944/1119 turns, 1.8 min, eta 0.3 min
+[capture] 960/1119 turns, 1.8 min, eta 0.3 min
+[capture] 976/1119 turns, 1.8 min, eta 0.3 min
+[capture] 992/1119 turns, 1.9 min, eta 0.2 min
+[capture] 1008/1119 turns, 1.9 min, eta 0.2 min
+[capture] 1024/1119 turns, 1.9 min, eta 0.2 min
+[capture] 1040/1119 turns, 2.0 min, eta 0.1 min
+[capture] 1056/1119 turns, 2.0 min, eta 0.1 min
+[capture] 1072/1119 turns, 2.0 min, eta 0.1 min
+[capture] 1088/1119 turns, 2.0 min, eta 0.1 min
+[capture] 1104/1119 turns, 2.1 min, eta 0.0 min
+[capture] 1119/1119 turns, 2.1 min, eta 0.0 min
+[mem_cap] done: gen3ai-capped-crncap-544426.scope exit 0 · peak 0.99 GB of cap 10.00 GB (10%) · not OOM-killed
+[mem_cap] cap 10.00 GB (swap 0) · unit gen3ai-capped-crncap-661037.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[capture] 1119 turns done, 0 to go
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/stable_baselines3/common/save_util.py:167: UserWarning: Could not deserialize object _ridealong_opt. Consider using `custom_objects` argument to replace this object.
+Exception: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/stable_baselines3/common/save_util.py:167: UserWarning: Could not deserialize object _ridealong_opt_owner. Consider using `custom_objects` argument to replace this object.
+Exception: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/stable_baselines3/common/save_util.py:167: UserWarning: Could not deserialize object _ridealong_vopts. Consider using `custom_objects` argument to replace this object.
+Exception: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/stable_baselines3/common/save_util.py:167: UserWarning: Could not deserialize object _ridealong_vopts_owner. Consider using `custom_objects` argument to replace this object.
+Exception: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.
+  warnings.warn(
+[mem_cap] done: gen3ai-capped-crncap-661037.scope exit 0 · peak 0.73 GB of cap 10.00 GB (7%) · not OOM-killed

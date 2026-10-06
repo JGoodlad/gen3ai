@@ -1,0 +1,4 @@
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-crnrefit-540260.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[truth] 0 turns already done, 6 to go (S = 32, blob_s1001_final greedy (both sides), 2 worker(s))
+[truth] 6/6 turns, 1.1 min, eta 0.0 min
+[mem_cap] done: gen3ai-capped-crnrefit-540260.scope exit 0 · peak 1.50 GB of cap 12.00 GB (13%) · not OOM-killed

@@ -1,0 +1,7 @@
+[run_all] start 2026-10-06T13:41:36-07:00 workers=3 threads=2
+[run_all] capture exit 0 2026-10-06T13:43:41-07:00
+[run_all] start 2026-10-06T14:52:04-07:00 workers=3 threads=2
+[run_all] capture exit 0 2026-10-06T14:52:07-07:00
+[run_all] held exit 0 2026-10-06T15:17:26-07:00
+[run_all] train exit 0 2026-10-06T15:43:53-07:00
+[run_all] DONE 2026-10-06T15:43:53-07:00
