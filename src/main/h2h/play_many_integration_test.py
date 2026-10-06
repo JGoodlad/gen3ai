@@ -158,16 +158,28 @@ def test_a_cell_listed_twice_is_refused(checkpoints):
         MANY.resolve_cells([(a, b), (b, a), (a, b)])
 
 
-def test_a_load_that_never_reached_the_slots_is_caught_and_writes_no_row(built, checkpoints, tmp_path, monkeypatch):
+@pytest.fixture(scope="module")
+def load_skipped(built, checkpoints, tmp_path_factory):
     """``InferenceService.load`` made a no-op: the cycle runs on whatever the slots held (the opponent's slot holds the
-    PLAYER's template weights), and the engine's own after-cycle check refuses the batch before it is scored."""
+    PLAYER's template weights), and the engine's own after-cycle check refuses the batch before it is scored. A MODULE
+    fixture (a real engine's play is ~30 s, the tier budget is per test call); the test reads what it recorded."""
     a, b = checkpoints
-    out = tmp_path / "ledger"
-    monkeypatch.setattr(InferenceService, "load", lambda self, slot, policy, model_id: None)
-    with pytest.raises(CopyParityFailure, match="slot 1"):
-        MANY.play_cells(str(out), MANY.resolve_cells([(a, b)]), pairs=2, batch_pairs=2, run_label="s",
-                        compute=COMPUTE, **QUIET)
-    assert rows_of(out) == []
+    out = tmp_path_factory.mktemp("h2h_many_load_skipped") / "ledger"
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(InferenceService, "load", lambda self, slot, policy, model_id: None)
+        try:
+            MANY.play_cells(str(out), MANY.resolve_cells([(a, b)]), pairs=2, batch_pairs=2, run_label="s",
+                            compute=COMPUTE, **QUIET)
+            raised = None
+        except CopyParityFailure as e:
+            raised = e
+    return {"raised": raised, "rows": rows_of(out)}
+
+
+def test_a_load_that_never_reached_the_slots_is_caught_and_writes_no_row(load_skipped):
+    assert load_skipped["raised"] is not None, "the skipped load was not refused"
+    assert "slot 1" in str(load_skipped["raised"])
+    assert load_skipped["rows"] == []
 
 
 @pytest.fixture(scope="module")

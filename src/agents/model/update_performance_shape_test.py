@@ -193,8 +193,24 @@ def plain_learner() -> Iterator[Any]:
 R1_CPU_ATTENTION_PROFILE = {"fused": 2, "math": 2}
 
 
-def test_R1s_attention_profile_on_cpu_is_pinned(plain_learner):
-    ops = _r1_forward_ops(plain_learner, contextlib.nullcontext())
+@pytest.fixture(scope="module")
+def r1_cpu_forward_ops() -> Iterator[List[str]]:
+    """R1's AOT forward graph traced ONCE per module (a full dynamo + AOT trace of the golden is ~30 s, and the
+    tier budget is per test call, `designs/ops/testing.md`); the pin below only reads it."""
+    from agents.training import learner_golden as LG
+    cc._reset_control_for_tests()
+    torch._dynamo.reset()
+    model = LG.build_learner()
+    LG.load_buffer_into(model)
+    try:
+        yield _r1_forward_ops(model, contextlib.nullcontext())
+    finally:
+        cc._reset_control_for_tests()
+        torch._dynamo.reset()
+
+
+def test_R1s_attention_profile_on_cpu_is_pinned(r1_cpu_forward_ops):
+    ops = r1_cpu_forward_ops
     got = {"fused": sum(_FUSED in o for o in ops), "math": sum(o == _MATH_SOFTMAX for o in ops)}
     assert got == R1_CPU_ATTENTION_PROFILE, (
         f"R1's attention lowering changed: {got}, pinned {R1_CPU_ATTENTION_PROFILE}. A lost fused kernel or a new "

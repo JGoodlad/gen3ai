@@ -42,8 +42,10 @@ def test_teeth_a_fixed_opponent_playing_the_trainees_weights_is_fatal(fixed_run)
     assert g["games"] == 1 and g["fatal"] and not g["missing"], g
 
 
-def test_teeth_another_seed_set_on_the_python_side_is_fatal(built, tmp_path):
-    """The gate compares GAMES: a Python path on a different seed set must fail it."""
-    rep = PAR.run({"games": 2, "shard_games": 2, "sentinels": 0, "n_envs": 4, "bots": ["heuristic", "staller"],
-                   "device": "cpu", "backend": "eager", "bar": PAR.BAR_CPU, "seed": 7, "python_seed": 8}, str(tmp_path))
-    assert rep["games"]["fatal"] and not rep["pass"]
+def test_teeth_another_seed_set_on_the_python_side_is_fatal(fixed_run):
+    """The gate compares GAMES: a Python path on a different seed set must fail it. Replays one shard of
+    the module's already-played fixed row on another cycle seed (the Rust games are the row's own), so no
+    second gate run is paid for (a full `PAR.run` of this took 35-43 s, over the unmarked tier's 30 s)."""
+    g = PAR.rerun_python(fixed_run["workdir"], keep=["ext_fixed1"], shards=[1], python_seed=fixed_run["cfg"]["seed"] + 1,
+                         tag="seed_swap")
+    assert g["games"] == 1 and g["fatal"] and not g["missing"], g

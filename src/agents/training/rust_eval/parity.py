@@ -536,9 +536,9 @@ def run(cfg: Dict[str, Any], workdir: Optional[str] = None) -> Dict[str, Any]:
 
 def rerun_python(workdir: str, *, keep: List[str], python_self_play_temp: Optional[float] = None,
                  python_fixed_paths: Optional[Dict[str, str]] = None, shards: Optional[List[int]] = None,
-                 tag: str = "rerun") -> Dict[str, Any]:
+                 python_seed: Optional[int] = None, tag: str = "rerun") -> Dict[str, Any]:
     """TEETH: replay the Python path of a finished :func:`run` on a SUBSET of its items (``keep``) with one
-    input MUTATED — a sentinel sampling at another temperature, a fixed opponent from another file
+    input MUTATED — a sentinel sampling at another temperature, another cycle seed (``python_seed``), a fixed opponent from another file
     (``"trainee"`` = the trainee's own zip: what an unloaded Rust fixed slot plays) — and judge its games
     against the Rust games that run recorded. A subset keeps every game's key: an item's units, game
     indices and per-unit quota depend on that item alone; ``shards`` keeps only those shard units of it
@@ -561,7 +561,7 @@ def rerun_python(workdir: str, *, keep: List[str], python_self_play_temp: Option
     skip = [u.unit_id for u in units if shards is not None and u.shard_index not in set(shards)]
     kept = {(u.item.key, u.shard_index) for u in units if u.unit_id not in set(skip)}
     py = run_python(run_dir=md / ".eval_runs" / f"step_{inp['step']}", model_dir=md, trainee=inp["trainee"],
-                    items=items, shard_games=inp["shard_games"], step=inp["step"], cycle_seed=inp["seed"],
+                    items=items, shard_games=inp["shard_games"], step=inp["step"], cycle_seed=inp["seed"] if python_seed is None else int(python_seed),
                     quota=inp["quota"], arch_toggles=inp["arch_toggles"], gamma=inp["gamma"],
                     sentinel_greedy=inp["sentinel_greedy"], self_play_temp=temp, skip_units=skip)
     return compare_games([g for g in rust_games if (g["item"], int(g["shard"])) in kept], py["games"], inp["bar"])
