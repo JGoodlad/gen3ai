@@ -30,7 +30,8 @@ serving it with a synthetic key would be a V stripped of its privilege — a dif
 """
 from __future__ import annotations
 
-from typing import Any, Tuple
+import contextlib
+from typing import Any, Iterator, Tuple
 
 import torch
 from torch import nn
@@ -107,13 +108,55 @@ def masked_logp(raw: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
     return torch.where(mask, logp, torch.full_like(logp, float("-inf"))).float()
 
 
+def _is_forward_state(v: Any) -> bool:
+    """A module attribute a forward (re)writes: a tensor that is not a parameter or buffer (those live in
+    ``_parameters`` / ``_buffers``, not ``vars()``), a tuple / list holding one (`EntitySeats.last_cand`),
+    or a per-forward STASH dataclass (`ExtractorStashes`, `OpStashes`: `gen3_extractor_stashes_v1`)."""
+    if torch.is_tensor(v) or type(v).__name__.endswith("Stashes"):
+        return True
+    return isinstance(v, (tuple, list)) and any(torch.is_tensor(x) for x in v)
+
+
+@contextlib.contextmanager
+def forward_state_released(policy: Any) -> Iterator[None]:
+    """Run a forward whose per-forward Python state does not outlive it (`gen3_reference_state_released_v1`,
+    F-XC-3). Every module attribute the forward REPLACED — its stash dataclass, a plain tensor attribute
+    such as `PokemonEncoder.last_move_tokens`, a tuple of tensors such as `EntitySeats.last_cand` — is
+    EMPTIED when it returns (a stash to a fresh instance, anything else to ``None``, an attribute the
+    forward created is removed); an attribute the forward did not touch is left alone. So the tensors the
+    forward produced are released, and the module holds no row-sized state afterwards.
+
+    Without it a parity gate's eager reference left its stashes alive on a T2 slot's replica, sized by the
+    gate's LAST row count: a slot load then read as a NEW allocation, growing with the arm's stash per row
+    (fixed_mass ≈ 0.38 MB per row; blob far less). Emptying rather than restoring the previous objects also
+    drops a stale stash an earlier forward (with grad) left there, which `copy.deepcopy` refuses."""
+    saved = []
+    for mod in policy.modules():
+        d = vars(mod)
+        saved.append((d, {k: v for k, v in d.items() if v is None or _is_forward_state(v)}))
+    try:
+        yield
+    finally:
+        for d, before in saved:
+            for k in [k for k, v in d.items() if _is_forward_state(v) and d.get(k) is not before.get(k, d)]:
+                v = d[k]
+                if k not in before:
+                    del d[k]
+                elif type(v).__name__.endswith("Stashes"):
+                    d[k] = type(v)()
+                else:
+                    d[k] = None
+
+
 def policy_reference(policy: Any, obs: torch.Tensor, mask: torch.Tensor
                      ) -> Tuple[torch.Tensor, torch.Tensor]:
     """The EAGER reference, read through the policy's OWN sb3 path (``extract_features`` → towers →
     ``_get_action_dist_from_latent`` → ``apply_masking``), exactly what the rollout samples from.
-    Same output contract as ``DecisionModule``. The parity gate's ground truth."""
+    Same output contract as ``DecisionModule``. The parity gate's ground truth. It leaves the policy's
+    per-forward state EMPTY (`forward_state_released`): a gate run on a served slot's replica acquires
+    nothing that outlives the gate."""
     fe = policy.features_extractor
-    with torch.no_grad():
+    with torch.no_grad(), forward_state_released(policy):
         pi, vf = fe({"observation": obs})
         latent_pi = policy.mlp_extractor.forward_actor(pi)
         latent_vf = policy.mlp_extractor.forward_critic(vf)

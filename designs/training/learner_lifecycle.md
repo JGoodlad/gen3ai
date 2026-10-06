@@ -272,9 +272,15 @@ allocated / 9.49 GiB reserved, 1.14 GiB of it the then-resident device batch; th
   (below) counts reserved grown since the freeze whatever grew it. Measured 2026-10-03 (P10 F7,
   buckets 8 / 64 / 256): an opponent load (CPU
   source) grows neither; its transient peak (~27 MiB: the eager reference forward and the served
-  clones) comes from the cache. A replica keeps its LAST eager reference forward's activation
-  stash (`ExtractorStashes`; 17 MiB at 255 rows) until its next forward — bounded, replaced not
-  added.
+  clones) comes from the cache. **A replica keeps NO eager reference state** (`gen3_reference_state_released_v1`,
+  2026-10-05, F-XC-3): `policy_reference` runs under `decision.forward_state_released`, which empties every
+  per-forward attribute the forward replaced (the extractor's and the op's stashes, `last_move_tokens`,
+  `EntitySeats.last_cand`). Before it, each replica kept its LAST eager forward's stash, sized by that
+  gate's row count, so a load whose last gate ran at more rows than the startup gate's read as a NEW
+  allocation — under fixed_mass ≈ 0.38 MB per row, enough to refuse a pool load at 1 MiB — and every
+  T2 replica held one for the run: MEASURED at N = 256 with 31 T2 slots, the T2 stage's allocated memory fell
+  1,264 → 749 MiB and the `UpdateFit` headroom rose 1,192 → 1,790 MiB under fixed_mass
+  (`research_state/measurements/x5_launchable_2026-10-05/`). `reference_state_test` pins it.
 - `SnapshotPool`'s default device is the CPU, and `snapshot_pool_device_test` pins EVERY construction
   in `src/` and `tools/` (tests included) to it with one AST scan. The sizing harness's own pool was
   missed by the first fix and died on the runtime refusal (fixed in `95af710e`). The one declared

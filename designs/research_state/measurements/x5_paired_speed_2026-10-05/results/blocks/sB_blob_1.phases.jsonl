@@ -1,0 +1,51 @@
+{"phase": "slot_load_logging", "t0": 1791258241.160959}
+{"phase": "start", "t0": 1791258241.161036, "pid": 3421433, "argv": ["--run-name", "sB_blob_1", "--arch", "production", "--device", "cuda", "--steps", "15000000", "--seed", "1001", "--ridealong-ensemble", "5", "--ridealong-rnd", "--ridealong-adv", "5", "--ridealong-opp", "5", "--ridealong-rnd-variants", "all", "--snapshot-ladder-games", "0", "--checkpoint-every-steps", "1000000"], "svc_cls": "InferenceService"}
+{"phase": "slot_load", "t0": 1791258491.0925968, "slot": 0, "model_id": "pool:10000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258492.7037084, "slot": 1, "model_id": "pool:20000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258494.302583, "slot": 2, "model_id": "pool:30000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258495.9254284, "slot": 3, "model_id": "pool:40000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258497.5525827, "slot": 4, "model_id": "pool:50000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258499.160196, "slot": 5, "model_id": "pool:60000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258500.7866178, "slot": 6, "model_id": "pool:70000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258502.3930674, "slot": 7, "model_id": "pool:80000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258503.9986835, "slot": 8, "model_id": "pool:90000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258505.6269698, "slot": 9, "model_id": "pool:100000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258507.252622, "slot": 10, "model_id": "pool:110000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258508.8803241, "slot": 11, "model_id": "pool:120000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258510.5507762, "slot": 12, "model_id": "pool:130000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258513.4535983, "slot": 13, "model_id": "pool:140000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258515.07921, "slot": 14, "model_id": "pool:150000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258516.6927235, "slot": 15, "model_id": "pool:160000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258518.3292384, "slot": 16, "model_id": "pool:170000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258519.9736378, "slot": 17, "model_id": "pool:180000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258521.5949569, "slot": 18, "model_id": "pool:190000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791258523.2274294, "slot": 19, "model_id": "pool:200000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "update", "t0": 1791258643.601638, "t1": 1791258656.6094096, "ok": true, "tid": 134429715674944}
+{"phase": "collect", "t0": 1791258656.6528063, "t1": 1791258671.4729805, "ok": true, "tid": 134429715674944}
+{"phase": "dump", "t0": 1791258671.4831629, "t1": 1791258671.4850368, "ok": true, "tid": 134429715674944}
+{"phase": "update", "t0": 1791258671.4850736, "t1": 1791258719.3828473, "ok": true, "tid": 134429715674944}
+{"phase": "collect", "t0": 1791258719.3913264, "t1": 1791258732.5367157, "ok": true, "tid": 134429715674944}
+{"phase": "dump", "t0": 1791258732.5467782, "t1": 1791258732.5562015, "ok": true, "tid": 134429715674944}
+{"phase": "update", "t0": 1791258732.5562387, "t1": 1791258773.405307, "ok": true, "tid": 134429715674944}
+{"phase": "collect", "t0": 1791258773.413716, "t1": 1791258786.9927678, "ok": true, "tid": 134429715674944}
+{"phase": "dump", "t0": 1791258787.0015528, "t1": 1791258787.009866, "ok": true, "tid": 134429715674944}
+{"phase": "update", "t0": 1791258787.0099006, "t1": 1791258829.963001, "ok": true, "tid": 134429715674944}
+{"phase": "collect", "t0": 1791258829.9723454, "t1": 1791258843.3612463, "ok": true, "tid": 134429715674944}
+{"phase": "dump", "t0": 1791258843.3831823, "t1": 1791258843.3913307, "ok": true, "tid": 134429715674944}
+{"phase": "update", "t0": 1791258843.3913631, "t1": 1791258884.3279517, "ok": true, "tid": 134429715674944}
+{"phase": "collect", "t0": 1791258884.336947, "t1": 1791258897.7243211, "ok": true, "tid": 134429715674944}
+{"phase": "dump", "t0": 1791258897.7354143, "t1": 1791258897.7435849, "ok": true, "tid": 134429715674944}
+{"phase": "update", "t0": 1791258897.7436206, "t1": 1791258938.692891, "ok": true, "tid": 134429715674944}
+{"phase": "collect", "t0": 1791258938.7019856, "t1": 1791258952.0524945, "ok": true, "tid": 134429715674944}
+{"phase": "dump", "t0": 1791258952.061496, "t1": 1791258952.0693593, "ok": true, "tid": 134429715674944}
+{"phase": "update", "t0": 1791258952.0693955, "t1": 1791258992.9988537, "ok": true, "tid": 134429715674944}
+{"phase": "collect", "t0": 1791258993.0080006, "t1": 1791259006.4688053, "ok": true, "tid": 134429715674944}
+{"phase": "dump", "t0": 1791259006.4797506, "t1": 1791259006.4995737, "ok": true, "tid": 134429715674944}
+{"phase": "update", "t0": 1791259006.4996161, "t1": 1791259047.487283, "ok": true, "tid": 134429715674944}
+{"phase": "collect", "t0": 1791259047.496482, "t1": 1791259060.944611, "ok": true, "tid": 134429715674944}
+{"phase": "dump", "t0": 1791259060.9560294, "t1": 1791259060.963813, "ok": true, "tid": 134429715674944}
+{"phase": "update", "t0": 1791259060.9638472, "t1": 1791259101.947484, "ok": true, "tid": 134429715674944}
+{"phase": "collect", "t0": 1791259101.9568872, "t1": 1791259115.472044, "ok": true, "tid": 134429715674944}
+{"phase": "dump", "t0": 1791259115.4814212, "t1": 1791259115.4895563, "ok": true, "tid": 134429715674944}
+{"phase": "update", "t0": 1791259115.48959, "t1": 1791259156.467267, "ok": true, "tid": 134429715674944}
+{"phase": "dump", "t0": 1791259158.590374, "t1": 1791259158.5983126, "ok": true, "tid": 134429715674944}

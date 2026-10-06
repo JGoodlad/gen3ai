@@ -1,0 +1,51 @@
+{"phase": "slot_load_logging", "t0": 1791259197.6470995}
+{"phase": "start", "t0": 1791259197.6471772, "pid": 3473574, "argv": ["--run-name", "sB_fm_1", "--arch", "production", "--device", "cuda", "--steps", "15000000", "--seed", "1001", "--ridealong-ensemble", "5", "--ridealong-rnd", "--ridealong-adv", "5", "--ridealong-opp", "5", "--ridealong-rnd-variants", "all", "--snapshot-ladder-games", "0", "--checkpoint-every-steps", "1000000", "--belief-tokens", "fixed_mass", "--allow-nonproduction-arch"], "svc_cls": "InferenceService"}
+{"phase": "slot_load", "t0": 1791259699.4927335, "slot": 0, "model_id": "pool:10000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259701.2893956, "slot": 1, "model_id": "pool:20000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259703.0959795, "slot": 2, "model_id": "pool:30000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259704.909761, "slot": 3, "model_id": "pool:40000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259706.7304947, "slot": 4, "model_id": "pool:50000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259708.545857, "slot": 5, "model_id": "pool:60000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259710.35362, "slot": 6, "model_id": "pool:70000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259712.1650846, "slot": 7, "model_id": "pool:80000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259713.9776218, "slot": 8, "model_id": "pool:90000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259715.7836258, "slot": 9, "model_id": "pool:100000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259717.5896182, "slot": 10, "model_id": "pool:110000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259719.3982227, "slot": 11, "model_id": "pool:120000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259721.2156413, "slot": 12, "model_id": "pool:130000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259723.0231025, "slot": 13, "model_id": "pool:140000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259724.841933, "slot": 14, "model_id": "pool:150000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259726.666809, "slot": 15, "model_id": "pool:160000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259728.4949255, "slot": 16, "model_id": "pool:170000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259730.3055568, "slot": 17, "model_id": "pool:180000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259732.1109338, "slot": 18, "model_id": "pool:190000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "slot_load", "t0": 1791259733.9294686, "slot": 19, "model_id": "pool:200000", "grew_bytes": 1024, "tolerance": 1048576}
+{"phase": "update", "t0": 1791259901.419597, "t1": 1791259915.372897, "ok": true, "tid": 126454566090560}
+{"phase": "collect", "t0": 1791259915.4208918, "t1": 1791259935.0270052, "ok": true, "tid": 126454566090560}
+{"phase": "dump", "t0": 1791259935.037568, "t1": 1791259935.0389566, "ok": true, "tid": 126454566090560}
+{"phase": "update", "t0": 1791259935.0389955, "t1": 1791259988.4135835, "ok": true, "tid": 126454566090560}
+{"phase": "collect", "t0": 1791259988.4226043, "t1": 1791260005.565342, "ok": true, "tid": 126454566090560}
+{"phase": "dump", "t0": 1791260005.5759609, "t1": 1791260005.5849257, "ok": true, "tid": 126454566090560}
+{"phase": "update", "t0": 1791260005.5849621, "t1": 1791260051.79523, "ok": true, "tid": 126454566090560}
+{"phase": "collect", "t0": 1791260051.8043716, "t1": 1791260069.1977816, "ok": true, "tid": 126454566090560}
+{"phase": "dump", "t0": 1791260069.2074146, "t1": 1791260069.2148762, "ok": true, "tid": 126454566090560}
+{"phase": "update", "t0": 1791260069.2149105, "t1": 1791260115.4196584, "ok": true, "tid": 126454566090560}
+{"phase": "collect", "t0": 1791260115.4287837, "t1": 1791260132.787424, "ok": true, "tid": 126454566090560}
+{"phase": "dump", "t0": 1791260132.798281, "t1": 1791260132.8055632, "ok": true, "tid": 126454566090560}
+{"phase": "update", "t0": 1791260132.805602, "t1": 1791260179.045004, "ok": true, "tid": 126454566090560}
+{"phase": "collect", "t0": 1791260179.054107, "t1": 1791260196.283126, "ok": true, "tid": 126454566090560}
+{"phase": "dump", "t0": 1791260196.2944512, "t1": 1791260196.301925, "ok": true, "tid": 126454566090560}
+{"phase": "update", "t0": 1791260196.3019621, "t1": 1791260242.5783677, "ok": true, "tid": 126454566090560}
+{"phase": "collect", "t0": 1791260242.587642, "t1": 1791260260.0622995, "ok": true, "tid": 126454566090560}
+{"phase": "dump", "t0": 1791260260.0714507, "t1": 1791260260.0786545, "ok": true, "tid": 126454566090560}
+{"phase": "update", "t0": 1791260260.0786881, "t1": 1791260306.3833764, "ok": true, "tid": 126454566090560}
+{"phase": "collect", "t0": 1791260306.3928201, "t1": 1791260323.8336015, "ok": true, "tid": 126454566090560}
+{"phase": "dump", "t0": 1791260323.84529, "t1": 1791260323.8656147, "ok": true, "tid": 126454566090560}
+{"phase": "update", "t0": 1791260323.8656533, "t1": 1791260373.5155947, "ok": true, "tid": 126454566090560}
+{"phase": "collect", "t0": 1791260373.5254302, "t1": 1791260391.2010896, "ok": true, "tid": 126454566090560}
+{"phase": "dump", "t0": 1791260391.212526, "t1": 1791260391.2199576, "ok": true, "tid": 126454566090560}
+{"phase": "update", "t0": 1791260391.2199914, "t1": 1791260437.5272331, "ok": true, "tid": 126454566090560}
+{"phase": "collect", "t0": 1791260437.5368717, "t1": 1791260454.981624, "ok": true, "tid": 126454566090560}
+{"phase": "dump", "t0": 1791260454.991039, "t1": 1791260454.998566, "ok": true, "tid": 126454566090560}
+{"phase": "update", "t0": 1791260454.9985971, "t1": 1791260501.4481106, "ok": true, "tid": 126454566090560}
+{"phase": "dump", "t0": 1791260502.585946, "t1": 1791260502.5935059, "ok": true, "tid": 126454566090560}

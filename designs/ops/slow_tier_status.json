@@ -91,41 +91,41 @@
   },
   "src/agents/inference/service/service_cuda_test.py::test_aot_backend_one_package_per_bucket_serves_every_slot": {
    "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 137.86,
-   "contention": 1.19,
+   "commit": "065d2d7ff2caaa1e5d968577499cabd144d10c8c",
+   "at": "2026-10-06T05:50:22Z",
+   "duration_s": 103.02,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_eager_cuda_steady_state_allocates_no_segment_and_a_new_one_poisons": {
    "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 1.34,
-   "contention": 1.01,
+   "commit": "065d2d7ff2caaa1e5d968577499cabd144d10c8c",
+   "at": "2026-10-06T05:50:22Z",
+   "duration_s": 1.1,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_graph_backend_parity_weight_swap_and_a_frozen_steady_state": {
    "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 99.08,
+   "commit": "065d2d7ff2caaa1e5d968577499cabd144d10c8c",
+   "at": "2026-10-06T05:50:22Z",
+   "duration_s": 112.17,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_the_double_buffer_wait_stops_a_repack_before_the_queued_copy_reads_it": {
    "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 63.33,
-   "contention": 1.67,
+   "commit": "065d2d7ff2caaa1e5d968577499cabd144d10c8c",
+   "at": "2026-10-06T05:50:22Z",
+   "duration_s": 48.13,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_two_lanes_replaying_concurrently_serve_their_own_slots": {
    "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 50.21,
+   "commit": "065d2d7ff2caaa1e5d968577499cabd144d10c8c",
+   "at": "2026-10-06T05:50:22Z",
+   "duration_s": 51.37,
    "contention": 1.0,
    "detail": ""
   },
@@ -195,10 +195,10 @@
   },
   "src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda": {
    "status": "pass",
-   "commit": "c7b4d03ec542d2aa4a8b5b26dd9565c055150709",
-   "at": "2026-10-06T01:36:38Z",
-   "duration_s": 147.44,
-   "contention": 1.0,
+   "commit": "065d2d7ff2caaa1e5d968577499cabd144d10c8c",
+   "at": "2026-10-06T05:50:22Z",
+   "duration_s": 175.22,
+   "contention": 1.11,
    "detail": ""
   },
   "src/agents/model/compile_regions_trained_cuda_test.py::test_arm_Cs_trained_weights_pass_the_R1_gate_at_fp32_on_cuda": {
@@ -1042,5 +1042,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-06T01:36:38Z"
+ "last_written": "2026-10-06T05:50:22Z"
 }

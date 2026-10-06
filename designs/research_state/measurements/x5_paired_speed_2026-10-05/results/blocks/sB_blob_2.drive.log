@@ -1,0 +1,6 @@
+drive sB_blob_2 start 1791260538.873658262 args: --arch production --device cuda --steps 15000000 --seed 1001 --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all --snapshot-ladder-games 0 --checkpoint-every-steps 1000000
+wrapper pid 3539356
+trainer pid 3539377
+reached 10 update rows at i=306
+SIGTERM -> 3539377 at 1791261457.215453404
+end 1791261459.229021749; wrapper alive: no

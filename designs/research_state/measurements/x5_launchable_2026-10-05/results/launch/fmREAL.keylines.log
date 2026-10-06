@@ -1,0 +1,48 @@
+201:🦀 [RUST ENV] T2 up in 508.8s: 1 slot group(s) [('pool0', 31)], trainee slot(s) [24], buckets (8, 64, 256) (non-trainee slots <= 64), lanes 8, backend graph on cuda
+202:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000010000.zip on cpu
+203:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000020000.zip on cpu
+204:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000030000.zip on cpu
+205:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000040000.zip on cpu
+206:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000050000.zip on cpu
+207:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000060000.zip on cpu
+208:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000070000.zip on cpu
+209:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000080000.zip on cpu
+210:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000090000.zip on cpu
+211:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000100000.zip on cpu
+212:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000110000.zip on cpu
+213:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000120000.zip on cpu
+214:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000130000.zip on cpu
+215:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000140000.zip on cpu
+216:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000150000.zip on cpu
+217:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000160000.zip on cpu
+218:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000170000.zip on cpu
+219:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000180000.zip on cpu
+220:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000190000.zip on cpu
+221:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000200000.zip on cpu
+320:[CompileRegions] parity PASS (fp32) — R1 [fresh weights] loss rel 0.00e+00 <= 0.0001; train features: fp32 max|compiled-eager| 0.00e+00 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.94e-05 (features_extractor.history_events.stat_emb.weight) over 146 params <= 0.1004 [the K9 learner golden's real labelled buffer] | R1 [fresh weights, seeded perturbation scale=0.05 seed+0] loss rel 0.00e+00 <= 0.0001; train features: fp32 max|compiled-eager| 0.00e+00 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.63e-05 (features_extractor.history_events.faint_emb.weight) over 214 params <= 0.00988
+323:🧊 [COMPILE LOCK] after the end of startup (the region gate, the reset and the prewarm of every declared signature): max 1 cache entries per code object (limit 8, headroom 7) at micro_step (micro_step.py:155); 1 code objects hold 1 entries; 4 graphs compiled in this process (incl. the gate's); mode stance. Any further dynamo compile or a cache-limit hit now stops the run with a typed exit.
+324:🐤 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs
+325:🧊 [LEARNER STARTUP] declared optimizer state: policy.optimizer +257
+327:    weights on the card (policy + ride-along heads)            alloc       57 (     +57)  reserved       66 (     +66)  peak       59  free    11510
+328:    rust env core (T2 slots, staging, arena)                   alloc      749 (    +691)  reserved     2598 (   +2532)  peak     1433  free     8394
+329:    compiled regions: gate + prewarm + lock                    alloc     1246 (    +498)  reserved     7608 (   +5010)  peak     4826  free     3354
+330:    optimizer state declared (Adam m, v) + lifecycle           alloc     1271 (     +25)  reserved     7608 (      +0)  peak     1308  free     3354
+331:🧮 [UpdateFit] dry first update (98,304 fixture rows, 1 epoch, device batch staged, 14.5s): demand (peak reserved) 9,134 MiB, peak allocated 6,645, floor 1,271; card for this process 10,924 (reserved 9,134 + free 1,790) -> headroom 1,790 MiB vs the declared 1,024; peak segment 'batch'
+333:🛡️  [SUPPLY] --self-play: must deliver self-play opponent (a seeded pool) within 3 consecutive live eval cycles, else FATAL_SUPPLY (5)
+1335:[EVAL] step 400,052: Rust eval core played 1,400 games in 34.1s (56,223 trainee decisions, 268 traces, 82 near-ties)
+1421:[SELFPLAY EVAL] step 400,052: Bots 18.4%  Pool 87.6%  Monotonicity -0.20  SelfPlay 0%  [summed unit time 726s; wall at collection end]
+1422:[SELFPLAY EVAL] new best (18.4%) saved to <scratch>/models/fmREAL/best_model/best_model.zip
+1423:📦 [SELFPLAY] Snapshot promoted at step 400,052 → snapshot_000000400052.zip (pool size: 20)
+1424:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000400052.zip on cpu
+1434:[SELFPLAY EVAL] step 400,052: cycle wall 37.5s (launch -> collected) · summed unit time 726s (eval/duration_sec)
+3545:[EVAL] step 800,220: Rust eval core played 1,400 games in 27.5s (47,102 trainee decisions, 278 traces, 9 near-ties)
+3631:[SELFPLAY EVAL] step 800,220: Bots 23.2%  Pool 80.2%  Monotonicity 0.20  SelfPlay 0%  [summed unit time 650s; wall at collection end]
+3632:[SELFPLAY EVAL] new best (23.2%) saved to <scratch>/models/fmREAL/best_model/best_model.zip
+3633:📦 [SELFPLAY] Snapshot promoted at step 800,220 → snapshot_000000800220.zip (pool size: 20)
+3634:🧠 [SELFPLAY] pool snapshot loaded INFERENCE-ONLY (no optimizer acquired): snapshot_000000800220.zip on cpu
+3644:[SELFPLAY EVAL] step 800,220: cycle wall 31.1s (launch -> collected) · summed unit time 650s (eval/duration_sec)
+4472:🐤 [CompileCanary] update 10: compiled == eager on the fixture (fp32, 1.0 s) — R1 [trained weights] loss rel 5.96e-08 <= 0.0001; train features: fp32 max|compiled-eager| 5.96e-08 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.91e-05 (features_extractor.history_events.itemtr_emb.weight) over 211 params <= 0.00988 [unmoved rule: bit-identical to the init record, or exactly 0.0] | R1 [trained weights, the 10 unmoved param(s) perturbed scale=0.05 seed+0 (e.g. features_extractor.value_pre_norm.weight)] loss rel 5.96e-08 <= 0.0001; train features: fp32 max|compiled-eager| 5.96e-08 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.74e-05 (features_extractor.history_events.itemtr_emb.weight) over 211 params <= 0.00988
+4977:[ABORT] SIGTERM received — stopping at the next safe point (rollout / step boundary; no save after 120s without one)
+4979:[ABORT] SIGTERM received — at the safe point: step (longest stretch between safe points 55.3s, ended at rollout_start)
+5329:[ABORT] Checkpoint saved → <scratch>/models/fmREAL/final_model_interrupted.zip
+5330:[mem_cap] done: gen3ai-capped-python3-3350075.scope exit 15 · peak 16.68 GB of cap 48.00 GB (35%) · not OOM-killed

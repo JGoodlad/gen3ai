@@ -1,0 +1,450 @@
+{
+ "s": 0.16716884071284221,
+ "median_cycle_s": {
+  "blob": 54.43,
+  "fixed_mass": 63.529
+ },
+ "n_cycles": {
+  "blob": 21,
+  "fixed_mass": 21
+ },
+ "block_medians": {
+  "blob": [
+   54.454,
+   54.434,
+   54.332
+  ],
+  "fixed_mass": [
+   63.777,
+   63.377,
+   63.516
+  ]
+ },
+ "s_per_block_pair": [
+  0.17120872663165243,
+  0.1642907006650256,
+  0.16903482294044014
+ ],
+ "s_block_range": [
+  0.1642907006650256,
+  0.17120872663165243
+ ],
+ "matched_wall_time_steps": 12851611.07525697,
+ "matched_wall_time_checkpoint": 12000000,
+ "train_ms_block_medians_s": {
+  "blob": [
+   40.962009765625,
+   41.000265625,
+   40.915923828125
+  ],
+  "fixed_mass": [
+   46.28926953125,
+   46.12596484375,
+   46.165728515625
+  ]
+ },
+ "blocks": [
+  {
+   "tag": "sB_blob_1",
+   "tb_records": 9,
+   "update_phases": 10,
+   "cycles": [
+    {
+     "k": 1,
+     "update": 2,
+     "wall_s": 54.454,
+     "excluded": null
+    },
+    {
+     "k": 2,
+     "update": 3,
+     "wall_s": 56.381,
+     "excluded": null
+    },
+    {
+     "k": 3,
+     "update": 4,
+     "wall_s": 54.352,
+     "excluded": null
+    },
+    {
+     "k": 4,
+     "update": 5,
+     "wall_s": 54.326,
+     "excluded": null
+    },
+    {
+     "k": 5,
+     "update": 6,
+     "wall_s": 54.43,
+     "excluded": null
+    },
+    {
+     "k": 6,
+     "update": 7,
+     "wall_s": 54.464,
+     "excluded": null
+    },
+    {
+     "k": 7,
+     "update": 8,
+     "wall_s": 54.526,
+     "excluded": null
+    },
+    {
+     "k": 8,
+     "update": 9,
+     "wall_s": 43.109,
+     "excluded": "the stop: the abort dump after SIGTERM (an update, no rollout)"
+    }
+   ],
+   "kept_n": 7,
+   "kept": [
+    54.454,
+    56.381,
+    54.352,
+    54.326,
+    54.43,
+    54.464,
+    54.526
+   ],
+   "median": 54.454,
+   "train_ms_median": 40.962009765625
+  },
+  {
+   "tag": "sB_fm_1",
+   "tb_records": 9,
+   "update_phases": 10,
+   "cycles": [
+    {
+     "k": 1,
+     "update": 2,
+     "wall_s": 63.63,
+     "excluded": null
+    },
+    {
+     "k": 2,
+     "update": 3,
+     "wall_s": 63.591,
+     "excluded": null
+    },
+    {
+     "k": 3,
+     "update": 4,
+     "wall_s": 63.496,
+     "excluded": null
+    },
+    {
+     "k": 4,
+     "update": 5,
+     "wall_s": 63.777,
+     "excluded": null
+    },
+    {
+     "k": 5,
+     "update": 6,
+     "wall_s": 63.787,
+     "excluded": null
+    },
+    {
+     "k": 6,
+     "update": 7,
+     "wall_s": 67.355,
+     "excluded": null
+    },
+    {
+     "k": 7,
+     "update": 8,
+     "wall_s": 63.779,
+     "excluded": null
+    },
+    {
+     "k": 8,
+     "update": 9,
+     "wall_s": 47.595,
+     "excluded": "the stop: the abort dump after SIGTERM (an update, no rollout)"
+    }
+   ],
+   "kept_n": 7,
+   "kept": [
+    63.63,
+    63.591,
+    63.496,
+    63.777,
+    63.787,
+    67.355,
+    63.779
+   ],
+   "median": 63.777,
+   "train_ms_median": 46.28926953125
+  },
+  {
+   "tag": "sB_blob_2",
+   "tb_records": 9,
+   "update_phases": 10,
+   "cycles": [
+    {
+     "k": 1,
+     "update": 2,
+     "wall_s": 54.434,
+     "excluded": null
+    },
+    {
+     "k": 2,
+     "update": 3,
+     "wall_s": 56.387,
+     "excluded": null
+    },
+    {
+     "k": 3,
+     "update": 4,
+     "wall_s": 54.426,
+     "excluded": null
+    },
+    {
+     "k": 4,
+     "update": 5,
+     "wall_s": 54.358,
+     "excluded": null
+    },
+    {
+     "k": 5,
+     "update": 6,
+     "wall_s": 54.533,
+     "excluded": null
+    },
+    {
+     "k": 6,
+     "update": 7,
+     "wall_s": 54.281,
+     "excluded": null
+    },
+    {
+     "k": 7,
+     "update": 8,
+     "wall_s": 54.514,
+     "excluded": null
+    },
+    {
+     "k": 8,
+     "update": 9,
+     "wall_s": 43.615,
+     "excluded": "the stop: the abort dump after SIGTERM (an update, no rollout)"
+    }
+   ],
+   "kept_n": 7,
+   "kept": [
+    54.434,
+    56.387,
+    54.426,
+    54.358,
+    54.533,
+    54.281,
+    54.514
+   ],
+   "median": 54.434,
+   "train_ms_median": 41.000265625
+  },
+  {
+   "tag": "sB_fm_2",
+   "tb_records": 9,
+   "update_phases": 10,
+   "cycles": [
+    {
+     "k": 1,
+     "update": 2,
+     "wall_s": 63.377,
+     "excluded": null
+    },
+    {
+     "k": 2,
+     "update": 3,
+     "wall_s": 63.191,
+     "excluded": null
+    },
+    {
+     "k": 3,
+     "update": 4,
+     "wall_s": 63.254,
+     "excluded": null
+    },
+    {
+     "k": 4,
+     "update": 5,
+     "wall_s": 63.276,
+     "excluded": null
+    },
+    {
+     "k": 5,
+     "update": 6,
+     "wall_s": 63.479,
+     "excluded": null
+    },
+    {
+     "k": 6,
+     "update": 7,
+     "wall_s": 66.912,
+     "excluded": null
+    },
+    {
+     "k": 7,
+     "update": 8,
+     "wall_s": 63.61,
+     "excluded": null
+    },
+    {
+     "k": 8,
+     "update": 9,
+     "wall_s": 48.13,
+     "excluded": "the stop: the abort dump after SIGTERM (an update, no rollout)"
+    }
+   ],
+   "kept_n": 7,
+   "kept": [
+    63.377,
+    63.191,
+    63.254,
+    63.276,
+    63.479,
+    66.912,
+    63.61
+   ],
+   "median": 63.377,
+   "train_ms_median": 46.12596484375
+  },
+  {
+   "tag": "sB_blob_3",
+   "tb_records": 9,
+   "update_phases": 10,
+   "cycles": [
+    {
+     "k": 1,
+     "update": 2,
+     "wall_s": 54.329,
+     "excluded": null
+    },
+    {
+     "k": 2,
+     "update": 3,
+     "wall_s": 56.239,
+     "excluded": null
+    },
+    {
+     "k": 3,
+     "update": 4,
+     "wall_s": 54.336,
+     "excluded": null
+    },
+    {
+     "k": 4,
+     "update": 5,
+     "wall_s": 54.332,
+     "excluded": null
+    },
+    {
+     "k": 5,
+     "update": 6,
+     "wall_s": 54.585,
+     "excluded": null
+    },
+    {
+     "k": 6,
+     "update": 7,
+     "wall_s": 54.065,
+     "excluded": null
+    },
+    {
+     "k": 7,
+     "update": 8,
+     "wall_s": 54.332,
+     "excluded": null
+    },
+    {
+     "k": 8,
+     "update": 9,
+     "wall_s": 43.401,
+     "excluded": "the stop: the abort dump after SIGTERM (an update, no rollout)"
+    }
+   ],
+   "kept_n": 7,
+   "kept": [
+    54.329,
+    56.239,
+    54.336,
+    54.332,
+    54.585,
+    54.065,
+    54.332
+   ],
+   "median": 54.332,
+   "train_ms_median": 40.915923828125
+  },
+  {
+   "tag": "sB_fm_3",
+   "tb_records": 9,
+   "update_phases": 10,
+   "cycles": [
+    {
+     "k": 1,
+     "update": 2,
+     "wall_s": 65.044,
+     "excluded": null
+    },
+    {
+     "k": 2,
+     "update": 3,
+     "wall_s": 63.169,
+     "excluded": null
+    },
+    {
+     "k": 3,
+     "update": 4,
+     "wall_s": 63.529,
+     "excluded": null
+    },
+    {
+     "k": 4,
+     "update": 5,
+     "wall_s": 63.385,
+     "excluded": null
+    },
+    {
+     "k": 5,
+     "update": 6,
+     "wall_s": 63.621,
+     "excluded": null
+    },
+    {
+     "k": 6,
+     "update": 7,
+     "wall_s": 63.443,
+     "excluded": null
+    },
+    {
+     "k": 7,
+     "update": 8,
+     "wall_s": 63.516,
+     "excluded": null
+    },
+    {
+     "k": 8,
+     "update": 9,
+     "wall_s": 46.697,
+     "excluded": "the stop: the abort dump after SIGTERM (an update, no rollout)"
+    }
+   ],
+   "kept_n": 7,
+   "kept": [
+    65.044,
+    63.169,
+    63.529,
+    63.385,
+    63.621,
+    63.443,
+    63.516
+   ],
+   "median": 63.516,
+   "train_ms_median": 46.165728515625
+  }
+ ]
+}

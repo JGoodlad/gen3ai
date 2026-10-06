@@ -1,0 +1,6 @@
+drive sB_fm_2 start 1791261495.849200046 args: --arch production --device cuda --steps 15000000 --seed 1001 --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all --snapshot-ladder-games 0 --checkpoint-every-steps 1000000 --belief-tokens fixed_mass --allow-nonproduction-arch
+wrapper pid 3590618
+trainer pid 3590639
+reached 10 update rows at i=434
+SIGTERM -> 3590639 at 1791262798.661903227
+end 1791262800.675342811; wrapper alive: no

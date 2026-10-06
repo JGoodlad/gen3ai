@@ -1,0 +1,6 @@
+drive fmREAL start 1791256750.851612963 args: --arch production --device cuda --steps 15000000 --seed 1001 --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all --snapshot-ladder-games 0 --checkpoint-every-steps 1000000 --belief-tokens fixed_mass --allow-nonproduction-arch --eval-freq 400000 --promote-threshold 0.0
+wrapper pid 3350063
+trainer pid 3350084
+reached 12 update rows at i=484
+SIGTERM -> 3350084 at 1791258203.860357454
+end 1791258205.873169871; wrapper alive: no

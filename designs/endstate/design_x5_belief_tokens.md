@@ -654,6 +654,20 @@ seat" exceptions), and listed every opponent-slot `hp > 0` gate F-X5-12 named pl
     why is UNVERIFIED (the desktop's 811 MiB is the likely part). Under Amendment 5 (§7.9) the +5 % / +3 % lines no
     longer gate the launch (s ≤ 50 %, s from the paired benchmark, not these reads); the headroom line is F-XC-2's
     refusal, which now clears at this box state without the override; F-XC-3 still stands.
+  - **F-XC-3 FIXED, and the launch status (2026-10-05, `gen3_reference_state_released_v1`,
+    `measurements/x5_launchable_2026-10-05/`, `measurements/x5_paired_speed_2026-10-05/`).** The parity gate's
+    EAGER reference ran the slot replica's own forward, which replaces the extractor's and the op's per-forward
+    stashes; they outlived the gate, sized by its last bucket's rows (fixed_mass ≈ 0.38 MB per row), so a slot load
+    read them as a new allocation. `decision.policy_reference` now runs under `forward_state_released`, which empties
+    every per-forward attribute the forward replaced; no compiled code moves (blob and fixed_mass R1 + T2 identical
+    before and after). The REAL production launch (no override; X26 heads, regime A, `--eval-freq 400000`): every
+    slot load grew ≤ 1,024 B (20 at startup, 2 pool refreshes), the T2 stage's allocated memory 1,264 → 749 MiB,
+    `UpdateFit` headroom **1,790 MiB** (declared 1,024: PASS), the R1 gate and the update-10 canary PASS, no NaN.
+    **The paired ABAB benchmark (3 blocks per arm, desktop stopped, §7.4's reader): s = +16.7 %** (block pairs
+    +17.1 / +16.4 / +16.9 %; update-cycle 54.43 → 63.53 s, of which `train_ms` 40.96 → 46.17 s), so the
+    **matched-wall-time checkpoint is 12M** (15M / 1.167 = 12.85M). s ≤ 50 %: **fixed_mass is LAUNCHABLE under
+    Amendment 5**, with no refusal overridden. The +5 % / +3 % budget lines still fail; under Amendment 5 they no
+    longer gate.
 
 ### 3.7 The opponent pointer, and the A and B heads re-based
 
@@ -1413,6 +1427,13 @@ Rule 8 applies to any row whose renormalisation denominator is within 1e-12 of 0
 
 Everything else in §7.4–§7.8 stands. The oracle reference arms are unaffected (reported, never gated).
 
+**Status (2026-10-05, MEASURED):** s = **+16.7 %** (paired ABAB, block pairs 16.4–17.1 %;
+`measurements/x5_paired_speed_2026-10-05/`), so the matched wall-time read takes each fixed_mass run's **12M**
+checkpoint against blob at 15M. The F-XC-2 and F-XC-3 refusals are FIXED and a real production fixed_mass launch
+passes every startup check and its update-10 canary with no override (`measurements/x5_launchable_2026-10-05/`).
+The fixed_mass seeds may launch once their pin P_x5 carries this fix (§7.5's blob-identity precondition is checked
+there).
+
 ---
 
 ## 8. Risks, open gaps, build plan
@@ -1919,3 +1940,4 @@ the safe default, but would leave X5 unadopted for reasons of noise.
 | 2026-10-05 | **F-XC-4 FIXED for fixed_mass by an index-selected max (`gen3_fm_index_max_v1`); blob untouched** | **Under fixed_mass the incoming direction's ten channel maxima over the full candidate sweep are taken by `damage_op.max_by_index` (the value at the detached argmax), not `amax`. The value is bit-identical; the backward is a scatter at a saved index, so no recomputed float has to equal a saved max. Scope: the `fixed_moves is not None` branch of the incoming direction only. The blob arm's R1 and T2 compiled code is byte-identical before and after (dynamo graph + every Inductor module hashed with the caches off), and its K9 golden passes, so the §7.5 identity precondition against P_blob = e5e660dd holds. Eager change for fixed_mass: on an exact tie the gradient goes whole to the first maximal element (amax split it); the fixed_mass K9 golden is unchanged. CUDA: compiled gradients finite and the real startup gate PASSES in 4 of 4 fresh processes; planted NaN / gradient miscompiles still FATAL.** Reason: the defect is `amax`'s tie-count backward over a tensor Inductor recomputes and Triton's FMA contraction rounds differently (finite with contraction off); selecting by index removes the float equality the backward depended on. | `remove_noop_ops` off for R1 (a global Inductor pass change for the arm, and it only moved which nodes were recomputed — the class stays); Triton FMA contraction off for fixed_mass (process-global, slower kernels, and it removes one rounding source rather than the equality); a newer torch (no release with a fix identified); respelling every `amax` in the model (blob's would change, voiding §7.5) | `measurements/x5_fxc4_nanfix_2026-10-05/`; `designs/training/compile_flags.md` (F-XC-4); `damage_op_index_max_test.py`, `compile_regions_fixed_mass_cuda_test.py`; ledger 2026-10-05 FINDING + FIX |
 | 2026-10-05 | **A/B Amendment 5 (OWNER)** | **fixed_mass launches at s ≤ 50 % (refusals still FIXED, never waived); strength read at BOTH matched steps and matched wall-time (15M/(1+s)), each at the registered boundaries; adoption is the owner's decision with both reads, purpose metric (1), s and GPU-hours; "either read suffices" is disallowed.** Reason: the owner must decide what to do given the cost, not just the strength. | The +5 % budget as a launch gate (the cost work may not reach it); the 5–15 % / > 15 % speed rule; automatic adoption | §7.9; owner 2026-10-05 |
 | 2026-10-05 | **The hypothesis encoding is the per-row pass's exact split, gathered (`gen3_x5_hyp_gather_v1`); fixed_mass only, blob untouched** | **The species-only columns of `PokemonEncoder`'s two first Linears are computed once per forward over the 400-row dex table (over the slots' own dex rows when B·6 < 400) and gathered by hypothesis species; the row-level columns (clock, weather, fainted, hazards, screens, the active-context scatter) once per row; the rest of the encoder per OPPONENT slot only. Equal to the per-row pass up to fp32 reassociation (≤ 2.9e-6 on real rows; ≤ 6.2e-15 at fp64); the fixed_mass K9 golden re-recorded; blob's R1 and T2 compiled code byte-identical.** Reason: the encoding pass was X5's largest single cost; the brief's premise (a hypothesis token depends on its species alone) is false — five row-level features enter — so only the first layers split exactly. Effect: the encoding 10.09 → 4.38 ms per micro-batch; `train_ms` +19.5 % → +12.8 %; T2 +46.1 % → +45.6 %; headroom 1,106 → 1,192 MiB. §3.6's `train_ms` and T2 lines still FAIL. | Encoding the species once with the row features dropped or frozen (a cheaper token, but it changes what is computed: a design change for the owner); a one-hot matmul gather (deterministic backward, ≈ 0.5 ms; the atomic backward did not show in the profile); compacting to hidden slots only (≈ 12 % of opponent slots; needs dynamic shapes or a capped buffer) | `measurements/x5_hyp_gather_2026-10-05/`; `hypothesis_encode.py`, `hypothesis_encode_test.py`; ledger 2026-10-05 MEASUREMENT + BUILT |
+| 2026-10-05 | **F-XC-3 FIXED: the parity gate's eager reference leaves no per-forward state on a served replica (`gen3_reference_state_released_v1`); s MEASURED +16.7 %; fixed_mass LAUNCHABLE under Amendment 5** | **`policy_reference` runs under `decision.forward_state_released`, which empties every module attribute the forward replaced (a stash to a fresh instance, a tensor or tensor tuple to `None`, a created one removed). The paired ABAB benchmark gives s = +16.7 % (block pairs 16.4–17.1 %), so the matched wall-time checkpoint is 12M.** | Raising the 1 MiB slot-load tolerance (an override; Amendment 5 forbids waiving a refusal); keeping the stash but pre-sizing it at startup (still row-sized state per replica for the run, and it re-breaks at a new bucket); clearing only `ExtractorStashes` (the op stash, `last_move_tokens` and `EntitySeats.last_cand` also outlive the forward) | `measurements/x5_launchable_2026-10-05/` (mechanism, blob + fixed_mass compiled-code identity, the real launch), `measurements/x5_paired_speed_2026-10-05/` (s); `reference_state_test` fails on revert (both arms) |

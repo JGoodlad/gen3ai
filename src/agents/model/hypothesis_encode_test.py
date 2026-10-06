@@ -66,13 +66,15 @@ def blob() -> Any:
 
 
 def _counting(monkeypatch: Any) -> List[int]:
+    """Count the forward's calls of the gathered path. ``raising=False`` so a REVERT (the extractor no longer
+    naming the function) fails on the COUNT assertion below, not on a missing attribute here."""
     calls = [0]
-    real = EF.gathered_hypothesis_tokens
+    real = gathered_hypothesis_tokens
 
     def counted(*a: Any, **k: Any) -> torch.Tensor:
         calls[0] += 1
         return real(*a, **k)
-    monkeypatch.setattr(EF, "gathered_hypothesis_tokens", counted)
+    monkeypatch.setattr(EF, "gathered_hypothesis_tokens", counted, raising=False)
     return calls
 
 
@@ -93,8 +95,8 @@ def test_the_fixed_mass_forward_gathers_once_and_runs_the_encoder_once(fixed_mas
             fe(_rows(fixed_mass))
     finally:
         h.remove()
-    assert calls[0] == 1, f"the gathered hypothesis path ran {calls[0]}x (expected once per forward)"
     assert n[0] == 1, f"PokemonEncoder ran {n[0]}x — the per-row hypothesis pass is back"
+    assert calls[0] == 1, f"the gathered hypothesis path ran {calls[0]}x (expected once per forward)"
 
 
 def test_the_blob_forward_never_reaches_the_gathered_path(blob, monkeypatch):
