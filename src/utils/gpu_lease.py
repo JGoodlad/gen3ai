@@ -2,6 +2,7 @@
 
 USAGE
     scripts/ops/gpu_lease.sh acquire --owner "X5 U1" [--note "..."] [--max-hours 12] [--watch-pid N] [--token-file F]
+        # --watch-pid N must be ALIVE after a ~1 s settle (the long-lived launcher, NOT a `nohup setsid ... &` wrapper): else exit 2
         # stdout:  export GEN3AI_GPU_LEASE_TOKEN=<token>      (stderr carries the human line)
         # held by someone else or by a one-off job: exits 6 / 5 AT ONCE naming the holder
     scripts/ops/gpu_lease.sh status               # who holds the GPU now (lease or one-off), stale leases cleared
@@ -57,6 +58,7 @@ DEFAULT_MAX_HOURS = 12.0
 HOLDER_POLL_S = 0.5
 START_TIMEOUT_S = 30.0        # the holder's PROCESS STARTUP (stdlib import) — never a wait on the GPU
 RELEASE_GRACE_S = 10.0
+WATCH_SETTLE_S = 1.0          # `--watch-pid` must still be alive this long after acquire is asked (see WatchPidGone)
 
 EXIT_BUSY, EXIT_LEASED, EXIT_NOT_OWNER = 5, 6, 7
 
@@ -76,6 +78,14 @@ class GpuLeased(GpuUnavailable):
             f"GPU LEASED (not waiting): {lease.describe()}{what}. The GPU belongs to that owner for its "
             "lifetime; ask the orchestrator, do not poll. (`scripts/ops/gpu_lease.sh status`; only the "
             "orchestrator uses `release --force`.)")
+
+
+class WatchPidGone(ValueError):
+    """``--watch-pid`` names a process that is already gone (or exits within the settle window).
+
+    The holder ends the moment its watched pid dies, so such a lease evaporates on its first poll (2026-10-06:
+    a pid of a ``nohup setsid ... &`` WRAPPER, which forks the real job and exits at once, left the lease
+    unheld for ~24 s while the agent believed it held the GPU). Refused before anything is taken."""
 
 
 class GpuBusy(GpuUnavailable):
@@ -272,6 +282,28 @@ class Acquired:
     already_held: bool
 
 
+def _pid_alive(pid: int) -> bool:
+    st = procfs.read_stat(pid)
+    return st is not None and st.state not in ("Z", "X")       # an unreaped exited child is not alive
+
+
+def _check_watch_pid(watch_pid: int) -> None:
+    """Refuse a ``--watch-pid`` that is not alive now, or that dies within :data:`WATCH_SETTLE_S`."""
+    if not watch_pid:
+        return
+    deadline = time.monotonic() + WATCH_SETTLE_S
+    while True:
+        if not _pid_alive(watch_pid):
+            raise WatchPidGone(
+                f"--watch-pid {watch_pid} is not alive (it was gone within {WATCH_SETTLE_S:g} s of acquire). "
+                f"A lease watching it would end at once. Likely mistake: the pid of a launch wrapper "
+                f"(`nohup setsid ... &`, `$!` of a shell that forks the job and exits) — pass the pid of the "
+                f"long-lived process itself (the launcher / trainer), or omit --watch-pid.")
+        if time.monotonic() >= deadline:
+            return
+        time.sleep(min(0.1, max(0.0, deadline - time.monotonic())))
+
+
 def acquire(lock: object, owner: str, note: str = "", max_hours: float = DEFAULT_MAX_HOURS,
             watch_pid: int = 0, token_file: Optional[object] = None,
             env: Optional[Mapping[str, str]] = None) -> Acquired:
@@ -279,6 +311,7 @@ def acquire(lock: object, owner: str, note: str = "", max_hours: float = DEFAULT
     Idempotent for the owner: the caller's token matching the valid lease renews its expiry."""
     if not owner.strip():
         raise ValueError("a lease needs an --owner name")
+    _check_watch_pid(int(watch_pid))
     clear_stale(lock)
     mine = holds_lease(lock, env)
     if mine is not None:
@@ -424,6 +457,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except PermissionError as e:
         print(f"[gpu_lease] REFUSING: {e}", file=sys.stderr)
         return EXIT_NOT_OWNER
+    except WatchPidGone as e:
+        print(f"[gpu_lease] REFUSING: {e}", file=sys.stderr)
+        return 2
     print(f"[gpu_lease] unknown command {cmd!r} (acquire | release | status)", file=sys.stderr)
     return 2
 

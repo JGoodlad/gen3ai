@@ -381,3 +381,50 @@ def test_the_lease_holder_survives_its_acquirer(lock):
     assert r.returncode == 0, r.stderr
     assert L.read_lease(lock) is not None and L.read_lease(lock).owner == "agent-A"
     assert not _free(lock)
+
+
+# ---- --watch-pid must name a LIVE process (2026-10-06: a `nohup setsid ... &` wrapper pid exited at once,
+# ---- the holder saw its watched pid die on the first poll, and the lease evaporated ~24 s after "ACQUIRED")
+
+def test_acquire_refuses_a_watch_pid_that_exited_at_once(lock, monkeypatch):
+    monkeypatch.setattr(L, "WATCH_SETTLE_S", 0.3)
+    wrapper = subprocess.Popen(["true"])             # the wrapper: forks nothing we watch, exits now
+    wrapper.wait()
+    with pytest.raises(L.WatchPidGone, match="wrapper"):
+        _acquire(lock, watch_pid=wrapper.pid)
+    assert L.read_lease(lock) is None and _free(lock)        # nothing was taken
+
+
+def test_acquire_refuses_a_watch_pid_that_dies_within_the_settle_window(lock, monkeypatch):
+    monkeypatch.setattr(L, "WATCH_SETTLE_S", 3.0)
+    short = subprocess.Popen(["sleep", "0.5"])
+    try:
+        with pytest.raises(L.WatchPidGone):
+            _acquire(lock, watch_pid=short.pid)
+        assert L.read_lease(lock) is None and _free(lock)
+    finally:
+        short.kill()
+        short.wait()
+
+
+def test_acquire_refuses_an_unreaped_zombie_watch_pid(lock, monkeypatch):
+    monkeypatch.setattr(L, "WATCH_SETTLE_S", 0.3)
+    z = subprocess.Popen(["true"])
+    _wait_for(lambda: (P.read_stat(z.pid) is not None and P.read_stat(z.pid).state == "Z"),
+              "the child to exit and stay unreaped")
+    try:
+        with pytest.raises(L.WatchPidGone):
+            _acquire(lock, watch_pid=z.pid)
+    finally:
+        z.wait()
+
+
+def test_the_cli_exits_2_naming_the_wrapper_mistake(lock, monkeypatch, capsys):
+    monkeypatch.setattr(L, "WATCH_SETTLE_S", 0.3)
+    monkeypatch.setattr("utils.gpu_lock.lock_path", lambda: lock)
+    wrapper = subprocess.Popen(["true"])
+    wrapper.wait()
+    rc = L.main(["acquire", "--owner", "agent-A", "--watch-pid", str(wrapper.pid)])
+    assert rc == 2
+    assert "wrapper" in capsys.readouterr().err
+    assert L.read_lease(lock) is None

@@ -18,7 +18,7 @@ USAGE
 acquire   takes the lease NOW or fails AT ONCE naming the holder (lease owner, pid, command, since when):
           exit 6 = leased to someone else, 5 = a one-off hold is in progress. On success stdout is
           `export GEN3AI_GPU_LEASE_TOKEN=<token>` (the human line is on stderr). A detached holder keeps the
-          GPU's flock until `release`, SIGTERM, --max-hours (default 12; 0 = none) or --watch-pid's death.
+          GPU's flock until `release`, SIGTERM, --max-hours (default 12; 0 = none) or --watch-pid's death. --watch-pid must be a LIVE long-lived pid (checked ~1 s after: a `nohup setsid ... &` wrapper pid is refused, exit 2).
           Re-running it with your token renews the expiry. An agent's Bash tool does not keep exports between
           calls: pass --token-file F once and put GEN3AI_GPU_LEASE_TOKEN_FILE=F in front of each GPU call.
 status    LEASED / BUSY / FREE; a stale lease record (dead holder, reused pid) is detected and cleared.
