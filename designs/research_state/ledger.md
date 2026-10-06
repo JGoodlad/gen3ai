@@ -22495,3 +22495,17 @@ The registered look-2 read of `design_x5_belief_tokens.md` §7.4 (the cross stat
 5. The engine compile took ~7.5 min per engine, against look 1's 4–6.5 min (UNVERIFIED cause: 10 checkpoints per engine against 6).
 
 Tag: **READ · X5 A/B look 2 · matched steps CONTINUE (Δ̂ −0.97 [−3.36, +1.41], t 2.441 < 2.683, 8 df) · matched wall-time FUTILITY STOP, NOT DETECTED, INFERIOR (Δ̂ −6.89 [−8.88, −4.90]) · purpose metric (1) not due · next = look 3 (+3 seeds per arm)**
+
+### 2026-10-06 · BANK · **X5 A/B fixed_mass look-2 seeds 1004 and 1005 COMPLETE at 708dcb0a, strict behaviour check, 0 restarts / 0 crashes (closing look 2's missing bank entry); then the look-3 seeds are dispatched**
+
+| seed | run | steps | wall | in-loop eval @ ~14.0M (greedy): bots · pool | K9(b) excluded: median · max | max \|d log pi\| |
+|---|---|---|---|---|---|---|
+| 1004 | `rb_x5ab_fm_s1004` | 15,047,754 | 2 h 40 m | 88.6 % · 68.2 % | 0.053 · 0.087 | 3.0e-5 |
+| 1005 | `rb_x5ab_fm_s1005` | 15,047,263 | 2 h 48 m (slower near the end: CPU contention from a concurrent CRN rollout job; wall only) | 89.6 % · 68.6 % | 0.061 · 0.098 | 1.8e-5 |
+
+- Restart and crash counts verified by the orchestrator from the run dirs (0 / 0 each); `final_model.zip` present; single pin 708dcb0a.
+- **Look 2 read (4f24f264):** matched steps CONTINUE (Δ̂ −0.97 pp [−3.36, +1.41], t 2.441 < 2.683); matched wall-time FUTILITY STOP, NOT DETECTED, INFERIOR (−6.89 pp).
+- **Look 3 (registered):** seeds 1006–1008 per arm, alternating arms (fm, blob, fm, blob, fm, blob) to block box drift (§7.4's alternation, restored after Amendment 4's blob-first exception). Blob at P_blob e5e660dd, fixed_mass at P_x5 708dcb0a. About 15 GPU-h, within the owner's ≈ 41 GPU-h A/B budget.
+- **`data/` freeze:** no `data/` change while these pinned seeds are live (a pin isolates code, not data).
+
+Tag: **BANK · fm look-2 seeds 1004–1005 complete · look 3 dispatched (1006–1008 per arm, alternating)**
