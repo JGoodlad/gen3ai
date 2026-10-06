@@ -18,7 +18,10 @@ at a time, through a declared read (a legacy flat directory of v1 rows is read u
 load byte-checked and parity-gated), each cell exactly as ``play`` plays it — the same games, the same rows. An engine
 serves up to TWO architectures (module ``arch``: one slot group each, the X5 cross), so ``play`` and ``play-many`` both
 play a ``fixed_mass``-vs-``blob`` cell. An ORACLE checkpoint plays only under a reveal mode (module ``reveal``: the
-PER-SIDE oracle reveal, one-sided clairvoyance or both-sided, each its own eval protocol stamped on every row). Run from the repo root (the team pool is read cwd-relative; elsewhere refused). ``runfloor`` (module) turns a round-robin of edges into the run-to-run SD on this scale.
+PER-SIDE oracle reveal, one-sided clairvoyance or both-sided, each its own eval protocol stamped on every row). Run from the repo root (the team pool is read cwd-relative; elsewhere refused). ``runfloor`` (module) turns a round-robin of edges into the run-to-run SD on this scale. ``cross`` (module) is the
+X5 A/B's REGISTERED seed × seed cross statistic and decision rule (§7.4: Δ̂, V̂, t on 2(n − 1) df, the look
+boundaries, rule 8, the outcome table) plus the oracle reads (C, C_full − C_species, the floor, H) and the declared
+family reads that build its matrix from the ledger.
 
 Detail: ``designs/training/eval_and_rating.md`` "The checkpoint-vs-checkpoint head-to-head".
 """

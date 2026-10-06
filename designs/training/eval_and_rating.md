@@ -947,6 +947,17 @@ and builds no engine when nothing is left.
   parity-gated) stay per BATCH, ~0.47 s. On the GPU the engine start it removes is 114–167 s — the GPU per-cell time is
   **UNVERIFIED** (DEFERRED to the GPU owner; the commands are in the measurement README).
 
+**The A/B's registered read (`main/h2h/cross.py`, X5 §7.4, 2026-10-06, committed before any look-1 cell was
+played).** Pure functions over the seed × seed matrix h_ij (pp, draws ½): Δ̂ = mean h − 50, V̂ = (s²_R + s²_C)/n,
+t = (Δ̂ + δ)/√V̂ on 2(n − 1) df, δ = 3.5; the look boundaries 5.761 / 2.683 / 1.874; the outcome table
+(INCONCLUSIVE / NON-INFERIOR / FUTILITY STOP with the INFERIOR label / CONTINUE / NOT DETECTED); rule 8 at EVERY
+boundary (a statistic within 1e-9 is not a crossing). The oracle reads: C (the same statistic, oracle rows),
+C_full − C_species on shared reference columns, the replicate floor F = max(P0's h2h 4.57 pp, the blob columns'
+spread) and H = Δ / C only when C's two-sided 95 % lower end clears F. The matrix comes from a declared FAMILY read
+(`inference="across_runs"`) per protocol; a missing / short (< 1,000 pairs) / aborted cell is an INCONCLUSIVE
+reason. Tests: `cross_test.py` (synthetic matrices: known Δ, an exact-fraction hand computation, every outcome row,
+rule 8 at each boundary, the column cancellation, the adapter's refusals).
+
 Tests: `agents/training/eval_ledger/` (above),
 `main/h2h/play_test.py` (scoring, the toy-engine mirror, seeds, the digest, resume, the team-source refusal),
 `stats_test.py`, `runfloor_test.py`, and on the real engine `play_mirror_integration_test.py` /
