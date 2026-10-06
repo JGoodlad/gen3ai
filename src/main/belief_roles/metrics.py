@@ -6,8 +6,8 @@ them are DESCRIPTIVE only (conditional on the run and the bank; Field & Welsh 20
 inference.
 
 **(1) Opponent-intent log loss — the ADOPTION GATE is the CONDITIONAL form (Amendment 3(b), §7.7(b)),
-``intent_logloss_conditional``:** per row E_row = blob's named set (:mod:`.eset`; a fixed_mass run's from
-its paired reference blob run), and on the rows whose realised event e ∈ E_row the loss is
+``intent_logloss_conditional``:** per row E_row = blob's named set (:mod:`.eset`; a blob run's OWN; a
+fixed_mass run is scored on EVERY blob run of the look and its value is the MEAN over those sets), and on the rows whose realised event e ∈ E_row the loss is
 ``−log [P(e) / Σ_{e′ ∈ E_row} P(e′)]`` with the arm's probabilities RENORMALISED over E_row — same rows,
 same support, both arms, so neither blob's selection on the outcome (its misses dropped) nor its
 structural over-certainty (all mass on its named set, while fixed_mass reserves mass for OTHER) moves
@@ -208,8 +208,34 @@ def intent_read(br: BankRows, cols: Columns, rows: np.ndarray) -> dict:
     return out
 
 
-def intent_conditional_read(br: BankRows, cols: Columns, rows: np.ndarray) -> dict:
-    """Amendment 3(b)'s metric (1) and coverage (module docstring). Rows: the labelled, non-Struggle
+def intent_conditional(br: BankRows, cols: Columns, rows: np.ndarray) -> dict:
+    """Metric (1) over every E_row the run is scored on: one :func:`intent_conditional_read` per
+    reference (a blob run: its own set, one entry) and their MEAN — the run's value. A reference whose
+    value is None makes the mean None (never a mean over the survivors)."""
+    if not cols.esets:
+        return {"available": False,
+                "reason": "no E_row: a fixed_mass run is read on EVERY blob run of the look "
+                          "(read --reference <label>=<blob>[,<blob>...])"}
+    per = []
+    for es in cols.esets:
+        r = intent_conditional_read(br, cols, rows, es)
+        r["reference_label"], r["reference_checkpoint_sha256"] = es.label, es.checkpoint_sha256
+        per.append(r)
+
+    def mean(get) -> Optional[float]:
+        v = [get(r) for r in per]
+        return None if any(x is None for x in v) else float(np.mean(v))
+
+    return {"available": True, "n_references": len(per), "per_reference": per,
+            "mean": {"logloss": mean(lambda r: r["all"]["logloss"]),
+                     "set_miss_rate": mean(lambda r: r["all"]["set_miss_rate"]),
+                     "outside_mass": mean(lambda r: r["coverage"].get("mean_outside_mass")),
+                     "citl": mean(lambda r: r["coverage"].get("citl"))}}
+
+
+def intent_conditional_read(br: BankRows, cols: Columns, rows: np.ndarray, es) -> dict:
+    """Amendment 3(b)'s metric (1) and coverage on ONE E_row ``es`` (``eset.ESet``; module docstring).
+    Rows: the labelled, non-Struggle
     rows; rule 8 excludes a row whose E_row is ill-determined (the reference blob's E4 seat cut is a
     near-tie) or whose arm read is (``read_tie_arm``), and a row whose denominator Σ_{E_row} P is within
     :data:`eset.DENOM_EPS` of 0. A realised event IN E_row to which the arm gives exactly zero mass has
@@ -217,22 +243,18 @@ def intent_conditional_read(br: BankRows, cols: Columns, rows: np.ndarray) -> di
     never floored, never dropped in silence."""
     from main.belief_roles.eset import DENOM_EPS
 
-    if cols.eset_mass is None:
-        return {"available": False,
-                "reason": "no E_row: a fixed_mass run is read on its paired blob run's named set "
-                          "(`read --reference <label>=<blob>.erow.npz`)"}
-    assert cols.eset_in is not None and cols.eset_tie is not None and cols.eset_logp_event is not None
+    assert cols.eset_logp_event is not None
     struggle = rows & (br.event == struggle_num())
     lab = rows & (br.event != NO_EVENT) & ~struggle
-    tie = lab & (cols.eset_tie | cols.read_tie_arm)
+    tie = lab & (es.tie | cols.read_tie_arm)
     L = lab & ~tie
-    inset = L & cols.eset_in
-    den0 = inset & (cols.eset_mass <= DENOM_EPS)
+    inset = L & es.e_in
+    den0 = inset & (es.mass <= DENOM_EPS)
     U = inset & ~den0
     zero = U & ~np.isfinite(cols.eset_logp_event)
     is_sw = br.event >= SWITCH_BASE
     with np.errstate(divide="ignore", invalid="ignore"):
-        cond = -(cols.eset_logp_event - np.log(np.where(U, cols.eset_mass, 1.0)))
+        cond = -(cols.eset_logp_event - np.log(np.where(U, es.mass, 1.0)))
 
     def block(sel) -> dict:
         n_l = int((sel & L).sum())
@@ -247,13 +269,13 @@ def intent_conditional_read(br: BankRows, cols: Columns, rows: np.ndarray) -> di
                 "logloss_ci95": cluster_ci(v, br.battle_index[u]) if ok else None}
 
     allr = np.ones(br.n, dtype=bool)
-    out = {"available": True, "all": block(allr), "move": block(~is_sw), "switch": block(is_sw),
+    out = {"all": block(allr), "move": block(~is_sw), "switch": block(is_sw),
            "by_opp_class": {k: block(np.asarray(br.opp_class) == k) for k in CLASSES},
            "excluded_rule8_tie": int(tie.sum()), "excluded_rule8_denominator": int(den0.sum()),
            "excluded_struggle": int(struggle.sum())}
     # ---- coverage (REPORTED): the arm's mass outside E_row vs the observed outside frequency
-    mass_out = np.clip(1.0 - cols.eset_mass[L], 0.0, 1.0)
-    obs_out = (~cols.eset_in[L]).astype(np.float64)
+    mass_out = np.clip(1.0 - es.mass[L], 0.0, 1.0)
+    obs_out = (~es.e_in[L]).astype(np.float64)
     cov: dict = {"n": int(L.sum())}
     if L.any():
         edges = np.asarray(OUTSIDE_BINS)
@@ -419,7 +441,7 @@ def read_all(br: BankRows, cols: Columns, roles: RoleSet) -> dict:
         good = sel & consistent
         blk: Dict[str, dict] = {"n_rows": int(sel.sum())}
         blk["intent"] = intent_read(br, cols, sel)
-        blk["intent_conditional"] = intent_conditional_read(br, cols, sel)
+        blk["intent_conditional"] = intent_conditional(br, cols, sel)
         for col, pi, tie, rM, rV, rtie, mm in (
                 ("arm", cols.pi_arm, cols.sel_tie_arm, cols.role_M_arm, cols.role_V_arm,
                  cols.read_tie_arm if fm else np.zeros(br.n, dtype=bool),
@@ -452,13 +474,12 @@ PER_RUN_DIRECTION = {
 def per_run(blk: dict) -> Dict[str, Optional[float]]:
     a = blk["arm"]
     oe = a["other"].get("mean_err")
-    ic = blk.get("intent_conditional") or {}
-    icc = ic.get("coverage") or {}
+    icm = (blk.get("intent_conditional") or {}).get("mean") or {}
     return {
-        ADOPTION_GATE_METRIC: (ic.get("all") or {}).get("logloss"),
-        "intent_set_miss_rate": (ic.get("all") or {}).get("set_miss_rate"),
-        "intent_outside_mass": icc.get("mean_outside_mass"),
-        "intent_outside_citl": icc.get("citl"),
+        ADOPTION_GATE_METRIC: icm.get("logloss"),
+        "intent_set_miss_rate": icm.get("set_miss_rate"),
+        "intent_outside_mass": icm.get("outside_mass"),
+        "intent_outside_citl": icm.get("citl"),
         "intent_logloss": blk["intent"]["all"]["logloss"],
         "intent_miss_rate": blk["intent"]["all"]["miss_rate"],
         "presence_brier": a["presence"].get("brier"),

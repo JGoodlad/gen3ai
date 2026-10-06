@@ -3,16 +3,16 @@
   python -m main.belief_roles roles                                   # the Smogon role set + pairs
   python -m main.belief_roles read --out <dir> \\
         --ckpt <run>/checkpoints/<ckpt>.zip=<label> [...] \\
-        [--reference <fixed_mass label>=<blob label | <blob>.erow.npz>]  # CPU forwards on the Lane S bank
+        [--reference <fixed_mass label>=<blob>[,<blob>...]]           # CPU forwards on the Lane S bank
   python -m main.belief_roles infer --treat <X5 read>.json ... --control <blob read>.json ... \\
         --boundary 2.683 [--metric intent_logloss] [--margin 0]      # §7.4's across-seed t
 
 ``--out`` under ``models/`` is REFUSED (read-only). A bare run directory is REFUSED as a checkpoint.
 
 A blob read writes its named set E_row beside its JSON (``<label>.erow.npz``, Amendment 3(b)); a
-fixed_mass read is scored on its PAIRED blob run's E_row through ``--reference`` (the registered pairing:
-fixed_mass seed s ↔ blob seed s), naming either a blob label read in the same invocation or a saved
-``.erow.npz``. Without one its conditional metric (the adoption gate) is None.
+fixed_mass read is scored on EVERY blob run of the look through ``--reference`` (its value is the MEAN of
+the conditional log loss over those sets; each ``<blob>`` is a blob label read in the same invocation or
+a saved ``.erow.npz``). Without any, its conditional metric (the adoption gate) is None.
 """
 from __future__ import annotations
 
@@ -53,25 +53,30 @@ def refuse_under_models(path: Path) -> None:
 
 
 def read_one(br, roles, zip_path: Path, label: str, threads: int, commit: str,
-             reencode_s: float, reference=None, erow_out: Optional[Path] = None) -> dict:
-    """One checkpoint's read. ``reference``: a blob run's ``ERow`` (a fixed_mass run's E_row);
-    ``erow_out``: where a blob run's own E_row is saved."""
+             reencode_s: float, references=(), erow_out: Optional[Path] = None) -> dict:
+    """One checkpoint's read. ``references``: blob runs' ``ERow``s (a fixed_mass run is scored on each,
+    the run's value their mean); ``erow_out``: where a blob run's own E_row is saved."""
     from main.belief_roles.eset import ERow_SCHEMA
     from main.belief_roles.forward import arm_of, file_sha256, load_strict, read_columns
     from main.belief_roles.metrics import read_all
     from main.policy_spectrum.reader import inference_globals
 
-    if reference is not None and reference.meta.get("bank_sha256") != br.bank.manifest["content_sha256"]:
-        raise SystemExit(f"[belief_roles] REFUSED: the reference E_row was read on bank "
-                         f"{reference.meta.get('bank_sha256')}, this read is on "
-                         f"{br.bank.manifest['content_sha256']}")
+    references = list(references)
+    for reference in references:
+        if reference.meta.get("bank_sha256") != br.bank.manifest["content_sha256"]:
+            raise SystemExit(f"[belief_roles] REFUSED: the reference E_row {reference.meta.get('label')} was "
+                             f"read on bank {reference.meta.get('bank_sha256')}, this read is on "
+                             f"{br.bank.manifest['content_sha256']}")
+    ref_shas = [r.meta.get("checkpoint_sha256") for r in references]
+    if len(set(ref_shas)) != len(ref_shas):
+        raise SystemExit("[belief_roles] REFUSED: a blob checkpoint is named twice as a reference")
     t0 = time.time()
     with inference_globals(threads):
         model = load_strict(zip_path)
     t_load = time.time() - t0
     arm = arm_of(model)
     t1 = time.time()
-    cols = read_columns(model, br, roles, threads=threads, reference=reference)
+    cols = read_columns(model, br, roles, threads=threads, references=references)
     t_fwd = time.time() - t1
     del model
     sha = file_sha256(Path(zip_path))
@@ -84,10 +89,11 @@ def read_one(br, roles, zip_path: Path, label: str, threads: int, commit: str,
         if erow_out is not None:
             cols.own_erow.save(erow_out)
             eref["erow_path"] = str(erow_out)
-    elif reference is not None:
-        eref = {"mode": "paired", "reference_label": reference.meta.get("label"),
-                "checkpoint_sha256": reference.meta.get("checkpoint_sha256"),
-                "erow_sha256": reference.content_sha256(), "pairing_rule": "fixed_mass seed s ↔ blob seed s"}
+    elif references:
+        eref = {"mode": "all_blob_mean", "rule": "the mean over every blob run of the look (§7.7(b))",
+                "references": [{"reference_label": r.meta.get("label"),
+                                "checkpoint_sha256": r.meta.get("checkpoint_sha256"),
+                                "erow_sha256": r.content_sha256()} for r in references]}
     else:
         eref = {"mode": "none"}
     t2 = time.time()
@@ -135,15 +141,19 @@ def cmd_read(a) -> int:
     labels = [lb for _, lb in specs]
     if len(set(labels)) != len(labels):
         sys.exit("[belief_roles] two --ckpt share a label")
-    refs = {}
+    refs: dict = {}
     for spec in a.reference or []:
         fm, _, ref = spec.partition("=")
-        if fm not in labels or not ref:
-            sys.exit(f"[belief_roles] --reference {spec!r}: name it <fixed_mass label>=<blob label | "
-                     "path.erow.npz>, the label one of this invocation's --ckpt")
-        refs[fm] = ref
-    # a blob named as a reference is read FIRST, so its E_row exists when its fixed_mass partner is read
-    ref_labels = set(refs.values())
+        names = [x for x in ref.split(",") if x]
+        if fm not in labels or not names:
+            sys.exit(f"[belief_roles] --reference {spec!r}: name it <fixed_mass label>=<blob>[,<blob>...], "
+                     "each <blob> a label of this invocation's --ckpt or a path.erow.npz")
+        refs.setdefault(fm, []).extend(names)
+    for fm, names in refs.items():
+        if len(set(names)) != len(names):
+            sys.exit(f"[belief_roles] --reference {fm}: a blob is named twice")
+    # every blob named as a reference is read FIRST, so its E_row exists when a fixed_mass run is read
+    ref_labels = {n for names in refs.values() for n in names}
     specs.sort(key=lambda x: x[1] not in ref_labels)
     t = time.time()
     br = load_bank_rows(Path(a.bank), workers=a.workers)
@@ -160,15 +170,14 @@ def cmd_read(a) -> int:
         return lb.replace("/", "_").replace(" ", "_")
 
     for p, label in specs:
-        reference = None
-        if label in refs:
-            r = refs[label]
+        references = []
+        for r in refs.get(label, []):
             rp = out / f"{safe_of(r)}.erow.npz" if r in labels else Path(r)
             if not rp.is_file():
                 sys.exit(f"[belief_roles] --reference {label}={r}: no E_row file at {rp}")
-            reference = ERow.load(rp)
+            references.append(ERow.load(rp))
         safe = safe_of(label)
-        res = read_one(br, roles, p, label, a.threads, commit, t_re, reference=reference,
+        res = read_one(br, roles, p, label, a.threads, commit, t_re, references=references,
                        erow_out=out / f"{safe}.erow.npz")
         (out / f"{safe}.json").write_text(json.dumps(res, indent=1, sort_keys=True) + "\n")
         print(f"[belief_roles] {label} ({res['arm']}): {json.dumps(res['per_run'])}  "
@@ -205,8 +214,9 @@ def main(argv=None) -> int:
     r.add_argument("--threads", type=int, default=default_threads())
     r.add_argument("--workers", type=int, default=2, help="re-encoding core processes")
     r.add_argument("--reference", action="append",
-                   help="<fixed_mass label>=<blob label | path.erow.npz> — the paired blob run whose named "
-                        "set E_row the fixed_mass run's conditional metric is scored on (repeatable)")
+                   help="<fixed_mass label>=<blob>[,<blob>...] — EVERY blob run of the look (a label of this "
+                        "invocation or a path.erow.npz); the fixed_mass run's conditional metric is the "
+                        "MEAN over their named sets (repeatable; names accumulate)")
     r.set_defaults(fn=cmd_read)
     r = sub.add_parser("infer", help="§7.4's across-seed two-sample t on read JSONs")
     r.add_argument("--treat", nargs="+", required=True, help="the X5 (fixed_mass) runs' read JSONs")

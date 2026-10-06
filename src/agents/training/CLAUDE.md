@@ -384,8 +384,9 @@ NOTHING: any checkpoint `.zip` of either arm on the Lane S bank, CPU forwards on
 (`python -m main.belief_roles infer --treat … --control … --boundary <the stopping look's t>`); its battle-clustered intervals
 are descriptive only. 🚨 **Purpose metric (1)'s ADOPTION-GATE form is `intent_logloss_conditional`** (Amendment 3(b), §7.7(b)):
 the log loss renormalised over E_row = BLOB's named set, on the rows whose event is in it, for both arms — a `fixed_mass`
-read is scored on its PAIRED blob run's set (`read --reference <fm label>=<blob label | .erow.npz>`, fixed_mass seed s ↔
-blob seed s; without one its value is None, and `infer` refuses a pairing that is not one-to-one onto the control group).
+read is scored on EVERY blob run of the look and its value is the MEAN (`read --reference <fm label>=<blob>[,<blob>…]`,
+labels or `.erow.npz`; without any its value is None, and `infer` refuses a fixed_mass read whose references are not
+EXACTLY the control group's blob runs).
 The as-built `intent_logloss` (each arm over the rows its OWN candidates cover, the MISS rate its own column) favours blob
 twice and is DESCRIPTIVE only; the coverage (`fixed_mass`'s mass outside E_row vs the realised outside frequency) is reported. The role set is derived from Smogon data at read time and stamped (`role_set_sha256`); `infer` refuses mixed sets.
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)** (its

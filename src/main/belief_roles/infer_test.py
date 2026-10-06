@@ -93,27 +93,36 @@ def _cread(tmp_path, name, arm, value, sha, ref):
     return p
 
 
-def test_the_adoption_gate_metric_needs_a_one_to_one_set_pairing(tmp_path):
-    """Amendment 3(b): blob reads on their OWN named set; the fixed_mass reads' reference blob
-    checkpoints map one-to-one onto the control group's — else the arms are scored over different
-    supports and the comparison is REFUSED."""
+def test_the_adoption_gate_metric_needs_every_fm_read_on_exactly_the_blob_set(tmp_path):
+    """§7.7(b) decision (2026-10-06): blob reads on their OWN named set; EVERY fixed_mass read references
+    EXACTLY the control group's blob checkpoints (all of them, none other, no repeat) — else the
+    comparison is REFUSED."""
     m = "intent_logloss_conditional"
     c = [_cread(tmp_path, f"b{i}", "blob", v, f"c{i}", {"mode": "own", "checkpoint_sha256": f"c{i}"})
          for i, v in enumerate(CONTROL)]
 
-    def treat(refs):
+    def treat(refsets):
         return [_cread(tmp_path, f"x{i}", "fixed_mass", v, f"t{i}",
-                       {"mode": "paired", "checkpoint_sha256": r} if r else {"mode": "none"})
-                for i, (v, r) in enumerate(zip(TREAT, refs))]
+                       {"mode": "all_blob_mean", "references": [{"checkpoint_sha256": x} for x in rs]}
+                       if rs is not None else {"mode": "none"})
+                for i, (v, rs) in enumerate(zip(TREAT, refsets))]
 
-    r = compare_reads(treat(["c0", "c1", "c2"]), c, m, boundary=2.683)
+    full = ["c0", "c1", "c2"]
+    r = compare_reads(treat([full, full[::-1], full]), c, m, boundary=2.683)
     assert abs(r.t - 4.008918628686366) < 1e-9 and r.crossed
-    assert compare_reads(treat(["c2", "c0", "c1"]), c, m, boundary=2.683).t == r.t
-    for bad in (["c0", "c0", "c1"], ["c0", "c1", "cX"], ["c0", "c1", None]):
-        with pytest.raises(InferenceRefused, match="one-to-one|paired blob"):
+    for bad in ([full, full, ["c0", "c1"]],                  # a missing reference
+                [full, full, full + ["cX"]],                 # an extra one
+                [full, full, ["c0", "c1", "c1"]],            # a repeat in place of one
+                [full, ["c0", "c1", "cX"], full],            # sets differ across fixed_mass runs
+                [full, full, None]):                         # no reference at all
+        with pytest.raises(InferenceRefused, match="EXACTLY|EVERY blob run"):
             compare_reads(treat(bad), c, m, boundary=2.683)
-    with pytest.raises(InferenceRefused, match="one-to-one"):
-        compare_reads(treat(["c0", "c1", "c2"])[:2], c, m, boundary=2.683)       # unequal n
-    c_bad = c[:2] + [_cread(tmp_path, "b9", "blob", 1.7, "c9", {"mode": "paired", "checkpoint_sha256": "c0"})]
+    # the old seed-id pairing (one reference per fixed_mass run) is refused too
+    paired = [_cread(tmp_path, f"y{i}", "fixed_mass", v, f"u{i}",
+                     {"mode": "paired", "checkpoint_sha256": f"c{i}"}) for i, v in enumerate(TREAT)]
+    with pytest.raises(InferenceRefused, match="EVERY blob run"):
+        compare_reads(paired, c, m, boundary=2.683)
+    c_bad = c[:2] + [_cread(tmp_path, "b9", "blob", 1.7, "c9",
+                            {"mode": "all_blob_mean", "references": [{"checkpoint_sha256": "c0"}]})]
     with pytest.raises(InferenceRefused, match="OWN named set"):
-        compare_reads(treat(["c0", "c1", "c2"]), c_bad, m, boundary=2.683)
+        compare_reads(treat([full] * 3), c_bad, m, boundary=2.683)

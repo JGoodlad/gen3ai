@@ -38,21 +38,21 @@ into the log loss (§7.4).
 
 Amendment 3(b) (§7.7(b), :mod:`.eset`): the same heads also give each arm's FULL distribution on the dense
 event space (checked equal to the scored probability at the realised event), and its mass on E_row =
-blob's named set — a blob run's own (saved as ``Columns.own_erow``), a fixed_mass run's from the paired
-blob run passed as ``reference``.
+blob's named set — a blob run's own (saved as ``Columns.own_erow``), a fixed_mass run's from the
+blob runs passed as ``references`` (EVERY blob run of the look; the run's value is the mean over them).
 """
 from __future__ import annotations
 
 import hashlib
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import numpy as np
 
 from main.belief_roles.bank_rows import SWITCH_BASE, BankRows
-from main.belief_roles.eset import (ERow, blob_event_dist, event_index, flat_event_dist,
+from main.belief_roles.eset import (ERow, ESet, blob_event_dist, event_index, flat_event_dist,
                                     set_mask)
 from main.belief_roles.roles import HP_NUM, RoleSet
 
@@ -86,12 +86,10 @@ class Columns:
     role_V_arm: np.ndarray           # [N,R] Σ p(1 − p) over the contributing indicators
     role_M_prior: np.ndarray
     role_V_prior: np.ndarray
-    # ---- Amendment 3(b) (`eset`): E_row = blob's named set — a blob run's OWN, a fixed_mass run's
-    # from its paired REFERENCE blob run; all None when a fixed_mass run is read with no reference
+    # ---- Amendment 3(b) (`eset`): E_row = blob's named set — a blob run's OWN (one entry), a fixed_mass
+    # run's from EVERY reference blob run of the look (one entry each); empty when none was given
     own_erow: Optional[ERow] = None          # blob only: its named set on every row
-    eset_mass: Optional[np.ndarray] = None   # [N] Σ_{e ∈ E_row} P_arm(e) — the renormalisation denominator
-    eset_in: Optional[np.ndarray] = None     # [N] bool — the realised event is in E_row
-    eset_tie: Optional[np.ndarray] = None    # [N] bool — E_row's own seat cut is a rule-8 near-tie
+    esets: List[ESet] = field(default_factory=list)
     eset_logp_event: Optional[np.ndarray] = None  # [N] log P_arm(realised event), dense; −inf at 0
 
 
@@ -225,10 +223,10 @@ def _flat_event_logp(events, flat_logits, fi, pi_m, p_tail):
 
 
 def read_columns(model: Any, br: BankRows, roles: RoleSet, threads: int = 4,
-                 batch: int = BATCH, reference: Optional[ERow] = None) -> Columns:
-    """The batched forward (module docstring). ``reference``: a blob run's named set (``eset``) — the
-    E_row a ``fixed_mass`` run's conditional intent read is scored on; REFUSED for a blob run (its
-    E_row is its own)."""
+                 batch: int = BATCH, references: Sequence[ERow] = ()) -> Columns:
+    """The batched forward (module docstring). ``references``: blob runs' named sets (``eset``) — the
+    E_rows a ``fixed_mass`` run's conditional intent read is scored on, one read each; REFUSED for a
+    blob run (its E_row is its own)."""
     import torch
 
     from agents.model.extra_obs_keys import zero_extra_obs
@@ -243,7 +241,8 @@ def read_columns(model: Any, br: BankRows, roles: RoleSet, threads: int = 4,
     fe = model.policy.features_extractor
     S = int(fe.layout["max_species"])
     D = SWITCH_BASE + S
-    if reference is not None:
+    references = list(references)
+    for reference in references:
         if arm == "blob":
             raise ValueError("a blob run's E_row is its OWN named set — a --reference is for a fixed_mass "
                              "run only (§7.7(b))")
@@ -343,25 +342,24 @@ def read_columns(model: Any, br: BankRows, roles: RoleSet, threads: int = 4,
             if gap.numel() and float(gap.max()) > 1e-9:
                 raise AssertionError(f"the dense event distribution disagrees with the scored log "
                                      f"probability by {float(gap.max()):.3g} nats")
-            emask = etie = None
+            sets = []
             if arm == "blob":
                 assert sev is not None and swok is not None
                 put("erow_seat_events", sev)
                 put("erow_switch_ok", swok)
                 put("erow_tie", read_tie)
-                emask, etie = set_mask(sev, swok, D), read_tie
-            elif reference is not None:
-                emask = reference.mask(i, i + B, D)
-                etie = torch.from_numpy(reference.tie[i:i + B])
-            if emask is not None:
+                sets.append((set_mask(sev, swok, D), read_tie))
+            else:
+                sets = [(r.mask(i, i + B, D), torch.from_numpy(r.tie[i:i + B])) for r in references]
+            for j, (emask, etie) in enumerate(sets):
                 e_in = emask.gather(1, idx.unsqueeze(-1)).squeeze(-1) & ok
                 if arm == "blob" and bool(((e_in != cov) & ok).any()):
                     raise AssertionError("blob: 'the realised event is in E_row' and 'covered' disagree "
                                          "— E_row must be exactly the support the intent read scores")
-                put("eset_mass", (Pd * emask).sum(-1))
-                put("eset_in", e_in)
-                put("eset_tie", etie)
-                put("eset_logp_event", lp_ev)
+                put(f"eset_mass_{j}", (Pd * emask).sum(-1))
+                put(f"eset_in_{j}", e_in)
+                put(f"eset_tie_{j}", etie)
+            put("eset_logp_event", lp_ev)
             put("intent_logp", torch.where(cov, lp, torch.full_like(lp, math.nan)))
             put("intent_covered", cov)
             put("opp_active_species", opp_ids.gather(1, ctx.opp_active_local.long().clamp(0, TEAM - 1)
@@ -411,5 +409,10 @@ def read_columns(model: Any, br: BankRows, roles: RoleSet, threads: int = 4,
                    own_erow=(ERow(seat_events=cat["erow_seat_events"].astype(np.int64),
                                   switch_ok=cat["erow_switch_ok"].astype(bool),
                                   tie=cat["erow_tie"].astype(bool)) if arm == "blob" else None),
-                   eset_mass=cat.get("eset_mass"), eset_in=cat.get("eset_in"),
-                   eset_tie=cat.get("eset_tie"), eset_logp_event=cat.get("eset_logp_event"))
+                   esets=[ESet(mass=cat[f"eset_mass_{j}"], e_in=cat[f"eset_in_{j}"].astype(bool),
+                               tie=cat[f"eset_tie_{j}"].astype(bool),
+                               label="own" if arm == "blob" else str(references[j].meta.get("label")),
+                               checkpoint_sha256="" if arm == "blob"
+                               else str(references[j].meta.get("checkpoint_sha256")))
+                          for j in range(1 if arm == "blob" else len(references))],
+                   eset_logp_event=cat.get("eset_logp_event"))

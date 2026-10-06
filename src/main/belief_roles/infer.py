@@ -18,10 +18,11 @@ appears twice, when a group mixes arms (or does not hold the arm its side declar
 fewer than 2 runs, when a metric is missing in a run, or when both arms have zero variance.
 
 **The adoption-gate metric** (``intent_logloss_conditional``, Amendment 3(b)) is scored on E_row = blob's
-named set, so it carries one more refusal: every control (blob) read must be on its OWN set, and the
-treat (fixed_mass) reads' REFERENCE blob checkpoints must map ONE-TO-ONE onto the control group's
-checkpoints (equal n; the registered pairing is fixed_mass seed s ↔ blob seed s), so the two arms are
-scored over the same collection of supports. The t itself is unchanged: two-sample, unpaired.
+named set, so it carries one more refusal: every control (blob) read must be on its OWN set, and EVERY
+treat (fixed_mass) read must reference EXACTLY the control group's blob checkpoints — all of them, no
+other, no repeat (its value is the mean over those sets; §7.7(b)'s decision, mirroring the cross). So
+every fixed_mass run is scored over the same collection of supports the blob arm is. The t itself is
+unchanged: two-sample, unpaired.
 """
 from __future__ import annotations
 
@@ -150,17 +151,16 @@ def check_set_pairing(t_reads: List[dict], c_reads: List[dict]) -> None:
             raise InferenceRefused(f"{r['label']}: a control (blob) read must be scored on its OWN named "
                                    f"set (eset_reference {ref})")
         c_shas.append(r["checkpoint"]["sha256"])
-    refs = []
     for r in t_reads:
         ref = r.get("eset_reference") or {}
-        if ref.get("mode") != "paired" or not ref.get("checkpoint_sha256"):
-            raise InferenceRefused(f"{r['label']}: a treat read must be scored on a paired blob run's "
-                                   f"named set (`read --reference`; eset_reference {ref})")
-        refs.append(ref["checkpoint_sha256"])
-    if len(t_reads) != len(c_reads) or sorted(refs) != sorted(c_shas):
-        raise InferenceRefused("the treat reads' reference blob checkpoints are not a one-to-one map onto "
-                               "the control group's checkpoints — the two arms would be scored over "
-                               "different collections of supports")
+        if ref.get("mode") != "all_blob_mean":
+            raise InferenceRefused(f"{r['label']}: a treat read must be scored on EVERY blob run of the "
+                                   f"look (read --reference; eset_reference mode {ref.get('mode')!r})")
+        shas = [x.get("checkpoint_sha256") for x in ref.get("references") or []]
+        if sorted(map(str, shas)) != sorted(c_shas):
+            raise InferenceRefused(f"{r['label']}: its reference blob checkpoints are not EXACTLY the "
+                                   "control group's (a missing, extra or repeated reference) — the arms "
+                                   "would be scored over different collections of supports")
 
 
 def summarize(results: Dict[str, TResult]) -> str:

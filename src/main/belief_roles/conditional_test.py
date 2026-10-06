@@ -12,7 +12,7 @@ import torch
 
 from main.belief_roles import metrics as MX
 from main.belief_roles.bank_rows import SWITCH_BASE, BankRows
-from main.belief_roles.eset import ERow, blob_event_dist, event_index, flat_event_dist, set_mask
+from main.belief_roles.eset import ERow, ESet, blob_event_dist, event_index, flat_event_dist, set_mask
 from main.belief_roles.forward import Columns, _event_logp, _flat_event_logp
 
 S = 8
@@ -37,10 +37,15 @@ def _cols(arm, events, p_event, eset_mass, eset_in, intent_cov=None, intent_lp=N
                    intent_covered=cov, opp_active_species=np.zeros(n, np.int64),
                    role_M_arm=zeros[:, :0], role_V_arm=zeros[:, :0], role_M_prior=zeros[:, :0],
                    role_V_prior=zeros[:, :0],
-                   eset_mass=np.asarray(eset_mass, np.float64), eset_in=np.asarray(eset_in, bool),
-                   eset_tie=np.zeros(n, bool) if tie is None else np.asarray(tie, bool),
+                   esets=[ESet(mass=np.asarray(eset_mass, np.float64), e_in=np.asarray(eset_in, bool),
+                               tie=np.zeros(n, bool) if tie is None else np.asarray(tie, bool))],
                    eset_logp_event=lp_ev)
     return br, cols
+
+
+def _read1(br, cols, rows):
+    """The read on the run's ONE E_row."""
+    return MX.intent_conditional_read(br, cols, rows, cols.esets[0])
 
 
 def _planted(q_in, q_out, counts, over_certain):
@@ -69,8 +74,8 @@ def test_a_planted_over_certain_arm_cannot_win_metric_1():
     set is reverted."""
     honest = _planted((0.6, 0.2), 0.2, (60, 20, 20), over_certain=False)
     over = _planted((0.6, 0.2), 0.2, (60, 20, 20), over_certain=True)
-    c_h = MX.intent_conditional_read(*honest, np.ones(100, bool))["all"]
-    c_o = MX.intent_conditional_read(*over, np.ones(100, bool))["all"]
+    c_h = _read1(*honest, np.ones(100, bool))["all"]
+    c_o = _read1(*over, np.ones(100, bool))["all"]
     want = -(60 * math.log(0.75) + 20 * math.log(0.25)) / 80
     assert c_h["n_scored"] == c_o["n_scored"] == 80
     assert abs(c_h["logloss"] - want) < 1e-12 and abs(c_o["logloss"] - want) < 1e-12
@@ -81,7 +86,7 @@ def test_a_planted_over_certain_arm_cannot_win_metric_1():
     # an over-certain arm with WORSE discrimination inside E_row (1:1) loses the conditional metric
     flat = _cols("blob", [10] * 60 + [11] * 20 + [12] * 20, [0.5] * 80 + [0.0] * 20, [1.0] * 100,
                  [True] * 80 + [False] * 20)
-    c_f = MX.intent_conditional_read(*flat, np.ones(100, bool))["all"]
+    c_f = _read1(*flat, np.ones(100, bool))["all"]
     assert abs(c_f["logloss"] - math.log(2)) < 1e-12 and c_f["logloss"] > c_h["logloss"]
 
 
@@ -90,7 +95,7 @@ def test_renormalisation_by_hand_and_the_shared_rows():
     event is outside E_row — not scored, counted in the set miss rate."""
     br, cols = _cols("fixed_mass", [10, SWITCH_BASE + 3, 12], [0.3, 0.1, 0.2], [0.6, 0.4, 0.5],
                      [True, True, False])
-    r = MX.intent_conditional_read(br, cols, np.ones(3, bool))
+    r = _read1(br, cols, np.ones(3, bool))
     assert r["all"]["n_scored"] == 2 and abs(r["all"]["set_miss_rate"] - 1 / 3) < 1e-12
     assert abs(r["all"]["logloss"] - (math.log(2) + math.log(4)) / 2) < 1e-12
     assert abs(r["move"]["logloss"] - math.log(2)) < 1e-12
@@ -100,18 +105,18 @@ def test_renormalisation_by_hand_and_the_shared_rows():
 def test_rule8_a_denominator_within_1e12_of_zero_is_excluded_and_counted():
     br, cols = _cols("fixed_mass", [10, 10, 10], [5e-13, 1e-12, 0.5], [9e-13, 1e-12, 1.0],
                      [True, True, True])
-    r = MX.intent_conditional_read(br, cols, np.ones(3, bool))
+    r = _read1(br, cols, np.ones(3, bool))
     assert r["excluded_rule8_denominator"] == 2 and r["all"]["n_scored"] == 1
     assert abs(r["all"]["logloss"] - math.log(2)) < 1e-12
     # a near-tie at the reference blob's seat cut (E_row ill-determined) is excluded too
     br, cols = _cols("fixed_mass", [10, 10], [0.5, 0.25], [1.0, 1.0], [True, True], tie=[True, False])
-    r = MX.intent_conditional_read(br, cols, np.ones(2, bool))
+    r = _read1(br, cols, np.ones(2, bool))
     assert r["excluded_rule8_tie"] == 1 and abs(r["all"]["logloss"] - math.log(4)) < 1e-12
 
 
 def test_a_zero_mass_event_inside_the_set_is_never_floored():
     br, cols = _cols("fixed_mass", [10, 11], [0.5, 0.0], [1.0, 0.5], [True, True])
-    r = MX.intent_conditional_read(br, cols, np.ones(2, bool))["all"]
+    r = _read1(br, cols, np.ones(2, bool))["all"]
     assert r["n_zero_event_mass"] == 1 and r["logloss"] is None
 
 
@@ -123,7 +128,7 @@ def test_coverage_calibration_by_hand():
     ins = [False] * 2 + [True] * 8 + [False] * 3 + [True] * 17
     ev = [12 if not i else 10 for i in ins]
     br, cols = _cols("fixed_mass", ev, [0.1 if not i else 0.5 for i in ins], mass, ins)
-    c = MX.intent_conditional_read(br, cols, np.ones(30, bool))["coverage"]
+    c = _read1(br, cols, np.ones(30, bool))["coverage"]
     assert c["n"] == 30
     assert abs(c["mean_outside_mass"] - 0.13) < 1e-12 and abs(c["outside_freq"] - 1 / 6) < 1e-12
     assert abs(c["citl"] - (0.13 - 1 / 6)) < 1e-12
@@ -136,8 +141,40 @@ def test_coverage_calibration_by_hand():
 
 def test_no_reference_means_no_value_never_a_guess():
     br, cols = _cols("fixed_mass", [10], [0.5], [1.0], [True])
-    cols.eset_mass = None
-    assert MX.intent_conditional_read(br, cols, np.ones(1, bool))["available"] is False
+    cols.esets = []
+    r = MX.intent_conditional(br, cols, np.ones(1, bool))
+    assert r["available"] is False
+    assert MX.per_run({"intent": {"all": {"logloss": None, "miss_rate": None}}, "intent_conditional": r,
+                       "arm": {"presence": {}, "other": {}, "roles_r1_r2": {"weighted_abs_delta": None},
+                               "roles_r3": {"both_rate": None}}})[MX.ADOPTION_GATE_METRIC] is None
+
+
+def test_a_fixed_mass_value_is_the_mean_over_every_blob_set():
+    """§7.7(b) decision (2026-10-06): a fixed_mass run is scored on EVERY blob run of the look and its
+    value is the MEAN of the per-set conditional log losses. Two sets on the same three rows: set A holds
+    rows 0, 1 (masses 0.6 / 0.4, P(e) 0.3 / 0.1 → log 2, log 4); set B holds rows 0, 2 (masses 0.5 / 0.25,
+    P(e) 0.3 / 0.2 → −log 0.6, −log 0.8). per_run reads the mean of the two, not either one, and not
+    the pooled mean over the four scored rows. A None on any set makes the mean None."""
+    br, cols = _cols("fixed_mass", [10, 11, 12], [0.3, 0.1, 0.2], [0.6, 0.4, 0.5], [True, True, False])
+    cols.esets[0].label, cols.esets[0].checkpoint_sha256 = "blobA", "a" * 64
+    cols.esets.append(ESet(mass=np.array([0.5, 0.9, 0.25]), e_in=np.array([True, False, True]),
+                           tie=np.zeros(3, bool), label="blobB", checkpoint_sha256="b" * 64))
+    r = MX.intent_conditional(br, cols, np.ones(3, bool))
+    la = (math.log(2) + math.log(4)) / 2
+    lb = -(math.log(0.6) + math.log(0.8)) / 2
+    assert r["n_references"] == 2
+    assert [x["reference_label"] for x in r["per_reference"]] == ["blobA", "blobB"]
+    assert abs(r["per_reference"][0]["all"]["logloss"] - la) < 1e-12
+    assert abs(r["per_reference"][1]["all"]["logloss"] - lb) < 1e-12
+    assert abs(r["mean"]["logloss"] - (la + lb) / 2) < 1e-12
+    assert abs(r["mean"]["set_miss_rate"] - 1 / 3) < 1e-12
+    assert abs(r["mean"]["outside_mass"] - ((0.4 + 0.6 + 0.5) / 3 + (0.5 + 0.1 + 0.75) / 3) / 2) < 1e-12
+    pr = MX.per_run({"intent": {"all": {"logloss": None, "miss_rate": None}}, "intent_conditional": r,
+                     "arm": {"presence": {}, "other": {}, "roles_r1_r2": {"weighted_abs_delta": None},
+                             "roles_r3": {"both_rate": None}}})
+    assert abs(pr[MX.ADOPTION_GATE_METRIC] - (la + lb) / 2) < 1e-12
+    cols.esets[1].e_in = np.zeros(3, bool)                         # set B scores no row → None
+    assert MX.intent_conditional(br, cols, np.ones(3, bool))["mean"]["logloss"] is None
 
 
 # --------------------------------------------------------------------------- the dense distributions

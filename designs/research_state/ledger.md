@@ -22445,3 +22445,22 @@ Tag: **BUILT · plateau Tier 1 offline (U9a) · `main.plateau tick / status` · 
   4. The quota gate (`check_usage.py --gate`) returned a rate-limit error at the start of this unit and was not re-checked.
 
 Tag: **BUILT · Amendment 3(b) conditional metric (1) + coverage · fixed_mass paired to blob seed s · smoke only, no inference**
+
+### 2026-10-06 · BUILT · **X5 A/B metric (1) for a fixed_mass run = the MEAN of the conditional log loss over EVERY blob run of the look (orchestrator decision, supersedes the seed-id pairing built earlier today); registered rule and boundary unchanged**
+
+- **Decision (orchestrator, under the owner's delegation).** A fixed_mass run is scored on each blob run's named set of the same look; its metric (1) value is the mean over those sets. Blob runs keep their OWN set.
+  - Reason: §7.4's "seeds do not pair runs" makes fm s ↔ blob s arbitrary. The mean over all the look's blob sets mirrors the cross design and leaves no arbitrary choice.
+  - The one-seed s1001 smoke values were seen BEFORE this choice; the choice follows from §7.4's principle, not from them.
+  - Unchanged: one value per run, the across-seed two-sample t on 2(n − 1) df, tested only after a NON-INFERIOR matched-steps verdict, at that look's t-boundary.
+- **Built.**
+  - `read --reference <fm>=<blob>[,<blob>…]` takes a set of blob labels or `.erow.npz` paths; a repeat is refused.
+  - The read reports the conditional log loss and coverage per reference plus their mean. The mean is `per_run`; a None on any reference makes it None.
+  - `eset_reference` mode `all_blob_mean` lists every reference's checkpoint sha256.
+  - `infer` refuses unless every fixed_mass read references EXACTLY the control group's blob checkpoints: no missing, extra or repeated reference, and no sets that differ across fixed_mass runs.
+- **Verified.** Tests that fail on revert:
+  - The mean (first-reference-only mutant: fails).
+  - The refusals (a subset check in place of exact equality: fails).
+  - The existing planted / renormalisation / coverage tests are unchanged and green.
+  - A CLI re-read of `rb_x5ab_fm_s1001` final on the saved blob s1001 set gives the identical value (1.752). No across-seed `infer` was run.
+
+Tag: **BUILT · metric (1) fixed_mass value = mean over the look's blob sets · supersedes seed-id pairing · rule + boundary unchanged**

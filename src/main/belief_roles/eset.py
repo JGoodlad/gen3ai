@@ -10,11 +10,12 @@ support of the blob's induced distribution, decided STRUCTURALLY (membership, ne
 row's ``covered`` flag and "the realised event is in E_row" are the same predicate (checked in
 ``forward.read_columns``).
 
-**A fixed_mass run has no blob heads**, so its E_row is a REFERENCE blob run's, read on the same bank rows
-(the registered pairing: fixed_mass seed s ↔ blob seed s — the Decision record of §7.7). A blob read
-writes its E_row beside its JSON (``<label>.erow.npz``); a fixed_mass read takes one through
-``--reference``. ``infer`` refuses a conditional-metric comparison whose references are not a one-to-one
-map onto the control group's checkpoints.
+**A fixed_mass run has no blob heads**, so it is scored on EVERY blob run of the look, each set read on
+the same bank rows, and its value is the MEAN of the conditional log loss over those sets (orchestrator
+decision 2026-10-06, the Decision record of §7.7: "seeds do not pair runs", §7.4, and the mean mirrors the
+cross design). A blob read writes its E_row beside its JSON (``<label>.erow.npz``); a fixed_mass read takes
+them through ``--reference``. ``infer`` refuses a conditional-metric comparison in which any fixed_mass
+read does not reference exactly the control group's blob runs.
 
 The event space is DENSE: index e < :data:`SWITCH_BASE` is a move num (every Hidden Power → 237), index
 ``SWITCH_BASE + s`` a switch-in by species s, so ``D = SWITCH_BASE + S``.
@@ -102,6 +103,17 @@ def set_mask(seat_events, switch_ok, D: int):
     S = switch_ok.shape[1]
     m[:, SWITCH_BASE:SWITCH_BASE + S] = switch_ok.bool()
     return m
+
+
+@dataclass
+class ESet:
+    """One E_row's per-row quantities for one arm (``forward.read_columns``)."""
+
+    mass: np.ndarray                 # [N] Σ_{e ∈ E_row} P_arm(e) — the renormalisation denominator
+    e_in: np.ndarray                 # [N] bool — the realised event is in E_row
+    tie: np.ndarray                  # [N] bool — E_row's own seat cut is a rule-8 near-tie
+    label: str = "own"               # the reference blob run's label ("own" for a blob run)
+    checkpoint_sha256: str = ""      # the reference blob checkpoint ("" for a blob run's own)
 
 
 def blob_event_dist(alpha_logits, seat_nums, beta_logits, beta_ok, content_logp):

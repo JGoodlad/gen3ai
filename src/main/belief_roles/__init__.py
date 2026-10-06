@@ -10,8 +10,8 @@ forward passes only; the output never goes under ``models/``.
                     true team and movesets, its realised action on the COMMON EVENT SPACE, on-/off-pool.
 - :mod:`.forward`   one checkpoint (THE strict loader) → per-decision presence for three columns (the
                     arm's own, the Smogon prior), the intent probability of the realised event, role masses.
-- :mod:`.eset`      Amendment 3(b): blob's named set E_row (a fixed_mass run's from its PAIRED blob run,
-                    ``read --reference``) and each arm's full distribution on the dense event space.
+- :mod:`.eset`      Amendment 3(b): blob's named set E_row (a fixed_mass run is scored on EVERY blob
+                    run of the look, ``read --reference``, its value the mean) and each arm's full distribution on the dense event space.
 - :mod:`.metrics`   the purpose metrics (the ADOPTION GATE ``intent_logloss_conditional`` — renormalised
                     over E_row — with its coverage; the as-built intent log loss + its MISS column, descriptive;
                     presence Brier / log score,
