@@ -22262,3 +22262,13 @@ Tag: **FINDING + FIX · F-XC-4 = a NaN compiled backward (Inductor `remove_noop_
 - **Still open (not this unit):** F-XC-2 (`UpdateFit` headroom), F-XC-3 (the T2 slot-load allocation), the +16.7 % `train_ms` cost. The `amax`-recompute class is LATENT at ~50 other reductions, blob's included; the gate and canary catch it.
 
 Tag: **FINDING + FIX · F-XC-4 = `amax` backward 0/0 over an Inductor recompute rounded differently by Triton FMA contraction (finite with contraction off) · fixed_mass maxima by index, value bit-identical, golden unmoved · blob R1 + T2 compiled code IDENTICAL · CUDA gate 4/4 + e2e regime-A compiled: gate, update-10 canary, 11 dumps PASS · logger key renamed (TB tag discontinuous) · canary independence wording fixed**
+
+### 2026-10-05 · REGISTRATION · **X5 A/B Amendment 5 (owner): the fixed_mass arm runs at up to 50 % slower; strength is read at BOTH matched steps and matched wall-time, each at the registered boundaries; adoption becomes the owner's decision**
+
+Before any fixed_mass seed and before any read (`design_x5_belief_tokens.md` §7.9).
+- **Launch:** the U8 cost budget is no longer the launch gate. Launch requires s ≤ 50 % (the paired-benchmark slowdown, Amendment 1). The startup refusals (F-XC-2 headroom, F-XC-3 slot load) must still be FIXED, not overridden.
+- **Reads:** (1) matched steps, the §7.4 cross at 15M vs 15M; (2) matched wall-time, fixed_mass at the nearest 1M checkpoint at or below 15M/(1+s), against blob at 15M. Same t-boundaries and outcome table for each.
+- **Adoption:** no automatic rule. The owner decides with both verdicts, purpose metric (1) (Amendment 3's form, in sequence after a matched-steps NON-INFERIOR), s and GPU-hours. "Either read suffices" is disallowed; requiring both is an intersection-union test with no α cost.
+- **Interpretation:** a wall-time deficit with steps non-inferior is a cost-now finding (optimisation or the encoder refactor could change it), not a verdict on the representation.
+
+Tag: **REGISTRATION · X5 A/B Amendment 5 · launch at s ≤ 50 % (refusals still fixed) · strength at matched steps AND matched wall-time · owner decides adoption**
