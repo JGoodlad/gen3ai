@@ -6,6 +6,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WT="$(cd "$HERE/../../../.." && pwd)"
 cd "$WT"
 export PYTHONPATH="$WT/src"
+export CUDA_VISIBLE_DEVICES=   # CPU only: torch cannot create a CUDA context (no GPU lease)
 exec nice -n 15 "$WT/scripts/ops/mem_cap.sh" --name crnread 12 timeout 30m \
     /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.policy_spectrum read \
     --bank "$HERE/../m5_laneS/bank_v1" --out "$HERE/rows/reads" \

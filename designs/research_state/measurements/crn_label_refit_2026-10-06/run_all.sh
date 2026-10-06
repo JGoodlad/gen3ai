@@ -3,6 +3,7 @@
 # step is resumable, so re-running this script after a kill continues where it stopped.
 #   setsid nohup ./run_all.sh <workers> <threads> > /dev/null 2>&1 < /dev/null &
 set -uo pipefail
+export CUDA_VISIBLE_DEVICES=   # CPU only, every phase (no GPU lease)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WT="$(cd "$HERE/../../../.." && pwd)"
 W="${1:-3}"; T="${2:-2}"

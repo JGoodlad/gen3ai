@@ -12,6 +12,7 @@ PY=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3
 CKPT=/home/goodlad/dev/gen3ai/models/rb_x5ab_blob_s1001/final_model.zip
 cd "$WT"
 export PYTHONPATH="$WT/src"
+export CUDA_VISIBLE_DEVICES=   # CPU only: torch cannot create a CUDA context (no GPU lease)
 exec nice -n 15 "$WT/scripts/ops/mem_cap.sh" --name crnrefit 12 timeout 12h \
     "$PY" -m main.policy_spectrum.truth run \
     --bank "$HERE/../m5_laneS/bank_v1" --subset "$SUBSET" \
