@@ -312,8 +312,12 @@ def torch_globals(*, num_threads: Optional[int] = None,
         torch.set_num_threads(prev_threads)
 
 
+#: The model attribute (and `metadata.json` key) holding the torch thread count a FRESH build ran at.
+INIT_NUM_THREADS_ATTR = "init_num_threads"
+
+
 @contextlib.contextmanager
-def single_thread_build() -> Iterator[None]:
+def single_thread_build() -> Iterator[int]:
     """Build FRESH model weights at ONE intra-op thread, restoring the caller's count on exit
     (even on an exception) — THE shared helper for every site that creates and initialises new
     parameters (`gen3_single_thread_init_v1`).
@@ -325,9 +329,13 @@ def single_thread_build() -> Iterator[None]:
     run's starting network depended on the core count and `OMP_NUM_THREADS` (F-X5-4).
 
     Only the intra-op count matters (the QR is a BLAS/LAPACK call); the interop pool is untouched.
+    YIELDS the intra-op thread count actually IN EFFECT inside the block (`torch.get_num_threads()`
+    read after the set — 1), so a caller can RECORD what its build ran at rather than assume it
+    (`metadata.json` `init_num_threads`, written by `main.train.model_build.construct_fresh_learner`).
     A thin `torch_globals(num_threads=1)`, so the restore is the guard's own."""
+    import torch
     with torch_globals(num_threads=1):
-        yield
+        yield torch.get_num_threads()
 
 
 def restores_torch_globals(fn: Callable[..., Any]) -> Callable[..., Any]:

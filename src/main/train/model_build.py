@@ -38,7 +38,7 @@ from main.train.run_io import (
     _attach_run_tb_logger, _model_hparams, _run_lineage, _write_latest_txt,
 )
 from utils.logging.levels import LogLevel
-from utils.torch_state_guard import single_thread_build
+from utils.torch_state_guard import INIT_NUM_THREADS_ATTR, single_thread_build
 
 
 # ── The training-hparam passthroughs: ONE declared table, applied on BOTH build paths ──
@@ -165,7 +165,7 @@ def construct_fresh_learner(args, env, policy_kwargs):
     a parameter still bit-identical to its init at the FRESH bar. The record rides in every checkpoint,
     so a resume / fork / restart reads the lineage's own fresh build, never a re-derived one."""
     from agents.model.compile_regions import record_param_init
-    with single_thread_build():
+    with single_thread_build() as build_threads:
         model = InstrumentedMaskablePPO(
             Gen3DualHeadMaskablePolicy,
             env,
@@ -185,6 +185,12 @@ def construct_fresh_learner(args, env, policy_kwargs):
             policy_kwargs=policy_kwargs
         )
     record_param_init(model)
+    # `metadata.json` `init_num_threads` (X5 A/B §7.4 precondition): the torch thread count the build RAN AT,
+    # as `single_thread_build` reported it from inside the block — never the process default. A plain int on
+    # the model, so SB3's `save` writes it into every checkpoint (like the init record above) and a resume /
+    # fork carries it with the weights; `run_io._model_hparams` hands it to the metadata writer, whose
+    # existing value always wins (`save_model_snapshot`).
+    setattr(model, INIT_NUM_THREADS_ATTR, int(build_threads))
     return model
 
 

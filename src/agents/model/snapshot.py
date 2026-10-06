@@ -230,6 +230,7 @@ def save_model_snapshot(
     existing_git_hash = None
     existing_pin_source = None
     existing_num_timesteps = None
+    existing_init_num_threads = None
     if os.path.exists(meta_path):
         with open(meta_path) as f:
             existing = json.load(f)
@@ -247,6 +248,7 @@ def save_model_snapshot(
             existing_git_hash = existing.get("git_hash")
             existing_pin_source = existing.get("pin_source")
             existing_num_timesteps = existing.get("num_timesteps")
+            existing_init_num_threads = existing.get("init_num_threads")
 
     # WHICH TORCH ran this process (owner 2026-09-30: torch 2.8 is the default, 2.5.1 legacy).
     # Overwritten every save, like `python_version`; `pin_history` keeps the per-span story. The
@@ -281,6 +283,12 @@ def save_model_snapshot(
     )
     if hparams:
         metadata.update(hparams)
+    # `init_num_threads` — the torch thread count the run's FRESH build ran at — is IMMUTABLE like
+    # `original_command`: the first recorded value wins, so a resume (whose model carries the same value
+    # in its checkpoint) can never overwrite it. A FORK is a new run dir with no existing record, so it
+    # records the value its checkpoint carries (the build its weights came from). ABSENT = unrecorded.
+    if existing_init_num_threads is not None:
+        metadata["init_num_threads"] = existing_init_num_threads
     # HOW FAR THIS RUN TRAINED, as a top-level key — "latest", so unlike `original_command` /
     # `lineage` / `pin_history` it is OVERWRITTEN on every save. It exists because the step count
     # was previously readable only by opening the checkpoint .zip, which the JSON-only offline

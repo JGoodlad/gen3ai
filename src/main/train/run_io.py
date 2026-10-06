@@ -15,6 +15,7 @@ from agents.model.snapshot import record_checkpoint
 from agents.training.dose import dose_block
 from agents.training.lineage import build_lineage
 from main.train.constants import checkpoint_due
+from utils.torch_state_guard import INIT_NUM_THREADS_ATTR
 
 
 def _resolve_fresh_model_dir(run_name, exploiter_label, model_arg):
@@ -172,6 +173,12 @@ def _model_hparams(model) -> dict:
         # `check_compatible` reads.
         "dose": dose_block(model),
     }
+    # The torch thread count the run's FRESH build ran at (`construct_fresh_learner`, X5 A/B §7.4
+    # precondition). Carried on the model (it rides every checkpoint), ABSENT for a checkpoint that predates
+    # the record — UNKNOWN, never a guessed 1. `save_model_snapshot` makes the first recorded value immutable.
+    _bt = getattr(model, INIT_NUM_THREADS_ATTR, None)
+    if isinstance(_bt, int) and not isinstance(_bt, bool):
+        out[INIT_NUM_THREADS_ATTR] = _bt
     # The step this snapshot was taken at. Recorded because `pin_history` (metadata.json's
     # append-only "which commit ran which steps") needs a step for its span boundaries, and
     # every production save already routes through here. `getattr` because the test doubles

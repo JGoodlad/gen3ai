@@ -1170,7 +1170,7 @@ fixed now, and the boundaries do not depend on σ (estimated variance).
 - Checkpoints every 1M from **10M** (the speed rule's matched-wall-clock checkpoint and the jitter read need them).
 - Arm order alternates by seed (X1 B1 B2 X2 X3 B3 …), to block box drift.
 - **Preconditions:** the build thread count is recorded in `metadata.json` (`init_num_threads`) and equal across every
-  run (F-X5-4 / F-X5-5; the production fresh build is pinned to one thread since `50fdfdc2`, so this is a check); U8's cost budget passed. A run that breaks a precondition is
+  run (F-X5-4 / F-X5-5; the production fresh build is pinned to one thread since `50fdfdc2`, so this is a check); runs launched from the commit that adds `main/train/init_num_threads_test.py` record the key (before it nothing wrote it, so an earlier run's absent key reads UNKNOWN, not 1); U8's cost budget passed. A run that breaks a precondition is
   INCONCLUSIVE.
 - Through the training agent, `gpu_lock` throughout.
 
