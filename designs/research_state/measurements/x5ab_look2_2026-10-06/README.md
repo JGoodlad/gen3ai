@@ -1,0 +1,113 @@
+# X5 A/B look 2 — the mirrored head-to-head cross, PREPARED (not yet played; 2026-10-06)
+
+The registered look-2 read of `designs/endstate/design_x5_belief_tokens.md` §7.4 (n = 5 seeds per arm, df 8,
+**NON-INFERIOR iff t ≥ 2.683**, FUTILITY STOP iff Δ̂ ≤ −3.5 pp (non-binding), rule 8) at matched steps, and §7.9's
+matched wall-time read at the same boundary. Look 1 (`../x5ab_look1_2026-10-06/`) read CONTINUE at matched steps and
+FUTILITY STOP (NOT DETECTED, INFERIOR) at matched wall-time; the futility stop is non-binding, so both reads go on.
+
+## What look 2 plays: only the NEW cells
+
+| read | family (registered at `bcb0296c`) | look-1 request (reused, 9 cells) | look-2 request (new, 16 cells) | rows × cols |
+|---|---|---|---|---|
+| matched steps | `x5ab_strength_steps` | `x5ab_look1_steps` | `x5ab_look2_steps` | fixed_mass 15M (`final_model.zip`) × blob 15M |
+| matched wall-time | `x5ab_strength_wall` | `x5ab_look1_wall` | `x5ab_look2_wall` | fixed_mass 12M checkpoint × blob 15M |
+
+**Same families, new requests.** A family is the eval ledger's group-sequential read: its registration pins the
+decision kind, the protocol and the rule, and that rule already names all three looks' boundaries
+(`looks 5.761/2.683/1.874`), so each look is one request in it and `eval_ledger.looks()` reads them apart. The driver
+re-registers each family with its EXACT recorded terms (commit `bcb0296c`, the same rule string); `family-register` is
+idempotent only on identical terms, so it never re-registers at HEAD's commit.
+
+**The cells: 5 × 5 − 3 × 3 = 16 per read, 32 in all** (rows fixed_mass, columns blob, seeds 1001–1005): rows
+1004–1005 × all five blob columns (10) + rows 1001–1003 × blob 1004–1005 (6). The oracle arms are NOT extended (§7.6:
+reference arms; look 1's oracle reads stand).
+
+**Checkpoints are resolved at PLAY time** by `plan_look2.py`: every run must have a ≥ 15M checkpoint and a
+`final_model.zip`, and each fixed_mass run exactly one checkpoint in [12M, 13M) (§7.9: s = +16.7 %, 15M / 1.167 =
+12.85M → the 12M one). A missing or short run REFUSES the whole read (exit 3), never drops a seed: at ~13:27 today
+`rb_x5ab_fm_s1005` was at 10.0M with no final, and the plan refused it, naming it.
+
+**The uniqueness guard** (by checkpoint sha256, the ledger cells' key):
+1. the plan refuses unless the ledger's look-1 request holds EXACTLY the registered 3 × 3 cells;
+2. it refuses a planned cell that is already a look-1 cell, or two planned cells with one sha pair;
+3. it refuses if the look-2 request holds any cell outside the plan (a stray or replayed cell);
+4. the reader marks the read INCONCLUSIVE if a look-2 cell is a look-1 cell (`... replays look-1 cell(s)`) or a cell
+   appears under both requests (`matrix_from_cells`: "appears twice").
+
+**Engine identity.** Look 1 played at `bcb0296c`. The driver lists every commit since then on the engine path
+(`src/main/h2h`, `src/rust_env`, `src/rust_sim`, `src/utils/rust_env`, `src/agents/{model,observation}`,
+`src/agents/training/eval_ledger`, `data/`) and REFUSES (exit 5) if there is one, unless `ALLOW_ENGINE_DRIFT=1` after a
+review; commits already reviewed are listed in the driver's `REVIEWED`. One so far: `19bdf034` (`snapshot.py`'s
+`save_model_snapshot` keeps `init_num_threads` — a save-time metadata field; h2h never saves a model). The dry ran at
+`96eedfb5`, before it; its regime id `adfdbee824c9eb0a` equals look 1's.
+
+## THE COMMAND (at 14:08 or later, once the training run has released the GPU)
+
+From a worktree at the commit that landed this directory (bootstrap it: submodule + `dist`/`node_modules` links),
+under the GPU lease the orchestrator grants:
+
+```bash
+cd <worktree> && export PYTHONPATH=$PWD/src
+D=designs/research_state/measurements/x5ab_look2_2026-10-06
+TOK=$HOME/.cache/gen3ai/x5look2/lease.token
+# 0. fm_s1005 must be finished: this prints 16 for each read and exits 0, or names what is missing (exit 3)
+for r in steps wall; do /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 $D/plan_look2.py --read $r --out /tmp/x5l2_$r.json; done
+# 1. the lease
+scripts/ops/gpu_lease.sh acquire --owner <agent name> --note "X5 A/B look 2" --max-hours 2 --token-file $TOK
+# 2. play, detached (resumable: if it dies, run the same line again)
+GEN3AI_GPU_LEASE_TOKEN_FILE=$TOK nohup setsid bash $D/play_look2.sh > $D/run.log 2>&1 < /dev/null &
+# 3. when run.log ends "DONE": the read, the audit, the release
+/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 $D/read_look2.py      # → result.json, result.md
+/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.eval_ledger audit
+GEN3AI_GPU_LEASE_TOKEN_FILE=$TOK scripts/ops/gpu_lease.sh release
+```
+
+`read_look2.py --progress` gives cell counts at any time (progress, never a verdict).
+
+**Expected: 32 cells × 1,000 pairs = 64,000 games, ~20–25 min of GPU.** From look 1's `run.log`: ~9.5 s per 1,000-game
+batch (90–127 games/s) → 64 batches ≈ 10 min; two engines (one per read) at 4–6.5 min of T2 graph compile each ≈
+8–13 min; cell swaps ~2.5 s × 32 ≈ 1.5 min. **UNVERIFIED:** each look-2 engine holds 10 checkpoints (5 + 5) where
+look 1's held 6, which may lengthen the compile or the swaps.
+
+## The CPU dry run (2026-10-06, before the GPU was free)
+
+`dry_run/` (`dry_setup.sh`, `dry_run.sh`, `dry_tamper2.sh`, `guard_check.py`; log `dry_run/dry_run.log`): a scratch
+ledger `~/.cache/gen3ai/x5look2/dry/ledger` (outside `models/`), a scratch models dir of read-only symlinks to
+`rb_x5ab_{fm,blob}_s100{1,2}`, `SEEDS="1001 1002" LOOK1_SEEDS=1001` (a 2 × 2 matrix whose "look 1" is the 1 × 1
+corner, so look 2 has 3 new cells per read: a new row, a new column and the new corner), 20 pairs per cell in batches of
+10, CPU (T2 eager, `CUDA_VISIBLE_DEVICES=` empty), the SAME `play_look2.sh` / `plan_look2.py` / `read_look2.py`.
+13:29–13:42 PDT, no GPU touched.
+
+1. **Look 2 before look 1 exists → the plan REFUSES** (exit 3): "x5ab_look1_steps: the ledger holds 0 cell(s) …".
+2. Look 1 (`EMIT=look1`, dry run only) played 1 cell per read under `x5ab_look1_steps` / `_wall`.
+3. **Look 2 planned and played exactly the 3 new cells per read** ("4 cells in the 2 x 2 matrix = 1 reused from
+   x5ab_look1_steps + 3 new under x5ab_look2_steps"); the wall rows resolved to `checkpoint_12000021` /
+   `checkpoint_12000070`, the same files look 1 used. Regime id `adfdbee824c9eb0a` = look 1's.
+4. **A re-run plays nothing**: "0 with batches to play (0 batch(es)), 6 already recorded", for both reads.
+5. **The read** (`dry_run/read/result.md`) builds the full 2 × 2 matrix from both requests (look-2 cells in bold) and
+   decides at look 2: INCONCLUSIVE with the one reason "2 seeds per arm, look 2 registers 5" — by construction, as it
+   should be; the statistic is printed (df 2 here; df 8 at n = 5). Ledger audit: 16 rows, 16 claims, 0 live, OK.
+6. **Tamper attempts through the real writer never reach the ledger**: replaying the look-1 cell under
+   `x5ab_look2_steps` at the same schedule seed is refused by the ledger (`DuplicateBatchError`: the seed block is keyed
+   by the two checkpoints, the regime and the schedule, not by the request), and at another schedule seed it is
+   refused as a request-spec conflict. So the plan/read guards were exercised on FAKE ledger cells
+   (`guard_check.py` → `guard_check.log`): a look-1 cell replayed under look 2 → plan REFUSED, read INCONCLUSIVE
+   ("appears twice", "replays look-1 cell(s)"); look 1 holding an extra cell → both refuse; look 1 missing → both
+   refuse; one new cell missing → plan plays it, read INCONCLUSIVE ("missing cell"); clean → plan 3, read OK up to the
+   seed count.
+7. The plan on the REAL archive at ~13:27 REFUSED: `rb_x5ab_fm_s1005: last checkpoint 10000180 < 15M; no
+   final_model.zip; 0 checkpoint(s) in [12M, 13M)` — the play-time resolution works as intended.
+
+The look-2 decision rule itself (n = 5, df 8, boundary 2.683, futility, rule 8) is `main.h2h.cross` as registered at
+`bcb0296c` (`LOOK_BOUNDARIES[2] = 2.683`, `LOOK_SEEDS[2] = 5`, df = 2(n − 1)), unit-tested at look 2 in
+`src/main/h2h/cross_test.py`; `read_look2.py` calls `summarize(2, …)` unchanged. A cross statistic that is undefined
+(zero variance) is caught and read INCONCLUSIVE rather than raising.
+
+## Files
+
+| file | what |
+|---|---|
+| `play_look2.sh` | the incremental, resumable, detached driver (registers the families with their recorded terms, plans, plays) |
+| `plan_look2.py` | resolves the checkpoints at play time, the preconditions and the uniqueness guard → the cell list |
+| `read_look2.py` | the read at n = 5 on the full 5 × 5 matrix (look-1 + look-2 requests) → `result.json`, `result.md` |
+| `dry_run/` | the CPU dry run: its scripts, the guard check on fake cells, logs, and its (dry) read |

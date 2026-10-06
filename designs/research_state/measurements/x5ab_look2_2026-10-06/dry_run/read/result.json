@@ -1,0 +1,373 @@
+{
+ "cited": [
+  "blob-path identity at 708dcb0a vs e5e660dd (ledger 2026-10-06 BANK)",
+  "restarts / crashes / init_num_threads: the runs' ledger BANK entries"
+ ],
+ "dry_run": true,
+ "look": 2,
+ "look1_seeds": [
+  1001
+ ],
+ "matched_steps": {
+  "cells": [
+   {
+    "aborted": 0,
+    "d": 0,
+    "l": 24,
+    "n_pairs": 20,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     7,
+     0,
+     10,
+     0,
+     3
+    ],
+    "player": "rb_x5ab_fm_s1001@15047411",
+    "score_pp": 40.0,
+    "verdict": "OK",
+    "w": 16
+   },
+   {
+    "aborted": 0,
+    "d": 1,
+    "l": 22,
+    "n_pairs": 20,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     5,
+     1,
+     11,
+     0,
+     3
+    ],
+    "player": "rb_x5ab_fm_s1001@15047411",
+    "score_pp": 43.75,
+    "verdict": "OK",
+    "w": 17
+   },
+   {
+    "aborted": 0,
+    "d": 0,
+    "l": 26,
+    "n_pairs": 20,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     8,
+     0,
+     10,
+     0,
+     2
+    ],
+    "player": "rb_x5ab_fm_s1002@15047763",
+    "score_pp": 35.0,
+    "verdict": "OK",
+    "w": 14
+   },
+   {
+    "aborted": 0,
+    "d": 0,
+    "l": 23,
+    "n_pairs": 20,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     6,
+     0,
+     11,
+     0,
+     3
+    ],
+    "player": "rb_x5ab_fm_s1002@15047763",
+    "score_pp": 42.5,
+    "verdict": "OK",
+    "w": 17
+   }
+  ],
+  "col_sha256": [
+   "5ff8fcae66fe5a2fd99198f5492153070ed5249cbdaad2283c062d4d94a8f4f9",
+   "ec6541ee0eddddc94d07d3f223a8bf1ce9e5f8346b53c88d24d981c96307556a"
+  ],
+  "cols": [
+   "rb_x5ab_blob_s1001/final_model.zip",
+   "rb_x5ab_blob_s1002/final_model.zip"
+  ],
+  "decision": {
+   "boundary": 2.683,
+   "label": null,
+   "look": 2,
+   "near_boundary": [],
+   "outcome": "INCONCLUSIVE",
+   "reasons": [
+    "2 seeds per arm, look 2 registers 5"
+   ],
+   "stat": {
+    "ci95_pp": [
+     -23.530787853315175,
+     4.155787853315173
+    ],
+    "col_means_pp": [
+     37.5,
+     43.125
+    ],
+    "delta_hat_pp": -9.6875,
+    "df": 2,
+    "h_pp": [
+     [
+      40.0,
+      43.75
+     ],
+     [
+      35.0,
+      42.5
+     ]
+    ],
+    "margin_pp": 3.5,
+    "n": 2,
+    "row_means_pp": [
+     41.875,
+     38.75
+    ],
+    "s2_cols": 15.8203125,
+    "s2_rows": 4.8828125,
+    "se_pp": 3.2173844190584378,
+    "t": -1.923146007467383,
+    "upper95_one_sided_pp": -0.29278388989461845,
+    "v_hat": 10.3515625
+   }
+  },
+  "family": "x5ab_strength_steps",
+  "n_cells_look1": 1,
+  "n_cells_look2": 3,
+  "requests": [
+   "x5ab_look1_steps",
+   "x5ab_look2_steps"
+  ],
+  "row_sha256": [
+   "b4876c07f8b9ea40f6f485e1ae7a0b637b1d1a7069f447c38bff0650b3d49152",
+   "dcd9bed6da824cd1bc65e582b72fafac9fe88b7675701da2560b447e5fa2be82"
+  ],
+  "rows": [
+   "rb_x5ab_fm_s1001/final_model.zip",
+   "rb_x5ab_fm_s1002/final_model.zip"
+  ],
+  "stat_shown": {
+   "ci95_pp": [
+    -23.530787853315175,
+    4.155787853315173
+   ],
+   "col_means_pp": [
+    37.5,
+    43.125
+   ],
+   "delta_hat_pp": -9.6875,
+   "df": 2,
+   "h_pp": [
+    [
+     40.0,
+     43.75
+    ],
+    [
+     35.0,
+     42.5
+    ]
+   ],
+   "margin_pp": 3.5,
+   "n": 2,
+   "row_means_pp": [
+    41.875,
+    38.75
+   ],
+   "s2_cols": 15.8203125,
+   "s2_rows": 4.8828125,
+   "se_pp": 3.2173844190584378,
+   "t": -1.923146007467383,
+   "upper95_one_sided_pp": -0.29278388989461845,
+   "v_hat": 10.3515625
+  },
+  "verdict": "INCONCLUSIVE"
+ },
+ "matched_wall_time": {
+  "cells": [
+   {
+    "aborted": 0,
+    "d": 0,
+    "l": 23,
+    "n_pairs": 20,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     5,
+     0,
+     13,
+     0,
+     2
+    ],
+    "player": "rb_x5ab_fm_s1001@12000021",
+    "score_pp": 42.5,
+    "verdict": "OK",
+    "w": 17
+   },
+   {
+    "aborted": 0,
+    "d": 1,
+    "l": 23,
+    "n_pairs": 20,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     8,
+     1,
+     6,
+     0,
+     5
+    ],
+    "player": "rb_x5ab_fm_s1001@12000021",
+    "score_pp": 41.25,
+    "verdict": "OK",
+    "w": 16
+   },
+   {
+    "aborted": 0,
+    "d": 0,
+    "l": 20,
+    "n_pairs": 20,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     3,
+     0,
+     14,
+     0,
+     3
+    ],
+    "player": "rb_x5ab_fm_s1002@12000070",
+    "score_pp": 50.0,
+    "verdict": "OK",
+    "w": 20
+   },
+   {
+    "aborted": 0,
+    "d": 0,
+    "l": 19,
+    "n_pairs": 20,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     6,
+     0,
+     7,
+     0,
+     7
+    ],
+    "player": "rb_x5ab_fm_s1002@12000070",
+    "score_pp": 52.5,
+    "verdict": "OK",
+    "w": 21
+   }
+  ],
+  "col_sha256": [
+   "5ff8fcae66fe5a2fd99198f5492153070ed5249cbdaad2283c062d4d94a8f4f9",
+   "ec6541ee0eddddc94d07d3f223a8bf1ce9e5f8346b53c88d24d981c96307556a"
+  ],
+  "cols": [
+   "rb_x5ab_blob_s1001/final_model.zip",
+   "rb_x5ab_blob_s1002/final_model.zip"
+  ],
+  "decision": {
+   "boundary": 2.683,
+   "label": null,
+   "look": 2,
+   "near_boundary": [],
+   "outcome": "INCONCLUSIVE",
+   "reasons": [
+    "2 seeds per arm, look 2 registers 5"
+   ],
+   "stat": {
+    "ci95_pp": [
+     -23.650954281105903,
+     16.775954281105903
+    ],
+    "col_means_pp": [
+     46.25,
+     46.875
+    ],
+    "delta_hat_pp": -3.4375,
+    "df": 2,
+    "h_pp": [
+     [
+      42.5,
+      41.25
+     ],
+     [
+      50.0,
+      52.5
+     ]
+    ],
+    "margin_pp": 3.5,
+    "n": 2,
+    "row_means_pp": [
+     41.875,
+     51.25
+    ],
+    "s2_cols": 0.1953125,
+    "s2_rows": 43.9453125,
+    "se_pp": 4.6979051182415335,
+    "t": 0.013303802104754786,
+    "upper95_one_sided_pp": 10.280315203135235,
+    "v_hat": 22.0703125
+   }
+  },
+  "family": "x5ab_strength_wall",
+  "n_cells_look1": 1,
+  "n_cells_look2": 3,
+  "requests": [
+   "x5ab_look1_wall",
+   "x5ab_look2_wall"
+  ],
+  "row_sha256": [
+   "844057ac830c96b20c987bdcbcde955c717bbad32513cc8e4de99519095b452d",
+   "731a01813f63d1b0e707b27c1148df0ff2a2e8e29a6af00b86f8246cf5bf7d5b"
+  ],
+  "rows": [
+   "rb_x5ab_fm_s1001/checkpoints/checkpoint_12000021_steps.zip",
+   "rb_x5ab_fm_s1002/checkpoints/checkpoint_12000070_steps.zip"
+  ],
+  "stat_shown": {
+   "ci95_pp": [
+    -23.650954281105903,
+    16.775954281105903
+   ],
+   "col_means_pp": [
+    46.25,
+    46.875
+   ],
+   "delta_hat_pp": -3.4375,
+   "df": 2,
+   "h_pp": [
+    [
+     42.5,
+     41.25
+    ],
+    [
+     50.0,
+     52.5
+    ]
+   ],
+   "margin_pp": 3.5,
+   "n": 2,
+   "row_means_pp": [
+    41.875,
+    51.25
+   ],
+   "s2_cols": 0.1953125,
+   "s2_rows": 43.9453125,
+   "se_pp": 4.6979051182415335,
+   "t": 0.013303802104754786,
+   "upper95_one_sided_pp": 10.280315203135235,
+   "v_hat": 22.0703125
+  },
+  "verdict": "INCONCLUSIVE"
+ },
+ "min_pairs": 20,
+ "preconditions": [],
+ "seeds": [
+  1001,
+  1002
+ ]
+}

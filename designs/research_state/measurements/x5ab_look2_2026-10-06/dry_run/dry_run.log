@@ -1,0 +1,168 @@
+##### 1. look 2 BEFORE look 1 exists: the plan must refuse
+=== 2026-10-06T13:30:45-07:00 look 2 at 96eedfb54dfd8232b09c73562eb41532435bd629; engine-path commits since bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7: none
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_steps", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 1, "ts": "2026-10-06T20:30:45+00:00", "writer_id": "20261006T203045Z.0-goodlad_desktop-534328-ledger_cli"}
+REFUSED (steps): x5ab_look1_steps: the ledger holds 0 cell(s), 0 of the registered 1 look-1 cells and 0 other(s); look 2 reuses EXACTLY look 1's 1 cells (fix look 1 first; never replay it under look 2)
+PLAN REFUSED steps (2026-10-06T13:30:46-07:00)
+exit 3
+##### 2. DRY RUN look 1 (1 cell per read)
+=== 2026-10-06T13:30:46-07:00 look 2 at 96eedfb54dfd8232b09c73562eb41532435bd629; engine-path commits since bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7: none
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_steps", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 1, "ts": "2026-10-06T20:30:45+00:00", "writer_id": "20261006T203045Z.0-goodlad_desktop-534328-ledger_cli"}
+[plan] steps: family x5ab_strength_steps; rows ['rb_x5ab_fm_s1001/final_model.zip', 'rb_x5ab_fm_s1002/final_model.zip']
+[plan] DRY RUN: emitting look 1's 1
+=== 2026-10-06T13:30:46-07:00 x5ab_look1_steps: 1 cell(s) planned (/home/goodlad/.cache/gen3ai/x5look2/dry/plan/steps_look1.json)
+[h2h] play-many: 1 cell(s) x 20 pairs in batches of 10; 1 with batches to play (2 batch(es)), 0 already recorded; purpose ab, family x5ab_strength_steps, request x5ab_look1_steps under /home/goodlad/.cache/gen3ai/x5look2/dry/ledger
+[h2h] pre-flight: 1 cell(s), 2 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_fm_s1001@15047411 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 4.9s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a28a2889a4eb80b69/src/rust_env/target/release)
+[h2h] engine up in 11.3s: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/1: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_steps; swap 0.00s
+[h2h] batch 1/2: 10 pairs / 20 games in 33.8s (0.59 games/s); W/L/D 7/13/0; pair counts [4, 0, 5, 0, 1]; near-tie games 0; digest d022348831bd
+[h2h] batch 2/2: 10 pairs / 20 games in 32.7s (0.61 games/s); W/L/D 9/11/0; pair counts [3, 0, 5, 0, 2]; near-tie games 0; digest 1226c394101b
+rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954: score 40.00% [25.14, 54.86] (pair-clustered 95%), SE 7.780 pp over 20 pairs / 40 games; W/L/D 16/24/0; pentanomial [7, 0, 10, 0, 3]; 0.60 games/s
+[mem_cap] done: gen3ai-capped-main.h2h-534348.scope exit 0 · peak 0.88 GB of cap 24.00 GB (4%) · not OOM-killed
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_wall", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 7, "ts": "2026-10-06T20:32:12+00:00", "writer_id": "20261006T203212Z.0-goodlad_desktop-537406-ledger_cli"}
+[plan] wall: family x5ab_strength_wall; rows ['checkpoints/checkpoint_12000021_steps.zip', 'checkpoints/checkpoint_12000070_steps.zip']
+[plan] DRY RUN: emitting look 1's 1
+=== 2026-10-06T13:32:12-07:00 x5ab_look1_wall: 1 cell(s) planned (/home/goodlad/.cache/gen3ai/x5look2/dry/plan/wall_look1.json)
+[h2h] play-many: 1 cell(s) x 20 pairs in batches of 10; 1 with batches to play (2 batch(es)), 0 already recorded; purpose ab, family x5ab_strength_wall, request x5ab_look1_wall under /home/goodlad/.cache/gen3ai/x5look2/dry/ledger
+[h2h] pre-flight: 1 cell(s), 2 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_fm_s1001@12000021 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 6.3s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a28a2889a4eb80b69/src/rust_env/target/release)
+[h2h] engine up in 11.6s: rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/1: rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_wall; swap 0.00s
+[h2h] batch 1/2: 10 pairs / 20 games in 16.3s (1.22 games/s); W/L/D 8/12/0; pair counts [3, 0, 6, 0, 1]; near-tie games 0; digest 5f5180069c0d
+[h2h] batch 2/2: 10 pairs / 20 games in 22.2s (0.90 games/s); W/L/D 9/11/0; pair counts [2, 0, 7, 0, 1]; near-tie games 0; digest 1b342b651c37
+rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1001@15047954: score 42.50% [29.96, 55.04] (pair-clustered 95%), SE 6.564 pp over 20 pairs / 40 games; W/L/D 17/23/0; pentanomial [5, 0, 13, 0, 2]; 1.04 games/s
+[mem_cap] done: gen3ai-capped-main.h2h-537424.scope exit 0 · peak 0.93 GB of cap 24.00 GB (4%) · not OOM-killed
+=== 2026-10-06T13:33:12-07:00 DONE
+exit 0
+##### 3. look 2 (3 new cells per read)
+=== 2026-10-06T13:33:12-07:00 look 2 at 96eedfb54dfd8232b09c73562eb41532435bd629; engine-path commits since bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7: none
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_steps", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 1, "ts": "2026-10-06T20:30:45+00:00", "writer_id": "20261006T203045Z.0-goodlad_desktop-534328-ledger_cli"}
+[plan] steps: family x5ab_strength_steps; rows ['rb_x5ab_fm_s1001/final_model.zip', 'rb_x5ab_fm_s1002/final_model.zip']
+[plan] WARNING: look-1 cell(s) short/invalid — the read will be INCONCLUSIVE: ['rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954 (20 pairs, OK)']
+[plan] steps: 4 cells in the 2 x 2 matrix = 1 reused from x5ab_look1_steps + 3 new under x5ab_look2_steps (0 already in the ledger, 0 at >= 1000 pairs; the driver's resume skips every recorded batch)
+=== 2026-10-06T13:33:12-07:00 x5ab_look2_steps: 3 cell(s) planned (/home/goodlad/.cache/gen3ai/x5look2/dry/plan/steps_look2.json)
+[h2h] play-many: 3 cell(s) x 20 pairs in batches of 10; 3 with batches to play (6 batch(es)), 0 already recorded; purpose ab, family x5ab_strength_steps, request x5ab_look2_steps under /home/goodlad/.cache/gen3ai/x5look2/dry/ledger
+[h2h] pre-flight: 3 cell(s), 4 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_fm_s1001@15047411 (slots ['player']); eval_b declared from rb_x5ab_blob_s1002@15047525 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 7.3s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a28a2889a4eb80b69/src/rust_env/target/release)
+[h2h] engine up in 8.9s: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1002@15047525; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/3: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 0.00s
+[h2h] batch 1/2: 10 pairs / 20 games in 16.9s (1.19 games/s); W/L/D 5/14/1; pair counts [4, 1, 5, 0, 0]; near-tie games 0; digest a5486bcf55c0
+[h2h] batch 2/2: 10 pairs / 20 games in 43.3s (0.46 games/s); W/L/D 12/8/0; pair counts [1, 0, 6, 0, 3]; near-tie games 0; digest 4ec4f11c08f6
+[h2h] cell 2/3: rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 5.15s
+[h2h] batch 1/2: 10 pairs / 20 games in 45.7s (0.44 games/s); W/L/D 6/14/0; pair counts [4, 0, 6, 0, 0]; near-tie games 0; digest b0bf6be101a3
+[h2h] batch 2/2: 10 pairs / 20 games in 14.7s (1.36 games/s); W/L/D 8/12/0; pair counts [4, 0, 4, 0, 2]; near-tie games 1; digest 7fa59a3d05f0
+[h2h] cell 3/3: rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 0.99s
+[h2h] batch 1/2: 10 pairs / 20 games in 15.8s (1.27 games/s); W/L/D 6/14/0; pair counts [4, 0, 6, 0, 0]; near-tie games 0; digest 5059ab5b3a97
+[h2h] batch 2/2: 10 pairs / 20 games in 17.8s (1.12 games/s); W/L/D 11/9/0; pair counts [2, 0, 5, 0, 3]; near-tie games 0; digest 3af7e5793776
+rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1002@15047525: score 43.75% [29.94, 57.56] (pair-clustered 95%), SE 7.226 pp over 20 pairs / 40 games; W/L/D 17/22/1; pentanomial [5, 1, 11, 0, 3]; 0.66 games/s
+rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1001@15047954: score 35.00% [20.97, 49.03] (pair-clustered 95%), SE 7.345 pp over 20 pairs / 40 games; W/L/D 14/26/0; pentanomial [8, 0, 10, 0, 2]; 0.66 games/s
+rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1002@15047525: score 42.50% [28.17, 56.83] (pair-clustered 95%), SE 7.500 pp over 20 pairs / 40 games; W/L/D 17/23/0; pentanomial [6, 0, 11, 0, 3]; 1.19 games/s
+[mem_cap] done: gen3ai-capped-main.h2h-540032.scope exit 0 · peak 1.15 GB of cap 24.00 GB (5%) · not OOM-killed
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_wall", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 7, "ts": "2026-10-06T20:32:12+00:00", "writer_id": "20261006T203212Z.0-goodlad_desktop-537406-ledger_cli"}
+[plan] wall: family x5ab_strength_wall; rows ['checkpoints/checkpoint_12000021_steps.zip', 'checkpoints/checkpoint_12000070_steps.zip']
+[plan] WARNING: look-1 cell(s) short/invalid — the read will be INCONCLUSIVE: ['rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1001@15047954 (20 pairs, OK)']
+[plan] wall: 4 cells in the 2 x 2 matrix = 1 reused from x5ab_look1_wall + 3 new under x5ab_look2_wall (0 already in the ledger, 0 at >= 1000 pairs; the driver's resume skips every recorded batch)
+=== 2026-10-06T13:36:13-07:00 x5ab_look2_wall: 3 cell(s) planned (/home/goodlad/.cache/gen3ai/x5look2/dry/plan/wall_look2.json)
+[h2h] play-many: 3 cell(s) x 20 pairs in batches of 10; 3 with batches to play (6 batch(es)), 0 already recorded; purpose ab, family x5ab_strength_wall, request x5ab_look2_wall under /home/goodlad/.cache/gen3ai/x5look2/dry/ledger
+[h2h] pre-flight: 3 cell(s), 4 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_fm_s1001@12000021 (slots ['player']); eval_b declared from rb_x5ab_blob_s1002@15047525 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 9.7s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a28a2889a4eb80b69/src/rust_env/target/release)
+[h2h] engine up in 10.0s: rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1002@15047525; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/3: rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 0.00s
+[h2h] batch 1/2: 10 pairs / 20 games in 14.5s (1.38 games/s); W/L/D 8/12/0; pair counts [4, 0, 4, 0, 2]; near-tie games 0; digest a55e161becde
+[h2h] batch 2/2: 10 pairs / 20 games in 45.6s (0.44 games/s); W/L/D 8/11/1; pair counts [4, 1, 2, 0, 3]; near-tie games 0; digest b644196155a2
+[h2h] cell 2/3: rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 4.94s
+[h2h] batch 1/2: 10 pairs / 20 games in 29.1s (0.69 games/s); W/L/D 9/11/0; pair counts [2, 0, 7, 0, 1]; near-tie games 0; digest 03843323817a
+[h2h] batch 2/2: 10 pairs / 20 games in 14.7s (1.36 games/s); W/L/D 11/9/0; pair counts [1, 0, 7, 0, 2]; near-tie games 0; digest 2b5fa7a82c02
+[h2h] cell 3/3: rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 1.18s
+[h2h] batch 1/2: 10 pairs / 20 games in 21.6s (0.93 games/s); W/L/D 10/10/0; pair counts [3, 0, 4, 0, 3]; near-tie games 0; digest 8a5e153d95bc
+[h2h] batch 2/2: 10 pairs / 20 games in 36.4s (0.55 games/s); W/L/D 11/9/0; pair counts [3, 0, 3, 0, 4]; near-tie games 0; digest 4edefba659ee
+rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1002@15047525: score 41.25% [23.83, 58.67] (pair-clustered 95%), SE 9.118 pp over 20 pairs / 40 games; W/L/D 16/23/1; pentanomial [8, 1, 6, 0, 5]; 0.67 games/s
+rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1001@15047954: score 50.00% [38.00, 62.00] (pair-clustered 95%), SE 6.283 pp over 20 pairs / 40 games; W/L/D 20/20/0; pentanomial [3, 0, 14, 0, 3]; 0.91 games/s
+rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1002@15047525: score 52.50% [34.87, 70.13] (pair-clustered 95%), SE 9.230 pp over 20 pairs / 40 games; W/L/D 21/19/0; pentanomial [6, 0, 7, 0, 7]; 0.69 games/s
+[mem_cap] done: gen3ai-capped-main.h2h-541409.scope exit 0 · peak 1.15 GB of cap 24.00 GB (5%) · not OOM-killed
+=== 2026-10-06T13:39:24-07:00 DONE
+exit 0
+##### 4. look 2 again: every batch recorded, nothing replayed
+=== 2026-10-06T13:39:24-07:00 look 2 at 96eedfb54dfd8232b09c73562eb41532435bd629; engine-path commits since bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7: none
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_steps", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 1, "ts": "2026-10-06T20:30:45+00:00", "writer_id": "20261006T203045Z.0-goodlad_desktop-534328-ledger_cli"}
+[plan] steps: family x5ab_strength_steps; rows ['rb_x5ab_fm_s1001/final_model.zip', 'rb_x5ab_fm_s1002/final_model.zip']
+[plan] WARNING: look-1 cell(s) short/invalid — the read will be INCONCLUSIVE: ['rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954 (20 pairs, OK)']
+[plan] steps: 4 cells in the 2 x 2 matrix = 1 reused from x5ab_look1_steps + 3 new under x5ab_look2_steps (3 already in the ledger, 0 at >= 1000 pairs; the driver's resume skips every recorded batch)
+=== 2026-10-06T13:39:25-07:00 x5ab_look2_steps: 3 cell(s) planned (/home/goodlad/.cache/gen3ai/x5look2/dry/plan/steps_look2.json)
+[h2h] play-many: 3 cell(s) x 20 pairs in batches of 10; 0 with batches to play (0 batch(es)), 6 already recorded; purpose ab, family x5ab_strength_steps, request x5ab_look2_steps under /home/goodlad/.cache/gen3ai/x5look2/dry/ledger
+rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1002@15047525: score 43.75% [29.94, 57.56] (pair-clustered 95%), SE 7.226 pp over 20 pairs / 40 games; W/L/D 17/22/1; pentanomial [5, 1, 11, 0, 3]; 0.66 games/s
+rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1001@15047954: score 35.00% [20.97, 49.03] (pair-clustered 95%), SE 7.345 pp over 20 pairs / 40 games; W/L/D 14/26/0; pentanomial [8, 0, 10, 0, 2]; 0.66 games/s
+rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1002@15047525: score 42.50% [28.17, 56.83] (pair-clustered 95%), SE 7.500 pp over 20 pairs / 40 games; W/L/D 17/23/0; pentanomial [6, 0, 11, 0, 3]; 1.19 games/s
+[mem_cap] done: gen3ai-capped-main.h2h-542994.scope exit 0 · peak 0.30 GB of cap 24.00 GB (1%) · not OOM-killed
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_wall", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 7, "ts": "2026-10-06T20:32:12+00:00", "writer_id": "20261006T203212Z.0-goodlad_desktop-537406-ledger_cli"}
+[plan] wall: family x5ab_strength_wall; rows ['checkpoints/checkpoint_12000021_steps.zip', 'checkpoints/checkpoint_12000070_steps.zip']
+[plan] WARNING: look-1 cell(s) short/invalid — the read will be INCONCLUSIVE: ['rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1001@15047954 (20 pairs, OK)']
+[plan] wall: 4 cells in the 2 x 2 matrix = 1 reused from x5ab_look1_wall + 3 new under x5ab_look2_wall (3 already in the ledger, 0 at >= 1000 pairs; the driver's resume skips every recorded batch)
+=== 2026-10-06T13:39:28-07:00 x5ab_look2_wall: 3 cell(s) planned (/home/goodlad/.cache/gen3ai/x5look2/dry/plan/wall_look2.json)
+[h2h] play-many: 3 cell(s) x 20 pairs in batches of 10; 0 with batches to play (0 batch(es)), 6 already recorded; purpose ab, family x5ab_strength_wall, request x5ab_look2_wall under /home/goodlad/.cache/gen3ai/x5look2/dry/ledger
+rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1002@15047525: score 41.25% [23.83, 58.67] (pair-clustered 95%), SE 9.118 pp over 20 pairs / 40 games; W/L/D 16/23/1; pentanomial [8, 1, 6, 0, 5]; 0.67 games/s
+rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1001@15047954: score 50.00% [38.00, 62.00] (pair-clustered 95%), SE 6.283 pp over 20 pairs / 40 games; W/L/D 20/20/0; pentanomial [3, 0, 14, 0, 3]; 0.91 games/s
+rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1002@15047525: score 52.50% [34.87, 70.13] (pair-clustered 95%), SE 9.230 pp over 20 pairs / 40 games; W/L/D 21/19/0; pentanomial [6, 0, 7, 0, 7]; 0.69 games/s
+[mem_cap] done: gen3ai-capped-main.h2h-543060.scope exit 0 · peak 0.29 GB of cap 24.00 GB (1%) · not OOM-killed
+=== 2026-10-06T13:39:31-07:00 DONE
+exit 0
+##### 5. the read
+{
+ "matched_steps": "INCONCLUSIVE",
+ "matched_wall_time": "INCONCLUSIVE"
+}
+exit 0
+steps x5ab_look1_steps: 1 cells, 1 at >= 20 pairs, 20 pairs, aborted 0
+steps x5ab_look2_steps: 3 cells, 3 at >= 20 pairs, 60 pairs, aborted 0
+wall x5ab_look1_wall: 1 cells, 1 at >= 20 pairs, 20 pairs, aborted 0
+wall x5ab_look2_wall: 3 cells, 3 at >= 20 pairs, 60 pairs, aborted 0
+[audit] /home/goodlad/.cache/gen3ai/x5look2/dry/ledger: {'rows': 16, 'live_rows': 16, 'requests': 4, 'families': 2, 'claims': 16, 'live_claims': 0, 'decisions': 0, 'references': 0} — OK
+audit exit 0
+##### 6. TAMPER: play look 1 cell fm1 x blob1 under x5ab_look2_steps; the plan must refuse, the read must be INCONCLUSIVE
+[h2h] play-many: 1 cell(s) x 20 pairs in batches of 10; 1 with batches to play (2 batch(es)), 0 already recorded; purpose ab, family x5ab_strength_steps, request x5ab_look2_steps under /home/goodlad/.cache/gen3ai/x5look2/dry/ledger
+[h2h] pre-flight: 1 cell(s), 2 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_fm_s1001@15047411 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 5.0s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a28a2889a4eb80b69/src/rust_env/target/release)
+[h2h] engine up in 11.1s: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/1: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 0.00s
+agents.training.eval_ledger.writer.DuplicateBatchError: the seed block ('seed', 'b4876c07f8b9ea40f6f485e1ae7a0b637b1d1a7069f447c38bff0650b3d49152', '5ff8fcae66fe5a2fd99198f5492153070ed5249cbdaad2283c062d4d94a8f4f9', 'adfdbee824c9eb0a', 'gen3_eval_game_seed_v1', 0, 'h2h:6ceb5db1022cfe48', 'h2h', 3750553687027935068) is already recorded as 20261006T203047Z.0-goodlad_desktop-534356-h2h:0
+[mem_cap] done: gen3ai-capped-main.h2h-543161.scope exit 1 · peak 0.87 GB of cap 24.00 GB (4%) · not OOM-killed
+=== 2026-10-06T13:40:18-07:00 look 2 at 96eedfb54dfd8232b09c73562eb41532435bd629; engine-path commits since bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7: none
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_steps", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 1, "ts": "2026-10-06T20:30:45+00:00", "writer_id": "20261006T203045Z.0-goodlad_desktop-534328-ledger_cli"}
+[plan] steps: family x5ab_strength_steps; rows ['rb_x5ab_fm_s1001/final_model.zip', 'rb_x5ab_fm_s1002/final_model.zip']
+[plan] WARNING: look-1 cell(s) short/invalid — the read will be INCONCLUSIVE: ['rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954 (20 pairs, OK)']
+[plan] steps: 4 cells in the 2 x 2 matrix = 1 reused from x5ab_look1_steps + 3 new under x5ab_look2_steps (3 already in the ledger, 0 at >= 1000 pairs; the driver's resume skips every recorded batch)
+=== 2026-10-06T13:40:19-07:00 x5ab_look2_steps: 3 cell(s) planned (/home/goodlad/.cache/gen3ai/x5look2/dry/plan/steps_look2.json)
+[h2h] play-many: 3 cell(s) x 20 pairs in batches of 10; 0 with batches to play (0 batch(es)), 6 already recorded; purpose ab, family x5ab_strength_steps, request x5ab_look2_steps under /home/goodlad/.cache/gen3ai/x5look2/dry/ledger
+rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1002@15047525: score 43.75% [29.94, 57.56] (pair-clustered 95%), SE 7.226 pp over 20 pairs / 40 games; W/L/D 17/22/1; pentanomial [5, 1, 11, 0, 3]; 0.66 games/s
+rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1001@15047954: score 35.00% [20.97, 49.03] (pair-clustered 95%), SE 7.345 pp over 20 pairs / 40 games; W/L/D 14/26/0; pentanomial [8, 0, 10, 0, 2]; 0.66 games/s
+rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1002@15047525: score 42.50% [28.17, 56.83] (pair-clustered 95%), SE 7.500 pp over 20 pairs / 40 games; W/L/D 17/23/0; pentanomial [6, 0, 11, 0, 3]; 1.19 games/s
+[mem_cap] done: gen3ai-capped-main.h2h-543671.scope exit 0 · peak 0.29 GB of cap 24.00 GB (1%) · not OOM-killed
+=== 2026-10-06T13:40:22-07:00 DONE
+exit 0 (expect 3)
+{
+ "matched_steps": "INCONCLUSIVE"
+}
+exit 0
+reasons: ['2 seeds per arm, look 2 registers 5']
+##### DONE 2026-10-06T13:40:23-07:00
+##### 7. TAMPER 2 (schedule seed 7)
+main.h2h.errors.H2HError: request x5ab_look2_steps: request 'x5ab_look2_steps' is open with other terms (['spec']): {'spec': {'batch_pairs': 10, 'producer': 'h2h', 'schedule_seed': 0}} vs {'spec': {'producer': 'h2h', 'batch_pairs': 10, 'schedule_seed': 7}} — a different batch size (or schedule seed) over an existing request would replay the same batch index under another length; use the same --batch-pairs, or a new --request
+=== 2026-10-06T13:41:09-07:00 look 2 at 96eedfb54dfd8232b09c73562eb41532435bd629; engine-path commits since bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7: none
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_steps", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 1, "ts": "2026-10-06T20:30:45+00:00", "writer_id": "20261006T203045Z.0-goodlad_desktop-534328-ledger_cli"}
+[plan] steps: family x5ab_strength_steps; rows ['rb_x5ab_fm_s1001/final_model.zip', 'rb_x5ab_fm_s1002/final_model.zip']
+[plan] WARNING: look-1 cell(s) short/invalid — the read will be INCONCLUSIVE: ['rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954 (20 pairs, OK)']
+[plan] steps: 4 cells in the 2 x 2 matrix = 1 reused from x5ab_look1_steps + 3 new under x5ab_look2_steps (3 already in the ledger, 0 at >= 1000 pairs; the driver's resume skips every recorded batch)
+=== 2026-10-06T13:41:10-07:00 x5ab_look2_steps: 3 cell(s) planned (/home/goodlad/.cache/gen3ai/x5look2/dry/plan/steps_look2.json)
+[h2h] play-many: 3 cell(s) x 20 pairs in batches of 10; 0 with batches to play (0 batch(es)), 6 already recorded; purpose ab, family x5ab_strength_steps, request x5ab_look2_steps under /home/goodlad/.cache/gen3ai/x5look2/dry/ledger
+rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1002@15047525: score 43.75% [29.94, 57.56] (pair-clustered 95%), SE 7.226 pp over 20 pairs / 40 games; W/L/D 17/22/1; pentanomial [5, 1, 11, 0, 3]; 0.66 games/s
+rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1001@15047954: score 35.00% [20.97, 49.03] (pair-clustered 95%), SE 7.345 pp over 20 pairs / 40 games; W/L/D 14/26/0; pentanomial [8, 0, 10, 0, 2]; 0.66 games/s
+rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1002@15047525: score 42.50% [28.17, 56.83] (pair-clustered 95%), SE 7.500 pp over 20 pairs / 40 games; W/L/D 17/23/0; pentanomial [6, 0, 11, 0, 3]; 1.19 games/s
+[mem_cap] done: gen3ai-capped-main.h2h-544173.scope exit 0 · peak 0.29 GB of cap 24.00 GB (1%) · not OOM-killed
+=== 2026-10-06T13:41:12-07:00 DONE
+exit 0 (expect 3)
+{
+ "matched_steps": "INCONCLUSIVE"
+}
+exit 0
+- reasons: ['2 seeds per arm, look 2 registers 5']; near a boundary: none
+##### DONE 2026-10-06T13:41:13-07:00

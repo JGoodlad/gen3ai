@@ -1,0 +1,15 @@
+A. clean
+  plan: PLANNED 3
+  read: INCONCLUSIVE ['2 seeds per arm, look 2 registers 5']
+B. a look-1 cell replayed under look 2
+  plan: REFUSED: x5ab_look2_steps holds cell(s) outside look 2's plan: ['fm1001 vs blob1001']
+  read: INCONCLUSIVE ['cell fm1001 vs blob1001 appears twice (two requests?)', "x5ab_look2_steps replays look-1 cell(s): ['fm1001 vs blob1001']"]
+C. look 1 holds a cell outside its registered 1 x 1
+  plan: REFUSED: x5ab_look1_steps: the ledger holds 2 cell(s), 1 of the registered 1 look-1 cells and 1 other(s); look 2 reuses EXACTLY look 1's 1 cells (fix look 1 first; never replay it under look 2)
+  read: INCONCLUSIVE ['cell fm1002 vs blob1002 appears twice (two requests?)', "x5ab_look2_steps replays look-1 cell(s): ['fm1002 vs blob1002']", 'x5ab_look1_steps holds 2 cell(s), not exactly the registered 1 look-1 cells']
+D. look 1 missing
+  plan: REFUSED: x5ab_look1_steps: the ledger holds 0 cell(s), 0 of the registered 1 look-1 cells and 0 other(s); look 2 reuses EXACTLY look 1's 1 cells (fix look 1 first; never replay it under look 2)
+  read: INCONCLUSIVE ['missing cell b4876c07f8b9 vs 5ff8fcae66fe', 'x5ab_look1_steps holds 0 cell(s), not exactly the registered 1 look-1 cells']
+E. look 2 incomplete (one new cell missing)
+  plan: PLANNED 3
+  read: INCONCLUSIVE ['missing cell dcd9bed6da82 vs ec6541ee0edd']
