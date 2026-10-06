@@ -338,3 +338,23 @@ def read_by_regime(decl: ReaderDecl, *, root: "str | os.PathLike[str] | None" = 
     for sr in out:
         by.setdefault(sr.row["regime"]["regime_id"], []).append(sr)
     return {rid: _result(decl, rs, t, path, request_id, family, [x for x in excluded]) for rid, rs in sorted(by.items())}
+
+
+def read_decisions(*, root: "str | os.PathLike[str] | None" = None, kind: str,
+                   request_ids: Optional[Iterable[str]] = None, as_of: Any = None) -> List[Dict[str, Any]]:
+    """The DECISION rows of ``kind`` (optionally only those naming one of ``request_ids``), validated, as of
+    ``as_of``, in stream order. Decisions are not count rows: no regime, purpose or selection rule applies to them,
+    so this read takes no :class:`ReaderDecl` (the count rows a decision consumed are read with :func:`read`)."""
+    if kind not in S.DECISION_KINDS:
+        raise ReaderDeclError(f"decision kind {kind!r} not in {S.DECISION_KINDS}")
+    t = _as_of(as_of)
+    path = ST.resolve_root(root)
+    want = set(request_ids) if request_ids is not None else None
+    out: List[Dict[str, Any]] = []
+    for d, _w in (ST.scan_decisions(path) if path.exists() else []):
+        if d["kind"] != kind or (want is not None and d["request_id"] not in want):
+            continue
+        if t is not None and S.parse_ts(d["ts"]) > t:  # type: ignore[operator]
+            continue
+        out.append(d)
+    return out

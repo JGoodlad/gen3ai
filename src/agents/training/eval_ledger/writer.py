@@ -62,6 +62,17 @@ class RequestSpecError(LedgerClaimError):
     """A request or family re-opened with different terms, or a row that contradicts its request."""
 
 
+class DecisionExistsError(LedgerClaimError):
+    """``append_decision(unique=True)`` on a request (or family) that already carries a decision of that kind.
+    ``.decision`` is the one on record."""
+
+    def __init__(self, decision: Mapping[str, Any]):
+        self.decision = dict(decision)
+        super().__init__(f"{decision['kind']} decision {decision['decision_id']} already decides "
+                         f"{decision['request_id'] or decision['family']!r} (verdict {decision['verdict']!r}); a "
+                         "sequential decision is written once")
+
+
 def _utc_now() -> _dt.datetime:
     return _dt.datetime.now(_dt.timezone.utc)
 
@@ -323,10 +334,22 @@ class LedgerWriter:
 
     # ---------------------------------------------------------------------------------------- decisions, references
     def append_decision(self, *, kind: str, subject: str, consumed: Any, verdict: str, rule: str, rule_version: str,
-                        request_id: Optional[str] = None, family: Optional[str] = None) -> Dict[str, Any]:
+                        request_id: Optional[str] = None, family: Optional[str] = None,
+                        unique: bool = False) -> Dict[str, Any]:
         """Append a DECISION row: what it decided, the rows it consumed (``consumed`` is an ``eval_ledger.read``
         result: their ids, count and digest are recorded), its ``as_of`` (the read's, else now), the rule and the
-        verdict. Never edited afterwards."""
+        verdict. Never edited afterwards.
+
+        ``unique=True``: ONE decision of ``kind`` per request (or family). Under the ledger lock, a decision of the
+        same kind already naming this ``request_id`` / ``family`` is :class:`DecisionExistsError` (carrying it), so
+        two drivers racing on one sequential test can never both decide it."""
+        if unique:
+            with self._lock():
+                for old, _w in ST.scan_decisions(self.root):
+                    if old["kind"] == kind and old["request_id"] == request_id and old["family"] == family:
+                        raise DecisionExistsError(old)
+                return self.append_decision(kind=kind, subject=subject, consumed=consumed, verdict=verdict, rule=rule,
+                                            rule_version=rule_version, request_id=request_id, family=family)
         ids = sorted(r["row_id"] for r in consumed.rows)
         d = {"schema": S.DECISION_SCHEMA, "decision_id": f"{self.writer_id}:d{self._dec_seq}", "kind": kind,
              "subject": subject, "request_id": request_id, "family": family,

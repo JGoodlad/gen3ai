@@ -729,12 +729,24 @@ def open_writer(out_dir: Optional[str], purpose: str) -> Tuple[Path, L.LedgerWri
     return Path(root), L.LedgerWriter(root, producer=PRODUCER)
 
 
+def edge_spec(batch_pairs: int, schedule_seed: int, consumer: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+    """The request ``spec`` an edge opens with (a re-open must repeat it exactly). ``consumer`` is a calling
+    consumer's FROZEN inputs (e.g. the plateau check's two nodes, ``main.plateau``), stored under ``consumer``;
+    without one the spec is exactly the one every existing request holds."""
+    spec: Dict[str, Any] = {"producer": PRODUCER, "batch_pairs": int(batch_pairs), "schedule_seed": int(schedule_seed)}
+    if consumer is not None:
+        spec["consumer"] = dict(consumer)
+    return spec
+
+
 def plan_edge(writer: L.LedgerWriter, root: Path, regime: Mapping[str, Any], player: PlayerRef, opponent: PlayerRef,
               *, pairs: int, batch_pairs: int, schedule_seed: int, schedule_key: Optional[str], purpose: str,
-              request_id: Optional[str], family: Optional[str], request_kind: Optional[str]) -> EdgePlan:
+              request_id: Optional[str], family: Optional[str], request_kind: Optional[str],
+              consumer_spec: Optional[Mapping[str, Any]] = None) -> EdgePlan:
     """Open (idempotently) the cell's request and read what it already holds; REFUSES a plan that would replay a
     recorded batch index under another length. The plan's oracle reveal mode is ``regime``'s protocol
-    (:func:`regime_for`); a cell whose checkpoints do not fit it is refused here, before any request is opened."""
+    (:func:`regime_for`); a cell whose checkpoints do not fit it is refused here, before any request is opened.
+    ``consumer_spec``: a consumer's frozen inputs, pinned in the request's spec (:func:`edge_spec`)."""
     key = schedule_key or schedule_key_of(player, opponent)
     plan = batch_plan(pairs, batch_pairs)
     check_core_flags(player)
@@ -746,12 +758,11 @@ def plan_edge(writer: L.LedgerWriter, root: Path, regime: Mapping[str, Any], pla
     kind = request_kind or ("ab_cell" if purpose == "ab" else "adhoc")
     try:
         req = writer.open_request(rid, kind=kind, purpose=purpose, family=family, protocol=protocol,
-                                  spec={"producer": PRODUCER, "batch_pairs": int(batch_pairs),
-                                        "schedule_seed": int(schedule_seed)})
+                                  spec=edge_spec(batch_pairs, schedule_seed, consumer_spec))
     except L.RequestSpecError as e:
-        raise H2HError(f"request {rid}: {e} — a different batch size (or schedule seed) over an existing request "
-                       "would replay the same batch index under another length; use the same --batch-pairs, or a "
-                       "new --request") from None
+        raise H2HError(f"request {rid}: {e} — a different batch size (or schedule seed, or a consumer's frozen "
+                       "inputs) over an existing request would replay the same batch index under another length or "
+                       "players; use the same --batch-pairs, or a new --request") from None
     existing = read_own(protocol, root=root, request_id=rid, regime_id=regime["regime_id"])
     done = completed_batches(existing.rows, player, opponent)
     for b_i, n in done.items():

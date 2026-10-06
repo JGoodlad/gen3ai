@@ -18,7 +18,9 @@ The invariants (each a line in :attr:`AuditReport.problems` when broken):
   cursor and compared). ``rebuild_index=True`` (``audit --rebuild-index``) drops and rebuilds them first.
 
 ``verify`` re-checks one decision: its rows and digest. Re-deriving its VERDICT needs the decision's rule
-registered in :data:`RULES` — none is yet (the SPRT, plateau and A/B rules land with U4 / U9 / X5)."""
+registered in :data:`RULES`: the plateau's TIER-1 GSPRT is (``agents.training.plateau_t1``, U9a, 2026-10-06); the
+SPRT and A/B rules land with U4 / X5. A registered function returns ``None`` for a decision whose ``rule`` it does not
+own (a future two-tier plateau decision shares the kind)."""
 from __future__ import annotations
 
 from collections import Counter
@@ -32,8 +34,15 @@ from agents.training.eval_ledger import row_index as RI
 from agents.training.eval_ledger import schema as S
 from agents.training.eval_ledger import store as ST
 
-#: decision kind -> a function re-deriving its verdict from (decision, rows). EMPTY until a rule lands.
-RULES: Dict[str, Callable[[Mapping[str, Any], List[Dict[str, Any]]], str]] = {}
+def _plateau_rule(d: Mapping[str, Any], rows: List[Dict[str, Any]]) -> Optional[str]:
+    from agents.training import plateau_t1 as T1   # lazy: the rule imports sprt, which the ledger does not need
+
+    return T1.rederive(d, rows)
+
+
+#: decision kind -> a function re-deriving its verdict from (decision, rows), or ``None`` when the decision's
+#: ``rule`` is not one it owns.
+RULES: Dict[str, Callable[[Mapping[str, Any], List[Dict[str, Any]]], Optional[str]]] = {"plateau": _plateau_rule}
 
 
 @dataclass
@@ -201,10 +210,10 @@ def verify(root: Path, decision_id: str) -> VerifyReport:
     if not probs and S.rows_digest((i, live[i].sha) for i in ids) != d["consumed"]["digest"]:
         probs.append("the consumed rows' digest does not match the decision's")
     rule = RULES.get(d["kind"])
-    if rule is None:
-        return VerifyReport(decision_id, probs, None, f"no rule registered for {d['kind']!r}: rows and digest "
-                            "checked, the verdict is not re-derived")
-    got = rule(d, [live[i].row for i in ids if i in live])
+    got = None if rule is None else rule(d, [live[i].row for i in ids if i in live])
+    if got is None:
+        return VerifyReport(decision_id, probs, None, f"no rule registered for {d['kind']!r} / {d['rule']!r}: rows "
+                            "and digest checked, the verdict is not re-derived")
     if got != d["verdict"]:
         probs.append(f"the rule re-derives {got!r}, the decision says {d['verdict']!r}")
     return VerifyReport(decision_id, probs, got, "verdict re-derived")

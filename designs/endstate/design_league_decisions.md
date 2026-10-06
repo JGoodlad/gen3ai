@@ -66,6 +66,12 @@ build or decision that differs updates this doc and its Decision record in the s
     checks.** A confirmed cycle is reported as a TREADMILL, with its own levers.
   - Strength vs a frozen reference mixture (§0(a)) is the REPORTED secondary and the kind diagnostic.
 
+  - **AS BUILT (U9a, 2026-10-06): Tier 1 only, offline.** `python -m main.plateau tick <run>` plays each due
+    check's GSPRT on `main.h2h`'s engine and writes one decision row per check (GAIN / FLAT / UNDECIDED /
+    INCONCLUSIVE) to the eval ledger; `python -m main.plateau status <run>` prints the run's Tier-1 status
+    (`TIER1_PLATEAU` = FLAT at two consecutive checks). Tier 2 (the cycle monitor) and the panel are NOT built, so
+    a Tier-1 plateau is a candidate, never a declared plateau. Detail: `design_evaluation.md` §8.1 "As built".
+
   The definition below is the 2026-10-02 version that this proposal would amend.
 - **Definition (owner):** plateau = plain training gains < 2 Elo per training GPU-hour, measured as the slope of
   §0(a), strength vs the archive's Nash mixture, with §0(b) the gap NOT falling. Economic reading: on one GPU the
@@ -100,7 +106,9 @@ build or decision that differs updates this doc and its Decision record in the s
   `design_evaluation.md` §0a (with confidence sequences added as G1's first candidate, §8).
 - [ ] Promotion vs the Nash mixture (§A).
 - [ ] T20 build with its validation gate (§B).
-- [ ] Plateau: the owner answers Q8 (two-tier, `design_evaluation.md` §11.2); the N0 back-test; then build (U9).
+- [x] Plateau Tier 1, offline (U9a, 2026-10-06): `main.plateau`, one decision row per check.
+- [ ] Plateau: the owner answers Q8 (two-tier, `design_evaluation.md` §11.2); the N0 back-test; then build the rest
+  (U9: Tier 2 + the panel + the 2-check rule's joint OC).
 - [ ] The cycle monitor (`design_evaluation.md` §2.5, U5): a standing instrument, from step 0.
 - [ ] Validate the plateau-kind → lever mapping on the first real plateau.
 
@@ -116,3 +124,4 @@ build or decision that differs updates this doc and its Decision record in the s
 | 2026-10-03 | The CYCLE MONITOR as a standing instrument **(owner input)** | a thinned-archive matrix grown one row per check from step 0, four signals with parametric-bootstrap nulls | cycling read only inside the plateau test | `design_evaluation.md` §2.5 |
 | 2026-10-03 | Eviction rule **(orchestrator, after review M5; PROPOSED, owner Q6)** | a declared ledger read at matrix DONE: among confidently zero-weight members, evict the one the newest member most surely beats; ties oldest, then id; grow otherwise; archive deletion separate | the PFSP-weight tie-break | `design_evaluation.md` §2.4 |
 | 2026-10-02 | Doc structure (orchestrator; the owner left it to the orchestrator) | ONE doc for the three population decisions (shared problem and machinery); the SYSTEM in `design_evaluation.md` | three separate docs | they share §0 and one machinery |
+| 2026-10-06 | The plateau meter's FIRST slice (plateau-meter agent, for the owner's plateau-first plan) | Tier 1 BUILT offline (U9a): the registered GSPRT newest vs W-back as a pure rule over ledger rows, `main.plateau tick / status`, a Tier-1 status beside an explicit "Tier 2 not built" caveat | waiting for U4's scheduler and U5's monitor before any plateau read (a deep run would start with no "done" signal at all) | `design_evaluation.md` §8.1 "As built", Decision record |

@@ -14,6 +14,10 @@
 - **U1, the ledger v2 core, is BUILT (2026-10-03):** §0b's schema, streams, claims, reader API, audit and static gate
   (§0b.1, §10's U1 hand-off). The orchestrator's provisional answers to Q1–Q9 are in the Decision record, for the
   owner's review on 10-04.
+- **U9a, the plateau's TIER 1 run OFFLINE, is BUILT (2026-10-06):** §8.1's GSPRT as a pure rule over one request's
+  rows (`agents/training/plateau_t1.py`), the check planner, the offline driver and reader `python -m main.plateau`
+  (`tick` / `status`), one decision row per check (§8.1 "As built"). Tier 2, the panel, the GPU window and the
+  scheduler are NOT built.
 
 This doc is the SYSTEM: how eval evidence is produced, stored, scheduled and estimated. The population DECISIONS (promotion, eviction, plateau) live in [`design_league_decisions.md`](design_league_decisions.md). A build or decision that differs from this doc updates it and its Decision record in the same commit. Era context: [`era_plan_post_m5.md`](era_plan_post_m5.md). The evidence behind the numbers measured on banked data is in [`measurements/eval_design_2026-10-03/`](../research_state/measurements/eval_design_2026-10-03/README.md); the revision's simulations are in its `revision/` folder.
 
@@ -447,6 +451,11 @@ rows = eval_ledger.read(DECL, request_id=..., players=..., as_of=...)
   `as_of` is NOT built** (no row maps a step to a time until U2's cycle rows exist; U1 hand-off).
 - **Inference.** `cells.pooled_pairs` (the pooled pentanomial, pair-clustered CI) refuses a read declared
   `across_runs` (`InferenceScopeError`): that error bar needs the run term, i.e. a seed-level estimator over cells.
+- **Decisions** are read with `read_decisions(root=, kind=, request_ids=, as_of=)` (U9a, 2026-10-06): validated decision
+  rows of one kind, optionally of named requests. Decisions are not count rows (no regime, purpose or selection rule
+  applies), so the read takes no `ReaderDecl`. **A sequential decision is written ONCE:** `append_decision(...,
+  unique=True)` refuses, under the ledger lock, a second decision of the same kind for the same request or family
+  (`DecisionExistsError`, carrying the one on record).
 - **A family across looks** is `cells.looks(read)`: its requests in the order opened, each a list of `Cell`s with a
   verdict (OK / INCONCLUSIVE + reasons, §9.1), so X5 §7.4's per-cell rule and its Δ̂ over cells are expressible
   (tested in `reader_test.py`).
@@ -543,7 +552,7 @@ its request and batch.
 
 | question | meter / test | status |
 |---|---|---|
-| Is plain training still paying? (**plateau**) | **TWO TIERS** (owner, 2026-10-03; §8): Tier 1 is the owner-registered head-to-head GSPRT, newest vs the W-back snapshot. Tier 2 is a READ of the cycle monitor, plus the panel. Plateau only when Tier 1 is flat AND there is no cycling. Strength vs a frozen reference is the REPORTED secondary | PROPOSED (league §C; Q8). U9 builds it |
+| Is plain training still paying? (**plateau**) | **TWO TIERS** (owner, 2026-10-03; §8): Tier 1 is the owner-registered head-to-head GSPRT, newest vs the W-back snapshot. Tier 2 is a READ of the cycle monitor, plus the panel. Plateau only when Tier 1 is flat AND there is no cycling. Strength vs a frozen reference is the REPORTED secondary | **Tier 1 BUILT OFFLINE (U9a, 2026-10-06: `python -m main.plateau`, §8.1 "As built")**; Tier 2, the panel and the in-window lane PROPOSED (league §C; Q8). U9 builds the rest |
 | Are we CYCLING? (**cycle monitor**, a standing instrument) | the thinned-archive matrix grown one row per 10M check from step 0; four signals with parametric-bootstrap nulls (§2.5) | PROPOSED (owner, 2026-10-03). U5 builds it |
 | Does a candidate join the pool? (**promotion**) | GSPRT on mirrored pairs, H0 0.50 / H1 0.55, α = β = 0.05, cap 1,680 pairs | BUILT, default OFF (`e9c5ab2d`); flips ON at X26. Ledger rows in U2; resume in U4b |
 | Who stays in the pool? (**eviction**) | a DECLARED LEDGER READ at matrix DONE (§2.4) | PROPOSED (league §B; Q6) |
@@ -966,7 +975,9 @@ The two-tier plateau plus the monitor are 2.7–4.0 % of that.
 - [ ] U3 backfill (SHRUNK by D-L4 to the verbatim copies + anchors, N0's ladder on request); U3b anchors / untaught /
       gap onto the ledger; U3c the `eval_results.jsonl` readers.
 - [ ] U4 the scheduler + generalized window (+ its first measurement); U4a slot-direct snapshot loads; U4b SPRT resume.
-- [ ] U5 the cycle monitor (+ its offline driver); U9 the two-tier plateau check.
+- [x] U9a the plateau's Tier 1, offline — BUILT 2026-10-06 (`agents/training/plateau_t1.py`, `main.plateau`; §8.1 "As built").
+- [ ] U5 the cycle monitor (+ its offline driver); U9 the two-tier plateau check (Tier 2 + the panel + the 2-check
+      rule's joint OC, on top of U9a).
 - [x] U6 the multi-cell offline engine — BUILT 2026-10-04 (`main.h2h play-many`, `main/h2h/many.py`): up to TWO architectures per engine since 2026-10-04 (F-U6-1 closed, `main/h2h/arch.py`): the X5 cross's two-architecture cells play on it (§10 U6 row).
 - [ ] U7 T20 estimators; U7a retire the ladder updater; U7b eviction operating characteristics; U8 §2.7's validation
       + the N0 back-test (references and plateau).
@@ -1010,6 +1021,46 @@ plateau is declared only when BOTH say so.
   EVERY time. **Why the stopping-time-biased Tier 1 rows are not reused by the monitor:** a sequentially stopped
   edge estimate is biased toward its boundary. So the monitor plays its own 500 pairs against lag 5, although sharing
   would save 1,000 games.
+
+**As built (U9a, 2026-10-06): Tier 1, run OFFLINE.**
+- **The rule** is `agents/training/plateau_t1.py`, a pure function of ONE request's rows: folded in BATCH order
+  (whatever order the ledger holds them in), `sprt.llr` at H0 0.50 / H1 0.52, Wald bounds at α = β = 0.05, checked at
+  40-pair batch boundaries, min 40 pairs, cap 6,000 pairs. An LLR within 1e-9 of a bound is not a crossing (§9.1). The
+  first crossing STOPS the test; a batch recorded after it (a racing driver) is listed as surplus, never folded. More
+  than 25 % of the cell's attempted games aborted at the stop is INCONCLUSIVE. Rows that are not one test's (two
+  matchups or regimes, a gap in the batch sequence, a batch of another length, a duplicated batch) are a typed refusal,
+  never a verdict. **Vocabulary:** GAIN / FLAT / UNDECIDED / INCONCLUSIVE (a decision), CONTINUE (running).
+- **The decision row** (kind `plateau`, one per request) spells out EVERY constant in its `rule` string
+  (`plateau_t1_gsprt(p0=0.5,p1=0.52,…,bounds=wald,band=1e-09)`, version `gen3_plateau_t1_v1`), so
+  `python -m main.eval_ledger verify <id>` RE-DERIVES the verdict from the consumed rows alone
+  (`eval_ledger.audit.RULES["plateau"]`; a plateau decision of another rule — the later two-tier one — is not
+  re-derived by it). `append_decision(unique=True)` makes the decision unique per request under the ledger lock.
+- **The check plan.** Nodes are the run's PERIODIC checkpoints (`checkpoints/checkpoint_<step>_steps.zip`, never a
+  forced save): node(g) is the first at or above the grid step g = k·Δ, below g + 500k steps. Δ = 10M, W = lag 5 × Δ =
+  50M steps (the GPU-hour form is NOT computed per run). A check whose node or W-back node is missing is
+  `MISSING_NODE`, never played against a substitute. `--lineage-run` adds an ancestor's checkpoints (a fork's first W
+  of steps has its W-back node in the parent).
+- **One request per (run, check step, W)**: `plateau_t1:<run>:<grid>:w<W>`, kind `plateau_t1`, purpose `plateau`, the
+  h2h protocol and regime, its spec FREEZING the rule and both nodes' sha256 (a replaced node file is refused at the
+  re-open, never re-planned). Its games are `main.h2h`'s, on the h2h engine and row builder, on the plateau's OWN
+  schedule namespace (`plateau_t1:<digest(newest, W-back)>`, ordered), so no other consumer's seed block collides.
+  It is NOT put in a family: U9 chooses the two-tier family's shape.
+- **The driver** `python -m main.plateau tick <run>` plays every DUE check (both nodes on disk, no decision), oldest
+  first, ONE batch at a time, re-reading the rule after every batch; resumable at any batch (a banked batch is never
+  replayed, a gap is filled first, a decided-but-unrecorded test is recorded without playing). CPU by default;
+  `--device cuda` takes the GPU lease through the engine. **The reader** `python -m main.plateau status <run>` prints
+  every check's state and the run's TIER-1 status: `TIER1_PLATEAU` when the newest decided check and the one Δ before
+  it are both FLAT, `FLAT_ONCE`, `CLIMBING` (the newest is GAIN), `CONTINUE` (UNDECIDED / INCONCLUSIVE), `NOT_YET`;
+  always beside "Tier 2 and the panel are NOT BUILT: this is not a plateau declaration". Two decisions for one request,
+  or a decision the rows contradict, is `CONFLICT` (exit 2).
+- **Where it plays today:** offline only, run by the operator after each 10M checkpoint. Not inside the trainer's
+  window (U4), and never on CPU beside an X5 A/B arm (§4.2). Beside a deep run it competes with the env core for CPU:
+  the mean 3,200 games per check at P0's contended 4.8 games/s is ~11 min, the cap 12,000 games ~42 min (UNMEASURED
+  on this box beside a live run).
+- **Tests:** the GSPRT's boundaries, the rounding band, the cap, the abort rule and the vocabulary on synthetic rows
+  (`plateau_t1_test.py`); the driver's stop, uniqueness, resume and frozen inputs through a real ledger
+  (`main/plateau_test.py`); one tick on the real engine, CPU, two perturbed-fresh checkpoints
+  (`main/h2h/plateau_integration_test.py`).
 
 ### 8.2 Tier 2: transitivity (a READ of the cycle monitor, plus the panel)
 - **The cycle monitor's verdict at this check** (§2.5): NONE, SUSPECTED or CONFIRMED.
@@ -1128,7 +1179,8 @@ adds the monitor and the plateau unit).
 | 7 | **U4a** | slot-direct snapshot loads (F-ED-11): state dicts go straight into the declared slots via `slots.copy_in`, with no per-cycle `nn.Module` build in `load_sentinels`; `rust_eval/launch.py` added to the learner-lifecycle gate's scope if it is not already | 0.5 | opus-high | U4 | no |
 | 8 | **U4b** | SPRT resume across restarts (Q7) + snapshot files pinned while a request is open | 0.5 | opus-high | U4 | no |
 | 9 | **U5** | the CYCLE MONITOR: thinned-node requests, rows + panel, the four signals with parametric-bootstrap nulls, confirmation top-ups, `cycle_flag` decisions, the dashboard (support size, entropy, lag curve), `hodge.py` pool × pool, and the offline driver `main.cycle_monitor` (CPU or offline engine, for pinned runs and N0) | 2.0 | opus-high | U4 (driver: U1 + U6) | no |
-| 10 | **U9** | the two-tier PLATEAU check: Tier 1 GSPRT requests, the panel rule, the signature table, the 2-check rule, the G6 joint OC simulation, the decision rows | 1.0 | opus-high | U5 | no (a pre-registration) |
+| 9a | **U9a — DONE 2026-10-06** | the plateau's TIER 1, offline (§8.1 "As built"): the rule as a pure function of a request's rows, the check planner, `python -m main.plateau tick / status`, one decision row per check, `verify` re-derivation, `read_decisions` + unique decisions in the ledger | 0.5 | opus-high | U1, U6 | no |
+| 10 | **U9** | the two-tier PLATEAU check: Tier 1 GSPRT requests (offline: U9a), the panel rule, the signature table, the 2-check rule, the G6 joint OC simulation, the decision rows | 1.0 | opus-high | U5 | no (a pre-registration) |
 | 11 | **U3b** | `main.anchors`, `main.untaught_meter`, `best_response_gap` onto the ledger | 1.0 | sonnet-high | U1, U2 | **yes** |
 | 12 | **U3c** | migrate the `eval_results.jsonl` readers (TensorBoard / TUI, `main.elo`, `best_response_gap`, the supply guards) to the ledger; retire the file's write | 1.0 | sonnet-xhigh | U2, U3 | **yes**, with the reader list |
 | 13 | **U7** | T20 estimators: BT / Hodge pool × pool, the reference candidates (§2.3), T3 rows in the window, T2 on betting CSs, the eviction ledger read (§2.4), the ladder fit reading the ledger | 2.5 | opus-high | U4, U0 | no |
@@ -1391,3 +1443,5 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
 | 2026-10-03 | **U1 build decisions (eval U1 agent)** | (1) the SEED BLOCK is a second uniqueness key, exempt for `audit_replay` (the batch key alone lets a second request re-record the same games); (2) two more event kinds, `family` (registration + pinned protocol) and `row` (a recorded unit, so the fold needs no row scan); the void rule also checks the claimant's own shard (a writer killed between row and event is repaired, not replayed); (3) protocols named `gen3_eval_protocol_v1_<writer>`, KEPT by the two migrated writers (storage-only); (4) a new row's `team_set` digests the ordered team lists + builder parameters, while an upgraded row's digests its `team_source` label, so v1 and v2 rows of one writer are different regimes and never pooled; (5) the outcome digest's near-tie margin is the GPU bar (2e-3) for h2h, `null` for bots; (6) v1 h2h's integer `compute.near_tie_games` moves to `near_tie_game_count` on read (v2's `near_tie_games` is an index list); (7) every `ReaderDecl` field is required, plus `decision_kind` for a family read; `read_by_regime` for listings; (8) a per-process counter in the writer id | the batch key alone; a row scan per claim; a `gen3_eval_protocol_v2` for storage-only rows; label-digest team sets for new rows | §0b.2, §0b.4, §0b.7; `measurements/eval_ledger_u1_2026-10-03/` |
 | 2026-10-04 | **U2 build decisions (eval U2 agent)** | (1) ONE request per (cycle step × REGIME) — `<run>:cycle:<step>:<regime_id>` — because a request holds one regime and a cycle's opponents are three or more (the U1 hand-off's one request per cycle could not hold them); the SPRT is one request per candidate (its sentinels are one regime); (2) purpose `cycle` for the in-loop cycle (§0b.5), NOT `monitor` (that names the cycle MONITOR's rows, §2.5); (3) ONE protocol `gen3_eval_protocol_v1_inloop` for the cycle and the SPRT (same executor, seeds, seats, teams); (4) a roster bot's identity is its name + the RUST bot sources (`rust_env/src/bots`, `opponents.rs`), so it never pools with `bot_rr`'s Python bots; (5) `team_set` digests BOTH builders (trainee + opponent); (6) claims before the cycle plays, rows after it, every row checked against the published shard results first (a mismatch RAISES); a failed cycle CANCELS its requests; the protocol's own refusals drop one row with a printed line; (7) `compute.outcome_digest_all` beside the margin-filtered digest (F-ED-23); (8) the snapshot-ladder dual-write NOT built (moved out by the brief; U7 / U7a) | one request per cycle (refused: one regime per request); purpose `monitor`; a protocol per producer; best-effort (swallowed) ledger errors | §0b.1, §0b.5, U2 hand-off; `measurements/eval_ledger_u2_2026-10-04/` |
 | 2026-10-04 | **F-U6-1, the two-architecture offline engine (h2h agent)** | one engine declares up to TWO T2 slot groups (one per architecture) from the PLAN's cells, each holding only the slots its cells need, and one eval core per (player group, opponent group) used; group 0 = the first cell's player's architecture, so a single-architecture plan is exactly the old engine; the cwd-relative team pool is REFUSED outside the repo root | two FULL groups (2 slots each, both roles) — twice the slots and lanes for the X5 cross, which uses one role per arm; ONE eval core with a sentinel route per group — the executor picks the route by the order of the cycle's sentinel items, so it needs an executor change shared with training; building every combination at startup — cores nobody plays | `measurements/h2h_cross_2026-10-04/`; `play_cross_integration_test.py` |
+| 2026-10-06 | **The plateau meter's FIRST slice, "U9a: Tier 1 offline" (plateau-meter agent; PLAN, written before the build)** | **Ships:** (1) the Tier-1 RULE as a pure, deterministic function of one request's rows (`agents/training/plateau_t1.py`: §8.1's GSPRT, H0 0.50 / H1 0.52, α = β = 0.05, Wald bounds, 40-pair batches, cap 6,000 pairs, the 1e-9 rounding band, INCONCLUSIVE above 25 % aborted; verdicts GAIN / FLAT / UNDECIDED / INCONCLUSIVE; the rule's constants spelled out in the decision's `rule` string, so `main.eval_ledger verify` re-derives a verdict from the rows alone); (2) the CHECK PLANNER: the nodes are the run's periodic checkpoints at each multiple of Δ = 10M (the first at or above it, within a declared slack), W = 5 Δ = 50M steps, one `plateau_t1` request per (run, check step, W) whose spec FREEZES both nodes' sha256 (a changed file is refused, not re-planned); (3) the OFFLINE DRIVER `python -m main.plateau tick <run>`: plays each due check one 40-pair batch at a time through `main.h2h`'s own engine (CPU by default; CUDA only under a lease), decides after every batch, and writes ONE decision row per request (the writer refuses a second, under the ledger lock); resumable at any batch; (4) the READER `python -m main.plateau status <run>`: every check's state and the run's TIER-1 status (CLIMBING / FLAT ONCE / TIER-1 PLATEAU at two consecutive FLAT checks / NOT YET), always printed beside "Tier 2 and the panel are NOT BUILT: this is not a plateau declaration" | **Deferred:** the in-trainer GPU-window hook and the scheduler's allocation (U4: it needs the frozen-vs-frozen executor change and a GPU measurement; X26 is pinned, so its checks run offline anyway, F-ED-19); Tier 2 (the cycle monitor, U5) and the panel; the two-tier decision as a FAMILY (U9 proper: the Tier-1 request is NOT put into a family now, so U9 chooses the family shape); the joint OC simulation (G6); snapshot pinning against retention while a request is open (U4b); a W in measured GPU-hours (declared in steps here); a polling `watch` mode (the operator's 55-min cron runs `tick`) | the smallest slice that lets a deep run answer "does Tier 1 say plateau, or not yet?" (the owner's plateau-first plan, 2026-10-06); everything it needs (the ledger, `main.h2h`, `sprt.py`) is BUILT, and nothing in it touches the trainer, so no live or queued run changes |
+| 2026-10-06 | **U9a build decisions (plateau-meter agent; BUILT as planned)** | (1) the verdict is a pure function of the request's rows under the rule its decision row spells out in full, so `verify` re-derives it with no other input; (2) rows are folded in BATCH order, the first crossing stops, later batches are surplus (never folded), and a gap or a short batch is a refusal, never a verdict; (3) INCONCLUSIVE (aborts > 25 %) is judged at the stop; (4) ONE decision per request by `append_decision(unique=True)` under the ledger lock, plus `read_decisions` (no `ReaderDecl`: decisions are not count rows); (5) `audit.RULES` entries may return `None` for a decision of a rule they do not own (the kind `plateau` will also carry U9's two-tier decision); (6) the request spec FREEZES both nodes' sha256 through a new optional `consumer` block in `main.h2h`'s edge spec (absent = the spec every existing request holds); (7) the plateau's own ordered schedule namespace, so its seed blocks never collide with a monitor row on the same pair; (8) W declared in STEPS (5 × 10M), not converted from GPU-hours per run; (9) nodes are periodic checkpoints only, the first in [g, g + 500k) | a CONTINUE / UNDECIDED decision row per interim look (rows already carry the trail); the Tier-1 request inside a plateau family now (U9's choice); a per-run lock file (the ledger's claim + unique decision already serialize two drivers); nodes from the self-play pool's `snapshots/` (promotion-gated, so a stalled run would have no nodes) | §8.1 "As built"; `plateau_t1_test.py`, `main/plateau_test.py`, `main/h2h/plateau_integration_test.py` |

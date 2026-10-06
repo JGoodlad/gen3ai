@@ -30,7 +30,8 @@ from __future__ import annotations
 
 from agents.training.eval_ledger.cells import Cell, InferenceScopeError, cells, looks, pooled_pairs
 from agents.training.eval_ledger.reader import (ALL_PURPOSES, LedgerRead, MixedRegimeError, ReaderDecl,
-                                                ReaderDeclError, RegimeFilter, read, read_by_regime)
+                                                ReaderDeclError, RegimeFilter, read, read_by_regime,
+                                                read_decisions)
 from agents.training.eval_ledger.schema import (BOT_NATIVE_TEMP, DECISION_KINDS, FLAGS, GROUP_SEQUENTIAL_KINDS,
                                                 PLAYER_KINDS, PROTOCOLS, PURPOSES, PURPOSES_V1, REQUEST_KINDS,
                                                 SCHEMA, SCHEMA_V1, SEAT_RULES, LedgerSchemaError, as_v2, batch_key,
@@ -39,16 +40,18 @@ from agents.training.eval_ledger.schema import (BOT_NATIVE_TEMP, DECISION_KINDS,
 from agents.training.eval_ledger.store import (LedgerLockTimeout, LedgerPathError, archive_ledger_root,
                                                check_write_root)
 from agents.training.eval_ledger.writer import (AlreadyRecordedError, ClaimHeldError, ClaimVoidedError,
-                                                DuplicateBatchError, LedgerClaimError, LedgerWriter,
-                                                RequestSpecError)
+                                                DecisionExistsError, DuplicateBatchError, LedgerClaimError,
+                                                LedgerWriter, RequestSpecError)
 
 __all__ = [
     "ALL_PURPOSES", "AlreadyRecordedError", "BOT_NATIVE_TEMP", "Cell", "ClaimHeldError", "ClaimVoidedError",
-    "DECISION_KINDS", "DuplicateBatchError", "FLAGS", "GROUP_SEQUENTIAL_KINDS", "InferenceScopeError",
+    "DECISION_KINDS", "DecisionExistsError", "DuplicateBatchError", "FLAGS", "GROUP_SEQUENTIAL_KINDS",
+    "InferenceScopeError",
     "LedgerClaimError", "LedgerLockTimeout", "LedgerPathError", "LedgerRead", "LedgerSchemaError", "LedgerWriter",
     "MixedRegimeError", "PLAYER_KINDS", "PROTOCOLS", "PURPOSES", "PURPOSES_V1", "REQUEST_KINDS", "ReaderDecl",
     "ReaderDeclError", "RegimeFilter", "RequestSpecError", "SCHEMA", "SCHEMA_V1", "SEAT_RULES", "archive_ledger_root",
     "as_v2", "batch_key", "cells", "check_row", "check_write_root", "looks", "outcome_digest", "pooled_pairs", "read", "read_by_regime",
+    "read_decisions",
     "regime_id", "seed_key", "team_id", "team_set_id", "upgrade_v1", "utc_now", "validate_row", "validate_row_v1",
     "with_regime_id",
 ]

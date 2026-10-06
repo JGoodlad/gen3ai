@@ -1047,6 +1047,38 @@ default stays OFF while the M5 sizing arms are compared. The orchestrator flips 
 - ⚠️ **The cost is real:** a long test blocks training until its verdict.
 - Owed: one GPU confirmation, which rides a planned launch.
 
+### The plateau meter, TIER 1 (`python -m main.plateau`, eval U9a — `gen3_plateau_t1_v1`)
+
+**What it answers:** "does Tier 1 say PLATEAU, or not yet?" for a live or finished run
+(`designs/endstate/design_evaluation.md` §8.1, "As built"). Every Δ = 10M steps, the newest node (the first periodic
+checkpoint at or above the grid step) plays the node W = 50M steps back on mirrored pairs, and a pentanomial GSPRT
+(`agents/training/plateau_t1.py`: H0 0.50 / H1 0.52, α = β = 0.05, Wald bounds, 40-pair batches, cap 6,000 pairs)
+decides GAIN / FLAT / UNDECIDED (INCONCLUSIVE above 25 % aborted games).
+
+```bash
+python -m main.plateau status <run>                  # every check's state + the run's Tier-1 status; plays nothing
+python -m main.plateau tick <run> [--max-checks N]    # play every DUE check to its decision (CPU by default)
+python -m main.plateau tick <run> --dry-run           # list the due checks
+python -m main.plateau tick <fork> --lineage-run <parent>   # the parent's checkpoints are nodes too
+python -m main.eval_ledger verify <decision_id>       # re-derives a check's verdict from its rows
+```
+
+- 🚨 **TIER 1 ONLY.** `TIER1_PLATEAU` (FLAT at two consecutive checks) is a CANDIDATE plateau: §8.3's plateau also
+  needs the cycle monitor NONE and the panel FLAT (U5 / U9, NOT BUILT). Every output says so.
+- **Statuses:** `NOT_YET` (no decided check) · `CLIMBING` (newest decided check GAIN) · `FLAT_ONCE` · `TIER1_PLATEAU`
+  · `CONTINUE` (newest decided check UNDECIDED / INCONCLUSIVE: re-check at the next interval). A later check still
+  running does not erase a called status; it is listed as pending.
+- **Ledger:** one `plateau_t1` request per (run, check step, W), purpose `plateau`, the h2h protocol and regime; its
+  spec freezes both nodes' sha256 (a replaced node file is REFUSED). One decision row (kind `plateau`) per request,
+  written once under the ledger lock; its `rule` string carries every constant. `status` exits 2 on a CONFLICT (two
+  decisions, or a decision its rows contradict).
+- **Resumable at any batch**: a re-run never replays a banked batch, fills a gap first, and records a decided test
+  without playing.
+- 🚨 **Where to run it.** Offline, by the operator after each 10M checkpoint (the deep run's training agent; its 55-min
+  cron can call `tick`). CPU by default, under `scripts/ops/mem_cap.sh` and `nice`. **Never on CPU beside an X5 A/B
+  arm** (the registered speed rule, `design_evaluation.md` §4.2). `--device cuda` takes the GPU lease through the
+  engine: only the lease holder, never while a run owns the GPU. The in-trainer window is not built (U4).
+
 ### Eval on the Rust env core (the only trainer core, M5 Lane H — `agents/training/rust_eval/`)
 
 An eval cycle is played on the M5 Rust env core, not on `main.eval_worker`
