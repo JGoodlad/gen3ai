@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,419-line file. **The ledger itself is append-only and is never edited by this**;
+22,448-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**774 headings · 719 dated · 2026-08-01 → 2026-10-06 · ledger 22,419 lines.**
+**775 headings · 720 dated · 2026-08-01 → 2026-10-06 · ledger 22,448 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -794,3 +794,4 @@ rename.
   - `L22336` · `2026-10-06` · BANK · **X5 A/B FIXED_MASS arm (the hypothesis tokens) COMPLETE: seeds 1001, 1002, 1003 at 708dcb0a, all 15M, strict behaviour check, 0 restarts / 0 crashes / no deviation; every look-1 arm is now trained**
   - `L22353` · `2026-10-06` · READ · **X5 A/B LOOK 1: matched steps CONTINUE (Δ̂ −1.31 pp [−6.09, +3.46], t 1.27 < 5.761); matched wall-time FUTILITY STOP, verdict NOT DETECTED, INFERIOR (Δ̂ −6.78 pp [−9.28, −4.28], upper one-sided 95 % −4.86 < −3.5); oracle ceiling C_species +2.44 [+0.31, +4.57], C_full +2.18 [+0.53, +3.84] pp, both below the replicate floor 4.57, so H is not reported**
   - `L22409` · `2026-10-06` · BUILT · **The PLATEAU meter's TIER 1, offline (eval U9a): the registered head-to-head GSPRT (newest 10M-grid node vs the node 50M back, H0 0.50 / H1 0.52, α = β = 0.05, 40-pair batches, cap 6,000 pairs) as a pure rule over eval-ledger rows, `python -m main.plateau tick / status`, one decision row per check; Tier 2 and the panel NOT built**
+  - `L22420` · `2026-10-06` · BUILT · **X5 A/B Amendment 3(b) purpose-metric reader: metric (1) = the CONDITIONAL intent log loss renormalised over BLOB's named set E_row, a fixed_mass run scored on its PAIRED blob run's set (seed s ↔ seed s); coverage + the as-built form reported; smoke on the s1001 finals (not the registered read): conditional blob 1.900 vs fixed_mass 1.752, as-built 1.902 vs 1.980**

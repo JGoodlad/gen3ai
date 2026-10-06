@@ -59,11 +59,11 @@ def ckpts(tmp_path_factory):
             "fixed_mass_cold": _save(root / "run_fm_cold", "fixed_mass", 13, perturb=False)}
 
 
-def _read(br, path, label):
+def _read(br, path, label, **kw):
     from main.belief_roles.__main__ import read_one
     from main.belief_roles.roles import derive
 
-    return read_one(br, derive(), path, label, threads=2, commit="test", reencode_s=0.0)
+    return read_one(br, derive(), path, label, threads=2, commit="test", reencode_s=0.0, **kw)
 
 
 def test_both_arms_read_on_the_bank(bank_slice, ckpts):
@@ -82,6 +82,10 @@ def test_both_arms_read_on_the_bank(bank_slice, ckpts):
         assert r["off_pool"]["n_rows"] == 0 and r["per_run_off_pool"]["intent_logloss"] is None
         it = r["on_pool"]["intent"]["all"]
         assert it["n_covered"] + it["n_miss"] == it["n_labeled"] > 0
+        # Amendment 3(b): a fixed_mass read with no paired blob set has NO adoption-gate value
+        if r["arm"] == "fixed_mass":
+            assert r["eset_reference"] == {"mode": "none"}
+            assert pr["intent_logloss_conditional"] is None
     # the Smogon prior column is checkpoint-independent
     a, b = reads["blob"]["on_pool"]["prior"], reads["fixed_mass"]["on_pool"]["prior"]
     assert a["presence"]["brier"] == b["presence"]["brier"]
@@ -96,3 +100,32 @@ def test_both_arms_read_on_the_bank(bank_slice, ckpts):
     for k in reads:
         assert reads[k]["on_pool"]["intent"]["switch"]["n_miss"] == 0, k
         assert reads[k]["on_pool"]["intent"]["miss_breakdown"]["switch"] == 0, k
+
+
+def test_the_conditional_metric_on_the_paired_blob_set(bank_slice, ckpts, tmp_path):
+    """Amendment 3(b) end to end: the blob read writes its named set E_row, the fixed_mass read is
+    scored on it. On its OWN set the blob's conditional loss is its as-built loss on the same rows (all
+    its mass sits on E_row); the fixed_mass arm is scored on a subset of the blob's in-set rows (its own
+    rule-8 rows excluded), gives every in-set event positive mass, and reports its outside mass."""
+    from main.belief_roles.eset import ERow
+
+    br = bank_slice
+    blob = _read(br, ckpts["blob"], "blob", erow_out=tmp_path / "blob.erow.npz")
+    ref = ERow.load(tmp_path / "blob.erow.npz")
+    assert ref.n == br.n and ref.meta["checkpoint_sha256"] == blob["checkpoint"]["sha256"]
+    fm = _read(br, ckpts["fixed_mass"], "fm", reference=ref)
+    assert blob["eset_reference"]["mode"] == "own"
+    assert fm["eset_reference"]["mode"] == "paired"
+    assert fm["eset_reference"]["checkpoint_sha256"] == blob["checkpoint"]["sha256"]
+    bi, bc = blob["on_pool"]["intent"]["all"], blob["on_pool"]["intent_conditional"]
+    fc = fm["on_pool"]["intent_conditional"]
+    assert bc["all"]["n_scored"] == bi["n_covered"] and bc["all"]["n_rows"] == bi["n_labeled"]
+    # on its own set the blob's renormalisation can only RAISE its probabilities: its α keeps SWITCH
+    # finite on rows where no β slot is legal (mass that names no event; F-X5-AM3-2), which the
+    # as-built read charged to it
+    assert bc["all"]["logloss"] <= bi["logloss"] + 1e-12
+    assert abs(bc["coverage"]["outside_freq"] - bi["miss_rate"]) < 1e-12
+    assert fc["available"] and fc["all"]["n_zero_event_mass"] == 0
+    assert 0 < fc["all"]["n_in_set"] <= bc["all"]["n_in_set"]
+    assert math.isfinite(fm["per_run"]["intent_logloss_conditional"])
+    assert 0.0 < fc["coverage"]["mean_outside_mass"] < 1.0

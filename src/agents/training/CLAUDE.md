@@ -382,9 +382,12 @@ monitor) and the panel exist. Offline, never on CPU beside an X5 A/B arm (`desig
 NOTHING: any checkpoint `.zip` of either arm on the Lane S bank, CPU forwards only, output refused under `models/`. Its
 `per_run` block (on-pool primary) is the ONE value per run §7.4's adoption gate infers on, ACROSS SEEDS
 (`python -m main.belief_roles infer --treat … --control … --boundary <the stopping look's t>`); its battle-clustered intervals
-are descriptive only. 🚨 **The intent log loss is over the rows the arm's candidates COVER; the MISS rate is its own column** —
-compare the two arms on both, never on the log loss alone (`fixed_mass` reads U4's flat pointer, whose OTHER candidates
-cover every modelled event; `blob` misses the moves outside its six seats). The role set is derived from Smogon data at read time and stamped (`role_set_sha256`); `infer` refuses mixed sets.
+are descriptive only. 🚨 **Purpose metric (1)'s ADOPTION-GATE form is `intent_logloss_conditional`** (Amendment 3(b), §7.7(b)):
+the log loss renormalised over E_row = BLOB's named set, on the rows whose event is in it, for both arms — a `fixed_mass`
+read is scored on its PAIRED blob run's set (`read --reference <fm label>=<blob label | .erow.npz>`, fixed_mass seed s ↔
+blob seed s; without one its value is None, and `infer` refuses a pairing that is not one-to-one onto the control group).
+The as-built `intent_logloss` (each arm over the rows its OWN candidates cover, the MISS rate its own column) favours blob
+twice and is DESCRIPTIVE only; the coverage (`fixed_mass`'s mass outside E_row vs the realised outside frequency) is reported. The role set is derived from Smogon data at read time and stamped (`role_set_sha256`); `infer` refuses mixed sets.
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)** (its
 "The eval COUNT ledger" and "The checkpoint-vs-checkpoint head-to-head" sections).
 

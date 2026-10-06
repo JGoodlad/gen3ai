@@ -82,3 +82,38 @@ def test_compare_reads_and_its_refusals(tmp_path):
         compare_reads(t, c, "not_a_metric", boundary=1.0)
     with pytest.raises(InferenceRefused, match="no on_pool value"):
         compare_reads(t, c, "presence_brier", boundary=1.0)
+
+
+def _cread(tmp_path, name, arm, value, sha, ref):
+    p = tmp_path / f"{name}.json"
+    p.write_text(json.dumps({"schema": "gen3_belief_purpose_read_v2", "label": name, "arm": arm,
+                             "bank_sha256": "b" * 64, "role_set_sha256": "r" * 64,
+                             "checkpoint": {"sha256": sha}, "eset_reference": ref,
+                             "per_run": {"intent_logloss_conditional": value}}))
+    return p
+
+
+def test_the_adoption_gate_metric_needs_a_one_to_one_set_pairing(tmp_path):
+    """Amendment 3(b): blob reads on their OWN named set; the fixed_mass reads' reference blob
+    checkpoints map one-to-one onto the control group's — else the arms are scored over different
+    supports and the comparison is REFUSED."""
+    m = "intent_logloss_conditional"
+    c = [_cread(tmp_path, f"b{i}", "blob", v, f"c{i}", {"mode": "own", "checkpoint_sha256": f"c{i}"})
+         for i, v in enumerate(CONTROL)]
+
+    def treat(refs):
+        return [_cread(tmp_path, f"x{i}", "fixed_mass", v, f"t{i}",
+                       {"mode": "paired", "checkpoint_sha256": r} if r else {"mode": "none"})
+                for i, (v, r) in enumerate(zip(TREAT, refs))]
+
+    r = compare_reads(treat(["c0", "c1", "c2"]), c, m, boundary=2.683)
+    assert abs(r.t - 4.008918628686366) < 1e-9 and r.crossed
+    assert compare_reads(treat(["c2", "c0", "c1"]), c, m, boundary=2.683).t == r.t
+    for bad in (["c0", "c0", "c1"], ["c0", "c1", "cX"], ["c0", "c1", None]):
+        with pytest.raises(InferenceRefused, match="one-to-one|paired blob"):
+            compare_reads(treat(bad), c, m, boundary=2.683)
+    with pytest.raises(InferenceRefused, match="one-to-one"):
+        compare_reads(treat(["c0", "c1", "c2"])[:2], c, m, boundary=2.683)       # unequal n
+    c_bad = c[:2] + [_cread(tmp_path, "b9", "blob", 1.7, "c9", {"mode": "paired", "checkpoint_sha256": "c0"})]
+    with pytest.raises(InferenceRefused, match="OWN named set"):
+        compare_reads(treat(["c0", "c1", "c2"]), c_bad, m, boundary=2.683)

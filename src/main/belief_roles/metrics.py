@@ -5,10 +5,20 @@ across-seed inference takes (:mod:`main.belief_roles.infer`). The battle-cluster
 them are DESCRIPTIVE only (conditional on the run and the bank; Field & Welsh 2007), never the
 inference.
 
-**(1) Opponent-intent log loss on the common event space** — mean ``−log P(realised event)`` over the
-labelled rows the arm's candidates COVER; the rows they cannot cover are the MISS column
-(``intent_miss_rate``), never floored into the score (§7.4). Split by kind (move / switch) and by
-opponent class. A Struggle label (forced, no PP) is excluded and counted.
+**(1) Opponent-intent log loss — the ADOPTION GATE is the CONDITIONAL form (Amendment 3(b), §7.7(b)),
+``intent_logloss_conditional``:** per row E_row = blob's named set (:mod:`.eset`; a fixed_mass run's from
+its paired reference blob run), and on the rows whose realised event e ∈ E_row the loss is
+``−log [P(e) / Σ_{e′ ∈ E_row} P(e′)]`` with the arm's probabilities RENORMALISED over E_row — same rows,
+same support, both arms, so neither blob's selection on the outcome (its misses dropped) nor its
+structural over-certainty (all mass on its named set, while fixed_mass reserves mass for OTHER) moves
+the score. **Coverage is REPORTED** beside it (``intent_coverage``): the mass outside E_row against the
+observed outside frequency (calibration-in-the-large + a reliability curve on fixed bins); for blob its
+miss rate. Rule 8: a row whose denominator is within 1e-12 of 0 is excluded and counted.
+
+**The as-built form stays REPORTED, descriptive only** (``intent_logloss``): mean ``−log P(realised
+event)`` over the labelled rows the arm's OWN candidates cover; the rows they cannot cover are the MISS
+column (``intent_miss_rate``), never floored into the score (§7.4). Split by kind (move / switch) and by
+opponent class. A Struggle label (forced, no PP) is excluded and counted (in both forms).
 
 **(2) Species presence** — per decision the team Brier ``Σ_{s∈V} (π_s − y_s)²`` (y = the true unseen
 set) and the set log score ``Σ_V BCE(π_s, y_s)``; the Murphy reliability / resolution / uncertainty split
@@ -52,6 +62,8 @@ MASS_BINS = (0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0 + 1e-12)
 #: §4.2 R3's presence bar and its rule-8 exclusion band.
 R3_BAR = 0.25
 R3_BAND = (0.245, 0.255)
+#: Fixed reliability bins on the mass OUTSIDE E_row (Amendment 3(b) coverage).
+OUTSIDE_BINS = (0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 1.0 + 1e-12)
 #: Class-wise calibration: how many of the most frequent true species to tabulate.
 N_CLASSES = 20
 CLASSES = ("bot", "pool_snapshot", "exploiter")
@@ -193,6 +205,68 @@ def intent_read(br: BankRows, cols: Columns, rows: np.ndarray) -> dict:
            "excluded_rule8": int(tie.sum()), "excluded_struggle": int(struggle.sum()),
            "miss_breakdown": miss_breakdown(br, cols, L & ~cols.intent_covered)}
     assert np.isfinite(nll[cov]).all(), "a covered event has a non-finite log loss"
+    return out
+
+
+def intent_conditional_read(br: BankRows, cols: Columns, rows: np.ndarray) -> dict:
+    """Amendment 3(b)'s metric (1) and coverage (module docstring). Rows: the labelled, non-Struggle
+    rows; rule 8 excludes a row whose E_row is ill-determined (the reference blob's E4 seat cut is a
+    near-tie) or whose arm read is (``read_tie_arm``), and a row whose denominator Σ_{E_row} P is within
+    :data:`eset.DENOM_EPS` of 0. A realised event IN E_row to which the arm gives exactly zero mass has
+    an infinite conditional loss: it is counted (``n_zero_event_mass``) and the metric is then None —
+    never floored, never dropped in silence."""
+    from main.belief_roles.eset import DENOM_EPS
+
+    if cols.eset_mass is None:
+        return {"available": False,
+                "reason": "no E_row: a fixed_mass run is read on its paired blob run's named set "
+                          "(`read --reference <label>=<blob>.erow.npz`)"}
+    assert cols.eset_in is not None and cols.eset_tie is not None and cols.eset_logp_event is not None
+    struggle = rows & (br.event == struggle_num())
+    lab = rows & (br.event != NO_EVENT) & ~struggle
+    tie = lab & (cols.eset_tie | cols.read_tie_arm)
+    L = lab & ~tie
+    inset = L & cols.eset_in
+    den0 = inset & (cols.eset_mass <= DENOM_EPS)
+    U = inset & ~den0
+    zero = U & ~np.isfinite(cols.eset_logp_event)
+    is_sw = br.event >= SWITCH_BASE
+    with np.errstate(divide="ignore", invalid="ignore"):
+        cond = -(cols.eset_logp_event - np.log(np.where(U, cols.eset_mass, 1.0)))
+
+    def block(sel) -> dict:
+        n_l = int((sel & L).sum())
+        u = sel & U
+        n_z = int((sel & zero).sum())
+        v = cond[u]
+        ok = n_z == 0 and v.size > 0
+        return {"n_rows": n_l, "n_in_set": int((sel & inset).sum()), "n_scored": int(u.sum()),
+                "n_zero_event_mass": n_z, "set_miss_rate": _f((n_l - int((sel & inset).sum())) / n_l)
+                if n_l else None,
+                "logloss": _f(v.mean()) if ok else None,
+                "logloss_ci95": cluster_ci(v, br.battle_index[u]) if ok else None}
+
+    allr = np.ones(br.n, dtype=bool)
+    out = {"available": True, "all": block(allr), "move": block(~is_sw), "switch": block(is_sw),
+           "by_opp_class": {k: block(np.asarray(br.opp_class) == k) for k in CLASSES},
+           "excluded_rule8_tie": int(tie.sum()), "excluded_rule8_denominator": int(den0.sum()),
+           "excluded_struggle": int(struggle.sum())}
+    # ---- coverage (REPORTED): the arm's mass outside E_row vs the observed outside frequency
+    mass_out = np.clip(1.0 - cols.eset_mass[L], 0.0, 1.0)
+    obs_out = (~cols.eset_in[L]).astype(np.float64)
+    cov: dict = {"n": int(L.sum())}
+    if L.any():
+        edges = np.asarray(OUTSIDE_BINS)
+        b = np.clip(np.searchsorted(edges, mass_out, side="right") - 1, 0, len(edges) - 2)
+        bins = [{"lo": float(edges[i]), "n": int((b == i).sum()), "mass": float(mass_out[b == i].mean()),
+                 "freq": float(obs_out[b == i].mean())} for i in range(len(edges) - 1) if (b == i).any()]
+        d = mass_out - obs_out
+        var = (mass_out * (1 - mass_out)).sum()
+        cov.update({"mean_outside_mass": float(mass_out.mean()), "outside_freq": float(obs_out.mean()),
+                    "citl": float(d.mean()), "citl_ci95": cluster_ci(d, br.battle_index[L]),
+                    "z": float((obs_out - mass_out).sum() / np.sqrt(var)) if var > 0 else None,
+                    "bins": bins})
+    out["coverage"] = cov
     return out
 
 
@@ -345,6 +419,7 @@ def read_all(br: BankRows, cols: Columns, roles: RoleSet) -> dict:
         good = sel & consistent
         blk: Dict[str, dict] = {"n_rows": int(sel.sum())}
         blk["intent"] = intent_read(br, cols, sel)
+        blk["intent_conditional"] = intent_conditional_read(br, cols, sel)
         for col, pi, tie, rM, rV, rtie, mm in (
                 ("arm", cols.pi_arm, cols.sel_tie_arm, cols.role_M_arm, cols.role_V_arm,
                  cols.read_tie_arm if fm else np.zeros(br.n, dtype=bool),
@@ -363,8 +438,11 @@ def read_all(br: BankRows, cols: Columns, roles: RoleSet) -> dict:
     return out
 
 
+#: Amendment 3(b): purpose metric (1)'s ADOPTION-GATE form (the old ``intent_logloss`` is descriptive).
+ADOPTION_GATE_METRIC = "intent_logloss_conditional"
 #: The per-run scalars §7.4's across-seed inference reads, with the direction that is BETTER.
 PER_RUN_DIRECTION = {
+    ADOPTION_GATE_METRIC: "lower",
     "intent_logloss": "lower", "intent_miss_rate": "lower",
     "presence_brier": "lower", "presence_bce": "lower", "presence_resolution": "higher",
     "other_abs_err": "lower", "roles_r1_weighted_abs_delta": "lower", "roles_r3_both_rate": "lower",
@@ -374,7 +452,13 @@ PER_RUN_DIRECTION = {
 def per_run(blk: dict) -> Dict[str, Optional[float]]:
     a = blk["arm"]
     oe = a["other"].get("mean_err")
+    ic = blk.get("intent_conditional") or {}
+    icc = ic.get("coverage") or {}
     return {
+        ADOPTION_GATE_METRIC: (ic.get("all") or {}).get("logloss"),
+        "intent_set_miss_rate": (ic.get("all") or {}).get("set_miss_rate"),
+        "intent_outside_mass": icc.get("mean_outside_mass"),
+        "intent_outside_citl": icc.get("citl"),
         "intent_logloss": blk["intent"]["all"]["logloss"],
         "intent_miss_rate": blk["intent"]["all"]["miss_rate"],
         "presence_brier": a["presence"].get("brier"),

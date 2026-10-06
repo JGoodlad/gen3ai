@@ -22416,3 +22416,32 @@ Tag: **READ · X5 A/B look 1 · matched steps CONTINUE (Δ̂ −1.31 [−6.09, +
 - **DEFERRED.** GPU-side: a CUDA `tick` (the lease holder only) and its per-check wall; a real-checkpoint CPU tick on a production run (not run: an arm was live); Tier 2 (U5), the panel, the two-tier family and the joint OC simulation (U9); the scheduler and the in-window lane (U4).
 
 Tag: **BUILT · plateau Tier 1 offline (U9a) · `main.plateau tick / status` · one `plateau` decision per check, `verify` re-derives · Tier 2 + panel NOT BUILT**
+
+### 2026-10-06 · BUILT · **X5 A/B Amendment 3(b) purpose-metric reader: metric (1) = the CONDITIONAL intent log loss renormalised over BLOB's named set E_row, a fixed_mass run scored on its PAIRED blob run's set (seed s ↔ seed s); coverage + the as-built form reported; smoke on the s1001 finals (not the registered read): conditional blob 1.900 vs fixed_mass 1.752, as-built 1.902 vs 1.980**
+
+- **What.** `main.belief_roles` (`eset.py`, `metrics.intent_conditional_read`, `infer.check_set_pairing`; read schema v2).
+  - Per row, E_row = the blob checkpoint's structural support on the common event space: its namable E4 seats, plus the switch-ins its β-legal slots' contents support.
+  - Each arm's full distribution is built on a dense event space and renormalised over E_row. The score is on the rows whose realised event is in E_row: same rows, same support, both arms.
+  - A blob read saves its set (`<label>.erow.npz`). A fixed_mass read takes its paired blob run's set (`read --reference`).
+  - `infer` on `intent_logloss_conditional` refuses unless the references are one-to-one onto the control group.
+  - Rule 8: the reference seat-cut ties, the arm's own read ties and denominators ≤ 1e-12 are excluded and counted. A zero-mass in-set event gives None, never a floor.
+  - Coverage (the mass outside E_row vs the realised outside frequency: calibration-in-the-large, z, a fixed-bin reliability curve) and the as-built log loss + miss rate stay REPORTED.
+- **Verified.** Tests that fail on revert:
+  - The planted over-certain arm ties an honest arm of equal discrimination on the conditional metric and wins the as-built one.
+  - The renormalisation and coverage calibration by hand; rule 8; the zero-mass refusal.
+  - The dense distributions against the scored log-probabilities (blob and flat pointer).
+  - `infer`'s pairing refusals.
+  - An integration read pairing a fresh blob read's set into a fixed_mass read.
+  - The reader asserts, on every row of a real read, that the dense distribution equals the scored probability and that blob's "in E_row" equals its "covered".
+- **Smoke (NOT the registered read; one seed per arm, no `infer` run; on-pool; CPU forwards on the Lane S bank through the strict loader).**
+  - `rb_x5ab_blob_s1001` final (15,047,954 steps): conditional **1.900** [1.863, 1.940] on 11,475 rows; as-built 1.902; miss rate 4.76 %.
+  - `rb_x5ab_fm_s1001` final (15,047,411 steps), scored on blob s1001's set: conditional **1.752** [1.714, 1.798] on 11,370 rows; as-built 1.980 on 11,944 rows, 0 % miss.
+  - Coverage: fixed_mass puts 10.27 % mass outside E_row against a realised 4.81 % (CITL +5.46 pp [+4.93, +6.00], so it is UNDER-confident about blob's set).
+  - The two forms order the runs in OPPOSITE directions. Intervals are battle-clustered and descriptive.
+- **FINDINGS.**
+  1. §7.7(b) does not say WHICH blob run's set a fixed_mass run is scored on. Seed-id pairing is this build's choice (Decision record; the alternatives are listed there). This is for the owner.
+  2. Blob's α keeps SWITCH finite on rows with no β-legal slot (0.17 % of its mass on average on the bank, up to ~0.26 on single rows). That mass names no event. The as-built read charged it to blob; the renormalisation removes it.
+  3. The fixed_mass read excludes its OWN rule-8 rows (105 here), which a blob read cannot know about, so the arms' scored rows differ by under 1 %.
+  4. The quota gate (`check_usage.py --gate`) returned a rate-limit error at the start of this unit and was not re-checked.
+
+Tag: **BUILT · Amendment 3(b) conditional metric (1) + coverage · fixed_mass paired to blob seed s · smoke only, no inference**

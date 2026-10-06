@@ -16,6 +16,12 @@ The inputs are the readers' JSON files (``python -m main.belief_roles read``); a
 when its runs were read on different banks, role sets, reader schemas or strata, when a checkpoint
 appears twice, when a group mixes arms (or does not hold the arm its side declares), when either arm has
 fewer than 2 runs, when a metric is missing in a run, or when both arms have zero variance.
+
+**The adoption-gate metric** (``intent_logloss_conditional``, Amendment 3(b)) is scored on E_row = blob's
+named set, so it carries one more refusal: every control (blob) read must be on its OWN set, and the
+treat (fixed_mass) reads' REFERENCE blob checkpoints must map ONE-TO-ONE onto the control group's
+checkpoints (equal n; the registered pairing is fixed_mass seed s ↔ blob seed s), so the two arms are
+scored over the same collection of supports. The t itself is unchanged: two-sample, unpaired.
 """
 from __future__ import annotations
 
@@ -25,7 +31,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-from main.belief_roles.metrics import PER_RUN_DIRECTION
+from main.belief_roles.metrics import ADOPTION_GATE_METRIC, PER_RUN_DIRECTION
 
 #: Rule 8 at the boundary.
 BOUNDARY_EPS = 1e-9
@@ -119,6 +125,8 @@ def compare_reads(treat_paths: Sequence[Path], control_paths: Sequence[Path], me
         if arms != {arm}:
             raise InferenceRefused(f"the {side} group holds arms {sorted(arms)}, not only {arm!r}")
     key = "per_run" if stratum == "on_pool" else "per_run_off_pool"
+    if metric == ADOPTION_GATE_METRIC:
+        check_set_pairing(t_reads, c_reads)
 
     def vals(reads: List[dict]) -> List[float]:
         out = []
@@ -133,10 +141,33 @@ def compare_reads(treat_paths: Sequence[Path], control_paths: Sequence[Path], me
                         boundary=boundary, margin=margin, metric=metric)
 
 
+def check_set_pairing(t_reads: List[dict], c_reads: List[dict]) -> None:
+    """The conditional metric's E_row refusals (module docstring)."""
+    c_shas = []
+    for r in c_reads:
+        ref = r.get("eset_reference") or {}
+        if ref.get("mode") != "own" or ref.get("checkpoint_sha256") != r["checkpoint"]["sha256"]:
+            raise InferenceRefused(f"{r['label']}: a control (blob) read must be scored on its OWN named "
+                                   f"set (eset_reference {ref})")
+        c_shas.append(r["checkpoint"]["sha256"])
+    refs = []
+    for r in t_reads:
+        ref = r.get("eset_reference") or {}
+        if ref.get("mode") != "paired" or not ref.get("checkpoint_sha256"):
+            raise InferenceRefused(f"{r['label']}: a treat read must be scored on a paired blob run's "
+                                   f"named set (`read --reference`; eset_reference {ref})")
+        refs.append(ref["checkpoint_sha256"])
+    if len(t_reads) != len(c_reads) or sorted(refs) != sorted(c_shas):
+        raise InferenceRefused("the treat reads' reference blob checkpoints are not a one-to-one map onto "
+                               "the control group's checkpoints — the two arms would be scored over "
+                               "different collections of supports")
+
+
 def summarize(results: Dict[str, TResult]) -> str:
     lines = []
     for m, r in results.items():
-        lines.append(f"{m}: improvement {r.improvement:+.5g} (treat {r.mean_treat:.5g} n={r.n_treat}, "
+        tag = " [ADOPTION GATE, Amendment 3(b)]" if m == ADOPTION_GATE_METRIC else " [descriptive]"
+        lines.append(f"{m}{tag}: improvement {r.improvement:+.5g} (treat {r.mean_treat:.5g} n={r.n_treat}, "
                      f"control {r.mean_control:.5g} n={r.n_control}), t = {r.t:.4f} on {r.df} df "
                      f"vs boundary {r.boundary} → {'CROSSED' if r.crossed else 'not crossed'}")
     return "\n".join(lines)
