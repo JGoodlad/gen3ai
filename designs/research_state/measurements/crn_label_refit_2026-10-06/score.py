@@ -180,9 +180,12 @@ def verdict(m1):
 
 
 def main() -> int:
+    import sys
+
+    pre = "smoke_" if "--smoke" in sys.argv else ""
     decs = load_decisions()
     pol = root_policy(decs)
-    sc = np.load(ROWS / "scores.npz")
+    sc = np.load(ROWS / f"{pre}scores.npz")
     tabs, names = turn_tables(sc)
     sub_ids = json.loads((ROWS / "subset_train.json").read_text())["ids"] + \
         json.loads((ROWS / "subset_held.json").read_text())["ids"]
@@ -202,9 +205,9 @@ def main() -> int:
                            ("M3b_starved_vs_dominated", held_free, "starved_vs_dominated")):
         out["meters"][key] = boot(meter(tabs, names, ids, kind, pol), names, contrasts)
     out["verdict"] = verdict(out["meters"]["M1_all_contested"])
-    fr = json.loads((ROWS / "fit_report.json").read_text())
+    fr = json.loads((ROWS / f"{pre}fit_report.json").read_text())
     out["fit_report"] = fr
-    (HERE / "result.json").write_text(json.dumps(out, indent=1) + "\n")
+    ((ROWS / "smoke_result.json") if pre else (HERE / "result.json")).write_text(json.dumps(out, indent=1) + "\n")
     print(json.dumps({"verdict": out["verdict"], "M1": out["meters"]["M1_all_contested"]}, indent=1))
     return 0
 

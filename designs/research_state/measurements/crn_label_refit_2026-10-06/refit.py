@@ -160,6 +160,8 @@ def score_head(h, rs) -> np.ndarray:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--threads", type=int, default=3)
+    ap.add_argument("--smoke", action="store_true", help="PLUMBING ONLY: every outcome is FABRICATED at random "
+                    "(the real truth is never read); writes rows/smoke_*")
     a = ap.parse_args()
     import hashlib
 
@@ -172,9 +174,22 @@ def main() -> int:
 
     tr_ids = json.loads((ROWS / "subset_train.json").read_text())["ids"]
     he_ids = json.loads((ROWS / "subset_held.json").read_text())["ids"]
-    truth = load_truth(ROWS / "truth_train_S8.jsonl", 8)
-    truth.update(load_truth(ROWS / "truth_held_S32.jsonl", 32))
     idx, files = load_capture(ROWS / "cap")
+    if a.smoke:
+        rng = np.random.default_rng(0)
+        held_set = set(he_ids)
+        truth = {}
+        for i, c in idx.items():
+            s_ = 32 if i in held_set else 8
+            outs = {k: rng.choice([-1.0, 0.0, 1.0], size=s_, p=[.45, .1, .45]) for k in c["actions"]}
+            for k, ca in c["actions"].items():
+                for j in range(N_FEAT):
+                    if ca["term"][j] is not None:
+                        outs[k][j] = ca["term"][j]
+            truth[i] = {"ok": True, "outcomes": {k: list(v) for k, v in outs.items()}}
+    else:
+        truth = load_truth(ROWS / "truth_train_S8.jsonl", 8)
+        truth.update(load_truth(ROWS / "truth_held_S32.jsonl", 32))
     recs = build(tr_ids + he_ids, idx, files, truth, split_of)
     train = [r for r in recs if r["split"] == "train"]
     val = [r for r in recs if r["split"] == "val"]
@@ -182,10 +197,19 @@ def main() -> int:
     for r in held:
         if len(r["O"]) != 32:
             raise RuntimeError(f"held-out {r['id']} has {len(r['O'])} seeds")
+    # CRN alignment: a capture branch that ENDED within one ply must end the same way as truth
+    # playout j under the same seed (the capture's successor IS truth's state otherwise)
+    ended = [(r["T"][j], r["O"][j]) for r in recs for j in range(N_FEAT) if r["E"][j] > 0]
+    agree = sum(1 for t, o in ended if t == o)
+    crn = {"ended_branches": len(ended), "agree": agree}
+    print(f"[refit] CRN alignment on ended branches: {agree}/{len(ended)}", flush=True)
+    if ended and agree / len(ended) < 0.99:
+        raise RuntimeError(f"capture and truth are not on the same dice: {crn}")
     report = {"n_actions": {"train": len(train), "val": len(val), "held": len(held)},
               "n_turns": {s: len({r["id"] for r in recs if r["split"] == s}) for s in ("train", "val", "held")},
               "refused_capture": sorted(i for i, c in idx.items() if not c.get("ok")),
               "refused_truth": sorted(i for i, t in truth.items() if not t.get("ok")),
+              "crn_alignment": crn,
               "fits": []}
     out = {"ids": np.array([r["id"] for r in held]), "battle": np.array([r["battle"] for r in held]),
            "action": np.array([r["action"] for r in held]),
@@ -208,8 +232,9 @@ def main() -> int:
                 report["fits"].append(info)
                 out[f"REFIT_K{k}_s{s}"] = score_head(h, held)
                 print(f"[refit] K={k} seed={s}: {info}", flush=True)
-    np.savez_compressed(ROWS / "scores.npz", **out)
-    (ROWS / "fit_report.json").write_text(json.dumps(report, indent=1) + "\n")
+    pre = "smoke_" if a.smoke else ""
+    np.savez_compressed(ROWS / f"{pre}scores.npz", **out)
+    (ROWS / f"{pre}fit_report.json").write_text(json.dumps(report, indent=1) + "\n")
     print(f"[refit] wrote scores for {len(held)} held-out actions", flush=True)
     return 0
 
