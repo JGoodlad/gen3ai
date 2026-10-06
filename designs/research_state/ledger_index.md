@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,335-line file. **The ledger itself is append-only and is never edited by this**;
+22,352-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**771 headings · 716 dated · 2026-08-01 → 2026-10-05 · ledger 22,335 lines.**
+**772 headings · 717 dated · 2026-08-01 → 2026-10-06 · ledger 22,352 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -791,3 +791,4 @@ rename.
   - `L22296` · `2026-10-05` · REGISTRATION (LATE) + FINDING · **X5 A/B oracle predictions, written AFTER the oracle seeds trained but BEFORE any oracle head-to-head game was played or read; the lapse recorded honestly**
   - `L22311` · `2026-10-05` · AUDIT · **ARCHITECTURE AUDIT (read-only, owner request): 33 findings, KEEP 18 · EXACT REFACTOR 6 · BEHAVIOUR CHANGE 13 entries; no simple baseline was ever trained deliberately, the one accidental simple run (`ai_v12_01`) was discarded unread, and 19.3 % of the parameters (the SB3 value tower) are in no loss graph**
   - `L22324` · `2026-10-05` · MEASUREMENT + FIX · **F-XC-3 FIXED: the parity gate's eager reference left its per-forward stashes on every T2 replica, sized by its last bucket's rows, so a slot load read them as a new allocation (`gen3_reference_state_released_v1`); a REAL fixed_mass production launch passes every refusal with no override; the paired ABAB benchmark gives s = +16.7 % (16.4–17.1 %), matched wall-time checkpoint 12M; fixed_mass LAUNCHABLE under Amendment 5**
+  - `L22336` · `2026-10-06` · BANK · **X5 A/B FIXED_MASS arm (the hypothesis tokens) COMPLETE: seeds 1001, 1002, 1003 at 708dcb0a, all 15M, strict behaviour check, 0 restarts / 0 crashes / no deviation; every look-1 arm is now trained**

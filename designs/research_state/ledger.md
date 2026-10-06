@@ -22332,3 +22332,20 @@ Tag: **AUDIT · 33 findings · dead value tower 19.3 % MEASURED · no simple bas
 - **Blob side effect.** Blob's T2 stage drops 920 → 731 MiB and its headroom rises 2,874 → 3,082 MiB. The arithmetic is unchanged.
 
 Tag: **MEASUREMENT + FIX · F-XC-3 = the parity reference's stash outliving the gate · fixed by releasing per-forward state · blob + fixed_mass compiled code IDENTICAL · real launch: D-6 1,790 MiB, 22 slot loads ≤ 1 KiB, gate + canary PASS, no NaN · s = +16.7 % [16.4, 17.1] · matched wall-time 12M · LAUNCHABLE (Amendment 5)**
+
+### 2026-10-06 · BANK · **X5 A/B FIXED_MASS arm (the hypothesis tokens) COMPLETE: seeds 1001, 1002, 1003 at 708dcb0a, all 15M, strict behaviour check, 0 restarts / 0 crashes / no deviation; every look-1 arm is now trained**
+
+The X5 hypothesis-token arm (`--belief-tokens fixed_mass`) + the X26 heads, the §7.5 surface, launched under Amendment 5 (s = +16.7 % ≤ 50 %). The blob-path identity precondition was verified at 708dcb0a against e5e660dd (the K9 blob entry and buffer sha identical, `data/` unchanged, OP_SEMANTICS identical, the obs golden and reward/critic code untouched).
+
+| seed | run | steps | wall | in-loop eval @ ~14.0M (greedy): bots · pool | K9(b) excluded: median · max | max \|d log pi\| |
+|---|---|---|---|---|---|---|
+| 1001 | `rb_x5ab_fm_s1001` | 15,047,411 | 2 h 40 m | 88.0 % · 63.4 % | 0.056 · 0.077 | 2.5e-5 |
+| 1002 | `rb_x5ab_fm_s1002` | 15,047,763 | 2 h 39 m | 89.8 % · 70.8 % | 0.065 · 0.094 | 3.0e-5 |
+| 1003 | `rb_x5ab_fm_s1003` | 15,047,738 | 2 h 40 m | 90.9 % · 69.0 % | 0.065 · 0.090 | 2.6e-5 |
+
+- **First-seed watch-items, all PASS:** `UpdateFit` headroom 2,406 MiB; the startup R1 gate and the update-10 canary passed, no NaN; no slot load tripped the tolerance at any pool refresh. Launched with `--allow-nonproduction-arch`, the arch guard's consent for the registered lever.
+- **Wall time:** 2 h 40 m vs blob's 2 h 17–21 m, about +17 %, consistent with the paired s.
+- **Telemetry only, not a read.** s1003's monotonicity read 0.60 (blob s1005 read 0.80, the others 1.00), recorded as telemetry.
+- **Look 1's inputs are complete:** blob 1001–1003 (plus 1004–1005 for look 2), fixed_mass 1001–1003, oracle-species and oracle-full 1001b–1003. Next: the mirrored head-to-head cross (matched steps at 15M; matched wall-time with fixed_mass at 12M; the oracle cells in both modes).
+
+Tag: **BANK · X5 A/B fixed_mass arm complete (1001–1003) · strict, no deviation · look 1 ready to play**
