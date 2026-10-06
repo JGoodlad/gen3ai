@@ -22292,3 +22292,18 @@ Tag: **MEASUREMENT + BUILT · premise FALSE (row-level inputs enter) · exact fi
 - **DEFERRED.** GPU-side: the per-cell time and the CUDA graph backend at a reveal (one more eval core per seat orientation; UNMEASURED); a real-checkpoint oracle cross on the banked `rb_x5ab_oracle_*` finals (CPU-runnable, not run here).
 
 Tag: **BUILT · per-side oracle reveal in `main.h2h` (one_sided / both_sided, levels derived, typed refusals) · `off` bit-identical to `c7b4d03e` · two new eval protocols + `compute.oracle_reveal` on every row**
+
+### 2026-10-05 · REGISTRATION (LATE) + FINDING · **X5 A/B oracle predictions, written AFTER the oracle seeds trained but BEFORE any oracle head-to-head game was played or read; the lapse recorded honestly**
+
+**FINDING (orchestrator lapse).** Amendment 2 (§7.6) required "pre-registered predictions are written in the launch's ledger entry before the first oracle seed". They were not: the oracle-species and oracle-full seeds trained 2026-10-04/05 with no prediction on record. Verified: no h2h cell with an oracle side has been played. The eval ledger holds only the oracle runs' own in-loop cycle rows, which are not the cross. So the boundary that protects the read, predictions before any look at the ceiling C, still holds. These are written now, before the per-side cross (`aa621e40`) plays a single oracle cell. The in-loop telemetry already banked (bots / pool rates, which cannot compare arms) was seen before writing; it is noted as such.
+
+**Orchestrator predictions.** C = oracle − blob on the mirrored head-to-head cross, one-sided clairvoyance (the primary), in percentage points at 15M, look-1 seeds:
+- **C_species:** +4 pp, 80 % interval [0, +10]. Reasoning: knowing the six species removes most of the "who is in the back" uncertainty, which matters for switching. Tempered by the old-era privileged critic, which bought no value resolution, and by shortcut learning at 15M.
+- **C_full:** +8 pp, 80 % interval [+2, +16]. Reasoning: adds Choice Band / coverage / spread surprises, which are the high-variance hidden facts in gen-3 OU.
+- **C_full − C_species:** +4 pp, 80 % interval [−2, +10].
+- **Both-sided cells (descriptive):** the non-oracle side does NOT gain, and may LOSE, from being handed a reveal it never trained on (the out-of-distribution caveat): its rate falls by 0 to −5 pp relative to one-sided.
+- **Headroom captured H = Δ / C** (only if C clears the floor): no confident prediction; 0.2–0.6 is plausible.
+
+**The owner is invited to add predictions** before the cross is played. These are graded at look 1, never revised.
+
+Tag: **REGISTRATION (late, before any oracle read) · FINDING: the predictions lapse · C_species +4, C_full +8 (pp, one-sided)**
