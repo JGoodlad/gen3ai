@@ -111,6 +111,20 @@ CLOG="$D/launcher_child.log"
 STATUS="${STATUS:-$D/watch_status.txt}"
 PY="$(ops_python)"
 
+# FAILURE lines of the child log, ANCHORED to what the trainer really prints (2026-10-06: the old
+# case-insensitive bare `FATAL|Traceback` false-fired on every current run: Python's harmless
+# "Enable tracemalloc to get the object allocation traceback" warning, the `[CompileCanary] armed`
+# banner ("... before it FATALs") and the `[SUPPLY] ... else FATAL_SUPPLY (5)` banner).
+#   * `^Traceback (most recent call last)` - a real traceback starts a line, case-sensitive
+#   * `] FATAL`  - every typed fatal is `[Tag] FATAL` (`[ModelVersion]`, `[SUPPLY]`, `[CompileSentinel]`,
+#                  `[CompileCanary]`, `[Learner]`, `[LearnerLifecycle]`, `[Resume]`, `[Recipe]`,
+#                  `[TorchFloor]`, `[DesktopGpu]`, `[RunArchive]`, ...); no armed/announce banner puts
+#                  a bracket tag directly before FATAL
+#   * `FATAL ERROR DETECTED` - train_rl_agent.py's fail-fast banner
+#   * CUDA / host out-of-memory
+# Pinned by src/main/ops/watch_run_failure_grep_test.py (banners must NOT fire, real lines must).
+FAIL_RE='^[[:space:]]*Traceback \(most recent call last\)|\] FATAL|FATAL ERROR DETECTED|CUDA out of memory|OutOfMemoryError'
+
 say() { echo "[$(date '+%F %T')] $*" >> "$STATUS"; }
 
 last_step=-1; last_move=$(date +%s)
@@ -132,8 +146,8 @@ while true; do
         fi
     fi
     # FAILURE words, not just progress
-    if grep -qiE 'OutOfMemory|CUDA out of memory|FATAL|Traceback|FATAL_CONFIG' "$CLOG" 2>/dev/null; then
-        say "FAILURE: error text in child log — $(grep -oiE 'OutOfMemory|CUDA out of memory|FATAL_CONFIG|FATAL|Traceback' "$CLOG" | tail -1)"
+    if grep -qE "$FAIL_RE" "$CLOG" 2>/dev/null; then
+        say "FAILURE: error text in child log — $(grep -oE "$FAIL_RE" "$CLOG" | tail -1)"
         break
     fi
     # arm-INVALIDATING: the pin must be the registered sha. A `--sync-to-main` line voids the arm.
