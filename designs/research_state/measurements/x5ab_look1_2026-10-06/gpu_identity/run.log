@@ -1,0 +1,68 @@
+### cpu_both.log
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4113020.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 1 cell(s) x 50 pairs in batches of 50; 1 with batches to play (1 batch(es)), 0 already recorded; purpose audit under /home/goodlad/.cache/gen3ai/x5look1/identity/ledger_cpu_both
+[h2h] pre-flight: 1 cell(s), 2 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_sp_s1002@15047736 (slots ['player']); eval_b declared from rb_x5ab_fm_s1001@15047411 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal both_sided: (group, group, (p1, p2) levels) [(0, 1, ('species', 'species'))] in 3.6s
+[h2h] engine up in 7.3s: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_fm_s1001@15047411; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 0a29beecc866687e
+[h2h] cell 1/1: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_fm_s1001@15047411 — 1 batch(es) to play, 0 recorded; request h2h:43c1b73906d0860f; swap 0.00s
+[h2h] batch 1/1: 50 pairs / 100 games in 39.0s (2.56 games/s); W/L/D 64/35/1; pair counts [9, 0, 17, 1, 23]; near-tie games 1; digest 74d6bf233e95
+[mem_cap] done: gen3ai-capped-main.h2h-4113020.scope exit 0 · peak 0.98 GB of cap 24.00 GB (4%) · not OOM-killed
+### cpu_off.log
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4112278.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 2 cell(s) x 50 pairs in batches of 50; 2 with batches to play (2 batch(es)), 0 already recorded; purpose audit under /home/goodlad/.cache/gen3ai/x5look1/identity/ledger_cpu_off
+[h2h] pre-flight: 2 cell(s), 3 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_fm_s1001@15047411 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['player', 'opponent']); eval core(s) for (player group, opponent group) [(0, 1), (1, 1)] in 5.3s
+[h2h] engine up in 8.5s: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 1), ('eval_b', 2)], 2 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/2: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954 — 1 batch(es) to play, 0 recorded; request h2h:a79d3c84fd888a23; swap 0.00s
+[h2h] batch 1/1: 50 pairs / 100 games in 36.5s (2.74 games/s); W/L/D 46/53/1; pair counts [11, 1, 30, 0, 8]; near-tie games 0; digest 7456d91676c7
+[h2h] cell 2/2: rb_x5ab_blob_s1002@15047525 vs rb_x5ab_blob_s1001@15047954 — 1 batch(es) to play, 0 recorded; request h2h:712df7e7defcb964; swap 2.39s
+[h2h] batch 1/1: 50 pairs / 100 games in 18.7s (5.34 games/s); W/L/D 51/47/2; pair counts [12, 1, 22, 1, 14]; near-tie games 1; digest c242d03304dd
+[mem_cap] done: gen3ai-capped-main.h2h-4112278.scope exit 0 · peak 1.30 GB of cap 24.00 GB (5%) · not OOM-killed
+### cpu_one2.log
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4164664.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 1 cell(s) x 50 pairs in batches of 50; 1 with batches to play (1 batch(es)), 0 already recorded; purpose audit under /home/goodlad/.cache/gen3ai/x5look1/identity/ledger_cpu_one2
+[h2h] pre-flight: 1 cell(s), 2 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_full_s1002@15047676 (slots ['player']); eval_b declared from rb_x5ab_fm_s1001@15047411 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal one_sided: (group, group, (p1, p2) levels) [(0, 1, ('full', 'off'))] in 6.6s
+[h2h] engine up in 11.1s: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_fm_s1001@15047411; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 6c77ff1fd3ed8d64
+[h2h] cell 1/1: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_fm_s1001@15047411 — 1 batch(es) to play, 0 recorded; request h2h:99553c5486b84571; swap 0.00s
+[h2h] batch 1/1: 50 pairs / 100 games in 33.9s (2.95 games/s); W/L/D 54/45/1; pair counts [9, 1, 26, 0, 14]; near-tie games 0; digest c1967ed9f0d4
+[mem_cap] done: gen3ai-capped-main.h2h-4164664.scope exit 0 · peak 1.05 GB of cap 24.00 GB (4%) · not OOM-killed
+### cpu_one.log
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4158873.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 1 cell(s) x 50 pairs in batches of 50; 1 with batches to play (1 batch(es)), 0 already recorded; purpose audit under /home/goodlad/.cache/gen3ai/x5look1/identity/ledger_cpu_one
+[h2h] pre-flight: 1 cell(s), 2 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_sp_s1002@15047736 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal one_sided: (group, group, (p1, p2) levels) [(0, 1, ('species', 'off'))] in 4.0s
+[h2h] engine up in 7.7s: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 6c77ff1fd3ed8d64
+[h2h] cell 1/1: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_blob_s1001@15047954 — 1 batch(es) to play, 0 recorded; request h2h:067b092f17d4b67b; swap 0.00s
+[h2h] batch 1/1: 50 pairs / 100 games in 38.9s (2.57 games/s); W/L/D 50/47/3; pair counts [10, 0, 27, 3, 10]; near-tie games 2; digest 979410192b72
+[mem_cap] done: gen3ai-capped-main.h2h-4158873.scope exit 0 · peak 0.96 GB of cap 24.00 GB (4%) · not OOM-killed
+### cuda_both.log
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4151049.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 1 cell(s) x 50 pairs in batches of 50; 1 with batches to play (1 batch(es)), 0 already recorded; purpose audit under /home/goodlad/.cache/gen3ai/x5look1/identity/ledger_cuda_both
+[h2h] pre-flight: 1 cell(s), 2 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_sp_s1002@15047736 (slots ['player']); eval_b declared from rb_x5ab_fm_s1001@15047411 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal both_sided: (group, group, (p1, p2) levels) [(0, 1, ('species', 'species'))] in 3.8s
+[h2h] engine up in 430.7s: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_fm_s1001@15047411; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 0a29beecc866687e
+[h2h] cell 1/1: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_fm_s1001@15047411 — 1 batch(es) to play, 0 recorded; request h2h:43c1b73906d0860f; swap 0.00s
+[h2h] batch 1/1: 50 pairs / 100 games in 3.2s (31.40 games/s); W/L/D 64/35/1; pair counts [9, 0, 17, 1, 23]; near-tie games 1; digest 74d6bf233e95
+[mem_cap] done: gen3ai-capped-main.h2h-4151049.scope exit 0 · peak 9.06 GB of cap 24.00 GB (38%) · not OOM-killed
+### cuda_off.log
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4112344.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 2 cell(s) x 50 pairs in batches of 50; 2 with batches to play (2 batch(es)), 0 already recorded; purpose audit under /home/goodlad/.cache/gen3ai/x5look1/identity/ledger_cuda_off
+[h2h] pre-flight: 2 cell(s), 3 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_fm_s1001@15047411 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['player', 'opponent']); eval core(s) for (player group, opponent group) [(0, 1), (1, 1)] in 5.1s
+[h2h] engine up in 400.7s: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 2)], 2 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/2: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954 — 1 batch(es) to play, 0 recorded; request h2h:a79d3c84fd888a23; swap 0.00s
+[h2h] batch 1/1: 50 pairs / 100 games in 3.8s (26.49 games/s); W/L/D 46/53/1; pair counts [11, 1, 30, 0, 8]; near-tie games 0; digest 3e8a90b9c589
+[h2h] cell 2/2: rb_x5ab_blob_s1002@15047525 vs rb_x5ab_blob_s1001@15047954 — 1 batch(es) to play, 0 recorded; request h2h:712df7e7defcb964; swap 2.62s
+[h2h] batch 1/1: 50 pairs / 100 games in 2.1s (47.29 games/s); W/L/D 51/47/2; pair counts [12, 1, 22, 1, 14]; near-tie games 1; digest c242d03304dd
+[mem_cap] done: gen3ai-capped-main.h2h-4112344.scope exit 0 · peak 9.15 GB of cap 24.00 GB (38%) · not OOM-killed
+### cuda_one2.log
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-11739.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 1 cell(s) x 50 pairs in batches of 50; 1 with batches to play (1 batch(es)), 0 already recorded; purpose audit under /home/goodlad/.cache/gen3ai/x5look1/identity/ledger_cuda_one2
+[h2h] pre-flight: 1 cell(s), 2 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_full_s1002@15047676 (slots ['player']); eval_b declared from rb_x5ab_fm_s1001@15047411 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal one_sided: (group, group, (p1, p2) levels) [(0, 1, ('full', 'off'))] in 3.5s
+[h2h] engine up in 370.7s: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_fm_s1001@15047411; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 6c77ff1fd3ed8d64
+[h2h] cell 1/1: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_fm_s1001@15047411 — 1 batch(es) to play, 0 recorded; request h2h:99553c5486b84571; swap 0.00s
+[h2h] batch 1/1: 50 pairs / 100 games in 2.8s (35.27 games/s); W/L/D 54/45/1; pair counts [9, 1, 26, 0, 14]; near-tie games 0; digest c1967ed9f0d4
+[mem_cap] done: gen3ai-capped-main.h2h-11739.scope exit 0 · peak 9.00 GB of cap 24.00 GB (38%) · not OOM-killed
+### cuda_one.log
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4189820.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 1 cell(s) x 50 pairs in batches of 50; 1 with batches to play (1 batch(es)), 0 already recorded; purpose audit under /home/goodlad/.cache/gen3ai/x5look1/identity/ledger_cuda_one
+[h2h] pre-flight: 1 cell(s), 2 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_sp_s1002@15047736 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal one_sided: (group, group, (p1, p2) levels) [(0, 1, ('species', 'off'))] in 3.4s
+[h2h] engine up in 129.4s: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 6c77ff1fd3ed8d64
+[h2h] cell 1/1: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_blob_s1001@15047954 — 1 batch(es) to play, 0 recorded; request h2h:067b092f17d4b67b; swap 0.00s
+[h2h] batch 1/1: 50 pairs / 100 games in 2.8s (35.36 games/s); W/L/D 50/47/3; pair counts [10, 0, 27, 3, 10]; near-tie games 2; digest 979410192b72
+[mem_cap] done: gen3ai-capped-main.h2h-4189820.scope exit 0 · peak 5.66 GB of cap 24.00 GB (24%) · not OOM-killed

@@ -22349,3 +22349,59 @@ The X5 hypothesis-token arm (`--belief-tokens fixed_mass`) + the X26 heads, the 
 - **Look 1's inputs are complete:** blob 1001–1003 (plus 1004–1005 for look 2), fixed_mass 1001–1003, oracle-species and oracle-full 1001b–1003. Next: the mirrored head-to-head cross (matched steps at 15M; matched wall-time with fixed_mass at 12M; the oracle cells in both modes).
 
 Tag: **BANK · X5 A/B fixed_mass arm complete (1001–1003) · strict, no deviation · look 1 ready to play**
+
+### 2026-10-06 · READ · **X5 A/B LOOK 1: matched steps CONTINUE (Δ̂ −1.31 pp [−6.09, +3.46], t 1.27 < 5.761); matched wall-time FUTILITY STOP, verdict NOT DETECTED, INFERIOR (Δ̂ −6.78 pp [−9.28, −4.28], upper one-sided 95 % −4.86 < −3.5); oracle ceiling C_species +2.44 [+0.31, +4.57], C_full +2.18 [+0.53, +3.84] pp, both below the replicate floor 4.57, so H is not reported**
+
+The registered look-1 read of `design_x5_belief_tokens.md` §7.4 (the cross statistic, δ = 3.5 pp, look-1 boundary t ≥ 5.761 on 4 df), §7.9 (Amendment 5: both strength reads, each its own verdict) and §7.6–§7.7 (the oracle reference arms, reported, never gated). Artifact: [`measurements/x5ab_look1_2026-10-06/`](measurements/x5ab_look1_2026-10-06/) (`result.md`, `result.json`, `README.md`).
+
+**Inputs.** 90 cells × 1,000 mirrored pairs (180,000 games), both sides greedy, schedule seed 0, on the GPU (T2 graph) at ONE commit `bcb0296c` and one engine build, rows in the archive eval ledger under four families (`x5ab_strength_steps`, `x5ab_strength_wall`, `x5ab_oracle_one_sided`, `x5ab_oracle_both_sided`; purpose `ab`). Every cell complete, 0 aborted games; ledger audit OK (1,272 rows, 0 live claims). Checkpoints: the 15M `final_model.zip` of blob / fixed_mass / oracle-species / oracle-full seeds 1001(b)–1003; fixed_mass's matched wall-time checkpoint = its 12M file (`checkpoint_12000021 / 12000070 / 12000119_steps.zip`, s = +16.7 %). Preconditions: every run ≥ 15M with its final; blob-path identity and 0 restarts as banked; none failed. h_ij = row seed's score against column seed (pp, a draw ½).
+
+**Step 1, the deferred GPU identity checks: PASS.** Five cells (play-many's same-architecture cell on a two-group engine, the fixed_mass × blob cross, one-sided oracle-species × blob, one-sided oracle-full × fixed_mass, both-sided oracle-species × fixed_mass; 50 pairs each, seed 911, scratch ledgers) played on CPU eager and GPU graph: W/L/D, pentanomial, team counters, seed block and the ALL-games outcome digest identical in 5 / 5 (`gpu_identity/compare.json`). **Kill / resume: PASS** (SIGKILL of the driver's process group mid-batch, restart skipped the 3 recorded rows and replayed the voided claim's batch; 18 rows, audit OK).
+
+**The strength reads (look 1, n = 3 per arm, df 4, boundary 5.761).**
+
+| read | Δ̂ (pp) [95 %] | SE | t = (Δ̂ + δ)/SE | upper one-sided 95 % | outcome |
+|---|---|---|---|---|---|
+| **matched steps** (fixed_mass 15M × blob 15M) | **−1.31 [−6.09, +3.46]** | 1.72 | 1.270 | +2.35 | **CONTINUE** |
+| **matched wall-time** (fixed_mass 12M × blob 15M) | **−6.78 [−9.28, −4.28]** | 0.90 | −3.648 | −4.86 | **FUTILITY STOP (verdict NOT DETECTED, INFERIOR)** |
+
+- Matched steps: row means (fixed_mass seeds) 45.56 / 49.16 / 51.34, column means (blob seeds) 48.01 / 48.93 / 49.13; the fixed_mass seed spread (5.8 pp, s²_R 8.53 against the blob columns' s²_C 0.35) carries most of V̂. No statistic within 1e-9 of any boundary.
+- Matched wall-time: every one of the 9 cells is below 45 pp. Amendment 5's honest reading: at s = +16.7 % the hypothesis tokens currently cost strength per GPU-hour (fixed_mass at 12M against blob at 15M); it is not evidence about the representation, and the futility stop is NON-BINDING.
+- **Purpose metric (1) (Amendment 3's conditional log loss): not tested** (strength not NON-INFERIOR).
+- **Next, as registered:** matched steps says CONTINUE → look 2 adds two seeds per arm (blob 1004–1005 are banked; fixed_mass 1004–1005 must be trained). Adoption is the owner's decision with both reads (§7.9).
+
+**The oracle reads (one-sided clairvoyance PRIMARY for C; both-sided DESCRIPTIVE; the same cross statistic with the oracle seeds as rows).**
+
+| cell set | one-sided Δ̂ (pp) [95 %] | both-sided Δ̂ (pp) [95 %] |
+|---|---|---|
+| oracle-species × blob (**C_species**) | **+2.44 [+0.31, +4.57]** | +2.21 [−0.85, +5.26] |
+| oracle-full × blob (**C_full**) | **+2.18 [+0.53, +3.84]** | +10.24 [+7.81, +12.68] |
+| oracle-species × fixed_mass | +4.45 [−0.43, +9.33] | +4.22 [−0.48, +8.91] |
+| oracle-full × fixed_mass | +4.11 [−0.78, +9.00] | +7.73 [+1.98, +13.47] |
+
+- **C_full − C_species** (shared blob columns, 4 df): **−0.26 pp [−1.92, +1.40]**: telling the whole set adds nothing measurable over telling the species.
+- **Floor and H.** F = max(P0's h2h max-pairwise |Δ| 4.57 pp [S3/S4, 8M], this cross's blob-column spread 1.12 pp) = **4.57 pp**. C's lower 95 % bound is +0.31 (species) / +0.53 (full), below F, so **H = Δ / C is NOT reported: "the ceiling is within the noise: belief representation has little strength leverage at this budget"** (§7.6's registered sentence). Both C intervals exclude 0 against blob: the oracle is detectably stronger, by about 2–2.5 pp, which is below the replicate floor.
+- Both-sided (descriptive; the non-oracle side out of distribution): handed the FULL reveal, the non-oracle side's rate falls by 8.06 pp (blob) and 3.62 pp (fixed_mass) relative to one-sided; handed the species, it rises by 0.23 pp in both groups (checked: the two equal values come from different matrices; the sums of cell differences happen to coincide).
+
+**The late-registered predictions (2026-10-05, `43e0955d`), graded on the point estimate against the 80 % interval.**
+
+| prediction | interval | observed | grade |
+|---|---|---|---|
+| C_species +4 | [0, +10] | +2.44 | **IN** |
+| C_full +8 | [+2, +16] | +2.18 | **IN** (at the edge) |
+| C_full − C_species +4 | [−2, +10] | −0.26 | **IN** |
+| both-sided: the non-oracle side's rate falls by 0 to −5 pp | [−5, 0] | mean −2.81; by group species × blob +0.23, species × fixed_mass +0.23, full × blob −8.06, full × fixed_mass −3.62 | **IN** on the mean; **OUT in 3 of 4 groups** |
+| H 0.2–0.6 plausible | — | not reported | **NOT GRADED** |
+
+**Wall time.** The whole look on the GPU: 80 min (07:23–08:43 PDT; 10 engines at 4–6.5 min of T2 compile each, then 90–127 games/s, about 9 s per 1,000-game batch). Step 1 + the kill test: about 25 min (CPU and GPU in parallel).
+
+**FINDINGS (standing rule 7).**
+1. **Choices the registration leaves open, declared in `main.h2h.cross` (`bcb0296c`) BEFORE any look-1 cell was in the archive ledger:** the reported interval is the two-sided Student-t one; "C's lower 95 % bound" is that interval's lower end (the conservative reading); the floor F as above (rule 3's max-pairwise rule, but P0's 4.57 is from different runs at 8M, not this depth; the in-experiment term at 15M is 1.12); C_full − C_species on shared columns with 4 df; the seat effect is not subtracted (P0: u = −0.006 ± 0.083 pp); rule 8 applied at every boundary, not only t.
+2. **Pre-registration hygiene lapse (minor):** the kill / resume test played 40-pair slices of the REAL look-1 matched-steps cells at the SAME schedule seed 0 into a scratch ledger, and its per-batch W/L/D lines were visible about 8 minutes before the estimator commit landed. The estimator was written before any game; nothing statistical changed after (the only edit moved its reader declarations to module level for the reader gate). A separate seed would have avoided it.
+3. **An oracle level is its own ARCHITECTURE group** to `main.h2h`'s pre-flight (`oracle_reveal` is an architecture toggle), so one engine holds one oracle level and one opponent arm: 10 engines for the look, not 4. No game changes; the engine start dominates the look's wall time.
+4. **The clean-games outcome digest is device-dependent by construction** (the 2e-3 near-tie list differs between CPU eager and GPU graph on 1 of 5 identity cells); the all-games digest agreed everywhere and is the identity check used.
+5. **Secondary meters NOT read at this look** (the untaught meter, the outside panel and its HARM flag): out of this unit's scope.
+6. **`init_num_threads`** is still not recorded (the 2026-10-04 BANK's finding); the precondition stands "by construction".
+7. The main checkout's local `main` was not fast-forwarded to `bcb0296c` by this agent (the worktree sandbox refuses `git -C`).
+
+Tag: **READ · X5 A/B look 1 · matched steps CONTINUE (Δ̂ −1.31 [−6.09, +3.46], t 1.27) · matched wall-time FUTILITY STOP, NOT DETECTED, INFERIOR (Δ̂ −6.78 [−9.28, −4.28]) · C_species +2.44, C_full +2.18 below floor 4.57 → H not reported · predictions C IN ×3, both-sided mixed · purpose metric (1) not tested**

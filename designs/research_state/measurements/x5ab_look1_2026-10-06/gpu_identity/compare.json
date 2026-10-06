@@ -1,0 +1,493 @@
+{
+ "all_equal": true,
+ "modes": {
+  "off": [
+   {
+    "cell": [
+     "rb_x5ab_fm_s1001@15047411",
+     "rb_x5ab_blob_s1001@15047954",
+     0
+    ],
+    "equal": true,
+    "differs": [],
+    "wld": [
+     [
+      46,
+      53,
+      1
+     ],
+     [
+      46,
+      53,
+      1
+     ]
+    ],
+    "near_tie": {
+     "near_tie_decisions": [
+      0,
+      0
+     ],
+     "near_tie_decisions_wide": [
+      17,
+      16
+     ],
+     "near_tie_game_count": [
+      0,
+      0
+     ],
+     "near_tie_game_count_wide": [
+      13,
+      12
+     ],
+     "near_tie_games": [
+      [
+       11,
+       13,
+       25,
+       35,
+       55,
+       58,
+       64,
+       65,
+       67,
+       73,
+       81,
+       90,
+       92
+      ],
+      [
+       11,
+       13,
+       25,
+       35,
+       55,
+       58,
+       64,
+       65,
+       67,
+       73,
+       81,
+       92
+      ]
+     ],
+     "near_tie_margin": [
+      2e-05,
+      2e-05
+     ],
+     "near_tie_margin_wide": [
+      0.002,
+      0.002
+     ]
+    },
+    "digests": {
+     "outcome_digest": [
+      "7456d91676c7b1bb7d55d4e34780baa20e65b54c9559241a61a4d94ff2bf2bcb",
+      "3e8a90b9c589f157e4f4e39e52334f0b4d8900f5e86e6f8b87b0ea70c9a8e30a"
+     ],
+     "outcome_digest_all": [
+      "2dd11afa510a2b28dd4d15eecde5e3377180f33b1efcab50d9539861ed4a9793",
+      "2dd11afa510a2b28dd4d15eecde5e3377180f33b1efcab50d9539861ed4a9793"
+     ]
+    },
+    "devices": [
+     "cpu",
+     "cuda"
+    ],
+    "backends": [
+     "eager",
+     "graph"
+    ]
+   },
+   {
+    "cell": [
+     "rb_x5ab_blob_s1002@15047525",
+     "rb_x5ab_blob_s1001@15047954",
+     0
+    ],
+    "equal": true,
+    "differs": [],
+    "wld": [
+     [
+      51,
+      47,
+      2
+     ],
+     [
+      51,
+      47,
+      2
+     ]
+    ],
+    "near_tie": {
+     "near_tie_decisions": [
+      1,
+      1
+     ],
+     "near_tie_decisions_wide": [
+      21,
+      21
+     ],
+     "near_tie_game_count": [
+      1,
+      1
+     ],
+     "near_tie_game_count_wide": [
+      13,
+      13
+     ],
+     "near_tie_games": [
+      [
+       4,
+       11,
+       18,
+       26,
+       29,
+       38,
+       45,
+       49,
+       53,
+       91,
+       94,
+       97,
+       99
+      ],
+      [
+       4,
+       11,
+       18,
+       26,
+       29,
+       38,
+       45,
+       49,
+       53,
+       91,
+       94,
+       97,
+       99
+      ]
+     ],
+     "near_tie_margin": [
+      2e-05,
+      2e-05
+     ],
+     "near_tie_margin_wide": [
+      0.002,
+      0.002
+     ]
+    },
+    "digests": {
+     "outcome_digest": [
+      "c242d03304ddc21901344b69239b483fe89ee6239d0a66f998c68b9d1ce95347",
+      "c242d03304ddc21901344b69239b483fe89ee6239d0a66f998c68b9d1ce95347"
+     ],
+     "outcome_digest_all": [
+      "cc670bc0b6cafb3283f61477e367effe8a0c62cac456850e5686e808a005ab13",
+      "cc670bc0b6cafb3283f61477e367effe8a0c62cac456850e5686e808a005ab13"
+     ]
+    },
+    "devices": [
+     "cpu",
+     "cuda"
+    ],
+    "backends": [
+     "eager",
+     "graph"
+    ]
+   }
+  ],
+  "one": [
+   {
+    "cell": [
+     "rb_x5ab_oracle_sp_s1002@15047736",
+     "rb_x5ab_blob_s1001@15047954",
+     0
+    ],
+    "equal": true,
+    "differs": [],
+    "wld": [
+     [
+      50,
+      47,
+      3
+     ],
+     [
+      50,
+      47,
+      3
+     ]
+    ],
+    "near_tie": {
+     "near_tie_decisions": [
+      2,
+      2
+     ],
+     "near_tie_decisions_wide": [
+      18,
+      18
+     ],
+     "near_tie_game_count": [
+      2,
+      2
+     ],
+     "near_tie_game_count_wide": [
+      14,
+      14
+     ],
+     "near_tie_games": [
+      [
+       0,
+       3,
+       8,
+       19,
+       32,
+       46,
+       47,
+       54,
+       57,
+       63,
+       77,
+       82,
+       85,
+       87
+      ],
+      [
+       0,
+       3,
+       8,
+       19,
+       32,
+       46,
+       47,
+       54,
+       57,
+       63,
+       77,
+       82,
+       85,
+       87
+      ]
+     ],
+     "near_tie_margin": [
+      2e-05,
+      2e-05
+     ],
+     "near_tie_margin_wide": [
+      0.002,
+      0.002
+     ]
+    },
+    "digests": {
+     "outcome_digest": [
+      "979410192b724dfdfa17e83d227819e74a001a188fb8590f3f71667613a609aa",
+      "979410192b724dfdfa17e83d227819e74a001a188fb8590f3f71667613a609aa"
+     ],
+     "outcome_digest_all": [
+      "d452ce7a57f2e5ae421105acb05b9b3038016bf71e4911840f7545ab7969933e",
+      "d452ce7a57f2e5ae421105acb05b9b3038016bf71e4911840f7545ab7969933e"
+     ]
+    },
+    "devices": [
+     "cpu",
+     "cuda"
+    ],
+    "backends": [
+     "eager",
+     "graph"
+    ]
+   }
+  ],
+  "one2": [
+   {
+    "cell": [
+     "rb_x5ab_oracle_full_s1002@15047676",
+     "rb_x5ab_fm_s1001@15047411",
+     0
+    ],
+    "equal": true,
+    "differs": [],
+    "wld": [
+     [
+      54,
+      45,
+      1
+     ],
+     [
+      54,
+      45,
+      1
+     ]
+    ],
+    "near_tie": {
+     "near_tie_decisions": [
+      0,
+      0
+     ],
+     "near_tie_decisions_wide": [
+      13,
+      13
+     ],
+     "near_tie_game_count": [
+      0,
+      0
+     ],
+     "near_tie_game_count_wide": [
+      12,
+      12
+     ],
+     "near_tie_games": [
+      [
+       11,
+       20,
+       26,
+       27,
+       40,
+       51,
+       53,
+       58,
+       67,
+       73,
+       88,
+       89
+      ],
+      [
+       11,
+       20,
+       26,
+       27,
+       40,
+       51,
+       53,
+       58,
+       67,
+       73,
+       88,
+       89
+      ]
+     ],
+     "near_tie_margin": [
+      2e-05,
+      2e-05
+     ],
+     "near_tie_margin_wide": [
+      0.002,
+      0.002
+     ]
+    },
+    "digests": {
+     "outcome_digest": [
+      "c1967ed9f0d4d50cb989b79aaf6d2148b9dc8557d6fd938c5499a956ea50d73f",
+      "c1967ed9f0d4d50cb989b79aaf6d2148b9dc8557d6fd938c5499a956ea50d73f"
+     ],
+     "outcome_digest_all": [
+      "d82b89cd5b9bc4af20f283a264ed7a8fa3351cfa82f46b1fbcae3f09909bceab",
+      "d82b89cd5b9bc4af20f283a264ed7a8fa3351cfa82f46b1fbcae3f09909bceab"
+     ]
+    },
+    "devices": [
+     "cpu",
+     "cuda"
+    ],
+    "backends": [
+     "eager",
+     "graph"
+    ]
+   }
+  ],
+  "both": [
+   {
+    "cell": [
+     "rb_x5ab_oracle_sp_s1002@15047736",
+     "rb_x5ab_fm_s1001@15047411",
+     0
+    ],
+    "equal": true,
+    "differs": [],
+    "wld": [
+     [
+      64,
+      35,
+      1
+     ],
+     [
+      64,
+      35,
+      1
+     ]
+    ],
+    "near_tie": {
+     "near_tie_decisions": [
+      1,
+      1
+     ],
+     "near_tie_decisions_wide": [
+      16,
+      16
+     ],
+     "near_tie_game_count": [
+      1,
+      1
+     ],
+     "near_tie_game_count_wide": [
+      11,
+      11
+     ],
+     "near_tie_games": [
+      [
+       3,
+       7,
+       25,
+       31,
+       36,
+       72,
+       73,
+       77,
+       80,
+       82,
+       89
+      ],
+      [
+       3,
+       7,
+       25,
+       31,
+       36,
+       72,
+       73,
+       77,
+       80,
+       82,
+       89
+      ]
+     ],
+     "near_tie_margin": [
+      2e-05,
+      2e-05
+     ],
+     "near_tie_margin_wide": [
+      0.002,
+      0.002
+     ]
+    },
+    "digests": {
+     "outcome_digest": [
+      "74d6bf233e95f93bc1310072c1289af960257122ae2f1ca27213b2761b13d3d8",
+      "74d6bf233e95f93bc1310072c1289af960257122ae2f1ca27213b2761b13d3d8"
+     ],
+     "outcome_digest_all": [
+      "27ea7aca80be6b4b58f65be31b1e3b1b9d73a9f677923fc177a7fe4a962ef1d5",
+      "27ea7aca80be6b4b58f65be31b1e3b1b9d73a9f677923fc177a7fe4a962ef1d5"
+     ]
+    },
+    "devices": [
+     "cpu",
+     "cuda"
+    ],
+    "backends": [
+     "eager",
+     "graph"
+    ]
+   }
+  ]
+ }
+}

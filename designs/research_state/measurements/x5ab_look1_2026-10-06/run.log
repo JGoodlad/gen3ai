@@ -1,0 +1,331 @@
+=== 2026-10-06T07:23:38-07:00 x5ab_look1_steps mode=off
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-49959.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family x5ab_strength_steps, request x5ab_look1_steps under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_fm_s1001@15047411 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 9.4s
+[h2h] engine up in 385.0s: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/9: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_steps; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.9s (112.89 games/s); W/L/D 476/519/5; pair counts [125, 1, 268, 4, 102]; near-tie games 2; digest 3329b622ff14
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.1s (123.92 games/s); W/L/D 437/558/5; pair counts [139, 3, 277, 2, 79]; near-tie games 1; digest 5be66efd4a86
+[h2h] cell 2/9: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_steps; swap 2.31s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.9s (112.08 games/s); W/L/D 453/546/1; pair counts [133, 1, 279, 0, 87]; near-tie games 2; digest 8cf3d99f6044
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.7s (93.34 games/s); W/L/D 454/534/12; pair counts [139, 5, 251, 7, 98]; near-tie games 2; digest a1ec6cd3dbff
+[h2h] cell 3/9: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_steps; swap 2.30s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.3s (120.70 games/s); W/L/D 436/558/6; pair counts [143, 4, 268, 2, 83]; near-tie games 3; digest 826bdb469b6a
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.1s (109.68 games/s); W/L/D 459/533/8; pair counts [126, 1, 282, 3, 88]; near-tie games 0; digest 85f6868650fa
+[h2h] cell 4/9: rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_steps; swap 3.76s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.0s (90.99 games/s); W/L/D 467/523/10; pair counts [127, 5, 264, 5, 99]; near-tie games 3; digest ad7c4b29eded
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.3s (108.06 games/s); W/L/D 494/499/7; pair counts [121, 3, 255, 2, 119]; near-tie games 3; digest dd07bc1103b3
+[h2h] cell 5/9: rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_steps; swap 2.32s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.9s (126.36 games/s); W/L/D 480/512/8; pair counts [123, 5, 261, 3, 108]; near-tie games 1; digest 6b8c9115c76f
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.7s (114.68 games/s); W/L/D 491/506/3; pair counts [113, 1, 279, 2, 105]; near-tie games 0; digest 761563705141
+[h2h] cell 6/9: rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_steps; swap 0.89s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.4s (106.45 games/s); W/L/D 502/491/7; pair counts [103, 4, 281, 3, 109]; near-tie games 0; digest 3196e59bb0bb
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.1s (98.81 games/s); W/L/D 495/499/6; pair counts [105, 1, 288, 5, 101]; near-tie games 5; digest 18ecf979c207
+[h2h] cell 7/9: rb_x5ab_fm_s1003@15047738 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_steps; swap 5.31s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.1s (98.64 games/s); W/L/D 472/522/6; pair counts [123, 4, 272, 2, 99]; near-tie games 3; digest 8085ccf6656c
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.4s (105.98 games/s); W/L/D 515/479/6; pair counts [92, 3, 292, 3, 110]; near-tie games 1; digest 0b1dcc575de6
+[h2h] cell 8/9: rb_x5ab_fm_s1003@15047738 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_steps; swap 2.27s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.3s (107.97 games/s); W/L/D 511/484/5; pair counts [102, 4, 276, 1, 117]; near-tie games 3; digest 55dc1d3a98ff
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.2s (109.11 games/s); W/L/D 530/466/4; pair counts [95, 1, 276, 1, 127]; near-tie games 0; digest 4e4f0555392f
+[h2h] cell 9/9: rb_x5ab_fm_s1003@15047738 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_steps; swap 0.88s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.1s (110.31 games/s); W/L/D 519/476/5; pair counts [97, 2, 280, 3, 118]; near-tie games 0; digest ba35d81f228a
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.6s (94.22 games/s); W/L/D 518/477/5; pair counts [105, 1, 266, 4, 124]; near-tie games 1; digest 6098367dddcf
+[mem_cap] done: gen3ai-capped-main.h2h-49959.scope exit 0 · peak 9.59 GB of cap 24.00 GB (40%) · not OOM-killed
+=== 2026-10-06T07:33:30-07:00 x5ab_look1_wall mode=off
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-88441.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family x5ab_strength_wall, request x5ab_look1_wall under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_fm_s1001@12000021 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 9.5s
+[h2h] engine up in 386.4s: rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/9: rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_wall; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.9s (125.80 games/s); W/L/D 401/593/6; pair counts [167, 5, 254, 1, 73]; near-tie games 1; digest 87c8b2449d0e
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.4s (106.06 games/s); W/L/D 411/583/6; pair counts [157, 4, 265, 2, 72]; near-tie games 3; digest 9c5e03bd8c90
+[h2h] cell 2/9: rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_wall; swap 2.29s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.3s (107.00 games/s); W/L/D 413/581/6; pair counts [157, 4, 263, 2, 74]; near-tie games 1; digest 6b7ed098d6e3
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.2s (122.16 games/s); W/L/D 427/567/6; pair counts [141, 4, 281, 2, 72]; near-tie games 0; digest 8c4bbfa46a7c
+[h2h] cell 3/9: rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_wall; swap 2.29s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.3s (107.63 games/s); W/L/D 437/561/2; pair counts [142, 1, 276, 1, 80]; near-tie games 1; digest c7976fd4ff61
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.0s (110.93 games/s); W/L/D 409/587/4; pair counts [147, 3, 290, 1, 59]; near-tie games 2; digest 05fd9bd218aa
+[h2h] cell 4/9: rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_wall; swap 3.72s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.7s (130.50 games/s); W/L/D 403/590/7; pair counts [156, 5, 273, 2, 64]; near-tie games 1; digest c73c62d3e291
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.8s (113.10 games/s); W/L/D 413/580/7; pair counts [154, 1, 272, 4, 69]; near-tie games 0; digest f4d0689e0e77
+[h2h] cell 5/9: rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_wall; swap 2.28s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.0s (111.61 games/s); W/L/D 447/548/5; pair counts [134, 3, 277, 2, 84]; near-tie games 2; digest 0d994f3c2a6c
+[h2h] batch 2/2: 500 pairs / 1000 games in 11.4s (87.85 games/s); W/L/D 437/559/4; pair counts [139, 2, 279, 2, 78]; near-tie games 3; digest 818d4499e30d
+[h2h] cell 6/9: rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_wall; swap 0.89s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.4s (119.75 games/s); W/L/D 436/560/4; pair counts [152, 2, 254, 2, 90]; near-tie games 1; digest 68a42aedc7ce
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.4s (119.35 games/s); W/L/D 452/542/6; pair counts [131, 3, 277, 3, 86]; near-tie games 3; digest ef300355ebb4
+[h2h] cell 7/9: rb_x5ab_fm_s1003@12000119 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_wall; swap 5.34s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.1s (109.44 games/s); W/L/D 434/562/4; pair counts [149, 3, 261, 1, 86]; near-tie games 2; digest ef2836164282
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.6s (130.81 games/s); W/L/D 448/545/7; pair counts [139, 5, 262, 2, 92]; near-tie games 1; digest 4386a4a7b5a2
+[h2h] cell 8/9: rb_x5ab_fm_s1003@12000119 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_wall; swap 2.30s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.2s (109.11 games/s); W/L/D 455/540/5; pair counts [132, 3, 273, 2, 90]; near-tie games 1; digest cd998db08d25
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.7s (115.33 games/s); W/L/D 425/566/9; pair counts [148, 3, 268, 4, 77]; near-tie games 0; digest 8e38a482b71f
+[h2h] cell 9/9: rb_x5ab_fm_s1003@12000119 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_wall; swap 0.92s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.0s (111.61 games/s); W/L/D 429/561/10; pair counts [150, 4, 259, 2, 85]; near-tie games 1; digest 5c0965ada5b4
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.5s (104.97 games/s); W/L/D 451/545/4; pair counts [141, 3, 260, 1, 95]; near-tie games 0; digest db00ab522131
+[mem_cap] done: gen3ai-capped-main.h2h-88441.scope exit 0 · peak 9.55 GB of cap 24.00 GB (40%) · not OOM-killed
+=== 2026-10-06T07:43:15-07:00 x5ab_look1_oracle_one mode=one_sided
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-127047.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family x5ab_oracle_one_sided, request x5ab_look1_oracle_one under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_sp_s1001b@15048446 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal one_sided: (group, group, (p1, p2) levels) [(0, 1, ('species', 'off'))] in 9.2s
+[h2h] engine up in 129.3s: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 6c77ff1fd3ed8d64
+[h2h] cell 1/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.8s (113.36 games/s); W/L/D 509/478/13; pair counts [106, 2, 264, 11, 117]; near-tie games 5; digest 176fc81de11a
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.7s (129.28 games/s); W/L/D 508/489/3; pair counts [114, 1, 260, 2, 123]; near-tie games 1; digest 1769f667a384
+[h2h] cell 2/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.30s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.8s (113.40 games/s); W/L/D 517/470/13; pair counts [89, 4, 288, 9, 110]; near-tie games 1; digest 0dbc12e630cc
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.3s (119.93 games/s); W/L/D 560/436/4; pair counts [87, 1, 261, 3, 148]; near-tie games 2; digest 2eff893678d5
+[h2h] cell 3/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.28s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.3s (119.76 games/s); W/L/D 520/474/6; pair counts [98, 3, 275, 3, 121]; near-tie games 1; digest 9cd41b474864
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.2s (122.21 games/s); W/L/D 535/454/11; pair counts [96, 5, 257, 6, 136]; near-tie games 2; digest 054699b5fc26
+[h2h] cell 4/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 3.64s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.8s (128.28 games/s); W/L/D 529/463/8; pair counts [98, 4, 263, 4, 131]; near-tie games 2; digest 2190048aae20
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.1s (122.94 games/s); W/L/D 487/503/10; pair counts [101, 6, 295, 4, 94]; near-tie games 1; digest 1f7829ac042b
+[h2h] cell 5/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 3.29s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.1s (124.04 games/s); W/L/D 534/454/12; pair counts [96, 3, 261, 5, 135]; near-tie games 2; digest e729ac22e0ff
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.6s (132.15 games/s); W/L/D 518/476/6; pair counts [93, 2, 288, 4, 113]; near-tie games 0; digest 6953ff5f0ecf
+[h2h] cell 6/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.89s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.7s (129.25 games/s); W/L/D 539/457/4; pair counts [87, 1, 282, 3, 127]; near-tie games 0; digest 9d6143b7aa19
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.7s (103.28 games/s); W/L/D 544/448/8; pair counts [90, 4, 264, 4, 138]; near-tie games 2; digest 128fe20cbd99
+[h2h] cell 7/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 3.67s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.3s (137.21 games/s); W/L/D 499/494/7; pair counts [111, 4, 268, 3, 114]; near-tie games 1; digest 5ce5892f8550
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.3s (137.19 games/s); W/L/D 518/469/13; pair counts [101, 5, 262, 8, 124]; near-tie games 0; digest 18cb603f24c6
+[h2h] cell 8/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.23s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.7s (114.87 games/s); W/L/D 503/482/15; pair counts [99, 11, 273, 4, 113]; near-tie games 2; digest e7f17d54a26a
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.6s (130.72 games/s); W/L/D 503/493/4; pair counts [100, 0, 293, 4, 103]; near-tie games 0; digest 70f9f5a66cc7
+[h2h] cell 9/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.87s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.4s (119.58 games/s); W/L/D 515/476/9; pair counts [97, 2, 280, 7, 114]; near-tie games 0; digest 1f8671ef58d7
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.0s (124.88 games/s); W/L/D 524/468/8; pair counts [94, 3, 277, 5, 121]; near-tie games 2; digest 7d073e5a650e
+[mem_cap] done: gen3ai-capped-main.h2h-127047.scope exit 0 · peak 6.32 GB of cap 24.00 GB (26%) · not OOM-killed
+=== 2026-10-06T07:48:26-07:00 x5ab_look1_oracle_one mode=one_sided
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-143074.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family x5ab_oracle_one_sided, request x5ab_look1_oracle_one under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_sp_s1001b@15048446 (slots ['player']); eval_b declared from rb_x5ab_fm_s1001@15047411 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal one_sided: (group, group, (p1, p2) levels) [(0, 1, ('species', 'off'))] in 9.6s
+[h2h] engine up in 384.6s: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_fm_s1001@15047411; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 6c77ff1fd3ed8d64
+[h2h] cell 1/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.2s (108.59 games/s); W/L/D 546/448/6; pair counts [81, 0, 287, 4, 128]; near-tie games 1; digest bf8f455f9d45
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.0s (110.96 games/s); W/L/D 588/407/5; pair counts [76, 2, 253, 3, 166]; near-tie games 2; digest e8359199e12d
+[h2h] cell 2/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.39s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.0s (99.65 games/s); W/L/D 531/462/7; pair counts [85, 4, 288, 3, 120]; near-tie games 0; digest 742780b383c5
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.4s (96.38 games/s); W/L/D 534/460/6; pair counts [103, 2, 253, 2, 140]; near-tie games 3; digest 9f4a1e408c09
+[h2h] cell 3/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.36s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.7s (103.54 games/s); W/L/D 499/493/8; pair counts [106, 8, 273, 0, 113]; near-tie games 0; digest de4b6a3cea08
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.5s (104.84 games/s); W/L/D 527/464/9; pair counts [83, 4, 295, 3, 115]; near-tie games 0; digest cd4f7cb801e1
+[h2h] cell 4/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 3.76s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.5s (118.19 games/s); W/L/D 582/401/17; pair counts [67, 3, 265, 12, 153]; near-tie games 0; digest 3e9083e5585c
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.0s (124.34 games/s); W/L/D 609/381/10; pair counts [50, 3, 279, 5, 163]; near-tie games 5; digest c013f7147f50
+[h2h] cell 5/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.38s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.2s (97.87 games/s); W/L/D 534/457/9; pair counts [81, 3, 292, 6, 118]; near-tie games 2; digest 52b1c3fb2e89
+[h2h] batch 2/2: 500 pairs / 1000 games in 11.0s (91.15 games/s); W/L/D 544/445/11; pair counts [87, 4, 267, 7, 135]; near-tie games 3; digest c43b25b2ea19
+[h2h] cell 6/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.88s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.2s (108.15 games/s); W/L/D 522/471/7; pair counts [93, 5, 280, 2, 120]; near-tie games 1; digest ef36bdae7ecb
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.9s (112.43 games/s); W/L/D 527/465/8; pair counts [103, 4, 255, 4, 134]; near-tie games 3; digest 6bdbc95b5675
+[h2h] cell 7/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 3.74s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.0s (124.62 games/s); W/L/D 559/435/6; pair counts [87, 2, 259, 4, 148]; near-tie games 1; digest 75d618b1ca32
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.0s (124.26 games/s); W/L/D 539/453/8; pair counts [87, 3, 276, 5, 129]; near-tie games 2; digest 56e2b13888ed
+[h2h] cell 8/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.35s
+[h2h] batch 1/2: 500 pairs / 1000 games in 12.3s (81.36 games/s); W/L/D 525/465/10; pair counts [92, 5, 276, 5, 122]; near-tie games 1; digest a13df915cb46
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.8s (113.17 games/s); W/L/D 536/453/11; pair counts [92, 7, 262, 4, 135]; near-tie games 2; digest 3ebd0d8008be
+[h2h] cell 9/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.88s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.3s (120.06 games/s); W/L/D 510/484/6; pair counts [103, 4, 274, 2, 117]; near-tie games 1; digest 531cae4b3496
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.9s (126.13 games/s); W/L/D 511/478/11; pair counts [100, 3, 276, 6, 115]; near-tie games 0; digest e49f9e1de200
+[mem_cap] done: gen3ai-capped-main.h2h-143074.scope exit 0 · peak 9.72 GB of cap 24.00 GB (40%) · not OOM-killed
+=== 2026-10-06T07:58:18-07:00 x5ab_look1_oracle_one mode=one_sided
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-181607.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family x5ab_oracle_one_sided, request x5ab_look1_oracle_one under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_full_s1001b@15046904 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal one_sided: (group, group, (p1, p2) levels) [(0, 1, ('full', 'off'))] in 9.1s
+[h2h] engine up in 129.3s: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 6c77ff1fd3ed8d64
+[h2h] cell 1/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.5s (134.17 games/s); W/L/D 546/446/8; pair counts [90, 2, 265, 4, 139]; near-tie games 4; digest a6c9ca17f1d3
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.2s (138.33 games/s); W/L/D 507/480/13; pair counts [106, 8, 260, 5, 121]; near-tie games 2; digest 60fd0a67c3d8
+[h2h] cell 2/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.28s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.5s (117.90 games/s); W/L/D 519/473/8; pair counts [104, 1, 265, 5, 125]; near-tie games 0; digest 661402b006d7
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.5s (105.38 games/s); W/L/D 511/473/16; pair counts [110, 5, 249, 9, 127]; near-tie games 2; digest d9755d70ba05
+[h2h] cell 3/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.29s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.1s (124.00 games/s); W/L/D 533/457/10; pair counts [87, 4, 280, 4, 125]; near-tie games 4; digest 4eafdae4b804
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.7s (129.90 games/s); W/L/D 527/465/8; pair counts [91, 6, 277, 2, 124]; near-tie games 1; digest d10add0ddf93
+[h2h] cell 4/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 3.64s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.0s (111.19 games/s); W/L/D 507/481/12; pair counts [104, 2, 272, 8, 114]; near-tie games 2; digest 5e45966a0f52
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.5s (105.11 games/s); W/L/D 509/478/13; pair counts [114, 5, 246, 6, 129]; near-tie games 2; digest f0638fbee7b6
+[h2h] cell 5/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 3.29s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.8s (113.11 games/s); W/L/D 510/479/11; pair counts [96, 2, 287, 5, 110]; near-tie games 1; digest 1e98a3eac613
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.0s (125.51 games/s); W/L/D 493/495/12; pair counts [110, 3, 273, 7, 107]; near-tie games 3; digest cbf8b3935a60
+[h2h] cell 6/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.87s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.0s (124.44 games/s); W/L/D 535/460/5; pair counts [101, 1, 257, 4, 137]; near-tie games 0; digest 40d59efd8d46
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.5s (117.15 games/s); W/L/D 518/475/7; pair counts [103, 5, 264, 2, 126]; near-tie games 1; digest 2e512d2049b3
+[h2h] cell 7/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 3.63s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.7s (129.04 games/s); W/L/D 531/464/5; pair counts [95, 1, 273, 4, 127]; near-tie games 2; digest 9fa8f0a3dd14
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.6s (116.03 games/s); W/L/D 485/500/15; pair counts [115, 5, 265, 10, 105]; near-tie games 0; digest e9f0ed6e8c31
+[h2h] cell 8/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.28s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.1s (109.96 games/s); W/L/D 511/476/13; pair counts [93, 4, 287, 7, 109]; near-tie games 2; digest 865740d1da2c
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.4s (134.62 games/s); W/L/D 513/481/6; pair counts [102, 3, 274, 3, 118]; near-tie games 2; digest 3bdd530c0549
+[h2h] cell 9/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.88s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.8s (127.55 games/s); W/L/D 521/473/6; pair counts [100, 3, 271, 1, 125]; near-tie games 1; digest b47c671124c5
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.0s (124.69 games/s); W/L/D 532/467/1; pair counts [93, 1, 280, 0, 126]; near-tie games 0; digest b08c4e1addf1
+[mem_cap] done: gen3ai-capped-main.h2h-181607.scope exit 0 · peak 6.39 GB of cap 24.00 GB (27%) · not OOM-killed
+=== 2026-10-06T08:03:33-07:00 x5ab_look1_oracle_one mode=one_sided
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-197615.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family x5ab_oracle_one_sided, request x5ab_look1_oracle_one under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_full_s1001b@15046904 (slots ['player']); eval_b declared from rb_x5ab_fm_s1001@15047411 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal one_sided: (group, group, (p1, p2) levels) [(0, 1, ('full', 'off'))] in 9.5s
+[h2h] engine up in 367.5s: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_fm_s1001@15047411; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 6c77ff1fd3ed8d64
+[h2h] cell 1/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.0s (110.51 games/s); W/L/D 564/430/6; pair counts [79, 3, 269, 3, 146]; near-tie games 0; digest b310b128bb97
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.2s (97.89 games/s); W/L/D 592/395/13; pair counts [72, 5, 247, 6, 170]; near-tie games 2; digest 300e9aa146ac
+[h2h] cell 2/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.40s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.1s (89.89 games/s); W/L/D 502/482/16; pair counts [109, 4, 261, 10, 116]; near-tie games 2; digest 219a08e23c9e
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.1s (99.17 games/s); W/L/D 537/455/8; pair counts [103, 4, 246, 2, 145]; near-tie games 1; digest ab94295dd468
+[h2h] cell 3/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.42s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.1s (109.67 games/s); W/L/D 496/496/8; pair counts [123, 2, 249, 4, 122]; near-tie games 0; digest 72c519bd8a23
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.7s (115.44 games/s); W/L/D 498/495/7; pair counts [114, 3, 264, 4, 115]; near-tie games 3; digest b4ccfac45ecf
+[h2h] cell 4/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 3.76s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.5s (118.22 games/s); W/L/D 558/435/7; pair counts [75, 1, 285, 4, 135]; near-tie games 1; digest 75f3cd570ced
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.5s (104.90 games/s); W/L/D 559/434/7; pair counts [93, 2, 247, 3, 155]; near-tie games 2; digest 4a475a65bfb6
+[h2h] cell 5/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.39s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.7s (102.94 games/s); W/L/D 541/456/3; pair counts [88, 0, 280, 3, 129]; near-tie games 3; digest 61a6f7a3a6ec
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.0s (99.62 games/s); W/L/D 506/484/10; pair counts [108, 2, 266, 8, 116]; near-tie games 3; digest a6ada485add2
+[h2h] cell 6/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.90s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.0s (124.41 games/s); W/L/D 498/498/4; pair counts [105, 2, 286, 2, 105]; near-tie games 1; digest f0bf7e7782f0
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.5s (95.63 games/s); W/L/D 522/473/5; pair counts [103, 3, 264, 2, 128]; near-tie games 1; digest 27e6b6c8627e
+[h2h] cell 7/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 3.76s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.8s (113.52 games/s); W/L/D 572/424/4; pair counts [66, 1, 291, 3, 139]; near-tie games 0; digest a069d86779a1
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.1s (98.60 games/s); W/L/D 570/418/12; pair counts [86, 2, 244, 10, 158]; near-tie games 1; digest 616c3dba3d7b
+[h2h] cell 8/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 2.41s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.6s (86.57 games/s); W/L/D 537/457/6; pair counts [88, 2, 280, 2, 128]; near-tie games 1; digest 76fb51bf2667
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.0s (111.21 games/s); W/L/D 543/454/3; pair counts [90, 0, 274, 3, 133]; near-tie games 2; digest 60a97b87c99c
+[h2h] cell 9/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_one; swap 0.92s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.1s (110.09 games/s); W/L/D 528/467/5; pair counts [103, 4, 257, 1, 135]; near-tie games 0; digest 6b754bac7047
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.3s (96.99 games/s); W/L/D 553/444/3; pair counts [80, 2, 282, 1, 135]; near-tie games 3; digest a398cb057d19
+[mem_cap] done: gen3ai-capped-main.h2h-197615.scope exit 0 · peak 9.75 GB of cap 24.00 GB (41%) · not OOM-killed
+=== 2026-10-06T08:13:16-07:00 x5ab_look1_oracle_both mode=both_sided
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-236222.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family x5ab_oracle_both_sided, request x5ab_look1_oracle_both under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_sp_s1001b@15048446 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal both_sided: (group, group, (p1, p2) levels) [(0, 1, ('species', 'species'))] in 9.1s
+[h2h] engine up in 125.9s: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 0a29beecc866687e
+[h2h] cell 1/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.7s (129.89 games/s); W/L/D 522/469/9; pair counts [104, 4, 257, 5, 130]; near-tie games 2; digest af49d7e9cd84
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.5s (133.91 games/s); W/L/D 490/497/13; pair counts [112, 6, 267, 7, 108]; near-tie games 1; digest 8c4f0cd978ec
+[h2h] cell 2/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.29s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.2s (108.41 games/s); W/L/D 563/431/6; pair counts [90, 3, 248, 3, 156]; near-tie games 0; digest 32779ccdc4de
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.5s (117.98 games/s); W/L/D 526/466/8; pair counts [102, 3, 259, 5, 131]; near-tie games 1; digest da25260855b8
+[h2h] cell 3/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.28s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.9s (111.80 games/s); W/L/D 513/475/12; pair counts [103, 5, 264, 7, 121]; near-tie games 0; digest 8d062c822f58
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.3s (119.83 games/s); W/L/D 503/486/11; pair counts [101, 5, 279, 6, 109]; near-tie games 0; digest 5e72bc292a91
+[h2h] cell 4/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 3.66s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.2s (121.28 games/s); W/L/D 531/457/12; pair counts [93, 5, 266, 7, 129]; near-tie games 1; digest fcdf39898887
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.2s (121.41 games/s); W/L/D 530/462/8; pair counts [91, 2, 279, 4, 124]; near-tie games 0; digest 6f1986fe639e
+[h2h] cell 5/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 3.27s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.4s (118.34 games/s); W/L/D 539/447/14; pair counts [88, 4, 267, 10, 131]; near-tie games 2; digest cf4763eb5eb5
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.0s (125.27 games/s); W/L/D 526/468/6; pair counts [93, 2, 280, 4, 121]; near-tie games 3; digest a880daff5923
+[h2h] cell 6/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.89s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.6s (116.16 games/s); W/L/D 549/442/9; pair counts [88, 2, 264, 7, 139]; near-tie games 1; digest d413ac32f6bc
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.7s (102.98 games/s); W/L/D 518/464/18; pair counts [93, 5, 275, 9, 118]; near-tie games 1; digest 68f24db6c38b
+[h2h] cell 7/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 3.66s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.3s (137.49 games/s); W/L/D 494/496/10; pair counts [112, 3, 269, 7, 109]; near-tie games 1; digest cc15e96371b7
+[h2h] batch 2/2: 500 pairs / 1000 games in 6.9s (144.69 games/s); W/L/D 484/507/9; pair counts [119, 6, 263, 3, 109]; near-tie games 0; digest fca8fc40dee2
+[h2h] cell 8/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.28s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.9s (126.03 games/s); W/L/D 501/489/10; pair counts [101, 2, 285, 8, 104]; near-tie games 2; digest 4af1e5d98922
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.4s (135.24 games/s); W/L/D 507/489/4; pair counts [113, 1, 262, 3, 121]; near-tie games 1; digest 9ae9ba56df3f
+[h2h] cell 9/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.89s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.5s (117.14 games/s); W/L/D 524/470/6; pair counts [102, 1, 265, 5, 127]; near-tie games 1; digest f2fe3c11db37
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.5s (133.63 games/s); W/L/D 490/500/10; pair counts [103, 6, 289, 2, 100]; near-tie games 2; digest c013c5b92f1a
+[mem_cap] done: gen3ai-capped-main.h2h-236222.scope exit 0 · peak 6.34 GB of cap 24.00 GB (26%) · not OOM-killed
+=== 2026-10-06T08:18:24-07:00 x5ab_look1_oracle_both mode=both_sided
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-252242.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family x5ab_oracle_both_sided, request x5ab_look1_oracle_both under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_sp_s1001b@15048446 (slots ['player']); eval_b declared from rb_x5ab_fm_s1001@15047411 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal both_sided: (group, group, (p1, p2) levels) [(0, 1, ('species', 'species'))] in 9.5s
+[h2h] engine up in 382.7s: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_fm_s1001@15047411; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 0a29beecc866687e
+[h2h] cell 1/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.2s (108.47 games/s); W/L/D 569/425/6; pair counts [83, 1, 259, 3, 154]; near-tie games 2; digest 93082042a0e8
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.2s (108.71 games/s); W/L/D 581/410/9; pair counts [71, 3, 265, 6, 155]; near-tie games 1; digest b9bcfaee2a6d
+[h2h] cell 2/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.39s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.3s (96.83 games/s); W/L/D 528/468/4; pair counts [100, 1, 267, 3, 129]; near-tie games 1; digest b67d41b9583e
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.2s (98.25 games/s); W/L/D 521/470/9; pair counts [102, 3, 263, 6, 126]; near-tie games 2; digest 1b4d47badd4b
+[h2h] cell 3/9: rb_x5ab_oracle_sp_s1001b@15048446 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.42s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.8s (113.57 games/s); W/L/D 501/491/8; pair counts [112, 6, 261, 2, 119]; near-tie games 3; digest d9f908636b06
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.9s (100.94 games/s); W/L/D 535/458/7; pair counts [79, 4, 296, 3, 118]; near-tie games 1; digest c00dc0f9070a
+[h2h] cell 4/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 3.79s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.5s (117.02 games/s); W/L/D 554/430/16; pair counts [81, 6, 263, 8, 142]; near-tie games 2; digest fa5f6c29bd63
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.0s (110.72 games/s); W/L/D 593/399/8; pair counts [74, 3, 248, 5, 170]; near-tie games 2; digest 018719454f62
+[h2h] cell 5/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.42s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.8s (84.44 games/s); W/L/D 546/439/15; pair counts [84, 7, 266, 4, 139]; near-tie games 1; digest 13a509f84517
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.8s (102.44 games/s); W/L/D 562/431/7; pair counts [91, 3, 246, 4, 156]; near-tie games 1; digest 556c4440c402
+[h2h] cell 6/9: rb_x5ab_oracle_sp_s1002@15047736 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.89s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.9s (100.93 games/s); W/L/D 527/463/10; pair counts [94, 4, 271, 6, 125]; near-tie games 0; digest d424c37d102c
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.7s (115.06 games/s); W/L/D 537/455/8; pair counts [97, 4, 257, 4, 138]; near-tie games 3; digest 92488bda2f47
+[h2h] cell 7/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 3.79s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.1s (123.07 games/s); W/L/D 537/457/6; pair counts [96, 4, 261, 2, 137]; near-tie games 1; digest d3a1a56acdf8
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.6s (116.46 games/s); W/L/D 545/449/6; pair counts [87, 2, 273, 4, 134]; near-tie games 1; digest 52aa2a54cdf0
+[h2h] cell 8/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.39s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.6s (86.19 games/s); W/L/D 534/460/6; pair counts [98, 3, 261, 3, 135]; near-tie games 2; digest 6a8d9a4299ff
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.1s (123.05 games/s); W/L/D 523/470/7; pair counts [96, 3, 275, 4, 122]; near-tie games 0; digest 975f33050a24
+[h2h] cell 9/9: rb_x5ab_oracle_sp_s1003@15046289 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.88s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.9s (126.35 games/s); W/L/D 498/495/7; pair counts [111, 3, 270, 4, 112]; near-tie games 2; digest 113c538fc6cf
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.2s (122.48 games/s); W/L/D 494/497/9; pair counts [107, 5, 278, 4, 106]; near-tie games 2; digest 34e16ec6f7b2
+[mem_cap] done: gen3ai-capped-main.h2h-252242.scope exit 0 · peak 9.71 GB of cap 24.00 GB (40%) · not OOM-killed
+=== 2026-10-06T08:28:15-07:00 x5ab_look1_oracle_both mode=both_sided
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-290857.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family x5ab_oracle_both_sided, request x5ab_look1_oracle_both under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_full_s1001b@15046904 (slots ['player']); eval_b declared from rb_x5ab_blob_s1001@15047954 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal both_sided: (group, group, (p1, p2) levels) [(0, 1, ('full', 'full'))] in 9.3s
+[h2h] engine up in 125.8s: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_blob_s1001@15047954; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 0a29beecc866687e
+[h2h] cell 1/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.8s (114.16 games/s); W/L/D 614/377/9; pair counts [60, 4, 253, 5, 178]; near-tie games 0; digest 96ca58f64cb2
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.0s (111.55 games/s); W/L/D 573/415/12; pair counts [74, 6, 261, 6, 153]; near-tie games 0; digest d141ba5fc9c9
+[h2h] cell 2/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.27s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.8s (128.55 games/s); W/L/D 624/368/8; pair counts [49, 3, 268, 3, 177]; near-tie games 2; digest af1202fc1736
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.5s (133.91 games/s); W/L/D 618/370/12; pair counts [59, 4, 248, 8, 181]; near-tie games 2; digest 16829d2f52e1
+[h2h] cell 3/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.31s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.4s (119.67 games/s); W/L/D 570/427/3; pair counts [81, 0, 265, 3, 151]; near-tie games 1; digest 484907f57e65
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.0s (124.93 games/s); W/L/D 568/423/9; pair counts [71, 3, 278, 6, 142]; near-tie games 2; digest dac8e46b8f92
+[h2h] cell 4/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 3.65s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.6s (116.92 games/s); W/L/D 608/383/9; pair counts [63, 2, 256, 5, 174]; near-tie games 0; digest b2c42dd40b1c
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.5s (117.56 games/s); W/L/D 585/410/5; pair counts [72, 4, 262, 1, 161]; near-tie games 0; digest f06243cf3749
+[h2h] cell 5/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 3.32s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.2s (108.82 games/s); W/L/D 593/394/13; pair counts [65, 5, 261, 4, 165]; near-tie games 2; digest ba45d2d5ac90
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.5s (133.44 games/s); W/L/D 622/367/11; pair counts [53, 3, 258, 8, 178]; near-tie games 1; digest 2c11631f1890
+[h2h] cell 6/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.92s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.5s (133.71 games/s); W/L/D 585/406/9; pair counts [73, 2, 258, 7, 160]; near-tie games 3; digest 755e147ed878
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.0s (111.24 games/s); W/L/D 601/393/6; pair counts [66, 3, 258, 3, 170]; near-tie games 2; digest 75d51b12cb5a
+[h2h] cell 7/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 3.64s
+[h2h] batch 1/2: 500 pairs / 1000 games in 7.2s (138.86 games/s); W/L/D 612/384/4; pair counts [76, 2, 230, 2, 190]; near-tie games 0; digest f7d4608abb9c
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.8s (128.06 games/s); W/L/D 582/412/6; pair counts [80, 1, 251, 5, 163]; near-tie games 1; digest e97551115c1b
+[h2h] cell 8/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.25s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.5s (118.16 games/s); W/L/D 615/376/9; pair counts [55, 2, 264, 7, 172]; near-tie games 3; digest 53ec565aff75
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.1s (139.88 games/s); W/L/D 610/384/6; pair counts [69, 1, 245, 5, 180]; near-tie games 0; digest d40f1e6ae0df
+[h2h] cell 9/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.86s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.3s (120.35 games/s); W/L/D 605/388/7; pair counts [64, 2, 258, 5, 171]; near-tie games 2; digest b63d1c3fde27
+[h2h] batch 2/2: 500 pairs / 1000 games in 7.3s (137.03 games/s); W/L/D 585/405/10; pair counts [71, 3, 260, 7, 159]; near-tie games 3; digest f6dd66a7b47c
+[mem_cap] done: gen3ai-capped-main.h2h-290857.scope exit 0 · peak 6.33 GB of cap 24.00 GB (26%) · not OOM-killed
+=== 2026-10-06T08:33:25-07:00 x5ab_look1_oracle_both mode=both_sided
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-306809.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family x5ab_oracle_both_sided, request x5ab_look1_oracle_both under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_oracle_full_s1001b@15046904 (slots ['player']); eval_b declared from rb_x5ab_fm_s1001@15047411 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)], oracle reveal both_sided: (group, group, (p1, p2) levels) [(0, 1, ('full', 'full'))] in 9.5s
+[h2h] engine up in 377.9s: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_fm_s1001@15047411; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime 0a29beecc866687e
+[h2h] cell 1/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.0s (111.07 games/s); W/L/D 625/367/8; pair counts [58, 3, 248, 5, 186]; near-tie games 0; digest 90a38dd1b671
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.6s (104.01 games/s); W/L/D 610/384/6; pair counts [56, 1, 271, 5, 167]; near-tie games 1; digest 539695fca905
+[h2h] cell 2/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.40s
+[h2h] batch 1/2: 500 pairs / 1000 games in 12.2s (81.93 games/s); W/L/D 558/436/6; pair counts [77, 2, 280, 4, 137]; near-tie games 1; digest 7e3efb0b3485
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.3s (107.14 games/s); W/L/D 552/439/9; pair counts [90, 6, 253, 3, 148]; near-tie games 1; digest dd69e683d2bc
+[h2h] cell 3/9: rb_x5ab_oracle_full_s1001b@15046904 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.43s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.5s (95.17 games/s); W/L/D 547/445/8; pair counts [92, 2, 260, 4, 142]; near-tie games 1; digest 6f7b79fb8e40
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.7s (103.11 games/s); W/L/D 539/451/10; pair counts [78, 7, 288, 3, 124]; near-tie games 0; digest bb582a0f7790
+[h2h] cell 4/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 3.81s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.3s (119.86 games/s); W/L/D 595/393/12; pair counts [71, 2, 251, 6, 170]; near-tie games 2; digest 693a7bda0e9b
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.3s (120.54 games/s); W/L/D 603/389/8; pair counts [62, 1, 264, 7, 166]; near-tie games 0; digest c0d15c1ec5e2
+[h2h] cell 5/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.37s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.8s (101.99 games/s); W/L/D 557/439/4; pair counts [90, 3, 256, 1, 150]; near-tie games 2; digest a594443b7372
+[h2h] batch 2/2: 500 pairs / 1000 games in 13.2s (75.87 games/s); W/L/D 530/457/13; pair counts [92, 3, 270, 10, 125]; near-tie games 0; digest ecb15df55864
+[h2h] cell 6/9: rb_x5ab_oracle_full_s1002@15047676 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.92s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.8s (113.14 games/s); W/L/D 564/429/7; pair counts [80, 4, 265, 3, 148]; near-tie games 0; digest d6e866e09e12
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.4s (106.30 games/s); W/L/D 526/470/4; pair counts [106, 1, 257, 3, 133]; near-tie games 1; digest 89acfc4376b4
+[h2h] cell 7/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_fm_s1001@15047411 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 3.80s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.0s (125.28 games/s); W/L/D 607/386/7; pair counts [56, 1, 273, 6, 164]; near-tie games 4; digest 10ecb606970b
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.6s (93.97 games/s); W/L/D 636/360/4; pair counts [58, 1, 243, 3, 195]; near-tie games 1; digest 91b2636cca35
+[h2h] cell 8/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_fm_s1002@15047763 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 2.36s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.8s (84.78 games/s); W/L/D 558/437/5; pair counts [88, 1, 261, 2, 148]; near-tie games 3; digest 514014ff6614
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.5s (95.19 games/s); W/L/D 572/421/7; pair counts [84, 1, 253, 4, 158]; near-tie games 0; digest 22c9639e798f
+[h2h] cell 9/9: rb_x5ab_oracle_full_s1003@15047595 vs rb_x5ab_fm_s1003@15047738 — 2 batch(es) to play, 0 recorded; request x5ab_look1_oracle_both; swap 0.89s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.8s (102.13 games/s); W/L/D 585/408/7; pair counts [73, 1, 261, 6, 159]; near-tie games 3; digest 29182089ef74
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.5s (95.20 games/s); W/L/D 561/432/7; pair counts [74, 3, 282, 2, 139]; near-tie games 1; digest 50b3be38cf50
+[mem_cap] done: gen3ai-capped-main.h2h-306809.scope exit 0 · peak 9.69 GB of cap 24.00 GB (40%) · not OOM-killed
+=== 2026-10-06T08:43:24-07:00 DONE
