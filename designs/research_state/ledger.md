@@ -22464,3 +22464,34 @@ Tag: **BUILT · Amendment 3(b) conditional metric (1) + coverage · fixed_mass p
   - A CLI re-read of `rb_x5ab_fm_s1001` final on the saved blob s1001 set gives the identical value (1.752). No across-seed `infer` was run.
 
 Tag: **BUILT · metric (1) fixed_mass value = mean over the look's blob sets · supersedes seed-id pairing · rule + boundary unchanged**
+
+### 2026-10-06 · READ · **X5 A/B LOOK 2: matched steps CONTINUE (Δ̂ −0.97 pp [−3.36, +1.41], t 2.441 < 2.683 on 8 df); matched wall-time FUTILITY STOP, verdict NOT DETECTED, INFERIOR (Δ̂ −6.89 pp [−8.88, −4.90], upper one-sided 95 % −5.29 < −3.5); purpose metric (1) not due**
+
+The registered look-2 read of `design_x5_belief_tokens.md` §7.4 (the cross statistic, δ = 3.5 pp, look-2 boundary t ≥ 2.683 on 8 df, futility Δ̂ ≤ −δ, rule 8) and §7.9 (Amendment 5: both strength reads, each its own verdict). Artifact: [`measurements/x5ab_look2_2026-10-06/`](measurements/x5ab_look2_2026-10-06/) (`result.md`, `result.json`, `run.log`, `README.md`).
+
+**Inputs.** The full 5 × 5 cross per read: look 1's 9 cells (requests `x5ab_look1_steps` / `_wall`, reused from the ledger, not replayed) + 16 NEW cells per read (requests `x5ab_look2_steps` / `_wall`, same families `x5ab_strength_steps` / `x5ab_strength_wall`). 32 new cells × 1,000 mirrored pairs (64,000 games), both sides greedy, schedule seed 0, batches of 500, GPU (T2 graph) under the lease `x5-look2`, rows in the archive eval ledger, purpose `ab`. Every cell ≥ 1,000 pairs, 0 aborted games; ledger audit OK (1,492 rows, 0 live claims). Regime id `adfdbee824c9eb0a`, the same as look 1's. Checkpoints: the 15M `final_model.zip` of blob seeds 1001–1005 (`e5e660dd`) and fixed_mass seeds 1001–1005 (`708dcb0a`); fixed_mass's matched wall-time checkpoint = its 12M file (s = +16.7 %), for the new seeds `checkpoint_12000227` (s1004) and `checkpoint_12000192` (s1005). Preconditions checked at read time: every run ≥ 15M with its final, exactly one fixed_mass checkpoint in [12M, 13M); none failed.
+
+**Engine drift since look 1 (`bcb0296c`), reviewed BEFORE the play** (the driver refuses an unreviewed commit under `src/` or `data/`): `131f3412` changed `src/main/h2h/play.py` (the request spec now built by `edge_spec()` with an optional `consumer` block): with no consumer (`many.py` passes none) `schema.canonical(edge_spec(500, 0))` is byte-identical to the recorded look-1 spec `{"batch_pairs":500,"producer":"h2h","schedule_seed":0}`, and no game-path function changed (the diff touches only `plan_edge`'s spec line, its docstring and its error text); its eval-ledger changes (`read_decisions`, `append_decision(unique=)`, the plateau verify rule) are additive and off the row path. `19bdf034` (init_num_threads) is save-time / fresh-build only. `96eedfb5`, `54f3bb64`, `e1e81456` are ops scripts and tests. None can alter a game or a spec; `ALLOW_ENGINE_DRIFT` was not set.
+
+**The strength reads (look 2, n = 5 per arm, df 8, boundary 2.683).**
+
+| read | Δ̂ (pp) [95 %] | SE | t = (Δ̂ + δ)/SE | upper one-sided 95 % | outcome |
+|---|---|---|---|---|---|
+| **matched steps** (fixed_mass 15M × blob 15M) | **−0.97 [−3.36, +1.41]** | 1.04 | **2.441** | +0.95 | **CONTINUE** |
+| **matched wall-time** (fixed_mass 12M × blob 15M) | **−6.89 [−8.88, −4.90]** | 0.86 | −3.931 | −5.29 | **FUTILITY STOP (verdict NOT DETECTED, INFERIOR)** |
+
+- Matched steps: row means (fixed_mass seeds 1001–1005) 45.48 / 48.75 / 50.82 / 49.32 / 50.77, column means (blob seeds) 48.54 / 50.08 / 49.55 / 48.16 / 48.82; s²_R 4.76 against s²_C 0.60, so the fixed_mass seed spread (fm s1001 the low row, as at look 1) still carries most of V̂. t = 2.441 is below 2.683 (no statistic within 1e-9 of any boundary) and Δ̂ is above −δ, so the outcome is CONTINUE. The point estimate moved from −1.31 (look 1) to −0.97, and the interval narrowed from [−6.09, +3.46] to [−3.36, +1.41].
+- Matched wall-time: all 25 cells are below 48 pp; the deficit is unchanged from look 1 (−6.78 → −6.89). Amendment 5's reading stands: at s = +16.7 % the hypothesis tokens currently cost strength per GPU-hour; it is not evidence about the representation; the futility stop is non-binding.
+- **Purpose metric (1): NOT due at this look** (it is tested in sequence only after a NON-INFERIOR matched-steps verdict).
+- **Next, as registered:** matched steps says CONTINUE → look 3 adds three seeds per arm (1006–1008; 8 per arm, 64 cells, 39 of them new, boundary 1.874 on 14 df). Adoption stays the owner's decision with both reads (§7.9).
+
+**Wall time.** 14:19:29–14:48:30 PDT, 29 min on the GPU: two engines (T2 graph compile 466 s and 436 s, ~7.5 min each, longer than look 1's 4–6.5 min with 10 checkpoints per engine against 6), then 64 batches at 9–11 s each (90–110 games/s). Training side note (the training agent's): `rb_x5ab_fm_s1005` ran 2 h 48 m, slower near the end, likely CPU contention from a concurrent CRN rollout job; wall only, strength is read at matched steps / checkpoints.
+
+**FINDINGS (standing rule 7).**
+1. **The fixed_mass seeds 1004–1005 have no BANK entry in this ledger** (blob 1004–1005's is 2026-10-04); this read checked only what `read_look2.py` checks (≥ 15M, the final, the 12M checkpoint) and the single pin `708dcb0a` in each `pin_history`. Restart / crash counts for fm s1004 / s1005 were NOT verified here.
+2. **`init_num_threads` is absent from all four look-2 runs' `metadata.json`** (they predate `19bdf034`); the precondition stands "by construction" as at look 1.
+3. **A bystander process held a CUDA context during the play** (`main.policy_spectrum.truth run`, pid 545906, 330 MiB, another agent's CRN job); it held no GPU lease, and the play ran normally.
+4. The oracle arms were not extended (§7.6: reference arms); look 1's oracle reads stand.
+5. The engine compile took ~7.5 min per engine, against look 1's 4–6.5 min (UNVERIFIED cause: 10 checkpoints per engine against 6).
+
+Tag: **READ · X5 A/B look 2 · matched steps CONTINUE (Δ̂ −0.97 [−3.36, +1.41], t 2.441 < 2.683, 8 df) · matched wall-time FUTILITY STOP, NOT DETECTED, INFERIOR (Δ̂ −6.89 [−8.88, −4.90]) · purpose metric (1) not due · next = look 3 (+3 seeds per arm)**

@@ -1,0 +1,430 @@
+=== 2026-10-06T14:19:29-07:00 look 2 at 131f34123afcbed743c0ebeecce4c300083491e6; engine-path commits since bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7: 131f3412
+19bdf034
+96eedfb5
+54f3bb64
+e1e81456 (reviewed: 131f3412 19bdf034 96eedfb5 54f3bb64 e1e81456); unreviewed: none
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_steps", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 2521, "ts": "2026-10-06T14:23:38+00:00", "writer_id": "20261006T142338Z.0-goodlad_desktop-49948-ledger_cli"}
+[plan] steps: family x5ab_strength_steps; rows ['rb_x5ab_fm_s1001/final_model.zip', 'rb_x5ab_fm_s1002/final_model.zip', 'rb_x5ab_fm_s1003/final_model.zip', 'rb_x5ab_fm_s1004/final_model.zip', 'rb_x5ab_fm_s1005/final_model.zip']
+[plan] steps: 25 cells in the 5 x 5 matrix = 9 reused from x5ab_look1_steps + 16 new under x5ab_look2_steps (0 already in the ledger, 0 at >= 1000 pairs; the driver's resume skips every recorded batch)
+=== 2026-10-06T14:19:30-07:00 x5ab_look2_steps: 16 cell(s) planned (/home/goodlad/.cache/gen3ai/x5look2/plan/steps_look2.json)
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-579470.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 16 cell(s) x 1000 pairs in batches of 500; 16 with batches to play (32 batch(es)), 0 already recorded; purpose ab, family x5ab_strength_steps, request x5ab_look2_steps under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 16 cell(s), 10 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_fm_s1001@15047411 (slots ['player']); eval_b declared from rb_x5ab_blob_s1004@15047200 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 18.6s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a28a2889a4eb80b69/src/rust_env/target/release)
+🧊 [CompileCache] PRIVATE /home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_579483_o4rv72pe for this process (T2 graph) — no run declared a cache; deleted at exit [gen3_hermetic_compile_cache_v1]
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpyssl9ck7/cuda_utils.c:5:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpyssl9ck7/cuda_utils.c:1:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+split the reduction. Cut an issue to PyTorch if this is an
+
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpe846s8ke/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpe846s8ke/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpz4p3vqfz/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpz4p3vqfz/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpibprnf3r/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpibprnf3r/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpbg2wacu0/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpbg2wacu0/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpqxzj68ys/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpqxzj68ys/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp6zmulag9/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp6zmulag9/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpss85kvw3/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpss85kvw3/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+split the reduction. Cut an issue to PyTorch if this is an
+
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpo0be_pyw/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpo0be_pyw/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpbhvir1f8/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpbhvir1f8/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+split the reduction. Cut an issue to PyTorch if this is an
+
+  mask |= a_isnan and not b_isnan
+  mask |= a_isnan and not b_isnan
+  equal |= a_isnan and b_isnan
+  equal |= a_isnan and b_isnan
+split the reduction. Cut an issue to PyTorch if this is an
+
+  mask |= a_isnan and not b_isnan
+  mask |= a_isnan and not b_isnan
+  equal |= a_isnan and b_isnan
+  equal |= a_isnan and b_isnan
+[h2h] engine up in 465.9s: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1004@15047200; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/16: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1004@15047200 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.8s (92.63 games/s); W/L/D 446/551/3; pair counts [146, 1, 258, 2, 93]; near-tie games 0; digest 42d1088b279e
+[h2h] batch 2/2: 500 pairs / 1000 games in 11.7s (85.70 games/s); W/L/D 448/542/10; pair counts [134, 6, 269, 2, 89]; near-tie games 4; digest 8e96949cf9e5
+[h2h] cell 2/16: rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1005@15046550 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 2.79s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.0s (90.62 games/s); W/L/D 443/552/5; pair counts [149, 4, 250, 1, 96]; near-tie games 2; digest 7ee16c43c3e3
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.2s (98.10 games/s); W/L/D 464/528/8; pair counts [122, 3, 282, 3, 90]; near-tie games 0; digest d472bd0384ca
+[h2h] cell 3/16: rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1004@15047200 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 2.84s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.0s (90.91 games/s); W/L/D 464/530/6; pair counts [122, 3, 283, 3, 89]; near-tie games 2; digest 40533950cc82
+[h2h] batch 2/2: 500 pairs / 1000 games in 11.0s (90.86 games/s); W/L/D 470/523/7; pair counts [127, 2, 267, 5, 99]; near-tie games 0; digest f00c3c8bc50d
+[h2h] cell 4/16: rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1005@15046550 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 1.12s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.1s (90.25 games/s); W/L/D 488/510/2; pair counts [109, 2, 290, 0, 99]; near-tie games 1; digest 7749c3f9444a
+[h2h] batch 2/2: 500 pairs / 1000 games in 12.7s (79.01 games/s); W/L/D 493/501/6; pair counts [115, 2, 269, 4, 110]; near-tie games 0; digest 58dd177b0bfa
+[h2h] cell 5/16: rb_x5ab_fm_s1003@15047738 vs rb_x5ab_blob_s1004@15047200 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 2.99s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.7s (85.31 games/s); W/L/D 505/486/9; pair counts [104, 3, 275, 6, 112]; near-tie games 1; digest a7fba525b88c
+[h2h] batch 2/2: 500 pairs / 1000 games in 11.9s (84.38 games/s); W/L/D 495/500/5; pair counts [104, 0, 292, 5, 99]; near-tie games 0; digest 97bbcbdce794
+[h2h] cell 6/16: rb_x5ab_fm_s1003@15047738 vs rb_x5ab_blob_s1005@15046550 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 1.11s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.1s (89.98 games/s); W/L/D 490/506/4; pair counts [105, 2, 294, 2, 97]; near-tie games 0; digest 65a0bee54185
+[h2h] batch 2/2: 500 pairs / 1000 games in 15.6s (63.96 games/s); W/L/D 498/493/9; pair counts [103, 3, 285, 4, 105]; near-tie games 2; digest 2438d203c4fe
+[h2h] cell 7/16: rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 6.63s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.0s (99.72 games/s); W/L/D 480/515/5; pair counts [120, 3, 273, 0, 104]; near-tie games 0; digest 298432151c41
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.6s (94.33 games/s); W/L/D 494/498/8; pair counts [106, 5, 281, 3, 105]; near-tie games 0; digest 2f5bc08f0b1b
+[h2h] cell 8/16: rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 2.77s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.2s (98.07 games/s); W/L/D 512/486/2; pair counts [105, 1, 275, 1, 118]; near-tie games 0; digest bb7f03c765de
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.9s (100.63 games/s); W/L/D 503/489/8; pair counts [103, 4, 280, 2, 111]; near-tie games 1; digest 219a6b737d20
+[h2h] cell 9/16: rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 2.74s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.5s (95.42 games/s); W/L/D 483/509/8; pair counts [109, 2, 289, 6, 94]; near-tie games 2; digest ec1cc175f1f6
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.2s (98.25 games/s); W/L/D 492/499/9; pair counts [110, 6, 273, 3, 108]; near-tie games 3; digest 91675e52b131
+[h2h] cell 10/16: rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1004@15047200 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 2.70s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.8s (92.58 games/s); W/L/D 479/507/14; pair counts [117, 6, 267, 8, 102]; near-tie games 0; digest 84364023d7ec
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.5s (95.48 games/s); W/L/D 468/519/13; pair counts [116, 7, 281, 4, 92]; near-tie games 1; digest 3b94efb134b9
+[h2h] cell 11/16: rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1005@15046550 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 2.69s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.7s (115.20 games/s); W/L/D 512/484/4; pair counts [97, 3, 287, 1, 112]; near-tie games 0; digest 7cfe2036bef6
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.9s (112.52 games/s); W/L/D 472/525/3; pair counts [124, 2, 275, 1, 98]; near-tie games 1; digest 95d3d8add1ca
+[h2h] cell 12/16: rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 4.46s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.3s (97.54 games/s); W/L/D 492/504/4; pair counts [109, 1, 285, 3, 102]; near-tie games 1; digest 7d4274019794
+[h2h] batch 2/2: 500 pairs / 1000 games in 13.3s (74.97 games/s); W/L/D 495/498/7; pair counts [111, 3, 273, 4, 109]; near-tie games 0; digest df1b4eff81fc
+[h2h] cell 13/16: rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 2.71s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.6s (86.09 games/s); W/L/D 508/480/12; pair counts [97, 5, 283, 3, 112]; near-tie games 2; digest 7af462f242b4
+[h2h] batch 2/2: 500 pairs / 1000 games in 11.4s (87.63 games/s); W/L/D 535/459/6; pair counts [88, 2, 281, 4, 125]; near-tie games 3; digest 2cda65a4393f
+[h2h] cell 14/16: rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 2.72s
+[h2h] batch 1/2: 500 pairs / 1000 games in 12.5s (80.18 games/s); W/L/D 510/487/3; pair counts [106, 1, 274, 2, 117]; near-tie games 0; digest 8e5c5b48fb8f
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.3s (97.38 games/s); W/L/D 508/484/8; pair counts [103, 5, 273, 3, 116]; near-tie games 3; digest 40db19cf8bdf
+[h2h] cell 15/16: rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1004@15047200 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 2.69s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.9s (84.25 games/s); W/L/D 496/496/8; pair counts [112, 2, 270, 6, 110]; near-tie games 1; digest 1b6bf91bfe99
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.2s (98.32 games/s); W/L/D 504/489/7; pair counts [104, 3, 278, 4, 111]; near-tie games 0; digest 6bc755197d51
+[h2h] cell 16/16: rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1005@15046550 — 2 batch(es) to play, 0 recorded; request x5ab_look2_steps; swap 2.68s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.4s (95.99 games/s); W/L/D 499/495/6; pair counts [97, 4, 297, 2, 100]; near-tie games 2; digest dcc9425c8659
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.8s (101.68 games/s); W/L/D 497/498/5; pair counts [117, 1, 264, 2, 116]; near-tie games 3; digest d221ce9fdb8b
+rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1004@15047200: score 45.02% [42.93, 47.12] (pair-clustered 95%), SE 1.067 pp over 1000 pairs / 2000 games; W/L/D 894/1093/13; pentanomial [280, 7, 527, 4, 182]; 89.03 games/s
+rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1005@15046550: score 45.67% [43.59, 47.76] (pair-clustered 95%), SE 1.064 pp over 1000 pairs / 2000 games; W/L/D 907/1080/13; pentanomial [271, 7, 532, 4, 186]; 94.22 games/s
+rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1004@15047200: score 47.02% [44.98, 49.07] (pair-clustered 95%), SE 1.045 pp over 1000 pairs / 2000 games; W/L/D 934/1053/13; pentanomial [249, 5, 550, 8, 188]; 90.88 games/s
+rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1005@15046550: score 49.25% [47.21, 51.29] (pair-clustered 95%), SE 1.043 pp over 1000 pairs / 2000 games; W/L/D 981/1011/8; pentanomial [224, 4, 559, 4, 209]; 84.26 games/s
+rb_x5ab_fm_s1003@15047738 vs rb_x5ab_blob_s1004@15047200: score 50.35% [48.34, 52.36] (pair-clustered 95%), SE 1.028 pp over 1000 pairs / 2000 games; W/L/D 1000/986/14; pentanomial [208, 3, 567, 11, 211]; 84.84 games/s
+rb_x5ab_fm_s1003@15047738 vs rb_x5ab_blob_s1005@15046550: score 49.73% [47.73, 51.72] (pair-clustered 95%), SE 1.016 pp over 1000 pairs / 2000 games; W/L/D 988/999/13; pentanomial [208, 5, 579, 6, 202]; 74.77 games/s
+rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1001@15047954: score 49.02% [46.98, 51.07] (pair-clustered 95%), SE 1.046 pp over 1000 pairs / 2000 games; W/L/D 974/1013/13; pentanomial [226, 8, 554, 3, 209]; 96.95 games/s
+rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1002@15047525: score 51.00% [48.95, 53.05] (pair-clustered 95%), SE 1.048 pp over 1000 pairs / 2000 games; W/L/D 1015/975/10; pentanomial [208, 5, 555, 3, 229]; 99.33 games/s
+rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1003@15047619: score 49.18% [47.15, 51.20] (pair-clustered 95%), SE 1.031 pp over 1000 pairs / 2000 games; W/L/D 975/1008/17; pentanomial [219, 8, 562, 9, 202]; 96.81 games/s
+rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1004@15047200: score 48.02% [45.99, 50.06] (pair-clustered 95%), SE 1.039 pp over 1000 pairs / 2000 games; W/L/D 947/1026/27; pentanomial [233, 13, 548, 12, 194]; 94.01 games/s
+rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1005@15046550: score 49.38% [47.34, 51.41] (pair-clustered 95%), SE 1.040 pp over 1000 pairs / 2000 games; W/L/D 984/1009/7; pentanomial [221, 5, 562, 2, 210]; 113.84 games/s
+rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1001@15047954: score 49.62% [47.58, 51.67] (pair-clustered 95%), SE 1.042 pp over 1000 pairs / 2000 games; W/L/D 987/1002/11; pentanomial [220, 4, 558, 7, 211]; 84.78 games/s
+rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1002@15047525: score 52.60% [50.58, 54.62] (pair-clustered 95%), SE 1.029 pp over 1000 pairs / 2000 games; W/L/D 1043/939/18; pentanomial [185, 7, 564, 7, 237]; 86.85 games/s
+rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1003@15047619: score 51.18% [49.11, 53.24] (pair-clustered 95%), SE 1.054 pp over 1000 pairs / 2000 games; W/L/D 1018/971/11; pentanomial [209, 6, 547, 5, 233]; 87.95 games/s
+rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1004@15047200: score 50.38% [48.32, 52.43] (pair-clustered 95%), SE 1.050 pp over 1000 pairs / 2000 games; W/L/D 1000/985/15; pentanomial [216, 5, 548, 10, 221]; 90.74 games/s
+rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1005@15046550: score 50.08% [48.04, 52.11] (pair-clustered 95%), SE 1.040 pp over 1000 pairs / 2000 games; W/L/D 996/993/11; pentanomial [214, 5, 561, 4, 216]; 98.76 games/s
+{"cells": [{"batches": 2, "d": 13, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 89.03133903133903, "l": 1093, "near_tie_decisions": 4, "near_tie_games": 4, "opponent": "rb_x5ab_blob_s1004@15047200", "opponent_sha256": "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4", "pair_counts": [280, 7, 527, 4, 182], "pair_sd": 0.3373814810622595, "pairs": 1000, "player": "rb_x5ab_fm_s1001@15047411", "player_sha256": "b4876c07f8b9ea40f6f485e1ae7a0b637b1d1a7069f447c38bff0650b3d49152", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.45025, "score_ci95": [0.4293493373334719, 0.47115066266652805], "se_pp": 1.0668939205177044, "w": 894, "wall_s": 22.464, "win_rate": 0.447}, {"batches": 2, "d": 13, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 94.2151874882231, "l": 1080, "near_tie_decisions": 2, "near_tie_games": 2, "opponent": "rb_x5ab_blob_s1005@15046550", "opponent_sha256": "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5", "pair_counts": [271, 7, 532, 4, 186], "pair_sd": 0.3364225284038178, "pairs": 1000, "player": "rb_x5ab_fm_s1001@15047411", "player_sha256": "b4876c07f8b9ea40f6f485e1ae7a0b637b1d1a7069f447c38bff0650b3d49152", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.45675, "score_ci95": [0.4359087441093393, 0.4775912558906607], "se_pp": 1.0638614459487552, "w": 907, "wall_s": 21.228, "win_rate": 0.4535}, {"batches": 2, "d": 13, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 90.88430428065072, "l": 1053, "near_tie_decisions": 2, "near_tie_games": 2, "opponent": "rb_x5ab_blob_s1004@15047200", "opponent_sha256": "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4", "pair_counts": [249, 5, 550, 8, 188], "pair_sd": 0.33058542651518114, "pairs": 1000, "player": "rb_x5ab_fm_s1002@15047763", "player_sha256": "dcd9bed6da824cd1bc65e582b72fafac9fe88b7675701da2560b447e5fa2be82", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.47025, "score_ci95": [0.4497703504937218, 0.4907296495062782], "se_pp": 1.0454029090461927, "w": 934, "wall_s": 22.006, "win_rate": 0.467}, {"batches": 2, "d": 8, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 84.26019548365352, "l": 1011, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_x5ab_blob_s1005@15046550", "opponent_sha256": "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5", "pair_counts": [224, 4, 559, 4, 209], "pair_sd": 0.3298523193075237, "pairs": 1000, "player": "rb_x5ab_fm_s1002@15047763", "player_sha256": "dcd9bed6da824cd1bc65e582b72fafac9fe88b7675701da2560b447e5fa2be82", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.4925, "score_ci95": [0.47206576622429897, 0.512934233775701], "se_pp": 1.0430846205009092, "w": 981, "wall_s": 23.736, "win_rate": 0.4905}, {"batches": 2, "d": 14, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 84.83922965979468, "l": 986, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_x5ab_blob_s1004@15047200", "opponent_sha256": "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4", "pair_counts": [208, 3, 567, 11, 211], "pair_sd": 0.3251437658459231, "pairs": 1000, "player": "rb_x5ab_fm_s1003@15047738", "player_sha256": "2f132c51141d1430681ca1a5d6f7cea70a9d8a5d3b9950d3fb1ff43e9976004c", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.5035, "score_ci95": [0.4833574594353145, 0.5236425405646854], "se_pp": 1.0281948670775811, "w": 1000, "wall_s": 23.574, "win_rate": 0.5}, {"batches": 2, "d": 13, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 74.76915024860742, "l": 999, "near_tie_decisions": 2, "near_tie_games": 2, "opponent": "rb_x5ab_blob_s1005@15046550", "opponent_sha256": "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5", "pair_counts": [208, 5, 579, 6, 202], "pair_sd": 0.32137706937602245, "pairs": 1000, "player": "rb_x5ab_fm_s1003@15047738", "player_sha256": "2f132c51141d1430681ca1a5d6f7cea70a9d8a5d3b9950d3fb1ff43e9976004c", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.49725, "score_ci95": [0.47734080494093245, 0.5171591950590676], "se_pp": 1.0162835269781794, "w": 988, "wall_s": 26.749000000000002, "win_rate": 0.494}, {"batches": 2, "d": 13, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 96.95089437200058, "l": 1013, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_x5ab_blob_s1001@15047954", "opponent_sha256": "5ff8fcae66fe5a2fd99198f5492153070ed5249cbdaad2283c062d4d94a8f4f9", "pair_counts": [226, 8, 554, 3, 209], "pair_sd": 0.33083513929053754, "pairs": 1000, "player": "rb_x5ab_fm_s1004@15047754", "player_sha256": "e9082b529666c7ad80702c555c73455caadf001b1932cfc3c602f6710c86679f", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.49025, "score_ci95": [0.46975488087616957, 0.5107451191238305], "se_pp": 1.0461925701771608, "w": 974, "wall_s": 20.629, "win_rate": 0.487}, {"batches": 2, "d": 10, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 99.33445912387008, "l": 975, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_x5ab_blob_s1002@15047525", "opponent_sha256": "ec6541ee0eddddc94d07d3f223a8bf1ce9e5f8346b53c88d24d981c96307556a", "pair_counts": [208, 5, 555, 3, 229], "pair_sd": 0.3313001052818423, "pairs": 1000, "player": "rb_x5ab_fm_s1004@15047754", "player_sha256": "e9082b529666c7ad80702c555c73455caadf001b1932cfc3c602f6710c86679f", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.51, "score_ci95": [0.4894760763985051, 0.5305239236014949], "se_pp": 1.047662921744202, "w": 1015, "wall_s": 20.134, "win_rate": 0.5075}, {"batches": 2, "d": 17, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 96.8147933004163, "l": 1008, "near_tie_decisions": 5, "near_tie_games": 5, "opponent": "rb_x5ab_blob_s1003@15047619", "opponent_sha256": "7b72986ba67b614b9f33ab7aa84d86dfe251b5f37e409d4a7ca33575cf23a243", "pair_counts": [219, 8, 562, 9, 202], "pair_sd": 0.32611468579057934, "pairs": 1000, "player": "rb_x5ab_fm_s1004@15047754", "player_sha256": "e9082b529666c7ad80702c555c73455caadf001b1932cfc3c602f6710c86679f", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.49175, "score_ci95": [0.47154731129032573, 0.5119526887096743], "se_pp": 1.0312651855283794, "w": 975, "wall_s": 20.658, "win_rate": 0.4875}, {"batches": 2, "d": 27, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 94.00705052878966, "l": 1026, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_x5ab_blob_s1004@15047200", "opponent_sha256": "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4", "pair_counts": [233, 13, 548, 12, 194], "pair_sd": 0.32867988677125953, "pairs": 1000, "player": "rb_x5ab_fm_s1004@15047754", "player_sha256": "e9082b529666c7ad80702c555c73455caadf001b1932cfc3c602f6710c86679f", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.48025, "score_ci95": [0.4598883980026129, 0.5006116019973872], "se_pp": 1.0393770632834265, "w": 947, "wall_s": 21.275, "win_rate": 0.4735}, {"batches": 2, "d": 7, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 113.8433515482696, "l": 1009, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_x5ab_blob_s1005@15046550", "opponent_sha256": "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5", "pair_counts": [221, 5, 562, 2, 210], "pair_sd": 0.32902385049445, "pairs": 1000, "player": "rb_x5ab_fm_s1004@15047754", "player_sha256": "e9082b529666c7ad80702c555c73455caadf001b1932cfc3c602f6710c86679f", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.49375, "score_ci95": [0.4733670895723894, 0.5141329104276107], "se_pp": 1.04046477208118, "w": 984, "wall_s": 17.567999999999998, "win_rate": 0.492}, {"batches": 2, "d": 11, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 84.7816871555744, "l": 1002, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_x5ab_blob_s1001@15047954", "opponent_sha256": "5ff8fcae66fe5a2fd99198f5492153070ed5249cbdaad2283c062d4d94a8f4f9", "pair_counts": [220, 4, 558, 7, 211], "pair_sd": 0.32944190606155355, "pairs": 1000, "player": "rb_x5ab_fm_s1005@15047263", "player_sha256": "0bc658e0418c6fe644384497bb74d8f195e5289d1e429e80b4624f05c2c22e3f", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.49625, "score_ci95": [0.47584119117880713, 0.5166588088211929], "se_pp": 1.0417867798617406, "w": 987, "wall_s": 23.59, "win_rate": 0.4935}, {"batches": 2, "d": 18, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 86.85456203587093, "l": 939, "near_tie_decisions": 5, "near_tie_games": 5, "opponent": "rb_x5ab_blob_s1002@15047525", "opponent_sha256": "ec6541ee0eddddc94d07d3f223a8bf1ce9e5f8346b53c88d24d981c96307556a", "pair_counts": [185, 7, 564, 7, 237], "pair_sd": 0.32527650515339224, "pairs": 1000, "player": "rb_x5ab_fm_s1005@15047263", "player_sha256": "0bc658e0418c6fe644384497bb74d8f195e5289d1e429e80b4624f05c2c22e3f", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.526, "score_ci95": [0.5058492362824631, 0.5461507637175369], "se_pp": 1.028614625624217, "w": 1043, "wall_s": 23.027, "win_rate": 0.5215}, {"batches": 2, "d": 11, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 87.94688008442901, "l": 971, "near_tie_decisions": 3, "near_tie_games": 3, "opponent": "rb_x5ab_blob_s1003@15047619", "opponent_sha256": "7b72986ba67b614b9f33ab7aa84d86dfe251b5f37e409d4a7ca33575cf23a243", "pair_counts": [209, 6, 547, 5, 233], "pair_sd": 0.3334075555504076, "pairs": 1000, "player": "rb_x5ab_fm_s1005@15047263", "player_sha256": "0bc658e0418c6fe644384497bb74d8f195e5289d1e429e80b4624f05c2c22e3f", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.51175, "score_ci95": [0.4910955206044791, 0.532404479395521], "se_pp": 1.0543272646484019, "w": 1018, "wall_s": 22.741, "win_rate": 0.509}, {"batches": 2, "d": 15, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 90.74410163339384, "l": 985, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_x5ab_blob_s1004@15047200", "opponent_sha256": "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4", "pair_counts": [216, 5, 548, 10, 221], "pair_sd": 0.3320899294185556, "pairs": 1000, "player": "rb_x5ab_fm_s1005@15047263", "player_sha256": "0bc658e0418c6fe644384497bb74d8f195e5289d1e429e80b4624f05c2c22e3f", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.50375, "score_ci95": [0.4831771470743604, 0.5243228529256396], "se_pp": 1.0501605649671921, "w": 1000, "wall_s": 22.04, "win_rate": 0.5}, {"batches": 2, "d": 11, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 98.75567845151095, "l": 993, "near_tie_decisions": 5, "near_tie_games": 5, "opponent": "rb_x5ab_blob_s1005@15046550", "opponent_sha256": "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5", "pair_counts": [214, 5, 561, 4, 216], "pair_sd": 0.32889224315512156, "pairs": 1000, "player": "rb_x5ab_fm_s1005@15047263", "player_sha256": "0bc658e0418c6fe644384497bb74d8f195e5289d1e429e80b4624f05c2c22e3f", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.50075, "score_ci95": [0.48037524260021736, 0.5211247573997827], "se_pp": 1.0400485931321075, "w": 996, "wall_s": 20.252000000000002, "win_rate": 0.498}], "engine": {"cells": [{"cell": "rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1004@15047200", "load_s": 1.114, "play_s": 22.528, "rows": 2, "set_cell_s": 0.0}, {"cell": "rb_x5ab_fm_s1001@15047411 vs rb_x5ab_blob_s1005@15046550", "load_s": 1.082, "play_s": 21.312, "rows": 2, "set_cell_s": 2.794}, {"cell": "rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1004@15047200", "load_s": 1.071, "play_s": 22.08, "rows": 2, "set_cell_s": 2.837}, {"cell": "rb_x5ab_fm_s1002@15047763 vs rb_x5ab_blob_s1005@15046550", "load_s": 1.107, "play_s": 23.805, "rows": 2, "set_cell_s": 1.122}, {"cell": "rb_x5ab_fm_s1003@15047738 vs rb_x5ab_blob_s1004@15047200", "load_s": 1.111, "play_s": 23.629, "rows": 2, "set_cell_s": 2.986}, {"cell": "rb_x5ab_fm_s1003@15047738 vs rb_x5ab_blob_s1005@15046550", "load_s": 1.086, "play_s": 26.82, "rows": 2, "set_cell_s": 1.107}, {"cell": "rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1001@15047954", "load_s": 1.111, "play_s": 20.708, "rows": 2, "set_cell_s": 6.628}, {"cell": "rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1002@15047525", "load_s": 1.104, "play_s": 20.21, "rows": 2, "set_cell_s": 2.77}, {"cell": "rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1003@15047619", "load_s": 1.116, "play_s": 20.742, "rows": 2, "set_cell_s": 2.738}, {"cell": "rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1004@15047200", "load_s": 1.102, "play_s": 21.331, "rows": 2, "set_cell_s": 2.696}, {"cell": "rb_x5ab_fm_s1004@15047754 vs rb_x5ab_blob_s1005@15046550", "load_s": 1.071, "play_s": 17.623, "rows": 2, "set_cell_s": 2.694}, {"cell": "rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1001@15047954", "load_s": 1.096, "play_s": 23.652, "rows": 2, "set_cell_s": 4.461}, {"cell": "rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1002@15047525", "load_s": 1.073, "play_s": 23.091, "rows": 2, "set_cell_s": 2.706}, {"cell": "rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1003@15047619", "load_s": 1.087, "play_s": 22.808, "rows": 2, "set_cell_s": 2.718}, {"cell": "rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1004@15047200", "load_s": 1.084, "play_s": 22.105, "rows": 2, "set_cell_s": 2.69}, {"cell": "rb_x5ab_fm_s1005@15047263 vs rb_x5ab_blob_s1005@15046550", "load_s": 1.041, "play_s": 20.315, "rows": 2, "set_cell_s": 2.681}], "decl": {"combos": [[0, 1]], "groups": [{"fingerprint": "c616b6e01416", "name": "eval", "roles": ["player"], "source": "rb_x5ab_fm_s1001@15047411"}, {"fingerprint": "0a4058df5283", "name": "eval_b", "roles": ["opponent"], "source": "rb_x5ab_blob_s1004@15047200"}]}, "preflight_s": 18.564, "startup_s": 465.861}}
+[mem_cap] done: gen3ai-capped-main.h2h-579470.scope exit 0 · peak 9.76 GB of cap 24.00 GB (41%) · not OOM-killed
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_wall", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 2559, "ts": "2026-10-06T14:33:30+00:00", "writer_id": "20261006T143330Z.0-goodlad_desktop-88430-ledger_cli"}
+[plan] wall: family x5ab_strength_wall; rows ['rb_x5ab_fm_s1001/checkpoints/checkpoint_12000021_steps.zip', 'rb_x5ab_fm_s1002/checkpoints/checkpoint_12000070_steps.zip', 'rb_x5ab_fm_s1003/checkpoints/checkpoint_12000119_steps.zip', 'rb_x5ab_fm_s1004/checkpoints/checkpoint_12000227_steps.zip', 'rb_x5ab_fm_s1005/checkpoints/checkpoint_12000192_steps.zip']
+[plan] wall: 25 cells in the 5 x 5 matrix = 9 reused from x5ab_look1_wall + 16 new under x5ab_look2_wall (0 already in the ledger, 0 at >= 1000 pairs; the driver's resume skips every recorded batch)
+=== 2026-10-06T14:34:27-07:00 x5ab_look2_wall: 16 cell(s) planned (/home/goodlad/.cache/gen3ai/x5look2/plan/wall_look2.json)
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-main.h2h-620593.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 16 cell(s) x 1000 pairs in batches of 500; 16 with batches to play (32 batch(es)), 0 already recorded; purpose ab, family x5ab_strength_wall, request x5ab_look2_wall under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 16 cell(s), 10 checkpoint(s) — 2 architecture(s): eval declared from rb_x5ab_fm_s1001@12000021 (slots ['player']); eval_b declared from rb_x5ab_blob_s1004@15047200 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 18.1s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a28a2889a4eb80b69/src/rust_env/target/release)
+🧊 [CompileCache] PRIVATE /home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_620601_lg35j7qd for this process (T2 graph) — no run declared a cache; deleted at exit [gen3_hermetic_compile_cache_v1]
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpry58l8iz/cuda_utils.c:5:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpry58l8iz/cuda_utils.c:1:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+split the reduction. Cut an issue to PyTorch if this is an
+
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpo4wee8w9/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpo4wee8w9/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp5ip5_1p1/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp5ip5_1p1/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmprr2r3724/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmprr2r3724/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpo5g7pv4b/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpo5g7pv4b/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmprz5w3rxv/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmprz5w3rxv/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpcom0v6mj/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpcom0v6mj/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp3tz0d9ky/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp3tz0d9ky/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+split the reduction. Cut an issue to PyTorch if this is an
+
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpgikt2hda/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpgikt2hda/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpe341lsau/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpe341lsau/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+split the reduction. Cut an issue to PyTorch if this is an
+
+  mask |= a_isnan and not b_isnan
+  mask |= a_isnan and not b_isnan
+  equal |= a_isnan and b_isnan
+  equal |= a_isnan and b_isnan
+split the reduction. Cut an issue to PyTorch if this is an
+
+  mask |= a_isnan and not b_isnan
+  mask |= a_isnan and not b_isnan
+  equal |= a_isnan and b_isnan
+  equal |= a_isnan and b_isnan
+[h2h] engine up in 436.4s: rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1004@15047200; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/16: rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1004@15047200 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.5s (95.20 games/s); W/L/D 378/621/1; pair counts [194, 0, 233, 1, 72]; near-tie games 0; digest f60c8926099b
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.9s (100.88 games/s); W/L/D 376/621/3; pair counts [185, 3, 248, 0, 64]; near-tie games 1; digest 3a19fea0c0c8
+[h2h] cell 2/16: rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1005@15046550 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 2.68s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.4s (105.95 games/s); W/L/D 413/583/4; pair counts [163, 3, 254, 1, 79]; near-tie games 0; digest 69904101a99e
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.3s (107.96 games/s); W/L/D 426/568/6; pair counts [150, 5, 263, 1, 81]; near-tie games 3; digest 4bc472f2c77e
+[h2h] cell 3/16: rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1004@15047200 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 2.84s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.5s (105.11 games/s); W/L/D 408/589/3; pair counts [164, 1, 260, 2, 73]; near-tie games 2; digest c2f7fa6c510d
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.6s (94.15 games/s); W/L/D 425/569/6; pair counts [157, 2, 253, 4, 84]; near-tie games 4; digest e9891ad8930c
+[h2h] cell 4/16: rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1005@15046550 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 1.09s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.0s (100.19 games/s); W/L/D 410/581/9; pair counts [149, 7, 276, 2, 66]; near-tie games 3; digest 3d933a22def5
+[h2h] batch 2/2: 500 pairs / 1000 games in 11.6s (86.06 games/s); W/L/D 432/561/7; pair counts [144, 3, 270, 4, 79]; near-tie games 2; digest 834095570841
+[h2h] cell 5/16: rb_x5ab_fm_s1003@12000119 vs rb_x5ab_blob_s1004@15047200 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 2.80s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.5s (105.53 games/s); W/L/D 433/560/7; pair counts [141, 5, 273, 2, 79]; near-tie games 2; digest f1b0c26fbcdb
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.8s (92.80 games/s); W/L/D 445/549/6; pair counts [138, 3, 270, 3, 86]; near-tie games 2; digest bef3d55451a8
+[h2h] cell 6/16: rb_x5ab_fm_s1003@12000119 vs rb_x5ab_blob_s1005@15046550 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 1.04s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.3s (107.93 games/s); W/L/D 465/530/5; pair counts [120, 3, 287, 2, 88]; near-tie games 0; digest ad1f20631da8
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.9s (101.31 games/s); W/L/D 471/519/10; pair counts [109, 9, 292, 1, 89]; near-tie games 0; digest e378848682ab
+[h2h] cell 7/16: rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 6.36s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.2s (98.07 games/s); W/L/D 424/571/5; pair counts [158, 3, 252, 2, 85]; near-tie games 2; digest 58c75f0d446a
+[h2h] batch 2/2: 500 pairs / 1000 games in 11.1s (90.39 games/s); W/L/D 421/576/3; pair counts [157, 3, 259, 0, 81]; near-tie games 3; digest a49005ef8ffb
+[h2h] cell 8/16: rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 2.63s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.6s (86.32 games/s); W/L/D 419/575/6; pair counts [152, 4, 267, 2, 75]; near-tie games 1; digest 45643b52657b
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.1s (98.54 games/s); W/L/D 437/557/6; pair counts [138, 4, 277, 2, 79]; near-tie games 1; digest 4a3bc851691c
+[h2h] cell 9/16: rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 2.65s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.8s (102.18 games/s); W/L/D 438/555/7; pair counts [146, 2, 261, 5, 86]; near-tie games 2; digest d10ac0874f42
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.9s (101.37 games/s); W/L/D 437/555/8; pair counts [144, 5, 262, 3, 86]; near-tie games 2; digest ef00eaa87df0
+[h2h] cell 10/16: rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1004@15047200 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 2.66s
+[h2h] batch 1/2: 500 pairs / 1000 games in 12.7s (79.00 games/s); W/L/D 394/598/8; pair counts [168, 5, 257, 3, 67]; near-tie games 3; digest 1e3d02d9bfe6
+[h2h] batch 2/2: 500 pairs / 1000 games in 11.7s (85.83 games/s); W/L/D 416/574/10; pair counts [148, 7, 271, 3, 71]; near-tie games 1; digest 9425b56816d9
+[h2h] cell 11/16: rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1005@15046550 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 2.65s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.6s (116.18 games/s); W/L/D 444/550/6; pair counts [149, 4, 248, 2, 97]; near-tie games 3; digest 98ca04ca02b2
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.0s (99.65 games/s); W/L/D 446/551/3; pair counts [137, 0, 277, 3, 83]; near-tie games 1; digest 17789f673eba
+[h2h] cell 12/16: rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1001@15047954 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 4.40s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.8s (92.37 games/s); W/L/D 424/571/5; pair counts [144, 3, 280, 2, 71]; near-tie games 2; digest 2104fa9890c0
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.8s (101.98 games/s); W/L/D 449/547/4; pair counts [143, 2, 259, 2, 94]; near-tie games 0; digest 671d2a1c1333
+[h2h] cell 13/16: rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1002@15047525 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 4.75s
+[h2h] batch 1/2: 500 pairs / 1000 games in 11.9s (84.29 games/s); W/L/D 450/543/7; pair counts [139, 4, 261, 3, 93]; near-tie games 3; digest b123fec3b4e1
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.9s (101.45 games/s); W/L/D 434/564/2; pair counts [142, 2, 278, 0, 78]; near-tie games 1; digest a0f2a3e2abd8
+[h2h] cell 14/16: rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1003@15047619 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 2.74s
+[h2h] batch 1/2: 500 pairs / 1000 games in 12.0s (83.31 games/s); W/L/D 447/550/3; pair counts [138, 3, 271, 0, 88]; near-tie games 0; digest 16aa34ebbf1c
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.8s (101.65 games/s); W/L/D 444/552/4; pair counts [140, 3, 269, 1, 87]; near-tie games 1; digest a8dbb534b244
+[h2h] cell 15/16: rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1004@15047200 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 2.67s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.5s (94.79 games/s); W/L/D 395/599/6; pair counts [172, 3, 252, 3, 70]; near-tie games 1; digest ed0f3377e240
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.7s (115.04 games/s); W/L/D 400/597/3; pair counts [167, 1, 262, 2, 68]; near-tie games 2; digest 73ab11fc3fce
+[h2h] cell 16/16: rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1005@15046550 — 2 batch(es) to play, 0 recorded; request x5ab_look2_wall; swap 2.70s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.2s (97.69 games/s); W/L/D 455/538/7; pair counts [124, 6, 284, 1, 85]; near-tie games 0; digest 0b9f2a240dfe
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.7s (114.57 games/s); W/L/D 434/562/4; pair counts [147, 2, 266, 2, 83]; near-tie games 2; digest 96ea5527af04
+rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1004@15047200: score 37.80% [35.71, 39.89] (pair-clustered 95%), SE 1.069 pp over 1000 pairs / 2000 games; W/L/D 754/1242/4; pentanomial [379, 3, 481, 1, 136]; 97.96 games/s
+rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1005@15046550: score 42.20% [40.12, 44.28] (pair-clustered 95%), SE 1.063 pp over 1000 pairs / 2000 games; W/L/D 839/1151/10; pentanomial [313, 8, 517, 2, 160]; 106.95 games/s
+rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1004@15047200: score 41.88% [39.79, 43.96] (pair-clustered 95%), SE 1.066 pp over 1000 pairs / 2000 games; W/L/D 833/1158/9; pentanomial [321, 3, 513, 6, 157]; 99.33 games/s
+rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1005@15046550: score 42.50% [40.49, 44.51] (pair-clustered 95%), SE 1.025 pp over 1000 pairs / 2000 games; W/L/D 842/1142/16; pentanomial [293, 10, 546, 6, 145]; 92.59 games/s
+rb_x5ab_fm_s1003@12000119 vs rb_x5ab_blob_s1004@15047200: score 44.22% [42.18, 46.27] (pair-clustered 95%), SE 1.042 pp over 1000 pairs / 2000 games; W/L/D 878/1109/13; pentanomial [279, 8, 543, 5, 165]; 98.76 games/s
+rb_x5ab_fm_s1003@12000119 vs rb_x5ab_blob_s1005@15046550: score 47.17% [45.20, 49.15] (pair-clustered 95%), SE 1.009 pp over 1000 pairs / 2000 games; W/L/D 936/1049/15; pentanomial [229, 12, 579, 3, 177]; 104.52 games/s
+rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1001@15047954: score 42.45% [40.35, 44.55] (pair-clustered 95%), SE 1.073 pp over 1000 pairs / 2000 games; W/L/D 845/1147/8; pentanomial [315, 6, 511, 2, 166]; 94.07 games/s
+rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1002@15047525: score 43.10% [41.07, 45.13] (pair-clustered 95%), SE 1.035 pp over 1000 pairs / 2000 games; W/L/D 856/1132/12; pentanomial [290, 8, 544, 4, 154]; 92.03 games/s
+rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1003@15047619: score 44.12% [42.04, 46.21] (pair-clustered 95%), SE 1.063 pp over 1000 pairs / 2000 games; W/L/D 875/1110/15; pentanomial [290, 7, 523, 8, 172]; 101.78 games/s
+rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1004@15047200: score 40.95% [38.93, 42.97] (pair-clustered 95%), SE 1.032 pp over 1000 pairs / 2000 games; W/L/D 810/1172/18; pentanomial [316, 12, 528, 6, 138]; 82.28 games/s
+rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1005@15046550: score 44.73% [42.63, 46.82] (pair-clustered 95%), SE 1.070 pp over 1000 pairs / 2000 games; W/L/D 890/1101/9; pentanomial [286, 4, 525, 5, 180]; 107.28 games/s
+rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1001@15047954: score 43.88% [41.82, 45.93] (pair-clustered 95%), SE 1.048 pp over 1000 pairs / 2000 games; W/L/D 873/1118/9; pentanomial [287, 5, 539, 4, 165]; 96.94 games/s
+rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1002@15047525: score 44.42% [42.37, 46.48] (pair-clustered 95%), SE 1.051 pp over 1000 pairs / 2000 games; W/L/D 884/1107/9; pentanomial [281, 6, 539, 3, 171]; 92.08 games/s
+rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1003@15047619: score 44.73% [42.66, 46.79] (pair-clustered 95%), SE 1.054 pp over 1000 pairs / 2000 games; W/L/D 891/1102/7; pentanomial [278, 6, 540, 1, 175]; 91.57 games/s
+rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1004@15047200: score 39.98% [37.92, 42.03] (pair-clustered 95%), SE 1.048 pp over 1000 pairs / 2000 games; W/L/D 795/1196/9; pentanomial [339, 4, 514, 5, 138]; 103.93 games/s
+rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1005@15046550: score 44.73% [42.69, 46.76] (pair-clustered 95%), SE 1.038 pp over 1000 pairs / 2000 games; W/L/D 889/1100/11; pentanomial [271, 8, 550, 3, 168]; 105.46 games/s
+{"cells": [{"batches": 2, "d": 4, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 97.96238244514106, "l": 1242, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_x5ab_blob_s1004@15047200", "opponent_sha256": "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4", "pair_counts": [379, 3, 481, 1, 136], "pair_sd": 0.3379796299042743, "pairs": 1000, "player": "rb_x5ab_fm_s1001@12000021", "player_sha256": "844057ac830c96b20c987bdcbcde955c717bbad32513cc8e4de99519095b452d", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.378, "score_ci95": [0.35706228222561015, 0.39893771777438986], "se_pp": 1.0687854332382634, "w": 754, "wall_s": 20.416, "win_rate": 0.377}, {"batches": 2, "d": 10, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 106.94615261215978, "l": 1151, "near_tie_decisions": 3, "near_tie_games": 3, "opponent": "rb_x5ab_blob_s1005@15046550", "opponent_sha256": "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5", "pair_counts": [313, 8, 517, 2, 160], "pair_sd": 0.3360117615559073, "pairs": 1000, "player": "rb_x5ab_fm_s1001@12000021", "player_sha256": "844057ac830c96b20c987bdcbcde955c717bbad32513cc8e4de99519095b452d", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.422, "score_ci95": [0.40118419096936175, 0.4428158090306382], "se_pp": 1.06256248712207, "w": 839, "wall_s": 18.701, "win_rate": 0.4195}, {"batches": 2, "d": 9, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 99.32952570151478, "l": 1158, "near_tie_decisions": 6, "near_tie_games": 6, "opponent": "rb_x5ab_blob_s1004@15047200", "opponent_sha256": "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4", "pair_counts": [321, 3, 513, 6, 157], "pair_sd": 0.337008177960138, "pairs": 1000, "player": "rb_x5ab_fm_s1002@12000070", "player_sha256": "731a01813f63d1b0e707b27c1148df0ff2a2e8e29a6af00b86f8246cf5bf7d5b", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.41875, "score_ci95": [0.39787246332777737, 0.43962753667222265], "se_pp": 1.065713432457394, "w": 833, "wall_s": 20.134999999999998, "win_rate": 0.4165}, {"batches": 2, "d": 16, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 92.58830609693996, "l": 1142, "near_tie_decisions": 6, "near_tie_games": 5, "opponent": "rb_x5ab_blob_s1005@15046550", "opponent_sha256": "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5", "pair_counts": [293, 10, 546, 6, 145], "pair_sd": 0.32400614188619936, "pairs": 1000, "player": "rb_x5ab_fm_s1002@12000070", "player_sha256": "731a01813f63d1b0e707b27c1148df0ff2a2e8e29a6af00b86f8246cf5bf7d5b", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.425, "score_ci95": [0.40492793483470124, 0.44507206516529874], "se_pp": 1.0245973842440743, "w": 842, "wall_s": 21.601, "win_rate": 0.421}, {"batches": 2, "d": 13, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 98.75567845151095, "l": 1109, "near_tie_decisions": 4, "near_tie_games": 4, "opponent": "rb_x5ab_blob_s1004@15047200", "opponent_sha256": "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4", "pair_counts": [279, 8, 543, 5, 165], "pair_sd": 0.32952393467474184, "pairs": 1000, "player": "rb_x5ab_fm_s1003@12000119", "player_sha256": "2cf7e1ae064672bd6fb0954e0b0a714b25006d65164893afb6251509b0e9ece9", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.44225, "score_ci95": [0.4218361095354168, 0.46266389046458317], "se_pp": 1.0420461771127205, "w": 878, "wall_s": 20.252000000000002, "win_rate": 0.439}, {"batches": 2, "d": 15, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 104.52051215050955, "l": 1049, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_x5ab_blob_s1005@15046550", "opponent_sha256": "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5", "pair_counts": [229, 12, 579, 3, 177], "pair_sd": 0.3189689305852197, "pairs": 1000, "player": "rb_x5ab_fm_s1003@12000119", "player_sha256": "2cf7e1ae064672bd6fb0954e0b0a714b25006d65164893afb6251509b0e9ece9", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.47175, "score_ci95": [0.4519899882818861, 0.4915100117181139], "se_pp": 1.0086683234774387, "w": 936, "wall_s": 19.134999999999998, "win_rate": 0.468}, {"batches": 2, "d": 8, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 94.06895254221345, "l": 1147, "near_tie_decisions": 5, "near_tie_games": 5, "opponent": "rb_x5ab_blob_s1001@15047954", "opponent_sha256": "5ff8fcae66fe5a2fd99198f5492153070ed5249cbdaad2283c062d4d94a8f4f9", "pair_counts": [315, 6, 511, 2, 166], "pair_sd": 0.3393595658220273, "pairs": 1000, "player": "rb_x5ab_fm_s1004@12000227", "player_sha256": "94dc025265633685a79e501d1d9a2624179ed6413364d17a4495b203cec7cd31", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.4245, "score_ci95": [0.4034767956866704, 0.4455232043133296], "se_pp": 1.0731491737634375, "w": 845, "wall_s": 21.261, "win_rate": 0.4225}, {"batches": 2, "d": 12, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 92.02595131827175, "l": 1132, "near_tie_decisions": 2, "near_tie_games": 2, "opponent": "rb_x5ab_blob_s1002@15047525", "opponent_sha256": "ec6541ee0eddddc94d07d3f223a8bf1ce9e5f8346b53c88d24d981c96307556a", "pair_counts": [290, 8, 544, 4, 154], "pair_sd": 0.32725539887998195, "pairs": 1000, "player": "rb_x5ab_fm_s1004@12000227", "player_sha256": "94dc025265633685a79e501d1d9a2624179ed6413364d17a4495b203cec7cd31", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.431, "score_ci95": [0.41072664452045493, 0.45127335547954506], "se_pp": 1.034872437047659, "w": 856, "wall_s": 21.733, "win_rate": 0.428}, {"batches": 2, "d": 15, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 101.77599104371279, "l": 1110, "near_tie_decisions": 4, "near_tie_games": 4, "opponent": "rb_x5ab_blob_s1003@15047619", "opponent_sha256": "7b72986ba67b614b9f33ab7aa84d86dfe251b5f37e409d4a7ca33575cf23a243", "pair_counts": [290, 7, 523, 8, 172], "pair_sd": 0.3363020019811606, "pairs": 1000, "player": "rb_x5ab_fm_s1004@12000227", "player_sha256": "94dc025265633685a79e501d1d9a2624179ed6413364d17a4495b203cec7cd31", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.44125, "score_ci95": [0.4204162106783235, 0.46208378932167643], "se_pp": 1.0634803079349264, "w": 875, "wall_s": 19.651, "win_rate": 0.4375}, {"batches": 2, "d": 18, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 82.27743952608195, "l": 1172, "near_tie_decisions": 4, "near_tie_games": 4, "opponent": "rb_x5ab_blob_s1004@15047200", "opponent_sha256": "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4", "pair_counts": [316, 12, 528, 6, 138], "pair_sd": 0.32640663487633226, "pairs": 1000, "player": "rb_x5ab_fm_s1004@12000227", "player_sha256": "94dc025265633685a79e501d1d9a2624179ed6413364d17a4495b203cec7cd31", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.4095, "score_ci95": [0.3892792251483777, 0.42972077485162224], "se_pp": 1.0321884096001626, "w": 810, "wall_s": 24.308, "win_rate": 0.405}, {"batches": 2, "d": 9, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 107.284626113078, "l": 1101, "near_tie_decisions": 4, "near_tie_games": 4, "opponent": "rb_x5ab_blob_s1005@15046550", "opponent_sha256": "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5", "pair_counts": [286, 4, 525, 5, 180], "pair_sd": 0.33822231125671154, "pairs": 1000, "player": "rb_x5ab_fm_s1004@12000227", "player_sha256": "94dc025265633685a79e501d1d9a2624179ed6413364d17a4495b203cec7cd31", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.44725, "score_ci95": [0.426297248202205, 0.46820275179779497], "se_pp": 1.0695528590576149, "w": 890, "wall_s": 18.642, "win_rate": 0.445}, {"batches": 2, "d": 9, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 96.93679720822026, "l": 1118, "near_tie_decisions": 2, "near_tie_games": 2, "opponent": "rb_x5ab_blob_s1001@15047954", "opponent_sha256": "5ff8fcae66fe5a2fd99198f5492153070ed5249cbdaad2283c062d4d94a8f4f9", "pair_counts": [287, 5, 539, 4, 165], "pair_sd": 0.33154314705383126, "pairs": 1000, "player": "rb_x5ab_fm_s1005@12000192", "player_sha256": "b672772f5ab7fc5edb830b0443cb91af7138d33134cfcfc66eed66933d48a6b1", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.43875, "score_ci95": [0.418211020047237, 0.45928897995276297], "se_pp": 1.0484314873102503, "w": 873, "wall_s": 20.631999999999998, "win_rate": 0.4365}, {"batches": 2, "d": 9, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 92.08103130755065, "l": 1107, "near_tie_decisions": 4, "near_tie_games": 4, "opponent": "rb_x5ab_blob_s1002@15047525", "opponent_sha256": "ec6541ee0eddddc94d07d3f223a8bf1ce9e5f8346b53c88d24d981c96307556a", "pair_counts": [281, 6, 539, 3, 171], "pair_sd": 0.33251316139741366, "pairs": 1000, "player": "rb_x5ab_fm_s1005@12000192", "player_sha256": "b672772f5ab7fc5edb830b0443cb91af7138d33134cfcfc66eed66933d48a6b1", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.44425, "score_ci95": [0.4236509280039124, 0.46484907199608755], "se_pp": 1.051498941999004, "w": 884, "wall_s": 21.72, "win_rate": 0.442}, {"batches": 2, "d": 7, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 91.56670634557275, "l": 1102, "near_tie_decisions": 1, "near_tie_games": 1, "opponent": "rb_x5ab_blob_s1003@15047619", "opponent_sha256": "7b72986ba67b614b9f33ab7aa84d86dfe251b5f37e409d4a7ca33575cf23a243", "pair_counts": [278, 6, 540, 1, 175], "pair_sd": 0.3331905662731967, "pairs": 1000, "player": "rb_x5ab_fm_s1005@12000192", "player_sha256": "b672772f5ab7fc5edb830b0443cb91af7138d33134cfcfc66eed66933d48a6b1", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.44725, "score_ci95": [0.4266089630129685, 0.46789103698703144], "se_pp": 1.0536410843045816, "w": 891, "wall_s": 21.842, "win_rate": 0.4455}, {"batches": 2, "d": 9, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 103.93389804084602, "l": 1196, "near_tie_decisions": 3, "near_tie_games": 3, "opponent": "rb_x5ab_blob_s1004@15047200", "opponent_sha256": "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4", "pair_counts": [339, 4, 514, 5, 138], "pair_sd": 0.3314699229339063, "pairs": 1000, "player": "rb_x5ab_fm_s1005@12000192", "player_sha256": "b672772f5ab7fc5edb830b0443cb91af7138d33134cfcfc66eed66933d48a6b1", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.39975, "score_ci95": [0.37921555625540343, 0.42028444374459656], "se_pp": 1.0481999323116264, "w": 795, "wall_s": 19.243000000000002, "win_rate": 0.3975}, {"batches": 2, "d": 11, "devices": ["cuda/graph"], "games": 2000, "games_per_s": 105.45742156604271, "l": 1100, "near_tie_decisions": 2, "near_tie_games": 2, "opponent": "rb_x5ab_blob_s1005@15046550", "opponent_sha256": "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5", "pair_counts": [271, 8, 550, 3, 168], "pair_sd": 0.3282722958158367, "pairs": 1000, "player": "rb_x5ab_fm_s1005@12000192", "player_sha256": "b672772f5ab7fc5edb830b0443cb91af7138d33134cfcfc66eed66933d48a6b1", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.44725, "score_ci95": [0.4269136481172261, 0.46758635188277387], "se_pp": 1.0380881475106063, "w": 889, "wall_s": 18.965, "win_rate": 0.4445}], "engine": {"cells": [{"cell": "rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1004@15047200", "load_s": 1.062, "play_s": 20.481, "rows": 2, "set_cell_s": 0.0}, {"cell": "rb_x5ab_fm_s1001@12000021 vs rb_x5ab_blob_s1005@15046550", "load_s": 1.048, "play_s": 18.765, "rows": 2, "set_cell_s": 2.681}, {"cell": "rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1004@15047200", "load_s": 1.052, "play_s": 20.201, "rows": 2, "set_cell_s": 2.838}, {"cell": "rb_x5ab_fm_s1002@12000070 vs rb_x5ab_blob_s1005@15046550", "load_s": 1.063, "play_s": 21.67, "rows": 2, "set_cell_s": 1.091}, {"cell": "rb_x5ab_fm_s1003@12000119 vs rb_x5ab_blob_s1004@15047200", "load_s": 1.065, "play_s": 20.327, "rows": 2, "set_cell_s": 2.802}, {"cell": "rb_x5ab_fm_s1003@12000119 vs rb_x5ab_blob_s1005@15046550", "load_s": 1.061, "play_s": 19.199, "rows": 2, "set_cell_s": 1.044}, {"cell": "rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1001@15047954", "load_s": 1.077, "play_s": 21.325, "rows": 2, "set_cell_s": 6.365}, {"cell": "rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1002@15047525", "load_s": 1.066, "play_s": 21.795, "rows": 2, "set_cell_s": 2.628}, {"cell": "rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1003@15047619", "load_s": 1.077, "play_s": 19.718, "rows": 2, "set_cell_s": 2.649}, {"cell": "rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1004@15047200", "load_s": 1.085, "play_s": 24.396, "rows": 2, "set_cell_s": 2.665}, {"cell": "rb_x5ab_fm_s1004@12000227 vs rb_x5ab_blob_s1005@15046550", "load_s": 1.076, "play_s": 18.697, "rows": 2, "set_cell_s": 2.652}, {"cell": "rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1001@15047954", "load_s": 1.068, "play_s": 20.697, "rows": 2, "set_cell_s": 4.398}, {"cell": "rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1002@15047525", "load_s": 1.084, "play_s": 21.786, "rows": 2, "set_cell_s": 4.75}, {"cell": "rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1003@15047619", "load_s": 1.099, "play_s": 21.911, "rows": 2, "set_cell_s": 2.744}, {"cell": "rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1004@15047200", "load_s": 1.084, "play_s": 19.317, "rows": 2, "set_cell_s": 2.667}, {"cell": "rb_x5ab_fm_s1005@12000192 vs rb_x5ab_blob_s1005@15046550", "load_s": 1.059, "play_s": 19.02, "rows": 2, "set_cell_s": 2.705}], "decl": {"combos": [[0, 1]], "groups": [{"fingerprint": "c616b6e01416", "name": "eval", "roles": ["player"], "source": "rb_x5ab_fm_s1001@12000021"}, {"fingerprint": "0a4058df5283", "name": "eval_b", "roles": ["opponent"], "source": "rb_x5ab_blob_s1004@15047200"}]}, "preflight_s": 18.083, "startup_s": 436.441}}
+[mem_cap] done: gen3ai-capped-main.h2h-620593.scope exit 0 · peak 9.74 GB of cap 24.00 GB (41%) · not OOM-killed
+=== 2026-10-06T14:48:30-07:00 DONE

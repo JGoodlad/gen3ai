@@ -1305,18 +1305,18 @@ unplayed ACTION. [MEASURED · NOT DETECTED at the action level · one checkpoint
 [`../endstate/design_q_head.md`](../endstate/design_q_head.md) §5.0 (`006156b7`)]
 
 
-### 4.5 The X5 belief A/B at look 1, and the value of perfect information (2026-10-06)
+### 4.5 The X5 belief A/B at look 2, and the value of perfect information (2026-10-06)
 
-**Hypothesis tokens (concrete guesses of the opponent's hidden Pokémon) vs the blob belief: NOT shown non-inferior at matched steps, and INFERIOR per GPU-hour.** Three seeds per arm, mirrored head-to-head cross, δ = 3.5 pp:
+**Hypothesis tokens (concrete guesses of the opponent's hidden Pokémon) vs the blob belief: NOT YET shown non-inferior at matched steps (t 2.441 against look 2's boundary 2.683), and INFERIOR per GPU-hour.** Five seeds per arm (look 2), mirrored head-to-head cross, δ = 3.5 pp:
 
 | read | Δ̂ [95 %] | outcome |
 |---|---|---|
-| matched steps (15M vs 15M) | −1.31 pp [−6.09, +3.46] | CONTINUE (look 2 trains fixed_mass seeds 1004–1005) |
-| matched wall-time (fixed_mass at 12M, s = +16.7 %) | −6.78 pp [−9.28, −4.28] | FUTILITY STOP (non-binding), INFERIOR |
+| matched steps (15M vs 15M) | −0.97 pp [−3.36, +1.41] (look 1: −1.31 [−6.09, +3.46]) | CONTINUE (look 3 adds seeds 1006–1008 per arm) |
+| matched wall-time (fixed_mass at 12M, s = +16.7 %) | −6.89 pp [−8.88, −4.90] (look 1: −6.78) | FUTILITY STOP (non-binding), INFERIOR |
 
-The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the representation.
+The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the representation. Purpose metric (1) is tested only after a NON-INFERIOR matched-steps verdict, so it has not been tested.
 
-[NOT DETECTED (steps) / DETECTED (wall-time, INFERIOR) · ledger 2026-10-06 *X5 A/B LOOK 1 read* (`662151d1`) · meas: [`measurements/x5ab_look1_2026-10-06/`](measurements/x5ab_look1_2026-10-06/)]
+[NOT DETECTED (steps) / DETECTED (wall-time, INFERIOR) · ledger 2026-10-06 *X5 A/B LOOK 2 read* (supersedes the LOOK 1 read, `662151d1`) · meas: [`measurements/x5ab_look2_2026-10-06/`](measurements/x5ab_look2_2026-10-06/), [`measurements/x5ab_look1_2026-10-06/`](measurements/x5ab_look1_2026-10-06/)]
 
 **Perfect information about the opponent's team buys little strength at this budget.** A network TOLD the opponent's species beats blob by **+2.44 pp [+0.31, +4.57]**; told the whole set, **+2.18 pp [+0.53, +3.84]**; the set adds nothing measurable over the species (−0.26 [−1.92, +1.40]). Both C's are real (the intervals exclude 0) but sit below the 4.57 pp replicate floor. So the registered reading applies: belief representation has little strength leverage at 15M / this recipe. It bounds what ANY belief improvement (X5 included) can buy in strength here. The tokens' case therefore rests on observability and search enablement, not on strength.
 

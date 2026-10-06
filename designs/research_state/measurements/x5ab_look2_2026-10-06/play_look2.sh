@@ -41,11 +41,16 @@ FAMILY_COMMIT=bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7
 RULE="design_x5_belief_tokens.md §7.4 (+§7.6-§7.9 Amendments 2-5): cross t=(Δ̂+3.5)/√V̂, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross"
 
 # Look 1 was played at bcb0296c. Refuse to play look 2 on an engine path that changed since, unless consented.
-# REVIEWED (not on the play path): 19bdf034 = snapshot.py's save_model_snapshot keeps init_num_threads (a SAVE-time
-# metadata field; h2h never saves a model).
-REVIEWED="19bdf034"
-ALL=$(git log --format=%h --abbrev=8 "$FAMILY_COMMIT"..HEAD -- src/main/h2h src/rust_env src/rust_sim \
-      src/utils/rust_env src/agents/model src/agents/observation src/agents/training/eval_ledger data 2>&1)
+# The scope is ALL of src/ and data/ (any import the engine reaches). REVIEWED (2026-10-06, before the GPU play):
+#   19bdf034  snapshot.py save_model_snapshot keeps init_num_threads; single_thread_build yields an int — SAVE-time /
+#             fresh-build only; h2h never saves or builds a model.
+#   131f3412  play.py: plan_edge's spec now comes from edge_spec(); without a consumer (many.py passes none) it
+#             serialises byte-identically to the recorded look-1 spec {"batch_pairs":500,"producer":"h2h",
+#             "schedule_seed":0} (checked with schema.canonical); no game-path function changed; eval_ledger gains
+#             read_decisions / append_decision(unique=) / the plateau verify rule — additive, not on the row path.
+#   96eedfb5, 54f3bb64, e1e81456  ops scripts / gpu_lease acquire / their tests — not imported by h2h.
+REVIEWED="131f3412 19bdf034 96eedfb5 54f3bb64 e1e81456"
+ALL=$(git log --format=%h --abbrev=8 "$FAMILY_COMMIT"..HEAD -- src data 2>&1)
 DRIFT=$(for c in $ALL; do case " $REVIEWED " in *" $c "*) ;; *) git log -1 --oneline "$c";; esac; done)
 echo "=== $(date -Is) look 2 at $(git rev-parse HEAD); engine-path commits since $FAMILY_COMMIT: ${ALL:-none}" \
      "(reviewed: $REVIEWED); unreviewed: ${DRIFT:-none}"
