@@ -22307,3 +22307,16 @@ Tag: **BUILT · per-side oracle reveal in `main.h2h` (one_sided / both_sided, le
 **The owner is invited to add predictions** before the cross is played. These are graded at look 1, never revised.
 
 Tag: **REGISTRATION (late, before any oracle read) · FINDING: the predictions lapse · C_species +4, C_full +8 (pp, one-sided)**
+
+### 2026-10-05 · AUDIT · **ARCHITECTURE AUDIT (read-only, owner request): 33 findings, KEEP 18 · EXACT REFACTOR 6 · BEHAVIOUR CHANGE 13 entries; no simple baseline was ever trained deliberately, the one accidental simple run (`ai_v12_01`) was discarded unread, and 19.3 % of the parameters (the SB3 value tower) are in no loss graph**
+
+Doc: [`designs/endstate/design_arch_audit.md`](../endstate/design_arch_audit.md). Audited at `43e0955d`, CPU only, no code changed. Stance (owner's scope extension the same day): "we have it" is not evidence; every major piece re-justified from first principles at our size, and a top-down comparison with AlphaStar, OpenAI Five, DeepNash, Pluribus / ReBeL, Metamon and Foul Play.
+
+- **MEASURED (new, CPU):** `learner_golden.build_learner()` + one `train()` on the committed golden buffer: 592,129 of 3,065,882 parameters (`value_pre_norm`, `value_projection`, `mlp_extractor.value_net`, `value_net`) are bit-identical after the update under the win-prob critic (F1, EXACT REFACTOR). The flat policy tower (`projection` + `mlp_extractor.policy_net`) holds 1.13M (37 %), the attention trunk 284,416 (9 %) while doing 63 % of the FLOPs (F2, F5).
+- **Top behaviour-change candidates:** train simple controls at matched budget (C-ENT, C-NOCELL, C-MLP; F24) and read `ai_v12_01` (24.4M steps, 29 architecture keys off, "31 Elo ahead, inside the 38 floor") head-to-head against `ai_v12_02` (F23); the lead hypothesis (static Pokémon tokens, board context mixed by attention, then pre-LN, then a third trunk layer, one lever per arm, §4).
+- **Evidence base:** the per-block and per-edge-family dependence tables in ARCHITECTURE.md are gen-3 at 9.6M (2026-08-07), before several GIGO fixes; a CPU re-read on the X5 blob seeds is the first proposed unit (F22).
+- **FINDINGS (rule 7):** doc rot in ARCHITECTURE.md (§2.1 "36 tokens" vs live 61; §2.3 omits the 32 event seats; §5's stale seat indices), the extractor class docstring, learning note §6.9 and `designs/CLAUDE.md`'s endstate rows (F21, not fixed here: out of scope); the latent `amax` NaN class remains in blob (F6); X5's inference-tier GPU cost attribution and bf16 readiness were NOT examined (GPU held by another agent).
+
+Nothing changes before X5's look 1 is read; the owner reviews the buckets before any build.
+
+Tag: **AUDIT · 33 findings · dead value tower 19.3 % MEASURED · no simple baseline ever trained**
