@@ -1,0 +1,53 @@
+[31mF[0m[31mF[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[31m                                                                   [100%][0m
+=================================== FAILURES ===================================
+[31m[1m______ test_the_fixed_mass_forward_gathers_once_and_runs_the_encoder_once ______[0m
+
+fixed_mass = <agents.training.instrumented_ppo.ppo.InstrumentedMaskablePPO object at 0x7caa842cd710>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7caa7cf6ab10>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_the_fixed_mass_forward_gathers_once_and_runs_the_encoder_once[39;49;00m(fixed_mass, monkeypatch):[90m[39;49;00m
+        fe = fixed_mass.policy.features_extractor[90m[39;49;00m
+>       calls = _counting(monkeypatch)[90m[39;49;00m
+                ^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+
+[1m[31msrc/agents/model/hypothesis_encode_test.py[0m:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7caa7cf6ab10>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_counting[39;49;00m(monkeypatch: Any) -> List[[96mint[39;49;00m]:[90m[39;49;00m
+        calls = [[94m0[39;49;00m][90m[39;49;00m
+>       real = EF.gathered_hypothesis_tokens[90m[39;49;00m
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mE       AttributeError: module 'agents.model.extractor_forward' has no attribute 'gathered_hypothesis_tokens'[0m
+
+[1m[31msrc/agents/model/hypothesis_encode_test.py[0m:70: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+⚠️  [BRIDGE=rust] POKESIM_EMISSION_SELFCHECK=1 — this process runs the EMISSION SELF-CHECK build (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a72eda887a3a57819/src/rust_sim/target/selfcheck/sim_bridge), not the production release binary. Unset it for a real run.
+[31m[1m____________ test_the_blob_forward_never_reaches_the_gathered_path _____________[0m
+
+blob = <agents.training.instrumented_ppo.ppo.InstrumentedMaskablePPO object at 0x7caa7c08f250>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7caa7c0bbe90>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_the_blob_forward_never_reaches_the_gathered_path[39;49;00m(blob, monkeypatch):[90m[39;49;00m
+        fe = blob.policy.features_extractor[90m[39;49;00m
+>       calls = _counting(monkeypatch)[90m[39;49;00m
+                ^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+
+[1m[31msrc/agents/model/hypothesis_encode_test.py[0m:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7caa7c0bbe90>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_counting[39;49;00m(monkeypatch: Any) -> List[[96mint[39;49;00m]:[90m[39;49;00m
+        calls = [[94m0[39;49;00m][90m[39;49;00m
+>       real = EF.gathered_hypothesis_tokens[90m[39;49;00m
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mE       AttributeError: module 'agents.model.extractor_forward' has no attribute 'gathered_hypothesis_tokens'[0m
+
+[1m[31msrc/agents/model/hypothesis_encode_test.py[0m:70: AttributeError
+[36m[1m=========================== short test summary info ============================[0m
+[31mFAILED[0m src/agents/model/hypothesis_encode_test.py::[1mtest_the_fixed_mass_forward_gathers_once_and_runs_the_encoder_once[0m - AttributeError: module 'agents.model.extractor_forward' has no attribute 'g...
+[31mFAILED[0m src/agents/model/hypothesis_encode_test.py::[1mtest_the_blob_forward_never_reaches_the_gathered_path[0m - AttributeError: module 'agents.model.extractor_forward' has no attribute 'g...
+[31m[31m[1m2 failed[0m, [32m4 passed[0m[31m in 2.69s[0m[0m
+unit tests at HEAD exit 1

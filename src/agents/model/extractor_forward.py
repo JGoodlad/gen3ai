@@ -30,6 +30,7 @@ from agents.model.extractor_ctx import (ExtractorContext, PointerInputs, TOKEN_T
 from agents.model.extractor_stashes import ExtractorStashes
 from agents.model.flat_intent import FlatConsumerOps, append_other, compat_intent_logits, flat_candidates
 from agents.model.hypothesis_set import HypothesisSet
+from agents.model.hypothesis_encode import gathered_hypothesis_tokens
 from agents.model.hypothesis_tokens import (FixedMassMoves, OppPresence, OpRoster, build_op_roster,
                                             fixed_mass_moves, hypothesis_ctx, key_log_presence,
                                             other_column, other_roster, splice_hypothesis_tokens)
@@ -423,10 +424,12 @@ class ExtractorForward(ExtractorApi):
         if self.hypothesis_builder is not None:
             _hs = self._build_hypothesis_species(ctx, role_tokens)
             _hctx = hypothesis_ctx(ctx, _hs, self.layout)
-            _move_tok_real = self.pokemon_encoder.last_move_tokens
-            _role_hyp = self.pokemon_encoder(_hctx, self.embeddings)
-            self.pokemon_encoder.last_move_tokens = _move_tok_real   # OUR move tokens: the real pass's
-            role_tokens = splice_hypothesis_tokens(role_tokens, _role_hyp, _hs,
+            # gen3_x5_hyp_gather_v1: the encoder's species half over the dex table ONCE, gathered by
+            # the hypothesis species; the row-level half per row; the rest per OPPONENT slot only
+            # (`hypothesis_encode`: the exact split of the per-row pass, up to fp32 reassociation).
+            _opp_hyp = gathered_hypothesis_tokens(self.pokemon_encoder, self.embeddings, ctx,
+                                                  _hs.slot_species, self.hypothesis_builder.dex_rows)
+            role_tokens = splice_hypothesis_tokens(role_tokens, _opp_hyp, _hs,
                                                    self.hypothesis_builder.hypothesis_marker)
         # In-place hidden-opponent belief: replace the un-revealed opp slots with distinct learned
         # unknown-mon tokens BEFORE the transformer, so the body refines them and every readout

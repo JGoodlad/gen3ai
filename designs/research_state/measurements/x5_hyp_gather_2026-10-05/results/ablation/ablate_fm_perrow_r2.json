@@ -1,0 +1,19 @@
+{
+ "arm": "fm",
+ "pieces_removed": [],
+ "batch": 2048,
+ "torch": "2.8.0+cu126",
+ "first_call_compile_s": 130.4,
+ "compiled_ms_blocks": [
+  92.814,
+  92.735,
+  92.97,
+  93.027,
+  93.104
+ ],
+ "compiled_ms_median": 92.97,
+ "peak_alloc_mib": 4286.2,
+ "graph_breaks": {},
+ "unique_graphs": 1,
+ "cache_root": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_2558832_f4xau4ex"
+}

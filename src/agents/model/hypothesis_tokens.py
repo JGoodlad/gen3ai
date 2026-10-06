@@ -15,9 +15,11 @@ WHAT THIS MODULE OWNS (pure functions over the U2 `HypothesisSet`; no parameters
   this context, so a hypothesis seat's posterior is SPECIES-SPECIFIC (§3.4) instead of a constant.
 * **The hypothesis TOKENS** (`splice_hypothesis_tokens`). `PokemonEncoder` — the SAME encoder a
   revealed mon goes through — encodes the hypothesis context; the hidden opponent slots take that
-  token + the learned `hypothesis_marker`. The encoder is per-mon (its only cross-mon input is the
-  active-context scatter, and a hypothesis is never the active), so the non-hidden rows of that
-  pass equal the real pass's; they are taken from the real pass anyway (`torch.where`).
+  token + the learned `hypothesis_marker`; every other slot keeps the real pass's token
+  (`torch.where`). AS BUILT (`gen3_x5_hyp_gather_v1`) the encoding is computed by
+  `hypothesis_encode.gathered_hypothesis_tokens`: the encoder's species half once over the dex table,
+  gathered, plus its row-level half (the clock / weather / fainted / hazards / screens context and the
+  active-context scatter) — the per-row pass, split exactly at the two first Linears.
 * **The presence KEY BIAS** (`key_log_presence`, `float_key_mask`). Every EXPECTATION-class (class E)
   reduction over opponent tokens adds ``log π_j`` to every query's logit for key ``j`` (ToMe's
   proportional attention, Bolya et al. 2023): 0 on a revealed key, the hypothesis's log π on a hidden
@@ -62,12 +64,13 @@ def hypothesis_ctx(ctx: ExtractorContext, hs: HypothesisSet, layout: Dict[str, A
         hp_and_active=ids["hp_and_active"], last_move_ids=ids["last_move_ids"])
 
 
-def splice_hypothesis_tokens(role_tokens: torch.Tensor, role_hyp: torch.Tensor,
+def splice_hypothesis_tokens(role_tokens: torch.Tensor, opp_hyp: torch.Tensor,
                              hs: HypothesisSet, marker: torch.Tensor) -> torch.Tensor:
-    """[B,12,D]: the hidden opponent slots take the hypothesis pass's token + ``marker``; every other
-    row keeps the real pass's token."""
+    """[B,12,D]: the hidden opponent slots take the hypothesis pass's token ``opp_hyp`` [B,6,D] (the
+    OPPONENT slots only — `hypothesis_encode.gathered_hypothesis_tokens`) + ``marker``; every other row
+    keeps the real pass's token."""
     opp = role_tokens[:, TEAM_SIZE:2 * TEAM_SIZE]
-    hyp = role_hyp[:, TEAM_SIZE:2 * TEAM_SIZE] + marker
+    hyp = opp_hyp + marker
     opp = torch.where(hs.slot_is_hypothesis.unsqueeze(-1), hyp, opp)
     return torch.cat([role_tokens[:, :TEAM_SIZE], opp], dim=1)
 

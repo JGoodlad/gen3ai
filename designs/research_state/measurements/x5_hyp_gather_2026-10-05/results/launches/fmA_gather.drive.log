@@ -1,0 +1,6 @@
+drive fmA_gather start 1791250641.006341230 args: --arch production --device cuda --steps 6000000 --eval-freq 50000000 --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all --belief-tokens fixed_mass --allow-nonproduction-arch --behaviour-check warn
+wrapper pid 2913767
+trainer pid 2913788
+reached 12 update rows at i=484
+SIGTERM -> 2913788 at 1791252094.066564010
+end 1791252096.079441053; wrapper alive: no

@@ -11858,3 +11858,20 @@ their pin's code and are unaffected. No run is live.
   `full` pinned. It found three real defects before passing (nature not lower-cased, a typed Hidden Power resolved to the
   bare id, a consumed item overwritten).
 
+
+## 2026-10-05 — X5 hypothesis encoding split exactly and gathered (`gen3_x5_hyp_gather_v1`; fixed_mass only; blob byte-identical; no config / ARCH_SIGNATURE change)
+
+- **What.** Under `--belief-tokens fixed_mass` the hypothesis tokens were `PokemonEncoder` re-run over all 12 mons of every
+  row on the hypothesis context, to read the 6 opponent slots. `agents/model/hypothesis_encode.py` now computes the same
+  values as that pass's exact split at its two first Linears: the species-only columns once per forward over the 400-row
+  dex table (over the slots' own dex rows when B·6 < 400), gathered by hypothesis species; the row-level columns (clock,
+  weather, fainted, hazards, screens, the active-context scatter) once per row; the rest per opponent slot only.
+- **Why not per species alone.** Those five row-level features enter the encoding (one species' tokens differ by up to 1.06
+  across real rows; bitwise equal with them held fixed), so no encoding is per-species past the first layer.
+- **Exactness.** fp32 reassociation only (≤ 2.9e-6 on real rows; ≤ 6.2e-15 at fp64; gradients agree at fp64). The
+  fixed_mass K9 golden is re-recorded (post `c1ab0fbf…`; losses move ≤ 6.7e-8; the per-row pass patched back in
+  reproduces the old entry 99 / 99). No `ARCH_SIGNATURE` bump: the function is unchanged, so every checkpoint means the same.
+- **Cost** (`designs/research_state/measurements/x5_hyp_gather_2026-10-05/`). The encoding 10.09 → 4.38 ms per micro-batch;
+  `train_ms` +19.5 % → +12.8 % vs blob; T2 +46.1 % → +45.6 %; `UpdateFit` headroom 1,106 → 1,192 MiB.
+- **Gates.** `hypothesis_encode_test.py` (the path taken once and the encoder once per forward, blob never; values on both
+  static branches; every slot incl. the active; gradients); `selection_sites` declares the module.

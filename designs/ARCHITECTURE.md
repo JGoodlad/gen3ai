@@ -382,7 +382,11 @@ logistic fixed-size presence (Σπ = 6 − revealed), a learned delta on the T0 
 opponent active's move group — and READS it (`gen3_x5_belief_tokens_v1`,
 `agents/model/hypothesis_tokens.py`): each hidden opponent slot holds its hypothesis's dex row encoded
 by THE `PokemonEncoder` + a learned `hypothesis_marker` (replacing `BeliefSlots`' constant token, which
-that arm does not call); the T0 belief heads read those seats with their species; OTHER_species joins
+that arm does not call) — computed as that encoder's exact split at its two first Linears
+(`gen3_x5_hyp_gather_v1`, `agents/model/hypothesis_encode.py`): the species-only columns once per forward
+over the 400-row dex table, gathered by hypothesis species; the row-level columns (clock, weather, fainted,
+hazards, screens, the active-context scatter) once per row; the rest of the encoder per OPPONENT slot only
+(equal to the per-row pass up to fp32 reassociation); the T0 belief heads read those seats with their species; OTHER_species joins
 the trunk as one extra seat after the entity seats; and every expectation-type reduction over opponent
 tokens — the trunk's attention, `their_cls`, `value_cls`, `HiddenOppBeliefPool`, `value_entity_pool` —
 adds log π of each opponent key (detached; FLOAT key masks in the three `nn` pools). The opponent

@@ -171,6 +171,7 @@ Rules to preserve:
 | the DICT obs keys the forward reads beyond `observation` | `extra_obs_keys.py` |
 | X5's dex-row table (a hypothesised opponent mon's per-mon obs row, per species; the generator, the loader, the committed artifact) | `hypothesis_dex_rows.py` + `hypothesis_dex_rows.json` |
 | X5's T0 hypothesis builder (`--belief-tokens fixed_mass`: δ_θ, the fixed-size presence, the one stable ordering, OTHER, the active's move group; the set-BCE helpers) | `hypothesis_set.py` |
+| X5's hypothesis-token ENCODING (`PokemonEncoder` split exactly at its two first Linears: the species half once over the dex table, gathered; the row-level half per row; the rest per opponent slot — the per-row pass on `hypothesis_ctx` stays the definition its test compares against) | `hypothesis_encode.py` |
 | X5's hypothesis TOKENS in the chain (the hypothesis context, the spliced tokens, the per-key log-presence, the class-E pools' float masks, the op's opponent-MON roster `OpRoster` + OTHER's averaged `other_roster`) | `hypothesis_tokens.py` |
 
 🚨 **THE FORWARD HAS TWO PUBLIC SURFACES: the constructor signature, and the obs DICT's KEY SET.**
@@ -272,6 +273,12 @@ masked key) **and gets its I1 / I2 test in `hypothesis_tokens_test.py`** (π = 0
 two copies at w/2 ≡ one at w). A max-type reduction is class M (presence-scaled max, §9 M2 = C). π is
 DETACHED wherever it weights the policy or critic (M10). Blob must stay byte-identical: every X5 read
 sits behind `hypothesis_builder is not None` with the blob code path untouched.
+
+🚨 **A change to `PokemonEncoder`'s INPUT stitch must be mirrored in `hypothesis_encode.species_table` /
+`_cols`** (`gen3_x5_hyp_gather_v1`): fixed_mass computes the hypothesis tokens from the encoder's two first
+Linears split by COLUMN BLOCK, so a new input column, a reordered block or a new ROW-level input (anything
+not in the dex row) changes the split. `hypothesis_encode_test` compares it with the per-row pass at fp64
+and fails on drift; a new row-level input belongs in the per-row half, never the species table.
 
 **The op's opponent-MON axis under `fixed_mass` reads `op.stash.x5` (an `OpRoster`), never a gate of
 its own.** Every opponent-slot kernel in `damage_op*.py` takes "alive" from `roster.alive`

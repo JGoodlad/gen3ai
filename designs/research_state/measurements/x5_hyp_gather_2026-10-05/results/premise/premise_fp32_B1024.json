@@ -1,0 +1,27 @@
+{
+ "dtype": "float32",
+ "real_contexts": {
+  "hidden_slots": 752,
+  "species_with_2plus": 18,
+  "species_not_bitwise_equal": 18,
+  "max_abs_diff": 1.0585434436798096
+ },
+ "row_level_inputs_held_constant": {
+  "hidden_slots": 752,
+  "species_with_2plus": 18,
+  "species_not_bitwise_equal": 0,
+  "max_abs_diff": 0.0
+ },
+ "active": {
+  "hypothesis_slot_is_opp_active": 0,
+  "rows": 1024
+ },
+ "row_level_inputs_vary": {
+  "turn_feature": true,
+  "weather_feature": true,
+  "fainted_feature": true,
+  "spikes_feature": true,
+  "screen_feature": false,
+  "opp_ctx_raw": true
+ }
+}

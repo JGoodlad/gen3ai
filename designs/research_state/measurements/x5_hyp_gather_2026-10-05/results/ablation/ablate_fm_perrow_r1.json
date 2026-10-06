@@ -1,0 +1,51 @@
+{
+ "arm": "fm",
+ "pieces_removed": [],
+ "batch": 2048,
+ "torch": "2.8.0+cu126",
+ "first_call_compile_s": 130.5,
+ "compiled_ms_blocks": [
+  92.726,
+  92.714,
+  92.811,
+  92.853,
+  92.846
+ ],
+ "compiled_ms_median": 92.811,
+ "peak_alloc_mib": 4286.2,
+ "t2_graph_replay_ms": {
+  "8": {
+   "blocks": [
+    1.9864,
+    1.9862,
+    1.9861,
+    1.9861,
+    1.986
+   ],
+   "median": 1.9861
+  },
+  "64": {
+   "blocks": [
+    2.961,
+    2.8641,
+    2.864,
+    2.8642,
+    2.864
+   ],
+   "median": 2.8641
+  },
+  "256": {
+   "blocks": [
+    6.0894,
+    6.0788,
+    6.0898,
+    6.0901,
+    6.092
+   ],
+   "median": 6.0898
+  }
+ },
+ "graph_breaks": {},
+ "unique_graphs": 4,
+ "cache_root": "/home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_2424288_175sm98z"
+}

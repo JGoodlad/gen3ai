@@ -1,0 +1,6 @@
+drive blobB start 1791252096.085473986 args: --arch production --device cuda --steps 6000000 --eval-freq 50000000 --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all
+wrapper pid 2979105
+trainer pid 2979126
+reached 11 update rows at i=293
+SIGTERM -> 2979126 at 1791252975.356879983
+end 1791252977.370402298; wrapper alive: no

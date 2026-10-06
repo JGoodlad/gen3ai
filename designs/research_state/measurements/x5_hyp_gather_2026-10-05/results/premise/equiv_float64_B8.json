@@ -1,0 +1,1 @@
+{"dtype": "float64", "rows": 8, "hyp_slots": 9, "max_abs": 4.440892098500626e-15, "mean_abs": 9.645054997249293e-16, "ref_max_abs": 5.560789205602522, "rel_to_max": 7.986082432375616e-16, "finite_all_slots": true}

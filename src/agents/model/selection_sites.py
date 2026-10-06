@@ -45,7 +45,7 @@ from typing import Dict, FrozenSet, List, NamedTuple, Optional, Tuple
 FORWARD_MODULES: Tuple[str, ...] = (
     "aux_value_heads", "belief_heads", "conditional_threat", "damage_kinds", "damage_op", "damage_op_blocks",
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
-    "flat_intent", "hypothesis_set", "hypothesis_tokens",
+    "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
     "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "switch_branch",
     "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
@@ -327,6 +327,11 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # opponent-MON roster): the per-mon candidate masks are num-range tests, the hidden-team marginal is
     # gated on the integer count k, and the bench E5 tail is a RANK test on the one order — the order
     # itself is `hypothesis_set.stable_order` (the declared sort_head MARGIN site, re-used, not copied).
+    # gen3_x5_hyp_gather_v1: the gathered hypothesis encoding — the Hidden Power slot test on the dex
+    # table's integer move ids (as `encoders`), and the hypothesis species (already integer).
+    "hypothesis_encode": {
+        "INT": ("ids['all_move_ids'] == HIDDEN_POWER_MOVE_NUM", "slot_species.long()"),
+    },
     "hypothesis_tokens": {
         "INT": ("moves.seat_nums == HP", "pres.k > 0", "species.clamp(0, S - 1).long()",
                 "num >= _TYPED_HP[0]", "num <= _TYPED_HP[-1]", "num != HP", "k > 0",
