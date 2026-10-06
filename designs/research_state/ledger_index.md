@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,512-line file. **The ledger itself is append-only and is never edited by this**;
+22,542-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**778 headings · 723 dated · 2026-08-01 → 2026-10-06 · ledger 22,512 lines.**
+**779 headings · 724 dated · 2026-08-01 → 2026-10-06 · ledger 22,542 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -798,3 +798,4 @@ rename.
   - `L22449` · `2026-10-06` · BUILT · **X5 A/B metric (1) for a fixed_mass run = the MEAN of the conditional log loss over EVERY blob run of the look (orchestrator decision, supersedes the seed-id pairing built earlier today); registered rule and boundary unchanged**
   - `L22468` · `2026-10-06` · READ · **X5 A/B LOOK 2: matched steps CONTINUE (Δ̂ −0.97 pp [−3.36, +1.41], t 2.441 < 2.683 on 8 df); matched wall-time FUTILITY STOP, verdict NOT DETECTED, INFERIOR (Δ̂ −6.89 pp [−8.88, −4.90], upper one-sided 95 % −5.29 < −3.5); purpose metric (1) not due**
   - `L22499` · `2026-10-06` · BANK · **X5 A/B fixed_mass look-2 seeds 1004 and 1005 COMPLETE at 708dcb0a, strict behaviour check, 0 restarts / 0 crashes (closing look 2's missing bank entry); then the look-3 seeds are dispatched**
+  - `L22512` · `2026-10-06` · MEASUREMENT · **CRN LABEL REFIT: a de-noised label does NOT raise the value head's sibling discrimination. REFIT-K8 − BASE −0.014 [−0.032, +0.002] (registered verdict NOT DETECTED, NOT SHOWN FLAT; a gain ≥ +0.002 excluded) while the 8-rollout leaf beats the head +0.077 [+0.035, +0.115]; the bound is the representation / coverage, not the label**
