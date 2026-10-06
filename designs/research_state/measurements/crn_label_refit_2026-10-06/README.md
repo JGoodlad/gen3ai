@@ -164,3 +164,22 @@ A bound within ±0.0005 of its boundary is a BOUNDARY result and counts as not c
 ---
 
 ## Amendments
+
+### Amendment 1 (2026-10-06, before any outcome was read): the size
+
+The pilot read throughput only: no accuracy, no label and no scorer was computed. It ran 22
+held-out turns at S = 32 with 2 workers x 3 torch threads on a loaded box (load 10-13, with a
+training run and other agents' gates beside it). Cost: **0.21-0.23 CPU-s per playout** (cgroup
+`cpu.stat`: 703 CPU-s for 3,136 playouts on the resumed leg, 863 CPU-s for 3,776 including the
+killed leg), ~30 sim turns per playout. The full 1,600-turn job is 231,584 playouts, about
+**13.5 CPU-hours: over the ~10-hour budget**. So §5's subsample rule applies: the first
+**380 battles** by the size hash, **160,256 playouts, ~9.4 CPU-hours**. TRAIN 556 turns /
+189 battles / 3,960 actions; HELD-OUT 563 turns / 191 battles / 4,018 actions.
+
+**Kill + resume, tested once** on the pilot (`rows/subset_pilot2.json`, 16 turns). The job was
+killed by PID mid-chunk after 3 durable rows. The re-run printed `3 turns already done, 13 to go`
+and finished with 16 unique rows equal to the subset, every row parsing. The capture's resume was
+tested by re-running it (`6 turns done, 0 to go`).
+
+The pilot rows whose turns fall in the HELD-OUT subsample seed `rows/truth_held_S32.jsonl` (same
+code, checkpoint, seeds and continuation). The other pilot rows are not used.
