@@ -5,12 +5,12 @@
 block of the observation (`src/rust_sim/src/encoder/oracle.rs`). A checkpoint trained under it is a different
 function of the observation than a production one, and the reveal is made by the ENV CORE, so a tool that plays or
 reads a checkpoint through any other observation source (the websocket client `main.play`, the Lane S bank the
-prober re-encodes, `main.h2h`'s `off`-mode eval engine, `main.anchors`) would feed it observations it never trained
-on — silently, with every number still printing. Those tools therefore REFUSE a recorded non-`off` mode, naming it:
-:func:`refuse_if_revealed`.
+prober re-encodes, `main.anchors`) would feed it observations it never trained on — silently, with every number still
+printing. Those tools therefore REFUSE a recorded non-`off` mode, naming it: :func:`refuse_if_revealed`.
 
-The per-SIDE reveal that would let `main.h2h` play an oracle checkpoint (the one-sided clairvoyance cells of the X5
-A/B, §7.7(a)) is DEFERRED, not built.
+`main.h2h` is the one offline tool that PLAYS an oracle checkpoint: its eval cores take a PER-SIDE reveal level
+(`main.h2h.reveal`; the one-sided clairvoyance and both-sided cells of the X5 A/B, §7.7(a)), and it refuses an oracle
+checkpoint under its `off` mode itself (`main.h2h.reveal.RevealModeError`).
 """
 from __future__ import annotations
 
@@ -57,6 +57,6 @@ def refuse_if_revealed(model_path: str, *, tool: str, reason: Optional[str] = No
         "opponent's true species are written into its observation). "
         + (reason or "This tool builds its observations without the reveal, so the checkpoint would be fed "
                      "inputs it never trained on — silently.")
-        + " The per-side reveal an offline engine needs to play it (X5 A/B §7.7(a)) is deferred; "
-        "read its own in-loop eval (the run's recorded mode) instead."
+        + " Play it with `python -m main.h2h --oracle-reveal-mode one_sided|both_sided` (the per-side reveal, "
+        "X5 A/B §7.7(a)), or read its own in-loop eval (the run's recorded mode)."
     )

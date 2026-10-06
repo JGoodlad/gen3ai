@@ -116,11 +116,14 @@ def build_eval_core(decl: EvalDecl, *, collector_decl: Any, svc: Any, extra_ids:
                     trainee_builder: Any, opp_builder: Any, fixed_builders: Mapping[str, Any],
                     turn_limit: int, terminal: Optional[Dict[str, Any]] = None,
                     fixed_policies: Optional[Mapping[str, Any]] = None,
+                    oracle_reveal: Optional[Tuple[str, str]] = None,
                     emit: Callable[[str], None] = print) -> RustEvalCore:
     """Acquire the eval core (module docs) over an already STARTED T2 service whose declaration carried
     :func:`eval_extra_slots`; ``extra_ids`` are those slots' global ids (``col.extra_slots``).
     ``fixed_policies`` (label -> policy, the ``eval_extra_slots`` mapping) are LOADED into the
-    non-reused fixed slots here (:func:`load_fixed_slots`)."""
+    non-reused fixed slots here (:func:`load_fixed_slots`). ``oracle_reveal`` = a PER-SEAT ``(p1, p2)`` reveal level
+    (the trainee plays p1): only the head-to-head engine passes one (``main.h2h``, X5 A/B §7.7(a)); ``None`` = the
+    run's recorded mode, ``collector_decl.oracle_reveal``, on both seats."""
     import time
 
     from agents.training.eval_callback import eval_opponent_names
@@ -145,7 +148,7 @@ def build_eval_core(decl: EvalDecl, *, collector_decl: Any, svc: Any, extra_ids:
                        refusal_budget=int(collector_decl.refusal_budget), bank_dir=None,
                        terminal=terminal, opponents=table.spec_rows(),
                        # the run's RECORDED observation mode (--oracle-reveal): in-loop eval plays at the same one
-                       oracle_reveal=collector_decl.oracle_reveal)
+                       oracle_reveal=collector_decl.oracle_reveal if oracle_reveal is None else tuple(oracle_reveal))
     t0 = time.perf_counter()
     core = open_core(collector_decl, spec)
     lib = ffi.load(ffi.default_path(collector_decl.profile))

@@ -11875,3 +11875,14 @@ their pin's code and are unaffected. No run is live.
   `train_ms` +19.5 % → +12.8 % vs blob; T2 +46.1 % → +45.6 %; `UpdateFit` headroom 1,106 → 1,192 MiB.
 - **Gates.** `hypothesis_encode_test.py` (the path taken once and the encoder once per forward, blob never; values on both
   static branches; every slot incl. the active; gradients); `selection_sites` declares the module.
+## 2026-10-05 — EVAL TOOLING: the PER-SIDE oracle reveal in `main.h2h` (`--oracle-reveal-mode {off,one_sided,both_sided}`; no config / ARCH_SIGNATURE change; training specs unchanged)
+
+- **What changed.** The Rust env core's `Spec.oracle_reveal` became a per-side value (`core::spec::Reveal`): the spec key
+  takes a level string (both sides, as before) or a `[p1, p2]` pair; a symmetric value is still written as the string.
+  `build_eval_core(oracle_reveal=(p1, p2))` passes a pair; `main.h2h` derives each cell's pair from its declared mode and
+  the two checkpoints' recorded levels (`main/h2h/reveal.py`) and no longer refuses an oracle checkpoint under a reveal
+  mode (it still refuses one under `off`; the other offline tools keep refusing).
+- **Ledger.** Two new eval protocols, `gen3_eval_protocol_v1_h2h_oracle_one_sided` / `..._both_sided`; a revealed row
+  carries `compute.oracle_reveal`.
+- **Gates.** `off` bit-identical to `c7b4d03e` (a recorded 24-game play and its row); a split core's side rows equal the
+  symmetric core's at that side's level (Rust); real games move only the revealed side(s); every row stamped.

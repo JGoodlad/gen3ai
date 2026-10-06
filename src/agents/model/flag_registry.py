@@ -475,8 +475,10 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "flips it is refused (`check_oracle_reveal`) and a flagless resume inherits it; it is excluded "
                    "from `check_compatible` (a frozen opponent of the same run is built at the run's mode) and "
                    "from the ARCH SURFACE by class. Offline tools that play a checkpoint without the reveal "
-                   "(`main.h2h`, `main.anchors`, `main.play`) REFUSE a recorded non-'off' mode "
-                   "(`agents.model.oracle_reveal.refuse_if_revealed`)."),
+                   "(`main.anchors`, `main.play`) REFUSE a recorded non-'off' mode "
+                   "(`agents.model.oracle_reveal.refuse_if_revealed`); `main.h2h` plays it at its recorded "
+                   "level through a PER-SIDE reveal (`--oracle-reveal-mode one_sided|both_sided`, "
+                   "`main.h2h.reveal`)."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

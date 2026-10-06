@@ -363,8 +363,9 @@ weight: `--oracle-reveal {off,species,full}` makes the Rust encoder write the op
 (a DIAGNOSTIC for the X5 A/B's oracle arm, `designs/endstate/design_x5_belief_tokens.md` §7.6; never production). The
 extractor only stores it. It is recorded, inherited by a flagless resume and refused on a flip (`check_oracle_reveal`),
 kept off the ARCH surface and out of `check_compatible` by its class, and `oracle_reveal.py` is the reader a tool
-uses to REFUSE such a checkpoint when it builds observations without the reveal (`main.h2h`, `main.anchors`,
-`main.play`, `main.belief_roles`, `main.policy_spectrum`).
+uses to REFUSE such a checkpoint when it builds observations without the reveal (`main.anchors`, `main.play`,
+`main.belief_roles`, `main.policy_spectrum`). `main.h2h` PLAYS one, at its recorded level, through its per-side reveal
+(`--oracle-reveal-mode one_sided|both_sided`, `main.h2h.reveal`) and refuses one under its default `off`.
 
 ## Model versioning (`model_version/`, `snapshot.py`)
 

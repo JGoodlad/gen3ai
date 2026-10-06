@@ -50,6 +50,27 @@ MANY_CELL = L.ReaderDecl(
     name="main.h2h.many.cell", purposes=L.ALL_PURPOSES,
     regime=L.RegimeFilter(protocol=PL.PROTOCOL, play="greedy", opponent_play="greedy", mirrored=True),
     requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
+#: ... at the one-sided oracle reveal's protocol (``main.h2h.reveal``).
+MANY_CELL_ONE_SIDED = L.ReaderDecl(
+    name="main.h2h.many.cell_oracle_one_sided", purposes=L.ALL_PURPOSES,
+    regime=L.RegimeFilter(protocol=PL.PROTOCOL_ONE_SIDED, play="greedy", opponent_play="greedy", mirrored=True),
+    requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
+#: ... at the both-sided oracle reveal's protocol.
+MANY_CELL_BOTH_SIDED = L.ReaderDecl(
+    name="main.h2h.many.cell_oracle_both_sided", purposes=L.ALL_PURPOSES,
+    regime=L.RegimeFilter(protocol=PL.PROTOCOL_BOTH_SIDED, play="greedy", opponent_play="greedy", mirrored=True),
+    requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
+
+
+def _read_cell(protocol: str, **kw: Any) -> Any:
+    """One cell's rows at ``protocol`` (one declared read per protocol: the ledger gate's rule 2)."""
+    if protocol == PL.PROTOCOL:
+        return L.read(MANY_CELL, **kw)
+    if protocol == PL.PROTOCOL_ONE_SIDED:
+        return L.read(MANY_CELL_ONE_SIDED, **kw)
+    if protocol == PL.PROTOCOL_BOTH_SIDED:
+        return L.read(MANY_CELL_BOTH_SIDED, **kw)
+    raise PL.H2HError(f"protocol {protocol!r} is not one main.h2h plays")
 
 
 def cells_from_file(path: str) -> List[Tuple[str, str]]:
@@ -94,7 +115,8 @@ def resolve_cells(specs: Sequence[Tuple[str, str]]) -> List[Cell]:
     return cells
 
 
-def preflight(cells: Sequence[Cell], emit: Callable[[str], None] = lambda _m: None) -> PL.EngineDecl:
+def preflight(cells: Sequence[Cell], emit: Callable[[str], None] = lambda _m: None,
+              reveal_mode: str = "off") -> PL.EngineDecl:
     """Check EVERY side of every cell BEFORE any engine exists — the deleted core variants and the team source (as
     ``play`` does) — and DECLARE the engine (``main.h2h.arch.declare_engine``: at most two architectures, a third is
     :class:`main.h2h.play.CellArchMismatch`). Loads each distinct checkpoint once on the CPU and drops it."""
@@ -108,11 +130,12 @@ def preflight(cells: Sequence[Cell], emit: Callable[[str], None] = lambda _m: No
                 seen[ref.sha256] = ref
                 PL.check_core_flags(ref)
                 PL.check_team_source(ref)
-    decl = PL.declare_engine(cells, PL._load_host)
+    decl = PL.declare_engine(cells, PL._load_host, reveal_mode)
     groups = "; ".join(f"{PL.GROUP_NAMES[i]} declared from {a.source} (slots {list(decl.roles[i])})"
                        for i, a in enumerate(decl.archs))
     emit(f"[h2h] pre-flight: {len(cells)} cell(s), {len(seen)} checkpoint(s) — {len(decl.archs)} architecture(s): "
-         f"{groups}; eval core(s) for (player group, opponent group) {list(decl.combos)} in "
+         f"{groups}; eval core(s) for (player group, opponent group) {list(decl.combos)}"
+         f"{f', oracle reveal {reveal_mode}: (group, group, (p1, p2) levels) {list(decl.cores)}' if reveal_mode != 'off' else ''} in "
          f"{time.perf_counter() - t0:.1f}s")
     return decl
 
@@ -143,6 +166,7 @@ def play_cells(out_dir: Optional[str], cells: Sequence[Cell], *, pairs: int,
                batch_pairs: int = PL.DEFAULT_BATCH_PAIRS, schedule_seed: int = 0, schedule_key: Optional[str] = None,
                purpose: str = PL.DEFAULT_PURPOSE, run_label: str, compute: PL.Compute,
                request_id: Optional[str] = None, family: Optional[str] = None, request_kind: Optional[str] = None,
+               reveal_mode: str = "off",
                emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True)) -> Dict[str, Any]:
     """Play ``pairs`` mirrored pairs of every cell on ONE engine, each cell exactly as :func:`main.h2h.play.play_edge`
     plays it (module docs). ``request_id`` = ONE request for every cell (an X5 LOOK: ``--purpose ab --family F
@@ -154,7 +178,7 @@ def play_cells(out_dir: Optional[str], cells: Sequence[Cell], *, pairs: int,
     if not cells:
         raise PL.H2HError("no cells")
     root, writer = PL.open_writer(out_dir, purpose)
-    regime = PL.regime_for(EP.stall_threshold())
+    regime = PL.regime_for(EP.stall_threshold(), mode=reveal_mode)
     plans = [PL.plan_edge(writer, root, regime, p, o, pairs=pairs, batch_pairs=batch_pairs,
                           schedule_seed=schedule_seed, schedule_key=schedule_key, purpose=purpose,
                           request_id=request_id, family=family, request_kind=request_kind) for p, o in cells]
@@ -166,7 +190,7 @@ def play_cells(out_dir: Optional[str], cells: Sequence[Cell], *, pairs: int,
     rep = EngineReport()
     if todo:
         t0 = time.perf_counter()
-        decl = preflight([(ep.player, ep.opponent) for ep in todo], emit)
+        decl = preflight([(ep.player, ep.opponent) for ep in todo], emit, reveal_mode)
         rep.preflight_s = round(time.perf_counter() - t0, 3)
         rep.decl = decl.block()
         commit = PL.current_commit()
@@ -191,7 +215,7 @@ def play_cells(out_dir: Optional[str], cells: Sequence[Cell], *, pairs: int,
     writer.close()
     out = []
     for ep in plans:
-        got = L.read(MANY_CELL, root=root, request_id=ep.rid, regime_id=regime["regime_id"],
-                     players=[ep.player.sha256], opponents=[ep.opponent.sha256])
+        got = _read_cell(regime["protocol"], root=root, request_id=ep.rid, regime_id=regime["regime_id"],
+                         players=[ep.player.sha256], opponents=[ep.opponent.sha256])
         out.append(ST.edge_summary(list(got.rows)))
     return {"cells": out, "engine": rep.block()}

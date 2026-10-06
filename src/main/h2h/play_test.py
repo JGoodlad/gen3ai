@@ -156,7 +156,8 @@ def _row(writer, a, b, batch, n, req, key="h2h:k", seed=0, regime=None):
 
     eng = types.SimpleNamespace(compute=PL.Compute(device="cpu"),    # only what build_row reads
                                 regime=regime or PL.regime_for(TL, TEAM_SET), torch_version="t",
-                                core_stamp="s", team_check={"a": "x"}, historical={"a": []})
+                                core_stamp="s", team_check={"a": "x"}, historical={"a": []},
+                                mode="off", levels=("off", "off"))
     return PL.build_row(writer=writer, run_label="study", commit="c0ffee", a=a, b=b, eng=eng, purpose="audit",
                         key=key, sched_seed=seed, batch=batch, cseed=PL.cycle_seed(seed, key, batch), score=sc,
                         t_start=L.utc_now(), t_end=L.utc_now(), wall_s=2.0,

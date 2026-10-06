@@ -79,7 +79,12 @@ FLAGS = ("draws_folded", "teams_unrecorded", "seed_unrecorded", "sha_unrecorded"
 #: ``designs/research_state/measurements/eval_ledger_u1_2026-10-03/``).
 #: ``v1_inloop`` (eval U2) is the trainer's in-loop eval cycle and its SPRT promotion on the Rust eval core
 #: (``agents.training.cycle_ledger``).
-PROTOCOLS = ("gen3_eval_protocol_v1_h2h", "gen3_eval_protocol_v1_bot_rr", "gen3_eval_protocol_v1_inloop")
+#: ``v1_h2h_oracle_one_sided`` / ``v1_h2h_oracle_both_sided`` are ``main.h2h``'s games with the PER-SIDE oracle reveal
+#: (X5 A/B §7.7(a)): one-sided clairvoyance (only the oracle checkpoint's side is told the other team, at its own
+#: recorded level) and both-sided (the other side is told the oracle's team too, at the same level). Same seats, teams,
+#: seeds and turn limit as ``v1_h2h``; what differs is what an observation carries, so they never pool with it.
+PROTOCOLS = ("gen3_eval_protocol_v1_h2h", "gen3_eval_protocol_v1_bot_rr", "gen3_eval_protocol_v1_inloop",
+             "gen3_eval_protocol_v1_h2h_oracle_one_sided", "gen3_eval_protocol_v1_h2h_oracle_both_sided")
 #: The protocol a v1 row is upgraded to, by its writer (§0b.2's upgrade rule).
 V1_WRITER_PROTOCOL = {"h2h": "gen3_eval_protocol_v1_h2h", "bot_rr": "gen3_eval_protocol_v1_bot_rr"}
 

@@ -7,7 +7,8 @@ the Python plumbing a wrong default would break silently:
 * the mode is RECORDED in `model_config.json` (a fresh save writes it; a pre-v137 config migrates to `off`);
 * a resume that FLIPS it is refused (`check_oracle_reveal`), a matching one passes, and `check_compatible` — which
   gates every load incl. a frozen opponent of the same run — does NOT read it (resume-immutable class);
-* an offline tool that builds its observations without the reveal REFUSES an oracle checkpoint, by name;
+* an offline tool that builds its observations without the reveal REFUSES an oracle checkpoint, by name (`main.h2h`
+  plays one through its per-side reveal and refuses it under its `off` mode);
 * the extractor stores the mode (inert in the forward) and rejects an unknown level.
 """
 import dataclasses
@@ -74,13 +75,13 @@ def test_an_offline_tool_refuses_an_oracle_checkpoint_by_name_and_accepts_a_prod
     (run / "final_model.zip").write_bytes(b"")
     save_model_snapshot(str(run), dataclasses.replace(version, oracle_reveal="species"), git_hash="t")
     with pytest.raises(OracleRevealRefused) as e:
-        refuse_if_revealed(str(run / "final_model.zip"), tool="main.h2h", reason="The engine's eval cores are built at off.")
-    assert "main.h2h" in str(e.value) and "species" in str(e.value) and "deferred" in str(e.value)
+        refuse_if_revealed(str(run / "final_model.zip"), tool="main.anchors", reason="The session builds without it.")
+    assert "main.anchors" in str(e.value) and "species" in str(e.value) and "--oracle-reveal-mode" in str(e.value)
     plain = tmp_path / "rb_plain"
     plain.mkdir()
     (plain / "final_model.zip").write_bytes(b"")
     save_model_snapshot(str(plain), version, git_hash="t")
-    refuse_if_revealed(str(plain / "final_model.zip"), tool="main.h2h")   # off: fine
+    refuse_if_revealed(str(plain / "final_model.zip"), tool="main.anchors")   # off: fine
     assert recorded_oracle_reveal(str(tmp_path / "no_such_run.zip")) == "off", "a legacy / missing config reads off"
 
 
@@ -95,9 +96,12 @@ def test_a_corrupt_recorded_mode_is_refused_not_read_as_off(tmp_path, version):
         recorded_oracle_reveal(str(tmp_path / "final_model.zip"))
 
 
-def test_the_h2h_host_load_takes_the_refusal(tmp_path, version):
-    """The refusal is wired into the engine's checkpoint load, before any weight is read."""
-    from main.h2h.arch import _load_host
+def test_the_h2h_engine_refuses_an_oracle_checkpoint_under_its_off_mode_before_loading(tmp_path, version):
+    """`main.h2h` no longer takes `refuse_if_revealed` (it PLAYS an oracle checkpoint through its per-side reveal,
+    `main.h2h.reveal`), but under its default `off` mode it refuses one itself, typed, before any weight is read
+    (the rest of the per-side matrix: `src/main/h2h/reveal_test.py`)."""
+    from main.h2h.arch import declare_engine
+    from main.h2h.reveal import RevealModeError
 
     run = tmp_path / "oracle_run"
     run.mkdir()
@@ -105,7 +109,12 @@ def test_the_h2h_host_load_takes_the_refusal(tmp_path, version):
     save_model_snapshot(str(run), dataclasses.replace(version, oracle_reveal="species"), git_hash="t")
 
     class Ref:
+        id = "oracle_run"
+        sha256 = "a" * 64
         zip_path = str(run / "final_model.zip")
 
-    with pytest.raises(OracleRevealRefused, match="main.h2h"):
-        _load_host(Ref())
+    def host(_ref):
+        raise AssertionError("a checkpoint was loaded before the reveal mode was checked")
+
+    with pytest.raises(RevealModeError, match="one_sided"):
+        declare_engine([(Ref(), Ref())], host)

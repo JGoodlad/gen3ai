@@ -14,7 +14,7 @@ This module is dependency-free (no numpy, no poke-env, no ``agents``): every con
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 
 @dataclass(frozen=True)
@@ -107,7 +107,8 @@ def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, st
               turn_limit: Optional[int],
               refusal_budget: int, bank_dir: Optional[str], format_id: str = "gen3ou",
               labels: "tuple[str, ...]" = (), terminal: "Optional[dict]" = None,
-              opponents: "Optional[list[dict]]" = None, oracle_reveal: str = "off") -> str:
+              opponents: "Optional[list[dict]]" = None,
+              oracle_reveal: "Union[str, Tuple[str, str]]" = "off") -> str:
     """The startup declaration as the core parses it (every key explicit in the JSON — nothing
     defaulted except ``format_id``, the one format the core runs, and ``labels``: the Lane-C label
     FAMILIES the core writes, ``label_inventory`` names; none by default), and ``terminal`` (M5 Lane
@@ -120,11 +121,17 @@ def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, st
     default one EXTERNAL route, so a zeroed ``ep_opp`` is Lane 0's shape (the caller answers p2).
     ``oracle_reveal`` is the ORACLE REVEAL level (:data:`ORACLE_REVEAL_LEVELS`): ``off`` is the production
     observation; a diagnostic level writes the opponent's true species into every side's opponent block
-    from turn 1 — the run's recorded mode, so the training pool and its eval core must be given the SAME one."""
+    from turn 1 — the run's recorded mode, so the training pool and its eval core must be given the SAME one. A
+    ``(p1, p2)`` PAIR is a PER-SIDE level (each side's chain told the other side's team at its own level): only the
+    head-to-head engine declares one (``main.h2h``, X5 A/B §7.7(a)). A pair whose two levels agree is written as the
+    string, so a symmetric spec's text is exactly what it was before the per-side form existed."""
     import json
 
-    if oracle_reveal not in ORACLE_REVEAL_LEVELS:
-        raise ValueError(f"oracle_reveal {oracle_reveal!r} is not one of {ORACLE_REVEAL_LEVELS}")
+    levels = (oracle_reveal, oracle_reveal) if isinstance(oracle_reveal, str) else tuple(oracle_reveal)
+    if len(levels) != 2 or any(lv not in ORACLE_REVEAL_LEVELS for lv in levels):
+        raise ValueError(f"oracle_reveal {oracle_reveal!r} is not one of {ORACLE_REVEAL_LEVELS} or a (p1, p2) pair "
+                         "of them")
+    reveal: "Union[str, list[str]]" = levels[0] if levels[0] == levels[1] else list(levels)
 
     from utils.rust_env import episode as EP
 
@@ -135,7 +142,7 @@ def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, st
         "turn_limit": turn_limit,
         "terminal": term, "refusal_budget": refusal_budget, "bank_dir": bank_dir, "labels": list(labels),
         "opponents": [dict(r) for r in (opponents if opponents is not None else ({"kind": "external"},))],
-        "oracle_reveal": oracle_reveal,
+        "oracle_reveal": reveal,
     }
     assert tuple(spec) == SPEC_KEYS, "spec_json and SPEC_KEYS drifted"
     return json.dumps(spec)

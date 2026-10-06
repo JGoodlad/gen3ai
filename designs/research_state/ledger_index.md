@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,285-line file. **The ledger itself is append-only and is never edited by this**;
+22,295-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**767 headings · 712 dated · 2026-08-01 → 2026-10-05 · ledger 22,285 lines.**
+**768 headings · 713 dated · 2026-08-01 → 2026-10-05 · ledger 22,295 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -787,3 +787,4 @@ rename.
   - `L22251` · `2026-10-05` · FINDING + FIX · **F-XC-4 FIXED: fixed_mass's NaN compiled backward was `amax`'s tie-count backward over a tensor Inductor RECOMPUTES (Triton FMA contraction rounds the recompute differently, so no element equals the saved max: 0/0); fixed_mass now selects its ten incoming channel maxima BY INDEX (`gen3_fm_index_max_v1`); blob's compiled code byte-identical; the fixed_mass self-play logger crash fixed (`flat_switch_tgt_top1`); the canary no longer words an independence refusal as a CONFIRMED disagreement**
   - `L22266` · `2026-10-05` · REGISTRATION · **X5 A/B Amendment 5 (owner): the fixed_mass arm runs at up to 50 % slower; strength is read at BOTH matched steps and matched wall-time, each at the registered boundaries; adoption becomes the owner's decision**
   - `L22275` · `2026-10-05` · MEASUREMENT + BUILT · **X5 hypothesis encoding split exactly at the encoder's first Linears and gathered (`gen3_x5_hyp_gather_v1`): the encoding 10.09 → 4.38 ms per micro-batch (−57 %), `train_ms` +19.5 % → +12.8 % and T2 +46.1 % → +45.6 % vs blob (both still OVER budget), D-6 headroom 1,106 → 1,192 MiB (PASSES); the "per species" premise is FALSE; blob byte-identical**
+  - `L22285` · `2026-10-05` · BUILT · **The PER-SIDE oracle reveal in `main.h2h` (X5 A/B §7.7(a)): one-sided clairvoyance and both-sided cells play oracle checkpoints through the training core's own encoder path; `off` byte-identical; each mode its own eval protocol, stamped on every row**

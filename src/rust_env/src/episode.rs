@@ -431,7 +431,7 @@ mod tests {
             bank_dir: None,
             labels: Vec::new(),
             opponents: crate::opponents::Routes::external(),
-            oracle_reveal: pokesim::encoder::oracle::Level::Off,
+            oracle_reveal: crate::core::spec::Reveal::OFF,
         };
         let mut core = Core::new(spec).unwrap();
         let mut cols = OwnedCols::new(1);

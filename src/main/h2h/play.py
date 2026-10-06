@@ -71,6 +71,7 @@ from agents.training import mirrored_pairs as MP
 from agents.training.rust_eval import seeds as SD
 from main.h2h.arch import (GROUP_NAMES, MAX_GROUPS, ROLES, CellArchMismatch, EngineArch, EngineDecl,  # noqa: F401
                            _historical, _load_host, _terminal_of, declare_engine)
+from main.h2h import reveal as RV
 from main.h2h.errors import H2HError
 
 #: The opponent's key in the eval plan (the executor's per-game seed key is ``(cycle seed, key, game)``).
@@ -102,11 +103,38 @@ EXPECTED_GAMES_PER_S = 4.0
 
 TEAM_SOURCE = "eval_builders default_biased(bias_prob=0.1): both sides draw from the player's eval team builder"
 
+#: The protocols of the two ORACLE REVEAL modes (``main.h2h.reveal``, X5 A/B §7.7(a)): the same games as
+#: :data:`PROTOCOL`, with the per-side reveal in the observations.
+PROTOCOL_ONE_SIDED = RV.PROTOCOL_OF_MODE["one_sided"]
+PROTOCOL_BOTH_SIDED = RV.PROTOCOL_OF_MODE["both_sided"]
+assert RV.PROTOCOL_OF_MODE["off"] == PROTOCOL, "the off mode IS the h2h protocol"
+
 #: The resume read: THIS request's rows (any purpose — a request has one), at this tool's protocol.
 H2H_RESUME = L.ReaderDecl(
     name="main.h2h.resume", purposes=L.ALL_PURPOSES,
     regime=L.RegimeFilter(protocol=PROTOCOL, play="greedy", opponent_play="greedy", mirrored=True),
     requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
+#: ... at the one-sided oracle reveal's protocol.
+H2H_RESUME_ONE_SIDED = L.ReaderDecl(
+    name="main.h2h.resume_oracle_one_sided", purposes=L.ALL_PURPOSES,
+    regime=L.RegimeFilter(protocol=PROTOCOL_ONE_SIDED, play="greedy", opponent_play="greedy", mirrored=True),
+    requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
+#: ... at the both-sided oracle reveal's protocol.
+H2H_RESUME_BOTH_SIDED = L.ReaderDecl(
+    name="main.h2h.resume_oracle_both_sided", purposes=L.ALL_PURPOSES,
+    regime=L.RegimeFilter(protocol=PROTOCOL_BOTH_SIDED, play="greedy", opponent_play="greedy", mirrored=True),
+    requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
+
+
+def read_own(protocol: str, **kw: Any) -> Any:
+    """THIS request's rows at ``protocol`` (one declared read per protocol: the ledger gate's rule 2)."""
+    if protocol == PROTOCOL:
+        return L.read(H2H_RESUME, **kw)
+    if protocol == PROTOCOL_ONE_SIDED:
+        return L.read(H2H_RESUME_ONE_SIDED, **kw)
+    if protocol == PROTOCOL_BOTH_SIDED:
+        return L.read(H2H_RESUME_BOTH_SIDED, **kw)
+    raise H2HError(f"protocol {protocol!r} is not one main.h2h plays ({sorted(RV.PROTOCOL_OF_MODE.values())})")
 
 
 def eval_team_set() -> str:
@@ -363,12 +391,13 @@ class Compute:
                 "profile": self.profile}
 
 
-def regime_for(turn_limit: int, team_set: Optional[str] = None) -> Dict[str, Any]:
-    """The v2 regime block. ``team_set`` defaults to :func:`eval_team_set` (it reads the team pool)."""
+def regime_for(turn_limit: int, team_set: Optional[str] = None, mode: str = "off") -> Dict[str, Any]:
+    """The v2 regime block. ``team_set`` defaults to :func:`eval_team_set` (it reads the team pool); ``mode`` is the
+    plan's oracle reveal mode, whose protocol the block names (``off``: :data:`PROTOCOL`, the block of before)."""
     return L.with_regime_id({
         "play": "greedy", "opponent_play": "greedy", "mirrored": True, "mirror_rule": MP.SCHEMA,
         "eval_core": "rust", "turn_limit": int(turn_limit), "seed_rule": SD.SCHEMA, "team_source": TEAM_SOURCE,
-        "protocol": PROTOCOL, "seat_rule": "fixed_p1", "player_temp": None, "opponent_temp": None,
+        "protocol": RV.PROTOCOL_OF_MODE[RV.check_mode(mode)], "seat_rule": "fixed_p1", "player_temp": None, "opponent_temp": None,
         "team_set": team_set or eval_team_set()})
 
 
@@ -404,7 +433,7 @@ class H2HEngine:
 
     def __init__(self, player: PlayerRef, opponent: PlayerRef, compute: Compute,
                  emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True),
-                 decl: Optional[EngineDecl] = None):
+                 decl: Optional[EngineDecl] = None, reveal_mode: str = "off"):
         import torch
 
         from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
@@ -423,19 +452,24 @@ class H2HEngine:
 
         ensure_built(compute.profile, emit=emit)
         self.turn_limit = EP.stall_threshold()
-        self.regime = regime_for(self.turn_limit)
+        # the plan's ORACLE REVEAL mode (``main.h2h.reveal``): the declaration's when one is given
+        self.mode = decl.mode if decl is not None else RV.check_mode(reveal_mode)
+        if decl is not None and reveal_mode not in ("off", decl.mode):
+            raise H2HError(f"reveal mode {reveal_mode!r} differs from the declaration's {decl.mode!r}")
+        self.regime = regime_for(self.turn_limit, mode=self.mode)
         self._threads0 = torch.get_num_threads()
         #: host copies of the checkpoints this engine has loaded, by content hash (a cross reuses each run's snapshot
         #: across a row and a column); bounded by :attr:`host_cache` entries, least recently used evicted
         self._hosts: Dict[str, Any] = {}
         self.host_cache = 4
-        self.cores: Dict[Tuple[int, int], Any] = {}
+        #: one eval core per (player group, opponent group, (p1, p2) reveal levels) — ``EngineDecl.cores``
+        self.cores: Dict[Tuple[int, int, Tuple[str, str]], Any] = {}
         try:
             if compute.torch_threads:
                 torch.set_num_threads(int(compute.torch_threads))
             t0 = time.perf_counter()
             # THE ENGINE'S ARCHITECTURES: the plan's (default: this one cell's); group 0 = the first cell's player's
-            self.decl = decl if decl is not None else declare_engine([(player, opponent)], self._host)
+            self.decl = decl if decl is not None else declare_engine([(player, opponent)], self._host, self.mode)
             self.archs = self.decl.archs
             self.set_cell(player, opponent)
             n = int(compute.n_envs)
@@ -454,12 +488,15 @@ class H2HEngine:
                 backend=compute.resolved_backend, buckets=buckets, lanes=lanes,
                 max_rows_per_flush=max(1024, n_slots * max(buckets), 4 * n))).startup()
             tb, flat, fixed = eval_builders(None, [])
-            for gp, go in self.decl.combos:
-                self.cores[(gp, go)] = build_eval_core(
+            for gp, go, lv in self.decl.cores:
+                # the reveal reaches the core's startup declaration per SEAT (the player is p1); `off` on both seats
+                # passes nothing, so the spec is exactly the engine's of before the reveal
+                self.cores[(gp, go, lv)] = build_eval_core(
                     EvalDecl(n_envs=n, n_sentinels=1), collector_decl=cdecl, svc=self.svc,
                     extra_ids=[self.decl.slot_of(gp, "player"), self.decl.slot_of(go, "opponent")],
                     trainee_builder=tb, opp_builder=flat, fixed_builders=fixed, turn_limit=self.turn_limit,
-                    terminal=self.archs[gp].terminal, emit=lambda _m: None)
+                    terminal=self.archs[gp].terminal, emit=lambda _m: None,
+                    oracle_reveal=None if lv == RV.OFF_OFF else lv)
             packed = {c: tuple(ev.team_table.teams) for c, ev in self.cores.items()}
             if len(set(packed.values())) != 1:
                 raise H2HError(f"the eval cores' team tables differ ({sorted(packed)}) — one plan, one team table")
@@ -486,7 +523,7 @@ class H2HEngine:
     @property
     def ev(self) -> Any:
         """The CURRENT cell's eval core (its player's group x its opponent's group)."""
-        return self.cores[self.combo]
+        return self.cores[self.core_key]
 
     # ------------------------------------------------------------------------------------------ cells
     def _host(self, ref: PlayerRef) -> Any:
@@ -536,7 +573,19 @@ class H2HEngine:
             raise CellArchMismatch(f"cell {player.id} vs {opponent.id}: slot groups {combo} (player, opponent) have no "
                                    f"eval core — the engine declared {list(self.decl.combos)}; declare the plan's "
                                    "cells when the engine is built")
+        # the cell's reveal levels, from the mode and the two RECORDED levels; the core they select must have been
+        # declared, and is checked once more against the checkpoints (an oracle side at its own level only)
+        cell = f"cell {player.id} vs {opponent.id}"
+        rec = (RV.recorded_level(player), RV.recorded_level(opponent))
+        levels = RV.side_levels(self.mode, rec[0], rec[1], cell)
+        key = (combo[0], combo[1], levels)
+        if key not in self.decl.cores:
+            raise CellArchMismatch(f"{cell}: slot groups {combo} at reveal levels {levels} (p1, p2) have no eval core — "
+                                   f"the engine declared {list(self.decl.cores)}; declare the plan's cells when the "
+                                   "engine is built")
+        RV.check_side_levels(key[2], self.mode, rec[0], rec[1], cell)
         self.player, self.opponent, self.pm, self.om, self.combo = player, opponent, pm, om, combo
+        self.core_key, self.levels = key, levels
         self.team_check = team_check
         self.historical = {player.id: _historical(player), opponent.id: _historical(opponent)}
         return time.perf_counter() - t0
@@ -637,6 +686,10 @@ def build_row(*, writer: L.LedgerWriter, run_label: str, commit: str, a: PlayerR
                "p2_policy_decisions": executor.get("p2_policy_decisions"),
                "outcome_digest": score.outcome_digest, "near_tie_games": list(score.near_tie_idx or []),
                "digest_margin": DIGEST_MARGIN, "outcome_digest_all": score.outcome_digest_all}
+    stamp = RV.row_block(eng.mode, eng.levels)
+    if stamp is not None:
+        # the per-side ORACLE REVEAL the games were played at (absent on an `off` row: the row of before the reveal)
+        compute["oracle_reveal"] = stamp
     return {
         "schema": L.SCHEMA, "row_id": writer.next_row_id(), "supersedes": None, "ts": L.utc_now(),
         "t_start": t_start, "t_end": t_end, "run": run_label, "commit": commit,
@@ -680,22 +733,26 @@ def plan_edge(writer: L.LedgerWriter, root: Path, regime: Mapping[str, Any], pla
               *, pairs: int, batch_pairs: int, schedule_seed: int, schedule_key: Optional[str], purpose: str,
               request_id: Optional[str], family: Optional[str], request_kind: Optional[str]) -> EdgePlan:
     """Open (idempotently) the cell's request and read what it already holds; REFUSES a plan that would replay a
-    recorded batch index under another length."""
+    recorded batch index under another length. The plan's oracle reveal mode is ``regime``'s protocol
+    (:func:`regime_for`); a cell whose checkpoints do not fit it is refused here, before any request is opened."""
     key = schedule_key or schedule_key_of(player, opponent)
     plan = batch_plan(pairs, batch_pairs)
     check_core_flags(player)
     check_core_flags(opponent)
+    protocol = regime["protocol"]
+    mode = next(m for m, pr in RV.PROTOCOL_OF_MODE.items() if pr == protocol)
+    RV.side_levels(mode, RV.recorded_level(player), RV.recorded_level(opponent), f"cell {player.id} vs {opponent.id}")
     rid = request_id or default_request_id(player, opponent, regime["regime_id"], key, schedule_seed)
     kind = request_kind or ("ab_cell" if purpose == "ab" else "adhoc")
     try:
-        req = writer.open_request(rid, kind=kind, purpose=purpose, family=family, protocol=PROTOCOL,
+        req = writer.open_request(rid, kind=kind, purpose=purpose, family=family, protocol=protocol,
                                   spec={"producer": PRODUCER, "batch_pairs": int(batch_pairs),
                                         "schedule_seed": int(schedule_seed)})
     except L.RequestSpecError as e:
         raise H2HError(f"request {rid}: {e} — a different batch size (or schedule seed) over an existing request "
                        "would replay the same batch index under another length; use the same --batch-pairs, or a "
                        "new --request") from None
-    existing = L.read(H2H_RESUME, root=root, request_id=rid, regime_id=regime["regime_id"])
+    existing = read_own(protocol, root=root, request_id=rid, regime_id=regime["regime_id"])
     done = completed_batches(existing.rows, player, opponent)
     for b_i, n in done.items():
         if b_i >= len(plan) or plan[b_i] != n:
@@ -777,7 +834,7 @@ def play_planned(eng: "H2HEngine", writer: L.LedgerWriter, ep: EdgePlan, *, sche
 def play_edge(out_dir: Optional[str], player: PlayerRef, opponent: PlayerRef, *, pairs: int,
               batch_pairs: int = DEFAULT_BATCH_PAIRS, schedule_seed: int = 0, schedule_key: Optional[str] = None,
               purpose: str = DEFAULT_PURPOSE, run_label: str, compute: Compute, request_id: Optional[str] = None,
-              family: Optional[str] = None, request_kind: Optional[str] = None,
+              family: Optional[str] = None, request_kind: Optional[str] = None, reveal_mode: str = "off",
               emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True)) -> Dict[str, Any]:
     """Play ``pairs`` mirrored pairs of ``player`` vs ``opponent`` in batches, one §0b row per batch appended under
     its claim to the ledger root ``out_dir`` (``None`` = the run archive's ``_ledger``; any other root under
@@ -788,7 +845,7 @@ def play_edge(out_dir: Optional[str], player: PlayerRef, opponent: PlayerRef, *,
     from utils.rust_env import episode as EP
 
     root, writer = open_writer(out_dir, purpose)
-    regime = regime_for(EP.stall_threshold())
+    regime = regime_for(EP.stall_threshold(), mode=reveal_mode)
     ep = plan_edge(writer, root, regime, player, opponent, pairs=pairs, batch_pairs=batch_pairs,
                    schedule_seed=schedule_seed, schedule_key=schedule_key, purpose=purpose, request_id=request_id,
                    family=family, request_kind=request_kind)
@@ -798,7 +855,7 @@ def play_edge(out_dir: Optional[str], player: PlayerRef, opponent: PlayerRef, *,
     if ep.todo:
         commit = current_commit()
         with engine_lock(compute):
-            eng = H2HEngine(player, opponent, compute, emit)
+            eng = H2HEngine(player, opponent, compute, emit, reveal_mode=reveal_mode)
             try:
                 if eng.regime["regime_id"] != regime["regime_id"]:
                     raise H2HError("the engine's regime differs from the one planned")
@@ -807,6 +864,6 @@ def play_edge(out_dir: Optional[str], player: PlayerRef, opponent: PlayerRef, *,
             finally:
                 eng.close()
     writer.close()
-    got = L.read(H2H_RESUME, root=root, request_id=ep.rid, regime_id=regime["regime_id"],
-                 players=[player.sha256], opponents=[opponent.sha256])
+    got = read_own(regime["protocol"], root=root, request_id=ep.rid, regime_id=regime["regime_id"],
+                   players=[player.sha256], opponents=[opponent.sha256])
     return ST.edge_summary(list(got.rows))

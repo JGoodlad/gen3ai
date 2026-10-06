@@ -9,6 +9,7 @@ from typing import List, Optional
 
 from agents.training import eval_ledger as L
 from main.h2h import play as PL
+from main.h2h import reveal as RV
 from main.h2h import stats as ST
 
 
@@ -41,6 +42,12 @@ def _common(p: argparse.ArgumentParser, request_help: Optional[str] = None) -> N
     p.add_argument("--torch-threads", type=int, default=4, help="intra-op threads of a CPU forward")
     p.add_argument("--front", default="proc", choices=("proc", "ffi"))
     p.add_argument("--profile", default="release", choices=("release", "selfcheck"))
+    p.add_argument("--oracle-reveal-mode", default="off", choices=RV.MODES,
+                   help="the PER-SIDE oracle reveal (X5 A/B §7.7(a); module main.h2h.reveal): off = no reveal (an "
+                        "oracle checkpoint is REFUSED); one_sided = the oracle side told the other team at its own "
+                        "recorded level, the other side as trained (the primary read); both_sided = the other side "
+                        "told the oracle's team too (descriptive: out of distribution for it). Each mode is its own "
+                        "eval protocol, stamped on every row")
 
 
 def _compute(a: argparse.Namespace) -> PL.Compute:
@@ -79,6 +86,16 @@ H2H_READ = L.ReaderDecl(
     name="main.h2h.read", purposes=L.ALL_PURPOSES,
     regime=L.RegimeFilter(protocol=PL.PROTOCOL, play="greedy", opponent_play="greedy", mirrored=True),
     requests="any", selection="include", flags_ok=frozenset({"digest_unrecorded"}), inference="conditional")
+#: ... the one-sided oracle reveal's rows (``main.h2h.reveal``; no v1 row exists at it).
+H2H_READ_ONE_SIDED = L.ReaderDecl(
+    name="main.h2h.read_oracle_one_sided", purposes=L.ALL_PURPOSES,
+    regime=L.RegimeFilter(protocol=PL.PROTOCOL_ONE_SIDED, play="greedy", opponent_play="greedy", mirrored=True),
+    requests="any", selection="include", flags_ok=frozenset(), inference="conditional")
+#: ... the both-sided oracle reveal's rows.
+H2H_READ_BOTH_SIDED = L.ReaderDecl(
+    name="main.h2h.read_oracle_both_sided", purposes=L.ALL_PURPOSES,
+    regime=L.RegimeFilter(protocol=PL.PROTOCOL_BOTH_SIDED, play="greedy", opponent_play="greedy", mirrored=True),
+    requests="any", selection="include", flags_ok=frozenset(), inference="conditional")
 
 
 def cmd_play(a: argparse.Namespace) -> int:
@@ -88,7 +105,8 @@ def cmd_play(a: argparse.Namespace) -> int:
     compute = _compute(a)
     summ = PL.play_edge(a.out, player, opponent, pairs=a.pairs, batch_pairs=a.batch_pairs, schedule_seed=a.seed,
                         schedule_key=a.schedule_key, purpose=a.purpose, run_label=a.label, compute=compute,
-                        request_id=a.request, family=a.family, request_kind=a.request_kind)
+                        request_id=a.request, family=a.family, request_kind=a.request_kind,
+                        reveal_mode=a.oracle_reveal_mode)
     print(ST.format_edge(summ))
     print(json.dumps(summ, sort_keys=True))
     return 0
@@ -106,7 +124,8 @@ def cmd_play_many(a: argparse.Namespace) -> int:
     specs = MANY.cells_from_file(a.cells) if a.cells is not None else MANY.cross(a.players, a.opponents)
     out = MANY.play_cells(a.out, MANY.resolve_cells(specs), pairs=a.pairs, batch_pairs=a.batch_pairs,
                           schedule_seed=a.seed, schedule_key=a.schedule_key, purpose=a.purpose, run_label=a.label,
-                          compute=_compute(a), request_id=a.request, family=a.family, request_kind=a.request_kind)
+                          compute=_compute(a), request_id=a.request, family=a.family, request_kind=a.request_kind,
+                          reveal_mode=a.oracle_reveal_mode)
     for summ in out["cells"]:
         print(ST.format_edge(summ))
     print(json.dumps(out, sort_keys=True))
@@ -118,7 +137,11 @@ def cmd_read(a: argparse.Namespace) -> int:
     if not root.exists():
         print(f"[h2h] no such directory: {root}", file=sys.stderr)
         return 2
-    reads = L.read_by_regime(H2H_READ, root=root)
+    # every protocol main.h2h plays: `off` (with its v1 rows), then the two oracle reveal modes — never pooled (each
+    # regime is its own key)
+    reads = dict(L.read_by_regime(H2H_READ, root=root))
+    reads.update(L.read_by_regime(H2H_READ_ONE_SIDED, root=root))
+    reads.update(L.read_by_regime(H2H_READ_BOTH_SIDED, root=root))
     if a.regime is not None:
         reads = {k: v for k, v in reads.items() if k == a.regime}
     rows = [r for got in reads.values() for r in got.rows]

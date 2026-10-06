@@ -53,7 +53,7 @@ pub const FAMILIES: [&str; 6] = ["belief", "spread", "hp_type", "item", "intent"
 fn spec_with(n: usize, threads: usize, teams: Vec<String>, level: Level) -> pokesim_env::core::Spec {
     let mut spec = common::spec(n, threads, teams);
     spec.labels = pokesim_env::labels::declare(&FAMILIES.map(String::from)).expect("labels");
-    spec.oracle_reveal = level;
+    spec.oracle_reveal = pokesim_env::core::spec::Reveal::both(level);
     spec
 }
 
@@ -508,6 +508,152 @@ fn full_differs_from_off_only_in_the_opponent_block_and_tells_the_true_set() {
     assert!(total.rows > 20_000 && total.tail_rows > 5_000, "{total:?}");
     assert!(total.tail_slots_checked > 10_000 && total.seen_slots_checked > 20_000, "{total:?}");
     assert!(total.item_known > 1_000 && total.moves_added > 1_000, "{total:?}");
+}
+
+// ------------------------------------------------------------------ the PER-SIDE reveal (main.h2h, X5 A/B §7.7(a))
+
+/// Every column the model reads, ROW-major per (env, side): each per-env column is `SIDES * k` elements.
+const ROW_COLS: [usize; 22] = [
+    col::OBS, col::MASK, col::NEED, col::DEC_N,
+    col::BELIEF_SPECIES, col::BELIEF_MOVES, col::KNOWN_MOVES, col::BELIEF_SPREAD, col::BELIEF_SPREAD_MASK,
+    col::BELIEF_NATURE, col::BELIEF_NATURE_MASK, col::BELIEF_EV, col::BELIEF_EV_MASK, col::HP_TYPE_LABEL,
+    col::HP_TYPE_MASK, col::ITEM_LABEL, col::ITEM_MASK, col::WIN_MARGIN, col::OPP_ACTION_KIND,
+    col::OPP_ACTION_NUM, col::OPP_SWITCH_SLOT, col::OPP_SWITCH_SPECIES,
+];
+
+fn row_bytes(cols: &OwnedCols, c: usize, n: usize, k: usize) -> &[u8] {
+    let b = cols.bytes(c);
+    let w = b.len() / (n * SIDES);
+    &b[k * w..(k + 1) * w]
+}
+
+/// Play the SAME staging and actions on three cores — symmetric `off`, symmetric `level`, and the split reveal
+/// `split` — and require, at every decision row of every side, the split core's row (obs, mask and every label
+/// column) to be BIT-identical to the symmetric core of THAT side's level: a side at `level` is written exactly as
+/// the training core writes it, a side at `off` exactly as `off` writes it. Returns (rows, revealed rows) compared.
+fn per_side_differential(level: Level, split: [Level; 2], n: usize, seed: u64, steps: usize) -> (u64, u64) {
+    use pokesim_env::core::spec::Reveal;
+    let teams = common::corpus_teams();
+    let nt = teams.len();
+    let spec_at = |r: Reveal| {
+        let mut s = spec_with(n, 1, teams.clone(), Level::Off);
+        s.oracle_reveal = r;
+        s
+    };
+    let mut cores = [
+        Core::new(spec_at(Reveal::OFF)).expect("off core"),
+        Core::new(spec_at(Reveal::both(level))).expect("symmetric core"),
+        Core::new(spec_at(Reveal(split))).expect("split core"),
+    ];
+    let mut cols = [OwnedCols::new(n), OwnedCols::new(n), OwnedCols::new(n)];
+    let addrs = [cols[0].addrs(), cols[1].addrs(), cols[2].addrs()];
+    for (c, a) in cores.iter_mut().zip(addrs) {
+        c.freeze(a).expect("freeze");
+    }
+    let mut stage_rng = common::Rng(seed ^ 0x5157_A6E5);
+    let mut act_rng = common::Rng(seed);
+    let (mut rows, mut revealed) = (0u64, 0u64);
+    let mut op = |code: u8, cores: &mut [Core; 3], cols: &mut [OwnedCols; 3], stage: bool, rows: &mut u64, revealed: &mut u64| {
+        if stage {
+            for i in 0..n {
+                common::stage(&mut cols[0], i, &mut stage_rng, nt);
+            }
+            common::random_actions(&mut cols[0], &mut act_rng);
+            for c in [col::EP_TEAM, col::EP_SEED] {
+                let v = cols[0].slice::<u32>(c).to_vec();
+                cols[1].slice_mut::<u32>(c).copy_from_slice(&v);
+                cols[2].slice_mut::<u32>(c).copy_from_slice(&v);
+            }
+            let act = cols[0].slice::<i32>(col::ACTION).to_vec();
+            cols[1].slice_mut::<i32>(col::ACTION).copy_from_slice(&act);
+            cols[2].slice_mut::<i32>(col::ACTION).copy_from_slice(&act);
+        } else {
+            for i in 0..n {
+                common::stage(&mut cols[0], i, &mut stage_rng, nt);
+            }
+            for c in [col::EP_TEAM, col::EP_SEED] {
+                let v = cols[0].slice::<u32>(c).to_vec();
+                cols[1].slice_mut::<u32>(c).copy_from_slice(&v);
+                cols[2].slice_mut::<u32>(c).copy_from_slice(&v);
+            }
+        }
+        for (i, c) in cores.iter_mut().enumerate() {
+            assert_eq!(c.dispatch(code, addrs[i]), 0, "core {i}: {:?}", c.last_error().map(|e| e.json()));
+        }
+        // the games are the same games: the reveal is an observation mode, never a game input
+        for c in [col::NEED, col::DONE, col::EPISODE, col::TURN, col::REWARD, col::TERMINATED, col::TRUNCATED, col::REFUSED] {
+            assert_eq!(cols[0].bytes(c), cols[2].bytes(c), "column {c}: the split core's game differs from off's");
+            assert_eq!(cols[1].bytes(c), cols[2].bytes(c), "column {c}: the split core's game differs from the symmetric one's");
+        }
+        for env in 0..n {
+            for side in 0..SIDES {
+                let k = env * SIDES + side;
+                if cols[2].slice::<u8>(col::NEED)[k] != 1 {
+                    continue;
+                }
+                let want = if split[side] == Level::Off { 0 } else { 1 };
+                for c in ROW_COLS {
+                    assert!(
+                        row_bytes(&cols[2], c, n, k) == row_bytes(&cols[want], c, n, k),
+                        "env {env} p{}: column {c} of the split reveal {split:?} differs from the symmetric {:?} core's",
+                        side + 1,
+                        split[side]
+                    );
+                }
+                *rows += 1;
+                if split[side] != Level::Off {
+                    *revealed += 1;
+                }
+            }
+        }
+    };
+    op(b'R', &mut cores, &mut cols, false, &mut rows, &mut revealed);
+    for _ in 0..steps {
+        op(b'S', &mut cores, &mut cols, true, &mut rows, &mut revealed);
+    }
+    for c in &cores {
+        assert_eq!(c.counters()[counter::REFUSALS], 0, "a refusal");
+    }
+    (rows, revealed)
+}
+
+#[test]
+fn a_per_side_reveal_writes_each_side_exactly_as_the_symmetric_core_of_its_level() {
+    for level in [Level::Species, Level::Full] {
+        for (i, split) in [[level, Level::Off], [Level::Off, level]].into_iter().enumerate() {
+            let (rows, revealed) = per_side_differential(level, split, 6, 61 + i as u64, 300);
+            eprintln!("per-side {split:?}: {rows} rows, {revealed} at the revealed side");
+            // NON-VACUITY: both sides decided many times, and the revealed side is about half of them
+            assert!(rows > 3_000 && revealed > 1_000 && rows - revealed > 1_000, "{split:?}: {rows} / {revealed}");
+        }
+    }
+}
+
+#[test]
+fn the_symmetric_core_differs_from_off_so_the_per_side_comparison_has_teeth() {
+    // the reveal changes the rows it reaches (else "the split side equals the symmetric core" would hold for an
+    // inert reveal too): the first decision's opponent block at every level differs from off's
+    for level in [Level::Species, Level::Full] {
+        let teams = common::corpus_teams();
+        let nt = teams.len();
+        let mut obs = Vec::new();
+        for r in [pokesim_env::core::spec::Reveal::OFF, pokesim_env::core::spec::Reveal([level, Level::Off])] {
+            let mut s = spec_with(2, 1, teams.clone(), Level::Off);
+            s.oracle_reveal = r;
+            let mut core = Core::new(s).expect("core");
+            let mut cols = OwnedCols::new(2);
+            let mut rng = common::Rng(7);
+            for i in 0..2 {
+                common::stage(&mut cols, i, &mut rng, nt);
+            }
+            let a = cols.addrs();
+            core.freeze(a).expect("freeze");
+            assert_eq!(core.dispatch(b'R', a), 0);
+            obs.push((row_bytes(&cols, col::OBS, 2, 0).to_vec(), row_bytes(&cols, col::OBS, 2, 1).to_vec()));
+        }
+        assert_ne!(obs[0].0, obs[1].0, "{level:?}: p1's revealed row equals off's");
+        assert_eq!(obs[0].1, obs[1].1, "{level:?}: p2 (off) moved");
+    }
 }
 
 // ------------------------------------------------------------------ edge cases

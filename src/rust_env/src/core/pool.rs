@@ -180,10 +180,12 @@ impl Env {
                 BattleVersion::parse_root_unrecorded(side, &spec.names[side], Some(&self.log.teams[side]), Default::default())
                     .map_err(core_err(&format!("root p{}", side + 1)))?;
             // The ORACLE REVEAL (a diagnostic observation mode, `pokesim::encoder::oracle`): each side's
-            // chain is told the OTHER side's team, so the trainee and a policy opponent are symmetric.
-            // `off` builds nothing — the chain is the one the build without the reveal made.
-            if spec.oracle_reveal != Level::Off {
-                let oracle = Oracle::new(spec.oracle_reveal, &self.log.teams[1 - side], &ctx.dex)
+            // chain is told the OTHER side's team at ITS side's level (`Spec::oracle_reveal.of(side)`): a run's
+            // recorded mode is one level for both sides (the trainee and a policy opponent are symmetric); the
+            // head-to-head engine may split it (one-sided clairvoyance, X5 A/B §7.7(a)). A side at `off` builds
+            // nothing — its chain is the one the build without the reveal made.
+            if spec.oracle_reveal.of(side) != Level::Off {
+                let oracle = Oracle::new(spec.oracle_reveal.of(side), &self.log.teams[1 - side], &ctx.dex)
                     .map_err(core_err(&format!("oracle p{}", side + 1)))?;
                 chain = chain.with_oracle(side, Arc::new(oracle)).map_err(core_err(&format!("oracle p{}", side + 1)))?;
             }
@@ -460,9 +462,11 @@ impl Pool {
                     .map_err(|e| format!("spec: team {i}: the reading refuses it as p{}: {}", side + 1, e.message()))?;
             }
             // ... and, under the ORACLE REVEAL, the observation can be told it as the opponent's team.
-            if spec.oracle_reveal != Level::Off {
-                Oracle::new(spec.oracle_reveal, t, &dex)
-                    .map_err(|e| format!("spec: team {i}: the oracle reveal refuses it: {}", e.message()))?;
+            for level in spec.oracle_reveal.0 {
+                if level != Level::Off {
+                    Oracle::new(level, t, &dex)
+                        .map_err(|e| format!("spec: team {i}: the oracle reveal refuses it: {}", e.message()))?;
+                }
             }
         }
         if let Some(d) = &spec.bank_dir {

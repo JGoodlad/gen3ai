@@ -1377,9 +1377,10 @@ does nothing given another setting.
 **`--oracle-reveal {off,species,full}` is not a row of the generated table above:** it builds no module and moves no weight, so it is
 a `resume_immutable` OBSERVATION-MODE flag (config v137), `off` in production and never on the ARCH surface. It is recorded in
 `model_config.json` and `metadata.json`, inherited by a flagless resume, refused if a resume flips it (`check_oracle_reveal`),
-and shown by `main.checkargs` and the launch banner. `main.h2h`, `main.anchors`, `main.play`, `main.belief_roles` and
-`main.policy_spectrum` refuse a checkpoint that records `species` or `full` (they build observations without the reveal). It is refused
-with the fork arm. See §1.2 for what the row carries.
+and shown by `main.checkargs` and the launch banner. `main.anchors`, `main.play`, `main.belief_roles` and
+`main.policy_spectrum` refuse a checkpoint that records `species` or `full` (they build observations without the reveal); `main.h2h`
+plays one at its recorded level through a PER-SIDE reveal (`--oracle-reveal-mode one_sided|both_sided`) and refuses one under `off`.
+It is refused with the fork arm. See §1.2 for what the row carries.
 
 ### 6.3 Reward config (resume-immutable, `check_reward_config`)
 

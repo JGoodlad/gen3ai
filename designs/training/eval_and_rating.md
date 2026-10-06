@@ -920,6 +920,28 @@ and builds no engine when nothing is left.
   and after every cycle the engine checks both slots bit-exact against THIS cell's checkpoints (`H2HEngine.verify_slots`):
   a skipped load and a copy that did nothing are both caught before the batch is scored, and no row is written (tested).
 - The host copies of the checkpoints (the load SOURCE, never served) go through `load_checkpoint_strict` on the CPU, an LRU of 4.
+- 🚨 **THE PER-SIDE ORACLE REVEAL (`--oracle-reveal-mode {off,one_sided,both_sided}`, `main/h2h/reveal.py`; X5 A/B
+  §7.7(a), 2026-10-05).** `main.h2h` is the one offline tool that PLAYS an oracle checkpoint (one whose run recorded
+  `--oracle-reveal species|full`). A plan declares ONE mode, and each cell's `(p1, p2)` levels follow from it and the
+  two checkpoints' RECORDED levels — never typed: `off` = no reveal (an oracle checkpoint is REFUSED, typed
+  `RevealModeError`, before anything loads); `one_sided` = the oracle side at its recorded level, the other side `off`
+  (clairvoyance, the primary read); `both_sided` = the other side told the oracle's team too, at the same level
+  (DESCRIPTIVE: out of distribution for that side). A reveal mode needs exactly ONE oracle side per cell (none, or an
+  oracle vs an oracle, is `RevealModeError`); a side at a level other than its checkpoint's / the mode's is
+  `RevealLevelMismatch` (checked per cell against the core it plays on). The reveal reaches the observation through
+  the Rust encoder exactly as in training: the eval core's spec carries the levels per SEAT (`Spec.oracle_reveal` as
+  `[p1, p2]`, `core::spec::Reveal`; `build_eval_core(oracle_reveal=(p1, p2))`), each side's chain told the OTHER
+  side's team at its own side's level, and the engine declares one eval core per (player group, opponent group,
+  levels). **Rows:** each mode is its own eval PROTOCOL (`gen3_eval_protocol_v1_h2h_oracle_one_sided` /
+  `..._both_sided`, so its own regime — never pooled with `off`), and every revealed row carries
+  `compute.oracle_reveal = {mode, player, opponent}`. A family pins ONE protocol, so an A/B look's oracle cells are a
+  request and a family per mode. **`off` is byte-identical** to the engine before the reveal (recorded at `c7b4d03e`
+  and reproduced: every action, margin and log-prob bit of a 24-game play, and the row's every non-volatile field —
+  pinned in `play_reveal_integration_test.py`). Tests: `reveal_test.py` (the level matrix, every refusal, the stamp,
+  the protocols, the spec's form), `play_reveal_integration_test.py` (real games: the off pin; one-sided moves only
+  the oracle side's turn-1 decision in either seat; both-sided moves both; every row stamped), and the Rust
+  `oracle_reveal_test.rs::a_per_side_reveal_writes_each_side_exactly_as_the_symmetric_core_of_its_level` (a split
+  core's side rows — obs, mask, every label — are bit-identical to the training core's at that side's level).
 - **Cost (CPU, measured 2026-10-04 on the P0 finals):** a swap to the next cell is 0.27 s (both checkpoints cached) to 1.1 s
   (one loaded for the first time), against a 4.7–5.5 s CPU engine start per cell before; the slot loads (copy-checked and
   parity-gated) stay per BATCH, ~0.47 s. On the GPU the engine start it removes is 114–167 s — the GPU per-cell time is
@@ -932,7 +954,8 @@ Tests: `agents/training/eval_ledger/` (above),
 (the multi-cell engine: rows equal single-cell rows, a swapped cell equals a fresh engine game for game, resume, the family
 read, the third-architecture refusal, the stale-slot checks); `play_cross_integration_test.py` (the two-architecture
 engine: a cross cell's valid rows, same-architecture identity on the two-group engine in either group, cross replay,
-resume, the family read, the refusals, a stale slot caught in EACH group).
+resume, the family read, the refusals, a stale slot caught in EACH group); `reveal_test.py` and
+`play_reveal_integration_test.py` (the per-side oracle reveal, above).
 
 ### SPRT promotion (`--promotion-sprt`, T6 — `gen3_sprt_promotion_v1`, DEFAULT OFF)
 

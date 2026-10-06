@@ -34,13 +34,11 @@ def _load_host(ref: PlayerRef) -> Any:
     """``ref``'s checkpoint through the strict loader (``gen3_strict_checkpoint_load_v1``), on the CPU, eval mode.
     ``historical_load_kwargs`` strips the policy / extractor kwargs DELETED since the checkpoint was written (PopArt,
     the value-dist head) and REFUSES an ON one — a run trained at an older pin still loads at HEAD. The host copy is
-    only the SOURCE of a slot load (T2 copies it into its slot in place): it is never served."""
-    from agents.model.oracle_reveal import refuse_if_revealed
+    only the SOURCE of a slot load (T2 copies it into its slot in place): it is never served. An ORACLE checkpoint loads
+    like any other: the reveal level it PLAYS at is the plan's (``main.h2h.reveal``), checked per cell against its
+    recorded level by :func:`declare_engine` and ``H2HEngine.set_cell``."""
     from agents.model.snapshot import historical_load_kwargs, load_checkpoint_strict
 
-    # the engine's eval cores are built at `oracle_reveal = off` (the per-SIDE reveal is deferred, X5 A/B §7.7(a)):
-    # an oracle checkpoint would play observations it never trained on, so it is refused here, by name
-    refuse_if_revealed(ref.zip_path, tool="main.h2h", reason="The engine's eval cores are built at --oracle-reveal off.")
     m = load_checkpoint_strict(ref.zip_path, device="cpu", **historical_load_kwargs(ref.zip_path))
     m.policy.eval()
     return m
@@ -145,6 +143,9 @@ class EngineDecl:
     * ``combos`` — the (player group, opponent group) pairs the cells use; ONE eval core each (an eval core's route
       table names the opponent's slot, fixed when the core opens).
     * ``members`` — every checkpoint's group, by content hash.
+    * ``mode`` / ``cores`` — the plan's ORACLE REVEAL mode (``main.h2h.reveal``) and the eval cores it needs: one per
+      (player group, opponent group, (p1 level, p2 level)) its cells use, in first-use order. Under ``off`` every level
+      pair is ``("off", "off")``: one core per combo, the engine of before the reveal.
     """
 
     archs: Tuple[EngineArch, ...]
@@ -152,6 +153,8 @@ class EngineDecl:
     roles: Tuple[Tuple[str, ...], ...]
     combos: Tuple[Tuple[int, int], ...]
     members: Mapping[str, int]
+    mode: str = "off"
+    cores: Tuple[Tuple[int, int, Tuple[str, str]], ...] = ()
 
     @property
     def n_slots(self) -> int:
@@ -174,18 +177,28 @@ class EngineDecl:
         raise H2HError(f"slot {slot} is not declared (0..{self.n_slots - 1})")
 
     def block(self) -> Dict[str, Any]:
-        return {"groups": [{"name": GROUP_NAMES[i], "source": a.source, "roles": list(self.roles[i]),
-                            "fingerprint": a.fingerprint[:12]} for i, a in enumerate(self.archs)],
-                "combos": [list(c) for c in self.combos]}
+        out: Dict[str, Any] = {"groups": [{"name": GROUP_NAMES[i], "source": a.source, "roles": list(self.roles[i]),
+                                           "fingerprint": a.fingerprint[:12]} for i, a in enumerate(self.archs)],
+                               "combos": [list(c) for c in self.combos]}
+        if self.mode != "off":
+            out["oracle_reveal"] = {"mode": self.mode, "cores": [[gp, go, list(lv)] for gp, go, lv in self.cores]}
+        return out
 
 
-def declare_engine(cells: Sequence[Tuple[PlayerRef, PlayerRef]], host: Callable[[PlayerRef], Any]) -> EngineDecl:
+def declare_engine(cells: Sequence[Tuple[PlayerRef, PlayerRef]], host: Callable[[PlayerRef], Any],
+                   mode: str = "off") -> EngineDecl:
     """Sort every side of every cell into at most :data:`MAX_GROUPS` architectures (``host`` loads a checkpoint; each
     distinct checkpoint is asked for ONCE, in first-use order, the first cell's player first). A checkpoint whose
     architecture matches neither group is a typed :class:`CellArchMismatch` naming it and what differs from each; a
-    player whose terminal differs from its group's first player's is refused the same way."""
+    player whose terminal differs from its group's first player's is refused the same way. ``mode`` is the plan's
+    ORACLE REVEAL mode: every cell's two levels are resolved FIRST (``main.h2h.reveal.side_levels``: an oracle
+    checkpoint under ``off``, a reveal mode with no oracle side, an oracle vs an oracle are typed refusals before
+    anything loads), and one eval core is declared per (player group, opponent group, levels)."""
+    from main.h2h.reveal import recorded_level, side_levels
+
     if not cells:
         raise H2HError("no cell to declare an engine for")
+    cell_levels = [side_levels(mode, recorded_level(p), recorded_level(o), f"cell {p.id} vs {o.id}") for p, o in cells]
     sides: Dict[str, Tuple[PlayerRef, set]] = {}
     for p, o in cells:
         sides.setdefault(p.sha256, (p, set()))[1].add("player")
@@ -227,9 +240,13 @@ def declare_engine(cells: Sequence[Tuple[PlayerRef, PlayerRef]], host: Callable[
         group_roles[members[sha]] |= rs
     roles_of = [tuple(r for r in ROLES if r in gr) for gr in group_roles]
     combos: List[Tuple[int, int]] = []
-    for p, o in cells:
+    cores: List[Tuple[int, int, Tuple[str, str]]] = []
+    for (p, o), lv in zip(cells, cell_levels):
         c = (members[p.sha256], members[o.sha256])
         if c not in combos:
             combos.append(c)
+        k = (c[0], c[1], lv)
+        if k not in cores:
+            cores.append(k)
     return EngineDecl(archs=tuple(archs), sources=tuple(sources), roles=tuple(roles_of), combos=tuple(combos),
-                      members=dict(members))
+                      members=dict(members), mode=mode, cores=tuple(cores))

@@ -286,7 +286,12 @@ the sleep belief, recency, last action, the active flag — the mon's state on t
 the opponent's TRUE species (`species`) or whole SET (`full`) into the opponent team block of the observation from turn 1,
 as if the game had a team preview. It enters the shared trunk through the row; it is not a side input to any head. The code is
 `src/rust_sim/src/encoder/oracle.rs`; the mode is the Rust env core's `Spec.oracle_reveal` (a REQUIRED spec key,
-`protocol.SPEC_KEYS`), and `off` leaves every row byte-identical to the encoder that had no reveal.
+`protocol.SPEC_KEYS`), and `off` leaves every row byte-identical to the encoder that had no reveal. The key takes ONE level
+(a string: both sides, the run's recorded mode) or a PER-SIDE pair `[p1, p2]` (`core::spec::Reveal`; each side's chain told
+the other side's team at its own side's level), which only the head-to-head engine declares (`main.h2h`'s one-sided /
+both-sided oracle cells, X5 A/B §7.7(a)); a symmetric spec is always written as the string, so its text is unchanged.
+`oracle_reveal_test.rs::a_per_side_reveal_writes_each_side_exactly_as_the_symmetric_core_of_its_level` pins that a split
+core's side rows (obs, mask, every label column) are bit-identical to the symmetric core of that side's level.
 
 | piece | is |
 |---|---|
