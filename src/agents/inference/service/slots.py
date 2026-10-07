@@ -11,7 +11,11 @@ a checkpoint built with the same weight shapes but a different forward-affecting
 mode, ``--attend-unrevealed-opponents``, a belief grad mode, ...) would run the TEMPLATE's forward
 with foreign weights — a silently different function. So a load must match both the state-dict
 SIGNATURE (keys x shapes x dtypes) and the FORWARD FINGERPRINT (the policy's constructor
-parameters, the extractor kwargs included, plus the critic runtime attributes).
+parameters, the extractor kwargs included, plus the critic runtime attributes). The extractor kwargs
+are CANONICAL: one recorded at exactly the value its ABSENCE means at load (the extractor
+constructor's signature default) is dropped, so a checkpoint that records a defaulted kwarg and an
+older one that lacks it share a fingerprint, while any non-default difference still splits
+(`canonical_extractor_kwargs`; X5 look 3, FINDING 1).
 
 THE RIDE-ALONG HEADS ARE NOT SERVED (F-MEM, `gen3_opponent_inference_load_v1`): they are detached and
 no forward reads them, so both identities leave them out — the signature skips every `ridealong.*`
@@ -62,14 +66,61 @@ def state_signature(sd: Dict[str, torch.Tensor]) -> Tuple[Tuple[str, Tuple[int, 
     return tuple((k, tuple(v.shape), str(v.dtype)) for k, v in sorted(sd.items()))
 
 
+def _absent_means(extractor_class: Any) -> Dict[str, Any]:
+    """What an ABSENT ``features_extractor_kwargs`` key MEANS at load, per parameter: the extractor
+    class's own constructor-signature default. SB3 rebuilds a checkpoint's extractor by splatting the
+    zip's saved kwargs into ``features_extractor_class(observation_space, **kwargs)`` (neither
+    ``load_checkpoint_strict`` nor ``historical_load_kwargs`` fills a key in), so the signature is the
+    ONE source of what a missing key builds — NOT the flag registry's ``default`` (the CLI default:
+    ``attend_unrevealed_opponents`` is True there and False in the signature) and NOT a
+    ``ModelVersion`` migration default. ``{}`` (nothing canonicalised) for anything whose signature
+    cannot be read; a ``*args`` / ``**kwargs`` parameter has no default and is never listed."""
+    import inspect
+
+    try:
+        sig = inspect.signature(extractor_class)
+    except (TypeError, ValueError):
+        return {}
+    return {n: p.default for n, p in sig.parameters.items()
+            if p.default is not inspect.Parameter.empty
+            and p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)}
+
+
+def _is_default(value: Any, default: Any) -> bool:
+    """``value`` is EXACTLY ``default`` — same type, equal and the same repr — so the constructor provably
+    builds the same thing whether it is passed or not. Deliberately strict: ``1`` vs ``True``, ``0`` vs
+    ``0.0``, ``[]`` vs ``()``, and two OFF spellings (``'off'`` vs ``'none'``) are NOT merged."""
+    try:
+        return type(value) is type(default) and bool(value == default) and repr(value) == repr(default)
+    except Exception:                                   # noqa: BLE001 - an uncomparable value is not a default
+        return False
+
+
+def canonical_extractor_kwargs(extractor_class: Any, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    """``kwargs`` minus every key recorded AT the value its absence means (:func:`_absent_means`).
+
+    A checkpoint written at a later commit RECORDS constructor kwargs at their defaults that an older
+    checkpoint of the same architecture lacks (X5 look 3, FINDING 1: ``policy_readout: 'tower'``,
+    ``oracle_reveal: 'off'``); both build the identical extractor, so the forward fingerprint must not
+    tell them apart. DROPPING (rather than filling absent keys in) keeps an old checkpoint's fingerprint
+    unchanged when a new kwarg is added with a default, and a new checkpoint that records it at that
+    default lands on the same hash. Any non-default value — recorded or not in the other — still splits,
+    as does a key whose absence means something else than the value recorded."""
+    defaults = _absent_means(extractor_class)
+    return {k: v for k, v in kwargs.items() if not (k in defaults and _is_default(v, defaults[k]))}
+
+
 def forward_fingerprint(policy: Any) -> str:
     """sha256 over what fixes the forward: constructor parameters (minus the optimizer, the schedule
-    and the ride-along declarations) + the critic runtime attributes."""
+    and the ride-along declarations) + the critic runtime attributes. The extractor kwargs are
+    CANONICAL (:func:`canonical_extractor_kwargs`): a kwarg recorded at the value its absence means
+    is dropped, so "absent" and "present at its default" share a fingerprint."""
     from agents.model.ridealong_heads import RIDEALONG_FLAGS
 
     params = {k: v for k, v in policy._get_constructor_parameters().items() if k not in _NOT_FORWARD}
     fek = params.get("features_extractor_kwargs")
     if isinstance(fek, dict):
+        fek = canonical_extractor_kwargs(params.get("features_extractor_class"), fek)
         params["features_extractor_kwargs"] = {k: v for k, v in fek.items() if k not in RIDEALONG_FLAGS}
     for a in _RUNTIME_ATTRS:
         params[a] = getattr(policy, a, None)

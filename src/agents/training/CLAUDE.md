@@ -373,7 +373,9 @@ cells on ONE engine (eval U6 / X5 U0): the same games and rows as single-cell `p
 cell; 🚨 **up to TWO architectures per engine** (`main/h2h/arch.py`, F-U6-1 closed): one T2 slot group per architecture
 with only the slots its cells need and one eval core per (player group, opponent group), so a two-architecture cross (the
 X5 A/B's was `fixed_mass` × `blob`, played at its own pin) plays on one engine — a THIRD architecture is refused before
-anything plays. Run it from the repo root (the team
+anything plays; an extractor kwarg RECORDED AT ITS DEFAULT (the extractor constructor's signature default — what an
+absent key builds) does not split an architecture, any non-default value does (`slots.canonical_extractor_kwargs`, X5
+look 3 FINDING 1). Run it from the repo root (the team
 pool is read cwd-relative; any other cwd is refused).
 🚨 **`python -m main.plateau` is the PLATEAU meter's TIER 1** (eval U9a; the rule is `plateau_t1.py`): `tick <run>` plays each
 due check (the newest 10M-grid node vs the node 50M back) as the registered GSPRT on `main.h2h`'s engine, one 40-pair batch

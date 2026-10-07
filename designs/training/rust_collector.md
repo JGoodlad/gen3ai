@@ -179,7 +179,9 @@ the training sources and fails on one that is not in it. (The refused-method tab
 
 One slot group per ARCHITECTURE in the route table's slot order (pool, stables, exploiter — ONE slot;
 the two-slot ladder plan of F-LE-6 was deleted with the exploiter ladder, deletion pass L4), then the trainee's slot(s); consecutive same-architecture routes share a group
-(F-LE-7). Default buckets `(8, N)`, plus 64 when N > 64 (`build.py` states why; decision: the program doc's
+(F-LE-7). "Same architecture" is the state-dict signature plus the forward fingerprint over the CANONICAL extractor
+kwargs — a kwarg recorded at the value its absence means at load (the extractor constructor's signature default) does
+not split a group (`slots.canonical_extractor_kwargs`, X5 look 3 FINDING 1; `eval_and_rating.md`). Default buckets `(8, N)`, plus 64 when N > 64 (`build.py` states why; decision: the program doc's
 Decision record). PER-SLOT CAPS (`gen3_slot_bucket_caps_v1`, `--t2-opponent-bucket-cap`, default 64): only the
 trainee's slot(s) capture the N-row bucket; every other slot (opponents, eval's) captures the buckets <= 64, rows
 beyond chunked — each lane's CUDA-graph pool is sized by its largest capture (8 lanes x 232 MiB uncapped at

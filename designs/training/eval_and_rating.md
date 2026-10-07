@@ -926,6 +926,23 @@ and builds no engine when nothing is left.
   `fixed_mass` checkpoint, `designs/research_state/measurements/h2h_cross_2026-10-04/` — 8 / 8 rows and every game's
   `outcome_digest_all`); a cross cell replays exactly on the same seeds, also with its groups declared the other way
   round. GPU memory is ESTIMATED there (the cross: ≈ today's engine; 4 slots worst case ≈ 2×), UNMEASURED.
+- 🚨 **A KWARG RECORDED AT ITS DEFAULT DOES NOT SPLIT AN ARCHITECTURE (X5 look 3 FINDING 1, 2026-10-07).** A checkpoint
+  written at a later commit records extractor kwargs at their defaults that an older checkpoint of the same architecture
+  lacks (`policy_readout: "tower"`, `oracle_reveal: "off"` in the `706fa536`-trained seeds' zips), and the forward
+  fingerprint used to hash them as different — so blob s1006 and s1007 were two "architectures" and the look-3 cross was
+  refused. The fingerprint now hashes the CANONICAL extractor kwargs (`agents.inference.service.slots.
+  canonical_extractor_kwargs`): a key recorded at EXACTLY (same type, equal, same repr) the value its ABSENCE means at
+  load is dropped. "What absence means" has ONE source, the one sb3's load applies: the extractor class's own
+  constructor-signature default (the zip's saved kwargs are splatted into it; nothing fills a missing key) — NOT the flag
+  registry's CLI default (`attend_unrevealed_opponents` is `True` there, `False` in the signature, so a checkpoint
+  recording `True` still splits from one that lacks the key) and not a `ModelVersion` migration default. Any non-default
+  value still splits, two OFF spellings (`"off"` / `"none"`) and `0` vs `False` are not merged, and a kwarg added later
+  with a default changes no older checkpoint's fingerprint. The state-dict signature check is unchanged. Proved on the
+  look-3 finals (CPU, read-only): blob s1001 / s1006 / s1007 / s1008 share one fingerprint, fm s1001 / s1007 another,
+  and the cross `fm{1001,1007} × blob{1001,1006,1007,1008}` declares ONE engine of two groups (it was refused);
+  tests `src/agents/inference/service/slots_fingerprint_test.py`, `src/main/h2h/arch_default_kwargs_test.py`. The same
+  fingerprint groups the TRAINER's T2 slots (`rust_rollout.build._arch_key`), so a pool snapshot that differs from the
+  trainee only by such a record now shares its group (the same function, `designs/training/rust_collector.md`).
 - 🚨 **THE TEAM POOL IS READ FROM THE WORKING DIRECTORY** (`utils.team_loader.TeamLoader`: `./data/teams`), so `main.h2h`
   REFUSES any cwd whose `data/teams` is not this checkout's (`play.check_team_pool`) — before, it loaded NO team, recorded
   the empty pool's team-set id and died on an `IndexError` in the eval core. Run it from the repo root.
