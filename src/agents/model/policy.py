@@ -140,6 +140,10 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         # move-resolution family replaces, at the same point and for the same reason (`off`: a no-op).
         if hasattr(fe, "retire_superseded_action_cells"):
             fe.retire_superseded_action_cells()
+        # gen3_value_threat_inject_off_v1 (v142, `--value-threat-inject off`, audit F10): retire the critic's
+        # token-content threat projection at the same point and for the same reason (ON: a no-op).
+        if hasattr(fe, "retire_value_threat_inject"):
+            fe.retire_value_threat_inject()
         self.action_net = _NoFlatActionNet()
         self.pointer_head = PointerNativeActionHead(
             # gen3_entity_move_seats_v1: move tokens are the REFINED E3 trunk seats (d_model-wide),

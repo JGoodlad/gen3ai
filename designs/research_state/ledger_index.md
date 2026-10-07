@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,724-line file. **The ledger itself is append-only and is never edited by this**;
+22,748-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**793 headings · 738 dated · 2026-08-01 → 2026-10-07 · ledger 22,724 lines.**
+**794 headings · 739 dated · 2026-08-01 → 2026-10-07 · ledger 22,748 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -813,3 +813,4 @@ rename.
   - `L22666` · `2026-10-06` · BUILT + MEASURED · **POKE-ENV RETIREMENT P2: the ELO ladder and the untaught meter now play every game on the Rust eval engine (the trainee's own Rust rows); the TRANSPORT is a stamped REGIME BOUNDARY that fits and readers refuse to mix. Paired shift on 16 N0 ladder pairs: NOT DETECTED (+0.99 pp [−2.46, +4.43] on the fitted edge)**
   - `L22675` · `2026-10-06` · BUILT · **F11's MOVE-RESOLUTION family behind `--move-resolution {off,on}` (config v141, OFF in production): per legal action P(it resolves as stated) by the exact gen-3 rules, intent-weighted; Destiny Bond = P(the opponent KOs us); the seven blocks' 55 facts kept, their 10 judgments dropped; `off` byte-identical; a stated exact 0 never contradicted in 300 real battles**
   - `L22712` · `2026-10-07` · FINDING + FIX · **The production damage op read an UNREVEALED opponent's top-1 PRIOR ability as REVEALED (`id > 0`), so it asserted guesses as certain (Toxic "never landed" on an unrevealed Snorlax: 12 of the old op's 199 certain-zero status claims on real played moves LANDED, all Snorlax Toxic); its status landing also ignored Safeguard, incoming Sleep / Freeze Clause, our Substitute and Yawn; `conditional_threat` counted accuracy twice; `intent_conditional` had three wrong rules. Fixed on the default path (`gen3_op_ability_status_gigo_v1`): one ability view + one status rule per direction, an AST gate, a real-battle gate; a TRAINING-INPUT BOUNDARY**
+  - `L22725` · `2026-10-07` · BUILT · **F10's screen arm: `--value-threat-inject off` (config v142, ON in production) now differs from production by the critic's token-content threat route ALONE — retired after SB3's re-init, −1,792 parameters, every other initial byte equal (before: 185 tensors moved); ON byte-identical; the screen meter named, not registered**

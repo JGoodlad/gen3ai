@@ -889,8 +889,15 @@ large random projection, not merely at init. The route is invariant under permut
 is shared across defenders by Contract W), equivariant under permuting ours (the row rides mon `j`'s
 token), and invariant at the pool — unlike the deleted flat concat, whose meaning was slot-ordered.
 `W_inj` is covered by `restore_identity_init()` (ledger M1) and that is gated on a real
-`MaskablePPO` build, not a bare extractor. Structural + version-checked, fresh runs only; OFF
-(production) builds no module and leaves the op on `hard_max`. **v1 substitutes α := normalize(w),
+`MaskablePPO` build, not a bare extractor. Structural + version-checked, fresh runs only; **ON in production.**
+**OFF is architecture audit F10's one-lever screen arm** (`--value-threat-inject off`, `gen3_value_threat_inject_off_v1`):
+with the op built it constructs the projection NOT LIVE and the policy RETIRES it after SB3's orthogonal re-init,
+so a trained OFF model has no module, key, optimizer slot or parameter for the route (production learner
+3,065,882 → 3,064,090 parameters, −1,792 = the `Linear(13, 128)`), every OTHER initial byte equals production's
+(MEASURED 2026-10-07 on a CPU `MaskablePPO` build, `value_threat_inject_off_test.py`, also under each of
+`--token-encoding static`, `--policy-readout trunk`, `--move-resolution on`, `--belief-tokens fixed_mass`), and
+the op stays on `hard_max`. The critic then reads the op's incoming rows through the trunk (`prefuse_proj`) and
+`value_entity_pool`'s op-row source only. **v1 substitutes α := normalize(w),
 a PRESENCE belief where the design wants a supervised USAGE belief** — deliberately, so a null
 indicts the delivery route rather than the belief.
 

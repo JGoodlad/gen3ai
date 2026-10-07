@@ -31,14 +31,13 @@ def _common(layout):
 
 
 def _pair(seed=0):
-    """A WEIGHT-MATCHED (OFF, ON) extractor pair.
+    """A WEIGHT-MATCHED (OFF, ON) extractor pair — matched BY CONSTRUCTION since v142.
 
-    Seeding both constructions identically is NOT enough: building `ValueThreatInject` draws from
-    the RNG stream (a `Linear`'s kaiming init runs before we zero it), so every module built after
-    it would receive different draws in ON than in OFF, and a forward comparison would report a
-    difference that has nothing to do with the injection. So the shared weights are copied across
-    explicitly — which is also the sharper claim: with the SAME body, does the injection change
-    anything at zero-init?
+    Building `ValueThreatInject` draws from the RNG stream (a `Linear`'s kaiming init runs before it is
+    zeroed). Until v142 OFF skipped it, so every module built after it received different draws and this
+    helper had to copy the shared weights across. gen3_value_threat_inject_off_v1 (audit F10): with the op
+    built, OFF constructs the projection too (not live; the POLICY retires it after SB3's re-init), so the
+    same seed now gives the SAME bytes everywhere — asserted here rather than repaired.
     """
     from agents.model.damage_op_test import _make_layout
     from agents.model.features_extractor import Gen3FeaturesExtractor
@@ -46,11 +45,10 @@ def _pair(seed=0):
     space, common = _space(layout), _common(layout)
     torch.manual_seed(seed); off = Gen3FeaturesExtractor(space, **common)
     torch.manual_seed(seed); on = Gen3FeaturesExtractor(space, **common, value_threat_inject=True)
-    shared = {k: v for k, v in on.state_dict().items()
-              if not k.startswith("cls_pool.value_threat_proj.")}
-    missing, unexpected = off.load_state_dict(shared, strict=False)
-    assert not unexpected, f"ON carries keys OFF lacks beyond the injection: {unexpected}"
-    assert not missing, f"OFF has keys ON lacks: {missing}"
+    a, b = off.state_dict(), on.state_dict()
+    assert a.keys() == b.keys(), sorted(set(a) ^ set(b))[:5]
+    moved = [k for k in a if not torch.equal(a[k], b[k])]
+    assert not moved, f"OFF and ON differ at init beyond nothing: {moved[:5]}"
     return off, on, layout
 
 
@@ -99,8 +97,11 @@ def test_inject_dim_matches_the_rung_the_op_will_build():
 
 def test_v0_off_adds_no_module_and_on_adds_only_its_own_keys():
     off, on, _ = _pair()
-    assert off.cls_pool.value_threat_proj is None
-    assert on.cls_pool.value_threat_proj is not None
+    # v142: a bare OFF extractor carries the projection NOT LIVE until the policy retires it.
+    assert not off.cls_pool.value_threat_live and off.cls_pool.value_threat_proj is not None
+    assert on.cls_pool.value_threat_live and on.cls_pool.value_threat_proj is not None
+    assert on.retire_value_threat_inject() is False
+    assert off.retire_value_threat_inject() is True and off.cls_pool.value_threat_proj is None
     new = set(on.state_dict()) - set(off.state_dict())
     assert new and all(k.startswith("cls_pool.value_threat_proj.") for k in new), sorted(new)[:5]
     assert not (set(off.state_dict()) - set(on.state_dict())), "OFF must not have keys ON lacks"

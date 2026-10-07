@@ -458,6 +458,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 141:
         data.setdefault("move_resolution", "off")
         data["config_version"] = 141
+    # v142 (gen3_value_threat_inject_off_v1, F10) — no field: `value_threat_inject=False` now builds the projection
+    # and retires it after SB3's re-init (init-byte parity with ON). The state_dict is unchanged and a load re-draws
+    # no init, so every past config stamps through.
+    if version < 142:
+        data["config_version"] = 142
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

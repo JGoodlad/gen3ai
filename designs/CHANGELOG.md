@@ -12125,3 +12125,34 @@ branch `obs-facts-append`).
   checkpoint); `OP_SEMANTICS` → `gen3_op_ability_status_gigo_v1`. Re-recorded: the K9 learner golden (both arms; both
   buffers rebuilt — their stored behaviour log-probs were the old op's) and `main/h2h`'s off/off play digests.
   Pinned runs are unaffected (the X5 A/B look-3 seeds and their cross play at `706fa536`, registered `bef16d61`).
+
+## 2026-10-07 — ARCHITECTURE (screen arm, ON in production): F10's `--value-threat-inject off` is a ONE-lever arm (`gen3_value_threat_inject_off_v1`, config v142; ON byte-identical; no ARCH_SIGNATURE / MIGRATION_FLOOR change)
+
+- **Why.** Architecture audit F10, owner 2026-10-06: the critic reads the damage operator's incoming rows three ways
+  (the trunk's `prefuse_proj` injection, `value_entity_pool`'s op-row source, `value_threat_inject`'s token content on
+  the value pool's copy); the approved test deletes `value_threat_inject` and reads critic discrimination. The flag
+  already existed (v64, ON in production), but its OFF build skipped the projection's `Linear`, which shifted the
+  init draw of every later module and SB3's orthogonal re-draw over them: 185 tensors of the production learner
+  started from different bytes, a confound in a one-lever screen.
+- **What.** With the op built, OFF now CONSTRUCTS `ValueThreatInject` NOT LIVE (`CLSPool.value_threat_live`; the
+  forward reads the flag, never the module's presence) and `Gen3DualHeadMaskablePolicy._build` RETIRES it after SB3's
+  re-init and before the pointer head and the optimizer (`ExtractorApi.retire_value_threat_inject`, the
+  `retire_superseded_intent_heads` precedent; it also leaves the identity-init guard's set). A trained OFF model has
+  no module, key, optimizer slot or parameter for the route; production learner 3,065,882 → 3,064,090 parameters
+  (−1,792 = `Linear(13, 128)`); every other initial byte equals production's. The op stays on R0 `hard_max` (the
+  reduced rows feed only this route). No new flag, no new field: `--arch production --value-threat-inject off
+  --allow-nonproduction-arch` is the arm (`main.checkargs`: 1 of 42 ARCH keys differs, every recipe knob matches).
+- **Versions.** `MODEL_CONFIG_VERSION` 141 → 142 records that a fresh OFF build's init bytes changed; the state_dict is
+  the same in both versions, so every past config stamps through (a load re-draws no init).
+- **Proofs.** ON: the K9 learner golden (both entries) passes; the production extractor's CPU dynamo FX graph (one
+  full graph, 11,317 lines, sha256 `cf4a45a0…`), its state_dict and its outputs, and the production learner's
+  state_dict, all equal the base commit's (`f0d673fd`). OFF: `value_threat_inject_off_test.py` — real `MaskablePPO`
+  builds: retired (no key / slot / parameter), every other parameter bit-identical, step-0 forwards bitwise equal in
+  both halves, a bare OFF extractor never reads the projection, and the same three properties under
+  `--token-encoding static`, `--policy-readout trunk`, `--move-resolution on`, `--belief-tokens fixed_mass` and
+  static + trunk + fixed_mass. `value_threat_inject_test.py`'s weight-matched pair is now matched by construction
+  (asserted, no longer copied). CPU `--debug --steps 10000 --value-threat-inject off`: exit 0, 5 update tables,
+  learner freeze released, the checkpoint (config v142) holds no route key and strict-loads.
+- **The screen's meter** (not registered, not run): `main.ops.critic_read`'s `gate.resolution.bot` /
+  `gate.resolution.pool` (primary), `identity.resolution`, `gate.skill.{bot,pool}`, `identity.turn_contrast`
+  (secondary) — `design_arch_audit.md` F10 "As built".

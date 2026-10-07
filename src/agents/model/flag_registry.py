@@ -262,7 +262,13 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               "the consequence kernels' believed-candidate axis (C1b/C2/C3 k_cand + D4 k_bench)"),
     ModelFlag("value_threat_inject", False, Tier.CLI, Klass.STRUCTURAL, 64,
               "add the op's alpha-weighted incoming row to our tokens on the VALUE pool's copy",
-              requires=("damage_op",)),
+              requires=("damage_op",),
+              note="ON in production. Architecture audit F10 (owner 2026-10-06) screens 'off': since v142 "
+                   "(gen3_value_threat_inject_off_v1) an OFF build with the op on CONSTRUCTS the projection and the "
+                   "policy RETIRES it after SB3's orthogonal re-init (`ExtractorApi.retire_value_threat_inject`), so "
+                   "every other parameter's initial bytes equal production's and `--value-threat-inject off` is a "
+                   "one-lever arm. The critic then reads the op's incoming rows through the trunk (`prefuse_proj`) "
+                   "and `value_entity_pool`'s op-row source only."),
     ModelFlag("opp_intent", False, Tier.CLI, Klass.STRUCTURAL, 68,
               "the alpha (their move) / beta (their switch-in) supervised pointer heads",
               derived=True, source_arg="opp_intent_coef", on_value=0.05,

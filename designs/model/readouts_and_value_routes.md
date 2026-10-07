@@ -39,7 +39,7 @@ convention: `our_cls`, `our_active_refined` and the pointer head cannot reach it
 bit-identical at ANY weight — gated against a large random projection, not just at init. Equivariant
 in both axes (α has no defender index by Contract W; the row rides mon j's token; attention pooling
 is permutation-invariant). `W_inj` sits in the `restore_identity_init()` capture set (M1) and that
-is gated on a REAL `MaskablePPO` build. Structural + version-checked, off = no module).
+is gated on a REAL `MaskablePPO` build. Structural + version-checked; ON in production. **`off` is architecture audit F10's screen arm** (`gen3_value_threat_inject_off_v1`, v142): with the op built, OFF CONSTRUCTS the projection NOT LIVE (`CLSPool.value_threat_live`) and the policy's `_build` RETIRES it after SB3's orthogonal re-init (`ExtractorApi.retire_value_threat_inject`, the `retire_superseded_intent_heads` precedent), so a trained OFF model holds no key, slot or parameter for it while every other initial byte equals production's; the op stays on R0 `hard_max` (the reduced rows fed only this route). Pinned by `value_threat_inject_off_test.py`.
 
 ## The PRIVILEGED route — DELETED (deletion pass L2)
 

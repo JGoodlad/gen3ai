@@ -22721,3 +22721,27 @@ Tag: **BUILT · `--move-resolution` (OFF) · inventory 55 / 10 / 3 + 21 missing 
 - **FINDINGS.** (1) Out of the brief, not fixed (named residuals in the op): Glare → Ghost and Leech Seed on a seeded target (the family prices both); the slot-tied `out_gain` (retrain-class). (2) Safeguard and Yawn are exercised by unit tests only (0 occurrences in the bank). (3) The `rb_x5ab_blob_s1007` read is a model trained UNDER the old op, so the 7,041 is "how much the input moved", not a behaviour change. (4) GPU numerics of the changed kernels are unmeasured (no lease); the compiled forward gains a few gathers and a [B,6,K] einsum.
 
 Tag: **FINDING + FIX · op read unrevealed top-1 ability as certain: 30.3 % of real decisions, 12 / 199 certain-zero status claims contradicted (Snorlax Toxic) → 0 / 181 · + 5 status rules, e_pko accuracy once, 3 intent_conditional rules · `gen3_op_ability_status_gigo_v1`, AST gate + real-battle gate · TRAINING-INPUT BOUNDARY, X5 look-3 (pinned 706fa536) unaffected** · meas: [`measurements/op_gigo_2026-10-07/`](measurements/op_gigo_2026-10-07/README.md)
+
+### 2026-10-07 · BUILT · **F10's screen arm: `--value-threat-inject off` (config v142, ON in production) now differs from production by the critic's token-content threat route ALONE — retired after SB3's re-init, −1,792 parameters, every other initial byte equal (before: 185 tensors moved); ON byte-identical; the screen meter named, not registered**
+
+Architecture audit F10 (owner 2026-10-06: delete `value_threat_inject`, read critic discrimination). The existing flag is
+the lever; what changed is its OFF build. With the op built, OFF constructs `ValueThreatInject` not live and the policy
+retires it after SB3's orthogonal re-init (`ExtractorApi.retire_value_threat_inject`), so OFF draws every init exactly as
+production does. Measured on CPU `MaskablePPO` builds: production learner 3,065,882 → 3,064,090 parameters, 0 of 715
+shared tensors moved (the pre-v142 OFF build moved 185); the same under `--token-encoding static`, `--policy-readout
+trunk`, `--move-resolution on`, `--belief-tokens fixed_mass` and static + trunk + fixed_mass. ON: K9 golden (both
+entries) passes; production extractor FX graph (sha256 `cf4a45a0…`, 11,317 lines), state_dict, outputs and the learner
+state_dict equal `f0d673fd`'s. CPU `--debug` smoke with OFF: exit 0, checkpoint strict-loads with no route key.
+
+**The screen's meter** (not registered, not run): `python -m main.ops.critic_read <off arm> --control <production arm>
+--out <dir>`, delta rows `gate.resolution.bot` / `gate.resolution.pool` (primary; G1 Murphy resolution, the
+discrimination term), `identity.resolution`, `gate.skill.{bot,pool}`, `identity.turn_contrast` (secondary).
+
+**Findings.** (1) F10 removes ONE of three routes: `value_entity_pool`'s op-row source still delivers the op's incoming
+rows to the critic, so "the trunk only" is not what OFF builds; a trunk-only arm would also need the entity pool's op
+rows dropped (a separate lever). (2) Murphy resolution pools states across battles; the strictly within-game sibling
+pairwise accuracy (the 0.517 meter, `paired_refit_discrimination_2026-09-14/`) is not a `critic_read` row. (3) No
+replicate floor exists for these rows (`--floor-json`), so labels read vs ZERO. (4) GPU checks (compiled CUDA graph,
+T2 tier) DEFERRED: no lease; the OFF forward differs only by a Python-constant branch.
+
+Tag: **BUILT · `--value-threat-inject off` one-lever (0 / 715 tensors moved, −1,792 params) · ON byte-identical (K9 both, FX graph, state_dict) · config v142 · meter: critic_read `gate.resolution.{bot,pool}`** · design: [`design_arch_audit.md` F10](../endstate/design_arch_audit.md)

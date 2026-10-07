@@ -104,6 +104,26 @@ class ExtractorApi(ExtractorBuild):
         `tower`: `projection_dim` (the tower then maps it to `NET_ARCH[-1]`); `trunk`: `D_MODEL` (the
         state query's read, and the actor branch is the identity)."""
         return D_MODEL if self.policy_query is not None else int(self.projection_dim)
+    def retire_value_threat_inject(self) -> bool:
+        """gen3_value_threat_inject_off_v1 (v142, `--value-threat-inject off` with the op built, audit F10): drop
+        the critic's token-content threat projection. Returns True when it dropped it.
+
+        Called by `Gen3DualHeadMaskablePolicy._build` AFTER SB3's orthogonal re-init and BEFORE the pointer head
+        and the optimizer are built (the `retire_superseded_intent_heads` precedent): the projection was
+        constructed (its init draw) and re-initialised (its orthogonal draw) exactly as under ON, so every OTHER
+        module's initial bytes equal production's, while the retired projection holds no state_dict key, no
+        optimizer slot and no forward use (`CLSPool.value_threat_live` is False, so the forward never read it).
+        ON (production): a no-op."""
+        pool = self.cls_pool
+        if pool.value_threat_live or pool.value_threat_proj is None:
+            return False
+        pool.value_threat_proj = None
+        # The identity-init guard's set was captured by observation while the projection existed; a retired
+        # module is not a module to re-zero, so it leaves the set with it.
+        self._identity_init_zeroed = tuple(
+            n for n in self._identity_init_zeroed if not n.startswith("cls_pool.value_threat_proj"))
+        return True
+
     def retire_superseded_action_cells(self) -> bool:
         """gen3_move_resolution_v1 (v141, `--move-resolution on`): the move-resolution family REPLACES the seven
         per-action blocks — drop them. Returns True when it dropped any.

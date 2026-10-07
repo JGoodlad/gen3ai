@@ -243,8 +243,16 @@ class ExtractorBuild(torch.nn.Module):
         # the op is built ~250 lines BELOW this point and module construction order is load-bearing
         # (SB3 restores optimizer state positionally — reordering to suit this feature would corrupt
         # every resume). A post-construction assert below ties the two together.
-        _vti_dim = value_threat_inject_dim() if bool(value_threat_inject) else 0
-        self.cls_pool = CLSPool(layout, value_threat_inject_dim=_vti_dim)
+        #
+        # gen3_value_threat_inject_off_v1 (v142, architecture audit F10): with the op built, the projection is
+        # built in BOTH modes, so its init draw (and SB3's orthogonal re-draw over it) happens in the same place
+        # either way; OFF marks it not-live and `ExtractorApi.retire_value_threat_inject` drops it after SB3's
+        # re-init, before the optimizer (the `retire_superseded_intent_heads` precedent). Every OTHER parameter's
+        # initial bytes therefore equal the ON (production) build's — `--value-threat-inject off` is a ONE-lever
+        # arm. Before v142 an OFF build skipped the Linear and shifted ~185 later tensors' init draws.
+        _vti_dim = value_threat_inject_dim() if (bool(value_threat_inject) or bool(damage_op)) else 0
+        self.cls_pool = CLSPool(layout, value_threat_inject_dim=_vti_dim,
+                                value_threat_live=bool(value_threat_inject))
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
         # In-place hidden-opponent belief (the live design): distinct learned unknown-mon tokens fill
         # the un-revealed opp slots + a species/moves aux head supervises them. OFF reproduces the

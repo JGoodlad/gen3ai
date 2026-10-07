@@ -29,7 +29,8 @@ class CLSPool(torch.nn.Module):
     transformer, so pooling over the 12 team tokens gives the value query a whole-board read.
     """
 
-    def __init__(self, layout: Dict[str, Any], value_threat_inject_dim: int = 0):
+    def __init__(self, layout: Dict[str, Any], value_threat_inject_dim: int = 0,
+                 value_threat_live: bool = True):
         super().__init__()
         self.our_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
         self.their_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
@@ -52,6 +53,11 @@ class CLSPool(torch.nn.Module):
         self.value_threat_proj = (
             ValueThreatInject(value_threat_inject_dim, D_MODEL)
             if value_threat_inject_dim else None)
+        # gen3_value_threat_inject_off_v1 (v142, audit F10): `--value-threat-inject off` with the op built still
+        # CONSTRUCTS the projection (so no later init draw moves) but never applies it; the policy's `_build`
+        # then retires it (`ExtractorApi.retire_value_threat_inject`). The forward reads this flag, never the
+        # module's presence, so a bare (not-yet-retired) OFF extractor is the OFF forward too.
+        self.value_threat_live = bool(value_threat_live) and self.value_threat_proj is not None
 
 
     def forward(self, our_team_out: torch.Tensor, their_team_out: torch.Tensor,
@@ -90,7 +96,7 @@ class CLSPool(torch.nn.Module):
         # pointer head downstream, all read the untouched `our_team_out` — so the policy is
         # provably blind to `W_inj` (V1) and this arm moves the critic alone.
         our_for_value = our_team_out
-        if self.value_threat_proj is not None:
+        if self.value_threat_live and self.value_threat_proj is not None:
             if threat_rows is None:
                 raise ValueError(
                     "value_threat_inject is built but the op supplied no reduced rows — the "

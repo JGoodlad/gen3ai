@@ -459,7 +459,14 @@ from typing import Any, Dict
 #   2026-10-06: facts kept, judgments dropped). A STRUCTURAL string {off,on}: 'on' builds `MoveResolutionCell` and
 #   retires the seven per-action blocks, gated in check_compatible. A pre-v141 config migrates to "off" (the only
 #   possible past). No ARCH_SIGNATURE bump ('off' is byte-identical), no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 141
+# v142 (gen3_value_threat_inject_off_v1): no new field — what `value_threat_inject=False` BUILDS changed (architecture
+#   audit F10, owner 2026-10-06: delete the critic's token-content threat route, read critic discrimination). With the
+#   op built, OFF now constructs the projection (its init draw) and the policy RETIRES it after SB3's orthogonal
+#   re-init, so every other parameter's initial bytes equal production's (ON) and `--value-threat-inject off` is a
+#   one-lever arm. Before v142 OFF skipped the Linear and shifted ~185 later tensors' init draws. The state_dict is
+#   unchanged in both modes, so a pre-v142 config stamps through (a load never re-draws an init). No ARCH_SIGNATURE
+#   bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 142
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
