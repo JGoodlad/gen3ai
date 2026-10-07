@@ -1,8 +1,10 @@
+from __future__ import annotations
 import numpy as np
 from .base import ObservationEncoder
 from .constants import ABILITY_SLOT_DIM, ABILITY_DOMINANCE_DIM, ABILITY_KNOWN_DIM
-from poke_env.battle.abstract_battle import AbstractBattle
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from poke_env.battle.abstract_battle import AbstractBattle
 
 
 class AbilitiesEncoder(ObservationEncoder):

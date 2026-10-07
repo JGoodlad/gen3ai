@@ -3,18 +3,18 @@
  "tests": {
   "src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_battles[ladder_keys_0_149]": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 100.28,
-   "contention": 1.24,
+   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
+   "at": "2026-10-07T16:24:55Z",
+   "duration_s": 108.58,
+   "contention": 1.08,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_battles[ladder_keys_150_299]": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 98.96,
-   "contention": 1.04,
+   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
+   "at": "2026-10-07T16:24:55Z",
+   "duration_s": 111.23,
+   "contention": 1.11,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[173]": {
@@ -43,50 +43,50 @@
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[NOTSET]": {
    "status": "skip",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
+   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
+   "at": "2026-10-07T16:24:55Z",
    "duration_s": 0.0,
-   "contention": 1.12,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_100_149]": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 255.72,
-   "contention": 1.12,
+   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
+   "at": "2026-10-07T16:24:55Z",
+   "duration_s": 359.97,
+   "contention": 1.28,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_6000_6049]": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 117.8,
+   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
+   "at": "2026-10-07T16:24:55Z",
+   "duration_s": 178.69,
    "contention": 1.19,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_protocol_and_byte_fuzz_corpora": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 4.59,
-   "contention": 1.0,
+   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
+   "at": "2026-10-07T16:24:55Z",
+   "duration_s": 6.39,
+   "contention": 1.18,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[even_keys_whole_pool]": {
    "status": "pass",
-   "commit": "8288b9a2e44452b926b3131014f3ee1e14e67292",
-   "at": "2026-10-07T02:24:14Z",
-   "duration_s": 302.35,
+   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
+   "at": "2026-10-07T16:24:55Z",
+   "duration_s": 228.05,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[odd_keys_whole_pool]": {
    "status": "pass",
-   "commit": "8288b9a2e44452b926b3131014f3ee1e14e67292",
-   "at": "2026-10-07T02:30:08Z",
-   "duration_s": 353.69,
-   "contention": 1.37,
+   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
+   "at": "2026-10-07T16:24:55Z",
+   "duration_s": 242.46,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_aot_backend_one_package_per_bucket_serves_every_slot": {
@@ -825,6 +825,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/poke_env_free_entry_points_test.py::test_a_debug_smoke_with_eval_runs_with_poke_env_blocked": {
+   "status": "pass",
+   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
+   "at": "2026-10-07T16:34:18Z",
+   "duration_s": 361.06,
+   "contention": 1.33,
+   "detail": ""
+  },
   "src/utils/bridge/bridge_impl_parity_test.py::test_a_forfeited_battles_record_logs_the_forcelose_command[node]": {
    "status": "pass",
    "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
@@ -1058,5 +1066,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-07T06:09:04Z"
+ "last_written": "2026-10-07T16:34:18Z"
 }

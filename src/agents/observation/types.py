@@ -1,8 +1,10 @@
+from __future__ import annotations
 import numpy as np
 from .base import ObservationEncoder
 from .constants import COMBINED_TYPES_DIM
-from poke_env.battle.abstract_battle import AbstractBattle
-from typing import Any, Dict
+from typing import Any, Dict, TYPE_CHECKING
+if TYPE_CHECKING:
+    from poke_env.battle.abstract_battle import AbstractBattle
 
 class TypeEncoder(ObservationEncoder):
     """

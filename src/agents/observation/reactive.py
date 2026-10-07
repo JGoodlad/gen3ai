@@ -1,6 +1,6 @@
+from __future__ import annotations
 import numpy as np
 from .base import ObservationEncoder
-from poke_env.battle.abstract_battle import AbstractBattle
 from .constants import (
     REACTIVE_DIM, ACTIVE_REQ_MOVES_OFFSET, ACTIVE_REQ_MOVES_PER, ACTIVE_REQ_MOVES_DIM,
 )
@@ -8,7 +8,9 @@ from .types import TypeEncoder
 from agents import gen3_data
 from agents.observation.wish_belief import build_wish_pending, wish_floating_value
 from agents.battle.battle_event import OURS, OPP
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from poke_env.battle.abstract_battle import AbstractBattle
 
 def _request_slot_moves(battle: Any, legal: Any) -> List[Any]:
     """Per-request-slot ``Move`` objects in ACTION order — slot i ↔ action logit ``6+i`` — with

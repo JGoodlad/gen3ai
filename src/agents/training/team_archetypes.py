@@ -31,8 +31,8 @@ import json
 import os
 from dataclasses import dataclass, field
 
-from poke_env.data import to_id_str
-from poke_env.teambuilder import Teambuilder
+from utils.showdown_id import to_id_str
+from utils.team_packing import Teambuilder
 
 from agents.gen3_data import moves as g3moves
 from agents.gen3_data import species as g3species

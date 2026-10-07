@@ -11,7 +11,6 @@ from __future__ import annotations
 import functools
 
 import numpy as np
-from poke_env.battle.effect import Effect
 
 from agents.enums import PokemonType, Status
 from agents.gen3_data import type_chart as _type_chart_data
@@ -177,11 +176,15 @@ STATUS_MOVE_IMMUNITY: dict[str, frozenset] = {
     "willowisp":    frozenset({PokemonType.FIRE}),
 }
 
-# Volatile effects worth surfacing in logs and reward signals (Gen 3 relevant subset).
-NOTABLE_EFFECTS: tuple[Effect, ...] = (
-    Effect.TAUNT, Effect.CONFUSION, Effect.ENCORE, Effect.ATTRACT,
-    Effect.DISABLE, Effect.SUBSTITUTE,
-)
+# Volatile effects worth surfacing in logs and reward signals (Gen 3 relevant subset), by the NAME of the poke-env
+# ``Effect`` member that keys a mon's ``effects`` dict. Spelled as names so this module imports no poke-env (P1 of
+# the retirement): ``mon.effects`` is only ever handed in by the poke-env battle layer, whose keys carry ``.name``.
+NOTABLE_EFFECT_NAMES: tuple[str, ...] = ("TAUNT", "CONFUSION", "ENCORE", "ATTRACT", "DISABLE", "SUBSTITUTE")
+
+
+def has_effect(effects, name: str) -> bool:
+    """Is the poke-env ``Effect`` called ``name`` among ``effects``' keys? (``Effect.X in effects`` by NAME.)"""
+    return any(getattr(k, "name", None) == name for k in effects)
 
 
 def is_status_move_immune(move_id: str, mon) -> bool:
@@ -245,7 +248,7 @@ def status_land_estimate(
     if is_status_move_immune(move_id, mon):  # type immunity OR already statused — certain
         return 0.0, True
     effects = getattr(mon, "effects", None) or {}
-    if Effect.SUBSTITUTE in effects:  # Sub blocks status — certain
+    if has_effect(effects, "SUBSTITUTE"):  # Sub blocks status — certain
         return 0.0, True
     block_mass = 0.0
     for ability, p in (ability_dist or [(None, 1.0)]):
@@ -285,9 +288,10 @@ def mon_status_str(mon) -> str | None:
     if status is not None:
         parts.append(status.name)
     effects = getattr(mon, "effects", {})
-    for eff in NOTABLE_EFFECTS:
-        if eff in effects:
-            parts.append(eff.name.lower())
+    present = {getattr(k, "name", None) for k in effects}
+    for name in NOTABLE_EFFECT_NAMES:
+        if name in present:
+            parts.append(name.lower())
     return ", ".join(parts) if parts else None
 
 

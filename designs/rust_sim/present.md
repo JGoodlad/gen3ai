@@ -170,10 +170,11 @@ neither reads as a reveal), and `BoardReading.upkeep_turn` (an `|upkeep|`, read 
 `legal_actions()` is `LegalActions.from_battle` over the raw `|request|` (the `BoardReading` keeps its
 text) and `mask()` the 11-dim mask; slice V compares both to `Gen3ActionMasker` on every decision.
 
-**The poke-env data the reading consults is GENERATED**: `tables.rs` from poke-env's pokedex, move
-table, `Effect` lifecycle sets, `SideCondition`, type names and ignore set
-(`python -m agents.battle.rust_core_present_tables --write`; `rust_core_present_tables_test.py`
-fails the day it is stale).
+**The poke-env data the reading consults is FROZEN, Rust-owned source** (P1 of the poke-env retirement, T27,
+2026-10-07): `tables.rs` was GENERATED from poke-env's pokedex, move table, `Effect` lifecycle sets, `SideCondition`,
+type names and ignore set by a Python generator that imported poke-env (deleted, with its freshness test). The rows are
+edited directly, nothing re-derives them from the fork (retired in P6), and the per-rule pins in `present/tests.rs` plus
+the engine-truth audit are the checks.
 
 ## 4. Search on the core
 

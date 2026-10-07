@@ -633,7 +633,7 @@ class H2HEngine:
         """Play ``pairs`` mirrored pairs at per-game seed base ``seed``; returns the trimmed game log and the
         cycle's stats (``CycleStats.as_dict``). ``sink`` (a diagnostic's own list) receives the executor's
         FULL game rows instead — every action, margin and the input log — and is what is returned."""
-        from agents.training.eval_player import ForensicQuota
+        from agents.training.eval_quota import ForensicQuota
         from agents.training.eval_sharding import SENTINEL, EvalItem, ShardedEvalPool
 
         shard_games = max(2, 2 * math.ceil(pairs / int(self.compute.n_envs)))

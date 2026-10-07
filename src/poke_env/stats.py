@@ -5,16 +5,8 @@ from typing import List
 
 from poke_env.data import GenData
 
-STATS_TO_IDX = {
-    "hp": 0,
-    "atk": 1,
-    "def": 2,
-    "spa": 3,
-    "spd": 4,
-    "spe": 5,
-    "satk": 3,
-    "sdef": 4,
-}
+# `STATS_TO_IDX` is defined in `utils.team_packing` (poke-env-free; P1 of the retirement) and re-exported here.
+from utils.team_packing import STATS_TO_IDX  # noqa: E402,F401
 
 
 def _raw_stat(base: int, ev: int, iv: int, level: int, nature_multiplier: float) -> int:

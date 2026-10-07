@@ -297,7 +297,7 @@ def test_consumed_item_surfaces_after_enditem():
     # id-form (normalised), matching `item` and the codebase convention — even though
     # poke-env stores the raw protocol display name ("Salac Berry") on consumed_item.
     assert opp.consumed_item == "salacberry"
-    from poke_env.data.normalize import to_id_str
+    from utils.showdown_id import to_id_str
     assert opp.consumed_item == to_id_str(b.opponent_active_pokemon.consumed_item)
 
 

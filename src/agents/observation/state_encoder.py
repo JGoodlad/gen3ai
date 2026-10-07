@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from .base import ObservationEncoder
 from . import assembler as _assembler
@@ -37,8 +38,9 @@ from .constants import (
     ACTIVE_CONTEXT_DIM,
     GLOBAL_ENV_DIM
 )
-from poke_env.battle.abstract_battle import AbstractBattle
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, TYPE_CHECKING
+if TYPE_CHECKING:
+    from poke_env.battle.abstract_battle import AbstractBattle
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.ordering_integrity import check_obs_move_order
 from agents.observation.reactive import ReactiveEncoder as _ReactiveEncoder

@@ -2,7 +2,6 @@ import numpy as np
 import math
 from .base import ObservationEncoder
 from .constants import GLOBAL_ENV_DIM, WEATHER_ONEHOT_DIM, MAX_TURNS, MAX_SPIKES, CLOCK_DIM
-from poke_env.battle.side_condition import SideCondition
 from typing import Any, Dict
 
 
@@ -23,14 +22,11 @@ _WEATHER_MAX_TURNS = 5
 # (log(1+MAX_TURNS)); precomputed because encode() is the hot per-decision path.
 _LOG_MAX_TURNS = math.log(1 + MAX_TURNS)
 
-# Per-side side-conditions encoded as presence bits (gen3ou). Spikes is a 0-3 count
-# handled separately.
-_SCREEN_CONDITIONS = [
-    SideCondition.REFLECT,
-    SideCondition.LIGHT_SCREEN,
-    SideCondition.SAFEGUARD,
-    SideCondition.MIST,
-]
+# Per-side side-conditions encoded as presence bits (gen3ou), as the lower-cased ``SideCondition`` names the
+# LiveView keys its ``side_conditions`` by (``reflect``, ``light_screen``, ``safeguard``, ``mist``). Spelled as ids
+# so this module imports no poke-env (P1 of the retirement); ``global_env_test.py`` pins them to the fork's enum.
+# Spikes is a 0-3 count handled separately.
+_SCREEN_CONDITIONS = ["reflect", "light_screen", "safeguard", "mist"]
 
 
 class GlobalEnvEncoder(ObservationEncoder):
@@ -86,8 +82,7 @@ class GlobalEnvEncoder(ObservationEncoder):
         cur += CLOCK_DIM
 
         # 5. Per-side screens / Safeguard / Mist (8): for each condition, [ours, opp]
-        for cond in _SCREEN_CONDITIONS:
-            cid = cond.name.lower()
+        for cid in _SCREEN_CONDITIONS:
             vec[cur] = 1.0 if cid in ours else 0.0
             vec[cur + 1] = 1.0 if cid in opp else 0.0
             cur += 2
@@ -123,8 +118,7 @@ class GlobalEnvEncoder(ObservationEncoder):
 
         sc = hz + 2 + CLOCK_DIM
         screens = {}
-        for j, cond in enumerate(_SCREEN_CONDITIONS):
-            cid = cond.name.lower()
+        for j, cid in enumerate(_SCREEN_CONDITIONS):
             screens[f"our_{cid}"] = bool(vector[sc + j * 2] > 0.5)
             screens[f"opp_{cid}"] = bool(vector[sc + j * 2 + 1] > 0.5)
 

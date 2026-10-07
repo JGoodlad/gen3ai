@@ -1,4 +1,4 @@
-from poke_env.teambuilder import Teambuilder
+from utils.team_packing import Teambuilder
 from utils.gen3_utils import fix_gen3_hp_ivs
 import hashlib
 import os

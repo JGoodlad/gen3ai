@@ -14,7 +14,8 @@ reports ``[comparison-overlap]`` for an ``==`` / ``!=`` / ``in`` whose operands 
 caught all four bot sites on the pre-fix code. This gate runs it over ``agents``, ``main``,
 ``utils`` and ``poke_env`` (``--check-untyped-defs``, ``--follow-imports=silent``, independent of
 ``mypy.ini``'s strict scope) and FAILS on every overlap finding whose operand types name a poke-env
-enum (the enum set is DERIVED from the vendored package, not typed here).
+enum (the enum set is DERIVED, not typed here: every ``Enum`` the vendored package defines, plus the four
+whose definitions P1 of the retirement moved into ``agents.enums`` — the fork re-exports those).
 
 **The honest limit:** mypy can only see a comparison whose receiver it can type. A value that flows
 through ``Any`` (an unannotated ``getattr``, an untyped container) is invisible to it. Other
@@ -114,6 +115,14 @@ def poke_env_enum_names() -> set[str]:
         for obj in vars(mod).values():
             if isinstance(obj, type) and issubclass(obj, enum.Enum) and obj.__module__ == mod.__name__:
                 names.add(obj.__name__)
+    # P1 of the retirement MOVED four of these classes' DEFINITIONS into `agents.enums` (the fork's modules re-export
+    # them, so their ``__module__`` is no longer ``poke_env.battle.*``): count them by where they are defined now,
+    # or `Status` / `MoveCategory` / `Weather` / `PokemonType` would silently drop out of the gate.
+    import agents.enums as owned
+
+    for obj in vars(owned).values():
+        if isinstance(obj, type) and issubclass(obj, enum.Enum) and obj.__module__ == owned.__name__:
+            names.add(obj.__name__)
     return names
 
 

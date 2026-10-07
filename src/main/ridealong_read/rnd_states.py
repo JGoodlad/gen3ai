@@ -370,8 +370,8 @@ def pool_membership(bank: Any) -> dict:
     the ``default_biased`` trainee builder's full pool)? And are the untaught-meter teams off it?
     Teams are matched on their (species, moveset) set."""
     from agents.training.untaught_meter import DEFAULT_TEAMS_MANIFEST, load_team_manifest
-    from poke_env.teambuilder import ConstantTeambuilder
     from utils.paths import repo_path
+    from utils.team_packing import ConstantTeambuilder
 
     def fp(packed: str) -> frozenset:
         return frozenset((m.split("|")[0].lower(), m.split("|")[4]) for m in packed.split("]") if m)

@@ -211,7 +211,7 @@ class UntaughtEngine:
                   sink: Optional[List[Dict[str, Any]]] = None) -> Cell:
         """Play ``games`` games of ``ref`` piloting ``team`` against the opponent — ONE eval cycle at
         :func:`cycle_seed` ``(seed, team.index)`` — and return the cell. ``sink`` receives the trimmed game rows."""
-        from agents.training.eval_player import ForensicQuota
+        from agents.training.eval_quota import ForensicQuota
         from agents.training.eval_sharding import FIXED, SENTINEL, EvalItem, ShardedEvalPool
         from agents.training.trace_result import DRAW, DRAW_TIMEOUT, LOSS, WIN
 

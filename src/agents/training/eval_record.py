@@ -10,7 +10,7 @@ import json
 import math
 import os
 
-from agents.training.eval_roster import RANDOM_OPPONENT_NAME
+from agents.training.eval_schedule import RANDOM_OPPONENT_NAME
 from agents.training.fixed_opponent_pool import is_external
 from main.launcher.ipc import send_metrics
 

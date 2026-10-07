@@ -1,7 +1,9 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 import numpy as np
-from poke_env.battle.abstract_battle import AbstractBattle
-from typing import Any, Dict
+from typing import Any, Dict, TYPE_CHECKING
+if TYPE_CHECKING:
+    from poke_env.battle.abstract_battle import AbstractBattle
 
 class ObservationEncoder(ABC):
     """Base class for all observation encoders."""

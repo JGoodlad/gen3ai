@@ -16,7 +16,7 @@ Code: `src/rust_sim/src/core_events/` (`line.rs`, `reading.rs`, `side.rs`, `pars
 (`src/rust_sim/src/protocol.rs`), the bridge's core tracking (`src/rust_sim/src/bridge.rs`,
 `BridgeSession::new_core` / `new_construct_turn0_core` / `core_events`), and the replay/record
 binary `src/rust_sim/src/bin/core_events.rs`. Python: `src/agents/battle/rust_core_parity.py` (+
-`_test.py`), `src/agents/battle/offline_feed.py`, `src/agents/battle/rust_core_schema.py`.
+`_test.py`), `src/agents/battle/offline_feed.py`, `src/agents/battle/rust_core_schema_test.py` (the schema's sync pin).
 
 ---
 
@@ -53,10 +53,14 @@ one ship identical chunks and end on the same PRNG seed).
 ## 2. The typed line (`line.rs`)
 
 `Line { kw: Kw, fields: Vec<Field> }`. `Kw` is one variant per protocol keyword (the 120 of
-`MESSAGE_POLICY` + the player-intercepted ones), GENERATED with its routing into `schema.rs` from
-`agents/battle/battle_event.py` + `Player.MESSAGES_TO_IGNORE` by `python -m
-agents.battle.rust_core_schema --write`, and pinned by `rust_core_schema_test.py` (routine) — the
-Rust core cannot classify a keyword differently from poke-env without that test failing.
+`MESSAGE_POLICY` + the player-intercepted ones), with its routing in `schema.rs`. **`schema.rs` is FROZEN,
+Rust-owned source since P1 of the poke-env retirement (T27, 2026-10-07)**: it was GENERATED from
+`agents/battle/battle_event.py` + `Player.MESSAGES_TO_IGNORE` by a Python generator that imported poke-env (deleted), and a
+new keyword is now added IN `schema.rs` (with a drift-scan row, P4). While the Python battle layer lives,
+`rust_core_schema_test.py` (routine) parses the Rust file and compares it with `battle_event.py` — keywords, routes,
+event kinds and both halves of the value-key schema — so the Rust core cannot classify a keyword differently from the
+Python reader without that test failing (a keyword Rust routes `Intercept::Ignored` is the frozen
+`Player.MESSAGES_TO_IGNORE` set and is skipped).
 
 A `Field` is typed only where the keyword's grammar puts that type AND it re-renders to the same
 bytes: `Ident` (`p1a: Nick` / slot-less `p1: Nick`), `SideRef` (a side condition's first field),

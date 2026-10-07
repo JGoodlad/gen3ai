@@ -1,21 +1,12 @@
 """This module defines the Status class, which represents statuses a pokemon can be
 afflicted with.
+
+**P1 of the poke-env retirement (T27): the definition moved OUT of the fork.** The class is OWNED by
+``agents.enums`` (standard library only, so our data facade and the trainer load no ``poke_env`` module);
+this module re-exports the same object, so ``poke_env.battle.status.Status is agents.enums.Status`` and every
+poke-env comparison against it is unchanged. The fork is retired in P6; this file goes with it.
 """
 
-from enum import Enum, auto, unique
+from agents.enums import Status
 
-
-@unique
-class Status(Enum):
-    """Enumeration, represent a status a pokemon can be afflicted with."""
-
-    BRN = auto()
-    FNT = auto()
-    FRZ = auto()
-    PAR = auto()
-    PSN = auto()
-    SLP = auto()
-    TOX = auto()
-
-    def __str__(self) -> str:
-        return f"{self.name} (status) object"
+__all__ = ["Status"]

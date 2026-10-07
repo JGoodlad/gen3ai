@@ -375,7 +375,7 @@ def test_status_applied_and_cured_folded():
     """A STATUS event → our_status_applied; a CURESTATUS event → our_status_cured.
     These are the per-turn transition events the history needs (the snapshot only
     shows current status, not 'cured THIS turn')."""
-    from poke_env.battle.status import Status
+    from agents.enums import Status
     # Opp Toxics our tyranitar, then our tyranitar's Lum Berry cures it.
     events_applied = [
         ev(EventKind.MOVE, side=OPP, actor="blissey", target="tyranitar", move_id="toxic"),
@@ -397,7 +397,7 @@ def test_status_applied_and_cured_folded():
 
 
 def test_status_transition_encoder_round_trip():
-    from poke_env.battle.status import Status
+    from agents.enums import Status
     from agents.observation.turn_delta_encoder import (
         OFFSET_OUR_STATUS_CURED, OFFSET_OPP_STATUS_APPLIED,
     )

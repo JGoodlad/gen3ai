@@ -1,25 +1,10 @@
-"""This module defines the ConstantTeambuilder class, which is a subclass of
-ShowdownTeamBuilder that yields a constant team.
+"""``ConstantTeambuilder`` — see ``utils.team_packing``.
+
+**P1 of the poke-env retirement (T27): the definition moved OUT of the fork** into ``utils.team_packing``
+(poke-env-free); this module re-exports the same objects, so the fork's ``Player`` and every poke-env consumer see the
+identical classes. Retired with the fork (P6).
 """
 
-from typing import List
+from utils.team_packing import ConstantTeambuilder
 
-from poke_env.teambuilder.teambuilder import Teambuilder
-from poke_env.teambuilder.teambuilder_pokemon import TeambuilderPokemon
-
-
-class ConstantTeambuilder(Teambuilder):
-    def __init__(self, team: str):
-        if "|" in team:
-            self._mons = self.parse_packed_team(team)
-        else:
-            self._mons = self.parse_showdown_team(team)
-
-        self.packed_team = self.join_team(self._mons)
-
-    def yield_team(self) -> str:
-        return self.packed_team
-
-    @property
-    def team(self) -> List[TeambuilderPokemon]:
-        return self._mons
+__all__ = ["ConstantTeambuilder"]

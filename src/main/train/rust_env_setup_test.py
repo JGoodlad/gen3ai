@@ -4,7 +4,6 @@ run seed differs from the first segment's; every save records the env core. (The
 the Rust core is the only one, deletion pass P11b.)"""
 from __future__ import annotations
 
-import importlib
 from types import SimpleNamespace
 
 import pytest
@@ -39,24 +38,16 @@ def test_the_rust_core_resolves_to_the_stated_defaults():
 
 
 def test_the_training_floor_roster_maps_onto_ported_bots():
+    from main.train.matchup_setup import TRAIN_BOT_NAMES
     from utils.rust_env import bot_inventory as BI
 
-    classes = []
-    for row in BI.ROWS:
-        if "train" not in row.used_by:
-            continue
-        mod, _, name = row.cls.rpartition(".")
-        classes.append(getattr(importlib.import_module(mod), name))
-    names = _bot_names(classes)
+    names = _bot_names(TRAIN_BOT_NAMES)
     assert names == [r.name for r in BI.ROWS if "train" in r.used_by] and len(names) == 8
 
 
 def test_an_unported_bot_is_refused_by_name():
-    class Nope:  # not in the inventory
-        pass
-
     with pytest.raises(RuntimeError, match="no ported Rust bot"):
-        _bot_names([Nope])
+        _bot_names(["Nope"])
 
 
 def test_a_restart_segment_draws_a_different_run_seed():
@@ -100,7 +91,7 @@ def test_startup_builds_this_checkouts_env_core_before_anything_else(monkeypatch
     for argv, profile in (((), "release"), (("--rust-env-profile", "selfcheck"), "selfcheck")):
         with pytest.raises(_Built):
             build_rust_vec_env(_args(*argv), mappings=None, trainee_teambuilder=None, opponent_teambuilder=None,
-                               opponent_classes=[], bot_weights=None, fixed_opponents=[], exploiter_entry=None,
+                               opponent_names=[], bot_weights=None, fixed_opponents=[], exploiter_entry=None,
                                snapshot_dir=None, opponent_version=None, self_play_fraction=0.0, n_envs=4,
                                emit=lambda _m: None)
     assert seen == ["release", "selfcheck"]

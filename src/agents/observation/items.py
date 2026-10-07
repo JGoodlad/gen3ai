@@ -1,9 +1,11 @@
+from __future__ import annotations
 import numpy as np
 from .base import ObservationEncoder
 from .constants import ITEM_ID_DIM, ITEM_KNOWN_DIM, ITEM_CONSUMED_DIM
-from poke_env.battle.abstract_battle import AbstractBattle
-from poke_env import to_id_str  # canonical id normalizer (accepted poke-env string-util touch)
-from typing import Any, Dict, Optional
+from utils.showdown_id import to_id_str  # canonical Showdown id normaliser (poke-env-free)
+from typing import Any, Dict, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from poke_env.battle.abstract_battle import AbstractBattle
 
 class ItemsEncoder(ObservationEncoder):
     """

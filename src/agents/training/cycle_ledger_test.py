@@ -283,7 +283,7 @@ def test_the_trainer_builds_one_ledger_at_startup_and_hands_it_to_the_eval_callb
     resolve_config(args, p)
     bundle = build_callbacks(
         args=args, model_dir=str(tmp_path / "run_x"), annealing_mode=False, _pool=None, _fixed_opponents=None,
-        _bot_weight_vec=None, OPPONENT_CLASSES=(), _specialist_team_str=None, _promote_threshold=0.6,
+        _bot_weight_vec=None, OPPONENT_NAMES=(), _specialist_team_str=None, _promote_threshold=0.6,
         _heuristic_floor=0.0, _sp_start_wr=0.5, _sp_full_wr=0.9)
     led = bundle.eval_callback._cycle_ledger
     assert isinstance(led, CL.CycleLedger) and led.root == run_archive / "_ledger" and led.run_label == "run_x"

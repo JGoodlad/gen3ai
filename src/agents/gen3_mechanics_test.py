@@ -8,7 +8,7 @@ from poke_env.battle.status import Status
 
 from agents.gen3_mechanics import (
     ABILITY_TYPE_MULTIPLIER,
-    NOTABLE_EFFECTS,
+    NOTABLE_EFFECT_NAMES,
     PHAZING_MOVES,
     INVULNERABLE_MOVES,
     STATUS_MOVES,
@@ -166,8 +166,8 @@ class TestMonStatusStr:
         assert result == "BRN, taunt"
 
     def test_only_notable_effects_shown(self):
-        # An effect not in NOTABLE_EFFECTS should not appear
-        non_notable = next(e for e in Effect if e not in NOTABLE_EFFECTS)
+        # An effect not in NOTABLE_EFFECT_NAMES should not appear
+        non_notable = next(e for e in Effect if e.name not in NOTABLE_EFFECT_NAMES)
         mon = _mon(effects={non_notable: 1})
         assert mon_status_str(mon) is None
 

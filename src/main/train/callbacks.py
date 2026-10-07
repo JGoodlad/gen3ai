@@ -60,7 +60,7 @@ def _value_sidecar_on(args) -> bool:
 
 
 def build_callbacks(*, args, model_dir, annealing_mode, _pool,
-                    _fixed_opponents, _bot_weight_vec, OPPONENT_CLASSES,
+                    _fixed_opponents, _bot_weight_vec, OPPONENT_NAMES,
                     _specialist_team_str, _promote_threshold,
                     _heuristic_floor, _sp_start_wr, _sp_full_wr) -> CallbackBundle:
     """Build every `learn()`-time callback this run's flags ask for."""
@@ -147,8 +147,8 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
     # reason as the signal group: no battles, no env state, one small dict per worker per rollout.
     # The `{term -> class}` map is derived from THIS run's `reward_class_composition` census, so
     # the exported grouping and the startup composition line read one declaration.
-    from agents.training.reward_manager import (
-        RewardConfig as _RewardConfig, reward_class_composition as _rcc)
+    from agents.training.reward_composition import reward_class_composition as _rcc
+    from agents.training.reward_config import RewardConfig as _RewardConfig
     from agents.training.reward_term_callback import RewardTermMetricsCallback
     from agents.training.reward_term_stats import term_class_map as _tcm
     reward_term_callback = RewardTermMetricsCallback(
@@ -277,7 +277,7 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
             stable_challenge_share=args.stable_opponent_selfplay_share,
             stable_pfsp=args.stable_opponent_pfsp,
             bot_weight_vec=_bot_weight_vec,
-            floor_roster_count=len(OPPONENT_CLASSES),
+            floor_roster_count=len(OPPONENT_NAMES),
             # PFSP: when >0 the callback EMA-smooths the per-sentinel win-rates each eval and pushes
             # them to the env pools so sampling oversamples the selves we're losing to (0.0 = off).
             pfsp_scale=args.pfsp_scale,

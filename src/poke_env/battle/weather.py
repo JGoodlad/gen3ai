@@ -1,46 +1,11 @@
-"""This module defines the Weather class, which represents a in-battle weather."""
+"""This module defines the Weather class, which represents a in-battle weather.
 
-import logging
-from enum import Enum, auto
+**P1 of the poke-env retirement (T27): the definition moved OUT of the fork.** The class is OWNED by
+``agents.enums`` (standard library only, so our data facade and the trainer load no ``poke_env`` module);
+this module re-exports the same object, so ``poke_env.battle.weather.Weather is agents.enums.Weather`` and every
+poke-env comparison against it is unchanged. The fork is retired in P6; this file goes with it.
+"""
 
+from agents.enums import Weather
 
-class Weather(Enum):
-    """Enumeration, represent a non null weather in a battle."""
-
-    UNKNOWN = auto()
-    DESOLATELAND = auto()
-    DELTASTREAM = auto()
-    HAIL = auto()
-    PRIMORDIALSEA = auto()
-    RAINDANCE = auto()
-    SANDSTORM = auto()
-    SNOWSCAPE = SNOW = auto()
-    SUNNYDAY = auto()
-
-    def __str__(self) -> str:
-        return f"{self.name} (weather) object"
-
-    @staticmethod
-    def from_showdown_message(message: str):
-        """Returns the Weather object corresponding to the message.
-
-        :param message: The message to convert.
-        :type message: str
-        :return: The corresponding Weather object.
-        :rtype: Weather
-        """
-        message = message.replace("move: ", "")
-        message = message.replace(" ", "_")
-        message = message.replace("-", "_")
-
-        try:
-            return Weather[message.upper()]
-        except KeyError:
-            logging.getLogger("poke-env").warning(
-                "Unexpected weather '%s' received. Weather.UNKNOWN will be used "
-                "instead. If this is unexpected, please open an issue at "
-                "https://github.com/hsahovic/poke-env/issues/ along with this error "
-                "message and a description of your program.",
-                message,
-            )
-            return Weather.UNKNOWN
+__all__ = ["Weather"]

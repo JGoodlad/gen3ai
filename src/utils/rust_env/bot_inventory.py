@@ -34,7 +34,7 @@ from dataclasses import dataclass
 
 #: The roster SITES a bot can be used from (the test derives each from the code).
 SITES = {
-    "train": "the training floor roster — `main/train/matchup_setup.py` OPPONENT_CLASSES (also the "
+    "train": "the training floor roster — `main/train/matchup_setup.py` TRAIN_BOT_NAMES (also the "
              "exploiter --exploiter-keep-bots mix, mapped to the core's bots by `rust_env_setup._bot_names`)",
     "eval": "the eval roster — `agents/training/eval_roster.py` _EVAL_OPPONENT_SPECS (also "
             "`main.anchors` `bot:<name>` and the prober's replay, both through that table)",

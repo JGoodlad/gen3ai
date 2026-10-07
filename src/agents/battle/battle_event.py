@@ -30,7 +30,7 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Any, Dict, Optional, Sequence, Tuple
 
-from poke_env.data.normalize import to_id_str
+from utils.showdown_id import to_id_str
 
 # Side labels, matching poke-env's internal `_current_move_user_side`.
 OURS = "ours"

@@ -50,7 +50,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-from poke_env.data.normalize import to_id_str
+from utils.showdown_id import to_id_str
 
 from agents.action.constants import MOVE_START, N_MOVE_SLOTS
 from agents.action.mask_generator import Gen3ActionMasker

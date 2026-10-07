@@ -492,7 +492,7 @@ this gate is P0 and makes progress a NUMBER that falls: the set of files that im
 at all, ~1.5 s over ~1,400 files) and its CLI; `designs/ops/poke_env_import_allowlist.txt` is the GENERATED list, frozen
 at 2026-10-06 (171 entries: 74 non-test + 97 test; the gate's two `FROZEN_*_COUNT` constants are the CURRENT size: 167 after
 the first shrink, the T27/P0 dead-code removal; 165 after P2, which retired `snapshot_ladder.py` and
-`untaught_meter.py`); the gate is `src/poke_env_import_gate_test.py`, `static`-tier, opt
+`untaught_meter.py`; 138 after P1); the gate is `src/poke_env_import_gate_test.py`, `static`-tier, opt
 out with `GEN3AI_SKIP_POKE_ENV_IMPORT_GATE=1`. The scanner's own shape tests are `src/utils/poke_env_importers_test.py`.
 
 **What counts as an importer.** `import poke_env[.x]` / `from poke_env[.x] import …` at module level, inside a function
@@ -516,6 +516,21 @@ and out of scope. Blind spots: a module name built at run time; shell `python -c
 * The ONE permanent entry is `PEER_PROCESS_PERMANENT` (`main/anchors/peer_scripts/metamon_side.py`): it runs in Metamon's
   interpreter against UPSTREAM poke-env 0.8.3.3 and is never imported by this repo. It is not on the list and is not
   counted. The end state is an empty list plus that file, and the fork deleted (P6).
+
+**P1 (2026-10-07): the allowlist 165 -> 138 (50 non-test + 88 test), and the TRAINER's closure is poke-env-free — proved
+by RUNNING, not by counting.** A count says which FILES name poke-env, not whether an entry point reaches one (before P1
+`main.h2h` / `main.plateau` loaded 0 modules at import and 36 at run time). `utils/poke_env_blocker.py` makes
+`import poke_env[.x]` raise AND records every attempt (an `ImportError` swallowed by a caller still lands in the
+record; `GEN3AI_POKE_ENV_BLOCK_LOG` carries the record across child interpreters), and
+`src/poke_env_free_entry_points_test.py` uses it: (1) a fresh interpreter imports the trainer, its parser (on the
+production argv), `main.h2h`, `main.plateau`, the launcher, `checkargs` and the offline meters with the blocker
+installed (routine tier); (2) the blocker's own teeth; (3) a real `main.h2h` edge on the Rust eval engine (`sim`);
+(4) the CPU `--debug --steps 10000 --debug-eval --eval-freq 4000` smoke through `poke_env_blocker.main` (`slow`). The
+owned seams that made it possible are `agents/enums.py` (the four value-enums, DEFINED there; the fork re-exports them),
+`utils/showdown_id.py` (`to_id_str`), `utils/team_packing.py` (the paste <-> packed machinery),
+`agents/training/eval_schedule.py` + `eval_quota.py` (the eval schedule, roster names and forensic quota) and
+`main/train/matchup_setup.TRAIN_BOT_NAMES` (the training roster by name). A test that must read the fork as an ORACLE
+(identity pins, parity fuzzes) goes in an already-listed file — `src/agents/enums_test.py` holds the P1 seam pins.
 
 ### The SLOW-TIER LAST-KNOWN-STATUS gate (`src/slow_tier_status_gate_test.py`)
 

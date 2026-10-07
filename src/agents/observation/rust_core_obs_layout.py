@@ -92,6 +92,12 @@ def _f64_table(w: _W, name: str, xs: Iterable[float]) -> None:
     w(f"pub static {name}: [f64; {len(xs)}] = [{', '.join(_f64(x) for x in xs)}];")
 
 
+#: The `PokemonType` NAMES the fork's ``Move._MOVE_CATEGORY_PER_TYPE_PRE_SPLIT`` maps to SPECIAL (sorted; the typeless
+#: ``THREE_QUESTION_MARKS`` is one of them). FROZEN here so this generator imports no poke-env (P1 of the retirement);
+#: ``agents/gen3_data/moves_test.py::test_the_frozen_special_types_equal_the_forks_table`` pins it to the fork's dict.
+_SPECIAL_TYPES_PRE_SPLIT = ("DARK", "DRAGON", "ELECTRIC", "FIRE", "GRASS", "ICE", "PSYCHIC", "THREE_QUESTION_MARKS", "WATER")
+
+
 def render() -> str:
     from agents.battle.turn_view import FAINT_CAUSE_VOCAB_LIVE
     from agents.gen3_mechanics import _PROTECT_COUNTER_MAX
@@ -105,7 +111,6 @@ def render() -> str:
     from agents.observation.types import TypeEncoder
     from agents.observation.wish_belief import WISH_HEAL_FRACTION
     from agents.training.episode_tracker import PairHistoryTracker, RecencyTracker
-    from poke_env.battle.move import Move
 
     # `Gen3ObservationEncoder.base_dimension` is exactly this expression; the test pins the two.
     obs_dim = C.OFFSET_EVENT_WINDOW + C.EVENT_WINDOW_DIM
@@ -157,8 +162,7 @@ def render() -> str:
     _pairs_usize(w, "TYPE_TO_IDX", sorted(TypeEncoder.TYPE_TO_IDX.items(), key=lambda kv: kv[1]))
     w("/// poke-env's `Move._MOVE_CATEGORY_PER_TYPE_PRE_SPLIT`: the `PokemonType` NAMES whose damaging")
     w("/// moves are SPECIAL (the rest are PHYSICAL) — `moves._category_val`'s gen-3 source.")
-    special = sorted(t.name for t, cat in Move._MOVE_CATEGORY_PER_TYPE_PRE_SPLIT.items()
-                     if cat.name == "SPECIAL")
+    special = list(_SPECIAL_TYPES_PRE_SPLIT)
     _str_table(w, "SPECIAL_TYPES_PRE_SPLIT", special)
     w("")
     w("/// `global_env._WEATHER_IDX` (the `None` key is index 0, the default).")
@@ -167,7 +171,7 @@ def render() -> str:
     w("/// `global_env._LOG_MAX_TURNS` = `math.log(1 + MAX_TURNS)`.")
     w(f"pub const LOG_MAX_TURNS: f64 = {_f64(G._LOG_MAX_TURNS)};")
     w("/// `global_env._SCREEN_CONDITIONS`, as the lower-cased `SideCondition` names the view keys by.")
-    _str_table(w, "SCREEN_CONDITIONS", [c.name.lower() for c in G._SCREEN_CONDITIONS])
+    _str_table(w, "SCREEN_CONDITIONS", list(G._SCREEN_CONDITIONS))
     w("")
     w("/// `active_context`'s boost order.")
     _str_table(w, "BOOST_ORDER", ("atk", "def", "spa", "spd", "spe", "accuracy", "evasion"))

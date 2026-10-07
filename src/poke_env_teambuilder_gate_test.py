@@ -53,7 +53,7 @@ from __future__ import annotations
 
 import pytest
 
-from poke_env.teambuilder import Teambuilder
+from utils.team_packing import Teambuilder
 
 # A minimal but REAL gen3ou paste. Six mons, no nicknames (a nickname on an item-less line is the
 # sibling hazard H1 — kept out of this file so the two are never confused), explicit Hidden Power
@@ -189,7 +189,7 @@ def test_the_pack_path_refuses_an_oversize_team(monkeypatch: pytest.MonkeyPatch)
 
     def reverted_parse(team: str):
         """`Teambuilder.parse_showdown_team` exactly as it was before the fix."""
-        from poke_env.teambuilder.teambuilder_pokemon import TeambuilderPokemon
+        from utils.team_packing import TeambuilderPokemon
         return [TeambuilderPokemon.from_showdown(m) for m in team.split("\n\n") if m != ""]
 
     monkeypatch.setattr(Gen3Teambuilder, "parse_showdown_team", staticmethod(reverted_parse))

@@ -29,7 +29,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 from poke_env.battle.battle import Battle
-from poke_env.data.normalize import to_id_str
+from utils.showdown_id import to_id_str
 
 from agents.battle.battle_event import (
     EVENT_KIND,

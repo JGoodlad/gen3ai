@@ -37,11 +37,14 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any, Dict, Mapping, Optional, Tuple
 
-from poke_env.data.gen_data import GenData
-from poke_env.data.normalize import to_id_str
+from utils.showdown_id import to_id_str
+
+# The sentinel poke-env's ``Pokemon._item`` starts at — ``GenData.UNKNOWN_ITEM``. Spelled here so this module
+# imports no poke-env (P1 of the retirement); ``live_view_test.test_unknown_item_sentinel_is_pokeenvs`` pins it.
+UNKNOWN_ITEM = "unknown_item"
 
 # Items poke-env represents as "not yet known". Treated as None in the live view.
-_UNKNOWN_ITEMS = {None, GenData.UNKNOWN_ITEM}
+_UNKNOWN_ITEMS = {None, UNKNOWN_ITEM}
 
 
 # Per-ENUM-MEMBER memos for the two name derivations below. An enum member is a process-wide

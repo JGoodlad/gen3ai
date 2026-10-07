@@ -84,8 +84,11 @@ Each submodule mirrors `moves.py` (the original `gen3_movedex`, the template):
   re-read or re-parsed;
 - `get(id)` is tolerant (returns `None` for an unknown/unrevealed id), `*_data(id)` is
   crash-don't-drop (raises `KeyError`);
-- poke-env value-enums (`PokemonType`, `MoveCategory`) are borrowed as **keys/names only** —
-  never called, never made to carry data. The data is ours; the enums are just the keys.
+- the value-enums (`PokemonType`, `MoveCategory`) are used as **keys/names only** — never called, never made to
+  carry data. The data is ours; the enums are just the keys. 🚨 **They are OURS too (P1 of the poke-env
+  retirement, 2026-10-07): `agents/enums.py` DEFINES them (standard library only) and the vendored fork's four enum
+  modules re-export them**, so `import agents.gen3_data` loads no `poke_env` module (it used to load six, and the
+  trainer 36 — survey A-F1). `src/poke_env_free_entry_points_test.py` is the gate.
 - `.raw()` returns the parsed JSON dict; `state_encoder.load_mappings` assembles the encoder
   mappings from `.raw()` so each file is parsed once and shared.
 
@@ -96,7 +99,8 @@ matter), validation (missing/empty → raise), and the singleton idiom.
 
 `state_encoder.load_mappings()` (assembles the encoder's species/moves/items/abilities/priors/
 natures + reverse maps), `gen3_mechanics` (`type_chart`), `hidden_power_tracker` (`priors`). All
-poke-env *static-data* reads have been removed from the runtime; the data layer is poke-env-free.
+poke-env *static-data* reads have been removed from the runtime; the data layer is poke-env-free — at IMPORT and at RUN
+time (`utils/poke_env_blocker.py` makes `import poke_env` impossible in a test interpreter).
 
 ## Performance note (why we own the data)
 
@@ -198,5 +202,8 @@ Pool-derived (a committed calibration artifact, same pattern):
   `agents.training.team_archetypes.load_team_archetypes`.
 
 All are loaded once (lazy singletons) and raise `FileNotFoundError` / `ValueError` if missing or
-empty. The data layer is poke-env-free; the only poke-env touches left in the battle layer are a
-parser sentinel (`GenData.UNKNOWN_ITEM`) and the `to_id_str` string util — neither is static data.
+empty. The data layer is poke-env-free; the two poke-env touches the battle layer had left — the parser sentinel
+(`GenData.UNKNOWN_ITEM`, now `live_view.UNKNOWN_ITEM`) and the `to_id_str` string util (now `utils/showdown_id.py`,
+which the fork's `poke_env/data/normalize.py` re-exports) — were moved out in P1 and are pinned equal to the fork's
+by `src/agents/enums_test.py`. The ACQUISITION layer (`tools/pokemon_data_extractor/sync.py`) still reads poke-env's
+static data on purpose: that is where `data/pokemon/` comes from.

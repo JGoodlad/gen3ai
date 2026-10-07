@@ -87,7 +87,7 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   = pool + stable** (= 1 − bot; bot is left implicit). `nonbot` is independent of the stable challenge
   share (it cancels); the per-bucket split needs three **reporting-only** inputs threaded into the
   callback from `train_rl_agent` (the capped `stable_challenge_share`, the `--bot-weights` vector, and
-  `len(OPPONENT_CLASSES)` — the floor roster, which excludes eval-only `random`).
+  `len(OPPONENT_NAMES)` — the floor roster, `matchup_setup.TRAIN_BOT_NAMES`, which excludes eval-only `random`).
   With no stable opponents these reduce to `selfplay_fraction = nonbot = sf·P`, `stable = 0`.
   `_opponent_mix_fractions` is a hand-written **mirror** of the wrapper's selection, so the anti-drift
   guard was `wrappers_test.py::test_mix_fractions_match_actual_sampling` (deleted with the wrapper, U3; it ran the REAL
@@ -279,7 +279,7 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   **only which frozen opponent is sampled** — never the rollout, GAE, value target, promotion gate, or the
   `win_rate_vs_bots` curriculum ramp — so it cannot corrupt training; the worst case is "does little." A denser
   sentinel count under PFSP + a decay-toward-neutral for stale entries are the obvious follow-ups (deferred).
-- **Full roster (v1 + v2 of every archetype).** Training (`OPPONENT_CLASSES`) and eval
+- **Full roster (v1 + v2 of every archetype).** Training (`TRAIN_BOT_NAMES`, display names) and eval
   (`eval_opponent_names()` / `_EVAL_OPPONENT_SPECS`) both use all eight archetype bots —
   `{Heuristic, Heuristic2, Staller, StallerV2, Aggressive, AggressiveV2, SetupSweep,
   SetupSweepV2}` — because they play differently and the extra playstyle diversity is the

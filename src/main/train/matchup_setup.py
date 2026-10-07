@@ -15,19 +15,30 @@ import sys
 from typing import Any, List, Optional
 
 from agents.model.model_version import ModelVersionError
-from agents.opponents import (
-    Gen3AggressivePlayer, Gen3AggressiveV2Player, Gen3HeuristicV2Player, Gen3SetupSweepPlayer,
-    Gen3SetupSweepV2Player, Gen3StallerPlayer, Gen3StallerV2Player,
-)
 from agents.observation.state_encoder import load_mappings
-from agents.training.eval_callback import opponent_name
 from agents.training.matchup_spec import MatchupSpec
 from agents.training.snapshot_pool import HEURISTIC_FLOOR, SELF_PLAY_FULL, SELF_PLAY_START
 from main.exit_codes import FatalConfigError, TrainExitCode
 from main.launcher.ipc import emit
 from main.train.run_io import _run_arch_toggles
-from poke_env.player import SimpleHeuristicsPlayer
 from utils.team_loader import TeamLoader
+
+
+#: The training FLOOR roster, by display name — ALL eight archetype bots (both v1 and v2 of each). They play
+#: differently and the extra playstyle diversity is the point. Random is NOT here (it's the eval-only "is the model
+#: broken" floor). The names are the keys of Lane F's bot inventory (`utils/rust_env/bot_inventory.py`, whose test
+#: derives the "train" site FROM this list) and of the Rust env core's ported bots; the poke-env player classes they
+#: used to be listed as were only ever keys to these names (P1 of the poke-env retirement).
+TRAIN_BOT_NAMES: List[str] = [
+    "heuristic",
+    "heuristic2",
+    "staller",
+    "staller_v2",
+    "aggressive",
+    "aggressive_v2",
+    "setup_sweep",
+    "setup_sweep_v2",
+]
 
 
 @dataclasses.dataclass
@@ -39,7 +50,7 @@ class MatchupSetup:
     trainee_teambuilder: Any
     opponent_teambuilder: Any
     specialist_team_str: Any
-    opponent_classes: List[Any]
+    opponent_names: List[str]
     bot_weight_vec: Optional[List[float]]
     fixed_opponents: List[Any]
     exploiter_entry: Any
@@ -225,30 +236,18 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
 
     mappings = load_mappings()
 
-    # Training heuristic opponents — ALL eight archetype bots (both v1 and v2 of each).
-    # They play differently and the extra playstyle diversity is the point. Random is NOT
-    # here (it's the eval-only "is the model broken" floor).
-    OPPONENT_CLASSES = [
-        SimpleHeuristicsPlayer,
-        Gen3HeuristicV2Player,
-        Gen3StallerPlayer,
-        Gen3StallerV2Player,
-        Gen3AggressivePlayer,
-        Gen3AggressiveV2Player,
-        Gen3SetupSweepPlayer,
-        Gen3SetupSweepV2Player,
-    ]
-    print(f"[Opponents] training pool = {len(OPPONENT_CLASSES)} bots "
-          f"({', '.join(opponent_name(c) for c in OPPONENT_CLASSES)})")
+    # Training heuristic opponents — ALL eight archetype bots (`TRAIN_BOT_NAMES`).
+    OPPONENT_NAMES = list(TRAIN_BOT_NAMES)
+    print(f"[Opponents] training pool = {len(OPPONENT_NAMES)} bots "
+          f"({', '.join(OPPONENT_NAMES)})")
 
     # Resolve --bot-weights (name=weight) into a roster-aligned vector (unlisted → 1.0). None →
     # uniform (current behavior, byte-for-byte). Validated here so a typo fails fast at startup.
     _bot_weight_vec = None
     if args.bot_weights:
-        _bot_weight_vec = resolve_bot_weights(args.bot_weights,
-                                              [opponent_name(c) for c in OPPONENT_CLASSES])
+        _bot_weight_vec = resolve_bot_weights(args.bot_weights, OPPONENT_NAMES)
         print(f"[Opponents] heuristic weights = "
-              f"{ {opponent_name(c): w for c, w in zip(OPPONENT_CLASSES, _bot_weight_vec)} }")
+              f"{ {n: w for n, w in zip(OPPONENT_NAMES, _bot_weight_vec)} }")
 
     # Resolve + VALIDATE --stable-opponents (cross-run fixed opponents) at startup. Each foreign
     # model must share THIS run's arch_signature (= observation layout) — a mismatch is a
@@ -368,7 +367,7 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     return MatchupSetup(
         matchup=matchup, mappings=mappings,
         trainee_teambuilder=trainee_teambuilder, opponent_teambuilder=opponent_teambuilder,
-        specialist_team_str=_specialist_team_str, opponent_classes=OPPONENT_CLASSES,
+        specialist_team_str=_specialist_team_str, opponent_names=OPPONENT_NAMES,
         bot_weight_vec=_bot_weight_vec, fixed_opponents=_fixed_opponents,
         exploiter_entry=_exploiter_entry, heuristic_floor=_heuristic_floor,
         sp_start_wr=_sp_start_wr, sp_full_wr=_sp_full_wr,

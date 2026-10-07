@@ -29,6 +29,16 @@ have **different** gates:
 
 ---
 
+> 🚨 **This package imports NO poke-env at runtime** (P1 of the poke-env retirement, `T27`, 2026-10-07). The Python encoder
+> still reads poke-env battle objects (`encode(battle: AbstractBattle)`), but only as ANNOTATIONS: `AbstractBattle` / `Pokemon`
+> sit under `if TYPE_CHECKING:` with `from __future__ import annotations`; ids come from `utils.showdown_id.to_id_str`, the
+> value-enums from `agents.enums`, and `global_env._SCREEN_CONDITIONS` is spelled as the lower-cased `SideCondition` names
+> (pinned to the fork's by `src/agents/enums_test.py`). The trainer imports this package (`damage_tables` → `types`), so a
+> runtime `import poke_env` here fails `src/poke_env_free_entry_points_test.py` — keep new imports of the fork under
+> `TYPE_CHECKING`, and never add one to the shrink-only allowlist.
+
+---
+
 ## MANDATORY: run the obs-build benchmark on every change to this directory
 
 **Any change to a file under `src/agents/observation/` — even a "pure refactor" or a

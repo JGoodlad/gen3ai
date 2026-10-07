@@ -97,9 +97,8 @@ def with_hp_ivs(text: str) -> str:
     and the front end then REJECTS the team ("Forretress has Hidden Power Ghost, but its IVs are for
     Hidden Power Psychic"; measured on the first mirrored read, 2026-10-01). So every team we hand the
     peer carries the IVs our builder would have used. A mon that already states IVs is left alone."""
-    from poke_env.teambuilder import Teambuilder
-
     from utils.gen3_utils import fix_gen3_hp_ivs
+    from utils.team_packing import Teambuilder
 
     blocks = [b for b in text.strip().split("\n\n") if b.strip()]
     mons = fix_gen3_hp_ivs(Teambuilder.parse_showdown_team(text.strip()))

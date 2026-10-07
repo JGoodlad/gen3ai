@@ -17,7 +17,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
-from agents.training.eval_player import ForensicQuota, _rule_for
+from agents.training.eval_quota import ForensicQuota, _rule_for
 from agents.training.trace_selection import SELECTION_SCHEMA
 from main.launcher.ipc import send_event
 from utils.git import get_git_hash

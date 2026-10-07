@@ -1,33 +1,180 @@
-"""Accepted poke-env value-enums — the single re-export seam for our code.
+"""The four Gen-3 value-enums — OWNED here, poke-env-free, the single seam for our code.
 
-These four enums are *spec-defined value vocabularies* (a fixed set of Gen-3 types,
-status conditions, move categories, and weathers). We borrow their members **as keys
-only** — to index a lookup table, build a one-hot, or compare identity. We never call
-methods on them (no ``PokemonType.damage_multiplier``, no behaviour), so re-exporting
-them through this module gives every consumer one import to point at while keeping the
-"poke-env is an implementation detail behind the strict battle-API" standard intact.
+These four enums are *spec-defined value vocabularies* (a fixed set of Gen-3 types, status
+conditions, move categories, and weathers). Our code uses their members **as keys only** — to index a
+lookup table, build a one-hot, or compare identity. It never calls methods on them (no
+``PokemonType.damage_multiplier``, no behaviour), so routing them through this module gives every
+consumer one import to point at. The static Phase-4 guard (``strict_api_lock_test.py`` /
+``no_raw_battle_read_test.py``) forbids ``from poke_env … import {PokemonType, Status, MoveCategory,
+Weather}`` everywhere under ``agents/{observation,action,training,inference}`` *except* this module's
+own seam — a new direct poke-env enum import fails CI.
 
-Why a seam at all, and why exactly these four:
-  * They are pure data enums with no temporal/stateful semantics, unlike the ``Battle`` /
-    ``Pokemon`` objects (which flow exclusively through ``LiveView`` / ``TurnView`` /
-    ``LegalActions`` — see ``agents/battle/strict_view.py``). There is nothing to misread.
-  * Routing them here means the static Phase-4 guard (``enums_lock_test.py`` /
-    ``no_raw_battle_read_test.py``) can forbid ``from poke_env … import {PokemonType,
-    Status, MoveCategory, Weather}`` everywhere under ``agents/{observation,action,
-    training,inference}`` *except* this module — a new direct poke-env enum import then
-    fails CI.
+**Who defines them (P1 of the poke-env retirement, ``T27``).** The DEFINITIONS live HERE, and this module
+imports nothing outside the standard library, so ``agents.gen3_data`` (the data facade) and the trainer's
+whole import closure load no ``poke_env`` module. The vendored fork's four modules
+(``poke_env/battle/{pokemon_type,status,move_category,weather}.py``) are now RE-EXPORTS of these classes,
+so the identity every consumer relies on still holds in the other direction —
+``agents.enums.PokemonType is poke_env.battle.pokemon_type.PokemonType`` — and a poke-env ``Pokemon.status``
+compares equal to ``agents.enums.Status.SLP`` exactly as before (pinned by ``enums_test.py``). Before P1
+the arrow ran the other way (this module re-exported the fork's classes), which put 36 poke-env modules on
+the trainer's import path although training never calls poke-env.
 
-``Effect`` is **intentionally excluded.** poke-env's ``Effect`` enum is the temporal,
-overwrite-on-every-line volatile vocabulary that has caused real bugs; it is replaced by
-our own source-derived ``agents/observation/gen3_effects.py``. Do not add it here.
-
-The members are the same objects poke-env uses internally, so this is a pure import-path
-indirection — ``agents.enums.PokemonType is poke_env.battle.pokemon_type.PokemonType``.
+The classes carry the SAME members, ``auto()`` values, ``__str__`` and (for ``PokemonType`` / ``Weather``)
+the two helper methods the fork's Python battle layer calls (``damage_multiplier``, ``from_name``,
+``from_showdown_message``) — copied verbatim, because that layer still runs until P6 deletes it; our own
+code never calls them. Do not add behaviour here, and do not add ``Effect`` — poke-env's ``Effect`` enum is
+the temporal, overwrite-on-every-line volatile vocabulary that has caused real bugs; it is replaced by our
+own source-derived ``agents/observation/gen3_effects.py``.
 """
+from __future__ import annotations
 
-from poke_env.battle.move_category import MoveCategory
-from poke_env.battle.pokemon_type import PokemonType
-from poke_env.battle.status import Status
-from poke_env.battle.weather import Weather
+import logging
+from enum import Enum, auto, unique
+from typing import Dict, Optional
 
 __all__ = ["PokemonType", "Status", "MoveCategory", "Weather"]
+
+
+@unique
+class PokemonType(Enum):
+    """A Pokemon type
+
+    This enumeration represents pokemon types. Each type is an instance of this class,
+    whose name corresponds to the upper case spelling of its english name (ie. FIRE).
+    """
+
+    BUG = auto()
+    DARK = auto()
+    DRAGON = auto()
+    ELECTRIC = auto()
+    FAIRY = auto()
+    FIGHTING = auto()
+    FIRE = auto()
+    FLYING = auto()
+    GHOST = auto()
+    GRASS = auto()
+    GROUND = auto()
+    ICE = auto()
+    NORMAL = auto()
+    POISON = auto()
+    PSYCHIC = auto()
+    ROCK = auto()
+    STEEL = auto()
+    WATER = auto()
+    THREE_QUESTION_MARKS = auto()
+    STELLAR = auto()
+
+    def __str__(self) -> str:
+        return f"{self.name} (pokemon type) object"
+
+    def damage_multiplier(
+        self,
+        type_1: PokemonType,
+        type_2: Optional[PokemonType] = None,
+        *,
+        type_chart: Dict[str, Dict[str, float]],
+    ) -> float:
+        """Computes the damage multiplier from this type on a pokemon with types `type_1`
+        and, optionally, `type_2`.
+
+        :param type_1: The first type of the target.
+        :type type_1: PokemonType
+        :param type_2: The second type of the target. Defaults to None.
+        :type type_2: PokemonType, optional
+        :return: The damage multiplier from this type on a pokemon with types `type_1`
+            and, optionally, `type_2`.
+        :rtype: float
+        """
+        if self in {
+            PokemonType.THREE_QUESTION_MARKS,
+            PokemonType.STELLAR,
+        } or type_1 in {PokemonType.THREE_QUESTION_MARKS, PokemonType.STELLAR}:
+            return 1
+
+        damage_multiplier = type_chart[type_1.name][self.name]
+        if type_2 is not None:
+            return damage_multiplier * type_chart[type_2.name][self.name]
+        return damage_multiplier
+
+    @staticmethod
+    def from_name(name: str) -> PokemonType:
+        """Returns a pokemon type based on its name.
+
+        :param name: The name of the pokemon type.
+        :type name: str
+        :return: The corresponding type object.
+        :rtype: PokemonType
+        """
+        if name == "???":
+            return PokemonType.THREE_QUESTION_MARKS
+        return PokemonType[name.upper()]
+
+
+@unique
+class Status(Enum):
+    """Enumeration, represent a status a pokemon can be afflicted with."""
+
+    BRN = auto()
+    FNT = auto()
+    FRZ = auto()
+    PAR = auto()
+    PSN = auto()
+    SLP = auto()
+    TOX = auto()
+
+    def __str__(self) -> str:
+        return f"{self.name} (status) object"
+
+
+@unique
+class MoveCategory(Enum):
+    """Enumeration, represent a move category."""
+
+    PHYSICAL = auto()
+    SPECIAL = auto()
+    STATUS = auto()
+
+    def __str__(self) -> str:
+        return f"{self.name} (move category) object"
+
+
+class Weather(Enum):
+    """Enumeration, represent a non null weather in a battle."""
+
+    UNKNOWN = auto()
+    DESOLATELAND = auto()
+    DELTASTREAM = auto()
+    HAIL = auto()
+    PRIMORDIALSEA = auto()
+    RAINDANCE = auto()
+    SANDSTORM = auto()
+    SNOWSCAPE = SNOW = auto()
+    SUNNYDAY = auto()
+
+    def __str__(self) -> str:
+        return f"{self.name} (weather) object"
+
+    @staticmethod
+    def from_showdown_message(message: str):
+        """Returns the Weather object corresponding to the message.
+
+        :param message: The message to convert.
+        :type message: str
+        :return: The corresponding Weather object.
+        :rtype: Weather
+        """
+        message = message.replace("move: ", "")
+        message = message.replace(" ", "_")
+        message = message.replace("-", "_")
+
+        try:
+            return Weather[message.upper()]
+        except KeyError:
+            logging.getLogger("poke-env").warning(
+                "Unexpected weather '%s' received. Weather.UNKNOWN will be used "
+                "instead. If this is unexpected, please open an issue at "
+                "https://github.com/hsahovic/poke-env/issues/ along with this error "
+                "message and a description of your program.",
+                message,
+            )
+            return Weather.UNKNOWN

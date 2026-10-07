@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from .base import ObservationEncoder
 from .constants import (
@@ -29,9 +30,10 @@ from .items import ItemsEncoder
 from .moves import MovesEncoder
 from .species import SpeciesEncoder
 from .types import TypeEncoder
-from poke_env.battle.abstract_battle import AbstractBattle
 from agents.enums import Status
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from poke_env.battle.abstract_battle import AbstractBattle
 
 # Status → condition one-hot slot, in both the read-model's id form (LivePokemon.status,
 # e.g. "brn") and poke-env's Status enum (raw / unit-test fallback). Both map to the SAME

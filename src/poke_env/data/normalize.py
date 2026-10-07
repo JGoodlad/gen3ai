@@ -1,12 +1,8 @@
-from functools import lru_cache
+"""``to_id_str`` — re-exported from ``utils.showdown_id`` (P1 of the poke-env retirement, ``T27``).
 
+The definition moved OUT of the fork so our code can normalise a Showdown id without importing poke-env; this
+module hands back the same function object, so the fork and our code can never disagree. Retired with the fork (P6).
+"""
+from utils.showdown_id import to_id_str
 
-@lru_cache(2**13)
-def to_id_str(name: str) -> str:
-    """Converts a full-name to its corresponding id string.
-    :param name: The name to convert.
-    :type name: str
-    :return: The corresponding id string.
-    :rtype: str
-    """
-    return "".join(char for char in name if char.isalnum()).lower()
+__all__ = ["to_id_str"]

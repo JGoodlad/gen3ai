@@ -16,29 +16,12 @@ from agents.opponents import (
 )
 from agents.training.eval_player import EvalRLPlayer
 
-BATTLE_FORMAT = "gen3ou"
-
-# Single-player concurrency ceiling (kept for SelfPlayCallback's one-player path).
-_EVAL_CONCURRENCY = 100
-# PerOpponentEvalCallback evaluates every opponent concurrently — one RLPlayer per
-# opponent, all gathered. Cap the AGGREGATE in-flight battles so N opponents don't
-
-
-# Flat eval schedule — one cadence, one game count, applied uniformly to every bot
-# AND every self-play sentinel. No maturity tiers, no per-opponent caps. The cycle plays blocking
-# in the trainer's process (~1.5% of wall at N=256, m5_sizing PROGRESS.md O9), so the cadence is
-# what bounds its cost.
-EVAL_FREQ_STEPS = 2_000_000
-EVAL_GAMES = 100
-
-# Battle-level work-stealing: each opponent's EVAL_GAMES games are split into shard units of
-# (at most) this many games, so any idle worker can drain a straggler's remaining games instead of
-# one worker grinding a whole opponent alone. Smaller → finer tail collapse but more player builds
-# (and, on the websocket transport, more connection churn — the bridge is preferred for fine
-# shards). `>= EVAL_GAMES` ⇒ one shard per opponent == the original opponent-level behaviour.
-# Default 25 → 4 shards/opponent: a ~4x shorter tail at modest cost. Tunable via
-# `--eval-shard-games`.
-EVAL_SHARD_GAMES = 25
+# The schedule constants, the battle format and the roster's NAMES are poke-env-free and live in `eval_schedule`
+# (P1 of the retirement); re-exported here so every historical import site resolves.
+from agents.training.eval_schedule import (  # noqa: F401
+    BATTLE_FORMAT, _EVAL_CONCURRENCY, EVAL_FREQ_STEPS, EVAL_GAMES, EVAL_SHARD_GAMES,
+    RANDOM_OPPONENT_NAME as _SCHEDULE_RANDOM_NAME, _EVAL_ROSTER as _SCHEDULE_ROSTER, eval_opponent_names,
+)
 
 _OPPONENT_NAMES: dict[type, str] = {
     RandomPlayer: "random",
@@ -60,6 +43,7 @@ def opponent_name(player_cls: type) -> str:
 
 
 RANDOM_OPPONENT_NAME = opponent_name(RandomPlayer)
+assert RANDOM_OPPONENT_NAME == _SCHEDULE_RANDOM_NAME, (RANDOM_OPPONENT_NAME, _SCHEDULE_RANDOM_NAME)
 
 # The canonical eval roster: (display name, player class, account prefix). Every bot
 # plays — both the v1 and v2 of each archetype, since they play differently and the
@@ -79,13 +63,11 @@ _EVAL_OPPONENT_SPECS: list[tuple[str, type, str]] = [
     ("setup_sweep_v2", Gen3SetupSweepV2Player, "CbSetupV2"),
 ]
 
-# Full roster, in spec order. Random first (the broken-model floor).
+# Full roster, in spec order. Random first (the broken-model floor). The poke-env-free copy of these names is
+# `eval_schedule._EVAL_ROSTER` (what `eval_opponent_names()` serves); the two MUST agree, so a drift fails at import.
 _EVAL_ROSTER = [name for (name, _cls, _prefix) in _EVAL_OPPONENT_SPECS]
-
-
-def eval_opponent_names() -> list[str]:
-    """Ordered display names of the full eval roster (all bots + Random)."""
-    return list(_EVAL_ROSTER)
+assert _EVAL_ROSTER == _SCHEDULE_ROSTER, (
+    f"eval_roster._EVAL_OPPONENT_SPECS names {_EVAL_ROSTER} != eval_schedule._EVAL_ROSTER {_SCHEDULE_ROSTER}")
 
 
 def eval_opponent_class(name: str) -> type:

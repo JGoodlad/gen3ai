@@ -177,7 +177,7 @@ async def main():
     _mu = build_matchup_and_opponents(args)
     matchup, mappings = _mu.matchup, _mu.mappings
     trainee_teambuilder, opponent_teambuilder = _mu.trainee_teambuilder, _mu.opponent_teambuilder
-    _specialist_team_str, OPPONENT_CLASSES = _mu.specialist_team_str, _mu.opponent_classes
+    _specialist_team_str, OPPONENT_NAMES = _mu.specialist_team_str, _mu.opponent_names
     _bot_weight_vec, _fixed_opponents = _mu.bot_weight_vec, _mu.fixed_opponents
     _exploiter_entry, _promote_threshold = _mu.exploiter_entry, _mu.promote_threshold
     _heuristic_floor, _sp_start_wr, _sp_full_wr = (
@@ -216,8 +216,10 @@ async def main():
 
     # Per-run reward config (design §1). gamma MUST == the PPO gamma (asserted post-build below); the
     # Rust env core's collector builds its reward from the same config. Default = the single-variable run.
-    from agents.training.reward_manager import (
-        RewardConfig, format_reward_composition, reward_composition_block)
+    # The reward's declarations live in `reward_config` / `reward_composition` (poke-env-free); `reward_manager` (the
+    # Python `Gen3RewardManager`, which imports the Python battle layer) is the eval / offline path's, not the trainer's.
+    from agents.training.reward_composition import format_reward_composition, reward_composition_block
+    from agents.training.reward_config import RewardConfig
     # Single construction site (gamma == InstrumentedMaskablePPO(gamma=0.9999), asserted below). Every
     # reward CLI flag flows in by name → training, eval, and the version record all use ONE config.
     reward_config = RewardConfig.from_args(args)
@@ -309,7 +311,7 @@ async def main():
     from main.train.rust_env_setup import build_rust_vec_env
     env = build_rust_vec_env(
         args, mappings=mappings, trainee_teambuilder=trainee_teambuilder,
-        opponent_teambuilder=opponent_teambuilder, opponent_classes=OPPONENT_CLASSES,
+        opponent_teambuilder=opponent_teambuilder, opponent_names=OPPONENT_NAMES,
         bot_weights=_bot_weight_vec, fixed_opponents=_fixed_opponents, exploiter_entry=_exploiter_entry,
         snapshot_dir=str(_snapshot_dir) if _snapshot_dir is not None else None,
         opponent_version=_opp_version, self_play_fraction=_initial_self_play_fraction, n_envs=n_envs,
@@ -333,7 +335,7 @@ async def main():
     _cb = build_callbacks(
         args=args, model_dir=model_dir,
         annealing_mode=annealing_mode, _pool=_pool, _fixed_opponents=_fixed_opponents,
-        _bot_weight_vec=_bot_weight_vec, OPPONENT_CLASSES=OPPONENT_CLASSES,
+        _bot_weight_vec=_bot_weight_vec, OPPONENT_NAMES=OPPONENT_NAMES,
         _specialist_team_str=_specialist_team_str, _promote_threshold=_promote_threshold,
         _heuristic_floor=_heuristic_floor, _sp_start_wr=_sp_start_wr, _sp_full_wr=_sp_full_wr)
 

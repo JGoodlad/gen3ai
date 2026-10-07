@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 from dataclasses import dataclass
-from poke_env.battle.pokemon_type import PokemonType
+from agents.enums import PokemonType
 
 from agents.training.hidden_power_tracker import HiddenPowerTracker, HIDDEN_POWER_TYPE_ORDER
 
@@ -77,7 +77,7 @@ def test_flash_fire_frozen_arcanine_05x_leaves_fire():
     fall through and get the normal Fire-vs-Fire 0.5× resistance, then thaw the
     target. Without this quirk, Fire would be wrongly eliminated.
     """
-    from poke_env.battle.status import Status
+    from agents.enums import Status
     tracker = make_tracker()
     arcanine_frozen = MockMon("arcanine", PokemonType.FIRE, None, "flashfire",
                               status=Status.FRZ)

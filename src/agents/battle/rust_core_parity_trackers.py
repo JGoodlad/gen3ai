@@ -117,7 +117,7 @@ class _Nums:
 
 def intent_label(delta, prev_frame: Sequence[str]) -> dict:
     """``build_opp_intent_label`` with id-valued lookups, decoded back to ids."""
-    from poke_env.data.normalize import to_id_str
+    from utils.showdown_id import to_id_str
 
     from agents.training.opp_intent_labels import KIND_SWITCH, build_opp_intent_label
 

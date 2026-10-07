@@ -12,7 +12,7 @@ history fold" below). `gen3_frame_deletion_v1` deleted its OBS encoding (the lag
 tracker's fold and the α/β intent-label source; the action masker/mapper read the
 LiveView / LegalActions / TurnView surfaces; and the reward manager reads `LiveView` too. Our
 non-`battle/` code is held to the strict boundary by `src/agents/strict_api_lock_test.py` (the
-lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is the `LiveView`
+lock) + the `src/agents/enums.py` seam (which since P1 of the poke-env retirement DEFINES the four value-enums; the fork re-exports them). The one remaining open item is the `LiveView`
 **event-fold** itself (current-board independence), tracked in `designs/ai_v4/todo_live_battle.md`.
 
 - **`Gen3Battle(Battle)`** (`gen3_battle.py`) — subclasses poke-env's singles `Battle`.
@@ -235,8 +235,10 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   implementation**: a change to `_build_event` / `_capture_pre` / the schema, or to a poke-env
   transition they read, fails the COMMIT tier the day it lands — mirror it in
   `src/rust_sim/src/core_events/reading.rs` in the same change (or behind a flag OFF in
-  `production_config.json`). And `battle_event.py`'s tables are GENERATED into Rust:
-  `python -m agents.battle.rust_core_schema --write` (`rust_core_schema_test.py` fails when stale).
+  `production_config.json`). And `battle_event.py`'s tables have a Rust twin that is FROZEN, Rust-owned
+  source since P1 of the poke-env retirement (the generator imported poke-env and is deleted): the schema is edited IN
+  `src/rust_sim/src/core_events/schema.rs`, and `rust_core_schema_test.py` parses it and holds it equal to
+  `battle_event.py` (keywords, routes, event kinds, value keys) while this layer lives.
   Contract: [`designs/rust_sim/core_events.md`](../../../designs/rust_sim/core_events.md).
 - **`rust_core_parity_views.py` — slice V, the view + legality slice of the training observation
   path** (`gen3_core_parity_views_v1`). At EVERY decision of every recorded battle, both viewers, the
@@ -288,10 +290,10 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   They also pin the core's REFUSALS (`gen3_core_error_v1`): a line poke-env raises on must fail in
   the core with the SAME exception class (`core_error.class`), and malformed input must never be
   reported as a poke-env class.
-  🚨 **The poke-env data the core's reading consults is GENERATED from poke-env**:
-  `python -m agents.battle.rust_core_present_tables --write` after any change to poke-env's pokedex,
-  move table, `Effect` lifecycle sets or `SideCondition` (`rust_core_present_tables_test.py` fails
-  when stale). Contract: [`designs/rust_sim/present.md`](../../../designs/rust_sim/present.md).
+  🚨 **The poke-env data the core's reading consults is FROZEN, Rust-owned source** (P1 of the poke-env
+  retirement; it was GENERATED from poke-env's pokedex, move table, `Effect` lifecycle sets and `SideCondition` by a
+  generator that imported it, now deleted): `src/rust_sim/src/present/tables.rs` is edited directly, nothing re-derives it
+  from the fork (which is retired in P6), and the per-rule pins and the engine-truth audit are its checks. Contract: [`designs/rust_sim/present.md`](../../../designs/rust_sim/present.md).
 - **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
   **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
   (or `strict_view().legal`): per-slot `LegalMove(id, current_pp, max_pp, disabled, target)`,

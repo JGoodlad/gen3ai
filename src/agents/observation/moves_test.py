@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from agents.observation.moves import MovesEncoder, HIDDEN_POWER_MOVE_NUM
 from agents.observation.types import TypeEncoder
-from poke_env.battle.move_category import MoveCategory
+from agents.enums import MoveCategory
 
 
 @pytest.fixture(autouse=True)

@@ -25,7 +25,7 @@ import random
 import subprocess
 from typing import List, Optional, Sequence, Tuple
 
-from poke_env.teambuilder.teambuilder import Teambuilder
+from utils.team_packing import Teambuilder
 
 from utils.paths import repo_path
 

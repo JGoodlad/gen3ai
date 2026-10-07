@@ -138,9 +138,10 @@ exactly that ([`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_ev
 (a `|` inside one field is two fields — `volatile_start_detail`, not a pipe-joined string). Every
 corpus battle checks it (`tests/core_events_test.rs`, and `core_events` refuses otherwise).
 
-🚨 **The keyword table is GENERATED** from `agents/battle/battle_event.py`:
-`python -m agents.battle.rust_core_schema --write` after any `MESSAGE_POLICY` / `EventKind` /
-value-schema change (`rust_core_schema_test.py` fails the day it is stale).
+🚨 **The keyword table is FROZEN, Rust-owned source** (P1 of the poke-env retirement; it was GENERATED from
+`agents/battle/battle_event.py` by a Python generator that imported poke-env, now deleted): edit `core_events/schema.rs`
+directly for a new keyword / `EventKind` / value key, and mirror it in `battle_event.py` while that layer lives —
+`rust_core_schema_test.py` parses the Rust file and fails when the two differ.
 
 | gate | what it proves |
 |---|---|
@@ -167,8 +168,10 @@ every successor is a `BattleVersion` (`search_driver`'s `open_root` `core: "text
 protocol / view roads are deleted, program §4 M2). Contract, the rules, the search road, the
 gates: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md).
 
-🚨 **The poke-env tables are GENERATED**: `python -m agents.battle.rust_core_present_tables --write`
-after a poke-env data change (`rust_core_present_tables_test.py` fails the day it is stale).
+🚨 **The poke-env tables are FROZEN, Rust-owned source** (P1 of the poke-env retirement; they were GENERATED from
+poke-env's data by a Python generator that imported it, now deleted): edit `present/tables.rs` directly. Nothing
+re-derives them from the fork any more, so a change to the fork's data (none is planned: it is retired in P6) is NOT
+picked up — the engine-truth audit and the per-rule pins are the checks.
 
 🚨 **A TRAINING SESSION BUILDS NO CORE RECORDING unless asked.** A reader opts in (`new_core`).
 The one exception is OPT-IN per battle: START's `core_obs` key makes the child fold a PARSE chain with

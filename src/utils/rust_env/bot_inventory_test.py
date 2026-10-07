@@ -54,10 +54,25 @@ def _list_assign(tree, target: str) -> list:
     return found
 
 
+def _eval_name_to_class() -> dict:
+    """``display name -> dotted class`` from the eval roster's own table (the one place a name meets its class)."""
+    t = _tree("agents/training/eval_roster.py")
+    (lst,) = _list_assign(t, "_EVAL_OPPONENT_SPECS")
+    imports = _imports(t)
+    return {tup.elts[0].value: _canonical(_resolve(imports[tup.elts[1].id])) for tup in lst.elts}
+
+
 def train_roster() -> set:
+    """The classes of the training floor roster: ``main/train/matchup_setup.py``'s ``TRAIN_BOT_NAMES`` (display names,
+    poke-env-free since P1 of the retirement) resolved through the eval roster's name -> class table, so a bot named
+    there that no table knows fails HERE and a class with no inventory row fails ``test_every_roster_bot_has_a_row``."""
     t = _tree("main/train/matchup_setup.py")
-    (lst,) = _list_assign(t, "OPPONENT_CLASSES")
-    return _classes([e.id for e in lst.elts], _imports(t))
+    (lst,) = _list_assign(t, "TRAIN_BOT_NAMES")
+    names = [e.value for e in lst.elts]
+    by_name = _eval_name_to_class()
+    unknown = [n for n in names if n not in by_name]
+    assert not unknown, f"{unknown} are in TRAIN_BOT_NAMES but not in eval_roster._EVAL_OPPONENT_SPECS"
+    return {by_name[n] for n in names}
 
 
 def eval_roster() -> set:

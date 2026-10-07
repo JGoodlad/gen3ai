@@ -75,8 +75,8 @@ def team_species(team_str: str) -> List[str]:
     An alternate FORME is normalized to its ``base_species`` — the artifact's vocabulary is the
     num-keyed basis (``gen3_data.species.base_form_ids()``), because a forme shares its base's
     national-dex ``num`` and every num-indexed consumer would collapse them anyway."""
-    from poke_env.data import to_id_str            # lazy — see the module-scope note
-    from poke_env.teambuilder import Teambuilder
+    from utils.showdown_id import to_id_str
+    from utils.team_packing import Teambuilder
 
     mons = Teambuilder.parse_showdown_team(team_str)
     if not mons:

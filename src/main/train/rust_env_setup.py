@@ -145,17 +145,18 @@ def env_core_switch_line(args: Any) -> Optional[str]:
     return f"🔀 [ENV CORE] CORE SWITCH — {D4_CORE_SWITCH}"
 
 
-def _bot_names(opponent_classes: Sequence[Any]) -> List[str]:
-    """The floor roster's classes as Lane F's bot names (``bot_inventory``)."""
+def _bot_names(opponent_names: Sequence[str]) -> List[str]:
+    """The floor roster's display names, each checked against Lane F's inventory (``bot_inventory``): a bot with no
+    row, or no PORTED Rust bot, is refused by name. (The roster used to be the poke-env player CLASSES; they only ever
+    served as keys to these names, so the trainer now carries the names — P1 of the poke-env retirement.)"""
     from utils.rust_env import bot_inventory as BI
 
-    by_cls = BI.by_class()
+    by_name = BI.by_name()
     out = []
-    for cls in opponent_classes:
-        key = f"{cls.__module__}.{cls.__qualname__}"
-        row = by_cls.get(key)
+    for name in opponent_names:
+        row = by_name.get(name)
         if row is None or not row.rust:
-            raise RuntimeError(f"the Rust env core: the floor roster's {key} has no ported Rust bot (Lane F)")
+            raise RuntimeError(f"the Rust env core: the floor roster's {name!r} has no ported Rust bot (Lane F)")
         out.append(row.name)
     return out
 
@@ -170,7 +171,7 @@ def segment_seed(seed: int, num_timesteps: int) -> int:
 
 
 def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, opponent_teambuilder: Any,
-                       opponent_classes: Sequence[Any], bot_weights: Optional[Sequence[float]],
+                       opponent_names: Sequence[str], bot_weights: Optional[Sequence[float]],
                        fixed_opponents: Sequence[Any], exploiter_entry: Any, snapshot_dir: Optional[str],
                        opponent_version: Any, self_play_fraction: float, n_envs: int,
                        eval_trainee_team_str: Any = None,
@@ -189,7 +190,7 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
 
     ensure_built(args.rust_env_profile, emit=emit)
     obs_space, act_space = trainee_spaces(args, mappings)
-    plan = E.OpponentPlan.from_args(args, bot_names=_bot_names(opponent_classes),
+    plan = E.OpponentPlan.from_args(args, bot_names=_bot_names(opponent_names),
                                     stable_entries=list(fixed_opponents or ()), exploiter_entry=exploiter_entry,
                                     heuristic_weights=bot_weights, bot_seed=0)
     buckets = tuple(int(x) for x in args.t2_buckets.split(",")) if getattr(args, "t2_buckets", None) else ()

@@ -11,7 +11,7 @@ import torch
 import pytest
 from gymnasium import spaces
 
-from poke_env.battle.pokemon_type import PokemonType
+from agents.enums import PokemonType
 
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor,

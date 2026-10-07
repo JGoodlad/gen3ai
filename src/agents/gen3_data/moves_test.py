@@ -1,6 +1,5 @@
 import pytest
-from poke_env.battle.move_category import MoveCategory
-from poke_env.battle.pokemon_type import PokemonType
+from agents.enums import MoveCategory, PokemonType
 
 from agents.gen3_data import moves as movedex
 from agents.gen3_data.moves import MoveData
@@ -242,3 +241,4 @@ def test_boost_covers_gen3_setup_excludes_memento_and_stockpile():
     assert "memento" not in boost         # foe-target debuff + self-faint, NOT setup
     assert "stockpile" not in boost       # gen3 Stockpile does NOT raise Def/SpD (gen4 addition)
     assert movedex.move_data("curse").is_boost is False  # static flag stays off (live-resolved)
+

@@ -1,5 +1,5 @@
 from utils.gen3_utils import fix_gen3_hp_ivs, GEN3_HP_IVS
-from poke_env.teambuilder import TeambuilderPokemon
+from utils.team_packing import TeambuilderPokemon
 
 def test_hp_bug_fix():
     # Setup a Tyranitar with Hidden Power [Bug] and default IVs

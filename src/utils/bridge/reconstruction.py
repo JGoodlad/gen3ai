@@ -136,8 +136,8 @@ def decode_packed_team(packed: str) -> List[dict]:
     ``packed_team_decode_integration_test.py``. Replay/re-roll deliberately do
     NOT use this: they feed the packed string back to the sim verbatim.
     """
-    from poke_env.data.normalize import to_id_str
-    from poke_env.teambuilder.teambuilder import Teambuilder
+    from utils.showdown_id import to_id_str
+    from utils.team_packing import Teambuilder
 
     aliases = _sim_aliases()
 

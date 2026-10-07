@@ -14,7 +14,7 @@ import time
 from typing import Any
 
 from agents.training.eval_launch import EVAL_MANIFEST_NAME, EVAL_SNAPSHOT_NAME
-from agents.training.eval_player import ForensicQuota, _rule_for
+from agents.training.eval_quota import ForensicQuota, _rule_for
 from agents.training.eval_sharding import PLAN_NAME, ShardedEvalPool
 from agents.training.trace_selection import SELECTION_SCHEMA, build_selection
 from main.launcher.ipc import send_metrics

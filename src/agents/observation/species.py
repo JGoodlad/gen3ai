@@ -1,8 +1,10 @@
+from __future__ import annotations
 import numpy as np
 from .base import ObservationEncoder
-from poke_env.battle.abstract_battle import AbstractBattle
-from poke_env.battle.pokemon import Pokemon
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from poke_env.battle.abstract_battle import AbstractBattle
+    from poke_env.battle.pokemon import Pokemon
 
 class SpeciesEncoder(ObservationEncoder):
     """
