@@ -53,7 +53,7 @@ def test_stale_cross_batch_read_is_unrepresentable(fe_and_layout):
         fe(_obs(layout))
     assert fe.stash is not before                              # replaced as a UNIT at entry
     assert fe.last_value_pooled is not None and fe.last_value_pooled is not sentinel
-    assert fe.last_alpha_logits is None                        # not merely overwritten: RESET
+    assert fe.last_flat_intent_logits is None                  # not merely overwritten: RESET
     assert "alpha_logits" not in fe._belief_supervision        # key absent ⇒ head did not run
     # the surface is live: the pointer stash was written this forward and the property sees it
     assert fe.last_pointer_inputs is fe.stash.pointer_inputs is not None

@@ -616,18 +616,37 @@ class TestStaleDecisionRedecide:
         p._tracker.restore.assert_called_once()
 
 
-# ── RLPlayer._opp_intent (v67 α/β capture — the interpretability payload) ─────
-# The method only reads the extractor stash, so a mock `self` exercises it. What it produces is what lands in the trace and therefore in the prober.
+# ── RLPlayer._opp_intent (α/β capture — the interpretability payload) ─────
+# The method only reads the extractor stash, so a mock `self` exercises it. What it produces is what lands in
+# the trace and therefore in the prober. Since the X5 version break (config v144) the stash is X5's FLAT
+# opponent pointer (one softmax over K move seats · OTHER_move · six switch slots · OTHER_species); the blob
+# α / β stashes are deleted.
 
-def _intent_self(*, alpha=None, seat_nums=None, beta=None, species=None):
+def _flat(k=3, seats=(33, 87, 0), seat_p=(0.5, 0.2, 0.0), other_move_p=0.05,
+          slot_p=(None, None, None, None, None, None), other_species_p=0.0,
+          slot_ids=(0, 0, 0, 0, 0, 0), hidden=(False,) * 6):
+    """(logits [1,F], FlatIntentInputs-like) for one row; a None / 0.0 entry is a DEAD candidate (-inf)."""
+    import math
     from types import SimpleNamespace
-    ex = SimpleNamespace(last_alpha_logits=alpha, last_alpha_seat_nums=seat_nums,
-                         last_beta_logits=beta,
-                         last_belief_logits=({"species": species} if species is not None else None))
+
+    import torch
+    probs = list(seat_p) + [other_move_p] + [0.0 if q is None else q for q in slot_p] + [other_species_p]
+    live = [q > 0 for q in seat_p] + [other_move_p > 0] + [q is not None for q in slot_p] + [other_species_p > 0]
+    logits = torch.tensor([[math.log(q) if (lv and q > 0) else float("-inf") for q, lv in zip(probs, live)]])
+    fi = SimpleNamespace(k=k, live=torch.tensor([live]),
+                         cand_ids=torch.tensor([list(seats) + [0] + list(slot_ids) + [0]]),
+                         slot_species=torch.tensor([[i if h else 0 for i, h in zip(slot_ids, hidden)]]),
+                         slot_is_hypothesis=torch.tensor([list(hidden)]))
+    return logits, fi
+
+
+def _intent_self(*, flat=None, built=True):
+    from types import SimpleNamespace
+    logits, fi = flat if flat is not None else (None, None)
+    ex = SimpleNamespace(flat_intent_head=(object() if built else None),
+                         last_flat_intent_logits=logits, last_flat_intent=fi)
     fake = SimpleNamespace(model=SimpleNamespace(policy=SimpleNamespace(features_extractor=ex)))
-    # `_opp_intent` calls the sibling helpers on `self`; bind the REAL ones so the mock exercises
-    # the real naming path rather than a stub of it.
-    fake._slot_species = lambda: RLPlayer._slot_species(fake)
+    # `_opp_intent` calls the sibling helper on `self`; bind the REAL one so the mock exercises the real path.
     fake._revealed_opp_species = RLPlayer._revealed_opp_species
     return fake
 
@@ -642,108 +661,63 @@ def _intent_battle(*revealed, active=None):
                            opponent_active_pokemon=(active or next(iter(team.values()), None)))
 
 
-def test_opp_intent_none_when_heads_off():
-    assert RLPlayer._opp_intent(_intent_self()) is None
+def test_opp_intent_none_when_the_intent_readout_is_off():
+    assert RLPlayer._opp_intent(_intent_self(built=False)) is None
+
+
+def test_opp_intent_RAISES_when_the_pointer_is_built_but_stashed_nothing():
+    """A silent None here would write a trace with no intent block for a model that has one."""
+    with pytest.raises(RuntimeError, match="stashed no flat_intent"):
+        RLPlayer._opp_intent(_intent_self(built=True))
 
 
 def test_opp_intent_names_every_option_and_rounds_for_disk():
     """The owner constraint: the model may only point at things it can NAME. A seat the belief did
-    not fill (num 0) is DROPPED rather than shown as an anonymous index."""
-    import torch
-    # Two real seats (Tackle=33, Thunder=87) + one unfilled, then the SWITCH column.
-    alpha = torch.tensor([[2.0, 0.0, 0.0, 1.0]])
-    seats = torch.tensor([[33, 87, 0]])
-    out = RLPlayer._opp_intent(_intent_self(alpha=alpha, seat_nums=seats))
+    not fill is DROPPED rather than shown as an anonymous index; OTHER_move and the SWITCH total are
+    named options of their own."""
+    out = RLPlayer._opp_intent(_intent_self(flat=_flat(slot_p=(0.25, None, None, None, None, None))))
     names = [r["name"] for r in out["alpha"]]
-    assert "SWITCH" in names and len(out["alpha"]) == 3, "the empty seat must be dropped"
+    assert "SWITCH" in names and "OTHER move" in names and len(out["alpha"]) == 4, names
     assert all(not n.startswith("move#") for n in names), "every option is named through the dex"
-    assert out["alpha"][0]["p"] > out["alpha"][-1]["p"], "ranked highest-first"
+    assert out["alpha"][0]["p"] >= out["alpha"][-1]["p"], "ranked highest-first"
     # Rounded on the way to disk — these ride every captured decision of every captured battle.
     assert all(r["p"] == round(r["p"], 4) for r in out["alpha"])
-    assert "beta" not in out, "no β head → no β key, rather than an empty one"
+    assert [r["slot"] for r in out["beta"]] == [0] and out["beta"][0]["p"] == 1.0
 
 
-def test_opp_intent_beta_is_named_by_the_species_posterior():
-    """β points at a SLOT, and a believed slot is an anonymous query — the model's own species
-    posterior is what makes 'they will switch to X' refer to anything. An illegal candidate (-inf,
-    i.e. fainted or already active) is not listed at all."""
-    import torch
-    alpha, seats = torch.tensor([[1.0, 0.5]]), torch.tensor([[33]])
-    beta = torch.tensor([[0.0, 5.0, float("-inf")]])
-    species = torch.zeros(1, 3, 400)
-    species[0, 1, 143] = 10.0          # slot 1 → snorlax (dex 143)
-    out = RLPlayer._opp_intent(_intent_self(alpha=alpha, seat_nums=seats, beta=beta,
-                                            species=species))
-    assert [r["slot"] for r in out["beta"]] == [1, 0], "ranked, and the -inf candidate excluded"
-    assert out["beta"][0]["species"] == "snorlax"
-
-
-def test_opp_intent_beta_slot_stays_a_bare_index_without_a_species_head():
-    """No species head means nothing in the model can say what that slot holds. A bare index is the
-    honest answer; inventing a name would be worse than the index."""
-    import torch
-    out = RLPlayer._opp_intent(_intent_self(
-        alpha=torch.tensor([[1.0, 0.5]]), seat_nums=torch.tensor([[33]]),
-        beta=torch.tensor([[1.0, 0.0]])))
-    assert [r["species"] for r in out["beta"]] == [None, None]
+def test_opp_intent_beta_names_a_HIDDEN_slot_by_its_HYPOTHESIS_species():
+    """β points at a SLOT. Under X5 a hidden slot HOLDS a hypothesis species — that is what β's mass is
+    on, so it names the row (flagged `revealed: false`). A dead candidate is not listed at all."""
+    out = RLPlayer._opp_intent(_intent_self(flat=_flat(
+        slot_p=(0.1, 0.3, None, None, None, None), slot_ids=(9, 143, 0, 0, 0, 0),
+        hidden=(False, True, False, False, False, False))))
+    assert [r["slot"] for r in out["beta"]] == [1, 0], "ranked, and the dead candidate excluded"
+    assert out["beta"][0]["species"] == "snorlax" and out["beta"][0]["revealed"] is False
 
 
 # ── β naming provenance (`gen3_beta_revealed_naming_v1`) ─────────────────────
-# THE defect this pins: β's candidate mask is alive-and-not-active, which includes REVEALED bench
-# mons, while the species aux only supervises the BELIEVED slots — so the posterior is un-trained
-# exactly where the board already has the answer. Naming a revealed slot from it made the rendered
-# mon one not on the opponent's team at all in 73.3% of 6,876 pivots (843-battle sweep, 2026-08-19),
-# and an owner analysis read "β predicts porygon2" on a turn where β's slot was the revealed
-# Salamence and β was CORRECT.
+# THE defect this pins: a revealed slot named from anything but the board read as a different mon (73.3% of
+# 6,876 pivots, 843-battle sweep, 2026-08-19) and decided a wrong research conclusion.
 
-def test_opp_intent_beta_names_a_REVEALED_slot_from_the_BOARD_not_the_posterior():
-    """A slot the board has revealed is named from `battle.opponent_team`, and flagged `revealed`.
-    The species posterior is deliberately made to disagree — that disagreement is the whole bug."""
-    import torch
-    alpha, seats = torch.tensor([[1.0, 0.5]]), torch.tensor([[33]])
-    beta = torch.tensor([[5.0, 0.0, 0.0]])          # slot 0 leads
-    species = torch.zeros(1, 3, 400)
-    species[0, 0, 233] = 10.0                        # the posterior says porygon2 (dex 233) …
-    battle = _intent_battle("salamence", "tyranitar")   # … the board says salamence
-    out = RLPlayer._opp_intent(
-        _intent_self(alpha=alpha, seat_nums=seats, beta=beta, species=species), battle)
+def test_opp_intent_beta_names_a_REVEALED_slot_from_the_BOARD():
+    """A slot the board has revealed is named from `battle.opponent_team`, and flagged `revealed`."""
+    battle = _intent_battle("salamence", "tyranitar")
+    out = RLPlayer._opp_intent(_intent_self(flat=_flat(
+        slot_p=(0.5, 0.1, None, None, None, None), slot_ids=(373, 248, 0, 0, 0, 0))), battle)
     top = out["beta"][0]
-    assert top["slot"] == 0
-    assert top["species"] == "salamence", "a revealed slot must be named off the board"
-    assert top["revealed"] is True
+    assert top["slot"] == 0 and top["species"] == "salamence" and top["revealed"] is True
 
 
-def test_opp_intent_beta_still_names_a_HIDDEN_slot_from_the_posterior():
-    """The other branch, unchanged: past the revealed mons the board says nothing, so the model's
-    own species posterior is the only thing that can name the slot — flagged as the guess it is."""
-    import torch
-    alpha, seats = torch.tensor([[1.0, 0.5]]), torch.tensor([[33]])
-    beta = torch.tensor([[0.0, 5.0, 0.0]])          # slot 1 leads
-    species = torch.zeros(1, 3, 400)
-    species[0, 1, 143] = 10.0                        # slot 1 → snorlax (dex 143)
-    battle = _intent_battle("salamence")             # only slot 0 is on the board
-    out = RLPlayer._opp_intent(
-        _intent_self(alpha=alpha, seat_nums=seats, beta=beta, species=species), battle)
-    top = out["beta"][0]
-    assert top["slot"] == 1 and top["species"] == "snorlax"
-    assert top["revealed"] is False
-    # …and the revealed neighbour in the SAME payload is still board-named, so the flag is per-row.
-    slot0 = next(r for r in out["beta"] if r["slot"] == 0)
-    assert slot0["species"] == "salamence" and slot0["revealed"] is True
-
-
-def test_opp_intent_beta_without_a_battle_is_all_posterior_and_says_so():
-    """No battle to read ⇒ nothing can be named off the board. The rows fall back to the posterior
-    and are flagged `revealed: false`, which is what makes a downstream surface caveat them rather
-    than present them as the board."""
-    import torch
-    species = torch.zeros(1, 2, 400)
-    species[0, 0, 143] = 10.0
-    out = RLPlayer._opp_intent(_intent_self(
-        alpha=torch.tensor([[1.0, 0.5]]), seat_nums=torch.tensor([[33]]),
-        beta=torch.tensor([[1.0, 0.0]]), species=species))
-    assert [r["revealed"] for r in out["beta"]] == [False, False]
-    assert out["beta"][0]["species"] == "snorlax"
+def test_opp_intent_beta_is_per_row_and_carries_OTHER_species_as_no_slot():
+    battle = _intent_battle("salamence")
+    out = RLPlayer._opp_intent(_intent_self(flat=_flat(
+        slot_p=(0.1, 0.3, None, None, None, None), slot_ids=(373, 143, 0, 0, 0, 0),
+        hidden=(False, True, False, False, False, False), other_species_p=0.2)), battle)
+    by_slot = {r["slot"]: r for r in out["beta"]}
+    assert by_slot[0]["species"] == "salamence" and by_slot[0]["revealed"] is True
+    assert by_slot[1]["species"] == "snorlax" and by_slot[1]["revealed"] is False
+    assert by_slot[-1]["species"] == "OTHER species" and by_slot[-1]["revealed"] is False
+    assert sum(r["p"] for r in out["beta"]) == pytest.approx(1.0, abs=1e-3)
 
 
 def test_revealed_opp_species_uses_the_ENCODERS_OWN_slot_order():

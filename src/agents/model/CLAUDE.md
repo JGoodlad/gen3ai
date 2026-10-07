@@ -99,13 +99,18 @@ the rest of the network:
 **Dual-head value readout (H4 / Option C).** The transformer body is shared, but the actor and
 critic read it through independent paths. `CLSPool` holds a third query `value_cls` that attends
 over all 12 team tokens to produce `value_pooled`; `ProjectionAssembler.forward` returns a
-`(pi_combined, vf_combined)` pair; and the root `forward` returns a `(pi_features, vf_features)`
-tuple. This extractor therefore **must** be paired with `Gen3DualHeadMaskablePolicy`
+`(pi_combined, vf_combined)` pair; and the root `forward` returns a `(pi_features, value_pooled)`
+tuple — the value half has NO projection (`vf_features_dim` = `D_MODEL`; architecture audit F1, the X5
+version break's part 2). This extractor therefore **must** be paired with `Gen3DualHeadMaskablePolicy`
 (`policy.py`), which keeps `share_features_extractor=True` (one body) and overrides `forward` /
-`evaluate_actions` / `get_distribution` / `predict_values` to unpack the tuple and route each half
-to `mlp_extractor.forward_actor` / `forward_critic`. A stock SB3 policy expects a single-tensor
-extractor and will break — doubly so under the pointer-native action head (`gen3_pointer_native_v1`): the policy's `_build`
-deletes the flat `action_net` and the action logits come from the `PointerNativeActionHead` over
+`evaluate_actions` / `get_distribution` / `predict_values` to unpack the tuple: the policy half goes to
+`mlp_extractor.forward_actor`, and the value is `_critic_value(vf)` = `sigmoid(fe.last_win_prob_logits)` (the
+win-prob head on `value_pooled`, the only critic; `vf` is read only for its batch size). There is NO value
+tower: the policy's `_build` does not call SB3's — it builds an ACTOR-only `MlpExtractor` (`vf=[]`), SB3's
+orthogonal re-init (extractor, then mlp extractor, gain √2), the retire hooks, the pointer head and the
+optimizer, and `action_net` / `value_net` are RAISING stubs (`_NoFlatActionNet` / `_NoValueNet`). A stock SB3
+policy expects a single-tensor extractor and will break — doubly so under the pointer-native action head
+(`gen3_pointer_native_v1`): the action logits come from the `PointerNativeActionHead` over
 the extractor's `last_pointer_inputs` stash (per-logit inputs: `designs/ARCHITECTURE.md` § Heads). The startup `_run_roundtrip_test` and the snapshot/feature tests all
 unpack the tuple — keep that in mind when touching the extractor's return shape.
 
@@ -162,7 +167,7 @@ Rules to preserve:
 | the architecture constants | `arch_constants.py` |
 | the extractor: `__init__` · the `last_*` surface · `forward_internal` · the class + `forward` | `extractor_build.py` · `extractor_api.py` · `extractor_forward.py` · `features_extractor.py` (the re-export HUB) |
 | the phases | `extractor_ctx.py` · `encoders.py` · `team_transformer.py` · `pools.py` · `belief_heads.py` · `projection.py` |
-| the op | `damage_op.py` · `damage_op_layout.py` · `damage_op_pairwise.py` · `damage_op_blocks.py` · `damage_op_speed.py` (`--speed-physics on`'s inputs) · `move_order.py` (THE move-order rule: priority bracket + speed physics) · `damage_kinds.py` (the non-formula damage + Beat Up's exact party terms every kernel applies) · `status_rules.py` (the incoming side / clause status rule the op and the move-resolution family share; whether a clause is in force is `agents.gen3_data.format_spec`'s call, never a constant) |
+| the op | `damage_op.py` · `index_max.py` (`max_by_index`, every gradient-path max — a leaf) · `damage_op_layout.py` · `damage_op_pairwise.py` · `damage_op_blocks.py` · `damage_op_speed.py` (`--speed-physics on`'s inputs) · `move_order.py` (THE move-order rule: priority bracket + speed physics) · `damage_kinds.py` (the non-formula damage + Beat Up's exact party terms every kernel applies) · `status_rules.py` (the incoming side / clause status rule the op and the move-resolution family share; whether a clause is in force is `agents.gen3_data.format_spec`'s call, never a constant) |
 | the lookup tables, in LAYER order | `damage_tables.py` → `belief_tables.py` → `dex_ids.py` |
 | the readouts and the critic routes | `aux_value_heads.py` · `q_winprob_head.py` · `value_readouts.py` · `value_threat_inject.py` |
 | the pointer head and the per-action cells | `pointer_head.py` · `pair_outcome.py` · `switch_branch.py` · `conditional_threat.py` · the move-resolution family that replaces them under `--move-resolution on` (`move_resolution.py` · `move_resolution_rules.py` · `move_resolution_tables.py`) |
@@ -296,10 +301,11 @@ declared `SetCuts` that reads its positions IN ORDER makes the declaration unsou
 **X5 is the ONLY belief representation** (the X5 version break, config v144: `--belief-tokens` and its `blob` path
 are DELETED — `model_version/version_break.py`, `designs/model/versioning.md`). The opponent-belief family
 (`opp_belief_slots` / `opp_intent`) builds it whenever it is on and REFUSES a configuration missing one of its
-requirements; there is no second belief path to keep byte-identical. `BeliefSlots`, `AlphaIntentHead` and
-`BetaSwitchHead` are still CONSTRUCTED (their init draws are part of the global RNG stream every later initial byte
-follows — the K9 golden pins them) and then discarded / retired: never delete a constructor that draws from the
-global RNG without re-recording what it moves.
+requirements; there is no second belief path to keep byte-identical. The blob path's `BeliefSlots`,
+`AlphaIntentHead` and `BetaSwitchHead` are DELETED (the version break's part 2 — not even constructed for their
+init draws), so the init bytes moved once and the K9 golden is re-recorded at the end of the break. The general rule
+stands: a constructor that draws from the global RNG is never added or deleted without re-recording what it moves.
+A retired module leaves a plain `None` (`extractor_api.drop_child`), so a strict load REPORTS its keys as unexpected.
 
 A hidden opponent slot holds a hypothesis at presence π < 1 and OTHER_species
 holds the tail's mass (`designs/endstate/design_x5_belief_tokens.md` §3.5). A reduction that reads
@@ -356,16 +362,20 @@ production arch with suppression OFF; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out, `G
 for the CUDA cells). The Inductor diagnosis:
 [`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md).
 
-🚨 **A second load-bearing spelling: X5's incoming channel maxima are `max_by_index`, not `amax`**
-(`gen3_fm_index_max_v1`, F-XC-4). `amax`'s backward divides by `Σ(x == amax)`; when Inductor RECOMPUTES
+🚨 **A second load-bearing spelling: EVERY gradient-path value-reduction max is `max_by_index`, never `amax`**
+(`index_max.max_by_index`, a LEAF module; `damage_op` re-exports it; architecture audit F6a, after
+`gen3_fm_index_max_v1` / F-XC-4). `amax`'s backward divides by `Σ(x == amax)`; when Inductor RECOMPUTES
 `x` in the backward kernel and Triton's FMA contraction rounds it differently from the forward kernel,
-no element equals the saved max and the compiled gradient is 0/0 = NaN (CUDA, 41 parameters, the
-400-wide sweep only X5 prices). `damage_op.max_by_index` gathers at the detached argmax: the
-same value, a scatter backward. It sits behind `fixed_moves is not None` (the belief-off ablation keeps
-`amax`); its argmax is K9(b)'s one `MAX_VALUE` EXACT site (the index may
-only gather its own operand — `selection_sites_test` pins it). The class is LATENT at every other `amax`
-a compiled backward recomputes; the R1 gate's `NonFiniteGateArmError` names the next one, and the cure is
-the same spelling at that site, behind the arm that tripped it. Detail: `designs/training/compile_flags.md`.
+no element equals the saved max and the compiled gradient is 0/0 = NaN (CUDA, 41 parameters, 2026-10-05).
+`max_by_index(x, dim, keepdim)` gathers at the detached argmax: the same value bit for bit, a scatter
+backward, and on an exact tie the WHOLE gradient goes to the FIRST maximum (the declared convention). It covers
+the op's ten incoming channel maxima in EVERY configuration (belief on or off), the pairwise kernels, the
+status-landing maxima, the E5 tail's worst-phys/spec and `pair_reduce`'s inert pool; a NEW max over candidates on
+a gradient path uses it. `amax` / `amin` are legal only OFF any gradient path (a comparison operand, a table
+lookup, a constant, an observation indicator, a `no_grad` bracket, a diagnostic) — the list:
+[`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md) "The op's MAXIMA". Its argmax is
+K9(b)'s one `MAX_VALUE` EXACT site (`selection_sites`; the index may only gather its own operand —
+`selection_sites_test` pins it). Detail: `designs/training/compile_flags.md`.
 
 🚨 **A third: every FLOAT attention bias reaches SDPA through `dense_attn_bias`** (`gen3_dense_attn_bias_v1`,
 F-ST-8). Under Inductor, a bias built by in-place slice writes (`EdgeBias._write_block`'s head-innermost
@@ -527,15 +537,18 @@ A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a t
 
 ## The CRITIC MODE (`critic_mode.py`, the recorded `critic` field {shaped,winprob}, v109)
 
-`gen3_winprob_critic_mode_v1`. `Gen3DualHeadMaskablePolicy._critic_value` chooses between two
-readouts, and `agents/model/critic_mode.py` is the ONE declaration of the legal set. That module is
+`gen3_winprob_critic_mode_v1`. `critic` is a RECORDED field with two historical values, and
+`agents/model/critic_mode.py` is the ONE declaration of the legal set; since the X5 version break's part 2
+(architecture audit F1) the policy BUILDS only `winprob` — its `critic` kwarg defaults to `winprob` and any other
+value is refused before anything is built (the scalar `value_net` a `shaped` critic read is deleted with the
+whole SB3 value tower). That module is
 deliberately **torch-free and import-light**: `main.checkargs` promises not to import torch and
 needs the legal set to validate an argv offline. There is NO `--critic` flag any more (deletion pass P11b batch (b)): the win-prob critic is a CONSTANT of every trainer namespace, and `critic` survives as the FIELD `model_config.json` records, string-compared by `check_compatible` (an absent record still means `shaped`).
 
-| recorded `critic` | `_critic_value` returns | `value_net` |
+| recorded `critic` | `_critic_value` returns | at HEAD |
 |---|---|---|
-| `shaped` (what an ABSENT record means; loadable only — an old checkpoint still loads as an opponent / in meters / in the prober, and a resume or fork of one is refused `FATAL_CONFIG`, D4) | `value_net(latent_vf)` | trained |
-| **`winprob`** (the only critic a run trains) | `sigmoid(fe.last_win_prob_logits)` in **[0,1]**, `[B,1]` | in NO loss graph |
+| `shaped` (what an ABSENT RECORD means — `CRITIC_UNRECORDED`, for a `ModelVersion` / `model_config.json` read) | `value_net(latent_vf)` (historical) | NOT constructible: the policy refuses it, and every such checkpoint is below `MIGRATION_FLOOR` 144 — run it PINNED to its own commit |
+| **`winprob`** (the only critic; the policy kwarg's DEFAULT) | `sigmoid(fe.last_win_prob_logits)` in **[0,1]**, `[B,1]` | the only one built; no value tower exists |
 
 **Read the mode through `is_winprob`, never a bare `== "winprob"`** — one spelling, one answer, and
 a `getattr(obj, "critic", "shaped")` read answers correctly through it.
@@ -543,9 +556,9 @@ a `getattr(obj, "critic", "shaped")` read answers correctly through it.
 🚨 **The version gate matters more here than for a typical structural flag: BOTH routes return a
 `[B,1]` float tensor**, so a flipped `critic` produces no shape error, no load failure and no metric
 that changes name — the run simply predicts a different quantity for the rest of its life. The string
-compare in `check_compatible` is the only thing standing between a resume and that. **No
-`ARCH_SIGNATURE` bump at v109** — `shaped` is the default, so an untyped flag adds and removes
-nothing; the bump belongs to the DEFAULT FLIP, where it is forced.
+compare in `check_compatible` is the only thing standing between a resume and that. (No
+`ARCH_SIGNATURE` bump at v109 nor at the default flip; the version break's floor now refuses every
+`shaped` checkpoint anyway.)
 [`designs/model/versioning.md`](../../../designs/model/versioning.md) has both in full, and how the
 kwarg is threaded.
 
@@ -570,9 +583,13 @@ the X5 version break (v144) is X5's **flat pointer** (`gen3_x5_flat_pointer_v1`)
 opponent active's K move seats, OTHER_move, a switch to each of their six slots and OTHER_species, scored by
 one shared scorer plus each candidate's DETACHED log π. Its consumers read its RE-EXPRESSION
 (`fe.stash.flat_consumer_ops`, `flat_intent.FlatConsumerOps`): **`α`** over the K seats + OTHER_move + the
-switch mass, **`β`** over the six slots + OTHER_species. The blob path's `AlphaIntentHead` / `BetaSwitchHead`
-(two separate pointers) are constructed for their init draws and RETIRED by the policy; `last_alpha_logits` /
-`last_beta_logits` are never written. Why pointers, matching by canonical id, and why the label is shifted back
+switch mass, **`β`** over the six slots + OTHER_species. The pointer's shared scorer is BIAS-FREE (one scorer
+over ONE softmax: a bias is a common shift, audit F16b) — unlike the POLICY pointer head's three per-FAMILY
+scorer biases, which are not common to every logit and stay. The blob path's `AlphaIntentHead` /
+`BetaSwitchHead` are DELETED, and with them the `alpha_logits` / `beta_logits` / `alpha_seat_nums` stashes and the
+`last_alpha_logits` / `last_beta_logits` properties; the trace reader (`agents/inference/player.py`'s
+`_opp_intent`) and `main/search_dividend/alpha.py` read the flat pointer (`last_flat_intent_logits` /
+`last_flat_intent`). Why pointers, matching by canonical id, and why the label is shifted back
 one row before `get()` shuffles: [`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md).
 
 **Supervision only:** the pointer reads a DETACHED input (`opp_intent_grad_mode` `detached`), so a null

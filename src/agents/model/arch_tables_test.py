@@ -70,7 +70,7 @@ def test_head_totals_equal_live_in_features(fe_and_cfg):
     fe, _ = fe_and_cfg
     pi, vf = arch_tables.head_input_parts(fe)
     assert sum(d for _, d, _ in pi) == fe.projection.in_features
-    assert sum(d for _, d, _ in vf) == fe.value_projection.in_features
+    assert sum(d for _, d, _ in vf) == fe.vf_features_dim
 
 
 def test_production_config_matches_the_registry():

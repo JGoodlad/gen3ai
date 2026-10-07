@@ -43,7 +43,10 @@ Three things about it are deliberate:
   predicts porygon2"* on a turn where `β`'s slot held the revealed Salamence and `β` was CORRECT.
   **Every pre-fix trace is entirely posterior-named**, so on an archived run every `β` name carries
   the tag; the page never repairs one (see `src/main/prober/CLAUDE.md`). A row with no species at all
-  renders as a bare `slot 4` and is NOT tagged — a caveat needs a name to qualify.
+  renders as a bare `slot 4` and is NOT tagged — a caveat needs a name to qualify. Since the X5 version break
+  (part 2, 2026-10-07) the trace's β comes from the flat opponent pointer: a still-hidden slot (`"revealed": false`)
+  is named by the HYPOTHESIS species that slot holds — exactly what β points at, but still the model's belief, so
+  it keeps the tag — and OTHER_species is a row with `"slot": -1`.
 - **It says whether the model SAW THE LOSS COMING, twice.** Above the replay, the battle-level
   verdict — a `blind loss` / `knew @ turn N` badge and `engine.awareness_text`'s sentence,
   printed, never re-worded here. Then under each decision's critic row, a **`P(win) · dist` strip**

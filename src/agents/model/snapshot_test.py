@@ -689,7 +689,8 @@ def test_opp_belief_cls_survives_save_load_and_rebuilds_module(layout, mappings)
     from sb3_contrib import MaskablePPO
 
     ek = {"layout": layout, "mappings": mappings,
-          "attend_unrevealed_opponents": True, "opp_belief_cls_k": 3}
+          "attend_unrevealed_opponents": True, "opp_belief_cls_k": 3,
+          "win_prob_mode": "shaping"}       # the policy's critic is the win-prob head (no value tower, F1)
     pk = {"features_extractor_class": Gen3FeaturesExtractor,
           "features_extractor_kwargs": ek, "net_arch": [512, 512]}
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -1046,7 +1047,7 @@ def test_snapshot_save_load_roundtrip(layout, version, mappings):
 
     # Both heads of the dual-head extractor must reproduce exactly across save/load.
     assert pi_before.shape == (1, PROJECTION_DIM)
-    assert vf_before.shape == (1, PROJECTION_DIM)
+    assert vf_before.shape == (1, loaded.policy.features_extractor.vf_features_dim)   # value_pooled (no value projection: F1)
     assert torch.allclose(pi_before, pi_after, atol=1e-6), (
         "Policy feature output changed after save/load round-trip"
     )

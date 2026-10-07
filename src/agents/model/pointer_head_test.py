@@ -210,6 +210,7 @@ def _real_policy(key="baseline", **toggles):
 
     ek = enc.get_features_extractor_kwargs()
     kw = {**ek, **{k: v for k, v in toggles.items() if k in _SIG}}
+    kw.setdefault("win_prob_mode", "shaping")  # the policy's critic is the win-prob head (no value tower since v144, F1)
     torch.manual_seed(0)
     model = MaskablePPO(
         Gen3DualHeadMaskablePolicy, DummyVecEnv([lambda: _Env()]),

@@ -484,6 +484,16 @@ from typing import Any, Dict
 #     (`t0_species_prior`, `move_belief_mode`, `move_prior_fusion`, `opp_intent`, `opp_belief_slots`,
 #     `entity_tail_seats`). The
 #     production model is byte-identical to the pre-break fixed_mass arm (K9 init / post hashes unchanged).
+#   Part 2 — the EXACT-refactor bundle (architecture audit F1 / F6a / F7a / F16b + the blob leftovers): the dead SB3
+#     value tower is DELETED (`value_pre_norm` / `value_projection`, `mlp_extractor.value_net`, `value_net`: 592,129
+#     parameters; the extractor's value half IS `value_pooled`, the policy builds its own actor-only stack and a
+#     `critic` other than winprob is refused), the flat pointer's shared scorer has no bias (F16b, -1), every
+#     value-reduction max is `index_max.max_by_index` (F6a), the off-path speed-spread lookups are gone (F7a), and
+#     `BeliefSlots` / `AlphaIntentHead` / `BetaSwitchHead` (constructed only for their RNG draws) and
+#     `--beta-setvalued-coef` are deleted. 3,111,176 -> 2,519,046 production parameters. The INIT bytes move (the
+#     K9 golden is re-recorded once, at the end of the break); the weight-mapping identity proof
+#     (`designs/research_state/measurements/version_break_identity_2026-10-07/`) is bitwise except F16b's
+#     softmax-shift rounding (log pi max |d| 2.4e-7).
 MODEL_CONFIG_VERSION = 144
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings

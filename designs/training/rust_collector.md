@@ -196,7 +196,8 @@ free.** A policy-only forward for the non-trainee slots (`ServiceSpec.value_slot
 the value arena NaN for those slots) was built, proven bit-identical on the policy outputs (CPU, CUDA eager, captured
 graph) and MEASURED (deletion pass P2, 2026-10-02, 31 slots x 8 lanes, buckets 8/64/256): graph replay −0.3 % /
 −0.6 % at bucket 8 / 64, `max_memory_allocated` identical, a COLD T2 startup +103 s (a second Inductor entry per
-bucket) — NOT adopted. Under `winprob` Inductor already drops the critic tower, and the value branch is a thin readout
+bucket) — NOT adopted. There is no critic tower at all since the version break's part 2 (audit F1 deleted it; before
+that, Inductor already dropped its MLP under `winprob`), and the value branch is a thin readout
 on the trunk pi shares (cutting the extractor's value routes + win head too saves only 3.1–3.8 %). A new consumer of
 an opponent slot's V needs nothing declared today; if the mode is ever revived (`git cherry-pick e9d17f06`), the
 consumer list is `rust_rollout.build.value_slot_ids`. Evidence: `designs/ops/deletion_pass_manifest.md` §6 finding 11,

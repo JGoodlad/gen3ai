@@ -33,7 +33,7 @@ import torch
 from agents.model.arch_constants import (
     PAIR_OUTCOME_MOVE_DIM, _PAIR_OUTCOME_DMG, _PAIR_OUTCOME_NEW, _PAIR_OUTCOME_RAW,
 )
-from agents.model.features_extractor import Gen3FeaturesExtractor, TEAM_SIZE
+from agents.model.features_extractor import D_MODEL, Gen3FeaturesExtractor, TEAM_SIZE
 from agents.model.model_version import (
     MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
 )
@@ -540,7 +540,7 @@ def test_off_builds_no_module_and_no_extra_dims():
     assert fe_on.pointer_move_cell_dim == fe_off.pointer_move_cell_dim + PAIR_OUTCOME_MOVE_DIM
     # pi and vf are untouched at ANY weight — the cell widens the pointer stash, not a projection
     assert fe_on.projection.in_features == fe_off.projection.in_features
-    assert fe_on.value_projection.in_features == fe_off.value_projection.in_features
+    assert fe_on.vf_features_dim == fe_off.vf_features_dim
 
 
 def test_off_is_byte_identical():
@@ -561,7 +561,7 @@ def test_off_is_byte_identical():
 def test_on_forward_runs_and_contributes_exactly_zero_at_init():
     fe, layout = _build(**_ON_KWARGS)
     pi, vf = fe(_obs(layout))
-    assert pi.shape[1] == vf.shape[1]
+    assert vf.shape[1] == D_MODEL
     cells = fe.last_pointer_inputs.move_cells
     assert cells.shape[2] == fe.pointer_move_cell_dim
     assert float(cells[..., -PAIR_OUTCOME_MOVE_DIM:].abs().max()) == 0.0
@@ -574,7 +574,7 @@ def test_on_runs_WITHOUT_the_intent_head_and_uses_the_R1_fallback():
     be tested without the DISTRIBUTION claim. It must actually build and run, not just be
     documented."""
     fe, layout = _build(**_ON_KWARGS)
-    assert fe.alpha_head is None
+    assert fe.flat_intent_head is None
     pi, vf = fe(_obs(layout))
     assert pi.shape[0] == 3
     assert fe.damage_op.last_pair_in is not None
@@ -612,7 +612,7 @@ def test_it_stacks_with_the_other_alpha_cells():
     fe, layout = _build(**x5_kwargs(**_ON_KWARGS, intent_threshold=True, intent_move_cell=True,
                                     value_entity_pool=True))
     pi, vf = fe(_obs(layout))
-    assert pi.shape == vf.shape
+    assert pi.shape[0] == vf.shape[0] and vf.shape[-1] == D_MODEL
     assert fe.last_pointer_inputs.move_cells.shape[2] == fe.pointer_move_cell_dim
 
 

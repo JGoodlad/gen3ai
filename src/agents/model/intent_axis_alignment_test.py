@@ -54,7 +54,7 @@ def test_the_intent_pointers_seat_nums_are_the_ops_topk_in_the_same_order():
     seat_nums = fi.seat_nums if fi is not None else None
     topk = fe.damage_op.last_topk_idx if fe.damage_op is not None else None
     # the blob α's stash is never written since the X5 break: a consumer reading it would read None
-    assert fe.last_alpha_seat_nums is None
+    assert not hasattr(fe, "last_alpha_seat_nums")              # the blob α stash is DELETED (part 2)
     # NOT a skip. `_forward_with_intent` ASKS for `opp_intent` + `damage_topk_k=6` explicitly, so a
     # build without the intent pointer or an op top-K is a broken build, not an inapplicable one — and a
     # skip here would silently retire THE gate for a named bug class that has bitten before

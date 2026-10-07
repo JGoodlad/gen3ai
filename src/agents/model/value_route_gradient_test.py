@@ -46,6 +46,9 @@ def _build(seed=7, **extra):
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     torch.manual_seed(seed)
     kwargs = dict(_ALL_ROUTES_ON)
+    # The critic's read surface is the win-prob head on `value_pooled` (the only critic; no value tower since
+    # the version break, audit F1) — `shaping`, so its gradient reaches the trunk-side routes.
+    kwargs["win_prob_mode"] = "shaping"
     kwargs.update(extra)
     fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs)
     return fe, layout
@@ -91,14 +94,15 @@ def _registry_names(fe, layout):
 
 
 def test_every_route_receives_critic_gradient():
-    """THE guard: one backward from the critic's actual read surface (the vf features;
-    value_pooled is vf_parts[0]) must reach every route's zero-init projection."""
+    """THE guard: one backward from the critic's actual read — the win-prob logit off `value_pooled` (the
+    extractor's value half) — must reach every route's zero-init projection. (Not `vf.sum()`: with no
+    projection after it, a sum over a LayerNorm-ended pool is a constant of its input.)"""
     fe, layout = _build()
     fe.train()
     torch.manual_seed(11)
     obs = _obs(layout, 3)
     pi, vf = fe(obs)
-    vf.sum().backward()
+    fe.last_win_prob_logits.sum().backward()
     for name, proj in _route_projs(fe).items():
         g = proj.weight.grad
         assert g is not None and float(g.abs().max()) > 0.0, (
@@ -116,7 +120,7 @@ def test_the_TOKEN_CONTENT_injection_also_receives_critic_gradient():
     fe.train()
     torch.manual_seed(11)
     pi, vf = fe(_obs(layout, 3))
-    vf.sum().backward()
+    fe.last_win_prob_logits.sum().backward()
     for name in ("value_threat_proj",):
         proj = getattr(fe.cls_pool, name).proj
         assert float(proj.weight.abs().max()) == 0.0, f"{name} must start zero-init"

@@ -14,8 +14,8 @@
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
 | DELETED by P11 (the whole census: B1-B5, P11b, P11c, P11d) | 37 | 0 | 37 |
-| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06; −1, `--belief-tokens`, DELETED at the X5 version break 2026-10-07, `designs/deleted_flags.md`) | 167 | 9 | 176 |
-| verdicts NOW | KEEP 166 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
+| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06; −1, `--belief-tokens`, DELETED at the X5 version break 2026-10-07, `designs/deleted_flags.md`; −1, `--beta-setvalued-coef`, DELETED at the X5 version break's part 2 2026-10-07 — it scaled the deleted blob β's set-valued credit, `designs/deleted_flags.md`) | 166 | 9 | 175 |
+| verdicts NOW | KEEP 165 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -200,7 +200,6 @@
 | `--item-belief` | — | 180 / 34 | `--arch production`: `production_config.json` `item_belief` = `true` | **KEEP** |
 | `--history-events` | — | 180 / 34 | `--arch production`: `production_config.json` `history_events` = `true` | **KEEP** |
 | `--value-entity-pool` | — | 181 / 34 | `--arch production`: `production_config.json` `value_entity_pool` = `true` | **KEEP** |
-| `--beta-setvalued-coef` | — | 184 / 34 | `--arch production`: `recipe.fresh.beta_setvalued_coef` = `0.05` | **KEEP** |
 | `--intent-label-bot-weight` | — | 171 / 34 | `--arch production`: `production_config.json` `intent_label_bot_weight` = `0.25`; `--arch production`: `recipe.fresh.intent_label_bot_weight` = `0.25` | **KEEP** |
 | `--opp-intent-coef` | — | 185 / 34 | `--arch production`: `recipe.fresh.opp_intent_coef` = `0.05` | **KEEP** |
 | `--value-threat-inject` | — | 186 / 34 | `--arch production`: `production_config.json` `value_threat_inject` = `true` | **KEEP** |

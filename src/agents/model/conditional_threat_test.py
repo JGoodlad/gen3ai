@@ -286,7 +286,7 @@ def test_off_builds_no_module_and_no_extra_dims():
     assert fe_on.pointer_move_cell_dim == fe_off.pointer_move_cell_dim, (
         "OA1 is a SWITCH-cell cell — it must not touch the move cell")
     assert fe_on.projection.in_features == fe_off.projection.in_features
-    assert fe_on.value_projection.in_features == fe_off.value_projection.in_features
+    assert fe_on.vf_features_dim == fe_off.vf_features_dim
 
 
 def test_off_is_byte_identical():
@@ -361,7 +361,10 @@ def test_the_alpha_ladder_is_the_shipped_one_not_a_second_distribution():
     assert [n for n, _ in fe.conditional_threat.named_parameters()] == ["proj.weight", "proj.bias"]
     fe(_obs(layout))
     op = fe.damage_op
-    expected = pair_alpha(fe.last_alpha_logits, op.last_topk_w, op.last_pair_seat_live)
+    # PRECONDITION: this build runs WITHOUT the intent readout, so the ladder is the R1 `belief_mean` rung
+    # (`pair_alpha(None, …)`); the X5 consumer's own α is pinned in `move_resolution_x5_test` / `flat_intent_test`.
+    assert fe.stash.flat_consumer_ops is None and fe.flat_intent_head is None
+    expected = pair_alpha(None, op.last_topk_w, op.last_pair_seat_live)
     assert expected.shape == (3, op.last_topk_w.shape[-1])
     assert float(expected.sum(-1).max()) <= 1.0 + 1e-6
 

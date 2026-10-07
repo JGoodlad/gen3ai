@@ -15,11 +15,11 @@ two disagree, ARCHITECTURE.md wins.
 `forward_internal` is decomposed into phase `nn.Module`s, chained by a thin orchestrator, in ONE
 order — the TIER ORDER (`gen3_tiered_pipeline_v1`). There is no placement flag and no second chain:
 
-`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `[MoveBelief?]` → `[SpreadBelief?]` →
+`ObsUnpack` → `PokemonEncoder` → `[HypothesisBuilder?]` → `[MoveBelief?]` → `[SpreadBelief?]` →
 `[HPTypeBelief?]` → `[DamageOperator?]` → `prefuse_proj` residual → `EntityMoveSeats` → edge cells →
-`TeamTransformer` → `[BeliefHead?]` → `CLSPool` → `[α/β?]` → `[side readouts?]` →
-`ProjectionAssembler`, then **two** root heads
-(`pre_proj_norm`/`projection` for policy, `value_pre_norm`/`value_projection` for value), each → `ReLU`.
+`TeamTransformer` → `[BeliefHead?]` → `CLSPool` → `[FlatIntentHead?]` → `[side readouts?]` →
+`ProjectionAssembler`, then ONE root head for the policy (`pre_proj_norm`/`projection` → `ReLU`); the value
+half is `value_pooled` itself, with no projection (architecture audit F1, the version break part 2).
 
 Grouped into the four tiers the contract asserts:
 
@@ -27,7 +27,7 @@ Grouped into the four tiers the contract asserts:
 |---|---|---|
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder` (`PokemonEncoder`; under `--token-encoding static` it is `StaticTokenEncoder`, S + D with no board input, and the X5 hypothesis tokens are its dex-table encoding gathered, `static_tokens.py`), `t0_species_prior`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in), `hypothesis_builder` (X5, built with the opponent-belief family — the only belief representation since the X5 version break, v144: its SPECIES half runs before `move_belief` — the hidden opponent slots then take THE `pokemon_encoder`'s token for their hypothesis's dex row + `hypothesis_marker` (computed by `hypothesis_encode.py`: the encoder's species half once over the dex table, gathered, + its row-level half — the exact split; `hypothesis_tokens.py`; the blob path's `belief_slots` token is deleted) and the T0 belief heads read them with their species — its move group after `move_belief`; OTHER_species enters the trunk as one extra seat and every opponent key carries log π in the trunk and the class-E pools; the active's move group gives the E4 seats, the op's seat axis and its class-M weights) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `history_events` (H-B event seats, opt-in), `edge_bias`, `team_transformer` |
-| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool` (which also owns the two token-content critic injections), `flat_intent_head` (X5's flat opponent pointer; the blob α / β heads are constructed and retired), `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat` (opt-in) |
+| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool` (which also owns the two token-content critic injections), `flat_intent_head` (X5's flat opponent pointer; the blob α / β heads are DELETED, not constructed), `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat` (opt-in) |
 | **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `policy_query` (`--policy-readout trunk` only, audit F2) |
 
 **The ordering is an ASSERTED INVARIANT, not a convention** — `tier_contract.py` declares a tier per
@@ -57,12 +57,12 @@ equal-but-separately-computed tensors is exactly how the "bias and concat can ne
 invariant stops holding without anything failing. Parameter-free, so OFF is byte-identical and the
 version check is the only thing that can reject a mid-run flip.
 
-`BeliefSlots`/`BeliefHead` are built only when `opp_belief_slots` (`--opp-belief-aux-coef>0`),
+`HypothesisBuilder`/`BeliefHead` are built only when `opp_belief_slots` (`--opp-belief-aux-coef>0`),
 `MoveBelief` only when `move_belief_mode != off`, `DamageOperator` only when `damage_op` (which requires
 `move_belief_mode` revealed/both); with all off the chain is the baseline `ObsUnpack →
-PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler` byte-for-byte. `BeliefSlots` swaps the
-un-revealed opp role-tokens for learned unknown-mon tokens *before* the transformer (so the belief is
-refined in-lineup); `BeliefHead` reads the refined opp tokens *after* the transformer and stashes the
+PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler` byte-for-byte. X5's hypothesis tokens fill
+the un-revealed opp slots with the encoded dex row of their hypothesis species *before* the transformer (so
+the belief is refined in-lineup; the blob path's learned `BeliefSlots` token is deleted, v144); `BeliefHead` reads the refined opp tokens *after* the transformer and stashes the
 species/moves aux logits (a side readout — does NOT feed forward). **That T0/T2 split of the species
 belief is deliberate and stays**: `BeliefHead` is a training-only side readout, not a second resolve
 path, and its T2 declaration is what records the fact — if it ever started feeding a T0/T1 consumer
@@ -103,14 +103,14 @@ no incentive to encode hidden state — still feeding the policy. That combinati
 ### Scope, and why the mode is resume-immutable rather than weight-shape
 
 Scope is the four heads with a forward path: `MoveBelief`, `SpreadBelief`, `HPTypeBelief`, and
-`AlphaIntentHead` (published unconditionally, so enabling a consumer later cannot reopen the route
-— and since the critic-route deletion wave took every α→vf route, α now reaches the objective only
-through the POLICY, via the pointer cells). `BeliefHead`, `PubValHead` and `BetaSwitchHead` are
+X5's flat opponent pointer (`FlatIntentHead`, cut at its publication boundary — the deleted blob
+`AlphaIntentHead`'s role; since the critic-route deletion wave took every α→vf route, α reaches the
+objective only through the POLICY, via the pointer cells). `BeliefHead` is
 structurally label-only in every mode — asserted in `belief_label_only_gate_test.py`, not assumed,
 so a head that starts feeding forward fails a test instead of quietly rejoining the PPO objective.
 🚨 **`WinProbHead` is NOT in that set under the win-prob critic (the only critic)**: there the head IS `_critic_value`,
 so it feeds GAE, the value loss and (at `win_prob_mode shaping`, which the mode implies) the trunk.
-Under the shaped critic (an old checkpoint; no longer trainable) it is label-only like the other three. The claim is mode-conditional, and
+Under the shaped critic (a pre-break checkpoint, run PINNED; not constructible at HEAD) it was label-only. The claim is mode-conditional, and
 reading it as unconditional would say the production critic cannot reach the objective.
 
 `detach()` is value-preserving ⇒ the forward is bit-identical in all three modes ⇒ this is a
@@ -203,8 +203,8 @@ ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, no
    key-mask) → a `[B, k·D_MODEL]` hidden-opponent belief. `None` when `k=0`. See the v9 toggle note
    under *Model versioning* and `designs/ai_v5/design_offense_and_opponent_belief.md` §B2.
 6. **`ProjectionAssembler`** — emits a `(pi_combined, vf_combined)` pair. Policy: `our_pool(128)
-   + their_pool(128) + our_active_refined(128) + non_matchup_rest`. Value: `value_pooled(128) +
-   non_matchup_rest` (+ the seed readout over the op's typed `incoming_rows` when the op is on).
+   + their_pool(128) + our_active_refined(128) + non_matchup_rest`. Value: `value_pooled(128)` alone
+   (`vf_combined IS value_pooled`).
    **`gen3_ctx_dedup_v1`: the per-side encoded active contexts are DELETED from both heads** —
    they were duplicated delivery with a 1:1 entity-native replacement already live (the E2
    injection puts each side's FULL raw ctx block on its active token; the global token is a
@@ -212,20 +212,22 @@ ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, no
    pool reads that token directly, so the concat is currently its one direct head path. **Under
    `--token-encoding static` the `non_matchup_rest` concat is DELETED** (`board_bypass`; pi width −25): the
    board reaches the policy only through the board tokens, the edges and the cells. When
-   the hidden-opponent belief is on, its `[B, K·D_MODEL]` is appended to **both** (last),
-   widening each projection input by `k·D_MODEL`.
-7. **Root heads** — two parallel `pre_proj_norm` (LayerNorm) → `projection` (Linear) → `ReLU`
-   heads, one per `*_combined`, both emitting `PROJECTION_DIM`. SB3 sizes the shared
-   `mlp_extractor` from `features_dim = PROJECTION_DIM`, then `Gen3DualHeadMaskablePolicy` feeds
-   the policy half to `forward_actor` and the value half to `forward_critic`.
+   the hidden-opponent belief is on, its `[B, K·D_MODEL]` is appended to the POLICY half (last),
+   widening the projection input by `k·D_MODEL`.
+7. **Root head** — ONE `pre_proj_norm` (LayerNorm) → `projection` (Linear) → `ReLU` on `pi_combined`,
+   emitting `PROJECTION_DIM`; the value half passes through untouched as `value_pooled` (`[B, D_MODEL]`,
+   `vf_features_dim`). `Gen3DualHeadMaskablePolicy` builds an ACTOR-only `MlpExtractor` (`net_arch` = the
+   actor widths, `vf=[]`) and feeds the policy half to `forward_actor`; the critic is
+   `_critic_value(vf)` = `sigmoid(fe.last_win_prob_logits)` (the win-prob head on `value_pooled`), and no
+   value tower exists (architecture audit F1).
 8. **`--policy-readout trunk` (`gen3_policy_readout_trunk_v1`, config v138, audit F2; OFF in production)**
    — the policy half of steps 6–7 and SB3's actor branch are RETIRED: `PolicyStateQuery` (`pools.py`,
    T3) is one learned query, 4 heads, over every refined trunk token (our 6, their 6, the global token,
    the entity and event seats) plus `HiddenOppBeliefPool`'s K outputs, under the trunk's own key mask
    (+ its per-key log π under `fixed_mass`) → LayerNorm → `[B, D_MODEL]`, and that IS `pi_features`
    (`forward_internal` returns it in place of `pi_combined`; `_forward_unguarded` applies no projection).
-   `pre_proj_norm` / `projection` and `mlp_extractor.policy_net` are still BUILT and see SB3's orthogonal
-   re-init (so no surviving module's initial bytes move), then `Gen3DualHeadMaskablePolicy._build` drops
+   `pre_proj_norm` / `projection` and `mlp_extractor.policy_net` are still BUILT and see the policy's orthogonal
+   re-init (SB3's order) (so no surviving module's initial bytes move), then `Gen3DualHeadMaskablePolicy._build` drops
    them (`ExtractorApi.retire_policy_tower`; `policy_net` becomes the empty `Sequential`, the identity)
    before the optimizer is made, and sizes the pointer head from `policy_ctx_dim` (D_MODEL) with
    `TRUNK_POINTER_HIDDEN` scorers. The query is built from `POLICY_QUERY_INIT_SEED` inside `fork_rng` out

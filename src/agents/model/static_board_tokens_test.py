@@ -304,10 +304,20 @@ def test_their_spikes_reach_their_mons_as_content_only_through_op_content(static
     assert d[:, TEAM_SIZE:].gt(MOVES).any(1).float().mean().item() >= 0.5, \
         "THEIR Spikes reached their mons on fewer than half the rows"
     assert d[:, :TEAM_SIZE].max().item() == 0.0, "THEIR Spikes reached OUR mons pre-trunk"
-    # the CONTROL: with the op content at its zero init, nothing pre-trunk reads their Spikes on their mons
+    # the CONTROL: with the op content at its zero init, nothing pre-trunk reads their Spikes on their mons —
+    # EXCEPT X5's hypothesis selection: δ_θ reads the board, so a board fact can swap two near-tied hypotheses
+    # between hidden slots (the board-conditioned BELIEF the pursuit_p column above is exempt for; measured at the
+    # version break's part-2 init: one of the 32 rows, two hidden slots at π 0.3297 vs 0.3295). A row whose
+    # hypothesis assignment changed is EXCLUDED (deterministic: an integer comparison), and must stay rare.
     dead = _with_op_content(static_tower)
-    d0 = (_trunk_input(dead, obs3) - _trunk_input(dead, obs0)).abs().amax(-1)
-    assert d0.max().item() == 0.0, "a route other than op_content carried their Spikes to a mon token"
+    t0 = _trunk_input(dead, obs0)
+    sp0 = dead.last_hypothesis.slot_species.clone()
+    t3 = _trunk_input(dead, obs3)
+    sp3 = dead.last_hypothesis.slot_species.clone()
+    same = (sp0 == sp3).all(-1)                                                       # [B] no hypothesis swap
+    assert same.float().mean().item() >= 0.75, "their Spikes re-selected hypotheses on most rows"
+    d0 = (t3 - t0).abs().amax(-1)
+    assert d0[same].max().item() == 0.0, "a route other than op_content carried their Spikes to a mon token"
 
 
 def test_the_op_content_reaches_every_mon_on_both_sides(static_tower):

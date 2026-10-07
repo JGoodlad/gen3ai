@@ -40,7 +40,7 @@ picks. The *critic* is a small head that outputs P(win).
 2. **19% of the parameters do nothing.** Under the win-probability critic the old value tower (592,129 of
    3,065,882 parameters, MEASURED here) is computed on every forward pass and is in no loss: one training update
    leaves every one of its weights bit-identical. Deleting it changes nothing the model does. (F1; EXACT
-   REFACTOR, HIGH.)
+   REFACTOR, HIGH. **DONE 2026-10-07** at the version break's part 2: production now holds 2,519,046 parameters.)
 3. **The capacity is in the wrong place.** The attention trunk, where the reasoning happens, has 284k parameters
    and does 63% of the arithmetic. A flat policy tower inherited from the library default (`net_arch [512,512]`
    with a `tanh` nonlinearity nobody chose) has 1.13M parameters and produces only a "general mood" vector the
@@ -58,7 +58,8 @@ picks. The *critic* is a small head that outputs P(win).
    operator takes, independently per number, the maximum over the opponent's believed moves: the "low roll" can
    come from one move and the "KO chance" from another. The same hard maximum (~40 call sites) is what produced
    the 2026-10-05 compiled-gradient NaN; it was fixed for the X5 arm only. (F6; EXACT for the NaN class,
-   BEHAVIOUR CHANGE for the reduction, MEDIUM.)
+   BEHAVIOUR CHANGE for the reduction, MEDIUM. The EXACT half is **DONE 2026-10-07**: every gradient-path max is
+   `max_by_index`.)
 7. **Seven hand-designed strategy feature blocks sit beside each action** (Focus Punch / Endure / Destiny Bond
    thresholds, "don't click the KO into the obvious switch", Rapid-Spin-into-Ghost, …), widening the move scorer's
    input to 62 numbers. Some are exact physics a small scorer cannot multiply out (principled); others are human
@@ -152,7 +153,7 @@ Budget: one RTX 3080 Ti; ~2,000 environment steps/s (owner's figure); 15M-step r
 | flat MLP tower after the trunk | small or none | 1.13M params, never chosen (F2) | over-built |
 | per-action features | physics facts only | 7 heuristic blocks, 62-wide move cell (F11) | over-built |
 | belief | Smogon prior + learned correction | yes, six heads with aux losses shaping the trunk | principled; trunk shaping unmeasured (F9) |
-| critic | P(win) | P(win), 17k-param head; a dead 592k tower beside it (F1) | right idea; clean up |
+| critic | P(win) | P(win), 17k-param head; a dead 592k tower beside it (F1; DELETED at the version break, 2026-10-07) | right idea; clean up (done) |
 | memory | turn history | 32 event seats in the trunk (F19) | principled; size unmeasured |
 | training data | human bootstrap + self-play league | self-play league only | under-built (out of this audit's scope) |
 | controls | a plain baseline at matched budget | none ever trained deliberately | **missing (F24)** |
@@ -252,6 +253,14 @@ returns `sigmoid(win_head logit)` and reads `latent_vf` only for a batch-size ch
   also computes it on every rollout decision.
 - *Bucket:* **EXACT REFACTOR** (pi and V outputs unchanged; init bytes of later modules shift, so the K9 golden
   is re-recorded at the version break). *Cost* ~0.5 agent-day. *Priority:* HIGH.
+- *As built (2026-10-07, the version break part 2):* DELETED — the extractor's `value_pre_norm` / `value_projection`,
+  SB3's `mlp_extractor.value_net` and `policy.value_net`, 592,129 parameters. The extractor's value half IS
+  `value_pooled` (`[B, 128]`, `vf_features_dim`); `_critic_value` returns `sigmoid(fe.last_win_prob_logits)`;
+  the policy no longer calls SB3's `_build` (an actor-only `MlpExtractor`, the orthogonal re-init in SB3's order,
+  the retire hooks, the pointer head, the optimizer; `action_net` / `value_net` are raising stubs); a `critic`
+  other than `winprob` is refused before anything is built. The T2 question of §8 is ANSWERED (below). Weight-
+  mapping identity BITWISE (forward, every surviving post-update parameter, every pinned loss; `designs/research_state/measurements/version_break_identity_2026-10-07/`).
+  See the Decision record's 2026-10-07 EXACT-bundle row.
 
 **F2 · The flat policy tower holds 37% of the parameters for a context vector.** `projection` (1177→512, 603k)
 + `mlp_extractor.policy_net` (512→512→512, 525k) produce `latent_pi`, which the pointer head reads only through
@@ -321,6 +330,14 @@ modules, counted here). `provenance` and `acc` come from the argmax of yet anoth
   **BEHAVIOUR CHANGE**: replace the per-channel max with the α-weighted expectation row that `pair_outcome`
   already computes, or a learned pool over the per-candidate cells; one arm. *Priority:* (a) MEDIUM (removes a
   latent crash on the next torch upgrade), (b) MEDIUM.
+- *As built (2026-10-07, the version break part 2, (a)):* `max_by_index` moved to the leaf module
+  `agents/model/index_max.py` (`max_by_index(x, dim=-1, keepdim=False)`; `damage_op` re-exports it) and is THE
+  spelling of every gradient-path value-reduction max in the forward, in EVERY configuration (the op's ten
+  incoming channel maxima incl. the belief-off branch, the pairwise kernels, the status-landing maxima, the E5
+  tail's worst-phys/spec, `pair_reduce`'s inert deepsets pool). `amax` / `amin` remain only off any gradient
+  path (the provenance gate operand, the cure/cleric table lookups, the cheapest-undo minimum, the `we_have_pur`
+  indicator, `fixed_size_tau`'s `no_grad` bracket, the move-tie-gap diagnostics). It moved NO byte of the K9
+  update (no exact tie with a nonzero upstream gradient on that buffer). (b) is not built.
 
 **F7 · The outspeed logistic and other non-physics constants.** `_DMG_SPEED_SCALE = 15.0` (the logistic
 temperature for P(outspeed), "~one stage", hand-chosen); its uncertainty-aware variant was deleted, yet ~6
@@ -344,6 +361,13 @@ banked in `flag_census_2026-09-06.md`); `_DMG_CHIP_CAP 1.5`, `_DMG_CRIT_CAP 3.0`
   but Brier 0.0440 and ECE 0.0184 (worst of the three; the upper-middle bins over-confident) — still not better
   calibrated overall; conditioning the mixture on the battle is the open lever. See the Decision record's
   2026-10-07 F7b rows.
+- *As built (2026-10-07, the version break part 2, (a)):* the off-path (`--speed-physics off`, production)
+  `SPECIES_SPREAD_PRIOR[..., spe, 1]` lookups (one in `damage_op`, two in `damage_op_blocks`, three in
+  `damage_op_pairwise`) and `_p_outspeed`'s ignored `opp_spe_std` argument are DELETED (`pair_outcome_coords`
+  lost the parameter); X5's OTHER roster computes its speed-sigma average only under `on`. Under `on` at that
+  commit `damage_op_speed._opp_speeds_belief` still read the sigma column. **FINDING:** main's later
+  `gen3_speed_mixture_v1` (`50b034a7`, the discrete Smogon spreads mixture) deletes that Gaussian read, after
+  which the roster's `spe_std` field and its `_x5_avg` read are dead in BOTH modes.
 
 **F8 · ~60 single-production-value toggles, and code paths production never runs.** Every row of ARCHITECTURE
 §6's flag table that is `ACTIVE` is one value forever in practice; behind them sit fallback paths: the legacy
@@ -431,6 +455,15 @@ shared scorer per family; equivariant by construction. *Merit:* the standard ans
 of choices (pointer networks; AlphaStar's unit selection). *Bucket:* **KEEP**. One provably dead parameter:
 `beta_head.scorer.2.bias` (a shared bias inside one softmax is shift-invariant, MEASURED unmoved). EXACT,
 trivial, bundle with F1.
+- *As built (2026-10-07, the version break part 2, (b)):* the α / β heads are deleted (X5), so the live instance
+  is X5's flat opponent pointer: `FlatIntentHead.out` is `IsolatedLinear(hidden, 1, bias=False)` (`IsolatedLinear`
+  gained nn.Linear's `bias` flag) — one scorer over ONE softmax, so its bias was a common shift (measured
+  gradient over one K9 update |g| ≤ 2.3e-10 vs the weight's ~1e-3); −1 parameter. The POLICY pointer head's
+  three scorers keep their biases: they are PER-FAMILY offsets inside one softmax, not common to every logit,
+  so not dead. Not touched, reported: an attention KEY-projection bias is the same shift-invariant class
+  (`PolicyStateQuery.k_proj.bias` under `--policy-readout trunk`; the key slice of every
+  `nn.MultiheadAttention` packed `in_proj_bias`). Identity: NOT bitwise, by fp rounding of the removed shift alone
+  (forward log π max |Δ| 2.4e-7; CONTROL with the bias re-attached BITWISE).
 
 **F17 · Zero-init add-ons and the tier order.** Every delivery starts at exactly 0; T0 resolve → T1 reason → T2
 decide → T3 deliver is an asserted invariant. *Bucket:* **KEEP** (makes each add-on's effect attributable;
@@ -529,7 +562,12 @@ Proposed order (each its own unit; nothing before X5 look 1):
 
 ## 8. What this audit could not verify
 
-- Whether the inference tier computes the dead value tower per decision (F1).
+- ~~Whether the inference tier computes the dead value tower per decision (F1).~~ **ANSWERED 2026-10-07**
+  (MEASURED at the pre-part-2 commit, CPU, the dynamo FX graph of `engine.decide` + DCE): the compiled T2 graph
+  KEPT `value_pre_norm` + `value_projection` (the extractor's `stash.features_out` side effect held the vf
+  tensor) and dead-code-eliminated the 512→512→512 critic MLP; the eager backend computed the whole tower except
+  `value_net` per decision. The version break's part 2 deleted the tower, and the `DecisionModule` no longer calls
+  `forward_critic`.
 - Metamon's exact model sizes and data counts; Graphormer's per-layer sharing detail (§3.1, F15).
 - What "rev-1" was in the `ai_v12_01` famine reading, and whether that arm's checkpoints still load at HEAD
   (F23; a pinned load may be needed).
@@ -739,3 +777,4 @@ the production goldens (the K9 learner golden, the compile canary's rows): an ow
 | 2026-10-07 | **F7b: the Gaussian speed belief REPLACED by the discrete Smogon spreads mixture (orchestrator brief)** | `gen3_speed_mixture_v1`, under `--speed-physics on` only (`off` byte-identical, no config / ARCH bump: no parameter, a non-persistent table registered only under `on`): their speed = `SPEED_MIX` (`belief_tables.build_species_speed_mix`, from `gen3_data.priors.all_spreads` — EVERY chaos spread, because the top-25 cut drops exactly the lumpy tail, e.g. Blissey's max-Speed sets), each support point through the exact stage / paralysis arithmetic; P = Σ w·(1[ours > f] + ½·1[ours = f]); the X5 OTHER slot reads the tail's mixture. Lane S (580 battles, 23,598 rows): log loss 0.1308 (off 0.1341, Gaussian 0.1367), 0 certain-and-wrong (Gaussian 1), Brier 0.0440 (0.0425, 0.0406), ECE 0.0184 (0.0157, 0.0160) — fixes the tail, NOT better calibrated overall; the trained arm loses the learned belief's information (Brier 0.0440 vs the Gaussian's 0.0368) | Keeping the Gaussian (a 15-σ certain miss); the top-25 spreads (the miss stays a certain miss); conditioning the mixture on the learned belief (no likelihood to condition with — the open lever, with battle evidence) | brief 2026-10-07; `designs/research_state/measurements/speed_physics_f7b_2026-10-07/`; ledger 2026-10-07 |
 | 2026-10-07 | **The move-resolution family under X5 `fixed_mass` (the refusal LIFTED; `gen3_move_resolution_x5_v1`, no config / ARCH_SIGNATURE bump: no weight changes shape, `off` byte-identical in both belief modes)** — and **how OTHER enters P(resolve): PRICED, never excluded** | The same rules read the flat pointer's re-expression (α over K seats + OTHER_move, β over six slots + OTHER_species). **OTHER_move = one seat per gen-3 PRIORITY level**, each carrying α_OTHER · P_tail(level), the level as its priority and its members' move tables conditioned on the level; its damage / status / c2 columns the op's tail contraction. **OTHER_species = a 7th mon**, read like a hidden slot with the renormalised tail as its species distribution (its `out_cells` column the OTHER-mode D1 pass). Why: X5's own ruling (§3.7 / §9 M3 (c), "OTHER as a switch target or a move outcome must be priced, not zero"); OTHER is not small (cold start, the compile-parity bank: α_OTHER up to 0.18, β_OTHER up to 0.63); the seven blocks the family retires already price OTHER under fixed_mass, so excluding it would deliver LESS than the blocks it replaces; the per-level split makes the move ORDER and every order × move-fact product (a faster Protect / Magic Coat / Substitute / Taunt / hit) the EXACT tail expectation with the one unchanged order rule (a one-member tail reads as the seat naming that move, to fp32 summation order — max |Δ| 1.5e-8 — tested). The one remaining approximation is the tail-averaged damage grid (a member's KO / hit odds are not split by priority) — X5's named Jensen cost of option (c) | **Excluded with its mass reported as a feature:** the family's "unnamed seat" branch asserts no hit and no block, so the excluded mass would CLAIM "OTHER never KOs us first, never Protects" — a claim, not an absence (the CLAUDE.md fallback rule) — and a new coordinate changes the block width (a weight-shape change) in both modes. **One tail-averaged OTHER seat** at priority 0 (`intent_conditional`'s residual) or at the tail's mean priority: wrong order (a Protect + Earthquake tail would act first never / always), and E[first]·E[Protect] halves a tail Protect's block. **Expanding OTHER into its M members** (exact): the per-member damage grid is not stashed, and [B,4,K+M] is ~50× the seat axis. **A per-level damage split** (closes the remaining gap): an op change on the production path | this build; `move_resolution_x5_test.py`; ledger 2026-10-07 |
 | 2026-10-07 | The move-resolution × `fixed_mass` compile failure (F-MR-1) | `split_other_move` builds its result through `MoveResolutionOps`'s constructor, not `_replace` (same values) | `@torch._dynamo.dont_skip_tracing` on a stdlib function (it opts dynamo into tracing `collections`, which may break the graph elsewhere); leaving the family uncompiled (the learner region is ONE fullgraph region by K6) | §9.4; the first CUDA launch of the arm (lease "static fix gpu") |
+| 2026-10-07 | **EXACT bundle built at the version break** (part 2 of `gen3_x5_version_break_v1`, config v144 — no further bump) | **F1** (the dead SB3 value tower deleted, 592,129 parameters; the extractor's value half is `value_pooled`; the policy builds its own actor-only stack, raising `action_net` / `value_net` stubs, `critic` other than `winprob` refused), **F16b** (the flat opponent pointer's shared scorer bias-free, −1), **F6a** (`index_max.max_by_index` at every gradient-path max; first-maximum tie convention), **F7a** (the off-path speed-sigma lookups and `_p_outspeed`'s ignored argument deleted), and the blob LEFTOVERS (`BeliefSlots` / `AlphaIntentHead` / `BetaSwitchHead` and their construct-and-retire deleted — no RNG-draw preservation any more; the never-written α / β stashes deleted and their readers moved to the flat pointer; `--beta-setvalued-coef` deleted; retired modules leave a plain `None` via `extractor_api.drop_child`, closing the strict-load hole). Production learner 3,111,176 → 2,519,046 parameters (MEASURED, CPU, the K9 learner). The init bytes move (no construct-and-discard), so the K9 learner golden and the compile goldens are re-recorded ONCE at the end of the break. | Left, LISTED: the attention key-projection biases (same shift-invariant class as F16b; `PolicyStateQuery.k_proj.bias`, MHA `in_proj_bias`'s key slice); the move belief's Hungarian `elif` in `belief_bank` (REACHABLE with the belief family off); `main.train.config.inherit_derived_enable_coefs` / `UnrecordedEnableCoef` (unreachable behind the v144 floor, not small); the v122–v143 migration branches. F6b and F7b remain their own levers. | Weight-mapping identity vs the `26131c0c` reference (K9 forward + one K9 update, CPU, 1 thread): F1 + leftovers + F7a BITWISE; with F16b NOT bitwise by the removed softmax shift's rounding alone (log π max |Δ| 2.4e-7, entropy 4.8e-7, post-update 6.0e-8, losses at the 8th significant digit; values and masks EQUAL), CONTROL with the bias re-attached BITWISE; F6a moved no byte. `designs/research_state/measurements/version_break_identity_2026-10-07/`; `x5_version_break_part2_test.py` |

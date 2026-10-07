@@ -200,7 +200,8 @@ Python encoder (`agents/action/ordering_integrity.check_obs_move_order`). Measur
 bank (580 real battles, 42,465 decisions, 2026-10-06): action 6+*k*'s token names request move *k*
 on all 142,598 legal move actions, and the sim executed the chosen move on all 27,361 played moves.
 
-`non_matchup_rest` — the raw-scalar tail the global token and both projection heads read — is
+`non_matchup_rest` — the raw-scalar tail the global token and the policy projection read (the value half has
+no projection, so no head-level copy) — is
 `GLOBAL_ENV_DIM (20) + the 5 board scalars = 25` dims. It stops at the `active_req_moves` offset,
 so the embedding-ID block is excluded from it by construction.
 
@@ -342,7 +343,17 @@ embedding tables, live in `src/agents/observation/CLAUDE.md`.
 
 `Gen3FeaturesExtractor` (`src/agents/model/features_extractor.py`), paired **mandatorily** with
 `Gen3DualHeadMaskablePolicy` (`policy.py`) — the extractor returns a `(pi_features, vf_features)`
-tuple, which stock SB3 policies cannot consume.
+tuple, which stock SB3 policies cannot consume. Its value half IS `value_pooled` (`[B, D_MODEL]` = 128,
+the extractor's `vf_features_dim`): there is no value projection and no critic tower (architecture audit
+F1, the version break, config v144). The value function is `sigmoid(win_head(value_pooled))` —
+`policy._critic_value(vf)` returns `sigmoid(fe.last_win_prob_logits)`, reading `vf` only for its batch size.
+The policy builds its own stack (it does not call SB3's `_build`): an ACTOR-only `MlpExtractor` (`net_arch`
+names the actor widths, `vf=[]`), SB3's orthogonal re-init of the extractor then the mlp extractor (gain √2,
+SB3's order), the retire hooks, the pointer head and the optimizer; `action_net` and `value_net` are RAISING
+stubs (`_NoFlatActionNet`, `_NoValueNet`). The policy's `critic` kwarg defaults to `winprob` and any other
+value is refused before anything is built. The inference tier's T2 `DecisionModule` reads the actor only and calls no
+critic; there is no value tower left for it to compute. Production learner: **2,519,046 parameters** (MEASURED, CPU,
+2026-10-07, part 2 of the version break — the K9 learner, the production surface).
 
 Modules actually built under the production config (`named_children()`) — GENERATED:
 
@@ -353,8 +364,7 @@ hidden_opp_belief · intent_move_cell · intent_threshold_move · intent_conditi
 pair_outcome_move · pair_outcome_switch · switch_branch · conditional_threat · t0_species_prior ·
 belief_head · move_belief · spread_belief · hp_type_belief_head · item_belief_head · damage_op ·
 prefuse_proj · assembler · win_head · value_entity_pool · history_events · pre_proj_norm ·
-projection · value_pre_norm · value_projection · activation · hypothesis_builder ·
-flat_intent_head
+projection · activation · hypothesis_builder · flat_intent_head
 ```
 <!-- END GENERATED: modules -->
 
@@ -392,7 +402,7 @@ logistic fixed-size presence (Σπ = 6 − revealed), a learned delta on the T0 
 opponent active's move group — and READS it (`gen3_x5_belief_tokens_v1`,
 `agents/model/hypothesis_tokens.py`): each hidden opponent slot holds its hypothesis's dex row encoded
 by THE `PokemonEncoder` + a learned `hypothesis_marker` (the deleted blob path's constant per-position
-`BeliefSlots` token is constructed for its init draw and never kept) — computed as that encoder's exact split at its two first Linears
+`BeliefSlots` token no longer exists — not even constructed) — computed as that encoder's exact split at its two first Linears
 (`gen3_x5_hyp_gather_v1`, `agents/model/hypothesis_encode.py`): the species-only columns once per forward
 over the 400-row dex table, gathered by hypothesis species; the row-level columns (clock, weather, fainted,
 hazards, screens, the active-context scatter) once per row; the rest of the encoder per OPPONENT slot only
@@ -422,10 +432,11 @@ ONE flat list (`gen3_x5_flat_pointer_v1`,
 `agents/model/flat_intent.py`, T2): the opponent active's K move seats, OTHER_move (token: the active's E5
 seat), a switch to each of their six slots (a revealed mon, or the hypothesis a hidden slot holds) and
 OTHER_species (its refined trunk token), scored by one shared scorer plus each candidate's DETACHED log π,
-one softmax; masks are structural. It REPLACES the α / β heads (`AlphaIntentHead` / `BetaSwitchHead` are
-still constructed and see SB3's orthogonal re-init — their draws are part of the global stream every later
-initial byte follows — then the policy's `_build` retires them before the optimizer is made; they hold no
-state_dict key, optimizer slot or forward use). Its labels come from the existing intent label: a move beyond the seats is an
+one softmax; masks are structural. It REPLACES the α / β heads (`AlphaIntentHead` / `BetaSwitchHead` are deleted;
+nothing is constructed for its RNG draws any more). Its scorer (`FlatIntentHead.out`,
+`IsolatedLinear(hidden, 1, bias=False)`) has NO bias: one scorer feeds every candidate of ONE softmax, so a
+bias would be a common shift — invariant, and measured gradient |g| ≤ 2.3e-10 over one K9 update (architecture
+audit F16b). Its labels come from the existing intent label: a move beyond the seats is an
 OTHER_move label, a hidden switch-in not among the hypotheses an OTHER_species label (a belief miss is
 supervised, never masked); a typed Hidden Power label names a revealed HP's seat. The seven α consumers
 read its re-expression: α over the K seats + OTHER_move (a PRICED (K+1)-th seat — every seat-axis operand
@@ -445,8 +456,8 @@ A pre-break checkpoint (blob or fixed_mass) is refused at `MIGRATION_FLOOR` 144 
 `latent_pi`, the flat policy tower's output (steps 11 and §3.3 below). The `trunk` mode
 ([`endstate/design_arch_audit.md`](endstate/design_arch_audit.md) F2, `gen3_policy_readout_trunk_v1`)
 RETIRES that tower — the extractor's `pre_proj_norm` / `projection` and SB3's `mlp_extractor.policy_net`,
-1,130,802 parameters at production widths (MEASURED, this build: the production learner holds 3,065,882
-under `tower` and 1,991,528 under `trunk`) — and reads the context off the trunk instead:
+1,130,802 parameters at production widths (the production learner holds 2,519,046 under `tower` and
+1,444,692 under `trunk` — MEASURED, CPU, 2026-10-07, part 2 of the version break) — and reads the context off the trunk instead:
 `PolicyStateQuery` (`agents/model/pools.py`, T3) is ONE learned query, 4 heads, attending over every
 refined trunk token (our 6, their 6, the global token, the entity and event seats) plus the
 `HiddenOppBeliefPool`'s K outputs, under the trunk's own key mask (and X5's per-key log π), then a LayerNorm → `[B, 128]`. That vector IS `pi_features` (no projection, no ReLU); the
@@ -454,8 +465,8 @@ retired actor branch is the empty `Sequential` (the identity), so every `forward
 policy, the T2 `DecisionModule`, the compiled learner region — is unchanged. Each action is still scored
 from its OWN token by the same equivariant scorer, widened to `TRUNK_POINTER_HIDDEN` = 128 (no 64-dim
 squeeze of the context). Init isolation: the query is built from a private seed out of `IsolatedLinear`s
-and the tower is retired only after SB3's orthogonal re-init, so every surviving non-pointer parameter
-starts from the `tower` build's bytes. The value path is unchanged. Config v138, no `ARCH_SIGNATURE`
+and the tower is retired only after the policy's orthogonal re-init (SB3's order), so every surviving non-pointer parameter
+starts from the `tower` build's bytes. The value half is the same in both modes (`value_pooled`). Config v138, no `ARCH_SIGNATURE`
 change while both modes build.
 **`--token-encoding` is `legacy` in production**: step 2 below is `PokemonEncoder`, and nothing of the static
 encoder is built. The `static` arm ([`endstate/design_static_tokens.md`](endstate/design_static_tokens.md),
@@ -569,8 +580,8 @@ The concrete steps:
    (`gen3_dense_attn_bias_v1`, F-ST-8). Values are unchanged.
 10. **`CLSPool`** — three learned queries: `our_cls` over our 6 refined tokens, `their_cls` over
     theirs, `value_cls` over **all 12**. Also extracts `our_active_refined`.
-11. **`ProjectionAssembler`** → `pre_proj_norm`/`projection`/ReLU (policy) and
-    `value_pre_norm`/`value_projection`/ReLU (value), both emitting `PROJECTION_DIM` = 512.
+11. **`ProjectionAssembler`** → `pre_proj_norm`/`projection`/ReLU (policy), emitting `PROJECTION_DIM` =
+    512; the value half is `value_pooled` itself (`[B, 128]`, no projection — the win-prob head's input).
     (Under `--policy-readout trunk` the policy half is `PolicyStateQuery` instead — see above.)
 
 ### 2.2 Dims that flow between phases
@@ -585,7 +596,7 @@ The concrete steps:
 | `ACTIVE_CTX_HIDDEN` | `[64, 32]` | " |
 | `POINTER_HIDDEN` | 64 | " |
 | `TRANSFORMER_N_LAYERS` / `N_HEADS` / `FFN_DIM` | 2 / 4 / 256 | " |
-| `NET_ARCH` (SB3 mlp_extractor) | `[512, 512]` | " |
+| `NET_ARCH` (the ACTOR-only mlp_extractor; no critic branch) | `[512, 512]` | " |
 
 Embedding tables (`Embeddings`, registered exactly once, passed as a forward argument):
 species 400×32, move 400×16, item 600×16, ability 100×16, type 20×16.
@@ -656,17 +667,17 @@ HEAD, are generated below — never hand-edit inside the markers.
 | `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` (POLICY only — the vf half read dV 0.0000 and was deleted) |
 | **total** | **1177** | == `projection.in_features`, asserted at generation |
 
-**`vf_projection` — `Linear(128, 512)`** (LayerNorm → Linear → ReLU). Input concat, in order:
+**The value half — no projection** (architecture audit F1, config v144): the extractor returns `value_pooled` itself, the win-prob head's input; the critic is `sigmoid(win_head(value_pooled))` and no critic tower is built.
 
 | Part | Dims | Source |
 |---|---|---|
 | `value_pooled` | 128 | `CLSPool.value_cls` over **all 12** team tokens |
-| **total** | **128** | == `value_projection.in_features`, asserted at generation |
+| **total** | **128** | == `vf_features_dim`, asserted at generation |
 <!-- END GENERATED: head-inputs -->
 
 **Every value route INJECTS into `value_pooled`** (v89 `gen3_value_pooled_routes_v1`): the
 routes below add a zero-init `D_MODEL` contribution to the tensor the win-prob critic actually
-reads (and `vf_parts[0]`, so the scalar critic sees the same wiring). The old post-assembler
+reads (`vf_parts[0]`, which is also the extractor's whole value half). The old post-assembler
 vf-concat delivery was structurally bypassed by the (since deleted) distributional-critic route —
 gen-12 proof: `value_entity_pool.out_proj` and the then-live α-reduce projection bit-exact ZERO
 after 25M steps, while `value_threat_proj` (the one `value_pooled` route) trained to 0.117. The
@@ -863,8 +874,8 @@ their believed top-K.
 
 Route availability is **width-neutral by construction** (additive injection changes no
 projection width), so the old ede5a88 discovery-sizing bug class — a fall-through branch hiding
-a vf part from the forward that sized `value_pre_norm` — is unrepresentable. Both projection
-input widths are **static arithmetic** (`compute_projection_widths`, `gen3_static_widths_v1`;
+a vf part from the forward that sized the (since deleted) value projection — is unrepresentable. The
+widths are **static arithmetic** (`compute_projection_widths`, `gen3_static_widths_v1`;
 the construction-time discovery forward is deleted): pi = 3·D_MODEL + the `non_matchup_rest`
 scalar tail + k·D_MODEL (hidden-opp belief pool, `opp_belief_cls_k`, POLICY side only);
 **vf = D_MODEL, a constant no flag can move**. `projection_width_test.py` verifies the arithmetic
@@ -920,10 +931,10 @@ token), and invariant at the pool — unlike the deleted flat concat, whose mean
 `W_inj` is covered by `restore_identity_init()` (ledger M1) and that is gated on a real
 `MaskablePPO` build, not a bare extractor. Structural + version-checked, fresh runs only; **ON in production.**
 **OFF is architecture audit F10's one-lever screen arm** (`--value-threat-inject off`, `gen3_value_threat_inject_off_v1`):
-with the op built it constructs the projection NOT LIVE and the policy RETIRES it after SB3's orthogonal re-init,
-so a trained OFF model has no module, key, optimizer slot or parameter for the route (production learner
-3,065,882 → 3,064,090 parameters, −1,792 = the `Linear(13, 128)`), every OTHER initial byte equals production's
-(MEASURED 2026-10-07 on a CPU `MaskablePPO` build, `value_threat_inject_off_test.py`, also under each of
+with the op built it constructs the projection NOT LIVE and the policy RETIRES it after its orthogonal re-init,
+so a trained OFF model has no module, key, optimizer slot or parameter for the route (−1,792 parameters = the
+`Linear(13, 128)`; measured against the then-production learner of 3,065,882, before part 2 of the version break),
+every OTHER initial byte equals production's (MEASURED 2026-10-07 on a CPU `MaskablePPO` build, `value_threat_inject_off_test.py`, also under each of
 `--token-encoding static`, `--policy-readout trunk`, `--move-resolution on`; X5's fixed_mass surface is production), and
 the op stays on `hard_max`. The critic then reads the op's incoming rows through the trunk (`prefuse_proj`) and
 `value_entity_pool`'s op-row source only. **v1 substitutes α := normalize(w),
@@ -932,8 +943,8 @@ indicts the delivery route rather than the belief.
 
 ### 3.3 The action head is the pointer head — there is no flat `action_net`
 
-`Gen3DualHeadMaskablePolicy._build` replaces SB3's flat `Linear(latent, 11)` with a **raising stub**
-and rebuilds the optimizer; `PointerNativeActionHead` produces the logits, and
+`Gen3DualHeadMaskablePolicy._build` never constructs SB3's flat `Linear(latent, 11)` (it does not call
+SB3's `_build`): `action_net` is a **raising stub** (`_NoFlatActionNet`); `PointerNativeActionHead` produces the logits, and
 `_get_action_dist_from_latent` is the single funnel all three logit sites pass through.
 
 Shared context for all three families: **`latent_pi`** — the policy tower's output, i.e. everything
@@ -984,12 +995,15 @@ zeros). The `PointerNativeActionHead` docstring still says `sec×10`; the code i
 
 Position-equivariance is structural: one shared scorer per entity family, so permuting the team
 permutes the logits, and a sorted-vs-request misalignment is unrepresentable at the logits.
-Cold start: all three scorers are zero-init and built **after** SB3's ortho-init pass, so every
+The three scorers (`move_score` / `switch_score` / `struggle_score`) each KEEP their bias: they are
+PER-FAMILY offsets inside one softmax — not common to every logit, so not shift-invariant and not dead
+(contrast the flat opponent pointer's ONE scorer over ONE softmax, which has no bias — §2.1, audit F16b).
+Cold start: all three scorers are zero-init and built **after** the policy's ortho-init pass, so every
 logit is exactly 0 at step 0 ⇒ uniform-over-legal.
 
 **The pointer route is POLICY-ONLY.** `pointer_head` is reached solely through
 `_get_action_dist_from_latent(latent_pi)`; every value path is
-`forward_critic(vf_features) → _critic_value`, which never touches it. So the per-action `cell`
+`_critic_value(vf)` = `sigmoid(win_head(value_pooled))`, which never touches it. So the per-action `cell`
 channel exists for the actor and **not** for the critic — the critic's op-physics routes are the
 entity pool's injection into `value_pooled` (dV 5.490 — 97% of the whole critic route joint),
 `--value-threat-inject`'s token content on the value pool's copy (1.0686) — both vf-only, both reading the op through `OpTensors` views rather
@@ -1013,7 +1027,7 @@ families, the pointer cells and the belief stack are that run's, unchanged.
 
 | recorded `critic` | `V(s)` is | trained by | reward stream | `gamma` |
 |---|---|---|---|---|
-| `shaped` (the historical critic; LOADABLE only — not trainable since the Python env core was deleted, so an old shaped checkpoint serves as an opponent / in the meters, and a resume or fork of one is refused `FATAL_CONFIG`, D4) | `value_net` | the MSE at `vf_coef`, in raw return units | the SIGNED terminal alone, ±30 with a −35 timeout (the shaping it once carried is deleted, §6.3) | 0.9999 |
+| `shaped` (the historical critic; NOT constructible at HEAD — the policy refuses any `critic` but `winprob` before it builds anything, and every shaped checkpoint is below `MIGRATION_FLOOR` 144, so it runs PINNED to its own commit) | the scalar `value_net` (DELETED with the whole SB3 value tower at the version break, audit F1) | the MSE at `vf_coef`, in raw return units | the SIGNED terminal alone, ±30 with a −35 timeout (the shaping it once carried is deleted, §6.3) | 0.9999 |
 | **`winprob`** (**this config**) | `sigmoid(win_head logit)` ∈ **[0, 1]** | the win-prob head's **BCE against the terminal WIN INDICATOR**, at `vf_coef` **0.5** | the TERMINAL **WIN INDICATOR** alone — `+victory_value` (**1.0**) on a win, `0.0` on a loss, a tie and a 250-turn timeout alike | **1.0** |
 
 **PopArt, the distributional value head (`value_dist_head`) and the `value_from_dist` critic route
@@ -1026,7 +1040,7 @@ was an auxiliary readout at a fixed weight of 1.0.)
 
 The critic and the return are the same quantity by construction: with the win-indicator terminal (victory 1.0, a constant of the namespace) the
 undiscounted return from any state is exactly `1{win}`, so **`V(s) = P(win | s)` with no
-approximation term**. `value_net` is in no loss graph (its scalar term is dropped), the BCE joins
+approximation term**. There is no scalar value head at all (the SB3 value tower is deleted, audit F1), the BCE joins
 the **`value`** noise-scale group rather than `aux`, and there is one critic and one coefficient
 (`--vf-coef`).
 
@@ -1217,7 +1231,7 @@ Explosion `pko`), and the `incoming_matrix` call is where `last_topk_idx` / `las
 — the incoming per-mon `p_outspeed`, the outgoing `p_outspeed`, the outgoing attacker matrix, the pair outcome's
 paralysis severity, C1's boost `d_outspeed`, C2's `d_their_outspeed` and the V edge — reads, under `off`,
 `sigmoid((our_spe − their_spe) / _DMG_SPEED_SCALE)` with `_DMG_SPEED_SCALE = 15.0` (hand-chosen, "about one
-stage"; the per-species believed-speed spread is looked up and discarded). Under `on` (no parameters; `off` is
+stage"; no per-species speed-spread lookup is made — audit F7a deleted the discarded ones). Under `on` (no parameters; `off` is
 byte-identical — the extractor's compiled graph, state_dict and outputs) each site builds its inputs in
 `damage_op_speed.py` and calls ONE rule, `move_order.p_first_same_priority`: OUR speeds EXACT (Showdown's integer
 stat, stage-floor and paralysis arithmetic: the stage applies on the active row only, paralysis on every row,
@@ -1326,6 +1340,17 @@ that swaps a holder out still reads the current actives' sports. Pinned by
 The block passes through a learned per-channel `out_gain` (a Parameter, multiplicative only, so the
 "no threat ⇒ exactly 0" gates stay clean) before it reaches the heads and before `pointer_cells`
 slices it — so the pointer path and the flat concat can never disagree on a value.
+
+**Every gradient-path max is `max_by_index`** (`agents/model/index_max.py`, a leaf module; `damage_op`
+re-exports it; architecture audit F6a): `max_by_index(x, dim, keepdim)` gathers `x` at
+`x.detach().argmax(dim)`, so its value equals `amax`'s bit for bit and on an exact tie the WHOLE gradient goes
+to the FIRST maximum (the declared convention; `amax` splits it). It is the spelling of the op's ten incoming
+channel maxima in every configuration (belief on or off), the pairwise kernels (setup deltas, worst/best
+cells, the four channel maxima, `p_pur_vs_us`), the status-landing maxima, the E5 tail's worst-phys/spec and
+`pair_reduce`'s inert deepsets pool. `amax` / `amin` remain only off any gradient path: the provenance gate
+operand (a comparison), the cure/cleric table lookups, the cheapest-undo path minimum (constants), the
+`we_have_pur` observation indicator, `fixed_size_tau`'s `no_grad` bracket and the move-tie-gap diagnostics.
+`selection_sites` declares the one `MAX_VALUE` EXACT site at `index_max`.
 
 **The pair-reduction rungs exist but are INERT in production** (`agents/model/pair_reduce.py`,
 `design_pair_reduction.md` §8.1 steps 3–4): `DamageOperator(reduce_how=…)` — constructor-only, no
@@ -1723,7 +1748,7 @@ under `torch.is_grad_enabled()`) and `last_move_latent_table`. The pinned no-lea
 `damage_op_test.test_op_is_leak_free_of_privileged_keys`, the bridge fuzz
 `poke_env_gaps/belief_labels_fuzz_test.py`, and — as a **graph invariant** —
 `delivery_graph_test.test_no_aux_edge_reaches_the_forward`, which asserts that no `aux` edge
-terminates at `pi_projection`, `vf_projection`, or any pointer logit.
+terminates at `pi_projection`, `value_pooled` (the critic's sink — there is no value projection), or any pointer logit.
 
 ---
 
@@ -1787,7 +1812,7 @@ not re-derive them.
 
 | Question | File |
 |---|---|
-| **This document as a clickable digraph** — the **120 nodes / 1103 edges** above (counted 2026-08-23 from `delivery_graph_snapshot.json`, which the viewer is built from — read it there rather than trusting this cell), hue-coded by what each channel physically carries, with a per-checkpoint measured-dependence overlay and a path filter (pick `vf_projection` to see exactly what the critic reads) | **https://model.g5d.io** (served live from the workstation checkout, so it is never a stale copy), or `designs/architecture_viewer.html` via `file://`. **Generated — never hand-edit it**: rebuild with `python -m agents.model.build_arch_viewer`, and `--check` fails if the committed artifact has drifted from the graph. |
+| **This document as a clickable digraph** — the **120 nodes / 1103 edges** above (counted 2026-08-23 from `delivery_graph_snapshot.json`, which the viewer is built from — read it there rather than trusting this cell), hue-coded by what each channel physically carries, with a per-checkpoint measured-dependence overlay and a path filter (pick `value_pooled` to see exactly what the critic reads) | **https://model.g5d.io** (served live from the workstation checkout, so it is never a stale copy), or `designs/architecture_viewer.html` via `file://`. **Generated — never hand-edit it**: rebuild with `python -m agents.model.build_arch_viewer`, and `--check` fails if the committed artifact has drifted from the graph. |
 | Obs-build performance gate (mandatory benchmark) + per-slot detail | `src/agents/observation/CLAUDE.md` |
 | Phase contract, `ExtractorContext`, versioning playbook | `src/agents/model/CLAUDE.md` |
 | How it got here — every version entry, verbatim | `designs/CHANGELOG.md` |

@@ -147,7 +147,7 @@ def test_forward_output_shape():
         pi_features, vf_features = model({"observation": obs})
     # Dual-head extractor returns (policy, value) features, both PROJECTION_DIM-wide.
     assert pi_features.shape == (1, model.features_dim)
-    assert vf_features.shape == (1, model.features_dim)
+    assert vf_features.shape == (1, model.vf_features_dim)   # value_pooled (no value projection: F1)
 
 
 def test_active_context_changes_output():

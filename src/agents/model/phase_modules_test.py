@@ -241,7 +241,7 @@ def test_opp_belief_cls_k_grows_projection_by_k_times_dmodel(k):
     # does not move. `test_the_hidden_opp_belief_pi_half_is_a_live_policy_input` below is the
     # pin on WHY that asymmetry is the right one.
     assert on.projection_input_dim == base.projection_input_dim + k * D_MODEL
-    assert on.value_projection_input_dim == base.value_projection_input_dim
+    assert on.vf_features_dim == base.vf_features_dim
 
 
 def test_opp_belief_cls_k_requires_unmask():

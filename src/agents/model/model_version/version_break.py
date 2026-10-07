@@ -3,9 +3,9 @@ after X5's adoption (``designs/endstate/design_x5_belief_tokens.md`` Decision re
 
 WHAT IT MEANS FOR A CHECKPOINT. The break raised ``MIGRATION_FLOOR`` to 144, so EVERY earlier checkpoint is
 refused by ``_migrate_config``'s pre-floor gate — the blob arm because its belief path is DELETED (part 1),
-and a pre-break ``fixed_mass`` one because the break's later parts reshape its weights (the dead value tower,
-the dead pointer bias, the op's per-slot ``out_gain`` tied to one scalar) and change its forward (the
-intent_conditional pre/post-gain). Neither can be reproduced at HEAD; both RUN PINNED to their own commit.
+and a pre-break ``fixed_mass`` one because the break reshapes its weights (part 2 deleted the dead value tower
+and the flat pointer's dead scorer bias; a later part ties the op's per-slot ``out_gain`` to one scalar) and
+changes its forward (the intent_conditional pre/post-gain). Neither can be reproduced at HEAD; both RUN PINNED to their own commit.
 
 This module is the ONE home of:
 
@@ -59,11 +59,14 @@ def blob_deleted_reason() -> str:
 
 def pre_break_fixed_mass_reason() -> str:
     return (f"It records belief_tokens='fixed_mass': a PRE-BREAK X5 checkpoint. The X5 version break "
-            f"(config v{VERSION_BREAK_CONFIG}, {VERSION_BREAK_SIGNATURE}) reshaped and re-wired the weights it "
-            "trained (the dead value tower, the dead pointer bias, the op's per-slot out_gain tied to one "
-            "scalar, the intent_conditional pre/post-gain), so it cannot be reproduced at HEAD. Run it PINNED "
-            f"to its own commit (the git_hash in its metadata.json; at the latest {LAST_BLOB_COMMIT[:12]}, the "
-            "last pre-break commit), or start a fresh run.")
+            f"(config v{VERSION_BREAK_CONFIG}, {VERSION_BREAK_SIGNATURE}) reshaped the weights it trained — part 2 "
+            "DELETED the dead SB3 value tower (the extractor's value_pre_norm / value_projection, "
+            "mlp_extractor.value_net and value_net: 592,129 parameters no loss read under the win-prob critic) "
+            "and the flat opponent pointer's shared scorer bias (flat_intent_head.out.bias), so its state_dict "
+            "holds keys this code refuses — and the later parts re-wire the op (its per-slot out_gain tied to "
+            "one scalar, the intent_conditional pre/post-gain), so it cannot be reproduced at HEAD. Run it "
+            f"PINNED to its own commit (the git_hash in its metadata.json; at the latest {LAST_BLOB_COMMIT[:12]}, "
+            "the last pre-break commit), or start a fresh run.")
 
 
 def pre_break_diagnosis(data: dict) -> Optional[str]:

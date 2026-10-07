@@ -2,8 +2,7 @@
 
 Since the X5 version break (config v144) the opponent-belief family (`opp_belief_slots`) builds X5's hypothesis
 tokens — a hidden opponent slot holds a hypothesised mon at presence π < 1 — and `BeliefSlots`' constant
-learned unknown-mon tokens (the blob path) are DELETED from the forward (the module is still constructed for its
-init draw, then discarded). `BeliefHead` still aux-supervises the hidden slots on species + moves. These tests
+learned unknown-mon tokens (the blob path) are DELETED (the class too, part 2 of the break). `BeliefHead` still aux-supervises the hidden slots on species + moves. These tests
 pin: the aux-logit shapes, the off-path being baseline byte-for-byte (no projection-width change), the
 attend-unrevealed dependency guard, that the aux logits carry grad into the hypothesis tokens, and that the
 blob's unknown-slot module is not kept. The label plumbing + loss live in the training-side tests.
@@ -15,7 +14,6 @@ import pytest
 
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor,
-    BeliefSlots,
     BeliefHead,
     D_MODEL,
 )
@@ -37,40 +35,8 @@ def _obs(layout, b=2):
     return {"observation": torch.zeros(b, layout["total_dim"])}
 
 
-# --------------------------------------------------------------------------- BeliefSlots
 # The MODULE (still constructed for its init draw — the K9 golden pins the RNG stream — then discarded
 # by the extractor): its own contract, kept while the class exists.
-
-
-def test_belief_slots_replaces_only_believed_opp_slots():
-    torch.manual_seed(0)
-    bs = BeliefSlots()
-    role = torch.randn(2, 2 * TEAM_SIZE, D_MODEL)
-    # batch 0: opp slots 0,1 revealed; 2..5 believed. batch 1: all opp revealed.
-    mask = torch.zeros(2, TEAM_SIZE, dtype=torch.bool)
-    mask[0, 2:] = True
-    out = bs(role, mask)
-    # our team untouched
-    assert torch.equal(out[:, :TEAM_SIZE, :], role[:, :TEAM_SIZE, :])
-    # revealed opp slots untouched
-    assert torch.equal(out[0, TEAM_SIZE:TEAM_SIZE + 2, :], role[0, TEAM_SIZE:TEAM_SIZE + 2, :])
-    assert torch.equal(out[1, TEAM_SIZE:, :], role[1, TEAM_SIZE:, :])
-    # believed slots become the learned per-position unknown token
-    for slot in range(2, TEAM_SIZE):
-        assert torch.allclose(out[0, TEAM_SIZE + slot, :], bs.unknown_slot_emb[slot])
-
-
-def test_unknown_slot_embeddings_are_distinct():
-    """Distinct-per-position is the whole point — identical tokens would collapse under the
-    permutation-equivariant transformer, defeating per-slot specialisation."""
-    torch.manual_seed(0)
-    bs = BeliefSlots()
-    e = bs.unknown_slot_emb
-    assert e.shape == (TEAM_SIZE, D_MODEL)
-    # pairwise distinct (no two slot embeddings identical)
-    for i in range(TEAM_SIZE):
-        for j in range(i + 1, TEAM_SIZE):
-            assert not torch.allclose(e[i], e[j])
 
 
 # --------------------------------------------------------------------------- BeliefHead
@@ -151,7 +117,7 @@ def test_belief_logits_carry_grad():
     # gradient flows back to the hypothesis tokens the hidden slots hold (their builder's δ_θ) — the
     # believed tokens are supervised; the blob's unknown-slot embeddings are not kept at all
     bl["species"].sum().backward()
-    assert model.belief_slots is None
+    assert not hasattr(model, "belief_slots")
     hb = [p.grad for p in model.hypothesis_builder.parameters() if p.grad is not None]
     assert hb and any(float(g.abs().sum()) > 0 for g in hb)
 

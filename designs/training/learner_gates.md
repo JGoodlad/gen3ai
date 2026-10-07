@@ -31,7 +31,7 @@ some always sit on a rounding boundary, so rounding buys no portability and lose
 **Determinism and the torch key.** CPU, eager, fp32, `torch.set_num_threads(1)` for the BUILD and the
 update (a CPU reduction order can depend on the thread count), numpy + torch seeded before `train()`.
 🚨 **The INIT depends on the thread count too, so `build_learner` pins one thread ITSELF** (F-X5-4, fixed
-2026-10-03): SB3's `_build` re-initialises every Linear with `orthogonal_`, a LAPACK QR whose blocked
+2026-10-03): the policy's `_build` (SB3's ortho-init, kept in order) re-initialises every Linear with `orthogonal_`, a LAPACK QR whose blocked
 reduction order follows the BLAS thread count. The RNG draws are identical; the rounding is not (max
 |Δ| ~1.1e-6, ~95% of a 512×512 matrix's bytes differ). Built at 8 threads, 15 of the 41 parameter
 groups moved (init `ffc668b3…` vs the banked `f476942c…`). The routine test passed only because the

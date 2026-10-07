@@ -502,7 +502,9 @@ class ExtractorForward(ExtractorApi):
             _x5r = other_roster(_x5r, _hs, self.hypothesis_builder, self.move_belief,
                                 self.damage_op.BASE_STATS, self.damage_op.SPECIES_TYPE,
                                 self.damage_op.SPECIES_SPREAD_PRIOR, int(self.damage_op.CHART.shape[-1]),
-                                _SB_SPE, cuts=(self.consequence_topk, self.entity_topk_seats))
+                                _SB_SPE, cuts=(self.consequence_topk, self.entity_topk_seats),
+                                # audit F7a: the speed-spread average only where it is read (`--speed-physics on`)
+                                with_spe_std=bool(self.damage_op.speed_physics))
             self.stash.hypothesis = _hs
         # T0 RESOLVE (spread/HP-type) → T1 REASON (the op). Run the WHOLE physics stack ONCE, here,
         # PRE-attention: the spread + HP-type beliefs read the raw opp role tokens (the move belief
@@ -827,7 +829,7 @@ class ExtractorForward(ExtractorApi):
                     "indistinguishable from a null RESULT. Requires damage_topk_k>0 (and the "
                     "incoming matrix that computes it).")
             _tp = threshold_probs(
-                _x5i.alpha, _pair_cells, self.damage_op.last_pair_gate,  # type: ignore[union-attr]
+                _x5i.alpha, _pair_cells, self.damage_op.last_pair_gate,  # type: ignore[arg-type,union-attr]
                 ctx.our_active_idx, seat_live=_x5i.seat_live)
             self.stash.thresh_probs = _tp
             _mcells = torch.cat([_mcells, self.intent_threshold_move(

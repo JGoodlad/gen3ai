@@ -726,11 +726,14 @@ seat" exceptions), and listed every opponent-slot `hp > 0` gate F-X5-12 named pl
   log π — π_m (0 revealed), OTHER_move's log-mass, a hypothesis's log π (0 revealed), OTHER's log-mass — DETACHED at
   the source and again in the head (M10); a masked candidate is −inf; a row with no live candidate (padding only) is
   left all-zero so the CE cannot be NaN. Built from its own private seed (`FLAT_INTENT_INIT_SEED`) out of
-  `IsolatedLinear`s.
-- **α / β retired.** They are still CONSTRUCTED and still see SB3's orthogonal re-init (both draw from the global RNG),
-  then `Gen3DualHeadMaskablePolicy._build` drops them (`retire_superseded_intent_heads`) BEFORE the optimizer is
-  built: no state_dict key, no optimizer slot, every non-X5 initial byte equal to blob's (pinned:
-  `hypothesis_set_test`). A standalone extractor (the delivery-graph / viewer tools) keeps them unused.
+  `IsolatedLinear`s. The shared scorer's output Linear is BIAS-FREE (`FlatIntentHead.out` =
+  `IsolatedLinear(hidden, 1, bias=False)`, the version break's part 2, architecture audit F16b): one scorer over ONE
+  softmax, so a bias is a common shift — invariant (measured |g| ≤ 2.3e-10 over one K9 update).
+- **α / β DELETED** (the version break's part 2, 2026-10-07). Until then they were constructed for their global-RNG
+  init draws and retired by the policy before the optimizer; `AlphaIntentHead`, `BetaSwitchHead` (and `BeliefSlots`)
+  and that construct-and-retire are gone, so the init bytes moved once (the K9 golden is re-recorded at the end of the
+  break). What changed and why: with blob deleted (part 1) nothing compared the arms' init bytes any more, so
+  preserving the draw sequence bought nothing.
 - **Labels** (`flat_intent_targets`, the ONE function the loss, B and the readers call; no Rust change — the intent
   label already carries the switch-in species num and the TRUE typed Hidden Power num): a move in the seats → its seat;
   a typed Hidden Power label → a REVEALED Hidden Power's seat (num 237, priced as its typed mixture; before U4 that
@@ -815,13 +818,46 @@ append to it without another bump):
   `opp_belief_slots` (`requires` is acyclic; `opp_intent`'s half is a constructor refusal `flag_requires_test` knows).
 - **The deletion.** BeliefSlots' forward splice and the α / β forward block are gone; `BeliefSlots`,
   `AlphaIntentHead` and `BetaSwitchHead` are still CONSTRUCTED (their init draws are part of the global RNG stream
-  every later initial byte follows) — BeliefSlots discarded at once, α / β retired by the policy before the optimizer.
+  every later initial byte follows) — BeliefSlots discarded at once, α / β retired by the policy before the optimizer
+  (part 2 below DELETED all three and the construct-and-retire).
   The blob-only learner terms (the α / β CE and β's set-valued credit, the hidden-team Hungarian row) and their
   tests go with them; the ride-along B head's α form (`OppEffectEnsemble`) too.
 - **Byte identity.** The production model is the pre-break fixed_mass arm, byte for byte: the K9 learner golden's
   default slot now holds that arm's committed entry MOVED VERBATIM (init `47c4c5fd…`, post `70a26bfc…`, every loss;
   torch 2.8.0+cu126; its seed-18 buffer renamed `learner_golden_buffer.npz`) and reproduces it IDENTICALLY at the
   break (`designs/research_state/measurements/version_break_identity_2026-10-07/`).
+
+**As built — the X5 VERSION BREAK, part 2 (2026-10-07; still config v144 — no further bump): the EXACT-refactor
+bundle** (`designs/endstate/design_arch_audit.md` F1 / F6a / F7a / F16b, with the blob leftovers this doc's part 1
+listed). What changed in THIS doc's design and why:
+- **The construct-and-retire is deleted.** `BeliefSlots`, `AlphaIntentHead` and `BetaSwitchHead` are no longer
+  constructed (no RNG-draw preservation); `ExtractorApi.retire_superseded_intent_heads` and the never-written
+  `alpha_logits` / `beta_logits` / `alpha_seat_nums` stashes (and their `last_*` properties) are deleted. Retired
+  modules now leave a plain `None` (`extractor_api.drop_child`), so a strict load reports a retired module's keys as
+  UNEXPECTED instead of swallowing them (the hole part 1 recorded).
+- **The readers moved to the flat pointer** (F-X5-36 closed): the inference player's `_opp_intent` trace block
+  (`last_flat_intent_logits` / `last_flat_intent` through `flat_intent.render_flat`: α = the named seats +
+  `"OTHER move"` + `"SWITCH"`; β = P(slot | switch), a hidden slot named by its HYPOTHESIS species, a revealed one from
+  the board, OTHER_species as slot −1) and `search_dividend.alpha.alpha_publication` (seats → `move_p`, α_SWITCH, β per
+  live slot; OTHER_move's mass REPORTED as `other_move_mass` in the diagnostics, never spent on a named move). Both
+  return None only when the pointer is not built (the belief-off ablation) and RAISE when it is built but stashed
+  nothing.
+- **`--beta-setvalued-coef` DELETED** (it scaled the deleted blob β's set-valued credit; `recipe.fresh`, the
+  `apply_training_hparams` row, `_resolve` and the learner attribute with it; `designs/deleted_flags.md`).
+- **The four α-requiring consumers** (`intent_move_cell`, `intent_threshold`, `intent_conditional`,
+  `switch_branch`) read only the flat pointer's operands (their unreachable non-X5 arms deleted);
+  `pair_outcome_move` / `_switch` and `conditional_threat` keep both arms (the R1 `belief_mean` fallback is reachable
+  with the belief family off).
+- **The flat pointer's scorer bias** is deleted (F16b, −1 parameter); **every gradient-path max** is
+  `index_max.max_by_index` (F6a — this doc's §3.5 presence-scaled maxima included); the off-path speed-sigma
+  lookups are deleted and the OTHER roster averages `spe_std` only under `--speed-physics on` (F7a).
+- **Left in place, LISTED:** the move belief's Hungarian `elif` in `belief_bank` (REACHABLE: move belief on with the
+  belief family off); `main.train.config.inherit_derived_enable_coefs` / `UnrecordedEnableCoef` (unreachable behind the
+  floor, not small); the v122–v143 migration branches.
+- **Identity:** production 3,111,176 → 2,519,046 parameters (MEASURED, CPU, the K9 learner); the weight-mapping proof
+  against the `26131c0c` reference is BITWISE without F16b and differs only by the removed softmax shift's rounding with
+  it (log π max |Δ| 2.4e-7; CONTROL with the bias re-attached BITWISE)
+  (`designs/research_state/measurements/version_break_identity_2026-10-07/`).
 
 **Rust.** No runtime observation or label change.
 - The label-writer guard is **DONE** (F-X5-3, `680edc36`, `gen3_label_lookup_guard_v1`): every Rust label writer
@@ -1560,7 +1596,7 @@ there).
 | F-X5-33 | **The per-mon order ranks a revealed Hidden Power's 16 typed channels by P(t)**; tracker-narrowed equal P(t) can put a near-tie at a per-mon cut, so `near_tie_rows` may exclude more rows with a revealed HP (conservative; 0 on the golden buffer). The bench rows' move REINJECTION still uses sigmoid weights (F-X5-26 covers the active only). |
 | F-X5-34 | **OTHER_move is a label only for one of its MEMBERS** (U4 decision). §3.7 says "a move outside the seats → OTHER_move"; as built, a move outside the seats that is not in the presence construction's candidate set (Struggle, a learnset gap — π = 0 in the model) is MASKED and counted (`flat_unmodeled_rate`; 0 on the K9 golden buffer, 0–4.0 % of choices across the fixed_mass smoke's five updates against bots), so OTHER_move's label means exactly what its mass means (Σ_beyond π) and its calibration reads by linearity. Same rule for OTHER_species (a hidden switch-in outside V's tail). **The composition of the unmodeled rows is UNVERIFIED** (candidates: Struggle, moves copied by Transform / Mimic, learnset-table gaps); U7 should break it down before it is read as a belief property. **U7 broke it down on the bank: F-X5-43** (all Struggle). |
 | F-X5-35 | **`seat_live` consistency (F-X5-15) is applied under fixed_mass ONLY.** The three consumers take an optional `seat_live`; the blob arm passes none, so production stays byte-identical and keeps the pre-existing inconsistency until the losing arm is deleted. |
-| F-X5-36 | **No human render of the flat pointer in traces.** `RLPlayer._opp_intent` and `main.search_dividend.alpha` read α / β only, so a fixed_mass trace carries no `opp_intent` block and the search-dividend α reader returns None. `flat_intent.render_flat` exists; wiring it into the player / prober is a follow-up (out of U4's scope). |
+| F-X5-36 | **CLOSED 2026-10-07 (the version break's part 2): both readers read the flat pointer** (see "As built — part 2"). Was: **No human render of the flat pointer in traces.** `RLPlayer._opp_intent` and `main.search_dividend.alpha` read α / β only, so a fixed_mass trace carries no `opp_intent` block and the search-dividend α reader returns None. `flat_intent.render_flat` exists; wiring it into the player / prober is a follow-up (out of U4's scope). |
 | F-X5-37 | **U4's added cost is UNMEASURED on the GPU** (§3.6 "What U4 ADDS"): OTHER_move's full-move-axis pricing (the status coordinates over `[B, 6, 400]`, a second `[B, 400]` damage-roll pair, the einsums). CPU compile 145 s cold vs 142 s (one run each). If U8's budget binds, the status coordinates can be computed on the tail's TYPE / category marginals instead of per move — a semantics change (orchestrator decision). |
 | F-X5-38 | **The blob β's no-candidate rows read UNIFORM to its consumers** (pre-existing, blob only): `BetaSwitchHead` sets a row with no legal switch-in to all-zero logits (NaN-safety for the CE), so `has_cand` is true and `switch_branch` / the boom cell read a uniform arrival where there is none. The flat re-expression gives −inf there (zero switch mass). Reported, not fixed (standing rule 9; production byte-identity). |
 | F-X5-39 | **The fixed_mass arm logs `opp_intent/flat_*`, not `alpha_*` / `beta_*` / `beta_setvalued_*`**; an arm-vs-arm intent read must map the keys (`flat_move_recall_top1` ↔ `alpha_move_recall_top1`, `flat_switch_tgt_top1` ↔ `beta_recall_top1` (named `flat_switch_target_recall_top1` before 2026-10-05, F-X5-48), …). |
@@ -2021,3 +2057,4 @@ the safe default, but would leave X5 unadopted for reasons of noise.
 | 2026-10-07 | **X5 ADOPTED: hypothesis tokens (`--belief-tokens fixed_mass`) become the production belief representation, by the owner's PRE-COMMITTED rule (`079dee3e`, "a go as long as they aren't worse")** | Look 3 (`c344ccd1`, 8 seeds per arm, played at the training pin 706fa536): MATCHED STEPS **NON-INFERIOR** (Δ̂ −0.99 pp [−2.92, +0.94], t 2.788 ≥ 1.874); matched wall time (end-to-end, 12M) INFERIOR (−5.91 pp; the accepted cost at s = +16.7 %, to be recovered by the static-token and performance work); purpose metric (1) CROSSED (intent log loss 1.753 vs 1.904, −0.151 nats, t 10.05). **Consequences:** the production config flips to fixed_mass at the ONE planned version break, which also carries: the blob-path deletion (§3.8), the exact bundle (F1 / F6a / F7a / F16b), the obs-facts append (branch `obs-facts-append`), the op `out_gain` slot-tie, the intent_conditional pre/post-gain unification, baselines re-pointed or era-marked; plus the h2h fingerprint ignoring default-valued settings (look-3 finding 1). Recorded by the orchestrator under the owner's delegation (through 10-07); the owner may reverse it. | Waiting for a fresh owner decision (the rule was pre-committed precisely so the read decides) | owner (pre-committed 10-06), applied 10-07 |
 | 2026-10-07 | **The move-resolution family (`--move-resolution on`) builds under `fixed_mass`** (was refused) | It reads the flat pointer's re-expression (§3.7) with OTHER PRICED, per this doc's §3.7 / §9 M3 (c): OTHER_move as one seat per priority level (the exact order × move-fact tail expectation), OTHER_species as a 7th mon on the renormalised tail; `off` byte-identical in both modes | Excluding OTHER (a claim, not an absence; less than the seven blocks it retires already deliver); one tail-averaged OTHER seat at priority 0 or the tail's mean priority (wrong order) | `design_arch_audit.md` Decision record 2026-10-07 |
 | 2026-10-07 | **Version break part 1 AS BUILT: the X5 flip + the blob deletion** (config v144, `gen3_x5_version_break_v1`) | ONE bump for the whole break; `MIGRATION_FLOOR` RISES to 144 (every pre-break checkpoint runs pinned: the later parts reshape weights and change behaviour); the belief family builds X5 whenever on and refuses a missing requirement; the blob forward and loss paths deleted; BeliefSlots / α / β kept as constructed-then-discarded modules for their RNG draws; refusals name `LAST_BLOB_COMMIT` (`26131c0c`) and exit `FATAL_CONFIG` on a resume; the K9 golden's fixed_mass entry moved verbatim (byte-identical) | Decoupling the floor from the signature (legacy manifest D-L1, provisional — the later parts make no pre-break checkpoint reproducible); a `blob` fallback when a requirement is off (a second belief path to keep honest); deleting the α / β / BeliefSlots constructors (moves every production init byte, the K9 golden); re-recording the golden (the identity proof would be lost) | §3.8 "As built — the X5 VERSION BREAK, part 1"; `CHANGELOG.md` v144; `x5_version_break_test.py` |
+| 2026-10-07 | **Version break part 2 AS BUILT: the EXACT-refactor bundle + the blob leftovers** (config v144, no further bump) | The construct-and-retire of `BeliefSlots` / α / β DELETED (no RNG-draw preservation: with blob gone no arm compares init bytes); the never-written α / β stashes deleted and both readers (the inference player's trace block, the search dividend) moved to the flat pointer; `--beta-setvalued-coef` deleted; retired modules leave a plain `None` (`drop_child`), closing the strict-load hole; the flat pointer's scorer bias-free (audit F16b); `max_by_index` at every gradient-path max (F6a); the off-path speed-sigma lookups deleted (F7a); the dead SB3 value tower deleted (F1). 3,111,176 → 2,519,046 parameters. | Keeping the construct-and-retire for init-byte continuity (nothing compares against blob's bytes any more; the K9 golden is re-recorded once at the end of the break); deleting the Hungarian `elif` (reachable with the belief family off) | `designs/research_state/measurements/version_break_identity_2026-10-07/` (BITWISE without F16b; F16b = softmax-shift rounding only, its control BITWISE); `x5_version_break_part2_test.py`; `design_arch_audit.md` Decision record 2026-10-07 |

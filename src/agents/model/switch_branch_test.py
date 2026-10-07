@@ -32,7 +32,7 @@ from agents.model.arch_constants import SWITCH_BRANCH_MOVE_DIM, _SWITCH_BRANCH_R
 from agents.model.damage_op_layout import (
     _DMG_OMX_CELL, _DMG_OMX_IDX_HIGH, _DMG_OMX_IDX_MULT, _DMG_OMX_IDX_PKO,
 )
-from agents.model.features_extractor import Gen3FeaturesExtractor, TEAM_SIZE
+from agents.model.features_extractor import D_MODEL, Gen3FeaturesExtractor, TEAM_SIZE
 from agents.model.model_version import (
     MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
 )
@@ -402,7 +402,7 @@ def test_off_builds_no_module_and_no_extra_dims():
     assert fe_on.pointer_move_cell_dim == fe_off.pointer_move_cell_dim + SWITCH_BRANCH_MOVE_DIM
     assert fe_on.pointer_switch_cell_dim == fe_off.pointer_switch_cell_dim
     assert fe_on.projection.in_features == fe_off.projection.in_features
-    assert fe_on.value_projection.in_features == fe_off.value_projection.in_features
+    assert fe_on.vf_features_dim == fe_off.vf_features_dim
 
 
 def test_off_is_byte_identical():
@@ -457,7 +457,7 @@ def test_it_stacks_with_every_other_move_cell_rider():
                         intent_conditional=True, pair_outcome_cell=True,
                         pair_outcome_switch=True)
     pi, vf = fe(_obs(layout))
-    assert pi.shape == vf.shape
+    assert pi.shape[0] == vf.shape[0] and vf.shape[-1] == D_MODEL
     assert fe.last_pointer_inputs.move_cells.shape[2] == fe.pointer_move_cell_dim
     assert fe.last_pointer_inputs.switch_cells.shape[2] == fe.pointer_switch_cell_dim
 

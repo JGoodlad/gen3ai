@@ -185,7 +185,7 @@ def test_fixed_mass_B_on_the_FLAT_pointer_is_BIT_IDENTICAL_to_learning(fm_arms):
     off, on = fm_arms
     from agents.model.ridealong_heads import FlatOppEffectEnsemble
     assert isinstance(on["model"].policy.ridealong.opp, FlatOppEffectEnsemble)
-    assert on["model"].policy.features_extractor.alpha_head is None
+    assert not hasattr(on["model"].policy.features_extractor, "alpha_head")   # the blob α is DELETED (v144 part 2)
     assert th.equal(off["built_rng"][0], on["built_rng"][0])
     for k in off["buf"]:
         assert np.array_equal(off["buf"][k], on["buf"][k]), f"rollout key {k} differs"

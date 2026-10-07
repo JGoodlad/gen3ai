@@ -26,7 +26,7 @@ digraph gen3_delivery {
   "spread_belief" [shape=box, style=filled, fillcolor="#e6dcf3", label="spread_belief"];
   "t0_species_prior" [shape=box, style=filled, fillcolor="#e6dcf3", label="t0_species_prior"];
   "pi_projection" [shape=box, style="filled,bold", fillcolor="#d7ead9", label="pi_projection\n1177→512"];
-  "vf_projection" [shape=box, style="filled,bold", fillcolor="#d7ead9", label="vf_projection\n128→512"];
+  "value_pooled" [shape=box, style="filled,bold", fillcolor="#d7ead9", label="value_pooled\n128→128"];
   "win_head" [shape=box, style="filled,bold", fillcolor="#d7ead9", label="win_head\n128→1"];
   "hidden_opp_belief" [shape=plaintext, label="hidden_opp_belief"];
   "non_matchup_rest" [shape=plaintext, label="non_matchup_rest"];
@@ -83,8 +83,8 @@ digraph gen3_delivery {
   "OTHER_species" -> "flat_intent_head" [color="#2f6f3e", style=solid, label="content w=128", tooltip="ABS · FlatIntentHead.token_dim (D_MODEL)"];
   "OTHER_species" -> "flat_intent_head" [color="#2f6f3e", style=solid, label="content w=128", tooltip="ABS · D_MODEL"];
   "OTHER_species" -> "pi_projection" [color="#31538f", style=solid, label="concat w=128", tooltip="ABS · D_MODEL"];
-  "OTHER_species" -> "vf_projection" [color="#31538f", style=solid, label="concat w=128", tooltip="ABS · D_MODEL"];
-  "OTHER_species" -> "vf_projection" [color="#2f6f3e", style=solid, label="content w=128", tooltip="ABS · D_MODEL"];
+  "OTHER_species" -> "value_pooled" [color="#31538f", style=solid, label="concat w=128", tooltip="ABS · D_MODEL"];
+  "OTHER_species" -> "value_pooled" [color="#2f6f3e", style=solid, label="content w=128", tooltip="ABS · D_MODEL"];
   "OTHER_species" -> "win_head" [color="#2f6f3e", style=solid, label="content w=128", tooltip="ABS · D_MODEL"];
   "damage_op" -> "E4_threat" [color="#2f6f3e", style=solid, label="content w=35 ×6", tooltip="ABS · MOVE_LATENT_DIM + 3"];
   "damage_op" -> "E5_tail" [color="#2f6f3e", style=solid, label="content w=4 ×6", tooltip="ABS · _EDGE_TAIL_CELL(4)"];
@@ -98,8 +98,8 @@ digraph gen3_delivery {
   "damage_op" -> "pointer.switch_logit" [color="#7d5bab", style=bold, label="cell w=15 ×6", tooltip="ABS/action · PAIR_OUTCOME_SWITCH_DIM"];
   "damage_op" -> "pointer.switch_logit" [color="#7d5bab", style=bold, label="cell w=4 ×6", tooltip="ABS/action · CONDITIONAL_THREAT_SWITCH_DIM"];
   "damage_op" -> "pointer.switch_logit" [color="#7d5bab", style=bold, label="cell w=15 ×6", tooltip="ABS/action · _PTR_SWITCH_CELL_IN"];
-  "damage_op" -> "vf_projection" [color="#2f6f3e", style=solid, label="content w=13", tooltip="ABS · value_threat_inject_dim()"];
-  "damage_op" -> "vf_projection" [color="#2f6f3e", style=solid, label="content w=128", tooltip="ABS · D_MODEL"];
+  "damage_op" -> "value_pooled" [color="#2f6f3e", style=solid, label="content w=13", tooltip="ABS · value_threat_inject_dim()"];
+  "damage_op" -> "value_pooled" [color="#2f6f3e", style=solid, label="content w=128", tooltip="ABS · D_MODEL"];
   "event" -> "opp_mon" [color="#b5453a", style=dashed, label="r w=3 ×192", tooltip="RATIO · _EDGE_R_CELL", dir=both];
   "event" -> "our_mon" [color="#b5453a", style=dashed, label="r w=3 ×192", tooltip="RATIO · _EDGE_R_CELL", dir=both];
   "flat_intent_head" -> "loss.opp_intent_flat_ce" [color="#8a8a8a", style=dotted, label="aux", tooltip="train-only · training-only obs Dict key"];
@@ -123,7 +123,6 @@ digraph gen3_delivery {
   "move_belief" -> "opp_mon" [color="#2f6f3e", style=solid, label="content w=128 ×6", tooltip="ABS · D_MODEL"];
   "move_belief" -> "opp_mon" [color="#2f6f3e", style=solid, label="content w=128 ×6", tooltip="ABS · D_MODEL"];
   "non_matchup_rest" -> "pi_projection" [color="#31538f", style=solid, label="concat w=25", tooltip="ABS · GLOBAL_ENV_DIM + board scalars"];
-  "non_matchup_rest" -> "vf_projection" [color="#31538f", style=solid, label="concat w=25", tooltip="ABS · GLOBAL_ENV_DIM + board scalars"];
   "obs.active_context" -> "obs_unpack" [color="#2f6f3e", style=solid, label="content w=120", tooltip="ABS · schema.slices()['active_context']"];
   "obs.event_window" -> "event" [color="#2f6f3e", style=solid, label="content w=30 ×32", tooltip="ABS · layout['event_token_dim']"];
   "obs.event_window" -> "obs_unpack" [color="#2f6f3e", style=solid, label="content w=960", tooltip="ABS · schema.slices()['event_window']"];
@@ -140,8 +139,8 @@ digraph gen3_delivery {
   "opp_mon" -> "global" [color="#b5453a", style=dashed, label="g w=4 ×6", tooltip="RATIO · _EDGE_G_CELL", dir=both];
   "opp_mon" -> "global" [color="#b5453a", style=dashed, label="x w=4 ×6", tooltip="RATIO · _EDGE_X_CELL", dir=both];
   "opp_mon" -> "pi_projection" [color="#31538f", style=solid, label="concat w=128 ×6", tooltip="ABS · D_MODEL"];
-  "opp_mon" -> "vf_projection" [color="#31538f", style=solid, label="concat w=128 ×6", tooltip="ABS · D_MODEL"];
-  "opp_mon" -> "vf_projection" [color="#2f6f3e", style=solid, label="content w=128 ×6", tooltip="ABS · D_MODEL"];
+  "opp_mon" -> "value_pooled" [color="#31538f", style=solid, label="concat w=128 ×6", tooltip="ABS · D_MODEL"];
+  "opp_mon" -> "value_pooled" [color="#2f6f3e", style=solid, label="content w=128 ×6", tooltip="ABS · D_MODEL"];
   "opp_mon" -> "win_head" [color="#2f6f3e", style=solid, label="content w=128 ×6", tooltip="ABS · D_MODEL"];
   "our_active_refined" -> "pi_projection" [color="#31538f", style=solid, label="concat w=128", tooltip="ABS · D_MODEL"];
   "our_mon" -> "OTHER_species" [color="#b5453a", style=dashed, label="d4 w=4 ×6", tooltip="RATIO · _EDGE_D4_CELL", dir=both];
@@ -156,8 +155,8 @@ digraph gen3_delivery {
   "our_mon" -> "opp_mon" [color="#b5453a", style=dashed, label="v w=3 ×36", tooltip="RATIO · _EDGE_V_CELL", dir=both];
   "our_mon" -> "pi_projection" [color="#31538f", style=solid, label="concat w=128 ×6", tooltip="ABS · D_MODEL"];
   "our_mon" -> "pointer.switch_logit" [color="#2f6f3e", style=solid, label="content w=128 ×6", tooltip="ABS · D_MODEL"];
-  "our_mon" -> "vf_projection" [color="#31538f", style=solid, label="concat w=128 ×6", tooltip="ABS · D_MODEL"];
-  "our_mon" -> "vf_projection" [color="#2f6f3e", style=solid, label="content w=128 ×6", tooltip="ABS · D_MODEL"];
+  "our_mon" -> "value_pooled" [color="#31538f", style=solid, label="concat w=128 ×6", tooltip="ABS · D_MODEL"];
+  "our_mon" -> "value_pooled" [color="#2f6f3e", style=solid, label="content w=128 ×6", tooltip="ABS · D_MODEL"];
   "our_mon" -> "win_head" [color="#2f6f3e", style=solid, label="content w=128 ×6", tooltip="ABS · D_MODEL"];
   "pi_projection" -> "pointer.move_logit" [color="#2f6f3e", style=solid, label="content w=512 ×4", tooltip="ABS · NET_ARCH[-1]"];
   "pi_projection" -> "pointer.struggle_logit" [color="#2f6f3e", style=solid, label="content w=512", tooltip="ABS · NET_ARCH[-1]"];

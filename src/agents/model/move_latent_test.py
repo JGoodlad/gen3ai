@@ -45,7 +45,7 @@ def test_off_path_projection_dims_unchanged():
     (unlike the damage op, which appends to the projections)."""
     off, on = _model(), _model(move_latent=True)
     assert on.projection_input_dim == off.projection_input_dim
-    assert on.value_projection_input_dim == off.value_projection_input_dim
+    assert on.vf_features_dim == off.vf_features_dim
 
 
 def test_latent_table_shape_and_context_free():

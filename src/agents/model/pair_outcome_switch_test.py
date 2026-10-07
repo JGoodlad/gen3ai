@@ -399,7 +399,7 @@ def test_off_builds_no_module_and_no_extra_dims():
     assert fe_on.pointer_move_cell_dim == fe_off.pointer_move_cell_dim, (
         "the switch half must not touch the MOVE cell — that is Phase A's sink")
     assert fe_on.projection.in_features == fe_off.projection.in_features
-    assert fe_on.value_projection.in_features == fe_off.value_projection.in_features
+    assert fe_on.vf_features_dim == fe_off.vf_features_dim
 
 
 def test_off_is_byte_identical():

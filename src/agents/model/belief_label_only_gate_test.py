@@ -80,6 +80,7 @@ def _build_real_policy(**overrides):
     ek = enc.get_features_extractor_kwargs()
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     kw = {**ek, **{k: v for k, v in {**_CFG, **overrides}.items() if k in sig}}
+    kw.setdefault("win_prob_mode", "shaping")  # the policy's critic is the win-prob head (no value tower since v144, F1)
     torch.manual_seed(0)
     model = MaskablePPO(
         Gen3DualHeadMaskablePolicy, DummyVecEnv([lambda: _Env(enc.dimension)]),
@@ -357,8 +358,6 @@ def test_supervision_keys_are_exactly_what_the_forward_registers():
     fe(_obs(enc))
     registered = set(fe._belief_supervision)
     not_built = set()
-    if fe.alpha_head is None:
-        not_built |= {"alpha_logits", "beta_logits"}     # retired by the policy since the X5 break
     if fe.flat_intent_head is None:
         not_built |= {"flat_intent_logits"}              # X5 U4: the opponent-belief family only
     if fe.spread_belief is None:

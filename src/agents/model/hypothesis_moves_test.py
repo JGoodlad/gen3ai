@@ -165,7 +165,7 @@ def test_one_order_feeds_the_e4_seats_the_op_seat_axis_and_alphas_seats(fm_polic
     assert torch.equal(fe.entity_seats.last_cand[0], seats)
     assert torch.equal(fe.damage_op.last_topk_idx, seats)
     # X5 U4: α is retired under fixed_mass — the FLAT pointer's move columns are the same seats
-    assert fe.stash.alpha_seat_nums is None
+    assert not hasattr(fe.stash, "alpha_seat_nums")             # the blob α stash is DELETED (part 2)
     assert torch.equal(fe.last_flat_intent.seat_nums, seats)
     assert torch.equal(fe.last_flat_intent.cand_ids[:, :seats.shape[1]], seats)
     assert torch.equal(fe.damage_op.last_topk_w, hs.moves.seat_pi)

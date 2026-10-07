@@ -18,7 +18,7 @@ import pytest
 import torch
 
 from agents.model.arch_constants import INTENT_COND_MOVE_DIM
-from agents.model.features_extractor import Gen3FeaturesExtractor, TEAM_SIZE
+from agents.model.features_extractor import D_MODEL, Gen3FeaturesExtractor, TEAM_SIZE
 from agents.model.intent_conditional import IntentConditionalMoveCell
 from agents.model.model_version import (
     MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
@@ -339,7 +339,7 @@ def test_off_builds_no_module_and_no_extra_dims():
 def test_on_forward_runs_and_is_in_the_identity_sweep():
     fe, layout = _build(**_ON_KWARGS)
     pi, vf = fe(_obs(layout))
-    assert pi.shape == vf.shape
+    assert pi.shape[0] == vf.shape[0] and vf.shape[-1] == D_MODEL
     assert "intent_conditional.proj" in fe._identity_init_zeroed
 
 
@@ -358,7 +358,7 @@ def test_full_intent_stack_builds_and_runs():
                            "opp_belief_slots": True,
                            "value_entity_pool": True})
     pi, vf = fe(_obs(layout))
-    assert pi.shape == vf.shape
+    assert pi.shape[0] == vf.shape[0] and vf.shape[-1] == D_MODEL
 
 
 # ------------------------------------------------------------------- version machinery

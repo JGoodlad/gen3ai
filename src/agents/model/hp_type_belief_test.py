@@ -481,7 +481,7 @@ def test_flat_ablation_drops_the_head_but_keeps_typed_hp():
     # The head is a side readout either way → the projection widths must NOT differ, so the ablation
     # is not confounded by a capacity change.
     assert composed.projection_input_dim == flat.projection_input_dim
-    assert composed.value_projection_input_dim == flat.value_projection_input_dim
+    assert composed.vf_features_dim == flat.vf_features_dim
 
 
 def test_flat_still_masks_the_typeless_channel():

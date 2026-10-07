@@ -21,7 +21,7 @@ import pytest
 import torch
 
 from agents.model.damage_op import _DMG_OMX_IDX_PKO, _DMG_OMX_CELL, _DMG_OUT_N_MOVES
-from agents.model.features_extractor import Gen3FeaturesExtractor, TEAM_SIZE
+from agents.model.features_extractor import D_MODEL, Gen3FeaturesExtractor, TEAM_SIZE
 from agents.model.model_version import (
     ModelVersion, ModelVersionError, _migrate_config,
 )
@@ -94,7 +94,7 @@ def test_full_intent_stack_runs_lean():
                         intent_threshold=True, intent_conditional=True,
                         value_entity_pool=True)
     pi, vf = fe(_obs(layout))
-    assert pi.shape == vf.shape
+    assert pi.shape[0] == vf.shape[0] and vf.shape[-1] == D_MODEL
 
 
 def test_boom_pko_stash_equals_the_old_flat_view_at_init():

@@ -455,7 +455,7 @@ def test_pair_outcome_fallback_arch_compiles_to_one_graph():
     assert off, "no registry row requires opp_intent — this probe has lost its subject"
     fe, layout = _build_production_extractor(
         pair_outcome_cell=True, opp_intent=False, opp_belief_slots=False, **off)
-    assert fe.alpha_head is None, "this cell is meant to exercise the NO-intent fallback"
+    assert fe.flat_intent_head is None, "this cell is meant to exercise the NO-intent fallback"
     explained = torch._dynamo.explain(fe.forward)(
         {"observation": torch.zeros(_BATCH, layout["total_dim"])})
     assert explained.graph_break_count == 0, explained.break_reasons

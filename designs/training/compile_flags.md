@@ -920,7 +920,8 @@ parameters)**, so a backward-only miscompile there passed on any weights. Three 
 
 - **The probe loss** (`agents.model.compile_gate_probe.gate_loss`) is the old features term plus
   what the production loss reads: the MASKED legal log-probs through the real pointer head, `V`
-  (`policy._critic_value`), the scalar `value_net`, and every graph-carrying stash tensor. Each term
+  (`policy._critic_value`), and every graph-carrying stash tensor (the scalar `value_net` it also read is
+  DELETED with the SB3 value tower, version break part 2, audit F1). Each term
   gets fixed, deterministic, sign-varying weights (no RNG). The gradient is read over the WHOLE
   policy (extractor and heads). It leaves **1 of 254** parameters with zero gradient (0.39%, the same
   on CUDA, fresh-perturbed and trained): `edge_bias.c5_map.weight`, the Baton-Pass receiver edge.
@@ -1438,7 +1439,7 @@ How the bars are set:
     its history.
   - **What the init rule adds.** In `rb_x5ab_oracle_sp_s1001`'s FATAL checkpoint (update 10, 987,904
     steps), 17 of 387 parameters are bit-identical to the fresh build at seed 1001. Ten are the SB3
-    value tower that the win-prob critic never reads (dead in every arm: the blob seed at 15.0M has
+    value tower that the win-prob critic never read (DELETED since the version break's part 2, audit F1; dead in every arm: the blob seed at 15.0M has
     the same ten, and R1 gives them no gradient, so they are never judged). Seven are the oracle's:
     `belief_head.{species_head, moves_head}.{weight, bias}`, `belief_head.norm.{weight, bias}` and
     `belief_slots.unknown_slot_emb`. The zero rule saw four of the seven. The init rule adds the
@@ -1506,11 +1507,12 @@ How the bars are set:
   fixed_mass K9 golden did not move. On CUDA the fixed_mass startup gate now PASSES in 4 of 4 fresh
   processes (per-parameter rel err ≤ 1.4e-5 against bars ≥ 0.0099; cosine ≥ 1 − 4e-10), and a compiled
   regime-A launch passes its gate, the update-10 canary and 11 logger dumps.
-  ⚠️ **The class is latent wherever an `amax` / max-with-dim reduction's input is recomputed in a
-  compiled backward** — about fifty such reductions sit in the model, blob's included. It fires only
-  when the recompute rounds differently, and the startup gate's `NonFiniteGateArmError` and the
-  canary are what catch it. The next NaN FATAL of this shape gets the same cure (`max_by_index` at
-  the named site, behind the arm that tripped it), never a looser bar.
+  ⚠️ **The class is CLOSED on the gradient path since the version break's part 2 (audit F6a):**
+  `max_by_index` moved to the leaf module `agents/model/index_max.py` and is THE spelling of every
+  gradient-path value-reduction max in the forward, in every configuration (the blob arm is deleted);
+  `amax` / `amin` remain only off any gradient path (`designs/model/op_contracts.md` "The op's MAXIMA").
+  A NEW max over candidates on a gradient path uses it; a NaN FATAL of this shape elsewhere (a reduction
+  this rule missed) gets the same cure, never a looser bar.
 
 `compile_regions_trained_cuda_test` (GPU tier) runs C's real weights through the real gate. The
 fp64-REFERENCED form of the gate (compiled no worse than k x eager's own error vs float64,

@@ -38,8 +38,23 @@ Boundary rule: each producer module owns its own stash surface — the op keeps 
 `PokemonEncoder` keeps `last_move_tokens` (written unconditionally every encoder forward, read in
 the same extractor forward) — a submodule never writes into its parent's container. Related
 fail-loud: `Gen3DualHeadMaskablePolicy._critic_value` under the win-prob critic (the only critic) RAISES when the
-win head/logits are missing or batch-stale instead of falling back to the scalar
-`value_net` (the silently-wrong-critic shape v89 exposed). Gate: `extractor_stashes_test.py`.
+win head/logits are missing or batch-stale — there is no scalar `value_net` to fall back to (deleted with
+the SB3 value tower, audit F1; falling back was the silently-wrong-critic shape v89 exposed). Gate:
+`extractor_stashes_test.py`.
+
+## The op's MAXIMA: one spelling, one tie convention (audit F6a)
+
+Every gradient-path value-reduction max in the forward is `max_by_index` (`agents/model/index_max.py`, a
+LEAF module so any kernel can import it without a cycle; `damage_op` re-exports it): the value is `amax`'s bit
+for bit, gathered at `x.detach().argmax(dim)`, and on an EXACT tie the whole gradient goes to the FIRST
+maximum (a declared convention; `amax` splits it, and an Inductor-recomputed `x == amax` operand once matched
+nothing and produced 0/0 — the 2026-10-05 compiled-gradient NaN). It covers the op's ten incoming channel
+maxima in every configuration (belief on or off — there is no `amax` branch), the pairwise kernels, the
+status-landing maxima, the E5 tail's worst-phys/spec and `pair_reduce`'s inert deepsets pool. A NEW max over
+candidates on a gradient path uses it. `amax` / `amin` are legal only OFF any gradient path — the provenance
+gate operand (a comparison), a TABLE lookup (cure / cleric), a constant (the cheapest-undo minimum), an
+observation indicator (`we_have_pur`), a `no_grad` bracket (`fixed_size_tau`) or a diagnostic (the move-tie
+gaps). `selection_sites` declares the one `MAX_VALUE` EXACT site at `index_max`.
 
 ## The op's READ contracts: an opponent's ability, and the status rules (`gen3_op_ability_status_gigo_v1`)
 

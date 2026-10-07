@@ -159,7 +159,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
                              "critic (share_features_extractor=True): its two readouts split inside it.")
         self._build_mlp_extractor()
         self.action_net = _NoFlatActionNet()
-        self.value_net = _NoValueNet()
+        self.value_net = _NoValueNet()  # type: ignore[assignment]  # sb3 types the slot as the Linear it builds
         if self.ortho_init:
             for module in (self.features_extractor, self.mlp_extractor):
                 module.apply(partial(self.init_weights, gain=np.sqrt(2)))
@@ -198,19 +198,19 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1),  # type: ignore[call-arg]
                                               **self.optimizer_kwargs)
 
-    def __init__(self, *args: Any, critic: str = CRITIC_UNRECORDED, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args: Any, critic: str = CRITIC_WINPROB, **kwargs: Any) -> None:
         # gen3_winprob_critic_mode_v1: WHICH readout is the value function — since the version break
         # (config v144, architecture audit F1) only 'winprob': `_critic_value` is sigmoid(win_head logit)
-        # ∈ [0,1]. 'shaped' (and an ABSENT kwarg, `CRITIC_UNRECORDED`: a pre-v109 checkpoint's saved
-        # policy_kwargs never carried the key) read the scalar `value_net`, which no longer exists; such a
-        # checkpoint is below MIGRATION_FLOOR anyway and runs PINNED to its own commit.
+        # ∈ [0,1], and it is the DEFAULT (the only value this class builds). 'shaped' read the scalar
+        # `value_net`, which no longer exists: refused BEFORE anything is built. (A pre-v109 checkpoint whose
+        # pickled policy_kwargs never carried the key — 'shaped' by `CRITIC_UNRECORDED` — is below
+        # MIGRATION_FLOOR, and its state_dict's value-tower keys fail the strict load; it runs PINNED.)
         if not is_winprob(critic):
             raise ValueError(
                 f"critic={critic!r}: the only critic is {CRITIC_WINPROB!r} (sigmoid(win_head logit)). The "
                 "scalar value_net a 'shaped' critic read was DELETED at the version break (config v144, "
-                "architecture audit F1); an absent record means 'shaped' (pre-v109). Run such a checkpoint "
-                "PINNED to its own commit.")
+                "architecture audit F1). Run such a checkpoint PINNED to its own commit.")
+        super().__init__(*args, **kwargs)
         self._critic_mode = str(critic)
 
         # gen3_identity_init_guard_v1: SB3's `_build()` just ran

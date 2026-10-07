@@ -39,7 +39,7 @@ convention: `our_cls`, `our_active_refined` and the pointer head cannot reach it
 bit-identical at ANY weight — gated against a large random projection, not just at init. Equivariant
 in both axes (α has no defender index by Contract W; the row rides mon j's token; attention pooling
 is permutation-invariant). `W_inj` sits in the `restore_identity_init()` capture set (M1) and that
-is gated on a REAL `MaskablePPO` build. Structural + version-checked; ON in production. **`off` is architecture audit F10's screen arm** (`gen3_value_threat_inject_off_v1`, v142): with the op built, OFF CONSTRUCTS the projection NOT LIVE (`CLSPool.value_threat_live`) and the policy's `_build` RETIRES it after SB3's orthogonal re-init (`ExtractorApi.retire_value_threat_inject`, the `retire_superseded_intent_heads` precedent), so a trained OFF model holds no key, slot or parameter for it while every other initial byte equals production's; the op stays on R0 `hard_max` (the reduced rows fed only this route). Pinned by `value_threat_inject_off_test.py`.
+is gated on a REAL `MaskablePPO` build. Structural + version-checked; ON in production. **`off` is architecture audit F10's screen arm** (`gen3_value_threat_inject_off_v1`, v142): with the op built, OFF CONSTRUCTS the projection NOT LIVE (`CLSPool.value_threat_live`) and the policy's `_build` RETIRES it after its orthogonal re-init (SB3's order) (`ExtractorApi.retire_value_threat_inject`, through `extractor_api.drop_child`: a plain `None` is left, so a strict load reports a retired module's keys as unexpected), so a trained OFF model holds no key, slot or parameter for it while every other initial byte equals production's; the op stays on R0 `hard_max` (the reduced rows fed only this route). Pinned by `value_threat_inject_off_test.py`.
 
 ## The PRIVILEGED route — DELETED (deletion pass L2)
 
@@ -60,9 +60,11 @@ audit / probe CLIs still hand-build (`designs/ops/TECH_DEBT_BACKLOG.md`).
 ## `WinProbHead`
 
 A separate `WinProbHead` (`win_prob_mode != none`) reads `value_pooled` *after* the pools and stashes
-a `last_win_prob_logits` [B,1]. It never enters the pi/vf CONCAT, so projection dims are unchanged
-either way — but **what consumes it depends on the recorded `critic`**: under `shaped` it is a side readout fed
-to the win-prob AUX loss and the prober, and under **`winprob` it IS the critic** (`_critic_value`
+a `last_win_prob_logits` [B,1]. It never enters the pi CONCAT. **It IS the critic** — the only one: `value_pooled`
+is the extractor's whole value half (no projection, no SB3 value tower — both DELETED at the version break's part 2,
+architecture audit F1), and `_critic_value(vf)` returns `sigmoid(fe.last_win_prob_logits)`, reading `vf` only for
+its batch size. (Under the historical `shaped` critic — a pre-break checkpoint, run PINNED — it was a side readout
+fed to the win-prob AUX loss and the prober.) Under **`winprob`** (`_critic_value`
 returns `sigmoid` of these logits and the head's BCE is the value loss at `vf_coef`). `read_only`
 feeds it a STOP-GRAD `value_pooled` (head trains its own params only); `shaping` feeds it live (the
 win objective also shapes the trunk), and `winprob` implies `shaping`.
@@ -114,8 +116,8 @@ epochs cost +8.9 s on a 67.0 s update (+13 %), far past the ~2 % instrument budg
 
 **Why the heads are NOT extractor modules, unlike every readout above.** The owner's rule is that the
 baseline learns EXACTLY what production learns, so this is tested bit-for-bit. Three things
-in the extractor would break it. SB3's ortho-init `apply` re-draws every `nn.Linear` in the extractor
-from the GLOBAL RNG, so any new Linear there shifts `mlp_extractor` / `value_net` init and every later
+in the extractor would break it. The policy's ortho-init `apply` (SB3's, kept in its `_build`) re-draws every `nn.Linear` in the extractor
+from the GLOBAL RNG, so any new Linear there shifts the actor `mlp_extractor`'s init and every later
 sample. `policy.optimizer` is built from `self.parameters()`. And PPO's `clip_grad_norm_` runs over
 all policy parameters. So the extractor RECORDS the four kwargs and builds nothing, and the policy builds
 `policy.ridealong` after `_build` inside `fork_rng` from `RIDEALONG_INIT_SEED`. The heads' params

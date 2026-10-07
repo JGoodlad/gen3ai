@@ -293,7 +293,7 @@ def fm():
 @pytest.mark.integration
 def test_the_candidate_set_and_its_structural_mask_on_a_real_forward(fm):
     fe, ctx, hs = fm["fe"], fm["ctx"], fm["hs"]
-    assert fe.alpha_head is None and fe.beta_head is None and fe.flat_intent_head is not None
+    assert not hasattr(fe, "alpha_head") and not hasattr(fe, "beta_head") and fe.flat_intent_head is not None
     fi, fl = fe.last_flat_intent, fe.last_flat_intent_logits
     k = fe.entity_topk_seats
     assert fi.k == k and fl.shape == (64, flat_width(k))
@@ -411,13 +411,13 @@ def test_production_builds_the_flat_pointer_and_the_alpha_beta_readout_is_gone()
     from main.train.production_args import production_args
     m = _unperturbed_learner(production_args())
     fe = m.policy.features_extractor
-    assert fe.flat_intent_head is not None and fe.alpha_head is None and fe.beta_head is None
+    assert fe.flat_intent_head is not None and not hasattr(fe, "alpha_head") and not hasattr(fe, "beta_head")
     assert not any(k.startswith(("features_extractor.alpha_head.", "features_extractor.beta_head."))
                    for k in m.policy.state_dict())
     with torch.no_grad():
         fe(_obs_from_golden(8))
     assert fe.last_flat_intent_logits is not None
-    assert fe.last_alpha_logits is None and fe.last_beta_logits is None
+    assert not hasattr(fe, "last_alpha_logits") and not hasattr(fe, "last_beta_logits")
 
 
 # ------------------------------------------------------------------------------ the fullgraph trace

@@ -9770,7 +9770,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "note": "OTHER_species joins the keys; every opponent key carries its log-presence",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -9799,16 +9799,6 @@
       "width": 25
     },
     {
-      "dst": "vf_projection",
-      "note": "the one head input with NO token route a pool reads \u2014 its only other delivery is the global token",
-      "pooled": false,
-      "source_constant": "GLOBAL_ENV_DIM + board scalars",
-      "src": "non_matchup_rest",
-      "type": "concat",
-      "via": "ProjectionAssembler concat",
-      "width": 25
-    },
-    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -9818,7 +9808,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[0]",
@@ -9836,7 +9826,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[1]",
@@ -9854,7 +9844,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[2]",
@@ -9872,7 +9862,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[3]",
@@ -9890,7 +9880,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[4]",
@@ -9908,7 +9898,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[5]",
@@ -9936,7 +9926,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[0]",
@@ -9954,7 +9944,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[1]",
@@ -9972,7 +9962,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[2]",
@@ -9990,7 +9980,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[3]",
@@ -10008,7 +9998,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[4]",
@@ -10026,7 +10016,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[5]",
@@ -10198,7 +10188,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "note": "OTHER_species is an opponent source row after their six; every opponent row's logit carries its log-presence",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -10387,7 +10377,7 @@
       "zero_init": true
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "note": "an attention VALUE carries a magnitude where an attention BIAS cannot \u2014 'this mon is about to lose 62% of its HP', per entity",
       "pooled": true,
       "source_constant": "value_threat_inject_dim()",
@@ -10398,7 +10388,7 @@
       "zero_init": true
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "damage_op",
@@ -11058,7 +11048,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[0]",
@@ -11096,7 +11086,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[1]",
@@ -11134,7 +11124,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[2]",
@@ -11172,7 +11162,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[3]",
@@ -11210,7 +11200,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[4]",
@@ -11248,7 +11238,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[5]",
@@ -11286,7 +11276,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[0]",
@@ -11324,7 +11314,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[1]",
@@ -11362,7 +11352,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[2]",
@@ -11400,7 +11390,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[3]",
@@ -11438,7 +11428,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[4]",
@@ -11476,7 +11466,7 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
+      "dst": "value_pooled",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[5]",
@@ -11839,7 +11829,7 @@
     "obs_dim": 2761,
     "op_out_dim": 138,
     "pi_projection_in": 1177,
-    "vf_projection_in": 128
+    "value_pooled_dim": 128
   },
   "nodes": [
     {
@@ -11937,10 +11927,11 @@
       "out_features": 512
     },
     {
-      "id": "vf_projection",
+      "id": "value_pooled",
       "in_features": 128,
       "kind": "head",
-      "out_features": 512
+      "note": "the critic's input: `value_cls` + the value routes; read by win_head",
+      "out_features": 128
     },
     {
       "id": "win_head",

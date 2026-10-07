@@ -239,7 +239,7 @@ def test_off_path_projection_dims_unchanged_by_damage_op():
     # either. Both head widths are now independent of the op's out_dim — `vf_combined` is
     # `value_pooled` alone, and every critic route is an additive injection into it.
     assert on.projection_input_dim - base.projection_input_dim == 0
-    assert on.value_projection_input_dim - base.value_projection_input_dim == 0
+    assert on.vf_features_dim - base.vf_features_dim == 0
 
 
 def test_dependency_guard_requires_revealed_or_both():
@@ -585,7 +585,7 @@ def test_topk_off_path_projection_dims_unchanged():
     # gen3_no_concat_v1: the flat block no longer enters either projection, and BOTH of
     # these configs carry the op (and so the fixed-width seed window) — no delta at all.
     assert on.projection_input_dim == base.projection_input_dim
-    assert on.value_projection_input_dim == base.value_projection_input_dim
+    assert on.vf_features_dim == base.vf_features_dim
 
 
 def test_topk_dependency_guard():
@@ -811,7 +811,7 @@ def test_matrices_outgoing_off_path_dims_unchanged():
     # gen3_no_concat_v1: the flat block no longer enters either projection, and BOTH of
     # these configs carry the op (and so the fixed-width seed window) — no delta at all.
     assert on.projection_input_dim == base.projection_input_dim
-    assert on.value_projection_input_dim == base.value_projection_input_dim
+    assert on.vf_features_dim == base.vf_features_dim
 
 
 def test_matrices_outgoing_requires_damage_op():
@@ -1020,7 +1020,7 @@ def test_matrices_incoming_off_path_dims_unchanged():
     # window; the matrix widens only the BLOCK, never the projections.
     assert on.damage_op.out_dim - base.damage_op.out_dim == _dmg_imx_dim(on.damage_op.matrices_incoming_k)
     assert on.projection_input_dim == base.projection_input_dim
-    assert on.value_projection_input_dim == base.value_projection_input_dim
+    assert on.vf_features_dim == base.vf_features_dim
 
 
 def test_matrices_incoming_dependency_guards():

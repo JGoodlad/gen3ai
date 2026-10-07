@@ -122,7 +122,10 @@ def test_a_real_update_runs_every_micro_batch_through_R1_compiled_and_none_eager
 #: the 1,060 are `optimizer.step()`'s per-parameter step-count reads (`ppo.py`'s two step sites, 494 each), which
 #: scale with the parameter TENSOR count X5 changes; no read sits in the micro-step (the TEETH below still add
 #: exactly one per micro-batch). The blob learner's per-site split was not re-measured (blob is deleted).
-GOLDEN_UPDATE_HOST_SCALAR_READS = 1060
+#: 1,060 → 1,056 at the version break's part 2 (2026-10-07): the flat pointer's scorer bias (F16b) was the one
+#: deleted parameter tensor that received a gradient (MEASURED: re-attaching it restores 1,060); the deleted value
+#: tower (F1) held no gradient, so it was never stepped and moved no read.
+GOLDEN_UPDATE_HOST_SCALAR_READS = 1056
 
 
 def test_a_real_update_makes_a_bounded_number_of_host_scalar_reads(learner, monkeypatch):

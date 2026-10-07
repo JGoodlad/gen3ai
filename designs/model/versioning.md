@@ -173,6 +173,13 @@ every one runs PINNED. `model_version/version_break.py` is the one home of the c
   `snapshot.load_checkpoint_strict` runs `refuse_deleted_pickled_kwargs` on the zip itself, so a caller whose
   sanitizer never refuses (the prober's set math) or passes none cannot hand SB3 a blob kwarg.
 
+* **Part 2 (the EXACT-refactor bundle: audit F1 / F6a / F7a / F16b + the blob leftovers)** adds NO bump and judges
+  no extractor kwarg (none was removed, so nothing new under `_DEAD_FEK_*`); the policy kwarg `critic` survives,
+  defaulting to `winprob` and accepting only it. A pre-break `fixed_mass` checkpoint's state_dict now holds keys this
+  code refuses (the deleted value tower; `flat_intent_head.out.bias`), which `pre_break_fixed_mass_reason` names.
+  Retired modules leave a plain `None` (`extractor_api.drop_child`), so a strict load REPORTS a retired module's
+  keys as unexpected instead of swallowing them.
+
 Every post-floor `if version < N` branch in `_migrate_config` (v122–v143) is now UNREACHABLE and is left in place;
 moving their history into the archive block and deleting them is legacy-manifest unit R1 / L1, not the break's.
 
@@ -195,9 +202,9 @@ other and with the code.
 ## The `critic` route has no fallback, its version gate, and how the mode is threaded
 
 **The `winprob` route has NO FALLBACK, for the deleted `value_from_dist` route's exact reason** (the v89
-orphaned-route class): `value_net` is in no loss graph under this critic, so quietly returning it
-would be a critic the training loop believes in and nothing updates. A missing head, an un-stashed
-`last_win_prob_logits`, or a batch-size disagreement with `latent_vf` all RAISE.
+orphaned-route class): there is nothing to fall back to — the scalar `value_net` and the whole SB3 value
+tower are DELETED (version break part 2, audit F1; `policy.value_net` is a raising stub). A missing head, an
+un-stashed `last_win_prob_logits`, or a batch-size disagreement with `latent_vf` (= `value_pooled`) all RAISE.
 
 🚨 **The version gate matters more here than for a typical structural flag, and the reason is
 worth internalising: BOTH routes return a `[B,1]` float tensor.** A flipped `critic` produces no
@@ -209,8 +216,10 @@ ONLY thing standing between a resume and that, which is the same argument `win_p
 **NO `ARCH_SIGNATURE` bump — at v109 (the mode) nor at v130 (the default flip, deletion pass D2,
 2026-10-02).** The flip moved only what an UNTYPED critic meant on a FRESH argv (the `--critic` flag itself is deleted since P11b batch (b); `critic` is now the recorded field alone)
 (`critic_mode.CRITIC_DEFAULT` = `winprob`); what an ABSENT RECORD means is a separate constant that did
-not move (`CRITIC_UNRECORDED` = `shaped`: the policy constructor's default, `ModelVersion.critic`'s field
-default, and every `getattr(policy, "_critic_mode", …)` read). So no checkpoint loads differently, a
+not move (`CRITIC_UNRECORDED` = `shaped`: `ModelVersion.critic`'s field default and every
+`getattr(policy, "_critic_mode", …)` read — it is what a RECORD without the key means. Since the version break's
+part 2 the POLICY constructor's default is `winprob`, and any other value is refused before anything is built:
+a `shaped` checkpoint is below `MIGRATION_FLOOR` and runs PINNED). So no checkpoint loads differently, a
 flagless resume inherits its recorded critic, and `check_compatible`'s string compare still refuses a
 critic mismatch — the warm-start hazard the old plan bumped the signature for cannot arise. (The earlier
 plan here — "the signature bump belongs to the DEFAULT FLIP" — assumed the two meanings were one constant.)

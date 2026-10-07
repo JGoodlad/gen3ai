@@ -308,6 +308,5 @@ def test_jsonable_stringifies_the_unexpected():
 
 
 def test_battery_constants_are_stable_surface():
-    assert CAPACITY_BATTERY_VERSION >= 1
-    assert FEATURE_TAPS == ("role_tokens", "team_tokens", "value_pooled",
-                            "pi_features", "vf_features")
+    assert CAPACITY_BATTERY_VERSION >= 2       # 2: the vf_features tap left with the value projection (F1)
+    assert FEATURE_TAPS == ("role_tokens", "team_tokens", "value_pooled", "pi_features")

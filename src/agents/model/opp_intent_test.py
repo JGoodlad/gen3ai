@@ -1,11 +1,9 @@
 """Gates for `α`/`β` (design_opponent_intent.md §6 — G3b, G4, G5 in module form).
 
-The two load-bearing ones:
+The blob path's two heads (`AlphaIntentHead` / `BetaSwitchHead`) and their equivariance / padding / NaN-row unit
+tests are DELETED with them (the X5 version break, config v144, part 2); the flat pointer's own are in
+`flat_intent_test.py`. What stays:
 
-  * EQUIVARIANCE — permuting their moves must permute `α` exactly, and permuting their bench must
-    permute `β`. A flat `Linear(ctx, K)` would pass every shape test here and silently learn "seat
-    0 is usually right" from the belief's own sort order, memorising the very ordering `α` exists
-    to correct.
   * MATCHING BY CANONICAL ID — seats are `w.topk(K)` and permute every turn, so a target built
     from a seat INDEX is wrong the moment the belief re-sorts. The label is a move NUM and the
     match happens at loss time.
@@ -13,54 +11,7 @@ The two load-bearing ones:
 import pytest
 import torch
 
-from agents.model.opp_intent import (INTENT_IGNORE, AlphaIntentHead, BetaSwitchHead,
-                                     match_seats_to_move_num, render_alpha)
-
-
-def test_alpha_is_equivariant_under_permuting_their_moves():
-    torch.manual_seed(0)
-    head = AlphaIntentHead(seat_dim=8, ctx_dim=6).eval()
-    seats = torch.randn(3, 5, 8)
-    ctx = torch.randn(3, 6)
-    with torch.no_grad():
-        base = head(seats, ctx)
-        perm = torch.tensor([3, 0, 4, 1, 2])
-        permd = head(seats[:, perm], ctx)
-    assert torch.allclose(base[:, perm], permd[:, :5], atol=1e-6), \
-        "alpha must permute WITH the seats — the scorer has become position-indexed"
-    assert torch.allclose(base[:, 5], permd[:, 5], atol=1e-6), \
-        "the SWITCH logit reads board context only and must be permutation-INVARIANT"
-
-
-def test_beta_is_equivariant_under_permuting_their_bench():
-    torch.manual_seed(0)
-    head = BetaSwitchHead(token_dim=12, ctx_dim=6).eval()
-    tok = torch.randn(2, 6, 12)
-    ctx = torch.randn(2, 6)
-    mask = torch.ones(2, 6)
-    with torch.no_grad():
-        base = head(tok, ctx, mask)
-        perm = torch.tensor([5, 4, 3, 2, 1, 0])
-        permd = head(tok[:, perm], ctx, mask[:, perm])
-    assert torch.allclose(base[:, perm], permd, atol=1e-6)
-
-
-def test_padding_and_illegal_targets_are_unrepresentable_not_merely_unlikely():
-    torch.manual_seed(0)
-    a = AlphaIntentHead(seat_dim=4, ctx_dim=4).eval()
-    seats, ctx = torch.randn(1, 3, 4), torch.randn(1, 4)
-    valid = torch.tensor([[1.0, 0.0, 1.0]])
-    with torch.no_grad():
-        p = a(seats, ctx, seat_valid=valid).softmax(-1)
-    assert float(p[0, 1]) == 0.0, "a padded seat must receive exactly zero mass"
-
-    b = BetaSwitchHead(token_dim=4, ctx_dim=4).eval()
-    tok, c = torch.randn(1, 6, 4), torch.randn(1, 4)
-    cand = torch.tensor([[1.0, 0, 0, 1.0, 0, 0]])
-    with torch.no_grad():
-        pb = b(tok, c, cand).softmax(-1)
-    assert float(pb[0, 1]) == 0.0 and float(pb[0, 4]) == 0.0
-    assert pytest.approx(float(pb.sum()), abs=1e-6) == 1.0
+from agents.model.opp_intent import INTENT_IGNORE, match_seats_to_move_num, render_alpha
 
 
 def test_matching_is_by_id_and_survives_a_seat_permutation():
@@ -114,16 +65,15 @@ def _intent_kwargs(**over):
 def test_off_builds_no_heads_and_adds_no_state_dict_keys():
     """Since the X5 version break (v144) `opp_intent` builds X5's FLAT pointer with the hypothesis tokens (the
     opponent-belief family is one family). OFF (both toggles off) builds none of it; ON adds exactly the X5
-    modules — the blob path's α / β heads are constructed for their init draw and RETIRED by the policy, so
-    they hold no state_dict key."""
+    modules — the blob path's α / β heads are DELETED (part 2), so they hold no state_dict key."""
     from agents.model.identity_init_test import _build_real_policy
     off, _ = _build_real_policy(**_intent_kwargs(opp_intent=False, opp_belief_slots=False))
     on, _ = _build_real_policy(**_intent_kwargs())
     fo, fn = off.policy.features_extractor, on.policy.features_extractor
     assert fo.flat_intent_head is None and fo.hypothesis_builder is None
-    assert fo.alpha_head is None and fo.beta_head is None
+    assert not hasattr(fo, "alpha_head") and not hasattr(fo, "beta_head")
     assert fn.flat_intent_head is not None and fn.hypothesis_builder is not None
-    assert fn.alpha_head is None and fn.beta_head is None                   # retired
+    assert not hasattr(fn, "alpha_head") and not hasattr(fn, "beta_head")   # deleted
     new = set(fn.state_dict()) - set(fo.state_dict())
     assert new and {k.split(".")[0] for k in new} == {"flat_intent_head", "hypothesis_builder", "belief_head"}, \
         sorted(new)[:4]
@@ -134,14 +84,14 @@ def test_off_builds_no_heads_and_adds_no_state_dict_keys():
 def test_a_real_policy_emits_a_normalized_alpha_over_seats_plus_switch():
     """The consumers' α is the flat pointer's RE-EXPRESSION (`FlatConsumerOps.alpha`, logits over the K seats ·
     OTHER_move · SWITCH) — one normalised distribution; β the six slots · OTHER_species. The blob α's stash is
-    never written."""
+    deleted."""
     from agents.model.identity_init_test import _build_real_policy
     m, _ = _build_real_policy(**_intent_kwargs())
     fe = m.policy.features_extractor.eval()
     dim = m.observation_space["observation"].shape[0]
     with torch.no_grad():
         fe({"observation": torch.rand(3, dim), "action_mask": torch.ones(3, 11)})
-    assert fe.last_alpha_logits is None and fe.last_beta_logits is None and fe.last_alpha_seat_nums is None
+    assert not hasattr(fe, "last_alpha_logits") and not hasattr(fe, "last_beta_logits")
     assert fe.last_flat_intent_logits.shape == (3, 6 + 8), "K=6 seats + OTHER_move + six slots + OTHER_species"
     ops = fe.stash.flat_consumer_ops
     assert ops.alpha.shape == (3, 6 + 2), "K=6 seats + OTHER_move + SWITCH"
@@ -188,21 +138,6 @@ def test_version_gate_rejects_a_toggle_flip():
     with pytest.raises(ModelVersionError, match="opp_intent"):
         base.check_compatible(on)
     on.check_compatible(on)
-
-
-def test_a_row_with_no_legal_switch_in_does_not_produce_nan():
-    """THE bug a smoke caught: their last mon is active ⇒ every beta candidate masked ⇒ all -inf
-    ⇒ log_softmax NaN ⇒ cross_entropy NaN for the WHOLE batch, even though such a row is always
-    IGNORE'd. Those rows must come back finite."""
-    torch.manual_seed(0)
-    b = BetaSwitchHead(token_dim=4, ctx_dim=4).eval()
-    tok, c = torch.randn(2, 6, 4), torch.randn(2, 4)
-    mask = torch.zeros(2, 6)
-    mask[0, 2] = 1.0                       # row 0 has one legal target; row 1 has NONE
-    with torch.no_grad():
-        out = b(tok, c, mask)
-    assert torch.isfinite(out[1]).all(), "an all-masked row must be finite, not all -inf"
-    assert float(out[0, 0]) == float("-inf"), "a masked slot in a LIVE row is still unrepresentable"
 
 
 # ------------------------------------------- content-addressed believed-slot resolution

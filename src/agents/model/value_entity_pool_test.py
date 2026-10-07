@@ -133,7 +133,7 @@ def _build_both(**over):
     return _build_real_policy(**kw)
 
 
-def test_the_vf_projection_is_sized_for_BOTH_value_parts():
+def test_the_value_half_is_sized_for_BOTH_value_parts():
     """The direct assertion: the static width must equal what a real forward produces
     (gen3_static_widths_v1 — the broad flag sweep lives in `projection_width_test.py`)."""
     model, enc = _build_both()
@@ -149,11 +149,10 @@ def test_the_vf_projection_is_sized_for_BOTH_value_parts():
         f" — flag resolution dropped one; fix that rather than skipping the width gate")
     with torch.no_grad():
         _pi, vf = fe.forward_internal(_obs(enc, n=3))
-    assert vf.shape[1] == fe.value_projection_input_dim, (
-        f"vf width {vf.shape[1]} != computed {fe.value_projection_input_dim} "
-        f"(delta {vf.shape[1] - fe.value_projection_input_dim}); a value part was appended "
+    assert vf.shape[1] == fe.vf_features_dim, (
+        f"vf width {vf.shape[1]} != computed {fe.vf_features_dim} "
+        f"(delta {vf.shape[1] - fe.vf_features_dim}); a value part was appended "
         f"outside compute_projection_widths' arithmetic")
-    assert fe.value_pre_norm.normalized_shape[0] == vf.shape[1]
 
 
 def test_a_real_forward_through_the_policy_does_not_raise(model_and_enc):
@@ -179,9 +178,7 @@ def test_route_availability_is_width_neutral_by_construction():
     model_off, _ = _build_real_policy(**_CRITIC_STACK)
     fe_on = model_on.policy.features_extractor
     fe_off = model_off.policy.features_extractor
-    assert fe_on.value_projection_input_dim == fe_off.value_projection_input_dim == _D
-    assert (fe_on.value_pre_norm.normalized_shape[0]
-            == fe_off.value_pre_norm.normalized_shape[0] == _D)
+    assert fe_on.vf_features_dim == fe_off.vf_features_dim == _D
 
 
 # ------------------------------------------------------------------ v82: the FULL row set

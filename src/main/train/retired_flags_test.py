@@ -46,13 +46,17 @@ def test_shaped_stays_LOADABLE_but_the_trainer_trains_only_the_default():
     assert CRITIC_UNRECORDED == CRITIC_SHAPED, "an ABSENT record still means shaped: old checkpoints must load as such"
 
 
-def test_the_policy_still_loads_a_shaped_critic_checkpoint():
+def test_the_policy_builds_only_the_winprob_critic_and_refuses_a_shaped_one():
+    """The version break (config v144, architecture audit F1) deleted the scalar `value_net` a shaped critic
+    read: the policy's `critic` kwarg defaults to and accepts only winprob, and refuses `shaped` BEFORE
+    anything is built (a shaped checkpoint is below MIGRATION_FLOOR and runs pinned). The RECORD's absent
+    value still means shaped (`CRITIC_UNRECORDED`, the test above) — that is a fact about old configs."""
     from agents.model.policy import Gen3DualHeadMaskablePolicy
 
-    assert "critic" in inspect.signature(Gen3DualHeadMaskablePolicy.__init__).parameters
-    # the policy's own validation takes the LOADABLE set, never the trainable one
-    src = inspect.getsource(Gen3DualHeadMaskablePolicy.__init__)
-    assert "CRITIC_MODES" in src
+    sig = inspect.signature(Gen3DualHeadMaskablePolicy.__init__).parameters
+    assert sig["critic"].default == "winprob"
+    with pytest.raises(ValueError, match="value_net a 'shaped' critic read was DELETED"):
+        Gen3DualHeadMaskablePolicy(critic="shaped")
 
 
 def test_the_rollout_has_one_source_the_rust_collector():

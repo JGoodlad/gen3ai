@@ -222,32 +222,6 @@ def test_TEETH_each_planted_x5_perturbation_fails_the_golden(plant, monkeypatch)
     assert any(g in moved for g in X5_GROUPS), moved
 
 
-def _plant_alpha_head(monkeypatch):
-    """A plant on the deleted blob path's intent readout: α's head (constructed for its init draws, then
-    retired by the policy) emits logits + 1e-2 — and a RuntimeError if it is called at all."""
-    from agents.model.opp_intent import AlphaIntentHead
-    orig = AlphaIntentHead.forward
-    calls = []
-
-    def planted(self, *a, **k):
-        calls.append(1)
-        return orig(self, *a, **k) + 1e-2
-
-    monkeypatch.setattr(AlphaIntentHead, "forward", planted)
-    return calls
-
-
-def test_TEETH_the_retired_alpha_head_is_never_called_and_moves_nothing(monkeypatch):
-    """The X5 version break deleted the α / β readout: the heads are CONSTRUCTED (their init draws) and
-    RETIRED before the optimizer, so a plant on α's forward is never reached and the golden is
-    byte-identical. FAILS if α is re-wired into the forward or the loss (the blob path coming back)."""
-    calls = _plant_alpha_head(monkeypatch)
-    model = L.build_learner()
-    assert model.policy.features_extractor.alpha_head is None
-    d, _ = L.check(model)
-    assert d == [] and calls == [], (d, len(calls))
-
-
 # -------------------------------------------------------------------------------------- isolation
 def test_delta_theta_learns_from_the_set_BCE_alone_at_golden_level(monkeypatch):
     """M10 / U2's isolation, through the REAL update: detach the logits every set BCE reads (the presence

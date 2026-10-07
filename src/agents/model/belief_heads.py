@@ -6,9 +6,6 @@ re-exports every name here, so historical import paths still resolve.
 from agents.model.extractor_ctx import Embeddings
 import torch
 from typing import Dict, Optional, Tuple
-from agents.observation.constants import (
-    TEAM_SIZE,
-)
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 # _PRIOR_FLOOR — the LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default).
 # Legality itself is unconditional; this is only the height of the liftable base a legal-unobserved

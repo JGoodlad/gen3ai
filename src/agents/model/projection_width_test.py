@@ -109,15 +109,15 @@ def _assert_widths(fe, kwargs):
         f"outside the additive value_pooled routes?)")
     # The built projections must be sized from the same arithmetic.
     assert fe.projection_input_dim == exp_pi
-    assert fe.value_projection_input_dim == exp_vf
+    assert fe.vf_features_dim == exp_vf
     assert fe.pre_proj_norm.normalized_shape[0] == exp_pi
     assert fe.projection.in_features == exp_pi
-    assert fe.value_pre_norm.normalized_shape[0] == exp_vf
-    assert fe.value_projection.in_features == exp_vf
+    # (the value half has NO projection since the version break, audit F1: it IS `value_pooled`)
+    assert not hasattr(fe, "value_pre_norm") and not hasattr(fe, "value_projection")
     # And the full forward (concat -> norm -> projection) must actually run.
     with torch.no_grad():
         pi_f, vf_f = fe(obs)
-    assert pi_f.shape[1] == fe.projection_dim and vf_f.shape[1] == fe.projection_dim
+    assert pi_f.shape[1] == fe.projection_dim and vf_f.shape[1] == exp_vf
 
 
 @pytest.mark.parametrize("name", sorted(_COMBOS))

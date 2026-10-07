@@ -92,24 +92,19 @@ def _eq():
 
 
 # ------------------------------------------------------------------------------- P(outspeed)
-def test_p_outspeed_is_the_fixed_scale_logistic_and_ignores_the_std():
+def test_p_outspeed_is_the_fixed_scale_logistic_and_takes_no_std():
     """The uncertainty-aware variant (`threat_prob_outspeed`, gen3_bidir_threat_trunk_v1 #3) is
-    DELETED by gen3_dead_flag_purge_v2, so one behaviour survives and the std argument is inert.
-
-    The std assertion is the load-bearing half. `_p_outspeed` still ACCEPTS `opp_spe_std` — ~12 call
-    sites across `damage_op` / `_blocks` / `_pairwise` still compute and pass it — so "the divisor no
-    longer depends on it" is a claim about the body that a signature check cannot make. Pinning it
-    here means a re-introduction has to change this test rather than silently change the physics."""
+    DELETED by gen3_dead_flag_purge_v2, so one behaviour survives — and since the version break's part 2
+    (architecture audit F7a) `_p_outspeed` no longer even ACCEPTS the std it ignored, so no call site can
+    compute the speed-spread lookups that fed it (`x5_version_break_part2_test` instruments the forward)."""
+    import inspect
     op, _ = _op()
     our = torch.tensor([200.0, 100.0, 300.0])
     opp = torch.tensor([180.0, 180.0, 180.0])
     expected = torch.sigmoid((our - opp) / _DMG_SPEED_SCALE)
 
     assert torch.allclose(op._p_outspeed(our, opp), expected)
-    # Same answer for a WILDLY different std, and for no std at all.
-    for std in (torch.tensor([40.0, 40.0, 40.0]), torch.tensor([1.0, 1.0, 1.0])):
-        assert torch.allclose(op._p_outspeed(our, opp, std), expected), (
-            "opp_spe_std must not reach the divisor — the uncertainty-aware branch is deleted.")
+    assert list(inspect.signature(op._p_outspeed).parameters) == ["our_spe", "opp_spe"]
 
     assert torch.all((expected >= 0.0) & (expected <= 1.0))
     assert expected[2] > expected[0] > expected[1]          # monotonic in our speed

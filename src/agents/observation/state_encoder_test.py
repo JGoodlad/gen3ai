@@ -68,4 +68,4 @@ def test_encoder_and_features_extractor_are_compatible():
 
     # Dual-head extractor: policy and value features, both PROJECTION_DIM-wide.
     assert pi_features.shape == (1, model.features_dim)
-    assert vf_features.shape == (1, model.features_dim)
+    assert vf_features.shape == (1, model.vf_features_dim)   # value_pooled (no value projection: F1)

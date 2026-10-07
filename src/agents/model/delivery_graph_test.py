@@ -423,11 +423,10 @@ def test_the_gate_covers_the_parametered_modules_not_a_hand_list(extractor):
                    "intent_conditional", "history_events"):
         assert expect in live, f"{expect} vanished from the extractor — update the declarations"
     # ...and the RETIRED ones are not: the graph describes the policy's model, in which the flat
-    # pointer replaced α / β (`retire_superseded_intent_heads`) and BeliefSlots is never kept.
+    # pointer replaced α / β, and α / β / BeliefSlots are DELETED (the version break, part 2).
     for retired in ("alpha_head", "beta_head", "belief_slots"):
         assert retired not in live, (
-            f"{retired} is a child of the graph's extractor — the build seam no longer applies the "
-            "policy's retirement, so the graph would draw a head no trained model holds")
+            f"{retired} is a child of the graph's extractor — a DELETED head came back")
     # DECLARED and buildable whether or not THIS config builds them — the claim that the
     # enumeration is not quietly excluding the modules it would be most embarrassing to miss,
     # keyed on the builder so it survives a generation that gates one off.
@@ -459,8 +458,8 @@ def test_the_flag_gated_off_discriminator_is_not_inert():
     buildable = buildable_child_names()
 
     # POSITIVE: modules the OTHER critic mode / other flag settings build, that this config does not.
-    for name in ("spread_belief", "hidden_opp_belief", "item_belief_head", "alpha_head",
-                 "beta_head", "belief_head", "hypothesis_builder", "flat_intent_head"):
+    for name in ("spread_belief", "hidden_opp_belief", "item_belief_head", "move_resolution_cell",
+                 "policy_query", "belief_head", "hypothesis_builder", "flat_intent_head"):
         assert name in buildable, (
             f"{name!r} is assigned by extractor_build but the discriminator does not see it — "
             "module_coverage will report every config that gates it off as a STALE declaration")

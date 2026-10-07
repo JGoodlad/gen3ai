@@ -103,7 +103,7 @@ number the optimizer sees, so they run on **every Nth update**; the module that 
 |---|---|
 | per-term noise sampler (`noise_scale_terms.py`) | `train/noise_scale_<g>`, `train/noise_scale_ratio_<g>`, `train/noise_scale_share_<g>`, `train/noise_per_term_ms` |
 | grad balance (`grad_balance_metrics`) | `grad/*` |
-| effective rank (`rank_probe`) | `rank/{trunk,value_cls,policy,vf_feat}_*` |
+| effective rank (`rank_probe`) | `rank/{trunk,value_cls,policy,vf_feat}_*` — `vf_feat` measures `value_pooled` (128-wide; the extractor's whole value half since the version break's part 2 — before it, the 512-wide post-ReLU value projection, so the series breaks there) |
 | edge / cell liveness | `edge/*`, `cell/*` |
 
 **Every update, unchanged:** the loss terms, `train/approx_kl{,_epoch_k}`, the clip fractions,

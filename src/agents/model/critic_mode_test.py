@@ -53,14 +53,16 @@ def test_the_bare_argv_default_is_winprob_and_an_ABSENT_record_is_still_shaped()
     assert CRITIC_MODES == ("shaped", "winprob")
 
 
-def test_a_policy_built_without_the_kwarg_is_the_SHAPED_critic():
-    """SB3 rebuilds a loaded policy from its SAVED policy_kwargs: a pre-v109 zip has no `critic` key,
-    so the constructor default is what an old checkpoint's critic becomes. Reverting it to
-    `CRITIC_DEFAULT` would flip every such load to the win-prob route."""
+def test_a_policy_built_without_the_kwarg_is_the_winprob_critic_but_an_absent_RECORD_is_still_shaped():
+    """Since the version break (config v144, architecture audit F1) the policy builds ONE critic — the
+    win-prob head; its scalar `value_net` is deleted — so the constructor default IS winprob. An absent
+    RECORD still means shaped (`ModelVersion.critic`, `CRITIC_UNRECORDED`): a pre-v109 checkpoint is below
+    MIGRATION_FLOOR, and its state_dict's value-tower keys fail the strict load, so the default never
+    silently re-reads an old checkpoint as a probability critic."""
     import inspect
 
     from agents.model.policy import Gen3DualHeadMaskablePolicy
-    assert inspect.signature(Gen3DualHeadMaskablePolicy.__init__).parameters["critic"].default == "shaped"
+    assert inspect.signature(Gen3DualHeadMaskablePolicy.__init__).parameters["critic"].default == "winprob"
     from agents.model.model_version import ModelVersion
     assert ModelVersion.__dataclass_fields__["critic"].default == "shaped"
 
@@ -106,7 +108,7 @@ class _Env(gym.Env):
         return np.ones(ACTION_SPACE_SIZE, bool)
 
 
-def _real_policy(critic="shaped", win_prob_mode="shaping", seed=0, **policy_kw):
+def _real_policy(critic="winprob", win_prob_mode="shaping", seed=0, **policy_kw):
     """MaskablePPO -> ActorCriticPolicy._build() — the construction training uses."""
     enc = Gen3ObservationEncoder(load_mappings())
     ek = enc.get_features_extractor_kwargs()
@@ -141,15 +143,15 @@ def test_the_winprob_critic_IS_the_heads_sigmoid_and_lives_in_the_unit_interval(
     assert torch.equal(v, torch.sigmoid(logits.reshape(-1, 1)))
 
 
-def test_the_shaped_critic_is_value_net_even_when_the_win_prob_head_exists():
-    """The CONTROL for the test above. Without it, a build where BOTH modes routed to the head
-    would pass the winprob assertions and nothing would notice."""
-    p, enc = _real_policy(critic="shaped", seed=3)
-    obs = _obs(enc, batch=3)
-    with torch.no_grad():
-        v = p.predict_values(obs)
-        direct = p.value_net(p.mlp_extractor.forward_critic(p.extract_features(obs)[1]))
-    assert torch.equal(v, direct)
+def test_the_shaped_critic_is_refused_and_value_net_is_a_raising_stub():
+    """The version break (config v144, audit F1) deleted the scalar critic: `critic='shaped'` is refused
+    BEFORE anything is built, and the `value_net` slot raises instead of returning a value."""
+    with pytest.raises(ValueError, match="value_net a 'shaped' critic read was DELETED"):
+        _real_policy(critic="shaped", seed=3)
+    p, enc = _real_policy(critic="winprob", seed=3)
+    assert not list(p.value_net.parameters())
+    with pytest.raises(RuntimeError, match="value_net was deleted"):
+        p.value_net(p.extract_features(_obs(enc, batch=3))[1])
 
 
 def test_winprob_has_NO_fallback_when_the_head_is_absent():
@@ -173,7 +175,7 @@ def test_the_policy_no_longer_takes_PopArt_or_value_from_dist():
 
 
 def test_an_unknown_critic_raises_rather_than_defaulting():
-    with pytest.raises(ValueError, match="unknown critic"):
+    with pytest.raises(ValueError, match="the only critic is"):
         _real_policy(critic="winprb")
 
 

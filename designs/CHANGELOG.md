@@ -12472,3 +12472,102 @@ branch `obs-facts-append`).
   tests stay red until a post-break opponent exists. Four X5 EXACT selection-site declarations move under the
   weight-jitter probe (pinned as known in `selection_sites_test`, owed a re-judgment). The grad-balance probe names no
   X5 set-BCE row. A retired module registered as `None` swallows unexpected state_dict keys under its name.
+
+### Part 2 — the EXACT-refactor bundle (architecture audit F1 / F6a / F7a / F16b + the blob leftovers)
+
+Three commits (`7340b6d9` stage A: F1 + the blob leftovers + F7a; `fd4a2de9` stage B: F16b; `829cae1d` stage C:
+F6a) plus this part's tests and docs. NO further bump: still v144 / `gen3_x5_version_break_v1` / `MIGRATION_FLOOR`
+144; no extractor kwarg was removed (nothing new under `snapshot._DEAD_FEK_*`); the policy kwarg `critic` survives,
+accepting only `winprob`.
+
+- **F1 — the dead SB3 value tower, DELETED. Why:** under the win-prob critic (the only critic) `_critic_value` read
+  only the win head's stash, so the tower was 592,129 parameters no loss read (`designs/endstate/design_arch_audit.md`
+  F1). **What:** the extractor's `value_pre_norm` (LayerNorm 128) + `value_projection` (Linear 128→512), SB3's
+  `mlp_extractor.value_net` (512→512→512 tanh) and `policy.value_net` (512→1) are gone. The extractor's value half IS
+  `value_pooled` (`[B, D_MODEL=128]`, attribute `vf_features_dim`); `policy._critic_value(vf)` returns
+  `sigmoid(fe.last_win_prob_logits)`, reading `vf` only for its batch size. `Gen3DualHeadMaskablePolicy._build` no
+  longer calls SB3's `_build`: it builds an ACTOR-only `MlpExtractor` (`net_arch` = the actor widths, `vf=[]`),
+  orthogonally re-inits the extractor then the mlp extractor (gain √2, SB3's order), runs the retire hooks, builds the
+  pointer head and the optimizer; `action_net` / `value_net` are RAISING stubs (`_NoFlatActionNet`, `_NoValueNet`), so
+  no flat-head or value Linear is constructed and discarded. The policy's `critic` kwarg defaults to `winprob`; any
+  other value is refused BEFORE anything is built. `vf_coef` unchanged (it scales the win-prob BCE). Telemetry:
+  `rank/vf_feat_*` now measures `value_pooled` (128-wide) instead of the 512-wide post-ReLU projection (a series
+  break); the capacity battery dropped its `vf_features` tap (`CAPACITY_BATTERY_VERSION` 2). The delivery graph's
+  critic sink is renamed `vf_projection` → `value_pooled`, and `non_matchup_rest` is drawn to `pi_projection` only
+  (its vf edge was stale).
+- **The T2 question (audit §8), ANSWERED.** MEASURED at the pre-part-2 commit (CPU, the dynamo FX graph of
+  `engine.decide` + DCE): the compiled T2 graph KEPT `value_pre_norm` + `value_projection` (the extractor's
+  `stash.features_out` side effect held the vf tensor) and dead-code-eliminated the 512→512→512 critic MLP; the eager
+  backend computed the whole tower except `value_net` per decision. The `DecisionModule` no longer calls
+  `forward_critic`, and the tower no longer exists.
+- **F16b — the flat opponent pointer's scorer bias, DELETED. Why:** one scorer feeds every candidate of ONE softmax,
+  so its bias is a common, shift-invariant offset (measured gradient over one K9 update |g| ≤ 2.3e-10 vs the weight's
+  ~1e-3). **What:** `FlatIntentHead.out` is `IsolatedLinear(hidden, 1, bias=False)` (`IsolatedLinear` gained
+  nn.Linear's `bias` flag); −1 parameter. The POLICY pointer head's three scorers (`move_score` / `switch_score` /
+  `struggle_score`) carry PER-FAMILY biases inside one softmax — not common to every logit, so not dead — and stay.
+- **F6a — every gradient-path max is `max_by_index`. Why:** `amax`'s tie-splitting backward is the 2026-10-05
+  compiled-gradient NaN class (an Inductor-recomputed operand equal to no saved max); the fix had reached the X5
+  incoming maxima only. **What:** `max_by_index` moved to the LEAF module `src/agents/model/index_max.py`
+  (`max_by_index(x, dim=-1, keepdim=False)`; `damage_op` re-exports it) and is THE spelling of every gradient-path
+  value-reduction max in the forward: the op's ten incoming channel maxima in EVERY configuration (the belief-off
+  branch's `amax` and `_chan_max` included — the `fixed_moves` split collapsed), the pairwise kernels (setup deltas,
+  worst / best cells, the four channel maxima, `p_pur_vs_us`), the status-landing maxima in `damage_op_blocks`, the E5
+  tail's worst-phys / spec (`pointer_head`, `hypothesis_tokens`) and `pair_reduce`'s inert deepsets pool. Value
+  bit-identical; on an exact tie the whole gradient goes to the FIRST maximum (declared convention). Left as `amax` /
+  `amin`, on NO gradient path: the provenance gate operand (a comparison), the cure / cleric TABLE lookups, the
+  cheapest-undo `paths.amin` (constants), the `we_have_pur` observation indicator, `fixed_size_tau`'s `no_grad`
+  bracket, the move-tie-gap DIAGNOSTICS (`hypothesis_set.boundary_gap`'s `gaps.amin`, `hypothesis_tokens`' gap
+  `amin`). `selection_sites`: the one `MAX_VALUE` EXACT site is now `index_max`'s
+  (`x.detach().argmax(dim=dim, keepdim=True)`), `index_max` joined `FORWARD_MODULES`, and the deleted α / β heads'
+  `opp_intent` declarations were removed.
+- **F7a — the discarded off-path speed-spread lookups, DELETED. Why:** under `--speed-physics off` (production) the
+  speed-sigma column was looked up and ignored. **What:** the `SPECIES_SPREAD_PRIOR[..., _SB_SPE, 1]` lookups (one in
+  `damage_op`, two in `damage_op_blocks`, three in `damage_op_pairwise`) and `_p_outspeed`'s ignored `opp_spe_std`
+  argument are gone (`pair_outcome_coords` lost its `opp_spe_std` parameter); X5's OTHER roster computes its `spe_std`
+  tail average only under `on` (`other_roster(with_spe_std=speed_physics)`). Under `on` at this branch
+  `damage_op_speed._opp_speeds_belief` still reads the sigma column (its consumer).
+- **The blob leftovers (Part 1's FINDINGS), DELETED.** `BeliefSlots`, `AlphaIntentHead` and `BetaSwitchHead` and their
+  construct-and-discard / construct-and-retire (no RNG-draw preservation any more), `ExtractorApi.retire_superseded_intent_heads`,
+  and the never-written stashes `alpha_logits` / `beta_logits` / `alpha_seat_nums` with their `last_*` properties.
+  Their readers moved to the flat pointer: the inference player's `_opp_intent` trace block (from
+  `last_flat_intent_logits` / `last_flat_intent` via `flat_intent.render_flat`: α = the named seats + "OTHER move" +
+  "SWITCH"; β = P(slot | switch), a hidden slot named by its HYPOTHESIS species, a revealed one from the board,
+  OTHER species as slot −1) and `search_dividend.alpha.alpha_publication` (seats → `move_p`, α_SWITCH, β per live
+  slot, OTHER_move's mass REPORTED as `other_move_mass` in the diagnostics, never spent on a named move); both return
+  None only when the flat pointer is not built and RAISE when it is built but stashed nothing (X5 FINDING F-X5-36
+  closed). `--beta-setvalued-coef` DELETED (its `recipe.fresh` 0.05, the `apply_training_hparams` row, `_resolve`, the
+  `InstrumentedPPO` attribute; `designs/deleted_flags.md`, the flag census row removed). The four α-requiring consumers
+  (`intent_move_cell`, `intent_threshold`, `intent_conditional`, `switch_branch`) read only the flat pointer's operands
+  (their unreachable non-X5 `_x5i is None` arms deleted); `pair_outcome_move` / `_switch` and `conditional_threat`
+  keep both arms (the R1 `belief_mean` fallback is reachable with the belief family off). **The strict-load hole is
+  CLOSED:** the retire hooks use `extractor_api.drop_child(owner, name)` (the child leaves `_modules`; a plain `None`
+  stays), so a strict load reports a retired module's keys as UNEXPECTED instead of swallowing them.
+- **Parameter counts** (MEASURED, CPU, the K9 learner = the production surface): 3,111,176 before part 2 → 2,519,047
+  after stage A → **2,519,046** after stage B (−592,130 = the 592,129-parameter tower + 1 bias). Under
+  `--policy-readout trunk` the same build holds 1,444,692.
+- **The identity proof** (`designs/research_state/measurements/version_break_identity_2026-10-07/`,
+  `compare_mapped.py`): the `26131c0c` reference's init weights mapped (dropping exactly the declared keys), the K9
+  forward + one K9 update on CPU at 1 thread. Stage A (F1 + leftovers + F7a): **BITWISE** (the forward, every surviving
+  post-update parameter, every pinned loss). With F16b: NOT bitwise, by the fp rounding of the removed softmax shift
+  alone — forward log_prob / masked_logp max |Δ| 2.4e-7, entropy 4.8e-7, values and masks EQUAL; post-update max |Δ|
+  6.0e-8; pinned losses differ in the 8th significant digit. CONTROL (the reference bias re-attached in the script and
+  trained by the same optimizer at its pre-break position): **BITWISE**. F6a moved no byte (the control is bitwise
+  after F6a too: no exact tie with a nonzero upstream gradient on that buffer). The INIT bytes move (no
+  construct-and-discard), so the K9 learner golden, the compile-parity / compile-regions goldens and the
+  collapsed-critic parity fixtures (calibrated to the old init bytes) are re-recorded ONCE at the end of the break.
+- **Refusal text.** `version_break.pre_break_fixed_mass_reason` names what part 2 deleted (the value tower's keys,
+  `flat_intent_head.out.bias`), which a pre-break fixed_mass state_dict still holds.
+- **Tests (fail on revert)** — `src/agents/model/x5_version_break_part2_test.py`: F1 — no value tower on the policy
+  or the T2 module, the value half is `value_pooled`, the critic equals `sigmoid(win_head)`, a non-`winprob` critic
+  refused; F6a — an AST scan of `FORWARD_MODULES` with a declared non-gradient list, plus a tie test; F7a — an
+  instrumented `SPECIES_SPREAD_PRIOR` read on the default forward; F16b — no bias; item 5 — the deleted modules and
+  stashes, `--beta-setvalued-coef` refused at parse time with its reason, the recipe carries no key, the strict-load
+  hole closed via `drop_child` plus an AST check of the retire hooks.
+- **FINDINGS (left for later units).** (1) An attention KEY-projection bias is the same shift-invariant class as F16b
+  and was NOT touched: `PolicyStateQuery.k_proj.bias` (under `--policy-readout trunk`) and the key slice of every
+  `nn.MultiheadAttention`'s packed `in_proj_bias`. (2) The move belief's Hungarian `elif` in `belief_bank` is
+  REACHABLE (move belief on with the belief family off) and stays. (3) `main.train.config.inherit_derived_enable_coefs`
+  / `UnrecordedEnableCoef` (unreachable behind the v144 floor but not small: checkargs + a test file) and the
+  v122–v143 migration branches stay. (4) Main's later `50b034a7` (`gen3_speed_mixture_v1`) deletes the `on`-path
+  Gaussian speed read; after it lands here, the OTHER roster's `spe_std` field and its `_x5_avg` read are dead in BOTH
+  modes. (5) The init-calibrated goldens and fixtures named above read red until the end-of-break re-record.

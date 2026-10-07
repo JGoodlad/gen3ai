@@ -181,7 +181,7 @@ def test_forward_runs_with_hp_probs_in_obs(extractor):
     assert torch.isfinite(pi_out).all()
     assert torch.isfinite(vf_out).all()
     assert pi_out.shape == (1, 512)
-    assert vf_out.shape == (1, 512)
+    assert vf_out.shape == (1, 128)          # value_pooled (no value projection: audit F1)
 
 
 def test_distinct_typed_hp_takes_type_from_channel_not_blend(extractor):

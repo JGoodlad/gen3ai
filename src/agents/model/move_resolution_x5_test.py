@@ -288,7 +288,7 @@ def test_the_one_lever_init_property_under_fixed_mass():
     on = _policy(move_resolution="on")
     fe = on.features_extractor
     assert all(getattr(fe, n) is None for n in SEVEN)
-    assert fe.alpha_head is None and fe.beta_head is None           # X5 retires α / β; the family reads the pointer
+    assert not hasattr(fe, "alpha_head") and not hasattr(fe, "beta_head")   # α / β DELETED; the family reads the pointer
     for p in fe.move_resolution_cell.parameters():
         assert float(p.detach().abs().max()) == 0.0
     a, b = off.state_dict(), on.state_dict()

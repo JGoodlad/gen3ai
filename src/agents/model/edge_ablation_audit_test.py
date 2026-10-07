@@ -33,7 +33,7 @@ class _AuditPolicy(torch.nn.Module):
         self.features_extractor = fe
         torch.manual_seed(0)
         self.pi_head = torch.nn.Linear(512, 11)
-        self.vf_head = torch.nn.Linear(512, 1)
+        self.vf_head = torch.nn.Linear(fe.vf_features_dim, 1)   # the value half is value_pooled (no projection)
 
     def get_distribution(self, obs):
         pi, _ = self.features_extractor(obs)

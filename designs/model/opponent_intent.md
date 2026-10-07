@@ -9,16 +9,18 @@ two disagree, ARCHITECTURE.md wins.
 
 X5's hypothesis tokens are the only belief representation (the X5 version break, config v144), and
 with them the opponent-intent head is the FLAT pointer (`gen3_x5_flat_pointer_v1`,
-[`../endstate/design_x5_belief_tokens.md`](../endstate/design_x5_belief_tokens.md) §3.7). α / β are
-RETIRED — constructed (their init draws keep the RNG stream), re-initialised by SB3, then dropped by
-the policy's `_build` before the optimizer is made (`ExtractorApi.retire_superseded_intent_heads`);
-nothing supervises or reads them, and their loss (the α / β cross-entropies, the set-valued β partial
+[`../endstate/design_x5_belief_tokens.md`](../endstate/design_x5_belief_tokens.md) §3.7). The α / β heads
+(`AlphaIntentHead` / `BetaSwitchHead`) are DELETED — not constructed at all since the version break's part 2
+(no RNG-draw preservation), with their never-written stashes (`alpha_logits` / `beta_logits` /
+`alpha_seat_nums` and the `last_*` properties) — and their loss (the α / β cross-entropies, the set-valued β partial
 credit) and their `opp_intent/alpha_*` / `beta_*` metrics are deleted. The sections after this one
 describe the α / β heads' design and the CONSUMERS' conventions, which the flat pointer's
 re-expression still serves. `agents/model/flat_intent.py` holds ONE pointer over a fixed column layout for K seats:
 `[0, K)` the active's move seats (THE one order), `K` OTHER_move, `K+1 .. K+6` a switch to each of their
 slots (a revealed mon, or the HYPOTHESIS a hidden slot holds), `K+7` OTHER_species. One shared scorer
-(token ⊕ the two team pools ⊕ the candidate's kind) plus the candidate's DETACHED log π, one softmax;
+(token ⊕ the two team pools ⊕ the candidate's kind; `FlatIntentHead.out` = `IsolatedLinear(hidden, 1,
+bias=False)` — one scorer over ONE softmax, so a bias would be a common, shift-invariant offset: audit F16b)
+plus the candidate's DETACHED log π, one softmax;
 masks are structural; the input is detached under `--opp-intent-grad-mode detached` as α's was.
 
 * **Labels** (`flat_intent_targets`, from the same Rust label — no label change): a move in the seats →
@@ -48,8 +50,12 @@ masks are structural; the input is detached under `--opp-intent-grad-mode detach
   column is the OTHER-mode D1 pass (the tail-averaged defender, P(KO) nulled), its `opp_p_ghost` the
   tail's P(Ghost); num-table reads use `pair_outcome.seat_num_table` / `seat_in_set`. All four
   per-seat consumers apply the meaningful-K gate (`seat_live`, F-X5-15) in that arm.
-* **Rendering**: `render_flat` names the options; `RLPlayer._opp_intent` still renders only α / β, so a
-  production trace (X5) carries no `opp_intent` block yet (U4 FINDING).
+* **Rendering / readers**: `render_flat` names the options. The two readers read the flat pointer
+  (`last_flat_intent_logits` / `last_flat_intent`): the inference player's `_opp_intent` trace block
+  (`agents/inference/player.py`; α = the named seats + `"OTHER move"` + `"SWITCH"`, β = P(slot | switch))
+  and `search_dividend.alpha.alpha_publication` (seats → `move_p`, α_SWITCH, β per live slot; OTHER_move's
+  mass REPORTED as `other_move_mass` in the diagnostics, never spent on a named move). Both return None only
+  when the flat pointer is not built (the belief-off ablation) and RAISE when it is built but stashed nothing.
 
 ## The two heads
 
@@ -107,7 +113,7 @@ subset and a suffix — so a pooled and a stratified number can never drift apar
 suffix must render distinctly in the stdout table (`train_logger.HumanOutputFormat` truncates at 36
 columns and RAISES on a collision — `flat_intent_test.py` pins every key).
 
-**Interpretability is a first-class output, not a debug aid** (`render_alpha` → the trace's
+**Interpretability is a first-class output, not a debug aid** (`render_flat` → the trace's
 `opp_intent` block): `α` as a ranked list of NAMED moves. The owner constraint is that the model may
 only ever point at options it can name, and rendering is where that becomes checkable.
 
@@ -115,7 +121,7 @@ only ever point at options it can name, and rendering is where that becomes chec
 not — `RLPlayer._opp_intent` built the block and `BattleRecorder` never wrote it, so the payload was
 computed on every decision and dropped on the floor:
 
-`α`/`β` logits → `RLPlayer._opp_intent` (`render_alpha`, plus the `β` naming rule below) → the
+the flat pointer's logits → the inference player's `_opp_intent` (`render_flat`, plus the `β` naming rule below) → the
 summary invocation's `opp_intent` block → `engine.build_opp_intent` / `opp_intent_text` → the
 prober's Summary **EXPECT** line, `analyze`'s `opp_intent`, and the web replay's per-turn *expect*
 line (`src/main/prober/CLAUDE.md`).
@@ -130,6 +136,11 @@ opponent's team at all in 73.3% of 6,876 pivots** (88.3% on revealed slots), and
 analysis read "β predicts porygon2" on a turn where `β`'s slot held the revealed Salamence and `β`
 was **CORRECT**. The slot mapping itself was validated 7560/7560 against the belief block's
 hidden-slot set — the pointer was fine; the label beside it was a different head's output.
+
+**The naming rule now (X5):** a slot the board has REVEALED is named from the board
+(`gen3_beta_revealed_naming_v1`, `"revealed": true`); a still-HIDDEN slot is named by the HYPOTHESIS
+species the slot holds — the flat pointer's candidate id for it, i.e. exactly what β points at
+(`"revealed": false`); OTHER_species (the hypothesis set's tail) is a row with `"slot": -1`.
 
 ## The nine α consumers
 

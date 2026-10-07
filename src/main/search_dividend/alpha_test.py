@@ -68,45 +68,65 @@ def test_a_non_move_request_has_nothing_to_marginalize_over(req):
 
 
 class _Stash:
-    def __init__(self, alpha=None, seats=None, beta=None):
-        self.last_alpha_logits = alpha
-        self.last_alpha_seat_nums = seats
-        self.last_beta_logits = beta
+    """An extractor stub carrying X5's FLAT opponent pointer stash (the only intent readout since the version
+    break, config v144): K move seats, OTHER_move, six switch slots, OTHER_species — one softmax."""
+
+    def __init__(self, k=2, seats=None, seat_p=None, other_move_p=0.0, slot_p=None, other_species_p=0.0,
+                 built=True, stashed=True, width=None):
+        import math
+        from types import SimpleNamespace
+
+        import torch
+        self.flat_intent_head = object() if built else None
+        seats = list(seats or [89, 157])[:k]
+        seat_p = list(seat_p or [0.0] * k)
+        slot_p = list(slot_p) if slot_p is not None else [None] * 6
+        probs = seat_p + [other_move_p] + [0.0 if q is None else q for q in slot_p] + [other_species_p]
+        live = [q > 0 for q in seat_p] + [other_move_p > 0] + [q is not None for q in slot_p] + [other_species_p > 0]
+        logits = [math.log(q) if (lv and q > 0) else float("-inf") for q, lv in zip(probs, live)]
+        if width is not None:
+            logits = logits[:width]
+        ids = seats + [0] + [100 + j for j in range(6)] + [0]
+        self.last_flat_intent_logits = torch.tensor([logits]) if stashed else None
+        self.last_flat_intent = (SimpleNamespace(k=k, live=torch.tensor([live]), cand_ids=torch.tensor([ids]),
+                                                 slot_species=torch.tensor([[0] * 6]))
+                                 if stashed else None)
 
 
 def test_an_alpha_off_checkpoint_publishes_nothing():
     assert alpha_publication(None) is None
-    assert alpha_publication(_Stash()) is None
+    assert alpha_publication(_Stash(built=False)) is None
 
 
-def test_a_seat_width_mismatch_FAILS_LOUD():
-    """Clause 3 — align by CONSTRUCTION. Broadcasting a mismatch pairs each alpha weight with the
-    WRONG opponent move while every shape check still passes: the named `op move-order` bug
-    class."""
-    import torch
+def test_a_built_pointer_that_stashed_nothing_RAISES_rather_than_reading_as_no_opinion():
+    """A silent None here would run the uniform ABSENCE fallback as if the model had no intent readout."""
+    with pytest.raises(RuntimeError, match="stashed no flat_intent"):
+        alpha_publication(_Stash(stashed=False))
 
-    stash = _Stash(alpha=torch.zeros(1, 4), seats=torch.tensor([[89, 157]]))
-    with pytest.raises(ValueError, match="seat width mismatch"):
+
+def test_a_flat_width_mismatch_FAILS_LOUD():
+    """Clause 3 — align by CONSTRUCTION. A list that is not K seats + OTHER_move + six slots + OTHER_species
+    would pair each probability with the wrong candidate while every shape check still passed."""
+    stash = _Stash(k=2, seat_p=[0.5, 0.5], width=7)
+    with pytest.raises(ValueError, match="flat pointer width"):
         alpha_publication(stash)
 
 
 def test_an_unfilled_seat_is_dropped_not_shown_as_an_anonymous_index():
-    import torch
-
-    stash = _Stash(alpha=torch.log(torch.tensor([[0.4, 0.3, 0.3]])),
-                   seats=torch.tensor([[89, 0]]))
+    stash = _Stash(k=2, seats=[89, 0], seat_p=[0.4, 0.1], other_move_p=0.2, slot_p=[0.3, None, None, None, None, None])
     pub = alpha_publication(stash)
     assert set(pub.move_p) == {89}
+    assert pub.move_p[89] == pytest.approx(0.4, abs=1e-5)
     assert pub.switch_p == pytest.approx(0.3, abs=1e-5)
+    assert pub.other_move_p == pytest.approx(0.2, abs=1e-5)   # REPORTED, never a named branch
 
 
 def test_beta_masks_are_respected():
-    import torch
-
-    beta = torch.tensor([[float("-inf"), 2.0, 1.0]])
-    stash = _Stash(alpha=torch.zeros(1, 2), seats=torch.tensor([[89]]), beta=beta)
+    stash = _Stash(k=1, seats=[89], seat_p=[0.5], slot_p=[None, 0.3, 0.1, None, None, None], other_species_p=0.1)
     pub = alpha_publication(stash)
     assert set(pub.beta_p) == {1, 2}          # an illegal switch-in is UNREPRESENTABLE
+    assert pub.switch_p == pytest.approx(0.5, abs=1e-5)       # OTHER_species is switch mass, but names no slot
+    assert pub.beta_p[1] == pytest.approx(0.6, abs=1e-5) and pub.beta_p[2] == pytest.approx(0.2, abs=1e-5)
 
 
 # -- the candidate set --------------------------------------------------------

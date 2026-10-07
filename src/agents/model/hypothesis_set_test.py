@@ -366,7 +366,7 @@ def test_production_builds_the_hypothesis_builder_and_no_blob_key(x5):
     assert fe.hypothesis_builder is not None and fe.flat_intent_head is not None
     sd = x5.policy.state_dict()
     assert any(".hypothesis_builder." in k for k in sd) and any(".flat_intent_head." in k for k in sd)
-    # F-X5-27 + U4: BeliefSlots is never kept and α / β are retired AFTER SB3's orthogonal re-init
+    # F-X5-27 + U4 + the version break part 2: BeliefSlots and α / β are DELETED (no state_dict key)
     assert not [k for k in sd if any(r in k for r in (".belief_slots.", ".alpha_head.", ".beta_head."))]
     # ...and the retired heads hold no optimizer slot (the optimizer is built after the retirement)
     opt_ids = {id(p) for g in x5.policy.optimizer.param_groups for p in g["params"]}

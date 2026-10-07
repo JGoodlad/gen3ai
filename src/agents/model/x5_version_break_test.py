@@ -4,7 +4,8 @@ X5's hypothesis tokens became the ONLY belief representation and the blob path w
 FAILS ON REVERT of one piece of that:
 
 * the production surface builds the hypothesis set and the flat pointer with no switch to turn them off
-  (`belief_tokens` is no constructor kwarg any more) — and BeliefSlots / α / β are not in the state_dict;
+  (`belief_tokens` is no constructor kwarg any more) — and BeliefSlots / α / β are not in the state_dict
+  (part 2 deleted the classes too: `x5_version_break_part2_test.py`);
 * an OFF value of each flag X5 requires is REFUSED at build, naming the flag (no blob fallback);
 * a typed `--belief-tokens` is refused at PARSE time WITH its reason (`designs/deleted_flags.md`);
 * a pre-break config is refused at `MIGRATION_FLOOR` with its OWN reason — blob deleted (recorded, or absent
@@ -65,7 +66,7 @@ def test_production_builds_the_hypothesis_set_and_the_flat_pointer_with_no_switc
     fe, cfg, _layout = production
     assert "belief_tokens" not in cfg, "the production mirror records a deleted field"
     assert fe.hypothesis_builder is not None and fe.flat_intent_head is not None
-    assert fe.belief_slots is None, "BeliefSlots (the blob path's hidden-slot token) must never be kept"
+    assert not hasattr(fe, "belief_slots"), "BeliefSlots (the blob path's hidden-slot token) is DELETED (part 2)"
     import inspect
 
     from agents.model.features_extractor import Gen3FeaturesExtractor
@@ -75,7 +76,7 @@ def test_production_builds_the_hypothesis_set_and_the_flat_pointer_with_no_switc
 
 
 def test_a_built_policy_holds_no_blob_parameter():
-    """On a REAL policy (SB3's `_build` ran): α / β retired, BeliefSlots absent — no blob state_dict key."""
+    """On a REAL policy: α / β and BeliefSlots are DELETED (part 2) — no blob state_dict key."""
     from agents.training import learner_golden as LG
     keys = list(LG.build_learner().policy.state_dict())
     for blob_key in ("features_extractor.alpha_head.", "features_extractor.beta_head.",
@@ -104,7 +105,7 @@ def test_the_belief_off_ablation_still_builds_and_builds_no_x5(production):
     fe = _build(production, opp_belief_slots=False, opp_intent=False, t0_species_prior=False,
                 intent_move_cell=False, intent_threshold=False, intent_conditional=False,
                 switch_branch_cell=False, species_prior_fusion=False, ridealong_opp=0)
-    assert fe.hypothesis_builder is None and fe.flat_intent_head is None and fe.belief_slots is None
+    assert fe.hypothesis_builder is None and fe.flat_intent_head is None and not hasattr(fe, "belief_slots")
 
 
 # ----------------------------------------------------------------------------- the CLI

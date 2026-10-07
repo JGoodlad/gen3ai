@@ -25,7 +25,7 @@ import pytest
 import torch
 
 from agents.model.arch_constants import INTENT_THRESH_MOVE_DIM
-from agents.model.features_extractor import Gen3FeaturesExtractor, TEAM_SIZE
+from agents.model.features_extractor import D_MODEL, Gen3FeaturesExtractor, TEAM_SIZE
 from agents.model.intent_threshold import (
     IntentThresholdMoveCell, threshold_probs,
 )
@@ -196,7 +196,7 @@ def test_off_builds_no_module_and_no_extra_dims():
     assert not any("intent_threshold" in k for k in fe_off.state_dict())
     assert fe_on.pointer_move_cell_dim == fe_off.pointer_move_cell_dim + INTENT_THRESH_MOVE_DIM
     # Both HEAD widths are untouched: the cell widens the pointer stash, not pi/vf.
-    assert fe_on.value_projection.in_features == fe_off.value_projection.in_features
+    assert fe_on.vf_features_dim == fe_off.vf_features_dim
     assert fe_on.projection.in_features == fe_off.projection.in_features
 
 
@@ -204,7 +204,7 @@ def test_on_forward_runs_and_contributes_zero_at_init():
     fe, layout = _build(**_ON_KWARGS)
     obs = _obs(layout)
     pi, vf = fe(obs)
-    assert pi.shape[1] == vf.shape[1]
+    assert vf.shape[1] == D_MODEL
     assert fe._thresh_probs is not None
     # the projection is in the identity-init capture set (M1: the sweep re-zeros it after
     # SB3's ortho pass on a real policy build)
@@ -237,7 +237,7 @@ def test_every_surviving_value_flag_together_still_builds_and_runs():
     fe, layout = _build(**{**_ON_KWARGS, "opp_belief_slots": True,
                            "value_entity_pool": True, "value_threat_inject": True})
     pi, vf = fe(_obs(layout))
-    assert pi.shape == vf.shape
+    assert pi.shape[0] == vf.shape[0] and vf.shape[-1] == D_MODEL
 
 
 # -------------------------------------------- THE PIN: the POLICY half survives the wave

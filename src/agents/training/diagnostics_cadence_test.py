@@ -210,11 +210,9 @@ def _real_gen3_ppo(device: str = "cpu"):
     _args, layout, pk = _production_policy_kwargs()
     from agents.model.compile_parity_fixture import load_parity_rows
     _ROWS, _MASKS = load_parity_rows(layout["total_dim"])
-    # The SCALAR critic: the win-prob critic's BCE needs outcome labels that only the full
-    # callback stack attaches, and without them the grad-balance probe (correctly) waits for a
-    # minibatch that has a win-prob term — for ever, on this toy. The probes' read-only-ness does
-    # not depend on which critic term they measure.
-    pk = {**pk, "critic": "shaped"}
+    # The win-prob critic — the only one since the version break (config v144, audit F1; the scalar
+    # `value_net` this toy used to train is deleted).
+    pk = {**pk, "critic": "winprob"}
     th.manual_seed(0)
     model = InstrumentedMaskablePPO(
         Gen3DualHeadMaskablePolicy,
@@ -293,6 +291,13 @@ def test_the_ON_arm_really_runs_every_gated_probe(three_arms):
         assert tag in logged, tag
 
 
+#: The parameters only the CRITIC reads (the value CLS pool, its token-content injection, the entity pool and the
+#: win-prob head): the toy trains no critic (see the vacuity count below).
+_CRITIC_ONLY = ("features_extractor.cls_pool.norm_pool_value", "features_extractor.cls_pool.value_cls",
+                "features_extractor.cls_pool.value_threat_proj", "features_extractor.value_entity_pool.",
+                "features_extractor.win_head.")
+
+
 def test_learning_is_BIT_IDENTICAL_with_the_diagnostics_on_and_skipped(three_arms):
     state0, on, on_again, off = three_arms
     p_on, o_on, l_on, r_on = on
@@ -305,8 +310,12 @@ def test_learning_is_BIT_IDENTICAL_with_the_diagnostics_on_and_skipped(three_arm
     # diagnostic changed parameter k" could not fail for them), zero obs + perturbed 107, real
     # rows + fresh 22, real rows + perturbed 19 (the belief/win heads, whose loss terms this toy
     # does not train, and two edge maps).
+    # The CRITIC side is excluded from that count: this toy trains no critic — the win-prob BCE needs outcome
+    # labels the toy does not attach (its mode is set to "none" above), and the scalar `value_net` whose MSE
+    # used to move these here is DELETED (the version break, config v144, audit F1). The equalities below still
+    # cover every parameter, the critic side included.
     assert any(not th.equal(p_on[k], state0["policy"][k]) for k in p_on)
-    names = state0["param_names"]
+    names = [k for k in state0["param_names"] if not k.startswith(_CRITIC_ONLY)]
     unmoved = [k for k in names if th.equal(p_on[k], state0["policy"][k])]
     assert len(unmoved) <= 0.1 * len(names), (
         f"{len(unmoved)}/{len(names)} parameters never moved in the update — the bit-identity "
