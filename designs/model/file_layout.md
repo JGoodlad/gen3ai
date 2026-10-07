@@ -26,7 +26,7 @@ table exists to prevent:
 | `extractor_ctx.py` | `ExtractorContext`, `ObsUnpack`, `Embeddings`, token-type ids, obs helpers |
 | `encoders.py` | `MoveLatentEncoder`, `PokemonEncoder` |
 | `team_transformer.py` | `EdgeBias` (+ the `_EDGE_*_CELL` definitions), `BiasedEncoderLayer`, `TeamTransformer`, `EventSeats` |
-| `pools.py` | `CLSPool`, `HiddenOppBeliefPool` |
+| `pools.py` | `CLSPool`, `HiddenOppBeliefPool`, `PolicyStateQuery` + `POLICY_READOUT_MODES` (`--policy-readout trunk`, audit F2: the policy's state query over the refined trunk; private-seed `IsolatedLinear`s). Gate: `policy_readout_test.py` |
 | `belief_heads.py` | `BeliefSlots`, `BeliefHead`, `MoveBelief`, `SpreadBelief`, `ItemBelief`, `HPTypeBelief`, `BELIEF_GRAD_MODES` |
 | `q_winprob_head.py` | `QWinProbHead` — the per-action `P(win\|s,a)` shared scorer over the pointer head's own action tokens. The extractor-built per-action Q head (and `Q_WINPROB_MODES`) was deleted with the cf training half (deletion pass L4); the class survives ONLY as the scorer the detached ride-along A head (`ridealong_heads.AdvantageEnsemble`) is built from |
 | `aux_value_heads.py` | `WinProbHead` only — the readout off `value_pooled` that is the critic under the win-prob critic (the only critic). (`ValueDistHead` went with the distributional value head, deletion pass L1; `CfEvidentialHead` and `ShadowValueHead` went with the cf training half, L4; the twin win-prob heads B/C reused `WinProbHead`.) |

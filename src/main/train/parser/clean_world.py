@@ -172,6 +172,17 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "--move-belief-mode != off, --opp-intent-coef > 0 and "
                              "--opp-belief-aux-coef > 0. In build unit U2 the hypothesis set is built "
                              "and supervised but does not yet enter the trunk or the op (U3).")
+    from agents.model.pools import POLICY_READOUT_MODES
+    parser.add_argument("--policy-readout", "--policy_readout", dest="policy_readout",
+                        choices=POLICY_READOUT_MODES, default=None,
+                        help="Where the pointer head's decision context comes from "
+                             "(gen3_policy_readout_trunk_v1, v138; architecture audit F2, "
+                             "designs/endstate/design_arch_audit.md). 'tower' (default; production): "
+                             "the flat SB3 policy tower, byte-identical. 'trunk': that tower (the "
+                             "1177->512 projection + mlp_extractor.policy_net 512->512->512 tanh) is "
+                             "RETIRED and the context is one learned attention query over every refined "
+                             "trunk token; each action is still scored from its own token by the same "
+                             "equivariant pointer scorer. STRUCTURAL, version-checked, fresh-only.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

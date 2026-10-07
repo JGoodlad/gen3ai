@@ -110,8 +110,9 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     "fork_fraction": "win_head",
 }
 
-# "blob" is `belief_tokens`' OFF state (X5, v136; `flag_registry.OFF_STRINGS`).
-_FALSY_STRINGS = {"none", "off", "", "blob"}
+# "blob" is `belief_tokens`' OFF state (X5, v136) and "tower" `policy_readout`'s (audit F2, v138;
+# `flag_registry.OFF_STRINGS`).
+_FALSY_STRINGS = {"none", "off", "", "blob", "tower"}
 
 
 def _is_off(value: Any) -> bool:

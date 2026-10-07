@@ -406,6 +406,13 @@ class ModelVersionFields:
     # built at the run's mode); what the input MEANS differs, so `check_oracle_reveal` refuses a resume that
     # flips it, and a flagless resume inherits it. Recorded here so every offline tool can read it.
     oracle_reveal: str = "off"
+    # gen3_policy_readout_trunk_v1 (config v138, architecture audit F2): `--policy-readout {tower,trunk}`.
+    # STRUCTURAL: `trunk` builds the state query (`pools.PolicyStateQuery`), retires the flat policy tower
+    # (the extractor's `pre_proj_norm` / `projection` and `mlp_extractor.policy_net` — the state_dict delta)
+    # and widens the pointer scorers; `tower` builds nothing. `net_arch` keeps recording the value the
+    # policy kwargs carry (the VALUE branch is unchanged), so this field is what says the actor branch is
+    # gone. No ARCH_SIGNATURE bump while both modes build at one commit — the string compare is the gate.
+    policy_readout: str = "tower"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at

@@ -80,6 +80,31 @@ class ExtractorApi(ExtractorBuild):
         self.beta_head = None
         return True
 
+    def retire_policy_tower(self) -> bool:
+        """gen3_policy_readout_trunk_v1 (`--policy-readout trunk`, audit F2): drop the extractor half of
+        the flat policy tower (`pre_proj_norm`, `projection`) — the policy context is `policy_query`'s
+        read of the trunk instead. Returns True when it dropped them.
+
+        Called by `Gen3DualHeadMaskablePolicy._build` AFTER SB3's orthogonal re-init and BEFORE the
+        optimizer is built (the `retire_superseded_intent_heads` precedent): the two modules were
+        constructed and re-initialised exactly as under `tower`, so the global RNG stream — every later
+        module's initial bytes — is unchanged, while the retired modules hold no state_dict key, no
+        optimizer slot and no forward use. `tower`: a no-op."""
+        if self.policy_query is None or self.projection is None:
+            return False
+        # Typed as the modules for every `tower` reader; under `trunk` no forward path reads them (the
+        # trunk branch of `forward_internal` / `_forward_unguarded` returns before), so None is safe.
+        self.pre_proj_norm = None  # type: ignore[assignment]
+        self.projection = None  # type: ignore[assignment]
+        return True
+
+    @property
+    def policy_ctx_dim(self) -> int:
+        """The width of `pi_features` — the pointer head's decision context before the SB3 actor branch.
+        `tower`: `projection_dim` (the tower then maps it to `NET_ARCH[-1]`); `trunk`: `D_MODEL` (the
+        state query's read, and the actor branch is the identity)."""
+        return D_MODEL if self.policy_query is not None else int(self.projection_dim)
+
     def set_belief_grad_mode(self, mode: str) -> None:
         """Apply a belief-grad-mode at RUNTIME (the --allow-belief-grad-mode-change migration path).
 

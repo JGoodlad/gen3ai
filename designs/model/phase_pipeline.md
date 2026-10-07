@@ -28,7 +28,7 @@ Grouped into the four tiers the contract asserts:
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in), `hypothesis_builder` (X5, `--belief-tokens fixed_mass` only: its SPECIES half runs before `move_belief` — the hidden opponent slots then take THE `pokemon_encoder`'s token for their hypothesis's dex row + `hypothesis_marker` (computed by `hypothesis_encode.py`: the encoder's species half once over the dex table, gathered, + its row-level half — the exact split; `hypothesis_tokens.py`; `belief_slots` is not called in that arm) and the T0 belief heads read them with their species — its move group after `move_belief`; OTHER_species enters the trunk as one extra seat and every opponent key carries log π in the trunk and the class-E pools; the active's move group gives the E4 seats, the op's seat axis and its class-M weights) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `history_events` (H-B event seats, opt-in), `edge_bias`, `team_transformer` |
 | **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool` (which also owns the two token-content critic injections), `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat` (opt-in) |
-| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head` |
+| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `policy_query` (`--policy-readout trunk` only, audit F2) |
 
 **The ordering is an ASSERTED INVARIANT, not a convention** — `tier_contract.py` declares a tier per
 module and `tier_contract_test.py` runs a real forward under instrumentation, checking (a) tier
@@ -209,3 +209,15 @@ ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, no
    heads, one per `*_combined`, both emitting `PROJECTION_DIM`. SB3 sizes the shared
    `mlp_extractor` from `features_dim = PROJECTION_DIM`, then `Gen3DualHeadMaskablePolicy` feeds
    the policy half to `forward_actor` and the value half to `forward_critic`.
+8. **`--policy-readout trunk` (`gen3_policy_readout_trunk_v1`, config v138, audit F2; OFF in production)**
+   — the policy half of steps 6–7 and SB3's actor branch are RETIRED: `PolicyStateQuery` (`pools.py`,
+   T3) is one learned query, 4 heads, over every refined trunk token (our 6, their 6, the global token,
+   the entity and event seats) plus `HiddenOppBeliefPool`'s K outputs, under the trunk's own key mask
+   (+ its per-key log π under `fixed_mass`) → LayerNorm → `[B, D_MODEL]`, and that IS `pi_features`
+   (`forward_internal` returns it in place of `pi_combined`; `_forward_unguarded` applies no projection).
+   `pre_proj_norm` / `projection` and `mlp_extractor.policy_net` are still BUILT and see SB3's orthogonal
+   re-init (so no surviving module's initial bytes move), then `Gen3DualHeadMaskablePolicy._build` drops
+   them (`ExtractorApi.retire_policy_tower`; `policy_net` becomes the empty `Sequential`, the identity)
+   before the optimizer is made, and sizes the pointer head from `policy_ctx_dim` (D_MODEL) with
+   `TRUNK_POINTER_HIDDEN` scorers. The query is built from `POLICY_QUERY_INIT_SEED` inside `fork_rng` out
+   of `IsolatedLinear`s. The value half is unchanged. Gate: `policy_readout_test.py`.

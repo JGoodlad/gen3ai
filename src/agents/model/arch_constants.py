@@ -23,6 +23,15 @@ NET_ARCH = [512, 512]             # MLP policy layers (SB3 policy_kwargs["net_ar
 # gen3_pointer_native_v1: the pointer action head's shared scorer hidden width (the ONLY action head —
 # no flat action_net exists in this generation; see Gen3DualHeadMaskablePolicy._build).
 POINTER_HIDDEN = 64               # hidden width of the pointer move/switch/struggle scorers
+# gen3_policy_readout_trunk_v1 (config v138, architecture audit F2; `--policy-readout trunk`): the
+# pointer scorers' hidden width when the flat policy tower is gone. The decision context is then the
+# trunk's own D_MODEL-wide state query (`pools.PolicyStateQuery`), so the scorer keeps that width
+# rather than squeezing the context to POINTER_HIDDEN. `tower` (production) keeps POINTER_HIDDEN.
+TRUNK_POINTER_HIDDEN = 128
+#: The state query's PRIVATE init seed: built inside `torch.random.fork_rng` from it, out of
+#: `IsolatedLinear`s SB3's orthogonal re-init skips, so building it draws nothing from the global
+#: stream (every surviving non-lever parameter's initial bytes equal the `tower` build's).
+POLICY_QUERY_INIT_SEED = 20261006
 
 # Unified transformer hyperparameters. d_model matches ROLE_TOKEN_SIZE so team
 # role tokens enter the transformer without a projection step.

@@ -507,6 +507,18 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "hypothesis builder and supervises a different belief target than `blob`.\n"
                 "Resume with the matching --belief-tokens setting (a flagless resume inherits it), or "
                 "start a fresh training run.")
+        # gen3_policy_readout_trunk_v1 (v138, audit F2): `trunk` retires the flat policy tower and reads
+        # the decision context off the trunk. The pointer head's `ctx_proj` changes shape too, so a
+        # strict load would also fail — but the compare names the cause instead of a tensor size.
+        if self.policy_readout != saved.policy_readout:
+            raise ModelVersionError(
+                f"policy_readout mismatch: saved={saved.policy_readout!r}, "
+                f"current={self.policy_readout!r}.\n"
+                "Where the pointer head's decision context comes from is fixed for a run's lifetime: "
+                "`trunk` has no flat policy tower (a state query over the trunk instead) and a wider "
+                "pointer scorer than `tower`.\n"
+                "Resume with the matching --policy-readout setting (a flagless resume inherits it), or "
+                "start a fresh training run.")
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —
         # a resume that dropped one would silently delete a trained baseline head, one that added

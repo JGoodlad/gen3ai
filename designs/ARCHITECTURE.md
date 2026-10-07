@@ -425,6 +425,24 @@ P(Ghost)); `threshold_probs`, `IntentMoveCell` and `IntentConditionalMoveCell` n
 meaningful-K gate as `pair_alpha` does. The ride-along B head (when on) is re-based onto the flat list.
 Config v136, no `ARCH_SIGNATURE` change while both arms build.
 
+**`--policy-readout` (audit F2) is `tower` in production**: the pointer head's decision context is
+`latent_pi`, the flat policy tower's output (steps 11 and §3.3 below). The `trunk` mode
+([`endstate/design_arch_audit.md`](endstate/design_arch_audit.md) F2, `gen3_policy_readout_trunk_v1`)
+RETIRES that tower — the extractor's `pre_proj_norm` / `projection` and SB3's `mlp_extractor.policy_net`,
+1,130,802 parameters at production widths (MEASURED, this build: the production learner holds 3,065,882
+under `tower` and 1,991,528 under `trunk`) — and reads the context off the trunk instead:
+`PolicyStateQuery` (`agents/model/pools.py`, T3) is ONE learned query, 4 heads, attending over every
+refined trunk token (our 6, their 6, the global token, the entity and event seats) plus the
+`HiddenOppBeliefPool`'s K outputs, under the trunk's own key mask (and its per-key log π under
+`fixed_mass`), then a LayerNorm → `[B, 128]`. That vector IS `pi_features` (no projection, no ReLU); the
+retired actor branch is the empty `Sequential` (the identity), so every `forward_actor` caller — the
+policy, the T2 `DecisionModule`, the compiled learner region — is unchanged. Each action is still scored
+from its OWN token by the same equivariant scorer, widened to `TRUNK_POINTER_HIDDEN` = 128 (no 64-dim
+squeeze of the context). Init isolation: the query is built from a private seed out of `IsolatedLinear`s
+and the tower is retired only after SB3's orthogonal re-init, so every surviving non-pointer parameter
+starts from the `tower` build's bytes. The value path is unchanged. Config v138, no `ARCH_SIGNATURE`
+change while both modes build.
+
 The concrete steps:
 
 1. **`ObsUnpack`** — slices the 2761-dim vector into `ExtractorContext` (~30 named tensors:
@@ -496,6 +514,7 @@ The concrete steps:
     theirs, `value_cls` over **all 12**. Also extracts `our_active_refined`.
 11. **`ProjectionAssembler`** → `pre_proj_norm`/`projection`/ReLU (policy) and
     `value_pre_norm`/`value_projection`/ReLU (value), both emitting `PROJECTION_DIM` = 512.
+    (Under `--policy-readout trunk` the policy half is `PolicyStateQuery` instead — see above.)
 
 ### 2.2 Dims that flow between phases
 
@@ -790,7 +809,8 @@ and rebuilds the optimizer; `PointerNativeActionHead` produces the logits, and
 
 Shared context for all three families: **`latent_pi`** — the policy tower's output, i.e. everything
 in §3.1 after the mlp_extractor. So the op block, the beliefs, and any head-level modulation
-condition every pointer score.
+condition every pointer score. (Under `--policy-readout trunk`, OFF in production, the context is
+instead `PolicyStateQuery`'s 128-wide read of the refined trunk, and the scorers are 128 wide — §2.1.)
 
 Output layout is `[switch ×6, move ×4, struggle]` (`agents/action/constants.py`).
 
@@ -1349,6 +1369,7 @@ does nothing given another setting.
 | `opp_intent_grad_mode` | `"detached"` | ACTIVE |
 | `pair_outcome_cell` | `true` | ACTIVE |
 | `pair_outcome_switch` | `true` | ACTIVE |
+| `policy_readout` | `"tower"` | OFF |
 | `ridealong_adv` | `0` | OFF |
 | `ridealong_ensemble` | `0` | OFF |
 | `ridealong_opp` | `0` | OFF |

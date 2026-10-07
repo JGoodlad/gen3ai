@@ -25,7 +25,7 @@ from sb3_contrib.common.maskable.distributions import MaskableDistribution
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 
 from agents.model import masked_categorical as _mc
-from agents.model.arch_constants import D_MODEL
+from agents.model.arch_constants import D_MODEL, POINTER_HIDDEN, TRUNK_POINTER_HIDDEN
 from agents.model.critic_mode import CRITIC_UNRECORDED, CRITIC_MODES, is_winprob
 
 if TYPE_CHECKING:
@@ -124,6 +124,18 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         # below (`ExtractorApi.retire_superseded_intent_heads`); blob: a no-op.
         if hasattr(fe, "retire_superseded_intent_heads"):
             fe.retire_superseded_intent_heads()
+        # gen3_policy_readout_trunk_v1 (`--policy-readout trunk`, audit F2): RETIRE the flat policy tower
+        # — the extractor's `pre_proj_norm` / `projection` and SB3's `mlp_extractor.policy_net` — AFTER
+        # the ortho-init draws above (they drew exactly as under `tower`, so no surviving module's initial
+        # bytes move) and BEFORE the optimizer below. The actor branch becomes the EMPTY Sequential (the
+        # identity), so every `forward_actor` caller — this policy, the T2 `DecisionModule`, the compiled
+        # trainer — passes the state query's read straight to the pointer head unchanged. `tower`: a no-op.
+        trunk = bool(getattr(fe, "retire_policy_tower", None) and fe.retire_policy_tower())
+        pointer_hidden = POINTER_HIDDEN
+        if trunk:
+            self.mlp_extractor.policy_net = th.nn.Sequential()
+            self.mlp_extractor.latent_dim_pi = fe.policy_ctx_dim
+            pointer_hidden = TRUNK_POINTER_HIDDEN
         self.action_net = _NoFlatActionNet()
         self.pointer_head = PointerNativeActionHead(
             # gen3_entity_move_seats_v1: move tokens are the REFINED E3 trunk seats (d_model-wide),
@@ -132,6 +144,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
             ctx_dim=self.mlp_extractor.latent_dim_pi,
             move_cell_dim=fe.pointer_move_cell_dim,
             switch_cell_dim=fe.pointer_switch_cell_dim,
+            hidden=pointer_hidden,
         )
         # `Optimizer.__init__` is typed without `lr`; every concrete class SB3 selects takes it.
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1),  # type: ignore[call-arg]

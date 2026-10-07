@@ -123,6 +123,9 @@ TIER_OF: Dict[str, int] = {
     # T3 DELIVER — the pooled contract and the readouts taken off it.
     "hidden_opp_belief": 3,
     "assembler": 3,
+    # gen3_policy_readout_trunk_v1 (`--policy-readout trunk`, audit F2): the policy's state query over
+    # the refined trunk + the belief pool's outputs — DELIVER, where the assembler sits under `tower`.
+    "policy_query": 3,
     "win_head": 3,
     # gen3_unified_value_readout_v1 (v80): the Stage-3 unified critic entity pool, injected into
     # `value_pooled` through the v89 seam. Since the critic-route deletion wave it is the ONLY

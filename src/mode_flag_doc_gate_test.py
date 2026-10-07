@@ -114,6 +114,9 @@ _CLAIMS: Tuple[Claim, ...] = (
     Claim("move_belief_mode",
           r"`move_belief_mode`\s*=\s*`\"(?P<value>\w+)\"`",
           "§3.2 the MoveBelief step"),
+    Claim("policy_readout",
+          r"\*\*`--policy-readout` \(audit F2\) is `(?P<value>\w+)` in production\*\*",
+          "§2.1 the --policy-readout paragraph"),
 
     # ---- the critic family: what the mode implies and refuses ------------------------------
     Claim("vf_coef",

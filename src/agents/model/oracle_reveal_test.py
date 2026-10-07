@@ -32,7 +32,8 @@ def version():
 def test_the_flag_is_one_resume_immutable_registry_row_off_by_default():
     f = FR.BY_NAME["oracle_reveal"]
     assert (f.default, f.klass, f.tier, f.cli_flag) == ("off", FR.Klass.RESUME_IMMUTABLE, FR.Tier.CLI, "--oracle-reveal")
-    assert f.since == MODEL_CONFIG_VERSION, "the field arrived with the config version that is current"
+    # The field arrived with config v137 (a later bump — v138, `policy_readout` — must not move it).
+    assert f.since == 137 <= MODEL_CONFIG_VERSION, "the field arrived with config v137"
     assert FR.is_enabled("species") and not FR.is_enabled("off")
     assert f not in FR.arch_surface_flags(), "a diagnostic observation mode is never on the production ARCH surface"
 

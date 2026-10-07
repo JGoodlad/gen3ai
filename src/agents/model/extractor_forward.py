@@ -1041,6 +1041,29 @@ class ExtractorForward(ExtractorApi):
         if self.win_head is not None:
             wp_in = value_pooled if self.win_prob_mode == "shaping" else value_pooled.detach()
             self.stash.win_prob_logits = self.win_head(wp_in)
+        if self.policy_query is not None:
+            # gen3_policy_readout_trunk_v1 (`--policy-readout trunk`, audit F2): the policy's context is
+            # the state query's read of EVERY refined trunk token, in the trunk's own order and under its
+            # own key mask (+ its per-key log-presence under fixed_mass), plus the hidden-opponent belief
+            # pool's K outputs when built (never masked). No assembler concat, no projection, no tower:
+            # `pi_features` IS this [B, D_MODEL] vector (`_forward_unguarded`). The value half is
+            # `value_pooled`, exactly what the assembler returns as `vf_combined`.
+            assert _seat_out is not None, "the entity seats always join the trunk (E3 is unconditional)"
+            _keys = [our_team_out, their_team_out,
+                     self.team_transformer.last_global_out.unsqueeze(1), _seat_out]
+            _pads = [ctx.fainted_mask_ours, ctx.fainted_mask_opp,
+                     torch.zeros(ctx.batch_size, 1, dtype=torch.bool, device=ctx.device), _seat_pad]
+            _qlp = _klp
+            if belief is not None:
+                _brows = belief.view(ctx.batch_size, -1, D_MODEL)
+                _keys.append(_brows)
+                _pads.append(torch.zeros(ctx.batch_size, _brows.shape[1], dtype=torch.bool,
+                                         device=ctx.device))
+                if _qlp is not None:
+                    _qlp = torch.cat([_qlp, torch.zeros(ctx.batch_size, _brows.shape[1],
+                                                        dtype=_qlp.dtype, device=_qlp.device)], dim=1)
+            pi_ctx = self.policy_query(torch.cat(_keys, dim=1), torch.cat(_pads, dim=1), _qlp)
+            return pi_ctx, value_pooled
         out: Tuple[torch.Tensor, torch.Tensor] = self.assembler(
                              our_team_pooled, their_team_pooled, our_active_refined, value_pooled,
                              ctx, belief)

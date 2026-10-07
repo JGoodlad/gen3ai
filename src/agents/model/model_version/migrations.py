@@ -432,6 +432,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 137:
         data.setdefault("oracle_reveal", "off")
         data["config_version"] = 137
+    # v138 (gen3_policy_readout_trunk_v1, audit F2) — `policy_readout`, defaulted rather than refused:
+    # "tower" is the only possible past (the trunk readout did not exist).
+    if version < 138:
+        data.setdefault("policy_readout", "tower")
+        data["config_version"] = 138
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

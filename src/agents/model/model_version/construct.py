@@ -224,6 +224,9 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_oracle_reveal_v1 (v137): the DIAGNOSTIC observation mode (resume-immutable).
             oracle_reveal=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("oracle_reveal", "off")),
+            # gen3_policy_readout_trunk_v1 (v138, audit F2): the policy's decision-context source.
+            policy_readout=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("policy_readout", "tower")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

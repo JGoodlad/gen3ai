@@ -8,6 +8,7 @@ import torch
 from typing import Dict, Any, Optional, Tuple
 from agents.model.value_threat_inject import (ValueThreatInject)
 from agents.model.hypothesis_tokens import OppPresence, float_key_mask
+from agents.model.team_transformer import _KEY_PAD_NEG
 from agents.model.arch_constants import (D_MODEL,
     TRANSFORMER_N_HEADS,
     TRANSFORMER_FFN_DIM,
@@ -172,6 +173,63 @@ class HiddenOppBeliefPool(torch.nn.Module):
         belief = self.decoder(queries, all_team_out, memory_key_padding_mask=all_fainted)
         belief = self.norm(belief)                                                # [B, K, D_MODEL]
         return belief.reshape(batch_size, self.k * D_MODEL)  # type: ignore[no-any-return]  # [B, K*D_MODEL]
+
+
+#: gen3_policy_readout_trunk_v1 (config v138, architecture audit F2): WHERE the pointer head's decision
+#: context comes from. ``tower`` (the default and production): the flat SB3 policy tower —
+#: ``ProjectionAssembler`` → ``pre_proj_norm`` / ``projection`` / ReLU → ``mlp_extractor.policy_net``
+#: (512→512→512, tanh) → ``latent_pi``. ``trunk``: that tower is RETIRED (built, orthogonally
+#: re-initialised by SB3 exactly as in ``tower`` so no other initial byte moves, then dropped by the
+#: policy's ``_build``) and the context is :class:`PolicyStateQuery`'s read of the refined trunk.
+POLICY_READOUT_MODES: Tuple[str, ...] = ("tower", "trunk")
+
+
+class PolicyStateQuery(torch.nn.Module):
+    """gen3_policy_readout_trunk_v1 (``--policy-readout trunk``): the pointer head's decision context
+    read DIRECTLY off the refined trunk — one learned query, ``TRANSFORMER_N_HEADS`` heads, attending
+    over EVERY post-transformer token (our 6, their 6, the global token, the entity / event seats) plus
+    the hidden-opponent belief pool's K query outputs when that pool is built, then a LayerNorm →
+    ``[B, D_MODEL]``. It replaces the 1.13M-parameter flat tower (audit F2) that squeezed the same state
+    through a 1177→512 projection, two tanh layers and a 512→64 ``ctx_proj``.
+
+    Keys use the trunk's OWN key-padding mask (a −1e9 addend) and, under ``--belief-tokens fixed_mass``,
+    the trunk's own per-key log-presence (``key_log_presence``), so it is the same class-E reduction the
+    trunk performs over opponent tokens. The belief-pool outputs are never masked (always present).
+
+    INIT ISOLATION (the ``IsolatedLinear`` pattern, ``hypothesis_set.IsolatedLinear``): built inside
+    ``torch.random.fork_rng`` from ``POLICY_QUERY_INIT_SEED``, out of linears SB3's orthogonal re-init
+    skips, so building it moves no other module's initial bytes and no later global draw."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        from agents.model.arch_constants import POLICY_QUERY_INIT_SEED
+        from agents.model.hypothesis_set import IsolatedLinear
+        self.n_heads = TRANSFORMER_N_HEADS
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(POLICY_QUERY_INIT_SEED)
+            # Same 0.02 scale as the CLSPool queries.
+            self.query = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
+            self.k_proj = IsolatedLinear(D_MODEL, D_MODEL)
+            self.v_proj = IsolatedLinear(D_MODEL, D_MODEL)
+            self.out_proj = IsolatedLinear(D_MODEL, D_MODEL)
+        self.norm = torch.nn.LayerNorm(D_MODEL)
+
+    def forward(self, tokens: torch.Tensor, pad: torch.Tensor,
+                key_log_presence: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """`tokens` [B, n, D_MODEL]; `pad` [B, n] bool (True = masked key); `key_log_presence`
+        [B, n] or None (added on unmasked keys only, as in the trunk) → `[B, D_MODEL]`."""
+        B, n, d = tokens.shape
+        hd = d // self.n_heads
+        q = self.query.expand(B, 1, d).reshape(B, 1, self.n_heads, hd).transpose(1, 2)   # [B,H,1,hd]
+        k = self.k_proj(tokens).reshape(B, n, self.n_heads, hd).transpose(1, 2)           # [B,H,n,hd]
+        v = self.v_proj(tokens).reshape(B, n, self.n_heads, hd).transpose(1, 2)
+        bias = pad.to(tokens.dtype) * _KEY_PAD_NEG                                          # [B,n]
+        if key_log_presence is not None:
+            bias = bias + torch.where(pad, torch.zeros_like(key_log_presence),
+                                      key_log_presence).to(tokens.dtype)
+        attn = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v, attn_mask=bias[:, None, None, :].expand(B, self.n_heads, 1, n))
+        return self.norm(self.out_proj(attn.transpose(1, 2).reshape(B, d)))  # type: ignore[no-any-return]
 
 
 def opp_keys_with_other(their_team_out: torch.Tensor, fainted_mask_opp: torch.Tensor,

@@ -11886,3 +11886,24 @@ their pin's code and are unaffected. No run is live.
   carries `compute.oracle_reveal`.
 - **Gates.** `off` bit-identical to `c7b4d03e` (a recorded 24-game play and its row); a split core's side rows equal the
   symmetric core's at that side's level (Rust); real games move only the revealed side(s); every row stamped.
+## 2026-10-06 — ARCHITECTURE AUDIT F2: `--policy-readout {tower,trunk}` — the flat policy tower retired behind a flag (`gen3_policy_readout_trunk_v1`; config v138, no ARCH_SIGNATURE bump; production stays `tower`)
+
+- **What.** Under `trunk` the flat SB3 policy tower — the extractor's `pre_proj_norm` / `projection` (1177→512) and
+  `mlp_extractor.policy_net` (512→512→512, tanh) — is RETIRED, and the pointer head's decision context is
+  `pools.PolicyStateQuery`: one learned query, 4 heads, over every refined trunk token (our 6, their 6, the global token,
+  the entity and event seats) plus `HiddenOppBeliefPool`'s K outputs, under the trunk's own key mask (its per-key log π
+  under `fixed_mass`), LayerNorm → 128. That vector IS `pi_features`; the actor branch becomes the empty `Sequential`, so
+  every `forward_actor` caller (the policy, the T2 `DecisionModule`, the compiled R1 region) is unchanged. The pointer
+  scorer is the same equivariant form, widened to `TRUNK_POINTER_HIDDEN` = 128. Value path unchanged.
+- **Init isolation.** The query is built from `POLICY_QUERY_INIT_SEED` inside `fork_rng` out of `IsolatedLinear`s; the
+  tower is still built and orthogonally re-initialised, then dropped in `_build` (`ExtractorApi.retire_policy_tower`)
+  before the optimizer. Every surviving non-pointer parameter starts from the `tower` build's bytes.
+- **Counts (MEASURED, production surface).** 3,065,882 → 1,991,528 parameters (−1,130,802 tower, +49,920 query,
+  +6,036 pointer widening).
+- **The flag.** STRUCTURAL, CLI tier; five surfaces + `check_compatible` + `_migrate_config` (pre-v138 → `tower`) + the
+  production mirror (`policy_readout: "tower"`); `'tower'` joins `flag_registry.OFF_STRINGS` and `arch_tables`' OFF strings.
+  The startup round-trip now reads the policy-feature width from `policy_ctx_dim` (it asserted 512).
+- **Identity.** `tower`: the K9 learner golden's blob and fixed_mass entries pass unchanged; the dynamo FX graphs of the
+  production R1 micro-step and T2 decision forward are byte-identical to `8288b9a2`'s (sha256 `23cdd29c…` / `99a38ef5…`).
+- **Gates.** `policy_readout_test.py` (9 tests, each failing on a planted revert); `--debug --steps 10000` exit 0 in both
+  modes. GPU checks DEFERRED (compile parity, T2 throughput, memory).

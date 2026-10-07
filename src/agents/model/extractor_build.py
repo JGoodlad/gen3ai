@@ -43,7 +43,8 @@ from agents.model.opp_intent import AlphaIntentHead, BetaSwitchHead
 from agents.model.flat_intent import FlatIntentHead
 from agents.model.pair_outcome import PairOutcomeMoveCell, PairOutcomeSwitchCell
 from agents.model.pointer_head import EntityMoveSeats
-from agents.model.pools import CLSPool, HiddenOppBeliefPool
+from agents.model.pools import (CLSPool, HiddenOppBeliefPool, POLICY_READOUT_MODES,
+                                PolicyStateQuery)
 from agents.model.projection import ProjectionAssembler, compute_projection_widths
 from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.t0_species import T0SpeciesPrior
@@ -111,6 +112,7 @@ class ExtractorBuild(torch.nn.Module):
                  ridealong_rnd_variants: str = "off",
                  belief_tokens: str = "blob",
                  oracle_reveal: str = "off",
+                 policy_readout: str = "tower",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -961,6 +963,21 @@ class ExtractorBuild(torch.nn.Module):
                     "candidate) re-uses the opponent active's E5 tail seat as its token.")
             self.flat_intent_head = FlatIntentHead(D_MODEL, _intent_ctx)
             cast("ExtractorApi", self)._stamp_belief_grad_flags()
+
+        # gen3_policy_readout_trunk_v1 (config v138, architecture audit F2, `--policy-readout`): WHERE the
+        # pointer head's decision context comes from. `tower` (default, production) builds NOTHING here —
+        # byte-identical to the build without the flag. `trunk` builds the state query (one learned query
+        # over every refined trunk token, `pools.PolicyStateQuery`) LAST, from a PRIVATE seed inside
+        # `fork_rng` out of `IsolatedLinear`s SB3's orthogonal re-init skips, so no other initial byte
+        # moves. The flat tower (`pre_proj_norm` / `projection` here, `mlp_extractor.policy_net` on the
+        # policy) is still CONSTRUCTED and still sees SB3's re-init, so the global stream — every later
+        # module's initial bytes — equals `tower`'s; the policy then RETIRES it in `_build`
+        # (`retire_policy_tower`), so it holds no state_dict key, no optimizer slot and no forward use.
+        if policy_readout not in POLICY_READOUT_MODES:
+            raise ValueError(f"policy_readout must be one of {POLICY_READOUT_MODES}, got {policy_readout!r}")
+        self.policy_readout = policy_readout
+        self.policy_query: Optional[PolicyStateQuery] = (
+            PolicyStateQuery() if policy_readout == "trunk" else None)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

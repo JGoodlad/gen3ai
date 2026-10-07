@@ -436,7 +436,13 @@ from typing import Any, Dict
 #   input MEANS differs, so `check_oracle_reveal` refuses a resume that flips it (a flagless resume inherits it).
 #   A pre-v137 config migrates to "off" (the only possible past). No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
 #   The `full` level (the opponent's whole set) joined the same field without a bump: the recorded value is a string.
-MODEL_CONFIG_VERSION = 137
+# v138 (gen3_policy_readout_trunk_v1, architecture audit F2; designs/endstate/design_arch_audit.md):
+#   `policy_readout` — `--policy-readout {tower,trunk}`. STRUCTURAL: `trunk` retires the flat policy tower
+#   (`pre_proj_norm` / `projection` + `mlp_extractor.policy_net`), builds the trunk state query
+#   (`pools.PolicyStateQuery`) and widens the pointer scorers to TRUNK_POINTER_HIDDEN; `tower` (the default,
+#   production) builds nothing and is byte-identical to v137. A pre-v138 config migrates to "tower" (the only
+#   possible past). No ARCH_SIGNATURE bump while both modes build at one commit; no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 138
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

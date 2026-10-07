@@ -194,14 +194,18 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
                                   device=dev, action_mask=True)
         with torch.no_grad():
             pi_features, vf_features = reloaded.policy.features_extractor(dummy_obs)
-        assert pi_features.shape == (1, PROJECTION_DIM), (
-            f"Round-trip test: unexpected policy-feature shape {pi_features.shape}, expected (1, {PROJECTION_DIM})"
+        # gen3_policy_readout_trunk_v1 (audit F2): the policy-feature width is the extractor's to state —
+        # PROJECTION_DIM under `--policy-readout tower`, D_MODEL under `trunk` (the state query's read).
+        pi_dim = int(getattr(reloaded.policy.features_extractor, "policy_ctx_dim", PROJECTION_DIM))
+        assert pi_features.shape == (1, pi_dim), (
+            f"Round-trip test: unexpected policy-feature shape {pi_features.shape}, expected (1, {pi_dim})"
         )
         assert vf_features.shape == (1, PROJECTION_DIM), (
             f"Round-trip test: unexpected value-feature shape {vf_features.shape}, expected (1, {PROJECTION_DIM})"
         )
         if debug:
-            print(f"[ModelVersion] Round-trip smoke test PASSED (pi+vf shape: {tuple(pi_features.shape)})")
+            print(f"[ModelVersion] Round-trip smoke test PASSED (pi shape: {tuple(pi_features.shape)}, "
+                  f"vf shape: {tuple(vf_features.shape)})")
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
 

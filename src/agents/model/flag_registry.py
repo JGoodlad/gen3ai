@@ -479,6 +479,11 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "(`agents.model.oracle_reveal.refuse_if_revealed`); `main.h2h` plays it at its recorded "
                    "level through a PER-SIDE reveal (`--oracle-reveal-mode one_sided|both_sided`, "
                    "`main.h2h.reveal`)."),
+    ModelFlag("policy_readout", "tower", Tier.CLI, Klass.STRUCTURAL, 138,
+              "where the pointer head's decision context comes from: 'tower' (the flat SB3 policy "
+              "tower: projection 1177->512 + mlp_extractor.policy_net 512->512->512 tanh -> latent_pi) "
+              "or 'trunk' (that tower retired; one learned query over every refined trunk token)",
+              note="Architecture audit F2 (designs/endstate/design_arch_audit.md; owner 2026-10-06: \"no need to keep the tower\"). A SCREENABLE behaviour change, OFF in production. 'tower' builds nothing new and is byte-identical to the build without the flag. 'trunk' builds `agents.model.pools.PolicyStateQuery` (a private seed, `IsolatedLinear`s: no non-lever init byte moves), RETIRES the extractor's `pre_proj_norm` / `projection` and SB3's `mlp_extractor.policy_net` after SB3's orthogonal re-init (the `retire_superseded_intent_heads` precedent), and widens the pointer scorers to `TRUNK_POINTER_HIDDEN`; each legal action's logit is still its OWN refined token through the same equivariant scorer. The value path is unchanged (the dead SB3 value tower is F1, a separate unit). Both modes build at ONE commit, so there is no ARCH_SIGNATURE bump while the screen runs; the string compare in check_compatible is the gate."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}
@@ -505,7 +510,8 @@ OFF_VALUES = (False, 0, "off", "none")
 
 #: The OFF spellings of a MODE string. ``'blob'`` is `belief_tokens`' OFF state (X5, v136): the
 #: pre-X5 representation, which builds nothing — so ``requires`` binds only ``'fixed_mass'``.
-OFF_STRINGS: Tuple[str, ...] = ("off", "none", "blob")
+#: ``'tower'`` is `policy_readout`'s (audit F2, v138): today's flat policy tower, nothing new built.
+OFF_STRINGS: Tuple[str, ...] = ("off", "none", "blob", "tower")
 
 
 def is_enabled(value: Any) -> bool:

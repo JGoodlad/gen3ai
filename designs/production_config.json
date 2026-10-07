@@ -63,6 +63,7 @@
   "pair_outcome_cell": true,
   "pair_outcome_switch": true,
   "policy_grad_coef": 1.0,
+  "policy_readout": "tower",
   "progress_decision_tense": false,
   "progress_switch_freeze": false,
   "projection_dim": 512,

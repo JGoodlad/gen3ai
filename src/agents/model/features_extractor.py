@@ -287,6 +287,15 @@ class Gen3FeaturesExtractor(ExtractorForward):
     def _forward_unguarded(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor,
                                                                        torch.Tensor]:
         pi_combined, vf_combined = self.forward_internal(obs)
+        if self.policy_query is not None:
+            # gen3_policy_readout_trunk_v1 (`--policy-readout trunk`, audit F2): `forward_internal`
+            # returned the state query's [B, D_MODEL] read — it IS the policy features. No projection,
+            # no ReLU; the policy's retired tower makes `forward_actor` the identity on it.
+            pi_features = pi_combined
+            vf_pre = self.value_projection(self.value_pre_norm(vf_combined))
+            vf_features = self.activation(vf_pre)
+            self.stash.features_out = (pi_features, vf_features)
+            return pi_features, vf_features
         pi_pre = self.projection(self.pre_proj_norm(pi_combined))
         vf_pre = self.value_projection(self.value_pre_norm(vf_combined))
         pi_features = self.activation(pi_pre)
