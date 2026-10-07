@@ -40,6 +40,16 @@ Elo represents it faithfully, however densely measured — but the dense matrix 
 ``fit_quality`` (mean/max |predicted − observed|) QUANTIFY the intransitivity, which the sparse
 live fit cannot even see.
 
+🚨 THE TRANSPORT BOUNDARY (poke-env retirement P2, 2026-10-06). Every pair this tree plays runs on the RUST EVAL
+ENGINE (``snapshot_ladder_play``: the head-to-head meter's engine, Rust rows, seat-balanced mirrored pairs, draws
+recorded and excluded from the edge); every row before it was played by two poke-env ``RLPlayer`` s with the PYTHON
+encoder (unmirrored, the newer node always on p1, a draw folded into ``b`` 's column). Each row carries its
+``transport`` (absent = ``python_bridge``), ``ladder.json``'s recipe block names the transport its edges came from,
+and a fit over rows of BOTH transports is REFUSED (:class:`LadderTransportError`) unless the caller names one
+(``--transport``) or accepts the mix (``--allow-mixed-transport``, stamped ``mixed``). Readers comparing two ladders
+(``main.critic_gate``) refuse a transport mismatch the same way. Measured shift and the decision:
+``designs/training/eval_and_rating.md`` "The TRANSPORT boundary".
+
 CLI:
   python -m agents.training.snapshot_ladder <run_dir> --backfill        # one-time back tax
   python -m agents.training.snapshot_ladder <run_dir> --promote <step>  # per-promotion update
@@ -59,7 +69,6 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import argparse
-import asyncio
 import glob
 import itertools
 import json
@@ -101,7 +110,14 @@ def _pair_key(a: int, b: int) -> tuple[int, int]:
     return (a, b) if a <= b else (b, a)
 
 
-def load_games(run_dir: str, *, include_eval_cycle: bool = False
+# ── THE TRANSPORT BOUNDARY (P2): the names live in `snapshot_ladder_transport` and are re-exported here ──────
+from agents.training.snapshot_ladder_transport import (  # noqa: E402,F401 — re-exported API
+    TRANSPORT_MIXED, TRANSPORT_PYTHON, TRANSPORT_RUST, TRANSPORTS, LadderTransportError, check_same_transport,
+    ladder_transport, row_transport)
+from agents.training import snapshot_ladder_transport as _T  # noqa: E402
+
+
+def load_games(run_dir: str, *, include_eval_cycle: bool = False, transport: "str | None" = None
                ) -> dict[tuple[int, int], list[int]]:
     """Read games.jsonl → {(lo, hi): [wins_lo, games]}, summing duplicate lines (independent
     samples of the SAME frozen matrix pool across appends; adding them just tightens the edge).
@@ -110,7 +126,11 @@ def load_games(run_dir: str, *, include_eval_cycle: bool = False
     the promotion-deciding eval games a v2 tree reused as edges, and under recipe v3 the games
     that SELECTED a snapshot never RATE it (the winner's curse; see the module docstring). A pair
     whose only rows are eval-cycle rows therefore reads as UNMEASURED, which is what makes
-    ``_measure_missing`` / ``--backfill-fresh`` play it fresh."""
+    ``_measure_missing`` / ``--backfill-fresh`` play it fresh.
+
+    ``transport`` (``None`` = every row, the arithmetic of before) keeps only the rows played on that transport
+    (:func:`row_transport`)."""
+    _T.check_transport_name(transport)
     out: dict[tuple[int, int], list[int]] = {}
     path = games_log_path(run_dir)
     if not os.path.exists(path):
@@ -124,6 +144,8 @@ def load_games(run_dir: str, *, include_eval_cycle: bool = False
                 r = json.loads(line)
                 if not include_eval_cycle and r.get("source") == EVAL_CYCLE_SOURCE:
                     continue
+                if transport is not None and row_transport(r) != transport:
+                    continue
                 lo, hi = _pair_key(int(r["a"]), int(r["b"]))
                 wins_lo = int(r["wins_a"]) if r["a"] == lo else int(r["games"]) - int(r["wins_a"])
                 e = out.setdefault((lo, hi), [0, 0])
@@ -135,20 +157,30 @@ def load_games(run_dir: str, *, include_eval_cycle: bool = False
 
 
 def _append_game(run_dir: str, step_a: int, step_b: int, wins_a: int, games: int,
-                 source: "str | None" = None) -> None:
+                 source: "str | None" = None, play: "dict | None" = None) -> None:
     """Append one measured pair (race-safe: a single sub-PIPE_BUF line append is atomic).
 
     Every row carries ``recipe_version`` — the ``LADDER_FITTER_VERSION`` of the tree that PLAYED
     it (3 from 2026-09-27; rows without the key predate it). ``source`` is PROVENANCE, written
     only when it is not the default: an ordinary round-robin pair carries no ``source`` key, a
     fresh promotion baseline vs an eval sentinel carries ``"source": "promotion_baseline"``, and
-    the ``"eval_cycle"`` rows a v2 tree wrote are never written again."""
+    the ``"eval_cycle"`` rows a v2 tree wrote are never written again.
+
+    ``play`` is the PLAY STAMP of a Rust-engine edge (``snapshot_ladder_play.LadderEngine.play``'s fields beyond
+    ``wins_a`` / ``games``: ``transport``, ``encoder``, ``protocol``, ``draws``, the per-seat counts, the pentanomials,
+    the schedule, the regime id, the core stamp, both content hashes; ~0.8 KB, still one atomic append). A row
+    without it reads as a ``python_bridge`` row (:func:`row_transport`) — what every pre-boundary tree wrote; this
+    tree's play path always passes it."""
     os.makedirs(_ladder_dir(run_dir), exist_ok=True)
     row = {"a": int(step_a), "b": int(step_b), "wins_a": int(wins_a), "games": int(games),
            "at": datetime.now(timezone.utc).isoformat(),
            "recipe_version": LADDER_FITTER_VERSION}
     if source:
         row["source"] = str(source)
+    if play is not None:
+        extra = {k: v for k, v in play.items() if k not in ("wins_a", "games")}
+        row_transport(extra)                       # refuses an unknown transport before anything is written
+        row.update(extra)
     with open(games_log_path(run_dir), "a") as f:
         f.write(json.dumps(row) + "\n")
 
@@ -157,6 +189,7 @@ LADDER_SOURCE = "ladder"        #: a pair this module PLAYED (rows carry no `sou
 #: a pair a v2 tree REUSED from an eval cycle. 🚨 NEVER a rating edge under v3 (winner's curse);
 #: `load_games` skips these rows and `--backfill-fresh` replaces them.
 EVAL_CYCLE_SOURCE = "eval_cycle"
+assert EVAL_CYCLE_SOURCE == _T._EVAL_CYCLE, "the transport census must skip the same rows load_games skips"
 #: a FRESH pair vs a sentinel the promoting eval cycle used, played at PROMOTION_BASELINE_GAMES.
 PROMOTION_BASELINE_SOURCE = "promotion_baseline"
 #: Games per fresh promotion-baseline pair (owner decision 2026-09-27). Double the round-robin's
@@ -184,6 +217,21 @@ def pair_sources(run_dir: str) -> dict[tuple[int, int], set[str]]:
                 continue
             out.setdefault(key, set()).add(str(r.get("source") or LADDER_SOURCE))
     return out
+
+
+def pair_transports(run_dir: str) -> dict[tuple[int, int], set[str]]:
+    """{(lo, hi): {transport, …}} over games.jsonl's rating-edge rows (``snapshot_ladder_transport``)."""
+    return _T.pair_transports(games_log_path(run_dir))
+
+
+def fit_transport(run_dir: str, keep_keys: "set | None" = None, *, transport: "str | None" = None,
+                  allow_mixed: bool = False) -> str:
+    """The ONE transport a fit over ``run_dir``'s kept pairs reads, or :class:`LadderTransportError`
+    (``snapshot_ladder_transport.fit_transport``)."""
+    kept = None if keep_keys is None else (
+        lambda lo, hi: elo_mod.snap_key(lo) in keep_keys and elo_mod.snap_key(hi) in keep_keys)
+    return _T.fit_transport(games_log_path(run_dir), kept, transport=transport, allow_mixed=allow_mixed,
+                            run_dir=run_dir)
 
 
 # ── what the eval cycles measured (READ ONLY — never a rating edge under v3) ──────────────────
@@ -378,8 +426,10 @@ class LadderRecipeError(RuntimeError):
     """
 
 
-def ladder_recipe(sentinel_edges_dropped: int, eval_cycle_pairs_dropped: int = 0) -> dict:
-    """The stamp `fit_ladder` writes: what this fit IS, and which tree produced it."""
+def ladder_recipe(sentinel_edges_dropped: int, eval_cycle_pairs_dropped: int = 0,
+                  transport: "str | None" = None) -> dict:
+    """The stamp `fit_ladder` writes: what this fit IS, and which tree produced it. ``transport`` (the fit's
+    :func:`fit_transport`) rides it as provenance; it is not compared by :func:`recipe_status`."""
     from utils.git import get_git_hash
     try:
         commit = get_git_hash()
@@ -400,6 +450,8 @@ def ladder_recipe(sentinel_edges_dropped: int, eval_cycle_pairs_dropped: int = 0
         "eval_cycle_pair_edges_dropped_count": int(eval_cycle_pairs_dropped),
         "promotion_baseline_games": PROMOTION_BASELINE_GAMES,
         "commit": commit,
+        # P2 (2026-10-06): which transport played the edges (`python_bridge` / `rust_eval` / `mixed`)
+        **({"transport": transport} if transport else {}),
     }
 
 
@@ -564,7 +616,8 @@ def fit_relative(frozen_edges, reference_step: int) -> "tuple[dict[str, float], 
 # ── the fit (dense matrix + bot anchors) ────────────────────────────────────────────────────
 def fit_ladder(run_dir: str, base: float | None = None, *,
                first_n: int | None = None, write: bool = True,
-               steps: list[int] | None = None, reference: int | None = None) -> dict:
+               steps: list[int] | None = None, reference: int | None = None,
+               transport: str | None = None, allow_mixed_transport: bool = False) -> dict:
     """Fit the anchored BT ladder from the DENSE frozen matrix + each snapshot's historical
     bot edges (from eval_results.jsonl, which connect the ladder to the pinned bots for the
     absolute scale). Returns the ladder dict (also written to ladder.json when ``write``).
@@ -588,7 +641,11 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
     a run's FINAL 12-node fit is not the same object as the n-th node of a 4-node fit. Measured
     2026-09-07 on `ai_v9_29_rev1_0823`: its 8M node reads **2052** in a first-4 fit and **1958**
     in the final 12-node fit — 94 Elo of newest-node deflation, which `main.critic_gate` was
-    silently handing to the arm it compared against."""
+    silently handing to the arm it compared against.
+
+    🚨 THE TRANSPORT (P2, 2026-10-06): the kept pairs' rows must all come from ONE transport (:func:`fit_transport`) —
+    a Python-played and a Rust-played edge are different measurements — else :class:`LadderTransportError`.
+    ``transport`` fits only that transport's rows; ``allow_mixed_transport`` fits both, stamped ``mixed``."""
     anchors = elo_mod.load_bot_anchors()
     pins = (anchors or {}).get("ratings")
     base = base if base is not None else (anchors or {}).get("base", elo_mod.DEFAULT_BASE)
@@ -610,7 +667,9 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
     results: list[tuple[str, str, int, int]] = []
     # (1) DENSE frozen-vs-frozen edges — the resolution. `load_games` skips v2's reused
     # `eval_cycle` rows (recipe v3); the count of kept pairs that carried ONLY such rows is stamped.
-    games = load_games(run_dir)
+    # ONE transport (P2): a named one is a filter; `mixed` (consented) reads every row.
+    fit_t = fit_transport(run_dir, keep_keys, transport=transport, allow_mixed=allow_mixed_transport)
+    games = load_games(run_dir, transport=None if fit_t == TRANSPORT_MIXED else fit_t)
     eval_cycle_pairs_dropped = len(eval_cycle_only_pairs(run_dir, steps))
     for (lo, hi), (wins_lo, g) in games.items():
         if g > 0 and _kept(elo_mod.snap_key(lo), elo_mod.snap_key(hi)):
@@ -684,7 +743,7 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
         # 🚨 THE RECIPE STAMP — what this fit IS, so a later reader can tell whether its number is
         # on the same scale as one fitted today. See the RECIPE STAMP block above; a file without
         # it is pre-2026-09-22 and `recipe_status` reads `absent`.
-        "recipe": ladder_recipe(sentinel_edges_dropped, eval_cycle_pairs_dropped),
+        "recipe": ladder_recipe(sentinel_edges_dropped, eval_cycle_pairs_dropped, transport=fit_t),
         # PROVENANCE of games.jsonl's rows among the kept frozen pairs, per source: `ladder`
         # (round-robin), `promotion_baseline` (fresh 200-game pairs vs the eval's sentinels, v3)
         # and `eval_cycle` (a v2 tree's reuse — LISTED here, but NOT an edge of this fit).
@@ -707,88 +766,52 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
     return ladder
 
 
-# ── playing a frozen pair (bridge, no server) ───────────────────────────────────────────────
-def _play_pair(run_dir, step_a, step_b, n_games, mappings, cv, all_teams, sample_teams,
-               concurrency, impl, compile_extractor=True):
-    """Round-robin one frozen pair on the bridge; return (wins_a, games_finished).
-
-    ``compile_extractor`` defaults ON here, unlike training where it is an explicit flag: this is an
-    OFFLINE tool, nothing is racing it for CPU, both players are frozen no-grad models, and the
-    one-time compile is repaid within the first rung of a 100-game ladder. The helper self-validates
-    and reverts if the compile does not actually pay, so the default cannot make this slower."""
-    import torch
-    torch.set_num_threads(1)  # defensive: B=1 CPU inference; the parallelism is across shards
-    from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
-    from agents.inference.player import RLPlayer
-    from agents.model.compile_opponents import maybe_compile_extractor
-    from agents.model.snapshot import load_foreign_opponent
-    from utils.teambuilder import Gen3Teambuilder
-    from utils.bridge.local_battle_runner import run_local_battles
-
-    # Our own snapshots, but this-run's config (every arch toggle) differs from a bare
-    # current_model_version → load them as FOREIGN opponents: reads each zip's own saved config
-    # and skips check_compatible (the eval FIXED-opponent path). config lives beside the snapshots.
-    cfg = os.path.join(run_dir, "snapshots", "model_config.json")
-    if not os.path.exists(cfg):
-        cfg = os.path.join(run_dir, "model_config.json")
-
-    def _player(step, tag):
-        model, _ = load_foreign_opponent(_snapshot_zip(run_dir, step), current_version=cv,
-                                         device="cpu", config_path=cfg)
-        # Pure frozen CPU inference over many games — exactly the shape --compile-opponents targets.
-        # On by default here (unlike training) because this is an offline analysis tool: nothing is
-        # racing it, and the ~10-20s compile is repaid within the first ladder rung.
-        maybe_compile_extractor(model, compile_extractor, label=f"ladder:{step}", hide_cuda=True)
-        return RLPlayer(
-            model=model, team=Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1),
-            battle_format="gen3ou", server_configuration=LocalhostServerConfiguration,
-            mappings=mappings, account_configuration=AccountConfiguration(f"L{tag}", "pw"),
-            stochastic=False, start_listening=False)  # greedy = a stable frozen yardstick
-
-    pa = _player(step_a, f"a{step_a % 100000:05d}")
-    pb = _player(step_b, f"b{step_b % 100000:05d}")
-    pa.reset_battles(); pb.reset_battles()
-    asyncio.run(run_local_battles(pa, pb, n_games, concurrency=concurrency, impl=impl))
-    return pa.n_won_battles, pa.n_finished_battles
+# ── playing a frozen pair (the Rust eval engine, `snapshot_ladder_play`; no server, no poke-env) ──────────────
+#: The transport this tree PLAYS every new pair on.
+PLAY_TRANSPORT = TRANSPORT_RUST
 
 
 def missing_pairs(run_dir, target_pairs) -> list[tuple[int, int]]:
-    """The pairs in ``target_pairs`` with no rating-edge row yet — what ``_measure_missing`` would
-    play. An ``eval_cycle``-only pair counts as MISSING (recipe v3; :func:`load_games`)."""
-    have = load_games(run_dir)
-    return [(a, b) for (a, b) in target_pairs
-            if _pair_key(a, b) not in have or have[_pair_key(a, b)][1] == 0]
+    """The pairs in ``target_pairs`` with no rating-edge row ON THE PLAY TRANSPORT yet — what ``_measure_missing``
+    would play. An ``eval_cycle``-only pair counts as MISSING (recipe v3; :func:`load_games`), and so does a pair
+    measured only by the Python ladder (P2: its edge is a different measurement — ``--backfill`` re-measures it on
+    Rust, and the fit refuses to mix the two, :func:`fit_transport`)."""
+    have = pair_transports(run_dir)
+    return [(a, b) for (a, b) in target_pairs if PLAY_TRANSPORT not in have.get(_pair_key(a, b), set())]
 
 
-def _measure_missing(run_dir, target_pairs, n_games, concurrency, impl, *,
-                     source: "str | None" = None):
-    """Play every (a, b) in target_pairs NOT already in games.jsonl; append each (tagged
-    ``source`` when given). Returns the count of pairs played."""
-    from agents.observation.state_encoder import load_mappings
-    from agents.model.snapshot import current_model_version
-    from utils.team_loader import TeamLoader
+def _rows_on_transport(run_dir: str, a: int, b: int, transport: str) -> int:
+    """How many rows ``(a, b)`` (either order) already has on ``transport`` — the next Rust edge's BATCH index, so a
+    deliberate re-measurement plays fresh games instead of replaying identical ones (``snapshot_ladder_play``)."""
+    return _T.rows_on_transport(games_log_path(run_dir), a, b, transport)
+
+
+def _measure_missing(run_dir, target_pairs, n_games, *, source: "str | None" = None,
+                     engine_kw: "dict | None" = None):
+    """Play every (a, b) in target_pairs NOT already measured on the play transport (:func:`missing_pairs`) on ONE
+    Rust eval engine (``snapshot_ladder_play.open_engine``); append each (tagged ``source`` when given) with its play
+    stamp. Returns the count of pairs played. One bad pair never aborts the sweep; an engine that cannot START is
+    raised (every pair would fail the same way)."""
+    from agents.training import snapshot_ladder_play as LP
 
     todo = missing_pairs(run_dir, target_pairs)
     if not todo:
         return 0
-    mappings = load_mappings()
-    cv = current_model_version(mappings)
-    loader = TeamLoader()
-    all_teams = loader.get_all_teams()
-    sample_teams = loader.get_sample_teams()
     played = 0
-    for a, b in todo:
-        try:
-            wins_a, finished = _play_pair(run_dir, a, b, n_games, mappings, cv, all_teams,
-                                          sample_teams, concurrency, impl)
-            _append_game(run_dir, a, b, wins_a, finished, source=source)
-            played += 1
-            tag = f" [{source}]" if source else ""
-            print(f"[ladder] {a//1_000_000}M vs {b//1_000_000}M: {wins_a}/{finished}{tag}", flush=True)
-        except Exception as e:  # noqa: BLE001 — one bad pair must not abort the sweep
-            import traceback
-            print(f"[ladder] pair {a} vs {b} FAILED: {type(e).__name__}: {e}\n"
-                  f"{traceback.format_exc()}", flush=True)
+    with LP.open_engine(run_dir, todo, **(engine_kw or {})) as eng:
+        for a, b in todo:
+            try:
+                res = eng.play(a, b, n_games, batch=_rows_on_transport(run_dir, a, b, PLAY_TRANSPORT))
+                _append_game(run_dir, a, b, res["wins_a"], res["games"], source=source, play=res)
+                played += 1
+                tag = f" [{source}]" if source else ""
+                print(f"[ladder] {a//1_000_000}M vs {b//1_000_000}M: {res['wins_a']}/{res['games']} decisive, "
+                      f"{res['draws']} draw(s), {res['n_pairs']} mirrored pairs (seats {res['seat_split']}) on "
+                      f"{res['transport']}{tag}", flush=True)
+            except Exception as e:  # noqa: BLE001 — one bad pair must not abort the sweep
+                import traceback
+                print(f"[ladder] pair {a} vs {b} FAILED: {type(e).__name__}: {e}\n"
+                      f"{traceback.format_exc()}", flush=True)
     return played
 
 
@@ -816,8 +839,8 @@ def promotion_plan(run_dir, new_step, n_games=100,
             "fresh_games": len(baseline) * int(baseline_games) + len(rr) * int(n_games)}
 
 
-def update_for_promotion(run_dir, new_step, n_games=100, concurrency=4, impl="node",
-                         baseline_games=PROMOTION_BASELINE_GAMES) -> dict:
+def update_for_promotion(run_dir, new_step, n_games=100, baseline_games=PROMOTION_BASELINE_GAMES, *,
+                         engine_kw: "dict | None" = None, fit_kw: "dict | None" = None) -> dict:
     """The per-promotion tax (recipe v3): play the newly-promoted frozen snapshot vs every OTHER
     frozen snapshot on disk (skipping already-measured pairs), append, refit.
 
@@ -837,16 +860,16 @@ def update_for_promotion(run_dir, new_step, n_games=100, concurrency=4, impl="no
     if not plan["sentinels"]:
         print(f"[ladder] note: no eval_results.jsonl row at step {new_step} names sentinels — "
               f"every pair is an ordinary round-robin pair", flush=True)
-    played_b = _measure_missing(run_dir, plan["baseline"], baseline_games, concurrency, impl,
+    played_b = _measure_missing(run_dir, plan["baseline"], baseline_games, engine_kw=engine_kw,
                                 source=PROMOTION_BASELINE_SOURCE)
-    played_r = _measure_missing(run_dir, plan["round_robin"], n_games, concurrency, impl)
+    played_r = _measure_missing(run_dir, plan["round_robin"], n_games, engine_kw=engine_kw)
     print(f"[ladder] promotion @{new_step}: played {played_b} baseline + {played_r} round-robin "
           f"pair(s)", flush=True)
-    return fit_ladder(run_dir)
+    return fit_ladder(run_dir, **(fit_kw or {}))
 
 
-def backfill_fresh(run_dir, n_games=PROMOTION_BASELINE_GAMES, concurrency=4, impl="node",
-                   dry_run=False) -> dict:
+def backfill_fresh(run_dir, n_games=PROMOTION_BASELINE_GAMES, dry_run=False, *,
+                   engine_kw: "dict | None" = None, fit_kw: "dict | None" = None) -> dict:
     """Replace a v2 ladder's reused ``eval_cycle`` pairs with FRESH ``promotion_baseline`` pairs
     (``n_games`` each, default 200), then refit. Only pairs among the pool on disk whose ONLY rows
     are eval-cycle rows are played (:func:`eval_cycle_only_pairs`), so it is idempotent. The old
@@ -859,16 +882,18 @@ def backfill_fresh(run_dir, n_games=PROMOTION_BASELINE_GAMES, concurrency=4, imp
         for a, b in pairs:
             print(f"  {a:>12,} vs {b:>12,}")
         return {}
-    _measure_missing(run_dir, pairs, n_games, concurrency, impl, source=PROMOTION_BASELINE_SOURCE)
-    return fit_ladder(run_dir)
+    _measure_missing(run_dir, pairs, n_games, engine_kw=engine_kw, source=PROMOTION_BASELINE_SOURCE)
+    return fit_ladder(run_dir, **(fit_kw or {}))
 
 
-def backfill(run_dir, n_games=100, concurrency=4, impl="node", shard=None) -> dict:
+def backfill(run_dir, n_games=100, shard=None, *, engine_kw: "dict | None" = None,
+             fit_kw: "dict | None" = None) -> dict:
     """The one-time back tax: round-robin ALL frozen snapshots currently on disk (only the
-    pairs not yet in games.jsonl), then refit. Idempotent — reruns skip measured pairs.
+    pairs not yet measured ON THE PLAY TRANSPORT — :func:`missing_pairs`), then refit. Idempotent —
+    reruns skip measured pairs. On a pre-boundary run this re-measures every Python-only pair on Rust.
 
     ``shard`` = (i, n): play only pairs whose index % n == i — the disjoint-slice split for
-    running N backfill PROCESSES in parallel (true multi-core: each spawns its own bridge; the
+    running N backfill PROCESSES in parallel (true multi-core: each builds its own engine; the
     slices are disjoint so no pair is double-played, and games.jsonl appends stay race-safe).
     A sharded run does NOT refit (the last shard to finish, or a `--fit-only`, does)."""
     steps = pool_snapshot_steps(run_dir)
@@ -877,7 +902,7 @@ def backfill(run_dir, n_games=100, concurrency=4, impl="node", shard=None) -> di
         i, n = shard
         pairs = [p for k, p in enumerate(pairs) if k % n == i]
         print(f"[ladder] shard {i}/{n}: {len(pairs)} pairs @ {n_games} games", flush=True)
-        _measure_missing(run_dir, pairs, n_games, concurrency, impl)
+        _measure_missing(run_dir, pairs, n_games, engine_kw=engine_kw)
         return {}  # sharded workers don't refit; caller fits once all shards finish
     print(f"[ladder] backfill over {len(steps)} snapshots = {len(pairs)} pairs "
           f"(measuring the missing ones @ {n_games} games)", flush=True)
@@ -886,13 +911,14 @@ def backfill(run_dir, n_games=100, concurrency=4, impl="node", shard=None) -> di
     # refit, which reads exactly like "the games were added". It is not: a variance-reduction
     # tie-break needs MORE games on pairs that already have some, and `load_games` sums duplicate
     # lines by design. Say so out loud rather than let a no-op be mistaken for a measurement.
-    measured = _measure_missing(run_dir, pairs, n_games, concurrency, impl)
+    measured = _measure_missing(run_dir, pairs, n_games, engine_kw=engine_kw)
     if measured == 0 and pairs:
         print(f"[ladder] ⚠️  0 of {len(pairs)} pairs were missing — this mode measured NOTHING and "
               f"CANNOT add variance-reduction games to an already-complete ladder. To tighten a "
-              f"contrast, append duplicate rows for existing pairs (load_games SUMS them); "
-              f"--backfill will not do it.", flush=True)
-    return fit_ladder(run_dir)
+              f"contrast, append further rows for existing pairs (load_games SUMS them; a Rust edge "
+              f"must take a NEW batch index, or it replays the same games); --backfill will not do it.",
+              flush=True)
+    return fit_ladder(run_dir, **(fit_kw or {}))
 
 
 def latest_promoted_elo(run_dir: str) -> "tuple[int, float, float] | None":
@@ -954,16 +980,30 @@ def main() -> int:
     ap.add_argument("--reference", type=int, default=None,
                     help="step of the relative column's reference node (default: the "
                          f"{DEFAULT_REFERENCE_BASELINE} baseline when present, else the first)")
-    ap.add_argument("--concurrency", type=int, default=4)
-    ap.add_argument("--impl", default="node")
+    # The Rust eval engine's CPU shape (`snapshot_ladder_play`; defaults sized to run beside a training run)
+    ap.add_argument("--n-envs", type=int, default=None, help="eval-core envs (default 32)")
+    ap.add_argument("--threads", type=int, default=None, help="the Rust core's worker threads (default 2)")
+    ap.add_argument("--torch-threads", type=int, default=None, help="intra-op threads of the CPU forward (default 2)")
+    ap.add_argument("--transport", choices=TRANSPORTS, default=None,
+                    help="fit only the rows played on this transport (default: the rows' own, refusing a mix)")
+    ap.add_argument("--allow-mixed-transport", action="store_true",
+                    help="fit Python- and Rust-played rows together, stamped `mixed` (a different measurement)")
+    # Pre-P2 knobs of the poke-env play path, accepted so an older caller's argv still parses; they do nothing
+    ap.add_argument("--concurrency", type=int, default=None, help=argparse.SUPPRESS)
+    ap.add_argument("--impl", default=None, help=argparse.SUPPRESS)
     ap.add_argument("--shard", default=None, help="I:N — play only pair-slice I of N (parallel workers)")
     ap.add_argument("--fit-only", action="store_true", help="refit from games.jsonl, play nothing")
     a = ap.parse_args()
+    if a.concurrency is not None or a.impl is not None:
+        print("[ladder] note: --concurrency / --impl are IGNORED — the ladder plays on the Rust eval engine "
+              "(snapshot_ladder_play); its shape is --n-envs / --threads / --torch-threads", flush=True)
+    from agents.training import snapshot_ladder_play as LP
+    engine_kw = LP.engine_kwargs(a.n_envs, a.threads, a.torch_threads)
+    fit_kw = {"transport": a.transport, "allow_mixed_transport": a.allow_mixed_transport}
     if a.fit_only:
-        ladder = fit_ladder(a.run_dir, reference=a.reference)
+        ladder = fit_ladder(a.run_dir, reference=a.reference, **fit_kw)
     elif a.backfill_fresh:
-        ladder = backfill_fresh(a.run_dir, a.baseline_games, a.concurrency, a.impl,
-                                dry_run=a.dry_run)
+        ladder = backfill_fresh(a.run_dir, a.baseline_games, dry_run=a.dry_run, engine_kw=engine_kw, fit_kw=fit_kw)
         if not ladder:
             return 0
     elif a.promote is not None:
@@ -971,11 +1011,11 @@ def main() -> int:
             plan = promotion_plan(a.run_dir, a.promote, a.n_games, a.baseline_games)
             print(json.dumps(plan, indent=2))
             return 0
-        ladder = update_for_promotion(a.run_dir, a.promote, a.n_games, a.concurrency, a.impl,
-                                      baseline_games=a.baseline_games)
+        ladder = update_for_promotion(a.run_dir, a.promote, a.n_games, baseline_games=a.baseline_games,
+                                      engine_kw=engine_kw, fit_kw=fit_kw)
     elif a.backfill:
         shard = tuple(int(x) for x in a.shard.split(":")) if a.shard else None
-        ladder = backfill(a.run_dir, a.n_games, a.concurrency, a.impl, shard=shard)
+        ladder = backfill(a.run_dir, a.n_games, shard=shard, engine_kw=engine_kw, fit_kw=fit_kw)
         if not ladder:  # sharded worker — no fit, no ladder table to print
             print(f"[ladder] shard {a.shard} done (fit deferred to --fit-only)", flush=True)
             return 0
@@ -985,7 +1025,7 @@ def main() -> int:
           f"non-transitivity mean|err| {ladder['fit_quality']['mean_abs_err']:.3f}")
     # The recipe, printed beside the numbers it produced — a rating quoted without it is a rating
     # on an unstated scale, which is how a +73.1 Elo recipe gap went unnoticed for six days.
-    print(f"[ladder] recipe: {recipe_status(ladder)[1]}")
+    print(f"[ladder] recipe: {recipe_status(ladder)[1]} | transport: {ladder_transport(ladder)}")
     print_ladder_table(ladder)
     return 0
 

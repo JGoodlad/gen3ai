@@ -2,8 +2,9 @@
 
 The aggregation is what every fold verdict is read off, so each property it must have gets its own
 named test that FAILS on revert: the bootstrap is PAIRED (one shared index set), a floor is a
-max-pairwise MAGNITUDE, ``WITHIN FLOOR`` outranks a CI that excludes zero, and a run whose timeouts
-clear 25% reports no verdict at all.
+max-pairwise MAGNITUDE, ``WITHIN FLOOR`` outranks a CI that excludes zero, a run whose timeouts
+clear 25% reports no verdict at all, and the TRANSPORT boundary (P2: the Rust eval core vs the
+pre-boundary poke-env bridge) is refused by every reader that puts two reads side by side.
 """
 from __future__ import annotations
 
@@ -174,19 +175,98 @@ def test_the_level_is_the_equal_weight_team_mean_not_the_game_weighted_pool():
 # Concurrency refusal
 # ---------------------------------------------------------------------------------------------
 
-def test_concurrency_above_one_is_refused():
+def test_concurrency_above_one_is_refused_as_a_RETIRED_knob():
     um.check_concurrency(1)
-    with pytest.raises(um.MeterError, match="REFUSING concurrency=3"):
+    with pytest.raises(um.MeterError, match="REFUSING concurrency=3: the knob is RETIRED"):
         um.check_concurrency(3)
 
 
-def test_the_concurrency_refusal_has_an_explicit_override(monkeypatch):
-    monkeypatch.setenv(um.ALLOW_CONCURRENCY_ENV, "1")
-    um.check_concurrency(3)
+def test_the_concurrency_refusal_has_no_override_any_more(monkeypatch):
+    """The old `GEN3AI_UNTAUGHT_METER_ALLOW_CONCURRENCY=1` escape is gone with the poke-env path."""
+    monkeypatch.setenv("GEN3AI_UNTAUGHT_METER_ALLOW_CONCURRENCY", "1")
+    with pytest.raises(um.MeterError):
+        um.check_concurrency(3)
+    assert not hasattr(um, "ALLOW_CONCURRENCY_ENV")
+
+
+def test_impl_node_is_refused_with_the_reason():
+    um.check_impl("rust")
+    with pytest.raises(um.MeterError, match="Rust EVAL CORE"):
+        um.check_impl("node")
 
 
 # ---------------------------------------------------------------------------------------------
-# Seeds
+# THE TRANSPORT BOUNDARY (poke-env retirement P2)
+# ---------------------------------------------------------------------------------------------
+
+def _stamped(cells, transport):
+    for t in cells.values():
+        for c in t.values():
+            c.transport = transport
+    return cells
+
+
+def test_a_cell_without_a_stamp_is_the_pre_boundary_python_bridge_and_round_trips_the_stamp():
+    old = um.Cell(wins=1, finished=2, attempted=2)
+    assert old.transport_name == um.TRANSPORT_LEGACY == "python_bridge"
+    assert "transport" not in old.to_json()                       # a pre-boundary cell's JSON is unchanged
+    new = um.Cell(wins=1, ties=1, finished=2, attempted=2, transport=um.TRANSPORT_RUST, turn_limit_draws=1)
+    back = um.cell_from_json(new.to_json())
+    assert (back.transport, back.turn_limit_draws) == ("rust_eval", 1)
+    assert um.cell_from_json(old.to_json(), "rust_eval").transport == "rust_eval"   # the artifact-level stamp
+
+
+def test_aggregate_REFUSES_a_mix_of_transports_and_reads_it_only_with_consent():
+    cells = _cells({"A": [0.6] * 8, "BASE": [0.5] * 8}, TEAMS)
+    _stamped({"A": cells["A"]}, um.TRANSPORT_RUST)                # A on the Rust core, BASE pre-boundary
+    with pytest.raises(um.TransportMixError, match="DIFFERENT transports"):
+        um.aggregate(cells, TEAMS, ref_labels=["A"], baseline_label="BASE", draws=200)
+    res = um.aggregate(cells, TEAMS, ref_labels=["A"], baseline_label="BASE", draws=200,
+                       allow_transport_mix=True)
+    assert res["transport"] == "MIXED:python_bridge+rust_eval"
+    assert "TRANSPORT MIX" in um.render_markdown({"result": res})
+
+
+def test_aggregate_stamps_the_one_transport_of_an_unmixed_read():
+    cells = _stamped(_cells({"A": [0.6] * 8, "BASE": [0.5] * 8}, TEAMS), um.TRANSPORT_RUST)
+    res = um.aggregate(cells, TEAMS, ref_labels=["A"], baseline_label="BASE", draws=200)
+    assert res["transport"] == "rust_eval"
+    legacy = um.aggregate(_cells({"A": [0.6] * 8}, TEAMS), TEAMS, ref_labels=["A"], baseline_label=None, draws=200)
+    assert legacy["transport"] == "python_bridge"
+
+
+def test_merge_cells_refuses_a_shard_set_that_mixes_transports_and_reads_a_shards_meta_stamp():
+    rust_shard = {um.SHARD_META: {"transport": "rust_eval"},
+                  "A": {"U_0": um.Cell(wins=1, finished=2, attempted=2).to_json()}}
+    merged = um.merge_cells([rust_shard])
+    assert merged["A"]["U_0"].transport == "rust_eval" and um.SHARD_META not in merged
+    legacy_shard = {"A": {"U_1": um.Cell(wins=2, finished=2, attempted=2).to_json()}}
+    with pytest.raises(um.TransportMixError):
+        um.merge_cells([rust_shard, legacy_shard])
+
+
+def test_a_rows_artifact_takes_its_meta_transport_stamp(tmp_path):
+    art = tmp_path / "rust.json"
+    art.write_text(json.dumps({"_meta": {"transport": "rust_eval"}, "U_a": {"wins": 5, "games": 10}}))
+    assert um.cells_from_rows_artifact(str(art))["U_a"].transport == "rust_eval"
+    old = tmp_path / "old.json"
+    old.write_text(json.dumps({"_meta": {}, "U_a": {"wins": 5, "games": 10}}))
+    assert um.cells_from_rows_artifact(str(old))["U_a"].transport_name == "python_bridge"
+
+
+def test_the_rust_cycle_seed_depends_on_the_seed_and_the_team_never_the_ref():
+    """CRN: one cell's cycle seed is a function of (--seed, team index) ONLY — no ref goes in."""
+    import inspect
+
+    from agents.training import untaught_rust as UR
+
+    assert list(inspect.signature(UR.cycle_seed).parameters) == ["seed", "team_index"]
+    seeds = {UR.cycle_seed(s, t) for s in (0, 1) for t in range(8)}
+    assert len(seeds) == 16 and UR.cycle_seed(0, 3) == UR.cycle_seed(0, 3)
+
+
+# ---------------------------------------------------------------------------------------------
+# Seeds — the PRE-BOUNDARY python-bridge convention (kept for the committed replay drivers)
 # ---------------------------------------------------------------------------------------------
 
 def test_seed_zero_reproduces_the_banked_probe_conventions():

@@ -137,12 +137,14 @@ def read_own(protocol: str, **kw: Any) -> Any:
     raise H2HError(f"protocol {protocol!r} is not one main.h2h plays ({sorted(RV.PROTOCOL_OF_MODE.values())})")
 
 
-def eval_team_set() -> str:
+def eval_team_set(team_pool: str = "repo") -> str:
     """The TEAM SET identity of the player's eval team builder (``eval_builders(None, [])``'s trainee builder: the
-    default pool with its 10 % sample-team bias): the digest of the ordered team lists and the builder parameters."""
+    default pool with its 10 % sample-team bias): the digest of the ordered team lists and the builder parameters.
+    ``team_pool`` names the pool rule checked first (``repo``: :func:`check_team_pool`; ``cwd``:
+    :func:`check_team_pool_cwd`)."""
     from utils.team_loader import TeamLoader
 
-    check_team_pool()
+    team_pool_check(team_pool)
     loader = TeamLoader()
     return L.team_set_id({"builder": "Gen3Teambuilder", "kind": "default_biased", "bias_prob": 0.1,
                           "teams": list(loader.get_all_teams()), "bias_teams": list(loader.get_sample_teams())})
@@ -416,6 +418,34 @@ def check_team_pool() -> Path:
     return want
 
 
+def check_team_pool_cwd() -> Path:
+    """The TRAINER's rule (``team_pool="cwd"``): the pool is the WORKING DIRECTORY's ``data/teams``, whatever checkout
+    the code came from. A PINNED run's child imports its pin's ``src/`` but runs with cwd = the main checkout and reads
+    main's ``data/`` (root CLAUDE.md: a pin isolates CODE, not DATA), so a process it spawns (the snapshot ladder's
+    detached updater) must draw from the pool the run trained on, where :func:`check_team_pool` would refuse. It still
+    REFUSES the failure that check exists for: no ``./data/teams``, or a pool that loads no team."""
+    from utils.team_loader import TeamLoader
+
+    here = Path.cwd() / "data" / "teams"
+    if not here.is_dir():
+        raise H2HError(f"the team pool is read relative to the working directory ({Path.cwd()}): {here} is missing")
+    if not TeamLoader().get_all_teams():
+        raise H2HError(f"the team pool under {here} loads NO team: the eval core would die at its first draw")
+    return here
+
+
+#: The team-pool rules an engine can check (``H2HEngine(team_pool=...)``): ``repo`` = this checkout's pool, the
+#: head-to-head's own rule; ``cwd`` = the working directory's, the trainer's rule.
+TEAM_POOL_RULES: Dict[str, Callable[[], Path]] = {"repo": check_team_pool, "cwd": check_team_pool_cwd}
+
+
+def team_pool_check(rule: str) -> Path:
+    """Run the named team-pool rule (:data:`TEAM_POOL_RULES`); an unknown name is refused."""
+    if rule not in TEAM_POOL_RULES:
+        raise H2HError(f"team pool rule {rule!r} not in {sorted(TEAM_POOL_RULES)}")
+    return TEAM_POOL_RULES[rule]()
+
+
 class H2HEngine:
     """ONE T2 service and one eval core PER (player architecture, opponent architecture) the plan uses, built once
     (:class:`EngineDecl`). A single-architecture plan is today's engine exactly: one slot group of two slots (the
@@ -433,7 +463,8 @@ class H2HEngine:
 
     def __init__(self, player: PlayerRef, opponent: PlayerRef, compute: Compute,
                  emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True),
-                 decl: Optional[EngineDecl] = None, reveal_mode: str = "off"):
+                 decl: Optional[EngineDecl] = None, reveal_mode: str = "off", *,
+                 team_source_check: bool = True, team_pool: str = "repo"):
         import torch
 
         from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
@@ -441,7 +472,11 @@ class H2HEngine:
         from agents.training.rust_rollout.build import RustEnvDecl
 
         self.compute, self.emit = compute, emit
-        check_team_pool()
+        # `team_source_check=False` + `team_pool="cwd"` is the SNAPSHOT LADDER's engine (`agents.training.
+        # snapshot_ladder_play`): its yardstick draws both sides from the default pool for EVERY run (as it always
+        # did), and it runs inside a pinned run's tree, whose data/ is the working directory's
+        self.team_source_check, self.team_pool = bool(team_source_check), team_pool
+        team_pool_check(team_pool)
         check_core_flags(player)
         check_core_flags(opponent)
         # THIS checkout's env core, built (incrementally) before anything loads — the trainer's own startup step
@@ -456,7 +491,7 @@ class H2HEngine:
         self.mode = decl.mode if decl is not None else RV.check_mode(reveal_mode)
         if decl is not None and reveal_mode not in ("off", decl.mode):
             raise H2HError(f"reveal mode {reveal_mode!r} differs from the declaration's {decl.mode!r}")
-        self.regime = regime_for(self.turn_limit, mode=self.mode)
+        self.regime = regime_for(self.turn_limit, team_set=eval_team_set(team_pool), mode=self.mode)
         self._threads0 = torch.get_num_threads()
         #: host copies of the checkpoints this engine has loaded, by content hash (a cross reuses each run's snapshot
         #: across a row and a column); bounded by :attr:`host_cache` entries, least recently used evicted
@@ -566,7 +601,10 @@ class H2HEngine:
         t0 = time.perf_counter()
         check_core_flags(player)
         check_core_flags(opponent)
-        team_check = {player.id: check_team_source(player), opponent.id: check_team_source(opponent)}
+        team_check = ({player.id: check_team_source(player), opponent.id: check_team_source(opponent)}
+                      if self.team_source_check else
+                      {r.id: "not checked (the caller's yardstick draws both sides from the default pool)"
+                       for r in (player, opponent)})
         pm, om = self._host(player), self._host(opponent)
         combo = (self._group(player, pm, "player"), self._group(opponent, om, "opponent"))
         if combo not in self.decl.combos:

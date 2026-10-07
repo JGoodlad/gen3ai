@@ -705,6 +705,11 @@ def edges_from_run(run_dir: str, *, source: str = "auto", with_bot_rr: bool = Fa
         for (lo, hi), (wins_lo, g) in ladder_mod.load_games(run_dir).items():
             if g > 0:
                 results.append((elo_mod.snap_key(lo), elo_mod.snap_key(hi), wins_lo, g))
+        # P2: a dense log played on BOTH transports (the Python ladder and the Rust eval engine) is two
+        # measurements; the width over it is stated, never refused here (a descriptor, not a rating)
+        if ladder_mod.fit_transport(run_dir, allow_mixed=True) == ladder_mod.TRANSPORT_MIXED:
+            caveats.append("the dense ladder MIXES transports (python_bridge + rust_eval): its edges are two "
+                           "measurements (designs/training/eval_and_rating.md \"The TRANSPORT boundary\")")
     except Exception as e:  # noqa: BLE001 — a run may have no dense ladder at all
         caveats.append(f"no dense frozen ladder ({type(e).__name__})")
     n_dense = len(results)

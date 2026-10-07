@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,666-line file. **The ledger itself is append-only and is never edited by this**;
+22,675-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**790 headings · 735 dated · 2026-08-01 → 2026-10-06 · ledger 22,666 lines.**
+**791 headings · 736 dated · 2026-08-01 → 2026-10-06 · ledger 22,675 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -810,3 +810,4 @@ rename.
   - `L22636` · `2026-10-06` · FINDING + FIX · **Our active's move LEGALITY reached the wrong move in `PokemonEncoder` since `bcdd868b` (2026-08-17): request-order legality written by POSITION onto move slots sorted by `Move.id`; on real play 2,542 of 37,358 move-bearing decisions (6.8 %) put a choosable move's "legal" bit on another move. The agent NEVER acted on a wrong move (mask, pointer scoring and the sim agree on 142,598 / 142,598 actions and 27,361 / 27,361 executed moves). Fixed at the one cross-order rule (`gen3_move_legality_by_id_v1`) + a THROWING row guard at the inference service**
   - `L22648` · `2026-10-06` · BUILT · **POKE-ENV RETIREMENT, P0 (T27): a GENERATED importer inventory (171 files = 74 non-test + 97 test, plus one permanent peer-process script) and a SHRINK-ONLY static import gate: a new importer fails, a retired one must leave the list, and the frozen counts only go down (`python -m utils.poke_env_importers --shrink`)**
   - `L22658` · `2026-10-06` · BUILT · **POKE-ENV RETIREMENT, P0 dead-code removal: `collect_replays.py`, `replay_imputation_probe.py` and `ladder_usage_smoke.py` (+ their tests, 1,932 lines in all, tests included) DELETED after a reachability check; the import allowlist shrank 171 -> 167 by the first `--shrink`; the standalone Python eval worker was asked for and is NOT deletable (still reachable)**
+  - `L22666` · `2026-10-06` · BUILT + MEASURED · **POKE-ENV RETIREMENT P2: the ELO ladder and the untaught meter now play every game on the Rust eval engine (the trainee's own Rust rows); the TRANSPORT is a stamped REGIME BOUNDARY that fits and readers refuse to mix. Paired shift on 16 N0 ladder pairs: NOT DETECTED (+0.99 pp [−2.46, +4.43] on the fitted edge)**

@@ -22,26 +22,30 @@ frozen baseline, and vs the continuation arms at matched depth — and applies t
 to both. A single column is a fold's *apparent* gift; the second is what is left after the parent's
 own free progress is removed.
 
-REPRODUCIBILITY — BOTH HALVES, OR THE LEVELS ARE A DRAW.
+THE GAMES ARE PLAYED ON THE RUST EVAL CORE (poke-env retirement P2, ``agents.training.untaught_rust``).
+One (ref, team) cell is one eval cycle of the Rust eval core with the T2 inference service on the CPU,
+on the training encoder's rows — the poke-env ``RLPlayer`` pair over the bridge (the Python encoder)
+is gone from the meter. 🚨 **That switch is a REGIME BOUNDARY**: every cell / artifact carries
+``transport = "rust_eval"`` (:data:`TRANSPORT_RUST`); one without it is ``"python_bridge"``
+(:data:`TRANSPORT_LEGACY`, pre-boundary), and every reader that puts reads side by side
+(:func:`aggregate`, :func:`merge_cells`, ``--from-rows``) REFUSES a mix unless told
+(``allow_transport_mix``).
 
-* **All five global-RNG seams are pinned** (``src/agents/training/CLAUDE.md`` → GLOBAL-RANDOM
-  COUPLING): ``$GEN3AI_{PLAYER,TEAM,POLICY,POOL,STALLER}_SEED``, set per team from
-  ``--seed`` + the team index, plus a per-BATTLE re-seed of both players' sampling generators and a
-  per-battle sim seed. Seeds alone are not enough.
-* **``concurrency`` is REFUSED above 1.** Interleaved battles consume the shared streams in a
-  scheduling-dependent order: measured 2026-09-03, seeded at concurrency 3 two runs of the offline
-  collateral-KL probe still produced 1193 vs 1141 states with arm levels up to +0.043 apart. At
-  concurrency 1 they were byte-identical.
-* **Sharding is over TEAMS, one single-concurrency process each.** A cell is a pure function of
-  (ref, team index, battle index), so the shard split cannot move a number — verified by
-  ``exploiter_competence`` (two runs of one cell in two processes → bit-identical per-battle rows)
-  before it sharded 3200 battles across six workers, and gated here by
-  ``untaught_meter_reproducibility_integration_test.py``.
+REPRODUCIBILITY. Every game is a pure function of its key — (the cell's cycle seed, a function of
+``--seed`` and the team index only; the game index) — through the per-game seed rule
+(``rust_eval.seeds``) and the KEYED DRAW, never of the env count, the threads or the shard process,
+except that a decision within a rounding error of a tie can flip with the forward's batch shape (the
+env count). At a fixed compute a cell replays bit for bit, so **sharding over TEAMS** (``--workers``)
+cannot move a number. ``concurrency`` is RETIRED (:func:`check_concurrency`): battles in flight are the
+core's envs, and they no longer share a stream.
 
-CRN. For a given (team ``ti``, battle ``j``) the dice, the opponent's team and both players'
-sampling-stream starting state are identical across every ref — only the ref's weights change — so
-every ref-vs-ref difference is a PAIRED difference on the same games. The opponent's team draw is
-prefix-consistent, so a ref measured at 12 games/team plays the first 12 of another ref's 200.
+CRN. For a given (team ``ti``, battle ``j``) the battle seed, the opponent's team and both sides'
+sampling-stream keys are identical across every ref — only the ref's weights change — so every
+ref-vs-ref difference is a PAIRED difference on the same games. Each game's draw is its own, so the
+schedule is prefix-consistent: a ref measured at 12 games/team plays the first 12 of another's 200.
+
+THE TURN LIMIT. The core ends a game at the declared turn limit as a DRAW, as training does, so the
+TIMEOUT bucket below is 0 on a Rust read and those games are TIES (``Cell.turn_limit_draws``).
 
 AGGREGATION. Team is the cluster (between-team variance dominates and more games per team does not
 shrink it). **One fixed resampling index set is shared by every ref and every contrast**, so a
@@ -53,7 +57,7 @@ VERDICT VOCABULARY, as ruled: ``WITHIN FLOOR`` (|Δ| below the replicate floor �
 exclude zero, which says the games are consistent, not that the arm differs), ``NOT DETECTED``
 (|Δ| clears the floor but the CI spans zero), ``SIGNIFICANT``. A run whose timeouts exceed 25% of
 attempted battles is ``INCONCLUSIVE`` and reports no verdict at all — a timeout is never a semantic
-outcome.
+outcome (a pre-boundary ``python_bridge`` read could carry timeouts; a Rust read carries none).
 """
 from __future__ import annotations
 
@@ -180,8 +184,11 @@ DEFAULT_BOOTSTRAP_SEED = 20260906
 #: INCONCLUSIVE instead of a level.
 TIMEOUT_INCONCLUSIVE_FRACTION = 0.25
 
-#: Seed offsets, per seam. At ``--seed 0`` the sim dice, pool draw and per-battle policy seeds
-#: reproduce ``exploiter_competence/compete.py`` exactly.
+#: THE PYTHON-BRIDGE SEED CONVENTION (pre-boundary, ``transport = "python_bridge"``). The meter no longer
+#: plays through it; it is kept, unchanged, for the committed measurement drivers that replay the
+#: pre-boundary series (``n0_endofrun_2026-09-27/scripts/gu_unit.py``, pinned by
+#: ``src/main/untaught_unit_script_test.py``). At ``--seed 0`` the sim dice, pool draw and per-battle
+#: policy seeds reproduce ``exploiter_competence/compete.py`` exactly.
 _ENV_SEED_OFFSETS = {
     "GEN3AI_PLAYER_SEED": 10000,
     "GEN3AI_TEAM_SEED": 20000,
@@ -194,12 +201,20 @@ _PILOT_POLICY_BASE = 71000
 _OPP_POLICY_BASE = 72000
 _SEED_STRIDE = 1000000
 
-#: Set to ``"1"`` to accept an unquotable, non-reproducible run at concurrency > 1.
-ALLOW_CONCURRENCY_ENV = "GEN3AI_UNTAUGHT_METER_ALLOW_CONCURRENCY"
+#: The two TRANSPORTS a cell can have been played on — a regime boundary (module docs).
+TRANSPORT_RUST = "rust_eval"
+TRANSPORT_LEGACY = "python_bridge"
 
 
 class MeterError(RuntimeError):
     """A refusal the caller should surface verbatim (bad concurrency, unresolvable input)."""
+
+
+class TransportMixError(MeterError):
+    """Reads played on DIFFERENT transports (``rust_eval`` vs the pre-boundary ``python_bridge``) put side by
+    side without consent (:func:`cells_transport`)."""
+
+    cause = "transport_mix"
 
 
 class MirroredPinnedTeamError(MeterError):
@@ -408,18 +423,30 @@ def policy_seeds(seed: int, team_index: int, battle_index: int) -> Tuple[int, in
 
 
 def check_concurrency(concurrency: int) -> None:
-    """REFUSE concurrency > 1 unless the caller explicitly accepts unquotable levels."""
+    """The ``concurrency`` knob is RETIRED (P2): REFUSE any value but 1, with the reason.
+
+    It existed because interleaved poke-env battles consumed shared RNG streams in a
+    scheduling-dependent order (measured 2026-09-03: seeded at concurrency 3, two runs differed by up to
+    +0.043 in level). On the Rust eval core every game is a pure function of its key and the core's envs
+    ARE the battles in flight (``--n-envs``), so there is nothing left for this knob to set."""
     if concurrency == 1:
         return
-    if os.environ.get(ALLOW_CONCURRENCY_ENV) == "1":
+    raise MeterError(
+        f"REFUSING concurrency={concurrency}: the knob is RETIRED — the meter plays on the Rust eval core,\n"
+        "  where the battles in flight are the core's envs (--n-envs) and every game is a pure function of\n"
+        "  its key (cycle seed, game index), so no shared stream is consumed in a scheduling-dependent\n"
+        "  order. Shard over TEAMS with --workers N, or raise --n-envs.")
+
+
+def check_impl(impl: str) -> None:
+    """``impl`` named the poke-env bridge's sim (``rust`` / ``node``); the meter's games now run on the Rust eval
+    core, so only ``rust`` means anything. ``node`` is REFUSED with the reason."""
+    if impl == "rust":
         return
     raise MeterError(
-        f"REFUSING concurrency={concurrency}: this meter is reproducible only at concurrency=1.\n"
-        "  Seeds pin the dice and both players' sampling, but interleaved battles still consume\n"
-        "  the shared streams in a scheduling-dependent order (measured 2026-09-03: seeded at\n"
-        "  concurrency 3, two runs differed by 52 states and up to +0.043 in level).\n"
-        f"  Shard over TEAMS with --workers N instead, or set {ALLOW_CONCURRENCY_ENV}=1 to accept\n"
-        "  levels that cannot be quoted.")
+        f"REFUSING --impl {impl}: the untaught meter's games run on the Rust EVAL CORE (poke-env retirement P2) —\n"
+        "  there is no bridge to pick an implementation for. The pre-boundary node-bridge series is history;\n"
+        "  replay it pinned to a commit before the switch.")
 
 
 # --------------------------------------------------------------------------------------------
@@ -438,10 +465,18 @@ class Cell:
     #: MIRRORED TEAM PAIRS (`gen3_mirrored_pairs_v1`): the cell's pentanomial over PAIRS (pairs scoring
     #: 0..4 half-points to the pilot). None = an unmirrored cell; its presence IS the cell's regime.
     pairs: Optional[List[int]] = None
+    #: The TRANSPORT the cell was played on (``rust_eval``); None = a pre-boundary cell (``python_bridge``).
+    transport: Optional[str] = None
+    #: Rust eval core only: the games among ``ties`` that ended AT THE TURN LIMIT (a DRAW, as in training).
+    turn_limit_draws: Optional[int] = None
 
     @property
     def mirrored(self) -> bool:
         return self.pairs is not None
+
+    @property
+    def transport_name(self) -> str:
+        return self.transport or TRANSPORT_LEGACY
 
     @property
     def timeouts(self) -> int:
@@ -456,18 +491,24 @@ class Cell:
                 "finished": self.finished, "attempted": self.attempted,
                 "timeouts": self.timeouts, "win_rate": self.win_rate,
                 "opp_teams": self.opp_teams,
-                **({"pairs": list(self.pairs)} if self.pairs is not None else {})}
+                **({"pairs": list(self.pairs)} if self.pairs is not None else {}),
+                **({"transport": self.transport} if self.transport is not None else {}),
+                **({"turn_limit_draws": self.turn_limit_draws} if self.turn_limit_draws is not None else {})}
 
 
-def cell_from_json(d: dict) -> Cell:
+def cell_from_json(d: dict, transport: Optional[str] = None) -> Cell:
+    """``transport``: the artifact-level stamp, used when the row carries none of its own."""
     finished = int(d.get("finished", d.get("games", 0)))
     attempted = int(d.get("attempted", finished))
     wins = int(d["wins"])
     ties = int(d.get("ties", 0))
     pairs = d.get("pairs")
+    tld = d.get("turn_limit_draws")
     return Cell(wins=wins, ties=ties, losses=max(0, finished - wins - ties),
                 finished=finished, attempted=attempted, opp_teams=list(d.get("opp_teams", [])),
-                pairs=[int(x) for x in pairs] if pairs is not None else None)
+                pairs=[int(x) for x in pairs] if pairs is not None else None,
+                transport=d.get("transport") or transport,
+                turn_limit_draws=int(tld) if tld is not None else None)
 
 
 def cells_from_rows_artifact(path: str) -> Dict[str, Cell]:
@@ -478,7 +519,9 @@ def cells_from_rows_artifact(path: str) -> Dict[str, Cell]:
     """
     with open(path) as fh:
         raw = json.load(fh)
-    cells = {k: cell_from_json(v) for k, v in raw.items()
+    meta = raw.get("_meta") if isinstance(raw, dict) else None
+    transport = meta.get("transport") if isinstance(meta, dict) else None
+    cells = {k: cell_from_json(v, transport) for k, v in raw.items()
              if isinstance(v, dict) and "wins" in v and k not in ("POOLED", "_meta")}
     if not cells:
         raise MeterError(f"{path}: no per-team rows (expected objects carrying 'wins'/'games')")
@@ -486,11 +529,12 @@ def cells_from_rows_artifact(path: str) -> Dict[str, Cell]:
 
 
 # --------------------------------------------------------------------------------------------
-# Playing — the battle harness (imports torch/poke-env lazily so the maths half stays cheap)
+# Playing — on the Rust eval core (`untaught_rust`, imported lazily so the maths half stays cheap)
 # --------------------------------------------------------------------------------------------
 
 def _teambuilders():
-    """Build the two teambuilder subclasses lazily.
+    """Build the two teambuilder subclasses lazily. LEGACY: the python-bridge path only (``gu_unit.py``
+    replays the pre-boundary series through it); the meter's own games draw on the Rust eval core.
 
     They are defined INSIDE a function on purpose: importing ``utils.teambuilder`` at module scope
     would drag poke-env into every consumer of the pure aggregation half, which is torch-free and
@@ -531,37 +575,24 @@ def _teambuilders():
     return PinnedTeam, PairedPool
 
 
-def _fixed_packed_builder():
-    """The mirrored pair's swappable-side builder (built lazily, like ``_teambuilders``; a SEPARATE
-    factory so ``_teambuilders()``'s two-class contract — read by the committed measurement scripts —
-    does not move). It yields whatever PACKED team it was last ``set`` to; the teams it is handed were
-    packed by ``PinnedTeam`` / ``PairedPool`` (``Gen3Teambuilder``: validated, the gen-3 HP IV fix)."""
-    from poke_env.teambuilder import Teambuilder
-
-    class FixedPacked(Teambuilder):
-        def __init__(self):
-            self.current: Optional[str] = None
-
-        def set(self, packed: str) -> "FixedPacked":
-            self.current = packed
-            return self
-
-        def yield_team(self):
-            if self.current is None:
-                raise MeterError("FixedPacked: no team set for this game")
-            return self.current
-
-    return FixedPacked
-
-
 def _reseed_player(player, seed: int) -> None:
     """Reset a player's private sampling generator (the documented per-instance cache,
-    ``gen3_policy_sample_rng_v1``) so battle (ti, j) starts identically for every ref."""
+    ``gen3_policy_sample_rng_v1``) so battle (ti, j) starts identically for every ref. LEGACY: the
+    python-bridge path only (``gu_unit.py``); the meter no longer plays through it."""
     player._policy_seed = int(seed)
     player._policy_gens = {}
 
 
-@restores_torch_globals          # it caps torch at 1 thread for its games, and gives the caller its own back
+def default_compute() -> Any:
+    """The meter's default CPU compute (``main.h2h.play.Compute``): 32 envs, 2 core threads, 4 torch threads,
+    the process front end, the release build. A test passes its own (``front="ffi", profile="selfcheck"``)."""
+    from main.h2h.play import Compute
+
+    return Compute(device="cpu", backend="eager", n_envs=32, threads=2, torch_threads=4, front="proc",
+                   profile="release")
+
+
+@restores_torch_globals          # it sets the forward's thread count for its games, and gives the caller its own back
 def play_cells(
     refs: Sequence[ResolvedRef],
     teams: Sequence[TeamSlice],
@@ -574,152 +605,65 @@ def play_cells(
     stochastic: bool = True,
     progress=None,
     mirrored: bool = False,
+    compute: Any = None,
+    game_log: Optional[Dict[Tuple[str, str], List[Dict[str, Any]]]] = None,
+    info: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Dict[str, Cell]]:
-    """Play every (ref × team) cell and return the raw counts. ``concurrency`` must be 1.
+    """Play every (ref × team) cell ON THE RUST EVAL CORE and return the raw counts
+    (``agents.training.untaught_rust``; every cell is stamped ``transport = "rust_eval"``).
 
-    ``stochastic`` sets BOTH sides' sampling regime and defaults to True — the TRAINING regime,
-    which is what every untaught-meter level on record was measured in. ``False`` is the EVAL
-    regime (argmax both sides), the one `main.eval_worker` plays a fixed cross-run opponent in;
-    the two are different populations and a number must never leave either without saying which
-    it is (`main.best_response_gap` prints the regime on every row).
+    ``stochastic`` sets BOTH sides' sampling regime and defaults to True — the TRAINING regime
+    (both sides sample at T = 1.0, the keyed draw), which is what every untaught-meter level on record
+    was measured in. ``False`` is the EVAL regime (argmax both sides), the one a fixed cross-run opponent
+    is evaluated in; the two are different populations and a number must never leave either without
+    saying which it is (`main.best_response_gap` prints the regime on every row).
 
-    ``mirrored`` (T17, ``gen3_mirrored_pairs_v1``): ``games_per_team`` (EVEN — refused otherwise) is
-    played as ``games_per_team // 2`` MIRRORED PAIRS. Pair ``j`` draws ONE pool team ``B_j``
-    (``pool_sequence`` over pairs); game 1 the pilot plays its pinned team ``T`` against the opponent on
-    ``B_j``, game 2 the pilot plays ``B_j`` against the opponent on ``T`` — both with battle ``j``'s sim
-    seed and policy seeds — so the team draw's luck cancels inside the pair. Each cell then carries its
-    pentanomial ``pairs``. 🚨 This CHANGES what the meter measures: half the games put the pilot on a POOL
-    team, not its pinned one — a regime boundary, never pooled with an unmirrored read.
+    ``impl`` (only ``"rust"``: :func:`check_impl`) and ``concurrency`` (only 1: :func:`check_concurrency`)
+    are RETIRED knobs, still checked so an old caller is refused with the reason. ``compute`` is a
+    ``main.h2h.play.Compute`` (CPU only; default :func:`default_compute`). ``game_log`` receives each
+    cell's trimmed game rows under ``(ref label, team key)``; ``info`` the engine's provenance (the
+    transport, the encoder, the core stamp, the eval regime, the compute).
+
+    ``mirrored`` is REFUSED (P13): every cell here is a PILOT on its PINNED team, and mirroring swaps it.
     """
     check_concurrency(concurrency)
+    check_impl(impl)
     if mirrored:
         # P13 (owner 2026-10-02): every cell here is a PILOT on its PINNED team — the one place both
         # pinned-team meters (`main.untaught_meter`, `main.best_response_gap --play`) play through.
         from agents.training.mirrored_pairs import pinned_team_refusal
         raise MirroredPinnedTeamError(pinned_team_refusal("untaught_meter.play_cells"))
-    import asyncio
-
     import torch as th
-    from poke_env.ps_client import AccountConfiguration
-    from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
-    from agents.inference.player import RLPlayer
-    from agents.model.snapshot import current_model_version, load_foreign_opponent
-    from agents.observation.state_encoder import load_mappings
-    from utils.bridge.local_battle_runner import run_local_battles
-    from utils.team_loader import TeamLoader
+    from agents.training.untaught_rust import play_cells_rust
 
-    th.set_num_threads(1)
-    PinnedTeam, PairedPool = _teambuilders()
-    FixedPacked = _fixed_packed_builder()
-    from agents.training import mirrored_pairs as MP
-
-    maps = load_mappings()
-    cv = current_model_version(maps)
-    opp_model = load_foreign_opponent(
-        opponent.zip_path, current_version=cv, device="cpu",
-        config_path=opponent.config_path)[0]
-
-    pool = PairedPool(TeamLoader().get_all_teams())
-    n_pool = len(pool.packed_teams)
-    n_draws = games_per_team // 2 if mirrored else games_per_team
-    seqs = {t.index: pool_sequence(seed, t.index, n_draws, n_pool) for t in teams}
-
-    out: Dict[str, Dict[str, Cell]] = {}
-    for ref in refs:
-        model = load_foreign_opponent(
-            ref.zip_path, current_version=cv, device="cpu", config_path=ref.config_path)[0]
-        out[ref.label] = {}
-        for team in teams:
-            ti = team.index
-            if mirrored:
-                cells = _play_mirrored_cell(RLPlayer, model, opp_model, team, pool, seqs[ti], seed, impl,
-                                            maps, stochastic, PinnedTeam, FixedPacked, MP)
-                out[ref.label][team.key] = cells
-                if progress is not None:
-                    progress(ref.label, team.key, cells)
-                continue
-            pilot = RLPlayer(model=model, team=PinnedTeam(team.path), battle_format="gen3ou",
-                             server_configuration=LocalhostServerConfiguration, mappings=maps,
-                             account_configuration=AccountConfiguration(f"UM{ti}a", "pw"),
-                             stochastic=stochastic, start_listening=False)
-            opp = RLPlayer(model=opp_model, team=pool, battle_format="gen3ou",
-                           server_configuration=LocalhostServerConfiguration, mappings=maps,
-                           account_configuration=AccountConfiguration(f"UM{ti}b", "pw"),
-                           stochastic=stochastic, start_listening=False)
-            pool.set_sequence(seqs[ti])
-            cell = Cell()
-            for j in range(games_per_team):
-                ps, os_ = policy_seeds(seed, ti, j)
-                _reseed_player(pilot, ps)
-                _reseed_player(opp, os_)
-                pool.at(j)
-                pilot.reset_battles()
-                opp.reset_battles()
-                asyncio.run(run_local_battles(pilot, opp, 1, concurrency=1, impl=impl,
-                                              seed=sim_seed(seed, ti, j)))
-                cell.attempted += 1
-                cell.opp_teams.append(seqs[ti][j])
-                if pilot.n_finished_battles != 1:
-                    continue          # the TIMEOUT bucket — never scored as a loss
-                cell.finished += 1
-                cell.wins += int(pilot.n_won_battles)
-                cell.ties += int(pilot.n_tied_battles)
-                cell.losses += 1 - int(pilot.n_won_battles) - int(pilot.n_tied_battles)
-            out[ref.label][team.key] = cell
-            if progress is not None:
-                progress(ref.label, team.key, cell)
-    return out
+    compute = compute if compute is not None else default_compute()
+    if compute.torch_threads:
+        th.set_num_threads(int(compute.torch_threads))
+    return play_cells_rust(refs, teams, opponent, games_per_team=games_per_team, seed=seed,
+                           stochastic=stochastic, compute=compute, progress=progress, game_log=game_log,
+                           info=info)
 
 
-def _play_mirrored_cell(RLPlayer, model, opp_model, team, pool, seq, seed, impl, maps, stochastic,
-                        PinnedTeam, FixedPacked, MP) -> Cell:
-    """One (ref, team) cell as MIRRORED PAIRS — see ``play_cells(mirrored=True)``."""
-    import asyncio
+def cells_transport(cells_by_ref: Dict[str, Dict[str, Cell]], *, allow_mix: bool = False) -> str:
+    """The ONE transport every cell was played on (``rust_eval`` / the pre-boundary ``python_bridge``).
 
-    from poke_env.ps_client import AccountConfiguration
-    from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
+    A MIX is :class:`TransportMixError` — the transport switch (poke-env retirement P2) is a regime
+    boundary: the encoder, the sampler and the turn-limit rule all changed with it — unless
+    ``allow_mix``, which returns ``"MIXED:<a>+<b>"`` so the readout says so."""
+    kinds = sorted({c.transport_name for t in cells_by_ref.values() for c in t.values()})
+    if len(kinds) <= 1:
+        return kinds[0] if kinds else TRANSPORT_RUST
+    if allow_mix:
+        return "MIXED:" + "+".join(kinds)
+    by = {k: sorted(lab for lab, t in cells_by_ref.items() if any(c.transport_name == k for c in t.values()))
+          for k in kinds}
+    raise TransportMixError(
+        f"these reads were played on DIFFERENT transports {by} — the Rust eval core (rust_eval) and the "
+        "pre-boundary poke-env bridge (python_bridge) are different regimes (encoder, sampler, turn-limit "
+        "rule); re-read one side on the other's transport, or pass --allow-transport-mix to read them side "
+        "by side knowingly")
 
-    from utils.bridge.local_battle_runner import run_local_battles
-
-    ti = team.index
-    pinned = PinnedTeam(team.path).packed_teams[0]
-    ours, theirs = FixedPacked(), FixedPacked()
-    pilot = RLPlayer(model=model, team=ours, battle_format="gen3ou",
-                     server_configuration=LocalhostServerConfiguration, mappings=maps,
-                     account_configuration=AccountConfiguration(f"UM{ti}a", "pw"),
-                     stochastic=stochastic, start_listening=False)
-    opp = RLPlayer(model=opp_model, team=theirs, battle_format="gen3ou",
-                   server_configuration=LocalhostServerConfiguration, mappings=maps,
-                   account_configuration=AccountConfiguration(f"UM{ti}b", "pw"),
-                   stochastic=stochastic, start_listening=False)
-    cell = Cell()
-    points: List[Optional[int]] = []
-    for j, b_idx in enumerate(seq):
-        pool_team = pool.packed_teams[b_idx]
-        for swapped in (False, True):
-            ours.set(pool_team if swapped else pinned)
-            theirs.set(pinned if swapped else pool_team)
-            ps, os_ = policy_seeds(seed, ti, j)        # the SAME seeds for both games of pair j
-            _reseed_player(pilot, ps)
-            _reseed_player(opp, os_)
-            pilot.reset_battles()
-            opp.reset_battles()
-            asyncio.run(run_local_battles(pilot, opp, 1, concurrency=1, impl=impl,
-                                          seed=sim_seed(seed, ti, j)))
-            cell.attempted += 1
-            cell.opp_teams.append(int(b_idx))
-            if pilot.n_finished_battles != 1:
-                points.append(None)          # the TIMEOUT bucket — and it voids the whole pair
-                continue
-            won, tied = int(pilot.n_won_battles), int(pilot.n_tied_battles)
-            cell.finished += 1
-            cell.wins += won
-            cell.ties += tied
-            cell.losses += 1 - won - tied
-            points.append(MP.WIN_POINTS if won else MP.DRAW_POINTS if tied else MP.LOSS_POINTS)
-    cell.pairs = MP.pair_counts(points)
-    return cell
 
 
 def cells_regime(cells_by_ref: Dict[str, Dict[str, Cell]]) -> bool:
@@ -798,6 +742,7 @@ def aggregate(
     floor: Optional[float] = None,
     draws: int = DEFAULT_BOOTSTRAP_DRAWS,
     bootstrap_seed: int = DEFAULT_BOOTSTRAP_SEED,
+    allow_transport_mix: bool = False,
 ) -> dict:
     """The whole readout: levels, both delta columns, both floors, the INCONCLUSIVE rule.
 
@@ -806,6 +751,8 @@ def aggregate(
     column's floor is computed from the control arms themselves.
     """
     mirrored = cells_regime(cells_by_ref)
+    # the TRANSPORT boundary (P2): a rust_eval read and a python_bridge read are never one population
+    transport = cells_transport(cells_by_ref, allow_mix=allow_transport_mix)
     idx = bootstrap_index(len(team_keys), draws, bootstrap_seed)
     all_labels = list(dict.fromkeys(list(ref_labels) + ([baseline_label] if baseline_label else [])
                                     + list(control_labels)))
@@ -881,6 +828,7 @@ def aggregate(
     return {
         "teams": list(team_keys),
         "mirrored_pairs": mirrored,
+        "transport": transport,
         "levels": levels,
         "control": control_block,
         "contrasts": contrasts,
@@ -908,7 +856,11 @@ def render_markdown(result: dict, *, title: str = "Untaught meter") -> str:
         lines += [f"**Teams** {meta.get('teams_manifest', '?')} ({len(res['teams'])} clusters) · "
                   f"**opponent** `{meta.get('opponent', {}).get('resolved_file', '?')}` · "
                   f"**{meta.get('games_per_team', '?')} games/team** · seed {meta.get('seed', '?')} · "
-                  f"concurrency {meta.get('concurrency', 1)}", ""]
+                  f"**transport** `{res.get('transport', meta.get('transport', TRANSPORT_LEGACY))}`", ""]
+    if str(res.get("transport", "")).startswith("MIXED:"):
+        lines += [f"> 🚨 **TRANSPORT MIX** ({res['transport']}) — read side by side under "
+                  "`--allow-transport-mix`: the Rust eval core and the poke-env bridge are different regimes "
+                  "(encoder, sampler, turn-limit rule); the levels are NOT one population.", ""]
     to = res["timeouts"]
     if to["inconclusive"]:
         lines += [f"> 🚨 **INCONCLUSIVE** — {to['timeouts']}/{to['attempted']} battles timed out "
@@ -996,19 +948,31 @@ def render_text(result: dict) -> str:
         out.append(row)
     to = res["timeouts"]
     out.append(f"  timeouts {to['timeouts']}/{to['attempted']} ({to['fraction']:.1%})"
-               + ("  ** INCONCLUSIVE **" if to["inconclusive"] else ""))
+               + ("  ** INCONCLUSIVE **" if to["inconclusive"] else "")
+               + f"   transport {res.get('transport', TRANSPORT_LEGACY)}")
     return "\n".join(out)
 
 
-def merge_cells(shards: Iterable[Dict[str, Dict[str, Any]]]) -> Dict[str, Dict[str, Cell]]:
-    """Merge per-shard raw cell dicts (JSON-shaped) into one ``label -> team -> Cell`` map."""
+#: The key a shard file's provenance rides under (never a ref label).
+SHARD_META = "_meta"
+
+
+def merge_cells(shards: Iterable[Dict[str, Dict[str, Any]]], *,
+                allow_transport_mix: bool = False) -> Dict[str, Dict[str, Cell]]:
+    """Merge per-shard raw cell dicts (JSON-shaped) into one ``label -> team -> Cell`` map. A shard's
+    ``_meta`` block (its transport stamp) is provenance, not a ref; a cell without its own transport takes
+    the shard's. A set that mixes the mirrored regimes, or the TRANSPORTS, is refused here, not averaged."""
     out: Dict[str, Dict[str, Cell]] = {}
     for shard in shards:
+        meta = shard.get(SHARD_META) if isinstance(shard.get(SHARD_META), dict) else {}
         for lab, teams in shard.items():
+            if lab == SHARD_META:
+                continue
             out.setdefault(lab, {})
             for key, c in teams.items():
                 if key in out[lab]:
                     raise MeterError(f"shard overlap: {lab}/{key} produced twice")
-                out[lab][key] = c if isinstance(c, Cell) else cell_from_json(c)
-    cells_regime(out)            # a shard set that mixes the regimes is refused here, not averaged
+                out[lab][key] = c if isinstance(c, Cell) else cell_from_json(c, meta.get("transport"))
+    cells_regime(out)
+    cells_transport(out, allow_mix=allow_transport_mix)
     return out

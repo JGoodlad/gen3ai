@@ -245,7 +245,8 @@ def _nodes(ladder: Dict[str, Any]) -> List[Tuple[int, float, float]]:
     return sorted(out)
 
 
-def _refit_first_n(run_dir: str, n: int, *, what: str, rated_steps: Sequence[int]
+def _refit_first_n(run_dir: str, n: int, *, what: str, rated_steps: Sequence[int],
+                   allow_mixed_transport: bool = False
                    ) -> Tuple[Optional[List[Tuple[int, float, float]]], Optional[str]]:
     """``(nodes, None)`` — a fresh BT fit over the FIRST ``n`` of the committed ladder's rated
     snapshots — or ``(None, why)`` when that prefix cannot be fit on its own. The prefix comes
@@ -263,7 +264,8 @@ def _refit_first_n(run_dir: str, n: int, *, what: str, rated_steps: Sequence[int
         return None, (f"{what} rates more snapshots than the matched count ({n}), so its first-{n} "
                       f"fit is needed, but there is no {games_path!r} to refit from. Rebuild the "
                       f"ladder with: python -m agents.training.snapshot_ladder {run_dir} --backfill")
-    doc = sl.fit_ladder(run_dir, first_n=n, write=False, steps=list(rated_steps))
+    doc = sl.fit_ladder(run_dir, first_n=n, write=False, steps=list(rated_steps),
+                        allow_mixed_transport=allow_mixed_transport)
     nodes = _nodes({**doc, "path": f"{games_path} (first-{n} refit)"})
     if len(nodes) != n:
         return None, (f"the first-{n} prefix of {what}'s ladder rates {len(nodes)} node(s) on its "
@@ -275,12 +277,32 @@ def _refit_first_n(run_dir: str, n: int, *, what: str, rated_steps: Sequence[int
     return nodes, None
 
 
+def side_transport(run_dir: str, doc: Dict[str, Any]) -> str:
+    """The transport a side's ladder edges were played on (P2, ``snapshot_ladder_transport``): its ``games.jsonl``
+    census when the log exists (the refit reads it), else the committed file's recipe stamp; ``mixed`` when the log
+    holds both."""
+    from agents.training import snapshot_ladder as sl_mod
+    if os.path.exists(sl_mod.games_log_path(run_dir)):
+        return sl_mod.fit_transport(run_dir, allow_mixed=True)
+    return sl_mod.ladder_transport(doc)
+
+
 def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
-                   at_snapshots: Optional[int]) -> Dict[str, Any]:
-    """Endpoint 1 — the anchored ladder at matched SNAPSHOT COUNT, against the parent CONTINUED."""
+                   at_snapshots: Optional[int], *, allow_transport_mix: bool = False) -> Dict[str, Any]:
+    """Endpoint 1 — the anchored ladder at matched SNAPSHOT COUNT, against the parent CONTINUED.
+
+    🚨 Both sides must be played on ONE transport (P2, 2026-10-06): a Python-played and a Rust-played ladder are
+    different measurements (``designs/training/eval_and_rating.md`` "The TRANSPORT boundary"), so a mismatch — or a
+    side whose log mixes both — is a :class:`GateRefusal` unless ``allow_transport_mix`` (then a printed caveat)."""
     from agents.training import snapshot_ladder as sl_mod
     lr = load_ladder(run["run_dir"], what="run")
     lp = load_ladder(parent["run_dir"], what="parent")
+    transports = {"run": side_transport(run["run_dir"], lr), "parent": side_transport(parent["run_dir"], lp)}
+    try:
+        transport_notes = sl_mod.check_same_transport(
+            {k: {"recipe": {"transport": t}} for k, t in transports.items()}, allow=allow_transport_mix)
+    except sl_mod.LadderTransportError as e:
+        raise GateRefusal("ladder transport", f"{e}\n  (pass --allow-transport-mix to read it with the caveat)")
     run = {**run, "ladder_doc": lr}
     parent = {**parent, "ladder_doc": lp}
     nr, npar = _nodes(lr), _nodes(lp)
@@ -318,7 +340,8 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
     def _side(nodes: List[Tuple[int, float, float]], run_dir: str, what: str
               ) -> List[Tuple[int, float, float]]:
         got, why = _refit_first_n(run_dir, n, what=what,
-                                  rated_steps=[s for s, _, _ in nodes])
+                                  rated_steps=[s for s, _, _ in nodes],
+                                  allow_mixed_transport=allow_transport_mix)
         if got is not None:
             refit[what] = True
             return got
@@ -380,6 +403,9 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
         # a WARNING, never a refusal: the two runs' recorded eras (utils.era) differ => the delta
         # crosses an era boundary (anchors / regimes changed) and is descriptive only.
         "era_warning": cross_era_warning(run["run_dir"], parent["run_dir"]),
+        # P2: the transport each side's edges were played on, and the caveat when a mix was accepted
+        "transport": transports,
+        "transport_warning": transport_notes,
         "refit_at_count": refit,
         "refit_fallbacks": fallbacks,
         "matched_fit_size": matched_fit_size,
@@ -419,7 +445,7 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
 
 def famine_section(run: Dict[str, Any], comparator: Dict[str, Any],
                    at_snapshots: Optional[int], floor_elo: float,
-                   floor_source: str) -> Dict[str, Any]:
+                   floor_source: str, *, allow_transport_mix: bool = False) -> Dict[str, Any]:
     """THE FAMINE PRE-TEST — does terminal-only reward learn at the INCUMBENT's rate?
 
     The registered rule (ledger 2026-09-06, *FAMINE PRE-TEST*): at ~5M, if the arm's anchored
@@ -432,7 +458,7 @@ def famine_section(run: Dict[str, Any], comparator: Dict[str, Any],
     PopArt *and* the shaped critic, so this is a rate comparison ACROSS RECIPES against the
     incumbent's own run-to-run noise — the pre-registered confound, printed with the verdict.
     """
-    lad = ladder_section(run, comparator, at_snapshots)
+    lad = ladder_section(run, comparator, at_snapshots, allow_transport_mix=allow_transport_mix)
     if not lad["matched_fit_size"]:
         raise GateRefusal("famine pre-test", (
             "the comparator's ladder cannot be refit at the matched snapshot count, so the only "
@@ -1135,6 +1161,9 @@ def build_parser() -> argparse.ArgumentParser:
                          "would have made anyway (ledger 2026-09-06 cell 2, +3.45pp).")
     ap.add_argument("--at-snapshots", type=int, default=None, metavar="N",
                     help="compare the ladders at N snapshots (default: the matched maximum)")
+    ap.add_argument("--allow-transport-mix", action="store_true",
+                    help="compare ladders played on different TRANSPORTS (the Python ladder vs the Rust eval "
+                         "engine, P2 2026-10-06) — refused by default; the output carries the caveat")
     ap.add_argument("--baseline-dir", default=DEFAULT_BASELINE_DIR, metavar="DIR",
                     help="the committed calibration baseline directory "
                          "(default: the winprob_critic_baseline_2026-09-06 measurement)")
@@ -1270,7 +1299,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     }
 
     say("(1) ladder")
-    doc["ladder"] = ladder_section(run, parent, args.at_snapshots)
+    doc["ladder"] = ladder_section(run, parent, args.at_snapshots, allow_transport_mix=args.allow_transport_mix)
     say("(2) calibration gate")
     baseline = load_baseline(args.baseline_dir)
     doc["calibration"] = calibration_section(
@@ -1287,7 +1316,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         try:
             doc["famine"] = famine_section(run, famine, args.at_snapshots, famine_floor,
                                            "--famine-floor-elo" if args.famine_floor_elo is not None
-                                           else f"registry `{args.famine_comparator}`.floor_elo")
+                                           else f"registry `{args.famine_comparator}`.floor_elo",
+                                           allow_transport_mix=args.allow_transport_mix)
         except SystemExit as exc:
             # A comparator with no usable ladder must not take down the WHOLE read — the famine
             # pre-test is one endpoint beside four, and its refusal is recorded as such.

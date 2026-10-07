@@ -152,6 +152,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 - one register
                      "BIAS (~21-29 Elo newest-node inflation, non-uniform, so near-zero adds may "
                      "change sign under the fix). Re-run with --fixed-fit to refit from "
                      "games.jsonl.")
+    # P2: which stack played the edges (a fit over both is refused by fit_ladder; a committed file says which)
+    bias_note += f" | transport {snapshot_ladder.ladder_transport(lad)}"
     r = {int(k): v for k, v in lad["ratings"].items()}
     se = {int(k): v for k, v in lad.get("se", {}).items()}
     nodes = sorted(r)

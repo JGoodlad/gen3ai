@@ -908,13 +908,13 @@ def build_report(runs: Sequence[ExploiterRun], *, stat: str = "pooled",
 
 
 # --------------------------------------------------------------------------------------------
-# The optional PLAY path — fresh head-to-head games on the rust bridge
+# The optional PLAY path — fresh head-to-head games on the Rust eval core (via untaught_meter.play_cells)
 # --------------------------------------------------------------------------------------------
 
 def play_head_to_head(run: ExploiterRun, *, games: int, seed: int = 0, impl: str = "rust",
                       greedy: bool = False, concurrency: int = 1,
                       progress=None, mirrored: bool = False) -> Dict[str, Any]:
-    """``games`` fresh exploiter-vs-target battles, offline, on the bridge. Writes NOTHING.
+    """``games`` fresh exploiter-vs-target battles, offline, on the Rust eval core (CPU). Writes NOTHING.
 
     It reuses ``agents.training.untaught_meter.play_cells`` — the tool of record for offline
     head-to-head battles between two saved checkpoints — with the exploiter as the PILOT on its
@@ -988,6 +988,9 @@ def play_head_to_head(run: ExploiterRun, *, games: int, seed: int = 0, impl: str
         "mirrored_pairs": bool(mirrored), "pairs": pairs_block,
         "ci_unit": "pair (pentanomial score interval)" if mirrored else "game (Wilson)",
         "greedy": greedy, "impl": impl, "seed": seed, "concurrency": concurrency,
+        # the TRANSPORT boundary (poke-env retirement P2): played on the Rust eval core, the training encoder
+        "transport": um.cells_transport(cells),
+        "turn_limit_draws": sum(int(c.turn_limit_draws or 0) for c in got.values()),
         "games_requested": int(games), "games_per_team": per_team,
         "games_played": attempted, "finished": finished,
         "wins": wins, "ties": ties, "losses": finished - wins - ties,

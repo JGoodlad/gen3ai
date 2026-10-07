@@ -1,0 +1,126 @@
+{
+ "g20": {
+  "games_per_team": 20,
+  "teams": [
+   "U_61590463",
+   "U_92832108",
+   "U_ce35b736",
+   "U_9909f2e9",
+   "U_9d5f8458",
+   "U_f7ba5702",
+   "U_90b94599",
+   "U_dbf81d8e"
+  ],
+  "transport": "MIXED:python_bridge+rust_eval",
+  "new_level_pp": 50.625,
+  "new_ci95_pp": [
+   40.0,
+   61.24999999999999
+  ],
+  "old_level_pp": 50.625,
+  "old_ci95_pp": [
+   43.125,
+   58.12500000000001
+  ],
+  "delta_new_minus_old_pp": -1.3877787807814457e-15,
+  "delta_ci95_pp": [
+   -15.000000000000002,
+   15.624999999999995
+  ],
+  "verdict_no_floor": "NOT DETECTED",
+  "new_wins_ties_finished": [
+   81,
+   2,
+   160
+  ],
+  "old_wins_ties_finished": [
+   81,
+   1,
+   160
+  ],
+  "old_timeouts": 0,
+  "new_turn_limit_draws": 1,
+  "per_team_new": [
+   0.7,
+   0.65,
+   0.25,
+   0.45,
+   0.45,
+   0.5,
+   0.7,
+   0.35
+  ],
+  "per_team_old": [
+   0.4,
+   0.6,
+   0.5,
+   0.45,
+   0.45,
+   0.65,
+   0.35,
+   0.65
+  ]
+ },
+ "g60": {
+  "games_per_team": 60,
+  "teams": [
+   "U_61590463",
+   "U_92832108",
+   "U_ce35b736",
+   "U_9909f2e9",
+   "U_9d5f8458",
+   "U_f7ba5702",
+   "U_90b94599",
+   "U_dbf81d8e"
+  ],
+  "transport": "MIXED:python_bridge+rust_eval",
+  "new_level_pp": 50.208333333333336,
+  "new_ci95_pp": [
+   44.58333333333333,
+   55.41666666666667
+  ],
+  "old_level_pp": 54.58333333333334,
+  "old_ci95_pp": [
+   51.45833333333334,
+   57.91666666666666
+  ],
+  "delta_new_minus_old_pp": -4.375,
+  "delta_ci95_pp": [
+   -8.75,
+   0.4166666666666652
+  ],
+  "verdict_no_floor": "NOT DETECTED",
+  "new_wins_ties_finished": [
+   241,
+   4,
+   480
+  ],
+  "old_wins_ties_finished": [
+   262,
+   2,
+   480
+  ],
+  "old_timeouts": 0,
+  "new_turn_limit_draws": 2,
+  "per_team_new": [
+   0.6166666666666667,
+   0.48333333333333334,
+   0.36666666666666664,
+   0.5,
+   0.4,
+   0.5166666666666667,
+   0.5666666666666667,
+   0.5666666666666667
+  ],
+  "per_team_old": [
+   0.5833333333333334,
+   0.55,
+   0.5,
+   0.5333333333333333,
+   0.5,
+   0.6,
+   0.48333333333333334,
+   0.6166666666666667
+  ]
+ }
+}

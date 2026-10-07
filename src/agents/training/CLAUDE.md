@@ -296,7 +296,7 @@ last-snapshot rule below cannot move what a name points at while its run keeps t
 🚨 **A NEW OPPONENT IS A RE-MEASUREMENT, NOT A RENAME** — untaught-meter levels are not comparable
 across opponents, so `python -m main.baselines set <name> <file> --reason "<ledger title>"` is the
 only legal edit, and it PRINTS the ledger line to append rather than writing one.
-🚨 **The untaught meter's default opponent is `untaught_meter_opponent_v14` (INTERIM until the Rustboro opponent, legacy manifest D-L3) and its default config is `auto`** (B3, 2026-10-04: the old v101 defaults did not load at HEAD). A played artifact stamps `_meta.series`; `--from-rows` REFUSES artifacts that recorded different opponents (`--allow-opponent-mix` consents). Detail: `designs/training/eval_and_rating.md`.
+🚨 **The untaught meter's default opponent is `untaught_meter_opponent_v14` (INTERIM until the Rustboro opponent, legacy manifest D-L3) and its default config is `auto`** (B3, 2026-10-04: the old v101 defaults did not load at HEAD). A played artifact stamps `_meta.series`; `--from-rows` REFUSES artifacts that recorded different opponents (`--allow-opponent-mix` consents). Its games run on the Rust eval core since P2 (2026-10-06, `untaught_rust.py`; the executor's opt-in `trainee_temp` / per-cycle `trainee_builder`); every artifact stamps `_meta.transport`, and the readers refuse a `rust_eval` / `python_bridge` mix (`--allow-transport-mix` consents). Detail: `designs/training/eval_and_rating.md`.
 🚨 **LOAD a baseline with `baselines.load(name)`, NEVER a bare `MaskablePPO.load`** — the bare path
 rebuilds the extractor from the zip's own pickled kwargs and (measured 2026-09-22) raises
 `unexpected keyword argument 'threat_prob_outspeed'` on **all five** current-generation entries,
@@ -566,6 +566,15 @@ Elo** above the current fit of the same 20 nodes, flipping the sign of a cross-r
 otherwise); `latest_promoted_elo`
 deliberately does NOT check it (a within-run trend scalar). **Bump `LADDER_FITTER_VERSION`
 whenever the fit changes what a rating MEANS.**
+
+🚨 **THE LADDER PLAYS ON THE RUST EVAL ENGINE, AND THE TRANSPORT IS A REGIME BOUNDARY** (poke-env retirement P2,
+2026-10-06; `snapshot_ladder_play.py`, `snapshot_ladder_transport.py`). Every new edge is seat-balanced mirrored
+pairs on `main.h2h`'s engine (Rust rows, CPU), draws recorded and excluded from the edge; every row before it was
+the poke-env `RLPlayer` + Python-encoder ladder (`python_bridge`, `a` always on p1). Each row carries `transport`
+(absent = `python_bridge`), `ladder.json`'s recipe block names it, `fit_ladder` REFUSES a fit over both
+(`--transport` / `--allow-mixed-transport`), and `main.critic_gate` refuses two ladders of different transports
+(`--allow-transport-mix`). The transport is NOT a recipe change (no fitter bump). Detail and the measured shift:
+`designs/training/eval_and_rating.md` "The TRANSPORT boundary".
 
 **Converting a stale file: `python -m main.elo refit [--apply] <run>`** — refits from the
 append-only `games.jsonl` (plays nothing) over the COMMITTED file's node set, and with `--apply`

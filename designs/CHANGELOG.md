@@ -12039,3 +12039,27 @@ branch `obs-facts-append`).
   `main.ops.eval_trace_gen` SOP command, the Python-oracle parity harness `rust_eval/parity.py`, the eval benchmark, five
   tests): it goes with the survey's P2. `main/search_dividend/` is untouched (search stays in the end state; reported for the
   owner).
+## 2026-10-06 — EVAL TOOLING: poke-env retirement P2 — the snapshot ladder and the untaught meter play on the Rust eval engine (a TRANSPORT regime boundary; no config / ARCH_SIGNATURE change; training unchanged)
+
+- **What.** The ELO headline (`snapshot_ladder`) and the untaught meter played every game through two poke-env
+  `RLPlayer`s and the PYTHON encoder while the trainee trains on Rust rows (survey A-F2). Now: the ladder plays on
+  `main.h2h`'s engine (`agents/training/snapshot_ladder_play.py`, protocol `gen3_ladder_rust_v1`: seat-balanced
+  mirrored pairs, draws recorded and excluded from the edge, seeds a pure function of the pair and its batch), and
+  the untaught meter (with `main.best_response_gap --play`) on the Rust eval core (`agents/training/untaught_rust.py`,
+  `gen3_untaught_rust_v1`; the executor's opt-in `trainee_temp` = `gen3_eval_trainee_sample_v1` and per-cycle
+  `trainee_builder`, both `None` = the cycle of before).
+- **The boundary.** Every ladder row stamps `transport` (absent = `python_bridge`); `fit_ladder` refuses a fit over
+  both (`--transport`, `--allow-mixed-transport`); `ladder.json`'s recipe block carries `transport` (provenance; no
+  fitter bump); `main.critic_gate` refuses two ladders of different transports (`--allow-transport-mix`). Every
+  untaught artifact stamps `_meta.transport`; `aggregate` / `merge_cells` / `--from-rows` refuse a mix
+  (`--allow-transport-mix`). `H2HEngine` gained `team_source_check` / `team_pool` (the ladder's yardstick is the
+  default pool for every run, and a pinned run's pool is the working directory's).
+- **Measured** (`designs/research_state/measurements/pokeenv_p2_ladder_2026-10-06/`): ladder, 16 N0 pairs × 100 games
+  per stack: the transport alone +1.31 pp [−2.90, +5.52], the fitted edge +0.99 pp [−2.46, +4.43], the same stack vs its
+  banked games −4.00 pp [−8.58, +0.58]; seat effect u = +0.56 pp. Untaught, 60 games/team: −4.38 pp [−8.75, +0.42].
+  All NOT DETECTED (not equivalence).
+- **Retired knobs.** The ladder CLI ignores (and says so) a pre-P2 caller's `--impl` / `--concurrency`; the untaught
+  meter refuses `--impl node` and a `--concurrency` other than 1.
+- **Gates.** `snapshot_ladder_transport_test.py`, `snapshot_ladder_rust_integration_test.py`,
+  `untaught_rust_integration_test.py`, the critic-gate transport test, the rewritten untaught reproducibility gate;
+  each fails on a revert.

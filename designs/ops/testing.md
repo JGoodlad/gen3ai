@@ -490,8 +490,9 @@ this gate is P0 and makes progress a NUMBER that falls: the set of files that im
 
 **The pieces.** `utils/poke_env_importers.py` is the scanner (an AST scan; one parse per file that mentions the package
 at all, ~1.5 s over ~1,400 files) and its CLI; `designs/ops/poke_env_import_allowlist.txt` is the GENERATED list, frozen
-at 2026-10-06 (171 entries: 74 non-test + 97 test; the gate's two `FROZEN_*_COUNT` constants are the CURRENT size, 167 after
-the first shrink, the T27/P0 dead-code removal); the gate is `src/poke_env_import_gate_test.py`, `static`-tier, opt
+at 2026-10-06 (171 entries: 74 non-test + 97 test; the gate's two `FROZEN_*_COUNT` constants are the CURRENT size: 167 after
+the first shrink, the T27/P0 dead-code removal; 165 after P2, which retired `snapshot_ladder.py` and
+`untaught_meter.py`); the gate is `src/poke_env_import_gate_test.py`, `static`-tier, opt
 out with `GEN3AI_SKIP_POKE_ENV_IMPORT_GATE=1`. The scanner's own shape tests are `src/utils/poke_env_importers_test.py`.
 
 **What counts as an importer.** `import poke_env[.x]` / `from poke_env[.x] import …` at module level, inside a function

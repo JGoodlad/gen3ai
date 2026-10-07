@@ -1007,3 +1007,36 @@ def test_the_section_REPORTS_each_sides_recipe(tree):
     assert sec["run"]["recipe_status"] == "current"
     assert sec["parent"]["recipe_status"] == "current"
     assert "gen3_ladder_recipe" in sec["run"]["recipe"]
+
+
+# ------------------------------------------------- the TRANSPORT boundary (P2, 2026-10-06)
+
+def _write_rust_pair_log(run_dir: str, steps, results):
+    """A `snapshots/` pool + a `games.jsonl` whose rows were played on the Rust eval engine."""
+    from agents.training import snapshot_ladder as sl
+    for s in steps:
+        _write_zip(os.path.join(run_dir, "snapshots", f"snapshot_{s:012d}.zip"))
+    for a, b, wins_a in results:
+        sl._append_game(run_dir, a, b, wins_a, 100, play={"transport": "rust_eval", "draws": 0})
+
+
+def test_two_ladders_played_on_different_TRANSPORTS_are_refused_unless_allowed(tree):
+    """🚨 Fails on revert (P2): a Python-played ladder and a Rust-played one are different measurements, so the
+    matched-count delta between them is a REFUSAL; `--allow-transport-mix` reads it with the caveat recorded."""
+    steps = (1_000_000, 2_000_000)
+    arm = build_run(tree["root"], "ARMRUST", sharpness=0.05, steps=steps, ladder_elo=(1800.0, 1850.0))
+    comp = build_run(tree["root"], "COMPPY", sharpness=0.05, steps=steps, ladder_elo=(1800.0, 1850.0))
+    _write_rust_pair_log(arm, steps, [(2_000_000, 1_000_000, 55)])
+    _write_pair_log(comp, steps, [(2_000_000, 1_000_000, 55)])
+    run, parent = cg._resolve_ref(arm, what="run"), cg._resolve_ref(comp, what="parent")
+    with pytest.raises(cg.GateRefusal) as exc:
+        cg.ladder_section(run, parent, None)
+    assert "transport" in str(exc.value) and "--allow-transport-mix" in str(exc.value)
+    sec = cg.ladder_section(run, parent, None, allow_transport_mix=True)
+    assert sec["transport"] == {"run": "rust_eval", "parent": "python_bridge"}
+    assert sec["transport_warning"] and "TRANSPORT MIX ACCEPTED" in sec["transport_warning"][0]
+    both_py = build_run(tree["root"], "ARMPY", sharpness=0.05, steps=steps, ladder_elo=(1800.0, 1850.0))
+    _write_pair_log(both_py, steps, [(2_000_000, 1_000_000, 55)])
+    same = cg.ladder_section(cg._resolve_ref(both_py, what="run"), parent, None)
+    assert same["transport"] == {"run": "python_bridge", "parent": "python_bridge"}
+    assert same["transport_warning"] == []

@@ -687,11 +687,10 @@ def test_the_detached_ladder_updater_never_sees_the_gpu(tmp_path, monkeypatch):
     assert seen["env"]["CUDA_VISIBLE_DEVICES"] == "" and "--promote" in seen["argv"]
 
 
-def test_the_detached_ladder_updater_plays_on_the_rust_bridge(tmp_path, monkeypatch):
-    """The updater's round-robin plays through `snapshot_ladder --impl`, whose own default is `node`. The
-    callback used to forward `--use-bridge`'s resolved impl (rust); when P11 B4 deleted that plumbing the
-    argument fell back to its `node` default, so every live promotion spawned a NODE-bridge updater
-    (found by P10-F2). It is the Rust bridge, by name."""
+def test_the_detached_ladder_updater_passes_no_poke_env_play_knob(tmp_path, monkeypatch):
+    """P2 (2026-10-06): the updater plays on the Rust eval engine (`snapshot_ladder_play`), so the poke-env
+    play path's `--impl` / `--concurrency` are gone from its argv (the CLI ignores them, loudly, for an older
+    caller). The argv the updater is spawned with must still PARSE under the ladder CLI."""
     import types
     from agents.training import selfplay_callback as sc
     seen = {}
@@ -699,4 +698,6 @@ def test_the_detached_ladder_updater_plays_on_the_rust_bridge(tmp_path, monkeypa
     sc.SelfPlayCallback._spawn_snapshot_ladder_update(
         types.SimpleNamespace(_model_dir=str(tmp_path), _ladder_games=4), 1000)
     argv = seen["argv"]
-    assert argv[argv.index("--impl") + 1] == "rust"
+    assert argv[1:3] == ["-m", "agents.training.snapshot_ladder"]
+    assert "--impl" not in argv and "--concurrency" not in argv
+    assert argv[argv.index("--promote") + 1] == "1000" and argv[argv.index("--n-games") + 1] == "4"

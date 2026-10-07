@@ -21,7 +21,7 @@ python -m main.best_response_gap <the six runs> --allow-unmatched
 # one round alone, on the endpoint convention the banked numbers use
 python -m main.best_response_gap ai_v13_13_exploit5_offense --stat endpoint
 
-# + N FRESH head-to-head games on the bridge (CPU, niced, seed 0, concurrency 1)
+# + N FRESH head-to-head games on the Rust eval core (CPU, niced, seed 0; transport rust_eval)
 python -m main.best_response_gap ai_v13_13_exploit5_offense --play 20 [--greedy]
 ```
 (in a linked worktree, first: ``export PYTHONPATH=$PYTHONPATH:src``)
@@ -73,7 +73,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--budget-tol", type=float, default=engine.DEFAULT_BUDGET_TOL)
     p.add_argument("--dose-tol", type=float, default=engine.DEFAULT_DOSE_TOL)
     p.add_argument("--play", type=int, default=0, metavar="N",
-                   help="ALSO play N fresh exploiter-vs-target battles per run on the bridge. "
+                   help="ALSO play N fresh exploiter-vs-target battles per run on the Rust eval core. "
                         "Reported beside the series, never folded into it.")
     p.add_argument("--greedy", action="store_true",
                    help="--play in the EVAL regime (argmax both sides), which is the regime the "

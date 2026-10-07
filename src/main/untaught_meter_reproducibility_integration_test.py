@@ -1,19 +1,20 @@
-"""THE REPRODUCIBILITY GATE for ``python -m main.untaught_meter`` — real bridge battles.
+"""THE REPRODUCIBILITY GATE for ``python -m main.untaught_meter`` — real games on the Rust EVAL CORE.
 
-The meter's whole claim is that a LEVEL it prints can be quoted. That needs two things at once and
-this test proves both in one shot: every global-RNG seam pinned, and ``concurrency == 1``. Seeds
-alone are not enough — measured 2026-09-03, seeded at concurrency 3 two runs of the offline
-collateral-KL probe still produced 1193 vs 1141 states with arm levels up to +0.043 apart.
+The meter's whole claim is that a LEVEL it prints can be quoted. Since poke-env retirement P2 every game runs on the
+Rust eval core (``agents.training.untaught_rust``), where a game is a pure function of its key (the cell's cycle
+seed = f(``--seed``, team index), the game index) through the per-game seed rule and the keyed draw. Two things
+follow, and this test proves both through the CLI exactly as a reader runs it:
 
-It also proves the thing that licenses SHARDING: two runs at ``--workers 2`` are byte-identical, so
-a cell is a pure function of (ref, team index, battle index) and the split across worker PROCESSES
-cannot move a number. ``exploiter_competence`` verified this by hand before it sharded 3200 battles
-across six workers; here it is a standing gate.
+* two runs of the same argv are BYTE-IDENTICAL (everything but the wall clock and the cwd);
+* the SHARD split cannot move a number: ``--workers 2`` (two processes, each its own engine) and ``--workers 1``
+  (one engine) give the same levels, at one compute (``--n-envs`` etc.: a decision within a rounding error of a tie
+  may flip with the forward's batch shape, so the compute is held fixed — standing rule 8).
 
-Marked ``sim`` (bridge battles, no server) and ``slow`` (two full measurement runs, 24 battles plus
-four model loads — cost tracks battle COUNT, and ``slow`` is the marker that means expensive).
-Both runs play two freshly built, seeded v121 checkpoints (see ``_fresh_models``), so it needs no
-run archive.
+It also pins the TRANSPORT stamp the artifact carries (``rust_eval``, the encoder, the core build).
+
+Marked ``sim`` + ``integration`` (real games, the in-process core) and ``slow`` (three CLI runs, five engine
+startups). The checkpoints are two seeded PERTURBED-fresh production-architecture policies (the Lane H gate's
+recipe), saved once to ``tmp_path``, so it needs no run archive.
 
 Run it alone::
 
@@ -30,28 +31,21 @@ import sys
 import pytest
 
 from agents.training import untaught_meter as engine
-from utils.paths import src_root
+from utils.paths import repo_root, src_root
 
-pytestmark = [pytest.mark.sim, pytest.mark.slow]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]
 
-#: The ARM and the BASELINE are two FRESHLY BUILT, seeded, untrained current-architecture
-#: checkpoints (``main.fresh_checkpoint``), saved ONCE per test to ``tmp_path`` and read by
-#: both runs — so the two invocations still measure the SAME files. They used to be two archived
-#: v9 checkpoints; the observation-architecture batch (v121, MIGRATION_FLOOR 121) put every archived
-#: run behind the pre-generation wall, and reproducibility is a property of the METER, not of any
-#: one checkpoint's strength. It returns to the named files once v121 nodes exist (the
-#: ``ai_v14_01_base`` lineage).
-_ARM_SEED = 20260926
-_BASE_SEED = 20260927
+COMPUTE = ["--n-envs", "4", "--threads", "1", "--torch-threads", "1", "--front", "ffi", "--profile", "selfcheck"]
 
 
-def _fresh_models(tmp_path) -> dict:
-    from main.fresh_checkpoint import save_fresh_checkpoint
+def _models(tmp_path) -> dict:
+    from agents.training.rust_eval import parity as PAR
+    from agents.training.rust_rollout.testkit import build_selfcheck
 
-    arm = save_fresh_checkpoint(tmp_path / "fresh_arm", _ARM_SEED)
-    base = save_fresh_checkpoint(tmp_path / "fresh_base", _BASE_SEED)
-    return {"ref": str(arm), "baseline": str(base),
-            "config": str(tmp_path / "fresh_base" / "model_config.json")}
+    build_selfcheck()
+    with PAR.declared_torch_state(1):
+        arm, (base,), cfg = PAR.build_models(tmp_path / "run_untaught_repro", n_sentinels=1)
+    return {"ref": arm, "baseline": base, "config": cfg}
 
 
 def _teams_manifest(tmp_path) -> str:
@@ -63,25 +57,15 @@ def _teams_manifest(tmp_path) -> str:
     return str(p)
 
 
-def _run(models, manifest, out_path) -> dict:
+def _run(models, manifest, out_path, workers: int) -> dict:
     env = dict(os.environ)
-    env["PYTHONPATH"] = os.pathsep.join(
-        p for p in [env.get("PYTHONPATH", ""), str(src_root())] if p)
-    for var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS",
-                "NUMEXPR_NUM_THREADS"):
-        env.setdefault(var, "1")
-    env.setdefault("GEN3AI_TIMEOUT_SCALE", "8")
-    from utils.bridge.sim_bridge_bin import expected_bin_path
-
-    prebuilt = expected_bin_path("sim_bridge")     # the build the suite is on (root conftest)
-    if "POKESIM_SIM_BRIDGE_BIN" not in env and prebuilt.exists():
-        env["POKESIM_SIM_BRIDGE_BIN"] = str(prebuilt)     # never pay a cargo build inside a test
+    env["PYTHONPATH"] = os.pathsep.join(p for p in [str(src_root()), env.get("PYTHONPATH", "")] if p)
     argv = [sys.executable, "-m", "main.untaught_meter",
             f"ARM={models['ref']}", "--baseline", f"BASE={models['baseline']}",
-            "--opponent", models["baseline"], "--config", models["config"],
-            "--teams", manifest, "--games-per-team", "3", "--workers", "2",
+            "--opponent", models["baseline"],
+            "--teams", manifest, "--games-per-team", "3", "--workers", str(workers), *COMPUTE,
             "--quiet", "--json", out_path]
-    proc = subprocess.run(argv, env=env, capture_output=True, text=True)
+    proc = subprocess.run(argv, env=env, capture_output=True, text=True, cwd=str(repo_root()), timeout=1800)
     assert proc.returncode == 0, f"meter failed:\n{proc.stdout}\n{proc.stderr}"
     with open(out_path) as fh:
         return json.load(fh)
@@ -94,25 +78,42 @@ def _stable(doc: dict) -> str:
     return json.dumps(doc, sort_keys=True, indent=1)
 
 
-def test_two_sharded_runs_of_the_meter_are_byte_identical(tmp_path):
-    """Same argv, same output path, two processes: the JSON must match byte for byte.
+@pytest.fixture(scope="module")
+def runs(tmp_path_factory):
+    tmp = tmp_path_factory.mktemp("untaught_repro")
+    models = _models(tmp)
+    manifest = _teams_manifest(tmp)
+    out = str(tmp / "run.json")
+    first = _stable(_run(models, manifest, out, 2))
+    second = _stable(_run(models, manifest, out, 2))
+    one = _run(models, manifest, str(tmp / "one.json"), 1)
+    return first, second, one
 
-    Both halves are under test at once — the five seeds AND ``concurrency=1``. If either regresses
-    the levels start wandering and every delta read off them becomes a draw rather than a
-    measurement.
-    """
-    models = _fresh_models(tmp_path)
-    manifest = _teams_manifest(tmp_path)
-    out = str(tmp_path / "run.json")
 
-    first = _stable(_run(models, manifest, out))
-    second = _stable(_run(models, manifest, out))
+def test_two_sharded_runs_of_the_meter_are_byte_identical(runs):
+    first, second, _one = runs
     assert first == second
-
     doc = json.loads(second)
-    assert doc["result"]["timeouts"]["timeouts"] == 0
-    assert doc["_meta"]["concurrency"] == 1
+    assert doc["result"]["timeouts"]["timeouts"] == 0          # a turn-limit game is a DRAW on the core
     assert doc["_meta"]["workers"] == 2
     # A level worth quoting: 2 teams x 3 games x 2 pilots.
     assert doc["result"]["levels"]["ARM"]["attempted"] == 6
     assert len(doc["result"]["teams"]) == 2
+
+
+def test_the_shard_split_cannot_move_a_number(runs):
+    _first, second, one = runs
+    two = json.loads(second)
+    assert one["_meta"]["workers"] == 1
+    for lab in ("ARM", "BASE"):
+        assert one["result"]["levels"][lab]["per_team"] == two["result"]["levels"][lab]["per_team"]
+
+
+def test_the_artifact_carries_the_rust_eval_transport_stamp(runs):
+    _first, second, one = runs
+    for doc in (json.loads(second), one):
+        m = doc["_meta"]
+        assert (m["transport"], m["encoder"]) == ("rust_eval", "rust") and m["core_stamp"]
+        assert doc["result"]["transport"] == "rust_eval"
+        assert all(c["transport"] == "rust_eval" for lv in doc["result"]["levels"].values()
+                   for c in lv["per_team"].values())

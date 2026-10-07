@@ -147,6 +147,8 @@ class _Game:
     opp: List[List[Any]] = field(default_factory=list)
     #: the battle turn at each trainee decision (the gate's clock for ordering two streams' first flips)
     turns: List[int] = field(default_factory=list)
+    #: the argmax at each trainee decision — recorded only when the trainee SAMPLES (``trainee_temp``)
+    argmax: List[int] = field(default_factory=list)
 
 
 @dataclass
@@ -218,13 +220,15 @@ class RustEvalCore:
         raise EvalCoreError(f"unknown eval item kind {item.kind!r}")
 
     def _make_game(self, u: _Unit, g: int, cycle_seed: int, sentinel_greedy: bool,
-                   sentinel_index: Mapping[str, int], mirrored: bool = False) -> _Game:
+                   sentinel_index: Mapping[str, int], mirrored: bool = False,
+                   trainee_builder: Optional[Any] = None) -> _Game:
         item = u.unit.item
         # THE MIRRORED-PAIR RULE (`seeds.pair_game`): a pair's two games share the key of its first game
         # — the same two teams, battle seed, bot streams and sample seed — and the second is SWAPPED.
         key, swapped = SD.pair_game(cycle_seed, item.key, g, mirrored)
         t = self.team_table
-        p1 = t.index(SD.draw_team(self.trainee_builder, key, SD.TRAINEE), f"eval {item.key} game {g} trainee")
+        tb = self.trainee_builder if trainee_builder is None else trainee_builder
+        p1 = t.index(SD.draw_team(tb, key, SD.TRAINEE), f"eval {item.key} game {g} trainee")
         p2 = t.index(SD.draw_team(self.opponent_builder(item, sentinel_greedy), key, SD.OPPONENT),
                      f"eval {item.key} game {g} opponent")
         return _Game(u=u, g=g, key=key, route=self._route_for(item, sentinel_index),
@@ -245,13 +249,30 @@ class RustEvalCore:
                   sentinel_policies: Mapping[str, Any], forensic_root: Optional[str], quota: Any, gamma: float,
                   sentinel_greedy: bool, self_play_temp: float, cycle_seed: int,
                   game_log: Optional[List[Dict[str, Any]]] = None,
-                  safe_point: Optional[Callable[[str], None]] = None) -> CycleStats:
+                  safe_point: Optional[Callable[[str], None]] = None,
+                  trainee_temp: Optional[float] = None,
+                  trainee_builder: Optional[Any] = None) -> CycleStats:
         """Play every unit of ``pool`` (a ``ShardedEvalPool``) and publish one ``ShardResult`` per unit
         into ``result_dir``. ``sentinel_policies`` maps each SENTINEL item key to its loaded policy.
         ``forensic_root`` = ``<run>/eval_traces/step_<N>`` (None = capture nothing). ``safe_point`` (the
         run's `DeferredAbort.safe_point`, P10-A2) is called at the top of EVERY host step — no T2 ticket
         in flight, no learner state touched — so a stop signal / forced checkpoint never waits out the
-        whole cycle; it may not return (an abort exits the process there)."""
+        whole cycle; it may not return (an abort exits the process there).
+
+        Two OPT-IN overrides, both ``None`` by default (= today's cycle, byte for byte; every in-loop,
+        SPRT and head-to-head caller passes neither):
+
+        * ``trainee_temp`` (``gen3_eval_trainee_sample_v1``): the trainee SAMPLES at this temperature
+          instead of playing the argmax — the keyed draw on ``KD.STREAM_TRAINEE`` from the game's
+          ``sample_seed`` at its p1 decision index, exactly as a sampled sentinel draws on
+          ``STREAM_OPPONENT``. The decision's logged margin is then the draw's CDF margin, and the game
+          log carries the argmax beside each sampled action (``argmax``). Used by the offline untaught
+          meter's TRAINING regime (``agents.training.untaught_rust``).
+        * ``trainee_builder``: the builder the trainee's team is drawn from THIS cycle instead of the
+          declared one (its teams must be in the core's declared team table — ``TeamTableMiss``
+          otherwise). Only p1's draw moves; the opponent's builder is unchanged."""
+        if trainee_temp is not None and not float(trainee_temp) > 0.0:
+            raise EvalCoreError(f"trainee_temp must be > 0 (None = greedy), got {trainee_temp!r}")
         from agents.inference.service.spec import Priority
         from agents.training.eval_callback import ForensicQuota, trace_filename_stem
         from utils.rust_env import ffi
@@ -299,7 +320,8 @@ class RustEvalCore:
                 env_unit[e] = u
             if u is None:
                 return self._filler()
-            return self._make_game(u, u.games.pop(0), cycle_seed, sentinel_greedy, sentinel_index, mirrored)
+            return self._make_game(u, u.games.pop(0), cycle_seed, sentinel_greedy, sentinel_index, mirrored,
+                                   trainee_builder)
 
         def promote(e: int) -> None:
             gm = staged[e]
@@ -358,11 +380,18 @@ class RustEvalCore:
                 lp, v, gr = ticket.host()
                 lp, v, gr = np.array(lp, copy=True), np.array(v, copy=True), np.array(gr, copy=True)
                 for j, e in enumerate(fwd.tolist()):
-                    a = int(gr[j])
-                    c["action"][e, 0] = a
                     gm = cur[e]
-                    srt = np.sort(lp[j][np.isfinite(lp[j])])
-                    margin = float(srt[-1] - srt[-2]) if srt.size > 1 else float("inf")
+                    if trainee_temp is None:
+                        a = int(gr[j])
+                        srt = np.sort(lp[j][np.isfinite(lp[j])])
+                        margin = float(srt[-1] - srt[-2]) if srt.size > 1 else float("inf")
+                    else:
+                        # the OPT-IN trainee sample: the keyed draw on the TRAINEE stream, keyed by the game
+                        uu = KD.keyed_uniforms(gm.sample_seed, KD.STREAM_TRAINEE, 0, 0, int(c["dec_n"][e, 0]))
+                        aa, mm = KD.keyed_actions(np.asarray(lp[j:j + 1]), uu, float(trainee_temp))
+                        a, margin = int(aa[0]), float(mm[0])
+                        gm.argmax.append(int(gr[j]))
+                    c["action"][e, 0] = a
                     st.near_ties += int(margin < NEAR_TIE)
                     gm.actions.append(a)
                     gm.turns.append(int(c["turn"][e]))
@@ -484,7 +513,8 @@ class RustEvalCore:
                              "margins": list(gm.margins), "logp": list(gm.logp), "teams": list(gm.teams), "seed": list(gm.seed),
                              **({"swapped": gm.swapped} if mirrored else {}),
                              "captured": gm.capturing, "trace": kept_path, "script": f["script"], "opp": list(gm.opp),
-                             "turns": list(gm.turns)})
+                             "turns": list(gm.turns),
+                             **({"argmax": list(gm.argmax)} if gm.argmax else {})})
         u.done += 1
         u.t1 = time.perf_counter()
         if u.done < u.unit.n_games:

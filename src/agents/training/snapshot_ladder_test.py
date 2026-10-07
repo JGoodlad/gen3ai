@@ -35,35 +35,37 @@ def test_measure_once_contract(tmp_path, monkeypatch):
     run = str(tmp_path)
     _append_pair(run, 208, 224, 55, 100)      # already measured
 
-    played = []
+    sl._append_game(run, 208, 224, 55, 100, play=_rust_stamp(55, 100))   # already measured, on Rust
 
-    def fake_play(run_dir, a, b, n, *a_, **k_):
-        played.append((a, b))
-        return 60, 100  # wins_a, finished
-
-    monkeypatch.setattr(sl, "_play_pair", fake_play)
-    # Stub the heavy loaders `_measure_missing` imports INSIDE its body. Patch ATTRIBUTES on the
-    # real modules — never `sys.modules[...]` with a SimpleNamespace, which is what made this test
-    # order-dependent: replacing `agents.observation.state_encoder` wholesale broke the very next
-    # `agents.model.snapshot` import (`from ...state_encoder import Gen3ObservationEncoder`), so
-    # the test passed only when some EARLIER test in the session had already imported snapshot.
-    # A function-local `from X import y` re-reads the attribute at call time, so this is enough.
-    import agents.model.snapshot            # noqa: F401 — import before patching, not after
-    import agents.observation.state_encoder  # noqa: F401
-    import utils.team_loader                 # noqa: F401
-
-    monkeypatch.setattr("agents.observation.state_encoder.load_mappings", lambda: {})
-    monkeypatch.setattr("agents.model.snapshot.current_model_version", lambda m: None)
-
-    class _Loader:
-        def get_all_teams(self): return ["t"]
-        def get_sample_teams(self): return ["t"]
-    monkeypatch.setattr("utils.team_loader.TeamLoader", _Loader)
-
-    n = sl._measure_missing(run, [(208, 224), (208, 240)], n_games=100, concurrency=1, impl="node")
-    assert (208, 224) not in played      # already measured → skipped
-    assert (208, 240) in played          # new → played
+    played: list = []
+    _stub_players(monkeypatch, played)
+    n = sl._measure_missing(run, [(208, 224), (208, 240)], n_games=100)
+    assert (208, 224, 100) not in played      # already measured → skipped
+    assert (208, 240, 100) in played          # new → played
     assert n == 1
+
+
+def _rust_stamp(wins_a, games, draws=0):
+    """The play stamp a Rust-engine edge carries (`snapshot_ladder_play.LadderEngine.play`), minimal."""
+    from agents.training import snapshot_ladder_play as LP
+    return {"wins_a": wins_a, "games": games, "draws": draws, "games_played": games + draws,
+            "transport": LP.TRANSPORT, "encoder": LP.ENCODER, "protocol": LP.PROTOCOL, "mirrored": True,
+            "n_pairs": (games + draws) // 2, "batch": 0}
+
+
+def test_a_PYTHON_only_pair_is_MISSING_on_the_play_transport(tmp_path, monkeypatch):
+    """🚨 Fails on revert (P2): a pair the Python ladder measured is a different measurement, so the Rust play
+    path re-measures it instead of treating it as done; and the new row carries the Rust transport stamp."""
+    run = str(tmp_path)
+    _append_pair(run, 208, 224, 55, 100)                       # a pre-boundary (Python) row
+    assert sl.missing_pairs(run, [(208, 224)]) == [(208, 224)]
+    played: list = []
+    _stub_players(monkeypatch, played)
+    assert sl._measure_missing(run, [(208, 224)], n_games=100) == 1
+    rows = [json.loads(x) for x in open(sl.games_log_path(run))]
+    assert [sl.row_transport(r) for r in rows] == [sl.TRANSPORT_PYTHON, sl.TRANSPORT_RUST]
+    assert rows[1]["encoder"] == "rust" and rows[1]["mirrored"] is True and "draws" in rows[1]
+    assert sl.missing_pairs(run, [(208, 224)]) == []
 
 
 def test_fit_recovers_ordering(tmp_path, monkeypatch):
@@ -282,24 +284,22 @@ def test_promotion_sentinel_steps_reads_the_promoting_cycles_sentinels_in_ANY_re
 
 
 def _stub_players(monkeypatch, played):
-    """Stub the bridge + the heavy loaders `_measure_missing` imports in its body (attributes on
-    the real modules — see `test_measure_once_contract`)."""
-    import agents.model.snapshot            # noqa: F401
-    import agents.observation.state_encoder  # noqa: F401
-    import utils.team_loader                 # noqa: F401
+    """Stub the Rust eval engine `_measure_missing` opens (`snapshot_ladder_play.open_engine`, read as a
+    module attribute at call time) with one that records each edge and returns a Rust play stamp."""
+    import contextlib
 
-    def fake_play(run_dir, a, b, n, *a_, **k_):
-        played.append((a, b, n))
-        return n // 2 + 1, n
+    from agents.training import snapshot_ladder_play as LP
 
-    class _Loader:
-        def get_all_teams(self): return ["t"]
-        def get_sample_teams(self): return ["t"]
+    class _Eng:
+        def play(self, a, b, n, batch=0):
+            played.append((a, b, n))
+            return _rust_stamp(n // 2 + 1, n)
 
-    monkeypatch.setattr(sl, "_play_pair", fake_play)
-    monkeypatch.setattr("agents.observation.state_encoder.load_mappings", lambda: {})
-    monkeypatch.setattr("agents.model.snapshot.current_model_version", lambda m: None)
-    monkeypatch.setattr("utils.team_loader.TeamLoader", _Loader)
+    @contextlib.contextmanager
+    def fake_open(run_dir, pairs, **kw):
+        yield _Eng()
+
+    monkeypatch.setattr(LP, "open_engine", fake_open)
 
 
 def test_v3_promotion_ingests_NO_eval_cycle_edge_and_plays_200_FRESH_vs_each_sentinel(
@@ -336,7 +336,7 @@ def test_promotion_plan_is_the_cost_line(tmp_path, monkeypatch):
     _plant_eval_log(run, [_symmetric_row(400, [{"step": 100, "win_rate": 0.6},
                                                 {"step": 50, "win_rate": 0.6}])])   # 50 groomed
     monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 200, 300, 400])
-    _append_pair(run, 400, 300, 50, 100)                       # already measured: never replayed
+    sl._append_game(run, 400, 300, 50, 100, play=_rust_stamp(50, 100))   # measured on Rust: never replayed
     plan = sl.promotion_plan(run, 400)
     assert plan["baseline"] == [(400, 100)] and plan["round_robin"] == [(400, 200)]
     assert plan["already_measured"] == 1 and plan["sentinels_not_in_pool"] == [50]

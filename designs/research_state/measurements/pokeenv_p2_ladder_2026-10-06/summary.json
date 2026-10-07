@@ -1,0 +1,218 @@
+{
+  "pairs": [
+    {
+      "a": 26000016,
+      "b": 24000000,
+      "py": 0.53,
+      "rust_a_p1": 0.62,
+      "rust_edge": 0.62,
+      "banked_py": NaN,
+      "rust_draws": 0,
+      "py_ties": 0
+    },
+    {
+      "a": 30000000,
+      "b": 24000000,
+      "py": 0.49,
+      "rust_a_p1": 0.56,
+      "rust_edge": 0.541,
+      "banked_py": 0.57,
+      "rust_draws": 2,
+      "py_ties": 0
+    },
+    {
+      "a": 34000032,
+      "b": 32000016,
+      "py": 0.46,
+      "rust_a_p1": 0.38,
+      "rust_edge": 0.39,
+      "banked_py": NaN,
+      "rust_draws": 0,
+      "py_ties": 0
+    },
+    {
+      "a": 36000000,
+      "b": 24000000,
+      "py": 0.51,
+      "rust_a_p1": 0.52,
+      "rust_edge": 0.51,
+      "banked_py": 0.54,
+      "rust_draws": 0,
+      "py_ties": 1
+    },
+    {
+      "a": 38000016,
+      "b": 32000016,
+      "py": 0.44,
+      "rust_a_p1": 0.5,
+      "rust_edge": 0.49,
+      "banked_py": 0.51,
+      "rust_draws": 0,
+      "py_ties": 0
+    },
+    {
+      "a": 42000000,
+      "b": 40000032,
+      "py": 0.6,
+      "rust_a_p1": 0.44,
+      "rust_edge": 0.43,
+      "banked_py": NaN,
+      "rust_draws": 0,
+      "py_ties": 1
+    },
+    {
+      "a": 44000016,
+      "b": 24000000,
+      "py": 0.47,
+      "rust_a_p1": 0.56,
+      "rust_edge": 0.55,
+      "banked_py": 0.63,
+      "rust_draws": 0,
+      "py_ties": 0
+    },
+    {
+      "a": 44000016,
+      "b": 32000016,
+      "py": 0.45,
+      "rust_a_p1": 0.56,
+      "rust_edge": 0.52,
+      "banked_py": NaN,
+      "rust_draws": 0,
+      "py_ties": 0
+    },
+    {
+      "a": 44000016,
+      "b": 42000000,
+      "py": 0.47,
+      "rust_a_p1": 0.5,
+      "rust_edge": 0.5,
+      "banked_py": NaN,
+      "rust_draws": 0,
+      "py_ties": 1
+    },
+    {
+      "a": 46000032,
+      "b": 40000032,
+      "py": 0.49,
+      "rust_a_p1": 0.44,
+      "rust_edge": 0.455,
+      "banked_py": 0.53,
+      "rust_draws": 1,
+      "py_ties": 0
+    },
+    {
+      "a": 48000000,
+      "b": 42000000,
+      "py": 0.56,
+      "rust_a_p1": 0.48,
+      "rust_edge": 0.52,
+      "banked_py": 0.46,
+      "rust_draws": 2,
+      "py_ties": 0
+    },
+    {
+      "a": 54000000,
+      "b": 32000016,
+      "py": 0.48,
+      "rust_a_p1": 0.46,
+      "rust_edge": 0.45,
+      "banked_py": 0.59,
+      "rust_draws": 0,
+      "py_ties": 0
+    },
+    {
+      "a": 54000000,
+      "b": 40000032,
+      "py": 0.49,
+      "rust_a_p1": 0.62,
+      "rust_edge": 0.6,
+      "banked_py": NaN,
+      "rust_draws": 0,
+      "py_ties": 0
+    },
+    {
+      "a": 58000032,
+      "b": 42000000,
+      "py": 0.48,
+      "rust_a_p1": 0.6,
+      "rust_edge": 0.602,
+      "banked_py": NaN,
+      "rust_draws": 2,
+      "py_ties": 0
+    },
+    {
+      "a": 70000032,
+      "b": 40000032,
+      "py": 0.55,
+      "rust_a_p1": 0.56,
+      "rust_edge": 0.56,
+      "banked_py": 0.6,
+      "rust_draws": 0,
+      "py_ties": 0
+    },
+    {
+      "a": 72000000,
+      "b": 42000000,
+      "py": 0.62,
+      "rust_a_p1": 0.5,
+      "rust_edge": 0.51,
+      "banked_py": 0.54,
+      "rust_draws": 0,
+      "py_ties": 0
+    }
+  ],
+  "rust_a_on_p1_minus_python": {
+    "label": "Rust (a on p1, draws vs a) \u2212 Python, same protocol",
+    "k": 16,
+    "mean_delta": 0.0131,
+    "ci95_model": [
+      -0.029,
+      0.0552
+    ],
+    "ci95_empirical_t": [
+      -0.0311,
+      0.0573
+    ],
+    "ci95_bootstrap": [
+      -0.0312,
+      0.0544
+    ],
+    "mean_abs_delta": 0.0769
+  },
+  "rust_edge_minus_python": {
+    "label": "Rust ladder edge (seat-balanced, draws out) \u2212 Python",
+    "k": 16,
+    "mean_delta": 0.0099,
+    "ci95_model": [
+      -0.0246,
+      0.0443
+    ],
+    "ci95_empirical_t": [
+      -0.0303,
+      0.05
+    ],
+    "ci95_bootstrap": [
+      -0.0312,
+      0.0478
+    ],
+    "mean_abs_delta": 0.0667
+  },
+  "python_now_minus_banked": {
+    "label": "Python now \u2212 Python banked (the same stack's floor)",
+    "k": 9,
+    "mean_delta": -0.04,
+    "ci95_model": [
+      -0.0858,
+      0.0058
+    ],
+    "ci95_empirical_t": [
+      -0.0947,
+      0.0147
+    ],
+    "ci95_bootstrap": [
+      -0.0889,
+      0.0134
+    ],
+    "mean_abs_delta": 0.08
+  }
+}

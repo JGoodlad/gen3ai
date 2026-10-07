@@ -49,12 +49,10 @@ src/agents/training/golden_obs_capture.py
 src/agents/training/live_view_build_benchmark.py
 src/agents/training/obs_build_benchmark.py
 src/agents/training/obs_materializer.py
-src/agents/training/snapshot_ladder.py
 src/agents/training/species_priors.py
 src/agents/training/team_archetypes.py
 src/agents/training/trainer_turn_benchmark.py
 src/agents/training/turn_delta.py
-src/agents/training/untaught_meter.py
 src/main/anchors/mirrored.py
 src/main/anchors/runner.py
 src/main/anchors/session.py

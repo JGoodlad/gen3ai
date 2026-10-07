@@ -30,11 +30,17 @@ Examples::
     python -m main.untaught_meter --from-rows \\
         FUND=…/untaught_TCFUNDA_end.json --baseline …/untaught_TCUNFA_end.json
 
-**Sharding.** ``--workers N`` splits the TEAMS across N single-concurrency child processes. A cell
-is a pure function of (ref, team index, battle index), so the split cannot move a number — gated by
-``src/main/untaught_meter_reproducibility_integration_test.py``. Within-shard concurrency above 1 is
-REFUSED: seeds pin the dice, but interleaved battles consume the shared streams in a
-scheduling-dependent order.
+**The games run on the Rust EVAL CORE** (poke-env retirement P2, ``agents.training.untaught_rust``):
+the T2 service and the eval core on the CPU, the training encoder's rows. Every artifact is stamped
+``_meta.transport = "rust_eval"`` (+ the encoder, the core build, the eval regime); an artifact without
+the stamp is the pre-boundary ``python_bridge`` series, and ``--from-rows`` REFUSES a mix of the two
+(``--allow-transport-mix`` consents). ``--impl node`` and ``--concurrency`` above 1 are REFUSED with the
+reason (retired knobs).
+
+**Sharding.** ``--workers N`` splits the TEAMS across N child processes, each its own CPU engine. A
+cell is one eval cycle whose every game is a function of (cycle seed = f(seed, team), game index), so
+at a fixed ``--n-envs`` the split cannot move a number — gated by
+``src/main/untaught_meter_reproducibility_integration_test.py``.
 """
 from __future__ import annotations
 
@@ -92,10 +98,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--seed", type=int, default=engine.DEFAULT_SEED,
                    help="seeds every stream; at 0 the dice reproduce the banked probes exactly.")
     p.add_argument("--workers", type=int, default=1,
-                   help="shard the TEAMS over N single-concurrency processes.")
+                   help="shard the TEAMS over N processes, each its own CPU Rust eval engine.")
     p.add_argument("--concurrency", type=int, default=1,
-                   help="battles in flight per shard. Values above 1 are REFUSED (unquotable).")
-    p.add_argument("--impl", choices=("rust", "node"), default="rust")
+                   help="RETIRED (P2): any value but 1 is REFUSED — the battles in flight are the Rust eval "
+                        "core's envs (--n-envs).")
+    p.add_argument("--impl", choices=("rust", "node"), default="rust",
+                   help="RETIRED (P2): the games run on the Rust EVAL CORE; 'node' is REFUSED with the reason.")
+    p.add_argument("--n-envs", type=int, default=32, help="the Rust eval core's envs (games in flight).")
+    p.add_argument("--threads", type=int, default=2, help="the Rust core's worker threads.")
+    p.add_argument("--torch-threads", type=int, default=4, help="intra-op threads of the CPU forward.")
+    p.add_argument("--front", default="proc", choices=("proc", "ffi"), help="the Rust core's front end.")
+    p.add_argument("--profile", default="release", choices=("release", "selfcheck"),
+                   help="the Rust env core build.")
+    p.add_argument("--allow-transport-mix", action="store_true",
+                   help="with --from-rows: read artifacts played on DIFFERENT transports (the Rust eval core "
+                        "and the pre-boundary poke-env bridge) side by side anyway. The header says so.")
     p.add_argument("--mirrored-pairs", action="store_true",
                    help="REFUSED (owner 2026-10-02): this is a PINNED-TEAM meter, and mirroring "
                         "swaps the pinned team — one game would measure piloting it, the other the "
@@ -307,6 +324,8 @@ def _child_argv(args, team_indices: Sequence[int], out_path: str) -> List[str]:
     argv += ["--opponent", args.opponent, "--config", args.config,
              "--games-per-team", str(args.games_per_team), "--seed", str(args.seed),
              "--impl", args.impl, "--concurrency", str(args.concurrency),
+             "--n-envs", str(args.n_envs), "--threads", str(args.threads),
+             "--torch-threads", str(args.torch_threads), "--front", args.front, "--profile", args.profile,
              "--workers", "1",
              *(["--mirrored-pairs"] if args.mirrored_pairs else []),
              "--shard-teams", ",".join(str(i) for i in team_indices),
@@ -314,10 +333,20 @@ def _child_argv(args, team_indices: Sequence[int], out_path: str) -> List[str]:
     return argv
 
 
-def _run_shards(args, refs, baseline, controls, opponent, teams, log) -> Dict[str, Dict[str, engine.Cell]]:
+def _compute(args):
+    from main.h2h.play import Compute
+
+    return Compute(device="cpu", backend="eager", n_envs=args.n_envs, threads=args.threads,
+                   torch_threads=args.torch_threads, front=args.front, profile=args.profile)
+
+
+def _run_shards(args, refs, baseline, controls, opponent, teams, log, info: dict
+                ) -> Dict[str, Dict[str, engine.Cell]]:
+    """Play every cell (in-process, or over ``--workers`` shard processes); ``info`` receives the engine's
+    provenance (the transport stamp, the core build, the regime)."""
     shards = _shard_teams(teams, args.workers)
     if len(shards) == 1:
-        return _play(args, refs, baseline, controls, opponent, teams, log)
+        return _play(args, refs, baseline, controls, opponent, teams, log, info)
 
     env = dict(os.environ)
     for var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS",
@@ -339,10 +368,21 @@ def _run_shards(args, refs, baseline, controls, opponent, teams, log) -> Dict[st
         failed = [si for si, _, p in procs if p.wait() != 0]
         if failed:
             raise MeterError(f"shard(s) {failed} failed — see their output above")
-        return engine.merge_cells(json.load(open(out)) for _, out, _ in procs)
+        docs = []
+        for _, out, _ in procs:
+            with open(out) as fh:
+                docs.append(json.load(fh))
+        metas = [d.get(engine.SHARD_META) or {} for d in docs]
+        stamps = sorted({str(m.get("core_stamp")) for m in metas})
+        if len(stamps) > 1:
+            raise MeterError(f"the shard processes ran different Rust core builds {stamps} — refusing to merge")
+        info.update(metas[0])
+        info["shards"] = len(docs)
+        return engine.merge_cells(docs)
 
 
-def _play(args, refs, baseline, controls, opponent, teams, log) -> Dict[str, Dict[str, engine.Cell]]:
+def _play(args, refs, baseline, controls, opponent, teams, log, info: dict
+          ) -> Dict[str, Dict[str, engine.Cell]]:
     all_refs = list(refs) + ([baseline] if baseline else []) + list(controls)
     seen: Dict[str, ResolvedRef] = {}
     for r in all_refs:
@@ -351,13 +391,13 @@ def _play(args, refs, baseline, controls, opponent, teams, log) -> Dict[str, Dic
 
     def progress(label, key, cell):
         log(f"    {label:24s} {key:14s} {cell.wins:4d}/{cell.finished:<4d}"
-            + (f"  ({cell.timeouts} TIMEOUT)" if cell.timeouts else ""))
+            + (f"  ({cell.ties} draw(s), {cell.turn_limit_draws or 0} at the turn limit)" if cell.ties else ""))
 
     cells = engine.play_cells(list(seen.values()), teams, opponent,
                               games_per_team=args.games_per_team, seed=args.seed,
                               impl=args.impl, concurrency=args.concurrency,
                               progress=None if args.quiet else progress,
-                              mirrored=args.mirrored_pairs)
+                              mirrored=args.mirrored_pairs, compute=_compute(args), info=info)
     log(f"  played in {time.time() - t0:.0f}s")
     return cells
 
@@ -383,9 +423,11 @@ def _plan_lines(args, refs, baseline, controls, opponent, teams) -> List[str]:
         out.append("control      NONE — the delta vs the frozen baseline will OVERSTATE a fold by "
                    "whatever a plain continuation would have gained (ledger 2026-09-06, cell 2).")
     n = (len(refs) + (1 if baseline else 0) + len(controls)) * len(teams) * args.games_per_team
-    out.append(f"battles      {n} ({args.games_per_team}/team) · concurrency {args.concurrency} · "
-               f"{max(1, min(args.workers, len(teams)))} worker(s) · impl {args.impl}")
-    out.append(f"seed         {args.seed}  (five env seams per team + per-battle sim/policy seeds)")
+    out.append(f"battles      {n} ({args.games_per_team}/team) on the RUST EVAL CORE (transport "
+               f"{engine.TRANSPORT_RUST}) · {args.n_envs} envs · "
+               f"{max(1, min(args.workers, len(teams)))} worker(s) · CPU")
+    out.append(f"seed         {args.seed}  (per team: cycle seed = hash(seed, team index); per game: the "
+               "rust_eval.seeds key rule — CRN across refs)")
     return out
 
 
@@ -403,14 +445,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"untaught_meter --check: {len(cells)} artifact(s), {len(team_keys)} shared "
                   f"team key(s) — OK")
             return 0
+        try:
+            result = engine.aggregate(cells, team_keys, ref_labels=ref_labels,
+                                      baseline_label=baseline_label, control_labels=control_labels,
+                                      floor=args.floor, draws=args.bootstrap_draws,
+                                      bootstrap_seed=args.bootstrap_seed,
+                                      allow_transport_mix=args.allow_transport_mix)
+        except MeterError as exc:
+            print(f"untaught_meter: {exc}", file=sys.stderr)
+            return 1
+        if args.allow_transport_mix and result["transport"].startswith("MIXED:"):
+            print(f"untaught_meter: WARNING --allow-transport-mix: {result['transport']} — the levels are NOT "
+                  "one population", file=sys.stderr)
         meta = {"mode": "from-rows", "teams_manifest": "(from the artifacts)",
-                "games_per_team": None, "seed": None, "concurrency": None,
+                "games_per_team": None, "seed": None,
+                "transport": result["transport"],
                 "opponent": {"resolved_file": "(as recorded in the artifacts)"},
                 "argv": list(argv if argv is not None else sys.argv[1:])}
-        result = engine.aggregate(cells, team_keys, ref_labels=ref_labels,
-                                  baseline_label=baseline_label, control_labels=control_labels,
-                                  floor=args.floor, draws=args.bootstrap_draws,
-                                  bootstrap_seed=args.bootstrap_seed)
         return _emit(args, {"_meta": meta, "result": result}, log)
 
     if not args.refs:
@@ -419,6 +470,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     try:
         engine.check_concurrency(args.concurrency)
+        engine.check_impl(args.impl)
         if args.mirrored_pairs:
             from agents.training.mirrored_pairs import pinned_team_refusal
             from agents.training.untaught_meter import MirroredPinnedTeamError
@@ -451,15 +503,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.shard_out is None:          # a shard child would just re-print the parent's plan
         log("\n".join(_plan_lines(args, refs, baseline, controls, opponent, teams)))
 
+    info: dict = {}
     try:
-        cells = _run_shards(args, refs, baseline, controls, opponent, teams, log)
+        cells = _run_shards(args, refs, baseline, controls, opponent, teams, log, info)
     except MeterError as exc:
         print(f"untaught_meter: {exc}", file=sys.stderr)
         return 1
 
     if args.shard_out:
         with open(args.shard_out, "w") as fh:
-            json.dump({lab: {k: c.to_json() for k, c in t.items()} for lab, t in cells.items()},
+            json.dump({engine.SHARD_META: info,
+                       **{lab: {k: c.to_json() for k, c in t.items()} for lab, t in cells.items()}},
                       fh, indent=1)
         return 0
 
@@ -478,19 +532,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "controls": [c.to_json() for c in controls],
         "games_per_team": args.games_per_team,
         "seed": args.seed,
+        # THE TRANSPORT BOUNDARY (poke-env retirement P2): every game ran on the Rust eval core, on the
+        # training encoder's rows. An artifact WITHOUT this stamp is `python_bridge` (pre-boundary).
+        "transport": info.get("transport", engine.TRANSPORT_RUST),
+        "encoder": info.get("encoder"),
+        "core_stamp": info.get("core_stamp"),
+        "eval_regime": info.get("eval_regime"),
+        "compute": info.get("compute"),
+        "engine": info.get("engine"),
         "seed_convention": {
-            "env_per_team": engine.team_env_seeds(args.seed, 0),
-            "env_offsets": "value shown for team 0; each seam is offset + 1e6*seed + team_index",
-            "sim": "[seed + team_index + 1, battle_index + 1, 3, 4]",
-            "pool_sequence": "random.Random(61000 + 1e6*seed + team_index).randrange(n_pool)",
-            "pilot_policy": "71000 + 1e6*seed + team_index*1000 + battle_index (per battle)",
-            "opponent_policy": "72000 + 1e6*seed + team_index*1000 + battle_index (per battle)",
+            "cycle_seed": "per (seed, team index): blake2b('gen3_untaught_cycle_seed_v1', seed, team_index) "
+                          "— never the ref (CRN across refs)",
+            "per_game": "rust_eval.seeds (gen3_eval_game_seed_v1): key = (cycle seed, 'untaught', game index) "
+                        "-> the opponent's team draw, the battle seed, the keyed-draw sample seed",
+            "pilot_team": "the pinned team, every game",
+            "draws": "keyed draw at T=1.0: the pilot on STREAM_TRAINEE, the opponent on STREAM_OPPONENT",
         },
-        "concurrency": args.concurrency,
         # T17: the PAIRING regime — a read is never compared across it (aggregate refuses a mix)
         "mirrored_pairs": bool(args.mirrored_pairs),
         "workers": max(1, min(args.workers, len(teams))),
-        "impl": args.impl,
         "argv": list(argv if argv is not None else sys.argv[1:]),
     }
     ref_labels = [r.label for r in refs]

@@ -220,18 +220,26 @@ cluster-bootstrapped win rate. Offline — no training, no launcher, no server, 
 | refs | resolved through the **imported** `fixed_opponent_pool.resolve_model_ref` — the same call every checkpoint-reference flag (`--stable-opponents`, `--exploiter`) goes through. A bare run dir therefore means the run's **LAST SNAPSHOT**, and the resolved file + `rung` + `rule` + `num_timesteps` are printed per ref and stamped in the JSON, so no reader has to infer WHICH FILE was scored |
 | opponent | one fixed model piloting the **paired** pool draw — **BY NAME** out of the baseline registry: **`untaught_meter_opponent_v14`** (N0's 24M snapshot, config v121), an **INTERIM** default until the Rustboro opponent (legacy manifest D-L3 / R0). It was rev-1's 24M (`untaught_meter_opponent`, config v101) until 2026-10-04, which does not load at HEAD (F-LR-2, fixed in B3). `--opponent` also takes any other registry name or a raw ref |
 | module tree | **`--config auto` is the default** — each model's OWN `model_config.json`, the only value that loads a current checkpoint (the shared v101 `untaught_meter_config` is history: selectable by name, unloadable at HEAD). `device="cpu"` |
-| play | `stochastic=True` both sides · rust bridge · **`concurrency=1`** |
+| play | `stochastic=True` both sides (keyed draw at T = 1.0: the pilot on `STREAM_TRAINEE`, the opponent a sentinel on `STREAM_OPPONENT`) · the Rust EVAL CORE with T2 on the CPU, on the training encoder's rows (`agents.training.untaught_rust`, poke-env retirement P2) · `--n-envs` (default 32) games in flight; `--concurrency` other than 1 and `--impl node` are retired and refused with the reason. Run it from the repo root (`main.h2h`'s team-pool rule) |
 | aggregation | equal-weight cluster mean over TEAMS, and **ONE fixed resampling index set shared by every ref and every contrast** so a ref-vs-ref difference is paired on the same team draws |
 
 **THE OPPONENT DEFAULT IS A REGISTRY NAME** (`gen3_baselines_registry_v1`), and the CLI prints `[baseline] --opponent default: …` naming the run before it resolves anything — see *THE BASELINE REGISTRY* above. 🚨 **A new opponent is a RE-MEASUREMENT, not a rename**: levels are not comparable across opponents, so re-pointing that entry is a `python -m main.baselines set` with a ledger title, never a module edit.
 
 🚨 **THE SERIES BOUNDARY IS RECORDED AND ENFORCED (B3, 2026-10-04).** Every played artifact stamps `_meta.series` (`opponent_run`, `opponent_file`, `opponent_num_timesteps`, `opponent_sha256`, `key`, `config_mode`) and `_meta.opponent.sha256`. `--from-rows` reads each artifact's recorded opponent (`engine.rows_artifact_series`) and **REFUSES a mix of different opponents** (`MeterError`, exit 1; a sha256 decides when both sides carry one, else `run/file`); `--allow-opponent-mix` reads them side by side knowingly and says the levels are on different scales; an artifact that records no opponent is warned about, never silently trusted. The v101 (rev-1) series and the v121 (`ai_v14_01_base`) series are two series: the B3 re-point to v14 opened NO new one, because every post-M5 read (sizing, P0, the X5 A/B) already used v14 with `--config auto`.
 
-**THE SEEDS.** Per team, all five global-RNG seams above are set from `--seed` + the team index;
-additionally both players' sampling generators are re-seeded **per battle** and the sim takes a
-per-battle dice seed. **At `--seed 0` the dice, the pool draw and the policy seeds reproduce
-`arch_transfer_2026-09-05/exploiter_competence/compete.py` exactly**, so a level here is comparable
-to that banked one.
+**THE SEEDS (since P2, 2026-10-06).** A cell = one (ref, team) = one eval cycle at cycle seed
+`blake2b('gen3_untaught_cycle_seed_v1', seed, team_index)` — never the ref. Each game is keyed (cycle seed,
+`untaught`, game index) through `rust_eval.seeds` (`gen3_eval_game_seed_v1`): the opponent's team draw, the battle
+seed and both sides' keyed-draw seed, so every ref plays the SAME games (CRN) and the schedule is prefix-consistent
+(a 20-game cell is the first 20 games of a 60-game one). A cell replays bit for bit at one compute; a decision within
+a rounding error of a tie can flip with `--n-envs` (the batch shape), so the compute is stamped. SHARDING is over
+TEAMS (`--workers N`, each its own CPU engine) and cannot move a number — gated by
+`src/main/untaught_meter_reproducibility_integration_test.py`.
+
+**Pre-boundary (the poke-env bridge path, every artifact before 2026-10-06), kept as the record and for the
+committed replay driver `gu_unit.py`:** per team, all five global-RNG seams above were set from `--seed` + the team
+index, both players' sampling generators re-seeded **per battle**, and the sim took a per-battle dice seed; **at
+`--seed 0` they reproduced `arch_transfer_2026-09-05/exploiter_competence/compete.py` exactly.**
 
 | stream | value |
 |---|---|
@@ -240,16 +248,20 @@ to that banked one.
 | pool sequence | `random.Random(61000 + 1e6·seed + team_index).randrange(n_pool)`, drawn **sequentially** — one `Random` per team, prefix-consistent, so a ref at 12 games/team plays the first 12 of another ref's 200 |
 | pilot / opponent policy | `71000 / 72000 + 1e6·seed + team_index·1000 + battle_index`, re-seeded per battle |
 
-🚨 **`concurrency > 1` is REFUSED** (`GEN3AI_UNTAUGHT_METER_ALLOW_CONCURRENCY=1` accepts unquotable
-levels). Seeds pin the dice and both players' sampling, but interleaved battles consume the shared
-streams in a **scheduling-dependent order** — measured 2026-09-03, seeded at concurrency 3 two runs
-of the offline collateral-KL probe still gave 1193 vs 1141 states with arm levels up to +0.043
-apart. **SHARDING IS OVER TEAMS**: `--workers N` splits the teams round-robin across N
-single-concurrency child processes, which is safe because a cell is a pure function of (ref, team
-index, battle index) — verified by `exploiter_competence` before it sharded 3200 battles across six
-workers, and gated here by
-`src/main/untaught_meter_reproducibility_integration_test.py` (`sim`+`slow`: two `--workers 2` runs,
-byte-identical JSON).
+Pre-boundary, `concurrency > 1` was REFUSED because interleaved battles consumed the shared streams in a
+scheduling-dependent order (measured 2026-09-03: seeded at concurrency 3, two runs of the offline collateral-KL
+probe gave 1193 vs 1141 states, arm levels up to +0.043 apart). On the Rust core every game is keyed, so the
+games in flight are the core's envs (`--n-envs`), and the reproducibility gate asserts two `--workers 2` runs are
+byte-identical and `--workers 1` gives the same per-team cells.
+
+🚨 **THE TRANSPORT BOUNDARY (P2, 2026-10-06).** Every cell / shard / artifact stamps `_meta.transport =
+"rust_eval"` (+ `encoder`, `core_stamp`, `eval_regime`, `compute`); an artifact without it is `python_bridge`
+(pre-boundary). `aggregate`, `merge_cells` and `--from-rows` REFUSE a mix (`TransportMixError`);
+`--allow-transport-mix` reads them side by side and labels the read `MIXED:…`. Paired read at the switch
+(`rb_x5ab_blob_s1001` vs the v14 opponent, the untaught 8, 60 games/team, team-level pairing only): Δ new − old
+**−4.38pp [−8.75, +0.42], NOT DETECTED**, which still allows a few pp either way
+(`designs/research_state/measurements/pokeenv_p2_ladder_2026-10-06/untaught/`). `main.best_response_gap --play`
+plays through the same `play_cells`.
 
 🚨 **THE CONTINUATION CONTROL IS THE SECOND COLUMN, and it is not optional bookkeeping.** Ledger
 2026-09-06 (cell 2) measured a plain +1.08M-step continuation of v8's parent — no teacher, no
@@ -264,9 +276,10 @@ pooled across regimes**. Verdicts, in order: `WITHIN FLOOR` (|Δ| below the floo
 exclude zero, which says the games are consistent, not that the arm differs) → `NOT DETECTED` (CI
 spans zero) → `SIGNIFICANT`.
 
-**Timeouts are their own bucket**: an unfinished battle is never scored as a loss, win rate is over
-FINISHED games, and a run whose timeouts exceed **25%** of attempted battles reports `INCONCLUSIVE`
-with no verdict at all (CLI exit 3).
+**Timeouts:** a game at the turn limit is a DRAW (as in training), so a Rust read has no TIMEOUT bucket
+(`Cell.turn_limit_draws` counts those ties). A pre-boundary read's unfinished battle was never scored as a loss (win
+rate over FINISHED games), and a read whose timeouts exceed **25%** of attempted battles still reports
+`INCONCLUSIVE` with no verdict at all (CLI exit 3).
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
@@ -1139,6 +1152,13 @@ sentinel (`--no-eval-sentinel-greedy`) draws the Rust core's keyed draw at the s
 (a reused training slot and an eval slot, pinned and pool teams) are compared game for game and draw
 for draw. What those rows do NOT prove is in the lane's PROGRESS (F-LH-10).
 
+**Two OPT-IN overrides of `RustEvalCore.run_cycle`** (P2, 2026-10-06; both `None` by default = the cycle above, byte
+for byte — no in-loop, SPRT or head-to-head caller passes either): `trainee_temp` (`gen3_eval_trainee_sample_v1`, the
+trainee SAMPLES by the keyed draw on `STREAM_TRAINEE` from the game's sample seed, the logged margin is the draw's CDF
+margin and the game log carries the argmax beside each action) and `trainee_builder` (this cycle's trainee team
+builder; its teams must be in the core's declared team table). Their one user is the offline untaught meter's
+training regime (`agents.training.untaught_rust`).
+
 ### OFFLINE generation of an eval cycle (`main.ops.eval_trace_gen`) — and the PROVENANCE marker
 
 A live eval cycle is sized for a training run: `--eval-games` games (100 by default; the old `--eval-battles` was the deleted final eval's knob and never sized a live cycle) per opponent,
@@ -1311,7 +1331,8 @@ fine ordering rides on the sparse, near-50% sentinel edges (±15 Elo CIs). Fix f
 a promoted snapshot is FROZEN, so snapshot-A-vs-snapshot-B is a STATIONARY Bernoulli — measure it
 ONCE (dense round-robin) and it is permanent. On each promotion, `SelfPlayCallback._spawn_snapshot_ladder_update`
 fires a **DETACHED** `python -m agents.training.snapshot_ladder <run> --promote <step>` subprocess
-(bridge, off the training path) that plays the new frozen node vs the current frozen pool —
+(CPU, off the training path; since 2026-10-06 every game on the **Rust eval engine**, see "The TRANSPORT
+boundary" below) that plays the new frozen node vs the current frozen pool —
 **200 FRESH games vs each sentinel the promoting eval cycle used** (`source: "promotion_baseline"`,
 recipe v3 — see below) and `--snapshot-ladder-games` (default 100/pair; 0 disables the whole
 update) vs every other frozen node — and appends to
@@ -1321,13 +1342,66 @@ historical bot edges (from `eval_results.jsonl` — the anchor connection, **and
 see the eval-sentinel exclusion below) → an anchored BT fit
 (`fit_pairwise`, bots pinned) written to `<run>/snapshot_ladder/ladder.json` (the sidecar metric);
 `_record_ladder_elo` surfaces the latest promoted node's rating as `eval/ladder_elo` (+`_ci`) on
-TB/TUI — the high-resolution counterpart to the saturated `eval/elo`. Snapshots load via
-`load_foreign_opponent` (their own saved config → toggles honored, `check_compatible`
-skipped). `--backfill` pays the one-time back tax over the whole current pool (idempotent — skips
+TB/TUI — the high-resolution counterpart to the saturated `eval/elo`. Snapshots load through the
+strict loader with each zip's historical kwargs sanitized (`main.h2h.arch._load_host`). `--backfill` pays the one-time back tax over the whole current pool (idempotent — skips
 measured pairs); `--fit-only` refits without playing. `ladder.json.fit_quality.mean_abs_err`
 QUANTIFIES non-transitivity (a scalar Elo is lossy if the pool is rock-paper-scissors — the dense
 matrix at least measures it). Tests: `snapshot_ladder_test.py` (store accumulation/symmetry,
-measure-once contract, fit-recovers-ordering, sidecar read, the eval-sentinel exclusion).
+measure-once contract, fit-recovers-ordering, sidecar read, the eval-sentinel exclusion),
+`snapshot_ladder_transport_test.py` (the transport boundary) and `snapshot_ladder_rust_integration_test.py`
+(an edge played end to end on the Rust engine, `sim` + `integration`).
+
+#### 🚨 The TRANSPORT boundary — the ladder plays on the Rust eval engine (poke-env retirement P2, 2026-10-06)
+
+**What changed.** Until 2026-10-06 every ladder edge was played by two poke-env `RLPlayer`s over the in-process
+bridge, each building its observation with the PYTHON encoder, while every trainee since the M5 cutover trains on
+RUST rows — so the ELO headline was measured on a stack the trainee never saw (survey finding A-F2,
+`designs/research_state/measurements/pokeenv_and_hotpath_survey_2026-10-06/`). Every NEW edge is now played by
+`agents/training/snapshot_ladder_play.py` on the head-to-head meter's engine (`main.h2h.play.H2HEngine`: one T2
+service, one Rust eval core, CPU eager, every slot load byte-checked), the code the in-loop eval and `main.h2h` play
+on. What an edge measures (protocol `gen3_ladder_rust_v1`):
+
+| | Python ladder (`python_bridge`, every row before 2026-10-06) | Rust ladder (`rust_eval`) |
+|---|---|---|
+| observation | the Python encoder (`RLPlayer`) | the Rust encoder (the trainee's own rows) |
+| both sides | greedy, the default pool with its 10 % sample-team bias, independent draws | greedy, the same pool (the eval core's trainee builder), `n_games // 2` MIRRORED team pairs |
+| seats | `a` (the NEW node, on a promotion) on p1 in every game | SEAT-BALANCED: `ceil(P/2)` pairs with `a` as the player, `floor(P/2)` with `b`, on the same schedule (the key is order-independent) |
+| a draw | folded into `b`'s column (`wins_a` / finished) | recorded (`draws`) and EXCLUDED from the edge (`games` = decisive games) |
+| seeds | the unseeded global `random` stream | a pure function of the two content hashes and the edge's batch index (a deliberate re-measurement takes a NEW batch) |
+| pinned-team run | played on the default pool | the same (the yardstick is the default pool for every run); the pool is the WORKING DIRECTORY's, the trainer's rule (`H2HEngine(team_pool="cwd")`), because a pinned run's child reads main's `data/` |
+
+**THE DECISION: a REGIME BOUNDARY, like 2026-09-07's.** Even a zero transport shift would leave the protocol
+changed (the seat effect no longer credited to the newest node; draws no longer `b`'s), so the two are different
+measurements of the same frozen pair, and nothing may fit or compare them as one:
+
+- every `games.jsonl` row carries `transport` (absent = `python_bridge`) plus the play stamp (`encoder`,
+  `protocol`, `draws`, `by_seat`, both seats' pentanomials, `seat_split`, the schedule key and cycle seed,
+  `regime_id`, `core_stamp`, both content hashes);
+- `fit_ladder` REFUSES a fit whose kept pairs span both transports (`LadderTransportError`, naming the fix):
+  `--transport rust_eval` fits only the Rust rows, `--allow-mixed-transport` fits both, stamped `mixed`;
+- `ladder.json`'s `recipe` block carries `transport` (`snapshot_ladder.ladder_transport`; absent =
+  `python_bridge`). It is PROVENANCE, not part of `recipe_status` (the FIT did not change, so a refit reproduces a
+  file exactly and `LADDER_FITTER_VERSION` stays 3);
+- `main.critic_gate` REFUSES a run/parent pair whose ladders were played on different transports (or a side whose
+  log mixes them) unless `--allow-transport-mix`, which records `transport_warning`; `main.elo` and
+  `main.ops.plateau_signal` print the transport beside the number; `hodge.edges_from_run` states a mixed log as a
+  caveat;
+- `missing_pairs` counts a pair measured only by the Python ladder as MISSING, so `--backfill` on a pre-boundary run
+  re-measures every pair on Rust (then fit it with `--transport rust_eval`).
+
+A live run pinned before the boundary keeps its pinned code, so it keeps writing Python rows; only a run launched (or
+re-pinned) at or after the boundary writes Rust rows. The CLI still ACCEPTS a pre-P2 caller's `--impl` /
+`--concurrency` and says they are ignored; the engine's shape is `--n-envs` (32) / `--threads` (2) /
+`--torch-threads` (2).
+
+**The measured shift** (`designs/research_state/measurements/pokeenv_p2_ladder_2026-10-06/`; N0
+`ai_v14_01_base`, 16 frozen pairs × 100 games per stack, CPU, both greedy, the box loaded so timings are
+contaminated, counts are not): the transport alone (Rust with `a` on p1 and the old draw fold, minus Python) moves
+the mean edge **+1.31 pp [−2.90, +5.52]**; the edge as the Rust ladder fits it **+0.99 pp [−2.46, +4.43]**; the same
+Python stack against its own banked games **−4.00 pp [−8.58, +0.58]** (the floor). **NOT DETECTED**, and the
+cross-stack per-pair |Δ| (6.7–7.7 pp) is no larger than the same-stack one (8.0 pp). That is not equivalence (no
+registered bar): a mean shift of a few pp (≈ ±25–35 Elo per edge) is not excluded. The seat effect is **u = +0.56 pp**
+(not detected), which the Python ladder credited to the newest node on every edge.
 
 🚨 **THE EVAL CYCLES' SENTINEL EDGES ARE EXCLUDED FROM THE LADDER FIT** (2026-09-07).
 `elo._rows_to_results` yields TWO families off one eval row — trainee-vs-bot (`bot:`) and

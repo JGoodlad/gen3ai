@@ -347,10 +347,10 @@
   },
   "src/agents/training/rust_eval/parity_test.py::test_milestone_fixed_opponents_and_the_sampled_regime_on_cpu": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:46:42Z",
-   "duration_s": 258.22,
-   "contention": 1.0,
+   "commit": "11d2757480d05833dde0d9c75ed5f8e63696cbfa",
+   "at": "2026-10-07T06:09:04Z",
+   "duration_s": 631.54,
+   "contention": 1.76,
    "detail": ""
   },
   "src/agents/training/rust_eval/parity_test.py::test_milestone_gpu_graph_backend_vs_the_compiled_python_worker_on_a_real_pool": {
@@ -801,11 +801,27 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/main/untaught_meter_reproducibility_integration_test.py::test_the_artifact_carries_the_rust_eval_transport_stamp": {
+   "status": "pass",
+   "commit": "11d2757480d05833dde0d9c75ed5f8e63696cbfa",
+   "at": "2026-10-07T05:20:39Z",
+   "duration_s": 0.0,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/untaught_meter_reproducibility_integration_test.py::test_the_shard_split_cannot_move_a_number": {
+   "status": "pass",
+   "commit": "11d2757480d05833dde0d9c75ed5f8e63696cbfa",
+   "at": "2026-10-07T05:20:39Z",
+   "duration_s": 0.0,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_two_sharded_runs_of_the_meter_are_byte_identical": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 44.63,
+   "commit": "11d2757480d05833dde0d9c75ed5f8e63696cbfa",
+   "at": "2026-10-07T05:20:39Z",
+   "duration_s": 100.88,
    "contention": 1.0,
    "detail": ""
   },
@@ -1042,5 +1058,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-07T05:05:17Z"
+ "last_written": "2026-10-07T06:09:04Z"
 }

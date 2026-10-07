@@ -130,7 +130,12 @@ def test_dry_run_with_controls_names_them_and_drops_the_warning(tmp_path, capsys
 
 def test_concurrency_above_one_is_refused_before_anything_is_resolved(tmp_path, capsys):
     assert cli.main(_base_argv(tmp_path) + ["--concurrency", "4"]) == 1
-    assert "REFUSING concurrency=4" in capsys.readouterr().err
+    assert "REFUSING concurrency=4: the knob is RETIRED" in capsys.readouterr().err
+
+
+def test_impl_node_is_refused_with_the_reason_before_anything_is_resolved(tmp_path, capsys):
+    assert cli.main(_base_argv(tmp_path) + ["--impl", "node"]) == 1
+    assert "Rust EVAL CORE" in capsys.readouterr().err
 
 
 def test_no_refs_is_a_usage_error(capsys):
@@ -229,10 +234,12 @@ def test_the_markdown_report_is_written_and_carries_both_columns(tmp_path):
 # SERIES boundary that every reader sees
 # ---------------------------------------------------------------------------------------------
 
-def _rows_artifact(path, opponent, *, teams=("U_a", "U_b")):
+def _rows_artifact(path, opponent, *, teams=("U_a", "U_b"), transport=None):
     doc = {k: {"wins": 3, "games": 10} for k in teams}
     if opponent is not None:
         doc["_meta"] = {"opponent": opponent}
+    if transport is not None:
+        doc.setdefault("_meta", {})["transport"] = transport
     path.write_text(json.dumps(doc))
     return str(path)
 
@@ -309,16 +316,44 @@ def test_a_played_artifact_stamps_its_series(tmp_path, monkeypatch):
     arm = _fake_run(tmp_path, "arm")
     teams = _fake_teams(tmp_path)
 
-    def fake_shards(args, refs, baseline, controls, opponent, teams_, log):
-        return {r.label: {t.key: engine.Cell(wins=1, finished=2, attempted=2) for t in teams_}
-                for r in refs}
+    def fake_shards(args, refs, baseline, controls, opponent, teams_, log, info):
+        info.update({"transport": "rust_eval", "encoder": "rust", "core_stamp": "stamp-x"})
+        return {r.label: {t.key: engine.Cell(wins=1, finished=2, attempted=2, transport="rust_eval")
+                          for t in teams_} for r in refs}
     monkeypatch.setattr(cli, "_run_shards", fake_shards)
     out = tmp_path / "o.json"
     assert cli.main([arm, "--teams", teams, "--opponent", opp, "--quiet", "--json", str(out)]) == 0
     meta = json.loads(out.read_text())["_meta"]
+    # THE TRANSPORT BOUNDARY (P2): every played artifact says which transport, encoder and core build
+    assert (meta["transport"], meta["encoder"], meta["core_stamp"]) == ("rust_eval", "rust", "stamp-x")
+    assert json.loads(out.read_text())["result"]["transport"] == "rust_eval"
     s = meta["series"]
     assert s["opponent_file"] == "final_model.zip" and s["opponent_run"] == "opp"
     assert s["opponent_sha256"] == engine.file_sha256(str(tmp_path / "opp" / "final_model.zip"))
     assert s["config_mode"] == "auto"
     # and a re-read of that artifact recovers the same identity, so the boundary is checkable
     assert engine.rows_artifact_series(str(out))["key"] == s["key"]
+
+
+def test_from_rows_REFUSES_a_rust_eval_artifact_beside_a_pre_boundary_one(tmp_path, capsys):
+    """P2's regime boundary: an artifact without `_meta.transport` is `python_bridge`; one stamped
+    `rust_eval` is the Rust eval core's. Side by side they are REFUSED unless `--allow-transport-mix`."""
+    a = _rows_artifact(tmp_path / "a.json", _OPP_B, transport="rust_eval")
+    b = _rows_artifact(tmp_path / "b.json", _OPP_B)
+    assert cli.main(["--from-rows", f"A={a}", "--baseline", f"B={b}", "--quiet"]) == 1
+    err = capsys.readouterr().err
+    assert "DIFFERENT transports" in err and "--allow-transport-mix" in err
+    out = tmp_path / "mix.json"
+    assert cli.main(["--from-rows", f"A={a}", "--baseline", f"B={b}", "--quiet", "--allow-transport-mix",
+                     "--json", str(out)]) == 0
+    assert "NOT one population" in capsys.readouterr().err
+    assert json.loads(out.read_text())["_meta"]["transport"] == "MIXED:python_bridge+rust_eval"
+
+
+def test_from_rows_reads_two_rust_eval_artifacts_without_complaint(tmp_path, capsys):
+    a = _rows_artifact(tmp_path / "a.json", _OPP_B, transport="rust_eval")
+    b = _rows_artifact(tmp_path / "b.json", _OPP_B, transport="rust_eval")
+    out = tmp_path / "r.json"
+    assert cli.main(["--from-rows", f"A={a}", "--baseline", f"B={b}", "--quiet", "--json", str(out)]) == 0
+    assert capsys.readouterr().err == ""
+    assert json.loads(out.read_text())["result"]["transport"] == "rust_eval"

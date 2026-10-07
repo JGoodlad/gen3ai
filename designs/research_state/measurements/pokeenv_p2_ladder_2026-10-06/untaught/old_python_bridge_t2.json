@@ -1,0 +1,61 @@
+{
+ "mode": "old",
+ "ref": {
+  "label": "REF",
+  "ref": "/home/goodlad/dev/gen3ai/models/rb_x5ab_blob_s1001",
+  "role": "ref",
+  "resolved_file": "/home/goodlad/dev/gen3ai/models/rb_x5ab_blob_s1001/final_model.zip",
+  "config_path": "/home/goodlad/dev/gen3ai/models/rb_x5ab_blob_s1001/model_config.json",
+  "run_base": "rb_x5ab_blob_s1001",
+  "resolution_rung": "latest_txt",
+  "resolution_rule": "last_snapshot",
+  "num_timesteps": 15047954
+ },
+ "opponent": {
+  "label": "OPPONENT",
+  "ref": "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/snapshots/snapshot_000024000000.zip",
+  "role": "opponent",
+  "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/snapshots/snapshot_000024000000.zip",
+  "config_path": "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/snapshots/model_config.json",
+  "run_base": "ai_v14_01_base",
+  "resolution_rung": "explicit_zip",
+  "resolution_rule": "explicit_zip",
+  "num_timesteps": 24000000
+ },
+ "games_per_team": 20,
+ "seed": 0,
+ "wall_s": 73.9,
+ "cells": {
+  "U_ce35b736": {
+   "wins": 10,
+   "ties": 0,
+   "losses": 10,
+   "finished": 20,
+   "attempted": 20,
+   "timeouts": 0,
+   "win_rate": 0.5,
+   "opp_teams": [
+    616,
+    714,
+    403,
+    155,
+    321,
+    546,
+    179,
+    273,
+    633,
+    238,
+    52,
+    706,
+    353,
+    373,
+    298,
+    326,
+    637,
+    475,
+    646,
+    581
+   ]
+  }
+ }
+}

@@ -749,7 +749,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
             self._pool_generation += 1
             self.logger.record("train/selfplay_promoted_steps", float(step))
             # Pay the one-time snapshot-ladder tax for the NEW frozen node — a DETACHED subprocess
-            # (bridge round-robin vs the current frozen pool: 200 FRESH games vs each sentinel this
+            # (Rust-eval-engine round-robin vs the current frozen pool: 200 FRESH games vs each sentinel this
             # cycle used — its own games decided the promotion and are never reused as edges,
             # recipe v3 — plus N per other pair), fully off the training path. Frozen-vs-frozen is stationary → measured once, appended to
             # snapshot_ladder/games.jsonl forever. Best-effort: a failure never touches training.
@@ -819,7 +819,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
 
     def _spawn_snapshot_ladder_update(self, step: int) -> None:
         """Fire a DETACHED subprocess that round-robins the just-promoted frozen snapshot vs the
-        current frozen pool (bridge) and appends the results to snapshot_ladder/games.jsonl, then
+        current frozen pool (the Rust eval engine, CPU) and appends the results to snapshot_ladder/games.jsonl, then
         refits. Fully off the training path (its own session); stdout → snapshot_ladder/updater.log.
         Best-effort — a spawn failure is logged and ignored, never touching training."""
         if not self._model_dir or self._ladder_games <= 0:
@@ -828,9 +828,10 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
             os.makedirs(os.path.join(self._model_dir, "snapshot_ladder"), exist_ok=True)
             logf = open(os.path.join(self._model_dir, "snapshot_ladder", "updater.log"), "a")
             subprocess.Popen(
+                # P2 (2026-10-06): the ladder plays on the Rust eval engine (`snapshot_ladder_play`, CPU),
+                # Rust rows like the trainee's; the poke-env play path's `--impl` is gone
                 [sys.executable, "-m", "agents.training.snapshot_ladder", self._model_dir,
-                 "--promote", str(int(step)), "--n-games", str(self._ladder_games),
-                 "--impl", "rust"],
+                 "--promote", str(int(step)), "--n-games", str(self._ladder_games)],
                 stdout=logf, stderr=subprocess.STDOUT, start_new_session=True,
                 # gen3_ladder_off_gpu_v1: the updater plays on the CPU (`snapshot_ladder` loads with
                 # device="cpu"), but its imports still opened a CUDA context: 330 MiB of the TRAINING
