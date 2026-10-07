@@ -11907,3 +11907,28 @@ their pin's code and are unaffected. No run is live.
   production R1 micro-step and T2 decision forward are byte-identical to `8288b9a2`'s (sha256 `23cdd29c…` / `99a38ef5…`).
 - **Gates.** `policy_readout_test.py` (9 tests, each failing on a planted revert); `--debug --steps 10000` exit 0 in both
   modes. GPU checks DEFERRED (compile parity, T2 throughput, memory).
+
+## 2026-10-06 — STATIC-TOKEN ENCODER, build stage 1 (`gen3_static_tokens_v1`, `--token-encoding {legacy,static}`, config v139; `legacy` default and byte-identical; no ARCH_SIGNATURE change)
+
+- **What.** The owner's lead architecture direction (arch audit §4 L1 + F4 + F14, widened 2026-10-06: "item, ability,
+  moves and stats all static"; `designs/endstate/design_static_tokens.md`). Under `static`, `pokemon_encoder` is
+  `StaticTokenEncoder` (`agents/model/static_tokens.py`): token = S + D. S, the static identity, reads only the set
+  fields (species, the level-100 actual stats: exact for ours, the Smogon usage-weighted mean ± std for an opponent,
+  `belief_tables.build_static_stat_prior`; types, item, abilities, species_known, the Hidden Power block, the four
+  moves summed as a set after the move network and the within-mon self-attention). D reads the mon's own state (HP,
+  status, counters, sleep belief, recency, protect, last action, trap bits, active flag, item consumed, its side's
+  active context on the active, a per-move PP / legality pool). No board fact (clock, weather, faint counts, Spikes,
+  screens) enters either. Under `--belief-tokens fixed_mass` the hypothesis tokens are the dex table encoded once per
+  forward and gathered (exact).
+- **Stage 2 NOT built; `static` is NOT screen-ready.** The board's new home (OUR SIDE / THEIR SIDE / FIELD tokens
+  replacing the global token, `x` / `g` / `c4` retargeted, the policy's board bypass deleted, the per-mon op content on
+  both sides: `designs/endstate/design_entity_coverage_audit.md` §6.1, B1 + B2) is part of the same arm and the next unit.
+- **Measured (CPU census).** Per-mon encoder 161,536 → 135,520 parameters; policy 3,065,882 → 3,039,866. Encoder MACs
+  per row ≈ −0.33 M (≈ −1.2 % of the forward; from shapes). X5 hypothesis encoding ≈ 14× fewer MACs at B = 2,048
+  (ESTIMATED; GPU time DEFERRED).
+- **Finding F-ST-1 (legacy, unfixed).** `PokemonEncoder` writes our active's request-order legality bits onto its
+  sorted-by-id move slots by position: a wrong bit on 2 of 64 blob golden rows (1 of 64 fixed_mass). `static` matches by
+  move-num identity.
+- **Gates.** `static_tokens_test.py` (12; five mutations each fail it); the flag on the five registry surfaces,
+  `check_compatible`, `_migrate_config` (pre-v139 → `legacy`); `selection_sites` declares the module; K9 goldens (both
+  entries), compiled-region goldens and the obs goldens unchanged.

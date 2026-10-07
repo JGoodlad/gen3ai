@@ -17,7 +17,7 @@ Splitting validation from construction would also break `flag_requires_test._gua
 which walks THIS function's body for the flag-coupling raises (it resolves the file from
 `Gen3FeaturesExtractor.__init__`, so it follows the constructor wherever it lives).
 """
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
 
 import torch
 from gymnasium import spaces
@@ -49,6 +49,7 @@ from agents.model.projection import ProjectionAssembler, compute_projection_widt
 from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.t0_species import T0SpeciesPrior
 from agents.model.hypothesis_set import BELIEF_TOKEN_MODES, HypothesisBuilder
+from agents.model.static_tokens import TOKEN_ENCODING_MODES, StaticTokenEncoder
 from agents.model.team_transformer import EdgeBias, EventSeats, TeamTransformer
 from agents.model.value_readouts import UnifiedValueReadout
 from agents.model.value_threat_inject import (
@@ -113,6 +114,7 @@ class ExtractorBuild(torch.nn.Module):
                  belief_tokens: str = "blob",
                  oracle_reveal: str = "off",
                  policy_readout: str = "tower",
+                 token_encoding: str = "legacy",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -198,7 +200,16 @@ class ExtractorBuild(torch.nn.Module):
         # latent_pi, which does not exist at extractor time). The extractor's side of the contract is the
         # per-forward stash `stash.pointer_inputs` (request-ordered move tokens + valid mask + our team
         # tokens + the op's per-action cells), set unconditionally in forward_internal.
-        self.pokemon_encoder = PokemonEncoder(layout, move_latent=move_latent)
+        # gen3_static_tokens_v1 (`--token-encoding static`; designs/endstate/design_static_tokens.md): the
+        # per-mon encoder is S (static identity) + D (the mon's own state), with NO board fact — a drop-in at
+        # the SAME attribute (its submodules keep `PokemonEncoder`'s names). `legacy` builds `PokemonEncoder`
+        # exactly as before (byte-identical: the same construction, the same RNG draws).
+        if token_encoding not in TOKEN_ENCODING_MODES:
+            raise ValueError(f"token_encoding must be one of {TOKEN_ENCODING_MODES}, got {token_encoding!r}")
+        self.token_encoding = token_encoding
+        self.pokemon_encoder: Union[PokemonEncoder, StaticTokenEncoder] = (
+            StaticTokenEncoder(layout, move_latent=move_latent) if token_encoding == "static"
+            else PokemonEncoder(layout, move_latent=move_latent))
         # gen3_entity_move_seats_v1 (v54, Stage 1): move ENTITY seats in the trunk — E3 (our active's
         # 4 request-ordered move tokens, unconditional) + E4 (the opp active's top-`entity_topk_seats`
         # believed threat moves, opt-in). The pointer head then reads the REFINED E3 seats (post-

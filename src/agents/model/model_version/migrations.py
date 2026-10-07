@@ -437,6 +437,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 138:
         data.setdefault("policy_readout", "tower")
         data["config_version"] = 138
+    # v139 (gen3_static_tokens_v1) — `token_encoding`, defaulted rather than refused: "legacy" is the only
+    # possible past (the static encoder did not exist).
+    if version < 139:
+        data.setdefault("token_encoding", "legacy")
+        data["config_version"] = 139
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

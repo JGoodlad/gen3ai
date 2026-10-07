@@ -442,6 +442,23 @@ squeeze of the context). Init isolation: the query is built from a private seed 
 and the tower is retired only after SB3's orthogonal re-init, so every surviving non-pointer parameter
 starts from the `tower` build's bytes. The value path is unchanged. Config v138, no `ARCH_SIGNATURE`
 change while both modes build.
+**`--token-encoding` is `legacy` in production**: step 2 below is `PokemonEncoder`, and nothing of the static
+encoder is built. The `static` arm ([`endstate/design_static_tokens.md`](endstate/design_static_tokens.md),
+`gen3_static_tokens_v1`, config v139, no `ARCH_SIGNATURE` change while both encodings build) builds
+`agents/model/static_tokens.py`'s `StaticTokenEncoder` at the same `pokemon_encoder` attribute: each mon's
+token is S + D. S, the static identity, reads only the mon's set fields: species, the six level-100 ACTUAL
+stats (our team from the observed spread; an opponent from the Smogon usage-weighted stat mean ± std,
+`belief_tables.build_static_stat_prior`), types, item, abilities, species_known, the Hidden Power block, and
+the four moves through the move network (no context columns) and the within-mon self-attention, SUMMED as a
+set. D, the dynamic state, reads HP, status, the counters, the sleep-wake belief, recency, protect odds, the
+last action, the trap bits, the active flag, the item-consumed bit, the side's active context on the active
+(bench zero) and a per-move PP / legality pool (our active's legality matched to its sorted slots by move-num
+identity). No board fact (clock, weather, faint counts, Spikes, screens) enters either. The per-move tokens
+the pointer head and the E3 seats read are the static move token plus its own PP / legality. Under
+`fixed_mass` a hypothesis token is the dex table encoded ONCE per forward and gathered
+(`static_hypothesis_tokens`, exact). It is build stage 1 of 2 and NOT screen-ready: the board's new home (three
+board tokens and the per-mon op content on both sides, from `endstate/design_entity_coverage_audit.md`) is
+stage 2, not built.
 
 The concrete steps:
 
@@ -1380,6 +1397,7 @@ does nothing given another setting.
 | `spread_belief_nature` | `true` | ACTIVE |
 | `switch_branch_cell` | `true` | ACTIVE |
 | `t0_species_prior` | `true` | ACTIVE |
+| `token_encoding` | `"legacy"` | OFF |
 | `value_entity_pool` | `true` | ACTIVE |
 | `value_entity_pool_full` | `true` | ACTIVE |
 | `value_threat_inject` | `true` | ACTIVE |

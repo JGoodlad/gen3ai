@@ -172,6 +172,7 @@ Rules to preserve:
 | X5's dex-row table (a hypothesised opponent mon's per-mon obs row, per species; the generator, the loader, the committed artifact) | `hypothesis_dex_rows.py` + `hypothesis_dex_rows.json` |
 | X5's T0 hypothesis builder (`--belief-tokens fixed_mass`: δ_θ, the fixed-size presence, the one stable ordering, OTHER, the active's move group; the set-BCE helpers) | `hypothesis_set.py` |
 | X5's hypothesis-token ENCODING (`PokemonEncoder` split exactly at its two first Linears: the species half once over the dex table, gathered; the row-level half per row; the rest per opponent slot — the per-row pass on `hypothesis_ctx` stays the definition its test compares against) | `hypothesis_encode.py` |
+| the STATIC per-mon encoder (`--token-encoding static`: S = the static identity from the set fields, D = the mon's own state, added, no board input; the X5 hypothesis tokens as the dex table encoded once and gathered) | `static_tokens.py` |
 | X5's hypothesis TOKENS in the chain (the hypothesis context, the spliced tokens, the per-key log-presence, the class-E pools' float masks, the op's opponent-MON roster `OpRoster` + OTHER's averaged `other_roster`) | `hypothesis_tokens.py` |
 
 🚨 **THE FORWARD HAS TWO PUBLIC SURFACES: the constructor signature, and the obs DICT's KEY SET.**
@@ -284,6 +285,13 @@ sits behind `hypothesis_builder is not None` with the blob code path untouched.
 Linears split by COLUMN BLOCK, so a new input column, a reordered block or a new ROW-level input (anything
 not in the dex row) changes the split. `hypothesis_encode_test` compares it with the per-row pass at fp64
 and fails on drift; a new row-level input belongs in the per-row half, never the species table.
+
+🚨 **`--token-encoding static` (`static_tokens.py`): a per-mon input goes to S or D by its CLASS, and NO board
+fact goes to either** (`designs/endstate/design_static_tokens.md` §1 is the field-by-field table). S must stay a
+pure function of the mon's own SET fields (that is what makes an X5 hypothesis token a table gather); D reads
+only the mon's own state. `static_tokens_test.py` fails when a board or dynamic field reaches S, when a board
+field reaches the encoder at all, and when the move SET stops being permutation-invariant. A new per-mon
+observation column must be classified there in the same pass, or `static` silently drops it.
 
 **The op's opponent-MON axis under `fixed_mass` reads `op.stash.x5` (an `OpRoster`), never a gate of
 its own.** Every opponent-slot kernel in `damage_op*.py` takes "alive" from `roster.alive`

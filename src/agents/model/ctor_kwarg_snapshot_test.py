@@ -65,6 +65,7 @@ CTOR_KWARGS_V96 = frozenset({
     "ridealong_ensemble", "ridealong_rnd", "ridealong_adv", "ridealong_opp",
     "ridealong_rnd_variants",
     "belief_tokens",
+    "token_encoding",
     "oracle_reveal",
     "policy_readout",
 })

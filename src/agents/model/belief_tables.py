@@ -108,6 +108,42 @@ N_NATURES = 25                                              # gen3 has exactly 2
 _NATURE_PRIOR_FLOOR = 0.02                                  # uniform mix so every nature stays liftable (no log 0)
 
 
+def build_static_stat_prior(n_species: int) -> torch.Tensor:
+    """``[n_species, 6, 2]`` the Smogon usage-weighted ``(mean, std)`` of each species' realised level-100
+    stat [hp, atk, def, spa, spd, spe] at IV 31: `--token-encoding static`'s opponent stat prior
+    (`static_tokens.StaticTokenEncoder.STAT_PRIOR`). The five non-HP stats are EXACTLY the damage operator's
+    `SPECIES_SPREAD_PRIOR` (`build_opp_spread_prior`, one source); HP is added here from the
+    same `gen3_data.priors.spreads` rows with the same no-data fallback (neutral-0-EV mean, a std spanning
+    up to max investment). Non-persistent (pure data-derived, recomputable); no committed table."""
+    out = torch.zeros(n_species, 6, 2, dtype=torch.float32)
+    out[:, 1:, :] = build_opp_spread_prior(n_species)
+
+    def hp_stat(base: int, ev: int) -> float:
+        return 1.0 if base == 1 else float(2 * base + 31 + ev // 4 + 110)   # Shedinja's HP is always 1
+
+    for sid in gen3_data.species.base_form_ids():
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
+        snum = sd.num
+        if not (0 <= snum < n_species):
+            continue
+        base = int(sd.base_stats.get("hp", 0))
+        m1 = m2 = wsum = 0.0
+        for _nature, evs, w in gen3_data.priors.spreads(sid):
+            val = hp_stat(base, int(evs[0]))
+            m1 += w * val
+            m2 += w * val * val
+            wsum += float(w)
+        if wsum <= 0.0:
+            neutral, maxed = hp_stat(base, 0), hp_stat(base, 252)
+            out[snum, 0, 0] = neutral
+            out[snum, 0, 1] = max(1.0, (maxed - neutral) / 2.0)
+        else:
+            mean = m1 / wsum
+            out[snum, 0, 0] = mean
+            out[snum, 0, 1] = max(1.0, max(0.0, m2 / wsum - mean * mean) ** 0.5)
+    return out
+
+
 def build_nature_mult() -> torch.Tensor:
     """``[N_NATURES, 5]`` the nature stat multiplier (0.9/1.0/1.1) for {atk,def,spa,spd,spe}, indexed by the
     nature ``num`` (0..24). The head marginalises ``E[mult] = P(nature) @ NATURE_MULT``; the op marginalises

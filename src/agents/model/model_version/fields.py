@@ -413,6 +413,11 @@ class ModelVersionFields:
     # policy kwargs carry (the VALUE branch is unchanged), so this field is what says the actor branch is
     # gone. No ARCH_SIGNATURE bump while both modes build at one commit — the string compare is the gate.
     policy_readout: str = "tower"
+    # gen3_static_tokens_v1 (config v139): `--token-encoding {legacy,static}`. STRUCTURAL: `static` builds
+    # `StaticTokenEncoder` (S + D, no board fact) in `pokemon_encoder`'s place — a different state_dict under
+    # the same prefix. No ARCH_SIGNATURE bump while both encodings build at one commit: the string compare in
+    # check_compatible is the gate.
+    token_encoding: str = "legacy"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at

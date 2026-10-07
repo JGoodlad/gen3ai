@@ -183,6 +183,18 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "RETIRED and the context is one learned attention query over every refined "
                              "trunk token; each action is still scored from its own token by the same "
                              "equivariant pointer scorer. STRUCTURAL, version-checked, fresh-only.")
+    from agents.model.static_tokens import TOKEN_ENCODING_MODES
+    parser.add_argument("--token-encoding", "--token_encoding", dest="token_encoding",
+                        choices=TOKEN_ENCODING_MODES, default=None,
+                        help="The per-Pokemon token (gen3_static_tokens_v1, v139; "
+                             "designs/endstate/design_static_tokens.md). 'legacy' (default; production): "
+                             "today's PokemonEncoder, byte-identical. 'static': each token is S (the static "
+                             "identity: species, item, ability, the four moves pooled as a set, the actual "
+                             "stats; for the opponent the Smogon stat prior until revealed) + D (the mon's own "
+                             "battle state: HP, status, boosts, volatiles, PP, ...); the clock, weather, faint "
+                             "counts, hazards and screens reach a token only by attention and the damage "
+                             "operator. Builds on both --belief-tokens modes. STRUCTURAL, version-checked, "
+                             "fresh-only.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

@@ -442,7 +442,13 @@ from typing import Any, Dict
 #   (`pools.PolicyStateQuery`) and widens the pointer scorers to TRUNK_POINTER_HIDDEN; `tower` (the default,
 #   production) builds nothing and is byte-identical to v137. A pre-v138 config migrates to "tower" (the only
 #   possible past). No ARCH_SIGNATURE bump while both modes build at one commit; no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 138
+# v139 (gen3_static_tokens_v1; designs/endstate/design_static_tokens.md): `token_encoding` —
+#   `--token-encoding {legacy,static}`. STRUCTURAL: `static` builds `StaticTokenEncoder` (the static identity S
+#   + the dynamic per-mon state D, no board fact) in `pokemon_encoder`'s place; `legacy` (the default,
+#   production until the screen rules) builds `PokemonEncoder` and is byte-identical to v138. A pre-v139 config
+#   migrates to "legacy" (the only possible past). No ARCH_SIGNATURE bump while both encodings build at one
+#   commit. No MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 139
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

@@ -47,7 +47,7 @@ FORWARD_MODULES: Tuple[str, ...] = (
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
     "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
-    "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "switch_branch",
+    "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
     "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
 )
 
@@ -352,6 +352,15 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 # argmax over a bool mask — exact by type)
                 "species_type.long()", "t.unsqueeze(0) == st[:, 0:1]", "t.unsqueeze(0) == st[:, 1:2]",
                 "hyp.long()", "torch.argmax(hyp.long(), dim=-1)"),
+    },
+    # gen3_static_tokens_v1 (`--token-encoding static`): the spread_known and legality bits are 0/1 observation
+    # reads; the Hidden Power slot test, the move-num identity match (our active's legality onto its sorted
+    # slots) and the hypothesis species are integers.
+    "static_tokens": {
+        "OBS": ("known > 0.5", "ctx.our_active_req_move_legal[:, None, :] > 0.5"),
+        "INT": ("ids['all_move_ids'] == HIDDEN_POWER_MOVE_NUM", "ctx.our_active_req_move_ids.long()",
+                "req_ids[:, None, :] == sorted_ids[:, :, None]", "sorted_ids[:, :, None] > 0",
+                "slot_species.long()"),
     },
     "t0_species": {
         "OBS": ("onehot > 0",),

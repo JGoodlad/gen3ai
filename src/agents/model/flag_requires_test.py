@@ -52,6 +52,8 @@ _ON_OVERRIDE: Dict[str, object] = {
     "ridealong_rnd_variants": "all",
     # gen3_x5_hypothesis_set_v1 (v136): a two-value mode string; 'blob' is OFF.
     "belief_tokens": "fixed_mass",
+    # gen3_static_tokens_v1 (v139): a two-value mode string; 'legacy' is OFF.
+    "token_encoding": "static",
 }
 
 

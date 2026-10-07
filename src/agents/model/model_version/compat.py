@@ -519,6 +519,18 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "pointer scorer than `tower`.\n"
                 "Resume with the matching --policy-readout setting (a flagless resume inherits it), or "
                 "start a fresh training run.")
+        # gen3_static_tokens_v1 (v139): the per-Pokemon token encoding. `static` builds a different module
+        # under the SAME `pokemon_encoder` prefix; a weight load would fail on its keys, but a frozen-opponent
+        # gate must name the cause, and no ARCH_SIGNATURE bump separates the two while both build.
+        if self.token_encoding != saved.token_encoding:
+            raise ModelVersionError(
+                f"token_encoding mismatch: saved={saved.token_encoding!r}, "
+                f"current={self.token_encoding!r}.\n"
+                "The per-Pokemon token encoding is fixed for a run's lifetime: `static` builds "
+                "StaticTokenEncoder (static identity + dynamic state, no board context) where `legacy` "
+                "builds PokemonEncoder.\n"
+                "Resume with the matching --token-encoding setting (a flagless resume inherits it), or "
+                "start a fresh training run.")
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —
         # a resume that dropped one would silently delete a trained baseline head, one that added

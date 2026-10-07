@@ -161,6 +161,7 @@
 | `--ridealong-opp` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_opp` = `0`; X26's opponent-effect B heads | **KEEP** |
 | `--ridealong-rnd-variants` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_rnd_variants` = `"off"`; X26's RND variant ensemble | **KEEP** |
 | `--belief-tokens` | — | 0 / 0 | `--arch production`: `production_config.json` `belief_tokens` = `"blob"`; the X5 A/B's `fixed_mass` arm (`designs/endstate/design_x5_belief_tokens.md` §3.8, U2) | **KEEP** |
+| `--token-encoding` | — | 0 / 0 | `--arch production`: `production_config.json` `token_encoding` = `"legacy"`; the static-token arm `static` (`designs/endstate/design_static_tokens.md`; build stage 1, NOT screen-ready) | **KEEP** |
 | `--oracle-reveal` | — | 0 / 0 | a DIAGNOSTIC observation mode (`oracle_reveal`, config v137; `off` = production; `species` / `full` = the X5 A/B's oracle-species / oracle-full arms, `designs/endstate/design_x5_belief_tokens.md` §7.6) | **KEEP** |
 | `--policy-readout` | — | 0 / 0 | `--arch production`: `production_config.json` `policy_readout` = `"tower"`; the architecture audit F2 screen's `trunk` arm (`designs/endstate/design_arch_audit.md` F2, config v138) | **KEEP** |
 | `--fork-fraction` | — | 1 / 0 | the Rust fork arm (declared, OFF; `designs/training/forks.md` section 14 checklist gates enabling it; `designs/endstate/`) | **KEEP** |

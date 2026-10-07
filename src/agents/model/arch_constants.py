@@ -214,3 +214,12 @@ HYPOTHESIS_INIT_SEED = 20261003
 # inside `torch.random.fork_rng` from `IsolatedLinear`s, so no non-X5 initial byte moves).
 FLAT_INTENT_HIDDEN = 64
 FLAT_INTENT_INIT_SEED = 20261004
+
+# gen3_static_tokens_v1 (`--token-encoding static`; `designs/endstate/design_static_tokens.md`). Under
+# `static` a Pokémon's token is S (its static identity: species + set + actual stats) + D (its own battle
+# state), with NO board fact in either. STATIC_STAT_SCALE divides the level-100 actual stats (and the
+# opponent prior's std) S reads; STATIC_DYN_HIDDEN is D's MLP width (input → this → ROLE_TOKEN_SIZE);
+# STATIC_MOVE_POOL_DIM is the width of D's per-move dynamic pool Σ_k ReLU(W[m_k; pp_k; legal_k]).
+STATIC_STAT_SCALE = 500.0
+STATIC_DYN_HIDDEN = 128
+STATIC_MOVE_POOL_DIM = 32

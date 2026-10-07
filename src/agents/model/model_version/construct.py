@@ -227,6 +227,9 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_policy_readout_trunk_v1 (v138, audit F2): the policy's decision-context source.
             policy_readout=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("policy_readout", "tower")),
+            # gen3_static_tokens_v1 (v139): the per-Pokemon token encoding (structural).
+            token_encoding=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("token_encoding", "legacy")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),
