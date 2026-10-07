@@ -178,7 +178,9 @@ def sanitized_load_custom_objects(ckpt_path: str, device: str = "cpu") -> "tuple
     if not dropped and not dropped_policy:
         return None, ()
     from stable_baselines3.common.save_util import load_from_zip_file
-    data, _, _ = load_from_zip_file(ckpt_path, device=device)
+
+    from agents.training.instrumented_ppo.strict_load import never_unpickled
+    data, _, _ = load_from_zip_file(ckpt_path, device=device, custom_objects=never_unpickled())
     pk = dict(data.get("policy_kwargs") or {})
     fek = dict(pk.get("features_extractor_kwargs") or {})
     drop = set(dropped)

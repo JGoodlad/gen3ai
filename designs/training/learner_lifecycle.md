@@ -492,6 +492,31 @@ stream is bit-identical before and after the load ("No global reseed after the f
   `MaskablePPO` plus the strict `set_parameters` (below), which has no ride-along acquisition. None of
   them runs inside a frozen learner.
 
+**A CPU load never unpickles training state and never creates a CUDA context (`gen3_cpu_load_no_cuda_v1`,
+2026-10-06).** Every checkpoint from the ride-along heads (v126) to this fix pickled `_ridealong_opt`,
+`_ridealong_opt_owner`, `_ridealong_vopts`, `_ridealong_vopts_owner` and `_ridealong_variant_disabled` into its sb3
+`data` (~100 MB of the ~170 MB `data` of an X5 A/B checkpoint). sb3's `json_to_data` cloudpickle-loads every
+serialized attribute onto the device it was SAVED from, whatever `device` the load asks for, so every read-only CPU
+load (the prober, `main.h2h`, `main.belief_roles`, `main.policy_spectrum`, the meters) created a CUDA context on a
+GPU-visible box (330 MiB measured by the CRN refit job). With the GPU hidden the same objects failed to unpickle
+behind 8 warnings. The fix has three parts, all in `instrumented_ppo/strict_load.py`:
+- **Save.** `NEVER_UNPICKLED` is in `_excluded_save_params`, so a save no longer writes these attributes.
+- **Load.** `StrictCheckpointLoad.load` passes `never_unpickled(custom_objects)` to sb3, which substitutes None for
+  each attribute INSTEAD of unpickling it. This covers the learner, the opponents and the readers, since every load
+  class carries the mixin. The two `load_from_zip_file` peeks (`snapshot._patch_historical_floor`, the prober's
+  `_real_policy_kwargs`) pass the same `custom_objects`.
+- **Guard.** A load asked for the CPU that initialised CUDA anyway raises `CudaContextOnCpuLoad`, so any future
+  pickled CUDA object is a typed error at its first CPU read.
+
+**The semantics are unchanged, decided from the code.** sb3's `load` runs `__dict__.update(data)` and THEN
+`_setup_model`, and `RideAlongTerms._setup_model` re-acquires every ride-along optimizer (an inference load sets them
+to None). So the pickled Adam state was overwritten on every load, and a restart never restored it. The X26
+PREREGISTRATION already states it ("the heads' Adam state resets at every launcher restart"). Nothing a resume reads
+moved; the trainee's resume still comes out of `_setup_model` holding fresh optimizers bound to its own heads.
+Read-only check on a real `rb_x5ab_fm_s1006b` checkpoint (CUDA hidden): before, 8 deserialize warnings; after, 0,
+and `torch.cuda.is_initialized()` False. Pinned by `agents/training/cpu_load_no_cuda_test.py`, whose three tests
+each fail on revert. The tests use a tripwire object, not a GPU.
+
 **Every load is STRICT (`gen3_strict_checkpoint_load_v1`, P10 F4, 2026-10-03; readers: P10 follow-up F1).**
 sb3's `load` retries with `exact_match=False` whenever the strict error mentions `pi_features_extractor`
 (its "SB3 < 1.7.0" patch), and our extractor is registered under three aliases, so ANY missing extractor

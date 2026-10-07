@@ -1246,7 +1246,10 @@ def _patch_historical_floor(zip_path: str, kwargs: dict) -> None:
     """
     try:
         from stable_baselines3.common.save_util import load_from_zip_file
-        data, _, _ = load_from_zip_file(zip_path, device="cpu", print_system_info=False)
+
+        from agents.training.instrumented_ppo.strict_load import never_unpickled
+        data, _, _ = load_from_zip_file(zip_path, device="cpu", print_system_info=False,
+                                        custom_objects=never_unpickled())
     except Exception:
         return                                  # unreadable here → let SB3's own load report it
     pk = (data or {}).get("policy_kwargs") or {}

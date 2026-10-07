@@ -870,7 +870,7 @@ state, PPO scalars, RNG). Two things to know when reading `ridealong/*`. **The h
 on epoch 0 only** (`RIDEALONG_EPOCHS` = 1: each rollout row seen once, scored before the heads train
 on it). All 10 epochs cost +13 % of a GPU update on the learner benchmark; one pass MEASURED +0.59 s = 0.88 % of a 67 s update (`ridealong_step_benchmark.py`; X26's
 `PREREGISTRATION.md` "Overhead").
-And **the heads' Adam state is not checkpointed** (a restart resumes their weights with a fresh Adam).
+And **the heads' Adam state is not checkpointed** (a restart resumes their weights with a fresh Adam: `_setup_model` re-acquires it). 🚨 **Nor is it SAVED or UNPICKLED any more** (`gen3_cpu_load_no_cuda_v1`): older checkpoints pickled the optimizers (CUDA tensors) into sb3's `data`, and a CPU READ of one created a CUDA context. `strict_load.NEVER_UNPICKLED` is excluded from every save and substituted on every load (`StrictCheckpointLoad.load`), and a CPU load that initialises CUDA anyway raises `CudaContextOnCpuLoad` (`designs/training/learner_lifecycle.md`).
 **Every ride-along optimizer is ACQUIRED AT STARTUP** (`RideAlongTerms._setup_model` →
 `_ridealong_acquire`, Adam state pre-allocated, bit-identical to lazy init). There is NO lazy build:
 a step that finds an optimizer missing, or bound to other heads, raises

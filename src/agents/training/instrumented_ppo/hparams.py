@@ -175,7 +175,12 @@ class PpoHyperparameters:
         # `_loop_hooks` (gen3_declared_loop_hooks_v1) is the loop's hook TABLE — closures over this
         # process's freeze guard and compile sentinel; built fresh by every `_setup_model`.
         # `_rust_row_provenance` is the last fill's per-row provenance (K9(b)'s dump) — transient too.
-        return super()._excluded_save_params() + ["_rust_collector", "_rust_fill", "_rust_row_versions",
+        # The ride-along optimizers and their owner handles (`strict_load.NEVER_UNPICKLED`,
+        # gen3_cpu_load_no_cuda_v1) are re-acquired by every `_setup_model`, so a restart never restored
+        # them; pickled, they were ~100 MB of CUDA state a CPU reader's load put on the GPU.
+        from agents.training.instrumented_ppo.strict_load import NEVER_UNPICKLED
+
+        return super()._excluded_save_params() + list(NEVER_UNPICKLED) + ["_rust_collector", "_rust_fill", "_rust_row_versions",
                                                   "_rust_row_provenance",
                                                   "_rust_version", "_behaviour_probe_metrics", "_env_core_stamp",
                                                   "_capacity_state",
