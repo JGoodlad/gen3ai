@@ -207,10 +207,11 @@ def test_on_requires_the_intent_head():
         _build(move_resolution="on", opp_intent=False)
 
 
-def test_on_refuses_fixed_mass():
-    with pytest.raises(ValueError):
-        _build(move_resolution="on", belief_tokens="fixed_mass", t0_species_prior=True, opp_belief_slots=True,
-               entity_tail_seats=True)
+def test_on_builds_under_fixed_mass():
+    """gen3_move_resolution_x5_v1: the family no longer refuses X5 — it reads the flat pointer (the fixed_mass forward,
+    OTHER's pricing and the one-lever property are `move_resolution_x5_test.py`)."""
+    fe = _build(move_resolution="on", belief_tokens="fixed_mass")
+    assert fe.move_resolution_cell is not None and fe.flat_intent_head is not None
 
 
 def test_an_unknown_mode_is_refused():

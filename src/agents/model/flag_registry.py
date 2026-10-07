@@ -514,8 +514,10 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "(`retire_superseded_action_cells`), so every other parameter's initial bytes equal "
                    "production's: `--arch production --move-resolution on` is the ONE-lever screen arm. "
                    "REQUIRES opp_intent (α / β weight every opponent-dependent fact), damage_op, damage_outgoing "
-                   "and both per-move matrices (the KO / hit / immunity physics); refuses "
-                   "belief_tokens='fixed_mass' (blob seat axis only).",
+                   "and both per-move matrices (the KO / hit / immunity physics). Builds on BOTH belief modes "
+                   "(gen3_move_resolution_x5_v1): under belief_tokens='fixed_mass' the same rules read the flat "
+                   "pointer, OTHER_move priced as one seat per priority level and OTHER_species as a 7th mon "
+                   "(the renormalised tail), never excluded.",
               requires=("opp_intent", "damage_op", "damage_outgoing", "damage_matrices_incoming",
                         "damage_matrices_outgoing")),
     ModelFlag("speed_physics", "off", Tier.CLI, Klass.STRUCTURAL, 143,

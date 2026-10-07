@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,861-line file. **The ledger itself is append-only and is never edited by this**;
+22,873-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**798 headings · 743 dated · 2026-08-01 → 2026-10-07 · ledger 22,861 lines.**
+**799 headings · 744 dated · 2026-08-01 → 2026-10-07 · ledger 22,873 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -818,3 +818,4 @@ rename.
   - `L22799` · `2026-10-07` · BUILT · **POKE-ENV RETIREMENT P1: the trainer, `main.h2h`, `main.plateau`, the launcher and the offline meters import AND RUN with `poke_env` impossible (survey A-F1 fixed: 36 modules at import -> 0, h2h 36 at run time -> 0); enums, `to_id_str` and team packing are OWNED and the fork re-exports them by identity; the three Rust-source generators are frozen as Rust-owned source; the import allowlist 165 -> 138; K9 learner golden (both entries), h2h play digests and the obs golden unchanged**
   - `L22806` · `2026-10-07` · READ · **X5 A/B LOOK 3 (final, n = 8 per arm): matched steps NON-INFERIOR (Δ̂ −0.99 pp [−2.92, +0.94], t 2.788 ≥ 1.874 on 14 df); matched wall-time NOT DETECTED, INFERIOR (Δ̂ −5.91 pp [−7.54, −4.28]); 13M sensitivity −4.12 pp, reported only; purpose metric (1) CROSSED (conditional intent log loss 1.753 vs 1.904 nats, t 10.05); under the owner's pre-committed rule these imply ADOPT, not taken here**
   - `L22853` · `2026-10-07` · FINDING + BUILD · **The gen3ou FORMAT SPEC: the ladder's rules declared once (`agents.gen3_data.format_spec`), one story per rule; master differs from our pin by exactly two rules — Quick Claw is BANNED on master, and master's One Boost Passer Clause counts Recycle; the 719-team training pool is 719 / 719 legal under master's rules and holds no Quick Claw; the Smogon priors give the banned Quick Claw 0.32 % of all sets and the model tables put a 0.02 floor on 789 banned (species, move) cells — the prior filter is BUILT and HELD**
+  - `L22861` · `2026-10-07` · BUILT · **The MOVE-RESOLUTION family builds under X5 `fixed_mass` (`gen3_move_resolution_x5_v1`; the refusal lifted): the same rules read the flat opponent pointer, OTHER is PRICED — OTHER_move as one seat per gen-3 priority level (the exact order × move-fact tail expectation), OTHER_species as a 7th mon on the renormalised tail; `off` byte-identical in both belief modes; on the full real-battle bank the fixed_mass read's 1,485 exact-zero claims are never contradicted**

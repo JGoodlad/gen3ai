@@ -90,6 +90,21 @@ def build_move_tables(n_moves: int) -> Dict[str, torch.Tensor]:
     return {"KIND": kind, "FLAG": flag, "SEAT_KIND": seat}
 
 
+def build_priority_table(move_priority: torch.Tensor) -> torch.Tensor:
+    """``PRIO_W [n_moves, L]`` — each move num's priority as a ONE-HOT over the integer levels
+    ``PRIORITY_MIN … PRIORITY_MAX``. X5 only (`gen3_move_resolution_x5_v1`): `move_resolution.gather_ops` splits
+    OTHER_move's tail by priority level with it (each level's mass and its members' conditional tables). A priority
+    outside the range, or not an integer, RAISES: its tail mass would silently vanish from every level."""
+    from agents.model.move_resolution_rules import PRIORITY_MAX, PRIORITY_MIN
+    p = move_priority.detach().cpu().double()
+    bad = (p < PRIORITY_MIN) | (p > PRIORITY_MAX) | (p != p.round())
+    if bool(bad.any()):
+        raise ValueError(f"move_resolution: move priorities outside the integer range [{PRIORITY_MIN}, "
+                         f"{PRIORITY_MAX}] at nums {torch.nonzero(bad).flatten().tolist()[:8]}")
+    idx = (p.round() - PRIORITY_MIN).long()
+    return torch.nn.functional.one_hot(idx, PRIORITY_MAX - PRIORITY_MIN + 1).float()
+
+
 def build_species_tables(chart: torch.Tensor, ability_damage_mult: torch.Tensor,
                          species_types: torch.Tensor) -> Dict[str, torch.Tensor]:
     """Per-species / per-ability immunity tables over the 19-wide attacking-type axis:

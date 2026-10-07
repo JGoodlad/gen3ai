@@ -56,7 +56,25 @@ an unrevealed opponent's top-1 PRIOR ability as certain), and the family reads t
 
 Zero-init projections built as `IsolatedLinear`s (SB3's orthogonal re-init skips them and they draw nothing from
 the global RNG, so building the family moves no other parameter's initial bytes); ON-at-init contributes exactly 0.
-α / β are the stop-grad publications. The family is BLOB-only (`--belief-tokens fixed_mass` is refused at build).
+α / β are the stop-grad publications.
+
+## Under X5 (`--belief-tokens fixed_mass`; `gen3_move_resolution_x5_v1`)
+
+The SAME rules (`move_facts` / `switch_facts` hold no mode branch) read the flat opponent pointer's re-expression
+(`flat_intent.FlatConsumerOps`, the one the seven retired blocks read there): α over the K seats + OTHER_move as a
+(K+1)-th seat, α_SWITCH, β over the six slots + OTHER_species as a 7th. **OTHER is PRICED, never excluded**
+(design_x5_belief_tokens §3.7 / §9 M3 (c): "OTHER as a switch target or a move outcome must be priced, not zero"):
+every OTHER operand is the tail's EXPECTATION of the per-member operand. OTHER_move — a SET of moves — enters as
+one seat PER PRIORITY LEVEL (`PRIORITY_MIN … PRIORITY_MAX`): level l carries α_OTHER · P_tail(l), its own integer
+priority (so `p_seat_first` stays the one order rule and is EXACT per level), and its members' move tables
+conditioned on l (kind, flags, category, flinch: `E_tail[table | l]`), so every product of ORDER and a move fact
+(their faster Protect, Magic Coat, Substitute, Taunt; a faster hit) is the exact tail expectation; its damage /
+status grid is the op's tail contraction (`pair_in` / `pair_type_mult` / the c2 operands), shared by the levels.
+OTHER_species' per-slot tables are `other_tail_probs @ table` (the believed-slot read with the tail as its species
+distribution), its `out_cells` column the OTHER-mode D1 pass. A hypothesis slot reads its hypothesis species (the
+roster's one-hot), its presence carried by β (the flat pointer's log π bias), never multiplied in again. The one
+approximation is the Jensen gap of the TAIL-AVERAGED damage grid (a member's KO / hit odds are not split by its
+priority level, nor OTHER_species' by species), the X5 design's own named cost of option (c).
 """
 from __future__ import annotations
 
@@ -69,14 +87,15 @@ from agents.model.arch_constants import (MOVE_RESOLUTION_MOVE_DIM, MOVE_RESOLUTI
 from agents.model.move_resolution_rules import (
     ABILITY_INNER_FOCUS, ABILITY_OWN_TEMPO, ABILITY_SLEEP_BLOCK, ABILITY_SOUNDPROOF, BELLY_DRUM_HP_FRACTION,
     MOVE_RESOLUTION_MOVE_COORDS, MOVE_RESOLUTION_SWITCH_COORDS, P_CONFUSION_SELF_HIT, P_FULL_PARA,
-    P_INFATUATION, P_THAW, PAIR_FACT_COORDS, PURSUIT_SWITCH_MULT, ROLL_WINDOW, SUB_HP_FRACTION)
+    P_INFATUATION, P_THAW, PAIR_FACT_COORDS, PRIORITY_MAX, PRIORITY_MIN, PURSUIT_SWITCH_MULT, ROLL_WINDOW,
+    SUB_HP_FRACTION)
 from agents.model.move_order import p_seat_first
 from agents.model.status_rules import incoming_status_mask
 from agents.gen3_data import format_spec
 from agents.model.move_resolution_tables import (C_BRN, C_FRZ, C_PAR, C_PSN, C_SLP, C_TOX, FLAG_IDX, KIND_IDX,
                                                  NAMED_ABILITIES, S_LS_OURS, S_MIST_OURS, S_REFLECT_OURS, S_SG_OPP,
                                                  S_SG_OURS, SEAT_KIND_IDX, WEATHER_COL,
-                                                 build_move_tables, build_species_tables)
+                                                 build_move_tables, build_priority_table, build_species_tables)
 
 assert len(MOVE_RESOLUTION_MOVE_COORDS) == _MOVE_RESOLUTION_MOVE_RAW, \
     "MOVE_RESOLUTION_MOVE_COORDS and _MOVE_RESOLUTION_MOVE_RAW disagree — one was edited alone."
@@ -106,7 +125,9 @@ _PAIR = {n: i for i, n in enumerate(PAIR_FACT_COORDS)}
 # =========================================================================================== the OPERANDS
 class MoveResolutionOps(NamedTuple):
     """Everything the family reads, as tensors (built from a forward by `gather_ops`, or by hand in a test).
-    ``B`` batch · ``K`` their seats · request slots 4 · team slots 6 · ``T`` = 19 attacking types."""
+    ``B`` batch · ``K'`` their seats (blob: K; fixed_mass: K + one OTHER_move seat per priority level) · request
+    slots 4 · our team slots 6 · ``J`` their mon axis (blob: 6; fixed_mass: 6 + OTHER_species) · ``T`` = 19
+    attacking types."""
     gate: torch.Tensor             # [B,1]  our active alive × an opponent active exists
     # --- our action
     req_ids: torch.Tensor          # [B,4] long  our request-slot move nums
@@ -144,35 +165,35 @@ class MoveResolutionOps(NamedTuple):
     opp_last_move: torch.Tensor    # [B] long  their active's last move num (0 = none / a switch)
     opp_p_wake: torch.Tensor       # [B]    P(their active wakes at its next move) — the obs sleep belief
     opp_alive_total: torch.Tensor  # [B]    their mons not known fainted
-    opp_cond: torch.Tensor         # [B,6,7]
-    opp_rest: torch.Tensor         # [B,6]
-    opp_alive: torch.Tensor        # [B,6]  revealed-and-alive OR unrevealed
-    imm_dmg: torch.Tensor          # [B,6,T] P(their slot is immune to an attacking type) — types + ability
-    chart0: torch.Tensor           # [B,6,T] P(their slot's TYPES make it immune)
-    p_type: torch.Tensor           # [B,6,T] P(their slot has type t)
-    abl_block: torch.Tensor        # [B,6,C] P(their slot's ability blocks status category c)
-    opp_named_abl: torch.Tensor    # [B,6,n] P(their slot has a named ability)
+    opp_cond: torch.Tensor         # [B,J,7]
+    opp_rest: torch.Tensor         # [B,J]
+    opp_alive: torch.Tensor        # [B,J]  revealed-and-alive OR unrevealed (OTHER_species: its liveness)
+    imm_dmg: torch.Tensor          # [B,J,T] P(their slot is immune to an attacking type) — types + ability
+    chart0: torch.Tensor           # [B,J,T] P(their slot's TYPES make it immune)
+    p_type: torch.Tensor           # [B,J,T] P(their slot has type t)
+    abl_block: torch.Tensor        # [B,J,C] P(their slot's ability blocks status category c)
+    opp_named_abl: torch.Tensor    # [B,J,n] P(their slot has a named ability)
     screens: torch.Tensor          # [B,8]
     weather: torch.Tensor          # [B,W]
     spikes: torch.Tensor           # [B,2]  [ours, theirs] / 3
     # --- the opponent model
-    alpha: torch.Tensor            # [B,K]  α move slice (stop-grad, meaningful-K masked)
+    alpha: torch.Tensor            # [B,K'] α move slice (stop-grad, meaningful-K masked; X5: + OTHER_move)
     a_switch: torch.Tensor         # [B,1]
-    beta: torch.Tensor             # [B,6]  β (zero when there is no legal switch-in)
-    seat_nums: torch.Tensor        # [B,K] long
-    seat_prio: torch.Tensor        # [B,K]
-    seat_kind: torch.Tensor        # [B,K,S]
-    seat_flag: torch.Tensor        # [B,K,F]
-    seat_phys: torch.Tensor        # [B,K]  gen-3 type-based category
-    seat_flinch: torch.Tensor      # [B,K]  their seat's flinch chance × their Serene Grace
-    pair_in: torch.Tensor          # [B,6,K,14] the op's unified outcome grid (the 12 facts read)
+    beta: torch.Tensor             # [B,J]  β (zero when there is no legal switch-in; X5: + OTHER_species)
+    seat_nums: torch.Tensor        # [B,K'] long (an OTHER_move level: 0 — it is a set, read through its tables)
+    seat_prio: torch.Tensor        # [B,K'] (an OTHER_move level: the level)
+    seat_kind: torch.Tensor        # [B,K',S] (an OTHER_move level: P(a member at that level is of the kind))
+    seat_flag: torch.Tensor        # [B,K',F]
+    seat_phys: torch.Tensor        # [B,K']  gen-3 type-based category
+    seat_flinch: torch.Tensor      # [B,K']  their seat's flinch chance × their Serene Grace
+    pair_in: torch.Tensor          # [B,6,K',14] the op's unified outcome grid (the 12 facts read)
     pair_gate: torch.Tensor        # [B,6,1]
-    pair_type_mult: torch.Tensor   # [B,6,K]
+    pair_type_mult: torch.Tensor   # [B,6,K']
     p_out: torch.Tensor            # [B,1]  P(our active outspeeds theirs)
-    out_cells: torch.Tensor        # [B,4,6,5] our move × their mon [low, high, crit, pko, type_mult]
+    out_cells: torch.Tensor        # [B,4,J,5] our move × their mon [low, high, crit, pko, type_mult]
     c2_base: torch.Tensor          # [B,4,4] [is_status, d_their_outspeed, d_sched, e_slp_free]
-    d_burn_k: torch.Tensor         # [B,K]
-    d_slp_k: torch.Tensor          # [B,K]
+    d_burn_k: torch.Tensor         # [B,K']
+    d_slp_k: torch.Tensor          # [B,K']
     is_brn: torch.Tensor           # [B,4]
     is_slp: torch.Tensor           # [B,4]
 
@@ -218,7 +239,7 @@ def move_facts(o: MoveResolutionOps, kind_t: torch.Tensor, flag_t: torch.Tensor)
     a_un = (1.0 - alpha.sum(-1, keepdim=True) - a_sw).clamp(min=0.0)                  # [B,1]
     p_out = o.p_out.to(dt)
     # ---------------------------------------------------------------- ORDER: does seat k act before move m?
-    pre = p_seat_first(o.prio[:, :, None], o.seat_prio[:, None, :], p_out[:, :, None])   # [B,4,K]
+    pre = p_seat_first(o.prio[:, :, None], o.seat_prio[:, None, :], p_out[:, :, None])   # [B,4,K']
     pre_un = p_seat_first(o.prio, torch.zeros_like(o.prio), p_out)                    # [B,4] an unnamed seat: priority 0
     # ---------------------------------------------------------------- their seats vs OUR ACTIVE
     corr = incoming_status_correction(o)                                              # [B,6,6]
@@ -403,13 +424,14 @@ def move_facts(o: MoveResolutionOps, kind_t: torch.Tensor, flag_t: torch.Tensor)
     l_un = l_un * (1.0 - hp_gate) * (1.0 - is_pf * pre_un)
     # ---------------------------------------------------------------- the SWITCH branch (β-weighted arrival)
     beta = o.beta.to(dt)                                                              # [B,6]
-    imm_j = o.imm_dmg.gather(2, o.req_type[:, None, :].expand(-1, 6, -1)).transpose(1, 2)   # [B,4,6]
-    chart0_j = o.chart0.gather(2, o.req_type[:, None, :].expand(-1, 6, -1)).transpose(1, 2)
+    J = o.imm_dmg.shape[1]                                                            # 6 (blob) · 7 (X5: + OTHER)
+    imm_j = o.imm_dmg.gather(2, o.req_type[:, None, :].expand(-1, J, -1)).transpose(1, 2)   # [B,4,J]
+    chart0_j = o.chart0.gather(2, o.req_type[:, None, :].expand(-1, J, -1)).transpose(1, 2)
     asleep_j = o.opp_cond[..., C_SLP][:, None, :]                                     # [B,1,6]
     statused_j = (o.opp_cond[..., 1:].sum(-1) > 0.5).to(dt)[:, None, :]
     ti_j = torch.einsum("bmt,bjt->bmj", o.st_type_imm.to(dt), o.p_type.to(dt)).clamp(max=1.0)
     ti_j = torch.maximum(ti_j, fl("status_type_imm")[:, :, None] * chart0_j)
-    abl_j = o.abl_block.to(dt).gather(2, o.st_cat[:, None, :].expand(-1, 6, -1)).transpose(1, 2)  # [B,4,6]
+    abl_j = o.abl_block.to(dt).gather(2, o.st_cat[:, None, :].expand(-1, J, -1)).transpose(1, 2)  # [B,4,J]
     named_j = o.opp_named_abl.to(dt)                                                  # [B,6,n]
     sound_j = named_j[..., NAMED_ABILITIES.index(ABILITY_SOUNDPROOF)][:, None, :]
     tempo_j = named_j[..., NAMED_ABILITIES.index(ABILITY_OWN_TEMPO)][:, None, :]
@@ -538,6 +560,7 @@ class MoveResolutionCell(torch.nn.Module):
     ABILITY_IMM: torch.Tensor
     ABILITY_NAMED: torch.Tensor
     SPECIES_NAMED_PRIOR: torch.Tensor
+    PRIO_W: torch.Tensor
 
     def __init__(self, damage_op: Any, out_move: int = MOVE_RESOLUTION_MOVE_DIM,
                  out_switch: int = MOVE_RESOLUTION_SWITCH_DIM) -> None:
@@ -549,6 +572,9 @@ class MoveResolutionCell(torch.nn.Module):
         for name, t in build_species_tables(damage_op.CHART.detach().cpu(), damage_op.ABILITY_DAMAGE_MULT.detach().cpu(),
                                             damage_op.SPECIES_TYPE.detach().cpu()).items():
             self.register_buffer(name, t, persistent=False)
+        # gen3_move_resolution_x5_v1: each move num's priority as a one-hot over the integer levels (X5 only: the
+        # split of OTHER_move's tail by priority level, `split_other_move`).
+        self.register_buffer("PRIO_W", build_priority_table(damage_op.MOVE_PRIORITY), persistent=False)
         self.move_proj = IsolatedLinear(_MOVE_RESOLUTION_MOVE_RAW, int(out_move), zero=True)
         self.switch_proj = IsolatedLinear(_MOVE_RESOLUTION_SWITCH_RAW, int(out_switch), zero=True)
 
@@ -562,10 +588,65 @@ class MoveResolutionCell(torch.nn.Module):
 
 
 # =========================================================================================== the GATHER
+def split_other_move(o: MoveResolutionOps, other_u: torch.Tensor, tables: Dict[str, torch.Tensor],
+                     flinch_mult: torch.Tensor) -> MoveResolutionOps:
+    """X5 (`gen3_move_resolution_x5_v1`): ``o``'s LAST seat is OTHER_move — a SET of moves, the renormalised tail
+    ``other_u`` ``[B,M]`` (`FixedMassMoves.other_u`) — and is replaced by one seat PER PRIORITY LEVEL l
+    (``PRIORITY_MIN … PRIORITY_MAX``): its α is α_OTHER · P_tail(l), its priority the level, its move tables its
+    members' tables CONDITIONED on l (``E_tail[table | l]``; 0 on an empty level, which carries no α), and its damage
+    / status / c2 columns OTHER's own (the op's tail contraction), shared by every level. So `p_seat_first` stays the
+    ONE order rule and every product of ORDER and a move fact is the exact tail expectation; a one-member tail reads
+    as the seat that names that move (to fp32 summation order: the extra zero-α levels reorder a sum). ``tables``:
+    ``prio_w`` (`build_priority_table`), ``kind``, ``flag``, ``phys``, ``flinch`` — per move NUM; ``flinch_mult``
+    ``[B]`` the attacker's Serene Grace (as on a named seat)."""
+    M = other_u.shape[-1]
+    dt = other_u.dtype
+
+    def rows(t: torch.Tensor) -> torch.Tensor:                                        # the table on the tail's axis
+        t = t.to(dt)
+        if t.dim() == 1:
+            t = t[:, None]
+        return t[:M] if t.shape[0] >= M else torch.cat([t, t.new_zeros(M - t.shape[0], t.shape[1])])
+
+    w = other_u[:, :, None] * rows(tables["prio_w"])[None, :, :]                       # [B,M,L] u_m · 1[prio(m) = l]
+    p_l = w.sum(1)                                                                      # [B,L]
+    inv = p_l.clamp(min=_EPS).reciprocal()
+    L = p_l.shape[-1]
+
+    def cond(t: torch.Tensor) -> torch.Tensor:                                          # [B,L,C]
+        c: torch.Tensor = torch.einsum("bml,mc->blc", w, rows(t))
+        return c * inv[:, :, None]
+
+    def lev(t: torch.Tensor, ax: int) -> torch.Tensor:                                  # the named seats + OTHER's, L×
+        k = t.shape[ax] - 1
+        return torch.cat([t.narrow(ax, 0, k)] + [t.narrow(ax, k, 1)] * L, dim=ax)
+
+    def named(t: torch.Tensor) -> torch.Tensor:
+        return t[:, :-1]
+    B = other_u.shape[0]
+    lv = torch.arange(PRIORITY_MIN, PRIORITY_MAX + 1, device=other_u.device).to(o.seat_prio.dtype)
+    return o._replace(
+        alpha=torch.cat([named(o.alpha), o.alpha[:, -1:] * p_l.to(o.alpha.dtype)], dim=-1),
+        seat_nums=torch.cat([named(o.seat_nums), o.seat_nums.new_zeros(B, L)], dim=-1),
+        seat_prio=torch.cat([named(o.seat_prio), lv[None, :].expand(B, -1)], dim=-1),
+        seat_kind=torch.cat([named(o.seat_kind), cond(tables["kind"]).to(o.seat_kind.dtype)], dim=1),
+        seat_flag=torch.cat([named(o.seat_flag), cond(tables["flag"]).to(o.seat_flag.dtype)], dim=1),
+        seat_phys=torch.cat([named(o.seat_phys), cond(tables["phys"])[..., 0].to(o.seat_phys.dtype)], dim=-1),
+        seat_flinch=torch.cat([named(o.seat_flinch), (cond(tables["flinch"])[..., 0]
+                                                      * flinch_mult[:, None]).to(o.seat_flinch.dtype)], dim=-1),
+        pair_in=lev(o.pair_in, 2), pair_type_mult=lev(o.pair_type_mult, 2),
+        d_burn_k=lev(o.d_burn_k, 1), d_slp_k=lev(o.d_slp_k, 1))
+
+
 def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_logits: Optional[torch.Tensor],
-               imc_ops: Optional[Tuple[torch.Tensor, ...]]) -> MoveResolutionOps:
+               imc_ops: Optional[Tuple[torch.Tensor, ...]], x5: Optional[Any] = None) -> MoveResolutionOps:
     """Build `MoveResolutionOps` from one extractor forward, at the pointer stash (T2: α / β exist; every op stash
-    was written at T1). Fails loud when a stash is missing — a silent zero is indistinguishable from a null result."""
+    was written at T1). Fails loud when a stash is missing — a silent zero is indistinguishable from a null result.
+
+    ``x5`` (`flat_intent.FlatConsumerOps`, `--belief-tokens fixed_mass` only; `gen3_move_resolution_x5_v1`): α / β
+    are then the flat pointer's re-expression (``alpha_logits`` [B,K+2], ``beta_logits`` [B,7]) and every seat-axis
+    or mon-axis operand carries OTHER's column — OTHER_move priced by the tail contraction, OTHER_species by the
+    renormalised tail (the module docstring). ``None``: the blob read, unchanged."""
     from agents.model.damage_kinds import gather_bp, is_priced, typeless_move_type
     from agents.model.damage_op_layout import _BOOSTS_DIM
     from agents.model.pair_outcome import pair_alpha_full
@@ -575,14 +656,27 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
     cell: MoveResolutionCell = fe.move_resolution_cell
     op = fe.damage_op
     stash = op.stash
-    if (alpha_logits is None or beta_logits is None or imc_ops is None or op.last_pair_in is None
-            or op.last_pair_seat_live is None or op.last_pair_type_mult is None or op.last_out_cells is None
+    # The seat-axis / mon-axis operands: the op's stashes (blob), or the flat pointer's re-expression with OTHER's
+    # column appended (X5 — the SAME object the seven retired blocks read there; OTHER_move's column is then split
+    # by priority level below).
+    if x5 is None:
+        seat_live, pair_in, pair_type_mult, out_cells = (op.last_pair_seat_live, op.last_pair_in,
+                                                         op.last_pair_type_mult, op.last_out_cells)
+        other_u: Optional[torch.Tensor] = None
+        hs = None
+    else:
+        seat_live, pair_in, pair_type_mult, out_cells = x5.seat_live, x5.pair_in, x5.type_mult, x5.out_cells
+        other_u = x5.other_u
+        hs = fe.last_hypothesis
+    if (alpha_logits is None or beta_logits is None or imc_ops is None or pair_in is None
+            or seat_live is None or pair_type_mult is None or out_cells is None
             or op.last_topk_idx is None or op.last_pair_gate is None or stash.opp_species_post is None
-            or op.last_raw_block is None):
+            or op.last_raw_block is None or (x5 is not None and hs is None)):
         raise RuntimeError(
             "move_resolution is on but α / β or an op stash is missing — the family would silently contribute "
             "nothing, which is indistinguishable from a null RESULT. Requires opp_intent + damage_op + "
-            "damage_outgoing + damage_matrices_incoming / outgoing + damage_topk_k > 0.")
+            "damage_outgoing + damage_matrices_incoming / outgoing + damage_topk_k > 0 (under fixed_mass: the "
+            "flat pointer's operands with OTHER's columns, and the hypothesis set).")
     B = ctx.batch_size
     dev = ctx.device
     ar = torch.arange(B, device=dev)
@@ -656,16 +750,39 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
     p_type = torch.where(believed, type_post, type_rev)
     abl_block = torch.where(believed, blk_post, blk_rev)
     opp_named = torch.where(believed, named_post, named_rev)
+    cond_opp, rest_opp = cond[:, opp], rest[:, opp]
+    if hs is not None:
+        # X5: OTHER_species is the 7th mon — the BELIEVED-slot read with the renormalised tail as its species
+        # distribution (the same five table products a hidden slot's posterior takes; 0 when OTHER is masked). It
+        # is unrevealed, so it carries no status, no Rest and no fainting.
+        tail = hs.other_tail_probs.to(post.dtype)[:, None, :]                             # [B,1,S]
+        imm_dmg = torch.cat([imm_dmg, torch.matmul(tail, cell.SPECIES_P_IMM)], dim=1)
+        chart0 = torch.cat([chart0, torch.matmul(tail, cell.SPECIES_CHART0)], dim=1)
+        p_type = torch.cat([p_type, torch.matmul(tail, cell.SPECIES_HAS_TYPE)], dim=1)
+        abl_block = torch.cat([abl_block, torch.matmul(tail, op.SPECIES_STATUS_BLOCK_PRIOR)], dim=1)
+        opp_named = torch.cat([opp_named, torch.matmul(tail, cell.SPECIES_NAMED_PRIOR)], dim=1)
+        cond_opp = torch.cat([cond_opp, cond_opp.new_zeros(B, 1, cond_opp.shape[-1])], dim=1)
+        rest_opp = torch.cat([rest_opp, rest_opp.new_zeros(B, 1)], dim=1)
+        opp_alive = torch.cat([opp_alive, hs.other_live.to(opp_alive.dtype)[:, None]], dim=1)
     # --- the opponent model (stop-grad publications)
-    seat_live = op.last_pair_seat_live
     alpha, a_sw, _a_stay = pair_alpha_full(alpha_logits, seat_live)
     has_cand = torch.isfinite(beta_logits).any(-1, keepdim=True).to(alpha.dtype)
     beta = torch.softmax(beta_logits.detach().float().clamp(min=-1e9), dim=-1).to(alpha.dtype) * has_cand
-    nums = op.last_topk_idx
-    seat_phys = op.MOVE_PHYS[nums]
-    seat_flinch = (op.MOVE_SECONDARY[nums][..., SECONDARY_FLINCH_IDX]
-                   * opp_sec_mult[:, None])
+    nums = op.last_topk_idx                                                               # [B,K]
     base, d_burn_k, d_slp_k, is_brn, is_slp = imc_ops
+    k_seats = alpha.shape[-1]
+    for name, t, ax in (("pair_in", pair_in, 2), ("pair_type_mult", pair_type_mult, 2), ("d_burn_k", d_burn_k, 1),
+                        ("d_slp_k", d_slp_k, 1)):
+        if t.shape[ax] != k_seats:      # the SAME axis (the `op move-order` bug class); X5: OTHER_move's column
+            raise ValueError(f"move_resolution: α carries {k_seats} seats but {name} has {t.shape[ax]}")
+    # X5: OTHER_move's seat is a SET; it reads num 0's rows here and `split_other_move` replaces it below.
+    seat_nums = nums if other_u is None else torch.cat([nums, torch.zeros_like(nums[:, :1])], dim=-1)
+    seat_phys = op.MOVE_PHYS[seat_nums]
+    seat_flinch = (op.MOVE_SECONDARY[seat_nums][..., SECONDARY_FLINCH_IDX]
+                   * opp_sec_mult[:, None])
+    if out_cells.shape[2] != beta.shape[-1] or imm_dmg.shape[1] != beta.shape[-1]:
+        raise ValueError(f"move_resolution: β carries {beta.shape[-1]} mons but out_cells has {out_cells.shape[2]} "
+                         f"and the per-slot tables {imm_dmg.shape[1]}")
     # Every op value the family reads is PRE-gain: the op's learned `out_gain` is one scalar per block channel —
     # per REQUEST SLOT for the per-move outgoing channels, so a post-gain read would scale the same move by where
     # it is listed (trained X5 arms learned 1.365 vs 1.146 on the KO channel of slots 0 / 3). `out_cells`,
@@ -674,7 +791,7 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
     p_out = ot.out_p_outspeed
     p_out = p_out if p_out.dim() == 2 else p_out[:, None]
     opp_fainted_rev = ((1.0 - alive_all[:, opp]) * (~ctx.opp_believed_mask).float()).sum(-1)
-    return MoveResolutionOps(
+    ops = MoveResolutionOps(
         gate=gate, req_ids=ids, req_type=req_type, is_dmg=is_dmg, acc=acc, prio=op.MOVE_PRIORITY[ids],
         inflicts=op.MOVE_INFLICTS_STATUS[ids],
         p_land=op._status_landing(ctx)[:, :4],     # the op reads the `known` flag itself (gen3_op_ability_known_v1)
@@ -688,15 +805,23 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
         opp_active=opp_act, opp_vol=vol_opp, opp_hp=ctx.hp_and_active[ar, opp_g, 0],
         opp_protect_odds=pp[ar, opp_g, POKEMON_PROTECT_OFFSET], opp_last_move=ctx.last_move_ids[ar, opp_g],
         opp_p_wake=pp[ar, opp_g, POKEMON_SLEEP_BELIEF_OFFSET + 1],
-        opp_alive_total=TEAM_SIZE - opp_fainted_rev, opp_cond=cond[:, opp], opp_rest=rest[:, opp],
+        opp_alive_total=TEAM_SIZE - opp_fainted_rev, opp_cond=cond_opp, opp_rest=rest_opp,
         opp_alive=opp_alive, imm_dmg=imm_dmg, chart0=chart0, p_type=p_type, abl_block=abl_block,
         opp_named_abl=opp_named, screens=ctx.screen_feature, weather=ctx.weather_feature,
         spikes=ctx.spikes_feature,
-        alpha=alpha, a_switch=a_sw, beta=beta, seat_nums=nums, seat_prio=op.MOVE_PRIORITY[nums],
-        seat_kind=cell.SEAT_KIND[nums], seat_flag=cell.FLAG[nums], seat_phys=seat_phys, seat_flinch=seat_flinch,
-        pair_in=op.last_pair_in, pair_gate=op.last_pair_gate, pair_type_mult=op.last_pair_type_mult,
-        p_out=p_out, out_cells=op.last_out_cells, c2_base=base, d_burn_k=d_burn_k, d_slp_k=d_slp_k,
+        alpha=alpha, a_switch=a_sw, beta=beta, seat_nums=seat_nums, seat_prio=op.MOVE_PRIORITY[seat_nums],
+        seat_kind=cell.SEAT_KIND[seat_nums], seat_flag=cell.FLAG[seat_nums], seat_phys=seat_phys,
+        seat_flinch=seat_flinch,
+        pair_in=pair_in, pair_gate=op.last_pair_gate, pair_type_mult=pair_type_mult,
+        p_out=p_out, out_cells=out_cells, c2_base=base, d_burn_k=d_burn_k, d_slp_k=d_slp_k,
         is_brn=is_brn, is_slp=is_slp)
+    if other_u is None:
+        return ops
+    # X5: OTHER_move (α's last seat) → one seat per PRIORITY level (`split_other_move`).
+    return split_other_move(ops, other_u, {"prio_w": cell.PRIO_W, "kind": cell.SEAT_KIND, "flag": cell.FLAG,
+                                           "phys": op.MOVE_PHYS,
+                                           "flinch": op.MOVE_SECONDARY[:, SECONDARY_FLINCH_IDX]},
+                            opp_sec_mult)
 
 
 def _beatup_count(op: Any, ctx: Any) -> torch.Tensor:

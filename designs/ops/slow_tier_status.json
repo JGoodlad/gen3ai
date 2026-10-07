@@ -273,6 +273,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/model/move_resolution_x5_test.py::test_debug_smoke_under_fixed_mass_with_the_family_on": {
+   "status": "pass",
+   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
+   "at": "2026-10-07T16:28:07Z",
+   "duration_s": 323.67,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/model/update_performance_shape_test.py::test_on_cuda_the_trunk_layer_dispatches_a_fused_sdpa_kernel_not_math": {
    "status": "pass",
    "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",

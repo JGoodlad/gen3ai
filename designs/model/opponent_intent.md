@@ -124,7 +124,7 @@ hidden-slot set — the pointer was fine; the label beside it was a different he
 
 Eight modules now contract α against the op's physics — `IntentValueReduce`, `IntentMoveCell`,
 `IntentThresholdMoveCell`, `IntentConditionalMoveCell`, `PairOutcomeMoveCell`, the v94 pair
-`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`, and the v95 pair `ConditionalThreatCell` — and, under `--move-resolution on` (v141, OFF in production), `MoveResolutionCell`, which REPLACES the seven pointer-cell consumers (they are retired on a built policy) and contracts α / β the same way (the publication, stop-grad, seats masked never renormalised, the unmodeled mass `1 − Σα − α_SWITCH` named rather than reassigned). They share four conventions, and each one exists because breaking it fails
+`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`, and the v95 pair `ConditionalThreatCell` — and, under `--move-resolution on` (v141, OFF in production), `MoveResolutionCell`, which REPLACES the seven pointer-cell consumers (they are retired on a built policy) and contracts α / β the same way (the publication, stop-grad, seats masked never renormalised, the unmodeled mass `1 − Σα − α_SWITCH` named rather than reassigned; under X5 `fixed_mass` it reads the flat pointer's re-expression with OTHER priced, OTHER_move split into one seat per priority level). They share four conventions, and each one exists because breaking it fails
 silently:
 
 ## The two conventions `pair_outcome.py` added

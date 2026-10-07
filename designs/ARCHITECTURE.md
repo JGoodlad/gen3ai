@@ -827,7 +827,17 @@ the incoming side / clause rules and reads an opponent's ability through its `kn
 own re-application of `status_rules.incoming_status_mask` is an exact no-op on real op output; every op value it
 reads is PRE-gain (the op's `out_gain` is per request slot on the per-move channels), and its projections are
 shared across slots. Requires `opp_intent`, `damage_op`,
-`damage_outgoing` and both per-move matrices; blob only. Named residuals (not modelled): accuracy / evasion
+`damage_outgoing` and both per-move matrices. **Builds on both belief modes** (`gen3_move_resolution_x5_v1`):
+under X5 `fixed_mass` the same rules (no mode branch) read the flat opponent pointer's re-expression, the one the
+seven blocks read there — α over the K move seats plus OTHER_move, α_SWITCH, β over the six slots plus
+OTHER_species — and **OTHER is PRICED, never excluded** (design_arch_audit Decision record 2026-10-07): OTHER_move
+enters as one seat per gen-3 PRIORITY level (−6 … +5), each with α_OTHER · P_tail(level), that level as its
+priority (so the order rule `p_seat_first` is exact per level) and its members' move tables conditioned on the
+level, its damage / status / c2 columns the op's tail contraction; OTHER_species is a 7th mon read like a hidden
+slot with the renormalised tail as its species distribution (its `out_cells` column the OTHER-mode D1 pass); a
+hidden slot reads its hypothesis species, its presence carried by β, never multiplied in again. The remaining
+approximation is the tail-averaged damage grid (a tail member's KO / hit odds are not split by its priority).
+Named residuals (not modelled): accuracy / evasion
 stages, Attract's gender rule, Fake Out's first turn, a confusion ending this turn, Encore / Disable at 0 PP,
 the opponent's Disabled move, Damp, Wonder Guard, Truant, Endeavor's HP comparison, two-turn moves, a seat outside
 their believed top-K.

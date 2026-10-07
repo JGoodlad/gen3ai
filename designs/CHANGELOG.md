@@ -12275,3 +12275,35 @@ branch `obs-facts-append`).
 - **Boundary.** NONE: both clauses are in force for gen3ou, so every model value is byte-identical. The PRIOR = 0
   filter (`compute_priors.py`, the facade guard, the model tables' ILLEGAL value for banned entities) changes model
   inputs and is HELD on `format-spec-prior` until the X5 look-3 cross finishes (design §5.1).
+## 2026-10-07 — ARCHITECTURE (opt-in, OFF in production): the MOVE-RESOLUTION family builds under X5 `fixed_mass` (`gen3_move_resolution_x5_v1`; the refusal lifted; OTHER PRICED; `off` byte-identical in both belief modes; no config / ARCH_SIGNATURE bump)
+
+- **Why.** X5's hypothesis tokens are ADOPTED (`c471c2a8`: look 3 non-inferior at matched steps, the owner's
+  pre-committed rule; the flip rides the version break), and `--move-resolution on` refused `--belief-tokens
+  fixed_mass`, so the F11 screen could not run on the arm that becomes production.
+- **What.** `move_facts` / `switch_facts` are unchanged and hold no belief-mode branch (the J axis — 6 blob, 7 X5 — is
+  read from the operands instead of a literal 6). `gather_ops` takes the flat pointer's re-expression
+  (`FlatConsumerOps`, the object the seven retired blocks read under fixed_mass): α over the K move seats + OTHER_move,
+  α_SWITCH, β over the six slots + OTHER_species. **OTHER is PRICED, never excluded** (Decision record,
+  `design_arch_audit.md` 2026-10-07): `split_other_move` replaces the OTHER_move seat by one seat per gen-3 PRIORITY
+  level (−6 … +5; `move_resolution_rules.PRIORITY_MIN / MAX`, the per-num one-hot `build_priority_table`), each with
+  α_OTHER · P_tail(level), the level as its priority and its members' move tables conditioned on the level, its damage
+  / status / c2 columns the op's tail contraction shared by the levels — so the order rule `p_seat_first` stays the
+  one rule and every order × move-fact product is the exact tail expectation; OTHER_species is a 7th mon, the
+  believed-slot read with `other_tail_probs` as its species distribution, its `out_cells` column the OTHER-mode D1
+  pass; a hidden slot reads its hypothesis species (the roster's one-hot), presence carried by β. The remaining
+  approximation is the tail-averaged damage grid. The constructor refusal and `flag_requires_test`'s bespoke coupling
+  are gone; the registry note says both modes.
+- **Versions.** No weight changes shape and no checkpoint changes meaning (a fixed_mass + `on` checkpoint could not
+  exist; blob + `on` reads the same numbers: the same gathers), so no `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` bump.
+- **Proofs.** `off`, both belief modes: the production extractor's and its fixed_mass arm's dynamo graphs (one graph
+  each, 11,318 / 20,077 lines, sha256 `cf4a45a0d5a4edf5…` / `8705e9e948ebf6fc…`), state_dict bytes and outputs equal
+  `f0d673fd`'s and, after the rebase, `ccba59f0`'s; the K9 learner golden passes (both entries). `move_resolution_x5_test.py` (each verified to fail on a
+  mutation: the refusal back, OTHER_move excluded, OTHER_move at priority 0, unconditioned tables, OTHER_species
+  excluded, hidden slots read through the usage prior): a one-member OTHER tail prices as the seat that names it
+  (to fp32 summation order), a β = 0 OTHER_species column changes nothing, half-copies of a seat / mon are invariant;
+  OTHER's KO mass reaches `dbond_p_ko`, its order is the exact tail expectation (a Protect + Earthquake tail blocks
+  with 0.5, not 0.25), OTHER_species decides `p_lands_switch`; the real fixed_mass forward's gathers; the one-lever
+  init property on a real `MaskablePPO` policy; composition with `--token-encoding static` / `--policy-readout trunk`;
+  a `slow` CPU `--debug` smoke on the production fixed_mass arm with the family on (a typed small rollout shape:
+  the recipe's 98,304-row target would take hours on CPU; exit 0, two updates, ~6 min). `move_resolution_bridge_integration_test.py` now runs both modes; full Lane S bank,
+  fixed_mass read: 31,942 played moves, 1,485 exact-zero claims, 0 contradicted (blob, re-run: 1,515, 0).

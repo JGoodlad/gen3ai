@@ -1043,10 +1043,8 @@ class ExtractorBuild(torch.nn.Module):
                 raise ValueError(
                     "move_resolution=on requires damage_op + damage_outgoing + damage_matrices_incoming + "
                     "damage_matrices_outgoing: the KO / hit / immunity facts are the operator's physics.")
-            if belief_tokens != "blob":
-                raise ValueError(
-                    "move_resolution=on is built for belief_tokens='blob' only: its seat axis is alpha's K "
-                    "seats, and X5's flat pointer (OTHER_move as a priced (K+1)-th seat) is not wired into it.")
+            # gen3_move_resolution_x5_v1: under `belief_tokens='fixed_mass'` the SAME rules read the flat pointer's
+            # re-expression (OTHER_move a priced (K+1)-th seat, OTHER_species a priced 7th mon) — no refusal.
             self.damage_op.stash_pair_cells = True
             self.damage_op.stash_pair_outcome = True
             self.damage_op.stash_pair_type_mult = True

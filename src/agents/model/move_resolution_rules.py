@@ -132,6 +132,14 @@ SEAT_KINDS: Dict[str, Tuple[str, ...]] = {
 # so the bracket and the within-bracket rule can never fork.
 
 
+#: Every gen-3 move's priority lies in ``[PRIORITY_MIN, PRIORITY_MAX]`` (Roar / Whirlwind −6 … Helping Hand +5,
+#: `data/moves.ts`; the gen-3 dex holds −6 −5 −4 −3 −1 0 +1 +3 +4 +5). Under X5 the family splits OTHER_move — a SET
+#: of moves — into one seat per integer PRIORITY level (`move_resolution.gather_ops`), so `move_order.p_seat_first`
+#: stays the ONE order rule and is exact per level (`gen3_move_resolution_x5_v1`). A move outside the range is refused when
+#: the table is built (`move_resolution_tables.build_priority_table`).
+PRIORITY_MIN, PRIORITY_MAX = -6, 5
+
+
 #: Protect / Detect / Endure FAIL when no action follows them in the queue (`data/moves.ts` protect / endure
 #: `onPrepareHit: return !!this.queue.willAct() && …`): into a switch (the switch resolved before any move) and
 #: when the user moves LAST. Every reader prices them × P(an action follows) — `p_seat_first` gives the order.

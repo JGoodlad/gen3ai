@@ -1053,7 +1053,7 @@ class ExtractorForward(ExtractorApi):
         # policy retires the seven it replaces, so on a built policy this is the only rider of either cell.
         if self.move_resolution_cell is not None:
             _mr_m, _mr_s = self.move_resolution_cell(
-                gather_move_resolution_ops(self, ctx, _al, _bl, _imc_ops))
+                gather_move_resolution_ops(self, ctx, _al, _bl, _imc_ops, _x5i))
             _mcells = torch.cat([_mcells, _mr_m], dim=2)
             _scells = torch.cat([_scells, _mr_s], dim=2)
         self.stash.pointer_inputs = PointerInputs(

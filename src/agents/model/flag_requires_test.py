@@ -169,11 +169,6 @@ BESPOKE_COUPLINGS: Dict[FrozenSet[str], str] = {
     frozenset({"belief_tokens", "damage_op"}):
         "per-VALUE: fixed_mass needs damage_candidate_k == 0 (the full candidate axis); a value of the "
         "op's truncation knob, not whether the op is on.",
-    # gen3_move_resolution_v1 (v141): the family is BLOB-only — a requirement on belief_tokens' VALUE (its
-    # OFF state), which `requires` (enabled-only) cannot express.
-    frozenset({"move_resolution", "belief_tokens"}):
-        "per-VALUE: move_resolution=on needs belief_tokens == 'blob' (the OFF state): its seat axis is "
-        "alpha's K seats, not X5's flat pointer. `requires` can only say 'enabled'.",
 }
 
 

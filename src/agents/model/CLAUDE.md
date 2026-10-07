@@ -302,7 +302,11 @@ EXPECTATION-type reduction (softmax attention, a pool, a weighted sum) takes the
 masked key) **and gets its I1 / I2 test in `hypothesis_tokens_test.py`** (π = 0 ≡ masked, bit-exact;
 two copies at w/2 ≡ one at w). A max-type reduction is class M (presence-scaled max, §9 M2 = C). π is
 DETACHED wherever it weights the policy or critic (M10). Blob must stay byte-identical: every X5 read
-sits behind `hypothesis_builder is not None` with the blob code path untouched.
+sits behind `hypothesis_builder is not None` with the blob code path untouched. A consumer that contracts
+the FLAT POINTER's α / β (presence already inside them, through its log π bias) never multiplies π in
+again; its I1 / I2 live beside it (the move-resolution family: `move_resolution_x5_test.py`, where OTHER
+is PRICED — OTHER_move one seat per priority level, `move_resolution.split_other_move`; OTHER_species a
+7th mon on the renormalised tail).
 
 🚨 **A change to `PokemonEncoder`'s INPUT stitch must be mirrored in `hypothesis_encode.species_table` /
 `_cols`** (`gen3_x5_hyp_gather_v1`): fixed_mass computes the hypothesis tokens from the encoder's two first
