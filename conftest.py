@@ -25,6 +25,49 @@ import sys
 
 import pytest
 
+
+# --- THIS CHECKOUT'S src/ FIRST — for this process AND every subprocess a test starts ------------
+#
+# `pip install -e .` names ONE absolute path (the MAIN checkout's src/), so a git WORKTREE's session
+# with no `PYTHONPATH` collected its own test files and imported MAIN's code — and every subprocess a
+# test spawned (a trainer, a fuzz child, a `-c` probe) did the same, silently. The harness that runs
+# worktree agents refuses `export PYTHONPATH=…` (2026-10-07), so the export could not be relied on.
+# Here, before anything imports `agents` / `main` / `utils` / `poke_env`:
+#
+#   * `<this checkout>/src` goes to the FRONT of `sys.path` (ahead of site-packages and the `.pth`);
+#   * it is PREPENDED to `os.environ["PYTHONPATH"]`, so every subprocess AND every xdist worker
+#     (execnet spawns them after this, with this environ) inherits it. Prepended, never replaced: a
+#     PYTHONPATH entry still lands before site-packages, which is the order the launcher's PIN rests
+#     on — `child.py` prepends ITS pinned src in front of this one, so a pinned child still wins.
+#
+# A top-level name ALREADY imported from another tree (a plugin got there first) cannot be fixed by
+# a path edit — the session REFUSES. A COPY of this conftest in a temp dir (the conftest's own tests)
+# has no `src/` beside it and changes nothing. Pinned by `src/packaging_gate_test.py`, whose shadow
+# check now runs in a CLEAN subprocess (no PYTHONPATH) so this edit cannot mask an installed
+# competitor. Opt-out: GEN3AI_SKIP_SRC_FIRST=1.
+def _put_this_checkouts_src_first() -> None:
+    if os.environ.get("GEN3AI_SKIP_SRC_FIRST"):
+        return
+    src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src")
+    if not os.path.isdir(os.path.join(src, "agents")):
+        return
+    real = os.path.realpath(src)
+    for name in ("agents", "main", "utils", "poke_env"):
+        mod = sys.modules.get(name)
+        origin = getattr(mod, "__file__", None) if mod is not None else None
+        if origin and not os.path.realpath(origin).startswith(real + os.sep):
+            raise pytest.UsageError(
+                f"`{name}` was already imported from {origin} before the root conftest could put "
+                f"{src} first — this session would test another tree's code. Run pytest from this "
+                "checkout with nothing pre-importing the repo's packages.")
+    sys.path[:] = [src] + [p for p in sys.path if os.path.realpath(p or os.curdir) != real]
+    parts = [p for p in os.environ.get("PYTHONPATH", "").split(os.pathsep) if p]
+    os.environ["PYTHONPATH"] = os.pathsep.join(
+        [src] + [p for p in parts if os.path.realpath(p) != real])
+
+
+_put_this_checkouts_src_first()
+
 if not os.environ.get("GEN3AI_TEST_ALLOW_GPU"):
     # Empty string => no visible CUDA device => torch.cuda.is_available() is False
     # => SB3 device="auto" resolves to CPU. Hard-set (not setdefault) so an already-exported

@@ -5,12 +5,16 @@ the `src/` root because, like those, its subject is the whole tree rather than a
 
 ## Why a whole test file about `sys.path` ordering
 
-There are now THREE mechanisms that can put this repo's `src/` on the import path, and they
+There are now FOUR mechanisms that can put this repo's `src/` on the import path, and they
 do not agree about precedence:
 
     1. `export PYTHONPATH=$PYTHONPATH:src`     -> lands in sys.path BEFORE site-packages
     2. `pip install -e .` (a `.pth` file)      -> lands AFTER site-packages
     3. the root `conftest.py`'s rootdir entry  -> gives `src.agents`, NOT `agents`
+    4. the root `conftest.py`'s `_put_this_checkouts_src_first` -> THIS checkout's `src/` at the
+       FRONT of `sys.path` and of `PYTHONPATH` (pytest sessions only; 2026-10-07, because a
+       worktree agent's harness refuses the export) — `test_this_session_and_its_subprocesses_
+       import_this_checkout`; the shadow check therefore runs in a CLEAN subprocess
 
 Two of those are load-bearing at the same time and must not be collapsed into one:
 
@@ -142,33 +146,62 @@ def test_nothing_installed_shadows_our_four_top_level_names() -> None:
     import of somebody else's module and behaviour nobody can explain. Cheap to check for all
     four at once, so it is checked for all four.
 
-    Asserts against THIS checkout (derived from `__file__`), not an absolute path — so a
-    worktree checks itself, and the test is meaningful under PYTHONPATH and under an editable
-    install alike.
+    Run in a CLEAN subprocess — no PYTHONPATH, cwd outside the repo — because the root
+    `conftest.py` puts THIS checkout's `src/` first in this process (and in its PYTHONPATH), which
+    would outrank an installed competitor here and hide it. In the clean interpreter only
+    site-packages and its `.pth` files answer: a name resolving INTO an installed-packages
+    directory is a competitor. (Not importable at all — no editable install, CI — is fine: then
+    nothing installed claims the name.)
     """
-    import importlib.util
-
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    code = textwrap.dedent(f"""
+        import importlib.util
+        for name in {list(EXPECTED_TOP_LEVEL)!r}:
+            spec = importlib.util.find_spec(name)
+            print(name, spec.origin if spec is not None and spec.origin else "NOT-FOUND")
+    """)
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                         env=env, cwd=str(_REPO_ROOT.parent), timeout=120)
+    assert out.returncode == 0, f"probe failed:\n{out.stderr}"
+    installed = {str(Path(p).resolve()) for p in
+                 (sysconfig.get_paths()["purelib"], sysconfig.get_paths()["platlib"]) if p}
     offenders = []
-    for name in EXPECTED_TOP_LEVEL:
-        spec = importlib.util.find_spec(name)
-        if spec is None or spec.origin is None:
-            offenders.append(f"{name}: not importable at all")
+    for line in out.stdout.strip().splitlines():
+        name, origin = line.split(" ", 1)
+        if origin == "NOT-FOUND":
             continue
-        if not str(Path(spec.origin).resolve()).startswith(str(_SRC_DIR)):
-            offenders.append(f"{name}: {spec.origin}")
+        resolved = str(Path(origin).resolve())
+        if any(resolved.startswith(d + os.sep) for d in installed):
+            offenders.append(f"{name}: {origin}")
     assert not offenders, (
-        "a top-level package name is resolving OUTSIDE this checkout's src/:\n  "
+        "a top-level package name is claimed by something INSTALLED in site-packages:\n  "
         + "\n  ".join(offenders)
-        + f"\n\nexpected everything under: {_SRC_DIR}\n\n"
-        "TWO causes, and the message above tells you which:\n"
-        "  * resolved into site-packages -> something installed has claimed one of our names. "
-        "Uninstall the competitor. Do not rename around it and do not relax this assertion; "
-        "the failure mode is silent, the import succeeds and the wrong code runs.\n"
-        "  * resolved into a DIFFERENT checkout of this repo -> you are running THIS tree's "
-        "tests against ANOTHER tree's code. The usual cause is running a git worktree's suite "
-        "with no PYTHONPATH, so the main checkout's editable install answers the import. Fix "
-        "with `export PYTHONPATH=$PYTHONPATH:src` — in a worktree that export is not optional."
+        + "\n\nUninstall the competitor. Do not rename around it and do not relax this assertion; "
+        "the failure mode is silent, the import succeeds and the wrong code runs."
     )
+
+
+def test_this_session_and_its_subprocesses_import_this_checkout() -> None:
+    """THE WORKTREE HALF (2026-10-07). The editable install names the MAIN checkout's `src/`, and the
+    harness refuses `export PYTHONPATH=…` in a worktree — so the root `conftest.py` puts this
+    checkout's `src/` first in `sys.path` AND at the front of `PYTHONPATH`. Proved in-process and in a
+    subprocess started the way most tests start one (inherited env, a cwd OUTSIDE the repo): both
+    must import THIS tree's `agents`. On a revert, in a worktree with no export, both resolve into the
+    main checkout; anywhere, the first PYTHONPATH entry is no longer this checkout's absolute `src/`.
+    """
+    import agents
+    assert str(Path(agents.__file__).resolve()).startswith(str(_SRC_DIR) + os.sep), (
+        f"this session imports `agents` from {agents.__file__}, not {_SRC_DIR}")
+    first = os.environ.get("PYTHONPATH", "").split(os.pathsep)[0]
+    assert first and Path(first).resolve() == _SRC_DIR, (
+        f"PYTHONPATH's first entry is {first!r}, not this checkout's src/ ({_SRC_DIR}) — the root "
+        "conftest's `_put_this_checkouts_src_first` is gone, so a subprocess a test spawns imports "
+        "whatever the editable install names (in a worktree: the MAIN checkout's code).")
+    out = subprocess.run([sys.executable, "-c", "import agents; print(agents.__file__)"],
+                         capture_output=True, text=True, cwd=str(_REPO_ROOT.parent), timeout=120)
+    assert out.returncode == 0, out.stderr
+    assert str(Path(out.stdout.strip()).resolve()).startswith(str(_SRC_DIR) + os.sep), (
+        f"a subprocess imports `agents` from {out.stdout.strip()}, not {_SRC_DIR}")
 
 
 def test_every_declared_package_actually_exists() -> None:

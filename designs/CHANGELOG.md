@@ -12343,3 +12343,19 @@ branch `obs-facts-append`).
   (8.8 min under a load of ~35 on 16 threads).
 - **Tests.** `src/main/train/debug_shape_test.py` (3 of 6 fail on a revert of the call); the slow
   `debug_shape_smoke_integration_test.py` (the real trainer process).
+## 2026-10-07 — pytest puts THIS checkout's `src/` first, for itself and every subprocess (root `conftest.py`; no config / ARCH bump)
+
+- **Why.** The editable install names the MAIN checkout's `src/`, and a worktree agent's harness refuses
+  `export PYTHONPATH=…`, so a worktree's pytest session — and every subprocess a test spawns — silently imported
+  MAIN's code.
+- **What.** `conftest.py` `_put_this_checkouts_src_first`, before anything imports the repo's packages: this
+  checkout's absolute `src/` goes to the FRONT of `sys.path` and is PREPENDED to `os.environ["PYTHONPATH"]` (xdist
+  workers and test subprocesses inherit it). Prepending keeps the launcher's pin working (`child.py` prepends its
+  pinned `src` in front). A repo package already imported from another tree REFUSES the session; a conftest copy
+  with no `src/` beside it changes nothing; `GEN3AI_SKIP_SRC_FIRST=1` opts out.
+- **The gate kept meaningful.** `src/packaging_gate_test.py`'s shadow check now runs in a CLEAN subprocess (no
+  PYTHONPATH, cwd outside the repo), so the conftest edit cannot hide an installed competitor; the new
+  `test_this_session_and_its_subprocesses_import_this_checkout` asserts this session, `PYTHONPATH`'s first entry
+  and a spawned subprocess all resolve `agents` to this checkout (fails with the opt-out set: the session imported
+  the main checkout's `agents`).
+- **Not covered.** A direct `python <script>` from a worktree root still imports main's code without the export.
