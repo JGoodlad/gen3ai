@@ -53,6 +53,10 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   are in the `CLAUDE.md` files and are self-enforcing via gates; they do not need re-reading here.
 - Verify every in-flight claim in the handoff (an agent "still running", an arm "killed") against
   the process table before acting on it.
+- **Confirm the STALL FIX is live** (owner, 2026-10-07): run `cc_keepalive_patch.py self`; exit 0 means
+  PATCHED. If it reads UNPATCHED (exit 1) or unknown (exit 2), tell the owner AT ONCE: that session
+  will fall into hours of stalls after its first dropped connection (§7, 2026-10-07 entry). The fix
+  is `claude daemon stop`, then relaunch with `cc_keepalive_patch.py claude agents`.
 
 ## 2. Dispatching agents
 
@@ -387,6 +391,21 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   a `--sync-to-main` batch, anything the owner reserved by name.
 
 ## 7. When an agent stalls, and how to wait — mechanics
+
+**2026-10-07 · THE KEEP-ALIVE LATCH IS THE STALL CAUSE, AND IT IS PATCHED (measured; owner + Debug Oct).**
+- **Cause:** in stock Claude Code, ONE connection error ("Stale connection — disabling keep-alive for retry") switches keep-alive OFF for the rest of the process's life, and nothing turns it back on.
+- **What follows:** every request opens a fresh connection, with 60 s byte-watchdog stalls and non-streaming fallbacks. The retries are then REJECTED by the server ("previous_message_id has already been continued" / "No thread state"), so each stall also forces a full uncached re-upload.
+- **The patch** makes that switch a no-op (8 bytes, reversible).
+- **Measured on the orchestrator's own debug log:**
+  - before, 07:00–12:37 PT: **131 stalls in ~1,725 requests (7.6 %)** and 101 rejected retries;
+  - after, 12:37–16:19: **0 stalls in ~2,190 requests**, including the day's busiest hour (967 requests), with no silent gap ≥ 40 s;
+  - the trigger fired twice after the patch, and the process stayed pooled both times.
+- **Caveat:** one afternoon; a server-side change is not ruled out.
+- **The tool:** `~/.claude/tools/cc_keepalive_patch/cc_keepalive_patch.py` (on PATH as `cc_keepalive_patch.py`):
+  - `self`: is the claude process above this shell patched? It reads `/proc/<pid>/exe`;
+  - `claude <args>`: the launcher. It patches if needed, then runs claude, and REFUSES (exit 2) if the binary's layout changed after an update;
+  - `status | apply | restore`: inspect, patch, or undo.
+- **A restart is no longer the only cure; relaunching PATCHED is.** An unpatched session that has latched stays degraded until it is relaunched through the tool. Older text in this section that treats a stall as an unexplained server hang is superseded by this entry for the latch path.
 
 **🚨 NEVER AN UNBOUNDED WAIT ON A SUB-AGENT (owner, 2026-10-07).** A completion notification can fail to arrive (a stall, a crash, a harness restart), and a session whose only wake source is that notification can hang forever. Every session that dispatches agents keeps a bounded wake source armed for as long as any agent it dispatched is live:
 - **The orchestrator:** the standing `:07 / :37` health-check cron (§7.w) IS its bounded wake. It must exist whenever an agent is live, and is re-created after every restart.

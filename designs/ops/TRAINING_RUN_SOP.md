@@ -68,6 +68,8 @@ trap in particular applies directly to the watchers this session arms in §2 bel
 
 ---
 
+**Session health first (owner, 2026-10-07):** at every session start or restart, run `cc_keepalive_patch.py self` (exit 0 = PATCHED). If it reads UNPATCHED or unknown, report it to the orchestrator at once: an unpatched session falls into long stalls after its first dropped connection, and a stalled Training session cannot watch a live run. The fix is `claude daemon stop`, then relaunch with `cc_keepalive_patch.py claude agents` (`ORCHESTRATOR_SOP.md` §7, 2026-10-07 entry).
+
 ## 1. Before launch — "it launches" and "it is the experiment" are INDEPENDENT checks
 
 **0. The GPU LEASE (owner, 2026-10-03: nobody blocks on the GPU).** Nothing in the launcher or the trainer
