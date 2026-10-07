@@ -432,6 +432,12 @@ def _migrate_config(data: dict) -> dict:
     if version < 137:
         data.setdefault("oracle_reveal", "off")
         data["config_version"] = 137
+    # v138 (gen3_obs_facts_v1) — `obs_facts`, defaulted rather than refused: "off" is the only possible
+    # past (the consumer did not exist). A pre-v138 checkpoint is still refused by `check_compatible`
+    # on `total_dim` (its observation is 2761 wide; the OBS-FACTS block made it 2845).
+    if version < 138:
+        data.setdefault("obs_facts", "off")
+        data["config_version"] = 138
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

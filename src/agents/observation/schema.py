@@ -143,9 +143,17 @@ def build_schema(layout: Dict) -> ObsSchema:
         blocks.append(Block("event_window", layout["event_window_offset"], ew_dim,
                             doc=(f"H-B: last {layout['event_window_n']} event records × "
                                  f"{layout['event_token_dim']} cols (typed, most-recent last)")))
+    # gen3_obs_facts_v1: the OBS-FACTS block closes base (absent = a pre-facts layout), its four
+    # sub-blocks (seen / choice / vol / screens) as children.
+    of_dim = layout.get("obs_facts_dim", 0)
+    if of_dim:
+        blocks.append(Block("obs_facts", layout["obs_facts_offset"], of_dim,
+                            doc=("what the opponent has seen of us, the opponent active's Choice-lock "
+                                 "evidence, the actives' volatile turns, each side's screen turns"),
+                            children=_sub_blocks(layout.get("obs_facts", {}))))
     # gen3_frame_deletion_v1: the prev_action_mask + turn_history tail blocks are DELETED, so
-    # the event window is the last block and base_dim == total_dim. The tiling proof below is
-    # what makes that a checked fact rather than an assumption.
+    # base_dim == total_dim. The tiling proof below is what makes that a checked fact rather than
+    # an assumption.
     return ObsSchema(total_dim=layout["total_dim"], blocks=blocks).validate()
 
 

@@ -412,6 +412,12 @@ class ExtractorForward(ExtractorApi):
         self.stash.opp_believed_mask = ctx.opp_believed_mask
         self.stash.opp_active_local = ctx.opp_active_local   # for the prober's belief-row decode
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
+        # gen3_obs_facts_v1 (`--obs-facts v1` only; `off` builds nothing): the OBS-FACTS block as T0
+        # content on the role tokens of the entities it describes, before the belief stack reads them.
+        if self.obs_facts_inject is not None:
+            assert ctx.obs_facts is not None, "obs_facts=v1 on a layout without the OBS-FACTS block"
+            role_tokens = self.obs_facts_inject(ctx.obs_facts, role_tokens, ctx.our_active_idx,
+                                                ctx.opp_active_local, self.embeddings)
         # gen3_x5_belief_tokens_v1 (X5 U3, `--belief-tokens fixed_mass` only; blob runs NONE of this):
         # the hypothesis set's SPECIES half (δ_θ reads the PRE-belief opponent role tokens — the
         # revealed ones), then the hypothesis TOKENS: THE `pokemon_encoder` on the hypothesis context

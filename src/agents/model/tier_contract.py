@@ -72,6 +72,9 @@ TIER_OF: Dict[str, int] = {
     # gen3_item_belief_v1 (v83): the hidden-item posterior — a resolve step exactly like the
     # species/spread/HP-type beliefs; the op (T1) consumes its p_cb publication.
     "item_belief_head": 0,
+    # gen3_obs_facts_v1 (v138, `--obs-facts v1`): the OBS-FACTS block added to the role tokens right
+    # after the per-mon encoder — what is on the board, T0 RESOLVE.
+    "obs_facts_inject": 0,
     # gen3_x5_hypothesis_set_v1 (X5 U2, `--belief-tokens fixed_mass` only): δ_θ + the fixed-size
     # presence + the hypothesis selection + OTHER read the T0 prior and PRE-trunk tokens only.
     "hypothesis_builder": 0,

@@ -347,3 +347,33 @@ def test_called_move_class_assist_and_nature_power(caller, called):
     out = assert_same(BASE + ["|switch|p2a: Clefable|Clefable, F|100/100",
                               f"|move|p2a: Clefable|{caller}|p2a: Clefable", called])
     assert [m["id"] for m in opp(out, "clefable")["moves"]] == [caller.lower().replace(" ", "")]
+
+
+# ------------------------------------------------- gen3_obs_facts_v1: V14 public reveal, V15 residual
+def test_v14_what_the_opponent_has_seen_of_our_side():
+    """The PUBLIC flags (`LiveMove.seen`, `item_public`, `ability_public`) are the reading's own
+    reveal rules pointed at our side: a `|request|` reveals nothing, a public line reveals."""
+    out = assert_same(BASE)
+    m = ours(out, "metagross")
+    assert not any(mv["seen"] for mv in m["moves"]) and not m["item_public"] and not m["ability_public"]
+    out = assert_same(BASE + ["|move|p1a: Metagross|Meteor Mash|p2a: Zapdos",
+                              "|-heal|p1a: Metagross|301/301|[from] item: Leftovers",
+                              "|-immune|p1a: Metagross|[from] ability: Clear Body"])
+    m = ours(out, "metagross")
+    assert [mv["id"] for mv in m["moves"] if mv["seen"]] == ["meteormash"]
+    assert m["item_public"] and m["ability_public"]
+    out = assert_same(BASE + ["|move|p2a: Zapdos|Thunderbolt|p1a: Metagross"])
+    assert [mv["seen"] for mv in opp(out, "zapdos")["moves"]] == [True]
+
+
+def test_v14_an_item_gone_and_a_trick_are_public():
+    out = assert_same(BASE + ["|-enditem|p1a: Metagross|Leftovers|[from] move: Knock Off|[of] p2a: Zapdos"])
+    assert ours(out, "metagross")["item_public"]
+    out = assert_same(BASE + ["|-activate|p1a: Metagross|move: Trick|[of] p2a: Zapdos"])
+    assert ours(out, "metagross")["item_public"] and opp(out, "zapdos")["item_public"]
+
+
+def test_v15_residual_done_is_the_current_turns_upkeep():
+    assert assert_same(BASE)["view"]["residual_done"] is False
+    assert assert_same(BASE + ["|", "|upkeep"])["view"]["residual_done"] is True
+    assert assert_same(BASE + ["|", "|upkeep", "|turn|2"])["view"]["residual_done"] is False

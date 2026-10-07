@@ -406,6 +406,10 @@ class ModelVersionFields:
     # built at the run's mode); what the input MEANS differs, so `check_oracle_reveal` refuses a resume that
     # flips it, and a flagless resume inherits it. Recorded here so every offline tool can read it.
     oracle_reveal: str = "off"
+    # gen3_obs_facts_v1 (config v138): `--obs-facts {off,v1}`. STRUCTURAL: `v1` builds the zero-init T0
+    # `ObsFactsInject` (the OBS-FACTS block as role-token content — the state_dict delta); `off` (production)
+    # builds nothing. The observation carries the block either way (obs 2761 -> 2845, the `total_dim` break).
+    obs_facts: str = "off"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at

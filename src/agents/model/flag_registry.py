@@ -458,6 +458,19 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="X5 (designs/endstate/design_x5_belief_tokens.md §3.8). Production stays 'blob' until the X5 A/B rules; both arms build at ONE commit, so there is no ARCH_SIGNATURE bump until the losing arm is deleted. 'blob' builds nothing (byte-identical to the pre-X5 model). 'fixed_mass' builds `agents.model.hypothesis_set.HypothesisBuilder` from a private seed (no non-X5 init byte moves) and re-targets the hidden-team belief supervision to the set BCE. Build unit U2 stashes the hypothesis set; tokens entering the trunk and the op are U3, the flat pointer U4. It REQUIRES t0_species_prior (the scores are log P_T0 + delta), move_belief_mode (the active's move group), opp_intent (the pointer it re-bases), opp_belief_slots (the presence BCE and BeliefHead's set BCE ride --opp-belief-aux-coef) and (U4, the flat pointer) entity_tail_seats (OTHER_move's token is the opponent active's E5 tail seat). Under 'fixed_mass' the FLAT opponent pointer (agents.model.flat_intent) REPLACES the alpha / beta heads (retired after SB3's orthogonal re-init, so no non-X5 init byte moves).",
               requires=("t0_species_prior", "move_belief_mode", "opp_intent", "opp_belief_slots",
                         "entity_tail_seats")),
+    ModelFlag("obs_facts", "off", Tier.CLI, Klass.STRUCTURAL, 138,
+              "whether the model READS the observation's OBS-FACTS block ('off' = production, builds "
+              "nothing; 'v1' = the zero-init ObsFactsInject: what the opponent has seen of our team, the "
+              "opponent active's Choice-lock evidence, the actives' Encore / Taunt / Disable / Uproar / "
+              "partial-trap turns and each side's screen turns, added to the role tokens of the entities "
+              "they describe)",
+              note="gen3_obs_facts_v1 (designs/endstate/design_entity_coverage_audit.md Decision record; "
+                   "owner scope 2026-10-06). The observation carries the block whatever this flag says "
+                   "(obs 2761 -> 2845, the `total_dim` break; the 2761-dim prefix is byte-identical), so the "
+                   "lever is screened as its OWN arm and the static-token rebuild can route the facts without "
+                   "a second obs change. 'v1' is zero-init (identity-at-init) and built LAST (no existing "
+                   "parameter position moves). STRUCTURAL: the module is the state_dict delta, so "
+                   "check_compatible compares the value. family=ARCH, OFF on the production surface."),
     ModelFlag("oracle_reveal", "off", Tier.CLI, Klass.RESUME_IMMUTABLE, 137,
               "DIAGNOSTIC observation mode (X32; X5 A/B §7.6): how much of the opponent's true team the "
               "OBSERVATION states from turn 1 ('off' = production; 'species' = the six species, "

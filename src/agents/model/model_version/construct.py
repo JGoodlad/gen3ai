@@ -224,6 +224,9 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_oracle_reveal_v1 (v137): the DIAGNOSTIC observation mode (resume-immutable).
             oracle_reveal=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("oracle_reveal", "off")),
+            # gen3_obs_facts_v1 (v138): the OBS-FACTS consumer (structural).
+            obs_facts=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("obs_facts", "off")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

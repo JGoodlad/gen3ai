@@ -197,6 +197,9 @@ class ExtractorContext:
     # event-record block (None on a pre-event layout). Ids inside are embedding ids; ONLY the
     # flag-gated EventSeats consumer reads it — no Linear touches it raw.
     event_window: "Optional[torch.Tensor]" = None
+    # gen3_obs_facts_v1: the [B, OBS_FACTS_DIM] OBS-FACTS block (None on a pre-facts layout). Read only
+    # by `ObsFactsInject` under `--obs-facts v1`; its move id goes through the move embedding.
+    obs_facts: "Optional[torch.Tensor]" = None
 
 
 class Embeddings(torch.nn.Module):
@@ -328,6 +331,8 @@ class ObsUnpack(torch.nn.Module):
             event_window = x[:, _ew].reshape(
                 batch_size, self.layout['event_window_n'], self.layout['event_token_dim'])
 
+        obs_facts = x[:, sl['obs_facts']] if 'obs_facts' in sl else None
+
         # Active-slot indices + fainted masks (used by move-validity, transformer, and pool).
         active_flags = hp_and_active[:, :, -1]
         our_active_idx = locate_active_slot(active_flags[:, 0:TEAM_SIZE])
@@ -385,4 +390,5 @@ class ObsUnpack(torch.nn.Module):
             our_ctx_raw=our_ctx_raw, opp_ctx_raw=opp_ctx_raw, non_matchup_rest=non_matchup_rest,
             pair_history=pair_history,
             event_window=event_window,
+            obs_facts=obs_facts,
         )

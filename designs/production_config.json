@@ -53,6 +53,7 @@
     512,
     512
   ],
+  "obs_facts": "off",
   "op_believed_lean": true,
   "op_drop_renders": true,
   "opp_belief_aux_coef": 0.05,
@@ -132,7 +133,7 @@
   "switch_branch_cell": true,
   "t0_species_prior": true,
   "terminal_indicator": true,
-  "total_dim": 2761,
+  "total_dim": 2845,
   "type_embedding_dim": 16,
   "value_entity_pool": true,
   "value_entity_pool_full": true,

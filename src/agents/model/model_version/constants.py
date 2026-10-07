@@ -436,7 +436,16 @@ from typing import Any, Dict
 #   input MEANS differs, so `check_oracle_reveal` refuses a resume that flips it (a flagless resume inherits it).
 #   A pre-v137 config migrates to "off" (the only possible past). No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
 #   The `full` level (the opponent's whole set) joined the same field without a bump: the recorded value is a string.
-MODEL_CONFIG_VERSION = 137
+# v138 (gen3_obs_facts_v1, the entity-coverage audit's B5 / B7 / B8 / B9 lever; designs/endstate/
+#   design_entity_coverage_audit.md Decision record): the OBS-FACTS block is APPENDED to the observation
+#   (2761 -> 2845: what the opponent has seen of our team, the opponent active's Choice-lock evidence, the
+#   actives' Encore / Taunt / Disable / Uproar / partial-trap turns, each side's screen turns) and
+#   `obs_facts` — `--obs-facts {off,v1}` — records whether the model READS it. STRUCTURAL: `v1` builds the
+#   zero-init `ObsFactsInject`; `off` (production) builds nothing. The prefix of the observation is
+#   byte-identical, so — the H-A (v79) / H-B (v81) precedent for an appended obs block — NO ARCH_SIGNATURE
+#   bump: `total_dim` (a `_WEIGHT_FIELDS` entry) carries the break, and `check_compatible` refuses every
+#   pre-v138 checkpoint on it. A pre-v138 config migrates to "off". No MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 138
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

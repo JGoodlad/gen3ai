@@ -111,6 +111,7 @@ class ExtractorBuild(torch.nn.Module):
                  ridealong_rnd_variants: str = "off",
                  belief_tokens: str = "blob",
                  oracle_reveal: str = "off",
+                 obs_facts: str = "off",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -902,6 +903,20 @@ class ExtractorBuild(torch.nn.Module):
         if belief_tokens not in BELIEF_TOKEN_MODES:
             raise ValueError(f"belief_tokens must be one of {BELIEF_TOKEN_MODES}, got {belief_tokens!r}")
         self.belief_tokens = belief_tokens
+        # gen3_obs_facts_v1 (v138): the OBS-FACTS block's consumer. The observation ALWAYS carries the
+        # block; `off` (production) builds nothing and reads none of it, so its forward is the one it
+        # was. `v1` builds the zero-init T0 `ObsFactsInject` (the facts as role-token content), built
+        # LAST so no existing parameter position moves. A layout without the block is refused here.
+        from agents.model.obs_facts_inject import OBS_FACTS_MODES, ObsFactsInject
+        if obs_facts not in OBS_FACTS_MODES:
+            raise ValueError(f"obs_facts must be one of {OBS_FACTS_MODES}, got {obs_facts!r}")
+        self.obs_facts = obs_facts
+        self.obs_facts_inject: Optional[ObsFactsInject] = None
+        if obs_facts == "v1":
+            if "obs_facts" not in layout:
+                raise ValueError("obs_facts=v1 needs an observation layout that carries the OBS-FACTS "
+                                 "block (gen3_obs_facts_v1): this layout predates it")
+            self.obs_facts_inject = ObsFactsInject(layout)
         # gen3_oracle_reveal_v1 (v137): the DIAGNOSTIC observation mode this extractor's observations are built
         # under (`encoder::oracle`, written into the observation by the Rust env core). INERT here: the forward
         # reads the observation and nothing else, so no module is built and no weight moves. It is stored so the

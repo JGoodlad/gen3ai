@@ -1432,6 +1432,7 @@ def current_model_version(
     ridealong_rnd_variants: str = "off",
     belief_tokens: str = "blob",
     oracle_reveal: str = "off",
+    obs_facts: str = "off",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
 ) -> ModelVersion:
@@ -1490,6 +1491,8 @@ def current_model_version(
     # gen3_oracle_reveal_v1 (v137): the diagnostic observation mode — resume-immutable, so not in
     # `check_compatible`, but recorded so a worker / an offline tool reads the run's own value.
     ext_kwargs["oracle_reveal"] = str(oracle_reveal)
+    # gen3_obs_facts_v1 (v138): the OBS-FACTS consumer — structural (`v1` builds a module).
+    ext_kwargs["obs_facts"] = str(obs_facts)
     ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
@@ -1578,6 +1581,8 @@ def arch_toggles_from_model(model: Any) -> dict:
         "belief_tokens": str(getattr(fe, "belief_tokens", "blob") or "blob"),
         # gen3_oracle_reveal_v1 (v137): the diagnostic observation mode the policy was built under.
         "oracle_reveal": str(getattr(fe, "oracle_reveal", "off") or "off"),
+        # gen3_obs_facts_v1 (v138): `v1` builds `ObsFactsInject` (a state_dict delta).
+        "obs_facts": str(getattr(fe, "obs_facts", "off") or "off"),
         # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
         # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
         # gate must see it (else an inject-on run FATALs loading its own sentinels).

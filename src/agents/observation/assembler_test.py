@@ -56,8 +56,10 @@ def test_describe_offset_names_every_block_from_the_declared_layout():
     enc = Gen3ObservationEncoder(load_mappings())
     seen = {describe_offset(i).split("[")[0].split(" ")[0] for i in range(enc.dimension)}
     assert {"our_team", "opp_team", "active_context", "global", "board/reactive",
-            "pair_history", "event_window"} <= seen
-    assert describe_offset(enc.dimension - 1).startswith("event_window row 31")
+            "pair_history", "event_window", "obs_facts"} <= seen
+    from agents.observation import constants as C
+    assert describe_offset(C.OFFSET_OBS_FACTS - 1).startswith("event_window row 31")
+    assert describe_offset(enc.dimension - 1) == f"obs_facts +{C.OBS_FACTS_DIM - 1}"
 
 
 # --------------------------------------------------------------------------------------- #

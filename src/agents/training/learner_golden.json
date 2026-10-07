@@ -111,9 +111,9 @@
     "train/value_loss": 0.0432997812749818,
     "win_prob/loss": 0.8661025986075401
    },
-   "recorded_at_commit": "7bed4347d0bb7f13c44bb28ba4f7d53c1f4e7b24",
-   "recorded_on": "2026-10-04",
-   "reason": "F-X5-47 gen3_smogon_species_usage_weighted_v1: the Smogon species-usage marginal is the rating-weighted set total W (sum Abilities), not the unweighted Raw count - every moved element is the marginal's (proof designs/research_state/measurements/species_usage_golden_2026-10-04/); buffer rebuilt (K9(b) failed on the parent-marginal behaviour log-probs; the same games)",
+   "recorded_at_commit": "69b36920e32a4288e8d3d032fa90c2ac36057e02",
+   "recorded_on": "2026-10-06",
+   "reason": "gen3_obs_facts_v1: the OBS-FACTS block is appended to the observation (2761 -> 2845); --obs-facts off (production) reads none of it. PROOF of off == the pre-change model: the rebuilt buffer is byte-identical in every column but the new obs dims, and the post-update params hash is UNCHANGED (092224261d81c5b8).",
    "torch": "2.8.0+cu126",
    "numpy": "2.4.3",
    "python": "3.11.15"
@@ -304,9 +304,21 @@
    "changed": [
     "(first entry)"
    ]
+  },
+  {
+   "recorded_at_commit": "69b36920e32a4288e8d3d032fa90c2ac36057e02",
+   "recorded_on": "2026-10-06",
+   "reason": "gen3_obs_facts_v1: the OBS-FACTS block is appended to the observation (2761 -> 2845); --obs-facts off (production) reads none of it. PROOF of off == the pre-change model: the rebuilt buffer is byte-identical in every column but the new obs dims, and the post-update params hash is UNCHANGED (092224261d81c5b8).",
+   "torch": "2.8.0+cu126",
+   "numpy": "2.4.3",
+   "python": "3.11.15",
+   "post_params_sha256": "092224261d81c5b8bae543c7e79d333c01832ec02110860347940013a470a9e2",
+   "changed": [
+    "(first entry)"
+   ]
   }
  ],
- "buffer_sha256": "05d557fb92637c1bc02eea977934a77f6efaa0ed0f26211591ee51427bd97662",
+ "buffer_sha256": "fcd7deb0e3d636d05082edc7aa3ca59277c637fdf85eaf610a4e7241cbdad016",
  "buffer": {
   "file": "learner_golden_buffer.npz",
   "n_steps": 16,
@@ -339,7 +351,7 @@
     "n_steps": 16,
     "n_envs": 4
    },
-   "buffer_sha256": "a9f63a470dfc3b9293a1f0146b9f03ed70193d0cd8661e846e31c9e03d67e888",
+   "buffer_sha256": "77408e6cdec296f2dcba1f82bcda87b07a22f049693fdf2eb724699be20160f9",
    "entries": {
     "2.8.0+cu126": {
      "init_params_sha256": "47c4c5fdde7b4dc171db6f758eda0da097ab2b44224e61fc44fd67a736d92f69",
@@ -385,74 +397,74 @@
       "value_net.bias": "0cfdd0bcaf4d0e92",
       "value_net.weight": "3acda6666573adda"
      },
-     "post_params_sha256": "c1ab0fbf54be0a4994a3e63406f075200c5fcee127276ceb1694b0a54c814329",
+     "post_params_sha256": "c2221914d78217029414dfa86dbcd5fd5fcd8f3216e85531b651c986cdb42f52",
      "group_sha256": {
-      "features_extractor.belief_head": "a8fd0969e59be698",
-      "features_extractor.cls_pool": "212a23dbe8a82464",
-      "features_extractor.conditional_threat": "920e3b7d864a875f",
+      "features_extractor.belief_head": "5559abc0334cc117",
+      "features_extractor.cls_pool": "86d4c154d8da08df",
+      "features_extractor.conditional_threat": "0bb9d8af69dca378",
       "features_extractor.damage_op": "3719b9fbeac4b746",
-      "features_extractor.edge_bias": "c75d82d25e2235fa",
-      "features_extractor.embeddings": "86913742a169ca26",
-      "features_extractor.entity_seats": "c9f1c64c9672014e",
-      "features_extractor.flat_intent_head": "f02115c31fc769e5",
-      "features_extractor.hidden_opp_belief": "d6f976684b953a75",
-      "features_extractor.history_events": "c0576df0a4070411",
-      "features_extractor.hp_type_belief_head": "2aad4e0f8f0f3d8e",
-      "features_extractor.hypothesis_builder": "418518cb6234b506",
-      "features_extractor.intent_conditional": "2b806b1e0b07f77a",
-      "features_extractor.intent_move_cell": "b8b80ea73d21a1f2",
-      "features_extractor.intent_threshold_move": "bef0ecf94dd9117e",
-      "features_extractor.item_belief_head": "57351b6dbe45e472",
-      "features_extractor.move_belief": "6b2c0282925fb952",
-      "features_extractor.pair_outcome_move": "7207232626ddce9a",
-      "features_extractor.pair_outcome_switch": "8fa13f3307dbc568",
-      "features_extractor.pokemon_encoder": "525f52377991c4c9",
-      "features_extractor.pre_proj_norm": "3b5a5bf3493311dd",
-      "features_extractor.prefuse_proj": "943e4ca3f7724e28",
-      "features_extractor.projection": "6a99979f0217c156",
-      "features_extractor.spread_belief": "9bdfe9706321776b",
-      "features_extractor.switch_branch": "81a7e506367ee58b",
-      "features_extractor.team_transformer": "0c342ca40fdafa2f",
-      "features_extractor.value_entity_pool": "80d28682654aced5",
+      "features_extractor.edge_bias": "0d49f87356a43168",
+      "features_extractor.embeddings": "7507b8bf3c4df381",
+      "features_extractor.entity_seats": "4c5b4af8ff977f16",
+      "features_extractor.flat_intent_head": "61b745bf202954f2",
+      "features_extractor.hidden_opp_belief": "643c2a070feb7fbe",
+      "features_extractor.history_events": "0772a156c083c9de",
+      "features_extractor.hp_type_belief_head": "51b4940e8be7baf1",
+      "features_extractor.hypothesis_builder": "0f632b3148a0d726",
+      "features_extractor.intent_conditional": "4e9ac0b46c9f2741",
+      "features_extractor.intent_move_cell": "b2ac308928f67b04",
+      "features_extractor.intent_threshold_move": "4e527d6a5a2db433",
+      "features_extractor.item_belief_head": "6d43eff51c7f0e64",
+      "features_extractor.move_belief": "3ee3180535b511f7",
+      "features_extractor.pair_outcome_move": "bfc17634f8ee1786",
+      "features_extractor.pair_outcome_switch": "78a1184b23027f8f",
+      "features_extractor.pokemon_encoder": "4f611c136eb3f1c5",
+      "features_extractor.pre_proj_norm": "47f943c3f3596629",
+      "features_extractor.prefuse_proj": "3e35240e5212241a",
+      "features_extractor.projection": "13ad096cc508ae12",
+      "features_extractor.spread_belief": "06b14d76d1fc1aa4",
+      "features_extractor.switch_branch": "7f0d0b96e484d93e",
+      "features_extractor.team_transformer": "07a539c96d5230f2",
+      "features_extractor.value_entity_pool": "6280ae207f1f88f9",
       "features_extractor.value_pre_norm": "c6777ec7124aad24",
       "features_extractor.value_projection": "4f56838435a824aa",
-      "features_extractor.win_head": "629011fc8eefc671",
-      "mlp_extractor.policy_net": "778e30921f4b0a3c",
+      "features_extractor.win_head": "6ea6d09c294a85d9",
+      "mlp_extractor.policy_net": "69254781e1086aeb",
       "mlp_extractor.value_net": "cd34209eb911c893",
-      "pointer_head.ctx_proj": "d872f28e94c3d676",
-      "pointer_head.move_proj": "712f64b94c2d9a3a",
-      "pointer_head.move_score": "26e86857e9e4f323",
-      "pointer_head.struggle_score": "4882165b0d0a671b",
-      "pointer_head.switch_proj": "21cef63be6ad90d5",
-      "pointer_head.switch_score": "8f33c42c4166fff3",
+      "pointer_head.ctx_proj": "93e51eba27323765",
+      "pointer_head.move_proj": "63f0c9caa0f94d22",
+      "pointer_head.move_score": "89c2af78ea0d414b",
+      "pointer_head.struggle_score": "d3e1906f30cef372",
+      "pointer_head.switch_proj": "72403138a069cdde",
+      "pointer_head.switch_score": "df716386cbb62051",
       "value_net.bias": "0cfdd0bcaf4d0e92",
       "value_net.weight": "3acda6666573adda"
      },
      "losses": {
-      "belief/hptype_loss": 0.705121599137783,
-      "belief/item_loss": 0.59064931422472,
-      "belief/move_loss": 0.015420843032188714,
+      "belief/hptype_loss": 0.7051215916872025,
+      "belief/item_loss": 0.5906493067741394,
+      "belief/move_loss": 0.015420843148604035,
       "belief/movelatent_loss": 0.5138904079794884,
-      "belief/natureev_loss": 2.1540770679712296,
-      "belief/set_aux_loss": 5.186536014080048,
-      "belief/spread_loss": 0.04157730145379901,
-      "opp_intent/flat_loss": 0.5397408120334148,
-      "train/approx_kl": 0.001929285004734993,
+      "belief/natureev_loss": 2.1540770828723907,
+      "belief/set_aux_loss": 5.186535894870758,
+      "belief/spread_loss": 0.04157730331644416,
+      "opp_intent/flat_loss": 0.5397408083081245,
+      "train/approx_kl": 0.001929265446960926,
       "train/clip_fraction": 0.015625,
-      "train/entropy_loss": -1.8291536271572113,
+      "train/entropy_loss": -1.8291536420583725,
       "train/explained_variance": -0.5679131746292114,
       "train/loss": 0.6297374963760376,
       "train/n_updates": 2.0,
-      "train/policy_gradient_loss": -0.006546917371451855,
-      "train/value_loss": 0.027055671729613096,
-      "win_prob/loss": 0.7055414319038391
+      "train/policy_gradient_loss": -0.006546821910887957,
+      "train/value_loss": 0.02705565805081278,
+      "win_prob/loss": 0.7055413648486137
      },
      "fp64_reference": {
       "rows_judged": 64,
       "rows_excluded": 0,
       "min_margin": 0.0004902235984217335,
       "terms_fp32": {
-       "policy": 1.862645149230957e-08,
+       "policy": 2.60770320892334e-08,
        "entropy": -0.09146910160779953,
        "species_belief_set": 0.2615378797054291,
        "move_belief": 0.000771271763369441,
@@ -466,7 +478,7 @@
        "loss": 0.7860699892044067
       },
       "terms_fp64": {
-       "policy": -3.749168059341557e-09,
+       "policy": 4.0509055693194185e-09,
        "entropy": -0.09146910436021276,
        "species_belief_set": 0.2615381114461273,
        "move_belief": 0.0007712720770609425,
@@ -477,10 +489,10 @@
        "hp_type": 0.03508823015289716,
        "item_belief": 0.02940302921348169,
        "win_prob": 0.38834921885067636,
-       "loss": 0.7860701622177957
+       "loss": 0.7860701700178694
       },
       "term_abs_err": {
-       "policy": 2.2375619551651127e-08,
+       "policy": 2.202612651991398e-08,
        "entropy": 2.752413227891104e-09,
        "species_belief_set": 2.317406982421666e-07,
        "move_belief": 3.1369150148546215e-10,
@@ -491,7 +503,7 @@
        "hp_type": 3.4968335241303272e-09,
        "item_belief": 1.6588632793801406e-09,
        "win_prob": 4.600947683952583e-08,
-       "loss": 1.7301338894881724e-07
+       "loss": 1.8081346264686715e-07
       },
       "grads": {
        "features_extractor.hypothesis_builder.delta_out.weight": {
@@ -499,24 +511,24 @@
         "rel_err": 1.990560369291563e-07
        },
        "features_extractor.hypothesis_builder.other_map.weight": {
-        "norm_fp64": 0.021074639574629555,
-        "rel_err": 4.57670163101586e-07
+        "norm_fp64": 0.021074640562096292,
+        "rel_err": 4.367664175633692e-07
        },
        "features_extractor.hypothesis_builder.hypothesis_marker": {
-        "norm_fp64": 0.004373961700536972,
-        "rel_err": 8.322227665149105e-07
+        "norm_fp64": 0.004373961785875769,
+        "rel_err": 7.97662631284868e-07
        },
        "features_extractor.flat_intent_head.hidden.weight": {
-        "norm_fp64": 0.008877513662501429,
-        "rel_err": 9.82544370759882e-07
+        "norm_fp64": 0.008877513616171019,
+        "rel_err": 9.782948355507453e-07
        },
        "features_extractor.belief_head.species_head.weight": {
         "norm_fp64": 0.14034445861689918,
         "rel_err": 3.423454932594486e-07
        },
        "pointer_head.move_proj.weight": {
-        "norm_fp64": 0.16720075735005124,
-        "rel_err": 1.4152443606761764e-06
+        "norm_fp64": 0.16720065265306977,
+        "rel_err": 1.4164309423413315e-06
        },
        "features_extractor.win_head.net.3.weight": {
         "norm_fp64": 0.5907753674637949,
@@ -548,9 +560,9 @@
       "hypothesis_rows": 36,
       "near_tie_rows": 0
      },
-     "recorded_at_commit": "8288b9a2e44452b926b3131014f3ee1e14e67292",
+     "recorded_at_commit": "69b36920e32a4288e8d3d032fa90c2ac36057e02",
      "recorded_on": "2026-10-06",
-     "reason": "gen3_behaviour_tie_consumed_v1: the fp64 reference's rule-8 exclusion no longer counts ties inside a set-read X5 prefix (rows_excluded 1 -> 0); the update itself is unchanged",
+     "reason": "gen3_obs_facts_v1: the OBS-FACTS block is appended to the observation (2761 -> 2845); --obs-facts off (production) reads none of it. The rebuilt buffer replays the SAME games (actions + the 2761-dim obs prefix byte-identical); its values / log_probs / advantages / returns moved by <= 7.2e-7 because 065d2d7f (gen3_x5_hyp_gather_v1, the hypothesis encoding equal to the per-row pass up to fp32 reassociation) landed after this buffer was last rebuilt (f20b2479) - not this change (the blob arm, which runs none of that code, is byte-identical in every buffer column and its post-update hash is unchanged).",
      "torch": "2.8.0+cu126",
      "numpy": "2.4.3",
      "python": "3.11.15"
@@ -644,6 +656,18 @@
      "python": "3.11.15",
      "post_params_sha256": "c1ab0fbf54be0a4994a3e63406f075200c5fcee127276ceb1694b0a54c814329",
      "changed": []
+    },
+    {
+     "recorded_at_commit": "69b36920e32a4288e8d3d032fa90c2ac36057e02",
+     "recorded_on": "2026-10-06",
+     "reason": "gen3_obs_facts_v1: the OBS-FACTS block is appended to the observation (2761 -> 2845); --obs-facts off (production) reads none of it. The rebuilt buffer replays the SAME games (actions + the 2761-dim obs prefix byte-identical); its values / log_probs / advantages / returns moved by <= 7.2e-7 because 065d2d7f (gen3_x5_hyp_gather_v1, the hypothesis encoding equal to the per-row pass up to fp32 reassociation) landed after this buffer was last rebuilt (f20b2479) - not this change (the blob arm, which runs none of that code, is byte-identical in every buffer column and its post-update hash is unchanged).",
+     "torch": "2.8.0+cu126",
+     "numpy": "2.4.3",
+     "python": "3.11.15",
+     "post_params_sha256": "c2221914d78217029414dfa86dbcd5fd5fcd8f3216e85531b651c986cdb42f52",
+     "changed": [
+      "(first entry)"
+     ]
     }
    ]
   }

@@ -507,6 +507,14 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "hypothesis builder and supervises a different belief target than `blob`.\n"
                 "Resume with the matching --belief-tokens setting (a flagless resume inherits it), or "
                 "start a fresh training run.")
+        # gen3_obs_facts_v1 (v138): `v1` adds `ObsFactsInject`'s parameters (zero-init, so a v1 run
+        # starts as the off network and nothing in the output SHAPE differs) — this compare is the gate.
+        if self.obs_facts != saved.obs_facts:
+            raise ModelVersionError(
+                f"obs_facts mismatch: saved={saved.obs_facts!r}, current={self.obs_facts!r}.\n"
+                "The OBS-FACTS consumer is fixed for a run's lifetime: `v1` builds ObsFactsInject.\n"
+                "Resume with the matching --obs-facts setting (a flagless resume inherits it), or start "
+                "a fresh training run.")
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —
         # a resume that dropped one would silently delete a trained baseline head, one that added

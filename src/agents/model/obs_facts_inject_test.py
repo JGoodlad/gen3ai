@@ -1,0 +1,89 @@
+"""`--obs-facts {off,v1}` (gen3_obs_facts_v1) on a REAL SB3-built policy (the construction path
+training uses — the identity_init_test rule), over REAL observation rows (the compile parity
+fixture: 64 rows from reproducible battles, every one carrying a nonzero OBS-FACTS block).
+
+* `off` reads NONE of the block: perturbing every facts cell leaves the forward bit-identical.
+* `v1` at init IS the `off` network: every shared parameter byte-equal at the same seed (the
+  injector draws no RNG and SB3's orthogonal re-init skips it), the injector all-zero, the outputs
+  equal — and the gradient reaches every one of its four projections.
+* `v1` READS the block: once the injector is nonzero, the facts move the output.
+"""
+from __future__ import annotations
+
+import pytest
+import torch
+
+from agents.model.compile_parity_fixture import load_parity_rows
+from agents.model.identity_init_test import _build_real_policy
+from agents.observation import constants as C
+
+_TOGGLES = dict(move_belief_mode="both", t0_species_prior=True, damage_op=True,
+                damage_outgoing=True)
+
+
+@pytest.fixture(scope="module")
+def pair():
+    off, enc = _build_real_policy(obs_facts="off", **_TOGGLES)
+    v1, _ = _build_real_policy(obs_facts="v1", **_TOGGLES)
+    obs, _mask = load_parity_rows(enc.dimension)
+    return off.policy, v1.policy, torch.as_tensor(obs[:16])
+
+
+def _features(policy, x):
+    with torch.no_grad():
+        pi, vf = policy.features_extractor({"observation": x})
+    return pi, vf
+
+
+def _facts_perturbed(x):
+    y = x.clone()
+    y[:, C.OFFSET_OBS_FACTS:] = y[:, C.OFFSET_OBS_FACTS:] + 0.5
+    y[:, C.OFFSET_OBS_FACTS + C.FACTS_CHOICE_OFFSET + 2] = 85.0     # a valid move id (Thunderbolt)
+    return y
+
+
+def test_off_builds_nothing_and_reads_none_of_the_block(pair):
+    off, _, x = pair
+    assert off.features_extractor.obs_facts_inject is None
+    a, b = _features(off, x), _features(off, _facts_perturbed(x))
+    assert torch.equal(a[0], b[0]) and torch.equal(a[1], b[1])
+
+
+def test_v1_at_init_is_the_off_network(pair):
+    off, v1, x = pair
+    so, s1 = off.state_dict(), v1.state_dict()
+    extra = sorted(set(s1) - set(so))
+    assert extra and all(".obs_facts_inject." in k for k in extra), extra
+    assert set(so) <= set(s1)
+    moved = [k for k in so if not torch.equal(so[k], s1[k])]
+    assert not moved, f"a v1 build shifted shared initial weights: {moved[:5]}"
+    assert all(torch.count_nonzero(s1[k]) == 0 for k in extra), "the injector is zero-init"
+    a, b = _features(off, x), _features(v1, x)
+    assert torch.equal(a[0], b[0]) and torch.equal(a[1], b[1])
+
+
+def test_v1_the_gradient_reaches_every_projection(pair):
+    _, v1, x = pair
+    inj = v1.features_extractor.obs_facts_inject
+    v1.zero_grad()
+    pi, vf = v1.features_extractor({"observation": x})
+    (pi.square().sum() + vf.square().sum()).backward()
+    for name in ("seen_proj", "vol_proj", "choice_proj", "screens_proj"):
+        g = getattr(inj, name).bias.grad
+        assert g is not None and torch.count_nonzero(g) > 0, name
+    v1.zero_grad()
+
+
+def test_v1_reads_the_block_once_the_injector_is_nonzero(pair):
+    _, v1, x = pair
+    inj = v1.features_extractor.obs_facts_inject
+    saved = {k: v.clone() for k, v in inj.state_dict().items()}
+    try:
+        gen = torch.Generator().manual_seed(5)
+        with torch.no_grad():
+            for p in inj.parameters():
+                p.copy_(torch.randn(p.shape, generator=gen) * 0.05)
+        a, b = _features(v1, x), _features(v1, _facts_perturbed(x))
+        assert not torch.equal(a[0], b[0]) and not torch.equal(a[1], b[1])
+    finally:
+        inj.load_state_dict(saved)

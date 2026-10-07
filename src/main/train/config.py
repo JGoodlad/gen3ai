@@ -503,6 +503,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("ridealong_adv", 0)
     _resolve("ridealong_opp", 0)
     _resolve("ridealong_rnd_variants", "off")      # v127 structural str (canonical comma list)
+    _resolve("obs_facts", "off")                    # v138 structural str (gen3_obs_facts_v1; version-checked, fresh-only)
     _resolve("belief_tokens", "blob")              # v136 structural str (X5 U2; version-checked, fresh-only)
     _resolve("oracle_reveal", "off")               # v137 RESUME-IMMUTABLE str (the diagnostic observation mode; flagless resume inherits)
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —

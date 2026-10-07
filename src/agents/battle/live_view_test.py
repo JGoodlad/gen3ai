@@ -169,6 +169,8 @@ def test_livepokemon_fields_are_exactly_the_minimal_set():
         "consumed_item", "status_counter", "protect_counter",
         # incoming-damage belief inputs: EV-computed stats + integer HP (current-board facts)
         "stats", "current_hp", "max_hp",
+        # gen3_obs_facts_v1: what a PROTOCOL line has revealed (current knowledge, not history)
+        "item_public", "ability_public",
     }
 
 

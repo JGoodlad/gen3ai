@@ -6,10 +6,10 @@ from unittest.mock import MagicMock
 from .state_encoder import Gen3ObservationEncoder, load_mappings
 
 # Computed from live constants so they track architecture changes (no magic numbers).
-from agents.observation.constants import OFFSET_EVENT_WINDOW, EVENT_WINDOW_DIM
+from agents.observation.constants import OFFSET_EVENT_WINDOW, EVENT_WINDOW_DIM, OBS_FACTS_DIM
 
 # gen3_pair_history_v1: base ends after the H-A2 pair block.
-EXPECTED_BASE_DIM = OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM
+EXPECTED_BASE_DIM = OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM + OBS_FACTS_DIM  # gen3_obs_facts_v1
 # gen3_frame_deletion_v1: the prev-mask + lag-frame tail is DELETED, so the full obs
 # IS the base. Kept as a separate name so a future appended block has an obvious
 # home, and so its absence reads as a visible equality rather than a silent one.

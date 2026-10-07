@@ -172,6 +172,15 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "--move-belief-mode != off, --opp-intent-coef > 0 and "
                              "--opp-belief-aux-coef > 0. In build unit U2 the hypothesis set is built "
                              "and supervised but does not yet enter the trunk or the op (U3).")
+    from agents.model.obs_facts_inject import OBS_FACTS_MODES
+    parser.add_argument("--obs-facts", "--obs_facts", dest="obs_facts",
+                        choices=OBS_FACTS_MODES, default=None,
+                        help="gen3_obs_facts_v1 (v138): whether the model READS the observation's OBS-FACTS "
+                             "block — what the opponent has seen of our team, the opponent active's "
+                             "Choice-lock evidence, the actives' Encore / Taunt / Disable / Uproar / "
+                             "partial-trap turns, each side's screen turns. 'off' (default; production): "
+                             "builds nothing. 'v1': the zero-init ObsFactsInject adds each fact to its "
+                             "entity's role token. STRUCTURAL, version-checked, fresh-only.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "
