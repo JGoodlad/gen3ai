@@ -96,7 +96,13 @@ class FlatIntentHead(torch.nn.Module):
     """The flat pointer's ONE shared scorer (module docstring). Built from a PRIVATE seed out of
     `IsolatedLinear`s (SB3's orthogonal re-init skips them), so building it moves no non-X5 initial
     byte; its last layer is NOT zero (α's and β's were not either): a cold head is a learned-noise
-    re-weighting of the presence prior, which the bias already carries."""
+    re-weighting of the presence prior, which the log-presence bias already carries.
+
+    The last layer has NO BIAS (gen3_x5_version_break_v1 part 2, architecture audit F16b): one scorer
+    feeds every candidate of ONE softmax, so its output bias is added identically to every logit and is
+    shift-invariant — it changes no probability, and its gradient is Σ_c (p_c − y_c) = 0 up to rounding
+    (measured over one K9 update: |g| ≤ 2.3e-10 against the weight's ~1e-3). Every consumer reads the
+    flat logits through a softmax (the loss, `compat_intent_logits`' α / β, the readers)."""
 
     def __init__(self, token_dim: int, ctx_dim: int, hidden: int = FLAT_INTENT_HIDDEN) -> None:
         super().__init__()
@@ -104,7 +110,7 @@ class FlatIntentHead(torch.nn.Module):
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(FLAT_INTENT_INIT_SEED)
             self.hidden = IsolatedLinear(self.token_dim + self.ctx_dim + 2, int(hidden))
-            self.out = IsolatedLinear(int(hidden), 1)
+            self.out = IsolatedLinear(int(hidden), 1, bias=False)
 
     def forward(self, tokens: torch.Tensor, ctx: torch.Tensor, log_pi: torch.Tensor,
                 live: torch.Tensor, k: int) -> torch.Tensor:

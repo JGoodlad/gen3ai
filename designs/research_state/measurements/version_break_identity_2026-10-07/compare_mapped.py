@@ -136,12 +136,18 @@ def main(argv: List[str]) -> int:
         if a.readd_flat_bias:
             # CONTROL ONLY: the pre-break head's `out` carried a bias; put an identical Linear back so the
             # reference bias rides the forward AND the optimizer exactly as it did before the break.
+            # The SAME weight Parameter is kept (the optimizer already holds it); the new bias is inserted
+            # right after it in the optimizer's one param group — its pre-break position, so the global
+            # grad-norm clip sums the per-parameter norms in the pre-break order.
             head = pol.features_extractor.flat_intent_head
             old = head.out
-            new = IsolatedLinear(old.in_features, old.out_features, bias=True)
+            new = IsolatedLinear(int(old.weight.shape[1]), int(old.weight.shape[0]), bias=True)
+            new.weight = old.weight
             head.out = new
-            pol.optimizer = pol.optimizer_class(pol.parameters(), lr=pol.optimizer.param_groups[0]["lr"],
-                                                **pol.optimizer_kwargs)
+            assert len(pol.optimizer.param_groups) == 1, "the control assumes the policy's one param group"
+            params = pol.optimizer.param_groups[0]["params"]
+            i = next(k for k, p in enumerate(params) if p is old.weight)
+            params.insert(i + 1, new.bias)
         head_sd = pol.state_dict()
         _want = None if a.findings is None else set(a.findings.split(","))
         _decl = {k: v for k, v in DECLARED_REMOVED.items() if _want is None or v in _want}

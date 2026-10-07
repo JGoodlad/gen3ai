@@ -362,19 +362,25 @@ class IsolatedLinear(torch.nn.Module):
     ``fork_rng`` (``HYPOTHESIS_INIT_SEED``) so the ``fixed_mass`` arm leaves every NON-X5 parameter's
     initial bytes equal to the ``blob`` arm's (design §6 item 2) — and an ``nn.Linear`` here would be
     re-drawn by SB3 from the global stream, shifting every later draw (the mlp_extractor, the heads).
-    The init is ``nn.Linear``'s own (Kaiming-uniform weight, uniform bias), or exact zeros."""
+    The init is ``nn.Linear``'s own (Kaiming-uniform weight, uniform bias), or exact zeros. ``bias=False``
+    builds no bias (``nn.Linear``'s convention; the weight draws exactly as with one, the bias draw being
+    the last)."""
 
-    def __init__(self, in_features: int, out_features: int, zero: bool = False) -> None:
+    bias: Optional[torch.nn.Parameter]
+
+    def __init__(self, in_features: int, out_features: int, zero: bool = False, bias: bool = True) -> None:
         super().__init__()
         self.weight = torch.nn.Parameter(torch.empty(out_features, in_features))
-        self.bias = torch.nn.Parameter(torch.empty(out_features))
+        self.bias = torch.nn.Parameter(torch.empty(out_features)) if bias else None
         if zero:
             torch.nn.init.zeros_(self.weight)
-            torch.nn.init.zeros_(self.bias)
+            if self.bias is not None:
+                torch.nn.init.zeros_(self.bias)
         else:
             torch.nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-            bound = 1.0 / math.sqrt(in_features) if in_features > 0 else 0.0
-            torch.nn.init.uniform_(self.bias, -bound, bound)
+            if self.bias is not None:
+                bound = 1.0 / math.sqrt(in_features) if in_features > 0 else 0.0
+                torch.nn.init.uniform_(self.bias, -bound, bound)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return F.linear(x, self.weight, self.bias)
