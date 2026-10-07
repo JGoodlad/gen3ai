@@ -35,7 +35,7 @@ every other removal.
 | `7340b6d9` stage A: F1 + the blob leftovers + F7a | the value tower, 10 keys, 592,129 parameters | BITWISE | BITWISE | EQUAL |
 | `fd4a2de9` stage B: + F16b | + `flat_intent_head.out.bias` (1) | log_prob / masked_logp max \|Δ\| 2.4e-7, entropy 4.8e-7; values, masks EQUAL | max \|Δ\| 6.0e-8 | differ in the 8th significant digit |
 | the same, `--readd-flat-bias` (CONTROL) | the tower only | BITWISE | BITWISE | EQUAL |
-| `829cae1d` stage C: + F6a, and the part's final commit (`result.json`) | all 11 keys, 592,130 parameters | as stage B (identical numbers) | as stage B | as stage B |
+| `829cae1d` stage C: + F6a; and `60ddd378`, the part's final code (`result.json`) | all 11 keys, 592,130 parameters | as stage B (identical numbers) | as stage B | as stage B |
 | the same, `--readd-flat-bias` (CONTROL, `result_control_readd_flat_bias.json`) | the tower only | BITWISE | BITWISE | EQUAL |
 
 `result_stageA_f1.json` is stage A's run; `result.json` and `result_control_readd_flat_bias.json` are the part's
@@ -45,7 +45,7 @@ final commit (named inside each file as `commit`).
 (the flat opponent pointer). `softmax(s + b) = softmax(s)` exactly in real arithmetic, but not in fp32: every
 logit is rounded after the shift, so the downstream log-probabilities move by ~1 ulp (2.4e-7 at |log π| ~ 1–3),
 the update's gradients by rounding, and the bias itself — which receives a pure rounding-noise gradient (measured
-|g| ≤ 2.3e-10 over this update, against its weight's ~1e-3) — was being moved by Adam (whose `ε` turns a 1e-10
+|g| ≤ 2.3e-10 over this update, against its weight's ~1e-3) — was being moved by Adam(W) (whose `ε` turns a 1e-10
 gradient into a ~3e-7 step) and shifting every later minibatch's logits again. The CONTROL removes exactly that
 one parameter's effect and is bitwise, so **nothing else in the bundle moves a byte**: F1's tower (no loss read
 it; it received no gradient, so it never entered the grad-norm clip or the optimizer step), item 5's deletions

@@ -1,0 +1,341 @@
+{
+ "baseline": false,
+ "commit": "60ddd3789ac83b33d3b7d04743c185531351b6e7",
+ "control_readd_flat_bias": true,
+ "declared_removed": [
+  "features_extractor.value_pre_norm.bias",
+  "features_extractor.value_pre_norm.weight",
+  "features_extractor.value_projection.bias",
+  "features_extractor.value_projection.weight",
+  "mlp_extractor.value_net.0.bias",
+  "mlp_extractor.value_net.0.weight",
+  "mlp_extractor.value_net.2.bias",
+  "mlp_extractor.value_net.2.weight",
+  "pi_features_extractor.value_pre_norm.bias",
+  "pi_features_extractor.value_pre_norm.weight",
+  "pi_features_extractor.value_projection.bias",
+  "pi_features_extractor.value_projection.weight",
+  "value_net.bias",
+  "value_net.weight",
+  "vf_features_extractor.value_pre_norm.bias",
+  "vf_features_extractor.value_pre_norm.weight",
+  "vf_features_extractor.value_projection.bias",
+  "vf_features_extractor.value_projection.weight"
+ ],
+ "dropped": [
+  "features_extractor.value_pre_norm.bias",
+  "features_extractor.value_pre_norm.weight",
+  "features_extractor.value_projection.bias",
+  "features_extractor.value_projection.weight",
+  "mlp_extractor.value_net.0.bias",
+  "mlp_extractor.value_net.0.weight",
+  "mlp_extractor.value_net.2.bias",
+  "mlp_extractor.value_net.2.weight",
+  "pi_features_extractor.value_pre_norm.bias",
+  "pi_features_extractor.value_pre_norm.weight",
+  "pi_features_extractor.value_projection.bias",
+  "pi_features_extractor.value_projection.weight",
+  "value_net.bias",
+  "value_net.weight",
+  "vf_features_extractor.value_pre_norm.bias",
+  "vf_features_extractor.value_pre_norm.weight",
+  "vf_features_extractor.value_projection.bias",
+  "vf_features_extractor.value_projection.weight"
+ ],
+ "dropped_params": 592129,
+ "findings": "all",
+ "forward": {
+  "entropy": {
+   "equal": true,
+   "max_abs_delta": 0.0
+  },
+  "log_prob": {
+   "equal": true,
+   "max_abs_delta": 0.0
+  },
+  "masked_logp": {
+   "equal": true,
+   "max_abs_delta": 0.0
+  },
+  "masks_bool": {
+   "equal": true,
+   "max_abs_delta": 0.0
+  },
+  "values": {
+   "equal": true,
+   "max_abs_delta": 0.0
+  }
+ },
+ "forward_bitwise_equal": true,
+ "losses": {
+  "belief/hptype_loss": {
+   "equal": true,
+   "head": 0.7051395401358604,
+   "reference": 0.7051395401358604
+  },
+  "belief/item_loss": {
+   "equal": true,
+   "head": 0.5783408731222153,
+   "reference": 0.5783408731222153
+  },
+  "belief/move_loss": {
+   "equal": true,
+   "head": 0.015329314861446619,
+   "reference": 0.015329314861446619
+  },
+  "belief/movelatent_loss": {
+   "equal": true,
+   "head": 0.5138457342982292,
+   "reference": 0.5138457342982292
+  },
+  "belief/natureev_loss": {
+   "equal": true,
+   "head": 2.1555216163396835,
+   "reference": 2.1555216163396835
+  },
+  "belief/set_aux_loss": {
+   "equal": true,
+   "head": 5.181282162666321,
+   "reference": 5.181282162666321
+  },
+  "belief/spread_loss": {
+   "equal": true,
+   "head": 0.04160613380372524,
+   "reference": 0.04160613380372524
+  },
+  "opp_intent/flat_loss": {
+   "equal": true,
+   "head": 0.539926428347826,
+   "reference": 0.539926428347826
+  },
+  "train/approx_kl": {
+   "equal": true,
+   "head": 0.0018898649141192436,
+   "reference": 0.0018898649141192436
+  },
+  "train/clip_fraction": {
+   "equal": true,
+   "head": 0.015625,
+   "reference": 0.015625
+  },
+  "train/entropy_loss": {
+   "equal": true,
+   "head": -1.8291947543621063,
+   "reference": -1.8291947543621063
+  },
+  "train/explained_variance": {
+   "equal": true,
+   "head": -0.5654934644699097,
+   "reference": -0.5654934644699097
+  },
+  "train/loss": {
+   "equal": true,
+   "head": 0.628854513168335,
+   "reference": 0.628854513168335
+  },
+  "train/n_updates": {
+   "equal": true,
+   "head": 2.0,
+   "reference": 2.0
+  },
+  "train/policy_gradient_loss": {
+   "equal": true,
+   "head": -0.006470122840255499,
+   "reference": -0.006470122840255499
+  },
+  "train/value_loss": {
+   "equal": true,
+   "head": 0.027062139357440174,
+   "reference": 0.027062139357440174
+  },
+  "win_prob/loss": {
+   "equal": true,
+   "head": 0.7050374820828438,
+   "reference": 0.7050374820828438
+  }
+ },
+ "losses_equal": true,
+ "missing_from_reference": [],
+ "n_params_head": 2519047,
+ "reference_commit": "26131c0ce62b2de7c9913d9c84e8c318a0200b19",
+ "reshaped": [],
+ "torch": "2.8.0+cu126",
+ "update_bitwise_equal": true,
+ "update_groups": {
+  "features_extractor.belief_head": {
+   "max_abs_delta": 0.0,
+   "tensors": 6,
+   "unequal": 0
+  },
+  "features_extractor.cls_pool": {
+   "max_abs_delta": 0.0,
+   "tensors": 23,
+   "unequal": 0
+  },
+  "features_extractor.conditional_threat": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "features_extractor.damage_op": {
+   "max_abs_delta": 0.0,
+   "tensors": 1,
+   "unequal": 0
+  },
+  "features_extractor.edge_bias": {
+   "max_abs_delta": 0.0,
+   "tensors": 34,
+   "unequal": 0
+  },
+  "features_extractor.embeddings": {
+   "max_abs_delta": 0.0,
+   "tensors": 6,
+   "unequal": 0
+  },
+  "features_extractor.entity_seats": {
+   "max_abs_delta": 0.0,
+   "tensors": 7,
+   "unequal": 0
+  },
+  "features_extractor.flat_intent_head": {
+   "max_abs_delta": 0.0,
+   "tensors": 3,
+   "unequal": 0
+  },
+  "features_extractor.hidden_opp_belief": {
+   "max_abs_delta": 0.0,
+   "tensors": 21,
+   "unequal": 0
+  },
+  "features_extractor.history_events": {
+   "max_abs_delta": 0.0,
+   "tensors": 13,
+   "unequal": 0
+  },
+  "features_extractor.hp_type_belief_head": {
+   "max_abs_delta": 0.0,
+   "tensors": 8,
+   "unequal": 0
+  },
+  "features_extractor.hypothesis_builder": {
+   "max_abs_delta": 0.0,
+   "tensors": 12,
+   "unequal": 0
+  },
+  "features_extractor.intent_conditional": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "features_extractor.intent_move_cell": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "features_extractor.intent_threshold_move": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "features_extractor.item_belief_head": {
+   "max_abs_delta": 0.0,
+   "tensors": 4,
+   "unequal": 0
+  },
+  "features_extractor.move_belief": {
+   "max_abs_delta": 0.0,
+   "tensors": 6,
+   "unequal": 0
+  },
+  "features_extractor.pair_outcome_move": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "features_extractor.pair_outcome_switch": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "features_extractor.pokemon_encoder": {
+   "max_abs_delta": 0.0,
+   "tensors": 18,
+   "unequal": 0
+  },
+  "features_extractor.pre_proj_norm": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "features_extractor.prefuse_proj": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "features_extractor.projection": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "features_extractor.spread_belief": {
+   "max_abs_delta": 0.0,
+   "tensors": 8,
+   "unequal": 0
+  },
+  "features_extractor.switch_branch": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "features_extractor.team_transformer": {
+   "max_abs_delta": 0.0,
+   "tensors": 27,
+   "unequal": 0
+  },
+  "features_extractor.value_entity_pool": {
+   "max_abs_delta": 0.0,
+   "tensors": 8,
+   "unequal": 0
+  },
+  "features_extractor.win_head": {
+   "max_abs_delta": 0.0,
+   "tensors": 6,
+   "unequal": 0
+  },
+  "mlp_extractor.policy_net": {
+   "max_abs_delta": 0.0,
+   "tensors": 4,
+   "unequal": 0
+  },
+  "pointer_head.ctx_proj": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "pointer_head.move_proj": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "pointer_head.move_score": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "pointer_head.struggle_score": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "pointer_head.switch_proj": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  },
+  "pointer_head.switch_score": {
+   "max_abs_delta": 0.0,
+   "tensors": 2,
+   "unequal": 0
+  }
+ }
+}
