@@ -199,6 +199,11 @@ side, linked to its active Pokémon by a structural edge. Keep per-mon dynamic s
 status, revealed moves and PP, recency, last action, trapped) on the mon. *Option B*, fully static tokens with
 every per-mon state as its own token, is over-reach at 128 dims and 61 tokens; not recommended.
 
+**The board layout for the rebuild** is inventoried and recommended fact by fact in
+[`design_entity_coverage_audit.md`](design_entity_coverage_audit.md) (2026-10-06): OUR SIDE / THEIR SIDE / FIELD tokens
+in place of the global token, plus an op-derived content input per mon so amounts (Spikes chip, end-of-turn ledger)
+survive the broadcast's removal.
+
 **What it costs.** The trunk must now do mixing the encoder did. That is the case for a third round, and a third
 post-LN round is the regime where post-LN is known to train less stably, so pre-LN comes with it.
 

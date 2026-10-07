@@ -226,6 +226,7 @@ reading order for someone new; this table mirrors it.
 | [`endstate/design_x5_belief_tokens.md`](endstate/design_x5_belief_tokens.md) | X5's build spec and registered A/B — fixed-mass hypothesis tokens + OTHER, presence semantics for every opponent reduction, the flat opponent pointer, the group-sequential head-to-head |
 | [`endstate/design_x5_tradeoffs.md`](endstate/design_x5_tradeoffs.md) | what X5's chosen semantics give up, how each limitation is detected, and the richer options to revisit |
 | [`endstate/design_arch_audit.md`](endstate/design_arch_audit.md) | the ARCHITECTURE AUDIT (2026-10-05) — every major piece re-justified from first principles at our size, a top-down comparison with the literature, findings bucketed KEEP / EXACT REFACTOR / BEHAVIOUR CHANGE, the simple controls never trained, and the lead hypothesis (static Pokémon tokens, attention mixes the battle) |
+| [`endstate/design_entity_coverage_audit.md`](endstate/design_entity_coverage_audit.md) | the ENTITY COVERAGE AUDIT (2026-10-06) — every gen-3 battle fact mapped to its route today and its home in the static-token rebuild; what attention alone could not reach (counts, "my side", amounts); the gaps ranked; the recommended board layout (two SIDE tokens + a FIELD token, an op-derived content input per mon) |
 
 ## Folder conventions
 
