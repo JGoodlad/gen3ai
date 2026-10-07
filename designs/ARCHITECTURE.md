@@ -555,7 +555,11 @@ The concrete steps:
 9. **`TeamTransformer`** — **61 tokens** (13 base + 16 entity seats + 32 event seats, §2.3), 2
    `BiasedEncoderLayer`s, `d_model` 128, 4 heads, FFN 256, post-LN. One `[B,4,61,61]` float bias
    carries both the key-padding addend (`-1e9`) and every edge family; it is built once and shared
-   by both layers.
+   by both layers. Each layer hands it to SDPA through `dense_attn_bias` (as does `PolicyStateQuery`'s
+   key bias): under `torch.compile` Inductor's `inductor_force_stride_order` pins it row-major, in eager
+   it is `.contiguous()` (a no-op here). Without the pin, Inductor can lay the bias out head-innermost
+   whenever the token count is a multiple of 8, and CUDA's efficient-attention kernel refuses that layout
+   (`gen3_dense_attn_bias_v1`, F-ST-8). Values are unchanged.
 10. **`CLSPool`** — three learned queries: `our_cls` over our 6 refined tokens, `their_cls` over
     theirs, `value_cls` over **all 12**. Also extracts `our_active_refined`.
 11. **`ProjectionAssembler`** → `pre_proj_norm`/`projection`/ReLU (policy) and

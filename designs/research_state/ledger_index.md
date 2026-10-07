@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,899-line file. **The ledger itself is append-only and is never edited by this**;
+22,954-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**803 headings · 748 dated · 2026-08-01 → 2026-10-07 · ledger 22,899 lines.**
+**804 headings · 749 dated · 2026-08-01 → 2026-10-07 · ledger 22,954 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -823,3 +823,4 @@ rename.
   - `L22880` · `2026-10-07` · BUILD · **`--debug` is SAFE BY CONSTRUCTION: a fresh smoke whose untyped update is above 4,096 rows takes `--rollout-target-samples 2304 --batch-size 384 --n-epochs 1` (typed knobs win), so `--arch production --debug --steps 10000` reaches 5 updates and exits 0 in ~6 min on CPU instead of collecting for hours**
   - `L22886` · `2026-10-07` · BUILD · **A worktree's pytest imports the WORKTREE's code without an export: the root `conftest.py` puts this checkout's `src/` first in `sys.path` and prepends it to `PYTHONPATH` (subprocesses and xdist workers inherit it); the launcher pin still wins; the packaging gate's shadow check moved to a clean subprocess so it stays meaningful**
   - `L22892` · `2026-10-07` · BUILD · **F7b's speed belief is now the DISCRETE Smogon spreads mixture (`gen3_speed_mixture_v1`, `--speed-physics on` only): it fixes the tail — log loss 0.1308 vs the logistic's 0.1341 and the Gaussian's 0.1367, 0 rows certain and wrong — but is NOT better calibrated overall (Brier 0.0440 vs 0.0425 / 0.0406, ECE 0.0184 vs 0.0157 / 0.0160; upper-middle bins over-confident)**
+  - `L22900` · `2026-10-07` · FINDING + FIX · **`--token-encoding static` now runs compiled on CUDA. Two defects the CPU smokes could not show are fixed: the attention bias layout under Inductor (F-ST-8) and an aliasing recompile (F-ST-9). A third, in `--move-resolution on` × `fixed_mass` (F-MR-1), was found by the deferred GPU checks and fixed. Every deferred flag's real CUDA launch then passed T2 startup, R1 parity and the update-10 canary.**

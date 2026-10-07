@@ -83,9 +83,20 @@ class StaticTokenEncoder(torch.nn.Module):
         pk = layout['pokemon']
         msl = pk['moves']['layout']['slot_layout']
         self.num_moves = len(pk['moves']['layout']['slots'])
-        self._msl = msl
-        self._moves_offset = pk['moves']['offset']
-        self._slot_offsets = [s['offset'] for s in pk['moves']['layout']['slots']]
+        # gen3_static_layout_ints_v1 (F-ST-9): the forward reads PLAIN INTS precomputed here, never a reference
+        # into `layout` — a held sub-dict is the same object `ObsUnpack.layout` reaches, and dynamo then guards
+        # the two paths' identity (an OBJECT_ALIASING guard) that spuriously failed after the compile lock.
+        mo = pk['moves']['offset']
+        self._move_cols: Tuple[Tuple[Tuple[Tuple[int, int], ...], int, int], ...] = tuple(
+            (((mo + s['offset'] + msl['power']['offset'], mo + s['offset'] + msl['type']['offset']),
+              (mo + s['offset'] + msl['type']['offset'] + msl['type']['dim'], mo + s['offset'] + msl['known']['offset']),
+              (mo + s['offset'] + msl['max_pp']['offset'],
+               mo + s['offset'] + msl['max_pp']['offset'] + msl['max_pp']['dim']),
+              (mo + s['offset'] + msl['accuracy']['offset'],
+               mo + s['offset'] + msl['never_miss']['offset'] + msl['never_miss']['dim'])),
+             mo + s['offset'] + msl['known']['offset'],
+             mo + s['offset'] + msl['current_pp']['offset'])
+            for s in pk['moves']['layout']['slots'])
         # The STATIC move columns: power + secondary + recoil · category · max PP · accuracy + never-miss.
         self.move_static_remnant_dim = ((msl['type']['offset'] - msl['power']['offset'])
                                         + (msl['known']['offset'] - (msl['type']['offset'] + msl['type']['dim']))
@@ -159,18 +170,11 @@ class StaticTokenEncoder(torch.nn.Module):
 
     def _move_columns(self, pp: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Per move: the static remnants [...,4,R], the known bit [...,4,1], current PP [...,4,1]."""
-        msl, mo = self._msl, self._moves_offset
         rem, known, cur = [], [], []
-        for off in self._slot_offsets:
-            s0 = mo + off
-            rem.append(torch.cat([
-                pp[..., s0 + msl['power']['offset']:s0 + msl['type']['offset']],
-                pp[..., s0 + msl['type']['offset'] + msl['type']['dim']:s0 + msl['known']['offset']],
-                pp[..., s0 + msl['max_pp']['offset']:s0 + msl['max_pp']['offset'] + msl['max_pp']['dim']],
-                pp[..., s0 + msl['accuracy']['offset']:s0 + msl['never_miss']['offset'] + msl['never_miss']['dim']],
-            ], dim=-1))
-            known.append(pp[..., s0 + msl['known']['offset']:s0 + msl['known']['offset'] + 1])
-            cur.append(pp[..., s0 + msl['current_pp']['offset']:s0 + msl['current_pp']['offset'] + 1])
+        for spans, k, c in self._move_cols:
+            rem.append(torch.cat([pp[..., a:b] for a, b in spans], dim=-1))
+            known.append(pp[..., k:k + 1])
+            cur.append(pp[..., c:c + 1])
         return torch.stack(rem, dim=-2), torch.stack(known, dim=-2), torch.stack(cur, dim=-2)
 
     def encode(self, pp: torch.Tensor, ids: Dict[str, torch.Tensor], embeddings: Embeddings,

@@ -260,6 +260,14 @@ proof). Module: `agents/model/board_tokens.py`.
   context. Added to the mon tokens after the op, just before the trunk.
 - **Both readouts** build and run under static (`tower` and `trunk`), on both belief arms (`blob`, `fixed_mass`);
   the four `--debug` smokes are in §10.
+- **Compiled on CUDA** (2026-10-07, F-ST-8 / F-ST-9). Two fixes were needed for `static` to run under Inductor on
+  CUDA. (1) Every float attention bias goes to SDPA through `dense_attn_bias` (`gen3_dense_attn_bias_v1`), which
+  pins its layout row-major. `static` × `fixed_mass` has 64 keys, a multiple of 8, and without the pin Inductor
+  handed CUDA's efficient-attention kernel a head-innermost bias. (2) `StaticTokenEncoder` keeps the move columns
+  as plain integers (`_move_cols`, `gen3_static_layout_ints_v1`), not as a reference into the layout dict. The
+  held reference let dynamo install an object-aliasing guard, and that guard recompiled the learner's region
+  after the compile lock. Legacy is unchanged in value: eager is byte-identical, and the compiled graph changes
+  layout only.
 
 
 
@@ -518,7 +526,19 @@ stop at their third update on K9(b)'s excluded-share CEILING (F-ST-5: every row 
 `legacy` passes at 0.13), and with `--behaviour-check warn` both EXIT 0 (four updates, 8 checks, `Training
 complete`).
 
-**DEFERRED to a GPU lease (stage 2 adds):** whether `static` × `blob` trips K9(b) at production sizing (F-ST-5);
+**On the GPU (2026-10-07, lease "static fix gpu", worktree at the fix commit, `--arch production` + the X26
+ride-along heads, `--snapshot-ladder-games 0`, compile-trainer on, real CUDA launches stopped by PID).** For
+`static` × `fixed_mass` × `tower`: the T2 service started, R1 parity passed (loss rel 0, grad cosine 1.000000,
+per-parameter max 1.97e-05), and the update-10 canary passed. UpdateFit demand was 8,780 MiB with 2,144 MiB of
+headroom against the declared 1,024 MiB, and nvidia-smi peaked at 9,766 of 12,288 MiB. Before the two fixes, the
+first launch died in T2's graph build (F-ST-8). With only F-ST-8 fixed, it died at update 1 with
+`[CompileSentinel] FATAL` (F-ST-9). Tests that fail on revert: `dense_attn_bias_test.py`. Its CPU tests require
+every trunk SDPA, and `PolicyStateQuery`'s, to read the pinned bias, in inference and training graphs. Its CUDA
+tests (`slow`, lease) show the 64-key miniature raising without the pin and matching eager, forward and
+gradients, with it. Also `static_tokens_test.py::test_the_static_encoder_forward_holds_no_reference_into_the_layout`.
+The other arms' launches are in the ledger entry for 2026-10-07 (F-ST-8 / F-ST-9).
+
+**Still DEFERRED (stage 2):** whether `static` × `blob` trips K9(b) at production sizing (F-ST-5);
 the cost of the two extra trunk tokens in `train_ms` and the T2 flush; the compiled region / T2 graph with the
 board tokens and the op content.
 
@@ -567,6 +587,36 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
   is still one column read for both: "revealed count" is always 6/6 on our side (a constant there), and alive =
   hp > 0 on ours but `opp_addressable` (unrevealed = alive) on theirs. Both are the true value of the same fact
   from our viewpoint; what the OPPONENT has seen of us (audit B7) is a separate new observation fact.
+- **F-ST-8 (stage 2, CUDA × Inductor, FIXED 2026-10-07 by `gen3_dense_attn_bias_v1`):** `static` × `fixed_mass`
+  died about 3 min into its first real launch, in the T2 service's first CUDA-graph build:
+  `RuntimeError: (*bias): last dimension must be contiguous` from `_scaled_dot_product_efficient_attention`.
+  - **What triggers it.** The trunk bias is built `.contiguous()`, then gets `fixed_mass`'s per-key log-presence
+    add and `EdgeBias`'s in-place slice writes. Under Inductor that makes it a FLEXIBLE buffer, laid out after the
+    head-innermost `m.permute(0, 3, 1, 2)` of the family maps.
+  - **Why Inductor did not catch it.** Inductor's SDPA stride constraint (torch 2.8 `sdpa_constraint`) reads the
+    buffer's provisional row-major strides. When the key count is a multiple of 8 they look "aligned", so it passes
+    the buffer through without freezing its layout. Inductor then fixes the layout head-innermost, with strides
+    `(16384, 1, 256, 4)` in the generated code.
+  - **Why only this arm.** `static` × `fixed_mass` has 64 keys. Legacy `fixed_mass` has 62 and `static` × `blob`
+    has 63, so the constraint pads and copies for them.
+  - **What the CUDA miniature showed.** It reproduces the error only with the log-presence add. Without the add,
+    the `.contiguous()` buffer stays row-major.
+  - **Fix.** `dense_attn_bias` pins the layout row-major under compile with `inductor_force_stride_order`, and its
+    identity backward is registered at import.
+  - **Why the smokes missed it.** The CPU `--debug` smokes use T2's eager backend, and a CPU compile takes the
+    constraint's `require_stride_order` branch, so neither can show this.
+- **F-ST-9 (stage 2, CUDA × Inductor, FIXED 2026-10-07 by `gen3_static_layout_ints_v1`):** with F-ST-8 fixed, the
+  launch passed T2 and R1, then exited at update 1 with `[CompileSentinel] FATAL ... dynamo RECOMPILED after the
+  compile lock`.
+  - **The guard dynamo named.** `...unpack.layout['pokemon']['moves']['layout']['slot_layout'] is
+    ...pokemon_encoder._msl`. `StaticTokenEncoder` held that sub-dict of the layout, and `ObsUnpack.layout`
+    reaches the same object.
+  - **What the probe found.** An instrumented relaunch printed the two objects' ids at the prewarm and at every
+    update entry, and they stayed identical. So the guard's reported reason does not match the objects it names.
+    **UNVERIFIED:** the exact torch mechanism.
+  - **Fix.** The encoder keeps plain integer column spans instead of the sub-dict, so dynamo installs no aliasing
+    guard. The relaunch then ran past update 10, and the canary passed.
+  - **Test.** `static_tokens_test.py` fails when an encoder attribute holds a layout container.
 - **F-ST-7 (the screen, §8.1):** three seeds per arm give an ESTIMATED power of only 0.27 (σ = 3.43 pp, δ = 3.5 pp)
   to show non-inferiority when `static` is truly equal; the registration must choose a harm screen, a wider δ or
   X5's sequential extension.
@@ -592,4 +642,6 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
 | 2026-10-06 | Stage 2 readers × readout | `tower`: the `non_matchup_rest` concat deleted (pi 1177 → 1152); `trunk`: the state query keys on the three refined board tokens; the critic's `full` pool takes the three board rows under source tag 3 | keeping `non_matchup_rest` under `trunk`'s absent tower (nothing to delete there); a new source tag per board token (the trunk's type embedding already tells them apart) | §4.1; F2 interaction |
 | 2026-10-06 | Stage 2 versioning | config v140, no field: a pre-v140 `static` record (stage 1's layout) is REFUSED, `legacy` stamps through; no ARCH_SIGNATURE bump while both encodings build | migrating a stage-1 static checkpoint (no home for `global_proj`; nothing was trained on it) | `designs/model/versioning.md`'s playbook |
 | 2026-10-06 | The screen | DRAFTED in §8.1 (static vs legacy, one commit, 15M, 3 seeds each, the mirrored h2h 3 × 3 cross, X5's cross statistic, δ for the owner, BETTER / EQUIVALENT / NON-INFERIOR adopt, INFERIOR splits per §7); NOT registered | registering it from the build agent (the orchestrator registers before any seed) | the brief |
+| 2026-10-07 | The CUDA compile failure (F-ST-8) | fix at the bias's consumer: every float SDPA bias goes through `dense_attn_bias` (row-major pin under compile, `.contiguous()` eager), for both arms and both SDPA sites | `.contiguous()` alone (traced as a no-op, because the fake tensor is contiguous); padding the key count off a multiple of 8 (fragile, and it changes the trunk); disabling the efficient kernel (slower, and it hides the class); an opaque custom op (a copy every forward) | §11 F-ST-8; the CUDA miniature fails without the pin |
+| 2026-10-07 | The update-1 recompile (F-ST-9) | the static encoder reads plain-int column spans; no module keeps a reference into the layout that the forward reads | a deep copy of the slot layout (it keeps a dict on the guarded path) | §11 F-ST-9; the instrumented relaunch |
 | 2026-10-07 | **The screen REGISTERED (§8.2)** | fixed_mass + tower in both arms; δ 3.5 pp; X5's sequential looks 3 / 5 / 8 (OBF 5.761 / 2.683 / 1.874) instead of one under-powered look; P_st = the registration commit; GPU preconditions first | the single-look draft (≈ 0.27 power) | orchestrator (owner delegation; "keep spawning agents. Experiments.", 10-07) |

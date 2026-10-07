@@ -9,6 +9,7 @@ from typing import Dict, Any, Optional, Tuple
 from agents.model.value_threat_inject import (ValueThreatInject)
 from agents.model.hypothesis_tokens import OppPresence, float_key_mask
 from agents.model.team_transformer import _KEY_PAD_NEG
+from agents.model.dense_attn_bias import dense_attn_bias
 from agents.model.arch_constants import (D_MODEL,
     TRANSFORMER_N_HEADS,
     TRANSFORMER_FFN_DIM,
@@ -233,6 +234,7 @@ class PolicyStateQuery(torch.nn.Module):
         if key_log_presence is not None:
             bias = bias + torch.where(pad, torch.zeros_like(key_log_presence),
                                       key_log_presence).to(tokens.dtype)
+        bias = dense_attn_bias(bias)                     # gen3_dense_attn_bias_v1: a dense last dim under Inductor
         attn = torch.nn.functional.scaled_dot_product_attention(
             q, k, v, attn_mask=bias[:, None, None, :].expand(B, self.n_heads, 1, n))
         return self.norm(self.out_proj(attn.transpose(1, 2).reshape(B, d)))  # type: ignore[no-any-return]

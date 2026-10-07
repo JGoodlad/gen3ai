@@ -587,6 +587,16 @@ class MoveResolutionCell(torch.nn.Module):
         return self.move_proj(m), self.switch_proj(s)
 
 
+def _replaced(o: MoveResolutionOps, **upd: torch.Tensor) -> MoveResolutionOps:
+    """``o._replace(**upd)`` in a form dynamo traces (`gen3_move_resolution_traceable_v1`, F-MR-1). ``_replace``
+    lives in ``collections``, which dynamo SKIPS, so under ``fullgraph=True`` the compiled learner region refused it
+    (CUDA launch of ``fixed_mass`` × ``--move-resolution on``, 2026-10-07). The same values, built by the class's
+    own constructor."""
+    unknown = set(upd) - set(MoveResolutionOps._fields)
+    assert not unknown, f"MoveResolutionOps has no field(s) {sorted(unknown)}"
+    return MoveResolutionOps(*[upd[f] if f in upd else getattr(o, f) for f in MoveResolutionOps._fields])
+
+
 # =========================================================================================== the GATHER
 def split_other_move(o: MoveResolutionOps, other_u: torch.Tensor, tables: Dict[str, torch.Tensor],
                      flinch_mult: torch.Tensor) -> MoveResolutionOps:
@@ -625,8 +635,8 @@ def split_other_move(o: MoveResolutionOps, other_u: torch.Tensor, tables: Dict[s
         return t[:, :-1]
     B = other_u.shape[0]
     lv = torch.arange(PRIORITY_MIN, PRIORITY_MAX + 1, device=other_u.device).to(o.seat_prio.dtype)
-    return o._replace(
-        alpha=torch.cat([named(o.alpha), o.alpha[:, -1:] * p_l.to(o.alpha.dtype)], dim=-1),
+    return _replaced(
+        o, alpha=torch.cat([named(o.alpha), o.alpha[:, -1:] * p_l.to(o.alpha.dtype)], dim=-1),
         seat_nums=torch.cat([named(o.seat_nums), o.seat_nums.new_zeros(B, L)], dim=-1),
         seat_prio=torch.cat([named(o.seat_prio), lv[None, :].expand(B, -1)], dim=-1),
         seat_kind=torch.cat([named(o.seat_kind), cond(tables["kind"]).to(o.seat_kind.dtype)], dim=1),

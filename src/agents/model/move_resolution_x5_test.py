@@ -351,3 +351,21 @@ def test_debug_smoke_under_fixed_mass_with_the_family_on(tmp_path):
     cfg = (tmp_path / "models" / "mr_x5_smoke" / "model_config.json").read_text()
     assert '"move_resolution": "on"' in cfg and '"belief_tokens": "fixed_mass"' in cfg
     assert any(t.startswith("behaviour/") for t in tags)
+
+
+def test_split_other_move_compiles_as_one_graph():
+    """F-MR-1 (`gen3_move_resolution_traceable_v1`): `split_other_move` runs inside the compiled learner region
+    (`fullgraph=True`), so it must trace. ``NamedTuple._replace`` lives in ``collections``, which dynamo SKIPS — the
+    CUDA launch of fixed_mass × `--move-resolution on` died on it at startup (2026-10-07). Same values as eager."""
+    named = ops(("bodyslam", "protect", "counter", "thunderwave"), seats=("earthquake", "growl", "protect"),
+                alpha=(0.3, 0.2, 0.25), pair_in=_grid(), p_out=torch.tensor([[0.4]]))
+    u = _tail(protect=0.5, quickattack=0.25, earthquake=0.25)
+    want = split_other_move(named, u, TABLES, torch.ones(1))
+    torch._dynamo.reset()
+    try:
+        got = torch.compile(split_other_move, fullgraph=True, backend="eager")(named, u, TABLES, torch.ones(1))
+    finally:
+        torch._dynamo.reset()
+    assert type(got) is MoveResolutionOps and got._fields == want._fields
+    for f in want._fields:
+        assert torch.equal(getattr(got, f), getattr(want, f)), f

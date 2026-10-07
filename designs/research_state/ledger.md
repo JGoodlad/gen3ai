@@ -22896,3 +22896,58 @@ Tag: **BUILD · conftest src-first + PYTHONPATH prepend · pin order kept · sha
 - Read: the mixture says "usually slower" for species whose battle sets (pool teams) are faster than usage says, so P ~0.72–0.87 rows come true 0.60–0.74 of the time. The prior is not the problem any more; the missing piece is BATTLE EVIDENCE (an observed move order prunes the support) — the open lever, not built.
 
 Tag: **BUILD · speed physics on: discrete Smogon spreads mixture · log loss 0.1308 (best), 0 certain-wrong, Brier 0.0440 / ECE 0.0184 (worst) · NOT better calibrated overall** · design: [`design_arch_audit.md`](../endstate/design_arch_audit.md) F7 · meas: [`measurements/speed_physics_f7b_2026-10-07/`](measurements/speed_physics_f7b_2026-10-07/README.md)
+
+### 2026-10-07 · FINDING + FIX · **`--token-encoding static` now runs compiled on CUDA. Two defects the CPU smokes could not show are fixed: the attention bias layout under Inductor (F-ST-8) and an aliasing recompile (F-ST-9). A third, in `--move-resolution on` × `fixed_mass` (F-MR-1), was found by the deferred GPU checks and fixed. Every deferred flag's real CUDA launch then passed T2 startup, R1 parity and the update-10 canary.**
+
+- **F-ST-8 (root cause of the screen's step-0 death).**
+  - **Symptom.** `RuntimeError: (*bias): last dimension must be contiguous` in the T2 service's first graph build.
+  - **Cause.** Under Inductor the trunk's float bias becomes a FLEXIBLE buffer once `fixed_mass`'s per-key
+    log-presence add and `EdgeBias`'s head-innermost slice writes touch it. torch 2.8's `sdpa_constraint` reads
+    its provisional strides, finds them "aligned" when the key count n is a multiple of 8, and passes it without
+    freezing the layout. Inductor then lays it out with strides `(16384, 1, 256, 4)`.
+  - **Why only this arm.** `static` × `fixed_mass` has n = 64. Legacy `fixed_mass` has 62 and `static` × `blob`
+    63, which take the padded-copy branch. The legacy contrast at P_st passed.
+  - **Reproduction.** A CUDA miniature fails only with the log-presence add.
+  - **Fix.** `agents/model/dense_attn_bias.py` (`gen3_dense_attn_bias_v1`) pins the bias row-major under compile
+    and is `.contiguous()` in eager, at both float-bias SDPA sites.
+- **F-ST-9.**
+  - **Symptom.** The next launch passed T2 and R1, then exited at update 1 with `[CompileSentinel] FATAL`, a
+    recompile after the lock. Dynamo named the guard `unpack.layout[...]['slot_layout'] is pokemon_encoder._msl`.
+  - **Probe.** An instrumented relaunch printed both ids at the prewarm and at each update entry, and they were
+    identical. **UNVERIFIED:** the torch mechanism.
+  - **Fix.** The static encoder reads plain-int spans (`gen3_static_layout_ints_v1`), so there is no aliasing guard.
+- **F-MR-1.**
+  - **Symptom.** `fixed_mass` × `--move-resolution on` failed its startup R1 compile, because
+    `split_other_move`'s `NamedTuple._replace` is a function dynamo skips, under `fullgraph=True`.
+  - **Fix.** The ops are rebuilt through the constructor (`gen3_move_resolution_traceable_v1`).
+- **GPU checks.**
+  - **Setup.** Lease "static fix gpu", 13:49–17:15. Each check is a real `--compile-trainer` CUDA launch:
+    `--arch production --allow-nonproduction-arch`, the X26 ride-along heads, `--snapshot-ladder-games 0`, seed
+    1001, stopped by PID after the update-10 canary.
+  - **Code.** `static` × `fixed_mass` ran at `26131c0c` + the fixes. The others ran at `50b034a7` + the fixes.
+  - **Headroom.** The headroom column is UpdateFit's measured headroom against the declared 1,024 MiB floor. The
+    peak column is nvidia-smi's peak of 12,288 MiB.
+
+| arm | T2 startup | R1 parity (grad cosine · max per-param rel err) | update-10 canary | UpdateFit demand / headroom | smi peak |
+|---|---|---|---|---|---|
+| `static` × `fixed_mass` (the screen's arm) | OK | PASS (1.000000 · 1.97e-05) | PASS | 8,780 / 2,144 MiB | 9,766 MiB |
+| `static` × `fixed_mass` × `--policy-readout trunk` | OK | PASS | PASS | 8,888 / 2,036 MiB | 9,874 MiB |
+| `--policy-readout trunk` (blob) | OK | PASS | PASS | 7,818 / 3,156 MiB | 8,754 MiB |
+| `--move-resolution on` (blob) | OK | PASS | PASS | 7,792 / 3,180 MiB | 8,730 MiB |
+| `--move-resolution on` × `fixed_mass` | OK | PASS (after F-MR-1) | PASS | 9,126 / 1,792 MiB | 10,131 MiB |
+| `--value-threat-inject off` (blob) | OK | PASS | PASS | 7,396 / 3,674 MiB | 8,236 MiB |
+| `--speed-physics on` (blob) | OK | PASS | PASS | 7,890 / 3,080 MiB | 8,830 MiB |
+
+  Every R1 read grad cosine 1.000000 and loss rel 0. The per-parameter max relative error was ≤ 8.11e-03 under its
+  own bar (the seeded-perturbation rung's bar is about 0.0099).
+- **FINDINGS.**
+  1. `fixed_mass` × `--move-resolution on` has the least headroom: 1,792 MiB against the 1,024 MiB floor.
+  2. The first `--policy-readout trunk` launch was killed by MY rebase of the worktree mid-run. K9(b) resolves
+     ops by source LINE from the files on disk, so a rebase under a live run reads as undeclared selection sites
+     (`TieMarginError`). It was rerun clean. A pinned run lives in its own worktree and is not exposed.
+  3. Cold Inductor compile per arm is about 10–15 min. The run's compile cache is per run dir, so no cache was
+     shared across arms.
+  4. Other `nn.MultiheadAttention` key-padding sites build their float masks inside torch. None has a key count
+     that is a multiple of 8 today (6, 7, 12, 13). **UNVERIFIED** for a future seat count.
+
+Tag: **FIX · F-ST-8 attention-bias layout (n % 8 == 0 under Inductor) · F-ST-9 aliasing recompile · F-MR-1 `_replace` under fullgraph · 7 / 7 arms T2 + R1 + canary@10 PASS on CUDA · eager byte-identical** · design: [`design_static_tokens.md`](../endstate/design_static_tokens.md) §4.1, §10, §11 · [`design_arch_audit.md`](../endstate/design_arch_audit.md) §9.4

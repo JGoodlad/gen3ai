@@ -360,6 +360,23 @@ only gather its own operand — `selection_sites_test` pins it). The class is LA
 a compiled backward recomputes; the R1 gate's `NonFiniteGateArmError` names the next one, and the cure is
 the same spelling at that site, behind the arm that tripped it. Detail: `designs/training/compile_flags.md`.
 
+🚨 **A third: every FLOAT attention bias reaches SDPA through `dense_attn_bias`** (`gen3_dense_attn_bias_v1`,
+F-ST-8). Under Inductor, a bias built by in-place slice writes (`EdgeBias._write_block`'s head-innermost
+`m.permute(0, 3, 1, 2)`) is a FLEXIBLE buffer, and Inductor may lay it out head-innermost. Inductor's own SDPA
+stride constraint passes it unfrozen whenever the key count is a multiple of 8. CUDA's efficient kernel then
+raises "(*bias): last dimension must be contiguous". `--token-encoding static` (64 keys) died on this in the T2
+service's first graph build; legacy (62 keys) took the padded-copy branch and never did. `dense_attn_bias` pins the
+bias row-major (Inductor's `inductor_force_stride_order`; its identity backward is registered at import) and is
+`.contiguous()` in eager. A NEW SDPA call with a float mask goes through it. `dense_attn_bias_test.py` fails when a
+call site drops it. Its CUDA test reproduces the failure without the pin. A CPU compile cannot reproduce it,
+because the constraint's CPU branch always requires the stride order.
+
+🚨 **A forward reads PLAIN INTS precomputed in `__init__`, never a module attribute holding a sub-dict of `layout`**
+(`gen3_static_layout_ints_v1`, F-ST-9). `ObsUnpack.layout` reaches the same object, so dynamo installs an
+object-aliasing guard. On the `static` arm's CUDA launch that guard recompiled the learner's region after the
+compile lock (`[CompileSentinel] FATAL` at update 1), although the two objects stayed identical.
+`static_tokens_test.py` fails when the static encoder holds a layout container.
+
 **The general lesson:** a backend that "can't compile our model" was one op, not a property of the
 architecture. Before reaching for a global suppression flag, bisect to the op — see
 `designs/training/compile_flags.md` → Compiled CPU opponents.

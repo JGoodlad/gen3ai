@@ -304,3 +304,35 @@ def test_our_actual_stats_are_the_level_100_formula(static_blob):
                          (2 * 60 + 31 + 5) * 0.9, 2 * 70 + 31 + 5, 2 * 110 + 31 + 63 + 5]) / 500.0
     assert torch.allclose(feat[:6], want, atol=1e-6)
     assert torch.equal(feat[6:12], torch.zeros(6)) and feat[12].item() == 1.0
+
+
+def _layout_containers(obj: Any, out: Dict[int, str], path: str = "layout") -> None:
+    if isinstance(obj, (dict, list)):
+        out[id(obj)] = path
+        for k, v in (obj.items() if isinstance(obj, dict) else enumerate(obj)):
+            _layout_containers(v, out, f"{path}[{k!r}]")
+
+
+def test_the_static_encoder_forward_holds_no_reference_into_the_layout(static_fixed_mass):
+    """gen3_static_layout_ints_v1 (F-ST-9): the encoder's forward state is PLAIN INTS, never a sub-dict of the
+    layout (`ObsUnpack.layout` reaches the same object, and dynamo guarded the two paths' identity — the
+    OBJECT_ALIASING guard that fired after the compile lock on the CUDA launch, 2026-10-07). Only the inert
+    `layout` record itself may alias it; the move columns are exactly the slot layout's."""
+    fe = static_fixed_mass.policy.features_extractor
+    pe = fe.pokemon_encoder
+    held: Dict[int, str] = {}
+    _layout_containers(fe.unpack.layout, held)
+    assert len(held) > 10                                                  # PRECONDITION: the walk saw the tree
+    bad = [(name, held[id(v)]) for name, v in vars(pe).items()
+           if name != "layout" and not name.startswith("_modules") and id(v) in held]
+    assert not bad, f"the static encoder holds layout containers: {bad}"
+    pk = fe.unpack.layout['pokemon']
+    msl, mo = pk['moves']['layout']['slot_layout'], pk['moves']['offset']
+    for (spans, k, c), slot in zip(pe._move_cols, pk['moves']['layout']['slots']):
+        s0 = mo + slot['offset']
+        assert spans == ((s0 + msl['power']['offset'], s0 + msl['type']['offset']),
+                         (s0 + msl['type']['offset'] + msl['type']['dim'], s0 + msl['known']['offset']),
+                         (s0 + msl['max_pp']['offset'], s0 + msl['max_pp']['offset'] + msl['max_pp']['dim']),
+                         (s0 + msl['accuracy']['offset'], s0 + msl['never_miss']['offset'] + msl['never_miss']['dim']))
+        assert (k, c) == (s0 + msl['known']['offset'], s0 + msl['current_pp']['offset'])
+    assert len(pe._move_cols) == len(pk['moves']['layout']['slots']) == pe.num_moves

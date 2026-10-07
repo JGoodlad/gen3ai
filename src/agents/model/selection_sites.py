@@ -43,7 +43,7 @@ from typing import Dict, FrozenSet, List, NamedTuple, Optional, Tuple
 #: production surface (every file a torch op of `evaluate_actions` was called from;
 #: `selection_sites_test` re-measures it and fails on a module outside this list).
 FORWARD_MODULES: Tuple[str, ...] = (
-    "aux_value_heads", "belief_heads", "board_tokens", "conditional_threat", "damage_kinds", "damage_op", "damage_op_blocks", "damage_op_speed",
+    "aux_value_heads", "belief_heads", "board_tokens", "conditional_threat", "damage_kinds", "dense_attn_bias", "damage_op", "damage_op_blocks", "damage_op_speed",
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
     "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",

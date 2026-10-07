@@ -6,6 +6,7 @@ re-exports every name here, so historical import paths still resolve.
 from agents.model.extractor_ctx import (Embeddings, ExtractorContext, NUM_TOKEN_TYPES, NUM_TOKEN_TYPES_STATIC,
                                         TOKEN_TYPE_FIELD, TOKEN_TYPE_GLOBAL, TOKEN_TYPE_OUR_SIDE,
                                         TOKEN_TYPE_OUR_TEAM, TOKEN_TYPE_THEIR_SIDE, TOKEN_TYPE_THEIR_TEAM)
+from agents.model.dense_attn_bias import dense_attn_bias
 from agents.model.board_tokens import (BOARD_SEATS_LEGACY, BOARD_SEATS_STATIC, FIELD_DIM, N_BOARD_TOKENS_STATIC,
                                        SIDE_DIM, board_offsets, field_features, side_features)
 assert (TOKEN_TYPE_THEIR_SIDE, TOKEN_TYPE_FIELD) == (TOKEN_TYPE_OUR_SIDE + 1, TOKEN_TYPE_OUR_SIDE + 2), \
@@ -59,7 +60,10 @@ class BiasedEncoderLayer(torch.nn.Module):
         B, n, d = x.shape
         qkv = self.in_proj(x).reshape(B, n, 3, self.n_heads, self.head_dim)
         q, k, v = (qkv[:, :, i].transpose(1, 2) for i in range(3))            # each [B,H,n,hd]
-        attn = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=bias)
+        # gen3_dense_attn_bias_v1 (F-ST-8): pin the bias row-major — Inductor may otherwise hand CUDA's
+        # efficient kernel a head-innermost layout when n % 8 == 0 (`dense_attn_bias`'s docstring).
+        attn = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v, attn_mask=None if bias is None else dense_attn_bias(bias))
         x = self.norm1(x + self.out_proj(attn.transpose(1, 2).reshape(B, n, d)))
         return self.norm2(x + self.linear2(torch.nn.functional.relu(self.linear1(x))))  # type: ignore[no-any-return]
 

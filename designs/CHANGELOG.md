@@ -12380,3 +12380,30 @@ branch `obs-facts-append`).
   points, Q values per row, exact saturation), `speed_physics_extractor_test.py` (a point mixture at our speed is
   ½; the learned belief is not read; Blissey's max-Speed mass is in the table); `selection_sites.py` re-declared
   (two INT comparisons; the Gaussian's three entries removed).
+
+## 2026-10-07 — The compiled CUDA path for `--token-encoding static` and `--move-resolution on` × `fixed_mass`: three fixes, then the deferred GPU checks of the week's flags (`gen3_dense_attn_bias_v1`, `gen3_static_layout_ints_v1`, `gen3_move_resolution_traceable_v1`; no config / ARCH bump; eager byte-identical)
+
+- **Why.** Step 0 of the static-token screen (registered `26131c0c`) died about 3 min into its first real CUDA launch,
+  in the T2 service's first graph build: `RuntimeError: (*bias): last dimension must be contiguous`. The flags landed
+  this week had their GPU checks deferred for want of a lease.
+- **F-ST-8, the attention bias (`agents/model/dense_attn_bias.py`).** Inductor can lay the trunk's float bias out
+  head-innermost. The bias is a flexible buffer once `fixed_mass`'s log-presence add and `EdgeBias`'s slice writes
+  touch it, and torch 2.8's SDPA constraint passes such a buffer unfrozen when the key count is a multiple of 8.
+  `static` × `fixed_mass` has 64 keys, legacy `fixed_mass` 62. `dense_attn_bias` pins the bias row-major under
+  compile (`inductor_force_stride_order`, identity backward registered at import) and is `.contiguous()` in eager.
+  It is applied in `BiasedEncoderLayer` and in `PolicyStateQuery`. `selection_sites.FORWARD_MODULES` declares it.
+- **F-ST-9, an aliasing recompile (`static_tokens.py`).** With F-ST-8 fixed, the launch exited at update 1:
+  `[CompileSentinel] FATAL`, dynamo RECOMPILED after the compile lock. Dynamo named an object-aliasing guard
+  between `ObsUnpack.layout`'s slot layout and `StaticTokenEncoder._msl`, yet an instrumented relaunch showed the
+  two objects identical at every update. The encoder now reads plain-int column spans (`_move_cols`).
+- **F-MR-1, the move-resolution family under `fixed_mass` (`move_resolution.py`).** The first CUDA launch of
+  `fixed_mass` × `--move-resolution on` failed at its startup R1 compile, because `split_other_move` called
+  `NamedTuple._replace`, which dynamo skips. The ops are now rebuilt through the class constructor (`_replaced`).
+- **The GPU checks** (real `--compile-trainer` CUDA launches, `--arch production` + the X26 ride-along heads,
+  stopped by PID after the update-10 canary; the ledger entry of this date has the table): `static` × `fixed_mass`
+  (± `--policy-readout trunk`), `--policy-readout trunk`, `--move-resolution on` (blob and fixed_mass),
+  `--value-threat-inject off`, `--speed-physics on`. Every arm passed T2 startup, R1 parity and the update-10 canary.
+- **Tests (fail on revert).** `dense_attn_bias_test.py`: CPU, every SDPA's mask is the pin, in inference and
+  training graphs and for both sites; CUDA (`slow`), the 64-key miniature raises without the pin and matches eager
+  with it, forward and gradients. `static_tokens_test.py::test_the_static_encoder_forward_holds_no_reference_into_the_layout`.
+  `move_resolution_x5_test.py::test_split_other_move_compiles_as_one_graph`.
