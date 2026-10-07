@@ -58,7 +58,7 @@ Zero-init projections built as `IsolatedLinear`s (SB3's orthogonal re-init skips
 the global RNG, so building the family moves no other parameter's initial bytes); ON-at-init contributes exactly 0.
 α / β are the stop-grad publications.
 
-## Under X5 (`--belief-tokens fixed_mass`; `gen3_move_resolution_x5_v1`)
+## Under X5 (X5; `gen3_move_resolution_x5_v1`)
 
 The SAME rules (`move_facts` / `switch_facts` hold no mode branch) read the flat opponent pointer's re-expression
 (`flat_intent.FlatConsumerOps`, the one the seven retired blocks read there): α over the K seats + OTHER_move as a
@@ -653,10 +653,10 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
     """Build `MoveResolutionOps` from one extractor forward, at the pointer stash (T2: α / β exist; every op stash
     was written at T1). Fails loud when a stash is missing — a silent zero is indistinguishable from a null result.
 
-    ``x5`` (`flat_intent.FlatConsumerOps`, `--belief-tokens fixed_mass` only; `gen3_move_resolution_x5_v1`): α / β
+    ``x5`` (`flat_intent.FlatConsumerOps`, X5 only; `gen3_move_resolution_x5_v1`): α / β
     are then the flat pointer's re-expression (``alpha_logits`` [B,K+2], ``beta_logits`` [B,7]) and every seat-axis
     or mon-axis operand carries OTHER's column — OTHER_move priced by the tail contraction, OTHER_species by the
-    renormalised tail (the module docstring). ``None``: the blob read, unchanged."""
+    renormalised tail (the module docstring). ``None``: the belief family off (the op's own stashes)."""
     from agents.model.damage_kinds import gather_bp, is_priced, typeless_move_type
     from agents.model.damage_op_layout import _BOOSTS_DIM
     from agents.model.pair_outcome import pair_alpha_full

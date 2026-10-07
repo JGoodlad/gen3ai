@@ -75,7 +75,7 @@ CONFIGS = ("core", "+fast", "+decay", "+small", "+feat", "+all",
            "-fast", "-decay", "-small", "-feat")
 
 
-def _spec(config: str) -> Any:
+def _spec(config: str, fe: Any) -> Any:
     from agents.model.ridealong_heads import RND_VARIANTS, RideAlongSpec
 
     if config == "core":
@@ -86,7 +86,9 @@ def _spec(config: str) -> Any:
         names = tuple(v for v in RND_VARIANTS if v != config[1:])
     else:
         names = (config[1:],)
-    return RideAlongSpec(ensemble=5, rnd=True, adv=5, opp=5, rnd_variants=names)
+    # B is over X5's FLAT opponent pointer (the only B since the X5 version break): its K seats.
+    return RideAlongSpec(ensemble=5, rnd=True, adv=5, opp=5, rnd_variants=names,
+                         opp_flat_k=RideAlongSpec.from_extractor(fe).opp_flat_k)
 
 
 def run(device: str, batch: int, k: int, warmup: int,
@@ -118,6 +120,9 @@ def run(device: str, batch: int, k: int, warmup: int,
                       "win_mask": th.ones(n, 1, device=device),
                       "opp_action_kind": (th.arange(n, device=device) % 2)[:, None].float(),
                       "opp_action_num": th.zeros(n, 1, device=device),
+                      # the flat B's label (`flat_intent_targets`) reads the switch target too
+                      "opp_switch_slot": th.full((n, 1), -1.0, device=device),
+                      "opp_switch_species": th.zeros(n, 1, device=device),
                       "opp_class": th.zeros(n, 1, device=device)},
         advantages=th.linspace(-0.2, 0.2, n, device=device))
     cuda = device.startswith("cuda")
@@ -132,7 +137,7 @@ def run(device: str, batch: int, k: int, warmup: int,
     out: Dict[str, Any] = {}
     for cfg in configs:
         heads = build_ridealong(pol.features_extractor, obs_dim=int(layout["total_dim"]),
-                                spec=_spec(cfg))
+                                spec=_spec(cfg, pol.features_extractor))
         assert heads is not None
         pol.ridealong = heads.to(device)
         learner = _learner(pol)

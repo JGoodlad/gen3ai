@@ -65,7 +65,7 @@ class ExtractorApi(ExtractorBuild):
         return n
 
     def retire_superseded_intent_heads(self) -> bool:
-        """X5 U4 (`gen3_x5_flat_pointer_v1`, design §3.7): under ``--belief-tokens fixed_mass`` the
+        """X5 U4 (`gen3_x5_flat_pointer_v1`, design §3.7): under X5 the
         flat opponent pointer REPLACES the α / β heads — drop them. Returns True when it dropped them.
 
         Called by `Gen3DualHeadMaskablePolicy._build` AFTER SB3's orthogonal re-init and BEFORE the
@@ -73,7 +73,7 @@ class ExtractorApi(ExtractorBuild):
         orthogonal draws) exactly as in the blob arm, so the global RNG stream — every later module's
         initial bytes, the mlp_extractor and the value / action heads included — is unchanged, while
         the retired heads hold no state_dict key, no optimizer slot and no forward use (F-X5-27's rule
-        for `BeliefSlots`: a parameter that never gets a gradient is not kept). ``blob``: a no-op."""
+        for `BeliefSlots`: a parameter that never gets a gradient is not kept). Without the flat pointer: a no-op."""
         if self.flat_intent_head is None or self.alpha_head is None:
             return False
         self.alpha_head = None

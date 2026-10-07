@@ -11,8 +11,8 @@ program. This module is the same arithmetic with:
   * MASKED reductions instead of selection: per-element losses over EVERY slot, `torch.where(mask, x,
     0)` BEFORE the sum (so a masked-out slot cannot inject a NaN/Inf — Inf * 0 = NaN), divided by
     ``count.clamp(min=1)``; a supervised slot's NaN still reaches the loss (K9(c) fail-closed);
-  * the Hungarian per-k groups computed for ALL rows at each k (believed positions sorted first by a
-    stable argsort), each group's contribution masked by ``counts == k``;
+  * the move belief's Hungarian per-k groups computed for ALL rows at each k (believed positions
+    sorted first by a stable argsort), each group's contribution masked by ``counts == k``;
   * ``present`` (a 0-d bool tensor) where the legacy function returned ``None`` — the term is then
     exactly 0.0 with no gradient, so ``loss + coef * term`` is unchanged;
   * every metric as a ``(value, weight)`` pair of 0-d float32 tensors, weight 1.0 exactly when the
@@ -309,92 +309,10 @@ def move_latent_terms(ml: Optional[th.Tensor], latent_table: Optional[th.Tensor]
                                       "slots": (n.float(), w)})
 
 
-def belief_aux_terms(bl: Optional[Dict[str, th.Tensor]], sp_labels: Optional[th.Tensor],
-                     mv_labels: Optional[th.Tensor], moves_weight: float = 1.0) -> StaticTerm:
-    """`belief_bank.belief_aux_loss` (the hidden-team Hungarian aux), static (its vocab RAISE is
-    `check_label_vocab`'s). ``moves_weight`` is a run constant (static)."""
-    if bl is None or sp_labels is None or mv_labels is None:
-        return _absent(th.zeros(()))
-    sp_logits, mv_logits = bl["species"], bl["moves"]
-    dev = sp_logits.device
-    B, n_slots, S = sp_logits.shape
-    M = mv_logits.shape[-1]
-    sp = sp_labels.long().to(dev)
-    mv = mv_labels.long().to(dev)
-    believed = sp >= 0                                                      # [B,6]
-    counts = believed.sum(1)                                                # [B]
-    order = _believed_first(believed)
-    do_moves = moves_weight != 0.0
-    logp_all = th.log_softmax(sp_logits, dim=-1)                            # [B,6,S]
-    ce_sum = sp_logits.new_zeros(())
-    n_slots_t = sp_logits.new_zeros(())
-    n_correct = sp_logits.new_zeros(())
-    bce_sum = sp_logits.new_zeros(())
-    bce_n = sp_logits.new_zeros(())
-    tp = sp_logits.new_zeros(())
-    pred_pos = sp_logits.new_zeros(())
-    true_pos = sp_logits.new_zeros(())
-    for k in range(1, n_slots + 1):
-        rows = counts == k                                                  # [B]
-        idx = order[:, :k]                                                  # [B,k]
-        pred_logp = logp_all.gather(1, idx.unsqueeze(-1).expand(B, k, S))   # [B,k,S]
-        tgt_sp = sp.gather(1, idx).clamp(0, S - 1)                          # [B,k]
-        cost = -th.gather(pred_logp, 2, tgt_sp[:, None, :].expand(B, k, k))  # [B,k,k]
-        perms = _perms(k, dev)
-        ii = th.arange(k, device=dev).view(1, k).expand(perms.shape[0], k)
-        best = perms[cost[:, ii, perms].sum(-1).argmin(1)]                  # [B,k]
-        matched_sp = th.gather(tgt_sp, 1, best)                             # [B,k]
-        ce = -th.gather(pred_logp, 2, matched_sp.unsqueeze(-1)).squeeze(-1)  # [B,k]
-        r2 = rows.unsqueeze(-1)
-        ce_sum = ce_sum + th.where(r2, ce, ce.new_zeros(())).sum()
-        n_slots_t = n_slots_t + rows.sum().to(ce.dtype) * k
-        with th.no_grad():
-            hit = (pred_logp.argmax(-1) == matched_sp) & r2
-            n_correct = n_correct + hit.sum().to(ce.dtype)
-        if do_moves:
-            label_slot = th.gather(idx, 1, best)                            # [B,k]
-            mv_pred = mv_logits.gather(1, idx.unsqueeze(-1).expand(B, k, M))
-            mv_ids = mv.gather(1, label_slot.unsqueeze(-1).expand(B, k, mv.shape[-1]))
-            mh = _multi_hot(mv_ids, M, mv_pred)                             # [B,k,M]
-            slot_has_moves = (mv_ids >= 0).any(-1) & r2                     # [B,k]
-            per = F.binary_cross_entropy_with_logits(mv_pred, mh, reduction="none").mean(-1)
-            bce_sum = bce_sum + th.where(slot_has_moves, per, per.new_zeros(())).sum()
-            bce_n = bce_n + slot_has_moves.sum().to(per.dtype)
-            with th.no_grad():
-                r3 = r2.unsqueeze(-1)
-                pp = (mv_pred > 0.0) & r3
-                mb = (mh > 0.5) & r3
-                tp = tp + (pp & mb).sum().to(per.dtype)
-                pred_pos = pred_pos + pp.sum().to(per.dtype)
-                true_pos = true_pos + mb.sum().to(per.dtype)
-    present = n_slots_t > 0
-    ce_mean = ce_sum / n_slots_t.clamp(min=1)
-    bce = th.where(bce_n > 0, bce_sum / bce_n.clamp(min=1), bce_sum.new_zeros(()))
-    aux = ce_mean + moves_weight * bce
-    w = _w(present)
-    with th.no_grad():
-        n_samples = (counts > 0).sum().to(ce_mean.dtype)
-        acc = n_correct / n_slots_t.clamp(min=1)
-        metrics = {
-            "species_ce": (ce_mean.detach().float(), w),
-            "moves_bce": (bce.detach().float(), w),
-            "species_acc": (acc.float(), w),
-            "species_acc_above_chance": ((acc - 1.0 / S).float(), w),
-            "moves_precision": (th.where(pred_pos > 0, tp / pred_pos.clamp(min=1),
-                                         tp.new_zeros(())).float(), w),
-            "moves_recall": (th.where(true_pos > 0, tp / true_pos.clamp(min=1),
-                                      tp.new_zeros(())).float(), w),
-            "k_mean": ((n_slots_t / n_samples.clamp(min=1)).float(), w),
-            "coverage": ((n_samples / B).float(), w),
-            "mask_rate": ((n_slots_t / believed.numel()).float(), w),
-        }
-    return StaticTerm(aux, present, metrics)
-
-
 def hypothesis_set_terms(hs: Any, bl: Optional[Dict[str, th.Tensor]], sp_labels: Optional[th.Tensor],
                          mv_labels: Optional[th.Tensor], moves_weight: float = 1.0) -> StaticTerm:
     """X5's hidden-team supervision under ``--belief-tokens fixed_mass`` (`gen3_x5_hypothesis_set_v1`,
-    design §3.2 "Supervision"; the `hidden_team` row's replacement — the two are gated exclusively):
+    design §3.2 "Supervision"; the `hidden_team_set` row — the only hidden-team supervision):
 
       * the PRESENCE BCE — the set BCE on the T0 construction's exact logit ``a + τ`` (``hs.species``),
         the ONLY gradient δ_θ receives (M10);
@@ -444,7 +362,6 @@ def hypothesis_set_terms(hs: Any, bl: Optional[Dict[str, th.Tensor]], sp_labels:
 
 #: row name -> its static twin (the registry walk below dispatches on it).
 _STATIC_FNS = {
-    "hidden_team": belief_aux_terms,
     "hidden_team_set": hypothesis_set_terms,
     "move_belief": move_belief_terms,
     "move_latent": move_latent_terms,

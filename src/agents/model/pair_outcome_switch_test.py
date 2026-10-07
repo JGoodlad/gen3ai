@@ -40,6 +40,7 @@ from agents.model.pair_outcome import (
     PAIR_OUTCOME_SWITCH_IDX, PairOutcomeSwitchCell, pair_alpha, pair_alpha_full, rapid_spin_num,
     reduce_pair_in, reduce_pair_in_all,
 )
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 _BASE_KWARGS = dict(
@@ -424,14 +425,16 @@ def test_on_forward_runs_and_contributes_exactly_zero_at_init():
 def test_on_is_independently_enableable_of_the_MOVE_half_and_of_the_intent_head():
     """The two pair-outcome flags deliver ONE tensor to TWO sinks. Coupling them would make a
     measured result unattributable to a sink, so each must build and run alone — and each must
-    reach α through the same ladder (publication, else the R1 belief_mean rung)."""
+    reach α through the same ladder (the publication — since the X5 version break the FLAT pointer's
+    re-expression, which needs the whole opponent-belief family (`x5_kwargs`) — else the R1 belief_mean
+    rung)."""
     fe, layout = _build(**_ON_KWARGS)
-    assert fe.pair_outcome_move is None and fe.alpha_head is None
+    assert fe.pair_outcome_move is None and fe.flat_intent_head is None
     fe(_obs(layout))
     assert fe.damage_op.last_pair_in is not None
-    both, layout2 = _build(**_BASE_KWARGS, pair_outcome_cell=True, pair_outcome_switch=True,
-                           opp_intent=True)
+    both, layout2 = _build(**x5_kwargs(**_BASE_KWARGS, pair_outcome_cell=True, pair_outcome_switch=True))
     pi, vf = both(_obs(layout2))
+    assert both.stash.flat_consumer_ops is not None
     assert both.last_pointer_inputs.move_cells.shape[2] == both.pointer_move_cell_dim
     assert both.last_pointer_inputs.switch_cells.shape[2] == both.pointer_switch_cell_dim
 

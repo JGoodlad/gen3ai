@@ -34,7 +34,6 @@ def fm():
     from agents.model.hypothesis_set_test import _obs_from_golden, _unperturbed_learner
     from main.train.production_args import production_args
     a = production_args()
-    a.belief_tokens = "fixed_mass"
     m = _unperturbed_learner(a)
     fe = copy.deepcopy(m.policy).features_extractor.eval()
     obs = _obs_from_golden(64)
@@ -184,6 +183,13 @@ def test_p_pur_vs_us_is_a_presence_scaled_max_over_the_opponent_mons(fm):
     with torch.no_grad():
         our, _ = _with_roster(op, x5).pairwise_entry(hctx, fe.last_move_belief_logits)
     want = (x5.slot_pi * x5.move_w[:, :, pur] * x5.alive).amax(-1)
+    # OTHER_species enters the max with presence 1 − Π(1 − π) (F4 (b), `889add9d`). The K9 buffer's seed-18 rows
+    # (the golden's default since the X5 version break) hold rows where OTHER's Pursuit mass IS the max — the
+    # blob buffer's rows never did, which is how this expectation went without the term.
+    assert x5.other_any is not None
+    other = (x5.other_any * x5.other_pursuit)
+    assert bool((other > want).any()), "PRECONDITION: no row where OTHER's Pursuit is the max — the term is untested"
+    want = torch.maximum(want, other)
     alive_i = (hctx.hp_and_active[:, :6, 0] > 0).float()
     assert torch.equal(our[..., 1], want[:, None] * alive_i)
     # presence matters: with every hypothesis at presence 1 the read can only rise

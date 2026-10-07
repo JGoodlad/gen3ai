@@ -1,7 +1,7 @@
 """The FLAT opponent pointer's loss + metrics as ONE static, traceable fold (`gen3_x5_flat_pointer_v1`,
-X5 build unit U4; design §3.7). `--belief-tokens fixed_mass` only — the blob arm's α / β fold
-(`intent_fold.py`) is untouched, and `intent_fold` dispatches here when the extractor published the
-flat pointer instead.
+X5 build unit U4; design §3.7) — THE opponent-intent loss: `intent_fold` (`intent_fold.py`, the entry
+point and the shared static primitives) dispatches here whenever the extractor published the flat
+pointer.
 
 Same static contract as `intent_fold` (the learner micro-step is compile region R1): every output
 SHAPE depends only on input shapes, no host read, no boolean-mask indexing, no `nonzero`, no Python
@@ -9,16 +9,14 @@ branch on a tensor value; "emit only if non-empty" is a 0/1 metric WEIGHT.
 
 THE LOSS. One cross-entropy over the flat list at the rows whose label names a live candidate
 (`flat_intent_targets`): a move in the seats, OTHER_move, a switch target, OTHER_species. A belief
-miss is an OTHER LABEL, so it is SUPERVISED (the blob arm masked it, and its set-valued partial credit
-for "someone unseen" is superseded: the OTHER_species label is that statement made exact).
-`--intent-label-bot-weight` folds before the mean with the row-COUNT denominator, as in the blob fold.
+miss is an OTHER LABEL, so it is SUPERVISED (the OTHER_species label states "someone unseen" exactly).
+`--intent-label-bot-weight` scales the bot-class rows before the mean, with the row-COUNT denominator.
 A masked row's logits are replaced by zeros BEFORE the softmax (an exactly-zero gradient there; a
 NaN in a SUPERVISED row still reaches the term — K9(c) fail-closed).
 
 THE METRICS (`opp_intent/flat_*`, plus F-X5-8's isolated belief-miss share):
 * ``other_label_rate`` — of the opponent's genuine CHOICES (kind MOVE or SWITCH), the share whose
-  label is OTHER_move or OTHER_species: the belief-miss share `alpha_mask_rate` used to mix with
-  non-choices. Split ``other_move_label_rate`` (of MOVE choices) / ``other_species_label_rate`` (of
+  label is OTHER_move or OTHER_species: the belief-miss share, isolated from non-choices. Split ``other_move_label_rate`` (of MOVE choices) / ``other_species_label_rate`` (of
   SWITCH choices); ``flat_unmodeled_rate`` is the share of choices outside every candidate's support
   (masked, counted).
 * the pointer's own reads, pooled and per opponent class: accuracy, info gain over the batch's
@@ -135,10 +133,7 @@ def flat_intent_fold_tensors(
             sink.put(f"flat_n_supervised_{name}", n_m.to(odt), ok)
             _flat_subset_metrics(sink, fl_d, tgt, m, ok, k, f"_{name}")
             _other_rates(sink, cls, kind, rows, rows.sum() >= 2, f"_{name}")
-    zero = torch.zeros((), dtype=odt, device=dev)
-    false = torch.zeros((), dtype=torch.bool, device=dev)
-    return IntentFoldOut(setvalued_term=zero, setvalued_present=false,
-                         intent_term=_scale(intent_coef, lf), intent_present=any_s, metrics=sink.out)
+    return IntentFoldOut(intent_term=_scale(intent_coef, lf), intent_present=any_s, metrics=sink.out)
 
 
 def flat_intent_fold(fe: Any, obs: Mapping[str, Tensor], flat_logits: Tensor, *, intent_coef: Coef,

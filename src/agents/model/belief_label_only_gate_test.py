@@ -35,11 +35,14 @@ from agents.model.features_extractor import (BELIEF_GRAD_MODES, _BELIEF_SUPERVIS
                                              Gen3FeaturesExtractor)
 from agents.model.model_version import _BELIEF_GRAD_MODE_EFFECT
 from agents.model.policy import Gen3DualHeadMaskablePolicy
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
-# Every forward-consumed belief head ON at once — the configuration whose routes the cut must sever.
-_CFG = dict(
-    attend_unrevealed_opponents=True, opp_belief_slots=True,
+# Every forward-consumed belief head ON at once — the configuration whose routes the cut must sever. The
+# opponent-belief family is ON: since the X5 version break (v144) that is X5's hypothesis tokens + the flat
+# opponent pointer, with every requirement they carry (`x5_surface_fixture.x5_kwargs`).
+_CFG = x5_kwargs(
+    attend_unrevealed_opponents=True,
     move_belief_mode="both", move_prior_fusion=True, move_latent=True,
     damage_op=True, damage_outgoing=True, spread_belief=True,
 )
@@ -296,61 +299,49 @@ def test_readout_heads_are_structurally_label_only_in_every_mode():
 # Contracts that keep the machinery honest
 # --------------------------------------------------------------------------------------------
 
-def test_alpha_is_cut_at_its_PUBLICATION_boundary():
-    """`AlphaIntentHead` is the head that would have been missed — and the way it is covered
-    changed with the critic-route deletion wave, so read this before "restoring" the old form.
+def test_the_intent_pointer_is_cut_at_its_PUBLICATION_boundary():
+    """The opponent-intent readout — since the X5 version break X5's FLAT pointer (`flat_intent_head`;
+    the blob path's `AlphaIntentHead` is constructed for its init draw and retired) — is the head that
+    would be missed, so it is asserted where the claim is made: at the **publish boundary**.
 
-    THE OLD FORM. This test used to enable `--intent-value-reduce` (a CRITIC route that consumed
-    α) and assert end-to-end that `alpha_head` collects PPO gradient under `shaping` and none
-    under `label_only`. The wave deleted that route AND every other α→vf route, so there is no
-    longer any critic-side consumer to build the control on.
+    WHY NOT THROUGH A CONSUMER. Every policy-side consumer of the pointer reads its RE-EXPRESSION
+    (`FlatConsumerOps.alpha` / `.beta`), and the switch-cell consumers stop-grad it unconditionally — a
+    control that reads 0 under `shaping` too, i.e. vacuous; the move-cell consumers do carry the gradient,
+    but this file's uniform-random obs floors every move dex num to 0, so the pointer head masks all four
+    MOVE logits and the branch is un-differentiated. Also vacuous, also silently.
 
-    WHY IT IS NOT SIMPLY RE-POINTED AT A POLICY CONSUMER. Both candidate families fail as
-    controls, for opposite reasons, and both failures are silent:
-      * the SWITCH-cell consumers (`ConditionalThreatCell`, `PairOutcomeSwitchCell`,
-        `SwitchBranchMoveCell`) stop-grad α **unconditionally** by the policy-side convention, so
-        no gradient reaches `alpha_head` through them in ANY mode — a control that reads 0 under
-        `shaping` too, i.e. vacuous;
-      * the MOVE-cell consumers (`IntentMoveCell`, `IntentThresholdMoveCell`) DO carry the
-        gradient, but this file's uniform-random obs floors every move dex num to 0, so
-        `_request_order_move_tokens` resolves nothing, the pointer head masks all four MOVE
-        logits, and the branch is un-differentiated. Also vacuous, also silently.
-
-    So the claim is asserted where it is actually made: at the **publish boundary**. `label_only`
-    means `_publish_belief` stop-grads α's logits, so the published tensor carries no graph back to
-    `alpha_head` — which is a STRONGER statement than any single consumer's, because it holds for
-    every consumer, including ones added later. `shaping` is the live control on the same config.
-    """
-    intent = dict(opp_intent=True, entity_topk_seats=6,
-                  damage_topk_k=6, damage_matrices_incoming=True)
-
+    So: `label_only` means `_publish_belief` stop-grads the pointer's logits, so the published tensor
+    carries no graph back to `flat_intent_head` — a STRONGER statement than any single consumer's,
+    because it holds for every consumer, including ones added later. `shaping` is the live control on
+    the same config, and the supervised (intent-loss) direction must still reach the head."""
     built = {}
 
     def _published(mode):
-        model, enc = _build_real_policy(belief_grad_mode=mode, **intent)
+        model, enc = _build_real_policy(belief_grad_mode=mode, entity_topk_seats=6,
+                                        damage_topk_k=6, damage_matrices_incoming=True)
         fe = model.policy.features_extractor
         fe(_obs(enc))
-        assert fe.alpha_head is not None and fe.last_alpha_logits is not None
+        assert fe.flat_intent_head is not None and fe.last_flat_intent_logits is not None
         built[mode] = (model, enc)
-        return fe.last_alpha_logits
+        return fe.last_flat_intent_logits
 
     live = _published("shaping")
     assert live.requires_grad and live.grad_fn is not None, (
-        "α's publication carries no graph even under `shaping` — the head is not differentiable "
-        "here at all, so the cut asserted below would be vacuous.")
+        "the pointer's publication carries no graph even under `shaping` — the head is not "
+        "differentiable here at all, so the cut asserted below would be vacuous.")
 
     cut = _published("label_only")
     assert not cut.requires_grad, (
-        "label_only published α with a live graph — every forward consumer (present and future) "
-        "can therefore train the intent head from the PPO objective.")
+        "label_only published the intent pointer with a live graph — every forward consumer (present "
+        "and future) can therefore train the intent head from the PPO objective.")
 
     # ...and its own supervised loss must still reach it under label_only.
     model, enc = built["label_only"]
     fe = model.policy.features_extractor
     model.policy.zero_grad(set_to_none=True)
     fe(_obs(enc))
-    fe.belief_supervision("alpha_logits").float().sum().backward()
-    assert _grad_mass(model, ("alpha_head",)) > 0.0, "the intent loss no longer trains alpha_head"
+    fe.belief_supervision("flat_intent_logits").float().sum().backward()
+    assert _grad_mass(model, ("flat_intent_head",)) > 0.0, "the intent loss no longer trains flat_intent_head"
 
 
 def test_supervision_keys_are_exactly_what_the_forward_registers():
@@ -367,9 +358,9 @@ def test_supervision_keys_are_exactly_what_the_forward_registers():
     registered = set(fe._belief_supervision)
     not_built = set()
     if fe.alpha_head is None:
-        not_built |= {"alpha_logits", "beta_logits"}     # need --opp-intent-coef
+        not_built |= {"alpha_logits", "beta_logits"}     # retired by the policy since the X5 break
     if fe.flat_intent_head is None:
-        not_built |= {"flat_intent_logits"}              # X5 U4: --belief-tokens fixed_mass only
+        not_built |= {"flat_intent_logits"}              # X5 U4: the opponent-belief family only
     if fe.spread_belief is None:
         not_built |= {"spread_belief", "spread_nature_logits", "spread_ev"}
     if fe.item_belief_head is None:

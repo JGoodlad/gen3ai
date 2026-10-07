@@ -169,7 +169,9 @@ def test_the_recorder_gives_every_production_row_a_finite_margin_and_leaves_the_
     rec.check()
     assert th.equal(ref, got), "the recorder must not change what the forward computes"
     assert np.isfinite(rec.margin).all() and all(rec.site)
-    assert any("pointer_head" in s for s in rec.sites_seen) and any("damage_op.py" in s for s in rec.sites_seen)
+    # X5 (production since the version break): the E4 seats come from THE one stable order (`hypothesis_set`'s
+    # argsort), not the pointer head's top-K the blob surface ran.
+    assert any("hypothesis_set.py" in s for s in rec.sites_seen) and any("damage_op.py" in s for s in rec.sites_seen)
 
 
 def test_an_undeclared_discrete_op_in_the_forward_is_refused(production, monkeypatch):

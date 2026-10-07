@@ -3,7 +3,6 @@ its two first Linears (`hypothesis_encode`; `designs/research_state/measurements
 
 * the fixed_mass forward takes the gathered path ONCE and runs `PokemonEncoder` ONCE (the real pass) —
   the per-row hypothesis pass is gone (fails on revert: 0 gathered calls, 2 encoder passes);
-* blob never reaches it (its arithmetic is the X5 A/B's blob seeds', §7.5);
 * the VALUES are the per-row pass's: at fp64 within 1e-12 (exact up to reassociation — measured ~6e-15),
   at fp32 within the declared 2e-5 (measured ~3e-6 on token values up to ~6), on every hypothesis slot of
   the K9 golden's real rows;
@@ -50,18 +49,9 @@ def _rows(model: Any, n: int = 0) -> Dict[str, torch.Tensor]:
 @pytest.fixture(scope="module")
 def fixed_mass() -> Any:
     from agents.training import learner_golden as LG
-    m = LG.build_arm_learner("fixed_mass")
-    LG.load_buffer_into(m, LG.arm_buffer("fixed_mass"))
-    assert m.policy.features_extractor.hypothesis_builder is not None        # PRECONDITION: the X5 arm
-    return m
-
-
-@pytest.fixture(scope="module")
-def blob() -> Any:
-    from agents.training import learner_golden as LG
     m = LG.build_learner()
-    LG.load_buffer_into(m)
-    assert m.policy.features_extractor.hypothesis_builder is None            # PRECONDITION: blob
+    LG.load_buffer_into(m, LG.BUFFER_PATH)
+    assert m.policy.features_extractor.hypothesis_builder is not None        # PRECONDITION: the X5 arm
     return m
 
 
@@ -97,18 +87,6 @@ def test_the_fixed_mass_forward_gathers_once_and_runs_the_encoder_once(fixed_mas
         h.remove()
     assert n[0] == 1, f"PokemonEncoder ran {n[0]}x — the per-row hypothesis pass is back"
     assert calls[0] == 1, f"the gathered hypothesis path ran {calls[0]}x (expected once per forward)"
-
-
-def test_the_blob_forward_never_reaches_the_gathered_path(blob, monkeypatch):
-    fe = blob.policy.features_extractor
-    calls = _counting(monkeypatch)
-    n, h = _encoder_passes(fe)
-    try:
-        with torch.no_grad():
-            fe(_rows(blob))
-    finally:
-        h.remove()
-    assert calls[0] == 0 and n[0] == 1
 
 
 def _both(fe: Any, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor, Any]:

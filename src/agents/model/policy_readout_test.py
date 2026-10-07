@@ -155,10 +155,12 @@ def test_trunk_policy_features_are_the_state_query_read():
         assert th.equal(pi, pol.features_extractor.policy_query(tokens, pad, klp))
         assert th.equal(pol.mlp_extractor.forward_actor(pi), pi)       # the actor branch is the identity
     fe = pol.features_extractor
-    # Every refined trunk token is a key: 12 team + global + every extra seat (+ the belief pool's K).
+    # Every refined trunk token is a key: 12 team + global + every extra seat (+ the belief pool's K)
+    # (+ X5's OTHER_species token: the opponent-belief family is on in production since the version break).
     n_seats = fe.entity_seats.n_seats + (32 if fe.history_events is not None else 0)
     k = int(fe.hidden_opp_belief.k) if fe.hidden_opp_belief is not None else 0
-    assert tokens.shape[1] == 2 * TEAM_SIZE + 1 + n_seats + k
+    assert fe.hypothesis_builder is not None                       # PRECONDITION: production is X5
+    assert tokens.shape[1] == 2 * TEAM_SIZE + 1 + n_seats + k + 1
     assert not bool(pad[:, 2 * TEAM_SIZE].any()), "the global token is never masked"
 
 
@@ -273,13 +275,18 @@ def test_trunk_fresh_build_one_cpu_update_under_the_K6_freeze():
 
 # ------------------------------------------------------------------------------- the version gate
 def test_recorded_migrated_and_a_mismatch_is_refused():
-    """The worker's rebuild surface records the mode; a pre-v138 config migrates to ``tower`` (the only
-    possible past); a resume or a frozen opponent of the other mode is REFUSED, naming the field."""
-    from agents.model.model_version import ModelVersionError, _migrate_config
+    """The worker's rebuild surface records the mode; a RECORDED mode migrates through verbatim; a pre-v138
+    config (whose v138 branch defaulted ``tower``) predates the X5 version break's MIGRATION_FLOOR and is
+    REFUSED; a resume or a frozen opponent of the other mode is REFUSED, naming the field."""
+    import dataclasses
+
+    from agents.model.model_version import MODEL_CONFIG_VERSION, ModelVersionError, _migrate_config
     assert _version("trunk").policy_readout == "trunk" and _version("tower").policy_readout == "tower"
-    data: Dict[str, Any] = {"config_version": 137}
-    _migrate_config(data)
-    assert data["policy_readout"] == "tower" and data["config_version"] >= 138
+    for mode in ("trunk", "tower"):
+        rec = _migrate_config(dataclasses.asdict(_version(mode)))
+        assert rec["policy_readout"] == mode and rec["config_version"] == MODEL_CONFIG_VERSION
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 137})
     with pytest.raises(ModelVersionError, match="policy_readout mismatch"):
         _version("trunk").check_compatible(_version("tower"))
     _version("trunk").check_compatible(_version("trunk"))

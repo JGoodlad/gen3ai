@@ -114,29 +114,6 @@ def test_static_equals_legacy_on_REAL_stashes_float32(real, name):
 
 
 # ------------------------------------------------------------------------------- synthetic edges
-def _synthetic_hidden(B=96, S=50, M=40, seed=0, scored="mixed"):
-    g = th.Generator().manual_seed(seed)
-    sp = th.randint(1, S, (B, 6), generator=g)
-    mv = th.randint(1, M, (B, 6, 4), generator=g)
-    if scored == "none":
-        sp[:] = -1
-    elif scored == "mixed":                       # every k from 0 to 6, rows cycling
-        for b in range(B):
-            k = b % 7
-            perm = th.randperm(6, generator=g)
-            sp[b, perm[k:]] = -1
-    mv[sp < 0] = -1
-    mv[:, :, 3] = th.where(th.rand(B, 6, generator=g) < 0.4, th.full((B, 6), -1), mv[:, :, 3])
-    bl = {"species": th.randn(B, 6, S, generator=g), "moves": th.randn(B, 6, M, generator=g)}
-    return [bl, sp, mv, 1.0]
-
-
-@pytest.mark.parametrize("scored", ["none", "mixed", "all"])
-@pytest.mark.parametrize("dtype,tol", [(th.float64, 1e-12), (th.float32, 2e-6)])
-def test_hidden_team_every_k_and_nothing_scored(scored, dtype, tol):
-    _compare("hidden_team", _synthetic_hidden(scored=scored), dtype, tol)
-
-
 @pytest.mark.parametrize("mode", ["revealed", "unrevealed", "both"])
 @pytest.mark.parametrize("dtype,tol", [(th.float64, 1e-12), (th.float32, 2e-6)])
 def test_move_belief_every_mode_and_k(mode, dtype, tol):

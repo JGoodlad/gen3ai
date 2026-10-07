@@ -146,7 +146,6 @@ def fm_policy():
     from agents.model.hypothesis_set_test import _unperturbed_learner
     from main.train.production_args import production_args
     a = production_args()
-    a.belief_tokens = "fixed_mass"
     return _unperturbed_learner(a)
 
 
@@ -204,7 +203,6 @@ def test_fixed_mass_refuses_fewer_than_four_move_seats():
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     from main.train.production_args import production_args
     a = production_args()
-    a.belief_tokens = "fixed_mass"
     enc = Gen3ObservationEncoder(load_mappings())
     kw = build_extractor_arch_kwargs(a, base=enc.get_features_extractor_kwargs())
     kw["entity_topk_seats"] = 3

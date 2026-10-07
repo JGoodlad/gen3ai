@@ -69,10 +69,10 @@ class CLSPool(torch.nn.Module):
         only when value_threat_inject is built) → `(our_team_pooled, their_team_pooled,
         our_active_refined, value_pooled)`, each [B, D_MODEL].
 
-        `presence` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only): `their_cls` and
+        `presence` (gen3_x5_belief_tokens_v1, X5 only): `their_cls` and
         `value_cls` are class-E reductions over opponent tokens, so OTHER_species joins their keys and
         every opponent key carries its log-presence through a FLOAT key-padding mask (F-X5-14:
-        `−inf` masked, ``log π`` otherwise). None (blob) is the original bool-mask path, byte-identical."""
+        `−inf` masked, ``log π`` otherwise). None (the belief family off) is the bool-mask path."""
         batch_size = ctx.batch_size
         our_cls_q   = self.our_cls.expand(batch_size, -1, -1)
         their_cls_q = self.their_cls.expand(batch_size, -1, -1)
@@ -170,7 +170,7 @@ class HiddenOppBeliefPool(torch.nn.Module):
 
         `presence` (gen3_x5_belief_tokens_v1, fixed_mass only): the cross-attention is a class-E
         reduction over opponent tokens — OTHER_species joins the memory and every opponent key carries
-        its log-presence (a FLOAT memory key-padding mask). None (blob): byte-identical."""
+        its log-presence (a FLOAT memory key-padding mask). None (the belief family off): nothing added."""
         queries = self.queries.expand(batch_size, -1, -1)                         # [B, K, D_MODEL]
         if presence is not None:
             mem, mem_mask = team_keys_with_other(all_team_out, all_fainted, presence)
@@ -199,7 +199,7 @@ class PolicyStateQuery(torch.nn.Module):
     ``[B, D_MODEL]``. It replaces the 1.13M-parameter flat tower (audit F2) that squeezed the same state
     through a 1177→512 projection, two tanh layers and a 512→64 ``ctx_proj``.
 
-    Keys use the trunk's OWN key-padding mask (a −1e9 addend) and, under ``--belief-tokens fixed_mass``,
+    Keys use the trunk's OWN key-padding mask (a −1e9 addend) and, under X5,
     the trunk's own per-key log-presence (``key_log_presence``), so it is the same class-E reduction the
     trunk performs over opponent tokens. The belief-pool outputs are never masked (always present).
 

@@ -19,6 +19,8 @@ gate's hard bound, one line from tripping it — and is now one module per conce
                       raw config, so a resume / fork refuses (`ShapedRewardCheckpointError`)
     retired_levers.py the DELETED Python-core levers, recognised the same way (`RETIRED`,
                       `RetiredLeverCheckpointError`) — each deletion unit appends its levers
+    version_break.py  THE X5 VERSION BREAK (v144): the last blob-capable commit, the belief-specific
+                      pre-floor diagnosis, the pickled `belief_tokens` judgment, `PreBreakCheckpointError`
 
 **The import graph is a DAG rooted at `constants`**, which imports nothing from the package. No
 submodule imports this hub back — that would close a cycle whose symptom is an `AttributeError`
@@ -48,6 +50,10 @@ from agents.model.model_version.retired_levers import (
     RetiredLeverCheckpointError,
 )
 from agents.model.model_version.spec import ModelVersion
+from agents.model.model_version.version_break import (
+    LAST_BLOB_COMMIT,
+    PreBreakCheckpointError,
+)
 
 __all__ = [
     "ARCH_SIGNATURE",
@@ -60,6 +66,8 @@ __all__ = [
     "RETIRED_FIELDS",
     "RetiredLeverCheckpointError",
     "ShapedRewardCheckpointError",
+    "LAST_BLOB_COMMIT",
+    "PreBreakCheckpointError",
     "SIGNATURE_FIRST_VERSION",
     "_BELIEF_GRAD_MODE_EFFECT",
     "_REWARD_IMMUTABLE_FIELDS",

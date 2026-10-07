@@ -208,7 +208,7 @@ RIDEALONG_RND_SMALL_HIDDEN = 32
 #: policy's own init, and every later draw, bit-identical).
 RIDEALONG_INIT_SEED = 20260930
 
-# gen3_x5_hypothesis_set_v1 (X5 build unit U2, `--belief-tokens fixed_mass`;
+# gen3_x5_hypothesis_set_v1 (X5 build unit U2, X5;
 # `designs/endstate/design_x5_belief_tokens.md` §3.2-§3.3). HYPOTHESIS_DELTA_HIDDEN is δ_θ's MLP
 # width: the Deep-Sets pool over the revealed opponent role tokens ⊕ the global projection
 # (2 × D_MODEL) → this → the species logits. (OTHER_species' embedding averages the WHOLE tail since
@@ -218,7 +218,7 @@ RIDEALONG_INIT_SEED = 20260930
 HYPOTHESIS_DELTA_HIDDEN = 96
 HYPOTHESIS_INIT_SEED = 20261003
 
-# gen3_x5_flat_pointer_v1 (X5 build unit U4, `--belief-tokens fixed_mass` only; design §3.7): the FLAT
+# gen3_x5_flat_pointer_v1 (X5 build unit U4, X5 only; design §3.7): the FLAT
 # opponent pointer that replaces the α / β heads in that arm. FLAT_INTENT_HIDDEN is its one shared
 # scorer's width (α's and β's scorers were 64 wide); FLAT_INTENT_INIT_SEED its PRIVATE init seed (built
 # inside `torch.random.fork_rng` from `IsolatedLinear`s, so no non-X5 initial byte moves).

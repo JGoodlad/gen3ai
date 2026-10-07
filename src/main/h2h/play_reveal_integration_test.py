@@ -41,8 +41,10 @@ PAIRS, N_ENVS = 12, 8
 #: was 32972493… / 4baf87e0…).
 #: RE-RECORDED 2026-10-07 for gen3_format_spec_priors_v1 (banned entities get prior 0: the Smogon ability / item priors
 #: and the move / item / species tables; was 395e7d7b… / 82982a8f…).
-OFF_BITS = "9bffc7d619f80a810c2c078dbbeadad0cd4d1b559db8667887139ecf22275250"
-OFF_OUTCOME_ALL = "54eca92a76bc8d802b78b7af2f49188ebc600bf53db337cfea67cb5a61ca8322"
+#: RE-RECORDED 2026-10-07 for the X5 version break (gen3_x5_version_break_v1, config v144): the conftest's production
+#: checkpoints are X5 now (blob deleted), a different architecture and so different games; was 9bffc7d6… / 54eca92a….
+OFF_BITS = "c06a6c51345c25a2285458d18db6081ad2f615743560dd5b8d7616a72307085b"
+OFF_OUTCOME_ALL = "ce837ceb3ef139677790a3c0fc5fe8ac8733f64394e06238f870d6a0c34c29f5"
 
 
 def bits_digest(games):

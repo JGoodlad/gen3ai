@@ -118,7 +118,11 @@ def test_a_real_update_runs_every_micro_batch_through_R1_compiled_and_none_eager
 #: EXACT pin on purpose: a count is deterministic, so any change is a reviewed one-line edit — a lower
 #: number is a win to write down, a higher one is a host sync somebody added (x480 micro-batches in a
 #: production update). Production, diag-skipped: 9,942 reads per update (K8 acceptance), was 66,784.
-GOLDEN_UPDATE_HOST_SCALAR_READS = 1050
+#: 1,050 → 1,060 at the X5 VERSION BREAK (2026-10-07): the golden learner became X5's surface. MEASURED: 988 of
+#: the 1,060 are `optimizer.step()`'s per-parameter step-count reads (`ppo.py`'s two step sites, 494 each), which
+#: scale with the parameter TENSOR count X5 changes; no read sits in the micro-step (the TEETH below still add
+#: exactly one per micro-batch). The blob learner's per-site split was not re-measured (blob is deleted).
+GOLDEN_UPDATE_HOST_SCALAR_READS = 1060
 
 
 def test_a_real_update_makes_a_bounded_number_of_host_scalar_reads(learner, monkeypatch):

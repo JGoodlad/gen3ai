@@ -5,13 +5,17 @@ the same ALWAYS-CURRENT obligation as that leaf — update it in the same pass a
 [`../ARCHITECTURE.md`](../ARCHITECTURE.md) is the doc of record for what the model IS; where the
 two disagree, ARCHITECTURE.md wins.
 
-## Under `--belief-tokens fixed_mass`: ONE flat pointer replaces α / β (X5 U4)
+## ONE flat pointer is the opponent-intent head (X5 U4)
 
-Everything below describes the **blob** arm (production). In the X5 `fixed_mass` arm
-(`gen3_x5_flat_pointer_v1`, [`../endstate/design_x5_belief_tokens.md`](../endstate/design_x5_belief_tokens.md)
-§3.7) α / β are RETIRED — constructed, re-initialised by SB3, then dropped by the policy's `_build`
-before the optimizer is made (`ExtractorApi.retire_superseded_intent_heads`), so no non-X5 initial byte
-moves — and `agents/model/flat_intent.py` holds ONE pointer over a fixed column layout for K seats:
+X5's hypothesis tokens are the only belief representation (the X5 version break, config v144), and
+with them the opponent-intent head is the FLAT pointer (`gen3_x5_flat_pointer_v1`,
+[`../endstate/design_x5_belief_tokens.md`](../endstate/design_x5_belief_tokens.md) §3.7). α / β are
+RETIRED — constructed (their init draws keep the RNG stream), re-initialised by SB3, then dropped by
+the policy's `_build` before the optimizer is made (`ExtractorApi.retire_superseded_intent_heads`);
+nothing supervises or reads them, and their loss (the α / β cross-entropies, the set-valued β partial
+credit) and their `opp_intent/alpha_*` / `beta_*` metrics are deleted. The sections after this one
+describe the α / β heads' design and the CONSUMERS' conventions, which the flat pointer's
+re-expression still serves. `agents/model/flat_intent.py` holds ONE pointer over a fixed column layout for K seats:
 `[0, K)` the active's move seats (THE one order), `K` OTHER_move, `K+1 .. K+6` a switch to each of their
 slots (a revealed mon, or the HYPOTHESIS a hidden slot holds), `K+7` OTHER_species. One shared scorer
 (token ⊕ the two team pools ⊕ the candidate's kind) plus the candidate's DETACHED log π, one softmax;
@@ -20,14 +24,22 @@ masks are structural; the input is detached under `--opp-intent-grad-mode detach
 * **Labels** (`flat_intent_targets`, from the same Rust label — no label change): a move in the seats →
   its seat (a typed Hidden Power label → a REVEALED HP's seat, num 237); a move beyond the seats →
   OTHER_move; a revealed switch → its slot; a hidden switch-in → the hypothesis slot holding its species,
-  else OTHER_species when it is in the tail. **A belief miss is supervised as an OTHER label**, so the
-  set-valued partial credit is superseded in that arm. Masked: non-choices, and a choice outside every
-  candidate's support (Struggle, a learnset gap, a species outside V) — counted as `flat_unmodeled_rate`.
+  else OTHER_species when it is in the tail. **A belief miss is supervised as an OTHER label** (the
+  OTHER_species label states "someone unseen" exactly). Masked: non-choices, a label on a dead
+  candidate, and a choice outside every candidate's support (Struggle, a learnset gap, a species outside
+  V) — counted as `flat_unmodeled_rate`.
+* **Loss** (`instrumented_ppo/flat_intent_fold.py`, inside the learner micro-step, region R1; reached
+  through `instrumented_ppo/intent_fold.py`'s dispatch): ONE cross-entropy over the flat list at the
+  supervised rows, `--opp-intent-coef` × it; `--intent-label-bot-weight` scales the bot-class rows
+  before the mean at the supervised-row-COUNT denominator (`designs/training/belief_losses.md`). A
+  masked row's logits are replaced before the softmax (an exactly-zero gradient); a NaN in a
+  supervised row still reaches the term (K9(c)).
 * **Metrics** (`instrumented_ppo/flat_intent_fold.py`, static, `fullgraph`-traced): `flat_*` (loss, mask
   rate, accuracy, info gain, the kind decision both ways, which move / which target), pooled and per
-  opponent class, and **`opp_intent/other_label_rate`** — of the opponent's CHOICES, the share labelled
-  OTHER (F-X5-8: the belief-miss share `alpha_mask_rate` mixed with non-choices), split
-  `other_move_label_rate` / `other_species_label_rate`.
+  opponent class, `label_bot_frac` (the bot share of the supervised rows), and
+  **`opp_intent/other_label_rate`** — of the opponent's CHOICES, the share labelled OTHER (F-X5-8: the
+  belief-miss share, isolated from non-choices), split `other_move_label_rate` /
+  `other_species_label_rate`.
 * **Consumers** read a re-expression (`compat_intent_logits` + `FlatConsumerOps`): α over the K seats +
   OTHER_move + log α_SWITCH (a guarded logsumexp — the unguarded one has a NaN gradient on a row with no
   switch target, and three consumers do not detach α), β over the six slots + OTHER_species. OTHER is
@@ -37,7 +49,7 @@ masks are structural; the input is detached under `--opp-intent-grad-mode detach
   tail's P(Ghost); num-table reads use `pair_outcome.seat_num_table` / `seat_in_set`. All four
   per-seat consumers apply the meaningful-K gate (`seat_live`, F-X5-15) in that arm.
 * **Rendering**: `render_flat` names the options; `RLPlayer._opp_intent` still renders only α / β, so a
-  fixed_mass trace carries no `opp_intent` block yet (U4 FINDING).
+  production trace (X5) carries no `opp_intent` block yet (U4 FINDING).
 
 ## The two heads
 
@@ -54,9 +66,11 @@ learns "seat 0 is usually right" from the belief's own `w.topk` sort order — m
 ordering `α` exists to correct. Equivariance is gated in both axes.
 
 **Matching is by canonical id.** Seats permute every turn and are built by the model mid-forward, so
-the env emits the opponent's move NUM and `match_seats_to_move_num` locates it at loss time. A
-belief miss is MASKED and `opp_intent/alpha_mask_rate` is logged — that rate is the BELIEF's coverage
-failure, and folding it into "α was wrong" would hide which component to fix.
+the env emits the opponent's move NUM and the label is located among the seats at loss time
+(`flat_intent_targets` for the flat pointer; `match_seats_to_move_num` for α's seat axis, which the
+ride-along B head and the search dividend still read). A belief miss is an OTHER label, and its share
+is `opp_intent/other_label_rate` — the BELIEF's coverage failure, kept apart from "the pointer was
+wrong" so a reader can tell which component to fix.
 
 **Only a CHOICE is a label** (`opp_intent_labels.build_opp_intent_label`). A switch-in the
 opponent did not choose is MASKED — our phaze, a DRAG by our Roar / Whirlwind (even after their own
@@ -81,20 +95,17 @@ which was a pure bot measurement; the pool figure at the same step was 0.296. An
 the ramp is uninterpretable; a trend after ~6M happens to be safe, but read `_pool` and do not rely
 on that.
 
-The split covers **every** axis: the KIND decision both directions (`alpha_switch_recall` /
-`_precision`, `alpha_move_kind_recall` / `_precision`), the move axis (`alpha_move_recall_top1` /
-`_top2` against `alpha_move_baseline_argmax_w` — compared LIKE FOR LIKE, both "given they moved"),
-the β pointer (`beta_recall_top1` / `_top2`, `beta_info_gain_nats`), and the switch-coverage matrix
-(`beta_switch_to_revealed` / `_hidden_found` / `_hidden_missed`, which partition voluntary switches
-and sum to 1, plus `beta_belief_miss_rate` over the rows that ASKED). It used to cover only
-accuracy / info-gain / count, which left exactly the metrics a reader uses to LOCATE a deficit
-pooled. `alpha_mask_rate` stays whole-batch: it is the BELIEF's coverage failure, and folding it
-into "α was wrong" would hide which component to fix.
-
-One computation serves both reads — `_alpha_subset_metrics` / `_beta_subset_metrics` /
-`switch_coverage_metrics` take a row subset and a suffix — so a pooled and a stratified number can
-never drift apart. `switch_coverage_metrics` is module-level rather than a closure in the PPO loop
-because nothing tested that matrix at all, and a metric with no test can silently read zero.
+The split covers **every** axis (`instrumented_ppo/flat_intent_fold.py`, pooled and with each class
+suffix): accuracy (`flat_acc`), the KIND decision both directions (`flat_switch_recall` /
+`flat_switch_precision`, `flat_switch_rate`), WHICH move given they moved (`flat_move_recall_top1`),
+WHICH target given they switched (`flat_switch_tgt_top1`), the information gain over the batch's
+empirical marginal (`flat_info_gain_nats`), the supervised count (`flat_n_supervised_*`), and the
+belief-miss shares (`other_label_rate`, `other_move_label_rate`, `other_species_label_rate`,
+`flat_unmodeled_rate`). `flat_mask_rate`, `flat_n_supervised`, `flat_loss` and `label_bot_frac` are
+whole-batch. One computation serves both reads — `_flat_subset_metrics` / `_other_rates` take a row
+subset and a suffix — so a pooled and a stratified number can never drift apart. A key and its class
+suffix must render distinctly in the stdout table (`train_logger.HumanOutputFormat` truncates at 36
+columns and RAISES on a collision — `flat_intent_test.py` pins every key).
 
 **Interpretability is a first-class output, not a debug aid** (`render_alpha` → the trace's
 `opp_intent` block): `α` as a ranked list of NAMED moves. The owner constraint is that the model may
@@ -124,7 +135,7 @@ hidden-slot set — the pointer was fine; the label beside it was a different he
 
 Eight modules now contract α against the op's physics — `IntentValueReduce`, `IntentMoveCell`,
 `IntentThresholdMoveCell`, `IntentConditionalMoveCell`, `PairOutcomeMoveCell`, the v94 pair
-`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`, and the v95 pair `ConditionalThreatCell` — and, under `--move-resolution on` (v141, OFF in production), `MoveResolutionCell`, which REPLACES the seven pointer-cell consumers (they are retired on a built policy) and contracts α / β the same way (the publication, stop-grad, seats masked never renormalised, the unmodeled mass `1 − Σα − α_SWITCH` named rather than reassigned; under X5 `fixed_mass` it reads the flat pointer's re-expression with OTHER priced, OTHER_move split into one seat per priority level). They share four conventions, and each one exists because breaking it fails
+`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`, and the v95 pair `ConditionalThreatCell` — and, under `--move-resolution on` (v141, OFF in production), `MoveResolutionCell`, which REPLACES the seven pointer-cell consumers (they are retired on a built policy) and contracts α / β the same way (the publication, stop-grad, seats masked never renormalised, the unmodeled mass `1 − Σα − α_SWITCH` named rather than reassigned; it reads X5's flat pointer re-expression with OTHER priced, OTHER_move split into one seat per priority level). They share four conventions, and each one exists because breaking it fails
 silently:
 
 ## The two conventions `pair_outcome.py` added

@@ -14,7 +14,7 @@ import pytest
 import torch
 
 from agents.model.opp_intent import (INTENT_IGNORE, AlphaIntentHead, BetaSwitchHead,
-                                     intent_losses, match_seats_to_move_num, render_alpha)
+                                     match_seats_to_move_num, render_alpha)
 
 
 def test_alpha_is_equivariant_under_permuting_their_moves():
@@ -89,39 +89,6 @@ def test_unnameable_actions_are_masked():
     assert int(out[0]) == INTENT_IGNORE
 
 
-def test_loss_skips_masked_rows_and_reports_the_mask_rate():
-    torch.manual_seed(0)
-    logits = torch.randn(4, 5, requires_grad=True)
-    tgt = torch.tensor([1, INTENT_IGNORE, 4, INTENT_IGNORE])
-    loss, m = intent_losses(logits, tgt, None, None)
-    assert m["opp_intent/alpha_n_supervised"] == 2.0
-    assert m["opp_intent/alpha_mask_rate"] == pytest.approx(0.5)
-    loss.backward()
-    assert logits.grad is not None and torch.isfinite(logits.grad).all()
-
-
-def test_all_masked_is_a_finite_zero_not_a_nan():
-    """An early rollout can legitimately contain no usable label; that must not poison the loss."""
-    logits = torch.randn(3, 5)
-    tgt = torch.full((3,), INTENT_IGNORE)
-    loss, m = intent_losses(logits, tgt, None, None)
-    assert float(loss) == 0.0 and torch.isfinite(loss)
-    assert m["opp_intent/alpha_mask_rate"] == pytest.approx(1.0)
-
-
-def test_switch_and_move_accuracy_are_reported_separately():
-    """A head that only learns 'they attack' must not hide behind the attack-heavy base rate."""
-    logits = torch.full((4, 3), -10.0)
-    logits[:, 0] = 10.0                       # always predicts seat 0
-    tgt = torch.tensor([0, 0, 2, 2])          # two moves, two switches
-    _, m = intent_losses(logits, tgt, None, None)
-    # Always predicting seat 0 gets the KIND right on every move row and every switch row wrong.
-    assert m["opp_intent/alpha_move_kind_recall"] == pytest.approx(1.0)
-    assert m["opp_intent/alpha_move_recall_top1"] == pytest.approx(1.0)
-    assert m["opp_intent/alpha_switch_recall"] == pytest.approx(0.0)
-    assert m["opp_intent/alpha_acc"] == pytest.approx(0.5)
-
-
 def test_render_alpha_names_every_option_and_never_invents_one():
     """G3b as a test: mass may only ever point at something with a name."""
     probs = torch.tensor([0.5, 0.2, 0.0, 0.3])
@@ -145,29 +112,48 @@ def _intent_kwargs(**over):
 
 
 def test_off_builds_no_heads_and_adds_no_state_dict_keys():
+    """Since the X5 version break (v144) `opp_intent` builds X5's FLAT pointer with the hypothesis tokens (the
+    opponent-belief family is one family). OFF (both toggles off) builds none of it; ON adds exactly the X5
+    modules — the blob path's α / β heads are constructed for their init draw and RETIRED by the policy, so
+    they hold no state_dict key."""
     from agents.model.identity_init_test import _build_real_policy
-    off, _ = _build_real_policy(**_intent_kwargs(opp_intent=False))
+    off, _ = _build_real_policy(**_intent_kwargs(opp_intent=False, opp_belief_slots=False))
     on, _ = _build_real_policy(**_intent_kwargs())
     fo, fn = off.policy.features_extractor, on.policy.features_extractor
+    assert fo.flat_intent_head is None and fo.hypothesis_builder is None
     assert fo.alpha_head is None and fo.beta_head is None
-    assert fn.alpha_head is not None and fn.beta_head is not None
+    assert fn.flat_intent_head is not None and fn.hypothesis_builder is not None
+    assert fn.alpha_head is None and fn.beta_head is None                   # retired
     new = set(fn.state_dict()) - set(fo.state_dict())
-    assert new and all(k.startswith(("alpha_head.", "beta_head.")) for k in new), sorted(new)[:4]
+    assert new and {k.split(".")[0] for k in new} == {"flat_intent_head", "hypothesis_builder", "belief_head"}, \
+        sorted(new)[:4]
+    assert not any(k.startswith(("alpha_head.", "beta_head.")) for k in fn.state_dict())
     assert not (set(fo.state_dict()) - set(fn.state_dict())), "OFF must not have keys ON lacks"
 
 
 def test_a_real_policy_emits_a_normalized_alpha_over_seats_plus_switch():
+    """The consumers' α is the flat pointer's RE-EXPRESSION (`FlatConsumerOps.alpha`, logits over the K seats ·
+    OTHER_move · SWITCH) — one normalised distribution; β the six slots · OTHER_species. The blob α's stash is
+    never written."""
     from agents.model.identity_init_test import _build_real_policy
     m, _ = _build_real_policy(**_intent_kwargs())
     fe = m.policy.features_extractor.eval()
     dim = m.observation_space["observation"].shape[0]
     with torch.no_grad():
         fe({"observation": torch.rand(3, dim), "action_mask": torch.ones(3, 11)})
-    assert fe.last_alpha_logits.shape == (3, 7), "K=6 seats + SWITCH"
-    assert fe.last_beta_logits.shape == (3, 6)
-    p = torch.softmax(fe.last_alpha_logits, dim=-1)
-    assert torch.allclose(p.sum(-1), torch.ones(3), atol=1e-5)
-    assert fe.last_alpha_seat_nums.shape == (3, 6)
+    assert fe.last_alpha_logits is None and fe.last_beta_logits is None and fe.last_alpha_seat_nums is None
+    assert fe.last_flat_intent_logits.shape == (3, 6 + 8), "K=6 seats + OTHER_move + six slots + OTHER_species"
+    ops = fe.stash.flat_consumer_ops
+    assert ops.alpha.shape == (3, 6 + 2), "K=6 seats + OTHER_move + SWITCH"
+    assert ops.beta.shape == (3, 7), "six slots + OTHER_species"
+    # α IS the flat distribution re-expressed: its softmax puts the pointer's own mass on each seat and
+    # OTHER_move, and the whole switch mass (six slots + OTHER_species) on SWITCH — normalised over seats+switch
+    pf = torch.softmax(fe.last_flat_intent_logits.float(), dim=-1)
+    pa = torch.softmax(ops.alpha.float(), dim=-1)
+    assert torch.allclose(pa.sum(-1), torch.ones(3), atol=1e-5)
+    assert torch.allclose(pa[:, :7], pf[:, :7], atol=1e-5)
+    assert torch.allclose(pa[:, 7], pf[:, 7:].sum(-1), atol=1e-5)
+    assert fe.last_flat_intent.seat_nums.shape == (3, 6)
 
 
 def test_enabling_without_entity_seats_fails_loud():
@@ -217,22 +203,6 @@ def test_a_row_with_no_legal_switch_in_does_not_produce_nan():
         out = b(tok, c, mask)
     assert torch.isfinite(out[1]).all(), "an all-masked row must be finite, not all -inf"
     assert float(out[0, 0]) == float("-inf"), "a masked slot in a LIVE row is still unrepresentable"
-    tgt = torch.tensor([2, INTENT_IGNORE])
-    loss, m = intent_losses(None, None, out, tgt)
-    assert torch.isfinite(loss), f"beta loss went non-finite: {loss}"
-    assert m["opp_intent/beta_n_supervised"] == 1.0
-
-
-def test_a_target_on_a_masked_slot_would_be_inf_which_is_why_the_fold_masks_it():
-    """The SECOND non-finite case (measured: beta_loss=inf). beta's label slot is resolved on the
-    board at t+1; its logits come from the board at t. A switch-in that was UNREVEALED at t has no
-    addressable slot there, so the target lands on a -inf logit. This pins WHY the PPO fold must
-    drop unreachable targets — if this ever stops being inf, that guard can be revisited."""
-    logits = torch.tensor([[0.5, float("-inf"), 0.2]])
-    loss, _ = intent_losses(None, None, logits, torch.tensor([1]))
-    assert not torch.isfinite(loss), "an unreachable target must be non-finite — hence the guard"
-    loss2, _ = intent_losses(None, None, logits, torch.tensor([2]))
-    assert torch.isfinite(loss2)
 
 
 # ------------------------------------------- content-addressed believed-slot resolution
@@ -284,100 +254,6 @@ def test_content_addressing_is_INVARIANT_to_permuting_the_believed_slots():
     perm = torch.tensor([0, 1, 2, 5, 3, 4])
     moved = int(resolve_believed_slot_by_content(lg[:, perm], mask[:, perm], torch.tensor([77]))[0])
     assert perm[moved] == base, "the target must track the mon, not the index"
-
-
-def test_move_accuracy_is_not_charged_for_the_switch_decision_its_baseline_never_faces():
-    """`alpha_acc_move` vs `alpha_acc_move_baseline_argmax_w` is NOT a like-for-like comparison, and
-    reading it as one produced a wrong conclusion on a live run ("alpha is below its own baseline").
-
-    `pred` is an argmax over all K+1 classes, so on a MOVE row where alpha's top mass sits on SWITCH
-    it scores zero. The baseline is `(tgt == 0)` — a property of the TARGETS that never chooses
-    between moving and switching, so it cannot make that error at all.
-
-    This plants the pathological case: alpha ranks the moves PERFECTLY but always prefers SWITCH.
-    The raw metric reads 0.0 (looks like a head that cannot rank moves); the restricted metric reads
-    1.0 (the truth); and the switch-rate diagnostic reads 1.0, naming which defect it actually is.
-    """
-    k = 4                                     # 4 move seats + SWITCH at index 4
-    n = 6
-    logits = torch.full((n, k + 1), -5.0)
-    tgt = torch.tensor([0, 1, 2, 3, 0, 1])    # every row is a MOVE row
-    for i, t in enumerate(tgt):
-        logits[i, int(t)] = 1.0               # correct move is the best MOVE...
-    logits[:, k] = 9.0                        # ...but SWITCH always outranks it
-    _, m = intent_losses(logits, tgt, None, None)
-
-    assert m["opp_intent/alpha_move_kind_recall"] == pytest.approx(0.0), \
-        "axis 2 must show the pathology: it never once said 'a move'"
-    assert m["opp_intent/alpha_move_recall_top1"] == pytest.approx(1.0), \
-        "axis 4 must show the truth: given they moved, it ranks the moves perfectly"
-    assert m["opp_intent/alpha_pred_switch_rate"] == pytest.approx(1.0), \
-        "and this names the defect: it over-predicts switching"
-    # THE POINT: a single fused number cannot say both of those at once, which is why the old
-    # `alpha_acc_move` (kind AND target together) read 0.0 here and was mistaken for a head that
-    # could not rank moves.
-
-
-def test_the_restricted_metric_equals_the_raw_one_when_switch_is_never_predicted():
-    """No double-counting: with SWITCH ranked last the two metrics must agree, so `_restricted` is
-    a strict refinement rather than a different measurement."""
-    k = 4
-    logits = torch.full((5, k + 1), -5.0)
-    tgt = torch.tensor([0, 2, 1, 3, 2])
-    for i, t in enumerate(tgt):
-        logits[i, int(t)] = 1.0
-    logits[:, k] = -9.0                       # SWITCH never wins
-    _, m = intent_losses(logits, tgt, None, None)
-    # With SWITCH never predicted the kind decision is trivially right on every move row, so the
-    # two axes decouple cleanly: kind recall saturates and the target metric carries all the signal.
-    assert m["opp_intent/alpha_move_kind_recall"] == pytest.approx(1.0)
-    assert m["opp_intent/alpha_move_recall_top1"] == pytest.approx(1.0)
-    assert m["opp_intent/alpha_pred_switch_rate"] == pytest.approx(0.0)
-
-
-def test_all_four_prediction_axes_are_reported():
-    """The opponent's action is a KIND (move vs switch) and a TARGET given that kind, so there are
-    four things to be right about. Each needs its own number — a fused metric hides which one broke,
-    which is precisely what `alpha_acc_move` did before it was split."""
-    k = 4
-    logits = torch.randn(8, k + 1)
-    tgt = torch.tensor([0, 1, k, 2, k, 3, 0, k])          # a mix of moves and switches
-    beta_logits = torch.randn(8, 6)
-    beta_tgt = torch.tensor([INTENT_IGNORE, INTENT_IGNORE, 2, INTENT_IGNORE,
-                             4, INTENT_IGNORE, INTENT_IGNORE, 1])
-    _, m = intent_losses(logits, tgt, beta_logits, beta_tgt)
-    for axis, key in (("they switched -> KIND", "opp_intent/alpha_switch_recall"),
-                      ("they moved    -> KIND", "opp_intent/alpha_move_kind_recall"),
-                      ("they switched -> TARGET", "opp_intent/beta_recall_top1"),
-                      ("they moved    -> TARGET", "opp_intent/alpha_move_recall_top1")):
-        assert key in m, f"no metric for the axis '{axis}' ({key})"
-        assert 0.0 <= m[key] <= 1.0
-
-
-def test_move_kind_and_switch_prediction_rate_are_complements():
-    """`alpha_acc_move_kind` and `alpha_pred_switch_on_move_rows` partition the move rows, so they
-    must sum to 1 — a cheap invariant that catches either being computed on the wrong subset."""
-    k = 4
-    torch.manual_seed(3)
-    logits = torch.randn(12, k + 1)
-    tgt = torch.tensor([0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3])   # all MOVE rows
-    _, m = intent_losses(logits, tgt, None, None)
-    assert (m["opp_intent/alpha_move_kind_recall"]
-            + m["opp_intent/alpha_pred_switch_rate"]) == pytest.approx(1.0)
-
-
-def test_switch_precision_is_not_the_same_as_switch_recall():
-    """A head that shouts SWITCH at everything has PERFECT switch recall and terrible precision.
-    Only logging recall makes those indistinguishable — and the consumers act on what alpha ASSERTS,
-    so precision is the number that decides whether acting on it helps."""
-    k = 4
-    logits = torch.full((10, k + 1), -5.0)
-    logits[:, k] = 9.0                                   # always predicts SWITCH
-    tgt = torch.tensor([k, k, 0, 1, 2, 3, 0, 1, 2, 3])   # only 2 of 10 are real switches
-    _, m = intent_losses(logits, tgt, None, None)
-    assert m["opp_intent/alpha_switch_recall"] == pytest.approx(1.0), "caught every switch"
-    assert m["opp_intent/alpha_switch_precision"] == pytest.approx(0.2), "but cried switch 5x too often"
-    assert m["opp_intent/alpha_pred_switch_rate"] == pytest.approx(1.0)
 
 
 def test_opp_addressable_distinguishes_hidden_from_dead():

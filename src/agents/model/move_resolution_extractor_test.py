@@ -197,8 +197,13 @@ def test_gather_reads_our_hp_for_substitute(obs):
     x[0, list(VOLATILE_SLOTS).index("substitute") + 1464 + 14] = 0.0
     x[0, our * _POK + 67] = 0.2
     assert _facts(fe, x)[0, 0, MI["p_lands_stay"]].item() == 0.0
+    x[0, our * _POK + 67] = 1.0
+    full = _facts(fe, x)[0, 0, MI["p_lands_stay"]].item()
     x[0, our * _POK + 67] = 0.8
-    assert _facts(fe, x)[0, 0, MI["p_lands_stay"]].item() == pytest.approx(1.0)
+    # Above the 25% cost the read does not depend on our HP. Under X5 (production since the version break) it
+    # keeps a small HP-INDEPENDENT residual on this row (0.99545: the opponent's priced intent, not the HP gate),
+    # so the pin is "the full-HP read" (to fp32 rounding: 1.2e-7 apart on this row), not 1.0 (the blob read was 1.0).
+    assert abs(_facts(fe, x)[0, 0, MI["p_lands_stay"]].item() - full) < 1e-5 and full > 0.99
 
 
 # --------------------------------------------------------------------------------- refusals
@@ -210,7 +215,7 @@ def test_on_requires_the_intent_head():
 def test_on_builds_under_fixed_mass():
     """gen3_move_resolution_x5_v1: the family no longer refuses X5 — it reads the flat pointer (the fixed_mass forward,
     OTHER's pricing and the one-lever property are `move_resolution_x5_test.py`)."""
-    fe = _build(move_resolution="on", belief_tokens="fixed_mass")
+    fe = _build(move_resolution="on")
     assert fe.move_resolution_cell is not None and fe.flat_intent_head is not None
 
 
@@ -220,10 +225,12 @@ def test_an_unknown_mode_is_refused():
 
 
 # ------------------------------------------------------------------------------ version machinery
-def test_a_pre_v141_config_migrates_to_off():
-    from agents.model.model_version import _migrate_config
-    out = _migrate_config({"config_version": 139})
-    assert out["move_resolution"] == "off" and out["config_version"] >= 141
+def test_a_pre_v141_config_is_below_the_floor():
+    """The v141 migration branch (default "off") is UNREACHABLE since the X5 version break raised
+    MIGRATION_FLOOR to 144: a v139 config is refused as pre-generation, never migrated."""
+    from agents.model.model_version import ModelVersionError, _migrate_config
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 139})
 
 
 def test_check_compatible_gates_the_flag():

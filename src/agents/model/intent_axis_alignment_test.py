@@ -1,11 +1,12 @@
-"""α's seat axis and the op's candidate axis must be THE SAME axis, in the same order.
+"""The opponent-intent pointer's seat axis and the op's candidate axis must be THE SAME axis, in the same order.
 
-This is the prerequisite for step 6 and it is a load-bearing assumption nobody had checked.
-`opp_intent.match_seats_to_move_num`'s docstring says `seat_nums` are "the move nums the op's
-top-K actually holds (`op.last_topk_idx`)" — and the extractor in fact passes
-`entity_seats.last_cand[0]`. Those are two different objects that are BELIEVED to agree.
+This is the prerequisite for every α consumer and it is a load-bearing assumption. Since the X5 version break
+(v144) the intent readout is X5's FLAT pointer: its K move seats are the opponent active's move group
+(`fe.last_flat_intent.seat_nums`), and the op's top-K (`op.last_topk_idx`) is built from the SAME move group.
+Those are two different objects that are BELIEVED to agree. (The blob path's α read `entity_seats.last_cand[0]`
+— deleted with it.)
 
-Why it matters more than it looks. Step 6 weights the op's believed-move axis by α:
+Why it matters more than it looks. Every α consumer weights the op's believed-move axis by the pointer:
 
     reduced[b, j] = Σ_k α[b, k] · outcome[b, j, k]
 
@@ -23,7 +24,8 @@ import torch
 
 
 def _forward_with_intent():
-    """One real forward with the op + E4 seats + α all live. Returns the extractor."""
+    """One real forward with the op + E4 seats + the intent pointer all live (the shared toggle set has
+    the X5 opponent-belief family on). Returns the extractor."""
     from agents.model.identity_init_test import _build_real_policy
     model, _enc = _build_real_policy(
         damage_op=True, move_belief_mode="revealed", damage_matrices_outgoing=True,
@@ -41,27 +43,30 @@ def _forward_with_intent():
     return fe
 
 
-def test_alpha_seat_nums_are_the_ops_topk_in_the_same_order():
+def test_the_intent_pointers_seat_nums_are_the_ops_topk_in_the_same_order():
     """THE gate. Same move nums, same positions — not merely the same SET.
 
     A set-equality check would pass under a permutation, which is the failure mode that matters.
     """
     pytest.importorskip("sb3_contrib")
     fe = _forward_with_intent()
-    seat_nums = fe.last_alpha_seat_nums
+    fi = fe.last_flat_intent
+    seat_nums = fi.seat_nums if fi is not None else None
     topk = fe.damage_op.last_topk_idx if fe.damage_op is not None else None
+    # the blob α's stash is never written since the X5 break: a consumer reading it would read None
+    assert fe.last_alpha_seat_nums is None
     # NOT a skip. `_forward_with_intent` ASKS for `opp_intent` + `damage_topk_k=6` explicitly, so a
-    # build without an alpha head or an op top-K is a broken build, not an inapplicable one — and a
+    # build without the intent pointer or an op top-K is a broken build, not an inapplicable one — and a
     # skip here would silently retire THE gate for a named bug class that has bitten before
     # (`project_op_move_order_bugclass`).
     assert seat_nums is not None and topk is not None, (
         f"the config this test constructs did not produce what it asked for "
-        f"(alpha seat_nums={'present' if seat_nums is not None else 'MISSING'}, "
+        f"(flat pointer seat_nums={'present' if seat_nums is not None else 'MISSING'}, "
         f"op top-K={'present' if topk is not None else 'MISSING'}) — the axis-alignment gate "
         f"cannot run, so fix the build rather than skipping past it")
     assert seat_nums.shape == topk.shape, (seat_nums.shape, topk.shape)
     assert torch.equal(seat_nums.long(), topk.long()), (
-        "alpha's seat axis is NOT the op's candidate axis in the same order — an alpha-weighted "
+        "the intent pointer's seat axis is NOT the op's candidate axis in the same order — an α-weighted "
         "reduction over the op's move axis would pair every term with the wrong opponent move.\n"
         f"seats: {seat_nums[0].tolist()}\ntopk : {topk[0].tolist()}"
     )

@@ -23,7 +23,7 @@ update the topic doc in the same pass as the code.**
 | a stash surface, or the `torch.compile` refusal | [`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md) |
 | adding, demoting or deleting a model flag | [`designs/model/flag_registry_rules.md`](../../../designs/model/flag_registry_rules.md) + the GENERATED [`designs/flag_registry.md`](../../../designs/flag_registry.md) |
 | `model_version/`, a config bump, a deleted kwarg, a resume-immutable hparam, `--critic`'s gate | [`designs/model/versioning.md`](../../../designs/model/versioning.md) |
-| the α/β heads, their metrics, or a new α consumer | [`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md) |
+| the opponent-intent readout (X5's flat pointer re-expressed as α / β), its metrics, or a new α consumer | [`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md) |
 | the delivery graph, the architecture viewer, where the canonical architecture lives | [`designs/model/architecture_artifacts.md`](../../../designs/model/architecture_artifacts.md) |
 | a type annotation, or the mypy gate's scope | [`designs/model/typing.md`](../../../designs/model/typing.md) |
 
@@ -126,10 +126,9 @@ and rescale the trunk's; **(3)** every input goes through `RideAlongBatch.detach
 network (RND target, randomized prior) is a BUFFER (`freeze_to_buffers`), never a
 `requires_grad=False` parameter. **The RND VARIANTS** (`ridealong_rnd_variants`, v127,
 `RND_VARIANT_DECLS`) are built LAST in `RideAlongHeads`, each from its own private seed or a deep copy
-of base's predictor, so adding one never changes another head's init. Under `--belief-tokens
-fixed_mass` B is RE-BASED onto the X5 flat opponent pointer (`FlatOppEffectEnsemble`; labels from
-`flat_intent.flat_intent_targets`) — still detached, pinned bit-identical to learning by
-`ridealong_update_test`'s fixed_mass arm. They are excluded from
+of base's predictor, so adding one never changes another head's init. B reads X5's FLAT opponent
+pointer (`FlatOppEffectEnsemble`; labels from `flat_intent.flat_intent_targets`) — still detached, pinned
+bit-identical to learning by `ridealong_update_test`. They are excluded from
 `trainable_parameters()`: each has its own optimizer (`variant_parameters(name)`). The observation
 variants share base's target and normaliser, so they must never own copies of them. Detail: [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md).
 
@@ -170,7 +169,7 @@ Rules to preserve:
 | versioning, snapshots, the compile path, the critic modes | `model_version/` · `snapshot.py` · `compile_opponents.py` · `critic_mode.py` |
 | the DICT obs keys the forward reads beyond `observation` | `extra_obs_keys.py` |
 | X5's dex-row table (a hypothesised opponent mon's per-mon obs row, per species; the generator, the loader, the committed artifact) | `hypothesis_dex_rows.py` + `hypothesis_dex_rows.json` |
-| X5's T0 hypothesis builder (`--belief-tokens fixed_mass`: δ_θ, the fixed-size presence, the one stable ordering, OTHER, the active's move group; the set-BCE helpers) | `hypothesis_set.py` |
+| X5's T0 hypothesis builder (built with the opponent-belief family — the only belief representation: δ_θ, the fixed-size presence, the one stable ordering, OTHER, the active's move group; the set-BCE helpers) | `hypothesis_set.py` |
 | X5's hypothesis-token ENCODING (`PokemonEncoder` split exactly at its two first Linears: the species half once over the dex table, gathered; the row-level half per row; the rest per opponent slot — the per-row pass on `hypothesis_ctx` stays the definition its test compares against) | `hypothesis_encode.py` |
 | the STATIC per-mon encoder (`--token-encoding static`: S = the static identity from the set fields, D = the mon's own state, added, no board input; the X5 hypothesis tokens as the dex table encoded once and gathered) | `static_tokens.py` |
 | the STATIC arm's BOARD (`--token-encoding static`, stage 2: the side-relative SIDE / FIELD content the three board tokens project, the seat tuples, the per-mon op content `OpContent`) | `board_tokens.py` |
@@ -292,24 +291,32 @@ count (in order up to it: the species order), or None (every pair: the move grou
 declared `SetCuts` that reads its positions IN ORDER makes the declaration unsound —
 `tie_identity_integration_test` permutes every set prefix and requires log π bit-identical.
 
-## 🚨 X5 (`--belief-tokens fixed_mass`): every reduction over OPPONENT tokens declares its presence semantics
+## 🚨 X5's hypothesis tokens: every reduction over OPPONENT tokens declares its presence semantics
 
-Under `fixed_mass` a hidden opponent slot holds a hypothesis at presence π < 1 and OTHER_species
+**X5 is the ONLY belief representation** (the X5 version break, config v144: `--belief-tokens` and its `blob` path
+are DELETED — `model_version/version_break.py`, `designs/model/versioning.md`). The opponent-belief family
+(`opp_belief_slots` / `opp_intent`) builds it whenever it is on and REFUSES a configuration missing one of its
+requirements; there is no second belief path to keep byte-identical. `BeliefSlots`, `AlphaIntentHead` and
+`BetaSwitchHead` are still CONSTRUCTED (their init draws are part of the global RNG stream every later initial byte
+follows — the K9 golden pins them) and then discarded / retired: never delete a constructor that draws from the
+global RNG without re-recording what it moves.
+
+A hidden opponent slot holds a hypothesis at presence π < 1 and OTHER_species
 holds the tail's mass (`designs/endstate/design_x5_belief_tokens.md` §3.5). A reduction that reads
 them as whole mons is the "counts as a whole mon" bug, and it fails no shape check. **An
 EXPECTATION-type reduction (softmax attention, a pool, a weighted sum) takes the per-key log π**
 (`hypothesis_tokens.OppPresence` / `key_log_presence`; a FLOAT key mask in an `nn` pool, `−inf` on a
 masked key) **and gets its I1 / I2 test in `hypothesis_tokens_test.py`** (π = 0 ≡ masked, bit-exact;
 two copies at w/2 ≡ one at w). A max-type reduction is class M (presence-scaled max, §9 M2 = C). π is
-DETACHED wherever it weights the policy or critic (M10). Blob must stay byte-identical: every X5 read
-sits behind `hypothesis_builder is not None` with the blob code path untouched. A consumer that contracts
+DETACHED wherever it weights the policy or critic (M10). Every X5 read sits behind `hypothesis_builder is not
+None` (the belief-off ablation surface builds none of it). A consumer that contracts
 the FLAT POINTER's α / β (presence already inside them, through its log π bias) never multiplies π in
 again; its I1 / I2 live beside it (the move-resolution family: `move_resolution_x5_test.py`, where OTHER
 is PRICED — OTHER_move one seat per priority level, `move_resolution.split_other_move`; OTHER_species a
 7th mon on the renormalised tail).
 
 🚨 **A change to `PokemonEncoder`'s INPUT stitch must be mirrored in `hypothesis_encode.species_table` /
-`_cols`** (`gen3_x5_hyp_gather_v1`): fixed_mass computes the hypothesis tokens from the encoder's two first
+`_cols`** (`gen3_x5_hyp_gather_v1`): X5 computes the hypothesis tokens from the encoder's two first
 Linears split by COLUMN BLOCK, so a new input column, a reordered block or a new ROW-level input (anything
 not in the dex row) changes the split. `hypothesis_encode_test` compares it with the per-row pass at fp64
 and fails on drift; a new row-level input belongs in the per-row half, never the species table.
@@ -329,7 +336,7 @@ the base seat count is `TeamTransformer._total_tokens` (15 under static) and a b
 `static_board_tokens_test.py` fails on a side mix-up, a dropped count, a one-sided or missing op content, a
 `x` / `g` / `c4` seat regression and a readout that still reads the global token or `non_matchup_rest`.
 
-**The op's opponent-MON axis under `fixed_mass` reads `op.stash.x5` (an `OpRoster`), never a gate of
+**The op's opponent-MON axis under X5 reads `op.stash.x5` (an `OpRoster`), never a gate of
 its own.** Every opponent-slot kernel in `damage_op*.py` takes "alive" from `roster.alive`
 (`opp_addressable` — a hypothesis row reads HP 1.0, and no gate may depend on that), the per-mon
 candidates from `roster.move_order` / `move_w`, and (in an OTHER-mode pass) the tail-averaged tables
@@ -349,13 +356,13 @@ production arch with suppression OFF; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out, `G
 for the CUDA cells). The Inductor diagnosis:
 [`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md).
 
-🚨 **A second load-bearing spelling: fixed_mass's incoming channel maxima are `max_by_index`, not `amax`**
+🚨 **A second load-bearing spelling: X5's incoming channel maxima are `max_by_index`, not `amax`**
 (`gen3_fm_index_max_v1`, F-XC-4). `amax`'s backward divides by `Σ(x == amax)`; when Inductor RECOMPUTES
 `x` in the backward kernel and Triton's FMA contraction rounds it differently from the forward kernel,
 no element equals the saved max and the compiled gradient is 0/0 = NaN (CUDA, 41 parameters, the
-400-wide sweep only fixed_mass prices). `damage_op.max_by_index` gathers at the detached argmax: the
-same value, a scatter backward. It sits behind `fixed_moves is not None` so blob keeps `amax` (its
-compiled code byte-identical, §7.5); its argmax is K9(b)'s one `MAX_VALUE` EXACT site (the index may
+400-wide sweep only X5 prices). `damage_op.max_by_index` gathers at the detached argmax: the
+same value, a scatter backward. It sits behind `fixed_moves is not None` (the belief-off ablation keeps
+`amax`); its argmax is K9(b)'s one `MAX_VALUE` EXACT site (the index may
 only gather its own operand — `selection_sites_test` pins it). The class is LATENT at every other `amax`
 a compiled backward recomputes; the R1 gate's `NonFiniteGateArmError` names the next one, and the cure is
 the same spelling at that site, behind the arm that tripped it. Detail: `designs/training/compile_flags.md`.
@@ -458,6 +465,11 @@ FATALed. When the past value is unknown, the migration leaves the field `None` r
 1. Change `ARCH_SIGNATURE` in `model_version/constants.py` (e.g. `"gen3_attn_v1"` → `"gen3_lstm_v1"`)
 2. Old models get a clear arch-family error on load
 
+🚨 **The X5 VERSION BREAK (config v144, `gen3_x5_version_break_v1`) RAISED `MIGRATION_FLOOR` to 144**: every
+pre-break checkpoint (blob or fixed_mass) is refused at the floor with the belief-specific reason and runs PINNED
+(`model_version/version_break.py` — `LAST_BLOB_COMMIT`, `check_post_break`, the pickled `belief_tokens` judgment).
+The post-floor `if version < N` branches (v122–v143) are unreachable and left in place (legacy manifest R1 / L1).
+
 **When you DELETE an extractor kwarg** — the case with no automatic gate, and the one this project
 has silently got wrong five times. Every archived checkpoint keeps the deleted name pickled in
 `policy_kwargs["features_extractor_kwargs"]`, and **SB3 rebuilds the extractor from the ZIP, not
@@ -550,22 +562,22 @@ stripped on load by `snapshot._DEAD_POLICY_KWARGS_JUDGED` / `_DEAD_FEK_*` — a 
 pre-deletion zip TypeErrors (`play.py` and the prober's loaders sanitize; `snapshot.historical_load_kwargs`
 is the helper). Detail: [`designs/model/versioning.md`](../../../designs/model/versioning.md).
 
-## Opponent intent — `α` / `β` (`opp_intent.py`, v67)
+## Opponent intent — X5's FLAT POINTER, re-expressed as `α` / `β` (`flat_intent.py`; `opp_intent.py` keeps the shared constants)
 
 The build for one sentence the model could not express: *"they are likely to click **this**, so
-**this** is my answer."* `--opp-intent-coef>0` adds two SUPERVISED pointer heads:
+**this** is my answer."* `--opp-intent-coef>0` turns on the SUPERVISED opponent-intent readout, which since
+the X5 version break (v144) is X5's **flat pointer** (`gen3_x5_flat_pointer_v1`): ONE softmax over the
+opponent active's K move seats, OTHER_move, a switch to each of their six slots and OTHER_species, scored by
+one shared scorer plus each candidate's DETACHED log π. Its consumers read its RE-EXPRESSION
+(`fe.stash.flat_consumer_ops`, `flat_intent.FlatConsumerOps`): **`α`** over the K seats + OTHER_move + the
+switch mass, **`β`** over the six slots + OTHER_species. The blob path's `AlphaIntentHead` / `BetaSwitchHead`
+(two separate pointers) are constructed for their init draws and RETIRED by the policy; `last_alpha_logits` /
+`last_beta_logits` are never written. Why pointers, matching by canonical id, and why the label is shifted back
+one row before `get()` shuffles: [`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md).
 
-- **`α`** — a pointer over the opponent's K believed threat-move seats **plus a SWITCH option**.
-- **`β`** — given a switch, which of their mons comes in; masked to alive-and-non-active, because an
-  illegal switch-in must be UNREPRESENTABLE rather than merely unlikely.
-
-Why pointers and not a flat `Linear(ctx, K)`, matching by canonical id, and why the label is shifted
-back one row before `get()` shuffles:
-[`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md).
-
-**Supervision only:** both heads read a DETACHED input, so a null indicts the head's predictive
-power, not the policy. Structural + version-checked; requires `--entity-topk-seats>0` (fail-loud);
-OFF builds neither head.
+**Supervision only:** the pointer reads a DETACHED input (`opp_intent_grad_mode` `detached`), so a null
+indicts its predictive power, not the policy. Structural + version-checked; requires the whole belief family
+(X5's requirements, refused at build); OFF builds none of it.
 
 ### 🚨 Reading `opp_intent/*` — take the `_pool` suffix, not the bare key
 
@@ -579,8 +591,9 @@ decision tree rather than a player. Measured on gen-11: bot info gain **0.124 na
 
 🚨 **The bare key is a MIX, and the mix MOVES** — supervised rows ran 100% bot at 2M and ~7% from 6M
 on, so a pooled metric rises as the mix shifts and that rise is indistinguishable from the head
-improving. Any trend spanning the ramp is uninterpretable. `alpha_mask_rate` stays whole-batch on
-purpose: it is the BELIEF's coverage failure. Full metric inventory and the head→human path:
+improving. Any trend spanning the ramp is uninterpretable. `flat_mask_rate` and `other_label_rate` (the flat
+pointer's, `opp_intent/*`; the blob α's `alpha_mask_rate` left with it, v144) are the coverage reads: a choice the
+pointer's named candidates miss is an OTHER label, supervised, never masked. Full metric inventory and the head→human path:
 [`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md).
 
 #### 🚨 How a `β` slot is NAMED — two branches, and conflating them produced a wrong conclusion
@@ -606,9 +619,10 @@ conventions, and each exists because breaking it fails silently:
 1. **T1 produces, T2 consumes.** α is scored from the E4 seats and the CLS pools, both DOWNSTREAM
    of the op — so the op cannot reduce by α, and every consumer runs at the pointer stash. A
    "swap `_chan_max`'s `how=`" plan is unbuildable for that reason, not for want of a knob.
-2. **Read `last_alpha_logits` (the PUBLICATION), never a raw stash** — and take the
-   **UNRENORMALIZED move slice**. The missing SWITCH mass is the literally-correct statement that a
-   switching opponent applies no outcome this turn; renormalizing asserts they attacked.
+2. **Read the flat pointer's re-expression (`FlatConsumerOps.alpha` / `.beta`, built from the
+   PUBLICATION), never a raw stash** — and take the **UNRENORMALIZED move slice** (OTHER_move included as a
+   PRICED seat). The missing SWITCH mass is the literally-correct statement that a switching opponent applies
+   no outcome this turn; renormalizing asserts they attacked.
 3. **Align by CONSTRUCTION and fail loud on a width mismatch.** α's seats and the op's top-K are
    the SAME axis (`intent_axis_alignment_test`); broadcasting a mismatch would pair each α weight
    with the wrong opponent move while every shape check still passed — the named `op move-order`

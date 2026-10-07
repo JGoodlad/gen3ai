@@ -23,9 +23,12 @@ from agents.model.intent_conditional import IntentConditionalMoveCell
 from agents.model.model_version import (
     MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
 )
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
-_ON_KWARGS = dict(
+# The opponent-belief family is ON (the intent readout needs it): since the X5 version break (v144) that is
+# X5's hypothesis tokens + the flat pointer, with every requirement they carry (`x5_surface_fixture`).
+_ON_KWARGS = x5_kwargs(
     attend_unrevealed_opponents=True, move_belief_mode="revealed", move_prior_fusion=True,
     move_latent=True, damage_op=True, damage_outgoing=True, damage_matrices_incoming=True,
     damage_matrices_outgoing=True,

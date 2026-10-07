@@ -5,7 +5,7 @@ The forward pass resolves the game in the order the game itself resolves in:
     T0 RESOLVE   what is on the board?          species/move/spread/HP-type belief
     T1 REASON    what follows from that board?  the DamageOperator, the seats, the edges, attention
     T2 DECIDE    what will they do, and what     the post-attention readouts: belief aux, the pools,
-                 does that make my moves worth?  the α/β intent heads
+                 does that make my moves worth?  the flat opponent pointer (X5)
     T3 DELIVER   one contract, two pools         the assembler + the readouts off the pools
 
 Until now that ordering held **by construction** — it was a property of how `forward_internal`
@@ -24,8 +24,8 @@ spirit as the leak-safety assertions in `delivery_graph_test.py`.
 2. **PROVENANCE** — no tier-declared entry point receives, as an argument, a tensor whose STORAGE
    was produced by a strictly LATER tier. Keyed on `untyped_storage().data_ptr()` rather than on
    tensor identity, so it sees through `.detach()`, slices and other views — which matters, because
-   the α head's input is a detached slice and a "just read α at T0" regression would arrive
-   detached. Producing tensors are kept alive for the duration of the trace so a freed storage
+   the intent head's input is detached (`opp_intent_grad_mode=detached`) and a "just read α at T0"
+   regression would arrive detached. Producing tensors are kept alive for the duration of the trace so a freed storage
    cannot be recycled into a false positive.
 
 **What this CANNOT catch, stated plainly.** It is a check on DATA FLOW, not on meaning. It sees a
@@ -65,15 +65,16 @@ TIER_OF: Dict[str, int] = {
     # reach — which is why the DamageOperator (T1) priced unrevealed defenders from a STATIC usage
     # table for as long as it did. Declared T0, it is a resolve step the op consumes directly.
     "t0_species_prior": 0,
-    "belief_slots": 0,
     "move_belief": 0,
     "hp_type_belief_head": 0,
     "spread_belief": 0,
     # gen3_item_belief_v1 (v83): the hidden-item posterior — a resolve step exactly like the
     # species/spread/HP-type beliefs; the op (T1) consumes its p_cb publication.
     "item_belief_head": 0,
-    # gen3_x5_hypothesis_set_v1 (X5 U2, `--belief-tokens fixed_mass` only): δ_θ + the fixed-size
-    # presence + the hypothesis selection + OTHER read the T0 prior and PRE-trunk tokens only.
+    # gen3_x5_hypothesis_set_v1 (X5; built with the belief family since the X5 version break): δ_θ + the
+    # fixed-size presence + the hypothesis selection + OTHER read the T0 prior and PRE-trunk tokens only,
+    # and write the hidden opponent slots' tokens pre-trunk. (`belief_slots`, the blob path's T0 token,
+    # is never kept — constructed for its init draw only — so it holds no declaration.)
     "hypothesis_builder": 0,
     # T1 REASON — physics over the resolved state, then attention over tokens that carry it.
     "damage_op": 1,
@@ -86,20 +87,24 @@ TIER_OF: Dict[str, int] = {
     # T2 DECIDE — the post-attention readouts.
     #
     # `belief_head` sits here DELIBERATELY, and the T0/T2 split of the species belief
-    # (`BeliefSlots` injects unknown-mon tokens pre-trunk; `BeliefHead` reads refined tokens
-    # post-trunk) is legitimate rather than a second resolve path: `BeliefHead` is a
+    # (`hypothesis_builder` writes the hidden slots' hypothesis tokens pre-trunk; `BeliefHead` reads
+    # refined tokens post-trunk) is legitimate rather than a second resolve path: `BeliefHead` is a
     # TRAINING-ONLY side readout whose output is stashed for the aux loss and never fed forward.
     # Declaring it T2 is what records that fact — if it ever started feeding a T0/T1 consumer,
     # the provenance check would fail.
     "belief_head": 2,
     "cls_pool": 2,
+    # α / β: still CONSTRUCTED on a bare extractor (their init draws keep the global RNG stream) but
+    # RETIRED by the policy (`retire_superseded_intent_heads`) and never called — the flat pointer is
+    # the intent readout. Declared because a bare extractor still holds them as children.
     "alpha_head": 2,
     "beta_head": 2,
-    # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass): the flat opponent pointer — α / β's T2 slot.
+    # gen3_x5_flat_pointer_v1 (X5 U4): the flat opponent pointer — α / β's T2 slot, the intent readout.
     "flat_intent_head": 2,
     # gen3_intent_move_cell_v1: the POLICY-side alpha consumer — weights the op's T1 c2 operand
-    # stash by the T2 alpha publication into the pointer MOVE cell. T2 by the same logic as
-    # `alpha_head` itself: it answers "what are my moves worth", post-attention.
+    # stash by the T2 alpha publication (the flat pointer's α re-expression) into the pointer MOVE
+    # cell. T2 by the same logic as the pointer itself: it answers "what are my moves worth",
+    # post-attention.
     "intent_move_cell": 2,
     # gen3_intent_threshold_v1 (v84): the α-weighted threshold operator, at the pointer stash
     # beside intent_move_cell (T2). Its p_KO CRITIC half (`intent_threshold_value`, T3) was

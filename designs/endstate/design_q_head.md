@@ -262,8 +262,8 @@ every input stop-grad. The code is `agents/model/ridealong_heads.py`, and
   seat's concrete MOVE ID through the head's own embedding, plus one SWITCH column from the context.
   Each is centred under α (stop-grad). The label is the same advantage, at the column of the
   opponent's actual action (α's own label, `match_seats_to_move_num`; misses are masked). **This
-  is the simple pre-X5 parameterisation (the blob arm's); under `--belief-tokens fixed_mass` it is
-  RE-BASED onto §3's flat pointer (seats + switch targets + OTHER; X5 U4, `FlatOppEffectEnsemble`,
+  is the simple pre-X5 parameterisation (the blob arm's — DELETED with blob at the X5 version break, v144); under
+  X5 (the only belief representation since) it is RE-BASED onto §3's flat pointer (seats + switch targets + OTHER; X5 U4, `FlatOppEffectEnsemble`,
   `design_x5_belief_tokens.md` §3.7 "As built (U4)") — OTHER rows are labels there and switch targets are
   told apart (2026-10-04).** The blob parameterisation's declared limit: a move outside the believed seats is not a
   label, so B is conditional on the opponent choosing a listed option. There is no OTHER mass, and

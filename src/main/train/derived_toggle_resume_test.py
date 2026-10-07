@@ -5,8 +5,10 @@ checkpoint's `model_config.json` to carry everything the umbrella wrote. Until c
 carry `opp_intent_coef` — the dose that ENABLES the derived `opp_intent` toggle — so the restarted child
 resolved it to 0.0, built no intent heads and died at `check_compatible`
 (`[ModelVersion] FATAL: opp_intent mismatch: saved=True, current=False`; the F-LG-6 launcher run,
-2026-09-30, `~/gen3ai_archive/cutover_prep/fresh2`). v125 records it; a pre-v125 checkpoint takes the
-dose from its run's `metadata.json:cli_args` as a MIGRATION, or is REFUSED — never guessed.
+2026-09-30, `~/gen3ai_archive/cutover_prep/fresh2`). v125 records it. A pre-v125 checkpoint used to take
+the dose from its run's `metadata.json:cli_args` as a MIGRATION (`config.inherit_derived_enable_coefs`);
+since the X5 version break raised MIGRATION_FLOOR to 144 every such checkpoint is REFUSED before that
+recovery could run (a launch exits FATAL_CONFIG with the pinned fix, a typed dose included).
 
 (a) is the class guard: every key `apply_production_arch` can write onto the namespace is a
 `ModelVersion` field. (b) is the end-to-end restart. Every test here fails on revert.
@@ -111,7 +113,7 @@ def test_a_launcher_restart_of_a_fresh_arch_production_run_resolves_back_to_its_
     assert BY_NAME["opp_intent"].source_arg == "opp_intent_coef"
 
 
-# ── the pre-v125 migration: cli_args, else REFUSE ───────────────────────────────────────────────
+# ── a pre-v125 checkpoint: below the X5 version break's floor, REFUSED ──────────────────────────
 def _pre_v125(version: ModelVersion) -> dict:
     d = dataclasses.asdict(version)
     d.pop("opp_intent_coef")
@@ -119,15 +121,15 @@ def _pre_v125(version: ModelVersion) -> dict:
     return d
 
 
-def test_a_pre_v125_config_migrates_OFF_to_0_and_leaves_ON_unrecorded():
+def test_a_pre_v125_config_is_refused_at_the_floor():
+    """The v125 branch (OFF ⇒ 0.0, ON ⇒ unrecorded) is unreachable since MIGRATION_FLOOR rose to 144."""
+    from agents.model.model_version import ModelVersionError
     from agents.model.model_version.migrations import _migrate_config
 
-    base = dataclasses.asdict(_saved_version(_resolve(_FRESH)))
-    for on, want in ((False, 0.0), (True, None)):
-        d = dict(base, opp_intent=on, config_version=124)
-        d.pop("opp_intent_coef")
-        out = _migrate_config(d)
-        assert out["config_version"] >= 125 and "opp_intent_coef" in out and out["opp_intent_coef"] == want
+    for on in (False, True):
+        d = dict(_pre_v125(_saved_version(_resolve(_FRESH))), opp_intent=on)
+        with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+            _migrate_config(d)
 
 
 def _restart_argv(ckpt, run):
@@ -137,21 +139,20 @@ def _restart_argv(ckpt, run):
     return resume_child_args(list(_FRESH), ckpt, run)[0]
 
 
-def test_a_pre_v125_resume_takes_the_dose_from_cli_args(tmp_path, capsys):
-    fresh = _resolve(_FRESH + ["--opp-intent-coef", "0.07"])
-    run, ckpt = _run_dir(tmp_path, _pre_v125(_saved_version(fresh)), cli_args={"opp_intent_coef": 0.07})
-    restarted = _resolve(_restart_argv(ckpt, run))
-    assert restarted.opp_intent_coef == 0.07
-    assert "MIGRATION" in capsys.readouterr().out
-
-
-def test_a_pre_v125_resume_with_no_recorded_dose_is_REFUSED_and_a_typed_one_wins(tmp_path):
+@pytest.mark.parametrize("cli_args,typed", [
+    ({"opp_intent_coef": 0.07}, []),                  # the dose the old migration recovered from cli_args
+    (None, []),                                        # no recorded dose (the old UnrecordedEnableCoef case)
+    (None, ["--opp-intent-coef", "0.05"]),             # a TYPED dose does not rescue a pre-break parent
+])
+def test_a_pre_v125_resume_is_REFUSED_with_the_pinned_fix(tmp_path, capsys, cli_args, typed):
+    from agents.model.model_version.version_break import LAST_BLOB_COMMIT
     from main.exit_codes import TrainExitCode
 
-    fresh = _resolve(_FRESH)
-    run, ckpt = _run_dir(tmp_path, _pre_v125(_saved_version(fresh)))          # no metadata.json at all
+    fresh = _resolve(_FRESH + ["--opp-intent-coef", "0.07"])
+    run, ckpt = _run_dir(tmp_path, _pre_v125(_saved_version(fresh)), cli_args=cli_args)
     with pytest.raises(SystemExit) as e:
-        _resolve(_restart_argv(ckpt, run))
+        _resolve(_restart_argv(ckpt, run) + typed)
     assert e.value.code == int(TrainExitCode.FATAL_CONFIG)
-    typed = _resolve(_restart_argv(ckpt, run) + ["--opp-intent-coef", "0.05"])
-    assert typed.opp_intent_coef == 0.05
+    out = capsys.readouterr().out
+    assert "PRE-GENERATION" in out and LAST_BLOB_COMMIT[:12] in out
+    assert "MIGRATION" not in out                     # the cli_args recovery never ran

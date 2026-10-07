@@ -41,6 +41,7 @@ from agents.model.pair_outcome import (
     PAIR_OUTCOME_COORDS, PAIR_OUTCOME_IDX, PairOutcomeMoveCell, alpha_belief_mean, pair_alpha,
     reduce_pair_in,
 )
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 _BASE_KWARGS = dict(
@@ -580,10 +581,15 @@ def test_on_runs_WITHOUT_the_intent_head_and_uses_the_R1_fallback():
 
 
 def test_on_runs_WITH_the_intent_head():
-    fe, layout = _build(**_ON_KWARGS, opp_intent=True)
-    assert fe.alpha_head is not None
+    """With the opponent-belief family on (since the X5 version break: X5's hypothesis tokens + the
+    FLAT pointer, `x5_kwargs`), α is the pointer's re-expression (`FlatConsumerOps.alpha`), not the R1
+    rung: the cell consumes the flat ops' grid."""
+    fe, layout = _build(**x5_kwargs(**_ON_KWARGS))
+    assert fe.flat_intent_head is not None
     pi, vf = fe(_obs(layout))
     assert pi.shape[0] == 3
+    ops = fe.stash.flat_consumer_ops
+    assert ops is not None and ops.pair_in is not None and ops.alpha is not None
 
 
 def test_requires_damage_op():
@@ -603,9 +609,8 @@ def test_missing_topk_stash_fails_loud_rather_than_contributing_zeros():
 def test_it_stacks_with_the_other_alpha_cells():
     """All four move-cell consumers on at once must build and run at the summed width — the
     ede5a88 lesson applied to the pointer stash."""
-    fe, layout = _build(**_ON_KWARGS, opp_intent=True, intent_threshold=True,
-                        intent_move_cell=True,
-                        value_entity_pool=True)
+    fe, layout = _build(**x5_kwargs(**_ON_KWARGS, intent_threshold=True, intent_move_cell=True,
+                                    value_entity_pool=True))
     pi, vf = fe(_obs(layout))
     assert pi.shape == vf.shape
     assert fe.last_pointer_inputs.move_cells.shape[2] == fe.pointer_move_cell_dim

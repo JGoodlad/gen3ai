@@ -12,7 +12,9 @@ CROSSED iff ``t − boundary ≥ 1e-9`` (rule 8: a t within 1e-9 of the boundary
 ``margin`` defaults to 0 (superiority: "(1) improves past that boundary"). The one-sided p-value is
 reported beside it, never the decision.
 
-The inputs are the readers' JSON files (``python -m main.belief_roles read``); a comparison is REFUSED
+The inputs are the readers' JSON files (``python -m main.belief_roles read``) — FINISHED artifacts, so a
+control group of BANKED blob reads (written before the X5 version break, when the reader still read a
+blob checkpoint) compares with X5 reads made today; a comparison is REFUSED
 when its runs were read on different banks, role sets, reader schemas or strata, when a checkpoint
 appears twice, when a group mixes arms (or does not hold the arm its side declares), when either arm has
 fewer than 2 runs, when a metric is missing in a run, or when both arms have zero variance.

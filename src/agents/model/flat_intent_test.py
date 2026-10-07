@@ -281,7 +281,6 @@ def fm():
     from agents.model.hypothesis_set_test import _obs_from_golden, _unperturbed_learner
     from main.train.production_args import production_args
     a = production_args()
-    a.belief_tokens = "fixed_mass"
     m = _unperturbed_learner(a)
     pol = copy.deepcopy(m.policy).eval()
     fe = pol.features_extractor
@@ -405,16 +404,20 @@ def test_the_flat_loss_trains_the_head_and_never_delta_theta(fm):
 
 
 @pytest.mark.integration
-def test_blob_keeps_alpha_beta_and_builds_no_flat_pointer():
+def test_production_builds_the_flat_pointer_and_the_alpha_beta_readout_is_gone():
+    """The X5 version break deleted the blob path's α / β readout: on a built policy the heads are retired,
+    the forward publishes the flat pointer, and no α / β stash is written. FAILS if α / β come back."""
     from agents.model.hypothesis_set_test import _obs_from_golden, _unperturbed_learner
     from main.train.production_args import production_args
     m = _unperturbed_learner(production_args())
     fe = m.policy.features_extractor
-    assert fe.flat_intent_head is None and fe.alpha_head is not None and fe.beta_head is not None
-    assert not any(".flat_intent_head." in k for k in m.policy.state_dict())
+    assert fe.flat_intent_head is not None and fe.alpha_head is None and fe.beta_head is None
+    assert not any(k.startswith(("features_extractor.alpha_head.", "features_extractor.beta_head."))
+                   for k in m.policy.state_dict())
     with torch.no_grad():
         fe(_obs_from_golden(8))
-    assert fe.last_flat_intent_logits is None and fe.last_alpha_logits is not None
+    assert fe.last_flat_intent_logits is not None
+    assert fe.last_alpha_logits is None and fe.last_beta_logits is None
 
 
 # ------------------------------------------------------------------------------ the fullgraph trace

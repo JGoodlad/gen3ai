@@ -76,14 +76,17 @@ _OFF = {
 
 
 def _current_config() -> dict:
-    """A CURRENT config as a v130 writer recorded it: today's fields + every retired field OFF."""
+    """A CURRENT config carrying every retired field OFF, as every v121+ writer recorded them — stamped at
+    `MIGRATION_FLOOR` (the X5 version break, v144, floors every older config; the POP is version-INDEPENDENT,
+    so a stale key at the floor is exactly the case it exists for)."""
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
     cfg = json.loads(ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
                      .to_json())
     cfg.update(_OFF)
-    cfg["config_version"] = 130
+    from agents.model.model_version import MIGRATION_FLOOR
+    cfg["config_version"] = MIGRATION_FLOOR
     return cfg
 
 
@@ -94,7 +97,7 @@ def test_the_table_covers_exactly_the_recorded_off_set():
     assert all(f.startswith("--") for f in RETIRED_FIELD_FLAGS.values())
 
 
-def test_a_v130_config_migrates_to_the_current_schema_and_stays_constructible():
+def test_a_config_carrying_every_retired_field_migrates_to_the_current_schema_and_stays_constructible():
     cfg = _current_config()
     out = _migrate_config(dict(cfg))
     assert not (set(out) & set(RETIRED_FIELDS)), "a retired field survived the migration"

@@ -121,7 +121,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         from agents.model.features_extractor import PointerNativeActionHead  # local: avoid import cycle
         fe = cast("Gen3FeaturesExtractor", self.features_extractor)
         # X5 U4 (fixed_mass): retire α / β AFTER the ortho-init draws above and BEFORE the optimizer
-        # below (`ExtractorApi.retire_superseded_intent_heads`); blob: a no-op.
+        # below (`ExtractorApi.retire_superseded_intent_heads`); without the flat pointer: a no-op.
         if hasattr(fe, "retire_superseded_intent_heads"):
             fe.retire_superseded_intent_heads()
         # gen3_policy_readout_trunk_v1 (`--policy-readout trunk`, audit F2): RETIRE the flat policy tower

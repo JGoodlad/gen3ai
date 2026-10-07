@@ -24,12 +24,15 @@ import numpy as np
 import torch
 
 from agents.model.features_extractor import Gen3FeaturesExtractor
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
-_ALL_ROUTES_ON = dict(
+# The opponent-belief family is ON — since the X5 version break (v144) X5's hypothesis tokens, with every
+# requirement they carry (`x5_surface_fixture.x5_kwargs`).
+_ALL_ROUTES_ON = x5_kwargs(
     attend_unrevealed_opponents=True, move_belief_mode="revealed", move_prior_fusion=True,
     move_latent=True, damage_op=True, damage_outgoing=True, damage_matrices_incoming=True,
-    damage_topk_k=6, entity_topk_seats=6, opp_intent=True, opp_belief_slots=True,
+    damage_topk_k=6, entity_topk_seats=6,
     value_entity_pool=True, value_entity_pool_full=True, intent_threshold=True,
 )
 # Flags that gate a value route (must stay in sync with _value_pooled_routes — pinned below by

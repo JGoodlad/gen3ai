@@ -16,7 +16,7 @@ Sweep coverage: production (designs/production_config.json), all-routes-on (the
 `value_route_gradient_test._ALL_ROUTES_ON` shape), minimal (bare flags), and targeted
 combos toggling each width-relevant flag independently — the hidden-opp belief pool
 (`opp_belief_cls_k`, at two different k), the seed window (`damage_op`), and the
-width-NEUTRAL families (opp_belief_slots, value_entity_pool[_full], the intent_* cells,
+width-NEUTRAL families (the X5 opponent-belief family, value_entity_pool[_full], the intent_* cells,
 value_threat_inject, history_events) that must move nothing.
 """
 
@@ -30,6 +30,7 @@ import torch
 from agents.model.arch_constants import D_MODEL
 from agents.model.features_extractor import Gen3FeaturesExtractor, compute_projection_widths
 from agents.model.value_route_gradient_test import _ALL_ROUTES_ON
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from utils.git import get_repo_root
 
@@ -67,7 +68,8 @@ _COMBOS = {
     "damage_op_min": dict(_DAMAGE_OP_MIN),
     "damage_op_plus_pool": dict(_DAMAGE_OP_MIN, opp_belief_cls_k=6),
     # -- width-neutral families (each must move NEITHER width off its base).
-    "belief_slots_only": dict(attend_unrevealed_opponents=True, opp_belief_slots=True),
+    # the opponent-belief family = X5's hypothesis tokens + the flat pointer since the version break (v144)
+    "belief_family_x5": x5_kwargs(attend_unrevealed_opponents=True),
     "value_entity_pool_no_op": dict(value_entity_pool=True, value_entity_pool_full=True),
     "value_threat_inject": dict(_DAMAGE_OP_MIN, value_threat_inject=True),
     "history_events": dict(history_events=True),

@@ -106,7 +106,7 @@ changes learning. `agents/model/ridealong_heads.py`; flags `--ridealong-ensemble
 | RND | the RAW observation, per-dimension running mean / variance, clipped ±5 | a frozen random net's output | MSE (one visit per rollout row) |
 | A (K) | `stash.pointer_inputs` + `value_pooled` (`QWinProbHead`'s shape) | the GAE advantage of the action TAKEN | MSE of the π-centred member at the taken action |
 | B (K) | α's seat move IDs (own embedding) + `value_pooled`; SWITCH from the context | the same advantage | MSE of the α-centred member at the opponent's actual action (α's own `match_seats_to_move_num` target; misses masked) |
-| B (K), `--belief-tokens fixed_mass` (X5 U4) | the FLAT pointer's columns: seat move IDs, the switch targets' SPECIES (revealed or hypothesis), learned OTHER_move / OTHER_species vectors (`FlatOppEffectEnsemble`) + `value_pooled` | the same advantage | MSE of the member centred under the FLAT α at `flat_intent_targets`' column — OTHER rows included (a belief miss is a label), switch targets told apart |
+| B (K), X5 U4 (production) | the FLAT pointer's columns: seat move IDs, the switch targets' SPECIES (revealed or hypothesis), learned OTHER_move / OTHER_species vectors (`FlatOppEffectEnsemble`) + `value_pooled` | the same advantage | MSE of the member centred under the FLAT α at `flat_intent_targets`' column — OTHER rows included (a belief miss is a label), switch targets told apart |
 
 **All four heads train on PPO's FIRST epoch only** (`RIDEALONG_EPOCHS` = 1): each rollout row once,
 scored before the step that trains on it. On the GPU learner benchmark, training them on all ten

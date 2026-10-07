@@ -113,12 +113,12 @@ class EntityMoveSeats(torch.nn.Module):
                 x5_roster: Optional[Any] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         """→ `(seats [B, 4+K, d_model], pad [B, 4+K] bool)` (pad True = masked, the key-mask sense).
 
-        `fixed_moves` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only — a
+        `fixed_moves` (gen3_x5_belief_tokens_v1, X5 only — a
         `hypothesis_tokens.FixedMassMoves`): the E4 seats are the move group's seats in THE one order
         (revealed first, then the top unrevealed by π_m; a revealed Hidden Power's seat rendered as its
         typed mixture), each seat's belief channel its DETACHED presence, a seat that carries no mass
         key-masked; the opponent ACTIVE's E5 seat is OTHER_move (`other_move_cells`), masked iff
-        OTHER_move is. None (blob): byte-identical.
+        OTHER_move is. None (the belief family off): nothing added.
 
         `x5_roster` (U3 part 3, fixed_mass only — a `hypothesis_tokens.OpRoster`): every BENCH mon's E5
         seat is presence-aware — its tail is its moves beyond rank K of ITS one order over its fixed-mass

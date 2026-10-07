@@ -1,12 +1,14 @@
 """The ride-along reader end to end on a handful of banked battles (integration: the Rust core
-re-encodes the bank, a real checkpoint is loaded from the MAIN checkout's ``models/``).
+re-encodes the bank; the checkpoint is a FRESH production one saved under the test's tmp dir).
 
-Skips cleanly when there is no ``models/`` archive or the checkpoint is absent (a CI box, a fresh
-clone). Teeth: the heads' provenance is stated, the forward's V equals the policy-spectrum path's
-critic read on the same rows, feature-RND's drift of a checkpoint against ITSELF is exactly zero,
-fresh ``fast`` / ``decay`` RND variants score bit-identically to base (they ARE base at init) and
-fresh heads are their own identification floor, and a bare run directory / an output under
-``models/`` are refused.
+Why fresh: every archived checkpoint in ``models/`` predates the X5 version break (config v144) and is
+refused by this code (it runs PINNED to its own commit), so no archived checkpoint is readable at HEAD
+until a post-break run exists. A fresh production checkpoint carries no ride-along heads, so the reader
+attaches FRESH ones — the ``fresh-untrained`` branch below. Teeth: the heads' provenance is stated, the
+forward's V equals the policy-spectrum path's critic read on the same rows, feature-RND's drift of a
+checkpoint against ITSELF is exactly zero, fresh ``fast`` / ``decay`` RND variants score bit-identically
+to base (they ARE base at init) and fresh heads are their own identification floor, and a bare run
+directory / an output under ``models/`` are refused.
 """
 
 from __future__ import annotations
@@ -19,20 +21,26 @@ import pytest
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
-CKPT_REL = "ai_v14_07_g0p_k2/final_model.zip"
 N_BATTLES = 12
 
 
 @pytest.fixture(scope="module")
-def ckpt() -> Path:
-    from utils.paths import main_models_dir
+def ckpt(tmp_path_factory) -> Path:
+    """A fresh production (X5) checkpoint + its run-level ``model_config.json``."""
+    from agents.model.snapshot import arch_toggles_from_model, current_model_version
+    from agents.observation.state_encoder import load_mappings
+    from agents.training.rust_eval import parity as PAR
+    from main.fresh_checkpoint import build_fresh_model
+    from main.train.production_args import production_args
 
-    md = main_models_dir()
-    if md is None:
-        pytest.skip("no models/ archive (main_models_dir() is None)")
-    p = md / CKPT_REL
-    if not p.exists():
-        pytest.skip(f"checkpoint {p} is absent")
+    run = tmp_path_factory.mktemp("ridealong_read") / "run_x5"
+    (run / "checkpoints").mkdir(parents=True)
+    with PAR.declared_torch_state(1):
+        model, _, _ = build_fresh_model(7, args=production_args())
+        p = run / "checkpoints" / "final_model.zip"
+        model.save(str(p))
+    (run / "model_config.json").write_text(
+        current_model_version(load_mappings(), **arch_toggles_from_model(model)).to_json())
     return p
 
 
@@ -48,7 +56,8 @@ def test_reader_smoke_end_to_end(ckpt, tmp_path):
     assert r["schema"] == "gen3_ridealong_read_v1"
     assert r["heads"] in ("trained", "fresh-untrained")
     assert r["reencode"]["obs_as_recorded"] is True
-    assert r["own_truth_continuation"] == "K2final"
+    # a fresh checkpoint is no truth continuation's greedy policy: meter (iv) has no own truth
+    assert r["own_truth_continuation"] is None
     assert r["bank"]["battles"] == N_BATTLES
     u = r["i_uncertainty_vs_v_error"]["all"]
     assert {"ens_std", "ens_logit_std", "rnd_z", "ref_v_entropy"} <= set(u)
@@ -111,7 +120,8 @@ def test_refusals(ckpt, tmp_path):
     with pytest.raises(SystemExit, match="REFUSED"):
         main(["--checkpoint", str(ckpt.parent), "--out", str(tmp_path)])
     md = main_models_dir()
-    assert md is not None
+    if md is None:
+        pytest.skip("no models/ archive (main_models_dir() is None) — the models/ refusal needs one")
     with pytest.raises(SystemExit, match="REFUSED"):
         main(["--checkpoint", str(ckpt), "--out", str(md / "ridealong_read_should_not_exist")])
     assert not (md / "ridealong_read_should_not_exist").exists()

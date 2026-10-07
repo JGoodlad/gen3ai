@@ -23,10 +23,11 @@ def test_one_update_reproduces_the_recorded_golden_exactly():
         + "\nIf that is intended, re-record deliberately (module docs): "
           "python -m agents.training.learner_golden record --reason \"...\" under EVERY torch build.")
     # the production loss surface is live, not vacuously matched: every production term logged a loss
-    for k in ("win_prob/loss", "belief/aux_loss", "belief/move_loss", "belief/movelatent_loss",
+    # (X5: the hidden-team belief is the set BCE, the intent is the flat pointer — `belief/aux_loss` and
+    # `opp_intent/alpha_loss` / `beta_loss` were the deleted blob path's)
+    for k in ("win_prob/loss", "belief/set_aux_loss", "belief/move_loss", "belief/movelatent_loss",
               "belief/spread_loss", "belief/natureev_loss", "belief/hptype_loss", "belief/item_loss",
-              "opp_intent/alpha_loss", "opp_intent/beta_loss", "train/policy_gradient_loss",
-              "train/entropy_loss"):
+              "opp_intent/flat_loss", "train/policy_gradient_loss", "train/entropy_loss"):
         assert k in now["losses"], f"{k} was not logged — a production term did not fold on the pinned buffer"
 
 
@@ -50,6 +51,21 @@ def test_a_missing_torch_build_fails_it_never_records(monkeypatch):
     with pytest.raises(L.LearnerGoldenError, match="no learner golden recorded for torch 0.0.0"):
         L.check()
     assert L.GOLDEN_PATH.read_bytes() == before
+
+
+def test_the_default_slot_is_the_fixed_mass_entry_moved_verbatim():
+    """The X5 version break MOVED the fixed_mass arm's committed entry into the default slot without
+    re-recording it: the init / post hashes are the pre-break arm's (`version_break_identity_2026-10-07`'s
+    reference, captured at 26131c0c), the buffer is the arm's seed-18 rollout and the blob slot is gone.
+    FAILS if anyone re-records the golden without a new reason row, or restores an arm block."""
+    g = L.load_golden()
+    e = g["entries"]["2.8.0+cu126"]
+    assert e["init_params_sha256"] == "47c4c5fdde7b4dc171db6f758eda0da097ab2b44224e61fc44fd67a736d92f69"
+    assert e["post_params_sha256"] == "70a26bfc2cfb2ed37f6a951ce791e4c49271c0f4bce84a4a68f96f2e8d977750"
+    assert g["buffer_sha256"] == "4b48eaf0a08c0382b655c79bc8e27aea5c3980f7594856479ab1056a08c66539"
+    assert g["perturb"] == "name_keyed" and "arms" not in g
+    assert L.RECORD_RUN_SEED == 18
+    assert "MOVED VERBATIM" in g["history"][-1]["reason"]
 
 
 def test_record_requires_a_reason():

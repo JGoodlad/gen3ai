@@ -116,13 +116,18 @@ def test_the_migration_floor_did_not_move():
     HISTORY" comment).
 
     The history is pinned against SIGNATURE_FIRST_VERSION (append-only), so each raise stays TRUE
-    as history; the live floor is pinned so the NEXT raise fires this tripwire again."""
+    as history; the live floor is pinned so the NEXT raise fires this tripwire again.
+
+    FIRED AGAIN at the X5 VERSION BREAK (`gen3_x5_version_break_v1` → 144, 2026-10-07). FOLLOW-UP OWED:
+    this time the now-unreachable v122–v143 branches were LEFT in place on purpose (the break's scope;
+    their deletion + archiving is legacy-manifest unit R1 / L1) — `_migrate_config` marks them UNREACHABLE."""
     assert SIGNATURE_FIRST_VERSION["gen3_frame_deletion_v1"] == 90
     assert SIGNATURE_FIRST_VERSION["gen3_event_semantics_v1"] == 91
     assert SIGNATURE_FIRST_VERSION["gen3_critic_route_wave_v1"] == 96
     assert SIGNATURE_FIRST_VERSION["gen3_event_record_v2"] == 121
-    assert MIGRATION_FLOOR == 121
-    assert MODEL_CONFIG_VERSION >= 121
+    assert SIGNATURE_FIRST_VERSION["gen3_x5_version_break_v1"] == 144
+    assert MIGRATION_FLOOR == 144
+    assert MODEL_CONFIG_VERSION >= 144
 
 
 # ------------------------------------------------------------------------ the pickled-kwargs side

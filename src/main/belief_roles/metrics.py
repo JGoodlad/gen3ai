@@ -6,8 +6,10 @@ them are DESCRIPTIVE only (conditional on the run and the bank; Field & Welsh 20
 inference.
 
 **(1) Opponent-intent log loss — the ADOPTION GATE is the CONDITIONAL form (Amendment 3(b), §7.7(b)),
-``intent_logloss_conditional``:** per row E_row = blob's named set (:mod:`.eset`; a blob run's OWN; a
-fixed_mass run is scored on EVERY blob run of the look and its value is the MEAN over those sets), and on the rows whose realised event e ∈ E_row the loss is
+``intent_logloss_conditional``:** per row E_row = a blob run's named set (:mod:`.eset`; a blob run was
+scored on its OWN — those reads are banked, the blob read arm is deleted; an X5 run is scored on EVERY blob
+run of the look and its value is the MEAN over those sets), and on the rows whose realised event e ∈ E_row
+the loss is
 ``−log [P(e) / Σ_{e′ ∈ E_row} P(e′)]`` with the arm's probabilities RENORMALISED over E_row — same rows,
 same support, both arms, so neither blob's selection on the outcome (its misses dropped) nor its
 structural over-certainty (all mass on its named set, while fixed_mass reserves mass for OTHER) moves
@@ -26,8 +28,9 @@ over the pooled per-species indicators on FIXED bins; class-wise mean calibratio
 for the most frequent true species.
 
 **(3) OTHER calibration (R4)** — OTHER = Σ_tail π over the species past the k-th in the ONE stable order
-(for ``fixed_mass`` the arm's own OTHER, checked equal to the model's ``other_mass``; for ``blob`` and the
-prior, the same construction on their presence — a DERIVED OTHER, so the three columns are comparable)
+(for ``fixed_mass`` — the X5 arm, the only one read since the version break — the arm's own OTHER,
+checked equal to the model's ``other_mass``; for the prior, and for ``blob`` in the banked pre-break
+reads, the same construction on their presence — a DERIVED OTHER, so the columns are comparable)
 against the realised count of true unseen species in the tail, by r; reliability over OTHER-mass bins
 and the Spiegelhalter-type Z = Σ(N − M) / √Σ π(1 − π).
 
@@ -37,7 +40,7 @@ verdict); R3: on the substitute pairs, the rate at which BOTH have π ≥ 0.25 a
 
 **Rule 8** (every exclusion counted in the output): a row whose selection the read depends on sits
 within 1e-6 of a boundary (``fixed_mass``: ``near_tie_rows``; the derived OTHER: the k-th / (k+1)-th π
-gap; ``blob``'s intent read: its E4 seat cut) is excluded from that read; R3 excludes a row where either
+gap; a banked ``blob`` read's intent read: its E4 seat cut) is excluded from that read; R3 excludes a row where either
 π lies in [0.245, 0.255]. A row whose labels do not count k true unseen species inside V is excluded from
 (2)–(4) and counted (``label_mismatch``; the set BCE's own consistency rule).
 """
@@ -436,7 +439,6 @@ def read_all(br: BankRows, cols: Columns, roles: RoleSet) -> dict:
     y, consistent = unseen_labels(br, cols)
     Nt = role_counts(br, roles)
     out: Dict[str, dict] = {"label_mismatch": int(((cols.k >= 1) & ~consistent).sum())}
-    fm = cols.arm == "fixed_mass"
     for stratum, sel in (("on_pool", br.on_pool), ("off_pool", ~br.on_pool)):
         good = sel & consistent
         blk: Dict[str, dict] = {"n_rows": int(sel.sum())}
@@ -444,8 +446,7 @@ def read_all(br: BankRows, cols: Columns, roles: RoleSet) -> dict:
         blk["intent_conditional"] = intent_conditional(br, cols, sel)
         for col, pi, tie, rM, rV, rtie, mm in (
                 ("arm", cols.pi_arm, cols.sel_tie_arm, cols.role_M_arm, cols.role_V_arm,
-                 cols.read_tie_arm if fm else np.zeros(br.n, dtype=bool),
-                 cols.other_mass_model if fm else None),
+                 cols.read_tie_arm, cols.other_mass_model),
                 ("prior", cols.pi_prior, cols.sel_tie_prior, cols.role_M_prior, cols.role_V_prior,
                  np.zeros(br.n, dtype=bool), None)):
             blk[col] = {

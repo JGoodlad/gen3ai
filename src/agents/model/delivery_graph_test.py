@@ -245,7 +245,8 @@ def test_absent_op_sub_blocks_do_not_produce_pointer_cells(graph, snapshot):
     if cfg.get("conditional_threat_cell"):
         expected.add(CONDITIONAL_THREAT_SWITCH_DIM)
     if cfg.get("opp_intent"):
-        expected.add(int(cfg.get("entity_topk_seats", 0)) + 1)   # alpha_head's SWITCH-class cell
+        # the flat pointer's alpha RE-EXPRESSION: K seats + OTHER_move + the total SWITCH mass
+        expected.add(int(cfg.get("entity_topk_seats", 0)) + 2)
     assert {e["width"] for e in cells} == expected
 
 
@@ -418,14 +419,20 @@ def test_the_gate_covers_the_parametered_modules_not_a_hand_list(extractor):
     # BUILT by this config. A module the production run does not build is a property of the CONFIG,
     # not of the enumeration (see the buildable-declaration check below, where such a module's
     # survival is asserted).
-    for expect in ("damage_op", "team_transformer", "alpha_head",
+    for expect in ("damage_op", "team_transformer", "hypothesis_builder", "flat_intent_head",
                    "intent_conditional", "history_events"):
         assert expect in live, f"{expect} vanished from the extractor — update the declarations"
+    # ...and the RETIRED ones are not: the graph describes the policy's model, in which the flat
+    # pointer replaced α / β (`retire_superseded_intent_heads`) and BeliefSlots is never kept.
+    for retired in ("alpha_head", "beta_head", "belief_slots"):
+        assert retired not in live, (
+            f"{retired} is a child of the graph's extractor — the build seam no longer applies the "
+            "policy's retirement, so the graph would draw a head no trained model holds")
     # DECLARED and buildable whether or not THIS config builds them — the claim that the
     # enumeration is not quietly excluding the modules it would be most embarrassing to miss,
     # keyed on the builder so it survives a generation that gates one off.
     buildable = buildable_child_names()
-    for expect in ("damage_op", "team_transformer", "alpha_head",
+    for expect in ("damage_op", "team_transformer", "hypothesis_builder", "flat_intent_head",
                    "intent_conditional", "history_events"):
         assert expect in buildable, f"{expect} vanished from extractor_build"
         assert expect in MODULE_GRAPH_TOKENS or expect in NON_DELIVERY_MODULES, (
@@ -452,11 +459,73 @@ def test_the_flag_gated_off_discriminator_is_not_inert():
     buildable = buildable_child_names()
 
     # POSITIVE: modules the OTHER critic mode / other flag settings build, that this config does not.
-    for name in ("belief_slots", "spread_belief", "hidden_opp_belief",
-                 "item_belief_head", "alpha_head", "beta_head", "belief_head"):
+    for name in ("spread_belief", "hidden_opp_belief", "item_belief_head", "alpha_head",
+                 "beta_head", "belief_head", "hypothesis_builder", "flat_intent_head"):
         assert name in buildable, (
             f"{name!r} is assigned by extractor_build but the discriminator does not see it — "
             "module_coverage will report every config that gates it off as a STALE declaration")
 
     # NEGATIVE: it must not answer "buildable" to a name nothing assigns, or STALE is unreachable.
     assert "_module_the_builder_never_assigns" not in buildable
+
+
+# ------------------------------------------------------------- X5: the hypothesis set + flat pointer
+def test_x5_hypothesis_tokens_are_drawn_where_the_forward_puts_them(graph, extractor):
+    """X5's T0 hypothesis set is the ONLY belief representation (the X5 version break), so the graph
+    must draw it: what δ_θ reads (the pre-belief role tokens, the T0 prior), what it writes (every
+    hidden opponent slot's token, the OTHER_species seat, the op's roster) — and the blob-era routes
+    it replaced must be gone (BeliefSlots' token, the T0 marginal straight into the op)."""
+    assert extractor.hypothesis_builder is not None, "preconditions: production builds X5"
+    edges = {(e["type"], e["src"], e["dst"]) for e in graph["edges"]}
+    T = sum(1 for n in graph["nodes"] if n["id"].startswith("opp_mon["))
+    for j in range(T):
+        assert ("content", "hypothesis_builder", f"opp_mon[{j}]") in edges, j
+    for need in (("content", "hypothesis_builder", "OTHER_species"),
+                 ("content", "hypothesis_builder", "damage_op"),
+                 ("content", "pokemon_encoder.role_encoder", "hypothesis_builder"),
+                 ("content", "t0_species_prior", "hypothesis_builder"),
+                 ("aux", "hypothesis_builder", "loss.hypothesis_presence_set_bce"),
+                 ("aux", "species_belief", "loss.hidden_team_set_bce")):
+        assert need in edges, need
+    assert ("content", "t0_species_prior", "damage_op") not in edges, (
+        "under X5 the op prices the hypothesis roster, not the T0 marginal")
+    blob = {"belief_slots", "alpha_head", "beta_head", "loss.belief_aux"}
+    ids = {n["id"] for n in graph["nodes"]}
+    assert not ids & blob, ids & blob
+
+
+def test_the_OTHER_species_seat_sits_between_the_entity_and_event_seats(graph, extractor):
+    """The seat layout the forward builds (`extractor_forward`: OTHER_species right after the entity
+    seats, the event seats LAST) — and `n_tokens` is the WHOLE sequence, every seat node counted."""
+    seats = {n["id"]: n for n in graph["nodes"] if n["kind"] == "seat"}
+    base = extractor.team_transformer._total_tokens
+    other = base + extractor.entity_seats.n_seats
+    assert seats["OTHER_species"]["index"] == other
+    assert seats["OTHER_species"]["token_type"] == "THEIR_TEAM"
+    events = sorted(n["index"] for k, n in seats.items() if k.startswith("event["))
+    assert events and events[0] == other + 1
+    assert sorted(n["index"] for n in seats.values()) == list(range(graph["meta"]["n_tokens"]))
+
+
+def test_the_flat_pointer_reads_its_candidates_and_its_publication_weights_the_cells(graph, extractor):
+    """The flat opponent pointer replaced α / β: it reads the refined E4 seats (their move seats),
+    the E5 seats (OTHER_move is the active's), every opponent slot (switch targets) and OTHER_species,
+    and its α / β RE-EXPRESSION is what weights every intent consumer cell — at α's width K + 2
+    (K seats, OTHER_move, the total SWITCH mass) and β's TEAM_SIZE + 1 (six slots, OTHER_species)."""
+    from agents.observation.constants import TEAM_SIZE
+    assert extractor.flat_intent_head is not None, "preconditions: production builds the pointer"
+    K = extractor.entity_topk_seats
+    into = {e["src"] for e in graph["edges"]
+            if e["type"] == "content" and e["dst"] == "flat_intent_head"}
+    for need in ([f"E4_threat[{c}]" for c in range(K)] + [f"E5_tail[{t}]" for t in range(TEAM_SIZE)]
+                 + [f"opp_mon[{j}]" for j in range(TEAM_SIZE)] + ["OTHER_species"]):
+        assert need in into, need
+    pub = [e for e in graph["edges"] if e["type"] == "cell" and e["src"] == "flat_intent_head"]
+    switch = [e for e in pub if e["dst"].startswith("pointer.switch_logit")]
+    assert len(switch) == TEAM_SIZE and {e["width"] for e in switch} == {K + 2}
+    assert all("alpha" in e["via"] for e in switch)
+    moves = [e for e in pub if e["dst"].startswith("pointer.move_logit")]
+    assert {e["width"] for e in moves} == {K + 2, TEAM_SIZE + 1}, (
+        "the move cells read BOTH the alpha and the beta re-expression")
+    assert ("aux", "flat_intent_head", "loss.opp_intent_flat_ce") in {
+        (e["type"], e["src"], e["dst"]) for e in graph["edges"]}

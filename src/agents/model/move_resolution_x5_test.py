@@ -1,4 +1,5 @@
-"""gen3_move_resolution_x5_v1 — the move-resolution family under X5 (`--belief-tokens fixed_mass --move-resolution on`).
+"""gen3_move_resolution_x5_v1 — the move-resolution family under X5 (production + `--move-resolution on`; X5's
+hypothesis tokens are the only belief representation since the version break, config v144).
 
 The family's RULES (`move_facts` / `switch_facts`) hold no belief-mode branch: under fixed_mass they read the flat
 opponent pointer's re-expression, with OTHER_move a PRICED seat set (one per priority level) and OTHER_species a PRICED 7th mon (the
@@ -15,7 +16,7 @@ What must hold, each failing on revert:
     slot as its hypothesis and OTHER_species as the renormalised tail;
   * **the one-lever init property under fixed_mass** on a real `MaskablePPO` policy;
   * **composition** with `--token-encoding static` and `--policy-readout trunk`;
-  * a CPU `--debug` smoke under `--belief-tokens fixed_mass --move-resolution on` (`slow`).
+  * a CPU `--debug` smoke under `--arch production --move-resolution on` (`slow`).
 """
 from __future__ import annotations
 
@@ -210,7 +211,7 @@ def _capture(fe: Any, x: torch.Tensor):
 
 
 def test_fixed_mass_forward_runs_with_the_family_on(obs):
-    fe = _build(move_resolution="on", belief_tokens="fixed_mass")
+    fe = _build(move_resolution="on")
     assert fe.move_resolution_cell is not None and fe.flat_intent_head is not None
     o = _capture(fe, obs)
     pi = fe.last_pointer_inputs
@@ -235,7 +236,7 @@ def test_fixed_mass_forward_runs_with_the_family_on(obs):
 
 
 def test_fixed_mass_gathers_each_hypothesis_and_the_tail(obs):
-    fe = _build(move_resolution="on", belief_tokens="fixed_mass")
+    fe = _build(move_resolution="on")
     o = _capture(fe, obs)
     hs = fe.last_hypothesis
     cell = fe.move_resolution_cell
@@ -263,16 +264,6 @@ def test_fixed_mass_gathers_each_hypothesis_and_the_tail(obs):
                           atol=1e-5, rtol=0.0)
 
 
-def test_the_blob_read_is_unchanged_by_the_x5_seam(obs):
-    """Blob gathers K seats and 6 mons, and its seat tables are the plain per-num gathers (one-hot priorities)."""
-    fe = _build(move_resolution="on")
-    o = _capture(fe, obs)
-    K = fe.entity_topk_seats
-    assert o.alpha.shape[-1] == K and o.beta.shape[-1] == 6 and o.imm_dmg.shape[1] == 6
-    assert torch.equal(o.seat_prio, fe.damage_op.MOVE_PRIORITY[o.seat_nums])
-    assert torch.equal(o.seat_kind, fe.move_resolution_cell.SEAT_KIND[o.seat_nums])
-
-
 # --------------------------------------------------------------- the one-lever init + composition (policies)
 def _policy(**over: Any):
     from sb3_contrib import MaskablePPO
@@ -293,8 +284,8 @@ def _policy(**over: Any):
 
 
 def test_the_one_lever_init_property_under_fixed_mass():
-    off = _policy(belief_tokens="fixed_mass")
-    on = _policy(belief_tokens="fixed_mass", move_resolution="on")
+    off = _policy()
+    on = _policy(move_resolution="on")
     fe = on.features_extractor
     assert all(getattr(fe, n) is None for n in SEVEN)
     assert fe.alpha_head is None and fe.beta_head is None           # X5 retires α / β; the family reads the pointer
@@ -317,7 +308,7 @@ def test_the_one_lever_init_property_under_fixed_mass():
                                   {"token_encoding": "static", "policy_readout": "trunk"}],
                          ids=["static", "trunk", "static+trunk"])
 def test_composes_with_static_tokens_and_the_trunk_readout(obs, over):
-    pol = _policy(belief_tokens="fixed_mass", move_resolution="on", **over)
+    pol = _policy(move_resolution="on", **over)
     fe = pol.features_extractor
     assert fe.move_resolution_cell is not None and all(getattr(fe, n) is None for n in SEVEN)
     x = {"observation": obs[:16]}
@@ -344,12 +335,12 @@ def test_debug_smoke_under_fixed_mass_with_the_family_on(tmp_path):
     ~6 min on one CPU core (measured 2026-10-07)."""
     from agents.training.tb_relevance_test import _run_smoke
     tags, series = _run_smoke(tmp_path, "mr_x5_smoke",
-                              ["--arch", "production", "--belief-tokens", "fixed_mass", "--move-resolution", "on",
+                              ["--arch", "production", "--move-resolution", "on",
                                "--allow-nonproduction-arch", "--n-epochs", "1", "--batch-size", "384",
                                "--rollout-target-samples", "2304",
                                "--steps", "4000"])          # argparse keeps the LAST --steps (the helper's is 10000)
     cfg = (tmp_path / "models" / "mr_x5_smoke" / "model_config.json").read_text()
-    assert '"move_resolution": "on"' in cfg and '"belief_tokens": "fixed_mass"' in cfg
+    assert '"move_resolution": "on"' in cfg and '"belief_tokens"' not in cfg
     assert any(t.startswith("behaviour/") for t in tags)
 
 

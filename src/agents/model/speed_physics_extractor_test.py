@@ -257,9 +257,14 @@ def test_requires_the_op_and_rejects_an_unknown_mode() -> None:
 
 def test_version_machinery() -> None:
     from agents.model.model_version import ModelVersion, ModelVersionError
-    from agents.model.model_version.migrations import _migrate_config
-    m = _migrate_config({"config_version": 142})
-    assert m["speed_physics"] == "off" and m["config_version"] >= 143
+    from agents.model.model_version.migrations import MIGRATION_FLOOR, _migrate_config
+    # the v143 branch (a pre-v143 config defaults to `off`) is unreachable since the X5 version break raised
+    # MIGRATION_FLOOR to 144: such a config is refused at the floor; a RECORDED mode migrates verbatim
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 142})
+    for mode in ("off", "on"):
+        m = _migrate_config({"config_version": MIGRATION_FLOOR, "speed_physics": mode})
+        assert m["speed_physics"] == mode and m["config_version"] >= 143
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
     a = ModelVersion.from_layout_and_policy_kwargs(layout, {"features_extractor_kwargs": {}})
     assert a.speed_physics == "off"

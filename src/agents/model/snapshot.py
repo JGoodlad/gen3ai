@@ -1151,7 +1151,16 @@ _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
                     # the surviving extractor has no home for, so ON is refused (the v75 rule); OFF
                     # built nothing and pops. The reachable half: every v95+ checkpoint pickles
                     # `pair_value_route` (`snapshot.snapshot_extractor_kwargs` always wrote it).
-                    ("pair_value_route", False))
+                    ("pair_value_route", False),
+                    # v144 (the X5 VERSION BREAK, gen3_x5_version_break_v1): `belief_tokens` is deleted —
+                    # X5's hypothesis tokens are the only belief representation. 'fixed_mass' is the forward
+                    # this code builds, so it pops; 'blob' named a forward that no longer exists (BeliefSlots'
+                    # constant hidden-slot tokens, the alpha / beta heads in a state_dict) and is REFUSED with
+                    # the deletion reason by `version_break.refuse_pickled_belief_tokens`, which
+                    # `sanitize_dead_extractor_kwargs` runs BEFORE this table (so the refusal names the
+                    # deletion and the pinned fix, not the generic sentence). Reachable: every v136-v143
+                    # checkpoint pickles it.
+                    ("belief_tokens", "fixed_mass"))
 
 # POLICY kwargs (`policy_kwargs[...]`, NOT the extractor's) that left `Gen3DualHeadMaskablePolicy.__init__`
 # at v131 (deletion pass L1). SB3 splats the zip's pickled `policy_kwargs` into the policy constructor, so a
@@ -1174,7 +1183,8 @@ def sanitize_dead_extractor_kwargs(fek: dict) -> bool:
     constructor when it rebuilds the policy. A key dropped from one and not the other either fails
     the gate for the wrong reason or TypeErrors inside the constructor.
     """
-    changed = False
+    from agents.model.model_version.version_break import refuse_pickled_belief_tokens
+    changed = refuse_pickled_belief_tokens(fek)     # v144: blob REFUSED with its own reason; fixed_mass pops
     for dead, supported in _DEAD_FEK_JUDGED:
         if dead in fek:
             # Compare on TYPE, not truthiness: the v78 entries are mode STRINGS, and `bool("off")`
@@ -1300,10 +1310,40 @@ def load_checkpoint_strict(path: str, *, device: str = "cpu",
     session, the prober's ``sanitized_load_custom_objects`` for a forensic read). No module outside
     the strict classes calls ``MaskablePPO.load`` / ``PPO.load``: ``strict_checkpoint_load_gate_test``
     fails one, with an empty allowlist."""
+    refuse_deleted_pickled_kwargs(path)
     kwargs: Dict[str, Any] = {"env": None, "device": device}
     if custom_objects:
         kwargs["custom_objects"] = custom_objects
     return StrictMaskablePPO.load(path, **kwargs)
+
+
+def refuse_deleted_pickled_kwargs(zip_path: str) -> None:
+    """Refuse a checkpoint whose PICKLED extractor kwargs name a deleted forward, BEFORE any loader
+    splats them into the live constructor (`gen3_x5_version_break_v1`).
+
+    `load_checkpoint_strict` takes ``custom_objects`` from its caller, and a caller whose sanitizer
+    NEVER refuses (the prober's set-math `sanitized_load_custom_objects`) or that passes none at all
+    would otherwise hand SB3 a blob checkpoint's ``belief_tokens='blob'`` — a bare ``TypeError`` (no
+    such kwarg), or, once dropped, a state_dict with no home (``alpha_head`` / ``belief_slots`` keys).
+    The refusal is `version_break`'s typed ``ModelVersionError`` naming the deletion and the pinned
+    commit. ONLY ``policy_kwargs`` is deserialized (never the rest of ``data``: an unpickled CUDA tensor
+    there would create a CUDA context before the strict load's own `CudaContextOnCpuLoad` check could see
+    it). A zip this cannot read is left to SB3's own load to report."""
+    try:
+        import json
+        import zipfile
+
+        from stable_baselines3.common.save_util import json_to_data
+        path = zip_path if zip_path.endswith(".zip") or os.path.exists(zip_path) else zip_path + ".zip"
+        with zipfile.ZipFile(path) as z:
+            raw = json.loads(z.read("data").decode())
+        data = json_to_data(json.dumps({"policy_kwargs": raw.get("policy_kwargs", {})}))
+    except Exception:
+        return
+    fek = ((data or {}).get("policy_kwargs") or {}).get("features_extractor_kwargs")
+    if isinstance(fek, dict) and "belief_tokens" in fek:
+        from agents.model.model_version.version_break import refuse_pickled_belief_tokens
+        refuse_pickled_belief_tokens(dict(fek))
 
 
 def load_foreign_opponent(
@@ -1433,7 +1473,6 @@ def current_model_version(
     ridealong_adv: int = 0,
     ridealong_opp: int = 0,
     ridealong_rnd_variants: str = "off",
-    belief_tokens: str = "blob",
     oracle_reveal: str = "off",
     policy_readout: str = "tower",
     token_encoding: str = "legacy",
@@ -1491,9 +1530,6 @@ def current_model_version(
     ext_kwargs["ridealong_adv"] = int(ridealong_adv)
     ext_kwargs["ridealong_opp"] = int(ridealong_opp)
     ext_kwargs["ridealong_rnd_variants"] = str(ridealong_rnd_variants)
-    # gen3_x5_hypothesis_set_v1 (v136): X5's belief representation — structural, so a frozen
-    # opponent's gate must see it.
-    ext_kwargs["belief_tokens"] = str(belief_tokens)
     # gen3_oracle_reveal_v1 (v137): the diagnostic observation mode — resume-immutable, so not in
     # `check_compatible`, but recorded so a worker / an offline tool reads the run's own value.
     ext_kwargs["oracle_reveal"] = str(oracle_reveal)
@@ -1588,9 +1624,6 @@ def arch_toggles_from_model(model: Any) -> dict:
         "ridealong_adv": int(getattr(fe, "ridealong_adv", 0) or 0),
         "ridealong_opp": int(getattr(fe, "ridealong_opp", 0) or 0),
         "ridealong_rnd_variants": str(getattr(fe, "ridealong_rnd_variants", "off") or "off"),
-        # gen3_x5_hypothesis_set_v1 (v136): X5's belief representation (`fixed_mass` builds the
-        # hypothesis builder — a state_dict delta — so a frozen opponent's gate must see it).
-        "belief_tokens": str(getattr(fe, "belief_tokens", "blob") or "blob"),
         # gen3_oracle_reveal_v1 (v137): the diagnostic observation mode the policy was built under.
         "oracle_reveal": str(getattr(fe, "oracle_reveal", "off") or "off"),
         # gen3_policy_readout_trunk_v1 (v138, audit F2): `trunk` retires the flat policy tower and builds

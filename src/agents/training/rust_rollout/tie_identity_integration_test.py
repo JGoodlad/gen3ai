@@ -28,8 +28,10 @@ from agents.training.rust_rollout import tie_margins as TM
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
-ARMS: Dict[str, Dict[str, str]] = {"blob": {}, "oracle_species": {"oracle_reveal": "species"},
-                                   "oracle_full": {"oracle_reveal": "full"}, "fixed_mass": {"belief_tokens": "fixed_mass"}}
+#: The production surface (X5's fixed-mass hypothesis tokens — the blob arm was DELETED at the version break)
+#: and the two oracle-reveal arms on top of it.
+ARMS: Dict[str, Dict[str, str]] = {"fixed_mass": {}, "oracle_species": {"oracle_reveal": "species"},
+                                   "oracle_full": {"oracle_reveal": "full"}}
 N_ENVS, N_STEPS, RUN_SEED, MODEL_SEED = 8, 64, 1001, 1001
 #: The declared PAYLOAD sites, read once at import (the rule-before arm strips them from `SS.MARGIN`).
 _PAYLOAD_RULES = {k: r for k, r in SS.MARGIN.items() if r.payload}
@@ -55,7 +57,7 @@ def _rollout(arm: str, fresh: bool) -> Any:
                      build=lambda m: TK.collector_for(m, obs, decl=decl, p2=p2, builder=TK.pool_builder()))
     with single_thread_build():
         model = TK.fresh_model(env, n_steps=N_STEPS, batch_size=N_STEPS * N_ENVS, seed=MODEL_SEED,
-                               perturb_seed=1234, policy_args=args, perturb_keyed=arm != "blob")
+                               perturb_seed=1234, policy_args=args, perturb_keyed=True)
     if fresh:                       # a fresh run's first update: the zero-init action scorers
         with th.no_grad():
             for name in K._SCORERS:

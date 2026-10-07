@@ -405,11 +405,11 @@ class TeamTransformer(torch.nn.Module):
         bias [B, H, n, n] ALREADY carrying the key-padding addend, returning it with the edge
         families written in (see `EdgeBias`). The bias is built ONCE and shared by every layer.
 
-        `key_log_presence` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only): optional
+        `key_log_presence` (gen3_x5_belief_tokens_v1, X5 only): optional
         [B, n] per-KEY log-presence (`hypothesis_tokens.key_log_presence`) added to every query's
         logit in every head — ToMe's proportional attention, so a hypothesis key at presence π weighs
         as π of a token. A MASKED key keeps exactly its −1e9 addend (its log-presence is not added).
-        None (blob) adds nothing: byte-identical."""
+        None (the belief family off) adds nothing."""
         batch_size = ctx.batch_size
         device = ctx.device
 

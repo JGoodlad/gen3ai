@@ -24,4 +24,3 @@ class AuxTerms:
 
     _move_belief_latent_loss = staticmethod(_belief_bank.move_belief_latent_loss)
 
-    _belief_aux_loss = staticmethod(_belief_bank.belief_aux_loss)

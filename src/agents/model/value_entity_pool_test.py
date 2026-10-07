@@ -192,8 +192,9 @@ def test_full_requires_base_flag():
 
 
 def test_full_pool_adds_global_and_belief_rows_and_stays_zero_init():
-    """The complete Stage-3 row set: 12 team + 6 op + 1 global (+K belief when the hidden-opp
-    pool exists) — attended (last_att covers every row, global never masked), still exactly
+    """The complete Stage-3 row set: 12 team + OTHER_species (X5: the opponent-belief family is on in the
+    shared toggle set, and OTHER joins THEIR-team source after their six) + 6 op + 1 global (+K belief when
+    the hidden-opp pool exists) — attended (last_att covers every row, global never masked), still exactly
     zero cold, and the v80 3-row table is untouched when full=False (gen-12 compat)."""
     model, enc = _build_real_policy(value_entity_pool=True, value_entity_pool_full=True,
                                     opp_belief_cls_k=6, attend_unrevealed_opponents=True)
@@ -206,9 +207,10 @@ def test_full_pool_adds_global_and_belief_rows_and_stays_zero_init():
         pi, vf = fe(obs)
     assert torch.isfinite(vf).all()
     n_rows = uvr.last_att.shape[-1]
-    assert n_rows == 12 + 6 + 1 + 6, n_rows          # team + op + global + K=6 belief
-    # the global row (index 18) is never masked: it must carry attention mass somewhere
-    assert float(uvr.last_att[:, :, 18].sum()) > 0.0
+    assert fe.hypothesis_builder is not None                  # X5: OTHER_species is a row
+    assert n_rows == 12 + 1 + 6 + 1 + 6, n_rows      # team + OTHER_species + op + global + K=6 belief
+    # the global row (index 19, after team + OTHER + op) is never masked: it must carry attention mass
+    assert float(uvr.last_att[:, :, 19].sum()) > 0.0
     # v80 compat: the base build keeps the 3-row table byte-shape
     base, _ = _build_real_policy(value_entity_pool=True)
     assert base.policy.features_extractor.value_entity_pool.source_emb.shape[0] == 3

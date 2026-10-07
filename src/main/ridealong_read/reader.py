@@ -169,7 +169,7 @@ def attach_heads(policy: Any, obs_dim: int, rows: np.ndarray,
                 "rnd_stats": "the checkpoint's own running statistics"}
         own.eval()
         return own, prov
-    # X5 U4: a fixed_mass checkpoint's B is over the FLAT pointer's columns (0 = α's support).
+    # X5 U4: B is over the FLAT pointer's columns (the only B since the X5 version break).
     spec = RideAlongSpec(**BASELINE_SPEC_KW,
                          opp_flat_k=RideAlongSpec.from_extractor(policy.features_extractor).opp_flat_k)
     heads = build_ridealong(policy.features_extractor, obs_dim=obs_dim, spec=spec)
@@ -239,7 +239,6 @@ def forward_columns(model: Any, heads: Any, rows: np.ndarray, masks: np.ndarray,
                 obs=ob["observation"], pooled=fe.last_value_pooled,
                 pointer=tuple(fe.last_pointer_inputs), pi=pi, logits=logits,
                 legal=torch.from_numpy(mk.astype(bool)), values=v,
-                alpha_logits=fe.last_alpha_logits, alpha_seat_nums=fe.last_alpha_seat_nums,
                 flat_logits=getattr(fe, "last_flat_intent_logits", None),
                 flat_ids=(fe.last_flat_intent.cand_ids
                           if getattr(fe, "last_flat_intent", None) is not None else None))

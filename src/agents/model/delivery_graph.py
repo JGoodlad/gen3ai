@@ -107,15 +107,14 @@ _DEFAULT_CONFIG = str(repo_path("designs", "production_config.json"))
 MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     # --- resolved as a NODE ID ---
     "damage_op": ("damage_op",),
-    "belief_slots": ("belief_slots",),
+    "hypothesis_builder": ("hypothesis_builder",),   # X5's T0 hypothesis set + OTHER_species
     "belief_head": ("species_belief",),           # the T2 training-only readout, drawn by its role
     "move_belief": ("move_belief",),
     "spread_belief": ("spread_belief",),
     "hp_type_belief_head": ("hp_type_belief",),
     "item_belief_head": ("item_belief",),
     "hidden_opp_belief": ("hidden_opp_belief",),
-    "alpha_head": ("alpha_head",),
-    "beta_head": ("beta_head",),
+    "flat_intent_head": ("flat_intent_head",),    # X5's flat opponent pointer (α / β's successor)
     "win_head": ("win_head",),
     "projection": ("pi_projection",),
     "value_projection": ("vf_projection",),
@@ -259,6 +258,12 @@ def build_extractor(config_path: str = _DEFAULT_CONFIG) -> "tuple[Any, Dict[str,
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     # the ctor never reads the space (`observation_space: spaces.Space`, deliberately unread)
     fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()
+    # The LIVE model, not the bare build: `Gen3DualHeadMaskablePolicy._build` retires the α / β heads
+    # (after SB3's re-init, before the optimizer) whenever X5's flat opponent pointer is built — they
+    # are CONSTRUCTED only so their init draws keep the global RNG stream, and no trained model holds
+    # them (no state_dict key, no forward use). Keeping them here would draw, tier and tabulate two
+    # heads that exist in no checkpoint. A no-op when the flat pointer is not built.
+    fe.retire_superseded_intent_heads()
     return fe, cfg, layout
 
 
@@ -319,12 +324,22 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     for t in range(n_e5):
         nodes.append(_node(f"E5_tail[{t}]", "seat", index=base + n_e3 + k_e4 + t,
                            token_type="THEIR_THREAT+tail_marker"))
+    # X5 (gen3_x5_belief_tokens_v1): OTHER_species — the hypothesis set's TAIL as ONE token — joins
+    # the trunk as one extra seat right after the entity seats (E3/E4/E5 stay front-indexed, the event
+    # seats stay LAST), typed THEIR_TEAM and key-masked iff OTHER is masked.
+    hb = getattr(fe, "hypothesis_builder", None)
+    n_other = 1 if hb is not None else 0
+    if n_other:
+        nodes.append(_node("OTHER_species", "seat", index=base + n_e3 + k_e4 + n_e5,
+                           token_type="THEIR_TEAM",
+                           note="the hypothesis set's tail mass as one token; its log-mass is its "
+                                "per-KEY attention bias (key_log_presence)"))
     # gen3_event_window_v1 (Tier H-B): the event seats join the extra seam LAST — which is what
     # keeps every front-indexed slice above position-stable — and take TOKEN_TYPE_HISTORY (the
     # E5 precedent, no token-type table growth). One seat per event record (`EventSeats.n`).
     n_ev = fe.history_events.n if fe.history_events is not None else 0
     for e in range(n_ev):
-        nodes.append(_node(f"event[{e}]", "seat", index=base + n_e3 + k_e4 + n_e5 + e,
+        nodes.append(_node(f"event[{e}]", "seat", index=base + n_e3 + k_e4 + n_e5 + n_other + e,
                            token_type="HISTORY"))
 
     # --- COMPUTE / SINK NODES ----------------------------------------------------------------
@@ -345,13 +360,28 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     if getattr(fe, "item_belief_head", None) is not None:
         nodes.append(_node("item_belief", "belief_head", stage="T0",
                            out_dim=fe.item_belief_head.item_head.out_features))
-    if getattr(fe, "alpha_head", None) is not None:
-        # gen3_opp_intent_v1 (v67): α (which of their believed moves will they click, or SWITCH)
-        # and β (if they switch, to whom). Pointer heads over objects that already exist, so both
-        # are equivariant under permuting what they point at.
-        nodes.append(_node("alpha_head", "belief_head", stage="T2",
-                           out_dim=fe.entity_topk_seats + 1))
-        nodes.append(_node("beta_head", "belief_head", stage="T2", out_dim=T))
+    from agents.model.tier_contract import TIER_OF as _TIER_OF
+    if hb is not None:
+        # X5 (gen3_x5_hypothesis_set_v1 / gen3_x5_belief_tokens_v1): the T0 hypothesis set — δ_θ
+        # corrects the T0 species prior, the fixed-size presence picks one concrete hypothesis per
+        # hidden opponent slot, the tail becomes OTHER_species, and the opponent active's move group
+        # fixes the ONE move order. Its out_dim is the species vocabulary δ_θ scores.
+        nodes.append(_node("hypothesis_builder", "belief_head",
+                           stage=f"T{_TIER_OF['hypothesis_builder']}",
+                           out_dim=hb.delta_out.weight.shape[0],
+                           note="δ_θ + fixed-size presence + the hypothesis selection + OTHER_species "
+                                "+ the active's move group; presence π is DETACHED wherever it "
+                                "weights the policy or critic"))
+    fih = getattr(fe, "flat_intent_head", None)
+    if fih is not None:
+        # gen3_x5_flat_pointer_v1 (X5 U4): ONE pointer over [their K move seats, OTHER_move, switch
+        # → each of their six slots, OTHER_species], one softmax, the detached log-presence as the
+        # logit bias. It replaced α (which move, or SWITCH) and β (switch to whom); its consumers read
+        # the α / β RE-EXPRESSION of its publication (`compat_intent_logits`).
+        from agents.model.flat_intent import flat_width
+        nodes.append(_node("flat_intent_head", "belief_head",
+                           stage=f"T{_TIER_OF['flat_intent_head']}",
+                           out_dim=flat_width(fe.entity_topk_seats)))
     # The two SIDE readouts off `value_pooled`. Neither is drawn as a head input (they are not
     # concatenated into pi/vf at all), which is exactly why both went unrepresented — a module with
     # no concat is invisible to a graph built from the head-input tables.
@@ -456,6 +486,20 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                    via="EdgeBias.forward (zero-init cell map -> a per-pair, "
                                        "per-head additive attention logit, every layer)",
                                    note=_NOTES.get(fam, "")))
+    # X5 (F-X5-28): OTHER_species' COLUMN — the SAME family map applied to OTHER's tail-averaged cells,
+    # written at (the family's row seats, the OTHER seat) + its transpose, for the families
+    # `EdgeBias.OTHER_FAMILIES` prices (the rest give OTHER bias 0 — "no information").
+    if n_other and fe.edge_bias is not None:
+        _other_rows = {"e3": "E3_move", "our": "our_mon"}
+        for fam, side in sorted(type(fe.edge_bias).OTHER_FAMILIES.items()):
+            if fam not in fams:
+                continue
+            for src in _members(_other_rows[side]):
+                edges.append(_edge(src, "OTHER_species", "bias", fx._EDGE_FAMILIES[fam],
+                                   f"_EDGE_{fam.upper()}_CELL", family=fam, bidirectional=True,
+                                   via="EdgeBias.forward (OTHER_species' column: the family map "
+                                       "over OTHER's tail-averaged cells)",
+                                   note="zero where OTHER is masked (structural, other_live)"))
 
     # --- CONTENT EDGES: what becomes / enters a token ------------------------------------------
     # Seat construction. These projections are ordinary trainable Linears (new information), not
@@ -465,11 +509,15 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                            fx.MOVE_NET_HIDDEN[1], "MOVE_NET_HIDDEN[1]",
                            via="EntityMoveSeats.move_seat_proj",
                            note="request-slot order — seat k IS action logit 6+k"))
+    _e4_note = ("[latent, belief w, accuracy, is_phys]; idx detached, w differentiable"
+                if hb is None else
+                "[latent, w, accuracy, is_phys] in the move group's ONE order (X5 FixedMassMoves); "
+                "w = the fixed-mass presence pi_m (1 revealed), DETACHED")
     for c in range(k_e4):
         edges.append(_edge("damage_op", f"E4_threat[{c}]", "content",
                            fx.MOVE_LATENT_DIM + 3, "MOVE_LATENT_DIM + 3",
                            via="EntityMoveSeats.threat_seat_proj",
-                           note="[latent, belief w, accuracy, is_phys]; idx detached, w differentiable"))
+                           note=_e4_note))
     for t in range(n_e5):
         edges.append(_edge("damage_op", f"E5_tail[{t}]", "content", 4, "_EDGE_TAIL_CELL(4)",
                            via="EntityMoveSeats.tail_proj",
@@ -545,6 +593,15 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                            via="CLSPool.their_cls", pooled=True))
         edges.append(_edge(f"opp_mon[{j}]", "vf_projection", "concat", D, "D_MODEL",
                            via="CLSPool.value_cls", pooled=True))
+    # X5: both class-E pools over opponent tokens take OTHER_species as a 7th opponent key, every
+    # opponent key carrying its log-presence through a FLOAT key mask (opp_keys_with_other /
+    # team_keys_with_other).
+    _other_key_note = "OTHER_species joins the keys; every opponent key carries its log-presence"
+    if n_other:
+        edges.append(_edge("OTHER_species", "pi_projection", "concat", D, "D_MODEL",
+                           via="CLSPool.their_cls", pooled=True, note=_other_key_note))
+        edges.append(_edge("OTHER_species", "vf_projection", "concat", D, "D_MODEL",
+                           via="CLSPool.value_cls", pooled=True, note=_other_key_note))
     edges.append(_edge("our_active_refined", "pi_projection", "concat", D, "D_MODEL",
                        via="ProjectionAssembler concat", pooled=False,
                        note="our active's refined token; pi-only (the vf active readout "
@@ -596,6 +653,12 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
             edges.append(_edge(f"opp_mon[{i}]", "vf_projection", "content",
                                fx.D_MODEL, "D_MODEL", via=_uvr_via,
                                pooled=True, zero_init=True))
+        if n_other:
+            edges.append(_edge("OTHER_species", "vf_projection", "content",
+                               fx.D_MODEL, "D_MODEL", via=_uvr_via,
+                               pooled=True, zero_init=True,
+                               note="OTHER_species is an opponent source row after their six; every "
+                                    "opponent row's logit carries its log-presence"))
         if fe.damage_op is not None:
             edges.append(_edge("damage_op", "vf_projection", "content",
                                fx.D_MODEL, "D_MODEL",
@@ -718,41 +781,58 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                zero_init=True,
                                note="the judgments (neutralization, tempo_cost, the spin stake) dropped"))
 
-    # --- OPPONENT INTENT: what alpha/beta READ, and where their publication lands ---------------
-    # gen3_opp_intent_v1. Both heads were missing from this graph entirely, and the omission was
-    # load-bearing rather than cosmetic: five downstream modules (IntentMoveCell,
-    # IntentThresholdMove/Value, IntentConditionalMoveCell, IntentValueReduce, ValueIntentRoute)
-    # are all named "published alpha × …" in their own `via` text, with nothing in the picture
-    # producing an alpha. The WIDTH on a publication edge is the publication's own width — the
-    # blocks those weights build are drawn by the parallel `damage_op` edges, so the two are not
-    # additive and this edge is never a second copy of the same columns.
-    if getattr(fe, "alpha_head", None) is not None:
+    # --- OPPONENT INTENT: what the FLAT POINTER reads, and where its publication lands ----------
+    # gen3_x5_flat_pointer_v1 (X5 U4, design §3.7). One candidate list — their K move seats, OTHER_move,
+    # switch → each of their six slots, OTHER_species — scored by ONE shared scorer over (candidate
+    # token ‖ board ctx ‖ kind), plus the candidate's DETACHED log-presence as a logit bias. Every
+    # consumer cell contracts the α / β RE-EXPRESSION of its publication (`compat_intent_logits`):
+    # α over [K seats, OTHER_move, log α_SWITCH], β over [six slots, OTHER_species]. The WIDTH on a
+    # publication edge is that re-expression's own width — the blocks those weights build are drawn by
+    # the parallel `damage_op` edges, so the two are not additive and this edge is never a second copy
+    # of the same columns.
+    if fih is not None:
         _detached = fe.opp_intent_grad_mode != "shaping"
         _grad_note = ("input DETACHED (opp_intent_grad_mode=detached) — a null then says the head "
                       "cannot predict the opponent, not that predicting them perturbed the policy"
                       if _detached else
                       "opp_intent_grad_mode=shaping — the intent gradient reaches the trunk")
+        _tw, _tc = fih.token_dim, "FlatIntentHead.token_dim (D_MODEL)"
+        _fvia = ("FlatIntentHead (one SHARED scorer over candidate token ‖ board ctx ‖ kind, + the "
+                 "candidate's DETACHED log-presence as a logit bias)")
         for c in range(k_e4):
-            edges.append(_edge(f"E4_threat[{c}]", "alpha_head", "content", D, "D_MODEL",
-                               via="AlphaIntentHead.seat_scorer (the REFINED E4 seat ‖ board ctx, "
-                                   "one SHARED scorer over every seat)",
-                               note="equivariant under permuting their moves; "
-                                    "SWITCH is scored from the ctx alone. " + _grad_note))
+            edges.append(_edge(f"E4_threat[{c}]", "flat_intent_head", "content", _tw, _tc,
+                               via=_fvia + " — a move-seat candidate",
+                               note="the REFINED E4 seat; equivariant under permuting their moves. "
+                                    + _grad_note))
+        for t in range(n_e5):
+            edges.append(_edge(f"E5_tail[{t}]", "flat_intent_head", "content", _tw, _tc,
+                               via=_fvia + " — OTHER_move",
+                               note="OTHER_move's token is the opponent ACTIVE's refined E5 seat (the "
+                                    "active's moves beyond the K seats, a priced (K+1)-th seat); only "
+                                    "the active's seat is read on a given row"))
+        for j in range(T):
+            edges.append(_edge(f"opp_mon[{j}]", "flat_intent_head", "content", _tw, _tc,
+                               via=_fvia + " — a switch-target candidate",
+                               note="switch → slot j: a REVEALED bench mon, or the hypothesis that "
+                                    "hidden slot holds; legality is a MASK (addressable, not the "
+                                    "active), never learned"))
+        if n_other:
+            edges.append(_edge("OTHER_species", "flat_intent_head", "content", _tw, _tc,
+                               via=_fvia + " — OTHER_species",
+                               note="a switch to a mon in the hypothesis set's tail — a belief miss "
+                                    "is an OTHER label, supervised, not a masked row"))
+        _ctx_via = "FlatIntentHead ctx = CLSPool.our_cls ‖ CLSPool.their_cls"
         for i in range(T):
-            edges.append(_edge(f"our_mon[{i}]", "alpha_head", "content", D, "D_MODEL",
-                               via="AlphaIntentHead ctx = CLSPool.our_cls ‖ CLSPool.their_cls",
-                               pooled=True))
-            edges.append(_edge(f"opp_mon[{i}]", "alpha_head", "content", D, "D_MODEL",
-                               via="AlphaIntentHead ctx = CLSPool.our_cls ‖ CLSPool.their_cls",
-                               pooled=True))
-            edges.append(_edge(f"opp_mon[{i}]", "beta_head", "content", D, "D_MODEL",
-                               via="BetaSwitchHead.scorer (their refined token ‖ board ctx)",
-                               note="pointer over their six tokens — legality is a MASK, never "
-                                    "learned; their_team_out is detached at this call"))
-            edges.append(_edge(f"our_mon[{i}]", "beta_head", "content", D, "D_MODEL",
-                               via="BetaSwitchHead ctx = CLSPool.our_cls ‖ CLSPool.their_cls",
-                               pooled=True))
-        _a_w, _a_c = fe.entity_topk_seats + 1, "entity_topk_seats + 1 (the SWITCH class)"
+            edges.append(_edge(f"our_mon[{i}]", "flat_intent_head", "content", D, "D_MODEL",
+                               via=_ctx_via, pooled=True))
+            edges.append(_edge(f"opp_mon[{i}]", "flat_intent_head", "content", D, "D_MODEL",
+                               via=_ctx_via, pooled=True))
+        if n_other:
+            edges.append(_edge("OTHER_species", "flat_intent_head", "content", D, "D_MODEL",
+                               via=_ctx_via, pooled=True, note=_other_key_note))
+        _K = fe.entity_topk_seats
+        _a_w, _a_c = _K + 2, "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)"
+        _b_w, _b_c = T + 1, "TEAM_SIZE + 1 (six slots, OTHER_species)"
         _move_cell_consumers = [
             n for n, m in (("IntentMoveCell", getattr(fe, "intent_move_cell", None)),
                            ("IntentThresholdMoveCell", getattr(fe, "intent_threshold_move", None)),
@@ -763,11 +843,13 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
             if m is not None]
         if _move_cell_consumers:
             for k in range(n_e3):
-                edges.append(_edge("alpha_head", f"pointer.move_logit[{k}]", "cell", _a_w, _a_c,
-                                   via="the alpha PUBLICATION weighting "
+                edges.append(_edge("flat_intent_head", f"pointer.move_logit[{k}]", "cell", _a_w, _a_c,
+                                   via="the flat pointer's alpha RE-EXPRESSION weighting "
                                        + " / ".join(_move_cell_consumers),
-                                   note="stop-grad under belief_grad_mode=label_only; the CELL "
-                                        "widths ride the parallel damage_op edges"))
+                                   note="from the PUBLICATION (stop-grad under "
+                                        "belief_grad_mode=label_only); OTHER_move is a priced seat, "
+                                        "never mass that reads as SWITCH. The CELL widths ride the "
+                                        "parallel damage_op edges"))
         _beta_move_consumers = [
             n for n, m in (("IntentConditionalMoveCell", getattr(fe, "intent_conditional", None)),
                            ("SwitchBranchMoveCell", getattr(fe, "switch_branch", None)),
@@ -775,11 +857,12 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
             if m is not None]
         if _beta_move_consumers:
             for k in range(n_e3):
-                edges.append(_edge("beta_head", f"pointer.move_logit[{k}]", "cell", T, "TEAM_SIZE",
-                                   via="the beta PUBLICATION weighting "
+                edges.append(_edge("flat_intent_head", f"pointer.move_logit[{k}]", "cell", _b_w, _b_c,
+                                   via="the flat pointer's beta RE-EXPRESSION weighting "
                                        + " / ".join(_beta_move_consumers),
                                    note="what they bring in is what our move actually lands on — "
-                                        "the Explosion trade's target, and OA2's whole subject"))
+                                        "the Explosion trade's target, and OA2's whole subject; "
+                                        "beta_OTHER is a column, never renormalised away"))
         _switch_cell_consumers = [
             n for n, m in (("PairOutcomeSwitchCell", getattr(fe, "pair_outcome_switch", None)),
                            ("ConditionalThreatCell", getattr(fe, "conditional_threat", None)),
@@ -787,12 +870,12 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
             if m is not None]
         if _switch_cell_consumers:
             for j in range(T):
-                edges.append(_edge("alpha_head", f"pointer.switch_logit[{j}]", "cell",
+                edges.append(_edge("flat_intent_head", f"pointer.switch_logit[{j}]", "cell",
                                    _a_w, _a_c,
-                                   via="the alpha PUBLICATION weighting "
+                                   via="the flat pointer's alpha RE-EXPRESSION weighting "
                                        + " / ".join(_switch_cell_consumers),
-                                   note="the first alpha route to the SWITCH logits at all — "
-                                        "stop-grad unconditionally (a policy-side consumer)"))
+                                   note="the intent route to the SWITCH logits — stop-grad "
+                                        "unconditionally (a policy-side consumer)"))
 
     # --- SIDE READOUTS off `value_pooled` -------------------------------------------------------
     # Neither head is a concat part (that is the point — a privileged/outcome label must not reach
@@ -812,6 +895,9 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                via=_via, pooled=True, note=_note))
             edges.append(_edge(f"opp_mon[{i}]", _sink, "content", D, "D_MODEL",
                                via=_via, pooled=True, note=_note))
+        if n_other:
+            edges.append(_edge("OTHER_species", _sink, "content", D, "D_MODEL",
+                               via=_via, pooled=True, note=_note + "; " + _other_key_note))
 
     # --- AUX EDGES: training-only supervision --------------------------------------------------
     # These terminate at loss sinks and NOWHERE else. delivery_graph_test asserts it.
@@ -825,8 +911,19 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     if fe.hp_type_belief_head is not None and float(cfg.get("hp_type_belief_coef", 0.0)) > 0:
         aux_specs.append(("hp_type_belief", "loss.hp_type_ce", "hp_type_label", _OBS_KEY))
     if fe.belief_head is not None and float(cfg.get("opp_belief_aux_coef", 0.0)) > 0:
-        aux_specs.append(("species_belief", "loss.belief_aux", "belief_species/belief_moves",
-                          _OBS_KEY))
+        if hb is None:
+            aux_specs.append(("species_belief", "loss.belief_aux", "belief_species/belief_moves",
+                              _OBS_KEY))
+        else:
+            # X5's hidden-team supervision (the `hidden_team_set` bank row, at the same
+            # --opp-belief-aux-coef): the PRESENCE BCE — the set BCE on the T0 construction's own
+            # logit, the ONLY gradient δ_θ receives — and BeliefHead RE-TARGETED to the same set BCE
+            # (its per-slot species logits reduced to one team score) + its moves BCE on the
+            # hypothesis seats. No slot matching anywhere.
+            aux_specs.append(("hypothesis_builder", "loss.hypothesis_presence_set_bce",
+                              "belief_species (the true unseen team, multi-hot)", _OBS_KEY))
+            aux_specs.append(("species_belief", "loss.hidden_team_set_bce",
+                              "belief_species/belief_moves", _OBS_KEY))
     if fe.spread_belief is not None and float(cfg.get("spread_belief_coef", 0.0)) > 0:
         aux_specs.append(("spread_belief", "loss.spread_belief", "belief_spread", _OBS_KEY))
     if (getattr(fe, "item_belief_head", None) is not None
@@ -835,16 +932,15 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     if getattr(fe, "win_head", None) is not None:
         aux_specs.append(("win_head", "loss.win_prob_bce", "MC episode outcome (win=1/loss=0)",
                           _ROLLOUT))
-    if getattr(fe, "alpha_head", None) is not None:
+    if fih is not None:
         # `opp_intent_coef` is a TRAIN-LOOP dose, not a weight-shape param: recorded in
-        # model_config.json only from config v125 (None before), so the heads' existence is the one
-        # thing every config can witness. Drawn
-        # unconditionally rather than guessed, with the coefficient named as the real gate.
-        aux_specs.append(("alpha_head", "loss.opp_intent_alpha_ce",
-                          "opp_action_move_num (folded at the train-loop --opp-intent-coef)",
-                          _OBS_KEY))
-        aux_specs.append(("beta_head", "loss.opp_intent_beta_ce",
-                          "opp_switch_species (folded at the train-loop --opp-intent-coef)",
+        # model_config.json only from config v125 (None before), so the head's existence is the one
+        # thing every config can witness. Drawn unconditionally rather than guessed, with the
+        # coefficient named as the real gate. ONE cross-entropy over the flat list
+        # (`flat_intent_fold`): a belief miss is an OTHER label, supervised.
+        aux_specs.append(("flat_intent_head", "loss.opp_intent_flat_ce",
+                          "opp_action_kind/opp_action_num/opp_switch_slot/opp_switch_species "
+                          "(folded at the train-loop --opp-intent-coef)",
                           _OBS_KEY))
     for src, sink, label, source in aux_specs:
         nodes.append(_node(sink, "aux_loss", label_key=label))
@@ -940,12 +1036,52 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     # The T0 belief legs, with the distinction that matters: a leg either REINJECTS into the tokens
     # the transformer will refine, or it is a side READOUT that never enters the forward. Collapsing
     # those two into one arrow is what made "is this belief actually used?" unanswerable by eye.
-    if fe.belief_slots is not None:
-        nodes.append(_node("belief_slots", "phase", stage="T0",
-                           note="swaps unrevealed opp role tokens for learned unknown-mon queries"))
+    if hb is not None:
+        # X5's T0 hypothesis set (gen3_x5_hypothesis_set_v1 / gen3_x5_belief_tokens_v1). What it READS:
+        # δ_θ's Deep-Sets pool over the REVEALED pre-belief opponent role tokens ⊕ its projection of
+        # the global token's RAW input; the T0 species prior (score = log P_T0 + δ_θ); and, after the
+        # move belief, the opponent active's typed move posterior (its move group).
+        edges.append(_edge("pokemon_encoder.role_encoder", "hypothesis_builder", "content", D,
+                           "D_MODEL",
+                           via="HypothesisBuilder.delta (Deep-Sets sum over the REVEALED opponent "
+                               "role tokens, pre-belief)",
+                           note="hidden slots contribute nothing; detached under "
+                                "belief_grad_mode=detached"))
+        edges.append(_edge("obs_unpack", "hypothesis_builder", "content",
+                           int(hb.delta_global.weight.shape[1]),
+                           "TeamTransformer._global_token_input_dim",
+                           via="HypothesisBuilder.delta_global (the global token's RAW input: "
+                               "our ctx ‖ opp ctx ‖ non_matchup_rest)",
+                           note="its OWN projection — the transformer's global_proj is T1"))
+        if fe.move_belief is not None:
+            edges.append(_edge("move_belief", "hypothesis_builder", "content",
+                               fe.move_belief.move_head.out_features, "layout['max_moves']",
+                               via="HypothesisBuilder.with_moves (the opponent ACTIVE's move group)",
+                               note="the ONE move order every consumer shares (E4 seats, the op's "
+                                    "top-K / pair cells, the D3 / S3 cells, the flat pointer's "
+                                    "seats) + the fixed-mass presence pi_m"))
+        # What it WRITES. The hidden slots' tokens are THE pokemon_encoder applied to each hypothesis
+        # species' dex row (`hypothesis_encode`: the species half over the dex table once, gathered)
+        # + `hypothesis_marker`, spliced in place of the unrevealed opponent role tokens.
         for j in range(T):
-            edges.append(_edge("belief_slots", f"opp_mon[{j}]", "content", D,
-                               "D_MODEL", note="in-place; pre-transformer"))
+            edges.append(_edge("hypothesis_builder", f"opp_mon[{j}]", "content", D, "D_MODEL",
+                               via="splice_hypothesis_tokens (the hypothesis species' dex row "
+                                   "through THE pokemon_encoder, gathered, + hypothesis_marker)",
+                               note="HIDDEN slots only, pre-transformer; a revealed slot keeps its "
+                                    "own token. The slot's log-presence is its per-KEY attention "
+                                    "bias in the trunk and every class-E pool (key_log_presence)"))
+        edges.append(_edge("hypothesis_builder", "OTHER_species", "content", D, "D_MODEL",
+                           via="HypothesisBuilder.other_rest + other_map (the tail-mean species "
+                               "embedding)",
+                           note="the hypothesis set's TAIL as one token; zero where OTHER is masked"))
+        if fe.damage_op is not None:
+            edges.append(_edge("hypothesis_builder", "damage_op", "content",
+                               layout["max_species"], "layout['max_species']",
+                               via="build_op_roster / other_roster (OpRoster)",
+                               note="a hidden slot priced as its concrete hypothesis (per-slot "
+                                    "species one-hots replace the T0 marginal as the defender "
+                                    "belief), per-mon fixed-mass candidates in ONE order, and "
+                                    "OTHER_species' tail-averaged tables"))
     if fe.move_belief is not None:
         for j in range(T):
             edges.append(_edge("move_belief", f"opp_mon[{j}]", "content", D, "D_MODEL",
@@ -953,9 +1089,19 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     if getattr(fe, "t0_species_prior", None) is not None:
         nodes.append(_node("t0_species_prior", "belief_head", stage="T0",
                            note="team-composition species belief; parameter-free"))
-        edges.append(_edge("t0_species_prior", "damage_op", "content",
-                           layout["max_species"], "layout['max_species']",
-                           note="P(species | revealed team) — replaces the STATIC usage prior"))
+        if hb is None:
+            edges.append(_edge("t0_species_prior", "damage_op", "content",
+                               layout["max_species"], "layout['max_species']",
+                               note="P(species | revealed team) — replaces the STATIC usage prior"))
+        else:
+            # X5: the op prices the hypothesis roster, not the T0 marginal — the prior reaches it
+            # only through the hypothesis scores.
+            edges.append(_edge("t0_species_prior", "hypothesis_builder", "content",
+                               layout["max_species"], "layout['max_species']",
+                               via="species_team_prior_logits (log P_T0(s | revealed team))",
+                               note="the hypothesis score is log P_T0 + δ_θ; δ_θ's last layer is "
+                                    "zero, so a cold start IS the Smogon prior's fixed-size "
+                                    "marginal"))
     if fe.spread_belief is not None:
         edges.append(_edge("spread_belief", "damage_op", "content", 5, "5 stats",
                            note="believed opp spread; without it the op prices a fictional "
@@ -982,9 +1128,11 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         "arch_signature": cfg.get("arch_signature"),
         "config_version": cfg.get("config_version"),
         "obs_dim": layout["total_dim"],
-        "n_tokens": base + seats.n_seats,
+        # The WHOLE trunk sequence: base + entity seats + OTHER_species (X5) + the event seats.
+        # (It counted the entity seats only — 29 against the trunk's 61 — until X5 added a seat.)
+        "n_tokens": base + seats.n_seats + n_other + n_ev,
         "base_seats": base,
-        "extra_seats": seats.n_seats,
+        "extra_seats": seats.n_seats + n_other + n_ev,
         "edge_bias_families": sorted(fams),
         "op_out_dim": op.out_dim,
         "pi_projection_in": fe.projection.in_features,

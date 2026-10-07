@@ -74,19 +74,22 @@ def test_a_flagless_resume_INHERITS_the_recorded_value_and_a_typed_one_overrides
     assert '_resolve("policy_gae_lambda", 0.80)' in inspect.getsource(cfg)
 
 
-def test_it_is_a_RECORDED_ModelVersion_field_and_an_old_config_migrates_to_0_80():
-    from agents.model.model_version import ModelVersion
+def test_it_is_a_RECORDED_ModelVersion_field_and_an_old_config_is_refused():
+    """The field is recorded and a recorded value migrates verbatim. The v123 branch that defaulted an old
+    config to 0.80 is UNREACHABLE since the X5 version break raised MIGRATION_FLOOR to 144: such a config is
+    refused at the floor."""
+    from agents.model.model_version import ModelVersion, ModelVersionError
     from agents.model.model_version.construct import ModelVersionConstruction
     from agents.model.model_version.constants import MODEL_CONFIG_VERSION
-    from agents.model.model_version.migrations import _migrate_config
+    from agents.model.model_version.migrations import MIGRATION_FLOOR, _migrate_config
     assert ModelVersion.__dataclass_fields__["policy_gae_lambda"].default == _DEFAULT
     fn = ModelVersionConstruction.from_layout_and_policy_kwargs
     assert inspect.signature(fn).parameters["policy_gae_lambda"].default == _DEFAULT
     assert "policy_gae_lambda=float(policy_gae_lambda)" in inspect.getsource(fn)
     assert MODEL_CONFIG_VERSION >= 123
-    out = _migrate_config({"config_version": 122})
-    assert out["policy_gae_lambda"] == _DEFAULT and out["config_version"] >= 123
-    kept = _migrate_config({"config_version": 122, "policy_gae_lambda": 0.95})
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 122})
+    kept = _migrate_config({"config_version": MIGRATION_FLOOR, "policy_gae_lambda": 0.95})
     assert kept["policy_gae_lambda"] == 0.95
 
 

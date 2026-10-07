@@ -55,9 +55,7 @@ FORWARD_MODULES: Tuple[str, ...] = (
 #: every node inside them is exempt (`REASONS["LABEL"]`).
 LABEL_FUNCS: FrozenSet[Tuple[str, str]] = frozenset({
     ("opp_intent", f) for f in (
-        "match_seats_to_move_num", "resolve_believed_slot_by_content", "info_gain_nats",
-        "intent_label_weights", "set_valued_switch_loss", "intent_losses", "_alpha_subset_metrics",
-        "_beta_subset_metrics", "switch_coverage_metrics", "render_alpha")} | {
+        "match_seats_to_move_num", "resolve_believed_slot_by_content", "render_alpha")} | {
     # gen3_x5_hypothesis_set_v1 (X5 U2): the set-supervision loss + label helpers and the rule-8
     # near-tie READER (`near_tie_rows`, a check-side helper, never the forward).
     ("hypothesis_set", f) for f in (
@@ -153,7 +151,7 @@ MARGIN: Dict[Tuple[str, str], Rule] = {
     #     and a computed max HP; a fixed-damage KO at exactly the remaining HP is a genuine near-tie)
     #     gen3_nonformula_damage_v1: ONE site now — every kernel reaches it through damage_kinds.
     ("damage_kinds", "fixed >= tgt_cur_hp"): Rule("threshold", zero_exact=True),
-    # --- gen3_x5_belief_tokens_v1 (X5 U3, `--belief-tokens fixed_mass` only): THE one stable order of
+    # --- gen3_x5_belief_tokens_v1 (X5 U3): THE one stable order of
     #     the hypothesis set (species, and the active's move group — one source line). Since U3 log π
     #     reads it: hypothesis rank j fills the j-th hidden slot (k <= 5, so positions 0..5) and the
     #     move seats are positions 0..K-1 (K = 6): every adjacent pair among the first 7 is a boundary
@@ -281,8 +279,8 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "sorted_ids[:, None, :] == req_ids[:, :, None]"),
     },
     "extractor_forward": {
-        "OBS": ("_opp_active_flag < 0.5", "ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0"),
-        "INT": ("_seat_nums > 0",),
+        # (`_opp_active_flag < 0.5` / `_seat_nums > 0` left with the blob path's α / β forward block, v144.)
+        "OBS": ("ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0",),
         "PYTHON": ("self.entity_topk_seats > 0", "self.opp_intent_grad_mode == 'shaping'"),
     },
     "intent_conditional": {
@@ -365,8 +363,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "o.st_cat == slp_cat", "o.st_cat > 0", "our_types[..., 0] == T_GHOST",
                 "our_types[..., 1] == T_GHOST", "op.MOVE_STATUS_CAT[ids].long()"),
     },
-    # gen3_x5_hypothesis_set_v1 (X5 U2, `--belief-tokens fixed_mass` only — the module never runs on the
-    # production `blob` surface). In U2 the hypothesis set is STASHED and read only by the presence BCE
+    # gen3_x5_hypothesis_set_v1 (X5 U2; the production surface since the X5 version break, v144). In U2 the hypothesis set is STASHED and read only by the presence BCE
     # and the readers, so its three float-operand discrete ops are NOT_LOGP. 🚨 U3 wires the tokens into
     # the trunk / the op — log π then reads them, and these three MUST be re-declared: the selection
     # argsort as a MARGIN rule on the k-th / (k+1)-th π gap (§3.1's rule-8 exclusion,

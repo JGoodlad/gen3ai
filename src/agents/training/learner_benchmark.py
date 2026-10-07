@@ -557,7 +557,8 @@ def _config(model: Any, name: str, base_epochs: int):
             obs_dim = int(model.policy.observation_space["observation"].shape[0])
             model.policy.ridealong = build_ridealong(
                 fe, obs_dim=obs_dim, spec=RideAlongSpec(ensemble=5, rnd=True, adv=5, opp=5,
-                                                        rnd_variants=RND_VARIANTS)
+                                                        rnd_variants=RND_VARIANTS,
+                                                        opp_flat_k=RideAlongSpec.from_extractor(fe).opp_flat_k)
             ).to(model.device)
             model._ridealong_disabled = False
             model._ridealong_acquire()

@@ -114,26 +114,30 @@ def test_a_flagless_resume_INHERITS_the_recorded_cadence_and_a_typed_one_overrid
     assert '_resolve("diagnostics_every", DIAGNOSTICS_EVERY_DEFAULT)' in inspect.getsource(cfg)
 
 
-def test_it_is_a_RECORDED_field_and_a_pre_v124_config_migrates_to_every_update():
-    from agents.model.model_version import ModelVersion
+def test_it_is_a_RECORDED_field_and_a_pre_v124_config_is_refused():
+    """The field is recorded and a recorded value migrates verbatim. The v124 branch that defaulted a
+    pre-v124 config to every update (`DIAGNOSTICS_EVERY_PRE_V124`) is UNREACHABLE since the X5 version
+    break raised MIGRATION_FLOOR to 144: such a config is refused at the floor."""
+    from agents.model.model_version import ModelVersion, ModelVersionError
     from agents.model.model_version.constants import MODEL_CONFIG_VERSION
     from agents.model.model_version.construct import ModelVersionConstruction
-    from agents.model.model_version.migrations import _migrate_config
+    from agents.model.model_version.migrations import MIGRATION_FLOOR, _migrate_config
     assert ModelVersion.__dataclass_fields__["diagnostics_every"].default == 1
     fn = ModelVersionConstruction.from_layout_and_policy_kwargs
     assert "diagnostics_every=int(diagnostics_every)" in inspect.getsource(fn)
     assert MODEL_CONFIG_VERSION >= 124
-    out = _migrate_config({"config_version": 123})
-    assert out["diagnostics_every"] == dc.DIAGNOSTICS_EVERY_PRE_V124 == 1
-    assert out["config_version"] >= 124
-    assert _migrate_config({"config_version": 123, "diagnostics_every": 10})["diagnostics_every"] == 10
+    assert dc.DIAGNOSTICS_EVERY_PRE_V124 == 1
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 123})
+    rec = _migrate_config({"config_version": MIGRATION_FLOOR, "diagnostics_every": 10})
+    assert rec["diagnostics_every"] == 10 and rec["config_version"] >= MIGRATION_FLOOR
     import main.train.model_build as mb
     assert inspect.getsource(mb).count("diagnostics_every=args.diagnostics_every,") == 2
 
 
 def test_checkargs_reports_the_inherited_cadence(tmp_path):
-    """`main.checkargs` resolves an argv the way the launch does: a flagless resume of a pre-v124
-    parent (the production mirror, a real recorded config) INHERITS 1; a typed value wins."""
+    """`main.checkargs` resolves an argv the way the launch does: a flagless resume of a parent that
+    RECORDED the cadence (the production mirror, a real recorded config) INHERITS 1; a typed value wins."""
     import json
 
     from agents.model.model_version import ModelVersion

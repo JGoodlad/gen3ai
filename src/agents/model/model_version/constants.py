@@ -470,7 +470,21 @@ from typing import Any, Dict
 #   first) from the speed BELIEF + the exact gen-3 order rules (`move_order`) instead of `_DMG_SPEED_SCALE`'s
 #   logistic. A STRUCTURAL string {off,on} with NO parameters, gated in check_compatible. A pre-v143 config migrates
 #   to "off" (the only possible past). No ARCH_SIGNATURE bump ('off' is byte-identical), no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 143
+# v144 (gen3_x5_version_break_v1 — THE X5 VERSION BREAK; designs/endstate/design_x5_belief_tokens.md Decision record
+#   2026-10-07 + §3.8, `model_version/version_break.py`): the ONE planned checkpoint break after X5's adoption. ONE
+#   bump carries every part of the break (later parts append below, no further bump). ARCH_SIGNATURE ->
+#   "gen3_x5_version_break_v1" and MIGRATION_FLOOR -> 144: NO pre-break checkpoint (blob or fixed_mass) is
+#   reproducible at HEAD, so every one is refused at the floor with the belief-specific reason and runs PINNED
+#   (`version_break.LAST_BLOB_COMMIT`).
+#   Part 1 — the X5 flip + the blob deletion: X5's hypothesis tokens (the old `--belief-tokens fixed_mass`) are the
+#     ONLY belief representation. `belief_tokens` leaves the config, the flag, the extractor kwarg and the registry;
+#     the blob path's forward and loss branches are deleted. A pickled `belief_tokens='fixed_mass'` pops, any other
+#     value is refused (`snapshot._DEAD_FEK_JUDGED`). The opponent-belief family (`opp_belief_slots` /
+#     `opp_intent`) now builds X5 whenever it is on and REFUSES a configuration missing one of X5's requirements
+#     (`t0_species_prior`, `move_belief_mode`, `move_prior_fusion`, `opp_intent`, `opp_belief_slots`,
+#     `entity_tail_seats`). The
+#     production model is byte-identical to the pre-break fixed_mass arm (K9 init / post hashes unchanged).
+MODEL_CONFIG_VERSION = 144
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -491,7 +505,7 @@ _BELIEF_GRAD_MODE_EFFECT = {
 # The signature-by-signature history (v2 -> gen3_ctx_dedup_v1: what broke weight
 # compatibility each time, and why) lives in designs/CHANGELOG.md under 'The
 # ARCH_SIGNATURE narrative' — moved there 2026-08-16.
-ARCH_SIGNATURE = "gen3_event_record_v2"
+ARCH_SIGNATURE = "gen3_x5_version_break_v1"
 class ModelVersionError(Exception):
     pass
 

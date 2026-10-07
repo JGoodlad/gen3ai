@@ -42,7 +42,7 @@ def test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on
     from agents.model import parity_probe as PP
     from agents.training import learner_golden as LG
     monkeypatch.setattr(PP, "PERTURB_SCALE", 0.0)          # a FRESH launch's weights (zero-init pointer head)
-    model = LG.build_arm_learner("fixed_mass")
+    model = LG.build_learner()
     assert model.policy.features_extractor.hypothesis_builder is not None      # PRECONDITION: the X5 arm
     dev = torch.device("cuda")
     model.policy.to(dev)

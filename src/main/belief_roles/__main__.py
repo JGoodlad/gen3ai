@@ -3,16 +3,19 @@
   python -m main.belief_roles roles                                   # the Smogon role set + pairs
   python -m main.belief_roles read --out <dir> \\
         --ckpt <run>/checkpoints/<ckpt>.zip=<label> [...] \\
-        [--reference <fixed_mass label>=<blob>[,<blob>...]]           # CPU forwards on the Lane S bank
+        [--reference <label>=<blob>.erow.npz[,<blob>.erow.npz...]]    # CPU forwards on the Lane S bank
   python -m main.belief_roles infer --treat <X5 read>.json ... --control <blob read>.json ... \\
         --boundary 2.683 [--metric intent_logloss] [--margin 0]      # §7.4's across-seed t
 
 ``--out`` under ``models/`` is REFUSED (read-only). A bare run directory is REFUSED as a checkpoint.
 
-A blob read writes its named set E_row beside its JSON (``<label>.erow.npz``, Amendment 3(b)); a
-fixed_mass read is scored on EVERY blob run of the look through ``--reference`` (its value is the MEAN of
-the conditional log loss over those sets; each ``<blob>`` is a blob label read in the same invocation or
-a saved ``.erow.npz``). Without any, its conditional metric (the adoption gate) is None.
+``read`` reads X5 checkpoints (the hypothesis tokens, the only belief representation since the X5
+version break, config v144). A PRE-BREAK checkpoint — a blob one, or a pre-break fixed_mass one — is
+REFUSED with the loader's typed reason (run this reader PINNED to the checkpoint's own commit, where the
+blob read arm still exists). A run's conditional metric (the adoption gate) is scored on EVERY blob run
+of the look through ``--reference``: the BANKED ``<label>.erow.npz`` named sets the X5 A/B's blob reads
+wrote (its value is the MEAN of the conditional log loss over those sets). Without any, it is None.
+``infer`` compares finished read JSONs, the X5 A/B's blob reads among them.
 """
 from __future__ import annotations
 
@@ -21,7 +24,6 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 READ_SCHEMA = "gen3_belief_purpose_read_v2"
 
@@ -53,10 +55,9 @@ def refuse_under_models(path: Path) -> None:
 
 
 def read_one(br, roles, zip_path: Path, label: str, threads: int, commit: str,
-             reencode_s: float, references=(), erow_out: Optional[Path] = None) -> dict:
-    """One checkpoint's read. ``references``: blob runs' ``ERow``s (a fixed_mass run is scored on each,
-    the run's value their mean); ``erow_out``: where a blob run's own E_row is saved."""
-    from main.belief_roles.eset import ERow_SCHEMA
+             reencode_s: float, references=()) -> dict:
+    """One checkpoint's read. ``references``: banked blob runs' ``ERow``s (the run is scored on each,
+    its value their mean). A pre-break checkpoint raises ``forward.ReadRefused``."""
     from main.belief_roles.forward import arm_of, file_sha256, load_strict, read_columns
     from main.belief_roles.metrics import read_all
     from main.policy_spectrum.reader import inference_globals
@@ -81,15 +82,7 @@ def read_one(br, roles, zip_path: Path, label: str, threads: int, commit: str,
     del model
     sha = file_sha256(Path(zip_path))
     bank_sha = br.bank.manifest["content_sha256"]
-    if cols.own_erow is not None:
-        cols.own_erow.meta = {"schema": ERow_SCHEMA, "label": label, "checkpoint_sha256": sha,
-                              "bank_sha256": bank_sha}
-        eref = {"mode": "own", "reference_label": label, "checkpoint_sha256": sha,
-                "erow_sha256": cols.own_erow.content_sha256()}
-        if erow_out is not None:
-            cols.own_erow.save(erow_out)
-            eref["erow_path"] = str(erow_out)
-    elif references:
+    if references:
         eref = {"mode": "all_blob_mean", "rule": "the mean over every blob run of the look (§7.7(b))",
                 "references": [{"reference_label": r.meta.get("label"),
                                 "checkpoint_sha256": r.meta.get("checkpoint_sha256"),
@@ -138,23 +131,31 @@ def cmd_read(a) -> int:
             sys.exit(f"[belief_roles] {p}: name the checkpoint .zip — a bare run directory resolves "
                      "to the run's LAST snapshot and moves")
         specs.append((p, label))
+    # a PRE-BREAK checkpoint (blob, or a pre-break fixed_mass) is refused here, before the bank's re-encode
+    from main.belief_roles.forward import ReadRefused, refuse_pre_break
+    for p, _ in specs:
+        try:
+            refuse_pre_break(p)
+        except ReadRefused as e:
+            sys.exit(f"[belief_roles] REFUSED: {e}")
     labels = [lb for _, lb in specs]
     if len(set(labels)) != len(labels):
         sys.exit("[belief_roles] two --ckpt share a label")
     refs: dict = {}
     for spec in a.reference or []:
-        fm, _, ref = spec.partition("=")
+        lb, _, ref = spec.partition("=")
         names = [x for x in ref.split(",") if x]
-        if fm not in labels or not names:
-            sys.exit(f"[belief_roles] --reference {spec!r}: name it <fixed_mass label>=<blob>[,<blob>...], "
-                     "each <blob> a label of this invocation's --ckpt or a path.erow.npz")
-        refs.setdefault(fm, []).extend(names)
-    for fm, names in refs.items():
+        if lb not in labels or not names:
+            sys.exit(f"[belief_roles] --reference {spec!r}: name it <label>=<blob>.erow.npz[,...], <label> "
+                     "a --ckpt label of this invocation")
+        refs.setdefault(lb, []).extend(names)
+    for lb, names in refs.items():
         if len(set(names)) != len(names):
-            sys.exit(f"[belief_roles] --reference {fm}: a blob is named twice")
-    # every blob named as a reference is read FIRST, so its E_row exists when a fixed_mass run is read
-    ref_labels = {n for names in refs.values() for n in names}
-    specs.sort(key=lambda x: x[1] not in ref_labels)
+            sys.exit(f"[belief_roles] --reference {lb}: a blob set is named twice")
+        for r in names:
+            if r in labels:
+                sys.exit(f"[belief_roles] --reference {lb}={r}: a reference is a BANKED blob named set "
+                         "(<blob>.erow.npz) — a checkpoint this commit reads is an X5 one, never a blob")
     t = time.time()
     br = load_bank_rows(Path(a.bank), workers=a.workers)
     t_re = time.time() - t
@@ -166,19 +167,18 @@ def cmd_read(a) -> int:
     out.mkdir(parents=True, exist_ok=True)
     from main.belief_roles.eset import ERow
 
-    def safe_of(lb: str) -> str:
-        return lb.replace("/", "_").replace(" ", "_")
-
     for p, label in specs:
         references = []
         for r in refs.get(label, []):
-            rp = out / f"{safe_of(r)}.erow.npz" if r in labels else Path(r)
+            rp = Path(r)
             if not rp.is_file():
                 sys.exit(f"[belief_roles] --reference {label}={r}: no E_row file at {rp}")
             references.append(ERow.load(rp))
-        safe = safe_of(label)
-        res = read_one(br, roles, p, label, a.threads, commit, t_re, references=references,
-                       erow_out=out / f"{safe}.erow.npz")
+        safe = label.replace("/", "_").replace(" ", "_")
+        try:
+            res = read_one(br, roles, p, label, a.threads, commit, t_re, references=references)
+        except ReadRefused as e:
+            sys.exit(f"[belief_roles] REFUSED: {e}")
         (out / f"{safe}.json").write_text(json.dumps(res, indent=1, sort_keys=True) + "\n")
         print(f"[belief_roles] {label} ({res['arm']}): {json.dumps(res['per_run'])}  "
               f"{res['timing_s']}", flush=True)
@@ -214,13 +214,14 @@ def main(argv=None) -> int:
     r.add_argument("--threads", type=int, default=default_threads())
     r.add_argument("--workers", type=int, default=2, help="re-encoding core processes")
     r.add_argument("--reference", action="append",
-                   help="<fixed_mass label>=<blob>[,<blob>...] — EVERY blob run of the look (a label of this "
-                        "invocation or a path.erow.npz); the fixed_mass run's conditional metric is the "
-                        "MEAN over their named sets (repeatable; names accumulate)")
+                   help="<label>=<blob>.erow.npz[,...] — EVERY blob run of the look, as the BANKED named "
+                        "sets its blob reads wrote; the run's conditional metric is the MEAN over them "
+                        "(repeatable; names accumulate)")
     r.set_defaults(fn=cmd_read)
     r = sub.add_parser("infer", help="§7.4's across-seed two-sample t on read JSONs")
     r.add_argument("--treat", nargs="+", required=True, help="the X5 (fixed_mass) runs' read JSONs")
-    r.add_argument("--control", nargs="+", required=True, help="the blob runs' read JSONs")
+    r.add_argument("--control", nargs="+", required=True,
+                   help="the blob runs' read JSONs (banked: a HEAD build reads no blob checkpoint)")
     r.add_argument("--boundary", type=float, required=True,
                    help="the stopping look's t-boundary (§7.4: 5.761 / 2.683 / 1.874)")
     r.add_argument("--metric", action="append", help="a per_run metric (repeatable; default: all)")

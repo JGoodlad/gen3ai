@@ -50,8 +50,6 @@ _ON_OVERRIDE: Dict[str, object] = {
     "damage_candidate_k": 2,
     # gen3_ridealong_rnd_variants_v1: a comma-list string; `True` is not a legal value.
     "ridealong_rnd_variants": "all",
-    # gen3_x5_hypothesis_set_v1 (v136): a two-value mode string; 'blob' is OFF.
-    "belief_tokens": "fixed_mass",
     # gen3_static_tokens_v1 (v139): a two-value mode string; 'legacy' is OFF.
     "token_encoding": "static",
     # gen3_move_resolution_v1 (v141): a two-value mode string; 'off' is OFF.
@@ -91,9 +89,19 @@ def base_kwargs():
 # (The one relation that once lived here — `value_dist_mode != 'none'` also needing
 # `value_dist_vmax > value_dist_vmin` — left with the distributional value head.)
 _VALUE_RELATIONS: Dict[str, Dict[str, object]] = {
-    # gen3_x5_belief_tokens_v1 (X5 U3): the move group's revealed moves take the first seats, so
-    # fixed_mass needs at least four E4 seats (the constructor refuses fewer).
-    "belief_tokens": {"entity_topk_seats": 4},
+    # X5's hypothesis tokens (the belief family's only representation since the version break, v144): the
+    # move group's revealed moves take the first seats, so the family needs at least four E4 seats (the
+    # constructor refuses fewer).
+    "opp_belief_slots": {"entity_topk_seats": 4},
+    # `opp_intent` and `opp_belief_slots` are ONE switch (X5's flat pointer reads the hypothesis set, and
+    # the set's BCE rides the belief coefficient). `requires` is ACYCLIC, so the coupling is declared on
+    # `opp_belief_slots` alone; `opp_intent`'s closure therefore gets the belief half (and its own
+    # requirements) here — the constructor refuses opp_intent without it.
+    "opp_intent": {"opp_belief_slots": True, "t0_species_prior": True, "entity_tail_seats": True,
+                   "move_prior_fusion": True, "entity_topk_seats": 4},
+    # move_resolution needs X5 (through opp_intent) AND the incoming matrix, and under X5 the matrix's K must
+    # EQUAL entity_topk_seats (a per-VALUE relation, BESPOKE_COUPLINGS) — so its closure takes K = 4 too.
+    "move_resolution": {"damage_topk_k": 4},
 }
 
 
@@ -159,16 +167,13 @@ BESPOKE_COUPLINGS: Dict[FrozenSet[str], str] = {
         "per-FAMILY: d3/s3 ARE the E4 seats' bias rows; the other 15 families are indifferent.",
     frozenset({"edge_bias_families", "history_events"}):
         "per-FAMILY: only `r` (Tier H-C reference edges) rides the H-B event seats.",
-    # gen3_x5_belief_tokens_v1 (X5 U3): three per-VALUE relations of the fixed_mass arm's move axis.
-    frozenset({"belief_tokens", "entity_topk_seats"}):
-        "per-VALUE: fixed_mass needs entity_topk_seats >= 4 (revealed moves take the first seats); "
-        "`requires` can only say 'enabled' (`_VALUE_RELATIONS` supplies the magnitude).",
-    frozenset({"belief_tokens", "damage_op", "entity_topk_seats"}):
-        "per-VALUE: under fixed_mass the op's incoming-matrix K must EQUAL entity_topk_seats (its seat "
-        "axis IS the move group's seats) — a relation between two numbers, true only with the matrix on.",
-    frozenset({"belief_tokens", "damage_op"}):
-        "per-VALUE: fixed_mass needs damage_candidate_k == 0 (the full candidate axis); a value of the "
-        "op's truncation knob, not whether the op is on.",
+    # gen3_x5_belief_tokens_v1 (X5 U3): two per-VALUE relations of X5's move axis (the belief family).
+    frozenset({"opp_belief_slots", "opp_intent", "damage_op", "entity_topk_seats"}):
+        "per-VALUE: under X5 the op's incoming-matrix K must EQUAL entity_topk_seats (its seat axis IS the "
+        "move group's seats) — a relation between two numbers, true only with the matrix on.",
+    frozenset({"opp_belief_slots", "opp_intent", "damage_op"}):
+        "per-VALUE: X5 needs damage_candidate_k == 0 (the full candidate axis); a value of the op's "
+        "truncation knob, not whether the op is on.",
 }
 
 

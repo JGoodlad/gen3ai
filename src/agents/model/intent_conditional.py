@@ -181,7 +181,7 @@ class IntentConditionalMoveCell(torch.nn.Module):
         pointer — K seats + OTHER_move (a (K+1)-th seat, priced: `pair_cells` carries its tail
         column) + the total switch mass — and β over the six slots + OTHER_species (`out_pko_mj`
         carries OTHER's column). ``seat_live`` `[B,K+1]` masks α (F-X5-15); ``other_u`` `[B,M]` gives
-        OTHER_move's num-table columns (`seat_num_table` / `seat_in_set`). Both None: blob, unchanged."""
+        OTHER_move's num-table columns (`seat_num_table` / `seat_in_set`). Both None: the belief family off."""
         k = alpha_logits.shape[-1] - 1                                 # last class is SWITCH
         n_nums = topk_nums.shape[-1] + (1 if other_u is not None else 0)
         if pair_cells.shape[2] != k or n_nums != k:

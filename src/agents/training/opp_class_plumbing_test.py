@@ -112,7 +112,7 @@ def test_the_trainer_defaults_the_weight_to_one():
     assert InstrumentedMaskablePPO.intent_label_bot_weight == 1.0
 
 
-def test_the_train_loop_passes_the_configured_weight_to_intent_losses():
+def test_the_train_loop_passes_the_configured_weight_to_the_intent_fold():
     """Source-level pin of the ONE call site: the weight must be read off the model, not
     hardcoded. A silently-dropped kwarg is a flag that does nothing while looking wired."""
     import inspect

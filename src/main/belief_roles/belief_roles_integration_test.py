@@ -1,6 +1,7 @@
-"""The readers end to end on a slice of the committed Lane S bank: fresh `blob` and `fixed_mass`
-checkpoints saved, loaded back through THE strict loader, read on CPU (integration: the Rust core
-re-encodes the bank; `models/` is never written)."""
+"""The readers end to end on a slice of the committed Lane S bank: fresh X5 checkpoints saved, loaded back
+through THE strict loader, read on CPU (integration: the Rust core re-encodes the bank; `models/` is never
+written); the adoption-gate metric scored on a BANKED blob named set (the X5 A/B's look-3 read, sliced to
+the same rows); a PRE-BREAK checkpoint refused with the loader's reason."""
 from __future__ import annotations
 
 import json
@@ -10,8 +11,12 @@ import pytest
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
+#: A blob run's named set as the X5 A/B's look-3 read banked it (the full bank v1, 20,712 rows).
+BANKED_BLOB_EROW = ("designs", "research_state", "measurements", "x5ab_look3_2026-10-07", "purpose",
+                    "blob_s1001.erow.npz")
 
-def _save(dst, arm: str, seed: int, perturb: bool):
+
+def _save(dst, seed: int, perturb: bool):
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
     from agents.model.snapshot import arch_toggles_from_model, current_model_version
     from agents.observation.state_encoder import load_mappings
@@ -20,10 +25,8 @@ def _save(dst, arm: str, seed: int, perturb: bool):
     from main.train.production_args import production_args
 
     dst.mkdir(parents=True)
-    args = production_args()
-    args.belief_tokens = arm
     with PAR.declared_torch_state(1):
-        model, _, _ = build_fresh_model(seed, args=args)
+        model, _, _ = build_fresh_model(seed, args=production_args())
         if perturb:
             perturb_(model.policy, seed=seed + 100, scale=PERTURB_SCALE)
         path = dst / "snapshot_000000001000.zip"
@@ -35,7 +38,8 @@ def _save(dst, arm: str, seed: int, perturb: bool):
 
 @pytest.fixture(scope="module")
 def bank_slice():
-    """One battle per source cycle of the committed bank (9 battles), re-encoded with its truths."""
+    """One battle per source cycle of the committed bank (9 battles), re-encoded with its truths, and the
+    slice's row indices in the FULL bank (a banked E_row is per full-bank row)."""
     from main.belief_roles.bank_rows import bank_rows_of
     from main.policy_spectrum import bank as B
     from main.policy_spectrum.bank_test import BANK_V1
@@ -46,17 +50,17 @@ def bank_slice():
         if b.source["label"] not in seen:
             seen.add(b.source["label"])
             keep.add(b.battle_id)
+    idx = [i for i, d in enumerate(bank.decisions) if d["battle"] in keep]
     sub = B.Bank(bank.manifest, [b for b in bank.battles if b.battle_id in keep],
-                 [d for d in bank.decisions if d["battle"] in keep])
-    return bank_rows_of(sub, workers=2)
+                 [bank.decisions[i] for i in idx])
+    return bank_rows_of(sub, workers=2), idx
 
 
 @pytest.fixture(scope="module")
 def ckpts(tmp_path_factory):
     root = tmp_path_factory.mktemp("belief_roles")
-    return {"blob": _save(root / "run_blob", "blob", 11, perturb=True),
-            "fixed_mass": _save(root / "run_fm", "fixed_mass", 12, perturb=True),
-            "fixed_mass_cold": _save(root / "run_fm_cold", "fixed_mass", 13, perturb=False)}
+    return {"x5": _save(root / "run_x5", 12, perturb=True),
+            "x5_cold": _save(root / "run_x5_cold", 13, perturb=False)}
 
 
 def _read(br, path, label, **kw):
@@ -66,13 +70,12 @@ def _read(br, path, label, **kw):
     return read_one(br, derive(), path, label, threads=2, commit="test", reencode_s=0.0, **kw)
 
 
-def test_both_arms_read_on_the_bank(bank_slice, ckpts):
-    br = bank_slice
+def test_an_x5_checkpoint_reads_on_the_bank(bank_slice, ckpts):
+    br, _ = bank_slice
     assert br.n > 100 and (br.event >= 0).any() and (br.event >= 1000).any()
     reads = {k: _read(br, p, k) for k, p in ckpts.items()}
-    assert reads["blob"]["arm"] == "blob"
-    assert reads["fixed_mass"]["arm"] == "fixed_mass" == reads["fixed_mass_cold"]["arm"]
     for k, r in reads.items():
+        assert r["arm"] == "fixed_mass"                                # the X5 arm's name in every read
         json.dumps(r)                                                  # serialisable, no NaN objects
         pr = r["per_run"]
         for m in ("intent_logloss", "intent_miss_rate", "presence_brier", "presence_bce",
@@ -82,54 +85,72 @@ def test_both_arms_read_on_the_bank(bank_slice, ckpts):
         assert r["off_pool"]["n_rows"] == 0 and r["per_run_off_pool"]["intent_logloss"] is None
         it = r["on_pool"]["intent"]["all"]
         assert it["n_covered"] + it["n_miss"] == it["n_labeled"] > 0
-        # Amendment 3(b): a fixed_mass read with no blob set has NO adoption-gate value
-        if r["arm"] == "fixed_mass":
-            assert r["eset_reference"] == {"mode": "none"}
-            assert pr["intent_logloss_conditional"] is None
+        # Amendment 3(b): a read with no blob set has NO adoption-gate value
+        assert r["eset_reference"] == {"mode": "none"}
+        assert pr["intent_logloss_conditional"] is None
+        # the switch side covers every switch-in: the hypothesis slots + OTHER_species' tail
+        assert r["on_pool"]["intent"]["switch"]["n_miss"] == 0, k
+        assert r["on_pool"]["intent"]["miss_breakdown"]["switch"] == 0, k
     # the Smogon prior column is checkpoint-independent
-    a, b = reads["blob"]["on_pool"]["prior"], reads["fixed_mass"]["on_pool"]["prior"]
+    a, b = reads["x5"]["on_pool"]["prior"], reads["x5_cold"]["on_pool"]["prior"]
     assert a["presence"]["brier"] == b["presence"]["brier"]
     assert a["roles_r1_r2"]["weighted_abs_delta"] == b["roles_r1_r2"]["weighted_abs_delta"]
-    # a COLD fixed_mass checkpoint (δ_θ zero-init) reads exactly the prior's presence; a perturbed one does not
-    cold = reads["fixed_mass_cold"]["on_pool"]
+    # a COLD checkpoint (δ_θ zero-init) reads exactly the prior's presence; a perturbed one does not
+    cold = reads["x5_cold"]["on_pool"]
     assert abs(cold["arm"]["presence"]["brier"] - cold["prior"]["presence"]["brier"]) < 1e-6
-    hot = reads["fixed_mass"]["on_pool"]
+    hot = reads["x5"]["on_pool"]
     assert abs(hot["arm"]["presence"]["brier"] - hot["prior"]["presence"]["brier"]) > 1e-4
-    # the switch side covers every switch-in in both arms: blob through BeliefHead's content over V,
-    # fixed_mass (U4's flat pointer) through the hypothesis slots + OTHER_species' tail
-    for k in reads:
-        assert reads[k]["on_pool"]["intent"]["switch"]["n_miss"] == 0, k
-        assert reads[k]["on_pool"]["intent"]["miss_breakdown"]["switch"] == 0, k
 
 
-def test_the_conditional_metric_on_the_blob_set(bank_slice, ckpts, tmp_path):
-    """Amendment 3(b) end to end: the blob read writes its named set E_row, the fixed_mass read is
-    scored on it (the look's blob set, here of one run). On its OWN set the blob's conditional loss is its as-built loss on the same rows (all
-    its mass sits on E_row); the fixed_mass arm is scored on a subset of the blob's in-set rows (its own
-    rule-8 rows excluded), gives every in-set event positive mass, and reports its outside mass."""
+def test_the_conditional_metric_on_a_banked_blob_set(bank_slice, ckpts):
+    """Amendment 3(b) end to end on a BANKED blob named set (the X5 A/B's look-3 read of blob_s1001; the
+    blob read arm itself was deleted at the version break), sliced to the test bank's rows: the X5 read is
+    scored on it, records the reference, gives every in-set event positive mass and reports its outside
+    mass."""
+    import numpy as np
+
     from main.belief_roles.eset import ERow
+    from utils.paths import repo_path
 
-    br = bank_slice
-    blob = _read(br, ckpts["blob"], "blob", erow_out=tmp_path / "blob.erow.npz")
-    ref = ERow.load(tmp_path / "blob.erow.npz")
-    assert ref.n == br.n and ref.meta["checkpoint_sha256"] == blob["checkpoint"]["sha256"]
-    fm = _read(br, ckpts["fixed_mass"], "fm", references=[ref])
-    assert blob["eset_reference"]["mode"] == "own"
-    assert fm["eset_reference"]["mode"] == "all_blob_mean"
-    assert [x["checkpoint_sha256"] for x in fm["eset_reference"]["references"]] == [blob["checkpoint"]["sha256"]]
-    bi = blob["on_pool"]["intent"]["all"]
-    bc = blob["on_pool"]["intent_conditional"]["per_reference"][0]
+    br, idx = bank_slice
+    full = ERow.load(repo_path(*BANKED_BLOB_EROW))
+    assert full.meta["bank_sha256"] == br.bank.manifest["content_sha256"]    # the same bank v1
+    ii = np.asarray(idx)
+    ref = ERow(seat_events=full.seat_events[ii], switch_ok=full.switch_ok[ii], tie=full.tie[ii],
+               meta=dict(full.meta))
+    assert ref.n == br.n
+    fm = _read(br, ckpts["x5"], "x5", references=[ref])
+    er = fm["eset_reference"]
+    assert er["mode"] == "all_blob_mean"
+    assert [x["checkpoint_sha256"] for x in er["references"]] == [full.meta["checkpoint_sha256"]]
+    assert er["references"][0]["erow_sha256"] == ref.content_sha256()
     fcm = fm["on_pool"]["intent_conditional"]
     assert fcm["available"] and fcm["n_references"] == 1
     fc = fcm["per_reference"][0]
+    assert fc["reference_label"] == "blob_s1001"
     assert fm["per_run"]["intent_logloss_conditional"] == fc["all"]["logloss"] == fcm["mean"]["logloss"]
-    assert bc["all"]["n_scored"] == bi["n_covered"] and bc["all"]["n_rows"] == bi["n_labeled"]
-    # on its own set the blob's renormalisation can only RAISE its probabilities: its α keeps SWITCH
-    # finite on rows where no β slot is legal (mass that names no event; F-X5-AM3-2), which the
-    # as-built read charged to it
-    assert bc["all"]["logloss"] <= bi["logloss"] + 1e-12
-    assert abs(bc["coverage"]["outside_freq"] - bi["miss_rate"]) < 1e-12
     assert fc["all"]["n_zero_event_mass"] == 0
-    assert 0 < fc["all"]["n_in_set"] <= bc["all"]["n_in_set"]
+    assert 0 < fc["all"]["n_scored"] <= fc["all"]["n_in_set"] <= fc["all"]["n_rows"]
     assert math.isfinite(fm["per_run"]["intent_logloss_conditional"])
     assert 0.0 < fc["coverage"]["mean_outside_mass"] < 1.0
+
+
+def test_a_pre_break_run_is_refused_by_the_read_with_the_loaders_reason(bank_slice, ckpts, tmp_path):
+    """A REAL checkpoint zip whose run config records a pre-break generation (here: the same weights under
+    a v143 blob config) is refused by the read itself — `forward.ReadRefused` carrying `version_break`'s
+    reason and the last pre-break commit — before any forward."""
+    import shutil
+
+    from agents.model.model_version.version_break import LAST_BLOB_COMMIT
+    from main.belief_roles.forward import ReadRefused
+
+    br, _ = bank_slice
+    run = tmp_path / "run_pre_break"
+    run.mkdir()
+    z = run / "snapshot_000000001000.zip"
+    shutil.copy(ckpts["x5_cold"], z)
+    cfg = json.loads((ckpts["x5_cold"].parent / "model_config.json").read_text())
+    cfg.update(config_version=143, belief_tokens="blob")
+    (run / "model_config.json").write_text(json.dumps(cfg))
+    with pytest.raises(ReadRefused, match=f"(?s)belief_tokens='blob'.*DELETED.*{LAST_BLOB_COMMIT[:12]}"):
+        _read(br, z, "pre_break")

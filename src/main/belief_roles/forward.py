@@ -2,44 +2,33 @@
 
 The load goes through THE strict loader (``load_checkpoint_strict`` + ``historical_load_kwargs``,
 `gen3_strict_checkpoint_load_v1`); the forwards run inside ``policy_spectrum.reader.inference_globals``
-(fixed thread count, restored on exit), batched in the bank's FIXED order. The arm is read off the
-model (``features_extractor.hypothesis_builder`` is built iff ``--belief-tokens fixed_mass``), never
-assumed.
+(fixed thread count, restored on exit), batched in the bank's FIXED order. The checkpoint must carry
+X5's hypothesis tokens (``features_extractor.hypothesis_builder``) — the only belief representation
+since the X5 version break (config v144); its arm is recorded as ``fixed_mass`` (the name the X5 A/B
+reads carry). A PRE-BREAK checkpoint (a blob one, or a pre-break fixed_mass one) is REFUSED before any
+forward (:class:`ReadRefused`, the loader's typed reason: run this reader PINNED to the checkpoint's own
+commit) — the blob read arm (BeliefHead's hidden-slot posterior, α / β) was deleted with the blob path.
 
-Per decision, three COLUMNS of belief (each a per-species presence π over the structural candidate set
+Per decision, two COLUMNS of belief (each a per-species presence π over the structural candidate set
 V = the dex-row table's valid nums minus the revealed ones, Σ_V π = k = the hidden count):
 
-* ``fixed_mass`` — the arm's OWN presence, ``hs.species.pi`` (σ(log P_T0 + δ_θ + τ));
-* ``blob`` — the blob's own species belief, BeliefHead's per-slot species logits reduced to the
-  hidden-slot mean and put through the SAME fixed-size construction (``belief_head_team_scores`` —
-  §4.2 R3's "the fixed-size marginal of BeliefHead's posterior for the blob, so the two are comparable");
-* ``prior`` — the Smogon T0 prior alone (``species_team_prior_logits`` → the same construction), the
-  third column (§4.2), identical for every checkpoint.
+* ``arm`` — the checkpoint's OWN presence, ``hs.species.pi`` (σ(log P_T0 + δ_θ + τ));
+* ``prior`` — the Smogon T0 prior alone (``species_team_prior_logits`` → the same fixed-size
+  construction), the comparison column (§4.2), identical for every checkpoint.
 
-The opponent-intent read (the COMMON EVENT SPACE, `bank_rows`): each arm's heads induce a probability
-on the realised event,
+The opponent-intent read (the COMMON EVENT SPACE, `bank_rows`) is the FLAT opponent pointer's
+(:func:`_flat_event_logp`, X5 U4 `gen3_x5_flat_pointer_v1`): one softmax over [K move seats · OTHER_move ·
+six switch targets · OTHER_species]; a seat's content is its move (a Hidden Power seat — 237 or a typed
+channel — is the one HP event), a slot's its species (revealed, or the hypothesis it holds), OTHER's the
+renormalised tail (π_m / Σ π_m over OTHER_move's members; ``other_tail_probs`` for OTHER_species).
 
-* a move event m:   P = Σ_k α_k · [seat k's event = m]  (a Hidden Power seat — 237 or a typed channel —
-  is the one HP event);
-* a switch to s:    P = α_SWITCH · Σ_j β_j · c_j(s) over β's legal slots, where c_j is slot j's CONTENT:
-  a revealed slot is its species; a hidden slot is, under ``blob``, BeliefHead's species posterior for
-  that slot (softmax over V — the content β's training target is addressed by,
-  ``resolve_believed_slot_by_content``), under ``fixed_mass`` the hypothesis species the seat holds.
+An event no candidate can produce (a move outside the seats and outside OTHER_move's members; a
+switch-in no slot's content supports) is a MISS: its own column, never floored into the log loss (§7.4).
 
-Under ``fixed_mass`` (X5 U4, `gen3_x5_flat_pointer_v1`) α / β are retired and the FLAT pointer is
-read instead (:func:`_flat_event_logp`): one softmax over [K move seats · OTHER_move · six switch
-targets · OTHER_species], OTHER's content the renormalised tail (π_m / Σ π_m over OTHER_move's members;
-``other_tail_probs`` for OTHER_species). A checkpoint whose forward stashes no flat logits takes the
-α / β read.
-
-An event no candidate can produce (a move outside the seats — and, under the flat pointer, outside
-OTHER_move's members; a switch-in no slot's content supports) is a MISS: its own column, never floored
-into the log loss (§7.4).
-
-Amendment 3(b) (§7.7(b), :mod:`.eset`): the same heads also give each arm's FULL distribution on the dense
+Amendment 3(b) (§7.7(b), :mod:`.eset`): the same pointer also gives the FULL distribution on the dense
 event space (checked equal to the scored probability at the realised event), and its mass on E_row =
-blob's named set — a blob run's own (saved as ``Columns.own_erow``), a fixed_mass run's from the
-blob runs passed as ``references`` (EVERY blob run of the look; the run's value is the mean over them).
+a blob run's named set, passed as ``references`` — the BANKED ``<label>.erow.npz`` sets the X5 A/B's blob
+reads wrote (EVERY blob run of the look; the run's value is the mean over them).
 """
 from __future__ import annotations
 
@@ -52,8 +41,7 @@ from typing import Any, Dict, List, Optional, Sequence
 import numpy as np
 
 from main.belief_roles.bank_rows import SWITCH_BASE, BankRows
-from main.belief_roles.eset import (ERow, ESet, blob_event_dist, event_index, flat_event_dist,
-                                    set_mask)
+from main.belief_roles.eset import ERow, ESet, event_index, flat_event_dist
 from main.belief_roles.roles import HP_NUM, RoleSet
 
 BATCH = 256
@@ -77,8 +65,8 @@ class Columns:
     pi_prior: np.ndarray             # [N,S] float64
     sel_tie_arm: np.ndarray          # [N] bool — a near-tie at the arm's species selection boundary
     sel_tie_prior: np.ndarray        # [N] bool
-    read_tie_arm: np.ndarray         # [N] bool — fixed_mass: `near_tie_rows(hs)`; blob: the E4 seat cut
-    other_mass_model: Optional[np.ndarray]   # [N] fixed_mass only: the model's own OTHER mass
+    read_tie_arm: np.ndarray         # [N] bool — `near_tie_rows(hs)`
+    other_mass_model: Optional[np.ndarray]   # [N] the model's own OTHER mass (None in a synthetic Columns)
     intent_logp: np.ndarray          # [N] float64 — log P(realised event); NaN where unlabeled or a miss
     intent_covered: np.ndarray       # [N] bool — the event is in the arm's support
     opp_active_species: np.ndarray   # [N] int — the opponent active's num (the miss breakdown)
@@ -86,9 +74,8 @@ class Columns:
     role_V_arm: np.ndarray           # [N,R] Σ p(1 − p) over the contributing indicators
     role_M_prior: np.ndarray
     role_V_prior: np.ndarray
-    # ---- Amendment 3(b) (`eset`): E_row = blob's named set — a blob run's OWN (one entry), a fixed_mass
-    # run's from EVERY reference blob run of the look (one entry each); empty when none was given
-    own_erow: Optional[ERow] = None          # blob only: its named set on every row
+    # ---- Amendment 3(b) (`eset`): E_row = a blob run's named set, from EVERY banked reference blob run of
+    # the look (one entry each); empty when none was given
     esets: List[ESet] = field(default_factory=list)
     eset_logp_event: Optional[np.ndarray] = None  # [N] log P_arm(realised event), dense; −inf at 0
 
@@ -101,9 +88,34 @@ def file_sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+class ReadRefused(ValueError):
+    """A checkpoint this reader cannot read at this commit: a PRE-BREAK one (its ``model_config.json``
+    below ``MIGRATION_FLOOR``, or a pickled ``belief_tokens='blob'``), carrying the loader's own typed
+    reason and the pinned fix. The CLI prints it and exits; never a traceback."""
+
+
+def refuse_pre_break(zip_path: Path) -> None:
+    """Raise :class:`ReadRefused` for a PRE-BREAK checkpoint, BEFORE anything is loaded (the CLI runs it
+    on every ``--ckpt`` before the bank's re-encode): its run-level ``model_config.json`` through
+    ``version_break.check_post_break`` (every blob or pre-break fixed_mass run), then its pickled kwargs
+    through the strict loader's own ``refuse_deleted_pickled_kwargs`` (a blob zip with no config beside
+    it). A zip with neither verdict passes (the strict load reports anything else)."""
+    from agents.model.model_version.constants import ModelVersionError
+    from agents.model.model_version.shaped_reward import saved_config_path
+    from agents.model.model_version.version_break import PreBreakCheckpointError, check_post_break
+    from agents.model.snapshot import refuse_deleted_pickled_kwargs
+
+    try:
+        check_post_break(saved_config_path(str(zip_path)))
+        refuse_deleted_pickled_kwargs(str(zip_path))
+    except (PreBreakCheckpointError, ModelVersionError) as e:
+        raise ReadRefused(f"{zip_path}: {e}") from e
+
+
 def load_strict(zip_path: Path) -> Any:
     """The checkpoint through the strict loader, on the CPU, eval mode (a bare run dir is REFUSED: it
-    would resolve to the run's last snapshot, which moves)."""
+    would resolve to the run's last snapshot, which moves; a pre-break checkpoint is REFUSED first,
+    :func:`refuse_pre_break`)."""
     from agents.model.oracle_reveal import refuse_if_revealed
     from agents.model.snapshot import historical_load_kwargs, load_checkpoint_strict
 
@@ -113,19 +125,20 @@ def load_strict(zip_path: Path) -> Any:
     if zip_path.is_dir() or zip_path.suffix != ".zip":
         raise ValueError(f"{zip_path}: name the checkpoint .zip — a bare run directory resolves to the "
                          "run's LAST snapshot and moves")
+    refuse_pre_break(zip_path)
     m = load_checkpoint_strict(str(zip_path), device="cpu", **historical_load_kwargs(str(zip_path)))
     m.policy.eval()
     return m
 
 
 def arm_of(model: Any) -> str:
+    """``fixed_mass`` — the X5 hypothesis tokens, the only belief representation this code builds (the
+    name the X5 A/B's reads carry). A model built with the belief family OFF has no belief to read."""
     fe = model.policy.features_extractor
-    if getattr(fe, "hypothesis_builder", None) is not None:
-        return "fixed_mass"
-    if getattr(fe, "belief_head", None) is None or getattr(fe, "t0_species_prior", None) is None:
-        raise ValueError("the checkpoint has no BeliefHead / T0 species prior — neither X5 arm "
-                         "(`--belief-tokens blob` needs both for the presence read)")
-    return "blob"
+    if getattr(fe, "hypothesis_builder", None) is None:
+        raise ValueError("the checkpoint builds no X5 hypothesis tokens (the belief family is OFF: "
+                         "--opp-belief-aux-coef / --opp-intent-coef 0) — there is no belief to read")
+    return "fixed_mass"
 
 
 def _boundary_tie(pi, cand, k):
@@ -134,32 +147,6 @@ def _boundary_tie(pi, cand, k):
 
     order = stable_order(pi, cand)
     return boundary_gap(pi.gather(-1, order), k, cand.sum(-1)) < TIE_EPS
-
-
-def _event_logp(events, alpha_logits, seat_nums, beta_logits, beta_ok, content_logp):
-    """``(logp [B] float64 (−inf on a miss), covered [B] bool)`` of each row's realised event under one
-    arm's heads (module docstring). ``content_logp`` [B,6,S] — log c_j(s), −inf off the support."""
-    import torch
-
-    B, K1 = alpha_logits.shape
-    K = K1 - 1
-    la = torch.log_softmax(alpha_logits.double(), dim=-1)                     # −inf on masked seats
-    ev = _hp_collapse(seat_nums.long())
-    seat_ok = torch.isfinite(la[:, :K]) & (seat_nums > 0)
-    is_move = (events >= 0) & (events < SWITCH_BASE)
-    is_sw = events >= SWITCH_BASE
-    hit = seat_ok & (ev == events.unsqueeze(-1)) & is_move.unsqueeze(-1)
-    neg = torch.full((), -math.inf, dtype=torch.float64)
-    lp_move = torch.logsumexp(torch.where(hit, la[:, :K], neg), dim=-1)
-    lb = torch.log_softmax(beta_logits.double().masked_fill(~beta_ok, -math.inf), dim=-1)
-    S = content_logp.shape[-1]
-    sp = (events - SWITCH_BASE).clamp(0, S - 1)
-    lc = content_logp.double().gather(-1, sp.view(B, 1, 1).expand(B, TEAM, 1)).squeeze(-1)  # [B,6]
-    term = torch.where(beta_ok & torch.isfinite(lc), lb + lc, neg)
-    lp_sw = la[:, K] + torch.logsumexp(term, dim=-1)
-    covered = (hit.any(-1) & is_move) | ((beta_ok & torch.isfinite(lc)).any(-1) & is_sw)
-    lp = torch.where(is_move, lp_move, torch.where(is_sw, lp_sw, neg))
-    return torch.where(covered, lp, neg), covered
 
 
 def _hp_collapse(nums):
@@ -224,15 +211,13 @@ def _flat_event_logp(events, flat_logits, fi, pi_m, p_tail):
 
 def read_columns(model: Any, br: BankRows, roles: RoleSet, threads: int = 4,
                  batch: int = BATCH, references: Sequence[ERow] = ()) -> Columns:
-    """The batched forward (module docstring). ``references``: blob runs' named sets (``eset``) — the
-    E_rows a ``fixed_mass`` run's conditional intent read is scored on, one read each; REFUSED for a
-    blob run (its E_row is its own)."""
+    """The batched forward (module docstring). ``references``: banked blob runs' named sets (``eset``) —
+    the E_rows the run's conditional intent read is scored on, one read each."""
     import torch
 
     from agents.model.extra_obs_keys import zero_extra_obs
     from agents.model.hypothesis_dex_rows import load_hypothesis_dex_rows
-    from agents.model.hypothesis_set import (belief_head_team_scores, fixed_mass_presence,
-                                             near_tie_rows, species_candidates)
+    from agents.model.hypothesis_set import fixed_mass_presence, near_tie_rows, species_candidates
     from agents.model.t0_species import species_team_prior_logits
     from main.belief_roles.roles import prior_move_probs
     from main.policy_spectrum.reader import inference_globals
@@ -243,9 +228,6 @@ def read_columns(model: Any, br: BankRows, roles: RoleSet, threads: int = 4,
     D = SWITCH_BASE + S
     references = list(references)
     for reference in references:
-        if arm == "blob":
-            raise ValueError("a blob run's E_row is its OWN named set — a --reference is for a fixed_mass "
-                             "run only (§7.7(b))")
         if reference.n != br.n or reference.switch_ok.shape[1] != S:
             raise ValueError(f"the reference E_row is {reference.n} rows × {reference.switch_ok.shape[1]} "
                              f"species, this bank read is {br.n} × {S}")
@@ -281,59 +263,27 @@ def read_columns(model: Any, br: BankRows, roles: RoleSet, threads: int = 4,
             pi_prior = fixed_mass_presence(t0lp, cand, k).pi
             # ---- the arm's own presence
             hs = st.hypothesis
-            if arm == "fixed_mass":
-                assert hs is not None, "fixed_mass forward stashed no hypothesis set"
-                pi_arm = hs.species.pi.double()
-                read_tie = near_tie_rows(hs)
-                put("other_mass_model", hs.other_mass.double())
-            else:
-                sl = st.belief_logits["species"].double()                       # [B,6,S]
-                pi_arm = fixed_mass_presence(belief_head_team_scores(sl, believed), cand, k).pi
-                # the blob's E4 seats are `torch.topk(w_all, K)` (F-X5-13): a near-tie at the cut
-                w_all = fe.damage_op.last_w_all.double()
-                Kseat = int(st.alpha_seat_nums.shape[-1])
-                top = w_all.topk(min(Kseat + 1, w_all.shape[-1]), dim=-1).values
-                read_tie = (top[:, Kseat - 1] - top[:, Kseat]) < TIE_EPS
-            sel_tie_arm = _boundary_tie(pi_arm, cand, k)
-            if arm == "fixed_mass":
-                sel_tie_arm = sel_tie_arm | read_tie
+            assert hs is not None, "an X5 forward stashed no hypothesis set"
+            pi_arm = hs.species.pi.double()
+            read_tie = near_tie_rows(hs)
+            put("other_mass_model", hs.other_mass.double())
             put("k", k)
             put("cand", cand)
             put("revealed_nums", torch.where(rev, opp_ids, torch.zeros_like(opp_ids)))
             put("pi_arm", pi_arm)
             put("pi_prior", pi_prior)
-            put("sel_tie_arm", sel_tie_arm)
+            put("sel_tie_arm", _boundary_tie(pi_arm, cand, k) | read_tie)
             put("sel_tie_prior", _boundary_tie(pi_prior, cand, k))
             put("read_tie_arm", read_tie)
-            # ---- opponent intent on the common event space
+            # ---- opponent intent on the common event space: the FLAT pointer (X5 U4)
             events = torch.tensor(br.event[i:i + batch], dtype=torch.long)
-            active = ctx.hp_and_active[:, TEAM:2 * TEAM, -1] > 0.5
-            beta_ok = ctx.opp_addressable.bool() & ~active
-            content = torch.full((B, TEAM, S), -math.inf, dtype=torch.float64)
-            content.scatter_(-1, opp_ids.clamp(0, S - 1).unsqueeze(-1),
-                             torch.where(rev, 0.0, -math.inf).double().unsqueeze(-1))
-            if arm == "fixed_mass":
-                hyp = torch.full((B, TEAM, S), -math.inf, dtype=torch.float64)
-                hyp.scatter_(-1, hs.slot_species.long().clamp(0, S - 1).unsqueeze(-1),
-                             torch.where(hs.slot_is_hypothesis & (hs.slot_species > 0), 0.0,
-                                         -math.inf).double().unsqueeze(-1))
-            else:
-                sl = st.belief_logits["species"].double()
-                hyp = torch.log_softmax(sl.masked_fill(~cand.unsqueeze(1), -math.inf), dim=-1)
-            content = torch.where(believed.unsqueeze(-1), hyp, content)
-            sev = swok = None
-            if getattr(st, "flat_intent_logits", None) is not None:          # U4: fixed_mass
-                assert hs is not None and hs.moves is not None and st.flat_intent is not None
-                lp, cov = _flat_event_logp(events, st.flat_intent_logits, st.flat_intent,
-                                           hs.moves.presence.pi, hs.other_tail_probs)
-                Pd = flat_event_dist(st.flat_intent_logits, st.flat_intent, hs.moves.presence.pi,
-                                     hs.other_tail_probs)
-            else:
-                lp, cov = _event_logp(events, st.alpha_logits, st.alpha_seat_nums, st.beta_logits,
-                                      beta_ok, content)
-                Pd, sev, swok = blob_event_dist(st.alpha_logits, st.alpha_seat_nums, st.beta_logits,
-                                                beta_ok, content)
-            # ---- Amendment 3(b): the arm's mass on E_row (the dense distribution, `eset`)
+            assert (hs.moves is not None and st.flat_intent is not None
+                    and st.flat_intent_logits is not None), "an X5 forward stashed no flat pointer"
+            lp, cov = _flat_event_logp(events, st.flat_intent_logits, st.flat_intent,
+                                       hs.moves.presence.pi, hs.other_tail_probs)
+            Pd = flat_event_dist(st.flat_intent_logits, st.flat_intent, hs.moves.presence.pi,
+                                 hs.other_tail_probs)
+            # ---- Amendment 3(b): the arm's mass on each reference E_row (the dense distribution, `eset`)
             idx, ok = event_index(events, D)
             p_ev = torch.where(ok, Pd.gather(1, idx.unsqueeze(-1)).squeeze(-1),
                                torch.zeros((), dtype=torch.float64))
@@ -342,23 +292,11 @@ def read_columns(model: Any, br: BankRows, roles: RoleSet, threads: int = 4,
             if gap.numel() and float(gap.max()) > 1e-9:
                 raise AssertionError(f"the dense event distribution disagrees with the scored log "
                                      f"probability by {float(gap.max()):.3g} nats")
-            sets = []
-            if arm == "blob":
-                assert sev is not None and swok is not None
-                put("erow_seat_events", sev)
-                put("erow_switch_ok", swok)
-                put("erow_tie", read_tie)
-                sets.append((set_mask(sev, swok, D), read_tie))
-            else:
-                sets = [(r.mask(i, i + B, D), torch.from_numpy(r.tie[i:i + B])) for r in references]
-            for j, (emask, etie) in enumerate(sets):
-                e_in = emask.gather(1, idx.unsqueeze(-1)).squeeze(-1) & ok
-                if arm == "blob" and bool(((e_in != cov) & ok).any()):
-                    raise AssertionError("blob: 'the realised event is in E_row' and 'covered' disagree "
-                                         "— E_row must be exactly the support the intent read scores")
+            for j, r in enumerate(references):
+                emask = r.mask(i, i + B, D)
                 put(f"eset_mass_{j}", (Pd * emask).sum(-1))
-                put(f"eset_in_{j}", e_in)
-                put(f"eset_tie_{j}", etie)
+                put(f"eset_in_{j}", emask.gather(1, idx.unsqueeze(-1)).squeeze(-1) & ok)
+                put(f"eset_tie_{j}", torch.from_numpy(r.tie[i:i + B]))
             put("eset_logp_event", lp_ev)
             put("intent_logp", torch.where(cov, lp, torch.full_like(lp, math.nan)))
             put("intent_covered", cov)
@@ -375,19 +313,12 @@ def read_columns(model: Any, br: BankRows, roles: RoleSet, threads: int = 4,
             revf = rev.double().unsqueeze(-1)
             M_rev = (revf * ph).sum(1)
             V_rev = (revf * ph * (1 - ph)).sum(1)
-            if arm == "fixed_mass":
-                sp = hs.slot_pi.double()
-                q = believed.double().unsqueeze(-1) * sp.unsqueeze(-1) * ph
-                tail = cand & (hs.rank >= k.unsqueeze(-1)) & (k > 0).unsqueeze(-1)
-                w = torch.where(tail, pi_arm, torch.zeros_like(pi_arm))
-                M_arm = M_rev + q.sum(1) + w @ P_roles
-                V_arm = V_rev + (q * (1 - q)).sum(1) + w @ P_roles - (w * w) @ (P_roles * P_roles)
-            else:
-                hidf = believed.double().unsqueeze(-1)
-                M_arm = M_rev + (hidf * ph).sum(1)
-                V_arm = V_rev + (hidf * ph * (1 - ph)).sum(1)
-            put("role_M_arm", M_arm)
-            put("role_V_arm", V_arm)
+            sp = hs.slot_pi.double()
+            q = believed.double().unsqueeze(-1) * sp.unsqueeze(-1) * ph
+            tail = cand & (hs.rank >= k.unsqueeze(-1)) & (k > 0).unsqueeze(-1)
+            w = torch.where(tail, pi_arm, torch.zeros_like(pi_arm))
+            put("role_M_arm", M_rev + q.sum(1) + w @ P_roles)
+            put("role_V_arm", V_rev + (q * (1 - q)).sum(1) + w @ P_roles - (w * w) @ (P_roles * P_roles))
             # prior column: revealed mons by Smogon P(m | s) (revealed moves 1; 4 revealed ⇒ 0)
             qp = P_roles[opp_ids.clamp(0, S - 1)]                                 # [B,6,R]
             four = ((opp_mv > 0).sum(-1) >= 4).unsqueeze(-1)
@@ -406,13 +337,9 @@ def read_columns(model: Any, br: BankRows, roles: RoleSet, threads: int = 4,
                    opp_active_species=cat["opp_active_species"],
                    role_M_arm=cat["role_M_arm"], role_V_arm=cat["role_V_arm"],
                    role_M_prior=cat["role_M_prior"], role_V_prior=cat["role_V_prior"],
-                   own_erow=(ERow(seat_events=cat["erow_seat_events"].astype(np.int64),
-                                  switch_ok=cat["erow_switch_ok"].astype(bool),
-                                  tie=cat["erow_tie"].astype(bool)) if arm == "blob" else None),
                    esets=[ESet(mass=cat[f"eset_mass_{j}"], e_in=cat[f"eset_in_{j}"].astype(bool),
                                tie=cat[f"eset_tie_{j}"].astype(bool),
-                               label="own" if arm == "blob" else str(references[j].meta.get("label")),
-                               checkpoint_sha256="" if arm == "blob"
-                               else str(references[j].meta.get("checkpoint_sha256")))
-                          for j in range(1 if arm == "blob" else len(references))],
+                               label=str(references[j].meta.get("label")),
+                               checkpoint_sha256=str(references[j].meta.get("checkpoint_sha256")))
+                          for j in range(len(references))],
                    eset_logp_event=cat.get("eset_logp_event"))

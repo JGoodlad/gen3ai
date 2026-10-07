@@ -505,6 +505,25 @@ def retired_levers_finding(argv: List[str]) -> dict | None:
     return None
 
 
+def version_break_finding(argv: List[str]) -> dict | None:
+    """Does this argv resume or fork a checkpoint whose config predates `MIGRATION_FLOOR` — a blob or
+    pre-break fixed_mass checkpoint (the X5 version break, v144), or anything older? ``None`` when there
+    is no `--model`, no readable parent config, or it is current; else ``{"config_path", "evidence",
+    "message", "last_commit"}``. The SAME predicate `resolve_config` refuses on
+    (`model_version.version_break.check_post_break`), read from the RAW parent config. Pure JSON."""
+    model = model_arg(argv)
+    if not model:
+        return None
+    from agents.model.model_version.version_break import PreBreakCheckpointError, check_post_break
+    config_path, _tried = parent_config_path(model)
+    try:
+        check_post_break(config_path)
+    except PreBreakCheckpointError as e:
+        return {"config_path": config_path, "evidence": [f"config_version {e.config_version}"],
+                "message": str(e), "last_commit": e.last_commit}
+    return None
+
+
 def pin_predates_shaped_deletion(sha: str | None) -> bool | None:
     """Is `sha` at or before the last commit with the shaped reward path? ``None`` when git cannot
     say (no sha, unknown object) — the caller then reports rather than refuses."""
@@ -573,7 +592,8 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
            "resolution": None, "combinations": [], "ns": None,
            "arch": None, "recipe": None, "recipe_refusal": None, "env_core_refusal": None,
            "shaped_reward": shaped_reward_finding(argv),
-           "retired_levers": retired_levers_finding(argv)}
+           "retired_levers": retired_levers_finding(argv),
+           "version_break": version_break_finding(argv)}
     effective_argv = argv
     if unknown:
         # A stale flag makes the effective namespace unbuildable (argparse refuses the argv) and,
@@ -948,6 +968,7 @@ def main(raw: List[str] | None = None) -> int:
     _print_fork_lr_inheritance(res["resolution"])
     shaped_fatal = _print_shaped_reward(res.get("shaped_reward"), argv, a.pin)
     shaped_fatal = _print_retired_levers(res.get("retired_levers"), argv, a.pin) or shaped_fatal
+    shaped_fatal = _print_version_break(res.get("version_break"), argv, a.pin) or shaped_fatal
 
     if res["unsatisfiable"]:
         print(f"  unsatisfiable combinations     : {len(res['unsatisfiable'])}  "
@@ -1123,6 +1144,31 @@ def _print_retired_levers(finding: dict | None, argv: List[str], explicit_pin: s
     print("      ✗ WOULD FAIL IN resolve_config (main.train.config.enforce_not_shaped_parent exits "
           "FATAL_CONFIG)" + (f"; the pin {sha[:8]} is AFTER the deletion" if before is False and sha
                              else ""))
+    return True
+
+
+def _print_version_break(finding: dict | None, argv: List[str], explicit_pin: str | None) -> bool:
+    """Print the PRE-BREAK PARENT verdict (the X5 version break, v144); True ⇔ it refuses. Printed even when
+    clean. It REFUSES unless the child will run a PINNED commit at or before the last pre-break commit
+    (`version_break.LAST_BLOB_COMMIT`) — the fix the refusal names, and what the launcher does for a
+    same-run restart by default (the checkpoint's recorded git_hash is the pin)."""
+    if finding is None:
+        print("  pre-break parent                 : none (no --model, or its config is this generation's)")
+        return False
+    sha, why = resolve_pin_for(argv, explicit_pin)
+    from main.launcher.pinned_argv import differs_from_head
+    if sha and not differs_from_head(sha):
+        sha = None                      # the pin IS this tree, which cannot build it
+    before = pin_predates_commit(sha, finding["last_commit"]) if finding["last_commit"] else None
+    print("  pre-break parent                 : YES — " + "; ".join(finding["evidence"]))
+    if before:
+        print(f"      ℹ️  ADVISORY — the child runs PINNED commit {sha[:8]} ({why}), at or before the last "
+              "pre-break commit, whose own resolve_config builds it.")
+        return False
+    for line in finding["message"].splitlines():
+        print(f"      {line}")
+    print("      ✗ WOULD FAIL IN resolve_config (main.train.config.enforce_not_shaped_parent exits "
+          "FATAL_CONFIG)" + (f"; the pin {sha[:8]} is AFTER the break" if before is False and sha else ""))
     return True
 
 

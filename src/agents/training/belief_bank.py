@@ -14,7 +14,7 @@ every existing test and call site still resolves), and `compute()` yields terms 
 order the inline blocks added them — so `loss = loss + term` accumulates bit-identically.
 All SIX supervised heads are rows. They do NOT all run at one position: float addition order
 is the byte-identity constraint, so each row carries the SITE of the inline block it replaced
-(`hidden_move` — the hidden-team Hungarian aux + the move-belief BCE, adjacent, early in the
+(`hidden_move` — the hidden-team set BCE + the move-belief BCE, adjacent, early in the
 minibatch; `latent` — the move-latent grading, after the intent block; `revealed` — the
 spread/nature-EV/hp-type trio) and `compute(site=…)` folds only that site's rows, in registry
 order. One registry, three call sites, the exact historical addition sequence.
@@ -335,126 +335,6 @@ def move_belief_latent_loss(ml, latent_table, known_moves):
     return loss, metrics
 
 
-def belief_aux_loss(bl, sp_labels, mv_labels, moves_weight: float = 1.0):
-    """Order-invariant (Hungarian / DETR-style) hidden-opponent belief aux loss.
-
-    bl = {"species": [B,6,S], "moves": [B,6,M]} (the stashed BeliefHead logits); sp_labels [B,6]
-    and mv_labels [B,6,4] are the privileged int labels (-1 = revealed/pad).
-    The k believed-slot predictions of each sample are matched to its k hidden-mon targets by
-    **per-sample min-cost assignment** (so the anonymous slot tokens collectively cover the hidden
-    SET instead of each chasing a reveal-shifting fixed slot↔mon target), then species cross-entropy
-    + moves multi-label BCE are taken over the matched pairs. The matching is exact: for k ≤ TEAM_SIZE
-    the k! permutations are enumerated and the min-CE-cost one chosen (vectorised per distinct k — no
-    per-sample Python loop, no scipy).
-
-    Perf: the species log-softmax is taken on the GATHERED believed slots ([n,k,S]) not the full
-    [B,6,S] (the non-believed slots are never read); the moves branch is skipped entirely when
-    moves_weight==0; accuracy + moves P/R are diagnostics computed under no_grad.
-
-    Returns (aux_tensor, metrics_dict) or None when nothing to score (belief
-    off / labels absent / a minibatch with zero believed slots — the None guard keeps an empty
-    minibatch from NaN-poisoning the loss). FAILS LOUD on an out-of-vocab label id (impossible on
-    real data → a corrupt embedding-num pipeline), rather than silently dropping it. Pure + static so
-    it unit-tests without a full PPO."""
-    if bl is None or sp_labels is None or mv_labels is None:
-        return None
-    sp_logits = bl["species"]
-    mv_logits = bl["moves"]
-    device = sp_logits.device
-    sp_labels = sp_labels.long().to(device)
-    mv_labels = mv_labels.long().to(device)
-    n_species = sp_logits.shape[-1]
-    n_moves = mv_logits.shape[-1]
-    believed = sp_labels >= 0                                                  # [B, 6] (-1 = not scored)
-    counts = believed.sum(1)                                                   # [B] k per sample
-    if int(counts.sum()) == 0:
-        return None
-    # FAIL LOUD: a believed label id must fit the vocab. Every real Gen-3 species/move num is well
-    # inside max=400, so a violation means the label↔embedding num space is corrupt — crash, don't
-    # silently filter and train on a hole. (-1 pads were already excluded by `believed`.) A SINGLE
-    # host-sync on the happy path (the per-element max()/message only run on the failure path).
-    sp_believed = sp_labels[believed]
-    mv_believed = mv_labels[believed]
-    sp_bad = (sp_believed >= n_species).any()
-    mv_bad = (mv_believed >= n_moves).any() if mv_believed.numel() else sp_bad.new_zeros(())
-    if bool(sp_bad | mv_bad):
-        raise ValueError(
-            f"belief label out of vocab: species max {int(sp_believed.max())} (n_species {n_species}) / "
-            f"move max {int(mv_believed.max()) if mv_believed.numel() else -1} (n_moves {n_moves}) — "
-            "the embedding-num pipeline is corrupt (real Gen-3 nums are all < 400)."
-        )
-    do_moves = moves_weight != 0.0
-    ce_terms, bce_terms = [], []
-    n_correct = th.zeros((), device=device)
-    n_slots = 0
-    mv_tp = mv_pred_pos = mv_true_pos = 0  # moves precision/recall accumulators (diagnostic)
-    # Group samples by their believed-slot count k; within a group every cost matrix is k×k so the
-    # whole group is matched with one vectorised permutation-enumeration.
-    for k in range(1, sp_labels.shape[1] + 1):
-        sel = (counts == k).nonzero(as_tuple=True)[0]                          # samples with k believed
-        if sel.numel() == 0:
-            continue
-        n = sel.numel()
-        slot_idx = believed[sel].nonzero(as_tuple=False)[:, 1].view(n, k)      # [n, k] believed positions
-        rows = sel.view(n, 1).expand(n, k)                                     # [n, k] sample indices
-        pred_logp = th.log_softmax(sp_logits[rows, slot_idx], dim=-1)          # [n, k, S] softmax on gathered
-        tgt_sp = sp_labels[rows, slot_idx]                                     # [n, k] target species
-        # cost[a,i,j] = CE of predicting believed-slot i's logits at target j = -logp[a,i,tgt[a,j]]
-        cost = -th.gather(pred_logp, 2, tgt_sp[:, None, :].expand(n, k, k))    # [n, k, k]
-        perms = th.tensor(list(itertools.permutations(range(k))), dtype=th.long, device=device)  # [P,k]
-        ii = th.arange(k, device=device).view(1, k).expand(perms.shape[0], k)
-        best_perm = perms[cost[:, ii, perms].sum(-1).argmin(1)]               # [n, k] min-cost assignment
-        matched_sp = th.gather(tgt_sp, 1, best_perm)                           # [n, k] matched species target
-        ce_terms.append((-th.gather(pred_logp, 2, matched_sp[:, :, None]).squeeze(-1)).reshape(-1))
-        with th.no_grad():
-            n_correct = n_correct + (pred_logp.argmax(-1) == matched_sp).sum()
-        n_slots += n * k
-        if do_moves:
-            matched_label_slot = th.gather(slot_idx, 1, best_perm)             # [n, k] matched label slot
-        if do_moves:
-            mv_pred = mv_logits[rows, slot_idx]                                # [n, k, M] predictions
-            mv_ids = mv_labels[rows, matched_label_slot]                      # [n, k, 4] matched move ids
-            mvalid = mv_ids >= 0                                               # [n, k, 4] (pad excluded)
-            multi_hot = th.zeros_like(mv_pred)                                 # [n, k, M]
-            if bool(mvalid.any()):
-                aa, kk, _ = mvalid.nonzero(as_tuple=True)
-                multi_hot[aa, kk, mv_ids[mvalid]] = 1.0
-            # per-slot BCE = mean over the M move classes (same per-slot scale as the per-slot CE),
-            # but ONLY for slots with ≥1 labeled move — a slot whose moves are all-pad (unknown
-            # moveset) must NOT be supervised toward "predict no moves" (all-negative).
-            slot_has_moves = mvalid.any(-1)                                    # [n, k]
-            per_slot_bce = F.binary_cross_entropy_with_logits(
-                mv_pred, multi_hot, reduction="none").mean(-1)                 # [n, k]
-            bce_terms.append(per_slot_bce[slot_has_moves].reshape(-1))
-            with th.no_grad():
-                pred_present = mv_pred > 0.0                                   # sigmoid>0.5 ⇒ predicted present
-                mv_tp += int((pred_present & multi_hot.bool()).sum())
-                mv_pred_pos += int(pred_present.sum())
-                mv_true_pos += int(multi_hot.sum())
-    ce = th.cat(ce_terms).mean()
-    bce_cat = th.cat(bce_terms) if bce_terms else th.zeros(0, device=device)
-    # numel guard: every believed slot could have an unknown moveset (all-pad) → no BCE terms → 0
-    # (not NaN). In practice hidden mons have mapped moves so this is the degenerate edge.
-    bce = bce_cat.mean() if bce_cat.numel() else th.zeros((), device=device)
-    aux = ce + moves_weight * bce
-    n_samples = int((counts > 0).sum())
-    acc = float((n_correct.float() / max(1, n_slots)).item())
-    metrics = {
-        "species_ce": float(ce.item()),
-        "moves_bce": float(bce.item()),
-        "species_acc": acc,
-        "species_acc_above_chance": acc - 1.0 / n_species,
-        "moves_precision": (mv_tp / mv_pred_pos) if mv_pred_pos else 0.0,
-        "moves_recall": (mv_tp / mv_true_pos) if mv_true_pos else 0.0,
-        "k_mean": n_slots / max(1, n_samples),
-        "coverage": n_samples / sp_labels.shape[0],
-        # uniform per-head coverage (see _spread_belief_loss): here believed = HIDDEN slots,
-        # so this is the flip side of the revealed-slot heads' rates — together they tile B×6.
-        "mask_rate": n_slots / believed.numel(),
-    }
-    return aux, metrics
-
-
 def item_belief_loss(logits, item_label, item_mask):
     """Supervised CROSS-ENTROPY for the ITEM belief (gen3_item_belief_v1) — the bank's seventh
     row, the exact hp_type shape over the item-num axis: `logits` = the extractor's stashed
@@ -501,8 +381,8 @@ class BeliefHeadRow:
     value from `compute()`'s ``params`` dict (``moves_weight``). ``gate`` names the enable
     flag; ``coef`` the coefficient key; ``probe`` the `aux_probe_terms` key the grad-balance
     probe reports under; ``site`` the train() position whose inline block this row replaced;
-    ``loss_key`` the metrics key carrying the unscaled loss (the hidden-team block's historic
-    name is ``aux_loss``)."""
+    ``loss_key`` the metrics key carrying the unscaled loss (the hidden-team row's is
+    ``aux_loss``, the historic name)."""
     name: str
     probe: str
     prefix: str
@@ -518,15 +398,8 @@ class BeliefHeadRow:
 #: adds them in yield order, preserving the float-addition sequence of the inline blocks this
 #: bank replaced (spread → nature/EV → hp-type, consecutive in train() since v40/v51).
 ROWS: Tuple[BeliefHeadRow, ...] = (
-    BeliefHeadRow(
-        name="hidden_team", probe="species_belief", prefix="", gate="hidden_team",
-        coef="opp_belief_aux_coef", loss_fn=belief_aux_loss, site="hidden_move",
-        loss_key="aux_loss",
-        args=(("attr", "last_belief_logits"), ("obs", "belief_species"),
-              ("obs", "belief_moves"), ("param", "moves_weight"))),
-    # gen3_x5_hypothesis_set_v1 (X5 U2): the `hidden_team` row's replacement under
-    # `--belief-tokens fixed_mass` — the two are gated EXCLUSIVELY (micro_step), so at most one of them
-    # adds a term and the blob arm's float-addition sequence is untouched.
+    # gen3_x5_hypothesis_set_v1 (X5 U2): the hidden-team supervision — X5's set BCE over the hypothesis
+    # set (the order-invariant Hungarian `hidden_team` row it replaced was deleted at the X5 version break).
     BeliefHeadRow(
         name="hidden_team_set", probe="species_belief_set", prefix="set_", gate="hidden_team_set",
         coef="opp_belief_aux_coef", loss_fn=hypothesis_set_loss, site="hidden_move",
@@ -538,7 +411,7 @@ ROWS: Tuple[BeliefHeadRow, ...] = (
         coef="move_belief_coef", loss_fn=move_belief_loss, site="hidden_move",
         args=(("stash", "move_belief_logits"), ("obs", "known_moves"),
               ("obs", "belief_moves"), ("attr", "move_belief_mode"),
-              # gen3_x5_belief_tokens_v1: None under blob (the Hungarian path, unchanged)
+              # gen3_x5_belief_tokens_v1: the hypothesis set (None = no hypothesis builder)
               ("attr", "last_hypothesis"), ("obs", "belief_species"))),
     BeliefHeadRow(
         name="move_latent", probe="move_latent", prefix="movelatent_", gate="move_latent",

@@ -81,10 +81,10 @@ class UnifiedValueReadout(torch.nn.Module):
         global_row [B,D_MODEL] (required — never masked) and belief_rows [B,K,D_MODEL]
         (optional — present only with a HiddenOppBeliefPool) → [B, D_MODEL], added into `value_pooled`.
 
-        `presence` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only): the pool is a
+        `presence` (gen3_x5_belief_tokens_v1, X5 only): the pool is a
         class-E reduction over opponent tokens, so OTHER_species joins the THEIR-team source (row
         after their six) and every opponent row's logit carries its log-presence (added BEFORE the
-        mask fill, so a masked row keeps exactly −1e9). None (blob): byte-identical.
+        mask fill, so a masked row keeps exactly −1e9). None (the belief family off): nothing added.
 
         `board_rows` (gen3_static_board_v1, `--token-encoding static` only) [B, 3, D_MODEL]: the three
         refined BOARD tokens (our side, their side, field) take the global row's place under `full` —

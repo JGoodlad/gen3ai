@@ -1,4 +1,4 @@
-"""`gen3_fm_index_max_v1` — fixed_mass's incoming channel maxima are selected BY INDEX; blob's are not (F-XC-4).
+"""`gen3_fm_index_max_v1` — X5's (fixed_mass) incoming channel maxima are selected BY INDEX (F-XC-4).
 
 THE DEFECT (`designs/research_state/measurements/x5_fxc4_nanfix_2026-10-05/`): `amax`'s backward is
 ``grad · (x == amax) / Σ(x == amax)``. Inductor RECOMPUTED fixed_mass's 400-wide incoming sweep in the
@@ -10,8 +10,8 @@ detached argmax: bit-identical to `amax`, and its backward is a scatter at a sav
 These CPU tests pin the SCOPE and the ARITHMETIC; the CUDA fact (the compiled gradient is finite, the
 real gate passes) is `compile_regions_fixed_mass_cuda_test.py` (GPU tier).
 
-* the blob forward NEVER selects by index (its compiled and eager arithmetic are the X5 A/B's blob
-  seeds', §7.5) — and the fixed_mass forward does, ten times per forward (fails on revert);
+* the production (X5) forward selects by index, ten times per forward (fails on revert); the `amax`
+  spelling stays for an op without X5's move axis (`fixed_moves is None`, the belief-off ablation);
 * `max_by_index` is `amax` bit for bit in value, its gradient equals `amax`'s off ties, and on a tie it
   goes whole to the FIRST maximal element (`argmax`'s documented tie rule; `amax` splits it);
 * the fixed_mass FORWARD is bit-identical to the `amax` spelling on the K9 golden's real rows."""
@@ -43,18 +43,10 @@ def _evaluate(model: Any, rows: Tuple[Dict[str, torch.Tensor], torch.Tensor, tor
 
 
 @pytest.fixture(scope="module")
-def blob() -> Any:
-    from agents.training import learner_golden as LG
-    m = LG.build_learner()
-    LG.load_buffer_into(m)
-    return m
-
-
-@pytest.fixture(scope="module")
 def fixed_mass() -> Any:
     from agents.training import learner_golden as LG
-    m = LG.build_arm_learner("fixed_mass")
-    LG.load_buffer_into(m, LG.arm_buffer("fixed_mass"))
+    m = LG.build_learner()
+    LG.load_buffer_into(m, LG.BUFFER_PATH)
     assert m.policy.features_extractor.hypothesis_builder is not None        # PRECONDITION: the X5 arm
     return m
 
@@ -68,14 +60,6 @@ def _counting(monkeypatch: Any) -> List[int]:
         return real(x)
     monkeypatch.setattr(DO, "max_by_index", counted)
     return calls
-
-
-def test_the_blob_forward_never_selects_by_index(blob, monkeypatch):
-    """§7.5: blob's arithmetic is the trained blob seeds'. A blob forward that reached `max_by_index`
-    would change its compiled backward (the K9 blob golden and the code hashes would move too)."""
-    calls = _counting(monkeypatch)
-    _evaluate(blob, _forward_rows(blob))
-    assert calls[0] == 0, f"the blob forward called max_by_index {calls[0]}x"
 
 
 def test_the_fixed_mass_forward_selects_its_ten_incoming_channel_maxima_by_index(fixed_mass, monkeypatch):

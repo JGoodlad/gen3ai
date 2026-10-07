@@ -48,9 +48,15 @@ def test_a_fresh_save_records_the_mode_and_the_round_trip_keeps_it(tmp_path, ver
     assert recorded_oracle_reveal(str(tmp_path)) == "species"
 
 
-def test_a_pre_v137_config_migrates_to_off():
-    out = _migrate_config({"config_version": 136})
-    assert out["oracle_reveal"] == "off" and out["config_version"] >= 137
+def test_a_pre_v137_config_is_refused_and_a_recorded_mode_migrates_verbatim():
+    """The v137 branch (a pre-v137 config defaults to `off`) is unreachable since the X5 version break raised
+    MIGRATION_FLOOR to 144: such a config is refused at the floor. A RECORDED mode migrates verbatim."""
+    from agents.model.model_version.migrations import MIGRATION_FLOOR
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 136})
+    for mode in ("off", "species", "full"):
+        out = _migrate_config({"config_version": MIGRATION_FLOOR, "oracle_reveal": mode})
+        assert out["oracle_reveal"] == mode and out["config_version"] >= MIGRATION_FLOOR
 
 
 def test_the_resume_gate_refuses_a_flip_names_both_modes_and_passes_a_match(version):

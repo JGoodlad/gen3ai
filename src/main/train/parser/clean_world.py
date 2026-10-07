@@ -159,19 +159,9 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "is one coherent posterior (priors ⊕ prediction unified), anchored at the "
                              "prior at cold-start. Forward-behavior toggle (no weight-shape change; "
                              "version-checked, fresh-only). REQUIRES --move-belief-mode != off. Off by default.")
-    from agents.model.hypothesis_set import BELIEF_TOKEN_MODES
-    parser.add_argument("--belief-tokens", "--belief_tokens", dest="belief_tokens",
-                        choices=BELIEF_TOKEN_MODES, default=None,
-                        help="X5's opponent-belief representation (gen3_x5_hypothesis_set_v1, v136; "
-                             "designs/endstate/design_x5_belief_tokens.md). 'blob' (default; production "
-                             "until the X5 A/B rules): today's model, byte-identical. 'fixed_mass': build "
-                             "the T0 hypothesis builder — concrete species hypotheses with logistic "
-                             "fixed-size presence (Σπ = 6 − revealed), a learned state-dependent delta "
-                             "on the Smogon prior trained by a set BCE, and an OTHER token. STRUCTURAL, "
-                             "version-checked, fresh-only. Requires --t0-species-prior, "
-                             "--move-belief-mode != off, --opp-intent-coef > 0 and "
-                             "--opp-belief-aux-coef > 0. In build unit U2 the hypothesis set is built "
-                             "and supervised but does not yet enter the trunk or the op (U3).")
+    # (`--belief-tokens {blob,fixed_mass}` was DELETED at the X5 version break, config v144: X5's hypothesis
+    # tokens are the only belief representation, built whenever the opponent-belief family is on. A typed
+    # one is refused at parse time WITH its reason — `designs/deleted_flags.md` via `deleted_flag_reasons`.)
     from agents.model.pools import POLICY_READOUT_MODES
     parser.add_argument("--policy-readout", "--policy_readout", dest="policy_readout",
                         choices=POLICY_READOUT_MODES, default=None,
@@ -193,7 +183,7 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "stats; for the opponent the Smogon stat prior until revealed) + D (the mon's own "
                              "battle state: HP, status, boosts, volatiles, PP, ...); the clock, weather, faint "
                              "counts, hazards and screens reach a token only by attention and the damage "
-                             "operator. Builds on both --belief-tokens modes. STRUCTURAL, version-checked, "
+                             "operator. Builds with or without X5's hypothesis tokens. STRUCTURAL, version-checked, "
                              "fresh-only.")
     from agents.model.move_resolution_rules import MOVE_RESOLUTION_MODES
     parser.add_argument("--move-resolution", "--move_resolution", dest="move_resolution",
@@ -205,7 +195,7 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "intent-weighted, plus the seven blocks' FACTS consolidated and their JUDGMENTS "
                              "(tempo_cost, wasted_ko, the hand thresholds) dropped; the seven blocks are retired. "
                              "STRUCTURAL, version-checked, fresh-only. Requires --opp-intent-coef > 0, "
-                             "--damage-op, --damage-outgoing and both per-move matrices; blob only.")
+                             "--damage-op, --damage-outgoing and both per-move matrices.")
     from agents.model.move_order import SPEED_PHYSICS_MODES
     parser.add_argument("--speed-physics", "--speed_physics", dest="speed_physics",
                         choices=SPEED_PHYSICS_MODES, default=None,

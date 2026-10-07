@@ -88,18 +88,18 @@ class OpStashes:
     # because one alpha cannot weight two (design_opponent_intent.md §5.1).
     pair_in: Optional[torch.Tensor] = None           # [B,J,K,_PAIR_OUTCOME_RAW]
     pair_seat_live: Optional[torch.Tensor] = None    # [B,K] the meaningful-K gate (unmodeled seats)
-    # gen3_x5_belief_tokens_v1 (`--belief-tokens fixed_mass` only): the seat axis's EXTENSION — the K
+    # gen3_x5_belief_tokens_v1 (X5 only): the seat axis's EXTENSION — the K
     # seats ⊕ the 16 typed Hidden Power nums — and its contraction onto the K seats (a revealed HP's
-    # seat is its typed mixture). None under blob: every seat-axis consumer reads `topk_*` as before.
+    # seat is its typed mixture). None with the belief family off: every seat-axis consumer reads `topk_*`.
     seat_ext_idx: Optional[torch.Tensor] = None      # [B,K+16] move nums (detached)
     seat_mix: Optional[torch.Tensor] = None          # [B,K,K+16]
     # gen3_x5_belief_tokens_v1 (U3 part 3, fixed_mass only): the opponent-MON axis — "alive" from
     # `opp_addressable`, hypothesis species, per-mon fixed-mass move presence, the hidden-team marginal
-    # (`hypothesis_tokens.OpRoster`). Every opponent-axis kernel reads it; None (blob): byte-identical.
+    # (`hypothesis_tokens.OpRoster`). Every opponent-axis kernel reads it; None (the belief family off): nothing added.
     x5: Optional[Any] = None
     # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass only): OTHER_move's seat-axis COLUMN for every α-seat
     # consumer — each per-candidate coordinate on the FULL candidate axis contracted with the
-    # renormalised tail `FixedMassMoves.other_u` (E_tail[f(m)], never a zero row). None under blob.
+    # renormalised tail `FixedMassMoves.other_u` (E_tail[f(m)], never a zero row). None with the belief family off.
     pair_cells_other: Optional[torch.Tensor] = None      # [B,J,1,6]
     pair_in_other: Optional[torch.Tensor] = None         # [B,J,1,_PAIR_OUTCOME_RAW]
     pair_type_mult_other: Optional[torch.Tensor] = None  # [B,J,1]
@@ -807,7 +807,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         item belief's publication, None → the Smogon species prior). Also populates every per-forward stash on
         `self.stash`.
 
-        `fixed_moves` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only — a
+        `fixed_moves` (gen3_x5_belief_tokens_v1, X5 only — a
         `hypothesis_tokens.FixedMassMoves`): the opponent active's candidate weights are its FIXED-MASS
         presence (π_m; 1 revealed; DETACHED, M10), so every incoming max is the presence-scaled max of
         §9 M2 = C, and the top-K seat axis is THE one order's seats (no `torch.topk`, F-X5-13). None
@@ -816,7 +816,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         `x5_roster` (U3 part 3, fixed_mass only — a `hypothesis_tokens.OpRoster`; `ctx` is then the
         HYPOTHESIS context): the opponent-MON axis every opponent-axis kernel reads from
         `self.stash.x5` — hidden slots priced as their concrete hypotheses, "alive" from
-        `opp_addressable`, per-mon fixed-mass candidates. None (blob): byte-identical."""
+        `opp_addressable`, per-mon fixed-mass candidates. None (the belief family off): nothing added."""
         self.stash = OpStashes()          # gen3_op_stashes_v1: ONE reset, no stash can go stale
         self.stash.x5 = x5_roster
         if self.speed_physics:

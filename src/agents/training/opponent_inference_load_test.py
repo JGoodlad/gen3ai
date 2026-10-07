@@ -303,7 +303,9 @@ def _drop(submodule: str) -> Any:
     return edit
 
 
-@pytest.mark.parametrize("submodule", ["alpha_head", "win_head"])
+# `flat_intent_head`: X5's intent pointer (the blob-era `alpha_head` is RETIRED by the policy since the X5 version
+# break and holds no key to drop).
+@pytest.mark.parametrize("submodule", ["flat_intent_head", "win_head"])
 def test_a_checkpoint_MISSING_an_extractor_submodule_is_refused_by_every_load(
         world: Dict[str, Any], tmp_path: Path, submodule: str) -> None:
     """P10 F4: sb3's `load` retried with `exact_match=False` whenever the strict error mentioned
@@ -326,7 +328,9 @@ def test_a_checkpoint_with_an_UNEXPECTED_key_is_refused(world: Dict[str, Any], t
     from agents.model.snapshot import load_model_snapshot, load_opponent_snapshot
 
     def extra(sd: Dict[str, Any]) -> None:
-        sd["features_extractor.alpha_head.not_a_parameter"] = th.zeros(3)
+        # under a LIVE submodule: a key under a RETIRED one (`alpha_head`, registered as None) is not reported by
+        # torch's strict load at all — the parent skips a None child's whole prefix
+        sd["features_extractor.flat_intent_head.not_a_parameter"] = th.zeros(3)
 
     bad = _rewrite_policy(world["zip_off"], tmp_path / "extra", extra)
     with pytest.raises(RuntimeError, match="not_a_parameter"):
@@ -340,8 +344,8 @@ def test_set_parameters_REFUSES_exact_match_False_on_a_mismatch(world: Dict[str,
 
     m = world["off"]
     sd = {k: v.clone() for k, v in m.policy.state_dict().items()}
-    _drop("alpha_head")(sd)
-    with pytest.raises(StrictLoadError, match="alpha_head"):
+    _drop("flat_intent_head")(sd)
+    with pytest.raises(StrictLoadError, match="flat_intent_head"):
         m.set_parameters({"policy": sd}, exact_match=False)
     # a MATCHING set loads either way (the refusal is about the mismatch, not the flag)
     full = {k: v.clone() for k, v in m.policy.state_dict().items()}
@@ -363,12 +367,12 @@ def test_a_READER_load_REFUSES_a_checkpoint_missing_an_extractor_submodule(
     from agents.model.snapshot import load_checkpoint_strict
     from agents.training.instrumented_ppo.strict_load import StrictLoadError
 
-    bad = _rewrite_policy(world["zip_off"], tmp_path / "reader", _drop("alpha_head"))
+    bad = _rewrite_policy(world["zip_off"], tmp_path / "reader", _drop("flat_intent_head"))
     with warnings.catch_warnings(record=True) as seen:
         warnings.simplefilter("always")
         bare = MaskablePPO.load(str(bad), env=None, device="cpu")           # the BUG: loads, silently
     assert bare is not None and any("SB3 < 1.7.0" in str(w.message) for w in seen)
-    with pytest.raises(StrictLoadError, match="alpha_head"):
+    with pytest.raises(StrictLoadError, match="flat_intent_head"):
         load_checkpoint_strict(str(bad), device="cpu")
 
 

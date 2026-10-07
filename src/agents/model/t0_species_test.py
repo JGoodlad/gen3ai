@@ -122,9 +122,11 @@ def _forward_once(monkeypatch, **overrides):
 
 
 def test_off_hands_every_site_the_static_prior(monkeypatch):
-    """Flag OFF ⇒ every consumer receives None and falls through to `SPECIES_USAGE_PRIOR`."""
+    """Flag OFF ⇒ every consumer receives None and falls through to `SPECIES_USAGE_PRIOR`. Built on the
+    belief-OFF surface: X5's hypothesis tokens (the opponent-belief family, on in the shared toggle set)
+    REQUIRE the T0 prior, so OFF is only legal with the family off."""
     pytest.importorskip("sb3_contrib")
-    seen = _forward_once(monkeypatch, t0_species_prior=False)
+    seen = _forward_once(monkeypatch, t0_species_prior=False, opp_belief_slots=False, opp_intent=False)
     assert seen, "no unrevealed-defender site ran — the gate would be vacuous"
     assert all(x is None for x in seen), f"{sum(x is not None for x in seen)} site(s) got an override"
 
@@ -135,15 +137,27 @@ def test_on_hands_every_site_the_same_one_belief(monkeypatch):
     Identity, not equality: the invariant is that the belief is resolved ONCE at T0 and shared, so
     the edge cells and the op block cannot disagree on a value. Two equal-but-separate tensors would
     mean it is being recomputed per site, which is how those two routes drift apart.
-    """
+
+    Built on the belief-OFF surface (the T0 prior stands alone there): with the opponent-belief family on,
+    X5's hypothesis set hands the op its PER-SLOT species beliefs instead (the next test)."""
     pytest.importorskip("sb3_contrib")
-    seen = _forward_once(monkeypatch, t0_species_prior=True)
+    seen = _forward_once(monkeypatch, t0_species_prior=True, opp_belief_slots=False, opp_intent=False)
     assert seen, "no unrevealed-defender site ran — the gate would be vacuous"
     assert all(x is not None for x in seen), \
         f"{sum(x is None for x in seen)} site(s) still took the static prior"
     first = seen[0]
     assert all(x is first for x in seen), "the T0 belief must be computed once and shared"
     assert first.shape[0] == 1 and first.dim() == 2, "must stay the 2-D team-level shape"
+
+
+def test_under_x5_no_site_falls_back_to_the_static_prior(monkeypatch):
+    """With the opponent-belief family on (X5's hypothesis tokens, which REQUIRE the T0 prior), every
+    unrevealed-defender site is handed a belief — none falls through to `SPECIES_USAGE_PRIOR`."""
+    pytest.importorskip("sb3_contrib")
+    seen = _forward_once(monkeypatch, t0_species_prior=True)
+    assert seen, "no unrevealed-defender site ran — the gate would be vacuous"
+    assert all(x is not None for x in seen), \
+        f"{sum(x is None for x in seen)} site(s) took the static prior under X5"
 
 
 def test_on_actually_changes_the_unrevealed_pricing():

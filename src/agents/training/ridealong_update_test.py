@@ -120,7 +120,7 @@ def _rng_state():
     return th.get_rng_state().clone(), np.random.get_state(), random.getstate()
 
 
-def _build(ridealong: dict, belief_tokens: str = "blob"):
+def _build(ridealong: dict):
     from agents.training.rust_rollout.testkit import ToyVecEnv
 
     from agents.model.compile_parity_fixture import load_parity_rows
@@ -130,10 +130,10 @@ def _build(ridealong: dict, belief_tokens: str = "blob"):
     from main.fresh_checkpoint import _production_policy_kwargs
 
     _args, layout, pk = _production_policy_kwargs()
-    pk = {**pk, "features_extractor_kwargs": {**pk["features_extractor_kwargs"], **ridealong,
-                                              "belief_tokens": belief_tokens}}
+    pk = {**pk, "features_extractor_kwargs": {**pk["features_extractor_kwargs"], **ridealong}}
     rows, masks = load_parity_rows(layout["total_dim"])
-    env_cls = _env_cls(rows, masks, flat_labels=belief_tokens == "fixed_mass")
+    # production is X5 (the flat pointer, the only intent readout since the version break): the FLAT labels
+    env_cls = _env_cls(rows, masks, flat_labels=True)
     th.manual_seed(0)
     np.random.seed(0)
     random.seed(0)
@@ -172,8 +172,8 @@ def _build(ridealong: dict, belief_tokens: str = "blob"):
 
 @pytest.fixture(scope="module")
 def fm_arms():
-    """X5 U4: the fixed_mass arm — B re-based onto the FLAT opponent pointer — OFF and ON."""
-    return _build({}, "fixed_mass"), _build({"ridealong_opp": 2}, "fixed_mass")
+    """X5 U4: production (X5) — B re-based onto the FLAT opponent pointer — OFF and ON."""
+    return _build({}), _build({"ridealong_opp": 2})
 
 
 def test_fixed_mass_B_on_the_FLAT_pointer_is_BIT_IDENTICAL_to_learning(fm_arms):

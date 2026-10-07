@@ -138,7 +138,7 @@ def test_the_family_reads_across_the_cells_of_its_look(played):
 # ------------------------------------------------------------------------------------------------ refusals
 def test_a_third_architecture_cell_is_refused_before_any_engine_or_game(built, checkpoints, foreign, third,
                                                                         tmp_path):
-    """Two architectures (``blob`` and X5's ``fixed_mass``) make one engine (``play_cross_integration_test.py``); a
+    """Two architectures (production and ``--token-encoding static``) make one engine (``play_cross_integration_test.py``); a
     THIRD is refused in the pre-flight, naming it and what differs from each group, before anything plays."""
     a, b = checkpoints
     out = tmp_path / "ledger"
@@ -147,7 +147,7 @@ def test_a_third_architecture_cell_is_refused_before_any_engine_or_game(built, c
                         run_label="s", compute=COMPUTE, **QUIET)
     msg = str(ei.value)
     assert PL.resolve_player(third).id in msg and PL.resolve_player(a).id in msg
-    assert PL.resolve_player(foreign).id in msg and "move_prior_fusion" in msg and "belief_tokens" in msg
+    assert PL.resolve_player(foreign).id in msg and "op_believed_lean" in msg and "token_encoding" in msg
     assert "matches neither" in msg
     assert rows_of(out) == [], "nothing was played"
 
@@ -238,7 +238,7 @@ def test_a_swapped_cell_plays_game_for_game_what_a_fresh_engine_plays(swapped):
 
 
 def test_a_refused_cell_leaves_the_engine_on_its_previous_cell(swapped):
-    assert "belief_tokens" in swapped["refused"]
+    assert "token_encoding" in swapped["refused"]
     (_c1, _c2, (paa, paa2)) = swapped["cells"]
     assert swapped["cell_after_refusal"] == (paa.sha256, paa2.sha256)
     assert swapped["after_refusal"] == swapped["games"][2], "the previous cell still plays its own games"

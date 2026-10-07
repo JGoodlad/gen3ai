@@ -380,8 +380,8 @@ token injection), through `value_entity_pool`'s op-row source, and through `valu
   (before v142 an OFF build moved 185 tensors' init draws). The op stays on `hard_max`. The critic then reads the
   op's rows through the trunk (`prefuse_proj`) AND `value_entity_pool`'s op-row source: F10 deletes one of three
   routes, not two. `--arch production --value-threat-inject off --allow-nonproduction-arch` is the screen arm;
-  composes with `--token-encoding static`, `--policy-readout trunk`, `--move-resolution on`, `--belief-tokens
-  fixed_mass` (tested). **The screen's meter** (not registered, not run): `python -m main.ops.critic_read <off arm>
+  composes with `--token-encoding static`, `--policy-readout trunk`, `--move-resolution on` and X5's fixed-mass
+  surface (tested; production since the X5 version break, v144). **The screen's meter** (not registered, not run): `python -m main.ops.critic_read <off arm>
   --control <production arm> --out <dir>`, read on its delta rows — PRIMARY `gate.resolution.bot` and
   `gate.resolution.pool` (G1: Murphy resolution of V against the outcome, the discrimination term, per stratum,
   from `main.critic_gate`); SECONDARY `identity.resolution` (Murphy resolution, IPW, all strata),

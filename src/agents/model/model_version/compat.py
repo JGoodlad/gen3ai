@@ -495,18 +495,8 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "nothing in the weights would catch it.\n"
                 "Resume with the matching --species-prior-fusion setting, or start a fresh training run."
             )
-        # gen3_x5_hypothesis_set_v1 (v136): X5's belief representation. `fixed_mass` adds the hypothesis
-        # builder's parameters and re-means the hidden-team belief supervision; nothing in the policy /
-        # value output's SHAPE differs, so this compare is the only gate (design §3.8: no ARCH_SIGNATURE
-        # bump while both arms build at one commit).
-        if self.belief_tokens != saved.belief_tokens:
-            raise ModelVersionError(
-                f"belief_tokens mismatch: saved={saved.belief_tokens!r}, "
-                f"current={self.belief_tokens!r}.\n"
-                "X5's belief representation is fixed for a run's lifetime: `fixed_mass` builds the "
-                "hypothesis builder and supervises a different belief target than `blob`.\n"
-                "Resume with the matching --belief-tokens setting (a flagless resume inherits it), or "
-                "start a fresh training run.")
+        # (`belief_tokens`' compare, v136-v143, left with the field at the X5 version break, v144: blob is
+        # deleted and every pre-break config is refused at MIGRATION_FLOOR — `model_version.version_break`.)
         # gen3_policy_readout_trunk_v1 (v138, audit F2): `trunk` retires the flat policy tower and reads
         # the decision context off the trunk. The pointer head's `ctx_proj` changes shape too, so a
         # strict load would also fail — but the compare names the cause instead of a tensor size.

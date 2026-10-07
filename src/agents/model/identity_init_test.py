@@ -28,13 +28,17 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from agents.action.constants import ACTION_SPACE_SIZE
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.model.policy import Gen3DualHeadMaskablePolicy
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 # The toggles that OWN the documented zero-init modules — the pre-attention physics injection
 # `prefuse_proj` and the belief heads whose cold-start is supposed to equal the prior.
-# (The v44 FiLM generators were the third member until v78 deleted the zarch family.)
-_ZERO_INIT_TOGGLES = dict(
-    attend_unrevealed_opponents=True, opp_belief_slots=True,
+# (The v44 FiLM generators were the third member until v78 deleted the zarch family.) The
+# opponent-belief family is ON, which since the X5 version break (v144) means X5's hypothesis tokens
+# and every requirement they carry (`x5_surface_fixture.x5_kwargs`) — the belief representation
+# production builds.
+_ZERO_INIT_TOGGLES = x5_kwargs(
+    attend_unrevealed_opponents=True,
     move_belief_mode="revealed", move_prior_fusion=True, move_latent=True,
     damage_op=True, damage_outgoing=True, spread_belief=True,
     item_belief=True,

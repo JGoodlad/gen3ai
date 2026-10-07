@@ -28,17 +28,20 @@ from agents.action.constants import ACTION_SPACE_SIZE
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.model.model_version import (MODEL_CONFIG_VERSION, ModelVersionError, _migrate_config)
 from agents.model.policy import Gen3DualHeadMaskablePolicy
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 _mappings = load_mappings()
 _layout = Gen3ObservationEncoder(_mappings).get_layout()
 
 # The full belief+physics stack: every consumer the op reads (move / spread / HP-type belief) plus
-# the head-block producers, so the test exercises the production shape.
-_BASE = dict(attend_unrevealed_opponents=True, opp_belief_slots=True,
-             move_belief_mode="revealed", move_prior_fusion=True,
-             move_latent=True, damage_op=True, damage_outgoing=True, damage_topk_k=5,
-             damage_matrices_incoming=True, spread_belief=True)
+# the head-block producers, so the test exercises the production shape — the opponent-belief family
+# included, which since the X5 version break (v144) is X5's hypothesis tokens with every requirement they
+# carry (`x5_surface_fixture.x5_kwargs`).
+_BASE = x5_kwargs(attend_unrevealed_opponents=True,
+                  move_belief_mode="revealed", move_prior_fusion=True,
+                  move_latent=True, damage_op=True, damage_outgoing=True, damage_topk_k=5,
+                  damage_matrices_incoming=True, spread_belief=True)
 
 #: The three flags step 3/4 deleted. They must not merely be ignored — a caller that still passes
 #: one has a config this codebase cannot honour, and must be told so.

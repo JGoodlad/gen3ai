@@ -10,9 +10,9 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **122** in the mirror this file is gated against (the `gen3_event_record_v2` signature-bump window, row 3: the mirror follows the code, so the obs-architecture batch's surface — 2761-dim obs, the reshaped event rows — and the shaped-reward deletion's field removal are what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_event_record_v2`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
-| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 132 / `gen3_event_record_v2`) |
-| `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited, and carrying its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax, so the record cannot live in the file). The `gen3_event_record_v2` **signature-bump window is OPEN** (2026-09-26, the observation-architecture batch): the production run records `gen3_critic_route_wave_v1`, HEAD builds `gen3_event_record_v2`, so the mirror follows the CODE until the first run at the new signature exists — then it closes and the mirror tracks that run. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
+| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **144** in the mirror this file is gated against (the X5 VERSION BREAK's follow-the-code window, row 3: the mirror follows the code, so the obs-architecture batch's surface — 2761-dim obs, the reshaped event rows — the shaped-reward deletion's field removal and X5's hypothesis tokens as the only belief representation are what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_x5_version_break_v1`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
+| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 144 / `gen3_x5_version_break_v1`) |
+| `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited, and carrying its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax, so the record cannot live in the file). A **signature-bump window is OPEN** (opened 2026-09-26 by the observation-architecture batch, `gen3_event_record_v2`; moved forward 2026-10-07 by the X5 version break, `gen3_x5_version_break_v1`, config 144): the production run records `gen3_critic_route_wave_v1`, HEAD builds `gen3_x5_version_break_v1`, so the mirror follows the CODE until the first run at the new signature exists — then it closes and the mirror tracks that run. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
 Everything below describes what HEAD builds under `designs/production_config.json`. The
 machine-derived tables are **generated** (`python -m agents.model.arch_tables`, pinned by
@@ -351,10 +351,10 @@ Modules actually built under the production config (`named_children()`) — GENE
 embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_transformer · cls_pool ·
 hidden_opp_belief · intent_move_cell · intent_threshold_move · intent_conditional ·
 pair_outcome_move · pair_outcome_switch · switch_branch · conditional_threat · t0_species_prior ·
-belief_slots · belief_head · move_belief · spread_belief · hp_type_belief_head ·
-item_belief_head · damage_op · prefuse_proj · assembler · win_head · value_entity_pool ·
-history_events · pre_proj_norm · projection · value_pre_norm · value_projection · activation ·
-alpha_head · beta_head
+belief_head · move_belief · spread_belief · hp_type_belief_head · item_belief_head · damage_op ·
+prefuse_proj · assembler · win_head · value_entity_pool · history_events · pre_proj_norm ·
+projection · value_pre_norm · value_projection · activation · hypothesis_builder ·
+flat_intent_head
 ```
 <!-- END GENERATED: modules -->
 
@@ -367,9 +367,9 @@ happens to be written.
 
 | tier | question | modules |
 |---|---|---|
-| **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` |
+| **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `hypothesis_builder`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
-| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat`; `cls_pool` additionally owns the token-content critic injection (`value_threat_proj`) |
+| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `flat_intent_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat`; `cls_pool` additionally owns the token-content critic injection (`value_threat_proj`) |
 | **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head` |
 
 The contract asserts two things per forward: tier-declared entry points are entered in
@@ -379,18 +379,20 @@ data flow, not on meaning — it cannot see a T0 leg *recomputing* something int
 tokens. Every `nn.Module` child of the extractor must declare a tier or be listed as untiered, so a
 new phase cannot escape it.
 
-`BeliefSlots` (T0, injects unknown-mon tokens pre-trunk) and `BeliefHead` (T2, reads refined tokens)
-are the one deliberate split: `BeliefHead` is a **training-only side readout** whose output is
-stashed for the aux loss and never fed forward, which is exactly what its T2 declaration records.
+`HypothesisBuilder` (T0, writes the hidden opponent slots' tokens pre-trunk) and `BeliefHead` (T2, reads
+refined tokens) are the one deliberate split: `BeliefHead` is a **training-only side readout** whose output is
+stashed for the aux loss (the set BCE) and never fed forward, which is exactly what its T2 declaration records.
 
-**`--belief-tokens` (X5) is `blob` in production**: the representation described here, and nothing
-of X5 is built. The `fixed_mass` arm ([`endstate/design_x5_belief_tokens.md`](endstate/design_x5_belief_tokens.md))
-adds `HypothesisBuilder` (`agents/model/hypothesis_set.py`, T0) — concrete species hypotheses with
+**The opponent belief is X5's HYPOTHESIS TOKENS — the only belief representation** (adopted 2026-10-07;
+the X5 version break, config v144 / `gen3_x5_version_break_v1`, deleted `--belief-tokens` and the
+`blob` path: [`endstate/design_x5_belief_tokens.md`](endstate/design_x5_belief_tokens.md)). The
+opponent-belief family (`opp_belief_slots` + `opp_intent`, both on in production) builds
+`HypothesisBuilder` (`agents/model/hypothesis_set.py`, T0) — concrete species hypotheses with
 logistic fixed-size presence (Σπ = 6 − revealed), a learned delta on the T0 prior, OTHER and the
 opponent active's move group — and READS it (`gen3_x5_belief_tokens_v1`,
 `agents/model/hypothesis_tokens.py`): each hidden opponent slot holds its hypothesis's dex row encoded
-by THE `PokemonEncoder` + a learned `hypothesis_marker` (replacing `BeliefSlots`' constant token, which
-that arm does not call) — computed as that encoder's exact split at its two first Linears
+by THE `PokemonEncoder` + a learned `hypothesis_marker` (the deleted blob path's constant per-position
+`BeliefSlots` token is constructed for its init draw and never kept) — computed as that encoder's exact split at its two first Linears
 (`gen3_x5_hyp_gather_v1`, `agents/model/hypothesis_encode.py`): the species-only columns once per forward
 over the 400-row dex table, gathered by hypothesis species; the row-level columns (clock, weather, fainted,
 hazards, screens, the active-context scatter) once per row; the rest of the encoder per OPPONENT slot only
@@ -411,18 +413,19 @@ defined — not nulled); every live opponent mon is an ATTACKER (C1b / C2 / C3 /
 move presence (k = 4 − revealed, revealed moves pinned at 1), selected by one stable per-mon order;
 `p_pur_vs_us` is a presence-scaled max over the mons; Beat Up's opponent party sum reads π / k over every
 candidate; the bench E5 seats are presence-aware (tail beyond rank K, summed presence, presence-scaled
-worst case). OTHER_species gets the blob's AVERAGED construction on the renormalised tail
+worst case). OTHER_species gets the AVERAGED construction (the E10 usage mixture) on the renormalised tail
 (`other_roster`): defender `P_tail @ tables` with P(KO) nulled, attacker E_tail[base stats], E_tail[STAB],
 E_tail[speed], moves = the parameter-free E10 mixture over the tail through the k = 4 construction; its
 edge column is written for D1, C1, C3, D4 and V (`EdgeBias.OTHER_FAMILIES`; C2 / S1 / T / X / G carry
-no OTHER edge), and at the Pursuit max it enters with presence 1 − Π_tail(1 − π). `BeliefSlots` is not
-built in that arm. The opponent pointer there is ONE flat list (`gen3_x5_flat_pointer_v1`,
+no OTHER edge), and at the Pursuit max it enters with presence 1 − Π_tail(1 − π). The opponent pointer is
+ONE flat list (`gen3_x5_flat_pointer_v1`,
 `agents/model/flat_intent.py`, T2): the opponent active's K move seats, OTHER_move (token: the active's E5
 seat), a switch to each of their six slots (a revealed mon, or the hypothesis a hidden slot holds) and
 OTHER_species (its refined trunk token), scored by one shared scorer plus each candidate's DETACHED log π,
-one softmax; masks are structural. It REPLACES α / β in that arm (they are constructed and see SB3's
-orthogonal re-init, then the policy's `_build` retires them before the optimizer is made, so no non-X5
-initial byte moves). Its labels come from the existing intent label: a move beyond the seats is an
+one softmax; masks are structural. It REPLACES the α / β heads (`AlphaIntentHead` / `BetaSwitchHead` are
+still constructed and see SB3's orthogonal re-init — their draws are part of the global stream every later
+initial byte follows — then the policy's `_build` retires them before the optimizer is made; they hold no
+state_dict key, optimizer slot or forward use). Its labels come from the existing intent label: a move beyond the seats is an
 OTHER_move label, a hidden switch-in not among the hypotheses an OTHER_species label (a belief miss is
 supervised, never masked); a typed Hidden Power label names a revealed HP's seat. The seven α consumers
 read its re-expression: α over the K seats + OTHER_move (a PRICED (K+1)-th seat — every seat-axis operand
@@ -431,7 +434,12 @@ renormalised tail weights `FixedMassMoves.other_u`) + the total switch mass, β 
 OTHER_species (`out_cells` gets OTHER's column from the OTHER-mode D1 pass, `opp_p_ghost` the tail's
 P(Ghost)); `threshold_probs`, `IntentMoveCell` and `IntentConditionalMoveCell` now apply the seats'
 meaningful-K gate as `pair_alpha` does. The ride-along B head (when on) is re-based onto the flat list.
-Config v136, no `ARCH_SIGNATURE` change while both arms build.
+X5 REQUIRES `t0_species_prior`, `move_belief_mode` ≠ off, `move_prior_fusion`, BOTH belief toggles, `entity_topk_seats` ≥ 4 (=
+`damage_topk_k` when the incoming matrix is on), `damage_candidate_k` = 0 and `entity_tail_seats`: a
+configuration with the family on and one of them off is REFUSED at build (no blob fallback); with the family
+off nothing of X5 is built (the belief-off ablation surface — no hidden-slot token and no intent readout).
+A pre-break checkpoint (blob or fixed_mass) is refused at `MIGRATION_FLOOR` 144 and runs PINNED
+(`model_version/version_break.py`).
 
 **`--policy-readout` (audit F2) is `tower` in production**: the pointer head's decision context is
 `latent_pi`, the flat policy tower's output (steps 11 and §3.3 below). The `trunk` mode
@@ -441,8 +449,7 @@ RETIRES that tower — the extractor's `pre_proj_norm` / `projection` and SB3's 
 under `tower` and 1,991,528 under `trunk`) — and reads the context off the trunk instead:
 `PolicyStateQuery` (`agents/model/pools.py`, T3) is ONE learned query, 4 heads, attending over every
 refined trunk token (our 6, their 6, the global token, the entity and event seats) plus the
-`HiddenOppBeliefPool`'s K outputs, under the trunk's own key mask (and its per-key log π under
-`fixed_mass`), then a LayerNorm → `[B, 128]`. That vector IS `pi_features` (no projection, no ReLU); the
+`HiddenOppBeliefPool`'s K outputs, under the trunk's own key mask (and X5's per-key log π), then a LayerNorm → `[B, 128]`. That vector IS `pi_features` (no projection, no ReLU); the
 retired actor branch is the empty `Sequential` (the identity), so every `forward_actor` caller — the
 policy, the T2 `DecisionModule`, the compiled learner region — is unchanged. Each action is still scored
 from its OWN token by the same equivariant scorer, widened to `TRUNK_POINTER_HIDDEN` = 128 (no 64-dim
@@ -462,8 +469,8 @@ set. D, the dynamic state, reads HP, status, the counters, the sleep-wake belief
 last action, the trap bits, the active flag, the item-consumed bit, the side's active context on the active
 (bench zero) and a per-move PP / legality pool (our active's legality matched to its sorted slots by move-num
 identity). No board fact (clock, weather, faint counts, Spikes, screens) enters either. The per-move tokens
-the pointer head and the E3 seats read are the static move token plus its own PP / legality. Under
-`fixed_mass` a hypothesis token is the dex table encoded ONCE per forward and gathered
+the pointer head and the E3 seats read are the static move token plus its own PP / legality. An X5
+hypothesis token is the dex table encoded ONCE per forward and gathered
 (`static_hypothesis_tokens`, exact). The board's home under `static` is build stage 2 (`gen3_static_board_v1`,
 config v140, `agents/model/board_tokens.py`, from `endstate/design_entity_coverage_audit.md` §6.1 B1 + B2): the
 single global token is REPLACED by three BOARD tokens (§2.3's static table) — OUR SIDE and THEIR SIDE through ONE
@@ -546,14 +553,14 @@ The concrete steps:
    the move prior gives a banned move `_ILLEGAL_PROB` in every row (Smeargle's Ingrain in its own), the item prior
    0 on a banned item, and the species usage / co-occurrence priors a banned species 0 / `SPECIES_CLAUSE_LOGIT`.
    The observation's unrevealed-ability prior follows the same files (an unrevealed Dugtrio reads Arena Trap 1.0).
-   Both belief modes read these tables (`fixed_mass`'s hypothesis moves come from the move prior's legality).
+   X5's hypothesis moves read these tables too (they come from the move prior's legality).
 5. **`DamageOperator`** — the full 660-dim block (§4), computed on the pre-attention tokens.
 6. **`prefuse_proj`** — the op's per-our-mon incoming rows `[B,6,12]` projected to `d_model` and
    **added** to our 6 role tokens. Zero-init ⇒ exactly 0 at init.
 7. **`EntityMoveSeats`** — builds 16 extra seats (§2.3).
 8. **Edge cells** — 15 per-pair physics tensors computed here, pre-transformer (§5).
-9. **`TeamTransformer`** — **61 tokens** (13 base + 16 entity seats + 32 event seats, §2.3), 2
-   `BiasedEncoderLayer`s, `d_model` 128, 4 heads, FFN 256, post-LN. One `[B,4,61,61]` float bias
+9. **`TeamTransformer`** — **62 tokens** (13 base + 16 entity seats + OTHER_species + 32 event seats, §2.3),
+   2 `BiasedEncoderLayer`s, `d_model` 128, 4 heads, FFN 256, post-LN. One `[B,4,62,62]` float bias
    carries both the key-padding addend (`-1e9`) and every edge family; it is built once and shared
    by both layers. Each layer hands it to SDPA through `dense_attn_bias` (as does `PolicyStateQuery`'s
    key bias): under `torch.compile` Inductor's `inductor_force_stride_order` pins it row-major, in eager
@@ -583,7 +590,7 @@ The concrete steps:
 Embedding tables (`Embeddings`, registered exactly once, passed as a forward argument):
 species 400×32, move 400×16, item 600×16, ability 100×16, type 20×16.
 
-### 2.3 The 61-token sequence
+### 2.3 The 62-token sequence
 
 | Seats | Index range | Token type | Content |
 |---|---|---|---|
@@ -592,18 +599,19 @@ species 400×32, move 400×16, item 600×16, ability 100×16, type 20×16.
 | global | 12 | `TOKEN_TYPE_GLOBAL` | `[our_ctx, opp_ctx, non_matchup_rest]` → `global_proj` |
 | **E3** our active's moves | 13–16 | `TOKEN_TYPE_OUR_MOVE` | move token in **request order**, `move_seat_proj` 32→128 |
 | **E4** opp threat moves | 17–22 | `TOKEN_TYPE_THEIR_THREAT` | `threat_seat_proj([latent(32), w, acc, is_phys])`, K = `entity_topk_seats` = 6 |
-| **E5** tail threats | 23–28 | `TOKEN_TYPE_THEIR_THREAT` + `tail_marker` | per-opp-mon beyond-top-K residual `tail_proj([p_tail, worst_phys, worst_spec, revealed])` |
-| **event seats** (`history_events`, ON) | 29–60 | `TOKEN_TYPE_HISTORY` + `event_marker` | the event window's `EVENT_WINDOW_N` = 32 records, one seat each, most-recent LAST (`EventSeats`, `team_transformer.py`: per-column embeddings + scalars → `LayerNorm(proj(row))`); PAD rows are key-masked |
+| **E5** tail threats | 23–28 | `TOKEN_TYPE_THEIR_THREAT` + `tail_marker` | per-opp-mon beyond-top-K residual `tail_proj([p_tail, worst_phys, worst_spec, revealed])`; the opponent ACTIVE's E5 seat is X5's OTHER_move token |
+| **OTHER_species** (X5) | 29 | `TOKEN_TYPE_THEIR_TEAM` | the hypothesis set's tail beyond the hypotheses, one seat (keyed by its log-mass) |
+| **event seats** (`history_events`, ON) | 30–61 | `TOKEN_TYPE_HISTORY` + `event_marker` | the event window's `EVENT_WINDOW_N` = 32 records, one seat each, most-recent LAST (`EventSeats`, `team_transformer.py`: per-column embeddings + scalars → `LayerNorm(proj(row))`); PAD rows are key-masked |
 
 The event seats join the extra seam LAST, so they are always the final `EVENT_WINDOW_N` tokens — the
-`r` edge family addresses them by that contract (§5). Under the X5 `fixed_mass` arm, OTHER_species
-is one more seat after the entity seats (62 tokens).
+`r` edge family addresses them by that contract (§5). X5's OTHER_species is the one seat after the entity
+seats (before the event seats).
 
 `entity_seats.n_seats` = 16 (4 + 6 + 6). Base seat count = `2·TEAM_SIZE + 1` = 13, so **every
 extra seat index is `13 + offset`** — that is what makes the base slices position-stable. Every consumer
 reads the base as `TeamTransformer._total_tokens`, never the literal.
 
-**Under `--token-encoding static` (63 tokens; 64 under X5 `fixed_mass`)** the global seat becomes three board
+**Under `--token-encoding static` (64 tokens)** the global seat becomes three board
 seats and every later seat shifts by 2 (`_total_tokens` = 15; `board_seats` = (12, 13, 14)):
 
 | Seats | Index range | Token type | Content |
@@ -731,7 +739,7 @@ ONE α over the move axis then reduces it — **Contract W**: α has no defender
 axis, so the flat block's nine-independent-maxima incoherence (D2) and a per-defender α (D3) are
 **shape errors** here rather than properties under test. α is the softmax of the PUBLISHED α
 logits, **move slice only, unrenormalized and stop-grad** (a high `α_SWITCH` correctly shrinks
-every coordinate toward zero; the detach is unconditional, so no PPO→`alpha_head` route depends on
+every coordinate toward zero; the detach is unconditional, so no PPO→`flat_intent_head` route depends on
 a training flag). **With `--opp-intent` OFF it falls back to the shipped R1 `belief_mean` rung
 (α := w/Σw)**, which is what makes the flag independently enableable — the DELIVERY claim is
 testable apart from the DISTRIBUTION claim. A seat closed by the meaningful-K gate is MASKED, its
@@ -838,8 +846,8 @@ the incoming side / clause rules and reads an opponent's ability through its `kn
 own re-application of `status_rules.incoming_status_mask` is an exact no-op on real op output; every op value it
 reads is PRE-gain (the op's `out_gain` is per request slot on the per-move channels), and its projections are
 shared across slots. Requires `opp_intent`, `damage_op`,
-`damage_outgoing` and both per-move matrices. **Builds on both belief modes** (`gen3_move_resolution_x5_v1`):
-under X5 `fixed_mass` the same rules (no mode branch) read the flat opponent pointer's re-expression, the one the
+`damage_outgoing` and both per-move matrices. **Reads X5's flat pointer** (`gen3_move_resolution_x5_v1`):
+the same rules (no mode branch) read the flat opponent pointer's re-expression, the one the
 seven blocks read there — α over the K move seats plus OTHER_move, α_SWITCH, β over the six slots plus
 OTHER_species — and **OTHER is PRICED, never excluded** (design_arch_audit Decision record 2026-10-07): OTHER_move
 enters as one seat per gen-3 PRIORITY level (−6 … +5), each with α_OTHER · P_tail(level), that level as its
@@ -916,7 +924,7 @@ with the op built it constructs the projection NOT LIVE and the policy RETIRES i
 so a trained OFF model has no module, key, optimizer slot or parameter for the route (production learner
 3,065,882 → 3,064,090 parameters, −1,792 = the `Linear(13, 128)`), every OTHER initial byte equals production's
 (MEASURED 2026-10-07 on a CPU `MaskablePPO` build, `value_threat_inject_off_test.py`, also under each of
-`--token-encoding static`, `--policy-readout trunk`, `--move-resolution on`, `--belief-tokens fixed_mass`), and
+`--token-encoding static`, `--policy-readout trunk`, `--move-resolution on`; X5's fixed_mass surface is production), and
 the op stays on `hard_max`. The critic then reads the op's incoming rows through the trunk (`prefuse_proj`) and
 `value_entity_pool`'s op-row source only. **v1 substitutes α := normalize(w),
 a PRESENCE belief where the design wants a supervised USAGE belief** — deliberately, so a null
@@ -1410,7 +1418,7 @@ in the production config. Each maps its per-pair cell through a **zero-init**
 whole edge system is bitwise-identical to `off` at initialisation.
 
 Seat indices as in §2.3: our mons `[0:6]`, opp mons `[6:12]`, global `12`, E3 `[13:17]`,
-E4 `[17:23]`, E5 `[23:29]`, event seats `[29:61]`.
+E4 `[17:23]`, E5 `[23:29]`, OTHER_species `29`, event seats `[30:62]`.
 
 ### 5.1 The from × to grid
 
@@ -1518,7 +1526,6 @@ does nothing given another setting.
 |---|---|---|
 | `attend_unrevealed_opponents` | `true` | ACTIVE |
 | `belief_grad_mode` | `"shaping"` | ACTIVE |
-| `belief_tokens` | `"blob"` | OFF |
 | `conditional_threat_cell` | `true` | ACTIVE |
 | `consequence_topk` | `6` | ACTIVE |
 | `damage_candidate_k` | `0` | OFF |

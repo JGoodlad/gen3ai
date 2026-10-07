@@ -32,9 +32,12 @@ from agents.model.intent_threshold import (
 from agents.model.model_version import (
     MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
 )
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
-_ON_KWARGS = dict(
+# The opponent-belief family is ON (the intent readout needs it): since the X5 version break (v144) that is
+# X5's hypothesis tokens + the flat pointer, with every requirement they carry (`x5_surface_fixture`).
+_ON_KWARGS = x5_kwargs(
     attend_unrevealed_opponents=True, move_belief_mode="revealed", move_prior_fusion=True,
     move_latent=True, damage_op=True, damage_outgoing=True, damage_matrices_incoming=True,
     damage_topk_k=6, entity_topk_seats=6, opp_intent=True, intent_threshold=True,
@@ -216,8 +219,10 @@ def test_missing_stash_fails_loud():
 
 
 def test_requires_opp_intent_and_damage_op():
-    with pytest.raises(ValueError, match="opp_intent"):
-        _build(**{**_ON_KWARGS, "opp_intent": False})
+    # the cell's OWN requirement, with the whole belief family off (X5 refuses opp_intent off alone,
+    # which would match "opp_intent" for a different reason)
+    with pytest.raises(ValueError, match="intent_threshold=True requires opp_intent"):
+        _build(**{**_ON_KWARGS, "opp_intent": False, "opp_belief_slots": False})
     with pytest.raises(ValueError, match="damage_op"):
         _build(**{**_ON_KWARGS, "damage_op": False, "damage_outgoing": False,
                   "damage_matrices_incoming": False, "damage_topk_k": 0,

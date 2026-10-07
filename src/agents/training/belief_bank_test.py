@@ -74,15 +74,15 @@ def test_sites_partition_the_registry():
     for row in bb.ROWS:
         by_site.setdefault(row.site, []).append(row.name)
     assert by_site == {
-        "hidden_move": ["hidden_team", "hidden_team_set", "move_belief"],
+        "hidden_move": ["hidden_team_set", "move_belief"],
         "latent": ["move_latent"],
         "revealed": ["spread", "nature_ev", "hp_type", "item"],
     }
 
 
-def test_hidden_move_site_attr_param_and_loss_key():
-    """The hidden-team row: 'attr' stash (last_belief_logits), 'param' arg (moves_weight),
-    UNPREFIXED metrics with the historic `aux_loss` key. The move-belief row: 'attr' mode."""
+def test_hidden_move_site_attr_mode_and_an_absent_hypothesis_set():
+    """The move-belief row: 'attr' mode. The hidden-team set row with no hypothesis set on the
+    extractor (`last_hypothesis` absent — a static fact) contributes nothing, even when gated on."""
     class _FE:
         def __init__(self):
             S, M = 30, 40
@@ -104,14 +104,10 @@ def test_hidden_move_site_attr_param_and_loss_key():
     obs = {"belief_species": sp, "belief_moves": mv, "known_moves": km}
     out = bb.compute(fe, obs,
                      coefs={"opp_belief_aux_coef": 0.1, "move_belief_coef": 0.05},
-                     gates={"hidden_team": True, "move_belief": True},
+                     gates={"hidden_team_set": True, "move_belief": True},
                      site="hidden_move", params={"moves_weight": 1.0})
-    assert [row.name for row, _, _ in out] == ["hidden_team", "move_belief"]
-    ht_row, ht_term, ht_m = out[0]
-    assert ht_row.prefix == "" and "aux_loss" in ht_m and "loss" not in ht_m
-    direct = bb.belief_aux_loss(fe.last_belief_logits, sp, mv, moves_weight=1.0)
-    assert th.equal(ht_term, 0.1 * direct[0])
-    mb_row, mb_term, mb_m = out[1]
+    assert [row.name for row, _, _ in out] == ["move_belief"]
+    mb_row, mb_term, mb_m = out[0]
     assert mb_row.prefix == "move_" and "loss" in mb_m
     d_mb = bb.move_belief_loss(fe._ml, km, mv, "revealed")
     assert th.equal(mb_term, 0.05 * d_mb[0])
@@ -124,6 +120,5 @@ def test_aliases_still_resolve_on_the_ppo_class():
     assert P._spread_belief_loss is bb.spread_belief_loss
     assert P._nature_ev_belief_loss is bb.nature_ev_belief_loss
     assert P._hp_type_belief_loss is bb.hp_type_belief_loss
-    assert P._belief_aux_loss is bb.belief_aux_loss
     assert P._move_belief_loss is bb.move_belief_loss
     assert P._move_belief_latent_loss is bb.move_belief_latent_loss

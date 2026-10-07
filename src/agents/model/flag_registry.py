@@ -192,11 +192,23 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               "k learned query tokens summarising the unrevealed opp party into both heads",
               requires=("attend_unrevealed_opponents",)),
     ModelFlag("opp_belief_slots", False, Tier.CLI, Klass.STRUCTURAL, 16,
-              "learned unknown-mon tokens in the un-revealed opp slots + the BeliefHead",
+              "the hidden-opponent belief: X5's hypothesis tokens in the un-revealed opp slots (the T0 "
+              "hypothesis builder) + the BeliefHead",
               derived=True, source_arg="opp_belief_aux_coef",
               note="coef>0 is the enable signal; the COEF is a training hparam, the BOOL is the "
-                   "version-checked arch toggle.",
-              requires=("attend_unrevealed_opponents",)),
+                   "version-checked arch toggle. Since the X5 VERSION BREAK (config v144) it builds X5's "
+                   "hypothesis tokens (designs/endstate/design_x5_belief_tokens.md) — the only belief "
+                   "representation: `--belief-tokens` and its blob arm (a constant learned token per hidden "
+                   "slot, BeliefSlots) are DELETED. So it REQUIRES what X5 requires: t0_species_prior (the "
+                   "scores are log P_T0 + a learned delta), move_belief_mode (the active's move group), "
+                   "move_prior_fusion (a hypothesis slot's move prior is its species' Smogon row), "
+                   "opp_intent (the flat opponent pointer reads the hypothesis set — the two are ONE switch: "
+                   "opp_intent's own build refuses opp_belief_slots off, a coupling the acyclic `requires` "
+                   "graph states from this side only), entity_topk_seats (>= 4: revealed moves take the "
+                   "first seats) and entity_tail_seats (OTHER_move's token is the opponent active's E5 tail "
+                   "seat). An OFF value of any of them with the belief family on is REFUSED at build.",
+              requires=("attend_unrevealed_opponents", "t0_species_prior", "move_belief_mode", "move_prior_fusion",
+                        "opp_intent", "entity_topk_seats", "entity_tail_seats")),
     ModelFlag("move_belief_mode", "off", Tier.CLI, Klass.STRUCTURAL, 17,
               "predict + reinject each opp mon's moveset (off|revealed|unrevealed|both)",
               requires=("attend_unrevealed_opponents",), coef_arg="move_belief_coef"),
@@ -270,13 +282,19 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "one-lever arm. The critic then reads the op's incoming rows through the trunk (`prefuse_proj`) "
                    "and `value_entity_pool`'s op-row source only."),
     ModelFlag("opp_intent", False, Tier.CLI, Klass.STRUCTURAL, 68,
-              "the alpha (their move) / beta (their switch-in) supervised pointer heads",
+              "the opponent-intent readout: X5's FLAT opponent pointer (their move seats + OTHER_move + "
+              "each switch target + OTHER_species, one softmax), re-expressed as alpha / beta for the "
+              "consumers",
               derived=True, source_arg="opp_intent_coef", on_value=0.05,
               coef_arg="intent_label_bot_weight",
               note="coef>0 is the enable signal, like opp_belief_slots. `coef_arg` is the heads' "
                    "BOT-label weight, which is a separate dose from the enable signal: production "
                    "trains it at 0.25 and a fresh run defaults to 1.0, so `--arch production` "
-                   "names it rather than setting it.",
+                   "names it rather than setting it. Since the X5 VERSION BREAK (config v144) the alpha / "
+                   "beta HEADS are the deleted blob path's (still constructed for their init draws, retired "
+                   "by the policy before the optimizer); the readout is X5's flat pointer, so opp_intent "
+                   "also needs opp_belief_slots and X5's requirements (declared on opp_belief_slots; the "
+                   "constructor refuses opp_intent without it).",
               requires=("entity_topk_seats",)),
     ModelFlag("species_prior_fusion", False, Tier.CLI, Klass.STRUCTURAL, 69,
               "read BeliefHead's species head as a DELTA on the team-composition prior",
@@ -457,13 +475,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="The X26 RND strategy comparison (owner, 2026-09-30: \"ensemble RND, toss one a different learning rate or something, so we knock them out all at once\"). `fast` = base's predictor at 10x the rate; `decay` = base's predictor pulled toward its init with a 10-update half-life; `small` = a 32-unit one-hidden-layer predictor; `feat` = base's shapes over the detached value_pooled. Declarations: `agents.model.ridealong_heads.RND_VARIANT_DECLS`. The observation variants share base's target and normalisation (paired). DETACHED exactly like the four heads (pinned bit-for-bit by `ridealong_update_test`, base itself included). STRUCTURAL: the variants' parameters are the state_dict delta. family=CRITIC: never on the production ARCH surface. It REQUIRES ridealong_rnd: base is the shared target and the reference.",
               requires=("ridealong_rnd",),
               family=Family.CRITIC),
-    ModelFlag("belief_tokens", "blob", Tier.CLI, Klass.STRUCTURAL, 136,
-              "X5's opponent-belief representation: 'blob' (today's constant hidden-slot tokens) or "
-              "'fixed_mass' (concrete species hypotheses with logistic fixed-size presence, a learned "
-              "delta on the Smogon prior trained by a set BCE, and an OTHER token)",
-              note="X5 (designs/endstate/design_x5_belief_tokens.md §3.8). Production stays 'blob' until the X5 A/B rules; both arms build at ONE commit, so there is no ARCH_SIGNATURE bump until the losing arm is deleted. 'blob' builds nothing (byte-identical to the pre-X5 model). 'fixed_mass' builds `agents.model.hypothesis_set.HypothesisBuilder` from a private seed (no non-X5 init byte moves) and re-targets the hidden-team belief supervision to the set BCE. Build unit U2 stashes the hypothesis set; tokens entering the trunk and the op are U3, the flat pointer U4. It REQUIRES t0_species_prior (the scores are log P_T0 + delta), move_belief_mode (the active's move group), opp_intent (the pointer it re-bases), opp_belief_slots (the presence BCE and BeliefHead's set BCE ride --opp-belief-aux-coef) and (U4, the flat pointer) entity_tail_seats (OTHER_move's token is the opponent active's E5 tail seat). Under 'fixed_mass' the FLAT opponent pointer (agents.model.flat_intent) REPLACES the alpha / beta heads (retired after SB3's orthogonal re-init, so no non-X5 init byte moves).",
-              requires=("t0_species_prior", "move_belief_mode", "opp_intent", "opp_belief_slots",
-                        "entity_tail_seats")),
     ModelFlag("oracle_reveal", "off", Tier.CLI, Klass.RESUME_IMMUTABLE, 137,
               "DIAGNOSTIC observation mode (X32; X5 A/B §7.6): how much of the opponent's true team the "
               "OBSERVATION states from turn 1 ('off' = production; 'species' = the six species, "
@@ -553,11 +564,10 @@ for _f in REGISTRY:                                  # a self-requirement can ne
 OFF_VALUES = (False, 0, "off", "none")
 
 
-#: The OFF spellings of a MODE string. ``'blob'`` is `belief_tokens`' OFF state (X5, v136): the
-#: pre-X5 representation, which builds nothing — so ``requires`` binds only ``'fixed_mass'``.
-#: ``'tower'`` is `policy_readout`'s (audit F2, v138): today's flat policy tower, nothing new built.
-#: ``'legacy'`` is `token_encoding`'s OFF state (v139): today's `PokemonEncoder`.
-OFF_STRINGS: Tuple[str, ...] = ("off", "none", "blob", "tower", "legacy")
+#: The OFF spellings of a MODE string. ``'tower'`` is `policy_readout`'s (audit F2, v138): today's flat
+#: policy tower, nothing new built. ``'legacy'`` is `token_encoding`'s OFF state (v139): today's
+#: `PokemonEncoder`. (``'blob'``, `belief_tokens`' OFF state, left with the flag at the X5 version break.)
+OFF_STRINGS: Tuple[str, ...] = ("off", "none", "tower", "legacy")
 
 
 def is_enabled(value: Any) -> bool:

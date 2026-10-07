@@ -70,7 +70,7 @@ _INTENT = (("emit_opp_intent_labels", True),)
 _BANK = "agents/training/belief_bank.py"
 _PPO = "agents/training/instrumented_ppo/ppo.py"
 _SETUP = "agents/training/instrumented_ppo/train_setup.py"
-_INTENT_FOLD = "agents/training/instrumented_ppo/intent_fold.py"   # K8: the intent block, inside region R1
+_INTENT_FOLD = "agents/training/instrumented_ppo/flat_intent_fold.py"   # K8: the intent fold, inside region R1
 
 _REVEALED = ("the side's REVEALED opponent slots (`species_known` read from the side's own row, the "
              "leading-contiguous block; the reading's `opp` list in encoder order)")
@@ -139,10 +139,10 @@ LABELS: Tuple[LabelKey, ...] = (
              "WHICH kind of opponent this episode faces (bot / pool / stable / exploiter), set by the "
              "wrapper at reset — the host's per-episode routing state",
              alt_gates=(_INTENT,)),
-    # ---------------------------------------------------------------- opponent intent (α/β)
+    # ---------------------------------------------------------------- opponent intent (the flat pointer)
     LabelKey("opp_action_kind", "i64", (1,), "intent", _INTENT, True, "Gen3Env._opp_intent_labels",
              (_INTENT_FOLD, _SETUP), "core",
-             "what the opponent DID at the PREVIOUS decision (move / switch / unknown) — the α/β label the "
+             "what the opponent DID at the PREVIOUS decision (move / switch / unknown) — the intent label the "
              "port's trackers already fold (`trackers::IntentLabel`, slice T)"),
     LabelKey("opp_action_num", "i64", (1,), "intent", _INTENT, True, "Gen3Env._opp_intent_labels",
              (_INTENT_FOLD, _SETUP), "core",
@@ -153,7 +153,8 @@ LABELS: Tuple[LabelKey, ...] = (
              "the switch-in's REVEALED slot as of the previous decision (`_opp_slot_map_prev`), "
              "SWITCH_SLOT_NONE otherwise"),
     LabelKey("opp_switch_species", "i64", (1,), "intent", _INTENT, True, "Gen3Env._opp_intent_labels",
-             (_INTENT_FOLD, _SETUP), "core", "the switch-in's species NUM (content-addressed β)"),
+             (_INTENT_FOLD, _SETUP), "core",
+             "the switch-in's species NUM (names a hidden switch-in: a hypothesis slot or OTHER_species)"),
     # ---------------------------------------------------------------- OFF the production surface
     LabelKey("fork_pg_m", "f32", (1,), "fork", (("emit_fork_pg_mask", True),), False,
              "Gen3Env._merge_training_keys", ("agents/training/fork_arm.py",), "host_const",

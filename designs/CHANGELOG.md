@@ -12407,3 +12407,68 @@ branch `obs-facts-append`).
   training graphs and for both sites; CUDA (`slow`), the 64-key miniature raises without the pin and matches eager
   with it, forward and gradients. `static_tokens_test.py::test_the_static_encoder_forward_holds_no_reference_into_the_layout`.
   `move_resolution_x5_test.py::test_split_other_move_compiles_as_one_graph`.
+## 2026-10-07 — v144 / `gen3_x5_version_break_v1`: THE X5 VERSION BREAK (ONE bump for every part; `MIGRATION_FLOOR` 144; every pre-break checkpoint runs PINNED)
+
+- **Why.** X5 was ADOPTED (`designs/endstate/design_x5_belief_tokens.md` Decision record 2026-10-07: look 3 matched
+  steps NON-INFERIOR, purpose metric crossed) and the adoption carries the ONE planned checkpoint break. One bump
+  covers all its parts; each part appends a subsection here (and a line to v144's comment above
+  `MODEL_CONFIG_VERSION`) without another bump.
+- **Versioning.** `MODEL_CONFIG_VERSION` 143 → 144; `ARCH_SIGNATURE` `gen3_event_record_v2` → `gen3_x5_version_break_v1`;
+  `MIGRATION_FLOOR` 121 → 144 with `SIGNATURE_FIRST_VERSION["gen3_x5_version_break_v1"] = 144`. The floor RISES
+  (superseding the legacy manifest's provisional D-L1 "decouple"): the later parts reshape weights (the dead value tower
+  F1, the dead pointer bias F16b, the op's per-slot `out_gain` tied to one scalar) and change behaviour (the
+  intent_conditional pre/post-gain), so no pre-break checkpoint — blob or fixed_mass — is reproducible at HEAD.
+
+### Part 1 — the X5 flip + the blob deletion
+
+- **The flip.** X5's hypothesis tokens (the former `--belief-tokens fixed_mass` arm) are the ONLY belief representation.
+  `--belief-tokens` is DELETED (`designs/deleted_flags.md`; a typed one is refused at parse time with the reason) with
+  the `belief_tokens` extractor kwarg, `ModelVersion` field, `_resolve` line, registry row, `production_config.json`
+  key and `hypothesis_set.BELIEF_TOKEN_MODES`. The opponent-belief family (`opp_belief_slots` / `opp_intent`) builds
+  X5 (`hypothesis_builder` + `flat_intent_head`) whenever it is on, and REFUSES at build a configuration missing one
+  of X5's requirements (`t0_species_prior`, `move_belief_mode`, `move_prior_fusion`, both belief toggles, `entity_tail_seats`,
+  `entity_topk_seats` ≥ 4, the op K agreement, `damage_candidate_k` = 0); with both toggles off nothing of X5 is built
+  (the belief-off ablation). Registry: `opp_belief_slots` REQUIRES `t0_species_prior`, `move_belief_mode`, `move_prior_fusion`, `opp_intent`,
+  `entity_topk_seats`, `entity_tail_seats`; `'blob'` left `OFF_STRINGS`.
+- **The deletion.** BeliefSlots' forward splice and the α / β forward block are gone; `BeliefSlots`, `AlphaIntentHead`
+  and `BetaSwitchHead` are still CONSTRUCTED for their init draws (the global RNG stream every later initial byte
+  follows), BeliefSlots discarded at once and α / β retired by the policy before the optimizer. The blob-only learner
+  terms and readers go with the path (the α / β intent fold, the hidden-team Hungarian row, the ride-along B head's α
+  form, `main.belief_roles`' blob read arm) — see FINDINGS below for what was left dead in place.
+- **Refusals (the pinned fix).** `model_version/version_break.py`: `LAST_BLOB_COMMIT` = `26131c0c` (the last commit
+  that builds blob); the pre-floor PRE-GENERATION refusal appends the belief reason (blob DELETED — recorded, or the key
+  absent below v136 — vs a pre-break fixed_mass checkpoint the break reshaped); `check_post_break` makes a resume / fork
+  exit `FATAL_CONFIG` before the inheritance sweep (`main.train.config.enforce_not_shaped_parent`) and is
+  `main.checkargs`' "pre-break parent" block; a pickled `belief_tokens` is `snapshot._DEAD_FEK_JUDGED` (`fixed_mass`
+  pops, anything else refused) and `load_checkpoint_strict` refuses a blob zip before SB3 splats it
+  (`refuse_deleted_pickled_kwargs`).
+- **Byte identity (the proof).** The production model is the pre-break fixed_mass arm byte for byte: the K9 learner
+  golden's fixed_mass entry MOVED VERBATIM to the default slot (init `47c4c5fd…`, post `70a26bfc…`, every loss,
+  torch 2.8.0+cu126; its seed-18 buffer renamed `learner_golden_buffer.npz`; the blob entries and buffer deleted, the
+  blob history kept as `history_deleted_blob_default`) and `python -m agents.training.learner_golden check` reads
+  IDENTICAL at the break. Reference captured at `26131c0c`:
+  `designs/research_state/measurements/version_break_identity_2026-10-07/`.
+- **Mirror + registry.** `production_config.json` stamped 144 / `gen3_x5_version_break_v1` (the follow-the-code window,
+  `production_config.README.md`), `belief_tokens` removed; `baselines.json`: `production`'s signature override moved,
+  `untaught_meter_opponent_v14` marked `era_checkout_only` (it no longer loads at HEAD).
+- **Tests (fail on revert).** `x5_version_break_test.py` (the stamps; production builds the hypothesis set with no
+  switch and no blob key on a real policy; each OFF requirement refused naming its flag; the belief-off ablation still
+  builds; `--belief-tokens` refused at parse time with its reason; v143 blob / v130 key-absent / v143 fixed_mass each
+  refused with its own reason; the trainer path exits `FATAL_CONFIG`; checkargs reports it; `_DEAD_FEK_JUDGED` refuses
+  a pickled blob and pops fixed_mass; `load_checkpoint_strict` refuses a blob zip), `learner_golden_test` (the default
+  slot is the moved fixed_mass entry), `learner_golden_fixed_mass_test` (a plant on the retired α head is never called).
+- **Fixtures re-baselined on the X5 surface (no golden moved).** The collapsed-critic parity fixtures go to logit −10
+  (−9's first rung is informative on X5); the golden update's host-scalar-read pin 1,050 → 1,060 (988 are
+  `optimizer.step()`'s per-parameter reads, which follow X5's parameter-tensor count); `main.h2h`'s second test
+  architecture is `--token-encoding static`; `play_reveal`'s off/off digests re-recorded; the ride-along B and
+  `main.belief_roles` tests read the flat pointer.
+- **FINDINGS (left for later units).** Dead in place: the v122–v143 migration branches (legacy manifest R1 / L1);
+  `main.train.config.inherit_derived_enable_coefs` / `UnrecordedEnableCoef` (pre-v125 only); the forwards of
+  `BeliefSlots` / `AlphaIntentHead` / `BetaSwitchHead` (constructed for their RNG draws); the never-written
+  `alpha_logits` / `beta_logits` / `alpha_seat_nums` stashes (readers: the prober, `search_dividend`, the inference
+  player); the `_x5i is None` arms of the opp_intent-requiring consumer calls in `extractor_forward`; the move belief's
+  Hungarian `elif` in `belief_bank`. `--beta-setvalued-coef` is INERT (a census / deletion row is owed). The untaught
+  meter's DEFAULT opponent (`untaught_meter_opponent_v14`, now `era_checkout_only`) no longer loads at HEAD — its
+  tests stay red until a post-break opponent exists. Four X5 EXACT selection-site declarations move under the
+  weight-jitter probe (pinned as known in `selection_sites_test`, owed a re-judgment). The grad-balance probe names no
+  X5 set-BCE row. A retired module registered as `None` swallows unexpected state_dict keys under its name.

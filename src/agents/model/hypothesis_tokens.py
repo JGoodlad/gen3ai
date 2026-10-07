@@ -1,5 +1,5 @@
 """X5's hypothesis TOKENS in the phase chain (`gen3_x5_belief_tokens_v1`, build unit U3;
-`designs/endstate/design_x5_belief_tokens.md` §3.4 / §3.5). `--belief-tokens fixed_mass` only — the
+`designs/endstate/design_x5_belief_tokens.md` §3.4 / §3.5). X5 only — the
 `blob` arm never calls anything here, so its forward is byte-identical to the pre-X5 model.
 
 WHAT THIS MODULE OWNS (pure functions over the U2 `HypothesisSet`; no parameters of its own — the
@@ -41,7 +41,7 @@ from agents.observation.constants import TEAM_SIZE
 
 
 class OppPresence(NamedTuple):
-    """What a class-E pool over opponent tokens needs (fixed_mass only; None under blob)."""
+    """What a class-E pool over opponent tokens needs (X5 only; None with the belief family off)."""
     slot_log_pi: torch.Tensor     # [B,6]  log π of each opp slot's key (0 revealed, MASKED_LOG_PRESENCE off)
     other_out: torch.Tensor       # [B,D]  OTHER_species' REFINED token (the trunk's output at its seat)
     other_log_mass: torch.Tensor  # [B]    log Σ_tail π (MASKED_LOG_PRESENCE when masked)

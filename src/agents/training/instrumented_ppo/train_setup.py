@@ -37,7 +37,6 @@ class FoldFlags(NamedTuple):
     win_prob_on: Any
     policy_grad_coef: Any
     fork_pg_mask_on: Any
-    belief_set_on: Any = False
 
 
 class ProbeSetup(NamedTuple):
@@ -138,11 +137,7 @@ class TrainSetup:
         fork_pg_mask_on = (
             isinstance(self.rollout_buffer.observations, dict)
             and FORK_PG_MASK_KEY in self.rollout_buffer.observations)
-        # +X5 (gen3_x5_hypothesis_set_v1): under `--belief-tokens fixed_mass` the hidden-team belief
-        # supervision is the SET BCE row, gated exclusively against the Hungarian one.
-        belief_set_on = getattr(self.policy.features_extractor, "belief_tokens", "blob") == "fixed_mass"
         return FoldFlags(
-            belief_set_on=belief_set_on,
             belief_aux_on=belief_aux_on, move_belief_on=move_belief_on, move_latent_on=move_latent_on,
             spread_belief_on=spread_belief_on, hp_type_belief_on=hp_type_belief_on, item_belief_on=item_belief_on,
             critic_winprob=critic_winprob, win_prob_on=win_prob_on,
@@ -244,11 +239,8 @@ class TrainSetup:
             moves_weight=float(self.opp_belief_moves_weight),
             intent_on=float(getattr(self, "opp_intent_coef", 0.0)) > 0.0,
             intent_coef=float(getattr(self, "opp_intent_coef", 0.0)),
-            setvalued_on=float(getattr(self, "beta_setvalued_coef", 0.0)) > 0.0,
-            setvalued_coef=float(getattr(self, "beta_setvalued_coef", 0.0)),
             bot_label_weight=float(getattr(self, "intent_label_bot_weight", 1.0)),
             win_prob_on=bool(f.win_prob_on),
-            belief_set_on=bool(f.belief_set_on),
         )
 
     def _micro_region(self) -> Any:

@@ -24,8 +24,9 @@ name it ever exported still resolves from `agents.training.instrumented_ppo`.
     constants.py      the four module-level tuning constants
     device_batches.py K8: the DEVICE-RESIDENT micro-batch — one device copy of the flattened buffer
                       per update, micro-batches gathered from it (bit-identical, same permutation)
-    intent_fold.py    K8: the opponent-intent fold as ONE static, fullgraph-traceable function
-                      (called by `micro_step`, region R1; its oracle is a verbatim copy of the old block)
+    intent_fold.py    K8: the opponent-intent fold's entry point (called by `micro_step`, region R1)
+                      and the static metric primitives; it dispatches to `flat_intent_fold.py`, the
+                      X5 flat pointer's static, fullgraph-traceable loss + metrics
     inference.py      `InferenceMaskablePPO` — the class an OPPONENT / reader load builds: policy
                       weights only, no optimizer of any kind (gen3_opponent_inference_load_v1)
     strict_load.py    THE STRICT CHECKPOINT LOAD (`gen3_strict_checkpoint_load_v1`): the

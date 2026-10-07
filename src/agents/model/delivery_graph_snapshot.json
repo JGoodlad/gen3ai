@@ -1,20 +1,11 @@
 {
   "edges": [
     {
-      "dst": "loss.opp_intent_alpha_ce",
-      "label_key": "opp_action_move_num (folded at the train-loop --opp-intent-coef)",
+      "dst": "loss.opp_intent_flat_ce",
+      "label_key": "opp_action_kind/opp_action_num/opp_switch_slot/opp_switch_species (folded at the train-loop --opp-intent-coef)",
       "note": "privileged label (the OUTCOME / their actual action is the future at decision time); never enters the forward",
       "source_constant": "training-only obs Dict key",
-      "src": "alpha_head",
-      "type": "aux",
-      "width": null
-    },
-    {
-      "dst": "loss.opp_intent_beta_ce",
-      "label_key": "opp_switch_species (folded at the train-loop --opp-intent-coef)",
-      "note": "privileged label (the OUTCOME / their actual action is the future at decision time); never enters the forward",
-      "source_constant": "training-only obs Dict key",
-      "src": "beta_head",
+      "src": "flat_intent_head",
       "type": "aux",
       "width": null
     },
@@ -24,6 +15,15 @@
       "note": "privileged label (the OUTCOME / their actual action is the future at decision time); never enters the forward",
       "source_constant": "training-only obs Dict key",
       "src": "hp_type_belief",
+      "type": "aux",
+      "width": null
+    },
+    {
+      "dst": "loss.hypothesis_presence_set_bce",
+      "label_key": "belief_species (the true unseen team, multi-hot)",
+      "note": "privileged label (the OUTCOME / their actual action is the future at decision time); never enters the forward",
+      "source_constant": "training-only obs Dict key",
+      "src": "hypothesis_builder",
       "type": "aux",
       "width": null
     },
@@ -55,7 +55,7 @@
       "width": null
     },
     {
-      "dst": "loss.belief_aux",
+      "dst": "loss.hidden_team_set_bce",
       "label_key": "belief_species/belief_moves",
       "note": "privileged label (the OUTCOME / their actual action is the future at decision time); never enters the forward",
       "source_constant": "training-only obs Dict key",
@@ -83,6 +83,39 @@
     },
     {
       "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "c1",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "c3",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "d1",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[0]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
       "dst": "global",
       "family": "c4",
       "note": "",
@@ -490,6 +523,39 @@
     },
     {
       "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "c1",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "c3",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "d1",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[1]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
       "dst": "global",
       "family": "c4",
       "note": "",
@@ -897,6 +963,39 @@
     },
     {
       "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "c1",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "c3",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "d1",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[2]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 6
+    },
+    {
+      "bidirectional": true,
       "dst": "global",
       "family": "c4",
       "note": "",
@@ -1301,6 +1400,39 @@
       "type": "bias",
       "via": "EdgeBias.forward (zero-init cell map -> a per-pair, per-head additive attention logit, every layer)",
       "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "c1",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_C1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 7
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "c3",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_C3_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "d1",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_D1_CELL",
+      "src": "E3_move[3]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 6
     },
     {
       "bidirectional": true,
@@ -6859,6 +6991,28 @@
     },
     {
       "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "d4",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "v",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
       "dst": "global",
       "family": "g",
       "note": "written for our mons AND opp mons",
@@ -7211,6 +7365,28 @@
     },
     {
       "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "d4",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "v",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
       "dst": "global",
       "family": "g",
       "note": "written for our mons AND opp mons",
@@ -7563,6 +7739,28 @@
     },
     {
       "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "d4",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "v",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
       "dst": "global",
       "family": "g",
       "note": "written for our mons AND opp mons",
@@ -7915,6 +8113,28 @@
     },
     {
       "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "d4",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "v",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
       "dst": "global",
       "family": "g",
       "note": "written for our mons AND opp mons",
@@ -8267,6 +8487,28 @@
     },
     {
       "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "d4",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "v",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
       "dst": "global",
       "family": "g",
       "note": "written for our mons AND opp mons",
@@ -8619,6 +8861,28 @@
     },
     {
       "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "d4",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_D4_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "OTHER_species",
+      "family": "v",
+      "note": "zero where OTHER is masked (structural, other_live)",
+      "source_constant": "_EDGE_V_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "via": "EdgeBias.forward (OTHER_species' column: the family map over OTHER's tail-averaged cells)",
+      "width": 3
+    },
+    {
+      "bidirectional": true,
       "dst": "global",
       "family": "g",
       "note": "written for our mons AND opp mons",
@@ -8968,132 +9232,6 @@
       "type": "bias",
       "via": "EdgeBias.forward (zero-init cell map -> a per-pair, per-head additive attention logit, every layer)",
       "width": 3
-    },
-    {
-      "dst": "pointer.move_logit[0]",
-      "note": "stop-grad under belief_grad_mode=label_only; the CELL widths ride the parallel damage_op edges",
-      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
-      "src": "alpha_head",
-      "type": "cell",
-      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
-      "width": 7
-    },
-    {
-      "dst": "pointer.move_logit[1]",
-      "note": "stop-grad under belief_grad_mode=label_only; the CELL widths ride the parallel damage_op edges",
-      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
-      "src": "alpha_head",
-      "type": "cell",
-      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
-      "width": 7
-    },
-    {
-      "dst": "pointer.move_logit[2]",
-      "note": "stop-grad under belief_grad_mode=label_only; the CELL widths ride the parallel damage_op edges",
-      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
-      "src": "alpha_head",
-      "type": "cell",
-      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
-      "width": 7
-    },
-    {
-      "dst": "pointer.move_logit[3]",
-      "note": "stop-grad under belief_grad_mode=label_only; the CELL widths ride the parallel damage_op edges",
-      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
-      "src": "alpha_head",
-      "type": "cell",
-      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
-      "width": 7
-    },
-    {
-      "dst": "pointer.switch_logit[0]",
-      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
-      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
-      "src": "alpha_head",
-      "type": "cell",
-      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
-      "width": 7
-    },
-    {
-      "dst": "pointer.switch_logit[1]",
-      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
-      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
-      "src": "alpha_head",
-      "type": "cell",
-      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
-      "width": 7
-    },
-    {
-      "dst": "pointer.switch_logit[2]",
-      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
-      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
-      "src": "alpha_head",
-      "type": "cell",
-      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
-      "width": 7
-    },
-    {
-      "dst": "pointer.switch_logit[3]",
-      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
-      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
-      "src": "alpha_head",
-      "type": "cell",
-      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
-      "width": 7
-    },
-    {
-      "dst": "pointer.switch_logit[4]",
-      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
-      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
-      "src": "alpha_head",
-      "type": "cell",
-      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
-      "width": 7
-    },
-    {
-      "dst": "pointer.switch_logit[5]",
-      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
-      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
-      "src": "alpha_head",
-      "type": "cell",
-      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
-      "width": 7
-    },
-    {
-      "dst": "pointer.move_logit[0]",
-      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject",
-      "source_constant": "TEAM_SIZE",
-      "src": "beta_head",
-      "type": "cell",
-      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
-      "width": 6
-    },
-    {
-      "dst": "pointer.move_logit[1]",
-      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject",
-      "source_constant": "TEAM_SIZE",
-      "src": "beta_head",
-      "type": "cell",
-      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
-      "width": 6
-    },
-    {
-      "dst": "pointer.move_logit[2]",
-      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject",
-      "source_constant": "TEAM_SIZE",
-      "src": "beta_head",
-      "type": "cell",
-      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
-      "width": 6
-    },
-    {
-      "dst": "pointer.move_logit[3]",
-      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject",
-      "source_constant": "TEAM_SIZE",
-      "src": "beta_head",
-      "type": "cell",
-      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
-      "width": 6
     },
     {
       "dst": "pointer.move_logit[0]",
@@ -9494,6 +9632,152 @@
       "via": "PairOutcomeSwitchCell (mon j's OWN alpha-reduced UNIFIED outcome row + spin_denied)",
       "width": 15,
       "zero_init": true
+    },
+    {
+      "dst": "pointer.move_logit[0]",
+      "note": "from the PUBLICATION (stop-grad under belief_grad_mode=label_only); OTHER_move is a priced seat, never mass that reads as SWITCH. The CELL widths ride the parallel damage_op edges",
+      "source_constant": "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's alpha RE-EXPRESSION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
+      "width": 8
+    },
+    {
+      "dst": "pointer.move_logit[0]",
+      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject; beta_OTHER is a column, never renormalised away",
+      "source_constant": "TEAM_SIZE + 1 (six slots, OTHER_species)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's beta RE-EXPRESSION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
+      "width": 7
+    },
+    {
+      "dst": "pointer.move_logit[1]",
+      "note": "from the PUBLICATION (stop-grad under belief_grad_mode=label_only); OTHER_move is a priced seat, never mass that reads as SWITCH. The CELL widths ride the parallel damage_op edges",
+      "source_constant": "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's alpha RE-EXPRESSION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
+      "width": 8
+    },
+    {
+      "dst": "pointer.move_logit[1]",
+      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject; beta_OTHER is a column, never renormalised away",
+      "source_constant": "TEAM_SIZE + 1 (six slots, OTHER_species)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's beta RE-EXPRESSION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
+      "width": 7
+    },
+    {
+      "dst": "pointer.move_logit[2]",
+      "note": "from the PUBLICATION (stop-grad under belief_grad_mode=label_only); OTHER_move is a priced seat, never mass that reads as SWITCH. The CELL widths ride the parallel damage_op edges",
+      "source_constant": "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's alpha RE-EXPRESSION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
+      "width": 8
+    },
+    {
+      "dst": "pointer.move_logit[2]",
+      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject; beta_OTHER is a column, never renormalised away",
+      "source_constant": "TEAM_SIZE + 1 (six slots, OTHER_species)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's beta RE-EXPRESSION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
+      "width": 7
+    },
+    {
+      "dst": "pointer.move_logit[3]",
+      "note": "from the PUBLICATION (stop-grad under belief_grad_mode=label_only); OTHER_move is a priced seat, never mass that reads as SWITCH. The CELL widths ride the parallel damage_op edges",
+      "source_constant": "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's alpha RE-EXPRESSION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
+      "width": 8
+    },
+    {
+      "dst": "pointer.move_logit[3]",
+      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject; beta_OTHER is a column, never renormalised away",
+      "source_constant": "TEAM_SIZE + 1 (six slots, OTHER_species)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's beta RE-EXPRESSION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
+      "width": 7
+    },
+    {
+      "dst": "pointer.switch_logit[0]",
+      "note": "the intent route to the SWITCH logits \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's alpha RE-EXPRESSION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
+      "width": 8
+    },
+    {
+      "dst": "pointer.switch_logit[1]",
+      "note": "the intent route to the SWITCH logits \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's alpha RE-EXPRESSION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
+      "width": 8
+    },
+    {
+      "dst": "pointer.switch_logit[2]",
+      "note": "the intent route to the SWITCH logits \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's alpha RE-EXPRESSION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
+      "width": 8
+    },
+    {
+      "dst": "pointer.switch_logit[3]",
+      "note": "the intent route to the SWITCH logits \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's alpha RE-EXPRESSION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
+      "width": 8
+    },
+    {
+      "dst": "pointer.switch_logit[4]",
+      "note": "the intent route to the SWITCH logits \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's alpha RE-EXPRESSION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
+      "width": 8
+    },
+    {
+      "dst": "pointer.switch_logit[5]",
+      "note": "the intent route to the SWITCH logits \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)",
+      "src": "flat_intent_head",
+      "type": "cell",
+      "via": "the flat pointer's alpha RE-EXPRESSION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
+      "width": 8
+    },
+    {
+      "dst": "pi_projection",
+      "note": "OTHER_species joins the keys; every opponent key carries its log-presence",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "OTHER_species",
+      "type": "concat",
+      "via": "CLSPool.their_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "note": "OTHER_species joins the keys; every opponent key carries its log-presence",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "OTHER_species",
+      "type": "concat",
+      "via": "CLSPool.value_cls",
+      "width": 128
     },
     {
       "dst": "pi_projection",
@@ -9787,110 +10071,156 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
-      "note": "equivariant under permuting their moves; SWITCH is scored from the ctx alone. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
-      "source_constant": "D_MODEL",
+      "dst": "flat_intent_head",
+      "note": "the REFINED E4 seat; equivariant under permuting their moves. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
       "src": "E4_threat[0]",
       "type": "content",
-      "via": "AlphaIntentHead.seat_scorer (the REFINED E4 seat \u2016 board ctx, one SHARED scorer over every seat)",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a move-seat candidate",
       "width": 128
     },
     {
-      "dst": "alpha_head",
-      "note": "equivariant under permuting their moves; SWITCH is scored from the ctx alone. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
-      "source_constant": "D_MODEL",
+      "dst": "flat_intent_head",
+      "note": "the REFINED E4 seat; equivariant under permuting their moves. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
       "src": "E4_threat[1]",
       "type": "content",
-      "via": "AlphaIntentHead.seat_scorer (the REFINED E4 seat \u2016 board ctx, one SHARED scorer over every seat)",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a move-seat candidate",
       "width": 128
     },
     {
-      "dst": "alpha_head",
-      "note": "equivariant under permuting their moves; SWITCH is scored from the ctx alone. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
-      "source_constant": "D_MODEL",
+      "dst": "flat_intent_head",
+      "note": "the REFINED E4 seat; equivariant under permuting their moves. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
       "src": "E4_threat[2]",
       "type": "content",
-      "via": "AlphaIntentHead.seat_scorer (the REFINED E4 seat \u2016 board ctx, one SHARED scorer over every seat)",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a move-seat candidate",
       "width": 128
     },
     {
-      "dst": "alpha_head",
-      "note": "equivariant under permuting their moves; SWITCH is scored from the ctx alone. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
-      "source_constant": "D_MODEL",
+      "dst": "flat_intent_head",
+      "note": "the REFINED E4 seat; equivariant under permuting their moves. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
       "src": "E4_threat[3]",
       "type": "content",
-      "via": "AlphaIntentHead.seat_scorer (the REFINED E4 seat \u2016 board ctx, one SHARED scorer over every seat)",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a move-seat candidate",
       "width": 128
     },
     {
-      "dst": "alpha_head",
-      "note": "equivariant under permuting their moves; SWITCH is scored from the ctx alone. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
-      "source_constant": "D_MODEL",
+      "dst": "flat_intent_head",
+      "note": "the REFINED E4 seat; equivariant under permuting their moves. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
       "src": "E4_threat[4]",
       "type": "content",
-      "via": "AlphaIntentHead.seat_scorer (the REFINED E4 seat \u2016 board ctx, one SHARED scorer over every seat)",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a move-seat candidate",
       "width": 128
     },
     {
-      "dst": "alpha_head",
-      "note": "equivariant under permuting their moves; SWITCH is scored from the ctx alone. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
-      "source_constant": "D_MODEL",
+      "dst": "flat_intent_head",
+      "note": "the REFINED E4 seat; equivariant under permuting their moves. input DETACHED (opp_intent_grad_mode=detached) \u2014 a null then says the head cannot predict the opponent, not that predicting them perturbed the policy",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
       "src": "E4_threat[5]",
       "type": "content",
-      "via": "AlphaIntentHead.seat_scorer (the REFINED E4 seat \u2016 board ctx, one SHARED scorer over every seat)",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a move-seat candidate",
       "width": 128
     },
     {
-      "dst": "opp_mon[0]",
-      "note": "in-place; pre-transformer",
-      "source_constant": "D_MODEL",
-      "src": "belief_slots",
+      "dst": "flat_intent_head",
+      "note": "OTHER_move's token is the opponent ACTIVE's refined E5 seat (the active's moves beyond the K seats, a priced (K+1)-th seat); only the active's seat is read on a given row",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "E5_tail[0]",
       "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 OTHER_move",
       "width": 128
     },
     {
-      "dst": "opp_mon[1]",
-      "note": "in-place; pre-transformer",
-      "source_constant": "D_MODEL",
-      "src": "belief_slots",
+      "dst": "flat_intent_head",
+      "note": "OTHER_move's token is the opponent ACTIVE's refined E5 seat (the active's moves beyond the K seats, a priced (K+1)-th seat); only the active's seat is read on a given row",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "E5_tail[1]",
       "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 OTHER_move",
       "width": 128
     },
     {
-      "dst": "opp_mon[2]",
-      "note": "in-place; pre-transformer",
-      "source_constant": "D_MODEL",
-      "src": "belief_slots",
+      "dst": "flat_intent_head",
+      "note": "OTHER_move's token is the opponent ACTIVE's refined E5 seat (the active's moves beyond the K seats, a priced (K+1)-th seat); only the active's seat is read on a given row",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "E5_tail[2]",
       "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 OTHER_move",
       "width": 128
     },
     {
-      "dst": "opp_mon[3]",
-      "note": "in-place; pre-transformer",
-      "source_constant": "D_MODEL",
-      "src": "belief_slots",
+      "dst": "flat_intent_head",
+      "note": "OTHER_move's token is the opponent ACTIVE's refined E5 seat (the active's moves beyond the K seats, a priced (K+1)-th seat); only the active's seat is read on a given row",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "E5_tail[3]",
       "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 OTHER_move",
       "width": 128
     },
     {
-      "dst": "opp_mon[4]",
-      "note": "in-place; pre-transformer",
-      "source_constant": "D_MODEL",
-      "src": "belief_slots",
+      "dst": "flat_intent_head",
+      "note": "OTHER_move's token is the opponent ACTIVE's refined E5 seat (the active's moves beyond the K seats, a priced (K+1)-th seat); only the active's seat is read on a given row",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "E5_tail[4]",
       "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 OTHER_move",
       "width": 128
     },
     {
-      "dst": "opp_mon[5]",
-      "note": "in-place; pre-transformer",
-      "source_constant": "D_MODEL",
-      "src": "belief_slots",
+      "dst": "flat_intent_head",
+      "note": "OTHER_move's token is the opponent ACTIVE's refined E5 seat (the active's moves beyond the K seats, a priced (K+1)-th seat); only the active's seat is read on a given row",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "E5_tail[5]",
       "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 OTHER_move",
+      "width": 128
+    },
+    {
+      "dst": "flat_intent_head",
+      "note": "a switch to a mon in the hypothesis set's tail \u2014 a belief miss is an OTHER label, supervised, not a masked row",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "OTHER_species",
+      "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 OTHER_species",
+      "width": 128
+    },
+    {
+      "dst": "flat_intent_head",
+      "note": "OTHER_species joins the keys; every opponent key carries its log-presence",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "OTHER_species",
+      "type": "content",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
+      "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "note": "OTHER_species is an opponent source row after their six; every opponent row's logit carries its log-presence",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "OTHER_species",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
+      "dst": "win_head",
+      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk; OTHER_species joins the keys; every opponent key carries its log-presence",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "OTHER_species",
+      "type": "content",
+      "via": "CLSPool.value_cls -> WinProbHead",
       "width": 128
     },
     {
       "dst": "E4_threat[0]",
-      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "note": "[latent, w, accuracy, is_phys] in the move group's ONE order (X5 FixedMassMoves); w = the fixed-mass presence pi_m (1 revealed), DETACHED",
       "source_constant": "MOVE_LATENT_DIM + 3",
       "src": "damage_op",
       "type": "content",
@@ -9899,7 +10229,7 @@
     },
     {
       "dst": "E4_threat[1]",
-      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "note": "[latent, w, accuracy, is_phys] in the move group's ONE order (X5 FixedMassMoves); w = the fixed-mass presence pi_m (1 revealed), DETACHED",
       "source_constant": "MOVE_LATENT_DIM + 3",
       "src": "damage_op",
       "type": "content",
@@ -9908,7 +10238,7 @@
     },
     {
       "dst": "E4_threat[2]",
-      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "note": "[latent, w, accuracy, is_phys] in the move group's ONE order (X5 FixedMassMoves); w = the fixed-mass presence pi_m (1 revealed), DETACHED",
       "source_constant": "MOVE_LATENT_DIM + 3",
       "src": "damage_op",
       "type": "content",
@@ -9917,7 +10247,7 @@
     },
     {
       "dst": "E4_threat[3]",
-      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "note": "[latent, w, accuracy, is_phys] in the move group's ONE order (X5 FixedMassMoves); w = the fixed-mass presence pi_m (1 revealed), DETACHED",
       "source_constant": "MOVE_LATENT_DIM + 3",
       "src": "damage_op",
       "type": "content",
@@ -9926,7 +10256,7 @@
     },
     {
       "dst": "E4_threat[4]",
-      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "note": "[latent, w, accuracy, is_phys] in the move group's ONE order (X5 FixedMassMoves); w = the fixed-mass presence pi_m (1 revealed), DETACHED",
       "source_constant": "MOVE_LATENT_DIM + 3",
       "src": "damage_op",
       "type": "content",
@@ -9935,7 +10265,7 @@
     },
     {
       "dst": "E4_threat[5]",
-      "note": "[latent, belief w, accuracy, is_phys]; idx detached, w differentiable",
+      "note": "[latent, w, accuracy, is_phys] in the move group's ONE order (X5 FixedMassMoves); w = the fixed-mass presence pi_m (1 revealed), DETACHED",
       "source_constant": "MOVE_LATENT_DIM + 3",
       "src": "damage_op",
       "type": "content",
@@ -10140,6 +10470,78 @@
       "width": 128
     },
     {
+      "dst": "OTHER_species",
+      "note": "the hypothesis set's TAIL as one token; zero where OTHER is masked",
+      "source_constant": "D_MODEL",
+      "src": "hypothesis_builder",
+      "type": "content",
+      "via": "HypothesisBuilder.other_rest + other_map (the tail-mean species embedding)",
+      "width": 128
+    },
+    {
+      "dst": "damage_op",
+      "note": "a hidden slot priced as its concrete hypothesis (per-slot species one-hots replace the T0 marginal as the defender belief), per-mon fixed-mass candidates in ONE order, and OTHER_species' tail-averaged tables",
+      "source_constant": "layout['max_species']",
+      "src": "hypothesis_builder",
+      "type": "content",
+      "via": "build_op_roster / other_roster (OpRoster)",
+      "width": 400
+    },
+    {
+      "dst": "opp_mon[0]",
+      "note": "HIDDEN slots only, pre-transformer; a revealed slot keeps its own token. The slot's log-presence is its per-KEY attention bias in the trunk and every class-E pool (key_log_presence)",
+      "source_constant": "D_MODEL",
+      "src": "hypothesis_builder",
+      "type": "content",
+      "via": "splice_hypothesis_tokens (the hypothesis species' dex row through THE pokemon_encoder, gathered, + hypothesis_marker)",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[1]",
+      "note": "HIDDEN slots only, pre-transformer; a revealed slot keeps its own token. The slot's log-presence is its per-KEY attention bias in the trunk and every class-E pool (key_log_presence)",
+      "source_constant": "D_MODEL",
+      "src": "hypothesis_builder",
+      "type": "content",
+      "via": "splice_hypothesis_tokens (the hypothesis species' dex row through THE pokemon_encoder, gathered, + hypothesis_marker)",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[2]",
+      "note": "HIDDEN slots only, pre-transformer; a revealed slot keeps its own token. The slot's log-presence is its per-KEY attention bias in the trunk and every class-E pool (key_log_presence)",
+      "source_constant": "D_MODEL",
+      "src": "hypothesis_builder",
+      "type": "content",
+      "via": "splice_hypothesis_tokens (the hypothesis species' dex row through THE pokemon_encoder, gathered, + hypothesis_marker)",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[3]",
+      "note": "HIDDEN slots only, pre-transformer; a revealed slot keeps its own token. The slot's log-presence is its per-KEY attention bias in the trunk and every class-E pool (key_log_presence)",
+      "source_constant": "D_MODEL",
+      "src": "hypothesis_builder",
+      "type": "content",
+      "via": "splice_hypothesis_tokens (the hypothesis species' dex row through THE pokemon_encoder, gathered, + hypothesis_marker)",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[4]",
+      "note": "HIDDEN slots only, pre-transformer; a revealed slot keeps its own token. The slot's log-presence is its per-KEY attention bias in the trunk and every class-E pool (key_log_presence)",
+      "source_constant": "D_MODEL",
+      "src": "hypothesis_builder",
+      "type": "content",
+      "via": "splice_hypothesis_tokens (the hypothesis species' dex row through THE pokemon_encoder, gathered, + hypothesis_marker)",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[5]",
+      "note": "HIDDEN slots only, pre-transformer; a revealed slot keeps its own token. The slot's log-presence is its per-KEY attention bias in the trunk and every class-E pool (key_log_presence)",
+      "source_constant": "D_MODEL",
+      "src": "hypothesis_builder",
+      "type": "content",
+      "via": "splice_hypothesis_tokens (the hypothesis species' dex row through THE pokemon_encoder, gathered, + hypothesis_marker)",
+      "width": 128
+    },
+    {
       "dst": "damage_op",
       "note": "P(item == Choice Band) per opp slot \u2014 replaces the STATIC per-species SPECIES_CB_PRIOR on the unrevealed branch; the revealed branch stays exact, op-side",
       "source_constant": "softmax(item_logits)[:, :, cb_item_num]",
@@ -10154,6 +10556,15 @@
       "source_constant": "layout['max_moves']",
       "src": "move_belief",
       "type": "content",
+      "width": 400
+    },
+    {
+      "dst": "hypothesis_builder",
+      "note": "the ONE move order every consumer shares (E4 seats, the op's top-K / pair cells, the D3 / S3 cells, the flat pointer's seats) + the fixed-mass presence pi_m",
+      "source_constant": "layout['max_moves']",
+      "src": "move_belief",
+      "type": "content",
+      "via": "HypothesisBuilder.with_moves (the opponent ACTIVE's move group)",
       "width": 400
     },
     {
@@ -10603,6 +11014,15 @@
       "width": 17
     },
     {
+      "dst": "hypothesis_builder",
+      "note": "its OWN projection \u2014 the transformer's global_proj is T1",
+      "source_constant": "TeamTransformer._global_token_input_dim",
+      "src": "obs_unpack",
+      "type": "content",
+      "via": "HypothesisBuilder.delta_global (the global token's RAW input: our ctx \u2016 opp ctx \u2016 non_matchup_rest)",
+      "width": 145
+    },
+    {
       "dst": "pokemon_encoder.move_network",
       "note": "per-move slots",
       "source_constant": "per-move slot width",
@@ -10620,21 +11040,21 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
+      "note": "switch \u2192 slot j: a REVEALED bench mon, or the hypothesis that hidden slot holds; legality is a MASK (addressable, not the active), never learned",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "opp_mon[0]",
+      "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a switch-target candidate",
+      "width": 128
+    },
+    {
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[0]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "note": "pointer over their six tokens \u2014 legality is a MASK, never learned; their_team_out is detached at this call",
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[0]",
-      "type": "content",
-      "via": "BetaSwitchHead.scorer (their refined token \u2016 board ctx)",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -10658,21 +11078,21 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
+      "note": "switch \u2192 slot j: a REVEALED bench mon, or the hypothesis that hidden slot holds; legality is a MASK (addressable, not the active), never learned",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "opp_mon[1]",
+      "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a switch-target candidate",
+      "width": 128
+    },
+    {
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[1]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "note": "pointer over their six tokens \u2014 legality is a MASK, never learned; their_team_out is detached at this call",
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[1]",
-      "type": "content",
-      "via": "BetaSwitchHead.scorer (their refined token \u2016 board ctx)",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -10696,21 +11116,21 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
+      "note": "switch \u2192 slot j: a REVEALED bench mon, or the hypothesis that hidden slot holds; legality is a MASK (addressable, not the active), never learned",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "opp_mon[2]",
+      "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a switch-target candidate",
+      "width": 128
+    },
+    {
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[2]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "note": "pointer over their six tokens \u2014 legality is a MASK, never learned; their_team_out is detached at this call",
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[2]",
-      "type": "content",
-      "via": "BetaSwitchHead.scorer (their refined token \u2016 board ctx)",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -10734,21 +11154,21 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
+      "note": "switch \u2192 slot j: a REVEALED bench mon, or the hypothesis that hidden slot holds; legality is a MASK (addressable, not the active), never learned",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "opp_mon[3]",
+      "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a switch-target candidate",
+      "width": 128
+    },
+    {
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[3]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "note": "pointer over their six tokens \u2014 legality is a MASK, never learned; their_team_out is detached at this call",
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[3]",
-      "type": "content",
-      "via": "BetaSwitchHead.scorer (their refined token \u2016 board ctx)",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -10772,21 +11192,21 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
+      "note": "switch \u2192 slot j: a REVEALED bench mon, or the hypothesis that hidden slot holds; legality is a MASK (addressable, not the active), never learned",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "opp_mon[4]",
+      "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a switch-target candidate",
+      "width": 128
+    },
+    {
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[4]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "note": "pointer over their six tokens \u2014 legality is a MASK, never learned; their_team_out is detached at this call",
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[4]",
-      "type": "content",
-      "via": "BetaSwitchHead.scorer (their refined token \u2016 board ctx)",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -10810,21 +11230,21 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
+      "note": "switch \u2192 slot j: a REVEALED bench mon, or the hypothesis that hidden slot holds; legality is a MASK (addressable, not the active), never learned",
+      "source_constant": "FlatIntentHead.token_dim (D_MODEL)",
+      "src": "opp_mon[5]",
+      "type": "content",
+      "via": "FlatIntentHead (one SHARED scorer over candidate token \u2016 board ctx \u2016 kind, + the candidate's DETACHED log-presence as a logit bias) \u2014 a switch-target candidate",
+      "width": 128
+    },
+    {
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "opp_mon[5]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "note": "pointer over their six tokens \u2014 legality is a MASK, never learned; their_team_out is detached at this call",
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[5]",
-      "type": "content",
-      "via": "BetaSwitchHead.scorer (their refined token \u2016 board ctx)",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -10848,21 +11268,12 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[0]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[0]",
-      "type": "content",
-      "via": "BetaSwitchHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -10895,21 +11306,12 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[1]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[1]",
-      "type": "content",
-      "via": "BetaSwitchHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -10942,21 +11344,12 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[2]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[2]",
-      "type": "content",
-      "via": "BetaSwitchHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -10989,21 +11382,12 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[3]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[3]",
-      "type": "content",
-      "via": "BetaSwitchHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -11036,21 +11420,12 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[4]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[4]",
-      "type": "content",
-      "via": "BetaSwitchHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -11083,21 +11458,12 @@
       "width": 128
     },
     {
-      "dst": "alpha_head",
+      "dst": "flat_intent_head",
       "pooled": true,
       "source_constant": "D_MODEL",
       "src": "our_mon[5]",
       "type": "content",
-      "via": "AlphaIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
-      "width": 128
-    },
-    {
-      "dst": "beta_head",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[5]",
-      "type": "content",
-      "via": "BetaSwitchHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
+      "via": "FlatIntentHead ctx = CLSPool.our_cls \u2016 CLSPool.their_cls",
       "width": 128
     },
     {
@@ -11279,6 +11645,15 @@
       "width": 32
     },
     {
+      "dst": "hypothesis_builder",
+      "note": "hidden slots contribute nothing; detached under belief_grad_mode=detached",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "via": "HypothesisBuilder.delta (Deep-Sets sum over the REVEALED opponent role tokens, pre-belief)",
+      "width": 128
+    },
+    {
       "dst": "opp_mon[0]",
       "source_constant": "D_MODEL",
       "src": "pokemon_encoder.role_encoder",
@@ -11419,19 +11794,20 @@
       "width": 128
     },
     {
-      "dst": "damage_op",
-      "note": "P(species | revealed team) \u2014 replaces the STATIC usage prior",
+      "dst": "hypothesis_builder",
+      "note": "the hypothesis score is log P_T0 + \u03b4_\u03b8; \u03b4_\u03b8's last layer is zero, so a cold start IS the Smogon prior's fixed-size marginal",
       "source_constant": "layout['max_species']",
       "src": "t0_species_prior",
       "type": "content",
+      "via": "species_team_prior_logits (log P_T0(s | revealed team))",
       "width": 400
     }
   ],
   "meta": {
-    "arch_signature": "gen3_event_record_v2",
+    "arch_signature": "gen3_x5_version_break_v1",
     "base_seats": 13,
     "config": "production_config.json",
-    "config_version": 122,
+    "config_version": 144,
     "edge_bias_families": [
       "c1",
       "c2",
@@ -11458,8 +11834,8 @@
       "cell",
       "aux"
     ],
-    "extra_seats": 16,
-    "n_tokens": 29,
+    "extra_seats": 49,
+    "n_tokens": 62,
     "obs_dim": 2761,
     "op_out_dim": 138,
     "pi_projection_in": 1177,
@@ -11467,7 +11843,7 @@
   },
   "nodes": [
     {
-      "id": "loss.belief_aux",
+      "id": "loss.hidden_team_set_bce",
       "kind": "aux_loss",
       "label_key": "belief_species/belief_moves"
     },
@@ -11475,6 +11851,11 @@
       "id": "loss.hp_type_ce",
       "kind": "aux_loss",
       "label_key": "hp_type_label"
+    },
+    {
+      "id": "loss.hypothesis_presence_set_bce",
+      "kind": "aux_loss",
+      "label_key": "belief_species (the true unseen team, multi-hot)"
     },
     {
       "id": "loss.item_belief_ce",
@@ -11492,14 +11873,9 @@
       "label_key": "known_moves"
     },
     {
-      "id": "loss.opp_intent_alpha_ce",
+      "id": "loss.opp_intent_flat_ce",
       "kind": "aux_loss",
-      "label_key": "opp_action_move_num (folded at the train-loop --opp-intent-coef)"
-    },
-    {
-      "id": "loss.opp_intent_beta_ce",
-      "kind": "aux_loss",
-      "label_key": "opp_switch_species (folded at the train-loop --opp-intent-coef)"
+      "label_key": "opp_action_kind/opp_action_num/opp_switch_slot/opp_switch_species (folded at the train-loop --opp-intent-coef)"
     },
     {
       "id": "loss.spread_belief",
@@ -11512,21 +11888,22 @@
       "label_key": "MC episode outcome (win=1/loss=0)"
     },
     {
-      "id": "alpha_head",
+      "id": "flat_intent_head",
       "kind": "belief_head",
-      "out_dim": 7,
-      "stage": "T2"
-    },
-    {
-      "id": "beta_head",
-      "kind": "belief_head",
-      "out_dim": 6,
+      "out_dim": 14,
       "stage": "T2"
     },
     {
       "id": "hp_type_belief",
       "kind": "belief_head",
       "out_dim": 16
+    },
+    {
+      "id": "hypothesis_builder",
+      "kind": "belief_head",
+      "note": "\u03b4_\u03b8 + fixed-size presence + the hypothesis selection + OTHER_species + the active's move group; presence \u03c0 is DETACHED wherever it weights the policy or critic",
+      "out_dim": 400,
+      "stage": "T0"
     },
     {
       "id": "item_belief",
@@ -11780,12 +12157,6 @@
       "out_dim": 138
     },
     {
-      "id": "belief_slots",
-      "kind": "phase",
-      "note": "swaps unrevealed opp role tokens for learned unknown-mon queries",
-      "stage": "T0"
-    },
-    {
       "id": "obs_unpack",
       "kind": "phase",
       "note": "stateless; peels the flat vector into the ExtractorContext tensors",
@@ -11906,194 +12277,201 @@
       "token_type": "THEIR_THREAT+tail_marker"
     },
     {
-      "id": "event[0]",
+      "id": "OTHER_species",
       "index": 29,
       "kind": "seat",
-      "token_type": "HISTORY"
+      "note": "the hypothesis set's tail mass as one token; its log-mass is its per-KEY attention bias (key_log_presence)",
+      "token_type": "THEIR_TEAM"
     },
     {
-      "id": "event[10]",
-      "index": 39,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[11]",
-      "index": 40,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[12]",
-      "index": 41,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[13]",
-      "index": 42,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[14]",
-      "index": 43,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[15]",
-      "index": 44,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[16]",
-      "index": 45,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[17]",
-      "index": 46,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[18]",
-      "index": 47,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[19]",
-      "index": 48,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[1]",
+      "id": "event[0]",
       "index": 30,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[20]",
+      "id": "event[10]",
+      "index": 40,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[11]",
+      "index": 41,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[12]",
+      "index": 42,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[13]",
+      "index": 43,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[14]",
+      "index": 44,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[15]",
+      "index": 45,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[16]",
+      "index": 46,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[17]",
+      "index": 47,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[18]",
+      "index": 48,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[19]",
       "index": 49,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[21]",
-      "index": 50,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[22]",
-      "index": 51,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[23]",
-      "index": 52,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[24]",
-      "index": 53,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[25]",
-      "index": 54,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[26]",
-      "index": 55,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[27]",
-      "index": 56,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[28]",
-      "index": 57,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[29]",
-      "index": 58,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[2]",
+      "id": "event[1]",
       "index": 31,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[30]",
+      "id": "event[20]",
+      "index": 50,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[21]",
+      "index": 51,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[22]",
+      "index": 52,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[23]",
+      "index": 53,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[24]",
+      "index": 54,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[25]",
+      "index": 55,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[26]",
+      "index": 56,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[27]",
+      "index": 57,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[28]",
+      "index": 58,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[29]",
       "index": 59,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[31]",
-      "index": 60,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[3]",
+      "id": "event[2]",
       "index": 32,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[4]",
+      "id": "event[30]",
+      "index": 60,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[31]",
+      "index": 61,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[3]",
       "index": 33,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[5]",
+      "id": "event[4]",
       "index": 34,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[6]",
+      "id": "event[5]",
       "index": 35,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[7]",
+      "id": "event[6]",
       "index": 36,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[8]",
+      "id": "event[7]",
       "index": 37,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[9]",
+      "id": "event[8]",
       "index": 38,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[9]",
+      "index": 39,
       "kind": "seat",
       "token_type": "HISTORY"
     },

@@ -17,11 +17,12 @@ and they stayed ⇒ an executed move FAILED; ``p_lands_switch == 0`` and they sw
 EXERCISED. Two classes are excluded, named: Sleep Talk / Snore (a called move failing its own ``onTry`` prints no
 line) and Heal Bell / Aromatherapy (``-cureteam`` does not say whether anything was cured).
 
-Run in BOTH belief modes (`gen3_move_resolution_x5_v1`): blob, and X5's ``fixed_mass`` (the same rules on the flat
-pointer, OTHER_move / OTHER_species priced) — an exact zero that only the X5 read states would be contradicted here.
+Run on the production belief representation, X5's hypothesis tokens (`gen3_move_resolution_x5_v1`: the same rules on
+the flat pointer, OTHER_move / OTHER_species priced; the blob mode was DELETED at the version break, config v144) —
+an exact zero that only the X5 read states would be contradicted here.
 
 The same battles every run (a committed bank, a deterministic replay). The full bank as a script:
-    python src/agents/model/move_resolution_bridge_integration_test.py [n_battles] [blob|fixed_mass]
+    python src/agents/model/move_resolution_bridge_integration_test.py [n_battles]
 """
 from __future__ import annotations
 
@@ -52,7 +53,7 @@ def _norm(s: str) -> str:
     return "hiddenpower" if s.startswith("hiddenpower") else s
 
 
-def _extractor(belief_tokens: str = "blob") -> Any:
+def _extractor() -> Any:
     import gymnasium as gym
 
     from agents.model.damage_tables import sanitize_historical_move_floor
@@ -64,7 +65,6 @@ def _extractor(belief_tokens: str = "blob") -> Any:
     kw = {k: v for k, v in cfg.items() if k in sig}
     sanitize_historical_move_floor(kw)
     kw["move_resolution"] = "on"
-    kw["belief_tokens"] = belief_tokens
     mappings = load_mappings()
     layout = Gen3ObservationEncoder(mappings).get_layout()
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
@@ -140,7 +140,7 @@ def outcome(lines: List[Tuple[str, ...]], me: str, want: str, damaging: bool,
     return {"executed": False, "failed": None, "switched": switched}
 
 
-def check(n_battles: int, belief_tokens: str = "blob") -> Dict[str, Any]:
+def check(n_battles: int) -> Dict[str, Any]:
     from agents import gen3_data
     from agents.battle.core_obs import wrap_row
     from agents.battle.rust_core_parity import run_core
@@ -180,7 +180,7 @@ def check(n_battles: int, belief_tokens: str = "blob") -> Dict[str, Any]:
                 rows.append(np.array(wrap_row(entry["obs"]), dtype=np.float32))
                 meta.append((res["label"], f"p{v + 1}", slot, turn_lines))
                 meta[-1] = meta[-1] + (chosen,)  # type: ignore[assignment]
-    fe = _extractor(belief_tokens)
+    fe = _extractor()
     facts = _facts(fe, np.stack(rows)) if rows else torch.zeros(0, 4, len(MI))
     gates: collections.Counter = collections.Counter()
     certain = [0, 0]
@@ -209,9 +209,8 @@ def check(n_battles: int, belief_tokens: str = "blob") -> Dict[str, Any]:
     return {"decisions": len(meta), "gates": dict(gates), "certain": certain, "violations": violations}
 
 
-@pytest.mark.parametrize("belief_tokens", ["blob", "fixed_mass"])
-def test_a_stated_zero_is_never_contradicted_on_real_battles(belief_tokens):
-    r = check(N_BATTLES, belief_tokens)
+def test_a_stated_zero_is_never_contradicted_on_real_battles():
+    r = check(N_BATTLES)
     assert r["decisions"] > 0, "no played move reached the check"
     assert sum(r["gates"].values()) > 0, f"NOT EXERCISED: no exact-zero claim met an executed move ({r})"
     assert not r["violations"], "\n".join(r["violations"][:20])
@@ -219,7 +218,7 @@ def test_a_stated_zero_is_never_contradicted_on_real_battles(belief_tokens):
 
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 10**9
-    r = check(n, sys.argv[2] if len(sys.argv) > 2 else "blob")
+    r = check(n)
     print(json.dumps({k: v for k, v in r.items() if k != "violations"}), flush=True)
     print("\n".join(r["violations"][:50]) or "no violations", flush=True)
     sys.exit(1 if r["violations"] or not sum(r["gates"].values()) else 0)

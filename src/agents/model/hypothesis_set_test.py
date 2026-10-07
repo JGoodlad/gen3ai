@@ -9,10 +9,11 @@ What each test pins, and what reverting it would break:
 * V: the dex table's valid nums minus the revealed ones (no sentinel 0, none of the 13 phantom nums
   387–399 the T0 prior floors — F-X5-21);
 * the ONE stable ordering, ties to the lower number, and §3.1's rule-8 near-tie exclusion;
-* the blob arm builds nothing and its forward / params are unchanged; the fixed_mass arm's
-  non-X5 INITIAL bytes equal the blob arm's (private seed, `IsolatedLinear`);
+* the production surface builds the builder (the only belief representation since the X5 version break);
+  its state_dict holds no blob key and the optimizer exactly the live parameters;
 * M10: no policy / value / consumer-facing output puts gradient into δ_θ; the presence BCE does;
-* the flag: registry, checkargs' requires graph, the migration, the version gate, production stays blob.
+* the requirements: checkargs' requires graph and the extractor's refusals (`--belief-tokens` and its blob
+  arm are DELETED, config v144 — `x5_version_break_test`).
 """
 from __future__ import annotations
 
@@ -24,7 +25,7 @@ import numpy as np
 import pytest
 import torch
 
-from agents.model.hypothesis_set import (BELIEF_TOKEN_MODES, BISECTION_ITERS, MASKED_LOG_PRESENCE,
+from agents.model.hypothesis_set import (BISECTION_ITERS, MASKED_LOG_PRESENCE,
                                          MOVE_GROUP_MASS, SELECTION_TIE_EPS, TYPED_HP_NUMS,
                                          HypothesisBuilder, belief_head_team_scores,
                                          boundary_gap, fixed_mass_presence, fixed_size_tau,
@@ -352,53 +353,30 @@ def _unperturbed_learner(args):
 
 
 @pytest.fixture(scope="module")
-def arms():
+def x5():
+    """The production learner (X5's hypothesis tokens), UNPERTURBED."""
     from main.train.production_args import production_args
-    blob = production_args()
-    fm = production_args()
-    fm.belief_tokens = "fixed_mass"
-    return _unperturbed_learner(blob), _unperturbed_learner(fm)
+    return _unperturbed_learner(production_args())
 
 
-def test_production_is_blob_and_builds_no_hypothesis_builder(arms):
+def test_production_builds_the_hypothesis_builder_and_no_blob_key(x5):
     from main.train.production_args import production_args
-    assert production_args().belief_tokens == "blob"
-    m_blob, _ = arms
-    fe = m_blob.policy.features_extractor
-    assert fe.belief_tokens == "blob" and fe.hypothesis_builder is None
-    assert not any("hypothesis_builder" in k for k in m_blob.policy.state_dict())
-    assert BELIEF_TOKEN_MODES == ("blob", "fixed_mass")
-
-
-def test_fixed_mass_leaves_every_non_x5_initial_byte_equal_to_blob(arms):
-    m_blob, m_fm = arms
-    sd0, sd1 = m_blob.policy.state_dict(), m_fm.policy.state_dict()
-    extra = sorted(k for k in sd1 if k not in sd0)
-    assert extra and all((".hypothesis_builder." in k or ".flat_intent_head." in k) for k in extra)
-    assert any(".flat_intent_head." in k for k in extra)
-    # F-X5-27 (U3 part 3): fixed_mass does NOT build BeliefSlots (never called there); X5 U4 RETIRES the
-    # α / β heads there (the flat pointer replaces them) AFTER SB3's orthogonal re-init. Those are the
-    # ONLY blob keys it lacks; their init AND re-init draws still ran, so every other byte is unmoved.
-    retired = (".belief_slots.", ".alpha_head.", ".beta_head.")
-    missing = sorted(k for k in sd0 if k not in sd1)
-    assert missing and all(any(r in k for r in retired) for k in missing), missing
-    assert any(".alpha_head." in k for k in missing) and any(".beta_head." in k for k in missing)
-    moved = [k for k in sd0 if k in sd1 and not torch.equal(sd0[k], sd1[k])]
-    assert moved == [], moved
-    # every non-X5 parameter keeps its optimizer position RELATIVE to the others
-    n0 = [n for n, _ in m_blob.policy.named_parameters() if not any(r in n for r in retired)]
-    n1 = [n for n, _ in m_fm.policy.named_parameters()
-          if ".hypothesis_builder." not in n and ".flat_intent_head." not in n]
-    assert n0 == n1
+    assert not hasattr(production_args(), "belief_tokens")
+    fe = x5.policy.features_extractor
+    assert fe.hypothesis_builder is not None and fe.flat_intent_head is not None
+    sd = x5.policy.state_dict()
+    assert any(".hypothesis_builder." in k for k in sd) and any(".flat_intent_head." in k for k in sd)
+    # F-X5-27 + U4: BeliefSlots is never kept and α / β are retired AFTER SB3's orthogonal re-init
+    assert not [k for k in sd if any(r in k for r in (".belief_slots.", ".alpha_head.", ".beta_head."))]
     # ...and the retired heads hold no optimizer slot (the optimizer is built after the retirement)
-    opt_ids = {id(p) for g in m_fm.policy.optimizer.param_groups for p in g["params"]}
-    assert opt_ids == {id(p) for p in m_fm.policy.parameters()}
+    opt_ids = {id(p) for g in x5.policy.optimizer.param_groups for p in g["params"]}
+    assert opt_ids == {id(p) for p in x5.policy.parameters()}
 
 
-def test_cold_start_presence_is_exactly_the_priors_fixed_size_marginal_on_a_real_policy(arms):
+def test_cold_start_presence_is_exactly_the_priors_fixed_size_marginal_on_a_real_policy(x5):
     """δ_θ's last layer is zero on a REAL MaskablePPO-built policy (IsolatedLinear: SB3's orthogonal
     re-init skips it), so π is the Smogon prior's fixed-size marginal bit-for-bit at step 0."""
-    _, m_fm = arms
+    m_fm = x5
     fe = m_fm.policy.features_extractor
     hb = fe.hypothesis_builder
     assert float(hb.delta_out.weight.detach().abs().max()) == 0.0
@@ -416,20 +394,19 @@ def test_cold_start_presence_is_exactly_the_priors_fixed_size_marginal_on_a_real
     assert torch.equal(ref.pi, hs.species.pi)
 
 
-# (U2's "fixed_mass outputs == blob's with the shared weights" test is RETIRED by U3: the hypothesis
-# set is now READ by the trunk, the pools and the T0 belief heads, so the arms differ by design. The
-# blob arm's byte-identity is pinned by the K9 learner golden and `hypothesis_tokens_test`; the
-# fixed_mass reads by `hypothesis_tokens_test` — the class-E invariances, the M10 gradient path.)
+# (The hypothesis set is READ by the trunk, the pools and the T0 belief heads; those reads are pinned by
+# `hypothesis_tokens_test` — the class-E invariances, the M10 gradient path — and the update by the K9
+# learner golden.)
 
 
 def _delta_grads(hb):
     return {n: p.grad for n, p in hb.named_parameters() if n.startswith("delta_")}
 
 
-def test_no_policy_value_or_consumer_output_reaches_delta_theta_and_the_bce_does(arms):
+def test_no_policy_value_or_consumer_output_reaches_delta_theta_and_the_bce_does(x5):
     """M10: π is DETACHED into every policy / critic use, so δ_θ learns from the presence BCE alone.
     Teeth: compute π from `logits` instead of its detached copy and the consumer half fails."""
-    _, m_fm = arms
+    m_fm = x5
     pol = copy.deepcopy(m_fm.policy)
     fe = pol.features_extractor
     hb = fe.hypothesis_builder
@@ -466,10 +443,10 @@ def test_no_policy_value_or_consumer_output_reaches_delta_theta_and_the_bce_does
     assert float(hb.delta_out.weight.grad.abs().max()) > 0.0
 
 
-def test_the_set_supervision_row_trains_on_the_golden_buffer_and_matches_its_eager_wrapper(arms):
+def test_the_set_supervision_row_trains_on_the_golden_buffer_and_matches_its_eager_wrapper(x5):
     from agents.training.belief_bank import hypothesis_set_loss
     from agents.training.belief_bank_static import hypothesis_set_terms
-    _, m_fm = arms
+    m_fm = x5
     fe = copy.deepcopy(m_fm.policy).features_extractor
     obs = _obs_from_golden()
     fe(obs)
@@ -486,8 +463,8 @@ def test_the_set_supervision_row_trains_on_the_golden_buffer_and_matches_its_eag
     assert torch.allclose(team[b], bl["species"][b][m].mean(0))
 
 
-def test_near_tie_rows_on_real_states_are_reported_not_guessed(arms):
-    _, m_fm = arms
+def test_near_tie_rows_on_real_states_are_reported_not_guessed(x5):
+    m_fm = x5
     fe = copy.deepcopy(m_fm.policy).features_extractor
     obs = _obs_from_golden()
     with torch.no_grad():
@@ -505,43 +482,27 @@ def test_near_tie_rows_on_real_states_are_reported_not_guessed(arms):
 
 
 # ----------------------------------------------------------------------------------- the flag
-def test_checkargs_reads_the_requires_graph_and_blob_needs_nothing():
+def test_checkargs_reads_the_requires_graph_the_belief_family_needs_x5s_requirements():
     from main.checkargs import unsatisfiable_pairs
-    bad = unsatisfiable_pairs(["--belief-tokens", "fixed_mass", "--opp-intent-coef", "0"])
-    assert ("belief_tokens", "opp_intent", "--opp-intent-coef 0") in bad
-    assert unsatisfiable_pairs(["--belief-tokens", "blob", "--opp-intent-coef", "0"]) == []
+    bad = unsatisfiable_pairs(["--opp-belief-aux-coef", "0.1", "--opp-intent-coef", "0"])
+    assert ("opp_belief_slots", "opp_intent", "--opp-intent-coef 0") in bad
 
 
-def test_the_extractor_refuses_fixed_mass_without_its_dependencies(layout):
+def test_the_extractor_refuses_the_belief_family_without_x5s_dependencies(layout):
     import gymnasium as gym
     from agents.model.features_extractor import Gen3FeaturesExtractor
     from agents.observation.state_encoder import load_mappings
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
-    with pytest.raises(ValueError, match="belief_tokens must be one of"):
-        Gen3FeaturesExtractor(space, layout=layout, mappings=load_mappings(), belief_tokens="bogus")
-    with pytest.raises(ValueError, match="requires t0_species_prior"):
+    with pytest.raises(TypeError):
         Gen3FeaturesExtractor(space, layout=layout, mappings=load_mappings(), belief_tokens="fixed_mass")
+    with pytest.raises(ValueError, match="require t0_species_prior"):
+        Gen3FeaturesExtractor(space, layout=layout, mappings=load_mappings(), attend_unrevealed_opponents=True,
+                              opp_belief_slots=True)
 
 
-def test_a_pre_v136_config_migrates_to_blob_and_a_mismatch_is_refused():
-    import dataclasses
-    from agents.model.model_version import ModelVersionError
-    from agents.model.model_version.migrations import _migrate_config
-    from agents.model.snapshot import current_model_version
-    from agents.observation.state_encoder import load_mappings
-    out = _migrate_config({"config_version": 135})
-    assert out["belief_tokens"] == "blob" and out["config_version"] >= 136
-    a = current_model_version(load_mappings())
-    assert a.belief_tokens == "blob"
-    b = dataclasses.replace(a, belief_tokens="fixed_mass")
-    a.check_compatible(dataclasses.replace(a))
-    with pytest.raises(ModelVersionError, match="belief_tokens mismatch"):
-        b.check_compatible(a)
-
-
-def test_the_fixed_mass_forward_satisfies_the_tier_contract_with_the_builder_at_T0(arms):
+def test_the_fixed_mass_forward_satisfies_the_tier_contract_with_the_builder_at_T0(x5):
     from agents.model.tier_contract import assert_tier_contract, declared_tier
-    _, m_fm = arms
+    m_fm = x5
     fe = copy.deepcopy(m_fm.policy).features_extractor
     obs = _obs_from_golden(16)
     assert declared_tier("hypothesis_builder") == 0

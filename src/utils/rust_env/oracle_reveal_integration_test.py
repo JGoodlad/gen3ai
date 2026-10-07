@@ -9,9 +9,8 @@ real self-check ``cdylib``:
 * at the FIRST decision the `off` row states one opponent species (the lead) and the `species` row states all
   six — in the observation's opponent block, which is what the shared trunk reads;
 * the label columns the learner trains on survive it: under `species` every opponent species is stated, so
-  ``belief_species`` is all PAD, and the belief aux loss on those REAL labels returns ``None`` (no believed
-  slot, no target) with no NaN — "the blob head's species target is now visible, nothing may crash" — while
-  the same loss on the `off` labels trains.
+  ``belief_species`` / ``belief_moves`` are all PAD (no hidden target), while the `off` labels carry the
+  hidden mons as targets.
 """
 import numpy as np
 import pytest
@@ -131,24 +130,14 @@ def test_the_first_decision_under_full_states_every_opponent_set_and_differs_fro
     assert ITEM_ID_DIM == 1
 
 
-def test_the_belief_loss_on_the_real_oracle_labels_is_a_clean_none_and_off_still_trains(lib):
-    import torch
-
-    from agents.training.instrumented_ppo import InstrumentedMaskablePPO
-
-    loss = InstrumentedMaskablePPO._belief_aux_loss
-    g = torch.Generator().manual_seed(0)
-    bl = {"species": torch.randn(N, 6, 400, generator=g, requires_grad=True),
-          "moves": torch.randn(N, 6, 400, generator=g, requires_grad=True)}
-    for level, trains in (("species", False), ("off", True)):
+def test_the_real_oracle_labels_carry_no_hidden_target_and_off_still_does(lib):
+    for level, hidden in (("species", False), ("off", True)):
         _, labels, need = _first_decision(lib, level)
-        sp = torch.from_numpy(labels["belief_species"][:, 0]).long()       # p1's labels, (N, 6)
-        mv = torch.from_numpy(labels["belief_moves"][:, 0]).long()         # (N, 6, 4)
-        out = loss(bl, sp, mv)
-        if trains:
-            assert out is not None and torch.isfinite(out[0]), "off: five hidden mons per row are the targets"
+        sp = labels["belief_species"][:, 0]                                # p1's labels, (N, 6)
+        mv = labels["belief_moves"][:, 0]                                  # (N, 6, 4)
+        if hidden:
+            assert (sp >= 0).any(axis=1).all(), "off: every row's hidden mons are the targets"
         else:
             assert (sp == -1).all() and (mv == -1).all(), "species: nothing is hidden, nothing is a target"
-            assert out is None, "an all-PAD minibatch is the loss's declared no-op, never a NaN"
             km = labels["known_moves"][:, 0]
             assert (km[:, :, 0] >= 1).all(), "every stated species (seen or not) has its true moves as the known-slot label"

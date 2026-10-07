@@ -273,7 +273,7 @@ def test_x5_fixed_mass_arch_compiles_to_one_graph():
     the unrolled bisection is measured in the X5 note §3.6; the GPU cell is U8's.)"""
     torch._dynamo.reset()
     torch._dynamo.config.suppress_errors = False
-    fe, layout = _build_production_extractor(belief_tokens="fixed_mass")   # SUBJECT: the X5 arm
+    fe, layout = _build_production_extractor()   # SUBJECT: production = X5 (the only belief representation)
     assert fe.hypothesis_builder is not None
     obs = {"observation": torch.zeros(_BATCH, layout["total_dim"])}
     explained = torch._dynamo.explain(fe.forward)(obs)
@@ -445,13 +445,16 @@ def test_pair_outcome_fallback_arch_compiles_to_one_graph():
 
     # (If `pair_outcome_cell` ever GAINS an opp_intent requirement this raises a duplicate-kwarg
     # TypeError rather than quietly turning off the very cell under test — the loud direction.)
-    # A mode STRING's OFF value is its default (every such row defaults OFF: `belief_tokens` = 'blob'),
-    # never the bool False the constructor would refuse.
+    # A mode STRING's OFF value is its default (every such row defaults OFF), never the bool False the
+    # constructor would refuse. The X5 version break made opp_intent and opp_belief_slots ONE switch (X5's
+    # hypothesis tokens + flat pointer), so the no-intent fallback is the belief-OFF surface: both come off,
+    # with every row that requires either.
     off = {f.name: (f.default if isinstance(f.default, str) else False)
-           for f in REGISTRY if "opp_intent" in (f.requires or ())}
+           for f in REGISTRY if {"opp_intent", "opp_belief_slots"} & set(f.requires or ())}
+    off.pop("opp_belief_slots", None)
     assert off, "no registry row requires opp_intent — this probe has lost its subject"
     fe, layout = _build_production_extractor(
-        pair_outcome_cell=True, opp_intent=False, **off)
+        pair_outcome_cell=True, opp_intent=False, opp_belief_slots=False, **off)
     assert fe.alpha_head is None, "this cell is meant to exercise the NO-intent fallback"
     explained = torch._dynamo.explain(fe.forward)(
         {"observation": torch.zeros(_BATCH, layout["total_dim"])})

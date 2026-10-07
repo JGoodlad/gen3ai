@@ -11,7 +11,7 @@ Each test names what a revert would break:
   dropped or folded into S);
 * the BOARD context (clock, weather, faint counts, Spikes, screens) does not enter the per-mon encoder
   (fails when the static encoder reads it; the legacy control shows the same perturbation moves legacy);
-* under `--belief-tokens fixed_mass` the hypothesis tokens are the dex table encoded once and GATHERED, and
+* X5's hypothesis tokens are the dex table encoded once and GATHERED, and
   equal the per-row pass on every hypothesis slot (fp32 within 1e-5; fp64 within 1e-12), on both static
   branches; the forward takes that path once (fails on revert to the legacy split);
 * `legacy` is the default and builds `PokemonEncoder` (its byte identity is the K9 golden's and the obs
@@ -55,30 +55,21 @@ def _rows(model: Any, n: int = 0) -> Dict[str, torch.Tensor]:
     return obs
 
 
-def _static_args(arm: str) -> Any:
-    from agents.training import learner_golden as LG
+def _static_args() -> Any:
     from main.train.production_args import production_args
-    a = LG.arm_args(arm) if arm != LG.ARM_DEFAULT else production_args()
+    a = production_args()
     a.token_encoding = "static"
     return a
 
 
 @pytest.fixture(scope="module")
-def static_blob() -> Any:
+def static_model() -> Any:
+    """Production (X5's hypothesis tokens, the only belief representation) + `--token-encoding static`."""
     from agents.training import learner_golden as LG
-    m = LG.build_learner(args=_static_args("blob"))
+    m = LG.build_learner(args=_static_args())
     LG.load_buffer_into(m)
-    assert isinstance(m.policy.features_extractor.pokemon_encoder, StaticTokenEncoder)   # PRECONDITION
-    return m
-
-
-@pytest.fixture(scope="module")
-def static_fixed_mass() -> Any:
-    from agents.training import learner_golden as LG
-    m = LG.build_learner(args=_static_args("fixed_mass"), perturb_keyed=True)
-    LG.load_buffer_into(m, LG.arm_buffer("fixed_mass"))
     fe = m.policy.features_extractor
-    assert isinstance(fe.pokemon_encoder, StaticTokenEncoder) and fe.hypothesis_builder is not None
+    assert isinstance(fe.pokemon_encoder, StaticTokenEncoder) and fe.hypothesis_builder is not None   # PRECONDITION
     return m
 
 
@@ -114,15 +105,15 @@ def test_legacy_is_the_default_and_builds_the_pokemon_encoder(legacy):
     assert type(fe.pokemon_encoder) is PokemonEncoder
 
 
-def test_the_flag_is_recorded_and_read_back(static_blob, legacy):
+def test_the_flag_is_recorded_and_read_back(static_model, legacy):
     from agents.model.snapshot import arch_toggles_from_model
-    assert arch_toggles_from_model(static_blob)["token_encoding"] == "static"
+    assert arch_toggles_from_model(static_model)["token_encoding"] == "static"
     assert arch_toggles_from_model(legacy)["token_encoding"] == "legacy"
 
 
 # ------------------------------------------------------------------------------------ board context
-def test_board_context_does_not_enter_the_static_encoder(static_blob, legacy):
-    for model, static in ((static_blob, True), (legacy, False)):
+def test_board_context_does_not_enter_the_static_encoder(static_model, legacy):
+    for model, static in ((static_model, True), (legacy, False)):
         fe = model.policy.features_extractor
         with torch.no_grad():
             ctx = fe.unpack(_rows(model))
@@ -136,12 +127,12 @@ def test_board_context_does_not_enter_the_static_encoder(static_blob, legacy):
 
 
 # ------------------------------------------------------------------------------------ static identity
-def test_the_same_species_and_set_gives_the_same_static_identity_anywhere(static_blob):
+def test_the_same_species_and_set_gives_the_same_static_identity_anywhere(static_model):
     """Copy mons between rows and seats (other boards, other teams, our side vs theirs): S follows the slot."""
-    fe = static_blob.policy.features_extractor
+    fe = static_model.policy.features_extractor
     pe = fe.pokemon_encoder
     with torch.no_grad():
-        ctx = fe.unpack(_rows(static_blob))
+        ctx = fe.unpack(_rows(static_model))
         B = ctx.batch_size
         pp = ctx.pokemon_part.clone()
         # four REAL mons from four different rows, two ours and two theirs, each copied into a seat of the
@@ -164,9 +155,9 @@ def test_the_same_species_and_set_gives_the_same_static_identity_anywhere(static
     assert (s1[0, 0] - s1[0, 1]).abs().max().item() > MOVES
 
 
-def test_the_move_set_is_permutation_invariant(static_blob, legacy):
+def test_the_move_set_is_permutation_invariant(static_model, legacy):
     perm = [2, 0, 3, 1]
-    for model, static in ((static_blob, True), (legacy, False)):
+    for model, static in ((static_model, True), (legacy, False)):
         fe = model.policy.features_extractor
         pe = fe.pokemon_encoder
         slot = fe.layout['pokemon']['moves']['layout']['slots']
@@ -195,11 +186,11 @@ def test_the_move_set_is_permutation_invariant(static_blob, legacy):
 
 
 # ------------------------------------------------------------------------------------- dynamic state
-def test_the_dynamic_state_reaches_the_token_and_not_the_identity(static_blob):
-    fe = static_blob.policy.features_extractor
+def test_the_dynamic_state_reaches_the_token_and_not_the_identity(static_model):
+    fe = static_model.policy.features_extractor
     pe = fe.pokemon_encoder
     with torch.no_grad():
-        ctx = fe.unpack(_rows(static_blob))
+        ctx = fe.unpack(_rows(static_model))
         base = pe.parts(ctx, fe.embeddings)
         pp = ctx.pokemon_part.clone()
         pp[..., POKEMON_HP_OFFSET] = pp[..., POKEMON_HP_OFFSET] * 0.5                     # HP
@@ -233,26 +224,26 @@ BRANCHES = [pytest.param(8, id="per_slot_B8"), pytest.param(128, id="table_B128"
 
 
 @pytest.mark.parametrize("n", BRANCHES)
-def test_the_gathered_hypothesis_tokens_are_the_per_row_pass(static_fixed_mass, n):
-    fe = static_fixed_mass.policy.features_extractor
+def test_the_gathered_hypothesis_tokens_are_the_per_row_pass(static_model, n):
+    fe = static_model.policy.features_extractor
     with torch.no_grad():
-        ref, new, hs, ctx = _both(fe, _rows(static_fixed_mass, n))
+        ref, new, hs, ctx = _both(fe, _rows(static_model, n))
     hyp = hs.slot_is_hypothesis
     assert int(hyp.sum()) >= 4, "PRECONDITION: the rows hold hypothesis slots"
     act = torch.nn.functional.one_hot(ctx.opp_active_local, TEAM_SIZE).bool()
     assert not (hyp & act).any(), "PRECONDITION: a hypothesis slot is never the opponent's active"
     d32 = (ref - new)[hyp].abs().max().item()
     assert d32 <= FP32_ATOL, f"fp32 |gathered - per-row| = {d32:.3g}"
-    pol = copy.deepcopy(static_fixed_mass.policy).double()
-    obs64 = {k: (v.double() if v.is_floating_point() else v) for k, v in _rows(static_fixed_mass, n).items()}
+    pol = copy.deepcopy(static_model.policy).double()
+    obs64 = {k: (v.double() if v.is_floating_point() else v) for k, v in _rows(static_model, n).items()}
     with torch.no_grad():
         ref64, new64, hs64, _ = _both(pol.features_extractor, obs64)
     d64 = (ref64 - new64)[hs64.slot_is_hypothesis].abs().max().item()
     assert d64 <= FP64_ATOL, f"fp64 |gathered - per-row| = {d64:.3g}: not the same function"
 
 
-def test_the_fixed_mass_forward_takes_the_static_gather_once(static_fixed_mass, monkeypatch):
-    fe = static_fixed_mass.policy.features_extractor
+def test_the_fixed_mass_forward_takes_the_static_gather_once(static_model, monkeypatch):
+    fe = static_model.policy.features_extractor
     calls = [0]
     real = static_hypothesis_tokens
 
@@ -261,13 +252,13 @@ def test_the_fixed_mass_forward_takes_the_static_gather_once(static_fixed_mass, 
         return real(*a, **k)
     monkeypatch.setattr(EF, "static_hypothesis_tokens", counted, raising=False)
     with torch.no_grad():
-        fe(_rows(static_fixed_mass))
+        fe(_rows(static_model))
     assert calls[0] == 1, f"the static gather ran {calls[0]}x (expected once per forward)"
 
 
-def test_the_static_hypothesis_token_is_a_function_of_the_species_alone(static_fixed_mass):
+def test_the_static_hypothesis_token_is_a_function_of_the_species_alone(static_model):
     """Two batches with the same hypothesis species but different boards / teams give the same tokens."""
-    fe = static_fixed_mass.policy.features_extractor
+    fe = static_model.policy.features_extractor
     species = torch.tensor([[5, 248, 227, 0, 0, 0], [0, 0, 0, 248, 5, 227]])
     with torch.no_grad():
         t = static_hypothesis_tokens(fe.pokemon_encoder, fe.embeddings, species, fe.hypothesis_builder.dex_rows)
@@ -277,8 +268,8 @@ def test_the_static_hypothesis_token_is_a_function_of_the_species_alone(static_f
 
 
 # ----------------------------------------------------------------------------------------- the stats
-def test_the_opponent_stat_prior_is_the_operators_and_adds_hp(static_blob):
-    fe = static_blob.policy.features_extractor
+def test_the_opponent_stat_prior_is_the_operators_and_adds_hp(static_model):
+    fe = static_model.policy.features_extractor
     prior = fe.pokemon_encoder.STAT_PRIOR
     assert torch.equal(prior[:, 1:, :], fe.damage_op.SPECIES_SPREAD_PRIOR)
     valid = fe.damage_op.SPECIES_SPREAD_PRIOR[:, 0, 0] > 0
@@ -289,8 +280,8 @@ def test_the_opponent_stat_prior_is_the_operators_and_adds_hp(static_blob):
     assert (prior[valid, 0, 0] >= 181).all(), "an HP mean below the level-100 floor"
 
 
-def test_our_actual_stats_are_the_level_100_formula(static_blob):
-    pe = static_blob.policy.features_extractor.pokemon_encoder
+def test_our_actual_stats_are_the_level_100_formula(static_model):
+    pe = static_model.policy.features_extractor.pokemon_encoder
     pp = torch.zeros(1, 1, 122)
     base = torch.tensor([80., 100., 90., 60., 70., 110.])
     pp[0, 0, POKEMON_SPECIES_OFFSET + 1:POKEMON_SPECIES_OFFSET + 7] = base / 255.0

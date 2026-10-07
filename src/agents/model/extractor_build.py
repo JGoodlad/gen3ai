@@ -50,7 +50,7 @@ from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.move_resolution import MoveResolutionCell
 from agents.model.move_resolution_rules import MOVE_RESOLUTION_MODES
 from agents.model.t0_species import T0SpeciesPrior
-from agents.model.hypothesis_set import BELIEF_TOKEN_MODES, HypothesisBuilder
+from agents.model.hypothesis_set import HypothesisBuilder
 from agents.model.static_tokens import TOKEN_ENCODING_MODES, StaticTokenEncoder
 from agents.model.board_tokens import OpContent
 from agents.model.team_transformer import EdgeBias, EventSeats, TeamTransformer
@@ -114,7 +114,6 @@ class ExtractorBuild(torch.nn.Module):
                  ridealong_adv: int = 0,
                  ridealong_opp: int = 0,
                  ridealong_rnd_variants: str = "off",
-                 belief_tokens: str = "blob",
                  oracle_reveal: str = "off",
                  policy_readout: str = "tower",
                  token_encoding: str = "legacy",
@@ -230,7 +229,7 @@ class ExtractorBuild(torch.nn.Module):
         # `forward_internal` reads these attributes unconditionally, so they must always exist.
         self.alpha_head: Optional[AlphaIntentHead] = None
         self.beta_head: Optional[BetaSwitchHead] = None
-        self.flat_intent_head: Optional[FlatIntentHead] = None   # X5 U4, fixed_mass only
+        self.flat_intent_head: Optional[FlatIntentHead] = None   # X5 U4: built with the belief family
         # gen3_edge_bias_trunk_v1 (v56, Stage 2): computed physics as per-pair per-head attention
         # BIASES (see EdgeBias). "off" builds no module (no state_dict change beyond the layer swap);
         # the maps are zero-init so an ON run is byte-identical to OFF at init. Requirement
@@ -473,13 +472,14 @@ class ExtractorBuild(torch.nn.Module):
         self.opp_intent_grad_mode = opp_intent_grad_mode
         self.t0_species_prior = (T0SpeciesPrior(layout['max_species'])
                                  if t0_species_prior else None)
-        self.belief_slots = BeliefSlots() if opp_belief_slots else None
-        if self.belief_slots is not None and belief_tokens == "fixed_mass":
-            # F-X5-27 (ORCHESTRATOR, X5 U3 part 3): the fixed_mass arm never calls BeliefSlots (a hidden
-            # slot holds its hypothesis's token), so it is NOT built there — a parameter that never gets a
-            # gradient. Its init draw above still RAN, so the global RNG stream (every later module's
-            # initial bytes) stays equal to the blob arm's; only the module is dropped. `blob` keeps it.
-            self.belief_slots = None
+        # F-X5-27 (ORCHESTRATOR, X5 U3 part 3) + the X5 version break (v144): X5 never calls BeliefSlots (a
+        # hidden slot holds its hypothesis's token) and the blob path that did is DELETED, so the module is
+        # NEVER kept. It is still CONSTRUCTED when the belief family is on: its init draw is part of the global
+        # RNG stream every later module's initial bytes follow, so dropping the construction would move every
+        # production init byte (the K9 learner golden pins them). Only the module is discarded.
+        self.belief_slots: Optional[BeliefSlots] = None
+        if opp_belief_slots:
+            BeliefSlots()
         self.belief_head = (
             BeliefHead(layout['max_species'], layout['max_moves'],
                        species_prior_fusion=species_prior_fusion) if opp_belief_slots else None
@@ -934,18 +934,16 @@ class ExtractorBuild(torch.nn.Module):
                 "ridealong_opp requires opp_intent (--opp-intent-coef > 0): B's columns are alpha's "
                 "support (their believed move seats + SWITCH) and its centring reads alpha.")
 
-        # gen3_x5_hypothesis_set_v1 (X5 build unit U2, `--belief-tokens`): `blob` (the default and
-        # production until the X5 A/B rules) builds NOTHING, so the blob arm is byte-identical to the
-        # pre-X5 model. `fixed_mass` builds the T0 HYPOTHESIS BUILDER (`agents.model.hypothesis_set`):
-        # δ_θ, the fixed-size presence, the one stable ordering, OTHER and the active's move group.
-        # It is built LAST (no existing parameter position moves) from a PRIVATE seed inside
-        # `fork_rng`, out of `IsolatedLinear`s SB3's orthogonal re-init skips — so every NON-X5
-        # parameter's initial bytes equal the blob arm's. In U2 its output is only STASHED
-        # (`last_hypothesis`) and supervised by the presence BCE; tokens entering the trunk and the
-        # op are U3. The dependencies are enforced HERE, where `flag_requires_test` can see them.
-        if belief_tokens not in BELIEF_TOKEN_MODES:
-            raise ValueError(f"belief_tokens must be one of {BELIEF_TOKEN_MODES}, got {belief_tokens!r}")
-        self.belief_tokens = belief_tokens
+        # X5's HYPOTHESIS TOKENS (gen3_x5_hypothesis_set_v1 .. gen3_x5_flat_pointer_v1; the X5 VERSION BREAK,
+        # v144, made them the ONLY belief representation — `--belief-tokens` and its `blob` arm are DELETED).
+        # The opponent-belief family (`opp_belief_slots` / `opp_intent`) builds the T0 HYPOTHESIS BUILDER
+        # (`agents.model.hypothesis_set`: δ_θ, the fixed-size presence, the one stable ordering, OTHER, the
+        # active's move group) and the FLAT opponent pointer whenever either is on, and REFUSES a configuration
+        # missing one of their requirements: there is no longer a belief path that builds without them. With
+        # both off nothing of X5 is built (the belief-off ablation surface; no hidden-slot token, no intent).
+        # Built LAST (no existing parameter position moves) from a PRIVATE seed inside `fork_rng`, out of
+        # `IsolatedLinear`s SB3's orthogonal re-init skips. The dependencies are enforced HERE, where
+        # `flag_requires_test` can see them; each message names the flag it needs.
         # gen3_oracle_reveal_v1 (v137): the DIAGNOSTIC observation mode this extractor's observations are built
         # under (`encoder::oracle`, written into the observation by the Rust env core). INERT here: the forward
         # reads the observation and nothing else, so no module is built and no weight moves. It is stored so the
@@ -955,54 +953,66 @@ class ExtractorBuild(torch.nn.Module):
             raise ValueError(f"oracle_reveal must be one of {ORACLE_REVEAL_LEVELS}, got {oracle_reveal!r}")
         self.oracle_reveal = oracle_reveal
         self.hypothesis_builder: Optional[HypothesisBuilder] = None
-        if belief_tokens == "fixed_mass":
-            if not t0_species_prior:
-                raise ValueError(
-                    "belief_tokens=fixed_mass requires t0_species_prior=True: the hypothesis scores are "
-                    "log P_T0(s | revealed) + a learned delta, and P_T0 is the T0 species prior.")
-            if move_belief_mode == "off":
-                raise ValueError(
-                    "belief_tokens=fixed_mass requires move_belief_mode != off: the opponent active's "
-                    "move group is built from the MoveBelief posterior.")
-            if not self.opp_intent:
-                raise ValueError(
-                    "belief_tokens=fixed_mass requires opp_intent=True: X5 re-bases the opponent "
-                    "pointer (alpha's seats) onto the hypothesis set.")
-            if not opp_belief_slots:
-                raise ValueError(
-                    "belief_tokens=fixed_mass requires opp_belief_slots=True (--opp-belief-aux-coef > 0): "
-                    "the presence BCE that trains the learned delta and BeliefHead's re-targeted set BCE "
-                    "both ride that coefficient.")
-            # gen3_x5_belief_tokens_v1 (U3, U2 hand-off): the move group puts the REVEALED moves first in
-            # the K seats, so K < 4 leaves a fourth revealed move without a seat; and the op's top-K seat
-            # axis IS the move group's seats, so the two K's must agree (the registry cannot express a
-            # per-value requirement — refused here, where `flag_requires_test` can see it).
-            if self.entity_topk_seats < 4:
-                raise ValueError(
-                    f"belief_tokens=fixed_mass requires entity_topk_seats >= 4 (got {self.entity_topk_seats}): "
-                    "revealed moves take the first seats, and a fourth revealed move would have none.")
-            if self.damage_op is not None and self.damage_op.matrices_incoming \
-                    and self.damage_op.matrices_incoming_k != self.entity_topk_seats:
-                raise ValueError(
-                    "belief_tokens=fixed_mass requires damage_topk_k == entity_topk_seats: the op's seat "
-                    "axis (alpha's seats, the pair cells) IS the move group's seats.")
-            if self.damage_op is not None and self.damage_op.damage_candidate_k > 0:
-                raise ValueError("belief_tokens=fixed_mass requires damage_candidate_k == 0 (the full "
-                                 "candidate axis; the seats come from the move group, not a truncation).")
+        _x5_fix = ("there is no belief path without it — the blob path that built one was DELETED at the X5 "
+                   "version break (config v144)")
+        if (opp_belief_slots or self.opp_intent) and not t0_species_prior:
+            raise ValueError(
+                "the opponent-belief family (opp_belief_slots / opp_intent) builds X5's hypothesis tokens, which "
+                "require t0_species_prior=True: the hypothesis scores are log P_T0(s | revealed) + a learned "
+                f"delta, and P_T0 is the T0 species prior; {_x5_fix}.")
+        if (opp_belief_slots or self.opp_intent) and move_belief_mode == "off":
+            raise ValueError(
+                "the opponent-belief family (opp_belief_slots / opp_intent) builds X5's hypothesis tokens, which "
+                "require move_belief_mode != off: the opponent active's move group is built from the MoveBelief "
+                f"posterior; {_x5_fix}.")
+        if (opp_belief_slots or self.opp_intent) and not move_prior_fusion:
+            raise ValueError(
+                "the opponent-belief family (opp_belief_slots / opp_intent) builds X5's hypothesis tokens, which "
+                "require move_prior_fusion=True: a hidden slot's move prior is its hypothesis species' Smogon row "
+                f"(`MoveBelief.move_prior_probs`, built by the fusion), read by the T0 move mixture; {_x5_fix}.")
+        if opp_belief_slots and not self.opp_intent:
+            raise ValueError(
+                "opp_belief_slots=True builds X5's hypothesis tokens, which require opp_intent=True "
+                "(--opp-intent-coef > 0): X5's flat opponent pointer is the intent readout over the hypothesis "
+                f"set; {_x5_fix}.")
+        if self.opp_intent and not opp_belief_slots:
+            raise ValueError(
+                "opp_intent=True builds X5's flat opponent pointer, which requires opp_belief_slots=True "
+                "(--opp-belief-aux-coef > 0): the pointer reads the hypothesis set, and the presence BCE that "
+                f"trains the learned delta and BeliefHead's set BCE both ride that coefficient; {_x5_fix}.")
+        # gen3_x5_belief_tokens_v1 (U3, U2 hand-off): the move group puts the REVEALED moves first in the K
+        # seats, so K < 4 leaves a fourth revealed move without a seat; and the op's top-K seat axis IS the
+        # move group's seats, so the two K's must agree (per-VALUE requirements the registry cannot express —
+        # refused here, where `flag_requires_test` can see them).
+        if (opp_belief_slots or self.opp_intent) and self.entity_topk_seats < 4:
+            raise ValueError(
+                f"X5's hypothesis tokens require entity_topk_seats >= 4 (got {self.entity_topk_seats}): revealed "
+                "moves take the first seats, and a fourth revealed move would have none.")
+        if (opp_belief_slots or self.opp_intent) and self.damage_op is not None \
+                and self.damage_op.matrices_incoming \
+                and self.damage_op.matrices_incoming_k != self.entity_topk_seats:
+            raise ValueError(
+                "X5's hypothesis tokens require damage_topk_k == entity_topk_seats: the op's seat axis (the "
+                "flat pointer's seats, the pair cells) IS the move group's seats.")
+        if (opp_belief_slots or self.opp_intent) and self.damage_op is not None \
+                and self.damage_op.damage_candidate_k > 0:
+            raise ValueError("X5's hypothesis tokens require damage_candidate_k == 0 (the full candidate axis; "
+                             "the seats come from the move group, not a truncation).")
+        # gen3_x5_flat_pointer_v1 (X5 U4, design §3.7): OTHER_move's flat-pointer token is the opponent
+        # active's E5 tail seat, so the E5 seats must exist.
+        if (opp_belief_slots or self.opp_intent) and not entity_tail_seats:
+            raise ValueError(
+                "X5's flat opponent pointer requires entity_tail_seats=True: OTHER_move (a flat-pointer "
+                f"candidate) re-uses the opponent active's E5 tail seat as its token; {_x5_fix}.")
+        if opp_belief_slots and self.opp_intent:
             self.hypothesis_builder = HypothesisBuilder(
                 layout, self.team_transformer._global_token_input_dim, self.entity_topk_seats)
-            # gen3_x5_flat_pointer_v1 (X5 U4, design §3.7): the FLAT opponent pointer replaces α / β in
-            # this arm. OTHER_move's token is the opponent active's E5 tail seat, so the E5 seats must
-            # exist (refused here, where `flag_requires_test` can see it). Built from its OWN private
-            # seed out of `IsolatedLinear`s, appended after the hypothesis builder (no position moves).
-            # α / β are still CONSTRUCTED above and still see SB3's orthogonal re-init (their draws keep
-            # the global stream — every later module's initial bytes — equal to blob's); the policy then
-            # RETIRES them (`retire_superseded_intent_heads`, called from `_build` before the optimizer
-            # is made), so they hold no state_dict key and no optimizer slot.
-            if not self.entity_seats.tail_seats:
-                raise ValueError(
-                    "belief_tokens=fixed_mass requires entity_tail_seats=True: OTHER_move (a flat-pointer "
-                    "candidate) re-uses the opponent active's E5 tail seat as its token.")
+            # The FLAT opponent pointer replaces α / β. Built from its OWN private seed out of
+            # `IsolatedLinear`s, appended after the hypothesis builder (no position moves). α / β are still
+            # CONSTRUCTED above and still see SB3's orthogonal re-init (their draws are part of the global
+            # stream every later module's initial bytes follow); the policy then RETIRES them
+            # (`retire_superseded_intent_heads`, called from `_build` before the optimizer is made), so they
+            # hold no state_dict key, no optimizer slot and no forward use.
             self.flat_intent_head = FlatIntentHead(D_MODEL, _intent_ctx)
             cast("ExtractorApi", self)._stamp_belief_grad_flags()
 
@@ -1043,7 +1053,7 @@ class ExtractorBuild(torch.nn.Module):
                 raise ValueError(
                     "move_resolution=on requires damage_op + damage_outgoing + damage_matrices_incoming + "
                     "damage_matrices_outgoing: the KO / hit / immunity facts are the operator's physics.")
-            # gen3_move_resolution_x5_v1: under `belief_tokens='fixed_mass'` the SAME rules read the flat pointer's
+            # gen3_move_resolution_x5_v1: under X5 the SAME rules read the flat pointer's
             # re-expression (OTHER_move a priced (K+1)-th seat, OTHER_species a priced 7th mon) — no refusal.
             self.damage_op.stash_pair_cells = True
             self.damage_op.stash_pair_outcome = True

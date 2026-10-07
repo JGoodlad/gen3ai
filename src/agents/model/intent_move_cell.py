@@ -85,7 +85,7 @@ class IntentMoveCell(torch.nn.Module):
         — silently broadcasting there would mis-weight every term while every shape check passed.
 
         ``seat_live`` `[B,K]` (X5 U4, F-X5-15): the meaningful-K gate, applied as `pair_alpha` does
-        (mask, never renormalise); fixed_mass only, so blob is byte-identical.
+        (mask, never renormalise); X5 only.
         """
         k = alpha_logits.shape[-1] - 1                       # last class is SWITCH
         if d_burn_k.shape[-1] != k or d_slp_k.shape[-1] != k:

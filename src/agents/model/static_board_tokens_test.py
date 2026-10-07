@@ -289,6 +289,17 @@ def test_their_spikes_reach_their_mons_as_content_only_through_op_content(static
     o0[:, hz], o3[:, hz] = 0.0, 1.0
     obs0, obs3 = dict(obs, observation=o0), dict(obs, observation=o3)
     live = _with_op_content(static_tower, amount=True)
+    # The SIDE FACT itself: their Spikes is THEIR mons' entry chip (the `x` cell's column 0), never ours.
+    a0, a3 = _op_content_args(live, obs0), _op_content_args(live, obs3)
+    assert (a3[0][0][..., 0] - a0[0][0][..., 0]).abs().max().item() == 0.0, "THEIR Spikes became OUR entry chip"
+    assert (a3[0][1][..., 0] - a0[0][1][..., 0]).abs().max().item() > MOVES
+    # Under X5 (the only belief representation since the version break) OUR mons' `pursuit_p` (column 1: P(they
+    # carry Pursuit), composed from the move belief) is a function of the BOARD — the hypothesis set's δ_θ reads
+    # the board context — so any board fact, their Spikes included, legitimately moves it. That is a BELIEF
+    # conditioned on the board, not a side mix-up of the hazard fact; drop its column from the projection so the
+    # trunk-input read below isolates the hazard's own route.
+    with torch.no_grad():
+        live.op_content.amount_proj.weight[:, 1] = 0.0
     d = (_trunk_input(live, obs3) - _trunk_input(live, obs0)).abs().amax(-1)          # [B,12]
     assert d[:, TEAM_SIZE:].gt(MOVES).any(1).float().mean().item() >= 0.5, \
         "THEIR Spikes reached their mons on fewer than half the rows"
@@ -407,14 +418,18 @@ def test_the_board_tokens_move_the_trunk_policy_context(static_trunk):
 
 
 # ---------------------------------------------------------------------------------------- versioning
-def test_a_stage_one_static_config_is_refused_and_legacy_stamps_through():
-    """v140: a pre-v140 `static` record is the stage-1 layout (one global token) — no home in this code."""
+def test_a_stage_one_static_config_is_refused_and_a_current_record_stamps_through():
+    """v140: a pre-v140 `static` record is the stage-1 layout (one global token) — no home in this code. Since
+    the X5 version break raised MIGRATION_FLOOR to 144, EVERY pre-v144 config (stage-1 static or legacy) is
+    refused at the floor before the v140 branch could run (that branch is unreachable, left in place); a record
+    at the current version carries its encoding through verbatim."""
     from agents.model.critic_mode_test import _fresh_current_config
     from agents.model.model_version import MODEL_CONFIG_VERSION, ModelVersionError
-    from agents.model.model_version.migrations import _migrate_config
-    assert MODEL_CONFIG_VERSION >= 140
-    with pytest.raises(ModelVersionError, match="BUILD STAGE 1"):
-        _migrate_config(_fresh_current_config(config_version=139, token_encoding="static"))
-    out = _migrate_config(_fresh_current_config(config_version=139, token_encoding="legacy"))
-    assert out["token_encoding"] == "legacy" and out["config_version"] == MODEL_CONFIG_VERSION
-    assert _migrate_config(_fresh_current_config(token_encoding="static"))["token_encoding"] == "static"
+    from agents.model.model_version.migrations import MIGRATION_FLOOR, _migrate_config
+    assert MODEL_CONFIG_VERSION >= 140 and MIGRATION_FLOOR > 139
+    for enc in ("static", "legacy"):
+        with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+            _migrate_config(_fresh_current_config(config_version=139, token_encoding=enc))
+    for enc in ("static", "legacy"):
+        out = _migrate_config(_fresh_current_config(token_encoding=enc))
+        assert out["token_encoding"] == enc and out["config_version"] == MODEL_CONFIG_VERSION

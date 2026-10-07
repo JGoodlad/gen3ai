@@ -220,13 +220,13 @@ pub const COLUMNS: [ColSpec; N_COLUMNS] = [
     ColSpec { name: "item_mask", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
     // label `win_margin` (family `margin`; written iff need = 1 and the family is declared): the normalized MATERIAL MARGIN of the side's LiveView at this decision (`material_margin.py`: HP + alive over the declared team size, unrevealed opp mons full-HP-alive); 0.0 at reset
     ColSpec { name: "win_margin", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 1, owner: "C" },
-    // label `opp_action_kind` (family `intent`; written iff need = 1 and the family is declared): what the opponent DID at the PREVIOUS decision (move / switch / unknown) — the α/β label the port's trackers already fold (`trackers::IntentLabel`, slice T)
+    // label `opp_action_kind` (family `intent`; written iff need = 1 and the family is declared): what the opponent DID at the PREVIOUS decision (move / switch / unknown) — the intent label the port's trackers already fold (`trackers::IntentLabel`, slice T)
     ColSpec { name: "opp_action_kind", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 1, owner: "C" },
     // label `opp_action_num` (family `intent`; written iff need = 1 and the family is declared): that move's NUM, Hidden Power resolved to the attacker's TRUE typed num from the other side's own team
     ColSpec { name: "opp_action_num", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 1, owner: "C" },
     // label `opp_switch_slot` (family `intent`; written iff need = 1 and the family is declared): the switch-in's REVEALED slot as of the previous decision (`_opp_slot_map_prev`), SWITCH_SLOT_NONE otherwise
     ColSpec { name: "opp_switch_slot", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 1, owner: "C" },
-    // label `opp_switch_species` (family `intent`; written iff need = 1 and the family is declared): the switch-in's species NUM (content-addressed β)
+    // label `opp_switch_species` (family `intent`; written iff need = 1 and the family is declared): the switch-in's species NUM (names a hidden switch-in: a hypothesis slot or OTHER_species)
     ColSpec { name: "opp_switch_species", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 1, owner: "C" },
 ];
 

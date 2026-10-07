@@ -145,19 +145,10 @@ def test_a_one_row_final_micro_batch_trains_finite():
     assert bool(th.isfinite(_params(model)).all())
 
 
-def test_kl_check_and_the_set_valued_beta_loss_keep_a_nan_visible():
+def test_the_kl_check_keeps_a_nan_visible():
     G.check_kl_finite(0.01, epoch=0)
     with pytest.raises(G.NonFiniteLearnerError, match="approx-KL inf"):
         G.check_kl_finite(math.inf, epoch=2)
-    from agents.model.opp_intent import set_valued_switch_loss
-
-    logits = th.tensor([[0.0, float("-inf"), float("nan"), 0.0, 0.0, 0.0]])
-    believed = th.tensor([[0.0, 1.0, 1.0, 0.0, 0.0, 0.0]])
-    # slot 1 is the deliberate -inf (unreachable); slot 2 is a NaN: the row is SCORED, the NaN shows
-    out = set_valued_switch_loss(logits, believed, th.tensor([True]))
-    assert out is not None and bool(th.isnan(out))
-    believed_ok = th.tensor([[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]])
-    assert set_valued_switch_loss(logits, believed_ok, th.tensor([True])) is None   # -inf only: dropped
 
 
 def test_a_nan_gradient_from_a_finite_loss_is_fatal_naming_the_parameter():

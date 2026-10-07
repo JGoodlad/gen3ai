@@ -10,31 +10,9 @@ import torch
 
 from main.belief_roles import metrics as MX
 from main.belief_roles.bank_rows import NO_EVENT, SWITCH_BASE, BankRows
-from main.belief_roles.forward import Columns, _event_logp
+from main.belief_roles.forward import Columns
 
 S = 8          # a toy species axis
-
-
-def test_event_logp_common_event_space():
-    """Seats [10, 360 (a typed HP), 20, pad]; SWITCH. Slots: 0 revealed species 3, 1 hidden whose content
-    puts 0.25 on species 5, 2 not a legal switch-in."""
-    alpha = torch.tensor([[1.0, 2.0, 0.5, -math.inf, 0.0]]).repeat(5, 1)
-    seats = torch.tensor([[10, 360, 20, 0]]).repeat(5, 1)
-    beta = torch.tensor([[0.0, 1.0, 3.0, 0.0, 0.0, 0.0]]).repeat(5, 1)
-    ok = torch.tensor([[True, True, False, False, False, False]]).repeat(5, 1)
-    content = torch.full((5, 6, S), -math.inf, dtype=torch.float64)
-    content[:, 0, 3] = 0.0
-    content[:, 1, 5] = math.log(0.25)
-    content[:, 1, 6] = math.log(0.75)
-    events = torch.tensor([237, 20, 30, SWITCH_BASE + 5, SWITCH_BASE + 7])
-    lp, cov = _event_logp(events, alpha, seats, beta, ok, content)
-    la = torch.log_softmax(alpha[0].double(), -1)
-    lb = torch.log_softmax(torch.tensor([0.0, 1.0]).double(), -1)
-    assert cov.tolist() == [True, True, False, True, False]
-    assert abs(lp[0] - la[1]) < 1e-12                         # HP event ← the typed-HP seat (360)
-    assert abs(lp[1] - la[2]) < 1e-12
-    assert abs(lp[3] - (la[4] + lb[1] + math.log(0.25))) < 1e-12   # α_SW · β_1 · c_1(5)
-    assert lp[2] == -math.inf and lp[4] == -math.inf           # a MISS is −inf, never a floor
 
 
 def _toy(intent_logp, covered, event, k=None, read_tie=None):
@@ -47,7 +25,7 @@ def _toy(intent_logp, covered, event, k=None, read_tie=None):
                   battle_index=np.arange(n), opp_class=["bot"] * n, on_pool=np.ones(n, bool),
                   true_species=np.zeros((n, 6), np.int64), true_moves=[[set()] * 6] * n,
                   event=np.asarray(event, np.int64))
-    cols = Columns(arm="blob", k=k, cand=cand, revealed_nums=np.zeros((n, 6), np.int64), pi_arm=zeros,
+    cols = Columns(arm="fixed_mass", k=k, cand=cand, revealed_nums=np.zeros((n, 6), np.int64), pi_arm=zeros,
                    pi_prior=zeros, sel_tie_arm=np.zeros(n, bool), sel_tie_prior=np.zeros(n, bool),
                    read_tie_arm=np.zeros(n, bool) if read_tie is None else np.asarray(read_tie),
                    other_mass_model=None, intent_logp=np.asarray(intent_logp, np.float64),

@@ -141,13 +141,13 @@ def test_a_PASS_is_cached_per_distinct_weights_and_a_weight_change_is_rechecked(
 
 def test_a_COLLAPSED_critic_opponent_passes_parity_above_the_first_rung(monkeypatch, fresh, capsys):
     """gen3_parity_perturb_ladder_v1: a pool snapshot whose win-prob critic collapsed (saturated at
-    logit −9) is vacuous on V at the fresh-weights scale; the gate climbs the declared ladder. Revert
+    logit −10; −9 until X5 became production, where −9's first rung is informative) is vacuous on V at the fresh-weights scale; the gate climbs the declared ladder. Revert
     the ladder ⇒ `VacuousCompileParityError` on a legitimate opponent."""
     fe = fresh.policy.features_extractor
     head = fe.win_head.net[3]
     saved = {k: v.clone() for k, v in head.state_dict().items()}
     with torch.no_grad():
-        head.bias.fill_(-9.0)
+        head.bias.fill_(-10.0)
         head.weight.mul_(0.01)
     monkeypatch.setattr(torch, "compile", lambda fn, **k: fn)
     try:

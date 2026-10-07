@@ -69,7 +69,7 @@ class ExtractorStashes:
     features_out: Optional[Tuple[torch.Tensor, torch.Tensor]] = None  # the forward's own (pi, vf) return, by reference (K8)
     # --- same-forward hand-offs (T0 producer → T1/T2 consumer; internal, no `last_*` name) ----
     t0_species_probs: Optional[torch.Tensor] = None    # T0 species resolve → every T1 pricing site
-    # gen3_x5_hypothesis_set_v1 (X5 U2, `--belief-tokens fixed_mass` only): the T0 hypothesis set —
+    # gen3_x5_hypothesis_set_v1 (X5 U2, X5 only): the T0 hypothesis set —
     # presence, selection, OTHER, the active's move group. Read by the presence BCE and the readers;
     # U3 wires it into the trunk and the op. Everything detached except `species.logits` (M10).
     hypothesis: Optional[HypothesisSet] = None

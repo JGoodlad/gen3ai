@@ -115,7 +115,7 @@ dashes();
    that the header calls out rather than being quietly dropped or piled on the origin. This also
    covers the seats that carry no edge at all — `history[0..6]` have NONE, and `global` only
    RECEIVES bias (28 in, 0 out) — which a ranker has no opinion about and would drop wherever. */
-const SEAT_BANDS = [['our_mon', 'opp_mon'],
+const SEAT_BANDS = [['our_mon', 'opp_mon', 'OTHER_species'],
                     ['E3_move', 'E4_threat', 'E5_tail'],
                     ['global', 'history', 'event']];
 const MISC_BAND = 9;

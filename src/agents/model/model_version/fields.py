@@ -394,11 +394,8 @@ class ModelVersionFields:
     # as the four toggles above: the variants' predictors are the state_dict delta, and nothing
     # downstream would catch a flip.
     ridealong_rnd_variants: str = "off"
-    # gen3_x5_hypothesis_set_v1 (config v136, X5 U2): `--belief-tokens {blob,fixed_mass}`. STRUCTURAL:
-    # `fixed_mass` builds the T0 hypothesis builder (δ_θ + OTHER — the state_dict delta) and re-targets
-    # the belief supervision to the set BCE; `blob` builds nothing. No ARCH_SIGNATURE bump while both
-    # arms must build at one commit (design §3.8) — the string compare in check_compatible is the gate.
-    belief_tokens: str = "blob"
+    # (`belief_tokens`, config v136-v143, LEFT the config at the X5 version break, v144: X5's hypothesis
+    # tokens are the only belief representation — `model_version.version_break`.)
     # gen3_oracle_reveal_v1 (config v137, the X5 A/B's oracle reference arms): `--oracle-reveal {off,species,full}`.
     # A DIAGNOSTIC observation mode — the opponent's true species written into the observation's opponent
     # block from turn 1 (`encoder::oracle`). RESUME-IMMUTABLE: builds nothing and moves no weight, so the

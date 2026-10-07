@@ -17,7 +17,7 @@ from agents.model.model_version.constants import ARCH_SIGNATURE, ModelVersionErr
 # ⚠️ When ARCH_SIGNATURE next changes, raise this floor to the new signature's first stamped
 # version IN THE SAME COMMIT (and append the pairing to SIGNATURE_FIRST_VERSION below) —
 # migration_floor_test.py fails if the two drift apart.
-MIGRATION_FLOOR = 121
+MIGRATION_FLOOR = 144
 
 # The signature → first-stamped-version pairing the floor is derived from. Append-only: add the
 # new signature's row when it lands. migration_floor_test.py asserts
@@ -29,6 +29,11 @@ SIGNATURE_FIRST_VERSION = {
     "gen3_event_semantics_v1": 91,
     "gen3_critic_route_wave_v1": 96,
     "gen3_event_record_v2": 121,
+    # The X5 VERSION BREAK (`model_version.version_break`): the ONE planned checkpoint break after X5's
+    # adoption. It raises the floor (contra the legacy manifest's provisional D-L1 "decouple") because the
+    # break's later parts reshape weights and change behaviour, so NO pre-break checkpoint — blob or
+    # fixed_mass — is reproducible at HEAD; every one runs pinned.
+    "gen3_x5_version_break_v1": 144,
 }
 def _migrate_config(data: dict) -> dict:
     """Apply incremental forward-migrations to bring an old config up to the current schema.
@@ -49,13 +54,18 @@ def _migrate_config(data: dict) -> dict:
     """
     version = data.get("config_version", 1)
     if version < MIGRATION_FLOOR:
+        # The X5 version break (v144): a v121-v143 config also gets the BELIEF-specific reason — the blob
+        # path is deleted, or (fixed_mass) the break reshaped the weights it trained — and the pinned fix.
+        from agents.model.model_version.version_break import pre_break_diagnosis
+        _why = pre_break_diagnosis(data)
         raise ModelVersionError(
             f"config_version {version} is a PRE-GENERATION checkpoint: it predates "
             f"v{MIGRATION_FLOOR}, the first MODEL_CONFIG_VERSION stamped with the current "
             f"ARCH_SIGNATURE ({ARCH_SIGNATURE!r}). A checkpoint from an earlier generation "
             "cannot be loaded by this code — its weights were trained against an architecture "
             "this codebase no longer contains, and no config migration can bridge that.\n"
-            "To re-probe it, use the git_hash recorded in the checkpoint's own metadata.json "
+            + (f"{_why}\n" if _why else "")
+            + "To re-probe it, use the git_hash recorded in the checkpoint's own metadata.json "
             "(git checkout <git_hash> and probe from there — the prober prints exactly this "
             "diagnosis, with the hash, for archived runs)."
         )
@@ -347,6 +357,11 @@ def _migrate_config(data: dict) -> dict:
     for _dead in RETIRED_FIELDS:
         data.pop(_dead, None)
     # ---- POST-FLOOR MIGRATION BRANCHES (N > MIGRATION_FLOOR) --------------------------------
+    # ⚠️ UNREACHABLE since the X5 version break (MIGRATION_FLOOR 144): every branch below is `version < N`
+    # with N <= 143, and a config that old was refused at the floor above. They are left in place (their
+    # deletion — and the move of their history into the archive block — is legacy-manifest unit R1/L1,
+    # out of the break's scope). The v136 branch's `belief_tokens` default names a field that no longer
+    # exists; it can never run.
     # v122 (gen3_shaped_reward_deletion_v1) — THE STAMP ONLY: the deletion removes fields rather
     # than introducing one, and their POP is version-independent (above). v108's shape.
     if version < 122:

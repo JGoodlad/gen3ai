@@ -90,10 +90,6 @@ from agents.model.arch_constants import D_MODEL, HYPOTHESIS_DELTA_HIDDEN, HYPOTH
 from agents.observation.constants import TEAM_SIZE
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 
-#: The legal `--belief-tokens` values — the SINGLE SOURCE for the CLI `choices=` and the extractor's
-#: ValueError. `blob` (default, production until the A/B rules) builds nothing; `fixed_mass` builds
-#: `HypothesisBuilder`.
-BELIEF_TOKEN_MODES = ("blob", "fixed_mass")
 #: The bisection's FIXED iteration count (§3.2): the same in every dtype, no data-dependent exit.
 BISECTION_ITERS = 64
 #: §3.1's rule-8 exclusion: a row whose π at a selection boundary differs by less than this
@@ -410,7 +406,7 @@ def build_move_legality(n_species: int, n_moves: int) -> Tuple[torch.Tensor, tor
 
 
 class HypothesisBuilder(torch.nn.Module):
-    """T0 RESOLVE under ``--belief-tokens fixed_mass``: δ_θ, the fixed-size presence, the hypothesis
+    """T0 RESOLVE under X5: δ_θ, the fixed-size presence, the hypothesis
     selection, OTHER, and the active's move group (module docstring). Built ONLY in that arm, from a
     private seed, appended after every other module (no parameter position moves)."""
 

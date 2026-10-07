@@ -25,11 +25,13 @@ from main.exit_codes import TrainExitCode
 
 
 def _production_v121() -> dict:
-    """The production mirror as a v121 run recorded it — `hand_shaping: False` and the other 13
-    deleted fields present (the mirror dropped them at the deletion; a v121 file still has them)."""
+    """The production mirror carrying `hand_shaping: False` and the other 13 deleted fields, as a v121 run
+    recorded them (the mirror dropped them at the deletion) — stamped at `MIGRATION_FLOOR`: the X5 version
+    break (v144) floors every older config, and the shaped-field POP / refusal is version-INDEPENDENT."""
+    from agents.model.model_version import MIGRATION_FLOOR
     from agents.training.baselines import production_config
     raw = dict(production_config())
-    raw.update(config_version=121, hand_shaping=False, pbrs_material=True, pbrs_belief=True,
+    raw.update(config_version=MIGRATION_FLOOR, arch_signature="gen3_x5_version_break_v1", hand_shaping=False, pbrs_material=True, pbrs_belief=True,
                all_shaping_pbrs=True, stall_pbrs=False, bias_redesign=False,
                bias_additivity=1.0, mat_alive_weight=1.25, no_progress_penalty=0.15,
                switch_bias_weight=0.0, self_ko_hp_penalty=0.0, drop_redundant_bias=False,

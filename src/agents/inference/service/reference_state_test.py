@@ -31,11 +31,12 @@ def _rows(model: Any, n: int) -> Tuple[torch.Tensor, torch.Tensor]:
     return obs, mask
 
 
-@pytest.fixture(scope="module", params=["blob", "fixed_mass"])
+@pytest.fixture(scope="module", params=["fixed_mass"])
 def arm(request) -> Tuple[str, Any]:
+    """The production surface (X5's fixed-mass hypothesis tokens; the blob arm was DELETED at the version break)."""
     from agents.training import learner_golden as LG
-    m = LG.build_learner() if request.param == "blob" else LG.build_arm_learner(request.param)
-    LG.load_buffer_into(m, LG.arm_buffer(request.param))
+    m = LG.build_learner()
+    LG.load_buffer_into(m)
     m.policy.eval()
     return request.param, m
 

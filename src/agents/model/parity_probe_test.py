@@ -150,12 +150,12 @@ def test_a_single_row_is_judged_on_its_logprobs_only():
 
 
 # --------------------------------------------------------------------------- a COLLAPSED critic
-# gen3_parity_perturb_ladder_v1 — a win-prob critic saturated at logit ≈ −9 (the fresh3 shape,
+# gen3_parity_perturb_ladder_v1 — a win-prob critic saturated at logit ≈ −10 (−9 before X5 became production; the fresh3 shape,
 # `agents.inference.service.flat_weights_test` has the story) stays VACUOUS on V at the fresh-weights
 # scale even over 16 rows: the premise for climbing the declared ladder instead of refusing.
 
 @contextlib.contextmanager
-def _collapsed(model, bias: float = -9.0, gain: float = 0.01):
+def _collapsed(model, bias: float = -10.0, gain: float = 0.01):
     head = model.policy.features_extractor.win_head.net[3]
     saved = {k: v.clone() for k, v in head.state_dict().items()}
     with torch.no_grad():

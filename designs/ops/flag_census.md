@@ -14,8 +14,8 @@
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
 | DELETED by P11 (the whole census: B1-B5, P11b, P11c, P11d) | 37 | 0 | 37 |
-| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06) | 168 | 9 | 177 |
-| verdicts NOW | KEEP 167 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
+| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06; −1, `--belief-tokens`, DELETED at the X5 version break 2026-10-07, `designs/deleted_flags.md`) | 167 | 9 | 176 |
+| verdicts NOW | KEEP 166 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -160,7 +160,6 @@
 | `--ridealong-adv` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_adv` = `0`; X26's per-action A heads | **KEEP** |
 | `--ridealong-opp` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_opp` = `0`; X26's opponent-effect B heads | **KEEP** |
 | `--ridealong-rnd-variants` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_rnd_variants` = `"off"`; X26's RND variant ensemble | **KEEP** |
-| `--belief-tokens` | — | 0 / 0 | `--arch production`: `production_config.json` `belief_tokens` = `"blob"`; the X5 A/B's `fixed_mass` arm (`designs/endstate/design_x5_belief_tokens.md` §3.8, U2) | **KEEP** |
 | `--token-encoding` | — | 0 / 0 | `--arch production`: `production_config.json` `token_encoding` = `"legacy"`; the static-token arm `static` (`designs/endstate/design_static_tokens.md`; build stage 1, NOT screen-ready) | **KEEP** |
 | `--oracle-reveal` | — | 0 / 0 | a DIAGNOSTIC observation mode (`oracle_reveal`, config v137; `off` = production; `species` / `full` = the X5 A/B's oracle-species / oracle-full arms, `designs/endstate/design_x5_belief_tokens.md` §7.6) | **KEEP** |
 | `--policy-readout` | — | 0 / 0 | `--arch production`: `production_config.json` `policy_readout` = `"tower"`; the architecture audit F2 screen's `trunk` arm (`designs/endstate/design_arch_audit.md` F2, config v138) | **KEEP** |

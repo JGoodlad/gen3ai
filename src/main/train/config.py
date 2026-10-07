@@ -56,19 +56,24 @@ def _adaptive_batch_guards(args, parser) -> None:
 
 
 def enforce_not_shaped_parent(model_path: str) -> None:
-    """The LAUNCH-path wrapper over `model_version.shaped_reward.check_not_shaped` AND
-    `model_version.retired_levers.check_no_retired_levers`: print the typed refusal and exit
-    `FATAL_CONFIG` (restarting would hit the identical checkpoint every time, so the launcher must
+    """The LAUNCH-path wrapper over `model_version.shaped_reward.check_not_shaped`,
+    `model_version.retired_levers.check_no_retired_levers` AND `model_version.version_break.check_post_break`
+    (the X5 version break, v144: a parent whose config predates `MIGRATION_FLOOR` — every blob or pre-break
+    fixed_mass checkpoint — is refused with the belief-specific reason and the pinned fix, BEFORE the
+    inheritance sweep could fall back to OFF defaults and fail somewhere unrelated): print the typed refusal
+    and exit `FATAL_CONFIG` (restarting would hit the identical checkpoint every time, so the launcher must
     give up rather than loop). `main.checkargs` reads the same predicates."""
     from agents.model.model_version.retired_levers import (
         RetiredLeverCheckpointError, check_no_retired_levers)
     from agents.model.model_version.shaped_reward import (
         ShapedRewardCheckpointError, check_not_shaped, saved_config_path)
+    from agents.model.model_version.version_break import PreBreakCheckpointError, check_post_break
     from main.exit_codes import TrainExitCode
     try:
         check_not_shaped(saved_config_path(model_path))
         check_no_retired_levers(saved_config_path(model_path))
-    except (ShapedRewardCheckpointError, RetiredLeverCheckpointError) as e:
+        check_post_break(saved_config_path(model_path))
+    except (ShapedRewardCheckpointError, RetiredLeverCheckpointError, PreBreakCheckpointError) as e:
         print(f"\n[ModelVersion] FATAL: {e}", flush=True)
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
@@ -507,7 +512,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("ridealong_adv", 0)
     _resolve("ridealong_opp", 0)
     _resolve("ridealong_rnd_variants", "off")      # v127 structural str (canonical comma list)
-    _resolve("belief_tokens", "blob")              # v136 structural str (X5 U2; version-checked, fresh-only)
     _resolve("policy_readout", "tower")            # v138 structural str (audit F2; version-checked, fresh-only)
     _resolve("move_resolution", "off")             # v141 structural str (F11's move-resolution family; fresh-only)
     _resolve("speed_physics", "off")               # v143 structural str (F7b's speed physics; fresh-only)

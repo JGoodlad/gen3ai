@@ -112,7 +112,7 @@ def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
     check still passed (the named `op move-order` bug class).
 
     ``seat_live`` `[B,K]` (X5 U4, F-X5-15): the meaningful-K gate `pair_alpha` applies — mask, never
-    renormalise. Passed under fixed_mass only, so blob is byte-identical.
+    renormalise. Passed under X5 only.
     """
     k = alpha_logits.shape[-1] - 1                                     # last class is SWITCH
     if pair_cells.shape[2] != k:

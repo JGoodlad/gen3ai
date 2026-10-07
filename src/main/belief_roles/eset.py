@@ -2,20 +2,19 @@
 distribution on the COMMON EVENT SPACE, so purpose metric (1) can be scored on the same rows and the same
 support for both arms.
 
-**E_row** = the blob checkpoint's named candidate set on a row: the HP-collapsed move events of its E4
-seats that α can name (a finite α logit and a seat num > 0), and the switch-ins its β can name — species s
-is in E_row iff α_SWITCH is finite and some β-legal slot's CONTENT supports s (a revealed slot: its
-species; a hidden slot: BeliefHead's posterior over V, which supports every candidate). It is exactly the
-support of the blob's induced distribution, decided STRUCTURALLY (membership, never a value), so a blob
-row's ``covered`` flag and "the realised event is in E_row" are the same predicate (checked in
-``forward.read_columns``).
+**E_row** = a blob checkpoint's named candidate set on a row: the HP-collapsed move events of its E4
+seats that α could name (a finite α logit and a seat num > 0), and the switch-ins its β could name. It
+was exactly the support of the blob's induced distribution, decided STRUCTURALLY (membership, never a
+value). The blob reads of the X5 A/B wrote one per blob run beside their JSON (``<label>.erow.npz``,
+:class:`ERow`); the blob read arm that computed them was DELETED with the blob path at the X5 version
+break (config v144) — a blob checkpoint is read PINNED to its own commit — so this module now only
+LOADS those banked sets.
 
-**A fixed_mass run has no blob heads**, so it is scored on EVERY blob run of the look, each set read on
-the same bank rows, and its value is the MEAN of the conditional log loss over those sets (orchestrator
-decision 2026-10-06, the Decision record of §7.7: "seeds do not pair runs", §7.4, and the mean mirrors the
-cross design). A blob read writes its E_row beside its JSON (``<label>.erow.npz``); a fixed_mass read takes
-them through ``--reference``. ``infer`` refuses a conditional-metric comparison in which any fixed_mass
-read does not reference exactly the control group's blob runs.
+**An X5 run has no blob heads**, so it is scored on EVERY blob run of the look, each set read on the same
+bank rows, and its value is the MEAN of the conditional log loss over those sets (orchestrator decision
+2026-10-06, the Decision record of §7.7: "seeds do not pair runs", §7.4, and the mean mirrors the cross
+design); a read takes them through ``--reference``. ``infer`` refuses a conditional-metric comparison in
+which any fixed_mass read does not reference exactly the control group's blob runs.
 
 The event space is DENSE: index e < :data:`SWITCH_BASE` is a move num (every Hidden Power → 237), index
 ``SWITCH_BASE + s`` a switch-in by species s, so ``D = SWITCH_BASE + S``.
@@ -51,7 +50,8 @@ def hp_collapse(nums):
 
 @dataclass
 class ERow:
-    """A blob checkpoint's named set on every bank row (module docstring)."""
+    """A blob checkpoint's named set on every bank row (module docstring) — loaded from a banked
+    ``.erow.npz``."""
 
     seat_events: np.ndarray          # [N,K] int64 — the namable seats' move events, 0 = no seat
     switch_ok: np.ndarray            # [N,S] bool — the switch-ins β can name
@@ -112,34 +112,8 @@ class ESet:
     mass: np.ndarray                 # [N] Σ_{e ∈ E_row} P_arm(e) — the renormalisation denominator
     e_in: np.ndarray                 # [N] bool — the realised event is in E_row
     tie: np.ndarray                  # [N] bool — E_row's own seat cut is a rule-8 near-tie
-    label: str = "own"               # the reference blob run's label ("own" for a blob run)
-    checkpoint_sha256: str = ""      # the reference blob checkpoint ("" for a blob run's own)
-
-
-def blob_event_dist(alpha_logits, seat_nums, beta_logits, beta_ok, content_logp):
-    """``(P [B,D] float64, seat_events [B,K] long, switch_ok [B,S] bool)`` — the blob's induced
-    distribution on the dense event space (a move = Σ α over the seats naming it; a switch to s =
-    α_SWITCH · Σ_j β_j c_j(s) over β's legal slots) and its named set E_row."""
-    import torch
-
-    B, K1 = alpha_logits.shape
-    K = K1 - 1
-    S = content_logp.shape[-1]
-    D = SWITCH_BASE + S
-    la = torch.log_softmax(alpha_logits.double(), dim=-1)
-    seat_ok = torch.isfinite(la[:, :K]) & (seat_nums > 0)
-    ev = torch.where(seat_ok, hp_collapse(seat_nums.long()), torch.zeros_like(seat_nums.long()))
-    P = torch.zeros(B, D, dtype=torch.float64)
-    P.scatter_add_(1, ev, torch.where(seat_ok, la[:, :K].exp(), torch.zeros((), dtype=torch.float64)))
-    lb = torch.log_softmax(beta_logits.double().masked_fill(~beta_ok, -math.inf), dim=-1)
-    bp = torch.where(beta_ok, lb.exp(), torch.zeros((), dtype=torch.float64))     # 0 when no legal slot
-    c = content_logp.double().exp()                                               # −inf → 0
-    sw_ok = torch.isfinite(la[:, K])
-    P[:, SWITCH_BASE:] = torch.where(sw_ok.unsqueeze(-1), la[:, K].exp().unsqueeze(-1)
-                                     * torch.einsum("bj,bjs->bs", bp, c),
-                                     torch.zeros((), dtype=torch.float64))
-    switch_ok = sw_ok.unsqueeze(-1) & (beta_ok.unsqueeze(-1) & torch.isfinite(content_logp)).any(1)
-    return P, ev, switch_ok
+    label: str = "own"               # the reference blob run's label
+    checkpoint_sha256: str = ""      # the reference blob checkpoint
 
 
 def flat_event_dist(flat_logits, fi, pi_m, p_tail):

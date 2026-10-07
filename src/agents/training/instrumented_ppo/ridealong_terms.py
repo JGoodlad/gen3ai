@@ -202,14 +202,6 @@ class RideAlongAccumulator:
                 from agents.model.opp_intent import INTENT_IGNORE
                 # X5 U4: the share of rows B trains on — OTHER rows included (a belief miss is a label)
                 self.add("opp_label_rate", float((b.flat_target != INTENT_IGNORE).float().mean()))
-            elif ("opp" in out and b.opp_kind is not None and b.opp_num is not None
-                    and b.alpha_seat_nums is not None):
-                from agents.model.opp_intent import INTENT_IGNORE, match_seats_to_move_num
-                idx = match_seats_to_move_num(b.alpha_seat_nums, b.opp_num.long().reshape(-1),
-                                              b.opp_kind.long().reshape(-1),
-                                              int(b.alpha_seat_nums.shape[-1]))
-                # the share of rows B could train on: the opponent's action named in α's support
-                self.add("opp_label_rate", float((idx != INTENT_IGNORE).float().mean()))
             if v_ is not None and z is not None and zm is not None:
                 err = (v_ - z).abs()
                 for key in ("ens_logit_std", *(f"{p}_z" for p in rnd_prefixes(out))):
@@ -370,7 +362,7 @@ class RideAlongTerms:
             legal = pi > 0
             logits = dist.distribution.logits
         opp_on = float(getattr(self, "opp_intent_coef", 0.0) or 0.0) > 0.0   # labels ALIGNED
-        # X5 U4 (fixed_mass): B reads the FLAT pointer — its logits, its candidate ids and the label
+        # X5 U4: B reads the FLAT pointer — its logits, its candidate ids and the label
         # column from THE target function the intent loss uses (so B and the loss name one column).
         _fi = getattr(fe, "last_flat_intent", None) if opp_on else None
         _flat_kw: Dict[str, Any] = {}
@@ -386,10 +378,7 @@ class RideAlongTerms:
             pi=pi, logits=logits, legal=legal, values=values,
             actions=actions, advantages=rollout_data.advantages,
             win_target=obs.get("win_target"), win_mask=obs.get("win_mask"),
-            alpha_logits=fe.last_alpha_logits if opp_on else None,
-            alpha_seat_nums=fe.last_alpha_seat_nums if opp_on else None,
-            opp_kind=obs.get("opp_action_kind") if opp_on else None,
-            opp_num=obs.get("opp_action_num") if opp_on else None, **_flat_kw)
+            **_flat_kw)
         if b.pooled is None:
             return
         rnd = getattr(heads, "rnd", None)

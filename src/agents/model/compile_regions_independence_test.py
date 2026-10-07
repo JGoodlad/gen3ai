@@ -39,8 +39,8 @@ def fixed_mass():
     from agents.training import learner_golden as LG
     cc._reset_control_for_tests()
     torch._dynamo.reset()
-    m = LG.build_arm_learner("fixed_mass")
-    LG.load_buffer_into(m, LG.arm_buffer("fixed_mass"))
+    m = LG.build_learner()
+    LG.load_buffer_into(m, LG.BUFFER_PATH)
     m.batch_size = BATCH
     assert m.policy.features_extractor.hypothesis_builder is not None      # PRECONDITION: the X5 arm
     cc.control().install()

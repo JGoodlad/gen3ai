@@ -168,9 +168,7 @@ _COMPOSE = {
     "static": {"token_encoding": "static"},
     "trunk": {"policy_readout": "trunk"},
     "move_resolution": {"move_resolution": "on"},
-    "fixed_mass": {"belief_tokens": "fixed_mass"},
-    "static+trunk+fixed_mass": {"token_encoding": "static", "policy_readout": "trunk",
-                                "belief_tokens": "fixed_mass"},
+    "static+trunk": {"token_encoding": "static", "policy_readout": "trunk"},
 }
 
 

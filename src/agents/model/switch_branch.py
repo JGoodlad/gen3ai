@@ -228,7 +228,7 @@ class SwitchBranchMoveCell(torch.nn.Module):
         the total switch mass; ``seat_live`` `[B,K+1]`), β over the six slots + OTHER_species, and
         ``omx_cells`` / ``opp_p_ghost`` carry OTHER_species' column (the tail-averaged defender,
         never IMMUNE). ``other_u`` `[B,M]` prices OTHER_move's damaging indicator (`seat_num_table`).
-        None: blob, unchanged."""
+        None: the belief family off."""
         k = alpha_logits.shape[-1] - 1
         n_nums = topk_nums.shape[-1] + (1 if other_u is not None else 0)
         if n_nums != k or seat_live.shape[-1] != k:

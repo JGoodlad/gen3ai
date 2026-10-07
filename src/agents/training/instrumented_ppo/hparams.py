@@ -106,15 +106,15 @@ class PpoHyperparameters:
     move_belief_latent_coef: float = 0.0
 
     opp_intent_coef: float = 0.0
-    # SET-VALUED partial credit on beta's belief-miss rows (see `set_valued_switch_loss`). Scales
-    # ON TOP of opp_intent_coef, so it is a share of the intent budget rather than a second one.
-    # 0.0 = OFF and the loss is byte-identical; training-only, resume-mutable (no module changes).
+    # INERT since the X5 version break: the set-valued partial credit it scaled was the blob β loss,
+    # deleted with it (the flat pointer's OTHER_species label states "someone unseen" exactly). The
+    # flag still parses and the recipe still carries it; nothing in the learner reads it.
     beta_setvalued_coef: float = 0.0
-    # gen3_intent_label_bot_weight_v1: per-sample weight on α/β label rows whose opponent was a
-    # heuristic BOT (`opp_class == 0`); every other class stays 1.0. 1.0 = OFF and the loss is
-    # bit-identical (the unweighted `cross_entropy` call is taken unchanged). Training-only,
-    # resume-mutable. Applies to the INTENT losses only — never to the BeliefBank rows, which are
-    # team truth rather than behaviour. See `agents.model.opp_intent.intent_losses`.
+    # gen3_intent_label_bot_weight_v1: per-sample weight on the opponent-intent label rows whose
+    # opponent was a heuristic BOT (`opp_class == 0`); every other class stays 1.0. 1.0 = OFF and the
+    # loss is bit-identical (the unweighted reduction is taken unchanged). Training-only,
+    # resume-mutable. Applies to the INTENT loss only — never to the BeliefBank rows, which are team
+    # truth rather than behaviour. See `instrumented_ppo.flat_intent_fold`.
     intent_label_bot_weight: float = 1.0
 
     # ---- gen3_capacity_telemetry_v1 — LIVE CAPACITY TELEMETRY (`capacity/*`) -------------------

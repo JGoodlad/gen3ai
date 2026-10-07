@@ -13,13 +13,16 @@ import numpy as np
 import torch
 
 from agents.model.features_extractor import Gen3FeaturesExtractor
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 _mp = load_mappings()
 _layout = Gen3ObservationEncoder(_mp).get_layout()
-# A config with all four state-prediction belief heads live (move + spread + hp-type + the aux head).
-_CFG = dict(attend_unrevealed_opponents=True, opp_belief_slots=True, move_belief_mode="both",
-            spread_belief=True, damage_op=True)
+# A config with all four state-prediction belief heads live (move + spread + hp-type + the aux head). The
+# opponent-belief family is ON: since the X5 version break (v144) X5's hypothesis tokens, with every
+# requirement they carry (`x5_surface_fixture.x5_kwargs`).
+_CFG = x5_kwargs(attend_unrevealed_opponents=True, move_belief_mode="both",
+                 spread_belief=True, damage_op=True)
 
 
 def _model(**kw):
@@ -77,13 +80,23 @@ def test_detached_cuts_trunk_gradient_but_head_still_trains():
     obs = _obs(4)
     trunk = ("team_transformer", "pokemon_encoder")
 
-    sh = _model(**_CFG, belief_grad_mode="shaping")
+    def _open(m):
+        # `move_prior_fusion` (X5's T0 move mixture needs it) zero-inits the head so the cold posterior
+        # IS the prior — and a zero weight carries no gradient into the trunk in EITHER mode, which would
+        # make the shaping control vacuous. Open it (same draw for both models).
+        g = torch.Generator().manual_seed(5)
+        with torch.no_grad():
+            w = m.move_belief.move_head.weight
+            w.copy_(torch.randn(w.shape, generator=g) * 0.02)
+        return m
+
+    sh = _open(_model(**_CFG, belief_grad_mode="shaping"))
     sh.forward_internal(obs)
     (sh.last_move_belief_logits.float().sum()).backward()
     sh_trunk = _grad_mass(sh, trunk)
     sh_head = _grad_mass(sh, ("move_belief.move_head",))
 
-    dt = _model(**_CFG, belief_grad_mode="detached")
+    dt = _open(_model(**_CFG, belief_grad_mode="detached"))
     dt.forward_internal(obs)
     (dt.last_move_belief_logits.float().sum()).backward()
     dt_trunk = _grad_mass(dt, trunk)
@@ -181,9 +194,9 @@ def test_every_head_that_READS_a_grad_flag_is_actually_STAMPED_with_one():
     from agents.model.identity_init_test import _build_real_policy
 
     model, _enc = _build_real_policy(
-        opp_belief_slots=True, attend_unrevealed_opponents=True, move_belief_mode="both",
+        attend_unrevealed_opponents=True, move_belief_mode="both",
         move_prior_fusion=True, spread_belief=True, damage_op=True, damage_outgoing=True,
-        belief_grad_mode="label_only")
+        belief_grad_mode="label_only")          # the shared toggle set has the X5 belief family on
     fe = model.policy.features_extractor
 
     readers = {"detach_read": [], "publish_detach": []}

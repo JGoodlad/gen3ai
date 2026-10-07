@@ -9,92 +9,72 @@ training package). Each section below is unchanged, including its dated measurem
 
 ---
 
-## Hidden-opponent belief aux loss (`--opp-belief-aux-coef`)
+## Hidden-opponent belief supervision (`--opp-belief-aux-coef`) — X5's set BCE, the `hidden_team_set` row
 
-The training half of the in-place belief feature (model side in `src/agents/model/CLAUDE.md` →
-`BeliefSlots`/`BeliefHead`, v16). Off by default. Two pieces live here:
+The training half of the opponent-belief family (model side: `src/agents/model/CLAUDE.md` → X5's
+hypothesis tokens, the ONLY belief representation since the X5 version break, config v144). Off by
+default. Two pieces live here:
 - **Labels (the Rust env core's label path (formerly `gen3_env.py`, deleted in U3; `designs/rust_sim/env_labels.md`)).** When `emit_belief_labels` (set from `--opp-belief-aux-coef>0`), `step()`
   and `reset()` merge two PRIVILEGED int64 Dict-obs keys into the trainee obs: `belief_species[6]`
   and `belief_moves[6,4]` — the opponent's still-hidden mons (species/move NUMs), sourced from
-  `battle2.team` (agent2's own full team). The believed-slot mask is read **straight from the obs
-  vector's per-slot `species_known`** (the SAME signal `BeliefSlots` keys its injection on) — single
-  source of truth, so the label's believed slots can never diverge from where the model fills
-  unknown-mon tokens. The pure builder is `agents.observation.belief_labels`. These keys are
-  **training-only** (eval/self-play/inference never declare/need them) and read ONLY by the loss — the
-  model forward reads only `obs["observation"]`, so the omniscient labels can't leak. **Fail-loud:**
-  `_belief_labels` raises if the obs `species_known` is not leading-contiguous (a broken encoder
-  packing invariant), rather than mis-slotting supervision.
-- **Loss (`instrumented_ppo.py` `_belief_aux_loss`).** `train()` reads the per-minibatch stashed
-  logits (`policy.features_extractor.last_belief_logits`, set by the `evaluate_actions` forward) + the
-  label keys, and folds `opp_belief_aux_coef·(species_CE + moves_weight·moves_BCE)` into the loss.
-  **Order-invariant (Hungarian / DETR):** the k believed-slot predictions are matched to the k hidden
-  mons by per-sample min-CE-cost assignment (k! perms enumerated, vectorised per distinct k), so the
-  anonymous slot tokens collectively cover the hidden SET rather than each chasing a reveal-shifting
-  fixed target. Perf: species log-softmax on the GATHERED believed slots (not full `[B,6,S]`); moves
-  BCE skipped when `moves_weight==0`; accuracy/P-R diagnostics under `no_grad`. **Fail-loud:** an
-  out-of-vocab label id (impossible on real Gen-3 nums) RAISES — corrupt num pipeline, not a silent
-  drop. Returns `None` on an empty (zero-believed) minibatch to avoid NaN-poisoning.
-- **Metrics (`belief/*` — its OWN TB prefix, not `train/`, matching the `grad/`/`win_prob/`
-  groups; rendered in the launcher TUI directly BELOW the `train/` block in the train column).** Headline
-  `species_acc` + `species_acc_above_chance` (anchored to
-  `1/n_species`); `moves_precision`/`moves_recall` (the opaque BCE alone can't tell if the ~4 true
-  moves rank high); `coverage` (fraction of decisions with ≥1 believed slot) + `k_mean` (so acc is
-  interpretable — k=1 vs k=5 differ); `species_ce`, `moves_bce`, `aux_loss`; plus `mask_rate` — the
-  **uniform per-head coverage key** (`gen3_belief_mask_rate_v1`): fraction of the B×6 slot grid the
-  head scored this minibatch. EVERY belief head emits it under its own prefix (`belief/mask_rate`
-  hidden-team, `belief/spread_mask_rate`, `belief/natureev_mask_rate`, `belief/hptype_mask_rate`),
-  comparable across heads and batch sizes where the older `n_slots` counts are not — the label-coverage
-  baseline the belief-unification consolidation will judge per-head non-inferiority against. Note the
-  conventions TILE: hidden-team masks HIDDEN slots, the spread/nature/hp-type heads mask REVEALED
-  ones. **ALL SIX supervised belief losses live in `belief_bank.py`** (the design_unified_belief
-  §4 code-shape fold, 2026-08-16): one declarative ROW per head (stash/attr/obs/param arg spec ·
-  coef key · metric prefix · the `aux_loss` historic key for hidden-team) and `compute(site=…)`
-  loops replace the six inline verticals at their THREE original train() positions
-  (`hidden_move` = hidden-team Hungarian + move-belief BCE · `latent` = move-latent grading ·
-  `revealed` = spread/nature-EV/hp-type) — the site tag is what preserves the float-addition
-  sequence exactly (byte-identical), the old `InstrumentedMaskablePPO._*_loss` statics remain as
-  aliases, and a seventh supervised belief is now a row, not a slice
-  (`belief_bank_test.py::test_sites_partition_the_registry` pins the partition). **Balance:** the
-  shared-trunk grad-balance probe (`grad_balance.py`) reports `grad/species_belief_share` (this CE's
-  share of the common trunk-pull total) + `grad/species_belief_policy_cosine` — the principled "is the
-  aux DOMINATING / fighting the policy" signal (and `grad/aux_share` for the COMBINED non-RL draw).
-  **Tuning is empirical:** start `--opp-belief-aux-coef` small (0.1–0.3) so
-  `species_belief_share` lands at a few %; confirm `species_acc_above_chance` climbs in warmup; if the
-  policy degrades (`train/approx_kl` spikes, `entropy` collapses, `explained_variance` drops) while
-  the share is high, the aux is fighting the actor → lower the coef. `--opp-belief-moves-weight`
-  balances CE vs BCE (species dominates at 1.0). Both coefs are **training-only** (like `ent_coef`,
-  NOT version-locked); the `opp_belief_slots` arch toggle they imply IS version-checked, and
-  `--opp-belief-aux-coef` is **read back from the saved config on a flagless resume** (so a launcher
-  restart preserves belief-ON instead of FATALing).
-- **Tests.** Unit: `belief_aux_loss_test.py` (Hungarian order-invariance + min-cost-matching, empty
-  guard, grad, fail-loud out-of-vocab, perf fast-path), `agents/observation/belief_labels_test.py`,
-  `agents/model/belief_slots_test.py` (incl. end-to-end gradient flow through the stash to the belief
-  params + shared trunk). **Fuzz:** `poke_env_gaps/belief_labels_fuzz_test.py` (real bridge battles against the Python env's emitted labels) was DELETED with the Python env core (U3); the label contract is held by the Rust label gates (`rust_env_label_inventory_test.py`, `utils/rust_env/label_columns_test.py`).
+  `battle2.team` (agent2's own full team). The hidden-slot mask is read **straight from the obs
+  vector's per-slot `species_known`** — single source of truth. The pure builder is
+  `agents.observation.belief_labels`. These keys are **training-only** (eval/self-play/inference never
+  declare/need them) and read ONLY by the loss — the model forward reads only `obs["observation"]`, so
+  the omniscient labels can't leak. **Fail-loud:** `_belief_labels` raises if the obs `species_known`
+  is not leading-contiguous (a broken encoder packing invariant), rather than mis-slotting
+  supervision; an out-of-vocab label id RAISES once per update on the buffer
+  (`belief_bank_static.check_label_vocab`).
+- **Loss — the `hidden_team_set` row** (`gen3_x5_hypothesis_set_v1`, X5 U2; design:
+  `designs/endstate/design_x5_belief_tokens.md` §3.2), at the `hidden_move` site on
+  `--opp-belief-aux-coef`. It folds three terms:
+  - **the presence BCE**: one binary indicator per candidate species (V = the dex table's valid nums
+    minus the revealed), on the T0 construction's EXACT logit `a + τ` (no clamp), summed over V and
+    divided by k (per unseen mon), averaged over the scored rows. It is δ_θ's ONLY gradient (π is
+    detached everywhere else). τ is computed under `no_grad`, which is the exact implicit gradient
+    because the labels count k;
+  - **BeliefHead re-targeted** to the same set BCE: its per-slot species logits reduced to the
+    hidden-slot MEAN, then the same fixed-size construction over the same V;
+  - **`moves_weight` × BeliefHead's moves BCE on hypothesis seats**: the seat holding hypothesis
+    species `h` is supervised iff `h` is on the true unseen team, against that mon's moveset
+    (`belief_moves`). No slot matching anywhere (unseen slots are exchangeable in gen 3).
 
-## X5's set supervision (`--belief-tokens fixed_mass`, the `hidden_team_set` row)
-
-`gen3_x5_hypothesis_set_v1` (X5 U2; design: `designs/endstate/design_x5_belief_tokens.md` §3.2). Under
-`--belief-tokens fixed_mass` the hidden-team supervision is a DIFFERENT row, gated EXCLUSIVELY against
-`hidden_team` (`MicroStatic.belief_set_on`, read off the extractor) and riding the same
-`--opp-belief-aux-coef`, so the blob arm's float-addition sequence is untouched. It folds three terms:
-- **the presence BCE**: one binary indicator per candidate species (V = the dex table's valid nums
-  minus the revealed), on the T0 construction's EXACT logit `a + τ` (no clamp), summed over V and
-  divided by k (per unseen mon), averaged over the scored rows. It is δ_θ's ONLY gradient (π is
-  detached everywhere else). τ is computed under `no_grad`, which is the exact implicit gradient
-  because the labels count k;
-- **BeliefHead re-targeted** to the same set BCE: its per-slot species logits reduced to the
-  hidden-slot MEAN, then the same fixed-size construction over the same V;
-- **`moves_weight` × BeliefHead's moves BCE on hypothesis seats**: the seat holding hypothesis
-  species `h` is supervised iff `h` is on the true unseen team, against that mon's moveset
-  (`belief_moves`). No slot matching anywhere.
-
-A row is scored iff 0 < k < n and its labels are consistent (every true unseen species is a
-candidate and they count exactly k); a live row with inconsistent labels is DROPPED and counted in
-`belief/set_presence_label_mismatch` (an under-6 team would land here). Metrics `belief/set_*`:
-`presence_bce`, `beliefhead_set_bce`, `hyp_moves_bce`, `hyp_recall` (the share of the true hidden mons
-the hypothesis list holds), `other_share` (OTHER's mass / k), `hyp_moves_supervised`, `aux_loss`. The
-arithmetic lives ONCE, static-shape, in `belief_bank_static.hypothesis_set_terms`;
-`belief_bank.hypothesis_set_loss` is its eager wrapper. Tests: `src/agents/model/hypothesis_set_test.py`.
+  A row is scored iff 0 < k < n and its labels are consistent (every true unseen species is a
+  candidate and they count exactly k); a live row with inconsistent labels is DROPPED and counted in
+  `belief/set_presence_label_mismatch` (an under-6 team would land here). The row contributes nothing
+  (a static absence) when the extractor built no hypothesis set. The arithmetic lives ONCE,
+  static-shape, in `belief_bank_static.hypothesis_set_terms`; `belief_bank.hypothesis_set_loss` is its
+  eager wrapper.
+- **Metrics (`belief/set_*` — the `belief/` TB prefix, not `train/`).** `presence_bce`,
+  `beliefhead_set_bce`, `hyp_moves_bce`, `hyp_recall` (the share of the true hidden mons the
+  hypothesis list holds), `other_share` (OTHER's mass / k), `presence_label_mismatch`,
+  `hyp_moves_supervised`, `aux_loss` (the unscaled row loss). The row emits no `mask_rate`. The other
+  belief heads emit `mask_rate` under their own prefix — the **uniform per-head coverage key**
+  (`gen3_belief_mask_rate_v1`: the fraction of the B×6 slot grid the head scored this minibatch;
+  `belief/spread_mask_rate`, `belief/natureev_mask_rate`, `belief/hptype_mask_rate`).
+- **The bank.** **ALL the supervised belief losses live in `belief_bank.py`** (the
+  design_unified_belief §4 code-shape fold, 2026-08-16): one declarative ROW per head
+  (stash/attr/obs/param arg spec · coef key · metric prefix · loss key) and `compute(site=…)` folds
+  each row at its train() position (`hidden_move` = the hidden-team set BCE + move-belief BCE ·
+  `latent` = move-latent grading · `revealed` = spread/nature-EV/hp-type/item) — the site tag is what
+  preserves the float-addition sequence, and a new supervised belief is a row, not a slice
+  (`belief_bank_test.py::test_sites_partition_the_registry` pins the partition). The learner folds the
+  STATIC twins (`belief_bank_static.compute_static`, region R1); `belief_bank_static_test.py` pins each
+  static row equal to its `belief_bank` function.
+- **Balance.** The row's term is registered under the probe name `species_belief_set`, which the
+  shared-trunk grad-balance probe's term list (`instrumented_ppo/ppo.py`: `species_belief`,
+  `move_belief`, …) does not name — so no `grad/species_belief*_share` is emitted for it; the
+  combined non-RL draw is still `grad/aux_share`.
+- **Coefficients.** `--opp-belief-aux-coef` and `--opp-belief-moves-weight` are **training-only**
+  (like `ent_coef`, NOT version-locked); the `opp_belief_slots` arch toggle they imply IS
+  version-checked, and `--opp-belief-aux-coef` is **read back from the saved config on a flagless
+  resume** (so a launcher restart preserves belief-ON instead of FATALing).
+- **Tests.** `src/agents/model/hypothesis_set_test.py` (the set BCE), `belief_bank_static_test.py`
+  (the static twin vs the eager wrapper on the K9 golden's real stashes),
+  `agents/observation/belief_labels_test.py`; the label contract is held by the Rust label gates
+  (`rust_env_label_inventory_test.py`, `utils/rust_env/label_columns_test.py`). An old run's
+  `belief/species_ce` / `species_acc` / `k_mean` / `coverage` / `mask_rate` tags came from the
+  Hungarian `hidden_team` row of the deleted blob belief; nothing emits them now.
 
 ## Move-belief reinjection loss (`--move-belief-mode` / `--move-belief-coef`)
 
@@ -108,10 +88,12 @@ v17). The predicted moveset is REINJECTED into the opp token (it flows to both h
   privileged-*known* moveset of a revealed mon; the `revealed`/`unrevealed` mode names refer to the MON.)
 - **Loss (`instrumented_ppo.py` `_move_belief_loss`).** Reads `last_move_belief_logits` + the move
   labels, folds `move_belief_coef · BCE` over two DISJOINT slot populations: **revealed** slots (direct
-  multi-label BCE on `known_moves` — slot==species, no matching) and **unrevealed** slots (order-invariant
-  Hungarian BCE on `belief_moves` — the believed slots are anonymous; cost is the assignment-relevant
-  `-(pred·target)`, a cheap einsum). `mode` selects which population(s) are scored. Mode is read off the
-  extractor (single source); coef is a model attr (training-only).
+  multi-label BCE on `known_moves` — slot==species, no matching) and **unrevealed** slots (X5's rule:
+  a hypothesis seat is supervised iff its species is on the true unseen team, against THAT mon's
+  `belief_moves` moveset — `hypothesis_set.hypothesis_moves_targets`). `mode` selects which
+  population(s) are scored. Mode is read off the extractor (single source); coef is a model attr
+  (training-only). The function still carries an order-invariant Hungarian branch for the unrevealed
+  population, taken only when the extractor has no hypothesis set.
 - **Metrics (`belief/move_*`).** `bce`, `precision`, `recall`, `revealed_slots`, `unrevealed_slots`,
   `loss`. The move-loss gradient ALSO reaches the trunk via the reinjection, so it is broken out on its
   own as `grad/move_belief_share` (+ `_norm_shared`/`_policy_cosine`) on the common trunk-pull total.
@@ -227,22 +209,23 @@ supervision.
 
 ## Opponent-class label weight (`--intent-label-bot-weight`, default 1.0 = OFF)
 
-`gen3_intent_label_bot_weight_v1` — a per-sample weight on the opponent-intent (α/β) LABELS
-produced against a heuristic **bot**; every other opponent class (pool / stable / exploiter) keeps
+`gen3_intent_label_bot_weight_v1` — a per-sample weight on the opponent-intent LABELS (the X5 flat
+pointer's) produced against a heuristic **bot**; every other opponent class (pool / stable / exploiter) keeps
 1.0. It exists because a bot's tendencies are not the meta's, and the curriculum guarantees the
 head meets them first: `heuristic_fraction` is **0% self-play below `SELF_PLAY_START`**, so a fresh
 generation trains 100% vs bots until the pool seeds. Measured on gen-11, supervised intent rows ran
 **100% bot at 2M and ~7% from 6M on** — and bot rows score differently (info gain 0.124 nats vs
-pool 0.254, accuracy flat ~0.50 all run). The risk this knob addresses is imprinting: α/β learning
-a decision tree during the ramp and carrying it into pool play.
+pool 0.254, accuracy flat ~0.50 all run — measured on the α head the flat pointer replaced). The
+risk this knob addresses is imprinting: the intent head learning a decision tree during the ramp
+and carrying it into pool play.
 
 **The mechanism.** It reuses the EXISTING identity source — the `opp_class` obs key
 (`gen3_opp_class_v1`), tagged once per episode by the opponent draw (`rust_env_opponents.EpisodeOpponentSampler`; formerly `MaskableAgentWrapper._select_episode_opponent`),
-emitted beside the α/β labels by the env core (formerly `Gen3Env._opp_intent_labels`),
+emitted beside the intent labels by the env core (formerly `Gen3Env._opp_intent_labels`),
 shifted with them by `align_labels_to_predictions`, and already read in `train()` for the
 stratified metrics. **No new obs key was added**; the key that splits the dashboards is now also
-the key that weights the loss. `agents.model.opp_intent.intent_losses` takes a `bot_label_weight`
-and folds it as
+the key that weights the loss. The intent fold (`instrumented_ppo/flat_intent_fold.py`,
+`flat_intent_fold_tensors`) takes a `bot_label_weight` and folds it as
 
 ```
 loss = Σ_i w_i · ce_i / n_sup        w_i = W on bot rows, 1.0 elsewhere
@@ -253,31 +236,32 @@ would make a 100%-bot minibatch identical to an unweighted one, i.e. do nothing 
 regime the knob exists for; with `n_sup` a `w ≡ 1` batch reproduces the plain mean, so the
 `--opp-intent-coef` semantics are untouched.
 
-**Composition with the masks.** The masks run FIRST. A row masked by `INTENT_IGNORE` (unmodeled
-seat, unrevealed β switch-in, non-switch decision) is dropped, and the weight multiplies only the
-survivors — a masked bot row contributes nothing at any weight, and `W = 0` legally means "score
+**Composition with the masks.** The masks run FIRST. A row masked by `INTENT_IGNORE` (a choice
+outside every candidate's support, a label on a dead candidate, a non-choice decision) is dropped —
+its logits replaced BEFORE the softmax, so it receives an exactly-zero gradient — and the weight
+multiplies only the survivors — a masked bot row contributes nothing at any weight, and `W = 0` legally means "score
 bot rows for the metrics, train on none of them".
 
-**It is confined to α/β and that is a design claim, not an oversight.** The other supervised
+**It is confined to the intent loss and that is a design claim, not an oversight.** The other supervised
 beliefs — species, move, item, spread, nature/EV, HP-type — are **team truth**: what the
 opponent's team IS does not depend on who is piloting it, so discounting a bot's rows there would
 throw away valid labels. Only INTENT is behaviour. The `belief_bank` rows never see `opp_class`
 (pinned by `opp_class_plumbing_test::test_only_the_intent_loss_takes_the_weight`).
 
-**Diagnostic: `opp_intent/label_bot_frac`** — the bot share of the α rows actually SUPERVISED this
-minibatch. The per-class `alpha_n_supervised_*` counts carry the same information but are gated on
-≥2 rows and are counts, so nothing reported the ratio. It is emitted **whether or not the weight is
+**Diagnostic: `opp_intent/label_bot_frac`** — the bot share of the intent rows actually SUPERVISED
+this minibatch. The per-class `flat_n_supervised_*` counts carry the same information but are gated
+on ≥2 rows and are counts, so nothing reported the ratio. It is emitted **whether or not the weight is
 set**, because the decision to set it is made off this number. The existing stratified metrics are
 untouched — they measure the head, and a weighted loss must not move an accuracy.
 
-**Default 1.0 is a deliberate no-op.** At 1.0 the original unweighted `cross_entropy` call is taken
-unchanged, so the loss is **bit-identical** (not merely close — pinned by exact equality over three
-opponent mixes). Lowering it is a **generation/fork decision, not this change**: it moves the
+**Default 1.0 is a deliberate no-op.** At 1.0 the unweighted reduction is taken unchanged, so the
+loss is **bit-identical** to a run without `opp_class` (not merely close — pinned by exact equality
+over three opponent mixes). Lowering it is a **generation/fork decision, not this change**: it moves the
 supervision distribution, so it belongs at a launch boundary where it can be attributed.
 
 **Pre-registered decision path.** Decide at the gen-16 launch, beside the B-move supervision call:
-run the fork A/B **W=1.0 vs W=0.25**, gated on **`opp_intent/alpha_acc_pool`** (the `_pool` suffix,
-never the bare key — the bare one is a moving mix). W=0.25 wins only if `alpha_acc_pool` is
+run the fork A/B **W=1.0 vs W=0.25**, gated on **`opp_intent/flat_acc_pool`** (the `_pool` suffix,
+never the bare key — the bare one is a moving mix). W=0.25 wins only if `flat_acc_pool` is
 non-inferior or better; a fall there means bot rows were carrying real signal and the knob goes
 back to 1.0. `label_bot_frac` sizes the manipulation before the arm is run — if it is already ~0 at
 the steps that matter, the arm is not worth a generation slot.
@@ -288,11 +272,10 @@ bump, not in `check_compatible`, no `check_*` of its own; recorded on `ModelVers
 like every `training_coef`-class flag. It is deliberately NOT in `agents/model/flag_registry.py` — that
 registry's scope is extractor architecture toggles, and this reaches the extractor not at all.
 
-Tests: `agents/model/intent_label_bot_weight_test.py` (bit-identity at 1.0 on every mix, the
-hand-computed weighted mean, the all-bot scale-down, non-bot classes never discounted, W=0 killing
-the gradient, proportional gradient scaling, mask composition on both axes, β taking the same
-per-row vector, `label_bot_frac`, the stratified metrics unmoved, the CLI/ModelVersion/migration
-legs) and `agents/training/opp_class_plumbing_test.py` (the whole `opp_class` chain, which nothing
+Tests: `agents/model/intent_label_bot_weight_test.py` (on the flat fold: bit-identity at 1.0 on
+every mix, the hand-computed weighted mean, the all-bot scale-down, non-bot classes never
+discounted, W=0 killing the gradient, proportional gradient scaling, mask composition, a NaN reaching
+the term only from a supervised row, `label_bot_frac`, the CLI/ModelVersion/migration legs) and `agents/training/opp_class_plumbing_test.py` (the whole `opp_class` chain, which nothing
 covered before it became load-bearing: the two hand-mirrored class tables agreeing, the wrapper tag
 per opponent kind, the reset-time push onto the env, the env emission, the one-ahead shift, the
 episode-boundary drop, buffer shuffle-alignment on a real rollout buffer (sb3-contrib's `MaskableDictRolloutBuffer` then; the owned `rollout_buffer.RolloutBuffer`, the same layout, since deletion pass U4), and the

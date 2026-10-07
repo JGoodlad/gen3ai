@@ -27,9 +27,10 @@ def checkpoints(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def foreign(tmp_path_factory):
-    """A seeded PERTURBED-fresh checkpoint of ANOTHER architecture — the production surface with X5's
-    ``--belief-tokens fixed_mass`` (a structural toggle: another state-dict signature and forward fingerprint) — in
-    its own ``run_h2h_foreign/`` beside its ``model_config.json``. The X5 A/B's own arm pair."""
+    """A seeded PERTURBED-fresh checkpoint of ANOTHER architecture — the production surface with
+    ``--token-encoding static`` (a structural toggle: another state-dict signature and forward fingerprint) — in its
+    own ``run_h2h_foreign/`` beside its ``model_config.json``. The static-vs-legacy screen's own arm pair (the X5 A/B's
+    ``fixed_mass`` x ``blob`` pair was this fixture until the X5 version break deleted ``blob``)."""
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
     from agents.model.snapshot import arch_toggles_from_model, current_model_version
     from agents.observation.state_encoder import load_mappings
@@ -40,7 +41,7 @@ def foreign(tmp_path_factory):
     dst = tmp_path_factory.mktemp("h2h_foreign") / "run_h2h_foreign"
     dst.mkdir()
     args = production_args()
-    args.belief_tokens = "fixed_mass"
+    args.token_encoding = "static"
     with PAR.declared_torch_state(1):
         model, _, _ = build_fresh_model(7, args=args)
         perturb_(model.policy, seed=2700, scale=PERTURB_SCALE)
@@ -53,9 +54,10 @@ def foreign(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def third(tmp_path_factory):
-    """A seeded PERTURBED-fresh checkpoint of a THIRD architecture — the production (``blob``) surface with
-    ``--move-prior-fusion`` OFF (a forward toggle: the same state-dict signature, another forward fingerprint) — in its
-    own ``run_h2h_third/``: an engine of the two X5 architectures cannot serve it."""
+    """A seeded PERTURBED-fresh checkpoint of a THIRD architecture — the production surface with
+    ``--op-believed-lean`` OFF (a forward toggle: the same state-dict signature, another forward fingerprint) — in its
+    own ``run_h2h_third/``: an engine of the other two architectures cannot serve it. (Not ``--move-prior-fusion`` OFF
+    any more: X5's T0 move mixture reads the fused prior, so production cannot build without it.)"""
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
     from agents.model.snapshot import arch_toggles_from_model, current_model_version
     from agents.observation.state_encoder import load_mappings
@@ -66,7 +68,7 @@ def third(tmp_path_factory):
     dst = tmp_path_factory.mktemp("h2h_third") / "run_h2h_third"
     dst.mkdir()
     args = production_args()
-    args.move_prior_fusion = False
+    args.op_believed_lean = False
     with PAR.declared_torch_state(1):
         model, _, _ = build_fresh_model(9, args=args)
         perturb_(model.policy, seed=2900, scale=PERTURB_SCALE)

@@ -299,12 +299,11 @@ def test_sort_head_margin_counts_only_genuine_adjacent_pi_pairs():
 
 # ----------------------------------------------------------------------------------- the real policy
 @pytest.fixture(scope="module")
-def arms():
+def x5():
+    """The production learner (X5's hypothesis tokens, the only belief representation), UNPERTURBED."""
     from agents.model.hypothesis_set_test import _unperturbed_learner
     from main.train.production_args import production_args
-    fm = production_args()
-    fm.belief_tokens = "fixed_mass"
-    return _unperturbed_learner(production_args()), _unperturbed_learner(fm)
+    return _unperturbed_learner(production_args())
 
 
 def _golden(n=64):
@@ -312,9 +311,9 @@ def _golden(n=64):
     return _obs_from_golden(n)
 
 
-def test_the_hypothesis_context_substitutes_rows_and_keeps_every_real_mask(arms):
+def test_the_hypothesis_context_substitutes_rows_and_keeps_every_real_mask(x5):
     from agents.model.hypothesis_tokens import hypothesis_ctx
-    _, m_fm = arms
+    m_fm = x5
     fe = copy.deepcopy(m_fm.policy).features_extractor
     obs = _golden()
     with torch.no_grad():
@@ -334,12 +333,12 @@ def test_the_hypothesis_context_substitutes_rows_and_keeps_every_real_mask(arms)
         assert torch.equal(getattr(hctx, name), getattr(ctx, name)), name
 
 
-def test_x5_reads_the_hypothesis_set_but_no_policy_or_value_gradient_reaches_delta_theta(arms):
+def test_x5_reads_the_hypothesis_set_but_no_policy_or_value_gradient_reaches_delta_theta(x5):
     """M10 extended to U3's consumers: δ_θ CHANGES the forward (π drives the key bias, the selection
     and OTHER), yet the PPO-side outputs put exactly zero gradient into it; the consumed X5 parameters
     (`hypothesis_marker`, OTHER's `other_rest` / `other_map`) DO receive gradient. Teeth: compute π from
     `logits` instead of its detached copy and the zero-gradient half fails."""
-    _, m_fm = arms
+    m_fm = x5
     pol = copy.deepcopy(m_fm.policy).eval()
     fe = pol.features_extractor
     hb = fe.hypothesis_builder

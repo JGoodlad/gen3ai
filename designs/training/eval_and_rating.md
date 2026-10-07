@@ -916,8 +916,9 @@ and builds no engine when nothing is left.
   version, the served state-dict signature and the forward fingerprint; a player's terminal against its group's first
   player's) BEFORE any engine is built, and DECLARES the engine from them: one T2 slot group per architecture, each with
   ONLY the slots its cells need (`player` = an eval slot, `opponent` = a sentinel slot), and one eval core per (player
-  group, opponent group) the cells use (a core's route table names the opponent's slot when it opens). The X5 cross
-  (`--players <fixed_mass seeds> --opponents <blob seeds>`) is therefore ONE engine of two one-slot groups and one core —
+  group, opponent group) the cells use (a core's route table names the opponent's slot when it opens). The X5 A/B's
+  cross (`--players <fixed_mass seeds> --opponents <blob seeds>`, played at its own pin — blob no longer builds at HEAD
+  since the X5 version break) is therefore ONE engine of two one-slot groups and one core —
   as many slots as a single-architecture engine. Single-cell `play` declares from its one cell, so it plays a cross cell
   too. A THIRD architecture, a side with no slot in its group, or an undeclared combination is `CellArchMismatch`, naming
   what differs from each group. **A same-architecture cell plays on the two-group engine exactly the games it plays on the

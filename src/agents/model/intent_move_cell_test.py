@@ -8,7 +8,7 @@ What must hold (design_conditional_execution.md §6 G3 + the house rules):
   * The alpha weighting is invariant under a joint permutation of (alpha's move seats, the
     per-candidate operand columns) — the axis is content-addressed, not positional.
   * An axis-width mismatch and a missing-alpha forward FAIL LOUD (the `op move-order` class).
-  * Under belief_grad_mode="label_only" no pointer-logit gradient reaches alpha_head's
+  * Under belief_grad_mode="label_only" no pointer-logit gradient reaches the intent pointer's
     parameters through this path (the v75 publish boundary).
 """
 import gymnasium as gym
@@ -20,9 +20,12 @@ from agents.model.arch_constants import INTENT_MOVE_CELL_DIM
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from utils.paths import run_skip_reason, trace_glob
 from agents.model.intent_move_cell import IntentMoveCell
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
-_ON_KWARGS = dict(
+# The opponent-belief family is ON (the intent readout needs it): since the X5 version break (v144) that is
+# X5's hypothesis tokens + the flat pointer, with every requirement they carry (`x5_surface_fixture`).
+_ON_KWARGS = x5_kwargs(
     attend_unrevealed_opponents=True, move_belief_mode="revealed", move_prior_fusion=True,
     move_latent=True, damage_op=True, damage_outgoing=True, damage_matrices_incoming=True,
     damage_topk_k=6, entity_topk_seats=6, opp_intent=True, intent_move_cell=True,
@@ -161,7 +164,7 @@ def test_switch_mass_shrinks_the_conditional_terms_toward_zero():
 
 
 # --------------------------------------------------------------- label_only publish boundary
-def test_label_only_cuts_the_ppo_route_into_alpha_head():
+def test_label_only_cuts_the_ppo_route_into_the_intent_pointer():
     fe, layout = _build(**{**_ON_KWARGS, "belief_grad_mode": "label_only"})
     fe.train()
     torch.nn.init.normal_(fe.intent_move_cell.proj.weight, std=0.5)  # make the path carry signal
@@ -170,12 +173,13 @@ def test_label_only_cuts_the_ppo_route_into_alpha_head():
     _tok, _mv, _team, mcells, _sc = fe.last_pointer_inputs
     loss = mcells[..., -INTENT_MOVE_CELL_DIM:].sum()
     loss.backward()
-    alpha_grads = [p.grad for p in fe.alpha_head.parameters() if p.grad is not None]
+    # since the X5 version break α is the FLAT pointer's re-expression: its head is `flat_intent_head`
+    alpha_grads = [p.grad for p in fe.flat_intent_head.parameters() if p.grad is not None]
     assert all(g.abs().max() == 0 for g in alpha_grads if g is not None) or not alpha_grads, \
-        "label_only must stop the pointer-path gradient at alpha's publication boundary"
+        "label_only must stop the pointer-path gradient at the intent pointer's publication boundary"
 
 
-def test_shaping_mode_lets_gradient_reach_alpha_head():
+def test_shaping_mode_lets_gradient_reach_the_intent_pointer():
     # Real states: random obs have no valid belief seats, so alpha's mass sits on SWITCH and
     # the gradient through the alpha-expectation is structurally zero regardless of the mode.
     fe, layout = _build(**{**_ON_KWARGS, "belief_grad_mode": "shaping"})
@@ -186,14 +190,16 @@ def test_shaping_mode_lets_gradient_reach_alpha_head():
     mcells = fe.last_pointer_inputs[3]
     mcells[..., -INTENT_MOVE_CELL_DIM:].sum().backward()
     got = any(p.grad is not None and p.grad.abs().max() > 0
-              for p in fe.alpha_head.parameters())
-    assert got, "under shaping the alpha head should be trainable through the live path"
+              for p in fe.flat_intent_head.parameters())
+    assert got, "under shaping the intent pointer should be trainable through the live path"
 
 
 # --------------------------------------------------------------------------- requirements
 def test_requires_opp_intent_and_damage_op():
-    with pytest.raises(ValueError, match="opp_intent"):
-        _build(**{**_ON_KWARGS, "opp_intent": False})
+    # the cell's OWN requirement, with the whole belief family off (X5 refuses opp_intent off alone,
+    # which would match "opp_intent" for a different reason)
+    with pytest.raises(ValueError, match="intent_move_cell=True requires opp_intent"):
+        _build(**{**_ON_KWARGS, "opp_intent": False, "opp_belief_slots": False})
     with pytest.raises(ValueError, match="damage_op"):
         _build(**{**_ON_KWARGS, "damage_op": False, "damage_outgoing": False,
                   "damage_matrices_incoming": False, "damage_topk_k": 0})

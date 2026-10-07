@@ -6,8 +6,8 @@ of the FOLD ORDER contract (`ppo.train`'s docstring; `src/agents/training/CLAUDE
 
   1. the upstream PPO loss: `policy_grad_coef · policy_loss + ent_coef · entropy + vf_term` (the fork
      mask, plain / clipped value loss);
-  2. the BELIEF bank's `hidden_move` site (hidden-team aux, move belief) → the OPPONENT-INTENT fold
-     (set-valued β, then α/β) → the `latent` site (move latent) → the `revealed` site (spread,
+  2. the BELIEF bank's `hidden_move` site (hidden-team set BCE, move belief) → the OPPONENT-INTENT
+     fold (the flat pointer CE) → the `latent` site (move latent) → the `revealed` site (spread,
      nature/EV, HP type, item);
   3a. the WIN-PROB BCE (the value loss under the win-prob critic, else an aux term).
 
@@ -70,14 +70,8 @@ class MicroStatic(NamedTuple):
     moves_weight: float
     intent_on: bool
     intent_coef: float
-    setvalued_on: bool
-    setvalued_coef: float
     bot_label_weight: float
     win_prob_on: bool
-    # gen3_x5_hypothesis_set_v1 (X5 U2): the extractor is `--belief-tokens fixed_mass`, so the
-    # hidden-team supervision is the set BCE row (`hidden_team_set`), not the Hungarian one. LAST,
-    # with a default, so every existing construction is unchanged.
-    belief_set_on: bool = False
 
 
 class MicroOut(NamedTuple):
@@ -224,19 +218,12 @@ def micro_step(policy: Any, obs: Dict[str, th.Tensor], actions: th.Tensor,
         return loss
 
     # ---- 2. the belief bank (hidden_move) -> opponent intent -> latent -> revealed ---------------
-    # gen3_x5_hypothesis_set_v1: `hidden_team` (blob) and `hidden_team_set` (fixed_mass) are EXCLUSIVE.
-    _bank("hidden_move", {"hidden_team": st.belief_aux_on and not st.belief_set_on,
-                          "hidden_team_set": st.belief_aux_on and st.belief_set_on,
-                          "move_belief": st.move_belief_on})
-    io = (intent_fold(fe, obs, intent_coef=st.intent_coef, setvalued_coef=st.setvalued_coef,
-                      setvalued_on=st.setvalued_on, bot_label_weight=st.bot_label_weight)
+    # gen3_x5_hypothesis_set_v1: the hidden-team supervision is X5's set BCE row (`hidden_team_set`);
+    # it is absent (no term) when the extractor built no hypothesis set.
+    _bank("hidden_move", {"hidden_team_set": st.belief_aux_on, "move_belief": st.move_belief_on})
+    io = (intent_fold(fe, obs, intent_coef=st.intent_coef, bot_label_weight=st.bot_label_weight)
           if st.intent_on else None)                     # None <=> the inline block was skipped
     if io is not None:
-        if st.setvalued_on:
-            loss = loss + io.setvalued_term
-            terms["opp_intent_setvalued"] = io.setvalued_term
-            groups["opp_intent_setvalued"] = "aux"
-            present["opp_intent_setvalued"] = io.setvalued_present
         loss = loss + io.intent_term
         # REGISTERED whenever the block ran — the inline fold's `opp_intent_term` existed (a 0.0
         # when nothing was supervised) and the grad-balance probe and K9(c) saw it.

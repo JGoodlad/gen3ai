@@ -8,6 +8,10 @@ head's own parameters (the positive control). The teeth control builds the same 
 detach and shows the gradient DOES reach the trunk, so the "no leak" assertion is not vacuous; and
 reverting the detach in `detached()` fails the first test.
 
+B is X5's: on the production (X5) policy its columns are the FLAT opponent pointer's (`fe.last_flat_intent`),
+its labels the column `flat_intent.flat_intent_targets` names (the learner's own construction,
+`instrumented_ppo/ridealong_terms.py`), and it centres under the flat α.
+
 THE RND VARIANTS (`gen3_ridealong_rnd_variants_v1`) are covered by the same three tests: every
 variant's loss leaks nothing (`fast` / `decay` / `small` read the observation, `feat` reads the
 detached value_pooled — the teeth control shows an UNdetached value_pooled carries `feat`'s gradient
@@ -62,21 +66,32 @@ def forward():
 
 
 def _batch_kwargs(pol, obs, masks):
-    """Run the forward the learner runs, and return the kwargs the learner hands `detached`."""
+    """Run the forward the learner runs, and return the kwargs the learner hands `detached` — B's FLAT
+    pointer inputs built as `ridealong_terms` builds them (`flat_intent_targets` on the Rust intent label).
+    The label: every row names the opponent's FIRST move seat (a MOVE of that num), so each row with a
+    live first seat is a B label — asserted, never assumed."""
+    from agents.model.flat_intent import flat_intent_targets
+    from agents.model.opp_intent import INTENT_IGNORE
+
     pi_mask = masks.numpy()
     actions = th.tensor([int(np.flatnonzero(m)[0]) for m in pi_mask])
     values, _, _ = pol.evaluate_actions(obs, actions, action_masks=pi_mask)
     fe = pol.features_extractor
     dist = pol._last_pi_distribution
     n = values.shape[0]
+    fi = fe.last_flat_intent
+    assert fi is not None and fe.last_flat_intent_logits is not None, "the X5 forward stashed no flat pointer"
+    kind = th.zeros(n, 1)
+    num = fi.seat_nums[:, :1].float()
+    flat_target, _ = flat_intent_targets(fi, kind, num, th.full((n, 1), -1.0), th.zeros(n, 1))
+    assert int((flat_target != INTENT_IGNORE).sum()) >= 4, flat_target      # B has labels to train on
     return dict(obs=obs["observation"], pooled=fe.last_value_pooled,
                 pointer=tuple(fe.last_pointer_inputs), pi=dist.distribution.probs,
                 logits=dist.distribution.logits, legal=dist.distribution.probs > 0,
                 values=values, actions=actions,
                 advantages=values.reshape(-1) * 0.3 - 0.1,        # graph-carrying on purpose
                 win_target=(th.arange(n) % 2).float(), win_mask=th.ones(n),
-                alpha_logits=fe.last_alpha_logits, alpha_seat_nums=fe.last_alpha_seat_nums,
-                opp_kind=(th.arange(n) % 2).long(), opp_num=th.zeros(n, dtype=th.long))
+                flat_logits=fe.last_flat_intent_logits, flat_ids=fi.cand_ids, flat_target=flat_target)
 
 
 def _core_params(pol):
@@ -234,15 +249,21 @@ def test_the_bootstrap_hash_is_a_per_STATE_bit_independent_of_the_minibatch():
     assert float((m[:, 0] == m[:, 1]).float().mean()) < 0.6
 
 
-def test_CENTRING_A_under_pi_and_B_under_alpha(forward):
+def test_CENTRING_A_under_pi_and_B_under_the_flat_alpha(forward):
     pol, obs, masks = forward
     b = RideAlongBatch.detached(**_batch_kwargs(pol, obs, masks))
     out = pol.ridealong.readout(b)
     s_a = (out["adv"] * b.pi[:, None, :]).sum(-1)
     assert float(s_a.abs().max()) < 1e-5
-    alpha = th.softmax(b.alpha_logits.float(), -1)
+    # B's columns ARE the flat pointer's (K seats · OTHER_move · six slots · OTHER_species), centred
+    # under its distribution (a masked candidate's −inf logit gives it zero weight)
+    assert out["opp"].shape[-1] == b.flat_logits.shape[-1] == pol.features_extractor.entity_topk_seats + 8
+    alpha = th.softmax(b.flat_logits.float(), -1)
     s_b = (out["opp"] * alpha[:, None, :]).sum(-1)
     assert float(s_b.abs().max()) < 1e-5
+    # ... and the centring is not vacuous: the raw (uncentred) members' α-mean is NOT zero
+    raw = pol.ridealong.opp(b.pooled, b.flat_ids)
+    assert float((raw * alpha[:, None, :]).sum(-1).abs().max()) > 1e-4
     # Untrained members differ ONLY by their randomized priors — and do differ (per-action spread).
     assert float(out["adv_std"][b.legal].mean()) > 0
     assert float(out["ens_std"].mean()) > 0
@@ -269,9 +290,18 @@ def test_the_spec_and_the_dependencies():
         from agents.model.ridealong_heads import validate_spec
         validate_spec(RideAlongSpec(ensemble=13))
     assert not RideAlongSpec().any and RideAlongSpec(rnd=True).any
+    # B exists only over X5's flat pointer: the blob arm's B over α's support was deleted at the version
+    # break, so a B spec with no flat pointer is REFUSED (never a silent alternative head)
+    with pytest.raises(ValueError, match="FLAT opponent pointer"):
+        validate_spec(RideAlongSpec(opp=2))
+    validate_spec(RideAlongSpec(opp=2, opp_flat_k=4))
+    pol, _ = _policy()
+    from agents.model.ridealong_heads import FlatOppEffectEnsemble
+    assert isinstance(pol.ridealong.opp, FlatOppEffectEnsemble)
+    assert pol.ridealong.spec.opp_flat_k == pol.features_extractor.entity_topk_seats
 
 
-def test_the_version_gate_refuses_a_flip_and_the_migration_defaults_off():
+def test_the_version_gate_refuses_a_flip_and_a_pre_break_config_is_refused():
     import dataclasses
 
     from agents.model.model_version import ModelVersionError
@@ -293,12 +323,19 @@ def test_the_version_gate_refuses_a_flip_and_the_migration_defaults_off():
         on.check_compatible(base)
     with pytest.raises(ModelVersionError, match="ridealong_rnd_variants"):
         dataclasses.replace(base, ridealong_rnd_variants="fast").check_compatible(on)
+    # the fields are RECORDED: a config at the current version carrying them migrates verbatim
+    rec = dict(dataclasses.asdict(base), ridealong_ensemble=5, ridealong_rnd=True, ridealong_adv=5,
+               ridealong_opp=5, ridealong_rnd_variants="fast,decay,small,feat")
+    got = _migrate_config(dict(rec))
+    assert {k: got[k] for k in rec if k.startswith("ridealong_")} == \
+        {k: v for k, v in rec.items() if k.startswith("ridealong_")}
+    assert got["config_version"] == MODEL_CONFIG_VERSION
+    # a config from before the heads existed (v125) predates the X5 version break's MIGRATION_FLOOR: the
+    # migration that defaulted them OFF is unreachable, and the config is REFUSED
     old = {k: v for k, v in dataclasses.asdict(base).items() if not k.startswith("ridealong_")}
     old["config_version"] = 125
-    new = _migrate_config(old)
-    assert (new["ridealong_ensemble"], new["ridealong_rnd"], new["ridealong_adv"],
-            new["ridealong_opp"], new["ridealong_rnd_variants"],
-            new["config_version"]) == (0, False, 0, 0, "off", MODEL_CONFIG_VERSION)   # the migration runs to the CURRENT version
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(old)
 
 
 # ── the RND variant ensemble (gen3_ridealong_rnd_variants_v1) ────────────────────────────────────

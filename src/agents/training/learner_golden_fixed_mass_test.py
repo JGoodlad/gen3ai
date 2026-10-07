@@ -1,22 +1,22 @@
-"""K9(a) THE LEARNER GOLDEN's SECOND entry: ``--belief-tokens fixed_mass`` (X5 U6; design §6, §8.3).
+"""K9(a) THE LEARNER GOLDEN on X5's fixed-mass hypothesis tokens (X5 U6; design §6, §8.3) — the production
+surface since the X5 VERSION BREAK (config v144), whose entry this golden's default slot holds VERBATIM.
 
-The blob entry (`learner_golden_test`) proves the default surface UNCHANGED; this file proves the X5
-arm's update is pinned AND that the pin is about the right thing — correct, not merely new:
+`learner_golden_test` holds the generic properties (reproduces, has teeth, never records); this file proves
+the X5 update is pinned AND that the pin is about the right thing — correct, not merely new:
 
-* REPRODUCES: one eager fp32 ``train()`` of the arm's seeded learner (production + the lever, name-keyed
-  perturbation) on its OWN committed buffer reproduces every recorded hash — initial (whole and per group),
-  post-update (whole and per group) — and every pinned loss EXACTLY; with K9(b) ON (``fatal``) it still
-  does, and the behaviour probe passes with its rule-8 excluded share under the ceiling.
-* NOT VACUOUS: the X5 loss keys are logged and nonzero, α / β's are absent, every X5 group moved.
-* NON-X5 INIT = BLOB's: every group both arms share has the same INITIAL bytes as the blob arm built
-  with the same name-keyed noise (X5's modules are built from isolated generators).
+* REPRODUCES: one eager fp32 ``train()`` of the seeded learner (name-keyed perturbation) on the committed
+  buffer reproduces every recorded hash — initial (whole and per group), post-update (whole and per group)
+  — and every pinned loss EXACTLY; with K9(b) ON (``fatal``) it still does, and the behaviour probe passes
+  with its rule-8 excluded share under the ceiling.
+* NOT VACUOUS: the X5 loss keys are logged and nonzero, α / β's are absent, every X5 group moved, and the
+  deleted blob path's groups (the retired α / β heads, BeliefSlots) are absent.
 * fp64: the fp32 micro-step agrees with the same arithmetic at fp64 within the declared tolerances,
   and the recorded fp64 reference reproduces; an fp32-only defect FAILS it.
 * INDEPENDENT fp64 numpy references of the construction on the golden rows (Σπ = k, the root-find,
   OTHER's masked bias iff its tail is empty).
 * TEETH: a bias in the hypothesis builder's construction, the log-π key bias's sign, OTHER's column, the
-  flat pointer's mask — each FAILS the fixed_mass golden naming X5 groups, never the INIT; together they
-  leave the blob golden byte-identical; a blob-only plant (α's head) fails blob and leaves fixed_mass.
+  flat pointer's mask — each FAILS the golden naming X5 groups, never the INIT; a plant on the RETIRED α
+  head (the deleted blob path's intent readout) leaves it byte-identical — the head is never called.
 * ISOLATION at golden level: with the set BCE's logits detached δ_θ does not move at all (it learns
   from the presence BCE alone, M10); the B ride-along on the flat pointer is bit-identical to learning.
 
@@ -33,9 +33,9 @@ import torch as th
 from agents.training import learner_golden as L
 from agents.training import learner_golden_fp64 as F64
 
-ARM = "fixed_mass"
-#: Parameter groups only one arm has (depth-2 names, `group_sha256`).
+#: X5's own parameter groups (depth-2 names, `group_sha256`).
 X5_GROUPS = ("features_extractor.hypothesis_builder", "features_extractor.flat_intent_head")
+#: The deleted blob path's groups: never in the state_dict (α / β retired by the policy, BeliefSlots discarded).
 BLOB_ONLY_GROUPS = ("features_extractor.alpha_head", "features_extractor.beta_head",
                     "features_extractor.belief_slots")
 DELTA_PREFIX = "features_extractor.hypothesis_builder.delta_"
@@ -47,12 +47,12 @@ def _delta(model):
 
 @pytest.fixture(scope="module")
 def golden():
-    """The arm's golden, with K9(b) ON: (diffs, fingerprint, behaviour read, δ_θ before / after, model)."""
-    entry = L.arm_entry(ARM)
-    model = L.build_arm_learner(ARM)
+    """The golden, with K9(b) ON: (diffs, fingerprint, behaviour read, δ_θ before / after, model)."""
+    entry = L.entry()
+    model = L.build_learner()
     model.behaviour_check = "fatal"
     d0 = _delta(model)
-    diffs, now = L.check_arm(ARM, model)
+    diffs, now = L.check(model)
     beh = {k[len("behaviour/"):]: float(v) for k, v in model.logger.name_to_value.items()
            if k.startswith("behaviour/")}
     return dict(entry=entry, diffs=diffs, now=now, beh=beh, d0=d0, d1=_delta(model))
@@ -61,7 +61,7 @@ def golden():
 def test_the_fixed_mass_update_reproduces_its_golden_exactly_with_K9b_on(golden):
     assert not golden["diffs"], (
         "the fixed_mass learner golden MOVED:\n  " + "\n  ".join(golden["diffs"])
-        + "\nIf intended: python -m agents.training.learner_golden record --arm fixed_mass --reason \"...\"")
+        + "\nIf intended: python -m agents.training.learner_golden record --reason \"...\"")
 
 
 def test_K9b_passes_on_the_fixed_mass_entry_with_the_excluded_share_under_its_ceiling(golden):
@@ -87,34 +87,20 @@ def test_the_fixed_mass_entry_is_not_vacuous(golden):
     assert any(not th.equal(golden["d0"][n], golden["d1"][n]) for n in golden["d0"])
 
 
-def test_every_shared_group_starts_from_blobs_initial_bytes():
-    """X5's modules are built from isolated generators and α / β retired after SB3's draws, so with the
-    same NAME-KEYED noise every group both arms have starts byte-identical. Order-keyed noise would move
-    every group after the first added / retired parameter — the reason the arm perturbs by name."""
-    entry = L.arm_entry(ARM)
-    blob = L.build_learner(perturb_keyed=True)
-    bg = L.group_sha256(blob)
-    shared = sorted(set(bg) & set(entry["init_group_sha256"]))
-    assert set(entry["init_group_sha256"]) - set(shared) == set(X5_GROUPS)
-    assert set(bg) - set(shared) == set(BLOB_ONLY_GROUPS)
-    moved = [g for g in shared if bg[g] != entry["init_group_sha256"][g]]
-    assert moved == [], moved
-
-
-def test_the_arm_buffer_covers_every_x5_case_design_6_4():
+def test_the_buffer_covers_every_x5_case_design_6_4():
     """design §6.4: the buffer must hold >= `MIN_CASE_ROWS` rows of every X5 case — OTHER_species live and
     dead, OTHER_move live and dead (an active with four revealed moves), a hypothesis — or the golden pins
     a branch it never ran. The counts are the recorded ones."""
-    cov = L.arm_coverage(ARM)
-    assert cov == L.arm_entry(ARM)["coverage"]
+    cov = L.coverage()
+    assert cov == L.entry()["coverage"]
     thin = {k: v for k, v in cov.items() if k != "near_tie_rows" and v < L.MIN_CASE_ROWS}
     assert not thin, thin
 
 
 # ------------------------------------------------------------------------------------------- fp64
 def test_the_fp32_micro_step_agrees_with_fp64_within_the_declared_tolerances_and_reproduces():
-    entry = L.arm_entry(ARM)
-    ref = F64.reference(L.build_arm_learner(ARM), L.arm_buffer(ARM))
+    entry = L.entry()
+    ref = F64.reference(L.build_learner(), L.BUFFER_PATH)
     assert F64.violations(ref) == [], F64.violations(ref)
     assert ref["grads_absent"] == [] and len(ref["grads"]) == len(F64.KEY_GRADS)
     rec = entry["fp64_reference"]
@@ -138,7 +124,7 @@ def test_the_fp64_reference_has_teeth_an_fp32_only_defect_fails_it(monkeypatch):
         return orig(logits, target, mask, margin)
 
     monkeypatch.setattr(MS, "win_prob_terms", fp32_only)
-    bad = F64.violations(F64.reference(L.build_arm_learner(ARM), L.arm_buffer(ARM)))
+    bad = F64.violations(F64.reference(L.build_learner(), L.BUFFER_PATH))
     assert any(v.startswith("term win_prob") for v in bad), bad
 
 
@@ -147,8 +133,8 @@ def test_independent_fp64_numpy_references_of_the_construction_on_the_golden_row
     species group and Σπ = 4 − r for the active's moves; π equals a DIRECT fp64 numpy root-find of
     Σσ(a + τ) = k; OTHER's log-mass is the masked −1e9 iff its tail is empty."""
     from agents.model.hypothesis_set import MASKED_LOG_PRESENCE
-    model = L.build_arm_learner(ARM)
-    data = L.load_buffer_into(model, L.arm_buffer(ARM))
+    model = L.build_learner()
+    data = L.load_buffer_into(model, L.BUFFER_PATH)
     n = L.N_STEPS * L.N_ENVS
     obs = {k[4:]: th.as_tensor(v.reshape(n, *v.shape[2:])) for k, v in data.items() if k.startswith("obs:")}
     fe = model.policy.features_extractor
@@ -226,36 +212,40 @@ PLANTS = {"tau_bias": _plant_tau_bias, "logpi_sign": _plant_logpi_sign, "other_c
 
 
 @pytest.mark.parametrize("plant", sorted(PLANTS))
-def test_TEETH_each_planted_x5_perturbation_fails_the_fixed_mass_golden(plant, monkeypatch):
+def test_TEETH_each_planted_x5_perturbation_fails_the_golden(plant, monkeypatch):
     PLANTS[plant](monkeypatch)
-    diffs, _now = L.check_arm(ARM)
-    assert diffs, f"the planted {plant} perturbation did not move the fixed_mass golden"
+    diffs, _now = L.check()
+    assert diffs, f"the planted {plant} perturbation did not move the golden"
     assert not any(d.startswith("the INIT moved") for d in diffs), "a forward plant must not move the init"
     assert any(d.startswith("post_params_sha256") for d in diffs), diffs
     moved = next(d for d in diffs if d.startswith("parameter groups whose post-update bytes moved"))
     assert any(g in moved for g in X5_GROUPS), moved
 
 
-def test_TEETH_the_x5_plants_together_leave_the_blob_golden_byte_identical(monkeypatch):
-    for plant in PLANTS.values():
-        plant(monkeypatch)
-    diffs, _now = L.check()
-    assert diffs == [], diffs
-
-
 def _plant_alpha_head(monkeypatch):
-    """A blob-only plant: α's head (retired under fixed_mass) emits logits + 1e-2."""
+    """A plant on the deleted blob path's intent readout: α's head (constructed for its init draws, then
+    retired by the policy) emits logits + 1e-2 — and a RuntimeError if it is called at all."""
     from agents.model.opp_intent import AlphaIntentHead
     orig = AlphaIntentHead.forward
-    monkeypatch.setattr(AlphaIntentHead, "forward", lambda self, *a, **k: orig(self, *a, **k) + 1e-2)
+    calls = []
+
+    def planted(self, *a, **k):
+        calls.append(1)
+        return orig(self, *a, **k) + 1e-2
+
+    monkeypatch.setattr(AlphaIntentHead, "forward", planted)
+    return calls
 
 
-def test_TEETH_a_blob_only_plant_fails_blob_and_leaves_fixed_mass_byte_identical(monkeypatch):
-    _plant_alpha_head(monkeypatch)
-    d_blob, _ = L.check()
-    assert any(d.startswith("post_params_sha256") for d in d_blob), d_blob
-    d_fm, _ = L.check_arm(ARM)
-    assert d_fm == [], d_fm
+def test_TEETH_the_retired_alpha_head_is_never_called_and_moves_nothing(monkeypatch):
+    """The X5 version break deleted the α / β readout: the heads are CONSTRUCTED (their init draws) and
+    RETIRED before the optimizer, so a plant on α's forward is never reached and the golden is
+    byte-identical. FAILS if α is re-wired into the forward or the loss (the blob path coming back)."""
+    calls = _plant_alpha_head(monkeypatch)
+    model = L.build_learner()
+    assert model.policy.features_extractor.alpha_head is None
+    d, _ = L.check(model)
+    assert d == [] and calls == [], (d, len(calls))
 
 
 # -------------------------------------------------------------------------------------- isolation
@@ -266,23 +256,24 @@ def test_delta_theta_learns_from_the_set_BCE_alone_at_golden_level(monkeypatch):
     from agents.model import hypothesis_set as HS
     orig = HS.set_bce
     monkeypatch.setattr(HS, "set_bce", lambda logits, *a, **k: orig(logits.detach(), *a, **k))
-    model = L.build_arm_learner(ARM)
+    model = L.build_learner()
     d0 = _delta(model)
-    L.compute(model, buffer=L.arm_buffer(ARM))
+    L.compute(model)
     d1 = _delta(model)
     assert d0 and all(th.equal(d0[n], d1[n]) for n in d0), [n for n in d0 if not th.equal(d0[n], d1[n])]
 
 
 def test_the_B_ride_along_on_the_flat_pointer_is_bit_identical_to_learning_at_golden_level():
-    """U4's proof on the golden: the arm + B (`--ridealong-opp 2`) — every recorded group's initial and
+    """U4's proof on the golden: production + B (`--ridealong-opp 2`) — every recorded group's initial and
     post-update bytes and every pinned loss equal the entry's; B's own groups and loss are the only additions,
     and B trained."""
-    entry = L.arm_entry(ARM)
-    args = L.arm_args(ARM)
+    from main.train.production_args import production_args
+    entry = L.entry()
+    args = production_args()
     args.ridealong_opp = 2
-    model = L.build_arm_learner(ARM, args=args)
+    model = L.build_learner(args=args)
     assert model.policy.ridealong is not None and model.policy.ridealong.opp is not None
-    now = L.compute(model, buffer=L.arm_buffer(ARM))
+    now = L.compute(model)
     extra = sorted(set(now["group_sha256"]) - set(entry["group_sha256"]))
     assert extra and all(g.startswith("ridealong") for g in extra), extra
     for key in ("init_group_sha256", "group_sha256"):

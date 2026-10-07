@@ -45,7 +45,9 @@ def _forward(pol, rows, masks):
     rd = types.SimpleNamespace(
         observations={**obs, "win_target": (th.arange(n) % 2).float()[:, None],
                       "win_mask": th.ones(n, 1), "opp_action_kind": th.ones(n, 1),
-                      "opp_action_num": th.zeros(n, 1), "opp_class": th.zeros(n, 1)},
+                      "opp_action_num": th.zeros(n, 1), "opp_class": th.zeros(n, 1),
+                      # the flat B's label (`flat_intent_targets`) reads the switch target: a switch to slot 0
+                      "opp_switch_slot": th.zeros(n, 1), "opp_switch_species": th.zeros(n, 1)},
         advantages=th.linspace(-0.2, 0.2, n))
     return rd, values, actions
 

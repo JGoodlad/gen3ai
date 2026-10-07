@@ -40,12 +40,15 @@ from agents.model.pair_outcome import rapid_spin_num
 from agents.model.switch_branch import (
     SWITCH_BRANCH_COORDS, SWITCH_BRANCH_IDX, SwitchBranchMoveCell, _PROTECT_ONLY,
 )
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
-_BASE_KWARGS = dict(
+# The cell REQUIRES the intent head (α_SWITCH and β), and since the X5 version break (v144) the intent
+# head is X5's flat pointer: the opponent-belief family ON with every requirement it carries.
+_BASE_KWARGS = x5_kwargs(
     attend_unrevealed_opponents=True, move_belief_mode="revealed", move_prior_fusion=True,
     move_latent=True, damage_op=True, damage_outgoing=True, damage_matrices_incoming=True,
-    damage_matrices_outgoing=True, damage_topk_k=6, entity_topk_seats=6, opp_intent=True,
+    damage_matrices_outgoing=True, damage_topk_k=6, entity_topk_seats=6,
 )
 _ON_KWARGS = {**_BASE_KWARGS, "switch_branch_cell": True}
 
@@ -429,8 +432,10 @@ def test_requires_the_intent_head_because_alpha_SWITCH_and_beta_have_no_fallback
     would be identically 0 and every coordinate here would assert "they never switch" — a claim,
     not an absence. A flag whose fallback silently states something false is worse than one that
     says it needs the head."""
-    with pytest.raises(ValueError, match="opp_intent"):
-        _build(**{**_ON_KWARGS, "opp_intent": False})
+    # the cell's OWN refusal, with the whole belief family off (X5 refuses opp_intent off alone, which
+    # would match "opp_intent" for a different reason)
+    with pytest.raises(ValueError, match="switch_branch_cell=True requires opp_intent"):
+        _build(**{**_ON_KWARGS, "opp_intent": False, "opp_belief_slots": False})
 
 
 def test_requires_the_outgoing_matrix():
@@ -526,7 +531,9 @@ def test_the_module_is_drawn_with_edges_when_it_is_ON():
         fe = build_extractor(path)[0]
     vias = " ".join(str(e.get("via", "")) for e in graph["edges"])
     assert "SwitchBranchMoveCell" in vias, "the module is ON and draws no edge"
-    # β must be drawn reaching the move logits — OA2's whole subject is what they bring in
-    assert any(str(e["src"]) == "beta_head" and str(e["dst"]).startswith("pointer.move_logit")
+    # β (the flat pointer's beta re-expression, X5) must be drawn reaching the move logits — OA2's
+    # whole subject is what they bring in
+    assert any(str(e["src"]) == "flat_intent_head" and str(e["dst"]).startswith("pointer.move_logit")
+               and "beta" in str(e.get("via", "")) and "SwitchBranchMoveCell" in str(e.get("via", ""))
                for e in graph["edges"])
     assert not module_coverage(fe, graph)

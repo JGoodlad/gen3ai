@@ -133,7 +133,7 @@ class ExtractorForward(ExtractorApi):
         one every consumer reads (`last_move_belief_logits`) — is already typed. The reinjection then
         soft-embeds REAL typed moves rather than the typeless 237 row.
 
-        `hctx` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only): the hypothesis context —
+        `hctx` (gen3_x5_belief_tokens_v1, X5 only): the hypothesis context —
         a hidden slot holds a CONCRETE species hypothesis, so the move head's prior is THAT species'
         Smogon row (the E10 mixture over the T0 posterior is the blob's stand-in for a hidden slot and
         is not used), and the HP-type head reads the same species. The slot-selection mask and the
@@ -145,7 +145,7 @@ class ExtractorForward(ExtractorApi):
         P(t)) instead of its sigmoid inclusion weights — M10's rule, so RL cannot tune the move belief as a
         gate there. The move head keeps training through its own BCE; what is lost is the PPO → move-head
         route through the ACTIVE's reinjection (the other slots' rows keep it). Returns the move-group-
-        attached set and its `FixedMassMoves` (None, None under blob)."""
+        attached set and its `FixedMassMoves` (None, None with the belief family off)."""
         sctx = hctx if hctx is not None else ctx                 # where the SPECIES / move ids come from
         if self.move_belief_mode == "revealed":
             mb_mask = ~ctx.opp_believed_mask                 # revealed-species slots
@@ -444,13 +444,11 @@ class ExtractorForward(ExtractorApi):
         self.stash.opp_believed_mask = ctx.opp_believed_mask
         self.stash.opp_active_local = ctx.opp_active_local   # for the prober's belief-row decode
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
-        # gen3_x5_belief_tokens_v1 (X5 U3, `--belief-tokens fixed_mass` only; blob runs NONE of this):
-        # the hypothesis set's SPECIES half (δ_θ reads the PRE-belief opponent role tokens — the
-        # revealed ones), then the hypothesis TOKENS: THE `pokemon_encoder` on the hypothesis context
-        # (hidden slots' rows = their dex rows; every mask the REAL one) + `hypothesis_marker`,
-        # spliced into the hidden opponent slots. `BeliefSlots` is retired in this arm (its constant
-        # per-position token is exactly what X5 replaces); the module stays built so both arms share
-        # every non-X5 parameter, and it receives no gradient here.
+        # gen3_x5_belief_tokens_v1 (X5 U3; built with the belief family): the hypothesis set's SPECIES
+        # half (δ_θ reads the PRE-belief opponent role tokens — the revealed ones), then the hypothesis
+        # TOKENS: THE `pokemon_encoder` on the hypothesis context (hidden slots' rows = their dex rows;
+        # every mask the REAL one) + `hypothesis_marker`, spliced into the hidden opponent slots. (The
+        # blob path's constant per-position `BeliefSlots` token is DELETED, v144.)
         _hs: Optional[HypothesisSet] = None
         _hctx: Optional[ExtractorContext] = None
         if self.hypothesis_builder is not None:
@@ -469,11 +467,6 @@ class ExtractorForward(ExtractorApi):
                                                       _hs.slot_species, self.hypothesis_builder.dex_rows)
             role_tokens = splice_hypothesis_tokens(role_tokens, _opp_hyp, _hs,
                                                    self.hypothesis_builder.hypothesis_marker)
-        # In-place hidden-opponent belief: replace the un-revealed opp slots with distinct learned
-        # unknown-mon tokens BEFORE the transformer, so the body refines them and every readout
-        # attends over them as party members (flag-guarded; None ⇒ baseline zeros).
-        elif self.belief_slots is not None:
-            role_tokens = self.belief_slots(role_tokens, ctx.opp_believed_mask)
         # T0 RESOLVE — the move belief (gen3_tiered_pipeline_v1). Reinject the predicted opp moveset
         # into the opp ROLE tokens BEFORE the transformer, so the believed moves co-refine with the
         # species/team belief through the attention layers. The logits are stashed here; every
@@ -485,7 +478,7 @@ class ExtractorForward(ExtractorApi):
             self.stash.move_belief_logits = _mb_logits
             role_tokens = torch.cat([role_tokens[:, :TEAM_SIZE], opp_role], dim=1)
         # T0 RESOLVE — X5's hypothesis set: the opponent ACTIVE's move group joins the species half
-        # (fixed_mass only; None under blob).
+        # (X5 only; None with the belief family off).
         # X5 U3 part 2: the opponent active's move axis — ONE order for the E4 seats, the op's top-K /
         # pair cells / α seats and the D3 / S3 cells; the fixed-mass π_m as the op's class-M candidate
         # weights (DETACHED, M10). Built inside `_apply_move_belief` (part 3: the active's reinjection
@@ -765,74 +758,13 @@ class ExtractorForward(ExtractorApi):
         # token every pool reads; the op cells are the same post-gain numbers the projection heads
         # consume (width-0 when the op is off — the head's Linears are built correspondingly
         # narrower, never silently zero-padded).
-        # gen3_opp_intent_v1: ALPHA (which of their believed moves will they click, or SWITCH) and
-        # BETA (if they switch, to whom). Both are POINTER heads over objects that already exist —
-        # alpha over the E4 believed-threat seats, beta over their six team tokens — so both are
-        # equivariant under permuting what they point at. Supervision-only: the input is DETACHED, so
-        # a null result says "the head cannot predict the opponent", not "predicting the opponent
-        # perturbed the policy". Stashed for the loss + the prober; never fed forward.
-        if self.alpha_head is not None:
-            _K = self.entity_topk_seats
-            _cand = self.entity_seats.last_cand
-            if _cand is None:
-                raise RuntimeError(
-                    "opp_intent is on but the E4 seat builder stashed no candidate selection — "
-                    "alpha's seats and its move-num labels would come from different selections.")
-            # gen3_intent_grad_mode_v1. `detached` (default) keeps alpha/beta pure SUPERVISION:
-            # a null then says "the head cannot predict the opponent", not "predicting the opponent
-            # perturbed the policy" — two very different findings, and the detach is what keeps
-            # them apart. `shaping` lets the intent gradient into the trunk, which is the regime
-            # step 6 needs (a reduction weighted by alpha is only as good as alpha's read of THIS
-            # board) and buys the opposite risk: the aux objective can now fight the RL one. That
-            # is why `grad/opp_intent_policy_cosine` ships WITH this flag rather than after it — a
-            # persistently negative cosine means the two objectives disagree about the trunk, and
-            # without the number a shaping run would just look like a slow one.
-            _keep = self.opp_intent_grad_mode == "shaping"
-            _seat_feats = _seat_out[:, 4:4 + _K, :]                                # [B,K,D]
-            _ictx = torch.cat([our_team_pooled, their_team_pooled], dim=-1)
-            if not _keep:
-                _seat_feats, _ictx = _seat_feats.detach(), _ictx.detach()
-            _seat_nums = _cand[0]                                                  # [B,K] move NUMS
-            self.stash.alpha_seat_nums = _seat_nums.detach()
-            _seat_valid = ((_seat_nums > 0).float() if _fm is None
-                           else _fm.seat_on.float())        # X5: a seat that carries mass (structural)
-            _alpha = self.alpha_head(_seat_feats, _ictx, seat_valid=_seat_valid)
-            # gen3_belief_label_only_v1: alpha is a pure readout UNTIL `--intent-value-reduce`, which
-            # appends an alpha-weighted threat term to the CRITIC half (below) — that flag is what makes
-            # the value gradient able to reach `alpha_head`, and therefore what puts alpha in the
-            # label_only set. Publishing unconditionally keeps the one rule: a forward-consumed belief
-            # head's stash IS the publication, so turning the flag on later cannot reopen the route.
-            self.stash.belief_supervision["alpha_logits"] = _alpha
-            self.stash.alpha_logits = self._publish_belief(_alpha)
-            # BETA's candidates: every slot they could legally bring in. Legality is a MASK, never
-            # something the head has to learn — an illegal switch-in must be unrepresentable.
-            #
-            # ⚠️ A REVEALED slot and a BELIEVED slot mean different things by `hp == 0`, and
-            # conflating them silently deletes half of beta's job. MEASURED
-            # (`tmp/beta_slot_probe.py`, 12 real battles): unrevealed opp slots encode hp EXACTLY
-            # 0.000 in 1033/1033 cases — for them 0 means UNKNOWN, not DEAD. Masking on `hp>0`
-            # therefore made every hidden mon unaddressable, and the ~46% of switches that bring
-            # one (G2a) went from "unsupervised" to "unrepresentable".
-            #
-            # A believed slot is ALWAYS a legal target, and that is exact rather than heuristic:
-            # a Pokemon cannot faint without being revealed, so an unrevealed mon is alive.
-            # gen3_opp_addressable_v1: the ADDRESSABILITY half is single-sourced on the context
-            # (see ObsUnpack) — beta additionally excludes the current ACTIVE (you cannot switch
-            # to the mon already in). Same formula as before, one home for the hp-means-unknown
-            # rule.
-            _opp_active_flag = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1]   # [B,6]
-            _beta_mask = (ctx.opp_addressable & (_opp_active_flag < 0.5)).float()  # [B,6]
-            # gen3_intent_conditional_v1 (class B): beta is now PUBLISHED like alpha — the
-            # boom trade-value cell consumes it forward-side, so under label_only the policy
-            # gradient must be cut at this one boundary while the supervised intent loss keeps
-            # the LIVE view (the alpha pattern exactly).
-            _beta_live = self.beta_head(  # type: ignore[misc]
-                their_team_out.detach(), _ictx, candidate_mask=_beta_mask)
-            self.stash.belief_supervision["beta_logits"] = _beta_live
-            self.stash.beta_logits = self._publish_belief(_beta_live)
-        # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass only; design §3.7): the FLAT opponent pointer —
-        # one list (their move seats, OTHER_move, each switch target, OTHER_species), one softmax, the
-        # detached log π as the logit bias (M10). α / β are retired in this arm. The consumers below
+        # (The α / β intent READOUT — `AlphaIntentHead` over the E4 seats, `BetaSwitchHead` over their team
+        # tokens — was the blob path's and is DELETED at the X5 version break, v144. The two heads are still
+        # CONSTRUCTED with the belief family (their init draws are part of the global RNG stream) and the policy
+        # retires them before the optimizer; the flat pointer below is the intent readout.)
+        # gen3_x5_flat_pointer_v1 (X5 U4; design §3.7): the FLAT opponent pointer — built with the belief
+        # family — one list (their move seats, OTHER_move, each switch target, OTHER_species), one softmax,
+        # the detached log π as the logit bias (M10). The consumers below
         # read its RE-EXPRESSION (`_x5i`): α over the K seats + OTHER_move (a priced (K+1)-th seat) +
         # the total switch mass, β over the six slots + OTHER_species, and every seat-axis / mon-axis
         # operand with OTHER's column appended — never a zero row.
@@ -865,11 +797,11 @@ class ExtractorForward(ExtractorApi):
         # gen3_intent_move_cell_v1 (G3): alpha consumed on the POLICY side — the c2 re-delivery
         # channels join the pointer MOVE cell HERE, the first point where both operands exist
         # (the op's T1 operand stash from above, and alpha, T2, scored from the seats and pools).
-        # The consumer reads `last_alpha_logits` — the PUBLICATION, stop-grad under
-        # `belief_grad_mode=label_only` — never a raw stash, so label_only keeps cutting the
-        # PPO→alpha_head route through this path exactly as it does for every other consumer.
-        _al = self.last_alpha_logits if _x5i is None else _x5i.alpha
-        _bl = self.last_beta_logits if _x5i is None else _x5i.beta
+        # α / β are the FLAT POINTER's re-expression (`_x5i`, from the PUBLICATION — stop-grad under
+        # `belief_grad_mode=label_only`); None with the belief family off (a consumer that needs them
+        # requires opp_intent, and opp_intent builds the flat pointer).
+        _al = None if _x5i is None else _x5i.alpha
+        _bl = None if _x5i is None else _x5i.beta
         if self.intent_move_cell is not None:
             if _al is None or _imc_ops is None:
                 raise RuntimeError(

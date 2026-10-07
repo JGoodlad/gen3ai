@@ -81,7 +81,6 @@ def test_the_ppo_class_carries_every_term_family():
             f"`{base}` is gone from `InstrumentedMaskablePPO`'s bases (MRO is {mro}). The class "
             f"would still construct and still train — just without that family of loss terms.")
     for method in ("_win_prob_loss",
-                   "_belief_aux_loss",
                    "_move_belief_loss", "_spread_belief_loss", "_nature_ev_belief_loss",
                    "_hp_type_belief_loss", "_move_belief_latent_loss",
                    "_noise_scale_estimate", "_global_grad_sq", "_emit_noise_scale_warnings",

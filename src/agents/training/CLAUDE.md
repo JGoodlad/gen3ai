@@ -122,9 +122,9 @@ host read (`.item()`, `float(t)`, `bool(t)`), no boolean-mask indexing / `nonzer
 Python branch on a tensor value, no numpy — a diagnostic is a `(value, weight)` pair of 0-d tensors
 (weight 1.0 exactly where the old fold appended to its list), and `train()` reads ALL of a micro-batch's
 diagnostics in ONE host read (`micro_step.pack`). The belief losses' static twins are
-`belief_bank_static.py`; the opponent-intent block's is `instrumented_ppo/intent_fold.py` — the legacy
-`belief_bank` / `opp_intent` functions stay as the REFERENCE they are pinned equal to (float64 to
-1e-12). A new term on the production surface belongs in R1, written to these rules; anything else
+`belief_bank_static.py`; the opponent-intent block's is `instrumented_ppo/intent_fold.py`, which dispatches to
+X5's flat-pointer fold (`flat_intent_fold.py`; the blob α / β fold was deleted at the X5 version break, v144) — the
+legacy `belief_bank` functions stay as the REFERENCE they are pinned equal to (float64 to 1e-12). A new term on the production surface belongs in R1, written to these rules; anything else
 joins the tail in contract order. What moved out of `train()` before K8 is everything AROUND the
 sequence: the pre-loop setup (`train_setup`, incl. R1's static flags `_micro_static`), the metrics
 export (`metrics_export`) and the per-rollout probes (`rollout_probes`).
@@ -177,10 +177,11 @@ every load re-seeded to the snapshot's seed, which replayed the minibatch permut
 🚨 **`learner_golden_test.py` pins what ONE update computes** — exact post-update parameter bytes and
 every loss, per torch build — so ANY change to the fold, a term, a coefficient default or the step
 fails the routine gate until someone re-records deliberately: `python -m agents.training.learner_golden
-record --reason "..."` under EVERY interpreter with an entry (never a routine step). **A SECOND entry
-pins `--belief-tokens fixed_mass`** (X5 U6: `arms.fixed_mass` with its own buffer, name-keyed perturbation and an fp64
-reference, `learner_golden_fixed_mass_test.py`). Any fixed_mass change that reaches the update moves it. Re-record it
-with `record --arm fixed_mass --reason "..."` (`learner_gates.md` "The SECOND entry"). Every non-finite
+record --reason "..."` under EVERY interpreter with an entry (never a routine step). **Its ONE entry is X5's
+fixed-mass surface** (the production model since the X5 version break, v144): the former `arms.fixed_mass` entry
+MOVED VERBATIM to the default slot — its seed-18 buffer, NAME-KEYED perturbation, fp64 reference, K9(b) read and
+coverage (`learner_golden_fixed_mass_test.py` holds the X5-specific checks); the blob entry and buffer are deleted
+(`learner_gates.md`). Every non-finite
 loss / gradient / buffer value / KL is `main.exit_codes.NonFiniteLearnerError` (tagged `[Learner]
 FATAL`; exit 4, the launcher does NOT restart) BEFORE the optimizer moves anything
 (`instrumented_ppo/learner_gates.py`) — never a `nan_to_num`, a NaN-mask on a trained
@@ -210,7 +211,7 @@ Per minibatch (1 to 3a inside R1):
    `policy_loss` tensor is used, byte-identical to upstream, and 0.0 removes the policy-gradient
    term alone. Training-only, the `training_coef` provenance
    class: recorded, `_resolve`-inherited on a flagless resume, never gated)
-2. the belief bank — species/moves aux, opponent intent (+ set-valued β), move / spread /
+2. the belief bank — the hidden-team set BCE (X5), opponent intent (the flat pointer's CE), move / spread /
    nature-EV / HP-type / item belief, move-latent
 3. (3a) the win-prob BCE — the last R1 term
 4. (retired — the value-dist HL-Gauss CE was deleted with the dist head; the numbering below is unchanged)
@@ -370,8 +371,9 @@ batch under a claim, resumable per request, any other root under `models/` refus
 order is seat-dependent); read a pair-clustered interval, never a per-game one. `python -m main.h2h play-many` plays MANY
 cells on ONE engine (eval U6 / X5 U0): the same games and rows as single-cell `play`, one engine start instead of one per
 cell; 🚨 **up to TWO architectures per engine** (`main/h2h/arch.py`, F-U6-1 closed): one T2 slot group per architecture
-with only the slots its cells need and one eval core per (player group, opponent group), so the X5 cross (`fixed_mass` ×
-`blob`) plays on one engine — a THIRD architecture is refused before anything plays. Run it from the repo root (the team
+with only the slots its cells need and one eval core per (player group, opponent group), so a two-architecture cross (the
+X5 A/B's was `fixed_mass` × `blob`, played at its own pin) plays on one engine — a THIRD architecture is refused before
+anything plays. Run it from the repo root (the team
 pool is read cwd-relative; any other cwd is refused).
 🚨 **`python -m main.plateau` is the PLATEAU meter's TIER 1** (eval U9a; the rule is `plateau_t1.py`): `tick <run>` plays each
 due check (the newest 10M-grid node vs the node 50M back) as the registered GSPRT on `main.h2h`'s engine, one 40-pair batch
@@ -379,14 +381,16 @@ at a time, and writes ONE `plateau` decision row per check (GAIN / FLAT / UNDECI
 `status <run>` prints the run's Tier-1 status. 🚨 **Tier 1 only**: `TIER1_PLATEAU` is a candidate until Tier 2 (the cycle
 monitor) and the panel exist. Offline, never on CPU beside an X5 A/B arm (`designs/training/eval_and_rating.md`).
 🚨 **`python -m main.belief_roles` is the X5 PURPOSE-METRIC reader** (U7; `designs/endstate/design_x5_belief_tokens.md` §4 / §7.4) — it plays
-NOTHING: any checkpoint `.zip` of either arm on the Lane S bank, CPU forwards only, output refused under `models/`. Its
+NOTHING: any checkpoint `.zip` at HEAD's architecture (X5) on the Lane S bank, CPU forwards only, output refused under
+`models/`; a blob or other pre-break checkpoint is REFUSED with the pinned commit (`[belief_roles] REFUSED`; the A/B's blob
+reads are banked JSON + `.erow.npz`, which `infer` and `--reference` still read). Its
 `per_run` block (on-pool primary) is the ONE value per run §7.4's adoption gate infers on, ACROSS SEEDS
 (`python -m main.belief_roles infer --treat … --control … --boundary <the stopping look's t>`); its battle-clustered intervals
 are descriptive only. 🚨 **Purpose metric (1)'s ADOPTION-GATE form is `intent_logloss_conditional`** (Amendment 3(b), §7.7(b)):
 the log loss renormalised over E_row = BLOB's named set, on the rows whose event is in it, for both arms — a `fixed_mass`
-read is scored on EVERY blob run of the look and its value is the MEAN (`read --reference <fm label>=<blob>[,<blob>…]`,
-labels or `.erow.npz`; without any its value is None, and `infer` refuses a fixed_mass read whose references are not
-EXACTLY the control group's blob runs).
+read is scored on EVERY blob run of the look and its value is the MEAN (`read --reference <fm label>=<blob>.erow.npz[,…]`,
+banked `.erow.npz` files only since the version break; without any its value is None, and `infer` refuses a fixed_mass
+read whose references are not EXACTLY the control group's blob runs).
 The as-built `intent_logloss` (each arm over the rows its OWN candidates cover, the MISS rate its own column) favours blob
 twice and is DESCRIPTIVE only; the coverage (`fixed_mass`'s mass outside E_row vs the realised outside frequency) is reported. The role set is derived from Smogon data at read time and stamped (`role_set_sha256`); `infer` refuses mixed sets.
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)** (its
@@ -1147,7 +1151,7 @@ the backfill at startup.
 
 Cross-cutting rule for **every** belief loss below (`gen3_belief_label_only_v1`). Under
 `--belief-grad-mode label_only` the extractor's `last_move_belief_logits` / `last_spread_belief` /
-`last_hp_type_logits` / `last_spread_nature_logits` / `last_spread_ev` / `last_alpha_logits` stashes
+`last_hp_type_logits` / `last_spread_nature_logits` / `last_spread_ev` / `last_flat_intent_logits` stashes
 are **stop-grad publications** — that is how the mode stops the policy/value gradient reaching a
 belief head through any of its forward consumers. A supervised loss must therefore read its target
 through **`self.policy.features_extractor.belief_supervision("<key>")`**, which returns the LIVE
@@ -1173,23 +1177,24 @@ spread/nature-EV/hp-type heads mask REVEALED ones.
 
 | flag | default | supervises | label |
 |---|---|---|---|
-| `--opp-belief-aux-coef` (+ `--opp-belief-moves-weight`) | `0.0` | the opponent's still-hidden mons — species CE + moves BCE, **order-invariant (Hungarian)** over the anonymous believed slots | `belief_species`/`belief_moves`, from agent2's own team |
+| `--opp-belief-aux-coef` (+ `--opp-belief-moves-weight`) | `0.0` | the opponent's still-hidden mons — X5's SET BCE: the hypothesis presence + `BeliefHead` re-targeted + the hypothesis seats' moves (the blob path's Hungarian row was deleted, v144) | `belief_species`/`belief_moves`, from agent2's own team |
 | `--move-belief-mode` / `--move-belief-coef` | `off` / `0.0` | the reinjected moveset, over two DISJOINT slot populations (revealed = direct BCE, unrevealed = Hungarian) | `known_moves` / `belief_moves` |
 | `--spread-belief-coef` (+ `--spread-belief-nature`) | `0.0` | the hidden derived stats the `DamageOperator` consumes; the nature⊕EV decomposition supervises it structurally | true `mon.stats`, and agent2's TRUE declared nature/EVs, guarded against them (`gen3_true_spread_labels_v1`) |
 | `--hp-type-belief-coef` | `0.05` | the discrete Hidden-Power type posterior | `hp_type_label`/`hp_type_mask` |
-| `--intent-label-bot-weight` | `1.0` (OFF) | a per-sample weight on the opponent-intent (α/β) LABELS produced against a **bot** | the existing `opp_class` obs key |
+| `--intent-label-bot-weight` | `1.0` (OFF) | a per-sample weight on the opponent-intent (the flat pointer's) LABELS produced against a **bot** | the existing `opp_class` obs key |
 
 🚨 **Every belief label is a TRAINING-ONLY Dict-obs key read only by the loss** — the model forward
 reads only `obs["observation"]`, so privileged truth cannot leak — and each builder is **fail-loud**
 (a non-contiguous `species_known`, an out-of-vocab num) rather than mis-slotting supervision.
-🚨 **`--intent-label-bot-weight` is confined to α/β and that is a design claim**: the other beliefs
+🚨 **`--intent-label-bot-weight` is confined to the INTENT labels and that is a design claim**: the other beliefs
 are TEAM TRUTH, which does not depend on who is piloting, so discounting a bot's rows there would
 throw away valid labels. Only INTENT is behaviour; at 1.0 the loss is **bit-identical**. Every
 structural toggle is version-checked and fresh-only; every `*_coef` is training-only and **read back
 on a flagless resume**.
-🧩 **Under `--belief-tokens fixed_mass` (X5) the hidden-team row is `hidden_team_set`** — the set BCE
-(presence + BeliefHead re-targeted + hypothesis-seat moves), gated EXCLUSIVELY against the Hungarian
-`hidden_team` row on the same coefficient; `blob` never enables it.
+🧩 **The hidden-team row is `hidden_team_set`** — X5's set BCE (presence + BeliefHead re-targeted +
+hypothesis-seat moves) on `--opp-belief-aux-coef`; the blob path's Hungarian `hidden_team` row was deleted at the
+X5 version break (v144). ⚠️ `--beta-setvalued-coef` is INERT since the same deletion (it scaled the blob β's
+set-valued credit; the flag still parses — a census row is owed).
 **Full detail — in [`designs/training/belief_losses.md`](../../../designs/training/belief_losses.md).**
 
 ## `stats.py` — the package's SHARED small-sample statistics

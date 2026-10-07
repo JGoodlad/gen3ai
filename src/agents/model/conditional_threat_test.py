@@ -35,6 +35,7 @@ from agents.model.model_version import (
     MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
 )
 from agents.model.pair_outcome import PAIR_OUTCOME_IDX, pair_alpha
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 _BASE_KWARGS = dict(
@@ -321,11 +322,18 @@ def test_it_stacks_with_the_phase_B_switch_cell_and_stays_the_LAST_block():
 def test_on_is_independently_enableable_of_phase_B_and_of_the_intent_head():
     """OA1 and Phase B widen the SAME cell with DIFFERENT quantities. Coupling them would make a
     measured result unattributable to either, so each must build and run alone — and OA1 must
-    reach α through the same ladder (publication, else the R1 belief_mean rung)."""
+    reach α through the same ladder (the publication — since the X5 version break the FLAT pointer's
+    re-expression, which needs the whole opponent-belief family (`x5_kwargs`) — else the R1 belief_mean
+    rung). The belief-OFF build takes the rung; the X5 build reads the flat ops' grid + type multiplier."""
     fe, layout = _build(**_ON_KWARGS)
-    assert fe.pair_outcome_switch is None and fe.alpha_head is None
+    assert fe.pair_outcome_switch is None and fe.flat_intent_head is None
     fe(_obs(layout))
     assert fe.damage_op.last_pair_in is not None and fe.damage_op.last_pair_type_mult is not None
+    x5, layout2 = _build(**x5_kwargs(**_ON_KWARGS))
+    pi, vf = x5(_obs(layout2))
+    ops = x5.stash.flat_consumer_ops
+    assert ops is not None and ops.pair_in is not None and ops.type_mult is not None
+    assert x5.last_pointer_inputs.switch_cells.shape[2] == x5.pointer_switch_cell_dim
 
 
 def test_requires_damage_op_and_the_incoming_matrix():
@@ -428,6 +436,7 @@ def test_the_module_is_drawn_with_edges_when_it_is_ON():
     assert len(drawn) >= TEAM_SIZE, "one switch-logit edge per our mon"
     physics = [e for e in drawn if e["src"] == "damage_op"]
     assert len(physics) == TEAM_SIZE and all(e.get("zero_init") for e in physics)
-    # ...and α's own publication must be drawn reaching the SWITCH logits through it, which is the
-    # edge that says "the intent head now weights a switch decision".
-    assert any(e["src"] == "alpha_head" and "switch_logit" in e["dst"] for e in drawn)
+    # ...and the intent publication (the flat pointer's α re-expression, X5) must be drawn reaching
+    # the SWITCH logits through it, which is the edge that says "the intent head now weights a
+    # switch decision".
+    assert any(e["src"] == "flat_intent_head" and "switch_logit" in e["dst"] for e in drawn)

@@ -40,13 +40,12 @@ SECTIONS = ("modules", "head-inputs", "flag-table")
 # Optional modules worth calling ABSENT by name in §2 when the config does not build them.
 # (label as shown, dotted attribute on the instance)
 _ABSENT_CANDIDATES: Tuple[Tuple[str, str], ...] = (
-    ("belief_slots", "belief_slots"),
+    ("hypothesis_builder", "hypothesis_builder"),
     ("belief_head", "belief_head"),
     ("spread_belief", "spread_belief"),
     ("hidden_opp_belief", "hidden_opp_belief"),
     ("win_head", "win_head"),
-    ("alpha_head", "alpha_head"),
-    ("beta_head", "beta_head"),
+    ("flat_intent_head", "flat_intent_head"),
     ("value_entity_pool", "value_entity_pool"),
     ("value_threat_inject", "cls_pool.value_threat_proj"),
 )
@@ -63,10 +62,10 @@ _TOGGLE_MODULE: Dict[str, str] = {
     "entity_topk_seats": "entity_seats",
     "move_belief_mode": "move_belief",
     "hp_belief_mode": "hp_type_belief_head",
-    "opp_belief_slots": "belief_slots",
+    "opp_belief_slots": "hypothesis_builder",
     "opp_belief_cls_k": "hidden_opp_belief",
-    "opp_intent": "alpha_head",
-    "opp_intent_grad_mode": "alpha_head",
+    "opp_intent": "flat_intent_head",
+    "opp_intent_grad_mode": "flat_intent_head",
     "species_prior_fusion": "belief_head",
     "spread_belief": "spread_belief",
     "spread_belief_nature": "spread_belief",
@@ -74,7 +73,6 @@ _TOGGLE_MODULE: Dict[str, str] = {
     "value_threat_inject": "cls_pool.value_threat_proj",
     "value_entity_pool": "value_entity_pool",
     "value_entity_pool_full": "value_entity_pool",
-    "belief_tokens": "hypothesis_builder",
     "token_encoding": "pokemon_encoder.dynamic_encoder",
 }
 
@@ -111,9 +109,9 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     "fork_fraction": "win_head",
 }
 
-# "blob" is `belief_tokens`' OFF state (X5, v136), "tower" `policy_readout`'s (audit F2, v138) and
-# "legacy" `token_encoding`'s (v139; `flag_registry.OFF_STRINGS`).
-_FALSY_STRINGS = {"none", "off", "", "blob", "tower", "legacy"}
+# "tower" is `policy_readout`'s OFF state (audit F2, v138) and "legacy" `token_encoding`'s (v139;
+# `flag_registry.OFF_STRINGS`).
+_FALSY_STRINGS = {"none", "off", "", "tower", "legacy"}
 
 
 def _is_off(value: Any) -> bool:

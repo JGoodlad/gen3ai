@@ -150,6 +150,32 @@ home for, so `retired_levers.refuse_structural` refuses a config recording one O
 OFF (2026-10-02 archive scan). `QWinProbHead` survives as the ride-along A head's scorer class only. Flag list:
 `designs/deleted_flags.md`; the producer / audit stack that reads old runs' rings is kept (manifest D6).
 
+🚨 **THE X5 VERSION BREAK RAISED THE FLOOR (config v144, `gen3_x5_version_break_v1`, 2026-10-07)** — the ONE planned
+checkpoint break after X5's adoption, and ONE bump for all of its parts (later parts append to v144's comment and
+CHANGELOG entry, never a second bump). `ARCH_SIGNATURE` → `gen3_x5_version_break_v1`, `MIGRATION_FLOOR` → 144,
+`SIGNATURE_FIRST_VERSION["gen3_x5_version_break_v1"] = 144` (`migration_floor_test` keeps its rule). The floor
+RISES with the signature (contra the legacy manifest's provisional D-L1 "decouple") because the break's later parts
+reshape weights and change behaviour, so NO pre-break checkpoint — blob or fixed_mass — is reproducible at HEAD;
+every one runs PINNED. `model_version/version_break.py` is the one home of the consequences:
+
+* **`LAST_BLOB_COMMIT`** (`26131c0c…`) — the last commit that builds `belief_tokens='blob'` and the last pre-break
+  commit; every refusal names it, nothing else spells the hash.
+* **The pre-floor diagnosis** — `_migrate_config`'s PRE-GENERATION refusal appends `pre_break_diagnosis`: a
+  v121–v143 config recording `belief_tokens: "blob"` (or lacking the key below v136, where blob was the only past) is
+  told the blob path is DELETED; one recording `fixed_mass` that it is a pre-break X5 checkpoint whose weights the
+  break reshaped. Both name the pinned fix.
+* **The resume / fork refusal** — `check_post_break` reads the RAW parent config BEFORE any loader, so
+  `main.train.config.enforce_not_shaped_parent` exits `FATAL_CONFIG` with that text (a flagless resume would
+  otherwise fall back to OFF defaults and fail somewhere unrelated), and `main.checkargs` prints it as the
+  "pre-break parent" block (`version_break_finding`; ADVISORY when the child runs a pin at or before the commit).
+* **The pickled kwarg** — `belief_tokens` is `_DEAD_FEK_JUDGED` with `fixed_mass` the reproducible value; any other
+  value (`blob`) is refused by `refuse_pickled_belief_tokens` with the same deletion reason, and
+  `snapshot.load_checkpoint_strict` runs `refuse_deleted_pickled_kwargs` on the zip itself, so a caller whose
+  sanitizer never refuses (the prober's set math) or passes none cannot hand SB3 a blob kwarg.
+
+Every post-floor `if version < N` branch in `_migrate_config` (v122–v143) is now UNREACHABLE and is left in place;
+moving their history into the archive block and deleting them is legacy-manifest unit R1 / L1, not the break's.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

@@ -12,8 +12,8 @@ import torch
 
 from main.belief_roles import metrics as MX
 from main.belief_roles.bank_rows import SWITCH_BASE, BankRows
-from main.belief_roles.eset import ERow, ESet, blob_event_dist, event_index, flat_event_dist, set_mask
-from main.belief_roles.forward import Columns, _event_logp, _flat_event_logp
+from main.belief_roles.eset import ERow, ESet, event_index, flat_event_dist
+from main.belief_roles.forward import Columns, _flat_event_logp
 
 S = 8
 
@@ -178,33 +178,6 @@ def test_a_fixed_mass_value_is_the_mean_over_every_blob_set():
 
 
 # --------------------------------------------------------------------------- the dense distributions
-def test_blob_dense_distribution_and_its_named_set():
-    """The toy of `metrics_test.test_event_logp_common_event_space`: the dense distribution equals the
-    scored probability on every covered event, sums to 1, and its named set is exactly the covered
-    predicate."""
-    alpha = torch.tensor([[1.0, 2.0, 0.5, -math.inf, 0.0]]).repeat(5, 1)
-    seats = torch.tensor([[10, 360, 20, 0]]).repeat(5, 1)
-    beta = torch.tensor([[0.0, 1.0, 3.0, 0.0, 0.0, 0.0]]).repeat(5, 1)
-    ok = torch.tensor([[True, True, False, False, False, False]]).repeat(5, 1)
-    content = torch.full((5, 6, S), -math.inf, dtype=torch.float64)
-    content[:, 0, 3] = 0.0
-    content[:, 1, 5] = math.log(0.25)
-    content[:, 1, 6] = math.log(0.75)
-    events = torch.tensor([237, 20, 30, SWITCH_BASE + 5, SWITCH_BASE + 7])
-    lp, cov = _event_logp(events, alpha, seats, beta, ok, content)
-    P, sev, swok = blob_event_dist(alpha, seats, beta, ok, content)
-    D = SWITCH_BASE + S
-    idx, okv = event_index(events, D)
-    pe = P.gather(1, idx.unsqueeze(-1)).squeeze(-1)
-    assert torch.allclose(pe[cov].log(), lp[cov], atol=1e-12, rtol=0)
-    assert torch.allclose(P.sum(-1), torch.ones(5, dtype=torch.float64), atol=1e-12, rtol=0)
-    m = set_mask(sev, swok, D)
-    assert (m.gather(1, idx.unsqueeze(-1)).squeeze(-1) & okv).tolist() == cov.tolist()
-    assert set(torch.nonzero(m[0]).flatten().tolist()) == {10, 20, 237, SWITCH_BASE + 3, SWITCH_BASE + 5,
-                                                           SWITCH_BASE + 6}
-    assert abs(float((P[0] * m[0]).sum()) - 1.0) < 1e-12           # blob's mass is all on its own set
-
-
 def test_flat_dense_distribution_matches_the_scored_events():
     """The toy of `metrics_test.test_flat_pointer_event_logp`, with OTHER_move's π and the species tail
     each summing to 1: the dense distribution equals the scored probability on every covered event and

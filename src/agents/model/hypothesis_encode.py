@@ -1,6 +1,6 @@
 """X5's hypothesis TOKENS, encoded with the SPECIES half once per forward and GATHERED
 (`gen3_x5_hyp_gather_v1`; `designs/endstate/design_x5_belief_tokens.md` §3.4 "as built").
-`--belief-tokens fixed_mass` only — the `blob` arm never calls anything here.
+X5 only — the `blob` arm never calls anything here.
 
 WHAT IT COMPUTES. A hypothesis token is `PokemonEncoder` on the hypothesis context (`hypothesis_ctx`:
 a hidden opponent slot's row is its hypothesis's DEX ROW) — the per-row pass this replaces ran the whole

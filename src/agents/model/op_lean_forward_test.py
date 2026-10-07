@@ -25,9 +25,12 @@ from agents.model.features_extractor import Gen3FeaturesExtractor, TEAM_SIZE
 from agents.model.model_version import (
     ModelVersion, ModelVersionError, _migrate_config,
 )
+from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
-_ON_KWARGS = dict(
+# The opponent-belief family is ON (the intent readout needs it): since the X5 version break (v144) that is
+# X5's hypothesis tokens + the flat pointer, with every requirement they carry (`x5_surface_fixture`).
+_ON_KWARGS = x5_kwargs(
     attend_unrevealed_opponents=True, move_belief_mode="revealed", move_prior_fusion=True,
     move_latent=True, damage_op=True, damage_outgoing=True, damage_matrices_incoming=True,
     damage_matrices_outgoing=True, damage_topk_k=6, entity_topk_seats=6, opp_intent=True,
@@ -89,7 +92,6 @@ def test_full_intent_stack_runs_lean():
     """v77+v84+v85 all consume STASHES, so the lean block must feed them unchanged."""
     fe, layout = _build(**_ON_KWARGS, op_drop_renders=True, intent_move_cell=True,
                         intent_threshold=True, intent_conditional=True,
-                        opp_belief_slots=True,
                         value_entity_pool=True)
     pi, vf = fe(_obs(layout))
     assert pi.shape == vf.shape

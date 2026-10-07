@@ -49,18 +49,16 @@ THE FOUR HEADS (each its own STRUCTURAL flag, all OFF by default):
     (Σ_a π(a)·A(s,a) = 0), regressed (MSE) on the GAE advantage of the action actually taken — the
     only label PPO produces. K bootstrapped members with randomized priors, so an action the policy
     never plays (a STARVED move) keeps its members apart: per-action uncertainty.
-  * **B** (`--ridealong-opp K`): the opponent's main effect over α's own support — their K believed
-    move seats (scored from the seat's concrete MOVE ID through the head's own embedding) plus
-    SWITCH — centred under α (stop-grad), regressed (MSE) on the same advantage at the rows where
-    the opponent's actual action is named in that support (α's label, `match_seats_to_move_num`).
-    Because a and b are chosen simultaneously, E[adv | s, b] = B(s, b) once A is centred under π and
-    B under α, so A and B are identified by two MARGINAL regressions on one label. This is the
-    SIMPLE parameterisation that does not need X5 (the blob arm). Its declared limit: a move outside
-    the believed seats (α's mask rate) is not a label, so B is conditional on the opponent choosing a
-    listed option. Under `--belief-tokens fixed_mass` (X5 U4) B is RE-BASED onto the FLAT opponent
-    pointer (`FlatOppEffectEnsemble`: seats by move id, switch targets by SPECIES, OTHER_move /
-    OTHER_species as learned vectors; labels from `flat_intent.flat_intent_targets`), so a belief miss
-    is a row and switch targets are told apart.
+  * **B** (`--ridealong-opp K`): the opponent's main effect over the FLAT opponent pointer's columns
+    (X5 U4, `FlatOppEffectEnsemble`): their K move seats (scored from the seat's concrete MOVE ID
+    through the head's own embedding), OTHER_move, the six switch targets (by SPECIES — the revealed
+    mon's, or the hypothesis the slot holds) and OTHER_species (OTHER_move / OTHER_species as learned
+    vectors) — centred under the flat α (stop-grad), regressed (MSE) on the same advantage at the rows
+    whose label column `flat_intent.flat_intent_targets` names (the SAME function the intent loss
+    uses), so a belief miss is a row and switch targets are told apart. Because a and b are chosen
+    simultaneously, E[adv | s, b] = B(s, b) once A is centred under π and B under α, so A and B are
+    identified by two MARGINAL regressions on one label. (The blob arm's B over α's own seats +
+    SWITCH was deleted with the blob path at the X5 version break, config v144.)
 
 Q = V + A(a) + B(b) is a DERIVED readout (no I term); losses are MSE, linear in the labels
 (`design_q_head.md` §5.1's M = 1 rule).
@@ -280,7 +278,8 @@ class RideAlongSpec:
     #: The RND VARIANTS beside base (`RND_VARIANTS` names, canonical order; () = none).
     rnd_variants: Tuple[str, ...] = ()
     #: X5 U4 (`gen3_x5_flat_pointer_v1`): B's columns are the FLAT opponent pointer's (K move seats,
-    #: OTHER_move, six switch targets, OTHER_species) — the K here; 0 = α's support (the blob arm).
+    #: OTHER_move, six switch targets, OTHER_species) — the K here. 0 = no flat pointer, which B
+    #: REFUSES (`validate_spec`): the blob arm's B over α's support was deleted at the X5 version break.
     opp_flat_k: int = 0
 
     @property
@@ -306,6 +305,10 @@ def validate_spec(spec: RideAlongSpec) -> None:
     if tuple(spec.rnd_variants) != parse_rnd_variants(spec.rnd_variants):
         raise ValueError(f"rnd_variants must be declared names in canonical order "
                          f"{list(RND_VARIANTS)}, got {spec.rnd_variants!r}")
+    if spec.opp and not spec.opp_flat_k:
+        raise ValueError("ridealong_opp requires the FLAT opponent pointer (opp_flat_k > 0): B's columns "
+                         "are its K move seats + OTHER_move + six switch targets + OTHER_species. The "
+                         "blob arm's B over α's support was deleted at the X5 version break (config v144).")
     if spec.rnd_variants and not spec.rnd:
         raise ValueError("ridealong_rnd_variants requires ridealong_rnd: the observation variants "
                          "share base's frozen target and normalisation, and base is the reference "
@@ -574,56 +577,12 @@ class AdvantageEnsemble(torch.nn.Module):
                             for m, p in zip(self.members, self.priors)], dim=1)   # [B, K, 11]
 
 
-class _OppScorer(torch.nn.Module):
-    """One B member: seat k scored from its concrete MOVE ID (own embedding) + the value context,
-    SWITCH from the context alone — α's support, α's shared-scorer shape."""
-
-    def __init__(self, n_moves: int, hidden: int = POINTER_HIDDEN) -> None:
-        super().__init__()
-        self.n_moves = int(n_moves)
-        self.ctx_proj = torch.nn.Linear(D_MODEL, hidden)
-        self.move_emb = torch.nn.Embedding(self.n_moves, RIDEALONG_OPP_MOVE_EMB)
-        self.move_proj = torch.nn.Linear(RIDEALONG_OPP_MOVE_EMB, hidden)
-        self.seat_score = torch.nn.Linear(hidden, 1)
-        self.switch_score = torch.nn.Linear(hidden, 1)
-        for lin in (self.seat_score, self.switch_score):
-            torch.nn.init.zeros_(lin.weight)
-            torch.nn.init.zeros_(lin.bias)
-
-    def forward(self, ctx: torch.Tensor, seat_nums: torch.Tensor) -> torch.Tensor:
-        c = self.ctx_proj(ctx)                                                  # [B,H]
-        ids = seat_nums.long().clamp(0, self.n_moves - 1)
-        h = torch.tanh(self.move_proj(self.move_emb(ids)) + c[:, None, :])      # [B,K,H]
-        seat = self.seat_score(h).squeeze(-1)                                   # [B,K]
-        sw = self.switch_score(torch.tanh(c))                                   # [B,1]
-        return torch.cat([seat, sw], dim=-1)                                    # [B,K+1]
-
-
-class OppEffectEnsemble(torch.nn.Module):
-    def __init__(self, k: int, n_moves: int) -> None:
-        super().__init__()
-        self.k = int(k)
-        self.members = torch.nn.ModuleList()
-        self.priors = torch.nn.ModuleList()
-        for j in range(self.k):
-            torch.manual_seed(RIDEALONG_INIT_SEED + 10007 * (j + 1))
-            self.members.append(_OppScorer(n_moves))
-            prior = _OppScorer(n_moves)
-            for lin in (prior.seat_score, prior.switch_score):
-                torch.nn.init.normal_(lin.weight, 0.0, 1.0 / math.sqrt(POINTER_HIDDEN))
-            self.priors.append(freeze_to_buffers(prior))
-
-    def forward(self, ctx: torch.Tensor, seat_nums: torch.Tensor) -> torch.Tensor:
-        return torch.stack([m(ctx, seat_nums) + RIDEALONG_PRIOR_SCALE_Q * p(ctx, seat_nums)
-                            for m, p in zip(self.members, self.priors)], dim=1)   # [B, K, S+1]
-
-
 class _FlatOppScorer(torch.nn.Module):
     """One B member over the FLAT opponent pointer's columns (X5 U4, design §3.7): a move seat scored
     from its concrete MOVE ID, a switch target from its concrete SPECIES (the revealed mon's, or the
     hypothesis the slot holds — B now tells switch targets apart), OTHER_move and OTHER_species from
     a learned vector each — so a belief miss is a ROW, not a masked label. Same shared-scorer shape as
-    `_OppScorer`: one context projection, one candidate projection, a move-kind and a switch-kind
+    the other members: one context projection, one candidate projection, a move-kind and a switch-kind
     score (zero-init)."""
 
     def __init__(self, n_moves: int, n_species: int, k: int, hidden: int = POINTER_HIDDEN) -> None:
@@ -658,8 +617,8 @@ class _FlatOppScorer(torch.nn.Module):
 
 
 class FlatOppEffectEnsemble(torch.nn.Module):
-    """B's K members (+ randomized priors) over the flat pointer's columns — `OppEffectEnsemble`'s
-    structure, a private seed per member."""
+    """B's K members (+ randomized priors) over the flat pointer's columns — the same structure as
+    `ValueEnsemble` / `AdvantageEnsemble`, a private seed per member."""
 
     def __init__(self, k_members: int, n_moves: int, n_species: int, k_seats: int) -> None:
         super().__init__()
@@ -695,11 +654,7 @@ class RideAlongBatch:
     advantages: Optional[torch.Tensor] = None  # [B] the GAE advantage (raw, un-normalised)
     win_target: Optional[torch.Tensor] = None  # [B]
     win_mask: Optional[torch.Tensor] = None    # [B]
-    alpha_logits: Optional[torch.Tensor] = None    # [B, K+1]
-    alpha_seat_nums: Optional[torch.Tensor] = None  # [B, K]
-    opp_kind: Optional[torch.Tensor] = None     # [B] long (0 move, 1 switch, 2 unknown)
-    opp_num: Optional[torch.Tensor] = None      # [B] long
-    # X5 U4 (fixed_mass): the FLAT pointer's support instead of α's — its logits (B's centring
+    # X5 U4: the FLAT pointer's support — its logits (B's centring
     # distribution), the concrete ids B scores, and the label column (`flat_intent_targets`, the SAME
     # function the intent loss uses; INTENT_IGNORE where the row has no label).
     flat_logits: Optional[torch.Tensor] = None  # [B, K+8]
@@ -747,10 +702,8 @@ class RideAlongHeads(torch.nn.Module):
         self.adv = (AdvantageEnsemble(spec.adv, move_token_dim=move_token_dim,
                                       move_cell_dim=move_cell_dim,
                                       switch_cell_dim=switch_cell_dim) if spec.adv else None)
-        self.opp: Optional[torch.nn.Module] = (
-            None if not spec.opp
-            else OppEffectEnsemble(spec.opp, n_moves) if not spec.opp_flat_k
-            else FlatOppEffectEnsemble(spec.opp, n_moves, n_species, spec.opp_flat_k))
+        self.opp: Optional[FlatOppEffectEnsemble] = (
+            FlatOppEffectEnsemble(spec.opp, n_moves, n_species, spec.opp_flat_k) if spec.opp else None)
         # gen3_ridealong_rnd_variants_v1 (v127): built LAST, each from its own private seed (or a
         # deep copy of base's predictor), so every head above is bit-identical with or without them.
         self.rnd_variants: Optional[torch.nn.ModuleDict] = (
@@ -814,8 +767,8 @@ class RideAlongHeads(torch.nn.Module):
         Keys: ``ens_logits`` [B,K] · ``ens_p`` [B] (member mean) · ``ens_std`` [B] (disagreement) ·
         ``rnd_err`` [B] · ``rnd_z`` [B] · ``rndv_<name>_err`` / ``rndv_<name>_z`` [B] per RND
         variant (not for a name in ``skip_variants``) · ``adv`` [B,K,11] centred under π ·
-        ``adv_mean`` / ``adv_std`` [B,11] · ``opp`` [B,K,S+1] centred under α · ``opp_mean``
-        [B,S+1]."""
+        ``adv_mean`` / ``adv_std`` [B,11] · ``opp`` [B,K,F] (F = the flat pointer's K+8 columns)
+        centred under the flat α · ``opp_mean`` [B,F]."""
         out: Dict[str, torch.Tensor] = {}
         if self.ensemble is not None:
             lg = self.ensemble(b.pooled)
@@ -856,20 +809,12 @@ class RideAlongHeads(torch.nn.Module):
             n_legal = legal.sum(-1, keepdim=True).clamp(min=1.0)
             uni = raw - (raw * legal).sum(-1, keepdim=True) / n_legal
             out["adv_std"] = uni.std(1, unbiased=False)
-        if (isinstance(self.opp, FlatOppEffectEnsemble) and b.flat_logits is not None
-                and b.flat_ids is not None):
+        if self.opp is not None and b.flat_logits is not None and b.flat_ids is not None:
             # X5 U4: B over the FLAT pointer's columns, centred under the flat α (stop-grad: the
             # batch is detached). A padding row's all-zero logits centre under a uniform α — its
             # target is INTENT_IGNORE, so it trains nothing.
             alpha = torch.softmax(b.flat_logits.float(), dim=-1)                 # [B,F]
             raw = self.opp(b.pooled, b.flat_ids)                                 # [B,K,F]
-            centred = raw - (raw * alpha[:, None, :]).sum(-1, keepdim=True)
-            out["opp"] = centred
-            out["opp_mean"] = centred.mean(1)
-        elif (isinstance(self.opp, OppEffectEnsemble) and b.alpha_logits is not None
-                and b.alpha_seat_nums is not None):
-            alpha = torch.softmax(b.alpha_logits.float(), dim=-1)                # [B,S+1]
-            raw = self.opp(b.pooled, b.alpha_seat_nums)                          # [B,K,S+1]
             centred = raw - (raw * alpha[:, None, :]).sum(-1, keepdim=True)
             out["opp"] = centred
             out["opp_mean"] = centred.mean(1)
@@ -879,7 +824,7 @@ class RideAlongHeads(torch.nn.Module):
                train_rnd: bool = True) -> Dict[str, torch.Tensor]:
         """Per-head scalar losses (MSE / BCE, LINEAR in the labels' first moment — §5.1). A head
         with no usable label this batch contributes no key."""
-        from agents.model.opp_intent import INTENT_IGNORE, match_seats_to_move_num
+        from agents.model.opp_intent import INTENT_IGNORE
 
         losses: Dict[str, torch.Tensor] = {}
         h = state_hash(b.obs, self.hash_mult)
@@ -913,20 +858,6 @@ class RideAlongHeads(torch.nn.Module):
                 w = bootstrap_mask(h, self.spec.opp, _BITS_B) * ok[:, None]
                 se = (pred - y[:, None]).pow(2)
                 losses["opp"] = ((se * w).sum(0) / w.sum(0).clamp(min=1.0)).sum()
-        elif ("opp" in out and b.advantages is not None and b.opp_kind is not None
-                and b.opp_num is not None and b.alpha_seat_nums is not None):
-            n_seats = int(b.alpha_seat_nums.shape[-1])
-            idx = match_seats_to_move_num(b.alpha_seat_nums, b.opp_num.long().reshape(-1),
-                                          b.opp_kind.long().reshape(-1), n_seats)
-            ok = (idx != INTENT_IGNORE).float()
-            if bool(ok.any()):
-                safe = torch.where(idx == INTENT_IGNORE, torch.zeros_like(idx), idx)
-                pred = out["opp"].gather(
-                    -1, safe[:, None, None].expand(-1, self.spec.opp, 1)).squeeze(-1)
-                y = _flat(b.advantages).float()
-                w = bootstrap_mask(h, self.spec.opp, _BITS_B) * ok[:, None]
-                se = (pred - y[:, None]).pow(2)
-                losses["opp"] = ((se * w).sum(0) / w.sum(0).clamp(min=1.0)).sum()
         return losses
 
 
@@ -944,10 +875,11 @@ def build_ridealong(fe: object, *, obs_dim: int,
         raise ValueError("ridealong_ensemble requires win_prob_mode != 'none': the members predict "
                          "V's own win-probability target, which only a win head's run emits.")
     if spec.opp and not bool(getattr(fe, "opp_intent", False)):
-        raise ValueError("ridealong_opp requires opp_intent: B's columns are α's support (their "
-                         "believed move seats + SWITCH) and its centring reads α.")
+        raise ValueError("ridealong_opp requires opp_intent: B's columns are the flat opponent "
+                         "pointer's (its move seats, OTHER_move, the switch targets, OTHER_species) and "
+                         "its centring reads that pointer's distribution.")
     layout = getattr(fe, "layout", None) or {}
-    # α's seat nums index the extractor's own move table (`layout['max_moves']` rows).
+    # the flat pointer's seat move nums index the extractor's own move table (`layout['max_moves']` rows).
     n_moves = int(layout.get("max_moves", 400)) if isinstance(layout, dict) else 400
     # X5 U4: the flat B's switch targets index the species table (`layout['max_species']` rows).
     n_species = int(layout.get("max_species", 400)) if isinstance(layout, dict) else 400

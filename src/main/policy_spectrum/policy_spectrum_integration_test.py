@@ -90,6 +90,35 @@ def test_gate_one_has_teeth():
         B.check_recorded(b, ds, wrong)
 
 
+def test_the_reader_is_deterministic_on_an_x5_checkpoint(tmp_path, restore_torch_globals):
+    """Two reads of one fresh production (X5) checkpoint on a slice of the bank are byte-identical (the
+    recording policies in the archive predate the X5 version break, so the reader cannot load them at HEAD)."""
+    from agents.model.snapshot import arch_toggles_from_model, current_model_version
+    from agents.observation.state_encoder import load_mappings
+    from agents.training.rust_eval import parity as PAR
+    from main.fresh_checkpoint import build_fresh_model
+    from main.policy_spectrum.reader import load_probs, read_checkpoint, reencode
+    from main.train.production_args import production_args
+
+    bank = B.load_bank(BANK_V1)
+    sub = _subset(bank, 1)
+    run = tmp_path / "run_x5"
+    run.mkdir()
+    with PAR.declared_torch_state(1):
+        model, _, _ = build_fresh_model(3, args=production_args())
+        snap = run / "snapshot_000000001000.zip"
+        model.save(str(snap))
+    (run / "model_config.json").write_text(
+        current_model_version(load_mappings(), **arch_toggles_from_model(model)).to_json())
+    rows, masks, gate = reencode(sub)
+    r1 = read_checkpoint(sub, rows, masks, gate, snap, "a", tmp_path, threads=2)
+    r2 = read_checkpoint(sub, rows, masks, gate, snap, "b", tmp_path, threads=2)
+    pa, pb = load_probs(tmp_path, "a", sub), load_probs(tmp_path, "b", sub)
+    assert hashlib.sha256(pa.tobytes()).digest() == hashlib.sha256(pb.tobytes()).digest()
+    strip = lambda r: {k: v for k, v in r.items() if k != "label"}   # noqa: E731
+    assert strip(r1) == strip(r2)
+
+
 def test_reader_reproduces_the_recording_policy_and_is_deterministic(tmp_path,
                                                                      restore_torch_globals):
     from utils.paths import main_models_dir
@@ -108,7 +137,18 @@ def test_reader_reproduces_the_recording_policy_and_is_deterministic(tmp_path,
     if not snap.exists():
         pytest.skip(f"{snap} is not in the archive")
     rows, masks, gate = reencode(sub)
-    r1 = read_checkpoint(sub, rows, masks, gate, snap, "a", tmp_path, threads=2, models_root=md)
+    from agents.model.model_version import ModelVersionError
+    from agents.model.model_version.version_break import LAST_BLOB_COMMIT
+    try:
+        r1 = read_checkpoint(sub, rows, masks, gate, snap, "a", tmp_path, threads=2, models_root=md)
+    except ModelVersionError as e:
+        # The recording policy predates the X5 version break (config v144): this code REFUSES it with the pinned
+        # fix (asserted: the refusal names the last pre-break commit), and the reproduction claim belongs to a
+        # checkout at or before it. Determinism is pinned on a fresh X5 checkpoint
+        # (`test_the_reader_is_deterministic_on_an_x5_checkpoint`).
+        assert "PRE-GENERATION" in str(e) and LAST_BLOB_COMMIT[:12] in str(e), str(e)[:400]
+        pytest.skip(f"the recording policy {snap} predates the X5 version break and is refused at HEAD "
+                    f"(asserted); its reproduction check runs pinned at <= {LAST_BLOB_COMMIT[:12]}")
     r2 = read_checkpoint(sub, rows, masks, gate, snap, "b", tmp_path, threads=2, models_root=md)
     agree = r1["recording_agreement"]
     assert agree["decisions"] == len(sub.decisions)

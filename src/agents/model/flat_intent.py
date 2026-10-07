@@ -1,5 +1,5 @@
 """X5's FLAT OPPONENT POINTER (`gen3_x5_flat_pointer_v1`, build unit U4;
-`designs/endstate/design_x5_belief_tokens.md` §3.7). `--belief-tokens fixed_mass` only: the `blob` arm
+`designs/endstate/design_x5_belief_tokens.md` §3.7). X5 only: the `blob` arm
 keeps the α / β heads (`opp_intent.py`) and never calls anything here.
 
 ONE candidate list, ONE softmax, in a fixed column layout for K move seats (`flat_layout`):

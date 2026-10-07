@@ -789,6 +789,40 @@ seat" exceptions), and listed every opponent-slot `hp > 0` gate F-X5-12 named pl
 - **No `ARCH_SIGNATURE` bump while both arms must build at one commit.** The bump comes with the loser's deletion,
   through `snapshot._DEAD_FEK_*`, as the P11b deletions do.
 
+**As built — the X5 VERSION BREAK, part 1 (2026-10-07; config v144, `gen3_x5_version_break_v1`).** X5 was ADOPTED
+(Decision record 2026-10-07) and the blob arm deleted, at ONE bump that carries every part of the break (later parts
+append to it without another bump):
+- **Versioning.** `MODEL_CONFIG_VERSION` 143 → 144, `ARCH_SIGNATURE` → `gen3_x5_version_break_v1`, and
+  `MIGRATION_FLOOR` → 144 with `SIGNATURE_FIRST_VERSION["gen3_x5_version_break_v1"] = 144` — the floor RISES,
+  superseding the legacy manifest's provisional D-L1 "decouple": the break's later parts reshape weights (the dead
+  value tower F1, the dead pointer bias F16b, the op's per-slot `out_gain` tied to one scalar) and change behaviour
+  (the intent_conditional pre-gain), so NO pre-break checkpoint — blob or fixed_mass — is reproducible at HEAD.
+  `_migrate_config`'s pre-generation refusal appends the belief-specific reason (`model_version/version_break.py`):
+  a config recording `belief_tokens: "blob"` (or lacking the key below v136 — blob was the only past) is told the
+  blob path is DELETED; one recording `fixed_mass` that it is a pre-break X5 checkpoint the break reshaped; both name
+  the pinned fix (`version_break.LAST_BLOB_COMMIT` = `26131c0c`, the last commit that builds blob). A resume / fork
+  exits `FATAL_CONFIG` (`main.train.config.enforce_not_shaped_parent` → `version_break.check_post_break`, before the
+  inheritance sweep); `main.checkargs` reports it ("pre-break parent"). The pickled kwarg is
+  `snapshot._DEAD_FEK_JUDGED` (`belief_tokens`: `fixed_mass` pops, any other value REFUSED with the same reason), and
+  `load_checkpoint_strict` refuses a blob zip before SB3 splats its kwargs (`refuse_deleted_pickled_kwargs`).
+- **The flip.** `--belief-tokens`, the `belief_tokens` extractor kwarg / `ModelVersion` field / `_resolve` line /
+  registry row, `hypothesis_set.BELIEF_TOKEN_MODES` and the production mirror's key are DELETED
+  (`designs/deleted_flags.md`; a typed flag is refused at parse time with the reason). The opponent-belief family
+  (`opp_belief_slots` / `opp_intent`, both on in production) builds X5 whenever it is on, and REFUSES a configuration
+  missing one of X5's requirements (`t0_species_prior`, `move_belief_mode`, `move_prior_fusion`, both belief toggles, `entity_tail_seats`,
+  `entity_topk_seats` ≥ 4, the op K agreement, `damage_candidate_k` = 0) — there is no blob fallback. With both
+  belief toggles off nothing of X5 is built (the belief-off ablation surface). The registry declares the coupling on
+  `opp_belief_slots` (`requires` is acyclic; `opp_intent`'s half is a constructor refusal `flag_requires_test` knows).
+- **The deletion.** BeliefSlots' forward splice and the α / β forward block are gone; `BeliefSlots`,
+  `AlphaIntentHead` and `BetaSwitchHead` are still CONSTRUCTED (their init draws are part of the global RNG stream
+  every later initial byte follows) — BeliefSlots discarded at once, α / β retired by the policy before the optimizer.
+  The blob-only learner terms (the α / β CE and β's set-valued credit, the hidden-team Hungarian row) and their
+  tests go with them; the ride-along B head's α form (`OppEffectEnsemble`) too.
+- **Byte identity.** The production model is the pre-break fixed_mass arm, byte for byte: the K9 learner golden's
+  default slot now holds that arm's committed entry MOVED VERBATIM (init `47c4c5fd…`, post `70a26bfc…`, every loss;
+  torch 2.8.0+cu126; its seed-18 buffer renamed `learner_golden_buffer.npz`) and reproduces it IDENTICALLY at the
+  break (`designs/research_state/measurements/version_break_identity_2026-10-07/`).
+
 **Rust.** No runtime observation or label change.
 - The label-writer guard is **DONE** (F-X5-3, `680edc36`, `gen3_label_lookup_guard_v1`): every Rust label writer
   returns an `Err` (a FAULT) on a lookup it cannot make, and species match by dex num. It never fired (0 skips over
@@ -1986,3 +2020,4 @@ the safe default, but would leave X5 unadopted for reasons of noise.
 | 2026-10-07 | **LOOK 3 READ (registered rule, no decision by anyone yet)** | **Matched steps: NON-INFERIOR** (Δ̂ −0.99 pp [−2.92, +0.94], t 2.788 ≥ 1.874 on 14 df; n = 8 per arm, the full 8 × 8 cross: looks 1–2's 25 cells reused, 39 new). **Matched wall-time, END-TO-END (fixed_mass 12M vs blob 15M): NOT DETECTED, INFERIOR** (Δ̂ −5.91 pp [−7.54, −4.28], upper one-sided 95 % −4.57 < −3.5; Amendment 5: a cost-per-GPU-hour deficit at s = +16.7 %). SENSITIVITY line (13M steady-state, never a verdict): Δ̂ −4.12 pp [−5.46, −2.77], would read NOT DETECTED without the INFERIOR label (upper bound −3.01). **Purpose metric (1), tested in sequence because (i) is NON-INFERIOR: CROSSED** — conditional intent log loss over blob's named set 1.753 (fixed_mass, mean over all eight blob sets) vs 1.904 (blob), improvement 0.151 nats, t 10.05 ≥ 1.874 on 14 df; coverage reported: fixed_mass reserves 10.8 % outside the set against 5.15 % realised (CITL +5.6 pp), blob 0.15 % against 5.1 % (−5.0 pp). Played and read at the training pin `706fa536` (`bef16d61`), after a reviewed engine drift (11 commits since `bcb0296c`, none on a game path); one engine per architecture pair because the `706fa536`-trained checkpoints record two defaulted kwargs (`policy_readout`, `oracle_reveal`) the engine's forward fingerprint counts. **Under the owner's pre-committed rule (`079dee3e`: adopt unless matched steps is INFERIOR) these reads imply ADOPT; the decision is the owner's and is not taken here.** | — (a read, not a choice) | ledger 2026-10-07 READ (look 3); `measurements/x5ab_look3_2026-10-07/` |
 | 2026-10-07 | **X5 ADOPTED: hypothesis tokens (`--belief-tokens fixed_mass`) become the production belief representation, by the owner's PRE-COMMITTED rule (`079dee3e`, "a go as long as they aren't worse")** | Look 3 (`c344ccd1`, 8 seeds per arm, played at the training pin 706fa536): MATCHED STEPS **NON-INFERIOR** (Δ̂ −0.99 pp [−2.92, +0.94], t 2.788 ≥ 1.874); matched wall time (end-to-end, 12M) INFERIOR (−5.91 pp; the accepted cost at s = +16.7 %, to be recovered by the static-token and performance work); purpose metric (1) CROSSED (intent log loss 1.753 vs 1.904, −0.151 nats, t 10.05). **Consequences:** the production config flips to fixed_mass at the ONE planned version break, which also carries: the blob-path deletion (§3.8), the exact bundle (F1 / F6a / F7a / F16b), the obs-facts append (branch `obs-facts-append`), the op `out_gain` slot-tie, the intent_conditional pre/post-gain unification, baselines re-pointed or era-marked; plus the h2h fingerprint ignoring default-valued settings (look-3 finding 1). Recorded by the orchestrator under the owner's delegation (through 10-07); the owner may reverse it. | Waiting for a fresh owner decision (the rule was pre-committed precisely so the read decides) | owner (pre-committed 10-06), applied 10-07 |
 | 2026-10-07 | **The move-resolution family (`--move-resolution on`) builds under `fixed_mass`** (was refused) | It reads the flat pointer's re-expression (§3.7) with OTHER PRICED, per this doc's §3.7 / §9 M3 (c): OTHER_move as one seat per priority level (the exact order × move-fact tail expectation), OTHER_species as a 7th mon on the renormalised tail; `off` byte-identical in both modes | Excluding OTHER (a claim, not an absence; less than the seven blocks it retires already deliver); one tail-averaged OTHER seat at priority 0 or the tail's mean priority (wrong order) | `design_arch_audit.md` Decision record 2026-10-07 |
+| 2026-10-07 | **Version break part 1 AS BUILT: the X5 flip + the blob deletion** (config v144, `gen3_x5_version_break_v1`) | ONE bump for the whole break; `MIGRATION_FLOOR` RISES to 144 (every pre-break checkpoint runs pinned: the later parts reshape weights and change behaviour); the belief family builds X5 whenever on and refuses a missing requirement; the blob forward and loss paths deleted; BeliefSlots / α / β kept as constructed-then-discarded modules for their RNG draws; refusals name `LAST_BLOB_COMMIT` (`26131c0c`) and exit `FATAL_CONFIG` on a resume; the K9 golden's fixed_mass entry moved verbatim (byte-identical) | Decoupling the floor from the signature (legacy manifest D-L1, provisional — the later parts make no pre-break checkpoint reproducible); a `blob` fallback when a requirement is off (a second belief path to keep honest); deleting the α / β / BeliefSlots constructors (moves every production init byte, the K9 golden); re-recording the golden (the identity proof would be lost) | §3.8 "As built — the X5 VERSION BREAK, part 1"; `CHANGELOG.md` v144; `x5_version_break_test.py` |
