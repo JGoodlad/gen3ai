@@ -721,6 +721,32 @@ gen3ou has no team preview, so `apply_teambuilder_team` never attaches the sprea
 matches the declared teambuilder team to the request-built team by species and fills in
 IVs/EVs/nature (spread only, never re-running `_update_from_teambuilder`). Without it this block
 emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mon.
+**OBS-FACTS block — 84 dims, COMPUTED but NOT YET IN THE OBSERVATION (`gen3_obs_facts_v1`,
+`obs_facts.py`; Rust twin `src/rust_sim/src/encoder/facts.rs`; layout `constants.FACTS_*`).**
+`encode_obs_facts(vec, off, live, our_species, event_window)` writes it into a caller's buffer;
+`Gen3ObservationEncoder.encode` does NOT call it. The append (2761 → 2845, the new last block) and
+the model's `obs_facts` consumer (`off` / `v1`) land at the ONE planned checkpoint break, the X5 adoption
+version break (orchestrator decision 2026-10-06; branch `obs-facts-append`;
+`designs/endstate/design_entity_coverage_audit.md` §8). Four sub-blocks, each laid out to be ROUTED to
+an entity:
+
+| sub-block | offset | dims | content |
+|---|---|---|---|
+| `seen` | 0 | 6 × 7 | per OUR mon (row i = our team slot i): `[on_field_once, move_seen ×4, item_public, ability_public]` — what the OPPONENT has seen of it (backlog E1). The four move bits follow `LivePokemon.moves` (sorted by key), which is the per-mon slot's sorted move order |
+| `choice` | 42 | 4 | the OPPONENT ACTIVE: `[not_locked_by_item, not_locked_by_moves, stint_first_move (embedding id), stint_run (SAT_LUT)]`; zero when it is fainted or absent |
+| `vol` | 46 | 2 × 5 × 3 | per side (ours, theirs), the active's `encore, taunt, disable, uproar, partiallytrapped`: `[elapsed, min_left, max_left] / 8` (`FACTS_VOL_DURATION`; `min_left ≥ 1` while present) |
+| `screens` | 76 | 2 × 4 | per side: turns left / 5 on `reflect, light_screen, safeguard, mist` |
+
+Sources: the view (`LiveMove.seen`, `item_public`, `ability_public`, `residual_done`, the volatiles'
+`|turn|`-counted counters, the side conditions' start turns) and the event window's `facts` fold
+(`agents/training/obs_facts_fold.py`, riding `EventWindowTracker`, so every caller that threads
+`event_window=` threads it). **Elapsed is RESIDUALS**: the counter (or `turn − start`) plus one when
+`residual_done`. With no window the stint reads zero and the Encore / Disable bounds take the union of
+both adjustments. Gates: `obs_facts_test.py` (constructed protocol, every fact; each FAILS on revert of
+the code it names), slice O's `[FACTS]` comparison (the core ships the block beside the row; byte
+equality at every COMMIT decision), slice V rules V18 / V19, and the ENGINE truth test
+`src/rust_sim/tests/obs_facts_truth_test.rs`.
+
 **Board (reactive) block — 17 dims, layout in `reactive.py`.** `REACTIVE_SCALAR_DIM` (5) raw
 board scalars, then the 12-dim active-req-moves block. Offsets are `reactive_layout` entries —
 read them, never hardcode. **gen3_entity_rehome_v1**: the two 144-dim matchup matrices are

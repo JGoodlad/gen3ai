@@ -78,6 +78,13 @@ RULES: Dict[str, Tuple[str, str, str]] = {
                           "view.rs weather_json"),
     "V13-legal-flags": ("the legality flags are poke-env's parse of the request", "Battle.parse_request",
                         "view_adapter.legal_actions_from_payload"),
+    "V18-public-reveal": ("`gen3_obs_facts_v1`: a move / item / ability is PUBLIC once a protocol line "
+                          "revealed it — `moved(reveal=True)`, the `item` / `ability` setters, "
+                          "`end_item`, a Trick swap; never a `|request|` (so on OUR side: what the "
+                          "opponent has seen)", "Pokemon.moved / item.setter / ability.setter / "
+                          "end_item, abstract_battle -activate Trick", "present/mon.rs + board_reading.rs"),
+    "V19-residual-phase": ("`gen3_obs_facts_v1`: `residual_done` = this turn's `|upkeep|` was read",
+                           "Gen3Battle.parse_message `_upkeep_turn`", "board_reading.rs upkeep_turn"),
 }
 
 #: ``LivePokemon`` field → (class on OUR side, class on THEIR side, rule id or None).
@@ -105,6 +112,8 @@ MON_FIELDS: Dict[str, Tuple[str, str, Optional[str]]] = {
     "stats": (SIM, RULE, "V9-opp-hidden"),
     "current_hp": (SIM, RULE, "V9-opp-hidden"),
     "max_hp": (SIM, RULE, "V9-opp-hidden"),
+    "item_public": (RULE, RULE, "V18-public-reveal"),
+    "ability_public": (RULE, RULE, "V18-public-reveal"),
 }
 SIDE_FIELDS: Dict[str, Tuple[str, Optional[str]]] = {
     "team_size": (SIM, None),
@@ -116,6 +125,7 @@ VIEW_FIELDS: Dict[str, Tuple[str, Optional[str]]] = {
     "turn": (SIM, None), "finished": (SIM, None), "won": (SIM, None), "lost": (SIM, None),
     "weather.weather": (SIM, None), "weather.is_permanent": (SIM, None),
     "weather.turns_active": (RULE, "V12-weather-turns"),
+    "residual_done": (RULE, "V19-residual-phase"),
 }
 LEGAL_FIELDS: Dict[str, Tuple[str, Optional[str]]] = {
     "move_slots": (SIM, None), "switches": (SIM, None), "force_switch": (SIM, None),
@@ -231,7 +241,7 @@ def _mon_value(m: LivePokemon, name: str) -> Any:
     if name in ("boosts", "volatiles", "base_stats", "stats"):
         return dict(v)
     if name == "moves":
-        return [(x.id, x.current_pp, x.max_pp) for x in v]
+        return [(x.id, x.current_pp, x.max_pp, x.seen) for x in v]
     return v
 
 

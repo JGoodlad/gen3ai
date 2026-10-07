@@ -408,6 +408,87 @@ a screen.
 
 ---
 
+## 8. As built: the OBS-FACTS block — COMPUTED; its append deferred to the version break (`gen3_obs_facts_v1`, 2026-10-06)
+
+The owner put four of §5's gaps IN SCOPE on 2026-10-06 as ONE observation-enrichment lever, screened
+on its own and NOT bundled into the static-token rebuild's arm: rank 4 (B7, backlog E1), rank 5 (B9's
+Choice-lock half), rank 6 (B5) and rank 7 (B8's Encore / Taunt, plus Disable, Uproar and the partial
+trap). Layout and sources: [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §1.7 and
+`src/agents/observation/CLAUDE.md` (the OBS-FACTS block).
+
+**Status (orchestrator decision under the owner's delegation, 2026-10-06, option A).** The block is
+BUILT and gated in both languages (the reading flags, the fold, the Python and Rust encoders, slice O's
+byte comparison beside the row, the engine truth test) but it is **not in the observation**: appending
+it (obs 2761 → 2845) changes `total_dim`, a weight field, so HEAD would refuse EVERY existing
+checkpoint — the X5 arms mid-A/B (the look-3 cross), the untaught meter's opponent, the Lane S readers.
+The append and its `--obs-facts {off,v1}` consumer therefore land at the ONE planned checkpoint break:
+the X5 adoption version break (after the look-3 read), together with the exact-refactor bundle (F1 /
+F6a / F7a / F16b), with the baselines re-pointed or era-marked in the same unit. That half is built and
+committed on branch `obs-facts-append` (`60ebf659`): the append, the flag (config v138), the goldens
+re-recorded, `obs_facts_inject.py`. Rejected: prefix-compatible loading of 2761-wide checkpoints (a
+compatibility shim, which root `CLAUDE.md` rules out); taking the break now.
+
+**What the block carries (84 dims; laid out to be appended after the event window).**
+
+| fact | dims | home it is laid out for |
+|---|---|---|
+| what the opponent has seen of each of OUR mons: on the field once, each of its four moves, its item, its ability | 6 × 7 (row = our team slot) | DYN on our mon (B7) |
+| the opponent active's Choice-lock EVIDENCE: NOT-locked by item, NOT-locked by two distinct moves this stint, the stint's first move (an embedding id), the trailing run | 4 | DYN on their active (B9) |
+| each active's Encore / Taunt / Disable / Uproar / partial trap: elapsed, min left, max left | 2 × 5 × 3 | DYN on each active (B8) |
+| each side's turns left on Reflect / Light Screen / Safeguard / Mist | 2 × 4 | SIDE (B5) |
+
+**Mechanics, verified in the pinned `deps/pokemon-showdown` (the gen3 → gen4 → … → base chain).**
+- Durations count RESIDUALS: `sim/battle.ts` `fieldEvent('Residual')` decrements `handler.state.duration` and
+  ends the condition at 0; `|upkeep|` follows the residual (`sim/battle.ts:2838`).
+- Reflect / Light Screen / Safeguard / Mist: `duration: 5` (`data/moves.ts`); the `durationCallback`
+  extensions are Light Clay and Persistent, neither in gen 3; the gen-4 mod changes only residual order.
+- Encore: `data/mods/gen3/moves.ts` `durationCallback() { return this.random(3, 7) }` = 3–6 (the PRNG's
+  upper bound is exclusive; the owner's "3–7?" is 3–6), and base `encore.onStart` adds one when
+  `!this.queue.willMove(target)` (the target already acted this turn) — RANDOM, so the block gives
+  bounds, never a claimed value.
+- Taunt: `data/mods/gen3/moves.ts` `duration: 2`, `durationCallback: undefined`; the gen-4 `onStart` override
+  carries no `willMove` adjustment, so exactly 2.
+- Disable: gen 3 `this.random(2, 6)` = 2–5, plus one from the gen-4 `onStart` when `!willMove`.
+  ⚠️ §3.3 row 28 reads this as "+1 if the target had NOT moved"; the source adds it when the target will
+  not move again this turn, i.e. it HAD moved (corrected here, a FINDING).
+- Uproar: gen 3 `this.random(2, 6)` = 2–5. Partial trap: `data/mods/gen4/conditions.ts`
+  `this.random(3, 7)` = 3–6, ending early when the trapper leaves (gen-5 `onResidual`).
+- Choice Band: `data/mods/gen4/items.ts` adds `choicelock` `onAfterMove`; its gen-4 `onStart` stores
+  `pokemon.lastMove`; base `choicelock.onBeforeMove` drops the lock when the item is no longer a
+  Choice item and exempts Struggle. So: a revealed non-Choice item, or a known empty hand, proves NOT
+  locked; two distinct freely selected moves in one stint prove NOT locked; the first move of a stint is
+  the lock's move if there is a lock.
+
+**Engine truth.** `src/rust_sim/tests/obs_facts_truth_test.rs` plays 60 seeded random-legal battles
+built around these mechanics and checks every encoded fact against the referee at every decision:
+2,879 decisions, 1,711 live screen readings exactly equal to the engine's remaining duration, the
+engine's Encore / Taunt / Disable / Uproar / trap durations inside the encoded bounds at 591 / 284 /
+266 / 270 / 580 readings, and 652 decisions where the engine's opponent active was choice-locked:
+no NOT-locked proof fired and the stint's first move was the locked move. 0 failures. Teeth: ignoring
+the residual phase fails it 26 times, ignoring the Encore / Disable adjustment 154 times.
+
+**The lever, as built on `obs-facts-append`.** `--obs-facts {off,v1}` (config v138, a STRUCTURAL
+`ModelFlag`): `off` (production) builds nothing and reads none of the block; `v1` builds
+`agents/model/obs_facts_inject.py`, four zero-init `IsolatedLinear`s adding each fact to its entity's
+role token. Identity at init and no RNG draw: a `v1` arm's every other initial weight equals the `off`
+arm's at the same seed (pinned on a real SB3-built policy). The static-token rebuild can re-route the
+block (SIDE tokens for `screens`, the DYN input for the rest) at the same break.
+
+**Version consequence (of the append).** No `ARCH_SIGNATURE` bump (the H-A / H-B precedent for an
+appended block): `total_dim` 2761 → 2845 carries the break. Measured on the branch: the 2761-dim prefix
+is byte-identical (all 991 obs-golden vectors, the 64 compile-parity rows, the learner golden's buffer)
+and with `off` one real PPO update is byte-identical (the learner golden's post-update hash unchanged,
+`092224261d81c5b8`). The routine gate on that branch failed exactly the tests that load a 2761-wide
+checkpoint (≈12: the untaught meter's opponent, the Lane S / policy-spectrum / ride-along readers, the
+baselines registry) plus the generated artifacts it had not yet regenerated.
+
+**Not built (still open):** confusion's elapsed count (its counter is decremented per move attempt, not per
+residual, and poke-env keeps no count); the Yawn stage; the opponent's disabled move id and the two-turn
+charge (the rest of B9); the last HP the opponent saw of our benched mons (backlog E1's fifth item); a
+move revealed by a `|cant|` line naming it (poke-env does not read one for either side).
+
+---
+
 ## Decision record
 
 | date | decision | chosen | rejected / alternatives | evidence |
@@ -416,3 +497,6 @@ a screen.
 | 2026-10-06 | Board layout recommended for the rebuild | Three board tokens: OUR SIDE and THEIR SIDE (one shared side-relative projection) + FIELD; `x` to own side, `g` and `c4` to field; the critic reads all three; the head-only board route removed | Keeping one global token (A1, A2, A4); a token per side condition (conditions are attributes, and trunk cost binds); a token per pending effect (slot-keyed = side-keyed in singles); arch audit option A's active-context token (superseded by the owner's DYN spec) | §4, §6.1, §6.2 |
 | 2026-10-06 | Amounts after the broadcast goes | An op-derived content input per mon, both sides (incoming rows, entry chip, end-of-turn ledger, outgoing damage to their mons), as a requirement of L1 | Relying on edge biases alone (ratios cannot carry amounts, ARCHITECTURE §5.3) | §4 A3 |
 | 2026-10-06 | New facts | B5–B9 as one separately-flagged enrichment lever screened after L1; B4 (status-landing physics) as a GIGO fix, not held for a screen | Folding them into L1 (two levers in one arm) | §6.3 |
+| 2026-10-06 | **As built (owner scope):** B7 (what the opponent has seen of us), B9's Choice-lock EVIDENCE, B5 (screen turns) and B8's Encore / Taunt / Disable / Uproar / partial trap | One 84-dim OBS-FACTS block, COMPUTED and gated in both languages; Choice-lock as evidence only (two NOT-locked proofs, the first move, the run), never a claimed lock state (owner) | A lock-state bit or P(locked) (the owner: "we can never 100 % know"); bundling into the rebuild's arm | §8; `gen3_obs_facts_v1` |
+| 2026-10-06 | **The append waits for the version break (orchestrator, owner's delegation, option A):** block computed, append deferred to the X5 adoption version break, with the exact-refactor bundle and the baselines re-pointed / era-marked in the same unit; the append + `--obs-facts {off,v1}` (v138) consumer kept ready on branch `obs-facts-append` | (B) prefix-compatible loading of 2761-wide checkpoints (a shim; root `CLAUDE.md` rules it out); (C) the break now (it breaks every checkpoint mid-X5 read, the look-3 cross and the untaught-meter opponent included); a flag that forks the obs width | §8 |
+| 2026-10-06 | Disable's adjustment | +1 when the target had ALREADY acted this turn (`!willMove`), for Encore and Disable alike | §3.3 row 28's "+1 if the target had not moved" (inverted) | `data/mods/gen4/moves.ts` `disable.condition.onStart`; §8 |

@@ -14,6 +14,12 @@ fn the_generated_layout_tiles_the_row() {
     assert_eq!(OFFSET_EVENT_WINDOW, OFFSET_PAIR_HISTORY + PAIR_HISTORY_DIM);
     assert_eq!(OBS_DIM, OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM);
     assert_eq!(VOLATILE_SLOTS.len(), VOLATILES_DIM);
+    // gen3_obs_facts_v1: the OBS-FACTS block's four sub-blocks tile it (computed beside the row)
+    assert_eq!(FACTS_CHOICE_OFFSET, FACTS_SEEN_OFFSET + FACTS_SEEN_DIM);
+    assert_eq!(FACTS_VOL_OFFSET, FACTS_CHOICE_OFFSET + FACTS_CHOICE_DIM);
+    assert_eq!(FACTS_SCREENS_OFFSET, FACTS_VOL_OFFSET + FACTS_VOL_DIM);
+    assert_eq!(OBS_FACTS_DIM, FACTS_SCREENS_OFFSET + FACTS_SCREENS_DIM);
+    assert_eq!(FACTS_VOL_EFFECTS.len() * FACTS_VOL_CELL_DIM, FACTS_VOL_SIDE_DIM);
     assert_eq!(POKEMON_ACTIVE_OFFSET + 1, POKEMON_FULL_DIM, "the active flag is LAST in the slot");
     // the lookup tables the encoder binary-searches are sorted
     assert!(VOLATILE_TO_SLOT.windows(2).all(|w| w[0].0 < w[1].0));

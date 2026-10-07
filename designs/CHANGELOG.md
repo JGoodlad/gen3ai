@@ -11958,3 +11958,28 @@ their pin's code and are unaffected. No run is live.
   (0.179 / 0.234 > 0.15 on the third update's probe rows; every judged row within fp32, max |Δ log π| 2.4e-7); the
   site is the E5 tail cut (`pointer_head.py` `w_all.topk`). The `legacy` control passes at 0.127 / 0.129 / 0.083;
   `static` × `fixed_mass` (no such cut) passes at 0.01–0.03. GPU checks DEFERRED.
+## 2026-10-06 — THE OBS-FACTS BLOCK, COMPUTED (`gen3_obs_facts_v1`; not yet in the observation; no config / ARCH_SIGNATURE change)
+
+Four facts the entity-coverage audit found the model never sees (`designs/endstate/design_entity_coverage_audit.md`
+§5 ranks 4-7, owner scope 2026-10-06), built and gated in both languages but NOT appended to the observation: the
+append changes `total_dim` and would make HEAD refuse every existing checkpoint, so it lands at the X5 adoption
+version break (orchestrator decision, option A; the append + `--obs-facts {off,v1}` + re-recorded goldens are on
+branch `obs-facts-append`).
+
+- **The reading:** the fork's `Move.seen` (a public `|move|` revealed it), `Pokemon.item_public` / `ability_public`
+  (protocol writes only; the request path goes through `_set_ability_from_request`), and `Gen3Battle._upkeep_turn`;
+  `LiveMove.seen`, `LivePokemon.item_public` / `ability_public` and `LiveView.residual_done` on the view. The Rust
+  `present()` mirrors all four (`PMove.seen`, `PMon.item_public` / `ability_public`, `BoardReading.upkeep_turn`; the
+  oracle overlay leaves the flags alone); slice V rules V18 / V19.
+- **The fold:** `agents/training/obs_facts_fold.py` (owned by `EventWindowTracker`) / `trackers::facts` — the stint of
+  each side's active and the Encore / Disable `!willMove` adjustment.
+- **The block (84 dims):** `agents/observation/obs_facts.py` / `encoder/facts.rs` — `seen` 6×7 (what the opponent has
+  seen of each of our mons), `choice` 4 (the opponent active's Choice-lock EVIDENCE: two NOT-locked proofs, the
+  stint's first move, the run), `vol` 2×5×3 (Encore / Taunt / Disable / Uproar / partial trap: elapsed, min left, max
+  left, in residuals), `screens` 2×4 (Reflect / Light Screen / Safeguard / Mist turns left). `core_events --obs` ships
+  the core's block beside each row and slice O compares it byte for byte.
+- **Engine truth:** `src/rust_sim/tests/obs_facts_truth_test.rs` — 2,879 decisions of 60 seeded random-legal battles,
+  0 failures (teeth: 26 failures without the residual phase, 154 without the Encore / Disable adjustment).
+- **Cost (obs-build benchmark, `--turn 25 --reps 400`, same session, median of 3):** COLD calls / encode 4,245 → 4,306
+  (+1.4%); the production WARM shape ~1,357 unchanged; the Rust core encode unchanged (the block is not in it).
+

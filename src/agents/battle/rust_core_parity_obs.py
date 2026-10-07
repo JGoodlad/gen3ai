@@ -47,6 +47,20 @@ def python_row(battle, tracker, legal) -> np.ndarray:
         assembler=tracker.obs_assembler(enc.dimension))
 
 
+def python_facts(battle, tracker) -> np.ndarray:
+    """The OBS-FACTS block (`gen3_obs_facts_v1`) the Python encoder computes at this decision — from
+    the same view and the same event window `python_row` encodes from. Not yet part of the row."""
+    from agents.observation.base import ObservationEncoder
+    from agents.observation.constants import OBS_FACTS_DIM
+    from agents.observation.obs_facts import encode_obs_facts
+
+    vec = np.zeros(OBS_FACTS_DIM, dtype=np.float32)
+    our = [m.species if m is not None else None
+           for m in ObservationEncoder.get_team_list(battle, is_opponent=False)]
+    encode_obs_facts(vec, 0, battle.strict_view().live, our, tracker.event_window)
+    return vec
+
+
 _SLOT_FIELDS = None
 
 
@@ -150,7 +164,8 @@ def python_tokens(battle, legal, mask) -> Dict[str, str]:
 
 
 def compare_row(where: str, cap: Mapping[str, Any], py_row: np.ndarray, py_mask: np.ndarray,
-                census: ObsCensus, py_tokens: Optional[Mapping[str, str]] = None) -> None:
+                census: ObsCensus, py_tokens: Optional[Mapping[str, str]] = None,
+                py_facts: Optional[np.ndarray] = None) -> None:
     """One decision: the core's wire frame + mask (+ choice tokens) against the Python row + mask
     (+ the mapper's tokens)."""
     from agents.battle.core_obs import RowRefused, check_row, wrap_row
@@ -166,6 +181,15 @@ def compare_row(where: str, cap: Mapping[str, Any], py_row: np.ndarray, py_mask:
         census.diverge("[REFUSED] a row is not the observation", (where, str(e)))
         return
     py = np.asarray(py_row, dtype=np.float32)
+    if py_facts is not None:
+        # gen3_obs_facts_v1: the block computed beside the row — BYTES, like the row.
+        import base64
+
+        got = np.frombuffer(base64.b64decode(cap.get("facts") or ""), dtype="<f4")
+        want = np.asarray(py_facts, dtype=np.float32)
+        if got.shape != want.shape or got.tobytes() != want.tobytes():
+            bad = (np.flatnonzero(got != want)[:8].tolist() if got.shape == want.shape else "shape")
+            census.diverge("[FACTS] the OBS-FACTS block", (where, bad))
     for name, lo, hi in _block_spans():
         if np.any(py[lo:hi] != 0):
             census.nonzero_blocks[name] += 1

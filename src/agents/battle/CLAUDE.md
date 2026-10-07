@@ -64,7 +64,17 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   predicates the event window uses too. `TurnDelta.build_from_events` (`training/turn_delta.py`)
   folds this on every production path — the diff-based detective is retired (see below).
 - **`LiveView` / `LiveSide` / `LivePokemon` / `LiveMove`** (`live_view.py`) — the
-  **current-board** read surface ("what is true now"), built via `battle.live_view()`. An
+  **current-board** read surface ("what is true now"), built via `battle.live_view()`.
+  🚨 **What a PROTOCOL line has revealed is current knowledge, and it is on the view**
+  (`gen3_obs_facts_v1`): `LiveMove.seen` (a public `|move|` revealed the move — the fork's
+  `Move.seen`, set only by `Pokemon.moved(reveal=True)`), `LivePokemon.item_public` /
+  `ability_public` (the fork's `item` / `ability` setters, `end_item` and a Trick swap; never a
+  `|request|` — the request path writes through `_set_ability_from_request`), and
+  `LiveView.residual_done` (`Gen3Battle._upkeep_turn == turn`: this turn's `|upkeep|` was read, so a
+  replacement decision sits AFTER the residual that Showdown's durations count). On OUR side the
+  three flags are what the OPPONENT has seen of us. The Rust core's `present()` carries the same four,
+  held equal by slice V (rules V18 / V19, `rust_core_parity_views.py`; pins in
+  `rust_core_present_test.py`). An
   immutable snapshot of HP, status, boosts, revealed moves/item/ability, volatiles, hazards,
   weather, team sizes/reveal counts — holding **only primitives, no past-turn state** and no
   reference back to poke-env's `Pokemon`. A consumer literally cannot reach `last_move`

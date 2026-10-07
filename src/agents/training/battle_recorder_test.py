@@ -56,6 +56,9 @@ class _FakeMon:
         self.stats = {}
         self.current_hp = None
         self.max_hp = None
+        # gen3_obs_facts_v1: what a protocol line has revealed (the fork's `Pokemon` defines both)
+        self.item_public = False
+        self.ability_public = False
 
 
 class _Ns:
@@ -518,7 +521,8 @@ def test_action_labels_use_typed_own_hidden_power():
     wire-truth ids the mask/mapper use stay bare; only the recorded LABEL is typed."""
     sceptile = _FakeMon("sceptile", 1.0)
     # live moveset keyed bare but each Move carries the typed id (poke-env's raw_id patch)
-    sceptile.moves = {"hiddenpower": SimpleNamespace(id="hiddenpowerice", current_pp=24, max_pp=24)}
+    sceptile.moves = {"hiddenpower": SimpleNamespace(id="hiddenpowerice", current_pp=24, max_pp=24,
+                                                     seen=False)}
     opp = _FakeMon("gengar", 1.0)
     b = _battle([sceptile], [opp], "sceptile", "gengar", turn=1, move_ids=["hiddenpower"])
 

@@ -323,3 +323,19 @@ through a forme change at both levels);
 `encoder::oracle::tests` (the cells tile the slot, the guard's teeth per block); `label_lookup_guard_test.rs` (the
 labels' consumer guard); `src/utils/rust_env/oracle_reveal_integration_test.py` (the real core from Python).
 
+## 12. The OBS-FACTS block — computed BESIDE the row (`gen3_obs_facts_v1`)
+
+`encoder::facts::obs_facts(inputs, tables, out)` is `agents/observation/obs_facts.py`'s
+`encode_obs_facts`, cell for cell (f64, one round at the write): what the opponent has seen of our team,
+the opponent active's Choice-lock evidence, the actives' Encore / Taunt / Disable / Uproar / partial-trap
+turns and each side's screen turns (`ARCHITECTURE`-level detail: `src/agents/observation/CLAUDE.md`).
+`BattleVersion::encode_facts(side, &mut [f32; OBS_FACTS_DIM])` computes it from the row's own inputs;
+it is NOT part of the row (`OBS_DIM` unchanged) until the X5 adoption version break appends it (branch
+`obs-facts-append`). `core_events --obs` ships it as `"facts"` (base64 little-endian f32) beside each
+row, and slice O compares it BYTE for byte with the Python block (`[FACTS]`; a broken Python cell reads
+2,081 divergences on the COMMIT tier). The reading half is `present/` (V18 / V19) and the fold is
+`trackers::facts` (`trackers.md`). The ENGINE truth test is `tests/obs_facts_truth_test.rs`: 60 seeded
+random-legal battles, every decision, the encoded screens equal the engine's remaining duration, the
+engine's volatile durations inside the encoded bounds, no NOT-locked proof while the engine holds
+`choicelock` and the first move IS the locked move.
+

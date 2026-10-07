@@ -18,6 +18,7 @@
 pub mod clock;
 pub mod delta;
 pub mod ev;
+pub mod facts;
 pub mod history;
 pub mod hp_belief;
 pub mod record;

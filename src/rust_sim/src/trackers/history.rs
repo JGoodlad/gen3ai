@@ -568,6 +568,9 @@ pub struct EventWindow {
     first_faint: Option<(String, Rel, &'static str, Option<LastAct>)>,
     pending_denials: Vec<EventRecord>,
     actions_closed: bool,
+    /// `EventWindowTracker.facts` (`gen3_obs_facts_v1`): the stint / Encore-Disable-adjustment fold
+    /// the OBS-FACTS block reads, fed the same deduplicated readings.
+    pub facts: super::facts::FactsFold,
 }
 
 impl Default for EventWindow {
@@ -600,6 +603,7 @@ impl Default for EventWindow {
             first_faint: None,
             pending_denials: Vec::new(),
             actions_closed: false,
+            facts: super::facts::FactsFold::default(),
         }
     }
 }
@@ -727,6 +731,7 @@ impl EventWindow {
             let side = e.side;
             let sp = ev::actor(e);
             let et = e.turn as i64;
+            self.facts.observe(e, et);
             if et != self.act_turn {
                 self.close_actions();
                 self.start_turn(et);

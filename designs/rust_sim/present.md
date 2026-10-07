@@ -160,6 +160,13 @@ The board audit (`check_view`) checks every SIM-FACT field against the engine at
 three fixed findings' fields and the benched toxic stage included (Flash Fire joined the audited
 volatiles) — and names what it cannot check (V9, V14, V15) in `rules_fired`.
 
+**What a protocol line has revealed** (`gen3_obs_facts_v1`; slice V rules V18 / V19): `PMove.seen`
+(`moved(reveal)`), `PMon.item_public` (`set_item`, `-enditem`, a Trick swap) and `ability_public`
+(`set_ability`; the request path writes through `set_ability_from_request`, the oracle overlay too, so
+neither reads as a reveal), and `BoardReading.upkeep_turn` (an `|upkeep|`, read before
+`BATTLE_IGNORED`); the view carries `MoveView.seen`, `MonView.item_public` / `ability_public` and
+`OneSidedView.residual_done`.
+
 `legal_actions()` is `LegalActions.from_battle` over the raw `|request|` (the `BoardReading` keeps its
 text) and `mask()` the 11-dim mask; slice V compares both to `Gen3ActionMasker` on every decision.
 

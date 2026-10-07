@@ -74,6 +74,19 @@ pub const OFFSET_GLOBAL: usize = 1584;
 pub const OFFSET_REACTIVE: usize = 1604;
 pub const OFFSET_PAIR_HISTORY: usize = 1621;
 pub const OFFSET_EVENT_WINDOW: usize = 1801;
+pub const FACTS_SEEN_ROW_DIM: usize = 7;
+pub const FACTS_SEEN_DIM: usize = 42;
+pub const FACTS_CHOICE_DIM: usize = 4;
+pub const FACTS_VOL_CELL_DIM: usize = 3;
+pub const FACTS_VOL_SIDE_DIM: usize = 15;
+pub const FACTS_VOL_DIM: usize = 30;
+pub const FACTS_SCREEN_TURNS: usize = 5;
+pub const FACTS_SCREENS_DIM: usize = 8;
+pub const FACTS_SEEN_OFFSET: usize = 0;
+pub const FACTS_CHOICE_OFFSET: usize = 42;
+pub const FACTS_VOL_OFFSET: usize = 46;
+pub const FACTS_SCREENS_OFFSET: usize = 76;
+pub const OBS_FACTS_DIM: usize = 84;
 pub const MAX_TURNS: usize = 250;
 pub const MAX_SPIKES: usize = 3;
 pub const MAX_PP: usize = 64;
@@ -259,6 +272,15 @@ pub const SLEEP_MAX_K: usize = 5;
 pub static SLEEP_USABLE_MOVES: [&str; 2] = ["sleeptalk", "snore"];
 pub const EARLY_BIRD: &str = "earlybird";
 pub const UNKNOWN_ABILITY: &str = "unknownability";
+
+/// gen3_obs_facts_v1 — the OBS-FACTS block's tables (`constants.FACTS_*`, `obs_facts.py`).
+pub const FACTS_TURN_NORM: f64 = 8.0;
+pub static FACTS_VOL_EFFECTS: [&str; 5] = ["encore", "taunt", "disable", "uproar", "partiallytrapped"];
+/// `constants.FACTS_VOL_DURATION`, in `FACTS_VOL_EFFECTS` order: (min, max, adjusted).
+pub static FACTS_VOL_DURATION: [(i64, i64, bool); 5] = [(3, 6, true), (2, 2, false), (2, 5, true), (2, 5, false), (3, 6, false)];
+pub static FACTS_SCREENS: [&str; 4] = ["reflect", "light_screen", "safeguard", "mist"];
+/// `obs_facts.PARTIAL_TRAP_IDS` — every partial-trap volatile id the reading starts.
+pub static FACTS_PARTIAL_TRAP_IDS: [&str; 7] = ["partiallytrapped", "wrap", "bind", "clamp", "whirlpool", "firespin", "sandtomb"];
 
 /// `gen3_mechanics._PROTECT_COUNTER_MAX` — the 1/8 floor of the protect-success odds.
 pub const PROTECT_COUNTER_MAX: u64 = 8;

@@ -525,6 +525,22 @@ impl BattleVersion {
         };
         crate::encoder::encode(&inputs, out)
     }
+    /// The OBS-FACTS block of `side` (`gen3_obs_facts_v1`, `encoder::facts`): computed from the same
+    /// inputs as the row, but NOT part of it yet — the append lands at the X5 adoption version break.
+    pub fn encode_facts(&self, side: usize, out: &mut [f32; crate::encoder::layout::OBS_FACTS_DIM]) -> R<()> {
+        let s = self.streams[side].as_ref().ok_or_else(|| fault(format!("no stream for p{}", side + 1)))?;
+        let trackers = s.trk.as_ref().ok_or_else(|| fault("encode_facts: this stream folds no trackers (with_trackers)"))?;
+        let legal = legal_actions(&s.board_reading);
+        let inputs = crate::encoder::Inputs {
+            reading: &s.board_reading,
+            view: self.view(side)?,
+            legal: legal.as_ref(),
+            trackers: &trackers.trackers,
+            oracle: s.oracle.as_deref(),
+        };
+        crate::encoder::facts::obs_facts(&inputs, crate::encoder::data::tables(), out);
+        Ok(())
+    }
     /// The TRUTH AUDIT of `side`'s view against this version's own engine board.
     pub fn audit(&self, side: usize, dex: &Dex) -> R<Audit> {
         let board = self.engine.as_ref().and_then(|e| e.battle_state()).ok_or_else(|| fault("this version holds no board (audit_on)"))?;

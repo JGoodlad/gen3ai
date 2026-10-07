@@ -257,6 +257,63 @@ EVENT_WINDOW_N = 32
 EVENT_TOKEN_DIM = 30
 EVENT_WINDOW_DIM = EVENT_WINDOW_N * EVENT_TOKEN_DIM                       # 960 (32*30)
 
+# gen3_obs_facts_v1 — the OBS-FACTS block. COMPUTED (`obs_facts.encode_obs_facts`, the Rust twin
+# `encoder::facts`) but NOT YET IN THE OBSERVATION: its append (2761 -> 2845 + `--obs-facts {off,v1}`)
+# lands at the ONE planned checkpoint break, the X5 adoption version break (orchestrator decision
+# 2026-10-06, `designs/endstate/design_entity_coverage_audit.md` §8; branch `obs-facts-append`).
+# Four facts the entity-coverage audit found the model never sees (`designs/endstate/
+# design_entity_coverage_audit.md` §5 ranks 4-7, owner scope 2026-10-06). Every mechanic is verified
+# in the pinned `deps/pokemon-showdown` (the block's encoder, `obs_facts.py`, cites each line).
+# Four sub-blocks, each laid out so an entity encoder can ROUTE it without offset arithmetic:
+#
+#   SEEN    [6 x 7]  per OUR mon, in the per-mon slot order (row i = our team slot i): what the
+#                    OPPONENT has seen of it (backlog E1) — [on_field, move_seen x4 (the per-mon
+#                    slot's own sorted move order), item_public, ability_public].
+#   CHOICE  [4]      the OPPONENT ACTIVE's Choice-lock EVIDENCE, never a lock state:
+#                    [not_locked_by_item, not_locked_by_moves, stint_first_move (a move EMBEDDING id —
+#                    the dex num, like the last-action block's), stint_run (log-saturated count)].
+#   VOL     [2 x 5 x 3]  per side (ours, theirs), the ACTIVE's Encore / Taunt / Disable / Uproar /
+#                    partial trap: [elapsed, min_left, max_left] in turns / FACTS_TURN_NORM.
+#   SCREENS [2 x 4]  per side (ours, theirs): turns left / 5 on Reflect / Light Screen / Safeguard /
+#                    Mist.
+FACTS_SEEN_ROW_DIM = 7
+FACTS_SEEN_DIM = TEAM_SIZE * FACTS_SEEN_ROW_DIM                             # 42
+FACTS_CHOICE_DIM = 4
+# The duration volatiles, in block order, and their gen-3 DURATION in residuals: (min, max,
+# adjusted), `adjusted` = Showdown adds one when the target had already acted that turn. Sources
+# (deps/pokemon-showdown, the gen3 -> gen4 -> base mod chain):
+#   encore   data/mods/gen3/moves.ts durationCallback this.random(3, 7) = 3..6; data/moves.ts
+#            encore.condition.onStart duration++ when the target will not move this turn
+#   taunt    data/mods/gen3/moves.ts duration 2, durationCallback undefined; the gen4 onStart
+#            override has no willMove adjustment
+#   disable  data/mods/gen3/moves.ts this.random(2, 6) = 2..5; data/mods/gen4/moves.ts
+#            disable.condition.onStart duration++ when the target will not move this turn
+#   uproar   data/mods/gen3/moves.ts this.random(2, 6) = 2..5
+#   partial trap  data/mods/gen4/conditions.ts partiallytrapped this.random(3, 7) = 3..6 (ends
+#            early when the trapper leaves)
+FACTS_VOL_EFFECTS = ("encore", "taunt", "disable", "uproar", "partiallytrapped")
+FACTS_VOL_DURATION = {
+    "encore": (3, 6, True),
+    "taunt": (2, 2, False),
+    "disable": (2, 5, True),
+    "uproar": (2, 5, False),
+    "partiallytrapped": (3, 6, False),
+}
+FACTS_VOL_CELL_DIM = 3                                                      # elapsed, min_left, max_left
+FACTS_VOL_SIDE_DIM = len(FACTS_VOL_EFFECTS) * FACTS_VOL_CELL_DIM            # 15
+FACTS_VOL_DIM = 2 * FACTS_VOL_SIDE_DIM                                      # 30
+FACTS_TURN_NORM = 8.0
+# LiveSide side-condition names. All four last 5 residuals in gen 3 (data/moves.ts reflect /
+# lightscreen / safeguard / mist `duration: 5`; Light Clay and Persistent do not exist in gen 3).
+FACTS_SCREENS = ("reflect", "light_screen", "safeguard", "mist")
+FACTS_SCREEN_TURNS = 5
+FACTS_SCREENS_DIM = 2 * len(FACTS_SCREENS)                                  # 8
+FACTS_SEEN_OFFSET = 0
+FACTS_CHOICE_OFFSET = FACTS_SEEN_OFFSET + FACTS_SEEN_DIM
+FACTS_VOL_OFFSET = FACTS_CHOICE_OFFSET + FACTS_CHOICE_DIM
+FACTS_SCREENS_OFFSET = FACTS_VOL_OFFSET + FACTS_VOL_DIM
+OBS_FACTS_DIM = FACTS_SCREENS_OFFSET + FACTS_SCREENS_DIM                    # 84
+
 
 class EventCol(IntEnum):
     """The 30 columns of ONE H-B event token row — the single declaration the producer

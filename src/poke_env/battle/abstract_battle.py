@@ -1182,6 +1182,10 @@ class AbstractBattle(ABC):
                 of_src = next((t[len("[of] "):] for t in event[4:] if t.startswith("[of] ")), event[4])
                 mon2 = self.get_pokemon(of_src)
                 mon._item, mon2._item = mon2.item, mon.item
+                # gen3ai fork (`gen3_obs_facts_v1`): after a public Trick each side knows what both
+                # mons now hold (its own old item), so both items are public.
+                mon._item_public = True
+                mon2._item_public = True
             elif target != "":  # ['', '-activate', '', 'move: Splash']
                 # An ability activating (e.g. |-activate|p1a: Snorlax|ability: Immunity)
                 # REVEALS that ability — record it persistently, not just as a transient

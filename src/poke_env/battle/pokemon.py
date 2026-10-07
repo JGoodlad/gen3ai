@@ -32,6 +32,8 @@ class Pokemon:
         "_heightm",
         "_consumed_item",
         "_item",
+        "_item_public",     # gen3ai (`gen3_obs_facts_v1`): a protocol line revealed the item
+        "_ability_public",  # gen3ai (`gen3_obs_facts_v1`): a protocol line revealed the ability
         "_ivs",
         "_last_cant_reason",
         "_last_details",
@@ -115,6 +117,11 @@ class Pokemon:
         self._terastallized_type: Optional[PokemonType] = None
         self._item: Optional[str] = GenData.from_gen(gen).UNKNOWN_ITEM
         self._consumed_item: Optional[str] = None
+        # gen3ai fork (`gen3_obs_facts_v1`, backlog E1): set by the PROTOCOL write paths only (the
+        # `item` / `ability` setters and `end_item`), never by a `|request|` or the teambuilder —
+        # so on OUR side they read "the opponent has seen our item / ability".
+        self._item_public: bool = False
+        self._ability_public: bool = False
         self._last_request: Optional[Dict[str, Any]] = {}
         self._last_details: str = ""
         self._must_recharge: bool = False
@@ -247,7 +254,7 @@ class Pokemon:
         if self.ability is None:
             # needed for ability initialization in start of game,
             # done anyway in update_from_request()
-            self.ability = pkmn_request["baseAbility"]
+            self._set_ability_from_request(pkmn_request["baseAbility"])
         assert pkmn_request["baseAbility"] == (
             self.base_ability or ""
         ), f"{pkmn_request['baseAbility']} != {self.base_ability or ''}"
@@ -442,6 +449,7 @@ class Pokemon:
     def end_item(self, item: str):
         self._consumed_item = item
         self._item = None
+        self._item_public = True
 
         if item == "powerherb":
             self._preparing_move = None
@@ -514,6 +522,9 @@ class Pokemon:
         move = None
         if reveal:
             move = self._add_move(move_id)
+            # gen3ai fork (`gen3_obs_facts_v1`, E1): the public line revealed this move.
+            if move is not None:
+                move._seen = True
         if use:
             if move is not None:
                 move.use(pressure)
@@ -770,7 +781,7 @@ class Pokemon:
         self._active = request_pokemon["active"]
 
         if self.ability is None:
-            self.ability = request_pokemon["baseAbility"]
+            self._set_ability_from_request(request_pokemon["baseAbility"])
         if (
             "ability" in request_pokemon
             and request_pokemon["ability"] != request_pokemon["baseAbility"]
@@ -951,8 +962,16 @@ class Pokemon:
         else:
             return self._ability
 
+    def _set_ability_from_request(self, ability: str) -> None:
+        """gen3ai fork (`gen3_obs_facts_v1`): the ``ability`` setter's write WITHOUT the public
+        flag — a ``|request|`` tells only its own side, never the opponent."""
+        public = self._ability_public
+        self.ability = ability
+        self._ability_public = public
+
     @ability.setter
     def ability(self, ability: str):
+        self._ability_public = True
         if self._ability is None:
             self._ability = to_id_str(ability)
         else:
@@ -1188,8 +1207,22 @@ class Pokemon:
         """
         return self._item
 
+    @property
+    def item_public(self) -> bool:
+        """gen3ai fork (`gen3_obs_facts_v1`): a PROTOCOL line has revealed this mon's item (an
+        ``-item`` / ``-enditem`` / ``[from] item:`` reading). Never set by a ``|request|``."""
+        return self._item_public
+
+    @property
+    def ability_public(self) -> bool:
+        """gen3ai fork (`gen3_obs_facts_v1`): a PROTOCOL line has revealed this mon's ability
+        (``[from] ability:`` / ``-ability``). Never set by a ``|request|`` or by the species
+        having a single legal ability."""
+        return self._ability_public
+
     @item.setter
     def item(self, item: Optional[str]):
+        self._item_public = True
         self._item = to_id_str(item) if item is not None else None
         if self._item:
             self._consumed_item = None

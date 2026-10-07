@@ -93,6 +93,10 @@ class LiveMove:
     id: str
     current_pp: int
     max_pp: int
+    # gen3_obs_facts_v1 (backlog E1): a public ``|move|`` line revealed this move (poke-env's own
+    # reveal rule, ``Move.seen``). On the opponent's side every listed move is seen; on OURS it
+    # is "the opponent has seen this move of ours".
+    seen: bool = False
 
 
 @dataclass(frozen=True)
@@ -160,6 +164,13 @@ class LivePokemon:
     current_hp: Optional[int] = None
     max_hp: Optional[int] = None
 
+    # ---- what a PROTOCOL line has revealed (gen3_obs_facts_v1, backlog E1) ----
+    # Set by the reading's protocol write paths only, never by a ``|request|``: on our side they
+    # are "the opponent has seen our item / ability". ``item_public`` with ``item`` None is a known
+    # EMPTY hand (a Knock Off / Thief victim, a consumed Berry).
+    item_public: bool = False
+    ability_public: bool = False
+
     @property
     def move_ids(self) -> Tuple[str, ...]:
         """Just the revealed move ids, sorted — the terse accessor for id-only call-sites
@@ -194,7 +205,8 @@ class LivePokemon:
         # loops in the tree's hottest function (this build measured 20% of per-decision worker
         # CPU before `gen3_live_view_build_micros_v1`, 17% after).
         moves = tuple([
-            LiveMove(id=mid, current_pp=int(mv.current_pp), max_pp=int(mv.max_pp))
+            LiveMove(id=mid, current_pp=int(mv.current_pp), max_pp=int(mv.max_pp),
+                     seen=mv.seen)
             for mid, mv in sorted(mon.moves.items())
         ])
         # Spread: base_stats is public (both sides); ivs/evs/nature are own-side only.
@@ -237,6 +249,8 @@ class LivePokemon:
             stats=dict(mon.stats) if mon.stats else {},
             current_hp=(int(mon.current_hp) if mon.current_hp is not None else None),
             max_hp=(int(mon.max_hp) if mon.max_hp is not None else None),
+            item_public=mon.item_public,
+            ability_public=mon.ability_public,
         )
 
 
@@ -343,6 +357,10 @@ class LiveView:
     finished: bool = False
     won: Optional[bool] = None  # None until the battle ends
     lost: Optional[bool] = None  # None until the battle ends
+    # gen3_obs_facts_v1: this turn's end-of-turn residuals have run (its ``|upkeep|`` was read) —
+    # true at a forced replacement after a faint, false at a turn-start or Baton Pass decision.
+    # Showdown durations count residuals, so a turns-left read needs it.
+    residual_done: bool = False
 
     def mon(self, side: str, species: str) -> Optional[LivePokemon]:
         return (self.ours if side == "ours" else self.opp).get(species)
@@ -396,6 +414,7 @@ class LiveView:
             finished=bool(battle.finished),
             won=battle.won,
             lost=battle.lost,
+            residual_done=bool(getattr(battle, "residual_done", False)),
         )
 
 

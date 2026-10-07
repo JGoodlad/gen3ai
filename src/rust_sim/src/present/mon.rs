@@ -29,6 +29,9 @@ pub struct PMove {
     /// `Move._is_last_used` — `Pokemon.last_move` (M5 Lane F hand-off: the scripted bots read it;
     /// written by `moved` and cleared by `switch_out`, exactly poke-env's two writers).
     pub last_used: bool,
+    /// `Move._seen` (`gen3_obs_facts_v1`, backlog E1): a public `|move|` line revealed this move —
+    /// set by `moved(reveal=True)` only, never by a request.
+    pub seen: bool,
 }
 
 /// The fields of `Move.entry` the reading reads.
@@ -57,7 +60,7 @@ impl PMove {
                 id = dex::to_id(raw).chars().filter(|c| !c.is_ascii_digit()).collect();
             }
         }
-        let mut m = PMove { id, current_pp: 0, from_transform, base_power_override: bpo, last_used: false };
+        let mut m = PMove { id, current_pp: 0, from_transform, base_power_override: bpo, last_used: false, seen: false };
         let max = m.max_pp()?;
         m.current_pp = if from_transform { max.min(5) } else { max };
         Ok(m)
@@ -286,6 +289,11 @@ pub struct PMon {
     pub item: Option<String>,
     /// `_consumed_item`, raw (id-normalised only at the read-model).
     pub consumed_item: Option<String>,
+    /// `_item_public` / `_ability_public` (`gen3_obs_facts_v1`, backlog E1): a PROTOCOL line
+    /// revealed the item / ability — the `item` / `ability` setters, `end_item` and a Trick swap;
+    /// never a `|request|`.
+    pub item_public: bool,
+    pub ability_public: bool,
     last_details: String,
     pub active: bool,
     pub revealed: bool,
@@ -322,6 +330,8 @@ impl PMon {
             name: None,
             item: Some(UNKNOWN_ITEM.to_string()),
             consumed_item: None,
+            item_public: false,
+            ability_public: false,
             last_details: String::new(),
             active: false,
             revealed: false,
@@ -379,8 +389,15 @@ impl PMon {
     pub fn ability(&self) -> Option<&str> {
         self.temporary_ability.as_deref().or(self.forme_change_ability.as_deref()).or(self.ability_base.as_deref())
     }
-    /// `Pokemon.ability` setter: the BASE slot while it is None, the temporary slot after.
+    /// `Pokemon.ability` setter: the BASE slot while it is None, the temporary slot after. A
+    /// protocol write, so the ability is PUBLIC from here on (`gen3_obs_facts_v1`).
     pub fn set_ability(&mut self, a: &str) {
+        self.ability_public = true;
+        self.set_ability_from_request(a);
+    }
+    /// `Pokemon._set_ability_from_request` (`gen3_obs_facts_v1`): the setter's write without the
+    /// public flag — a `|request|` tells only its own side.
+    pub fn set_ability_from_request(&mut self, a: &str) {
         if self.ability_base.is_none() {
             self.ability_base = Some(dex::to_id(a));
         } else {
@@ -530,7 +547,7 @@ impl PMon {
         self.active = req.active;
         if self.ability().is_none() {
             let base = req.base_ability.as_deref().ok_or_else(|| refuse(PyExc::KeyError, "request mon without baseAbility (KeyError)"))?;
-            self.set_ability(base);
+            self.set_ability_from_request(base);
         }
         if let Some(a) = &req.ability {
             if Some(a.as_str()) != req.base_ability.as_deref() {
@@ -858,6 +875,12 @@ impl PMon {
         let mut at: Option<MoveRef> = None;
         if reveal {
             at = self.add_move(move_id)?;
+            // `gen3_obs_facts_v1` (E1): the public line revealed this move.
+            if let Some(a) = &at {
+                if let Some(m) = self.moves.get_mut(a) {
+                    m.seen = true;
+                }
+            }
         }
         if use_ {
             if let Some(a) = &at {

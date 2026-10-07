@@ -91,6 +91,7 @@ class Move:
         "_is_last_used",
         "_max_pp_cache",    # gen3ai: lazy per-instance memo of `max_pp` (see the property)
         "_request_target",
+        "_seen",            # gen3ai (`gen3_obs_facts_v1`): a PUBLIC line revealed this move
     )
 
     def __init__(
@@ -119,6 +120,11 @@ class Move:
 
         self._current_pp = min(5, self.max_pp) if from_transform else self.max_pp
         self._is_last_used: bool = False
+        # gen3ai fork (`gen3_obs_facts_v1`, backlog E1): True once a protocol line has REVEALED
+        # this move — `Pokemon.moved(..., reveal=True)`, the one path poke-env reveals an
+        # opponent's move through. A request never sets it, so on OUR side it reads "the
+        # opponent has seen this move", the same reading rule pointed at our own mons.
+        self._seen: bool = False
 
         self._dynamaxed_move = None
         self._request_target = None
@@ -459,6 +465,13 @@ class Move:
     @property
     def is_last_used(self) -> bool:
         return self._is_last_used
+
+    @property
+    def seen(self) -> bool:
+        """gen3ai fork (`gen3_obs_facts_v1`): a public ``|move|`` line revealed this move (the
+        reading's own reveal rule — a called Metronome move or a ``lockedmove`` continuation is
+        not a reveal). Never set from a ``|request|``."""
+        return self._seen
 
     @property
     def is_protect_counter(self) -> bool:
