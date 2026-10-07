@@ -373,7 +373,7 @@ SCREEN, one of the "behaviour changes, each screened at short equal budget" befo
   the X5 encoding cost win. A failure splits per §7.
 - **Before the GPU:** the deferred checks of §10.
 
-### 8.1 The screen's pre-registration — DRAFT, NOT REGISTERED (2026-10-06)
+### 8.1 The screen's pre-registration — REGISTERED 2026-10-07 (the §8.2 amendment binds where it differs)
 
 🚨 **A draft. Nothing here binds until the orchestrator registers it (with the owner's δ) before the first seed
 launches; a launch from this block without that registration is not the screen.** It follows the X5 A/B's
@@ -435,6 +435,19 @@ read is the likely outcome when `static` is truly equal. The orchestrator choose
 single look as a HARM screen (an INFERIOR read kills or splits; anything else goes to the deep-run decision with
 the read), (b) a wider δ, or (c) X5's sequential extension (looks at 3 / 5 / 8 seeds, O'Brien–Fleming boundaries,
 ≈ 41 GPU-h ceiling).
+
+
+### 8.2 REGISTRATION (orchestrator, 2026-10-07, under the owner's delegation; before any seed)
+
+The draft above binds, with these choices fixed now:
+- **Belief arm `fixed_mass`** (X5 ADOPTED, `c471c2a8`) and **readout `tower`** (production's; F2 `trunk` is not adopted) in BOTH arms. All other new flags stay at production defaults: `--move-resolution off`, `--value-threat-inject on`, `--speed-physics off`.
+- **δ = 3.5 pp**, X5's margin, so a pass means the same in both screens. The owner may override it before the first seed launches.
+- **SEQUENTIAL, not a single look** (the draft's 3 seeds give ≈ 0.27 power, F-ST-7). X5's group-sequential design is used verbatim: looks at **3, 5 and 8 seeds per arm**, O'Brien–Fleming boundaries on the t scale **5.761 (df 4), 2.683 (df 8), 1.874 (df 14)**, X5's futility rule, and rule 8. The draft's single-look critical value 2.132 is REPLACED by these boundaries. Each look's outcome uses the table above with that look's boundary. A look that crosses no boundary CONTINUES to the next look rather than reading NOT DETECTED, except at look 3 (8 seeds), where the table applies as written.
+- **P_st = this registration commit.** Every seed is PINNED to it via the launcher. `data/` stays frozen while any arm is live.
+- **Order:** L1 S1 S2 L2 L3 S3, then L4 S4 S5 L5 for look 2, then alternating for look 3.
+- **Every cross and read plays at P_st, never at HEAD** (the X5 look-3 rule, `bef16d61`).
+- **Preconditions on the GPU before seed 1** (§10): the R1 compiled gate on `static` × `fixed_mass`, a `--compile-trainer` launch smoke, and the cost read. s > 15 % stops the screen as an optimisation unit.
+- **Secondary reads as drafted.** On fixed_mass, the belief purpose metrics through `main.belief_roles`, where F-ST-2 (no board context for the T0 belief heads) would show.
 
 ## 9. Literature relied on
 
@@ -579,3 +592,4 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
 | 2026-10-06 | Stage 2 readers × readout | `tower`: the `non_matchup_rest` concat deleted (pi 1177 → 1152); `trunk`: the state query keys on the three refined board tokens; the critic's `full` pool takes the three board rows under source tag 3 | keeping `non_matchup_rest` under `trunk`'s absent tower (nothing to delete there); a new source tag per board token (the trunk's type embedding already tells them apart) | §4.1; F2 interaction |
 | 2026-10-06 | Stage 2 versioning | config v140, no field: a pre-v140 `static` record (stage 1's layout) is REFUSED, `legacy` stamps through; no ARCH_SIGNATURE bump while both encodings build | migrating a stage-1 static checkpoint (no home for `global_proj`; nothing was trained on it) | `designs/model/versioning.md`'s playbook |
 | 2026-10-06 | The screen | DRAFTED in §8.1 (static vs legacy, one commit, 15M, 3 seeds each, the mirrored h2h 3 × 3 cross, X5's cross statistic, δ for the owner, BETTER / EQUIVALENT / NON-INFERIOR adopt, INFERIOR splits per §7); NOT registered | registering it from the build agent (the orchestrator registers before any seed) | the brief |
+| 2026-10-07 | **The screen REGISTERED (§8.2)** | fixed_mass + tower in both arms; δ 3.5 pp; X5's sequential looks 3 / 5 / 8 (OBF 5.761 / 2.683 / 1.874) instead of one under-powered look; P_st = the registration commit; GPU preconditions first | the single-look draft (≈ 0.27 power) | orchestrator (owner delegation; "keep spawning agents. Experiments.", 10-07) |
