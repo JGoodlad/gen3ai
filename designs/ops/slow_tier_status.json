@@ -3,10 +3,10 @@
  "tests": {
   "src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_battles[ladder_keys_0_149]": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 100.28,
-   "contention": 1.24,
+   "commit": "1220fd8a60c11a8b9764eed3abbb0d4e4f86ede6",
+   "at": "2026-10-07T03:10:00Z",
+   "duration_s": 100.54,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_battles[ladder_keys_150_299]": {
@@ -50,43 +50,43 @@
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_100_149]": {
-   "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 255.72,
-   "contention": 1.12,
-   "detail": ""
+   "status": "fail",
+   "commit": "1220fd8a60c11a8b9764eed3abbb0d4e4f86ede6",
+   "at": "2026-10-07T03:08:14Z",
+   "duration_s": 0.34,
+   "contention": 1.01,
+   "detail": "ValueError: blocks tile 2761 dims but total_dim is 2845"
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_6000_6049]": {
-   "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 117.8,
-   "contention": 1.19,
-   "detail": ""
+   "status": "fail",
+   "commit": "1220fd8a60c11a8b9764eed3abbb0d4e4f86ede6",
+   "at": "2026-10-07T03:08:14Z",
+   "duration_s": 0.05,
+   "contention": 1.0,
+   "detail": "ValueError: blocks tile 2761 dims but total_dim is 2845"
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_protocol_and_byte_fuzz_corpora": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 4.59,
+   "commit": "1220fd8a60c11a8b9764eed3abbb0d4e4f86ede6",
+   "at": "2026-10-07T03:08:19Z",
+   "duration_s": 4.99,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[even_keys_whole_pool]": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 272.41,
-   "contention": 1.04,
+   "commit": "1220fd8a60c11a8b9764eed3abbb0d4e4f86ede6",
+   "at": "2026-10-07T03:03:10Z",
+   "duration_s": 305.7,
+   "contention": 1.13,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[odd_keys_whole_pool]": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 287.44,
-   "contention": 1.1,
+   "commit": "1220fd8a60c11a8b9764eed3abbb0d4e4f86ede6",
+   "at": "2026-10-07T03:08:14Z",
+   "duration_s": 303.38,
+   "contention": 1.01,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_aot_backend_one_package_per_bucket_serves_every_slot": {
@@ -1042,5 +1042,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-06T05:50:22Z"
+ "last_written": "2026-10-07T03:10:00Z"
 }

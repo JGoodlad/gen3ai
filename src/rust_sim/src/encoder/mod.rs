@@ -23,6 +23,7 @@
 //! `data/pokemon/` exactly as `agents.gen3_data` reads them.
 
 pub mod data;
+mod facts;
 pub mod hypothesis;
 pub mod layout;
 pub mod oracle;
@@ -70,6 +71,7 @@ pub fn cell_name(i: usize) -> String {
     };
     match i {
         _ if i >= OBS_DIM => format!("cell {i} (past the row)"),
+        _ if i >= OFFSET_OBS_FACTS => format!("obs_facts+{}", i - OFFSET_OBS_FACTS),
         _ if i >= OFFSET_EVENT_WINDOW => format!("event_window+{}", i - OFFSET_EVENT_WINDOW),
         _ if i >= OFFSET_PAIR_HISTORY => format!("pair_history+{}", i - OFFSET_PAIR_HISTORY),
         _ if i >= OFFSET_REACTIVE => format!("reactive+{}", i - OFFSET_REACTIVE),
@@ -138,6 +140,8 @@ fn encode_into(inp: &Inputs, out: &mut [f32; OBS_DIM]) -> CoreResult<()> {
     pair_history(inp, &mut out[OFFSET_PAIR_HISTORY..OFFSET_PAIR_HISTORY + PAIR_HISTORY_DIM]);
     // 7. the event window
     event_window(inp, t, &mut out[OFFSET_EVENT_WINDOW..OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM])?;
+    // 8. the OBS-FACTS block (gen3_obs_facts_v1)
+    facts::obs_facts(inp, t, &mut out[OFFSET_OBS_FACTS..OFFSET_OBS_FACTS + OBS_FACTS_DIM]);
     Ok(())
 }
 

@@ -30,6 +30,8 @@ pub struct MoveView {
     pub move_id: String,
     pub current_pp: u32,
     pub max_pp: u32,
+    /// `LiveMove.seen` (`gen3_obs_facts_v1`): a public `|move|` line revealed this move.
+    pub seen: bool,
 }
 
 /// `LivePokemon`.
@@ -62,6 +64,10 @@ pub struct MonView {
     pub stats: [Option<i64>; 6],
     pub current_hp: u32,
     pub max_hp: u32,
+    /// `LivePokemon.item_public` / `ability_public` (`gen3_obs_facts_v1`): a PROTOCOL line revealed
+    /// the item / ability.
+    pub item_public: bool,
+    pub ability_public: bool,
 }
 
 /// `LiveSide`.
@@ -93,6 +99,8 @@ pub struct OneSidedView {
     pub finished: bool,
     pub won: Option<bool>,
     pub lost: Option<bool>,
+    /// `LiveView.residual_done` (`gen3_obs_facts_v1`): this turn's `|upkeep|` was read.
+    pub residual_done: bool,
 }
 
 type R<T> = CoreResult<T>;
@@ -137,6 +145,7 @@ pub fn present(reading: &BoardReading) -> R<OneSidedView> {
         finished: reading.finished,
         won: reading.won,
         lost: reading.won.map(|w| !w),
+        residual_done: reading.upkeep_turn == Some(reading.turn),
     })
 }
 
@@ -146,7 +155,7 @@ pub(crate) fn mon_view(m: &PMon, active: bool, own: bool) -> R<MonView> {
         .moves
         .moves_ref()
         .into_iter()
-        .map(|(k, mv)| Ok(MoveView { id: k.to_string(), move_id: mv.id.clone(), current_pp: mv.current_pp, max_pp: mv.max_pp()? }))
+        .map(|(k, mv)| Ok(MoveView { id: k.to_string(), move_id: mv.id.clone(), current_pp: mv.current_pp, max_pp: mv.max_pp()?, seen: mv.seen }))
         .collect::<R<Vec<_>>>()?;
     moves.sort_by(|a, b| a.id.cmp(&b.id));
     let item = match m.item.as_deref() {
@@ -186,6 +195,8 @@ pub(crate) fn mon_view(m: &PMon, active: bool, own: bool) -> R<MonView> {
         stats: m.stats,
         current_hp: m.current_hp(),
         max_hp: m.max_hp(),
+        item_public: m.item_public,
+        ability_public: m.ability_public,
     })
 }
 
@@ -199,12 +210,13 @@ impl OneSidedView {
         o.push_str(&format!("{{\"turn\":{},\"weather\":{{\"weather\":", self.turn));
         json_out::opt_str_into(&mut o, self.weather.weather.as_deref());
         o.push_str(&format!(
-            ",\"is_permanent\":{},\"turns_active\":{}}},\"finished\":{},\"won\":{},\"lost\":{},\"ours\":",
+            ",\"is_permanent\":{},\"turns_active\":{}}},\"finished\":{},\"won\":{},\"lost\":{},\"residual_done\":{},\"ours\":",
             self.weather.is_permanent,
             self.weather.turns_active,
             self.finished,
             opt_bool(self.won),
-            opt_bool(self.lost)
+            opt_bool(self.lost),
+            self.residual_done
         ));
         side_json(&mut o, &self.ours);
         o.push_str(",\"opp\":");
@@ -280,7 +292,7 @@ fn mon_json(o: &mut String, m: &MonView) {
         json_out::str_into(o, &mv.id);
         o.push_str(",\"move_id\":");
         json_out::str_into(o, &mv.move_id);
-        o.push_str(&format!(",\"current_pp\":{},\"max_pp\":{}}}", mv.current_pp, mv.max_pp));
+        o.push_str(&format!(",\"current_pp\":{},\"max_pp\":{},\"seen\":{}}}", mv.current_pp, mv.max_pp, mv.seen));
     }
     o.push_str("],\"item\":");
     json_out::opt_str_into(o, m.item.as_deref());
@@ -329,5 +341,8 @@ fn mon_json(o: &mut String, m: &MonView) {
             None => o.push_str(&format!("\"{k}\":null")),
         }
     }
-    o.push_str(&format!("}},\"current_hp\":{},\"max_hp\":{}}}", m.current_hp, m.max_hp));
+    o.push_str(&format!(
+        "}},\"current_hp\":{},\"max_hp\":{},\"item_public\":{},\"ability_public\":{}}}",
+        m.current_hp, m.max_hp, m.item_public, m.ability_public
+    ));
 }

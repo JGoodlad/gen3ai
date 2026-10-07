@@ -95,6 +95,9 @@ pub struct BoardReading {
     /// `_player_role` as a side index.
     pub role: u8,
     pub turn: u32,
+    /// `Gen3Battle._upkeep_turn` (`gen3_obs_facts_v1`): the turn whose `|upkeep|` (the end of its
+    /// residual phase) was read — `LiveView.residual_done` is `upkeep_turn == turn`.
+    pub upkeep_turn: Option<u32>,
     /// `_team`, insertion-ordered by key (`p1: Name`).
     pub team: Vec<(String, PMon)>,
     /// `_opponent_team` (reveal order).
@@ -160,6 +163,7 @@ impl BoardReading {
             username: username.to_string(),
             role: viewer as u8,
             turn: 0,
+            upkeep_turn: None,
             team: Vec::new(),
             opp: Vec::new(),
             team_size: [None, None],
@@ -677,6 +681,11 @@ impl BoardReading {
     /// [`Self::parse_message`] of the line's `split_message()`.
     fn parse_message_split(&mut self, sm: &[String]) -> R<()> {
         let kw = sm.get(1).map(String::as_str).unwrap_or("");
+        if kw == "upkeep" {
+            // `Gen3Battle.parse_message`'s CONTROL branch (`gen3_obs_facts_v1`); poke-env ignores it.
+            self.upkeep_turn = Some(self.turn);
+            return Ok(());
+        }
         if BATTLE_IGNORED.contains(&kw) {
             return Ok(());
         }
@@ -819,6 +828,7 @@ impl BoardReading {
                 let m = self.mon(&p)?;
                 m.consumed_item = Some(item);
                 m.item = None;
+                m.item_public = true;
             }
             "-fieldend" => self.field_end(f(2)?)?,
             "-fieldstart" => {
@@ -1252,6 +1262,9 @@ impl BoardReading {
                 let ib = self.mon_ref(b).item.clone();
                 self.mon_at(a).item = ib;
                 self.mon_at(b).item = ia;
+                // `gen3_obs_facts_v1`: after a public Trick both items are known to both sides.
+                self.mon_at(a).item_public = true;
+                self.mon_at(b).item_public = true;
             }
             _ if !target.is_empty() => {
                 if let Some(ab) = effect.strip_prefix("ability: ") {
@@ -1322,6 +1335,7 @@ impl BoardReading {
 
 /// `Pokemon.item` setter: id-normalised; a truthy item clears `consumed_item`.
 fn set_item(m: &mut PMon, item: Option<&str>) {
+    m.item_public = true;
     m.item = item.map(dex::to_id);
     if m.item.as_deref().is_some_and(|i| !i.is_empty()) {
         m.consumed_item = None;

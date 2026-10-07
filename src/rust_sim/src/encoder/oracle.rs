@@ -254,7 +254,8 @@ fn apply_set(m: &mut PMon, set: &PokemonSet) -> CoreResult<()> {
         m.item = if set.item.is_empty() { None } else { Some(to_id(&set.item)) };
     }
     if m.ability().is_none() && !set.ability.is_empty() {
-        m.set_ability(&set.ability);
+        // not a PROTOCOL reveal: the told set leaves the public flags alone (`gen3_obs_facts_v1`)
+        m.set_ability_from_request(&set.ability);
     }
     // the SAME backfill an own mon's reading takes from its packed team (`Pokemon.backfill_spread_from_teambuilder`):
     // the nature lower-cased (the encoder's table is keyed so), `serious` when none is declared

@@ -74,6 +74,8 @@ def block_of(index: int) -> str:
         return f"board +{i - C.OFFSET_REACTIVE}"
     if i < C.OFFSET_EVENT_WINDOW:
         return f"pair_history cell+{(i - C.OFFSET_PAIR_HISTORY) % C.PAIR_HISTORY_CELL_DIM}"
+    if i >= C.OFFSET_OBS_FACTS:
+        return f"obs_facts +{i - C.OFFSET_OBS_FACTS}"
     col = (i - C.OFFSET_EVENT_WINDOW) % C.EVENT_TOKEN_DIM
     return f"event_window {C.EventCol(col).name}"
 
@@ -130,7 +132,8 @@ def _block_spans():
                    ("global", C.OFFSET_GLOBAL, C.OFFSET_REACTIVE),
                    ("board", C.OFFSET_REACTIVE, C.OFFSET_PAIR_HISTORY),
                    ("pair_history", C.OFFSET_PAIR_HISTORY, C.OFFSET_EVENT_WINDOW),
-                   ("event_window", C.OFFSET_EVENT_WINDOW, C.OFFSET_EVENT_WINDOW + C.EVENT_WINDOW_DIM))
+                   ("event_window", C.OFFSET_EVENT_WINDOW, C.OFFSET_OBS_FACTS),
+                   ("obs_facts", C.OFFSET_OBS_FACTS, C.OFFSET_OBS_FACTS + C.OBS_FACTS_DIM))
     return _BLOCKS
 
 

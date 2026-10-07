@@ -59,6 +59,7 @@ def _event_status_id(status: "str | None") -> int:
 # `_classify_faint_cause` is IMPORTED from turn_view rather than reimplemented: the frames and
 # the event window must never disagree about what "weather" means, and one copy cannot drift.
 from agents.battle.turn_view import _classify_faint_cause, damage_is_lethal, is_protect_block
+from agents.training.obs_facts_fold import ObsFactsFold
 
 _SELF_KO_MOVE_IDS: frozenset = frozenset({"explosion", "selfdestruct"})
 # The moves whose item lines move an item from one mon to the other (W3 above).
@@ -184,6 +185,10 @@ class EventWindowTracker:
         self._first_faint: Optional[tuple] = None  # (species, side, cause, last_act)
         self._pending_denials: list = []    # fainted-first rows, placed after their action
         self._actions_closed: bool = False
+        # gen3_obs_facts_v1: the stint / Encore-Disable-adjustment fold the OBS-FACTS block reads.
+        # It rides THIS tracker so every caller that threads `event_window=` threads it too, and it
+        # folds the same deduplicated events (the Rust twin is `EventWindow.facts`).
+        self.facts = ObsFactsFold()
 
     @staticmethod
     def _rec(t: int, actor, side, turn: int, **kw) -> dict:
@@ -280,6 +285,7 @@ class EventWindowTracker:
             sp = getattr(e, "actor_species", None)
             et = int(getattr(e, "turn", turn))
             k = e.kind
+            self.facts.observe(e, et)
             if et != self._act_turn:
                 self._close_actions()
                 self._start_turn(et)

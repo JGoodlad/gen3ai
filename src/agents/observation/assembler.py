@@ -169,6 +169,8 @@ def describe_offset(index: int) -> str:
     if index < OFFSET_EVENT_WINDOW:
         cell, off = divmod(index - C.OFFSET_PAIR_HISTORY, C.PAIR_HISTORY_CELL_DIM)
         return f"pair_history[opp {cell // TEAM_SIZE}][our {cell % TEAM_SIZE}] +{off}"
+    if index >= C.OFFSET_OBS_FACTS:
+        return f"obs_facts +{index - C.OFFSET_OBS_FACTS}"
     row, col = divmod(index - OFFSET_EVENT_WINDOW, EVENT_TOKEN_DIM)
     names = {int(c): c.name for c in C.EventCol}
     return f"event_window row {row} col {col} ({names.get(col, '?')})"

@@ -33,7 +33,8 @@ def _mon(r: Mapping[str, Any]) -> LivePokemon:
         hp_fraction=float(r["hp_fraction"]),
         status=r["status"],
         types=tuple(r["types"]),
-        moves=tuple(LiveMove(id=m["id"], current_pp=m["current_pp"], max_pp=m["max_pp"])
+        moves=tuple(LiveMove(id=m["id"], current_pp=m["current_pp"], max_pp=m["max_pp"],
+                             seen=m["seen"])
                     for m in r["moves"]),
         item=r["item"],
         ability=r["ability"],
@@ -50,6 +51,8 @@ def _mon(r: Mapping[str, Any]) -> LivePokemon:
         stats=dict(r["stats"]),
         current_hp=r["current_hp"],
         max_hp=r["max_hp"],
+        item_public=r["item_public"],
+        ability_public=r["ability_public"],
     )
 
 
@@ -73,6 +76,7 @@ def live_view_from_core(view: Mapping[str, Any], *, battle_tag: str = "") -> Liv
         finished=view["finished"],
         won=view["won"],
         lost=view["lost"],
+        residual_done=view["residual_done"],
     )
 
 

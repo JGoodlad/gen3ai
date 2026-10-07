@@ -117,8 +117,13 @@ def bench_successors(logs, reps: int, lib) -> dict:
             "ratio": float(np.median(ratio)), "ci": (float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5)))}
 
 
+def _obs_dim() -> int:
+    from agents.battle.core_obs import obs_dim
+    return obs_dim()
+
+
 def bench_playouts(logs, seeds: int, lib) -> dict:
-    w = np.random.default_rng(3).standard_normal((1, 2761)).astype(np.float32)
+    w = np.random.default_rng(3).standard_normal((1, _obs_dim())).astype(np.float32)
 
     def scorer(rows, masks):  # a stand-in forward: one projection + a fixed per-action bias
         return (rows @ w.T) + np.arange(11)[None, :] * 1e-3

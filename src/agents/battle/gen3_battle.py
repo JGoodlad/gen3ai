@@ -79,6 +79,13 @@ class Gen3Battle(Battle):
         self._weather_id: Optional[str] = None
         self._weather_permanent: bool = False
         self._weather_start_turn: int = 0
+        # gen3_obs_facts_v1: the turn whose `|upkeep|` (the end of its residual phase) has been
+        # read. `LiveView.residual_done` is "this turn's residuals have run" — true at a forced
+        # replacement after a faint (post-residual), false at a Baton Pass switch (mid-turn) and
+        # at every turn-start decision. A condition's Showdown duration counts RESIDUALS, so the
+        # turns left on a screen / Encore / Taunt at a replacement decision is one fewer than the
+        # `|turn|`-anchored count says. poke-env reads `upkeep` as CONTROL and keeps nothing.
+        self._upkeep_turn: Optional[int] = None
         # gen3_live_view_memo_v1 — see live_view() for the full invalidation proof.
         # `_state_epoch` is bumped by EVERY writer of the state LiveView reads; the memo is
         # the one-slot (epoch, view) pair it keys on.
@@ -233,6 +240,12 @@ class Gen3Battle(Battle):
         lo = max(0, start)
         return self._events[lo:end]
 
+    @property
+    def residual_done(self) -> bool:
+        """gen3_obs_facts_v1: the current turn's end-of-turn residuals have run (its ``|upkeep|``
+        has been read and no ``|turn|`` has followed it)."""
+        return self._upkeep_turn is not None and self._upkeep_turn == self.turn
+
     def live_weather(self) -> "LiveWeather":
         """The current :class:`LiveWeather`, from the incrementally-folded weather state
         (O(1)). Identical to ``_fold_weather`` over the whole log, computed on append
@@ -261,6 +274,8 @@ class Gen3Battle(Battle):
 
         if policy is not Policy.EVENT:
             super().parse_message(split_message)
+            if keyword == "upkeep":
+                self._upkeep_turn = self.turn
             if keyword == "turn":
                 # |turn|N has just set self.turn = N via end_turn(); mark the slice.
                 self._turn_start.setdefault(self._turn, len(self._events))
