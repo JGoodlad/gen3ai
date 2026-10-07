@@ -59,6 +59,12 @@ not learnsets / EVs, which Showdown's validator owns); `python -m main.team_lega
 🚨 **Adding a ban or clause is a SPEC edit with its source and its story** — the drift gate fails on any
 ban or clause master has and the spec lacks (and the reverse); `format_spec_test.py` re-derives the Uber
 tier, the OHKO moves, Accuracy Trap's moves and the ability-locked species from `deps/pokemon-showdown`.
+🚨 **A banned entity carries NO prior** (`gen3_format_spec_priors_v1`): the acquisition tool removes banned mass and
+renormalises (`compute_priors.py`; the Rust encoder reads the same files, so the filter is NEVER load-time only), and
+every prior load THROWS `PriorInvariantError` on a banned ability / item / move (or a species-banned move) / teammate
+(`priors._checked_format_legal`); `species_usage()` excludes banned species. The model tables give banned entries the
+ILLEGAL value (`belief_tables.format_banned_move_cells`, `dex_ids.format_banned_species_nums`). Tests:
+`format_spec_priors_test.py`.
 
 `learnset` is the **legality** primitive (which moves a species can LEGALLY learn in gen3) — distinct
 from `priors.moves` (how OFTEN a legal move is run). The move-belief prior uses it to PRUNE impossible

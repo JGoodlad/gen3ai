@@ -153,9 +153,15 @@ def test_unobserved_species_are_improbable_but_not_impossible():
     """A species outside the Smogon usage data is UNOBSERVED, not illegal — the same distinction
     the move prior draws between its `floor` and `_ILLEGAL_PROB`. Every floored entry must sit
     above the Species-Clause value so the learned delta has somewhere to lift it from."""
+    from agents.model.dex_ids import format_banned_species_nums
     log_marginal, _ = build_species_cooccur_prior(_N_SPECIES)
     tbl = species_prior_table()
-    floor = float(log_marginal[1:].min())                    # the rarest real candidate
+    banned = format_banned_species_nums(_N_SPECIES)          # gen3_format_spec_priors_v1: ILLEGAL, not unobserved
+    assert all(abs(float(log_marginal[n]) - SPECIES_CLAUSE_LOGIT) < 1e-5 for n in banned)
+    keep = torch.ones(_N_SPECIES, dtype=torch.bool)
+    keep[0] = False
+    keep[banned] = False
+    floor = float(log_marginal[keep].min())                  # the rarest LEGAL real candidate
     assert SPECIES_CLAUSE_LOGIT < floor < float(log_marginal[tbl.num("tyranitar")])
 
 

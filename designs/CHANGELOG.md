@@ -12307,3 +12307,24 @@ branch `obs-facts-append`).
   a `slow` CPU `--debug` smoke on the production fixed_mass arm with the family on (a typed small rollout shape:
   the recipe's 98,304-row target would take hours on CPU; exit 0, two updates, ~6 min). `move_resolution_bridge_integration_test.py` now runs both modes; full Lane S bank,
   fixed_mass read: 31,942 played moves, 1,485 exact-zero claims, 0 contradicted (blob, re-run: 1,515, 0).
+## 2026-10-07 — The format spec's PRIOR = 0: every prior gives a gen3ou-banned entity nothing (`gen3_format_spec_priors_v1`; TRAINING-INPUT BOUNDARY; no ARCH_SIGNATURE / config bump)
+
+- **Why.** Owner direction 2026-10-07 ("prefer setting the prior to 0 for banned items"); design
+  `designs/endstate/design_format_spec.md` §5.1. Held until the X5 look-3 cross finished (orchestrator OK, 10:02).
+- **What.** `compute_priors.py` drops banned abilities (before the ability tiers: Dugtrio / Diglett / Gligar's Sand Veil
+  and Electrode's Soundproof lose their 1 % floor, Voltorb's 50 %; the eight ability-locked species have no row), banned
+  items (Quick Claw: 182 species, 0.32 % of all sets, up to 51 % on Hypno; rows renormalised), banned moves (none carry
+  mass; the legal moves would be scaled to keep `Σ P + e = 4`) and banned teammate species; `check_format_legal` and the
+  facade's `priors._checked_format_legal` THROW on any banned mass; `species_usage()` excludes banned species. The model
+  tables: the move prior gives a banned move `_ILLEGAL_PROB` in every row (789 cells were at the 0.02 floor; Smeargle's
+  Ingrain in its own row), the item prior 0 on Quick Claw / Bright Powder / Lax Incense, the species usage prior 0 and the
+  co-occurrence log-marginal `SPECIES_CLAUSE_LOGIT` on the 20 banned base species. Both belief modes read these tables
+  (X5 `fixed_mass`'s hypothesis moves come from the move prior's legality).
+- **Observation.** Only an unrevealed opponent's ability-prior columns move (golden battles: 148 / 991 decisions, 2 columns).
+- **Re-recorded deliberately.** The golden observation fixture, `hypothesis_dex_rows.json` (6 rows), the Rust env core's
+  oracle-reveal `off` / `species` digests, the K9 learner golden (both arms, on rebuilt buffers), `main.h2h`'s off/off
+  digests; the unit tests that read a flat floor row now exclude the format-banned columns.
+- **Tests (fail on revert).** `format_spec_priors_test.py` (no banned mass in any prior, the tool reproduces the committed
+  priors, the guards throw on planted mass, the slot identity, every model table's ILLEGAL value, `fixed_mass`'s
+  hypothesis moves; 13 of 16 fail on a mechanical revert of the four code files, the other 3 read the regenerated data).
+- **Boundary.** A TRAINING-INPUT BOUNDARY by the `2d29c4c0` / `f0d673fd` precedent: weights unchanged and loadable.

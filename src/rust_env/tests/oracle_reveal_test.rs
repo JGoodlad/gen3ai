@@ -94,8 +94,11 @@ fn corpus_digest(level: Level, n: usize, threads: usize, seed: u64, steps: usize
 }
 
 /// Recorded on `e0d56693` (the commit before the reveal), `n = 8`, `threads = 2`, 600 ops, the three
-/// seeds below (27,333 decisions, 168 episodes, 0 refusals).
-const PRE_REVEAL_DIGEST: [u64; 3] = [0xc67256dbfedb798f, 0x08b7ef47213baf22, 0x781a48de5326b9b6];
+/// seeds below (27,333 decisions, 168 episodes, 0 refusals). RE-RECORDED 2026-10-07 for the format spec's
+/// prior filter (`gen3_format_spec_priors_v1`, a deliberate TRAINING-INPUT change: a banned ability's prior
+/// is 0, so an unrevealed Dugtrio / Diglett / Gligar / Electrode / Voltorb's ability columns move); the
+/// pre-reveal record was [0xc67256dbfedb798f, 0x08b7ef47213baf22, 0x781a48de5326b9b6].
+const PRE_REVEAL_DIGEST: [u64; 3] = [0x40a4d89469f446eb, 0x8efbe09d6fda4c74, 0x665bb79dbb6e0494];
 
 #[test]
 fn off_is_inert() {
@@ -105,7 +108,9 @@ fn off_is_inert() {
 
 /// The `species` level's bytes, recorded when it was built: the same corpus and seeds as `PRE_REVEAL_DIGEST`. A later
 /// level (or any change to the encoder) must leave `species` byte-identical, and this is what says so.
-const SPECIES_DIGEST: [u64; 3] = [0x60eeb3f53cc2c6fb, 0x653d80b821978e8b, 0x0f0e923713e27880];
+/// RE-RECORDED 2026-10-07 with `PRE_REVEAL_DIGEST` (the format spec's prior filter; was
+/// [0x60eeb3f53cc2c6fb, 0x653d80b821978e8b, 0x0f0e923713e27880]).
+const SPECIES_DIGEST: [u64; 3] = [0x13e5366e75f675d1, 0x04d13a7d55a999ad, 0x4b108c1abd8c97be];
 
 #[test]
 fn species_bytes_are_pinned() {

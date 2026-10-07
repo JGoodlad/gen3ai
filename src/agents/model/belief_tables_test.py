@@ -269,10 +269,16 @@ def test_base_stats_table_holds_the_BASE_forme():
 def test_species_usage_prior_holds_the_BASE_forme():
     """The same forme rule on the table the SECOND round moved, and the one where a forme collision
     would be hardest to see: a usage share is a plausible number at any num, so a last-write-wins
-    row reads as data rather than as a defect. Deoxys' three formes share num 386."""
+    row reads as data rather than as a defect. Deoxys' three formes share num 386 — and Deoxys is an Uber,
+    so the format spec gives num 386 EXACTLY 0 (gen3_format_spec_priors_v1); Castform's weather formes share
+    num 351 and Castform is legal, so ITS row carries the base forme's floored share."""
     prior = dx.build_species_usage_prior(_N_SPECIES)
     deoxys = gen3_data.species.get("deoxys")
     speed = gen3_data.species.get("deoxysspeed")
     assert speed is not None and speed.num == deoxys.num       # the collision is real
-    assert float(prior[deoxys.num]) > 0.0
+    assert float(prior[deoxys.num]) == 0.0                     # banned (Uber): never on a legal team
+    castform = gen3_data.species.get("castform")
+    sunny = gen3_data.species.get("castformsunny")
+    assert sunny is not None and sunny.num == castform.num
+    assert float(prior[castform.num]) > 0.0
     assert abs(float(prior.sum()) - 1.0) < 1e-5                # normalized over base forms only

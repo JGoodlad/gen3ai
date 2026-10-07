@@ -42,7 +42,7 @@ import torch
 
 from agents import gen3_data
 from agents.gen3_data.species import SpeciesData
-from agents.model.dex_ids import _belief_num, _hp_typed_nums, build_species_usage_prior
+from agents.model.dex_ids import _belief_num, _hp_typed_nums, build_species_usage_prior, format_banned_species_nums
 from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
 
 
@@ -341,6 +341,15 @@ def build_item_prior(n_species: int, n_items: int) -> torch.Tensor:
             if num is not None and 0 <= num < n_items:
                 vec[num] += float(p)
         prior[sd.num] = vec / float(vec.sum())
+    # gen3_format_spec_priors_v1: an item the FORMAT bans (Quick Claw, Bright Powder, Lax Incense) is 0 in every
+    # row — the floor and the no-usage uniform rows included — then each row renormalises (the forward's
+    # clamp_min(1e-6) makes it the ILLEGAL log-prior; design_format_spec.md §5.1).
+    from agents.gen3_data import format_spec
+    for item_id in sorted(format_spec.active().banned_items):
+        it = gen3_data.items.get(item_id)
+        if it is not None and 0 <= int(it.num) < n_items:
+            prior[:, int(it.num)] = 0.0
+    prior = prior / prior.sum(dim=1, keepdim=True)
     bl = gen3_data.species.get("blissey")
     lo = gen3_data.items.get("leftovers")
     if (bl is None or lo is None or not (0 < bl.num < n_species)
@@ -501,8 +510,33 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
             if u > float(prob[snum, num]):
                 prob[snum, num] = u                      # rare moves keep their real (small) rate
     prob[~covered, :] = floor                            # unknown species (num 0) / dex gaps → flat floor
+    # gen3_format_spec_priors_v1: a move the FORMAT bans (`agents.gen3_data.format_spec`: Swagger, Assist, the
+    # OHKO / evasion moves) is ILLEGAL for every species — the unknown-species row included — and a move banned
+    # for ONE species (Smeargle + Ingrain) is illegal in that row. Before, a TM like Swagger / Double Team sat at
+    # the legal-unobserved floor on every learner (design_format_spec.md §5.1).
+    for snum, mnum in format_banned_move_cells(n_species, n_moves):
+        prob[snum, mnum] = eps
     prob = prob.clamp(eps, 1.0 - eps)
     return torch.logit(prob).to(torch.float32)           # log(p/(1-p)), the additive log-odds base rate
+
+
+def format_banned_move_cells(n_species: int, n_moves: int) -> list:
+    """``[(species num or slice(None), move num)]`` — the move-prior cells the gen3ou format spec bans: every row
+    for a format-banned move, the one species' row for a species + move combo (gen3_format_spec_priors_v1)."""
+    from agents.gen3_data import format_spec
+    spec = format_spec.active()
+    out: list = []
+    for mid in sorted(spec.banned_moves):
+        md = gen3_data.moves.get(mid)
+        if md is not None and 0 <= _belief_num(mid, md) < n_moves:
+            out.append((slice(None), _belief_num(mid, md)))
+    for sid, mids in sorted(spec.species_move_bans().items()):
+        sd = gen3_data.species.get(sid)
+        for mid in sorted(mids):
+            md = gen3_data.moves.get(mid)
+            if sd is not None and md is not None and 0 <= sd.num < n_species and 0 <= _belief_num(mid, md) < n_moves:
+                out.append((sd.num, _belief_num(mid, md)))
+    return out
 
 
 # ── gen3_species_prior_fusion_v1 (v68): the TEAM-COMPOSITION species prior ────────────────────────
@@ -568,6 +602,10 @@ def build_species_cooccur_prior(n_species: int) -> Tuple[torch.Tensor, torch.Ten
     usage_prior = build_species_usage_prior(n_species)                  # [S] slot shares, sum 1
     log_marginal = usage_prior.clamp_min(_SPECIES_PRIOR_FLOOR).log()
     log_marginal[0] = math.log(_SPECIES_PRIOR_FLOOR)                    # sentinel: never a candidate
+    # gen3_format_spec_priors_v1: a species the FORMAT bans (Uber, ability-locked) is never on a legal team —
+    # the species-side ILLEGAL value, not the liftable unobserved floor (design_format_spec.md §5.1).
+    for snum in format_banned_species_nums(n_species):
+        log_marginal[snum] = SPECIES_CLAUSE_LOGIT
 
     log_lift = torch.zeros((n_species, n_species), dtype=torch.float32)
     base_ids = set(gen3_data.species.base_form_ids())

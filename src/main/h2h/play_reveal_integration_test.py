@@ -39,8 +39,10 @@ PAIRS, N_ENVS = 12, 8
 #: with the old positional write restored the `c7b4d03e` digests 56135c83… / 36a0376a… reproduce exactly).
 #: RE-RECORDED 2026-10-07 for gen3_op_ability_status_gigo_v1 (the damage op's opponent-ability / status-landing fix;
 #: was 32972493… / 4baf87e0…).
-OFF_BITS = "395e7d7bdb038770eff0f819cc288ca79edba84c9afcd47431852d1cec8c1465"
-OFF_OUTCOME_ALL = "82982a8f55d44357ec38eddfa3f512b4de5852348e0b25a7c84c8b4cb0c6a675"
+#: RE-RECORDED 2026-10-07 for gen3_format_spec_priors_v1 (banned entities get prior 0: the Smogon ability / item priors
+#: and the move / item / species tables; was 395e7d7b… / 82982a8f…).
+OFF_BITS = "9bffc7d619f80a810c2c078dbbeadad0cd4d1b559db8667887139ecf22275250"
+OFF_OUTCOME_ALL = "54eca92a76bc8d802b78b7af2f49188ebc600bf53db337cfea67cb5a61ca8322"
 
 
 def bits_digest(games):

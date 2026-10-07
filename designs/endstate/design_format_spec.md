@@ -1,8 +1,8 @@
 # The gen3ou FORMAT SPEC — one declaration, one story per rule
 
-**ALWAYS-CURRENT** (`designs/endstate/README.md`). Status 2026-10-07: the spec, team validation, the drift
-gate and the board-state readers are BUILT; the prior filter (§5.1) is BUILT and HELD on branch
-`format-spec-prior` until the X5 look-3 cross has finished (it changes model inputs).
+**ALWAYS-CURRENT** (`designs/endstate/README.md`). Status 2026-10-07: BUILT and LANDED — the spec, team validation,
+the drift gate and the board-state readers (`5e8d2956`), then the prior filter (§5.1, `gen3_format_spec_priors_v1`),
+landed once the orchestrator confirmed the X5 look-3 cross had finished (10:02, `c344ccd1`) with no pinned run live.
 
 Owner direction (2026-10-07): *"I want the clauses to have a clear story, prefer setting the prior to 0 for
 banned items; for more complex things like sleep clause, the observation can help it out"* ("or whatever you
@@ -91,9 +91,9 @@ moves and the ability-locked species from `deps/pokemon-showdown`.
 | story | code |
 |---|---|
 | the declaration | `src/agents/gen3_data/format_spec.py` |
-| PRIOR = 0 — acquisition filter *(held)* | `tools/smogon_stats_downloader/compute_priors.py` (`apply_format_spec`) |
-| PRIOR = 0 — the facade's throwing guard *(held)* | `src/agents/gen3_data/priors.py` (`_checked_format_legal`) |
-| PRIOR = 0 — the model tables' ILLEGAL value *(held)* | `belief_tables.build_move_prior_logits` / `build_item_prior`, `dex_ids.build_species_usage_prior`, `belief_tables.build_species_cooccur_prior` |
+| PRIOR = 0 — acquisition filter | `tools/smogon_stats_downloader/compute_priors.py` (the four `compute_*` filters + `check_format_legal`) |
+| PRIOR = 0 — the facade's throwing guard | `src/agents/gen3_data/priors.py` (`_checked_format_legal`) |
+| PRIOR = 0 — the model tables' ILLEGAL value | `belief_tables.build_move_prior_logits` / `build_item_prior`, `dex_ids.build_species_usage_prior`, `belief_tables.build_species_cooccur_prior` |
 | BOARD STATE readers | `agents/model/status_rules.py`, `damage_op_blocks.py` (`_outgoing_status_land`), `move_resolution.py` (Yawn, the switch branch) |
 | TEAM BUILDING validation | `src/agents/gen3_data/team_legality.py` + `python -m main.team_legality` |
 | the drift gate | `src/main/format_drift.py` (+ `format_drift_snapshot/`), run by `src/main/ladder_drift_scan.py` |
@@ -101,7 +101,7 @@ moves and the ability-locked species from `deps/pokemon-showdown`.
 
 ## 5. The stories in detail
 
-### 5.1 PRIOR = 0 (banned entities) — HELD on `format-spec-prior`
+### 5.1 PRIOR = 0 (banned entities) — `gen3_format_spec_priors_v1`
 
 **Where the filter sits: at ACQUISITION, not at load.** The Rust encoder reads `gen3_ability_priors.json`
 directly (`src/rust_sim/src/encoder/data.rs`; the unrevealed-ability observation and the Early Bird sleep
@@ -146,12 +146,22 @@ on banned things too:
 
 It is a **TRAINING-INPUT BOUNDARY with no ARCH bump** (the precedent of `2d29c4c0` and `f0d673fd`): weights are
 unchanged and loadable; every HEAD-code read of any checkpoint sees the new inputs. The observation changes
-only for an UNREVEALED opponent Dugtrio / Diglett / Gligar / Electrode / Voltorb (the ability prior value) —
-the golden observation fixture is re-recorded on the held branch if a golden battle meets one.
+only for an UNREVEALED opponent Dugtrio / Diglett / Gligar / Electrode / Voltorb / Mr. Mime (the ability prior
+columns): on the golden observation battles **148 of 991 decisions moved, in exactly 2 columns** (the unrevealed
+slot's second-ability id, Sand Veil 8 → 0, and P(top ability) 0.99 → 1.0). Re-recorded deliberately, each with the
+reason: the golden observation fixture, the X5 dex-row table (`hypothesis_dex_rows.json`, 6 species rows), the Rust
+env core's oracle-reveal `off` / `species` digests, the K9 learner golden (both arms, on REBUILT buffers — their
+behaviour log-probs were the old tables') and `main.h2h`'s off/off play digests; the Lane S bank's byte gate skips by
+its own rule (the encoder identity moved).
 
-**Why held:** the X5 look-3 cross plays at the training pin `706fa536` (`bef16d61`), so a HEAD change does not
-touch it — but the orchestrator gates any model-input change on that cross finishing, and `data/` changes reach
-pinned runs (a pin isolates code, not data).
+**Both belief modes.** The filter sits in the tables every prior consumer shares, so it covers the blob arm and X5's
+`fixed_mass` (adopted `c471c2a8`, production at the coming version break) alike: `fixed_mass` builds each hypothesis
+mon's candidate moves from the move prior's own legality (`hypothesis_set.build_move_legality`, so a banned move is
+never a candidate — `format_spec_priors_test.test_fixed_mass_hypothesis_moves_exclude_banned_moves`), its species
+score from the same co-occurrence prior, and its dex rows from the same observation encoder.
+
+**Why it waited:** a `data/` change reaches pinned runs (a pin isolates code, not data), and the orchestrator gated
+every model-input change on the X5 look-3 cross finishing. It finished at 10:02 (`c344ccd1`) with nothing pinned live.
 
 ### 5.2 BOARD STATE (Sleep Clause Mod, Freeze Clause Mod)
 
@@ -195,7 +205,7 @@ a team can carry several). **No pool team holds Quick Claw**, so the master-only
 
 The PROCEDURAL generator (`ou_random_teams.js`, fuzz / parity gates, not training) draws items from the Smogon
 item prior and validates with the PINNED validator, so **19 of 1,000 procedural teams (1.9 %) hold a Quick
-Claw** — ladder-illegal. The held prior filter removes it at the source.
+Claw** — ladder-illegal. The prior filter removes Quick Claw from the item prior the generator samples.
 
 ### 5.4 Format-gated mechanics
 
@@ -268,4 +278,5 @@ effect, a new trapper, a changed Sleep Clause body) and requires each to fail wi
 | 2026-10-07 | Team-building clauses | engine + team validation; the model needs nothing | modelling combos in the belief | §5.3: the training pool is 719 / 719 legal |
 | 2026-10-07 | The drift gate's reach | the three format files + the clause bodies the spec restates (found master's `recycle`) | the three format files only (the first survey missed `recycle`) | §2 |
 | 2026-10-07 | F7b's Quick Claw gate | `move_order.quick_claw_live()` reads `format_spec` (one source) | its landed hard-coded `False` (a second banlist) | `d02aded6` left the read for this spec |
-| 2026-10-07 | Sequencing | ship the spec, validation, drift gate and readers (production byte-identical); HOLD the prior filter on `format-spec-prior` until the X5 look-3 cross finishes | landing all at once | orchestrator brief 2026-10-07 |
+| 2026-10-07 | Sequencing | ship the spec, validation, drift gate and readers (production byte-identical, `5e8d2956`); HOLD the prior filter until the X5 look-3 cross finishes, then land it (orchestrator OK 10:02) | landing all at once | orchestrator brief 2026-10-07 |
+| 2026-10-07 | Versioning of the prior filter | a TRAINING-INPUT BOUNDARY, no `ARCH_SIGNATURE` / config bump (`gen3_format_spec_priors_v1` in the docs and goldens) | an ARCH bump (would strand every archived checkpoint; the weights are unchanged and loadable) | precedent `2d29c4c0`, `f0d673fd` |

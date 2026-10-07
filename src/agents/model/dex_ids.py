@@ -83,6 +83,19 @@ def _hp_typed_nums() -> Tuple[int, ...]:
 _USAGE_PRIOR_FLOOR = 1e-6
 
 
+def format_banned_species_nums(n_species: int) -> list:
+    """The dex nums of the species the gen3ou format spec bans (formes fold onto their base num; a num is
+    listed only when its BASE form is banned — Deoxys and its formes all are)."""
+    from agents.gen3_data import format_spec
+    banned = format_spec.active().banned_species
+    out = []
+    for sid in gen3_data.species.base_form_ids():
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
+        if sid in banned and 0 < sd.num < n_species:
+            out.append(sd.num)
+    return sorted(out)
+
+
 def build_species_usage_prior(n_species: int) -> torch.Tensor:
     """``[n_species]`` the normalized gen3ou species USAGE distribution over dex nums —
     ``P(an unrevealed opp slot is species s)`` before Species-Clause filtering
@@ -111,6 +124,10 @@ def build_species_usage_prior(n_species: int) -> torch.Tensor:
         if not (0 < sd.num < n_species):                  # sentinel num 0 stays exactly 0
             continue
         prior[sd.num] = max(float(usage.get(sid, 0.0)) / total, _USAGE_PRIOR_FLOOR)
+    # gen3_format_spec_priors_v1: a species the FORMAT bans (Uber, ability-locked) gets EXACTLY 0, not the floor
+    # — it is never on a legal team (design_format_spec.md §5.1).
+    for snum in format_banned_species_nums(n_species):
+        prior[snum] = 0.0
     tt = gen3_data.species.get("tyranitar")
     if tt is None or not (0 < tt.num < n_species) or float(prior[tt.num]) < 0.01:
         raise ValueError(

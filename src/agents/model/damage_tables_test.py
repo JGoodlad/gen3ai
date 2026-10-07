@@ -21,6 +21,19 @@ _LOGIT_EPS = math.log(_EPS / (1.0 - _EPS))                     # -13.8155
 _LOGIT_FLOOR = math.log(_PRIOR_FLOOR / (1.0 - _PRIOR_FLOOR))   #  -3.8918
 
 
+def _format_banned_cols(n_species, n_moves):
+    """The move columns the gen3ou format spec bans for EVERY species (gen3_format_spec_priors_v1: ILLEGAL in
+    every row, the flat-floor rows included — design_format_spec.md §5.1)."""
+    from agents.model.belief_tables import format_banned_move_cells
+    return sorted({m for s, m in format_banned_move_cells(n_species, n_moves) if isinstance(s, slice)})
+
+
+def _unbanned(row, n_species, n_moves):
+    keep = torch.ones(row.shape[0], dtype=torch.bool)
+    keep[_format_banned_cols(n_species, n_moves)] = False
+    return row[keep]
+
+
 def _num(species_id, move_id):
     return gen3_data.species.get(species_id).num, gen3_data.moves.get(move_id).num
 
@@ -69,7 +82,8 @@ def test_illegal_is_materially_below_legal_but_unobserved(prior):
                   if gen3_data.moves.get(m) is not None}
     for mid in legal:
         md = gen3_data.moves.get(mid)
-        if md is not None and md.num not in usage_nums and 0 <= md.num < _N_MOVES:
+        if (md is not None and md.num not in usage_nums and 0 <= md.num < _N_MOVES
+                and md.num not in _format_banned_cols(_N_SPECIES, _N_MOVES)):     # a banned move is ILLEGAL
             unobserved = md.num
             break
     assert unobserved is not None, "expected at least one legal-but-unused Blissey move"
@@ -111,6 +125,8 @@ def test_species_with_no_learnset_gets_flat_floor(prior):
     unrevealed opponent slot carries, which `MoveBelief.move_logits` indexes directly."""
     row0 = prior[0]
     assert torch.isfinite(row0).all()
+    assert prior[0, _format_banned_cols(_N_SPECIES, _N_MOVES)].max().item() == pytest.approx(_LOGIT_EPS, abs=1e-3)
+    row0 = _unbanned(row0, _N_SPECIES, _N_MOVES)                         # a format-banned move is ILLEGAL
     assert row0.min().item() == pytest.approx(_LOGIT_FLOOR, abs=1e-3)
     assert row0.max().item() == pytest.approx(_LOGIT_FLOOR, abs=1e-3)   # FLAT
 
@@ -119,8 +135,9 @@ def test_species_with_no_learnset_gets_flat_floor(prior):
         if gen3_data.learnset.get_legal_moves(sid) is None:
             snum = gen3_data.species.get(sid).num
             if 0 <= snum < _N_SPECIES and not gen3_data.priors.moves(sid):
-                assert prior[snum].min().item() == pytest.approx(_LOGIT_FLOOR, abs=1e-3)
-                assert prior[snum].max().item() == pytest.approx(_LOGIT_FLOOR, abs=1e-3)
+                row = _unbanned(prior[snum], _N_SPECIES, _N_MOVES)
+                assert row.min().item() == pytest.approx(_LOGIT_FLOOR, abs=1e-3)
+                assert row.max().item() == pytest.approx(_LOGIT_FLOOR, abs=1e-3)
                 break
 
 
@@ -143,7 +160,7 @@ def test_not_known_illegal_is_never_treated_as_known_illegal(prior):
     for snum in range(_N_SPECIES):
         if snum in rows_with_a_known_movepool:
             continue
-        row = prior[snum]
+        row = _unbanned(prior[snum], _N_SPECIES, _N_MOVES)      # a format-banned move is KNOWN illegal
         assert row.min().item() > _LOGIT_EPS + 5.0, (
             f"species num {snum} has no known movepool, yet carries 'impossible' cells — "
             "absence of a learnset was read as absence of moves"
@@ -155,8 +172,9 @@ def test_a_dex_gap_row_is_the_flat_floor_not_impossible(prior):
     """A num beyond the real dex (no species at all) is 'nothing known', not 'nothing possible'."""
     used = {gen3_data.species.get(s).num for s in gen3_data.species.base_form_ids()}
     gap = next(n for n in range(1, _N_SPECIES) if n not in used)
-    assert prior[gap].min().item() == pytest.approx(_LOGIT_FLOOR, abs=1e-3)
-    assert prior[gap].max().item() == pytest.approx(_LOGIT_FLOOR, abs=1e-3)
+    row = _unbanned(prior[gap], _N_SPECIES, _N_MOVES)
+    assert row.min().item() == pytest.approx(_LOGIT_FLOOR, abs=1e-3)
+    assert row.max().item() == pytest.approx(_LOGIT_FLOOR, abs=1e-3)
 
 
 # --- GATE 4: a LEGAL move WITH recorded usage keeps its TRUE usage --------------------------- #

@@ -36,6 +36,13 @@ element-wise across months, so the merged W is `Σ_months W_m` and every identit
 aggregated file (0 of 216 records off, 1.2e-14). Only `usage`, `Viability Ceiling` and `Checks and
 Counters` are latest-month (not summable) — never read `usage` as a count or a 12-month share.
 
+🚨 **The FORMAT SPEC filters every prior at acquisition** (`gen3_format_spec_priors_v1`,
+`designs/endstate/design_format_spec.md` §5.1): `compute_priors.py` imports `agents.gen3_data.format_spec` (run it
+with `PYTHONPATH=src`) and drops every banned ability (before the ability tiers, so the 1 % floor never lands on one),
+item, move (the legal moves scaled by `(4 − e) / (4 − e − b)`, a value above 1 THROWS) and teammate species;
+`check_format_legal` THROWS before any write if banned mass survives. A species left with no legal ability must be
+exactly the spec's `ABILITY_LOCKED_SPECIES`, or the tool THROWS.
+
 ⚠️ **`data/teams/sample/` has a SECOND writer that is not in this table.**
 `python -m main.promote_teams` promotes a seed-recorded random draw of already-downloaded pool teams
 into the curated set, and de-lists each from its source `teams.json` so the pool total is unchanged.

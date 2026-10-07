@@ -69,17 +69,26 @@ def test_prior_logits_floor_for_unseen_and_unknown_species():
     # LEGAL but with no recorded usage → the liftable floor. Membership is tested on `_belief_num`,
     # not `num`: the builder writes at the BELIEF num, which collapses every typed Hidden Power onto
     # 237, so a raw-`num` comparison would happily pick a move whose cell a usage entry already wrote.
+    # (Skarmory's only legal-but-unrecorded moves are Swagger / Double Team, which the FORMAT bans —
+    # gen3_format_spec_priors_v1 — so the unseen-LEGAL case reads Blissey's movepool.)
+    sk = gen3_data.species.get("blissey").num
+    legal = gen3_data.learnset.get_legal_moves("blissey")
     usage_nums = {dt._belief_num(m, gen3_data.moves.get(m))
-                  for m in gen3_data.priors.moves("skarmory") if gen3_data.moves.get(m) is not None}
+                  for m in gen3_data.priors.moves("blissey") if gen3_data.moves.get(m) is not None}
+    from agents.model.belief_tables import format_banned_move_cells
+    banned = {m for s, m in format_banned_move_cells(_N_SPECIES, _N_MOVES) if isinstance(s, slice)}
     unseen = next(bn for bn in (dt._belief_num(m, gen3_data.moves.get(m)) for m in sorted(legal)
                                 if gen3_data.moves.get(m) is not None)
-                  if bn not in usage_nums and 0 <= bn < _N_MOVES)     # e.g. Double Team / Swagger
+                  if bn not in usage_nums and 0 <= bn < _N_MOVES and bn not in banned)   # not Swagger: BANNED
     assert abs(_sigmoid(P[sk, unseen].item()) - dt._PRIOR_FLOOR) < 1e-3
 
     # species num 0 = unknown sentinel → floor everywhere (no species-specific prior).
     # NOTHING is known about its movepool, so every move stays POSSIBLE: "not known to be illegal"
     # must never collapse into "known to be illegal".
-    assert torch.allclose(torch.sigmoid(P[0]), torch.full((_N_MOVES,), dt._PRIOR_FLOOR), atol=1e-4)
+    # (except a FORMAT-banned move, which is illegal for every species: gen3_format_spec_priors_v1)
+    want = torch.full((_N_MOVES,), dt._PRIOR_FLOOR)
+    want[sorted(banned)] = dt._ILLEGAL_PROB
+    assert torch.allclose(torch.sigmoid(P[0]), want, atol=1e-4)
 
 
 def test_prior_logits_hidden_power_sums_typed_usage():

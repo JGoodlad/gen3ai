@@ -540,6 +540,13 @@ The concrete steps:
    unrevealed branch consumes P(Choice Band) from the publication instead of the static
    `SPECIES_CB_PRIOR` scalar — the revealed 0/1 exactness gate is unchanged. Supervised as the
    BeliefBank's seventh row.)*
+   **Every prior gives a FORMAT-BANNED entity nothing** (`gen3_format_spec_priors_v1`, the gen3ou format spec
+   `agents.gen3_data.format_spec`; `designs/endstate/design_format_spec.md` §5.1): the Smogon ability / item /
+   move / teammate priors carry no banned mass (Quick Claw, Sand Veil, Soundproof, Swagger, …; checked at load),
+   the move prior gives a banned move `_ILLEGAL_PROB` in every row (Smeargle's Ingrain in its own), the item prior
+   0 on a banned item, and the species usage / co-occurrence priors a banned species 0 / `SPECIES_CLAUSE_LOGIT`.
+   The observation's unrevealed-ability prior follows the same files (an unrevealed Dugtrio reads Arena Trap 1.0).
+   Both belief modes read these tables (`fixed_mass`'s hypothesis moves come from the move prior's legality).
 5. **`DamageOperator`** — the full 660-dim block (§4), computed on the pre-attention tokens.
 6. **`prefuse_proj`** — the op's per-our-mon incoming rows `[B,6,12]` projected to `d_model` and
    **added** to our 6 role tokens. Zero-init ⇒ exactly 0 at init.

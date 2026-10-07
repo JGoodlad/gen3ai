@@ -110,12 +110,6 @@
   "butterfree": {
     "compoundeyes": 1.0
   },
-  "cacnea": {
-    "sandveil": 1.0
-  },
-  "cacturne": {
-    "sandveil": 1.0
-  },
   "camerupt": {
     "magmaarmor": 1.0
   },
@@ -238,8 +232,7 @@
     "thickfat": 1.0
   },
   "diglett": {
-    "arenatrap": 0.99,
-    "sandveil": 0.01
+    "arenatrap": 1.0
   },
   "ditto": {
     "limber": 1.0
@@ -268,8 +261,7 @@
     "insomnia": 1.0
   },
   "dugtrio": {
-    "arenatrap": 0.99,
-    "sandveil": 0.01
+    "arenatrap": 1.0
   },
   "dunsparce": {
     "runaway": 0.00040048427950621916,
@@ -299,8 +291,7 @@
     "static": 0.5
   },
   "electrode": {
-    "soundproof": 0.01,
-    "static": 0.99
+    "static": 1.0
   },
   "elekid": {
     "static": 1.0
@@ -316,9 +307,6 @@
   },
   "exeggutor": {
     "chlorophyll": 1.0
-  },
-  "exploud": {
-    "soundproof": 1.0
   },
   "farfetchd": {
     "innerfocus": 0.5,
@@ -371,8 +359,7 @@
     "innerfocus": 1.0
   },
   "gligar": {
-    "hypercutter": 0.99,
-    "sandveil": 0.01
+    "hypercutter": 1.0
   },
   "gloom": {
     "chlorophyll": 1.0
@@ -587,9 +574,6 @@
     "raindish": 0.5,
     "swiftswim": 0.5
   },
-  "loudred": {
-    "soundproof": 1.0
-  },
   "ludicolo": {
     "raindish": 0.11497129685757125,
     "swiftswim": 0.8850287031424288
@@ -713,9 +697,6 @@
   },
   "moltres": {
     "pressure": 1.0
-  },
-  "mrmime": {
-    "soundproof": 1.0
   },
   "mudkip": {
     "torrent": 1.0
@@ -941,12 +922,6 @@
   },
   "salamence": {
     "intimidate": 1.0
-  },
-  "sandshrew": {
-    "sandveil": 1.0
-  },
-  "sandslash": {
-    "sandveil": 1.0
   },
   "sceptile": {
     "overgrow": 1.0
@@ -1226,8 +1201,7 @@
     "swarm": 0.7401943859028047
   },
   "voltorb": {
-    "soundproof": 0.5,
-    "static": 0.5
+    "static": 1.0
   },
   "vulpix": {
     "flashfire": 1.0
@@ -1257,9 +1231,6 @@
   },
   "whiscash": {
     "oblivious": 1.0
-  },
-  "whismur": {
-    "soundproof": 1.0
   },
   "wigglytuff": {
     "cutecharm": 1.0

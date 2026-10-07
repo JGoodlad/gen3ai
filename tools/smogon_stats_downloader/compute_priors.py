@@ -63,8 +63,20 @@ legacy ``count = sum(abilities.values())``, L134 / L262). A weighted numerator o
 ``Σ Moves == 4 W``; :func:`check_priors` THROWS on any output that breaks its own invariant
 (a distribution summing to 1, a move prior summing with the empty-slot mass to exactly 4).
 
+THE FORMAT SPEC — banned entities get prior 0 (`gen3_format_spec_priors_v1`, 2026-10-07). Every game is
+gen3ou, so a species / item / move / ability the format bans (`agents.gen3_data.format_spec`: the banlist, the
+OHKO / Evasion clauses, the ability-locked species, Smeargle + Ingrain) can never be on a legal team. The filter
+sits HERE, at acquisition, because the Rust encoder and the procedural team generator read these files directly:
+a banned ability leaves the dex-anchored ability set BEFORE the coverage tiers (so the 1 % floor no longer lands
+on it; a species left with no legal ability gets no row — exactly the spec's ability-locked list, or this
+THROWS); a banned item is dropped and the row renormalised; a banned move (or one banned for that species) is
+dropped and the legal moves scaled by ``(4 - e) / (4 - e - b)`` so ``Σ P + e == 4`` still holds (a scaled value
+above 1 THROWS — there is no joint to renormalise against); banned species leave every teammate row and key.
+:func:`check_priors` THROWS if any output still gives a banned entity mass, and the facade re-checks at load
+(``gen3_data.priors._checked_format_legal``). See ``designs/endstate/design_format_spec.md`` §5.1.
+
 Run from repo root (after tools/smogon_stats_downloader/sync.py):
-    python tools/smogon_stats_downloader/compute_priors.py
+    PYTHONPATH=src python tools/smogon_stats_downloader/compute_priors.py
 """
 from __future__ import annotations
 
@@ -73,6 +85,8 @@ import os
 import sys
 from collections import defaultdict
 from typing import Optional
+
+from agents.gen3_data import format_spec as FS
 
 STATS_PATH      = "data/pokemon/gen3_smogon_stats.json"
 SPECIES_PATH    = "data/pokemon/gen3_species.json"
@@ -205,12 +219,20 @@ def compute_ability_priors(
     }
     rejected_post_gen3: dict[str, list[str]] = {}
 
+    spec = FS.active()
+    summary["format_locked"] = []
     for sp_id in sorted(species_lookup.keys()):
         dex_abs = _gen3_dex_abilities(sp_id, pokedex, valid_ability_ids)
         if not dex_abs:
             summary["no_dex"] += 1
             summary["no_dex_species"].append(sp_id)
             continue
+        # The format spec: a banned ability leaves the set BEFORE the tiers (no floor lands on it).
+        legal_abs = [ab for ab in dex_abs if ab not in spec.banned_abilities]
+        if not legal_abs:
+            summary["format_locked"].append(sp_id)
+            continue
+        dex_abs = legal_abs
 
         # Look up Smogon usage for this species — chaos JSON uses capitalized names.
         chaos_entry = next(
@@ -268,6 +290,11 @@ def compute_ability_priors(
             summary["partial_floor"] += 1
 
     summary["rejected_post_gen3"] = rejected_post_gen3
+    locked = {sid for sid, _ in FS.ABILITY_LOCKED_SPECIES if sid in species_lookup}
+    if set(summary["format_locked"]) != locked:
+        raise PriorInvariantError(
+            f"species with no legal gen-3 ability {sorted(summary['format_locked'])} != the format spec's "
+            f"ABILITY_LOCKED_SPECIES {sorted(locked)} — update agents/gen3_data/format_spec.py")
     return priors, summary
 
 
@@ -327,6 +354,7 @@ def compute_move_priors(chaos: dict, species_lookup: dict) -> dict:
             continue
         w = weighted_count(sp_name, sp_data)
         d: dict[str, float] = {}
+        banned_mass = 0.0
         for mv, usage in moves.items():
             mid = _to_id(mv)
             if not mid or mid == "nomove" or usage <= 0:
@@ -334,7 +362,18 @@ def compute_move_priors(chaos: dict, species_lookup: dict) -> dict:
             p = usage / w
             if p > 1.0 + WEIGHTED_TOTAL_RTOL:
                 raise PriorInvariantError(f"{sp_name}: P({mid} in set) = {p!r} > 1")
+            if FS.active().is_banned("move", mid, species=sp_key):
+                banned_mass += p                   # the format spec: a banned move carries no prior
+                continue
             d[mid] = min(1.0, p)
+        if banned_mass > 0.0 and d:
+            e = empty_slot_mass(sp_name, sp_data)
+            scale = (MOVE_SLOTS - e) / (MOVE_SLOTS - e - banned_mass)
+            d = {m: p * scale for m, p in d.items()}
+            if max(d.values()) > 1.0 + WEIGHTED_TOTAL_RTOL:
+                raise PriorInvariantError(
+                    f"{sp_name}: removing banned-move mass {banned_mass!r} scales a legal move above P = 1 — "
+                    f"no exact renormalisation exists without a joint; decide by hand (design_format_spec §5.1)")
         if d:
             out[sp_key] = d
     return out
@@ -379,6 +418,19 @@ def check_priors(chaos: dict, *, hp: dict, ability: dict, move: dict, item: dict
     for sp, rows in spread.items():
         _check_distribution("spread", sp, [float(r[2]) for r in rows])
     check_move_priors(move, chaos)
+    check_format_legal(ability=ability, item=item, move=move, teammate=teammate)
+
+
+def check_format_legal(*, ability: dict, item: dict, move: dict, teammate: dict) -> None:
+    """THROWS unless no output gives an entity the gen3ou format spec bans any mass (design_format_spec §5.1)."""
+    spec = FS.active()
+    bad = ([("ability", sp, a) for sp, r in ability.items() for a in r if a in spec.banned_abilities]
+           + [("item", sp, i) for sp, r in item.items() for i in r if i in spec.banned_items]
+           + [("move", sp, m) for sp, r in move.items() for m in r if spec.is_banned("move", m, species=sp)]
+           + [("teammate", sp, t) for sp, r in teammate.items() for t in [sp, *r] if t in spec.banned_species])
+    if bad:
+        raise PriorInvariantError(f"{len(bad)} banned entr(ies) carry prior mass, e.g. {bad[:5]} — the format "
+                                  f"spec (agents.gen3_data.format_spec) bans them")
 
 
 def compute_item_priors(chaos: dict, species_lookup: dict) -> dict:
@@ -391,7 +443,8 @@ def compute_item_priors(chaos: dict, species_lookup: dict) -> dict:
         sp_key = sp_name.lower()
         if sp_key not in species_lookup:
             continue
-        items = sp_data.get("Items", {})
+        banned = FS.active().banned_items                  # the format spec: banned items carry no prior
+        items = {it: u for it, u in sp_data.get("Items", {}).items() if _to_id(it) not in banned}
         tot = sum(v for v in items.values() if v > 0)
         if tot <= 0:
             continue
@@ -411,10 +464,11 @@ def compute_teammate_priors(chaos: dict, species_lookup: dict) -> dict:
     out: dict[str, dict[str, float]] = {}
     for sp_name, sp_data in chaos["data"].items():
         sp_key = sp_name.lower()
-        if sp_key not in species_lookup:
+        banned = FS.active().banned_species                # the format spec: banned species carry no prior
+        if sp_key not in species_lookup or sp_key in banned:
             continue
         mates = {_to_id(t): v for t, v in (sp_data.get("Teammates") or {}).items()
-                 if v > 0 and _to_id(t) in species_lookup}
+                 if v > 0 and _to_id(t) in species_lookup and _to_id(t) not in banned}
         tot = sum(mates.values())
         if tot <= 0:
             continue

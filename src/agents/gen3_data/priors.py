@@ -12,6 +12,7 @@ import functools
 from typing import Any, Dict, List, Tuple
 
 from . import _base
+from . import format_spec as _fs
 
 #: A set has exactly this many move SLOTS; the chaos ``Moves`` field counts every slot (an empty one
 #: under the key ``""``), so ``Σ_m P(m in set) + empty-slot mass == MOVE_SLOTS`` EXACTLY.
@@ -36,6 +37,28 @@ def _checked_distributions(filename: str, table: Dict[str, Any], values: Any) ->
         if not v or any(not (0.0 < x <= 1.0 + _LOAD_RTOL) for x in v) or abs(tot - 1.0) > _LOAD_RTOL:
             raise PriorInvariantError(f"{filename}[{sp}]: not a distribution (sum {tot!r}) — regenerate "
                                       f"it with tools/smogon_stats_downloader/compute_priors.py")
+    return table
+
+
+def _checked_format_legal(filename: str, kind: str, table: Dict[str, Any]) -> Dict[str, Any]:
+    """THROWS unless no entry of ``table`` gives an entity the gen3ou FORMAT SPEC bans any mass
+    (``gen3_format_spec_priors_v1``; ``designs/endstate/design_format_spec.md`` §5.1): a banned ability / item /
+    move (or a move banned for that species) / teammate species — or a teammate row keyed BY a banned species.
+    The acquisition tool (``compute_priors.py``) removes that mass and renormalises; this guard makes a file
+    regenerated without the spec unloadable, so banned mass can never reach a model."""
+    spec = _fs.active()
+    for sp, row in table.items():
+        if kind == "move":
+            bad = [m for m in row if spec.is_banned("move", m, species=sp)]
+        elif kind == "teammate":
+            bad = [t for t in [sp, *row] if t in spec.banned_species]
+        else:
+            banned = spec.banned_abilities if kind == "ability" else spec.banned_items
+            bad = [e for e in row if e in banned]
+        if bad:
+            raise PriorInvariantError(
+                f"{filename}[{sp}]: {kind} {bad} is BANNED in {spec.format_id} (agents.gen3_data.format_spec) "
+                f"and must carry no prior — regenerate it with tools/smogon_stats_downloader/compute_priors.py")
     return table
 
 
@@ -65,7 +88,11 @@ def _checked_species_usage(table: Dict[str, float]) -> Dict[str, float]:
         if sid in stats:
             raise PriorInvariantError(f"gen3_smogon_stats.json: two chaos records normalize to {sid!r}")
         stats[sid] = rec
-    if set(table) != {s for s, r in stats.items() if _weighted_count(r) > 0.0}:
+    banned = _fs.active().banned_species
+    if banned & set(table):
+        raise PriorInvariantError(f"species usage: banned species {sorted(banned & set(table))} carry usage — "
+                                  f"the format spec gives them prior 0 (design_format_spec.md §5.1)")
+    if set(table) != {s for s, r in stats.items() if _weighted_count(r) > 0.0 and s not in banned}:
         raise PriorInvariantError(
             f"species usage: the species set differs from the chaos records' "
             f"({len(table)} vs {len(stats)}) — regenerate it from gen3_smogon_stats.json (F-X5-47)")
@@ -108,18 +135,20 @@ def _checked_moves(table: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, fl
     return table
 
 
-ability_raw = _base.singleton(lambda: _checked_distributions(
-    "gen3_ability_priors.json", _base.load_json("gen3_ability_priors.json"), dict.values))
+ability_raw = _base.singleton(lambda: _checked_format_legal("gen3_ability_priors.json", "ability", _checked_distributions(
+    "gen3_ability_priors.json", _base.load_json("gen3_ability_priors.json"), dict.values)))
 hidden_power_raw = _base.singleton(lambda: _checked_distributions(
     "gen3_hidden_power_priors.json", _base.load_json("gen3_hidden_power_priors.json"), dict.values))
-move_raw = _base.singleton(lambda: _checked_moves(_base.load_json("gen3_move_priors.json")))
-item_raw = _base.singleton(lambda: _checked_distributions(
-    "gen3_item_priors.json", _base.load_json("gen3_item_priors.json"), dict.values))
+move_raw = _base.singleton(lambda: _checked_format_legal(
+    "gen3_move_priors.json", "move", _checked_moves(_base.load_json("gen3_move_priors.json"))))
+item_raw = _base.singleton(lambda: _checked_format_legal("gen3_item_priors.json", "item", _checked_distributions(
+    "gen3_item_priors.json", _base.load_json("gen3_item_priors.json"), dict.values)))
 spread_raw = _base.singleton(lambda: _checked_distributions(
     "gen3_spread_priors.json", _base.load_json("gen3_spread_priors.json"),
     lambda rows: [r[2] for r in rows]))
-teammate_raw = _base.singleton(lambda: _checked_distributions(
-    "gen3_teammate_priors.json", _base.load_json("gen3_teammate_priors.json"), dict.values))
+teammate_raw = _base.singleton(lambda: _checked_format_legal("gen3_teammate_priors.json", "teammate",
+                                                              _checked_distributions(
+    "gen3_teammate_priors.json", _base.load_json("gen3_teammate_priors.json"), dict.values)))
 smogon_stats_raw = _base.singleton(lambda: _base.load_json("gen3_smogon_stats.json"))
 
 _EV_INDEX = {"hp": 0, "atk": 1, "def": 2, "spa": 3, "spd": 4, "spe": 5}
@@ -179,10 +208,11 @@ def species_usage() -> Dict[str, float]:
     the consumer picks its own floor/normalization. A species absent from the stats simply has no
     entry."""
     out: Dict[str, float] = {}
+    banned = _fs.active().banned_species          # the format spec: a banned species has usage 0 (§5.1)
     for name, sp_data in smogon_stats_raw().get("data", {}).items():
         sid = _species_id(name)
         w = _weighted_count(sp_data)
-        if sid and w > 0.0:
+        if sid and w > 0.0 and sid not in banned:
             out[sid] = w
     return _checked_species_usage(out)
 
