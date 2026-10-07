@@ -93,9 +93,8 @@ Script: `scripts/workstation/proxy_tunnel.sh`
 
 **Using the proxy:**
 ```bash
-# Replay collector
-python3 src/main/collect_replays.py --format gen3ou --save-dir replays/gen3ou \
-  --max-concurrent 20 --proxy socks5h://127.0.0.1:1080
+# (The replay collector, `src/main/collect_replays.py`, was DELETED 2026-10-06 — T27 / P0; its last
+# run was 2026-08-02. Any other public-server READER may still use the proxy.)
 
 # Bot (public LADDER — registered account; see designs/research_state/ladder_readiness.md)
 # ⚠️ NO --proxy here: Showdown auto-locks accounts on datacenter/VPS/proxy IPs
@@ -105,11 +104,8 @@ PS_PASSWORD=... python3 src/main/play.py --mode ladder --server official \
   --model models/<run>/final_model.zip --username <acct> --n-battles 20
 ```
 
-The collector dashboard shows **PROXIED** in green when active.
-
-**Verify no IP leak:**
+**Verify no IP leak** (for any process you route through the proxy; `<PID>` is that process's pid):
 ```bash
-pgrep -f collect_replays.py          # get PID
 ss -tnp | grep "pid=<PID>,"          # should only show 127.0.0.1:1080
 ss -tnp | grep ssh                   # should show 192.168.x.x → 136.109.158.194:22
 ```

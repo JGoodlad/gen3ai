@@ -495,3 +495,43 @@ pins it (every branch's fork step 0, later rows 1, term renormalised by the kept
 **(c) FINDINGS (outside the list).** 1. `--trainee-slots` (KEEP: `recipe.sizing.trainee_slots`, null) now only reserves T2 trainee slots nothing plays, since `--version-pinning` was its one use: the next one-valued candidate. 2. `PolicyOpponentServer`'s `generator` sampling mode and `sample_actions` are reachable only from `keyed_draw_benchmark` / `rust_env_opponents_benchmark` and their parity test (the Python core's `RLPlayer` stream): a sweep candidate. 3. P11c batch 1 also deleted `win_prob_callback.py`, `WindowTrigger`, the window fill and `SampleTrigger.set_target`; the R1 region's per-update `var` seam went with `--win-prob-strata-weight` (batch 2) — a future per-update tensor re-adds it in `R1Declaration`. 4. `best_response_gap._regime` now reads a recorded exploiter temperature curriculum as one `exploiter_temp_curriculum` key (an old curriculum exploiter is not comparable with a fixed-temperature one); no other reader of the deleted exploiter flags exists. 5. The two KEEPs are evidence-light by design: `--win-prob-mode`'s live name is open question 5 of `design_winprob_only_critic.md` (not an `endstate/*` doc), `--grad-checkpointing`'s is the runbook paragraph this unit wrote — the owner may prefer to delete either.
 
 **P11d hand-off (the LAST flag-census unit; the census is CLOSED — read this only if you touch the clock, the bot bank or the scaffolding offline stack).** **State:** 165 trainer + 9 launcher flags (the whole census: 211 → 174; KEEP 165 + 9, NEEDS-OWNER 0). **Commits:** `4498460d` (1/2: the four Rust-crossing flags, BaitBot, the clock's two OFF variants), `9de45902` (2/2: the in-training gauge retired; its code and docs), and `8f9d89cd` (a row-only commit that records `tb_relevance_test`'s slow row, which names `9de45902`: a slow row stores HEAD, so it is written after the code is committed). **What a reader needs:** (1) `ClockConfig` (`rust_sim/src/trackers/clock.rs`) now holds ONE field, `start_n` — a TEETH seam, not a production option: a chain whose clock starts at another `n` is what `encoder_test`, `core_events`' `POKESIM_CORE_EVENTS_TEETH=parse_clock` and `sim_bridge`'s NEW `POKESIM_SIM_BRIDGE_TEETH=clock_start` (both compiled out of `--release`) use to prove the parse-encode gate and the bridge-vs-core row comparison can SEE a clock divergence; production always builds `ClockConfig::default()`. (2) The bot bank `commit_corpus.json.gz` is 50 episodes (BaitBot's five dropped; the rest are the bank's own bytes); `bots::Bot::new` takes two seeds. (3) `RewardConfig` / `ModelVersion` still carry `progress_decision_tense` / `progress_switch_freeze` as RECORDED fields, refused when `True` on a resume (P11b's pattern, no RETIRED row, no bump). (4) `main.scaffolding_gauge` and `scaffolding.py`'s offline math are KEPT (readers: `critic_gate`, `main/ops/*`, `stats.py`, the calibration read). **FINDINGS (outside the list, not touched — standing rule 9).** (a) **`ClockConfig` is now a near-empty type threaded through ~20 Rust files** (`SideStream::with_trackers`, `SideTrackers::new`, `BattleVersion::*_with(Option<ClockConfig>)` — where `Some(default)` is the "trackers ON" marker — `search/{game,tree,playout}.rs`, every test): collapsing it to a bool / a plain "trackers on" marker is a mechanical sweep that was not part of this unit (the deletion pass's spirit says do it; the blast radius was the reason not to). (b) The census's still-open candidates from P11c stand: `--trainee-slots` (KEEP, `recipe.sizing.trainee_slots` = null; it only reserves T2 trainee slots nothing plays, since `--version-pinning` was its one use) and `PolicyOpponentServer`'s `generator` sampling mode + `sample_actions` (reachable only from `keyed_draw_benchmark` / `rust_env_opponents_benchmark` and their parity test). (c) `ProgressClock.update(delta, live, legal)` still takes `legal`, which `n` never read (it gated only the deleted charge's trapped-vs-wall exemption): a dead parameter on a public method, left. (d) `designs/ai_v12/launch_runbook.md` and `designs/research_state/README.md` still describe `--progress-decision-tense` / `train/scaffolding_*` as live: they are `ai_vN` / history documents (explicit-update only). (e) **UNVERIFIED:** that `tb_relevance_test`'s smoke FAILED before this unit's retirement was P10-F2's recorded observation (the three tags published once, rho 1.0 / gauge 0.0 / n 2,048); it was not re-measured on the pre-change tree here — what was measured is that it PASSES after (116 s) and that the three tags are asserted absent. (f) The other slow-tier rows in `slow_tier_status.json` were not refreshed (the file is `git checkout`ed except this one row); their staleness stands as reported by the slow-tier status gate. (g) The first `checkargs` baseline of this unit was taken from the main checkout at `6e112a99` (the worktree's was racing the unit's own edits) — both read exit 0 on all eight runs. (h) `ledger_index`, the arch viewer and the delivery graph needed no regeneration (no input changed).
+
+---
+
+## 8. POST-PASS REMOVALS (after the DONE pass above)
+
+Small deletions that follow the manifest's rule (verify unreachable, then delete with their tests and doc references, and
+record the citation in `designs/deleted_flags.md`).
+
+### 8.1 T27 / P0 dead-code removal (2026-10-06; orchestrator approval under the owner's delegation, poke-env retirement to one stack)
+
+Reachability was checked before each deletion: no import anywhere under `src/`, `tools/`, `scripts/` (`git grep` on the
+module name), no live process (`ps`), no systemd user unit or crontab entry, and no CLI or doc COMMAND a live process uses
+(the only doc commands left were in history docs or a workstation how-to).
+
+| path | lines (module / tests) | evidence it is unreachable | doc / test references handled |
+|---|---|---|---|
+| `src/main/collect_replays.py` | 334 / 0 | referenced only by the ai_v3 / ai_v6 impl docs, the ai_v11 notes, `scripts/workstation/GCP_INFRASTRUCTURE.md` (a how-to example) and `ladder_readiness.md` (history); no process; the output dir's newest date is 2026-08-02 | `GCP_INFRASTRUCTURE.md`'s two collector examples replaced by a note; the ai_v* docs and `ladder_readiness.md` are history and are left as written |
+| `src/agents/training/replay_imputation_probe.py` | 844 / 306 (`replay_imputation_probe_test.py`, 37 tests) | imported only by its own test; a run-directly script that ran once (2026-08-24) | `strict_api_lock_test.py`'s two allowlist rows (`training/replay_imputation_probe.py`: `active_pokemon`, `team`) removed; the `src/agents/training/CLAUDE.md` section and its map row removed; `designs/training/offline_meters.md`'s section replaced by a tombstone; `metamon_replay_feasibility.md` (research record) left as written |
+| `src/main/ladder_usage_smoke.py` | 336 / 112 (`ladder_usage_smoke_test.py`) | imported only by its own test; the measurement was banked 2026-09-24 (the registered n, 0 failures) | `designs/ops/testing.md`'s paragraph replaced by a tombstone; `ladder_readiness.md` and the measurement dir's README are history and are left as written |
+
+**Allowlist effect:** the poke-env import allowlist shrank 171 -> 167 (non-test 74 -> 71, test 97 -> 96): the three modules
+and the probe's test each imported poke-env (`ladder_usage_smoke_test.py` did not).
+
+### 8.2 Asked for, NOT deleted: the standalone Python eval worker `main/eval_worker.py` (570 lines) — still reachable
+
+The brief named "the Python branch of the eval worker". Its callback branch is already gone (P10-F2, above); what remains is
+the standalone worker, and it is NOT unreachable:
+
+* `main/ops/eval_trace_gen.py` drives `python -m main.eval_worker` (via `eval_launch.spawn_eval_workers`); it is a documented
+  SOP command (`designs/ops/TRAINING_RUN_SOP.md` — the "HIGH-POWER offline re-read", and `scripts/ops/README.md`), used to
+  regenerate a saved checkpoint's eval traces offline on CPU. There is no Rust-engine equivalent of that tool yet.
+* `agents/training/rust_eval/parity.py` spawns it as the Python ORACLE of the Rust eval cycle, and
+  `rust_eval/eval_benchmark.py` spawns it for the sharded-worker benchmark.
+* Five other tests import it — `eval_sentinel_greedy_test`, `eval_sharding_fuzz_test`, `mirrored_pairs_test`,
+  `server_port_threading_test` (all `agents/training`) and `main/ops/eval_trace_gen_test` — beside its own
+  `eval_worker_test` / `eval_worker_compile_test`; `selfplay_eval_worker_fuzz_test` mirrors its `_play_unit` without
+  importing it.
+
+It goes with the survey's **P2** (meters and `eval_trace_gen` onto the Rust eval engine), as the survey's plan already says
+(§A4.5), not before.

@@ -490,7 +490,8 @@ this gate is P0 and makes progress a NUMBER that falls: the set of files that im
 
 **The pieces.** `utils/poke_env_importers.py` is the scanner (an AST scan; one parse per file that mentions the package
 at all, ~1.5 s over ~1,400 files) and its CLI; `designs/ops/poke_env_import_allowlist.txt` is the GENERATED list, frozen
-at 2026-10-06 (171 entries: 74 non-test + 97 test); the gate is `src/poke_env_import_gate_test.py`, `static`-tier, opt
+at 2026-10-06 (171 entries: 74 non-test + 97 test; the gate's two `FROZEN_*_COUNT` constants are the CURRENT size, 167 after
+the first shrink, the T27/P0 dead-code removal); the gate is `src/poke_env_import_gate_test.py`, `static`-tier, opt
 out with `GEN3AI_SKIP_POKE_ENV_IMPORT_GATE=1`. The scanner's own shape tests are `src/utils/poke_env_importers_test.py`.
 
 **What counts as an importer.** `import poke_env[.x]` / `from poke_env[.x] import …` at module level, inside a function
@@ -892,12 +893,12 @@ all three sources by calling it. **The ladder MILESTONE tier has NAMED known div
 (`rust_core_parity.LADDER_KNOWN_DIVERGENCES`, each with its backlog row); they run in their own test
 and must still fire in exactly their named classes, so an entry that outlives its fix fails.
 
-**The FULL Metamon smoke** (`python -m main.ladder_usage_smoke`, `gen3_ladder_usage_smoke_v1`) plays
-every one of the 22,862 teams once (11,431 battles, the registered n) on the NODE bridge with both
-players encoding every decision — INCREMENTAL per `ORCHESTRATOR_SOP.md` §2: 50-battle units, rows
-written atomically to a durable directory, resumable (a restarted driver skips the units on disk —
-pinned by `main/ladder_usage_smoke_test.py` and proven by a real kill + resume), detached
-(`run --detach`), `status` for progress, `report` refuses before the registered n.
+**The FULL Metamon smoke is DELETED** (`main/ladder_usage_smoke.py`, T27 / P0 dead-code removal, 2026-10-06): it was a
+one-off, banked measurement (2026-09-24: all 22,862 ladder teams, 11,431 battles on the NODE bridge, both players encoding
+every decision with the Python encoder, 0 failures of 11,431 — the record is
+`designs/research_state/measurements/ladder_usage_smoke_2026-09-24/`), with no caller. Its subject (a Python poke-env parse
+crash or encoder crash on a ladder team) is the Python agent's, which the poke-env retirement removes; the ladder source
+of the fuzz and parity gates above is unchanged.
 
 **The Rust core CUTOVER stress and the M5 milestone harness are DELETED** (`main/rust_core_cutover/`, `main/rust_core_m5/`, deletion pass U3): the cutover is done, and the Python env they compared the core against is gone. Their pre-registered targets and verdicts are history (`designs/endstate/program_rust_core.md` §3, the ledger). The pattern they proved — minutes-long units, one atomic row each, resumable, `nice 19`, a worker cap, a governor on the live arm's fps, run from a `git archive` PIN (never a worktree: a binary compiled in a worktree panics once it is removed) — remains the template for any new long measurement driver.
 

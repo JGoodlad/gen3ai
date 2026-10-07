@@ -12021,3 +12021,21 @@ branch `obs-facts-append`).
   patch-target form added no file.
 - **Tests.** `src/utils/poke_env_importers_test.py` (the scan's shapes and look-alikes, the walk's pruning on a throwaway tree,
   `--init` / `--shrink`); the gate fails on a planted importer and on a count left above the list's size.
+
+## 2026-10-06 — POKE-ENV RETIREMENT, P0 dead-code removal: `collect_replays`, `replay_imputation_probe`, `ladder_usage_smoke` deleted (no model change; no ARCH_SIGNATURE / config change)
+
+- **Deleted** (orchestrator approval under the owner's delegation; each verified unreachable first — no importer, no live
+  process, no unit or cron entry, no live doc command): `src/main/collect_replays.py` (334 lines; the replay-collector daemon,
+  last output 2026-08-02), `src/agents/training/replay_imputation_probe.py` + its test (844 / 306; a one-off meter, run
+  2026-08-24) and `src/main/ladder_usage_smoke.py` + its test (336 / 112; a one-off measurement banked 2026-09-24, 11,431 of
+  11,431 battles clean).
+- **References handled.** `strict_api_lock_test.py`'s two allowlist rows for the probe (the only entries that wrote to raw
+  poke-env objects); the training leaf's section and map row; `designs/training/offline_meters.md` and
+  `designs/ops/testing.md` (tombstones); `scripts/workstation/GCP_INFRASTRUCTURE.md`'s collector examples; three rows in
+  `designs/deleted_flags.md` § Deleted PATHS and a new `designs/ops/deletion_pass_manifest.md` §8.
+- **The poke-env import allowlist shrank 171 -> 167** (non-test 74 -> 71, test 97 -> 96) with `python -m
+  utils.poke_env_importers --shrink`; the gate's two frozen counts followed.
+- **NOT deleted, reported.** The standalone Python eval worker `main/eval_worker.py` is still reachable (the documented
+  `main.ops.eval_trace_gen` SOP command, the Python-oracle parity harness `rust_eval/parity.py`, the eval benchmark, five
+  tests): it goes with the survey's P2. `main/search_dividend/` is untouched (search stays in the end state; reported for the
+  owner).

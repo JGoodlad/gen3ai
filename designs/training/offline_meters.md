@@ -37,43 +37,15 @@ subtracts the same `p̂(1−p̂)/(n−1)` identity but PER ROW with a heterogene
 `main/q_amortization.spearman` was the one true duplicate; it went with the E5 step-5 amortization meter (deletion pass L4), so `stats.py` now has no near-duplicate of `spearman` left in the tree. `hodge.py` and `elo.py` carry no general-purpose
 statistics at all; everything in them is bound to the rating model.
 
-## `replay_imputation_probe` — the own-side imputation meter (`replay_imputation_probe.py`)
+## `replay_imputation_probe` — DELETED (T27 / P0 dead-code removal, 2026-10-06)
 
-A **meter, not a lever**: it answers "how far would our observation move if the only thing we knew
-about our OWN side were what a public Showdown replay had shown by now?" — the #1 risk in
-`designs/research_state/metamon_replay_feasibility.md` §2.7, which Metamon cannot quantify because
-they have no ground truth and we can because we own a simulator. There is **no transcoder and no
-`|request|` synthesis here**; those are that memo's Gap 1 and deliberately out of scope.
-
-```bash
-export PYTHONPATH=$PYTHONPATH:src
-python src/agents/training/replay_imputation_probe.py 20 [--impl rust] [--json out.json]
-```
-
-**Mechanism.** It plays reproducible bridge battles (the `record_fixture_battle` recipe — pinned
-teams, a per-player RNG, a fixed sim seed) with a seeded-random policy that decides on the TRUE
-obs, and at every decision: encodes truth cold (`assembler=None`), snapshots our own mons,
-overwrites their **not-yet-revealed-by-then** moves / item / EVs+nature with the top Smogon-prior
-candidate for the species, bumps `Gen3Battle._state_epoch` so the `live_view` memo rebuilds,
-encodes again, restores, and bumps again. Truth is re-encoded a THIRD time after the restore and
-required to be bit-identical — the meter mutates the live battle, so a leaked restore would make
-every later decision's "truth" a previous decision's imputation, and that is gated rather than
-believed.
-
-**Reveal tracking models a REPLAY, not poke-env** (`track_own_reveals`, pure over raw protocol
-lines, 37 unit tests in `replay_imputation_probe_test.py`): moves on use, item on activation,
-spreads never. The sharp edges each have a test — Sleep Talk's callee IS in the user's set,
-Metronome's and Mirror Move's are NOT, Struggle is never a set move, Knock Off on the opponent
-does not disclose ours, and the species comes from the switch DETAILS (this pool carries localized
-nicknames, the same trap `search_dividend.determinize` documents).
-
-**Result (2026-08-24, 20 battles / 2,640 decisions), recorded in full in the memo.** The error is
-structurally confined to the our-team block — opp_team, active context, global env, pair history
-and the H-B event window are *exactly* zero everywhere, being opponent- or log-derived. Inside it,
-`moves` carries almost all of it (relL2 0.56 early → 0.36 late), `items` is ~free in gen3ou
-(0.036), and **`spread` is a flat floor that never decays** (0.268 / 0.268 / 0.256) because no
-battle progress ever reveals an EV spread. The early-game confound is confirmed at ~2.7× (whole-obs
-relL2 0.364 at turns 1–5 vs 0.136 at 16+). ⚠️ The `reactive.active_req_moves` row it prints is an
-ARTIFACT of holding the request at truth and is marked `*` in the output — read its direction,
-never its size.
-
+The own-side imputation meter (`agents/training/replay_imputation_probe.py` + its 37 unit tests) is gone: a one-off
+measurement ("how far would our observation move if the only thing we knew about our OWN side were what a public
+Showdown replay had shown by now?") that ran once, 2026-08-24 (20 battles / 2,640 decisions; the result is recorded in
+full in `designs/research_state/metamon_replay_feasibility.md`), had no importer and no caller, and
+read the Python battle layer's raw `Pokemon` objects, which the poke-env retirement (T27) is removing. The error was
+structurally confined to the our-team block: `moves` carried almost all of it (relL2 0.56 early, 0.36 late), `items` was
+~free in gen3ou (0.036), and `spread` was a flat floor (~0.27) because no battle progress ever reveals an EV spread.
+Recover the code from the repository history (the last commit that has the file) if the question returns; on the Rust
+reader it would be re-asked as a reader-level meter, not as a mutation of Python objects.
+Record: `designs/ops/deletion_pass_manifest.md` §8.

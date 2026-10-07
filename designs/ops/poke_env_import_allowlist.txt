@@ -49,7 +49,6 @@ src/agents/training/golden_obs_capture.py
 src/agents/training/live_view_build_benchmark.py
 src/agents/training/obs_build_benchmark.py
 src/agents/training/obs_materializer.py
-src/agents/training/replay_imputation_probe.py
 src/agents/training/snapshot_ladder.py
 src/agents/training/species_priors.py
 src/agents/training/team_archetypes.py
@@ -59,9 +58,7 @@ src/agents/training/untaught_meter.py
 src/main/anchors/mirrored.py
 src/main/anchors/runner.py
 src/main/anchors/session.py
-src/main/collect_replays.py
 src/main/eval_worker.py
-src/main/ladder_usage_smoke.py
 src/main/play.py
 src/main/prober/core_trace.py
 src/main/prober/engine/switch_in.py
@@ -151,7 +148,6 @@ src/agents/training/poke_env_gaps/snatch_fuzz_test.py
 src/agents/training/poke_env_gaps/transition_fuzz_test.py
 src/agents/training/poke_env_gaps/wish_floating_fuzz_test.py
 src/agents/training/redecide_rollback_fuzz_test.py
-src/agents/training/replay_imputation_probe_test.py
 src/agents/training/reward_golden_test.py
 src/agents/training/selfplay_eval_worker_fuzz_test.py
 src/agents/training/selfplay_opponent_fuzz_test.py

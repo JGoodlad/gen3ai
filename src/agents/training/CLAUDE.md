@@ -37,7 +37,7 @@ always-current obligation as this file — update the topic doc in the same pass
 | the FORK ARM — contested-state forks, the branch rows, the CRN, the `fork/` family | [`designs/training/forks.md`](../../../designs/training/forks.md) |
 | the stall-tail harvest / head-repair pipeline | [`designs/training/stall_tail_harvest.md`](../../../designs/training/stall_tail_harvest.md) |
 | either `--compile-*` flag, BLAS pinning | [`designs/training/compile_flags.md`](../../../designs/training/compile_flags.md) |
-| `stats.py`, the replay-imputation probe | [`designs/training/offline_meters.md`](../../../designs/training/offline_meters.md) |
+| `stats.py` (the shared small-sample statistics) | [`designs/training/offline_meters.md`](../../../designs/training/offline_meters.md) |
 | the RUST COLLECTOR — the rollout on the M5 Rust env core, the complete-game buffer, staleness, the keyed draw (`rust_rollout/`, `keyed_draw.py`, `rust_vec_env.py`) | [`designs/training/rust_collector.md`](../../../designs/training/rust_collector.md) |
 
 Closed history — **do not update it, and do not re-derive a plan from it**:
@@ -1265,16 +1265,6 @@ against a battle-level holdout. It is the ai_v12 head-repair backbone and it wri
 `$GEN3AI_HARVEST_DIR` overrides).
 
 **Full detail — every flag, gate, measurement and hazard — is in [`designs/training/stall_tail_harvest.md`](../../../designs/training/stall_tail_harvest.md).**
-
-## `replay_imputation_probe` — the own-side imputation meter (`replay_imputation_probe.py`)
-
-A **meter, not a lever**: how far would our observation move if the only thing we knew about our OWN
-side were what a public Showdown replay had shown by now? It plays reproducible bridge battles,
-overwrites our not-yet-revealed moves / item / spread with the top Smogon-prior candidate, and
-re-encodes — with truth re-encoded a THIRD time after the restore and required to be bit-identical,
-because a leaked restore would make every later "truth" a previous decision's imputation. There is
-**no transcoder and no `|request|` synthesis here**, deliberately.
-**Full detail — in [`designs/training/offline_meters.md`](../../../designs/training/offline_meters.md).**
 
 ## Two DELETED subsystems
 
