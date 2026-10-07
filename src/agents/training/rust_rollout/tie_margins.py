@@ -53,7 +53,8 @@ def _arg(args: Tuple[Any, ...], kwargs: Dict[str, Any], i: int, key: str, defaul
 
 
 def site_margin(rule: SS.Rule, name: str, args: Tuple[Any, ...], kwargs: Dict[str, Any],
-                payload: Optional[Tuple[th.Tensor, ...]] = None, out: Any = None) -> Optional[th.Tensor]:
+                payload: Optional[Tuple[th.Tensor, ...]] = None, out: Any = None,
+                consumed: Any = None) -> Optional[th.Tensor]:
     """The elementwise margin of one MARGIN op (float64, any shape whose leading dim is the op's rows), or
     None when the op cannot cross a cutoff (fewer candidates than the selection keeps).
 
@@ -61,7 +62,13 @@ def site_margin(rule: SS.Rule, name: str, args: Tuple[Any, ...], kwargs: Dict[st
     own result): the tensors the selected index GATHERS, each aligned to the operand. The margin is then
     the gap to the nearest candidate whose payload DIFFERS from the selected one's — a candidate whose
     every payload value is bit-identical selects the same values, so a tie with it cannot move anything
-    the forward computes (`gen3_behaviour_tie_identity_v1`)."""
+    the forward computes (`gen3_behaviour_tie_identity_v1`).
+
+    ``consumed`` (a ``sort_head`` rule that declares one, `selection_sites.Rule.consumed`, read by
+    `consumed_decl`): how the caller READS the order (`gen3_behaviour_tie_consumed_v1`) — a long tensor
+    (shape = the operand's without its last dim) = that many leading positions in ORDER, so only the pairs
+    up to and across it count; a `hypothesis_set.SetCuts` = the prefix as a SET at each cut, so only the
+    pair straddling a cut counts. A pair that cannot reorder anything the caller reads is no tie."""
     x = args[0].detach().double()
     if rule.kind == "topk":
         k = int(_arg(args, kwargs, 1, "k", 1))
@@ -80,6 +87,21 @@ def site_margin(rule: SS.Rule, name: str, args: Tuple[Any, ...], kwargs: Dict[st
         genuine = (a >= -1.0) & (a <= 0.0) & (b >= -1.0) & (b <= 0.0)
         if rule.zero_exact:
             genuine = genuine & ~((a == 0) & (b == 0))
+        if consumed is not None:
+            if dim not in (-1, x.dim() - 1):
+                raise TieMarginError(f"[K9(b)] a consumed declaration needs the sort on the last dim ({name}, dim {dim})")
+            i = th.arange(a.shape[-1], device=x.device)          # pair (i, i + 1) of the head
+            if isinstance(consumed, th.Tensor):                  # read IN ORDER up to a per-row count
+                if tuple(consumed.shape) != tuple(x.shape[:-1]):
+                    raise TieMarginError(f"[K9(b)] a consumed count of shape {tuple(consumed.shape)} does not align "
+                                         f"with the sorted operand {tuple(x.shape)} ({name})")
+                genuine = genuine & (i < consumed.to(x.device).long().unsqueeze(-1))
+            else:                                                # a SET at each cut: the straddling pair only
+                cuts = [int(c) for c in consumed]
+                if not cuts or min(cuts) < 1 or max(cuts) >= int(rule.head):
+                    raise TieMarginError(f"[K9(b)] the set cuts {cuts} of {name} must lie in [1, head {rule.head}): "
+                                         "a cut the head does not reach would never be judged")
+                genuine = genuine & th.isin(i + 1, th.tensor(cuts, device=x.device))
         g = _rel(a, b)
         return th.where(genuine, g, th.full_like(g, float("inf")))
     if rule.kind == "argmax":
@@ -157,6 +179,28 @@ def payload_tensors(rule: SS.Rule, frame: Any, operand: th.Tensor, site: str) ->
     return tuple(out)
 
 
+def consumed_decl(rule: SS.Rule, frame: Any, site: str) -> Any:
+    """The declared CONSUMPTION of a ``sort_head`` rule (`selection_sites.Rule.consumed`) read from the
+    issuing frame's locals: a long tensor (an in-order prefix count), a `hypothesis_set.SetCuts`, or None
+    (the rule declares none, or the caller passed None: every pair of the head). A stale declaration (no
+    such local, any other type) is a `TieMarginError` — never a silent "no restriction"."""
+    if not rule.consumed:
+        return None
+    from agents.model.hypothesis_set import SetCuts
+
+    loc = frame.f_locals if frame is not None else {}
+    if rule.consumed not in loc:
+        raise TieMarginError(f"[K9(b)] the MARGIN site {site} declares consumed {rule.consumed!r}, but its frame "
+                             "holds no such local — the declaration in agents/model/selection_sites.py is stale")
+    t = loc[rule.consumed]
+    if t is None or isinstance(t, SetCuts):
+        return t
+    if isinstance(t, th.Tensor) and not t.is_floating_point() and t.dtype != th.bool:
+        return t
+    raise TieMarginError(f"[K9(b)] the consumed declaration {rule.consumed!r} of {site} is a {type(t).__name__}: "
+                         "a long tensor, a SetCuts or None")
+
+
 def _caller_frame() -> Any:
     """The frame of the forward-module line that issued the op — the first frame outside torch and outside
     every ``__torch_function__`` (a recorder subclass's included) — or None when that frame is not in
@@ -232,7 +276,8 @@ class TieMargins(TorchFunctionMode):
         if rule is None:
             return out
         site = f"{where[0]}.py:{where[1]} {name}"
-        g = site_margin(rule, name, args, kwargs, payload_tensors(rule, frame, args[0], site), out)
+        g = site_margin(rule, name, args, kwargs, payload_tensors(rule, frame, args[0], site), out,
+                        consumed_decl(rule, frame, site))
         self.sites_seen[site] = self.sites_seen.get(site, 0) + 1
         if g is None:
             return out

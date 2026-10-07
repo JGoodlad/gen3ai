@@ -471,7 +471,7 @@ class ExtractorForward(ExtractorApi):
             _x5r = other_roster(_x5r, _hs, self.hypothesis_builder, self.move_belief,
                                 self.damage_op.BASE_STATS, self.damage_op.SPECIES_TYPE,
                                 self.damage_op.SPECIES_SPREAD_PRIOR, int(self.damage_op.CHART.shape[-1]),
-                                _SB_SPE)
+                                _SB_SPE, cuts=(self.consequence_topk, self.entity_topk_seats))
             self.stash.hypothesis = _hs
         # T0 RESOLVE (spread/HP-type) → T1 REASON (the op). Run the WHOLE physics stack ONCE, here,
         # PRE-attention: the spread + HP-type beliefs read the raw opp role tokens (the move belief

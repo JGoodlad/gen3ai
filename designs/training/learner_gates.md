@@ -87,7 +87,8 @@ beside the blob entries, which a non-default record never touches. `fixed_mass` 
 - **What runs.** At the seeded INIT, on the arm's buffer with the intent labels aligned as `train()` aligns them:
   ONE `micro_step` (region R1, every term of fold steps 1–3a), at fp32 and on a float64 copy under `Fp64Mode`. The
   mode promotes every float32 operand of every torch op, and `.float()` means `.double()`.
-- **Rule 8.** Rows whose K9(b) tie margin is under `FP32_TIE_EPS` are excluded from both runs: 2 of 64.
+- **Rule 8.** Rows whose K9(b) tie margin is under `FP32_TIE_EPS` are excluded from both runs: 0 of 64 since
+  `gen3_behaviour_tie_consumed_v1` (re-recorded 2026-10-06).
 - **What is compared.** Every term within `5e-6 + 1e-5·|t64|`; seven key gradients (δ_θ, OTHER's map, the hypothesis
   marker, the flat pointer, the set-BCE head, the policy, the critic) within relative L2 `5e-5`.
 - **Measured (recorded).** Terms ≤ 3.3e-7 abs and ≤ 1.3e-6 relative; gradients ≤ 1.5e-6.
@@ -248,8 +249,8 @@ training, every one of 3,538,944 rows of 36 fills through the probe forward; tor
 the healthy share. A fault that moves many rows is caught by its judged rows, or by the ceiling.
 `consistency_test` re-derives epsilon and the ceiling from `result.json` and fails on a changed constant.
 
-*Exact ties are excluded, per the owner's rule* — unless the tie provably cannot move log pi, which two
-DECLARED, deterministic rules decide (`gen3_behaviour_tie_identity_v1`, 2026-10-05; numbers from
+*Exact ties are excluded, per the owner's rule* — unless the tie provably cannot move log pi, which three
+DECLARED, deterministic rules decide (the third, CONSUMPTION, below the measurement table) (`gen3_behaviour_tie_identity_v1`, 2026-10-05; numbers from
 [`measurements/k9_tie_identity_2026-10-05/`](../research_state/measurements/k9_tie_identity_2026-10-05/README.md)):
 
 - **PAYLOAD IDENTITY** (`selection_sites.Rule.payload`, `tie_margins._payload_gap`). Two candidates whose
@@ -284,6 +285,32 @@ at any arm**; the excluded share after the rule:
 
 Oracle-full's live run read 4.98–8.11 % over its updates 1–11 under the rule before (its update 0 was the
 22.0 % stop), so no arm needs its own ceiling: `FP32_EXCLUDED_CEILING` stays 0.15 everywhere.
+
+- **CONSUMPTION** (`gen3_behaviour_tie_consumed_v1`, 2026-10-06; `selection_sites.Rule.consumed`,
+  `hypothesis_set.stable_order`'s `consumed`, `tie_margins.consumed_decl`). X5's one sort site is called by four
+  readers, and a sort pair is a hazard only where its reader reads the ORDER. Each caller declares how it reads
+  the order (the declaration changes nothing the sort returns):
+  - the op's per-mon move orders (`build_op_roster`, `other_roster`) are read as a SET before each cut (gathers
+    per candidate, then presence-scaled max / sums over K: the code path blob's `topk` feeds, whose rule already
+    counts only the k-th vs (k+1)-th value). They declare `SetCuts((consequence_topk, entity_topk_seats))`, so
+    only the pair straddling a cut counts;
+  - the species order declares `consumed = k`: positions ≥ k are OTHER's tail, read as a set;
+  - the active's move group declares nothing, so every pair of the head counts (its seats are read in order).
+
+  An unreadable declaration is a `TieMarginError`. The premise is held on real rows
+  (`tie_identity_integration_test`): a seeded random permutation of every per-mon set prefix leaves the full
+  masked log-probs bit-identical, and swapping the cut pair moves them. *Why:* `rb_x5ab_fm_s1006` (fatal, at
+  708dcb0a, after the identity rule) STOPPED at its update 1 on the ceiling, 0.281 (its `warn` replicate read
+  0.271, then 0.03–0.10 over 151 updates; the other five fixed_mass seeds read 0.04–0.09 there). One update
+  in, the move posterior is near-flat, so candidates INSIDE each mon's top six tie, and the rule counted every
+  adjacent pair of the head. Measured on CPU at the dumped update-1 weights
+  ([`measurements/k9_early_probe_2026-10-06/`](../research_state/measurements/k9_early_probe_2026-10-06/README.md);
+  2,048 rows, flips as above): before 15.2 %, after **5.9 %**, and **no row the flips call distinct is cleared**
+  (38 of 38 stay excluded). fixed_mass perturbed 5.1 % → 3.8 %; blob unchanged. The live 0.281 would project
+  to about 11 % (**UNVERIFIED**: a proportion from a random-opponent harness, not a GPU read). The update is
+  unchanged: the fixed_mass learner golden re-recorded with `post_params_sha256` identical and `changed: []`;
+  only its fp64 reference's rule-8 exclusion moved (1 → 0 rows).
+  The ceiling stays 0.15, and a judged row's mismatch stays FATAL in every phase (no early-phase leniency).
 
 *On the GPU, fixed_mass regime A (F-XC-5, 2026-10-05, at `e8008c2d`;
 [`measurements/x5_fxc4_compile_gate_2026-10-05/`](../research_state/measurements/x5_fxc4_compile_gate_2026-10-05/README.md)

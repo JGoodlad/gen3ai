@@ -89,6 +89,13 @@ class Rule(NamedTuple):
                      (``+inf`` non-candidate, ``−2`` pinned revealed move) cannot flip — and, with
                      ``zero_exact``, not two exact zeros (a structural π = 0 row).
 
+    ``consumed`` (``sort_head`` only; `gen3_behaviour_tie_consumed_v1`, 2026-10-06): the name of the issuing
+    frame's local that declares how the CALLER reads the order (`hypothesis_set.stable_order`):
+    a long tensor (per row) = that many leading positions read IN ORDER, the rest only as a set — the pairs up
+    to and across it count; a `hypothesis_set.SetCuts` = the prefix read as a SET at each cut — only the pair
+    straddling a cut counts; None = every pair of the head. A pair its reader cannot reorder anything by is no
+    tie. ``""`` = no declaration (every pair of the head).
+
     ``payload`` (``argmax`` only; `gen3_behaviour_tie_identity_v1`, 2026-10-05): the names of the issuing
     frame's local tensors the selected index GATHERS — everything the selection reaches (a tensor of fewer
     dims than the operand is per-row, broadcast over its slot dims). The margin is then the gap to the
@@ -102,6 +109,7 @@ class Rule(NamedTuple):
     why: str = ""
     head: int = 0
     payload: Tuple[str, ...] = ()
+    consumed: str = ""
 
 
 RULE_KINDS = ("topk", "argmax", "threshold", "threshold_self", "sort_head")
@@ -150,8 +158,12 @@ MARGIN: Dict[Tuple[str, str], Rule] = {
     #     reads it: hypothesis rank j fills the j-th hidden slot (k <= 5, so positions 0..5) and the
     #     move seats are positions 0..K-1 (K = 6): every adjacent pair among the first 7 is a boundary
     #     (`hypothesis_set.near_tie_rows` is the same rule, at the module's own eps).
+    #     gen3_behaviour_tie_consumed_v1 (2026-10-06): each caller DECLARES how it reads the order — the
+    #     species order in order up to k (ranks >= k are OTHER's tail, a set), the op's per-mon orders
+    #     (`build_op_roster`, `other_roster`) as a SET before each cut (only the cut pair counts), the move
+    #     group in order (None: every pair of the head).
     ("hypothesis_set", "torch.argsort(neg, dim=-1, stable=True)"): Rule(
-        "sort_head", head=7, zero_exact=True,
+        "sort_head", head=7, zero_exact=True, consumed="consumed",
         why="X5's one order: hypothesis slots / move seats in order, the seat boundary"),
 }
 

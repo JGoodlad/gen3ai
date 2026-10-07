@@ -1,0 +1,200 @@
+{
+ "arm": "fixed_mass",
+ "weights": "fresh",
+ "seed": 1001,
+ "run_seed": 1001,
+ "rows": 2048,
+ "eps": 0.0002,
+ "excluded_before": 312,
+ "excluded_frac_before": 0.15234375,
+ "cleared_identical": 274,
+ "excluded_after": 38,
+ "excluded_frac_after": 0.0185546875,
+ "rows_multi_call": 73,
+ "joint_identical_but_single_distinct": 0,
+ "determinism_failures_untouched_rows": 0,
+ "flip_noop_rows": 0,
+ "max_abs_dlogp_vs_stored": 2.384185791015625e-07,
+ "by_site": [
+  {
+   "sites": "hypothesis_set.py:214 argsort",
+   "verdict": "identical",
+   "rows": 231
+  },
+  {
+   "sites": "damage_op.py:950 argmax + damage_op.py:956 argmax",
+   "verdict": "identical",
+   "rows": 22
+  },
+  {
+   "sites": "damage_op.py:956 argmax",
+   "verdict": "identical",
+   "rows": 17
+  },
+  {
+   "sites": "damage_kinds.py:130 ge + hypothesis_set.py:214 argsort",
+   "verdict": "distinct",
+   "rows": 11
+  },
+  {
+   "sites": "damage_kinds.py:130 ge",
+   "verdict": "distinct",
+   "rows": 10
+  },
+  {
+   "sites": "damage_op.py:950 argmax + damage_op.py:956 argmax",
+   "verdict": "distinct",
+   "rows": 8
+  },
+  {
+   "sites": "damage_op.py:950 argmax + damage_op.py:956 argmax + hypothesis_set.py:214 argsort",
+   "verdict": "distinct",
+   "rows": 6
+  },
+  {
+   "sites": "hypothesis_set.py:214 argsort",
+   "verdict": "distinct",
+   "rows": 2
+  },
+  {
+   "sites": "damage_kinds.py:130 ge + hypothesis_set.py:214 argsort",
+   "verdict": "identical",
+   "rows": 1
+  },
+  {
+   "sites": "damage_kinds.py:130 ge",
+   "verdict": "identical",
+   "rows": 1
+  },
+  {
+   "sites": "damage_kinds.py:130 ge + damage_op.py:950 argmax + damage_op.py:956 argmax",
+   "verdict": "distinct",
+   "rows": 1
+  },
+  {
+   "sites": "damage_kinds.py:130 ge + damage_op.py:950 argmax + damage_op.py:956 argmax",
+   "verdict": "identical",
+   "rows": 1
+  },
+  {
+   "sites": "damage_op.py:950 argmax + damage_op.py:956 argmax + hypothesis_set.py:214 argsort",
+   "verdict": "identical",
+   "rows": 1
+  }
+ ],
+ "by_site_class": [
+  {
+   "sites": "hypothesis_set.py:214 argsort",
+   "class": "near",
+   "verdict": "identical",
+   "rows": 165
+  },
+  {
+   "sites": "hypothesis_set.py:214 argsort",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 66
+  },
+  {
+   "sites": "damage_op.py:950 argmax + damage_op.py:956 argmax",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 22
+  },
+  {
+   "sites": "damage_op.py:956 argmax",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 12
+  },
+  {
+   "sites": "damage_kinds.py:130 ge + hypothesis_set.py:214 argsort",
+   "class": "exact/near",
+   "verdict": "distinct",
+   "rows": 11
+  },
+  {
+   "sites": "damage_kinds.py:130 ge",
+   "class": "exact",
+   "verdict": "distinct",
+   "rows": 10
+  },
+  {
+   "sites": "damage_op.py:950 argmax + damage_op.py:956 argmax",
+   "class": "exact",
+   "verdict": "distinct",
+   "rows": 7
+  },
+  {
+   "sites": "damage_op.py:950 argmax + damage_op.py:956 argmax + hypothesis_set.py:214 argsort",
+   "class": "exact",
+   "verdict": "distinct",
+   "rows": 6
+  },
+  {
+   "sites": "damage_op.py:956 argmax",
+   "class": "near",
+   "verdict": "identical",
+   "rows": 5
+  },
+  {
+   "sites": "hypothesis_set.py:214 argsort",
+   "class": "near",
+   "verdict": "distinct",
+   "rows": 2
+  },
+  {
+   "sites": "damage_kinds.py:130 ge + hypothesis_set.py:214 argsort",
+   "class": "exact/near",
+   "verdict": "identical",
+   "rows": 1
+  },
+  {
+   "sites": "damage_kinds.py:130 ge",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 1
+  },
+  {
+   "sites": "damage_kinds.py:130 ge + damage_op.py:950 argmax + damage_op.py:956 argmax",
+   "class": "exact",
+   "verdict": "distinct",
+   "rows": 1
+  },
+  {
+   "sites": "damage_kinds.py:130 ge + damage_op.py:950 argmax + damage_op.py:956 argmax",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 1
+  },
+  {
+   "sites": "damage_op.py:950 argmax + damage_op.py:956 argmax",
+   "class": "near",
+   "verdict": "distinct",
+   "rows": 1
+  },
+  {
+   "sites": "damage_op.py:950 argmax + damage_op.py:956 argmax + hypothesis_set.py:214 argsort",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 1
+  }
+ ],
+ "new_rule": {
+  "excluded_payload_only": 120,
+  "excluded_frac_payload_only": 0.05859375,
+  "excluded": 120,
+  "excluded_frac": 0.05859375,
+  "payload_only_rows_by_flip_verdict": {
+   "identical": 82,
+   "distinct": 38
+  },
+  "payload_only_rows_by_min_site": {
+   "hypothesis_set.py:214 argsort": 84,
+   "damage_kinds.py:130 ge": 25,
+   "damage_op.py:950 argmax": 10,
+   "damage_op.py:956 argmax": 1
+  }
+ },
+ "torch": "2.8.0+cu126"
+}

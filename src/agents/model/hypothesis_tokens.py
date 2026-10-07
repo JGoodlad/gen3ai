@@ -335,7 +335,7 @@ def build_op_roster(hb: Any, ctx: ExtractorContext, hctx: ExtractorContext, hs: 
     selection gap attached (`near_tie_rows` reads it). ``move_logits`` [B,6,M] is the composed move
     posterior (`last_move_belief_logits`); ``cuts`` the per-mon selection sizes the op and the E5 seats
     consume (`consequence_topk`, `entity_topk_seats`) — every one is a rule-8 boundary."""
-    from agents.model.hypothesis_set import boundary_gap, ranks_of, stable_order
+    from agents.model.hypothesis_set import SetCuts, boundary_gap, ranks_of, stable_order
     B = ctx.batch_size
     opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
     believed = ctx.opp_believed_mask.bool()
@@ -356,7 +356,10 @@ def build_op_roster(hb: Any, ctx: ExtractorContext, hctx: ExtractorContext, hs: 
         act = torch.nn.functional.one_hot(ctx.opp_active_local, TEAM_SIZE).bool().unsqueeze(-1)  # [B,6,1]
         w = torch.where(act, fm.w_all.to(w.dtype).unsqueeze(1), w)
     key = slot_order_key(w, rev_move)
-    order = stable_order(key, sel)                                                   # [B,6,M]
+    # The op reads each mon's first K candidates as a SET (gathers per candidate, then presence-scaled
+    # max / sums over K — blob's `topk` feeds the same code) and the tail beyond K as a set: only the
+    # pair straddling each cut is a boundary (gen3_behaviour_tie_consumed_v1; `boundary_gap` below).
+    order = stable_order(key, sel, consumed=SetCuts(cuts))                           # [B,6,M]
     rank = ranks_of(order)
     sorted_key = key.gather(-1, order)
     n_sel = sel.sum(-1)                                                              # [B,6] structural count
@@ -388,7 +391,7 @@ def bench_tail_cells(ro: OpRoster, K: int, move_bp: torch.Tensor, move_acc: torc
 
 def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, base_stats: torch.Tensor,
                  species_type: torch.Tensor, spread_prior: torch.Tensor, n_types: int,
-                 spe_col: int) -> OpRoster:
+                 spe_col: int, cuts: "Optional[tuple[int, ...]]" = None) -> OpRoster:
     """``ro`` with OTHER attached (M3 (c); ORCHESTRATOR F4 (a) / (b)) and its OTHER-MODE roster: a copy in
     which EVERY hidden slot holds OTHER — the renormalised tail ``P_tail`` (`HypothesisSet.other_tail_probs`)
     priced by the blob's own AVERAGED construction, ``P_tail @ tables``:
@@ -403,7 +406,7 @@ def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, bas
 
     OTHER is never immune by construction: its multiplier is an expectation over the tail, 0 only if every
     tail species is immune. At a max-type site OTHER enters with ``other_any`` (F4 (b)), never its mass."""
-    from agents.model.hypothesis_set import fixed_mass_presence, move_candidates, ranks_of, stable_order
+    from agents.model.hypothesis_set import SetCuts, fixed_mass_presence, move_candidates, ranks_of, stable_order
     pt = hs.other_tail_probs.to(base_stats.dtype)                                       # [B,S]
     B = pt.shape[0]
     hyp = ro.hyp
@@ -422,7 +425,9 @@ def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, bas
     k4 = torch.full((B,), 4, dtype=torch.long, device=pt.device)
     pres = fixed_mass_presence(mix_logits.detach(), cand, k4)
     w_o = pres.pi.to(dt)                                                                # [B,M]
-    order_o = stable_order(w_o, cand)
+    # OTHER's order replaces each hypothesis slot's in the roster, so the op reads it exactly as
+    # `build_op_roster`'s: a SET at each cut (``cuts``; None = every pair of the head, conservative)
+    order_o = stable_order(w_o, cand, consumed=None if cuts is None else SetCuts(cuts))
     rank_o = ranks_of(order_o)
     h3 = hyp.unsqueeze(-1)
     move_w = torch.where(h3, w_o.unsqueeze(1), ro.move_w)

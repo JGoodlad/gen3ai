@@ -14,6 +14,7 @@ On a seeded complete-game rollout per arm (CPU, T2 eager, p2 a seeded random pol
 """
 from __future__ import annotations
 
+import contextlib
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
@@ -215,3 +216,88 @@ def test_a_planted_behaviour_mismatch_on_a_judged_row_is_FATAL_at_every_arm(arm,
             K.behaviour_probe(model)
     finally:
         buf.log_probs[t[i], e[i]] = keep
+
+
+# ---------------------------------------------------------------- gen3_behaviour_tie_consumed_v1 (2026-10-06)
+# The X5 sort site counts a tie only where the CALLER reads the order (`hypothesis_set.stable_order`'s
+# ``consumed``): the op's per-mon move orders (`build_op_roster`, `other_roster`) are read as a SET before
+# each cut, so only the pair straddling a cut is a boundary.
+
+_SET_CALLERS = ("build_op_roster", "other_roster")
+
+
+class _PermuteSetPrefix(TorchFunctionMode):
+    """At every X5 sort issued by a SET-reading caller: a seeded random permutation of the first ``K``
+    positions of each order (``swap_boundary``: swap positions K−1 and K instead — the teeth)."""
+
+    def __init__(self, K: int, seed: int, swap_boundary: bool = False) -> None:
+        super().__init__()
+        self.K, self.g, self.swap, self.calls = K, th.Generator().manual_seed(seed), swap_boundary, 0
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        out = func(*args, **(kwargs or {}))
+        if getattr(func, "__name__", "") != "argsort":
+            return out
+        f = TM._caller_frame()
+        if f is None or f.f_code.co_name != "stable_order" or f.f_back.f_code.co_name not in _SET_CALLERS:
+            return out
+        self.calls += 1
+        flat = out.clone().reshape(-1, out.shape[-1])
+        if self.swap:
+            flat[:, [self.K - 1, self.K]] = flat[:, [self.K, self.K - 1]]
+        else:
+            p = th.argsort(th.rand(flat.shape[0], self.K, generator=self.g), dim=-1)
+            flat[:, :self.K] = flat[:, :self.K].gather(-1, p)
+        return flat.reshape(out.shape)
+
+
+def _without_consumed() -> Dict[Any, Any]:
+    """The rule BEFORE `gen3_behaviour_tie_consumed_v1`: every pair of the sort head (undone by `_restore`)."""
+    saved = dict(SS.MARGIN)
+    for k, r in list(SS.MARGIN.items()):
+        if r.consumed:
+            SS.MARGIN[k] = r._replace(consumed="")
+    SS.line_map.cache_clear()
+    return saved
+
+
+@pytest.fixture(scope="module")
+def fixed_mass():
+    return _rollout("fixed_mass", fresh=False)
+
+
+def test_a_set_read_prefix_is_order_free_on_real_rows_and_its_cut_is_not(fixed_mass):
+    """The declaration's premise, on every row: permuting the first K = the cut of EVERY per-mon order
+    leaves the full masked log-probs BIT-IDENTICAL (so a tie inside the set cannot move log pi), while
+    swapping the pair across the cut moves them (the cut stays a boundary)."""
+    model = fixed_mass
+    ext = model.policy.features_extractor
+    cuts = {int(ext.consequence_topk), int(ext.entity_topk_seats)}
+    assert len(cuts) == 1, "the production cuts coincide; a split cut needs a permutation per cut"
+    K = cuts.pop()
+    base = _forward(model, contextlib.nullcontext())
+    for seed in (1, 2):
+        pm = _PermuteSetPrefix(K, seed)
+        assert np.array_equal(_forward(model, pm), base, equal_nan=True), "a set-read prefix's ORDER moved log pi"
+        assert pm.calls >= 2
+    sw = _PermuteSetPrefix(K, 0, swap_boundary=True)
+    moved = _forward(model, sw)
+    assert sw.calls >= 2 and not np.array_equal(moved, base, equal_nan=True)
+
+
+def test_the_consumed_rule_clears_set_internal_ties_and_never_excludes_a_new_row(fixed_mass):
+    model = fixed_mass
+    n = model.rollout_buffer.log_probs.size
+    eps = K.FP32_TIE_EPS
+    new = TM.TieMargins(n)
+    _forward(model, new)
+    new.check()
+    saved = _without_consumed()
+    try:
+        old = TM.TieMargins(n)
+        _forward(model, old)
+    finally:
+        _restore(saved)
+    assert not ((new.margin < eps) & ~(old.margin < eps)).any(), "the declaration never excludes a judged row"
+    assert ((old.margin < eps) & ~(new.margin < eps)).sum() >= 2, \
+        "the seeded rollout must hold rows whose only tie is inside a set-read prefix"

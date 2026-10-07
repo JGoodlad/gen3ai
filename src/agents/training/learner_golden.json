@@ -448,79 +448,79 @@
       "win_prob/loss": 0.7055414319038391
      },
      "fp64_reference": {
-      "rows_judged": 63,
-      "rows_excluded": 1,
-      "min_margin": 7.291973755752768e-05,
+      "rows_judged": 64,
+      "rows_excluded": 0,
+      "min_margin": 0.0004902235984217335,
       "terms_fp32": {
-       "policy": 1.5137688436084318e-08,
-       "entropy": -0.09138304740190506,
+       "policy": 1.862645149230957e-08,
+       "entropy": -0.09146910160779953,
        "species_belief_set": 0.2615378797054291,
-       "move_belief": 0.0007709141355007887,
-       "opp_intent": 0.02685478888452053,
-       "move_latent": 0.025457113981246948,
-       "spread_belief": 0.0020539637189358473,
-       "nature_ev": 0.10716815292835236,
-       "hp_type": 0.03539159521460533,
-       "item_belief": 0.02956201136112213,
-       "win_prob": 0.3891017735004425,
-       "loss": 0.7865151166915894
+       "move_belief": 0.000771271763369441,
+       "opp_intent": 0.02671792171895504,
+       "move_latent": 0.02548782341182232,
+       "spread_belief": 0.002080343896523118,
+       "nature_ev": 0.10810332745313644,
+       "hp_type": 0.03508823364973068,
+       "item_belief": 0.02940303087234497,
+       "win_prob": 0.3883492648601532,
+       "loss": 0.7860699892044067
       },
       "terms_fp64": {
-       "policy": -2.321049891967115e-09,
-       "entropy": -0.0913830455564575,
+       "policy": -3.749168059341557e-09,
+       "entropy": -0.09146910436021276,
        "species_belief_set": 0.2615381114461273,
-       "move_belief": 0.0007709144230287495,
-       "opp_intent": 0.026854789673253346,
-       "move_latent": 0.025457115984146513,
-       "spread_belief": 0.0020539637691400297,
-       "nature_ev": 0.1071681543147227,
-       "hp_type": 0.035391592047850966,
-       "item_belief": 0.029562011411949612,
-       "win_prob": 0.38910173975397566,
-       "loss": 0.7865153449466875
+       "move_belief": 0.0007712720770609425,
+       "opp_intent": 0.02671792417251667,
+       "move_latent": 0.025487824768567403,
+       "spread_belief": 0.0020803438582149936,
+       "nature_ev": 0.10810331578763406,
+       "hp_type": 0.03508823015289716,
+       "item_belief": 0.02940302921348169,
+       "win_prob": 0.38834921885067636,
+       "loss": 0.7860701622177957
       },
       "term_abs_err": {
-       "policy": 1.7458738328051434e-08,
-       "entropy": 1.8454475586571206e-09,
+       "policy": 2.2375619551651127e-08,
+       "entropy": 2.752413227891104e-09,
        "species_belief_set": 2.317406982421666e-07,
-       "move_belief": 2.8752796085891597e-10,
-       "opp_intent": 7.887328151712225e-10,
-       "move_latent": 2.002899564951255e-09,
-       "spread_belief": 5.020418239118363e-11,
-       "nature_ev": 1.3863703379746184e-09,
-       "hp_type": 3.1667543656799246e-09,
-       "item_belief": 5.0827481112847295e-11,
-       "win_prob": 3.374646684317639e-08,
-       "loss": 2.2825509815582734e-07
+       "move_belief": 3.1369150148546215e-10,
+       "opp_intent": 2.4535616316434528e-09,
+       "move_latent": 1.3567450843354756e-09,
+       "spread_belief": 3.830812446772858e-11,
+       "nature_ev": 1.1665502383517712e-08,
+       "hp_type": 3.4968335241303272e-09,
+       "item_belief": 1.6588632793801406e-09,
+       "win_prob": 4.600947683952583e-08,
+       "loss": 1.7301338894881724e-07
       },
       "grads": {
        "features_extractor.hypothesis_builder.delta_out.weight": {
         "norm_fp64": 0.08366673695576071,
-        "rel_err": 1.9905603692471815e-07
+        "rel_err": 1.990560369291563e-07
        },
        "features_extractor.hypothesis_builder.other_map.weight": {
-        "norm_fp64": 0.021392539893192654,
-        "rel_err": 3.964203057208656e-07
+        "norm_fp64": 0.021074639574629555,
+        "rel_err": 4.57670163101586e-07
        },
        "features_extractor.hypothesis_builder.hypothesis_marker": {
-        "norm_fp64": 0.004441559806641131,
-        "rel_err": 8.921992908691856e-07
+        "norm_fp64": 0.004373961700536972,
+        "rel_err": 8.322227665149105e-07
        },
        "features_extractor.flat_intent_head.hidden.weight": {
-        "norm_fp64": 0.00855567966615917,
-        "rel_err": 8.778157002630379e-07
+        "norm_fp64": 0.008877513662501429,
+        "rel_err": 9.82544370759882e-07
        },
        "features_extractor.belief_head.species_head.weight": {
         "norm_fp64": 0.14034445861689918,
-        "rel_err": 3.3327769774697214e-07
+        "rel_err": 3.423454932594486e-07
        },
        "pointer_head.move_proj.weight": {
-        "norm_fp64": 0.1546118617384874,
-        "rel_err": 1.5181487711614404e-06
+        "norm_fp64": 0.16720075735005124,
+        "rel_err": 1.4152443606761764e-06
        },
        "features_extractor.win_head.net.3.weight": {
-        "norm_fp64": 0.6383034097479403,
-        "rel_err": 5.819349186347175e-07
+        "norm_fp64": 0.5907753674637949,
+        "rel_err": 4.882836345231758e-07
        }
       },
       "grads_absent": [],
@@ -548,9 +548,9 @@
       "hypothesis_rows": 36,
       "near_tie_rows": 0
      },
-     "recorded_at_commit": "c7b4d03ec542d2aa4a8b5b26dd9565c055150709",
-     "recorded_on": "2026-10-05",
-     "reason": "gen3_x5_hyp_gather_v1: the hypothesis PokemonEncoder pass split exactly at its two first Linears (species half over the dex table once, or over the slots' own dex rows when B*6 < 400; gathered); fp32 reassociation only - the per-row pass patched back in reproduces the old golden 99/99 (designs/research_state/measurements/x5_hyp_gather_2026-10-05/)",
+     "recorded_at_commit": "8288b9a2e44452b926b3131014f3ee1e14e67292",
+     "recorded_on": "2026-10-06",
+     "reason": "gen3_behaviour_tie_consumed_v1: the fp64 reference's rule-8 exclusion no longer counts ties inside a set-read X5 prefix (rows_excluded 1 -> 0); the update itself is unchanged",
      "torch": "2.8.0+cu126",
      "numpy": "2.4.3",
      "python": "3.11.15"
@@ -634,6 +634,16 @@
       "parameter groups whose post-update bytes moved: ['features_extractor.belief_head', 'features_extractor.cls_pool', 'features_extractor.conditional_threat', 'features_extractor.edge_bias', 'features_extractor.embeddings', 'features_extractor.entity_seats', 'features_extractor.flat_intent_head', 'features_extractor.hidden_opp_belief', 'features_extractor.history_events', 'features_extractor.hp_type_belief_head', 'features_extractor.hypothesis_builder', 'features_extractor.item_belief_head', 'features_extractor.move_belief', 'features_extractor.pair_outcome_switch', 'features_extractor.pokemon_encoder', 'features_extractor.pre_proj_norm', 'features_extractor.prefuse_proj', 'features_extractor.projection', 'features_extractor.spread_belief', 'features_extractor.team_transformer', 'features_extractor.value_entity_pool', 'features_extractor.win_head', 'mlp_extractor.policy_net', 'pointer_head.ctx_proj', 'pointer_head.move_proj', 'pointer_head.move_score', 'pointer_head.struggle_score', 'pointer_head.switch_proj', 'pointer_head.switch_score']",
       "post_params_sha256 3d6b4ebb1e6711ea -> c1ab0fbf54be0a49"
      ]
+    },
+    {
+     "recorded_at_commit": "8288b9a2e44452b926b3131014f3ee1e14e67292",
+     "recorded_on": "2026-10-06",
+     "reason": "gen3_behaviour_tie_consumed_v1: the fp64 reference's rule-8 exclusion no longer counts ties inside a set-read X5 prefix (rows_excluded 1 -> 0); the update itself is unchanged",
+     "torch": "2.8.0+cu126",
+     "numpy": "2.4.3",
+     "python": "3.11.15",
+     "post_params_sha256": "c1ab0fbf54be0a4994a3e63406f075200c5fcee127276ceb1694b0a54c814329",
+     "changed": []
     }
    ]
   }

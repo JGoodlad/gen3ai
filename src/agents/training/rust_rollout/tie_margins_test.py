@@ -99,6 +99,51 @@ def test_a_stale_payload_declaration_is_refused_not_read_as_no_payload():
     assert p.shape == (2, 1, 3)
 
 
+_SORT_RULE = SS.Rule("sort_head", head=7, zero_exact=True, consumed="consumed")
+
+
+def _sm(keys, consumed):
+    """The sort_head margin of one row of descending presences ``keys`` (the forward sorts ``−key``)."""
+    neg = -th.tensor([keys], dtype=th.float64)
+    return float(T.site_margin(_SORT_RULE, "argsort", (neg,), {"dim": -1}, None, None, consumed).reshape(-1).min())
+
+
+def test_a_sort_pair_the_caller_does_not_read_in_order_is_no_tie():
+    """gen3_behaviour_tie_consumed_v1: positions 0..5 hold 0.9, 0.5, 0.4, 0.4·(1−1e-7) (a near tie at pair
+    (2, 3)), 0.2, 0.1, then 0.05. With no declaration (None) every pair of the head counts, so the row is
+    at the tie; read IN ORDER only up to k = 2 (pairs 0, 1) it is not; read IN ORDER up to 3 (pair (2, 3)
+    straddles the boundary) it is again; as a SET at cut 6 only pair (5, 6) counts: |0.1 − 0.05| / 0.1."""
+    keys = [0.9, 0.5, 0.4, 0.4 * (1 - 1e-7), 0.2, 0.1, 0.05, 0.01]
+    assert _sm(keys, None) == pytest.approx(1e-7, rel=1e-3)
+    assert _sm(keys, th.tensor([2])) == pytest.approx(0.2)              # min over pairs (0,1), (1,2)
+    assert _sm(keys, th.tensor([3])) == pytest.approx(1e-7, rel=1e-3)
+    from agents.model.hypothesis_set import SetCuts
+    assert _sm(keys, SetCuts((6,))) == pytest.approx(0.5)
+    # the straddling pair of a set cut IS judged: a near tie across cut 3
+    assert _sm(keys, SetCuts((3,))) == pytest.approx(1e-7, rel=1e-3)
+    assert _sm(keys, SetCuts((6, 3))) == pytest.approx(1e-7, rel=1e-3)
+
+
+def test_a_stale_or_unreachable_consumed_declaration_is_refused():
+    from agents.model.hypothesis_set import SetCuts
+
+    class _F:
+        f_locals = {"other": None}
+
+    with pytest.raises(T.TieMarginError, match="declares consumed 'consumed'.*stale"):
+        T.consumed_decl(_SORT_RULE, _F(), "hypothesis_set.py:1 argsort")
+    _F.f_locals = {"consumed": th.tensor([1.5])}
+    with pytest.raises(T.TieMarginError, match="a long tensor, a SetCuts or None"):
+        T.consumed_decl(_SORT_RULE, _F(), "hypothesis_set.py:1 argsort")
+    _F.f_locals = {"consumed": None}
+    assert T.consumed_decl(_SORT_RULE, _F(), "hypothesis_set.py:1 argsort") is None
+    keys = [0.9, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.01]
+    with pytest.raises(T.TieMarginError, match="never be judged"):       # a cut the head of 7 cannot reach
+        _sm(keys, SetCuts((7,)))
+    with pytest.raises(T.TieMarginError, match="does not align"):
+        _sm(keys, th.tensor([2, 3]))
+
+
 @pytest.fixture(scope="module")
 def production():
     from stable_baselines3.common.utils import obs_as_tensor

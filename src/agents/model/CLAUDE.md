@@ -260,7 +260,12 @@ editing a declared line means re-declaring it. 🚨 **An `argmax` MARGIN rule ma
 (`gen3_behaviour_tie_identity_v1`: the frame-local tensors its index gathers — a tie between candidates
 whose payloads are bit-identical is then no tie). The payload must be EVERYTHING the index reaches:
 `selection_sites_test` fails when the index is read anywhere but a `gather` of a declared payload, so a
-new consumer of a payload site's index means extending the declaration (or dropping it).
+new consumer of a payload site's index means extending the declaration (or dropping it). 🚨 **Every
+`hypothesis_set.stable_order` caller declares how it READS the order** (`consumed`,
+`gen3_behaviour_tie_consumed_v1`): a `SetCuts` (a set before each cut: the op's per-mon move orders), a long
+count (in order up to it: the species order), or None (every pair: the move group). A new reader of an order
+declared `SetCuts` that reads its positions IN ORDER makes the declaration unsound —
+`tie_identity_integration_test` permutes every set prefix and requires log π bit-identical.
 
 ## 🚨 X5 (`--belief-tokens fixed_mass`): every reduction over OPPONENT tokens declares its presence semantics
 

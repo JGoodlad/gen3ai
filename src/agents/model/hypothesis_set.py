@@ -183,12 +183,33 @@ def fixed_mass_presence(scores: torch.Tensor, cand: torch.Tensor, k: torch.Tenso
     return Presence(logits=logits, pi=pi, log_pi=log_pi, cand=cand, k=k, n=n, live=live, full=full)
 
 
-def stable_order(key: torch.Tensor, cand: torch.Tensor) -> torch.Tensor:
+class SetCuts(Tuple[int, ...]):
+    """A caller's declaration that it reads the first ``max(cuts)`` positions of a `stable_order` as a SET
+    at each cut — every consumer of the selected prefix is permutation-invariant over it, so only WHICH
+    candidates sit before each cut can move anything, never their order inside it
+    (`gen3_behaviour_tie_consumed_v1`; the blob arm's ``topk`` over the same consumers is judged the same
+    way, at its k-th vs (k+1)-th value)."""
+
+    def __new__(cls, cuts: "Tuple[int, ...]") -> "SetCuts":
+        return super().__new__(cls, tuple(sorted({int(c) for c in cuts})))
+
+
+def stable_order(key: torch.Tensor, cand: torch.Tensor,
+                 consumed: "Optional[torch.Tensor | SetCuts]" = None) -> torch.Tensor:
     """[B,N] candidate indices by ``key`` DESCENDING, ties to the LOWER index, non-candidates last.
 
     A STABLE ascending argsort of ``−key`` (non-candidates keyed ``+inf``): stability is what makes
     "equal ``π`` → lower number first" a guarantee rather than an implementation detail. Negation is
-    exact in floating point, so ``−key`` orders exactly as ``key`` reversed."""
+    exact in floating point, so ``−key`` orders exactly as ``key`` reversed.
+
+    ``consumed`` changes NOTHING this returns: it is the caller's declaration of how it READS the order,
+    read by the K9(b) tie-margin recorder (`selection_sites.Rule.consumed`, `gen3_behaviour_tie_consumed_v1`)
+    so that a tie only counts where it can move something:
+
+    * a long tensor of shape ``key.shape[:-1]`` — that many leading positions are read IN ORDER, the
+      rest only as a set (the adjacent pairs up to and across it are boundaries);
+    * a `SetCuts` — the prefix is read as a SET at each cut (only the pair straddling a cut is one);
+    * None — every adjacent pair of the recorder's head is a boundary (the conservative default)."""
     neg = torch.where(cand, -key, torch.full_like(key, math.inf))
     return torch.argsort(neg, dim=-1, stable=True)
 
@@ -486,7 +507,9 @@ class HypothesisBuilder(torch.nn.Module):
         scores = t0_log_prior + self.delta(opp_role_tokens, revealed_slots, global_input)
         pres = fixed_mass_presence(scores, cand, k)
         pi = pres.pi                                                                 # detached
-        order = stable_order(pi, cand)
+        # ranks >= k are OTHER's tail, read only as a set (`in_tail`, index-order sums): k positions are
+        # consumed in order (gen3_behaviour_tie_consumed_v1)
+        order = stable_order(pi, cand, consumed=k)
         rank = ranks_of(order)
         n_avail = pres.n
         sorted_pi = pi.gather(-1, order)
