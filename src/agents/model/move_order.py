@@ -34,7 +34,7 @@ Every rule below is verified in `deps/pokemon-showdown` with the gen-3 inheritan
 * CHOICE BAND does NOT touch speed — `data/items.ts` choiceband has ``onModifyAtk`` only (gen 4's override only
   re-wires the choice lock); Choice Scarf (the speed item) is gen 4.
 
-**QUICK CLAW IS BANNED IN GEN 3 OU** — format-gated, never silently dropped (:func:`quick_claw_live`). The
+**QUICK CLAW IS BANNED IN GEN 3 OU** — format-gated through the FORMAT SPEC (:func:`quick_claw_live` reads `agents.gen3_data.format_spec`), never silently dropped. The
 vendored simulator predates the ban (its `config/formats.ts` gen3ou banlist, submodule `e0551883`, 2026-05-09,
 has no Quick Claw); Showdown master's `config/formats.ts` ``[Gen 3] OU`` banlist carries ``'Quick Claw'`` (read
 2026-10-07), and the owner confirmed it as current policy the same day. The model plays gen3ou only
@@ -65,10 +65,11 @@ def quick_claw_live() -> bool:
     (read 2026-10-07); owner, 2026-10-07: "Quick Claw is now BANNED in Gen 3 OU". The vendored
     `deps/pokemon-showdown` (`e0551883`, 2026-05-09) predates the ban.
 
-    THE ONE READ of the ban for the speed physics, deliberately minimal: when the declared gen-3 OU FORMAT SPEC
-    (`designs/endstate/design_format_spec.md`, being built 2026-10-07) lands, this body becomes a read of its
-    banlist — no second banlist mechanism lives here."""
-    return False
+    THE ONE READ of the ban for the speed physics: a read of the gen3ou FORMAT SPEC's banlist
+    (`agents.gen3_data.format_spec`, `designs/endstate/design_format_spec.md` §5.4) — no second banlist lives here.
+    Read at call time, so a planted spec moves it."""
+    from agents.gen3_data import format_spec
+    return not format_spec.active().is_banned("item", "quickclaw")
 
 
 #: The modes of `--speed-physics` (gen3_speed_physics_v1). 'off' is the logistic, production.

@@ -1,0 +1,20 @@
+pool                    teams  illegal  ladder-only
+others/giraffe            373        0            0
+others/johnnyg2            90        0            0
+others/mcmegan             34        0            0
+others/schmuck_nick        21        0            0
+others/yak_attack         174        8            0
+promoted                   40        0            0
+smogon_sample              32        0            0
+specialist                  3        0            0
+TRAINING POOL             719        0            0
+problems by rule: Speed Pass Clause 7, banlist 5, One Boost Passer Clause 5, Obtainable Abilities 4, Baton Pass + Mean Look 1
+
+  others/yak_attack    data/teams/others/yak_attack/9660673cffa5999f.txt: [Speed Pass Clause] smeargle has Baton Pass and a way to boost its Speed; [Obtainable Abilities] species exploud is banned (Obtainable Abilities); [banlist] exploud's ability soundproof is banned; [One Boost Passer Clause] smeargle has Baton Pass and multiple ways to boost its stats
+  others/yak_attack    data/teams/others/yak_attack/baba3761ab458ee8.txt: [Speed Pass Clause] smeargle has Baton Pass and a way to boost its Speed; [Obtainable Abilities] species exploud is banned (Obtainable Abilities); [banlist] exploud's ability soundproof is banned; [One Boost Passer Clause] smeargle has Baton Pass and multiple ways to boost its stats
+  others/yak_attack    data/teams/others/yak_attack/900357b8fe884549.txt: [Speed Pass Clause] smeargle has Baton Pass and a way to boost its Speed; [Obtainable Abilities] species exploud is banned (Obtainable Abilities); [banlist] exploud's ability soundproof is banned; [One Boost Passer Clause] smeargle has Baton Pass and multiple ways to boost its stats
+  others/yak_attack    data/teams/others/yak_attack/6075bfc65e029286.txt: [Speed Pass Clause] vaporeon has Baton Pass and a way to boost its Speed
+  others/yak_attack    data/teams/others/yak_attack/39a2ec3e9635416f.txt: [Speed Pass Clause] zapdos has Baton Pass and a way to boost its Speed; [Obtainable Abilities] species mrmime is banned (Obtainable Abilities); [banlist] mrmime's ability soundproof is banned; [Baton Pass + Mean Look] umbreon has the banned combination Baton Pass + Mean Look; [One Boost Passer Clause] multiple Pokemon have Baton Pass and a way to boost their stats
+  others/yak_attack    data/teams/others/yak_attack/f1e489af18a1b3c1.txt: [Speed Pass Clause] zapdos has Baton Pass and a way to boost its Speed; [One Boost Passer Clause] multiple Pokemon have Baton Pass and a way to boost their stats
+  others/yak_attack    data/teams/others/yak_attack/471736196e5fd31f.txt: [Speed Pass Clause] zapdos has Baton Pass and a way to boost its Speed
+  others/yak_attack    data/teams/others/yak_attack/dbe9ea3568a11411.txt: [banlist] swampert's move swagger is banned

@@ -237,6 +237,7 @@ file handed to a poke-env we do not control must be **nickname-free**; the expor
 | 12 | **The `ObservationDebugger` no longer spams a ladder run.** A checkpoint trained with `--log-level periodic` carries a live debugger that `print()`s a full 12-mon board on every forward. `play.py` silences it (as the prober already did); `--debug-obs` keeps it. | Observed in the smoke: megabytes of stdout per battle. |
 | 13 | **A protocol-drift pre-flight gate exists.** `src/main/ladder_drift_scan.py`, exit 0/1, re-runnable, `--offline` for a cached corpus. | It is the only way to check drift against the LIVE server without an account, and it is the check to run before every ladder session. |
 | 13b | **The drift gate checks the ENCODER too** (2026-09-24). An effect id that `gen3_effects` cannot classify crashed the encode with every keyword known (Heal Bell). `ladder_drift_scan` now derives every gen3 effect id from Showdown master's source and requires each one classified. It also encodes every replayed effect and `\|cant\|` reason. `--no-effects` skips the source half offline. | It was the gap that let Heal Bell through. Mud Sport and Water Sport stay open, pending the owner (see above). |
+| 13c | **The drift gate checks the FORMAT too** (2026-10-07). gen3ou's rules are declared once in `agents.gen3_data.format_spec` (`designs/endstate/design_format_spec.md`); `ladder_drift_scan` compares master's gen3ou entry, gen-3 `Standard`, the Uber tier and the clause bodies against it, and `python -m main.format_drift check` does so offline against a committed master snapshot. Two pinned-vs-master differences exist and are declared: **Quick Claw is BANNED on master** (absent from the pin) and master's One Boost Passer Clause counts **Recycle**. `python -m main.team_legality` validates every pool under master's rules: **the 719-team training pool, the 32 Smogon sample teams and the 3 specialist teams are all legal; no pool team holds Quick Claw**. | Answers checklist item 2 (a banlist change since the pin) without a submodule bump, for the rules the spec covers; learnset / EV legality stays with Showdown's validator. |
 
 ### SIZED (≥ a day — not built)
 
@@ -411,7 +412,11 @@ Every step from here to the first rated game.
 2. `git submodule update --remote deps/pokemon-showdown` in a scratch worktree, then
    re-run `validate_teams_locally("gen3ou", …)` over all 719 teams against the UPDATED
    validator. Our pin is 2026-05-09; a banlist change since then would fail team submission
-   at `/utm` with an unhelpful error. (719/719 pass on the current pin.)
+   at `/utm` with an unhelpful error. (719/719 pass on the current pin.) **2026-10-07:** the
+   format-level half of this is now automatic — `ladder_drift_scan`'s format-spec check (item
+   13c) fails on any ban / clause change, and `python -m main.team_legality` validates the pools
+   under MASTER's rules (719/719 legal; Quick Claw, master's one new ban, is on no pool team).
+   The learnset / EV half still needs the updated validator.
 
 **Account**
 

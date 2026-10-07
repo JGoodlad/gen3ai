@@ -15,7 +15,7 @@ exposure — and its logs are the same protocol stream a live battle room carrie
 the ``|request|`` frames (which the Player layer consumes before a battle ever sees them,
 and which this scan therefore skips exactly as the Player does).
 
-Four checks, all run:
+Five checks, all run:
 
 * **keyword** — every ``|<kw>|`` classified; an unclassified or ``UNSUPPORTED`` one is
   the fatal case;
@@ -33,7 +33,10 @@ Four checks, all run:
   (``gen3_effect_sources``: every ``add('-start'|'-activate'|'-singleturn'|'-singlemove', …)``
   the gen3 format executes, each executed on a real ``Gen3Battle``) and every id is required
   to be classified. ``--showdown DIR`` names a checkout; by default a sparse shallow clone of
-  master is kept under ``--cache``. ``--no-effects`` skips it (offline).
+  master is kept under ``--cache``. ``--no-effects`` skips it (offline);
+* **format spec** — the same master checkout's gen3ou entry, gen-3 ``Standard``, Uber tier and
+  clause bodies against ``agents.gen3_data.format_spec`` (``main.format_drift``): a ban or clause
+  the ladder added or dropped since the spec was written FAILS (``--no-format-spec`` skips it).
 
 Run::
 
@@ -298,20 +301,31 @@ def main() -> int:
                          "shallow clone of master under <--cache>/showdown-master)")
     ap.add_argument("--no-effects", action="store_true",
                     help="skip the encoder (source) check")
+    ap.add_argument("--no-format-spec", action="store_true",
+                    help="skip the FORMAT-SPEC check (gen3ou's bans / clauses vs agents.gen3_data.format_spec)")
     args = ap.parse_args()
 
-    effects_rc = 0
-    if not args.no_effects:
+    effects_rc = format_rc = 0
+    if not (args.no_effects and args.no_format_spec):
         root = args.showdown
         if root is None:
             root = os.path.join(args.cache, "showdown-master")
             if args.offline and not os.path.isdir(root):
                 print("[drift] --offline and no cached Showdown master: pass --showdown or "
-                      "--no-effects", file=sys.stderr)
+                      "--no-effects --no-format-spec", file=sys.stderr)
                 return 2
             if not args.offline:
                 print(f"[drift] Showdown master @ {fetch_showdown_master(root)}")
-        effects_rc = effects_source_check(root)
+        if not args.no_effects:
+            effects_rc = effects_source_check(root)
+        if not args.no_format_spec:
+            # the FORMAT-SPEC check: a new / removed ban or clause on the ladder's gen3ou FAILS
+            # (design_format_spec.md §7; offline twin: `python -m main.format_drift check`)
+            from pathlib import Path
+
+            from main import format_drift
+            format_rc = format_drift.check(Path(root), label=f"Showdown at {root}")
+    effects_rc = max(effects_rc, format_rc)
 
     if args.offline:
         paths = sorted(

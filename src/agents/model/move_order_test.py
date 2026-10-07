@@ -137,5 +137,16 @@ def test_quick_claw_is_one_shared_roll_per_turn() -> None:
 
 
 def test_quick_claw_is_banned_in_gen3ou() -> None:
-    """Owner 2026-10-07 + Showdown master `config/formats.ts` ``[Gen 3] OU`` banlist: the op's term is OFF."""
+    """Owner 2026-10-07 + Showdown master `config/formats.ts` ``[Gen 3] OU`` banlist: the op's term is OFF — read
+    from the FORMAT SPEC (one source), so a planted spec without the ban turns it on."""
     assert quick_claw_live() is False
+
+
+def test_quick_claw_live_reads_the_format_spec(monkeypatch) -> None:
+    import dataclasses
+
+    from agents.gen3_data import format_spec as fs
+    rules = tuple(dataclasses.replace(r, bans=tuple(b for b in r.bans if b.ids != ("quickclaw",)))
+                  for r in fs.GEN3OU.rules)
+    monkeypatch.setattr(fs, "_ACTIVE", fs.FormatSpec(fs.FORMAT_ID, rules))
+    assert quick_claw_live() is True

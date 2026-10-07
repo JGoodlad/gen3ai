@@ -311,7 +311,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # production default) registers nothing and runs nothing new: byte-identical.
         self.speed_physics = bool(speed_physics)
         self.qc_item_num = QUICK_CLAW_ITEM_NUM
-        # Quick Claw is BANNED in gen3ou (`move_order.quick_claw_live`, owner + Showdown master 2026-10-07):
+        # Quick Claw is BANNED in gen3ou (`move_order.quick_claw_live` reads the format spec; owner + master 2026-10-07):
         # the rule stays implemented, and is OFF for the format the model plays.
         from agents.model.move_order import quick_claw_live
         self.quick_claw_live = quick_claw_live()

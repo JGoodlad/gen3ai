@@ -72,6 +72,7 @@ from agents.model.move_resolution_rules import (
     P_INFATUATION, P_THAW, PAIR_FACT_COORDS, PURSUIT_SWITCH_MULT, ROLL_WINDOW, SUB_HP_FRACTION)
 from agents.model.move_order import p_seat_first
 from agents.model.status_rules import incoming_status_mask
+from agents.gen3_data import format_spec
 from agents.model.move_resolution_tables import (C_BRN, C_FRZ, C_PAR, C_PSN, C_SLP, C_TOX, FLAG_IDX, KIND_IDX,
                                                  NAMED_ABILITIES, S_LS_OURS, S_MIST_OURS, S_REFLECT_OURS, S_SG_OPP,
                                                  S_SG_OURS, SEAT_KIND_IDX, WEATHER_COL,
@@ -268,6 +269,8 @@ def move_facts(o: MoveResolutionOps, kind_t: torch.Tensor, flag_t: torch.Tensor)
     sg_opp = o.screens[:, S_SG_OPP][:, None]
     opp_slp_live = o.opp_cond[..., C_SLP] * o.opp_alive * (1.0 - o.opp_rest)
     clause = (opp_slp_live.sum(-1) > 0.5).to(dt)[:, None]                             # our one sleep is used
+    if not format_spec.sleep_clause_mod():                                             # the format spec's call
+        clause = torch.zeros_like(clause)
     sub_up = ovl("substitute")
     our_ghost_a = o.our_is_ghost[ar, o.our_active].to(dt)[:, None]                    # [B,1]
     # a non-Ghost user's Curse aims at itself (`onModifyMove`: nonGhostTarget)
@@ -419,6 +422,8 @@ def move_facts(o: MoveResolutionOps, kind_t: torch.Tensor, flag_t: torch.Tensor)
     act_slp = (opp_cond_a[:, C_SLP] * (1.0 - o.opp_rest[ar, oa]))[:, None]
     bench_slp = (opp_slp_live.sum(-1, keepdim=True) - act_slp).clamp(min=0.0)
     clause_sw = 1.0 - (1.0 - (bench_slp > 0.5).to(dt)) * (1.0 - act_slp * (1.0 - nc_a))  # [B,1]
+    if not format_spec.sleep_clause_mod():                                             # the format spec's call
+        clause_sw = torch.zeros_like(clause_sw)
     la_inf = (o.acc[:, :, None] * (1.0 - ti_j) * (1.0 - abl_j) * (1.0 - statused_j * o.st_blocked[:, :, None])
               * (1.0 - is_sleep * clause_sw[:, :, None]) * (1.0 - (major * sg_opp)[:, :, None])
               * (1.0 - fl("sound")[:, :, None] * sound_j))

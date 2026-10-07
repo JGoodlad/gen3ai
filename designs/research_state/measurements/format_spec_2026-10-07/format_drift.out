@@ -1,0 +1,4 @@
+[format]   declared pin gap: format_banlist 'Quick Claw' — Quick Claw is on master's gen3ou banlist (config/formats.ts:4699) and absent from the pinned one (:4421): a pool team holding it PLAYS in training and is ILLEGAL on the ladder.
+[format]   declared pin gap: oneboostpasserclause.boostingEffects 'recycle' — master's One Boost Passer Clause counts `recycle` as a boosting effect (data/rulesets.ts:1167); the pinned list lacks it.
+[format] ✓ pinned deps/pokemon-showdown @ e0551883: gen3ou's rules, banlist, Standard, Uber tier and clause bodies match the spec (up to the declared pin gaps).
+[format] ✓ master snapshot @ c046106c: gen3ou's rules, banlist, Standard, Uber tier and clause bodies match the spec.

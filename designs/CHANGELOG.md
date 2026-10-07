@@ -12245,3 +12245,33 @@ branch `obs-facts-append`).
 - **Not done (later phases).** The Python battle layer and encoder, `agents/opponents.py`, `inference/player.py`,
   `eval_roster.py` / `eval_player.py`, `clone_pins.py`, the prober, the anchors, live play, and `tools/pokemon_data_extractor/sync.py`
   (acquisition: it derives `data/pokemon/` FROM poke-env's static data) still import it.
+## 2026-10-07 — The gen3ou FORMAT SPEC (`agents.gen3_data.format_spec`): the ladder's rules declared once, one story per rule; team validation; the format drift gate; the op's clause gates read the spec (production byte-identical; the PRIOR filter HELD on `format-spec-prior`)
+
+- **Why.** Owner direction 2026-10-07: every clause gets a clear story; banned entities get prior 0; the observation
+  helps with board-state clauses. The rules lived in the pinned engine, in `rulesets.ts` line citations inside the op,
+  and nowhere for the ladder's changes since the pin. Design: `designs/endstate/design_format_spec.md`.
+- **What.** `src/agents/gen3_data/format_spec.py` — every rule gen3ou's ruleset reaches (format entry → gen-3
+  `Standard` → gen-4 `Standard AG`) with ONE story (PRIOR = 0 / BOARD STATE / TEAM BUILDING / ENGINE / COSMETIC /
+  RULESET), its reason and source; every ban with its source; the team clauses' lists; `PINNED_DIFFERENCES` (Quick
+  Claw banned on master, absent from the pin; Recycle in master's One Boost Passer list). The spec is the LADDER's
+  (master `c046106c`). `src/agents/gen3_data/team_legality.py` + `python -m main.team_legality` (validate every pool;
+  report only). `src/main/format_drift.py` + `format_drift_snapshot/` (the committed master excerpt): compares the
+  format entry, Standard, Standard AG, the Uber tier, the clause lists and the board-state / OHKO clause bodies;
+  `ladder_drift_scan.py` runs it against its master clone (`--no-format-spec` skips). `status_rules`,
+  `damage_op_blocks._outgoing_status_land` and `move_resolution` (Yawn, the switch branch) ask
+  `format_spec.sleep_clause_mod()` / `freeze_clause_mod()` instead of hard-coding the clause. F7b's
+  `move_order.quick_claw_live()` (`d02aded6`, landed with a hard-coded `False` for this spec) now reads the banlist:
+  one source, Quick Claw stays OFF.
+- **Results.** Training pool 719 / 719 legal under master's rules (the 32 Smogon sample, 40 promoted and 3
+  specialist teams included); 8 dump teams already marked invalid by the acquisition validator fail the same rules;
+  no pool team holds Quick Claw; 19 / 1,000 procedural (`ou_random_teams.js`) teams do. Master's ONLY differences from
+  the pin are Quick Claw and Recycle (the second was missed by the first survey: it lives in a clause body).
+- **Tests (each fails on revert).** `format_spec_test.py` (one story per rule; the rule closure; the Uber tier, OHKO
+  moves, Accuracy Trap moves and ability-locked species re-derived from `deps/pokemon-showdown`),
+  `team_legality_test.py` (eleven planted illegal sets + One Boost Passer + the master-only Recycle; the training pool
+  is legal), `format_drift_test.py` (ten planted master differences each fail with exactly their diff; the pin
+  differs by exactly the declared gaps), `agents/model/format_spec_readers_test.py` (a planted spec without each
+  clause lifts every reader; AST: each clause site calls the spec).
+- **Boundary.** NONE: both clauses are in force for gen3ou, so every model value is byte-identical. The PRIOR = 0
+  filter (`compute_priors.py`, the facade guard, the model tables' ILLEGAL value for banned entities) changes model
+  inputs and is HELD on `format-spec-prior` until the X5 look-3 cross finishes (design §5.1).

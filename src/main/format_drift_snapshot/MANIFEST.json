@@ -1,0 +1,26 @@
+{
+  "commit": "c046106cbe075931b1ff8d8b800ff5be47a85f96",
+  "files": {
+    "config/formats.ts": {
+      "excerpt": true,
+      "sha256_full": "a042cf99140a39a4bd610bb3de90da1137403a47709bc9d849a411e452a9468e"
+    },
+    "data/mods/gen3/formats-data.ts": {
+      "excerpt": false,
+      "sha256_full": "8376707c9ac32221a46a4d0964400c3e9c7f6cc2b1e07041ab8f42aacf84a1e4"
+    },
+    "data/mods/gen3/rulesets.ts": {
+      "excerpt": false,
+      "sha256_full": "e80804da4125c3d6a48de497ee4b6c6a1c9cd5d75483d38dbc5885bca8c9350f"
+    },
+    "data/mods/gen4/rulesets.ts": {
+      "excerpt": false,
+      "sha256_full": "3b7e3b7f0919c576ca95fae2d14c8943280fcb26282f4071ab8b2c49f0d97beb"
+    },
+    "data/rulesets.ts": {
+      "excerpt": true,
+      "sha256_full": "ec02d9a93f6d2fc7238bae31f2f1ec8518d331610d6167d48422ccfb5ef6aa12"
+    }
+  },
+  "source": "smogon/pokemon-showdown"
+}

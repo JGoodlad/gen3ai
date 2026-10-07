@@ -60,6 +60,7 @@ from agents.model.damage_op_layout import (  # noqa: F401
 from agents.model.extractor_ctx import ability_known, revealed_ability1_ids
 from agents.model.move_resolution_tables import S_SG_OPP, S_SG_OURS
 from agents.model.status_rules import incoming_status_mask
+from agents.gen3_data import format_spec
 
 from agents.model.damage_kinds import (beatup_base_def, beatup_opp_target_def, beatup_party_ours,
                                        beatup_party_opp, beatup_swap, gather_beatup, gather_bp,
@@ -671,7 +672,8 @@ class DamageOperatorBlocks:
           • already_block — the slot already carries a major status (Yawn included: `onTryHit` fails on a
             statused target); NOT Leech Seed.
           • sleep_block — Sleep Clause: ANY of their mons asleep from a NON-Rest source blocks our sleep (Yawn's
-            delayed sleep included; `data/rulesets.ts:1378-1402`).
+            delayed sleep included; `data/rulesets.ts:1378-1402`), when the format spec has it in force
+            (`format_spec.sleep_clause_mod()`).
           • sub_block — a Substitute on their ACTIVE blocks every status move (incl. Leech Seed and Yawn).
           • sg_block — their SAFEGUARD (a side condition: every slot) blocks every major status and Yawn's
             volatile, NOT Leech Seed (`data/moves.ts` safeguard `onSetStatus` / `onTryAddVolatile`).
@@ -703,6 +705,8 @@ class DamageOperatorBlocks:
         opp_slp = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + _COND_SLP_IDX]
         opp_rest = ctx.pokemon_part[:, opp, POKEMON_SLEEP_BELIEF_OFFSET]
         sleep_clause = ((opp_slp * (1.0 - opp_rest)).sum(-1) > 0.5).float()[:, None, None]  # [B,1,1]
+        if not format_spec.sleep_clause_mod():                                             # the format spec's call
+            sleep_clause = torch.zeros_like(sleep_clause)
         sleep_block = sleep_clause * is_sleep[:, None, :]                                  # [B,6,4]
         is_active = torch.zeros(B, TEAM_SIZE, device=device)
         is_active[ar, ctx.opp_active_local] = 1.0

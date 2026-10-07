@@ -4,8 +4,10 @@ INCOMING status can land on one of our six, shared by the damage operator (its p
 incoming_status_correction`, which re-applies it as a no-op on the op's already-masked grid so its own contract
 stays self-contained).
 
-Every rule verified at the source (`deps/pokemon-showdown`, gen 3 resolved through gen 4 → base; gen3ou's rule
-set is Standard + Freeze Clause Mod, `config/formats.ts:4418-4422`):
+Every rule verified at the source (`deps/pokemon-showdown`, gen 3 resolved through gen 4 → base). WHETHER a clause
+is in force is the FORMAT SPEC's call, never a constant here (`agents.gen3_data.format_spec`: `sleep_clause_mod()` /
+`freeze_clause_mod()`, read at call time — `design_format_spec.md`); the mechanics below are what the clause does
+when it is (`main.format_drift` fails if master's clause body ever differs from the pinned one verified here):
 
 * **our Safeguard** (`data/moves.ts` safeguard: `onSetStatus` returns null for any status a FOE sets — a
   secondary included; `onTryAddVolatile` stops their Yawn): all six columns, every defender (a side condition).
@@ -19,6 +21,8 @@ set is Standard + Freeze Clause Mod, `config/formats.ts:4418-4422`):
 from __future__ import annotations
 
 import torch
+
+from agents.gen3_data import format_spec
 
 #: The six major-status columns, in `SECONDARY_COLS[:6]` / `MOVE_STATUS_IDENT` order.
 STATUS_COLS = ("par", "brn", "frz", "slp", "psn", "tox")
@@ -38,6 +42,10 @@ def incoming_status_mask(sg_ours: torch.Tensor, our_slp: torch.Tensor, our_frz: 
     dt = sg_ours.dtype
     clause_slp = ((our_slp * our_alive * (1.0 - our_rest)).sum(-1) > 0.5).to(dt)       # [B]
     clause_frz = (our_frz.sum(-1) > 0.5).to(dt)                                       # [B]
+    if not format_spec.sleep_clause_mod():                                            # the format spec's call
+        clause_slp = torch.zeros_like(clause_slp)
+    if not format_spec.freeze_clause_mod():
+        clause_frz = torch.zeros_like(clause_frz)
     one = torch.ones_like(sg_ours)
     cols = [one] * len(STATUS_COLS)
     cols[COL_FRZ] = 1.0 - clause_frz

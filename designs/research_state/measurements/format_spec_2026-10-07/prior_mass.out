@@ -1,0 +1,28 @@
+== ITEMS (Smogon item prior, sum-1 per species)
+  brightpowder: 0 species carry mass; usage-weighted share of ALL sets = 0.0000%; max 0.0000; top []
+  laxincense: 0 species carry mass; usage-weighted share of ALL sets = 0.0000%; max 0.0000; top []
+  quickclaw: 182 species carry mass; usage-weighted share of ALL sets = 0.3235%; max 0.5135; top [('hypno', 0.513), ('trapinch', 0.349), ('swalot', 0.329), ('masquerain', 0.288), ('torkoal', 0.201), ('shiftry', 0.188), ('camerupt', 0.155), ('wailord', 0.133)]
+  top-15-usage species' quickclaw P: [('tyranitar', 0.0011), ('metagross', 0.002), ('swampert', 0.0003), ('skarmory', 0.0001), ('salamence', 0.0002), ('zapdos', 0.0004), ('gengar', 0.0003), ('blissey', 0.0001), ('celebi', 0.0001), ('snorlax', 0.0106), ('suicune', 0.0002), ('dugtrio', 0.0001), ('aerodactyl', 0.0001), ('magneton', 0.0289), ('starmie', 0.0001)]
+== ABILITIES (dex-anchored Smogon ability prior)
+  cacnea: banned {'sandveil': 1.0} -> ROW DROPPED (no legal ability)  (W=0)
+  cacturne: banned {'sandveil': 1.0} -> ROW DROPPED (no legal ability)  (W=0)
+  diglett: banned {'sandveil': 0.01} -> {'arenatrap': 1.0}  (W=365)
+  dugtrio: banned {'sandveil': 0.01} -> {'arenatrap': 1.0}  (W=565599)
+  electrode: banned {'soundproof': 0.01} -> {'static': 1.0}  (W=10813)
+  exploud: banned {'soundproof': 1.0} -> ROW DROPPED (no legal ability)  (W=0)
+  gligar: banned {'sandveil': 0.01} -> {'hypercutter': 1.0}  (W=2704)
+  loudred: banned {'soundproof': 1.0} -> ROW DROPPED (no legal ability)  (W=0)
+  mrmime: banned {'soundproof': 1.0} -> ROW DROPPED (no legal ability)  (W=0)
+  sandshrew: banned {'sandveil': 1.0} -> ROW DROPPED (no legal ability)  (W=0)
+  sandslash: banned {'sandveil': 1.0} -> ROW DROPPED (no legal ability)  (W=0)
+  voltorb: banned {'soundproof': 0.5} -> {'static': 1.0}  (W=0)
+  whismur: banned {'soundproof': 1.0} -> ROW DROPPED (no legal ability)  (W=0)
+== MOVES (P(move in set))
+  banned (species, move) entries with mass: 0
+== TEAMMATES / SPECIES USAGE
+  banned species with a chaos record: []
+  teammate entries on a banned species: 0
+== MODEL-TABLE FLOORS (legal-unobserved floors that sit on banned entities)
+  move-prior cells (species, banned move) legal per learnset, at the 0.02 floor: 789
+  item-prior columns at the 1e-5 floor per species row: 3 (every species row)
+  species-usage floor 1e-6 / co-occurrence floor 1e-4 on banned species: 20 base species

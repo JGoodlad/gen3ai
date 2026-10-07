@@ -40,7 +40,25 @@ gen3_data.priors.teammates(species)     # {teammate_id: P(teammate|species)} (Sm
                                         #  the hidden-team belief's coupling prior)
 gen3_data.learnset.is_legal(species, move_id)      # gen3 legal-movepool gate (hard legality)
 gen3_data.learnset.get_legal_moves(species)        # frozenset|None (None = unknown → no constraint)
+from agents.gen3_data import format_spec          # gen3ou's rules + bans, ONE story each (below)
 ```
+
+## The FORMAT SPEC (`format_spec.py`, `team_legality.py`) — gen3ou's rules, declared once
+
+`format_spec` declares the gen3ou format every game is played under — the LADDER's rules (Showdown master),
+each rule with ONE handling story and each ban with its source (pinned file:line, master, or a derivation);
+`designs/endstate/design_format_spec.md` is the always-current doc. Readers ask it, never a constant:
+`format_spec.active()`, `sleep_clause_mod()` / `freeze_clause_mod()` (the op and move-resolution sleep /
+freeze gates), `GEN3OU.banned_{species,items,moves,abilities}`, `species_move_bans()` (Smeargle + Ingrain),
+`is_banned(kind, id, species=)`. `PINNED_DIFFERENCES` names where the pinned engine differs from the ladder
+(Quick Claw banned on master; Recycle in master's One Boost Passer list). A test plants a spec by swapping
+`format_spec._ACTIVE` (`without_rule`). `team_legality` parses a paste / packed team and validates it
+against the spec (bans, per-set combos, Accuracy Trap, Species Clause, One Boost Passer, Speed Pass —
+not learnsets / EVs, which Showdown's validator owns); `python -m main.team_legality` reports every pool,
+`python -m main.format_drift check` compares the spec with master (a committed snapshot, offline).
+🚨 **Adding a ban or clause is a SPEC edit with its source and its story** — the drift gate fails on any
+ban or clause master has and the spec lacks (and the reverse); `format_spec_test.py` re-derives the Uber
+tier, the OHKO moves, Accuracy Trap's moves and the ability-locked species from `deps/pokemon-showdown`.
 
 `learnset` is the **legality** primitive (which moves a species can LEGALLY learn in gen3) — distinct
 from `priors.moves` (how OFTEN a legal move is run). The move-belief prior uses it to PRUNE impossible

@@ -1231,7 +1231,10 @@ sleeper of ours ⇒ no sleep), **Freeze Clause** (any frozen mon of ours ⇒ no 
 Substitute** (its own row; Leech Seed too) — and their Yawn on our drowsy active fails. **Yawn is a sleep
 inflictor** in the status tables (`MOVE_IS_YAWN`; the sleep arrives one turn later — a named residual).
 Named residuals the op does not model: Glare → Ghost, Leech Seed on a seeded target (both priced by the
-move-resolution family). `OP_SEMANTICS` = `gen3_op_ability_status_gigo_v1`.
+move-resolution family). `OP_SEMANTICS` = `gen3_op_ability_status_gigo_v1`. **Whether Sleep Clause / Freeze Clause
+is in force is the FORMAT SPEC's call** (`agents.gen3_data.format_spec.sleep_clause_mod()` / `freeze_clause_mod()`,
+read by `status_rules`, `_outgoing_status_land` and the move-resolution family's Yawn / switch-branch sleep gates;
+both are in force for gen3ou, so the values above are unchanged; `designs/endstate/design_format_spec.md`).
 
 **Non-formula damage (`gen3_nonformula_damage_v1`, Beat Up `gen3_beatup_exact_v1`).** Every move whose damage is not the gen-3
 base-power formula has ONE declared model in `damage_tables.DAMAGE_MODELS` (each row cites its
