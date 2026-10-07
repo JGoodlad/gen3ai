@@ -80,6 +80,9 @@ TIER_OF: Dict[str, int] = {
     "entity_seats": 1,
     "edge_bias": 1,
     "team_transformer": 1,
+    # gen3_static_board_v1 (`--token-encoding static` only): the per-mon OP CONTENT — the op's `x` / `g` /
+    # `d1` cells projected onto the mon tokens pre-trunk (the `prefuse_proj` placement), so T1 REASON.
+    "op_content": 1,
     # T2 DECIDE — the post-attention readouts.
     #
     # `belief_head` sits here DELIBERATELY, and the T0/T2 split of the species belief

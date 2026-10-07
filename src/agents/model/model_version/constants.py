@@ -448,7 +448,14 @@ from typing import Any, Dict
 #   production until the screen rules) builds `PokemonEncoder` and is byte-identical to v138. A pre-v139 config
 #   migrates to "legacy" (the only possible past). No ARCH_SIGNATURE bump while both encodings build at one
 #   commit. No MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 139
+# v140 (gen3_static_board_v1, static-token build stage 2; designs/endstate/design_static_tokens.md §4): no new
+#   field — what `token_encoding="static"` BUILDS changed: the global token is replaced by three BOARD tokens
+#   (OUR SIDE / THEIR SIDE through one shared `side_proj`, FIELD), `x` → own side and `g` / `c4` → FIELD, the
+#   critic's pool reads the three board rows, the tower's `non_matchup_rest` bypass is deleted, and the per-mon
+#   OP CONTENT (`op_content`) is added on both sides. A pre-v140 config recording `static` (a stage-1 layout, never
+#   trained) is REFUSED (its state_dict has no home); `legacy` stamps through unchanged (byte-identical). No
+#   ARCH_SIGNATURE bump while both encodings build. No MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 140
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

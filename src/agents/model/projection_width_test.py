@@ -75,6 +75,10 @@ _COMBOS = {
     #    stash, never pi/vf) on top of the all-routes base.
     "intent_cells_full": dict(_ALL_ROUTES_ON, intent_move_cell=True, intent_conditional=True,
                               damage_outgoing=True, damage_matrices_outgoing=True),
+    # -- gen3_static_board_v1: `--token-encoding static` DELETES the `non_matchup_rest` pi bypass (the board
+    #    reaches the policy through its three board tokens); with and without the op, with the belief pool.
+    "static_minimal": dict(token_encoding="static"),
+    "static_damage_op_plus_pool": dict(_DAMAGE_OP_MIN, token_encoding="static", opp_belief_cls_k=6),
 }
 
 
@@ -88,7 +92,8 @@ def _build(kwargs):
 def _assert_widths(fe, kwargs):
     """The verifier: measured REAL-forward widths == the static arithmetic == the built modules."""
     exp_pi, exp_vf = compute_projection_widths(
-        _LAYOUT, opp_belief_cls_k=kwargs.get("opp_belief_cls_k", 0))
+        _LAYOUT, opp_belief_cls_k=kwargs.get("opp_belief_cls_k", 0),
+        token_encoding=kwargs.get("token_encoding", "legacy"))
     g = torch.Generator().manual_seed(11)
     obs = {"observation": torch.rand(3, _LAYOUT["total_dim"], generator=g)}
     with torch.no_grad():
@@ -125,6 +130,16 @@ def test_production_config_widths():
     kwargs = _production_kwargs()
     fe = _build(kwargs)
     _assert_widths(fe, kwargs)
+
+
+def test_production_config_widths_under_static_tokens():
+    """The production flag set under `--token-encoding static` (the screen's arm): pi loses exactly the
+    `non_matchup_rest` width."""
+    kwargs = dict(_production_kwargs(), token_encoding="static")
+    fe = _build(kwargs)
+    _assert_widths(fe, kwargs)
+    legacy_pi, _ = compute_projection_widths(_LAYOUT, opp_belief_cls_k=kwargs.get("opp_belief_cls_k", 0))
+    assert legacy_pi - fe.projection_input_dim == fe.team_transformer._non_matchup_rest_dim
 
 
 def test_arithmetic_deltas_without_building():

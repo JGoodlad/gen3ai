@@ -11932,3 +11932,29 @@ their pin's code and are unaffected. No run is live.
 - **Gates.** `static_tokens_test.py` (12; five mutations each fail it); the flag on the five registry surfaces,
   `check_compatible`, `_migrate_config` (pre-v139 → `legacy`); `selection_sites` declares the module; K9 goldens (both
   entries), compiled-region goldens and the obs goldens unchanged.
+
+## 2026-10-06 — STATIC-TOKEN ENCODER, build stage 2: the BOARD tokens + per-mon op content (`gen3_static_board_v1`, config v140; `legacy` byte-identical; no ARCH_SIGNATURE change)
+
+- **What.** Under `--token-encoding static` only (`designs/endstate/design_static_tokens.md` §4 / §4.1, from
+  `design_entity_coverage_audit.md` §6.1 B1 + B2), `agents/model/board_tokens.py`: the single GLOBAL token is replaced
+  by three BOARD tokens — OUR SIDE (seat 12) and THEIR SIDE (13) through ONE shared `side_proj` over 10 side-relative
+  facts (Spikes, Reflect / Light Screen / Safeguard / Mist presence, Wish, alive / fainted / revealed counts, Sleep
+  Clause used), FIELD (14) through `field_proj` (weather 7, clock 3, turns since progress). Base seats 13 → 15, the
+  type table 6 → 9 rows (static only). `x` → the mon's own side token, `g` / `c4` → FIELD (`EdgeBias(board_seats=…)`).
+  The critic's `value_entity_pool` (`full`) reads the three refined board rows; `tower` drops its `non_matchup_rest`
+  concat (pi 1177 → 1152); `trunk`'s state query keys on the three board tokens. The per-mon OP CONTENT (`op_content`,
+  zero-init): the `x` ⊕ `g` cells on every mon of both sides, our four moves' `d1` cells on each of their mons.
+- **Versioning.** `MODEL_CONFIG_VERSION` 140, no new field: a pre-v140 `static` config (stage 1's layout) is refused;
+  `legacy` stamps through. No ARCH_SIGNATURE bump while both encodings build.
+- **Measured (CPU).** Policy parameters: static tower 3,016,008 (legacy 3,065,882; stage-1 static 3,039,866), static
+  trunk 1,954,504 (legacy trunk 1,991,528). Extractor forward FLOPs per row: +0.68 MFLOP (+1.25 %) tower, +0.83 (+1.45 %)
+  trunk; the two extra trunk tokens +1.27 MFLOP (+3.55 % of the trunk).
+- **Gates.** `static_board_tokens_test.py` (16; nine mutations each fail it), `projection_width_test.py`'s static
+  combos; legacy identity: K9 learner golden both entries, the compiled-region golden rows, the obs goldens unchanged;
+  the routine gate green (12,480 passed).
+- **Screen.** DRAFTED in the design note §8.1 (static vs legacy, one commit, 15M, 3 seeds each, the mirrored h2h 3 × 3
+  cross); NOT registered.
+- **Finding F-ST-5.** On the small-recipe `--debug` smoke, `static` × `blob` trips K9(b)'s excluded-share ceiling
+  (0.179 / 0.234 > 0.15 on the third update's probe rows; every judged row within fp32, max |Δ log π| 2.4e-7); the
+  site is the E5 tail cut (`pointer_head.py` `w_all.topk`). The `legacy` control passes at 0.127 / 0.129 / 0.083;
+  `static` × `fixed_mass` (no such cut) passes at 0.01–0.03. GPU checks DEFERRED.

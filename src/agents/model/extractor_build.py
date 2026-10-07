@@ -50,6 +50,7 @@ from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.t0_species import T0SpeciesPrior
 from agents.model.hypothesis_set import BELIEF_TOKEN_MODES, HypothesisBuilder
 from agents.model.static_tokens import TOKEN_ENCODING_MODES, StaticTokenEncoder
+from agents.model.board_tokens import OpContent
 from agents.model.team_transformer import EdgeBias, EventSeats, TeamTransformer
 from agents.model.value_readouts import UnifiedValueReadout
 from agents.model.value_threat_inject import (
@@ -233,7 +234,7 @@ class ExtractorBuild(torch.nn.Module):
         self.edge_bias_families = str(edge_bias_families or "off")
         self.edge_bias = (EdgeBias(self.edge_bias_families)
                           if self.edge_bias_families != "off" else None)
-        self.team_transformer = TeamTransformer(layout)
+        self.team_transformer = TeamTransformer(layout, token_encoding=token_encoding)
         # The injection width IS the op reducer's `extra_dim`, computed by the SAME function the
         # reducer uses. It has to come from the pure helper rather than `self.damage_op`, because
         # the op is built ~250 lines BELOW this point and module construction order is load-bearing
@@ -695,6 +696,13 @@ class ExtractorBuild(torch.nn.Module):
         if self.prefuse_proj is not None:
             torch.nn.init.zeros_(self.prefuse_proj.weight)
             torch.nn.init.zeros_(self.prefuse_proj.bias)
+        # gen3_static_board_v1 (`--token-encoding static`, stage 2; audit B2): the per-mon OP CONTENT on BOTH
+        # sides — the `x` / `g` amounts (entry chip, end-of-turn ledger) on every mon, and our active's `d1`
+        # outgoing cells on each of THEIR mons — through zero-init projections (`board_tokens.OpContent`).
+        # Built only under static with the op (the cells are op kernels); legacy builds nothing here.
+        self.op_content: Optional[OpContent] = (
+            OpContent(outgoing=bool(damage_outgoing))
+            if (token_encoding == "static" and damage_op) else None)
         # gen3_entity_move_seats_v1: E4 threat seats need the belief-weighted candidate definition
         # (`DamageOperator.refine_candidates`) + the move latent table, both PRE-transformer — which the
         # tiered order now guarantees whenever the op exists. E3 is unconditional and needs none of this.
@@ -783,7 +791,7 @@ class ExtractorBuild(torch.nn.Module):
         # Stored on the root so arch_toggles_from_model can thread it to the eval/self-play workers
         # (the move-prior gate is a version-checked forward-behavior toggle).
         self.move_candidate_floor = move_candidate_floor
-        self.assembler = ProjectionAssembler(layout)
+        self.assembler = ProjectionAssembler(layout, token_encoding=token_encoding)
 
         # Auxiliary WIN-PROBABILITY head (tri-state `win_prob_mode`): a calibrated P(win|state) readout
         # off `value_pooled`. 'none' = no module (baseline byte-for-byte, NOT in pi/vf so projection dims
@@ -838,7 +846,7 @@ class ExtractorBuild(torch.nn.Module):
         # test `projection_width_test.py` preserves the old mechanism AS THE VERIFIER: it runs
         # a real forward per flag combo and asserts the measured widths equal this arithmetic.
         self.projection_input_dim, self.value_projection_input_dim = compute_projection_widths(
-            layout, opp_belief_cls_k=opp_belief_cls_k)
+            layout, opp_belief_cls_k=opp_belief_cls_k, token_encoding=token_encoding)
 
         # Two projection heads, both → PROJECTION_DIM. Pre-projection LayerNorm equalises
         # per-block scales. The value head reads the value-dedicated CLS pool (Option C):

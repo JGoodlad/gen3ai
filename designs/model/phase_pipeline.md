@@ -177,6 +177,13 @@ ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, no
    128, `TRANSFORMER_N_HEADS` heads, FFN `TRANSFORMER_FFN_DIM`, post-LN) under a key-padding mask
    that masks fainted team slots. The global token comes from the two active-contexts +
    non-matchup scalars; `embed_delta_slot` and `history_proj` are deleted.
+   **Under `--token-encoding static` (`gen3_static_board_v1`, stage 2)** the global token is replaced by
+   THREE board tokens — OUR SIDE (12) and THEIR SIDE (13) through ONE shared `side_proj` over side-relative
+   content, FIELD (14) through `field_proj` (`board_tokens.py`) — so the base is 15 (`_total_tokens`), every
+   extra seat shifts by 2, and the edge families read their board seat from `board_seats` ((12, 12, 12) under
+   legacy: `x` → the mon's own side, `g` / `c4` → FIELD under static). Just before the trunk the per-mon
+   OP CONTENT (`op_content`, T1, zero-init) adds the `x` ⊕ `g` amounts on every mon and our `d1` cells on
+   their mons. Readers take `TeamTransformer.board_rows()` ([B, 1, D] legacy, [B, 3, D] static).
    Returns the two refined team-token blocks. **Optional gradient checkpointing**: a runtime
    `grad_checkpointing` flag (set per run by `train_rl_agent.py --grad-checkpointing`, never
    saved/version-checked) runs these encoder layers under `torch.utils.checkpoint(...,
@@ -202,7 +209,9 @@ ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, no
    they were duplicated delivery with a 1:1 entity-native replacement already live (the E2
    injection puts each side's FULL raw ctx block on its active token; the global token is a
    second route). `non_matchup_rest` stays: the global token is its only other route and no
-   pool reads that token directly, so the concat is currently its one direct head path. When
+   pool reads that token directly, so the concat is currently its one direct head path. **Under
+   `--token-encoding static` the `non_matchup_rest` concat is DELETED** (`board_bypass`; pi width −25): the
+   board reaches the policy only through the board tokens, the edges and the cells. When
    the hidden-opponent belief is on, its `[B, K·D_MODEL]` is appended to **both** (last),
    widening each projection input by `k·D_MODEL`.
 7. **Root heads** — two parallel `pre_proj_norm` (LayerNorm) → `projection` (Linear) → `ReLU`

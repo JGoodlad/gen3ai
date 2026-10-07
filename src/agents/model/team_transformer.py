@@ -3,7 +3,13 @@
 Split out of `features_extractor.py` 2026-08-16 (one responsibility per file); that module
 re-exports every name here, so historical import paths still resolve.
 """
-from agents.model.extractor_ctx import Embeddings, ExtractorContext, NUM_TOKEN_TYPES, TOKEN_TYPE_GLOBAL, TOKEN_TYPE_OUR_TEAM, TOKEN_TYPE_THEIR_TEAM
+from agents.model.extractor_ctx import (Embeddings, ExtractorContext, NUM_TOKEN_TYPES, NUM_TOKEN_TYPES_STATIC,
+                                        TOKEN_TYPE_FIELD, TOKEN_TYPE_GLOBAL, TOKEN_TYPE_OUR_SIDE,
+                                        TOKEN_TYPE_OUR_TEAM, TOKEN_TYPE_THEIR_SIDE, TOKEN_TYPE_THEIR_TEAM)
+from agents.model.board_tokens import (BOARD_SEATS_LEGACY, BOARD_SEATS_STATIC, FIELD_DIM, N_BOARD_TOKENS_STATIC,
+                                       SIDE_DIM, board_offsets, field_features, side_features)
+assert (TOKEN_TYPE_THEIR_SIDE, TOKEN_TYPE_FIELD) == (TOKEN_TYPE_OUR_SIDE + 1, TOKEN_TYPE_OUR_SIDE + 2), \
+    "TeamTransformer.board_tokens reads the three board types as one consecutive arange"
 import torch
 from torch.utils.checkpoint import checkpoint
 from typing import Callable, Dict, Any, Optional, Tuple
@@ -200,12 +206,17 @@ class EdgeBias(torch.nn.Module):
                 opp_active_onehot: Optional[torch.Tensor] = None,
                 other_cells: "Optional[Dict[str, torch.Tensor]]" = None,
                 other_index: int = -1,
-                other_live: Optional[torch.Tensor] = None) -> torch.Tensor:
+                other_live: Optional[torch.Tensor] = None,
+                board_seats: Tuple[int, int, int] = BOARD_SEATS_LEGACY) -> torch.Tensor:
         """Write the enabled families into `bias` [B, H, n, n] (already carrying the key-pad addend).
         `base_seats` = the seat count BEFORE the extra block (E3 starts there); `cells` maps family →
         its per-pair cell tensor (see _EDGE_FAMILIES); `opp_active_onehot` [B,6] locates the opp
-        active column for the mon↔mon D2 family. Returns `bias`."""
+        active column for the mon↔mon D2 family. `board_seats` = (OUR SIDE, THEIR SIDE, FIELD)
+        (`TeamTransformer.board_seats`): `x` writes each mon to its OWN side's seat, `g` and `c4` to
+        FIELD. Legacy's three are all the one GLOBAL seat (byte-identical writes); under
+        `--token-encoding static` they are seats 12 / 13 / 14 (gen3_static_board_v1). Returns `bias`."""
         H = TRANSFORMER_N_HEADS
+        s_our, s_opp, s_field = board_seats
         e3, e4 = base_seats, base_seats + 4
         our = slice(0, TEAM_SIZE)
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
@@ -237,10 +248,9 @@ class EdgeBias(torch.nn.Module):
             # D4 is the full mon↔mon block too (the active column arrives pre-zeroed by the kernel).
             self._write_block(bias, self.d4_map(cells["d4"]), our, opp)
         if self.c4_map is not None and cells.get("c4") is not None:
-            # C4 connects the Protect-family E3 seats to the GLOBAL seat.
-            g = 2 * TEAM_SIZE
+            # C4 connects the Protect-family E3 seats to the GLOBAL seat (FIELD under static).
             self._write_block(bias, self.c4_map(cells["c4"][:, :, None, :]),
-                              slice(base_seats, base_seats + 4), slice(g, g + 1))
+                              slice(base_seats, base_seats + 4), slice(s_field, s_field + 1))
         if self.r_map is not None and cells.get("r") is not None:
             # R (Tier H-C): event-seat reference edges to the 12 live mon tokens. CONTRACT: the
             # event seats are the LAST N tokens (EventSeats joins the extra seam last — the
@@ -250,18 +260,18 @@ class EdgeBias(torch.nn.Module):
             self._write_block(bias, self.r_map(cells["r"]),
                               slice(n_tok - N, n_tok), slice(0, 2 * TEAM_SIZE))
         if self.g_map is not None and cells.get("g") is not None:
-            # G rides the same (mon, GLOBAL seat) route as X — schedule facts are board-level.
-            g = 2 * TEAM_SIZE
+            # G rides the (mon, GLOBAL seat) route — schedule facts are board-level (FIELD under
+            # static: the end-of-turn residual is a field phase).
             g_our, g_opp = cells["g"]
-            self._write_block(bias, self.g_map(g_our[:, :, None, :]), our, slice(g, g + 1))
-            self._write_block(bias, self.g_map(g_opp[:, :, None, :]), opp, slice(g, g + 1))
+            self._write_block(bias, self.g_map(g_our[:, :, None, :]), our, slice(s_field, s_field + 1))
+            self._write_block(bias, self.g_map(g_opp[:, :, None, :]), opp, slice(s_field, s_field + 1))
         if self.x_map is not None and cells.get("x") is not None:
-            # X connects each mon to the GLOBAL seat (index 2·TEAM_SIZE): entry/
-            # exit costs are board-level facts, composable with every mon token through it.
-            g = 2 * TEAM_SIZE
+            # X connects each mon to the GLOBAL seat (index 2·TEAM_SIZE) — under static to its OWN
+            # side's token (the Spikes it switches into are that side's): entry/exit costs are
+            # board-level facts, composable with every mon token through it.
             x_our, x_opp = cells["x"]
-            self._write_block(bias, self.x_map(x_our[:, :, None, :]), our, slice(g, g + 1))
-            self._write_block(bias, self.x_map(x_opp[:, :, None, :]), opp, slice(g, g + 1))
+            self._write_block(bias, self.x_map(x_our[:, :, None, :]), our, slice(s_our, s_our + 1))
+            self._write_block(bias, self.x_map(x_opp[:, :, None, :]), opp, slice(s_opp, s_opp + 1))
         if self.t_map is not None and cells.get("t") is not None:
             # T is mon↔mon like V (both directions ride the cell's two channels + the two head-sets).
             self._write_block(bias, self.t_map(cells["t"]), our, opp)
@@ -305,7 +315,7 @@ class TeamTransformer(torch.nn.Module):
     fainted/seat key-padding mask, returns the two team token blocks + the
     refined extra seats."""
 
-    def __init__(self, layout: Dict[str, Any]):
+    def __init__(self, layout: Dict[str, Any], token_encoding: str = "legacy"):
         super().__init__()
         # Runtime-only memory/compute knob (NOT a weight or arch param — never enters
         # model_config.json / the version check). When True, the encoder layers are run
@@ -314,14 +324,27 @@ class TeamTransformer(torch.nn.Module):
         # dropout=0.0 and use_reentrant=False make the recompute identical. Toggled per run
         # from --grad-checkpointing via _apply_grad_checkpointing(); a no-op under inference.
         self.grad_checkpointing = False
-        self.token_type_emb = torch.nn.Embedding(NUM_TOKEN_TYPES, D_MODEL)
+        # gen3_static_board_v1 (`--token-encoding static`, stage 2): the single GLOBAL token is replaced by
+        # three BOARD tokens — OUR SIDE / THEIR SIDE through ONE shared `side_proj` over side-relative
+        # content, and FIELD (`board_tokens.py`). The table grows by the three board types. `legacy` builds
+        # exactly what it always did, in the same order (byte-identical init).
+        self.static_board = token_encoding == "static"
+        self.token_type_emb = torch.nn.Embedding(
+            NUM_TOKEN_TYPES_STATIC if self.static_board else NUM_TOKEN_TYPES, D_MODEL)
 
         reactive_layout = layout['reactive_layout']
         _board_scalar_dim = reactive_layout['active_req_moves']['offset']
         active_ctx_dim = layout['active_context_dim']
         self._non_matchup_rest_dim = GLOBAL_ENV_DIM + _board_scalar_dim
+        # The global token's RAW input width. Kept under static too: X5's δ_θ projects the same raw fields
+        # itself (`HypothesisBuilder`), independent of which board token the trunk builds.
         self._global_token_input_dim = 2 * active_ctx_dim + self._non_matchup_rest_dim
-        self.global_proj = torch.nn.Linear(self._global_token_input_dim, D_MODEL)
+        if self.static_board:
+            self._board_offsets = board_offsets(layout)
+            self.side_proj = torch.nn.Linear(SIDE_DIM, D_MODEL)
+            self.field_proj = torch.nn.Linear(FIELD_DIM, D_MODEL)
+        else:
+            self.global_proj = torch.nn.Linear(self._global_token_input_dim, D_MODEL)
 
         # gen3_edge_bias_trunk_v1 (v55): the encoder stack is the BIASED clone — same math, same
         # shapes, but attention takes an additive per-pair per-head float bias (the edge-delivery
@@ -334,7 +357,34 @@ class TeamTransformer(torch.nn.Module):
 
         self._our_token_slice = slice(0, TEAM_SIZE)
         self._their_token_slice = slice(TEAM_SIZE, 2 * TEAM_SIZE)
-        self._total_tokens = 2 * TEAM_SIZE + 1   # team×2 + global
+        # team×2 + the board: the one global token (legacy) or OUR SIDE / THEIR SIDE / FIELD (static). Every
+        # extra seat (E3 …) starts here, so every consumer reads this rather than a literal.
+        self.n_board_tokens = N_BOARD_TOKENS_STATIC if self.static_board else 1
+        self._total_tokens = 2 * TEAM_SIZE + self.n_board_tokens
+        self.board_seats = BOARD_SEATS_STATIC if self.static_board else BOARD_SEATS_LEGACY
+        self.last_global_out: Optional[torch.Tensor] = None   # legacy: [B, D_MODEL]
+        self.last_board_out: Optional[torch.Tensor] = None    # static: [B, 3, D_MODEL] (our side, their side, field)
+
+    def board_tokens(self, ctx: ExtractorContext) -> torch.Tensor:
+        """[B, 3, D_MODEL] the static board tokens BEFORE the trunk (OUR SIDE, THEIR SIDE, FIELD), type
+        embeddings included. The two sides share `side_proj`; only the type differs."""
+        # The three board types are CONSECUTIVE ids (asserted at import), so one on-device arange reads them
+        # (no host-built index tensor: an H2D copy per forward would break CUDA-graph capture, M5 T2).
+        types = self.token_type_emb(torch.arange(TOKEN_TYPE_OUR_SIDE, TOKEN_TYPE_FIELD + 1, dtype=torch.long,
+                                                 device=ctx.device))                        # [3,D]
+        side = self.side_proj(side_features(ctx, self._board_offsets)) + types[:2]         # [B,2,D]
+        field = self.field_proj(field_features(ctx, self._board_offsets)) + types[2]       # [B,D]
+        return torch.cat([side, field.unsqueeze(1)], dim=1)
+
+    def board_rows(self) -> torch.Tensor:
+        """[B, n_board_tokens, D_MODEL] the REFINED board token(s) of the last forward (the critic's pool and
+        the trunk policy readout read these): the global token as one row (legacy), the three board tokens
+        (static)."""
+        if self.static_board:
+            assert self.last_board_out is not None
+            return self.last_board_out
+        assert self.last_global_out is not None
+        return self.last_global_out.unsqueeze(1)
 
     def forward(self, role_tokens: torch.Tensor, ctx: ExtractorContext,
                 embeddings: Embeddings,
@@ -359,10 +409,6 @@ class TeamTransformer(torch.nn.Module):
         batch_size = ctx.batch_size
         device = ctx.device
 
-        # Global token — active contexts + non-matchup scalars projected into d_model.
-        global_token_input = torch.cat([ctx.our_ctx_raw, ctx.opp_ctx_raw, ctx.non_matchup_rest], dim=1)
-        global_token = self.global_proj(global_token_input).unsqueeze(1)
-
         # Token-type embeddings per group.
         our_team_tokens   = role_tokens[:, 0:TEAM_SIZE, :]
         their_team_tokens = role_tokens[:, TEAM_SIZE:2 * TEAM_SIZE, :]
@@ -370,10 +416,17 @@ class TeamTransformer(torch.nn.Module):
         tt = self.token_type_emb
         our_team_tokens   = our_team_tokens   + tt(torch.full((1,), TOKEN_TYPE_OUR_TEAM,   dtype=torch.long, device=device))
         their_team_tokens = their_team_tokens + tt(torch.full((1,), TOKEN_TYPE_THEIR_TEAM, dtype=torch.long, device=device))
-        global_token      = global_token      + tt(torch.full((1,), TOKEN_TYPE_GLOBAL,     dtype=torch.long, device=device))
+        if self.static_board:
+            # gen3_static_board_v1: OUR SIDE / THEIR SIDE / FIELD (side-relative content, one side_proj).
+            global_token = self.board_tokens(ctx)
+        else:
+            # Global token — active contexts + non-matchup scalars projected into d_model.
+            global_token_input = torch.cat([ctx.our_ctx_raw, ctx.opp_ctx_raw, ctx.non_matchup_rest], dim=1)
+            global_token = self.global_proj(global_token_input).unsqueeze(1)
+            global_token = global_token + tt(torch.full((1,), TOKEN_TYPE_GLOBAL, dtype=torch.long, device=device))
 
         tokens = torch.cat([our_team_tokens, their_team_tokens, global_token], dim=1)
-        global_pad = torch.zeros(batch_size, 1, dtype=torch.bool, device=device)
+        global_pad = torch.zeros(batch_size, self.n_board_tokens, dtype=torch.bool, device=device)
         key_padding_mask = torch.cat([
             ctx.fainted_mask_ours,
             ctx.fainted_mask_opp,
@@ -417,7 +470,10 @@ class TeamTransformer(torch.nn.Module):
         # gen3_unified_value_readout_v2: the REFINED global token, stashed as a side output
         # (the full entity pool reads it as a row; nothing else consumes the stash, so plain
         # attribute assignment keeps the return contract untouched).
-        self.last_global_out = tokens[:, self._total_tokens - 1, :]
+        if self.static_board:
+            self.last_board_out = tokens[:, 2 * TEAM_SIZE:self._total_tokens, :]
+        else:
+            self.last_global_out = tokens[:, self._total_tokens - 1, :]
         extra_out = tokens[:, self._total_tokens:, :] if extra is not None else None
         return our_team_out, their_team_out, extra_out
 

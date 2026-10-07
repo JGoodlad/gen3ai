@@ -456,9 +456,21 @@ last action, the trap bits, the active flag, the item-consumed bit, the side's a
 identity). No board fact (clock, weather, faint counts, Spikes, screens) enters either. The per-move tokens
 the pointer head and the E3 seats read are the static move token plus its own PP / legality. Under
 `fixed_mass` a hypothesis token is the dex table encoded ONCE per forward and gathered
-(`static_hypothesis_tokens`, exact). It is build stage 1 of 2 and NOT screen-ready: the board's new home (three
-board tokens and the per-mon op content on both sides, from `endstate/design_entity_coverage_audit.md`) is
-stage 2, not built.
+(`static_hypothesis_tokens`, exact). The board's home under `static` is build stage 2 (`gen3_static_board_v1`,
+config v140, `agents/model/board_tokens.py`, from `endstate/design_entity_coverage_audit.md` §6.1 B1 + B2): the
+single global token is REPLACED by three BOARD tokens (§2.3's static table) — OUR SIDE and THEIR SIDE through ONE
+shared `side_proj` (`Linear(10, 128)`) over SIDE-RELATIVE content (Spikes layers; Reflect, Light Screen,
+Safeguard, Mist presence; Wish pending; alive, fainted and revealed counts /6; Sleep Clause used = a non-Rest
+sleeper on that side), the token type telling them apart, and FIELD (`field_proj`, `Linear(11, 128)`: the
+weather block, the 3 clock scalars, turns since progress); the token-type table is 9 rows under static. The `x`
+edge goes to the mon's OWN side token, `g` and `c4` to FIELD (§5). The critic's `value_entity_pool` (`full`)
+reads the three refined board tokens where it reads the global token; `tower`'s head-only `non_matchup_rest`
+concat is DELETED (pi width 1177 → 1152); `trunk`'s state query attends over the three board tokens. Every mon
+on BOTH sides gets the per-mon OP CONTENT (`op_content`, zero-init): its `x` ⊕ `g` cells (entry chip, Pursuit
+exposure, grounded; the end-of-turn ledger) through one shared `Linear(8, 128)`, and on each of THEIR mons the
+`d1` cells of our four request-order moves through `Linear(24, 128)`; our mons' incoming rows keep riding
+`prefuse_proj`. The board context therefore reaches a mon only through the trunk's attention, the edges and the
+op's amounts. Nothing has been trained on `static`; it is the screen's arm (design note §8).
 
 The concrete steps:
 
@@ -567,7 +579,20 @@ The event seats join the extra seam LAST, so they are always the final `EVENT_WI
 is one more seat after the entity seats (62 tokens).
 
 `entity_seats.n_seats` = 16 (4 + 6 + 6). Base seat count = `2·TEAM_SIZE + 1` = 13, so **every
-extra seat index is `13 + offset`** — that is what makes the base slices position-stable.
+extra seat index is `13 + offset`** — that is what makes the base slices position-stable. Every consumer
+reads the base as `TeamTransformer._total_tokens`, never the literal.
+
+**Under `--token-encoding static` (63 tokens; 64 under X5 `fixed_mass`)** the global seat becomes three board
+seats and every later seat shifts by 2 (`_total_tokens` = 15; `board_seats` = (12, 13, 14)):
+
+| Seats | Index range | Token type | Content |
+|---|---|---|---|
+| our mons | 0–5 | `TOKEN_TYPE_OUR_TEAM` | S + D (+ `prefuse_proj` incoming rows + `op_content` x ⊕ g) |
+| opp mons | 6–11 | `TOKEN_TYPE_THEIR_TEAM` | S + D (+ move-belief reinjection + `op_content` x ⊕ g + our `d1` cells) |
+| OUR SIDE | 12 | `TOKEN_TYPE_OUR_SIDE` (6) | `side_proj(our side's 10 facts)` |
+| THEIR SIDE | 13 | `TOKEN_TYPE_THEIR_SIDE` (7) | `side_proj(their side's 10 facts)` — the SAME projection |
+| FIELD | 14 | `TOKEN_TYPE_FIELD` (8) | `field_proj(weather 7, clock 3, turns since progress)` |
+| E3 / E4 / E5 / [OTHER] / events | 15–62 | as above | unchanged, shifted by 2 |
 E5 deliberately reuses `TOKEN_TYPE_THEIR_THREAT` rather than adding a 7th token-type row (growing
 the table changes every model's state_dict).
 
@@ -1260,7 +1285,7 @@ E4 `[17:23]`, E5 `[23:29]`, event seats `[29:61]`.
 | **c2** | E3 seat *k* × opp mon *d* | 7 | `[is_status, land, d_their_outspeed, d_in_phys_high, d_sched, d_in_all_slp, e_slp_free_turns]` — what *landing* would do |
 | **c3** | E3 seat *k* × opp mon *d* | 3 | `[is_recovery, d_in_pko, rest_sleep_turns]` — does healing beat their KO |
 | **c5** | E3 seat *k* × **our** mon *j* | 4 | `[is_bp, d_best_high, d_best_pko, d_outspeed]` — Baton-Pass receiver axis |
-| **c4** | E3 seat *k* × **global** (12) | 4 | `[is_protect, p_success, net_ours, net_theirs]` — the turn a successful Protect banks |
+| **c4** | E3 seat *k* × **global** (12; FIELD 14 under `static`) | 4 | `[is_protect, p_success, net_ours, net_theirs]` — the turn a successful Protect banks |
 | **d3** | E4 threat seat *c* × our mon *i* | 5 | `[high, pko, eff, is_phys, w]` — their believed move vs each of our mons |
 | **s3** | E4 seat *c* × our mon *i* | 3 | `[land, land·immob, w]` |
 | **d2** | our mon *i* × opp **ACTIVE** (one-hot column) | 4 | `[best_high, best_pko, p_outspeed, alive]` — our bench's offense vs their active |
@@ -1269,8 +1294,8 @@ E4 `[17:23]`, E5 `[23:29]`, event seats `[29:61]`.
 | **h** | our mon *i* × opp mon *j* | 5 | `[switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]` — obs-fed pair-history TENDENCIES (`gen3_pair_history_v1`; EpisodeTracker-folded, log-saturated; **IN the production families string** since gen-12 — the one family whose cell the GPU cannot recompute, since it IS compiled battle history) |
 | **r** | event seat *e* (the LAST-N tokens) × mon *m* (all 12) | 3 | `[is_actor, is_target, is_rel]` — STRUCTURAL reference edges (`gen3_event_ref_edges_v1`, Tier H-C; `is_rel` added by `gen3_event_record_v2`): event *e*'s recorded actor/target/REL mon IS mon *m* (species-num equality, side-gated against mirror false-links — actor on the row's side, target on the other, REL on its own `REL_SIDE`; `_event_reference_cells`, pure). **IN the production string** — requires `--history-events`, which is ON (the seats are the rows) |
 | **t** | our mon *i* × opp mon *j* | 2 | `[P(i traps j), P(j traps i)]` |
-| **x** | each mon × **global** (both sides) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` |
-| **g** | each mon × **global** (both sides) | 4 | `[leftovers, weather_chip, status_tick, leech]` — signed maxhp fractions, Toxic at its ramped next tick |
+| **x** | each mon × **global** (both sides; its OWN side token 12 / 13 under `static`) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` |
+| **g** | each mon × **global** (both sides; FIELD 14 under `static`) | 4 | `[leftovers, weather_chip, status_tick, leech]` — signed maxhp fractions, Toxic at its ramped next tick |
 
 **No family targets the E5 tail seats** — they are token content only.
 

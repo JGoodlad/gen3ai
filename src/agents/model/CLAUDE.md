@@ -173,6 +173,7 @@ Rules to preserve:
 | X5's T0 hypothesis builder (`--belief-tokens fixed_mass`: δ_θ, the fixed-size presence, the one stable ordering, OTHER, the active's move group; the set-BCE helpers) | `hypothesis_set.py` |
 | X5's hypothesis-token ENCODING (`PokemonEncoder` split exactly at its two first Linears: the species half once over the dex table, gathered; the row-level half per row; the rest per opponent slot — the per-row pass on `hypothesis_ctx` stays the definition its test compares against) | `hypothesis_encode.py` |
 | the STATIC per-mon encoder (`--token-encoding static`: S = the static identity from the set fields, D = the mon's own state, added, no board input; the X5 hypothesis tokens as the dex table encoded once and gathered) | `static_tokens.py` |
+| the STATIC arm's BOARD (`--token-encoding static`, stage 2: the side-relative SIDE / FIELD content the three board tokens project, the seat tuples, the per-mon op content `OpContent`) | `board_tokens.py` |
 | X5's hypothesis TOKENS in the chain (the hypothesis context, the spliced tokens, the per-key log-presence, the class-E pools' float masks, the op's opponent-MON roster `OpRoster` + OTHER's averaged `other_roster`) | `hypothesis_tokens.py` |
 
 🚨 **THE FORWARD HAS TWO PUBLIC SURFACES: the constructor signature, and the obs DICT's KEY SET.**
@@ -292,6 +293,14 @@ pure function of the mon's own SET fields (that is what makes an X5 hypothesis t
 only the mon's own state. `static_tokens_test.py` fails when a board or dynamic field reaches S, when a board
 field reaches the encoder at all, and when the move SET stops being permutation-invariant. A new per-mon
 observation column must be classified there in the same pass, or `static` silently drops it.
+**Under `static` the board's home is the three BOARD tokens** (`board_tokens.py`, `gen3_static_board_v1`): OUR
+SIDE / THEIR SIDE through ONE `side_proj` over the SAME side-relative columns (`SIDE_FACTS`), FIELD, and the
+per-mon `op_content` (the `x` ⊕ `g` amounts on every mon, our `d1` cells on theirs). A new board fact goes into
+`SIDE_FACTS` (one column for BOTH sides, read for each side) or `FIELD_FACTS`, never into the per-mon encoder;
+the base seat count is `TeamTransformer._total_tokens` (15 under static) and a board reader takes
+`TeamTransformer.board_rows()` / `board_seats`, never `2·TEAM_SIZE` or the global token.
+`static_board_tokens_test.py` fails on a side mix-up, a dropped count, a one-sided or missing op content, a
+`x` / `g` / `c4` seat regression and a readout that still reads the global token or `non_matchup_rest`.
 
 **The op's opponent-MON axis under `fixed_mass` reads `op.stash.x5` (an `OpRoster`), never a gate of
 its own.** Every opponent-slot kernel in `damage_op*.py` takes "alive" from `roster.alive`

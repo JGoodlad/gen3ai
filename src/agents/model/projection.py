@@ -14,7 +14,8 @@ from agents.model.arch_constants import D_MODEL
 from agents.model.extractor_ctx import ExtractorContext
 
 def compute_projection_widths(layout: Dict[str, Any], *,
-                              opp_belief_cls_k: int = 0) -> Tuple[int, int]:
+                              opp_belief_cls_k: int = 0,
+                              token_encoding: str = "legacy") -> Tuple[int, int]:
     """The `(pi, vf)` projection-input widths as STATIC ARITHMETIC (gen3_static_widths_v1).
 
     Mirrors `ProjectionAssembler.forward`'s concat exactly — this is the single place that
@@ -40,6 +41,10 @@ def compute_projection_widths(layout: Dict[str, Any], *,
     # The non-matchup scalar tail: global-env block + the 5 raw board scalars — everything
     # between the active contexts and the embedding-ID active_req_moves tail (ObsUnpack).
     non_matchup_rest = sl['reactive.active_req_moves'].start - sl['global_env'].start
+    # gen3_static_board_v1: under `--token-encoding static` the board reaches the policy through its three
+    # board tokens and the cells only — the head-only `non_matchup_rest` route is DELETED (F4's fourth route).
+    if token_encoding == "static":
+        non_matchup_rest = 0
     belief = opp_belief_cls_k * D_MODEL
     # pi: our_team_pooled + their_team_pooled + our_active_refined (D_MODEL each) + tail + belief.
     pi = 3 * D_MODEL + non_matchup_rest + belief
@@ -74,8 +79,10 @@ class ProjectionAssembler(torch.nn.Module):
     token, which no pool reads directly, so the pi concat is still its one direct head path.
     """
 
-    def __init__(self, layout: Dict[str, Any]):
+    def __init__(self, layout: Dict[str, Any], token_encoding: str = "legacy"):
         super().__init__()
+        # gen3_static_board_v1: `static` drops the `non_matchup_rest` direct route (`compute_projection_widths`).
+        self.board_bypass = token_encoding != "static"
 
     def forward(self, our_team_pooled: torch.Tensor, their_team_pooled: torch.Tensor,
                 our_active_refined: torch.Tensor, value_pooled: torch.Tensor,
@@ -85,8 +92,9 @@ class ProjectionAssembler(torch.nn.Module):
         """Concatenate the per-head pre-projection inputs → `(pi_combined, vf_combined)` [B, *].
         `hidden_opp_belief` [B, K*D_MODEL] feeds the POLICY head when built (its vf half was
         audited dead and deleted); the value half is `value_pooled` alone."""
-        pi_parts = [our_team_pooled, their_team_pooled, our_active_refined,
-                    ctx.non_matchup_rest]
+        pi_parts = [our_team_pooled, their_team_pooled, our_active_refined]
+        if self.board_bypass:
+            pi_parts.append(ctx.non_matchup_rest)
         # gen3_no_concat_v1 (v61): THE OP HEAD-CONCAT IS DEAD. The 660-dim flat block no longer
         # enters either head — its measured end-state (gen-4, stratified, 53ef270): net policy
         # dependence +0.00%, all-edges-off ABOVE the concat arm on flips, and the critic's

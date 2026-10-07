@@ -43,7 +43,7 @@ from typing import Dict, FrozenSet, List, NamedTuple, Optional, Tuple
 #: production surface (every file a torch op of `evaluate_actions` was called from;
 #: `selection_sites_test` re-measures it and fails on a module outside this list).
 FORWARD_MODULES: Tuple[str, ...] = (
-    "aux_value_heads", "belief_heads", "conditional_threat", "damage_kinds", "damage_op", "damage_op_blocks",
+    "aux_value_heads", "belief_heads", "board_tokens", "conditional_threat", "damage_kinds", "damage_op", "damage_op_blocks",
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
     "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
@@ -374,6 +374,16 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "ev[:, :, C.STAT].long()", "ev[:, :, C.TARGET_SPECIES].long()", "ev[:, :, C.TYPE].long()",
                 "ev[:, :, C.VALID] < 0.5", "ev[:, :, C.VALID] > 0.5", "rel == sm", "rel > 0", "rside == ss",
                 "tgt == sm", "tgt > 0"),
+        # gen3_static_board_v1: the build-time token-encoding switch (a config string).
+        "PYTHON": ("token_encoding == 'static'",),
+    },
+    "projection": {
+        "PYTHON": ("token_encoding != 'static'",),
+    },
+    # gen3_static_board_v1 (`--token-encoding static`, stage 2): our side's alive count reads the observed HP
+    # fraction (a fainted mon is exactly 0 — no near-tie).
+    "board_tokens": {
+        "OBS": ("hp[:, :TEAM_SIZE] > 0",),
     },
     "value_readouts": {
         "OBS": ("op_alive.clamp(max=1.0) < 0.5",),

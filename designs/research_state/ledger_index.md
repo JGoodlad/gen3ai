@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,610-line file. **The ledger itself is append-only and is never edited by this**;
+22,623-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**785 headings · 730 dated · 2026-08-01 → 2026-10-06 · ledger 22,610 lines.**
+**786 headings · 731 dated · 2026-08-01 → 2026-10-06 · ledger 22,623 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -805,3 +805,4 @@ rename.
   - `L22576` · `2026-10-06` · FINDING + FIX · **A read-only CPU checkpoint load created a CUDA context: every checkpoint since the ride-along heads pickled their CUDA optimizers into sb3's `data`; they are no longer saved, never unpickled on any load, and a CPU load that initialises CUDA is a typed error (`gen3_cpu_load_no_cuda_v1`); resume semantics unchanged (the state was never restored)**
   - `L22587` · `2026-10-06` · BUILT · **STATIC-TOKEN ENCODER, build stage 1 of 2 (`gen3_static_tokens_v1`, `--token-encoding {legacy,static}`, config v139; `legacy` default and byte-identical): token = S (static identity: species + set + actual stats, the four moves summed as a set) + D (the mon's own state), no board fact in either; X5 hypothesis tokens become an exact dex-table gather (≈ 14× fewer MACs at B = 2,048, ESTIMATED); NOT screen-ready until stage 2 (three board tokens + per-mon op content on both sides)**
   - `L22598` · `2026-10-06` · AUDIT · **POKE-ENV RETIREMENT + RUST HOT-PATH SURVEY (read-only, owner request): training already reads every observation through the RUST protocol reader, so poke-env is load-bearing only where the PYTHON agent (`RLPlayer`) plays — live ladder, anchors, the ELO headline (`snapshot_ladder`) and the untaught meter — plus the prober, the Python parity oracle and a few data / enum / generator uses; a six-phase plan to ONE stack is ≈ 10–13 agent-days. The Rust core is ~6 % of a ~50 s X5 cycle; the PPO update (74–82 %, GPU-bound) and T2 inference cap throughput, and still will after the queued GPU work**
+  - `L22611` · `2026-10-06` · BUILT · **STATIC-TOKEN ENCODER, build stage 2 (`gen3_static_board_v1`, config v140; `legacy` byte-identical): under `--token-encoding static` the global token becomes three BOARD tokens (OUR SIDE / THEIR SIDE through one side-relative projection, FIELD), `x` → own side and `g` / `c4` → FIELD, the critic and both policy readouts read the board tokens, the tower's `non_matchup_rest` bypass is deleted, and every mon on BOTH sides gets the op's per-mon amounts as content; static is buildable as the screen's arm (screen DRAFTED, not registered); K9(b)'s tie ceiling trips on `static` × `blob` debug smokes (F-ST-5)**

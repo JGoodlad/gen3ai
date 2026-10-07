@@ -442,6 +442,17 @@ def _migrate_config(data: dict) -> dict:
     if version < 139:
         data.setdefault("token_encoding", "legacy")
         data["config_version"] = 139
+    # v140 (gen3_static_board_v1, static-token stage 2) — no field; `static` now builds the board tokens + the
+    # op content. A stage-1 `static` record (global token, no board tokens) has no home in this code: REFUSED.
+    # `legacy` is unchanged (stamp only).
+    if version < 140:
+        if data.get("token_encoding") == "static":
+            raise ModelVersionError(
+                f"model_config.json (config_version {version}) records token_encoding='static' from BUILD STAGE 1 "
+                "(one global token, no board tokens, no op content). Stage 2 (v140, gen3_static_board_v1) "
+                "replaced that layout, so its state_dict has no home here. Run it PINNED to its own commit "
+                "(<= 0ea14560's line), or start a fresh run.")
+        data["config_version"] = 140
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

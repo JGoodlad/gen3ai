@@ -74,7 +74,8 @@ class UnifiedValueReadout(torch.nn.Module):
                 op_alive: Optional[torch.Tensor] = None,
                 global_row: Optional[torch.Tensor] = None,
                 belief_rows: Optional[torch.Tensor] = None,
-                presence: Optional["OppPresence"] = None) -> torch.Tensor:
+                presence: Optional["OppPresence"] = None,
+                board_rows: Optional[torch.Tensor] = None) -> torch.Tensor:
         """our/their_team_out [B,6,D_MODEL]; all_fainted [B,12] bool (True = masked);
         op_rows [B,6,per_mon] + op_alive [B,6] float when the op exists; under `full`:
         global_row [B,D_MODEL] (required — never masked) and belief_rows [B,K,D_MODEL]
@@ -83,7 +84,11 @@ class UnifiedValueReadout(torch.nn.Module):
         `presence` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only): the pool is a
         class-E reduction over opponent tokens, so OTHER_species joins the THEIR-team source (row
         after their six) and every opponent row's logit carries its log-presence (added BEFORE the
-        mask fill, so a masked row keeps exactly −1e9). None (blob): byte-identical."""
+        mask fill, so a masked row keeps exactly −1e9). None (blob): byte-identical.
+
+        `board_rows` (gen3_static_board_v1, `--token-encoding static` only) [B, 3, D_MODEL]: the three
+        refined BOARD tokens (our side, their side, field) take the global row's place under `full` —
+        source 3, never masked. Exactly one of `global_row` / `board_rows` is given under `full`."""
         rows = [self.token_proj(our_team_out) + self.source_emb[0],
                 self.token_proj(their_team_out) + self.source_emb[1]]
         masks = [all_fainted]
@@ -105,15 +110,24 @@ class UnifiedValueReadout(torch.nn.Module):
             if logp is not None:
                 logp.append(op_alive.new_zeros(op_alive.shape))
         if self.full:
-            if global_row is None:
+            if (global_row is None) == (board_rows is None):
                 raise ValueError(
-                    "value_entity_pool_full is built but the forward supplied no global row — "
-                    "a silent skip would shrink the row set and read like a working pool.")
-            rows.append(self.token_proj(global_row)[:, None, :] + self.source_emb[3])
-            masks.append(torch.zeros(global_row.shape[0], 1, dtype=torch.bool,
-                                     device=global_row.device))
-            if logp is not None:
-                logp.append(global_row.new_zeros(global_row.shape[0], 1))
+                    "value_entity_pool_full is built but the forward supplied "
+                    + ("no global row and no board rows" if global_row is None else "BOTH a global row and board rows")
+                    + " — a silent skip would shrink the row set and read like a working pool.")
+            if board_rows is not None:
+                rows.append(self.token_proj(board_rows) + self.source_emb[3])
+                masks.append(torch.zeros(board_rows.shape[0], board_rows.shape[1], dtype=torch.bool,
+                                         device=board_rows.device))
+                if logp is not None:
+                    logp.append(board_rows.new_zeros(board_rows.shape[0], board_rows.shape[1]))
+            else:
+                assert global_row is not None
+                rows.append(self.token_proj(global_row)[:, None, :] + self.source_emb[3])
+                masks.append(torch.zeros(global_row.shape[0], 1, dtype=torch.bool,
+                                         device=global_row.device))
+                if logp is not None:
+                    logp.append(global_row.new_zeros(global_row.shape[0], 1))
             if belief_rows is not None:
                 rows.append(self.token_proj(belief_rows) + self.source_emb[4])
                 masks.append(torch.zeros(belief_rows.shape[0], belief_rows.shape[1],

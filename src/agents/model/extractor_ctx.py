@@ -22,6 +22,13 @@ TOKEN_TYPE_GLOBAL = 3
 TOKEN_TYPE_OUR_MOVE = 4        # E3 — our active's 4 request-ordered move tokens
 TOKEN_TYPE_THEIR_THREAT = 5    # E4 — the opp active's top-K believed threat-move tokens
 NUM_TOKEN_TYPES = 6
+# gen3_static_board_v1 (`--token-encoding static` only, stage 2): the three BOARD tokens that replace the
+# global token (`board_tokens.py`). Consecutive ids; the static table is NUM_TOKEN_TYPES_STATIC rows (legacy's
+# table keeps NUM_TOKEN_TYPES, so its shape and init are unchanged; TOKEN_TYPE_GLOBAL's row is unused under static).
+TOKEN_TYPE_OUR_SIDE = 6
+TOKEN_TYPE_THEIR_SIDE = 7
+TOKEN_TYPE_FIELD = 8
+NUM_TOKEN_TYPES_STATIC = 9
 
 
 class PointerInputs(NamedTuple):

@@ -17,7 +17,7 @@ checked:
   `instrumented_ppo_test` ASSIGNS `type(fe).forward` — so the concrete class is where that
   attribute has to live for a restore to put it back where it came from.
 """
-from typing import Dict, Iterator, Optional, Tuple
+from typing import Any, Dict, Iterator, Optional, Tuple
 
 import torch
 from torch.utils.checkpoint import checkpoint
@@ -388,6 +388,27 @@ class ExtractorForward(ExtractorApi):
             type_mult=append_other(st.pair_type_mult, st.pair_type_mult_other, 2, "pair_type_mult"),
             out_cells=out_cells, out_pko=out_pko, opp_p_ghost=ghost)
 
+    def _op_content_rows(self, opctx: ExtractorContext, sp: Optional[torch.Tensor],
+                         cells: Dict[str, Any]) -> torch.Tensor:
+        """gen3_static_board_v1 (`--token-encoding static`): [B, 12, D_MODEL] the per-mon OP CONTENT
+        (`board_tokens.OpContent`) from the `x` / `g` / `d1` kernels — the SAME cells the edge families
+        deliver (re-used from ``cells`` when a family built them this forward; computed here otherwise, on
+        the same context and belief, so the two can never disagree on a value)."""
+        op, oc = self.damage_op, self.op_content
+        assert op is not None and oc is not None
+        x = cells.get("x")
+        if x is None:
+            x = op.pairwise_entry(opctx, self.last_move_belief_logits)  # type: ignore[arg-type]
+        g = cells.get("g")
+        if g is None:
+            g = op.pairwise_schedule(opctx)
+        d1 = None
+        if oc.outgoing_proj is not None:
+            d1 = cells.get("d1")
+            if d1 is None:
+                d1 = op.pairwise_outgoing(opctx, self.last_spread_belief, species_probs=sp)
+        return oc(x, g, d1)  # type: ignore[no-any-return]
+
     def forward_internal(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
         # gen3_extractor_stashes_v1: replace the WHOLE stash container at ENTRY — no stash (nor a
@@ -535,13 +556,13 @@ class ExtractorForward(ExtractorApi):
         # per-head additive logit biases via the closure. Zero-init maps ⇒ identity at init.
         _edge_fn = None
         _other_d1: Optional[torch.Tensor] = None     # X5 U4: OTHER_species' D1 cells, reused by out_cells
+        _cells: Dict[str, Any] = {}                  # the edge families' cells (the static OPC reuses them)
         if self.edge_bias is not None:
             _fams = self.edge_bias.families
             # The T0 stack computed the spread belief THIS forward, pre-trunk (gen3_tiered_pipeline_v1
             # made that unconditional), so it is always the current one. None when the leg is off —
             # the kernels then use their legacy neutral-bulk constants.
             _sb = self.last_spread_belief
-            _cells = {}
             if "d1" in _fams:
                 _cells["d1"] = self.damage_op.pairwise_outgoing(  # type: ignore[union-attr]
                     _opctx, _sb, species_probs=_sp)
@@ -636,8 +657,10 @@ class ExtractorForward(ExtractorApi):
                 _other_d1 = _ocells.get("d1")
                 _oidx = self.team_transformer._total_tokens + self.entity_seats.n_seats
                 _olive = _x5r.other_live
+            _board_seats = self.team_transformer.board_seats
             _edge_fn = lambda bias: self.edge_bias(  # noqa: E731
-                bias, _base, _cells, _opp_oh, other_cells=_ocells, other_index=_oidx, other_live=_olive)
+                bias, _base, _cells, _opp_oh, other_cells=_ocells, other_index=_oidx, other_live=_olive,
+                board_seats=_board_seats)
             _c2_edge_cells = _cells.get("c2")
         else:
             _c2_edge_cells = None
@@ -675,11 +698,17 @@ class ExtractorForward(ExtractorApi):
                        if self.entity_seats.tail_seats else None)
             _base_t = self.team_transformer._total_tokens
             _klp = key_log_presence(
-                2 * TEAM_SIZE + 1 + _seat_tokens.shape[1], _hs, _other_idx, e5_offset=_e5_off,
+                self.team_transformer._total_tokens + _seat_tokens.shape[1], _hs, _other_idx, e5_offset=_e5_off,
                 e4=(_fm.seat_logp if (_fm is not None and self.entity_topk_seats > 0) else None),
                 e4_offset=_base_t + 4,
                 e5_active=(_fm.other_log_mass if _fm is not None else None),
                 opp_active_local=ctx.opp_active_local)
+        # gen3_static_board_v1 (`--token-encoding static`, audit B2): the per-mon OP CONTENT on BOTH sides —
+        # the amounts an edge bias cannot carry (a ratio inside a softmax row): every mon's Spikes chip on entry
+        # and end-of-turn ledger, and our active's damage to each of THEIR mons. Added pre-trunk, after the op
+        # (T1), beside `prefuse_proj`'s incoming rows on our mons. None under legacy (nothing built).
+        if self.op_content is not None:
+            role_tokens = role_tokens + self._op_content_rows(_opctx, _sp, _cells)
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, _seat_types, _seat_pad),
@@ -1056,10 +1085,12 @@ class ExtractorForward(ExtractorApi):
             # `pi_features` IS this [B, D_MODEL] vector (`_forward_unguarded`). The value half is
             # `value_pooled`, exactly what the assembler returns as `vf_combined`.
             assert _seat_out is not None, "the entity seats always join the trunk (E3 is unconditional)"
-            _keys = [our_team_out, their_team_out,
-                     self.team_transformer.last_global_out.unsqueeze(1), _seat_out]
+            # The board: the global token (legacy) or the three board tokens (static, gen3_static_board_v1) —
+            # in the trunk's own seat order, so the per-key log-presence `_klp` stays aligned.
+            _keys = [our_team_out, their_team_out, self.team_transformer.board_rows(), _seat_out]
             _pads = [ctx.fainted_mask_ours, ctx.fainted_mask_opp,
-                     torch.zeros(ctx.batch_size, 1, dtype=torch.bool, device=ctx.device), _seat_pad]
+                     torch.zeros(ctx.batch_size, self.team_transformer.n_board_tokens, dtype=torch.bool,
+                                 device=ctx.device), _seat_pad]
             _qlp = _klp
             if belief is not None:
                 _brows = belief.view(ctx.batch_size, -1, D_MODEL)
@@ -1105,7 +1136,11 @@ class ExtractorForward(ExtractorApi):
             if presence is not None:
                 _uvr_kw["presence"] = presence           # X5 fixed_mass: OTHER row + log-π (class E)
             if self.value_entity_pool.full:
-                _uvr_kw["global_row"] = self.team_transformer.last_global_out
+                # gen3_static_board_v1: the three refined board tokens take the global row's place (static).
+                if self.team_transformer.static_board:
+                    _uvr_kw["board_rows"] = self.team_transformer.board_rows()
+                else:
+                    _uvr_kw["global_row"] = self.team_transformer.last_global_out
                 if belief is not None:
                     _uvr_kw["belief_rows"] = belief.view(ctx.batch_size, -1, D_MODEL)
             yield "value_entity_pool", self.value_entity_pool(
