@@ -1,0 +1,4404 @@
+{
+ "cited": [
+  "blob-path identity at 708dcb0a vs e5e660dd (ledger 2026-10-06 BANK)",
+  "look-3 seeds' learner goldens identical across e5e660dd / 708dcb0a / 706fa536 (the training agent, 2026-10-07)",
+  "restarts / crashes / init_num_threads: the runs' ledger BANK entries"
+ ],
+ "code_head": "706fa536ef53d9a680d2461f16613e0d1430d176",
+ "dry_run": false,
+ "look": 3,
+ "look_seeds": [
+  3,
+  5
+ ],
+ "matched_steps": {
+  "cells": [
+   {
+    "aborted": 0,
+    "d": 10,
+    "l": 1077,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     264,
+     4,
+     545,
+     6,
+     181
+    ],
+    "player": "rb_x5ab_fm_s1001@15047411",
+    "score_pp": 45.9,
+    "verdict": "OK",
+    "w": 913
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1080,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     272,
+     6,
+     530,
+     7,
+     185
+    ],
+    "player": "rb_x5ab_fm_s1001@15047411",
+    "score_pp": 45.675,
+    "verdict": "OK",
+    "w": 907
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1091,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     269,
+     5,
+     550,
+     5,
+     171
+    ],
+    "player": "rb_x5ab_fm_s1001@15047411",
+    "score_pp": 45.1,
+    "verdict": "OK",
+    "w": 895
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1093,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     280,
+     7,
+     527,
+     4,
+     182
+    ],
+    "player": "rb_x5ab_fm_s1001@15047411",
+    "score_pp": 45.025,
+    "verdict": "OK",
+    "w": 894
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1080,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     271,
+     7,
+     532,
+     4,
+     186
+    ],
+    "player": "rb_x5ab_fm_s1001@15047411",
+    "score_pp": 45.675,
+    "verdict": "OK",
+    "w": 907
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 1078,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     255,
+     14,
+     555,
+     3,
+     173
+    ],
+    "player": "rb_x5ab_fm_s1001@15047411",
+    "score_pp": 45.625,
+    "verdict": "OK",
+    "w": 903
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1039,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     238,
+     8,
+     555,
+     6,
+     193
+    ],
+    "player": "rb_x5ab_fm_s1001@15047411",
+    "score_pp": 47.699999999999996,
+    "verdict": "OK",
+    "w": 947
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1071,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     264,
+     5,
+     539,
+     9,
+     183
+    ],
+    "player": "rb_x5ab_fm_s1001@15047411",
+    "score_pp": 46.050000000000004,
+    "verdict": "OK",
+    "w": 913
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 1022,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     248,
+     8,
+     519,
+     7,
+     218
+    ],
+    "player": "rb_x5ab_fm_s1002@15047763",
+    "score_pp": 48.475,
+    "verdict": "OK",
+    "w": 961
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 1018,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     236,
+     6,
+     540,
+     5,
+     213
+    ],
+    "player": "rb_x5ab_fm_s1002@15047763",
+    "score_pp": 48.825,
+    "verdict": "OK",
+    "w": 971
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 990,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     208,
+     5,
+     569,
+     8,
+     210
+    ],
+    "player": "rb_x5ab_fm_s1002@15047763",
+    "score_pp": 50.175000000000004,
+    "verdict": "OK",
+    "w": 997
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1053,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     249,
+     5,
+     550,
+     8,
+     188
+    ],
+    "player": "rb_x5ab_fm_s1002@15047763",
+    "score_pp": 47.025,
+    "verdict": "OK",
+    "w": 934
+   },
+   {
+    "aborted": 0,
+    "d": 8,
+    "l": 1011,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     224,
+     4,
+     559,
+     4,
+     209
+    ],
+    "player": "rb_x5ab_fm_s1002@15047763",
+    "score_pp": 49.25,
+    "verdict": "OK",
+    "w": 981
+   },
+   {
+    "aborted": 0,
+    "d": 7,
+    "l": 1036,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     233,
+     5,
+     565,
+     2,
+     195
+    ],
+    "player": "rb_x5ab_fm_s1002@15047763",
+    "score_pp": 48.025,
+    "verdict": "OK",
+    "w": 957
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 1000,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     220,
+     10,
+     551,
+     5,
+     214
+    ],
+    "player": "rb_x5ab_fm_s1002@15047763",
+    "score_pp": 49.575,
+    "verdict": "OK",
+    "w": 983
+   },
+   {
+    "aborted": 0,
+    "d": 18,
+    "l": 1045,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     231,
+     7,
+     577,
+     9,
+     176
+    ],
+    "player": "rb_x5ab_fm_s1002@15047763",
+    "score_pp": 47.3,
+    "verdict": "OK",
+    "w": 937
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1001,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     215,
+     7,
+     564,
+     5,
+     209
+    ],
+    "player": "rb_x5ab_fm_s1003@15047738",
+    "score_pp": 49.65,
+    "verdict": "OK",
+    "w": 987
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 950,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     197,
+     5,
+     552,
+     2,
+     244
+    ],
+    "player": "rb_x5ab_fm_s1003@15047738",
+    "score_pp": 52.275000000000006,
+    "verdict": "OK",
+    "w": 1041
+   },
+   {
+    "aborted": 0,
+    "d": 10,
+    "l": 953,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     202,
+     3,
+     546,
+     7,
+     242
+    ],
+    "player": "rb_x5ab_fm_s1003@15047738",
+    "score_pp": 52.1,
+    "verdict": "OK",
+    "w": 1037
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 986,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     208,
+     3,
+     567,
+     11,
+     211
+    ],
+    "player": "rb_x5ab_fm_s1003@15047738",
+    "score_pp": 50.349999999999994,
+    "verdict": "OK",
+    "w": 1000
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 999,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     208,
+     5,
+     579,
+     6,
+     202
+    ],
+    "player": "rb_x5ab_fm_s1003@15047738",
+    "score_pp": 49.725,
+    "verdict": "OK",
+    "w": 988
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 984,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     213,
+     4,
+     555,
+     11,
+     217
+    ],
+    "player": "rb_x5ab_fm_s1003@15047738",
+    "score_pp": 50.375,
+    "verdict": "OK",
+    "w": 999
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 986,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     212,
+     6,
+     556,
+     5,
+     221
+    ],
+    "player": "rb_x5ab_fm_s1003@15047738",
+    "score_pp": 50.425,
+    "verdict": "OK",
+    "w": 1003
+   },
+   {
+    "aborted": 0,
+    "d": 8,
+    "l": 981,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     211,
+     3,
+     556,
+     5,
+     225
+    ],
+    "player": "rb_x5ab_fm_s1003@15047738",
+    "score_pp": 50.74999999999999,
+    "verdict": "OK",
+    "w": 1011
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1013,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     226,
+     8,
+     554,
+     3,
+     209
+    ],
+    "player": "rb_x5ab_fm_s1004@15047754",
+    "score_pp": 49.025,
+    "verdict": "OK",
+    "w": 974
+   },
+   {
+    "aborted": 0,
+    "d": 10,
+    "l": 975,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     208,
+     5,
+     555,
+     3,
+     229
+    ],
+    "player": "rb_x5ab_fm_s1004@15047754",
+    "score_pp": 51.0,
+    "verdict": "OK",
+    "w": 1015
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 1008,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     219,
+     8,
+     562,
+     9,
+     202
+    ],
+    "player": "rb_x5ab_fm_s1004@15047754",
+    "score_pp": 49.175000000000004,
+    "verdict": "OK",
+    "w": 975
+   },
+   {
+    "aborted": 0,
+    "d": 27,
+    "l": 1026,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     233,
+     13,
+     548,
+     12,
+     194
+    ],
+    "player": "rb_x5ab_fm_s1004@15047754",
+    "score_pp": 48.025,
+    "verdict": "OK",
+    "w": 947
+   },
+   {
+    "aborted": 0,
+    "d": 7,
+    "l": 1009,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     221,
+     5,
+     562,
+     2,
+     210
+    ],
+    "player": "rb_x5ab_fm_s1004@15047754",
+    "score_pp": 49.375,
+    "verdict": "OK",
+    "w": 984
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1003,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     224,
+     7,
+     548,
+     5,
+     216
+    ],
+    "player": "rb_x5ab_fm_s1004@15047754",
+    "score_pp": 49.55,
+    "verdict": "OK",
+    "w": 985
+   },
+   {
+    "aborted": 0,
+    "d": 20,
+    "l": 969,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     211,
+     8,
+     541,
+     8,
+     232
+    ],
+    "player": "rb_x5ab_fm_s1004@15047754",
+    "score_pp": 51.05,
+    "verdict": "OK",
+    "w": 1011
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 986,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     225,
+     5,
+     532,
+     12,
+     226
+    ],
+    "player": "rb_x5ab_fm_s1004@15047754",
+    "score_pp": 50.224999999999994,
+    "verdict": "OK",
+    "w": 995
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 1002,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     220,
+     4,
+     558,
+     7,
+     211
+    ],
+    "player": "rb_x5ab_fm_s1005@15047263",
+    "score_pp": 49.625,
+    "verdict": "OK",
+    "w": 987
+   },
+   {
+    "aborted": 0,
+    "d": 18,
+    "l": 939,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     185,
+     7,
+     564,
+     7,
+     237
+    ],
+    "player": "rb_x5ab_fm_s1005@15047263",
+    "score_pp": 52.6,
+    "verdict": "OK",
+    "w": 1043
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 971,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     209,
+     6,
+     547,
+     5,
+     233
+    ],
+    "player": "rb_x5ab_fm_s1005@15047263",
+    "score_pp": 51.175000000000004,
+    "verdict": "OK",
+    "w": 1018
+   },
+   {
+    "aborted": 0,
+    "d": 15,
+    "l": 985,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     216,
+     5,
+     548,
+     10,
+     221
+    ],
+    "player": "rb_x5ab_fm_s1005@15047263",
+    "score_pp": 50.375,
+    "verdict": "OK",
+    "w": 1000
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 993,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     214,
+     5,
+     561,
+     4,
+     216
+    ],
+    "player": "rb_x5ab_fm_s1005@15047263",
+    "score_pp": 50.075,
+    "verdict": "OK",
+    "w": 996
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1004,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     225,
+     7,
+     547,
+     5,
+     216
+    ],
+    "player": "rb_x5ab_fm_s1005@15047263",
+    "score_pp": 49.5,
+    "verdict": "OK",
+    "w": 984
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 971,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     210,
+     5,
+     548,
+     10,
+     227
+    ],
+    "player": "rb_x5ab_fm_s1005@15047263",
+    "score_pp": 50.975,
+    "verdict": "OK",
+    "w": 1010
+   },
+   {
+    "aborted": 0,
+    "d": 22,
+    "l": 968,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     209,
+     10,
+     541,
+     10,
+     230
+    ],
+    "player": "rb_x5ab_fm_s1005@15047263",
+    "score_pp": 51.05,
+    "verdict": "OK",
+    "w": 1010
+   },
+   {
+    "aborted": 0,
+    "d": 20,
+    "l": 1081,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     263,
+     14,
+     541,
+     6,
+     176
+    ],
+    "player": "rb_x5ab_fm_s1006b@15047281",
+    "score_pp": 45.45,
+    "verdict": "OK",
+    "w": 899
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1091,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     278,
+     6,
+     530,
+     4,
+     182
+    ],
+    "player": "rb_x5ab_fm_s1006b@15047281",
+    "score_pp": 45.15,
+    "verdict": "OK",
+    "w": 897
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 1118,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     279,
+     11,
+     549,
+     8,
+     153
+    ],
+    "player": "rb_x5ab_fm_s1006b@15047281",
+    "score_pp": 43.625,
+    "verdict": "OK",
+    "w": 863
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1150,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     308,
+     13,
+     521,
+     3,
+     155
+    ],
+    "player": "rb_x5ab_fm_s1006b@15047281",
+    "score_pp": 42.1,
+    "verdict": "OK",
+    "w": 834
+   },
+   {
+    "aborted": 0,
+    "d": 22,
+    "l": 1058,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     248,
+     14,
+     548,
+     8,
+     182
+    ],
+    "player": "rb_x5ab_fm_s1006b@15047281",
+    "score_pp": 46.550000000000004,
+    "verdict": "OK",
+    "w": 920
+   },
+   {
+    "aborted": 0,
+    "d": 21,
+    "l": 1085,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     261,
+     9,
+     555,
+     10,
+     165
+    ],
+    "player": "rb_x5ab_fm_s1006b@15047281",
+    "score_pp": 45.225,
+    "verdict": "OK",
+    "w": 894
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1070,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     255,
+     8,
+     552,
+     8,
+     177
+    ],
+    "player": "rb_x5ab_fm_s1006b@15047281",
+    "score_pp": 46.1,
+    "verdict": "OK",
+    "w": 914
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 1078,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     275,
+     9,
+     519,
+     8,
+     189
+    ],
+    "player": "rb_x5ab_fm_s1006b@15047281",
+    "score_pp": 45.675,
+    "verdict": "OK",
+    "w": 905
+   },
+   {
+    "aborted": 0,
+    "d": 21,
+    "l": 963,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     227,
+     5,
+     504,
+     16,
+     248
+    ],
+    "player": "rb_x5ab_fm_s1007@15048312",
+    "score_pp": 51.324999999999996,
+    "verdict": "OK",
+    "w": 1016
+   },
+   {
+    "aborted": 0,
+    "d": 18,
+    "l": 909,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     190,
+     6,
+     525,
+     8,
+     271
+    ],
+    "player": "rb_x5ab_fm_s1007@15048312",
+    "score_pp": 54.1,
+    "verdict": "OK",
+    "w": 1073
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 922,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     191,
+     3,
+     537,
+     8,
+     261
+    ],
+    "player": "rb_x5ab_fm_s1007@15048312",
+    "score_pp": 53.625,
+    "verdict": "OK",
+    "w": 1067
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 967,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     208,
+     5,
+     547,
+     5,
+     235
+    ],
+    "player": "rb_x5ab_fm_s1007@15048312",
+    "score_pp": 51.349999999999994,
+    "verdict": "OK",
+    "w": 1021
+   },
+   {
+    "aborted": 0,
+    "d": 8,
+    "l": 973,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     211,
+     3,
+     548,
+     5,
+     233
+    ],
+    "player": "rb_x5ab_fm_s1007@15048312",
+    "score_pp": 51.15,
+    "verdict": "OK",
+    "w": 1019
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 952,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     193,
+     6,
+     560,
+     8,
+     233
+    ],
+    "player": "rb_x5ab_fm_s1007@15048312",
+    "score_pp": 52.05,
+    "verdict": "OK",
+    "w": 1034
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 968,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     199,
+     5,
+     565,
+     7,
+     224
+    ],
+    "player": "rb_x5ab_fm_s1007@15048312",
+    "score_pp": 51.300000000000004,
+    "verdict": "OK",
+    "w": 1020
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 964,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     204,
+     4,
+     553,
+     7,
+     232
+    ],
+    "player": "rb_x5ab_fm_s1007@15048312",
+    "score_pp": 51.475,
+    "verdict": "OK",
+    "w": 1023
+   },
+   {
+    "aborted": 0,
+    "d": 8,
+    "l": 1026,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     217,
+     2,
+     591,
+     4,
+     186
+    ],
+    "player": "rb_x5ab_fm_s1008@15047681",
+    "score_pp": 48.5,
+    "verdict": "OK",
+    "w": 966
+   },
+   {
+    "aborted": 0,
+    "d": 10,
+    "l": 1013,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     234,
+     7,
+     538,
+     3,
+     218
+    ],
+    "player": "rb_x5ab_fm_s1008@15047681",
+    "score_pp": 49.1,
+    "verdict": "OK",
+    "w": 977
+   },
+   {
+    "aborted": 0,
+    "d": 10,
+    "l": 975,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     222,
+     6,
+     525,
+     4,
+     243
+    ],
+    "player": "rb_x5ab_fm_s1008@15047681",
+    "score_pp": 51.0,
+    "verdict": "OK",
+    "w": 1015
+   },
+   {
+    "aborted": 0,
+    "d": 15,
+    "l": 1015,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     225,
+     8,
+     557,
+     7,
+     203
+    ],
+    "player": "rb_x5ab_fm_s1008@15047681",
+    "score_pp": 48.875,
+    "verdict": "OK",
+    "w": 970
+   },
+   {
+    "aborted": 0,
+    "d": 10,
+    "l": 1000,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     217,
+     3,
+     564,
+     5,
+     211
+    ],
+    "player": "rb_x5ab_fm_s1008@15047681",
+    "score_pp": 49.75,
+    "verdict": "OK",
+    "w": 990
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1010,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     240,
+     8,
+     522,
+     6,
+     224
+    ],
+    "player": "rb_x5ab_fm_s1008@15047681",
+    "score_pp": 49.15,
+    "verdict": "OK",
+    "w": 976
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 955,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     196,
+     6,
+     558,
+     9,
+     231
+    ],
+    "player": "rb_x5ab_fm_s1008@15047681",
+    "score_pp": 51.824999999999996,
+    "verdict": "OK",
+    "w": 1028
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1028,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     257,
+     5,
+     509,
+     8,
+     221
+    ],
+    "player": "rb_x5ab_fm_s1008@15047681",
+    "score_pp": 48.275,
+    "verdict": "OK",
+    "w": 959
+   }
+  ],
+  "col_sha256": [
+   "5ff8fcae66fe5a2fd99198f5492153070ed5249cbdaad2283c062d4d94a8f4f9",
+   "ec6541ee0eddddc94d07d3f223a8bf1ce9e5f8346b53c88d24d981c96307556a",
+   "7b72986ba67b614b9f33ab7aa84d86dfe251b5f37e409d4a7ca33575cf23a243",
+   "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4",
+   "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5",
+   "403cca9558e57f0b4d915e30ce7083966f4f1c3240fe3d036b27a9c8b9d5378a",
+   "7f40b23fb0f22a60c9e817e220f8bc93d4d7fa5ee4530bb1caaf1a72d28402a5",
+   "e251b30d1e51bb866c5ec9f218fbf6621443a6f6577abdefd606d127795875e0"
+  ],
+  "cols": [
+   "rb_x5ab_blob_s1001/final_model.zip",
+   "rb_x5ab_blob_s1002/final_model.zip",
+   "rb_x5ab_blob_s1003/final_model.zip",
+   "rb_x5ab_blob_s1004/final_model.zip",
+   "rb_x5ab_blob_s1005/final_model.zip",
+   "rb_x5ab_blob_s1006/final_model.zip",
+   "rb_x5ab_blob_s1007/final_model.zip",
+   "rb_x5ab_blob_s1008/final_model.zip"
+  ],
+  "decision": {
+   "boundary": 1.874,
+   "label": null,
+   "look": 3,
+   "near_boundary": [],
+   "outcome": "NON-INFERIOR",
+   "reasons": [],
+   "stat": {
+    "ci95_pp": [
+     -2.9209503661288587,
+     0.938919116128853
+    ],
+    "col_means_pp": [
+     48.49375,
+     49.840625,
+     49.496875,
+     47.890625,
+     48.94375,
+     48.6875,
+     49.86875,
+     48.849999999999994
+    ],
+    "delta_hat_pp": -0.9910156250000028,
+    "df": 14,
+    "h_pp": [
+     [
+      45.9,
+      45.675,
+      45.1,
+      45.025,
+      45.675,
+      45.625,
+      47.699999999999996,
+      46.050000000000004
+     ],
+     [
+      48.475,
+      48.825,
+      50.175000000000004,
+      47.025,
+      49.25,
+      48.025,
+      49.575,
+      47.3
+     ],
+     [
+      49.65,
+      52.275000000000006,
+      52.1,
+      50.349999999999994,
+      49.725,
+      50.375,
+      50.425,
+      50.74999999999999
+     ],
+     [
+      49.025,
+      51.0,
+      49.175000000000004,
+      48.025,
+      49.375,
+      49.55,
+      51.05,
+      50.224999999999994
+     ],
+     [
+      49.625,
+      52.6,
+      51.175000000000004,
+      50.375,
+      50.075,
+      49.5,
+      50.975,
+      51.05
+     ],
+     [
+      45.45,
+      45.15,
+      43.625,
+      42.1,
+      46.550000000000004,
+      45.225,
+      46.1,
+      45.675
+     ],
+     [
+      51.324999999999996,
+      54.1,
+      53.625,
+      51.349999999999994,
+      51.15,
+      52.05,
+      51.300000000000004,
+      51.475
+     ],
+     [
+      48.5,
+      49.1,
+      51.0,
+      48.875,
+      49.75,
+      49.15,
+      51.824999999999996,
+      48.275
+     ]
+    ],
+    "margin_pp": 3.5,
+    "n": 8,
+    "row_means_pp": [
+     45.84375,
+     48.58125,
+     50.70625,
+     49.678125,
+     50.671875,
+     44.984375,
+     52.046875,
+     49.559375
+    ],
+    "s2_cols": 0.473991176060269,
+    "s2_rows": 6.003502894810268,
+    "se_pp": 0.8998259603161142,
+    "t": 2.7882996108698355,
+    "upper95_one_sided_pp": 0.593856959338144,
+    "v_hat": 0.8096867588588171
+   }
+  },
+  "family": "x5ab_strength_steps",
+  "n_cells": {
+   "x5ab_look1_steps": 9,
+   "x5ab_look2_steps": 16,
+   "x5ab_look3_steps": 39
+  },
+  "regime_id": "adfdbee824c9eb0a",
+  "registered": true,
+  "requests": [
+   "x5ab_look1_steps",
+   "x5ab_look2_steps",
+   "x5ab_look3_steps"
+  ],
+  "row_sha256": [
+   "b4876c07f8b9ea40f6f485e1ae7a0b637b1d1a7069f447c38bff0650b3d49152",
+   "dcd9bed6da824cd1bc65e582b72fafac9fe88b7675701da2560b447e5fa2be82",
+   "2f132c51141d1430681ca1a5d6f7cea70a9d8a5d3b9950d3fb1ff43e9976004c",
+   "e9082b529666c7ad80702c555c73455caadf001b1932cfc3c602f6710c86679f",
+   "0bc658e0418c6fe644384497bb74d8f195e5289d1e429e80b4624f05c2c22e3f",
+   "211c84ab102c47539dbb17fbe32e7cb8c5fe80cfdf9737e1acfcf15fd1f72f73",
+   "20e6bc658370db424d7025bb3a05644bc876a3c85ae5d5fbd9ddab6061462959",
+   "68a1711c659e4ca381a803f71c7d04f5b376fa87363dffa54b70eaefce55d385"
+  ],
+  "rows": [
+   "rb_x5ab_fm_s1001/final_model.zip",
+   "rb_x5ab_fm_s1002/final_model.zip",
+   "rb_x5ab_fm_s1003/final_model.zip",
+   "rb_x5ab_fm_s1004/final_model.zip",
+   "rb_x5ab_fm_s1005/final_model.zip",
+   "rb_x5ab_fm_s1006b/final_model.zip",
+   "rb_x5ab_fm_s1007/final_model.zip",
+   "rb_x5ab_fm_s1008/final_model.zip"
+  ],
+  "stat_shown": {
+   "ci95_pp": [
+    -2.9209503661288587,
+    0.938919116128853
+   ],
+   "col_means_pp": [
+    48.49375,
+    49.840625,
+    49.496875,
+    47.890625,
+    48.94375,
+    48.6875,
+    49.86875,
+    48.849999999999994
+   ],
+   "delta_hat_pp": -0.9910156250000028,
+   "df": 14,
+   "h_pp": [
+    [
+     45.9,
+     45.675,
+     45.1,
+     45.025,
+     45.675,
+     45.625,
+     47.699999999999996,
+     46.050000000000004
+    ],
+    [
+     48.475,
+     48.825,
+     50.175000000000004,
+     47.025,
+     49.25,
+     48.025,
+     49.575,
+     47.3
+    ],
+    [
+     49.65,
+     52.275000000000006,
+     52.1,
+     50.349999999999994,
+     49.725,
+     50.375,
+     50.425,
+     50.74999999999999
+    ],
+    [
+     49.025,
+     51.0,
+     49.175000000000004,
+     48.025,
+     49.375,
+     49.55,
+     51.05,
+     50.224999999999994
+    ],
+    [
+     49.625,
+     52.6,
+     51.175000000000004,
+     50.375,
+     50.075,
+     49.5,
+     50.975,
+     51.05
+    ],
+    [
+     45.45,
+     45.15,
+     43.625,
+     42.1,
+     46.550000000000004,
+     45.225,
+     46.1,
+     45.675
+    ],
+    [
+     51.324999999999996,
+     54.1,
+     53.625,
+     51.349999999999994,
+     51.15,
+     52.05,
+     51.300000000000004,
+     51.475
+    ],
+    [
+     48.5,
+     49.1,
+     51.0,
+     48.875,
+     49.75,
+     49.15,
+     51.824999999999996,
+     48.275
+    ]
+   ],
+   "margin_pp": 3.5,
+   "n": 8,
+   "row_means_pp": [
+    45.84375,
+    48.58125,
+    50.70625,
+    49.678125,
+    50.671875,
+    44.984375,
+    52.046875,
+    49.559375
+   ],
+   "s2_cols": 0.473991176060269,
+   "s2_rows": 6.003502894810268,
+   "se_pp": 0.8998259603161142,
+   "t": 2.7882996108698355,
+   "upper95_one_sided_pp": 0.593856959338144,
+   "v_hat": 0.8096867588588171
+  },
+  "verdict": "NON-INFERIOR"
+ },
+ "matched_wall_time": {
+  "cells": [
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1176,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     324,
+     9,
+     519,
+     3,
+     145
+    ],
+    "player": "rb_x5ab_fm_s1001@12000021",
+    "score_pp": 40.9,
+    "verdict": "OK",
+    "w": 812
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1148,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     298,
+     8,
+     544,
+     4,
+     146
+    ],
+    "player": "rb_x5ab_fm_s1001@12000021",
+    "score_pp": 42.3,
+    "verdict": "OK",
+    "w": 840
+   },
+   {
+    "aborted": 0,
+    "d": 6,
+    "l": 1148,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     289,
+     4,
+     566,
+     2,
+     139
+    ],
+    "player": "rb_x5ab_fm_s1001@12000021",
+    "score_pp": 42.449999999999996,
+    "verdict": "OK",
+    "w": 846
+   },
+   {
+    "aborted": 0,
+    "d": 4,
+    "l": 1242,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     379,
+     3,
+     481,
+     1,
+     136
+    ],
+    "player": "rb_x5ab_fm_s1001@12000021",
+    "score_pp": 37.8,
+    "verdict": "OK",
+    "w": 754
+   },
+   {
+    "aborted": 0,
+    "d": 10,
+    "l": 1151,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     313,
+     8,
+     517,
+     2,
+     160
+    ],
+    "player": "rb_x5ab_fm_s1001@12000021",
+    "score_pp": 42.199999999999996,
+    "verdict": "OK",
+    "w": 839
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 1170,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     314,
+     8,
+     534,
+     3,
+     141
+    ],
+    "player": "rb_x5ab_fm_s1001@12000021",
+    "score_pp": 41.225,
+    "verdict": "OK",
+    "w": 819
+   },
+   {
+    "aborted": 0,
+    "d": 7,
+    "l": 1182,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     330,
+     5,
+     517,
+     2,
+     146
+    ],
+    "player": "rb_x5ab_fm_s1001@12000021",
+    "score_pp": 40.725,
+    "verdict": "OK",
+    "w": 811
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1162,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     313,
+     6,
+     531,
+     4,
+     146
+    ],
+    "player": "rb_x5ab_fm_s1001@12000021",
+    "score_pp": 41.6,
+    "verdict": "OK",
+    "w": 826
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1170,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     310,
+     6,
+     545,
+     6,
+     133
+    ],
+    "player": "rb_x5ab_fm_s1002@12000070",
+    "score_pp": 41.15,
+    "verdict": "OK",
+    "w": 816
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 1107,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     273,
+     5,
+     556,
+     4,
+     162
+    ],
+    "player": "rb_x5ab_fm_s1002@12000070",
+    "score_pp": 44.425,
+    "verdict": "OK",
+    "w": 884
+   },
+   {
+    "aborted": 0,
+    "d": 10,
+    "l": 1102,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     283,
+     5,
+     531,
+     5,
+     176
+    ],
+    "player": "rb_x5ab_fm_s1002@12000070",
+    "score_pp": 44.65,
+    "verdict": "OK",
+    "w": 888
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 1158,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     321,
+     3,
+     513,
+     6,
+     157
+    ],
+    "player": "rb_x5ab_fm_s1002@12000070",
+    "score_pp": 41.875,
+    "verdict": "OK",
+    "w": 833
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1142,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     293,
+     10,
+     546,
+     6,
+     145
+    ],
+    "player": "rb_x5ab_fm_s1002@12000070",
+    "score_pp": 42.5,
+    "verdict": "OK",
+    "w": 842
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1133,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     298,
+     10,
+     527,
+     4,
+     161
+    ],
+    "player": "rb_x5ab_fm_s1002@12000070",
+    "score_pp": 43.0,
+    "verdict": "OK",
+    "w": 853
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 1072,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     253,
+     9,
+     557,
+     8,
+     173
+    ],
+    "player": "rb_x5ab_fm_s1002@12000070",
+    "score_pp": 45.975,
+    "verdict": "OK",
+    "w": 911
+   },
+   {
+    "aborted": 0,
+    "d": 6,
+    "l": 1127,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     288,
+     5,
+     546,
+     1,
+     160
+    ],
+    "player": "rb_x5ab_fm_s1002@12000070",
+    "score_pp": 43.5,
+    "verdict": "OK",
+    "w": 867
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 1107,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     288,
+     8,
+     523,
+     3,
+     178
+    ],
+    "player": "rb_x5ab_fm_s1003@12000119",
+    "score_pp": 44.375,
+    "verdict": "OK",
+    "w": 882
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1106,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     280,
+     6,
+     541,
+     6,
+     167
+    ],
+    "player": "rb_x5ab_fm_s1003@12000119",
+    "score_pp": 44.35,
+    "verdict": "OK",
+    "w": 880
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1106,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     291,
+     7,
+     519,
+     3,
+     180
+    ],
+    "player": "rb_x5ab_fm_s1003@12000119",
+    "score_pp": 44.35,
+    "verdict": "OK",
+    "w": 880
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1109,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     279,
+     8,
+     543,
+     5,
+     165
+    ],
+    "player": "rb_x5ab_fm_s1003@12000119",
+    "score_pp": 44.224999999999994,
+    "verdict": "OK",
+    "w": 878
+   },
+   {
+    "aborted": 0,
+    "d": 15,
+    "l": 1049,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     229,
+     12,
+     579,
+     3,
+     177
+    ],
+    "player": "rb_x5ab_fm_s1003@12000119",
+    "score_pp": 47.175,
+    "verdict": "OK",
+    "w": 936
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 1120,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     302,
+     5,
+     511,
+     4,
+     178
+    ],
+    "player": "rb_x5ab_fm_s1003@12000119",
+    "score_pp": 43.775,
+    "verdict": "OK",
+    "w": 871
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 1097,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     272,
+     6,
+     547,
+     5,
+     170
+    ],
+    "player": "rb_x5ab_fm_s1003@12000119",
+    "score_pp": 44.875,
+    "verdict": "OK",
+    "w": 892
+   },
+   {
+    "aborted": 0,
+    "d": 15,
+    "l": 1090,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     266,
+     8,
+     551,
+     5,
+     170
+    ],
+    "player": "rb_x5ab_fm_s1003@12000119",
+    "score_pp": 45.125,
+    "verdict": "OK",
+    "w": 895
+   },
+   {
+    "aborted": 0,
+    "d": 8,
+    "l": 1147,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     315,
+     6,
+     511,
+     2,
+     166
+    ],
+    "player": "rb_x5ab_fm_s1004@12000227",
+    "score_pp": 42.449999999999996,
+    "verdict": "OK",
+    "w": 845
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1132,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     290,
+     8,
+     544,
+     4,
+     154
+    ],
+    "player": "rb_x5ab_fm_s1004@12000227",
+    "score_pp": 43.1,
+    "verdict": "OK",
+    "w": 856
+   },
+   {
+    "aborted": 0,
+    "d": 15,
+    "l": 1110,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     290,
+     7,
+     523,
+     8,
+     172
+    ],
+    "player": "rb_x5ab_fm_s1004@12000227",
+    "score_pp": 44.125,
+    "verdict": "OK",
+    "w": 875
+   },
+   {
+    "aborted": 0,
+    "d": 18,
+    "l": 1172,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     316,
+     12,
+     528,
+     6,
+     138
+    ],
+    "player": "rb_x5ab_fm_s1004@12000227",
+    "score_pp": 40.949999999999996,
+    "verdict": "OK",
+    "w": 810
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 1101,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     286,
+     4,
+     525,
+     5,
+     180
+    ],
+    "player": "rb_x5ab_fm_s1004@12000227",
+    "score_pp": 44.725,
+    "verdict": "OK",
+    "w": 890
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1127,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     291,
+     6,
+     539,
+     8,
+     156
+    ],
+    "player": "rb_x5ab_fm_s1004@12000227",
+    "score_pp": 43.3,
+    "verdict": "OK",
+    "w": 859
+   },
+   {
+    "aborted": 0,
+    "d": 10,
+    "l": 1084,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     264,
+     5,
+     551,
+     5,
+     175
+    ],
+    "player": "rb_x5ab_fm_s1004@12000227",
+    "score_pp": 45.550000000000004,
+    "verdict": "OK",
+    "w": 906
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 1092,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     278,
+     8,
+     528,
+     3,
+     183
+    ],
+    "player": "rb_x5ab_fm_s1004@12000227",
+    "score_pp": 45.125,
+    "verdict": "OK",
+    "w": 897
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 1118,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     287,
+     5,
+     539,
+     4,
+     165
+    ],
+    "player": "rb_x5ab_fm_s1005@12000192",
+    "score_pp": 43.875,
+    "verdict": "OK",
+    "w": 873
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 1107,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     281,
+     6,
+     539,
+     3,
+     171
+    ],
+    "player": "rb_x5ab_fm_s1005@12000192",
+    "score_pp": 44.425,
+    "verdict": "OK",
+    "w": 884
+   },
+   {
+    "aborted": 0,
+    "d": 7,
+    "l": 1102,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     278,
+     6,
+     540,
+     1,
+     175
+    ],
+    "player": "rb_x5ab_fm_s1005@12000192",
+    "score_pp": 44.725,
+    "verdict": "OK",
+    "w": 891
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 1196,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     339,
+     4,
+     514,
+     5,
+     138
+    ],
+    "player": "rb_x5ab_fm_s1005@12000192",
+    "score_pp": 39.975,
+    "verdict": "OK",
+    "w": 795
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 1100,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     271,
+     8,
+     550,
+     3,
+     168
+    ],
+    "player": "rb_x5ab_fm_s1005@12000192",
+    "score_pp": 44.725,
+    "verdict": "OK",
+    "w": 889
+   },
+   {
+    "aborted": 0,
+    "d": 6,
+    "l": 1163,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     311,
+     4,
+     537,
+     2,
+     146
+    ],
+    "player": "rb_x5ab_fm_s1005@12000192",
+    "score_pp": 41.699999999999996,
+    "verdict": "OK",
+    "w": 831
+   },
+   {
+    "aborted": 0,
+    "d": 15,
+    "l": 1103,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     273,
+     11,
+     546,
+     4,
+     166
+    ],
+    "player": "rb_x5ab_fm_s1005@12000192",
+    "score_pp": 44.474999999999994,
+    "verdict": "OK",
+    "w": 882
+   },
+   {
+    "aborted": 0,
+    "d": 8,
+    "l": 1126,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     292,
+     3,
+     539,
+     5,
+     161
+    ],
+    "player": "rb_x5ab_fm_s1005@12000192",
+    "score_pp": 43.5,
+    "verdict": "OK",
+    "w": 866
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 1109,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     276,
+     9,
+     550,
+     6,
+     159
+    ],
+    "player": "rb_x5ab_fm_s1006b@12000042",
+    "score_pp": 44.074999999999996,
+    "verdict": "OK",
+    "w": 872
+   },
+   {
+    "aborted": 0,
+    "d": 30,
+    "l": 1092,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     264,
+     16,
+     550,
+     10,
+     160
+    ],
+    "player": "rb_x5ab_fm_s1006b@12000042",
+    "score_pp": 44.65,
+    "verdict": "OK",
+    "w": 878
+   },
+   {
+    "aborted": 0,
+    "d": 18,
+    "l": 1120,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     293,
+     10,
+     525,
+     6,
+     166
+    ],
+    "player": "rb_x5ab_fm_s1006b@12000042",
+    "score_pp": 43.55,
+    "verdict": "OK",
+    "w": 862
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 1179,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     329,
+     12,
+     510,
+     3,
+     146
+    ],
+    "player": "rb_x5ab_fm_s1006b@12000042",
+    "score_pp": 40.625,
+    "verdict": "OK",
+    "w": 804
+   },
+   {
+    "aborted": 0,
+    "d": 24,
+    "l": 1113,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     278,
+     13,
+     546,
+     7,
+     156
+    ],
+    "player": "rb_x5ab_fm_s1006b@12000042",
+    "score_pp": 43.75,
+    "verdict": "OK",
+    "w": 863
+   },
+   {
+    "aborted": 0,
+    "d": 21,
+    "l": 1137,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     291,
+     11,
+     544,
+     10,
+     144
+    ],
+    "player": "rb_x5ab_fm_s1006b@12000042",
+    "score_pp": 42.625,
+    "verdict": "OK",
+    "w": 842
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1104,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     275,
+     8,
+     547,
+     4,
+     166
+    ],
+    "player": "rb_x5ab_fm_s1006b@12000042",
+    "score_pp": 44.45,
+    "verdict": "OK",
+    "w": 882
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 1168,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     322,
+     7,
+     519,
+     8,
+     144
+    ],
+    "player": "rb_x5ab_fm_s1006b@12000042",
+    "score_pp": 41.125,
+    "verdict": "OK",
+    "w": 813
+   },
+   {
+    "aborted": 0,
+    "d": 24,
+    "l": 1078,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     274,
+     14,
+     518,
+     6,
+     188
+    ],
+    "player": "rb_x5ab_fm_s1007@12000026",
+    "score_pp": 45.5,
+    "verdict": "OK",
+    "w": 898
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1063,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     250,
+     9,
+     554,
+     7,
+     180
+    ],
+    "player": "rb_x5ab_fm_s1007@12000026",
+    "score_pp": 46.45,
+    "verdict": "OK",
+    "w": 921
+   },
+   {
+    "aborted": 0,
+    "d": 15,
+    "l": 1049,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     243,
+     7,
+     557,
+     6,
+     187
+    ],
+    "player": "rb_x5ab_fm_s1007@12000026",
+    "score_pp": 47.175,
+    "verdict": "OK",
+    "w": 936
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1087,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     267,
+     10,
+     543,
+     6,
+     174
+    ],
+    "player": "rb_x5ab_fm_s1007@12000026",
+    "score_pp": 45.25,
+    "verdict": "OK",
+    "w": 897
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 1084,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     254,
+     7,
+     569,
+     2,
+     168
+    ],
+    "player": "rb_x5ab_fm_s1007@12000026",
+    "score_pp": 45.574999999999996,
+    "verdict": "OK",
+    "w": 907
+   },
+   {
+    "aborted": 0,
+    "d": 15,
+    "l": 1064,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     268,
+     10,
+     519,
+     3,
+     200
+    ],
+    "player": "rb_x5ab_fm_s1007@12000026",
+    "score_pp": 46.425,
+    "verdict": "OK",
+    "w": 921
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1018,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     249,
+     3,
+     519,
+     7,
+     222
+    ],
+    "player": "rb_x5ab_fm_s1007@12000026",
+    "score_pp": 48.75,
+    "verdict": "OK",
+    "w": 968
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 1079,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     252,
+     9,
+     566,
+     2,
+     171
+    ],
+    "player": "rb_x5ab_fm_s1007@12000026",
+    "score_pp": 45.775,
+    "verdict": "OK",
+    "w": 910
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 1093,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     259,
+     11,
+     564,
+     8,
+     158
+    ],
+    "player": "rb_x5ab_fm_s1008@12000086",
+    "score_pp": 44.875,
+    "verdict": "OK",
+    "w": 888
+   },
+   {
+    "aborted": 0,
+    "d": 21,
+    "l": 1037,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     239,
+     7,
+     557,
+     4,
+     193
+    ],
+    "player": "rb_x5ab_fm_s1008@12000086",
+    "score_pp": 47.625,
+    "verdict": "OK",
+    "w": 942
+   },
+   {
+    "aborted": 0,
+    "d": 20,
+    "l": 1052,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     242,
+     8,
+     564,
+     4,
+     182
+    ],
+    "player": "rb_x5ab_fm_s1008@12000086",
+    "score_pp": 46.9,
+    "verdict": "OK",
+    "w": 928
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 1074,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     251,
+     12,
+     560,
+     5,
+     172
+    ],
+    "player": "rb_x5ab_fm_s1008@12000086",
+    "score_pp": 45.875,
+    "verdict": "OK",
+    "w": 909
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1011,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     225,
+     7,
+     555,
+     7,
+     206
+    ],
+    "player": "rb_x5ab_fm_s1008@12000086",
+    "score_pp": 49.05,
+    "verdict": "OK",
+    "w": 973
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1066,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     266,
+     9,
+     525,
+     4,
+     196
+    ],
+    "player": "rb_x5ab_fm_s1008@12000086",
+    "score_pp": 46.375,
+    "verdict": "OK",
+    "w": 921
+   },
+   {
+    "aborted": 0,
+    "d": 21,
+    "l": 1003,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     235,
+     14,
+     521,
+     3,
+     227
+    ],
+    "player": "rb_x5ab_fm_s1008@12000086",
+    "score_pp": 49.325,
+    "verdict": "OK",
+    "w": 976
+   },
+   {
+    "aborted": 0,
+    "d": 20,
+    "l": 1096,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     259,
+     13,
+     567,
+     3,
+     158
+    ],
+    "player": "rb_x5ab_fm_s1008@12000086",
+    "score_pp": 44.7,
+    "verdict": "OK",
+    "w": 884
+   }
+  ],
+  "col_sha256": [
+   "5ff8fcae66fe5a2fd99198f5492153070ed5249cbdaad2283c062d4d94a8f4f9",
+   "ec6541ee0eddddc94d07d3f223a8bf1ce9e5f8346b53c88d24d981c96307556a",
+   "7b72986ba67b614b9f33ab7aa84d86dfe251b5f37e409d4a7ca33575cf23a243",
+   "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4",
+   "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5",
+   "403cca9558e57f0b4d915e30ce7083966f4f1c3240fe3d036b27a9c8b9d5378a",
+   "7f40b23fb0f22a60c9e817e220f8bc93d4d7fa5ee4530bb1caaf1a72d28402a5",
+   "e251b30d1e51bb866c5ec9f218fbf6621443a6f6577abdefd606d127795875e0"
+  ],
+  "cols": [
+   "rb_x5ab_blob_s1001/final_model.zip",
+   "rb_x5ab_blob_s1002/final_model.zip",
+   "rb_x5ab_blob_s1003/final_model.zip",
+   "rb_x5ab_blob_s1004/final_model.zip",
+   "rb_x5ab_blob_s1005/final_model.zip",
+   "rb_x5ab_blob_s1006/final_model.zip",
+   "rb_x5ab_blob_s1007/final_model.zip",
+   "rb_x5ab_blob_s1008/final_model.zip"
+  ],
+  "decision": {
+   "boundary": 1.874,
+   "label": "INFERIOR",
+   "look": 3,
+   "near_boundary": [],
+   "outcome": "NOT DETECTED",
+   "reasons": [],
+   "stat": {
+    "ci95_pp": [
+     -7.542095966299043,
+     -4.27899778370096
+    ],
+    "col_means_pp": [
+     43.4,
+     44.665625,
+     44.740625,
+     42.071875,
+     44.9625,
+     43.553125,
+     45.515625,
+     43.80625
+    ],
+    "delta_hat_pp": -5.910546875000001,
+    "df": 14,
+    "h_pp": [
+     [
+      40.9,
+      42.3,
+      42.449999999999996,
+      37.8,
+      42.199999999999996,
+      41.225,
+      40.725,
+      41.6
+     ],
+     [
+      41.15,
+      44.425,
+      44.65,
+      41.875,
+      42.5,
+      43.0,
+      45.975,
+      43.5
+     ],
+     [
+      44.375,
+      44.35,
+      44.35,
+      44.224999999999994,
+      47.175,
+      43.775,
+      44.875,
+      45.125
+     ],
+     [
+      42.449999999999996,
+      43.1,
+      44.125,
+      40.949999999999996,
+      44.725,
+      43.3,
+      45.550000000000004,
+      45.125
+     ],
+     [
+      43.875,
+      44.425,
+      44.725,
+      39.975,
+      44.725,
+      41.699999999999996,
+      44.474999999999994,
+      43.5
+     ],
+     [
+      44.074999999999996,
+      44.65,
+      43.55,
+      40.625,
+      43.75,
+      42.625,
+      44.45,
+      41.125
+     ],
+     [
+      45.5,
+      46.45,
+      47.175,
+      45.25,
+      45.574999999999996,
+      46.425,
+      48.75,
+      45.775
+     ],
+     [
+      44.875,
+      47.625,
+      46.9,
+      45.875,
+      49.05,
+      46.375,
+      49.325,
+      44.7
+     ]
+    ],
+    "margin_pp": 3.5,
+    "n": 8,
+    "row_means_pp": [
+     41.15,
+     43.384375,
+     44.78125,
+     43.665625,
+     43.425,
+     43.10625,
+     46.3625,
+     46.840625
+    ],
+    "s2_cols": 1.209427839006697,
+    "s2_rows": 3.4199440220424124,
+    "se_pp": 0.7607045961680123,
+    "t": -3.168834376896019,
+    "upper95_one_sided_pp": -4.570710159438736,
+    "v_hat": 0.5786714826311387
+   }
+  },
+  "family": "x5ab_strength_wall",
+  "n_cells": {
+   "x5ab_look1_wall": 9,
+   "x5ab_look2_wall": 16,
+   "x5ab_look3_wall": 39
+  },
+  "regime_id": "adfdbee824c9eb0a",
+  "registered": true,
+  "requests": [
+   "x5ab_look1_wall",
+   "x5ab_look2_wall",
+   "x5ab_look3_wall"
+  ],
+  "row_sha256": [
+   "844057ac830c96b20c987bdcbcde955c717bbad32513cc8e4de99519095b452d",
+   "731a01813f63d1b0e707b27c1148df0ff2a2e8e29a6af00b86f8246cf5bf7d5b",
+   "2cf7e1ae064672bd6fb0954e0b0a714b25006d65164893afb6251509b0e9ece9",
+   "94dc025265633685a79e501d1d9a2624179ed6413364d17a4495b203cec7cd31",
+   "b672772f5ab7fc5edb830b0443cb91af7138d33134cfcfc66eed66933d48a6b1",
+   "53adcc3e066d6ef1d83736704fbe46f931b5e9dea7a5b389db1e35d6330bcb8d",
+   "bb29c8522bf424815e88d88986aba2e8ec62c3ea160f1214ad3378016e0f7063",
+   "d901a5520aecc5b1b1ef8bc9cfbb5d031f735d16af7d563d29d964bf1b1e2ff4"
+  ],
+  "rows": [
+   "rb_x5ab_fm_s1001/checkpoints/checkpoint_12000021_steps.zip",
+   "rb_x5ab_fm_s1002/checkpoints/checkpoint_12000070_steps.zip",
+   "rb_x5ab_fm_s1003/checkpoints/checkpoint_12000119_steps.zip",
+   "rb_x5ab_fm_s1004/checkpoints/checkpoint_12000227_steps.zip",
+   "rb_x5ab_fm_s1005/checkpoints/checkpoint_12000192_steps.zip",
+   "rb_x5ab_fm_s1006b/checkpoints/checkpoint_12000042_steps.zip",
+   "rb_x5ab_fm_s1007/checkpoints/checkpoint_12000026_steps.zip",
+   "rb_x5ab_fm_s1008/checkpoints/checkpoint_12000086_steps.zip"
+  ],
+  "stat_shown": {
+   "ci95_pp": [
+    -7.542095966299043,
+    -4.27899778370096
+   ],
+   "col_means_pp": [
+    43.4,
+    44.665625,
+    44.740625,
+    42.071875,
+    44.9625,
+    43.553125,
+    45.515625,
+    43.80625
+   ],
+   "delta_hat_pp": -5.910546875000001,
+   "df": 14,
+   "h_pp": [
+    [
+     40.9,
+     42.3,
+     42.449999999999996,
+     37.8,
+     42.199999999999996,
+     41.225,
+     40.725,
+     41.6
+    ],
+    [
+     41.15,
+     44.425,
+     44.65,
+     41.875,
+     42.5,
+     43.0,
+     45.975,
+     43.5
+    ],
+    [
+     44.375,
+     44.35,
+     44.35,
+     44.224999999999994,
+     47.175,
+     43.775,
+     44.875,
+     45.125
+    ],
+    [
+     42.449999999999996,
+     43.1,
+     44.125,
+     40.949999999999996,
+     44.725,
+     43.3,
+     45.550000000000004,
+     45.125
+    ],
+    [
+     43.875,
+     44.425,
+     44.725,
+     39.975,
+     44.725,
+     41.699999999999996,
+     44.474999999999994,
+     43.5
+    ],
+    [
+     44.074999999999996,
+     44.65,
+     43.55,
+     40.625,
+     43.75,
+     42.625,
+     44.45,
+     41.125
+    ],
+    [
+     45.5,
+     46.45,
+     47.175,
+     45.25,
+     45.574999999999996,
+     46.425,
+     48.75,
+     45.775
+    ],
+    [
+     44.875,
+     47.625,
+     46.9,
+     45.875,
+     49.05,
+     46.375,
+     49.325,
+     44.7
+    ]
+   ],
+   "margin_pp": 3.5,
+   "n": 8,
+   "row_means_pp": [
+    41.15,
+    43.384375,
+    44.78125,
+    43.665625,
+    43.425,
+    43.10625,
+    46.3625,
+    46.840625
+   ],
+   "s2_cols": 1.209427839006697,
+   "s2_rows": 3.4199440220424124,
+   "se_pp": 0.7607045961680123,
+   "t": -3.168834376896019,
+   "upper95_one_sided_pp": -4.570710159438736,
+   "v_hat": 0.5786714826311387
+  },
+  "verdict": "NOT DETECTED, INFERIOR"
+ },
+ "min_pairs": 1000,
+ "owner_rule": "X5 (fixed_mass) is ADOPTED unless look 3's MATCHED-STEPS read is INFERIOR (the upper one-sided 95 % bound of \u0394 < \u2212\u03b4 = \u22123.5 pp); NON-INFERIOR adopts; NOT DETECTED without INFERIOR adopts",
+ "owner_rule_implies": "matched steps NON-INFERIOR (not INFERIOR): under the owner's pre-committed rule, X5 is adopted \u2014 the owner's decision to take; purpose metric (1) is DUE (strength NON-INFERIOR)",
+ "preconditions": [],
+ "run_names": {
+  "blob_s1001": "rb_x5ab_blob_s1001",
+  "blob_s1002": "rb_x5ab_blob_s1002",
+  "blob_s1003": "rb_x5ab_blob_s1003",
+  "blob_s1004": "rb_x5ab_blob_s1004",
+  "blob_s1005": "rb_x5ab_blob_s1005",
+  "blob_s1006": "rb_x5ab_blob_s1006",
+  "blob_s1007": "rb_x5ab_blob_s1007",
+  "blob_s1008": "rb_x5ab_blob_s1008",
+  "fm_s1001": "rb_x5ab_fm_s1001",
+  "fm_s1002": "rb_x5ab_fm_s1002",
+  "fm_s1003": "rb_x5ab_fm_s1003",
+  "fm_s1004": "rb_x5ab_fm_s1004",
+  "fm_s1005": "rb_x5ab_fm_s1005",
+  "fm_s1006": "rb_x5ab_fm_s1006b",
+  "fm_s1007": "rb_x5ab_fm_s1007",
+  "fm_s1008": "rb_x5ab_fm_s1008"
+ },
+ "seeds": [
+  1001,
+  1002,
+  1003,
+  1004,
+  1005,
+  1006,
+  1007,
+  1008
+ ],
+ "sensitivity_wall_13M": {
+  "cells": [
+   {
+    "aborted": 0,
+    "d": 10,
+    "l": 1130,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     297,
+     4,
+     533,
+     4,
+     162
+    ],
+    "player": "rb_x5ab_fm_s1001@13000083",
+    "score_pp": 43.25,
+    "verdict": "OK",
+    "w": 860
+   },
+   {
+    "aborted": 0,
+    "d": 8,
+    "l": 1089,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     261,
+     5,
+     562,
+     3,
+     169
+    ],
+    "player": "rb_x5ab_fm_s1001@13000083",
+    "score_pp": 45.35,
+    "verdict": "OK",
+    "w": 903
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1096,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     267,
+     7,
+     556,
+     3,
+     167
+    ],
+    "player": "rb_x5ab_fm_s1001@13000083",
+    "score_pp": 44.9,
+    "verdict": "OK",
+    "w": 892
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1174,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     328,
+     9,
+     509,
+     3,
+     151
+    ],
+    "player": "rb_x5ab_fm_s1001@13000083",
+    "score_pp": 41.0,
+    "verdict": "OK",
+    "w": 814
+   },
+   {
+    "aborted": 0,
+    "d": 8,
+    "l": 1134,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     292,
+     5,
+     545,
+     3,
+     155
+    ],
+    "player": "rb_x5ab_fm_s1001@13000083",
+    "score_pp": 43.1,
+    "verdict": "OK",
+    "w": 858
+   },
+   {
+    "aborted": 0,
+    "d": 8,
+    "l": 1117,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     290,
+     5,
+     532,
+     3,
+     170
+    ],
+    "player": "rb_x5ab_fm_s1001@13000083",
+    "score_pp": 43.95,
+    "verdict": "OK",
+    "w": 875
+   },
+   {
+    "aborted": 0,
+    "d": 20,
+    "l": 1137,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     282,
+     14,
+     559,
+     6,
+     139
+    ],
+    "player": "rb_x5ab_fm_s1001@13000083",
+    "score_pp": 42.65,
+    "verdict": "OK",
+    "w": 843
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 1156,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     313,
+     7,
+     523,
+     4,
+     153
+    ],
+    "player": "rb_x5ab_fm_s1001@13000083",
+    "score_pp": 41.925000000000004,
+    "verdict": "OK",
+    "w": 833
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1110,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     284,
+     4,
+     539,
+     8,
+     165
+    ],
+    "player": "rb_x5ab_fm_s1002@13000134",
+    "score_pp": 44.15,
+    "verdict": "OK",
+    "w": 876
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 1073,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     257,
+     11,
+     549,
+     4,
+     179
+    ],
+    "player": "rb_x5ab_fm_s1002@13000134",
+    "score_pp": 45.925,
+    "verdict": "OK",
+    "w": 910
+   },
+   {
+    "aborted": 0,
+    "d": 18,
+    "l": 1080,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     256,
+     12,
+     557,
+     4,
+     171
+    ],
+    "player": "rb_x5ab_fm_s1002@13000134",
+    "score_pp": 45.550000000000004,
+    "verdict": "OK",
+    "w": 902
+   },
+   {
+    "aborted": 0,
+    "d": 21,
+    "l": 1110,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     287,
+     13,
+     523,
+     8,
+     169
+    ],
+    "player": "rb_x5ab_fm_s1002@13000134",
+    "score_pp": 43.974999999999994,
+    "verdict": "OK",
+    "w": 869
+   },
+   {
+    "aborted": 0,
+    "d": 22,
+    "l": 1068,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     279,
+     9,
+     503,
+     9,
+     200
+    ],
+    "player": "rb_x5ab_fm_s1002@13000134",
+    "score_pp": 46.050000000000004,
+    "verdict": "OK",
+    "w": 910
+   },
+   {
+    "aborted": 0,
+    "d": 26,
+    "l": 1125,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     270,
+     14,
+     573,
+     8,
+     135
+    ],
+    "player": "rb_x5ab_fm_s1002@13000134",
+    "score_pp": 43.1,
+    "verdict": "OK",
+    "w": 849
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1068,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     264,
+     7,
+     534,
+     5,
+     190
+    ],
+    "player": "rb_x5ab_fm_s1002@13000134",
+    "score_pp": 46.25,
+    "verdict": "OK",
+    "w": 918
+   },
+   {
+    "aborted": 0,
+    "d": 18,
+    "l": 1114,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     289,
+     10,
+     526,
+     8,
+     167
+    ],
+    "player": "rb_x5ab_fm_s1002@13000134",
+    "score_pp": 43.85,
+    "verdict": "OK",
+    "w": 868
+   },
+   {
+    "aborted": 0,
+    "d": 23,
+    "l": 1026,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     245,
+     9,
+     529,
+     10,
+     207
+    ],
+    "player": "rb_x5ab_fm_s1003@13000052",
+    "score_pp": 48.125,
+    "verdict": "OK",
+    "w": 951
+   },
+   {
+    "aborted": 0,
+    "d": 6,
+    "l": 1100,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     272,
+     3,
+     553,
+     3,
+     169
+    ],
+    "player": "rb_x5ab_fm_s1003@13000052",
+    "score_pp": 44.85,
+    "verdict": "OK",
+    "w": 894
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1043,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     249,
+     5,
+     541,
+     5,
+     200
+    ],
+    "player": "rb_x5ab_fm_s1003@13000052",
+    "score_pp": 47.55,
+    "verdict": "OK",
+    "w": 945
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 1097,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     278,
+     11,
+     530,
+     8,
+     173
+    ],
+    "player": "rb_x5ab_fm_s1003@13000052",
+    "score_pp": 44.675,
+    "verdict": "OK",
+    "w": 884
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 1070,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     246,
+     7,
+     571,
+     2,
+     174
+    ],
+    "player": "rb_x5ab_fm_s1003@13000052",
+    "score_pp": 46.275,
+    "verdict": "OK",
+    "w": 921
+   },
+   {
+    "aborted": 0,
+    "d": 3,
+    "l": 1071,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     261,
+     3,
+     546,
+     0,
+     190
+    ],
+    "player": "rb_x5ab_fm_s1003@13000052",
+    "score_pp": 46.375,
+    "verdict": "OK",
+    "w": 926
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1061,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     263,
+     4,
+     531,
+     8,
+     194
+    ],
+    "player": "rb_x5ab_fm_s1003@13000052",
+    "score_pp": 46.650000000000006,
+    "verdict": "OK",
+    "w": 927
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1077,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     270,
+     8,
+     529,
+     4,
+     189
+    ],
+    "player": "rb_x5ab_fm_s1003@13000052",
+    "score_pp": 45.85,
+    "verdict": "OK",
+    "w": 911
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 1040,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     233,
+     6,
+     568,
+     3,
+     190
+    ],
+    "player": "rb_x5ab_fm_s1004@13000095",
+    "score_pp": 47.775,
+    "verdict": "OK",
+    "w": 951
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1002,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     220,
+     7,
+     555,
+     9,
+     209
+    ],
+    "player": "rb_x5ab_fm_s1004@13000095",
+    "score_pp": 49.5,
+    "verdict": "OK",
+    "w": 982
+   },
+   {
+    "aborted": 0,
+    "d": 9,
+    "l": 1034,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     243,
+     6,
+     542,
+     3,
+     206
+    ],
+    "player": "rb_x5ab_fm_s1004@13000095",
+    "score_pp": 48.075,
+    "verdict": "OK",
+    "w": 957
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 1119,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     279,
+     8,
+     553,
+     9,
+     151
+    ],
+    "player": "rb_x5ab_fm_s1004@13000095",
+    "score_pp": 43.625,
+    "verdict": "OK",
+    "w": 864
+   },
+   {
+    "aborted": 0,
+    "d": 15,
+    "l": 1048,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     261,
+     10,
+     516,
+     5,
+     208
+    ],
+    "player": "rb_x5ab_fm_s1004@13000095",
+    "score_pp": 47.225,
+    "verdict": "OK",
+    "w": 937
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1042,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     240,
+     9,
+     554,
+     5,
+     192
+    ],
+    "player": "rb_x5ab_fm_s1004@13000095",
+    "score_pp": 47.5,
+    "verdict": "OK",
+    "w": 942
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 1026,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     230,
+     13,
+     553,
+     6,
+     198
+    ],
+    "player": "rb_x5ab_fm_s1004@13000095",
+    "score_pp": 48.225,
+    "verdict": "OK",
+    "w": 955
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1032,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     226,
+     7,
+     574,
+     7,
+     186
+    ],
+    "player": "rb_x5ab_fm_s1004@13000095",
+    "score_pp": 48.0,
+    "verdict": "OK",
+    "w": 952
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1149,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     310,
+     6,
+     524,
+     5,
+     155
+    ],
+    "player": "rb_x5ab_fm_s1005@13000125",
+    "score_pp": 42.225,
+    "verdict": "OK",
+    "w": 838
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 1091,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     266,
+     12,
+     547,
+     7,
+     168
+    ],
+    "player": "rb_x5ab_fm_s1005@13000125",
+    "score_pp": 44.975,
+    "verdict": "OK",
+    "w": 890
+   },
+   {
+    "aborted": 0,
+    "d": 10,
+    "l": 1070,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     249,
+     5,
+     567,
+     5,
+     174
+    ],
+    "player": "rb_x5ab_fm_s1005@13000125",
+    "score_pp": 46.25,
+    "verdict": "OK",
+    "w": 920
+   },
+   {
+    "aborted": 0,
+    "d": 18,
+    "l": 1144,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     298,
+     15,
+     533,
+     3,
+     151
+    ],
+    "player": "rb_x5ab_fm_s1005@13000125",
+    "score_pp": 42.35,
+    "verdict": "OK",
+    "w": 838
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1123,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     295,
+     7,
+     526,
+     7,
+     165
+    ],
+    "player": "rb_x5ab_fm_s1005@13000125",
+    "score_pp": 43.5,
+    "verdict": "OK",
+    "w": 863
+   },
+   {
+    "aborted": 0,
+    "d": 17,
+    "l": 1102,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     264,
+     11,
+     563,
+     6,
+     156
+    ],
+    "player": "rb_x5ab_fm_s1005@13000125",
+    "score_pp": 44.474999999999994,
+    "verdict": "OK",
+    "w": 881
+   },
+   {
+    "aborted": 0,
+    "d": 20,
+    "l": 1092,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     260,
+     13,
+     559,
+     7,
+     161
+    ],
+    "player": "rb_x5ab_fm_s1005@13000125",
+    "score_pp": 44.9,
+    "verdict": "OK",
+    "w": 888
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1091,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     260,
+     4,
+     568,
+     6,
+     162
+    ],
+    "player": "rb_x5ab_fm_s1005@13000125",
+    "score_pp": 45.15,
+    "verdict": "OK",
+    "w": 897
+   },
+   {
+    "aborted": 0,
+    "d": 26,
+    "l": 1069,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     265,
+     13,
+     529,
+     7,
+     186
+    ],
+    "player": "rb_x5ab_fm_s1006b@13000198",
+    "score_pp": 45.9,
+    "verdict": "OK",
+    "w": 905
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1076,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     263,
+     4,
+     546,
+     9,
+     178
+    ],
+    "player": "rb_x5ab_fm_s1006b@13000198",
+    "score_pp": 45.875,
+    "verdict": "OK",
+    "w": 911
+   },
+   {
+    "aborted": 0,
+    "d": 20,
+    "l": 1031,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     241,
+     6,
+     544,
+     12,
+     197
+    ],
+    "player": "rb_x5ab_fm_s1006b@13000198",
+    "score_pp": 47.949999999999996,
+    "verdict": "OK",
+    "w": 949
+   },
+   {
+    "aborted": 0,
+    "d": 23,
+    "l": 1039,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     256,
+     12,
+     517,
+     7,
+     208
+    ],
+    "player": "rb_x5ab_fm_s1006b@13000198",
+    "score_pp": 47.475,
+    "verdict": "OK",
+    "w": 938
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 1079,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     265,
+     7,
+     542,
+     4,
+     182
+    ],
+    "player": "rb_x5ab_fm_s1006b@13000198",
+    "score_pp": 45.775,
+    "verdict": "OK",
+    "w": 910
+   },
+   {
+    "aborted": 0,
+    "d": 11,
+    "l": 1057,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     255,
+     6,
+     541,
+     5,
+     193
+    ],
+    "player": "rb_x5ab_fm_s1006b@13000198",
+    "score_pp": 46.875,
+    "verdict": "OK",
+    "w": 932
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1055,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     247,
+     6,
+     556,
+     6,
+     185
+    ],
+    "player": "rb_x5ab_fm_s1006b@13000198",
+    "score_pp": 46.9,
+    "verdict": "OK",
+    "w": 931
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1081,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     260,
+     7,
+     555,
+     5,
+     173
+    ],
+    "player": "rb_x5ab_fm_s1006b@13000198",
+    "score_pp": 45.6,
+    "verdict": "OK",
+    "w": 905
+   },
+   {
+    "aborted": 0,
+    "d": 15,
+    "l": 1040,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     243,
+     9,
+     545,
+     6,
+     197
+    ],
+    "player": "rb_x5ab_fm_s1007@13000058",
+    "score_pp": 47.625,
+    "verdict": "OK",
+    "w": 945
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1045,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     236,
+     11,
+     562,
+     3,
+     188
+    ],
+    "player": "rb_x5ab_fm_s1007@13000058",
+    "score_pp": 47.4,
+    "verdict": "OK",
+    "w": 941
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 1031,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     236,
+     14,
+     545,
+     5,
+     200
+    ],
+    "player": "rb_x5ab_fm_s1007@13000058",
+    "score_pp": 47.975,
+    "verdict": "OK",
+    "w": 950
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1044,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     234,
+     11,
+     565,
+     2,
+     188
+    ],
+    "player": "rb_x5ab_fm_s1007@13000058",
+    "score_pp": 47.475,
+    "verdict": "OK",
+    "w": 943
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1021,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     241,
+     6,
+     534,
+     8,
+     211
+    ],
+    "player": "rb_x5ab_fm_s1007@13000058",
+    "score_pp": 48.55,
+    "verdict": "OK",
+    "w": 963
+   },
+   {
+    "aborted": 0,
+    "d": 20,
+    "l": 1056,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     247,
+     8,
+     555,
+     10,
+     180
+    ],
+    "player": "rb_x5ab_fm_s1007@13000058",
+    "score_pp": 46.7,
+    "verdict": "OK",
+    "w": 924
+   },
+   {
+    "aborted": 0,
+    "d": 7,
+    "l": 1029,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     239,
+     2,
+     549,
+     5,
+     205
+    ],
+    "player": "rb_x5ab_fm_s1007@13000058",
+    "score_pp": 48.375,
+    "verdict": "OK",
+    "w": 964
+   },
+   {
+    "aborted": 0,
+    "d": 13,
+    "l": 1035,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     241,
+     8,
+     545,
+     5,
+     201
+    ],
+    "player": "rb_x5ab_fm_s1007@13000058",
+    "score_pp": 47.925000000000004,
+    "verdict": "OK",
+    "w": 952
+   },
+   {
+    "aborted": 0,
+    "d": 21,
+    "l": 1060,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1001@15047954",
+    "pairs": [
+     257,
+     14,
+     533,
+     5,
+     191
+    ],
+    "player": "rb_x5ab_fm_s1008@13000095",
+    "score_pp": 46.475,
+    "verdict": "OK",
+    "w": 919
+   },
+   {
+    "aborted": 0,
+    "d": 19,
+    "l": 1038,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1002@15047525",
+    "pairs": [
+     242,
+     10,
+     545,
+     7,
+     196
+    ],
+    "player": "rb_x5ab_fm_s1008@13000095",
+    "score_pp": 47.625,
+    "verdict": "OK",
+    "w": 943
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1060,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1003@15047619",
+    "pairs": [
+     263,
+     4,
+     531,
+     10,
+     192
+    ],
+    "player": "rb_x5ab_fm_s1008@13000095",
+    "score_pp": 46.6,
+    "verdict": "OK",
+    "w": 924
+   },
+   {
+    "aborted": 0,
+    "d": 24,
+    "l": 1085,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1004@15047200",
+    "pairs": [
+     278,
+     8,
+     527,
+     4,
+     183
+    ],
+    "player": "rb_x5ab_fm_s1008@13000095",
+    "score_pp": 45.15,
+    "verdict": "OK",
+    "w": 891
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1016,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1005@15046550",
+    "pairs": [
+     241,
+     6,
+     528,
+     8,
+     217
+    ],
+    "player": "rb_x5ab_fm_s1008@13000095",
+    "score_pp": 48.85,
+    "verdict": "OK",
+    "w": 970
+   },
+   {
+    "aborted": 0,
+    "d": 12,
+    "l": 1089,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1006@15047472",
+    "pairs": [
+     250,
+     6,
+     583,
+     6,
+     155
+    ],
+    "player": "rb_x5ab_fm_s1008@13000095",
+    "score_pp": 45.25,
+    "verdict": "OK",
+    "w": 899
+   },
+   {
+    "aborted": 0,
+    "d": 16,
+    "l": 1031,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1007@15047535",
+    "pairs": [
+     241,
+     7,
+     543,
+     7,
+     202
+    ],
+    "player": "rb_x5ab_fm_s1008@13000095",
+    "score_pp": 48.05,
+    "verdict": "OK",
+    "w": 953
+   },
+   {
+    "aborted": 0,
+    "d": 14,
+    "l": 1092,
+    "n_pairs": 1000,
+    "opponent": "rb_x5ab_blob_s1008@15048279",
+    "pairs": [
+     272,
+     6,
+     542,
+     8,
+     172
+    ],
+    "player": "rb_x5ab_fm_s1008@13000095",
+    "score_pp": 45.050000000000004,
+    "verdict": "OK",
+    "w": 894
+   }
+  ],
+  "col_sha256": [
+   "5ff8fcae66fe5a2fd99198f5492153070ed5249cbdaad2283c062d4d94a8f4f9",
+   "ec6541ee0eddddc94d07d3f223a8bf1ce9e5f8346b53c88d24d981c96307556a",
+   "7b72986ba67b614b9f33ab7aa84d86dfe251b5f37e409d4a7ca33575cf23a243",
+   "495c33c2fc4cef2cb9af3f01613b1f6a5a1dc05df5e2c53f68b6491a932e39b4",
+   "036c83362cb0f43e4a6b8cb1a9d4f8a22a9f818503bc5010c1f32b3fa09d66c5",
+   "403cca9558e57f0b4d915e30ce7083966f4f1c3240fe3d036b27a9c8b9d5378a",
+   "7f40b23fb0f22a60c9e817e220f8bc93d4d7fa5ee4530bb1caaf1a72d28402a5",
+   "e251b30d1e51bb866c5ec9f218fbf6621443a6f6577abdefd606d127795875e0"
+  ],
+  "cols": [
+   "rb_x5ab_blob_s1001/final_model.zip",
+   "rb_x5ab_blob_s1002/final_model.zip",
+   "rb_x5ab_blob_s1003/final_model.zip",
+   "rb_x5ab_blob_s1004/final_model.zip",
+   "rb_x5ab_blob_s1005/final_model.zip",
+   "rb_x5ab_blob_s1006/final_model.zip",
+   "rb_x5ab_blob_s1007/final_model.zip",
+   "rb_x5ab_blob_s1008/final_model.zip"
+  ],
+  "decision": {
+   "boundary": 1.874,
+   "label": null,
+   "look": 3,
+   "near_boundary": [],
+   "outcome": "NOT DETECTED",
+   "reasons": [],
+   "stat": {
+    "ci95_pp": [
+     -5.461294828188935,
+     -2.7730801718110647
+    ],
+    "col_means_pp": [
+     45.690625,
+     46.4375,
+     46.85625,
+     44.465625,
+     46.165625,
+     45.528125,
+     46.5,
+     45.41875
+    ],
+    "delta_hat_pp": -4.1171875,
+    "df": 14,
+    "h_pp": [
+     [
+      43.25,
+      45.35,
+      44.9,
+      41.0,
+      43.1,
+      43.95,
+      42.65,
+      41.925000000000004
+     ],
+     [
+      44.15,
+      45.925,
+      45.550000000000004,
+      43.974999999999994,
+      46.050000000000004,
+      43.1,
+      46.25,
+      43.85
+     ],
+     [
+      48.125,
+      44.85,
+      47.55,
+      44.675,
+      46.275,
+      46.375,
+      46.650000000000006,
+      45.85
+     ],
+     [
+      47.775,
+      49.5,
+      48.075,
+      43.625,
+      47.225,
+      47.5,
+      48.225,
+      48.0
+     ],
+     [
+      42.225,
+      44.975,
+      46.25,
+      42.35,
+      43.5,
+      44.474999999999994,
+      44.9,
+      45.15
+     ],
+     [
+      45.9,
+      45.875,
+      47.949999999999996,
+      47.475,
+      45.775,
+      46.875,
+      46.9,
+      45.6
+     ],
+     [
+      47.625,
+      47.4,
+      47.975,
+      47.475,
+      48.55,
+      46.7,
+      48.375,
+      47.925000000000004
+     ],
+     [
+      46.475,
+      47.625,
+      46.6,
+      45.15,
+      48.85,
+      45.25,
+      48.05,
+      45.050000000000004
+     ]
+    ],
+    "margin_pp": 3.5,
+    "n": 8,
+    "row_means_pp": [
+     43.265625,
+     44.85625,
+     46.29375,
+     47.490625,
+     44.228125,
+     46.54375,
+     47.753125,
+     46.63125
+    ],
+    "s2_cols": 0.5860965401785705,
+    "s2_rows": 2.5557840401785716,
+    "se_pp": 0.6266857845401017,
+    "t": -0.9848436253471553,
+    "upper95_one_sided_pp": -3.0133994757434794,
+    "v_hat": 0.3927350725446428
+   }
+  },
+  "family": "x5ab_sensitivity_wall13",
+  "n_cells": {
+   "x5ab_look3_wall13": 64
+  },
+  "regime_id": "adfdbee824c9eb0a",
+  "registered": false,
+  "requests": [
+   "x5ab_look3_wall13"
+  ],
+  "row_sha256": [
+   "6a64792b3567df398b2c4c263c82a504ea5df99dfe8c831f669760b1f17bb719",
+   "dbd04313bc01d68b9bcdcb5bdae99db752dafc922b1f90c1a22ce137aa39323d",
+   "cf36e1bebfac1f0d790b9bb667bc8115d45324a787579392c36c3b7cb37f0b36",
+   "a004a642bc9bdc248066f656c4ed837c0c399432ceac8d2ef669a86a2f2715ec",
+   "a9f77d206779411ccdb6cf9a143e696764ac88d19b008ebf5505e53dc64b1514",
+   "f29d9dbd2c2342e796c73747ed65fad5a625e2571520e06ceb3f15b0f9e791a7",
+   "dec03ba8bf0e29a7c29de7f23c6dbf05ff611c57dbbbe7b09f46efba7f8595bf",
+   "7aa0a53feca967f0eafbc7fd20ea406680bb1bf478222dfc16f32ff05038fc85"
+  ],
+  "rows": [
+   "rb_x5ab_fm_s1001/checkpoints/checkpoint_13000083_steps.zip",
+   "rb_x5ab_fm_s1002/checkpoints/checkpoint_13000134_steps.zip",
+   "rb_x5ab_fm_s1003/checkpoints/checkpoint_13000052_steps.zip",
+   "rb_x5ab_fm_s1004/checkpoints/checkpoint_13000095_steps.zip",
+   "rb_x5ab_fm_s1005/checkpoints/checkpoint_13000125_steps.zip",
+   "rb_x5ab_fm_s1006b/checkpoints/checkpoint_13000198_steps.zip",
+   "rb_x5ab_fm_s1007/checkpoints/checkpoint_13000058_steps.zip",
+   "rb_x5ab_fm_s1008/checkpoints/checkpoint_13000095_steps.zip"
+  ],
+  "stat_shown": {
+   "ci95_pp": [
+    -5.461294828188935,
+    -2.7730801718110647
+   ],
+   "col_means_pp": [
+    45.690625,
+    46.4375,
+    46.85625,
+    44.465625,
+    46.165625,
+    45.528125,
+    46.5,
+    45.41875
+   ],
+   "delta_hat_pp": -4.1171875,
+   "df": 14,
+   "h_pp": [
+    [
+     43.25,
+     45.35,
+     44.9,
+     41.0,
+     43.1,
+     43.95,
+     42.65,
+     41.925000000000004
+    ],
+    [
+     44.15,
+     45.925,
+     45.550000000000004,
+     43.974999999999994,
+     46.050000000000004,
+     43.1,
+     46.25,
+     43.85
+    ],
+    [
+     48.125,
+     44.85,
+     47.55,
+     44.675,
+     46.275,
+     46.375,
+     46.650000000000006,
+     45.85
+    ],
+    [
+     47.775,
+     49.5,
+     48.075,
+     43.625,
+     47.225,
+     47.5,
+     48.225,
+     48.0
+    ],
+    [
+     42.225,
+     44.975,
+     46.25,
+     42.35,
+     43.5,
+     44.474999999999994,
+     44.9,
+     45.15
+    ],
+    [
+     45.9,
+     45.875,
+     47.949999999999996,
+     47.475,
+     45.775,
+     46.875,
+     46.9,
+     45.6
+    ],
+    [
+     47.625,
+     47.4,
+     47.975,
+     47.475,
+     48.55,
+     46.7,
+     48.375,
+     47.925000000000004
+    ],
+    [
+     46.475,
+     47.625,
+     46.6,
+     45.15,
+     48.85,
+     45.25,
+     48.05,
+     45.050000000000004
+    ]
+   ],
+   "margin_pp": 3.5,
+   "n": 8,
+   "row_means_pp": [
+    43.265625,
+    44.85625,
+    46.29375,
+    47.490625,
+    44.228125,
+    46.54375,
+    47.753125,
+    46.63125
+   ],
+   "s2_cols": 0.5860965401785705,
+   "s2_rows": 2.5557840401785716,
+   "se_pp": 0.6266857845401017,
+   "t": -0.9848436253471553,
+   "upper95_one_sided_pp": -3.0133994757434794,
+   "v_hat": 0.3927350725446428
+  },
+  "verdict": "NOT DETECTED"
+ }
+}

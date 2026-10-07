@@ -1320,18 +1320,20 @@ unplayed ACTION. [MEASURED · NOT DETECTED at the action level · one checkpoint
 [`../endstate/design_q_head.md`](../endstate/design_q_head.md) §5.0 (`006156b7`)]
 
 
-### 4.5 The X5 belief A/B at look 2, and the value of perfect information (2026-10-06)
+### 4.5 The X5 belief A/B at look 3 (final), and the value of perfect information (2026-10-07)
 
-**Hypothesis tokens (concrete guesses of the opponent's hidden Pokémon) vs the blob belief: NOT YET shown non-inferior at matched steps (t 2.441 against look 2's boundary 2.683), and INFERIOR per GPU-hour.** Five seeds per arm (look 2), mirrored head-to-head cross, δ = 3.5 pp:
+**Hypothesis tokens (concrete guesses of the opponent's hidden Pokémon, "fixed_mass") are NON-INFERIOR to the blob belief at matched steps, INFERIOR per GPU-hour, and BETTER at predicting the opponent's next action.** Eight seeds per arm (look 3, the last registered look), mirrored head-to-head cross, δ = 3.5 pp, played and read at the seeds' training pin `706fa536`:
 
 | read | Δ̂ [95 %] | outcome |
 |---|---|---|
-| matched steps (15M vs 15M) | −0.97 pp [−3.36, +1.41] (look 1: −1.31 [−6.09, +3.46]) | CONTINUE (look 3 adds seeds 1006–1008 per arm) |
-| matched wall-time (fixed_mass at 12M, s = +16.7 %) | −6.89 pp [−8.88, −4.90] (look 1: −6.78) | FUTILITY STOP (non-binding), INFERIOR |
+| matched steps (15M vs 15M) | −0.99 pp [−2.92, +0.94] (look 2: −0.97 [−3.36, +1.41]) | **NON-INFERIOR** (t 2.788 ≥ 1.874, 14 df) |
+| matched wall-time, end-to-end (fixed_mass at 12M, s = +16.7 %) | −5.91 pp [−7.54, −4.28] (look 2: −6.89) | NOT DETECTED, INFERIOR |
+| sensitivity: steady-state wall (fixed_mass at 13M), never a verdict | −4.12 pp [−5.46, −2.77] | reported only (would read NOT DETECTED, not INFERIOR: upper bound −3.01) |
+| purpose metric (1): opponent-intent log loss over blob's named set | fixed_mass 1.753 vs blob 1.904 nats (−0.151) | **CROSSED** (t 10.05 ≥ 1.874) |
 
-The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the representation. Purpose metric (1) is tested only after a NON-INFERIOR matched-steps verdict, so it has not been tested.
+The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the representation. Under the owner's PRE-COMMITTED rule (adopt unless matched steps is INFERIOR, `079dee3e`) these reads imply ADOPT; the decision is the owner's and is not recorded as taken here. Coverage, reported: fixed_mass reserves ~10.8 % of its intent mass for actions blob cannot name while 5.15 % happen (under-confident); blob reserves 0.15 % (over-confident).
 
-[NOT DETECTED (steps) / DETECTED (wall-time, INFERIOR) · ledger 2026-10-06 *X5 A/B LOOK 2 read* (supersedes the LOOK 1 read, `662151d1`) · meas: [`measurements/x5ab_look2_2026-10-06/`](measurements/x5ab_look2_2026-10-06/), [`measurements/x5ab_look1_2026-10-06/`](measurements/x5ab_look1_2026-10-06/)]
+[steps: registered NON-INFERIOR, its CI inside the ±4.57 pp replicate-floor band (EQUIVALENCE SUPPORTED by §0's definition) / wall-time: SIGNIFICANT, INFERIOR (|Δ̂| above the floor, CI excludes 0) / purpose metric (1): SIGNIFICANT (registered across-seed t; −0.151 nats exceeds blob's max pairwise seed spread 0.096) · ledger 2026-10-07 *X5 A/B LOOK 3 read* (supersedes the LOOK 1 and LOOK 2 reads) · meas: [`measurements/x5ab_look3_2026-10-07/`](measurements/x5ab_look3_2026-10-07/), [`measurements/x5ab_look2_2026-10-06/`](measurements/x5ab_look2_2026-10-06/), [`measurements/x5ab_look1_2026-10-06/`](measurements/x5ab_look1_2026-10-06/)]
 
 **Perfect information about the opponent's team buys little strength at this budget.** A network TOLD the opponent's species beats blob by **+2.44 pp [+0.31, +4.57]**; told the whole set, **+2.18 pp [+0.53, +3.84]**; the set adds nothing measurable over the species (−0.26 [−1.92, +1.40]). Both C's are real (the intervals exclude 0) but sit below the 4.57 pp replicate floor. So the registered reading applies: belief representation has little strength leverage at 15M / this recipe. It bounds what ANY belief improvement (X5 included) can buy in strength here. The tokens' case therefore rests on observability and search enablement, not on strength.
 

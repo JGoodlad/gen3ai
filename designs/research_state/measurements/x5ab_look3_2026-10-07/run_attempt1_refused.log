@@ -1,0 +1,41 @@
+=== 2026-10-07T07:22:48-07:00 look 3: play checkout /home/goodlad/dev/gen3ai/.claude/worktrees/x5-look3-pin-706fa536 at git rev-parse HEAD = 706fa536ef53d9a680d2461f16613e0d1430d176 (required 706fa536ef53d9a680d2461f16613e0d1430d176)
+=== engine-path commits since bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7: b7309869
+38ed7d0d
+fe237eac
+9c58c0d1
+5151f2bf
+5dcbcddd
+131f3412
+19bdf034
+96eedfb5
+54f3bb64
+e1e81456 (reviewed: 131f3412 19bdf034 96eedfb5 54f3bb64 e1e81456 b7309869 38ed7d0d fe237eac 9c58c0d1 5dcbcddd 5151f2bf); unreviewed: none
+{"commit": "bcb0296c0edf9d9f6602f23bcfbc6b14e5df8ef7", "decision_kind": "ab_verdict", "event": "family", "family_id": "x5ab_strength_steps", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_x5_belief_tokens.md \u00a77.4 (+\u00a77.6-\u00a77.9 Amendments 2-5): cross t=(\u0394\u0302+3.5)/\u221aV\u0302, df=2(n-1), looks 5.761/2.683/1.874; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 2521, "ts": "2026-10-06T14:23:38+00:00", "writer_id": "20261006T142338Z.0-goodlad_desktop-49948-ledger_cli"}
+[plan] steps: family x5ab_strength_steps; rows ['rb_x5ab_fm_s1001/final_model.zip', 'rb_x5ab_fm_s1002/final_model.zip', 'rb_x5ab_fm_s1003/final_model.zip', 'rb_x5ab_fm_s1004/final_model.zip', 'rb_x5ab_fm_s1005/final_model.zip', 'rb_x5ab_fm_s1006b/final_model.zip', 'rb_x5ab_fm_s1007/final_model.zip', 'rb_x5ab_fm_s1008/final_model.zip']
+[plan] steps: 64 cells in the 8 x 8 matrix = 25 reused from ['x5ab_look1_steps', 'x5ab_look2_steps'] + 39 new under x5ab_look3_steps (0 already in the ledger, 0 at >= 1000 pairs; the driver's resume skips every recorded batch)
+=== 2026-10-07T07:22:50-07:00 x5ab_look3_steps: 39 cell(s) planned (/home/goodlad/.cache/gen3ai/x5look3/plan/steps_look3.json)
+[mem_cap] cap 32.00 GB (swap 0) · unit gen3ai-capped-main.h2h-1834951.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 39 cell(s) x 1000 pairs in batches of 500; 39 with batches to play (78 batch(es)), 0 already recorded; purpose ab, family x5ab_strength_steps, request x5ab_look3_steps under /home/goodlad/dev/gen3ai/models/_ledger
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/x5-look3-pin-706fa536/src/main/h2h/__main__.py", line 6, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/x5-look3-pin-706fa536/src/main/h2h/cli.py", line 165, in main
+    return {"play": cmd_play, "play-many": cmd_play_many, "read": cmd_read}[a.cmd](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/x5-look3-pin-706fa536/src/main/h2h/cli.py", line 125, in cmd_play_many
+    out = MANY.play_cells(a.out, MANY.resolve_cells(specs), pairs=a.pairs, batch_pairs=a.batch_pairs,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/x5-look3-pin-706fa536/src/main/h2h/many.py", line 193, in play_cells
+    decl = preflight([(ep.player, ep.opponent) for ep in todo], emit, reveal_mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/x5-look3-pin-706fa536/src/main/h2h/many.py", line 133, in preflight
+    decl = PL.declare_engine(cells, PL._load_host, reveal_mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/x5-look3-pin-706fa536/src/main/h2h/arch.py", line 221, in declare_engine
+    raise CellArchMismatch(
+main.h2h.arch.CellArchMismatch: cell opponent rb_x5ab_blob_s1007@15047535: its architecture matches neither of the engine's 2 slot groups — group 0 (declared from rb_x5ab_fm_s1001@15047411): the architecture toggles {'belief_tokens': ('blob', 'fixed_mass')}; group 1 (declared from rb_x5ab_blob_s1006@15047472): the forward fingerprint (7ba292ac422c vs 0a4058df5283). One engine serves at most 2 architectures; play this cell on an engine of its own
+[mem_cap] done: gen3ai-capped-main.h2h-1834951.scope exit 1 · peak 0.72 GB of cap 32.00 GB (2%) · not OOM-killed
+FAILED x5ab_look3_steps (2026-10-07T07:22:58-07:00)
