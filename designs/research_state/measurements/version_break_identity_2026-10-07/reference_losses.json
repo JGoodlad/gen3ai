@@ -1,0 +1,19 @@
+{
+ "belief/hptype_loss": 0.7051395401358604,
+ "belief/item_loss": 0.5783408731222153,
+ "belief/move_loss": 0.015329314861446619,
+ "belief/movelatent_loss": 0.5138457342982292,
+ "belief/natureev_loss": 2.1555216163396835,
+ "belief/set_aux_loss": 5.181282162666321,
+ "belief/spread_loss": 0.04160613380372524,
+ "opp_intent/flat_loss": 0.539926428347826,
+ "train/approx_kl": 0.0018898649141192436,
+ "train/clip_fraction": 0.015625,
+ "train/entropy_loss": -1.8291947543621063,
+ "train/explained_variance": -0.5654934644699097,
+ "train/loss": 0.628854513168335,
+ "train/n_updates": 2.0,
+ "train/policy_gradient_loss": -0.006470122840255499,
+ "train/value_loss": 0.027062139357440174,
+ "win_prob/loss": 0.7050374820828438
+}
