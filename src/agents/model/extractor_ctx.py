@@ -56,6 +56,32 @@ def locate_active_slot(active_flags: torch.Tensor) -> torch.Tensor:
 
 
 
+def active_request_sorted_match(ctx: 'ExtractorContext') -> torch.Tensor:
+    """gen3_move_legality_by_id_v1 — THE one rule that crosses our active's two move orders.
+
+    Our active's per-mon move slots (`ctx.all_move_ids[ar, our_active_idx]`) are SORTED BY
+    `Move.id` string; the request block (`ctx.our_active_req_move_*`, action logit `6+k`) is in
+    REQUEST order. They are related by MOVE-NUM IDENTITY, never by position. Returns the bool
+    ``match [B, 4req, 4sorted]``: ``match[b, k, j]`` iff request slot ``k`` names the move at
+    sorted slot ``j`` (an empty request slot, id 0, matches nothing). Both directions read it:
+    request-order tokens from sorted slots (`pointer_head._request_order_move_tokens`) and
+    sorted-slot legality from request-order legality (`active_move_legality_sorted`)."""
+    ar = torch.arange(ctx.batch_size, device=ctx.device)
+    sorted_ids = ctx.all_move_ids[ar, ctx.our_active_idx]                 # [B,4] dex nums, SORTED order
+    req_ids = ctx.our_active_req_move_ids.long()                          # [B,4] dex nums, REQUEST order
+    return (sorted_ids[:, None, :] == req_ids[:, :, None]) & (req_ids[:, :, None] > 0)
+
+
+def active_move_legality_sorted(ctx: 'ExtractorContext') -> torch.Tensor:
+    """[B, 4sorted] our active's current-decision legality on its SORTED per-mon slots, matched by
+    move-num identity (`active_request_sorted_match`); a sorted slot no request slot names reads 0
+    (gen3_move_legality_by_id_v1). The legacy `PokemonEncoder` and the static-token encoder both
+    read this — one rule for both paths."""
+    match = active_request_sorted_match(ctx)
+    legal = (match & (ctx.our_active_req_move_legal[:, :, None] > 0.5)).any(1)   # [B,4sorted]
+    return legal.to(ctx.our_active_req_move_legal.dtype)
+
+
 def slice_pokemon_categoricals(pokemon_part: torch.Tensor, layout: Dict[str, Any]) -> Dict[str, torch.Tensor]:
     """Slice the per-Pokémon categorical IDs + HP blocks from a [B, N, POKEMON_FULL_DIM] block.
 
@@ -154,13 +180,17 @@ class ExtractorContext:
     # gen3_op_move_align_v1: OUR active mon's 4 moves in REQUEST-slot order (action 6+k) — the
     # DamageOperator's OUTGOING per-move blocks read THESE (not all_move_ids[our_active], which is
     # sorted-by-id) so their per-move output aligns with the action logits. [B,4] each:
-    #   our_active_req_move_ids       — dex num (HP → 237 regardless of type)
+    #   our_active_req_move_ids       — dex num of the move the active's MOVESET holds under the
+    #                                   request id (our own Hidden Power is TYPED, num 355-370 — the
+    #                                   same num its per-mon slot carries, so the identity match holds)
     #   our_active_req_move_type_ids  — TypeEncoder index (our own Hidden Power is typed)
     #   our_active_req_move_legal     — current-decision choosability (1=choosable now), request order
-    # `our_active_req_move_legal` is ALSO what the role encoder's per-move-slot validity feature
-    # reads (gen3_frame_deletion_v1). It used to read the prev-turn `move_mask`, which was both
-    # stale and sorted-by-id while the slots it gated are request-order — the exact mismatch that
-    # made the op stop reading it. One source now serves both consumers.
+    # 🚨 The per-mon move slots (`all_move_ids`) are SORTED BY `Move.id` STRING (Python
+    # `get_sorted_moves`, Rust `encoder/slot.rs`), NOT request order. A request-order tensor reaches a
+    # per-mon slot ONLY through `active_request_sorted_match` (gen3_move_legality_by_id_v1) — never
+    # by position. The role encoder's per-move-slot validity feature applied
+    # `our_active_req_move_legal` BY POSITION from gen3_frame_deletion_v1 (bcdd868b) until
+    # gen3_move_legality_by_id_v1, putting a choosable move's legality on a different move.
     our_active_req_move_ids: torch.Tensor
     our_active_req_move_type_ids: torch.Tensor
     our_active_req_move_legal: torch.Tensor

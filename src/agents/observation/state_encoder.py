@@ -40,6 +40,7 @@ from .constants import (
 from poke_env.battle.abstract_battle import AbstractBattle
 from typing import Dict, Any, List, Optional, Tuple
 from agents.action.mask_generator import Gen3ActionMasker
+from agents.action.ordering_integrity import check_obs_move_order
 from agents.observation.reactive import ReactiveEncoder as _ReactiveEncoder
 
 def load_mappings() -> Dict[str, Any]:
@@ -419,6 +420,12 @@ class Gen3ObservationEncoder(ObservationEncoder):
                     write_event_row(vec, _base + _ri * EVENT_TOKEN_DIM, _r, _cur)
                 if asm is not None:
                     asm.seed_window(_rows, _cur)
+
+        # gen3_move_legality_by_id_v1: the THROWING move-order guard (`ordering_integrity`) — our active's
+        # request-order block must map one-to-one onto its sorted per-mon move slots. Only with a real
+        # `legal` (the trainee / play path); the legal-is-None fallback is the plain-Battle unit path.
+        if legal is not None:
+            check_obs_move_order(vec, where="Gen3ObservationEncoder.encode")
 
         if asm is not None:
             asm.commit()

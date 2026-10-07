@@ -245,6 +245,18 @@ in a weak-keyed registry, never as a module attribute (an `RLock` there breaks
 `copy.deepcopy(policy)`), and the unguarded path contains no context manager at all so the compiled
 graph is unchanged. Gate: `forward_guard_test.py`.
 
+## 🚨 Our active's moves live in TWO orders — cross them by IDENTITY only (`gen3_move_legality_by_id_v1`)
+
+The per-mon move slots (`ctx.all_move_ids`, every encoder) are SORTED BY `Move.id` STRING; the request
+block (`ctx.our_active_req_move_*`) and actions 6–9 are in REQUEST order. **Never apply a request-order
+tensor to the per-mon slots by position, or a per-mon tensor to the request slots** — go through
+`extractor_ctx.active_request_sorted_match` (or `active_move_legality_sorted`), the ONE rule the pointer
+head, `PokemonEncoder` and the static encoder share. The positional form fired twice (the old prev-turn
+mask; then `PokemonEncoder`'s legality from `bcdd868b` to this fix, wrong on 6.8 % of real move-bearing
+decisions) and is silent whenever every move is legal. `move_legality_alignment_test.py` fails on it;
+`agents/action/ordering_integrity.check_obs_move_order` RAISES on a served row that breaks the rule's
+preconditions.
+
 ## 🚨 Every DISCRETE op in the forward is DECLARED (`selection_sites.py`, `gen3_behaviour_tie_exclusion_v1`)
 
 The forward is piecewise-discontinuous: a `topk` / `argmax` / comparison whose operands sit within a

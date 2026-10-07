@@ -23,6 +23,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 import numpy as np
 import torch
 
+from agents.action.ordering_integrity import check_obs_move_order
 from agents.inference.service.engine import Engine, PlanItem
 from agents.inference.service.parity import ParityReport, fixture_rows, gate_slot, judge
 from agents.inference.service.slots import SlotGroup
@@ -421,6 +422,11 @@ class InferenceService:
                               f"{self.spec.max_rows_per_flush} (the declared arena)")
         if not m.any(axis=1).all():
             raise CallerError("a row with no legal action has no decision to serve")
+        # gen3_move_legality_by_id_v1: THE model boundary for every served row (rollout, opponents, eval)
+        # — our active's request-order block must map one-to-one onto its sorted move slots and agree
+        # with the mask it is served with, or the model would score / gate the wrong move. RAISES
+        # (`OrderingMismatchError`): a data-integrity failure, never a caller mistake to retry.
+        check_obs_move_order(o, m, where=f"InferenceService.submit(slot {int(slot)})")
         t = Ticket(self, int(slot), o, m, Priority(priority), self._seq)
         self._seq += 1
         self._pending.append(t)

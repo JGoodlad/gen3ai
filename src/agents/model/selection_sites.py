@@ -267,7 +267,13 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "pokemon_part[:, :, types_info['offset'] + types_layout['type2']['offset']].long()",
                 "species_known_opp < 0.5", "species_known_opp > 0.5", "torch.argmax(active_flags, dim=1)",
                 "x[:, _arm.start + _arm_per:_arm.start + 2 * _arm_per].long()",
-                "x[:, _arm.start:_arm.start + _arm_per].long()"),
+                "x[:, _arm.start:_arm.start + _arm_per].long()",
+                # gen3_move_legality_by_id_v1: the 0/1 request legality bit (an observation read)
+                "ctx.our_active_req_move_legal[:, :, None] > 0.5"),
+        # gen3_move_legality_by_id_v1: THE cross-order rule (`active_request_sorted_match`) — integer
+        # move-num identity between our active's sorted slots and the request slots.
+        "INT": ("ctx.our_active_req_move_ids.long()", "req_ids[:, :, None] > 0",
+                "sorted_ids[:, None, :] == req_ids[:, :, None]"),
     },
     "extractor_forward": {
         "OBS": ("_opp_active_flag < 0.5", "ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0"),
@@ -306,8 +312,6 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     "pointer_head": {
         "ID": ("match.float().argmax(-1)", "move_valid < 0.5"),
-        "INT": ("ctx.our_active_req_move_ids.long()", "req_ids[:, :, None] > 0",
-                "sorted_ids[:, None, :] == req_ids[:, :, None]"),
     },
     "switch_branch": {
         "INT": ("req_move_ids[..., None] == self.protect_nums", "req_move_ids[..., None] == self.spin_num"),
@@ -357,10 +361,8 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # reads; the Hidden Power slot test, the move-num identity match (our active's legality onto its sorted
     # slots) and the hypothesis species are integers.
     "static_tokens": {
-        "OBS": ("known > 0.5", "ctx.our_active_req_move_legal[:, None, :] > 0.5"),
-        "INT": ("ids['all_move_ids'] == HIDDEN_POWER_MOVE_NUM", "ctx.our_active_req_move_ids.long()",
-                "req_ids[:, None, :] == sorted_ids[:, :, None]", "sorted_ids[:, :, None] > 0",
-                "slot_species.long()"),
+        "OBS": ("known > 0.5",),
+        "INT": ("ids['all_move_ids'] == HIDDEN_POWER_MOVE_NUM", "slot_species.long()"),
     },
     "t0_species": {
         "OBS": ("onehot > 0",),

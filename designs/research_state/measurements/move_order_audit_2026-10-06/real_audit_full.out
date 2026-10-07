@@ -1,0 +1,9 @@
+battles 580
+{'A_checked': 37358, 'B_checked': 142598, 'C_caller_skip': 117, 'C_checked': 27361, 'C_no_move_line': 4587, 'D_LEGALITY_MISAPPLIED': 2542, 'D_choosable_move_marked_illegal': 2542, 'D_no_request_moves': 5107, 'D_order_equal': 3717, 'D_rows': 37358, 'D_rows_with_1_illegal': 1659, 'D_rows_with_2_illegal': 633, 'D_rows_with_3_illegal': 1303, 'D_rows_with_illegal_move': 3595, 'decisions': 42465}
+EXAMPLES D 8
+    ('ai_v14_01_base/step_36000000/random/win_s0_001', 0, [38, 89, 355, 157], [89, 157, 355, 38], [1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0])
+    ('ai_v14_01_base/step_36000000/random/win_s0_001', 0, [38, 89, 355, 157], [89, 157, 355, 38], [1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0])
+    ('ai_v14_01_base/step_36000000/random/win_s2_001', 1, [89, 362, 56, 157], [89, 157, 362, 56], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0])
+    ('ai_v14_01_base/step_36000000/random/win_s2_001', 1, [89, 362, 56, 157], [89, 157, 362, 56], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0])
+    ('ai_v14_01_base/step_36000000/random/win_s2_001', 1, [89, 362, 56, 157], [89, 157, 362, 56], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0])
+    ('ai_v14_01_base/step_36000000/heuristic/win_s0_001', 0, [182, 191, 92, 18], [191, 18, 182, 92], [0.0, 1.0, 1.0, 1.0], [1.0, 0.0, 1.0, 1.0])

@@ -102,6 +102,12 @@ move/switch than the model selected:
 - **Switch-ordering alignment** (`ordering_integrity.py`): switch action index *i*,
   switch-validity bit *i*, and per-Pokémon obs slot *i* must all refer to the same mon —
   verified against the snapshot's slot-indexed switches.
+- **Move-order alignment** (`ordering_integrity.check_obs_move_order`): our active's per-mon move
+  slots are SORTED BY `Move.id`, the request block and actions 6-9 are in REQUEST order; every
+  served row must map each request move onto exactly one sorted slot and carry request legality
+  equal to the mask's move bits, or it RAISES `OrderingMismatchError`. The model crosses the two
+  orders only by move-num identity (`agents.model.extractor_ctx.active_request_sorted_match`).
+  Real-bridge pin: `move_order_bridge_integration_test.py` (scored slot ↔ action ↔ executed move).
 
 ## Files
 
@@ -111,7 +117,7 @@ move/switch than the model selected:
 | `mapper.py` | `Gen3ActionMapper` — pure `action_to_choice`, the `action_to_order` convenience, `assert_decision_current`, reverse `order_to_action` |
 | `serialize.py` | The single poke-env touch: `choice_to_order` + `order_to_action` |
 | `mask_generator.py` | `Gen3ActionMasker` — `mask_from_legal` (pure) + `get_mask(battle)` |
-| `ordering_integrity.py` | The `LiveView` + `legal`-driven alignment guards: `check_switch_ordering_alignment`, `check_move_validity_alignment`, `check_move_data_consistent`, plus the sorted-order helpers (`reorder_move_bits_to_sorted`, `assert_sorted_validity_correct`) |
+| `ordering_integrity.py` | The alignment guards: `check_obs_move_order` (the THROWING row guard on our active's request-order block ↔ its sorted per-mon move slots ↔ the mask, run at `InferenceService.submit` and in the Python encoder; `gen3_move_legality_by_id_v1`), `check_switch_ordering_alignment`, `check_move_data_consistent` |
 | `constants.py` | The 11-action layout constants |
 
 ## Tests
@@ -119,7 +125,8 @@ move/switch than the model selected:
 | File | Type | What it covers |
 |---|---|---|
 | `mapper_test.py` | Unit | Masker + pure `action_to_choice` (LegalActions STUB, no battle) + serialization + staleness guard + reverse map; struggle single-source regression |
-| `ordering_integrity_test.py` | Unit | Move/team ordering alignment (snapshot-driven) |
+| `ordering_integrity_test.py` | Unit | Move/team ordering alignment (snapshot-driven + the row guard on real rows) |
+| `move_order_bridge_integration_test.py` | Integration (`sim`) | Real banked battles through the Rust core: the scored slot, the action token and the executed move agree |
 | `fuzz_test_unit.py` | Standalone script | Snapshot-immutability simulation: corrupt the request mid-decision, prove the captured snapshot decodes identically (replaces the old latch race sim) |
 | `fuzz_test.py` | Fuzz (local bridge, no server) | Real battles vs RandomPlayer; exhaustively decodes + serializes every legal action each turn |
 | `trapping_signals_fuzz_test.py` | Fuzz (local bridge, no server) | `gen3_trapping_signals_v1` end to end over a forced Arena-Trap run: the `trapped` / `maybe_trapped` bits at OUR ACTIVE MON'S entity slot equal `legal.trapped` / `legal.maybe_trapped` on every decision (bench slots stay 0), and a refused switch puts an `EVENT_T_SWITCH_REJECTED` row as the event window's NEWEST — checked against raw-protocol `\|error\|[Unavailable choice]` truth, not our own fold |

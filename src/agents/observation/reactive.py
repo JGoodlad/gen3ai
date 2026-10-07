@@ -168,9 +168,12 @@ class ReactiveEncoder(ObservationEncoder):
                 md = gen3_data.moves.get(move.id)
 
                 # gen3_op_move_align_v1: request-order move NUM + resolved TYPE-id for the op's OUTGOING
-                # blocks. NUM mirrors moves.py (HP → 237 regardless of type, so the op's HP branch fires);
-                # the resolved type drives STAB / effectiveness (our own Hidden Power arrives typed, via
-                # _request_slot_moves, so the else branch supplies the real type — a bare 'hiddenpower'
+                # blocks. NUM mirrors moves.py — the num of the moveset's own Move, so our TYPED Hidden Power
+                # is its typed num (355-370, e.g. hiddenpowerice 365), the SAME num its sorted per-mon slot
+                # carries: the model maps request slot ↔ sorted slot by that identity
+                # (gen3_move_legality_by_id_v1). The resolved type drives STAB / effectiveness (our own
+                # Hidden Power arrives typed, via _request_slot_moves, so the else branch supplies the
+                # real type — a bare 'hiddenpower'
                 # would be type-unknown, which never happens for our own active).
                 if md is not None:
                     active_req_move_ids[i] = float(md.num)

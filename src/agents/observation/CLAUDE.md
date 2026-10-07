@@ -803,8 +803,14 @@ into `ctx.our_active_req_move_{ids,type_ids,legal}` and it never enters the raw-
 
 **The per-mon move block stays sorted-by-id on purpose** — it feeds the role token, whose value is
 order-sensitive (the 4 move encodings are concatenated), so it cannot be reordered without changing
-the network. Both orders are therefore live at once; the pointer action head resolves this by
-permuting on move-num IDENTITY, which makes a misaligned logit unrepresentable.
+the network. Both orders are therefore live at once (the per-mon slots are sorted by `Move.id`
+STRING, the request block by request slot), and the model crosses them ONLY by move-num IDENTITY
+(`extractor_ctx.active_request_sorted_match`, `gen3_move_legality_by_id_v1`) — the pointer head's
+tokens and `PokemonEncoder`'s per-slot legality alike. A positional crossing is silent whenever every
+move is legal; it was live in `PokemonEncoder` from `bcdd868b` to that fix. `encode` RAISES
+(`agents/action/ordering_integrity.check_obs_move_order`, on the trainee / play path where `legal` is
+real) when a request move has no unique sorted slot — measured +~20 µs per Python encode (+1.0 %
+cold calls/encode, 2026-10-06; the Python encoder is off the training path).
 
 **Move-effect block and incoming-damage / OHKO belief block — BOTH DELETED from the observation.**
 Their long descriptions moved verbatim to `designs/CHANGELOG.md` §5. Where the signal lives now:

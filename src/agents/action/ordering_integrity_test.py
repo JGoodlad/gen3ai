@@ -1,8 +1,8 @@
-"""Integrity tests for move-ordering alignment between the model's view
-(sorted-by-id move slots) and the action space (request order).
+"""Integrity tests for move/team ordering alignment between the model's view
+(sorted-by-id move slots, the request-order block) and the action space (request order).
 
-These reconstruct the state the model actually masks and assert the live check
-raises when — and only when — the validity bits would land on the wrong move.
+The row guard `check_obs_move_order` (gen3_move_legality_by_id_v1) is exercised on REAL rows
+(the learner golden buffer + the compile parity fixture) and on targeted corruptions of them.
 """
 import types
 import numpy as np
@@ -13,14 +13,12 @@ from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.pokemon import Pokemon
 from poke_env.battle.move import Move
 
-from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.ordering_integrity import (
     OrderingMismatchError,
-    check_move_validity_alignment,
+    row_offsets,
+    check_obs_move_order,
     check_switch_ordering_alignment,
-    reorder_move_bits_to_sorted,
-    assert_sorted_validity_correct,
 )
 from agents.battle.live_view import (
     LegalActions, LiveView, LiveSide, LivePokemon, LiveMove, LiveWeather,
@@ -111,58 +109,12 @@ def _battle(active_move_ids, disabled_id=None, struggle=False):
     return battle
 
 
-def test_raw_mask_misalignment_is_detectable():
-    """Pre-fix diagnostic: applying the raw action-order mask positionally to the
-    sorted move slots IS a misapplication on a disabled-move turn. Documents the
-    bug `check_move_validity_alignment` was written to catch."""
-    battle = _battle(
-        ["thunderbolt", "willowisp", "icepunch", "taunt"],
-        disabled_id="willowisp",
-    )
-    live = _live(["thunderbolt", "willowisp", "icepunch", "taunt"])
-    # get_mask returns the raw action-order mask.
-    raw_action_mask = Gen3ActionMasker.get_mask(battle, live=live)
-    legal = LegalActions.from_battle(battle)
-    # Applying that raw mask positionally to sorted slots IS a misapplication:
-    with pytest.raises(OrderingMismatchError):
-        check_move_validity_alignment(live, raw_action_mask, legal)
 
 
-def test_reorder_puts_validity_on_the_right_sorted_slot():
-    """The fix: reordering the action-order mask into sorted order makes each
-    move's bit land on its own sorted slot.
-
-    action order: [thunderbolt, willowisp(0), icepunch, taunt]
-    sorted order: [icepunch,    taunt,        thunderbolt, willowisp]
-    so sorted bits should be [icepunch=1, taunt=1, thunderbolt=1, willowisp=0].
-    """
-    action_ids = ["thunderbolt", "willowisp", "icepunch", "taunt"]
-    raw = np.zeros(11, dtype=np.float32)
-    raw[MOVE_START:MOVE_START + 4] = [1, 0, 1, 1]  # willowisp disabled
-    fixed = reorder_move_bits_to_sorted(raw, action_ids)
-    assert fixed[MOVE_START:MOVE_START + 4].tolist() == [1, 1, 1, 0]
-    # And it validates clean against the action-order source.
-    assert_sorted_validity_correct(fixed, raw, action_ids)
 
 
-def test_assert_catches_a_corrupted_reorder():
-    """If a reorder ever produces wrong sorted validity, the assertion raises."""
-    action_ids = ["thunderbolt", "willowisp", "icepunch", "taunt"]
-    raw = np.zeros(11, dtype=np.float32)
-    raw[MOVE_START:MOVE_START + 4] = [1, 0, 1, 1]
-    corrupt = raw.copy()  # raw (action order) is NOT the sorted order -> mismatch
-    with pytest.raises(OrderingMismatchError):
-        assert_sorted_validity_correct(corrupt, raw, action_ids)
 
 
-def test_all_legal_reorder_is_identity_on_values():
-    """All moves legal -> reorder keeps all-ones; harmless permutation."""
-    action_ids = ["thunderbolt", "willowisp", "icepunch", "taunt"]
-    raw = np.zeros(11, dtype=np.float32)
-    raw[MOVE_START:MOVE_START + 4] = [1, 1, 1, 1]
-    fixed = reorder_move_bits_to_sorted(raw, action_ids)
-    assert fixed[MOVE_START:MOVE_START + 4].tolist() == [1, 1, 1, 1]
-    assert_sorted_validity_correct(fixed, raw, action_ids)
 
 
 def test_switch_ordering_aligned_by_default():
@@ -189,14 +141,6 @@ def test_switch_ordering_mismatch_raises():
         check_switch_ordering_alignment(live, np.ones(11, dtype=np.int8), legal)
 
 
-def test_check_is_noop_without_move_slots():
-    """Defensive: a forced-switch snapshot (no move slots) -> nothing to compare, no raise."""
-    live = _live(["thunderbolt"])
-    forced_switch_legal = LegalActions(
-        move_slots=(), switches=(), force_switch=True, trapped=False,
-        maybe_trapped=False, wait=False, struggle=False, last_request=None,
-    )
-    check_move_validity_alignment(live, np.ones(11, dtype=np.int8), forced_switch_legal)
 
 
 # --------------------------------------------------------------------------
@@ -223,3 +167,120 @@ def test_mapper_raises_on_stale_state():
     ]
     with pytest.raises(RuntimeError):
         Gen3ActionMapper.assert_decision_current(ctx, battle)
+
+
+# --------------------------------------------------------------------------
+# gen3_move_legality_by_id_v1 — the ROW guard on real observation rows
+# --------------------------------------------------------------------------
+
+def _real_rows():
+    """REAL rows + the masks they were served with: the learner golden buffer (a Rust-core rollout)
+    and the compile parity fixture (real eval states)."""
+    from pathlib import Path
+    from agents.model.compile_parity_fixture import FIXTURE_PATH
+    gold = Path(__file__).resolve().parents[1] / "training" / "learner_golden_buffer.npz"
+    with np.load(gold) as z:
+        obs = z["obs:observation"]
+        obs = obs.reshape(-1, obs.shape[-1]).astype(np.float32)
+        mask = z["action_masks"].reshape(-1, z["action_masks"].shape[-1])
+    with np.load(FIXTURE_PATH) as z:
+        obs2, mask2 = np.asarray(z["obs"], dtype=np.float32), np.asarray(z["action_mask"], dtype=bool)
+    return np.concatenate([obs, obs2]), np.concatenate([mask.astype(bool), mask2])
+
+
+def _misaligned_row_index(obs):
+    """A row whose request order differs from its sorted slot order AND carries an illegal move —
+    exactly where a positional application lands legality on the wrong move."""
+    o = row_offsets()
+    for i, row in enumerate(obs):
+        req, legal = row[o.req_ids], row[o.req_legal]
+        team = row[o.team0:o.team0 + 6 * o.mon_dim].reshape(6, o.mon_dim)
+        act = np.flatnonzero(team[:, o.active_col] > 0.5)
+        if (req > 0).sum() == 4 and len(act) == 1 and (legal < 0.5).any():
+            if not np.array_equal(team[act[0], o.slot_id_cols], req):
+                return i
+    raise AssertionError("no misaligned real row — the corruption tests below would be vacuous")
+
+
+def test_guard_offsets_match_the_extractor_unpack():
+    """The guard's absolute offsets are the ones the model reads: the schema's request block and our
+    team block, and `slice_pokemon_categoricals`'s move ids + active flag (no model build needed)."""
+    import torch
+    from agents.model.extractor_ctx import slice_pokemon_categoricals
+    from agents.observation.constants import POKEMON_ACTIVE_OFFSET, POKEMON_FULL_DIM
+    from agents.observation.schema import build_schema
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    sl = build_schema(layout).slices()
+    o = row_offsets()
+    assert sl["reactive.active_req_moves"].start == o.req0 == o.req_ids.start
+    assert sl["reactive.active_req_moves"].stop == o.req_legal.stop
+    assert (o.mon_dim, o.active_col, o.team0) == (POKEMON_FULL_DIM, POKEMON_ACTIVE_OFFSET, 0)
+    assert sl["our_team"].start == 0 and (sl["our_team"].stop - sl["our_team"].start) == 6 * POKEMON_FULL_DIM
+    obs, _ = _real_rows()
+    team = torch.as_tensor(obs[:, :6 * POKEMON_FULL_DIM]).reshape(len(obs), 6, POKEMON_FULL_DIM)
+    ids = slice_pokemon_categoricals(team, layout)
+    assert torch.equal(ids["all_move_ids"], team[:, :, torch.as_tensor(o.slot_id_cols)].long())
+    assert torch.equal(ids["hp_and_active"][..., -1], team[:, :, POKEMON_ACTIVE_OFFSET])
+
+
+def test_guard_passes_every_real_row():
+    obs, mask = _real_rows()
+    check_obs_move_order(obs, mask)
+
+
+def test_guard_raises_when_a_request_move_has_no_sorted_slot():
+    obs, mask = _real_rows()
+    i = _misaligned_row_index(obs)
+    bad = obs[i:i + 1].copy()
+    bad[0, row_offsets().req0] = 9999.0                       # request slot 0 names a move our active does not hold
+    with pytest.raises(OrderingMismatchError, match="one-to-one"):
+        check_obs_move_order(bad, mask[i:i + 1])
+
+
+def test_guard_raises_when_legality_disagrees_with_the_mask():
+    obs, mask = _real_rows()
+    i = _misaligned_row_index(obs)
+    bad = mask[i:i + 1].copy()
+    bad[0, MOVE_START:MOVE_START + 4] = ~bad[0, MOVE_START:MOVE_START + 4]
+    with pytest.raises(OrderingMismatchError, match="disagree with"):
+        check_obs_move_order(obs[i:i + 1], bad)
+
+
+def test_guard_raises_on_a_choosable_move_with_no_identity():
+    obs, mask = _real_rows()
+    i = _misaligned_row_index(obs)
+    row = obs[i:i + 1].copy()
+    row[0, row_offsets().req0:row_offsets().req_legal.stop] = 0.0               # the request block wiped, the mask still allows moves
+    m = mask[i:i + 1].copy()
+    m[0, MOVE_START] = True
+    with pytest.raises(OrderingMismatchError, match="no identity"):
+        check_obs_move_order(row, m)
+
+
+def test_guard_raises_without_exactly_one_active():
+    from agents.observation.constants import POKEMON_ACTIVE_OFFSET, POKEMON_FULL_DIM
+    obs, mask = _real_rows()
+    i = _misaligned_row_index(obs)
+    row = obs[i:i + 1].copy()
+    for k in range(6):
+        row[0, k * POKEMON_FULL_DIM + POKEMON_ACTIVE_OFFSET] = 0.0
+    with pytest.raises(OrderingMismatchError, match="active mons"):
+        check_obs_move_order(row, mask[i:i + 1])
+
+
+def test_guard_exempts_a_single_forced_action_like_the_recharge_turn():
+    """Hyper Beam's recharge turn: the request names only `recharge` (no moveset holds it), so the request
+    block is all-zero while the mask allows action 6 alone. One legal action = nothing to choose: no raise.
+    The same row with a second legal action IS a decision and raises."""
+    obs, mask = _real_rows()
+    i = _misaligned_row_index(obs)
+    row = obs[i:i + 1].copy()
+    o = row_offsets()
+    row[0, o.req0:o.req_legal.stop] = 0.0
+    forced = np.zeros((1, mask.shape[1]), dtype=bool)
+    forced[0, MOVE_START] = True
+    check_obs_move_order(row, forced)
+    forced[0, 1] = True                          # + a legal switch: now a choice exists
+    with pytest.raises(OrderingMismatchError, match="no identity"):
+        check_obs_move_order(row, forced)

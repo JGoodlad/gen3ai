@@ -11983,3 +11983,22 @@ branch `obs-facts-append`).
 - **Cost (obs-build benchmark, `--turn 25 --reps 400`, same session, median of 3):** COLD calls / encode 4,245 → 4,306
   (+1.4%); the production WARM shape ~1,357 unchanged; the Rust core encode unchanged (the block is not in it).
 
+## 2026-10-06 — GIGO FIX: our active's move legality reaches its sorted move slots by IDENTITY (`gen3_move_legality_by_id_v1`; no ARCH_SIGNATURE / config bump)
+
+- **What was wrong.** From `bcdd868b` (`gen3_frame_deletion_v1`) `PokemonEncoder` wrote `our_active_req_move_legal`
+  (REQUEST order) onto our active's per-mon move slots (sorted by `Move.id` string) BY POSITION. On the Lane S bank
+  (580 real battles) 2,542 of 37,358 move-bearing decisions (6.8 %) had a choosable move's legality on another move.
+  The action mask, the pointer head's per-move scoring (identity-permuted) and the move the sim executed were always
+  aligned (142,598 / 142,598 tokens; 27,361 / 27,361 executed moves). Closes the static-token build's F-ST-1.
+- **The fix.** `extractor_ctx.active_request_sorted_match` is THE cross-order rule (move-num identity);
+  `active_move_legality_sorted` is the legality on the sorted slots. `PokemonEncoder`, `StaticTokenEncoder` and the
+  pointer head's `_request_order_move_tokens` read it. `selection_sites` moves the declarations to `extractor_ctx`.
+- **The guard.** `agents/action/ordering_integrity.check_obs_move_order` RAISES on a row whose request block does not
+  map one-to-one onto our active's sorted slots or disagrees with its mask (a single forced action — the Hyper Beam
+  recharge turn — is exempt from the "every choosable move has an id" check); wired at `InferenceService.submit` and the
+  Python encoder. The dead prev-mask helpers of the same module are deleted.
+- **Versions.** Learner golden re-recorded (blob, fixed_mass). Weights unchanged and loadable; no `ARCH_SIGNATURE` or
+  `MODEL_CONFIG_VERSION` bump (a bump would strand every archived checkpoint, incl. the live X5 arms, at HEAD). The obs
+  bytes are unchanged (obs goldens untouched).
+- **Not fixed (FINDING).** The op's `out_gain` holds a separate scalar per REQUEST slot, so the per-move pointer cells
+  are scaled by a move's listed slot (not a misalignment; the pre-gain cells are exactly equivariant).

@@ -188,9 +188,17 @@ scalars moved to the mon slots (§1.2).
 
 `active_req_moves` is in **request-slot order** (slot *k* ↔ action logit 6+*k*) and is sliced
 straight into `ExtractorContext`; it never enters the raw-scalar projection path. The per-mon move
-block (§1.2) stays **sorted by id** because the role token concatenates the 4 encodings and is
-therefore order-sensitive. Both orders are live simultaneously — that is the reason the pointer
-head permutes by move-num identity (§3).
+block (§1.2) stays **sorted by `Move.id` string** (both encoders) because the role token concatenates
+the 4 encodings and is therefore order-sensitive. Both orders are live simultaneously, and they meet
+in exactly ONE rule: `extractor_ctx.active_request_sorted_match` (move-num identity, never position;
+`gen3_move_legality_by_id_v1`). The pointer head's request-order tokens and `PokemonEncoder`'s
+per-move-slot legality (`active_move_legality_sorted`) both read it. A row that breaks its
+preconditions (a request move with no unique sorted slot, request legality ≠ the mask, a choosable
+move with no id where more than one action is legal — Hyper Beam's recharge turn is the exempt single
+forced action) RAISES `OrderingMismatchError` at the inference service's `submit` and in the
+Python encoder (`agents/action/ordering_integrity.check_obs_move_order`). Measured on the Lane S
+bank (580 real battles, 42,465 decisions, 2026-10-06): action 6+*k*'s token names request move *k*
+on all 142,598 legal move actions, and the sim executed the chosen move on all 27,361 played moves.
 
 `non_matchup_rest` — the raw-scalar tail the global token and both projection heads read — is
 `GLOBAL_ENV_DIM (20) + the 5 board scalars = 25` dims. It stops at the `active_req_moves` offset,
@@ -482,7 +490,9 @@ The concrete steps:
    (`ROLE_ENCODER_HIDDEN` `[256,128]`) → **12 × 128 role tokens**. The role input carries the
    E2 active-context injection: each side's 60-dim boosts+volatiles block scattered onto its
    ACTIVE mon's row, bench rows zero (the §6-audited entity home; the global-token/projection
-   routes remain — additive delivery, pinned by `e2_ctx_injection_test.py`). Stashes
+   routes remain — additive delivery, pinned by `e2_ctx_injection_test.py`). The move network's
+   per-slot validity bit is our active's CURRENT legality matched onto its sorted slots by move-num
+   identity (`active_move_legality_sorted`; 1 on every other mon). Stashes
    `last_move_tokens` `[B,12,4,32]` (sorted-by-id) for the seats and the pointer head.
 3. **`MoveBelief`** (T0, `move_belief_mode` = `"both"` — every opp slot, revealed and hidden)
    — reads the opp **role** tokens, predicts each opp slot's moveset,

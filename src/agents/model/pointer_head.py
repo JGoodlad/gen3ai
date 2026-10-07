@@ -3,7 +3,8 @@
 Split out of `features_extractor.py` 2026-08-16 (one responsibility per file); that module
 re-exports every name here, so historical import paths still resolve.
 """
-from agents.model.extractor_ctx import ExtractorContext, TOKEN_TYPE_OUR_MOVE, TOKEN_TYPE_THEIR_THREAT
+from agents.model.extractor_ctx import (ExtractorContext, TOKEN_TYPE_OUR_MOVE, TOKEN_TYPE_THEIR_THREAT,
+                                        active_request_sorted_match)
 import torch
 from typing import Any, Optional, Tuple
 from agents.observation.constants import (
@@ -21,20 +22,20 @@ def _request_order_move_tokens(move_tokens_all: torch.Tensor,
     """gen3_pointer_native_v1: permute OUR ACTIVE mon's per-move tokens from the extractor's
     SORTED-BY-ID slot order into ACTION/REQUEST order, by MOVE-NUM IDENTITY (never by position).
 
-    This is the single place the `ordering_integrity.py` bug class is dissolved: the extractor reads
-    moves via `MovesEncoder.get_sorted_moves` (sorted by dex num) while action logit `6+k` refers to
-    `legal.move_slots[k]` (request order). Both id sources are dex NUMs — `all_move_ids` indexes
-    MOVE_BP, and `our_active_req_move_ids` is written as `float(md.num)` in reactive.py — so they are
-    directly comparable.
+    The extractor reads moves via `MovesEncoder.get_sorted_moves` (sorted by `Move.id` STRING) while
+    action logit `6+k` refers to `legal.move_slots[k]` (request order). Both id sources are dex NUMs
+    of the SAME moveset object (`all_move_ids` indexes MOVE_BP; `our_active_req_move_ids` is
+    `float(md.num)` of the move the active's moveset holds under the request id, reactive.py /
+    rust `encoder::board`), so they are directly comparable. The match itself is
+    `extractor_ctx.active_request_sorted_match` — the ONE cross-order rule (gen3_move_legality_by_id_v1),
+    shared with the per-mon legality feature.
 
     Returns `(tokens_req [B,4,D], valid [B,4])`. A request slot that matches no sorted slot (an empty
     slot, forced Struggle, or a mon with <4 moves) gets a ZEROED token and `valid=0`, so the head
     contributes exactly 0 there rather than scoring a garbage vector.
     """
     ar = torch.arange(ctx.batch_size, device=ctx.device)
-    sorted_ids = ctx.all_move_ids[ar, ctx.our_active_idx]                 # [B,4] dex nums, SORTED order
-    req_ids = ctx.our_active_req_move_ids.long()                          # [B,4] dex nums, REQUEST order
-    match = (sorted_ids[:, None, :] == req_ids[:, :, None]) & (req_ids[:, :, None] > 0)  # [B,4req,4sorted]
+    match = active_request_sorted_match(ctx)                              # [B,4req,4sorted]
     valid = match.any(-1)                                                 # [B,4] did this slot resolve?
     perm = match.float().argmax(-1)                                       # [B,4] request slot -> sorted slot
     active_tokens = move_tokens_all[ar, ctx.our_active_idx]               # [B,4,D] sorted order

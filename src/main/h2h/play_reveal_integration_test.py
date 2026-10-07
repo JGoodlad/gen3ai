@@ -35,8 +35,10 @@ PAIRS, N_ENVS = 12, 8
 #: The OFF/OFF play of (A, B) — 12 pairs, 8 envs, the cycle seed of (0, "h2h:test", 0) — RECORDED at `c7b4d03e`, the
 #: commit before the per-side reveal, with this file's own digest: every game's result, end turn, teams and actions,
 #: every p1 margin and log-prob bit, every p2 decision (dec_n, action, argmax, margin bits). Reproduced at the build.
-OFF_BITS = "56135c839cdaa892541878eadd67727de2707418a971aaf6bd56346a9d4b71f0"
-OFF_OUTCOME_ALL = "36a0376a19539be7b4db48d2c82aa6fcab53542ba0599f654ccb44443cffe40c"
+#: RE-RECORDED 2026-10-06 for gen3_move_legality_by_id_v1 (the per-move-slot legality now lands on its own move;
+#: with the old positional write restored the `c7b4d03e` digests 56135c83… / 36a0376a… reproduce exactly).
+OFF_BITS = "3297249390e5373e7ce6a2d5cc84fd7cd4b2def668f736197b97939db70258f1"
+OFF_OUTCOME_ALL = "4baf87e0d3362198044cedad5e921777046387d93508b4a9d76fba7bf114a89f"
 
 
 def bits_digest(games):

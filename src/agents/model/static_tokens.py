@@ -35,7 +35,8 @@ from agents.model.arch_constants import (MOVE_LATENT_DIM, MOVE_NET_HIDDEN, ROLE_
                                          STATIC_STAT_SCALE)
 from agents.model.belief_tables import build_static_stat_prior
 from agents.model.encoders import MoveLatentEncoder
-from agents.model.extractor_ctx import Embeddings, ExtractorContext, slice_pokemon_categoricals
+from agents.model.extractor_ctx import (Embeddings, ExtractorContext, active_move_legality_sorted,
+                                        slice_pokemon_categoricals)
 from agents.observation.constants import (CONDITION_DIM, POKEMON_ACTIVE_OFFSET, POKEMON_CONDITION_OFFSET,
                                           POKEMON_COUNTER_DIM, POKEMON_COUNTER_OFFSET, POKEMON_HP_BLOCK_DIM,
                                           POKEMON_HP_BLOCK_OFFSET, POKEMON_HP_OFFSET,
@@ -246,14 +247,12 @@ class StaticTokenEncoder(torch.nn.Module):
 
     def move_legality(self, ctx: ExtractorContext) -> torch.Tensor:
         """[B,12,4] per (mon, SORTED move slot): our active's request-order legality matched to its sorted
-        slots by MOVE-NUM IDENTITY (the `_request_order_move_tokens` rule, inverted); 1 everywhere else. A
-        sorted slot no request slot names (an empty slot) reads 0 on our active."""
+        slots by MOVE-NUM IDENTITY — `extractor_ctx.active_move_legality_sorted`, the ONE rule the legacy
+        `PokemonEncoder` reads too (gen3_move_legality_by_id_v1); 1 everywhere else. A sorted slot no
+        request slot names (an empty slot) reads 0 on our active."""
         B = ctx.batch_size
         ar = torch.arange(B, device=ctx.device)
-        sorted_ids = ctx.all_move_ids[ar, ctx.our_active_idx]                          # [B,4]
-        req_ids = ctx.our_active_req_move_ids.long()                                    # [B,4]
-        match = (req_ids[:, None, :] == sorted_ids[:, :, None]) & (sorted_ids[:, :, None] > 0)
-        legal = (match & (ctx.our_active_req_move_legal[:, None, :] > 0.5)).any(-1)     # [B,4sorted]
+        legal = active_move_legality_sorted(ctx)                                        # [B,4sorted]
         out = torch.ones(B, 2 * TEAM_SIZE, self.num_moves, dtype=ctx.pokemon_part.dtype, device=ctx.device)
         out[ar, ctx.our_active_idx] = legal.to(out.dtype)
         return out

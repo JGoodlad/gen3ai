@@ -112,7 +112,7 @@ order (sorted by id). The SET pool is a sum, so it reads no order at all, and it
 is per-decision DYNAMIC state and lives only in D. Our active's legality arrives in REQUEST order and is
 matched to its slots by MOVE-NUM IDENTITY (`StaticTokenEncoder.move_legality`), never by position; the
 pointer head and the E3 seats leave this order through the existing identity permutation
-(`_request_order_move_tokens`). A position-based write is exactly legacy's F-ST-1 (§11).
+(`_request_order_move_tokens`). Both directions go through ONE rule, `extractor_ctx.active_request_sorted_match` (`active_move_legality_sorted` for the legality), which legacy now reads too (F-ST-1 FIXED, §11).
 
 ## 2. The opponent's unknown set: prior, belief, hypothesis, reveal
 
@@ -310,8 +310,9 @@ battle; not built (a T2 optimisation, its own unit). Stage 2's cost is §6.2 (ME
   `_migrate_config` step (pre-v139 → `legacy`), config v139, no `ARCH_SIGNATURE` bump while both encodings
   build; the production mirror records `legacy`.
 - Our active's move LEGALITY is matched to its sorted move slots by MOVE-NUM IDENTITY (`move_legality`).
-  Legacy writes the request-order legality bits onto the sorted-by-id slots BY POSITION (a FINDING, §11).
-- `selection_sites`: `static_tokens` is a declared forward module (two OBS reads, five integer ops).
+  Legacy now reads the same rule (`extractor_ctx.active_move_legality_sorted`, `gen3_move_legality_by_id_v1`);
+  until then it wrote the request-order legality bits onto the sorted-by-id slots BY POSITION (F-ST-1, §11).
+- `selection_sites`: `static_tokens` is a declared forward module (one OBS read, two integer ops; the identity match is `extractor_ctx`'s, declared there).
 
 ### 6.2 Stage 2's cost (MEASURED, CPU, 2026-10-06)
 
@@ -514,7 +515,7 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
 
 ## 11. Findings
 
-- **F-ST-1 (legacy, a reading defect, UNFIXED here because legacy must stay byte-identical):**
+- **F-ST-1 (legacy, a reading defect — FIXED 2026-10-06 by `gen3_move_legality_by_id_v1`, see the end of this item):**
   `PokemonEncoder` writes our active's legality bits (`our_active_req_move_legal`, REQUEST order) onto its
   move slots, which are SORTED BY ID, by POSITION. Wherever the request order differs from the id order, a
   move's "legal now" input belongs to another move. The pointer head and the operator use the identity
@@ -524,7 +525,12 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
   2026-10-06): the two orders differ on 60 of 60 blob rows with a request (53 of 55 fixed_mass), but the
   legality bits are almost always all-ones, so a move reads a WRONG legality bit on 2 of 64 blob rows (1 of
   64 fixed_mass): the rows where some move is illegal (a Choice lock, Taunt, Disable, no PP). Small, and
-  exactly the rows where legality matters.
+  exactly the rows where legality matters. **On real play** (the Lane S bank, 580 battles, 37,358 move-bearing
+  decisions): 2,542 rows (6.8 %) had a choosable move's legality on another move. **FIXED** by
+  `gen3_move_legality_by_id_v1`: `PokemonEncoder` and `StaticTokenEncoder.move_legality` both read
+  `extractor_ctx.active_move_legality_sorted` (one rule), and `agents/action/ordering_integrity.check_obs_move_order`
+  RAISES on a served row that breaks the rule's preconditions. The action mask was always right: no illegal move
+  was ever chosen, and the pointer head always scored the move the action sends (ledger 2026-10-06).
 - **F-ST-2:** under `static` the T0 belief heads lose the board context (§4, last paragraph).
 - **F-ST-3:** the opponent's stats in S are the Smogon PRIOR, never the learned spread belief (§2: circular);
   the belief reaches the physics only.
@@ -565,6 +571,7 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
 | 2026-10-06 | Board context | out of the per-mon path. Its home, from the entity-coverage audit: OUR SIDE + THEIR SIDE (one side-relative projection) + FIELD replacing the global token, `x` → own side, `g` / `c4` → field, the critic reads all three, the policy's board bypass deleted, and the operator's per-mon amounts as content on BOTH sides; all part of THIS arm (stage 2) | one global token (fails counts, side relativity, amounts: audit §4); a token per condition (trunk cost); the audit's new obs facts B5–B9 inside the arm (a separate later lever); the status-landing fix B4 here (F11's unit) | §4; `design_entity_coverage_audit.md` (`f32a9f4b`); coordinator 2026-10-06 |
 | 2026-10-06 | Build staging | ship stage 1 (S + D, the gather, the flag) now, stage 2 (§4) next, by handoff; `static` is NOT screen-ready until stage 2 lands | building both in one unit (it would cross the parallel F11 / F2 / K9(b) edits to the trunk and the readers) | the brief's "first coherent slice" rule |
 | 2026-10-06 | Legality onto sorted move slots | matched by MOVE-NUM IDENTITY under `static` | legacy's positional write (F-ST-1) | §11 |
+| 2026-10-06 | One rule for both encodings | `static` and legacy share `extractor_ctx.active_move_legality_sorted`; legacy's positional write is fixed, not preserved for byte-identity (GIGO fix `gen3_move_legality_by_id_v1`) | keeping legacy byte-identical (it would keep a wrong input on 6.8 % of real move-bearing decisions) | §11; owner rule "GIGO = fix ASAP" |
 | 2026-10-06 | Observation layout | UNCHANGED: everything S and D read is already in the 2761-dim observation | an obs change (would carry the obs benchmark, Rust encoder parity and goldens) | §1 |
 | 2026-10-06 | Stage 2 token types | a 9-row type table under static (OUR SIDE 6, THEIR SIDE 7, FIELD 8); legacy's stays 6 rows | re-using the GLOBAL row for FIELD (a type id whose meaning depends on the encoding); one type for both sides (side relativity would then need a learned side input) | §4.1; legacy byte identity |
 | 2026-10-06 | Stage 2 SIDE content | the 10 side-relative facts of the CURRENT observation (Spikes, 4 screen presences, Wish, alive / fainted / revealed counts, Sleep Clause used = a non-Rest sleeper on the side); alive from the per-mon slots (unrevealed = alive), Sleep Clause the op's own read | the audit's turns-left / Future Sight / Freeze Clause columns (new obs facts, B5 / B6: a separate lever); alive = 1 − fainted (a linear duplicate) | §4.1; brief "no new obs facts" |

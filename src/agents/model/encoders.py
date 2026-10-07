@@ -3,7 +3,7 @@
 Split out of `features_extractor.py` 2026-08-16 (one responsibility per file); that module
 re-exports every name here, so historical import paths still resolve.
 """
-from agents.model.extractor_ctx import Embeddings, ExtractorContext
+from agents.model.extractor_ctx import Embeddings, ExtractorContext, active_move_legality_sorted
 import torch
 from typing import Dict, Any, Optional
 from agents.observation.constants import (
@@ -242,16 +242,19 @@ class PokemonEncoder(torch.nn.Module):
         move_context_final = move_context.unsqueeze(2).expand(-1, -1, num_moves, -1)
 
         # Move validity: only the active slot gets a real mask; bench slots get all-ones.
-        # gen3_frame_deletion_v1 — the SOURCE changed with the prev-mask block's deletion, and
-        # the new one is strictly better on both axes this feature is read on. `ctx.move_mask`
-        # was the PREVIOUS turn's legality in SORTED-BY-ID order, while the move slots it gates
-        # are REQUEST-order aligned (gen3_op_move_align_v1) — stale AND misindexed, which is why
-        # the damage op abandoned it for `our_active_req_move_legal` and left this consumer
-        # behind. That tensor is current-decision choosability in request order: same [B, 4]
-        # shape, same meaning, correctly aligned to the slot it gates.
+        # 🚨 gen3_move_legality_by_id_v1: the move slots here are SORTED BY `Move.id` STRING
+        # (`get_sorted_moves`, both encoders), while `our_active_req_move_legal` is in REQUEST
+        # order. The legality reaches each sorted slot by MOVE-NUM IDENTITY through the one shared
+        # rule (`active_move_legality_sorted`). From gen3_frame_deletion_v1 (bcdd868b, 2026-08-17)
+        # until this fix it was written BY POSITION on the false belief that these slots are
+        # request-ordered: on 6.8 % of real move-bearing decisions (2,542 of 37,358, Lane S
+        # bank_v1; Choice lock / Taunt / Disable / 0 PP with a non-alphabetical moveset; 71 % of
+        # the rows carrying any illegal move) a choosable move's token read
+        # "illegal" and an illegal one's "legal". The action MASK was always right (no illegal
+        # move was ever chosen); only this feature was scrambled.
         move_validity_ours = torch.ones(batch_size, TEAM_SIZE, num_moves, 1, device=ctx.device)
         move_validity_ours[torch.arange(batch_size, device=ctx.device), ctx.our_active_idx] = \
-            ctx.our_active_req_move_legal.unsqueeze(-1).float()
+            active_move_legality_sorted(ctx).unsqueeze(-1).float()
         move_validity_opp  = torch.ones(batch_size, TEAM_SIZE, num_moves, 1, device=ctx.device)
         move_validity = torch.cat([move_validity_ours, move_validity_opp], dim=1)
 
