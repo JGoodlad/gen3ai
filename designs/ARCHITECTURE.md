@@ -695,7 +695,7 @@ doubling trigger (the port-verified departing-target rule — no β), one more z
 the move cell (+`INTENT_COND_MOVE_DIM`). Three of its rules are the simulator's
 (`gen3_op_ability_status_gigo_v1`, 2026-10-07): Protect / Detect's odds channel is `p_success ·
 P(an action follows)` (they FAIL with nothing after them in the queue — into a switch, or moving
-last; the order rule is `move_resolution_rules.p_seat_first`); Explosion's blockers are Protect /
+last; the order rule is `move_order.p_seat_first`); Explosion's blockers are Protect /
 Detect only (Endure survives the hit and the user still faints); Magic Coat bounces exactly the
 `reflectable` flag set (`move_resolution_rules.REFLECTABLE`, never Taunt / Encore / Disable /
 Torment / Roar). Enabling either is a gen-13+ decision gated on
@@ -713,7 +713,7 @@ seat k, our mon j, :]`** of width `_PAIR_OUTCOME_RAW` = **14** — the six exist
 | # | coordinate | source |
 |---|---|---|
 | 6-11 | `p_par p_brn p_frz p_slp p_psn p_tox` | `_incoming_status_lands` (the per-pivot immunity physics × the side / clause rules of §4's status-landing paragraph, applied per identity) SPLIT by the seat's status IDENTITY — `MOVE_STATUS_IDENT` for a dedicated status move (read from the raw `status_inflicted`, so **tox and psn stay apart** where `MOVE_STATUS_CAT` folds them), `MOVE_SECONDARY`'s L1-normalised major prefix for a damaging move's secondary |
-| 12 | `neutralization` | fraction of this mon's per-turn contribution destroyed WITHOUT a KO: burn → `0.5·base_atk/(base_atk+base_spa)`, paralysis → `0.25 + 0.75·Δp_outspeed` (the op's OWN outspeed logistic re-evaluated at ×0.25 speed), freeze/sleep → 1.0, psn/tox → the 1/8 and 1/16 residual ticks. Every scalar is a gen3 RULE; no tuned prior |
+| 12 | `neutralization` | fraction of this mon's per-turn contribution destroyed WITHOUT a KO: burn → `0.5·base_atk/(base_atk+base_spa)`, paralysis → `0.25 + 0.75·Δp_outspeed` (the op's OWN P(outspeed) re-evaluated with this mon paralysed: the logistic at ×0.25 speed, or under `--speed-physics on` the speed rule with paralysis applied once), freeze/sleep → 1.0, psn/tox → the 1/8 and 1/16 residual ticks. Every scalar is a gen3 RULE; no tuned prior |
 | 13 | `tempo_cost` | `P(any major status) × undo_turns(j)`, where `undo_turns` is the **CHEAPEST available undo path**: 1 turn for a cure MOVE (`MOVE_CURES_SELF_STATUS`: Refresh / Heal Bell / Aromatherapy), **1 for the Natural Cure ABILITY** (the status is shed on switch-out and a switch consumes exactly one of our actions), the op's own `rest_sleep_noeb` (**2**) for Rest, **2 for the bench-CLERIC path** (switch to an ALIVE teammate carrying a party-wide Heal Bell / Aromatherapy, then click it), else **0**. `0` means *no path exists* — never *the path is free* — which is why Natural Cure is priced at its literal switch. Every input is OUR mon's (moveset, ability, HP), so all of it is exact and no marginalisation arises on this axis. `neutralization` deliberately does NOT read the ability: it is a per-TURN rate and Natural Cure changes DURATION, which this reduction refuses to model without a rule to source a number from |
 
 ONE α over the move axis then reduces it — **Contract W**: α has no defender axis and no channel
@@ -1183,6 +1183,30 @@ Explosion `pko`), and the `incoming_matrix` call is where `last_topk_idx` / `las
 — the seat axis α aligns to — are selected. Turning either matrix flag off deletes those; turning
 `op_drop_renders` off re-widens the flat block to 660 and changes nothing else.
 
+**P(we act first) — the logistic in production, the speed PHYSICS behind `--speed-physics`** (v143,
+`gen3_speed_physics_v1`, architecture audit F7b, OFF in production). Every op site that prices who moves first
+— the incoming per-mon `p_outspeed`, the outgoing `p_outspeed`, the outgoing attacker matrix, the pair outcome's
+paralysis severity, C1's boost `d_outspeed`, C2's `d_their_outspeed` and the V edge — reads, under `off`,
+`sigmoid((our_spe − their_spe) / _DMG_SPEED_SCALE)` with `_DMG_SPEED_SCALE = 15.0` (hand-chosen, "about one
+stage"; the per-species believed-speed spread is looked up and discarded). Under `on` (no parameters; `off` is
+byte-identical — the extractor's compiled graph, state_dict and outputs) each site builds its inputs in
+`damage_op_speed.py` and calls ONE rule, `move_order.p_first_same_priority`: OUR speeds EXACT (Showdown's integer
+stat, stage-floor and paralysis arithmetic: the stage applies on the active row only, paralysis on every row,
+`modify(spe, 0.25)` rounds half down); THEIR speed a Gaussian belief on the integer lattice — the spread belief's
+believed speed (the Smogon prior mean without it) and the Smogon prior's per-species spread, both scaled by their
+stage and paralysis — integrated as `P(T < s) + ½ P(T = s) = ½[Φ((s − ½ − μ)/σ) + Φ((s + ½ − μ)/σ)]` (an exact tie
+is a coin flip; a point belief is the exact step; a wider spread pulls toward ½). Choice Band does not touch
+speed. Quick Claw (gen 3: ONE shared 1-in-5 roll per turn, holders at 65535) is implemented
+(`move_order.p_first_quick_claw`) and FORMAT-GATED OFF: it is BANNED in gen3ou (Showdown master's banlist, owner
+2026-10-07; `move_order.quick_claw_live`). The PRIORITY bracket is the same module's `p_seat_first`, read by the
+move-resolution family and `intent_conditional`; under `on` both read the PRE-gain P(first) (under `off`
+`intent_conditional` reads the post-gain one, production unchanged). Real battles (the Lane S bank, 580 battles,
+23,598 equal-priority turn rows, cold-start beliefs): Brier 0.0406 vs the logistic's 0.0425, log loss 0.1367 vs
+0.1341, ECE 0.0160 vs 0.0157; 3,428 unequal-priority rows, 0 contradicted
+(`designs/research_state/measurements/speed_physics_f7b_2026-10-07/`). Named residuals: Swift Swim /
+Chlorophyll / Macho Brace are not modelled, and the Gaussian tail under-covers a spread the Smogon prior never
+saw (the one certain-and-wrong row: a Timid 252-Speed Blissey, prior 148 ± 5.3).
+
 **An OPPONENT's ability is revealed only by its `known` flag (`gen3_op_ability_known_v1`).** The
 observation writes an UNREVEALED opponent's top-1 Smogon-prior ability into the ability block's `id1` with
 `known = 0` (§1.2). Every op read of an opponent's ability — the damage multiplier (Levitate, the absorbs,
@@ -1505,6 +1529,7 @@ does nothing given another setting.
 | `ridealong_rnd` | `false` | OFF |
 | `ridealong_rnd_variants` | `"off"` | OFF |
 | `species_prior_fusion` | `true` | ACTIVE |
+| `speed_physics` | `"off"` | OFF |
 | `spread_belief` | `true` | ACTIVE |
 | `spread_belief_nature` | `true` | ACTIVE |
 | `switch_branch_cell` | `true` | ACTIVE |

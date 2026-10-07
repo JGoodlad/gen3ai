@@ -206,6 +206,17 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "(tempo_cost, wasted_ko, the hand thresholds) dropped; the seven blocks are retired. "
                              "STRUCTURAL, version-checked, fresh-only. Requires --opp-intent-coef > 0, "
                              "--damage-op, --damage-outgoing and both per-move matrices; blob only.")
+    from agents.model.move_order import SPEED_PHYSICS_MODES
+    parser.add_argument("--speed-physics", "--speed_physics", dest="speed_physics",
+                        choices=SPEED_PHYSICS_MODES, default=None,
+                        help="Architecture audit F7b's SPEED PHYSICS (gen3_speed_physics_v1, v143; "
+                             "designs/endstate/design_arch_audit.md F7). 'off' (default; production): the damage "
+                             "operator's P(we act first) is a fixed logistic over the speed gap, byte-identical. "
+                             "'on': the integral over the speed BELIEF (the spread belief's believed speed and the "
+                             "Smogon prior's spread) plus the exact gen-3 rules (speed tie = coin flip, paralysis, "
+                             "stat stages, our exact stat arithmetic; Quick Claw format-gated, banned in gen3ou), "
+                             "at every op site. No parameters. STRUCTURAL, version-checked, fresh-only. Requires "
+                             "--damage-op.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

@@ -30,7 +30,7 @@ rolls, `p_outspeed`, the secondary columns) contracted with the published α. No
   (gen3_op_ability_status_gigo_v1): Protect FAILS when no action follows it in the queue
   (`onPrepareHit: !!this.queue.willAct()`), so into a switch and when we move last —
   `Σ_k α_k·(1 − P(seat k first)) + a_un·(1 − P(an unnamed priority-0 seat first))`, the order
-  from `move_resolution_rules.p_seat_first` (the family's own rule).
+  from `move_order.p_seat_first` (the family's own rule).
 * **Magic Coat** (§3.12, build step 6 — its G0 oracle ran FIRST, per the doc's own gate): the
   reflectable set was UNVERIFIED, so five constructed scenarios on the reference sim resolved
   it (`measurements/gen3_magiccoat_reflectable_oracle.json`): foe-targeting status (Toxic /
@@ -66,7 +66,7 @@ import torch
 from agents.gen3_data.moves import MoveData
 
 from agents.model.arch_constants import _INTENT_COND_RAW
-from agents.model.move_resolution_rules import p_seat_first
+from agents.model.move_order import p_seat_first
 from agents.model.pair_outcome import seat_in_set, seat_num_table
 
 # Gate move NUMS (gen3_data.moves, read 2026-08-16): counter 68, mirrorcoat 243, explosion 153,
@@ -106,7 +106,7 @@ def _reflectable_table() -> torch.Tensor:
 
 def _priority_table() -> torch.Tensor:
     """[n_move_nums] each move num's priority (the data facade's gen-3 value) — the ORDER input of the
-    Protect rule (`move_resolution_rules.p_seat_first`)."""
+    Protect rule (`move_order.p_seat_first`)."""
     from agents import gen3_data
     raw = gen3_data.moves.raw()
     n = max(cast(MoveData, gen3_data.moves.get(mid)).num for mid in raw) + 1

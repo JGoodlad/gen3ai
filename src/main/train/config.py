@@ -506,6 +506,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("belief_tokens", "blob")              # v136 structural str (X5 U2; version-checked, fresh-only)
     _resolve("policy_readout", "tower")            # v138 structural str (audit F2; version-checked, fresh-only)
     _resolve("move_resolution", "off")             # v141 structural str (F11's move-resolution family; fresh-only)
+    _resolve("speed_physics", "off")               # v143 structural str (F7b's speed physics; fresh-only)
     _resolve("oracle_reveal", "off")               # v137 RESUME-IMMUTABLE str (the diagnostic observation mode; flagless resume inherits)
     _resolve("token_encoding", "legacy")           # v139 structural str (static tokens; version-checked, fresh-only)
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —

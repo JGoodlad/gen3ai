@@ -165,6 +165,7 @@
 | `--oracle-reveal` | — | 0 / 0 | a DIAGNOSTIC observation mode (`oracle_reveal`, config v137; `off` = production; `species` / `full` = the X5 A/B's oracle-species / oracle-full arms, `designs/endstate/design_x5_belief_tokens.md` §7.6) | **KEEP** |
 | `--policy-readout` | — | 0 / 0 | `--arch production`: `production_config.json` `policy_readout` = `"tower"`; the architecture audit F2 screen's `trunk` arm (`designs/endstate/design_arch_audit.md` F2, config v138) | **KEEP** |
 | `--move-resolution` | — | 0 / 0 | `--arch production`: `production_config.json` `move_resolution` = `"off"`; the architecture audit F11 screen's `on` arm (the move-resolution family, `designs/endstate/design_arch_audit.md` §9, config v141) | **KEEP** |
+| `--speed-physics` | — | 0 / 0 | `--arch production`: `production_config.json` `speed_physics` = `"off"`; the architecture audit F7b `on` arm (P(we act first) from the speed belief + the exact gen-3 order rules, `designs/endstate/design_arch_audit.md` F7, config v143) | **KEEP** |
 | `--fork-fraction` | — | 1 / 0 | the Rust fork arm (declared, OFF; `designs/training/forks.md` section 14 checklist gates enabling it; `designs/endstate/`) | **KEEP** |
 | `--fork-branches` | — | 1 / 0 | the Rust fork arm's branch count | **KEEP** |
 | `--fork-contested-gap` | — | 0 / 0 | the Rust fork arm's selector quantile | **KEEP** |

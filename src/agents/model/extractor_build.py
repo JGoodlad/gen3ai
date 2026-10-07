@@ -119,6 +119,7 @@ class ExtractorBuild(torch.nn.Module):
                  policy_readout: str = "tower",
                  token_encoding: str = "legacy",
                  move_resolution: str = "off",
+                 speed_physics: str = "off",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -336,6 +337,16 @@ class ExtractorBuild(torch.nn.Module):
                 "reproduce the de-timid fiction it exists to remove.")
         if op_believed_lean and not damage_op:
             raise ValueError("op_believed_lean=True requires damage_op=True.")
+        # gen3_speed_physics_v1 (v143, `--speed-physics`; architecture audit F7b): P(we act first) from the speed
+        # BELIEF + the exact gen-3 order rules (`move_order`) instead of the op's fixed logistic. No parameters;
+        # 'off' (production) is byte-identical. It is the OP's physics, so it needs the op.
+        from agents.model.move_order import SPEED_PHYSICS_MODES
+        if speed_physics not in SPEED_PHYSICS_MODES:
+            raise ValueError(f"speed_physics must be one of {SPEED_PHYSICS_MODES}, got {speed_physics!r}")
+        if speed_physics == "on" and not damage_op:
+            raise ValueError("speed_physics='on' requires damage_op=True — it is the damage operator's "
+                             "P(outspeed) that it replaces; without the op there is nothing to price.")
+        self.speed_physics = speed_physics
         self.intent_conditional = None
         if intent_conditional:
             self.intent_conditional = IntentConditionalMoveCell(INTENT_COND_MOVE_DIM)
@@ -650,7 +661,8 @@ class ExtractorBuild(torch.nn.Module):
                                          candidate_k=self.damage_candidate_k,
                                          reduce_how=_reduce_how,
                                          drop_renders=op_drop_renders,
-                                         believed_lean=op_believed_lean)
+                                         believed_lean=op_believed_lean,
+                                         speed_physics=(speed_physics == "on"))
                           if damage_op else None)
         # Tie the two ends together NOW rather than discovering a width mismatch in a forward pass:
         # `cls_pool`'s projection was sized from the pure helper hundreds of lines above, before the

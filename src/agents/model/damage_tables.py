@@ -519,6 +519,7 @@ def build_species_ability_marginal(n_species: int, ability_table: torch.Tensor, 
 # philosophy as the crit-split, since OHKO is a nonlinear threshold a mean-field ×(1+0.5·p_cb) would blur).
 CHOICE_BAND_ITEM_NUM = int(cast(ItemData, gen3_data.items.get("choiceband")).num)   # 220
 CHOICE_BAND_PHYS_MULT = 1.5
+QUICK_CLAW_ITEM_NUM = int(cast(ItemData, gen3_data.items.get("quickclaw")).num)       # 217 — gen3_speed_physics_v1
 CURSE_MOVE_NUM = int(cast(MoveData, gen3_data.moves.get("curse")).num)              # 174 — the C1 runtime type branch
 TOXIC_MOVE_NUM = int(cast(MoveData, gen3_data.moves.get("toxic")).num)              # 92 — C2 tox-vs-psn (shared cat 5)
 REST_MOVE_NUM = int(cast(MoveData, gen3_data.moves.get("rest")).num)                # 156 — C3's self-sleep cost channel
@@ -535,6 +536,19 @@ def build_species_cb_prior(n_species: int) -> torch.Tensor:
         snum = cast(SpeciesData, gen3_data.species.get(sid)).num
         if 0 <= snum < n_species:
             prior[snum] = float((gen3_data.priors.items(sid) or {}).get("choiceband", 0.0))
+    return prior
+
+
+def build_species_qc_prior(n_species: int) -> torch.Tensor:
+    """``[n_species]`` P(holds Quick Claw | species) from the Smogon item usage prior (`gen3_data.priors.items`) —
+    the `build_species_cb_prior` rule for the speed physics (gen3_speed_physics_v1, `--speed-physics on`): the
+    op's prior for an UNREVEALED opponent's Quick Claw when no item belief runs (Hypno ≈0.51, Swalot ≈0.33).
+    Non-persistent, zero params; a species with no usage data reads 0.0."""
+    prior = torch.zeros(n_species, dtype=torch.float32)
+    for sid in gen3_data.species.base_form_ids():
+        snum = cast(SpeciesData, gen3_data.species.get(sid)).num
+        if 0 <= snum < n_species:
+            prior[snum] = float((gen3_data.priors.items(sid) or {}).get("quickclaw", 0.0))
     return prior
 
 

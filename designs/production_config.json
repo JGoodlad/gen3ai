@@ -128,6 +128,7 @@
   "role_token_size": 128,
   "species_embedding_dim": 32,
   "species_prior_fusion": true,
+  "speed_physics": "off",
   "spread_belief": true,
   "spread_belief_coef": 0.05,
   "spread_belief_nature": true,

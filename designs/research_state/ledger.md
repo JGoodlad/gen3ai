@@ -22745,3 +22745,54 @@ replicate floor exists for these rows (`--floor-json`), so labels read vs ZERO. 
 T2 tier) DEFERRED: no lease; the OFF forward differs only by a Python-constant branch.
 
 Tag: **BUILT · `--value-threat-inject off` one-lever (0 / 715 tensors moved, −1,792 params) · ON byte-identical (K9 both, FX graph, state_dict) · config v142 · meter: critic_read `gate.resolution.{bot,pool}`** · design: [`design_arch_audit.md` F10](../endstate/design_arch_audit.md)
+### 2026-10-07 · BUILT · **F7b's SPEED PHYSICS behind `--speed-physics {off,on}` (config v143, OFF in production): P(we act first) = the speed belief's lattice integral + the exact gen-3 order rules (coin-flip tie, exact stat / stage / paralysis arithmetic, Choice Band none, Quick Claw format-gated OFF — banned in gen3ou); ONE order rule (`move_order.py`); `off` byte-identical; on real battles NOT clearly better calibrated than the logistic (Brier 0.0406 vs 0.0425, log loss 0.1367 vs 0.1341)**
+
+The owner's 2026-10-06 ruling on audit F7b ("F7b IN"): replace the hand-picked `_DMG_SPEED_SCALE = 15` logistic.
+
+- **Built** (`src/agents/model/move_order.py`, `damage_op_speed.py`): under `on`, all seven op sites that price who
+  moves first (incoming / outgoing `p_outspeed`, the outgoing attacker matrix, the pair outcome's paralysis severity,
+  C1 `d_outspeed`, C2 `d_their_outspeed`, the V edge) call ONE rule, `move_order.p_first_same_priority`; each keeps
+  its `off` code verbatim. Their speed: the spread belief's believed speed (the Smogon prior mean without it) and
+  the Smogon prior's per-species spread (the formerly DISCARDED F7a lookups), scaled by stage and paralysis,
+  integrated on the integer lattice — a tie is a coin flip. Ours: Showdown's integer stat formula, stage floors,
+  paralysis `modify(spe, 0.25)` (rounds half DOWN), stage before paralysis. No parameters, no free constant.
+  `p_seat_first` (the priority bracket) moved into the same module; under `on` `intent_conditional` reads the
+  PRE-gain P(first) like the move-resolution family.
+- **Rules verified at source** (`deps/pokemon-showdown`, gen 3 → gen 4 → base): `sim/battle.ts` `comparePriority`
+  (priority, then speed) and `speedSort` (ties shuffled); `data/mods/gen3/scripts.ts` `getActionSpeed` (the turn's
+  Quick Claw roll ⇒ 65535); `sim/battle.ts` `if (this.gen === 3) this.quickClawRoll = this.randomChance(1, 5)` (one
+  SHARED roll per turn; `data/mods/gen3/items.ts` drops the per-holder hook); `statModify`; `getStat`'s boost table;
+  `data/mods/gen4/conditions.ts` par `chainModify(0.25)` + `modify`; `data/items.ts` choiceband (no `onModifySpe`).
+- **Quick Claw is BANNED in Gen 3 OU** (owner 2026-10-07; Showdown master `config/formats.ts` `[Gen 3] OU` banlist
+  carries `'Quick Claw'`, read 2026-10-07; the vendored simulator `e0551883`, 2026-05-09, predates the ban). The rule
+  is implemented and tested; the op's term is OFF for gen3ou through one read, `move_order.quick_claw_live`, for the
+  format-spec build to replace. **Exposure (reported, not changed — `data/` is frozen while the X5 look-3 cross runs):**
+  the Smogon item prior still gives Quick Claw mass to 182 species (14 at ≥ 0.05; Hypno 0.51, Trapinch 0.35, Swalot
+  0.33), and the item belief starts from it (under `on` the op never reads it); ZERO of the teams in
+  `data/teams/sample` (75 files), `specialist` (3), `others` (744, the pool) and the archetype file carry Quick Claw;
+  the Lane S bank holds no true holder.
+- **`off` proof.** The production extractor's dynamo FX graph (sha256 `3b06da42…`, 11,317 lines), state_dict bytes
+  and outputs equal the base `f0d673fd`'s.
+- **Real battles** (`measurements/speed_physics_f7b_2026-10-07/`; the whole Lane S bank through the Rust core, no
+  poke-env; CPU, deterministic): 23,598 equal-priority turn rows, cold-start beliefs — Brier **0.0406** (on) vs
+  **0.0425** (off), log loss **0.1367** vs **0.1341**, ECE 0.0160 vs 0.0157; a trained blob arm's beliefs
+  (`rb_x5ab_blob_s1007`): Brier 0.0368 vs 0.0369, log loss 0.1308 vs 0.1207. `on` is SHARPER (18,475 vs 17,772 rows in
+  the saturated bins) and pays for it in log loss. The bracket: 3,428 unequal-priority rows, **0 contradicted**. One
+  float32-certain miss under `on`: a Timid 252-Speed Blissey 15 prior σ above the Smogon mean (148 ± 5.3) — the
+  Gaussian tail under-covers a spread the prior never saw. Descriptive, no interval; the strength effect is
+  UNVERIFIED (only a matched A/B measures it).
+- **Tests that fail on revert** (11 mutations, all caught): `move_order_test.py` (tie, point step, lattice, spread
+  widening, paralysis rounding, stage table, stage-before-paralysis, priority bracket, Quick Claw roll and ban, the
+  stat formula), `speed_physics_extractor_test.py` (off never calls the rule, no parameters, edited real observations:
+  their paralysis, our +2, Choice Band, a coin-flip belief, a wider spread, Quick Claw gated / priced, versions),
+  `speed_physics_bridge_integration_test.py` (`sim` + `integration`: 40 banked battles, bracket never contradicted,
+  saturated bins hold).
+- **Findings, not fixed.** (1) Under `off` (production) `intent_conditional` feeds the POST-gain `p_outspeed` (scaled
+  by the op's learned `out_gain`) into the order rule while the move-resolution family reads it PRE-gain — fixed under
+  `on` only; changing production is an owner decision. (2) Swift Swim / Chlorophyll (speed ×2 in rain / sun) and
+  Macho Brace are not modelled (outside the owner's rule list). (3) The CPU math core `observation/incoming_damage.p_outspeed`
+  (the prober's switch-in view) is a second order rule over the exact spread distribution; not unified (not a model
+  input). GPU checks (the compiled CUDA graph of `on`, the T2 inference tier, the learner gates on GPU) DEFERRED: no
+  lease.
+
+Tag: **BUILT · `--speed-physics` (OFF) · one move-order rule · Quick Claw banned in gen3ou (gated, 0 pool teams carry it, prior still does) · `off` byte-identical · real battles: Brier 0.0406 vs 0.0425, log loss 0.1367 vs 0.1341 — not clearly better · bracket 0 / 3,428 contradicted** · design: [`design_arch_audit.md` F7](../endstate/design_arch_audit.md)

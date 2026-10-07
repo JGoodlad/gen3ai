@@ -306,7 +306,12 @@ class DamageOperatorBlocks:
                               our_cur_hp[:, None], eff, acc, eps)
         high, low, crit, ko = (r * usable for r in override_rolls((high, low, crit, ko), nf))
         opp_spe_std = self.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, opp_act], _SB_SPE, 1]   # [B] (#3)
-        p_outspeed = self._p_outspeed(our_spe, opp_spe, opp_spe_std)                  # [B]
+        if self.speed_physics:     # gen3_speed_physics_v1: our active's EXACT speed vs their active's belief
+            p_outspeed = self._p_first_vs_opp_active(
+                ctx, spread_belief, self._our_speeds_exact(ctx)[ar, our_act],
+                self._our_quick_claw(ctx)[ar, our_act])                                # [B]
+        else:
+            p_outspeed = self._p_outspeed(our_spe, opp_spe, opp_spe_std)              # [B]
 
         # gen3_unified_move_system_v1: per OUR move, "what status can it cause + with what probability".
         # realized P(effect k | move) = chance_mk × acc_m × Serene Grace(our active) × Shield Dust(opp
@@ -633,8 +638,15 @@ class DamageOperatorBlocks:
 
         # --- p_outspeed per attacker (our_spe [B,6] vs the shared believed opp speed) ---
         opp_spe_std = self.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, opp_act], _SB_SPE, 1]   # [B]
-        p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None].expand(B, TEAM_SIZE),
-                                      opp_spe_std[:, None].expand(B, TEAM_SIZE))             # [B,6]
+        if self.speed_physics:     # gen3_speed_physics_v1: C5's inherited stages ride as the stage override
+            _rows = (self._boost_stages(ctx.our_ctx_raw)[4][:, None].expand(B, TEAM_SIZE).clone()
+                     if inherit_stages else None)
+            p_outspeed = self._p_first_vs_opp_active(
+                ctx, spread_belief, self._our_speeds_exact(ctx, stage_rows=_rows),
+                self._our_quick_claw(ctx))                                                   # [B,6]
+        else:
+            p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None].expand(B, TEAM_SIZE),
+                                          opp_spe_std[:, None].expand(B, TEAM_SIZE))         # [B,6]
 
         # --- assemble + gate ---
         per_move = torch.stack([low, high, crit, ko], dim=-1)                           # [B,6,4,4]
@@ -921,9 +933,15 @@ class DamageOperatorBlocks:
         phys_share = phys / (phys + spec).clamp_min(eps)                            # [B,6]
         # How much of this mon's value rested on OUTSPEEDING — the op's own logistic, re-evaluated
         # at paralysis speed. Nothing new is assumed about speed; the same estimator answers twice.
-        p_fast = self._p_outspeed(our_spe, opp_spe[:, None], opp_spe_std[:, None])          # [B,6]
-        p_fast_par = self._p_outspeed(our_spe * _DMG_PARA_SPEED, opp_spe[:, None],
-                                      opp_spe_std[:, None])                                 # [B,6]
+        if self.speed_physics:
+            # gen3_speed_physics_v1: the forward's own pair (P(first), P(first | this mon paralysed)), from the
+            # one rule (`damage_op_speed`) — never a second estimator.
+            assert self.stash.speed_fast_pair is not None, "the op forward stashes it under --speed-physics on"
+            p_fast, p_fast_par = self.stash.speed_fast_pair                                 # [B,6] each
+        else:
+            p_fast = self._p_outspeed(our_spe, opp_spe[:, None], opp_spe_std[:, None])      # [B,6]
+            p_fast_par = self._p_outspeed(our_spe * _DMG_PARA_SPEED, opp_spe[:, None],
+                                          opp_spe_std[:, None])                             # [B,6]
         d_fast = (p_fast - p_fast_par).clamp(min=0.0, max=1.0)                              # [B,6]
         ones = torch.ones_like(phys_share)
         sev = torch.stack([

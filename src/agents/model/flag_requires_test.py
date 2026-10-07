@@ -56,6 +56,8 @@ _ON_OVERRIDE: Dict[str, object] = {
     "token_encoding": "static",
     # gen3_move_resolution_v1 (v141): a two-value mode string; 'off' is OFF.
     "move_resolution": "on",
+    # gen3_speed_physics_v1 (v143): a two-value mode string; 'off' is OFF.
+    "speed_physics": "on",
 }
 
 

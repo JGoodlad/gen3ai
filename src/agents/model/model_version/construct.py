@@ -233,6 +233,9 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_move_resolution_v1 (v141): F11's move-resolution family.
             move_resolution=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_resolution", "off")),
+            # gen3_speed_physics_v1 (v143): the op's P(we act first) physics.
+            speed_physics=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("speed_physics", "off")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

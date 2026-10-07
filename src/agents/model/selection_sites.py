@@ -43,11 +43,11 @@ from typing import Dict, FrozenSet, List, NamedTuple, Optional, Tuple
 #: production surface (every file a torch op of `evaluate_actions` was called from;
 #: `selection_sites_test` re-measures it and fails on a module outside this list).
 FORWARD_MODULES: Tuple[str, ...] = (
-    "aux_value_heads", "belief_heads", "board_tokens", "conditional_threat", "damage_kinds", "damage_op", "damage_op_blocks",
+    "aux_value_heads", "belief_heads", "board_tokens", "conditional_threat", "damage_kinds", "damage_op", "damage_op_blocks", "damage_op_speed",
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
     "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
-    "move_resolution", "move_resolution_rules", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
+    "move_order", "move_resolution", "move_resolution_rules", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
     "status_rules", "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
 )
 
@@ -118,6 +118,12 @@ RULE_KINDS = ("topk", "argmax", "threshold", "threshold_self", "sort_head")
 MARGIN: Dict[Tuple[str, str], Rule] = {
     # --- the believed-candidate SELECTIONS: topk over the composed move belief sigmoid(logits) * mask
     ("pointer_head", "w_all.topk(K, dim=-1)"): Rule("topk", why="E5 tail seats: each opp mon's top-K"),
+    # gen3_speed_physics_v1 (v143, `--speed-physics on` only): a POINT speed belief (sigma 0 — a padded slot)
+    # takes the exact step; its operand is the believed speed, a score.
+    ("move_order", "ours > mu"): Rule("threshold", zero_exact=True,
+                                      why="speed physics: a point belief's outspeed step"),
+    ("move_order", "ours == mu"): Rule("threshold", zero_exact=True,
+                                       why="speed physics: a point belief's speed-tie coin flip"),
     ("pointer_head", "w_all >= topv[..., -1:].clamp(min=1e-09)"): Rule(
         "threshold_self", why="E5 in-top-K mask at the K-th value of the same tensor (ties incl.)"),
     ("damage_op_pairwise", "w_all.detach().topk(K, dim=-1)"): Rule(
@@ -294,8 +300,20 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     "status_rules": {
         "OBS": ("(our_slp * our_alive * (1.0 - our_rest)).sum(-1) > 0.5", "our_frz.sum(-1) > 0.5"),
     },
-    "move_resolution_rules": {
-        "TABLE": ("prio_k > prio_m", "prio_k == prio_m"),
+    # gen3_speed_physics_v1 (v143): THE move-order rule — the priority bracket (tables vs tables; the speed
+    # tie-break is a multiplier, never a threshold) and our EXACT speed arithmetic (observation spread / stage /
+    # paralysis / item reads and integers, every floor and round of Showdown's integer formulas). The believed
+    # spread's zero test reads the Smogon prior table (× a stage / paralysis factor of the observation).
+    "move_order": {
+        "TABLE": ("prio_k > prio_m", "prio_k == prio_m", "sigma > 0"),
+        "OBS": ("iv.round()", "ev.round()", "(ev.round() / 4.0).floor()", "(nature_mult * 100.0).round()",
+                "(inner * pct / 100.0).floor()", "stage.round()", "(stat * (2.0 + s.clamp(min=0.0)) / 2.0).floor()",
+                "(stat * 2.0 / (2.0 - s.clamp(max=0.0))).floor()", "s >= 0",
+                "((stat * PARA_SPEED_MOD_4096 + 2047.0) / 4096.0).floor()", "para > 0.5"),
+    },
+    # gen3_speed_physics_v1: Quick Claw identity (integer item ids).
+    "damage_op_speed": {
+        "INT": ("ctx.item_ids[:, :TEAM_SIZE] == self.qc_item_num", "item == self.qc_item_num", "item == 0"),
     },
     "intent_threshold": {
         "INT": ("req_move_ids[..., None] == self.mech_nums",),

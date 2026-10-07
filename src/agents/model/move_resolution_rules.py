@@ -17,7 +17,7 @@ Nothing here imports torch: `move_resolution.py` builds its buffers from these d
 """
 from __future__ import annotations
 
-from typing import Any, Dict, FrozenSet, Tuple
+from typing import Dict, FrozenSet, Tuple
 
 # ----------------------------------------------------------------------------------------------- targets
 #: The facade `target` values that aim at the FOE in a singles battle (the rest are self / side / field / ally).
@@ -127,12 +127,9 @@ SEAT_KINDS: Dict[str, Tuple[str, ...]] = {
 }
 
 # ------------------------------------------------------------------------------------- move ORDER
-def p_seat_first(prio_m: Any, prio_k: Any, p_out: Any) -> Any:
-    """P(seat k acts BEFORE our move m) — the gen-3 order rule, ONE declaration for every reader (the family's
-    `pre`, `intent_conditional`'s Protect): the higher PRIORITY moves first; at equal priority the faster mon,
-    ``p_out`` = P(we outspeed them) (`sim/battle-queue.ts` sorts by priority, then speed). Duck-typed over
-    tensors (this module imports no torch); all three broadcast."""
-    return (prio_k > prio_m).to(p_out.dtype) + (prio_k == prio_m).to(p_out.dtype) * (1.0 - p_out)
+# The gen-3 order rule (`p_seat_first`: priority bracket, then P(we act first within it)) lives in
+# `agents.model.move_order` with the speed physics it is completed by (gen3_speed_physics_v1, audit F7b) — one module,
+# so the bracket and the within-bracket rule can never fork.
 
 
 #: Protect / Detect / Endure FAIL when no action follows them in the queue (`data/moves.ts` protect / endure

@@ -254,6 +254,14 @@ class ExtractorForward(ExtractorApi):
                              if self.damage_op is not None else None)
         else:
             _item_cb_prob = None
+        # gen3_speed_physics_v1 (`--speed-physics on` only): the same publication's P(Quick Claw) per opp slot —
+        # the op's Quick Claw belief (its exactness gate stays op-side, like CB's). Off passes nothing, and so
+        # does a format that BANS Quick Claw (gen3ou, `move_order.quick_claw_live`): no holder exists.
+        _op_kw: Dict[str, Any] = {}
+        if (self.damage_op is not None and self.damage_op.speed_physics
+                and self.damage_op.quick_claw_live and self.item_belief_head is not None):
+            _op_kw["item_qc_prob"] = (torch.softmax(self.stash.item_logits, dim=-1)  # type: ignore[arg-type]
+                                      [:, :, self.damage_op.qc_item_num])
         # gen3_typed_hp_belief_v1: the opp-HP-TYPE head + its typed composition + its token reinjection all
         # moved UP into `_apply_move_belief`, where the move head reads the same tokens at the same time —
         # so `last_move_belief_logits` is ALREADY typed by the time it reaches here and the op needs no
@@ -305,11 +313,12 @@ class ExtractorForward(ExtractorApi):
                 damage_block = checkpoint(self.damage_op, _opctx, self.last_move_belief_logits,
                                           self.last_spread_belief, move_latent_all,
                                           _sp, _item_cb_prob, fm, x5r,
-                                          use_reentrant=False)
+                                          use_reentrant=False, **_op_kw)
             else:
                 damage_block = self.damage_op(_opctx, self.last_move_belief_logits, self.last_spread_belief,
                                               move_latent_all, _sp,
-                                              item_cb_prob=_item_cb_prob, fixed_moves=fm, x5_roster=x5r)
+                                              item_cb_prob=_item_cb_prob, fixed_moves=fm, x5_roster=x5r,
+                                              **_op_kw)
         # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
         self.stash.damage_block = damage_block
         return opp_tokens, damage_block
@@ -918,7 +927,12 @@ class ExtractorForward(ExtractorApi):
             _mcells = torch.cat([_mcells, self.intent_conditional(
                 _al, _pc, self.damage_op.last_pair_gate,  # type: ignore[union-attr]
                 ctx.our_active_idx, self.damage_op.last_topk_idx,  # type: ignore[union-attr]
-                _ot.out_per_move[..., 1], _ot.out_p_outspeed,  # type: ignore[index,union-attr]
+                _ot.out_per_move[..., 1],  # type: ignore[index,union-attr]
+                # gen3_speed_physics_v1: under `on` the ORDER rule's input is the PRE-gain P(first) — the value the
+                # move-resolution family reads (one rule, one input); `off` keeps the post-gain read (production).
+                (self.damage_op.tensors_from_block(  # type: ignore[union-attr]
+                    self.damage_op.last_raw_block).out_p_outspeed  # type: ignore[union-attr,arg-type]
+                 if self.damage_op.speed_physics else _ot.out_p_outspeed),  # type: ignore[union-attr]
                 _ot.out_secondary[..., _OUT_SEC_FLINCH_COL],  # type: ignore[index,union-attr]
                 ctx.our_active_req_move_ids, _po,
                 _bl, _opko,

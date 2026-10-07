@@ -542,6 +542,16 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "the move-resolution family (different parameters, different cell widths).\n"
                 "Resume with the matching --move-resolution setting (a flagless resume inherits it), or "
                 "start a fresh training run.")
+        # gen3_speed_physics_v1 (v143, architecture audit F7b): the op's P(we act first). NO parameter differs
+        # between 'off' and 'on', so no shape error or strict load can catch a flip — this compare is the only gate.
+        if self.speed_physics != saved.speed_physics:
+            raise ModelVersionError(
+                f"speed_physics mismatch: saved={saved.speed_physics!r}, current={self.speed_physics!r}.\n"
+                "The op's P(we act first) is fixed for a run's lifetime: 'off' is the fixed logistic over the speed "
+                "gap, 'on' the speed belief's integral + the exact gen-3 order rules — the same weights read a "
+                "different input under each.\n"
+                "Resume with the matching --speed-physics setting (a flagless resume inherits it), or start a "
+                "fresh training run.")
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —
         # a resume that dropped one would silently delete a trained baseline head, one that added

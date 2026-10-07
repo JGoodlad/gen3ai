@@ -69,7 +69,8 @@ from agents.model.arch_constants import (MOVE_RESOLUTION_MOVE_DIM, MOVE_RESOLUTI
 from agents.model.move_resolution_rules import (
     ABILITY_INNER_FOCUS, ABILITY_OWN_TEMPO, ABILITY_SLEEP_BLOCK, ABILITY_SOUNDPROOF, BELLY_DRUM_HP_FRACTION,
     MOVE_RESOLUTION_MOVE_COORDS, MOVE_RESOLUTION_SWITCH_COORDS, P_CONFUSION_SELF_HIT, P_FULL_PARA,
-    P_INFATUATION, P_THAW, PAIR_FACT_COORDS, p_seat_first, PURSUIT_SWITCH_MULT, ROLL_WINDOW, SUB_HP_FRACTION)
+    P_INFATUATION, P_THAW, PAIR_FACT_COORDS, PURSUIT_SWITCH_MULT, ROLL_WINDOW, SUB_HP_FRACTION)
+from agents.model.move_order import p_seat_first
 from agents.model.status_rules import incoming_status_mask
 from agents.model.move_resolution_tables import (C_BRN, C_FRZ, C_PAR, C_PSN, C_SLP, C_TOX, FLAG_IDX, KIND_IDX,
                                                  NAMED_ABILITIES, S_LS_OURS, S_MIST_OURS, S_REFLECT_OURS, S_SG_OPP,

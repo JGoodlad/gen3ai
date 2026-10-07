@@ -126,6 +126,11 @@ class OpStashes:
     # (`unrevealed_species_probs`) the move-resolution family marginalises its per-slot immunity / type /
     # ability tables through — the SAME belief every other unrevealed read uses. None when off.
     opp_species_post: Optional[torch.Tensor] = None  # [B,S] | [B,6,S]
+    # gen3_speed_physics_v1 (v143, `--speed-physics on` only): the ITEM belief's P(Quick Claw) per opp slot (the
+    # extractor's publication; None → the Smogon species prior) and the forward's (P(first), P(first | we are
+    # paralysed)) against their active per our mon, which the pair outcome's paralysis severity reads. None when off.
+    item_qc_prob: Optional[torch.Tensor] = None      # [B,6]
+    speed_fast_pair: Optional[Tuple[torch.Tensor, torch.Tensor]] = None   # ([B,6], [B,6])
     raw_block: Optional[torch.Tensor] = None         # [B,out_dim] PRE-gain block (prober decode)
     tensors: Optional['OpTensors'] = None            # the post-gain typed views
 
@@ -133,6 +138,7 @@ from agents.model.damage_op_blocks import DamageOperatorBlocks
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, gather_beatup, gather_bp,
                                        gather_nonformula, nonformula_rolls, override_rolls)
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
+from agents.model.damage_op_speed import DamageOperatorSpeed
 from agents.model.pair_outcome import GHOST_TYPE_IDX as _GHOST_TIDX, PAIR_OUTCOME_IDX
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
@@ -159,7 +165,7 @@ def max_by_index(x: torch.Tensor) -> torch.Tensor:
     return torch.gather(x, -1, idx).squeeze(-1)
 
 
-class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Module):
+class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperatorSpeed, torch.nn.Module):
     """Fixed, differentiable gen3 damage calculator run in the GPU forward pass, fed by the
     move-belief head's PREDICTED moves — the "compute the physics, learn the belief" op
     (`designs/ai_v6/design_differentiable_damage_op.md`).
@@ -216,7 +222,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                  candidate_k: int = 0,
                  reduce_how: str = "hard_max",
                  drop_renders: bool = False,
-                 believed_lean: bool = False):
+                 believed_lean: bool = False,
+                 speed_physics: bool = False):
         super().__init__()
         # gen3_op_lean_forward_v1 (v86, design_op_tensors step 3): `drop_renders` removes the three
         # RENDER regions (outgoing matrix / incoming matrix / OAX) from the flat forward block — they
@@ -269,7 +276,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         from agents.model.damage_tables import (
             build_damage_buffers, HIDDEN_POWER_NUM, HIDDEN_POWER_BP,
             CHOICE_BAND_ITEM_NUM, CHOICE_BAND_PHYS_MULT, CURSE_MOVE_NUM, TOXIC_MOVE_NUM,
-            REST_MOVE_NUM, BATON_PASS_MOVE_NUM,
+            REST_MOVE_NUM, BATON_PASS_MOVE_NUM, QUICK_CLAW_ITEM_NUM,
         )
         from agents.observation.sleep_belief import expected_free_turns
         bufs = build_damage_buffers(layout['max_moves'], layout['max_species'], layout['max_abilities'])
@@ -299,6 +306,19 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         self.rest_sleep_noeb = float(expected_free_turns(True, 0.0))     # 2.0 exactly
         self.rest_sleep_eb = float(expected_free_turns(True, 1.0))       # 1.0 exactly
         self.baton_num = BATON_PASS_MOVE_NUM                             # C5's receiver-axis edge
+        # gen3_speed_physics_v1 (v143, architecture audit F7b): P(we act first) from the speed BELIEF + the exact
+        # gen-3 order rules (`move_order`, `damage_op_speed`) instead of `_DMG_SPEED_SCALE`'s logistic. Off (the
+        # production default) registers nothing and runs nothing new: byte-identical.
+        self.speed_physics = bool(speed_physics)
+        self.qc_item_num = QUICK_CLAW_ITEM_NUM
+        # Quick Claw is BANNED in gen3ou (`move_order.quick_claw_live`, owner + Showdown master 2026-10-07):
+        # the rule stays implemented, and is OFF for the format the model plays.
+        from agents.model.move_order import quick_claw_live
+        self.quick_claw_live = quick_claw_live()
+        if self.speed_physics and self.quick_claw_live:
+            from agents.model.damage_tables import build_species_qc_prior
+            self.register_buffer("SPECIES_QC_PRIOR", build_species_qc_prior(layout['max_species']),
+                                 persistent=False)
         # gen3_unified_topk_incoming_v1: secondary-col → status-category map for the per-pivot incoming
         # status-landing's ability-immunity fold (non-persistent — pure constant).
         self.register_buffer("_SEC_CAT_IDX", torch.tensor(_SECONDARY_TO_STATUS_CAT, dtype=torch.long),
@@ -663,8 +683,10 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
 
     def _p_outspeed(self, our_spe: torch.Tensor, opp_spe: torch.Tensor,
                     opp_spe_std: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """P(our mon outspeeds the opp active): a logistic over the speed gap at a FIXED scale. All args
-        broadcast together.
+        """P(our mon outspeeds the opp active): a logistic over the speed gap at a FIXED scale — the `off` form
+        of `--speed-physics` (production). All args broadcast together. Under `on` no site calls this: each
+        builds its inputs in `damage_op_speed` and calls `_p_first` (the speed belief's integral + the exact
+        gen-3 rules, `move_order`), which reads the believed speed spread these lookups carry.
 
         `opp_spe_std` IS ACCEPTED AND IGNORED. It fed the uncertainty-aware variant
         (gen3_bidir_threat_trunk_v1 #3, `prob_outspeed`) — divide the gap by the believed speed STD so a
@@ -771,11 +793,14 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                 species_probs: Optional[torch.Tensor] = None,
                 item_cb_prob: Optional[torch.Tensor] = None,
                 fixed_moves: Optional[Any] = None,
-                x5_roster: Optional[Any] = None) -> torch.Tensor:
+                x5_roster: Optional[Any] = None,
+                item_qc_prob: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Compute the full post-gain damage block [B, out_dim] from the beliefs. `move_belief_logits`
         [B,6,M] (already typed-HP composed), `spread_belief` [B,6,5] believed opp stats, `move_latent_all`
         [n_moves,MOVE_LATENT_DIM] (top-K identity source), `species_probs` [B,6,S] the T0 species prior,
-        `item_cb_prob` [B,6] P(Choice Band). Also populates every per-forward stash on `self.stash`.
+        `item_cb_prob` [B,6] P(Choice Band); `item_qc_prob` [B,6] P(Quick Claw) (`--speed-physics on` only — the
+        item belief's publication, None → the Smogon species prior). Also populates every per-forward stash on
+        `self.stash`.
 
         `fixed_moves` (gen3_x5_belief_tokens_v1, `--belief-tokens fixed_mass` only — a
         `hypothesis_tokens.FixedMassMoves`): the opponent active's candidate weights are its FIXED-MASS
@@ -789,6 +814,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         `opp_addressable`, per-mon fixed-mass candidates. None (blob): byte-identical."""
         self.stash = OpStashes()          # gen3_op_stashes_v1: ONE reset, no stash can go stale
         self.stash.x5 = x5_roster
+        if self.speed_physics:
+            self.stash.item_qc_prob = item_qc_prob
         B = ctx.batch_size
         device = ctx.device
         eps = 1e-6
@@ -978,7 +1005,16 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
             our_para > 0.5, our_para.new_tensor(_DMG_PARA_SPEED), our_para.new_tensor(1.0))
         our_spe = our_spe * our_spe_mult
         opp_spe_std = self.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, opp_act], _SB_SPE, 1]        # [B] (#3)
-        p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None], opp_spe_std[:, None])           # [B,6]
+        if self.speed_physics:
+            # gen3_speed_physics_v1: our six EXACT speeds (paralysis on every row, the stage on the active's) vs
+            # their active's speed belief, Quick Claw folded — and the same with each of ours paralysed (the
+            # pair outcome's paralysis severity reads both; one rule, never a second estimator).
+            _our_qc = self._our_quick_claw(ctx)
+            p_outspeed = self._p_first_vs_opp_active(ctx, spread_belief, self._our_speeds_exact(ctx), _our_qc)
+            self.stash.speed_fast_pair = (p_outspeed, self._p_first_vs_opp_active(
+                ctx, spread_belief, self._our_speeds_exact(ctx, para=torch.ones_like(our_spe)), _our_qc))
+        else:
+            p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None], opp_spe_std[:, None])       # [B,6]
 
         # Slot order == the named _DMG_IDX_* offsets: [phys_low, phys_high, phys_crit, phys_pko, phys_acc,
         #               spec_low, spec_high, spec_crit, spec_pko, spec_acc, outspeed, prov]

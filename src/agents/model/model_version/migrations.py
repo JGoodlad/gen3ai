@@ -463,6 +463,10 @@ def _migrate_config(data: dict) -> dict:
     # no init, so every past config stamps through.
     if version < 142:
         data["config_version"] = 142
+    # v143 (gen3_speed_physics_v1, F7b) — `speed_physics`, defaulted: "off" is the only possible past.
+    if version < 143:
+        data.setdefault("speed_physics", "off")
+        data["config_version"] = 143
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

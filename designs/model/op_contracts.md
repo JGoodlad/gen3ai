@@ -57,6 +57,19 @@ Two input contracts every op kernel follows (2026-10-07; ARCHITECTURE §4 states
   (`_incoming_status_lands`, `discrete_incoming_status`, and `pair_outcome_coords`' identity split all read them),
   the side / clause mask itself being `status_rules.incoming_status_mask`, which the move-resolution family shares.
   A new status rule goes there, not into a consumer. Tests: `op_status_rules_test.py`.
+* **Move ORDER has ONE rule** (`gen3_speed_physics_v1`, v143, audit F7b): `move_order.py` — the priority bracket
+  (`p_seat_first`, read by the move-resolution family and `intent_conditional`) and, under `--speed-physics on`,
+  the within-bracket rule (`p_first_same_priority`: the speed belief's lattice integral, the coin-flip tie, our
+  exact stat / stage / paralysis arithmetic, Quick Claw format-gated by `quick_claw_live`). Every op site that
+  prices who moves first keeps its `off` code verbatim and, under `on`, builds its inputs in `damage_op_speed.py`
+  (`_our_speeds_exact`, `_opp_speeds_belief`, `_our_quick_claw` / `_opp_quick_claw`, `_p_first*`) — a site's
+  hypothetical (C1's post-setup stage, C5's inherited stages, a paralysis it prices) is an override ARGUMENT,
+  never a second formula. Two `on`-only stashes: `item_qc_prob` (the item belief's P(Quick Claw); never set while
+  the format bans it) and `speed_fast_pair` (the forward's P(first) and P(first | this mon paralysed), which
+  `pair_outcome_coords` reads instead of re-deriving). The order rule reads the PRE-gain P(first) under `on`.
+  A Python closure inside an op method changes `off`'s dynamo graph (its captured locals become cell variables
+  and are renamed) — put an `on`-only helper on `damage_op_speed`, never nested in a site. Tests:
+  `move_order_test.py`, `speed_physics_extractor_test.py`, `speed_physics_bridge_integration_test.py`.
 
 ## Why the species posterior is spelled `log_softmax(...).exp()` — the whole diagnosis
 

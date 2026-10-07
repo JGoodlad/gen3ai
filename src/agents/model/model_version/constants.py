@@ -466,7 +466,11 @@ from typing import Any, Dict
 #   one-lever arm. Before v142 OFF skipped the Linear and shifted ~185 later tensors' init draws. The state_dict is
 #   unchanged in both modes, so a pre-v142 config stamps through (a load never re-draws an init). No ARCH_SIGNATURE
 #   bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 142
+# v143 (gen3_speed_physics_v1): `speed_physics` — architecture audit F7b (owner 2026-10-06): the op's P(we act
+#   first) from the speed BELIEF + the exact gen-3 order rules (`move_order`) instead of `_DMG_SPEED_SCALE`'s
+#   logistic. A STRUCTURAL string {off,on} with NO parameters, gated in check_compatible. A pre-v143 config migrates
+#   to "off" (the only possible past). No ARCH_SIGNATURE bump ('off' is byte-identical), no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 143
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

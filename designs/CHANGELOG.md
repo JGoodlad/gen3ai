@@ -12156,3 +12156,38 @@ branch `obs-facts-append`).
 - **The screen's meter** (not registered, not run): `main.ops.critic_read`'s `gate.resolution.bot` /
   `gate.resolution.pool` (primary), `identity.resolution`, `gate.skill.{bot,pool}`, `identity.turn_contrast`
   (secondary) — `design_arch_audit.md` F10 "As built".
+## 2026-10-07 — ARCHITECTURE (opt-in, OFF in production): F7b's SPEED PHYSICS, `--speed-physics {off,on}` (`gen3_speed_physics_v1`, config v143; `off` byte-identical; no ARCH_SIGNATURE / MIGRATION_FLOOR change)
+
+- **What.** Architecture audit F7b (owner 2026-10-06, "F7b IN"): the damage operator's P(we act first) from
+  PHYSICS instead of `sigmoid(Δspeed / _DMG_SPEED_SCALE = 15)`. `on` replaces the logistic at all seven op sites
+  that price who moves first (incoming / outgoing `p_outspeed`, the outgoing attacker matrix, the pair outcome's
+  paralysis severity, C1 `d_outspeed`, C2 `d_their_outspeed`, the V edge) by ONE rule,
+  `move_order.p_first_same_priority`; each site keeps its `off` code verbatim and builds its `on` inputs in the new
+  `damage_op_speed.py` mixin. No parameters.
+- **The rules** (`move_order.py`, each verified in `deps/pokemon-showdown` gen 3 → gen 4 → base): the speed BELIEF's
+  integral on the integer lattice, `½[Φ((s − ½ − μ)/σ) + Φ((s + ½ − μ)/σ)]` (μ = the spread belief's believed speed,
+  else the Smogon prior mean; σ = the Smogon prior's per-species speed spread — the formerly discarded
+  `SPECIES_SPREAD_PRIOR[..., spe, 1]` lookups), so an exact tie is a coin flip (`speedSort` shuffles) and a point
+  belief is the exact step; OUR speed exact (`statModify`'s integer formula, `getStat`'s stage floors, paralysis
+  `modify(spe, 0.25)` rounding half down, stage before paralysis); their stage and paralysis scale the belief's
+  mean and spread; Choice Band has no speed effect; Quick Claw (one shared 1-in-5 roll per turn, holders at 65535)
+  implemented and tested but FORMAT-GATED OFF — BANNED in Gen 3 OU (owner 2026-10-07; Showdown master
+  `config/formats.ts` `[Gen 3] OU` banlist, read 2026-10-07; the vendored simulator `e0551883` predates the ban),
+  one read `move_order.quick_claw_live` for the format-spec build to replace.
+- **One order rule.** `p_seat_first` (the priority bracket) MOVED from `move_resolution_rules` to `move_order`, so
+  the bracket and the within-bracket rule share one module; `move_resolution.py` and `intent_conditional.py` import
+  it there. Under `on`, `intent_conditional` reads the PRE-gain P(first) like the move-resolution family (under
+  `off` it keeps the post-gain read: production unchanged).
+- **Plumbing.** Registry row (structural, cli, v143, requires `damage_op`), parser + `_resolve`, ModelVersion field /
+  `check_compatible` (the ONLY gate: no shape differs) / construct / migration (pre-v143 → `off`), snapshot surfaces,
+  production mirror `off`, `selection_sites` (`move_order`, `damage_op_speed` declared), `QUICK_CLAW_ITEM_NUM` +
+  `build_species_qc_prior` (registered only under `on` with Quick Claw live).
+- **`off` proof.** The production extractor's dynamo FX graph (sha256 `3b06da42…`, 11,317 lines), state_dict bytes
+  and outputs equal the base `f0d673fd`'s. A nested closure in a site first renamed graph locals (captured cell
+  variables); helpers live on the mixin instead.
+- **Real battles** (`speed_physics_bridge_integration_test.py`; the Lane S bank through the Rust core, no
+  poke-env): 580 battles, 23,598 equal-priority turn rows, cold-start beliefs — Brier 0.0406 (`on`) vs 0.0425
+  (`off`), log loss 0.1367 vs 0.1341, ECE 0.0160 vs 0.0157; a trained blob arm's beliefs (`rb_x5ab_blob_s1007`):
+  Brier 0.0368 vs 0.0369, log loss 0.1308 vs 0.1207. 3,428 unequal-priority rows, 0 contradicted.
+- **Tests (each fails on revert; 11 mutations, all caught).** `move_order_test.py`, `speed_physics_extractor_test.py`,
+  `speed_physics_bridge_integration_test.py` (`sim` + `integration`).
