@@ -496,6 +496,22 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "its hypothesis tokens are the dex table encoded once and gathered (exact). Builds on both "
                    "belief modes; no requirement. No ARCH_SIGNATURE bump while both encodings build at one "
                    "commit: the string compare in check_compatible is the gate."),
+    ModelFlag("move_resolution", "off", Tier.CLI, Klass.STRUCTURAL, 141,
+              "F11's MOVE-RESOLUTION family ('off' = the seven per-action blocks, production; 'on' = per legal "
+              "action, P(it resolves as stated) by the exact gen-3 rules, intent-weighted, plus the seven "
+              "blocks' FACTS consolidated and their JUDGMENTS dropped)",
+              note="Architecture audit F11 §9 (owner 2026-10-06: facts kept, judgments dropped; Destiny Bond's "
+                   "feature = P(the opponent KOs us), no threshold). 'off' builds nothing and sets no op seam: "
+                   "byte-identical. 'on' builds `agents.model.move_resolution.MoveResolutionCell` LAST from "
+                   "zero-init IsolatedLinears (no global RNG draw, skipped by SB3's orthogonal re-init) and the "
+                   "policy RETIRES the seven blocks it replaces after SB3's re-init and before the optimizer "
+                   "(`retire_superseded_action_cells`), so every other parameter's initial bytes equal "
+                   "production's: `--arch production --move-resolution on` is the ONE-lever screen arm. "
+                   "REQUIRES opp_intent (α / β weight every opponent-dependent fact), damage_op, damage_outgoing "
+                   "and both per-move matrices (the KO / hit / immunity physics); refuses "
+                   "belief_tokens='fixed_mass' (blob seat axis only).",
+              requires=("opp_intent", "damage_op", "damage_outgoing", "damage_matrices_incoming",
+                        "damage_matrices_outgoing")),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

@@ -166,7 +166,7 @@ Rules to preserve:
 | the op | `damage_op.py` · `damage_op_layout.py` · `damage_op_pairwise.py` · `damage_op_blocks.py` · `damage_kinds.py` (the non-formula damage + Beat Up's exact party terms every kernel applies) |
 | the lookup tables, in LAYER order | `damage_tables.py` → `belief_tables.py` → `dex_ids.py` |
 | the readouts and the critic routes | `aux_value_heads.py` · `q_winprob_head.py` · `value_readouts.py` · `value_threat_inject.py` |
-| the pointer head and the per-action cells | `pointer_head.py` · `pair_outcome.py` · `switch_branch.py` · `conditional_threat.py` |
+| the pointer head and the per-action cells | `pointer_head.py` · `pair_outcome.py` · `switch_branch.py` · `conditional_threat.py` · the move-resolution family that replaces them under `--move-resolution on` (`move_resolution.py` · `move_resolution_rules.py` · `move_resolution_tables.py`) |
 | versioning, snapshots, the compile path, the critic modes | `model_version/` · `snapshot.py` · `compile_opponents.py` · `critic_mode.py` |
 | the DICT obs keys the forward reads beyond `observation` | `extra_obs_keys.py` |
 | X5's dex-row table (a hypothesised opponent mon's per-mon obs row, per species; the generator, the loader, the committed artifact) | `hypothesis_dex_rows.py` + `hypothesis_dex_rows.json` |
@@ -567,7 +567,7 @@ board), so the read side attaches `engine.BELIEF_NAME_CAVEAT` to any candidate n
 
 ### The rules an α CONSUMER follows (`pair_outcome.py` is the current template)
 
-Nine modules now contract α against the op's physics (listed in
+Nine modules now contract α against the op's physics (ten with `MoveResolutionCell`, `--move-resolution on`, which retires seven of them) (listed in
 [`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md)). They share four
 conventions, and each exists because breaking it fails silently:
 

@@ -1,6 +1,6 @@
 # Architecture audit: what is unprincipled, over-built or under-built (2026-10-05)
 
-**Status: AUDIT, read-only. Nothing in it is built or decided.** Every finding carries a bucket the owner
+**Status: AUDIT. As of 2026-10-06 the owner has ruled on its findings (Decision record) and F11 is BUILT behind `--move-resolution` (OFF in production, §9.4); everything else in it is as audited.** Every finding carries a bucket the owner
 reviews before any build: **KEEP** (principled after all, with the reason), **EXACT REFACTOR** (same function,
 bundled at the X5-adoption version break) or **BEHAVIOUR CHANGE** (needs its own test, one lever each). Audited at
 `43e0955d` against [`../ARCHITECTURE.md`](../ARCHITECTURE.md) (the statement of the model as it is now),
@@ -513,6 +513,160 @@ Proposed order (each its own unit; nothing before X5 look 1):
 
 ---
 
+## 9. F11 as built: the move-resolution INVENTORY (2026-10-06, written before the build)
+
+The owner's criterion (2026-10-06): **FACTS** (hard-to-compute mechanics: what will actually happen if I press
+this) are kept and consolidated; **JUDGMENTS** (opinions of the right play) are dropped. Every raw coordinate of
+the seven blocks is classified below, plus the damage operator's status channel. **REDUNDANT** means the fact is
+already delivered elsewhere. Every mechanic claim was verified against the vendored `deps/pokemon-showdown` with
+gen-3 inheritance resolved (the gen-3 mod over gen 4 → 5 → … → base; the merged dex loaded through `dist/`).
+The source lines are cited in `src/agents/model/move_resolution_rules.py`.
+
+### 9.1 The 68 raw coordinates of the seven blocks
+
+| block (raw width) | coordinate | class | why |
+|---|---|---|---|
+| `intent_move_cell` (7) | `is_status` | REDUNDANT | the move's identity is the E3 seat token; `p_land`/`known` ride the base cell |
+| | `d_their_outspeed`, `e_burn`, `d_sched`, `e_slp`, `e_slp_free` | FACT ×5 | the physics of what a landed status does (speed ×0.25, Atk ×0.5, the 1/8 / 1/16 tick, the suspended hit, the verified sleep tables) |
+| | `alpha_stay` | REDUNDANT | `1 − α_SWITCH` less the masked seat mass; `a_switch` rides once |
+| `intent_threshold` (6) | `is_fp·(1 − p_fp_broken)` | FACT, rebuilt | Focus Punch's fail rule, but the shipped form is wrong at the source: a hit on our own Substitute does NOT break focus, and only a hit landing BEFORE the punch counts |
+| | `is_sub·(1 − p_sub_broken)` | JUDGMENT | a hand 15 % ramp re-thresholded at the sub's 25 % HP: an opinion of whether the sub is worth it, not whether Substitute goes up |
+| | `is_endure·p_ko` | JUDGMENT | "Endure pays only where I die" (Endure's own fact, its success odds, is kept) |
+| | `is_dbond·p_ko` | FACT | the owner's Destiny Bond feature: P(the opponent KOs us this turn) = α × the operator's KO estimates. The shipped τ = current HP IS the KO event, so this one already had the owner's form |
+| | `is_endeavor·(1 − p_ko)` | JUDGMENT | "I survive to act" as Endeavor's value; Endeavor's real rules (Ghost immunity) are in the family |
+| | `p_ko` (context) | FACT | P(I am KO'd this turn) |
+| `intent_conditional` (13) | Counter / Mirror Coat return operands | FACT ×2 | the 2× magnitude Counter / Mirror Coat would return |
+| | `cat_match` | FACT, rebuilt | the category test, but the source rule is wider: the hit must LAND on the user (not its Substitute), come BEFORE the −5 move, Hidden Power always counts for Counter and never for Mirror Coat, Counter cannot hit a Ghost, Mirror Coat cannot hit a Dark type |
+| | `p_flinch_useful` | FACT | P(our flinch lands on a mon that has not yet moved) |
+| | `is_boom·(1 − p_blocked)` | FACT, rebuilt | the shipped blocker set counts ENDURE, which survives Explosion and does not block it |
+| | `is_boom·α_SWITCH` | REDUNDANT | `a_switch` rides once; the seat token names the move |
+| | Pursuit trigger, Pursuit bonus | FACT ×2 | the ×2 never-miss strike on the departing mon (port-verified) |
+| | Protect: damage avoided, status avoided | FACT ×2 | what a successful Protect blocks |
+| | Protect: the decay odds | FACT, moved | Protect's resolution IS its consecutive-use odds |
+| | Magic Coat `e_reflect` | FACT, rebuilt | the shipped predicate (status AND target 'normal') bounces Taunt / Encore / Disable / Torment / Roar, which carry no `reflectable` flag; the source flag set is exact |
+| | boom trade KO | FACT | P(the explosion KOs whoever it really hits) |
+| `pair_outcome_cell` (14) | `low high crit ko_ramp acc is_phys` | FACT ×6 | the α-reduced incoming damage at our active |
+| | `p_par … p_tox` | FACT ×6 | incoming status by identity, immunity-folded |
+| | `neutralization` | JUDGMENT | a hand valuation (burn costs `base_atk/(atk+spa)`, paralysis a linear 25 % + speed blend) |
+| | `tempo_cost` | JUDGMENT | the undo-path turn accounting (owner, explicitly) |
+| `switch_branch_cell` (9) | `e_high_switch`, `e_pko_switch`, `e_mult_switch` | FACT ×3 | our move's outcome on the β-weighted arrival |
+| | `wasted_ko` | JUDGMENT | "don't click the KO into the switch" (owner, explicitly; its two factors are delivered) |
+| | `a_switch` | FACT | P(they switch) |
+| | `p_spin_blocked` | FACT, moved | Rapid Spin's resolution (Normal vs a Ghost: no damage AND no clearing) |
+| | `spin_value_lost` | JUDGMENT | a stake product (the hazards a blocked spin fails to clear) |
+| | `protect_attack_mass`, `protect_blocked_mass` | FACT ×2 | P(they attack); P(our Protect blocks an attack) |
+| `pair_outcome_switch` (15) | the 12 damage + status coordinates, per defender | FACT ×12 | as on the move cell, at every defender |
+| | `neutralization`, `tempo_cost` | JUDGMENT ×2 | as above |
+| | `spin_denied` | JUDGMENT (fact half kept) | its stake factor (their side's hazards) is a valuation; the fact `is_ghost(j)·α_spin` (their spin fails on our Ghost) is kept |
+| `conditional_threat_cell` (4) | `e_pko_acc` | FACT, fixed | P(this mon dies). ⚠️ The shipped code multiplies `ko_ramp · acc`, but the op's `ko_ramp` is ALREADY `acc · P(KO \| hit)` (`DamageOperator._rolls`), so accuracy is counted TWICE: a 70 % Blizzard reads 0.49 where the truth is 0.70. Production carries it; the family computes it once |
+| | `e_type_mult`, `margin_high`, `margin_crit` | FACT ×3 | the bulk-independent multiplier and the two margins (kept by the owner's ruling) |
+
+**Counts (68 coordinates): FACT 55 · JUDGMENT 10 · REDUNDANT 3.** Of the 55 facts, 6 are rebuilt or moved because
+the shipped spelling disagrees with the source rule (`is_fp`, `cat_match`, boom `p_blocked`, Protect odds, Magic
+Coat, `p_spin_blocked`), and one (`e_pko_acc`) carries a production bug.
+
+### 9.2 The damage operator's status channel (`_status_landing`, the base move cell's `p_land` / `known`)
+
+FACT, already delivered: per our status move, P(it applies to their active) folding accuracy, the per-move type
+immunity (Thunder Wave → Ground, Toxic / poison → Steel and Poison, Will-O-Wisp → Fire, Leech Seed → Grass), the
+ability block (revealed exact, else the Smogon species prior), an existing major status, Sleep Clause (any LIVE
+opposing sleeper that did not Rest), and their Substitute. Its documented gaps (Yawn, an already-seeded Leech Seed)
+are below.
+
+### 9.3 The MISSING facts (owner's examples first; every rule verified at the source)
+
+| # | fact | status before the build |
+|---|---|---|
+| 1 | sleep on an already-asleep (or otherwise statused) mon fails | COVERED for the six-status moves (op); MISSING for **Yawn** (fails on a statused or already-drowsy target) |
+| 2 | Sleep Clause | COVERED for direct sleep moves (op); MISSING for **Yawn**, whose delayed sleep the clause blocks |
+| 3 | Substitute blocks status | COVERED for the six-status moves; MISSING for every other foe-targeting status move (Confuse Ray, Swagger, Mean Look, stat drops, Pain Split …) and for the **bypass set** (Taunt, Encore, Disable, Torment, Attract, Roar, Whirlwind, Psych Up, Haze …: the `bypasssub` flag) |
+| 4 | Rapid Spin vs a Ghost | COVERED (`switch_branch`'s `p_spin_blocked`); consolidated |
+| 5 | Counter / Mirror Coat conditions | PARTIAL (`cat_match`); MISSING: the hit must land on the user and not its Substitute, before the −5 move; the Hidden Power rule; Ghost / Dark immunity; a switch or a KO first means no return |
+| 6 | Beat Up | MISSING: fails when no party member is alive and unstatused (the user counts only if unstatused); typeless, so it hits Ghosts |
+| 7 | Focus Punch fails if hit | PARTIAL and wrong at the source (see 9.1) |
+| 8 | type / ability immunities to status | PARTIAL; MISSING: **Glare → Ghost** (gen 3 Glare checks type immunity); **Safeguard** on their side; an UNREVEALED immunity ability on their active vs our damaging move (Levitate, Volt / Water Absorb, Flash Fire: the op's outgoing block is revealed-or-none). VERIFIED NON-FACTS in gen 3: Volt Absorb does NOT absorb Thunder Wave, Flash Fire vs Will-O-Wisp is subsumed by Fire's burn immunity, Levitate has no status role, Electric types are NOT immune to paralysis. Soundproof blocks the sound set but is BANNED in gen3ou (moot; built from the prior, which is 0) |
+| 9 | Taunt / Encore / Disable effects | MISSING: ours fail on an already-taunted / encored / disabled target, and Encore / Disable on a target with no last move (Encore also on its `failencore` set); theirs restrict their own seats (a taunted opponent's status seat, an encored opponent's other seats cannot be clicked) and their Taunt landing FIRST stops our status move |
+| 10 | Destiny Bond | COVERED (9.1); the family keeps the owner's form and adds the exact trigger probability (the bond must be up before the KO; a bond from last turn persists until we move) |
+| 11 | Leech Seed on a seeded target fails | MISSING (op gap) |
+| 12 | Spikes at 3 layers; Reflect / Light Screen / Safeguard / Mist already up; the same weather already up | MISSING |
+| 13 | healing at full HP; Rest when asleep or with Insomnia / Vital Spirit; Refresh / Heal Bell with nothing to cure | MISSING |
+| 14 | Substitute at ≤ 1/4 HP or behind a Substitute already; Belly Drum at ≤ 1/2 HP | MISSING |
+| 15 | a stat-raising move with every raised stat at +6 | MISSING |
+| 16 | Dream Eater / Nightmare need a sleeping target; Sleep Talk / Snore a sleeping user | MISSING |
+| 17 | their Protect / Detect (or Substitute, Magic Coat, Taunt) landing before our move | PARTIAL (Protect mass only); MISSING as a per-move fact with the `protect` / `reflectable` flags and move ORDER |
+| 18 | whether we act at all: KO'd first (α × KO × priority and speed), asleep (the obs wake odds), frozen (20 % thaw, `defrost` moves exempt), paralysis 25 %, confusion 50 %, infatuation 50 %, a flinch or a sleep / freeze / paralysis from a faster seat | MISSING |
+| 19 | a switch does not resolve if their Pursuit KOs the departing mon | MISSING |
+
+**MISSING: 16** (rows 1–3, 5–9, 11–19: none of them is a judgment; 21 with the five added below). Residuals the build does NOT model, named rather
+than approximated: accuracy / evasion stages, Attract's gender rule, Fake Out's first-turn rule, a confusion that
+ends this turn (its counter is not observed), Encore / Disable at 0 PP, the Disabled MOVE's identity on the
+opponent, Damp, Wonder Guard, Truant, Endeavor's HP comparison.
+
+**Added during the build (the coordinator's 2026-10-06 relay of the entity-coverage audit, `f32a9f4b`, its gaps §
+rank 2):** the op's INCOMING status landing (`_incoming_status_lands`, the six `p_*` coordinates of `pair_in`)
+ignores four more gen-3 rules, each verified at the source and in gen3ou's rule set (`config/formats.ts:4418-4422`
+→ Standard + Freeze Clause Mod): **our Safeguard** (`data/moves.ts:15587-15615`), **incoming Sleep Clause**
+(`data/rulesets.ts:1378-1402`: a live, non-Rest sleeper of ours blocks their sleep), **our Substitute**
+(`gen4/moves.ts:1283-1320`: their status move fails, their secondary hits the sub) and **Freeze Clause**
+(`data/rulesets.ts:1451-1471`: ANY frozen mon of ours, no HP check, blocks a freeze). The outgoing `p_land` ignores
+**their Safeguard**. Yawn's delayed sleep is row 1–2 above. All five are MISSING facts (21 in all), corrected in
+the family under the flag.
+
+### 9.4 As built (2026-10-06, config v141, `gen3_move_resolution_v1`)
+
+`--move-resolution {off,on}` (STRUCTURAL, cli, default `off`, config v141; `src/agents/model/move_resolution*.py`;
+ARCHITECTURE §3.2 holds the statement of record). `off` builds nothing and sets no op seam. `on` builds ONE family —
+a 38-wide move-cell block and an 18-wide switch-cell block, each through a zero-init `IsolatedLinear` — and the
+policy retires the seven blocks after SB3's orthogonal re-init (every other parameter's initial bytes equal
+production's, pinned by test), so `--arch production --move-resolution on --allow-nonproduction-arch` is the
+one-lever screen arm (today's blocks vs the family).
+
+* **The new fact**, per legal move: `p_resolve` = P(it resolves as stated: lands / not blocked / not immune / not a
+  no-op) = `Σ_k α_k · A_k · L(m|k) + a_un · A_un · L_un + α_SWITCH · p_act · L_sw`, with `p_lands_stay`,
+  `p_lands_switch`, `p_ko_first`, `p_act` beside it. Per legal SWITCH: `p_switch_resolves` (their Pursuit can KO the
+  departing mon). Every rule is in `move_resolution_rules.py` with its source line.
+* **Destiny Bond (owner): `dbond_p_ko` = P(the opponent KOs us this turn) = `Σ_k α_k · ko_k`, NO threshold**;
+  `p_resolve` adds the exact trigger rule (the bond is up before the KO; a bond from last turn persists).
+* **Kept and consolidated:** all 55 facts of §9.1 (the six rebuilt ones as resolution rules; `e_pko` with accuracy
+  counted once). **Dropped:** the 10 judgments.
+* **Rules the real-battle fuzz found** (each a verified gen-3 rule the inventory had missed; each now a unit test
+  and a caught mutation): Protect / Detect / Endure FAIL when no action follows them (`onPrepareHit:
+  !!this.queue.willAct()`), so they fail into a switch and when we move last; a heal / Rest at full HP resolves if
+  a FASTER hit lands first (and Rest's "asleep" is `p_act`, since it must wake to move); a boost at +6 resolves
+  after a faster Haze / stat drop or an Intimidate arrival; a departing Natural Cure sleeper lifts the switch
+  branch's Sleep Clause; Wish fails while one is pending; their faster self-cure, thaw (1/5, or a defrost move) or wake (the obs wake odds) lifts "already statused"; a faster
+  hit may break our Substitute (its HP is unobserved: counted as breaking — the one approximation); their faster
+  status gives Refresh something to cure; a faster sleep move lets Sleep Talk work.
+* **Proof of `off`:** the production extractor compiles (dynamo, CPU) to the SAME graph (one graph, sha256
+  `eb892b00…`, 10,558 lines at `bef16d61`), the same state_dict bytes and the same outputs as its base at each rebase (`8288b9a2`, `11d27574`, `bef16d61`); the K9 learner golden
+  (both entries) and the obs golden pass unchanged.
+* **Real-battle check.** The development fuzz (poke-env players over the Rust `sim_bridge`, new battles every run,
+  ~1,000 battles over the build) found the eleven rules above; it was retired before landing because it imported
+  poke-env (the `poke_env_import_gate_test` allowlist is shrink-only). The committed check is
+  `move_resolution_bridge_integration_test.py`: the banked M5 Lane S battles replayed through the RUST CORE (no
+  poke-env), the family run on every played move's observation, the move resolved against the protocol. Full bank:
+  31,942 played moves, 1,515 exact-zero claims met an executed move, ZERO resolved; the certain direction
+  (`p_lands_stay = p_act = 1`, they stayed) 41 / 11,738 failed (0.35 %, the named residuals). Excluded from the
+  gate, named: Sleep Talk / Snore (a called move failing its own `onTry` prints no line) and Heal Bell / Aromatherapy
+  (`-cureteam` does not say whether anything was cured).
+
+**What it does NOT do (findings for the owner, not fixed here because each would move production):** the shipped
+`conditional_threat` double-counts accuracy in `e_pko_acc`; the shipped `intent_conditional` prices Protect by its
+stall odds alone (it ignores the moving-last rule) and counts ENDURE as an Explosion blocker; its Magic Coat
+predicate bounces moves with no `reflectable` flag; the op's incoming and outgoing status landing ignore the four
+coordinator-relayed rules above; and — found by the fuzz, the largest — **the op reads an opponent's ability as
+REVEALED whenever its id is non-zero**, but the observation writes an UNREVEALED opponent's most likely ability
+there with `known = 0` (`observation/abilities.py`), so `_status_landing` asserts Immunity on every unrevealed
+Snorlax (Toxic "never lands" where the prior says 0.14) and the outgoing / incoming kernels apply the top-1
+ability's immunity multiplier as certain (`damage_op_blocks.py` lines 231/235, 402/414, 547/554, 644-648, 727, 1265-1278). The family reads the `known` flag. And (coordinator, from `2d29c4c0`): the op's learned `out_gain` is one
+scalar per block channel, i.e. per REQUEST SLOT on the per-move outgoing channels, so the same move is scaled by
+where it is listed (trained X5 arms: KO gain 1.365 on slot 0 vs 1.146 on slot 3). The family reads every op value
+PRE-gain (`out_cells`, `pair_in`, and P(outspeed) from the pre-gain block) and its own projection is shared across
+slots; on the default path a slot-tied gain is retrain-class — a note for the version break. Each is a ~one-line fix on the production path, a behaviour change that moves
+the production goldens (the K9 learner golden, the compile canary's rows): an owner decision.
+
+---
+
 ## Decision record
 
 | date | decision | chosen | rejected / alternatives | evidence |
@@ -527,3 +681,4 @@ Proposed order (each its own unit; nothing before X5 look 1):
 | 2026-10-06 | **Owner: the STATIC-TOKEN rebuild (§4 L1, with F4 + F14) is GO, spec widened** | "I want item, ability, moves and stats all static if possible; let the attention and the damage op do the heavy lifting." The per-mon token = a STATIC identity (species + SET: item, ability, the four moves pooled as a set (F14), nature / EVs / IVs → actual stats) from a per-(species, set) table; for the opponent the same table gives the prior, the belief / hypothesis fills it, reveals override it. Per-mon DYNAMIC state (HP, status, boosts, volatiles, the item-consumed / changed flag) is a small separate per-mon input; board context (clock, weather, hazards, screens, the opponent active) leaves the per-mon encoder and reaches tokens by attention and the physics edges. Built on the X5 path (adoption pre-committed), screened at equal budget vs today. | Static species only (the audit's narrower L1) | owner 2026-10-06 |
 | 2026-10-06 | **F2 BUILT as a screenable flag** (`--policy-readout {tower,trunk}`, config v138, OFF in production) | **`trunk`:** the flat policy tower (the extractor's `pre_proj_norm` / `projection` + SB3's `mlp_extractor.policy_net`, 1,130,802 parameters) is RETIRED; the pointer head's context is `PolicyStateQuery` — ONE learned query, 4 heads, over every refined trunk token (our 6, their 6, the global token, the entity and event seats) plus `HiddenOppBeliefPool`'s K outputs, under the trunk's own key mask (its per-key log π under `fixed_mass`), then a LayerNorm → 128; the F16 scorer unchanged in form, widened to 128 (`TRUNK_POINTER_HIDDEN`: no 64-dim squeeze of the context). Init isolation by the X5 precedent: the query from a private seed out of `IsolatedLinear`s, the tower retired only after SB3's orthogonal re-init, so every surviving non-pointer parameter starts from `tower`'s bytes (tested). `tower` byte-identical: the K9 golden's two entries pass unchanged and the compiled R1 / T2 FX graphs equal the base commit's. Parameters 3,065,882 → 1,991,528. The value path is untouched (F1 is its own unit). GPU checks (compile parity, T2 throughput, memory) DEFERRED; built, not trained. | The audit's narrower test (`net_arch pi = []`, keeping the 1177→512 projection as the context): it keeps the flat concat the owner chose to drop; the existing CLS-pool outputs as the context (a Linear over their concat is itself a flat projection); several queries (one lever first); keeping `POINTER_HIDDEN` 64 (re-creates the bottleneck) | F2; owner 2026-10-06; `policy_readout_test.py` |
 | 2026-10-06 | **Static-token rebuild: design + build stage 1** | `design_static_tokens.md`: token = S (species + set + actual stats, moves summed as a set) + D (the mon's own state), ADDED, no board fact; opponent stats = the Smogon usage-weighted prior (the learned spread belief would be circular); X5 hypothesis tokens = the dex table encoded once and gathered; the coverage audit's board layout + per-mon op content are part of the SAME arm (stage 2). Stage 1 built behind `--token-encoding static` (config v139, default `legacy`, byte-identical) | a second token per mon; FiLM join; screening stage 1 alone (confounded: coverage audit §4) | `design_static_tokens.md`; `design_entity_coverage_audit.md` |
+| 2026-10-06 | **F11 BUILT behind `--move-resolution` (OFF in production)** | The inventory (§9: 68 coordinates → FACT 55 · JUDGMENT 10 · REDUNDANT 3; 21 MISSING facts incl. the coordinator's five) written first; the family built as ONE flag that retires the seven blocks on a built policy (§9.4): per legal action P(it resolves as stated) by the exact, source-verified gen-3 rules, intent-weighted; Destiny Bond = P(the opponent KOs us); the judgments dropped. `off` proven byte-identical (compiled graph, state_dict, outputs, K9 golden, obs golden). The coordinator-relayed op corrections are applied INSIDE the family only; the production op is untouched | Applying the incoming / outgoing status corrections to the production op now (moves the production goldens: an owner decision, reported); X5 `fixed_mass` support (refused at build: the flat pointer's (K+1)-th seat is not wired) | this build; ledger 2026-10-06 |

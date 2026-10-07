@@ -122,6 +122,10 @@ class OpStashes:
     # not. Leak-free (publications + the Smogon prior only), and computed HERE because the op owns
     # BOTH the species posterior and the type table; a consumer deriving it would re-implement both.
     opp_p_ghost: Optional[torch.Tensor] = None       # [B,6]
+    # gen3_move_resolution_v1 (v141, `--move-resolution on` only): the hidden-team species posterior
+    # (`unrevealed_species_probs`) the move-resolution family marginalises its per-slot immunity / type /
+    # ability tables through — the SAME belief every other unrevealed read uses. None when off.
+    opp_species_post: Optional[torch.Tensor] = None  # [B,S] | [B,6,S]
     raw_block: Optional[torch.Tensor] = None         # [B,out_dim] PRE-gain block (prober decode)
     tensors: Optional['OpTensors'] = None            # the post-gain typed views
 
@@ -251,6 +255,9 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # Off => None and zero extra work; on it is a pure `.detach()` of a tensor the incoming
         # matrix already built, so it adds no arithmetic at all.
         self.stash_pair_type_mult: bool = False
+        # gen3_move_resolution_v1 (v141): the seam for the hidden-team species posterior. Off => None and
+        # zero extra work (the production path never sets it).
+        self.stash_species_post: bool = False
         # gen3_op_stashes_v1: ALL per-forward side values live in ONE typed container, replaced
         # at forward entry (see OpStashes). The individual docs moved onto the dataclass fields;
         # the provenance tags (candidate dedup, lean forward, tensors views) are in CHANGELOG.
@@ -1059,6 +1066,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
             # A REVEALED slot's typing is fact, so the belief is used only where there is nothing
             # to know — the same revealed/unrevealed split `_outgoing_matrix` applies to bulk.
             self.stash.opp_p_ghost = torch.where(ctx.opp_believed_mask, _pg, _rev_ghost)
+        if self.stash_species_post:
+            self.stash.opp_species_post = self.unrevealed_species_probs(ctx, species_probs)
         if self.matrices_outgoing:
             _omx = self._outgoing_matrix(ctx, spread_belief, species_probs=species_probs)
             # gen3_op_lean_forward_v1: the typed pko stash consumers read (pre-gain — honest

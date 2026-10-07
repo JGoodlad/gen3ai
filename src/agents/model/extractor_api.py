@@ -13,8 +13,8 @@ import torch
 
 from agents.model.arch_constants import (
     CONDITIONAL_THREAT_SWITCH_DIM, D_MODEL, INTENT_COND_MOVE_DIM, INTENT_MOVE_CELL_DIM,
-    INTENT_THRESH_MOVE_DIM, PAIR_OUTCOME_MOVE_DIM, PAIR_OUTCOME_SWITCH_DIM,
-    SWITCH_BRANCH_MOVE_DIM,
+    INTENT_THRESH_MOVE_DIM, MOVE_RESOLUTION_MOVE_DIM, MOVE_RESOLUTION_SWITCH_DIM, PAIR_OUTCOME_MOVE_DIM,
+    PAIR_OUTCOME_SWITCH_DIM, SWITCH_BRANCH_MOVE_DIM,
 )
 from agents.model.belief_heads import BELIEF_GRAD_MODES, _BELIEF_SUPERVISION_KEYS
 from agents.model.extractor_build import ExtractorBuild
@@ -104,6 +104,25 @@ class ExtractorApi(ExtractorBuild):
         `tower`: `projection_dim` (the tower then maps it to `NET_ARCH[-1]`); `trunk`: `D_MODEL` (the
         state query's read, and the actor branch is the identity)."""
         return D_MODEL if self.policy_query is not None else int(self.projection_dim)
+    def retire_superseded_action_cells(self) -> bool:
+        """gen3_move_resolution_v1 (v141, `--move-resolution on`): the move-resolution family REPLACES the seven
+        per-action blocks — drop them. Returns True when it dropped any.
+
+        Called by `Gen3DualHeadMaskablePolicy._build` AFTER SB3's orthogonal re-init and BEFORE the pointer head
+        and the optimizer are built, exactly like `retire_superseded_intent_heads`: the seven were constructed
+        (their init draws) and re-initialised (their orthogonal draws) as in production, so the global RNG stream
+        and every OTHER module's initial bytes are unchanged, while the retired blocks hold no state_dict key, no
+        optimizer slot and no forward use. ``off``: a no-op."""
+        if self.move_resolution_cell is None:
+            return False
+        names = ("intent_move_cell", "intent_threshold_move", "intent_conditional", "pair_outcome_move",
+                 "switch_branch", "pair_outcome_switch", "conditional_threat")
+        dropped = False
+        for n in names:
+            if getattr(self, n, None) is not None:
+                setattr(self, n, None)
+                dropped = True
+        return dropped
 
     def set_belief_grad_mode(self, mode: str) -> None:
         """Apply a belief-grad-mode at RUNTIME (the --allow-belief-grad-mode-change migration path).
@@ -252,7 +271,9 @@ class ExtractorApi(ExtractorBuild):
         # gen3_pair_outcome_v1: the α-reduced unified outcome vector at our ACTIVE defender.
         base += PAIR_OUTCOME_MOVE_DIM if self.pair_outcome_move is not None else 0
         # gen3_switch_branch_v1: OA2 + spinblock + Protect's α-conditioning.
-        return base + (SWITCH_BRANCH_MOVE_DIM if self.switch_branch is not None else 0)
+        base += SWITCH_BRANCH_MOVE_DIM if self.switch_branch is not None else 0
+        # gen3_move_resolution_v1 (v141): the move-resolution family's move block (the seven above retired).
+        return base + (MOVE_RESOLUTION_MOVE_DIM if self.move_resolution_cell is not None else 0)
     @property
     def pointer_switch_cell_dim(self) -> int:
         base = self.damage_op.pointer_switch_cell_dim if self.damage_op is not None else 0
@@ -260,8 +281,9 @@ class ExtractorApi(ExtractorBuild):
         # outcome row + the spin-denial coordinate.
         base += PAIR_OUTCOME_SWITCH_DIM if self.pair_outcome_switch is not None else 0
         # gen3_conditional_threat_v1 (OA1): the SECOND — the four coordinates that row cannot carry.
-        return base + (CONDITIONAL_THREAT_SWITCH_DIM
-                       if self.conditional_threat is not None else 0)
+        base += CONDITIONAL_THREAT_SWITCH_DIM if self.conditional_threat is not None else 0
+        # gen3_move_resolution_v1 (v141): the move-resolution family's switch block.
+        return base + (MOVE_RESOLUTION_SWITCH_DIM if self.move_resolution_cell is not None else 0)
 
     def _publish_belief(self, t: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
         """Hand a belief output to the FORWARD (reinject / the op / the edge cells / the seats / the

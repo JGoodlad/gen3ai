@@ -136,6 +136,10 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
             self.mlp_extractor.policy_net = th.nn.Sequential()
             self.mlp_extractor.latent_dim_pi = fe.policy_ctx_dim
             pointer_hidden = TRUNK_POINTER_HIDDEN
+        # gen3_move_resolution_v1 (v141, `--move-resolution on`): retire the seven per-action blocks the
+        # move-resolution family replaces, at the same point and for the same reason (`off`: a no-op).
+        if hasattr(fe, "retire_superseded_action_cells"):
+            fe.retire_superseded_action_cells()
         self.action_net = _NoFlatActionNet()
         self.pointer_head = PointerNativeActionHead(
             # gen3_entity_move_seats_v1: move tokens are the REFINED E3 trunk seats (d_model-wide),

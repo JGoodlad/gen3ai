@@ -153,6 +153,16 @@ SWITCH_BRANCH_MOVE_DIM = _SWITCH_BRANCH_RAW
 _CONDITIONAL_THREAT_RAW = 4
 CONDITIONAL_THREAT_SWITCH_DIM = _CONDITIONAL_THREAT_RAW
 
+# gen3_move_resolution_v1 (config v141, `--move-resolution on`; architecture audit F11 §9): the MOVE-RESOLUTION
+# family that REPLACES the seven blocks above — per legal action, P(it resolves as stated) and its factors, plus
+# the seven blocks' 55 FACT coordinates consolidated (their judgments dropped). The coordinate tables are
+# `move_resolution_rules.MOVE_RESOLUTION_{MOVE,SWITCH}_COORDS`; each block rides through a zero-init projection
+# of the same width.
+_MOVE_RESOLUTION_MOVE_RAW = 38
+MOVE_RESOLUTION_MOVE_DIM = _MOVE_RESOLUTION_MOVE_RAW
+_MOVE_RESOLUTION_SWITCH_RAW = 18
+MOVE_RESOLUTION_SWITCH_DIM = _MOVE_RESOLUTION_SWITCH_RAW
+
 # gen3_value_direct_routes_v1 (v87): two direct CRITIC routes appended at the vf tail, both
 # zero-init. VALUE_CLOCK_DIM — the deadline clock's 3 raw scalars projected for the critic (the
 # v67 clock fix was validated for exactly this reader, and the audit read its surviving

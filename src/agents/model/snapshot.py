@@ -1437,6 +1437,7 @@ def current_model_version(
     oracle_reveal: str = "off",
     policy_readout: str = "tower",
     token_encoding: str = "legacy",
+    move_resolution: str = "off",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
 ) -> ModelVersion:
@@ -1501,6 +1502,7 @@ def current_model_version(
     # gen3_static_tokens_v1 (v139): the per-Pokemon token encoding — structural, so a frozen opponent's
     # gate must see it.
     ext_kwargs["token_encoding"] = str(token_encoding)
+    ext_kwargs["move_resolution"] = str(move_resolution)
     ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
@@ -1595,6 +1597,7 @@ def arch_toggles_from_model(model: Any) -> dict:
         # gen3_static_tokens_v1 (v139): the per-Pokemon token encoding (a different state_dict under the
         # same `pokemon_encoder` prefix), so a frozen opponent's gate must see it.
         "token_encoding": str(getattr(fe, "token_encoding", "legacy") or "legacy"),
+        "move_resolution": str(getattr(fe, "move_resolution", "off") or "off"),
         # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
         # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
         # gate must see it (else an inject-on run FATALs loading its own sentinels).

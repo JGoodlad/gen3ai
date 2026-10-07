@@ -123,6 +123,9 @@ TIER_OF: Dict[str, int] = {
     # a child module rather than as a top-level extractor child, so `cls_pool`'s own tier covers
     # it — which is also what makes its vf-only property structural.)
     "conditional_threat": 2,
+    # gen3_move_resolution_v1 (v141, `--move-resolution on`): the move-resolution family REPLACES the seven
+    # cells above at the same pointer-stash placement — the op stashes its grids at T1, α / β first exist at T2.
+    "move_resolution_cell": 2,
     # T3 DELIVER — the pooled contract and the readouts taken off it.
     "hidden_opp_belief": 3,
     "assembler": 3,

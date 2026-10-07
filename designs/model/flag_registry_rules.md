@@ -103,7 +103,7 @@ warn about an unsatisfiable command, the generated table could not show the grap
 `ModelFlag.requires` is that data — the flags that must be **enabled** for this one to be, where
 enabled is `flag_registry.is_enabled` (`False` / `0` / `'off'` / `'none'` are OFF; note it is *not*
 `bool()`, because a mode string's OFF state is the truthy `'off'`). `requirement_closure(name)`
-gives the transitive set. **24 of 44** toggles declare one.
+gives the transitive set. **30 of 50** toggles declare one.
 
 `flag_requires_test.py` enforces it in **both** directions, because a declaration nothing checks is
 a comment and a check nothing declares is invisible:

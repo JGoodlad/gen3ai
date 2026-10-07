@@ -22672,3 +22672,39 @@ Tag: **BUILT · poke-env dead-code removal (T27/P0) · 3 modules + 2 tests delet
 - **Still on `RLPlayer`:** live play (`main.play`), the anchors (`main.anchors`), the Python eval worker (`main.eval_worker`, the Rust eval core's standalone parity oracle), `churn_probe`, `bot_elo_calibration`, `cf_producer_snapshot`, `search_dividend`, the prober's replay, the parity / golden / benchmark harnesses; none was a trivial move. The poke-env import allowlist shrinks 167 → 165 (`snapshot_ladder.py`, `untaught_meter.py`).
 
 Tag: **BUILT · ladder + untaught meter on the Rust eval engine · TRANSPORT = regime boundary, refused-on-mix · shift NOT DETECTED (+0.99 pp [−2.46, +4.43] ladder; −4.38 pp [−8.75, +0.42] untaught) · seat effect +0.56 pp**
+### 2026-10-06 · BUILT · **F11's MOVE-RESOLUTION family behind `--move-resolution {off,on}` (config v141, OFF in production): per legal action P(it resolves as stated) by the exact gen-3 rules, intent-weighted; Destiny Bond = P(the opponent KOs us); the seven blocks' 55 facts kept, their 10 judgments dropped; `off` byte-identical; a stated exact 0 never contradicted in 300 real battles**
+
+The owner's 2026-10-06 ruling on audit F11 (facts kept, judgments dropped). The inventory went into
+`designs/endstate/design_arch_audit.md` §9 BEFORE the build: the seven blocks' 68 raw coordinates are FACT 55 ·
+JUDGMENT 10 (`tempo_cost`, `neutralization` ×2, `wasted_ko`, `spin_value_lost`, `spin_denied`'s stake, the Substitute /
+Endure / Endeavor hand thresholds) · REDUNDANT 3; 21 MISSING facts (the owner's examples plus the five the coordinator
+relayed from the entity-coverage audit: Safeguard both ways, incoming Sleep Clause, our Substitute, Freeze Clause,
+Yawn). Every mechanic was verified in `deps/pokemon-showdown` with gen-3 inheritance resolved.
+
+**Built** (`src/agents/model/move_resolution*.py`): `on` puts one zero-init block on each pointer cell (move 38, switch
+18) and the policy retires the seven blocks after SB3's re-init; every other parameter's initial bytes equal
+production's (tested), so `--arch production --move-resolution on --allow-nonproduction-arch` is the one-lever screen
+arm. `off`: the production extractor's dynamo graph (sha256 `eb892b00…` at `bef16d61`), state_dict bytes and outputs equal
+its base's at each rebase (`8288b9a2`, `11d27574`, `bef16d61`); the K9 learner golden (both entries) and the obs golden pass. 46 rule mutations, each caught by a test.
+
+**The real-battle check.** A development fuzz (poke-env players over the Rust `sim_bridge`; retired before landing: the poke-env import gate is shrink-only) found ELEVEN rules the
+inventory had missed, all source-verified and now tested (Protect / Detect / Endure fail when no action follows them,
+so into a switch; a heal at full HP after a faster hit; a +6 boost after a faster Haze or an Intimidate arrival; a
+departing Natural Cure sleeper and the switch-branch Sleep Clause; a pending Wish; their faster self-cure, thaw or
+wake; a faster hit breaking our Substitute; their faster status giving Refresh a target; a faster sleep move enabling
+Sleep Talk; Curse / boost no-ops). The final two runs (seeds 22, 23; 150 battles each, 6,297 + 6,274 decisions): 602 +
+583 exact-zero claims met an executed move, ZERO resolved (seed 22's two Curse "violations" were the classifier
+missing a silent no-op, fixed before seed 23). The certain direction (`p_lands_stay = p_act = 1`, they stayed):
+9 / 1,780 and 4 / 1,860 failed, all named residuals (Endeavor's HP rule, Perish Song, accuracy, a Substitute).
+Calibration: `p_resolve` in [0.8, 1.0) realised 0.921–0.923. The COMMITTED check is `move_resolution_bridge_integration_test.py` (the banked M5 Lane S battles replayed through the Rust core, no poke-env): full bank 31,942 played moves, 1,515 exact-zero claims, 0 contradicted; certain direction 41 / 11,738 failed.
+
+**Findings, not fixed (each would move production — owner decisions):** (1) **the op reads an opponent's ability as
+REVEALED whenever its id is non-zero, but the observation writes an unrevealed opponent's most likely ability there
+with `known = 0`** — `_status_landing` asserts Immunity on every unrevealed Snorlax, and the damage / status kernels
+apply the top-1 ability as certain (fuzz-found; the family reads `known`); (2) `conditional_threat`'s `e_pko_acc`
+counts accuracy twice; (3) `intent_conditional` prices Protect without the moving-last rule, counts Endure as an
+Explosion blocker, and bounces non-reflectable moves off Magic Coat; (4) the op's status landing ignores the four
+coordinator-relayed rules. GPU checks (the compiled CUDA graph of `on`, the T2 inference tier, the learner gates on
+GPU) are DEFERRED: no lease.
+
+Tag: **BUILT · `--move-resolution` (OFF) · inventory 55 / 10 / 3 + 21 missing · `off` byte-identical (graph, bytes, K9, obs golden) · 0 contradicted zeros in 300 battles · op ability-revealed GIGO FOUND, not fixed** · design: [`design_arch_audit.md` §9](../endstate/design_arch_audit.md)

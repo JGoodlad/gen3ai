@@ -531,6 +531,17 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "builds PokemonEncoder.\n"
                 "Resume with the matching --token-encoding setting (a flagless resume inherits it), or "
                 "start a fresh training run.")
+        # gen3_move_resolution_v1 (v141): F11's move-resolution family. 'on' adds `MoveResolutionCell`'s
+        # parameters, retires the seven per-action blocks and widens both pointer cells; the pointer head's
+        # in_features would also catch it, but only as an opaque shape error — this compare names the cause.
+        if self.move_resolution != saved.move_resolution:
+            raise ModelVersionError(
+                f"move_resolution mismatch: saved={saved.move_resolution!r}, "
+                f"current={self.move_resolution!r}.\n"
+                "The per-action cell family is fixed for a run's lifetime: 'on' replaces the seven blocks with "
+                "the move-resolution family (different parameters, different cell widths).\n"
+                "Resume with the matching --move-resolution setting (a flagless resume inherits it), or "
+                "start a fresh training run.")
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —
         # a resume that dropped one would silently delete a trained baseline head, one that added

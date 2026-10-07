@@ -230,6 +230,9 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_static_tokens_v1 (v139): the per-Pokemon token encoding (structural).
             token_encoding=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("token_encoding", "legacy")),
+            # gen3_move_resolution_v1 (v141): F11's move-resolution family.
+            move_resolution=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_resolution", "off")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

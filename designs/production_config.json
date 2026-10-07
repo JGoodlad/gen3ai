@@ -49,6 +49,7 @@
     32
   ],
   "move_prior_fusion": true,
+  "move_resolution": "off",
   "net_arch": [
     512,
     512

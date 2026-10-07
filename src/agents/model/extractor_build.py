@@ -47,6 +47,8 @@ from agents.model.pools import (CLSPool, HiddenOppBeliefPool, POLICY_READOUT_MOD
                                 PolicyStateQuery)
 from agents.model.projection import ProjectionAssembler, compute_projection_widths
 from agents.model.switch_branch import SwitchBranchMoveCell
+from agents.model.move_resolution import MoveResolutionCell
+from agents.model.move_resolution_rules import MOVE_RESOLUTION_MODES
 from agents.model.t0_species import T0SpeciesPrior
 from agents.model.hypothesis_set import BELIEF_TOKEN_MODES, HypothesisBuilder
 from agents.model.static_tokens import TOKEN_ENCODING_MODES, StaticTokenEncoder
@@ -116,6 +118,7 @@ class ExtractorBuild(torch.nn.Module):
                  oracle_reveal: str = "off",
                  policy_readout: str = "tower",
                  token_encoding: str = "legacy",
+                 move_resolution: str = "off",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -997,6 +1000,38 @@ class ExtractorBuild(torch.nn.Module):
         self.policy_readout = policy_readout
         self.policy_query: Optional[PolicyStateQuery] = (
             PolicyStateQuery() if policy_readout == "trunk" else None)
+        # gen3_move_resolution_v1 (v141, `--move-resolution`; architecture audit F11 §9): the MOVE-RESOLUTION
+        # family. `off` (the default and production) builds NOTHING and sets no op seam, so the extractor is
+        # byte-identical to the build without it. `on` builds `MoveResolutionCell` LAST (no existing parameter
+        # position moves) out of zero-init `IsolatedLinear`s (no global RNG draw; SB3's orthogonal re-init
+        # skips them), and the policy RETIRES the seven blocks it replaces after SB3's re-init and before the
+        # optimizer (`retire_superseded_action_cells`) — they were constructed and re-initialised exactly as in
+        # production, so every OTHER parameter's initial bytes equal production's. Requirements are enforced
+        # HERE, where `flag_requires_test` can see them.
+        if move_resolution not in MOVE_RESOLUTION_MODES:
+            raise ValueError(f"move_resolution must be one of {MOVE_RESOLUTION_MODES}, got {move_resolution!r}")
+        self.move_resolution = move_resolution
+        self.move_resolution_cell: Optional[MoveResolutionCell] = None
+        if move_resolution == "on":
+            if not self.opp_intent:
+                raise ValueError(
+                    "move_resolution=on requires opp_intent=True (--opp-intent-coef > 0): every resolution "
+                    "fact that depends on the opponent's choice is weighted by the published α / β, and a "
+                    "presence belief has no switch class to fall back on.")
+            if self.damage_op is None or not (damage_outgoing and damage_matrices_incoming
+                                              and damage_matrices_outgoing):
+                raise ValueError(
+                    "move_resolution=on requires damage_op + damage_outgoing + damage_matrices_incoming + "
+                    "damage_matrices_outgoing: the KO / hit / immunity facts are the operator's physics.")
+            if belief_tokens != "blob":
+                raise ValueError(
+                    "move_resolution=on is built for belief_tokens='blob' only: its seat axis is alpha's K "
+                    "seats, and X5's flat pointer (OTHER_move as a priced (K+1)-th seat) is not wired into it.")
+            self.damage_op.stash_pair_cells = True
+            self.damage_op.stash_pair_outcome = True
+            self.damage_op.stash_pair_type_mult = True
+            self.damage_op.stash_species_post = True
+            self.move_resolution_cell = MoveResolutionCell(self.damage_op)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

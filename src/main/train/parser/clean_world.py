@@ -195,6 +195,17 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "counts, hazards and screens reach a token only by attention and the damage "
                              "operator. Builds on both --belief-tokens modes. STRUCTURAL, version-checked, "
                              "fresh-only.")
+    from agents.model.move_resolution_rules import MOVE_RESOLUTION_MODES
+    parser.add_argument("--move-resolution", "--move_resolution", dest="move_resolution",
+                        choices=MOVE_RESOLUTION_MODES, default=None,
+                        help="F11's MOVE-RESOLUTION family (gen3_move_resolution_v1, v141; "
+                             "designs/endstate/design_arch_audit.md F11 §9). 'off' (default; production): the "
+                             "seven per-action blocks, byte-identical. 'on': per legal action, P(it resolves as "
+                             "stated) by the exact gen-3 rules (lands / not blocked / not immune / not a no-op), "
+                             "intent-weighted, plus the seven blocks' FACTS consolidated and their JUDGMENTS "
+                             "(tempo_cost, wasted_ko, the hand thresholds) dropped; the seven blocks are retired. "
+                             "STRUCTURAL, version-checked, fresh-only. Requires --opp-intent-coef > 0, "
+                             "--damage-op, --damage-outgoing and both per-move matrices; blob only.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

@@ -136,6 +136,7 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "pair_outcome_switch": ("PairOutcomeSwitchCell",),
     "switch_branch": ("SwitchBranchMoveCell",),
     "conditional_threat": ("ConditionalThreatCell",),
+    "move_resolution_cell": ("MoveResolutionCell",),
 }
 
 #: Parametered modules that deliberately draw NO edge, each with the reason. An entry here is a
@@ -696,6 +697,27 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                     "divided by the defender's bulk, and what a saturated P(KO) "
                                     "hides"))
 
+    if getattr(fe, "move_resolution_cell", None) is not None:
+        # gen3_move_resolution_v1 (v141): the MOVE-RESOLUTION family — the seven blocks above are retired on a built
+        # policy and this is the one rider of both cells.
+        for k in range(n_e3):
+            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
+                               fx.MOVE_RESOLUTION_MOVE_DIM, "MOVE_RESOLUTION_MOVE_DIM",
+                               via="MoveResolutionCell (published alpha AND beta x the op's pair / outgoing "
+                                   "grids x the gen-3 resolution rules)",
+                               zero_init=True,
+                               note="P(this move resolves as stated) — lands / not blocked / not immune / not "
+                                    "a no-op, intent-weighted — its factors, P(the opponent KOs us) (the "
+                                    "Destiny Bond feature), and the seven blocks' FACTS consolidated"))
+        for j in range(T):
+            edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",
+                               fx.MOVE_RESOLUTION_SWITCH_DIM, "MOVE_RESOLUTION_SWITCH_DIM",
+                               via="MoveResolutionCell (mon j's alpha-reduced incoming FACTS, the "
+                                   "Safeguard / Sleep / Freeze Clause / Substitute corrections, e_pko, the "
+                                   "margins, and P(the switch resolves))",
+                               zero_init=True,
+                               note="the judgments (neutralization, tempo_cost, the spin stake) dropped"))
+
     # --- OPPONENT INTENT: what alpha/beta READ, and where their publication lands ---------------
     # gen3_opp_intent_v1. Both heads were missing from this graph entirely, and the omission was
     # load-bearing rather than cosmetic: five downstream modules (IntentMoveCell,
@@ -736,7 +758,8 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                            ("IntentThresholdMoveCell", getattr(fe, "intent_threshold_move", None)),
                            ("IntentConditionalMoveCell", getattr(fe, "intent_conditional", None)),
                            ("PairOutcomeMoveCell", getattr(fe, "pair_outcome_move", None)),
-                           ("SwitchBranchMoveCell", getattr(fe, "switch_branch", None)))
+                           ("SwitchBranchMoveCell", getattr(fe, "switch_branch", None)),
+                           ("MoveResolutionCell", getattr(fe, "move_resolution_cell", None)))
             if m is not None]
         if _move_cell_consumers:
             for k in range(n_e3):
@@ -747,7 +770,8 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                         "widths ride the parallel damage_op edges"))
         _beta_move_consumers = [
             n for n, m in (("IntentConditionalMoveCell", getattr(fe, "intent_conditional", None)),
-                           ("SwitchBranchMoveCell", getattr(fe, "switch_branch", None)))
+                           ("SwitchBranchMoveCell", getattr(fe, "switch_branch", None)),
+                           ("MoveResolutionCell", getattr(fe, "move_resolution_cell", None)))
             if m is not None]
         if _beta_move_consumers:
             for k in range(n_e3):
@@ -758,7 +782,8 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                         "the Explosion trade's target, and OA2's whole subject"))
         _switch_cell_consumers = [
             n for n, m in (("PairOutcomeSwitchCell", getattr(fe, "pair_outcome_switch", None)),
-                           ("ConditionalThreatCell", getattr(fe, "conditional_threat", None)))
+                           ("ConditionalThreatCell", getattr(fe, "conditional_threat", None)),
+                           ("MoveResolutionCell", getattr(fe, "move_resolution_cell", None)))
             if m is not None]
         if _switch_cell_consumers:
             for j in range(T):

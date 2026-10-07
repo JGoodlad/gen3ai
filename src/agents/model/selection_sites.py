@@ -47,7 +47,7 @@ FORWARD_MODULES: Tuple[str, ...] = (
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
     "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
-    "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
+    "move_resolution", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
     "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
 )
 
@@ -315,6 +315,28 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     "switch_branch": {
         "INT": ("req_move_ids[..., None] == self.protect_nums", "req_move_ids[..., None] == self.spin_num"),
+    },
+    # gen3_move_resolution_v1 (v141, `--move-resolution on` only — it never runs on the production surface).
+    # Every discrete op reads the observation, a constant table or an integer: the family thresholds no score.
+    # The HP / stage cutoffs are the gen-3 RULES (Substitute at 1/4, Belly Drum at 1/2, a heal at full HP,
+    # +6 stages) read off the observed fraction / the obs-coded stage (k/6 · 6), so the same row always
+    # resolves the same way; a stage is a multiple of 1 and the ±5.5 cut sits half a stage from either side.
+    "move_resolution": {
+        "OBS": ("ctx.hp_and_active[..., 0] > 0", "ctx.hp_and_active[ar, our_act, 0] > 0",
+                "o.beatup_n <= 0.5", "o.opp_alive_total > 1.5", "o.opp_cond[..., 1:].sum(-1) > 0.5",
+                "o.opp_hp > SUB_HP_FRACTION", "o.our_alive.sum(-1) - o.our_alive[ar, o.our_active] > 0.5",
+                "o.our_cond[..., 1:].sum(-1) > 0.5", "o.our_cond[..., C_FRZ].sum(-1) > 0.5",
+                "opp_cond_a[:, 1:].sum(-1) > 0.5", "opp_slp_live.sum(-1) > 0.5", "slp_live.sum(-1) > 0.5",
+                "o.spikes[:, 1:2] < 0.99", "our_hp >= 1.0", "bench_slp > 0.5", "o.our_wish <= 0.0",
+                "known_all > 0.5", "(known_all > 0.5).long()", "our_hp > BELLY_DRUM_HP_FRACTION",
+                "our_hp > SUB_HP_FRACTION", "our_stage[:, 0:1] < 5.5", "our_stage[:, None, :] < 5.5",
+                "our_stage[:, None, :] > -5.5"),
+        "TABLE": ("op.CHART[t1] * op.CHART[t2] == 0", "o.prio < 0", "o.prio == 0", "pk == pm", "pk > pm",
+                  "o.self_boost < 0", "o.self_boost != 0", "(o.self_boost != 0).to(dt).sum(-1) > 0.5",
+                  "o.self_boost > 0", "o.self_boost[..., 0] > 0", "tm_a > 0"),
+        "INT": ("ids == op.hp_num", "o.opp_last_move > 0", "o.req_ids > 0", "o.st_cat < 6",
+                "o.st_cat == slp_cat", "o.st_cat > 0", "our_types[..., 0] == T_GHOST",
+                "our_types[..., 1] == T_GHOST", "op.MOVE_STATUS_CAT[ids].long()"),
     },
     # gen3_x5_hypothesis_set_v1 (X5 U2, `--belief-tokens fixed_mass` only — the module never runs on the
     # production `blob` surface). In U2 the hypothesis set is STASHED and read only by the presence BCE

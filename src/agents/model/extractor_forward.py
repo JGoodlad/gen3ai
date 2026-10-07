@@ -37,6 +37,7 @@ from agents.model.hypothesis_tokens import (FixedMassMoves, OppPresence, OpRoste
                                             other_column, other_roster, splice_hypothesis_tokens)
 from agents.model.damage_op_layout import _DMG_OMX_IDX_PKO, _SB_SPE
 from agents.model.intent_threshold import threshold_probs
+from agents.model.move_resolution import gather_ops as gather_move_resolution_ops
 from agents.model.pair_outcome import pair_alpha, reduce_pair_in, reduce_pair_in_all
 from agents.model.pointer_head import _request_order_move_tokens
 from agents.model.team_transformer import _event_reference_cells
@@ -670,7 +671,7 @@ class ExtractorForward(ExtractorApi):
         # `last_pair_cells`). Reuses the c2 edge grid when the edge family already built it this
         # forward — identical function, so the value is the same either way.
         _imc_ops = None
-        if self.intent_move_cell is not None and damage_block is not None:
+        if (self.intent_move_cell is not None or self.move_resolution_cell is not None) and damage_block is not None:
             _imc_ops = self.damage_op.pointer_intent_status_operands(  # type: ignore[union-attr]
                 _opctx, self.last_move_belief_logits, self.last_spread_belief,  # type: ignore[arg-type]
                 k_cand=self.consequence_topk, c2_cells=_c2_edge_cells,
@@ -1033,6 +1034,14 @@ class ExtractorForward(ExtractorApi):
                 # therefore the stake a spinblock destroys.
                 ctx.spikes_feature[:, 0:1],
                 **({} if _x5i is None else {"other_u": _x5i.other_u}))], dim=2)
+        # gen3_move_resolution_v1 (v141, `--move-resolution on`): the MOVE-RESOLUTION family — per legal action,
+        # P(it resolves as stated) and the seven blocks' FACTS, consolidated (their judgments dropped). The
+        # policy retires the seven it replaces, so on a built policy this is the only rider of either cell.
+        if self.move_resolution_cell is not None:
+            _mr_m, _mr_s = self.move_resolution_cell(
+                gather_move_resolution_ops(self, ctx, _al, _bl, _imc_ops))
+            _mcells = torch.cat([_mcells, _mr_m], dim=2)
+            _scells = torch.cat([_scells, _mr_s], dim=2)
         self.stash.pointer_inputs = PointerInputs(
             move_tokens=_tok_req, move_valid=_move_valid, team_tokens=our_team_out,
             move_cells=_mcells, switch_cells=_scells)

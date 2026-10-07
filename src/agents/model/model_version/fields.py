@@ -418,6 +418,10 @@ class ModelVersionFields:
     # the same prefix. No ARCH_SIGNATURE bump while both encodings build at one commit: the string compare in
     # check_compatible is the gate.
     token_encoding: str = "legacy"
+    # gen3_move_resolution_v1 (config v141): `--move-resolution {off,on}` — F11's move-resolution family. STRUCTURAL:
+    # 'on' builds `MoveResolutionCell` (the state_dict delta) and retires the seven per-action blocks; 'off' builds
+    # nothing. Both arms build at one commit, so the string compare in check_compatible is the gate.
+    move_resolution: str = "off"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at

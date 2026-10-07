@@ -791,6 +791,42 @@ while `e_high_switch` carries the magnitude there. `SWITCH_BRANCH_MOVE_DIM` = **
 Rapid Spin also clears Leech Seed and partial-trap from its user, and a Ghost KO'd on the switch-in
 denies nothing.
 
+**OFF in production: `move_resolution`** (v141, `gen3_move_resolution_v1`, `--move-resolution {off,on}` —
+architecture audit F11 §9, the owner's 2026-10-06 ruling: FACTS kept, JUDGMENTS dropped). `off` builds nothing
+and sets no op seam: the production forward, its compiled graph and its parameters are byte-identical to the
+build without it. `on` builds `MoveResolutionCell` (`move_resolution.py`; the rules and their Showdown sources in
+`move_resolution_rules.py`, the tables in `move_resolution_tables.py`) and the policy RETIRES the seven blocks
+above after SB3's re-init and before the optimizer, so every other parameter's initial bytes equal production's
+(`--arch production --move-resolution on --allow-nonproduction-arch` is the one-lever screen arm). The family
+puts ONE zero-init block on each pointer cell:
+
+* **move cell, 38 coordinates** (`MOVE_RESOLUTION_MOVE_COORDS`): per legal move, `p_resolve` = P(it resolves as
+  stated — lands, not blocked, not immune, not a no-op) by the exact gen-3 rules, intent-weighted —
+  `Σ_k α_k · A_k · L(m|k) + a_un · A_un · L_un + α_SWITCH · p_act · L_sw` over their believed seats (A = we get to
+  act: our own sleep / freeze / paralysis / confusion / infatuation, and not KO'd, slept, frozen, paralysed or
+  flinched by a seat that moves FIRST by priority then P(outspeed); L = the target's and our own rules plus the
+  seat's Protect / Magic Coat / Substitute / Taunt landing first) — with its factors `p_lands_stay`,
+  `p_lands_switch`, `p_ko_first`, `p_act`; then `p_ko_us` and **`dbond_p_ko` = P(the opponent KOs us this turn)
+  (Destiny Bond, no threshold — owner)**; then the seven blocks' 31 kept facts (Counter / Mirror Coat returns,
+  flinch, Pursuit, Protect's avoided damage / status / attack mass, the boom trade, OA2's switch branch, the c2
+  status consequences, the α-reduced incoming row at our active);
+* **switch cell, 18 coordinates** (`MOVE_RESOLUTION_SWITCH_COORDS`): mon j's α-reduced incoming damage + status
+  row, `p_spin_denied` (the fact half of `spin_denied`), `e_pko` (accuracy counted ONCE — the shipped
+  `conditional_threat` multiplies the already-accuracy-folded `ko_ramp` by `acc` again), `e_type_mult`, the two
+  margins, and `p_switch_resolves` (their Pursuit can KO the departing mon).
+
+Dropped (judgments): `tempo_cost`, `neutralization`, `wasted_ko`, `spin_value_lost`, the hazard stake of
+`spin_denied`, and the Focus Punch / Substitute / Endure / Endeavor hand thresholds. The incoming status
+coordinates are CORRECTED for OUR Safeguard, our active's Substitute, incoming Sleep Clause and Freeze Clause,
+which `_incoming_status_lands` ignores, and it reads an opponent's ability as revealed from the ability block's
+`known` flag — the op reads `id > 0`, which is wrong for an unrevealed opponent (the observation writes its most
+likely ability there with `known = 0`; audit §9.4); every op value it reads is PRE-gain (the op's `out_gain` is
+per request slot on the per-move channels), and its projections are shared across slots; the op itself is untouched. Requires `opp_intent`, `damage_op`,
+`damage_outgoing` and both per-move matrices; blob only. Named residuals (not modelled): accuracy / evasion
+stages, Attract's gender rule, Fake Out's first turn, a confusion ending this turn, Encore / Disable at 0 PP,
+the opponent's Disabled move, Damp, Wonder Guard, Truant, Endeavor's HP comparison, two-turn moves, a seat outside
+their believed top-K.
+
 Route availability is **width-neutral by construction** (additive injection changes no
 projection width), so the old ede5a88 discovery-sizing bug class — a fall-through branch hiding
 a vf part from the forward that sized `value_pre_norm` — is unrepresentable. Both projection
@@ -881,7 +917,9 @@ a missing block narrows the `Linear` rather than silently feeding it zeros at a 
 The **switch** cell likewise widens under `pair_outcome_switch`
 (+`PAIR_OUTCOME_SWITCH_DIM` = 15) and `conditional_threat_cell`
 (+`CONDITIONAL_THREAT_SWITCH_DIM` = 4), summed by `pointer_switch_cell_dim` and appended in that
-order; until v94 nothing widened it at all.
+order; until v94 nothing widened it at all. Under `--move-resolution on` (OFF in production) the seven blocks
+are retired on a built policy and the family's two blocks are the only riders: move cell 13 + 38 = 51, switch
+cell 15 + 18 = 33 (`MOVE_RESOLUTION_MOVE_DIM` / `MOVE_RESOLUTION_SWITCH_DIM`).
 
 Scoring: `tanh(proj(token ⊕ cells) + ctx_proj(latent_pi))` → a zero-init `Linear(64, 1)`.
 Move logits are multiplied by `move_valid`, so an unresolved request slot contributes **exactly 0**
@@ -1413,6 +1451,7 @@ does nothing given another setting.
 | `move_candidate_floor` | `0.02` | ACTIVE |
 | `move_latent` | `true` | ACTIVE |
 | `move_prior_fusion` | `true` | ACTIVE |
+| `move_resolution` | `"off"` | OFF |
 | `op_believed_lean` | `true` | ACTIVE |
 | `op_drop_renders` | `true` | ACTIVE |
 | `opp_belief_cls_k` | `6` | ACTIVE |

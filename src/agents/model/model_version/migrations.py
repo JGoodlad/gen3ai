@@ -453,6 +453,11 @@ def _migrate_config(data: dict) -> dict:
                 "replaced that layout, so its state_dict has no home here. Run it PINNED to its own commit "
                 "(<= 0ea14560's line), or start a fresh run.")
         data["config_version"] = 140
+    # v141 (gen3_move_resolution_v1, F11) — `move_resolution`, defaulted rather than refused: "off" is the only
+    # possible past (the family did not exist).
+    if version < 141:
+        data.setdefault("move_resolution", "off")
+        data["config_version"] = 141
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

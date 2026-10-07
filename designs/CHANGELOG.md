@@ -12063,3 +12063,32 @@ branch `obs-facts-append`).
 - **Gates.** `snapshot_ladder_transport_test.py`, `snapshot_ladder_rust_integration_test.py`,
   `untaught_rust_integration_test.py`, the critic-gate transport test, the rewritten untaught reproducibility gate;
   each fails on a revert.
+## 2026-10-06 — ARCHITECTURE (opt-in, OFF in production): F11's MOVE-RESOLUTION family, `--move-resolution {off,on}` (`gen3_move_resolution_v1`, config v141; `off` byte-identical; no ARCH_SIGNATURE / MIGRATION_FLOOR change)
+
+- **Why.** Architecture audit F11 and the owner's 2026-10-06 ruling: of the seven hand-designed per-action blocks, the
+  FACTS (hard-to-compute mechanics — what will actually happen if I press this) are kept and consolidated, the
+  JUDGMENTS (opinions of the right play) dropped; Destiny Bond's feature is P(the opponent KOs us), no threshold. The
+  inventory (`design_arch_audit.md` §9: 68 coordinates → 55 FACT / 10 JUDGMENT / 3 REDUNDANT, 21 missing facts) was
+  written before the build; every mechanic was verified in `deps/pokemon-showdown` with gen-3 inheritance resolved.
+- **What.** `on` builds `MoveResolutionCell` (`move_resolution.py`, rules in `move_resolution_rules.py`, tables in
+  `move_resolution_tables.py`): a 38-wide move-cell block (per legal move, P(it resolves as stated) — lands / not
+  blocked / not immune / not a no-op — by the exact rules, intent-weighted over α's seats, β's arrivals and the move
+  ORDER; its factors; `dbond_p_ko`; the 31 kept facts) and an 18-wide switch-cell block (the α-reduced incoming facts
+  corrected for our Safeguard / Substitute and Sleep / Freeze Clause, `p_spin_denied`, `e_pko` with accuracy counted
+  once, the margins, `p_switch_resolves`), both through zero-init `IsolatedLinear`s. The policy retires the seven
+  blocks after SB3's re-init (`ExtractorApi.retire_superseded_action_cells`), so every other initial parameter byte
+  equals production's. The op gains one OFF seam (`stash_species_post`). Requires `opp_intent`, `damage_op`,
+  `damage_outgoing`, both per-move matrices; refuses `belief_tokens=fixed_mass`.
+- **Plumbing.** Registry row (STRUCTURAL, cli, since 141), parser + `_resolve`, `ModelVersion` field + compat +
+  construct + migration (pre-v141 → `off`), snapshot surfaces, production mirror `off`, tier T2, `selection_sites`
+  declarations (every op EXACT: observation / table / integer), delivery-graph edges, `flag_registry.md` and the
+  ARCHITECTURE tables regenerated. `oracle_reveal_test`'s `since == MODEL_CONFIG_VERSION` pin relaxed to `== 137`.
+- **Proofs.** `off`: the production extractor's dynamo graph, state_dict bytes and outputs equal its base's at each rebase (`8288b9a2`, `11d27574`, `bef16d61`); the K9
+  learner golden (both entries) and the obs golden pass. `move_resolution_test.py` pins every rule on a constructed
+  state (46 rule mutations, all caught); `move_resolution_extractor_test.py` pins the real-policy retirement and the
+  one-lever init property; `move_resolution_rules_integration_test.py` re-derives every flag set from the gen-3 dex;
+  `move_resolution_bridge_integration_test.py` (the banked battles replayed through the Rust core, no poke-env)
+  gates that a stated exact 0 is never contradicted (full bank: 1,515 claims, 0 contradicted).
+- **Fuzz-found.** The real-battle check found eleven gen-3 rules the inventory missed (now tested; audit §9.4) and one
+  production-op defect, NOT fixed here: the op reads an opponent's ability as revealed when its id is non-zero, but an
+  unrevealed opponent carries its most likely ability there with `known = 0`. The family reads the `known` flag.

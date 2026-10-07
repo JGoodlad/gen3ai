@@ -455,7 +455,11 @@ from typing import Any, Dict
 #   OP CONTENT (`op_content`) is added on both sides. A pre-v140 config recording `static` (a stage-1 layout, never
 #   trained) is REFUSED (its state_dict has no home); `legacy` stamps through unchanged (byte-identical). No
 #   ARCH_SIGNATURE bump while both encodings build. No MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 140
+# v141 (gen3_move_resolution_v1): `move_resolution` — F11's MOVE-RESOLUTION family (architecture audit §9; owner
+#   2026-10-06: facts kept, judgments dropped). A STRUCTURAL string {off,on}: 'on' builds `MoveResolutionCell` and
+#   retires the seven per-action blocks, gated in check_compatible. A pre-v141 config migrates to "off" (the only
+#   possible past). No ARCH_SIGNATURE bump ('off' is byte-identical), no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 141
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
