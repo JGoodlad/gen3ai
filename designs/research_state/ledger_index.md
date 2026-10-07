@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,575-line file. **The ledger itself is append-only and is never edited by this**;
+22,586-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**782 headings · 727 dated · 2026-08-01 → 2026-10-06 · ledger 22,575 lines.**
+**783 headings · 728 dated · 2026-08-01 → 2026-10-06 · ledger 22,586 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -802,3 +802,4 @@ rename.
   - `L22543` · `2026-10-06` · AUDIT · **ENTITY COVERAGE AUDIT (read-only, owner request, for the static-token rebuild): 71 gen-3 battle facts mapped to their route today and their entity home; three kinds of fact lose their good route when board context leaves the per-mon encoder (counts: fainted mons are MASKED keys; "my side": one global token in a fixed (ours, theirs) frame; amounts: an edge carries only a ratio and the switch cell has no Spikes chip); recommended layout: OUR SIDE / THEIR SIDE / FIELD tokens + an op-derived content input per mon; KEEP 11 · EXACT REFACTOR 2 · BEHAVIOUR CHANGE 9**
   - `L22554` · `2026-10-06` · FINDING + FIX · **K9(b) early false stop root-caused: ties INSIDE the X5 per-mon move orders' top six, which the op reads as a SET, were counted as boundaries; each `stable_order` caller now declares how it reads the order (`gen3_behaviour_tie_consumed_v1`); at the dumped update-1 weights the excluded share goes 15.2 % → 5.9 % with 0 provably-distinct rows cleared; ceiling and judged-row FATAL unchanged**
   - `L22565` · `2026-10-06` · BUILT · **Architecture audit F2 as a screenable flag: `--policy-readout {tower,trunk}` (config v138, OFF in production). `trunk` retires the flat policy tower (1,130,802 parameters) and reads the pointer head's context with one learned attention query over every refined trunk token; `tower` byte-identical (K9 golden both entries, compiled R1 / T2 graphs equal the base commit's)**
+  - `L22576` · `2026-10-06` · FINDING + FIX · **A read-only CPU checkpoint load created a CUDA context: every checkpoint since the ride-along heads pickled their CUDA optimizers into sb3's `data`; they are no longer saved, never unpickled on any load, and a CPU load that initialises CUDA is a typed error (`gen3_cpu_load_no_cuda_v1`); resume semantics unchanged (the state was never restored)**
