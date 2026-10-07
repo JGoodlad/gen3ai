@@ -10,6 +10,7 @@ from typing import Any, Optional, Tuple
 from agents.observation.constants import (
     TEAM_SIZE,
 )
+from agents.model.index_max import max_by_index
 from agents.model.arch_constants import (MOVE_NET_HIDDEN,
     MOVE_LATENT_DIM,
     POINTER_HIDDEN,
@@ -180,8 +181,8 @@ class EntityMoveSeats(torch.nn.Module):
                 p_tail = tail_w.sum(-1).clamp(max=1.0)                                # [B,6]
                 score = tail_w * (damage_op.MOVE_BP[None, None, :] / 150.0)                     * damage_op.MOVE_ACCURACY[None, None, :]
                 phys = damage_op.MOVE_PHYS[None, None, :]
-                worst_phys = (score * phys).amax(-1)                                  # [B,6]
-                worst_spec = (score * (1.0 - phys)).amax(-1)
+                worst_phys = max_by_index(score * phys)                               # [B,6]
+                worst_spec = max_by_index(score * (1.0 - phys))
             else:
                 # X5 (U3 part 3): every mon's tail beyond rank K of ITS one order, presence-aware.
                 from agents.model.hypothesis_tokens import bench_tail_cells

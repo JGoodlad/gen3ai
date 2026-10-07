@@ -37,6 +37,7 @@ import torch
 
 from agents.model.extractor_ctx import ExtractorContext, slice_pokemon_categoricals
 from agents.model.hypothesis_set import HypothesisSet
+from agents.model.index_max import max_by_index
 from agents.observation.constants import TEAM_SIZE
 
 
@@ -220,8 +221,8 @@ def other_move_cells(fm: FixedMassMoves, move_bp: torch.Tensor, move_acc: torch.
     §9 M2 = C): max_m π_m · BP/150 · acc on each category channel. ``revealed`` = 1 (the active is)."""
     score = torch.where(fm.beyond, fm.w_all, torch.zeros_like(fm.w_all)) \
         * (move_bp / 150.0) * move_acc                                            # [B,M]
-    worst_phys = (score * move_phys).amax(-1)
-    worst_spec = (score * (1.0 - move_phys)).amax(-1)
+    worst_phys = max_by_index(score * move_phys)
+    worst_spec = max_by_index(score * (1.0 - move_phys))
     return torch.stack([fm.other_mass.to(score.dtype), worst_phys, worst_spec,
                         torch.ones_like(worst_phys)], dim=-1)
 
@@ -384,8 +385,8 @@ def bench_tail_cells(ro: OpRoster, K: int, move_bp: torch.Tensor, move_acc: torc
     tail = ro.move_rank >= K                                                        # [B,6,M]
     tw = torch.where(tail, ro.move_w, torch.zeros_like(ro.move_w))
     score = tw * (move_bp / 150.0) * move_acc
-    worst_phys = (score * move_phys).amax(-1)
-    worst_spec = (score * (1.0 - move_phys)).amax(-1)
+    worst_phys = max_by_index(score * move_phys)
+    worst_spec = max_by_index(score * (1.0 - move_phys))
     return torch.stack([tw.sum(-1), worst_phys, worst_spec], dim=-1)               # [B,6,3]
 
 

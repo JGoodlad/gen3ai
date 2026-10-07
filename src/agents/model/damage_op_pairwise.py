@@ -57,6 +57,7 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _TypeEncoder, _VOLATILE_SLOTS, _WATER_TIDX, _dmg_imx_dim, decode_damage_block,
 )
 
+from agents.model.index_max import max_by_index
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, beatup_swap, gather_beatup,
                                        gather_bp, gather_nonformula, nonformula_rolls, override_rolls)
 
@@ -247,8 +248,8 @@ class DamageOperatorPairwise:
         sp_probs = self.unrevealed_species_probs(ctx, species_probs)
         if base is None:
             base = self.pairwise_outgoing(ctx, spread_belief, species_probs=sp_probs)   # [B,4,6,6]
-        base_high = base[..., 1].amax(dim=1)                                         # [B,6]
-        base_pko = base[..., 3].amax(dim=1)                                          # [B,6]
+        base_high = max_by_index(base[..., 1], dim=1)                                         # [B,6]
+        base_pko = max_by_index(base[..., 3], dim=1)                                          # [B,6]
         # --- speed: our ACTIVE's real-spread spe (the pairwise_speed recipe) × its live stage ---
         d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]                     # [B,6,6]
         spread = ctx.pokemon_part[:, :TEAM_SIZE,
@@ -289,8 +290,8 @@ class DamageOperatorPairwise:
             dk = deltas[:, k]                                                        # [B,5]
             boosted = self.pairwise_outgoing(ctx, spread_belief, boost_delta=dk,
                                              species_probs=sp_probs)                # [B,4,6,6]
-            d_high = boosted[..., 1].amax(dim=1) - base_high                         # [B,6]
-            d_pko = boosted[..., 3].amax(dim=1) - base_pko
+            d_high = max_by_index(boosted[..., 1], dim=1) - base_high                         # [B,6]
+            d_pko = max_by_index(boosted[..., 3], dim=1) - base_pko
             if self.speed_physics:
                 p_k = self._p_first_active_at_stage(ctx, spread_belief, cur_spe_stage + dk[:, 4])
             else:
@@ -477,7 +478,7 @@ class DamageOperatorPairwise:
             dmg_ns = core * (1.0 + 0.5 * is_stab) * eff * 0.925 * (bp_k > 0).float()
             high, _l, _c, _k = override_rolls(self._rolls(dmg_ns, screen, maxhp[:, None, None],
                                                           cur_hp[:, None, None], acc_k, eps), nf)  # [B,6,K]
-            return (w_k * high * mask).amax(dim=-1)                                  # [B,6]
+            return max_by_index(w_k * high * mask)                                  # [B,6]
 
         d_in_phys = ((_worst(0.5, phys_mask) - _worst(1.0, phys_mask))[:, None, :]
                      * is_brn[:, :, None])                                           # [B,4,6] ≤0
@@ -714,8 +715,8 @@ class DamageOperatorPairwise:
                               maxhp[:, None, None, None], atk_cur_j[:, None, :, None],
                               eff[:, None], acc_k[:, None], eps)
         high, _low, _crit, ko = override_rolls((high, _low, _crit, ko), nf)
-        worst_high = (w_k[:, None] * high).amax(dim=-1)                              # [B,W,6]
-        worst_pko = (w_k[:, None] * ko).amax(dim=-1)
+        worst_high = max_by_index(w_k[:, None] * high)                              # [B,W,6]
+        worst_pko = max_by_index(w_k[:, None] * ko)
         d_high = worst_high[:, 1:] - worst_high[:, 0:1]                              # [B,4,6]
         d_pko = worst_pko[:, 1:] - worst_pko[:, 0:1]
         our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()       # [B]
@@ -805,7 +806,7 @@ class DamageOperatorPairwise:
                               maxhp[:, None, None, None], atk_cur_j[:, None, :, None],
                               eff[:, None], acc_k[:, None], eps)
         _h, _l, _c, ko_w = override_rolls((_h, _l, _c, ko_w), nf)
-        worst_pko = (w_k[:, None] * ko_w).amax(dim=-1)                               # [B,W,6]
+        worst_pko = max_by_index(w_k[:, None] * ko_w)                               # [B,W,6]
         d_pko = worst_pko[:, 1:] - worst_pko[:, 0:1]                                 # [B,4,6]
         # --- Rest's deterministic self-sleep cost (our OWN ability → exact, never a prior) ---
         own_eb = self.ABILITY_IS_EARLYBIRD[ctx.ability1_ids[ar, ctx.our_active_idx]]  # [B]
@@ -831,8 +832,8 @@ class DamageOperatorPairwise:
         cells = flat[:, :n_cells].reshape(-1, TEAM_SIZE, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MOVE)
         p_outspeed = flat[:, n_cells:n_cells + TEAM_SIZE]                                  # [B,6]
         alive = flat[:, n_cells + TEAM_SIZE:n_cells + 2 * TEAM_SIZE]                       # [B,6]
-        best_high = cells[..., _DMG_OAX_IDX_HIGH].amax(dim=-1)                             # [B,6]
-        best_pko = cells[..., _DMG_OAX_IDX_PKO].amax(dim=-1)                               # [B,6]
+        best_high = max_by_index(cells[..., _DMG_OAX_IDX_HIGH])                             # [B,6]
+        best_pko = max_by_index(cells[..., _DMG_OAX_IDX_PKO])                               # [B,6]
         return torch.stack([best_high, best_pko, p_outspeed, alive], dim=-1)               # [B,6,4]
 
     def pairwise_baton(self, ctx: 'ExtractorContext',
@@ -1020,8 +1021,8 @@ class DamageOperatorPairwise:
         wb = w_k[:, None, :, :]
         pm = phys_k[:, None, :, :]
         cells = torch.stack([
-            (wb * high * pm).amax(dim=-1), (wb * high * (1.0 - pm)).amax(dim=-1),
-            (wb * ko * pm).amax(dim=-1), (wb * ko * (1.0 - pm)).amax(dim=-1),
+            max_by_index(wb * high * pm), max_by_index(wb * high * (1.0 - pm)),
+            max_by_index(wb * ko * pm), max_by_index(wb * ko * (1.0 - pm)),
         ], dim=-1)                                                                     # [B,6i,6j,4]
         return cells * def_alive[:, :, None, None] * att_gate[:, None, :, None]
 
@@ -1158,13 +1159,13 @@ class DamageOperatorPairwise:
         _x5 = self.stash.x5
         if _x5 is None:
             w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
-            p_pur_vs_us = (w_all[:, :, pur] * alive_j).amax(dim=-1, keepdim=True)     # [B,1]
+            p_pur_vs_us = max_by_index(w_all[:, :, pur] * alive_j, keepdim=True)     # [B,1]
         else:
             # X5 (U3 part 3): a class-M max over the opponent MONS (§9 M2 = C) — each live mon's Pursuit
             # presence (its fixed-mass move presence; 1 revealed) scaled by the MON's presence (1 revealed,
             # π a hypothesis).
             alive_j = _x5.alive
-            p_pur_vs_us = (_x5.slot_pi * _x5.move_w[:, :, pur] * alive_j).amax(dim=-1, keepdim=True)
+            p_pur_vs_us = max_by_index(_x5.slot_pi * _x5.move_w[:, :, pur] * alive_j, keepdim=True)
             if _x5.other_any is not None:   # OTHER enters the max with presence 1 − Π(1 − π) (F4 (b))
                 p_pur_vs_us = torch.maximum(p_pur_vs_us, (_x5.other_any * _x5.other_pursuit)[:, None])
         we_have_pur = ((ctx.all_move_ids[:, :TEAM_SIZE] == pur).any(-1).float()

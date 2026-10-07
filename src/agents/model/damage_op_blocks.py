@@ -60,6 +60,7 @@ from agents.model.damage_op_layout import (  # noqa: F401
 from agents.model.extractor_ctx import ability_known, revealed_ability1_ids
 from agents.model.move_resolution_tables import S_SG_OPP, S_SG_OURS
 from agents.model.status_rules import incoming_status_mask
+from agents.model.index_max import max_by_index
 from agents.gen3_data import format_spec
 
 from agents.model.damage_kinds import (beatup_base_def, beatup_opp_target_def, beatup_party_ours,
@@ -828,7 +829,7 @@ class DamageOperatorBlocks:
         opp_serene = self.opp_secondary_mult(ctx)[ar, ctx.opp_active_local]                  # [B] known or prior
         sec_major = sec[..., :_SECONDARY_MAJOR_N]                                             # [B,K,6]
         abl_per_col = abl[..., self._SEC_CAT_IDX]                                             # [B,6,6] per status cat
-        sec_land = (sec_major[:, None, :, :] * ((1.0 - abl_per_col) * mask)[:, :, None, :]).amax(dim=-1)  # [B,6,K]
+        sec_land = max_by_index(sec_major[:, None, :, :] * ((1.0 - abl_per_col) * mask)[:, :, None, :])  # [B,6,K]
         damage_gate = (high_topk > eps).float()                                               # [B,6,K]
         secondary = (sec_land * acc[:, None, :] * opp_serene[:, None, None]
                      * damage_gate * (1.0 - already[:, :, None])).clamp(max=1.0)              # [B,6,K]
@@ -1315,8 +1316,8 @@ class DamageOperatorBlocks:
             cells = cells * defender_alive[:, :, None, None] * has_opp[:, None, None, None]
             return cells.permute(0, 2, 1, 3).contiguous()                                 # [B,K,6,3]
         w_b = w_topk[:, None, :]
-        p_major = (w_b * land).amax(dim=-1)                                               # [B,6]
-        p_immob = (w_b * land * is_immob[:, None, :]).amax(dim=-1)                         # [B,6]
+        p_major = max_by_index(w_b * land)                                               # [B,6]
+        p_immob = max_by_index(w_b * land * is_immob[:, None, :])                         # [B,6]
         feats = torch.stack([p_major, p_immob], dim=-1)                                   # [B,6,_DMG_STATUS_REFINE]
         return feats * defender_alive[:, :, None] * has_opp[:, None, None]
 
@@ -1354,7 +1355,7 @@ class DamageOperatorBlocks:
             cells = (cells * revealed_slot[:, :, None, None] * defender_alive[:, :, None, None]
                      * gate[:, None, None, None])
             return cells.permute(0, 2, 1, 3).contiguous()                                  # [B,4,6,2]
-        p_major = land.amax(dim=-1)                                                        # [B,6]
-        p_immob = (land * is_immob[:, None, :]).amax(dim=-1)                               # [B,6]
+        p_major = max_by_index(land)                                                        # [B,6]
+        p_immob = max_by_index(land * is_immob[:, None, :])                               # [B,6]
         feats = torch.stack([p_major, p_immob], dim=-1)                                    # [B,6,_DMG_STATUS_REFINE]
         return feats * revealed_slot[:, :, None] * defender_alive[:, :, None] * gate[:, None, None]

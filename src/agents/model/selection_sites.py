@@ -45,7 +45,7 @@ from typing import Dict, FrozenSet, List, NamedTuple, Optional, Tuple
 FORWARD_MODULES: Tuple[str, ...] = (
     "aux_value_heads", "belief_heads", "board_tokens", "conditional_threat", "damage_kinds", "dense_attn_bias", "damage_op", "damage_op_blocks", "damage_op_speed",
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
-    "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens",
+    "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens", "index_max",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
     "move_order", "move_resolution", "move_resolution_rules", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
     "status_rules", "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
@@ -178,8 +178,8 @@ REASONS: Dict[str, str] = {
     "PYTHON": "a Python scalar comparison (a config value), not a tensor op",
     "NOT_LOGP": "does not reach log pi(a|s) (the greedy-action readout)",
     "LABEL": "a loss / label / metric helper (`LABEL_FUNCS`), not the policy forward",
-    "MAX_VALUE": "an argmax whose index is read ONLY by a gather of its OWN operand (`damage_op.max_by_index`, "
-                 "gen3_fm_index_max_v1): the gathered value is the operand's maximum, bit-identical to `amax` "
+    "MAX_VALUE": "an argmax whose index is read ONLY by a gather of its OWN operand (`index_max.max_by_index`, "
+                 "gen3_fm_index_max_v1; every value-reduction max since the version break, audit F6a): the gathered value is the operand's maximum, bit-identical to `amax` "
                  "of it in every forward, so which near-tied candidate wins never reaches log pi — the site "
                  "is exactly as continuous as the `amax` it spells (`selection_sites_test` pins the gather)",
     "BISECT": "a fixed-step bisection's direction test under no_grad (X5's fixed-size construction): "
@@ -190,6 +190,10 @@ REASONS: Dict[str, str] = {
 
 #: Every EXACT site: module -> reason -> sources.
 EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
+    # gen3_fm_index_max_v1 / audit F6a (the version break, config v144, part 2): THE hard-max spelling, one site.
+    "index_max": {
+        "MAX_VALUE": ("x.detach().argmax(dim=dim, keepdim=True)",),
+    },
     "belief_heads": {
         "OBS": ("obs_hp_probs > 0", "obs_hp_probs.sum(-1, keepdim=True) > 0"),
         "INT": ("n_revealed >= opp_move_ids.shape[-1]", "opp_move_ids == HIDDEN_POWER_MOVE_NUM", "opp_move_ids > 0"),
@@ -198,7 +202,6 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("hp_frac > 0", "opp_burn > 0.5", "opp_para > 0.5", "our_para > 0.5", "s >= 0"),
         "TABLE": ("bp_all > 0", "phys_all > 0.5"),
         "SELECTED": ("bu_all > 0",),            # gen3_beatup_exact_v1: the 0/1 Beat Up bit at the candidate index
-        "MAX_VALUE": ("x.detach().argmax(dim=-1, keepdim=True)",),   # gen3_fm_index_max_v1 (fixed_mass only)
         "INT": ("(phys_all > 0.5).long()", "ctx.type1_ids[:, _og] == _GHOST_TIDX",
                 "ctx.type2_ids[:, _og] == _GHOST_TIDX", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
                 "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]", "opp_item == 0",
@@ -315,10 +318,6 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     "masked_categorical": {
         "INT": ("actions.long()",),
         "NOT_LOGP": ("torch.argmax(probs(logp), dim=1)",),
-    },
-    "opp_intent": {
-        "OBS": ("candidate_mask < 0.5", "candidate_mask > 0.5", "seat_valid < 0.5"),
-        "INT": ("(candidate_mask > 0.5).sum(dim=-1) == 0",),
     },
     "pair_outcome": {
         "INT": ("our_type1 == GHOST_TYPE_IDX", "our_type2 == GHOST_TYPE_IDX", "topk_nums[..., None] == self.spin_num",

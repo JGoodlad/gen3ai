@@ -37,6 +37,8 @@ from typing import Optional, cast
 
 import torch
 
+from agents.model.index_max import max_by_index
+
 PAIR_REDUCE_EPS = 1e-8
 PAIR_REDUCE_LATENT = 16          # ≥ set size 6 (Wagstaff 2019) — universality is free at 16
 _W_HOWS = ("belief_mean", "learned")
@@ -113,7 +115,7 @@ class DeepSetsReducer(torch.nn.Module):
         msg_in = torch.cat([cells, cells.pow(2),
                             w[:, None, :, None].expand(B, J, C, 1)], dim=-1)   # [B,J,C,2F+1]
         msg = self.phi(msg_in)                                                 # [B,J,C,L]
-        pooled = msg.sum(dim=2) if self.pool == "sum" else msg.amax(dim=2)     # [B,J,L]
+        pooled = msg.sum(dim=2) if self.pool == "sum" else max_by_index(msg, dim=2)     # [B,J,L]
         return self.rho(pooled)  # type: ignore[no-any-return]
 
 

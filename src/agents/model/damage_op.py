@@ -139,30 +139,13 @@ from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, gather
                                        gather_nonformula, nonformula_rolls, override_rolls)
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
 from agents.model.damage_op_speed import DamageOperatorSpeed
+# gen3_fm_index_max_v1 / audit F6a: THE hard-max spelling (a leaf module, re-exported here as
+# `damage_op.max_by_index`, the name this module's own maxima resolve at call time).
+from agents.model.index_max import max_by_index
 from agents.model.pair_outcome import GHOST_TYPE_IDX as _GHOST_TIDX, PAIR_OUTCOME_IDX
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
-
-
-def max_by_index(x: torch.Tensor) -> torch.Tensor:
-    """``x.amax(dim=-1)``'s VALUE, selected by INDEX (gen3_fm_index_max_v1, F-XC-4; fixed_mass only).
-
-    The value is the element at ``argmax`` — bit-identical to ``amax`` (a gather is exact). The
-    GRADIENT is what differs: ``amax``'s backward is ``grad · (x == amax) / Σ(x == amax)``, a float
-    EQUALITY between ``x`` and the saved max. Under ``torch.compile`` the min-cut partitioner may
-    RECOMPUTE a wide ``x`` in the backward kernel instead of saving it, and Triton contracts
-    ``a·b + c`` into FMAs differently in the two kernels (the fusion differs), so the recomputed ``x``
-    can miss the saved max by an ulp on every element: the tie count is 0 and the gradient is
-    ``0/0 = NaN``. Measured on fixed_mass's 400-wide incoming sweep on CUDA, 2026-10-05: the
-    compiled R1 gradient NaN on 41 parameters, finite with Triton's FMA contraction off
-    (``designs/research_state/measurements/x5_fxc4_nanfix_2026-10-05/``). Selecting by index makes
-    the backward a scatter at the saved ``argmax`` — no float comparison, so no recompute can break
-    it. On an exact TIE the whole gradient goes to the FIRST maximal element (``argmax``'s documented
-    tie rule) where ``amax`` splits it evenly — the one eager change, and only on the fixed_mass arm;
-    the blob arm keeps ``amax`` (its compiled and eager arithmetic unchanged, §7.5)."""
-    idx = x.detach().argmax(dim=-1, keepdim=True)      # K9(b): EXACT "MAX_VALUE" (selection_sites)
-    return torch.gather(x, -1, idx).squeeze(-1)
 
 
 class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperatorSpeed, torch.nn.Module):
@@ -488,18 +471,19 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         setting is an A/B at THIS call site with no new plumbing (the §5 step-5 gate).
 
         hard_max: `value` [B,6,C] (≥0), `channel_mask` [1,1,C] (1=on-channel). Off-channel
-        candidates zeroed; `amax` returns the max on-channel belief-weighted value (or 0).
-        Differentiable via the argmax subgradient — the dominant move's belief weight gets the
-        gradient — and NOT diluted the way a low-temperature softmax over a wide candidate
-        sweep would be (historically ~400 candidates; K=6 today, so that objection is ~6-way
-        and much weaker than when written)."""
+        candidates zeroed; the max on-channel belief-weighted value (or 0), selected BY INDEX
+        (`max_by_index`, audit F6a: `amax`'s value, a scatter backward — an exact tie's gradient goes
+        to the FIRST maximal candidate). Differentiable via the argmax subgradient — the dominant
+        move's belief weight gets the gradient — and NOT diluted the way a low-temperature softmax
+        over a wide candidate sweep would be (historically ~400 candidates; K=6 today, so that
+        objection is ~6-way and much weaker than when written)."""
         if how != "hard_max":
             raise NotImplementedError(f"REDUCE how={how!r} — only 'hard_max' is implemented at "
                                       "this legacy site. The Contract-W/L rungs (belief_mean / "
                                       "learned / deepsets / multi) live in pair_reduce.py, built "
                                       "via DamageOperator(reduce_how=…) and stashed on "
                                       "last_reduced_extra — design_pair_reduction.md §8.1")
-        return (value * channel_mask).amax(dim=-1)
+        return max_by_index(value * channel_mask)
 
     @staticmethod
     def _boost_mult(stage: torch.Tensor) -> torch.Tensor:
@@ -948,27 +932,18 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # same masks ⇒ bit-identical.
         wl, wh, wc, wk = wb * low_frac, wb * high_frac, wb * crit_frac, wb * ko_ramp   # [B,6,C] each
         wh_p, wh_s = wh * phys_mask, wh * spec_mask
-        if fixed_moves is None:
-            phys_low, spec_low = (wl * phys_mask).amax(dim=-1), (wl * spec_mask).amax(dim=-1)
-            phys_high, spec_high = wh_p.amax(dim=-1), wh_s.amax(dim=-1)
-            phys_crit, spec_crit = (wc * phys_mask).amax(dim=-1), (wc * spec_mask).amax(dim=-1)
-            phys_pko, spec_pko = (wk * phys_mask).amax(dim=-1), (wk * spec_mask).amax(dim=-1)
-            # gen3_unified_choice_band_v1: the CB-CONDITIONAL physical tail — the PHYSICAL-channel high-roll +
-            # P(OHKO) computed with the opp Atk ×1.5. Same hard-max aggregation over the believed candidates;
-            # special channel is CB-invariant so only the physical max is exposed (paired with p_cb below).
-            phys_high_cb = self._chan_max(wb * high_cb, phys_mask)                               # [B,6]
-            phys_pko_cb = self._chan_max(wb * ko_cb, phys_mask)                                  # [B,6]
-        else:
-            # gen3_fm_index_max_v1 (fixed_mass only — the FULL ~400-wide sweep): the same ten channel
-            # maxima, the same operands in the same order, each selected BY INDEX (`max_by_index`: the
-            # value is bit-identical, the backward is a scatter at the argmax, never an equality with a
-            # recomputed tensor). The compiled backward of the `amax` spelling was NaN (F-XC-4).
-            phys_low, spec_low = max_by_index(wl * phys_mask), max_by_index(wl * spec_mask)
-            phys_high, spec_high = max_by_index(wh_p), max_by_index(wh_s)
-            phys_crit, spec_crit = max_by_index(wc * phys_mask), max_by_index(wc * spec_mask)
-            phys_pko, spec_pko = max_by_index(wk * phys_mask), max_by_index(wk * spec_mask)
-            phys_high_cb = max_by_index((wb * high_cb) * phys_mask)                              # [B,6]
-            phys_pko_cb = max_by_index((wb * ko_cb) * phys_mask)                                 # [B,6]
+        # gen3_fm_index_max_v1 (X5) + audit F6a (every configuration since the version break, config v144, part 2):
+        # the ten channel maxima, each selected BY INDEX (`max_by_index`: the value is bit-identical to `amax`,
+        # the backward is a scatter at the argmax, never an equality with a recomputed tensor — the compiled
+        # backward of the `amax` spelling was NaN, F-XC-4). gen3_unified_choice_band_v1: the CB-CONDITIONAL
+        # physical tail — the PHYSICAL-channel high-roll + P(OHKO) computed with the opp Atk ×1.5 (special is
+        # CB-invariant, so only the physical max is exposed, paired with p_cb below).
+        phys_low, spec_low = max_by_index(wl * phys_mask), max_by_index(wl * spec_mask)
+        phys_high, spec_high = max_by_index(wh_p), max_by_index(wh_s)
+        phys_crit, spec_crit = max_by_index(wc * phys_mask), max_by_index(wc * spec_mask)
+        phys_pko, spec_pko = max_by_index(wk * phys_mask), max_by_index(wk * spec_mask)
+        phys_high_cb = max_by_index((wb * high_cb) * phys_mask)                                  # [B,6]
+        phys_pko_cb = max_by_index((wb * ko_cb) * phys_mask)                                     # [B,6]
         # PER-CHANNEL accuracy + PROVENANCE of the dominant (max belief-weighted high-roll) believed move.
         # accuracy is gathered COHERENTLY at the channel's dominant-damage move (the one the rolls describe),
         # so {pko, accuracy} parameterize that threat's full outcome distribution. provenance is the dominant
