@@ -197,6 +197,10 @@ def desugar_umbrella_flags(args) -> None:
         print(f"[Recipe] --arch production: applied {len(recipe)} RECIPE knob(s) from "
               f"designs/production_config.json's recipe.fresh ({args.recipe_source}). An "
               f"explicitly-typed flag still wins.")
+    # `--debug` SAFE BY CONSTRUCTION (main.train.debug_shape): AFTER the recipe (it reads the update
+    # size `--arch production` wrote) and before anything reads the rollout shape. A typed knob wins.
+    from main.train.debug_shape import apply_debug_rollout_shape
+    apply_debug_rollout_shape(args)
     # --unified-moves is the umbrella over the WHOLE move system: it sets --unified-damage to the same
     # level (so the op/belief/outgoing desugar below runs) AND turns on the move latent + its grading.
     # Applied BEFORE the --unified-damage desugar so the level flows through. v24.

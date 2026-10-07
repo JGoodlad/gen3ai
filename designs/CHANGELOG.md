@@ -12328,3 +12328,18 @@ branch `obs-facts-append`).
   priors, the guards throw on planted mass, the slot identity, every model table's ILLEGAL value, `fixed_mass`'s
   hypothesis moves; 13 of 16 fail on a mechanical revert of the four code files, the other 3 read the regenerated data).
 - **Boundary.** A TRAINING-INPUT BOUNDARY by the `2d29c4c0` / `f0d673fd` precedent: weights unchanged and loadable.
+## 2026-10-07 — `--debug` is safe by construction: a fresh smoke overrides the untyped rollout shape (`main.train.debug_shape`; no config / ARCH bump)
+
+- **Why.** `--debug` runs ONE CPU env, but `--arch production` writes the recipe's 98,304-row update target, so
+  `--arch production --debug --steps 10000` never reached its first update — three agents stalled on it for 30–45+ min
+  each (ledger 2026-10-07, the move-resolution × X5 entry's process note 4).
+- **What.** On a FRESH `--debug` run whose untyped update is above 4,096 rows, every UNTYPED knob of the rollout shape
+  is overridden right after the recipe is applied (`desugar_umbrella_flags`, so `checkargs` builds the same
+  namespace): `--rollout-target-samples` 2,304 rounded up to lcm(`--batch-size`, `--n-envs`), `--batch-size` 384,
+  `--n-epochs` 1, printed as `🧪 [DEBUG SHAPE]`. A typed knob wins; a resume is untouched; the default `--debug`
+  (2,048-row updates) is unchanged. The recipe surface reports an overridden knob as source `debug`, never as
+  silent drift, so `checkargs` does not refuse the argv.
+- **Measured.** `--arch production --debug --steps 10000`, CPU: 5 updates, `Training complete`, exit 0, ~6 min
+  (8.8 min under a load of ~35 on 16 threads).
+- **Tests.** `src/main/train/debug_shape_test.py` (3 of 6 fail on a revert of the call); the slow
+  `debug_shape_smoke_integration_test.py` (the real trainer process).

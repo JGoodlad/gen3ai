@@ -404,12 +404,14 @@ class RecipeDiff(NamedTuple):
     flag: str
     resolved: Any
     production: Any
-    #: "argv" (TYPED — a deliberate deviation), "default" (the silent kind), "restart" (resolved
+    #: "argv" (TYPED — a deliberate deviation), "default" (the silent kind), "debug" (the
+    #: `--debug` smoke shape, `main.train.debug_shape`), "restart" (resolved
     #: by `inherit_on_restart`) or "inherited" (a fork's value from its parent's config).
     source: str
 
     def line(self) -> str:
         how = {"argv": "TYPED", "default": "untyped default", "restart": "restored at restart",
+               "debug": "--debug smoke shape",
                "inherited": "inherited"}.get(self.source, self.source)
         return f"{self.dest:<24} {self.resolved!r:<10} ({how})   production: {self.production!r}"
 
@@ -470,6 +472,8 @@ def diff_against_production(ns: Any, mirror: Optional[Dict[str, Any]] = None,
     defaults = _parser_defaults()
     typed = typed_dests(ns)
     restored = {d for d, *_ in getattr(ns, "_recipe_restart_inherited", ()) or ()}
+    from main.train.debug_shape import OVERRIDE_ATTR
+    debug = frozenset(getattr(ns, OVERRIDE_ATTR, None) or ())
     out: List[RecipeDiff] = []
     for r in rows:
         if r.dest in COLLECTOR_ROWS and want[r.dest] is None:
@@ -477,7 +481,8 @@ def diff_against_production(ns: Any, mirror: Optional[Dict[str, Any]] = None,
         have = _resolved(r, ns, defaults)
         if _agree(have, want[r.dest]):
             continue
-        src = ("argv" if r.dest in typed else "restart" if r.dest in restored
+        src = ("argv" if r.dest in typed else "debug" if r.dest in debug
+               else "restart" if r.dest in restored
                else "inherited" if r.dest in inherited else "default")
         out.append(RecipeDiff(r.dest, r.flag, have, want[r.dest], src))
     return out

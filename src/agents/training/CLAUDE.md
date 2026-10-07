@@ -1001,6 +1001,11 @@ The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s
 - **Refusal.** `checkargs`, `--dry-run` and the launcher REFUSE a FRESH argv that differs on an
   UNTYPED knob; a TYPED difference is the arm's lever (INFO); `--allow-nonproduction-recipe`
   consents.
+- 🧪 **`--debug` is safe by construction** (`src/main/train/debug_shape.py`, 2026-10-07): a FRESH
+  `--debug` run (ONE CPU env) whose untyped update is above 4,096 rows — `--arch production`'s
+  98,304 — takes `--rollout-target-samples` 2,304 (rounded up to lcm(batch, n_envs)), `--batch-size`
+  384 and `--n-epochs` 1, each only if UNTYPED, printed as `[DEBUG SHAPE]`; the recipe surface
+  reports them as source `debug`, never as silent drift. A resume is untouched.
 - 🚨 **A same-run RESTART strips `--arch`.** For a run whose immutable `original_command` carried
   `--arch production`, `inherit_on_restart` resolves each untyped knob by exactly one route
   (`restart_route`), announced as `[Recipe] … from <source>`:

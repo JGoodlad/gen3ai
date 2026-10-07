@@ -812,6 +812,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/main/train/debug_shape_smoke_integration_test.py::test_arch_production_debug_smoke_reaches_an_update_and_exits_0": {
+   "status": "pass",
+   "commit": "26131c0ce62b2de7c9913d9c84e8c318a0200b19",
+   "at": "2026-10-07T20:00:33Z",
+   "duration_s": 529.75,
+   "contention": 7.27,
+   "detail": ""
+  },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_the_artifact_carries_the_rust_eval_transport_stamp": {
    "status": "pass",
    "commit": "11d2757480d05833dde0d9c75ed5f8e63696cbfa",
@@ -1077,5 +1085,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-07T18:08:30Z"
+ "last_written": "2026-10-07T20:00:33Z"
 }

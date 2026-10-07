@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,879-line file. **The ledger itself is append-only and is never edited by this**;
+22,885-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**800 headings · 745 dated · 2026-08-01 → 2026-10-07 · ledger 22,879 lines.**
+**801 headings · 746 dated · 2026-08-01 → 2026-10-07 · ledger 22,885 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -820,3 +820,4 @@ rename.
   - `L22853` · `2026-10-07` · FINDING + BUILD · **The gen3ou FORMAT SPEC: the ladder's rules declared once (`agents.gen3_data.format_spec`), one story per rule; master differs from our pin by exactly two rules — Quick Claw is BANNED on master, and master's One Boost Passer Clause counts Recycle; the 719-team training pool is 719 / 719 legal under master's rules and holds no Quick Claw; the Smogon priors give the banned Quick Claw 0.32 % of all sets and the model tables put a 0.02 floor on 789 banned (species, move) cells — the prior filter is BUILT and HELD**
   - `L22861` · `2026-10-07` · BUILT · **The MOVE-RESOLUTION family builds under X5 `fixed_mass` (`gen3_move_resolution_x5_v1`; the refusal lifted): the same rules read the flat opponent pointer, OTHER is PRICED — OTHER_move as one seat per gen-3 priority level (the exact order × move-fact tail expectation), OTHER_species as a 7th mon on the renormalised tail; `off` byte-identical in both belief modes; on the full real-battle bank the fixed_mass read's 1,485 exact-zero claims are never contradicted**
   - `L22874` · `2026-10-07` · BUILD · **The format spec's PRIOR = 0 LANDED (`gen3_format_spec_priors_v1`): no prior gives a gen3ou-banned entity mass — Quick Claw's 0.32 % of all sets (up to 51 % on Hypno) leaves the item prior, Sand Veil / Soundproof leave the ability prior (Dugtrio reads Arena Trap 1.0), 789 banned (species, move) cells drop from the 0.02 floor to ILLEGAL; the observation moves only in an unrevealed opponent's ability-prior columns (148 / 991 golden decisions, 2 columns); a TRAINING-INPUT BOUNDARY**
+  - `L22880` · `2026-10-07` · BUILD · **`--debug` is SAFE BY CONSTRUCTION: a fresh smoke whose untyped update is above 4,096 rows takes `--rollout-target-samples 2304 --batch-size 384 --n-epochs 1` (typed knobs win), so `--arch production --debug --steps 10000` reaches 5 updates and exits 0 in ~6 min on CPU instead of collecting for hours**
