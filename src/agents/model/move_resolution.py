@@ -41,20 +41,16 @@ scorer does not multiply its own inputs, so the product is formed here AND the f
 **Destiny Bond (owner, explicit): NO threshold.** `dbond_p_ko` = P(the opponent KOs us this turn) =
 `Σ_k α_k · ko_k`, the intent × the operator's accuracy-folded KO estimates; `p_resolve` adds the exact trigger rule.
 
-## The INCOMING status coordinates, corrected (the entity-coverage audit's rank-2 gaps)
+## The INCOMING status coordinates, and the op's ability read
 
-The op's `_incoming_status_lands` ignores five gen-3 rules (verified: Safeguard `data/moves.ts:15587-15615`; Sleep
-Clause `data/rulesets.ts:1378-1402`; Freeze Clause `data/rulesets.ts:1451-1471`, in gen3ou's rule set; Substitute
-`gen4/moves.ts:1283-1320`). The family corrects the six incoming status coordinates it delivers: OUR side's
-Safeguard zeroes all six, OUR live non-Rest sleeper zeroes `p_slp` (incoming Sleep Clause), ANY frozen mon of ours
-zeroes `p_frz` (Freeze Clause), OUR active's Substitute zeroes its own row (a bench candidate switching in has
-none). The op itself is untouched, so `--move-resolution off` stays byte-identical.
-
-**One more op defect, corrected the same way.** The op reads an opponent's ability as REVEALED when its id is
-non-zero (`_status_landing`'s `revealed = opp_ability > 0`, and `ABILITY_DAMAGE_MULT` / `ABILITY_STATUS_BLOCK`
-indexed by the raw id elsewhere), but the observation writes an UNREVEALED opponent's most likely ability into
-that slot with `known = 0`. The family reads the `known` flag (and re-runs `_status_landing` with the unrevealed
-ids zeroed, so its Smogon-prior branch is the one taken); the production op still carries the defect.
+The op's `_incoming_status_lands` applies the gen-3 side / clause rules itself since 2026-10-07
+(gen3_op_status_rules_v1: OUR Safeguard, incoming Sleep Clause, Freeze Clause, our active's Substitute — the ONE
+rule `status_rules.incoming_status_mask`); `incoming_status_correction` re-applies that same rule to the six
+incoming status coordinates the family delivers, an exact no-op on real op output (a 0/1 mask is idempotent), kept
+so the family's contract holds on any grid it is handed. The op also reads an opponent's ability as revealed only
+from the ability block's `known` flag (gen3_op_ability_known_v1; it read `id > 0` until 2026-10-07, which asserted
+an unrevealed opponent's top-1 PRIOR ability as certain), and the family reads the same view (`ability_known`,
+`revealed_ability1_ids`, the op's secondary helpers).
 
 ## Contract
 
@@ -64,7 +60,6 @@ the global RNG, so building the family moves no other parameter's initial bytes)
 """
 from __future__ import annotations
 
-import dataclasses
 from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 import torch
@@ -74,7 +69,8 @@ from agents.model.arch_constants import (MOVE_RESOLUTION_MOVE_DIM, MOVE_RESOLUTI
 from agents.model.move_resolution_rules import (
     ABILITY_INNER_FOCUS, ABILITY_OWN_TEMPO, ABILITY_SLEEP_BLOCK, ABILITY_SOUNDPROOF, BELLY_DRUM_HP_FRACTION,
     MOVE_RESOLUTION_MOVE_COORDS, MOVE_RESOLUTION_SWITCH_COORDS, P_CONFUSION_SELF_HIT, P_FULL_PARA,
-    P_INFATUATION, P_THAW, PAIR_FACT_COORDS, PURSUIT_SWITCH_MULT, ROLL_WINDOW, SUB_HP_FRACTION)
+    P_INFATUATION, P_THAW, PAIR_FACT_COORDS, p_seat_first, PURSUIT_SWITCH_MULT, ROLL_WINDOW, SUB_HP_FRACTION)
+from agents.model.status_rules import incoming_status_mask
 from agents.model.move_resolution_tables import (C_BRN, C_FRZ, C_PAR, C_PSN, C_SLP, C_TOX, FLAG_IDX, KIND_IDX,
                                                  NAMED_ABILITIES, S_LS_OURS, S_MIST_OURS, S_REFLECT_OURS, S_SG_OPP,
                                                  S_SG_OURS, SEAT_KIND_IDX, WEATHER_COL,
@@ -189,17 +185,12 @@ def incoming_status_correction(o: MoveResolutionOps) -> torch.Tensor:
     """``[B,6,6]`` the multiplier on the six incoming status coordinates (par brn frz slp psn tox) per OUR
     defender: OUR Safeguard (all six), incoming Sleep Clause (a live non-Rest sleeper of ours ⇒ no sleep), Freeze
     Clause (any frozen mon of ours ⇒ no freeze), and OUR active's Substitute (its own row only)."""
+    # The ONE rule (`status_rules.incoming_status_mask`); the production op already applies it at its source
+    # (gen3_op_status_rules_v1), so on real op output this is an exact no-op (a 0/1 mask is idempotent) — kept
+    # so the family's contract holds on any `pair_in` it is handed.
     sg = o.screens[:, S_SG_OURS]                                                      # [B]
-    slp_live = o.our_cond[..., C_SLP] * o.our_alive * (1.0 - o.our_rest)
-    clause_slp = (slp_live.sum(-1) > 0.5).to(sg.dtype)                                # [B]
-    clause_frz = (o.our_cond[..., C_FRZ].sum(-1) > 0.5).to(sg.dtype)                  # [B]
-    one = torch.ones_like(sg)
-    col = torch.stack([one, one, 1.0 - clause_frz, 1.0 - clause_slp, one, one], dim=-1)   # [B,6] par brn frz slp psn tox
-    sub = o.our_vol[:, VOL["substitute"]].to(sg.dtype)                                # [B]
-    act = torch.nn.functional.one_hot(o.our_active, 6).to(sg.dtype)                   # [B,6]
-    mult: torch.Tensor = ((1.0 - sg)[:, None, None] * col[:, None, :]
-                          * (1.0 - act * sub[:, None])[:, :, None])                   # [B,6,6]
-    return mult
+    return incoming_status_mask(sg, o.our_cond[..., C_SLP], o.our_cond[..., C_FRZ], o.our_alive, o.our_rest,
+                                o.our_vol[:, VOL["substitute"]].to(sg.dtype), o.our_active)
 
 
 def move_facts(o: MoveResolutionOps, kind_t: torch.Tensor, flag_t: torch.Tensor) -> torch.Tensor:
@@ -225,10 +216,8 @@ def move_facts(o: MoveResolutionOps, kind_t: torch.Tensor, flag_t: torch.Tensor)
     a_un = (1.0 - alpha.sum(-1, keepdim=True) - a_sw).clamp(min=0.0)                  # [B,1]
     p_out = o.p_out.to(dt)
     # ---------------------------------------------------------------- ORDER: does seat k act before move m?
-    pm = o.prio[:, :, None]
-    pk = o.seat_prio[:, None, :]
-    pre = (pk > pm).to(dt) + (pk == pm).to(dt) * (1.0 - p_out)[:, :, None]            # [B,4,K]
-    pre_un = (o.prio < 0).to(dt) + (o.prio == 0).to(dt) * (1.0 - p_out)               # [B,4]
+    pre = p_seat_first(o.prio[:, :, None], o.seat_prio[:, None, :], p_out[:, :, None])   # [B,4,K]
+    pre_un = p_seat_first(o.prio, torch.zeros_like(o.prio), p_out)                    # [B,4] an unnamed seat: priority 0
     # ---------------------------------------------------------------- their seats vs OUR ACTIVE
     corr = incoming_status_correction(o)                                              # [B,6,6]
     pin_a = o.pair_in[ar, o.our_active]                                               # [B,K,14]
@@ -575,7 +564,8 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
     from agents.model.damage_op_layout import _BOOSTS_DIM
     from agents.model.pair_outcome import pair_alpha_full
     from agents.observation.constants import (GLOBAL_ENV_DIM, POKEMON_CONDITION_OFFSET, POKEMON_PROTECT_OFFSET,
-                                              POKEMON_SLEEP_BELIEF_OFFSET, POKEMON_ABILITIES_OFFSET, TEAM_SIZE)
+                                              POKEMON_SLEEP_BELIEF_OFFSET, TEAM_SIZE)
+    from agents.model.extractor_ctx import ability_known, revealed_ability1_ids
     cell: MoveResolutionCell = fe.move_resolution_cell
     op = fe.damage_op
     stash = op.stash
@@ -613,10 +603,13 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
     nonghost = (1.0 - our_is_ghost[ar, our_act])[:, None, None]
     sb = sb + is_curse[..., None] * nonghost * op.CURSE_BOOSTS[None, None, :]
     our_abl = ctx.ability1_ids[ar, our_act]
-    opp_abl = ctx.ability1_ids[ar, opp_g]
+    # gen3_op_ability_known_v1: their Shield Dust / Serene Grace — revealed exact, else the Smogon prior (the op's
+    # one ability view; an unrevealed id1 is the top-1 PRIOR, never a reveal).
+    opp_sec_block = op.opp_secondary_block(ctx)[ar, opp_act]                              # [B]
+    opp_sec_mult = op.opp_secondary_mult(ctx)[ar, opp_act]                                # [B]
     from agents.model.damage_tables import SECONDARY_FLINCH_IDX
     sec_flinch = (op.MOVE_SECONDARY[ids][..., SECONDARY_FLINCH_IDX] * acc
-                  * op.ABILITY_SECONDARY_MULT[our_abl][:, None] * op.ABILITY_SECONDARY_BLOCK[opp_abl][:, None]
+                  * op.ABILITY_SECONDARY_MULT[our_abl][:, None] * opp_sec_block[:, None]
                   ).clamp(max=1.0)
     # --- both sides' per-mon state
     cond = pp[..., POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7]                  # [B,12,7]
@@ -634,13 +627,12 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
     sp = ctx.species_ids[:, opp]                                                          # [B,6]
     t1, t2 = ctx.type1_ids[:, opp], ctx.type2_ids[:, opp]
     chart0_rev = ((op.CHART[t1] * op.CHART[t2]) == 0).float()                             # [B,6,19]
-    a_rev = ctx.ability1_ids[:, opp]
+    a_rev = revealed_ability1_ids(ctx)[:, opp]                                            # 0 where unrevealed
     # REVEALED is the ability block's `known` flag — NOT `id > 0`: an unrevealed opponent's slot carries its
     # species' most likely ability in id1 (`[top1, top2, dominance, known=0]`, `observation/abilities.py`), so
     # reading `id > 0` as "revealed" would assert Snorlax's Immunity on a Thick Fat Snorlax (a fuzz-found GIGO
-    # the production op still carries — see the module docstring).
-    known_all = pp[..., POKEMON_ABILITIES_OFFSET + 3]                                    # [B,12]
-    abl_known = known_all[:, opp][:, :, None]
+    # the production op carried until 2026-10-07, gen3_op_ability_known_v1 — see the module docstring).
+    abl_known = ability_known(ctx)[:, opp][:, :, None]                                    # [B,6,1]
     abl_imm_rev = abl_known * cell.ABILITY_IMM[a_rev] + (1.0 - abl_known) * cell.SPECIES_ABL_IMM[sp]
     imm_rev = 1.0 - (1.0 - chart0_rev) * (1.0 - abl_imm_rev)
     imm_post = torch.matmul(post, cell.SPECIES_P_IMM).expand(-1, TEAM_SIZE, -1)
@@ -666,7 +658,7 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
     nums = op.last_topk_idx
     seat_phys = op.MOVE_PHYS[nums]
     seat_flinch = (op.MOVE_SECONDARY[nums][..., SECONDARY_FLINCH_IDX]
-                   * op.ABILITY_SECONDARY_MULT[opp_abl][:, None])
+                   * opp_sec_mult[:, None])
     base, d_burn_k, d_slp_k, is_brn, is_slp = imc_ops
     # Every op value the family reads is PRE-gain: the op's learned `out_gain` is one scalar per block channel —
     # per REQUEST SLOT for the per-move outgoing channels, so a post-gain read would scale the same move by where
@@ -679,8 +671,7 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
     return MoveResolutionOps(
         gate=gate, req_ids=ids, req_type=req_type, is_dmg=is_dmg, acc=acc, prio=op.MOVE_PRIORITY[ids],
         inflicts=op.MOVE_INFLICTS_STATUS[ids],
-        p_land=op._status_landing(dataclasses.replace(
-            ctx, ability1_ids=ctx.ability1_ids * (known_all > 0.5).long()))[:, :4],
+        p_land=op._status_landing(ctx)[:, :4],     # the op reads the `known` flag itself (gen3_op_ability_known_v1)
         st_type_imm=op.MOVE_STATUS_TYPE_IMMUNE[ids], st_cat=op.MOVE_STATUS_CAT[ids].long(),
         st_blocked=op.MOVE_BLOCKED_IF_STATUSED[ids], self_boost=sb, sec_flinch=sec_flinch,
         our_stage=stages, our_hp=our_hp, our_cond=cond[:, ours], our_alive=alive_all[:, ours],

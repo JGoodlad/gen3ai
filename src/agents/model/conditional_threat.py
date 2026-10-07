@@ -28,7 +28,7 @@ cannot express, plus the accuracy-folded KO probability §0.2(2) says the operat
 
 ## The coordinates
 
-    e_pko_acc[j]    = Σ_k α_k · ko_ramp(k,j) · acc(k)
+    e_pko_acc[j]    = Σ_k α_k · ko_ramp(k,j)          # ko_ramp = acc · P(KO | hit): accuracy counted ONCE
     e_type_mult[j]  = Σ_k α_k · type_mult(k,j)
     margin_high[j]  = Σ_k α_k · high(k,j) − hp_frac(j)          # > 0 ⇒ dead
     margin_crit[j]  = Σ_k α_k · crit(k,j) − hp_frac(j)          # > 0 ⇒ dead to a crit
@@ -44,8 +44,11 @@ defender-dependent.
 ordering it flips; if you cannot produce the pair, it is decoration.* This is a SWITCH cell, so
 every pair below is switch-vs-switch — the axis OA1 exists to move.
 
-**`e_pko_acc` — the product §0.2(2) says the op must form.** `ko_ramp` and `acc` ride the reduced
-row DECORRELATED, and a thin `tanh` MLP over a shared cell does not multiply two of its own inputs.
+**`e_pko_acc` — the product §0.2(2) says the op must form.** ⚠️ CORRECTED 2026-10-07 (gen3_op_ability_
+status_gigo_v1): the op's `ko_ramp` already IS `acc · P(KO | hit)` (`DamageOperator._rolls`), so the
+product is formed at the op and this coordinate is its α-contraction; the shipped `ko_ramp · acc` counted
+accuracy TWICE (a 70 % Blizzard read 0.49). The argument below was written believing `ko_ramp` was
+P(KO | hit); with accuracy folded once the two mons below read 0.35 vs 0.50, as stated.
 The case is exact: their believed set is {Blizzard 70% acc, which OHKOs our Salamence; Thunderbolt
 100% acc, which OHKOs our Starmie}, α = ½/½. **switch Salamence vs switch Starmie** — the two mons
 are IDENTICAL in every decorrelated channel (`Σα·ko_ramp` = 0.5 for both; `Σα·acc` = 0.85 for both,
@@ -174,11 +177,11 @@ class ConditionalThreatCell(torch.nn.Module):
                 f"{pair_in.shape[1]} — one of them was built over a different team axis.")
         dt = pair_in.dtype
         a = alpha.to(dt)
-        # `pko` in the design's sense = acc · P(KO | hit). The op ships the two DECORRELATED, and
-        # §0.2(2) is explicit that the product must be formed HERE rather than left to the head:
-        # a thin tanh scorer over a shared cell does not multiply two of its own inputs.
-        pko_acc = (pair_in[..., PAIR_OUTCOME_IDX["ko_ramp"]]
-                   * pair_in[..., PAIR_OUTCOME_IDX["acc"]])                        # [B,6,K]
+        # `pko` in the design's sense = acc · P(KO | hit) — and the op's `ko_ramp` IS that product already
+        # (`DamageOperator._rolls`: `ko = acc · clamp(...)`, the realized KO probability). gen3_op_ability_
+        # status_gigo_v1 (2026-10-07): this cell used to multiply by `acc` AGAIN, so a 70 % Blizzard read
+        # 0.49 where the truth is 0.70 (`design_arch_audit.md` §9.1). Accuracy is counted ONCE.
+        pko_acc = pair_in[..., PAIR_OUTCOME_IDX["ko_ramp"]]                       # [B,6,K] acc · P(KO | hit)
         e_pko_acc = torch.einsum("bk,bjk->bj", a, pko_acc)                         # [B,6]
         e_type = torch.einsum("bk,bjk->bj", a, type_mult.to(dt))                   # [B,6]
         e_high = torch.einsum("bk,bjk->bj", a, pair_in[..., PAIR_OUTCOME_IDX["high"]])

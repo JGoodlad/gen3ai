@@ -37,8 +37,10 @@ PAIRS, N_ENVS = 12, 8
 #: every p1 margin and log-prob bit, every p2 decision (dec_n, action, argmax, margin bits). Reproduced at the build.
 #: RE-RECORDED 2026-10-06 for gen3_move_legality_by_id_v1 (the per-move-slot legality now lands on its own move;
 #: with the old positional write restored the `c7b4d03e` digests 56135c83… / 36a0376a… reproduce exactly).
-OFF_BITS = "3297249390e5373e7ce6a2d5cc84fd7cd4b2def668f736197b97939db70258f1"
-OFF_OUTCOME_ALL = "4baf87e0d3362198044cedad5e921777046387d93508b4a9d76fba7bf114a89f"
+#: RE-RECORDED 2026-10-07 for gen3_op_ability_status_gigo_v1 (the damage op's opponent-ability / status-landing fix;
+#: was 32972493… / 4baf87e0…).
+OFF_BITS = "395e7d7bdb038770eff0f819cc288ca79edba84c9afcd47431852d1cec8c1465"
+OFF_OUTCOME_ALL = "82982a8f55d44357ec38eddfa3f512b4de5852348e0b25a7c84c8b4cb0c6a675"
 
 
 def bits_digest(games):

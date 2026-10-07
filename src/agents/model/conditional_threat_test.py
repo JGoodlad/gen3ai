@@ -94,40 +94,28 @@ def _grid(B=1, K=2, J=TEAM_SIZE, F=_PAIR_OUTCOME_RAW):
     return torch.zeros(B, J, K, F)
 
 
-def test_the_decorrelated_channels_CANNOT_express_e_pko_acc():
-    """§9a, and the reason `e_pko_acc` is a coordinate at all (§0.2(2): *precompute every
-    nonlinearity of two numbers IN THE OP*).
-
-    Their believed set is {Blizzard 70% acc — OHKOs our mon 0; Thunderbolt 100% acc — OHKOs our
-    mon 1}, α = ½/½. The two mons are then IDENTICAL in every channel the reduced row carries:
-
-        Σα·ko_ramp  = 0.5·1 + 0.5·0 = 0.5   for mon 0
-                    = 0.5·0 + 0.5·1 = 0.5   for mon 1
-        Σα·acc      = 0.5·0.7 + 0.5·1.0 = 0.85   for BOTH (acc has no defender axis at all)
-
-    while P(this mon dies) is 0.5·(1·0.7) = 0.35 for mon 0 and 0.5·(1·1.0) = 0.50 for mon 1. A
-    thin `tanh` scorer over a shared cell does not multiply two of its own inputs, so this pair is
-    unorderable without the product — and the numbers are exact, so a coordinate that merely
-    correlated with it would fail here."""
+def test_e_pko_acc_counts_accuracy_ONCE():
+    """gen3_op_ability_status_gigo_v1 (2026-10-07; `design_arch_audit.md` §9.1). The op's `ko_ramp` is ALREADY
+    `acc · P(KO | hit)` (`DamageOperator._rolls`), so `e_pko_acc` is its α-contraction and accuracy must not
+    be multiplied in again. Their believed set is {Blizzard 70 % acc, which OHKOs our mon 0 on a hit → the op's
+    ko_ramp 0.70; Thunderbolt 100 %, which OHKOs mon 1 → 1.00}. α = ½/½ ⇒ P(mon 0 dies) = 0.35, P(mon 1
+    dies) = 0.50; α = 1 on Blizzard ⇒ 0.70, where the shipped `ko_ramp · acc` read 0.49 (and 0.245 / 0.50
+    for the pair). FAILS on revert."""
     K = 2
     pair_in = _grid(K=K)
     i_ko, i_acc = PAIR_OUTCOME_IDX["ko_ramp"], PAIR_OUTCOME_IDX["acc"]
     pair_in[0, :, 0, i_acc] = 0.70          # Blizzard
     pair_in[0, :, 1, i_acc] = 1.00          # Thunderbolt
-    pair_in[0, 0, 0, i_ko] = 1.0            # Blizzard OHKOs mon 0
-    pair_in[0, 1, 1, i_ko] = 1.0            # Thunderbolt OHKOs mon 1
-    alpha = torch.tensor([[0.5, 0.5]])
-    out = _cell_out(alpha, pair_in, torch.zeros(1, TEAM_SIZE, K),
-                    torch.ones(1, TEAM_SIZE, 1), torch.zeros(1, TEAM_SIZE))
+    pair_in[0, 0, 0, i_ko] = 0.70           # Blizzard OHKOs mon 0 on a hit: acc · P(KO | hit) = 0.7 · 1
+    pair_in[0, 1, 1, i_ko] = 1.00           # Thunderbolt OHKOs mon 1
     i = CONDITIONAL_THREAT_IDX["e_pko_acc"]
+    out = _cell_out(torch.tensor([[0.5, 0.5]]), pair_in, torch.zeros(1, TEAM_SIZE, K),
+                    torch.ones(1, TEAM_SIZE, 1), torch.zeros(1, TEAM_SIZE))
     assert float(out[0, 0, i]) == pytest.approx(0.35, abs=1e-6)
     assert float(out[0, 1, i]) == pytest.approx(0.50, abs=1e-6)
-    # ...and the two decorrelated channels really are tied, which is the half that makes the case
-    a = alpha[0]
-    for j in (0, 1):
-        assert float((a * pair_in[0, j, :, i_ko]).sum()) == pytest.approx(0.5, abs=1e-6)
-        assert float((a * pair_in[0, j, :, i_acc]).sum()) == pytest.approx(0.85, abs=1e-6)
-
+    out = _cell_out(torch.tensor([[1.0, 0.0]]), pair_in, torch.zeros(1, TEAM_SIZE, K),
+                    torch.ones(1, TEAM_SIZE, 1), torch.zeros(1, TEAM_SIZE))
+    assert float(out[0, 0, i]) == pytest.approx(0.70, abs=1e-6)     # NOT 0.49
 
 def test_e_type_mult_is_the_alpha_weighted_multiplier_and_zero_means_IMMUNE():
     """§9a pair 1: *switch Gengar vs switch Swampert into a believed Earthquake.* A `high` of 0.0

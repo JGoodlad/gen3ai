@@ -1,0 +1,467 @@
+{
+ "n_battles": 580,
+ "n_rows": 42465,
+ "wall_s": {
+  "collect": 31.0,
+  "op_reads": 282.1
+ },
+ "a_unrevealed_prior_active": {
+  "rows": 12861,
+  "frac": 0.3029,
+  "of_which_our_active_has_status_move": 4504
+ },
+ "b_among_a": {
+  "old_differs_model_outputs": 3323,
+  "old_differs_op_block": 3323,
+  "material_any": 344,
+  "material_status_p_land": 326,
+  "material_damage_cell": 20,
+  "status_known_bit_flipped": 2146
+ },
+ "b_outside_a_old_differs_model_outputs": 0,
+ "bench_unrevealed_prior_rows": {
+  "rows": 23017,
+  "outside_a": 15333
+ },
+ "c_played_status_moves": {
+  "played_resolved": 1531,
+  "landed": 1141,
+  "excluded": {
+   "switched": 300,
+   "not_executed": 237,
+   "status_changed": 20
+  },
+  "old_certain_zero": 199,
+  "old_contradicted": 12,
+  "new_certain_zero": 181,
+  "new_contradicted": 0
+ },
+ "d_drivers": {
+  "a_rows": [
+   [
+    "blissey [naturalcure]",
+    3613
+   ],
+   [
+    "skarmory [keeneye]",
+    2601
+   ],
+   [
+    "snorlax [immunity]",
+    2516
+   ],
+   [
+    "magneton [magnetpull]",
+    1181
+   ],
+   [
+    "aerodactyl [rockhead]",
+    890
+   ],
+   [
+    "starmie [naturalcure]",
+    728
+   ],
+   [
+    "dugtrio [arenatrap]",
+    441
+   ],
+   [
+    "cloyster [shellarmor]",
+    243
+   ],
+   [
+    "heracross [swarm]",
+    168
+   ],
+   [
+    "quagsire [waterabsorb]",
+    63
+   ],
+   [
+    "smeargle [owntempo]",
+    61
+   ],
+   [
+    "hariyama [guts]",
+    56
+   ]
+  ],
+  "b_any_rows": [
+   [
+    "snorlax [immunity]",
+    1629
+   ],
+   [
+    "blissey [naturalcure]",
+    576
+   ],
+   [
+    "skarmory [keeneye]",
+    331
+   ],
+   [
+    "aerodactyl [rockhead]",
+    234
+   ],
+   [
+    "dugtrio [arenatrap]",
+    123
+   ],
+   [
+    "magneton [magnetpull]",
+    118
+   ],
+   [
+    "starmie [naturalcure]",
+    81
+   ],
+   [
+    "heracross [swarm]",
+    42
+   ],
+   [
+    "cloyster [shellarmor]",
+    41
+   ],
+   [
+    "hariyama [guts]",
+    35
+   ],
+   [
+    "breloom [effectspore]",
+    31
+   ],
+   [
+    "glalie [innerfocus]",
+    21
+   ]
+  ],
+  "b_material_rows": [
+   [
+    "snorlax [immunity]",
+    334
+   ],
+   [
+    "hariyama [guts]",
+    6
+   ],
+   [
+    "houndoom [flashfire]",
+    4
+   ]
+  ],
+  "c_old_contradicted": [
+   [
+    "snorlax [immunity] toxic",
+    12
+   ]
+  ],
+  "c_old_certain_zero_new_says_possible_not_landed": [
+   [
+    "snorlax [immunity] toxic",
+    6
+   ]
+  ]
+ },
+ "c_old_contradicted_rows": [
+  "ai_v14_01_base/step_36000000/staller/loss_s0_001 p1 t87 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/staller/loss_s0_001 p1 t95 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/staller/loss_s0_001 p1 t103 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/staller/loss_s0_001 p1 t111 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/staller/loss_s0_001 p1 t116 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/aggressive_v2/win_s0_001 p1 t81 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/aggressive_v2/win_s0_001 p1 t86 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/aggressive_v2/win_s0_001 p1 t91 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/aggressive_v2/win_s0_001 p1 t96 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_56000016/staller/win_s0_001 p1 t92 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_56000016/staller/win_s0_001 p1 t97 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_66000000/staller/win_s0_001 p1 t112 toxic vs snorlax -> tox"
+ ],
+ "c_new_contradicted_rows": [],
+ "e_rule_off_rows_changed (noise_control = base vs base)": {
+  "REACH_incoming_status_channel_zeroed": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "freeze_clause": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "incoming_sleep_clause": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "noise_control": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "our_drowsy_yawn_fails": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "our_safeguard": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "our_substitute": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "their_drowsy_yawn_fails": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "their_safeguard": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "yawn_as_sleep_inflictor": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  }
+ },
+ "e_rule_condition_rows": {
+  "our_asleep_nonrest_alive": 283,
+  "our_drowsy": 0,
+  "our_frozen_any": 482,
+  "our_safeguard": 0,
+  "our_substitute": 449,
+  "their_drowsy": 0,
+  "their_safeguard": 0
+ }
+}
+{
+ "extractor": "TRAINED /home/goodlad/dev/gen3ai/models/rb_x5ab_blob_s1007/final_model.zip",
+ "n_battles": 580,
+ "n_rows": 42465,
+ "wall_s": {
+  "collect": 32.0,
+  "op_reads": 302.1
+ },
+ "a_unrevealed_prior_active": {
+  "rows": 12861,
+  "frac": 0.3029,
+  "of_which_our_active_has_status_move": 4504
+ },
+ "b_among_a": {
+  "old_differs_model_outputs": 7041,
+  "old_differs_op_block": 3323,
+  "material_any": 350,
+  "material_status_p_land": 326,
+  "material_damage_cell": 25,
+  "status_known_bit_flipped": 2146
+ },
+ "b_outside_a_old_differs_model_outputs": 1169,
+ "bench_unrevealed_prior_rows": {
+  "rows": 23017,
+  "outside_a": 15333
+ },
+ "c_played_status_moves": {
+  "played_resolved": 1531,
+  "landed": 1141,
+  "excluded": {
+   "switched": 300,
+   "not_executed": 237,
+   "status_changed": 20
+  },
+  "old_certain_zero": 199,
+  "old_contradicted": 12,
+  "new_certain_zero": 181,
+  "new_contradicted": 0
+ },
+ "d_drivers": {
+  "a_rows": [
+   [
+    "blissey [naturalcure]",
+    3613
+   ],
+   [
+    "skarmory [keeneye]",
+    2601
+   ],
+   [
+    "snorlax [immunity]",
+    2516
+   ],
+   [
+    "magneton [magnetpull]",
+    1181
+   ],
+   [
+    "aerodactyl [rockhead]",
+    890
+   ],
+   [
+    "starmie [naturalcure]",
+    728
+   ],
+   [
+    "dugtrio [arenatrap]",
+    441
+   ],
+   [
+    "cloyster [shellarmor]",
+    243
+   ],
+   [
+    "heracross [swarm]",
+    168
+   ],
+   [
+    "quagsire [waterabsorb]",
+    63
+   ],
+   [
+    "smeargle [owntempo]",
+    61
+   ],
+   [
+    "hariyama [guts]",
+    56
+   ]
+  ],
+  "b_any_rows": [
+   [
+    "blissey [naturalcure]",
+    2887
+   ],
+   [
+    "snorlax [immunity]",
+    1830
+   ],
+   [
+    "magneton [magnetpull]",
+    829
+   ],
+   [
+    "dugtrio [arenatrap]",
+    420
+   ],
+   [
+    "skarmory [keeneye]",
+    419
+   ],
+   [
+    "aerodactyl [rockhead]",
+    259
+   ],
+   [
+    "starmie [naturalcure]",
+    126
+   ],
+   [
+    "heracross [swarm]",
+    46
+   ],
+   [
+    "hariyama [guts]",
+    45
+   ],
+   [
+    "cloyster [shellarmor]",
+    41
+   ],
+   [
+    "breloom [effectspore]",
+    31
+   ],
+   [
+    "glalie [innerfocus]",
+    25
+   ]
+  ],
+  "b_material_rows": [
+   [
+    "snorlax [immunity]",
+    335
+   ],
+   [
+    "hariyama [guts]",
+    11
+   ],
+   [
+    "houndoom [flashfire]",
+    4
+   ]
+  ],
+  "c_old_contradicted": [
+   [
+    "snorlax [immunity] toxic",
+    12
+   ]
+  ],
+  "c_old_certain_zero_new_says_possible_not_landed": [
+   [
+    "snorlax [immunity] toxic",
+    6
+   ]
+  ]
+ },
+ "c_old_contradicted_rows": [
+  "ai_v14_01_base/step_36000000/staller/loss_s0_001 p1 t87 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/staller/loss_s0_001 p1 t95 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/staller/loss_s0_001 p1 t103 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/staller/loss_s0_001 p1 t111 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/staller/loss_s0_001 p1 t116 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/aggressive_v2/win_s0_001 p1 t81 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/aggressive_v2/win_s0_001 p1 t86 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/aggressive_v2/win_s0_001 p1 t91 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_36000000/aggressive_v2/win_s0_001 p1 t96 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_56000016/staller/win_s0_001 p1 t92 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_56000016/staller/win_s0_001 p1 t97 toxic vs snorlax -> tox",
+  "ai_v14_01_base/step_66000000/staller/win_s0_001 p1 t112 toxic vs snorlax -> tox"
+ ],
+ "c_new_contradicted_rows": [],
+ "e_rule_off_rows_changed (noise_control = base vs base)": {
+  "REACH_incoming_status_channel_zeroed": {
+   "model_outputs_change": 33588,
+   "op_block_changes": 0
+  },
+  "freeze_clause": {
+   "model_outputs_change": 246,
+   "op_block_changes": 0
+  },
+  "incoming_sleep_clause": {
+   "model_outputs_change": 150,
+   "op_block_changes": 0
+  },
+  "noise_control": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "our_drowsy_yawn_fails": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "our_safeguard": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "our_substitute": {
+   "model_outputs_change": 259,
+   "op_block_changes": 0
+  },
+  "their_drowsy_yawn_fails": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "their_safeguard": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  },
+  "yawn_as_sleep_inflictor": {
+   "model_outputs_change": 0,
+   "op_block_changes": 0
+  }
+ },
+ "e_rule_condition_rows": {
+  "our_asleep_nonrest_alive": 283,
+  "our_drowsy": 0,
+  "our_frozen_any": 482,
+  "our_safeguard": 0,
+  "our_substitute": 449,
+  "their_drowsy": 0,
+  "their_safeguard": 0
+ }
+}

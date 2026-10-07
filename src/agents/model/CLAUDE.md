@@ -163,7 +163,7 @@ Rules to preserve:
 | the architecture constants | `arch_constants.py` |
 | the extractor: `__init__` · the `last_*` surface · `forward_internal` · the class + `forward` | `extractor_build.py` · `extractor_api.py` · `extractor_forward.py` · `features_extractor.py` (the re-export HUB) |
 | the phases | `extractor_ctx.py` · `encoders.py` · `team_transformer.py` · `pools.py` · `belief_heads.py` · `projection.py` |
-| the op | `damage_op.py` · `damage_op_layout.py` · `damage_op_pairwise.py` · `damage_op_blocks.py` · `damage_kinds.py` (the non-formula damage + Beat Up's exact party terms every kernel applies) |
+| the op | `damage_op.py` · `damage_op_layout.py` · `damage_op_pairwise.py` · `damage_op_blocks.py` · `damage_kinds.py` (the non-formula damage + Beat Up's exact party terms every kernel applies) · `status_rules.py` (the incoming side / clause status rule the op and the move-resolution family share) |
 | the lookup tables, in LAYER order | `damage_tables.py` → `belief_tables.py` → `dex_ids.py` |
 | the readouts and the critic routes | `aux_value_heads.py` · `q_winprob_head.py` · `value_readouts.py` · `value_threat_inject.py` |
 | the pointer head and the per-action cells | `pointer_head.py` · `pair_outcome.py` · `switch_branch.py` · `conditional_threat.py` · the move-resolution family that replaces them under `--move-resolution on` (`move_resolution.py` · `move_resolution_rules.py` · `move_resolution_tables.py`) |
@@ -256,6 +256,17 @@ mask; then `PokemonEncoder`'s legality from `bcdd868b` to this fix, wrong on 6.8
 decisions) and is silent whenever every move is legal. `move_legality_alignment_test.py` fails on it;
 `agents/action/ordering_integrity.check_obs_move_order` RAISES on a served row that breaks the rule's
 preconditions.
+
+## 🚨 An OPPONENT's ability is revealed only by its `known` flag (`gen3_op_ability_known_v1`)
+
+An unrevealed opponent's ability slot carries its species' TOP-1 Smogon-prior ability in `id1` with `known = 0`.
+The op read `ability1_ids > 0` as "revealed" until 2026-10-07 and so asserted the guess as CERTAIN in every
+damage / status / secondary kernel (Toxic "never landed" on an unrevealed Snorlax). **Read an opponent's ability
+through `extractor_ctx.ability_known` / `revealed_ability1_ids` (the op's `opp_ability_view` + `_known_or_prior`)
+and take the Smogon species marginal when it is unknown.** Status landing has ONE rule per direction
+(`_outgoing_status_land`; `_incoming_dedicated_land` + `status_rules.incoming_status_mask`). Gates:
+`ability_known_gate_test.py` (AST, allowlist EMPTY), `op_status_rules_test.py`; detail:
+[`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md).
 
 ## 🚨 Every DISCRETE op in the forward is DECLARED (`selection_sites.py`, `gen3_behaviour_tie_exclusion_v1`)
 

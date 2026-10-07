@@ -17,7 +17,7 @@ Nothing here imports torch: `move_resolution.py` builds its buffers from these d
 """
 from __future__ import annotations
 
-from typing import Dict, FrozenSet, Tuple
+from typing import Any, Dict, FrozenSet, Tuple
 
 # ----------------------------------------------------------------------------------------------- targets
 #: The facade `target` values that aim at the FOE in a singles battle (the rest are self / side / field / ally).
@@ -125,6 +125,19 @@ SEAT_KINDS: Dict[str, Tuple[str, ...]] = {
     "pursuit": ("pursuit",),
     "rapidspin": ("rapidspin",),
 }
+
+# ------------------------------------------------------------------------------------- move ORDER
+def p_seat_first(prio_m: Any, prio_k: Any, p_out: Any) -> Any:
+    """P(seat k acts BEFORE our move m) — the gen-3 order rule, ONE declaration for every reader (the family's
+    `pre`, `intent_conditional`'s Protect): the higher PRIORITY moves first; at equal priority the faster mon,
+    ``p_out`` = P(we outspeed them) (`sim/battle-queue.ts` sorts by priority, then speed). Duck-typed over
+    tensors (this module imports no torch); all three broadcast."""
+    return (prio_k > prio_m).to(p_out.dtype) + (prio_k == prio_m).to(p_out.dtype) * (1.0 - p_out)
+
+
+#: Protect / Detect / Endure FAIL when no action follows them in the queue (`data/moves.ts` protect / endure
+#: `onPrepareHit: return !!this.queue.willAct() && …`): into a switch (the switch resolved before any move) and
+#: when the user moves LAST. Every reader prices them × P(an action follows) — `p_seat_first` gives the order.
 
 # ------------------------------------------------------------------------- the per-turn probabilities
 #: Full paralysis (gen 3: 1 in 4, before the move).

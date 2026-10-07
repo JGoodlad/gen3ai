@@ -243,7 +243,8 @@ def test_the_flag_round_trips_through_the_snapshot_kwargs():
 def test_an_unrevealed_ability_is_read_from_the_known_flag_not_the_id(obs):
     """The observation writes an UNREVEALED opponent's most likely ability into id1 with known = 0. The family must
     price Toxic on an unrevealed Snorlax through the Smogon prior (Immunity ~0.86), never as a certain Immunity —
-    the production op's `_status_landing` reads `id > 0` as revealed and says 0 (pinned here as the op's defect)."""
+    and so must the production op (gen3_op_ability_known_v1, 2026-10-07: its `_status_landing` read `id > 0` as
+    revealed and said 0; it now reads the `known` flag). With the ability REVEALED it is exactly 0."""
     from agents.observation.types import TypeEncoder
     fe = _build(move_resolution="on")
     b = _first_live_row(obs, fe)
@@ -266,4 +267,10 @@ def test_an_unrevealed_ability_is_read_from_the_known_flag_not_the_id(obs):
     fam = _facts(fe, x)[0, 0, MI["p_lands_stay"]].item()
     assert 0.0 < fam < 0.2
     op_says = fe.damage_op._status_landing(fe.unpack({"observation": x}))[0, 0].item()
-    assert op_says == 0.0
+    p_thickfat = float(gen3_data.priors.ability("snorlax")["thickfat"])
+    acc = float(fe.damage_op.MOVE_ACCURACY[gen3_data.moves.get("toxic").num])
+    assert op_says == pytest.approx(acc * p_thickfat, abs=1e-5)             # ≈ 0.85 · 0.14 (was a certain 0)
+    assert fe.damage_op._status_landing(fe.unpack({"observation": x}))[0, 4].item() == 0.0   # known = 0
+    x[0, base + 15] = 1.0                                                   # REVEALED Immunity
+    assert fe.damage_op._status_landing(fe.unpack({"observation": x}))[0, 0].item() == 0.0
+    assert fe.damage_op._status_landing(fe.unpack({"observation": x}))[0, 4].item() == 1.0

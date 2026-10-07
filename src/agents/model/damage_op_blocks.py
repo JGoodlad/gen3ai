@@ -53,9 +53,13 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _TEMPO_CLERIC_TURNS, _TEMPO_CURE_TURNS, _TEMPO_NATURAL_CURE_TURNS,
     _NAT_SPD, _NAT_SPE, _N_OUT_SECONDARY, _OUT_SEC_COLS, _OUT_SEC_DROP, _OUT_SEC_KEEP,
     _PAIR_REDUCE_N_CHANNELS, _PTR_MOVE_CELL, _PTR_SWITCH_CELL_IN, _SB_ATK, _SB_DEF, _SB_SPA,
-    _SB_SPD, _SB_SPE, _SECONDARY_MAJOR_N, _SECONDARY_TO_STATUS_CAT, _SUBSTITUTE_CTX_IDX,
+    _SB_SPD, _SB_SPE, _SECONDARY_MAJOR_N, _SECONDARY_TO_STATUS_CAT, _SUBSTITUTE_CTX_IDX, _YAWN_CTX_IDX, _COND_FRZ_IDX,
     _TypeEncoder, _VOLATILE_SLOTS, _WATER_TIDX, _dmg_imx_dim, decode_damage_block,
 )
+
+from agents.model.extractor_ctx import ability_known, revealed_ability1_ids
+from agents.model.move_resolution_tables import S_SG_OPP, S_SG_OURS
+from agents.model.status_rules import incoming_status_mask
 
 from agents.model.damage_kinds import (beatup_base_def, beatup_opp_target_def, beatup_party_ours,
                                        beatup_party_opp, beatup_swap, gather_beatup, gather_bp,
@@ -132,12 +136,55 @@ class DamageOperatorBlocks:
         MOVE_STATUS_TYPE_IMMUNE: torch.Tensor
         MOVE_TYPE_IDX: torch.Tensor
         SPECIES_EXP_MULT: torch.Tensor
+        SPECIES_ABILITY_EXP_MULT: torch.Tensor
+        SPECIES_SECONDARY_BLOCK_PRIOR: torch.Tensor
+        SPECIES_SECONDARY_MULT_PRIOR: torch.Tensor
+        MOVE_IS_YAWN: torch.Tensor
         SPECIES_SPREAD_PRIOR: torch.Tensor
         SPECIES_STATUS_BLOCK_PRIOR: torch.Tensor
         SPECIES_USAGE_PRIOR: torch.Tensor
         TYPE_IS_PHYS: torch.Tensor
         _OUT_SEC_KEEP_IDX: torch.Tensor
         _SEC_CAT_IDX: torch.Tensor
+
+    # ------------------------------------------------- gen3_op_ability_known_v1 (the opponent's ability)
+    def opp_ability_view(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Their six slots' ``(ids [B,6] long, known [B,6] float, species [B,6] long)``: ``ids`` is the
+        ability id where it is REVEALED (the `known` flag, `extractor_ctx.ability_known`) and 0 otherwise —
+        an unrevealed slot's id1 is its species' top-1 PRIOR, never a reveal. Every op read of an opponent's
+        ability goes through this view and `_known_or_prior` (`ability_known_gate_test.py` pins it)."""
+        opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+        return revealed_ability1_ids(ctx)[:, opp], ability_known(ctx)[:, opp], ctx.species_ids[:, opp]
+
+    @staticmethod
+    def _known_or_prior(rev: torch.Tensor, prior: torch.Tensor, known: torch.Tensor) -> torch.Tensor:
+        """``known · rev + (1 − known) · prior`` — the revealed ability's exact table row where it is known,
+        the species' Smogon-prior marginal where it is not; ``known`` broadcasts over the table's trailing axes."""
+        while known.dim() < rev.dim():
+            known = known.unsqueeze(-1)
+        out: torch.Tensor = known * rev + (1.0 - known) * prior
+        return out
+
+    def opp_ability_damage_mult(self, ctx: 'ExtractorContext') -> torch.Tensor:
+        """``[B,6,T]`` their slots' ABILITY damage multiplier per attacking type (Levitate → Ground 0, the
+        absorbs, Flash Fire, Thick Fat), revealed exact else `SPECIES_ABILITY_EXP_MULT` (the Smogon prior)."""
+        ids, known, sp = self.opp_ability_view(ctx)
+        return self._known_or_prior(self.ABILITY_DAMAGE_MULT[ids], self.SPECIES_ABILITY_EXP_MULT[sp], known)
+
+    def opp_secondary_block(self, ctx: 'ExtractorContext') -> torch.Tensor:
+        """``[B,6]`` their slots' secondary-effect multiplier as DEFENDERS (Shield Dust 0), known or prior."""
+        ids, known, sp = self.opp_ability_view(ctx)
+        return self._known_or_prior(self.ABILITY_SECONDARY_BLOCK[ids], self.SPECIES_SECONDARY_BLOCK_PRIOR[sp], known)
+
+    def opp_secondary_mult(self, ctx: 'ExtractorContext') -> torch.Tensor:
+        """``[B,6]`` their slots' secondary-chance multiplier as ATTACKERS (Serene Grace 2), known or prior."""
+        ids, known, sp = self.opp_ability_view(ctx)
+        return self._known_or_prior(self.ABILITY_SECONDARY_MULT[ids], self.SPECIES_SECONDARY_MULT_PRIOR[sp], known)
+
+    def opp_status_block(self, ctx: 'ExtractorContext') -> torch.Tensor:
+        """``[B,6,N_STATUS_CAT]`` P(their slot's ability blocks status category c), known or prior."""
+        ids, known, sp = self.opp_ability_view(ctx)
+        return self._known_or_prior(self.ABILITY_STATUS_BLOCK[ids], self.SPECIES_STATUS_BLOCK_PRIOR[sp], known)
 
     def _outgoing_block(self, ctx: 'ExtractorContext',
                         spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -207,7 +254,7 @@ class DamageOperatorBlocks:
         at1 = ctx.type1_ids[ar, our_act]                          # [B] our types (STAB)
         at2 = ctx.type2_ids[ar, our_act]
 
-        # --- opp active defender (revealed species/types; ability revealed-or-none) ---
+        # --- opp active defender (revealed species/types; ability revealed-exact else its Smogon prior) ---
         # Bulk: the SpreadBelief's learned def/spd if provided (gen3_unified_spread_belief_v1), else the
         # legacy NEUTRAL 0-EV estimate (not max-bulk, which would under-price our KOs). maxhp stays the
         # neutral estimate either way (HP EVs vary little + the obs HP fraction carries relative HP).
@@ -228,11 +275,14 @@ class DamageOperatorBlocks:
         opp_cur_hp = ctx.hp_and_active[ar, opp_act, 0] * opp_maxhp  # [B] obs HP frac × est. max HP
         t1d = ctx.type1_ids[ar, opp_act]                          # [B]
         t2d = ctx.type2_ids[ar, opp_act]
-        opp_ability = ctx.ability1_ids[ar, opp_act]              # [B] (0 if unrevealed → no immunity mult)
+        # gen3_op_ability_known_v1: their ability — revealed exact, else the species' Smogon prior (never the
+        # top-1 prior id read as certain).
+        opp_loc = ctx.opp_active_local
+        abl_mult = self.opp_ability_damage_mult(ctx)[ar, opp_loc]                     # [B,T]
 
         # --- gen3 damage per move (defender = opp active, candidates = our 4 moves), via the shared rolls ---
         eff = self.CHART[t1d[:, None], move_ty] * self.CHART[t2d[:, None], move_ty]   # [B,4]
-        eff = eff * self.ABILITY_DAMAGE_MULT[opp_ability].gather(1, move_ty)          # [B,4] defender immunity
+        eff = eff * abl_mult.gather(1, move_ty)                                       # [B,4] defender immunity
         A = phys * our_atk[:, None] + (1.0 - phys) * our_spa[:, None]                 # [B,4]
         D = phys * opp_def[:, None] + (1.0 - phys) * opp_spd[:, None]                 # [B,4]
         is_stab = ((move_ty == at1[:, None]) | (move_ty == at2[:, None])).float()
@@ -264,7 +314,7 @@ class DamageOperatorBlocks:
         # `_OUT_SEC_COLS` = SECONDARY_COLS minus slp/psn/tox (gen3_op_block_trim_v1 — those three carry no
         # move any pool team runs, so they were structural zeros). [B,4,7].
         our_serene = self.ABILITY_SECONDARY_MULT[ctx.ability1_ids[ar, our_act]]        # [B] our active
-        opp_block = self.ABILITY_SECONDARY_BLOCK[opp_ability]                          # [B] opp Shield Dust
+        opp_block = self.opp_secondary_block(ctx)[ar, opp_loc]                         # [B] opp Shield Dust
         sec = self.MOVE_SECONDARY[move_ids][..., self._OUT_SEC_KEEP_IDX]                # [B,4,7] base chance
         sec = sec * (acc * legal)[:, :, None] * (our_serene * opp_block)[:, None, None]
         sec = sec.clamp(max=1.0)                                                        # [B,4,7]
@@ -399,7 +449,7 @@ class DamageOperatorBlocks:
         opp_hp_frac = torch.where(believed, torch.ones_like(opp_hp_frac), opp_hp_frac)  # hidden = full-HP switch-in
         opp_cur_hp = opp_hp_frac * opp_maxhp                                            # [B,6]
         t1d = ctx.type1_ids[:, opp]; t2d = ctx.type2_ids[:, opp]                        # [B,6]
-        opp_ability = ctx.ability1_ids[:, opp]                                          # [B,6]
+        abl_mult = self.opp_ability_damage_mult(ctx)                                    # [B,6,T] known or prior
         revealed = (~ctx.opp_believed_mask).float()                                     # [B,6] species known
         def_gate = revealed * (opp_hp_frac > 0).float()                                 # [B,6] revealed live target
         target_gate = def_gate + believed.float()                                       # [B,6] + hidden forced-alive
@@ -411,7 +461,7 @@ class DamageOperatorBlocks:
             t = table_per_def[:, None].expand(B, _DMG_OUT_N_MOVES, TEAM_SIZE, T)
             return torch.gather(t, 3, mty_e).squeeze(-1)
         eff = (_gather_type(self.CHART[t1d]) * _gather_type(self.CHART[t2d])
-               * _gather_type(self.ABILITY_DAMAGE_MULT[opp_ability]))                    # [B,4,6]
+               * _gather_type(abl_mult))                                                 # [B,4,6]
         # gen3_unrevealed_outgoing_prior_v1: E[mult] (type chart × expected ability immunity, one
         # matmul with P(species)) replaces the sentinel-neutral chart read at unrevealed slots.
         e_mult = sp_probs @ self.SPECIES_EXP_MULT                                        # [B,T] | [B,6,T]
@@ -544,15 +594,15 @@ class DamageOperatorBlocks:
             opp_para > 0.5, opp_spe.new_tensor(_DMG_PARA_SPEED), opp_spe.new_tensor(1.0))
         opp_cur_hp = ctx.hp_and_active[ar, opp_act, 0] * opp_maxhp    # [B]
         t1d = ctx.type1_ids[ar, opp_act]; t2d = ctx.type2_ids[ar, opp_act]   # [B]
-        opp_ability = ctx.ability1_ids[ar, opp_act]                  # [B] (0 if unrevealed)
+        abl_mult = self.opp_ability_damage_mult(ctx)[ar, ctx.opp_active_local]   # [B,T] known or prior
 
         # --- type effectiveness eff[B,6,4] = CHART[t1d]·CHART[t2d]·ability_mult (single defender, gathered) ---
         eff = (self.CHART[t1d][:, None, None, :].expand(B, TEAM_SIZE, _DMG_OAX_N_MOVES, self.CHART.shape[-1])
                .gather(3, move_ty[..., None]).squeeze(-1))            # [B,6,4]
         eff = eff * (self.CHART[t2d][:, None, None, :].expand(B, TEAM_SIZE, _DMG_OAX_N_MOVES, self.CHART.shape[-1])
                      .gather(3, move_ty[..., None]).squeeze(-1))
-        eff = eff * (self.ABILITY_DAMAGE_MULT[opp_ability][:, None, None, :]
-                     .expand(B, TEAM_SIZE, _DMG_OAX_N_MOVES, self.ABILITY_DAMAGE_MULT.shape[-1])
+        eff = eff * (abl_mult[:, None, None, :]
+                     .expand(B, TEAM_SIZE, _DMG_OAX_N_MOVES, abl_mult.shape[-1])
                      .gather(3, move_ty[..., None]).squeeze(-1))      # [B,6,4] defender immunity
 
         # --- gen3 damage per (attacker, move) → [B,6,4] (the _outgoing_block physics, single opp defender) ---
@@ -596,138 +646,176 @@ class DamageOperatorBlocks:
         return out * has_opp[:, None]                                                   # zeroed when no opp active
 
 
+    def _outgoing_status_land(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, torch.Tensor]:
+        """gen3_op_status_rules_v1 — THE outgoing status-landing rule, per (their slot d, our REQUEST move k):
+        ``(land [B,6,4], certain [B,6,4])``. `_status_landing` reads the active slot, `discrete_outgoing_status`
+        all six. P(lands) = is_status_move · accuracy · Π(1 − block), the blocks:
+
+          • type_immune — per-MOVE gen3 rule (Thunder Wave→Ground, Toxic/Poison→Steel/Poison, Will-O-Wisp
+            →Fire, Leech Seed→Grass), max over the slot's two types.
+          • ability_block — their ability REVEALED (the `known` flag, gen3_op_ability_known_v1) → exact
+            `ABILITY_STATUS_BLOCK`; NOT revealed → the species Smogon-prior marginal `SPECIES_STATUS_BLOCK_PRIOR`
+            (Snorlax: Immunity 0.86 / Thick Fat 0.14, so Toxic lands 0.85 · 0.14, never a certain 0).
+          • already_block — the slot already carries a major status (Yawn included: `onTryHit` fails on a
+            statused target); NOT Leech Seed.
+          • sleep_block — Sleep Clause: ANY of their mons asleep from a NON-Rest source blocks our sleep (Yawn's
+            delayed sleep included; `data/rulesets.ts:1378-1402`).
+          • sub_block — a Substitute on their ACTIVE blocks every status move (incl. Leech Seed and Yawn).
+          • sg_block — their SAFEGUARD (a side condition: every slot) blocks every major status and Yawn's
+            volatile, NOT Leech Seed (`data/moves.ts` safeguard `onSetStatus` / `onTryAddVolatile`).
+          • drowsy_block — Yawn on their active already drowsy fails (the `yawn` volatile has no `onRestart`).
+        `certain` = the value rests on PUBLIC information: a hard block, or a revealed ability."""
+        B, device = ctx.batch_size, ctx.device
+        ar = torch.arange(B, device=device)
+        n_type = self.MOVE_STATUS_TYPE_IMMUNE.shape[1]
+        opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+        # gen3_op_move_align_v1: request order, so move k ↔ action 6+k.
+        move_ids = ctx.our_active_req_move_ids                                             # [B,4]
+        inflicts = self.MOVE_INFLICTS_STATUS[move_ids]                                     # [B,4]
+        acc = self.MOVE_ACCURACY[move_ids]                                                 # [B,4]
+        sidx = self.MOVE_STATUS_CAT[move_ids]                                              # [B,4] long
+        is_sleep = self.MOVE_IS_SLEEP[move_ids]                                            # [B,4]
+        major = self.MOVE_BLOCKED_IF_STATUSED[move_ids]                                    # [B,4] 0 for Leech Seed
+        is_yawn = self.MOVE_IS_YAWN[move_ids]                                              # [B,4]
+        ti = self.MOVE_STATUS_TYPE_IMMUNE[move_ids]                                        # [B,4,n_type]
+        ti_dm = ti[:, None, :, :].expand(B, TEAM_SIZE, 4, n_type)                          # [B,6,4,n_type]
+        timm1 = torch.gather(ti_dm, 3, ctx.type1_ids[:, opp][:, :, None, None].expand(B, TEAM_SIZE, 4, 1)).squeeze(-1)
+        timm2 = torch.gather(ti_dm, 3, ctx.type2_ids[:, opp][:, :, None, None].expand(B, TEAM_SIZE, 4, 1)).squeeze(-1)
+        t_imm = torch.maximum(timm1, timm2)                                                # [B,6,4]
+        _ids, known, _sp = self.opp_ability_view(ctx)
+        ability_block = torch.gather(self.opp_status_block(ctx), 2,
+                                     sidx[:, None, :].expand(B, TEAM_SIZE, 4))             # [B,6,4]
+        opp_cond = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + 1:POKEMON_CONDITION_OFFSET + 7]
+        already = (opp_cond.sum(-1) > 0.5).float()                                         # [B,6]
+        already_block = already[:, :, None] * major[:, None, :]                            # [B,6,4]
+        opp_slp = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + _COND_SLP_IDX]
+        opp_rest = ctx.pokemon_part[:, opp, POKEMON_SLEEP_BELIEF_OFFSET]
+        sleep_clause = ((opp_slp * (1.0 - opp_rest)).sum(-1) > 0.5).float()[:, None, None]  # [B,1,1]
+        sleep_block = sleep_clause * is_sleep[:, None, :]                                  # [B,6,4]
+        is_active = torch.zeros(B, TEAM_SIZE, device=device)
+        is_active[ar, ctx.opp_active_local] = 1.0
+        has_sub = (ctx.opp_ctx_raw[:, _SUBSTITUTE_CTX_IDX] > 0.5).float()                  # [B]
+        sub_block = (has_sub[:, None] * is_active)[:, :, None] * inflicts[:, None, :]      # [B,6,4]
+        sg_opp = (ctx.screen_feature[:, S_SG_OPP] > 0.5).float()                           # [B]
+        sg_block = sg_opp[:, None, None] * major[:, None, :]                               # [B,6,4]
+        drowsy = (ctx.opp_ctx_raw[:, _YAWN_CTX_IDX] > 0.5).float()                         # [B] their active
+        drowsy_block = (drowsy[:, None] * is_active)[:, :, None] * is_yawn[:, None, :]     # [B,6,4]
+        land = (inflicts[:, None, :] * acc[:, None, :] * (1.0 - t_imm) * (1.0 - ability_block)
+                * (1.0 - already_block) * (1.0 - sleep_block) * (1.0 - sub_block)
+                * (1.0 - sg_block) * (1.0 - drowsy_block))                                 # [B,6,4]
+        certain = torch.clamp(t_imm + already_block + sleep_block + sub_block + sg_block + drowsy_block
+                              + known[:, :, None], max=1.0)                                # [B,6,4]
+        return land, certain
+
     def _status_landing(self, ctx: 'ExtractorContext') -> torch.Tensor:
         """gen3_unified_status_landing_v1: per OUR move (REQUEST-slot order == action 6+k), P(a dedicated
         STATUS move applies to the opp active) + a `known` bit — the GPU home for the masked move-effect
         block's `status_will_land`. The status MOVES the outgoing DAMAGE block can't price (BP 0 → usable 0).
-
-        P(lands) = is_status_move · accuracy · (1−type_immune) · (1−ability_block) · (1−already_block)
-                   · (1−sleep_clause_block), gated to 0 with no opp active / our active dead. Where:
-          • type_immune  — per-MOVE gen3 rule (Thunder Wave→Ground, Toxic/Poison→Steel/Poison, Will-O-Wisp
-            →Fire, **Leech Seed→Grass**), max over the opp active's two types.
-          • ability_block — REVEALED opp ability → exact `ABILITY_STATUS_BLOCK`; UNREVEALED → the species
-            Smogon-prior marginal `SPECIES_STATUS_BLOCK_PRIOR` (Snorlax Toxic ≈0.14 Immunity-dominated).
-          • already_block — the opp active already carries a major status (can't double-apply); NOT Leech Seed.
-          • sleep_clause_block — a SLEEP move fails if ANY opp mon is already asleep via a NON-Rest source
-            (`sleep_is_deterministic==0`). Rest self-sleep does NOT consume our cap (the user's rule). The
-            per-mon Rest flag is the existing gen3_sleep_wake_belief_v1 `sleep_is_deterministic` (reused).
-          • has_sub — the opp active behind a Substitute blocks EVERY status move (incl. Leech Seed); read
-            from the public Substitute volatile in `ctx.opp_ctx_raw` at `_SUBSTITUTE_CTX_IDX`.
-        `known` = the value rests on CERTAIN (public) info — a type/already-statused/Sleep-Clause/Substitute
-        hard block OR a revealed ability — vs a Smogon-prior estimate. No move-belief gradient (OUR moves are
-        certain). UNCOVERED residual: Yawn (delayed sleep, no status_inflicted), Leech-Seed-already-seeded."""
+        The rule is `_outgoing_status_land` (one rule, read at their ACTIVE slot); gated to 0 with no opp
+        active / our active dead. `known` = the value rests on CERTAIN (public) info — a hard block or a
+        REVEALED ability (the `known` flag, gen3_op_ability_known_v1) — vs a Smogon-prior estimate. No
+        move-belief gradient (OUR moves are certain). UNCOVERED residual: Leech-Seed-already-seeded,
+        Glare → Ghost (both FINDINGS of the 2026-10-07 op fix, priced by the move-resolution family)."""
         B, device = ctx.batch_size, ctx.device
         ar = torch.arange(B, device=device)
         our_act = ctx.our_active_idx                                  # [B]
-        opp_act = TEAM_SIZE + ctx.opp_active_local                    # [B] opp-active global slot
         has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()  # [B]
         our_alive = (ctx.hp_and_active[ar, our_act, 0] > 0).float()   # [B]
         gate = (has_opp * our_alive)[:, None]                         # [B,1]
+        land, certain = self._outgoing_status_land(ctx)
+        p_land = land[ar, ctx.opp_active_local]                       # [B,4]
+        inflicts = self.MOVE_INFLICTS_STATUS[ctx.our_active_req_move_ids]
+        known = inflicts * certain[ar, ctx.opp_active_local]          # [B,4]
+        return torch.cat([p_land, known], dim=1) * gate               # [B, _DMG_STATUS]
 
-        # gen3_op_move_align_v1: request-ordered obs slice so p_land[k] ↔ action 6+k (was
-        # all_move_ids[our_act], sorted-by-id → the output was positionally misaligned with the actions).
-        move_ids = ctx.our_active_req_move_ids                        # [B,4] request order
-        inflicts = self.MOVE_INFLICTS_STATUS[move_ids]               # [B,4]
-        acc = self.MOVE_ACCURACY[move_ids]                          # [B,4] (Toxic .85, WoW .75, T-Wave 1, …)
-        sidx = self.MOVE_STATUS_CAT[move_ids]                       # [B,4] long (0 = not a status move)
-        is_sleep = self.MOVE_IS_SLEEP[move_ids]                     # [B,4]
-        blocked_if_statused = self.MOVE_BLOCKED_IF_STATUSED[move_ids]  # [B,4] (0 for Leech Seed)
-
-        # type immunity (per move) — max over the opp active's two types.
-        t1 = ctx.type1_ids[ar, opp_act]                            # [B]
-        t2 = ctx.type2_ids[ar, opp_act]
-        ti = self.MOVE_STATUS_TYPE_IMMUNE[move_ids]                 # [B,4,N_TYPE_IDX]
-        type_immune = torch.maximum(ti.gather(2, t1[:, None, None].expand(B, 4, 1)).squeeze(2),
-                                    ti.gather(2, t2[:, None, None].expand(B, 4, 1)).squeeze(2))  # [B,4]
-
-        # ability immunity — revealed → exact; unrevealed (id 0) → the species Smogon-prior marginal.
-        opp_ability = ctx.ability1_ids[ar, opp_act]                # [B] (0 if unrevealed)
-        opp_species = ctx.species_ids[ar, opp_act]                 # [B]
-        abl_rev = self.ABILITY_STATUS_BLOCK[opp_ability].gather(1, sidx)           # [B,4]
-        abl_prior = self.SPECIES_STATUS_BLOCK_PRIOR[opp_species].gather(1, sidx)   # [B,4]
-        revealed = (opp_ability > 0).float()[:, None]              # [B,1]
-        ability_block = revealed * abl_rev + (1.0 - revealed) * abl_prior          # [B,4]
-
-        # already-statused (opp active) — any non-None status bit → blocks a MAJOR status (not Leech Seed).
-        opp_cond = ctx.pokemon_part[ar, opp_act,
-                                    POKEMON_CONDITION_OFFSET + 1:POKEMON_CONDITION_OFFSET + 7]  # [B,6]
-        already_statused = (opp_cond.sum(dim=1) > 0.5).float()[:, None]            # [B,1]
-        already_block = already_statused * blocked_if_statused                     # [B,4]
-
-        # Sleep Clause — ANY opp mon asleep via a NON-Rest source consumes our one-sleep cap.
-        opp_slp = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_SLP_IDX]  # [B,6]
-        opp_rest = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_SLEEP_BELIEF_OFFSET]  # [B,6] is_rest
-        nonrest_sleep = opp_slp * (1.0 - opp_rest)                                 # [B,6]
-        sleep_clause = (nonrest_sleep.sum(dim=1) > 0.5).float()[:, None]           # [B,1]
-        sleep_block = sleep_clause * is_sleep                                      # [B,4]
-
-        # Substitute — the opp active behind a Sub blocks EVERY status move (incl. Leech Seed) in gen3. Read
-        # the public Substitute volatile from the opp active context (boosts ++ volatiles). Applies to ALL
-        # inflicting moves (not just majors), so it folds in as a flat per-channel factor below.
-        has_sub = (ctx.opp_ctx_raw[:, _SUBSTITUTE_CTX_IDX] > 0.5).float()[:, None]  # [B,1]
-
-        p_land = (inflicts * acc * (1.0 - type_immune) * (1.0 - ability_block)
-                  * (1.0 - already_block) * (1.0 - sleep_block) * (1.0 - has_sub))  # [B,4]
-        # `known` = the value rests on CERTAIN info (a hard block — type/already-statused/Sleep-Clause/
-        # Substitute, all PUBLIC — or a revealed ability) vs a Smogon-prior estimate.
-        certain = torch.clamp(type_immune + already_block + sleep_block + has_sub + revealed, max=1.0)  # [B,4]
-        known = inflicts * certain                                                 # [B,4]
-        return torch.cat([p_land, known], dim=1) * gate                            # [B, _DMG_STATUS]
-
-    def _incoming_status_lands(self, ctx: 'ExtractorContext', topk_idx: torch.Tensor,
-                               high_topk: torch.Tensor) -> torch.Tensor:
-        """gen3_unified_topk_incoming_v1: per (OUR defender d, top-K move k), P(move k applies a status to
-        defender d) — the immunity-folded per-pivot safe-switch read (Thunder Wave → a Ground pivot = 0).
-        Combines two mutually-exclusive paths, taking the max:
-          • DEDICATED status move (Thunder Wave/Toxic/Will-O-Wisp/Spore/Leech Seed, BP 0): `inflicts · acc ·
-            (1−type_immune@our_def_types) · (1−ability_block@our_def_ability) · (1−already)` — the
-            per-MOVE type immunity (Thunder Wave→Ground, Toxic→Steel/Poison, WoW→Fire, Leech Seed→Grass)
-            evaluated at OUR DEFENDER's types (the incoming mirror of `_status_landing`'s opp lookup).
-          • DAMAGING-move MAJOR-status SECONDARY (Body Slam para, Ice Beam frz): `max_col(chance_col ·
-            (1−ability_block[cat(col)])) · acc · Serene-Grace(opp) · 1[damage lands on this pivot] ·
-            (1−already)` — gated by `high_topk>0`, so a pivot immune to the DAMAGE (Ghost vs Body Slam)
-            shows 0 status risk too. gen3 has no type-based para/freeze immunity beyond that gate.
-        All inputs are buffers + OUR-side public obs (types/ability/condition known) + the opp's revealed
-        Serene Grace → w-INDEPENDENT (the belief gradient rides `w_topk`, not this). HP candidates carry no
-        status (extended with zeros). v2 residual: incoming Sleep-Clause / our-Substitute (the owner's named
-        case is type immunity)."""
-        B, device, eps = ctx.batch_size, ctx.device, 1e-6
-        K = topk_idx.shape[1]
+    def _incoming_status_mask(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """gen3_op_status_rules_v1 — the side / clause rules on THEIR status landing on OUR six:
+        ``(mask [B,6,6], sub_row [B,6], drowsy [B,6])``. ``mask`` is `status_rules.incoming_status_mask` (our
+        Safeguard, incoming Sleep Clause, Freeze Clause, our active's Substitute) per (our defender, status
+        column); ``sub_row`` is the Substitute row alone (Leech Seed, which has no column); ``drowsy`` is 1 at our
+        active when it is already drowsy (their Yawn then fails)."""
+        B, device = ctx.batch_size, ctx.device
         ar = torch.arange(B, device=device)
-        opp_act = TEAM_SIZE + ctx.opp_active_local
+        ours = slice(0, TEAM_SIZE)
+        dt = ctx.pokemon_part.dtype
+        cond = ctx.pokemon_part[:, ours, POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7]   # [B,6,7]
+        alive = (ctx.hp_and_active[:, ours, 0] > 0).to(dt)
+        rest = ctx.pokemon_part[:, ours, POKEMON_SLEEP_BELIEF_OFFSET]
+        sg = (ctx.screen_feature[:, S_SG_OURS] > 0.5).to(dt)                               # [B]
+        sub = (ctx.our_ctx_raw[:, _SUBSTITUTE_CTX_IDX] > 0.5).to(dt)                       # [B]
+        mask = incoming_status_mask(sg, cond[..., _COND_SLP_IDX], cond[..., _COND_FRZ_IDX], alive, rest, sub,
+                                    ctx.our_active_idx)                                    # [B,6,6]
+        act = torch.zeros(B, TEAM_SIZE, device=device, dtype=dt)
+        act[ar, ctx.our_active_idx] = 1.0
+        sub_row = 1.0 - act * sub[:, None]                                                 # [B,6]
+        drowsy = act * (ctx.our_ctx_raw[:, _YAWN_CTX_IDX] > 0.5).to(dt)[:, None]           # [B,6]
+        return mask, sub_row, drowsy
+
+    def _incoming_dedicated_land(self, ctx: 'ExtractorContext', topk_idx: torch.Tensor) -> torch.Tensor:
+        """``[B,6,K]`` P(their DEDICATED status move k applies to OUR defender d) — THE incoming dedicated rule
+        (`_incoming_status_lands` and `discrete_incoming_status` both read it): `inflicts · acc ·
+        (1−type_immune@d's types) · (1−ability_block@d's ability) · (1−already)` × the side / clause rules
+        (`_incoming_status_mask`, at the move's status IDENTITY; Leech Seed — no identity column — only by our
+        Substitute) × Yawn's drowsy rule. Our six's abilities are the team sheet's (always known)."""
+        B = ctx.batch_size
+        K = topk_idx.shape[1]
         n_type = self.MOVE_STATUS_TYPE_IMMUNE.shape[1]
-        # --- candidate-axis (C = n_moves; the typed HP nums 355-370 carry no status/secondary — all-zero
-        # in these buffers, verified) move-status attributes → gather top-K (gen3_opp_hp_typed_candidates_v1) ---
         inflicts = self.MOVE_INFLICTS_STATUS[topk_idx]                                        # [B,K]
         acc = self.MOVE_ACCURACY[topk_idx]                                                    # [B,K]
         sidx = self.MOVE_STATUS_CAT[topk_idx]                                                 # [B,K]
         blocked = self.MOVE_BLOCKED_IF_STATUSED[topk_idx]                                     # [B,K]
         ti = self.MOVE_STATUS_TYPE_IMMUNE[topk_idx]                                           # [B,K,n_type]
-        sec = self.MOVE_SECONDARY[topk_idx]                                                   # [B,K,10]
-
-        # --- our 6 defenders' (known) types / ability / already-statused ---
         t1d = ctx.type1_ids[:, :TEAM_SIZE]                                                    # [B,6]
         t2d = ctx.type2_ids[:, :TEAM_SIZE]
         abl = self.ABILITY_STATUS_BLOCK[ctx.ability1_ids[:, :TEAM_SIZE]]                       # [B,6,7]
         our_cond = ctx.pokemon_part[:, :TEAM_SIZE,
                                     POKEMON_CONDITION_OFFSET + 1:POKEMON_CONDITION_OFFSET + 7]  # [B,6,6]
         already = (our_cond.sum(-1) > 0.5).float()                                            # [B,6]
-
-        # --- DEDICATED status move landing: type immunity @ our defender types (max over the 2 types) ---
         ti_dk = ti[:, None, :, :].expand(B, TEAM_SIZE, K, n_type)                              # [B,6,K,n_type]
         ti1 = torch.gather(ti_dk, 3, t1d[:, :, None, None].expand(B, TEAM_SIZE, K, 1)).squeeze(-1)
         ti2 = torch.gather(ti_dk, 3, t2d[:, :, None, None].expand(B, TEAM_SIZE, K, 1)).squeeze(-1)
         t_imm = torch.maximum(ti1, ti2)                                                       # [B,6,K]
         abl_block = torch.gather(abl, 2, sidx[:, None, :].expand(B, TEAM_SIZE, K))             # [B,6,K]
         already_block = already[:, :, None] * blocked[:, None, :]                             # [B,6,K]
-        dedicated = (inflicts[:, None, :] * acc[:, None, :] * (1.0 - t_imm)
-                     * (1.0 - abl_block) * (1.0 - already_block))                             # [B,6,K]
+        mask, sub_row, drowsy = self._incoming_status_mask(ctx)
+        ident = self.MOVE_STATUS_IDENT[topk_idx]                                              # [B,K,6]
+        has_ident = (ident.sum(-1) > 0.5).to(mask.dtype)                                      # [B,K]
+        rule = (has_ident[:, None, :] * torch.einsum("bjs,bks->bjk", mask, ident.to(mask.dtype))
+                + (1.0 - has_ident)[:, None, :] * sub_row[:, :, None])                       # [B,6,K]
+        rule = rule * (1.0 - self.MOVE_IS_YAWN[topk_idx][:, None, :] * drowsy[:, :, None])
+        land: torch.Tensor = (inflicts[:, None, :] * acc[:, None, :] * (1.0 - t_imm)
+                              * (1.0 - abl_block) * (1.0 - already_block) * rule)             # [B,6,K]
+        return land
 
+    def _incoming_status_lands(self, ctx: 'ExtractorContext', topk_idx: torch.Tensor,
+                               high_topk: torch.Tensor) -> torch.Tensor:
+        """gen3_unified_topk_incoming_v1: per (OUR defender d, top-K move k), P(move k applies a status to
+        defender d) — the immunity-folded per-pivot safe-switch read (Thunder Wave → a Ground pivot = 0).
+        Combines two mutually-exclusive paths, taking the max:
+          • DEDICATED status move (Thunder Wave/Toxic/Will-O-Wisp/Spore/Yawn/Leech Seed, BP 0):
+            `_incoming_dedicated_land` (the immunity physics × the side / clause rules × Yawn's drowsy rule).
+          • DAMAGING-move MAJOR-status SECONDARY (Body Slam para, Ice Beam frz): `max_col(chance_col ·
+            (1−ability_block[cat(col)]) · mask[d, col]) · acc · Serene-Grace(opp) · 1[damage lands on this
+            pivot] · (1−already)` — gated by `high_topk>0`, so a pivot immune to the DAMAGE (Ghost vs Body Slam)
+            shows 0 status risk too; `mask` is `_incoming_status_mask` (a secondary is stopped by our Safeguard,
+            the clauses and our Substitute exactly as a status move is). Their Serene Grace is revealed exact,
+            else its Smogon prior (gen3_op_ability_known_v1).
+        HP candidates carry no status (extended with zeros)."""
+        eps = 1e-6
+        ar = torch.arange(ctx.batch_size, device=ctx.device)
+        dedicated = self._incoming_dedicated_land(ctx, topk_idx)                              # [B,6,K]
+        acc = self.MOVE_ACCURACY[topk_idx]                                                    # [B,K]
+        sec = self.MOVE_SECONDARY[topk_idx]                                                   # [B,K,10]
+        abl = self.ABILITY_STATUS_BLOCK[ctx.ability1_ids[:, :TEAM_SIZE]]                       # [B,6,7]
+        our_cond = ctx.pokemon_part[:, :TEAM_SIZE,
+                                    POKEMON_CONDITION_OFFSET + 1:POKEMON_CONDITION_OFFSET + 7]  # [B,6,6]
+        already = (our_cond.sum(-1) > 0.5).float()                                            # [B,6]
+        mask, _sub_row, _drowsy = self._incoming_status_mask(ctx)                             # [B,6,6]
         # --- DAMAGING-move MAJOR-status SECONDARY (gated by the damage actually landing on this pivot) ---
-        opp_serene = self.ABILITY_SECONDARY_MULT[ctx.ability1_ids[ar, opp_act]]               # [B]
+        opp_serene = self.opp_secondary_mult(ctx)[ar, ctx.opp_active_local]                  # [B] known or prior
         sec_major = sec[..., :_SECONDARY_MAJOR_N]                                             # [B,K,6]
         abl_per_col = abl[..., self._SEC_CAT_IDX]                                             # [B,6,6] per status cat
-        sec_land = (sec_major[:, None, :, :] * (1.0 - abl_per_col)[:, :, None, :]).amax(dim=-1)  # [B,6,K]
+        sec_land = (sec_major[:, None, :, :] * ((1.0 - abl_per_col) * mask)[:, :, None, :]).amax(dim=-1)  # [B,6,K]
         damage_gate = (high_topk > eps).float()                                               # [B,6,K]
         secondary = (sec_land * acc[:, None, :] * opp_serene[:, None, None]
                      * damage_gate * (1.0 - already[:, :, None])).clamp(max=1.0)              # [B,6,K]
@@ -822,6 +910,10 @@ class DamageOperatorBlocks:
         ded_any = (ded.sum(dim=-1, keepdim=True) > 0.5).to(ded.dtype)
         ident = ded_any * ded + (1.0 - ded_any) * sec_ident                         # [B,K,6]
         p_ident = p_land[..., None] * ident[:, None, :, :]                          # [B,6,K,6]
+        # gen3_op_status_rules_v1: the side / clause rules per IDENTITY (exact for a multi-secondary move;
+        # a 0/1 mask, so a no-op where `p_land` already carries it).
+        _mask, _sub_row, _drowsy = self._incoming_status_mask(ctx)
+        p_ident = p_ident * _mask[:, :, None, :]                                    # [B,6,K,6]
 
         # --- neutralization: the per-(defender, status) severity, all gen3 rules ---
         phys = d_base[..., 1]                                                       # [B,6] base Atk
@@ -1182,36 +1274,16 @@ class DamageOperatorBlocks:
         major-vs-immobilize split is the decorrelation that matters for a SWITCH (a Ground pivot reads 0
         T-Wave immobilize even if it eats Toxic). Belief-weighted hard-max over K → the per-round gradient
         rides `w_topk` and sharpens the move belief toward status threats. `[B, TEAM_SIZE, _DMG_STATUS_REFINE]`."""
-        B = ctx.batch_size
         has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()   # [B]
-        n_type = self.MOVE_STATUS_TYPE_IMMUNE.shape[1]
         # candidate selection — the SAME detached top-K over the move belief as discrete_incoming. C =
         # n_moves: the typed HP nums 355-370 are ordinary candidates (the belief scattered onto them, bare
         # 237 masked) and carry NO status (all-zero in these buffers, verified) — gen3_opp_hp_typed_candidates_v1.
         # Shared with `discrete_incoming` for the same round when the caller passes it (`refine_candidates`).
         topk_idx, w_topk = cand if cand is not None else self.refine_candidates(ctx, move_belief_logits)
-        K = topk_idx.shape[1]
-        inflicts = self.MOVE_INFLICTS_STATUS[topk_idx]                                    # [B,K]
-        acc = self.MOVE_ACCURACY[topk_idx]                                                # [B,K]
         sidx = self.MOVE_STATUS_CAT[topk_idx]                                             # [B,K]
-        blocked = self.MOVE_BLOCKED_IF_STATUSED[topk_idx]                                 # [B,K]
-        ti = self.MOVE_STATUS_TYPE_IMMUNE[topk_idx]                                       # [B,K,n_type]
-        # our 6 defenders' KNOWN types / ability-block / already-statused / alive
-        t1d = ctx.type1_ids[:, :TEAM_SIZE]
-        t2d = ctx.type2_ids[:, :TEAM_SIZE]
-        abl = self.ABILITY_STATUS_BLOCK[ctx.ability1_ids[:, :TEAM_SIZE]]                   # [B,6,N_STATUS_CAT]
-        our_cond = ctx.pokemon_part[:, :TEAM_SIZE,
-                                    POKEMON_CONDITION_OFFSET + 1:POKEMON_CONDITION_OFFSET + 7]
-        already = (our_cond.sum(-1) > 0.5).float()                                        # [B,6]
         defender_alive = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()                # [B,6]
-        ti_dk = ti[:, None, :, :].expand(B, TEAM_SIZE, K, n_type)
-        ti1 = torch.gather(ti_dk, 3, t1d[:, :, None, None].expand(B, TEAM_SIZE, K, 1)).squeeze(-1)
-        ti2 = torch.gather(ti_dk, 3, t2d[:, :, None, None].expand(B, TEAM_SIZE, K, 1)).squeeze(-1)
-        t_imm = torch.maximum(ti1, ti2)                                                   # [B,6,K]
-        abl_block = torch.gather(abl, 2, sidx[:, None, :].expand(B, TEAM_SIZE, K))         # [B,6,K]
-        already_block = already[:, :, None] * blocked[:, None, :]                         # [B,6,K]
-        land = (inflicts[:, None, :] * acc[:, None, :] * (1.0 - t_imm)
-                * (1.0 - abl_block) * (1.0 - already_block))                              # [B,6,K]
+        # gen3_op_status_rules_v1: THE incoming dedicated rule (immunities + the side / clause rules + Yawn).
+        land = self._incoming_dedicated_land(ctx, topk_idx)                               # [B,6,K]
         is_immob: torch.Tensor = sum(  # type: ignore[union-attr]
             (sidx == c) for c in _IMMOBILIZE_STATUS_CATS).float().clamp(max=1.0)              # [B,K]
         if per_pair:
@@ -1245,25 +1317,9 @@ class DamageOperatorBlocks:
         has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()
         our_alive = (ctx.hp_and_active[ar, our_act, 0] > 0).float()
         gate = has_opp * our_alive                                                        # [B]
-        n_type = self.MOVE_STATUS_TYPE_IMMUNE.shape[1]
-        # our 4 status moves (gen3_op_move_align_v1: the request-ordered obs slice, NOT the sorted-by-id
-        # all_move_ids[our_act] — consistent with every other our-move op read). Output max-pools over the
-        # 4 moves so the ORDER is invariant here; no legality gate (parity with _status_landing + the CPU
-        # move-effect block, which both KEEP disabled moves — legality is the action mask's job).
-        move_ids = ctx.our_active_req_move_ids                                             # [B,4] request order
-        inflicts = self.MOVE_INFLICTS_STATUS[move_ids]                                     # [B,4]
-        acc = self.MOVE_ACCURACY[move_ids]                                                # [B,4]
-        sidx = self.MOVE_STATUS_CAT[move_ids]                                             # [B,4]
-        is_sleep = self.MOVE_IS_SLEEP[move_ids]                                           # [B,4]
-        blocked = self.MOVE_BLOCKED_IF_STATUSED[move_ids]                                 # [B,4]
-        ti = self.MOVE_STATUS_TYPE_IMMUNE[move_ids]                                       # [B,4,n_type]
+        sidx = self.MOVE_STATUS_CAT[ctx.our_active_req_move_ids]                          # [B,4]
         is_immob: torch.Tensor = sum(  # type: ignore[union-attr]
             (sidx == c) for c in _IMMOBILIZE_STATUS_CATS).float().clamp(max=1.0)              # [B,4]
-        # opp 6 defenders
-        opp_t1 = ctx.type1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
-        opp_t2 = ctx.type2_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
-        opp_ability = ctx.ability1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                         # [B,6]
-        opp_species = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                          # [B,6]
         revealed_slot: torch.Tensor = (1.0 - ctx.opp_believed_mask.float())               # [B,6] 1 = revealed
         defender_alive = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()    # [B,6]
         _x5 = self.stash.x5
@@ -1271,32 +1327,8 @@ class DamageOperatorBlocks:
             # X5 fixed_mass (U3 part 3): a hypothesis slot's types / ability prior are its species'
             # (`ctx` is the hypothesis context) and it is alive by addressability, never by its HP cell.
             revealed_slot, defender_alive = _x5.concrete, _x5.alive
-        ti_dm = ti[:, None, :, :].expand(B, TEAM_SIZE, 4, n_type)                          # [B,6,4,n_type]
-        timm1 = torch.gather(ti_dm, 3, opp_t1[:, :, None, None].expand(B, TEAM_SIZE, 4, 1)).squeeze(-1)
-        timm2 = torch.gather(ti_dm, 3, opp_t2[:, :, None, None].expand(B, TEAM_SIZE, 4, 1)).squeeze(-1)
-        t_imm = torch.maximum(timm1, timm2)                                               # [B,6,4]
-        ab_rev = torch.gather(self.ABILITY_STATUS_BLOCK[opp_ability], 2,
-                              sidx[:, None, :].expand(B, TEAM_SIZE, 4))                    # [B,6,4]
-        ab_pri = torch.gather(self.SPECIES_STATUS_BLOCK_PRIOR[opp_species], 2,
-                              sidx[:, None, :].expand(B, TEAM_SIZE, 4))                    # [B,6,4]
-        is_rev = (opp_ability > 0).float()[:, :, None]                                     # [B,6,1]
-        ability_block = is_rev * ab_rev + (1.0 - is_rev) * ab_pri                          # [B,6,4]
-        opp_cond = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE,
-                                    POKEMON_CONDITION_OFFSET + 1:POKEMON_CONDITION_OFFSET + 7]
-        already = (opp_cond.sum(-1) > 0.5).float()                                        # [B,6]
-        already_block = already[:, :, None] * blocked[:, None, :]                         # [B,6,4]
-        # Sleep-Clause (global): any opp asleep via a non-Rest source → our sleep moves fail
-        opp_slp = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_SLP_IDX]
-        opp_rest = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_SLEEP_BELIEF_OFFSET]
-        sleep_clause = ((opp_slp * (1.0 - opp_rest)).sum(-1) > 0.5).float()[:, None, None]  # [B,1,1]
-        sleep_block = sleep_clause * is_sleep[:, None, :]                                  # [B,6,4]
-        # Substitute — only the opp ACTIVE slot can hold a Sub (blocks every status move)
-        has_sub = (ctx.opp_ctx_raw[:, _SUBSTITUTE_CTX_IDX] > 0.5).float()                  # [B]
-        is_active = torch.zeros(B, TEAM_SIZE, device=device)
-        is_active[ar, ctx.opp_active_local] = 1.0
-        sub_block = (has_sub[:, None] * is_active)[:, :, None]                             # [B,6,1]
-        land = (inflicts[:, None, :] * acc[:, None, :] * (1.0 - t_imm) * (1.0 - ability_block)
-                * (1.0 - already_block) * (1.0 - sleep_block) * (1.0 - sub_block))         # [B,6,4]
+        # gen3_op_status_rules_v1: THE outgoing rule, all six slots (`_outgoing_status_land`).
+        land, _certain = self._outgoing_status_land(ctx)                                  # [B,6,4]
         if per_pair:
             # gen3_edge_bias_trunk_v1 (S1): the UN-collapsed per-(our move, opp mon) status cells for
             # the edge bias — [B, 4, 6, 2] = [land, land·is_immob] per (our status move k in REQUEST

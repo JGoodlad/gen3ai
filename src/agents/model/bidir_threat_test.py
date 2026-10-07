@@ -186,6 +186,7 @@ def _ctx_status(*, our_defenders, opp_defenders, our_moves, our_move_types, move
         our_active_req_move_legal=torch.tensor([list(move_mask)] * B, dtype=torch.float32),
         hp_probs=torch.zeros(B, n, 16), opp_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM),
         opp_believed_mask=torch.tensor([[bool(x) for x in believed]] * B),
+        screen_feature=torch.zeros(B, 8), our_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM),   # gen3_op_status_rules_v1
     )
 
 

@@ -16,21 +16,30 @@ rolls, `p_outspeed`, the secondary columns) contracted with the published α. No
   `p_flinch_useful = p_outspeed · p_flinch · (1 − α_SWITCH)` — a flinch against a switching
   opponent is worth exactly nothing.
 * **Explosion / Self-Destruct** (§3.1 — the ledger-H1 companion): the facts the valuation
-  needs, decorrelated — `p_executes = 1 − Σ_k α_k·1[k is Protect/Detect/Endure]` (the worst
-  branch, and it is α-visible) and `α_SWITCH` (detonating on an arrival we did not choose).
+  needs, decorrelated — `p_executes = 1 − Σ_k α_k·1[k is Protect/Detect]` (the worst branch, and
+  it is α-visible) and `α_SWITCH` (detonating on an arrival we did not choose). ENDURE is not a
+  blocker (gen3_op_ability_status_gigo_v1, 2026-10-07): it survives the hit at 1 HP and the user
+  still faints, so the detonation lands; the shipped set counted it.
 * **Protect / Detect** (§3.3, build step 5): `E[protect] = Σ_k α_k · damage_avoided(k) −
   tempo_cost`, where today's `c4` edge carries the mechanical `p_success` MULTIPLIER and omits
   the quantity it multiplies. Three decorrelated channels: the α-weighted incoming damage a
   successful Protect avoids, the obs floored-doubling `p_success` (the same scalar `c4` reads),
   and the α mass on STATUS seats (a successful Protect blocks the status too — the currency
   §2.1 named missing). Endure is deliberately NOT in this gate — its value is the v84 `p_KO`
-  branch, not damage avoidance.
+  branch, not damage avoidance. The odds channel is `p_success · P(an action follows)`
+  (gen3_op_ability_status_gigo_v1): Protect FAILS when no action follows it in the queue
+  (`onPrepareHit: !!this.queue.willAct()`), so into a switch and when we move last —
+  `Σ_k α_k·(1 − P(seat k first)) + a_un·(1 − P(an unnamed priority-0 seat first))`, the order
+  from `move_resolution_rules.p_seat_first` (the family's own rule).
 * **Magic Coat** (§3.12, build step 6 — its G0 oracle ran FIRST, per the doc's own gate): the
   reflectable set was UNVERIFIED, so five constructed scenarios on the reference sim resolved
   it (`measurements/gen3_magiccoat_reflectable_oracle.json`): foe-targeting status (Toxic /
   Thunder Wave / Leech Seed / Will-O-Wisp) BOUNCES; side-targeting Spikes does NOT — it lands
-  on the user's own side. The cell is `is_magiccoat · Σ_k α_k·is_reflectable_k` with the
-  predicate encoding exactly that finding (status AND raw target == 'normal').
+  on the user's own side. The cell is `is_magiccoat · Σ_k α_k·is_reflectable_k`, the predicate
+  the simulator's own `reflectable` flag set (`move_resolution_rules.REFLECTABLE`, re-derived from
+  the gen-3 dex by `move_resolution_rules_integration_test`). The shipped predicate (status AND raw
+  target 'normal') also bounced Taunt / Encore / Disable / Torment / Roar, which carry no flag
+  (gen3_op_ability_status_gigo_v1, 2026-10-07); the oracle's five scenarios agree with both.
 * **Explosion's β half** (§3.1, class B — the FIRST forward-side β consumer): the trade's
   target differs by branch, so the KO probability is
   `α_stay · pko(boom, their active) + α_SWITCH · Σ_j β_j · pko(boom, arrival j)` — β published
@@ -57,6 +66,7 @@ import torch
 from agents.gen3_data.moves import MoveData
 
 from agents.model.arch_constants import _INTENT_COND_RAW
+from agents.model.move_resolution_rules import p_seat_first
 from agents.model.pair_outcome import seat_in_set, seat_num_table
 
 # Gate move NUMS (gen3_data.moves, read 2026-08-16): counter 68, mirrorcoat 243, explosion 153,
@@ -73,22 +83,38 @@ def _gate_nums() -> torch.Tensor:
     return torch.tensor(nums, dtype=torch.long)
 
 
-_PROTECT_FAMILY = (182, 197, 203)     # protect / detect / endure — damage_op._PROTECT_NUMS
 _PROTECT_ONLY = (182, 197)            # the damage-avoidance pair (Endure's value is p_KO, v84)
 
 
 def _reflectable_table() -> torch.Tensor:
-    """[n_move_nums] 1.0 where gen3 Magic Coat bounces the move — FOE-TARGETING STATUS
-    (`not is_damaging` and raw target 'normal'), the G0-oracle-verified set: hazards
-    (target 'foeSide') and self/side moves are NOT reflectable."""
+    """[n_move_nums] 1.0 where gen3 Magic Coat bounces the move — the simulator's ``reflectable`` flag
+    set (`move_resolution_rules.REFLECTABLE`, ONE declaration, re-derived from the gen-3 dex by its
+    integration test). Fail-loud on an id the facade does not know (a silent drop reads as "nothing
+    to bounce")."""
+    from agents import gen3_data
+    from agents.model.move_resolution_rules import REFLECTABLE
+    raw = gen3_data.moves.raw()
+    n = max(cast(MoveData, gen3_data.moves.get(mid)).num for mid in raw) + 1
+    t = torch.zeros(n, dtype=torch.float32)
+    for mid in REFLECTABLE:
+        md = gen3_data.moves.get(mid)
+        if md is None:
+            raise ValueError(f"intent_conditional: reflectable move {mid!r} missing from gen3_data.moves")
+        t[md.num] = 1.0
+    return t
+
+
+def _priority_table() -> torch.Tensor:
+    """[n_move_nums] each move num's priority (the data facade's gen-3 value) — the ORDER input of the
+    Protect rule (`move_resolution_rules.p_seat_first`)."""
     from agents import gen3_data
     raw = gen3_data.moves.raw()
     n = max(cast(MoveData, gen3_data.moves.get(mid)).num for mid in raw) + 1
     t = torch.zeros(n, dtype=torch.float32)
-    for mid, r in raw.items():
+    for mid in raw:
         md = gen3_data.moves.get(mid)
-        if md is not None and not md.is_damaging and r.get("target") == "normal":
-            t[md.num] = 1.0
+        if md is not None:
+            t[md.num] = float(md.priority)
     return t
 
 
@@ -112,8 +138,8 @@ class IntentConditionalMoveCell(torch.nn.Module):
     Zero-init projection ⇒ ON-at-init contributes exactly zero to every action logit."""
 
     gate_nums: torch.Tensor
-    protect_nums: torch.Tensor
     protect_only_nums: torch.Tensor
+    priority_num: torch.Tensor
     status_num: torch.Tensor
     reflectable_num: torch.Tensor
 
@@ -124,14 +150,12 @@ class IntentConditionalMoveCell(torch.nn.Module):
         torch.nn.init.zeros_(self.proj.weight)
         torch.nn.init.zeros_(self.proj.bias)
         self.register_buffer("gate_nums", _gate_nums(), persistent=False)          # [6]
-        self.register_buffer("protect_nums",
-                             torch.tensor(_PROTECT_FAMILY, dtype=torch.long),
-                             persistent=False)                                     # [3]
         self.register_buffer("protect_only_nums",
                              torch.tensor(_PROTECT_ONLY, dtype=torch.long),
                              persistent=False)                                     # [2]
         self.register_buffer("status_num", _status_table(), persistent=False)      # [n_nums]
         self.register_buffer("reflectable_num", _reflectable_table(), persistent=False)
+        self.register_buffer("priority_num", _priority_table(), persistent=False)  # [n_nums]
 
     def forward(self, alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
                 pair_gate: torch.Tensor, our_active_idx: torch.Tensor,
@@ -173,9 +197,10 @@ class IntentConditionalMoveCell(torch.nn.Module):
         high_k = cells[..., 1]                                         # [B,K]
         is_phys_k = cells[..., 5]                                      # [B,K]
         dmg_k = (high_k > 0).float()                                   # damaging (status/immune = 0)
-        is_protect_k = (seat_in_set(self.protect_nums, topk_nums, other_u)
+        # The Explosion BLOCKERS: Protect / Detect only (Endure survives the hit; the user still faints).
+        is_protect_k = (seat_in_set(self.protect_only_nums, topk_nums, other_u)
                         if other_u is not None
-                        else (topk_nums[..., None] == self.protect_nums).any(-1).float())   # [B,K]
+                        else (topk_nums[..., None] == self.protect_only_nums).any(-1).float())   # [B,K]
         # Full α (renormalized would be wrong everywhere here): the SWITCH mass carries meaning
         # in every one of these cells, which is exactly what the v77 c2 cell could not express.
         alpha_full = torch.softmax(alpha_logits.float(), dim=-1).to(pair_cells.dtype)
@@ -212,6 +237,18 @@ class IntentConditionalMoveCell(torch.nn.Module):
         is_counter, is_mc, is_expl, is_sd, is_pursuit, is_mcoat = gates.unbind(-1)
         is_boom = is_expl + is_sd
         is_protfam = (req_move_ids[..., None] == self.protect_only_nums).any(-1).float()  # [B,4]
+        # Protect FAILS with no action after it (`onPrepareHit: !!this.queue.willAct()`): P(an action follows)
+        # = the α mass of seats that move AFTER our slot's move, + the unnamed seat's (priority 0); a switch
+        # resolves before any move, so α_SWITCH never follows. Order: `p_seat_first` (one rule, the family's).
+        prio_m = self.priority_num[req_move_ids.clamp(min=0, max=self.priority_num.shape[0] - 1)]   # [B,4]
+        prio_k = self.priority_num[topk_nums.clamp(min=0, max=self.priority_num.shape[0] - 1)]   # [B,K named]
+        if other_u is not None:     # X5: OTHER_move (the (K+1)-th seat) is priced at priority 0 (named residual)
+            prio_k = torch.cat([prio_k, torch.zeros_like(prio_k[:, :1])], dim=-1)
+        p_out = p_outspeed.to(alpha.dtype)                                             # [B,1]
+        first_k = p_seat_first(prio_m[:, :, None], prio_k[:, None, :], p_out[:, :, None])    # [B,4,K]
+        first_un = p_seat_first(prio_m, torch.zeros_like(prio_m), p_out)               # [B,4]
+        a_un = (1.0 - a_stay - a_switch).clamp(min=0.0)                                # [B,1]
+        p_follow = (alpha[:, None, :] * (1.0 - first_k)).sum(-1) + a_un * (1.0 - first_un)   # [B,4]
         raw = torch.stack([
             is_counter * e_phys,                        # the return's operand (head scales the ×2)
             is_mc * e_spec,
@@ -222,7 +259,7 @@ class IntentConditionalMoveCell(torch.nn.Module):
             is_pursuit * a_switch,                      # the ×2 never-miss trigger
             is_pursuit * a_switch * out_high,           # the α-weighted bonus damage (≈ +1× high)
             is_protfam * e_dmg_avoided,                 # what a successful Protect buys (damage)
-            is_protfam * protect_odds,                  # the mechanical decay odds (c4's scalar)
+            is_protfam * protect_odds * p_follow,       # the decay odds × P(an action follows it)
             is_protfam * e_status_avoided,              # ...and the status it blocks
             is_mcoat * e_reflect,                       # P(there is something to bounce) — the
                                                         # oracle-verified foe-status set only

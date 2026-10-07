@@ -199,7 +199,7 @@ def test_protect_carries_the_avoided_quantities_decorrelated():
                    req_ids=(182, 197, 0, 0), protect_odds=0.25))
     assert torch.allclose(out[0, 0, 8], torch.tensor(0.6), atol=1e-3)   # protect: dmg avoided
     assert torch.allclose(out[0, 1, 8], torch.tensor(0.6), atol=1e-3)   # detect gated too
-    assert torch.allclose(out[0, 0, 9], torch.tensor(0.25), atol=1e-6)  # the mechanical odds
+    assert torch.allclose(out[0, 0, 9], torch.tensor(0.25), atol=1e-4)  # odds × P(an action follows) ≈ 1
     assert float(out[0, 0, 10].abs()) < 1e-3                            # no status mass
     # α flipped to seat 1 = Toxic (a STATUS move): dmg avoided 0, status mass 1
     lg2 = torch.zeros(1, 4)
@@ -211,6 +211,64 @@ def test_protect_carries_the_avoided_quantities_decorrelated():
     # a non-protect slot's channels stay zero; ENDURE (203) is deliberately not in this gate
     out3 = m(*_args(alpha_logits=lg, high=[0.6, 0, 0], req_ids=(203, 89, 0, 0)))
     assert float(out3[..., 8:].abs().max()) < 1e-6
+
+
+def _num(mid):
+    from agents import gen3_data
+    return int(gen3_data.moves.get(mid).num)
+
+
+def test_protect_fails_with_no_action_after_it():
+    """gen3_op_ability_status_gigo_v1 (2026-10-07): Protect / Detect FAIL when no action follows them
+    (`data/moves.ts` protect `onPrepareHit: return !!this.queue.willAct() && …`). Into a certain SWITCH (the
+    switch resolves before any move) the odds channel is 0; into a priority-0 attack it is the stall odds;
+    into THEIR Protect (+3, a speed tie we lose: p_outspeed 0) it is 0 — they move first and nothing follows
+    ours. The shipped channel was the stall odds alone (0.5 in all three). FAILS on revert."""
+    m = _identity_cell()
+    sw = torch.zeros(1, 4)
+    sw[:, -1] = 30.0                                                     # α ≈ all on SWITCH
+    out = m(*_args(alpha_logits=sw, topk_nums=[89, 89, 89], req_ids=(182, 197, 0, 0), protect_odds=0.5))
+    assert float(out[0, 0, 9].abs()) < 1e-6 and float(out[0, 1, 9].abs()) < 1e-6
+    att = torch.zeros(1, 4)
+    att[:, 0] = 30.0                                                     # α ≈ all on Earthquake (prio 0)
+    out = m(*_args(alpha_logits=att, topk_nums=[89, 89, 89], req_ids=(182, 0, 0, 0), protect_odds=0.5))
+    assert torch.allclose(out[0, 0, 9], torch.tensor(0.5), atol=1e-6)
+    prot = _num("protect")
+    out = m(*_args(alpha_logits=att, topk_nums=[prot, 89, 89], req_ids=(182, 0, 0, 0), protect_odds=0.5,
+                   p_outspeed=0.0))
+    assert float(out[0, 0, 9].abs()) < 1e-6                              # theirs first, nothing follows ours
+    out = m(*_args(alpha_logits=att, topk_nums=[prot, 89, 89], req_ids=(182, 0, 0, 0), protect_odds=0.5,
+                   p_outspeed=1.0))
+    assert torch.allclose(out[0, 0, 9], torch.tensor(0.5), atol=1e-6)   # ours first, theirs follows
+
+
+def test_endure_does_not_block_explosion():
+    """gen3_op_ability_status_gigo_v1: ENDURE survives the hit at 1 HP and the user still faints — the
+    detonation LANDS (it is not in Protect's `protect` flag check). The shipped blocker set counted Endure
+    (p_executes 0); Protect / Detect still block. FAILS on revert."""
+    m = _identity_cell()
+    lg = torch.zeros(1, 4)
+    lg[:, 0] = 30.0
+    out = m(*_args(alpha_logits=lg, topk_nums=[_num("endure"), 89, 89], req_ids=(_EXPL, 0, 0, 0)))
+    assert torch.allclose(out[0, 0, 4], torch.tensor(1.0), atol=1e-6)   # Endure: it lands
+    out = m(*_args(alpha_logits=lg, topk_nums=[_num("detect"), 89, 89], req_ids=(_EXPL, 0, 0, 0)))
+    assert float(out[0, 0, 4]) < 1e-6                                    # Detect blocks
+
+
+def test_magic_coat_reads_the_reflectable_flag_not_status_and_normal_target():
+    """gen3_op_ability_status_gigo_v1: Magic Coat bounces exactly the simulator's `reflectable` set. Taunt /
+    Encore / Disable / Torment / Roar are foe-targeting STATUS moves with target 'normal' but NO flag
+    (`gen3/moves.ts` taunt flags {protect, bypasssub, metronome}), so they do not bounce; the shipped predicate
+    said they did. Toxic and Leech Seed still bounce. FAILS on revert."""
+    m = _identity_cell()
+    lg = torch.zeros(1, 4)
+    lg[:, 0] = 30.0
+    for mid in ("taunt", "encore", "disable", "torment", "roar"):
+        out = m(*_args(alpha_logits=lg, topk_nums=[_num(mid), 89, 89], req_ids=(277, 0, 0, 0)))
+        assert float(out[0, 0, 11].abs()) < 1e-6, mid
+    for mid in ("toxic", "leechseed", "thunderwave", "spore"):
+        out = m(*_args(alpha_logits=lg, topk_nums=[_num(mid), 89, 89], req_ids=(277, 0, 0, 0)))
+        assert torch.allclose(out[0, 0, 11], torch.tensor(1.0), atol=1e-6), mid
 
 
 def test_status_table_types_by_data_not_by_damage():

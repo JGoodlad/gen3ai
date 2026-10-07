@@ -41,6 +41,23 @@ fail-loud: `Gen3DualHeadMaskablePolicy._critic_value` under the win-prob critic 
 win head/logits are missing or batch-stale instead of falling back to the scalar
 `value_net` (the silently-wrong-critic shape v89 exposed). Gate: `extractor_stashes_test.py`.
 
+## The op's READ contracts: an opponent's ability, and the status rules (`gen3_op_ability_status_gigo_v1`)
+
+Two input contracts every op kernel follows (2026-10-07; ARCHITECTURE §4 states the rules themselves):
+
+* **An opponent's ability is read through ONE view.** `extractor_ctx.ability_known` / `revealed_ability1_ids`
+  (the op's `opp_ability_view`, `opp_ability_damage_mult`, `opp_status_block`, `opp_secondary_block`,
+  `opp_secondary_mult`, and `_known_or_prior` for a table of its own) — never `ctx.ability1_ids[...]` on the
+  opponent's side and never `id > 0` as "revealed": an unrevealed slot's id1 is its species' top-1 PRIOR with
+  `known = 0`. The unrevealed branch is a Smogon species marginal (`damage_tables.build_species_ability_marginal`),
+  never the pool. Gate: `ability_known_gate_test.py` (AST; fails any forward-module `ability1_ids` subscript that
+  is not our side; allowlist EMPTY).
+* **Status landing has ONE rule per direction.** Outgoing: `_outgoing_status_land` (`_status_landing` reads its
+  active slot, `discrete_outgoing_status` all six). Incoming: `_incoming_dedicated_land` + `_incoming_status_mask`
+  (`_incoming_status_lands`, `discrete_incoming_status`, and `pair_outcome_coords`' identity split all read them),
+  the side / clause mask itself being `status_rules.incoming_status_mask`, which the move-resolution family shares.
+  A new status rule goes there, not into a consumer. Tests: `op_status_rules_test.py`.
+
 ## Why the species posterior is spelled `log_softmax(...).exp()` — the whole diagnosis
 
 `torch.softmax` over the last dim of the `[B,6,n_species]` logits lowers to a numerator buffer plus a

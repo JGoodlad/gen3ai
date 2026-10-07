@@ -13,6 +13,8 @@ import types
 import numpy as np
 import gymnasium as gym
 import torch
+from agents.model.extractor_ctx import POKEMON_ABILITY_KNOWN_OFFSET
+from agents.model.damage_op_layout import _YAWN_CTX_IDX
 import pytest
 
 from agents.model.features_extractor import (
@@ -357,7 +359,7 @@ def test_three_roll_relationship():
 
 
 def _fake_ctx_out(*, our_species, our_t1, our_t2, our_moves, our_move_types,
-                  opp_species, opp_t1, opp_t2, move_mask, opp_ability=0, B=1):
+                  opp_species, opp_t1, opp_t2, move_mask, opp_ability=0, opp_known=None, B=1):
     """Hand-built ctx for the OUTGOING block: our active in slot 0 (4 moves in request order), opp active
     at slot TEAM_SIZE. Spread = IV31/EV0/neutral; full HP both sides."""
     n = 2 * TEAM_SIZE
@@ -375,6 +377,12 @@ def _fake_ctx_out(*, our_species, our_t1, our_t2, our_moves, our_move_types,
     sp = pokemon_part[:, :, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + 18]
     sp[..., 0:6] = 1.0      # IV 31
     sp[..., 13:18] = 1.0    # neutral nature
+    # gen3_op_ability_known_v1: the ability block's `known` flag — our six always; the opp active when the
+    # test REVEALS an ability (default: known iff an id was given; pass opp_known=0 with the species' top-1 id
+    # to build the real observation of an UNREVEALED opponent).
+    pokemon_part[:, :TEAM_SIZE, POKEMON_ABILITY_KNOWN_OFFSET] = 1.0
+    pokemon_part[:, TEAM_SIZE, POKEMON_ABILITY_KNOWN_OFFSET] = (
+        float(opp_ability != 0) if opp_known is None else float(opp_known))
     all_move_ids = torch.zeros(B, n, 4, dtype=torch.long)
     all_move_type_ids = torch.zeros(B, n, 4, dtype=torch.long)
     for k, (mid, mty) in enumerate(zip(our_moves, our_move_types)):
@@ -1153,18 +1161,24 @@ def test_outgoing_secondary_serene_grace_and_shield_dust():
     tb = gen3_data.moves.get("thunderbolt").num
     par = _OUT_SEC_BASE + _OUT_SEC_IDX["par"]
 
-    def _out(our_ab=0, opp_ab=0):
+    def _out(our_ab=0, opp_ab=0, opp_known=1.0, opp_species=260):
         ctx = _fake_ctx_out(our_species=135, our_t1=_T2I["ELECTRIC"], our_t2=0,
                             our_moves=[tb, 0, 0, 0], our_move_types=[_T2I["ELECTRIC"], 0, 0, 0],
-                            opp_species=260, opp_t1=_T2I["WATER"], opp_t2=_T2I["GROUND"], move_mask=[1, 0, 0, 0])
+                            opp_species=opp_species, opp_t1=_T2I["WATER"], opp_t2=_T2I["GROUND"],
+                            move_mask=[1, 0, 0, 0])
         ctx.ability1_ids[:, 0] = our_ab
         ctx.ability1_ids[:, TEAM_SIZE] = opp_ab
+        ctx.pokemon_part[:, 0, POKEMON_ABILITY_KNOWN_OFFSET] = 1.0                # our six: always known
+        ctx.pokemon_part[:, TEAM_SIZE, POKEMON_ABILITY_KNOWN_OFFSET] = opp_known
         return op._outgoing_block(ctx)[0, par].item()
 
     sg, sd = gen3_data.abilities.get("serenegrace").num, gen3_data.abilities.get("shielddust").num
     assert abs(_out() - 0.10) < 1e-4
     assert abs(_out(our_ab=sg) - 0.20) < 1e-4                     # our Serene Grace ×2
-    assert abs(_out(opp_ab=sd) - 0.0) < 1e-4                      # opp Shield Dust negates
+    assert abs(_out(opp_ab=sd) - 0.0) < 1e-4                      # opp Shield Dust (REVEALED) negates
+    # gen3_op_ability_known_v1: the same id with `known = 0` is the species' top-1 PRIOR, not a reveal — the
+    # op takes the species' Smogon marginal (Swampert's prior holds no Shield Dust, so the 10 % stands).
+    assert abs(_out(opp_ab=sd, opp_known=0.0) - 0.10) < 1e-4
 
 
 def test_decode_includes_secondary_blocks():
@@ -1322,9 +1336,10 @@ def test_op_modifiers_match_cpu_reference_which_is_showdown_fuzz_validated():
 
 
 # --------------------------------------------------------------------------- status-landing block
-def _status_land(op, *, our_moves, opp_t1, opp_t2, opp_species=248, opp_ability=0,
+def _status_land(op, *, our_moves, opp_t1, opp_t2, opp_species=248, opp_ability=0, opp_known=None,
                  move_mask=(1, 1, 1, 1), opp_active_status_idx=None,
-                 bench_sleep=None, bench_sleep_is_rest=False, opp_substitute=False):
+                 bench_sleep=None, bench_sleep_is_rest=False, opp_substitute=False,
+                 opp_safeguard=False, opp_drowsy=False):
     """Run op._status_landing for our 4 status moves vs the opp active. Returns (p_land[4], known[4]).
     Default opp_species 248 = Tyranitar (Sand Stream → NO status-blocking ability prior → a clean
     "no-ability-immunity" baseline; pass opp_species=143 Snorlax to exercise the Immunity prior).
@@ -1336,7 +1351,11 @@ def _status_land(op, *, our_moves, opp_t1, opp_t2, opp_species=248, opp_ability=
                         our_moves=[gen3_data.moves.get(m).num for m in our_moves],
                         our_move_types=[0, 0, 0, 0],
                         opp_species=opp_species, opp_t1=opp_t1, opp_t2=opp_t2,
-                        move_mask=list(move_mask), opp_ability=opp_ability)
+                        move_mask=list(move_mask), opp_ability=opp_ability, opp_known=opp_known)
+    if opp_safeguard:
+        ctx.screen_feature[:, 5] = 1.0                    # their Safeguard (screens [.., SG ours, SG opp, ..])
+    if opp_drowsy:
+        ctx.opp_ctx_raw[:, _YAWN_CTX_IDX] = 1.0
     if opp_active_status_idx is not None:
         ctx.pokemon_part[:, TEAM_SIZE, POKEMON_CONDITION_OFFSET + opp_active_status_idx] = 1.0
     if bench_sleep:
@@ -1374,11 +1393,18 @@ def test_status_landing_type_and_ability_immunity():
     assert p[1].item() == 0.0                              # LEECH SEED vs GRASS (the new rule)
 
     # Ability immunity: Toxic vs an UNREVEALED Snorlax (Immunity 0.86) → 0.85·(1−0.86) ≈ 0.119, then REVEALED.
+    imm_num = __import__("agents", fromlist=["gen3_data"]).gen3_data.abilities.get("immunity").num
     p, known = _status_land(op, our_moves=["toxic", "toxic", "toxic", "toxic"],
                             opp_t1=_T2I["NORMAL"], opp_t2=0, opp_species=143)  # Snorlax
     assert p[0].item() == pytest.approx(0.85 * (1 - 0.86), abs=0.01)
     assert known[0].item() == 0.0                          # a prior estimate → not known
-    imm_num = __import__("agents", fromlist=["gen3_data"]).gen3_data.abilities.get("immunity").num
+    # gen3_op_ability_known_v1 — THE defect: the REAL observation of an unrevealed Snorlax carries its top-1
+    # PRIOR ability (Immunity) in id1 with known = 0. The op read `id > 0` as revealed and said a CERTAIN 0;
+    # it must read the prior. FAILS on revert.
+    p, known = _status_land(op, our_moves=["toxic", "toxic", "toxic", "toxic"],
+                            opp_t1=_T2I["NORMAL"], opp_t2=0, opp_species=143, opp_ability=imm_num, opp_known=0)
+    assert p[0].item() == pytest.approx(0.85 * (1 - 0.86), abs=0.01)
+    assert known[0].item() == 0.0
     p, known = _status_land(op, our_moves=["toxic", "toxic", "toxic", "toxic"],
                             opp_t1=_T2I["NORMAL"], opp_t2=0, opp_species=143, opp_ability=imm_num)
     assert p[0].item() == 0.0 and known[0].item() == 1.0   # revealed Immunity → certain 0

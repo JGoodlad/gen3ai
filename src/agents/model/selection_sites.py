@@ -47,8 +47,8 @@ FORWARD_MODULES: Tuple[str, ...] = (
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
     "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
-    "move_resolution", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
-    "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
+    "move_resolution", "move_resolution_rules", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
+    "status_rules", "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
 )
 
 #: Top-level functions of a forward module that are NOT the forward (loss, label and metric helpers):
@@ -210,11 +210,15 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("(opp_slp * (1.0 - opp_rest)).sum(-1) > 0.5", "ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0",
                 "ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0", "ctx.hp_and_active[:, our, 0] > 0",
                 "ctx.hp_and_active[ar, our_act, 0] > 0", "ctx.opp_ctx_raw[:, _SUBSTITUTE_CTX_IDX] > 0.5",
-                "has_nc > 0.5", "has_rest > 0.5", "hp_frac > 0", "nonrest_sleep.sum(dim=1) > 0.5",
-                "opp_cond.sum(-1) > 0.5", "opp_cond.sum(dim=1) > 0.5", "opp_hp_frac > 0", "opp_para > 0.5",
+                "has_nc > 0.5", "has_rest > 0.5", "hp_frac > 0",
+                "opp_cond.sum(-1) > 0.5", "opp_hp_frac > 0", "opp_para > 0.5",
+                # gen3_op_status_rules_v1: their / our Safeguard, Yawn's drowsy volatile, our Substitute
+                "ctx.screen_feature[:, S_SG_OPP] > 0.5", "ctx.screen_feature[:, S_SG_OURS] > 0.5",
+                "ctx.opp_ctx_raw[:, _YAWN_CTX_IDX] > 0.5", "ctx.our_ctx_raw[:, _YAWN_CTX_IDX] > 0.5",
+                "ctx.our_ctx_raw[:, _SUBSTITUTE_CTX_IDX] > 0.5", "ctx.hp_and_active[:, ours, 0] > 0",
                 "our_burn > 0.5", "our_cb > 0.5", "our_cond.sum(-1) > 0.5", "our_para > 0.5",
                 "(~ctx.opp_believed_mask).long()"),
-        "TABLE": ("has_cure > 0.5", "has_other_cleric > 0.5", "self.MOVE_TYPE_IDX.long()",
+        "TABLE": ("has_cure > 0.5", "has_other_cleric > 0.5", "ident.sum(-1) > 0.5", "self.MOVE_TYPE_IDX.long()",
                   "live_cleric.sum(dim=-1, keepdim=True) - live_cleric > 0.5"),
         "SELECTED": ("bp_k > 0", "ded.sum(dim=-1, keepdim=True) > 0.5", "sec_tot > eps"),
         "INT": ("ctx.all_move_ids[ar, opp_act] > 0", "ctx.item_ids[:, our] == self.cb_item_num",
@@ -222,7 +226,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX", "move_ty == _WATER_TIDX",
                 "move_ty == at1[:, :, None]", "move_ty == at1[:, None]", "move_ty == at2[:, :, None]",
                 "move_ty == at2[:, None]", "move_ty.long()", "mty_k == at1[:, None]", "mty_k == at2[:, None]",
-                "n_revealed[:, None] < 4", "opp_ability > 0", "our_moves == self.rest_num", "sidx == c",
+                "n_revealed[:, None] < 4", "our_moves == self.rest_num", "sidx == c",
                 "torch.arange(K, device=device)[None, :] < 4"),
     },
     "damage_op_pairwise": {
@@ -239,7 +243,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "ctx.our_active_req_move_ids.long()", "ids == self.toxic_num", "items == LEFTOVERS_NUM",
                 "move_ids == n", "mty_k == at1[:, :, None]", "mty_k == at2[:, :, None]", "mty_k.long()",
                 "mty_k == ctx.type1_ids[:, opp][:, :, None]", "mty_k == ctx.type2_ids[:, opp][:, :, None]",
-                "opp_ab > 0", "opp_ability > 0", "sidx != LEECH_SEED_CAT", "sidx == 1", "sidx == 2", "sidx == 5",
+                "sidx != LEECH_SEED_CAT", "sidx == 1", "sidx == 2", "sidx == 5",
                 "sidx == _SLP_STATUS_CAT", "sidx > 0", "types1 == ti", "types2 == ti"),
     },
     "damage_kinds": {
@@ -257,7 +261,8 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "INT": ("ctx.all_move_ids == HIDDEN_POWER_MOVE_NUM",),
     },
     "extractor_ctx": {
-        "OBS": ("_opp_hp > 0.0", "hp_and_active[:, 0:TEAM_SIZE, 0] == 0",
+        "OBS": ("_opp_hp > 0.0", "ctx.pokemon_part[..., POKEMON_ABILITY_KNOWN_OFFSET] > 0.5",
+                "(ctx.pokemon_part[..., POKEMON_ABILITY_KNOWN_OFFSET] > 0.5).long()", "hp_and_active[:, 0:TEAM_SIZE, 0] == 0",
                 "hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] == 0",
                 "pokemon_part[:, :, POKEMON_LAST_ACTION_OFFSET].long()", "pokemon_part[:, :, ability1_idx].long()",
                 "pokemon_part[:, :, ability2_idx].long()", "pokemon_part[:, :, item_idx].long()",
@@ -282,7 +287,15 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     "intent_conditional": {
         "INT": ("req_move_ids[..., None] == self.gate_nums", "req_move_ids[..., None] == self.protect_only_nums",
-                "topk_nums[..., None] == self.protect_nums"),
+                "topk_nums[..., None] == self.protect_only_nums"),
+    },
+    # gen3_op_status_rules_v1: the shared side / clause rule (obs flags) and the shared move-ORDER rule (priority
+    # tables vs priority tables; the speed tie-break is a multiplier, never a threshold).
+    "status_rules": {
+        "OBS": ("(our_slp * our_alive * (1.0 - our_rest)).sum(-1) > 0.5", "our_frz.sum(-1) > 0.5"),
+    },
+    "move_resolution_rules": {
+        "TABLE": ("prio_k > prio_m", "prio_k == prio_m"),
     },
     "intent_threshold": {
         "INT": ("req_move_ids[..., None] == self.mech_nums",),
@@ -325,13 +338,13 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("ctx.hp_and_active[..., 0] > 0", "ctx.hp_and_active[ar, our_act, 0] > 0",
                 "o.beatup_n <= 0.5", "o.opp_alive_total > 1.5", "o.opp_cond[..., 1:].sum(-1) > 0.5",
                 "o.opp_hp > SUB_HP_FRACTION", "o.our_alive.sum(-1) - o.our_alive[ar, o.our_active] > 0.5",
-                "o.our_cond[..., 1:].sum(-1) > 0.5", "o.our_cond[..., C_FRZ].sum(-1) > 0.5",
-                "opp_cond_a[:, 1:].sum(-1) > 0.5", "opp_slp_live.sum(-1) > 0.5", "slp_live.sum(-1) > 0.5",
+                "o.our_cond[..., 1:].sum(-1) > 0.5",
+                "opp_cond_a[:, 1:].sum(-1) > 0.5", "opp_slp_live.sum(-1) > 0.5",
                 "o.spikes[:, 1:2] < 0.99", "our_hp >= 1.0", "bench_slp > 0.5", "o.our_wish <= 0.0",
-                "known_all > 0.5", "(known_all > 0.5).long()", "our_hp > BELLY_DRUM_HP_FRACTION",
+                "our_hp > BELLY_DRUM_HP_FRACTION",
                 "our_hp > SUB_HP_FRACTION", "our_stage[:, 0:1] < 5.5", "our_stage[:, None, :] < 5.5",
                 "our_stage[:, None, :] > -5.5"),
-        "TABLE": ("op.CHART[t1] * op.CHART[t2] == 0", "o.prio < 0", "o.prio == 0", "pk == pm", "pk > pm",
+        "TABLE": ("op.CHART[t1] * op.CHART[t2] == 0",
                   "o.self_boost < 0", "o.self_boost != 0", "(o.self_boost != 0).to(dt).sum(-1) > 0.5",
                   "o.self_boost > 0", "o.self_boost[..., 0] > 0", "tm_a > 0"),
         "INT": ("ids == op.hp_num", "o.opp_last_move > 0", "o.req_ids > 0", "o.st_cat < 6",

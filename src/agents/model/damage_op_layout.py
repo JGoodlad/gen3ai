@@ -142,6 +142,10 @@ _COND_SLP_IDX = 3                                         # condition one-hot [N
 from agents.observation.gen3_effects import VOLATILE_SLOTS as _VOLATILE_SLOTS
 from agents.observation.constants import BOOSTS_DIM as _BOOSTS_DIM
 _SUBSTITUTE_CTX_IDX = _BOOSTS_DIM + list(_VOLATILE_SLOTS).index("substitute")
+# gen3_op_status_rules_v1: Yawn's drowsy volatile (a second Yawn on a drowsy target fails) and the FREEZE column
+# of the condition one-hot (Freeze Clause), both derived from the layout.
+_YAWN_CTX_IDX = _BOOSTS_DIM + list(_VOLATILE_SLOTS).index("yawn")
+_COND_FRZ_IDX = 4                                         # condition one-hot [None,BRN,PAR,SLP,FRZ,PSN,TOX]
 _LEECH_SEED_CTX_SLOT = list(_VOLATILE_SLOTS).index("leechseed")   # gen3_edge_bias_trunk_v1 (G)
 # gen3_field_sport_slots_v1: Mud Sport / Water Sport's active-context indices (boosts ++ volatiles).
 _MUD_SPORT_CTX_IDX = _BOOSTS_DIM + list(_VOLATILE_SLOTS).index("mudsport")

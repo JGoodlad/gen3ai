@@ -102,6 +102,8 @@ class DamageOperatorPairwise:
         # Methods the SIBLING mixin (`damage_op_blocks.DamageOperatorBlocks`) owns — the pairwise
         # cells are built on the block kernels, so the call goes sideways across the composition.
         discrete_outgoing_status: Callable[..., torch.Tensor]
+        opp_ability_view: Callable[..., Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]
+        _known_or_prior: Callable[..., torch.Tensor]
         unrevealed_species_probs: Callable[..., torch.Tensor]
         _outgoing_matrix: Callable[..., torch.Tensor]
         _outgoing_attacker_matrix: Callable[..., torch.Tensor]
@@ -474,10 +476,10 @@ class DamageOperatorPairwise:
         # threat SUSPENDED (d_in_all = −worst hit of ANY category) for an EXPECTED number of
         # free turns from the VERIFIED hazard tables, Early-Bird-marginalised per mon (revealed
         # ability → exact; else the Smogon prior). Both RAW, decorrelated from `land`. ---
-        opp_ability = ctx.ability1_ids[:, opp]                                       # [B,6]
-        eb_rev = self.ABILITY_IS_EARLYBIRD[opp_ability]
-        eb_pri = self.SPECIES_EARLYBIRD_PRIOR[ctx.species_ids[:, opp]]
-        p_eb = torch.where(opp_ability > 0, eb_rev, eb_pri)                          # [B,6]
+        # gen3_op_ability_known_v1: revealed = the `known` flag (an unrevealed id1 is the top-1 PRIOR).
+        opp_ability, abl_known, opp_sp = self.opp_ability_view(ctx)                  # [B,6] ×3
+        p_eb = self._known_or_prior(self.ABILITY_IS_EARLYBIRD[opp_ability],
+                                    self.SPECIES_EARLYBIRD_PRIOR[opp_sp], abl_known)  # [B,6]
         e_free = (self.sleep_free_noeb
                   + (self.sleep_free_eb - self.sleep_free_noeb) * p_eb) / 4.0        # [B,6] (/max 4)
         e_slp_free = e_free[:, None, :] * is_slp[:, :, None]                         # [B,4,6]
@@ -1119,9 +1121,8 @@ class DamageOperatorPairwise:
         chip_table = torch.tensor([0.0, 1.0 / 8, 1.0 / 6, 1.0 / 4], device=device)
         # --- grounded (the T-family recipe) ---
         our_ab = ctx.ability1_ids[:, :TEAM_SIZE]
-        opp_ab = ctx.ability1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
-        opp_sp = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
-        ab_rev_j = (opp_ab > 0).float()
+        # gen3_op_ability_known_v1: revealed = the `known` flag (an unrevealed id1 is the top-1 PRIOR).
+        opp_ab, ab_rev_j, opp_sp = self.opp_ability_view(ctx)                     # [B,6] ×3
         fly_i = (self.TYPE_IS_FLYING[ctx.type1_ids[:, :TEAM_SIZE]]
                  + self.TYPE_IS_FLYING[ctx.type2_ids[:, :TEAM_SIZE]]).clamp(max=1.0)
         fly_j = (self.TYPE_IS_FLYING[ctx.type1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]]
@@ -1174,10 +1175,9 @@ class DamageOperatorPairwise:
         opp VICTIM is gated to 0 in direction A (its types are unknown — the D4 convention);
         both-alive-gated. "My Dugtrio traps their weakened Blissey" is a plan-defining edge."""
         our_ab = ctx.ability1_ids[:, :TEAM_SIZE]                                   # [B,6]
-        opp_ab = ctx.ability1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
-        opp_sp = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
+        # gen3_op_ability_known_v1: ability known = the `known` flag (an unrevealed id1 is the top-1 PRIOR).
+        opp_ab, ab_rev_j, opp_sp = self.opp_ability_view(ctx)                      # [B,6] ×3
         revealed_j = (1.0 - ctx.opp_believed_mask.float())                         # [B,6] species known
-        ab_rev_j = (opp_ab > 0).float()                                            # [B,6] ability known
         alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
         alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()
         _x5 = self.stash.x5

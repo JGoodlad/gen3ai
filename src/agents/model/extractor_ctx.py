@@ -11,7 +11,16 @@ from agents.observation.constants import (
     TEAM_SIZE,
     POKEMON_HP_PROBS_OFFSET,
     POKEMON_SPECIES_KNOWN_OFFSET,
+    POKEMON_ABILITIES_OFFSET,
+    ABILITY_SLOT_DIM,
+    ABILITY_DOMINANCE_DIM,
 )
+
+#: The ability block's `known` flag inside a per-mon row (`[id1, id2, dominance, known]`,
+#: `observation/abilities.py`): 1.0 once the ability is CONFIRMED (our six always; an opponent once an
+#: ability message fires), else 0.0 — and an UNREVEALED opponent's `id1` then carries its species' MOST
+#: LIKELY ability, not a revealed one.
+POKEMON_ABILITY_KNOWN_OFFSET = POKEMON_ABILITIES_OFFSET + ABILITY_SLOT_DIM + ABILITY_DOMINANCE_DIM
 
 # Token group ids for the unified transformer's type embedding.
 TOKEN_TYPE_OUR_TEAM = 0
@@ -54,6 +63,26 @@ def locate_active_slot(active_flags: torch.Tensor) -> torch.Tensor:
         torch.zeros(B, dtype=torch.long, device=active_flags.device),
     )
 
+
+
+def ability_known(ctx: 'ExtractorContext') -> torch.Tensor:
+    """``[B, 12]`` float: 1.0 where the mon's ability is CONFIRMED (the ability block's `known` flag).
+
+    gen3_op_ability_known_v1 — THE one rule for "is this ability revealed". ``ability1_ids > 0`` is NOT
+    it: an unrevealed opponent's slot carries its species' most likely ability in ``id1`` with
+    ``known = 0`` (`observation/abilities.py`), so reading a non-zero id as revealed asserts the top-1
+    ability as CERTAIN (Toxic "never lands" on an unrevealed Snorlax whose Smogon Immunity prior is
+    ≈ 0.86). Every physics read of an ability goes through this flag (`revealed_ability1_ids`); the
+    unrevealed branch takes the species' Smogon prior. A hypothesis row (X5) carries ``known = 0``."""
+    return (ctx.pokemon_part[..., POKEMON_ABILITY_KNOWN_OFFSET] > 0.5).to(ctx.pokemon_part.dtype)
+
+
+def revealed_ability1_ids(ctx: 'ExtractorContext') -> torch.Tensor:
+    """``[B, 12]`` long: ``ability1_ids`` where the ability is CONFIRMED (`ability_known`), else 0 — the
+    id every op table lookup reads (row 0 of every ability table is the neutral no-ability row). The
+    EMBEDDINGS keep reading the raw ``ability1_ids`` (the top-1 prior id beside its `known` bit is a
+    legitimate input); only the physics must not mistake it for a reveal."""
+    return ctx.ability1_ids * (ctx.pokemon_part[..., POKEMON_ABILITY_KNOWN_OFFSET] > 0.5).long()
 
 
 def active_request_sorted_match(ctx: 'ExtractorContext') -> torch.Tensor:

@@ -12092,3 +12092,36 @@ branch `obs-facts-append`).
 - **Fuzz-found.** The real-battle check found eleven gen-3 rules the inventory missed (now tested; audit §9.4) and one
   production-op defect, NOT fixed here: the op reads an opponent's ability as revealed when its id is non-zero, but an
   unrevealed opponent carries its most likely ability there with `known = 0`. The family reads the `known` flag.
+## 2026-10-07 — GIGO FIX on the production damage op: an opponent's ability by its `known` flag, the status-landing rules, `conditional_threat`'s accuracy, `intent_conditional`'s three rules (`gen3_op_ability_status_gigo_v1` = `gen3_op_ability_known_v1` + `gen3_op_status_rules_v1`; OP_SEMANTICS bumped; TRAINING-INPUT BOUNDARY; no ARCH_SIGNATURE / config bump)
+
+- **Why.** Found by the F11 move-resolution build (`fe16d565`; `design_arch_audit.md` §9.4) and the entity-coverage
+  audit (`f32a9f4b`, gap #2). The op read an opponent's ability as REVEALED whenever its id was non-zero, but the
+  observation writes an UNREVEALED opponent's top-1 Smogon-prior ability there with `known = 0`: the guess was applied
+  as CERTAIN in the damage, status, secondary and pairwise kernels. On the Lane S bank (580 real battles, 42,465
+  decisions) 12,861 rows (30.3 %) carried such a guess on their active; the old op made 199 certain-zero status claims
+  on played moves and 12 of them LANDED (all Toxic into Snorlax: Immunity 0.86 / Thick Fat 0.14); the fixed op makes
+  0 such contradictions in 181. `measurements/op_gigo_2026-10-07/`.
+- **What.** `extractor_ctx.ability_known` / `revealed_ability1_ids` (the one "revealed" rule) → the op's
+  `opp_ability_view` + `_known_or_prior` on every opponent read (outgoing block, both outgoing matrices, status
+  landing, Shield Dust / Serene Grace, Early Bird, Levitate in the hazard edge, the trap edge); unrevealed = the
+  Smogon species marginal (`build_species_ability_marginal`: new `SPECIES_ABILITY_EXP_MULT`,
+  `SPECIES_SECONDARY_BLOCK_PRIOR`, `SPECIES_SECONDARY_MULT_PRIOR`; `SPECIES_EXP_MULT` byte-identical). Status landing
+  has one rule per direction (`_outgoing_status_land`; `_incoming_dedicated_land` + `status_rules.incoming_status_mask`,
+  shared with the move-resolution family): their Safeguard (outgoing), our Safeguard / incoming Sleep Clause / Freeze
+  Clause / our active's Substitute (incoming, per status identity), and Yawn as a delayed-sleep inflictor
+  (`MOVE_IS_YAWN`; fails on a drowsy target). `conditional_threat.e_pko_acc` = `Σ α·ko_ramp` (accuracy once).
+  `intent_conditional`: Protect / Detect odds × P(an action follows) (`move_resolution_rules.p_seat_first`, the
+  family's order rule, now shared), Explosion blockers = Protect / Detect only, Magic Coat = the `reflectable` set.
+  The move-resolution family reads the op's fixed values (its own re-application of the incoming mask is an exact
+  no-op; `ON` byte-identical on its unit tests).
+- **Guards / tests (each fails on revert).** `ability_known_gate_test.py` (AST: no forward module indexes
+  `ability1_ids` outside our side; allowlist EMPTY), `op_status_rules_test.py`, `damage_op_test`'s unrevealed-Snorlax
+  row, `conditional_threat_test.test_e_pko_acc_counts_accuracy_ONCE`, `intent_conditional_test`'s three new tests,
+  `move_resolution_extractor_test`'s op pin (now asserts the fix), and the real-battle gate
+  `op_status_landing_bridge_integration_test.py` (48 banked battles replayed through the Rust core, no poke-env: 0
+  contradicted certain zeros for the new op, ≥ 1 — 9 — for the old read).
+- **Boundary.** A TRAINING-INPUT BOUNDARY by the 2026-10-04 Smogon-prior precedent (`2d29c4c0`, `f20b2479`): weights
+  unchanged and loadable, so NO ARCH_SIGNATURE / MODEL_CONFIG_VERSION bump (one would strand every archived
+  checkpoint); `OP_SEMANTICS` → `gen3_op_ability_status_gigo_v1`. Re-recorded: the K9 learner golden (both arms; both
+  buffers rebuilt — their stored behaviour log-probs were the old op's) and `main/h2h`'s off/off play digests.
+  Pinned runs are unaffected (the X5 A/B look-3 seeds and their cross play at `706fa536`, registered `bef16d61`).

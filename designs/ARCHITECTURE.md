@@ -692,7 +692,13 @@ than |dV|, was never part of that verdict, and is pinned by `intent_threshold_te
 **`intent_conditional`** (v85) is its sibling: the Counter/Mirror-Coat category sums,
 flinch's `(1−α_SWITCH)` term, Explosion's execute/into-switch facts and Pursuit's ×2 never-miss
 doubling trigger (the port-verified departing-target rule — no β), one more zero-init block on
-the move cell (+`INTENT_COND_MOVE_DIM`). Enabling either is a gen-13+ decision gated on
+the move cell (+`INTENT_COND_MOVE_DIM`). Three of its rules are the simulator's
+(`gen3_op_ability_status_gigo_v1`, 2026-10-07): Protect / Detect's odds channel is `p_success ·
+P(an action follows)` (they FAIL with nothing after them in the queue — into a switch, or moving
+last; the order rule is `move_resolution_rules.p_seat_first`); Explosion's blockers are Protect /
+Detect only (Endure survives the hit and the user still faints); Magic Coat bounces exactly the
+`reflectable` flag set (`move_resolution_rules.REFLECTABLE`, never Taunt / Encore / Disable /
+Torment / Roar). Enabling either is a gen-13+ decision gated on
 gen-12's `intent_move_cell` audit (the G3 verdict); the pre-build G2 usage baseline is
 `measurements/gen12_mechanic_usage_baseline.json` (Endure 0.0% / Sub 0.9% / Counter 5.6%).
 
@@ -706,7 +712,7 @@ seat k, our mon j, :]`** of width `_PAIR_OUTCOME_RAW` = **14** — the six exist
 
 | # | coordinate | source |
 |---|---|---|
-| 6-11 | `p_par p_brn p_frz p_slp p_psn p_tox` | `_incoming_status_lands` (the per-pivot immunity physics, unchanged) SPLIT by the seat's status IDENTITY — `MOVE_STATUS_IDENT` for a dedicated status move (read from the raw `status_inflicted`, so **tox and psn stay apart** where `MOVE_STATUS_CAT` folds them), `MOVE_SECONDARY`'s L1-normalised major prefix for a damaging move's secondary |
+| 6-11 | `p_par p_brn p_frz p_slp p_psn p_tox` | `_incoming_status_lands` (the per-pivot immunity physics × the side / clause rules of §4's status-landing paragraph, applied per identity) SPLIT by the seat's status IDENTITY — `MOVE_STATUS_IDENT` for a dedicated status move (read from the raw `status_inflicted`, so **tox and psn stay apart** where `MOVE_STATUS_CAT` folds them), `MOVE_SECONDARY`'s L1-normalised major prefix for a damaging move's secondary |
 | 12 | `neutralization` | fraction of this mon's per-turn contribution destroyed WITHOUT a KO: burn → `0.5·base_atk/(base_atk+base_spa)`, paralysis → `0.25 + 0.75·Δp_outspeed` (the op's OWN outspeed logistic re-evaluated at ×0.25 speed), freeze/sleep → 1.0, psn/tox → the 1/8 and 1/16 residual ticks. Every scalar is a gen3 RULE; no tuned prior |
 | 13 | `tempo_cost` | `P(any major status) × undo_turns(j)`, where `undo_turns` is the **CHEAPEST available undo path**: 1 turn for a cure MOVE (`MOVE_CURES_SELF_STATUS`: Refresh / Heal Bell / Aromatherapy), **1 for the Natural Cure ABILITY** (the status is shed on switch-out and a switch consumes exactly one of our actions), the op's own `rest_sleep_noeb` (**2**) for Rest, **2 for the bench-CLERIC path** (switch to an ALIVE teammate carrying a party-wide Heal Bell / Aromatherapy, then click it), else **0**. `0` means *no path exists* — never *the path is free* — which is why Natural Cure is priced at its literal switch. Every input is OUR mon's (moveset, ability, HP), so all of it is exact and no marginalisation arises on this axis. `neutralization` deliberately does NOT read the ability: it is a per-TURN rate and Natural Cure changes DURATION, which this reduction refuses to model without a rule to source a number from |
 
@@ -746,7 +752,7 @@ structurally cannot. Four coordinates, all `Σ_k α_k · f(k, j)` against the sa
 
 | # | coordinate | meaning |
 |---|---|---|
-| 0 | `e_pko_acc` | `Σ_k α_k · ko_ramp(k,j) · acc(k)` — §0.2(2)'s rule (*precompute every nonlinearity of two numbers IN THE OP*). `ko_ramp` and `acc` ride the reduced row DECORRELATED and a thin `tanh` scorer does not multiply two of its own inputs; two of our mons can be identical in `Σα·ko_ramp` AND in `Σα·acc` while their true P(dies) differ |
+| 0 | `e_pko_acc` | `Σ_k α_k · ko_ramp(k,j)` — P(this mon dies). The op's `ko_ramp` already IS `acc · P(KO \| hit)` (`DamageOperator._rolls`), so accuracy is counted ONCE (a 70 % Blizzard that OHKOs reads 0.70; the cell multiplied by `acc` again until 2026-10-07, `gen3_op_ability_status_gigo_v1`) |
 | 1 | `e_type_mult` | `Σ_k α_k · type_mult(k,j)` — the one cell channel NOT divided by the defender's own bulk, so a structural immunity (`0.0`) reads apart from an incidental zero and the read survives the mon's own HP moving |
 | 2-3 | `margin_high` `margin_crit` | `Σ_k α_k · high(k,j) − hp_frac(j)` and the same on the crit roll (§0.2(3): *probabilities SATURATE; ship the MARGIN too*; `> 0` ⇒ dead). They separate two mons a saturated `pko` cannot — at the bottom (*both survive; by how much?*) and at the top (*both die; does a low roll save one?*) — and the crit margin is the *safe pivot vs coinflip pivot* distinction |
 
@@ -816,12 +822,11 @@ puts ONE zero-init block on each pointer cell:
   margins, and `p_switch_resolves` (their Pursuit can KO the departing mon).
 
 Dropped (judgments): `tempo_cost`, `neutralization`, `wasted_ko`, `spin_value_lost`, the hazard stake of
-`spin_denied`, and the Focus Punch / Substitute / Endure / Endeavor hand thresholds. The incoming status
-coordinates are CORRECTED for OUR Safeguard, our active's Substitute, incoming Sleep Clause and Freeze Clause,
-which `_incoming_status_lands` ignores, and it reads an opponent's ability as revealed from the ability block's
-`known` flag — the op reads `id > 0`, which is wrong for an unrevealed opponent (the observation writes its most
-likely ability there with `known = 0`; audit §9.4); every op value it reads is PRE-gain (the op's `out_gain` is
-per request slot on the per-move channels), and its projections are shared across slots; the op itself is untouched. Requires `opp_intent`, `damage_op`,
+`spin_denied`, and the Focus Punch / Substitute / Endure / Endeavor hand thresholds. The op itself now applies
+the incoming side / clause rules and reads an opponent's ability through its `known` flag (§4), so the family's
+own re-application of `status_rules.incoming_status_mask` is an exact no-op on real op output; every op value it
+reads is PRE-gain (the op's `out_gain` is per request slot on the per-move channels), and its projections are
+shared across slots. Requires `opp_intent`, `damage_op`,
 `damage_outgoing` and both per-move matrices; blob only. Named residuals (not modelled): accuracy / evasion
 stages, Attract's gender rule, Fake Out's first turn, a confusion ending this turn, Encore / Disable at 0 PP,
 the opponent's Disabled move, Damp, Wonder Guard, Truant, Endeavor's HP comparison, two-turn moves, a seat outside
@@ -1170,6 +1175,32 @@ serialization into the flat block, which had no consumer. The `outgoing_matrix` 
 Explosion `pko`), and the `incoming_matrix` call is where `last_topk_idx` / `last_topk_cand_idx`
 — the seat axis α aligns to — are selected. Turning either matrix flag off deletes those; turning
 `op_drop_renders` off re-widens the flat block to 660 and changes nothing else.
+
+**An OPPONENT's ability is revealed only by its `known` flag (`gen3_op_ability_known_v1`).** The
+observation writes an UNREVEALED opponent's top-1 Smogon-prior ability into the ability block's `id1` with
+`known = 0` (§1.2). Every op read of an opponent's ability — the damage multiplier (Levitate, the absorbs,
+Flash Fire, Thick Fat) in the outgoing block and both outgoing matrices, the status block in the
+status-landing kernels, Shield Dust / Serene Grace on the secondaries, Early Bird, Levitate in the hazard
+edge, the trap abilities — goes through `extractor_ctx.ability_known` / `revealed_ability1_ids` (the op's
+`opp_ability_view` + `_known_or_prior`): REVEALED → the ability's exact table row; NOT revealed → the
+species' Smogon-prior marginal (`build_species_ability_marginal`: `SPECIES_ABILITY_EXP_MULT`,
+`SPECIES_STATUS_BLOCK_PRIOR`, `SPECIES_SECONDARY_BLOCK_PRIOR` / `_MULT_PRIOR`, `SPECIES_EARLYBIRD_PRIOR`,
+`SPECIES_TRAP_PRIOR`). The status channel's `known` bit is 1 only on a public hard block or a revealed
+ability. `ability_known_gate_test.py` fails any forward module that indexes `ability1_ids` outside our side.
+Until 2026-10-07 the op read `id > 0` as revealed — the top-1 guess as CERTAIN (Toxic "never landed" on an
+unrevealed Snorlax whose prior is Immunity 0.86 / Thick Fat 0.14).
+
+**Status landing — the rules (`gen3_op_status_rules_v1`, `_outgoing_status_land` / `_incoming_status_mask`).**
+OUTGOING (our status move → their slot): accuracy × type immunity × their ability (known or prior) ×
+already-statused × Sleep Clause (any of theirs asleep from a non-Rest source) × a Substitute on their active
+× **their Safeguard** (every major status and Yawn's volatile; not Leech Seed) × **Yawn on an already-drowsy
+target fails**. INCOMING (their seat → our mon j): the immunity physics × `status_rules.incoming_status_mask`
+— **our Safeguard** (all six statuses, secondaries included), **incoming Sleep Clause** (a live non-Rest
+sleeper of ours ⇒ no sleep), **Freeze Clause** (any frozen mon of ours ⇒ no freeze), **our active's
+Substitute** (its own row; Leech Seed too) — and their Yawn on our drowsy active fails. **Yawn is a sleep
+inflictor** in the status tables (`MOVE_IS_YAWN`; the sleep arrives one turn later — a named residual).
+Named residuals the op does not model: Glare → Ghost, Leech Seed on a seeded target (both priced by the
+move-resolution family). `OP_SEMANTICS` = `gen3_op_ability_status_gigo_v1`.
 
 **Non-formula damage (`gen3_nonformula_damage_v1`, Beat Up `gen3_beatup_exact_v1`).** Every move whose damage is not the gen-3
 base-power formula has ONE declared model in `damage_tables.DAMAGE_MODELS` (each row cites its

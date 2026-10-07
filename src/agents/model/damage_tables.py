@@ -376,6 +376,13 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     # P(species)). Built here so they reuse the chart + ability_damage_mult already in scope.
     species_types = build_species_types(n_species)
     species_exp_mult = build_species_exp_mult(n_species, chart, ability_damage_mult, species_types)
+    # gen3_op_ability_known_v1: the SPECIES-prior expectation of each per-ability table the op reads for an
+    # OPPONENT, taken wherever their ability is NOT revealed (the `known` flag, never `id > 0`): the damage
+    # multiplier alone (types are read separately for a revealed species), Shield Dust's secondary block and
+    # Serene Grace's secondary multiplier.
+    species_ability_exp_mult = build_species_ability_marginal(n_species, ability_damage_mult, neutral=1.0)
+    species_secondary_block = build_species_ability_marginal(n_species, ability_secondary_block, neutral=1.0)
+    species_secondary_mult = build_species_ability_marginal(n_species, ability_secondary_mult, neutral=1.0)
 
     return {
         "MOVE_BP": move_bp,
@@ -394,6 +401,9 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         "SPECIES_TYPE": species_types,
         "SPECIES_IS_GHOST": build_species_is_ghost(species_types),
         "SPECIES_EXP_MULT": species_exp_mult,
+        "SPECIES_ABILITY_EXP_MULT": species_ability_exp_mult,      # gen3_op_ability_known_v1
+        "SPECIES_SECONDARY_BLOCK_PRIOR": species_secondary_block,  # gen3_op_ability_known_v1
+        "SPECIES_SECONDARY_MULT_PRIOR": species_secondary_mult,    # gen3_op_ability_known_v1
         # full (mean,std) spread prior on the op too (SpreadBelief owns its own copy) — E[bulk] for an
         # unrevealed defender = P(species) @ means; the speed (mean,std) feeds the probabilistic outspeed.
         "SPECIES_SPREAD_PRIOR": build_opp_spread_prior(n_species),
@@ -473,22 +483,33 @@ def build_species_exp_mult(n_species: int, chart: torch.Tensor, ability_damage_m
     t1 = species_types[:, 0]
     t2 = species_types[:, 1]
     type_eff = chart[t1] * chart[t2]                       # [n_species, N_TYPE_IDX] (chart row = att axis)
-    reduction = 1.0 - ability_damage_mult                  # [n_abilities, N_TYPE_IDX]; 0 for neutral abilities
-    n_abilities = ability_damage_mult.shape[0]
-    exp_ability = torch.ones(n_species, N_TYPE_IDX, dtype=torch.float32)
+    return type_eff * build_species_ability_marginal(n_species, ability_damage_mult, neutral=1.0)
+
+
+def build_species_ability_marginal(n_species: int, ability_table: torch.Tensor, neutral: float) -> torch.Tensor:
+    """``[n_species, *ability_table.shape[1:]]`` the species' SMOGON-PRIOR expectation of a per-ability table:
+    ``neutral + Σ_a P(a|s)·(table[a] − neutral)``, clamped at 0 — the value an op read takes for an opponent
+    whose ability is NOT revealed (gen3_op_ability_known_v1; `extractor_ctx.ability_known`). The residual prior
+    mass (an ability outside the table, or a species with no Smogon row, e.g. num 0) reads ``neutral``, so the
+    form is robust to an unnormalized prior. Smogon-derived only (`gen3_data.priors.ability`, the priors rule).
+    ``build_species_exp_mult``'s ability factor is this with the damage multiplier (byte-identical to its
+    former inline loop: ``1 + (−x)`` and ``1 − x`` are the same IEEE value)."""
+    n_abilities = ability_table.shape[0]
+    out = torch.full((n_species,) + tuple(ability_table.shape[1:]), float(neutral), dtype=torch.float32)
+    delta = ability_table.to(torch.float32) - float(neutral)
     for sid in gen3_data.species.base_form_ids():
         sd = cast(SpeciesData, gen3_data.species.get(sid))
         snum = sd.num
         if not (0 <= snum < n_species):
             continue
-        acc = torch.zeros(N_TYPE_IDX, dtype=torch.float32)
+        acc = torch.zeros(tuple(ability_table.shape[1:]), dtype=torch.float32)
         for aid, p in (gen3_data.priors.ability(sid) or {}).items():
             ad = gen3_data.abilities.get(aid)
             if ad is None or not (0 <= ad.num < n_abilities):
                 continue
-            acc = acc + float(p) * reduction[ad.num]
-        exp_ability[snum] = (1.0 - acc).clamp(min=0.0)
-    return type_eff * exp_ability
+            acc = acc + float(p) * delta[ad.num]
+        out[snum] = (float(neutral) + acc).clamp(min=0.0)
+    return out
 
 
 # gen3_unified_choice_band_v1: Choice Band is the dominant damage-relevant gen3 item — it ×1.5 the holder's
@@ -554,7 +575,14 @@ NONFORMULA_LEVEL = 100
 #: expected-latent defender) and the T0 species marginal / co-occurrence lift moved from the UNWEIGHTED Raw count
 #: share to the RATING-WEIGHTED W share, so a recording made under gen3_smogon_prior_denominator_v1 is not
 #: reproducible here either.
-OP_SEMANTICS = "gen3_smogon_species_usage_weighted_v1"   # (was gen3_smogon_prior_denominator_v1: usage was Raw count)
+#: gen3_op_ability_status_gigo_v1 (2026-10-07, the op GIGO fix): the op reads an opponent's ability as revealed
+#: only through its `known` flag (an unrevealed slot's id1 is the species' top-1 PRIOR, never certain) and
+#: takes the Smogon species marginal otherwise, on every damage / status / secondary / pairwise read; status
+#: landing folds Safeguard (both sides), incoming Sleep Clause, Freeze Clause, our Substitute and Yawn's delayed
+#: sleep; `conditional_threat` counts accuracy once; `intent_conditional`'s Protect needs an action to follow,
+#: Endure no longer blocks Explosion, and Magic Coat bounces the `reflectable` set. A recording made under
+#: gen3_smogon_species_usage_weighted_v1 is not reproducible here.
+OP_SEMANTICS = "gen3_op_ability_status_gigo_v1"   # (was gen3_smogon_species_usage_weighted_v1)
 DAMAGE_MODELS: Dict[str, Tuple[str, float, str]] = {
     # --- fixed / level: `getDamage` → `move.damage === 'level'` → source.level, else `move.damage` ---
     "seismictoss": ("fixed", float(NONFORMULA_LEVEL), "data/moves.ts seismictoss: damage 'level'"),
@@ -716,6 +744,15 @@ _SLP_CAT = 4
 LEECH_SEED_CAT = 6
 N_STATUS_CAT = 7                              # index 0 = "not a status move"; 1..5 majors; 6 = Leech Seed
 _LEECH_SEED_ID = "leechseed"
+#: gen3_op_status_rules_v1: Yawn is a DELAYED sleep (`data/moves.ts` yawn: the `yawn` volatile, `onEnd` →
+#: `trySetStatus('slp')` at the end of the NEXT turn; gen 4 mod only re-orders its residual). The data facade
+#: records no `status_inflicted` for it, so the status-landing tables used to price it as no status at all. It
+#: is a SLEEP inflictor here: it fails on a statused target (`onTryHit`: `target.status`), its sleep is blocked
+#: by a sleep-blocking ability and by Sleep Clause (`data/rulesets.ts:1378-1402`, at the application), a
+#: Safeguard stops the volatile (`data/moves.ts` safeguard `onTryAddVolatile`), a Substitute stops it (no
+#: `bypasssub`), and it fails on a target already drowsy (no `onRestart`) — the one rule beyond the
+#: six-status set, read through `MOVE_IS_YAWN`. Residual, named: the sleep arrives one turn LATER.
+_YAWN_ID = "yawn"
 # gen3_status_economy_v1: the ability whose gen3 rule is "the status is shed on switch-out".
 _NATURAL_CURE_ID = "naturalcure"
 # SSOT guard: every status id the gen3_mechanics ability-immunity rules name MUST map to a known category,
@@ -754,7 +791,8 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
                                                mon sitting on the BENCH, so a teammate's Heal Bell is an undo
                                                path for mon j; Refresh is not.
       MOVE_INFLICTS_STATUS[n_moves]            1.0 if it is a dedicated status move (incl. Leech Seed)
-      MOVE_IS_SLEEP[n_moves]                   1.0 if it inflicts sleep (the Sleep-Clause gate)
+      MOVE_IS_SLEEP[n_moves]                   1.0 if it inflicts sleep (the Sleep-Clause gate) — Yawn included
+      MOVE_IS_YAWN[n_moves]                    1.0 at Yawn (its delayed sleep; fails on a target already drowsy)
       MOVE_BLOCKED_IF_STATUSED[n_moves]        1.0 for a MAJOR status (can't double-apply); 0 for Leech Seed
       MOVE_STATUS_TYPE_IMMUNE[n_moves, N_TYPE_IDX]   1.0 where a DEFENDER type is immune to THIS move's status
       ABILITY_STATUS_BLOCK[n_abilities, N_STATUS_CAT]   1.0 if the (revealed) ability hard-blocks that category
@@ -794,6 +832,8 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
         cures_team[num] = 1.0 if md.cures_team_status else 0.0
         if mid == _LEECH_SEED_ID:
             c = LEECH_SEED_CAT
+        elif mid == _YAWN_ID:
+            c = _SLP_CAT
         elif md.status_inflicted is not None:
             c = _STATUS_CAT.get(md.status_inflicted, 0)
         else:
@@ -803,7 +843,7 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
         cat[num] = c
         # gen3_pair_outcome_v1: the identity column, from the RAW status id (so tox != psn). Leech
         # Seed has no major-status column and correctly stays all-zero.
-        _col = _ident_col.get(md.status_inflicted or "")
+        _col = _ident_col.get("slp" if mid == _YAWN_ID else (md.status_inflicted or ""))
         if _col is not None:
             ident[num, _col] = 1.0
         inflicts[num] = 1.0
@@ -815,6 +855,14 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
             ti = _T2I.get(pt.name)
             if ti is not None:
                 type_immune[num, ti] = 1.0
+
+    # gen3_op_status_rules_v1: Yawn's own extra rule (fails on a target already drowsy). Fail-loud: a
+    # missing id would silently drop the rule, which reads exactly like "no Yawn user".
+    is_yawn = torch.zeros(n_moves, dtype=torch.float32)
+    _yd = gen3_data.moves.get(_YAWN_ID)
+    if _yd is None or not (0 <= _yd.num < n_moves) or float(inflicts[_yd.num]) != 1.0:
+        raise ValueError(f"gen3_data.moves has no usable {_YAWN_ID!r} row — Yawn's landing rule would never fire.")
+    is_yawn[_yd.num] = 1.0
 
     # gen3_status_economy_v1: the Natural Cure row. Fails loud rather than staying all-zero — an
     # all-zero table is indistinguishable from "no mon on either team has the ability", i.e. from a
@@ -863,6 +911,7 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
         "MOVE_CURES_TEAM_STATUS": cures_team,
         "MOVE_INFLICTS_STATUS": inflicts,
         "MOVE_IS_SLEEP": is_sleep,
+        "MOVE_IS_YAWN": is_yawn,
         "MOVE_BLOCKED_IF_STATUSED": blocked_if_statused,
         "MOVE_STATUS_TYPE_IMMUNE": type_immune,
         "ABILITY_STATUS_BLOCK": ability_block,
