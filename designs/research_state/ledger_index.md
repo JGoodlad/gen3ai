@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,799-line file. **The ledger itself is append-only and is never edited by this**;
+22,806-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**795 headings · 740 dated · 2026-08-01 → 2026-10-07 · ledger 22,799 lines.**
+**796 headings · 741 dated · 2026-08-01 → 2026-10-07 · ledger 22,806 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -815,3 +815,4 @@ rename.
   - `L22712` · `2026-10-07` · FINDING + FIX · **The production damage op read an UNREVEALED opponent's top-1 PRIOR ability as REVEALED (`id > 0`), so it asserted guesses as certain (Toxic "never landed" on an unrevealed Snorlax: 12 of the old op's 199 certain-zero status claims on real played moves LANDED, all Snorlax Toxic); its status landing also ignored Safeguard, incoming Sleep / Freeze Clause, our Substitute and Yawn; `conditional_threat` counted accuracy twice; `intent_conditional` had three wrong rules. Fixed on the default path (`gen3_op_ability_status_gigo_v1`): one ability view + one status rule per direction, an AST gate, a real-battle gate; a TRAINING-INPUT BOUNDARY**
   - `L22725` · `2026-10-07` · BUILT · **F10's screen arm: `--value-threat-inject off` (config v142, ON in production) now differs from production by the critic's token-content threat route ALONE — retired after SB3's re-init, −1,792 parameters, every other initial byte equal (before: 185 tensors moved); ON byte-identical; the screen meter named, not registered**
   - `L22748` · `2026-10-07` · BUILT · **F7b's SPEED PHYSICS behind `--speed-physics {off,on}` (config v143, OFF in production): P(we act first) = the speed belief's lattice integral + the exact gen-3 order rules (coin-flip tie, exact stat / stage / paralysis arithmetic, Choice Band none, Quick Claw format-gated OFF — banned in gen3ou); ONE order rule (`move_order.py`); `off` byte-identical; on real battles NOT clearly better calibrated than the logistic (Brier 0.0406 vs 0.0425, log loss 0.1367 vs 0.1341)**
+  - `L22799` · `2026-10-07` · BUILT · **POKE-ENV RETIREMENT P1: the trainer, `main.h2h`, `main.plateau`, the launcher and the offline meters import AND RUN with `poke_env` impossible (survey A-F1 fixed: 36 modules at import -> 0, h2h 36 at run time -> 0); enums, `to_id_str` and team packing are OWNED and the fork re-exports them by identity; the three Rust-source generators are frozen as Rust-owned source; the import allowlist 165 -> 138; K9 learner golden (both entries), h2h play digests and the obs golden unchanged**
