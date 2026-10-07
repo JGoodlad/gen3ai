@@ -156,6 +156,7 @@ suite is a check that rots). All are unmarked, so they run in every tier, and al
 | `src/trace_summary_reader_gate_test.py` | no module but `main/prober/core_trace.py` opens an eval-trace `*_summary.json` — every reader goes through its loaders | `GEN3AI_SKIP_SUMMARY_READER_GATE=1` |
 | `src/ledger_index_gate_test.py` | `designs/research_state/ledger_index.md` matches what `python -m main.ledger_index` renders | `GEN3AI_SKIP_LEDGER_INDEX_GATE=1` |
 | `src/poke_env_enum_str_compare_gate_test.py` | no poke-env enum is compared to a string (mypy `--strict-equality`, typed) — the bug that kept four bots from ever setting up | `GEN3AI_SKIP_ENUM_STR_GATE=1` |
+| `src/poke_env_import_gate_test.py` | no file outside the vendored fork imports `poke_env` unless it is on the GENERATED, shrink-only `designs/ops/poke_env_import_allowlist.txt` (poke-env is being retired to one stack, T27) | `GEN3AI_SKIP_POKE_ENV_IMPORT_GATE=1` |
 
 Two more guard the import path itself — `src/packaging_gate_test.py` (`PYTHONPATH` still outranks
 the editable install) and `src/poke_env_fork_gate_test.py` (the vendored fork still wins

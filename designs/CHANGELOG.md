@@ -12002,3 +12002,22 @@ branch `obs-facts-append`).
   bytes are unchanged (obs goldens untouched).
 - **Not fixed (FINDING).** The op's `out_gain` holds a separate scalar per REQUEST slot, so the per-move pointer cells
   are scaled by a move's listed slot (not a misalignment; the pre-gain cells are exactly equivariant).
+## 2026-10-06 — POKE-ENV RETIREMENT, P0: the generated importer inventory + a SHRINK-ONLY static import gate (no model change; no ARCH_SIGNATURE / config change)
+
+- **What.** First phase of the owner's "one stack" direction (T27; plan `designs/research_state/measurements/
+  pokeenv_and_hotpath_survey_2026-10-06/README.md` §A4.5). `utils/poke_env_importers.py` (an AST scanner + CLI) generates the
+  list of every file under `src/` / `tools/` / `scripts/`, outside the vendored fork `src/poke_env/`, that imports `poke_env`
+  (module level, lazy, `TYPE_CHECKING`, or a literal poke-env string given to `import_module` / `patch` /
+  `monkeypatch.setattr`). `designs/ops/poke_env_import_allowlist.txt` is that list, frozen: **171 entries (74 non-test + 97
+  test)**, plus one permanent peer-process script (`main/anchors/peer_scripts/metamon_side.py`, which runs against UPSTREAM
+  poke-env in Metamon's own interpreter and is never imported here).
+- **The gate** (`src/poke_env_import_gate_test.py`, `static` tier, `GEN3AI_SKIP_POKE_ENV_IMPORT_GATE=1`): a new importer FAILS; a
+  listed file that stopped importing FAILS (the entry must leave the list in the retiring commit); `FROZEN_NON_TEST_COUNT` /
+  `FROZEN_TEST_COUNT` are the ceiling and equal the list's size, so every shrink lowers them and raising one is not a legal
+  move. `python -m utils.poke_env_importers --shrink` is the mechanical step (REFUSES growth). Registered in the root
+  `CLAUDE.md` gate table (now sixteen), `CONTRIBUTING.md`, `designs/ops/testing.md` and `tier_budget_guard_test._STATIC_GATES`.
+- **Measured (AST scan, this checkout).** 1,369 `.py` files scanned in ~1.5 s; 172 importers = 75 non-test (47 top-level, 27
+  lazy-only, 1 TYPE_CHECKING-only) + 97 test (16 lazy-only) — the survey's counts, reproduced exactly; the literal-string
+  patch-target form added no file.
+- **Tests.** `src/utils/poke_env_importers_test.py` (the scan's shapes and look-alikes, the walk's pruning on a throwaway tree,
+  `--init` / `--shrink`); the gate fails on a planted importer and on a count left above the list's size.

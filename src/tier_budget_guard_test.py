@@ -105,7 +105,7 @@ _STATIC_GATES = (
     "src/slow_tier_status_gate_test.py", "src/mode_flag_doc_gate_test.py", "src/recipe_doc_gate_test.py",
     "src/ledger_index_gate_test.py", "src/trace_summary_reader_gate_test.py",
     "src/poke_env_enum_str_compare_gate_test.py", "src/learner_lifecycle_gate_test.py",
-    "src/global_rng_seed_gate_test.py",
+    "src/global_rng_seed_gate_test.py", "src/poke_env_import_gate_test.py",
 )
 
 

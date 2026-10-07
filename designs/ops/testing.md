@@ -96,7 +96,7 @@ Collapsing those into one axis is what the old single `integration` marker did, 
 | `browser` | headless chrome | 57 tests, **~19 s** (re-measured 2026-09-29, quiet box, 5 runs 18.0–20.3 s; was 1426 s) — NOT `slow` since 2026-09-29: it runs in the ROUTINE gate (a busy box skips a timed-out probe as inconclusive) |
 | `e2e` | a live Showdown server | run directly as scripts |
 | `slow` | *(orthogonal)* minutes, not seconds | 75 tests |
-| `static` | *(orthogonal)* a static gate: ~free warm, a bounded COLD-cache cost — its own 180 s budget, still in every tier | the 13 gates' files (below) |
+| `static` | *(orthogonal)* a static gate: ~free warm, a bounded COLD-cache cost — its own 180 s budget, still in every tier | every static gate's file (root `CLAUDE.md`'s table; `tier_budget_guard_test._STATIC_GATES` declares them) |
 
 **Counts are dated on purpose — RECOUNT before quoting one** (`pytest -m <tier> --collect-only -q`);
 this corpus moves faster than the doc describing it. Durations were taken on a quiet box and have
@@ -480,6 +480,40 @@ live surface fails too. External tools' flags (`pytest`, `ruff`, `pip`, `cargo`,
 in the test's own allowlist, **each named with its tool**, so it cannot quietly absorb one of ours.
 The census behind it — what each big `CLAUDE.md` is made of and what size is right — is
 `designs/research_state/claude_md_census_2026-09-06.md`.
+
+### The POKE-ENV IMPORT ratchet (`src/poke_env_import_gate_test.py`) — a static gate, shrink-only (T27 / P0, 2026-10-06)
+
+**Why.** The owner's 2026-10-06 direction is to retire poke-env to ONE stack ("not maintain the dual stack": every
+fact the Rust reader already reads is a second copy in the Python battle layer — the change amplification). The plan is
+`designs/research_state/measurements/pokeenv_and_hotpath_survey_2026-10-06/README.md` §A4 (backlog `T27`, phases P0–P6);
+this gate is P0 and makes progress a NUMBER that falls: the set of files that import `poke_env` may only shrink.
+
+**The pieces.** `utils/poke_env_importers.py` is the scanner (an AST scan; one parse per file that mentions the package
+at all, ~1.5 s over ~1,400 files) and its CLI; `designs/ops/poke_env_import_allowlist.txt` is the GENERATED list, frozen
+at 2026-10-06 (171 entries: 74 non-test + 97 test); the gate is `src/poke_env_import_gate_test.py`, `static`-tier, opt
+out with `GEN3AI_SKIP_POKE_ENV_IMPORT_GATE=1`. The scanner's own shape tests are `src/utils/poke_env_importers_test.py`.
+
+**What counts as an importer.** `import poke_env[.x]` / `from poke_env[.x] import …` at module level, inside a function
+(LAZY) or under `if TYPE_CHECKING:`; and a literal poke-env module STRING handed to `import_module` / `__import__` /
+`patch` / `monkeypatch.setattr` (so a test whose only contact is a patch target still counts). Scope is `src/`, `tools/`,
+`scripts/` minus the vendored fork (`src/poke_env/`) and build dirs; `designs/` measurement scripts are frozen history
+and out of scope. Blind spots: a module name built at run time; shell `python -c "import poke_env"` (bootstrap's smoke).
+
+**THE SHRINK RULE.**
+
+* An importer NOT on the list FAILS. A listed file that NO LONGER imports FAILS too (it must leave the list in the
+  commit that retires it — a stale entry would let the import return unnoticed).
+* `FROZEN_NON_TEST_COUNT` / `FROZEN_TEST_COUNT` (two lines in the gate file) are the CEILING: the list holds exactly that
+  many entries, so every shrink lowers them. **Raising a count, or adding a line, is not a legal move.** A file a build is
+  genuinely FORCED to add (e.g. a new file in the Python encoder that Rust-parity work needs) is named, with the reason, in
+  the commit body and decided by the owner; a green gate never waves it through.
+* **To shrink:** retire the import, then `python -m utils.poke_env_importers --shrink` (drops the stale entries, rewrites
+  the two constants, REFUSES if a live importer is unlisted). `python -m utils.poke_env_importers` prints the live
+  inventory (scope per file: top / lazy / type_checking, and which poke-env modules it names); `--json` for a machine read.
+  Parallel shrinkers conflict on the two constant lines at rebase — resolve by re-running `--shrink`.
+* The ONE permanent entry is `PEER_PROCESS_PERMANENT` (`main/anchors/peer_scripts/metamon_side.py`): it runs in Metamon's
+  interpreter against UPSTREAM poke-env 0.8.3.3 and is never imported by this repo. It is not on the list and is not
+  counted. The end state is an empty list plus that file, and the fork deleted (P6).
 
 ### The SLOW-TIER LAST-KNOWN-STATUS gate (`src/slow_tier_status_gate_test.py`)
 
