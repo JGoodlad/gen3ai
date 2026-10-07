@@ -388,6 +388,12 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
 
 ## 7. When an agent stalls, and how to wait — mechanics
 
+**🚨 NEVER AN UNBOUNDED WAIT ON A SUB-AGENT (owner, 2026-10-07).** A completion notification can fail to arrive (a stall, a crash, a harness restart), and a session whose only wake source is that notification can hang forever. Every session that dispatches agents keeps a bounded wake source armed for as long as any agent it dispatched is live:
+- **The orchestrator:** the standing `:07 / :37` health-check cron (§7.w) IS its bounded wake. It must exist whenever an agent is live, and is re-created after every restart.
+- **A sub-agent that dispatches its own sub-agents:** ONE background timer, `timeout 3300 sleep 3300`. On a timer wake it makes ONE cheap status read of each sub-agent's work (its worktree's `git log -1` / `git status | wc -l`, or its artifact) and re-arms. It never runs two timers, and lets the timer lapse once the last sub-agent has reported. This is written into all six agent definitions (`~/.claude/agents/*.md`, 2026-10-07).
+- **Waiting on a specific job:** `timeout 3300 bash -c "while kill -0 <PID>; do sleep 30; done"`, never a self-matching `pgrep -f`.
+- **Why 3300 s:** it is under the 1 h prompt-cache TTL, so a timer wake costs one cheap cached turn instead of a full context re-pay.
+
 **The rule behind all of it: the stream-idle timeout must be comfortably LESS than the stall
 watchdog.** The two watchdogs are layered — the byte-stream one ERRORS-and-RETRIES (recoverable,
 honours `CLAUDE_CODE_MAX_RETRIES`), the stall one ABORTS the agent (fatal, and its message literally
