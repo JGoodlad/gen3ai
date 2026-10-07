@@ -33,9 +33,6 @@ class ExtractorStashes:
     pointer_inputs: Optional[PointerInputs] = None   # request-ordered move tokens + valid mask
     #                                                  + our team tokens + the op's per-action cells
     # --- intent heads (T2 publications — stop-grad under belief_grad_mode=label_only) --------
-    alpha_logits: Optional[torch.Tensor] = None      # [B,K+1] which believed move (or SWITCH)
-    alpha_seat_nums: Optional[torch.Tensor] = None   # [B,K] seat move NUMS (detached; loss labels)
-    beta_logits: Optional[torch.Tensor] = None       # [B,6] if they switch, to whom
     # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass only — α / β are retired there): the FLAT opponent
     # pointer's publication [B,K+8] and its detached label-side description (`flat_intent.py`).
     flat_intent_logits: Optional[torch.Tensor] = None

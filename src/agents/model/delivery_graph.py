@@ -25,7 +25,7 @@ lying about the architecture. The reasoning is in
     cell        an ABSOLUTE, PER-ACTION                        DamageOperator.pointer_cells
     aux         nothing — training-only supervision            stashed logits -> PPO aux losses
 
-`aux` edges must NEVER terminate at `pi_projection`, `vf_projection`, or any pointer logit. That is
+`aux` edges must NEVER terminate at `pi_projection`, `value_pooled`, or any pointer logit. That is
 leak-safety, and `delivery_graph_test.py` asserts it — turning a property that was previously an
 argument in prose into a test.
 
@@ -81,7 +81,7 @@ def buildable_child_names() -> frozenset:
 EDGE_TYPES = ("bias", "content", "concat", "cell", "aux")
 
 # Sinks an `aux` edge may never reach (the leak-safety invariant).
-FORWARD_SINKS = ("pi_projection", "vf_projection")
+FORWARD_SINKS = ("pi_projection", "value_pooled")
 
 _DEFAULT_CONFIG = str(repo_path("designs", "production_config.json"))
 
@@ -117,7 +117,6 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "flat_intent_head": ("flat_intent_head",),    # X5's flat opponent pointer (α / β's successor)
     "win_head": ("win_head",),
     "projection": ("pi_projection",),
-    "value_projection": ("vf_projection",),
     "pokemon_encoder": ("pokemon_encoder.role_encoder", "pokemon_encoder.move_network"),
     # --- resolved through an edge's `via` (the module IS the channel, not an endpoint) ---
     "embeddings": ("Embeddings",),
@@ -149,8 +148,6 @@ NON_DELIVERY_MODULES: Dict[str, str] = {
     "pre_proj_norm":
         "root LayerNorm on the assembled pi concat (UNTIERED_CHILDREN) — normalises the head "
         "input in place; it carries no fact of its own.",
-    "value_pre_norm":
-        "root LayerNorm on the assembled vf concat — the value-side mirror of pre_proj_norm.",
 }
 
 
@@ -258,12 +255,6 @@ def build_extractor(config_path: str = _DEFAULT_CONFIG) -> "tuple[Any, Dict[str,
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     # the ctor never reads the space (`observation_space: spaces.Space`, deliberately unread)
     fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()
-    # The LIVE model, not the bare build: `Gen3DualHeadMaskablePolicy._build` retires the α / β heads
-    # (after SB3's re-init, before the optimizer) whenever X5's flat opponent pointer is built — they
-    # are CONSTRUCTED only so their init draws keep the global RNG stream, and no trained model holds
-    # them (no state_dict key, no forward use). Keeping them here would draw, tier and tabulate two
-    # heads that exist in no checkpoint. A no-op when the flat pointer is not built.
-    fe.retire_superseded_intent_heads()
     return fe, cfg, layout
 
 
@@ -392,9 +383,11 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     nodes.append(_node("pi_projection", "head",
                        in_features=fe.projection.in_features,
                        out_features=fe.projection.out_features))
-    nodes.append(_node("vf_projection", "head",
-                       in_features=fe.value_projection.in_features,
-                       out_features=fe.value_projection.out_features))
+    # gen3_x5_version_break_v1 part 2 (audit F1): the critic side has NO projection — the extractor's value
+    # half IS `value_pooled`, and the win-prob head (the only critic) reads it. The sink is that tensor.
+    nodes.append(_node("value_pooled", "head", in_features=fe.vf_features_dim,
+                       out_features=fe.vf_features_dim,
+                       note="the critic's input: `value_cls` + the value routes; read by win_head"))
     for k in range(n_e3):
         nodes.append(_node(f"pointer.move_logit[{k}]", "logit", action_index=T + k))
     for j in range(T):
@@ -586,12 +579,12 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     for i in range(T):
         edges.append(_edge(f"our_mon[{i}]", "pi_projection", "concat", D, "D_MODEL",
                            via="CLSPool.our_cls", pooled=True))
-        edges.append(_edge(f"our_mon[{i}]", "vf_projection", "concat", D, "D_MODEL",
+        edges.append(_edge(f"our_mon[{i}]", "value_pooled", "concat", D, "D_MODEL",
                            via="CLSPool.value_cls", pooled=True))
     for j in range(T):
         edges.append(_edge(f"opp_mon[{j}]", "pi_projection", "concat", D, "D_MODEL",
                            via="CLSPool.their_cls", pooled=True))
-        edges.append(_edge(f"opp_mon[{j}]", "vf_projection", "concat", D, "D_MODEL",
+        edges.append(_edge(f"opp_mon[{j}]", "value_pooled", "concat", D, "D_MODEL",
                            via="CLSPool.value_cls", pooled=True))
     # X5: both class-E pools over opponent tokens take OTHER_species as a 7th opponent key, every
     # opponent key carrying its log-presence through a FLOAT key mask (opp_keys_with_other /
@@ -600,21 +593,22 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     if n_other:
         edges.append(_edge("OTHER_species", "pi_projection", "concat", D, "D_MODEL",
                            via="CLSPool.their_cls", pooled=True, note=_other_key_note))
-        edges.append(_edge("OTHER_species", "vf_projection", "concat", D, "D_MODEL",
+        edges.append(_edge("OTHER_species", "value_pooled", "concat", D, "D_MODEL",
                            via="CLSPool.value_cls", pooled=True, note=_other_key_note))
     edges.append(_edge("our_active_refined", "pi_projection", "concat", D, "D_MODEL",
                        via="ProjectionAssembler concat", pooled=False,
                        note="our active's refined token; pi-only (the vf active readout "
                             "route was deleted — superseded by the seed window, then the pool)"))
-    for head in FORWARD_SINKS:
-        # gen3_ctx_dedup_v1: the active-context concat is DELETED from both heads — the ctx
-        # rides the active tokens (E2 injection) + the global token. The op's flat block is
-        # likewise NOT a head input since gen3_no_concat_v1; its per-head routes are below.
-        edges.append(_edge("non_matchup_rest", head, "concat", nmr,
-                           "GLOBAL_ENV_DIM + board scalars",
-                           via="ProjectionAssembler concat", pooled=False,
-                           note="the one head input with NO token route a pool reads — its "
-                                "only other delivery is the global token"))
+    # gen3_ctx_dedup_v1: the active-context concat is DELETED from both heads — the ctx rides the
+    # active tokens (E2 injection) + the global token. The op's flat block is likewise NOT a head input
+    # since gen3_no_concat_v1; its per-head routes are below. `non_matchup_rest` is a POLICY concat part
+    # only (its vf part was deleted in the critic-route wave; the graph drew it to the vf sink until the
+    # version break's part 2 removed the value projection).
+    edges.append(_edge("non_matchup_rest", "pi_projection", "concat", nmr,
+                       "GLOBAL_ENV_DIM + board scalars",
+                       via="ProjectionAssembler concat", pooled=False,
+                       note="the one head input with NO token route a pool reads — its "
+                            "only other delivery is the global token"))
     # gen3_value_threat_inject_v1: the op's per-our-mon reduced incoming row, ADDED to that mon's
     # token on the value pool's OWN copy — so `value_cls` pools an augmented set while `our_cls`,
     # `our_active_refined` and the pointer head read the untouched tokens (pi is bit-identical for
@@ -622,7 +616,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     # because that is what it is; it lives under `cls_pool`, which is why it was never drawn.
     if getattr(fe.cls_pool, "value_threat_proj", None) is not None:
         from agents.model.value_threat_inject import value_threat_inject_dim
-        edges.append(_edge("damage_op", "vf_projection", "content",
+        edges.append(_edge("damage_op", "value_pooled", "content",
                            value_threat_inject_dim(), "value_threat_inject_dim()",
                            via="CLSPool.value_threat_proj (one SHARED Linear over the six rows) — "
                                "token CONTENT on the value pool's copy of our mons",
@@ -647,20 +641,20 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         _uvr_via = ("UnifiedValueReadout (UVR_K queries, per-source type embeddings, "
                     "zero-init out projection) — additive into value_pooled")
         for i in range(T):
-            edges.append(_edge(f"our_mon[{i}]", "vf_projection", "content",
+            edges.append(_edge(f"our_mon[{i}]", "value_pooled", "content",
                                fx.D_MODEL, "D_MODEL", via=_uvr_via,
                                pooled=True, zero_init=True))
-            edges.append(_edge(f"opp_mon[{i}]", "vf_projection", "content",
+            edges.append(_edge(f"opp_mon[{i}]", "value_pooled", "content",
                                fx.D_MODEL, "D_MODEL", via=_uvr_via,
                                pooled=True, zero_init=True))
         if n_other:
-            edges.append(_edge("OTHER_species", "vf_projection", "content",
+            edges.append(_edge("OTHER_species", "value_pooled", "content",
                                fx.D_MODEL, "D_MODEL", via=_uvr_via,
                                pooled=True, zero_init=True,
                                note="OTHER_species is an opponent source row after their six; every "
                                     "opponent row's logit carries its log-presence"))
         if fe.damage_op is not None:
-            edges.append(_edge("damage_op", "vf_projection", "content",
+            edges.append(_edge("damage_op", "value_pooled", "content",
                                fx.D_MODEL, "D_MODEL",
                                via=_uvr_via + " — the per-our-mon incoming-row source",
                                pooled=True, zero_init=True))
@@ -1136,7 +1130,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         "edge_bias_families": sorted(fams),
         "op_out_dim": op.out_dim,
         "pi_projection_in": fe.projection.in_features,
-        "vf_projection_in": fe.value_projection.in_features,
+        "value_pooled_dim": fe.vf_features_dim,
         "edge_types": list(EDGE_TYPES),
     }
     nodes.sort(key=lambda n: (n["kind"], n["id"]))

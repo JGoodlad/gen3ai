@@ -491,7 +491,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("policy_grad_coef", 1.0)               # v102 training-only (inherited like opp_belief_aux_coef; 1.0 = upstream)
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
-    _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
     _resolve("intent_label_bot_weight", 1.0)   # v97 training-only (inherited like opp_belief_aux_coef)
     # gen3_fork_v1 — the FORK ARM. TRAINING-only and inherited, for the sharpest version of that
     # reason yet: the fraction is what the run COSTS, and a flagless restart that dropped it would

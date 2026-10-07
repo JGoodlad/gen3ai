@@ -11,7 +11,7 @@ Three jobs:
 2. **Leak-safety as an invariant.** `aux` edges carry privileged training-only labels (the
    opponent's true moveset, its Hidden Power type, its spread). "They never enter the forward" has
    always been true by construction and asserted only in prose. Here it is checked: no `aux` edge
-   may terminate at `pi_projection`, `vf_projection`, or any pointer logit.
+   may terminate at `pi_projection`, `value_pooled`, or any pointer logit.
 
 3. **Completeness — the one drift the two above cannot see.** Both compare the graph against
    ITSELF. A module that was never drawn is identical in the snapshot and in the live build, and a
@@ -195,13 +195,13 @@ def test_the_op_reaches_the_heads_by_its_post_concat_routes_only(graph):
     So the claim is now symmetric and stronger: **the op enters NEITHER head by concat.** pi gets
     it via pointer cells / prefuse / edge biases; vf gets it as additive CONTENT — the entity
     pool through the v89 seam, and the two `CLSPool` token-content injections."""
-    for head in ("pi_projection", "vf_projection"):
+    for head in ("pi_projection", "value_pooled"):
         stale = [e for e in graph["edges"]
                  if e["type"] == "concat" and e["src"] == "damage_op" and e["dst"] == head]
         assert stale == [], f"the op->{head} CONCAT is dead; the graph draws {stale}"
     content = [e for e in graph["edges"]
                if e["type"] == "content" and e["src"] == "damage_op"
-               and e["dst"] == "vf_projection"]
+               and e["dst"] == "value_pooled"]
     assert content, "the critic lost every op route — no op->vf content edge in the graph"
     assert all(e["pooled"] for e in content), (
         "an op->vf content edge is not pooled; every surviving critic route is an attention "

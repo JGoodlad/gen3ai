@@ -78,7 +78,6 @@
     "fresh": {
       "anneal_lr_start_steps": null,
       "batch_size": 2048,
-      "beta_setvalued_coef": 0.05,
       "clip_range": 0.15,
       "clip_range_vf": null,
       "ent_coef": 0.05,

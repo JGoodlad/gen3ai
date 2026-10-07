@@ -59,8 +59,8 @@ def _refuse_extra_obs_keys(policy: Any) -> None:
 class DecisionModule(nn.Module):
     """``forward(obs [B, D] f32, mask [B, A] bool) -> (logp [B, A] f32, value [B] f32)``.
 
-    Wraps (does not copy) ``policy``: the extractor, the actor/critic towers, the pointer head and
-    the critic read are the policy's own modules, so a weight copied into the policy is the weight
+    Wraps (does not copy) ``policy``: the extractor, the actor tower, the pointer head and the
+    critic read are the policy's own modules, so a weight copied into the policy is the weight
     this module serves.
     """
 
@@ -82,7 +82,6 @@ class DecisionModule(nn.Module):
         self.fe = policy.features_extractor
         self.mlp = policy.mlp_extractor
         self.ptr = policy.pointer_head
-        self.value_net = getattr(policy, "value_net", None)
 
     @property
     def policy(self) -> Any:
@@ -92,9 +91,9 @@ class DecisionModule(nn.Module):
         fe = self.fe
         pi, vf = fe({"observation": obs})
         latent_pi = self.mlp.forward_actor(pi)
-        latent_vf = self.mlp.forward_critic(vf)
-        # The policy's OWN critic read (win-prob / scalar branches), never a copy.
-        value = self._policy._critic_value(latent_vf).reshape(-1).float()
+        # The policy's OWN critic read (the win-prob head's stashed logit), never a copy. `vf` is
+        # `value_pooled`: no critic tower runs (audit F1, config v144).
+        value = self._policy._critic_value(vf).reshape(-1).float()
         tok_req, valid, team_tokens, move_cells, switch_cells = fe.last_pointer_inputs
         raw = self.ptr(latent_pi, tok_req, valid, team_tokens, move_cells, switch_cells)
         return masked_logp(raw, mask), value
@@ -159,8 +158,7 @@ def policy_reference(policy: Any, obs: torch.Tensor, mask: torch.Tensor
     with torch.no_grad(), forward_state_released(policy):
         pi, vf = fe({"observation": obs})
         latent_pi = policy.mlp_extractor.forward_actor(pi)
-        latent_vf = policy.mlp_extractor.forward_critic(vf)
-        value = policy._critic_value(latent_vf).reshape(-1).float()
+        value = policy._critic_value(vf).reshape(-1).float()
         dist = policy._get_action_dist_from_latent(latent_pi)
         dist.apply_masking(mask)
         logp = dist.distribution.logits

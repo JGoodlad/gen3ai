@@ -231,8 +231,7 @@ def forward_columns(model: Any, heads: Any, rows: np.ndarray, masks: np.ndarray,
         with torch.no_grad():
             pi_f, vf_f = pol.extract_features(ob)
             lat_pi = pol.mlp_extractor.forward_actor(pi_f)
-            lat_vf = pol.mlp_extractor.forward_critic(vf_f)
-            v = pol._critic_value(lat_vf).reshape(-1)
+            v = pol._critic_value(vf_f).reshape(-1)
             logits = pol._get_action_dist_from_latent(lat_pi).distribution.logits
             pi = torch.from_numpy(masked_probs(logits.numpy(), mk).astype(np.float32))
             b = RideAlongBatch.detached(

@@ -706,8 +706,7 @@ class ProbeModel:
                 # The head predicts in real return units (PopArt, which once normalized it, is deleted).
                 out["shadow_value"] = shadow(pooled).reshape(-1).cpu().numpy()
                 if vf is not None and hasattr(self._policy, "_critic_value"):
-                    latent_vf = self._policy.mlp_extractor.forward_critic(vf)
-                    out["live_v"] = self._policy._critic_value(latent_vf).reshape(-1).cpu().numpy()
+                    out["live_v"] = self._policy._critic_value(vf).reshape(-1).cpu().numpy()
         return out
 
     def architecture(self) -> "list[dict]":
@@ -733,7 +732,7 @@ class ProbeModel:
         tokens = 12 + (hist if isinstance(hist, int) else 0) + 1
         proj = getattr(ex, "projection_dim", getattr(F, "PROJECTION_DIM", "?"))
         pin = getattr(ex, "projection_input_dim", "?")
-        vin = getattr(ex, "value_projection_input_dim", "?")
+        vin = getattr(ex, "vf_features_dim", "?")
         mb = getattr(ex, "move_belief_mode", "off")
         wp = getattr(ex, "win_prob_mode", "none")
         # move_latent_encoder is ABSENT (not None) when off → its own getattr guard, not on().
@@ -743,7 +742,7 @@ class ProbeModel:
         # (name, active, optional, stage, role, attn) — TRUE forward order (forward_internal). `attn`
         # flags the ATTENTION layers (self-/cross-attention) so the prober can mark where the network
         # attends. gen3_tiered_pipeline_v1 order: Embeddings → ObsUnpack → PokemonEncoder[+MoveLatent]
-        # → [BeliefSlots] → [MoveBelief] → [SpreadBelief] → [DamageOperator] → TeamTransformer →
+        # → [HypothesisBuilder] → [MoveBelief] → [SpreadBelief] → [DamageOperator] → TeamTransformer →
         # [BeliefHead·side] → CLSPool(fork) → [WinProbHead·side] → [HiddenOppBeliefPool] →
         # ProjectionAssembler → π / V. The belief + physics are T0/T1: they all run PRE-transformer,
         # unconditionally — there is no longer a POST placement.
@@ -754,8 +753,9 @@ class ProbeModel:
             ("PokemonEncoder", True, False, "trunk",
              f"6+6 mons → role tokens ({d}d) · within-mon move self-attn" + ("  + MoveLatent(v24)" if has_latent else ""),
              True),
-            ("BeliefSlots", on("belief_slots"), True, "trunk",
-             "fill hidden-opp slots with learned tokens (in-lineup)", False),
+            ("HypothesisBuilder", on("hypothesis_builder"), True, "trunk",
+             "X5: each hidden-opp slot holds a hypothesis species' token at presence π, OTHER the tail",
+             False),
             ("MoveBelief", on("move_belief"), True, "trunk",
              f"predict + reinject opp moves ({mb})" + (" + prior-fusion" if prior_fusion else "")
              + " · T0 RESOLVE, PRE-transformer", False),
@@ -778,7 +778,9 @@ class ProbeModel:
             ("ProjectionAssembler", True, False, "shared",
              "→ (pi_combined, vf_combined): pools + ctx + belief + damage", False),
             ("π policy head", True, False, "policy", f"pi_combined → norm → proj({proj})  [in {pin}]", False),
-            ("V value head", True, False, "value", f"vf_combined → norm → proj({proj})  [in {vin}]", False),
+            ("V value head", wp != "none", False, "value",
+             f"value_pooled [{vin}] → WinProbHead → sigmoid = P(win), THE critic (no projection, no tower)",
+             False),
         ]
         return [{"name": n, "active": bool(a), "optional": o, "stage": s, "role": r, "attn": at}
                 for (n, a, o, s, r, at) in rows]
@@ -794,9 +796,10 @@ class ProbeModel:
         return ot.grad[0].abs().numpy()
 
     def features(self, obs: np.ndarray, mask: np.ndarray) -> "dict[str, np.ndarray]":
-        """The model's INTERNAL post-projection features — what the policy/value MLPs read.
+        """The model's INTERNAL features — what the actor tower and the critic (the win-prob head) read.
 
-        Returns ``{'pi': [PROJECTION_DIM], 'vf': [PROJECTION_DIM]}``. This is the probe boundary:
+        Returns ``{'pi': [PROJECTION_DIM], 'vf': [D_MODEL]}`` — ``vf`` is ``value_pooled`` itself (no value
+        projection since the version break, config v144, audit F1). This is the probe boundary:
         a linear probe on these activations tells us whether a derived quantity (is-faster,
         damage, faint-soon) is ALREADY in the representation. The feature extractor reads only
         ``obs['observation']`` (never ``action_mask``), so the mask is inert here — but we pass

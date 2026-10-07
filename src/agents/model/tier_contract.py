@@ -73,8 +73,8 @@ TIER_OF: Dict[str, int] = {
     "item_belief_head": 0,
     # gen3_x5_hypothesis_set_v1 (X5; built with the belief family since the X5 version break): δ_θ + the
     # fixed-size presence + the hypothesis selection + OTHER read the T0 prior and PRE-trunk tokens only,
-    # and write the hidden opponent slots' tokens pre-trunk. (`belief_slots`, the blob path's T0 token,
-    # is never kept — constructed for its init draw only — so it holds no declaration.)
+    # and write the hidden opponent slots' tokens pre-trunk. (`belief_slots`, the blob path's T0 token, is
+    # DELETED — the X5 version break, config v144, part 2.)
     "hypothesis_builder": 0,
     # T1 REASON — physics over the resolved state, then attention over tokens that carry it.
     "damage_op": 1,
@@ -94,12 +94,8 @@ TIER_OF: Dict[str, int] = {
     # the provenance check would fail.
     "belief_head": 2,
     "cls_pool": 2,
-    # α / β: still CONSTRUCTED on a bare extractor (their init draws keep the global RNG stream) but
-    # RETIRED by the policy (`retire_superseded_intent_heads`) and never called — the flat pointer is
-    # the intent readout. Declared because a bare extractor still holds them as children.
-    "alpha_head": 2,
-    "beta_head": 2,
-    # gen3_x5_flat_pointer_v1 (X5 U4): the flat opponent pointer — α / β's T2 slot, the intent readout.
+    # gen3_x5_flat_pointer_v1 (X5 U4): the flat opponent pointer — the intent readout (the blob path's α / β
+    # heads are DELETED, the X5 version break, config v144, part 2).
     "flat_intent_head": 2,
     # gen3_intent_move_cell_v1: the POLICY-side alpha consumer — weights the op's T1 c2 operand
     # stash by the T2 alpha publication (the flat pointer's α re-expression) into the pointer MOVE
@@ -154,7 +150,7 @@ UNTIERED_CHILDREN = frozenset({
     "embeddings",           # shared tables — a resource, not a phase
     "unpack",               # ObsUnpack: produces the tier-0 INPUT, ahead of every tier
     "prefuse_proj",         # the T1->trunk residual, owned by the root rather than by a phase
-    "pre_proj_norm", "projection", "value_pre_norm", "value_projection", "activation",
+    "pre_proj_norm", "projection", "activation",
     "value_threat_proj",    # lives under cls_pool in production; listed for the LUT-fork paths
 })
 

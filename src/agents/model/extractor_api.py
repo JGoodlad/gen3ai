@@ -24,6 +24,22 @@ from agents.model.hypothesis_set import HypothesisSet
 from agents.model.intent_threshold import ThresholdProbs
 
 
+def drop_child(owner: torch.nn.Module, name: str) -> None:
+    """RETIRE child module ``name`` of ``owner``: remove it from ``_modules`` and leave a PLAIN ``None``
+    attribute (gen3_x5_version_break_v1 part 2, the strict-load hole).
+
+    ``owner.name = None`` on a REGISTERED child keeps the key in ``_modules`` with a ``None`` value, and
+    torch's ``load_state_dict(strict=True)`` then treats ``name`` as a child that is merely absent:
+    an UNEXPECTED key under ``<prefix>.name.`` is SWALLOWED, never reported (``_load_from_state_dict``
+    skips any key whose first component names a child). So a checkpoint carrying a retired module's
+    weights loaded "cleanly" into a model that has none. A plain attribute is not a child, so the same
+    key is an unexpected key and a strict load refuses it. Readers keep their spelling (``owner.name``
+    reads ``None``)."""
+    if name in owner._modules:
+        delattr(owner, name)
+    setattr(owner, name, None)
+
+
 class ExtractorApi(ExtractorBuild):
     """The non-forward surface of `Gen3FeaturesExtractor` — see that class."""
 
@@ -64,29 +80,13 @@ class ExtractorApi(ExtractorBuild):
                 n += 1
         return n
 
-    def retire_superseded_intent_heads(self) -> bool:
-        """X5 U4 (`gen3_x5_flat_pointer_v1`, design §3.7): under X5 the
-        flat opponent pointer REPLACES the α / β heads — drop them. Returns True when it dropped them.
-
-        Called by `Gen3DualHeadMaskablePolicy._build` AFTER SB3's orthogonal re-init and BEFORE the
-        optimizer is built: the heads were constructed (their init draws) and re-initialised (their
-        orthogonal draws) exactly as in the blob arm, so the global RNG stream — every later module's
-        initial bytes, the mlp_extractor and the value / action heads included — is unchanged, while
-        the retired heads hold no state_dict key, no optimizer slot and no forward use (F-X5-27's rule
-        for `BeliefSlots`: a parameter that never gets a gradient is not kept). Without the flat pointer: a no-op."""
-        if self.flat_intent_head is None or self.alpha_head is None:
-            return False
-        self.alpha_head = None
-        self.beta_head = None
-        return True
-
     def retire_policy_tower(self) -> bool:
         """gen3_policy_readout_trunk_v1 (`--policy-readout trunk`, audit F2): drop the extractor half of
         the flat policy tower (`pre_proj_norm`, `projection`) — the policy context is `policy_query`'s
         read of the trunk instead. Returns True when it dropped them.
 
         Called by `Gen3DualHeadMaskablePolicy._build` AFTER SB3's orthogonal re-init and BEFORE the
-        optimizer is built (the `retire_superseded_intent_heads` precedent): the two modules were
+        optimizer is built (the retire-after-re-init precedent): the two modules were
         constructed and re-initialised exactly as under `tower`, so the global RNG stream — every later
         module's initial bytes — is unchanged, while the retired modules hold no state_dict key, no
         optimizer slot and no forward use. `tower`: a no-op."""
@@ -94,8 +94,8 @@ class ExtractorApi(ExtractorBuild):
             return False
         # Typed as the modules for every `tower` reader; under `trunk` no forward path reads them (the
         # trunk branch of `forward_internal` / `_forward_unguarded` returns before), so None is safe.
-        self.pre_proj_norm = None  # type: ignore[assignment]
-        self.projection = None  # type: ignore[assignment]
+        drop_child(self, "pre_proj_norm")
+        drop_child(self, "projection")
         return True
 
     @property
@@ -109,7 +109,7 @@ class ExtractorApi(ExtractorBuild):
         the critic's token-content threat projection. Returns True when it dropped it.
 
         Called by `Gen3DualHeadMaskablePolicy._build` AFTER SB3's orthogonal re-init and BEFORE the pointer head
-        and the optimizer are built (the `retire_superseded_intent_heads` precedent): the projection was
+        and the optimizer are built (the retire-after-re-init precedent): the projection was
         constructed (its init draw) and re-initialised (its orthogonal draw) exactly as under ON, so every OTHER
         module's initial bytes equal production's, while the retired projection holds no state_dict key, no
         optimizer slot and no forward use (`CLSPool.value_threat_live` is False, so the forward never read it).
@@ -117,7 +117,7 @@ class ExtractorApi(ExtractorBuild):
         pool = self.cls_pool
         if pool.value_threat_live or pool.value_threat_proj is None:
             return False
-        pool.value_threat_proj = None
+        drop_child(pool, "value_threat_proj")
         # The identity-init guard's set was captured by observation while the projection existed; a retired
         # module is not a module to re-zero, so it leaves the set with it.
         self._identity_init_zeroed = tuple(
@@ -129,7 +129,7 @@ class ExtractorApi(ExtractorBuild):
         per-action blocks — drop them. Returns True when it dropped any.
 
         Called by `Gen3DualHeadMaskablePolicy._build` AFTER SB3's orthogonal re-init and BEFORE the pointer head
-        and the optimizer are built, exactly like `retire_superseded_intent_heads`: the seven were constructed
+        and the optimizer are built, exactly like `retire_policy_tower`: the seven were constructed
         (their init draws) and re-initialised (their orthogonal draws) as in production, so the global RNG stream
         and every OTHER module's initial bytes are unchanged, while the retired blocks hold no state_dict key, no
         optimizer slot and no forward use. ``off``: a no-op."""
@@ -140,7 +140,7 @@ class ExtractorApi(ExtractorBuild):
         dropped = False
         for n in names:
             if getattr(self, n, None) is not None:
-                setattr(self, n, None)
+                drop_child(self, n)
                 dropped = True
         return dropped
 
@@ -178,7 +178,7 @@ class ExtractorApi(ExtractorBuild):
         `publish_detach` (cut route C, the head's own reinjection) goes on the three that HAVE a
         reinjection; `BeliefHead` is a pure readout with nothing to publish, and the extractor-level
         `_publish_belief` covers every consumer that reads a stash rather than being handed the tensor
-        by the head. BeliefSlots has no predictive read at all and is intentionally absent.
+        by the head.
         """
         _item = getattr(self, "item_belief_head", None)
         for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head,
@@ -212,12 +212,6 @@ class ExtractorApi(ExtractorBuild):
     # forking the state. Writes go through `self.stash.<field>` only.
     @property
     def last_pointer_inputs(self) -> Optional[PointerInputs]: return self.stash.pointer_inputs
-    @property
-    def last_alpha_logits(self) -> Optional[torch.Tensor]: return self.stash.alpha_logits
-    @property
-    def last_alpha_seat_nums(self) -> Optional[torch.Tensor]: return self.stash.alpha_seat_nums
-    @property
-    def last_beta_logits(self) -> Optional[torch.Tensor]: return self.stash.beta_logits
     @property
     def last_flat_intent_logits(self) -> Optional[torch.Tensor]: return self.stash.flat_intent_logits
     @property

@@ -153,7 +153,6 @@ FRESH_ROWS: Tuple[RecipeRow, ...] = (
     RecipeRow("spread_belief_coef", "--spread-belief-coef", 0.0, "§1 row 16"),
     RecipeRow("hp_type_belief_coef", "--hp-type-belief-coef", 0.05, "§1 row 16"),
     RecipeRow("item_belief_coef", "--item-belief-coef", 0.05, "§1 row 16"),
-    RecipeRow("beta_setvalued_coef", "--beta-setvalued-coef", 0.0, "§1 row 16"),
     RecipeRow("intent_label_bot_weight", "--intent-label-bot-weight", 1.0, "§1 row 16"),
 )
 #: Every row the fresh recipe declares — ``recipe.sizing`` first, then ``recipe.fresh``.

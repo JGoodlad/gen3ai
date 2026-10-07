@@ -306,13 +306,12 @@ class DamageOperatorBlocks:
         nf = nonformula_rolls(gather_nonformula(self, move_ids), opp_cur_hp[:, None], opp_maxhp[:, None],
                               our_cur_hp[:, None], eff, acc, eps)
         high, low, crit, ko = (r * usable for r in override_rolls((high, low, crit, ko), nf))
-        opp_spe_std = self.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, opp_act], _SB_SPE, 1]   # [B] (#3)
         if self.speed_physics:     # gen3_speed_physics_v1: our active's EXACT speed vs their active's belief
             p_outspeed = self._p_first_vs_opp_active(
                 ctx, spread_belief, self._our_speeds_exact(ctx)[ar, our_act],
                 self._our_quick_claw(ctx)[ar, our_act])                                # [B]
         else:
-            p_outspeed = self._p_outspeed(our_spe, opp_spe, opp_spe_std)              # [B]
+            p_outspeed = self._p_outspeed(our_spe, opp_spe)                           # [B]
 
         # gen3_unified_move_system_v1: per OUR move, "what status can it cause + with what probability".
         # realized P(effect k | move) = chance_mk × acc_m × Serene Grace(our active) × Shield Dust(opp
@@ -638,7 +637,6 @@ class DamageOperatorBlocks:
         high, low, crit, ko = (r * usable for r in override_rolls((high, low, crit, ko), nf))
 
         # --- p_outspeed per attacker (our_spe [B,6] vs the shared believed opp speed) ---
-        opp_spe_std = self.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, opp_act], _SB_SPE, 1]   # [B]
         if self.speed_physics:     # gen3_speed_physics_v1: C5's inherited stages ride as the stage override
             _rows = (self._boost_stages(ctx.our_ctx_raw)[4][:, None].expand(B, TEAM_SIZE).clone()
                      if inherit_stages else None)
@@ -646,8 +644,7 @@ class DamageOperatorBlocks:
                 ctx, spread_belief, self._our_speeds_exact(ctx, stage_rows=_rows),
                 self._our_quick_claw(ctx))                                                   # [B,6]
         else:
-            p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None].expand(B, TEAM_SIZE),
-                                          opp_spe_std[:, None].expand(B, TEAM_SIZE))         # [B,6]
+            p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None].expand(B, TEAM_SIZE))  # [B,6]
 
         # --- assemble + gate ---
         per_move = torch.stack([low, high, crit, ko], dim=-1)                           # [B,6,4,4]
@@ -839,8 +836,7 @@ class DamageOperatorBlocks:
 
     def pair_outcome_coords(self, ctx: 'ExtractorContext', real_idx: torch.Tensor,
                             pair_high: torch.Tensor, our_spe: torch.Tensor,
-                            opp_spe: torch.Tensor, opp_spe_std: torch.Tensor,
-                            d_base: torch.Tensor) -> torch.Tensor:
+                            opp_spe: torch.Tensor, d_base: torch.Tensor) -> torch.Tensor:
         """gen3_pair_outcome_v1 — the EIGHT non-damage coordinates of the unified outcome vector,
         per (our defender j, their believed seat k). `[B, 6, K, _PAIR_OUTCOME_NEW]`, in
         `PAIR_OUTCOME_COORDS` order after the damage prefix:
@@ -943,9 +939,8 @@ class DamageOperatorBlocks:
             assert self.stash.speed_fast_pair is not None, "the op forward stashes it under --speed-physics on"
             p_fast, p_fast_par = self.stash.speed_fast_pair                                 # [B,6] each
         else:
-            p_fast = self._p_outspeed(our_spe, opp_spe[:, None], opp_spe_std[:, None])      # [B,6]
-            p_fast_par = self._p_outspeed(our_spe * _DMG_PARA_SPEED, opp_spe[:, None],
-                                          opp_spe_std[:, None])                             # [B,6]
+            p_fast = self._p_outspeed(our_spe, opp_spe[:, None])                            # [B,6]
+            p_fast_par = self._p_outspeed(our_spe * _DMG_PARA_SPEED, opp_spe[:, None])      # [B,6]
         d_fast = (p_fast - p_fast_par).clamp(min=0.0, max=1.0)                              # [B,6]
         ones = torch.ones_like(phys_share)
         sev = torch.stack([

@@ -1324,7 +1324,7 @@ def refuse_deleted_pickled_kwargs(zip_path: str) -> None:
     `load_checkpoint_strict` takes ``custom_objects`` from its caller, and a caller whose sanitizer
     NEVER refuses (the prober's set-math `sanitized_load_custom_objects`) or that passes none at all
     would otherwise hand SB3 a blob checkpoint's ``belief_tokens='blob'`` — a bare ``TypeError`` (no
-    such kwarg), or, once dropped, a state_dict with no home (``alpha_head`` / ``belief_slots`` keys).
+    such kwarg), or, once dropped, a state_dict with no home (the deleted ``alpha_head`` / ``belief_slots`` keys).
     The refusal is `version_break`'s typed ``ModelVersionError`` naming the deletion and the pinned
     commit. ONLY ``policy_kwargs`` is deserialized (never the rest of ``data``: an unpickled CUDA tensor
     there would create a CUDA context before the strict load's own `CudaContextOnCpuLoad` check could see

@@ -213,14 +213,9 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
     # frozen at "detached", still recorded in model_config.json and still version-checked; the
     # "shaping" arm remains constructible via the extractor kwarg. Census: unanimous across the 24
     # runs that record it, and typed in ZERO of 107 recorded launcher commands.
-    parser.add_argument("--beta-setvalued-coef", "--beta_setvalued_coef",
-                        dest="beta_setvalued_coef", type=float, default=None,
-                        help="SET-VALUED partial credit for beta on switch-ins we did not believe "
-                             "(gen3_beta_setvalued_v1). Today those rows are MASKED, discarding a "
-                             "true fact: they brought a mon we had not revealed. This grades the "
-                             "coarse call -log(sum of believed-slot mass) without asserting WHICH "
-                             "member, which is the part we cannot label. Scales on top of "
-                             "--opp-intent-coef. 0.0 = OFF (byte-identical). Training-only.")
+    # `--beta-setvalued-coef` was DELETED at the X5 version break (config v144, part 2): it scaled the blob β's
+    # set-valued credit, deleted with the blob path; a typed one is refused with its reason
+    # (`designs/deleted_flags.md`).
     parser.add_argument("--intent-label-bot-weight", "--intent_label_bot_weight",
                         dest="intent_label_bot_weight", type=float, default=None,
                         help="Per-sample weight on the OPPONENT-INTENT (alpha/beta) labels produced "

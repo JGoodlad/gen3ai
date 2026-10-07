@@ -530,75 +530,73 @@ class RLPlayer(Gen3Player):
         return float(torch.sigmoid(logits[0, 0]).item())
 
     def _opp_intent(self, battle=None) -> Optional[dict]:
-        """ALPHA/BETA as NAMED, ranked options (forensic trace only) — the interpretability payload.
+        """α / β as NAMED, ranked options (forensic trace only) — the interpretability payload, read off
+        X5's FLAT opponent pointer (the only intent readout since the version break, config v144).
 
         This is the deliverable the whole opponent-intent design is justified on independently of
         Elo: a turn where the model played around a Fire Blast and one where it never saw the move
-        coming look IDENTICAL in every existing view. Reads the logits + seat move-nums the
-        extractor stashed on this same forward; None when the heads are off.
+        coming look IDENTICAL in every existing view. Reads the flat logits + their label-side
+        description (`last_flat_intent_logits` / `last_flat_intent`) the extractor stashed on this same
+        forward through `flat_intent.render_flat`. None when the intent readout is not built (the
+        belief-off ablation); a built pointer that stashed nothing is a RuntimeError, never a silent None.
 
-        The owner constraint — the model may only ever point at options it can NAME — is enforced
-        here by construction: every entry is rendered through the move dex, and a seat the belief
-        did not fill is dropped rather than shown as an anonymous index.
+        ``alpha`` = the named move seats, ``"OTHER move"`` (the active's moves beyond the seats) and
+        ``"SWITCH"`` (the total switch mass), highest first. ``beta`` = P(slot | switch) per switch target:
 
-        **β's naming rule (`gen3_beta_revealed_naming_v1`), and it has exactly two branches:**
-
-        - a slot the board has already REVEALED is named from `battle.opponent_team` (the encoder's
-          own opp-slot order, read through `ObservationEncoder.get_team_list` so the mapping cannot
-          drift from the obs), and carries ``"revealed": true``;
-        - a still-HIDDEN slot is named by the model's OWN species posterior
-          (`belief_decode.top_species_per_slot`) — the same content-addressing `β`'s target uses —
-          and carries ``"revealed": false`` (`species: None` when there is no species head at all).
-
-        The posterior used to name BOTH, and that was a display defect that produced a wrong
-        research conclusion. `β`'s candidate mask is alive-and-not-active, which INCLUDES revealed
-        bench mons, and the species aux only supervises the *believed* slots — so on a revealed
-        slot the posterior is un-trained. Measured over a 843-battle sentinel sweep (2026-08-19):
-        the rendered name was a mon not on the opponent's team at all in **73.3% of 6,876 pivots**
-        (88.3% on revealed slots), which read as "β predicts porygon2" on a turn where β's slot was
-        the revealed Salamence and β was CORRECT. Naming a revealed slot from the board is not a
-        nicety; it is the difference between reading the pointer and reading a different head.
+        - a slot the board has already REVEALED is named from `battle.opponent_team` (the encoder's own
+          opp-slot order, `ObservationEncoder.get_team_list`), ``"revealed": true``
+          (`gen3_beta_revealed_naming_v1`);
+        - a still-HIDDEN slot is named by the HYPOTHESIS species the slot holds (the flat pointer's
+          candidate id for it — what β points at under X5), ``"revealed": false``;
+        - ``OTHER species`` (the hypothesis set's tail) is a row with ``"slot": -1`` (the prober's "no slot").
 
         The block lands in the trace verbatim (`BattleRecorder.record` → the summary invocation's
         `opp_intent`), which is what the prober's `/battle` replay and `analyze` read.
         """
         extractor = getattr(self.model.policy, "features_extractor", None)
-        if extractor is None:
+        if extractor is None or getattr(extractor, "flat_intent_head", None) is None:
             return None
-        alogits = extractor.last_alpha_logits
-        seat_nums = extractor.last_alpha_seat_nums
-        if alogits is None or seat_nums is None:
-            return None
-        from agents.model.opp_intent import render_alpha
+        flat = extractor.last_flat_intent_logits
+        fi = extractor.last_flat_intent
+        if flat is None or fi is None:
+            raise RuntimeError(
+                "the flat opponent pointer is built but this forward stashed no flat_intent logits / "
+                "inputs — the trace would silently carry no intent block.")
+        from agents.model.flat_intent import other_species_col, render_flat, slot_col
         from agents.gen3_data import moves as _gm
+        from agents.inference.belief_decode import _num_to_species_id
         try:
             _by_num = {int(rec["num"]): rec.get("name") or mid
                        for mid, rec in _gm.raw().items() if "num" in rec}
         except Exception:
             _by_num = {}
-        probs = torch.softmax(alogits[0], dim=-1)
-        alpha = render_alpha(probs, seat_nums[0], lambda n: _by_num.get(int(n)))
+        _sp = _num_to_species_id()
+        k = int(fi.k)
+        probs = torch.softmax(flat[0].detach().float(), dim=-1)
+        moves, _sw = render_flat(probs, (k, fi.live[0], fi.cand_ids[0]),
+                                 lambda n: _by_num.get(int(n)), lambda n: _sp.get(int(n)), top=8)
         # Rounded on the way to disk: these ride EVERY captured decision of every captured battle,
         # and 15 significant figures of a display probability is trace weight with no reader.
-        out = {"alpha": [{"name": r["name"], "p": round(float(r["p"]), 4)} for r in alpha]}
-        blogits = extractor.last_beta_logits
-        if blogits is not None:
-            bp = torch.softmax(blogits[0], dim=-1)
-            named = self._slot_species()
-            board = self._revealed_opp_species(battle)
-            rows = []
-            for i in range(bp.shape[0]):
-                if not torch.isfinite(blogits[0, i]):
-                    continue
-                seen = board[i] if i < len(board) else None
-                rows.append({"slot": i, "p": round(float(bp[i]), 4),
-                             "species": seen if seen is not None else named.get(i),
-                             # ADDED, never substituted: a reader that predates this key sees the
-                             # old shape unchanged, and its absence is what marks an OLD trace as
-                             # posterior-named (see `engine.build_opp_intent`).
-                             "revealed": seen is not None})
-            rows.sort(key=lambda r: -r["p"])
-            out["beta"] = rows[:4]
+        out = {"alpha": [{"name": r["name"], "p": round(float(r["p"]), 4)} for r in moves]}
+        p = [float(x) for x in probs]
+        a_sw = sum(p[slot_col(k):])
+        board = self._revealed_opp_species(battle)
+        rows = []
+        for j in range(len(fi.slot_species[0])):
+            c = slot_col(k, j)
+            if not bool(fi.live[0, c]):
+                continue
+            hidden = bool(fi.slot_is_hypothesis[0, j])
+            seen = None if hidden else (board[j] if j < len(board) else None)
+            rows.append({"slot": j, "p": round(p[c] / a_sw, 4) if a_sw > 0 else 0.0,
+                         "species": seen if seen is not None else _sp.get(int(fi.cand_ids[0, c])),
+                         "revealed": not hidden})
+        c = other_species_col(k)
+        if bool(fi.live[0, c]):
+            rows.append({"slot": -1, "p": round(p[c] / a_sw, 4) if a_sw > 0 else 0.0,
+                         "species": "OTHER species", "revealed": False})
+        rows.sort(key=lambda r: -r["p"])
+        out["beta"] = rows[:4]
         return out
 
     @staticmethod

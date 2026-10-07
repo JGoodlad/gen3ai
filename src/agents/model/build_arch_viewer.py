@@ -136,7 +136,7 @@ NODE_SHAPE = {
     "input": "cut-rectangle",
     "aux_loss": "octagon",
 }
-FORWARD_SINKS = ("pi_projection", "vf_projection")
+FORWARD_SINKS = ("pi_projection", "value_pooled")
 
 # --------------------------------------------------------------------------------------------
 # Bias families. `d2` / `c1` / `s3` are opaque two-character codes, and an artifact whose job is to
@@ -214,7 +214,7 @@ _GIGO_GENERATIONS = ("gen-1", "gen-2")
 DOC_SECTION = {
     "damage_op": "4. The `DamageOperator` output block",
     "pi_projection": "3.1 / 3.2 The head inputs — GENERATED",
-    "vf_projection": "3.1 / 3.2 The head inputs — GENERATED",
+    "value_pooled": "3.1 / 3.2 The head inputs — GENERATED",
     "move_belief": "2.1 Order of operations",
     "hp_type_belief": "2.1 Order of operations",
 }

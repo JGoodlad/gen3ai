@@ -8,8 +8,10 @@ without a sim.
 **The α-consumer contract** (`src/agents/model/CLAUDE.md` -> *The rules an α CONSUMER follows*),
 and how each clause lands here:
 
-1. *Read ``last_alpha_logits`` — the PUBLICATION — never a raw stash.* :func:`alpha_publication`
-   is the only reader.
+1. *Read the flat pointer's PUBLICATION (``last_flat_intent_logits``) — never a raw stash.*
+   :func:`alpha_publication` is the only reader (X5's flat pointer is the only intent readout since the
+   version break, config v144; OTHER_move's mass has no single name and is REPORTED, never spent on a
+   named move).
 2. *Take the UNRENORMALIZED move slice; the missing mass is SWITCH, and renormalizing asserts
    they attacked.* Honoured literally: the move seats keep their unrenormalized weights and
    ``α_SWITCH`` is spent as switch mass on the opponent's actual switch targets. The final
@@ -106,15 +108,24 @@ def legal_choices_from_request(request: Optional[dict]) -> List[dict]:
 
 @dataclass(frozen=True)
 class AlphaPublication:
-    """The α head's read for ONE decision. ``None``-safe: an α-off checkpoint yields ``None``."""
+    """The intent readout for ONE decision. ``None``-safe: a checkpoint without it yields ``None``."""
 
-    move_p: Dict[int, float]     # {move_num: unrenormalized probability}
+    move_p: Dict[int, float]     # {move_num: unrenormalized probability} — the NAMED move seats
     switch_p: float              # α_SWITCH
     beta_p: Dict[int, float]     # {opp team slot index: P(this mon comes in | switch)}
+    other_move_p: float = 0.0    # OTHER_move — the active's moves beyond the seats (no single name)
 
 
 def alpha_publication(extractor) -> Optional[AlphaPublication]:
-    """Read α (and β) off the extractor's per-forward stash. ``None`` when the heads are off.
+    """Read α (and β) off the extractor's per-forward stash: X5's FLAT opponent pointer (the only intent
+    readout since the version break, config v144 — `last_flat_intent_logits` + `last_flat_intent`).
+    ``None`` when the readout is not built (the belief-off ablation); a built pointer that stashed
+    nothing RAISES (a silent None would run the uniform ABSENCE fallback as if the model had no opinion).
+
+    The flat list is one softmax over [the K move seats, OTHER_move, six switch targets, OTHER_species]:
+    ``move_p`` = the seats by canonical move NUM, ``other_move_p`` = OTHER_move, ``switch_p`` = the total
+    switch mass, ``beta_p`` = P(slot | switch) for each live switch slot (OTHER_species, which names no
+    slot, keeps its share of ``switch_p`` but no ``beta_p`` entry).
 
     Called immediately after the policy forward that produced the live decision, so the stash is
     the one belonging to THIS state — the same discipline `RLPlayer._opp_intent` follows. Any
@@ -122,35 +133,36 @@ def alpha_publication(extractor) -> Optional[AlphaPublication]:
     first and never again."""
     import torch
 
-    if extractor is None:
+    if extractor is None or getattr(extractor, "flat_intent_head", None) is None:
         return None
-    alogits = getattr(extractor, "last_alpha_logits", None)
-    seat_nums = getattr(extractor, "last_alpha_seat_nums", None)
-    if alogits is None or seat_nums is None:
-        return None
-    probs = torch.softmax(alogits[0].float(), dim=-1)
-    k = int(probs.shape[-1]) - 1
-    nums = seat_nums[0]
-    if int(nums.shape[-1]) != k:
-        # Clause 3 — align by CONSTRUCTION, fail loud on a width mismatch. Broadcasting here
-        # would pair each α weight with the wrong opponent move while every shape check passed.
-        raise ValueError(
-            f"α seat width mismatch: {k} move seats in last_alpha_logits but "
-            f"{int(nums.shape[-1])} seat nums — the axes must be the same by construction")
+    flat = getattr(extractor, "last_flat_intent_logits", None)
+    fi = getattr(extractor, "last_flat_intent", None)
+    if flat is None or fi is None:
+        raise RuntimeError("the flat opponent pointer is built but this forward stashed no flat_intent "
+                           "logits / inputs — the search would silently run the uniform fallback")
+    from agents.model.flat_intent import flat_width, other_move_col, slot_col
+
+    k = int(fi.k)
+    probs = torch.softmax(flat[0].float(), dim=-1)
+    if int(probs.shape[-1]) != flat_width(k):
+        # Clause 3 — align by CONSTRUCTION, fail loud on a width mismatch.
+        raise ValueError(f"flat pointer width {int(probs.shape[-1])} != {flat_width(k)} for K={k}")
+    live, ids = fi.live[0], fi.cand_ids[0]
     move_p: Dict[int, float] = {}
     for i in range(k):
-        num = int(nums[i])
-        if num <= 0:                       # a seat the belief never filled
+        num = int(ids[i])
+        if not bool(live[i]) or num <= 0:  # a seat the belief never filled
             continue
         move_p[num] = move_p.get(num, 0.0) + float(probs[i])
+    switch_p = float(probs[slot_col(k):].sum())
     beta_p: Dict[int, float] = {}
-    blogits = getattr(extractor, "last_beta_logits", None)
-    if blogits is not None:
-        bp = torch.softmax(blogits[0].float(), dim=-1)
-        for i in range(int(bp.shape[0])):
-            if torch.isfinite(blogits[0, i]):
-                beta_p[i] = float(bp[i])
-    return AlphaPublication(move_p=move_p, switch_p=float(probs[k]), beta_p=beta_p)
+    if switch_p > 0:
+        for j in range(int(fi.slot_species.shape[-1])):
+            c = slot_col(k, j)
+            if bool(live[c]):
+                beta_p[j] = float(probs[c]) / switch_p
+    return AlphaPublication(move_p=move_p, switch_p=switch_p, beta_p=beta_p,
+                            other_move_p=float(probs[other_move_col(k)]))
 
 
 def _move_num_lookup() -> Dict[str, int]:
@@ -209,6 +221,9 @@ def build_candidates(legal: Sequence[dict], pub: Optional[AlphaPublication], *, 
             scored.append(OppCandidate(c["token"], pub.switch_p * frac, "switch", c["label"],
                                        "alpha_switch"))
     unmatched = sum(p for n, p in pub.move_p.items() if n not in matched_nums)
+    # OTHER_move: the active's moves beyond the seats — no single name, so it buys no branch; a legal
+    # move outside the seats keeps the floor. REPORTED beside the belief's coverage failure.
+    other_move = float(getattr(pub, "other_move_p", 0.0))
     scored.sort(key=lambda c: -c.weight)
     kept = scored[:max(1, int(m_opp))]
     retained = sum(c.weight for c in kept)
@@ -217,6 +232,7 @@ def build_candidates(legal: Sequence[dict], pub: Optional[AlphaPublication], *, 
         # The BELIEF's coverage failure, reported not smeared: α mass on moves the opponent does
         # not actually have in this world.
         "unmatched_move_mass": round(unmatched, 4),
+        "other_move_mass": round(other_move, 4),
         # How much of α's opinion survived the top-m prune — the honest cost of the width bound.
         "retained_mass": round(retained, 4),
     }

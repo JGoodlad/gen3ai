@@ -164,7 +164,7 @@ def _parity_obs(obs_dim: int, batch: int, device: Any,
 def _readout(model: Any, fe: Any, obs: Any, legal_mask: Any) -> Dict[str, "torch.Tensor"]:
     """One no-grad forward through whatever `fe.forward` is installed, read at the DECISION level.
 
-    ``features`` — (pi_features ‖ vf_features). When the policy is the Gen3 dual-head policy (it
+    ``features`` — (pi_features ‖ value_pooled). When the policy is the Gen3 dual-head policy (it
     exposes the pointer-head seam and the critic read), also ``legal_logprob`` — the MASKED
     policy's log-probabilities on legal actions (0 elsewhere), i.e. exactly what the rollout
     samples from and PPO's ratio reads — and ``value``, the critic's value (the win-prob sigmoid
@@ -177,8 +177,7 @@ def _readout(model: Any, fe: Any, obs: Any, legal_mask: Any) -> Dict[str, "torch
         if all(hasattr(policy, a) for a in ("mlp_extractor", "_critic_value",
                                             "_get_action_dist_from_latent")):
             lp = policy.mlp_extractor.forward_actor(pi)
-            lv = policy.mlp_extractor.forward_critic(vf)
-            out["value"] = policy._critic_value(lv).float().flatten().clone()
+            out["value"] = policy._critic_value(vf).float().flatten().clone()
             dist = policy._get_action_dist_from_latent(lp)
             dist.apply_masking(legal_mask)
             logp = dist.distribution.logits.float()

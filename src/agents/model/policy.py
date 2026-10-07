@@ -1,10 +1,11 @@
 """Dual-head maskable policy for the value-dedicated CLS readout (H4 / Option C).
 
-`Gen3FeaturesExtractor.forward` returns a ``(pi_features, vf_features)`` tuple: the
+`Gen3FeaturesExtractor.forward` returns a ``(pi_features, value_pooled)`` tuple: the
 transformer body is shared, but the actor and critic read it through independent CLS
-pools + projection heads. Stock SB3 policies assume the features extractor returns a
-single tensor, so this policy overrides the four methods that consume features and routes
-each half of the tuple to its own ``mlp_extractor`` branch.
+pools. Stock SB3 policies assume the features extractor returns a single tensor, so this
+policy overrides the methods that consume features: the policy half goes through the actor
+tower (``mlp_extractor.forward_actor``) to the pointer head; the value half is the win-prob
+head's input, and the critic is that head (``_critic_value``) — there is no critic tower.
 
 Design note — we deliberately keep ``share_features_extractor=True`` so SB3 builds exactly
 ONE features-extractor instance (one transformer body). The "sharing" is real at the body
@@ -15,18 +16,20 @@ make SB3 instantiate a second full body (Option A, ~2× compute) — not what Op
 
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING, Any, Optional, Tuple, cast
 
 import numpy as np
 import torch as th
 
+from stable_baselines3.common.torch_layers import MlpExtractor
 from stable_baselines3.common.type_aliases import PyTorchObs
 from sb3_contrib.common.maskable.distributions import MaskableDistribution
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 
 from agents.model import masked_categorical as _mc
 from agents.model.arch_constants import D_MODEL, POINTER_HIDDEN, TRUNK_POINTER_HIDDEN
-from agents.model.critic_mode import CRITIC_UNRECORDED, CRITIC_MODES, is_winprob
+from agents.model.critic_mode import CRITIC_UNRECORDED, CRITIC_WINPROB, is_winprob
 
 if TYPE_CHECKING:
     # SB3 types `features_extractor` as `BaseFeaturesExtractor` (ours is duck-typed, not a subclass);
@@ -36,7 +39,7 @@ if TYPE_CHECKING:
 
 
 # gen3_policy_activation_pin_v1: the nonlinearity of the SB3 `mlp_extractor` tower
-# (`net_arch = [512, 512]`, both the actor and the critic branch).
+# (`net_arch = [512, 512]`, the ACTOR branch — the critic has no tower since the version break, F1).
 #
 # This value was NEVER chosen here. Until 2026-08-16 `train_rl_agent.py` passed `net_arch` but not
 # `activation_fn`, so the tower ran on `MaskableActorCriticPolicy`'s SIGNATURE DEFAULT
@@ -78,13 +81,28 @@ class _NoFlatActionNet(th.nn.Module):
         )
 
 
+class _NoValueNet(th.nn.Module):
+    """gen3_x5_version_break_v1 part 2 (architecture audit F1): a RAISING stub in `value_net`'s slot.
+
+    The scalar value head (and the extractor projection + SB3 critic tower that fed it) is DELETED: the
+    win-prob head is the only critic, read by `_critic_value`. An SB3 path that still called
+    `self.value_net(latent)` would be running a critic that does not exist; make that a loud error,
+    never an `Identity` (which would return the latent AS the value)."""
+
+    def forward(self, *args: Any, **kwargs: Any) -> Any:  # pragma: no cover - defensive
+        raise RuntimeError(
+            "The scalar value_net was deleted at the version break (config v144, architecture audit F1) — "
+            "the critic is sigmoid(win_head logit), read by Gen3DualHeadMaskablePolicy._critic_value. A "
+            "code path calling value_net directly is running a critic that no longer exists.")
+
+
 class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     """Maskable actor-critic policy whose features extractor yields a (pi, vf) tuple.
 
-    ``self.extract_features(obs)`` returns ``(pi_features, vf_features)`` because the
+    ``self.extract_features(obs)`` returns ``(pi_features, value_pooled)`` because the
     shared-extractor path simply returns whatever the extractor returns. Each consumer
-    below unpacks that tuple and feeds ``mlp_extractor.forward_actor`` / ``forward_critic``
-    the appropriate half. The value net and masking are inherited unchanged.
+    below unpacks that tuple, feeds the policy half to ``mlp_extractor.forward_actor`` and
+    reads the critic through ``_critic_value`` (the win-prob head; no critic tower, F1).
 
     **Pointer-native action head (gen3_pointer_native_v1).** There is NO flat positional
     action head in this generation: ``_build`` replaces SB3's ``action_net`` Linear with a
@@ -97,33 +115,56 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     row ever learns "slot j" positionally, and the sorted-vs-request ordering bug class is
     unrepresentable at the logits.
 
-    **The critic** is ``critic`` in ``policy_kwargs`` (`critic_mode`): ``winprob`` reads
-    ``sigmoid(win_head logit)``, ``shaped`` (what an absent record means) reads the scalar
-    ``value_net``. PopArt and the distributional value head were DELETED (deletion pass L1; a
-    checkpoint's pickled ``use_popart`` / ``value_from_dist`` are stripped by
-    ``snapshot._DEAD_POLICY_KWARGS_JUDGED``).
+    **The critic** is the win-prob head: ``_critic_value`` reads ``sigmoid(win_head logit)``, stashed by
+    the extractor forward. ``critic`` in ``policy_kwargs`` must be ``winprob``: the scalar ``value_net``
+    the ``shaped`` critic read was DELETED at the version break (config v144, architecture audit F1)
+    together with the extractor's ``value_pre_norm`` / ``value_projection`` and SB3's critic tower
+    (``mlp_extractor.value_net``), so the extractor's value half (``value_pooled``) reaches the critic
+    read untouched and ``value_net`` is a raising stub. PopArt and the distributional value head were
+    DELETED (deletion pass L1; a checkpoint's pickled ``use_popart`` / ``value_from_dist`` are stripped
+    by ``snapshot._DEAD_POLICY_KWARGS_JUDGED``).
     """
 
+    def _build_mlp_extractor(self) -> None:
+        """gen3_x5_version_break_v1 part 2 (architecture audit F1): the ACTOR tower only.
+
+        ``net_arch`` names the actor's widths (a list, or a dict's ``pi``); the critic branch is the EMPTY
+        Sequential (SB3's ``vf=[]``), so ``forward_critic`` is the identity on ``value_pooled`` and the deleted
+        512 → 512 → 512 critic tower is never built — it held 525,312 parameters no loss read."""
+        na = self.net_arch
+        pi_arch = list(na.get("pi", [])) if isinstance(na, dict) else list(na)
+        self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=dict(pi=pi_arch, vf=[]),
+                                          activation_fn=self.activation_fn, device=self.device)
+        # The critic branch is the identity on the extractor's value half, `value_pooled` [B, D_MODEL].
+        self.mlp_extractor.latent_dim_vf = D_MODEL
+
     def _build(self, lr_schedule: Any) -> None:
-        """gen3_pointer_native_v1: build SB3's stack, then REPLACE the flat action head.
+        """Build the policy's OWN stack: the actor tower, the pointer head, the optimizer.
 
-        `super()._build` creates `action_net = Linear(latent_dim_pi, 11)` (the flat positional head),
-        ortho-inits everything, and builds the optimizer. This generation has no flat head: swap in a
-        raising stub (see `_NoFlatActionNet`), build the `PointerNativeActionHead` sized from the
-        extractor's cell dims + `latent_dim_pi`, and REBUILD the optimizer — the one `super()` just
-        made holds the deleted Linear's params and not the pointer head's (dead params in a param
-        group would ride every checkpoint; missing ones would silently never train).
+        SB3's ``_build`` is NOT called. It would construct ``action_net = Linear(latent_dim_pi, 11)`` (the
+        flat positional head this generation does not have, gen3_pointer_native_v1) and ``value_net =
+        Linear(latent_dim_vf, 1)`` (the scalar critic deleted at the version break, F1) only for this
+        method to discard them. Here neither is built: both slots hold RAISING stubs (`_NoFlatActionNet`,
+        `_NoValueNet`). What SB3's does that this keeps, in its order: the mlp extractor (actor only,
+        `_build_mlp_extractor`), the orthogonal re-init of the extractor then the mlp extractor (gain √2,
+        SB3's), then the retire hooks (after the re-init's draws, before the optimizer), the
+        `PointerNativeActionHead` (sized from the extractor's cell dims + `latent_dim_pi`) and the
+        optimizer over every surviving parameter.
 
-        Ordering note: the head is created AFTER `super()._build`'s ortho-init `apply`, so its
-        zero-init scorers survive without the M1 guard — all logits are exactly 0 at step 0, i.e.
-        the cold-start policy is uniform-over-legal (the correct fresh-run init)."""
-        super()._build(lr_schedule)
+        Ordering note: the head is created AFTER the ortho-init `apply`, so its zero-init scorers survive
+        without the M1 guard — all logits are exactly 0 at step 0, i.e. the cold-start policy is
+        uniform-over-legal (the correct fresh-run init)."""
+        if not self.share_features_extractor:
+            raise ValueError("Gen3DualHeadMaskablePolicy shares ONE features extractor between actor and "
+                             "critic (share_features_extractor=True): its two readouts split inside it.")
+        self._build_mlp_extractor()
+        self.action_net = _NoFlatActionNet()
+        self.value_net = _NoValueNet()
+        if self.ortho_init:
+            for module in (self.features_extractor, self.mlp_extractor):
+                module.apply(partial(self.init_weights, gain=np.sqrt(2)))
         from agents.model.features_extractor import PointerNativeActionHead  # local: avoid import cycle
         fe = cast("Gen3FeaturesExtractor", self.features_extractor)
-        # X5 U4 (fixed_mass): retire α / β AFTER the ortho-init draws above and BEFORE the optimizer
-        # below (`ExtractorApi.retire_superseded_intent_heads`); without the flat pointer: a no-op.
-        if hasattr(fe, "retire_superseded_intent_heads"):
-            fe.retire_superseded_intent_heads()
         # gen3_policy_readout_trunk_v1 (`--policy-readout trunk`, audit F2): RETIRE the flat policy tower
         # — the extractor's `pre_proj_norm` / `projection` and SB3's `mlp_extractor.policy_net` — AFTER
         # the ortho-init draws above (they drew exactly as under `tower`, so no surviving module's initial
@@ -144,7 +185,6 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         # token-content threat projection at the same point and for the same reason (ON: a no-op).
         if hasattr(fe, "retire_value_threat_inject"):
             fe.retire_value_threat_inject()
-        self.action_net = _NoFlatActionNet()
         self.pointer_head = PointerNativeActionHead(
             # gen3_entity_move_seats_v1: move tokens are the REFINED E3 trunk seats (d_model-wide),
             # not the raw 32-dim PokemonEncoder tokens — the extractor owns the width.
@@ -160,13 +200,17 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
 
     def __init__(self, *args: Any, critic: str = CRITIC_UNRECORDED, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        # gen3_winprob_critic_mode_v1: WHICH readout is the value function. 'shaped' is every
-        # generation through gen-16 — `value_net` / E[Z] in raw shaped-return units — and what an
-        # ABSENT kwarg means (`CRITIC_UNRECORDED`: a pre-v109 checkpoint's saved policy_kwargs never
-        # carried the key), NOT the bare-argv `CRITIC_DEFAULT`.
-        # 'winprob' routes `_critic_value` to sigmoid(win_head logit) ∈ [0,1]; see critic_mode.py.
-        if str(critic) not in CRITIC_MODES:
-            raise ValueError(f"unknown critic {critic!r} (want one of {CRITIC_MODES})")
+        # gen3_winprob_critic_mode_v1: WHICH readout is the value function — since the version break
+        # (config v144, architecture audit F1) only 'winprob': `_critic_value` is sigmoid(win_head logit)
+        # ∈ [0,1]. 'shaped' (and an ABSENT kwarg, `CRITIC_UNRECORDED`: a pre-v109 checkpoint's saved
+        # policy_kwargs never carried the key) read the scalar `value_net`, which no longer exists; such a
+        # checkpoint is below MIGRATION_FLOOR anyway and runs PINNED to its own commit.
+        if not is_winprob(critic):
+            raise ValueError(
+                f"critic={critic!r}: the only critic is {CRITIC_WINPROB!r} (sigmoid(win_head logit)). The "
+                "scalar value_net a 'shaped' critic read was DELETED at the version break (config v144, "
+                "architecture audit F1); an absent record means 'shaped' (pre-v109). Run such a checkpoint "
+                "PINNED to its own commit.")
         self._critic_mode = str(critic)
 
         # gen3_identity_init_guard_v1: SB3's `_build()` just ran
@@ -192,40 +236,38 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         _obs_dim = int(_obs_space.shape[0]) if _obs_space is not None else 0
         self.ridealong = build_ridealong(self.features_extractor, obs_dim=_obs_dim)
 
-    def _critic_value(self, latent_vf: th.Tensor) -> th.Tensor:
-        """The critic value used by GAE / bootstrap / deployment.
+    def _critic_value(self, vf_features: th.Tensor) -> th.Tensor:
+        """The critic value used by GAE / bootstrap / deployment: the win-prob head's probability,
+        ``sigmoid(logit) ∈ [0,1]``, ``[B,1]``, read off the logits the preceding extractor forward stashed.
 
-        gen3_winprob_critic_mode_v1: under ``critic='winprob'`` the value IS the win-prob head's
-        probability — ``sigmoid(logit) ∈ [0,1]``. There is NO fallback: under this mode
-        ``value_net`` is in no loss graph, so quietly returning it would be a critic the training
-        loop believes in and nothing updates (the v89 orphaned-route class). Under ``shaped`` the
-        value is the scalar ``value_net``."""
+        ``vf_features`` is the extractor's value half (``value_pooled``, the head's own input) and is read
+        for its BATCH only — the guard that the stash belongs to this forward. There is NO fallback and no
+        second critic: the scalar ``value_net`` was deleted at the version break (config v144, audit F1)."""
         # `getattr` with the default rather than `self._critic_mode`: this method is called on
-        # policy-shaped STUBS and could be reached on a policy restored
-        # from a pre-v109 checkpoint whose saved `policy_kwargs` never carried the key. An
-        # absent field means the historical critic — the same read every other consumer does.
-        if is_winprob(getattr(self, "_critic_mode", CRITIC_UNRECORDED)):
-            fe = cast("Gen3FeaturesExtractor", self.features_extractor)
-            logits = getattr(fe, "last_win_prob_logits", None)
-            if getattr(fe, "win_head", None) is None or logits is None:
-                raise RuntimeError(
-                    "critic='winprob' but "
-                    + ("the extractor has no win_head (--win-prob-mode is 'none')"
-                       if getattr(fe, "win_head", None) is None
-                       else "last_win_prob_logits was not stashed by the preceding forward")
-                    + " — the scalar value_net is in NO loss graph under this critic, so falling "
-                    "back to it would be a silently-wrong critic (the v89 orphaned-route class). "
-                    "Check that extract_features ran on THIS policy's extractor before the critic "
-                    "read, and that --win-prob-mode is read_only or shaping.")
-            if logits.shape[0] != latent_vf.shape[0]:
-                raise RuntimeError(
-                    f"stale win-prob stash: logits batch {logits.shape[0]} vs latent_vf "
-                    f"{latent_vf.shape[0]} — the extractor forward and this critic read are "
-                    "from different batches.")
-            # [B,1] like `value_net(latent_vf)`, so every caller's `.flatten()` / `.squeeze(-1)`
-            # is unchanged. Probability units are the only currency here.
-            return th.sigmoid(logits.reshape(-1, 1))
-        return cast(th.Tensor, self.value_net(latent_vf))
+        # policy-shaped STUBS. A recorded non-winprob critic cannot be built (`__init__` refuses it).
+        mode = getattr(self, "_critic_mode", CRITIC_UNRECORDED)
+        if not is_winprob(mode):
+            raise RuntimeError(f"critic={mode!r} has no readout: the scalar value_net was deleted at the "
+                               "version break (config v144, architecture audit F1).")
+        fe = cast("Gen3FeaturesExtractor", self.features_extractor)
+        logits = getattr(fe, "last_win_prob_logits", None)
+        if getattr(fe, "win_head", None) is None or logits is None:
+            raise RuntimeError(
+                "critic='winprob' but "
+                + ("the extractor has no win_head (--win-prob-mode is 'none')"
+                   if getattr(fe, "win_head", None) is None
+                   else "last_win_prob_logits was not stashed by the preceding forward")
+                + " — the win-prob head is the only critic. Check that extract_features ran on THIS "
+                "policy's extractor before the critic read, and that --win-prob-mode is read_only or "
+                "shaping.")
+        if logits.shape[0] != vf_features.shape[0]:
+            raise RuntimeError(
+                f"stale win-prob stash: logits batch {logits.shape[0]} vs value features "
+                f"{vf_features.shape[0]} — the extractor forward and this critic read are "
+                "from different batches.")
+        # [B,1], so every caller's `.flatten()` / `.squeeze(-1)` reads one value per row. Probability units
+        # are the only currency here.
+        return th.sigmoid(logits.reshape(-1, 1))
 
     def _pointer_logits(self, latent_pi: th.Tensor) -> th.Tensor:
         """gen3_pointer_native_v1: the action logits ARE the pointer head's scores.
@@ -280,8 +322,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         seam `forward` and `compile_regions.weights_regime`'s freshness read share."""
         pi_features, vf_features = self.extract_features(obs)
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
-        latent_vf = self.mlp_extractor.forward_critic(vf_features)
-        values = self._critic_value(latent_vf)
+        values = self._critic_value(vf_features)
         return values, self.masked_logp(latent_pi, action_masks)
 
     def forward(
@@ -307,12 +348,11 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         `_last_pi_distribution` from the returned tensors."""
         pi_features, vf_features = self.extract_features(obs)
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
-        latent_vf = self.mlp_extractor.forward_critic(vf_features)
         # gen3_functional_masking_v1: functional masked logits (bit-identical to sb3's object).
         logp = self.masked_logp(latent_pi, action_masks)
         masks_bool = _mc.mask_bool(action_masks, logp)
         log_prob = _mc.log_prob(logp, actions)
-        values = self._critic_value(latent_vf)
+        values = self._critic_value(vf_features)
         return values, log_prob, _mc.entropy(logp, masks_bool), logp, masks_bool
 
     def evaluate_actions(
@@ -342,5 +382,4 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
 
     def predict_values(self, obs: PyTorchObs) -> th.Tensor:
         _, vf_features = self.extract_features(obs)
-        latent_vf = self.mlp_extractor.forward_critic(vf_features)
-        return self._critic_value(latent_vf)
+        return self._critic_value(vf_features)

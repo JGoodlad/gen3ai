@@ -269,14 +269,13 @@ class DamageOperatorPairwise:
         opp_spe = self._x5_avg(opp_spe, "spe")                                      # X5: OTHER's averaged speed
         opp_para = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
         opp_spe = opp_spe * (1.0 - 0.75 * opp_para)                                  # [B,6]
-        opp_std = self._x5_avg(self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1], "spe_std")   # [B,6]
         if self.speed_physics:
             # gen3_speed_physics_v1: our active's EXACT speed at its live stage (+ slot k's speed delta below) vs
             # their six speed mixtures — the one rule (`damage_op_speed`).
             p_base = self._p_first_active_at_stage(ctx, spread_belief, cur_spe_stage)  # [B,6]
         else:
             p_base = self._p_outspeed((act_spe * self._boost_mult(cur_spe_stage))[:, None],
-                                      opp_spe, opp_std)                              # [B,6]
+                                      opp_spe)                                       # [B,6]
         revealed = (~ctx.opp_believed_mask).float()                                  # [B,6]
         alive_j = (ctx.hp_and_active[:, opp, 0] > 0).float()
         _x5 = self.stash.x5
@@ -296,7 +295,7 @@ class DamageOperatorPairwise:
                 p_k = self._p_first_active_at_stage(ctx, spread_belief, cur_spe_stage + dk[:, 4])
             else:
                 p_k = self._p_outspeed(
-                    (act_spe * self._boost_mult(cur_spe_stage + dk[:, 4]))[:, None], opp_spe, opp_std)
+                    (act_spe * self._boost_mult(cur_spe_stage + dk[:, 4]))[:, None], opp_spe)
             d_spd = (p_k - p_base) * spd_gate
             ib = is_boost[:, k:k + 1].expand_as(d_high)
             hc = hp_cost[:, k:k + 1].expand_as(d_high)         # Belly Drum's half-max-HP price
@@ -435,7 +434,6 @@ class DamageOperatorPairwise:
         else:
             opp_spe = 2.0 * self.BASE_STATS[opp_species][..., _BS_SPE] + 31.0 + 5.0
         opp_para = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
-        opp_std = self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1]                 # [B,6]
         if self.speed_physics:
             # gen3_speed_physics_v1: their speed mixture now vs with them paralysed (the stage stays on their
             # active), our active's EXACT speed — the one rule (`damage_op_speed`).
@@ -444,8 +442,8 @@ class DamageOperatorPairwise:
             p_now = self._p_first_vs_six(ctx, _ours, _qc_u)                              # [B,6]
             p_par = self._p_first_vs_six(ctx, _ours, _qc_u, para=torch.ones_like(opp_para))   # [B,6]
         else:
-            p_now = self._p_outspeed(act_spe[:, None], opp_spe * (1.0 - 0.75 * opp_para), opp_std)
-            p_par = self._p_outspeed(act_spe[:, None], opp_spe * 0.25, opp_std)      # [B,6]
+            p_now = self._p_outspeed(act_spe[:, None], opp_spe * (1.0 - 0.75 * opp_para))
+            p_par = self._p_outspeed(act_spe[:, None], opp_spe * 0.25)               # [B,6]
         d_outspeed = (p_par - p_now)[:, None, :] * is_par[:, :, None]                # [B,4,6]
         # --- burn: mon j's worst believed PHYSICAL hit on our active, Atk halved ---
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
@@ -907,13 +905,12 @@ class DamageOperatorPairwise:
         opp_para = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE,
                                     POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
         opp_spe = opp_spe * (1.0 - 0.75 * opp_para)                                        # [B,6]
-        opp_std = self._x5_avg(self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1], "spe_std")   # [B,6]
         if self.speed_physics:
             # gen3_speed_physics_v1: every (our i, their j) pair by the one rule — paralysis on every row, the
             # stage on each side's ACTIVE row only (a bench mon's stages are reset), Quick Claw folded.
             p = self._p_first_pairs(ctx)                                                     # [B,6,6]
         else:
-            p = self._p_outspeed(our_spe[:, :, None], opp_spe[:, None, :], opp_std[:, None, :])  # [B,6,6]
+            p = self._p_outspeed(our_spe[:, :, None], opp_spe[:, None, :])                   # [B,6,6]
         alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()                        # [B,6]
         alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()           # [B,6]
         _x5 = self.stash.x5

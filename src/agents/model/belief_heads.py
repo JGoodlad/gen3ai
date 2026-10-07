@@ -21,53 +21,13 @@ from agents.model.arch_constants import (D_MODEL,
 
 
 
-class BeliefSlots(torch.nn.Module):
-    """In-place hidden-opponent belief (the live design — supersedes the side-pool `HiddenOppBeliefPool`).
-
-    Instead of summarising the hidden party into K side query tokens (a readout), this REPLACES the
-    opponent's un-revealed team slots — which arrive at the encoder as all-zero placeholders (Gen 3
-    has no team preview) — with K=TEAM_SIZE **distinct learned "unknown-mon" embeddings**, one per opp
-    slot position. The believed mons then sit *in the lineup* and are refined by the SAME 12-token
-    `TeamTransformer` and attended over by every downstream readout (`their_cls`, `value_cls`, the
-    policy reasoning) — "the model thinks about the hidden mons in latent space" rather than reading a
-    side summary.
-
-    Why distinct per-slot params: a permutation-equivariant transformer maps identical inputs to
-    identical outputs, so identical zero-slots collapse to one representation (the model can know
-    "there are unknowns" but not "slot A leans physical sweeper, slot B special wall"). Independent
-    init breaks that symmetry so the slots can specialise — the same trick `HiddenOppBeliefPool` used,
-    done in-place. The refined believed tokens are supervised by `BeliefHead` (species + moves),
-    which is what makes a slot actually *mean* a Skarmory-shaped wall instead of a generic blob.
-
-    Requires `attend_unrevealed_opponents` (else the believed slots are key-masked out of the
-    transformer and never refined). Off ⇒ this module is not built and the opp slots stay zeros
-    (baseline arch, byte-for-byte). See `designs/ai_v5/design_offense_and_opponent_belief.md`."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        # One distinct learned token per opponent team-slot position. Same 0.02 init scale as the
-        # CLS / belief queries. Slot position is the canonical order the aux labels are matched in.
-        self.unknown_slot_emb = torch.nn.Parameter(torch.randn(TEAM_SIZE, D_MODEL) * 0.02)
-
-    def forward(self, role_tokens: torch.Tensor, opp_believed_mask: torch.Tensor) -> torch.Tensor:
-        """role_tokens [B, 12, D], opp_believed_mask [B, 6] bool → role_tokens with believed opp
-        slots replaced by their learned unknown-token. Revealed (and revealed-then-fainted) opp slots
-        keep their encoded token unchanged."""
-        batch_size = role_tokens.shape[0]
-        our_tokens = role_tokens[:, :TEAM_SIZE, :]
-        opp_tokens = role_tokens[:, TEAM_SIZE:, :]                                    # [B, 6, D]
-        unknown = self.unknown_slot_emb.unsqueeze(0).expand(batch_size, -1, -1)       # [B, 6, D]
-        opp_tokens = torch.where(opp_believed_mask.unsqueeze(-1), unknown, opp_tokens)
-        return torch.cat([our_tokens, opp_tokens], dim=1)
-
-
 class BeliefHead(torch.nn.Module):
     """Auxiliary supervision for the in-place belief slots (the missing "B3" objective).
 
     Reads the post-transformer opponent team tokens and predicts, per slot, what the hidden mon IS:
     its **species** (cross-entropy) and its **moves** (multi-label BCE). Labels come free from the
     self-play env (it knows the opponent's full team); the loss (computed in `instrumented_ppo`)
-    scores ONLY the believed slots, in `BeliefSlots`' canonical slot order. Role is implicit: a
+    scores ONLY the believed slots, in the canonical opponent slot order. Role is implicit: a
     predicted species routes through the model's existing species/stat/type embeddings, which already
     encode wall-vs-sweeper — so "think Skarmory" supplies the role.
 
@@ -219,24 +179,23 @@ BELIEF_GRAD_MODES = ("shaping", "detached", "label_only")
 # gen3_belief_label_only_v1 — the stashes of the FORWARD-CONSUMED belief heads. These are exactly the
 # supervised heads whose output reaches pi/vf, and therefore the only ones a policy/value gradient can
 # reach BACKWARD: MoveBelief (reinject + the op + the edge cells + the seats), SpreadBelief (reinject +
-# the op + the cells), HPTypeBelief (the typed composition + its own type-embedding reinject), and
-# AlphaIntentHead (only under `--intent-value-reduce`, which appends an alpha-weighted threat term to
-# the CRITIC half — alpha is a pure readout without it, but the flag is what makes it reachable).
+# the op + the cells), HPTypeBelief (the typed composition + its own type-embedding reinject), and X5's
+# flat opponent pointer (its re-expressed α / β feed the pointer-cell consumers).
 #
 # THE RULE, and it is per-HEAD rather than per-stash so there is nothing to look up: under `label_only`
 # every one of these `last_*` stashes is a STOP-GRAD publication, and a supervised loss must read its
 # target through `Gen3FeaturesExtractor.belief_supervision(...)` instead.
 #
-# The other supervised heads — BeliefHead (species/moves/latent), WinProbHead,
-# BetaSwitchHead — are STRUCTURALLY label-only already: they are
+# The other supervised heads — BeliefHead (species/moves/latent), WinProbHead — are STRUCTURALLY
+# label-only already: they are
 # side readouts whose output never re-enters the forward, so no policy gradient can reach them in ANY
 # mode and there is nothing here to cut. `belief_label_only_gate_test.py` asserts that rather than
 # trusting it, so a head that starts feeding forward fails a test instead of quietly rejoining PPO.
 _BELIEF_SUPERVISION_KEYS = frozenset({
     "move_belief_logits", "hp_type_logits",
     "spread_belief", "spread_nature_logits", "spread_ev",
-    "alpha_logits", "beta_logits", "item_logits",
-    # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass): the flat opponent pointer replaces α / β there.
+    "item_logits",
+    # gen3_x5_flat_pointer_v1: the flat opponent pointer (the blob path's α / β heads are DELETED, v144).
     "flat_intent_logits",
 })
 

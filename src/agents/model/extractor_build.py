@@ -29,7 +29,7 @@ from agents.model.arch_constants import (
 )
 from agents.model.aux_value_heads import WinProbHead
 from agents.model.belief_heads import (
-    BELIEF_GRAD_MODES, BeliefHead, BeliefSlots, HPTypeBelief, ItemBelief, MoveBelief, SpreadBelief)
+    BELIEF_GRAD_MODES, BeliefHead, HPTypeBelief, ItemBelief, MoveBelief, SpreadBelief)
 from agents.model.conditional_threat import ConditionalThreatCell
 from agents.model.damage_op import DamageOperator, _DMG_PER_MON
 from agents.model.damage_tables import _PRIOR_FLOOR
@@ -39,7 +39,6 @@ from agents.model.extractor_stashes import ExtractorStashes
 from agents.model.intent_conditional import IntentConditionalMoveCell
 from agents.model.intent_move_cell import IntentMoveCell
 from agents.model.intent_threshold import IntentThresholdMoveCell
-from agents.model.opp_intent import AlphaIntentHead, BetaSwitchHead
 from agents.model.flat_intent import FlatIntentHead
 from agents.model.pair_outcome import PairOutcomeMoveCell, PairOutcomeSwitchCell
 from agents.model.pointer_head import EntityMoveSeats
@@ -224,12 +223,8 @@ class ExtractorBuild(torch.nn.Module):
         self.consequence_topk = int(consequence_topk)   # v59: C1b/C2/C3 k_cand + D4 k_bench
         self.entity_tail_seats = bool(entity_tail_seats)
         self.entity_seats = EntityMoveSeats(self.entity_topk_seats, self.entity_tail_seats)
-        # gen3_opp_intent_v1: DECLARED here, CONSTRUCTED at the end of __init__ — the MODULES
-        # must be appended last (SB3 restores optimizer state POSITIONALLY), while
-        # `forward_internal` reads these attributes unconditionally, so they must always exist.
-        self.alpha_head: Optional[AlphaIntentHead] = None
-        self.beta_head: Optional[BetaSwitchHead] = None
-        self.flat_intent_head: Optional[FlatIntentHead] = None   # X5 U4: built with the belief family
+        # gen3_x5_flat_pointer_v1: DECLARED here, CONSTRUCTED at the end of __init__ with the belief family.
+        self.flat_intent_head: Optional[FlatIntentHead] = None
         # gen3_edge_bias_trunk_v1 (v56, Stage 2): computed physics as per-pair per-head attention
         # BIASES (see EdgeBias). "off" builds no module (no state_dict change beyond the layer swap);
         # the maps are zero-init so an ON run is byte-identical to OFF at init. Requirement
@@ -247,7 +242,7 @@ class ExtractorBuild(torch.nn.Module):
         # gen3_value_threat_inject_off_v1 (v142, architecture audit F10): with the op built, the projection is
         # built in BOTH modes, so its init draw (and SB3's orthogonal re-draw over it) happens in the same place
         # either way; OFF marks it not-live and `ExtractorApi.retire_value_threat_inject` drops it after SB3's
-        # re-init, before the optimizer (the `retire_superseded_intent_heads` precedent). Every OTHER parameter's
+        # re-init, before the optimizer (the retire-after-re-init precedent). Every OTHER parameter's
         # initial bytes therefore equal the ON (production) build's — `--value-threat-inject off` is a ONE-lever
         # arm. Before v142 an OFF build skipped the Linear and shifted ~185 later tensors' init draws.
         _vti_dim = value_threat_inject_dim() if (bool(value_threat_inject) or bool(damage_op)) else 0
@@ -472,14 +467,9 @@ class ExtractorBuild(torch.nn.Module):
         self.opp_intent_grad_mode = opp_intent_grad_mode
         self.t0_species_prior = (T0SpeciesPrior(layout['max_species'])
                                  if t0_species_prior else None)
-        # F-X5-27 (ORCHESTRATOR, X5 U3 part 3) + the X5 version break (v144): X5 never calls BeliefSlots (a
-        # hidden slot holds its hypothesis's token) and the blob path that did is DELETED, so the module is
-        # NEVER kept. It is still CONSTRUCTED when the belief family is on: its init draw is part of the global
-        # RNG stream every later module's initial bytes follow, so dropping the construction would move every
-        # production init byte (the K9 learner golden pins them). Only the module is discarded.
-        self.belief_slots: Optional[BeliefSlots] = None
-        if opp_belief_slots:
-            BeliefSlots()
+        # (The blob path's `BeliefSlots` — one learned token per hidden opponent slot — is DELETED with its
+        # construct-and-discard (the X5 version break, config v144, part 2): a hidden slot holds its
+        # hypothesis's token.)
         self.belief_head = (
             BeliefHead(layout['max_species'], layout['max_moves'],
                        species_prior_fusion=species_prior_fusion) if opp_belief_slots else None
@@ -855,8 +845,7 @@ class ExtractorBuild(torch.nn.Module):
         self.role_token_size = ROLE_TOKEN_SIZE
 
         # gen3_belief_grad_mode_v1: stamp the per-head trunk-read detach flag now that every belief head
-        # exists. 'shaping' ⇒ all False ⇒ byte-identical. BeliefSlots has no predictive read (it only
-        # swaps in learned tokens pre-transformer), so it is intentionally NOT in this list.
+        # exists. 'shaping' ⇒ all False ⇒ byte-identical.
         cast("ExtractorApi", self)._stamp_belief_grad_flags()
 
         # gen3_static_widths_v1: the projection-input widths are STATIC ARITHMETIC — see
@@ -868,20 +857,20 @@ class ExtractorBuild(torch.nn.Module):
         # hid every width appended below it and built the critic 128 dims short). The sweep
         # test `projection_width_test.py` preserves the old mechanism AS THE VERIFIER: it runs
         # a real forward per flag combo and asserts the measured widths equal this arithmetic.
-        self.projection_input_dim, self.value_projection_input_dim = compute_projection_widths(
+        self.projection_input_dim, self.vf_features_dim = compute_projection_widths(
             layout, opp_belief_cls_k=opp_belief_cls_k, token_encoding=token_encoding)
 
-        # Two projection heads, both → PROJECTION_DIM. Pre-projection LayerNorm equalises
-        # per-block scales. The value head reads the value-dedicated CLS pool (Option C):
-        # the transformer body is shared, but policy and value are summarised + projected
-        # through independent paths so the critic isn't fighting the actor over the readout.
+        # The POLICY projection → PROJECTION_DIM (a pre-projection LayerNorm equalises per-block scales).
+        # gen3_x5_version_break_v1 part 2 (architecture audit F1): there is NO value projection. The extractor's
+        # value half is `value_pooled` itself ([B, D_MODEL], `vf_features_dim`) — the win-prob head's input, the
+        # only critic's — and the policy builds no critic tower over it (`policy._build_mlp_extractor`). The
+        # deleted `value_pre_norm` / `value_projection` (128 → 512) fed only SB3's `mlp_extractor.value_net` /
+        # `value_net`, which no loss read since the win-prob critic became the only one.
         self.projection_dim = PROJECTION_DIM
         self.pre_proj_norm = torch.nn.LayerNorm(self.projection_input_dim)
         self.projection = torch.nn.Linear(self.projection_input_dim, self.projection_dim)
-        self.value_pre_norm = torch.nn.LayerNorm(self.value_projection_input_dim)
-        self.value_projection = torch.nn.Linear(self.value_projection_input_dim, self.projection_dim)
         self.activation = torch.nn.ReLU()
-        # Both heads emit PROJECTION_DIM; SB3 sizes the shared mlp_extractor from this.
+        # The policy features are PROJECTION_DIM wide; SB3 sizes the actor tower from this.
         self.features_dim = self.projection_dim
 
         # gen3_opp_intent_v1: the ALPHA/BETA intent heads. Built LAST (before the identity snapshot)
@@ -899,11 +888,9 @@ class ExtractorBuild(torch.nn.Module):
         # requirement that alpha see our own threat (both sides anticipate; the fixed point is found
         # by self-play training, never solved at inference).
         _intent_ctx = 2 * D_MODEL
-        if self.opp_intent:
-            self.alpha_head = AlphaIntentHead(D_MODEL, _intent_ctx)
-            self.beta_head = BetaSwitchHead(D_MODEL, _intent_ctx)
-        # (alpha/beta stashes: read ONLY by the aux loss + the prober; never fed forward — see
-        # ExtractorStashes.)
+        # (The blob path's α / β heads — `AlphaIntentHead` / `BetaSwitchHead` — are DELETED with their
+        # construct-and-retire (the X5 version break, config v144, part 2): the flat pointer below is the
+        # intent readout.)
 
         # gen3_ridealong_heads_v1 (v126) — the DETACHED RIDE-ALONG heads' DECLARATION. The extractor
         # builds NOTHING for them: it records the four kwargs (so the flag registry's five surfaces,
@@ -1007,12 +994,8 @@ class ExtractorBuild(torch.nn.Module):
         if opp_belief_slots and self.opp_intent:
             self.hypothesis_builder = HypothesisBuilder(
                 layout, self.team_transformer._global_token_input_dim, self.entity_topk_seats)
-            # The FLAT opponent pointer replaces α / β. Built from its OWN private seed out of
-            # `IsolatedLinear`s, appended after the hypothesis builder (no position moves). α / β are still
-            # CONSTRUCTED above and still see SB3's orthogonal re-init (their draws are part of the global
-            # stream every later module's initial bytes follow); the policy then RETIRES them
-            # (`retire_superseded_intent_heads`, called from `_build` before the optimizer is made), so they
-            # hold no state_dict key, no optimizer slot and no forward use.
+            # The FLAT opponent pointer: built from its OWN private seed out of `IsolatedLinear`s, appended
+            # after the hypothesis builder (no position moves).
             self.flat_intent_head = FlatIntentHead(D_MODEL, _intent_ctx)
             cast("ExtractorApi", self)._stamp_belief_grad_flags()
 

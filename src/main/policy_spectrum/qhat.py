@@ -91,8 +91,7 @@ def logits_and_values(model, rows: np.ndarray, masks: np.ndarray, batch: int = 1
         with th.no_grad():
             pi_f, vf_f = pol.extract_features(ob)
             lat_pi = pol.mlp_extractor.forward_actor(pi_f)
-            lat_vf = pol.mlp_extractor.forward_critic(vf_f)
-            v = pol._critic_value(lat_vf).reshape(-1, 1)
+            v = pol._critic_value(vf_f).reshape(-1, 1)
             logits = pol._get_action_dist_from_latent(lat_pi).distribution.logits
         out.append(th.cat([logits, v], dim=1).cpu().numpy())
     return np.concatenate(out, 0).astype(np.float32)

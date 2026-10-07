@@ -37,12 +37,12 @@ conflating it with `α` being wrong would hide which component to fix.
 
 ## What is live
 
-The opponent-intent LOSS is X5's flat pointer (`agents.model.flat_intent`, folded by
-`agents.training.instrumented_ppo.flat_intent_fold`): `α` / `β` are no longer supervised or read.
-`AlphaIntentHead` / `BetaSwitchHead` are still CONSTRUCTED (their parameter draws keep the init
-stream) and retired by the policy. What this module still serves live: the label sentinel
+The opponent-intent readout is X5's flat pointer (`agents.model.flat_intent`, folded by
+`agents.training.instrumented_ppo.flat_intent_fold`); its consumers read `α` / `β` as its
+RE-EXPRESSION. The blob path's two separate heads (`AlphaIntentHead` / `BetaSwitchHead`) are DELETED
+(the version break, config v144, part 2). What this module still serves live: the label sentinel
 `INTENT_IGNORE`, the opponent-class table, the canonical-id seat matching, content-addressed slot
-resolution and the human render.
+resolution and the α render.
 """
 from __future__ import annotations
 
@@ -54,78 +54,6 @@ import torch
 # clicked, or the trace could not name their action. Must be negative (a valid class is >= 0) and
 # is what `cross_entropy(ignore_index=...)` skips.
 INTENT_IGNORE = -100
-
-
-class AlphaIntentHead(torch.nn.Module):
-    """`α` — a distribution over [their K believed-move seats] + [SWITCH].
-
-    Pointer-style: one SHARED scorer maps (seat features ‖ board context) → one logit, applied to
-    every seat, so the head is equivariant under permuting their moves. `SWITCH` gets its own
-    scorer over the board context alone, because there is no per-seat object to point at — it is
-    the "none of these" option and must be scored from the position, not from a move.
-    """
-
-    def __init__(self, seat_dim: int, ctx_dim: int, hidden: int = 64):
-        super().__init__()
-        self.seat_dim = int(seat_dim)
-        self.ctx_dim = int(ctx_dim)
-        self.seat_scorer = torch.nn.Sequential(
-            torch.nn.Linear(self.seat_dim + self.ctx_dim, hidden),
-            torch.nn.ReLU(),
-            torch.nn.Linear(hidden, 1),
-        )
-        self.switch_scorer = torch.nn.Sequential(
-            torch.nn.Linear(self.ctx_dim, hidden),
-            torch.nn.ReLU(),
-            torch.nn.Linear(hidden, 1),
-        )
-
-    def forward(self, seat_feats: torch.Tensor, ctx: torch.Tensor,
-                seat_valid: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """`seat_feats` [B,K,seat_dim], `ctx` [B,ctx_dim] → logits [B,K+1] (last column = SWITCH).
-
-        `seat_valid` [B,K] (1 = a real seat) masks padding to -inf so the softmax never puts mass
-        on a slot the belief did not fill.
-        """
-        B, K, _ = seat_feats.shape
-        ctx_b = ctx[:, None, :].expand(B, K, ctx.shape[-1])
-        seat_logits = self.seat_scorer(torch.cat([seat_feats, ctx_b], dim=-1)).squeeze(-1)  # [B,K]
-        if seat_valid is not None:
-            seat_logits = seat_logits.masked_fill(seat_valid < 0.5, float("-inf"))
-        switch_logit = self.switch_scorer(ctx)                                              # [B,1]
-        return torch.cat([seat_logits, switch_logit], dim=-1)                               # [B,K+1]
-
-
-class BetaSwitchHead(torch.nn.Module):
-    """`β` — given they switch, WHICH of their mons comes in.
-
-    Pointer-style over their six team tokens, so it is equivariant under permuting their bench.
-    Alive-and-not-active is enforced by the mask, not learned: an illegal target must be
-    unrepresentable rather than merely unlikely, or `β` will spend capacity learning the rules.
-    """
-
-    def __init__(self, token_dim: int, ctx_dim: int, hidden: int = 64):
-        super().__init__()
-        self.scorer = torch.nn.Sequential(
-            torch.nn.Linear(token_dim + ctx_dim, hidden),
-            torch.nn.ReLU(),
-            torch.nn.Linear(hidden, 1),
-        )
-
-    def forward(self, their_tokens: torch.Tensor, ctx: torch.Tensor,
-                candidate_mask: torch.Tensor) -> torch.Tensor:
-        """`their_tokens` [B,6,D], `ctx` [B,C], `candidate_mask` [B,6] (1 = a legal switch-in)."""
-        B, T, _ = their_tokens.shape
-        ctx_b = ctx[:, None, :].expand(B, T, ctx.shape[-1])
-        logits = self.scorer(torch.cat([their_tokens, ctx_b], dim=-1)).squeeze(-1)          # [B,6]
-        out = logits.masked_fill(candidate_mask < 0.5, float("-inf"))
-        # A row with NO legal switch-in (their last mon is the active one) would be all -inf, and
-        # `log_softmax` of that is NaN — which propagates through `cross_entropy` and poisons the
-        # WHOLE batch even though such a row's target is always IGNORE. Measured: a smoke reported
-        # `beta_loss = nan` with 130 supervised rows. Leave those rows FLAT (uniform, all-finite):
-        # they contribute nothing to the loss via ignore_index, and nothing can be NaN.
-        dead = (candidate_mask > 0.5).sum(dim=-1) == 0                                      # [B]
-        return torch.where(dead[:, None], torch.zeros_like(out), out)
 
 
 def match_seats_to_move_num(seat_nums: torch.Tensor, chosen_num: torch.Tensor,

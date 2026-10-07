@@ -755,7 +755,9 @@ matches its control at the SAME dose is its secondary read.
     nested `recipe` block (`n_envs` 32, `ent_coef` 0.02, self-play off, …).
     `src/main/train/production_args_test.py` compares it with a real resolved fresh
     launch on every mirror key, the recipe included, and fails if either side drops a key. The K9
-    learner golden was re-recorded for it (its learner now carries `beta_setvalued_coef` 0.05).
+    learner golden was re-recorded for it (its learner then carried `beta_setvalued_coef` 0.05; that flag
+    was DELETED at the X5 version break, config v144, part 2 — it scaled the deleted blob β's set-valued
+    credit, so `recipe.fresh` no longer carries it).
 
 **The production recipe, and where each value comes from.** "N0" is `models/ai_v14_01_base`, the
 lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; `model_config.json`).
@@ -793,7 +795,6 @@ lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; 
 | `spread_belief_coef` | 0.05 | `recipe.fresh` | N0 `--spread-belief-coef 0.05`, `model_config.json` |
 | `hp_type_belief_coef` | 0.05 | `recipe.fresh` | N0 `--hp-type-belief-coef 0.05`, `model_config.json` |
 | `item_belief_coef` | 0.05 | `recipe.fresh` | N0 `cli_args.item_belief_coef`, `model_config.json` |
-| `beta_setvalued_coef` | 0.05 | `recipe.fresh` | N0 `--beta-setvalued-coef 0.05`, `cli_args` |
 | `intent_label_bot_weight` | 0.25 | `recipe.fresh` | N0 `--intent-label-bot-weight 0.25`, `model_config.json` |
 | `n_epochs` | 5 | `recipe.fork` | E5 `--n-epochs 5`, `dose.n_epochs` (adopted L21451 for generalist forks) |
 | `fork_lr` | 5.6e-05 | `recipe.fork` | E5 `--fork-lr 5.6e-05`, `dose.lr_now` (2 × K2's 2.8e-05: the same dose at half the epochs) |

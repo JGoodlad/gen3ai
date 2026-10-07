@@ -290,7 +290,7 @@ function reach(id, types) {
 function delivery(id) {
   const viaContent = reach(id, CONTENT_ROUTES), viaAny = reach(id, ANY_FORWARD);
   const hit = (s, k) => k.endsWith('.') ? [...s].some(x => x.startsWith(k)) : s.has(k);
-  const out = [['pi_projection', 'pi_projection'], ['vf_projection', 'vf_projection'],
+  const out = [['pi_projection', 'pi_projection'], ['value_pooled', 'value_pooled'],
                ['pointer logits', 'pointer.']]
     .filter(([, k]) => k !== id)
     .map(([label, k]) => row('→ ' + label,
@@ -450,7 +450,7 @@ function header() {
   $('#leak').innerHTML = `<span class="badge ${L.ok ? 'ok' : 'no'}">leak-safety ` +
     `${L.ok ? 'PASS' : 'FAIL (' + L.violations.length + ')'}</span>`;
   $('#leak').title = 'computed from the embedded data: no aux edge may terminate at ' +
-    'pi_projection, vf_projection, or a pointer logit';
+    'pi_projection, value_pooled, or a pointer logit';
   /* Same three facts, re-rendered for the phone: the bar hides them at 390px, and the leak badge
      and snapshot age are exactly what you want when reading this away from the machine. */
   $('#ctlmeta').innerHTML = $('#leak').innerHTML + '<br>' + esc($('#hdr').textContent) +
@@ -534,7 +534,7 @@ cy.on('tap', ev => { if (ev.target === cy) { closeSheet(); closeCtls();
     $('#ctlbtn').setAttribute('aria-pressed', 'false'); }
   if (ev.target === cy) if (ev.target === cy) $('#sidebody').innerHTML =
   '<div class="kind">Click a node or an edge. Use <b>focus</b> to isolate everything that feeds ' +
-  'a sink — e.g. <code>vf_projection</code> answers “what does the critic see”.</div>'; });
+  'a sink — e.g. <code>value_pooled</code> answers “what does the critic see”.</div>'; });
 cy.on('mouseover', 'edge', ev => { const e = ev.target.data(), m = measure(e);
   const t = $('#tip'); t.style.display = 'block';
   t.innerHTML = `<b>${esc(e.src)} → ${esc(e.dst)}</b><br>${esc(e.type)} · ${esc(e.carries)}` +
@@ -549,11 +549,11 @@ document.addEventListener('mousemove', e => { const t = $('#tip');
   t.style.top = (e.clientY + 16) + 'px'; });
 header(); applyTheme(); legend(); applyFocus();   // applyTheme covers the `#dark=1` deep link
 /* A deep link restores the panel too, not just the dimming — otherwise a shared
-   `#focus=vf_projection` lands on a filtered graph with an empty panel beside it. */
+   `#focus=value_pooled` lands on a filtered graph with an empty panel beside it. */
 if (FOCUS) showNode(FOCUS);
 else $('#sidebody').innerHTML = '<div class="kind">Click any node — a token seat, the operator, a ' +
   'head, a logit — for its channels, what it can deliver to, and the bias families acting on ' +
-  'it. Use <b>focus</b> to isolate everything that feeds a sink: <code>vf_projection</code> ' +
+  'it. Use <b>focus</b> to isolate everything that feeds a sink: <code>value_pooled</code> ' +
   'answers “what does the critic see”.</div>';
 
 /* A machine-readable record that the page actually RENDERED, for the headless check in

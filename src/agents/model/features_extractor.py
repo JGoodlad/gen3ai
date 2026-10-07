@@ -52,7 +52,6 @@ from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.model.value_threat_inject import (VALUE_THREAT_INJECT_REDUCE_HOW, ValueThreatInject,
                                               value_threat_inject_dim)
 from agents.model.forward_guard import forward_guard_for  # noqa: F401  (re-exported by name)
-from agents.model.opp_intent import AlphaIntentHead, BetaSwitchHead
 from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY, SECONDARY_COLS as _SECONDARY_COLS
 # The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
 # unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
@@ -115,7 +114,7 @@ from agents.model.pools import (  # noqa: F401
     CLSPool, HiddenOppBeliefPool,
 )
 from agents.model.belief_heads import (  # noqa: F401
-    BELIEF_GRAD_MODES, BeliefHead, BeliefSlots, HPTypeBelief, ItemBelief, MoveBelief,
+    BELIEF_GRAD_MODES, BeliefHead, HPTypeBelief, ItemBelief, MoveBelief,
     SpreadBelief, _BELIEF_SUPERVISION_KEYS, _EV_DELTA_SCALE, _HP_PRESENCE_OFF_LOGIT,
     _REVEAL_LOGIT, mask_typeless_hp,
 )
@@ -251,13 +250,14 @@ class Gen3FeaturesExtractor(ExtractorForward):
     """Orchestrates the phase modules in the asserted TIER order (`tier_contract.py`; the order of
     record, step by step, is `designs/ARCHITECTURE.md` §2.1). Bracketed phases are flag-gated:
         T0 RESOLVE  ObsUnpack → [T0SpeciesPrior] → PokemonEncoder → [MoveBelief (+ typed-HP compose),
-                    SpreadBelief, ItemBelief, BeliefSlots]
+                    SpreadBelief, ItemBelief, X5's HypothesisBuilder]
         T1 REASON   [DamageOperator] → [prefuse_proj: the op's incoming rows added to our tokens]
                     → [EntityMoveSeats E3/E4/E5] → [EventSeats] → edge cells → TeamTransformer
         T2 DECIDE   CLSPool (+ [value_threat_inject] on the value pool's copy) → [BeliefHead (a
-                    training-only side readout)] → [α / β intent heads and the pointer-cell blocks]
+                    training-only side readout)] → [the flat opponent pointer and the pointer-cell blocks]
         T3 DELIVER  [HiddenOppBeliefPool] / [value_entity_pool] → ProjectionAssembler → [WinProbHead]
-    then a pre-projection LayerNorm + Linear + ReLU per side. The `DamageOperator` runs ONCE, before
+    then the POLICY side's pre-projection LayerNorm + Linear + ReLU; the value side returns `value_pooled`
+    as it is (no projection: architecture audit F1). The `DamageOperator` runs ONCE, before
     attention, on the pre-attention tokens and the move-belief posterior; its output reaches the policy
     through the pointer cells, the `prefuse_proj` token injection and the edge biases, and the critic
     through `value_entity_pool` / `value_threat_inject` — it is in neither projection's concat. The
@@ -267,7 +267,7 @@ class Gen3FeaturesExtractor(ExtractorForward):
     contract."""
 
     def forward(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Returns a (pi_features, vf_features) tuple — both [B, PROJECTION_DIM].
+        """Returns a ``(pi_features, value_pooled)`` tuple — ``[B, policy_ctx_dim]`` and ``[B, D_MODEL]``.
 
         The consuming policy (`Gen3DualHeadMaskablePolicy`) unpacks the tuple and routes
         each half to its own mlp_extractor branch. Standard SB3 policies expect a single
@@ -288,21 +288,18 @@ class Gen3FeaturesExtractor(ExtractorForward):
 
     def _forward_unguarded(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor,
                                                                        torch.Tensor]:
-        pi_combined, vf_combined = self.forward_internal(obs)
+        pi_combined, value_pooled = self.forward_internal(obs)
         if self.policy_query is not None:
             # gen3_policy_readout_trunk_v1 (`--policy-readout trunk`, audit F2): `forward_internal`
             # returned the state query's [B, D_MODEL] read — it IS the policy features. No projection,
             # no ReLU; the policy's retired tower makes `forward_actor` the identity on it.
             pi_features = pi_combined
-            vf_pre = self.value_projection(self.value_pre_norm(vf_combined))
-            vf_features = self.activation(vf_pre)
-            self.stash.features_out = (pi_features, vf_features)
-            return pi_features, vf_features
-        pi_pre = self.projection(self.pre_proj_norm(pi_combined))
-        vf_pre = self.value_projection(self.value_pre_norm(vf_combined))
-        pi_features = self.activation(pi_pre)
-        vf_features = self.activation(vf_pre)
+        else:
+            pi_features = self.activation(self.projection(self.pre_proj_norm(pi_combined)))
+        # gen3_x5_version_break_v1 part 2 (audit F1): the value half IS `value_pooled` — no projection, no
+        # tower; the critic is `sigmoid(win_head(value_pooled))`, stashed by the forward and read by
+        # `policy._critic_value`.
         # K8 (gen3_rank_device_v1): the forward's own return, by reference — the learner's rank probe
         # reads the micro-step's forward instead of running a second one.
-        self.stash.features_out = (pi_features, vf_features)
-        return pi_features, vf_features
+        self.stash.features_out = (pi_features, value_pooled)
+        return pi_features, value_pooled

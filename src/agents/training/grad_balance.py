@@ -45,8 +45,8 @@ from torch import nn
 #     only the policy; ``value_cls`` feeds only the value head). The value gradient still flows
 #     *through* ``value_cls_attn`` to reach ``team_transformer`` (which IS shared and IS
 #     measured); we just don't count the head-private query params themselves.
-#   - ``pre_proj_norm``/``projection`` (policy head) + ``value_pre_norm``/``value_projection``
-#     (value head): the dedicated readouts, by definition not shared.
+#   - ``pre_proj_norm``/``projection`` (the policy head's dedicated readout, by definition not
+#     shared; the value side has no projection since the version break, F1).
 # (``unpack`` is stateless — no params — so its absence here is a no-op.)
 # Single source of truth: if the extractor's phase attribute names change, update this tuple.
 SHARED_TRUNK_PHASES = ("embeddings", "pokemon_encoder", "team_transformer", "assembler")

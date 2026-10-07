@@ -7,7 +7,7 @@ un-revealed, produce the per-opp-slot supervision target for the in-place belief
                                            slot (canonical order); -1 for revealed / non-target slots.
     belief_moves   [TEAM_SIZE, MAX] int  — up to MAX move NUMs of that hidden mon; -1 pad.
 
-Canonical assignment (must match `BeliefSlots`' slot order in the model):
+Canonical assignment (must match the model's believed-slot order, `ExtractorContext.opp_believed_mask`):
 - believed slots = opp slots with species_known==0 (the trailing zero-placeholder slots in the
   encoder's revealed-first opp iteration).
 - hidden mons = the opponent's full team minus the already-revealed species, sorted by species num

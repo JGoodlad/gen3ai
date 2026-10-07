@@ -78,7 +78,6 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("fork_max_per_battle",           _PLAIN),   # forks per episode slice (inert at 0.0)
     ("fork_crn",                      _PLAIN),   # dice | dice_and_draws (inert at 0.0)
     ("opp_intent_coef",               _F0_OPT),
-    ("beta_setvalued_coef",           _F0_OPT),
     # gen3_capacity_telemetry_v1 — the live saturation early-warnings. Folds NO loss term and
     # writes no `.grad`, so an ON run's parameter updates are bit-identical to an OFF one; these
     # four only decide whether the `capacity/*` scalars exist and at what cadence.

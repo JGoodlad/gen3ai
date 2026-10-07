@@ -106,10 +106,6 @@ class PpoHyperparameters:
     move_belief_latent_coef: float = 0.0
 
     opp_intent_coef: float = 0.0
-    # INERT since the X5 version break: the set-valued partial credit it scaled was the blob β loss,
-    # deleted with it (the flat pointer's OTHER_species label states "someone unseen" exactly). The
-    # flag still parses and the recipe still carries it; nothing in the learner reads it.
-    beta_setvalued_coef: float = 0.0
     # gen3_intent_label_bot_weight_v1: per-sample weight on the opponent-intent label rows whose
     # opponent was a heuristic BOT (`opp_class == 0`); every other class stays 1.0. 1.0 = OFF and the
     # loss is bit-identical (the unweighted reduction is taken unchanged). Training-only,

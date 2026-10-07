@@ -131,6 +131,8 @@ def test_a_fork_is_info_only_and_is_judged_against_the_fork_recipe(tmp_path):
 _LAUNCH_CLI = {"ent_coef": 0.05, "n_envs": 48, "grad_accum_steps": 32, "n_epochs": 10,
                "min_lr": 1e-05, "max_lr": None, "anneal_lr_start_steps": None,
                "weight_decay": 1e-05, "clip_range": 0.15, "clip_range_vf": None, "self_play": True,
+               # a PRE-break run's cli_args carries the deleted `beta_setvalued_coef`; it must never reach
+               # the namespace (no recipe row, no flag: the X5 version break, config v144, part 2)
                "beta_setvalued_coef": 0.05, "opp_intent_coef": 0.05,
                # INERT on resume: deliberately DIFFERENT from the parser's, to prove they are
                # never written back (`gamma` is no recipe row any more — a PRE-P11b run's cli_args still
@@ -163,8 +165,9 @@ def test_each_row_has_exactly_one_restart_route():
     assert "critic" not in route and route["move_belief_coef"] == "resume"     # the critic is no recipe row (P11b)
     assert route["policy_gae_lambda"] == "resume"
     assert route["vf_coef"] == "model_config"
-    assert {route[d] for d in ("n_envs", "n_epochs", "ent_coef", "self_play", "beta_setvalued_coef")} \
+    assert {route[d] for d in ("n_envs", "n_epochs", "ent_coef", "self_play")} \
         == {"cli_args"}
+    assert "beta_setvalued_coef" not in route
 
 
 def test_a_same_run_restart_resolves_every_untyped_row_by_its_route(tmp_path):
@@ -173,7 +176,7 @@ def test_a_same_run_restart_resolves_every_untyped_row_by_its_route(tmp_path):
     got = {d: (v, s) for d, v, s in rs.inherit_on_restart(ns, str(run), _SAVED)}
     assert ns.ent_coef == 0.03 and "ent_coef" not in got                 # typed wins
     assert got["n_envs"] == (48, "metadata.json:cli_args") and ns.n_epochs == 10
-    assert ns.clip_range_vf is None and ns.beta_setvalued_coef == 0.05
+    assert ns.clip_range_vf is None and not hasattr(ns, "beta_setvalued_coef")
     # value-CHECKED recorded fields come from the CHECKPOINT, not cli_args:
     assert got["vf_coef"] == (0.5, "model_config.json")
     # INERT on resume — never written back, whatever cli_args says (and a pre-P11b `gamma` never reaches

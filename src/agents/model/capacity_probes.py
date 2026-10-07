@@ -8,7 +8,7 @@ at matched step and DIFFERENCED.
 
   (a) `rank_probe`          — representation effective rank (participation ratio + srank@0.99)
                               on five taps: post-encoder role tokens, post-transformer team
-                              tokens, `value_pooled`, `pi_features`, `vf_features`.
+                              tokens, `value_pooled`, `pi_features`.
   (b) `trainability_probe`  — Lyle et al., *Understanding and Preventing Capacity Loss in RL*:
                               how well a LINEAR head fits K fixed random target functions from
                               the FROZEN features, against the same probe on a fresh
@@ -39,15 +39,16 @@ from agents.training.rank_metrics import effective_rank
 
 # Bump when the JSON schema or an estimator's DEFINITION changes — a generation-over-generation
 # reader must be able to refuse to difference two artifacts that measured different things.
-CAPACITY_BATTERY_VERSION = 1
+# 2: the `vf_features` tap is gone — since the version break (config v144, audit F1) the extractor's value
+# half IS `value_pooled` (no value projection), so the tap duplicated `value_pooled`.
+CAPACITY_BATTERY_VERSION = 2
 
-#: The five taps, in pipeline order. Token taps are captured as [N, T, D]; the rest as [N, D].
+#: The four taps, in pipeline order. Token taps are captured as [N, T, D]; the rest as [N, D].
 FEATURE_TAPS: Tuple[str, ...] = (
     "role_tokens",      # post-encoder, pre-transformer  [N, 12, D_MODEL]
     "team_tokens",      # post-transformer               [N, 12, D_MODEL]
-    "value_pooled",     # the critic's CLS readout       [N, D_MODEL]
+    "value_pooled",     # the critic's input (win_head)  [N, D_MODEL]
     "pi_features",      # the actor's final rep          [N, PROJECTION_DIM]
-    "vf_features",      # the critic's final rep         [N, PROJECTION_DIM]
 )
 _TOKEN_TAPS = frozenset({"role_tokens", "team_tokens"})
 
@@ -256,9 +257,8 @@ def capture_features(fe: Any, obs: np.ndarray, masks: np.ndarray, batch: int = 2
             for i in range(0, len(obs), batch):
                 ob = {"observation": torch.as_tensor(obs[i:i + batch], device=device),
                       "action_mask": torch.as_tensor(masks[i:i + batch], device=device).float()}
-                pi, vf = fe(ob)
+                pi, _vf = fe(ob)
                 parts["pi_features"].append(pi.float().cpu().numpy())
-                parts["vf_features"].append(vf.float().cpu().numpy())
                 parts["value_pooled"].append(fe.last_value_pooled.float().cpu().numpy())
                 for name in ("role_tokens", "team_tokens"):
                     if name not in caught:

@@ -686,23 +686,17 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         ko_cb = torch.where(nf[0], nf[3], ko_cb)
         return high, low, crit, ko, high_cb, ko_cb
 
-    def _p_outspeed(self, our_spe: torch.Tensor, opp_spe: torch.Tensor,
-                    opp_spe_std: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def _p_outspeed(self, our_spe: torch.Tensor, opp_spe: torch.Tensor) -> torch.Tensor:
         """P(our mon outspeeds the opp active): a logistic over the speed gap at a FIXED scale — the `off` form
         of `--speed-physics` (production). All args broadcast together. Under `on` no site calls this: each
         builds its inputs in `damage_op_speed` and calls `_p_first` (the discrete Smogon speed mixture + the
         exact gen-3 rules, `move_order`).
 
-        `opp_spe_std` IS ACCEPTED AND IGNORED. It fed the uncertainty-aware variant
-        (gen3_bidir_threat_trunk_v1 #3, `prob_outspeed`) — divide the gap by the believed speed STD so a
-        high-variance opp speed reads nearer 0.5 — which was DELETED with its flag by
-        `gen3_dead_flag_purge_v2`: never enabled in any gen-9+ run, OFF in production, and no research_state
-        doc named it as a lever. The parameter and its ~6 `SPECIES_SPREAD_PRIOR[..., _SB_SPE, 1]` lookups
-        survive on purpose, and the distinction is the v88 deletion rule's: the deleted BRANCH is code that
-        never ran, while those lookups RAN every forward and were merely discarded. Removing them is
-        behaviour-preserving but is a live-hot-path edit across `damage_op` / `_blocks` / `_pairwise` rather
-        than a provably-inert one, so it is banked as the named follow-up in
-        `designs/research_state/flag_census_2026-09-06.md` instead of being smuggled into a purge."""
+        gen3_x5_version_break_v1 part 2 (architecture audit F7a): the `opp_spe_std` argument it once accepted and
+        IGNORED is DELETED, with the ~6 `SPECIES_SPREAD_PRIOR[..., _SB_SPE, 1]` lookups that fed it on this path
+        every forward only to be discarded (the deleted uncertainty-aware variant's input,
+        `gen3_dead_flag_purge_v2`; banked in `designs/research_state/flag_census_2026-09-06.md`). The `on` path
+        computes its own spread where it consumes it; this path computes none."""
         return torch.sigmoid((our_spe - opp_spe) / _DMG_SPEED_SCALE)
 
     # ------------------------------------------------------------------ pointer-native action head cells
@@ -1009,7 +1003,6 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         our_spe_mult[ar, ctx.our_active_idx] = self._boost_mult(our_b_spe) * torch.where(
             our_para > 0.5, our_para.new_tensor(_DMG_PARA_SPEED), our_para.new_tensor(1.0))
         our_spe = our_spe * our_spe_mult
-        opp_spe_std = self.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, opp_act], _SB_SPE, 1]        # [B] (#3)
         if self.speed_physics:
             # gen3_speed_physics_v1: our six EXACT speeds (paralysis on every row, the stage on the active's) vs
             # their active's speed belief, Quick Claw folded — and the same with each of ours paralysed (the
@@ -1019,7 +1012,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
             self.stash.speed_fast_pair = (p_outspeed, self._p_first_vs_opp_active(
                 ctx, spread_belief, self._our_speeds_exact(ctx, para=torch.ones_like(our_spe)), _our_qc))
         else:
-            p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None], opp_spe_std[:, None])       # [B,6]
+            p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None])                             # [B,6]
 
         # Slot order == the named _DMG_IDX_* offsets: [phys_low, phys_high, phys_crit, phys_pko, phys_acc,
         #               spec_low, spec_high, spec_crit, spec_pko, spec_acc, outspeed, prov]
@@ -1181,7 +1174,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                     _dmg = self.stash.pair_cells
                     _extra = self.pair_outcome_coords(
                         ctx, _ti, _dmg[..., PAIR_OUTCOME_IDX["high"]],
-                        our_spe, opp_spe, opp_spe_std, d_base)
+                        our_spe, opp_spe, d_base)
                     self.stash.pair_in = torch.cat([_dmg, _extra], dim=-1)     # [B,J,K,RAW]
                 else:
                     # X5: the status / tempo coordinates on the EXTENDED axis (num-keyed), then the
@@ -1189,7 +1182,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                     assert fixed_moves is not None and self.stash.seat_ext_idx is not None
                     _ext = self.pair_outcome_coords(
                         ctx, self.stash.seat_ext_idx, _dmg_g[..., PAIR_OUTCOME_IDX["high"]],
-                        our_spe, opp_spe, opp_spe_std, d_base)
+                        our_spe, opp_spe, d_base)
                     self.stash.pair_in = fixed_moves.mix_seats(
                         torch.cat([_dmg_g, _ext], dim=-1), dim=2)              # [B,J,K,RAW]
                     if _ou is not None and self.stash.pair_cells_other is not None:
@@ -1199,7 +1192,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                                              ).expand(_pr_cells_raw.shape[0], -1)
                         _ext_f = self.pair_outcome_coords(
                             ctx, _full, _pr_cells_raw[..., PAIR_OUTCOME_IDX["high"]],
-                            our_spe, opp_spe, opp_spe_std, d_base)                 # [B,J,M,8]
+                            our_spe, opp_spe, d_base)                 # [B,J,M,8]
                         _co = torch.einsum("bjcf,bc->bjf", _ext_f, _ou.to(_ext_f.dtype))
                         self.stash.pair_in_other = torch.cat(
                             [self.stash.pair_cells_other[:, :, 0], _co], dim=-1).unsqueeze(2)

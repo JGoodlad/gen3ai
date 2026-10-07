@@ -218,11 +218,11 @@ def _assert_totals(fe: Any, pi: List[Tuple[str, int, str]], vf: List[Tuple[str, 
             f"pi parts sum to {pi_total} but projection.in_features is "
             f"{fe.projection.in_features} — head_input_parts no longer matches "
             f"ProjectionAssembler.forward. Parts: {pi}")
-    if vf_total != fe.value_projection.in_features:
+    if vf_total != fe.vf_features_dim:
         raise AssertionError(
-            f"vf parts sum to {vf_total} but value_projection.in_features is "
-            f"{fe.value_projection.in_features} — head_input_parts no longer matches "
-            f"ProjectionAssembler.forward / forward_internal. Parts: {vf}")
+            f"vf parts sum to {vf_total} but the extractor's value half is {fe.vf_features_dim} wide "
+            f"— head_input_parts no longer matches ProjectionAssembler.forward / forward_internal. "
+            f"Parts: {vf}")
 
 
 def _head_table(title: str, linear: Any, parts: List[Tuple[str, int, str]], total_attr: str) -> str:
@@ -239,9 +239,15 @@ def _head_table(title: str, linear: Any, parts: List[Tuple[str, int, str]], tota
 def head_inputs_section(fe: Any) -> str:
     pi, vf = head_input_parts(fe)
     _assert_totals(fe, pi, vf)
+    vf_lines = ["**The value half — no projection** (architecture audit F1, config v144): the extractor "
+                "returns `value_pooled` itself, the win-prob head's input; the critic is "
+                "`sigmoid(win_head(value_pooled))` and no critic tower is built.", "",
+                "| Part | Dims | Source |", "|---|---|---|"]
+    for name, dims, source in vf:
+        vf_lines.append(f"| {name} | {dims} | {source} |")
+    vf_lines.append(f"| **total** | **{fe.vf_features_dim}** | == `vf_features_dim`, asserted at generation |")
     return (_head_table("pi_projection", fe.projection, pi, "projection")
-            + "\n\n"
-            + _head_table("vf_projection", fe.value_projection, vf, "value_projection"))
+            + "\n\n" + "\n".join(vf_lines))
 
 
 # --------------------------------------------------------------------------------- §6 flag table

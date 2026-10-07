@@ -1195,8 +1195,8 @@ structural toggle is version-checked and fresh-only; every `*_coef` is training-
 on a flagless resume**.
 🧩 **The hidden-team row is `hidden_team_set`** — X5's set BCE (presence + BeliefHead re-targeted +
 hypothesis-seat moves) on `--opp-belief-aux-coef`; the blob path's Hungarian `hidden_team` row was deleted at the
-X5 version break (v144). ⚠️ `--beta-setvalued-coef` is INERT since the same deletion (it scaled the blob β's
-set-valued credit; the flag still parses — a census row is owed).
+X5 version break (v144); `--beta-setvalued-coef` (which scaled the blob β's set-valued credit) was DELETED in the
+break's part 2 (`designs/deleted_flags.md`).
 **Full detail — in [`designs/training/belief_losses.md`](../../../designs/training/belief_losses.md).**
 
 ## `stats.py` — the package's SHARED small-sample statistics

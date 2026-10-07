@@ -234,9 +234,9 @@ class ExtractorContext:
     fainted_mask_ours: torch.Tensor
     fainted_mask_opp: torch.Tensor
     # Per-opp-slot "still hidden" mask [B, 6]: True where species_known==0 (Gen 3 has no team
-    # preview, so these are the opponent's un-revealed party mons). Single-sourced here so the
-    # in-place belief-slot injection (BeliefSlots) and any future consumer agree on which slots
-    # are believed vs revealed. Always computed (cheap); only consumed when belief is enabled.
+    # preview, so these are the opponent's un-revealed party mons). Single-sourced here so every
+    # consumer (X5's hypothesis set, the belief labels' slot order) agrees on which slots are
+    # believed vs revealed. Always computed (cheap); only consumed when belief is enabled.
     opp_believed_mask: torch.Tensor
     # Per-opp-slot ADDRESSABILITY [B, 6] bool — "is this slot a legal object to point at":
     # alive-and-revealed OR still-unrevealed. Single-sourced here because `hp == 0` means

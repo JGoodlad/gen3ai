@@ -111,7 +111,7 @@ class FlatIntentHead(torch.nn.Module):
         """`tokens` [B,F,D] · `ctx` [B,C] · `log_pi` [B,F] (DETACHED here, M10) · `live` [B,F] bool
         → logits [B,F]. A masked candidate is −inf; a row with NO live candidate (a padding row) is
         left all-zero (finite), so a cross-entropy over it — its target is always IGNORE — cannot be
-        NaN (the `BetaSwitchHead` rule)."""
+        NaN (the deleted blob `BetaSwitchHead`'s rule)."""
         B, F, _ = tokens.shape
         if F != flat_width(k):
             raise ValueError(f"the flat pointer has {F} candidates, expected {flat_width(k)} for K={k}")

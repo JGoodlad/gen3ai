@@ -200,8 +200,10 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         assert pi_features.shape == (1, pi_dim), (
             f"Round-trip test: unexpected policy-feature shape {pi_features.shape}, expected (1, {pi_dim})"
         )
-        assert vf_features.shape == (1, PROJECTION_DIM), (
-            f"Round-trip test: unexpected value-feature shape {vf_features.shape}, expected (1, {PROJECTION_DIM})"
+        # The value half is `value_pooled` itself (no projection since the version break, audit F1).
+        vf_dim = int(reloaded.policy.features_extractor.vf_features_dim)
+        assert vf_features.shape == (1, vf_dim), (
+            f"Round-trip test: unexpected value-feature shape {vf_features.shape}, expected (1, {vf_dim})"
         )
         if debug:
             print(f"[ModelVersion] Round-trip smoke test PASSED (pi shape: {tuple(pi_features.shape)}, "
