@@ -71,7 +71,7 @@ def _extractor() -> Any:
 
 def _ckpt_extractor(zip_path: str) -> Any:
     """A checkpoint's extractor with the physics switched ON in place (no parameter differs between the arms; the
-    Quick Claw term is off in gen3ou, so the op needs no buffer the checkpoint's build lacks)."""
+    Quick Claw term is off in gen3ou; the speed mixture's non-persistent table is added by `_p_first`)."""
     from main.policy_spectrum.reader import load_checkpoint
     fe = load_checkpoint(Path(zip_path)).policy.features_extractor
     fe.eval()
@@ -82,6 +82,9 @@ def _p_first(fe: Any, rows: np.ndarray, on: bool, batch: int = 256) -> Tuple[np.
     """Per row: (the op's PRE-gain P(we act first at equal priority) for our active, our active's TRUE Quick Claw)."""
     from agents.model.damage_tables import QUICK_CLAW_ITEM_NUM
     op = fe.damage_op
+    if on and not hasattr(op, "SPEED_MIX"):             # a checkpoint built `off`: its mixture table, non-persistent
+        from agents.model.belief_tables import build_species_speed_mix
+        op.register_buffer("SPEED_MIX", build_species_speed_mix(int(op.BASE_STATS.shape[0])), persistent=False)
     prev = op.speed_physics
     op.speed_physics = on
     ps: List[np.ndarray] = []
@@ -249,9 +252,9 @@ def test_the_priority_bracket_is_never_contradicted_and_the_physics_is_calibrate
     assert r["bracket"]["rows"] > 0, f"NOT EXERCISED: no unequal-priority turn ({r['skipped']})"
     assert r["bracket"]["contradicted"] == 0, r["bracket"]["examples"]
     assert r["within_bracket_rows"] >= 200, "too few equal-priority turns to read a calibration"
-    # the saturated bins hold: where the physics says "almost surely first / second", it almost surely is (the full
-    # bank has ONE float32-certain miss — a Timid 252-Speed Blissey 15 prior spreads above the Smogon mean: the
-    # Gaussian belief's tail, a named residual, ledger 2026-10-07)
+    # the saturated bins hold: where the physics says "almost surely first / second", it almost surely is (the
+    # Gaussian it replaced had ONE float32-certain miss on the full bank — a Timid 252-Speed Blissey 15 prior
+    # spreads above the Smogon mean; the discrete mixture keeps that set's mass, gen3_speed_mixture_v1)
     tab = {row["bin"]: row for row in r["on"]["table"]}
     assert tab["[0.95,1.00]"]["n"] > 0 and tab["[0.95,1.00]"]["observed"] >= 0.95, tab
     assert tab["[0.00,0.05)"]["n"] > 0 and tab["[0.00,0.05)"]["observed"] <= 0.05, tab

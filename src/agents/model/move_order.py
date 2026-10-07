@@ -8,10 +8,11 @@ layers, and both live here so no reader can fork either:
   priority does speed decide. This was `move_resolution_rules.p_seat_first` (the move-resolution family's and
   `intent_conditional`'s rule); it moved here unchanged so the bracket and the speed physics are one module.
 * **within a bracket** (:func:`p_first_same_priority`) — P(our mon acts before theirs at equal priority): the
-  speed BELIEF integral with the speed-tie coin flip (:func:`p_outspeed_belief`), then the gen-3 Quick Claw roll
-  (:func:`p_first_quick_claw`). Our speed is EXACT (:func:`gen3_speed_stat` → :func:`gen3_stage_speed` →
-  :func:`gen3_para_speed`, Showdown's integer arithmetic); theirs is a belief, so its stage / paralysis factor
-  scales the belief's mean AND spread (:func:`belief_speed_scale`).
+  DISCRETE speed mixture with the speed-tie coin flip (:func:`p_outspeed_mixture`), then the gen-3 Quick Claw
+  roll (:func:`p_first_quick_claw`). Our speed is EXACT (:func:`gen3_speed_stat` → :func:`gen3_stage_speed` →
+  :func:`gen3_para_speed`, Showdown's integer arithmetic); theirs is a DISCRETE distribution over the Speed STAT
+  (the Smogon spreads mixture, gen3_speed_mixture_v1), and each support point takes the SAME exact stage and
+  paralysis arithmetic as ours (:func:`gen3_final_speed`), so no rounding is approximated on either side.
 
 Every rule below is verified in `deps/pokemon-showdown` with the gen-3 inheritance resolved (gen3 → gen4 → gen5 →
 … → base; paths relative to `deps/pokemon-showdown/`):
@@ -42,15 +43,14 @@ has no Quick Claw); Showdown master's `config/formats.ts` ``[Gen 3] OU`` banlist
 exist on a legal team — while :func:`p_first_quick_claw` stays implemented and tested for a format that allows it.
 
 What is NOT modelled (named residuals, not silently wrong): Swift Swim / Chlorophyll (speed ×2 in rain / sun),
-Macho Brace (×0.5), and the opponent's speed is a GAUSSIAN over the integer lattice (the belief's mean and
-spread), not its exact usage mixture.
+Macho Brace (×0.5). Their speed is the species' Smogon USAGE mixture: what this battle has revealed about it (an
+observed move order) does not condition it, and the learned spread belief is not read here.
 
-Duck-typed over tensors (tensor METHODS only — ``floor``, ``round``, ``erf``, ``clamp``, ``to``), so this module
+Duck-typed over tensors (tensor METHODS only — ``floor``, ``round``, ``clamp``, ``to``, ``sum``, ``gather``), so this module
 imports no torch, exactly like the rule tables it serves.
 """
 from __future__ import annotations
 
-import math
 from typing import Any
 
 #: Gen 3's Quick Claw: ONE roll per turn, ``randomChance(1, 5)`` (`sim/battle.ts`), shared by every holder.
@@ -74,8 +74,6 @@ def quick_claw_live() -> bool:
 
 #: The modes of `--speed-physics` (gen3_speed_physics_v1). 'off' is the logistic, production.
 SPEED_PHYSICS_MODES = ("off", "on")
-
-_SQRT2 = math.sqrt(2.0)
 
 
 # ------------------------------------------------------------------------------------- the priority bracket
@@ -121,37 +119,23 @@ def gen3_final_speed(stat: Any, stage: Any, para: Any) -> Any:
     return gen3_para_speed(gen3_stage_speed(stat, stage), para)
 
 
-def belief_speed_scale(stage: Any, para: Any) -> Any:
-    """The factor a stage and paralysis put on a BELIEVED speed (its mean and its spread scale together): the
-    stage multiplier ``(2+s)/2`` / ``2/(2−s)`` times 1/4 under paralysis. A belief is continuous, so the integer
-    floors of the exact path have nothing to act on."""
-    s = stage.round().clamp(-6.0, 6.0)
-    pos = (s >= 0).to(s.dtype)
-    mult = pos * (2.0 + s.clamp(min=0.0)) / 2.0 + (1.0 - pos) * 2.0 / (2.0 - s.clamp(max=0.0))
-    p = (para > 0.5).to(s.dtype)
-    return mult * (1.0 - 0.75 * p)
+# ------------------------------------------------------------------------------ the speed MIXTURE
+def p_outspeed_mixture(ours: Any, their_final: Any, cum: Any) -> Any:
+    """P(our EXACT speed beats theirs) + ½ P(a tie), their FINAL speed a DISCRETE distribution
+    (gen3_speed_mixture_v1):
 
+        Σ_v w_v · (1[ours > f(v)] + ½ · 1[ours = f(v)])
 
-# ---------------------------------------------------------------------------------- the speed integral
-def _phi(z: Any) -> Any:
-    """The standard normal CDF."""
-    return 0.5 * (1.0 + (z / _SQRT2).erf())
-
-
-def p_outspeed_belief(ours: Any, mu: Any, sigma: Any) -> Any:
-    """P(our EXACT speed ``ours`` beats theirs) + ½ P(a tie), their FINAL speed believed ~ N(``mu``, ``sigma``²) on
-    the integer lattice (a speed stat is an integer): with T the believed speed rounded to an integer,
-
-        P(T < s) + ½ P(T = s) = ½ [Φ((s − ½ − μ)/σ) + Φ((s + ½ − μ)/σ)]
-
-    — the tie is a coin flip (`speedSort`'s shuffle), and nothing here is a free constant (the ½ is half a stat
-    point, the lattice). ``sigma = 0`` (a point belief) is the exact step ``1[s > μ] + ½·1[s = μ]``; a wider
-    spread pulls the probability toward ½. All three broadcast."""
-    ok = (sigma > 0).to(mu.dtype)
-    safe = sigma * ok + (1.0 - ok)                       # 1 where σ = 0: that branch is discarded below
-    smooth = 0.5 * (_phi((ours - 0.5 - mu) / safe) + _phi((ours + 0.5 - mu) / safe))
-    step = (ours > mu).to(mu.dtype) + 0.5 * (ours == mu).to(mu.dtype)
-    return ok * smooth + (1.0 - ok) * step
+    — the tie is a coin flip (`speedSort`'s shuffle); nothing is a free constant. ``their_final`` ``[..., V]`` is
+    each support point's FINAL speed f(v), NON-DECREASING along the last axis (the lattice through the exact,
+    monotone stage / paralysis arithmetic), and ``cum`` ``[..., V+1]`` the cumulative weights with a leading 0
+    (``cum[..., n]`` = the mass of the first n points). ``ours`` ``[..., Q]`` (Q values per row, its leading
+    axes ``their_final``'s). Because f is sorted, the mass below ``ours`` is a PREFIX whose length is a count, so
+    the sum is two ``gather``s. Returns ``[..., Q]`` in ``ours``'s dtype."""
+    below = (their_final.unsqueeze(-2) < ours.unsqueeze(-1)).sum(-1)           # [..., Q]: f(v) <  ours
+    at_or_below = (their_final.unsqueeze(-2) <= ours.unsqueeze(-1)).sum(-1)    # [..., Q]: f(v) <= ours
+    p = 0.5 * (cum.gather(-1, below) + cum.gather(-1, at_or_below))
+    return p.to(ours.dtype)
 
 
 def p_first_quick_claw(p_speed: Any, our_qc: Any, opp_qc: Any) -> Any:
@@ -164,7 +148,8 @@ def p_first_quick_claw(p_speed: Any, our_qc: Any, opp_qc: Any) -> Any:
     return (1.0 - QUICK_CLAW_P) * p_speed + QUICK_CLAW_P * on_roll
 
 
-def p_first_same_priority(ours: Any, mu: Any, sigma: Any, our_qc: Any, opp_qc: Any) -> Any:
-    """THE within-bracket rule: the speed integral, then Quick Claw. Every reader of P(we act first at equal
-    priority) under `--speed-physics on` goes through this one function."""
-    return p_first_quick_claw(p_outspeed_belief(ours, mu, sigma), our_qc, opp_qc)
+def p_first_same_priority(ours: Any, their_final: Any, cum: Any, our_qc: Any, opp_qc: Any) -> Any:
+    """THE within-bracket rule: the speed mixture (:func:`p_outspeed_mixture`), then Quick Claw. Every reader of
+    P(we act first at equal priority) under `--speed-physics on` goes through this one function. ``our_qc`` /
+    ``opp_qc`` broadcast against the ``[..., Q]`` result."""
+    return p_first_quick_claw(p_outspeed_mixture(ours, their_final, cum), our_qc, opp_qc)

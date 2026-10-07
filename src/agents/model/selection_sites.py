@@ -118,12 +118,6 @@ RULE_KINDS = ("topk", "argmax", "threshold", "threshold_self", "sort_head")
 MARGIN: Dict[Tuple[str, str], Rule] = {
     # --- the believed-candidate SELECTIONS: topk over the composed move belief sigmoid(logits) * mask
     ("pointer_head", "w_all.topk(K, dim=-1)"): Rule("topk", why="E5 tail seats: each opp mon's top-K"),
-    # gen3_speed_physics_v1 (v143, `--speed-physics on` only): a POINT speed belief (sigma 0 — a padded slot)
-    # takes the exact step; its operand is the believed speed, a score.
-    ("move_order", "ours > mu"): Rule("threshold", zero_exact=True,
-                                      why="speed physics: a point belief's outspeed step"),
-    ("move_order", "ours == mu"): Rule("threshold", zero_exact=True,
-                                       why="speed physics: a point belief's speed-tie coin flip"),
     ("pointer_head", "w_all >= topv[..., -1:].clamp(min=1e-09)"): Rule(
         "threshold_self", why="E5 in-top-K mask at the K-th value of the same tensor (ties incl.)"),
     ("damage_op_pairwise", "w_all.detach().topk(K, dim=-1)"): Rule(
@@ -302,10 +296,12 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     # gen3_speed_physics_v1 (v143): THE move-order rule — the priority bracket (tables vs tables; the speed
     # tie-break is a multiplier, never a threshold) and our EXACT speed arithmetic (observation spread / stage /
-    # paralysis / item reads and integers, every floor and round of Showdown's integer formulas). The believed
-    # spread's zero test reads the Smogon prior table (× a stage / paralysis factor of the observation).
+    # paralysis / item reads and integers, every floor and round of Showdown's integer formulas). The speed
+    # MIXTURE (gen3_speed_mixture_v1) compares two INTEGER speeds: the lattice through that same exact arithmetic
+    # vs our exact speed — no score operand, so no margin.
     "move_order": {
-        "TABLE": ("prio_k > prio_m", "prio_k == prio_m", "sigma > 0"),
+        "TABLE": ("prio_k > prio_m", "prio_k == prio_m"),
+        "INT": ("their_final.unsqueeze(-2) < ours.unsqueeze(-1)", "their_final.unsqueeze(-2) <= ours.unsqueeze(-1)"),
         "OBS": ("iv.round()", "ev.round()", "(ev.round() / 4.0).floor()", "(nature_mult * 100.0).round()",
                 "(inner * pct / 100.0).floor()", "stage.round()", "(stat * (2.0 + s.clamp(min=0.0)) / 2.0).floor()",
                 "(stat * 2.0 / (2.0 - s.clamp(max=0.0))).floor()", "s >= 0",

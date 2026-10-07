@@ -6,8 +6,10 @@ What must hold, each failing on revert:
     rule is never called (a raising stub on `damage_op_speed.p_first_same_priority` lets `off` through);
   * **`on` replaces the logistic at the op's sites** — every outspeed read differs from `off` and is the ONE rule;
   * on a REAL observation edited to a constructed board: their paralysis raises P(we first), our +2 stage raises
-    it, a Choice Band on our active changes nothing, a belief exactly at our speed reads ½ (the coin flip), a
-    wider believed spread pulls P toward ½, and Quick Claw is OFF in gen3ou (and priced when a format allows it);
+    it, a Choice Band on our active changes nothing, a mixture exactly at our speed reads ½ (the coin flip), the
+    learned spread belief is not read, and Quick Claw is OFF in gen3ou (and priced when a format allows it);
+  * the speed mixture is the FULL Smogon spreads mixture (gen3_speed_mixture_v1): Blissey's max-Speed sets keep
+    their mass (the Gaussian's 2026-10-07 certain-and-wrong row);
   * the version machinery (migration default, `check_compatible`, snapshot kwargs) and the dependency refusal.
 """
 from __future__ import annotations
@@ -75,6 +77,7 @@ def test_off_builds_nothing_and_never_calls_the_rule(obs: torch.Tensor, monkeypa
     fe = _build()
     assert fe.speed_physics == "off" and fe.damage_op.speed_physics is False
     assert not hasattr(fe.damage_op, "SPECIES_QC_PRIOR")
+    assert not hasattr(fe.damage_op, "SPEED_MIX")
     with torch.no_grad():
         fe({"observation": obs[:8]})                      # off: the stub is never reached
     assert fe.damage_op.stash.speed_fast_pair is None and fe.damage_op.stash.item_qc_prob is None
@@ -172,9 +175,11 @@ def test_choice_band_does_not_touch_speed(obs: torch.Tensor, fe_on: Gen3Features
     assert torch.equal(_p_active(fe_on, ctx), _p_active(fe_on, _with(ctx, item_ids=items)))
 
 
-def test_a_belief_at_our_exact_speed_is_a_coin_flip(obs: torch.Tensor, fe_on: Gen3FeaturesExtractor) -> None:
-    """Neither side boosted nor paralysed, their believed speed set EXACTLY to our active's exact speed: ½."""
-    ctx = _ctx(fe_on, obs)
+def test_a_mixture_at_our_exact_speed_is_a_coin_flip(obs: torch.Tensor) -> None:
+    """Neither side boosted nor paralysed, their species' mixture set to a POINT at our active's exact speed: ½."""
+    fe = _build(speed_physics="on")
+    op = fe.damage_op
+    ctx = _ctx(fe, obs)
     ar = torch.arange(ctx.batch_size)
     col = POKEMON_CONDITION_OFFSET + _COND_PAR_IDX
     pp = ctx.pokemon_part.clone()
@@ -182,31 +187,41 @@ def test_a_belief_at_our_exact_speed_is_a_coin_flip(obs: torch.Tensor, fe_on: Ge
     our, opp = ctx.our_ctx_raw.clone(), ctx.opp_ctx_raw.clone()
     our[:, 8:10], opp[:, 8:10] = 0.0, 0.0
     ctx = _with(ctx, pokemon_part=pp, our_ctx_raw=our, opp_ctx_raw=opp)
-    ours = fe_on.damage_op._our_speeds_exact(ctx)[ar, ctx.our_active_idx]
-    sb = torch.full((ctx.batch_size, TEAM_SIZE, 5), 200.0)
-    sb[ar, ctx.opp_active_local, 4] = ours
-    p = _p_active(fe_on, ctx, sb)
-    keep = fe_on.damage_op.SPECIES_SPREAD_PRIOR[ctx.species_ids[ar, TEAM_SIZE + ctx.opp_active_local], 4, 1] > 0
+    ours = op._our_speeds_exact(ctx)[ar, ctx.our_active_idx]
+    their = ctx.species_ids[ar, TEAM_SIZE + ctx.opp_active_local]
+    keep = their.unique(return_counts=True)
+    keep = torch.isin(their, keep[0][keep[1] == 1])                 # one species = one point: unique rows only
     assert keep.sum() >= 4
-    assert torch.allclose(p[keep], torch.full_like(p[keep], 0.5), atol=1e-6)
+    for b in torch.nonzero(keep).flatten().tolist():                # this test's own op: the mixture edited
+        op.SPEED_MIX[their[b]] = 0.0
+        op.SPEED_MIX[their[b], int(ours[b].item())] = 1.0
+    p = _p_active(fe, ctx)
+    assert torch.equal(p[keep], torch.full_like(p[keep], 0.5))
 
 
-def test_a_wider_believed_spread_pulls_toward_half(obs: torch.Tensor) -> None:
-    fe = _build(speed_physics="on")
-    ctx = _ctx(fe, obs)
-    op = fe.damage_op
-    ar = torch.arange(ctx.batch_size)
-    narrow = _p_active(fe, ctx)
-    with torch.no_grad():
-        mu, sd = op._opp_speeds_belief(ctx, None)
-        gap = op._our_speeds_exact(ctx)[ar, ctx.our_active_idx] - mu[ar, ctx.opp_active_local]
-    op.SPECIES_SPREAD_PRIOR[..., 1] *= 4.0                     # this test's own op: the spread ×4
-    wide = _p_active(fe, ctx)
-    # a gap of at least one stat point (inside half a point the lattice integral is not monotone in the spread),
-    # a real spread, and a probability off its saturation (rule 8: no input near a boundary)
-    moved = (gap.abs() >= 1.0) & (sd[ar, ctx.opp_active_local] > 0) & (narrow > 0.01) & (narrow < 0.99)
-    assert moved.sum() >= 4
-    assert ((wide[moved] - 0.5).abs() < (narrow[moved] - 0.5).abs()).all()
+def test_the_learned_spread_belief_is_not_read(obs: torch.Tensor, fe_on: Gen3FeaturesExtractor) -> None:
+    """gen3_speed_mixture_v1: their speed is the Smogon mixture alone — a believed speed changes nothing (the
+    Gaussian it replaced centred on it)."""
+    ctx = _ctx(fe_on, obs)
+    sb = torch.full((ctx.batch_size, TEAM_SIZE, 5), 999.0)
+    assert torch.equal(_p_active(fe_on, ctx), _p_active(fe_on, ctx, sb))
+
+
+def test_the_speed_mix_is_the_full_smogon_spreads_mixture() -> None:
+    """Every row is a distribution; Blissey — the 2026-10-07 certain-and-wrong row (a Timid 252-Speed Blissey,
+    229, against our 214, read P = 1.0 by the Gaussian at 148 ± 5) — keeps its max-Speed sets' mass, so our 214
+    is NOT certain to move first; and the mixture's support is lumpy (most mass at the uninvested speeds)."""
+    from agents import gen3_data
+    from agents.model.belief_tables import SPEED_LATTICE, build_species_speed_mix
+    n = int(_build(speed_physics="on").damage_op.BASE_STATS.shape[0])
+    mix = build_species_speed_mix(n)
+    assert mix.shape == (n, SPEED_LATTICE)
+    assert torch.allclose(mix.sum(-1), torch.ones(n), atol=1e-5)
+    bl = mix[gen3_data.species.get("blissey").num]
+    assert bl[229].item() > 0.0                                     # Timid 252 Speed: (110+31+63+5)·1.1
+    above = bl[215:].sum().item()
+    assert 0.0 < above < 0.05                                       # rare but real: P(we first) < 1
+    assert bl[:214].sum().item() > 0.95
 
 
 def test_quick_claw_is_off_in_gen3ou_and_priced_where_a_format_allows_it(obs: torch.Tensor) -> None:

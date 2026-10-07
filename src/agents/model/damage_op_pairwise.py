@@ -272,7 +272,7 @@ class DamageOperatorPairwise:
         opp_std = self._x5_avg(self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1], "spe_std")   # [B,6]
         if self.speed_physics:
             # gen3_speed_physics_v1: our active's EXACT speed at its live stage (+ slot k's speed delta below) vs
-            # their six believed speeds — the one rule (`damage_op_speed`).
+            # their six speed mixtures — the one rule (`damage_op_speed`).
             p_base = self._p_first_active_at_stage(ctx, spread_belief, cur_spe_stage)  # [B,6]
         else:
             p_base = self._p_outspeed((act_spe * self._boost_mult(cur_spe_stage))[:, None],
@@ -437,15 +437,12 @@ class DamageOperatorPairwise:
         opp_para = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
         opp_std = self.SPECIES_SPREAD_PRIOR[opp_species, _SB_SPE, 1]                 # [B,6]
         if self.speed_physics:
-            # gen3_speed_physics_v1: their speed belief now vs with them paralysed (the stage stays on their
+            # gen3_speed_physics_v1: their speed mixture now vs with them paralysed (the stage stays on their
             # active), our active's EXACT speed — the one rule (`damage_op_speed`).
-            _ours = self._our_speeds_exact(ctx)[ar, ctx.our_active_idx][:, None]       # [B,1]
-            _qc_u = self._our_quick_claw(ctx)[ar, ctx.our_active_idx][:, None]
-            _qc_o = self._opp_quick_claw(ctx)
-            _mu, _sd = self._opp_speeds_belief(ctx, spread_belief)
-            p_now = self._p_first(_ours, _mu, _sd, _qc_u, _qc_o)                       # [B,6]
-            _mu, _sd = self._opp_speeds_belief(ctx, spread_belief, para=torch.ones_like(opp_para))
-            p_par = self._p_first(_ours, _mu, _sd, _qc_u, _qc_o)                       # [B,6]
+            _ours = self._our_speeds_exact(ctx)[ar, ctx.our_active_idx]                # [B]
+            _qc_u = self._our_quick_claw(ctx)[ar, ctx.our_active_idx]
+            p_now = self._p_first_vs_six(ctx, _ours, _qc_u)                              # [B,6]
+            p_par = self._p_first_vs_six(ctx, _ours, _qc_u, para=torch.ones_like(opp_para))   # [B,6]
         else:
             p_now = self._p_outspeed(act_spe[:, None], opp_spe * (1.0 - 0.75 * opp_para), opp_std)
             p_par = self._p_outspeed(act_spe[:, None], opp_spe * 0.25, opp_std)      # [B,6]
@@ -914,10 +911,7 @@ class DamageOperatorPairwise:
         if self.speed_physics:
             # gen3_speed_physics_v1: every (our i, their j) pair by the one rule — paralysis on every row, the
             # stage on each side's ACTIVE row only (a bench mon's stages are reset), Quick Claw folded.
-            _mu, _sd = self._opp_speeds_belief(ctx, spread_belief)
-            p = self._p_first(self._our_speeds_exact(ctx)[:, :, None], _mu[:, None, :], _sd[:, None, :],
-                              self._our_quick_claw(ctx)[:, :, None],
-                              self._opp_quick_claw(ctx)[:, None, :])                 # [B,6,6]
+            p = self._p_first_pairs(ctx)                                                     # [B,6,6]
         else:
             p = self._p_outspeed(our_spe[:, :, None], opp_spe[:, None, :], opp_std[:, None, :])  # [B,6,6]
         alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()                        # [B,6]

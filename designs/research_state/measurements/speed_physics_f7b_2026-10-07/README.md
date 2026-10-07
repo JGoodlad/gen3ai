@@ -59,3 +59,41 @@ recharge / a move outside the dex) · 0 rows with a true Quick Claw holder.
   only at a gap above ~250.
 - **Quick Claw**: banned in gen3ou (owner + Showdown master, 2026-10-07); the bank holds no true holder, so the
   format gate is not exercised by real data here.
+
+## Re-read, 2026-10-07 (later): the Gaussian REPLACED by the discrete Smogon spreads mixture (`gen3_speed_mixture_v1`)
+
+**What changed** (under `--speed-physics on` only; `off` untouched): their speed is no longer a Gaussian around
+the spread belief's mean with the Smogon prior's σ, but the species' DISCRETE distribution over the Speed STAT
+from EVERY chaos spread (`gen3_data.priors.all_spreads`, no top-25 cut): P(we first) = Σ_v w_v (1[ours > f(v)] +
+½ 1[ours = f(v)]), each support point v through the same exact stage / paralysis arithmetic as ours. The learned
+spread belief is NOT read by the speed sites any more (the mixture is the prior alone), so both belief sources
+give the SAME `on` numbers.
+
+**Command** (one collection, both reads; CPU, 6.75 GB peak, 28 min, under `scripts/ops/mem_cap.sh 16`): the
+module's `collect` once, then `check(all)` and `check(all, ckpt)` — `calibration_coldstart_mixture.json`,
+`calibration_rb_x5ab_blob_s1007_mixture.json`. The cold-start Gaussian was re-run at the pre-change commit
+(`26131c0c`) and reproduced the table above EXACTLY; the trained-arm Gaussian row is the committed JSON (made at
+`d02aded6`'s base — its `off` row differs from today's by ≤ 0.0002, so the code moved slightly between).
+
+| beliefs | arm | Brier | log loss | ECE | certain and wrong |
+|---|---|---|---|---|---|
+| cold-start | off (logistic) | 0.0425 | 0.1341 | 0.0157 | 0 |
+| cold-start | Gaussian (replaced) | 0.0406 | 0.1367 | 0.0160 | 1 |
+| cold-start | **mixture** | 0.0440 | **0.1308** | 0.0184 | **0** |
+| `rb_x5ab_blob_s1007` | off (logistic) | 0.0369 | 0.1208 | 0.0235 | 0 |
+| `rb_x5ab_blob_s1007` | Gaussian (replaced; committed JSON) | 0.0368 | 0.1308 | 0.0180 | 1 |
+| `rb_x5ab_blob_s1007` | **mixture** | 0.0440 | 0.1308 | 0.0184 | **0** |
+
+Reliability (mixture; identical for both belief sources): [0.00,0.05) n 9,387 P 0.002 obs 0.003 · [0.05,0.20)
+583 · 0.111 · 0.060 · [0.20,0.35) 475 · 0.275 · 0.219 · [0.35,0.50) 762 · 0.411 · 0.377 · [0.50,0.65) 664 · 0.568
+· 0.599 · [0.65,0.80) 1,146 · 0.722 · 0.595 · [0.80,0.95) 1,195 · 0.865 · 0.737 · [0.95,1.00] 9,386 · 0.997 ·
+1.000. Priority bracket: 3,428 rows, 0 contradicted.
+
+**Read.** The mixture fixes the tail: the Blissey row is no longer certain-and-wrong (0 such rows), and the
+cold-start log loss is the best of the three (0.1308 vs 0.1341 off, 0.1367 Gaussian). It is NOT better
+calibrated overall: Brier and ECE are the worst of the three, and the upper-middle bins are OVER-confident
+([0.65,0.95): P ~0.72–0.87 against 0.60–0.74 observed) — the Smogon usage mixture says "this species is usually
+slower", while the battles' sets (trained-policy teams from the pool) are faster than usage more often than
+usage says. On the trained arm the mixture discards what the learned belief knew (log loss equal to the
+Gaussian's, Brier 0.0440 vs 0.0368). Descriptive, no interval. The next lever is conditioning the mixture on
+the battle (an observed move order prunes the support), not a different prior.

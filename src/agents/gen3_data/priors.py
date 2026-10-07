@@ -186,6 +186,38 @@ def spreads(species: str) -> List[list]:
     return spread_raw().get(species, [])
 
 
+@functools.lru_cache(maxsize=1)
+def _all_spreads() -> Dict[str, List[list]]:
+    out: Dict[str, List[list]] = {}
+    for name, rec in smogon_stats_raw().get("data", {}).items():
+        rows = []
+        for key, usage in (rec.get("Spreads") or {}).items():
+            if float(usage) <= 0.0 or ":" not in key:
+                continue
+            nature, evstr = key.split(":", 1)
+            try:
+                evs = [int(x) for x in evstr.split("/")]
+            except ValueError:
+                continue
+            if len(evs) == 6:
+                rows.append([nature, evs, float(usage)])
+        tot = sum(r[2] for r in rows)
+        if tot > 0.0:
+            out[_species_id(name)] = [[n, e, w / tot] for n, e, w in rows]
+    return out
+
+
+def all_spreads(species: str) -> List[list]:
+    """``[[nature, [hp,atk,def,spa,spd,spe], weight], ...]`` — EVERY chaos ``Spreads`` entry of
+    ``species`` (weights sum→1), read from the committed ``gen3_smogon_stats.json``, parsed exactly as
+    the acquisition layer parses them (`compute_spread_priors`) but WITHOUT its top-25 cut. The cut is
+    right for the moment-matched stat beliefs, wrong for a LUMPY read: a max-Speed Blissey (Timid 252,
+    0.03 % of its sets) is outside the top 25, so a mixture over them gives a real outcome probability 0.
+    The speed physics' discrete mixture (`belief_tables.build_species_speed_mix`) reads this one.
+    Empty list when the species has no chaos record."""
+    return _all_spreads().get(species, [])
+
+
 def teammates(species: str) -> Dict[str, float]:
     """``{teammate_species_id: P(teammate | species)}`` (sum→1) — the Smogon chaos ``Teammates``
     co-occurrence, the ONE species×species JOINT the usage stats publish. The Smogon-based

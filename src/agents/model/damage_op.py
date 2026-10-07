@@ -306,7 +306,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         self.rest_sleep_noeb = float(expected_free_turns(True, 0.0))     # 2.0 exactly
         self.rest_sleep_eb = float(expected_free_turns(True, 1.0))       # 1.0 exactly
         self.baton_num = BATON_PASS_MOVE_NUM                             # C5's receiver-axis edge
-        # gen3_speed_physics_v1 (v143, architecture audit F7b): P(we act first) from the speed BELIEF + the exact
+        # gen3_speed_physics_v1 (v143, architecture audit F7b): P(we act first) from the speed MIXTURE + the exact
         # gen-3 order rules (`move_order`, `damage_op_speed`) instead of `_DMG_SPEED_SCALE`'s logistic. Off (the
         # production default) registers nothing and runs nothing new: byte-identical.
         self.speed_physics = bool(speed_physics)
@@ -315,6 +315,11 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # the rule stays implemented, and is OFF for the format the model plays.
         from agents.model.move_order import quick_claw_live
         self.quick_claw_live = quick_claw_live()
+        if self.speed_physics:
+            # gen3_speed_mixture_v1: their speed as the species' DISCRETE Smogon spreads mixture (the Gaussian it
+            # replaced could not hold a max-or-none Speed investment). Non-persistent: no state_dict change.
+            from agents.model.belief_tables import build_species_speed_mix
+            self.register_buffer("SPEED_MIX", build_species_speed_mix(layout['max_species']), persistent=False)
         if self.speed_physics and self.quick_claw_live:
             from agents.model.damage_tables import build_species_qc_prior
             self.register_buffer("SPECIES_QC_PRIOR", build_species_qc_prior(layout['max_species']),
@@ -685,8 +690,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                     opp_spe_std: Optional[torch.Tensor] = None) -> torch.Tensor:
         """P(our mon outspeeds the opp active): a logistic over the speed gap at a FIXED scale — the `off` form
         of `--speed-physics` (production). All args broadcast together. Under `on` no site calls this: each
-        builds its inputs in `damage_op_speed` and calls `_p_first` (the speed belief's integral + the exact
-        gen-3 rules, `move_order`), which reads the believed speed spread these lookups carry.
+        builds its inputs in `damage_op_speed` and calls `_p_first` (the discrete Smogon speed mixture + the
+        exact gen-3 rules, `move_order`).
 
         `opp_spe_std` IS ACCEPTED AND IGNORED. It fed the uncertainty-aware variant
         (gen3_bidir_threat_trunk_v1 #3, `prob_outspeed`) — divide the gap by the believed speed STD so a

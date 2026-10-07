@@ -522,7 +522,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                         "damage_matrices_outgoing")),
     ModelFlag("speed_physics", "off", Tier.CLI, Klass.STRUCTURAL, 143,
               "Architecture audit F7b's SPEED PHYSICS ('off' = the op's P(we act first) as a fixed logistic over the "
-              "speed gap, production; 'on' = the integral over the speed belief plus the exact gen-3 order rules)",
+              "speed gap, production; 'on' = their speed as the species' discrete Smogon spreads mixture plus the exact "
+              "gen-3 order rules)",
               note="Owner 2026-10-06 (F7b IN). No parameters: 'off' runs nothing new (byte-identical: graph, "
                    "state_dict, outputs); 'on' builds its inputs in `damage_op_speed` and calls ONE rule "
                    "(`move_order.p_first_same_priority`) at every op site that prices who moves first. Quick Claw "

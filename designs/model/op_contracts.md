@@ -59,10 +59,12 @@ Two input contracts every op kernel follows (2026-10-07; ARCHITECTURE §4 states
   A new status rule goes there, not into a consumer. Tests: `op_status_rules_test.py`.
 * **Move ORDER has ONE rule** (`gen3_speed_physics_v1`, v143, audit F7b): `move_order.py` — the priority bracket
   (`p_seat_first`, read by the move-resolution family and `intent_conditional`) and, under `--speed-physics on`,
-  the within-bracket rule (`p_first_same_priority`: the speed belief's lattice integral, the coin-flip tie, our
-  exact stat / stage / paralysis arithmetic, Quick Claw format-gated by `quick_claw_live`). Every op site that
-  prices who moves first keeps its `off` code verbatim and, under `on`, builds its inputs in `damage_op_speed.py`
-  (`_our_speeds_exact`, `_opp_speeds_belief`, `_our_quick_claw` / `_opp_quick_claw`, `_p_first*`) — a site's
+  the within-bracket rule (`p_first_same_priority`: their speed as the species' DISCRETE Smogon spreads mixture
+  over the Speed stat — `SPEED_MIX`, gen3_speed_mixture_v1 — each support point through the same exact stage /
+  paralysis arithmetic as our exact speed, the coin-flip tie, Quick Claw format-gated by `quick_claw_live`). Every
+  op site that prices who moves first keeps its `off` code verbatim and, under `on`, builds its inputs in
+  `damage_op_speed.py` (`_our_speeds_exact`, `_opp_speed_mix`, `_our_quick_claw` / `_opp_quick_claw`, `_p_first*`;
+  an X5 OTHER slot reads the tail's mixture, `P_tail @ SPEED_MIX`) — a site's
   hypothetical (C1's post-setup stage, C5's inherited stages, a paralysis it prices) is an override ARGUMENT,
   never a second formula. Two `on`-only stashes: `item_qc_prob` (the item belief's P(Quick Claw); never set while
   the format bans it) and `speed_fast_pair` (the forward's P(first) and P(first | this mon paralysed), which

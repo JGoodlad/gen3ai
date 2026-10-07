@@ -54,6 +54,52 @@ N_SPREAD_STATS = len(SPREAD_STAT_COLS)                       # 5
 _SPREAD_BASE_IDX = {"atk": 1, "def": 2, "spa": 3, "spd": 4, "spe": 5}
 
 
+#: The speed lattice of `build_species_speed_mix`: every gen-3 level-100 Speed STAT is an integer below this
+#: (the fastest, Deoxys-S, Timid 252: (2·180 + 31 + 63 + 5)·1.1 = 504; the builder asserts it).
+SPEED_LATTICE = 512
+
+
+def build_species_speed_mix(n_species: int) -> torch.Tensor:
+    """``[n_species, SPEED_LATTICE]`` — each species' DISCRETE Smogon distribution of its level-100 Speed STAT:
+    ``mix[s, v]`` = Σ over the species' chaos spreads (nature × Speed EVs, IV 31) of the spread's weight where
+    ``priors.gen3_stat(base_spe, ev, nature)`` = v. The speed physics' belief over THEIR speed
+    (gen3_speed_mixture_v1, `--speed-physics on`): real Speed investment is LUMPY (max or none), which the
+    moment-matched Gaussian of `build_opp_spread_prior` cannot hold — a Timid 252-Speed Blissey sat 15 of its
+    σ above the Smogon mean and read P = 1.0 wrong (2026-10-07). EVERY chaos spread is read
+    (`gen3_data.priors.all_spreads`, not the top-25 cut), so such a set keeps its real weight.
+
+    Every row sums to 1. A species with no chaos record: uniform over every legal Speed investment (the 25
+    natures × Speed EVs 0, 4, …, 252) — no usage, so no preference. A num no species owns (0 = unknown / pad):
+    a point mass at speed 0 — the step the Gaussian's zero row gave (we are faster than an unknown).
+    Non-persistent, zero params; registered only under `--speed-physics on`."""
+    mix = torch.zeros(n_species, SPEED_LATTICE, dtype=torch.float64)
+    filled = torch.zeros(n_species, dtype=torch.bool)
+    nature_spe = [float(m.get("spe", 1.0)) for m in gen3_data.natures.multipliers().values()]
+    for sid in gen3_data.species.base_form_ids():
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
+        snum = sd.num
+        if not (0 <= snum < n_species):
+            continue
+        base = int(sd.base_stats.get("spe", 0))
+        rows = []
+        for n, evs, w in gen3_data.priors.all_spreads(sid):
+            nd = gen3_data.natures.get(str(n).lower())
+            rows.append((nd.multipliers.get("spe", 1.0) if nd is not None else 1.0,
+                         int(evs[_SPREAD_BASE_IDX["spe"]]), float(w)))
+        if not rows:
+            rows = [(m, ev, 1.0) for m in nature_spe for ev in range(0, 253, 4)]
+        tot = sum(w for _, _, w in rows)
+        for mult, ev, w in rows:
+            v = int(gen3_data.priors.gen3_stat(base, ev, mult))
+            if not (0 <= v < SPEED_LATTICE):
+                raise ValueError(f"build_species_speed_mix: {sid}'s speed {v} is outside the lattice "
+                                 f"[0, {SPEED_LATTICE}) — widen SPEED_LATTICE")
+            mix[snum, v] += w / tot
+        filled[snum] = True
+    mix[~filled, 0] = 1.0
+    return mix.to(torch.float32)
+
+
 def build_opp_spread_prior(n_species: int) -> torch.Tensor:
     """``[n_species, 5, 2]`` usage-weighted ``(mean, std)`` of each species' realized L100/IV31 stat VALUE
     for {atk,def,spa,spd,spe}, derived from the Smogon spread priors (`gen3_data.priors.spreads`). This is

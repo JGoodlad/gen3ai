@@ -12359,3 +12359,24 @@ branch `obs-facts-append`).
   and a spawned subprocess all resolve `agents` to this checkout (fails with the opt-out set: the session imported
   the main checkout's `agents`).
 - **Not covered.** A direct `python <script>` from a worktree root still imports main's code without the export.
+## 2026-10-07 — F7b's speed belief: the Gaussian REPLACED by the discrete Smogon spreads mixture (`gen3_speed_mixture_v1`; `--speed-physics on` only; no config / ARCH bump)
+
+- **Why.** On real battles the Gaussian speed belief (the spread belief's mean, the Smogon prior's σ) was not
+  better calibrated than the logistic (log loss 0.1367 vs 0.1341): real Speed investment is LUMPY — max or none —
+  and a Timid 252-Speed Blissey sat 15 σ out and read P = 1.0 wrong.
+- **What.** Under `on`, their speed is the species' DISCRETE distribution over the Speed stat — `SPEED_MIX`
+  (`belief_tables.build_species_speed_mix`, `[n_species, 512]`, non-persistent, registered only under `on`), built
+  from EVERY chaos spread through the new facade read `gen3_data.priors.all_spreads` (no top-25 cut: the cut drops
+  exactly that tail; no `data/` change). `move_order.p_outspeed_mixture`: Σ_v w_v (1[ours > f(v)] + ½·1[ours =
+  f(v)]), f = each support point through the same exact stage / paralysis arithmetic as ours, computed as two
+  prefix-sum gathers. The Gaussian rule (`p_outspeed_belief`, `belief_speed_scale`) is deleted; the learned
+  spread belief is no longer read at the speed sites; an X5 OTHER slot reads the tail's mixture. `off` is
+  untouched.
+- **Measured** (Lane S, 580 battles, 23,598 equal-priority rows): log loss 0.1308 (off 0.1341, Gaussian 0.1367),
+  0 rows certain and wrong (Gaussian 1), but Brier 0.0440 (0.0425, 0.0406) and ECE 0.0184 (0.0157, 0.0160) — not
+  better calibrated overall; on the trained blob arm it gives up the learned belief's information (Brier 0.0440
+  vs 0.0368). `designs/research_state/measurements/speed_physics_f7b_2026-10-07/`.
+- **Tests (fail on revert).** `move_order_test.py` (the lumpy case, ties, the exact stage / paralysis on support
+  points, Q values per row, exact saturation), `speed_physics_extractor_test.py` (a point mixture at our speed is
+  ½; the learned belief is not read; Blissey's max-Speed mass is in the table); `selection_sites.py` re-declared
+  (two INT comparisons; the Gaussian's three entries removed).

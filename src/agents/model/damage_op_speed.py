@@ -9,9 +9,12 @@ its `off` code byte-for-byte and, under `on`, builds its inputs here and calls O
 
 * OUR six speeds are EXACT (`move_order.gen3_speed_stat` → stage → paralysis, Showdown's integer arithmetic) —
   our spread, item and condition are known;
-* THEIR six speeds are the spread BELIEF (the believed speed — the prior mean when the spread belief is off —
-  and the Smogon prior's per-species spread, `SPECIES_SPREAD_PRIOR[..., spe, 1]`), scaled by their stage and
-  paralysis (`belief_speed_scale`); under X5 fixed_mass's OTHER pass both read the tail averages (`_x5_avg`);
+* THEIR six speeds are DISCRETE: the species' Smogon spreads mixture over the Speed STAT (`SPEED_MIX`,
+  `belief_tables.build_species_speed_mix`, gen3_speed_mixture_v1 — real Speed investment is lumpy, max or none,
+  which the Gaussian it replaced could not hold), each support point through the SAME exact stage (active row) and
+  paralysis arithmetic as ours (`gen3_final_speed`); under X5 fixed_mass's OTHER pass the slot reads the TAIL's
+  mixture (``P_tail @ SPEED_MIX``). The learned spread belief is NOT read here (the ``spread_belief`` arguments
+  are accepted for the sites' signatures and ignored);
 * Quick Claw — FORMAT-GATED (`move_order.quick_claw_live`): BANNED in gen3ou, the format the model plays, so
   `quick_claw_live` is False and both holders read 0 (the term vanishes; nothing is computed from the item
   belief or the prior). In a format that allows it: ours is our item; theirs is revealed exactly, else the ITEM
@@ -26,9 +29,8 @@ from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING
 
 import torch
 
-from agents.model.damage_op_layout import (_BS_SPE, _COND_PAR_IDX, _NAT_SPE, _SB_SPE)
-from agents.model.move_order import (belief_speed_scale, gen3_final_speed, gen3_speed_stat,
-                                     p_first_same_priority)
+from agents.model.damage_op_layout import (_BS_SPE, _COND_PAR_IDX, _NAT_SPE)
+from agents.model.move_order import gen3_final_speed, gen3_speed_stat, p_first_same_priority
 from agents.observation.constants import (POKEMON_CONDITION_OFFSET, POKEMON_SPREAD_DIM,
                                           POKEMON_SPREAD_OFFSET, TEAM_SIZE)
 
@@ -49,6 +51,7 @@ class DamageOperatorSpeed:
         BASE_STATS: torch.Tensor
         SPECIES_SPREAD_PRIOR: torch.Tensor
         SPECIES_QC_PRIOR: torch.Tensor
+        SPEED_MIX: torch.Tensor
 
     def _our_speeds_exact(self, ctx: 'ExtractorContext', stage_rows: Optional[torch.Tensor] = None,
                           para: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -69,24 +72,28 @@ class DamageOperatorSpeed:
         out: torch.Tensor = gen3_final_speed(stat, stage_rows, para)
         return out
 
-    def _opp_speeds_belief(self, ctx: 'ExtractorContext', spread_belief: Optional[torch.Tensor],
-                           para: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Their six mons' believed FINAL speed ``(mean [B,6], spread [B,6])``: the spread belief's speed (the
-        Smogon prior mean without one) and the prior's per-species spread, both × their stage (active row) and
-        paralysis factor. ``para`` ``[B,6]`` overrides the observed paralysis (a hypothetical)."""
+    def _opp_speed_mix(self, ctx: 'ExtractorContext',
+                       para: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Their six mons' DISCRETE final-speed distributions ``(final [B,6,V], cum [B,6,V+1])``: every lattice
+        speed v through their stage (active row) and paralysis (`gen3_final_speed`, non-decreasing in v), and the
+        cumulative mixture weights (float64, leading 0). ``para`` ``[B,6]`` overrides the observed paralysis (a
+        hypothetical). Under X5 fixed_mass's OTHER pass an OTHER slot reads the tail's mixture."""
         B = ctx.batch_size
         ar = torch.arange(B, device=ctx.device)
-        species = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                                  # [B,6]
-        prior = self.SPECIES_SPREAD_PRIOR[species, _SB_SPE]                                    # [B,6,2]
-        mu = spread_belief[..., _SB_SPE] if spread_belief is not None else prior[..., 0]
-        mu = self._x5_avg(mu, "spe")                                                           # X5: OTHER's average
-        sigma = self._x5_avg(prior[..., 1], "spe_std")
-        stage = torch.zeros_like(mu)
+        w = self.SPEED_MIX[ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]]                       # [B,6,V]
+        x5 = self.stash.x5
+        if x5 is not None and x5.override is not None:
+            tail = x5.species_probs.to(w.dtype) @ self.SPEED_MIX                               # [B,6,V]
+            w = torch.where(x5.override.unsqueeze(-1), tail, w)
+        stage = torch.zeros(B, TEAM_SIZE, device=ctx.device)
         stage[ar, ctx.opp_active_local] = self._boost_stages(ctx.opp_ctx_raw)[4]
         if para is None:
             para = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
-        scale = belief_speed_scale(stage, para)
-        return mu * scale, sigma * scale
+        lattice = torch.arange(w.shape[-1], device=ctx.device, dtype=stage.dtype)
+        final: torch.Tensor = gen3_final_speed(lattice.view(1, 1, -1), stage.unsqueeze(-1), para.unsqueeze(-1))
+        cum = torch.cat([torch.zeros_like(w[..., :1], dtype=torch.float64),
+                         w.to(torch.float64).cumsum(-1)], dim=-1)                              # [B,6,V+1]
+        return final, cum
 
     def _our_quick_claw(self, ctx: 'ExtractorContext') -> torch.Tensor:
         """``[B,6]`` 1 where our mon holds Quick Claw (our items are known); 0 where the format bans it."""
@@ -108,12 +115,30 @@ class DamageOperatorSpeed:
         p_qc: torch.Tensor = revealed + (1.0 - revealed) * unrevealed * prior
         return p_qc
 
-    def _p_first(self, ours: torch.Tensor, mu: torch.Tensor, sigma: torch.Tensor,
+    def _p_first(self, ours: torch.Tensor, final: torch.Tensor, cum: torch.Tensor,
                  our_qc: torch.Tensor, opp_qc: torch.Tensor) -> torch.Tensor:
-        """THE op's P(we act first at equal priority) under `on` — `move_order.p_first_same_priority`. All
-        five broadcast (the site picks the rows: our active vs their active, our six vs their active, …)."""
-        p: torch.Tensor = p_first_same_priority(ours, mu, sigma, our_qc, opp_qc)
+        """THE op's P(we act first at equal priority) under `on` — `move_order.p_first_same_priority`. ``ours``
+        ``[B,n,Q]`` against ``final`` / ``cum`` ``[B,n,·]`` (n of their mons); the Quick Claw terms broadcast
+        against the ``[B,n,Q]`` result."""
+        p: torch.Tensor = p_first_same_priority(ours, final, cum, our_qc, opp_qc)
         return p
+
+    def _p_first_vs_six(self, ctx: 'ExtractorContext', ours: torch.Tensor, our_qc: torch.Tensor,
+                        para: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """``[B,6]`` P(one mon of ours — speed ``ours`` ``[B]``, Quick Claw ``our_qc`` ``[B]`` — acts before each of
+        their six); ``para`` overrides their paralysis."""
+        final, cum = self._opp_speed_mix(ctx, para=para)
+        return self._p_first(ours[:, None, None].expand(-1, TEAM_SIZE, 1), final, cum,
+                             our_qc[:, None, None], self._opp_quick_claw(ctx).unsqueeze(-1)).squeeze(-1)
+
+    def _p_first_pairs(self, ctx: 'ExtractorContext') -> torch.Tensor:
+        """``[B,6,6]`` P(our mon i acts before their mon j) for every pair — our six EXACT speeds (paralysis on
+        every row, the stage on the active's) against each of their mixtures."""
+        final, cum = self._opp_speed_mix(ctx)
+        ours = self._our_speeds_exact(ctx)                                                      # [B,6]
+        p = self._p_first(ours[:, None, :].expand(-1, TEAM_SIZE, -1), final, cum,
+                          self._our_quick_claw(ctx)[:, None, :], self._opp_quick_claw(ctx).unsqueeze(-1))
+        return p.transpose(1, 2)                                                                # [B,i,j]
 
     def _p_first_active_at_stage(self, ctx: 'ExtractorContext', spread_belief: Optional[torch.Tensor],
                                  stage: torch.Tensor) -> torch.Tensor:
@@ -124,18 +149,17 @@ class DamageOperatorSpeed:
         rows = torch.zeros(B, TEAM_SIZE, device=ctx.device)
         rows[ar, ctx.our_active_idx] = stage
         ours = self._our_speeds_exact(ctx, stage_rows=rows)[ar, ctx.our_active_idx]          # [B]
-        mu, sigma = self._opp_speeds_belief(ctx, spread_belief)                                 # [B,6]
-        return self._p_first(ours[:, None], mu, sigma, self._our_quick_claw(ctx)[ar, ctx.our_active_idx][:, None],
-                             self._opp_quick_claw(ctx))
+        return self._p_first_vs_six(ctx, ours, self._our_quick_claw(ctx)[ar, ctx.our_active_idx])
 
     def _p_first_vs_opp_active(self, ctx: 'ExtractorContext', spread_belief: Optional[torch.Tensor],
                                ours: torch.Tensor, our_qc: torch.Tensor) -> torch.Tensor:
         """P(each of ``ours`` (``[B]`` or ``[B,6]``) acts before their ACTIVE at equal priority."""
         B = ctx.batch_size
         ar = torch.arange(B, device=ctx.device)
-        mu, sigma = self._opp_speeds_belief(ctx, spread_belief)
+        final, cum = self._opp_speed_mix(ctx)
         loc = ctx.opp_active_local
-        mu_a, sd_a, qc_a = mu[ar, loc], sigma[ar, loc], self._opp_quick_claw(ctx)[ar, loc]   # [B]
-        if ours.dim() == 2:
-            mu_a, sd_a, qc_a = mu_a[:, None], sd_a[:, None], qc_a[:, None]
-        return self._p_first(ours, mu_a, sd_a, our_qc, qc_a)
+        f_a, c_a = final[ar, loc].unsqueeze(1), cum[ar, loc].unsqueeze(1)                    # [B,1,·]
+        qc_a = self._opp_quick_claw(ctx)[ar, loc][:, None, None]                              # [B,1,1]
+        q = ours.reshape(B, 1, -1)
+        p = self._p_first(q, f_a, c_a, our_qc.reshape(B, 1, -1), qc_a)                        # [B,1,Q]
+        return p.reshape(ours.shape)

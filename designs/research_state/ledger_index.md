@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-22,891-line file. **The ledger itself is append-only and is never edited by this**;
+22,899-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**802 headings · 747 dated · 2026-08-01 → 2026-10-07 · ledger 22,891 lines.**
+**803 headings · 748 dated · 2026-08-01 → 2026-10-07 · ledger 22,899 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -822,3 +822,4 @@ rename.
   - `L22874` · `2026-10-07` · BUILD · **The format spec's PRIOR = 0 LANDED (`gen3_format_spec_priors_v1`): no prior gives a gen3ou-banned entity mass — Quick Claw's 0.32 % of all sets (up to 51 % on Hypno) leaves the item prior, Sand Veil / Soundproof leave the ability prior (Dugtrio reads Arena Trap 1.0), 789 banned (species, move) cells drop from the 0.02 floor to ILLEGAL; the observation moves only in an unrevealed opponent's ability-prior columns (148 / 991 golden decisions, 2 columns); a TRAINING-INPUT BOUNDARY**
   - `L22880` · `2026-10-07` · BUILD · **`--debug` is SAFE BY CONSTRUCTION: a fresh smoke whose untyped update is above 4,096 rows takes `--rollout-target-samples 2304 --batch-size 384 --n-epochs 1` (typed knobs win), so `--arch production --debug --steps 10000` reaches 5 updates and exits 0 in ~6 min on CPU instead of collecting for hours**
   - `L22886` · `2026-10-07` · BUILD · **A worktree's pytest imports the WORKTREE's code without an export: the root `conftest.py` puts this checkout's `src/` first in `sys.path` and prepends it to `PYTHONPATH` (subprocesses and xdist workers inherit it); the launcher pin still wins; the packaging gate's shadow check moved to a clean subprocess so it stays meaningful**
+  - `L22892` · `2026-10-07` · BUILD · **F7b's speed belief is now the DISCRETE Smogon spreads mixture (`gen3_speed_mixture_v1`, `--speed-physics on` only): it fixes the tail — log loss 0.1308 vs the logistic's 0.1341 and the Gaussian's 0.1367, 0 rows certain and wrong — but is NOT better calibrated overall (Brier 0.0440 vs 0.0425 / 0.0406, ECE 0.0184 vs 0.0157 / 0.0160; upper-middle bins over-confident)**

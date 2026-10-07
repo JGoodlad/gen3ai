@@ -207,6 +207,12 @@ set-level joint we own) but never ships as a prior:
   the `Raw count` table was deflated ×0.10–0.94). Per species `Σ_m P + Moves[""] / W == 4` exactly;
   the load THROWS `PriorInvariantError` otherwise (`priors._checked_moves`), and every other prior
   file must load as a distribution (sum 1) or THROWS the same way.
+  `priors.all_spreads(species)` is EVERY chaos `Spreads` entry of a species (weights sum 1), parsed as
+  `compute_spread_priors` parses them but WITHOUT its top-25 cut (`gen3_spread_priors.json` /
+  `priors.spreads`): the cut suits the moment-matched stat beliefs and drops a LUMPY tail (a Timid 252-Speed
+  Blissey, 0.03 % of its sets). Read from `gen3_smogon_stats.json` at call time, no file of its own; its one
+  consumer is the speed physics' discrete mixture (`agents.model.belief_tables.build_species_speed_mix`,
+  gen3_speed_mixture_v1).
   🚨 **`priors.species_usage()` is each species' W (`_weighted_count`), never `Raw count`**
   (`gen3_smogon_species_usage_weighted_v1`; F-X5-47: the `Raw count` share was off ×0.19–×1.75 by
   species — the co-occurrence lift divided a WEIGHTED teammate conditional by an UNWEIGHTED share).

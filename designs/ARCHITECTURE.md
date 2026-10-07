@@ -1209,20 +1209,23 @@ stage"; the per-species believed-speed spread is looked up and discarded). Under
 byte-identical — the extractor's compiled graph, state_dict and outputs) each site builds its inputs in
 `damage_op_speed.py` and calls ONE rule, `move_order.p_first_same_priority`: OUR speeds EXACT (Showdown's integer
 stat, stage-floor and paralysis arithmetic: the stage applies on the active row only, paralysis on every row,
-`modify(spe, 0.25)` rounds half down); THEIR speed a Gaussian belief on the integer lattice — the spread belief's
-believed speed (the Smogon prior mean without it) and the Smogon prior's per-species spread, both scaled by their
-stage and paralysis — integrated as `P(T < s) + ½ P(T = s) = ½[Φ((s − ½ − μ)/σ) + Φ((s + ½ − μ)/σ)]` (an exact tie
-is a coin flip; a point belief is the exact step; a wider spread pulls toward ½). Choice Band does not touch
+`modify(spe, 0.25)` rounds half down); THEIR speed the species' DISCRETE Smogon distribution over the Speed stat
+(`SPEED_MIX`, `belief_tables.build_species_speed_mix`, gen3_speed_mixture_v1: every chaos spread, nature × Speed
+EVs at IV 31, no top-25 cut; an X5 OTHER slot reads the tail's mixture), each support point through the same exact
+stage and paralysis arithmetic — `Σ_v w_v (1[s > f(v)] + ½·1[s = f(v)])` (an exact tie is a coin flip). The learned
+spread belief is not read by these sites. Choice Band does not touch
 speed. Quick Claw (gen 3: ONE shared 1-in-5 roll per turn, holders at 65535) is implemented
 (`move_order.p_first_quick_claw`) and FORMAT-GATED OFF: it is BANNED in gen3ou (Showdown master's banlist, owner
 2026-10-07; `move_order.quick_claw_live`). The PRIORITY bracket is the same module's `p_seat_first`, read by the
 move-resolution family and `intent_conditional`; under `on` both read the PRE-gain P(first) (under `off`
 `intent_conditional` reads the post-gain one, production unchanged). Real battles (the Lane S bank, 580 battles,
-23,598 equal-priority turn rows, cold-start beliefs): Brier 0.0406 vs the logistic's 0.0425, log loss 0.1367 vs
-0.1341, ECE 0.0160 vs 0.0157; 3,428 unequal-priority rows, 0 contradicted
-(`designs/research_state/measurements/speed_physics_f7b_2026-10-07/`). Named residuals: Swift Swim /
-Chlorophyll / Macho Brace are not modelled, and the Gaussian tail under-covers a spread the Smogon prior never
-saw (the one certain-and-wrong row: a Timid 252-Speed Blissey, prior 148 ± 5.3).
+23,598 equal-priority turn rows; the mixture's numbers are the same for cold-start and trained beliefs): Brier
+0.0440 vs the logistic's 0.0425 (cold-start; 0.0369 on the trained `rb_x5ab_blob_s1007`), log loss 0.1308 vs
+0.1341 (0.1208), ECE 0.0184 vs 0.0157 (0.0235), 0 rows certain and wrong; 3,428 unequal-priority rows, 0
+contradicted (`designs/research_state/measurements/speed_physics_f7b_2026-10-07/`) — NOT better calibrated
+overall: the upper-middle bins are over-confident. Named residuals: Swift Swim / Chlorophyll / Macho Brace are
+not modelled, and the mixture is the Smogon usage prior alone — nothing this battle has shown (an observed move
+order) conditions it.
 
 **An OPPONENT's ability is revealed only by its `known` flag (`gen3_op_ability_known_v1`).** The
 observation writes an UNREVEALED opponent's top-1 Smogon-prior ability into the ability block's `id1` with

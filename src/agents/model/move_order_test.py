@@ -9,9 +9,9 @@ import pytest
 import torch
 
 from agents.gen3_data import priors
-from agents.model.move_order import (QUICK_CLAW_P, belief_speed_scale, gen3_final_speed, gen3_para_speed,
-                                     gen3_speed_stat, gen3_stage_speed, p_first_quick_claw,
-                                     p_first_same_priority, p_outspeed_belief, p_seat_first, quick_claw_live)
+from agents.model.move_order import (QUICK_CLAW_P, gen3_final_speed, gen3_para_speed, gen3_speed_stat,
+                                     gen3_stage_speed, p_first_quick_claw, p_first_same_priority,
+                                     p_outspeed_mixture, p_seat_first, quick_claw_live)
 
 T = torch.tensor
 
@@ -62,52 +62,56 @@ def test_stage_applies_before_paralysis() -> None:
     assert gen3_stage_speed(gen3_para_speed(T([303.0]), T([1.0])), T([1.0])).item() == 114
 
 
-def test_paralysis_quarters_a_believed_speed_and_flips_the_order() -> None:
-    """Their believed 300 (spread 10) vs our 200: we are slower; paralysed, their mean AND spread quarter."""
-    mu, sd = T([300.0]), T([10.0])
-    assert p_outspeed_belief(T([200.0]), mu, sd).item() < 1e-6
-    m = belief_speed_scale(T([0.0]), T([1.0]))
-    assert m.item() == 0.25
-    assert p_outspeed_belief(T([200.0]), mu * m, sd * m).item() > 1 - 1e-6
-    # a +2 stage doubles the belief; a −1 makes it 2/3
-    assert belief_speed_scale(T([2.0]), T([0.0])).item() == 2.0
-    assert belief_speed_scale(T([-1.0]), T([0.0])).item() == pytest.approx(2.0 / 3.0)
+# ------------------------------------------------------------------------- the DISCRETE speed mixture
+def _mix(points: dict, stage: float = 0.0, para: float = 0.0, V: int = 512):
+    """A mixture ``{speed: weight}`` on the lattice, through the exact stage / paralysis: ``(final [1,V], cum
+    [1,V+1])`` as `damage_op_speed._opp_speed_mix` builds them."""
+    w = torch.zeros(1, V, dtype=torch.float64)
+    for v, p in points.items():
+        w[0, v] = p
+    final = gen3_final_speed(torch.arange(V, dtype=torch.float32).view(1, -1), T([[stage]]), T([[para]]))
+    cum = torch.cat([torch.zeros(1, 1, dtype=torch.float64), w.cumsum(-1)], dim=-1)
+    return final, cum
 
 
-# --------------------------------------------------------------------------------------- the speed tie
+def _p(ours: float, points: dict, **kw) -> float:
+    final, cum = _mix(points, **kw)
+    return p_outspeed_mixture(T([[ours]]), final, cum).item()
+
+
+def test_a_lumpy_spread_keeps_its_max_speed_mass() -> None:
+    """THE case the Gaussian missed (2026-10-07): a Blissey whose sets are 90 % uninvested (148) and 10 % Timid
+    252 (229), against our 214 — P(we first) is 0.9, never the 1.0 a Gaussian at 148 ± 5 gave."""
+    assert _p(214.0, {148: 0.9, 229: 0.1}) == pytest.approx(0.9)
+    assert _p(230.0, {148: 0.9, 229: 0.1}) == pytest.approx(1.0)
+    assert _p(100.0, {148: 0.9, 229: 0.1}) == 0.0
+
+
 def test_an_exact_speed_tie_is_a_coin_flip() -> None:
-    """``speedSort`` shuffles equal speeds: a point belief AT our speed reads ½, and so does a spread belief
-    centred on it (the lattice integral is symmetric)."""
-    assert p_outspeed_belief(T([394.0]), T([394.0]), T([0.0])).item() == 0.5
-    assert p_outspeed_belief(T([394.0]), T([394.0]), T([7.5])).item() == pytest.approx(0.5, abs=1e-6)
+    """``speedSort`` shuffles equal speeds: mass AT our speed counts ½."""
+    assert _p(394.0, {394: 1.0}) == 0.5
+    assert _p(300.0, {299: 0.5, 300: 0.5}) == pytest.approx(0.75)
+    assert _p(395.0, {394: 1.0}) == 1.0 and _p(393.0, {394: 1.0}) == 0.0
 
 
-def test_a_point_belief_is_the_exact_step() -> None:
-    assert p_outspeed_belief(T([395.0]), T([394.0]), T([0.0])).item() == 1.0
-    assert p_outspeed_belief(T([393.0]), T([394.0]), T([0.0])).item() == 0.0
+def test_their_stage_and_paralysis_take_the_exact_arithmetic() -> None:
+    """Each support point runs `gen3_final_speed` (stage floor, then paralysis rounding half DOWN): 303 at +1 is
+    floor(454.5) = 454 → modify → 113, so our 113 TIES it (½) where a continuous ×1.5×¼ scale (113.6) would not."""
+    assert _p(113.0, {303: 1.0}, stage=1.0, para=1.0) == 0.5
+    assert _p(200.0, {300: 1.0}) == 0.0
+    assert _p(200.0, {300: 1.0}, para=1.0) == 1.0                          # paralysed: 75
+    assert _p(400.0, {300: 1.0}, stage=2.0) == 0.0                         # +2: 600
+    assert _p(199.0, {300: 1.0}, stage=-1.0) == 0.0 and _p(201.0, {300: 1.0}, stage=-1.0) == 1.0   # −1: 200
 
 
-def test_the_integral_runs_over_the_integer_lattice() -> None:
-    """A belief one stat point below us, nearly certain: we are first (≈ 1) — half of the tie mass is a
-    coin flip, so a belief centred ON us reads ½, not the 1 a strict ``>`` would give."""
-    assert p_outspeed_belief(T([300.0]), T([299.0]), T([0.05])).item() > 1 - 1e-6
-    assert p_outspeed_belief(T([300.0]), T([300.0]), T([0.05])).item() == pytest.approx(0.5, abs=1e-6)
-
-
-def test_a_wider_belief_pulls_the_probability_toward_half() -> None:
-    """The uncertainty-aware form: a fixed gap reads less certain as the believed spread widens."""
-    sds = [2.0, 5.0, 10.0, 20.0, 40.0, 80.0]
-    above = [p_outspeed_belief(T([300.0]), T([280.0]), T([s])).item() for s in sds]
-    below = [p_outspeed_belief(T([260.0]), T([280.0]), T([s])).item() for s in sds]
-    assert all(a > b for a, b in zip(above, above[1:])) and above[-1] > 0.5
-    assert all(a < b for a, b in zip(below, below[1:])) and below[-1] < 0.5
-    assert above[0] > 0.99 and below[0] < 0.01
-
-
-def test_the_belief_mean_carries_a_gradient() -> None:
-    mu = T([290.0], requires_grad=True)
-    p_outspeed_belief(T([300.0]), mu, T([10.0])).sum().backward()
-    assert mu.grad is not None and mu.grad.item() < 0     # a faster belief lowers P(we are first)
+def test_q_values_per_row_and_saturation_is_exact() -> None:
+    """Several of our speeds against one mixture at once (the op's [B,n,Q] shape), and a certain answer is EXACTLY
+    0 / 1 in float32 (the cumulative mass runs in float64)."""
+    final, cum = _mix({100: 0.3, 200: 0.3, 300: 0.4})
+    got = p_outspeed_mixture(T([[50.0, 100.0, 150.0, 250.0, 350.0]]), final, cum)
+    assert got.dtype == torch.float32
+    assert got.tolist()[0] == pytest.approx([0.0, 0.15, 0.3, 0.6, 1.0])
+    assert got[0, 0].item() == 0.0 and got[0, -1].item() == 1.0
 
 
 # ------------------------------------------------------------------------------------ priority bracket
@@ -132,7 +136,8 @@ def test_quick_claw_is_one_shared_roll_per_turn() -> None:
     assert p_first_quick_claw(p, T([1.0]), T([1.0])).item() == pytest.approx(0.8 * 0.3 + 0.2 * 0.5)
     # a belief: P(they hold it) = 0.5 is the average of the two worlds
     assert p_first_quick_claw(p, T([0.0]), T([0.5])).item() == pytest.approx(0.5 * 0.3 + 0.5 * 0.8 * 0.3)
-    assert p_first_same_priority(T([300.0]), T([300.0]), T([0.0]), T([1.0]), T([0.0])).item() \
+    final, cum = _mix({300: 1.0})
+    assert p_first_same_priority(T([[300.0]]), final, cum, T([1.0]), T([0.0])).item() \
         == pytest.approx(0.8 * 0.5 + 0.2)
 
 
