@@ -559,7 +559,7 @@ class EventSeats(torch.nn.Module):
         from agents.observation.constants import N_EVENT_STATUS, N_EVENT_TYPES
         from agents.observation.gen3_effects import CANT_DIM_LIVE
         from agents.observation.constants import N_ITEM_TRANSITIONS
-        from agents.battle.turn_view import FAINT_CAUSE_DIM_LIVE
+        from agents.battle.faint_causes import FAINT_CAUSE_DIM_LIVE
         from agents.observation.constants import N_DENIAL, N_ENTRY, N_EVENT_STAT
         self.n = layout['event_window_n']
         self.kind_emb = torch.nn.Embedding(N_EVENT_TYPES, self._KIND_EMB)

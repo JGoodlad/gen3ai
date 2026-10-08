@@ -33,13 +33,17 @@ counter by +3 (one ``|cant|`` + two ``|move|`` lines), so K is corrupted for tho
 NOT reconstruct Showdown's ``skippedTime`` switch refund (rare; the opponent's true ``time`` is
 hidden anyway). Instead a ``sleep_counter_reliable`` bit goes to 0 the moment a sleep-usable move is
 seen this episode, so the model can discount the (now-unreliable) P(wake) scalar.
+
+**What lives here now.** The per-mon belief block is written by the Rust encoder (its wake tables are
+`layout.rs`'s ``SLEEP_*``); the Python writer (``sleep_belief_features``, the event-log source fold
+``build_sleep_sources``, ``early_bird_probability``) is DELETED with the Python encoder's encode path (T27 P6
+slice 6d-2). Kept: the verified tables, ``expected_free_turns`` (the model's C2 sleep-consequence kernel,
+``agents.model.damage_op``) and the pure ``sleep_wake_probability`` the tables are tested through.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Tuple
 
-from agents.battle.battle_event import EventKind, OURS, OPP
-from agents.gen3_data import priors as _priors
 
 # --- Verified P(wake | observed counter K) tables (index by K, clamped to _MAX_K) -------------
 # Unreachable rows are 1.0 sentinels; the reliability bit / clamp keep them from lying.
@@ -48,10 +52,6 @@ _OPP_EB: Tuple[float, ...] = (0.25, 2.0 / 3.0, 1.0, 1.0, 1.0, 1.0)
 _REST_NOEB: Tuple[float, ...] = (0.0, 0.0, 1.0, 1.0, 1.0, 1.0)
 _REST_EB: Tuple[float, ...] = (0.0, 1.0, 1.0, 1.0, 1.0, 1.0)
 _MAX_K = 5
-
-_SLEEP_USABLE_MOVES = frozenset({"sleeptalk", "snore"})
-_EARLY_BIRD = "earlybird"
-_UNKNOWN_ABILITY = "unknownability"
 
 
 def expected_free_turns(is_rest: bool, p_earlybird: float) -> float:
@@ -91,81 +91,3 @@ def sleep_wake_probability(counter: int, is_rest: bool, p_earlybird: float) -> f
     if p >= 1.0:
         return eb[k]
     return p * eb[k] + (1.0 - p) * noeb[k]
-
-
-def early_bird_probability(mon: Any) -> float:
-    """P(``mon`` has Early Bird). Own team / revealed opponent → exact 1.0/0.0 from ``mon.ability``;
-    an unrevealed opponent → the species' Smogon ``earlybird`` usage prior (≈0 for almost every
-    gen3ou mon, so the no-EB table dominates in practice)."""
-    ability = getattr(mon, "ability", None)
-    if ability and str(ability) != _UNKNOWN_ABILITY:
-        return 1.0 if str(ability) == _EARLY_BIRD else 0.0
-    species = getattr(mon, "species", None)
-    if not species:
-        return 0.0
-    return float(_priors.ability(species).get(_EARLY_BIRD, 0.0))
-
-
-def _reason_is_rest(reason: Optional[str]) -> bool:
-    """True iff a slp STATUS event's ``[from]`` reason names Rest (``move: rest`` or the bundled
-    bare ``rest``). Rest is the only gen3 self-cure sleep with a FIXED duration → deterministic."""
-    if not reason:
-        return False
-    r = str(reason).lower()
-    if ":" in r:
-        r = r.split(":", 1)[1]
-    return r.strip().replace(" ", "") == "rest"
-
-
-def build_sleep_sources(battle: Any) -> Dict[Tuple[str, str], Tuple[bool, bool]]:
-    """Fold the whole-battle event log into ``{(side, species): (is_rest_sleep,
-    sleep_usable_move_seen)}`` for each mon's CURRENT sleep episode. One backward-agnostic linear
-    pass over ``battle.events`` (gen3 STATUS events carry the ``[from]`` source poke-env discards).
-    Callers gate this on "is any mon asleep?" so it costs nothing on the common no-sleep decision.
-
-    ``is_rest_sleep`` selects the deterministic Rest table; ``sleep_usable_move_seen`` drives the
-    reliability bit (the +3 counter-noise guard). Keyed by the most-recent slp application per mon,
-    so a re-sleep after waking is tracked correctly.
-    """
-    events = getattr(battle, "events", None)
-    if not events:
-        return {}
-    slp_seq: Dict[Tuple[str, str], int] = {}
-    is_rest: Dict[Tuple[str, str], bool] = {}
-    for e in events:
-        if e.kind is EventKind.STATUS and e.status == "slp" and e.side and e.actor_species:
-            key = (e.side, e.actor_species)
-            slp_seq[key] = e.seq                       # most-recent slp application wins
-            is_rest[key] = _reason_is_rest(e.reason)
-    if not slp_seq:
-        return {}
-    usable: Dict[Tuple[str, str], bool] = {k: False for k in slp_seq}
-    for e in events:
-        if e.kind is EventKind.MOVE and e.side and e.actor_species and e.move_id in _SLEEP_USABLE_MOVES:
-            key = (e.side, e.actor_species)
-            seq0 = slp_seq.get(key)
-            if seq0 is not None and e.seq > seq0:      # a sleep-usable move SINCE this sleep applied
-                usable[key] = True
-    return {k: (is_rest[k], usable[k]) for k in slp_seq}
-
-
-def sleep_belief_features(
-    counter: int, mon: Any, is_own: bool, sleep_sources: Optional[Dict[Tuple[str, str], Tuple[bool, bool]]]
-) -> Tuple[float, float, float]:
-    """The 3 per-mon obs features for a CURRENTLY-ASLEEP mon, in obs order:
-    ``(sleep_is_deterministic, p_wake, sleep_counter_reliable)``.
-
-    - ``sleep_is_deterministic`` = 1.0 when the sleep is Rest (a known fixed schedule), else 0.0.
-    - ``p_wake`` = :func:`sleep_wake_probability` over the observed counter, source and Early Bird.
-    - ``sleep_counter_reliable`` = 0.0 once a Sleep Talk / Snore turn has corrupted the counter.
-
-    ``sleep_sources`` is the map from :func:`build_sleep_sources` (None on the mock / non-Gen3Battle
-    path → treated as a non-Rest, reliable, prior-only sleep, the common opponent case)."""
-    side = OURS if is_own else OPP
-    species = getattr(mon, "species", None)
-    is_rest, usable_seen = (False, False)
-    if sleep_sources and species is not None:
-        is_rest, usable_seen = sleep_sources.get((side, species), (False, False))
-    p_eb = early_bird_probability(mon)
-    p_wake = sleep_wake_probability(counter, is_rest, p_eb)
-    return (1.0 if is_rest else 0.0, p_wake, 0.0 if usable_seen else 1.0)

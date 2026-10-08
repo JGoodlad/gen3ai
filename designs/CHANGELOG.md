@@ -12990,3 +12990,37 @@ No model, config or training-arithmetic change.
      config. The display labels such a value `RESTORED at restart from metadata.json:cli_args`, says when the config
      could not be read under this tree, and the RECIPE SURFACE no longer reads it as an untyped default.
    - Test: `src/main/launcher/dry_run_test.py::test_i_*`.
+
+## 2026-10-08 — POKE-ENV RETIREMENT P6 slice 6d-2: the Python battle layer, the Python trackers, the Python encoder's encode path and the last Python runtime are DELETED (no obs value changed; no ARCH_SIGNATURE / config change)
+
+Nothing trained, evaluated, played or probed on them after slices 1–6d-1: every row, view, legality surface, tracker,
+label and reward was already the Rust core's. Deleted (manifest: `designs/ops/deletion_pass_manifest.md` §8.5):
+
+- **The Python runtime** — `RLPlayer` / `Gen3Player` (`agents/inference/player.py`), the bridge JSON road
+  (`utils/bridge/battle_stream_client.py`, `local_battle_runner.py`, `reconstruction.py`'s `__RECON__` capture
+  registry), the poke-env offline materializer (`obs_materializer.py`) and every fuzz / integration test that drove a
+  Python battle (the whole `agents/training/poke_env_gaps/`, `obs_roundtrip_fuzz_test` + `record_fixture_battle`, …).
+- **The battle layer** — `Gen3Battle`, the `BattleEvent` log + registry, `TurnView`, `StrictBattleView`, the offline
+  feed, and the strict-API lock. `live_view.py` keeps the read-model DATA CLASSES (`core_view` fills them for the
+  prober); the faint-cause vocabulary moved to `agents/battle/faint_causes.py`.
+- **The trackers** — `episode_tracker`, `event_window_tracker`, `obs_facts_fold`, `battle_snapshot`, `battle_recorder`,
+  the `TurnDelta` fold + `turn_delta_legacy`, `reward_manager` / `reward_function` / `reward_tracker`, `progress_clock`,
+  `slot_registry`, `HiddenPowerTracker`. `TurnDelta`'s frozen field layout, `HIDDEN_POWER_TYPE_ORDER`,
+  `material_margin` and the reward rule (`reward_config.terminal_breakdown`) stay.
+- **The encoder's encode path** — `Gen3ObservationEncoder.encode` / `get_observation`, every sub-encoder's `encode`, the
+  incremental assembler, the Wish fold, the obs-facts writer, the incoming-damage obs encoder + memo, the
+  `gen3_effect_sources` Python execution half. What the MODEL reads stays: `constants.py`, `get_layout()` /
+  `dimension` / `describe_vector`, the vocabularies, `schema`, `belief_labels`, `incoming_damage`'s math, the archive
+  decoder `TurnDeltaEncoder`.
+- **The Python action stack** — masker, mapper, `Choice`, the poke-env order serializer; `check_obs_move_order` (the
+  inference service's row guard) stays.
+
+**`src/rust_sim/src/encoder/layout.rs` is Rust-OWNED source** (its generator read the deleted encoder's internals):
+edited directly, and `agents/observation/rust_core_obs_layout_test.py` now PARSES it and holds every value the model
+also reads equal to its Python twin (108 shared integer constants incl. the block offsets and `OBS_DIM`, `EventCol`,
+the obs-facts tables, the volatile / cant / faint-cause / type / status vocabularies).
+
+**No obs value changed:** `python -m agents.training.golden_obs_core --check` and `golden_obs_core_test.py` pass
+unchanged on the branch. The prober's falsifier / lookahead / better-line integration tests were retargeted onto
+seeded Rust-core traces (`core_trace_integration_test.record_core_battle`); `gen3_effects_test`'s source-derived gates
+execute each effect line on the Rust reader (`main.live.effect_scan.probe_lines`).

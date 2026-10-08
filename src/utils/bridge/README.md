@@ -2,15 +2,24 @@
 
 This directory contains the bridge logic used to access the Pokémon Showdown simulation library directly from Python, without requiring a running server.
 
+> **P6 slice 6d-2 of the poke-env retirement (2026-10-08) — the Python bridge road is GONE.** DELETED: `battle_stream_client.py`
+> (the poke-env `PSClient` transport) and `local_battle_runner.py` (`run_local_battles`), with their tests, and
+> `reconstruction.py`'s live `__RECON__` capture registry (`offer_record` / `register_trace_prefix` / `pop_record`, fed only
+> by the runner). Every passage below that describes them, the `*_fuzz_test.py` suite they powered, or
+> `obs_materializer` is RECORDED HISTORY. What stays: `local_sim_bridge.js` (the Node relay — the rust_sim harness's
+> reference and the websocket front end's child), `reconstruction.py` (`ReconstructionRecord`, `decode_packed_team`,
+> `replay_battle` / `reroll_turn` / `reroll_many` — the prober's falsifier and lookahead), `search_session.py`,
+> `sim_bridge_bin.py`, `seed_spec.py`, `ws_frontend*`, `team_validator.py`, `damage_probe.js`; `BRIDGE_STREAM_LIMIT` is
+> `ws_frontend`'s alone.
+>
 > **P6 slice 6d-1 of the poke-env retirement (2026-10-08) — what this directory no longer holds.** DELETED: `counterfactual.py`
 > (the poke-env two-player counterfactual replay — the Rust core's is `utils/rust_env/counterfactual.py`) and the tests whose
 > battles it or `run_local_battles` played for their subject: `counterfactual_test`, `counterfactual_fuzz_test`,
 > `bridge_impl_parity_test`, `reconstruction_fuzz_test`, `reroll_many_parity_fuzz_test`, `search_clone_parity_fuzz_test`,
 > `search_driver_turn1_integration_test` and `local_sim_bridge_integration_test` — together with the whole
 > `main/search_dividend/` battery and the offline cf stack (`agents/training/cf_*`) that were this road's callers. **Every
-> passage below that names one of them as a gate, a caller or a section is RECORDED HISTORY.** `battle_stream_client.py`,
-> `local_battle_runner.py` and `reconstruction.py` still exist: the poke-env fuzz tests of the Python battle layer still play on
-> them and go with it (a later slice). The search INFRA stays: `search_session.py`, `sim_bridge_bin.py`, `ws_frontend*`.
+> passage below that names one of them as a gate, a caller or a section is RECORDED HISTORY.** `battle_stream_client.py` and
+> `local_battle_runner.py` went in slice 6d-2 (above). The search INFRA stays: `search_session.py`, `sim_bridge_bin.py`, `ws_frontend*`.
 
 ## Overview
 By bridging Python to Node.js, we can utilize the actual `pokemon-showdown` codebase (located in `deps/`) as a library. This allows us to perform complex operations like **Team Validation** using the official Smogon rules and logic, but with the performance of a local function call.

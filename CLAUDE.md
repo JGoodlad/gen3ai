@@ -88,8 +88,8 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 |---|---|
 | `src/agents/model/` | Feature-extractor phase contract, dual-head policy, architecture-constant rules, model versioning |
 | `src/agents/gen3_data/` | The data facade over `data/`, the acquisition-vs-access split, and every per-file schema |
-| `src/agents/observation/` | Obs-build performance gate (mandatory benchmark) + the full per-block obs layout |
-| `src/agents/battle/` | Event-sourced battle layer (Gen3Battle, BattleEvent log, LiveView/TurnView/LegalActions, StrictBattleView, TurnDelta fold) |
+| `src/agents/observation/` | The observation LAYOUT the model reads (constants, `get_layout()`, the vocabularies), the Rust-encoder benchmark mandate, the per-block meaning table |
+| `src/agents/battle/` | The battle read-models as data classes (LiveView / LegalActions, built from the Rust core by `core_view`), the core-obs frames and corpus replay, the faint-cause vocabulary |
 | `src/agents/training/` | The training hub — each topic keeps its heading + summary there and its detail in `designs/training/<topic>.md` |
 | `src/rust_sim/` | The Rust Showdown port: the module map, the conventions, the differential-gate ladder and how to run each rung, the four A/B fuzzers and their green-gate allowlists, the search/replay drivers, and the standing lessons — detail in `designs/rust_sim/` |
 | `src/main/launcher/` | Launcher internals: restarts, crash reporting, exit codes, flags, port default |
@@ -216,7 +216,7 @@ A path or flag named deliberately as HISTORY goes in `designs/deleted_flags.md` 
 
 🚨 **A TIMEOUT IS NEVER A SEMANTIC OUTCOME.** The box normally carries a production run, so bounds scale by measured contention (`src/utils/contention.py`; the factor is exactly 1.0 on an idle box). ⚠️ **The tier budget's "quiet" is the WINDOWED meter** (`src/utils/cpu_meter.py`: `/proc/stat` occupancy × `/proc/schedstat` run-queue, own process tree subtracted, PSI reported): on this 8-core/16-thread box, load1/cpus and PSI both read ~1.0 while shared cores ran tests 1.5-2x slower (2026-09-30). Timeouts still scale by load1. A run whose timeouts exceed 25% of attempted battles is INCONCLUSIVE, not reported. **Benchmarks get the opposite treatment — warn, never stretch**: a benchmark's output IS the measurement. `GEN3AI_TIMEOUT_SCALE=6` forces the factor; run the suite under it after touching any of this.
 
-🚨 **A fuzz SCRIPT wants a new battle every run; a pytest-collected TEST wants the same battle every run.** A collected test takes its battle from `obs_roundtrip_fuzz_test.record_fixture_battle(...)` and **asserts its precondition rather than branching on it** (`if x is not None:` around the decisive gate fails green). `random.seed(k)` is NOT enough — reproducibility needs fixed teams, a per-player RNG, a fixed sim seed, **and `concurrency=1`** (at concurrency 3, two runs of the same measurement differed by up to +0.043). Prefer REFUSING an unreproducible configuration over emitting a quietly-wandering number.
+🚨 **A fuzz SCRIPT wants a new battle every run; a pytest-collected TEST wants the same battle every run.** A collected test takes its battles from the Rust core, seeded end to end — `utils.rust_env.fixture_battles.play_rows(...)` for rows, `main.prober.core_trace_integration_test.record_core_battle(...)` for a core trace — and **asserts its precondition rather than branching on it** (`if x is not None:` around the decisive gate fails green). `random.seed(k)` is NOT enough — reproducibility needs fixed teams, a per-player RNG, a fixed sim seed, **and `concurrency=1`** (at concurrency 3, two runs of the same measurement differed by up to +0.043). Prefer REFUSING an unreproducible configuration over emitting a quietly-wandering number.
 
 **File naming:** `*_test.py` (pure unit) · `*_integration_test.py` (out-of-process dep; **the name no longer implies the tier — read the `pytestmark`**) · `*_fuzz_test.py` (real battles in-process via the bridge, run as scripts) · `*_e2e_test.py` / `*_fuzz_e2e_test.py` (live server) · `*_benchmark.py` (profiling, run as scripts).
 
@@ -368,9 +368,9 @@ src/
     model/           # Gen3FeaturesExtractor + the phase modules, damage_op, belief/dex tables,
                      #   critic_mode, capacity_probes, model_version/ — has CLAUDE.md
     gen3_data/       # The data facade over data/ (poke-env-free) — has CLAUDE.md
-    observation/     # Observation encoders — has CLAUDE.md
-    action/          # Action mask + mapping via LegalActions
-    battle/          # Event-sourced battle layer (Gen3Battle, TurnView, LiveView) — has CLAUDE.md
+    observation/     # The observation LAYOUT + vocabularies the model reads — has CLAUDE.md
+    action/          # The 11-dim action space constants + the obs move-order row guard
+    battle/          # Battle read-models (LiveView / LegalActions data classes, core_view, core_obs) — has CLAUDE.md
     training/        # Callbacks, reward, eval, cf grounding, meters — has CLAUDE.md
   main/
     launcher/        # Restart loop + Textual TUI — has CLAUDE.md
@@ -448,6 +448,6 @@ Per-file schemas: `src/agents/gen3_data/CLAUDE.md`. Acquisition: `tools/CLAUDE.m
 
 ---
 
-## Event-Sourced Battle Layer (`src/agents/battle/`)
+## Battle read-models (`src/agents/battle/`)
 
-poke-env is a **state tracker**; RL/reward/replay need *what happened, in order*. `Gen3Battle` + the `BattleEvent` log give that. **Non-`battle/` code reads battle state ONLY through the read-models** — `LiveView` (current board), `TurnView` (history fold), `LegalActions` (server-authoritative legality) — via `battle.strict_view()`, enforced by `src/agents/strict_api_lock_test.py`. The per-decision `TurnDelta` folds entirely from the event log. Detail: `src/agents/battle/CLAUDE.md`.
+The Python event-sourced battle layer (`Gen3Battle`, the `BattleEvent` log, `TurnView`, `StrictBattleView`) and the Python trackers / encoder encode path are DELETED (T27 P6 slice 6d-2): every row, view, legality surface, tracker and reward is the RUST core's. What stays in `battle/` is the read-models as frozen data classes — `LiveView` (current board) and `LegalActions` (legality) — which `core_view` builds from the core's `present()` / `legal_actions()` JSON for the prober. Detail: `src/agents/battle/CLAUDE.md`.

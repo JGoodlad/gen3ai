@@ -129,7 +129,7 @@ def test_the_constants_tables_are_equal():
 
 
 def test_the_model_read_vocabularies_are_equal():
-    from agents.battle.turn_view import FAINT_CAUSE_VOCAB_LIVE
+    from agents.battle.faint_causes import FAINT_CAUSE_VOCAB_LIVE
     from agents.observation import gen3_effects as E
     from agents.observation import pokemon as PK
     from agents.observation.types import TypeEncoder

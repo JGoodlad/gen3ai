@@ -91,7 +91,6 @@ ENTRY_POINTS = (
     "agents.model.snapshot",
     "agents.observation.state_encoder",
     "agents.battle.live_view",
-    "agents.battle.battle_event",
     "utils.teambuilder",
     "utils.team_sources",
     "agents.training.team_archetypes",

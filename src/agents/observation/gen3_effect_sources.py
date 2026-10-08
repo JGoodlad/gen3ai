@@ -30,28 +30,24 @@ Two halves, deliberately different in kind:
    (``'move: ' + this.effectState.sourceEffect``) cannot be read statically, so it must appear in
    :data:`DYNAMIC_EFFECT_EXPANSIONS` with the concrete strings it takes in gen3 — an unlisted one
    is an ERROR, never a skip.
-2. **The id mapping is EXECUTED** (:func:`derive_encoder_ids`): each concrete emission is fed as
-   a real protocol line into a real ``Gen3Battle`` and the ids that land in ``mon.effects`` are
-   read back through ``LiveView``'s own id function. poke-env's branch logic (Skill Swap, Leppa
-   Berry, Trick, Mimic never start an effect; everything else does) is therefore MEASURED, not
-   restated, and an ``Effect.UNKNOWN`` surfaces as the id ``unknown`` exactly as it would live.
+2. **The id mapping is EXECUTED on the RUST reader** (``main.live.effect_scan.probe_lines``): each concrete
+   line is fed, after a fixed two-mon preamble, to the reader + encoder the live client runs, and a line it
+   refuses (or a volatile it cannot classify) is a finding. The Python execution on a ``Gen3Battle``
+   (``effect_ids_for_line`` / ``derive_encoder_ids`` / ``unclassified``) is DELETED with the Python battle layer
+   (T27 P6 slice 6d-2); on the pinned Showdown and a master checkout both executions judged all 93 concrete lines
+   alike before it went (``main/live/effect_scan.py``).
 
-Consumers: ``gen3_effects_test.py`` (fails on drift, step 2 on ``Gen3Battle``) and
-``main/ladder_drift_scan.py``, which since P6 of the poke-env retirement takes ONLY step 1 from here (the text scan,
-:func:`scan_emissions` + :func:`concrete_lines`) and executes each concrete line on the RUST reader the live client
-runs (``main.live.effect_scan``) against the Showdown tree the public server runs.
+Consumers: ``main.live.effect_scan`` (the drift gate's encoder check, ``main/ladder_drift_scan.py``) and
+``gen3_effects_test.py`` — both take ONLY step 1 from here (:func:`scan_emissions` + :func:`concrete_lines`,
+:func:`mod_chain`, and the declared tables).
 """
 
 from __future__ import annotations
 
-import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, FrozenSet, Iterable, List, Optional, Set, Tuple
-
-if TYPE_CHECKING:
-    from agents.battle.gen3_battle import Gen3Battle
+from typing import Dict, FrozenSet, Iterable, List, Optional, Tuple
 
 KEYWORDS: Tuple[str, ...] = ("-start", "-activate", "-singleturn", "-singlemove")
 
@@ -431,77 +427,5 @@ def concrete_lines(emissions: Iterable[Emission]) -> Dict[Tuple[str, str, Tuple[
     return out
 
 
-def _fresh_battle() -> "Gen3Battle":
-    from agents.battle.gen3_battle import Gen3Battle
-    quiet = logging.getLogger("gen3_effect_sources")
-    b = Gen3Battle("battle-gen3ou-effectsources", "p1user", quiet, gen=3)
-    for line in (
-        ["", "player", "p1", "p1user", "", ""], ["", "player", "p2", "p2user", "", ""],
-        ["", "teamsize", "p1", "6"], ["", "teamsize", "p2", "6"], ["", "gametype", "singles"],
-        ["", "gen", "3"], ["", "start"],
-        ["", "switch", "p1a: Zappy", "Zapdos, L100", "100/100"],
-        ["", "switch", "p2a: Snorlax", "Snorlax, L100, M", "100/100"],
-        ["", "turn", "1"],
-        # reveal a move, so a line that indexes the target's moves (Leppa Berry) can resolve it
-        ["", "move", "p2a: Snorlax", "Tackle", "p1a: Zappy"],
-    ):
-        b.parse_message(line)
-    return b
-
-
-def effect_ids_for_line(keyword: str, effect: str, extra: Tuple[str, ...] = ()) -> Set[str]:
-    """EXECUTE one protocol line on a fresh ``Gen3Battle`` and return the ids it adds to the
-    target's ``LiveView`` volatiles. The arguments after the effect are the source's own (a
-    computed one gets a :func:`_placeholder`), so the branches that read them (Trick's ``[of]``
-    partner, Mimic's move, Skill Swap's abilities) run their real code."""
-    from agents.battle.live_view import _id
-    b = _fresh_battle()
-    mon = b.get_pokemon("p2a: Snorlax")
-    before = {str(_id(e)) for e in mon.effects}
-    line = ["", keyword, "p2a: Snorlax", effect, *extra]
-    prev = logging.root.manager.disable
-    logging.disable(logging.WARNING)  # Effect.UNKNOWN's warning; the id itself is the signal
-    try:
-        b.parse_message(line)
-    finally:
-        logging.disable(prev)
-    return {str(_id(e)) for e in mon.effects} - before
-
-
 #: The two silent start_effect sites (no ``-start``/``-activate`` line): a ``|move|`` of
 #: Minimize and a ``|-prepare|`` of Sky Drop (gen4+, not gen3-legal).
-SILENT_EFFECT_SOURCES: Dict[str, str] = {
-    "minimize": "abstract_battle `|move|` handler: start_effect('MINIMIZE') on a Minimize use",
-}
-
-
-def derive_encoder_ids(showdown_root: Path) -> Dict[str, List[Tuple[str, str, str]]]:
-    """Every id ``encode_volatiles`` can meet in gen3 → the ``(keyword, effect, file:line)``
-    lines that put it there. The union of the executed emissions and
-    :data:`SILENT_EFFECT_SOURCES`."""
-    out: Dict[str, List[Tuple[str, str, str]]] = {}
-    for (kw, eff, extra), ems in sorted(concrete_lines(scan_emissions(showdown_root)).items()):
-        for vid in effect_ids_for_line(kw, eff, extra):
-            for e in ems:
-                out.setdefault(vid, []).append((kw, eff, f"{e.file}:{e.line}"))
-    for vid, why in SILENT_EFFECT_SOURCES.items():
-        out.setdefault(vid, []).append(("(silent)", vid, why))
-    return out
-
-
-def unclassified(derived: Dict[str, List[Tuple[str, str, str]]]) -> Dict[str, List[str]]:
-    """The derived ids the encoder would RAISE on, minus the owner-pending ``unknown`` lines —
-    empty means every effect the gen3 sim can announce is classified. The test's (the drift scan
-    executes the lines on the Rust reader since P6, ``main.live.effect_scan``)."""
-    from agents.observation.gen3_effects import GEN3_VOLATILE_TO_SLOT, NOT_A_VOLATILE
-    bad: Dict[str, List[str]] = {}
-    for vid, srcs in derived.items():
-        if vid in GEN3_VOLATILE_TO_SLOT or vid in NOT_A_VOLATILE:
-            continue
-        rest = [f"{kw} {eff!r} ({where})" for kw, eff, where in srcs
-                if not (vid == "unknown" and (kw, eff) in PENDING_OWNER_LINES)]
-        if rest:
-            bad[vid] = rest
-    return bad
-
-

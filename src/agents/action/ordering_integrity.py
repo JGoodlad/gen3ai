@@ -19,17 +19,17 @@ the old prev-turn mask (fixed by a reorder helper) and then, from gen3_frame_del
 ``agents.model.extractor_ctx.active_request_sorted_match``.
 
 ``check_obs_move_order`` is the THROWING guard on the invariants that rule needs, run on
-every row the inference service serves and every row the Python encoder builds.
+every row the inference service serves. (The switch-ordering check and the TurnDelta move-data
+check that read a poke-env-backed ``LiveView`` / delta went with the Python action mapper and
+masker, T27 P6 slice 6d-2.)
 """
 import functools
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import Any, NamedTuple, Optional
 
 import numpy as np
 
-from agents.action.constants import MOVE_START, N_MOVE_SLOTS, SWITCH_END
+from agents.action.constants import MOVE_START, N_MOVE_SLOTS
 
-if TYPE_CHECKING:
-    from agents.battle.live_view import LiveView
 
 
 class OrderingMismatchError(RuntimeError):
@@ -138,67 +138,3 @@ def check_obs_move_order(obs: Any, mask: Optional[Any] = None, where: str = "obs
 CALLER_MOVES = frozenset({
     "sleeptalk", "metronome", "mirrormove", "naturepower", "assist", "copycat",
 })
-
-
-def _same_move(a, b) -> bool:
-    if a == b:
-        return True
-    # Hidden Power reports as type-suffixed ids in some paths; treat as one move.
-    return bool(a and b and a.startswith("hiddenpower") and b.startswith("hiddenpower"))
-
-
-def check_move_data_consistent(delta) -> None:
-    """Training-path data-integrity guard for the recorded move identity.
-
-    `TurnDelta.our_move_id` is derived from the protocol last_move (immune to the
-    action-bookkeeping desync, and delegation-aware). This asserts it agrees with
-    the *independent* protocol source — the DamagingMoveEvent captured at |move|
-    parse time — whenever a damaging move resolved. A disagreement means the two
-    protocol parse points contradict each other (corrupted capture), not a
-    recoverable condition. Non-damaging moves have no event and are skipped.
-    """
-    ev = getattr(delta, "our_damaging_event", None)
-    mv = getattr(delta, "our_move_id", None)
-    if ev is None or mv is None:
-        return
-    if getattr(delta, "our_switch_to", None) is not None:
-        return
-    if not _same_move(ev.move_id, mv):
-        raise OrderingMismatchError(
-            f"Move-data inconsistency on turn {getattr(delta, 'turn', '?')}: "
-            f"our_move_id='{mv}' (from protocol last_move) disagrees with the "
-            f"DamagingMoveEvent move_id='{ev.move_id}' (captured at |move| parse). "
-            f"The two protocol sources contradict each other."
-        )
-
-
-def check_switch_ordering_alignment(live: "LiveView", mask: np.ndarray, legal) -> None:
-    """Assert the team ordering the mask/mapper used equals the ordering the
-    feature extractor consumes, so switch action index *i*, switch-validity bit
-    *i*, and per-Pokémon obs slot *i* all refer to the same Pokémon.
-
-    Unlike moves, our team has no sort step — every consumer uses the
-    ``list(battle.team.values())`` order (the encoder via
-    ``ObservationEncoder.get_team_list(is_opponent=False)``, mirrored here by
-    ``live.ours.mons``; the masker/mapper via the ``LegalActions`` snapshot's
-    slot-indexed switches). This check guarantees that stays true: if the two ever
-    diverge (a future reorder, or the team mutating between snapshot and check) a switch
-    could silently target the wrong mon, so we crash instead. ``live`` is the
-    current-board :class:`LiveView`; ``legal`` is the per-decision :class:`LegalActions`,
-    each of whose switches names the species AND the team slot the action space maps it to.
-    """
-    if legal is None:
-        return
-    # The encoder's team order (what per-Pokémon slots + switch validity index).
-    encoder_team = [m.species for m in live.ours.mons]
-    for sw in legal.switches:
-        if sw.slot >= SWITCH_END or sw.slot >= len(encoder_team):
-            continue
-        if encoder_team[sw.slot] != sw.species:
-            raise OrderingMismatchError(
-                f"Team/switch ordering mismatch on turn {live.turn}: "
-                f"the action space maps switch slot {sw.slot} to '{sw.species}', but the "
-                f"feature extractor's per-Pokémon slot {sw.slot} is "
-                f"'{encoder_team[sw.slot]}'. Switch action {sw.slot} would target a "
-                f"different mon than the model evaluated at that slot."
-            )

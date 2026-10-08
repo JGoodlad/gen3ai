@@ -1,11 +1,16 @@
 # CLAUDE.md — Training (`src/agents/training/`)
 
-Callbacks, reward manager, episode/turn tracking, stall detection, the belief/value auxiliaries and
-the bot-eval pipeline. **How to launch training** (commands, flags) lives in the root `CLAUDE.md`
-→ Training / Launcher and in [`designs/ops/training_runbook.md`](../../../designs/ops/training_runbook.md);
-this file documents the subsystems' internal design. The `TurnDelta` fold and the
-LiveView/TurnView/LegalActions read-models it consumes are in `src/agents/battle/CLAUDE.md`; the
-obs-build performance gate is in `src/agents/observation/CLAUDE.md`.
+Callbacks, the reward's declarations, the belief/value auxiliaries and the eval pipeline. **How to launch
+training** (commands, flags) lives in the root `CLAUDE.md` → Training / Launcher and in
+[`designs/ops/training_runbook.md`](../../../designs/ops/training_runbook.md); this file documents the subsystems'
+internal design. 🚨 **The Python TRACKERS are DELETED** (T27 P6 slice 6d-2, 2026-10-08): `episode_tracker`,
+`event_window_tracker`, `obs_facts_fold`, `battle_snapshot` (`BattleContext`), `battle_recorder`, the `TurnDelta`
+fold (`TurnDelta.build_from_events`) and `turn_delta_legacy`, `reward_manager` / `reward_function` /
+`reward_tracker`, `progress_clock`, `slot_registry` and the `HiddenPowerTracker` — every fold, label, reward and
+trace record is the Rust core's (`src/rust_sim/src/trackers/`, `src/rust_env/`; `designs/rust_sim/trackers.md`).
+`turn_delta.py` keeps the frozen `TurnDelta` field layout (the feature-coverage probes and the archive decoder);
+`hidden_power_tracker.py` keeps `HIDDEN_POWER_TYPE_ORDER`. The battle read-models are in
+`src/agents/battle/CLAUDE.md`; the observation layout in `src/agents/observation/CLAUDE.md`.
 
 ## Where the detail is — the topic map
 
@@ -233,18 +238,21 @@ whole family of loss terms without breaking an import) and `MaskablePPO` staying
 module reached only through `train_setup` still counts as reachable — requiring a direct edge from
 `__init__`/`ppo` would forbid a decomposition rather than check one.
 
-## The reward — the TERMINAL alone (`reward_manager.py`); the no-progress clock (`progress_clock.py`)
+## The reward — the TERMINAL alone (`reward_config.terminal_breakdown`, the Rust core's twin)
 
 **The shaped reward path is DELETED** (`gen3_shaped_reward_deletion_v1`, config v122, 2026-09-26):
 the PBRS potentials, the BIAS terms, the bias refund, the no-progress TAX and their 14 flags
 (`designs/deleted_flags.md`). The reward is the terminal — production's win indicator
 (indicator, victory 1.0, draw 0.0 — constants of the namespace; the four flags `--gamma`, `--victory-value`, `--draw-penalty`, `--terminal-indicator` are DELETED, P11b batch (c)), or — historically, for an old checkpoint only — the signed ±`victory_value` / draw-penalty
-terminal. `reward_golden_test.py` was recorded at the last pre-deletion commit and passes unchanged,
-which is the proof production's reward did not move. 🚨 **A resume or fork of a checkpoint trained
+terminal. The rule is `reward_config.terminal_breakdown` (shared with the prober's core recorder); training's
+terminal is the Rust env core's twin (`src/rust_env`, pinned by its episode tests and `utils/rust_env/episode_test.py`).
+The per-turn Python `Gen3RewardManager` that wrapped it, and `reward_golden_test.py` (recorded at the last pre-shaping-
+deletion commit), are DELETED with the Python battle layer (T27 P6 slice 6d-2). 🚨 **A resume or fork of a checkpoint trained
 WITH shaping REFUSES** (`agents.model.model_version.shaped_reward`, enforced in `resolve_config`
 and `main.checkargs`) — run it pinned to ≤ `029cee83`; never continue it silently on the terminal
-alone. `material_margin.py` is the `win_margin` training-only OBS key, not a reward term, and
-`ProgressClock` is now an OBS-only counter (no `last_penalty`).
+alone. `material_margin.py` is the Python statement of the `win_margin` training-only label rule (not a reward
+term; the label is the Rust core's `labels/margin.rs`, rule for rule; `win_prob_test` drives the contested split
+with it), and the no-progress clock is an OBS-only counter the Rust trackers keep.
 
 **Full detail — the terminal table, the parity proof, the refusal, the clock — is in [`designs/training/reward.md`](../../../designs/training/reward.md).**
 
@@ -267,10 +275,11 @@ structurally closed.
 
 ## Faint attribution in the trace (`gen3_faint_attribution_v1`)
 
-`BattleRecorder` names the newly-fainted species by a SET DIFFERENCE over the two snapshots'
+The trace recorder names the newly-fainted species by a SET DIFFERENCE over the two snapshots'
 `*_fainted_species`, never by labelling a count change with the mon that was active at the
 DECISION — and it emits one event per species, because **one side can lose two mons in a turn**.
-Gate: `poke_env_gaps/faint_attribution_fuzz_test.py`, validated against the sim's own protocol log.
+The recorder is the prober's `main.prober.core_recorder` over the Rust core's walk (the Python `BattleRecorder` and
+its protocol-validated fuzz gate were deleted in T27 P6 slice 6d-2); its labels are `trace_labels.py`, shared.
 ⚠️ **A protocol identifier carries the NICKNAME, not the species** — this pool holds teams with
 localized nicknames (`Triopikeur` = Dugtrio), so any protocol-vs-our-data comparison must resolve
 identifiers through poke-env's `battle.team` map. ⚠️ **A forensic recorder must never take down a
@@ -1225,35 +1234,16 @@ offline cf stack (see "Counterfactual win-prob grounding — DELETED" below). Th
 Rust-core trace (F-LH-4: a core trace records no win-prob head), so it read nothing of any current run. The record of
 what it was and measured is [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).
 
-## Offline replay (`obs_materializer`) — the prefix-sharing materializer is DELETED
+## Offline replay (`obs_materializer`) — DELETED
 
-`materialize_branches` (with `open_branch_fork`, `materialize_branches_from`, `Branch`, `BranchFork`,
-`_PlayerSnapshot` and `clone_pins.py`) was deleted in poke-env retirement P6 slice 5 (2026-10-08, F-P5-3):
-nothing in production called it after P5 moved the prober's lookahead / better-line / falsify onto the
-Rust core (`main.prober.core_walk`). What stays is `materialize_decisions`, `infer_action_indices`,
-`scan_record` / `materialize_from_record` and the two replay players, until P6 slice 6. The record of the
-deleted machinery and its measurements is [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).
-
-🚨 **AN OFFLINE REPLAY'S BATTLE TAG IS ALWAYS UNIQUE, AND THAT IS A CORRECTNESS PROPERTY**
-(`gen3_recon_tag_collision_v1`, 2026-09-19). `_next_tag` used to hand the caller's `battle_tag`
-back verbatim, and the search passes the LIVE record's tag — so an offline replay ran in the LIVE
-BATTLE'S ROOM, and the search-dividend live recorder's choice tap (`main.search_dividend.record`, a
-process-wide patch whose only discriminator was that room) recorded every `/choose default` the replay player
-emitted when its action list ran out as a choice the LIVE player had made. Measured: ~1 per materialized ARM,
-so the `playoff` arm's nested rollouts replayed a prefix that was not the battle and 64 of 66 playoffs died.
-It was filed as a rust defect and was not one — node's bridge re-requests where rust fails loud, so the node
-cell ran the same wrong rollouts and reported a clean number. The tap, its battery and its pinning test
-(`recon_tag_isolation_test`) were deleted with `main.search_dividend` (P6 slice 6d-1); `_next_tag` stays unique.
-**Full detail — in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
-
-🚨 **The SEARCH does not materialize anything in Python** — its successors are Rust-core versions whose
-rows the driver encodes (`gen3_core_search_v1`); the search's protocol road, its one-sided VIEW road
-(`view_successor.py`, the M1 event folder, the per-decision fork caches) and `core_successor.py` are
-DELETED (Rust Core deletion pass, program §4 M2).
-
-🚨 **`EpisodeTracker.record` and `update_progress_clock` are SPLIT, not copied.** `record_context`
-and `advance_window` are their bodies once the context and the event windows exist; `record` /
-`update_progress_clock` are the poke-env-battle wrappers.
+The poke-env offline materializer (`obs_materializer.py`: `materialize_decisions`, the replay players; its
+prefix-sharing `materialize_branches` went in P6 slice 5) is DELETED with the Python runtime (T27 P6 slice 6d-2).
+The prober's lookahead / better-line / falsify read every successor row off the Rust core's parse chain
+(`main.prober.core_walk`), and the search's successors are Rust-core versions whose rows the driver encodes
+(`gen3_core_search_v1`). The record of the deleted machinery and its measurements is
+[`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md); the battle-tag-uniqueness lesson
+(`gen3_recon_tag_collision_v1`, 2026-09-19: an offline replay that reused the LIVE record's tag ran in the live room and
+a process-wide tap recorded its default choices as the live player's) is recorded there too.
 
 ## Counterfactual win-prob grounding — DELETED (the training half, deletion pass L4)
 

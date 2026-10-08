@@ -12,9 +12,9 @@ under its own flag, default OFF** — with the flag off, no training byte change
 
 | | |
 |---|---|
-| **Encoder** | `src/rust_sim/src/encoder/mod.rs` (`encode`, `encode_slice`, `prefill`, the active context, global env, board, pair history and event-window writers), `slot.rs` (the 122-dim per-mon slot; `populated_slot` is the ONE writer of a populated slot), `hypothesis.rs` (X5's hypothesis row, §10), `oracle.rs` (the diagnostic ORACLE REVEAL, §11), `data.rs` (the dex / prior tables, read from `data/pokemon/`), `layout.rs` (GENERATED), `wire.rs` (the row on the wire) |
+| **Encoder** | `src/rust_sim/src/encoder/mod.rs` (`encode`, `encode_slice`, `prefill`, the active context, global env, board, pair history and event-window writers), `slot.rs` (the 122-dim per-mon slot; `populated_slot` is the ONE writer of a populated slot), `hypothesis.rs` (X5's hypothesis row, §10), `oracle.rs` (the diagnostic ORACLE REVEAL, §11), `data.rs` (the dex / prior tables, read from `data/pokemon/`), `layout.rs` (Rust-OWNED source, §4), `wire.rs` (the row on the wire) |
 | **Version** | `BattleVersion::encode(side, &mut [f32; OBS_DIM])` — the side's reading, its view, its legality, its TRACKERS (required) |
-| **Python** | `agents/observation/rust_core_obs_layout.py` (the generator), `agents/battle/core_obs.py` (`wrap_row` / `check_row`), `agents/battle/core_replay.py` (`run_core`: `core_events --obs` from Python) |
+| **Python** | `agents/observation/constants.py` (the layout the MODEL reads, held equal to `layout.rs` by `rust_core_obs_layout_test.py`), `agents/battle/core_obs.py` (`wrap_row` / `check_row`), `agents/battle/core_replay.py` (`run_core`: `core_events --obs` from Python) |
 | **Bridge** | `src/rust_sim/src/bin/sim_bridge.rs` — the `core_obs` START key and the `__OBS__` frame (§5a) |
 | **Gates** | `core_corpus_test.py` (the commit corpus through `core_events --obs`: the PARSE chain's row, §6, fully-written rows), the obs golden (`golden_obs_core_test.py`), the four checks of §6a, `rust_core_obs_layout_test.py`, `core_obs_test.py`, `cargo test` (`encoder::tests`, `tests/encoder_test.rs`, `tests/sim_bridge_core_obs_test.rs`) |
 
@@ -64,17 +64,27 @@ the active-flag write fails it at cells 121 / 243 / 853). **The honest limit:** 
 its own sub-block first (Python's `np.zeros` per sub-encoder), so a skipped cell INSIDE a sub-block
 reads 0, not NaN — that class is caught by the byte gate against the Python value, not by the poison.
 
-## 4. The layout is GENERATED
+## 4. The layout is Rust-OWNED source (since P6 slice 6d-2)
 
-`src/rust_sim/src/encoder/layout.rs` is rendered by `python -m agents.observation.rust_core_obs_layout
---write` from `agents/observation/constants.py` (every offset and dim, `EventCol`, the event-type and
-item-transition ids), `gen3_effects` (`VOLATILE_SLOTS`, `GEN3_VOLATILE_TO_SLOT`, `NOT_A_VOLATILE`,
-`CANT_REASONS_LIVE`), `turn_view.FAINT_CAUSE_VOCAB`, `TypeEncoder.TYPE_TO_IDX`, the status / weather /
-screen maps, `assembler.SAT_LUT`, the sleep-wake tables, the protect floor and poke-env's
-`_MOVE_CATEGORY_PER_TYPE_PRE_SPLIT`. `rust_core_obs_layout_test.py` (routine) fails the day it is
-stale; a dim change is a one-place edit in `constants.py` plus a regeneration. The dex and prior
-tables are NOT generated: `data.rs` reads `data/pokemon/{species,items,abilities,moves,ability_priors,
-natures}.json` at runtime exactly as the facade does, so a `tools/` regeneration reaches both encoders.
+`src/rust_sim/src/encoder/layout.rs` holds every offset and dim, `EventCol`, the event-type and item-transition ids,
+the volatile slot table (`VOLATILE_SLOTS`, `VOLATILE_TO_SLOT`, `NOT_A_VOLATILE`, `CANT_REASONS_LIVE`), the faint-cause
+vocabulary, `TYPE_TO_IDX`, the status / weather / screen maps, the saturation LUT, the sleep-wake tables, the protect
+floor and the pre-split category map. It was RENDERED by `python -m agents.observation.rust_core_obs_layout --write`
+from the Python encoder's constants and internals until T27 P6 slice 6d-2 (2026-10-08) deleted the Python encoder's
+encode path; it is now edited DIRECTLY (the P1 precedent for `core_events/schema.rs` and `present/tables.rs`), and its
+header says so.
+
+What the MODEL reads still lives in Python — `agents/observation/constants.py` (the extractor slices by those offsets),
+`gen3_effects.VOLATILE_SLOTS` / `CANT_REASONS_LIVE`, the faint-cause vocabulary (`agents/battle/faint_causes.py`),
+`TypeEncoder.TYPE_TO_IDX`, `pokemon._STATUS_STR_IDX` — so the two must agree. `rust_core_obs_layout_test.py` (routine)
+PARSES `layout.rs` and holds every value both sides carry EQUAL: every shared `usize` constant (108 on 2026-10-08,
+asserted ≥ 100 and to include the eight block offsets and `OBS_DIM == OFFSET_OBS_FACTS + OBS_FACTS_DIM ==
+Gen3ObservationEncoder.dimension`), `EventCol`, `EVENT_STATUS_IDS`, the obs-facts tables and those vocabularies. A
+layout change is therefore a TWO-place edit (`layout.rs` + `constants.py`, or the vocabulary) that the gate refuses
+until both sides move. The tables only the encoder reads (the LUT, the wake tables, the weather map, …) have no
+Python twin any more. The dex and prior tables are NOT in the layout: `data.rs` reads
+`data/pokemon/{species,items,abilities,moves,ability_priors,natures}.json` at runtime exactly as the facade does, so a
+`tools/` regeneration reaches both readers.
 A species / item / ability / move row with no numeric `num` is a LOAD ERROR on both sides (`data.rs::num_of`; `gen3_data._base.load_dex_json`) — neither reads a missing `num` as 0 any more (F-X5-5; no shipped row trips it).
 
 ## 5. The row on the wire

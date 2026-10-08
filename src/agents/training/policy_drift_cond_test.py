@@ -5,7 +5,6 @@ the obs facts read through the layout (pinned against the encoders themselves), 
 paired-bootstrap intervals, the backfill equalling a fresh compute, and the verdict naming only the
 classes whose interval excludes 0."""
 import json
-from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -151,9 +150,20 @@ def test_state_facts_read_the_layout_the_encoders_write():
     obs[0, slot + lay["pokemon"]["hp"]["offset"]] = 0.37
     obs[0, slot + lay["pokemon"]["condition"]["offset"] + _STATUS_STR_IDX["slp"]] = 1
     obs[0, ot["start"] + lay["pokemon"]["hp"]["offset"]] = 0.9  # a bench mon: must not be read
-    live = SimpleNamespace(boosts={"atk": 6, "spe": -2, "evasion": 1}, volatiles=["stockpile2"])
+    # The active context's cells, written the way the Rust encoder writes them (the Python
+    # `ActiveContextEncoder.encode` that used to write them is deleted, T27 P6 slice 6d-2): per boost
+    # stat [positive, negative] / 6, then the volatile block (`gen3_effects.encode_volatiles`).
+    from agents.observation.gen3_effects import encode_volatiles
     cx = lay["parts"]["context"]
-    obs[0, cx["start"]: cx["start"] + cx["reshape"][1]] = ActiveContextEncoder().encode(live)
+    acl = ActiveContextEncoder().get_layout()
+    ctx = np.zeros(cx["reshape"][1], np.float32)
+    for i, (stat, stage) in enumerate((("atk", 6), ("def", 0), ("spa", 0), ("spd", 0), ("spe", -2),
+                                       ("accuracy", 0), ("evasion", 1))):
+        ctx[acl["boosts"]["offset"] + 2 * i] = max(0, stage) / 6.0
+        ctx[acl["boosts"]["offset"] + 2 * i + 1] = max(0, -stage) / 6.0
+    vo = acl["volatiles"]["offset"]
+    ctx[vo: vo + acl["volatiles"]["dim"]] = encode_volatiles(["stockpile2"])
+    obs[0, cx["start"]: cx["start"] + cx["reshape"][1]] = ctx
     g = lay["parts"]["global"]
     hz = g["start"] + lay["global_layout"]["hazards"]["offset"]
     obs[0, hz + 1] = 2 / C.MAX_SPIKES

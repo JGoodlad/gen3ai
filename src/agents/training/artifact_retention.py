@@ -3,7 +3,8 @@
 Two debug dirs grow without bound under a run dir over a multi-day session:
 
 - ``<run_dir>/stalls/stall_*.html`` — a full Showdown replay saved the first time a
-  battle hits the 250-turn stall cap (``StallLogger``). ~80 KB each, and a self-play
+  battle hits the 250-turn stall cap (``StallLogger``, deleted with the Python battle layer in T27 P6
+  slice 6d-2 — older run dirs still carry its files). ~80 KB each, and a self-play
   run generates thousands (3000+ over 50M steps) — the dominant offender.
 - ``<run_dir>/crashes/restart_err_*.txt`` — a per-crash diagnostic the launcher writes
   before auto-restarting (``launcher/run.py``). Tiny, but unbounded across a run's
@@ -48,7 +49,7 @@ KEEP_EVAL_TRACE_STEPS_DEFAULT = 0
 
 # (subdir, filename-prefix, filename-suffix) for each artifact kind. The prefix+suffix
 # guard means a stray file in the dir is left alone — we only ever delete what the
-# producer wrote (StallLogger -> stall_*.html, launcher -> restart_err_*.txt).
+# producer wrote (the deleted StallLogger -> stall_*.html, launcher -> restart_err_*.txt).
 _STALLS = ("stalls", "stall_", ".html")
 _CRASHES = ("crashes", "restart_err_", ".txt")
 

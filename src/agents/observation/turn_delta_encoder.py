@@ -88,7 +88,7 @@ from agents.observation.gen3_effects import (
     CANT_DIM,
     encode_cant_reason,
 )
-from agents.battle.turn_view import FAINT_CAUSE_DIM, FAINT_CAUSE_VOCAB
+from agents.battle.faint_causes import FAINT_CAUSE_DIM, FAINT_CAUSE_VOCAB
 from agents.gen3_mechanics import BOOST_DIM
 from agents.enums import Status
 
@@ -119,7 +119,7 @@ OUTCOME_DIM = len(_OUTCOME_ORDER)  # one-hot over move outcomes (3: hit/miss/fai
 EFF_DIM = 4         # one-hot: immune | resisted | normal | super-effective
 ORDER_DIM = 2       # binary: [we_first, opp_first]; all-zero = na / unknown
 SCALAR_DIM = 4 + CANT_DIM * 2 + 5 + EFF_DIM * 2 + ORDER_DIM
-# FAINT_CAUSE_DIM is imported from turn_view (8 cause labels).
+# FAINT_CAUSE_DIM is imported from agents.battle.faint_causes (8 cause labels).
 
 # Base block (indices 0..TURN_DELTA_BASE_DIM-1).
 TURN_DELTA_BASE_DIM = MOVE_FEAT_DIM * 2 + SCALAR_DIM

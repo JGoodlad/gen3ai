@@ -4,170 +4,20 @@
 The row guard `check_obs_move_order` (gen3_move_legality_by_id_v1) is exercised on REAL rows
 (the learner golden buffer + the compile parity fixture) and on targeted corruptions of them.
 """
-import types
 import numpy as np
 import pytest
-from unittest.mock import MagicMock
 
-from poke_env.battle.abstract_battle import AbstractBattle
-from poke_env.battle.pokemon import Pokemon
-from poke_env.battle.move import Move
-
-from agents.action.mapper import Gen3ActionMapper
 from agents.action.ordering_integrity import (
     OrderingMismatchError,
     row_offsets,
     check_obs_move_order,
-    check_switch_ordering_alignment,
-)
-from agents.battle.live_view import (
-    LegalActions, LiveView, LiveSide, LivePokemon, LiveMove, LiveWeather,
 )
 from agents.action.constants import MOVE_START
-
-
-_NO_WEATHER = LiveWeather(weather=None, is_permanent=False, turns_active=0)
-
-
-def _livemon(species, move_ids=(), active=False):
-    """A minimal LivePokemon carrying just the fields the integrity guards read
-    (species + revealed move ids)."""
-    return LivePokemon(
-        species=species, active=active, fainted=False, revealed=True,
-        hp_fraction=1.0, status=None, types=("ghost",),
-        moves=tuple(LiveMove(id=m, current_pp=16, max_pp=16) for m in sorted(move_ids)),
-        item=None, ability=None, boosts={}, volatiles={},
-    )
-
-
-def _live(active_move_ids=(), team_species=("gengar", "metagross", "starmie"),
-          active_species="gengar", turn=30):
-    """A LiveView whose ``ours.mons`` mirrors a ``_battle()`` team (same order), the
-    active mon carrying ``active_move_ids``. Drives the integrity checks + get_mask
-    through the LiveView boundary instead of a raw battle read."""
-    mons, active_obj = [], None
-    for s in team_species:
-        is_active = (s == active_species)
-        m = _livemon(s, active_move_ids if is_active else (), active=is_active)
-        mons.append(m)
-        if is_active:
-            active_obj = m
-    ours = LiveSide(team_size=len(mons), active=active_obj, mons=tuple(mons), side_conditions={})
-    opp = LiveSide(team_size=0, active=None, mons=(), side_conditions={})
-    return LiveView(turn=turn, weather=_NO_WEATHER, ours=ours, opp=opp)
-
-
-def _move(move_id):
-    m = MagicMock(spec=Move)
-    m.id = move_id
-    return m
-
-
-def _pokemon(species, move_ids, active=False):
-    mon = MagicMock(spec=Pokemon)
-    mon.species = species
-    mon.moves = {mid: _move(mid) for mid in move_ids}
-    mon.active = active
-    mon.fainted = False
-    return mon
-
-
-def _battle(active_move_ids, disabled_id=None, struggle=False):
-    """Build a minimal battle whose request (action) move order is
-    `active_move_ids` and whose active mon owns the same moves (sorted-order is
-    derived by the masker/extractor independently)."""
-    active = _pokemon("gengar", active_move_ids, active=True)
-    bench = [
-        _pokemon("metagross", ["meteormash"]),
-        _pokemon("starmie", ["surf"]),
-    ]
-    team = {p.species: p for p in [active, *bench]}
-
-    battle = MagicMock(spec=AbstractBattle)
-    battle.turn = 30
-    battle.team = team
-    battle.active_pokemon = active
-    # Bench is switchable; active is not.
-    battle.available_switches = bench
-    battle.available_moves = (
-        [_move("struggle")] if struggle else list(active.moves.values())
-    )
-    # LegalActions.from_battle reads these poke-env-derived legality flags.
-    battle.force_switch = False
-    battle.trapped = False
-    battle.maybe_trapped = False
-    battle.wait = False
-    # last_request drives the mask: request order + disabled flags.
-    battle.last_request = {
-        "active": [{
-            "moves": [
-                {"id": mid, "disabled": (mid == disabled_id)}
-                for mid in active_move_ids
-            ]
-        }]
-    }
-    return battle
-
-
-
-
-
-
-
-
-
-
-def test_switch_ordering_aligned_by_default():
-    """Our team uses list(battle.team.values()) order everywhere (mirrored by
-    live.ours.mons) -> aligned, no raise."""
-    battle = _battle(["icepunch", "taunt", "thunderbolt", "willowisp"])
-    legal = LegalActions.from_battle(battle)
-    live = _live(["icepunch", "taunt", "thunderbolt", "willowisp"])
-    check_switch_ordering_alignment(live, np.ones(11, dtype=np.int8), legal)  # explicit
-
-
-def test_switch_ordering_mismatch_raises():
-    """If the encoder's team order ever diverges from the mask/mapper's captured
-    snapshot order, a switch action would target the wrong mon -> must raise."""
-    battle = _battle(["icepunch", "taunt", "thunderbolt", "willowisp"])
-    legal = LegalActions.from_battle(battle)  # capture switches at the original order
-    # Simulate drift: the encoder's live team order (LiveView) no longer matches the
-    # snapshot's slot mapping (here, reversed).
-    live = _live(
-        active_move_ids=["icepunch", "taunt", "thunderbolt", "willowisp"],
-        team_species=("starmie", "metagross", "gengar"), active_species="gengar",
-    )
-    with pytest.raises(OrderingMismatchError):
-        check_switch_ordering_alignment(live, np.ones(11, dtype=np.int8), legal)
-
-
 
 
 # --------------------------------------------------------------------------
 # 2b — mapper resolves action index -> the move/switch that index means
 # --------------------------------------------------------------------------
-
-def test_mapper_resolves_action_index_to_request_slot():
-    """Action 6+k must execute request move k (the contract the model trains on)."""
-    battle = _battle(["thunderbolt", "willowisp", "icepunch", "taunt"])
-    for k, expected in enumerate(["thunderbolt", "willowisp", "icepunch", "taunt"]):
-        order = Gen3ActionMapper.action_to_order(MOVE_START + k, battle)
-        assert order.order.id == expected
-
-
-def test_mapper_raises_on_stale_state():
-    """If the server move list changes after the snapshot was captured, acting is
-    refused rather than sending the wrong move (fail-loud)."""
-    battle = _battle(["thunderbolt", "willowisp", "icepunch", "taunt"])
-    snap = LegalActions.from_battle(battle)
-    ctx = types.SimpleNamespace(turn=battle.turn, legal=snap, mask=np.ones(11, dtype=np.int8))
-    # Server now reports a different move order:
-    battle.last_request["active"][0]["moves"] = [
-        {"id": m, "disabled": False} for m in ["surf", "icebeam", "thunderbolt", "taunt"]
-    ]
-    with pytest.raises(RuntimeError):
-        Gen3ActionMapper.assert_decision_current(ctx, battle)
-
 
 # --------------------------------------------------------------------------
 # gen3_move_legality_by_id_v1 — the ROW guard on real observation rows

@@ -40,55 +40,6 @@ class GlobalEnvEncoder(ObservationEncoder):
         return GLOBAL_ENV_DIM
 
     # Why the `type: ignore[override]` below — LiveView-subject encoder; see ActiveContextEncoder.encode.
-    def encode(self, live_view: Any) -> np.ndarray:  # type: ignore[override]
-        """``live_view`` is a :class:`LiveView`."""
-        vec = np.zeros(self.dimension, dtype=np.float32)
-        w = live_view.weather
-
-        cur = 0
-        # 1. Weather one-hot (5)
-        vec[cur + _WEATHER_IDX.get(w.weather, 0)] = 1.0
-        cur += WEATHER_ONEHOT_DIM
-
-        # 2. Weather permanence + turns-remaining (2). Ability weather is permanent
-        #    (turns_remaining None → 0 remaining + permanent=1); move weather counts
-        #    down; no weather → both 0. All from the event log — no ability guessing.
-        vec[cur] = 1.0 if w.is_permanent else 0.0
-        tr = w.turns_remaining
-        vec[cur + 1] = (tr / _WEATHER_MAX_TURNS) if tr is not None else 0.0
-        cur += 2
-
-        # 3. Hazards: Spikes count per side (2)
-        ours, opp = live_view.ours.side_conditions, live_view.opp.side_conditions
-        vec[cur] = float(ours.get("spikes", 0)) / MAX_SPIKES
-        vec[cur + 1] = float(opp.get("spikes", 0)) / MAX_SPIKES
-        cur += 2
-
-        # 4. Turn clock (CLOCK_DIM=3) — gen3_deadline_clock_v1.
-        #    [0] log-ELAPSED: resolution in the OPENING (how far into the game am I).
-        #    [1] remaining LINEAR: constant sensitivity, the proportional budget left.
-        #    [2] log-REMAINING: the mirror of [0] — resolution at the DEADLINE, where the
-        #        forfeit lives. Over the last 20 turns this spans 55% of its range where [0]
-        #        spans 1.5%, which is the whole point: a critic cannot learn a cliff it has no
-        #        resolution on, and TD has to fit that cliff FIRST before it can bootstrap the
-        #        value back down the episode.
-        #    All three are clamped at the deadline so an over-cap turn saturates rather than
-        #    going negative / NaN (log of a non-positive remaining).
-        turn = float(live_view.turn)
-        remaining = max(0.0, float(MAX_TURNS) - turn)
-        vec[cur] = math.log(1 + turn) / _LOG_MAX_TURNS
-        vec[cur + 1] = remaining / MAX_TURNS
-        vec[cur + 2] = math.log(1 + remaining) / _LOG_MAX_TURNS
-        cur += CLOCK_DIM
-
-        # 5. Per-side screens / Safeguard / Mist (8): for each condition, [ours, opp]
-        for cid in _SCREEN_CONDITIONS:
-            vec[cur] = 1.0 if cid in ours else 0.0
-            vec[cur + 1] = 1.0 if cid in opp else 0.0
-            cur += 2
-
-        return vec
-
     def get_layout(self) -> Dict[str, Any]:
         # Offsets must match encode(); the feature extractor slices weather/hazards/
         # clock from here. "weather" spans the one-hot + permanence + turns (7 dims) so

@@ -2,9 +2,8 @@ from __future__ import annotations
 import numpy as np
 from .base import ObservationEncoder
 from .constants import COMBINED_TYPES_DIM
-from typing import Any, Dict, TYPE_CHECKING
-if TYPE_CHECKING:
-    from poke_env.battle.abstract_battle import AbstractBattle
+from typing import Any, Dict
+
 
 class TypeEncoder(ObservationEncoder):
     """
@@ -25,27 +24,6 @@ class TypeEncoder(ObservationEncoder):
     @property
     def dimension(self) -> int:
         return COMBINED_TYPES_DIM
-
-    def encode(self, mon: Any, battle: AbstractBattle) -> np.ndarray:
-        vec = np.zeros(self.dimension, dtype=np.float32)
-        if mon is None:
-            return vec
-            
-        # Get types and sort them for order invariance (e.g. Water/Ground == Ground/Water)
-        types = []
-        if mon.type_1:
-            types.append(mon.type_1.name)
-        if mon.type_2:
-            types.append(mon.type_2.name)
-            
-        types.sort()
-        
-        # Place IDs in the first two slots; the model will sum their embeddings
-        for i, tname in enumerate(types):
-            if i < 2:
-                vec[i] = float(self.TYPE_TO_IDX.get(tname, 0))
-                
-        return vec
 
     def get_layout(self) -> Dict[str, Any]:
         return {

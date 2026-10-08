@@ -54,6 +54,14 @@ One flat `float32` vector of **2845** dims, plus an 11-dim `action_mask`, delive
 Every number below comes from `agents/observation/constants.py` and
 `Gen3ObservationEncoder.get_layout()`. **Never hardcode an offset — read the layout.**
 
+**The row is written by the RUST encoder alone** (`src/rust_sim/src/encoder/`, served by the env core to training,
+eval, live play and the prober). The Python side is the LAYOUT the model reads — `constants.py`,
+`Gen3ObservationEncoder` (`dimension`, `get_layout()`, the read-back `describe_vector`) and the vocabularies the
+model's tables are sized from; it has no encode path (deleted with the Python battle layer and trackers, T27 P6
+slice 6d-2, 2026-10-08, with no obs value moving: the obs golden is byte-identical across it). The Rust layout
+`encoder/layout.rs` is Rust-owned source, held equal to every value the model also reads by
+`agents/observation/rust_core_obs_layout_test.py` (a parse gate; `rust_sim/encoder.md` §4).
+
 ### 1.1 Top-level blocks
 
 | Block | Start | End | Dims | Constant |
@@ -69,7 +77,7 @@ Every number below comes from `agents/observation/constants.py` and
 | **Total** *(= `base_dim`)* | | **2845** | | `Gen3ObservationEncoder.dimension` |
 
 The OBS-FACTS block is the LAST block: `total_dim == base_dim`, and the encoder's output IS the
-observation. There is no appended tail — the row the Rust core builds IS `encode(...)`, unchanged.
+observation. There is no appended tail.
 The first 2761 dims are byte-identical to the layout before the block was appended (measured at the
 append, the X5 version break's part 3, 2026-10-07: all 991 obs-golden vectors' prefixes hash to their
 pre-append values), and production (`--obs-facts off`) reads none of the block (§1.7).
@@ -79,9 +87,8 @@ last 32 decision-relevant EVENTS as typed 30-column records — type id · actor
 side · move id · attributed `hp_delta` · outcome/crit/effectiveness · `we_first` · status id ·
 log-saturated recency · forced-window phase tag · valid · cant-reason id · faint-cause id ·
 item-transition id · REL species + side · entry reason · denial reason · caller move · boost stat ·
-Spikes layers · Pursuit-on-switch — folded by `EventWindowTracker`
-(`agents/training/event_window_tracker.py`; the Rust core's `trackers::history::EventWindow`,
-slice T / O byte-equal) from PUBLIC protocol events (seq-idempotent), most-recent LAST with
+Spikes layers · Pursuit-on-switch — folded by the Rust core's `trackers::history::EventWindow`
+from PUBLIC protocol events (seq-idempotent), most-recent LAST with
 zero-padding at the front. The per-row-type schema is §1.6. Ids are
 embedding ids; **no Linear reads the block raw** — its only consumer is the opt-in
 `history_events` event-seat encoder (§ flag table). The columns are documented at
@@ -116,7 +123,7 @@ the entities they describe).
 
 ### 1.2 Per-Pokémon slot — 122 dims (`POKEMON_FULL_DIM`)
 
-`POKEMON_VECTOR_DIM` is 119; `state_encoder` appends the two OUR-side trapping bits and then the
+`POKEMON_VECTOR_DIM` is 119; the encoder appends the two OUR-side trapping bits and then the
 active flag → 122. The active flag stays the **last** dim of the slot on purpose — the model's
 `hp_and_active[:, :, -1]` convention is load-bearing (ObsUnpack / DamageOperator / entity seats).
 
@@ -137,7 +144,7 @@ active flag → 122. The active flag stays the **last** dim of the slot on purpo
 | recency `[since_seen, since_acted, since_hit]` | 109 | 3 | `POKEMON_RECENCY_OFFSET` |
 | protect-success odds | 112 | 1 | `POKEMON_PROTECT_OFFSET` |
 | last action `[move_id, was_switch, hit, miss, fail, crit]` (active only) | 113 | 6 | `POKEMON_LAST_ACTION_OFFSET` (`gen3_pair_history_v1` — the id is embedding-routed, its raw column zeroed at the slice) |
-| trapped (our active only) | 119 | 1 | `POKEMON_TRAPPED_OFFSET`, appended by `state_encoder` |
+| trapped (our active only) | 119 | 1 | `POKEMON_TRAPPED_OFFSET`, appended after the 119-dim vector |
 | maybe_trapped (our active only) | 120 | 1 | `POKEMON_MAYBE_TRAPPED_OFFSET`, appended |
 | active flag | 121 | 1 | `POKEMON_ACTIVE_OFFSET`, appended (LAST — load-bearing) |
 
@@ -173,7 +180,7 @@ active flag all 0). At `full` the set's facts are written too — the four moves
 play has revealed (an observed move's tracked PP, a consumed item, a changed ability) and gains only the facts play has not.
 A revealed mon leaves the tail and joins the seen prefix, matched by dex num. Nothing else in the row moves, and obs dims
 are unchanged. The model reads it through the shared trunk like any state of the block (with every species stated, no
-slot is "believed"); the Python encoder has no reveal. Mechanism, cells and gates:
+slot is "believed"). Mechanism, cells and gates:
 [`rust_sim/encoder.md`](rust_sim/encoder.md) §11.
 
 ### 1.3 Board (reactive) block — 17 dims
@@ -199,8 +206,8 @@ in exactly ONE rule: `extractor_ctx.active_request_sorted_match` (move-num ident
 per-move-slot legality (`active_move_legality_sorted`) both read it. A row that breaks its
 preconditions (a request move with no unique sorted slot, request legality ≠ the mask, a choosable
 move with no id where more than one action is legal — Hyper Beam's recharge turn is the exempt single
-forced action) RAISES `OrderingMismatchError` at the inference service's `submit` and in the
-Python encoder (`agents/action/ordering_integrity.check_obs_move_order`). Measured on the Lane S
+forced action) RAISES `OrderingMismatchError` at the inference service's `submit`
+(`agents/action/ordering_integrity.check_obs_move_order`). Measured on the Lane S
 bank (580 real battles, 42,465 decisions, 2026-10-06): action 6+*k*'s token names request move *k*
 on all 142,598 legal move actions, and the sim executed the chosen move on all 27,361 played moves.
 
@@ -276,8 +283,7 @@ and the attempted switch target:
 - **The refused-switch target is carried (E4, `gen3_event_record_v2`).** When a switch is refused
   while trapped, the `SWITCH_REJECTED` row's TARGET is the bench mon the switch aimed at. The
   server's `|error|[Unavailable choice]` does not name it, so each path supplies it from what it
-  SENT: the Python fold from the previous decision's action index (`EpisodeTracker.
-  _attempted_switch`, TurnDelta's decode), the core from the noted choice token
+  SENT: the core from the noted choice token
   (`trackers::attempted_switch_species`: `switch N` against the request's `side.pokemon`, or
   `switch <name>`). A search successor notes no choice, so its leaf row leaves the target 0.
 
@@ -1522,7 +1528,7 @@ E4 `[17:23]`, E5 `[23:29]`, OTHER_species `29`, event seats `[30:62]`.
 | **d2** | our mon *i* × opp **ACTIVE** (one-hot column) | 4 | `[best_high, best_pko, p_outspeed, alive]` — our bench's offense vs their active |
 | **d4** | our mon *i* × opp mon *j* (active column pre-zeroed) | 4 | `[phys_high, spec_high, phys_pko, spec_pko]` — the opp **bench**'s believed threat |
 | **v** | our mon *i* × opp mon *j* | 3 | `[p_outspeed, both_alive, revealed_j]` |
-| **h** | our mon *i* × opp mon *j* | 5 | `[switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]` — obs-fed pair-history TENDENCIES (`gen3_pair_history_v1`; EpisodeTracker-folded, log-saturated; **IN the production families string** since gen-12 — the one family whose cell the GPU cannot recompute, since it IS compiled battle history) |
+| **h** | our mon *i* × opp mon *j* | 5 | `[switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]` — obs-fed pair-history TENDENCIES (`gen3_pair_history_v1`; folded by the Rust trackers, log-saturated; **IN the production families string** since gen-12 — the one family whose cell the GPU cannot recompute, since it IS compiled battle history) |
 | **r** | event seat *e* (the LAST-N tokens) × mon *m* (all 12) | 3 | `[is_actor, is_target, is_rel]` — STRUCTURAL reference edges (`gen3_event_ref_edges_v1`, Tier H-C; `is_rel` added by `gen3_event_record_v2`): event *e*'s recorded actor/target/REL mon IS mon *m* (species-num equality, side-gated against mirror false-links — actor on the row's side, target on the other, REL on its own `REL_SIDE`; `_event_reference_cells`, pure). **IN the production string** — requires `--history-events`, which is ON (the seats are the rows) |
 | **t** | our mon *i* × opp mon *j* | 2 | `[P(i traps j), P(j traps i)]` |
 | **x** | each mon × **global** (both sides; its OWN side token 12 / 13 under `static`) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` |
@@ -1788,8 +1794,8 @@ SHIFT is still gated on `opp_intent_coef > 0`, so a win-prob-only run carries th
 per-episode value with no shift applied. This is the one row in the table whose production consumer
 is a DIAGNOSTIC rather than a loss.
 
-Only the **trainee** carries any of these. Eval and self-play opponents play through
-`RLPlayer` (and, in training, the inference service's slots), which never construct them.
+Only the **trainee** carries any of these. Eval and self-play opponents play through the Rust eval core and,
+in training, the inference service's slots, which never construct them.
 
 **Where the trainee's `observation` row comes from:** the Rust env core builds it from the trainee's
 own per-side stream (parse -> reading -> view -> trackers -> encode) — the only source since the Python
@@ -1807,8 +1813,7 @@ from the core, the host or a refusal (the inventory of record: `src/utils/rust_e
 Two side-channel stashes are also never fed forward: `last_belief_target_latent` (computed only
 under `torch.is_grad_enabled()`) and `last_move_latent_table`. The pinned no-leak tests are
 `belief_slots_test.test_latent_target_is_no_leak`,
-`damage_op_test.test_op_is_leak_free_of_privileged_keys`, the bridge fuzz
-`poke_env_gaps/belief_labels_fuzz_test.py`, and — as a **graph invariant** —
+`damage_op_test.test_op_is_leak_free_of_privileged_keys`, and — as a **graph invariant** —
 `delivery_graph_test.test_no_aux_edge_reaches_the_forward`, which asserts that no `aux` edge
 terminates at `pi_projection`, `value_pooled` (the critic's sink — there is no value projection), or any pointer logit.
 

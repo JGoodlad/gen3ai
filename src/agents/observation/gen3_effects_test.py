@@ -157,7 +157,7 @@ def test_no_dead_volatile_slots_beyond_known_extras():
     ability-activation, both derived from source) or an intentional counter/trap variant
     or a fuzz-confirmed engine extra. No silent dead entries."""
     derived = (_gen3_move_driven_volatiles() | _gen3_ability_activation_volatiles()
-               | set(_derived_encoder_ids()))
+               | _source_line_effect_ids())
     intentional_extras = {
         "perish0", "perish1", "perish2", "perish3",
         "stockpile", "stockpile1", "stockpile2", "stockpile3",
@@ -179,17 +179,32 @@ def test_no_dead_volatile_slots_beyond_known_extras():
 # --------------------------------------------------------------------------- #
 # THE WHOLE CLASS: every effect the gen3 sim can ANNOUNCE onto a mon (Heal Bell, 2026-09-24).
 # gen3_effect_sources scans every add('-start'|'-activate'|'-singleturn'|'-singlemove', …) the
-# gen3 format executes and EXECUTES each on a real Gen3Battle; these gates fail on drift.
+# gen3 format executes (the TEXT scan); since T27 P6 slice 6d-2 each concrete line is EXECUTED on the
+# Rust reader + encoder the live client runs (`main.live.effect_scan.probe_lines`), not on a Gen3Battle.
+# These gates fail on drift.
 # --------------------------------------------------------------------------- #
 _SD = _ROOT / "deps/pokemon-showdown"
-_DERIVED_CACHE: dict = {}
+_LINES_CACHE: dict = {}
 
 
-def _derived_encoder_ids():
-    if "d" not in _DERIVED_CACHE:
-        from agents.observation.gen3_effect_sources import derive_encoder_ids
-        _DERIVED_CACHE["d"] = derive_encoder_ids(_SD)
-    return _DERIVED_CACHE["d"]
+def _source_line_effect_ids():
+    """The effect ids the derived source lines NAME (`move: Mind Reader` -> `mindreader`): the TEXT of each
+    line's effect argument as a Showdown id. (The ids a line actually LANDS as were read off an executed
+    Gen3Battle until T27 P6 slice 6d-2; the Rust reader reports clean / finding, not ids.)"""
+    from utils.showdown_id import to_id_str
+    out = set()
+    for text in _source_lines():
+        effect = text.split("|")[3]          # "|<keyword>|<target>|<effect>|…"
+        out.add(to_id_str(effect.split(":", 1)[-1]))
+    return out
+
+
+def _source_lines():
+    """Every concrete effect line the pinned gen3 sim can announce → its sources (the text scan)."""
+    if "d" not in _LINES_CACHE:
+        from main.live.effect_scan import source_lines
+        _LINES_CACHE["d"] = source_lines(_SD)
+    return _LINES_CACHE["d"]
 
 
 @pytest.mark.integration  # needs deps/pokemon-showdown checked out
@@ -200,37 +215,24 @@ def test_gen3_mod_chain_is_the_one_the_scan_walks():
 
 @pytest.mark.integration
 def test_every_effect_the_gen3_sim_announces_is_classified():
-    """THE GATE. Every id a gen3-executable protocol line puts into ``LiveView.volatiles`` is a
-    slot or a documented NOT_A_VOLATILE entry — or one of the owner-pending ``unknown`` lines.
-    A new Showdown line, a renamed effect, or a poke-env enum gap fails HERE, not on a ladder."""
-    from agents.observation.gen3_effect_sources import unclassified
-    derived = _derived_encoder_ids()
-    assert len(derived) > 50, f"the scan found only {len(derived)} ids — it broke"
-    bad = unclassified(derived)
+    """THE GATE. Every gen3-executable effect line reads AND encodes clean on the Rust reader + encoder
+    (a slot, or a documented not-a-volatile) — a new Showdown line or a renamed effect fails HERE, not
+    on a ladder. (`main/live/effect_scan_test.py` holds the same on the drift scan's entry point.)"""
+    from main.live.effect_scan import probe_lines
+    lines = _source_lines()
+    assert len(lines) > 50, f"the scan found only {len(lines)} lines — it broke"
+    bad = probe_lines(sorted(lines))
     assert not bad, (
-        "gen3 protocol lines put these ids into LiveView.volatiles and gen3_effects does not "
-        "classify them (encode_volatiles would RAISE mid-battle):\n  "
-        + "\n  ".join(f"{vid}: {srcs}" for vid, srcs in sorted(bad.items())))
-
-
-@pytest.mark.integration
-def test_every_classified_non_slot_id_is_source_derived():
-    """No dead entries: NOT_A_VOLATILE and the same-state aliases each name an id a gen3 line
-    actually produces — a classification that nothing can reach is a guess, not a derivation."""
-    from agents.observation.gen3_effects import NOT_A_VOLATILE, _SAME_STATE_ALIASES
-    derived = set(_derived_encoder_ids())
-    dead = (set(NOT_A_VOLATILE) | set(_SAME_STATE_ALIASES)) - derived
-    assert not dead, f"classified but no gen3 line produces them: {sorted(dead)}"
+        "gen3 protocol lines the Rust reader refuses or cannot encode (the live client would halt):\n  "
+        + "\n  ".join(f"{text}: {why}" for text, why in sorted(bad.items())))
 
 
 @pytest.mark.integration
 def test_owner_pending_lines_are_live_and_still_raise():
-    """No derived gen3 line lands as ``unknown`` any more (Mud Sport / Water Sport, the last two,
-    got Effect members and slots in ``gen3_field_sport_slots_v1``), the pending table is empty to
-    match, and ``unknown`` itself still RAISES — pending is never a silent drop."""
+    """The pending table is empty (Mud Sport / Water Sport, the last two, got slots in
+    ``gen3_field_sport_slots_v1``) and ``unknown`` itself still RAISES — pending is never a silent drop."""
     from agents.observation.gen3_effect_sources import PENDING_OWNER_LINES
-    srcs = {(kw, eff) for kw, eff, _ in _derived_encoder_ids().get("unknown", [])}
-    assert srcs == set(PENDING_OWNER_LINES) == set(), (srcs, set(PENDING_OWNER_LINES))
+    assert set(PENDING_OWNER_LINES) == set()
     with pytest.raises(UnknownVolatileError, match="new gap"):
         encode_volatiles(["unknown"])
 
@@ -238,12 +240,14 @@ def test_owner_pending_lines_are_live_and_still_raise():
 @pytest.mark.integration
 def test_field_sports_are_derived_and_land_on_their_own_slots():
     """Revert pin for ``gen3_field_sport_slots_v1``: the two gen3 lines are derived from the
-    vendored Showdown, land as ``mudsport`` / ``watersport`` on a real ``Gen3Battle``, and each
-    writes exactly its own (last-two) slot."""
+    vendored Showdown, read + encode clean on the Rust reader, and each id writes exactly its own
+    (last-two) slot."""
     from agents.observation.gen3_effects import VOLATILE_SLOTS
-    derived = _derived_encoder_ids()
-    assert {eff for _kw, eff, _ in derived.get("mudsport", [])} == {"Mud Sport"}, derived.get("mudsport")
-    assert {eff for _kw, eff, _ in derived.get("watersport", [])} == {"move: Water Sport"}
+    from main.live.effect_scan import line_text, probe_lines
+    lines = _source_lines()
+    sports = [line_text("-start", "Mud Sport"), line_text("-start", "move: Water Sport")]
+    assert all(t in lines for t in sports), [t for t in lines if "Sport" in t]
+    assert probe_lines(sports) == {}
     assert VOLATILE_SLOTS[-2:] == ("mudsport", "watersport")
     for vid in ("mudsport", "watersport"):
         vec = encode_volatiles([vid])
@@ -314,9 +318,10 @@ def test_aromatherapy_is_cureteam_not_a_volatile_in_gen3():
     assert "'-cureteam'" in body[:body.index("\n\t},")]
 
 
-# Each classification this change added, EXERCISED on the protocol line the sim emits (fed to a
-# real Gen3Battle, read back through LiveView's own id function) — each FAILS on revert, where
-# the id reached encode_volatiles unclassified and raised.
+# Each classification this change added, EXERCISED on the protocol line the sim emits — read and
+# encoded by the Rust reader the live client runs (`main.live.effect_scan.probe_lines`; the Python
+# Gen3Battle execution is deleted, T27 P6 slice 6d-2) — each a finding on revert, where the id reached
+# the encoder unclassified and raised.
 _ONE_SHOT_LINES = [
     ("-activate", "move: Heal Bell", ()),
     ("-activate", "move: Magnitude", ("7",)),
@@ -328,15 +333,11 @@ _ONE_SHOT_LINES = [
 ]
 
 
+@pytest.mark.integration  # spawns the Rust live reader
 @pytest.mark.parametrize("kw,effect,extra", _ONE_SHOT_LINES)
-def test_one_shot_line_reaches_the_encoder_and_writes_no_slot(kw, effect, extra):
-    from agents.observation.gen3_effect_sources import effect_ids_for_line
-    from agents.observation.gen3_effects import NOT_A_VOLATILE
-    ids = effect_ids_for_line(kw, effect, extra)
-    assert len(ids) == 1 and next(iter(ids)) in NOT_A_VOLATILE, ids
-    assert encode_volatiles(ids).sum() == 0.0
-    both = encode_volatiles(ids | {"leechseed"})  # a real state beside it is untouched
-    assert both.sum() == 1.0 and both[VOLATILE_SLOTS.index("leechseed")] == 1.0
+def test_one_shot_line_reads_and_encodes_clean_on_the_rust_reader(kw, effect, extra):
+    from main.live.effect_scan import line_text, probe_lines
+    assert probe_lines([line_text(kw, effect, extra)]) == {}
 
 
 def test_heal_bell_is_the_regression():
@@ -344,13 +345,13 @@ def test_heal_bell_is_the_regression():
     assert encode_volatiles(["healbell"]).sum() == 0.0
 
 
+@pytest.mark.integration  # spawns the Rust live reader
 def test_mind_reader_is_the_lock_on_state():
     """Showdown's Mind Reader adds the SAME `lockon` volatile Lock-On does (moves.ts
     `source.addVolatile('lockon', target)`); poke-env names it MIND_READER. Lock-On slot."""
-    from agents.observation.gen3_effect_sources import effect_ids_for_line
-    ids = effect_ids_for_line("-activate", "move: Mind Reader", ("[of] p1a: Zappy",))
-    assert ids == {"mindreader"}
-    vec = encode_volatiles(ids)
+    from main.live.effect_scan import line_text, probe_lines
+    assert probe_lines([line_text("-activate", "move: Mind Reader", ("[of] p1a: Zappy",))]) == {}
+    vec = encode_volatiles({"mindreader"})
     assert vec.sum() == 1.0 and vec[VOLATILE_SLOTS.index("lockon")] == 1.0
 
 

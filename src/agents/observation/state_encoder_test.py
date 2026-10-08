@@ -1,8 +1,6 @@
 import numpy as np
 import torch
 import gymnasium as gym
-from poke_env.battle.abstract_battle import AbstractBattle
-from unittest.mock import MagicMock
 from .state_encoder import Gen3ObservationEncoder, load_mappings
 
 # Computed from live constants so they track architecture changes (no magic numbers).
@@ -21,23 +19,6 @@ def test_encoder_dimension():
     encoder = Gen3ObservationEncoder(mappings)
     assert encoder.base_dimension == EXPECTED_BASE_DIM
     assert encoder.dimension == EXPECTED_OBS_DIM
-
-
-def test_encoder_output_shape():
-    mappings = load_mappings()
-    encoder = Gen3ObservationEncoder(mappings)
-    battle = MagicMock(spec=AbstractBattle)
-    battle.team = {}
-    battle.opponent_team = {}
-    battle.active_pokemon = None
-    battle.opponent_active_pokemon = None
-    battle.weather = None
-    battle.side_conditions = {}
-    battle.opponent_side_conditions = {}
-    battle.turn = 0
-
-    obs = encoder.encode(battle)
-    assert obs.shape == (EXPECTED_BASE_DIM,)  # gen3_frame_deletion_v1: encode() output IS the full obs
 
 
 def test_encoder_and_features_extractor_are_compatible():

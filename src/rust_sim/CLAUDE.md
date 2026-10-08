@@ -139,11 +139,10 @@ exactly that ([`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_ev
 (a `|` inside one field is two fields — `volatile_start_detail`, not a pipe-joined string). Every
 corpus battle checks it (`tests/core_events_test.rs`, and `core_events` refuses otherwise).
 
-🚨 **The keyword table is FROZEN, Rust-owned source** (P1 of the poke-env retirement; it was GENERATED from
-`agents/battle/battle_event.py` by a Python generator that imported poke-env, now deleted): edit `core_events/schema.rs`
-directly for a new keyword / `EventKind` / value key, and mirror it in `battle_event.py` while that layer lives —
-`rust_core_schema_test.py` (deleted in P6 slice 6c) used to parse the Rust file and fail when the two differed; until slice 6d
-retires `battle_event.py`, NOTHING holds the two equal, so edit both by hand.
+🚨 **The keyword table is Rust-owned source, and the ONLY one** (P1 of the poke-env retirement; it was GENERATED from
+the Python `battle_event.py`, which P6 slice 6d-2 deleted with the Python battle layer): edit `core_events/schema.rs`
+directly for a new keyword / `EventKind` / value key — there is no Python twin to mirror any more; the cargo tests
+(`tests/core_events_test.rs`, `tracker_semantics_test.rs`, `window_record_test.rs`) are its gates.
 
 | gate | what it proves |
 |---|---|
@@ -188,9 +187,11 @@ the raw `Pokemon` there too), the legality, and the M3 trackers (REQUIRED — a 
 refuses). 🚨 **The encoder reproduces, it never fixes**: a wrong tracker value is fixed in the tracker,
 in both languages. 🚨 **The gate is BYTES** — f64 in Python's order, one round to f32 at the write;
 the obs golden hashes `tobytes()`, so a `-0.0` fails. 🚨 **Test / fuzz builds NaN-prefill the row** (release
-zero-fills), so an unwritten slot or block reads NaN. 🚨 **The layout is GENERATED**:
-`python -m agents.observation.rust_core_obs_layout --write` after any `constants.py` / `gen3_effects`
-change (`rust_core_obs_layout_test.py` fails the day it is stale). Contract, the wire frame, the
+zero-fills), so an unwritten slot or block reads NaN. 🚨 **`encoder/layout.rs` is Rust-OWNED source** (since P6
+slice 6d-2; its Python generator went with the Python encoder): edit it directly, together with
+`agents/observation/constants.py` — `src/agents/observation/rust_core_obs_layout_test.py` PARSES it and fails when any
+value the MODEL also reads (every shared offset / dim, `EventCol`, the obs-facts tables, the volatile / cant /
+faint-cause / type / status vocabularies) differs. Contract, the wire frame, the
 gates: [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md).
 
 | gate | proves |

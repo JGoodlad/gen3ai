@@ -130,12 +130,12 @@ python -m mypy                                                    # scope from m
 ruff check src/agents src/main src/utils --select F,E9            # real-bug lint classes
 ```
 
-**Fuzz tests** run real battles through the in-process bridge (no server) and validate
-observations against the actual protocol stream — run them directly as scripts, e.g.:
+**Fuzz tests** run real battles and validate against ground truth (the protocol stream or the omniscient
+engine) — on the Rust core since the poke-env retirement; the rust_sim fuzzers are listed in
+`src/rust_sim/CLAUDE.md`, e.g.:
 
 ```bash
-python src/agents/action/fuzz_test.py 50
-python src/agents/training/poke_env_gaps/transition_fuzz_test.py 50
+node src/rust_sim/harness/ab_fuzz.js --battles 200
 ```
 
 ## The Showdown server (optional)

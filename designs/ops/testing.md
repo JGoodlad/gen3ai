@@ -278,7 +278,7 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 |---|---|---|
 | `*_test.py` | Nothing — pure unit tests with mocks | — |
 | `*_integration_test.py` | An out-of-process dependency, no live server. **The name is historical and no longer implies the tier** — these split across `integration` (light), `sim` (bridge battles) and `browser` (headless chrome, ~19 s, routine since 2026-09-29). Read the file's `pytestmark`, not its name | `integration` and/or `sim` / `browser` / `slow` |
-| `*_fuzz_test.py` | `deps/pokemon-showdown` — runs **real battles in-process via the local BattleStream bridge** (`utils/bridge/local_battle_runner.py`); **no live server**. The default for fuzzing. | none — run directly as scripts (no `test_*` funcs, so `pytest` imports but collects nothing) |
+| `*_fuzz_test.py` | real battles with **no live server** — on the Rust core today (the env core's seeded rows, `utils.rust_env.fixture_battles`, or `core_events`); the Python in-process bridge runner they used to drive (`local_battle_runner`) is deleted (T27 P6 slice 6d-2) | none — run directly as scripts (no `test_*` funcs, so `pytest` imports but collects nothing) |
 | `*_fuzz_e2e_test.py` | A **live Showdown server** — fuzz whose checks need real async-server timing (e.g. `effectiveness_fuzz_e2e_test`, whose TurnDelta-vs-BattleContext effectiveness window is decision-timing-sensitive) | run directly as scripts |
 | `*_e2e_test.py` | A **live Showdown server** on localhost:8000 | `@pytest.mark.e2e` (scripts only, run directly) |
 | `*_benchmark.py` | `deps/pokemon-showdown` bridge (no live server) — **performance profiling, not pass/fail**: plays a real battle in-process, then `cProfile`s a hot path | none — run directly as scripts (no `test_*` funcs → `pytest` collects nothing). Place in a dir with no stdlib-shadowing names (e.g. `training/`, not `observation/`) |
@@ -755,26 +755,13 @@ the path's |Δ log-prob| bar in the (since-deleted) `rust_env_opponents_parity.j
 `inference/service/parity.judge`. Strict argmax equality with no margin is a flake waiting for a
 tie.
 
-### The REWARD GOLDEN (`src/agents/training/reward_golden_test.py`) — `sim`, ~20 s
+### The REWARD GOLDEN — DELETED (T27 P6 slice 6d-2)
 
-The reward stream, bit for bit: every field of every `RewardBreakdown` as `float.hex()`, for every
-decision of **30 real bridge battles** (5 battles x 6 reward COMPOSITIONS), sha256'd —
-`9463dc24…`, recorded in `src/agents/training/reward_golden.json` beside it with the commit it was
-produced at and a **per-sweep** hash, so a mismatch names the composition and battle that moved
-instead of only saying "the reward changed". It is the BEFORE/AFTER reference the `reward_manager.py`
-decomposition (`b0b3a253`) was proved on, promoted out of a scratch directory: a byte-identity
-reference that lives in one agent's tmp protects exactly one refactor.
-
-Reproducible by construction, all four clauses (see *What "fuzz test" means* below): fixed teams by
-pool index, a per-player RNG, a fixed sim PRNG seed, and **`concurrency=1`**. Verified: the hash
-reproduces bit-for-bit in a fresh worktree with an independently checked-out `data/`. The
-preconditions are ASSERTED, not branched on — a harness that errored or played a different number of
-decisions fails with *that* message, never as a reward change. Regenerate only for an INTENDED
-change, and record it in the ledger:
-
-```bash
-export PYTHONPATH=$PYTHONPATH:src && python3 src/agents/training/reward_golden_test.py --write
-```
+`reward_golden_test.py` + `reward_golden.json` held the Python reward stream bit for bit over 30 real bridge battles
+(5 battles × 6 compositions, sha256 `9463dc24…`); they went with the Python reward manager and the bridge runner they
+played through. The reward is the Rust env core's terminal, pinned by its episode tests (`src/rust_env`) and
+`utils/rust_env/episode_test.py`; the terminal RULE is `reward_config.terminal_breakdown` (`critic_mode_test` folds the
+four terminal boards through it).
 
 ### The LEARNER GOLDEN (`src/agents/training/learner_golden_test.py`) — unmarked, ~3 s
 
@@ -854,28 +841,17 @@ named `*fuzz_test.py`). A benchmark runs the PRODUCTION build (`cargo build --re
 what training pays.
 
 ### Fuzz tests (`*_fuzz_test.py`, run directly as scripts)
-Run battles **in-process via the local BattleStream bridge — no `npm run showdown`
-needed** (`utils/bridge/local_battle_runner.py`):
-```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/agents/action/fuzz_test.py [n_battles]
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_test.py [n_battles]
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/agents/battle/event_log_fuzz_test.py [n_battles]
-# also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch,incoming_damage}_fuzz_test.py
-#                                  poke_env_gaps/move_alignment_fuzz_test.py (per-move obs features ↔ legal.move_slots[k] ↔ action 6+k, forces Choice-lock/Disable)
-#                                  poke_env_gaps/faint_attribution_fuzz_test.py (a recorded `<side>:<species>:fainted` names the mon)
-#                                      PROTOCOL says fainted — the switch-in-dies case the old decision-time-active label got wrong)
-#                                  poke_env_gaps/damage_op_probe_fuzz_test.py (AUTHORITATIVE DamageOperator physics gate — CONSTRUCTED single-turn)
-#                                      scenarios via the OMNISCIENT BattleStream `utils/bridge/damage_probe.js`: exact both-side HP + the sim's OWN
-#                                      stats, zero measurement confounds; one modifier per scenario [type/STAB/SE/resist/4×/immunity/Thick Fat
-#                                      Choice Band/item/boosts/burn/screens/weather]) + poke_env_gaps/damage_op_fuzz_test.py (looser random-game net)
-#                                  training/hidden_power_tracker_fuzz_test.py
-#                                  and training/obs_roundtrip_fuzz_test.py (offline obs == live obs, bit-for-bit)
-#                                  (utils/bridge/{reconstruction,reroll_many_parity,search_clone_parity}_fuzz_test.py — battle replay/re-roll
-#                                      invariants, batched reroll_many == per-call reroll_turn, serializeBattle clone == reroll_many — were
-#                                      DELETED in P6 slice 6d-1 with the poke-env materializer oracle they compared against)
-#                                  (battle/rust_core_trackers_fuzz_test.py — slice T/V/O on FRESH battles against the Python
-#                                      reading — was DELETED in P6 slice 6c with the Python-vs-core comparisons)
-```
+
+🚨 **The poke-env fuzz suite is DELETED** (T27 P6 slice 6d-2, 2026-10-08): `action/fuzz_test.py`,
+`training/poke_env_gaps/` (all 23 — the transition / abilities / item-consumption / move-outcome / snatch /
+incoming-damage / move-alignment / faint-attribution / damage-op / recency / pair-history / sleep-wake / Wish /
+assembler / Baton Pass / reading-fixes checks), `battle/event_log_fuzz_test.py`, `battle/live_view_memo_fuzz_test.py`,
+`training/obs_roundtrip_fuzz_test.py`, `training/hidden_power_tracker_fuzz_test.py` and the rest of the scripts that
+drove a poke-env `Player` through the in-process bridge: their subject (the Python battle layer, trackers and encoder)
+is gone. What holds the Rust core is `designs/rust_sim/encoder.md` §6a and the rust_sim fuzzers
+(`src/rust_sim/CLAUDE.md` — the A/B fuzzers, the byte fuzz, the core corpus). The constructed-scenario DamageOperator
+physics probe that lived beside them (`damage_op_probe_fuzz_test.py`, the OMNISCIENT `utils/bridge/damage_probe.js`)
+went with the directory; its three helpers live on in `agents/model/beatup_sim_parity_test.py`.
 
 ### THREE TEAM SOURCES — the pool, the procedural generator, and the LADDER-USAGE corpus
 
@@ -907,12 +883,11 @@ proves the committed bytes reproduce): `python -m utils.ladder_corpus.build`.
 node src/rust_sim/harness/ab_fuzz.js --mode ladder [--ladder-tier full] --battles 200      # + --protocol --format gen3ou
 node src/rust_sim/harness/bridge_ab_fuzz.js --mode ladder --format gen3ou --battles 100
 node src/rust_sim/harness/gen_sim_bridge_diff.js --mode ladder --format gen3ou --persistent --battles 100
-python3 src/agents/training/obs_roundtrip_fuzz_test.py 20 20 --team-source ladder         # also: event_log /
-#   event_log / live_view_memo fuzz scripts take --team-source {pool,procedural,ladder}
 ```
 
 The parity harness's hook was `rust_core_parity.play(key, source="ladder")`, so slices T and O got
-all three sources by calling it; the harness is deleted (P6 slice 6c) and the fuzz scripts above are the consumers.
+all three sources by calling it; the harness is deleted (P6 slice 6c), and the Python fuzz scripts that took
+`--team-source` went in slice 6d-2 — the rust_sim harness commands above are the consumers.
 (Its ladder MILESTONE tier had NAMED known divergences, `rust_core_parity.LADDER_KNOWN_DIVERGENCES` — EMPTY since the
 Rust Core deletion pass, so nothing is lost with it.)
 
@@ -928,8 +903,8 @@ of the fuzz and parity gates above is unchanged.
 ### E2E tests (`*_e2e_test.py` / `*_fuzz_e2e_test.py`, require a live server)
 ```bash
 # Start server first: npm run showdown
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/agents/action/telemetry_e2e_test.py
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/agents/training/poke_env_gaps/effectiveness_fuzz_e2e_test.py [n_battles]
+# (the poke-env e2e scripts — action/telemetry_e2e_test.py, poke_env_gaps/effectiveness_fuzz_e2e_test.py — are
+#  DELETED with the Python battle layer, T27 P6 slice 6d-2; the live-play path is main.live, see live_integration_test.py)
 ```
 
 ### Benchmarks (`*_benchmark.py`, run directly as scripts)
@@ -1061,25 +1036,25 @@ skipping, blind, until lane C re-measured it. Performance is checked two ways:
 
 ### What "fuzz test" means in this project
 
-**Fuzz tests run real battles — by default in-process via the local BattleStream bridge (no server), or against a live server — and validate observations or behaviour against the actual protocol stream.** They are NOT deterministic scenario tests with fixed inputs.
-
-The canonical pattern (see `src/agents/training/poke_env_gaps/`):
-
-1. Subclass `Player` and override `_handle_battle_message` to intercept raw Showdown protocol lines mid-battle.
-2. Archive per-turn snapshots of the state you care about (e.g. which items were consumed, which moves were used).
-3. In `choose_move()`, validate that the encoded observation vector matches what the archived protocol events say should be there.
-4. Run N random battles; any validation failure raises immediately with a detailed error.
-
-This catches poke-env parsing bugs and encoder gaps that unit tests with mocks cannot — the test exercises the Showdown sim → poke-env → encoder pipeline end to end (the bridge feeds the identical protocol stream the live server would). When asked to write a fuzz test, always follow this pattern rather than writing parametrized unit tests with hand-crafted mock objects.
+**Fuzz tests run real battles and validate observations or behaviour against ground truth** — the protocol stream,
+or the omniscient engine. They are NOT deterministic scenario tests with fixed inputs. Since T27 P6 slice 6d-2 the
+battles are the RUST core's: the env core's seeded rows (`utils.rust_env.fixture_battles.play_rows`), a core trace
+(`core_trace_integration_test.record_core_battle`), or `core_events` over a recorded corpus — and the truth is the
+engine (`present/audit.rs`'s board audit, `tests/obs_facts_truth_test.rs`) or the protocol the core itself emitted.
+(The former pattern — a poke-env `Player` subclass intercepting raw lines and checking the Python encoder's row — went
+with the Python stack.) When asked to write a fuzz test, check real battles against ground truth rather than writing
+parametrized unit tests with hand-crafted mock objects.
 
 🚨 **A fuzz SCRIPT wants a new battle every run; a pytest-collected TEST wants the same battle
 every run.** A fixture seeded from the wall clock plays a different battle every run and
 eventually plays the one that *skips its own assertion* — a battle too short to anchor, a tie
 that empties the frame, a line the search outruns. Three shipped and were chased as flakes
 (`better_line`, `cf_audit`, and the guards this rule was written from). So a collected test
-takes its battle from **`obs_roundtrip_fuzz_test.record_fixture_battle(out_dir, key=…)`** —
-reproducible across processes, `key` selecting a different deterministic battle when you want
-variety — and asserts its precondition rather than branching on it (`if x is not None:` around
+takes its battles from the Rust core, seeded end to end — **`utils.rust_env.fixture_battles.play_rows(n, seed=…)`**
+for rows, **`main.prober.core_trace_integration_test.record_core_battle(lib, out_dir, key=…)`** for a core trace
+(the twin of the deleted `obs_roundtrip_fuzz_test.record_fixture_battle`) — reproducible across processes, `key` /
+`seed` selecting a different deterministic battle when you want variety — and asserts its precondition rather than
+branching on it (`if x is not None:` around
 the decisive gate is the antipattern's second half; it fails green). ⚠️ **`random.seed(k)` is
 NOT enough**: two players share the global `random` and the bridge interleaves their
 `choose_move` calls, so the draw order still diverges (`golden_obs_capture`, deleted in P6 slice 6c, measured the

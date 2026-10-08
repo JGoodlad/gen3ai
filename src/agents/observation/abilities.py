@@ -2,9 +2,7 @@ from __future__ import annotations
 import numpy as np
 from .base import ObservationEncoder
 from .constants import ABILITY_SLOT_DIM, ABILITY_DOMINANCE_DIM, ABILITY_KNOWN_DIM
-from typing import Any, Dict, Optional, TYPE_CHECKING
-if TYPE_CHECKING:
-    from poke_env.battle.abstract_battle import AbstractBattle
+from typing import Any, Dict, Optional
 
 
 class AbilitiesEncoder(ObservationEncoder):
@@ -65,39 +63,6 @@ class AbilitiesEncoder(ObservationEncoder):
 
     def _normalize(self, name: str) -> str:
         return name.lower().replace(" ", "").replace("_", "")
-
-    def encode(self, mon: Any, battle: AbstractBattle) -> np.ndarray:
-        vec = np.zeros(self.dimension, dtype=np.float32)
-        if mon is None:
-            return vec
-
-        ability = mon.ability
-        if ability:
-            ability_key = self._normalize(ability)
-            if ability_key != "unknownability":
-                if ability_key not in self.ability_to_id:
-                    raise ValueError(
-                        f"Unrecognized ability: {ability_key}. "
-                        "Update data/pokemon/gen3_abilities.json"
-                    )
-                vec[0] = float(self.ability_to_id[ability_key].get("num", 0))
-                vec[1] = 0.0
-                vec[2] = 1.0  # dominance forced to 1.0 — alternative no longer hypothetical
-                vec[3] = 1.0  # known
-                return vec
-
-        # Opp unrevealed — emit Smogon-derived priors so the model has a head
-        # start instead of a flat "unknown" signal.
-        species = getattr(mon, "species", None)
-        if species:
-            priors = self._species_priors.get(species)
-            if priors is not None:
-                num1, num2, dominance = priors
-                vec[0] = float(num1)
-                vec[1] = float(num2)
-                vec[2] = float(dominance)
-        # vec[3] stays 0.0 (not known)
-        return vec
 
     def get_layout(self) -> dict:
         return {

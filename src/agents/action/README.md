@@ -1,7 +1,14 @@
-# Gen3 Action System
+# Gen3 Action Space
 
-Translates between the RL model's 11-action discrete space and poke_env `BattleOrder`,
-routed entirely through our server-authoritative `LegalActions` snapshot.
+The 11-action discrete space the model acts in, and the row guard that keeps the model's view of our
+active's moves aligned with it. Every legality decision, mask and choice token is the RUST core's
+(`src/rust_sim/`, served to training by the env core and to the inference service as rows + masks).
+
+The Python action stack that decoded an action against a poke-env battle — the masker
+(`mask_generator.py`), the mapper (`mapper.py`), the `Choice` type (`choice.py`) and the poke-env
+`BattleOrder` serializer (`serialize.py`) — is DELETED with the Python battle layer (T27 P6 slice 6d-2),
+with its tests (`mapper_test.py`, `fuzz_test.py`, `fuzz_test_unit.py`, `trapping_signals_fuzz_test.py`,
+`telemetry_e2e_test.py`).
 
 ## Action Space
 
@@ -11,123 +18,26 @@ routed entirely through our server-authoritative `LegalActions` snapshot.
 | 6–9 | Use move in request slot 0–3 |
 | 10 | Struggle |
 
-## Three stages over one immutable snapshot
+## Move-order alignment — the one guard that stays
 
-A decision flows through three stages. The first two are **poke-env-free**; only the last
-touches poke-env order types:
-
-1. **mask** — `Gen3ActionMasker.mask_from_legal(legal)` builds the 11-dim binary mask
-   purely from a `LegalActions` snapshot (no battle). `get_mask(battle, legal=…, live=…)` is a
-   thin wrapper that snapshots the legality surface and runs the team-ordering integrity
-   guards. The own-team roster those guards check is read through a `LiveView`
-   (`live.ours.mons`) — built from the battle by default, or passed in via `live=` to reuse
-   one already built this decision — so `action/` no longer reaches into the raw battle for
-   state (`mask_generator.py` / `ordering_integrity.py` read only `LegalActions` + `LiveView`;
-   `serialize.py` stays the lone Choice→`BattleOrder` poke-env seam).
-2. **decode** (pure) — `Gen3ActionMapper.action_to_choice(action_idx, legal) -> Choice`
-   resolves an action index against the captured snapshot into a tagged, poke-env-free
-   `Choice` (`choice.py`). Fully testable with a `LegalActions` stub — no battle object.
-3. **serialize** (the one poke-env touch) — `serialize.choice_to_order(choice, battle)`
-   turns a `Choice` into the `BattleOrder` the client sends. This is the **only** module in
-   `action/` that imports poke-env order/move types at runtime (`mapper.py` names
-   `BattleOrder` under `TYPE_CHECKING` only; `serialize.order_to_action` is the reverse
-   boundary, for diagnostics).
-
-The env / player compose them: snapshot `legal` once at observation time, build the mask
-from it, store it on the `BattleContext`, and at action time decode + serialize against the
-**same** snapshot (`Gen3ActionMapper.action_to_order(action, battle, legal=ctx.legal)`).
-
-## Design: Crash Over Corruption
-
-The system enforces a strict "crash over corruption" contract — ambiguous or stale state
-raises immediately rather than silently sending a wrong action.
-
-### The captured snapshot (replaces the old decision-context latch)
-
-There is **no** `battle._gen3_decision_context` stash anymore. The immutable `LegalActions`
-captured at observation time **is** the per-decision snapshot. The masker builds the mask
-from it and the mapper decodes against it, so the two share one source by construction. If
-poke-env processes a background message and `last_request` shifts while the model "thinks",
-the decode is unaffected (it never re-reads the battle).
-`Gen3ActionMapper.assert_decision_current(ctx, battle)` is the fail-loud guard run before
-acting: it raises if the context is missing, from the wrong turn, or its snapshot's move
-ordering no longer matches the server (a genuine mid-decision change).
-
-### `LegalActions` is a hybrid source
-
-`LegalActions.from_battle` (in `battle/live_view.py`) is deliberately hybrid:
-
-- **`move_slots`** (which of the 4 move slots are legal, + pp / disabled / target) is
-  **wire-truth**, read straight from the parsed server request
-  (`last_request['active'][0]['moves']`).
-- **`switches` / `force_switch` / `trapped` / `maybe_trapped` / `wait` / `struggle`** are
-  poke-env's **derived** interpretation of that request (`available_switches`,
-  `force_switch`, `available_moves`, …). We keep them byte-identical rather than
-  re-deriving — they are the second poke-env-interpreted seam (alongside Choice→BattleOrder
-  serialization) that a future fully-owned `Player` would re-derive.
-
-### Struggle is single-sourced
-
-`legal.struggle` is the ONE source of truth for "the active mon must Struggle." When all PP
-is gone the server sends a lone `struggle` entry in the request moves; `from_battle` filters
-it OUT of `move_slots` and surfaces it only as the flag. So:
-
-- the masker sets bit 10 and never a move-slot bit for struggle;
-- `action_to_choice(10, legal)` → `Choice.struggle()`, gated on `legal.struggle` (pressing
-  10 when not legal raises);
-- move slots 6–9 map only to real `move_slots[idx-6]`.
-
-This removes the two-representations footgun behind the historical "struggle
-double-enabling" mask bug. Action index `10 == STRUGGLE` is fixed (the reward manager's
-struggle-loop tax depends on it).
-
-### End-to-end send conformance
-
-`Gen3ActionMapper.action_to_order` fail-loud-checks the whole chain — **offered** (mask) →
-**picked** (action) → **sent** (order) — so we never silently send Showdown a different
-move/switch than the model selected:
-
-1. `mask[action] != 0` — the model only picks what the mask OFFERED;
-2. `action_to_choice` raises if the action doesn't conform to `legal`;
-3. `choice_to_order` raises if the choice can't resolve to a real move/switch;
-4. the serialized order is **round-tripped** back through `order_to_action` and must equal
-   the picked action — otherwise `RuntimeError` (catches a serialization drift, e.g. a
-   duplicate-id or Hidden-Power mis-resolution). The round-trip is Hidden-Power-aware (bare
-   `hiddenpower` ↔ typed `hiddenpowerice` count as one move, no false positive).
-
-### Other invariants
-
-- **Duplicate species check**: if the team contains duplicate species (Species Clause
-  violation or state corruption), `get_mask` crashes.
-- **Switch-ordering alignment** (`ordering_integrity.py`): switch action index *i*,
-  switch-validity bit *i*, and per-Pokémon obs slot *i* must all refer to the same mon —
-  verified against the snapshot's slot-indexed switches.
-- **Move-order alignment** (`ordering_integrity.check_obs_move_order`): our active's per-mon move
-  slots are SORTED BY `Move.id`, the request block and actions 6-9 are in REQUEST order; every
-  served row must map each request move onto exactly one sorted slot and carry request legality
-  equal to the mask's move bits, or it RAISES `OrderingMismatchError`. The model crosses the two
-  orders only by move-num identity (`agents.model.extractor_ctx.active_request_sorted_match`).
-  Real-bridge pin: `move_order_bridge_integration_test.py` (scored slot ↔ action ↔ executed move).
+Our active mon's moves exist in TWO orders in every observation row: the per-mon move slots are
+SORTED BY `Move.id`, while the request block (`reactive.active_req_moves`) and actions 6–9 are in
+REQUEST order. `ordering_integrity.check_obs_move_order` is the THROWING guard (`OrderingMismatchError`)
+that every served row maps each request move onto exactly one sorted slot and carries request legality
+equal to the mask's move bits; it runs at `InferenceService.submit`. The model crosses the two orders
+only by move-num identity (`agents.model.extractor_ctx.active_request_sorted_match`;
+`gen3_move_legality_by_id_v1`).
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `choice.py` | `Choice` / `ChoiceKind` — the poke-env-free tagged action |
-| `mapper.py` | `Gen3ActionMapper` — pure `action_to_choice`, the `action_to_order` convenience, `assert_decision_current`, reverse `order_to_action` |
-| `serialize.py` | The single poke-env touch: `choice_to_order` + `order_to_action` |
-| `mask_generator.py` | `Gen3ActionMasker` — `mask_from_legal` (pure) + `get_mask(battle)` |
-| `ordering_integrity.py` | The alignment guards: `check_obs_move_order` (the THROWING row guard on our active's request-order block ↔ its sorted per-mon move slots ↔ the mask, run at `InferenceService.submit` and in the Python encoder; `gen3_move_legality_by_id_v1`), `check_switch_ordering_alignment`, `check_move_data_consistent` |
-| `constants.py` | The 11-action layout constants |
+| `constants.py` | The 11-action layout constants (`ACTION_SPACE_SIZE`, `MOVE_START`, `SWITCH_START`, `STRUGGLE`, …) |
+| `ordering_integrity.py` | `check_obs_move_order` (the row guard) and `row_offsets` (the offsets it reads, pinned against the extractor's unpack) |
 
 ## Tests
 
 | File | Type | What it covers |
 |---|---|---|
-| `mapper_test.py` | Unit | Masker + pure `action_to_choice` (LegalActions STUB, no battle) + serialization + staleness guard + reverse map; struggle single-source regression |
-| `ordering_integrity_test.py` | Unit | Move/team ordering alignment (snapshot-driven + the row guard on real rows) |
+| `ordering_integrity_test.py` | Unit | The row guard on real rows (the learner golden buffer + the compile parity fixture) and on targeted corruptions of them |
 | `move_order_bridge_integration_test.py` | Integration (`sim`) | Real banked battles through the Rust core: the scored slot, the action token and the executed move agree |
-| `fuzz_test_unit.py` | Standalone script | Snapshot-immutability simulation: corrupt the request mid-decision, prove the captured snapshot decodes identically (replaces the old latch race sim) |
-| `fuzz_test.py` | Fuzz (local bridge, no server) | Real battles vs RandomPlayer; exhaustively decodes + serializes every legal action each turn |
-| `trapping_signals_fuzz_test.py` | Fuzz (local bridge, no server) | `gen3_trapping_signals_v1` end to end over a forced Arena-Trap run: the `trapped` / `maybe_trapped` bits at OUR ACTIVE MON'S entity slot equal `legal.trapped` / `legal.maybe_trapped` on every decision (bench slots stay 0), and a refused switch puts an `EVENT_T_SWITCH_REJECTED` row as the event window's NEWEST — checked against raw-protocol `\|error\|[Unavailable choice]` truth, not our own fold |
-| `telemetry_e2e_test.py` | E2E (requires server) | Monitors for silent mid-decision state updates in live battles |

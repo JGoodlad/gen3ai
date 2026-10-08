@@ -1,83 +1,34 @@
-"""``LiveView`` — the current-board read-model. The single source of truth for
-"what is true *right now*", with **no past-turn state**.
+"""``LiveView`` / ``LegalActions`` — the current-board and legality READ-MODELS, as frozen data classes.
 
-Why this exists
----------------
-poke-env's ``Pokemon`` is a rich state tracker that mixes *current* facts (HP, status,
-boosts, revealed moves) with *temporal* ones (``last_move``, ``last_cant_reason``,
-``first_turn`` …). For RL that mixing is a hazard: a consumer can
-accidentally read a past-turn field as if it were current, and "what happened last
-turn" ends up sourced from two places that can disagree.
+The Rust core's reading builds them: its ``present()`` view and ``legal_actions()`` are copied field
+for field into these classes by :mod:`agents.battle.core_view` (the prober's core walk,
+``main.prober.core_walk``, is the consumer). Every reading rule is the Rust side's
+(``src/rust_sim/src/present/``); nothing here computes a value.
 
-(``protect_counter`` is the one borderline field we DO surface — like ``status_counter`` it is
-the *current value* of an in-battle counter, not a past-turn event: it governs the next
-Protect's success odds right now. See :attr:`LivePokemon.protect_counter`.)
+The poke-env constructors (``LiveView.from_battle``, ``LivePokemon.from_pokemon``,
+``LegalActions.from_battle``) and the weather fold they used are DELETED with the Python battle
+layer (T27 P6 slice 6d-2).
 
-We split the two concerns into two clean, separately-fuzzed surfaces:
-
-* **History / "what happened, in order"**  → the event log + :class:`TurnView`.
-* **Current board / "what is true now"**    → :class:`LiveView` (this module).
-
-:class:`LiveView` is an immutable snapshot built from the battle on demand
-(``battle.live_view()``). It holds **only primitives** — no reference back to the
-``Pokemon`` object — so a consumer *physically cannot* reach ``last_move`` or any other
-historical field through it. If you need history, you go to the event log. That
-constraint is the point: it makes the well-fuzzed API the only path.
-
-Scope (Gen 3 OU singles). Opponent fields are reveal-gated by what poke-env actually
-knows: an unrevealed item reads ``None`` (not the ``unknown_item`` sentinel), an
-unrevealed move simply isn't in ``moves``, and ``ability`` is ``None`` unless the
-protocol disclosed it *or* it is uniquely inferable from the species (e.g. gen-3
-Tyranitar ⇒ Sand Stream — public knowledge, not a leak).
+The split this module was built around stays: :class:`LiveView` is "what is true NOW" and holds
+only primitives — no past-turn state; "what happened" is the core's event record. (``protect_counter``
+is the one borderline field: like ``status_counter`` it is the CURRENT value of an in-battle counter
+that sets the next Protect's odds.) Opponent fields are reveal-gated: an unrevealed item reads
+``None``, an unrevealed move is not in ``moves``, and ``ability`` is ``None`` unless disclosed or
+uniquely inferable from the species.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from types import MappingProxyType
-from typing import Any, Dict, Mapping, Optional, Tuple
+from typing import Any, Mapping, Optional, Tuple
 
-from utils.showdown_id import to_id_str
 
-# The sentinel poke-env's ``Pokemon._item`` starts at — ``GenData.UNKNOWN_ITEM``. Spelled here so this module
-# imports no poke-env (P1 of the retirement); ``live_view_test.test_unknown_item_sentinel_is_pokeenvs`` pins it.
+# The sentinel poke-env's ``Pokemon._item`` starts at — ``GenData.UNKNOWN_ITEM`` — and the "not yet known" item
+# set. No reader here uses them since the poke-env constructors were deleted (T27 P6 slice 6d-2); they are KEPT
+# because ``enums_test.test_the_live_view_unknown_item_sentinel_is_the_forks`` pins them to the fork until slice 6e
+# retires that test with the fork.
 UNKNOWN_ITEM = "unknown_item"
-
-# Items poke-env represents as "not yet known". Treated as None in the live view.
 _UNKNOWN_ITEMS = {None, UNKNOWN_ITEM}
-
-
-# Per-ENUM-MEMBER memos for the two name derivations below. An enum member is a process-wide
-# SINGLETON whose ``.name`` is fixed at class-creation time, so these are pure functions of an
-# immutable input and the cache is bounded by the enum's own membership (Status ~7, PokemonType
-# ~19, Effect ~200). Worth it because ``.name`` is a ``DynamicClassAttribute`` — a descriptor
-# call, not a slot read — and the pair measured 6.6% of `LiveView.from_battle` at 105k calls per
-# 3k board builds. The `value is None` case is NOT cached (a dict probe on None is no cheaper
-# than the branch).
-_ENUM_NAME_CACHE: Dict[Any, str] = {}
-_ENUM_ID_CACHE: Dict[Any, str] = {}
-
-
-def _enum_name(value) -> Optional[str]:
-    """Lowercased ``.name`` of a poke-env enum (Status / Weather / …), or None."""
-    if value is None:
-        return None
-    name = _ENUM_NAME_CACHE.get(value)
-    if name is None:
-        name = _ENUM_NAME_CACHE[value] = value.name.lower()
-    return name
-
-
-def _id(value) -> Optional[str]:
-    """Showdown id form of an enum name: lowercased, no separators
-    (``Effect.LEECH_SEED`` -> ``leechseed``) so ids match the move/item/ability
-    convention the rest of the codebase uses."""
-    if value is None:
-        return None
-    out = _ENUM_ID_CACHE.get(value)
-    if out is None:
-        out = _ENUM_ID_CACHE[value] = value.name.lower().replace("_", "")
-    return out
 
 
 @dataclass(frozen=True)
@@ -185,77 +136,6 @@ class LivePokemon:
         form so ``"leechseed"`` / ``"Leech Seed"`` / ``"LEECH_SEED"`` all work."""
         return name.lower().replace("_", "").replace(" ", "") in self.volatiles
 
-    @classmethod
-    def from_pokemon(cls, mon, active: bool, is_own: bool = False) -> "LivePokemon":
-        """``active`` is supplied by the caller from poke-env's own
-        ``active_pokemon`` accessor (the source of truth) rather than re-derived from
-        ``mon.active`` — the latter can stay set on a just-fainted mon.
-
-        ``is_own`` gates the private spread block: our own mons carry IVs / EVs / nature
-        (with ``spread_known=True``); the opponent's are ``None`` (``spread_known=False``).
-        Own ``mon.ivs/evs/nature`` are populated by poke-env from the team we declared
-        (``backfill_teambuilder_spread`` covers no-preview formats like gen3ou, where the
-        protocol never echoes the spread).
-        """
-        raw_item = mon.item          # ONE property call; the guard below used to make two
-        item = raw_item if raw_item not in _UNKNOWN_ITEMS else None
-        # Moves keyed + sorted by the moves-dict key (the original LiveView.moves shape),
-        # so the slot order is stable across workers and `move_ids` is unchanged. PP comes
-        # off the Move value at that key.
-        # The comprehensions here and for `types` below are LIST comps inside `tuple(...)`
-        # rather than generator expressions: identical results, but CPython builds a list comp
-        # in one frame instead of resuming a generator per item, and these are the two hottest
-        # loops in the tree's hottest function (this build measured 20% of per-decision worker
-        # CPU before `gen3_live_view_build_micros_v1`, 17% after).
-        moves = tuple([
-            LiveMove(id=mid, current_pp=int(mv.current_pp), max_pp=int(mv.max_pp),
-                     seen=mv.seen)
-            for mid, mv in sorted(mon.moves.items())
-        ])
-        # Spread: base_stats is public (both sides); ivs/evs/nature are own-side only.
-        ivs = tuple(mon.ivs) if (is_own and mon.ivs is not None) else None
-        evs = tuple(mon.evs) if (is_own and mon.evs is not None) else None
-        nature = mon.nature if is_own else None
-        # poke-env stores consumed_item verbatim from the protocol (display form, e.g.
-        # "Salac Berry"); normalise to id-form so it matches `item` and the codebase
-        # convention ("salacberry"), the same id the obs item encoder works in.
-        consumed = mon.consumed_item
-        consumed_item = to_id_str(consumed) if consumed else None
-        return cls(
-            species=mon.species,
-            active=active,
-            fainted=bool(mon.fainted),
-            revealed=bool(mon.revealed),
-            hp_fraction=float(mon.current_hp_fraction),
-            status=_enum_name(mon.status),
-            types=tuple([_enum_name(t) for t in mon.types if t is not None]),
-            moves=moves,
-            item=item,
-            ability=mon.ability,
-            boosts={k: v for k, v in mon.boosts.items() if v},
-            volatiles={_id(e): int(cnt) for e, cnt in mon.effects.items()},
-            base_stats=dict(mon.base_stats),
-            ivs=ivs,
-            evs=evs,
-            nature=nature,
-            spread_known=bool(is_own),
-            consumed_item=consumed_item,
-            # These five read poke-env PROPERTIES that every ``Pokemon`` defines
-            # (`status_counter` / `protect_counter` / `stats` / `current_hp` / `max_hp`), so the
-            # `getattr(..., default)` they used to go through could never take its default —
-            # it cost 5 extra builtin calls per mon (3.7% of this build) and would have
-            # SWALLOWED an AttributeError raised *inside* a property as a silent default.
-            # `from_pokemon` has exactly one caller (`LiveView.from_battle`), always with a real
-            # `Pokemon`; a duck-typed stub now fails loudly instead of silently defaulting.
-            status_counter=int(mon.status_counter or 0),
-            protect_counter=int(mon.protect_counter or 0),
-            stats=dict(mon.stats) if mon.stats else {},
-            current_hp=(int(mon.current_hp) if mon.current_hp is not None else None),
-            max_hp=(int(mon.max_hp) if mon.max_hp is not None else None),
-            item_public=mon.item_public,
-            ability_public=mon.ability_public,
-        )
-
 
 @dataclass(frozen=True)
 class LiveSide:
@@ -309,38 +189,6 @@ class LiveWeather:
         return max(0, 5 - self.turns_active)
 
 
-_NO_WEATHER = LiveWeather(weather=None, is_permanent=False, turns_active=0)
-
-
-def _fold_weather(events, now_turn: int) -> LiveWeather:
-    """Derive current weather by folding WEATHER events in order. Single source of
-    truth = the protocol; we never inspect mon abilities to guess permanence."""
-    from agents.battle.battle_event import EventKind
-
-    weather: Optional[str] = None
-    is_permanent = False
-    start_turn = now_turn
-    for e in events:
-        if e.kind is not EventKind.WEATHER:
-            continue
-        wid = e.value.get("weather")
-        if wid in (None, "none"):
-            weather, is_permanent = None, False
-            continue
-        if "[upkeep]" in e.raw:
-            # a tick of the SAME weather — keep it (and its start turn) running
-            if weather is None:  # upkeep seen without a prior set (mid-battle join)
-                weather, start_turn = wid, e.turn
-            continue
-        # a fresh set: the cause decides permanence
-        weather = wid
-        is_permanent = str(e.value.get("from", "")).startswith("ability")
-        start_turn = e.turn
-    if weather is None:
-        return _NO_WEATHER
-    return LiveWeather(weather, is_permanent, max(0, now_turn - start_turn))
-
-
 @dataclass(frozen=True)
 class LiveView:
     """Immutable snapshot of the whole current board at one instant.
@@ -367,59 +215,6 @@ class LiveView:
 
     def mon(self, side: str, species: str) -> Optional[LivePokemon]:
         return (self.ours if side == "ours" else self.opp).get(species)
-
-    @classmethod
-    def from_battle(cls, battle) -> "LiveView":
-        role = battle._player_role
-        opp_role = "p2" if role == "p1" else "p1"
-        sizes = getattr(battle, "_team_size", {}) or {}
-
-        def side(team: Dict, conditions, declared_role, active_mon, is_own) -> LiveSide:
-            # Identity-match poke-env's own active accessor so the active slot is
-            # faithful even when it momentarily holds a just-fainted mon.
-            built = {}
-            active = None
-            for raw in team.values():
-                is_active = raw is active_mon
-                lm = LivePokemon.from_pokemon(raw, active=is_active, is_own=is_own)
-                built[id(raw)] = lm
-                if is_active:
-                    active = lm
-            return LiveSide(
-                team_size=int(sizes.get(declared_role, len(built))),
-                active=active,
-                mons=tuple(built.values()),
-                side_conditions={
-                    _enum_name(k): v for k, v in (conditions or {}).items()
-                },
-            )
-
-        # Weather is folded from our event log (cause-aware), not battle.weather —
-        # which can be empty/lossy and carries no permanence info.
-        # Prefer the battle's incrementally-folded weather (O(1)); fall back to scanning
-        # the event log for a plain Battle that lacks the running state.
-        if hasattr(battle, "live_weather"):
-            weather = battle.live_weather()
-        else:
-            weather = _fold_weather(getattr(battle, "events", ()), battle.turn)
-        return cls(
-            turn=battle.turn,
-            weather=weather,
-            ours=side(
-                battle.team, battle.side_conditions, role,
-                battle.active_pokemon, True,
-            ),
-            opp=side(
-                battle.opponent_team, battle.opponent_side_conditions, opp_role,
-                battle.opponent_active_pokemon, False,
-            ),
-            battle_tag=battle.battle_tag,
-            finished=bool(battle.finished),
-            won=battle.won,
-            lost=battle.lost,
-            residual_done=bool(getattr(battle, "residual_done", False)),
-        )
-
 
 # --------------------------------------------------------------------------- #
 # LegalActions — the server-authoritative decision surface.                     #
@@ -518,62 +313,3 @@ class LegalActions:
     @property
     def switch_slots(self) -> Tuple[int, ...]:
         return tuple(s.slot for s in self.switches)
-
-    @classmethod
-    def from_battle(cls, battle) -> "LegalActions":
-        request = battle.last_request or None
-        # During a force-switch the request carries no 'active' block; default to empty.
-        active_block = (request.get("active") if request else None) or [{}]
-        req_moves = active_block[0].get("moves", []) if active_block else []
-        # Normalize struggle OUT of the move slots — it is surfaced only via the
-        # `struggle` flag below (single source of truth). The server lists a lone
-        # `struggle` entry here when all PP is gone; keeping it in move_slots would
-        # re-introduce the two-representations footgun behind the historical
-        # "struggle double-enabling" mask bug.
-        move_slots = tuple(
-            LegalMove(
-                id=m.get("id", ""),
-                current_pp=int(m.get("pp", 0)),
-                max_pp=int(m.get("maxpp", 0)),
-                disabled=bool(m.get("disabled", False)),
-                target=m.get("target"),
-            )
-            for m in req_moves
-            if m.get("id") != "struggle"
-        )
-
-        # Switch slots are indexed against the team ordering the action space uses
-        # (list(battle.team.values())), so the mapper's slot→mon translation is faithful.
-        available = battle.available_switches
-        switches = tuple(
-            LegalSwitch(species=mon.species, slot=i)
-            for i, mon in enumerate(battle.team.values())
-            if mon in available
-        )
-
-        struggle = any(m.id == "struggle" for m in battle.available_moves)
-        return cls(
-            move_slots=move_slots,
-            switches=switches,
-            force_switch=bool(battle.force_switch),
-            trapped=bool(battle.trapped),
-            maybe_trapped=bool(battle.maybe_trapped),
-            wait=bool(battle.wait),
-            struggle=struggle,
-            last_request=MappingProxyType(request) if request else None,
-            own_hp_typed_id=_own_hp_typed_id(battle),
-        )
-
-
-def _own_hp_typed_id(battle) -> Optional[str]:
-    """The TYPED Hidden Power id of OUR active mon (``"hiddenpowergrass"``), or ``None`` if it has
-    none. The wire request re-keys our HP to bare ``"hiddenpower"`` (no team preview in gen3), but
-    the live ``Move`` object keeps the IV-derived typed id — and we ALWAYS know our own HP type.
-    Read off the active mon's moveset (a mon has at most one Hidden Power); robust to whether the
-    moveset is keyed bare or typed since it reads each ``Move.id``. OUR side only (``from_battle``
-    builds from our own request), so it can never surface the opponent's hidden HP type."""
-    active = getattr(battle, "active_pokemon", None)
-    if active is None:
-        return None
-    typed = [mv.id for mv in active.moves.values() if str(mv.id).startswith("hiddenpower")]
-    return typed[0] if len(typed) == 1 else None

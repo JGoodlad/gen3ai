@@ -36,7 +36,7 @@ from agents.observation.turn_delta_encoder import (
     OUTCOME_DIM,
     CANT_DIM,
 )
-from agents.battle.turn_view import FAINT_CAUSE_VOCAB
+from agents.battle.faint_causes import FAINT_CAUSE_VOCAB
 
 from agents.model.feature_coverage._support import (
     feature_model,

@@ -1,41 +1,35 @@
-# CLAUDE.md — Observation Encoder (`src/agents/observation/`)
+# CLAUDE.md — the Observation LAYOUT (`src/agents/observation/`)
 
-This directory builds the **2845-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
-the live value is `Gen3ObservationEncoder.dimension` — read it there, and see
-`designs/ARCHITECTURE.md` § Observation for the full block table).
-It runs once per agent decision across every training env, so it sits directly on the
-training-throughput (FPS) critical path. Two independent things can regress here, and they
-have **different** gates:
+This directory is the observation **as the MODEL reads it**: the **2845-dim** row's layout
+(`Gen3ObservationEncoder(load_mappings()).get_layout()` and `.dimension` — read them there; every offset is a
+named constant in `constants.py`, see `designs/ARCHITECTURE.md` § Observation for the block table), the
+vocabularies the model's tables are sized from (`gen3_effects.VOLATILE_SLOTS` / `CANT_REASONS_LIVE`,
+`types.TypeEncoder.TYPE_TO_IDX`, `pokemon._STATUS_STR_IDX`, `moves.HIDDEN_POWER_MOVE_NUM`), the read-back decoders
+the prober uses (`describe_vector` on the block descriptors, `obs_facts.describe`, `TurnDeltaEncoder` for archived
+runs), and a few pure helpers the model and prober share (`sleep_belief.expected_free_turns`, `incoming_damage`'s
+damage math, `belief_labels` — the reference definition of the belief-aux labels the Rust env core writes, `schema`).
 
-1. **Observation *values*** — if a change alters what the vector contains, it is
-   **retrain-class**: bump `ARCH_SIGNATURE` in `src/agents/model/model_version/` (see the
-   root `CLAUDE.md` → Model Versioning). Value-neutral refactors do **not** bump it.
-2. **Observation *build performance*** — if a change makes `encode` slower, training FPS
-   drops for the entire run. **This file governs that gate.**
+🚨 **The RUST encoder is the ONLY encoder** (`src/rust_sim/src/encoder/`, served by the env core to training, eval,
+live play and the prober). The Python encoder's encode path — `Gen3ObservationEncoder.encode` / `get_observation`,
+every sub-encoder's battle-reading `encode`, the incremental assembler (`assembler.py`), the Wish fold
+(`wish_belief.py`), the obs-facts writer, the incoming-damage obs encoder and its memo — is DELETED with the Python
+battle layer and trackers (T27 P6 slice 6d-2, 2026-10-08; `designs/ops/deletion_pass_manifest.md` §8.5). No obs
+value moved: the obs golden (`agents.training.golden_obs_core`) passes byte-identically across the deletion.
 
-> **Off-hot-path exception — `belief_labels.py`.** This module (the pure builder of the
-> hidden-opponent belief-aux labels) lives here for cohesion with the obs layer but is **NOT called
-> by `encode`** — the training label path (the label gates in `agents.training.trainee_spaces.label_gates`; inventory `utils/rust_env/label_inventory.py`) emits it only when `--opp-belief-aux-coef>0` or
-> `--move-belief-mode != off`, to emit the privileged training-only `belief_species`/`belief_moves`
-> (and, for move-belief known/both, `known_moves`; for `--spread-belief-coef>0`, `belief_spread`/`_mask` —
-> and, under `--spread-belief-nature`, `belief_nature`/`belief_ev`(+masks) for the nature/EV
-> decomposition, `gen3_nature_ev_belief_v1` — agent2's TRUE declared nature/EVs (`gen3_true_spread_labels_v1`,
-> guarded against its `mon.stats`), training-only so no leak;
-> for `--hp-type-belief-coef>0`, `hp_type_label`/`hp_type_mask` — the opp Hidden-Power-type label,
-> `gen3_typed_hp_belief_v1`) Dict keys (see
-> `src/agents/training/CLAUDE.md`). So it adds **zero** cost to the default obs build (benchmark
-> confirmed: `state_encoder.encode` unchanged, `belief_labels` absent from the profile). Changes to
-> `encode` itself still trip the gate below.
+Two things can regress, with different gates:
 
----
+1. **Observation *values*** — a change to what a cell contains is a change to the Rust encoder, and it is
+   **retrain-class**: bump `ARCH_SIGNATURE` (`src/agents/model/model_version/`). The value gates are the obs GOLDEN
+   (`python -m agents.training.golden_obs_core --check`, `golden_obs_core_test.py`) and the four checks of
+   `designs/rust_sim/encoder.md` §6a.
+2. **The LAYOUT** — 🚨 `src/rust_sim/src/encoder/layout.rs` is **Rust-OWNED source** (since slice 6d-2; it was
+   generated from this directory until the Python encoder went): edit it directly, and change `constants.py` in the
+   same edit. `rust_core_obs_layout_test.py` PARSES `layout.rs` and holds every value both sides carry equal — every
+   shared `usize` constant (108 today, the block offsets and `OBS_DIM` among them), `EventCol`, `EVENT_STATUS_IDS`,
+   the obs-facts tables, and the model-read vocabularies above — so a one-sided change FAILS.
 
-> 🚨 **This package imports NO poke-env at runtime** (P1 of the poke-env retirement, `T27`, 2026-10-07). The Python encoder
-> still reads poke-env battle objects (`encode(battle: AbstractBattle)`), but only as ANNOTATIONS: `AbstractBattle` / `Pokemon`
-> sit under `if TYPE_CHECKING:` with `from __future__ import annotations`; ids come from `utils.showdown_id.to_id_str`, the
-> value-enums from `agents.enums`, and `global_env._SCREEN_CONDITIONS` is spelled as the lower-cased `SideCondition` names
-> (pinned to the fork's by `src/agents/enums_test.py`). The trainer imports this package (`damage_tables` → `types`), so a
-> runtime `import poke_env` here fails `src/poke_env_free_entry_points_test.py` — keep new imports of the fork under
-> `TYPE_CHECKING`, and never add one to the shrink-only allowlist.
+> 🚨 **This package imports NO poke-env at runtime** (P1 of the poke-env retirement). The trainer imports it
+> (`damage_tables` → `types`), so a runtime `import poke_env` here fails `src/poke_env_free_entry_points_test.py`.
 
 ---
 
@@ -65,160 +59,6 @@ call counts no longer gate anything; the dated figures that cite it below are me
 
 ---
 
-## Pitfalls that have caused regressions here
-
-- **Calling `PokemonType.damage_multiplier` / `effective_multiplier(move_type, mon)` per cell.**
-  Use the value-based `effective_multiplier_by_types(move_type, t1, t2, ability, status)` and
-  read the mon's attributes once outside the loop. The object wrapper re-reads poke-env
-  properties every call.
-- **Re-reading poke-env properties inside the inner loop.** `move.type`, `mon.type_1/2`,
-  `mon.ability`, `move.category` are properties that do real work (`move.entry`,
-  `GenData.from_gen`); hoist them above the loop. The matchup matrices already do this
-  (`reactive._defender_terms` / `_attacker_type_dist` read each mon / (attacker, move) once,
-  not per cell) and the per-mon move category is memoized by id (`moves._category_val` — a
-  process-global cache off the *live* `move.category`, NOT a `gen3_data.moves` re-derivation,
-  which disagrees for fixed-power moves). Do not reintroduce a per-cell / per-slot property
-  read.
-- ~~**Breaking the turn-history deque cache** (`EpisodeTracker.prev_N_delta_vecs`)~~ — DELETED
-  with the lag frames (`gen3_frame_deletion_v1`); kept struck through because the shape of the
-  hazard recurs for any future memoized block. Historically: if the
-  benchmark's "recompute all 10" multiplier collapses toward 1×, you've reintroduced the
-  per-step O(N) re-encode.
-- **Wrapping live mons in proxy objects** with `__getattr__` (the deleted
-  `_AbilityOverrideMon`): `__getattr__` is slow and gets hit once per attribute per cell.
-
-## 🦀 The encoder has a RUST TWIN — slice O (the Python-vs-core row comparison) is DELETED
-
-The Rust Core Program's M4 (`gen3_core_encoder_v1`, `designs/rust_sim/encoder.md`) reproduces this
-directory's `encode` byte for byte in `src/rust_sim/src/encoder/`. Until T27 P6 slice 6c (2026-10-08)
-**slice O** of the parity harness compared the two rows as BYTES at every decision of the COMMIT corpus, so a
-value change here failed the routine gate until the Rust side mirrored it. **Slice O is deleted** (the harness
-`rust_core_parity*.py`, `rust_core_parity_test.py` and `core_row_parity_fuzz_test.py` went with it): the Python
-encoder was never a truth, and the row every run reads is the Rust encoder's, held by the four checks of
-`designs/rust_sim/encoder.md` §6a (the engine-truth audit, the round-trip chain, two roads one row, the frozen
-goldens) and the obs GOLDEN (`agents.training.golden_obs_core`, `golden_obs_core_test.py`). So a change HERE no
-longer has to be mirrored and moves no gate on the Rust side — which also means nothing now compares this
-directory's `encode` with the core; its remaining consumers (the counterfactual stack and the obs materializer, until
-slice 6d retires the encode path) read an UNGATED second implementation.
-
-- **The Rust LAYOUT is generated from THIS directory's constants**: after any change to
-  `constants.py`, `gen3_effects.py` (the volatile / cant vocabularies), the sub-encoders' index maps
-  or `assembler.SAT_LUT`, run `python -m agents.observation.rust_core_obs_layout --write` and rebuild
-  (`rust_core_obs_layout_test.py` fails the day `layout.rs` is stale).
-- **The benchmark is the Rust encoder's** — `python -m agents.observation.rust_encoder_benchmark` (the MANDATORY
-  section above). The Python benchmark's CORE row measured, 2026-09-24, load 17–24, turn 25 × 400 reps: core
-  encode **0.026 ms** (view memoized) / **0.037 ms** (`present()` + encode, cold) against this directory's 0.157 ms
-  production shape / 0.606 ms cold on the same decision (`research_state/measurements/rust_core_m4_2026-09-24/`).
-
-🚨 **The ORACLE REVEAL has NO Python mirror, by design.** `--oracle-reveal {species,full}` (a DIAGNOSTIC mode, never production;
-`designs/rust_sim/encoder.md` §11) writes the opponent's unseen species (`full`: their whole set, and the unrevealed facts
-of the seen mons too) into the opponent block of the row the Rust env core builds — dex-num-ordered rows after the seen mons. This directory's encoder always encodes
-`off` (slice O, deleted in P6 slice 6c, gated `off` only), and the prober / the Lane S bank cannot re-encode an oracle run's states. The mode
-is the run's recorded `oracle_reveal`; offline tools that build observations here refuse such a checkpoint
-(`agents.model.oracle_reveal`).
-
-## ⚠️ A fuzz ORACLE binds to the layout too — by NAME, never by literal
-
-The positional-binding sweep (2026-08-18) found two live misbinds on this directory's *readers*,
-both silent, both in code whose job was to catch exactly this class:
-
-- **`wish_floating_fuzz_test` read `OFFSET_REACTIVE + 17 / + 18`, and `REACTIVE_DIM` is 17** — so
-  both literals pointed PAST the reactive block, at `OFFSET_PAIR_HISTORY + 0 / + 1`. The oracle
-  compared its Wish expectation against a different block's (usually zero) content, so the
-  completeness half could only ever read *"the encoder never floats a Wish."* They went stale the
-  day `gen3_entity_rehome_v1` shrank the block. Fixed by resolving them from
-  `ReactiveEncoder().get_layout()`; pinned by
-  `reactive_test::test_the_wish_fuzz_reads_the_DECLARED_wish_columns`, which asserts the
-  relationship (offset ↔ declared column ↔ inside the block bound), not a number.
-- **`event_window_fuzz_test`'s independent fold guarded residual damage with
-  `e.value.get("from")` on a DAMAGE event** — the key DAMAGE never carries (the parser writes the
-  `[from]` clause to `value["reason"]` there and to `value["from"]` on the effect kinds). That is
-  the *same* key drift the tracker was already fixed for, so the oracle could not have caught the
-  bug coming back. Fixed to `e.from_clause`, behind the named `attributable_damage` predicate so
-  the oracle is unit-testable against the trap
-  (`event_window_test::test_the_fuzz_ORACLE_reads_the_from_clause_too`).
-
-Same lesson, twice: **an oracle that mirrors its subject's key choice is not an independent
-check.** Derive the oracle's addresses from the DECLARED layout (`get_layout()`,
-`build_schema(layout).slices()`) or from the raw protocol — never from a literal, and never from
-the consumer's own accessor.
-
-The H-B event window's column-15 **status vocabulary** now lives here too, as
-`constants.EVENT_STATUS_IDS` / `N_EVENT_STATUS`, for the reason `EVENT_T_*` does: it is the obs
-contract, written by `episode_tracker` and embedded by `team_transformer.EventSeats`. The
-producer CRASHES on an unrecognised status rather than coding it 0 = "none"
-(`_event_status_id`, the `normalize_cant_reason` contract), and `EventSeats` asserts its table
-covers the vocabulary and clamps from the table's own width — so growing the dict fails loud
-instead of clamping a new id onto `tox`.
-
-## The incremental cache (`assembler.py`) — what may and may not be cached
-
-`ObsAssembler` is owned by the `EpisodeTracker` (so it resets with the episode and deep-copies
-with a counterfactual arm) and is threaded into `encode(..., assembler=…)` by the
-inference player (and the profilers). **Every other caller passes nothing and gets the full rebuild** — which is also
-the oracle. There is deliberately **no flag**: a launch flag would fork the obs path into two
-long-lived variants and this tree has measured what happens to the branch nothing runs (the
-seedless-seed lesson). The diagnostic escape hatch is `GEN3AI_OBS_VERIFY=1`, which shadow-encodes
-both ways per decision and raises naming the offending block.
-
-**Cached:** the twelve 122-dim per-mon slots, keyed by SPECIES (never by list position — the opp
-team list grows as mons are revealed), and the encoded event-window rows.
-
-**Never cached, and each for a stated reason:**
-
-| block | why it is recomputed every decision |
-|---|---|
-| the two 58-dim active contexts | a switch clears boosts/volatiles with **no per-field event**, and a Baton Pass *keeps* them — "write zeros on SWITCH" is wrong in both directions |
-| global / board (reactive) | cheap, and the board's Wish fold is now incremental anyway |
-| the 180-dim pair history | every cell's `recency_of_last_pairing` ticks on every turn |
-| per-mon recency triplets | same — turn-anchored, so they move under a mon that did nothing |
-| `trapped` / `maybe_trapped` / `active` | request-sourced; a cached request bit that survives one decision too long is the `gen3_op_move_align_v1` misalignment class |
-| BOTH actives' whole slots | unconditionally dirty — it costs ~2 slot encodes and shrinks the event→dirty map to the families that touch a BENCHED mon |
-| the 84-dim OBS-FACTS block (`gen3_obs_facts_v1`) | cheap, and turn-anchored like the recency triplets (elapsed / turns-left tick every residual); its inputs are the view and the event window's `facts` fold. `encode_obs_facts` zeroes its own span, so the persistent buffer cannot serve a stale cell |
-
-⚠️ **Recomputing the active context correctly is necessary but not sufficient, and this tree learned
-that the expensive way.** Until 2026-08-23 the *source* was wrong: poke-env cleared the passer's
-boosts and volatiles on the `|switch|` and never read the `[from] Baton Pass` tag, so this block was
-faithfully re-encoding a Charizard the client believed had no boosts while the sim had
-`spa +2 / spd +2` (ledger 2026-08-23). Neither `obs_roundtrip` nor the assembler fuzz could see it —
-both compare two encoders over the *same* poke-env, so they agreed bit-for-bit on the wrong number,
-and the assembler fuzz's `baton_pass EXERCISED / 0 mismatches` line was a vacuous green. **A parity
-gate cannot see a fault upstream of the fork it compares**; the gate for that class is
-`training/poke_env_gaps/baton_pass_obs_integration_test.py`, which checks the observation against
-the *protocol*.
-
-**Four dirty signals, and it takes all four** (the first three are the design's; the fourth is the
-one the fuzz found):
-
-1. the **event log** — `STATE_ONLY` is empty in gen3ou, so no protocol mutation bypasses it;
-2. the **request**, per-mon (`StrictBattleView.request_change_seq`) — a `|request|` emits no event
-   yet writes condition/item/ability/moves/stats. Per-mon because a request arrives every
-   decision; an unchanged per-mon record *proves* no mutation, since `update_from_request` is a
-   pure function of it;
-3. **`HiddenPowerTracker.revision`** — 17 dims written by our own code, not by a line;
-4. 🚨 **`|-cureteam|`** — `EventKind.CURESTATUS` covers two keywords and one is TEAM-WIDE (Heal
-   Bell / Aromatherapy cures all six while naming only the active). This is the door the design's
-   §2.2 map missed; the fuzz caught it as 11 stale status bits on benched opponents in 9,272
-   decisions. Any CURESTATUS now dirties the whole side.
-
-Two whole-log folds that used to run per encode — `build_wish_pending` and `build_sleep_sources`
-— are incremental on the assembler. The full-fold functions **stay** and are what the non-cached
-path (and the fuzz oracle) uses, so the two are compared rather than one reading the other back.
-
-Gates: `assembler_test.py` (one named regression per design §2.3 trap; four of them scripted
-because a random gen3ou corpus reports forme-change / Transform / partial-trap / Pain-Split as
-NOT SEEN) and `training/poke_env_gaps/obs_assembler_fuzz_test.py` (real battles, byte-identity at
-every decision, with a printed trigger census — a clean run that exercised no trap says so).
-
-## Value-correctness (separate from perf, but also gated)
-
-Changes to *what the vector contains* are validated by the bridge-backed fuzz tests
-(`*_fuzz_test.py`, real battles, protocol-truth checks) and the unit tests in this directory.
-If your change is meant to be **value-neutral**, prove it: the effectiveness fast-path, for
-example, is pinned byte-for-byte by the exhaustive parity test in
-`src/agents/gen3_mechanics_test.py`. Obs-value changes are retrain-class → bump
-`ARCH_SIGNATURE`.
-
 ## The volatile vocabulary is SOURCE-DERIVED: crash-don't-drop without the whack-a-mole
 
 `gen3_effects.encode_volatiles` RAISES on an id it has not classified. That's by design, and it
@@ -235,8 +75,10 @@ Heal Bell). Why it kept happening: poke-env's `-activate` handler calls `start_e
    through the mod chain gen3 → gen4 → … → gen8 → base, resolved the way `sim/dex.ts` merges it. A
    mod key shadows its parent's, so gen3's Quick Claw / Lightning Rod / Synchronize / Aromatherapy
    lines drop out. Entries are kept only for gen3-legal ids (`agents.gen3_data`).
-2. **Executed half.** Every concrete line runs through a REAL `Gen3Battle`, and the id is read back
-   through `LiveView`'s own `_id`. poke-env's branch logic is measured rather than restated.
+2. **Executed half — on the RUST reader** (`main.live.effect_scan.probe_lines`): every concrete line is fed,
+   after a fixed two-mon preamble, to the reader + encoder the live client runs; a refusal or an unclassified
+   volatile is a finding. (The Python execution on a `Gen3Battle` is deleted, T27 P6 slice 6d-2; before it went
+   both executions judged all 93 concrete lines alike.)
 
 Every hand-written row in that module carries its reason and is checked against the source by the
 test: computed arguments (`DYNAMIC_EFFECT_EXPANSIONS`), gen-gated `sim/` lines and conditions,
@@ -279,9 +121,8 @@ rule-gated lines (`RULE_GATED_LINES`), and non-obtainable items.
 
 - `gen3_effects_test.py::test_every_effect_the_gen3_sim_announces_is_classified` plus its siblings
   (dead entries, stale rows, pending lines still raise).
-- `gen3_effects_bridge_integration_test.py` (`sim`). A scripted node-bridge battle uses Heal Bell,
-  Aromatherapy, Beat Up, Magnitude, Mind Reader, Spite and Conversion, and fully encodes both sides
-  at every decision.
+- `main/live/effect_scan_test.py` — every derived line of the pinned Showdown reads and encodes clean on
+  the Rust reader, and a fabricated effect is a finding.
 - `main/ladder_drift_scan.py` runs the same TEXT derivation against Showdown **master** (the public
   server) and, since P6 of the poke-env retirement, EXECUTES each derived line on the RUST reader
   (`main.live.effect_scan`: a spectator chain + an encode) instead of on `Gen3Battle`; every replay
@@ -291,7 +132,7 @@ This change is **value-neutral on every state that encoded before**: a newly cla
 touches encodes that used to RAISE. Proof: 400 pool battles (30,943 decisions) were byte-identical
 before and after, and the obs goldens pass unchanged. There was no `ARCH_SIGNATURE` bump.
 
-**poke-env reading findings this surfaced.** These were reported, not fixed. poke-env's reading is
+**poke-env reading findings this surfaced** (history — the reading is the Rust core's now). These were reported, not fixed. poke-env's reading is
 not the spec.
 
 - `|-activate|<mon>|item: Focus Band` does NOT disclose the item. The generic branch only starts an
@@ -331,34 +172,16 @@ silently de-tiers the model package.** Narrow with a targeted ignore instead.
   block comments stay.
 - **`np.ndarray` carries no shape.** Same rule as the model package's `[B, 6, K]` comments: the
   dimension lives in the comment and the `*_DIM` constant, the checker only knows "an array".
-- **`typing.cast` at the `gen3_data` facade boundary**, where the facade's `.get()` is `Optional` but
-  a guard has already proven presence. `incoming_damage_encoder` is the live case: `_is_damaging()`
-  owns the not-None test, so no narrowing survives the call and the two use sites `cast` rather than
-  re-test. `cast` returns its argument unchanged — the emitted vector is byte-identical. It IS a
-  real function call, so keep it off the hottest loops; the current four per obs build are 0.0002%
-  of the ~2.1M calls the benchmark counts and do not appear in the cProfile top-22.
-- **`# type: ignore` always carries a code and a reason.** One cause dominates here and is worth
-  knowing before reading one as a smell: **`ObservationEncoder.encode` still declares the pre-ai_v4
-  `(item, battle)` signature**, while `StateEncoder` / `GlobalEnv` / `ActiveContext` / `Reactive`
-  were migrated onto the LiveView read-model and take an entirely different subject. Nothing calls
-  them through the base, so the divergence is declared at each override rather than paid for by
-  widening the ABC to `*args` — which would delete the check for the encoders that DO conform. The
-  same applies to the three compact-string `describe_vector` sub-encoders (types / items /
-  abilities), whose output is embedded as a dict VALUE by `PokemonEncoder`.
+
+- **`# type: ignore` always carries a code and a reason.** The three compact-string `describe_vector`
+  sub-encoders (types / items / abilities) return a string where the base declares a dict — their
+  output is embedded as a dict VALUE by `PokemonEncoder` — so the divergence is declared at each
+  override.
+
 - ⚠️ **A standalone comment that starts with `# type: ignore` IS a directive.** mypy parses it
   wherever it sits and rejects it as malformed, so an explanatory line above an ignore must not
   begin with those words — this file's convention is `# Why the \`type: ignore[...]\` below — …`.
 
-**One latent mismatch is DECLARED rather than repaired**, at `incoming_damage_encoder._defender`:
-`Defender.type1` is non-optional and `effective_multiplier_by_types` requires it, but the
-expression yields `None` for a typeless `lm`. Believed unreachable (a `LivePokemon` always carries
-≥1 type). It carries a `# type: ignore[arg-type]` naming itself; if it ever fires the fix belongs
-in `_defender`, not in the annotation.
-
-**Annotations are runtime-neutral, and this package's benchmark gate still applies to them.**
-Measured over the typing pass (same-load A/B, busy box — absolute ms not comparable, ratios are):
-`state_encoder.encode` 93% → 94% of the build, turn-history 9% → 9%, `live_view()` 22% → 20%, and
-the cProfile top-22 ranking unchanged.
 
 ---
 
@@ -369,6 +192,16 @@ and the per-mon slot layout, derived from the live constants. **This** is the pe
 what each field MEANS and where it is sourced from. All offsets are computed from named constants
 — never hardcode indices.
 
+🚨 **Read the SOURCES below in the Rust core's terms.** This reference was written when the Python encoder
+wrote the row; the semantics are unchanged (the obs golden is byte-identical across the deletion), but every
+producer it names — the Python sub-encoders' `encode`, the `EpisodeTracker`-owned `RecencyTracker` /
+`PairHistoryTracker` / `EventWindowTracker` / `ProgressClock`, `HiddenPowerTracker`, the assembler, `Gen3Battle`'s
+event log — is now its Rust twin (`src/rust_sim/src/encoder/`, `src/rust_sim/src/trackers/`,
+`src/rust_sim/src/present/`; `designs/rust_sim/encoder.md`, `designs/rust_sim/trackers.md`). The fuzz gates it names
+under `training/poke_env_gaps/` and `action/` were deleted with the Python stack (slices 6c / 6d-2); the row is
+held by the engine-truth audit, the round-trip chain, two-roads-one-row and the frozen goldens
+(`designs/rust_sim/encoder.md` §6a).
+
 **Per-Pokémon slot (122 dims):** the 110 below + the 3-dim recency block + the 1-dim
 protect-odds field + the 6-dim last-action block + the 2 appended trapping bits + the
 appended active flag.
@@ -378,12 +211,12 @@ never-tracked reads 1.0 max staleness), log-saturated over a 10-turn cap, BOTH s
 every reset derives from observed protocol events), sourced from the EpisodeTracker-owned
 `RecencyTracker` (the same per-decision event window the TurnDelta fold reads) and threaded
 into `encode(recency=…)` like the progress clock. Fuzz gate:
-`poke_env_gaps/recency_fuzz_test.py` (encoded scalars == an independent full-log recount +
+the deleted `recency_fuzz_test.py` (encoded scalars == an independent full-log recount +
 decision-time active log, per mon per decision). **Protect-odds field** at
 `POKEMON_PROTECT_OFFSET` (112, gen3_entity_rehome_v1): P(a Protect/Detect/Endure by THIS mon
 succeeds now) under the gen3 floored-doubling stall rule (100/50/25/12.5, floor 1/8), from the
 LiveView `protect_counter` — EVERY mon owns its stall state (a benched mon truthfully reads 1.0;
-the counter resets on switch). Pinned by `protect_success_prob_fuzz_test.py`. **Last-action block** at
+the counter resets on switch). Pinned by the deleted `protect_success_prob_fuzz_test.py`. **Last-action block** at
 `POKEMON_LAST_ACTION_OFFSET` (113, `gen3_pair_history_v1` — Tier H-A1 of
 `designs/ai_v9/design_history_entity.md`): the SIDE's most recent executed action on its
 ACTIVE mon's slot — `[last_move_id, was_switch, hit, miss, fail, crit]`, bench rows zero.
@@ -392,7 +225,7 @@ move table and ZEROES its raw column — a dex num never reaches a Linear); outc
 matches the turn-delta `_OUTCOME_ORDER`; CANT windows leave the previous action standing;
 leads don't count (a placement, not an action). Folded by the EpisodeTracker-owned
 `PairHistoryTracker` (same decision window as recency), threaded via
-`encode(pair_history=…)`. Fuzz gate: `poke_env_gaps/pair_history_fuzz_test.py` (independent
+`encode(pair_history=…)`. Fuzz gate: the deleted `pair_history_fuzz_test.py` (independent
 full-log oracle; it caught a fainted-active-resurrection resync bug pre-ship). The SAME
 tracker also feeds the **180-dim pair-history block** after reactive
 (`OFFSET_PAIR_HISTORY`, 6×6×5 `h[i,j]` tendency counters — switch-ins/attacks/status-clicks
@@ -478,7 +311,7 @@ Unit gate: `training/event_window_test.py`; the event-fold FUZZ (the pair-histor
 the pre-enable gate. **Appended tail**
 (state_encoder): `POKEMON_TRAPPED_OFFSET` (119) + `POKEMON_MAYBE_TRAPPED_OFFSET` (120) — the
 OUR-side LegalActions trapping bits, nonzero ONLY at our active slot (`maybe_trapped` is the
-high-value trap-risk bit; fuzz gate `action/trapping_signals_fuzz_test.py`, which also asserts
+high-value trap-risk bit; fuzz gate the deleted `trapping_signals_fuzz_test.py`, which also asserts
 bench slots stay zero) — then the ACTIVE flag at `POKEMON_ACTIVE_OFFSET` (121), deliberately
 LAST in the slot (the model's `hp_and_active[:, :, -1]` convention is load-bearing).
 Original 110: species ID + 6 base stats, item ID + known + consumed, 2 type
@@ -508,7 +341,7 @@ Rest) selects which table; it's read from our **event log's `[from]` clause** (p
 `sleep_counter_reliable` drops to 0.0 once a Sleep Talk / Snore turn has corrupted the counter (+3 per
 turn, empirically verified) — instead of reconstructing Showdown's `skippedTime` switch refund. The
 counter→p_wake mapping and the source/reliability bits are **fuzz-calibrated against the real sim RNG**
-(`poke_env_gaps/sleep_wake_fuzz_test.py`: per-decision obs wiring exact + empirical wake-frequency ==
+(the deleted `sleep_wake_fuzz_test.py`: per-decision obs wiring exact + empirical wake-frequency ==
 the computed table across well-sampled (K, source) buckets).
 
 **Move slot (11 dims, layout in `moves.py`):** move ID, base power (/200), has_secondary,
