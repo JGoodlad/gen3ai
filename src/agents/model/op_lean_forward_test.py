@@ -57,9 +57,11 @@ def test_drop_renders_shrinks_the_block_and_keeps_every_offset():
     off, _ = _build(**_ON_KWARGS)
     lean = on.damage_op.out_dim
     assert lean < off.damage_op.out_dim
-    assert on.damage_op.out_gain.shape == (lean,)
-    # the surviving prefix of the gain init is IDENTICAL — offsets unchanged by construction
-    assert torch.equal(on.damage_op.out_gain, off.damage_op.out_gain[:lean])
+    assert on.damage_op.expanded_out_gain().shape == (lean,)
+    # the surviving prefix of the gain init is IDENTICAL — offsets unchanged by construction (the gain is tied per
+    # (region, channel) across request slots, the X5 version break's part 4; compared at the flat width)
+    assert torch.equal(on.damage_op.expanded_out_gain(), off.damage_op.expanded_out_gain()[:lean])
+    assert on.damage_op.out_gain_keys == off.damage_op.out_gain_keys[:on.damage_op.out_gain.numel()]
 
 
 def test_drop_renders_is_bit_identical_at_init():

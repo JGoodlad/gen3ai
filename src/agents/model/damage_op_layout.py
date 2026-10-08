@@ -218,6 +218,52 @@ def _dmg_imx_dim(k: int) -> int:
     ++ the per-(our-mon, move) cell block (`TEAM_SIZE` × k × `_DMG_IMX_CELL`)."""
     return k * _DMG_IMX_HEADER + TEAM_SIZE * k * _DMG_IMX_CELL
 
+
+def out_gain_channel_keys(*, outgoing: bool, matrices_outgoing: bool, matrices_incoming_k: int
+                          ) -> "list[tuple[Any, ...]]":
+    """gen3_x5_version_break_v1 part 4 (the slot-tied ``out_gain``): ONE key per flat block position, in the
+    block's own layout order; positions sharing a key share ONE learned gain scalar.
+
+    The key names the (block region, channel) and DROPS the REQUEST-SLOT / MOVE-SEAT index, so the same quantity
+    is scaled the same wherever its move is listed (design_arch_audit §9.4: trained X5 arms learned KO gain 1.365
+    on slot 0 vs 1.146 on slot 3). Tied across the move axis: the outgoing per-move stack ``[low,high,crit,pko]``
+    and the per-move secondary columns (request slots), the status-landing ``p_land`` / ``known`` pairs (request
+    slots), the outgoing matrix's cells (our move = request slot; render mode only) and the incoming matrix's
+    per-seat header and per-(our mon, seat) cells (the K believed-move seats; render mode only).
+
+    NOT tied — positional replicates of one quantity on a MON axis, kept per position on purpose (the brief ties
+    the move axis only; each is a reported finding, the owner decides): the incoming per-mon rows (our 6 TEAM
+    slots × 12 channels), the Choice-Band tail's ``phys_high_cb`` / ``phys_pko_cb`` (our 6 team slots), the
+    outgoing matrix's per-(their mon) cells and ``revealed`` bits (their 6 slots) and the incoming matrix's
+    per-(our mon) cells (our 6 team slots). ``matrices_outgoing`` / ``matrices_incoming_k`` must already be
+    zeroed when the renders are dropped (they then add no position)."""
+    keys: "list[tuple[Any, ...]]" = []
+    for i in range(TEAM_SIZE):                                    # incoming rows: per OUR team slot (untied)
+        keys += [("incoming_row", i, f) for f in range(_DMG_PER_MON)]
+    keys += [("cb_high", i) for i in range(TEAM_SIZE)]            # the CB tail: per our team slot (untied)
+    keys += [("cb_pko", i) for i in range(TEAM_SIZE)]
+    keys.append(("p_cb",))
+    if outgoing:
+        for _k in range(_DMG_OUT_N_MOVES):                        # request slot k: TIED
+            keys += [("out_move", f) for f in range(_DMG_OUT_PER_MOVE)]
+        keys.append(("out_p_outspeed",))
+        for _k in range(_DMG_OUT_N_MOVES):                        # request slot k: TIED
+            keys += [("out_secondary", c) for c in range(_N_OUT_SECONDARY)]
+        keys += [("status_p_land",)] * _DMG_STATUS_N_MOVES        # request slot k: TIED
+        keys += [("status_known",)] * _DMG_STATUS_N_MOVES
+    if matrices_outgoing:
+        for _k in range(_DMG_OUT_N_MOVES):                        # our move k (request slot): TIED
+            for d in range(TEAM_SIZE):                            # their mon d: untied
+                keys += [("omx_cell", d, f) for f in range(_DMG_OMX_CELL)]
+        keys += [("omx_revealed", d) for d in range(TEAM_SIZE)]
+    if matrices_incoming_k > 0:
+        for _k in range(matrices_incoming_k):                     # believed-move seat k: TIED
+            keys += [("imx_header", j) for j in range(_DMG_IMX_HEADER)]
+        for i in range(TEAM_SIZE):                                # our mon i: untied
+            for _k in range(matrices_incoming_k):                 # seat k: TIED
+                keys += [("imx_cell", i, f) for f in range(_DMG_IMX_CELL)]
+    return keys
+
 # `damage_topk_k` is the ONE "how many opponent moves does the discrete block reason about" knob. It used
 # to gate TWO blocks: the v30 LEAN top-K (`_topk_block`) and the v35 rich `_incoming_matrix`, with the
 # matrix suppressing the lean one at the same K.

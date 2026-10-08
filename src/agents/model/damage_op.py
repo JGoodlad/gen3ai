@@ -63,6 +63,7 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _PAIR_REDUCE_N_CHANNELS, _PTR_MOVE_CELL, _PTR_SWITCH_CELL_IN, _SB_ATK, _SB_DEF, _SB_SPA,
     _SB_SPD, _SB_SPE, _SECONDARY_MAJOR_N, _SECONDARY_TO_STATUS_CAT, _SUBSTITUTE_CTX_IDX,
     _TypeEncoder, _VOLATILE_SLOTS, _WATER_TIDX, _dmg_imx_dim, decode_damage_block,
+    out_gain_channel_keys,
 )
 
 
@@ -396,7 +397,44 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
             _imx_cell = torch.tensor([1.0 / 1.5, 1.0 / 1.5, 1.0 / 3.0, 1.0, 1.0 / 4.0, 1.0])
             gain[_imx0:_imx0 + TEAM_SIZE * self.matrices_incoming_k * _DMG_IMX_CELL] = \
                 _imx_cell.repeat(TEAM_SIZE * self.matrices_incoming_k)
-        self.out_gain = torch.nn.Parameter(gain)
+        # gen3_x5_version_break_v1 part 4 (the slot-tied out_gain; design_arch_audit §9.4): ONE learned scalar per
+        # (block region, channel) — the REQUEST-SLOT / move-seat index is not part of a channel's identity, so the
+        # same move is scaled the same wherever it is listed. `out_gain` holds the DISTINCT gains; the fixed
+        # one-hot `_out_gain_tie` [n_gain, out_dim] (non-persistent: pure layout) expands them to the flat width.
+        # Each tied channel's init is the per-slot init it replaces (equal per channel — asserted here).
+        keys = out_gain_channel_keys(
+            outgoing=bool(outgoing), matrices_outgoing=bool(matrices_outgoing and _renders),
+            matrices_incoming_k=(self.matrices_incoming_k if matrices_incoming and _renders else 0))
+        if len(keys) != self.out_dim:
+            raise RuntimeError(f"out_gain_channel_keys walked {len(keys)} positions, out_dim is {self.out_dim} — a "
+                               "region was added to the flat block without a gain key (the layout has ONE owner).")
+        distinct: Dict[Tuple[Any, ...], int] = {}
+        for k in keys:
+            distinct.setdefault(k, len(distinct))
+        idx = torch.tensor([distinct[k] for k in keys], dtype=torch.long)
+        first = torch.zeros(len(distinct), dtype=torch.long)
+        for pos in reversed(range(len(keys))):
+            first[idx[pos]] = pos
+        tied_init = gain[first]
+        if not torch.equal(tied_init[idx], gain):
+            bad = [keys[p] for p in range(len(keys)) if float(tied_init[idx[p]]) != float(gain[p])]
+            raise RuntimeError(f"out_gain: a tied channel's per-slot inits differ ({sorted(set(bad))[:4]}) — the "
+                               "tie would change the model at init.")
+        self.out_gain_keys: Tuple[Tuple[Any, ...], ...] = tuple(distinct)
+        self.register_buffer("_out_gain_tie", torch.nn.functional.one_hot(idx, len(distinct)).t().float(),
+                             persistent=False)                                       # [n_gain, out_dim]
+        self.out_gain = torch.nn.Parameter(tied_init)
+
+    def expanded_out_gain(self) -> torch.Tensor:
+        """The flat-width gain ``[out_dim]``: each position's tied (region, channel) scalar. A one-hot SUM (not an
+        index gather), so the forward value is exact and the backward is a fixed-order reduction (no scatter-add)."""
+        tie: torch.Tensor = self._out_gain_tie                                       # [n_gain, out_dim]
+        return (self.out_gain.unsqueeze(1) * tie).sum(0)
+
+    def apply_out_gain(self, block: torch.Tensor) -> torch.Tensor:
+        """The learned adapter on a PRE-gain block ``[B, out_dim]`` → the post-gain serialization (×only, no bias:
+        the no-threat zeros stay zero). The forward's one application."""
+        return block * self.expanded_out_gain()
 
 
     # gen3_op_stashes_v1 — the READ surface over the typed stash container (the re-export
@@ -1184,7 +1222,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # Read-only stash of the PRE-gain physics (the interpretable damage fractions / P(KO) / accuracy),
         # for the prober/forensic decode — the learned out_gain only rescales for the projection.
         self.stash.raw_block = block.detach()
-        gained = block * self.out_gain                                  # learnable per-channel adapter (×only)
+        # learnable per-(region, channel) adapter (×only), tied across request slots / move seats (part 4)
+        gained = self.apply_out_gain(block)
         # gen3_op_tensors_views_v1: the typed named views over the post-gain block, computed ONCE
         # here so every same-forward consumer (prefuse injection, seed readout) reads a field
         # instead of an offset. Zero-copy — `gained` is still the returned serialization.
