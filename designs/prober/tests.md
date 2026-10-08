@@ -36,8 +36,9 @@ field and the obs byte-equal — the poke-env ORACLE the core reading is held to
 equal the stored rows and its choice maps equal the poke-env materializer's; a tampered record line and
 misaligned states rows REFUSED; `query summary|scan|turns` exit 0 on the core-trace run) +
 `src/poke_env_free_entry_points_test.py::test_every_prober_command_and_the_web_app_run_with_poke_env_blocked`
-(`@sim @integration`: every JSON-CLI command bar `PROBER_POKE_ENV_COMMANDS` and the web app's views RUN
-with poke-env blocked on real core traces + a current-arch checkpoint; the exception list is pinned), `forensics_test.py` (pure `move_category` + `build_decision_table`/`decision_table_digest` over a
+(`@sim @integration`: every JSON-CLI command — `replay-counterfactual` included since P6, with a model
+and a self-model opponent and `--narrate` — and the web app's views RUN with poke-env blocked on real core
+traces + a current-arch checkpoint; the exception list `PROBER_POKE_ENV_COMMANDS` is pinned EMPTY), `forensics_test.py` (pure `move_category` + `build_decision_table`/`decision_table_digest` over a
 hand-written tmp trace via a fake session — no torch, no bridge),
 `falsifier_test.py` (pure: margin/percentile/paired-stats/verdict
 matrix, seed determinism, δ-anchor selection incl. the forced-switch remap, and
@@ -52,7 +53,10 @@ forward stash LIVES, plus the `ArchDriftError` diagnosis and the dropped-kwarg r
 `awareness_test.py` (the "did it KNOW?" verdict fold over hand-built atom distributions),
 `loops_test.py` (the bait-loop detector, pinned on literal Showdown protocol lines — the whole
 point of the module is that it must not read the rendered timeline), `lookahead_test.py` +
-`replay_test.py` (pure ORCHESTRATION with the bridge/model/players monkeypatched) +
+`replay_test.py` (pure ORCHESTRATION of the Rust-core counterfactual — opponent resolution, regime,
+per-rollout seeds, stall sides, narrate, every refusal — with the core walk and the play-out monkeypatched;
+the play-out's own semantics are `src/rust_env/tests/search_playout_cf_test.rs` +
+`src/utils/rust_env/cf_playout_test.py` + `successors_integration_test.py::test_the_counterfactual_keys_through_the_ffi`) +
 `lookahead_integration_test.py` (`@integration @sim`, real bridge → the core's successor row →
 a fake model's V), `hub_contract_test.py`, `groom_test.py` (the eval-data groomer, pure
 filesystem) and `belief_obs_fuzz_test.py` (run directly — real bridge battles over the full

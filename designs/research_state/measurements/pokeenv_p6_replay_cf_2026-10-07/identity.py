@@ -1,8 +1,10 @@
 """P6 identity read: the prober's ``replay-counterfactual`` on the poke-env road vs the Rust play-out.
 
-``gen3_pokeenv_p6_replay_cf_identity_v1``. Both roads live in ONE commit (``main/prober/replay.py``: the
-new ``replay_counterfactual_battle`` and the LEGACY ``poke_env_replay_counterfactual_battle`` + its
+``gen3_pokeenv_p6_replay_cf_identity_v1``. Both roads live in ONE commit, ``6168924c`` (``main/prober/replay.py``:
+the new ``replay_counterfactual_battle`` and the LEGACY ``poke_env_replay_counterfactual_battle`` + its
 player builders), so every comparison runs the same code base, the same models and the same records.
+🚨 **Run it AT ``6168924c``** — the cut-over commit after it deleted the legacy road, so ``run`` / ``dist``
+fail at HEAD (``table`` still works on the banked rows).
 
     # 0. the P5 identity set, copied read-only out of the archive (P5's own builder)
     python ../pokeenv_p5_prober_2026-10-07/capture.py fixture --dir /tmp/p6/fixture
@@ -12,8 +14,8 @@ player builders), so every comparison runs the same code base, the same models a
     PYTHONHASHSEED=0 python identity.py run --fixture /tmp/p6/fixture --models /tmp/p6/models --out /tmp/p6/run.jsonl
     # 3. the sampled regimes' DISTRIBUTIONS (old: unseeded, the process-wide streams; new: seeded) + rerun
     PYTHONHASHSEED=0 python identity.py dist --fixture /tmp/p6/fixture --models /tmp/p6/models --out /tmp/p6/dist.json
-    # 4. the table
-    python identity.py table /tmp/p6/run.jsonl
+    # 4. the table (the banked rows: rows.jsonl.gz, rows_trained.jsonl.gz)
+    python identity.py table rows.jsonl.gz
 
 THE REGIMES. Our side is always the trainee's GREEDY policy. The opponent:
 
@@ -176,7 +178,6 @@ class Roads:
         from poke_env.ps_client import LocalhostServerConfiguration
         import utils.bridge.counterfactual as BC
 
-        raw = {}
         orig = BC.summarize_trajectory
         BC.summarize_trajectory = lambda side, sink, **kw: [(sd, c) for sd, c in sink]
         old = []
@@ -227,14 +228,21 @@ def run(args) -> None:
     _threads(args.threads)
     models = json.loads((Path(args.models) / "models.json").read_text())
     roads = Roads(models)
+    def done_keys():
+        keys = set()
+        for f in [args.out, *args.skip_from]:
+            if Path(f).exists():
+                for ln in Path(f).read_text().splitlines():
+                    if ln.strip():
+                        d = json.loads(ln)
+                        keys.add((d["battle"], d["inv"], d["regime"], d["n"]))
+        return keys
+
     out = open(args.out, "a")
-    done = set()
-    if Path(args.out).exists():
-        for ln in Path(args.out).read_text().splitlines():
-            if ln.strip():
-                d = json.loads(ln)
-                done.add((d["battle"], d["inv"], d["regime"], d["n"]))
-    for _run, pre, sp in battles(Path(args.fixture)):
+    todo = list(battles(Path(args.fixture)))
+    if args.reverse:
+        todo.reverse()
+    for _run, pre, sp in todo:
         if args.only and args.only not in sp:
             continue
         s = roads.session(sp)
@@ -248,27 +256,64 @@ def run(args) -> None:
         if "actions" not in npz:
             out.write(json.dumps({"battle": sp, "inv": None, "regime": None, "n": None, "error": "no actions"}) + "\n")
             continue
-        for inv, sub in anchors(summary, {"actions": np.asarray(npz["actions"])}, k=args.per_battle):
-            for regime in REGIMES:
-                for n in NS:
-                    if (sp, inv, regime, n) in done:
-                        continue
-                    try:
-                        row = roads.case(sp, inv, sub, regime, n)
-                    except Exception as e:  # noqa: BLE001
-                        import traceback
+        cases = [(inv, sub, regime, n) for inv, sub in anchors(summary, {"actions": np.asarray(npz["actions"])},
+                                                                 k=args.per_battle)
+                 for regime in REGIMES for n in NS]
+        if args.reverse:
+            cases.reverse()
+        for inv, sub, regime, n in cases:
+            if (sp, inv, regime, n) in done_keys():   # re-read: a sibling job may have done it
+                continue
+            try:
+                row = roads.case(sp, inv, sub, regime, n)
+            except Exception as e:  # noqa: BLE001
+                import traceback
 
-                        row = {"battle": sp, "inv": inv, "sub": sub, "regime": regime, "n": n,
-                               "error": f"{type(e).__name__}: {e}", "tb": traceback.format_exc()[-1500:]}
-                    out.write(json.dumps(row) + "\n")
-                    out.flush()
-                    print(f"{pre} inv={inv} {regime} n={n}: "
-                          f"{row.get('identical', row.get('error'))}", flush=True)
+                row = {"battle": sp, "inv": inv, "sub": sub, "regime": regime, "n": n,
+                       "error": f"{type(e).__name__}: {e}", "tb": traceback.format_exc()[-1500:]}
+            out.write(json.dumps(row) + "\n")
+            out.flush()
+            print(f"{pre} inv={inv} {regime} n={n}: "
+                  f"{row.get('identical', row.get('error'))}", flush=True)
 
 
-def table(path: str) -> None:
-    rows = [json.loads(ln) for ln in Path(path).read_text().splitlines() if ln.strip()]
-    from collections import defaultdict
+def table(paths) -> None:
+    import statistics
+    from collections import Counter, defaultdict
+
+    seen, rows = {}, []
+    rerun_same = rerun_diff = 0
+    for path in paths:                         # sibling jobs may have both run a case: keep the first
+        import gzip
+
+        text = gzip.open(path, "rt").read() if str(path).endswith(".gz") else Path(path).read_text()
+        for ln in text.splitlines():
+            if ln.strip():
+                d = json.loads(ln)
+                key = (d["battle"], d["inv"], d["regime"], d["n"])
+                sig = [(p["new"], p["new_turns"], p["n_lines"]) for p in d.get("rollouts", [])]
+                if key not in seen:
+                    seen[key] = sig
+                    rows.append(d)
+                elif seen[key] == sig:         # the NEW road run twice, in two processes: reproducible?
+                    rerun_same += 1
+                else:
+                    rerun_diff += 1
+                    print("RERUN DIFFERS", key)
+    ok = [r for r in rows if "error" not in r]
+    ro = [p for r in ok for p in r["rollouts"]]
+    print(f"battles {len({r['battle'] for r in ok})}, decisions {len({(r['battle'], r['inv']) for r in ok})}, "
+          f"rollouts {len(ro)}, protocol lines compared {sum(p['n_lines'] for p in ro)}")
+    print("outcomes (new):", dict(Counter(p["new"] for p in ro)), "; rollouts >= 250 turns:",
+          sum(p["new_turns"] >= 250 for p in ro), "; turns median / max:", statistics.median(p["new_turns"] for p in ro),
+          max(p["new_turns"] for p in ro))
+    print("our side:", dict(Counter(r["our_side"] for r in ok)), "; bots:",
+          dict(Counter(r["bot"] for r in ok if r["regime"] == "bot")))
+    print("old road script exhausted:", dict(Counter(tuple(p["exhausted"] or ()) for p in ro)))
+    nw, ow = sum(r["new_wall_s"] for r in ok), sum(r["old_wall_s"] for r in ok)
+    print(f"wall: new {nw:.0f} s, old {ow:.0f} s, new/old {nw / max(ow, 1e-9):.3f}")
+    print(f"cases the new road ran TWICE (sibling jobs, separate processes): {rerun_same} identical, {rerun_diff} differ")
+    print()
 
     agg = defaultdict(lambda: [0, 0, 0, 0])   # cases, identical, rollouts, rollouts identical
     errs = [r for r in rows if "error" in r]
@@ -351,6 +396,8 @@ def main() -> int:
     r.add_argument("--per-battle", type=int, default=2)
     r.add_argument("--threads", type=int, default=4)
     r.add_argument("--only", default="")
+    r.add_argument("--reverse", action="store_true", help="walk the battles and cases from the END (a sibling job)")
+    r.add_argument("--skip-from", nargs="*", default=[], help="other jobs' row files: their cases are skipped")
     d = sub.add_parser("dist")
     d.add_argument("--fixture", required=True)
     d.add_argument("--models", required=True)
@@ -359,7 +406,7 @@ def main() -> int:
     d.add_argument("--battles", default="loss_s0_005,win_s2_002,loss_s0_003")
     d.add_argument("--threads", type=int, default=4)
     t = sub.add_parser("table")
-    t.add_argument("path")
+    t.add_argument("paths", nargs="+")
     a = ap.parse_args()
     if a.cmd == "models":
         build_models(Path(a.dir))
@@ -368,7 +415,7 @@ def main() -> int:
     elif a.cmd == "dist":
         dist(a)
     else:
-        table(a.path)
+        table(a.paths)
     return 0
 
 

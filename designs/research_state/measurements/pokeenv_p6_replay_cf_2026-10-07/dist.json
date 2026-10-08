@@ -1,0 +1,72 @@
+[
+ {
+  "battle": "/tmp/p6rcf/fixture/sizing_C_n256_e5_s1001/eval_traces/step_8000030/sentinel_0/loss_s0_005_summary.json",
+  "inv": 1,
+  "sub": 2,
+  "n": 40,
+  "new": {
+   "wins": 16,
+   "outcomes": {
+    "loss": 24,
+    "win": 16
+   },
+   "ci": [
+    0.2634811061240136,
+    0.5540438017260649
+   ]
+  },
+  "new_rerun_identical": true,
+  "old_unseeded": {
+   "wins": 11,
+   "outcomes": {
+    "loss": 29,
+    "win": 11
+   },
+   "ci": [
+    0.1610785343314309,
+    0.4283525083312457
+   ]
+  },
+  "diff": 0.125,
+  "diff_ci95": [
+   -0.0804,
+   0.3304
+  ]
+ },
+ {
+  "battle": "/tmp/p6rcf/fixture/sizing_C_n256_e5_s1001/eval_traces/step_8000030/aggressive/win_s2_002_summary.json",
+  "inv": 1,
+  "sub": 0,
+  "n": 40,
+  "new": {
+   "wins": 34,
+   "outcomes": {
+    "loss": 4,
+    "tie": 2,
+    "win": 34
+   },
+   "ci": [
+    0.7092737396097997,
+    0.9293890829149256
+   ]
+  },
+  "new_rerun_identical": true,
+  "old_unseeded": {
+   "wins": 35,
+   "outcomes": {
+    "loss": 4,
+    "tie": 1,
+    "win": 35
+   },
+   "ci": [
+    0.7388757932976187,
+    0.9454058022645873
+   ]
+  },
+  "diff": -0.025,
+  "diff_ci95": [
+   -0.1758,
+   0.1258
+  ]
+ }
+]

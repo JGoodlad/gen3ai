@@ -537,7 +537,9 @@ file (5) builds a real Rust-eval core-trace run plus a current-architecture chec
 the web app's views (FastAPI `TestClient`) with the blocker installed (`sim`); `PROBER_POKE_ENV_COMMANDS` is the closed
 list of commands still on poke-env (`replay-counterfactual`, P6-blocking), and the test pins that exactly those are
 blocked. The prober's poke-env ORACLE (the live recorder, the materializer) lives in the already-listed
-`src/main/prober/core_trace_integration_test.py`.
+`src/main/prober/core_trace_integration_test.py`. **P6 slice 1 (2026-10-07): the list is EMPTY** — `replay-counterfactual`
+plays out on the Rust core (`gen3_cf_core_playout_v1`) and the test RUNS it with the blocker installed; the allowlist
+went 135 -> 133 (`src/main/prober/replay.py`, `src/main/prober/session/counterfactual.py`).
 
 ### The SLOW-TIER LAST-KNOWN-STATUS gate (`src/slow_tier_status_gate_test.py`)
 

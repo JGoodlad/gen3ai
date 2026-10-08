@@ -138,10 +138,10 @@ def _build_parser() -> argparse.ArgumentParser:
     # question: results from two engines are not comparable within one investigation.
     p.add_argument("--impl", dest="impl", default="node", choices=["node", "rust"],
                    help="sim engine for the search/replay children (default node). 'rust' execs "
-                        "the src/rust_sim search_driver / sim_bridge binaries (built via cargo; "
-                        "override with POKESIM_SEARCH_DRIVER_BIN / POKESIM_SIM_BRIDGE_BIN). "
-                        "Applies to better-line / lookahead / falsify / falsify-scan / "
-                        "replay-counterfactual / calibration. NEVER falls back to node.")
+                        "the src/rust_sim search_driver binary (built via cargo; override with "
+                        "POKESIM_SEARCH_DRIVER_BIN). Applies to better-line / lookahead / falsify / "
+                        "falsify-scan / calibration. NEVER falls back to node. replay-counterfactual "
+                        "plays out on the in-process Rust core whatever this says.")
 
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -319,9 +319,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     prc = sub.add_parser(
         "replay-counterfactual",
-        help="COUNTERFACTUAL replay-to-end: substitute a move at a turn and play the rest LIVE (trainee "
-             "vs the RELOADED real opponent) to a win/loss — 'could it have won?'. --rollouts N gives a "
-             "Monte-Carlo win-prob ± CI. Loads the model; bridge-eval traces with *_reconstruction.json only")
+        help="COUNTERFACTUAL replay-to-end: substitute a move at a turn and play the rest (trainee "
+             "vs the RELOADED real opponent) to a win/loss on the in-process Rust core — 'could it have "
+             "won?'. --rollouts N gives a Monte-Carlo win-prob ± CI; every draw is seeded, so a rerun "
+             "answers identically. Loads the model; bridge-eval traces with *_reconstruction.json only")
     prc.add_argument("battle", help="a battle id (the *_summary.json path from list/summary)")
     prc.add_argument("inv", type=int, help="the move_selection invocation to diverge from")
     prc.add_argument("action", type=int, help="the substitute action INDEX (a legal action at that decision)")

@@ -464,8 +464,9 @@ slots naming the same mon**, which is the case it exists for; see `src/main/prob
 
 **The counterfactual tier rides `/analyze`** — `lookahead`, `better_line` and
 `replay_counterfactual` are per-DECISION probes, so they launch from the bottom of this page
-pre-filled with the current battle + inv, rather than getting a page of their own. They spawn Node
-and run for seconds to minutes, so they go through the **job registry** exactly like `falsify_scan`
+pre-filled with the current battle + inv, rather than getting a page of their own. They run for
+seconds to minutes (`lookahead` / `better_line` on a search child, `replay_counterfactual` as an
+in-process play-out on the Rust core), so they go through the **job registry** exactly like `falsify_scan`
 (submit → job id → poll `/partials/job/{id}`) and they are **password-gated** by the same rule:
 reading is anonymous, spending CPU is not.
 

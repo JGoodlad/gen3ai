@@ -163,7 +163,7 @@ decision's legal choice map from the walk (`core_walk.decision_choices`, the cor
 `present::choice_tokens`), and lookahead / better-line read every successor row from the side's TEXT
 through `core_events --obs-stream` (`core_walk.read_streams`: the parse chain with the trackers on, our
 actions replayed by index, only the asked decisions encoded) — byte-equal to the poke-env materializer
-it replaced on the P5 identity set. `replay-counterfactual` is the one view still on poke-env (it plays
-the rest of the battle LIVE with `RLPlayer` and the Python bots; P6-blocking). There is no room tag to
-build any more: the core's walk is not a poke-env room (the `_next_tag` prefix this section once
-described still serves `replay-counterfactual`'s materializer).
+it replaced on the P5 identity set. `replay-counterfactual` left poke-env in P6: it plays the rest of the
+battle as one in-process play-out on the core (`utils/rust_env/counterfactual.py`, the in-core bot ports;
+`designs/prober/counterfactual_probes.md`). There is no room tag to build any more: the core's walk is not
+a poke-env room, and no prober view materializes a poke-env battle.

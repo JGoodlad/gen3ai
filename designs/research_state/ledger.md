@@ -23244,3 +23244,30 @@ poke-env. Detail: `designs/CHANGELOG.md` v145.
   throughput and memory, `extractor_compiles_test`'s CUDA cells, a short real launch.
 
 Tag: **BUILD · the mon-tied out_gain · config v145 / `gen3_mon_tied_gain_v1` · 99 → 29 gains · identity bitwise at equal gains · F14 the last arbitrary production weight** · design: [`design_arch_audit.md`](../endstate/design_arch_audit.md) Decision record 2026-10-07 · measurement: [`measurements/mon_tied_gain_identity_2026-10-07/`](measurements/mon_tied_gain_identity_2026-10-07/)
+### 2026-10-07 · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 1: the prober's `replay-counterfactual` plays out on the Rust core (`gen3_cf_core_playout_v1`); old vs new IDENTICAL on every rollout of the P5 identity set; no prober command needs poke-env**
+
+- **Built.** One in-process `play_out` replaces two scripted poke-env players over the bridge: the core root is the
+  start of the divergence turn with the opponent's RECORDED turn-T choice fed (`at = {"turn": T, "other": "recorded"}`,
+  the search tree's `build_to_turn` + `recorded_turn_choices`), our side forced to the substitute, then both sides live —
+  ours and a checkpoint / self opponent through `ModelPolicy` (`RLPlayer._predict_best_action`'s arithmetic on the core
+  row, B=1), a roster bot by its IN-CORE Lane-F port (new playout key `bot`, asked only at a real decision, never
+  pending). Every draw is SEEDED from the battle + decision, so a rerun answers identically; `--impl node` is said in
+  the caveats, not obeyed. Also new: `stall.sides` (p1 first) and a side's protocol `text` (`--narrate`). Code:
+  `src/rust_env/src/search/{game,playout}.rs`, `utils/rust_env/counterfactual.py`, `main/prober/replay.py`; gate
+  `src/rust_env/tests/search_playout_cf_test.rs`. The poke-env road was deleted after the read; `PROBER_POKE_ENV_COMMANDS`
+  is empty and the blocked test RUNS the command; allowlist 135 → 133.
+- **Measured** (`designs/research_state/measurements/pokeenv_p6_replay_cf_2026-10-07/`; both roads at `6168924c`, CPU,
+  `PYTHONHASHSEED=0`, threads pinned): P5's 21 battles × 2 decisions, greedy trainee vs {greedy checkpoint, own greedy
+  self, a roster bot, a SAMPLED checkpoint} × n ∈ {1, 4}, the old road's bot / sampler streams seeded as the new road
+  seeds them — **336 / 336 cases, 840 / 840 rollouts identical** (outcome, last turn, our side's protocol: 691,043 lines;
+  14 stall-capped lines among them), + a trained checkpoint (`p4_shadow_v144`) **48 / 48, 120 / 120**. The one
+  difference is the player NAME (poke-env account names vs the recorded ones). The old road UNSEEDED vs the new, sampled
+  checkpoint, n = 40 on 2 decisions: +0.125 [−0.080, +0.330], −0.025 [−0.176, +0.126] — NOT DETECTED (weak). Wall new /
+  old 0.93.
+- **Findings** (README F-P6-1…12): the old road was never reproducible (process-wide streams); `--narrate` covers turns
+  0–80 of the WHOLE battle, prefix included (inherited); the reseed point moved (after the opponent's turn-T choice) with
+  no effect on 672 reseeded rollouts — UNVERIFIED beyond them; every battle read had the trainee on p1; old-on-node vs new
+  not compared; `cf_producer` (still on `utils/bridge/counterfactual.py`, with `main/search_dividend/playoff.py`) needs
+  per-decision rows / rewards the new API does not return.
+
+Tag: **BUILT · P6 slice 1 · replay-counterfactual on the core · identity 336/336 cases, 840/840 rollouts (+ trained 48/48) · allowlist 135 → 133** · plan: [`pokeenv_and_hotpath_survey_2026-10-06/README.md`](measurements/pokeenv_and_hotpath_survey_2026-10-06/README.md) §A4 · backlog T27

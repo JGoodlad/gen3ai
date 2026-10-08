@@ -135,10 +135,11 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   parse chain with the trackers on — the chain training's rows are encoded on — our actions replayed
   by index; the successor rows lookahead / better-line score); `replay_log` is the stand-in
   `*_replay.html` log (the poke-env player's dispatch). `core_recorder` turns a walk into the summary.
-  🚨 **Only `replay-counterfactual` still needs poke-env** (it plays the rest of a battle LIVE with
-  `RLPlayer` and the Python bots — P6-blocking); every other CLI command and the web app RUN with
-  poke-env blocked (`src/poke_env_free_entry_points_test.py`, whose `PROBER_POKE_ENV_COMMANDS` is
-  that closed list). Detail: `designs/prober/engine_and_model.md`.
+  🚨 **No prober command needs poke-env** (P6, 2026-10-07: `replay-counterfactual` plays the rest of a
+  battle as one in-process play-out on the Rust core — `replay.py` → `utils/rust_env/counterfactual.py`,
+  `gen3_cf_core_playout_v1`, the in-core bot ports); every CLI command and the web app RUN with poke-env
+  blocked (`src/poke_env_free_entry_points_test.py`, whose `PROBER_POKE_ENV_COMMANDS` is a closed list,
+  EMPTY). Detail: `designs/prober/engine_and_model.md`.
 - **`web/`** — the browser front end (FastAPI + Jinja2/HTMX over `ProbeSession`). It is
   **first-class for the GPU obs**: the learned belief/op signals tagged `🔷 GPU` render PRIMARY
   and the decoded CPU obs regions they subsume tagged `📋 CPU-obs` render dimmed, because the
@@ -552,7 +553,7 @@ for a CLI.
 ## The counterfactual tier (`lookahead` · `better_line` · `replay_counterfactual`)
 
 The three re-roll/clone-powered probes, bridge-eval traces only (each needs the
-`*_reconstruction.json` sibling) and each spawning Node. **The surface is `/analyze`** — they are
+`*_reconstruction.json` sibling). **The surface is `/analyze`** — they are
 per-DECISION probes, so they launch from the bottom of that page as password-gated background jobs
 (`web/CLAUDE.md`); the CLI equivalents are `query lookahead|better-line|replay-counterfactual`.
 
@@ -564,8 +565,10 @@ per-DECISION probes, so they launch from the bottom of that page as password-gat
   played X → better line Y"*, the headline ΔV / ΔP(win), the principal variation ply by ply, and the
   depth/beam/opponent provenance. At depth ≥ 2 the interior opponent is the trainee standing in for
   the real one, which the surface must FLAG — a contrastive line that hides its proxy reads as fact.
-- **replay-to-end** — substitute an action and play the rest live vs the reloaded opponent to a
-  win/loss; `n_rollouts > 1` resamples the post-divergence dice for a win-% ± Wilson CI. At
+- **replay-to-end** — substitute an action and play the rest vs the reloaded opponent to a win/loss,
+  as one in-process play-out on the RUST CORE (the opponent's recorded turn-T move fed, a roster bot
+  played by its in-core port, every draw SEEDED from the battle + decision, so a rerun answers
+  identically); `n_rollouts > 1` resamples the post-divergence dice for a win-% ± Wilson CI. At
   `n_rollouts == 1` it is a single realized-dice line and **not** a probability, which the payload's
   own `caveats` say and every surface must repeat.
 
@@ -597,15 +600,15 @@ training transport**, and like `--compile` it is a global flag placed BEFORE the
 Default `node` = today's behavior byte-for-byte.
 
 It picks the child process the re-roll-backed probes exec — `better-line` / `lookahead` / `falsify`
-/ `falsify-scan` / `calibration` / `replay-counterfactual`. The model-free, no-replay commands
+/ `falsify-scan` / `calibration`. The model-free, no-replay commands
 (`summary`, `list`, `scan`, `triage`, `overview`, `find`, `analyze`, `probe`, `decision-table`)
 spawn no sim child, so the flag is inert for them. Under `node` the work is split across
 `search_driver.js` (the clone-and-branch server) and `replay_driver.js` (replay / reroll); under
 `rust` a single `src/rust_sim` `search_driver` binary serves both — resolved (and built, once) by
 `utils/bridge/sim_bridge_bin.resolve_search_driver_bin`, overridable with
-`$POKESIM_SEARCH_DRIVER_BIN`. `replay-counterfactual`'s live post-divergence rollouts additionally
-ride the LIVE bridge seam (`$POKESIM_SIM_BRIDGE_BIN` / the `sim_bridge` binary), since that leg
-plays a real game. **It NEVER falls back to node** — an unbuildable binary is a clear error, because
+`$POKESIM_SEARCH_DRIVER_BIN`. `replay-counterfactual` spawns no child at all since P6 — its play-out
+runs in process on the Rust core whatever `--impl` says, and an `--impl node` read says so in its
+`caveats` (`engine: rust_core`). **It NEVER falls back to node** — an unbuildable binary is a clear error, because
 a "rust" probe that silently ran on node would answer a different question than the one asked.
 
 **The default lives on the SESSION, not the call**: `ProbeSession(root, …, impl="node")` stores it

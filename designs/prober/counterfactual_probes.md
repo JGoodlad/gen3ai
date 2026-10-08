@@ -79,22 +79,27 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   [`../training/search_teacher.md`](../training/search_teacher.md)); the search + 3-tier-confirm here stay as
   prober tools.
 - `replay_counterfactual(battle_id, inv, action, n_rollouts=1, opponent_ckpt=, opponent_source=)` —
-  **COUNTERFACTUAL replay-to-end** (`replay.py` → `utils/bridge/counterfactual.py`): "could the model
-  have won if it hadn't choked this turn?". 🚨 **The ONE prober command still on poke-env** (poke-env
-  retirement P5, 2026-10-07): it plays the rest of the battle LIVE with poke-env players (`RLPlayer`,
-  the Python bots) over the in-process bridge, so it is P6-blocking — the port is a Rust play-out from the
-  divergence (`utils.rust_env.successors.play_out` with the in-core bot ports), and
-  `src/poke_env_free_entry_points_test.py`'s `PROBER_POKE_ENV_COMMANDS` pins it as the only exception.
-  Pick up the recorded battle at `inv`'s turn, substitute
-  `action` (a legal action index) for OUR side, then play the rest LIVE — the trainee's GREEDY policy vs
-  the **RELOADED real opponent** — to a win/loss. The driver reuses `run_local_battles` with both
-  players' `choose_move` SCRIPTED to replay the recorded commands until the divergence (faithful: the
-  bridge `START` uses the recorded resolved seed + both recorded packed teams, and each scripted
-  Gen3Player decision runs `embed_battle` + `tracker.advance(recorded_idx)` — the recorded index
-  recovered by inverting the recorded choice string — so the post-divergence turn-history stays faithful,
-  proven bit-for-bit by `counterfactual_fuzz_test.py`). The opponent is RELOADED: a reproducible bot is
-  rebuilt exactly; `opponent_ckpt` loads any checkpoint (e.g. a self-play sentinel) as the opponent;
-  else the trainee's own model stands in (a flagged `self_model_approx`).
+  **COUNTERFACTUAL replay-to-end** (`replay.py` → `utils/rust_env/counterfactual.py` → the core's
+  `play_out`; `gen3_cf_core_playout_v1`, poke-env retirement P6, 2026-10-07): "could the model have won if
+  it hadn't choked this turn?". Pick up the recorded battle at `inv`'s turn, substitute `action` (a legal
+  action index) for OUR side, then play the rest — the trainee's GREEDY policy vs the **RELOADED real
+  opponent** — to a win/loss, as ONE in-process play-out on the RUST CORE (no poke-env player, no bridge
+  child; it RUNS with poke-env blocked). The core root (`at = {"turn": T, "other": "recorded"}`) replays the
+  record to the START of turn T, feeds the OPPONENT's recorded turn-T choice (it could not have reacted to
+  our change on the same turn), and branches OUR side on the substitute; everything after — an off-script
+  forced switch on turn T included — is live. Rows are the TRAINING observation path's; both model sides
+  decide with `RLPlayer._predict_best_action`'s arithmetic on the core row (`ModelPolicy`, one B=1 forward
+  per decision). The opponent is RELOADED: a roster bot is the **IN-CORE Rust port** (asked only at a real
+  decision, never exposed to the policy); `opponent_ckpt` loads any checkpoint (e.g. a self-play sentinel);
+  else the trainee's own model stands in (a flagged `self_model_approx`, sampled). The stall rule is the
+  old pairing's: OUR side and a model opponent forfeit at `StallConfig().threshold` (p1 first when both
+  are open), a bot never does (F-LF-5). **Every draw is SEEDED from the battle + decision** — the dice
+  (`fresh_seeds(…, salt=f"{tag}:{inv}:cf")`), a sampled opponent's per-rollout `torch.Generator`
+  (`replay.sampler_seeds`) and a bot's streams (`replay.bot_seed`; rollout k's are
+  `bot_stream_seed(seed, k, s)`) — so a rerun answers identically; the poke-env road drew a sampled
+  opponent and a bot from the process-wide unseeded streams. `--impl` does not apply (one engine): an
+  `--impl node` read says so in its `caveats`; the result's `engine` is `rust_core`. Identity with the road it
+  replaced: [`../research_state/measurements/pokeenv_p6_replay_cf_2026-10-07/`](../research_state/measurements/pokeenv_p6_replay_cf_2026-10-07/README.md).
   ⚠️ **A checkpoint opponent plays the RECORDED sampling regime — STOCHASTIC at temp 1.0**, which is
   what `eval_worker` recorded for a pool sentinel (`stochastic = not eval_sentinel_greedy`, default
   False). It used to be hard-wired greedy, and that is not cosmetic: a greedy copy of a net is
@@ -103,17 +108,22 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   hypothesis under test*. Measured over 477 sentinel states (G0, 2026-08-22): **+0.037 [+0.007,
   +0.066]**. Override with `--opponent-regime {recorded,stochastic,greedy}`; the regime is written
   into `opponent_source` (`ckpt_stochastic:<path>`), so no result can hide which opponent played.
-  `n_rollouts`>1 resamples the
-  post-divergence dice (`local_sim_bridge.js`'s `resumeReseed` PRNG swap at the divergence turn) for a
-  Monte-Carlo win-rate ± **Wilson CI**; `n_rollouts`==1 is the single realized-dice line (NOT a
+  `n_rollouts`>1 resamples the post-divergence dice — each rollout's engine RESEEDED at the branch point
+  (after the opponent's recorded turn-T choice, before ours; the poke-env road's `resumeReseed` swapped
+  the PRNG before turn T's first choice — no draw lies between, and the P6 read holds them identical) —
+  for a Monte-Carlo win-rate ± **Wilson CI**; `n_rollouts`==1 is the single realized-dice line (NOT a
   probability — a `caveat` says so). Loads the model; **requires the `*_reconstruction.json` sibling**.
-  Each rollout is a full in-process game (seconds); the `caveats` flag the self-play approximation +
-  that it best illuminates THROWN-LATE losses, not matchup-lost-from-turn-1 ones. `narrate=True` (the
-  CLI `--narrate`, and on by default from the web) additionally captures the **move-by-move play-by-play**
-  of the first recovered WIN + first LOSS (`winning_trajectory` / `losing_trajectory`: per-turn
-  `{turn, events}` from OUR one-sided view — moves / switches / damage / faints / crits / status / win)
-  via `run_local_battles`'s `chunk_sink` → `counterfactual.summarize_trajectory` — so you can read HOW a
-  different move wins and what the bot did (e.g. spamming Earthquake into a Levitate Gengar).
+  Each rollout is a full game (seconds); the `caveats` flag the self-play approximation, the seeded bot
+  port, and that it best illuminates THROWN-LATE losses, not matchup-lost-from-turn-1 ones.
+  `narrate=True` (the CLI `--narrate`, and on by default from the web) additionally captures the
+  **move-by-move play-by-play** of the first recovered WIN + first LOSS (`winning_trajectory` /
+  `losing_trajectory`: per-turn `{turn, events}` from OUR one-sided view — moves / switches / damage /
+  faints / crits / status / win) from the core's protocol lines for OUR side (`text`) →
+  `counterfactual.summarize_trajectory` — so you can read HOW a different move wins and what the bot did
+  (e.g. spamming Earthquake into a Levitate Gengar). ⚠️ It narrates the WHOLE battle's first 80 turns, the
+  recorded prefix included, so a divergence past turn ~80 narrates no post-divergence turn (P6 F-P6-3,
+  inherited unchanged). Player names are the RECORDED ones (the poke-env road printed its `CfT…` / `CfO…`
+  account names).
 - `falsify(battle_id, invs=, worst=, n_seeds=, n_alts=, followup=)` — **dice
   attribution** (`falsifier.py`): was a loss decision LUCK or a reducible MISTAKE?
   RE-ROLLS the real turn via the battle-reconstruction layer
