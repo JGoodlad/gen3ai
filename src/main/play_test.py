@@ -56,3 +56,16 @@ def test_every_help_string_renders():
     nothing else in the tree renders them (see main/checkargs_test.py for the same
     guard on the trainer's parser)."""
     build_parser().format_help()
+
+
+def test_a_halt_marker_refuses_every_mode_before_any_connection(tmp_path, monkeypatch):
+    """T28: while the parse-panic marker exists, `main.play` exits FATAL_LIVE_PARSE before it touches a
+    socket — selfplay included (the port is one nothing listens on; reaching it would hang or raise)."""
+    from main.exit_codes import TrainExitCode
+    from main.live import halt as H
+    from main.play import run
+
+    monkeypatch.setenv(H.HALT_ENV, str(tmp_path / "halt.json"))
+    H.record_halt(reason="planted", entry_point="test")
+    for mode in ("selfplay", "challenge", "accept"):
+        assert run(["--mode", mode, "--port", "9", "--opponent", "x"]) == int(TrainExitCode.FATAL_LIVE_PARSE)

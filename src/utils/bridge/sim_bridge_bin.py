@@ -279,6 +279,17 @@ def resolve_core_events_bin() -> str:
     return _resolve_rust_bin("core_events", "POKESIM_CORE_EVENTS_BIN", "the rust core parity harness")
 
 
+def resolve_live_reader_bin() -> str:
+    """Return an absolute path to the Rust ``live_reader`` binary, building it if needed.
+
+    The READER SESSION of live websocket play (poke-env retirement P4, ``main.live.reader``): one side's
+    foreign protocol stream in, the training chain's ``__OBS__`` frames out (``pokesim::side_reader``, the
+    chain ``sim_bridge``'s core observation mode ships). ``$POKESIM_LIVE_READER_BIN`` overrides, exactly like
+    its siblings.
+    """
+    return _resolve_rust_bin("live_reader", "POKESIM_LIVE_READER_BIN", "the live reader session")
+
+
 def resolve_and_publish_sim_bridge_bin() -> str:
     """Resolve the Rust binary ONCE and publish it to the env for every child process.
 

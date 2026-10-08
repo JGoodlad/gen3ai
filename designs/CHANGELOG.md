@@ -12761,3 +12761,41 @@ obs-facts appended (2845)`.
 - (Part 6, follow-up) `main.critic_gate` gains `--meter-opponent REF|BASELINE` (passed to the meter as `--opponent`):
   its endpoint 3 cannot run the meter's era-checkout default at HEAD; without it `--check` reports the meter's
   refusal (`critic_gate_test::test_check_without_a_meter_opponent_reports_the_meters_era_refusal`, fails on revert).
+
+## 2026-10-07 — T28: the live-play parse-panic HALT — marker, exit code, refusals (`gen3_live_parse_halt_v1`)
+
+- **Why.** Owner, 2026-10-07: a live client that cannot parse its input must stop at once with its own exit code,
+  and no more games are played until the cause is root-caused and fixed (`design_ladder_campaign.md` Decision record).
+- **What.** `main.live.halt`: `LiveParseHalt` maps BY NAME to the new `TrainExitCode.FATAL_LIVE_PARSE` (7); the
+  durable marker (battle id, offending lines, the battle's received stream tail, trace, commit, argv) is written
+  atomically to `~/.local/state/gen3ai/live_play_halt.json` (or `$GEN3AI_LIVE_HALT_FILE`), a second halt appended to
+  the first rather than replacing it; `main.play` (every mode) and `main.anchors` refuse to start while it exists
+  and exit 7; `python -m main.live.halt clear --fixed-by <commit>` refuses a commit that is not an ancestor of HEAD
+  or touches no test file, and moves the marker into an append-only history with the fix recorded. The launcher
+  never restarts a child that exits 7. Under pytest the real marker is sealed (reads see none, writes raise).
+- **Tests (fail on revert).** `src/main/live/halt_test.py`; `src/main/play_test.py::test_a_halt_marker_refuses_every_mode_before_any_connection`.
+
+## 2026-10-07 — P4: live websocket play on the Rust stack — the reader session, the client, the gates' instruments (`gen3_live_reader_session_v1`)
+
+- **Why.** Poke-env retirement P4 (`pokeenv_and_hotpath_survey_2026-10-06` §A4): live play still parsed through
+  poke-env + the Python encoder, a second implementation of the observation the model was trained on.
+- **One chain.** `pokesim::side_reader::SideReader` (`src/rust_sim/src/side_reader.rs`) is the per-side state
+  `sim_bridge`'s core observation mode kept inline — the parse chain, the cursor, the alignment, the sticky failure.
+  `sim_bridge` now holds one per requested side (byte-identical: `tests/sim_bridge_core_obs_test.rs`), and the new
+  `live_reader` binary holds one for a FOREIGN stream (`OPEN` / `FEED` / `CHOOSE` / `PROBE` / `CLOSE`,
+  `designs/rust_sim/live_reader.md`).
+- **The client.** `main.live`: `reader.py` (the pipe; `ROOM_SKIP`, the declared non-battle lines dropped before the
+  reader — everything else fed, an unknown keyword the reader's refusal), `client.py` (login, `/utm`, challenge /
+  accept, one message = one write, `/choose <token>|<rqid>`, the trainer's stall forfeit, a declared outgoing command
+  set with no chat / PM / `/search`; every reader refusal, an `[Invalid choice]`, an illegal or missing choice is a
+  T28 `LiveParseHalt`; no reconnect inside a battle), `policy.py` (`ModelPolicy` on CPU through the strict loader,
+  `RandomPolicy`). `main.play` runs it by default (`--client rust`); `--client poke-env` keeps the legacy `RLPlayer`
+  path for `main.anchors`' our side (its runner now passes the flag) and the shadow gate; `--mode ladder` is refused;
+  `--server official` needs `--public-acceptance`, both accounts in `$PS_OWN_ACCOUNTS` and `--proxy`.
+- **The gates' instruments.** `main.live.two_roads` (gate (a)), `main.live.replay_scan` (gate (b), with the
+  spectator-rename classification), `main.live.master_series` + `main.live.gate_peer` (gates (c) and (d) against a
+  local Node Showdown at master). Results: `designs/research_state/measurements/pokeenv_p4_live_2026-10-07/`.
+- **Tests (fail on revert).** `src/main/live/client_test.py` (framing, room-line skip, T28 triggers, the command
+  set), `gate_peer_test.py` (the shadow comparator's teeth), `live_integration_test.py` (the binary's sticky refusal,
+  gate (a) in miniature with a one-byte perturbation SEEN, a planted bad line halting `main.play` with exit 7 and the
+  next start refused before any connection, the spectator-rename root cause).

@@ -135,6 +135,9 @@ pub mod state;
 /// The Rust core's persistent battle state (`gen3_core_version_v1`, Rust Core Program M2): one
 /// immutable version per decision boundary, buildable from the sim's step or from one side's text.
 pub mod version;
+/// ONE side's parse-built observation chain advanced write by write — shared by `sim_bridge`'s core
+/// observation mode and the `live_reader` session (poke-env retirement P4).
+pub mod side_reader;
 pub mod stats;
 pub mod team;
 pub mod turn;

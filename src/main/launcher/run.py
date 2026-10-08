@@ -105,6 +105,12 @@ def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":
                  if "NonFiniteLearnerError" in s or "NonFiniteWeights" in s][-3:]
         return (["non-finite learner or weights (NaN / Inf loss, gradient or parameter) — a restart "
                  "would replay it; see the crash log"] + found)
+    if rc == int(TrainExitCode.FATAL_LIVE_PARSE):
+        # T28: a live session's parse panic. The launcher never runs live play, but the code is in ONE
+        # table, and a child that exits with it must never be restarted into another game.
+        found = [s for s in (l.strip() for l in lines) if "FATAL_LIVE_PARSE" in s or "LiveParseHalt" in s][-3:]
+        return (["a live session could not read its input (T28 parse panic) — all live play is HALTED "
+                 "until root-caused: python -m main.live.halt status"] + found)
     if rc == int(TrainExitCode.FATAL_SUPPLY):
         # gen3_supply_guard_v1: a LIVE coefficient's external supply (the cf label producer) died
         # or starved in flight. A restart would train on the same missing supply — STOP.
@@ -673,6 +679,7 @@ def _supervise(
             )
             kind = ("Non-finite learner" if rc == int(TrainExitCode.FATAL_NONFINITE)
                     else "Starved supply" if rc == int(TrainExitCode.FATAL_SUPPLY)
+                    else "Live parse panic" if rc == int(TrainExitCode.FATAL_LIVE_PARSE)
                     else "Fatal config error")
             state.add_event(f"🛑 {kind} — will NOT restart{saved}")
             for line in fatal_reason:

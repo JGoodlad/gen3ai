@@ -157,6 +157,9 @@ def our_argv(plan: SeriesPlan, mode: str, n_games: int, our_name: str = "",
     forfeit limit included."""
     return [
         "--mode", mode,
+        # Our side is the LEGACY poke-env client (`RLPlayer`, patched by `install_our_side`) until P3 moves
+        # it onto the Rust core; `main.play`'s default became the Rust client in P4.
+        "--client", "poke-env",
         "--server", "local",
         # Unused when `--server-uri` was given (resolve_server is patched), but a real value keeps
         # the parser honest and the reserved-port refusal reachable.

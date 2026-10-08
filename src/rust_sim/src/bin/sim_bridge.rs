@@ -119,7 +119,7 @@ use pokesim::encoder;
 use pokesim::json::Json;
 use pokesim::prng::{normalize_seed, Prng};
 use pokesim::trackers::clock::ClockConfig;
-use pokesim::version::BattleVersion;
+use pokesim::side_reader::SideReader;
 
 fn main() {
     // The process-wide gen-3 dex the core's trackers consult too (`trackers::dex`): the core
@@ -235,18 +235,13 @@ fn parse_core_obs(v: &Json) -> Result<Option<CoreObsSpec>, String> {
     Ok(Some(CoreObsSpec { sides }))
 }
 
-/// The core observation state of ONE battle: per requested side, the PARSE-built version chain
-/// (trackers on) and how far it has read.
+/// The core observation state of ONE battle: per requested side, the PARSE-built reader
+/// ([`SideReader`] — the ONE implementation `live_reader`, the P4 reader session, shares).
 struct CoreObs {
-    /// The side's parse chain; `None` for a side that was not requested.
-    chains: [Option<BattleVersion>; 2],
-    /// Lines of the side's stream each chain has folded (the incremental cursor).
-    folded: [usize; 2],
-    /// Decisions each chain has taken (one `__OBS__` frame each).
-    decided: [u32; 2],
-    /// Set while a step is in flight and kept on failure: once a step failed (or panicked, which
-    /// leaves the chain taken), every later write of this battle is refused too — the chain no
-    /// longer holds the stream, and a skipped frame must never pass for a quiet one.
+    /// The side's reader; `None` for a side that was not requested.
+    readers: [Option<SideReader>; 2],
+    /// Set while a step is in flight and kept on failure: once a step failed (or panicked), every
+    /// later write of this battle is refused too — a skipped frame must never pass for a quiet one.
     failed: Option<String>,
 }
 
@@ -266,24 +261,21 @@ fn core_obs_cfg() -> ClockConfig {
 impl CoreObs {
     fn new(spec: &CoreObsSpec, players: [&PlayerOptions; 2]) -> Result<CoreObs, String> {
         let cfg = core_obs_cfg();
-        let mut chains = [None, None];
+        let mut readers = [None, None];
         for side in 0..2 {
             if spec.sides[side] {
                 let p = players[side];
-                chains[side] = Some(
-                    BattleVersion::parse_root_unrecorded(side, &p.name, Some(&p.team.0), cfg)
-                        .map_err(|e| format!("core_obs: p{} root: {}", side + 1, e.message()))?,
-                );
+                readers[side] = Some(SideReader::new(side, &p.name, Some(&p.team.0), cfg)?);
             }
         }
-        Ok(CoreObs { chains, folded: [0, 0], decided: [0, 0], failed: None })
+        Ok(CoreObs { readers, failed: None })
     }
 
     /// Note a requested side's choice token on its chain, BEFORE the command is fed (a denied
     /// own action keeps it — `core_events` feeds its step chain the same way).
     fn note_choice(&mut self, side: usize, token: &str) {
-        if let Some(c) = self.chains[side].as_mut() {
-            c.note_choice(side, token);
+        if let Some(r) = self.readers[side].as_mut() {
+            r.note_choice(token);
         }
     }
 
@@ -309,64 +301,32 @@ impl CoreObs {
     fn step_inner(&mut self, bridge: &BridgeSession, from: usize, out: &mut impl Write) -> Result<(), String> {
         let chunks = &bridge.chunks().chunks[from..];
         for side in 0..2 {
-            let Some(chain) = self.chains[side].take() else { continue };
-            let tag = side + 1;
+            let Some(reader) = self.readers[side].as_mut() else { continue };
             let new: Vec<&str> = chunks
                 .iter()
                 .filter(|c| c.side == side)
                 .flat_map(|c| c.lines.iter().map(String::as_str))
                 .collect();
-            let next = chain
-                .parse_advance_lean(&new)
-                .map_err(|e| format!("core_obs: parse p{tag}: {}", e.message()))?;
-            self.folded[side] += new.len();
-            let s = next.stream(side).ok_or_else(|| format!("core_obs: p{tag}: the chain lost its stream"))?;
-            if s.lines != self.folded[side] {
-                return Err(format!("core_obs: p{tag}: the chain folded {} lines, the cursor says {}", s.lines, self.folded[side]));
-            }
+            let mut obs = Vec::with_capacity(encoder::wire::FRAME_LEN + 512);
+            obs.extend_from_slice(if side == 0 { b"__OBS__ p1 " } else { b"__OBS__ p2 " });
+            let adv = reader.advance(&new, &mut obs)?;
             // The incremental cursor == the whole shipped stream (O(chunks); test / self-check
             // builds only — the cursor is the same one that emits the chunks).
             #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
-            if self.folded[side] != bridge.side_line_count(side) {
+            if reader.folded() != bridge.side_line_count(side) {
                 return Err(format!(
-                    "core_obs: p{tag}: folded {} lines but the side was shipped {}",
-                    self.folded[side],
+                    "core_obs: p{}: folded {} lines but the side was shipped {}",
+                    side + 1,
+                    reader.folded(),
                     bridge.side_line_count(side)
                 ));
             }
-            let decisions = next.trackers(side).map_or(0, |t| t.decisions);
-            let opened = decisions.checked_sub(self.decided[side]).ok_or_else(|| format!("core_obs: p{tag}: the decision count went backwards"))?;
-            match (next.decision(side), opened) {
-                (None, 0) => {}
-                (Some(d), 1) => {
-                    // The core_events alignment: the decision's request is the LAST line the side
-                    // was shipped in this write (the live player decides after the request chunk).
-                    if d.line + 1 != s.lines {
-                        return Err(format!(
-                            "core_obs: [ALIGN] p{tag} decided at stream line {} but the write shipped {} lines",
-                            d.line, s.lines
-                        ));
-                    }
-                    // `n` = this frame's index among this side's frames in this battle (the chain
-                    // is rebuilt at every START, so it restarts at 0).
-                    let mut obs = Vec::with_capacity(encoder::wire::FRAME_LEN + 512);
-                    obs.extend_from_slice(if side == 0 { b"__OBS__ p1 " } else { b"__OBS__ p2 " });
-                    encoder::wire::obs_json_into(&next, side, d.line, self.decided[side], &mut obs)?;
-                    obs.push(b'\n');
-                    // ONE write of the whole line (the line writer passes it through in one piece).
-                    out.write_all(&obs).ok();
-                    out.flush().ok();
-                }
-                (d, n) => {
-                    return Err(format!(
-                        "core_obs: p{tag}: one write opened {n} decisions (a decision at the boundary: {}) — \
-                         exactly one frame per decision cannot be kept",
-                        d.is_some()
-                    ));
-                }
+            if adv.decided {
+                obs.push(b'\n');
+                // ONE write of the whole line (the line writer passes it through in one piece).
+                out.write_all(&obs).ok();
+                out.flush().ok();
             }
-            self.decided[side] = decisions;
-            self.chains[side] = Some(next);
         }
         Ok(())
     }

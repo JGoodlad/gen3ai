@@ -652,6 +652,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         raise SystemExit("--model is required for a real read (only --dry-run/--show-config "
                          "work without it)")
 
+    # T28 (owner 2026-10-07): an anchor read plays an OUTSIDE player over a socket, so a parse-panic
+    # HALT marker refuses it like every live entry point (`main.live.halt`).
+    from main.live.halt import refuse_if_halted
+    refuse_if_halted("main.anchors")
+
     plan.out_dir.mkdir(parents=True, exist_ok=True)
     print(render_plan(plan, cfg), flush=True)
 
@@ -719,11 +724,16 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 def run() -> int:
+    from main.exit_codes import TrainExitCode
+    from main.live.halt import HaltActive
     try:
         return main()
     except (config_mod.AnchorConfigError, server_mod.ServerError) as exc:
         print(f"🚨 {type(exc).__name__}: {exc}", file=sys.stderr)
         return 3
+    except HaltActive as exc:
+        print(f"🛑 {exc}", file=sys.stderr)
+        return int(TrainExitCode.FATAL_LIVE_PARSE)
 
 
 if __name__ == "__main__":

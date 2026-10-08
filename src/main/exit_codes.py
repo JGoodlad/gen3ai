@@ -29,6 +29,12 @@ class TrainExitCode(IntEnum):
                                  # at most `CUDA_LEAK_RESTART_CAP` times per launcher session, each one
                                  # logged loudly; the next one STOPS for good (a reproducible leak that
                                  # wants a human).
+    FATAL_LIVE_PARSE = 7         # a LIVE websocket session (``main.play``, ``main.anchors``) met input it
+                                 # could not read — an unparseable / unclassified protocol line, an encoder
+                                 # raise, or a choice it could not send (T28, owner 2026-10-07,
+                                 # ``main.live.halt.LiveParseHalt``). It wrote the durable HALT marker
+                                 # every live entry point refuses to start past; NOTHING restarts it —
+                                 # only a root-cause commit + ``python -m main.live.halt clear`` does.
 
 
 #: How many CUDA-leak stops the launcher restarts per session before it gives up (orchestrator,
@@ -92,7 +98,9 @@ _FATAL_BY_NAME = {"NonFiniteLearnerError": TrainExitCode.FATAL_NONFINITE,
                   # `utils.paths.RunArchiveError`: a run dir the archive cannot hold (no archive, or
                   # inside a linked worktree's own models/) — a restart meets the same refusal.
                   "RunArchiveError": TrainExitCode.FATAL_CONFIG,
-                  "ParityFailure": TrainExitCode.FATAL_CONFIG}
+                  "ParityFailure": TrainExitCode.FATAL_CONFIG,
+                  # T28: a live session's parse panic (`main.live.halt.LiveParseHalt`) — never retried.
+                  "LiveParseHalt": TrainExitCode.FATAL_LIVE_PARSE}
 
 
 def fatal_exit_code_for(exc: Optional[BaseException]) -> Optional[int]:

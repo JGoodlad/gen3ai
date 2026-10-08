@@ -306,13 +306,14 @@ which; `scripts/ops/README.md` lists every one.
 
 ## Playing / the LADDER
 
-`src/main/play.py` is the only entry point that talks to a Showdown server **as a client**, so it is the exact path a rated ladder game uses — modes `selfplay` / `challenge` / `accept` / `ladder`.
+`src/main/play.py` is the entry point that talks to a Showdown server **as a client** — modes `selfplay` / `challenge` / `accept` (`ladder` is REFUSED by policy). 🚨 **Its default client is the RUST stack (`--client rust`, poke-env retirement P4, 2026-10-07): `main.live`** — a thin websocket client over the reader SESSION `live_reader`, which reads the server's stream through the SAME chain training's rows come from (`pokesim::side_reader`; [`designs/rust_sim/live_reader.md`](designs/rust_sim/live_reader.md)). `--client poke-env` is the legacy `RLPlayer` path (`main.anchors`' our side until P3); P6 deletes it.
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
 python3 src/main/play.py --mode selfplay --port 9017        # 8000/8001 are REFUSED in code
-PS_PASSWORD=… python3 src/main/play.py --mode ladder --server official \
-  --model models/<run>/final_model.zip --username <acct> --n-battles 20
+python3 src/main/play.py --mode selfplay --port 9017 --model models/<run>/final_model.zip --n-battles 4
+python -m main.live.two_roads --battles 1000 --pairs 8 --out <dir>     # P4 gate (a): live rows == training rows
+python -m main.live.replay_scan --workers 6 --out <dir>                # P4 gate (b): the replay corpus, Rust reader
 python3 src/main/ladder_drift_scan.py --n 200               # 🚨 RUN BEFORE ANY LIVE SESSION
 python -m main.anchors --model models/<run> --opponent metamon:SmallRL \
   --regime greedy --teamset away --games 100 --out <dir>   # an EXTERNAL-ANCHOR read
@@ -321,6 +322,8 @@ python -m main.anchors --model models/<run> --opponent metamon:SmallRL \
 🚨 **An EXTERNAL-ANCHOR read is `python -m main.anchors`, and its procedure is [`designs/ops/EXTERNAL_ANCHORS_SOP.md`](designs/ops/EXTERNAL_ANCHORS_SOP.md)** — the three tiers, the greedy-vs-greedy rule and why (T = 1.0 perturbs `SmallRL` at 35% of decisions and `SyntheticRLV2` at 12%, so it is not one regime), and the standing numbers. It starts its OWN server on a 9500–9599 port (8000/8001 refused in code) and stops it by PID — **the in-repo websocket front end over the Rust bridge by default (`--server rust`), so an anchor read starts NO Node process**; `--server node` is the explicit opt-out, and the transport is stamped on every row. **A number never leaves it without its regime.**
 
 🚨 **A WEBSOCKET GAME MUST END WHERE A TRAINING EPISODE ENDS.** `play.py --forfeit-turn-limit` defaults to `agents.training.stall.StallConfig().threshold` (== `MAX_TURNS`, `gen3_deadline_clock_v1`) and is PRINTED at startup — an outside opponent that stalls past it is forfeited exactly as the trainer would, so a head-to-head measures the agent we train. Lower it for a deliberately shorter series; raising it does not. Pinned by `src/main/play_forfeit_limit_test.py`.
+
+🚨 **A LIVE PARSE PANIC HALTS ALL PLAY (T28, owner 2026-10-07).** Any unparseable or unclassified input, an encoder raise or a choice that could not be sent exits `FATAL_LIVE_PARSE` (7) and writes a durable HALT marker (`python -m main.live.halt status`; `~/.local/state/gen3ai/`, or `$GEN3AI_LIVE_HALT_FILE`); `main.play` and `main.anchors` REFUSE to start while it exists. Root-cause it with a regression test built from the captured lines that fails on revert, land it, then `python -m main.live.halt clear --fixed-by <commit>` — never skip the line, never "just the next game". PUSH the owner.
 
 🚨 **NO LADDER CAMPAIGN, and NEVER play, challenge or chat with a human (owner 2026-10-07: "be respectful that they are real people")** — public-server use is CUSTOM gen3ou challenges between OUR OWN accounts only, low volume, through the owner's SOCKS5 VM proxy (`design_ladder_campaign.md` Decision record). A datacenter/VPN IP gets a `#hostfilter` lock, which is a CHAT sanction, not a battle block (`designs/research_state/ladder_readiness.md`; the replay watcher connects through the same proxy) — and we never chat. 🚨 **Run the drift gate first**: `deps/pokemon-showdown` is pinned, the public server runs master, and `battle_event.classify` raises on an unknown keyword **by design**, as `gen3_effects.encode_volatiles` does on an unclassified effect id. On a live battle either raise kills the parse task, sends no choice, and loses on the timer. The gate checks both: the effect ids are re-derived from Showdown master's source (`agents/observation/gen3_effect_sources.py`). Full audit: [`designs/research_state/ladder_readiness.md`](designs/research_state/ladder_readiness.md).
 
@@ -372,6 +375,8 @@ src/
     training/        # Callbacks, reward, eval, cf grounding, meters — has CLAUDE.md
   main/
     launcher/        # Restart loop + Textual TUI — has CLAUDE.md
+    live/            # LIVE websocket play on the Rust stack (the reader session, the client, the
+                     #   P4 gates) + the T28 parse-panic HALT (`python -m main.live.halt`)
     ops/             # LIVE-run instruments: tb_read, killbar, g7_report, plateau_signal…
                      #   the shell half is scripts/ops/ — see scripts/ops/README.md
     prober/          # Forensic-replay inspector (+ web/) — has CLAUDE.md

@@ -131,6 +131,11 @@ __OBS__ p1 {"frame":{"dtype":"<f4","shape":[2845],"b64":…},"mask":[11 ints],
 | `rqid` | the request JSON's `rqid` when it carries one — the engine never writes one, so `null` on the bridge |
 | `n` | the frame's 0-based index among THIS side's frames in the current battle (0 at every START) — the alignment key a consumer counts its own decisions against |
 
+**The per-side state is ONE type, `pokesim::side_reader::SideReader`** (`src/rust_sim/src/side_reader.rs`):
+the chain, the folded-line cursor, the decision count, the alignment checks and the sticky failure. `sim_bridge` holds
+one per requested side; the `live_reader` session of live websocket play holds one for its side
+([`live_reader.md`](live_reader.md)) — so a live game's rows are built by the code that builds training's.
+
 A decision's request must be the LAST line the side was shipped in the write, and a write opens at
 most one decision per side — either violation, and every parse / fold / encode failure, is a FATAL
 `__ERR__` written IN PLACE of the write's chunks, and the mode stays failed for the rest of the

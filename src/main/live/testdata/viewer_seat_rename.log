@@ -1,0 +1,567 @@
+|init|battle
+|title|PlayerA vs. Guest 1
+|j|☆PlayerA
+|t:|1789049613
+|gametype|singles
+|player|p1|PlayerA|102|
+|player|p2|Guest 1|1|
+|gen|3
+|tier|[Gen 3] OU
+|rule|HP Percentage Mod: HP is shown in percentages
+|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+|rule|Endless Battle Clause: Forcing endless battles is banned
+|rule|Sleep Clause Mod: Limit one foe put to sleep
+|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+|rule|Species Clause: Limit one of each Pokémon
+|rule|OHKO Clause: OHKO moves are banned
+|rule|Evasion Items Clause: Evasion items are banned
+|rule|Evasion Moves Clause: Evasion moves are banned
+|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+|rule|Freeze Clause Mod: Limit one foe frozen
+|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+|
+|t:|1789049613
+|teamsize|p1|6
+|teamsize|p2|6
+|start
+|switch|p1a: Golem|Golem, F|100/100
+|switch|p2a: Lunatone|Lunatone|100/100
+|turn|1
+|
+|t:|1789049650
+|move|p2a: Lunatone|Light Screen|p2a: Lunatone
+|-sidestart|p2: Guest 1|move: Light Screen
+|move|p1a: Golem|Toxic|p2a: Lunatone
+|-status|p2a: Lunatone|tox
+|
+|-damage|p2a: Lunatone|94/100 tox|[from] psn
+|upkeep
+|turn|2
+|
+|t:|1789049668
+|move|p1a: Golem|Protect|p1a: Golem
+|-singleturn|p1a: Golem|Protect
+|move|p2a: Lunatone|Psychic|p1a: Golem
+|-activate|p1a: Golem|Protect
+|
+|-heal|p2a: Lunatone|100/100 tox|[from] item: Leftovers
+|-damage|p2a: Lunatone|88/100 tox|[from] psn
+|upkeep
+|turn|3
+|
+|t:|1789049695
+|switch|p2a: Tentacruel|Tentacruel, F|100/100
+|move|p1a: Golem|Rock Slide|p2a: Tentacruel
+|-damage|p2a: Tentacruel|52/100
+|
+|upkeep
+|turn|4
+|
+|t:|1789049708
+|move|p2a: Tentacruel|Rain Dance|p2a: Tentacruel
+|-weather|RainDance
+|move|p1a: Golem|Rock Slide|p2a: Tentacruel
+|-damage|p2a: Tentacruel|0 fnt
+|faint|p2a: Tentacruel
+|
+|t:|1789049727
+|switch|p2a: Altaria|Altaria, F|100/100
+|
+|-weather|RainDance|[upkeep]
+|upkeep
+|turn|5
+|
+|t:|1789049741
+|move|p2a: Altaria|Dragon Claw|p1a: Golem
+|-damage|p1a: Golem|71/100
+|move|p1a: Golem|Toxic|p2a: Altaria
+|-status|p2a: Altaria|tox
+|
+|-sideend|p2: Guest 1|move: Light Screen
+|-weather|RainDance|[upkeep]
+|-damage|p2a: Altaria|94/100 tox|[from] psn
+|-heal|p1a: Golem|77/100|[from] item: Leftovers
+|upkeep
+|turn|6
+|
+|t:|1789049769
+|-curestatus|p2a: Altaria|tox|[from] ability: Natural Cure|[silent]
+|switch|p2a: Granbull|Granbull, F|100/100
+|-ability|p2a: Granbull|Intimidate|boost
+|-unboost|p1a: Golem|atk|1
+|move|p1a: Golem|Protect||[still]
+|-fail|p1a: Golem
+|
+|-weather|RainDance|[upkeep]
+|-heal|p1a: Golem|83/100|[from] item: Leftovers
+|upkeep
+|turn|7
+|
+|t:|1789049792
+|move|p1a: Golem|Toxic|p2a: Granbull|[miss]
+|-miss|p1a: Golem|p2a: Granbull
+|move|p2a: Granbull|Brick Break|p1a: Golem
+|-supereffective|p1a: Golem
+|-damage|p1a: Golem|49/100
+|
+|-weather|RainDance|[upkeep]
+|-heal|p1a: Golem|55/100|[from] item: Leftovers
+|upkeep
+|turn|8
+|
+|t:|1789049812
+|switch|p2a: Lunatone|Lunatone|88/100 tox
+|move|p1a: Golem|Toxic|p2a: Lunatone
+|-fail|p2a: Lunatone|tox
+|
+|-weather|none
+|-heal|p2a: Lunatone|94/100 tox|[from] item: Leftovers
+|-damage|p2a: Lunatone|88/100 tox|[from] psn
+|-heal|p1a: Golem|61/100|[from] item: Leftovers
+|upkeep
+|turn|9
+|player|p2|PlayerB|1|
+|j|☆PlayerB
+|player|p2|PlayerB|1|
+|
+|t:|1789049838
+|move|p1a: Golem|Protect|p1a: Golem
+|-singleturn|p1a: Golem|Protect
+|move|p2a: Lunatone|Psychic|p1a: Golem
+|-activate|p1a: Golem|Protect
+|
+|-heal|p2a: Lunatone|94/100 tox|[from] item: Leftovers
+|-damage|p2a: Lunatone|82/100 tox|[from] psn
+|-heal|p1a: Golem|67/100|[from] item: Leftovers
+|upkeep
+|turn|10
+|
+|t:|1789049860
+|move|p2a: Lunatone|Hypnosis|p1a: Golem|[miss]
+|-miss|p2a: Lunatone|p1a: Golem
+|move|p1a: Golem|Rock Slide|p2a: Lunatone
+|-damage|p2a: Lunatone|55/100 tox
+|
+|-heal|p2a: Lunatone|61/100 tox|[from] item: Leftovers
+|-damage|p2a: Lunatone|42/100 tox|[from] psn
+|-heal|p1a: Golem|73/100|[from] item: Leftovers
+|upkeep
+|turn|11
+|
+|t:|1789049875
+|switch|p2a: Altaria|Altaria, F|94/100
+|move|p1a: Golem|Protect||[still]
+|-fail|p1a: Golem
+|
+|-heal|p2a: Altaria|100/100|[from] item: Leftovers
+|-heal|p1a: Golem|79/100|[from] item: Leftovers
+|upkeep
+|turn|12
+|
+|t:|1789049900
+|move|p2a: Altaria|Dragon Claw|p1a: Golem
+|-damage|p1a: Golem|53/100
+|move|p1a: Golem|Rock Slide|p2a: Altaria|[miss]
+|-miss|p1a: Golem|p2a: Altaria
+|
+|-heal|p1a: Golem|59/100|[from] item: Leftovers
+|upkeep
+|turn|13
+|
+|t:|1789049941
+|switch|p2a: Lunatone|Lunatone|42/100 tox
+|move|p1a: Golem|Rock Slide|p2a: Lunatone
+|-damage|p2a: Lunatone|16/100 tox
+|
+|-heal|p2a: Lunatone|22/100 tox|[from] item: Leftovers
+|-damage|p2a: Lunatone|16/100 tox|[from] psn
+|-heal|p1a: Golem|65/100|[from] item: Leftovers
+|upkeep
+|turn|14
+|
+|t:|1789049959
+|move|p1a: Golem|Protect|p1a: Golem
+|-singleturn|p1a: Golem|Protect
+|move|p2a: Lunatone|Hypnosis|p1a: Golem
+|-activate|p1a: Golem|Protect
+|
+|-heal|p2a: Lunatone|22/100 tox|[from] item: Leftovers
+|-damage|p2a: Lunatone|10/100 tox|[from] psn
+|-heal|p1a: Golem|71/100|[from] item: Leftovers
+|upkeep
+|turn|15
+|
+|t:|1789049970
+|move|p2a: Lunatone|Psychic|p1a: Golem
+|-damage|p1a: Golem|20/100
+|move|p1a: Golem|Rock Slide|p2a: Lunatone
+|-damage|p2a: Lunatone|0 fnt
+|faint|p2a: Lunatone
+|
+|t:|1789049978
+|switch|p2a: Altaria|Altaria, F|100/100
+|
+|-heal|p1a: Golem|26/100|[from] item: Leftovers
+|upkeep
+|turn|16
+|
+|t:|1789049985
+|move|p2a: Altaria|Dragon Claw|p1a: Golem
+|-damage|p1a: Golem|0 fnt
+|faint|p1a: Golem
+|
+|t:|1789050010
+|switch|p1a: Kangaskhan|Kangaskhan, F|100/100
+|
+|upkeep
+|turn|17
+|
+|t:|1789050034
+|move|p1a: Kangaskhan|Fake Out|p2a: Altaria
+|-damage|p2a: Altaria|82/100
+|cant|p2a: Altaria|flinch
+|
+|-heal|p2a: Altaria|88/100|[from] item: Leftovers
+|upkeep
+|turn|18
+|
+|t:|1789050043
+|move|p2a: Altaria|Dragon Dance|p2a: Altaria
+|-boost|p2a: Altaria|atk|1
+|-boost|p2a: Altaria|spe|1
+|move|p1a: Kangaskhan|Toxic|p2a: Altaria
+|-status|p2a: Altaria|tox
+|
+|-heal|p2a: Altaria|94/100 tox|[from] item: Leftovers
+|-damage|p2a: Altaria|88/100 tox|[from] psn
+|upkeep
+|turn|19
+|
+|t:|1789050058
+|move|p2a: Altaria|Dragon Dance|p2a: Altaria
+|-boost|p2a: Altaria|atk|1
+|-boost|p2a: Altaria|spe|1
+|move|p1a: Kangaskhan|Brick Break|p2a: Altaria
+|-resisted|p2a: Altaria
+|-damage|p2a: Altaria|76/100 tox
+|
+|-heal|p2a: Altaria|82/100 tox|[from] item: Leftovers
+|-damage|p2a: Altaria|69/100 tox|[from] psn
+|upkeep
+|turn|20
+|
+|t:|1789050081
+|move|p1a: Kangaskhan|Protect|p1a: Kangaskhan
+|-singleturn|p1a: Kangaskhan|Protect
+|move|p2a: Altaria|Dragon Dance|p2a: Altaria
+|-boost|p2a: Altaria|atk|1
+|-boost|p2a: Altaria|spe|1
+|
+|-heal|p2a: Altaria|76/100 tox|[from] item: Leftovers
+|-damage|p2a: Altaria|57/100 tox|[from] psn
+|upkeep
+|turn|21
+|
+|t:|1789050094
+|move|p2a: Altaria|Hidden Power|p1a: Kangaskhan
+|-damage|p1a: Kangaskhan|29/100
+|move|p1a: Kangaskhan|Brick Break|p2a: Altaria
+|-resisted|p2a: Altaria
+|-damage|p2a: Altaria|46/100 tox
+|
+|-heal|p2a: Altaria|52/100 tox|[from] item: Leftovers
+|-damage|p2a: Altaria|27/100 tox|[from] psn
+|-heal|p1a: Kangaskhan|35/100|[from] item: Leftovers
+|upkeep
+|turn|22
+|
+|t:|1789050142
+|-curestatus|p2a: Altaria|tox|[from] ability: Natural Cure|[silent]
+|switch|p2a: Arcanine|Arcanine, F|100/100
+|-ability|p2a: Arcanine|Intimidate|boost
+|-unboost|p1a: Kangaskhan|atk|1
+|move|p1a: Kangaskhan|Toxic|p2a: Arcanine
+|-status|p2a: Arcanine|tox
+|
+|-damage|p2a: Arcanine|94/100 tox|[from] psn
+|-heal|p1a: Kangaskhan|41/100|[from] item: Leftovers
+|upkeep
+|turn|23
+|
+|t:|1789050180
+|move|p1a: Kangaskhan|Protect|p1a: Kangaskhan
+|-singleturn|p1a: Kangaskhan|Protect
+|move|p2a: Arcanine|Agility|p2a: Arcanine
+|-boost|p2a: Arcanine|spe|2
+|
+|-heal|p2a: Arcanine|100/100 tox|[from] item: Leftovers
+|-damage|p2a: Arcanine|88/100 tox|[from] psn
+|-heal|p1a: Kangaskhan|47/100|[from] item: Leftovers
+|upkeep
+|turn|24
+|
+|t:|1789050203
+|move|p2a: Arcanine|Extreme Speed|p1a: Kangaskhan
+|-damage|p1a: Kangaskhan|21/100
+|move|p1a: Kangaskhan|Brick Break|p2a: Arcanine
+|-damage|p2a: Arcanine|72/100 tox
+|
+|-heal|p2a: Arcanine|79/100 tox|[from] item: Leftovers
+|-damage|p2a: Arcanine|60/100 tox|[from] psn
+|-heal|p1a: Kangaskhan|27/100|[from] item: Leftovers
+|upkeep
+|turn|25
+|
+|t:|1789050219
+|switch|p2a: Altaria|Altaria, F|27/100
+|move|p1a: Kangaskhan|Protect||[still]
+|-fail|p1a: Kangaskhan
+|
+|-heal|p2a: Altaria|33/100|[from] item: Leftovers
+|-heal|p1a: Kangaskhan|33/100|[from] item: Leftovers
+|upkeep
+|turn|26
+|
+|t:|1789050250
+|move|p2a: Altaria|Dragon Claw|p1a: Kangaskhan
+|-damage|p1a: Kangaskhan|19/100
+|move|p1a: Kangaskhan|Brick Break|p2a: Altaria
+|-resisted|p2a: Altaria
+|-damage|p2a: Altaria|26/100
+|
+|-heal|p2a: Altaria|32/100|[from] item: Leftovers
+|-heal|p1a: Kangaskhan|25/100|[from] item: Leftovers
+|upkeep
+|turn|27
+|
+|t:|1789050264
+|move|p2a: Altaria|Hidden Power|p1a: Kangaskhan
+|-damage|p1a: Kangaskhan|0 fnt
+|faint|p1a: Kangaskhan
+|
+|t:|1789050274
+|switch|p1a: Vileplume|Vileplume, M|100/100
+|
+|-heal|p2a: Altaria|38/100|[from] item: Leftovers
+|upkeep
+|turn|28
+|
+|t:|1789050300
+|move|p2a: Altaria|Dragon Dance|p2a: Altaria
+|-boost|p2a: Altaria|atk|1
+|-boost|p2a: Altaria|spe|1
+|move|p1a: Vileplume|Sleep Powder|p2a: Altaria
+|-status|p2a: Altaria|slp|[from] move: Sleep Powder
+|
+|-heal|p2a: Altaria|44/100 slp|[from] item: Leftovers
+|upkeep
+|turn|29
+|
+|t:|1789050313
+|cant|p2a: Altaria|slp
+|move|p1a: Vileplume|Leech Seed|p2a: Altaria|[miss]
+|-miss|p1a: Vileplume|p2a: Altaria
+|
+|-heal|p2a: Altaria|50/100 slp|[from] item: Leftovers
+|upkeep
+|turn|30
+|
+|t:|1789050324
+|cant|p2a: Altaria|slp
+|move|p1a: Vileplume|Leech Seed|p2a: Altaria
+|-start|p2a: Altaria|move: Leech Seed
+|
+|-heal|p2a: Altaria|57/100 slp|[from] item: Leftovers
+|-damage|p2a: Altaria|44/100 slp|[from] Leech Seed|[of] p1a: Vileplume
+|upkeep
+|turn|31
+|
+|t:|1789050371
+|-curestatus|p2a: Altaria|slp|[msg]
+|move|p2a: Altaria|Hidden Power|p1a: Vileplume
+|-supereffective|p1a: Vileplume
+|-damage|p1a: Vileplume|9/100
+|move|p1a: Vileplume|Sunny Day|p1a: Vileplume
+|-weather|SunnyDay
+|
+|-weather|SunnyDay|[upkeep]
+|-heal|p1a: Vileplume|15/100|[from] item: Leftovers
+|-heal|p2a: Altaria|50/100|[from] item: Leftovers
+|-damage|p2a: Altaria|38/100|[from] Leech Seed|[of] p1a: Vileplume
+|-heal|p1a: Vileplume|25/100|[silent]
+|upkeep
+|turn|32
+|
+|t:|1789050404
+|switch|p1a: Charizard|Charizard, M|100/100
+|move|p2a: Altaria|Dragon Dance|p2a: Altaria
+|-boost|p2a: Altaria|atk|1
+|-boost|p2a: Altaria|spe|1
+|
+|-weather|SunnyDay|[upkeep]
+|-heal|p2a: Altaria|44/100|[from] item: Leftovers
+|-damage|p2a: Altaria|32/100|[from] Leech Seed|[of] p1a: Charizard
+|upkeep
+|turn|33
+|
+|t:|1789050432
+|move|p2a: Altaria|Hidden Power|p1a: Charizard
+|-damage|p1a: Charizard|23/100
+|move|p1a: Charizard|Dragon Claw|p2a: Altaria
+|-supereffective|p2a: Altaria
+|-damage|p2a: Altaria|0 fnt
+|faint|p2a: Altaria
+|
+|t:|1789050454
+|switch|p2a: Arcanine|Arcanine, F|60/100 tox
+|-ability|p2a: Arcanine|Intimidate|boost
+|-unboost|p1a: Charizard|atk|1
+|
+|-weather|SunnyDay|[upkeep]
+|-heal|p2a: Arcanine|66/100 tox|[from] item: Leftovers
+|-damage|p2a: Arcanine|60/100 tox|[from] psn
+|upkeep
+|turn|34
+|
+|t:|1789050481
+|move|p2a: Arcanine|Extreme Speed|p1a: Charizard
+|-damage|p1a: Charizard|0 fnt
+|faint|p1a: Charizard
+|
+|t:|1789050486
+|switch|p1a: Nidoking|Nidoking, M|100/100
+|
+|-weather|SunnyDay|[upkeep]
+|-heal|p2a: Arcanine|66/100 tox|[from] item: Leftovers
+|-damage|p2a: Arcanine|54/100 tox|[from] psn
+|upkeep
+|turn|35
+|
+|t:|1789050527
+|move|p2a: Arcanine|Extreme Speed|p1a: Nidoking
+|-damage|p1a: Nidoking|65/100
+|move|p1a: Nidoking|Earthquake|p2a: Arcanine
+|-supereffective|p2a: Arcanine
+|-damage|p2a: Arcanine|0 fnt
+|faint|p2a: Arcanine
+|
+|t:|1789050535
+|switch|p2a: Granbull|Granbull, F|100/100
+|-ability|p2a: Granbull|Intimidate|boost
+|-unboost|p1a: Nidoking|atk|1
+|
+|-weather|none
+|upkeep
+|turn|36
+|
+|t:|1789050560
+|move|p1a: Nidoking|Sludge Bomb|p2a: Granbull
+|-damage|p2a: Granbull|73/100
+|move|p2a: Granbull|Earthquake|p1a: Nidoking
+|-supereffective|p1a: Nidoking
+|-damage|p1a: Nidoking|0 fnt
+|faint|p1a: Nidoking
+|
+|t:|1789050572
+|switch|p1a: Vileplume|Vileplume, M|25/100
+|
+|-heal|p1a: Vileplume|32/100|[from] item: Leftovers
+|-heal|p2a: Granbull|80/100|[from] item: Leftovers
+|upkeep
+|turn|37
+|
+|t:|1789050615
+|switch|p2a: Electrode|Electrode|100/100
+|move|p1a: Vileplume|Sleep Powder|p2a: Electrode|[miss]
+|-miss|p1a: Vileplume|p2a: Electrode
+|
+|-heal|p1a: Vileplume|38/100|[from] item: Leftovers
+|upkeep
+|turn|38
+|
+|t:|1789050649
+|move|p2a: Electrode|Rain Dance|p2a: Electrode
+|-weather|RainDance
+|move|p1a: Vileplume|Sleep Powder|p2a: Electrode|[miss]
+|-miss|p1a: Vileplume|p2a: Electrode
+|
+|-weather|RainDance|[upkeep]
+|-heal|p1a: Vileplume|44/100|[from] item: Leftovers
+|upkeep
+|turn|39
+|
+|t:|1789050662
+|move|p2a: Electrode|Thunder|p1a: Vileplume
+|-resisted|p1a: Vileplume
+|-damage|p1a: Vileplume|22/100
+|move|p1a: Vileplume|Giga Drain|p2a: Electrode
+|-damage|p2a: Electrode|75/100
+|-heal|p1a: Vileplume|34/100|[from] drain|[of] p2a: Electrode
+|
+|-weather|RainDance|[upkeep]
+|-heal|p1a: Vileplume|40/100|[from] item: Leftovers
+|upkeep
+|turn|40
+|
+|t:|1789050687
+|switch|p2a: Granbull|Granbull, F|80/100
+|-ability|p2a: Granbull|Intimidate|boost
+|-unboost|p1a: Vileplume|atk|1
+|move|p1a: Vileplume|Sleep Powder|p2a: Granbull|[miss]
+|-miss|p1a: Vileplume|p2a: Granbull
+|
+|-weather|RainDance|[upkeep]
+|-heal|p1a: Vileplume|47/100|[from] item: Leftovers
+|-heal|p2a: Granbull|86/100|[from] item: Leftovers
+|upkeep
+|turn|41
+|
+|t:|1789050711
+|move|p1a: Vileplume|Giga Drain|p2a: Granbull
+|-damage|p2a: Granbull|55/100
+|-heal|p1a: Vileplume|63/100|[from] drain|[of] p2a: Granbull
+|move|p2a: Granbull|Frustration|p1a: Vileplume
+|-damage|p1a: Vileplume|0 fnt
+|faint|p1a: Vileplume
+|
+|t:|1789050722
+|switch|p1a: Arcanine|Arcanine, M|100/100
+|-ability|p1a: Arcanine|Intimidate|boost
+|-unboost|p2a: Granbull|atk|1
+|
+|-weather|RainDance|[upkeep]
+|-heal|p2a: Granbull|62/100|[from] item: Leftovers
+|upkeep
+|turn|42
+|
+|t:|1789050739
+|move|p1a: Arcanine|Extreme Speed|p2a: Granbull
+|-damage|p2a: Granbull|34/100
+|move|p2a: Granbull|Earthquake|p1a: Arcanine
+|-supereffective|p1a: Arcanine
+|-damage|p1a: Arcanine|37/100
+|
+|-weather|none
+|-heal|p1a: Arcanine|43/100|[from] item: Leftovers
+|-heal|p2a: Granbull|40/100|[from] item: Leftovers
+|upkeep
+|turn|43
+|
+|t:|1789050750
+|move|p1a: Arcanine|Fire Blast|p2a: Granbull
+|-damage|p2a: Granbull|0 fnt
+|faint|p2a: Granbull
+|
+|t:|1789050754
+|switch|p2a: Electrode|Electrode|75/100
+|
+|-heal|p1a: Arcanine|49/100|[from] item: Leftovers
+|upkeep
+|turn|44
+|
+|t:|1789050793
+|move|p2a: Electrode|Thunder|p1a: Arcanine
+|-damage|p1a: Arcanine|0 fnt
+|faint|p1a: Arcanine
+|
+|win|PlayerB
