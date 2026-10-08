@@ -12435,7 +12435,7 @@ branch `obs-facts-append`).
   follows), BeliefSlots discarded at once and α / β retired by the policy before the optimizer. The blob-only learner
   terms and readers go with the path (the α / β intent fold, the hidden-team Hungarian row, the ride-along B head's α
   form, `main.belief_roles`' blob read arm) — see FINDINGS below for what was left dead in place.
-- **Refusals (the pinned fix).** `model_version/version_break.py`: `LAST_BLOB_COMMIT` = `26131c0c` (the last commit
+- **Refusals (the pinned fix).** `model_version/version_break.py`: `LAST_BLOB_COMMIT` = `f7567a9f` (the last commit
   that builds blob); the pre-floor PRE-GENERATION refusal appends the belief reason (blob DELETED — recorded, or the key
   absent below v136 — vs a pre-break fixed_mass checkpoint the break reshaped); `check_post_break` makes a resume / fork
   exit `FATAL_CONFIG` before the inheritance sweep (`main.train.config.enforce_not_shaped_parent`) and is
@@ -12741,7 +12741,7 @@ obs-facts appended (2845)`.
 - Every entry of `designs/baselines.json` is now `era_checkout_only` (the last loadable one, `untaught_meter_opponent_v14`,
   N0's 24M at v121, was marked in Part 1 with its pin note); nothing is deleted and nothing is re-pointed — no v144
   checkpoint exists yet to re-point to. Each entry keeps its recorded `commit` (its own era's checkout);
-  `version_break.LAST_BLOB_COMMIT` (`26131c0c`) is the last commit that loads the X5 A/B-era checkpoints.
+  `version_break.LAST_BLOB_COMMIT` (`f7567a9f`) is the last commit that loads the X5 A/B-era checkpoints.
 - The untaught meter's default opponent is that entry, so a bare `python -m main.untaught_meter R` now REFUSES at the
   default (`apply_baseline_defaults` raises `MeterError` naming `--opponent <a v144+ checkpoint>` — a NEW series — or
   the pin) instead of dying at its first model load. The unit driver's sim test (`untaught_unit_script_test`) plays two

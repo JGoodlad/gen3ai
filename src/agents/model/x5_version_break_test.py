@@ -59,7 +59,7 @@ def test_the_version_stamps_are_the_breaks():
     from agents.model.model_version import ARCH_SIGNATURE, SIGNATURE_FIRST_VERSION
     assert ARCH_SIGNATURE == VERSION_BREAK_SIGNATURE == "gen3_x5_version_break_v1"
     assert SIGNATURE_FIRST_VERSION[ARCH_SIGNATURE] == 144
-    assert LAST_BLOB_COMMIT == "26131c0ce62b2de7c9913d9c84e8c318a0200b19"
+    assert LAST_BLOB_COMMIT == "f7567a9fafb0135e5f47800d8f5452f3de2d9b9f"
 
 
 def test_production_builds_the_hypothesis_set_and_the_flat_pointer_with_no_switch(production):

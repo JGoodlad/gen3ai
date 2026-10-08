@@ -30,7 +30,7 @@ VERSION_BREAK_CONFIG = 144
 
 #: The last commit that builds the blob belief path (`--belief-tokens blob`) — and the last commit BEFORE the
 #: version break, so every pre-break checkpoint (blob or fixed_mass) runs pinned at or before it.
-LAST_BLOB_COMMIT = "26131c0ce62b2de7c9913d9c84e8c318a0200b19"
+LAST_BLOB_COMMIT = "f7567a9fafb0135e5f47800d8f5452f3de2d9b9f"
 
 #: The first config version that recorded `belief_tokens` (X5 U2). Below it the key is ABSENT and the only
 #: possible past is blob (the hypothesis builder did not exist).

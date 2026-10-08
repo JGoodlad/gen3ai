@@ -158,7 +158,7 @@ RISES with the signature (contra the legacy manifest's provisional D-L1 "decoupl
 reshape weights and change behaviour, so NO pre-break checkpoint — blob or fixed_mass — is reproducible at HEAD;
 every one runs PINNED. `model_version/version_break.py` is the one home of the consequences:
 
-* **`LAST_BLOB_COMMIT`** (`26131c0c…`) — the last commit that builds `belief_tokens='blob'` and the last pre-break
+* **`LAST_BLOB_COMMIT`** (`f7567a9f…`) — the last commit that builds `belief_tokens='blob'` and the last pre-break
   commit; every refusal names it, nothing else spells the hash.
 * **The pre-floor diagnosis** — `_migrate_config`'s PRE-GENERATION refusal appends `pre_break_diagnosis`: a
   v121–v143 config recording `belief_tokens: "blob"` (or lacking the key below v136, where blob was the only past) is

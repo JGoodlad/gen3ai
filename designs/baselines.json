@@ -152,7 +152,7 @@
    "arch_signature": "gen3_event_record_v2",
    "sha256": "8a387206cefd8da91a3788ed277da64c2549f8f7f5d5f56557dff040f19418c1",
    "num_timesteps": 24000000,
-   "notes": "era checkout only since the X5 VERSION BREAK (2026-10-07, config v144, gen3_x5_version_break_v1): MIGRATION_FLOOR rose to 144, so this v121 blob-era checkpoint does NOT load under current code; read it from its own commit, or from 26131c0c (agents.model.model_version.version_break.LAST_BLOB_COMMIT, the last commit before the break). The untaught meter's DEFAULT opponent therefore needs a successor at the new signature (legacy manifest D-L3's Rustboro opponent).",
+   "notes": "era checkout only since the X5 VERSION BREAK (2026-10-07, config v144, gen3_x5_version_break_v1): MIGRATION_FLOOR rose to 144, so this v121 blob-era checkpoint does NOT load under current code; read it from its own commit, or from f7567a9f (agents.model.model_version.version_break.LAST_BLOB_COMMIT, the last commit before the break). The untaught meter's DEFAULT opponent therefore needs a successor at the new signature (legacy manifest D-L3's Rustboro opponent).",
    "era_checkout_only": true
   }
  },
