@@ -1204,6 +1204,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="committed per-team rows artifacts — runs the meter with --from-rows "
                          "(no models, no battles)")
     ap.add_argument("--meter-timeout", type=float, default=None, metavar="SEC")
+    ap.add_argument("--meter-opponent", default=None, metavar="REF|BASELINE",
+                    help="the untaught meter's fixed opponent (passed as its --opponent). REQUIRED at HEAD "
+                         "since the X5 version break (v144): the meter's default opponent is era_checkout_only and "
+                         "a bare meter refuses at it, so the gate's endpoint 3 needs a v144+ checkpoint here")
     ap.add_argument("--skip-meter", action="store_true",
                     help="omit endpoint 3 entirely (the report says so in print)")
     ap.add_argument("--json", dest="json_out", default=None, metavar="PATH")
@@ -1247,7 +1251,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     margv = meter_argv(run, parent, controls, games_per_team=args.games_per_team,
                        rows=args.meter_rows, from_rows=bool(args.meter_rows),
                        workers=args.meter_workers, json_out=meter_json,
-                       check=args.check, dry_run=args.dry_run)
+                       check=args.check, dry_run=args.dry_run,
+                       extra=(["--opponent", args.meter_opponent] if args.meter_opponent else []))
 
     if resolve_only:
         ok, bad = check_inputs(args, run, parent, controls, famine, famine_floor)

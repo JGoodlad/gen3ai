@@ -12758,3 +12758,6 @@ obs-facts appended (2845)`.
   `main/h2h/arch_default_kwargs_test.py` (a real checkpoint and a copy re-saved without the two defaulted kwargs
   declare ONE group). Verified offline on the look-3 checkpoints: the cross `fm{1001,1007} × blob{1001,1006,1007,1008}`
   now declares one engine of two groups (refused before).
+- (Part 6, follow-up) `main.critic_gate` gains `--meter-opponent REF|BASELINE` (passed to the meter as `--opponent`):
+  its endpoint 3 cannot run the meter's era-checkout default at HEAD; without it `--check` reports the meter's
+  refusal (`critic_gate_test::test_check_without_a_meter_opponent_reports_the_meters_era_refusal`, fails on revert).

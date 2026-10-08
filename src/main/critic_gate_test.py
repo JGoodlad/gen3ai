@@ -548,14 +548,26 @@ def test_an_unresolvable_reweighting_surfaces_the_gauges_own_refusal(tree):
 
 # ------------------------------------------------------------------------------------- --check
 
+def test_check_without_a_meter_opponent_reports_the_meters_era_refusal(tree, capsys):
+    """FAILS ON REVERT of the version break's untaught-meter refusal: with no --meter-opponent, --check must
+    surface the meter's refusal at its era_checkout_only default (naming --opponent), not resolve a spec
+    that dies at its first model load."""
+    rc = cg.main([tree["arm"], "--parent", tree["parent"], "--control", tree["control"],
+                  "--baseline-dir", tree["baseline"], "--check"])
+    err = capsys.readouterr().err
+    assert rc != 0
+    assert "untaught_meter refused" in err and "era_checkout_only" in err and "--opponent" in err
+
+
 def test_check_resolves_everything_and_computes_nothing(tree, capsys, monkeypatch):
     def _boom(*_a, **_k):                       # any computation here is a bug
         raise AssertionError("--check must not compute the calibration section")
 
     monkeypatch.setattr(cg, "calibration_section", _boom)
     monkeypatch.setattr(cg, "kill_section", _boom)
+    # gen3_x5_version_break_v1 (v144): the meter's default opponent is behind the floor, so the gate names one.
     rc = cg.main([tree["arm"], "--parent", tree["parent"], "--control", tree["control"],
-                  "--baseline-dir", tree["baseline"], "--check"])
+                  "--baseline-dir", tree["baseline"], "--meter-opponent", tree["parent"], "--check"])
     printed = capsys.readouterr().out
     assert rc == 0
     assert "every input resolved — OK" in printed
