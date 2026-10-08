@@ -1,190 +1,21 @@
-"""gen3_event_window_v1 (Tier H-B) — the event fold, the obs block, and the seat consumer.
+"""gen3_event_window_v1 (Tier H-B) — the event-window CONTRACT the model reads, and the seat consumer.
 
-Three layers, one file: EventWindowTracker's fold rules (attach/idempotence/actives/forced
-windows), the encoder's 20-column row contract (offsets, padding-at-front, recency), and the
-EventSeats module's build/mask contract (OFF builds nothing; PAD rows get zero attention weight
-by key-mask; ON forward reads the block).
+The row's column contract (`constants.EventCol`, its one-hot groups, the plain-int mirror), the cant /
+status vocabularies the rows carry, and the EventSeats module's build/mask contract (OFF builds
+nothing; PAD rows get zero attention weight by key-mask; ON forward reads the block). The Python FOLD
+that produced the rows (`EventWindowTracker`) and its tests are deleted with the Python battle layer
+(T27 P6 slice 6d-2): the rows are the Rust core's (`src/rust_sim/src/trackers/`, pinned by
+`tests/tracker_semantics_test.rs` and `tests/window_record_test.rs`), and `rust_core_obs_layout_test.py`
+holds `EventCol` equal to the Rust encoder's columns.
 """
 import numpy as np
 import pytest
 import torch
 
-from agents.battle.battle_event import BattleEvent, EventKind, OURS, OPP
 from agents.observation.constants import (
-    EVENT_T_DENIED,
-    EVENT_T_BOOST, EVENT_T_CANT, EVENT_T_FAINT, EVENT_T_MOVE, EVENT_T_STATUS_APPLIED,
-    EVENT_T_SWITCH_IN, EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N, OFFSET_EVENT_WINDOW,
+    EVENT_T_MOVE, EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N, OFFSET_EVENT_WINDOW,
     EVENT_EFF_GROUP, EVENT_OUTCOME_GROUP, EventCol as C,
 )
-from agents.training.episode_tracker import EventWindowTracker
-
-
-def _ev(seq, turn, kind, side=None, sp=None, **value):
-    return BattleEvent(seq=seq, turn=turn, kind=kind, side=side, actor_species=sp, value=value)
-
-
-def _basic_events():
-    return [
-        _ev(1, 1, EventKind.SWITCH, OURS, "tyranitar", prev_active=None),
-        _ev(2, 1, EventKind.SWITCH, OPP, "skarmory", prev_active=None),
-        _ev(3, 2, EventKind.MOVE, OURS, "tyranitar", move_id="rockslide"),
-        _ev(4, 2, EventKind.DAMAGE, OPP, sp="skarmory", amount=-0.31),
-        _ev(5, 2, EventKind.CRIT, OURS, "tyranitar", op="crit"),
-        # side = the MOVER (tyranitar's rockslide was supereffective) — the producer's "attach
-        # to the resolving mover" convention, the same side CRIT carries one line up. This
-        # fixture said OPP (the defender) until 2026-08-19, agreeing with the tracker's flipped
-        # lookup while the real producer disagreed with both — on live battles every eff
-        # dropped and the window read all-neutral.
-        _ev(6, 2, EventKind.SUPEREFFECTIVE, OURS, "tyranitar", multiplier=2.0),
-        _ev(7, 2, EventKind.MOVE, OPP, "skarmory", move_id="spikes"),
-        _ev(8, 3, EventKind.STATUS, OPP, "skarmory", status="par"),
-        _ev(9, 3, EventKind.BOOST, OURS, "tyranitar", stat="atk", amount=2),
-        _ev(10, 4, EventKind.FAINT, OPP, "skarmory"),
-    ]
-
-
-def test_fold_attaches_modifiers_and_is_seq_idempotent():
-    t = EventWindowTracker(maxlen=16)
-    t.update(4, _basic_events(), "tyranitar", None)
-    t.update(4, _basic_events(), "tyranitar", None)    # replay: nothing may double
-    w = t.window()
-    kinds = [r["t"] for r in w]
-    # gen3_event_record_v2 (E12): turn 4 is a faint of a turn ACTOR that never acted, so the
-    # fold also records its DENIAL (fainted first) and the TURN CUT it forces on our actor.
-    assert kinds == [EVENT_T_SWITCH_IN, EVENT_T_SWITCH_IN, EVENT_T_MOVE, EVENT_T_MOVE,
-                     EVENT_T_STATUS_APPLIED, EVENT_T_BOOST, EVENT_T_FAINT,
-                     EVENT_T_DENIED, EVENT_T_DENIED]
-    assert [(r["actor"], r["denial"]) for r in w[7:]] == [("skarmory", 1), ("tyranitar", 2)]
-    our_move = w[2]
-    assert our_move["move_id"] == "rockslide" and our_move["target"] == "skarmory"
-    assert our_move["hp_delta"] == pytest.approx(-0.31)
-    assert our_move["crit"] and our_move["eff"] == 1                 # supereffective
-    assert our_move["we_first"] is True
-    assert w[3]["we_first"] is False                                  # skarmory moved second
-    assert w[4]["status"] == 2                                        # par
-    assert w[5]["hp_delta"] == pytest.approx(2 / 1.0)                 # boost magnitude raw (+2)
-    assert t._forced["opp"] is True                                   # faint opened the window
-
-
-def test_residual_and_recoil_damage_never_attach():
-    """The attach rule's two guards: a `[from]`-claused DAMAGE (recoil / sand / status / item)
-    and a clause-free DAMAGE on a NON-target mon must both leave the move's hp_delta alone."""
-    t = EventWindowTracker(maxlen=16)
-    evs = [
-        _ev(1, 1, EventKind.SWITCH, OURS, "tyranitar", prev_active=None),
-        _ev(2, 1, EventKind.SWITCH, OPP, "skarmory", prev_active=None),
-        _ev(3, 2, EventKind.MOVE, OURS, "tyranitar", move_id="doubleedge"),
-        _ev(4, 2, EventKind.DAMAGE, OPP, sp="skarmory", amount=-0.20),                  # the hit
-        BattleEvent(seq=5, turn=2, kind=EventKind.DAMAGE, side=OURS,
-                    actor_species="tyranitar", value={"amount": -0.07, "from": "Recoil"}),
-        BattleEvent(seq=6, turn=2, kind=EventKind.DAMAGE, side=OPP,
-                    actor_species="skarmory", value={"amount": -0.06, "from": "Sandstorm"}),
-        _ev(7, 2, EventKind.DAMAGE, OPP, sp="blissey", amount=-0.10),                   # not the target
-    ]
-    t.update(2, evs, "tyranitar", "skarmory")
-    mv = [r for r in t.window() if r["t"] == EVENT_T_MOVE][0]
-    assert mv["hp_delta"] == pytest.approx(-0.20)
-
-
-def test_effectiveness_from_a_one_sided_turn_lands_on_the_movers_row():
-    """The immune-on-pivot regression (2026-08-19, gen-15 win_s0_001 turns 7/11): we click
-    Earthquake, they voluntarily pivot Salamence in, `|-immune|` fires — the ONLY move that
-    turn is OURS. The producer tags the eff event on the MOVER; the tracker used to flip it
-    to the defender, look up the side with no open move, and silently drop it — so the
-    window showed `hit / neutral / 0.00` for a whiff the model was supposed to learn from.
-    Fails on the reverted lookup (`self._open_move.get(OPP if side == OURS else OURS)`)."""
-    t = EventWindowTracker(maxlen=16)
-    evs = [
-        _ev(1, 1, EventKind.SWITCH, OURS, "salamence", prev_active=None),
-        _ev(2, 1, EventKind.SWITCH, OPP, "metagross", prev_active=None),
-        _ev(3, 2, EventKind.SWITCH, OPP, "salamence", prev_active="metagross"),  # the pivot
-        _ev(4, 2, EventKind.MOVE, OURS, "salamence", move_id="earthquake"),
-        _ev(5, 2, EventKind.IMMUNE, OURS, "salamence", multiplier=0.0),          # MOVER-tagged
-    ]
-    t.update(2, evs, "salamence", "salamence")
-    mv = [r for r in t.window() if r["t"] == EVENT_T_MOVE][0]
-    assert mv["eff"] == 3, "the immune whiff must land on OUR move row, not vanish"
-
-
-def test_an_externally_caused_fail_does_not_mark_the_open_move_failed():
-    """`|-fail|p2a: Metagross|unboost|[from] ability: Clear Body` — Intimidate blocked on a
-    switch-in — arrives while Metagross is still the current move user, and used to mark its
-    full-damage Earthquake as `failed`. A FAIL with a real `[from]` cause is not the open
-    move's outcome; the synthetic "move-suffix" tag still is."""
-    t = EventWindowTracker(maxlen=16)
-    evs = [
-        _ev(1, 1, EventKind.SWITCH, OURS, "magneton", prev_active=None),
-        _ev(2, 1, EventKind.SWITCH, OPP, "metagross", prev_active=None),
-        _ev(3, 2, EventKind.MOVE, OPP, "metagross", move_id="earthquake"),
-        _ev(4, 2, EventKind.DAMAGE, OURS, sp="magneton", amount=-1.0),
-        BattleEvent(seq=5, turn=2, kind=EventKind.FAIL, side=OPP,
-                    actor_species="metagross", value={"from": "ability: Clear Body"}),
-        BattleEvent(seq=6, turn=2, kind=EventKind.MISS, side=OPP,
-                    actor_species="metagross", value={"from": "move-suffix"}),
-    ]
-    t.update(2, evs, "magneton", "metagross")
-    mv = [r for r in t.window() if r["t"] == EVENT_T_MOVE][0]
-    assert mv["failed"] is False, "Clear Body's fail is not Earthquake's outcome"
-    assert mv["missed"] is True, "the synthetic move-suffix outcome must still attach"
-
-
-def test_forced_window_tags_and_clears():
-    t = EventWindowTracker(maxlen=16)
-    evs = _basic_events() + [
-        _ev(11, 4, EventKind.SWITCH, OPP, "blissey", prev_active=None),   # replacement
-    ]
-    t.update(4, evs, "tyranitar", "blissey")
-    w = t.window()
-    assert w[-1]["t"] == EVENT_T_SWITCH_IN and w[-1]["actor"] == "blissey"
-    assert w[-1]["forced_window"] == 1.0        # emitted while the opp slot was empty
-    assert t._forced["opp"] is False            # the arrival closed it
-
-
-def test_window_is_bounded():
-    t = EventWindowTracker(maxlen=4)
-    evs = [_ev(i, i, EventKind.MOVE, OURS, "tyranitar", move_id="rockslide")
-           for i in range(1, 10)]
-    t.update(9, evs, None, None)
-    assert len(t.window()) == 4
-
-
-def test_encoder_writes_rows_back_padded_and_typed():
-    """The obs contract: rows most-recent-LAST, zero-padding at the FRONT, ids in the id
-    columns, valid=1 on real rows, recency log-saturated."""
-    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-
-    enc = Gen3ObservationEncoder(load_mappings())
-    t = EventWindowTracker()
-    t.update(4, _basic_events(), "tyranitar", None)
-
-    class _B:                                       # the minimal battle stub encode() accepts
-        team = {}
-        opponent_team = {}
-        active_pokemon = None
-        opponent_active_pokemon = None
-        available_moves = []
-        available_switches = []
-        weather = None
-        side_conditions = {}
-        opponent_side_conditions = {}
-        turn = 4
-
-    vec = enc.encode(_B(), event_window=t)
-    block = vec[OFFSET_EVENT_WINDOW:OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM] \
-        .reshape(EVENT_WINDOW_N, EVENT_TOKEN_DIM)
-    n_valid = int(block[:, C.VALID].sum())
-    assert n_valid == 9      # 7 + the two E12 DENIED rows (see the fold test above)
-    assert float(block[: EVENT_WINDOW_N - n_valid].sum()) == 0.0     # front padding all-zero
-    move_row = block[EVENT_WINDOW_N - n_valid + 2]                   # our rockslide
-    assert move_row[C.TYPE] == EVENT_T_MOVE
-    assert move_row[C.ACTOR_SIDE] == 1.0                             # our side
-    assert move_row[C.MOVE] > 0                                      # move num present
-    assert move_row[C.MAGNITUDE] == pytest.approx(-0.31)             # attributed damage
-    assert move_row[C.CRIT] == 1.0 and move_row[C.EFF_SUPER] == 1.0  # crit + supereffective
-    faint_row = block[EVENT_WINDOW_N - 3]                             # then the two DENIED rows
-    assert faint_row[C.TYPE] == EVENT_T_FAINT and faint_row[C.ACTOR_SIDE] == -1.0
-    assert block[EVENT_WINDOW_N - 1][C.TYPE] == EVENT_T_DENIED
-    assert 0.0 <= float(block[:, C.TURNS_AGO].max()) <= 1.0          # recency in range
 
 
 def test_event_seats_off_builds_nothing_on_reads_block():
@@ -228,32 +59,9 @@ def test_pre_floor_config_is_refused():
         _migrate_config({"config_version": 80})
 
 
-
 # ---------------------------------------------------------------------------
 # gen3_frame_deletion_v1 — EVENT_T_CANT, the lag frames' one unsubstituted fact
 # ---------------------------------------------------------------------------
-
-def test_cant_event_folds_with_its_reason():
-    """A `|cant|` must produce a CANT row carrying its REASON as `cant_id`.
-
-    This exists because it shipped broken for one commit. The fold read `e.cause`, which
-    `BattleEvent` does not define (`e.reason` is the accessor) — so EVERY live battle in which a
-    mon was fully paralysed / asleep / flinched / recharging raised `AttributeError` mid-fold.
-    The whole unit tier passed clean: nothing there drives a real event log, so the crash only
-    appeared in the sim tier (16 failures across the bridge, better-line, falsifier and obs-parity
-    suites — all one bug). This test is the cheap deterministic guard that would have caught it,
-    and it fails if the attribute name is ever changed back."""
-    from agents.observation.gen3_effects import cant_reason_id
-    t = EventWindowTracker(maxlen=16)
-    t.update(1, [_ev(1, 1, EventKind.SWITCH, OURS, "snorlax", prev_active=None)], "snorlax", "gengar")
-    t.update(2, [_ev(2, 2, EventKind.CANT, OURS, "snorlax", reason="par")], "snorlax", "gengar")
-    rows = [r for r in t.window() if r["t"] == EVENT_T_CANT]
-    assert len(rows) == 1, f"expected exactly one CANT row, got {len(rows)}"
-    r = rows[0]
-    assert r["actor"] == "snorlax" and r["side"] == OURS
-    assert r["cant"] == "par", f"the reason must survive the fold verbatim, got {r['cant']!r}"
-    assert cant_reason_id(r["cant"]) > 0, "a real reason must map to a nonzero id"
-
 
 def test_cant_reason_ids_are_distinct_and_zero_means_none():
     """Distinct reasons must get distinct ids, and 0 must be reserved for 'not a cant row'.
@@ -267,233 +75,6 @@ def test_cant_reason_ids_are_distinct_and_zero_means_none():
     ids = {r: cant_reason_id(r) for r in CANT_REASONS}
     assert 0 not in ids.values(), "0 is reserved for 'no cant' and must not collide with a reason"
     assert len(set(ids.values())) == len(CANT_REASONS), f"reason ids collide: {ids}"
-
-
-# ---------------------------------------------------------------------------
-# The DECISION CYCLE — an event must reach the obs of the decision AFTER it.
-#
-# Every test above drives `EventWindowTracker.update` directly with a hand-built event list, so
-# none of them says anything about WHICH events a real decision folds. That window comes from
-# `EpisodeTracker`: `record()` captures `battle.event_cursor`, and the NEXT decision's
-# `update_progress_clock()` folds `events_since(that cursor)`. The tests below drive that real
-# chain (scripted `Gen3Battle` -> record -> update_progress_clock -> encode) for the two rows
-# whose producers do NOT look like the others.
-# ---------------------------------------------------------------------------
-
-_CANON_OPENING = [
-    ["", "player", "p1", "p1user", "", ""],
-    ["", "player", "p2", "p2user", "", ""],
-    ["", "teamsize", "p1", "6"],
-    ["", "teamsize", "p2", "6"],
-    ["", "gametype", "singles"],
-    ["", "gen", "3"],
-    ["", "tier", "[Gen 3] OU"],
-    ["", "start"],
-    ["", "switch", "p1a: Zappy", "Zapdos, L100", "100/100"],
-    ["", "switch", "p2a: Tyra", "Tyranitar, L100, M", "100/100"],
-    ["", "turn", "1"],
-]
-
-
-def _opened_battle():
-    """A scripted `Gen3Battle` with both leads in and turn 1 marked."""
-    import logging
-
-    from agents.battle.gen3_battle import Gen3Battle
-
-    b = Gen3Battle("battle-gen3ou-canon", "p1user", logging.getLogger("event-window-test"), gen=3)
-    for line in _CANON_OPENING:
-        b.parse_message(line)
-    return b
-
-
-def _decide(tracker, battle, action=None):
-    """One decision, in `Gen3Env.embed_battle`'s exact order: record -> update_progress_clock
-    (the ONLY caller of `EventWindowTracker.update`) -> the caller encodes. Returns the folded
-    delta, as the env caches it."""
-    tracker.record(battle, np.ones(11, dtype=np.int8))
-    delta = tracker.update_progress_clock(battle, None)
-    if action is not None:
-        tracker.advance(action)
-    return delta
-
-
-def _event_rows(obs):
-    """The obs event block as (type, row) pairs for its VALID rows, oldest-first."""
-    return [
-        (int(obs[OFFSET_EVENT_WINDOW + r * EVENT_TOKEN_DIM + C.TYPE]), r)
-        for r in range(EVENT_WINDOW_N)
-        if obs[OFFSET_EVENT_WINDOW + r * EVENT_TOKEN_DIM + C.VALID] >= 0.5
-    ]
-
-
-def _encoder():
-    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-
-    return Gen3ObservationEncoder(load_mappings())
-
-
-def test_an_out_of_band_choice_rejection_reaches_the_NEXT_decisions_obs():
-    """A refused switch must arrive in the obs of the decision the server re-prompts for.
-
-    `CHOICE_REJECTED` is the ONE event kind recorded OUTSIDE the parse pass: poke-env intercepts
-    `|error|[Unavailable choice]` in `_handle_battle_message` before `parse_message` ever sees it,
-    and calls `Gen3Battle.record_choice_rejected` directly. So the fact this pins is that an
-    out-of-band append still lands INSIDE the next decision's `[cursor, now)` window — the cursor
-    is captured at `record()` time against the same log `_record` appends to, and nothing about
-    the parse pass is load-bearing for that.
-
-    It is the trap-reveal signal: after the frame deletion this row is the model's only route to
-    "we tried to pivot and were refused", so a miss here is silent GIGO, not a lost nicety.
-    """
-    from agents.observation.constants import EVENT_T_SWITCH_REJECTED
-    from agents.training.episode_tracker import EpisodeTracker
-
-    b, tr, enc = _opened_battle(), EpisodeTracker(history_cap=1), _encoder()
-
-    _decide(tr, b, action=2)                                  # decision 1: we press a switch
-    obs1 = enc.encode(b, event_window=tr.event_window)
-    assert not any(t == EVENT_T_SWITCH_REJECTED for t, _ in _event_rows(obs1)), \
-        "no rejection has happened yet — a row here would be a fabrication"
-
-    # The server refuses it. This is the whole out-of-band path, called exactly as poke-env does.
-    b.record_choice_rejected(
-        ["", "error", "[Unavailable choice] Can't switch: The active Pokemon is trapped"])
-
-    delta = _decide(tr, b)                                    # decision 2: the re-prompt
-    assert delta.attempted_switch_rejected, "the TurnDelta fold must see the rejection"
-    obs2 = enc.encode(b, event_window=tr.event_window)
-    rows = _event_rows(obs2)
-    assert rows, "decision 2 folded an empty window — the cursor did not cover the rejection"
-    typ, row = rows[-1]
-    assert typ == EVENT_T_SWITCH_REJECTED, (
-        f"the NEWEST row must be the rejection (it is the last event on the wire — the "
-        f"`|error|` is followed only by the re-prompt `|request|`, which is not an event); "
-        f"got type {typ}")
-    off = OFFSET_EVENT_WINDOW + row * EVENT_TOKEN_DIM
-    assert obs2[off + C.ACTOR_SIDE] == 1.0, "a rejection is always OURS"
-    assert obs2[off + C.ACTOR_SPECIES] > 0.0, \
-        "the actor is the trapped mon — an unattributed row cannot say WHO is stuck"
-
-
-def test_a_cant_line_reaches_the_obs_through_the_same_decision_cycle():
-    """The CANT row's end-to-end pin — the sibling of the rejection above.
-
-    CANT is fed by an ORDINARY `|cant|` protocol line (the normal parse pass), so it does NOT
-    share the rejection's out-of-band exposure. That is asserted here rather than assumed: the
-    two rows arrived in this window for the same reason (the lag frames were their only route
-    before `gen3_frame_deletion_v1`), the CANT fold reads the un-obvious `blocked_side` /
-    `blocked_actor` attribution, and nothing else drives a `|cant|` line all the way to an obs
-    index."""
-    from agents.observation.gen3_effects import cant_reason_id
-    from agents.training.episode_tracker import EpisodeTracker
-
-    b, tr, enc = _opened_battle(), EpisodeTracker(history_cap=1), _encoder()
-
-    _decide(tr, b, action=6)
-    b.parse_message(["", "cant", "p1a: Zappy", "par"])
-    _decide(tr, b)
-
-    obs = enc.encode(b, event_window=tr.event_window)
-    rows = _event_rows(obs)
-    assert rows, "decision 2 folded an empty window — the |cant| never reached it"
-    typ, row = rows[-1]
-    assert typ == EVENT_T_CANT, f"the newest row must be the CANT, got type {typ}"
-    off = OFFSET_EVENT_WINDOW + row * EVENT_TOKEN_DIM
-    assert obs[off + C.CANT] == float(cant_reason_id("par")), \
-        "the reason must reach the obs, not just the record — a bare 'could not move' row " \
-        "cannot tell paralysis from sleep"
-    assert obs[off + C.ACTOR_SIDE] == 1.0 and obs[off + C.ACTOR_SPECIES] > 0.0
-
-
-def test_the_window_block_is_ZERO_without_update_progress_clock():
-    """The trap that made the trapping-signals fuzz read FAIL on a working signal.
-
-    `update_progress_clock` is the ONLY caller of `EventWindowTracker.update`, and `encode`'s
-    `event_window=` is optional (None leaves the block zero). Miss either and the whole 32-row
-    block reads structurally zero — which a presence check on any single row type reports as
-    "the signal never reached the model", indistinguishable from a real miss. Pinned so the
-    next harness author is told this by a test name instead of by a day of debugging."""
-    from agents.training.episode_tracker import EpisodeTracker
-
-    b, tr, enc = _opened_battle(), EpisodeTracker(history_cap=1), _encoder()
-    tr.record(b, np.ones(11, dtype=np.int8))                 # record only — no clock update
-    tr.advance(2)
-    b.record_choice_rejected(["", "error", "[Unavailable choice] trapped"])
-    tr.record(b, np.ones(11, dtype=np.int8))
-
-    block = slice(OFFSET_EVENT_WINDOW, OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM)
-    assert not np.any(enc.encode(b, event_window=tr.event_window)[block]), \
-        "without update_progress_clock the tracker's window is never fed"
-    assert not np.any(enc.encode(b)[block]), \
-        "without event_window= the encoder writes nothing, however well fed the tracker is"
-
-
-# ---------------------------------------------------------------------------
-# The residual-attribution defect (shipped v81, found 2026-08-17 by coverage audit)
-# ---------------------------------------------------------------------------
-
-def test_residual_damage_is_not_folded_into_the_move_magnitude():
-    """A move's magnitude is ITS OWN hit — residual chip on the same target must not join it.
-
-    The defect this pins: `EventWindowTracker` tested `e.value.get("from")` to mean "this damage
-    carries a [from] clause, so it is NOT the move's own hit". On a DAMAGE event the parser
-    stores that clause under `value["reason"]` instead, so the raw key was ALWAYS absent and the
-    guard NEVER fired. Every sandstorm / burn / poison / Leech Seed / recoil tick landing on the
-    move's target that turn was added to the move's attributed hp_delta — measured -0.3625 for a
-    -0.3000 hit under sandstorm. It shipped in v81 and trained through two generations.
-
-    Asserted on the ARITHMETIC, not on the guard's spelling: a future refactor that reaches for
-    the wrong key again fails here regardless of how it phrases the test."""
-    t = EventWindowTracker(maxlen=16)
-    t.update(1, [_ev(1, 1, EventKind.SWITCH, OURS, "snorlax", prev_active=None),
-                 _ev(2, 1, EventKind.SWITCH, OPP, "tyranitar", prev_active=None)],
-             "snorlax", "tyranitar")
-    t.update(2, [
-        _ev(3, 2, EventKind.MOVE, OPP, "tyranitar", move_id="rockslide"),
-        _ev(4, 2, EventKind.DAMAGE, OURS, sp="snorlax", amount=-0.30),                 # the hit
-        _ev(5, 2, EventKind.DAMAGE, OURS, sp="snorlax", amount=-0.0625, reason="Sandstorm"),
-        _ev(6, 2, EventKind.DAMAGE, OURS, sp="snorlax", amount=-0.0625, reason="brn"),
-    ], "snorlax", "tyranitar")
-    moves = [r for r in t.window() if r["t"] == EVENT_T_MOVE]
-    assert len(moves) == 1
-    assert abs(moves[0]["hp_delta"] - (-0.30)) < 1e-9, (
-        f"move magnitude {moves[0]['hp_delta']} != -0.30 — residual damage was folded in")
-
-
-def test_from_clause_reads_both_storage_keys():
-    """`[from]` lives under two different keys depending on event kind — one accessor must span it.
-
-    DAMAGE/HEAL/SETHP/STATUS store it as `value["reason"]`; ITEM/ENDITEM/WEATHER/effect kinds
-    merge the parsed cause dict so it lands under `value["from"]`. BOTH raw accessors therefore
-    return None for half the event kinds, silently. `from_clause` is the one safe reader, and
-    this pins that — the inconsistency is the actual defect generator, not the one call site."""
-    dmg = _ev(1, 1, EventKind.DAMAGE, OURS, "snorlax", amount=-0.06, reason="Sandstorm")
-    itm = _ev(2, 1, EventKind.ENDITEM, OURS, "snorlax", item="leftovers", **{"from": "move: Knock Off"})
-    assert dmg.from_cause is None, "precondition: the raw key really is absent on DAMAGE"
-    assert dmg.from_clause == "Sandstorm"
-    assert itm.from_clause == "move: Knock Off"
-    assert _ev(3, 1, EventKind.DAMAGE, OURS, "snorlax", amount=-0.30).from_clause is None
-
-
-def test_an_unknown_status_name_CRASHES_rather_than_reading_as_none():
-    """Crash-don't-drop at the H-B status vocabulary (the `normalize_cant_reason` contract).
-
-    `_EVENT_STATUS_IDS.get(name, 0)` coded any unrecognised status as 0 — the id that MEANS
-    "no status". A parser or vocabulary drift would therefore tell the model the opponent was
-    clean on a turn it was badly poisoned, with no metric anywhere to show it."""
-    from agents.training.episode_tracker import _event_status_id
-
-    assert _event_status_id(None) == 0 and _event_status_id("") == 0
-    assert _event_status_id("tox") == 6 and _event_status_id("TOX") == 6
-    with pytest.raises(ValueError, match="unknown status"):
-        _event_status_id("frostbite")
-    # …but a `[...]` protocol modifier in the status slot is ABSENCE, not a bad name. The parser
-    # reads the status positionally, and a real `|-curestatus|` from Heal Bell / Aromatherapy
-    # lands `'[from] move: Aromatherapy'` there — caught by the routine gate on live battles when
-    # this guard first shipped without the distinction.
-    assert _event_status_id("[from] move: Aromatherapy") == 0
-    assert _event_status_id("[silent]") == 0
 
 
 def test_the_status_seat_table_covers_the_producer_vocabulary():
@@ -514,66 +95,6 @@ def test_the_status_seat_table_covers_the_producer_vocabulary():
     assert seats.status_emb.num_embeddings == EventSeats._STATUS_ROWS
     # every live id addresses its OWN row — none of them is the clamp target
     assert max(EVENT_STATUS_IDS.values()) < seats.status_emb.num_embeddings - 1
-
-
-# ---------------------------------------------------------------------------
-# gen3_damp_cant_v1 — the ability-sourced cant (register §3.7)
-# ---------------------------------------------------------------------------
-
-def test_damp_cant_does_not_crash_and_is_attributed_to_the_blocked_mon():
-    """`ability: Damp` must fold cleanly AND name the mon that actually lost its turn.
-
-    TWO defects rode this one row and fixing only the first would have shipped the second.
-
-    (a) CRASH. `damp` was absent from the cant vocabulary, and `normalize_cant_reason` is
-        crash-don't-drop — so the first blocked Explosion raised out of `state_encoder.encode`
-        and killed the episode, and in training the run. Damp is gen3-legal (Quagsire, Golduck,
-        Politoed, …) and Explosion is ubiquitous in gen3ou, so it is reachable in ordinary play;
-        reproduced on battle #1 of a scripted Quagsire-vs-Snorlax bridge battle.
-
-    (b) A LYING ROW. Showdown files an ability-sourced cant against the ability HOLDER with the
-        BLOCKED move as its argument:
-            |cant|p1a: Quagsire|ability: Damp|Self-Destruct|[of] p2a: Snorlax
-        Taken at face value that says Quagsire could not use Self-Destruct — a move it never had
-        — while the side that really lost its turn goes unmentioned. The `[of]` mon is resolved
-        at EMISSION (the log gains the fact; the fold stays pure) and preferred here."""
-    t = EventWindowTracker(maxlen=16)
-    t.update(1, [_ev(1, 1, EventKind.SWITCH, OURS, "quagsire", prev_active=None),
-                 _ev(2, 1, EventKind.SWITCH, OPP, "snorlax", prev_active=None)],
-             "quagsire", "snorlax")
-    t.update(2, [_ev(3, 2, EventKind.CANT, OURS, "quagsire",
-                     reason="ability: Damp", move="selfdestruct",
-                     **{"of": "p2a: Snorlax", "of_side": OPP, "of_actor": "snorlax"})],
-             "quagsire", "snorlax")
-    rows = [r for r in t.window() if r["t"] == EVENT_T_CANT]
-    assert len(rows) == 1
-    assert rows[0]["actor"] == "snorlax", "the row must name the mon that LOST its turn"
-    assert rows[0]["side"] == OPP, "...and its side, not the Damp holder's"
-    assert rows[0]["cant"] == "ability: Damp"
-
-
-def test_an_ordinary_cant_still_uses_its_own_actor():
-    """The `[of]` preference must not disturb self-inflicted cants, where holder == blocked mon."""
-    t = EventWindowTracker(maxlen=16)
-    t.update(1, [_ev(1, 1, EventKind.SWITCH, OURS, "snorlax", prev_active=None)], "snorlax", None)
-    t.update(2, [_ev(2, 2, EventKind.CANT, OURS, "snorlax", reason="par")], "snorlax", None)
-    r = [x for x in t.window() if x["t"] == EVENT_T_CANT][0]
-    assert r["actor"] == "snorlax" and r["side"] == OURS
-
-
-def test_truant_is_ability_sourced_but_keeps_its_OWN_actor():
-    """The `[of]` preference must key on `[of]`, NOT on the `ability:` prefix.
-
-    `ability: Truant` is every bit as ability-sourced as `ability: Damp` and is entirely
-    SELF-inflicted — the loafing mon blocks itself. Showdown sends no `[of]` for it, because
-    `[of]` means "caused by that OTHER mon". A rule that re-attributed on the prefix would
-    hand every Truant turn to the opponent, turning one fixed lie into a new one."""
-    t = EventWindowTracker(maxlen=16)
-    t.update(1, [_ev(1, 1, EventKind.SWITCH, OURS, "slaking", prev_active=None)], "slaking", None)
-    t.update(2, [_ev(2, 2, EventKind.CANT, OURS, "slaking", reason="ability: Truant")],
-             "slaking", None)
-    r = [x for x in t.window() if x["t"] == EVENT_T_CANT][0]
-    assert r["actor"] == "slaking" and r["side"] == OURS, "Truant must keep its own actor"
 
 
 def test_the_archive_cant_vocabulary_is_FROZEN():
@@ -637,26 +158,18 @@ def test_the_two_one_hot_groups_are_contiguous_and_in_order():
     assert C.MAGNITUDE < C.OUT_HIT and C.EFF_IMMUNE < C.WE_FIRST
 
 
-def test_producer_and_consumer_import_the_SAME_declaration():
-    """Not "agree on the numbers" — are the SAME object.
+def test_the_consumer_imports_the_SAME_declaration():
+    """Not "agree on the numbers" — the SAME object.
 
-    Two modules each holding their own copy of the map would pass every value assertion above
-    right up until one of them was edited. The point of the declaration is that there is one.
-    (Both read it through the `EVENT_COL` plain-int mirror, itself generated from `EventCol` —
-    see `test_the_plain_int_mirror_agrees_with_the_enum_member_for_member`.)
-
-    The PRODUCER is `assembler.write_event_row` since gen3_obs_assembler_v1 — one row writer
-    shared by the full rebuild in `state_encoder.encode` and the incremental ring, which is what
-    keeps the two obs schedulers from drifting in content. `state_encoder` no longer imports the
-    map at all, and this test follows the writer rather than the file it used to live in."""
+    A module holding its own copy of the map would pass every value assertion above right up until
+    one of them was edited. The consumer (`team_transformer.EventSeats`) reads the `EVENT_COL` plain-int
+    mirror, itself generated from `EventCol` (see
+    `test_the_plain_int_mirror_agrees_with_the_enum_member_for_member`). The PRODUCER is the Rust
+    encoder since T27 P6 slice 6d-2; its columns are held equal to `EventCol` by
+    `rust_core_obs_layout_test.py::test_the_event_columns_are_equal`."""
     from agents.observation.constants import EVENT_COL
-    from agents.observation import assembler as _producer
     from agents.model import team_transformer as _consumer
-    assert _producer.EVENT_COL is EVENT_COL
     assert _consumer.EVENT_COL is EVENT_COL
-    # …and the full path really does route through that writer (not a second copy of the loop).
-    import agents.observation.state_encoder as _se
-    assert _se.write_event_row is _producer.write_event_row
 
 
 def test_event_seats_scalar_count_matches_the_column_map():

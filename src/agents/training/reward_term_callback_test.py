@@ -109,7 +109,8 @@ class TestTheSeam:
 class TestTheRegistration:
     def test_the_launch_path_registers_it_with_this_runs_own_class_map(self):
         # The grouping and the startup composition line must read ONE declaration.
-        from agents.training.reward_manager import RewardConfig, reward_class_composition
+        from agents.training.reward_config import RewardConfig
+        from agents.training.reward_composition import reward_class_composition
         from agents.training.reward_term_stats import term_class_map
 
         cmap = term_class_map(reward_class_composition(RewardConfig()))

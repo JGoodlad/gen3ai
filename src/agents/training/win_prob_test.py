@@ -61,27 +61,24 @@ def test_a_FLAT_margin_is_treated_as_absent():
 
 
 def test_a_REAL_margin_spread_selects_a_STRICT_SUBSET():
-    """`gen3_obs_margin_unconditional_v1` — the consumer half of the fix, driven by margins the
-    REAL reward manager publishes under the win-prob composition rather than by hand-typed floats.
+    """`gen3_obs_margin_unconditional_v1` — the consumer half of the fix, driven by margins the REAL
+    `material_margin` rule computes off board views rather than by hand-typed floats. (It formerly read
+    them off the per-turn reward manager, which only wrapped this rule — deleted with the Python battle
+    layer, T27 P6 slice 6d-2; training's `win_margin` label is the Rust core's twin, `labels/margin.rs`.)
 
     Pre-fix, every one of these read 0.0, so `|margin| < tau` was always true: `contested_frac`
     was a flat 1.0, every `*_contested` tag was a byte-identical copy of its pooled sibling, and
     `P_mat` was a constant 0.5 — `skill_vs_material` scored the head against a coin flip."""
-    from agents.training.reward_manager import Gen3RewardManager, RewardConfig
-    from agents.training.reward_test_fakes import _Battle, _delta, _full_team_live
+    from agents.training.material_margin import material_margin
+    from agents.training.reward_test_fakes import _full_team_live
 
-    winprob = RewardConfig(terminal_indicator=True, victory_value=1.0, draw_penalty=0.0)
-    margins = []
-    for ours, opp in ((6, 1), (6, 2), (4, 4), (3, 3), (2, 6), (1, 6)):
-        mgr = Gen3RewardManager(config=winprob)
-        mgr.process_turn_reward(_Battle(_full_team_live(our_alive=ours, opp_alive=opp), turn=5),
-                                _delta())
-        margins.append([mgr._last_material_margin])
+    margins = [[material_margin(_full_team_live(our_alive=ours, opp_alive=opp))]
+               for ours, opp in ((6, 1), (6, 2), (4, 4), (3, 3), (2, 6), (1, 6))]
 
     margin = torch.tensor(margins)
     n = margin.shape[0]
     # A board-derived spread, not a hand-built one — the fix's whole point.
-    assert float(margin.max() - margin.min()) > 0.0, "the reward manager published a flat margin"
+    assert float(margin.max() - margin.min()) > 0.0, "the material-margin rule produced a flat margin"
 
     logits = torch.zeros(n, 1)
     target = (margin > 0).float()

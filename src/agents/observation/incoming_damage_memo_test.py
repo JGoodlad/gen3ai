@@ -263,19 +263,6 @@ def test_no_two_distinct_boards_share_a_key():
                               "empty-team"}, f"unexpected key collision: {group}"
 
 
-def test_hp_tracker_bypasses_the_memo():
-    """The tracker's per-episode narrowing is NOT in the key, so it must never be served from it.
-    Priming the memo with the tracker-free answer and then asking WITH a tracker must return the
-    tracker's answer, not the cached one."""
-    from agents.training.hidden_power_tracker import HiddenPowerTracker
-    live = _live(_opp("zapdos", moves=("hiddenpower",), types=("electric", "flying")))
-    memo = enc.IncomingBeliefMemo()
-    enc.encode_block(live, memo=memo)                       # prime with the prior-typed HP
-    tr = HiddenPowerTracker(_priors={"zapdos": {"ice": 1.0}})
-    with_tracker = enc.encode_block(live, hp_tracker=tr, memo=memo)
-    assert np.array_equal(with_tracker, enc.encode_block(live, hp_tracker=tr))
-
-
 def test_clearing_at_any_point_changes_nothing():
     """The memo is CONTENT-keyed, not history-carried: dropping it mid-stream must be invisible.
     This is the property `_pbrs_step` refuses to give up by telescoping Φ, stated as a test."""

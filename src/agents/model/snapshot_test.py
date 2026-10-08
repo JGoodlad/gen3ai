@@ -226,7 +226,7 @@ def test_migrate_pre_v41_adds_belief_grad_mode_default(version):
 # check_reward_config — resume-only value-meaning check (NOT part of check_compatible)
 # ---------------------------------------------------------------------------
 def _reward_cfg(**kw):
-    from agents.training.reward_manager import RewardConfig
+    from agents.training.reward_config import RewardConfig
     return RewardConfig(**kw)
 
 

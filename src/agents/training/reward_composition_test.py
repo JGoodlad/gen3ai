@@ -21,7 +21,7 @@ from agents.training.reward_composition import (
     reward_class_composition,
     reward_composition_block,
 )
-from agents.training.reward_manager import RewardConfig
+from agents.training.reward_config import RewardConfig
 
 #: The production reward composition.
 _WINPROB = dict(victory_value=1.0, draw_penalty=0.0, terminal_indicator=True)

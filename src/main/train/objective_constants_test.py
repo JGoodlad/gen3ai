@@ -56,7 +56,7 @@ def test_a_typed_flag_is_refused_with_its_reason_and_leaves_the_constant_alone(d
 def test_the_reward_config_a_launch_builds_is_the_winprob_one_never_the_dataclass_fallback():
     """The silent-wrong-objective guard: absent attributes would read the shaped-era dataclass defaults
     (victory 30.0, draw -35.0, signed terminal) — the constants must keep `from_args` on production's."""
-    from agents.training.reward_manager import RewardConfig
+    from agents.training.reward_config import RewardConfig
 
     rc = RewardConfig.from_args(build_parser().parse_args(["--steps", "1"]))
     assert (rc.victory_value, rc.draw_penalty, rc.terminal_indicator) == (1.0, 0.0, True)

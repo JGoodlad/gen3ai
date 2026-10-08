@@ -275,7 +275,7 @@ def test_no_arch_signature_bump_at_v109():
 def test_the_indicator_terminal_pays_zero_on_every_non_win():
     """Loss, pre-cap tie and 250-turn timeout alike, because the critic is sigmoid(logit) in
     [0,1] and V(s) == E[return] only holds when the return is `victory_value * 1{win}`."""
-    from agents.training.reward_manager import RewardConfig
+    from agents.training.reward_config import RewardConfig
     from agents.training.reward_terminal_test_support import terminal_reward
     cfg = RewardConfig(terminal_indicator=True, victory_value=1.0)
     assert terminal_reward(cfg, "win") == pytest.approx(1.0)
@@ -286,7 +286,7 @@ def test_the_indicator_terminal_pays_zero_on_every_non_win():
 
 def test_the_default_terminal_is_unchanged():
     """OFF byte-identity for the reward: the historical ±30 with the −35 stall ordering."""
-    from agents.training.reward_manager import RewardConfig
+    from agents.training.reward_config import RewardConfig
     from agents.training.reward_terminal_test_support import terminal_reward
     cfg = RewardConfig()
     assert cfg.terminal_indicator is False
@@ -306,7 +306,7 @@ def test_the_reward_defaults_track_the_dataclass():
     """The `reward_defaults_test` rule: a divergence would make an ABSENT field mean one thing to
     the reward and another to the version record."""
     from agents.model.model_version.constants import _REWARD_IMMUTABLE_FIELDS
-    from agents.training.reward_manager import RewardConfig
+    from agents.training.reward_config import RewardConfig
     rc = RewardConfig()
     for name in _REWARD_IMMUTABLE_FIELDS:
         assert getattr(rc, name) == _REWARD_IMMUTABLE_FIELDS[name]
@@ -318,7 +318,7 @@ def test_the_winprob_discount_is_the_identity_and_the_shaped_one_is_never_retype
     historical default), never as a second copy of the number."""
     import agents.model.critic_mode as cm
     from agents.training.reward_weights import PBRS_GAMMA
-    from agents.training.reward_manager import RewardConfig
+    from agents.training.reward_config import RewardConfig
     assert cm.WINPROB_GAMMA == 1.0 and not hasattr(cm, "critic_gamma")
     assert PBRS_GAMMA == 0.9999 == RewardConfig().gamma
 

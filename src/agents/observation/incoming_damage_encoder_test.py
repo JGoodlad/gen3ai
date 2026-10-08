@@ -5,12 +5,10 @@ the FIX-2 widenings (Return/Frustration pricing, Hidden Power typed expansion, t
 floor/cap so super-effective coverage survives). Uses real gen3_data (species/moves/priors) and the
 revealed move-id list `_candidates` takes (the belief is now sourced from LiveView) — no battle, no torch.
 """
-from types import SimpleNamespace as NS
 
 from agents.enums import PokemonType as PT
 from agents.observation import incoming_damage as inc
 from agents.observation import incoming_damage_encoder as enc
-from agents.training.hidden_power_tracker import HiddenPowerTracker
 
 
 def _channels(opp_moves, species, hp_tracker=None):
@@ -43,19 +41,6 @@ def test_revealed_hidden_power_no_dist_is_silent_but_safe():
     # A species with no HP prior and no tracker obs → no typed HP candidates (graceful, not a crash).
     cands = enc._hidden_power_candidates("missingno_nonexistent_species", None, 1.0)
     assert cands == []
-
-
-def test_revealed_hp_tracker_narrows_type():
-    # Once the HP tracker has observed an effectiveness tier, the expansion follows the NARROWED
-    # distribution, not the broad prior. Observing HP at 2× on a Dragon/Flying mon rules out every
-    # type but Ice (the 4× coverage), so the expansion collapses to a single HP Ice candidate at P=1.
-    tr = HiddenPowerTracker(_priors={"zapdos": {"ice": 0.5, "grass": 0.5}})
-    dragon_flyer = NS(type_1=PT.DRAGON, type_2=PT.FLYING, ability=None, status=None, species="x")
-    assert tr.is_feasible(2.0, dragon_flyer)
-    tr.observe("zapdos", 2.0, dragon_flyer)
-    cands = enc._hidden_power_candidates("zapdos", tr, 1.0)
-    assert len(cands) == 1 and cands[0].move_type == PT.ICE
-    assert abs(cands[0].p_in_set - 1.0) < 1e-6   # normalised: HP is in the set, type pinned to Ice
 
 
 def test_widened_floor_and_cap_admit_more_se_coverage():

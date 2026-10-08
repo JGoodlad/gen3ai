@@ -28,7 +28,8 @@ from agents.model.model_version import (
     ModelVersion,
     ModelVersionError,
 )
-from agents.training.reward_manager import RewardConfig, reward_class_composition
+from agents.training.reward_config import RewardConfig
+from agents.training.reward_composition import reward_class_composition
 from main.train_rl_agent import build_parser
 
 

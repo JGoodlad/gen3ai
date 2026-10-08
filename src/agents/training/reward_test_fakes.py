@@ -1,21 +1,15 @@
-"""Shared fakes for the reward-manager and progress-clock unit tests — NOT a test module.
+"""A minimal LiveView stub for the material-margin rule (`win_prob_test.py`) — NOT a test module.
 
-`reward_manager_test.py`, `reward_registry_test.py`, `reward_progress_clock_test.py` and the
-terminal helper `reward_terminal_test_support.py` need the same minimal LiveView / battle /
-TurnDelta stubs, so those live here once.
+The battle / TurnDelta / legality stubs the deleted reward-manager and progress-clock tests shared went
+with them (T27 P6 slice 6d-2).
 
 The name deliberately does NOT match pytest's `python_files` patterns (`*_test.py`), so this module
 is imported, never collected.
 """
-import numpy as np
 
 
-
-# --------------------------------------------------------------------------- #
-# Minimal LiveView / battle / delta stubs for Φ_mat + the fold.                 #
-# --------------------------------------------------------------------------- #
 class _Mon:
-    """Rich enough for the full process_turn_reward fold (status/se/dead-matchup/belief helpers)."""
+    """A board mon: what `material_margin` reads (`hp_fraction`, `fainted`), plus inert view fields."""
     def __init__(self, hp_fraction=1.0, species="mon", active=False):
         self.hp_fraction = hp_fraction
         self.fainted = hp_fraction <= 0.0
@@ -48,44 +42,6 @@ class _Live:
         self.opp = _Side(opp_hps, team_size=opp_team_size)
         self.weather = None
         self.won, self.lost, self.finished = won, lost, finished
-
-
-class _Battle:
-    def __init__(self, live, turn=1):
-        self._live = live
-        self.turn = turn
-        live.turn = turn   # mirror the real LiveView (its .turn comes from battle.turn) — the
-                           # terminal block reads live.turn to detect the stall TIMEOUT (turn>=cap).
-        self.won = live.won
-        self.lost = live.lost
-        self.finished = live.finished
-
-    def live_view(self):
-        return self._live
-
-
-def _delta(**kw):
-    """A minimal TurnDelta-like object exposing only the fields the fold/clock read."""
-    from types import SimpleNamespace
-    base = dict(
-        our_hp_delta=np.zeros(6, dtype=np.float32), opp_hp_delta=np.zeros(6, dtype=np.float32),
-        our_boost_delta=np.zeros(7, dtype=np.int8),
-        we_fainted=False, opp_fainted=False, our_move_id=None, our_switch_to=None,
-        opp_switch_to=None, opp_damaging_event=None, our_damaging_event=None,
-        opp_target_hp_delta=None, our_move_hit_delta=0.0, our_move_outcome=None,
-        our_failed_to_move=False,
-        our_effectiveness=1.0,
-        our_cant_reason=None, opp_status_applied=None, opp_resolved_move_id=None,
-        phase_is_forced_switch=False, our_status_applied=None,
-        our_status_cured=None, opp_status_cured=None,
-    )
-    base.update(kw)
-    return SimpleNamespace(**base)
-
-
-class _Legal:
-    def __init__(self, switches=()):
-        self.switches = tuple(switches)
 
 
 def _full_team_live(our_alive=6, opp_alive=6, our_hp=1.0, opp_hp=1.0, **kw):

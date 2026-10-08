@@ -10,13 +10,8 @@ import math
 
 import pytest
 
-from agents.training.reward_manager import (
-    RewardBreakdown,
-    RewardClass,
-    RewardConfig,
-    Gen3RewardManager,
-    reward_class_composition,
-)
+from agents.training.reward_composition import reward_class_composition
+from agents.training.reward_config import RewardBreakdown, RewardClass, RewardConfig
 from agents.training.reward_term_stats import (
     CLASS_NAMES,
     RewardTermAccumulator,
@@ -170,20 +165,3 @@ class TestTheMetrics:
         acc.observe(_bd(win_loss=1.0), total=1.0)
         m = reward_term_metrics(merge_drained([acc.drain()]), {})
         assert m["class_other_abs_share"] == pytest.approx(1.0)
-
-
-class TestTheManagerSeam:
-    def test_a_real_manager_tracks_its_own_composition_and_drains_to_None_twice_safely(self):
-        mgr = Gen3RewardManager(config=RewardConfig())
-        assert mgr._term_stats is not None
-        assert set(mgr._term_stats.terms) == set(
-            tracked_terms(reward_class_composition(mgr.config)))
-        drained = mgr.drain_reward_terms()
-        assert drained is not None and drained["n"] == 0
-
-    def test_the_accumulator_survives_an_episode_reset(self):
-        # The window is a ROLLOUT window, drained by the callback — not an episode window.
-        mgr = Gen3RewardManager(config=RewardConfig())
-        mgr._term_stats.observe(_bd(win_loss=30.0), total=30.0)
-        mgr.reset()
-        assert mgr.drain_reward_terms()["n"] == 1

@@ -5,7 +5,9 @@ exhaustive and non-overlapping (and TERMINAL-only since the shaped-reward deleti
 import unittest
 from dataclasses import fields
 
-from agents.training.reward_manager import RewardConfig, RewardClass, RewardBreakdown, PBRS_GAMMA
+from agents.training.reward_config import RewardConfig, RewardClass, RewardBreakdown
+
+from agents.training.reward_weights import PBRS_GAMMA
 
 
 class TestRewardRegistry(unittest.TestCase):
