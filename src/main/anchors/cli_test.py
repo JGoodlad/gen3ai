@@ -186,9 +186,66 @@ def test_the_default_transport_is_the_RUST_front_end_and_no_node_server_is_named
     plan must be able to say so before anything is started."""
     plan = build_plan(_args(), cfg)
     assert plan.server_impl == "rust"
-    assert plan.server_version.startswith("ws_frontend@")
+    # P3: with a checkpoint our-side the default front end runs IN-PROCESS (our side is its slot)
+    assert plan.server_version.startswith("ws_frontend[in-process]@")
     rendered = render_plan(plan, cfg)
-    assert "[rust]" in rendered and "NO NODE SERVER IS STARTED" in rendered
+    assert "[rust, IN-PROCESS]" in rendered and "NO NODE SERVER IS STARTED" in rendered
+    # the legacy client keeps the SUBPROCESS front end, stopped by its PID
+    legacy = build_plan(_args("--our-transport", "poke-env"), cfg)
+    assert legacy.server_version.startswith("ws_frontend@")
+    assert "[rust] (this tool starts and stops it by PID)" in render_plan(legacy, cfg)
+
+
+# --------------------------------------------------------- P3: who builds OUR observation
+def test_the_default_our_transport_is_the_CORE_slot_and_the_plan_says_so(cfg) -> None:
+    """P3 of the poke-env retirement: a checkpoint on `--server rust` plays as an in-process slot
+    of the front end, on the core's own row — and the plan names the reader and why it was chosen."""
+    plan = build_plan(_args(), cfg)
+    assert plan.our_transport == "core"
+    assert plan.our_transport_note.startswith("auto")
+    rendered = render_plan(plan, cfg)
+    assert "our transport     core" in rendered and "NO poke-env here" in rendered
+    assert "in-process core slot" in rendered and "python -m main.play" not in rendered
+
+
+@pytest.mark.parametrize("argv, legacy_reason", [
+    (("--server", "node"), "--server rust started by this tool"),
+    (("--server-uri", "ws://127.0.0.1:9543/showdown/websocket"), "--server rust started by this tool"),
+    (("--our-side", "bot:random"), "a checkpoint our-side"),
+    (("--challenge-mode", "pipelined"), "--challenge-mode serial"),
+])
+def test_auto_falls_back_to_the_legacy_client_SAYING_why(cfg, argv, legacy_reason) -> None:
+    plan = build_plan(_args(*argv), cfg)
+    assert plan.our_transport == "poke-env"
+    assert legacy_reason in plan.our_transport_note
+    assert legacy_reason in render_plan(plan, cfg)
+
+
+@pytest.mark.parametrize("argv", [
+    ("--server", "node"),
+    ("--server-uri", "ws://127.0.0.1:9543/showdown/websocket"),
+    ("--our-side", "bot:random"),
+    ("--challenge-mode", "pipelined"),
+])
+def test_an_explicit_core_transport_that_cannot_be_served_is_REFUSED(cfg, argv) -> None:
+    with pytest.raises(SystemExit, match="--our-transport core needs"):
+        build_plan(_args("--our-transport", "core", *argv), cfg)
+
+
+def test_a_peer_our_side_has_no_transport_of_ours(cfg) -> None:
+    plan = build_plan(_args("--our-side", "metamon:SyntheticRLV2", "--dry-run"), cfg)
+    assert plan.our_transport == "peer"
+
+
+@pytest.mark.parametrize("argv, stamp", [
+    ((), "rust_core_slot"),
+    (("--our-transport", "poke-env"), "poke_env_rlplayer"),
+    (("--our-side", "bot:random"), "poke_env_bot"),
+    (("--our-side", "metamon:SyntheticRLV2"), "peer"),
+])
+def test_every_row_stamps_WHICH_reader_built_our_observation(cfg, argv, stamp) -> None:
+    plan = build_plan(_args(*argv, "--dry-run"), cfg)
+    assert runner_mod.cell_spec(plan, {}, 1).stamp()["our_transport"] == stamp
 
 
 def test_node_is_reachable_as_the_explicit_opt_out(cfg) -> None:

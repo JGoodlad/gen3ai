@@ -41,7 +41,6 @@ src/agents/training/obs_build_benchmark.py
 src/agents/training/obs_materializer.py
 src/agents/training/trainer_turn_benchmark.py
 src/agents/training/turn_delta.py
-src/main/anchors/runner.py
 src/main/anchors/session.py
 src/main/eval_worker.py
 src/main/play.py

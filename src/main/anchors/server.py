@@ -369,6 +369,101 @@ class FrontEndServer(ManagedServer):
         return f"ws_frontend@{head}+{self.impl}:{binary}"
 
 
+class InProcessFrontEnd:
+    """The websocket front end run INSIDE this process, so OUR side can be an in-process slot
+    (``--our-transport core``, P3 of the poke-env retirement; :mod:`main.anchors.core_side`).
+
+    :class:`FrontEndServer` is a subprocess because the process that ran it used to import our
+    vendored poke-env for its OWN client; on the core path this process imports no poke-env at all,
+    so the server can live here and our slot needs no socket. The peer still connects over a real
+    websocket on a 9500–9599 port (8000/8001 refused), and it is stopped by closing the listener
+    and reaping every ``sim_bridge`` child it started — there is no PID of ours to kill, because
+    the server IS this process. Its log goes to ``ws_frontend.log`` in the read's directory, the
+    same file the subprocess wrote, so "0 ERRORs in the server log" reads the same way.
+    """
+
+    label = "ws_frontend (in-process)"
+    log_name = FrontEndServer.log_name
+
+    def __init__(self, port: int, battle_format: str = "gen3ou", seed_base: Optional[int] = None,
+                 capture_dir: Optional[Path] = None, log_path: Optional[Path] = None,
+                 pair_log: Optional[Path] = None, host: str = "127.0.0.1") -> None:
+        refuse_reserved(port)
+        self.port = port
+        self.host = host
+        self.battle_format = battle_format
+        self.seed_base = seed_base
+        self.capture_dir = Path(capture_dir) if capture_dir is not None else None
+        self.pair_log = Path(pair_log) if pair_log is not None else None
+        self.log_path = log_path
+        self.front = None
+        self._server = None
+        self._handler = None
+        self._saved_log: tuple = (0, True)
+        self.pid = os.getpid()
+
+    @property
+    def uri(self) -> str:
+        return server_uri(self.port)
+
+    async def __aenter__(self) -> "InProcessFrontEnd":
+        import logging
+
+        from websockets.asyncio.server import serve
+
+        from utils.bridge.seed_spec import derive_seed_from_base, validate_seed_spec
+        from utils.bridge.ws_frontend import ShowdownFrontEnd
+
+        if self.seed_base is not None:
+            validate_seed_spec(derive_seed_from_base(self.seed_base, 0))
+        if self.capture_dir is not None:
+            self.capture_dir.mkdir(parents=True, exist_ok=True)
+        log = logging.getLogger("ws_frontend")
+        self._saved_log = (log.level, log.propagate)
+        if self.log_path is not None:
+            self.log_path.parent.mkdir(parents=True, exist_ok=True)
+            self._handler = logging.FileHandler(self.log_path, mode="w")
+            self._handler.setFormatter(logging.Formatter(
+                "%(asctime)s %(levelname)s %(name)s %(message)s"))
+            log.addHandler(self._handler)
+            log.setLevel(logging.INFO)
+            log.propagate = False
+        self.front = ShowdownFrontEnd(
+            impl="rust", battle_format=self.battle_format, seed_base=self.seed_base,
+            capture_dir=str(self.capture_dir) if self.capture_dir is not None else None,
+            pair_seeds=self.pair_log is not None,
+            pair_log=str(self.pair_log) if self.pair_log is not None else None)
+        self._server = await serve(self.front.handler, self.host, self.port, max_size=None,
+                                   ping_interval=None)
+        log.info("ws_frontend listening IN-PROCESS — %s (seed_base=%s)", self.uri, self.seed_base)
+        log.info("[ws_frontend] READY %s", self.uri)
+        return self
+
+    async def __aexit__(self, *exc: object) -> None:
+        import logging
+
+        try:
+            if self._server is not None:
+                self._server.close()
+                await self._server.wait_closed()
+            if self.front is not None:
+                await self.front.close()
+        finally:
+            if self._handler is not None:
+                log = logging.getLogger("ws_frontend")
+                log.removeHandler(self._handler)
+                self._handler.close()
+                self._handler = None
+                log.setLevel(self._saved_log[0])
+                log.propagate = self._saved_log[1]
+
+
+def in_process_version() -> str:
+    """``server_version`` for the in-process front end — the subprocess form's identity with the
+    placement named, so a row says the server and our side shared one process."""
+    return FrontEndServer(9500).version().replace("ws_frontend@", "ws_frontend[in-process]@", 1)
+
+
 def showdown_pin() -> str:
     """The pinned submodule commit. Recorded on BOTH transports: the Rust port was ported from
     this tree, and the front end still validates a ``/utm`` team through its ``validate_team.js``.

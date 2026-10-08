@@ -132,6 +132,13 @@ class SeriesPlan:
     #: front end that keys each battle's seed by its unordered team pair and logs it to `pair_log`.
     mirrored_pairs: bool = False
     pair_log: Optional[Path] = None
+    #: `--our-transport`: "core" (the DEFAULT, P3) — our side is an IN-PROCESS slot of the Rust
+    #: front end reading the core's own observation (`main.anchors.core_side`), no poke-env in this
+    #: process; "poke-env" — the legacy `main.play` → `RLPlayer` websocket client (needed for
+    #: `--server node`, `--server-uri` and a `bot:` our-side). Stamped as `our_transport` per row.
+    our_transport: str = "core"
+    #: How `our_transport` was chosen ("explicit" or the `auto` resolution and its reason) — printed.
+    our_transport_note: str = ""
 
     @property
     def our_side_is_bot(self) -> bool:
@@ -342,18 +349,19 @@ def pair_exit_note(plan: SeriesPlan, half: str, their_report: Dict[str, Any],
             or classify_peer_error(our_report, _MIRROR_HALF[half], our_kind, n_records, expected))
 
 
-async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
+async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int, front: Any = None,
                    ) -> Tuple[List[Any], Dict[str, Any], Optional[SeriesFailure]]:
     """One half-series. Returns ``(records, peer_report, failure_or_None)``.
 
     🚨 **ROLE ORDER IS LOAD-BEARING.** The acceptor must be logged in before the challenger sends
     its first ``/challenge``: Showdown drops a challenge aimed at a user who is not online, and the
     challenger then waits forever with nothing in either log to say why.
+
+    ``front`` is the IN-PROCESS front end (:class:`main.anchors.server.InProcessFrontEnd`'s
+    ``ShowdownFrontEnd``) when our side is the core slot (``plan.our_transport == "core"``).
     """
     if plan.our_side_is_peer:
         return await run_peer_pair_half(plan, cfg, half, n_games)
-
-    import main.play as play
 
     mode, role, _suffix = HALVES[half]
     our_name, peer_name = half_usernames(plan, half)
@@ -373,7 +381,17 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
     peers_mod.check_username(our_name, "our")
     peers_mod.check_username(peer_name, "peer")
 
-    server_config = server_mod_config(plan)
+    if plan.our_transport == "core":
+        state = OurSideState()
+        proc, failure = await _play_core_half(plan, half, n_games, pplan, team_spec, front, state,
+                                              our_name, peer_name, role)
+        return _half_report(plan, half, n_games, pplan, proc, state, mirror, failure)
+
+    # ---- the LEGACY poke-env client (`--our-transport poke-env`): `main.play` → `RLPlayer` ----
+    import main.play as play
+    from main.anchors.session import server_config_for
+
+    server_config = server_config_for(plan.server_uri)
     state = OurSideState()
     undo = install_our_side(state, team_spec, plan.team_seed,
                             plan.forfeit_turn_limit, server_config,
@@ -438,7 +456,86 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
         await disconnect_our_side(state)
         stop_peer(proc)
         undo()
+    return _half_report(plan, half, n_games, pplan, proc, state, mirror, failure)
 
+
+async def _play_core_half(plan: SeriesPlan, half: str, n_games: int, pplan: Any,
+                          team_spec: Dict[str, Any], front: Any, state: OurSideState,
+                          our_name: str, peer_name: str, role: str,
+                          ) -> Tuple[Any, Optional[SeriesFailure]]:
+    """One half with OUR side as the in-process core slot (:mod:`main.anchors.core_side`).
+
+    The same role order, watchdog and peer teardown as the legacy client: the acceptor is online
+    before the challenger, :func:`watch` turns a dead peer or a stall into a named failure, the
+    peer writes its own report before anything terminates it, and our name is released before the
+    next half logs in (hazard H10's equivalent — the slot leaves the user table).
+    """
+    from main.anchors import core_side
+
+    if front is None:
+        raise SeriesFailure("core_slot_error",
+                            "--our-transport core needs the in-process front end, and none was started")
+    stochastic, temperature = core_side.our_stochastic(plan)
+    slot = None
+    proc = None
+    failure: Optional[SeriesFailure] = None
+    our_task: Optional[asyncio.Task] = None
+    try:
+        slot = core_side.build_slot(
+            front, username=our_name, model_zip=plan.model_zip, device=plan.device,
+            model_loader=plan.model_loader, stochastic=stochastic, temperature=temperature,
+            team_spec=team_spec, team_seed=plan.team_seed,
+            forfeit_limit=plan.forfeit_turn_limit, state=state, battle_format=plan.battle_format)
+        await slot.login()
+        if role == "acceptor":
+            proc = start_peer(pplan, nice=plan.nice)
+            await await_peer_ready(proc, pplan, plan.peer_ready_timeout_s)
+            our_task = asyncio.create_task(
+                slot.challenge_series(peer_name, n_games, plan.first_game_timeout_s))
+        else:
+            our_task = asyncio.create_task(slot.accept_series(peer_name, n_games))
+            proc = start_peer(pplan, nice=plan.nice)
+        watchdog = asyncio.create_task(
+            watch(proc, pplan, state, n_games, plan.first_game_timeout_s, plan.progress_timeout_s))
+        done, _pending = await asyncio.wait({our_task, watchdog},
+                                            return_when=asyncio.FIRST_COMPLETED)
+        if watchdog in done and not watchdog.cancelled():
+            exc = watchdog.exception()
+            if exc is not None:
+                raise exc
+        watchdog.cancel()
+        if our_task in done:
+            our_task.result()
+        else:
+            try:
+                await asyncio.wait_for(asyncio.shield(our_task), timeout=120.0)
+            except asyncio.TimeoutError:
+                our_task.cancel()
+        slot.check()
+    except SeriesFailure as exc:
+        failure = exc
+        print(f"[anchors] 🚨 {half} FAILED — {exc.cause}: {exc.detail}", flush=True)
+    except Exception as exc:                            # noqa: BLE001 - any death must be NAMED
+        failure = SeriesFailure("our_side_error", f"{type(exc).__name__}: {exc}")
+        print(f"[anchors] 🚨 {half} FAILED — our side raised: {exc}", flush=True)
+    finally:
+        if our_task is not None and not our_task.done():
+            our_task.cancel()
+            try:
+                await our_task
+            except (asyncio.CancelledError, Exception):  # noqa: BLE001
+                pass
+        await await_peer_exit(proc, timeout_s=180.0 if failure is None else 15.0)
+        if slot is not None:
+            await slot.leave()
+        stop_peer(proc)
+    return proc, failure
+
+
+def _half_report(plan: SeriesPlan, half: str, n_games: int, pplan: Any, proc: Any,
+                 state: OurSideState, mirror: Any, failure: Optional[SeriesFailure],
+                 ) -> Tuple[List[Any], Dict[str, Any], Optional[SeriesFailure]]:
+    """The half's peer report with OUR side's verification beside it — shared by both transports."""
     adapter = peers_mod.PEERS[plan.opponent_kind]
     report = adapter.read_report(pplan)
     report["peer_rc"] = proc.returncode if proc is not None else None
@@ -466,12 +563,10 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
     return state.records, report, failure
 
 
-def server_mod_config(plan: SeriesPlan) -> Any:
-    """The `ServerConfiguration` both halves use — built from the URI, so the tool can point at a
-    websocket FRONT END over the Rust bridge later without touching anything else here."""
-    from poke_env.ps_client.server_configuration import ServerConfiguration
+def _row_transport(plan: SeriesPlan) -> str:
+    from main.anchors.core_side import row_transport
 
-    return ServerConfiguration(plan.server_uri, "https://play.pokemonshowdown.com/action.php?")
+    return row_transport(plan)
 
 
 def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> CellSpec:
@@ -511,6 +606,7 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         our_side=plan.our_side,
         model_loader=str(report.get("model_loader") or ""),
         mirrored_pairs=bool(plan.mirrored_pairs),
+        our_transport=_row_transport(plan),
     )
 
 
@@ -650,18 +746,38 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
     last_report: Dict[str, Any] = {}
     failure: Optional[SeriesFailure] = None
     t0 = time.time()
-    for half, n_games in plan.half_sizes().items():
-        if n_games <= 0:
-            continue
-        print(f"[anchors] === half {half}: {n_games} games, {plan.opponent}, "
-              f"regime={plan.regime}, teamset={plan.teamset}", flush=True)
-        records, report, failure = await run_half(plan, cfg, half, n_games)
-        last_report = report
-        half_reports.append(report)
-        cell = cell_spec(plan, report, our_team_count)
-        all_rows.extend(rows_from(records, half, cell, report, len(all_rows) + 1))
-        if failure is not None:
-            break
+    in_process = None
+    if plan.our_transport == "core" and not plan.our_side_is_peer:
+        # P3: the front end runs IN THIS PROCESS so our side can be a slot of it; the peer still
+        # dials it over a real websocket on the read's 95XX port.
+        from main.anchors.server import InProcessFrontEnd
+
+        in_process = InProcessFrontEnd(
+            plan.server_port, battle_format=plan.battle_format, seed_base=plan.seed_base,
+            capture_dir=plan.capture_dir, pair_log=plan.pair_log,
+            log_path=plan.out_dir / InProcessFrontEnd.log_name)
+        await in_process.__aenter__()
+        print(f"[anchors] {in_process.label} serving {in_process.uri} inside pid={in_process.pid} "
+              f"({plan.server_version})", flush=True)
+    try:
+        for half, n_games in plan.half_sizes().items():
+            if n_games <= 0:
+                continue
+            print(f"[anchors] === half {half}: {n_games} games, {plan.opponent}, "
+                  f"regime={plan.regime}, teamset={plan.teamset}, our transport={plan.our_transport}",
+                  flush=True)
+            records, report, failure = await run_half(
+                plan, cfg, half, n_games, front=in_process.front if in_process else None)
+            last_report = report
+            half_reports.append(report)
+            cell = cell_spec(plan, report, our_team_count)
+            all_rows.extend(rows_from(records, half, cell, report, len(all_rows) + 1))
+            if failure is not None:
+                break
+    finally:
+        if in_process is not None:
+            await in_process.__aexit__(None, None, None)
+            print(f"[anchors] {in_process.label} closed (every battle child reaped)", flush=True)
     # 🚨 SERIES-LEVEL, STAMPED ON EVERY ROW. The two verification facts are properties of the
     # WHOLE cell — "both halves' regime verified", "every peer exited 0" — but a row has to be
     # self-contained, so they are back-filled onto the rows the first half already produced. An

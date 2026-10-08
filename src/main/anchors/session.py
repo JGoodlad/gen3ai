@@ -311,6 +311,14 @@ def install_serial_challenges() -> Callable[[], None]:
     return undo
 
 
+def server_config_for(uri: str) -> Any:
+    """The poke-env ``ServerConfiguration`` the LEGACY client (``--our-transport poke-env``) dials.
+    Lives here, beside the rest of that client, so the runner itself stays poke-env-free."""
+    from poke_env.ps_client.server_configuration import ServerConfiguration
+
+    return ServerConfiguration(uri, "https://play.pokemonshowdown.com/action.php?")
+
+
 def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: Optional[int],
                      forfeit_limit: int, server_config: Any, *, our_side: str = "model",
                      model_loader: str = "auto",

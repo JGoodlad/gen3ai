@@ -1,0 +1,189 @@
+{
+ "cells": [
+  {
+   "cell": "away_greedy",
+   "new": {
+    "our_transport": "rust_core_slot",
+    "status": "OK",
+    "W/L/T": "19/21/0",
+    "n": 40,
+    "win_rate": [
+     0.475,
+     0.32935470109606724,
+     0.6250263789656731
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": 1.0,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null
+   },
+   "old": {
+    "our_transport": "poke_env_rlplayer",
+    "status": "OK",
+    "W/L/T": "19/21/0",
+    "n": 40,
+    "win_rate": [
+     0.475,
+     0.32935470109606724,
+     0.6250263789656731
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": 1.0,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.209094398486348,
+     0.209094398486348
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 40,
+   "battles_with_identical_actions_both_sides": 40,
+   "battles_with_identical_per_side_protocol": 40,
+   "choices_compared": 4515,
+   "games_identical_result_turns_team": 40,
+   "diff_battles": []
+  },
+  {
+   "cell": "away_t1seeded",
+   "new": {
+    "our_transport": "rust_core_slot",
+    "status": "OK",
+    "W/L/T": "4/16/0",
+    "n": 20,
+    "win_rate": [
+     0.2,
+     0.08065766256307699,
+     0.41601743230667737
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": 0.5737885462555066,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null
+   },
+   "old": {
+    "our_transport": "poke_env_rlplayer",
+    "status": "OK",
+    "W/L/T": "4/16/0",
+    "n": 20,
+    "win_rate": [
+     0.2,
+     0.08065766256307699,
+     0.41601743230667737
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": 0.5737885462555066,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.24679166226855867,
+     0.24679166226855867
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 20,
+   "battles_with_identical_actions_both_sides": 20,
+   "battles_with_identical_per_side_protocol": 20,
+   "choices_compared": 1788,
+   "games_identical_result_turns_team": 20,
+   "diff_battles": []
+  },
+  {
+   "cell": "home_greedy",
+   "new": {
+    "our_transport": "rust_core_slot",
+    "status": "OK",
+    "W/L/T": "24/16/0",
+    "n": 40,
+    "win_rate": [
+     0.6,
+     0.44595893656849117,
+     0.7365167431845473
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": 1.0,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null
+   },
+   "old": {
+    "our_transport": "poke_env_rlplayer",
+    "status": "OK",
+    "W/L/T": "24/16/0",
+    "n": 40,
+    "win_rate": [
+     0.6,
+     0.44595893656849117,
+     0.7365167431845473
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": 1.0,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.2058287404441512,
+     0.2058287404441512
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 40,
+   "battles_with_identical_actions_both_sides": 40,
+   "battles_with_identical_per_side_protocol": 40,
+   "choices_compared": 4805,
+   "games_identical_result_turns_team": 40,
+   "diff_battles": []
+  }
+ ],
+ "pooled": {
+  "n_new": 100,
+  "wins_new": 47,
+  "n_old": 100,
+  "wins_old": 47,
+  "shift": [
+   0.0,
+   -0.13577587224219648,
+   0.13577587224219648
+  ],
+  "battles_identical": 100,
+  "battles": 100,
+  "choices": 11108
+ }
+}

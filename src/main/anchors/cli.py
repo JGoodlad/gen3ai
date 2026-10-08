@@ -40,6 +40,7 @@ import time
 from pathlib import Path
 from typing import List, Optional
 
+from main.anchors import core_side
 from main.anchors import config as config_mod
 from main.anchors import peers as peers_mod
 from main.anchors import results as results_mod
@@ -212,6 +213,16 @@ def build_parser() -> argparse.ArgumentParser:
                         "rust (a front end we start), a metamon --opponent, a checkpoint or bot our-side, "
                         "and --games a multiple of 4. A REGIME: stamped on every row, never pooled with "
                         "an unmirrored read.")
+    p.add_argument("--our-transport", dest="our_transport", default="auto",
+                   choices=("auto",) + core_side.OUR_TRANSPORTS,
+                   help="HOW our checkpoint plays. 'auto' (the DEFAULT) = 'core' wherever it can serve, else "
+                        "'poke-env', PRINTED in the plan. 'core' (P3 of the poke-env retirement): an "
+                        "IN-PROCESS slot of the Rust websocket front end, deciding on sim_bridge's core "
+                        "observation row (the training reader) — no poke-env in this process; needs "
+                        "--server rust started by this tool and a checkpoint our-side. 'poke-env': the "
+                        "LEGACY main.play -> RLPlayer websocket client (vendored poke-env + the Python "
+                        "encoder) — required for --server node, --server-uri and a bot: our-side. "
+                        "Stamped per row as our_transport, a REGIME BOUNDARY.")
     p.add_argument("--challenge-mode", dest="challenge_mode", default="serial",
                    choices=("serial", "pipelined"),
                    help="WHEN our side emits the next /challenge in a half we challenge. "
@@ -354,6 +365,24 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
             f"--our-side {our_side} equals --opponent: a cell of a policy against ITSELF measures "
             "nothing about the scale, and both sides would try to log in under names derived "
             "from the same agent.")
+    # P3 — WHO BUILDS OUR OBSERVATION. The core slot needs the front end in THIS process (so a
+    # `--server rust` this tool starts) and a checkpoint; anything else is the legacy client.
+    is_peer = our_side.startswith("metamon:") or our_side == "foulplay"
+    core_why = (None if is_peer else
+                "a checkpoint our-side (a bot: our-side is a Python roster bot)" if our_side != "model"
+                else "--server rust started by this tool (--server-uri / --server node have no "
+                     "in-process slot)" if (args.server_uri or args.server_kind != "rust")
+                else "--challenge-mode serial (the slot challenges only after the previous battle "
+                     "ENDED)" if args.challenge_mode != "serial" else None)
+    our_transport = getattr(args, "our_transport", "auto")
+    transport_note = "explicit"
+    if our_transport == "core" and core_why:
+        raise SystemExit(f"--our-transport core needs {core_why}; pass --our-transport poke-env "
+                         "(the legacy client) or drop the conflicting flag.")
+    if our_transport == "auto":
+        our_transport = "poke-env" if core_why else "core"
+        transport_note = (f"auto: the legacy client, because the core slot needs {core_why}"
+                          if core_why else "auto: the core slot is the default")
     if our_side.startswith("bot:") and args.regime != "greedy":
         raise SystemExit(
             f"--regime {args.regime} with --our-side {our_side}: a bot has no sampling knob, so "
@@ -467,18 +496,21 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         uri = server_mod.server_uri(port)
         started = True
         server_impl = args.server_kind
-        server_version = server_mod.build_server(
-            args.server_kind, port, node=cfg.node, battle_format=args.battle_format,
-            seed_base=args.seed_base,
-            capture_dir=Path(args.capture_dir) if args.capture_dir else None).version()
+        if our_transport == "core" and not is_peer:
+            # P3: the front end runs INSIDE this process (our side is a slot of it).
+            server_version = server_mod.in_process_version()
+        else:
+            server_version = server_mod.build_server(
+                args.server_kind, port, node=cfg.node, battle_format=args.battle_format,
+                seed_base=args.seed_base,
+                capture_dir=Path(args.capture_dir) if args.capture_dir else None).version()
 
     if args.model and our_side == "model":  # noqa: SIM108 - a peer/bot our-side has no zip
         zip_path, step, rung = resolve_model(args.model)
     else:
         zip_path, step, rung = "", None, ""
 
-    from main.play import DEFAULT_FORFEIT_TURN_LIMIT
-
+    DEFAULT_FORFEIT_TURN_LIMIT = _trainer_forfeit_limit()
     forfeit_limit = DEFAULT_FORFEIT_TURN_LIMIT
     if args.forfeit_turn_limit is not None:
         if our_side.startswith("metamon:"):
@@ -539,6 +571,8 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         model_loader=args.model_load,
         opponent_temperature=opp_t,
         our_temperature=our_t,
+        our_transport=("peer" if is_peer else our_transport),
+        our_transport_note=transport_note,
     )
 
 
@@ -560,11 +594,18 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
            if plan.mirrored_pairs else "unpaired games"),
         f"  our side          {plan.our_side}"
         + (f"  (loader={plan.model_loader})" if plan.our_side == "model" else ""),
+        f"  our transport     {plan.our_transport}  ({plan.our_transport_note})"
+        + ("  — an IN-PROCESS slot of the Rust front end on the core's own row; NO poke-env here"
+           if plan.our_transport == "core" else
+           "  — the LEGACY main.play/RLPlayer client (vendored poke-env + the Python encoder)"
+           if plan.our_transport == "poke-env" else ""),
         f"  our model         {plan.model_zip or '(none — our side is not a checkpoint)'}"
         + (f"  @ step {plan.model_step} (via {plan.model_rung})" if plan.model_step else ""),
         f"  device            {plan.device}",
         f"  server            {plan.server_uri}"
-        + (f"  [{plan.server_impl}] (this tool starts and stops it by PID)"
+        + ("  [rust, IN-PROCESS] (served by this process; closed and every battle child reaped at the end)"
+           if plan.started_server and plan.our_transport == "core" else
+           f"  [{plan.server_impl}] (this tool starts and stops it by PID)"
            if plan.started_server else "  (EXISTING — nothing started; stamped external)"),
         f"  server version    {plan.server_version or '(unknown — not started by this tool)'}"
         + ("  🚨 NO NODE SERVER IS STARTED" if plan.server_impl == "rust" else ""),
@@ -610,6 +651,11 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
                 ours_cmd = runner_mod.our_peer_plan(plan, cfg, role, n, half).command_line()
             except Exception as exc:                 # noqa: BLE001 - a plan must still PRINT
                 ours_cmd = f"<unavailable: {type(exc).__name__}: {exc}>"
+        elif plan.our_transport == "core":
+            stoch, temp = core_side.our_stochastic(plan)
+            ours_cmd = (f"in-process core slot '{our_name}' — we {mode} {peer_name}, {n} games, "
+                        f"{'sampled T=' + format(temp, 'g') if stoch else 'greedy'}, "
+                        f"forfeit at turn {plan.forfeit_turn_limit}")
         else:
             ours_cmd = ("python -m main.play "
                         + " ".join(runner_mod.our_argv(plan, mode, n, our_name, peer_name)))
@@ -624,8 +670,11 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
 
 
 def _trainer_forfeit_limit() -> int:
-    from main.play import DEFAULT_FORFEIT_TURN_LIMIT
-    return DEFAULT_FORFEIT_TURN_LIMIT
+    """The trainer's forfeit turn — ``main.play.DEFAULT_FORFEIT_TURN_LIMIT``'s own source, read
+    here directly because ``main.play`` imports poke-env and this CLI must not."""
+    from agents.training.stall import StallConfig
+
+    return StallConfig().threshold
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -665,7 +714,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     report: dict = {}
     failure = None
     try:
-        if plan.started_server:
+        if plan.started_server and plan.our_transport != "core":
             srv = server_mod.build_server(
                 plan.server_impl, plan.server_port, node=cfg.node,
                 battle_format=plan.battle_format, seed_base=plan.seed_base,

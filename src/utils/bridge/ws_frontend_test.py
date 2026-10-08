@@ -415,3 +415,93 @@ def test_serving_on_a_reserved_port_is_refused_before_anything_binds():
 
 def test_a_side_request_starts_with_nothing_to_choose():
     assert _SideRequest().is_wait == "cantUndo"
+
+
+# --------------------------------------------------------------------------------------------
+# the IN-PROCESS slot (P3): core_obs on START only when a connection asks, and `__OBS__` routed
+# --------------------------------------------------------------------------------------------
+class _ScriptedProc:
+    """A bridge child that records stdin and replays a scripted stdout."""
+
+    def __init__(self, out_lines):
+        import asyncio as _a
+
+        self.written = []
+        self.returncode = None
+        proc = self
+
+        class _In:
+            def write(self, data):
+                proc.written.append(data.decode())
+
+            async def drain(self):
+                return None
+
+            def is_closing(self):
+                return False
+
+        class _Out:
+            def __init__(self, lines):
+                self.lines = [ln.encode() + b"\n" for ln in lines]
+
+            async def readline(self):
+                await _a.sleep(0)
+                return self.lines.pop(0) if self.lines else b""
+
+        self.stdin = _In()
+        self.stdout = _Out(out_lines)
+        self.stderr = _Out([])
+
+    async def wait(self):
+        self.returncode = 0
+        return 0
+
+
+class _ObsConn(_Conn):
+    def __init__(self, **kw):
+        super().__init__(ws=_FakeWS(), guest_n=9, **kw)
+        self.core_obs = True
+        self.frames = []
+
+    async def on_obs(self, tag, slot, payload):
+        self.frames.append((tag, slot, payload))
+
+
+@pytest.mark.parametrize("p1_wants, expected", [(False, None), (True, {"sides": ["p1"]})])
+async def test_core_obs_is_on_START_only_when_a_connection_asks_for_it(monkeypatch, p1_wants,
+                                                                       expected):
+    import asyncio as _a
+    import base64
+
+    front = _front()
+    p1 = _ObsConn(name="Alpha", userid="alpha") if p1_wants else await _named(front, "Alpha")
+    p2 = await _named(front, "Beta")
+    procs = []
+
+    async def fake_exec(*argv, **kw):
+        procs.append(_ScriptedProc(["p1 " + base64.b64encode(b"|turn|1").decode(), "__END__"]))
+        return procs[-1]
+
+    monkeypatch.setattr(ws_frontend.asyncio, "create_subprocess_exec", fake_exec)
+    battle = await front.start_battle(p1, p2, "gen3ou", "t1", "t2")
+    await _a.wait_for(battle.reader, timeout=5)
+    start = json.loads(procs[0].written[0][len("START "):])
+    assert start.get("core_obs") == expected
+
+
+async def test_an_OBS_frame_reaches_its_slot_and_never_a_websocket():
+    import asyncio as _a
+    import base64
+
+    front = _front()
+    p1 = _ObsConn(name="Alpha", userid="alpha")
+    p2 = await _named(front, "Beta")
+    proc = _ScriptedProc(['__OBS__ p1 {"n":0}', "p1 " + base64.b64encode(b"|turn|1").decode(),
+                          "__END__"])
+    battle = _Battle(tag="battle-gen3ou-9", fmt="gen3ou", proc=proc, conns={"p1": p1, "p2": p2},
+                     names={"p1": "Alpha", "p2": "Beta"}, seed=None)
+    front.battles[battle.tag] = battle
+    await _a.wait_for(front._pump(battle), timeout=5)
+    assert p1.frames == [("battle-gen3ou-9", "p1", '{"n":0}')]
+    assert not any("__OBS__" in t for t in p1.ws.sent + p2.ws.sent)
+    assert p1.ws.sent == [">battle-gen3ou-9\n|turn|1"]

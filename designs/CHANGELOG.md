@@ -12847,3 +12847,30 @@ obs-facts appended (2845)`.
   `poke_env_free_entry_points_test.py` (5) runs every JSON-CLI command and the web app's views with poke-env blocked
   on real core traces and a current-architecture checkpoint. `PROBER_POKE_ENV_COMMANDS` is the closed exception list.
   `core_walk_test.py` covers the pure helpers. `lookahead_test.py`'s fakes follow the new seams.
+## 2026-10-07 — External-anchor reads play OUR side on the Rust stack: an in-process slot of the websocket front end on the core's own row (T27 P3; `--our-transport {auto,core,poke-env}`; no config / ARCH bump)
+
+- **Why.** P3 of the poke-env retirement (`designs/research_state/measurements/pokeenv_and_hotpath_survey_2026-10-06/README.md`
+  §A4.4): our side of a `python -m main.anchors` read was a poke-env websocket client (`main.play` → `RLPlayer`,
+  the Python battle layer and the Python encoder), a second reader training does not use.
+- **What.** With `--server rust` the front end (`utils.bridge.ws_frontend`) now runs INSIDE the anchors process
+  (`main.anchors.server.InProcessFrontEnd`) and our side is a connection of it with no socket
+  (`main.anchors.core_side`): its battles start their `sim_bridge` child with `core_obs` for its side, each
+  `__OBS__` frame is handed to the slot (never relayed), and the slot answers the request with the frame's own
+  choice token and the spliced `rqid` — the same client protocol, by function call. It reproduces `RLPlayer`'s
+  decision arithmetic, the trainer's forfeit and the team-draw order; any protocol surprise is a named
+  `core_slot_error`. Metamon / Foul Play stay external upstream-poke-env processes on the socket.
+- **Flag.** `--our-transport auto` (default) = `core` where it can serve, else the legacy client, printed in the
+  plan; `core` is refused with `--server node` / `--server-uri` / a `bot:` our-side / `--challenge-mode pipelined`.
+  Every row stamps `our_transport` (`rust_core_slot` · `poke_env_rlplayer` · `poke_env_bot` · `peer`).
+- **Front end.** `_Conn.core_obs` + `on_obs`, `START`'s `core_obs` only when a connection asks (otherwise byte-identical),
+  `__OBS__` routing, and `client_line` / `drop` / `next_guest` for an in-process connection.
+- **Measured** (`measurements/pokeenv_p3_anchors_2026-10-07/`): 100 seeded battle pairs vs `metamon:SmallRL`, old vs
+  new — **100 / 100 byte-identical** (both sides' 11,108 choices, every per-side chunk), 47/53 on both, 0 protocol
+  failures. `our_transport` is provenance, not a regime boundary. Finding: the legacy row's `n_decisions` was
+  cumulative over its half; the core slot's is per game.
+- **poke-env.** `main.anchors` imports and runs with poke-env blocked (entry-point list; the slow `rust-core` read
+  runs the CLI under `utils.poke_env_blocker`); `main/anchors/runner.py` left the import allowlist (136 → 135 (after P5)).
+- **Tests.** `main/anchors/core_side_test.py` (the slot's protocol rules and failures), `ws_frontend_test.py` (START
+  gating, `__OBS__` routing), `server_test.py` (the in-process server binds, greets, logs, closes; reserved ports),
+  `cli_test.py` (the auto resolution, the refusals, the row stamp), `anchors_integration_test.py` (routine smoke on
+  the core slot; slow read on `rust-core` blocked, `rust-poke-env`, `node-poke-env`).

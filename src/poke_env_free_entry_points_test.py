@@ -1,5 +1,5 @@
-"""The trainer, ``main.h2h``, ``main.plateau`` and the offline meters run with ``poke_env`` IMPOSSIBLE (P1 of the
-poke-env retirement, ``T27``).
+"""The trainer, ``main.h2h``, ``main.plateau``, ``main.anchors`` (P3) and the offline meters run with ``poke_env``
+IMPOSSIBLE (P1 of the poke-env retirement, ``T27``).
 
 **Why this exists.** The import gate (``poke_env_import_gate_test.py``) counts files that NAME ``poke_env``; it cannot
 say whether an entry point's import CLOSURE — or its RUN-TIME path — reaches one. Before P1 the trainer loaded 36
@@ -20,8 +20,13 @@ half; these tests install ``utils.poke_env_blocker`` FIRST (every ``import poke_
 4. ``test_a_debug_smoke_with_eval_runs_with_poke_env_blocked`` (``slow``) — the root CLAUDE.md ``--debug`` smoke WITH
    two in-process eval cycles, entered through ``poke_env_blocker.main`` (the trainer's own module name split so no
    argv carries it).
+5. ``main.anchors`` (P3, 2026-10-07) — its import closure is in the list below; its RUN-TIME path (a real anchor
+   read against Metamon, our side the in-process core slot of the Rust front end) runs under the same blocker in
+   ``src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-core]`` (``slow``,
+   its verdict banked in ``designs/ops/slow_tier_status.json``), which needs
+   the Metamon checkout and so lives beside the tool.
 
-5. ``test_every_prober_command_and_the_web_app_run_with_poke_env_blocked`` (``sim``, P5) — the PROBER on real Rust-eval
+6. ``test_every_prober_command_and_the_web_app_run_with_poke_env_blocked`` (``sim``, P5) — the PROBER on real Rust-eval
    core traces and a current-architecture checkpoint: every JSON-CLI command (model-free and model-loading) and the
    web app's views RUN with the blocker installed; the one command that still needs poke-env is the closed list
    :data:`PROBER_POKE_ENV_COMMANDS`, and the test pins that it is blocked and that nothing else is.
@@ -51,6 +56,12 @@ ENTRY_POINTS = (
     "main.h2h",
     "main.h2h.cli",
     "main.plateau",
+    "main.anchors",
+    "main.anchors.cli",
+    "main.anchors.core_side",
+    "main.anchors.runner",
+    "main.anchors.server",
+    "utils.bridge.ws_frontend",
     "main.launcher",
     "main.checkargs",
     "main.elo",

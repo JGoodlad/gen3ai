@@ -119,6 +119,13 @@ class CellSpec:
     #: PEER's team draw, so it is a different population from an unmirrored one and is never read beside
     #: it without this label.
     mirrored_pairs: bool = False
+    #: WHICH READER BUILT OUR OBSERVATION (P3 of the poke-env retirement, 2026-10-07) — a REGIME
+    #: BOUNDARY on the row like `server_impl`: "rust_core_slot" (our side is an in-process slot of
+    #: the Rust front end, deciding on `sim_bridge`'s core row — the training reader; the DEFAULT),
+    #: "poke_env_rlplayer" (the legacy `main.play` client: vendored poke-env + the Python encoder),
+    #: "poke_env_bot" (a Python roster bot) or "peer" (an anchor-vs-anchor cell). A row written
+    #: before the field existed was "poke_env_rlplayer" (or a bot / peer by its `our_side`).
+    our_transport: str = "poke_env_rlplayer"
 
     def stamp(self) -> Dict[str, Any]:
         return asdict(self)
@@ -195,7 +202,7 @@ class GameRow:
 #: file" once anyone writes a second producer.
 REQUIRED_ROW_FIELDS = (
     "opponent", "opponent_version", "opponent_commit",
-    "server_impl", "server_version",
+    "server_impl", "server_version", "our_transport",
     "our_side", "model_loader",
     "our_regime", "their_regime", "regime_matched",
     "teamset", "our_team_count", "their_team_count",
@@ -337,6 +344,7 @@ def render(summary: Dict[str, Any]) -> str:
         f"  transport   {cell.get('server_impl', 'node')}"
         + (f"  {cell['server_version']}" if cell.get("server_version") else "")
         + (f"  ({cell['server_uri']})" if cell.get("server_uri") else ""),
+        f"  our reader  {cell.get('our_transport', 'poke_env_rlplayer')}",
     ]
     if cell.get("search_time_ms"):
         v = summary.get("realized_visits_per_decision_mean")

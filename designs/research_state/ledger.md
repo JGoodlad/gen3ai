@@ -23175,3 +23175,29 @@ Tag: **BUILD + GATE · P4 DONE: (a) 318,465 decisions byte-equal · (b) 376,410 
   (`utils.rust_env.successors.play_out` with the in-core bots).
 
 Tag: **BUILD · P5 · identity 283/284 (the 1 = the declared blocked command) · allowlist 138 → 136** · plan: [`pokeenv_and_hotpath_survey_2026-10-06/README.md`](measurements/pokeenv_and_hotpath_survey_2026-10-06/README.md) §A4.5 · backlog T27
+### 2026-10-07 · BUILT + MEASURED · **POKE-ENV RETIREMENT P3: external-anchor reads play OUR side as an in-process slot of the Rust websocket front end, on the core's own observation row; the opponent stays an external upstream-poke-env process on the socket. Old vs new on 100 seeded battle pairs vs `metamon:SmallRL`: 100 / 100 BYTE-IDENTICAL, shift 0.000, 0 protocol failures**
+
+- **Built.** `main.anchors.core_side`: our side is a connection of the front end with no socket, running in the
+  anchors process (`main.anchors.server.InProcessFrontEnd`); its battles start `sim_bridge` with `core_obs` for its
+  side, the slot decides on each `__OBS__` frame (`RLPlayer._predict_best_action`'s arithmetic, the trainer's
+  forfeit, the same team-draw order) and answers with the frame's choice token + the spliced `rqid` through the
+  same client protocol, by function call. `--our-transport auto` (default) → `core`; the legacy `RLPlayer`
+  client stays for `--server node` / `--server-uri` / a `bot:` our-side (printed). Every row stamps
+  `our_transport`. `main.anchors` imports and RUNS with poke-env blocked; allowlist 136 → 135 (after P5) (`runner.py`).
+- **Measured** (`designs/research_state/measurements/pokeenv_p3_anchors_2026-10-07/`; `rb_x5ab_blob_s1008`
+  final, CPU, local front end only; each cell on both paths at one `--seed-base` and `--team-seed`, captures on):
+  greedy away 19/21 vs 19/21, greedy home 24/16 vs 24/16, our side T = 1.0 under one `GEN3AI_POLICY_SEED` 4/16 vs
+  4/16 (our argmax-match 0.574 on both). **100 / 100 battles byte-identical** — both sides' 11,108 choices and every
+  per-side chunk; pooled shift **0.000, Newcombe [−0.136, +0.136]** (unpaired, conservative; 0 discordant of 100
+  paired ⇒ |shift| < 0.03 at 95 %); 0 ERRORs in six server logs, 0 `core_slot_error`, 0 defaults / re-decides,
+  every regime verified, every peer clean.
+- **Decision.** No regime boundary: the paths played the same games, so `our_transport` is provenance and no
+  reader refuses a mix (contrast P2, whose protocol changed).
+- **Findings.** (1) The legacy row's `n_decisions` is CUMULATIVE over its half (`RLPlayer._n_decisions` is never
+  reset); a `rust_core_slot` row's is per game. (2) `session.py` keeps poke-env for the legacy client; retiring it
+  needs P4 (`--server node`) and a Rust-bot slot or the end of `bot:` our-side cells. (3) The routine anchors smoke
+  runs over its 30 s base budget under load on BOTH readers (a capped one-game read 37.3 s core vs 37.0 s legacy,
+  back to back); the subprocess-under-the-blocker form is therefore the slow read's `rust-core` case, not the
+  routine smoke.
+
+Tag: **BUILT · anchors' our side = in-process Rust core slot, poke-env-free · old vs new 100 / 100 byte-identical, shift 0.000 [−0.136, +0.136] · 0 protocol failures · allowlist 136 → 135 (after P5)**

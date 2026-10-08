@@ -38,11 +38,15 @@ opponent in its own process and its own poke-env.
 
 ### Who uses it
 
-🚨 **`python -m main.anchors` — every EXTERNAL-ANCHOR read — starts this module by default**
-(`--server rust`, `main.anchors.server.FrontEndServer`, its own subprocess, a 9500–9599 port,
-stopped by PID). No Node server is involved in an anchor read unless `--server node` is passed,
-and each row carries `server_impl` + `server_version = ws_frontend@<gen3ai head>+rust:<bridge
-binary>`. The promotion's evidence is
+🚨 **`python -m main.anchors` — every EXTERNAL-ANCHOR read — runs this module by default**
+(`--server rust`, a 9500–9599 port). With a checkpoint our-side (the default
+`--our-transport auto` → `core`, P3 of the poke-env retirement) it runs **IN the anchors process**
+(`main.anchors.server.InProcessFrontEnd`; rows say `server_version =
+ws_frontend[in-process]@<gen3ai head>+rust:<bridge binary>`) and OUR side is an **in-process
+slot** of it (`main.anchors.core_side`, see "The in-process slot" below), so the only websocket
+client is the opponent. The legacy poke-env client (`--our-transport poke-env`, and every `bot:`
+our-side) still gets the SUBPROCESS form (`FrontEndServer`, stopped by PID; `server_version =
+ws_frontend@…`). No Node server is involved in an anchor read unless `--server node` is passed. The promotion's evidence is
 [`anchors_rust_frontend_2026-09-20`](../research_state/measurements/anchors_rust_frontend_2026-09-20/README.md)
 (100 games each way: Δ +0.010 [−0.124, +0.144], NOT DETECTED; 40 MB mean server-tree RSS against
 Node's 3,227 MB; 126 s against 203 s), on top of the 200-battle side-by-side in
@@ -90,6 +94,22 @@ from the sim as ordinary chunk content — the front end adds nothing to them an
 | `/leave [<tag>]` | answers `\|deinit` |
 | `/search <format>` | **refused** with a popup naming `/challenge` as the alternative |
 | `/timer`, `/undo`, `/join`, `/savereplay`, `/avatar`, `/cancelsearch`, chat | accepted, no effect |
+
+### The in-process slot — a connection with no socket (P3, `core_obs`)
+
+A `_Conn` with `core_obs = True` is a user that lives in the front end's own process
+(`main.anchors.core_side`'s slot). Three hooks, and nothing a websocket client sees changes:
+
+| hook | what it does |
+|---|---|
+| `client_line(conn, line)` / `drop(conn)` / `next_guest()` | the slot speaks the SAME client protocol (`/trn`, `/utm`, `/challenge`, `/accept`, `<tag>\|/choose <token>\|<rqid>`, `<tag>\|/forfeit`) by function call, so every server-side rule above applies to it |
+| `START` carries `core_obs: {"sides": [<the slot's side>]}` | **only** when a connection in the battle has `core_obs`; otherwise the child's stdout is byte-identical to a plain battle's (`sim_bridge`'s `gen3_bridge_core_obs_v1`) |
+| `__OBS__ <side> <json>` lines go to `conn.on_obs(tag, side, payload)` | never relayed to any websocket; the child writes the frame BEFORE the chunk carrying that side's `\|request\|`, so the slot holds the row when the request (with its spliced `rqid`) arrives |
+
+The slot decides on the frame's row + mask (the training reader — the same `BattleVersion` parse
+chain and encoder training runs) and answers with the frame's own choice TOKEN for the chosen
+index. Pinned by `src/utils/bridge/ws_frontend_test.py` (the START gating, the routing) and
+`src/main/anchors/core_side_test.py` (the slot's protocol rules).
 
 ### The two things the front end ADDS to the sim's stream
 

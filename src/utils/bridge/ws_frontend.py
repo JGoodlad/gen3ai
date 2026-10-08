@@ -124,10 +124,19 @@ class _Conn:
     userid: str = ""
     team: Optional[str] = None
     avatar: str = "1"
+    #: IN-PROCESS SLOT (P3 of the poke-env retirement): a connection that wants the Rust CORE's
+    #: observation for its own slot. A battle this connection plays starts its child with
+    #: ``core_obs`` for that slot, and each ``__OBS__`` frame is handed to :meth:`on_obs` — it
+    #: never reaches a websocket. False for every real client, so their bytes are unchanged.
+    core_obs: bool = False
 
     @property
     def named(self) -> bool:
         return bool(self.userid)
+
+    async def on_obs(self, tag: str, slot: str, payload: str) -> None:
+        """One ``__OBS__`` payload for this connection's slot in battle ``tag``. A websocket client
+        never asks for one (``core_obs`` False), so the base does nothing."""
 
     async def send(self, text: str) -> None:
         try:
@@ -282,6 +291,20 @@ class ShowdownFrontEnd:
             self.challenges.pop(key, None)
         if conn.userid and self.users.get(conn.userid) is conn:
             self.users.pop(conn.userid, None)
+
+    # -- the IN-PROCESS slot's door -----------------------------------------------------
+    # An in-process connection (`main.anchors.core_side`) speaks the SAME client protocol a
+    # websocket client does — `/trn`, `/utm`, `/challenge`, `/accept`, `/choose …|rqid`,
+    # `/forfeit` — through these two calls instead of a socket, so every server-side rule (the
+    # name limit, team validation, the rqid refusal) applies to it unchanged.
+    def next_guest(self) -> int:
+        return next(self._guests)
+
+    async def client_line(self, conn: _Conn, line: str) -> None:
+        await self._client_line(conn, line)
+
+    async def drop(self, conn: _Conn) -> None:
+        await self._drop(conn)
 
     # -- inbound protocol ----------------------------------------------------------------
     async def _client_line(self, conn: _Conn, line: str) -> None:
@@ -538,6 +561,12 @@ class ShowdownFrontEnd:
                  "p2": {"name": p2.name, "team": p2_team}}
         if seed is not None:
             start["seed"] = seed
+        # An IN-PROCESS slot reads the core's own observation (the training reader, `sim_bridge`'s
+        # `gen3_bridge_core_obs_v1`). Named only when a connection asks for it: absent, the child's
+        # stdout is byte-identical to a plain battle's.
+        obs_sides = [slot for slot, c in (("p1", p1), ("p2", p2)) if c.core_obs]
+        if obs_sides:
+            start["core_obs"] = {"sides": obs_sides}
         await self._write_child(battle, "START " + json.dumps(start))
         self._live[tag] = battle
         battle.reader = asyncio.ensure_future(self._pump(battle))
@@ -578,6 +607,13 @@ class ShowdownFrontEnd:
                 if text.startswith("__RECON__"):
                     # Referee-view, full-information data. It must never reach a player; the
                     # front end has no forensic sink, so it is dropped here.
+                    continue
+                if text.startswith("__OBS__ "):
+                    # The core's row for an IN-PROCESS slot's next decision, written by the child
+                    # BEFORE the chunk that carries that side's `|request|` — so the slot holds it
+                    # by the time the request is relayed. Only a `core_obs` connection asked.
+                    _marker, obs_slot, payload = text.split(" ", 2)
+                    await battle.conns[obs_slot].on_obs(battle.tag, obs_slot, payload)
                     continue
                 slot, b64 = text.split(" ", 1)
                 chunk = base64.b64decode(b64).decode("utf-8")

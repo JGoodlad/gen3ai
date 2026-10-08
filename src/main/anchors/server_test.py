@@ -210,3 +210,33 @@ def test_build_server_returns_the_shared_lifecycle_either_way() -> None:
         assert isinstance(srv, ManagedServer)
         srv.stop()          # idempotent on a server that never started, on BOTH transports
         assert srv.pid is None
+
+
+# ------------------------------------------------- P3: the front end IN this process
+@pytest.mark.parametrize("port", sorted(RESERVED_PORTS))
+def test_the_in_process_front_end_refuses_the_reserved_ports_too(port: int) -> None:
+    from main.anchors.server import InProcessFrontEnd
+
+    with pytest.raises(ServerError, match=str(port)):
+        InProcessFrontEnd(port)
+
+
+async def test_the_in_process_front_end_serves_a_real_websocket_logs_and_closes(tmp_path) -> None:
+    """It binds a 95XX port, greets a real client the way a Showdown server does, writes its log
+    under the read's directory with the READY line, and on exit stops listening — nothing to kill
+    by PID, because the server is this process."""
+    from websockets.asyncio.client import connect
+
+    from main.anchors.server import InProcessFrontEnd, in_process_version
+
+    port = pick_port([9500, 9599])
+    log = tmp_path / "ws_frontend.log"
+    async with InProcessFrontEnd(port, log_path=log) as srv:
+        assert srv.pid == os.getpid() and srv.front is not None
+        async with connect(srv.uri) as ws:
+            first = await ws.recv()
+            assert str(first).startswith("|updateuser| Guest ")
+    assert "[ws_frontend] READY" in log.read_text()
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        assert s.connect_ex(("127.0.0.1", port)) != 0, "still listening after the context closed"
+    assert in_process_version().startswith("ws_frontend[in-process]@")

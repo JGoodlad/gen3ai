@@ -19,6 +19,15 @@ in the routine gate and an ENFORCED quiet-box budget failure at 36.5 s (2026-09-
 is waiting on the games and the process startups. Neither is ``sim`` (no in-process bridge) nor
 ``e2e`` (no server on :8000; each starts and stops its own on 9500-9599).
 
+**P3 (2026-10-07): our side is the in-process CORE slot by default.** The routine smoke plays it
+(``--our-transport auto`` → ``core``: an in-process slot of the Rust front end deciding on the core's
+own row). The slow read covers both of our readers on the rust server (``core`` and the legacy
+``poke-env`` client) and the legacy client on Node, and its ``core`` case runs the CLI in a FRESH
+interpreter under ``utils.poke_env_blocker`` — any ``import poke_env`` on the RUN-TIME path fails it
+with the importing frame. (That subprocess costs ~20 s of interpreter + torch start over the
+in-process smoke, measured 47-65 s at contention x1.8 on 2026-10-07, which is why it is not the
+routine one; the import CLOSURE is held in the routine gate by ``src/poke_env_free_entry_points_test.py``.)
+
 **Both transports for the full read, parametrized.** The default (`rust`) is the one the owner's
 direction put in the hot path and the one every read now takes unless it opts out; `node` is kept
 green because it is the reference a transport differential is taken against, and a reference
@@ -133,14 +142,18 @@ def _skip_reason(server: str = "rust") -> "str | None":
 
 
 
-def _read(tmp_path: Path, server: str, n_games: int, *extra: str):
-    """One anchor read through the real CLI; returns (rc, summary, rows, out)."""
+def _read(tmp_path: Path, server: str, n_games: int, *extra: str, blocked: bool = False):
+    """One anchor read through the real CLI; returns (rc, summary, rows, out).
+
+    ``blocked`` runs the CLI in a FRESH interpreter under ``utils.poke_env_blocker`` (every
+    ``import poke_env`` raises and is recorded) — P3's claim that our side of a read runs with no
+    poke-env at all, taken on the RUN-TIME path, which an import look cannot see."""
     reason = _skip_reason(server)
     if reason:
         pytest.skip(reason)
     model = _save_current_generation_checkpoint(tmp_path / "current_gen_run")
     out = tmp_path / "out"
-    rc = anchors_main([
+    argv = [
         "--model", model,
         "--opponent", "metamon:SmallRL",
         "--regime", "greedy",
@@ -159,7 +172,11 @@ def _read(tmp_path: Path, server: str, n_games: int, *extra: str):
         "--peer-username", f"MetaIt{server}",
         "--server", server,
         *extra,
-    ])
+    ]
+    if blocked:
+        rc = _run_blocked(argv, tmp_path)
+    else:
+        rc = anchors_main(argv)
     summary = json.loads((out / "summary.json").read_text())
     rows = [json.loads(line) for line in (out / "games.jsonl").read_text().splitlines()]
     # A named failure is a legitimate outcome of a contended box — but it must be NAMED, and the
@@ -170,6 +187,27 @@ def _read(tmp_path: Path, server: str, n_games: int, *extra: str):
             f"{len(rows)} of {n_games} games completed. "
             f"peer log: {sorted(p.name for p in out.rglob('peer_*.log'))}")
     return rc, summary, rows, out
+
+
+def _run_blocked(argv: list, tmp_path: Path) -> int:
+    import os
+    import subprocess
+
+    from utils.contention import scale_timeout
+    from utils.paths import repo_root, src_root
+
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(src_root())
+    env["CUDA_VISIBLE_DEVICES"] = ""
+    log = tmp_path / "blocked_attempts.log"
+    env["GEN3AI_POKE_ENV_BLOCK_LOG"] = str(log)
+    proc = subprocess.run([sys.executable, "-m", "utils.poke_env_blocker", "main.anchors", *argv],
+                          cwd=str(repo_root()), env=env, capture_output=True, text=True,
+                          timeout=scale_timeout(1800))
+    attempts = log.read_text() if log.exists() else ""
+    assert not attempts, f"poke_env was imported on our side of the read:\n{attempts}"
+    assert proc.returncode == 0, proc.stdout[-3000:] + proc.stderr[-3000:]
+    return proc.returncode
 
 
 def _assert_the_pieces_fit(summary: dict, rows: list, out: Path, server: str, n_games: int) -> None:
@@ -236,6 +274,10 @@ def test_one_capped_real_game_against_metamon_smallrl(tmp_path: Path, monkeypatc
                                     "--forfeit-turn-limit", str(SMOKE_FORFEIT_TURN))
     _assert_the_pieces_fit(summary, rows, out, "rust", 1)
     [row] = rows
+    # P3: our side was the IN-PROCESS core slot (the run-time no-poke-env proof is the slow read's
+    # `core` case, which runs the CLI under the blocker in a fresh interpreter)
+    assert row["our_transport"] == "rust_core_slot", row["our_transport"]
+    assert row["server_version"].startswith("ws_frontend[in-process]@"), row["server_version"]
     # the lowered limit is STAMPED on the row (a capped series is a different measurement) and held
     assert row["forfeit_turn_limit"] == SMOKE_FORFEIT_TURN, row["forfeit_turn_limit"]
     assert row["turns"] <= SMOKE_FORFEIT_TURN + 1, row["turns"]
@@ -243,14 +285,19 @@ def test_one_capped_real_game_against_metamon_smallrl(tmp_path: Path, monkeypatc
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("server", ["rust", "node"])
-def test_two_real_games_against_metamon_smallrl(tmp_path: Path, server: str) -> None:
+@pytest.mark.parametrize("server, transport", [("rust", "core"), ("rust", "poke-env"),
+                                               ("node", "poke-env")])
+def test_two_real_games_against_metamon_smallrl(tmp_path: Path, server: str, transport: str) -> None:
     """The whole tool, end to end, on the smallest sample that exercises every seam — one game per
     challenge role, played to its natural end at the trainer's own forfeit limit — once per
     transport, because "it works" on one of them says nothing about the other. ``slow`` on both
     (29.9-46.2 s each, 2026-09-30); the routine gate runs the capped one-game smoke above."""
-    _rc, summary, rows, out = _read(tmp_path, server, N_GAMES)
+    # the CORE case runs under the poke-env BLOCKER in a fresh interpreter: P3's run-time claim
+    _rc, summary, rows, out = _read(tmp_path, server, N_GAMES, "--our-transport", transport,
+                                    blocked=(transport == "core"))
     _assert_the_pieces_fit(summary, rows, out, server, N_GAMES)
+    assert all(row["our_transport"] == ("rust_core_slot" if transport == "core"
+                                        else "poke_env_rlplayer") for row in rows)
     # ROLE BALANCE: one game each way, which is what makes two the smallest useful n.
     assert summary["by_half"]["ours_challenge"]["n"] == 1
     assert summary["by_half"]["peer_challenge"]["n"] == 1

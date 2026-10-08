@@ -402,12 +402,36 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-poke-env]": {
+   "status": "pass",
+   "commit": "49326c1403d2de685c4fb37edfdecb8a632654e8",
+   "at": "2026-10-08T04:08:40Z",
+   "duration_s": 22.71,
+   "contention": 1.02,
+   "detail": ""
+  },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node]": {
    "status": "pass",
    "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
    "at": "2026-10-03T23:25:24Z",
    "duration_s": 19.76,
    "contention": 1.02,
+   "detail": ""
+  },
+  "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-core]": {
+   "status": "pass",
+   "commit": "49326c1403d2de685c4fb37edfdecb8a632654e8",
+   "at": "2026-10-08T04:08:40Z",
+   "duration_s": 31.56,
+   "contention": 1.71,
+   "detail": ""
+  },
+  "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-poke-env]": {
+   "status": "pass",
+   "commit": "49326c1403d2de685c4fb37edfdecb8a632654e8",
+   "at": "2026-10-08T04:08:40Z",
+   "duration_s": 25.01,
+   "contention": 1.03,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust]": {
@@ -863,10 +887,10 @@
   },
   "src/poke_env_free_entry_points_test.py::test_a_debug_smoke_with_eval_runs_with_poke_env_blocked": {
    "status": "pass",
-   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
-   "at": "2026-10-07T16:34:18Z",
-   "duration_s": 361.06,
-   "contention": 1.33,
+   "commit": "49326c1403d2de685c4fb37edfdecb8a632654e8",
+   "at": "2026-10-08T04:08:40Z",
+   "duration_s": 311.5,
+   "contention": 1.13,
    "detail": ""
   },
   "src/utils/bridge/bridge_impl_parity_test.py::test_a_forfeited_battles_record_logs_the_forcelose_command[node]": {
@@ -1102,5 +1126,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-08T01:38:44Z"
+ "last_written": "2026-10-08T04:08:40Z"
 }
