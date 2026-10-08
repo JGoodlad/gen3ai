@@ -1366,6 +1366,12 @@ The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the 
 **Handing an untrained network a revealed team hurts it** (the both-sided cells, descriptive): blob told the opponent's full set fell −8.1 pp. This confirms the registered out-of-distribution caveat; information a network never trained with is not free.
 
 [DESCRIPTIVE · same entry]
+
+### 4.6 The static-token screen at look 1 (interim, 2026-10-08)
+
+**Static Pokémon tokens (`--token-encoding static`: a mon's fixed identity as one token, the battle's dynamic state added to it) are not yet distinguishable from the legacy encoder in strength, and are not slower.** At three 15M seeds per arm the mirrored head-to-head cross reads Δ̂ **−1.26 pp** (fixed-sample 90 % [−2.51, −0.02]); t_NI 3.822 is below look 1's O'Brien–Fleming boundary 5.761, so the registered design CONTINUES to five seeds. Per training cycle `static` is about 3.7 % FASTER on quiet cycles (−1 to −4 % across readings), against the build's predicted +1.5 % FLOPs. No bot-panel harm (+0.58 pp).
+
+[NOT DETECTED at an interim look (no boundary crossed; the fixed-sample interval sits inside ±3.5 pp and just below 0, which a three-look design does not license reading as a verdict) · ledger 2026-10-08 READ "STATIC-TOKEN SCREEN LOOK 1"; `measurements/static_screen_look1_2026-10-08/`]
 ---
 
 ## 5. Retired hypotheses

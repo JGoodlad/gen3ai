@@ -1,0 +1,36 @@
+=== 2026-10-08T15:27:56-07:00 static-screen look 1: play checkout /home/goodlad/dev/gen3ai/.claude/worktrees/st-look1-pin-6c6d2e09 at git rev-parse HEAD = 6c6d2e0942e2111703a7e6d79bfadb31c8e51f01 (required 6c6d2e0942e2111703a7e6d79bfadb31c8e51f01)
+{"commit": "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01", "decision_kind": "ab_verdict", "event": "family", "family_id": "st_screen_strength_steps", "protocol": "gen3_eval_protocol_v1_h2h", "rule": "design_static_tokens.md \u00a78.1+\u00a78.2 (P_st 6c6d2e09; amendments 2026-10-08 1-2): static 15M x legacy 15M cross, t_NI=(\u0394\u0302+3.5)/\u221aV\u0302, t_SUP=\u0394\u0302/\u221aV\u0302, df=2(n-1), looks 3/5/8 seeds at OBF 5.761/2.683/1.874, rule 8; estimator main.h2h.cross", "schema": "gen3_eval_request_v1", "seq": 6111, "ts": "2026-10-08T22:17:45+00:00", "writer_id": "20261008T221745Z.0-goodlad_desktop-1534603-ledger_cli"}
+=== 2026-10-08T15:27:56-07:00 st_look1_steps: 9 cell(s) planned (/home/goodlad/.cache/gen3ai/st_look1/plan/steps_look1.json)
+[mem_cap] cap 32.00 GB (swap 0) · unit gen3ai-capped-main.h2h-1585894.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] play-many: 9 cell(s) x 1000 pairs in batches of 500; 9 with batches to play (18 batch(es)), 0 already recorded; purpose ab, family st_screen_strength_steps, request st_look1_steps under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 9 cell(s), 6 checkpoint(s) — 2 architecture(s): eval declared from rb_st_static_s1001@15087831 (slots ['player']); eval_b declared from rb_st_legacy_s1001@15048185 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 6.4s
+[h2h] engine up in 548.6s: rb_st_static_s1001@15087831 vs rb_st_legacy_s1001@15048185; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/9: rb_st_static_s1001@15087831 vs rb_st_legacy_s1001@15048185 — 2 batch(es) to play, 0 recorded; request st_look1_steps; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.6s (116.48 games/s); W/L/D 461/535/4; pair counts [137, 2, 259, 2, 100]; near-tie games 2; digest a1ff1e998961
+[h2h] batch 2/2: 500 pairs / 1000 games in 10.1s (99.15 games/s); W/L/D 482/515/3; pair counts [125, 1, 264, 2, 108]; near-tie games 2; digest da8d4e8014cd
+[h2h] cell 2/9: rb_st_static_s1001@15087831 vs rb_st_legacy_s1002@15048123 — 2 batch(es) to play, 0 recorded; request st_look1_steps; swap 1.37s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.3s (97.24 games/s); W/L/D 500/495/5; pair counts [113, 3, 266, 2, 116]; near-tie games 4; digest 3c6b823a0938
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.9s (100.68 games/s); W/L/D 479/515/6; pair counts [120, 3, 272, 3, 102]; near-tie games 5; digest 3326242b5403
+[h2h] cell 3/9: rb_st_static_s1001@15087831 vs rb_st_legacy_s1003@15047206 — 2 batch(es) to play, 0 recorded; request st_look1_steps; swap 1.37s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.0s (100.48 games/s); W/L/D 474/514/12; pair counts [115, 5, 279, 7, 94]; near-tie games 2; digest e6f949a08e89
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.3s (107.67 games/s); W/L/D 493/504/3; pair counts [123, 1, 257, 2, 117]; near-tie games 2; digest bae1057cd15c
+[h2h] cell 4/9: rb_st_static_s1002@15050373 vs rb_st_legacy_s1001@15048185 — 2 batch(es) to play, 0 recorded; request st_look1_steps; swap 2.35s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.4s (105.91 games/s); W/L/D 480/513/7; pair counts [119, 2, 273, 5, 101]; near-tie games 1; digest 0414ae9c18f2
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.3s (107.99 games/s); W/L/D 452/540/8; pair counts [140, 5, 256, 1, 98]; near-tie games 0; digest 2b8e67422b83
+[h2h] cell 5/9: rb_st_static_s1002@15050373 vs rb_st_legacy_s1002@15048123 — 2 batch(es) to play, 0 recorded; request st_look1_steps; swap 1.37s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.3s (107.08 games/s); W/L/D 514/480/6; pair counts [104, 3, 269, 3, 121]; near-tie games 0; digest 65679ff15845
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.7s (114.80 games/s); W/L/D 492/505/3; pair counts [112, 0, 281, 3, 104]; near-tie games 1; digest 2f672c6b458e
+[h2h] cell 6/9: rb_st_static_s1002@15050373 vs rb_st_legacy_s1003@15047206 — 2 batch(es) to play, 0 recorded; request st_look1_steps; swap 0.40s
+[h2h] batch 1/2: 500 pairs / 1000 games in 8.9s (112.90 games/s); W/L/D 492/505/3; pair counts [114, 2, 275, 1, 108]; near-tie games 1; digest 7ac81e15ab30
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.3s (107.12 games/s); W/L/D 489/502/9; pair counts [122, 3, 255, 6, 114]; near-tie games 5; digest acc6a4d9dc96
+[h2h] cell 7/9: rb_st_static_s1003@15067350 vs rb_st_legacy_s1001@15048185 — 2 batch(es) to play, 0 recorded; request st_look1_steps; swap 2.36s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.2s (109.28 games/s); W/L/D 498/500/2; pair counts [111, 1, 277, 1, 110]; near-tie games 1; digest 98a0d69ae346
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.1s (109.59 games/s); W/L/D 479/518/3; pair counts [124, 2, 268, 1, 105]; near-tie games 0; digest f9fc562f68e4
+[h2h] cell 8/9: rb_st_static_s1003@15067350 vs rb_st_legacy_s1002@15048123 — 2 batch(es) to play, 0 recorded; request st_look1_steps; swap 1.38s
+[h2h] batch 1/2: 500 pairs / 1000 games in 10.0s (100.06 games/s); W/L/D 489/503/8; pair counts [112, 4, 275, 4, 105]; near-tie games 2; digest 99ca88670aa2
+[h2h] batch 2/2: 500 pairs / 1000 games in 8.9s (112.69 games/s); W/L/D 491/502/7; pair counts [107, 2, 286, 5, 100]; near-tie games 1; digest b632e8ccf486
+[h2h] cell 9/9: rb_st_static_s1003@15067350 vs rb_st_legacy_s1003@15047206 — 2 batch(es) to play, 0 recorded; request st_look1_steps; swap 0.40s
+[h2h] batch 1/2: 500 pairs / 1000 games in 9.6s (104.32 games/s); W/L/D 478/513/9; pair counts [118, 5, 272, 4, 101]; near-tie games 0; digest de5d8c1b0a94
+[h2h] batch 2/2: 500 pairs / 1000 games in 9.5s (105.18 games/s); W/L/D 477/516/7; pair counts [123, 4, 267, 1, 105]; near-tie games 3; digest 6f919453ddb4
+[mem_cap] done: gen3ai-capped-main.h2h-1585894.scope exit 0 · peak 11.22 GB of cap 32.00 GB (35%) · not OOM-killed
+=== 2026-10-08T15:40:24-07:00 DONE

@@ -23530,3 +23530,27 @@ Tag: **BUILT · Python battle layer + trackers + encoder encode path + runtime d
   empty namespace.
 
 Tag: **BUILT · T27 DONE · vendored fork deleted · allowlist 0 / 0 · data/pokemon regenerated 8 / 8 byte-identical without it**
+
+### 2026-10-08 · READ · **STATIC-TOKEN SCREEN LOOK 1 (n = 3 per arm): CONTINUE — static vs legacy Δ̂ −1.26 pp, fixed-sample 90 % [−2.51, −0.02], look-1 interval [−4.63, +2.11]; t_NI 3.822 and t_SUP −2.161, both below the look-1 boundary 5.761; in-arm speed s −3.7 % (≤ 5 %, the strength rule alone decides); bots panel +0.58 pp, no HARM flag**
+
+The registered look-1 read of `design_static_tokens.md` §8.1 + §8.2 (P_st `6c6d2e09`; amendments 1–2 of 2026-10-08): `--token-encoding static` vs `legacy`, both `fixed_mass` + `tower`, 15M, δ = 3.5 pp, X5's group-sequential looks 3 / 5 / 8 (O'Brien–Fleming 5.761 / 2.683 / 1.874), rule 8. Artifact: [`measurements/static_screen_look1_2026-10-08/`](measurements/static_screen_look1_2026-10-08/) (`README.md`, `result.md`, `result.json`, `speed.json`, `s3_validity.json`, `panel_bots.json`). No decision is taken here.
+
+**Inputs.** 9 cells (each static seed's `final_model.zip` × each legacy seed's) × 1,000 mirrored pairs = 18,000 games, both sides greedy, schedule seed 0, one engine (T2 graph, CUDA), regime `adfdbee824c9eb0a` (the X5 A/B's), family `st_screen_strength_steps` (registered at `6c6d2e09`), request `st_look1_steps`, purpose `ab`; 0 aborted games; ledger audit OK (2,730 rows, 0 live claims). Played AND read from a checkout detached at `6c6d2e09` (the scripts refuse any other HEAD). Preconditions checked by `plan_look1.py`: all six at `pin_history` [6c6d2e09] only, finals 15.05–15.09M, `init_num_threads` 1, the arms' encodings as declared; none failed.
+
+**Deviations, banked.** S1 and S2 each one tie-only K9(b) resume (amendment 1). S3 five tie-only stops (2.36M, 7.41M, 7.52M, 7.62M, 7.73M; excluded share 0.17–0.23), then the amendment-2 `--behaviour-check warn` resume from `checkpoint_7000118` at 13:48:20. **S3 VERIFIED VALID here, read-only, from `launcher_child.full.log`:** 82 K9(b) probes after the switch (7.10M → 15.07M), max abs d log π on every current row 4.05e-5 < 1e-4 (judged 4.05e-5, excluded 1.45e-5); one more tie-only excursion under warn at 8.48M (max 1.97e-5, share 0.206).
+
+**The read (look 1, df 4).** h_ij (static row vs legacy column, pp): s1001 47.33 / 49.23 / 48.73; s1002 46.98 / 50.52 / 49.35; s1003 48.98 / 49.38 / 48.15 (8 of 9 below 50). Row means 48.43 / 48.95 / 48.83 (s²_R 0.076), column means 47.76 / 49.71 / 48.74 (s²_C 0.951); √V̂ 0.585 pp. Δ̂ −1.26; t_NI = (Δ̂ + 3.5)/√V̂ = 3.822 < 5.761; t_SUP = −2.161; no futility (Δ̂ > −3.5); nothing within 1e-9 of a boundary. **Outcome: CONTINUE to look 2** (§8.2: a look that crosses no boundary continues). X5's estimator (`main.h2h.cross.decide`, look 1) reads the same.
+
+**Speed (registered in-arm s, REPORTED).** Quiet cycles (contention factor < 1.05 over each cycle's window, each child's first 11 updates excluded so every resume window is out, canary / eval / dump cycles out): legacy 179 of 456 (38 / 60 / 81 per seed), median 58.96 s; static 203 of 471 (44 / 49 / 110), median 56.76 s ⇒ **s = −3.7 %** (mean of per-seed medians −2.7 %, median of them −1.1 %; update phase alone −2.6 %; END-TO-END wall +1.4 %, the resumes' extra startups). s ≤ 5 %: the strength rule alone decides; the matched-wall-clock read is not triggered.
+
+**Secondary (REPORTED).** Bots, from each run's own last in-loop eval (14.0M, 8 bots × 100 games): static 89.92 vs legacy 89.33 pp, +0.58, no HARM flag (fires below −7 pp). The frozen-pool and SmallRL components were not played (over the ~20-min GPU allowance with look 2 waiting).
+
+**FINDINGS (standing rule 7).**
+1. **The interpretive fork at an interim look.** §8.1's table was written for one look at 2.132; §8.2 replaced that value with the look boundaries. Read as §8.2 states it, look 1 crosses nothing: CONTINUE (declared in `read_look1.py` before the read). Read literally with §8.1's fixed-sample 90 % interval, [−2.51, −0.02] lies inside ±3.5 (would say EQUIVALENT), and the same interval sits wholly below 0 (t_SUP −2.161 < −2.132): unadjusted, static reads slightly worse, by about 1.3 pp inside the margin. Neither fixed-sample statement holds its error rate in a three-look design; the orchestrator owns the call.
+2. **Variance is in the LEGACY columns** (s²_C 0.95 vs s²_R 0.08): the three static seeds sit within 0.5 pp of each other. With n = 3 per arm the df-4 SE is small partly by luck; look 2 adds two seeds per arm.
+3. **S3's checkpoints after the switch are every 2.4M** (7.2 / 9.6 / 12.0 / 14.4M), not every 1M from 10M as §8.1 asks. Moot at s ≤ 5 %; it would matter only for a matched-wall-clock read.
+4. **The first play launch failed** after its ~9-min engine compile: the pin checkout had no Showdown submodule source, so team validation through node failed; no row was written. Fixed (`setup_pin.sh`) and relaunched; ~10 min of the lease lost. A pin checkout needs `git submodule update --init` before any h2h play.
+5. **The panel is the bots component only**, from in-loop evals at 14.0M (each run's own eval regime), not a fresh common panel; frozen pool and SmallRL unread.
+6. **GPU lease** `static look1 cross`: acquired 15:17:35, released 15:40:37 PDT, immediately after the play.
+
+Tag: **READ · static-token screen look 1 · CONTINUE (t_NI 3.822 < 5.761) · s −3.7 % · S3 VALID · no HARM flag**

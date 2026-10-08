@@ -1,0 +1,119 @@
+{
+ "arms": {
+  "static": {
+   "runs": {
+    "s1001": {
+     "step": 14000046,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T09:57:42.157526+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.88,
+      "heuristic2": 0.81,
+      "staller": 0.89,
+      "staller_v2": 0.94,
+      "aggressive": 0.87,
+      "aggressive_v2": 0.84,
+      "setup_sweep": 0.88,
+      "setup_sweep_v2": 0.88
+     },
+     "bots_mean_pp": 87.375,
+     "random": 1.0
+    },
+    "s1002": {
+     "step": 14000186,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T13:16:12.400608+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.88,
+      "heuristic2": 0.94,
+      "staller": 0.97,
+      "staller_v2": 0.97,
+      "aggressive": 0.95,
+      "aggressive_v2": 0.84,
+      "setup_sweep": 0.92,
+      "setup_sweep_v2": 0.86
+     },
+     "bots_mean_pp": 91.625,
+     "random": 1.0
+    },
+    "s1003": {
+     "step": 14000032,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T22:01:35.582682+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.89,
+      "heuristic2": 0.92,
+      "staller": 0.93,
+      "staller_v2": 0.97,
+      "aggressive": 0.93,
+      "aggressive_v2": 0.9,
+      "setup_sweep": 0.88,
+      "setup_sweep_v2": 0.84
+     },
+     "bots_mean_pp": 90.75,
+     "random": 1.0
+    }
+   },
+   "mean_pp": 89.91666666666667
+  },
+  "legacy": {
+   "runs": {
+    "s1001": {
+     "step": 14000010,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T07:03:08.282255+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.87,
+      "heuristic2": 0.92,
+      "staller": 0.95,
+      "staller_v2": 0.91,
+      "aggressive": 0.94,
+      "aggressive_v2": 0.85,
+      "setup_sweep": 0.87,
+      "setup_sweep_v2": 0.85
+     },
+     "bots_mean_pp": 89.5,
+     "random": 1.0
+    },
+    "s1002": {
+     "step": 14000024,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T16:07:28.015730+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.92,
+      "heuristic2": 0.79,
+      "staller": 0.95,
+      "staller_v2": 0.87,
+      "aggressive": 0.95,
+      "aggressive_v2": 0.88,
+      "setup_sweep": 0.92,
+      "setup_sweep_v2": 0.89
+     },
+     "bots_mean_pp": 89.625,
+     "random": 1.0
+    },
+    "s1003": {
+     "step": 14000067,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T18:58:07.405182+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.8,
+      "heuristic2": 0.88,
+      "staller": 0.95,
+      "staller_v2": 0.92,
+      "aggressive": 0.92,
+      "aggressive_v2": 0.85,
+      "setup_sweep": 0.89,
+      "setup_sweep_v2": 0.9
+     },
+     "bots_mean_pp": 88.875,
+     "random": 1.0
+    }
+   },
+   "mean_pp": 89.33333333333333
+  }
+ },
+ "static_minus_legacy_pp": 0.5833333333333428,
+ "harm_flag": false,
+ "note": "bots component only; frozen pool + SmallRL not read (see docstring)"
+}

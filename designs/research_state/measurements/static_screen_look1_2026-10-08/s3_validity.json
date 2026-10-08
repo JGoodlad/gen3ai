@@ -1,0 +1,83 @@
+{
+ "run": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1003",
+ "log": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1003/launcher_child.full.log",
+ "log_lines": 70780,
+ "bar": 0.0001,
+ "switch_attach": {
+  "time": "2026-10-08 13:48:20",
+  "pid": 1484575,
+  "line": 34150
+ },
+ "warn_mentions_lines": [],
+ "segments": [
+  {
+   "attached": "2026-10-08 12:09:04",
+   "pid": 1379954,
+   "line": 2,
+   "probes": 23,
+   "max_abs_dlogp_current": 6.68e-06,
+   "max_abs_dlogp_judged": 6.68e-06,
+   "max_excluded_frac": 0.0488
+  },
+  {
+   "attached": "2026-10-08 12:42:25",
+   "pid": 1454644,
+   "line": 9975,
+   "probes": 54,
+   "max_abs_dlogp_current": 2.31e-05,
+   "max_abs_dlogp_judged": 2.31e-05,
+   "max_excluded_frac": 0.0605
+  },
+  {
+   "attached": "2026-10-08 13:36:52",
+   "pid": 1478336,
+   "line": 33607,
+   "probes": 0,
+   "max_abs_dlogp_current": null,
+   "max_abs_dlogp_judged": null,
+   "max_excluded_frac": null
+  },
+  {
+   "attached": "2026-10-08 13:40:42",
+   "pid": 1480145,
+   "line": 33788,
+   "probes": 0,
+   "max_abs_dlogp_current": null,
+   "max_abs_dlogp_judged": null,
+   "max_excluded_frac": null
+  },
+  {
+   "attached": "2026-10-08 13:44:27",
+   "pid": 1482240,
+   "line": 33969,
+   "probes": 0,
+   "max_abs_dlogp_current": null,
+   "max_abs_dlogp_judged": null,
+   "max_excluded_frac": null
+  },
+  {
+   "attached": "2026-10-08 13:48:20",
+   "pid": 1484575,
+   "line": 34150,
+   "probes": 82,
+   "max_abs_dlogp_current": 4.05e-05,
+   "max_abs_dlogp_judged": 4.05e-05,
+   "max_excluded_frac": 0.206
+  }
+ ],
+ "post_switch_probes": 82,
+ "post_max_abs_dlogp_current_max": 4.05e-05,
+ "post_max_abs_dlogp_current_n": 82,
+ "post_max_abs_dlogp_judged_max": 4.05e-05,
+ "post_max_abs_dlogp_judged_n": 82,
+ "post_max_abs_dlogp_excluded_max": 1.45e-05,
+ "post_max_abs_dlogp_excluded_n": 82,
+ "post_excluded_frac_max": 0.206,
+ "post_excluded_frac_n": 82,
+ "post_violations_total_max_max": 0.0,
+ "post_violations_total_max_n": 82,
+ "post_probes_at_or_over_bar": [],
+ "first_probe_step": 7103403.0,
+ "last_probe_step": 15067350.0,
+ "verdict": "VALID"
+}
