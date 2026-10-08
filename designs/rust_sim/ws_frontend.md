@@ -182,7 +182,7 @@ is a different battle, and an inconclusive comparison must never read as either 
 
 ## Throughput — and why it is not the reason to use this
 
-`src/utils/bridge/ws_frontend_throughput_benchmark.py`. Two poke-env `RandomPlayer`s play the
+`ws_frontend_throughput_benchmark.py` (deleted in P6 slice 6c with the poke-env `RandomPlayer`s it drove; the figures below are its dated measurement). Two poke-env `RandomPlayer`s played the
 identical workload over a real websocket; the only difference is what is listening.
 
 **Measured 2026-09-14, `--battles 24 --impl rust`, on a box carrying a live training arm**

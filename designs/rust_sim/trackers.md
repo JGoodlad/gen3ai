@@ -14,14 +14,14 @@ fork shares its parent's and pays only for its own decision.
 | **Trackers** | `src/rust_sim/src/trackers/mod.rs` (`SideTrackers`, `TrackerState`, `IntentLabel`, `reward`), `history.rs` (recency, pair history, the event window, the wish and sleep folds), `clock.rs` (the progress clock), `hp_belief.rs` (the Hidden-Power belief), `delta.rs` (the context + the `TurnDelta` PROJECTION), `turnview.rs` (the frozen per-side turn fold), `ev.rs` (typed accessors over a reading) |
 | **Native record** | `src/rust_sim/src/trackers/record.rs` (`Window` = ordered `Action`s, each with ordered `Effect`s; `Choice`, `DenialWhy`) |
 | **Version** | `SideStream::with_trackers` / `BattleVersion::{root_with, observe_root_with, parse_root_with, parse_root_unrecorded}`; `BattleVersion::{decision, trackers, note_choice}` |
-| **Gates** | slice T (`agents/battle/rust_core_parity_trackers.py`, COMMIT + MILESTONE in `rust_core_parity_test.py`; FRESH battles: `rust_core_trackers_fuzz_test.py`); the native record's fixtures `tests/window_record_test.rs`; the training-input SEMANTICS pins `tests/tracker_semantics_test.rs` (Rust) and `agents/battle/tracker_semantics_fixtures_test.py` (both sides through slice T) |
+| **Gates** | the native record's fixtures `tests/window_record_test.rs`; the training-input SEMANTICS pins `tests/tracker_semantics_test.rs`; `agents/battle/core_corpus_test.py` (the commit corpus through `core_events --trackers --obs`; the information boundary on the native record). Slice T (`rust_core_parity_trackers.py`, COMMIT + MILESTONE), its FRESH fuzz `rust_core_trackers_fuzz_test.py` and `tracker_semantics_fixtures_test.py` (both sides through slice T) were DELETED in P6 slice 6c |
 
 ---
 
 ## 1. What crosses, and what does not
 
 `EpisodeTracker.record_context` + `advance_window` (`agents/training/episode_tracker.py`), line for
-line, over the side's READINGS (the `BattleEvent`s slice E holds equal to `Gen3Battle`'s):
+line, over the side's READINGS (the `BattleEvent`s slice E held equal to `Gen3Battle`'s until P6 slice 6c):
 
 | Python | Rust | read by |
 |---|---|---|
@@ -40,7 +40,7 @@ line, over the side's READINGS (the `BattleEvent`s slice E holds equal to `Gen3B
 reward terms (program M3 row, `gen3_shaped_reward_deletion_v1`), and with them the progress clock's
 CHARGE (`last_penalty`, `switch_legal`); the choice-band belief (the Python `ChoiceBandTracker` had no production reader — a no-op since it landed, `9a37b712` — and was deleted, deletion pass L2). **Not a first-class structure:** `TurnDelta`. Its layout is
 frozen and its obs frames were deleted (`gen3_frame_deletion_v1`); the core keeps only
-`delta::DeltaProjection` — the fields the clock and the label read — and slice T gates those
+`delta::DeltaProjection` — the fields the clock and the label read — and slice T (until P6 slice 6c) gated those
 CONSUMERS, never the layout.
 
 **ACTION DENIAL.** A chosen action that never happened is one of: a `Cant` with `then_moved == false`
@@ -77,7 +77,7 @@ A side's `SideStream` carries an optional `TrackerState` (`SideStream::with_trac
 `Arc<SideTrackers>`, the side's native-record builder, and the readings since its last decision.
 Every line is folded as it arrives; a `|request|` that opens a DECISION of this side — non-empty,
 not `wait`, battle unfinished, a legal action (the live player's dispatch, the same rule slice V's
-`decision_points` uses) — runs `record_context` → `advance_window` on the readings since the
+`decision_points` used, deleted in P6 slice 6c) — runs `record_context` → `advance_window` on the readings since the
 previous decision, closes the native window, and stores `Decision { line, window, reward }`.
 
 A fork CLONES the `TrackerState`: the tracker state is an `Arc` and is COPIED only when the fork's
@@ -135,30 +135,31 @@ record nor the event window negates an `|-unboost|` again.
 `Own(Option<String>)` or `Opp` — `Opp` carries no data, so no code path can put the opponent's
 chosen move into a viewer's record, and a record built from one side's stream sees nothing the
 other side cannot (`present()`'s guarantee, for the record). The boundary is also checked at the
-SLICE level: slice T runs `rust_core_parity_trackers.boundary_violations` on every decision's record
-(`[BOUNDARY]` divergence — an opponent `Cant` / `Denied` whose choice is not `"opp"`, or one of ours
-without `{"own": …}`), so COMMIT, MILESTONE and the tracker fuzz all fail on a leak.
+CORPUS level: `core_corpus_test.py::test_the_information_boundary_holds_on_the_core_record_and_the_check_has_teeth` runs
+`boundary_violations` on every decision's record of the commit corpus (an opponent `Cant` / `Denied` whose choice is not
+`"opp"`, or one of ours without `{"own": …}`) and fails on a planted leak. (Until P6 slice 6c slice T ran the same check as a
+`[BOUNDARY]` divergence in COMMIT, MILESTONE and the tracker fuzz.)
 
-## 4. Slice T — the gate
+## 4. Slice T — DELETED (P6 slice 6c); what held the trackers, and what holds them now
 
-`agents/battle/rust_core_parity_trackers.py`, on the same `core_events` replay as slices E and V
-(`core_events --trackers`): at every decision of both viewers, the real `EpisodeTracker` driven as
-the (deleted, U3) `Gen3Env.embed_battle` drove it over a `Gen3Battle` fed the viewer's text, serialised into the
-core's shape and compared TYPE-strict, EVERY differing leaf reported (one bad field never hides
-another), **no allowlist**: slots, the HP belief (every float32), the clock (`n`, its inputs,
-`value()`), recency, pair history, the 32 event-window rows (every column), the wish / sleep folds,
-the `TurnDelta` projection, the α/β label (kind, move id, switch species, switch slot), and the
-reward (win indicator) at every decision and at the end. A decision on one side that the other did
-not take is an `[ALIGN]` divergence, never a skip. Teeth (`rust_core_parity_test.py`): a residual
-folded into a move's `hp_delta` (the v81 class), a clock that never resets, a phaze labelled as a
-choice — each FAILS.
+`agents/battle/rust_core_parity_trackers.py` (on the same `core_events` replay as slices E and V, `core_events --trackers`)
+compared, at every decision of both viewers, the real `EpisodeTracker` driven as the (deleted, U3) `Gen3Env.embed_battle`
+drove it over a `Gen3Battle` fed the viewer's text, serialised into the core's shape, with the core's, TYPE-strict, EVERY
+differing leaf reported, **no allowlist**: slots, the HP belief (every float32), the clock, recency, pair history, the 32
+event-window rows (every column), the wish / sleep folds, the `TurnDelta` projection, the α/β label and the reward (win
+indicator). It ran in two tiers (`rust_core_parity_test.py`, COMMIT and MILESTONE) and on FRESH battles
+(`rust_core_trackers_fuzz_test.py`), with teeth (a residual folded into a move's `hp_delta` — the v81 class, a clock that
+never resets, a phaze labelled as a choice). It is deleted with the Python tracker stack it compared against (the Python
+side was never a truth, `present.md` §3).
 
-| tier | runs |
-|---|---|
-| COMMIT | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` (unmarked) |
-| MILESTONE | `… -m slow -q -n 2` (the verdict lands in `designs/ops/slow_tier_status.json`) |
+What holds the trackers now: the cargo fixtures `tests/window_record_test.rs` (the native record on constructed battles:
+attribution, denials, faint causes, the information boundary) and `tests/tracker_semantics_test.rs` (the M3 loss
+catalogue's training-input semantics, §5, on constructed battles); `core_corpus_test.py` (the commit corpus replays through
+`core_events --trackers --obs` with every decision carrying its tracker state and label kinds 0 / 1 / 2 all seen, a
+terminal reward recorded, the boundary clean); the obs golden (the trackers' fold is IN the row); and `designs/rust_sim/
+encoder.md` §6a.
 
-## 5. The training-input semantics the trackers fold (both paths, held equal by slice T)
+## 5. The training-input semantics the trackers fold (both paths; held equal by slice T until P6 slice 6c)
 
 The M3 loss catalogue (§ below) found GIGO in three of training's own layers, and the M6 cutover
 stress a fourth (the Hidden-Power belief's prior support); they are FIXED on the Python path and in

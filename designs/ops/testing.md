@@ -113,7 +113,7 @@ by the profile (`pytest -m <tier> --durations=0`), not by which subsystem feels 
 **time the cause before you name it**.
 
 🚨 **Cost tracks battle COUNT, not "does it battle"**, so `sim` cannot be the marker that decides
-routine cost — `slow` is. `gen3_data_obs_parity` is battle-backed and CHEAP, and putting it behind
+routine cost — `slow` is. `gen3_data_obs_parity` (the obs golden's byte test; since P6 slice 6c its successor is `golden_obs_core_test`) is battle-backed and CHEAP, and putting it behind
 the old `-m "not integration"` gate is exactly how it rode main RED three separate times.
 
 **A tier is DECLARED, never inferred.** Cost arrives transitively, so neither a filename nor an
@@ -349,7 +349,7 @@ session teardown ~5-10 s, so the gate is test bodies. An attribution run over th
 put **45 %** of their time in waits on CHILD processes (rust binaries, node bridges, python
 eval/replay children), 6 % in production-size policy construction and 4 % in fixed sleeps; the
 heavy hitters are the M5 parity gates (`rust_eval/parity*`,
-`rust_core_parity`, `bots_gate`), the `cf_producer`/`cf_audit` integration paths, the anchors smoke,
+`rust_core_parity` — deleted in P6 slice 6c, `core_corpus_test` replaces it —, `bots_gate`), the `cf_producer`/`cf_audit` integration paths, the anchors smoke,
 `extractor_compiles` (compile) and the two mypy-backed static gates on a COLD cache (~45 s on a fresh
 worktree's first gate; since 2026-10-02 they sit in the `static` budget tier above, so that cost is
 declared, not a flake). The fixes that shipped with this table: `3e766294` (a VACUOUS 30 s watchdog
@@ -708,7 +708,7 @@ principle). Fix the leak at its source with one of these idioms:
 - the root conftest's `restore_torch_globals` fixture, for a body that sets them itself (a CLI
   `main()` run in-process)
 - `@utils.torch_state_guard.restores_torch_globals` on a LIBRARY function that sets them for its own
-  work (`untaught_meter.play_cells`, `harvest.score_candidates`, `human_agreement.run`), so every
+  work (`untaught_meter.play_cells`, `harvest.score_candidates`; `human_agreement.run` was deleted in P6 slice 6c), so every
   caller gets its own back — not on a function returning a lazy iterator. A loader whose settings
   must outlive it sets NOTHING and gives its callers a scope instead
   (`policy_spectrum.reader.inference_globals`). Pinned by `src/main/torch_globals_restore_test.py`.
@@ -873,10 +873,8 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch2
 #                                  utils/bridge/reroll_many_parity_fuzz_test.py (batched reroll_many == per-call reroll_turn, bit-for-bit obs)
 #                                  utils/bridge/search_clone_parity_fuzz_test.py (serializeBattle clone == reroll_many, bit-for-bit obs + value_crn anchor + depth-2)
 #                                  and training/obs_roundtrip_fuzz_test.py (offline obs == live obs, bit-for-bit)
-#                                  battle/rust_core_trackers_fuzz_test.py [--minutes N] (slice T on FRESH battles: the Rust core's
-#                                      per-decision trackers / α-β label / reward == EpisodeTracker, + slices E, V and O — the
-#                                      Rust ENCODER's 2501-dim row byte-equal to Gen3ObservationEncoder's — pool + mechanic-dense
-#                                      + procedural teams; the fold-equivalence fuzz's shape re-pointed at the core)
+#                                  (battle/rust_core_trackers_fuzz_test.py — slice T/V/O on FRESH battles against the Python
+#                                      reading — was DELETED in P6 slice 6c with the Python-vs-core comparisons)
 ```
 
 ### THREE TEAM SOURCES — the pool, the procedural generator, and the LADDER-USAGE corpus
@@ -902,7 +900,7 @@ proves the committed bytes reproduce): `python -m utils.ladder_corpus.build`.
 | tier | teams | runs in |
 |---|---|---|
 | `commit` | 16 | the COMMIT-tier recorded battles (`ladder_0`, `ladder_1` of the Rust Core parity fixture) |
-| `milestone` | 800 | slice E/V MILESTONE (2 × 150 battles, 600 teams once each) and the fuzzers' default draw |
+| `milestone` | 800 | the fuzzers' default draw (and, until P6 slice 6c, slice E/V MILESTONE: 2 × 150 battles, 600 teams once each) |
 | `full` | 22,813 | the CUTOVER tier; `--ladder-tier full` soaks |
 
 ```bash
@@ -910,13 +908,13 @@ node src/rust_sim/harness/ab_fuzz.js --mode ladder [--ladder-tier full] --battle
 node src/rust_sim/harness/bridge_ab_fuzz.js --mode ladder --format gen3ou --battles 100
 node src/rust_sim/harness/gen_sim_bridge_diff.js --mode ladder --format gen3ou --persistent --battles 100
 python3 src/agents/training/obs_roundtrip_fuzz_test.py 20 20 --team-source ladder         # also: event_log /
-#   core_row_parity / live_view_memo fuzz scripts take --team-source {pool,procedural,ladder}
+#   event_log / live_view_memo fuzz scripts take --team-source {pool,procedural,ladder}
 ```
 
-The parity harness's hook is `rust_core_parity.play(key, source="ladder")`, so slices T and O get
-all three sources by calling it. **The ladder MILESTONE tier has NAMED known divergences**
-(`rust_core_parity.LADDER_KNOWN_DIVERGENCES`, each with its backlog row); they run in their own test
-and must still fire in exactly their named classes, so an entry that outlives its fix fails.
+The parity harness's hook was `rust_core_parity.play(key, source="ladder")`, so slices T and O got
+all three sources by calling it; the harness is deleted (P6 slice 6c) and the fuzz scripts above are the consumers.
+(Its ladder MILESTONE tier had NAMED known divergences, `rust_core_parity.LADDER_KNOWN_DIVERGENCES` — EMPTY since the
+Rust Core deletion pass, so nothing is lost with it.)
 
 **The FULL Metamon smoke is DELETED** (`main/ladder_usage_smoke.py`, T27 / P0 dead-code removal, 2026-10-06): it was a
 one-off, banked measurement (2026-09-24: all 22,862 ladder teams, 11,431 battles on the NODE bridge, both players encoding
@@ -949,13 +947,11 @@ ran zero kernels (`research_state/measurements/own_ppo_loop/`). `learner_benchma
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
-# WHERE the obs pipeline's time goes (component breakdown + cProfile ranking)
-python3 src/agents/training/obs_build_benchmark.py [--turn 25] [--reps 400] [--top 22] [--battles 200] [--seed 0]
-# WHERE a whole trainer turn's CPU goes (parse + obs + reward + mask + map + tracker), GPU-excluded
-# (a standalone profiler that MIRRORS the per-decision stages the deleted Python `Gen3Env` ran — it imports no env)
-python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0] [--pin-battles] [--bridge rust|node]   # rust is the default (training's)
-# A/B one implementation of LiveView.from_battle against the previous one, on ONE frozen board
-python3 src/agents/training/live_view_build_benchmark.py [--reps 2500] [--rounds 6] [--turn 12] [--profile]
+# WHERE the Rust ENCODER's time goes — THE mandatory before/after benchmark of an observation change (P6):
+#   `core_events --obs --obs-bench` at a seeded sample of the obs golden's banked decisions
+python -m agents.observation.rust_encoder_benchmark [--decisions 40] [--reps 300]
+# (the Python-path profilers `obs_build_benchmark.py`, `trainer_turn_benchmark.py` and `live_view_build_benchmark.py`
+#  were DELETED in P6 slice 6c with the Python encode path they profiled)
 # WHERE ONE SEARCHED DECISION's wall goes — the real SearchEngine (the Rust-core road) over BANKED
 #   eval traces, in stack-accounted phases (port open_root / expand_many / row wrap / glue)
 python3 src/main/search_dividend/search_decision_benchmark.py --traces models/<run>/eval_traces \
@@ -1008,31 +1004,20 @@ In the same pair, encode reads 9.5% un-profiled and 15.6% profiled and the actio
 against 2.2%. Rank work by a wall measurement; use cProfile to find WHICH function, not HOW MUCH.
 (`designs/research_state/measurements/search_profile_2026-09-22/README.md`.)
 
-🚨 **Every change under `src/agents/observation/` must run `obs_build_benchmark` before/after and
-confirm no meaningful regression.** That gate, the canonical baseline and the load-stable
-regression criteria are in `src/agents/observation/CLAUDE.md`. Absolute ms scale with machine load;
-the component **ratios** and the cProfile ranking are the load-stable signal.
-
-🚨 **`--pin-battles` is REQUIRED for any before/after or arm-vs-arm claim.** Unpinned, each
-invocation walks a fresh RANDOM battle (the `--seed` fixes the team draw and the action picks, NOT
-the sim dice), so two runs profile two different boards: measured, the run-to-run spread was LARGER
-than the effect being tested and carried the wrong SIGN. It is off by default so the headline share
-table still samples the board distribution.
-
-🚨 **The first two benchmarks cannot measure a CHANGE to `LiveView.from_battle`** — they walk a
-fresh random battle per invocation, so two consecutive runs profile two different boards. That
-mistake was made and briefly believed. Use `live_view_build_benchmark`, which freezes one seeded
-board and alternates the arm order.
+🚨 **Every change under `src/agents/observation/` — and to the Rust encoder — must run
+`python -m agents.observation.rust_encoder_benchmark` before/after and confirm no meaningful regression** (P6 slice
+6b: the row every run reads is the Rust encoder's). The gate and how to read it are in
+`src/agents/observation/CLAUDE.md`. Absolute µs scale with machine load; compare a same-session before/after.
+(The Python benchmarks that used to gate this — `obs_build_benchmark` with its canonical baseline and load-stable call
+counts, `trainer_turn_benchmark` with its `--pin-battles` rule, `live_view_build_benchmark` — were deleted in slice 6c; the
+lesson they carried stands: **unpinned, a benchmark that walks a fresh random battle per invocation profiles a different
+board each time, and the run-to-run spread can exceed the effect and carry the wrong sign** — pin the board before an A/B.)
 
 ⚠️ **A memoized value is billed to whichever stage asks for it FIRST.** `battle.live_view()` is
 memoized per state-epoch and five stages read it, so the whole board build was charged to
 `obs: legal + mask` — which was then named as the next optimization target on the strength of a
 number that was 88% someone else's work. **When a stage looks expensive, check whether it is merely
-first.** `trainer_turn_benchmark` now times the shared build on its own line.
-
-⚠️ **Reward cost depends on the REWARD COMPOSITION**, so a single baseline is meaningless without
-one: `--reward-argv '<train_rl_agent flags>'` times any composition through the launcher's own
-parser, and prints the resolved census with the run header.
+first.** (The deleted `trainer_turn_benchmark` timed the shared build on its own line.)
 
 Baselines with their provenance:
 `designs/research_state/measurements/post_paydown_baselines_2026-08-23.{json,md}`; the superseded
@@ -1098,7 +1083,7 @@ reproducible across processes, `key` selecting a different deterministic battle 
 variety — and asserts its precondition rather than branching on it (`if x is not None:` around
 the decisive gate is the antipattern's second half; it fails green). ⚠️ **`random.seed(k)` is
 NOT enough**: two players share the global `random` and the bridge interleaves their
-`choose_move` calls, so the draw order still diverges (`golden_obs_capture` measured the
+`choose_move` calls, so the draw order still diverges (`golden_obs_capture`, deleted in P6 slice 6c, measured the
 decision count swinging by hundreds). Reproducibility needs every randomness source *removed* —
 fixed teams, a per-player RNG, a fixed sim seed, **and `concurrency=1`**. Where a test needs a
 *qualifying* battle (cf_audit's non-tie, an ending branch arm), redraw over a bounded FIXED

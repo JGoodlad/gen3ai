@@ -40,7 +40,7 @@ def test_scored_slot_action_and_executed_move_agree_on_real_battles():
     from agents import gen3_data
     from agents.action.ordering_integrity import check_obs_move_order, row_offsets
     from agents.battle.core_obs import wrap_row
-    from agents.battle.rust_core_parity import run_core
+    from agents.battle.core_replay import run_core
     from agents.model.extractor_ctx import active_move_legality_sorted, active_request_sorted_match
     from main.policy_spectrum.bank import load_bank
 
@@ -133,7 +133,7 @@ def test_mimic_transform_and_the_recharge_turn_pass_the_guard_through_the_core()
     `--debug` smoke on this fix's first run). Every row passes the guard with its mask."""
     from agents.action.ordering_integrity import check_obs_move_order, row_offsets
     from agents.battle.core_obs import wrap_row
-    from agents.battle.rust_core_parity import RecordedBattle, run_core
+    from agents.battle.core_replay import RecordedBattle, run_core
 
     claydol = "Claydol||leftovers|levitate|rapidspin,mimic,earthquake,toxic|Sassy|252,100,112,,16,28|||||"
     ditto = "Ditto||leftovers|limber|transform|Relaxed|252,,252,,4,|||||"

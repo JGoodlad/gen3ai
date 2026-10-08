@@ -13,7 +13,7 @@ M6); SEARCH runs on it (§4 below — its one successor road since the deletion 
 | **Version** | `src/rust_sim/src/version.rs` — `BattleVersion`, `SideStream`, `Origin`, `parse_matches_step`, `streams_equal`; its engine is `src/rust_sim/src/engine.rs` |
 | **Reading** | `src/rust_sim/src/present/` — `BoardReading` (poke-env's `Battle` + `Pokemon` for one side), `present()`, `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` (GENERATED from poke-env) |
 | **Python transport** | `src/agents/battle/core_view.py` (a `LiveView` / `LegalActions` from the core's JSON — no rule applied) |
-| **Gates** | `cargo test` (`present::tests` one pin per rule, `tests/version_test.rs`, `tests/engine_split_test.rs`); `src/agents/battle/rust_core_present_test.py` (`sim`: every rule against poke-env ITSELF); slice V (`rust_core_parity_views.py`, COMMIT + MILESTONE); the three search gates with `core` as a road (§5) |
+| **Gates** | `cargo test` (`present::tests` one pin per rule, `tests/version_test.rs`, `tests/engine_split_test.rs`); `src/agents/battle/core_corpus_test.py` (`sim`: the engine board audit at every decision of the commit corpus, `parse == step`); the three search gates with `core` as a road (§5). (`rust_core_present_test.py` — every rule against poke-env ITSELF — and slice V (`rust_core_parity_views.py`, COMMIT + MILESTONE) were DELETED in P6 slice 6c.) |
 
 ---
 
@@ -26,7 +26,7 @@ a training-only leak does not compile. The omniscient board is used in exactly t
 outside the view:
 
 * **the audit** — `check_view(view, board, side, dex, pp_synced) -> Audit` asserts every SIM-FACT
-  field of a view against the engine (`BattleVersion::audit`); slice V runs it at every decision;
+  field of a view against the engine (`BattleVersion::audit`); `core_events --views` runs it at every decision (`core_corpus_test.py` replays it);
 * **the step path's owner truth** — on a CORE session (source recording on: the parity replay) each
   shipped line carries its source record's action SCOPE (`BridgeSession::side_scopes`), which the
   native window record keeps and the parse-reproduces-step gate holds the line-order owner to. It
@@ -80,25 +80,26 @@ call returns `CoreResult<T>`; a `CoreError` is one of three things, never an und
 
 The message is the pre-`CoreError` string byte for byte (`From<CoreError> for String` at the
 transport boundary), so `sim_bridge`'s `__ERR__` frames are unchanged. The engine's fatal condition is
-typed too (`Engine::fatal_error`). **The parity gate compares the CLASS**:
-`rust_core_present_test.py::test_refusals_raise_the_same_class` feeds each refusing line to poke-env and
-to the core (`core_events --present-stream` reports `core_error {kind, class, message}`) and requires
-the same class; the Rust pins are `core_error::tests`.
+typed too (`Engine::fatal_error`). **The class is what the core reports**:
+`rust_core_present_test.py::test_refusals_raise_the_same_class` (deleted in P6 slice 6c) fed each refusing line to poke-env and
+to the core (`core_events --present-stream` reports `core_error {kind, class, message}`) and required
+the same class; the Rust pins are `core_error::tests` and `present/tests.rs::a_line_poke_env_would_raise_on_is_refused`.
 
 ## 3. `present()` — the TRUE reading; poke-env's mistakes are FINDINGS, never rules
 
 🚨 **Parity with poke-env is not the goal; truth is** (owner directive, 2026-09-23). `present()`
 applies every poke-env PRESENTATION rule (slot order, the sighting-count PP, the volatile lifecycle,
 item / ability disclosure, the opponent's hidden spread, weather and screen turns, the legality
-parse — V1–V9, V11–V15, V17, each NAMED, applied at one site, pinned by a Rust unit test AND by a
-scenario replayed through poke-env itself, `rust_core_present_test.py`; the table is in
+parse — V1–V9, V11–V15, V17, each NAMED, applied at one site, pinned by a Rust unit test (and, until P6 slice 6c, by a
+scenario replayed through poke-env itself, `rust_core_present_test.py`); the table is in
 `src/rust_sim/src/present/mod.rs`). Where poke-env is WRONG about a sim fact the stream can
 establish, `present()` carries the TRUTH and **never a rule whose only purpose is to reproduce the
-mistake**; the disagreement is a FINDING in `agents/battle/poke_env_findings.py`: one field, a
-VALUE-AWARE predicate, the reproduction, the truth's source, whether it reaches the obs. Every
-comparison of the core against poke-env (slice V's core column, the present pins, the one-sided fuzz
-gate's core road) routes a field difference through it — a difference no finding explains is a
-divergence, and a finding that stops firing fails the pin that expects it. **The fork is not fixed
+mistake**; the disagreement was a FINDING in `agents/battle/poke_env_findings.py` (deleted in P6 slice 6c with every comparison of
+the core against poke-env): one field, a VALUE-AWARE predicate, the reproduction, the truth's source, whether it reaches
+the obs. Every such comparison (slice V's core column, the present pins, the one-sided fuzz gate's core road) routed a
+field difference through it — a difference no finding explained was a divergence, and a finding that stopped firing failed
+the pin that expected it. The disagreements are now recorded in this section only; the TRUTH is held by the engine board
+audit, not by a second reading. **The fork is not fixed
 from M2**: fixing it moves the training-input boundary, the owner's call; when it lands, the entry is
 deleted and the check tightens.
 
@@ -115,8 +116,8 @@ entries deleted, so every comparison of the core against poke-env is now exact:
 All three reached the obs (the fainted active's stages in `active_context`, the per-mon toxic slot,
 the `flashfire` volatile slot). Pins: `src/poke_env/battle/reading_fixes_test.py` (each FAILS on
 upstream), `agents/training/poke_env_gaps/pe_reading_fixes_obs_integration_test.py` (three
-constructed real-Showdown battles read at the obs), and this crate's `present::tests` +
-`rust_core_present_test.py`, which now assert the two readings EQUAL at the truth. The view road
+constructed real-Showdown battles read at the obs), and this crate's `present::tests` (+
+`rust_core_present_test.py`, deleted in P6 slice 6c, which asserted the two readings EQUAL at the truth). The view road
 (`view.rs` / `view_adapter` / `event_fold`) reproduces poke-env and followed: V10 and its boost
 ledger deleted, V5's toxic half on the residual chip.
 
@@ -135,7 +136,7 @@ multi-flag tail in the order the single-pass strip consumes; `BoardReading::move
 (`is_gen3_bare_move_caller`, `canonical_from_tail`). Every shape is one the real sim emitted
 (`harness/probe_called_move_shapes.js`: 1,500 battles, 25,419 sourced `|move|` lines, 31 shapes);
 pins: `poke_env/battle/called_move_reading_test.py` (23 fail on upstream), `present::called_move_tests`,
-`rust_core_present_test.py`, and the node-bridge battle `agents/battle/called_move_bridge_integration_test.py`
+`rust_core_present_test.py` (deleted in P6 slice 6c), and the node-bridge battle `agents/battle/called_move_bridge_integration_test.py`
 (both players encode every decision; p2's reading of p1's caller PP equals p1's own `|request|`).
 Not a training-input change: every line it changes used to raise (or, for the `[still]` shape, only
 Metronome / Assist / Nature Power reach it — none is on a pool team or engine-playable).
@@ -160,7 +161,7 @@ The board audit (`check_view`) checks every SIM-FACT field against the engine at
 three fixed findings' fields and the benched toxic stage included (Flash Fire joined the audited
 volatiles) — and names what it cannot check (V9, V14, V15) in `rules_fired`.
 
-**What a protocol line has revealed** (`gen3_obs_facts_v1`; slice V rules V18 / V19): `PMove.seen`
+**What a protocol line has revealed** (`gen3_obs_facts_v1`; rules V18 / V19): `PMove.seen`
 (`moved(reveal)`), `PMon.item_public` (`set_item`, `-enditem`, a Trick swap) and `ability_public`
 (`set_ability`; the request path writes through `set_ability_from_request`, the oracle overlay too, so
 neither reads as a reveal), and `BoardReading.upkeep_turn` (an `|upkeep|`, read before
@@ -168,7 +169,7 @@ neither reads as a reveal), and `BoardReading.upkeep_turn` (an `|upkeep|`, read 
 `OneSidedView.residual_done`.
 
 `legal_actions()` is `LegalActions.from_battle` over the raw `|request|` (the `BoardReading` keeps its
-text) and `mask()` the 11-dim mask; slice V compares both to `Gen3ActionMasker` on every decision.
+text) and `mask()` the 11-dim mask; until P6 slice 6c slice V compared both to `Gen3ActionMasker` on every decision (deleted; the cargo `present::tests` pin the legality rules).
 
 **The poke-env data the reading consults is FROZEN, Rust-owned source** (P1 of the poke-env retirement, T27,
 2026-10-07): `tables.rs` was GENERATED from poke-env's pokedex, move table, `Effect` lifecycle sets, `SideCondition`,
@@ -208,8 +209,8 @@ mid}` (no Python consumer since `CoreSuccessorFactory`'s deletion, program §4 M
 
 | gate | proves |
 |---|---|
-| slice V — COMMIT / MILESTONE (`rust_core_parity_views.py`, via `core_events --views`) | at every decision, both viewers: `present()` + `legal_actions()` + the mask == the `LiveView` / `LegalActions` training builds, type-strict, no allowlist but the registered poke-env FINDINGS (§3, value-aware, counted per decision — none registered today); the board audit; parse == step at every version |
-| `core_row_parity_fuzz_test.py` (`sim`) | on real bridge battles, search's encoded arm rows (D10 leaves included) == the poke-env replay's successor rows, byte for byte |
+| `core_corpus_test.py` (`sim`, via `core_events --views`) | at every decision of the 12 recorded battles, both viewers: the board audit (`present::audit::check_view` — the view against the omniscient engine) finds no divergence, and parse == step at every version. Slice V (`rust_core_parity_views.py`: `present()` + `legal_actions()` + the mask == the `LiveView` / `LegalActions` training builds, type-strict, COMMIT + MILESTONE) was DELETED in P6 slice 6c |
+| ~~`core_row_parity_fuzz_test.py`~~ (deleted in P6 slice 6c) | was: on real bridge battles, search's encoded arm rows (D10 leaves included) == the poke-env replay's successor rows, byte for byte. Search's rows now have no second reading; `tests/encoder_test.rs` holds step-built == parse-built bytes |
 | `search_test.py` | the core road's wiring: a deeper ply branches from its parent's driver node; an arm with no core payload RAISES; every root opens `core="text"` with the trackers; search is rust-only |
 
 ## 6. Measurements and findings

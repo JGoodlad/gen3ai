@@ -439,7 +439,8 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
             "pinned bots, so the delta is meaningful; its SE combines two independent fits and "
             "carries NO term for the anchor uncertainty they share." if anchored else
             "AT LEAST ONE LADDER IS NOT BOT-ANCHORED — its scale is arbitrary and the delta below "
-            "is NOT cross-run comparable. Run `python -m agents.training.bot_elo_calibration`."),
+            "is NOT cross-run comparable. Anchor it to `data/gen3_bot_elo_anchors.json` (the bot round-robin; the Python "
+            "calibration was deleted in P6 slice 6c, T15's Rust one replaces it)."),
     }
 
 

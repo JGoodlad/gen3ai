@@ -72,9 +72,10 @@ lock) + the `src/agents/enums.py` seam (which since P1 of the poke-env retiremen
   `|request|` — the request path writes through `_set_ability_from_request`), and
   `LiveView.residual_done` (`Gen3Battle._upkeep_turn == turn`: this turn's `|upkeep|` was read, so a
   replacement decision sits AFTER the residual that Showdown's durations count). On OUR side the
-  three flags are what the OPPONENT has seen of us. The Rust core's `present()` carries the same four,
-  held equal by slice V (rules V18 / V19, `rust_core_parity_views.py`; pins in
-  `rust_core_present_test.py`). An
+  three flags are what the OPPONENT has seen of us. The Rust core's `present()` carries the same four
+  (rules V18 / V19, pinned by the cargo tests `src/rust_sim/src/present/tests.rs` and
+  `tests/obs_facts_truth_test.rs`; the Python-vs-core slice V and `rust_core_present_test.py` that used to hold them equal
+  to this view were deleted in P6 slice 6c). An
   immutable snapshot of HP, status, boosts, revealed moves/item/ability, volatiles, hazards,
   weather, team sizes/reveal counts — holding **only primitives, no past-turn state** and no
   reference back to poke-env's `Pokemon`. A consumer literally cannot reach `last_move`
@@ -139,7 +140,7 @@ lock) + the `src/agents/enums.py` seam (which since P1 of the poke-env retiremen
 
   Measured over 589 real bridge decisions (`gen3ou`, measured through the now-deleted Python `Gen3Env` path — a dated measurement): **5.000 →
   1.000 `LiveView` builds per decision, 57.0 → 11.6 `LivePokemon.from_pokemon` calls per
-  decision**; `trainer_turn_benchmark --decisions 300` (same session, back to back, quiet box)
+  decision**; the (now-deleted) `trainer_turn_benchmark` at 300 decisions (same session, back to back, quiet box)
   **0.923 → 0.666 ms of our controllable CPU per decision, −28%**. `mask_generator.get_mask`
   was the one caller reaching past the accessor to `LiveView.from_battle`; it now prefers
   `battle.live_view()` and falls back for a plain poke-env `Battle`, which has no such method.
@@ -150,7 +151,7 @@ lock) + the `src/agents/enums.py` seam (which since P1 of the poke-env retiremen
   **That ONE remaining build is now the largest single item in per-decision worker CPU — 17% —
   and it spent months wearing another stage's name** (`gen3_live_view_build_micros_v1`,
   2026-08-23). Because the memo serves whichever consumer asks FIRST, the whole 12-mon build was
-  billed to `obs: legal + mask` in `trainer_turn_benchmark`, which therefore read 22% of worker
+  billed to `obs: legal + mask` in the (now-deleted) `trainer_turn_benchmark`, which therefore read 22% of worker
   CPU while the legality snapshot + 11-bit mask + two integrity checks measure **0.028 ms
   (2.8%)**. Measured by pre-building the view before the stage: the stage falls 0.222/0.243 ms →
   0.030/0.031 ms, i.e. **88% of that line was this build**. The benchmark now times
@@ -176,7 +177,7 @@ lock) + the `src/agents/enums.py` seam (which since P1 of the poke-env retiremen
   same-process A/B against a verbatim copy of the old code, arms verified field-identical:
   **1.244× on the build** (six rounds, 1.235–1.255) and **−34.6% Python calls per build (1073 →
   702, `sys.setprofile`, load-free)**. End to end, seven alternated `trainer_turn_benchmark`
-  pairs: the `live_view` stage **1.22× median (7/7 positive, 1.10–1.32)**, our controllable CPU
+  pairs (deleted in P6 slice 6c): the `live_view` stage **1.22× median (7/7 positive, 1.10–1.32)**, our controllable CPU
   ~1.06× median. Gates: `live_view_build_micros_test.py` (23 cases — the whole gen3 move
   universe against the spelled-out formula, every branch in seven gens, per-instance isolation,
   the synthetic `recharge` row, and the enum-key-safety property asserted on the enum classes
@@ -214,82 +215,41 @@ lock) + the `src/agents/enums.py` seam (which since P1 of the poke-env retiremen
   (`gen3_offline_feed_v1`). `feed_chunk(battle, chunk)` is a DISPATCH MIRROR of
   `Player._handle_battle_message` (request → `parse_request`, win/tie → `won_by`/`tied`,
   `[Unavailable choice]` → `record_choice_rejected`, the player's `MESSAGES_TO_IGNORE` read from the
-  class, `bigerror` dropped, the rest → `parse_message`). It is the Python half of the Rust Core
-  parity harness. Gate: `offline_feed_test.py` (`sim`) — a live bridge battle's log == the offline
+  class, `bigerror` dropped, the rest → `parse_message`). It was the Python half of the Rust Core
+  parity harness (deleted in P6 slice 6c; its remaining users are `offline_feed_test.py` and `observation/obs_facts_test.py`). Gate: `offline_feed_test.py` (`sim`) — a live bridge battle's log == the offline
   feed's, every event, every field, both viewers, plus conservation (the transport's `|init|battle`
   room line is fed too).
-- **`rust_core_parity.py` (+ `_test.py`) — the Rust Core parity harness, slice E (events)**
-  (`gen3_core_parity_events_v1`, the Rust Core Program's M1). The Rust core's READING projection
-  (`src/rust_sim/src/core_events/`) against THIS layer's `Gen3Battle`, per viewer, per event,
-  `seq · turn · kind · side · actor · target · value · raw`, type-strict, NO allowlist — both fed the
-  same per-side text (the core replays a recorded input log through the production bridge session;
-  `Gen3Battle` is fed through `offline_feed`). COMMIT tier in the routine gate (~2 s: the recorded
-  `rust_core_parity_fixtures/commit_tier.json.gz`, the four-shape byte-fuzz fixtures, one battle per
-  protocol scenario, + the golden RECORD corpus's round trip); MILESTONE tier `slow` (2 × 360 random
-  + 2 × 50 `production`-policy battles played live, 2 × 150 LADDER-USAGE battles, the protocol
-  corpus × 2, every byte-fuzz fixture; pinned by `rust_core_parity_fixtures/manifest.json`). **Three
-  team sources** (`utils.team_sources`): `play(key, source="ladder" | "procedural")` — slices T and O
-  inherit them by calling `play`; the ladder tier's NAMED known divergences
-  (`LADDER_KNOWN_DIVERGENCES`, each with its backlog row — EMPTY since the view projection's
-  deletion) run in their own test and must still fire (`designs/ops/testing.md` → THREE TEAM SOURCES). 🚨 **This layer is now the ORACLE of a second
-  implementation**: a change to `_build_event` / `_capture_pre` / the schema, or to a poke-env
-  transition they read, fails the COMMIT tier the day it lands — mirror it in
-  `src/rust_sim/src/core_events/reading.rs` in the same change (or behind a flag OFF in
-  `production_config.json`). And `battle_event.py`'s tables have a Rust twin that is FROZEN, Rust-owned
-  source since P1 of the poke-env retirement (the generator imported poke-env and is deleted): the schema is edited IN
-  `src/rust_sim/src/core_events/schema.rs`, and `rust_core_schema_test.py` parses it and holds it equal to
-  `battle_event.py` (keywords, routes, event kinds, value keys) while this layer lives.
-  Contract: [`designs/rust_sim/core_events.md`](../../../designs/rust_sim/core_events.md).
-- **`rust_core_parity_views.py` — slice V, the view + legality slice of the training observation
-  path** (`gen3_core_parity_views_v1`). At EVERY decision of every recorded battle, both viewers, the
-  `LiveView` + `LegalActions` training builds (a `Gen3Battle` fed through `offline_feed`, read at
-  the exact chunk `Player._handle_battle_message` dispatches the decision on — `decision_points`)
-  against the core column of `core_events --views`: every field classified SIM-FACT or PRESENTATION
-  (a NAMED rule V1–V13). Rides `check_battles(…, views=ViewCensus())` — one harness, one core call
-  per battle — at COMMIT (the recorded battles incl. two Baton Pass and two LADDER ones + the in-scope
-  byte-fuzz fixtures, ~2 s) and MILESTONE (`slow`, the same played battles as slice E). gen3ou only.
-  🚨 **This is the gate a Baton-Pass-class poke-env reading bug fails**: the core's view is audited
-  against the ENGINE, so a reading that drops a sim fact diverges from it. Teeth: a re-introduced
-  Baton Pass drop and a misread Spikes layer each FAIL a routine test. `offline_feed.new_battle(…,
-  packed_team=)` mirrors the `Player`'s `_teambuilder_team`. (Until the Rust Core deletion pass,
-  program §4 M2, it also compared the port's `one_sided_view` projection and ran reading-vs-engine
-  truth checks off it; both went with `view.rs`. History and the rule table:
-  [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md).)
-  **The core column** (`core_events --views`):
-  `present()` + `legal_actions()` + the 11-dim mask against the same `LiveView` / `LegalActions` /
-  `Gen3ActionMasker`, type-strict, and the core's board audit (`check_view`, `[BOARD]`). The core
-  reads the TRUTH, so a field where poke-env is WRONG is counted under its registered finding —
-  value-aware, per decision — and never as a divergence (below).
-- **`poke_env_findings.py` — the KNOWN poke-env READING findings** (`gen3_poke_env_findings_v1`).
-  Where poke-env's reading is wrong about a sim fact (the Rust board / the pinned Showdown source /
-  the request is the authority), the Rust core's `present()` carries the truth and the disagreement
-  is registered here: ONE field, a VALUE-AWARE predicate, a minimal reproduction, the truth's source,
-  whether it reaches the obs, and the obs blocks it may touch. Every comparison of the core against
-  poke-env routes through `explain()`; a difference no entry explains is a divergence. 🚨 **Never a
-  blanket tolerance, and never fixed from the core's side**: when the fork is fixed (a TRAINING-INPUT
-  change, the owner's call), DELETE the entry and the check tightens. **Today the registry is
-  EMPTY**: M2's three — PE-V10 (a fainted mon kept its stages), PE-R1b (the toxic count ticked at
-  `|turn|`, not at the residual chip), PE-V16 (Flash Fire ended by its holder's Fire move), all
-  reaching the obs — were FIXED in the fork as `gen3_pe_reading_fixes_v1` (2026-09-24, a
-  TRAINING-INPUT change: `pokemon.py` `faint` / `note_residual_chip` / `moved`, `abstract_battle.py`
-  `-damage`, `battle.py` `switch`), so every core-vs-reading comparison is exact. Pins:
-  `poke_env/battle/reading_fixes_test.py` (protocol lines, each FAILS on upstream) +
-  `training/poke_env_gaps/pe_reading_fixes_obs_integration_test.py` (three constructed real-Showdown
-  battles — Curse + Self-Destruct, a Toxic pivot re-entering after the residual, a Flash Fire
-  Houndoom — read at the obs). Contract + rates:
-  [`designs/rust_sim/present.md`](../../../designs/rust_sim/present.md) §3.
+- **`core_replay.py` + `core_corpus_test.py` — the Rust core's recorded corpus replayed through `core_events`**
+  (`gen3_core_parity_events_v1` while it compared the core with this layer; what is LEFT of the Rust Core parity harness
+  after T27 P6 slice 6c, 2026-10-08). `core_replay` is the core half and imports no poke-env: `RecordedBattle` (one
+  battle's INPUT log — format, seed, both players, every command), `run_core` (a batch through ONE `core_events`
+  process, `--views` / `--trackers` / `--obs` / `--record-dir` as asked), `core_chunks`, `chunks_sha`.
+  `core_corpus_test.py` (`sim`, routine gate, ~4 s) replays the 12 recorded battles of
+  `rust_core_parity_fixtures/commit_tier.json.gz` and holds what reads ONLY the core: every battle replays `ok`
+  (`parse == step`, the parse-chain encode gate, the engine BOARD audit at every decision, the bytes the players
+  received when it was recorded), every row is fully written and every decision's tokens are its legal actions, the
+  information boundary holds on the native record, and the golden RECORDS (`rust_core_parity_fixtures/records`, 70
+  files: the `gen3_core_event_v1` persisted form) read, re-write byte-identically and re-parse. Contract:
+  [`designs/rust_sim/core_events.md`](../../../designs/rust_sim/core_events.md).
+  🚨 **The Python-vs-core COMPARISONS are DELETED** — slice E (events: `rust_core_parity.py`), V (views + legality:
+  `rust_core_parity_views.py`), T (trackers, α/β label, reward: `rust_core_parity_trackers.py`), O (the 2501-dim row:
+  `rust_core_parity_obs.py`), their `rust_core_parity_test.py` (COMMIT and MILESTONE tiers), the per-rule pins
+  `rust_core_present_test.py`, the fuzzes `rust_core_trackers_fuzz_test.py` / `core_row_parity_fuzz_test.py`, the
+  constructed-battle fixtures `tracker_semantics_fixtures_test.py` / `event_record_v2_fixture_test.py`, the schema
+  comparison `rust_core_schema_test.py` and the findings registry `poke_env_findings.py`: the Python layer was never a
+  truth (`designs/rust_sim/present.md` §3), and what holds the core now is `designs/rust_sim/encoder.md` §6a plus the
+  cargo tests (`src/rust_sim/tests/core_events_test.rs`, `tracker_semantics_test.rs`, `window_record_test.rs`,
+  `obs_facts_truth_test.rs` and `src/rust_sim/src/present/tests.rs`). So a change to `_build_event` / `_capture_pre` / the schema
+  here no longer has to be mirrored in `src/rust_sim/src/core_events/reading.rs`, and — until slice 6d retires this
+  layer — NOTHING holds `battle_event.py`'s tables equal to the Rust-owned `core_events/schema.rs` (keywords, routes, event
+  kinds, value keys): edit both by hand.
 - **`core_view.py` — a `LiveView` / `LegalActions` from the Rust core's `present()` JSON**
   (`gen3_core_present_v1`, the Rust Core Program's M2). A pure TRANSPORT: every presentation rule is
-  applied in Rust (`src/rust_sim/src/present/`), so nothing here derives a field. Its consumers are
-  slice V's core column (`rust_core_parity_views.py`) and the pins in
-  `rust_core_present_test.py` (`sim`), which feed each reading rule's scenario to BOTH poke-env
-  (through `offline_feed`) and the core (`core_events --present-stream`) and compare field by field.
-  Slice T (`rust_core_parity_trackers.py`, `gen3_core_parity_trackers_v1`) holds the core's
-  per-decision TRACKERS, α/β label and reward equal to the `EpisodeTracker` training drives over this
-  package's `Gen3Battle` (`designs/rust_sim/trackers.md`).
-  They also pin the core's REFUSALS (`gen3_core_error_v1`): a line poke-env raises on must fail in
-  the core with the SAME exception class (`core_error.class`), and malformed input must never be
-  reported as a poke-env class.
+  applied in Rust (`src/rust_sim/src/present/`), so nothing here derives a field. Its consumer is the prober's
+  core walk (`main/prober/core_walk.py`); the Python-vs-poke-env comparisons that used it (slice V's core column, the
+  per-rule pins `rust_core_present_test.py` incl. the refusal-class pins `gen3_core_error_v1`, and slice T) were deleted
+  in P6 slice 6c — the rules are pinned by `src/rust_sim/src/present/tests.rs` (`designs/rust_sim/present.md`,
+  `designs/rust_sim/trackers.md`).
   🚨 **The poke-env data the core's reading consults is FROZEN, Rust-owned source** (P1 of the poke-env
   retirement; it was GENERATED from poke-env's pokedex, move table, `Effect` lifecycle sets and `SideCondition` by a
   generator that imported it, now deleted): `src/rust_sim/src/present/tables.rs` is edited directly, nothing re-derives it
@@ -387,11 +347,12 @@ that hook fires both for a missing attribute AND for a property that raised Attr
 computing, and the boundary message used to assume the first, so a read-model field blowing up
 inside `.live` surfaced as *"'StrictBattleView' has no attribute 'live'"* — a confident denial of
 something that plainly exists, with the true cause four frames down and erased. It now tells the
-two apart). The measurement instrument for the build is
-`agents/training/live_view_build_benchmark.py` (order-alternated same-process A/B on ONE frozen
+two apart). The measurement instrument for the build was
+`live_view_build_benchmark.py` (order-alternated same-process A/B on ONE frozen
 seeded board against a verbatim copy of the old code, with a field-identity check before timing
-and a load-free `sys.setprofile` call count — the trainer-turn benchmark cannot do this job
-because it walks a fresh random battle per invocation, so two runs profile two different boards).
+and a load-free `sys.setprofile` call count — the trainer-turn benchmark could not do that job
+because it walks a fresh random battle per invocation, so two runs profile two different boards);
+both benchmarks were DELETED in P6 slice 6c with the Python path they profiled.
 The spine is
 `event_log_fuzz_test.py` — real
 `gen3ou` battles where both players run `Gen3Battle`; it independently re-derives each turn

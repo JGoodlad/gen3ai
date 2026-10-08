@@ -581,9 +581,9 @@ progress. The **ELO subsystem** fits an **anchored Bradley-Terry** rating over t
 every eval cycle already produces (trainee vs the 9 fixed bots + pool sentinels — no new
 battles), giving one absolute number that rises with skill. Each cycle appends a row to an
 append-only `<run>/eval_results.jsonl` and records a live `eval/elo` (+CI) to TensorBoard + a
-`🏅 ELO` TUI badge. The fixed bots are the anchor; `python -m agents.training.bot_elo_calibration`
-plays a one-time bot-vs-bot round-robin (bridge, no server) → `data/gen3_bot_elo_anchors.json`,
-making snapshot ELOs **comparable across runs**. Offline: `python -m main.elo <run_dir>` prints a
+`🏅 ELO` TUI badge. The fixed bots are the anchor: a one-time bot-vs-bot round-robin → `data/gen3_bot_elo_anchors.json`
+makes snapshot ELOs **comparable across runs** (the Python calibration, `bot_elo_calibration`, was deleted in T27 P6
+slice 6c; T15's Rust bot-vs-bot calibration is its replacement, `designs/ops/TASK_BACKLOG.md`). Offline: `python -m main.elo <run_dir>` prints a
 ladder and plots an Elo-vs-step curve (and can backfill a running run from TensorBoard with
 `--source tb`). A rating is a **transitive** model by construction, so the same CLI also prints the
 **HodgeRank spine/width split** (`agents/training/hodge.py`) — the cyclic content a scalar ELO is

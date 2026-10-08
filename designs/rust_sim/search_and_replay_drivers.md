@@ -91,6 +91,8 @@ guard's exact iteration count. Every test carries a non-vacuity guard — the fi
 a mid-battle `move` boundary with a live bench, the two arms must really diverge, the wedge must
 really have wedged.
 
+> ⚠️ **P6 slice 6c (2026-10-08): the golden's GENERATORS are deleted.** `harness/search_golden.py` and `harness/gen_search_golden.py` drove real gen3ou battles through poke-env `RandomPlayer`s to capture `tmp/search_golden_node.json` (gitignored scratch — no golden is committed, and none existed on a fresh checkout), so `search_impl_parity.py`, `replay_impl_parity.py` and `rust_record_replay_check.py` below can no longer be fed one from this tree; they are kept (REPORTED, not deleted) until the owner decides whether the node-vs-rust search A/B is rebuilt on the Rust env core's recorded battles. The cargo `tests/search_driver_test.rs` never needed the golden.
+
 **GATE 2 — `src/rust_sim/harness/search_impl_parity.py`** (scratch, needs node + a captured record): replays
 `tmp/search_golden_node.json` — the NODE `search_driver.js` wire output over 6 decision points
 across 2 real gen3ou battles, 54 arms (12 exercising multi-round forced-switch follow-ups) plus

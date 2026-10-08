@@ -16,8 +16,8 @@ The ``pool`` path is the pre-existing one, unchanged (``Gen3Teambuilder`` over t
 a gate that gains ``--team-source`` plays byte-identical pool battles by default. ``procedural`` and
 ``ladder`` teams are PACKED strings, fed to the players through :class:`PackedTeamPool`.
 
-The Rust Core parity harness uses :func:`pair` for its key recipe (``rust_core_parity.play(key,
-source=…)``); slices T and O inherit it by calling the same ``play``.
+The Rust Core parity harness used :func:`pair` for its key recipe (``rust_core_parity.play(key,
+source=…)``, deleted in P6 slice 6c); ``obs_roundtrip_fuzz_test.record_fixture_battle`` is the remaining consumer.
 """
 from __future__ import annotations
 

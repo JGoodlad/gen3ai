@@ -859,6 +859,8 @@ output); T2 interleaves after M1.
 
 ## 3. The parity gate — three tiers, cost proportional to the decision it guards
 
+> ⚠️ **UPDATE 2026-10-08 (T27 P6 slice 6c): the Python-path parity harness described in this section is DELETED.** `rust_core_parity*.py` (slices E / V / T / O), its COMMIT and MILESTONE tiers, `rust_core_present_test.py`, the T / O fuzz and the findings registry went with the Python stack they compared against — that stack was never a truth, and the poke-env retirement removes it. What remains: `agents/battle/core_corpus_test.py` (the COMMIT corpus replayed through `core_events` with the engine board audit, the parse-chain encode gate, the information boundary and the golden records), the obs golden owned by the core (`golden_obs_core_test.py`) and the cargo tests; `designs/rust_sim/encoder.md` §6a names the four checks that replace the Python oracle and the loss the owner accepted (an independent second reading of facts the engine cannot audit). The text below is the DESIGN as built through M6, kept for its reasoning and its numbers.
+
 *(Owner amendment 2, 2026-09-23.)* ONE harness, `rust_core_parity` (proposed:
 `src/agents/battle/rust_core_parity_test.py` + a corpus module), with one SLICE per milestone
 (E events · V views + legality · T trackers + `TurnDelta` + reward · O obs · N env + successors).

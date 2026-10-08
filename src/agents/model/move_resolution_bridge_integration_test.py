@@ -143,7 +143,7 @@ def outcome(lines: List[Tuple[str, ...]], me: str, want: str, damaging: bool,
 def check(n_battles: int) -> Dict[str, Any]:
     from agents import gen3_data
     from agents.battle.core_obs import wrap_row
-    from agents.battle.rust_core_parity import run_core
+    from agents.battle.core_replay import run_core
     from agents.model.move_resolution_rules import MOVE_RESOLUTION_MOVE_IDX as MI
     from main.policy_spectrum.bank import load_bank
 

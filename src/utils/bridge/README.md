@@ -236,7 +236,7 @@ sampled turn — that last showed up only on the SEVENTH golden). All four are F
 (`gen3_fresh_golden_parity_triage_v1`), and the durable rule is: **generate a NEW golden and run
 each gate on at least two different seeds** before reporting either one green.
 
-**Performance — `search_impl_throughput_benchmark.py` (MEASURED, node vs rust).** Interleaved
+**Performance — `search_impl_throughput_benchmark.py` (MEASURED, node vs rust; the script was deleted in P6 slice 6c, the figures are its dated measurement).** Interleaved
 per-rep A/B (order flips each rep) so a drifting box load hits both arms equally; medians, ms,
 lower is better. Taken beside a live training run at load 8–24/16 cores, which the benchmark
 announces via `warn_if_contended()` — absolute ms are inflated, the RATIO is the load-stable

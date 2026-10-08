@@ -5,7 +5,7 @@ scoped first to **Gen 3 OU singles**, whose hard requirement is **bit-for-bit
 identical** output to upstream Showdown given the same seed + teams + choices.
 
 **`sim_bridge` is the ONLY training/eval transport** (the default since
-2026-08-14): every trainer run is serverless, and a typed `--use-bridge` is refused at parse time with the reason (deletion passes U3, P11b). The node bridge survives only as the explicit A/B arm of the standalone harnesses and benchmarks (`--bridge node`), and the websocket server only for `play.py` / the ladder. See the root `CLAUDE.md` → In-process bridge transport.
+2026-08-14): every trainer run is serverless, and a typed `--use-bridge` is refused at parse time with the reason (deletion passes U3, P11b). The node bridge survives only as the explicit A/B arm of the standalone harnesses (the benchmarks that offered a node arm were deleted in P6 slice 6c), and the websocket server only for `play.py` / the ladder. See the root `CLAUDE.md` → In-process bridge transport.
 
 The engine is **live and bit-for-bit through full battles**: every layer in the
 module map below is differentially validated against the real Showdown (PRNG →
@@ -113,8 +113,8 @@ read the row you are about to edit.**
 | `emission_check.rs` | BUILT; ON in `cargo test` + the fuzzers, compiled OUT of `--release` | The EMISSION SELF-CHECK (`gen3_core_emission_selfcheck_v1`): at every emission, the omniscient line round-trips (`Line::parse(render(l)) == l`), each viewer's render is the line that viewer is owed (the typed `side_view`) and no secret (exact HP, an owner-only line, a one-side frame) reaches the other viewer; a failure panics with the line, both renders and the viewer. Detail: [`designs/rust_sim/emission_selfcheck.md`](../../designs/rust_sim/emission_selfcheck.md). |
 | `present/` | M2 BUILT; search reads it, training does not | the TRUE reading of one side's stream (`gen3_core_present_v1`): `BoardReading` (poke-env's `Battle` + `Pokemon`, minus its registered mistakes), `present()` (a `LiveView`-shaped view, NO board parameter), `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` GENERATED from poke-env. Every rule named (V1–V17) and pinned; poke-env's mistakes are FINDINGS, not rules. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
 | `version.rs` | M2 BUILT | `BattleVersion` (`gen3_core_version_v1`): the persistent battle state — `Arc` parent, per-side stream (`BoardReading` + event `Reader`), per-transition events, memoized views, the `Engine` as REFEREE (step-built only); built by step (a fork: an engine clone in a fresh transport, its lines folded from their text), by observing a caller's session (linear), or by parse (one side's text), gated `parse == step` version by version. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
-| `trackers/` | M3 BUILT; read by the encoder (slice O, search's rows), not by training | The per-decision TRACKERS on the version (`gen3_core_trackers_v1`): slots, the Hidden-Power belief, the progress clock (obs half), recency, pair history, the 32-row event window, the wish / sleep folds, the α/β label, the win-indicator reward — folded from one side's stream at each of its decisions, shared by a fork (`Arc`); and the NATIVE window record (`record.rs`: ordered actions + attributed effects, denials incl. the gen-3 turn cut, the information boundary as a type and a slice-T check). Opt-in (`SideStream::with_trackers`). The training-input semantics (the M3 loss catalogue's GIGO, fixed on both paths: `gen3_event_window_semantics_fixes_v1` / `gen3_intent_label_semantics_fixes_v1` / `gen3_progress_clock_attribution_fix_v1`; and the cutover stress's `gen3_hp_prior_support_v1`) are pinned in `tests/tracker_semantics_test.rs`. The event window carries the native record's attribution since `gen3_event_record_v2` (E12 — 30-column rows, DENIED rows, the E4 refused-switch target resolved from the side's noted choice token: `trackers::attempted_switch_species`; a step-built version notes the transport's `choice_log` at the line it was fed, so a search root / child resolves it as the parse chain does) — the schema is `designs/ARCHITECTURE.md` §1.6, the per-mechanic fixtures `agents/battle/event_record_v2_fixture_test.py`. Detail: [`designs/rust_sim/trackers.md`](../../designs/rust_sim/trackers.md) §5. |
-| `encoder/` | M4 BUILT; slice O and SEARCH read it (`expand_many`'s `rows`); `sim_bridge` ships it under the opt-in `core_obs` — the Rust env core reads it | THE ENCODER (`gen3_core_encoder_v1`): `BattleVersion::encode(side, &mut [f32; OBS_DIM])` — the `OBS_DIM`-dim row (2845 since the X5 version break's part 3: its LAST block is the OBS-FACTS block `encoder/facts.rs`, written over the `trackers::facts` fold, held to the Python block by slice O's row compare and to the ENGINE by `tests/obs_facts_truth_test.rs`; `BattleVersion::encode_facts` computes the block alone) of one side from its reading, view, legality and TRACKERS, byte-equal to `Gen3ObservationEncoder` (slice O); `layout.rs` GENERATED from `agents/observation/constants.py`; the dex / prior tables read from `data/`; NaN-prefilled in test / fuzz builds; the row on the wire as a `<f4` frame (`wire.rs`); `oracle.rs` is the DIAGNOSTIC ORACLE REVEAL — the opponent block's unseen tail under `--oracle-reveal {species,full}` (`full` also overlays the true set on the seen mons), built per chain by the Rust env core, absent (`Inputs.oracle = None`) everywhere else, so slice O, `sim_bridge`'s `core_obs` and search build `off` rows. Detail: [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md). |
+| `trackers/` | M3 BUILT; read by the encoder (search's rows, the env core), not by training | The per-decision TRACKERS on the version (`gen3_core_trackers_v1`): slots, the Hidden-Power belief, the progress clock (obs half), recency, pair history, the 32-row event window, the wish / sleep folds, the α/β label, the win-indicator reward — folded from one side's stream at each of its decisions, shared by a fork (`Arc`); and the NATIVE window record (`record.rs`: ordered actions + attributed effects, denials incl. the gen-3 turn cut, the information boundary as a type, checked in `agents/battle/core_corpus_test.py`). Opt-in (`SideStream::with_trackers`). The training-input semantics (the M3 loss catalogue's GIGO, fixed on both paths: `gen3_event_window_semantics_fixes_v1` / `gen3_intent_label_semantics_fixes_v1` / `gen3_progress_clock_attribution_fix_v1`; and the cutover stress's `gen3_hp_prior_support_v1`) are pinned in `tests/tracker_semantics_test.rs`. The event window carries the native record's attribution since `gen3_event_record_v2` (E12 — 30-column rows, DENIED rows, the E4 refused-switch target resolved from the side's noted choice token: `trackers::attempted_switch_species`; a step-built version notes the transport's `choice_log` at the line it was fed, so a search root / child resolves it as the parse chain does) — the schema is `designs/ARCHITECTURE.md` §1.6, the per-mechanic fixtures `tests/window_record_test.rs` (its Python-vs-core twin `event_record_v2_fixture_test.py` was deleted in P6 slice 6c). Detail: [`designs/rust_sim/trackers.md`](../../designs/rust_sim/trackers.md) §5. |
+| `encoder/` | M4 BUILT; SEARCH reads it (`expand_many`'s `rows`); `sim_bridge` ships it under the opt-in `core_obs` — the Rust env core reads it | THE ENCODER (`gen3_core_encoder_v1`): `BattleVersion::encode(side, &mut [f32; OBS_DIM])` — the `OBS_DIM`-dim row (2845 since the X5 version break's part 3: its LAST block is the OBS-FACTS block `encoder/facts.rs`, written over the `trackers::facts` fold, held to the ENGINE by `tests/obs_facts_truth_test.rs`; `BattleVersion::encode_facts` computes the block alone) of one side from its reading, view, legality and TRACKERS, byte-equal to `Gen3ObservationEncoder` until P6 slice 6c deleted that comparison (slice O; the row is now held by the obs golden and `designs/rust_sim/encoder.md` §6a); `layout.rs` GENERATED from `agents/observation/constants.py`; the dex / prior tables read from `data/`; NaN-prefilled in test / fuzz builds; the row on the wire as a `<f4` frame (`wire.rs`); `oracle.rs` is the DIAGNOSTIC ORACLE REVEAL — the opponent block's unseen tail under `--oracle-reveal {species,full}` (`full` also overlays the true set on the seen mons), built per chain by the Rust env core, absent (`Inputs.oracle = None`) everywhere else, so `sim_bridge`'s `core_obs` and search build `off` rows. Detail: [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md). |
 | `core_error.rs` | BUILT | `CoreError` (`gen3_core_error_v1`): the core's error — a `Refusal` carrying the Python exception class poke-env raises on the same input (the parity gate compares it), `Malformed` input, or a core `Fault`. Never a bare `String` inside the core; the message converts unchanged at the transport boundary. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md) §2. |
 | `engine.rs` | BUILT | The ENGINE half of a bridge session (`gen3_core_engine_split_v1`): the battle, the turn loop, the open boundary and the TYPED requests, advancing over a caller-owned command queue into an `EngineSink`. `bridge::BridgeSession` is the TRANSPORT around it (what `sim_bridge` writes, byte-identical); a version owns the engine alone. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md) §2. |
 
@@ -142,26 +142,26 @@ corpus battle checks it (`tests/core_events_test.rs`, and `core_events` refuses 
 🚨 **The keyword table is FROZEN, Rust-owned source** (P1 of the poke-env retirement; it was GENERATED from
 `agents/battle/battle_event.py` by a Python generator that imported poke-env, now deleted): edit `core_events/schema.rs`
 directly for a new keyword / `EventKind` / value key, and mirror it in `battle_event.py` while that layer lives —
-`rust_core_schema_test.py` parses the Rust file and fails when the two differ.
+`rust_core_schema_test.py` (deleted in P6 slice 6c) used to parse the Rust file and fail when the two differed; until slice 6d
+retires `battle_event.py`, NOTHING holds the two equal, so edit both by hand.
 
 | gate | what it proves |
 |---|---|
 | `tests/core_events_test.rs` (`cargo test`) | on the protocol capture corpus, every byte-fuzz fixture, the trapping golden and the turn-limit golden: canonical source records (one per line), the step path re-derives the shipped bytes with per-side conservation, `parse(side text) == step`; recording changes no byte |
-| `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` | the COMMIT tier: the core's readings == `Gen3Battle`'s, per viewer, per event, type-strict, no allowlist; the golden records round-trip byte-identically and re-parse |
-| `… rust_core_parity_test.py -m slow -q -n 2` | the MILESTONE tier (2 × 200 random + 2 × 50 policy battles played live, the protocol corpus × 2, every byte-fuzz fixture) |
-| `core_events --trackers` → `rust_core_parity_trackers.py` (slice T, both tiers) | the core's per-decision trackers, α/β label and reward == the `EpisodeTracker` / label / reward training builds, every decision, both viewers, every field, no allowlist (`designs/rust_sim/trackers.md` §4) |
-| `core_events --views` → `rust_core_parity_views.py` (slice V, both tiers) | `present()` + `legal_actions()` + the mask == the `LiveView` / `LegalActions` training builds, every decision, both viewers; the core's board audit against the engine; `parse == step` at every version (`present.md` §5) |
+| `python3 -m pytest src/agents/battle/core_corpus_test.py -q` | the COMMIT corpus (`rust_core_parity_fixtures/commit_tier.json.gz`: 12 recorded battles) replays `ok` through `core_events --views --trackers --obs` — `parse == step`, the parse-chain encode gate, the engine BOARD audit at every decision, the recorded per-side bytes — with every row fully written and every decision's tokens equal to its legal actions; the information boundary holds on the native record; the golden records round-trip byte-identically and re-parse. The Python-vs-core comparisons that used to ride beside it (slice E events, V views, T trackers, O the row: `rust_core_parity*.py`, `rust_core_present_test.py`, the MILESTONE tier) were DELETED in P6 slice 6c — `designs/rust_sim/encoder.md` §6a names what holds the core now |
+| `tests/tracker_semantics_test.rs`, `tests/window_record_test.rs` (`cargo test`) | the trackers, the α/β label, the reward and the native window record on constructed battles (the M3 loss catalogue's cases, denials, faint causes, the information boundary) — the cargo twin of the deleted slice T and its `tracker_semantics_fixtures_test.py` (`designs/rust_sim/trackers.md` §4) |
+| `src/present/tests.rs`, `tests/obs_facts_truth_test.rs` (`cargo test`) | `present()` + `legal_actions()` per rule (V1–V13, PE-V10 / PE-V16 / PE-R1b, the refusals) and the reading's sim-fact fields against the omniscient engine — the cargo twin of the deleted slice V / `rust_core_present_test.py` (`present.md` §5) |
 
 ## The core's VERSION and READING — M2 (`gen3_core_version_v1`, `gen3_core_present_v1`)
 
 **`present(reading)` takes NO BOARD** — the view is built from one side's stream alone, so a
 board fact cannot reach it by construction; the omniscient board is a REFEREE (`check_view`, the
-audit slice V runs). 🚨 **Every version folds `parse(render)`** — the one observation path (program
+audit `core_corpus_test.py` replays). 🚨 **Every version folds `parse(render)`** — the one observation path (program
 §6c); the typed-at-source shortcut and its integrity mode are DELETED (program §4 M4 row). A core
 session's lines carry only the engine's SCOPE (`BridgeSession::side_scopes`, the owner truth). 🚨 **`present()` is the TRUE reading — parity with poke-env is not the goal.** Where
 poke-env is wrong about a sim fact the stream establishes, the view carries the truth and the
-disagreement is a registered FINDING (`agents/battle/poke_env_findings.py` — one field, a
-value-aware predicate, the reproduction, whether it reaches the obs; EMPTY since M2's three,
+disagreement was a registered FINDING (`agents/battle/poke_env_findings.py`, deleted in P6 slice 6c — one field, a
+value-aware predicate, the reproduction, whether it reached the obs; EMPTY since M2's three,
 PE-V10 / PE-R1b / PE-V16, were fixed in the fork as `gen3_pe_reading_fixes_v1`); never add a rule
 whose only purpose is to reproduce a poke-env mistake, and never fix the fork from here (that moves
 the training input — the owner's call). Search runs on it:
@@ -187,7 +187,7 @@ current-board facts, the raw `PMon` for the item / type / ability / move sub-enc
 the raw `Pokemon` there too), the legality, and the M3 trackers (REQUIRED — a stream without them
 refuses). 🚨 **The encoder reproduces, it never fixes**: a wrong tracker value is fixed in the tracker,
 in both languages. 🚨 **The gate is BYTES** — f64 in Python's order, one round to f32 at the write;
-slice O compares `tobytes()`, so a `-0.0` fails. 🚨 **Test / fuzz builds NaN-prefill the row** (release
+the obs golden hashes `tobytes()`, so a `-0.0` fails. 🚨 **Test / fuzz builds NaN-prefill the row** (release
 zero-fills), so an unwritten slot or block reads NaN. 🚨 **The layout is GENERATED**:
 `python -m agents.observation.rust_core_obs_layout --write` after any `constants.py` / `gen3_effects`
 change (`rust_core_obs_layout_test.py` fails the day it is stale). Contract, the wire frame, the
@@ -195,18 +195,18 @@ gates: [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md).
 
 | gate | proves |
 |---|---|
-| `core_events --obs` → `rust_core_parity_obs.py` (slice O, COMMIT + MILESTONE) | the core's row == the Python row BYTE for byte + the mask, every decision, both viewers, no allowlist |
-| `rust_core_parity_test.py::test_the_obs_golden_is_reproduced_by_the_core` | the core's rows hash to `training/golden_obs_fixture.json` exactly |
+| `src/agents/battle/core_corpus_test.py` (`sim`) | the core's rows over the COMMIT corpus are fully WRITTEN (no NaN from the self-check build's prefill, no `-0.0`), every obs block is nonzero somewhere, and each decision's choice tokens are exactly its legal actions (slice O's Python-row comparison was DELETED in P6 slice 6c, `designs/rust_sim/encoder.md` §6a) |
+| `src/agents/training/golden_obs_core_test.py` (`sim`; `python -m agents.training.golden_obs_core --check`) | the core, replaying the banked golden battles, writes rows that hash to `training/golden_obs_fixture.json` exactly, in order |
 | `tests/hypothesis_dex_rows_test.rs` (`cargo test`; also run by `agents/model/hypothesis_dex_rows_sim_test.py`, `sim`) | X5's hypothesis row (`encoder::hypothesis::hypothesis_slot`, the ONE synthetic input the encoder takes — "species s present, unrevealed set, full HP, no status", through the same `slot::populated_slot` writer) equals the slot the encoder writes at the REAL first appearance of every base-form species (and every corpus mon), byte for byte, outside the DECLARED `on_field` / field-revealed blocks of `hypothesis::CELLS`; the committed table it feeds (`agents/model/hypothesis_dex_rows.json`, via `core_events --dex-rows`) is byte-gated by the same sim test — [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md) §10 |
 | `src/rust_env/tests/oracle_reveal_test.rs` (`cargo test` in `src/rust_env`) | the diagnostic ORACLE REVEAL (`encoder/oracle.rs`, `--oracle-reveal`; [`encoder.md`](../../designs/rust_sim/encoder.md) §11): `off` is byte-identical (the obs / mask / label bytes pinned to a digest recorded before the build); `species` differs from `off` ONLY in the opponent block's unseen tail (real battles, both sides, every decision), which is the true unseen species' `hypothesis_slot` in dex-num order; `full` additionally tells the set, checked against the OPPOSING chain's own-team slot of the same mon; `off`, `species` and `full` each byte-pinned; formes, Species-Clause duplicates, a reveal in play, a real Forecast battle |
 | `tests/encoder_test.rs` (`cargo test`) | no NaN left at any decision; step-built == parse-built bytes; the trackerless and wrong-length refusals; `version::parse_encode_matches_step` refuses a parse chain whose trackers fold differently |
-| `core_events --obs` (slice O, every tier) — the PARSE-chain gate (`gen3_core_parse_obs_gate_v1`) | each side's parse chain (trackers on, the same `note_choice` tokens) decides at exactly the step chain's decisions, one per write, and encodes a BYTE-identical row, mask and tokens — the encode path `sim_bridge`'s `core_obs` ships |
+| `core_events --obs` (every replay, `core_corpus_test.py` included) — the PARSE-chain gate (`gen3_core_parse_obs_gate_v1`) | each side's parse chain (trackers on, the same `note_choice` tokens) decides at exactly the step chain's decisions, one per write, and encodes a BYTE-identical row, mask and tokens — the encode path `sim_bridge`'s `core_obs` ships |
 | `tests/sim_bridge_core_obs_test.rs` (`cargo test`) | `sim_bridge`'s `__OBS__` rows == `core_events --obs`'s, byte for byte, one per decision, before the request chunk; recycled child == fresh child; OFF byte-identical; the bridge rows equal an in-process parse chain's and the `POKESIM_SIM_BRIDGE_TEETH=clock_start` hook reaches them; a malformed key (incl. the deleted clock booleans) refused; the parse-chain gate refuses (`POKESIM_CORE_EVENTS_TEETH=parse_clock`, a test-build hook that starts the parse chain's clock at another `n`) |
-| `src/agents/battle/core_row_parity_fuzz_test.py` (`sim`) | search's rows (`expand_many`'s `rows`: row + mask + `present::choice_tokens`) == the poke-env replay's successor rows, byte for byte, D10 leaves included |
+| `src/utils/rust_env/successors_integration_test.py` (`sim`) | the in-process successors' rows == the `search_driver` binary's (`expand_many`'s `rows`: row + mask + `present::choice_tokens`), byte for byte. ⚠️ The poke-env replay's comparison of those rows, D10 leaves included (`core_row_parity_fuzz_test.py`), was DELETED in P6 slice 6c: search's successor rows now have no second reading |
 
 ## The EMISSION SELF-CHECK — every line checked as it is emitted (`gen3_core_emission_selfcheck_v1`)
 
-The whole-battle harness (slices E / V) checks a battle after it ends; `src/emission_check.rs`
+The whole-battle replay (`core_corpus_test.py`, over `core_events`) checks a battle after it ends; `src/emission_check.rs`
 checks each line AT ITS EMISSION: the omniscient line is canonical (`ProtocolBuilder::emit` /
 `retro_edit`), each viewer's render parses back to the typed fold it is owed (`bridge::derive_side`,
 `split_log_lines`), each bridge frame parses and belongs to its side (`push_chunk`), and — as its own
@@ -303,7 +303,7 @@ search teacher on it was deleted with the search teacher, deletion pass L3.) The
 |---|---|---|
 | `tests/search_driver_test.rs` (5 tests) | no | the aux-RNG stream vs node draw tables (EXACT f64 — a tolerance would only hide a divergence), clone independence, the `stuck` guard's exact 41 iterations |
 | `tests/replay_driver_test.rs` (12 tests) | no | the one-shot dispatch + exit codes, the persistent protocol untouched, the `recorded_queues` refusal-pull, turn-1 opening on both verb families |
-| `src/rust_sim/harness/search_impl_parity.py` | yes + a captured golden | the node `search_driver.js` wire output diffed field-by-field |
+| `src/rust_sim/harness/search_impl_parity.py` | yes + a captured golden | the node `search_driver.js` wire output diffed field-by-field. ⚠️ Its golden's generators (`search_golden.py`, `gen_search_golden.py`) were poke-env drivers and were DELETED in P6 slice 6c; the golden (`tmp/search_golden_node.json`) is gitignored scratch and none is committed, so this harness has no way to get one |
 | `src/rust_sim/harness/replay_impl_parity.py` | yes | `node replay_driver.js` vs the binary LIVE on identical requests |
 
 🚨 **RUN EACH PARITY GATE ON AT LEAST TWO FRESH SEEDS BEFORE CALLING IT GREEN.** A golden is three
@@ -325,8 +325,8 @@ The port's one-sided PROJECTION of the omniscient board (`view.rs::one_sided_vie
 reveal fold in `BridgeChunks`, `enable_view_fold`, the `view_pN` / `view_pN_at` payloads of
 `search_driver` and `core_events --views`' `views` / `truth`) and its Python consumers are
 DELETED (Rust Core deletion pass, program §4 M2): every successor the search scores is a Rust-core
-version read from its own stream (`present()`), and slice V holds that reading to the training
-`LiveView` at every decision. 🚨 **Do NOT feed `search::volatile_names` to the obs layer** — that
+version read from its own stream (`present()`), and the engine board audit holds that reading to the omniscient
+board at every decision (the comparison with the training `LiveView` — slice V — was deleted in P6 slice 6c). 🚨 **Do NOT feed `search::volatile_names` to the obs layer** — that
 set is the port's TYPED fields and includes conditions the sim never announces (gen-3 Choice lock
 raised `UnknownVolatileError` on the first real board); the reading folds the announcing lines.
 History, the reading-rule table (V1–V13) and the findings the projection surfaced:
@@ -747,8 +747,8 @@ All four A/B fuzzers take `--mode ladder` (`harness/ladder_corpus.js`, the JS tw
 Psywave, Fly, Blast Burn, Dig, Grudge or Triple Kick). A team is drawn from the tier with the
 fuzzer's seeded team RNG, so a master seed replays; `teamFilterClean` (the JS mirror) is REPORTED
 against, never used to drop a team, and typed Hidden Power is pickable (the corpus is gen3ou-valid
-and HP is priced at its IV-true BP). The same corpus is slice E/V's third team source
-(`rust_core_parity.play(key, source="ladder")`) and the Python fuzz scripts' `--team-source ladder`.
+and HP is priced at its IV-true BP). The same corpus is a team source of the Python fuzz scripts (`--team-source ladder`) and was the parity harness's third
+(`rust_core_parity.play(key, source="ladder")`, deleted in P6 slice 6c).
 The chapter: `designs/ops/testing.md` → THREE TEAM SOURCES.
 
 🚨 **ITS FIRST RUN FOUND A LIVE EMISSION BUG THE POOL COULD NEVER SHOW** (`gen3_lockedmove_announce_v1`):
@@ -1040,7 +1040,7 @@ lessons that outlive them — each cost a round to learn, and each binds the NEX
   gen3ou-pool exposure — 0 of 773 pool files carry either mechanic — so neither could ever have fired
   in training. That is what `--mode ourandom` exists for.
 - 🚨 **A GATE NOBODY CAN START IS INDISTINGUISHABLE FROM A GATE THAT PASSES.** Both parity harnesses
-  were un-runnable for weeks after a directory move left their repo-root index behind.
+  (`search_impl_parity.py`, `replay_impl_parity.py`) were un-runnable for weeks after a directory move left their repo-root index behind.
 - 🚨 **NEVER regex a single data file for a mechanic** — extract from the RESOLVED dist. gen3 resolves
   through gen4 → … → base, and later mods REPLACE and DELETE handlers (the Light Ball cautionary
   tale). See the MOD-CHAIN LAW above.

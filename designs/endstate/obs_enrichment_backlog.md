@@ -18,7 +18,7 @@ it IS).
 1. **Parity first, enrichment after.** M4 (the Rust encoder) must reproduce today's observation
    byte-for-byte, because that is the cutover gate. No entry here lands before the cutover. After
    it, each entry is an ordinary architecture change: behind a flag, recorded in `ARCHITECTURE.md`
-   and `CHANGELOG.md`, benchmarked with `obs_build_benchmark`, and trained into a fresh arm.
+   and `CHANGELOG.md`, benchmarked with `rust_encoder_benchmark` (`obs_build_benchmark` was deleted in P6 slice 6c), and trained into a fresh arm.
 2. **The imperfect-information boundary is a TYPE.** The encoder accepts only the per-side
    `OneSidedView` (plus its events), never the omniscient board. Each entry states which side's
    projection it reads. A fact the side cannot see on the ladder must not compile into its
@@ -68,7 +68,7 @@ Each gets a constructed-battle fixture that fails if it is flattened:
 **Status: DONE 2026-09-26** (`gen3_event_record_v2`, `b0a28b5b` — the owner's observation-architecture
 batch). The event row carries the native record's attribution (30 columns, a DENIED row type; schema in
 `designs/ARCHITECTURE.md` §1.6). Represented, each with a constructed-battle fixture run through the
-core and the Python path under slices T + O (`agents/battle/event_record_v2_fixture_test.py`): ACTION
+core (`src/rust_sim/tests/window_record_test.rs`; the Python-path twin `agents/battle/event_record_v2_fixture_test.py` under slices T + O was deleted in P6 slice 6c): ACTION
 DENIAL (fainted first; the TURN CUT by a self-KO and by recoil), trade KOs with cause and order
 (Destiny Bond, Perish Song), phazing (forced entry, the phazer, the dragged mon, the Spikes chip and
 layers), Baton Pass (passer, receiver, a pass into Spikes — the passed stages / volatiles ride the

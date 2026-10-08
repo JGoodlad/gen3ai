@@ -272,8 +272,8 @@ def resolve_core_events_bin() -> str:
     """Return an absolute path to the Rust ``core_events`` binary, building it if needed.
 
     The Rust Core Program's M1 tool (`gen3_core_events_v1`): it replays recorded battles through
-    the core and prints its typed events per viewer — the Rust side of the parity harness
-    (``agents.battle.rust_core_parity``). Never a training transport. ``$POKESIM_CORE_EVENTS_BIN``
+    the core and prints its typed events per viewer — the core half of the old parity harness
+    (``agents.battle.core_replay``, ``core_corpus_test``). Never a training transport. ``$POKESIM_CORE_EVENTS_BIN``
     overrides, exactly like its siblings.
     """
     return _resolve_rust_bin("core_events", "POKESIM_CORE_EVENTS_BIN", "the rust core parity harness")

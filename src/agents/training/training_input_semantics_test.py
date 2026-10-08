@@ -3,8 +3,8 @@ logs (`designs/research_state/measurements/rust_core_m3_2026-09-24/` §5; the fi
 `designs/research_state/measurements/training_input_gigo_fixes_2026-09-24/`).
 
 Each test names the catalogue id it pins and FAILS if its fix is reverted. The same cases on REAL
-constructed battles — the Python path and the Rust core together, through slice T — are
-`agents/battle/tracker_semantics_fixtures_test.py`; the Rust core's own pins are
+constructed battles were `agents/battle/tracker_semantics_fixtures_test.py` (the Python path and the Rust core together,
+through slice T; deleted in P6 slice 6c); the Rust core's own pins are
 `src/rust_sim/tests/tracker_semantics_test.rs`.
 
 * `gen3_event_window_semantics_fixes_v1` — W1 (a stat DROP is a negative BOOST row), W2 (a faint no
@@ -262,7 +262,7 @@ def test_t2_a_blocked_attack_freezes_the_clock():
     """Our Body Slam into their Protect: outcome "fail" with their Protect is the exogenous-denial
     branch — frozen, not charged. The branch always existed; what was broken is that a block never
     READ "fail", so the REVERT pin of T2 is ``test_turnview_a_blocked_move_is_outcome_fail…`` above
-    (and the constructed battle in ``tracker_semantics_fixtures_test.py``). This one pins the
+    (and the constructed battle in the deleted ``tracker_semantics_fixtures_test.py``, now ``tests/tracker_semantics_test.rs``). This one pins the
     contract the TurnView fix feeds."""
     assert _n(_clock_delta(our_move_id="bodyslam", our_move_outcome="fail", opp_resolved_move_id="protect")) == 0
     assert _n(_clock_delta(our_move_id="bodyslam", our_move_outcome="hit", opp_resolved_move_id="protect")) == 1

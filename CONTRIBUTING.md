@@ -276,8 +276,8 @@ to the launch commit — so pushing to `main` never disturbs a run in flight.
 - **`data/` is the source of truth.** The runtime reads only `data/`, through the
   `agents.gen3_data` facade — never live from poke-env. `tools/` is the only layer that knows
   the upstreams.
-- **Any change under `src/agents/observation/` must run the obs-build benchmark** before and
-  after (`src/agents/training/obs_build_benchmark.py`) — the gate and its baseline are in that
+- **Any change under `src/agents/observation/` must run the encoder benchmark** before and
+  after (`python -m agents.observation.rust_encoder_benchmark`) — the gate is in that
   package's `CLAUDE.md`.
 - **An edge case you fixed gets a named regression test** that fails if the fix is reverted.
 - **Claims carry their measurements.** "This is faster" is not a result; "1.41× at `--n-envs 48`,

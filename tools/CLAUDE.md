@@ -294,7 +294,7 @@ re-sync that changes them is a visible event rather than a silent re-id.
 the committed `data/` files (and that type-chart/natures still equal their poke-env source). A
 hand-edit that drifts a committed file from what the extractor produces fails there. After editing
 a builder, regenerate (`sync.py`) and run the obs golden
-(`training/gen3_data_obs_parity_integration_test.py`) — a value change there is retrain-class.
+(`python -m agents.training.golden_obs_core --check`) — a value change there is retrain-class.
 
 - **`build_move_aliases`** (`gen3_move_alias_resolution_v1`) emits `data/pokemon/gen3_move_aliases.json`
   — a flat `{alias_id: canonical_move_id}` map parsed from Showdown's `deps/pokemon-showdown/data/aliases.ts`

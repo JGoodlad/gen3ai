@@ -15,8 +15,9 @@ Code: `src/rust_sim/src/core_events/` (`line.rs`, `reading.rs`, `side.rs`, `pars
 `record.rs`, `jsonval.rs`, the generated `schema.rs`), the typed `ProtocolBuilder`
 (`src/rust_sim/src/protocol.rs`), the bridge's core tracking (`src/rust_sim/src/bridge.rs`,
 `BridgeSession::new_core` / `new_construct_turn0_core` / `core_events`), and the replay/record
-binary `src/rust_sim/src/bin/core_events.rs`. Python: `src/agents/battle/rust_core_parity.py` (+
-`_test.py`), `src/agents/battle/offline_feed.py`, `src/agents/battle/rust_core_schema_test.py` (the schema's sync pin).
+binary `src/rust_sim/src/bin/core_events.rs`. Python: `src/agents/battle/core_replay.py` (the core half of the old parity
+harness) + `core_corpus_test.py` (its Rust-only checks), `src/agents/battle/offline_feed.py`. (`rust_core_parity.py`, its
+`_test.py` and `rust_core_schema_test.py` — the schema's sync pin — were deleted in P6 slice 6c, 2026-10-08.)
 
 ---
 
@@ -56,11 +57,12 @@ one ship identical chunks and end on the same PRNG seed).
 `MESSAGE_POLICY` + the player-intercepted ones), with its routing in `schema.rs`. **`schema.rs` is FROZEN,
 Rust-owned source since P1 of the poke-env retirement (T27, 2026-10-07)**: it was GENERATED from
 `agents/battle/battle_event.py` + `Player.MESSAGES_TO_IGNORE` by a Python generator that imported poke-env (deleted), and a
-new keyword is now added IN `schema.rs` (with a drift-scan row, P4). While the Python battle layer lives,
-`rust_core_schema_test.py` (routine) parses the Rust file and compares it with `battle_event.py` — keywords, routes,
-event kinds and both halves of the value-key schema — so the Rust core cannot classify a keyword differently from the
+new keyword is now added IN `schema.rs` (with a drift-scan row, P4). Until P6 slice 6c,
+`rust_core_schema_test.py` (routine) parsed the Rust file and compared it with `battle_event.py` — keywords, routes,
+event kinds and both halves of the value-key schema — so the Rust core could not classify a keyword differently from the
 Python reader without that test failing (a keyword Rust routes `Intercept::Ignored` is the frozen
-`Player.MESSAGES_TO_IGNORE` set and is skipped).
+`Player.MESSAGES_TO_IGNORE` set and was skipped). **That test is DELETED (slice 6c) and nothing replaces it while
+`battle_event.py` lives (until slice 6d): a new keyword is edited into BOTH files by hand.**
 
 A `Field` is typed only where the keyword's grammar puts that type AND it re-renders to the same
 bytes: `Ident` (`p1a: Nick` / slot-less `p1: Nick`), `SideRef` (a side condition's first field),
@@ -179,32 +181,34 @@ of the COMMIT fixture + the first battle of each of the protocol capture scenari
 (70 records since the 2026-09-25 R4 regeneration, which also took in the fixture's two later
 battles `random_34` / `random_177`; gzip'd because the text carries every `|request|` frame). A
 regeneration rewrites every record's `core_commit`.
-Regenerate: `python -m agents.battle.rust_core_parity write-records`. Gate:
-`rust_core_parity_test.py::test_the_golden_records_round_trip_and_reparse` (`core_events
---check-records`).
+**The corpus is FROZEN**: its writer (`rust_core_parity write-records`, which also built the protocol-scenario half from
+`tests/vectors/protocol_capture_golden.txt`) was deleted in P6 slice 6c. New records for the 12 recorded battles come from
+`agents.battle.core_replay.run_core(battles, record_dir=…, commit=…)`; gzip them with `mtime=0` so a regeneration diffs
+clean. Gate: `core_corpus_test.py::test_the_golden_records_round_trip_and_reparse` (`core_events --check-records`).
 
-## 7. The parity harness — slice E, two tiers
+## 7. The recorded corpus — what is left of the parity harness (P6 slice 6c)
 
-`python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` (COMMIT, `sim`, ~2 s) and
-`… -m slow -q -n 2` (MILESTONE; verdicts into `designs/ops/slow_tier_status.json`). Both compare,
-per viewer and per event, `seq · turn · kind · side · actor · target · value · raw` of the core's
-readings against the log of a `Gen3Battle` fed the same per-side text through `offline_feed`
-(TYPE-strict: an int is not a float). No allowlist.
+Until slice 6c this section was the Python parity harness, **slice E**: per viewer and per event, `seq · turn · kind ·
+side · actor · target · value · raw` of the core's readings against the log of a `Gen3Battle` fed the same per-side text
+through `offline_feed` (TYPE-strict, no allowlist), in two tiers (COMMIT: 47 battles, ~18,600 events, ~2 s; MILESTONE,
+`slow`: 2 × 360 seeded-random, 2 × 50 policy battles played live, 2 × 150 LADDER battles, the protocol corpus × 2).
+**It is deleted** (`rust_core_parity.py`, `rust_core_parity_test.py`, the live-play MILESTONE tier and its
+`manifest.json` pin): the Python reader was never a truth, and `core_events`' own gates read the text alone
+(`parse(text) == step`, the emission self-check, canonical records, the byte-fuzz and protocol corpora in
+`tests/core_events_test.rs`).
 
-| tier | corpus |
-|---|---|
-| COMMIT | `commit_tier.json.gz` (6 seeded-random battles over 12 pool teams + 2 `production`-policy battles + 2 seeded-random Baton Pass battles, recorded input logs, the chunk bytes pinned by digest) + the six byte-fuzz fixtures that carry the four shapes random battles never reach + the first battle of each protocol capture scenario + the Forecast class sweep (`-formechange`) + a constructed Ditto (`-transform`) — 47 battles, ~18,600 events, ~2 s |
-| MILESTONE | 2 × 200 seeded-random (keys 0-199, 5000-5199) and 2 × 50 `production`-policy battles PLAYED live — the live `Gen3Battle` logs must ALSO equal the offline feed's — + the protocol corpus × 2 seeds + every byte-fuzz fixture; the pool hash and the checkpoint sha256 are pinned in `rust_core_parity_fixtures/manifest.json` and the tier refuses on a mismatch (`… write-manifest` in the same commit) |
-
-**Slice V rides the same call** (`check_battles(…, views=ViewCensus())`, `core_events --views`):
-the TRUTH AUDIT of the training observation path at every decision, both viewers — contract in
-[`one_sided_view.md`](one_sided_view.md) §4a. One harness, one core call per battle.
+`python3 -m pytest src/agents/battle/core_corpus_test.py -q` (`sim`, ~4 s) replays the 12 recorded battles of
+`rust_core_parity_fixtures/commit_tier.json.gz` (6 seeded-random battles over 12 pool teams + 2 `production`-policy
+battles + 2 seeded-random Baton Pass battles + 2 LADDER battles, recorded INPUT logs, the chunk bytes pinned by
+digest) through `core_events --views --trackers --obs` and holds what reads only the core (see
+`src/agents/battle/CLAUDE.md`). `fixtures/manifest.json` (the MILESTONE tier's pool hash / checkpoint sha / key ranges)
+is no longer read by anything.
 
 🚨 **The four ambiguity-prone shapes live in the BYTE-FUZZ corpus, not the protocol capture
 golden.** Damp's `[of]` cant, the slot-less future-move `-miss`, a bench `-curestatus` and
 `[from] lockedmove` occur 0 times in `protocol_capture_golden.txt`; they are in
 `tests/vectors/byte_fuzz_corpus/` (`42_…`, `29_…`/`30_…`/`31_…`, `70_…`, `52_…`), which is what
-both tiers and `core_events_test` run. A capture's scripted choices are replayed per decision with
+`core_events_test` runs (the Python tiers that also replayed them are deleted). A capture's scripted choices are replayed per decision with
 `CHOOSEIF` (a side whose choice this boundary already accepted is skipped); where a capture re-sends
 a rejected choice past the bridge's no-progress cap (8 consecutive rejects) the battle is TRUNCATED
 there and everything before it is still checked.

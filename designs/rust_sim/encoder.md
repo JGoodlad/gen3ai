@@ -14,9 +14,9 @@ under its own flag, default OFF** — with the flag off, no training byte change
 |---|---|
 | **Encoder** | `src/rust_sim/src/encoder/mod.rs` (`encode`, `encode_slice`, `prefill`, the active context, global env, board, pair history and event-window writers), `slot.rs` (the 122-dim per-mon slot; `populated_slot` is the ONE writer of a populated slot), `hypothesis.rs` (X5's hypothesis row, §10), `oracle.rs` (the diagnostic ORACLE REVEAL, §11), `data.rs` (the dex / prior tables, read from `data/pokemon/`), `layout.rs` (GENERATED), `wire.rs` (the row on the wire) |
 | **Version** | `BattleVersion::encode(side, &mut [f32; OBS_DIM])` — the side's reading, its view, its legality, its TRACKERS (required) |
-| **Python** | `agents/observation/rust_core_obs_layout.py` (the generator), `agents/battle/core_obs.py` (`wrap_row` / `check_row`), `agents/battle/rust_core_parity_obs.py` (slice O) |
+| **Python** | `agents/observation/rust_core_obs_layout.py` (the generator), `agents/battle/core_obs.py` (`wrap_row` / `check_row`), `agents/battle/core_replay.py` (`run_core`: `core_events --obs` from Python) |
 | **Bridge** | `src/rust_sim/src/bin/sim_bridge.rs` — the `core_obs` START key and the `__OBS__` frame (§5a) |
-| **Gates** | slice O (COMMIT + MILESTONE, `rust_core_parity_test.py`; through `core_events --obs` it also gates the PARSE chain's row, §6), the obs golden (`test_the_obs_golden_is_reproduced_by_the_core`), `rust_core_obs_layout_test.py`, `core_obs_test.py`, `cargo test` (`encoder::tests`, `tests/encoder_test.rs`, `tests/sim_bridge_core_obs_test.rs`) |
+| **Gates** | `core_corpus_test.py` (the commit corpus through `core_events --obs`: the PARSE chain's row, §6, fully-written rows), the obs golden (`golden_obs_core_test.py`), the four checks of §6a, `rust_core_obs_layout_test.py`, `core_obs_test.py`, `cargo test` (`encoder::tests`, `tests/encoder_test.rs`, `tests/sim_bridge_core_obs_test.rs`) |
 
 ---
 
@@ -58,7 +58,7 @@ for a `0.0` is a divergence.
 Test and fuzz builds (`debug_assertions` or the `emission-selfcheck` feature — `cargo test`, the
 `selfcheck` profile every pytest session and fuzzer runs) fill the row with NaN before encoding;
 release builds zero-fill (`encoder::prefill`, `NAN_POISON`). A slot, block or appended tail cell no
-branch wrote reads NaN and fails slice O (a NaN equals nothing) and
+branch wrote reads NaN and fails `core_corpus_test.py` (slice O's byte compare did, until P6 slice 6c) and
 `tests/encoder_test.rs::every_cell_is_written_at_every_decision_under_the_nan_poison` (teeth: removing
 the active-flag write fails it at cells 121 / 243 / 853). **The honest limit:** each sub-encoder zeroes
 its own sub-block first (Python's `np.zeros` per sub-encoder), so a skipped cell INSIDE a sub-block
@@ -185,37 +185,34 @@ path (`parse_root_unrecorded`); a char-at-a-time base64 of the 10 KB row and the
 times (the line is now built once as bytes and written with one `write_all`); and a SECOND gen-3
 dex load at the first decision.
 
-## 6. Slice O — the gate
+## 6. The row's gates — slice O (the Python-row comparison) is DELETED
 
-`agents/battle/rust_core_parity_obs.py`, inside slice T's decision loop (the tracker fold runs once
-for both): at every decision of both viewers, the row the Python `Gen3ObservationEncoder` path encodes (formerly via the deleted `Gen3Env.embed_battle`; the real
-`EpisodeTracker`, the legality snapshot, the incremental assembler) against the core's, BYTE-equal,
-plus the 11-dim mask. **No allowlist.** `core_events --obs` also folds each side's PARSE chain (one
-side's text, trackers on, the same `note_choice` tokens — the chain §5a ships to training) and REFUSES
-a battle unless it decides at exactly the step chain's decisions and encodes a BYTE-identical row
-with an equal mask and equal tokens (`version::parse_encode_matches_step`,
-`gen3_core_parse_obs_gate_v1`; the first differing cell named by `encoder::cell_name`) — so every
-slice-O run also gates the encode path the bridge ships. A divergence is classed by FIELD, slot-independent
-(`our_team moves+7`, `event_window MAGNITUDE`); the census also counts value-differing, byte-only and
-NaN cells, and which blocks were ever nonzero (a tier that never saw a block nonzero fails).
+Until P6 slice 6c (2026-10-08) **slice O** (`agents/battle/rust_core_parity_obs.py`, inside slice T's decision loop) held
+the core's row BYTE-equal, plus the 11-dim mask and the choice tokens, to the row the Python `Gen3ObservationEncoder`
+path encodes (the real `EpisodeTracker`, the legality snapshot, the incremental assembler), at every decision of both
+viewers, in three tiers (COMMIT, MILESTONE on every played battle, FRESH on new battles). It is deleted with the Python
+stack it compared against — §6a says what replaces it. What stays is everything that reads the core alone:
 
-| tier | runs |
-|---|---|
-| COMMIT | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` (unmarked: slice O on the recorded corpus, the obs GOLDEN reproduced by the core, the teeth) |
-| MILESTONE | `… -m slow -q -n 2` — slice O on every played battle (pool, policy, LADDER), the verdict in `designs/ops/slow_tier_status.json` |
-| FRESH | `python src/agents/battle/rust_core_trackers_fuzz_test.py [--minutes N] [--procedural P]` — slice O (with E / V / T) on new battles every run, pool + mechanic-dense + PROCEDURAL teams |
+`core_events --obs` folds each side's PARSE chain (one side's text, trackers on, the same `note_choice` tokens — the chain
+§5a ships to training) and REFUSES a battle unless it decides at exactly the step chain's decisions and encodes a
+BYTE-identical row with an equal mask and equal tokens (`version::parse_encode_matches_step`,
+`gen3_core_parse_obs_gate_v1`; the first differing cell named by `encoder::cell_name`) — so every `--obs` replay also gates
+the encode path the bridge ships. `python3 -m pytest src/agents/battle/core_corpus_test.py -q` (`sim`, ~4 s) replays the
+12 recorded battles through it and holds the rows: every one is the observation (`core_obs.wrap_row`), fully WRITTEN (the
+self-check build NaN-prefills a row, so an unwritten cell reads NaN) with no `-0.0`, every obs block nonzero somewhere (a
+replay cannot be green on zeros), and each decision's choice tokens are exactly the legal actions of its mask.
 
 **The obs golden is the CORE's** (P6 of the poke-env retirement, 2026-10-08). Its battles are BANKED as
 input logs (`training/golden_obs_battles.json`, recorded once while the core's rows, the Python capture's and
 the committed hashes all agreed), and `agents.training.golden_obs_core` replays them through `core_events --obs`
 and hashes the trainee's rows against `training/golden_obs_fixture.json`: `golden_obs_core_test.py` (`sim`) in the
 routine gate, `python -m agents.training.golden_obs_core --check | --write` by hand (a `--write` names the first
-moved decision and the count — review it). `test_the_obs_golden_is_reproduced_by_the_core` still plays
-`golden_obs_capture`'s battles through both stacks until slice O retires.
+moved decision and the count — review it). The Python capture that recorded those battles
+(`golden_obs_capture.py`) and its byte test (`gen3_data_obs_parity_integration_test.py`) are deleted (slice 6c).
 
-**Teeth** (`rust_core_parity_test.py`): a Python encoder change the core does not mirror (the move PP
-normaliser) fails on `our_team moves+` / `opp_team moves+`; a NaN cell and a `-0.0` in the core row
-each fail.
+**Teeth** (`core_corpus_test.py::test_the_row_check_has_teeth`): a NaN cell and a `-0.0` in a core row each fail.
+(The former tooth — a Python encoder change the core does not mirror fails slice O on exactly that field — went with
+the comparison.)
 
 ## 6a. What replaces the Python oracle (P6 of the poke-env retirement)
 
@@ -245,21 +242,21 @@ Hidden Power by prefix, `recharge` as `move 1` — the round trip back to the in
 null` where the side does not decide (a `wait` request, the battle over, no legal action). Python
 (`SearchEngine._materialize_core`) wraps the row with `np.frombuffer` and scores it: no view JSON, no
 event fold, no Python tracker, no Python encoder and no Python prefix fork run on a core successor.
-Slice O compares the tokens against the real mapper at every decision (12,677 at COMMIT);
-`core_row_parity_fuzz_test` compares each arm's row to the poke-env replay's, byte for byte.
+Until slice 6c slice O compared the tokens against the real mapper at every decision (12,677 at COMMIT) and
+`core_row_parity_fuzz_test` compared each arm's row to the poke-env replay's, byte for byte; both are deleted, and
+`core_corpus_test.py` holds each decision's tokens equal to its legal actions.
 
 ## 8. The encoder benchmark
 
 🚨 **`python -m agents.observation.rust_encoder_benchmark` is the MANDATORY before / after benchmark of an
 observation change** (P6): `core_events --obs --obs-bench` at a seeded sample of the obs golden's banked decisions,
 both shapes below, median / p90 / max over decisions; release build; it warns on a contended box and never
-rescales. The retired Python benchmark below printed the same core timing beside the Python encoder's.
+rescales. The retired Python benchmark (next paragraph) printed the same core timing beside the Python encoder's.
 
-`src/agents/training/obs_build_benchmark.py` prints a CORE row: the profiled battle's recorded input
-log is replayed through `core_events --obs --obs-bench SIDE K REPS` (the release build unless
-`POKESIM_EMISSION_SELFCHECK=1`), which times the Rust encoder at the SAME decision — the version's
-encode with its view memoized (the production shape) and `present()` + encode (cold) — and its row is
-asserted byte-equal to the Python row before the time is printed (`--no-core` skips it).
+The Python benchmark that printed a CORE row beside the Python encoder's (`obs_build_benchmark.py`, which replayed the
+profiled battle's recorded input log through `core_events --obs --obs-bench SIDE K REPS` and asserted the row byte-equal to
+the Python row before it printed a time) is deleted (slice 6c); `rust_encoder_benchmark` above is the same core timing
+without the Python half.
 
 ## 9. Measurements
 
@@ -341,8 +338,8 @@ unseen slot's pair cells are the never-interacted values, bit-for-bit an absent 
 **The `full` level.** Item, ability, the four moves (a bare Hidden Power typed from the set's declared type or its IVs, as the owner's request spells it) and the spread block (`PMon::backfill_spread`, the own mon's own backfill: nature lower-cased, `serious` if none) are written for every opponent mon, `hp_revealed` is 1 (probs 0, as for an own mon), and every other cell is the never-seen mon's. The slot writer's spread block and `hp_revealed` follow the view's `spread_known` (own: true; an opponent under `off` / `species`: false). A seen mon keeps what play revealed: the item only while the reading's is the unknown sentinel (`None` is a consumed / removed item, not an unknown one), the ability only while none is revealed, an observed move keeps its slot and tracked PP, a bare `hiddenpower` the reading learned stands for the typed one, a transformed mon gains no move. The independent oracle is the OPPOSING chain's own-team slot of the same mon in the same battle.
 
 **Scope.** The reveal exists on the Rust env core's chains (training, the in-loop eval core). `sim_bridge`'s `core_obs`
-mode, `core_events --obs` (slice O) and the search chains (`search_driver`, the env core's search, the fork arm) build
-`off` rows: the Python `Gen3ObservationEncoder` has no reveal, which is why slice O gates `off` only.
+mode, `core_events --obs` and the search chains (`search_driver`, the env core's search, the fork arm) build
+`off` rows: the Python `Gen3ObservationEncoder` has no reveal (which is why the deleted slice O gated `off` only).
 
 **Gates.** `src/rust_env/tests/oracle_reveal_test.rs`: `off_is_inert` (the off obs / mask / label bytes pinned to a
 digest recorded on `e0d56693`, the commit before the build), `species_bytes_are_pinned`, `full_bytes_are_pinned`, the
@@ -362,10 +359,11 @@ turns and each side's screen turns (`ARCHITECTURE`-level detail: `src/agents/obs
 `encode_into` writes it at `OFFSET_OBS_FACTS` (2761) as step 8, the row's last block (appended at the X5
 version break, config v144, part 3: `OBS_DIM` 2761 → 2845, the prefix byte-identical; `cell_name` names a
 cell `obs_facts+k`). `BattleVersion::encode_facts(side, &mut [f32; OBS_FACTS_DIM])` computes the block
-alone from the same inputs (the engine-truth test reads it). Slice O covers it through the whole-row byte
-comparison (`obs_facts` is one of its non-vacuity blocks); the separate `"facts"` field `core_events
+alone from the same inputs (the engine-truth test reads it). The obs golden covers it through the whole row, and `core_corpus_test.py` requires `obs_facts` nonzero somewhere (until
+P6 slice 6c, slice O's whole-row byte comparison did, with `obs_facts` one of its non-vacuity blocks); the separate
+`"facts"` field `core_events
 --obs` shipped beside the row while the block was outside it, and slice O's `[FACTS]` comparison of it,
-are DELETED as redundant with the row compare. The reading half is `present/` (V18 / V19) and the fold is
+were DELETED as redundant with the row compare. The reading half is `present/` (V18 / V19) and the fold is
 `trackers::facts` (`trackers.md`). The ENGINE truth test is `tests/obs_facts_truth_test.rs`: 60 seeded
 random-legal battles, every decision, the encoded screens equal the engine's remaining duration, the
 engine's volatile durations inside the encoded bounds, no NOT-locked proof while the engine holds

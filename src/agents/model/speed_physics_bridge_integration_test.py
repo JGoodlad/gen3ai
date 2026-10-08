@@ -141,7 +141,7 @@ def collect(n_battles: int) -> Dict[str, Any]:
     """Every qualifying turn's two viewer rows, their move priorities and the truth (who acted first)."""
     from agents import gen3_data
     from agents.battle.core_obs import wrap_row
-    from agents.battle.rust_core_parity import run_core
+    from agents.battle.core_replay import run_core
     from main.policy_spectrum.bank import load_bank
 
     battles = load_bank(BANK, verify=False).battles[:n_battles]

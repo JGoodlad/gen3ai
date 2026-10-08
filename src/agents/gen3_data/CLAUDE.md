@@ -139,9 +139,11 @@ be proven value-neutral (or it's a retrain-class change).
 ## Value-neutrality (changing the data layer)
 
 Reorganizing *where/through-what* data loads must not change any observed value. The guards:
-- **`training/gen3_data_obs_parity_integration_test.py`** — the linchpin: replays a fixed,
-  deterministic battle set and asserts every per-decision obs vector is byte-identical to the
-  golden fixture (`golden_obs_fixture.json`, captured by `golden_obs_capture.py`).
+- **`training/golden_obs_core_test.py`** — the linchpin: the Rust core replays a fixed battle set (banked as input
+  logs, `golden_obs_battles.json`) and every per-decision obs row must hash to the golden fixture
+  (`golden_obs_fixture.json`); `python -m agents.training.golden_obs_core --check | --write`. (Until P6 slice 6c the
+  linchpin was `gen3_data_obs_parity_integration_test.py`, which replayed the set through the Python capture,
+  `golden_obs_capture.py` — both deleted.)
 - **`extractor_parity_test.py`** — committed files == upstream; builders reproduce committed.
 - **per-dex + facade tests** here; **`gen3_mechanics_test.py`** pins the effectiveness chart.
 

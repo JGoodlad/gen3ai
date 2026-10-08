@@ -3,7 +3,7 @@
 ``golden_obs_fixture.json`` is the per-decision sha256 of the trainee's observation row over a fixed battle set — the
 value-neutrality LINCHPIN: if a row any training run reads changes, this says so in the routine gate. Until P6 the
 battles were PLAYED by the Python capture (``golden_obs_capture``: poke-env players over the bridge) and the rows
-written by the Python encoder; the core was held to them (``rust_core_parity_test``). The battles are now BANKED as
+written by the Python encoder; the core was held to them (``rust_core_parity_test``, deleted in slice 6c). The battles are now BANKED as
 input logs (``golden_obs_battles.json``, recorded once while both stacks agreed: core rows == Python rows ==
 the committed hashes) and the golden is the CORE's: each log is replayed through ``core_events --obs`` (the step
 chain + the parse-chain gate that ``sim_bridge``'s core observation mode ships) and the trainee's (p1's) rows are

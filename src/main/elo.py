@@ -105,8 +105,8 @@ def _print_table(fit: elo_mod.EloFit, anchored: bool) -> None:
         print(f"\nlatest snapshot: {step / 1e6:.1f}M → ELO {elo:.0f} ± {_ci95(se):.0f}"
               f"   |   best: {best[0] / 1e6:.1f}M → {best[1]:.0f}")
     anchor_note = ("bot round-robin (pinned)" if anchored else
-                   "random=base (fallback — run bot_elo_calibration.py for a "
-                   "cross-run-comparable scale)")
+                   "random=base (fallback — no bot anchors loaded, e.g. data/gen3_bot_elo_anchors.json, so "
+                   "the scale is not cross-run comparable)")
     print(f"anchor: {anchor_note}")
 
 

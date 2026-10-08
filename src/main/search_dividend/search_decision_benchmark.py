@@ -148,7 +148,7 @@ def load_decision(stem: str, impl: str, frac: float = 0.55):
     from main.search_dividend import determinize as dz
     from utils.bridge.reconstruction import ReconstructionRecord
     from utils.bridge.search_session import SearchSession
-    import agents.battle.core_row_parity_fuzz_test as G
+    import agents.training.obs_materializer as OM
 
     from main.prober.core_trace import load_summary   # a core trace EXPANDED (F-LH-5)
 
@@ -169,7 +169,11 @@ def load_decision(stem: str, impl: str, frac: float = 0.55):
     with SearchSession(record, impl=impl) as ss:
         root = ss.open_root(turn)
         pfx = root.prefix_p1_chunks if side == "p1" else root.prefix_p2_chunks
-    tokens = G._choice_map(record, side, our_history, pfx, anchor)
+    # ``{action index: sim choice string}`` for every LEGAL action at the branch decision, from the REAL action mapper
+    tokens = OM.materialize_decisions(
+        list(pfx), username=record.username(side), packed_team=record.packed_team(side),
+        side=side, actions=our_history, battle_format=record.format_id,
+        battle_tag=record.battle_tag, map_actions_at=anchor, stop_after_decision=anchor).action_choices or {}
     if not tokens:
         return None
     observed = dz.chunks_to_lines(pfx)

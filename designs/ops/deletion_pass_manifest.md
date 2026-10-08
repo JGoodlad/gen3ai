@@ -536,3 +536,25 @@ the standalone worker, and it is NOT unreachable:
 
 It goes with the survey's **P2** (meters and `eval_trace_gen` onto the Rust eval engine), as the survey's plan already says
 (§A4.5), not before.
+
+### 8.3 P6 slice 6c (T27), 2026-10-08 — the Python parity ORACLES, the Python-path benchmarks, the bot calibration, the BC reader
+
+The poke-env retirement's slice 6c (coordinator-owned WHAT-to-delete list; executed by a written manifest). Each group's
+replacement is named; nothing was deleted whose subject still has a user (the importers of `rust_core_parity.run_core` were
+re-pointed at `agents.battle.core_replay`, and the two `main/search_dividend` files that borrowed
+`core_row_parity_fuzz_test`'s helpers call `record_fixture_battle` / `obs_materializer.materialize_decisions` directly).
+Extracted FIRST: `agents/battle/core_corpus_test.py` — the part of the old harness that read only the core (the commit
+corpus replayed through `core_events --views --trackers --obs`, rows fully written, tokens == legal actions, the information
+boundary, the golden records' round trip). `rust_core_parity_fixtures/` stays (that test reads it).
+
+| group (P6 slice 6c, 2026-10-08) | files | lines (module / tests) | replacement / evidence | doc / test references handled |
+|---|---|---|---|---|
+| battle-layer parity ORACLES | `agents/battle/{rust_core_parity,rust_core_parity_obs,rust_core_parity_trackers,rust_core_parity_views,poke_env_findings}.py`; tests `rust_core_parity_test`, `core_row_parity_fuzz_test`, `rust_core_trackers_fuzz_test`, `rust_core_present_test`, `rust_core_schema_test`, `poke_env_findings_test`, `event_record_v2_fixture_test`, `tracker_semantics_fixtures_test` | 1,876 / 1,904 | Python-vs-core comparisons; the core's own checks are `core_corpus_test.py`, `golden_obs_core_test.py`, the cargo tests (`tracker_semantics_test.rs`, `window_record_test.rs`, `core_events_test.rs`, `present/tests.rs`, `obs_facts_truth_test.rs`) and `designs/rust_sim/encoder.md` §6a | `src/agents/battle/CLAUDE.md`, `src/agents/observation/CLAUDE.md`, `src/rust_sim/CLAUDE.md`, `designs/rust_sim/{encoder,present,trackers,core_events,emission_selfcheck,module_map,search_and_replay_drivers}.md`, `designs/ops/testing.md` |
+| the Python obs-golden capture | `agents/training/golden_obs_capture.py`, `gen3_data_obs_parity_integration_test.py` | 184 / 140 | the golden is the core's (`golden_obs_core.py`, slice 6b); `golden_obs_fixture.json` and `golden_obs_battles.json` kept byte-for-byte | `src/agents/gen3_data/CLAUDE.md`, `tools/CLAUDE.md`, `designs/rust_sim/encoder.md` |
+| Python-path benchmarks | `agents/training/{obs_build,trainer_turn,live_view_build}_benchmark.py`, `utils/bridge/{search_impl_throughput,ws_frontend_throughput}_benchmark.py` | 1,639 / 0 | the mandatory observation benchmark is `agents.observation.rust_encoder_benchmark` (slice 6b); the throughput figures stay as dated measurements | root `CLAUDE.md`, `src/agents/observation/CLAUDE.md`, `designs/ops/testing.md`, `CONTRIBUTING.md`, `src/utils/bridge/README.md`, `designs/rust_sim/ws_frontend.md` |
+| `rust_sim` harness drivers on poke-env | `rust_sim/harness/{search_golden,gen_search_golden,better_line_bench}.py` | 429 / 0 | no cargo test reads their golden (`tmp/search_golden_node.json` is gitignored scratch, none committed); `search_impl_parity.py`, `replay_impl_parity.py`, `rust_record_replay_check.py` can no longer be fed one — REPORTED, kept | `src/rust_sim/CLAUDE.md`, `designs/rust_sim/search_and_replay_drivers.md` |
+| bot calibration | `agents/training/{bot_elo_calibration,bot_matchup_matrix,bot_elo_store}.py` + their tests | 1,014 / 499 | **T15's Rust bot-vs-bot calibration (`designs/ops/TASK_BACKLOG.md`) is the replacement**; `data/gen3_bot_elo_anchors.json` and `data/gen3_bot_matchups.json` STAY byte-for-byte (the ELO fit still pins the nine bots to the former); `bot_elo_store` had no importer but the calibration | `designs/ops/TASK_BACKLOG.md` (T15), `designs/ops/training_runbook.md`, `src/main/critic_gate.py` / `src/main/elo.py` messages |
+| behaviour-cloning reader | `agents/bc/` (`log_reader.py`), `main/human_agreement.py` | 756 / 71 | a diagnostic on the Python encoder; rebuilt on the Rust reader when ai_v11 opens | `main/torch_globals_restore_test.py` (its `human_agreement.run` case), `designs/ops/testing.md` |
+
+**Allowlist effect (for the coordinator):** the 14 allowlist entries that no longer import poke-env are listed in the slice
+report (`test_no_stale_allowlist_entry` fails on this branch by design until the coordinator shrinks them).

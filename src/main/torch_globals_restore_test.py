@@ -1,6 +1,6 @@
 """Library functions that set torch globals for their own work give the caller its own back.
 
-`untaught_meter.play_cells`, `harvest.score_candidates` and `human_agreement.run` cap the intra-op
+`untaught_meter.play_cells` and `harvest.score_candidates` cap the intra-op
 thread count; `policy_spectrum.reader.load_checkpoint` used to set it AND turn TF32 off on CUDA and
 return with both still set. A caller running two of them in one process (a test, a notebook, a
 multi-meter CLI) then ran under whichever set last — Lane E's F-LJ-6 was exactly that class: a leaked
@@ -57,13 +57,6 @@ def test_score_candidates_restores_the_thread_count(tmp_path):
 
     _assert_restored(lambda: score_candidates(str(tmp_path / "missing.zip"), [], models_root=str(tmp_path),
                                               verbose=False))
-
-
-def test_human_agreement_run_restores_the_thread_count(tmp_path):
-    from main.human_agreement import run
-
-    _assert_restored(lambda: run(str(tmp_path / "no_run"), min_rating=0, max_replays=1,
-                                 replay_dir=str(tmp_path), device="cpu", ckpt_override=None, threads=4))
 
 
 def test_policy_spectrum_load_checkpoint_sets_no_global(tmp_path):

@@ -9,8 +9,9 @@ out, and computes no value, applies no rule, and defaults nothing. (Its predeces
 ``view_adapter`` over the port's ``one_sided_view`` payload, which re-applied poke-env's
 presentation rules in Python, is deleted — Rust Core deletion pass, program §4 M2.)
 
-Equality with the ``LiveView`` training builds is the Rust Core parity harness's slice V
-(``rust_core_parity_views.py``), at every decision of every recorded battle, both viewers.
+Equality with the ``LiveView`` training builds was the Rust Core parity harness's slice V
+(``rust_core_parity_views.py``, deleted in P6 slice 6c); the core's view is now held against the ENGINE by its board audit
+(``agents/battle/core_corpus_test.py``) and the cargo ``present`` tests.
 """
 
 from __future__ import annotations

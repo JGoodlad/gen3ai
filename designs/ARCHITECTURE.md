@@ -325,8 +325,7 @@ denial row (the native record does not model it either).
 Constructed-battle fixtures, one per mechanic (denial fainted-first / turn cut by self-KO / by
 recoil, trade KOs by Destiny Bond and Perish Song, Roar into Spikes, Baton Pass into Spikes,
 Thief / Trick / Knock Off, a Spikes sack and its free replacement, Pursuit on a switch, called
-moves, the E4 trap), each run through the core and the Python path with slices T and O on:
-`src/agents/battle/event_record_v2_fixture_test.py`.
+moves, the E4 trap), each replayed through the core: `src/rust_sim/tests/window_record_test.rs`.
 
 **The α/β intent label and the progress clock read `TurnDelta`, and both mask or discount what
 was not a choice or not our doing** (`gen3_intent_label_semantics_fixes_v1`,

@@ -8,9 +8,9 @@ THE THREE SEARCH GATES for the in-process road (the M2 trio — ``materializer_p
 1. **The depth-3 successor slice** (:mod:`utils.rust_env.successors_parity`): the in-process tree ==
    the ``search_driver`` binary, every arm field and every leaf row BYTE for byte, to depth 3.
    COMMIT tier here (ladder COMMIT teams + a pool battle); MILESTONE (``slow``): the ladder
-   milestone tier, the training pool and procedural teams. The binary's rows are themselves held to
+   milestone tier, the training pool and procedural teams. (Until P6 slice 6c the binary's rows were themselves held to
    the poke-env replay by ``agents/battle/core_row_parity_fuzz_test.py``, so the in-process rows
-   are too (transitively, byte equality being exact).
+   were too, transitively; that fuzz is deleted and the rows have no second reading now.)
 2. **Clone independence / determinism** (the fork-sharing gate's claim): re-expanding the same arm
    after its siblings reproduces it byte for byte; a stale node id (a previous root) is refused;
    the playout is a function of its inputs and siblings sharing a seed share their dice.

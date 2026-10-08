@@ -228,8 +228,6 @@ cargo build --profile selfcheck --features emission-selfcheck --bin sim_bridge -
 python3 src/agents/action/fuzz_test.py [n_battles]            # + many more: see designs/ops/testing.md
 python -m agents.observation.rust_encoder_benchmark           # 🚨 MANDATORY before/after any obs change (the Rust encoder every run reads)
 python -m agents.training.golden_obs_core --check             # the obs GOLDEN, owned by the Rust core (P6)
-python3 src/agents/training/trainer_turn_benchmark.py --pin-battles  # 🚨 --pin-battles for ANY A/B claim
-python3 src/agents/training/live_view_build_benchmark.py      # the only one that can A/B LiveView.from_battle
 ```
 
 ---

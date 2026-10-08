@@ -61,10 +61,10 @@ def test_a_replay_tag_is_never_the_callers_and_is_unique():
 def test_an_offline_materialization_records_nothing_into_the_live_builder():
     """End to end: with the tap installed and a live builder ACTIVE, materializing the same
     battle offline must leave the live record untouched."""
-    import agents.battle.core_row_parity_fuzz_test as G
+    from agents.training.obs_roundtrip_fuzz_test import record_fixture_battle
 
     with tempfile.TemporaryDirectory() as td:
-        record, summary, npz = G._record_one_battle(td, "rust", 0)
+        record, summary, npz = record_fixture_battle(td, key=0, tag="CR", impl="rust")
     actions = [int(x) for x in np.asarray(npz["actions"], dtype=int)]
     invs = summary["invocations"]
     cand = [i for i, inv in enumerate(invs)

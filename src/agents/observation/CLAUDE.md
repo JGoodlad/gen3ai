@@ -58,225 +58,10 @@ decision. A same-session before / after on the same load is the comparison; it w
 rescales. The obs GOLDEN (`python -m agents.training.golden_obs_core --check`, `golden_obs_core_test.py`) is the
 value gate beside it.
 
-**The Python encoder below is being RETIRED** (T27 P6 slice 6): nothing trains on its rows, and the rest of this
-section is the history of its own benchmark, `src/agents/training/obs_build_benchmark.py`, kept until that slice
-deletes it.
-
-### The workflow — do this for every change
-
-```bash
-# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
-
-# 1. BEFORE you edit: capture a baseline on the CURRENT code (stash/commit your change away,
-#    or run on a clean checkout), saving the full output.
-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 \
-    src/agents/training/obs_build_benchmark.py --turn 25 --reps 400 --top 22 | tee /tmp/obs_before.txt
-
-# 2. Apply your change.
-
-# 3. AFTER: re-run with the SAME flags and the SAME machine load, and diff.
-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 \
-    src/agents/training/obs_build_benchmark.py --turn 25 --reps 400 --top 22 | tee /tmp/obs_after.txt
-
-diff /tmp/obs_before.txt /tmp/obs_after.txt
-```
-
-**"the SAME machine load" is now checked for you** (`gen3_contention_robust_timeouts_v1`): the
-benchmark calls `warn_if_contended()` at entry and prints a loud "THE BOX IS BUSY" banner with the
-load average when the box is not idle. It still WARNS rather than refuses — a before/after pair run
-back-to-back under the *same* load is exactly the same-load A/B this gate asks for — but a banner on
-only one of the two runs means the comparison is void, so check both outputs before believing a diff.
-
-If you cannot easily get a "before" (the change is already applied), compare against the
-**canonical baseline pasted below** — but prefer a same-session before/after, because
-absolute timings are machine- and load-dependent.
-
-### What counts as a "meaningful regression" — use the LOAD-STABLE signals
-
-Absolute milliseconds scale with whatever else the box is doing (training alone pushes load
-past the core count and can inflate the numbers 2–3×). **Do NOT judge by the `ms` line.**
-Judge by these load-independent metrics, in priority order:
-
-1. **Total function calls per encode** = `<N function calls>` line ÷ `--reps`. This is the
-   single best regression detector — it does not move with machine load. Baseline ≈
-   **~5.43k calls/encode** — measured 2026-08-23 on an idle box at `--turn 25 --reps 400`, obs
-   2501, median of 3 runs (`designs/research_state/measurements/post_paydown_baselines_2026-08-23.json`).
-
-   🚨 **This number is in FULL-PROTOCOL units. The older ~3.46k figure below is NAKED-ENCODE and
-   is NOT comparable to what this benchmark prints today** — comparing today's output against it
-   reads as a +57% regression that does not exist. The benchmark has threaded the whole env
-   protocol since 2026-08-16 (`update_progress_clock`, recency, the H-A pair loop, the H-B
-   event-window fold); `episode_tracker._pair_sat_norm` alone is ~164 calls/encode, and the
-   tracker family is most of the difference. A threshold restated in the wrong units is worse
-   than no threshold, because it fires.
-
-   *History, in NAKED-ENCODE units — for the shape of past changes only, never as today's bar:*
-   ~3.46k was the post-`gen3_entity_rehome_v1` (v60) reference: deleting the two
-   144-dim matchup matrices removed the whole `_expected_multiplier`/`_joint_expectation` loop
-   family (measured same-session before/after at `--turn 25 --reps 400`, seed-0 battle:
-   6,332 → 3,462 calls/encode, −45%; wall 0.373 → 0.246 ms, −34% — the Stage-3 refund,
-   confirmed in reverse). ~6.44k was the post-`gen3_cpu_damage_deleted_v1` (v48)
-   reference, measured
-   same-session before/after at `--turn 25 --reps 300` on the seed-0 battle (7,396 → 6,444, −12.9%,
-   from deleting the incoming-damage / move-effect / active-move-scalar producers). History for
-   context: ~6.36k pre-`gen3_incoming_damage_v1`, ~6.85k after it, ~7.4k after the `v2` belief
-   recalibration (crit term + the wider candidate set). Always judge by a same-session before/after,
-   not the absolute. A jump of **>10%** above this is a regression — investigate.
-2. **cProfile `tottime` top-of-list structure.** A *new* function climbing into the top ~10,
-   or a known hot function's **call count** ballooning, means you added work to a hot loop.
-3. **Component ratios** (`state_encoder.encode` vs `live_view`). The turn-history component and
-   its deque-cache multiplier are GONE with the lag frames (`gen3_frame_deletion_v1`), so the
-   build is now `encode` + `live_view` only. Historically, if the turn-history "cached" line
-   stopped being a
-   single encode (`~12x saved` collapses toward `1x`), the deque memoization broke.
-
-A value-neutral refactor that adds <10% calls/encode and doesn't reshuffle the tottime top is
-fine. Anything larger needs justification (or a revert).
-
-### 🚨 The build is INCREMENTAL now — there are FOUR series, and they answer different questions
-
-`gen3_obs_assembler_v1` (`assembler.py`) makes `encode` a **scheduler** over a persistent
-2501-dim buffer: it re-derives only the blocks an event, the request, or the HP tracker says have
-moved, and the per-block writers are unchanged. So one number can no longer describe "the obs
-build", and the benchmark prints all four:
-
-| series | what it is | when production pays it |
-|---|---|---|
-| `full … [COLD]` | full rebuild, view memo dropped each rep | the comparable-to-history series |
-| `encode with the view memo WARM` | full rebuild, view already built | what encode cost BEFORE this change |
-| `cache invalidated each rep` | full rebuild THROUGH the assembler | the episode's first decision; after a re-decide rollback |
-| **`cache WARM + view memo WARM`** | **the incremental encode** | **every other decision — THE PRODUCTION SHAPE** |
-
-**Measured 2026-08-23, busy box (load 12–20 — absolute ms inflated, RATIOS are the claim),
-`--turn 25 --reps 400`:** production-shape encode is **2.6–2.7× cheaper** than the same decision's
-full rebuild, and warm `calls/encode` is **~1.33k against a cold ~4.6k (−72%)**. The
-decision-matched end-to-end is `trainer_turn_benchmark` (below), which walks *consecutive*
-decisions and therefore carries real dirty sets rather than one decision's: there the encode is
-**1.79×** (0.302 → 0.169 ms, three same-load pairs, disjoint ranges) and worker CPU is
-**1.19× (−16%)**.
-
-⚠️ **The warm reps loop is an OPTIMISTIC bound by construction** — it re-encodes ONE decision, so
-every rep has the same dirty set. It is a bound on the win, not the win. Quote
-`trainer_turn_benchmark` for anything end-to-end; that script grew a **`--no-assembler`** arm for
-exactly this, and a same-session pair is the only honest way to read absolute ms on this box.
-
-⚠️ **The COLD `calls/encode` moved: ~5.43k → ~4.6k**, and that is a real reduction, not a rebase.
-It is the saturation LUT (`assembler.SAT_LUT`, an 11-value codomain read as a table by
-`RecencyTracker.values` / `PairHistoryTracker.pair_values`) plus the pair-history block becoming
-ONE 180-float slice assignment instead of 36 five-float ones. Both are pinned bit-for-bit against
-the arithmetic they replaced (`assembler_test::test_the_saturation_lut_is_bit_for_bit_…`).
-
-**Byte-identity is asserted BY the benchmark**, not assumed: it encodes the profiled decision both
-ways and raises before printing if they differ. A speedup measured against a different vector is
-not a speedup.
-
-🚨 **The reps loop re-encodes ONE decision, so ANY cache in the build is 100% warm from rep 2
-— read the COLD series.** `battle.live_view()` is memoized per state-epoch
-(`gen3_live_view_memo_v1`, `src/agents/battle/CLAUDE.md`), and production sees exactly one
-COLD view build per decision — the memo's job is that the *other four* builds vanish, not that
-the encode's own build gets cheaper across reps. Left alone, the benchmark would have reported
-`live_view() alone : 0.000 ms (0%)` and a `calls/encode` that is bimodal by construction: a
-fantasy speedup, and the primary regression metric silently rebased. It therefore **drops the
-memo before every rep** (`_invalidate_view_memo`) for `full` / `enc_only` / `live_view`, and
-prints one extra WARM line beside them for the honest cost of the encode's view read once the
-mask/tracker path has already built it. **Judge calls/encode from the cold cProfile block.**
-Measured 2026-08-23, quiet box, `--turn 25 --reps 400`: cold 5401 / 5401 / 5369 / 5562
-calls/encode across four runs — the spread is which decision got profiled (`--seed` seeds
-action selection only; the bridge mints its own sim seed), so a single-run before/after diff
-of ±3% here is noise, not signal. Warm encode runs ~0.29–0.32 ms against cold ~0.39–0.42 ms.
-**A cache added inside the encode must extend this pattern, not lean on it.**
-
----
-
-## Canonical baseline (paste — the reference point for regressions)
-
-Captured with `--turn 25 --reps 400`. Paths shown repo-relative. Absolute ms omitted from the
-headline on purpose (load-dependent); the **call counts and ordering are the contract**.
-
-> ⚠️ The pasted block below predates `gen3_entity_rehome_v1` (the matchup deletion): the
-> matchup-era hot list (`effective_multiplier_by_types`, `reactive.py:encode` at ~44% of encode,
-> `_joint_expectation`) no longer exists. The block is kept for the v48-era shape until the
-> next full re-baseline.
->
-> **Current headline (re-baselined 2026-08-16, idle box, `--reps 200`, obs 3529 — i.e. BEFORE
-> `gen3_frame_deletion_v1` took the obs to 2437; the deletion only REMOVES work from this path,
-> so the figures below are an upper bound until the next re-baseline)** — and a
-> MEASUREMENT-HONESTY correction: until this date the benchmark (like the golden capture)
-> never ran `update_progress_clock` and threaded none of the tracker-fed blocks, so every
-> "encode ≈ 0.25 ms" figure timed the progress-clock/recency/H-A/H-B writes as SKIPPED —
-> production always paid them. With the FULL env protocol threaded:
-> **0.363 ms/decision** (encode 98%). Split: naked encode 0.246 ms; + recency/clock/H-A
-> pair-loop ≈ +0.077 ms (paid since v79 — gen-11 trained at this cost); + the v81 H-B
-> event-window write loop ≈ **+0.040 ms (+12%)** — the marginal cost of enabling nothing
-> (the block is unconditional; the fold is ≤32 dict-row writes + 2 species and 1 move dex
-> lookups per row). If the H-B tier survives its audit, vectorizing the row writes (numpy
-> assembly in the tracker) is the obvious first optimization.
->
-> **RE-BASELINED 2026-08-23** (idle box, no training run, `--turn 25 --reps 400`, median of 3):
-> **0.373 ms/decision, ~5.43k calls/encode, obs 2501.** Note the obs figure — the `2437` above is
-> stale; `gen3_frame_deletion_v1` took it there, later work brought it to 2501, and
-> `Gen3ObservationEncoder.get_layout()` is the only figure worth trusting. The 2026-08-16
-> headline's "upper bound" caveat is now DISCHARGED by a same-session A/B rather than assumed:
-> against `bcdd868` (the frame deletion) the current tree is **+2.4% calls/encode and +3.6%
-> wall**, tracking the +2.6% obs-dim growth — i.e. the frame-deletion era, v96–v100, the cf
-> plumbing and the entry-point decomposition moved no hot path. Full record:
-> `designs/research_state/measurements/post_paydown_baselines_2026-08-23.{json,md}`.
-
-```
-PER-DECISION OBS BUILD BENCHMARK  (obs dim <live>, turn 25, opp mons w/ revealed moves 5/6)
-
-  full per-decision obs build  :  ~0.5–1.2 ms   (LOAD-DEPENDENT — not a regression signal)
-    state_encoder.encode       :  ~79% of build
-    live_view() alone          :  ~15% of build
-
-  Total: ~2.74M function calls / 400 reps  ==>  ~6.85k calls per encode   <-- PRIMARY REGRESSION METRIC
-  (the +0.49k vs the pre-feature 6.36k is the gen3_incoming_damage_v1 belief loop; per-species
-   candidate/stat work is lru_cached, so only the per-defender damage/outspeed math is per-decision.
-   gen3_incoming_damage_v2 adds ~+6.6% on top: the crit term doubles the per-candidate damage calc and
-   the wider candidate pool fills more (defender, channel) pairs — _channel_threat goes ~10→12 calls/
-   encode. Still no single dominant hot loop; the revealed-HP typed expansion is NOT lru_cached (it
-   tracks the per-episode HP tracker) but only fires when a bare hiddenpower is revealed.)
-
-  Top functions by tottime (no single dominant hot loop — the matchup work is now spread thin):
-   ncalls  tottime  cumtime  function
-    80800    0.048    0.088   agents/gen3_mechanics.py:effective_multiplier_by_types (memoized; chart lookup)
-      400    0.046    0.261   agents/observation/reactive.py:encode                  (cumtime ≈ whole matchup block)
-     4800    0.036    0.101   agents/observation/moves.py:encode
-     4800    0.032    0.111   agents/battle/live_view.py:from_pokemon
-    42800    0.028    0.042   poke_env/battle/move.py:entry                          (poke-env Move property)
-    80800    0.028    0.116   agents/observation/reactive.py:_joint_expectation
-   238800    0.026    0.035   enum.__hash__                                          (lru_cache key hashing)
-     4800    0.025    0.189   agents/observation/pokemon.py:encode
-    26400    0.012    0.040   poke_env/battle/move.py:max_pp
-     4800    0.012    0.023   agents/observation/types.py:encode
-   264800    0.011    0.011   {builtins.len}
-      400    0.011    0.596   agents/observation/state_encoder.py:encode             (cumtime ≈ whole obs)
-```
-
-**Reading it:** there is **no single dominant hot loop** anymore — the matchup encoder's
-per-cell poke-env property reads were hoisted to team level (`reactive._defender_terms` /
-`_attacker_type_dist`, computed once per mon / per (attacker, move) instead of per cell), and
-the per-mon move category is memoized by id (`moves._category_val`), so `move.entry` dropped
-from ~158k to ~43k calls and `pokemon.ability` / `move.type` left the top list. Cost is now
-spread across `effective_multiplier_by_types` (the memoized chart lookup — the irreducible
-per-cell core), the matchup `encode` loop overhead itself, and the per-mon encoders. Type
-effectiveness must stay a memoized chart lookup (`effective_multiplier_by_types` + `_eff_cached`
-in `gen3_mechanics.py`) — `PokemonType.damage_multiplier` must **not** reappear here (if it
-does, something bypassed the chart). The matchup block (`reactive.encode`) and the per-mon
-`pokemon.encode` / `moves.encode` chain are the next-largest cumtime; `live_view.from_pokemon`
-(rebuilt ×12/encode) is shared with reward/replay, so it carries a wider blast radius.
-
-⚠️ **The `move.py:entry` and `move.py:max_pp` rows above are SUPERSEDED** by
-`gen3_live_view_build_micros_v1` (2026-08-23): both are now memoized — `max_pp` per `Move`
-instance, `entry` in a module dict keyed `(gen, id)` (NOT on the instance: the materializer's
-per-arm deepcopy is justified by `Move` holding no dex reference). Both were pure functions of
-inputs written once in `Move.__init__`. Same-session A/B on this benchmark, `--turn 25
---reps 300`, arms alternated: **COLD full rebuild 4,710 → 3,955 calls/encode (−16.0%)** — a fall
-on the primary metric, not a rise — `live_view() alone` 0.079/0.085 → 0.069/0.073 ms,
-`from_pokemon` cumtime 0.096/0.101 → 0.076/0.078, and `encode` with the view memo warm
-0.290/0.298 → 0.235/0.262 ms (the encoder reads `move.entry` too, so it benefits directly). The
-WARM-incremental series is unchanged (~1,280 calls/encode) because the production shape does not
-rebuild the view at all. Detail + the gate tests: `src/agents/battle/CLAUDE.md`.
+The Python benchmark that used to sit here (`obs_build_benchmark.py`, `trainer_turn_benchmark.py`,
+`live_view_build_benchmark.py`: the workflow, the load-stable signals, the four incremental series, the canonical
+baseline) was DELETED in T27 P6 slice 6c with the Python encode path it profiled — nothing trains on that path, so its
+call counts no longer gate anything; the dated figures that cite it below are measurements, not contracts.
 
 ---
 
@@ -302,33 +87,33 @@ rebuild the view at all. Detail + the gate tests: `src/agents/battle/CLAUDE.md`.
 - **Wrapping live mons in proxy objects** with `__getattr__` (the deleted
   `_AbilityOverrideMon`): `__getattr__` is slow and gets hit once per attribute per cell.
 
-## 🦀 The encoder has a RUST TWIN — a change here must be mirrored or it fails slice O the same day
+## 🦀 The encoder has a RUST TWIN — slice O (the Python-vs-core row comparison) is DELETED
 
 The Rust Core Program's M4 (`gen3_core_encoder_v1`, `designs/rust_sim/encoder.md`) reproduces this
-directory's `encode` byte for byte in `src/rust_sim/src/encoder/`, and **slice O** of the parity
-harness (`agents/battle/rust_core_parity_obs.py`, in the ROUTINE gate via
-`rust_core_parity_test.py`) compares the two rows as BYTES at every decision of the COMMIT corpus,
-both viewers, plus every obs golden. So a value change here — a new field, a changed normaliser, a
-new vocabulary entry — fails the routine gate until the Rust side mirrors it (or the change lands
-behind a flag OFF in `production_config.json`, program §3).
+directory's `encode` byte for byte in `src/rust_sim/src/encoder/`. Until T27 P6 slice 6c (2026-10-08)
+**slice O** of the parity harness compared the two rows as BYTES at every decision of the COMMIT corpus, so a
+value change here failed the routine gate until the Rust side mirrored it. **Slice O is deleted** (the harness
+`rust_core_parity*.py`, `rust_core_parity_test.py` and `core_row_parity_fuzz_test.py` went with it): the Python
+encoder was never a truth, and the row every run reads is the Rust encoder's, held by the four checks of
+`designs/rust_sim/encoder.md` §6a (the engine-truth audit, the round-trip chain, two roads one row, the frozen
+goldens) and the obs GOLDEN (`agents.training.golden_obs_core`, `golden_obs_core_test.py`). So a change HERE no
+longer has to be mirrored and moves no gate on the Rust side — which also means nothing now compares this
+directory's `encode` with the core; its remaining consumers (the counterfactual stack and the obs materializer, until
+slice 6d retires the encode path) read an UNGATED second implementation.
 
 - **The Rust LAYOUT is generated from THIS directory's constants**: after any change to
   `constants.py`, `gen3_effects.py` (the volatile / cant vocabularies), the sub-encoders' index maps
   or `assembler.SAT_LUT`, run `python -m agents.observation.rust_core_obs_layout --write` and rebuild
   (`rust_core_obs_layout_test.py` fails the day `layout.rs` is stale).
-- **Floats are compared by bytes**: the Rust side evaluates each Python expression in f64 in the same
-  order and rounds once at the write. Reordering an expression here (`a / b * c` → `a * c / b`) can
-  move a last bit and FAIL slice O even though it is "value-neutral" to a human.
-- **The benchmark prints a CORE row** — the Rust encoder timed on the SAME decision, byte-asserted
-  equal (`obs_build_benchmark.py`; `--no-core` skips it). Measured 2026-09-24, load 17–24,
-  `--turn 25 --reps 400`: core encode **0.026 ms** (view memoized) / **0.037 ms** (`present()` +
-  encode, cold) against this directory's 0.157 ms production shape / 0.606 ms cold on the same
-  decision (`research_state/measurements/rust_core_m4_2026-09-24/`).
+- **The benchmark is the Rust encoder's** — `python -m agents.observation.rust_encoder_benchmark` (the MANDATORY
+  section above). The Python benchmark's CORE row measured, 2026-09-24, load 17–24, turn 25 × 400 reps: core
+  encode **0.026 ms** (view memoized) / **0.037 ms** (`present()` + encode, cold) against this directory's 0.157 ms
+  production shape / 0.606 ms cold on the same decision (`research_state/measurements/rust_core_m4_2026-09-24/`).
 
 🚨 **The ORACLE REVEAL has NO Python mirror, by design.** `--oracle-reveal {species,full}` (a DIAGNOSTIC mode, never production;
 `designs/rust_sim/encoder.md` §11) writes the opponent's unseen species (`full`: their whole set, and the unrevealed facts
 of the seen mons too) into the opponent block of the row the Rust env core builds — dex-num-ordered rows after the seen mons. This directory's encoder always encodes
-`off`, so slice O gates `off` only, and the prober / the Lane S bank cannot re-encode an oracle run's states. The mode
+`off` (slice O, deleted in P6 slice 6c, gated `off` only), and the prober / the Lane S bank cannot re-encode an oracle run's states. The mode
 is the run's recorded `oracle_reveal`; offline tools that build observations here refuse such a checkpoint
 (`agents.model.oracle_reveal`).
 
@@ -620,8 +405,8 @@ its row to 30 columns** — entry reason / REL mon / denial / caller / boost sta
 Pursuit-on-switch, a DENIED row type (fainted first; the gen-3 TURN CUT), the refused-switch TARGET
 (E4) — with the schema in `designs/ARCHITECTURE.md` §1.6 and the fold moved to its own module,
 `agents/training/event_window_tracker.py` (`episode_tracker` re-exports it). One constructed battle
-per mechanic, run through the core and this path with slices T + O on:
-`agents/battle/event_record_v2_fixture_test.py`. With the frame deletion,
+per mechanic, replayed through the core: the cargo `src/rust_sim/tests/window_record_test.rs`
+(`agents/battle/event_record_v2_fixture_test.py`, its Python-vs-core twin, was deleted in P6 slice 6c). With the frame deletion,
 the 11-dim prev-turn action mask and the 7 × 159 TurnDelta lag frames that used to follow are
 DELETED, so `total_dim == base_dim` and `encode`'s output IS the observation. The window grew a
 `cant_id` column in the same pass — the one lag-frame fact with no substitute. What that
@@ -767,9 +552,10 @@ Sources: the view (`LiveMove.seen`, `item_public`, `ability_public`, `residual_d
 `event_window=` threads it). **Elapsed is RESIDUALS**: the counter (or `turn − start`) plus one when
 `residual_done`. With no window the stint reads zero and the Encore / Disable bounds take the union of
 both adjustments. Gates: `obs_facts_test.py` (constructed protocol, every fact; each FAILS on revert of
-the code it names; the block's offset and the encoder's write on both schedulers), slice O (the core's row
-carries the block, so the whole-row byte comparison covers it; `obs_facts` is one of its non-vacuity
-blocks), slice V rules V18 / V19, and the ENGINE truth test `src/rust_sim/tests/obs_facts_truth_test.rs`.
+the code it names; the block's offset and the encoder's write on both schedulers), the core's corpus test
+(`agents/battle/core_corpus_test.py`: `obs_facts` is one of the blocks every replayed row must see nonzero), the
+obs golden (the core's row carries the block), and the ENGINE truth test `src/rust_sim/tests/obs_facts_truth_test.rs`
+(the Python-vs-core slices O and V that used to compare the block and rules V18 / V19 were deleted in P6 slice 6c).
 
 **Board (reactive) block — 17 dims, layout in `reactive.py`.** `REACTIVE_SCALAR_DIM` (5) raw
 board scalars, then the 12-dim active-req-moves block. Offsets are `reactive_layout` entries —

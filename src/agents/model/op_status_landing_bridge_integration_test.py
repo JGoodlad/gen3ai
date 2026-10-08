@@ -95,7 +95,7 @@ def _extractor() -> Any:
 def collect(n_battles: int) -> Tuple[np.ndarray, List[Decision]]:
     """Replay the first ``n_battles`` of the bank; every answered decision of BOTH viewers with its obs row."""
     from agents.battle.core_obs import wrap_row
-    from agents.battle.rust_core_parity import run_core
+    from agents.battle.core_replay import run_core
     from main.policy_spectrum.bank import load_bank
 
     battles = load_bank(BANK, verify=False).battles[:n_battles]

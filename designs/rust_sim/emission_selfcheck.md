@@ -14,7 +14,7 @@ Code: `src/rust_sim/src/emission_check.rs` (the checks, the counters, the binari
 the call sites in `protocol.rs` (`ProtocolBuilder::emit` / `retro_edit`), `bridge.rs`
 (`derive_side`, `BridgeChunks::push_chunk`, `split_log_lines`) and the three binaries
 (`sim_bridge`, `search_driver`, `core_events`). Python: `utils.bridge.sim_bridge_bin` (the build
-switch), the root `conftest.py`, `agents.battle.rust_core_parity` (the counts in its census).
+switch), the root `conftest.py`, `agents.battle.core_replay` (`run_core`'s `selfcheck` counts; `rust_core_parity`'s census carried them until P6 slice 6c).
 
 ---
 
@@ -67,13 +67,14 @@ rot between the builds that use them (the reason M1 deleted its cfg-gated spike 
   which catch a handler panic per request and keep serving (`__ERR__` / `ok:false`), EXIT with
   status `EXIT_STATUS` (86) on a self-check panic instead (`emission_check::exit_if_failure`,
   itself compiled out of `--release`); `ab_replay` / `bridge_replay` report it as a `panic`
-  verdict, which fails their green gate; `core_events` dies and `rust_core_parity.run_core`
+  verdict, which fails their green gate; `core_events` dies and `core_replay.run_core`
   raises.
 * **The counts are the proof the check ran.** `emission_check::counts()` (`[omniscient,
   per_viewer, split, frame]`, relaxed atomics); `core_events` prints `summary()` to stderr at exit
-  in a self-check build and `rust_core_parity`'s census carries it. **The parity gate REFUSES a
-  run with no counts** (`rust_core_parity_test._assert_selfcheck_ran`) — a production
-  `core_events` makes slice E/V fail rather than pass without the check.
+  in a self-check build and `run_core(…, selfcheck=Counter())` collects it. **The corpus gate REFUSES a
+  run with no counts** (`core_corpus_test.py::test_the_commit_corpus_replays_clean_through_the_core`; formerly
+  `rust_core_parity_test._assert_selfcheck_ran`) — a production
+  `core_events` makes it fail rather than pass without the check.
 
 ## 3. The proof of zero production cost
 
@@ -105,4 +106,4 @@ Measurement record:
 | `tests/emission_check_test.rs` | ON in a test build; a real bridge battle reaches all four checks (counts); a self-check failure KILLS `sim_bridge` (exit 86, no `__ERR__`); every call site is compiled out of `--release` |
 | every other `cargo test` | runs with the check on every emitted line |
 | `utils/bridge/sim_bridge_bin_test.py` | the two builds never share a directory; the switch selects the build and keeps separate cache slots; a fuzz script turns it on, a production entry point does not, an explicit value wins |
-| `rust_core_parity_test.py` (COMMIT + MILESTONE) | slice E/V ran on the self-check `core_events` (the counts) |
+| `core_corpus_test.py` (`sim`) | the commit corpus ran on the self-check `core_events` (the counts) — and, being a self-check build, its NaN-prefilled rows prove every cell was written |

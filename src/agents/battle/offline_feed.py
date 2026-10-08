@@ -1,7 +1,7 @@
 """Feed ONE side's recorded protocol into a :class:`Gen3Battle` offline — no Player, no loop.
 
-``gen3_offline_feed_v1``. The Rust Core Program's parity harness (``rust_core_parity``) compares
-the core's events against ``Gen3Battle``'s reading of the SAME per-side text, and it must do that
+``gen3_offline_feed_v1``. The Rust Core Program's parity harness (``rust_core_parity``, deleted in P6 slice 6c) compared
+the core's events against ``Gen3Battle``'s reading of the SAME per-side text, and it had to do that
 without poke-env's async ``Player`` machinery (``designs/endstate/program_rust_core.md`` §3 — "no
 players: both paths re-derive from a recorded input log").
 
