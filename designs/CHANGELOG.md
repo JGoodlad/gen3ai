@@ -12736,3 +12736,25 @@ obs-facts appended (2845)`.
   pinned set is unchanged); their re-judgment (MARGIN or a new value-continuous reason) is still open.
 - **Still red**: the three untaught-meter tests (`untaught_meter_test` ×2, `untaught_unit_script_test`) — the default
   opponent baseline no longer loads; the break's baselines part handles them.
+
+### Part 6 — the named baselines behind the floor
+- Every entry of `designs/baselines.json` is now `era_checkout_only` (the last loadable one, `untaught_meter_opponent_v14`,
+  N0's 24M at v121, was marked in Part 1 with its pin note); nothing is deleted and nothing is re-pointed — no v144
+  checkpoint exists yet to re-point to. Each entry keeps its recorded `commit` (its own era's checkout);
+  `version_break.LAST_BLOB_COMMIT` (`26131c0c`) is the last commit that loads the X5 A/B-era checkpoints.
+- The untaught meter's default opponent is that entry, so a bare `python -m main.untaught_meter R` now REFUSES at the
+  default (`apply_baseline_defaults` raises `MeterError` naming `--opponent <a v144+ checkpoint>` — a NEW series — or
+  the pin) instead of dying at its first model load. The unit driver's sim test (`untaught_unit_script_test`) plays two
+  FRESH v144 checkpoints (`main.fresh_checkpoint`). Tests: `untaught_meter_test` (the registry/floor consistency, the
+  era wall is real, the refusal — fails on revert, an explicit `--opponent` skips it).
+
+### Part 7 — the h2h / T2 forward fingerprint ignores default-valued kwargs (X5 look 3 FINDING 1)
+- `agents.inference.service.slots.canonical_extractor_kwargs` drops every extractor kwarg RECORDED AT EXACTLY its
+  constructor-signature default (same type, equal value, same repr — `"off"` vs `"none"`, `0` vs `False` stay distinct)
+  before `forward_fingerprint` hashes it: an absent key and a key at its default build the same extractor, so they
+  no longer split a slot group / an h2h engine; any non-default difference still splits. The source of "default" is
+  the extractor signature (what sb3 builds from an absent key), NOT the flag registry (`attend_unrevealed_opponents`
+  differs: registry True, signature False — pinned by a test). Tests: `slots_fingerprint_test.py`,
+  `main/h2h/arch_default_kwargs_test.py` (a real checkpoint and a copy re-saved without the two defaulted kwargs
+  declare ONE group). Verified offline on the look-3 checkpoints: the cross `fm{1001,1007} × blob{1001,1006,1007,1008}`
+  now declares one engine of two groups (refused before).
