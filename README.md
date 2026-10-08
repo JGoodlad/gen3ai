@@ -50,9 +50,9 @@ the generation rewards genuine strategic understanding rather than raw damage ou
 The part we're quietly proudest of. The reward function is pinned by a **golden test** and the
 observation encoder by **fuzz tests that replay real battles** and check every field against the
 protocol stream; the physics are pinned by **oracle fuzz tests** against the real engine; **10,000+
-tests run in the routine gate**, with eight always-on static gates — mypy, ruff, file size,
+tests run in the routine gate**, with the always-on static gates — mypy, ruff, file size,
 documentation freshness, stub vacuity, slow-tier status, the architecture flag mirror, the ledger
-index — enforced inside it; the architecture diagram is **generated from the live code**, and a
+index and more (listed in `CONTRIBUTING.md`) — enforced inside it; the architecture diagram is **generated from the live code**, and a
 module without edges fails a completeness test. When we find a silently-dead subsystem, the fix
 ships with the structural guard that makes the whole bug class unrepresentable. History is
 append-only, claims carry their measurements, and retractions are recorded as retractions.

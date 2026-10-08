@@ -141,8 +141,8 @@ as an order of magnitude, not a budget. The counts are current: 10,186 tests col
 the six-battle obs-golden test rode `main` red three separate times. `-n 2` is `pytest-xdist` and
 is ~1.8× faster; use plain serial when you need `-s` or a debugger.
 
-**Eleven static gates run inside the suite** (there is no CI on this box, so a check outside the
-suite is a check that rots). All are unmarked, so they run in every tier, and all are ~free:
+**Seventeen static gates run inside the suite** (there is no CI on this box, so a check outside the
+suite is a check that rots). All declare the `static` tier, so they run in every tier, and all are ~free warm:
 
 | Gate | Checks | Opt-out |
 |---|---|---|
@@ -158,10 +158,15 @@ suite is a check that rots). All are unmarked, so they run in every tier, and al
 | `src/ledger_index_gate_test.py` | `designs/research_state/ledger_index.md` matches what `python -m main.ledger_index` renders | `GEN3AI_SKIP_LEDGER_INDEX_GATE=1` |
 | `src/enum_str_compare_gate_test.py` | no enum `agents.enums` defines is compared to a string (mypy `--strict-equality`, typed) — the bug that kept four bots from ever setting up | `GEN3AI_SKIP_ENUM_STR_GATE=1` |
 | `src/poke_env_import_gate_test.py` | no file imports `poke_env` unless it is on the GENERATED, shrink-only `designs/ops/poke_env_import_allowlist.txt` (EMPTY since T27 P6: frozen counts 0 / 0) | `GEN3AI_SKIP_POKE_ENV_IMPORT_GATE=1` |
+| `src/poke_env_absent_gate_test.py` | there is NO `poke_env` package in our tree, in this interpreter's site-packages, or in either env file (the vendored fork was deleted in T27 P6) | none (static, ~free) |
+| `src/learner_lifecycle_gate_test.py` | no training-STEP path constructs an optimizer, an `nn.Parameter` or an `nn.Module` — nor a CUDA stream / graph / pool — outside a declared startup builder or a class's `__init__` / `_build` / `_setup_model`; the allowlist is empty | `GEN3AI_SKIP_LIFECYCLE_GATE=1` |
+| `src/global_rng_seed_gate_test.py` | no non-test module binds a process-global SEEDING function by name or takes one as a value (the runtime reseed guard cannot see a pre-bound name); the allowlist is empty | `GEN3AI_SKIP_GLOBAL_RNG_GATE=1` |
+| `src/strict_checkpoint_load_gate_test.py` | no non-test module loads a PPO checkpoint through sb3's NON-STRICT retry (`MaskablePPO.load` / `PPO.load`, `set_parameters(…, exact_match=False)`); every reader uses `agents.model.snapshot.load_checkpoint_strict` | `GEN3AI_SKIP_STRICT_LOAD_GATE=1` |
+| `src/eval_ledger_reader_gate_test.py` | every reader of the eval COUNT ledger goes through `eval_ledger.read` / `read_by_regime` with a fully spelled-out `ReaderDecl`, and the ledger's closed lists equal `design_evaluation.md` §0b.2's table | `GEN3AI_SKIP_LEDGER_READER_GATE=1` |
 
-Two more guard the import path itself — `src/packaging_gate_test.py` (`PYTHONPATH` still outranks
-the editable install) and `src/poke_env_absent_gate_test.py` (no `poke_env` package
-anywhere). A missing linter **fails** rather than skips: a linter that silently opts out
+One more guard the import path itself, and it is NOT a static-tier gate: `src/packaging_gate_test.py`
+(`PYTHONPATH` still outranks the editable install). The count above is held to the `pytest.mark.static`
+declarations by `src/utils/static_gates_test.py` (list them with `python -m utils.static_gates`). A missing linter **fails** rather than skips: a linter that silently opts out
 reads exactly like a linter that found nothing.
 
 **Fuzz tests are not parametrized unit tests.** In this repo a `*_fuzz_test.py` plays *real

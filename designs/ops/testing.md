@@ -2,8 +2,8 @@
 
 Moved verbatim out of the root `CLAUDE.md` on **2026-09-07**, when the root was reduced to a
 constitution + command card + map (~10k tokens, loaded into EVERY session including every
-subagent's). **The root keeps the command table, the tier markers, the STATIC-GATE TABLE (seven rows — that
-table is the complete list) and the binding hazards; this file is the detail behind them.**
+subagent's). **The root keeps the command table, the tier markers, the STATIC-GATE TABLE (one row per `pytest.mark.static`
+file — `python -m utils.static_gates` lists them, `src/utils/static_gates_test.py` pins the counts) and the binding hazards; this file is the detail behind them.**
 
 Covers: running beside a live training run (contention-scaled timeouts), the two-axis tier system,
 file-naming conventions, which command to run, the static gates, the fuzz-test pattern and its

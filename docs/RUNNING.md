@@ -117,12 +117,14 @@ Two orthogonal marker axes: capability (*what a test needs* — `integration`, `
 | **The routine gate** (before any commit) | `pytest src/ -m "not slow and not e2e" -q -n 2` | ~4 min |
 | Everything (before a release/ship) | `pytest src/ -q` | ~47 min |
 
-Eleven static gates run inside the suite, unmarked so they run in every tier: mypy, ruff, file size,
-`CLAUDE.md` freshness, stub vacuity, slow-tier status, the `ARCHITECTURE.md` mode-flag mirror, the
-training-recipe mirror, the ledger index, the eval-trace summary readers and the enum-string
-comparison. Two of them also run standalone, and two more guard the import path
-(`src/packaging_gate_test.py`, `src/poke_env_absent_gate_test.py`). The full table with each gate's
-opt-out is in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+Seventeen static gates run inside the suite, all declaring the `static` tier so they run in every tier:
+mypy, ruff, file size, `CLAUDE.md` freshness, stub vacuity, slow-tier status, the `ARCHITECTURE.md`
+mode-flag mirror, the training-recipe mirror, the ledger index, the eval-trace summary readers, the
+enum-string comparison, the learner lifecycle, the global-RNG seeding, the strict checkpoint load, the
+eval-ledger readers, the poke-env import ratchet and the poke-env absence. (`src/packaging_gate_test.py`
+guards the import path and is not one of them.) The full table with each gate's opt-out is in
+[`CONTRIBUTING.md`](../CONTRIBUTING.md); `python -m utils.static_gates` lists them from the
+`pytest.mark.static` declarations, and `src/utils/static_gates_test.py` holds every count to that list.
 
 ```bash
 python -m mypy                                                    # scope from mypy.ini's files =
