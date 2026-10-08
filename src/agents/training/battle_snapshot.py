@@ -21,12 +21,12 @@ from dataclasses import dataclass, field
 from typing import Literal, Optional, TYPE_CHECKING
 import numpy as np
 
-from poke_env.battle.abstract_battle import DamagingMoveEvent
-
 from agents.training.slot_registry import SlotRegistry
 from agents.gen3_mechanics import BOOST_DIM, boosts_array
 
 if TYPE_CHECKING:
+    # annotation-only (`from __future__ import annotations`): importing this module never loads poke-env
+    from poke_env.battle.abstract_battle import DamagingMoveEvent
     from agents.battle.live_view import LegalActions
 
 

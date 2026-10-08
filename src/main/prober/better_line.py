@@ -51,10 +51,10 @@ from typing import List, Optional, Sequence
 
 import numpy as np
 
-from agents.training.obs_materializer import infer_action_indices, materialize_decisions
+from main.prober.core_walk import StreamRequest, decision_choices, read_streams, walk_cached
 from main.prober.engine import _npz_value
 from main.prober.falsifier import _label_of
-from utils.bridge.reconstruction import ReconstructionRecord, replay_battle
+from utils.bridge.reconstruction import ReconstructionRecord
 from utils.bridge.search_session import SearchSession
 
 _WIN, _LOSS = 1e6, -1e6      # terminal backup sentinels (win floats up, loss sinks)
@@ -138,22 +138,12 @@ def better_line_decision(
     recorded_v = _npz_value(npz, inv_index)
     recorded_next_v = _npz_value(npz, inv_index + 1) if inv_index + 1 < len(invs) else None
 
-    # Replay the recorded battle ONCE (Node spawn) and reuse BOTH sides' chunks below — the anchor
-    # choice-map (our side) and the opponent's action history (opp side) — instead of replaying twice.
-    rep = replay_battle(record, impl=impl)
-    our_full = rep.p1_chunks if side == "p1" else rep.p2_chunks
-    opp_full = rep.p1_chunks if other == "p1" else rep.p2_chunks
-
-    # Map our legal actions → sim choices at the anchor (the real mapper). encode_only_at=set() ⇒ no obs
-    # encode anywhere (we need only the choice-map + the decision's turn — the anchor obs is in npz).
-    trace = materialize_decisions(
-        our_full, username=username, packed_team=record.packed_team(side), side=side,
-        actions=our_prefix_actions + [chosen_idx], battle_format=record.format_id,
-        battle_tag=record.battle_tag, mappings=mappings,
-        map_actions_at=inv_index, stop_after_decision=inv_index, encode_only_at=set())
-    if not trace.decisions or trace.decisions[-1].turn != turn:
-        raise RuntimeError(f"replay desync materializing the anchor (inv {inv_index}, turn {turn})")
-    choice_map: dict = trace.action_choices or {}
+    # Our legal actions → sim choices at the anchor, off the RUST CORE's walk of the record (P5: the
+    # core's choice tokens, the mapper training's rows use). The anchor obs is in npz.
+    choice_map, walked_turn = decision_choices(record, side, inv_index)
+    if walked_turn != turn:
+        raise RuntimeError(f"replay desync at the anchor (inv {inv_index}, turn {turn}): the core "
+                           f"walks it at turn {walked_turn}")
     if chosen_idx not in choice_map:
         raise RuntimeError(f"chosen action {chosen_idx} not legal in replayed state")
 
@@ -176,32 +166,41 @@ def better_line_decision(
         opp_pre: List[int] = []
         opp_recorded_idx: Optional[int] = None
         if use_opp:
-            opp_all = infer_action_indices(record, other, mappings=mappings, chunks=opp_full)
-            opp_prefix_dec = materialize_decisions(
-                opp_prefix, username=record.username(other), packed_team=record.packed_team(other),
-                side=other, actions=opp_all, battle_format=record.format_id,
-                battle_tag=record.battle_tag, mappings=mappings, encode_only_at=set())
-            opp_pre = opp_all[:max(0, len(opp_prefix_dec.decisions) - 1)]
+            # the opponent's ACTION-INDEX history: each of its decisions' recorded choice inverted
+            # through the core's tokens at that decision (a choice no token names — a refused probe —
+            # is skipped, the queue semantics of the poke-env inverter this replaces)
+            opp_all = []
+            for od in walk_cached(record, other).decisions:
+                inv_tok = {t: a for a, t in od.tokens.items()}
+                if od.choice is not None and od.choice in inv_tok:
+                    opp_all.append(inv_tok[od.choice])
+            (opp_prefix_dec,) = read_streams([StreamRequest(
+                username=record.username(other), packed_team=record.packed_team(other), side=other,
+                chunks=list(opp_prefix), actions=opp_all, encode_at=[])])
+            opp_pre = opp_all[:max(0, len(opp_prefix_dec) - 1)]
             # the opp's divergence-ply action index (it played its recorded move there)
             if len(opp_all) > len(opp_pre):
                 opp_recorded_idx = opp_all[len(opp_pre)]
 
         # ---- helpers bound to this search -------------------------------------------------
+        def _view(chunks, *, who, actions, dec_i):
+            """The side's obs + mask + legal-action choice map at its ``dec_i``-th decision, read by
+            the RUST CORE's parse chain from the side's text (P5, ``core_walk.read_streams`` —
+            encoding ONLY that decision). ``(None, None, None)`` when the stream never gets there."""
+            (decs,) = read_streams([StreamRequest(
+                username=record.username(who), packed_team=record.packed_team(who), side=who,
+                chunks=chunks, actions=actions, encode_at=[dec_i])])
+            if len(decs) <= dec_i:
+                return None, None, None
+            d = decs[dec_i]
+            return np.array(d.obs, dtype=np.float32), np.asarray(d.mask, dtype=np.int8), d.choices
+
         def our_view(n: _Node):
-            """Materialize OUR successor obs + mask + legal-action choice map at node ``n``."""
+            """OUR successor obs + mask + legal-action choice map at node ``n``."""
             chunks = list(our_prefix)
             for s in n.our_suffixes:
                 chunks += s
-            dec_i = inv_index + n.depth
-            mt = materialize_decisions(
-                chunks, username=username, packed_team=record.packed_team(side), side=side,
-                actions=n.our_actions, battle_format=record.format_id, battle_tag=record.battle_tag,
-                mappings=mappings, map_actions_at=dec_i, stop_after_decision=dec_i,
-                encode_only_at={dec_i})        # encode ONLY the successor; the prefix is track-only
-            if len(mt.decisions) <= dec_i:
-                return None, None, None
-            d = mt.decisions[dec_i]
-            return d.obs, d.mask, (mt.action_choices or {})
+            return _view(chunks, who=side, actions=n.our_actions, dec_i=inv_index + n.depth)
 
         def opp_view(n: _Node):
             """Materialize the reloaded opponent's interior obs + mask + choice-map at node ``n`` (its
@@ -210,17 +209,9 @@ def better_line_decision(
             chunks = list(opp_prefix)
             for s in n.opp_suffixes:
                 chunks += s
-            dec_i = len(opp_pre) + n.depth        # opp acts once per turn, same cadence as us
-            mt = materialize_decisions(
-                chunks, username=record.username(other), packed_team=record.packed_team(other),
-                side=other, actions=opp_pre + n.opp_actions[len(opp_pre):],
-                battle_format=record.format_id, battle_tag=record.battle_tag, mappings=mappings,
-                map_actions_at=dec_i, stop_after_decision=dec_i,
-                encode_only_at={dec_i})        # encode ONLY the opp's interior decision
-            if len(mt.decisions) <= dec_i:
-                return None, None, None
-            d = mt.decisions[dec_i]
-            return d.obs, d.mask, (mt.action_choices or {})
+            # opp acts once per turn, same cadence as us
+            return _view(chunks, who=other, actions=opp_pre + n.opp_actions[len(opp_pre):],
+                         dec_i=len(opp_pre) + n.depth)
 
         # ---- ply 1: the divergence (opponent plays its RECORDED move) ---------------------
         cand = list(choice_map)

@@ -13,8 +13,13 @@ tokens, and the trace is written by `write_battle_record`. The expanded core sum
 that summary field for field (bar `meta.battle_id` / `meta.trace_source`), and the live encoder's
 obs must equal the core's stored obs row for row.
 
-Needs the rust env cdylib (built here, selfcheck profile) and the rust `search_driver` (resolved by
-`replay_battle(impl="rust")`) — `sim`. Seconds, not minutes.
+Since P5 of the poke-env retirement the expansion is the RUST CORE's walk (`core_events --walk`,
+`main.prober.core_walk` + `core_recorder`), so the live poke-env recorder here is the ORACLE the core
+reading is held to — and so is the poke-env materializer, for the counterfactual views' rows and choice
+maps. This file imports poke-env for exactly that (it is on the import allowlist until P6).
+
+Needs the rust env cdylib (built here, selfcheck profile) and the rust `core_events` (resolved by
+`main.prober.core_walk`) — `sim`. Seconds, not minutes.
 """
 from __future__ import annotations
 
@@ -310,6 +315,54 @@ def test_the_expansion_equals_the_live_python_recorder_field_for_field(run, tmp_
         assert len(live_obs) == len(obs)
         bad = [i for i, o in enumerate(live_obs) if not np.array_equal(o, obs[i])]
         assert not bad, f"{sp}: the live encoder's obs differs from the core's at rows {bad[:10]}"
+        # the stand-in protocol log == the live `_replay.html` poke-env rendered (`core_walk.replay_log`)
+        from main.prober.core_trace import protocol_log
+        from main.prober.engine.protocol import parse_protocol_log
+
+        with open(str(tmp_path / f"g{k}" / "live_replay.html")) as f:
+            live_log = parse_protocol_log(f.read())
+        assert tuple(protocol_log(sp, load_summary(sp))) == tuple(live_log), sp
+
+
+def test_the_replay_log_ignores_exactly_the_players_ignore_set():
+    """`core_walk.PLAYER_IGNORED` is the fork's `Player.MESSAGES_TO_IGNORE` (the dispatch it mirrors)."""
+    from poke_env.player.player import Player
+
+    from main.prober.core_walk import PLAYER_IGNORED
+
+    assert PLAYER_IGNORED == frozenset(Player.MESSAGES_TO_IGNORE)
+
+
+def test_the_core_stream_rows_and_choice_maps_equal_the_poke_env_materializer(run):
+    """P5's counterfactual readers against the poke-env ORACLE they replaced: `core_walk.read_streams` over the
+    trainee's walked stream (our actions replayed by index) reproduces the STORED rows byte for byte, and
+    `core_walk.decision_choices` equals the poke-env materializer's `map_actions_at` at every decision."""
+    from agents.training.obs_materializer import materialize_from_record
+    from main.prober import core_walk
+    from utils.bridge.reconstruction import ReconstructionRecord
+
+    _run_dir, normal, stall = run
+    n_checked = 0
+    for sp in normal + stall:
+        rec = ReconstructionRecord.from_dict(_recon(sp))
+        npz = _npz(sp)
+        side = rec.side_of(rec.trainee_username)
+        w = core_walk.walk(rec, side)
+        (decs,) = core_walk.read_streams([core_walk.StreamRequest(
+            rec.username(side), rec.packed_team(side), side, [c for s, c in w.chunks if s == side],
+            actions=npz["actions"].tolist())])
+        n = len(npz["actions"])
+        assert len(decs) >= n, (sp, len(decs), n)
+        bad = [k for k in range(n) if not np.array_equal(decs[k].obs, npz["obs"][k])]
+        assert not bad, f"{sp}: the core stream's rows differ from the stored rows at {bad[:10]}"
+        for k in sorted({0, n // 2, n - 1}):
+            mt = materialize_from_record(rec, actions=npz["actions"], map_actions_at=k,
+                                         stop_after_decision=k, impl="rust")
+            choices, turn = core_walk.decision_choices(rec, side, k)
+            assert choices == (mt.action_choices or {}), (sp, k, choices, mt.action_choices)
+            assert turn == mt.decisions[-1].turn, (sp, k)
+            n_checked += 1
+    assert n_checked >= 6
 
 
 # ---------------------------------------------------------------------------

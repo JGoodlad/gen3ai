@@ -23133,3 +23133,45 @@ Tag: **BUILD · the X5 version break · config v144 / `gen3_x5_version_break_v1`
   is `main.play --client poke-env` (until P3) and `main.live.gate_peer`'s shadow.
 
 Tag: **BUILD + GATE · P4 DONE: (a) 318,465 decisions byte-equal · (b) 376,410 replays, 0 unclassified refusals (1 spectator-only, root-caused) · (c) 315 master-Node games, 0 T28 halts · (d) 16,523 shadow decisions, 0 diffs** · meas: [`measurements/pokeenv_p4_live_2026-10-07/`](measurements/pokeenv_p4_live_2026-10-07/)
+### 2026-10-07 · BUILD · **P5 of the poke-env retirement LANDED: the PROBER reads battles from the Rust core (`core_events --walk` / `--obs-stream`, `main/prober/core_walk.py` + `core_recorder.py`); 283 / 284 JSON-CLI captures byte-identical on 21 banked battles; every command except `replay-counterfactual` (P6-blocking) and the web app RUN with poke-env blocked; import allowlist 138 → 136**
+
+- **What.** A Rust-eval core trace's expansion is now the core's walk of its reconstruction. Per trainee decision
+  the walk carries the `present()` view, legality, slot registries, `TurnDelta` projection, mask and choice tokens;
+  at the end it carries the terminal view and delta. A recorder that shares every label (`trace_labels`) and the
+  reward rule (`terminal_breakdown`) with the live `BattleRecorder` builds the summary. `falsify` / `lookahead` /
+  `better-line` take their choice maps from the walk and their successor rows from the core's parse chain. No
+  poke-env battle is built anywhere on these paths.
+- **Identity** (`designs/research_state/measurements/pokeenv_p5_prober_2026-10-07/`). The set is 9 `sizing_C`
+  (current-arch), 7 `rb_x5ab_blob_s1008` and 5 `ai_v14_01_base` battles: wins, losses, ties and two 250-turn
+  timeouts. Every model-free command ran per run / per battle, and every model-loading command ran on `sizing_C`.
+  BEFORE ran the base commit `6c6d2e09`; AFTER ran with poke-env blocked. Both were pinned to `PYTHONHASHSEED=0`
+  and 4 torch threads. **283 / 284 byte-identical.** The one difference is `replay-counterfactual`, blocked by
+  design; with poke-env present it is identical. At the summary level, every invocation of all 16 core battles was
+  equal to the poke-env expansion.
+- **Gates.** `core_trace_integration_test.py` holds the walk to a LIVE poke-env recorder (summary and protocol log)
+  and to the poke-env materializer (rows, choice maps). `poke_env_free_entry_points_test.py` runs every prober
+  command and the web app's views with poke-env blocked. `PROBER_POKE_ENV_COMMANDS = ("replay-counterfactual",)`
+  is the closed list.
+- **FINDINGS.**
+  - **F-P5-1.** The live recorder's multi-faint order (and the HP-delta slot it picks) varies with
+    `PYTHONHASHSEED`, because the faint set is a `frozenset`. Two unpinned base captures of `sizing_C`
+    `step_8000030/sentinel_0/win_s1_001` disagreed (`damage 17%` against `9%`). The core recorder uses board
+    order.
+  - **F-P5-2.** 2 of 21 banked traces re-encode differently at HEAD than their stored rows: 2 opponent-team cells,
+    from decision 8 and 49. The poke-env materializer and the core agree, so this is reading drift since the runs'
+    commits, not P5. **UNVERIFIED:** which commit moved them.
+  - **F-P5-3.** `materialize_branches`, `_PlayerSnapshot` and `clone_pins.py` have no production caller left; P6
+    deletes them.
+  - **F-P5-4.** better-line's interior-opponent history keeps a refused trap probe that the poke-env inverter
+    skipped. **UNVERIFIED** on a real case.
+  - **F-P5-5.** Under `--impl node` the counterfactual views now read the Rust core for maps and rows.
+  - **F-P5-6.** `analyze`'s floats move with torch's thread count, so an identity check must pin it.
+  - **F-P5-7.** The read ran at the base commit, where `sizing_C` was current. The concurrent X5 version break
+    (`MIGRATION_FLOOR` 144) puts every archived checkpoint behind the floor, so its model-loading half cannot be
+    repeated on archived runs at HEAD. The blocked test's fresh v144 checkpoint covers those commands now.
+  - **F-P5-8.** P4's `side_reader.rs` / `live_reader` (landed concurrently) and P5's `core_events --obs-stream`
+    are two Rust one-side readers. They should converge.
+- **Still on poke-env (P6-blocking).** `replay-counterfactual`. Its port is a Rust play-out from the divergence
+  (`utils.rust_env.successors.play_out` with the in-core bots).
+
+Tag: **BUILD · P5 · identity 283/284 (the 1 = the declared blocked command) · allowlist 138 → 136** · plan: [`pokeenv_and_hotpath_survey_2026-10-06/README.md`](measurements/pokeenv_and_hotpath_survey_2026-10-06/README.md) §A4.5 · backlog T27

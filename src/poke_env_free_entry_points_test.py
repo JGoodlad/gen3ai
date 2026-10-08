@@ -21,11 +21,17 @@ half; these tests install ``utils.poke_env_blocker`` FIRST (every ``import poke_
    two in-process eval cycles, entered through ``poke_env_blocker.main`` (the trainer's own module name split so no
    argv carries it).
 
+5. ``test_every_prober_command_and_the_web_app_run_with_poke_env_blocked`` (``sim``, P5) — the PROBER on real Rust-eval
+   core traces and a current-architecture checkpoint: every JSON-CLI command (model-free and model-loading) and the
+   web app's views RUN with the blocker installed; the one command that still needs poke-env is the closed list
+   :data:`PROBER_POKE_ENV_COMMANDS`, and the test pins that it is blocked and that nothing else is.
+
 A new import of ``poke_env`` on any of these paths fails here with the importing file and line. Fix the import (the
 data facade, ``utils.showdown_id``, ``utils.team_packing``, ``agents.enums`` are poke-env-free); never allowlist it.
 """
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -63,6 +69,20 @@ ENTRY_POINTS = (
     "utils.team_sources",
     "agents.training.team_archetypes",
     "agents.training.species_priors",
+    # the PROBER (P5): the JSON CLI, the web front end and the engine behind both
+    "main.prober.query",
+    "main.prober.web",
+    "main.prober.web.app",
+    "main.prober.session",
+    "main.prober.engine",
+    "main.prober.model",
+    "main.prober.core_trace",
+    "main.prober.core_walk",
+    "main.prober.core_recorder",
+    "main.prober.falsifier",
+    "main.prober.lookahead",
+    "main.prober.better_line",
+    "main.prober.forensics",
 )
 
 
@@ -184,3 +204,130 @@ def test_a_debug_smoke_with_eval_runs_with_poke_env_blocked(tmp_path):
     assert proc.returncode == 0, f"smoke failed:\n{proc.stdout[-3000:]}\n{proc.stderr[-4000:]}"
     assert "Training complete" in proc.stdout and "[EVAL] step 4,000" in proc.stdout, proc.stdout[-2000:]
     assert not log.exists() or not log.read_text().strip(), log.read_text()
+
+
+# ---- the PROBER (P5): every JSON-CLI command and the web front end, RUN with poke-env blocked -------------------
+
+#: The ONE prober command that still needs poke-env (P6-blocking): `replay-counterfactual` plays the rest of a
+#: battle LIVE with poke-env players (`RLPlayer`, the Python bots) over the in-process bridge. A Rust play-out
+#: (`utils.rust_env.successors.play_out` + the in-core bot ports) is its port; until then it is the declared
+#: exception, and this test pins that it is the ONLY one.
+PROBER_POKE_ENV_COMMANDS = ("replay-counterfactual",)
+
+_PROBER = r"""
+import json, sys, traceback
+from utils import poke_env_blocker as B
+B.install()
+from main.prober import query
+
+run, battle, decide = sys.argv[1], sys.argv[2], int(sys.argv[3])
+from main.prober.session import ProbeSession
+short = next(row["short_id"] for row in ProbeSession(run).battles() if row["id"] == battle)
+P = query._build_parser()
+rr = ["--seeds", "2", "--alts", "1", "--worst", "1"]
+cmds = [["summary", run], ["list", run], ["scan", run], ["scan", run, "--metric", "td_residual"],
+        ["awareness", run, "--outcome", "all"], ["loops", run], ["triage", run], ["switch-vs-info", run],
+        ["decision-table", run], ["turns", battle], ["overview", battle],
+        *[["find", battle, c] for c in query._FIND_CRITERIA],
+        ["analyze", battle, str(decide)],
+        ["--impl", "rust", "falsify", battle, "--inv", str(decide), "--seeds", "2", "--alts", "1"],
+        ["--impl", "rust", "lookahead", battle, "--inv", str(decide)],
+        ["--impl", "rust", "better-line", battle, str(decide), "--depth", "2", "--beam", "2", "--top-k", "2",
+         "--interior-opponent", "self"],
+        ["--impl", "rust", "falsify-scan", run, "--outcome", "loss", "--limit", "1", *rr, "--concurrency", "1"],
+        ["--impl", "rust", "calibration", run, "--outcome", "loss", "--limit", "1", *rr, "--concurrency", "1"],
+        ["probe", run, "is_faster", "--max-decisions", "60"],
+        ["history-saliency", run, "--max-decisions", "10"]]
+out = {}
+for argv in cmds:
+    key = " ".join(a for a in argv if not a.startswith("/"))
+    try:
+        res = query._run(P.parse_args(argv))
+        out[key] = {"ok": True, "error": res.get("error") if isinstance(res, dict) else None}
+    except Exception as e:
+        out[key] = {"ok": False, "error": f"{type(e).__name__}: {e}", "tb": traceback.format_exc()[-1500:]}
+
+from fastapi.testclient import TestClient
+from main.prober.web.app import create_app
+pages = {}
+with TestClient(create_app(run, open_access=True, impl="rust")) as c:
+    q = f"battle={short}&inv={decide}"
+    for path in ("/api/run", "/api/battles", f"/api/battle-turns?battle={short}", f"/api/analyze?{q}",
+                 "/api/scan", "/api/triage", "/", "/battles", f"/battle?battle={short}", f"/analyze?{q}",
+                 f"/partials/analyze?{q}", "/scan", "/triage"):
+        r = c.get(path)
+        pages[path] = r.status_code
+out_attempts = list(B.ATTEMPTS)
+
+# the declared exception: it reaches poke-env, and nothing else does
+exc = {}
+for name in ("replay-counterfactual",):
+    try:
+        query._run(P.parse_args(["--impl", "rust", name, battle, str(decide), "0", "--rollouts", "1"]))
+        exc[name] = "ran"
+    except B.PokeEnvBlocked:
+        exc[name] = "blocked"
+    except Exception as e:
+        exc[name] = f"{type(e).__name__}: {e}"
+print("PROBER-RESULT " + json.dumps({"commands": out, "pages": pages, "attempts": [n for n, _ in out_attempts],
+                                     "report": B.report() if out_attempts else "", "exceptions": exc}))
+"""
+
+
+@pytest.fixture(scope="module")
+def prober_run(tmp_path_factory):
+    """A real Rust-eval CORE-TRACE run (games played by the Rust env core, written by `write_core_trace` — the
+    prober integration test's builder) plus a seeded perturbed fresh production checkpoint as its eval snapshot, so
+    the model-loading commands load a model at the CURRENT architecture."""
+    import shutil
+
+    from agents.training.rust_eval.parity import build_models, declared_torch_state
+    from main.prober.core_trace_integration_test import FEATURES, _cargo, _play_core_games
+    from utils.rust_env import ffi
+
+    crate = src_root() / "rust_env"
+    benv = dict(os.environ, CARGO_TARGET_DIR=str(crate / "target"))
+    r = subprocess.run([_cargo(), "build", "--lib", *FEATURES, "--manifest-path", str(crate / "Cargo.toml")],
+                       env=benv, capture_output=True, text=True, timeout=1800)
+    assert r.returncode == 0, f"building the cdylib failed:\n{r.stderr[-4000:]}"
+    lib = ffi.load(ffi.default_path("selfcheck"), nan_poison=True)
+    run_dir = tmp_path_factory.mktemp("prober_blocked_run")
+    paths = _play_core_games(lib, str(run_dir), 3, turn_limit=250, seed=21, tag="s0")
+    with declared_torch_state(1):
+        trainee, _sent, cfg = build_models(tmp_path_factory.mktemp("prober_model"), n_sentinels=0)
+    shutil.copy(cfg, run_dir / "model_config.json")
+    # the NEAREST tier: a periodic checkpoint at the traces' step
+    os.makedirs(run_dir / "checkpoints")
+    shutil.copy(trainee, run_dir / "checkpoints" / "checkpoint_1000_steps.zip")
+    from main.prober.core_trace import load_summary
+
+    for sp in paths:
+        invs = load_summary(sp)["invocations"]
+        pick = [i for i, inv in enumerate(invs) if inv["phase"] == "move_selection" and inv["turn"] >= 2
+                and sum(a["valid"] for a in inv["actions"].values()) >= 2]
+        if pick:
+            return str(run_dir), sp, pick[0]
+    pytest.fail("no core trace with a usable move_selection decision")
+
+
+@pytest.mark.sim
+@pytest.mark.integration
+def test_every_prober_command_and_the_web_app_run_with_poke_env_blocked(prober_run):
+    """P5: the JSON CLI's every command bar the declared exception, and the web front end's views, RUN — not just
+    import — with poke-env blocked, on real core traces and a current-architecture checkpoint."""
+    run_dir, battle, decide = prober_run
+    r = subprocess.run([sys.executable, "-c", _PROBER, run_dir, battle, str(decide)], cwd=str(repo_root()),
+                       env=_env(), capture_output=True, text=True, timeout=scale_timeout(1500))
+    line = next((ln for ln in r.stdout.splitlines() if ln.startswith("PROBER-RESULT ")), None)
+    assert r.returncode == 0 and line, (r.stdout[-3000:], r.stderr[-4000:])
+    res = json.loads(line[len("PROBER-RESULT "):])
+    assert not res["attempts"], res["report"]
+    failed = {k: v for k, v in res["commands"].items() if not v["ok"]}
+    # `awareness` reads the deleted distributional value head; on a run that never had one it raises by design
+    assert set(failed) <= {"awareness --outcome all"}, failed
+    for must in ("turns", "overview", "analyze", "--impl rust falsify", "--impl rust lookahead",
+                 "--impl rust better-line"):
+        hits = [k for k in res["commands"] if k.startswith(must)]
+        assert hits and all(res["commands"][k]["error"] is None for k in hits), (must, res["commands"])
+    assert all(code == 200 for code in res["pages"].values()), res["pages"]
+    assert res["exceptions"] == {name: "blocked" for name in PROBER_POKE_ENV_COMMANDS}, res["exceptions"]

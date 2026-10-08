@@ -2,8 +2,8 @@
 
 Feature 1 of the prober's counterfactual analysis. For an anchored ``move_selection`` decision in a
 recorded bridge battle it RE-ROLLS the turn under each LEGAL action (OUR side plays the candidate, the
-opponent plays its RECORDED action), materializes the resulting one-sided successor obs through the
-real encoder, and reads the loaded model's **V(s′)** (plus the distributional / win-prob heads when the
+opponent plays its RECORDED action), reads the resulting one-sided successor obs off the RUST CORE's
+parse chain (the chain the training rows are encoded on — ``core_walk.read_streams``, P5), and reads the loaded model's **V(s′)** (plus the distributional / win-prob heads when the
 run trained them). The result is per-action ΔV — "what would the critic have valued each alternative
 at" — the value readout the model-free, material-margin :mod:`falsifier` deliberately defers.
 
@@ -30,8 +30,7 @@ from typing import List, Optional, Sequence
 
 import numpy as np
 
-from agents.training.obs_materializer import (Branch, materialize_branches,
-                                              materialize_from_record)
+from main.prober.core_walk import StreamRequest, decision_choices, read_streams
 from main.prober.engine import _npz_value
 from main.prober.falsifier import _label_of, fresh_seeds
 from utils.bridge.reconstruction import ReconstructionRecord, reroll_many
@@ -89,20 +88,12 @@ def lookahead_decision(
     actions = np.asarray(npz["actions"], dtype=int)
     chosen_idx = int(actions[inv_index])
 
-    # One materializer pass to the decision point: rebuild the exact state and map every LEGAL action
-    # index → the sim choice string (the same real mapper the falsifier uses). Zero reimplementation.
-    trace = materialize_from_record(
-        record, actions=actions, mappings=mappings,
-        map_actions_at=inv_index, stop_after_decision=inv_index, impl=impl,
-    )
-    if len(trace.decisions) != inv_index + 1:
+    # Every LEGAL action index → the sim choice string at the decision, off the RUST CORE's walk of the
+    # record (P5: the core's choice tokens, the mapper training's rows use — the falsifier's map).
+    choice_map, walked_turn = decision_choices(record, side, inv_index)
+    if walked_turn != turn:
         raise RuntimeError(
-            f"replay desync: materializer produced {len(trace.decisions)} decisions for inv {inv_index}")
-    if trace.decisions[-1].turn != turn:
-        raise RuntimeError(
-            f"replay desync: decision {inv_index} replays at turn {trace.decisions[-1].turn}, "
-            f"summary says {turn}")
-    choice_map: dict = trace.action_choices or {}
+            f"replay desync: decision {inv_index} replays at turn {walked_turn}, summary says {turn}")
     if chosen_idx not in choice_map:
         raise RuntimeError(f"chosen action {chosen_idx} not legal in replayed state")
 
@@ -141,30 +132,27 @@ def lookahead_decision(
     for arm in rr.arms:
         by_arm.setdefault(int(arm.label), {})[arm.seed] = arm
 
-    # EVERY (candidate × seed) arm shares one prefix — the recorded battle up to this turn —
-    # so the whole sweep replays it ONCE (materialize_branches) instead of once per arm. The
-    # per-arm obs is bit-identical to the per-arm replay; that equivalence is the contract
-    # `obs_materializer_branch_integration_test.py` pins.
+    # Each (candidate × seed) arm's SUCCESSOR row: the side's text (the recorded prefix + the arm's own
+    # ply) read by the RUST CORE's parse chain with the trackers on — the chain the training rows are
+    # encoded on — with our actions replayed by index, encoding only decision inv+1 (P5,
+    # `core_walk.read_streams`; every arm in ONE core process). Byte-equal to the poke-env
+    # materializer it replaces (`designs/research_state/measurements/pokeenv_p5_prober_2026-10-07/`).
     branch_keys: List[tuple] = []
-    branch_list: List[Branch] = []
+    requests: List[StreamRequest] = []
     for a in cand:
         for s in seed_list:
             r = by_arm.get(int(a), {}).get(s)
             if r is None or r.outcome.get("stuck") or r.outcome.get("ended"):
                 continue
             branch_keys.append((int(a), s))
-            branch_list.append(Branch(
-                chunks=list(r.p1_chunks if side == "p1" else r.p2_chunks), actions=[a],
-                label=(int(a), s)))
-    materialized = materialize_branches(
-        list(prefix_chunks), branch_list, username=username, packed_team=packed, side=side,
-        prefix_actions=prefix_actions, battle_format=record.format_id,
-        battle_tag=record.battle_tag, mappings=mappings, stop_after_decision=inv_index + 1,
-    ) if branch_list else []
+            requests.append(StreamRequest(
+                username=username, packed_team=packed, side=side,
+                chunks=list(prefix_chunks) + list(r.p1_chunks if side == "p1" else r.p2_chunks),
+                actions=prefix_actions + [int(a)], encode_at=[inv_index + 1]))
     succ_by_key = {}
-    for key, mt in zip(branch_keys, materialized):
-        if len(mt.decisions) > inv_index + 1:       # else: no successor request in the window
-            succ_by_key[key] = mt.decisions[inv_index + 1]
+    for key, decs in zip(branch_keys, read_streams(requests)):
+        if len(decs) > inv_index + 1:               # else: no successor request in the window
+            succ_by_key[key] = decs[inv_index + 1]
 
     rows = []
     for a in cand:
@@ -187,11 +175,12 @@ def lookahead_decision(
             succ = succ_by_key.get((int(a), s))
             if succ is None:
                 continue
-            v = model.value(succ.obs, succ.mask)
+            obs, mask = np.array(succ.obs, dtype=np.float32), np.asarray(succ.mask, dtype=np.int8)
+            v = model.value(obs, mask)
             vals.append(v)
             if s == "original":
                 crn_v = v
-                crn_wp = getattr(model, "win_prob_at", lambda *_: None)(succ.obs, succ.mask)
+                crn_wp = getattr(model, "win_prob_at", lambda *_: None)(obs, mask)
         v_mean, v_std = _stats(vals)
         rows.append({
             "action": int(a), "label": _label_of(inv, a), "choice": choice_map[a],

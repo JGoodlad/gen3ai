@@ -355,6 +355,20 @@ impl TrackerState {
         self.last_choice = Some(token.to_string());
     }
 
+    /// The TERMINAL transition (`gen3_core_walk_v1`, the prober's reader): the battle ended with no
+    /// decision opening it, so nothing folded the readings since this side's latest decision. The
+    /// delta from that decision's context to the FINAL board's, over those readings —
+    /// `RewardTracker.finalize`'s `TurnDelta.build_from_events(pending_ctx, terminal_ctx, window)`.
+    /// Read-only: the registries are cloned and nothing is folded. `None` before the first decision.
+    pub fn terminal_delta(&self, br: &crate::present::BoardReading) -> CoreResult<Option<DeltaProjection>> {
+        let Some(prev) = self.trackers.last.as_ref() else { return Ok(None) };
+        let view = crate::present::present(br)?;
+        let (mut our, mut opp) = (self.trackers.our_slots.clone(), self.trackers.opp_slots.clone());
+        let curr = Ctx::build(&view, None, &mut our, &mut opp, None)?;
+        let window: Vec<&Reading> = self.pending.iter().collect();
+        Ok(Some(DeltaProjection::build(prev, &curr, &window)))
+    }
+
     /// After the board took a `|request|` line (stream index `line`): if it opens a DECISION of this
     /// side (a non-empty, non-`wait` request on an unfinished battle with a legal action — the live
     /// player's dispatch, `rust_core_parity_views.decision_points`), fold the trackers.

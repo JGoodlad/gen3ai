@@ -13,6 +13,7 @@ from agents.training.trace_result import (
     DRAW, DRAW_KIND_KEY, RESULT_VOCABULARY, VOCABULARY_KEY, check_result, classify_result,
 )
 from agents.gen3_mechanics import boosts_str as _boosts_str_fn
+from agents.training import trace_labels
 
 
 class BattleRecorder:
@@ -356,95 +357,26 @@ class BattleRecorder:
     def _build_ctx(self, battle, mask: np.ndarray, legal=None) -> BattleContext:
         return BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots, legal)
 
-    def _action_label(self, action_idx: int, live: LiveView, legal) -> str:
-        team_list = live.ours.mons
-        # display_move_ids (not move_ids): shows OUR Hidden Power with its TYPED id
-        # ("hiddenpowergrass") instead of the wire-bare "hiddenpower" — we always know our own HP
-        # type, and these are human-/prober-facing labels (the mask/mapper use the wire-truth ids).
-        move_ids = list(legal.display_move_ids)
+    # ---- the LABELS: pure functions of the read-models, shared with the prober's core-trace
+    # recorder (`main.prober.core_recorder`) — `agents.training.trace_labels` is their one home ----
 
-        if action_idx < 6:
-            return f"switch:{team_list[action_idx].species}" if action_idx < len(team_list) else f"switch:slot{action_idx}"
-        elif action_idx < 10:
-            m = action_idx - 6
-            return move_ids[m] if m < len(move_ids) else f"move{m}"
-        return "struggle"
+    def _action_label(self, action_idx: int, live: LiveView, legal) -> str:
+        return trace_labels.action_label(action_idx, live, legal)
 
     def _all_action_labels(self, live: LiveView, probs: np.ndarray, mask: np.ndarray, legal) -> dict:
-        team_list = live.ours.mons
-        move_ids = list(legal.display_move_ids)  # typed own HP — see _action_label
+        return trace_labels.all_action_labels(live, probs, mask, legal)
 
-        result = {}
-        for i in range(11):
-            if i < 6:
-                label = f"switch:{team_list[i].species}" if i < len(team_list) else f"switch:slot{i}"
-            elif i < 10:
-                m = i - 6
-                label = move_ids[m] if m < len(move_ids) else f"move{m}"
-            else:
-                label = "struggle"
-            result[label] = {"prob": f"{probs[i] * 100:.1f}%", "valid": bool(mask[i])}
-        return result
-
-    @staticmethod
-    def _mon_display_status(mon: LivePokemon | None) -> str | None:
-        """Rich status string including counters and volatiles, read from a
-        :class:`LivePokemon` (id-form status + ``{volatile_id: counter}``).
-
-        Examples: "SLP(3)", "TOX(5)", "BRN", "PAR|TAUNT", "PERISH(2)|CONF"
-        """
-        if mon is None:
-            return None
-        parts = []
-        status = mon.status  # id form: 'slp'/'tox'/'brn'/'par'/'frz'/'psn'/'fnt' or None
-        ctr = mon.status_counter or 0
-        vol = mon.volatiles  # {volatile_id: counter}
-        if status == "slp":
-            parts.append(f"SLP({ctr})" if ctr else "SLP")
-        elif status == "tox":
-            parts.append(f"TOX({ctr})" if ctr else "TOX")
-        elif status is not None:
-            name_map = {"brn": "BRN", "par": "PAR", "frz": "FRZ", "psn": "PSN"}
-            if name := name_map.get(status):
-                parts.append(name)
-        effect_names = {
-            "taunt": "TAUNT", "confusion": "CONF", "encore": "ENCORE",
-            "attract": "ATTRACT", "disable": "DISABLE", "substitute": "SUB",
-        }
-        for vid, name in effect_names.items():
-            if vid in vol:
-                parts.append(name)
-        for n, vid in [(3, "perish3"), (2, "perish2"), (1, "perish1"), (0, "perish0")]:
-            if vid in vol:
-                parts.append(f"PERISH({n})")
-                break
-        return "|".join(parts) if parts else None
-
-    @staticmethod
-    def _status_key(status_str: str | None) -> str | None:
-        """Normalize for change detection — strips counter values, sorts parts."""
-        if not status_str:
-            return None
-        return "|".join(sorted(p.split("(")[0] for p in status_str.split("|")))
+    _mon_display_status = staticmethod(trace_labels.mon_display_status)
+    _status_key = staticmethod(trace_labels.status_key)
 
     def _our_bench_summary(self, live: LiveView) -> str:
-        return self._bench_summary(live.ours.active, live.ours.mons)
+        return trace_labels.bench_summary(live.ours.active, live.ours.mons)
 
     def _opp_bench_summary(self, live: LiveView) -> str:
-        return self._bench_summary(live.opp.active, live.opp.mons)
+        return trace_labels.bench_summary(live.opp.active, live.opp.mons)
 
     def _bench_summary(self, active: LivePokemon | None, mons) -> str:
-        parts = []
-        for mon in mons:
-            if active and mon.species == active.species:
-                continue
-            if mon.fainted:
-                parts.append(f"{mon.species}(faint)")
-            else:
-                pct = f"{mon.hp_fraction * 100:.0f}%"
-                status = self._mon_display_status(mon)
-                parts.append(f"{mon.species}({pct},{status})" if status else f"{mon.species}({pct})")
-        return ", ".join(parts)
+        return trace_labels.bench_summary(active, mons)
 
     def _our_hp_pct(self, ctx: BattleContext) -> str:
         if ctx.our_active == "NONE":
@@ -457,80 +389,20 @@ class BattleRecorder:
         slot = ctx.opp_slot_map.get(ctx.opp_active)
         return f"{ctx.opp_hp[slot] * 100:.0f}%" if slot is not None else "?%"
 
-    @staticmethod
-    def _newly_fainted(prev_fainted, now_fainted, fallback: str) -> "list[str]":
-        """EVERY species that actually fainted this turn, as a set difference.
-
-        A faint used to be detected by COUNT and then labelled with `prev_ctx.*_active` — the mon
-        that was active when the decision was made. That is the wrong mon whenever a switch
-        happened on the same turn, which is not a corner case:
-
-          * we switch Cloyster → Jolteon, the opponent's Explosion kills JOLTEON, and the trace
-            records `our:cloyster:fainted` — while its own battle log, two lines above, says the
-            Explosion hit Jolteon;
-          * the opponent switches Claydol → Dugtrio and our Ice Beam kills DUGTRIO, recorded as
-            `opp:claydol:fainted`.
-
-        Measured on ai_v9_17_tdaux_lam3: **25 of 466 turns** named a mon that did not faint.
-
-        The set difference also gets the case an HP-transition check would miss — a mon REVEALED
-        and killed on the same turn (Dugtrio above) has no previous HP to fall from.
-
-        `fallback` keeps the old behaviour when the sets cannot answer (a snapshot without the
-        species sets, or a faint the tracker saw but neither set names): a slightly wrong label is
-        still better than an empty one, and a forensic recorder must never raise into training.
-        """
-        gained = [sp for sp in (now_fainted or ()) if sp not in (prev_fainted or ())]
-        if gained:
-            # ONE SIDE CAN LOSE TWO MONS IN A TURN — measured: an opponent mon is KO'd, its forced
-            # replacement switches in and dies to Spikes, both inside turn 34. The old
-            # `if delta.opp_fainted:` shape could only ever emit one event per side, so the second
-            # faint was silently unreported (1 of 36 faints in a 4-battle fuzz). Return them all
-            # and let the caller emit one event each.
-            return gained
-        return [fallback] if fallback else []
+    #: EVERY species that fainted this turn, as a SET DIFFERENCE (one side can lose two mons in a
+    #: turn) — the rule and its measured history: `trace_labels.newly_fainted`.
+    _newly_fainted = staticmethod(trace_labels.newly_fainted)
 
     def _snapshot_statuses(self, live: LiveView) -> dict:
-        """Every mon's normalized status key on both sides, keyed ``"our:<species>"`` /
-        ``"opp:<species>"``. A fainted mon reads ``None`` — ``fnt`` is not a status a move inflicted,
-        and the faint already has its own event."""
-        out: dict = {}
-        for side, team in (("our", live.ours), ("opp", live.opp)):
-            for mon in team.mons:
-                out[f"{side}:{mon.species}"] = (
-                    None if mon.fainted else self._status_key(self._mon_display_status(mon)))
-        return out
+        return trace_labels.snapshot_statuses(live)
 
     def _append_status_events(self, events: list, prev_ctx: BattleContext,
                               delta: TurnDelta, live: LiveView) -> None:
-        """Append an event for EVERY status newly applied this turn — on either side, to ANY mon.
-
-        🚨 **It used to diff only the mon that was ACTIVE WHEN THE DECISION WAS MADE**
-        (``prev_ctx.our_active`` / ``prev_ctx.opp_active``), and a move resolves against whoever is
-        STANDING THERE, which after an opponent pivot is a different Pokémon. So a status inflicted
-        on a mon that SWITCHED IN never reached the trace at all — and the prober, having no event
-        to render, said the move did nothing. Found on `ai_v12_02_winprob_critic`
-        `step_50000016/sentinel_0/loss_s0_002` turn 1: the opponent switched Suicune → Cloyster, our
-        Thunder Wave paralyzed the Cloyster (``|-status|p2a: Cloyster|par`` in the replay, and the
-        next decision's obs carries the PAR bit — the MODEL always saw it), and the timeline read
-        ``we thunderwave — no effect``. A forensic-artifact bug, not a training one.
-
-        Diffing the whole board closes the class for every status (brn/par/slp/frz/psn/tox) and every
-        shape that moves a mon under the move — the pivot, the drag, the forced replacement. Only
-        NEWLY-APPLIED statuses are emitted: a cure clears the key and says nothing, which is the
-        behaviour the summary always had.
-        """
-        before = self._status_seen or {}
-        now = self._snapshot_statuses(live)
-        for key, new_key in now.items():
-            if not new_key or new_key == before.get(key):
-                continue
-            side, _, species = key.partition(":")
-            mon = (live.ours if side == "our" else live.opp).get(species)
-            display = self._mon_display_status(mon) if mon is not None else None
-            if display:
-                events.append(f"{side}:{species}:{display}")
-        self._status_seen = now
+        """Append an event for EVERY status newly applied this turn — on either side, to ANY mon
+        (`trace_labels.status_events`: a move resolves against whoever is STANDING THERE, so the
+        whole board is diffed, never only the decision-time actives)."""
+        new, self._status_seen = trace_labels.status_events(self._status_seen, live)
+        events.extend(new)
 
     def _fill_pending_outcome(self, prev_ctx: BattleContext, curr_ctx: BattleContext,
                               delta: TurnDelta, reward: float, live: LiveView) -> None:

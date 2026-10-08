@@ -218,3 +218,24 @@ with random legal actions (no policy forward). Measured 2026-09-23 at load 19-21
 per decision, 0.66-0.76 % of a random-action env step** (medians of two 5-round interleaved runs;
 the `|request|` JSON is ~60-70 % of it). The MILESTONE tier's first full run: 622 battles, 1,244
 viewers, 609,019 events, 0 divergences.
+
+## 9. The PROBER's readers — `--walk` and `--obs-stream` (poke-env retirement P5, 2026-10-07)
+
+The prober reads a battle from the core, never from poke-env (`src/main/prober/core_walk.py`):
+
+- **`core_events --walk`** (`gen3_core_walk_v1`, implies `--obs`): the battle replayed as for slice T/O,
+  and every decision record also carries the side's `present()` view, its legality and the raw
+  `|request|` payload (`view` / `legal` / `request`); the terminal record carries the FINAL view and
+  the delta of the window that ended the battle (`TrackerState::terminal_delta` —
+  `RewardTracker.finalize`'s `TurnDelta`, read-only: the registries are cloned). The prober's
+  core-trace expansion is built from it (`main.prober.core_recorder`), held field for field to the
+  live poke-env recorder by `src/main/prober/core_trace_integration_test.py`.
+- **`core_events --obs-stream`** (`gen3_core_obs_stream_v1`): one side's protocol TEXT (`STREAM
+  {viewer, username, team, actions, encode_at}` … `END`, many per process) through the PARSE chain
+  with the trackers on — the chain `sim_bridge`'s core observation mode encodes on — each batch ending
+  at a `|request|` line (the bridge's write rule), the side's own actions replayed by INDEX through the
+  decision's `present::choice_tokens`. Per decision: turn, mask, tokens and (where asked) the row.
+  It is the Rust twin of `obs_materializer.materialize_decisions` for the prober's lookahead /
+  better-line successors; its rows equal the stored rows of every core trace in that integration
+  test, and the poke-env materializer's rows on the P5 identity set
+  (`designs/research_state/measurements/pokeenv_p5_prober_2026-10-07/`).

@@ -1,8 +1,9 @@
-"""`main.prober.core_trace` without a bridge: the cross-check's refusal, the room tag, and the
-session's meta-only read (a core trace is never expanded to answer `run_summary`).
+"""`main.prober.core_trace` without a bridge: the cross-check's refusal, the live masked softmax, and
+the session's meta-only read (a core trace is never expanded to answer `run_summary`).
 
-The end-to-end expansion — and its equality with the live Python recorder — is
-`core_trace_integration_test.py` (`sim`). Milliseconds; unmarked.
+The end-to-end expansion — the Rust core's walk (`gen3_core_walk_v1`) — and its equality with the
+live Python recorder is `core_trace_integration_test.py` (`sim`); the walk's own pure helpers are
+`core_walk_test.py`. Milliseconds; unmarked.
 """
 from __future__ import annotations
 
@@ -34,17 +35,6 @@ def test_probs_are_the_live_masked_softmax():
     p = _masked_probs(logits, mask)
     assert p.dtype == np.float32 and p[mask == 0].sum() == 0
     assert np.isclose(p.sum(), 1.0) and np.isclose(p[1] / p[2], np.exp(0.7), rtol=1e-5)
-
-
-def test_a_core_battle_id_becomes_a_room_tag_poke_env_accepts():
-    """`Player._create_battle` only opens a room whose segment 1 is the format; a core trace's
-    battle_id (`core-<step>-<opp>-g<k>`) is not one — every replay of it read 0 decisions."""
-    from agents.training.obs_materializer import _next_tag
-
-    t = _next_tag("core-1000-heuristic-g3", "gen3ou")
-    assert t.split("-")[1] == "gen3ou" and "core-1000-heuristic-g3" in t
-    ok = _next_tag("battle-gen3ou-42", "gen3ou")
-    assert ok.startswith("battle-gen3ou-42-recon")
 
 
 def test_a_non_core_summary_passes_through_untouched():

@@ -23,11 +23,12 @@ from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING
 import numpy as np
 
-from poke_env.battle.abstract_battle import DamagingMoveEvent
-
 from agents.gen3_mechanics import BOOST_DIM
 
 if TYPE_CHECKING:
+    # annotation-only (`from __future__ import annotations`): importing this module never loads
+    # poke-env (P5 of the retirement — the prober's forensics reads SELF_KO_MOVES from here)
+    from poke_env.battle.abstract_battle import DamagingMoveEvent
     from agents.enums import Status
     from agents.training.battle_snapshot import BattleContext
 
@@ -493,6 +494,9 @@ class TurnDelta:
         def _to_dme(dm):
             if dm is None:
                 return None
+            from poke_env.battle.abstract_battle import DamagingMoveEvent  # the fold's one run-time read
+
+
             ts_str = dm.target_status
             target_status = Status.__members__.get(ts_str) if ts_str else None
             return DamagingMoveEvent(

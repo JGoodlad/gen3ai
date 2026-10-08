@@ -154,3 +154,29 @@ class RewardBreakdown:
             if parts:
                 result[group_name] = " ".join(parts)
         return result
+
+
+def terminal_breakdown(config: "RewardConfig", *, won: bool, lost: bool, finished: bool,
+                       turn: int) -> RewardBreakdown:
+    """The breakdown of ONE completed turn from the board's result meta — the reward's ONLY rule,
+    shared by `Gen3RewardManager.process_turn_reward` and the prober's core-trace recorder
+    (`main.prober.core_recorder`), which reads the Rust core's view rather than a poke-env battle.
+
+    A win pays `victory_value`. Under the WIN INDICATOR every non-win terminal — a decisive loss, a
+    pre-cap tie, a 250-turn timeout — pays exactly 0.0 (`gen3_winprob_critic_mode_v1`: the
+    undiscounted return is `victory_value * 1{win}`, so at victory 1.0 V(s) == P(win|s)). Under the
+    historical SIGNED terminal a timeout (the trainee FORFEITS at the turn cap, so it reads `lost` —
+    detected by the turn count) takes `draw_penalty`, and a decisive loss or a pre-cap tie (which
+    shares the branch) `-victory_value`. An unfinished board pays nothing. `lost` is accepted for the
+    callers' symmetry; the rule reads `won` / `finished` / `turn`."""
+    from agents.training.reward_weights import _TIMEOUT_TURN_CAP
+
+    bd = RewardBreakdown()
+    victory = float(config.victory_value)
+    if won:
+        bd.win_loss = victory
+    elif finished and bool(getattr(config, "terminal_indicator", False)):
+        bd.win_loss = 0.0
+    elif finished:
+        bd.win_loss = config.draw_penalty if turn >= _TIMEOUT_TURN_CAP else -victory
+    return bd

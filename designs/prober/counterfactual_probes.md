@@ -6,8 +6,9 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
 
 - `lookahead(battle_id, inv=, invs=, worst=, n_seeds=0, followup=)` — **one-ply VALUE-DELTA**
   (`lookahead.py`): for an anchored `move_selection` decision, RE-ROLL the turn under each LEGAL action
-  (the opponent plays its RECORDED move), materialize the resulting one-sided successor obs through the
-  real encoder, and read the loaded model's **V(s′)** — per-action ΔV, "what would the critic have
+  (the opponent plays its RECORDED move), read the resulting one-sided successor obs off the RUST CORE's
+  parse chain (`core_walk.read_streams` → `core_events --obs-stream`, the chain training's rows are
+  encoded on; poke-env retirement P5), and read the loaded model's **V(s′)** — per-action ΔV, "what would the critic have
   valued each alternative at" (the model-scored variant the model-free `falsify` deliberately defers,
   + the win-prob head on the successor via `ProbeModel.win_prob_at` when the run trained it; the
   distributional `value_dist_at` was deleted with the head, L1). Two faithful modes share one call: the **CRN** headline (the `"original"`
@@ -16,8 +17,9 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   `recorded_next_value`, a built-in consistency anchor) and a **dice-averaged** `value_mean`±`value_std`
   over `n_seeds`>0 fresh seeds. A candidate whose turn ENDS the battle is reported `terminal` (win/loss),
   not a numeric V. Loads the exact→nearest→recent model; **requires the trace's `*_reconstruction.json`
-  sibling**. (`ProbeModel.value` is the V(s′) primitive; the successor obs is materialized from
-  `reroll.prefix_pN_chunks + reroll.pN_chunks` per the obs-materializer recipe.) **The whole
+  sibling**. (`ProbeModel.value` is the V(s′) primitive; the successor row is read from
+  `reroll.prefix_pN_chunks + reroll.pN_chunks` with our prefix actions replayed by index, every arm in
+  ONE core process; the anchor's choice map is the core walk's, `core_walk.decision_choices`.) **The whole
   `(candidate × seed)` sweep resolves in ONE Node process** via `reconstruction.reroll_many` (each arm
   = a fresh session = byte-identical to a single `reroll_turn`, modulo `|t:|`), so the lookahead pays the
   ~677 ms Node-spawn cost ONCE instead of once per candidate (~9× on a full 9-action sweep; pinned by
@@ -29,14 +31,15 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   (`utils/bridge/search_session.py` → `search_driver.js`'s `State.serializeBattle` on node, or the rust
   binary's `BridgeSession::snapshot` under `--impl rust` — the only primitive that makes depth>1
   feasible), expands OUR top-k actions by policy prior, scores each
-  successor's V(s′) on the materialized ONE-SIDED obs (`model.values_batch`, one critic forward per
-  ply), keeps the top-`beam`, and recurses; backup is **max-over-our-continuations** and the returned
+  successor's V(s′) on its ONE-SIDED row read by the RUST CORE's parse chain (`core_walk.read_streams`,
+  P5; `model.values_batch`, one critic forward per ply), keeps the top-`beam`, and recurses; backup is **max-over-our-continuations** and the returned
   LINE is the principal variation. Returns ONE human-legible **contrastive trajectory**: the divergence
   (`best_alternative` + ΔV / `win_prob`), the per-ply `principal_variation`, and the chosen-vs-best
   `candidates`. **Faithful-conditional opponent:** the RECORDED move at the divergence ply (the chosen
   action is `recorded_exact` → the `value_crn` anchor, identical to lookahead), and at INTERIOR plies the
-  reloaded opponent reacts greedily on ITS OWN one-sided obs (materialized via the opponent's
-  action-history from `obs_materializer.infer_action_indices`) — `interior_opponent`: `"self"` (the
+  reloaded opponent reacts greedily on ITS OWN one-sided row (read by the core from its text, its
+  action-history inverted from each of its walked decisions' recorded choice through that decision's
+  core tokens — a choice no token names, a refused probe, is skipped) — `interior_opponent`: `"self"` (the
   trainee as a flagged proxy, default), `"ckpt"` (`opponent_ckpt`), or `"none"` (sim default). Depth-1 is
   faithful regardless; only depth≥2 leans on the interior model.
   ⚠️ **The beam plays a declared regime MIX, and the payload says so.** The divergence ply reproduces
@@ -58,7 +61,8 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   exact→nearest→recent model; **requires the trace's `*_reconstruction.json` sibling**. Default depth 2
   is the legibility/cost sweet spot (≈4 s search; depth 1 ≈2 s, depth 3 ≈5 s — try `--depth 3` for setups
   that pay off a turn later). Faithfulness pinned by `utils/bridge/search_clone_parity_fuzz_test.py`.
-  **Perf:** the bottleneck is obs materialization (the serializeBattle clones are ~2%), so three levers
+  **Perf (HISTORY — measured on the poke-env materializer, replaced by the core reader in P5):** the
+  bottleneck was obs materialization (the serializeBattle clones are ~2%), so three levers
   cut it ~1.5× (5.7 s → 3.7 s on a depth-2 decision): (1) ONE shared `replay_battle` feeds both the anchor
   choice-map AND the opponent's `infer_action_indices` history (was two full replays); (2) the per-node
   policy forwards are BATCHED (`action_probs_batch`, was one forward per node); (3) `materialize_decisions`
@@ -76,7 +80,12 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   prober tools.
 - `replay_counterfactual(battle_id, inv, action, n_rollouts=1, opponent_ckpt=, opponent_source=)` —
   **COUNTERFACTUAL replay-to-end** (`replay.py` → `utils/bridge/counterfactual.py`): "could the model
-  have won if it hadn't choked this turn?". Pick up the recorded battle at `inv`'s turn, substitute
+  have won if it hadn't choked this turn?". 🚨 **The ONE prober command still on poke-env** (poke-env
+  retirement P5, 2026-10-07): it plays the rest of the battle LIVE with poke-env players (`RLPlayer`,
+  the Python bots) over the in-process bridge, so it is P6-blocking — the port is a Rust play-out from the
+  divergence (`utils.rust_env.successors.play_out` with the in-core bot ports), and
+  `src/poke_env_free_entry_points_test.py`'s `PROBER_POKE_ENV_COMMANDS` pins it as the only exception.
+  Pick up the recorded battle at `inv`'s turn, substitute
   `action` (a legal action index) for OUR side, then play the rest LIVE — the trainee's GREEDY policy vs
   the **RELOADED real opponent** — to a win/loss. The driver reuses `run_local_battles` with both
   players' `choose_move` SCRIPTED to replay the recorded commands until the divergence (faithful: the
@@ -113,7 +122,8 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   exact recorded follow-ups) sit in the dice distribution (`luck_percentile`);
   plus a **paired** alternative-action sweep (top-k legal alts by saved logits,
   SAME seeds = common random numbers, mapped to sim choices by the real action
-  mapper via `obs_materializer.map_actions_at`) → `paired_advantage` ± SE per alt.
+  mapper — the core walk's choice tokens, `core_walk.decision_choices` (P5; the poke-env
+  `obs_materializer.map_actions_at` before)) → `paired_advantage` ± SE per alt.
   Both axes score an omniscient **material margin** (`alive diff + hp-frac diff` —
   referee-side analysis; the one-sided wall constrains the encoder, not analysis).
   Verdicts `LUCK`/`MISTAKE`/`MIXED`/`NEUTRAL` (thresholds in `falsifier.py`,

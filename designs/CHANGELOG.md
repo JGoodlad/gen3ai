@@ -12810,3 +12810,40 @@ obs-facts appended (2845)`.
   never consumed and every later frame of that battle read as a "race" (125 false records in one run). A stall forfeit
   now closes the frame (`stall_forfeit`), and the forfeit notices and the end are not a race. Pinned by
   `gate_peer_test.py::test_a_stall_forfeit_closes_the_open_frame_and_the_end_is_not_a_race`.
+## 2026-10-07 — P5 of the poke-env retirement: the PROBER reads battles from the Rust core (`gen3_core_walk_v1`, `gen3_core_obs_stream_v1`; no config / ARCH bump; prober output identical)
+
+- **Why.** The owner's direction (2026-10-06) is ONE stack. The prober was the last reader that rebuilt a Rust-eval
+  core trace by re-parsing its protocol through a poke-env `Battle` and a `BattleRecorder`, and its counterfactual
+  views materialized their rows through the poke-env materializer (backlog T27, plan §A4.5 P5).
+- **The expansion.** `core_trace.load_summary` / `protocol_log` now walk the reconstruction through the core:
+  `core_events --walk` (new, `src/rust_sim/src/bin/core_events.rs`) carries, per decision, the side's `present()`
+  view, its legality and its raw request. With the trackers, the masks and the choice tokens that `--obs` already
+  shipped, that is everything the summary needs. The terminal record adds the final view and
+  `TrackerState::terminal_delta` (new, `trackers/mod.rs`; `RewardTracker.finalize`'s `TurnDelta`, read-only).
+  `main/prober/core_walk.py` is the transport, alignment and replay-log dispatch. `main/prober/core_recorder.py`
+  builds the summary with the live recorder's rules over the core's read-models. The refusals are unchanged (the
+  record is the authority; count, mask and result must line up). One refusal is new: each row's action must map,
+  through the core's tokens, to the command actually played.
+- **Shared, so the two writers cannot drift.** `agents/training/trace_labels.py` holds every label (`BattleRecorder`
+  now delegates to it). `reward_config.terminal_breakdown` holds the reward rule (`Gen3RewardManager.process_turn_reward`
+  calls it).
+- **The counterfactual views.** `falsify` / `lookahead` / `better-line` take their choice maps from the walk
+  (`core_walk.decision_choices`). lookahead / better-line read successor rows through `core_events --obs-stream`
+  (new: one side's TEXT through the parse chain with the trackers on, the side's actions replayed by index;
+  `core_walk.read_streams`). `replay-counterfactual` stays on poke-env, P6-blocking: it plays the rest of the battle
+  live with `RLPlayer` and the Python bots.
+- **poke-env off the run-time path.** `engine/switch_in.py` uses the owned `PokemonType`; under the blocker, the
+  poke-env import there had returned `None` silently. `turn_delta.py` / `battle_snapshot.py` import
+  `DamagingMoveEvent` for annotations only, plus one lazy import in the fold. The import allowlist went 138 → 136.
+- **Identity** (`designs/research_state/measurements/pokeenv_p5_prober_2026-10-07/`). On 21 banked battles from 3 runs,
+  283 / 284 JSON-CLI captures are byte-identical before vs after. Both sides were pinned to `PYTHONHASHSEED=0` and 4
+  torch threads; the after side ran with poke-env blocked. The one difference is `replay-counterfactual`, blocked by
+  design and identical when poke-env is present. Two determinism findings: the live recorder's multi-faint order is a
+  frozenset's hash order, and the core recorder now uses board order (F-P5-1); `analyze`'s floats move with torch's
+  thread count (F-P5-6).
+- **Tests (fail on revert).** `core_trace_integration_test.py` holds the walk's summary to a LIVE poke-env
+  `BattleRecorder` field for field, and its protocol log to the live `_replay.html`. The core stream's rows equal the
+  stored rows, and its choice maps equal the materializer's. `PLAYER_IGNORED` is pinned to the fork's ignore set.
+  `poke_env_free_entry_points_test.py` (5) runs every JSON-CLI command and the web app's views with poke-env blocked
+  on real core traces and a current-architecture checkpoint. `PROBER_POKE_ENV_COMMANDS` is the closed exception list.
+  `core_walk_test.py` covers the pure helpers. `lookahead_test.py`'s fakes follow the new seams.

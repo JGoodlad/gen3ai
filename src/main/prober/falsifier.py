@@ -56,7 +56,7 @@ from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 
-from agents.training.obs_materializer import materialize_from_record
+from main.prober.core_walk import decision_choices
 from utils.bridge.reconstruction import ReconstructionRecord, reroll_turn
 
 # v1 verdict thresholds — deliberately simple, documented, and centralized.
@@ -180,22 +180,14 @@ def falsify_decision(
     actions = np.asarray(npz["actions"], dtype=int)
     chosen_idx = int(actions[inv_index])
 
-    # One materializer pass to the anchored decision: rebuilds the agent's exact
-    # state and maps every LEGAL action index → the sim choice string the live
-    # mapper would emit (zero mapping reimplementation; legality = the live mask).
-    trace = materialize_from_record(
-        record, actions=actions, mappings=mappings,
-        map_actions_at=inv_index, stop_after_decision=inv_index, impl=impl,
-    )
-    if len(trace.decisions) != inv_index + 1:
-        raise RuntimeError(
-            f"replay desync: materializer produced {len(trace.decisions)} decisions "
-            f"for inv {inv_index} — record and trace disagree")
-    if trace.decisions[-1].turn != turn:
+    # The anchored decision's LEGAL action index → sim choice string, read off the RUST CORE's walk
+    # of the record (`main.prober.core_walk`, P5: the core's `present::choice_tokens` — the mapper
+    # training's rows use; legality = the row's mask). `mappings` is accepted for the callers' API.
+    choice_map, walked_turn = decision_choices(record, side, inv_index)
+    if walked_turn != turn:
         raise RuntimeError(
             f"replay desync: decision {inv_index} replays at turn "
-            f"{trace.decisions[-1].turn}, summary says {turn}")
-    choice_map: Dict[int, str] = trace.action_choices or {}
+            f"{walked_turn}, summary says {turn}")
     if chosen_idx not in choice_map:
         raise RuntimeError(f"chosen action {chosen_idx} not legal in replayed state")
 

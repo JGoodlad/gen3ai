@@ -108,11 +108,16 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   Detail: `designs/prober/engine_and_model.md`.
 - **`core_trace.py`** — a Rust-eval **CORE TRACE** (`gen3_core_trace_v1`, written by
   `agents.training.rust_eval.traces`) ships a META-ONLY `*_summary.json`; `ProbeSession._summary`
-  EXPANDS it on read to the full legacy shape (`teams` + `invocations`) by replaying the
-  reconstruction on the rust driver and driving a real `BattleRecorder` exactly as
-  `EvalRLPlayer.choose_move` does. 🚨 **The stored `<prefix>.p1.jsonl.gz` record is the AUTHORITY**:
-  a replay whose protocol differs from it, or whose decisions do not line up with `states.npz`
-  (count, per-row legal mask, result), RAISES `CoreTraceMismatch` — never repaired. `_meta` reads
+  EXPANDS it on read to the full legacy shape (`teams` + `invocations`) FROM THE RUST CORE
+  (`gen3_core_walk_v1`, poke-env retirement P5): `core_walk.py` replays the reconstruction through
+  `core_events --walk` (per trainee decision the core's `present()` view, legality, slot registries,
+  frozen `TurnDelta` projection, mask and choice tokens; the terminal view + delta) and
+  `core_recorder.py` builds the summary with the live recorder's rules over those read-models (the
+  labels are `agents.training.trace_labels`, shared with `BattleRecorder`; the reward is
+  `reward_config.terminal_breakdown`). No poke-env battle is built. 🚨 **The stored
+  `<prefix>.p1.jsonl.gz` record is the AUTHORITY**: a walk whose protocol differs from it, or whose
+  decisions do not line up with `states.npz` (count, per-row legal mask, each row's action mapping
+  to the command actually played, result), RAISES `CoreTraceMismatch` — never repaired. `_meta` reads
   the stored meta without expanding (so `run_summary` stays instant). Cached in memory only;
   nothing is written into the run dir. ABSENT on a core trace: `*_replay.html` (its stand-in is the
   expansion's own protocol log, `core_trace.protocol_log`), and every auxiliary head — `win_probs`
@@ -123,6 +128,17 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   `CoreTraceUnsupported` by name). `src/trace_summary_reader_gate_test.py` fails any module that
   opens one itself (F-LH-5: such a reader saw meta only and read ZERO decisions, silently); its
   allowlist is EMPTY. Detail: `designs/prober/engine_and_model.md`.
+- **`core_walk.py`** / **`core_recorder.py`** — the prober's battle reading from the RUST CORE (P5).
+  `core_walk` is the transport + alignment: `walk(record, side)` (`core_events --walk`),
+  `decision_choices` (a decision's legal action → choice string, for falsify / lookahead /
+  better-line) and `read_streams` (`core_events --obs-stream`: one side's TEXT through the core's
+  parse chain with the trackers on — the chain training's rows are encoded on — our actions replayed
+  by index; the successor rows lookahead / better-line score); `replay_log` is the stand-in
+  `*_replay.html` log (the poke-env player's dispatch). `core_recorder` turns a walk into the summary.
+  🚨 **Only `replay-counterfactual` still needs poke-env** (it plays the rest of a battle LIVE with
+  `RLPlayer` and the Python bots — P6-blocking); every other CLI command and the web app RUN with
+  poke-env blocked (`src/poke_env_free_entry_points_test.py`, whose `PROBER_POKE_ENV_COMMANDS` is
+  that closed list). Detail: `designs/prober/engine_and_model.md`.
 - **`web/`** — the browser front end (FastAPI + Jinja2/HTMX over `ProbeSession`). It is
   **first-class for the GPU obs**: the learned belief/op signals tagged `🔷 GPU` render PRIMARY
   and the decoded CPU obs regions they subsume tagged `📋 CPU-obs` render dimmed, because the

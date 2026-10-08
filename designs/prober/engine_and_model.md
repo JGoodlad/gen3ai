@@ -95,49 +95,75 @@ under an unrelated name is its blind spot. Opt out with `GEN3AI_SKIP_SUMMARY_REA
 | `scaffolding_gauge.collect_slices` (and every meter over it: `critic_gate`, `ops.critic_readouts`, `ops.perbot_*`, `ops.negskill_null`) | `is_core_trace` on the NaN head | REFUSED — contestedness / the V-vs-P(win) gauge have no P(win); the gauge's old refusal blamed `--win-prob-mode none` |
 
 **The expansion** (`core_trace.expand` / `load_summary`; `ProbeSession._summary` calls it, as does
-`forensics.build_decision_table`):
+`forensics.build_decision_table`) reads the battle from the **RUST CORE** — `gen3_core_walk_v1`,
+poke-env retirement P5 (2026-10-07); no poke-env battle is built:
 
-1. `replay_battle(record, impl="rust")`;
-2. **CROSS-CHECK** — the replayed trainee-side protocol must equal the stored record's `text` lines,
+1. **WALK** the reconstruction through the core (`main.prober.core_walk.walk` → `core_events --walk`):
+   the recorded commands replayed through the production bridge session from the raw `>start` seed,
+   every transition gated `parse == step` and the parse chain's row byte-equal to the step chain's.
+   Per decision of the trainee the walk carries the core's `present()` view (`LiveView`, through
+   `agents.battle.core_view`), its legality, the trackers' slot registries and frozen `TurnDelta`
+   projection, the row's mask and the choice token of every legal action, and the token actually sent;
+   at the end the TERMINAL view and the delta of the window that ended the battle
+   (`TrackerState::terminal_delta`, `RewardTracker.finalize`'s);
+2. **CROSS-CHECK** — the walk's trainee-side protocol must equal the stored record's `text` lines,
    `|t:|` lines and blanks dropped on both sides. **The record is the authority**: a difference
    raises `CoreTraceMismatch` naming the first differing line;
-3. the replayed chunks go through `obs_materializer`'s transport-less replay player (the mirror of
-   `EvalRLPlayer.choose_move`: the stall check first, an all-zero mask is no decision), and at each
-   decision a real `BattleRecorder.record(battle, actions[i], softmax(masked logits[i]), mask,
-   {"obs", "logits", "value"})` runs — the same torch softmax the live player computes — then
-   `finalize` + `to_summary`. The per-turn `outcome.reward` is scored with the run's
-   `RewardConfig.from_dict(<run>/model_config.json)` (the eval worker's rule; absent ⇒ the default);
-4. **REFUSE** unless the decision count equals `meta.invocations` and the `states.npz` rows, each
-   decision's legal mask equals `action_mask[i]`, and the replayed result equals `meta.result`;
+3. **REFUSE** unless the decision count equals `meta.invocations` and the `states.npz` rows (bar the
+   stall forfeit below), each decision's legal mask equals `action_mask[i]`, and each row's ACTION maps
+   through that decision's tokens to the command the battle was actually played with;
+4. `main.prober.core_recorder.CoreRecorder` builds `teams` + `invocations` with the live recorder's
+   rules over the core's read-models — the context (per-slot float32 HP, the actives, the phase, the
+   fainted sets) from the view and the slot registries as `BattleContext.from_battle` builds it, the
+   outcome from the `TurnDelta` projection as `_fill_pending_outcome` / `finalize` read it, every label
+   from `agents.training.trace_labels` (the module `BattleRecorder` itself delegates to), the per-turn
+   `outcome.reward` from `reward_config.terminal_breakdown` under the run's
+   `RewardConfig.from_dict(<run>/model_config.json)` (absent ⇒ the default), the probabilities the same
+   torch masked softmax the live player computes; the recomputed result must equal `meta.result`;
 5. the recomputed `meta` is replaced by the STORED one (it keeps `trace_source`).
 
-The trainee's stall forfeit mirrors the live rule on both sides: the decision at `turn >=` the
-threshold is a forfeit, not a row (`rust_env::episode::stall_forfeit_due`, the executor's row
-filter, `_handle_stall` here). The threshold is `trace_source.turn_limit` when the writer records
-it, else `StallConfig().threshold` (production runs the core at exactly that). An opponent forfeit
-just ends the protocol. Expansions are cached **in memory** by path + input mtimes (≤256); the run
-dir is never written.
+The trainee's stall forfeit mirrors the live rule: the decision at `turn >=` the threshold is a
+forfeit, not a row (`rust_env::episode::stall_forfeit_due`, the executor's row filter). The core's
+walk has no stall rule and DOES decide there, so exactly ONE walk decision past the rows is accepted
+when it sits at `turn >= threshold` and the battle's last command is the trainee's `forcelose`; its
+delta closes the last row's window, as the terminal does live. The threshold is
+`trace_source.turn_limit` when the writer records it, else `StallConfig().threshold`. An opponent
+forfeit just ends the protocol. Expansions are cached **in memory** by path + input mtimes (≤256);
+the run dir is never written.
+
+🚨 **A multi-faint turn names its mons in BOARD order** (the core recorder's fainted sets are
+board-ordered tuples). The live recorder iterates a `frozenset`, so two faints in one turn came out
+in HASH order — a forensic summary that varied with `PYTHONHASHSEED` (P5 finding F-P5-1, measured on
+`sizing_C_n256_e5_s1001` `step_8000030/sentinel_0/win_s1_001`: two before-captures of the same
+`turns` disagreed on exactly that line).
 
 **Pinned equal to the live recorder.** `core_trace_integration_test.py` plays each core game again
 LIVE on the rust bridge (same seed and teams, p1 an `EvalRLPlayer`-shaped scripted player
 recording with `BattleRecorder`, p2 replaying the stored tokens, written by `write_battle_record`):
 the expanded summary equals that summary field for field (bar `meta.battle_id` /
 `meta.trace_source`), including a stall-forfeit game, and the live encoder's obs equal the core's
-stored obs row for row.
+stored obs row for row — the poke-env ORACLE the Rust reading is held to while poke-env exists. On
+banked traces the P5 identity read (`designs/research_state/measurements/pokeenv_p5_prober_2026-10-07/`)
+held every invocation of 16 core battles equal to the poke-env expansion.
 
 **What a core trace does NOT carry:**
 
 | absent | what reads it | how it degrades |
 |---|---|---|
-| `*_replay.html` | `_protocol_lines` / `_protocol_for` (`turns`' timeline, `loops`, `analyze`'s raw protocol) | `core_trace.protocol_log` stands in — `battle._build_replay_events()` of the expansion's battle, exactly what `save_replay` would have rendered |
+| `*_replay.html` | `_protocol_lines` / `_protocol_for` (`turns`' timeline, `loops`, `analyze`'s raw protocol) | `core_trace.protocol_log` stands in — `core_walk.replay_log` of the walk's trainee stream: the poke-env player's DISPATCH (a bare keyword and every line the player does not intercept, `|win|` / `|tie|` once, the `|init|battle` room framing first; never `|request|`, `|error|`, `|bigerror|` or the player's ignore set), exactly what `save_replay` rendered |
 | `win_probs` (NaN), `move_logits`, `spread_belief` (and `value_dist`, which no new trace carries) | the win-prob / belief-trajectory views | read "unavailable" exactly as on a head-off run; `analyze` re-runs the model on the stored obs |
 | `belief` / `opp_intent` per invocation | `opp_intent` text, belief panels on the summary | absent, as on a head-off run |
 
-**Cost:** one rust replay subprocess + one poke-env feed per battle, measured 0.03–0.7 s on the
-fixture games (first call pays the imports). A `scan` over N core traces pays N of these once per
-process.
+**Cost:** one `core_events --walk` subprocess per battle (tens of ms; it encodes every decision's
+row, which is what makes the parse-vs-step gate run). A `scan` over N core traces pays N of these once
+per process.
 
-**The room tag.** A core trace's `battle_tag` is its `battle_id` (`core-<step>-<opp>-g<k>`), which is
-not a poke-env room name (segment 1 must be the format). `obs_materializer._next_tag` now PREFIXES
-such a tag — before, every `falsify` / `lookahead` / `better_line` / `replay_counterfactual` on a
-core trace replayed ZERO decisions and read "replay desync".
+**The counterfactual views read the core too** (P5): `falsify` / `lookahead` / `better-line` take a
+decision's legal choice map from the walk (`core_walk.decision_choices`, the core's
+`present::choice_tokens`), and lookahead / better-line read every successor row from the side's TEXT
+through `core_events --obs-stream` (`core_walk.read_streams`: the parse chain with the trackers on, our
+actions replayed by index, only the asked decisions encoded) — byte-equal to the poke-env materializer
+it replaced on the P5 identity set. `replay-counterfactual` is the one view still on poke-env (it plays
+the rest of the battle LIVE with `RLPlayer` and the Python bots; P6-blocking). There is no room tag to
+build any more: the core's walk is not a poke-env room (the `_next_tag` prefix this section once
+described still serves `replay-counterfactual`'s materializer).

@@ -35,11 +35,13 @@ def _hp_frac_from_str(hp: str) -> "float | None":
 
 
 def _as_ptype(name: str):
-    """A type string ('WATER') → poke-env PokemonType (species.types are UPPERCASE enum names)."""
+    """A type string ('WATER') → the owned ``PokemonType`` (species.types are UPPERCASE enum names;
+    ``agents.enums`` — the fork re-exports it by identity, so nothing reads poke-env here)."""
+    from agents.enums import PokemonType
+
     try:
-        from poke_env.battle.pokemon_type import PokemonType
         return PokemonType[str(name).upper()]
-    except (KeyError, AttributeError, ImportError):
+    except (KeyError, AttributeError):
         return None
 
 

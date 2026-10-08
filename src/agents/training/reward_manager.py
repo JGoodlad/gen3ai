@@ -33,7 +33,7 @@ from agents.training.reward_term_stats import (
 # --- The reward's DECLARATIONS, CENSUS and MAGNITUDES — re-exported (explicit, so a name dropped
 # from the other side is an ImportError at import time). ---
 from agents.training.reward_config import (   # noqa: E402,F401 - declared re-export hub
-    RewardClass, RewardConfig, RewardBreakdown)
+    RewardClass, RewardConfig, RewardBreakdown, terminal_breakdown)
 from agents.training.reward_composition import (   # noqa: E402,F401 - declared re-export hub
     _rc, reward_class_composition, reward_config_digest, format_reward_composition,
     inert_reward_flags, reward_composition_block,
@@ -107,27 +107,12 @@ class Gen3RewardManager:
     def process_turn_reward(self, battle, delta: TurnDelta) -> float:
         """The reward for a completed turn. Builds the `RewardBreakdown` and stores it on
         ``self._last_breakdown`` so callers (e.g. BattleRecorder) can read it."""
-        bd = RewardBreakdown()
         live = battle.live_view()
 
-        # --- TERMINAL: the win/loss ---
-        victory = float(self.config.victory_value)
-        indicator = bool(getattr(self.config, "terminal_indicator", False))
+        # --- TERMINAL: the win/loss — the ONE rule, `reward_config.terminal_breakdown` (shared with
+        # the prober's core-trace recorder): the win indicator, or the historical signed terminal. ---
         won, lost, finished = self._terminal(live)
-        if won:
-            bd.win_loss = victory
-        elif finished and indicator:
-            # gen3_winprob_critic_mode_v1: the WIN INDICATOR. Every non-win terminal — decisive
-            # loss, pre-cap tie, 250-turn timeout — pays exactly 0.0, so the undiscounted return
-            # is `victory_value * 1{win}` and (at victory_value 1.0) V(s) == P(win|s) exactly.
-            bd.win_loss = 0.0
-        elif finished:
-            # SIGNED terminal. A no-progress STALL ends with the trainee FORFEITING at the turn cap
-            # (gen3_env issues ForfeitBattleOrder at turn>=cap → lost=True, turn>=cap) — NOT a tie —
-            # so the timeout is detected by the turn count. A timeout takes `draw_penalty`; a
-            # DECISIVE loss — and the rare PRE-CAP TIE, which shares this branch — −victory_value.
-            timed_out = live.turn >= _TIMEOUT_TURN_CAP
-            bd.win_loss = self.config.draw_penalty if timed_out else -victory
+        bd = terminal_breakdown(self.config, won=won, lost=lost, finished=finished, turn=live.turn)
 
         # The `win_margin` obs key's source (NOT a reward term; see `material_margin.py`).
         self._last_material_margin = _material_margin(live)

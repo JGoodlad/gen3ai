@@ -53,6 +53,13 @@
 //! `gen3_core_parse_obs_gate_v1`): the parse chain is the encode path `sim_bridge`'s core
 //! observation mode ships to training, so every slice-O run gates it too.
 //!
+//! `--walk` (implies `--obs`) is the PROBER's reader (`gen3_core_walk_v1`, `main.prober.core_walk`,
+//! poke-env retirement P5): every decision record also carries the side's `present()` view, its
+//! legality and the raw `|request|` payload (`"view"`, `"legal"`, `"request"`), and the terminal record
+//! the FINAL view and the delta of the window that ended the battle (`"view"`, `"delta"` —
+//! `TrackerState::terminal_delta`, `RewardTracker.finalize`'s `TurnDelta`), so a reader rebuilds a
+//! battle's per-decision board from the core alone.
+//!
 //! `--obs-bench SIDE K REPS` (with `--obs`) also TIMES the encoder at viewer SIDE's K-th decision
 //! (0-based): REPS encodes of the version (its view memoized — the production shape) and REPS of
 //! `present()` + encode (the COLD shape), reported as `"obs_bench"` with the row it timed — the core
@@ -194,6 +201,47 @@ struct TrackCap {
     /// The choice token this side sent AT this decision (the next `note_choice`), so the Python
     /// half of slice T can replay the real action (E4's refused-switch target reads it).
     choice: Option<String>,
+    /// `--walk` (`gen3_core_walk_v1`, the prober's reader): a pre-rendered JSON fragment — at a
+    /// decision `,"view":…,"legal":…,"request":…` (the side's `present()` view, its legality and the
+    /// raw `|request|` payload it decided on); on the terminal record `,"view":…,"delta":…` (the final
+    /// board and `TrackerState::terminal_delta`).
+    walk: Option<String>,
+}
+
+/// `--walk`: every decision and the terminal record also carry the side's view (see `TrackCap::walk`).
+static WALK: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+
+fn walking() -> bool {
+    WALK.get().copied().unwrap_or(false)
+}
+
+/// `--walk`'s fragment at a decision of `side` on version `v`.
+fn walk_decision(v: &BattleVersion, side: usize) -> Result<String, String> {
+    let mut o = String::from(",\"view\":");
+    o.push_str(&v.view(side).map_err(|e| e.message().to_string())?.json());
+    o.push_str(",\"legal\":");
+    o.push_str(&v.legal(side).map_or("null".to_string(), |l| l.json()));
+    o.push_str(",\"request\":");
+    match v.request(side) {
+        Some(r) => json_out::str_into(&mut o, r),
+        None => o.push_str("null"),
+    }
+    Ok(o)
+}
+
+/// `--walk`'s fragment on the TERMINAL record of `side`: the final view and the delta of the window
+/// that ended the battle (`null` before the side's first decision).
+fn walk_terminal(v: &BattleVersion, side: usize) -> Result<String, String> {
+    let s = v.stream(side).ok_or("no stream")?;
+    let trk = s.trk.as_ref().ok_or("no trackers")?;
+    let mut o = String::from(",\"view\":");
+    o.push_str(&v.view(side).map_err(|e| e.message().to_string())?.json());
+    o.push_str(",\"delta\":");
+    match trk.terminal_delta(&s.board_reading).map_err(|e| e.message().to_string())? {
+        Some(d) => d.json_into(&mut o),
+        None => o.push_str("null"),
+    }
+    Ok(o)
 }
 
 /// `--obs-bench`: (side, decision index, reps).
@@ -308,6 +356,7 @@ fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2],
         } else {
             None
         };
+        let walk = if walking() { Some(walk_decision(v, side)?) } else { None };
         caps[side].push(TrackCap {
             after,
             trackers: v.trackers(side).map_or("null".into(), |t| t.json()),
@@ -315,6 +364,7 @@ fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2],
             reward: d.reward,
             obs,
             choice: None,
+            walk,
         });
     }
     Ok(())
@@ -480,8 +530,9 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         // the TERMINAL reward, per viewer: the win indicator on the final board
         for side in 0..2 {
             let won = v.view(side).map(|w| w.won == Some(true)).unwrap_or(false);
+            let walk = if walking() { Some(walk_terminal(&v, side)?) } else { None };
             tcaps[side].push(TrackCap { after: usize::MAX, trackers: String::new(), window: String::new(),
-                                        reward: if won { 1.0 } else { 0.0 }, obs: None, choice: None });
+                                        reward: if won { 1.0 } else { 0.0 }, obs: None, choice: None, walk });
         }
     }
     Ok((sess, out, caps, tcaps))
@@ -548,7 +599,11 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
                             o.push(',');
                         }
                         if c.after == usize::MAX {
-                            o.push_str(&format!("{{\"terminal\":{:?}}}", c.reward));
+                            o.push_str(&format!("{{\"terminal\":{:?}", c.reward));
+                            if let Some(w) = &c.walk {
+                                o.push_str(w);
+                            }
+                            o.push('}');
                         } else {
                             o.push_str(&format!("{{\"after\":{},\"reward\":{:?},\"trackers\":{},\"window\":{}",
                                                 c.after, c.reward, c.trackers, c.window));
@@ -558,6 +613,9 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
                             if let Some(ch) = &c.choice {
                                 o.push_str(",\"choice\":");
                                 pokesim::core_events::json_out::str_into(&mut o, ch);
+                            }
+                            if let Some(w) = &c.walk {
+                                o.push_str(w);
                             }
                             o.push('}');
                         }
@@ -682,6 +740,130 @@ fn present_stream() -> i32 {
     0
 }
 
+/// `--obs-stream` (`gen3_core_obs_stream_v1`, the prober's counterfactual reader — P5 of the poke-env
+/// retirement): ONE side's protocol TEXT, as a client receives it, folded through the PARSE chain with
+/// the trackers on (the chain `sim_bridge`'s core observation mode encodes on), with the side's own
+/// actions replayed by INDEX — the Rust twin of `obs_materializer.materialize_decisions`.
+///
+/// stdin, one or more streams:
+///
+/// ```text
+/// STREAM {"viewer":0|1,"username":…,"team":<packed>|null,"actions":[i,…],"encode_at":[k,…]|null}
+/// <protocol line>…        (the side's text, every chunk's lines in order)
+/// END
+/// ```
+///
+/// A DECISION is taken where the chain decides (a non-empty, non-`wait` request on an unfinished
+/// battle with a legal action, folded as the LAST line of its batch — each batch ends at a
+/// `|request|` line, the bridge's write rule); at the k-th decision the stream notes the choice token
+/// of `actions[k]` (the core's `present::choice_tokens`, the mapper training's rows use) before the
+/// next line. Past the end of `actions` the side is told nothing. stdout, one JSON line per stream:
+/// `{"ok":true,"error":null,"decisions":[{"k","turn","mask","tokens","obs"?},…]}` — `obs` (the
+/// `<f4` wire frame) only at the `encode_at` decisions (all when null). An action that is not legal
+/// at its decision, or a line the reader refuses, is `{"ok":false,"error":…}` for that stream.
+fn obs_stream() -> i32 {
+    use pokesim::encoder::{wire, OBS_DIM};
+    let stdin = io::stdin();
+    let mut out = io::stdout().lock();
+    let mut head: Option<String> = None;
+    let mut body: Vec<String> = Vec::new();
+    let run = |head: &str, body: &[String]| -> Result<String, String> {
+        let h = Json::parse(head).map_err(|e| format!("STREAM header: {e}"))?;
+        let viewer = h.get("viewer").and_then(|v| v.as_f64()).ok_or("STREAM viewer")? as usize;
+        let username = h.str_at("username").ok_or("STREAM username")?.to_string();
+        let team = h.str_at("team").map(str::to_string);
+        let nums = |key: &str| -> Result<Option<Vec<usize>>, String> {
+            match h.get(key) {
+                None => Ok(None),
+                Some(v) if v.is_null() => Ok(None),
+                Some(v) => v.as_array().ok_or(format!("STREAM {key}"))?.iter()
+                    .map(|x| x.as_f64().map(|n| n as usize).ok_or(format!("STREAM {key} element")))
+                    .collect::<Result<Vec<_>, _>>().map(Some),
+            }
+        };
+        let actions = nums("actions")?.unwrap_or_default();
+        let encode_at = nums("encode_at")?;
+        let mut v = BattleVersion::parse_root_with(viewer, &username, team.as_deref(), Some(ClockConfig::default()))
+            .map_err(|e| e.message().to_string())?;
+        let mut o = String::from("{\"ok\":true,\"error\":null,\"decisions\":[");
+        let mut k = 0usize;
+        let mut start = 0usize;
+        let n = body.len();
+        while start < n {
+            let end = (start..n).find(|&i| body[i].starts_with("|request|")).map_or(n, |i| i + 1);
+            v = v.parse_advance_lean(&body[start..end]).map_err(|e| e.message().to_string())?;
+            start = end;
+            if v.decision(viewer).is_none() {
+                continue;
+            }
+            let legal = v.legal(viewer).ok_or("a decision with no legality")?;
+            let reading = &v.stream(viewer).ok_or("no stream")?.board_reading;
+            let tokens = pokesim::present::choice_tokens(reading, &legal).map_err(|e| e.message().to_string())?;
+            if k > 0 {
+                o.push(',');
+            }
+            o.push_str(&format!("{{\"k\":{k},\"turn\":{},\"mask\":{:?},\"tokens\":{}", reading.turn,
+                                pokesim::present::mask(&legal), pokesim::present::tokens_json(&tokens)));
+            if encode_at.as_ref().is_none_or(|ks| ks.contains(&k)) {
+                let mut row = [0.0f32; OBS_DIM];
+                v.encode(viewer, &mut row).map_err(|e| e.message().to_string())?;
+                o.push_str(",\"obs\":");
+                o.push_str(&wire::frame(&row));
+            }
+            o.push('}');
+            if let Some(&a) = actions.get(k) {
+                let tok = tokens.iter().find(|(i, _)| *i == a).map(|(_, t)| t.clone())
+                    .ok_or_else(|| format!("decision {k} (turn {}): action {a} is not legal (tokens {})",
+                                           reading.turn, pokesim::present::tokens_json(&tokens)))?;
+                v.note_choice(viewer, &tok);
+            }
+            k += 1;
+        }
+        o.push_str("]}");
+        Ok(o)
+    };
+    for line in stdin.lock().lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(e) => {
+                eprintln!("core_events --obs-stream: stdin: {e}");
+                return 1;
+            }
+        };
+        if let Some(rest) = line.strip_prefix("STREAM ") {
+            if head.is_some() {
+                eprintln!("core_events --obs-stream: STREAM before END");
+                return 1;
+            }
+            head = Some(rest.to_string());
+            body.clear();
+        } else if line == "END" {
+            let Some(h) = head.take() else {
+                eprintln!("core_events --obs-stream: END before STREAM");
+                return 1;
+            };
+            let res = run(&h, &body).unwrap_or_else(|e| {
+                let mut o = String::from("{\"ok\":false,\"error\":");
+                json_out::str_into(&mut o, &e);
+                o.push('}');
+                o
+            });
+            let _ = writeln!(out, "{res}");
+            let _ = out.flush();
+        } else if head.is_some() {
+            body.push(line);
+        } else if !line.trim().is_empty() {
+            eprintln!("core_events --obs-stream: a line outside STREAM … END");
+            return 1;
+        }
+    }
+    if head.is_some() {
+        eprintln!("core_events --obs-stream: a STREAM without END");
+        return 1;
+    }
+    0
+}
+
 /// `--check-records FILE…`: every record must round-trip byte-identically and re-parse from its
 /// stored text to its stored typed stream. One line per file: `ok <file>` or `FAIL <file>: why`.
 fn check_records(files: &[String]) -> i32 {
@@ -795,6 +977,9 @@ fn main() {
     if args.get(1).map(String::as_str) == Some("--dex-rows") {
         std::process::exit(dex_rows());
     }
+    if args.get(1).map(String::as_str) == Some("--obs-stream") {
+        std::process::exit(obs_stream());
+    }
     let bench_rounds: Option<usize> = if args.get(1).map(String::as_str) == Some("--bench-parse") {
         Some(args.get(2).and_then(|s| s.parse().ok()).unwrap_or(5))
     } else {
@@ -814,6 +999,13 @@ fn main() {
                 i += 1;
             }
             "--views" => views = true,
+            "--walk" => {
+                // gen3_core_walk_v1: the prober's reader — the trackers, the rows' masks and tokens,
+                // and per decision / at the end the side's view (see `TrackCap::walk`)
+                let _ = WALK.set(true);
+                obs = true;
+                trackers = true;
+            }
             "--trackers" => trackers = true,
             "--obs" => {
                 obs = true;

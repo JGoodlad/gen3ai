@@ -45,8 +45,6 @@ src/main/anchors/runner.py
 src/main/anchors/session.py
 src/main/eval_worker.py
 src/main/play.py
-src/main/prober/core_trace.py
-src/main/prober/engine/switch_in.py
 src/main/prober/replay.py
 src/main/prober/session/counterfactual.py
 src/main/search_dividend/battery.py

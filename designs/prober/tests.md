@@ -16,8 +16,11 @@ and the unattributed-split integration: over-valued vs lost via the reliability 
 + the selection-confound diagnostics), `discovery_test.py` (tmp_path trees, checkpoint
 precedence, **sharded `<outcome>_s<shard>_<idx>` parsing → distinct index**),
 `core_trace_test.py` (pure: the core-trace cross-check's refusal naming the first differing line,
-the live masked softmax, the core `battle_id` → room-tag prefix, and `ProbeSession._meta` reading a
-meta-only core summary without expanding it while `_summary` refuses its missing siblings) +
+the live masked softmax, and `ProbeSession._meta` reading a meta-only core summary without
+expanding it while `_summary` refuses its missing siblings) + `core_walk_test.py` (pure: the
+`core_events` script from a reconstruction, the replay-log DISPATCH (the poke-env player's rule, the
+`|init|battle` framing, one terminal line), a non-`--walk` result refused, the legal choice map, the
+one-decision stall-forfeit rule) +
 `core_trace_readers_test.py` (pure, `core_trace.expand` stubbed: each reader family OUTSIDE the
 prober on a core trace — `mechanic_usage_baseline` counts the expanded decisions, the meta readers
 (`critic_gate._trace_turns`, `quota_match`, `harvest_meter`) never expand and never report a NaN phi,
@@ -26,11 +29,15 @@ and `cf_audit`, `harvest`, `scaffolding_gauge` and the win-prob teacher REFUSE w
 gate: no module but `core_trace.py` opens a `*_summary.json`; EMPTY allowlist; its scanner's shapes
 pinned both ways) +
 `core_trace_integration_test.py` (`@sim @integration`, builds the rust env cdylib: REAL core games —
-two normal, one at a short `turn_limit` ending in the trainee's stall forfeit — expanded and matched
-against the `states.npz` rows; each game replayed LIVE on the rust bridge through a `BattleRecorder`
-exactly as `EvalRLPlayer` records, the two summaries equal field for field and the obs byte-equal; a
-tampered record line and misaligned states rows REFUSED; `query summary|scan|turns` exit 0 on the
-core-trace run), `forensics_test.py` (pure `move_category` + `build_decision_table`/`decision_table_digest` over a
+two normal, one at a short `turn_limit` ending in the trainee's stall forfeit — expanded FROM THE
+RUST CORE'S WALK (P5) and matched against the `states.npz` rows; each game replayed LIVE on the rust
+bridge through a `BattleRecorder` exactly as `EvalRLPlayer` records, the two summaries equal field for
+field and the obs byte-equal — the poke-env ORACLE the core reading is held to; the core's stream rows
+equal the stored rows and its choice maps equal the poke-env materializer's; a tampered record line and
+misaligned states rows REFUSED; `query summary|scan|turns` exit 0 on the core-trace run) +
+`src/poke_env_free_entry_points_test.py::test_every_prober_command_and_the_web_app_run_with_poke_env_blocked`
+(`@sim @integration`: every JSON-CLI command bar `PROBER_POKE_ENV_COMMANDS` and the web app's views RUN
+with poke-env blocked on real core traces + a current-arch checkpoint; the exception list is pinned), `forensics_test.py` (pure `move_category` + `build_decision_table`/`decision_table_digest` over a
 hand-written tmp trace via a fake session — no torch, no bridge),
 `falsifier_test.py` (pure: margin/percentile/paired-stats/verdict
 matrix, seed determinism, δ-anchor selection incl. the forced-switch remap, and
@@ -46,7 +53,7 @@ forward stash LIVES, plus the `ArchDriftError` diagnosis and the dropped-kwarg r
 `loops_test.py` (the bait-loop detector, pinned on literal Showdown protocol lines — the whole
 point of the module is that it must not read the rendered timeline), `lookahead_test.py` +
 `replay_test.py` (pure ORCHESTRATION with the bridge/model/players monkeypatched) +
-`lookahead_integration_test.py` (`@integration @sim`, real bridge → materialized successor obs →
+`lookahead_integration_test.py` (`@integration @sim`, real bridge → the core's successor row →
 a fake model's V), `hub_contract_test.py`, `groom_test.py` (the eval-data groomer, pure
 filesystem) and `belief_obs_fuzz_test.py` (run directly — real bridge battles over the full
 belief stack):

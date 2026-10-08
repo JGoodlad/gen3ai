@@ -1,6 +1,6 @@
 """Pure unit tests for the one-ply lookahead ORCHESTRATION (candidate sweep, ΔV, terminal handling,
-ranking) — the bridge (reroll_many / materialize_*) and the model are monkeypatched, so no Node, no
-torch. The real re-roll → materialize → value pipeline is exercised end-to-end (against a real battle)
+ranking) — the bridge (reroll_many), the core's walk / stream reader and the model are monkeypatched, so
+no binary, no torch. The real re-roll → core row → value pipeline is exercised end-to-end (against a real battle)
 in ``lookahead_integration_test.py``; this file pins the logic on top of it."""
 
 from types import SimpleNamespace
@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 import main.prober.lookahead as LA
-from agents.training.obs_materializer import MaterializedDecision, MaterializedTrace
+from main.prober.core_walk import StreamDecision
 from main.prober.lookahead import _stats, lookahead_decision
 
 _DIM = 4
@@ -31,8 +31,8 @@ def _fake_record():
 def _summary():
     # 11-key actions dict so _label_of can index 0..6; only `phase`/`turn` matter to the engine.
     acts = {f"a{i}": {"valid": True} for i in range(11)}
-    # The materializer (fake) replays the anchor decision at turn _TURN, so the anchor inv's turn must
-    # match (the engine asserts decisions[-1].turn == inv["turn"]).
+    # The core walk (fake) reaches the anchor decision at turn _TURN, so the anchor inv's turn must
+    # match (the engine asserts the walked turn == inv["turn"]).
     invs = [{"phase": "move_selection", "turn": _TURN, "actions": acts} for _ in range(_INV + 2)]
     return {"invocations": invs, "meta": {"result": "loss"}}
 
@@ -45,7 +45,7 @@ def _npz():
 
 
 class _Model:
-    """value(obs) = obs.sum(); the fake materializer encodes the candidate idx into the successor obs."""
+    """value(obs) = obs.sum(); the fake stream reader encodes the candidate idx into the successor obs."""
 
     def value(self, obs, mask):
         return float(np.asarray(obs, dtype=np.float64).sum())
@@ -55,11 +55,9 @@ class _Model:
 
 
 def _install_fakes(monkeypatch):
-    def fake_mat_from_record(record, *, actions, mappings=None, map_actions_at=None,
-                             stop_after_decision=None, impl="node"):
-        decisions = [MaterializedDecision(obs=np.zeros(_DIM, np.float32), mask=np.ones(11, np.int8),
-                                          turn=_TURN) for _ in range(_INV + 1)]
-        return MaterializedTrace(decisions=decisions, actions_complete=True, action_choices=dict(_CHOICES))
+    def fake_decision_choices(record, side, index):
+        # the core walk's legal choice map at the anchor, and the turn it walks it at
+        return dict(_CHOICES), _TURN
 
     def fake_reroll_many(record, turn, arms, *, followup="random", **kw):
         # The batched driver resolves every (candidate × seed) arm in one process; each arm carries its
@@ -74,28 +72,24 @@ def _install_fakes(monkeypatch):
                 p1_chunks=["S"], p2_chunks=["S"]))
         return SimpleNamespace(prefix_p1_chunks=["P"], prefix_p2_chunks=["P"], arms=out_arms)
 
-    def fake_mat_branches(prefix_chunks, branches, *, username, packed_team, side, prefix_actions,
-                          battle_format, battle_tag, mappings=None, stop_after_decision=None,
-                          **kw):
-        # One shared prefix, one trace per branch — the shape the real prefix-sharing
-        # materializer returns (arms differ only past the branch decision).
+    def fake_read_streams(requests, **kw):
+        # One stream per arm (the recorded prefix + the arm's ply) — the shape the core's parse-chain
+        # reader returns: every decision up to the successor, which is the one encoded.
         out = []
-        for br in branches:
-            actions = list(prefix_actions) + list(br.actions)
-            cand = int(actions[-1])                   # the candidate played this re-roll
-            decisions = [MaterializedDecision(obs=np.zeros(_DIM, np.float32),
-                                              mask=np.ones(11, np.int8), turn=_TURN)
-                         for _ in range(len(actions))]
+        for r in requests:
+            assert list(r.chunks) == ["P", "S"] and r.encode_at == [len(r.actions)]
+            cand = int(list(r.actions)[-1])           # the candidate played this re-roll
+            decs = [StreamDecision(k=k, turn=_TURN, mask=np.ones(11, np.int8), tokens={}, obs=None)
+                    for k in range(len(r.actions))]
             # The successor row (one past the last action) carries the candidate signal → distinct V.
-            decisions.append(MaterializedDecision(obs=np.full(_DIM, float(cand), np.float32),
-                                                  mask=np.ones(11, np.int8), turn=_TURN + 1))
-            out.append(MaterializedTrace(decisions=decisions, actions_complete=False,
-                                         action_choices=None))
+            decs.append(StreamDecision(k=len(r.actions), turn=_TURN + 1, mask=np.ones(11, np.int8),
+                                       tokens={}, obs=np.full(_DIM, float(cand), np.float32)))
+            out.append(decs)
         return out
 
-    monkeypatch.setattr(LA, "materialize_from_record", fake_mat_from_record)
+    monkeypatch.setattr(LA, "decision_choices", fake_decision_choices)
     monkeypatch.setattr(LA, "reroll_many", fake_reroll_many)
-    monkeypatch.setattr(LA, "materialize_branches", fake_mat_branches)
+    monkeypatch.setattr(LA, "read_streams", fake_read_streams)
 
 
 def test_stats_helper():

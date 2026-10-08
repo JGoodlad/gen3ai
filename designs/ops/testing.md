@@ -532,6 +532,13 @@ owned seams that made it possible are `agents/enums.py` (the four value-enums, D
 `main/train/matchup_setup.TRAIN_BOT_NAMES` (the training roster by name). A test that must read the fork as an ORACLE
 (identity pins, parity fuzzes) goes in an already-listed file — `src/agents/enums_test.py` holds the P1 seam pins.
 
+**P5 (2026-10-07): the allowlist 138 -> 136 (48 non-test + 88 test), and the PROBER runs poke-env-free.** The same test
+file (5) builds a real Rust-eval core-trace run plus a current-architecture checkpoint and RUNS every JSON-CLI command and
+the web app's views (FastAPI `TestClient`) with the blocker installed (`sim`); `PROBER_POKE_ENV_COMMANDS` is the closed
+list of commands still on poke-env (`replay-counterfactual`, P6-blocking), and the test pins that exactly those are
+blocked. The prober's poke-env ORACLE (the live recorder, the materializer) lives in the already-listed
+`src/main/prober/core_trace_integration_test.py`.
+
 ### The SLOW-TIER LAST-KNOWN-STATUS gate (`src/slow_tier_status_gate_test.py`)
 
 **The routine gate is `-m "not slow and not e2e"`, so a `slow` test is DESELECTED — and a

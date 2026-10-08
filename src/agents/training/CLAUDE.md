@@ -1242,7 +1242,11 @@ rust fails loud, so the node cell ran the same wrong rollouts and reported a cle
 by `main/search_dividend/recon_tag_isolation_test.py`.
 **Full detail — in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
 
-`materialize_branches` (the prober's counterfactual lookahead) replays the shared prefix ONCE
+🚨 **NOTHING IN PRODUCTION CALLS IT ANY MORE** (poke-env retirement P5, 2026-10-07): the prober's
+lookahead / better-line / falsify read their rows and choice maps from the RUST CORE
+(`main.prober.core_walk` — `core_events --walk` / `--obs-stream`, byte-equal to this materializer on
+the P5 identity set), so `materialize_branches`, `_PlayerSnapshot` and `clone_pins.py` are exercised
+by their own tests alone and leave with P6. `materialize_branches` replays the shared prefix ONCE
 (`open_branch_fork`, which freezes a `_PlayerSnapshot`) and runs every arm off it
 (`materialize_branches_from`); `clone_pins.py` is the ONE definition of WHICH objects a per-arm
 clone must SHARE rather than copy (a `logging.Logger`, a `MappingProxyType`, the append-only
@@ -1251,7 +1255,7 @@ clone ~9× cheaper than a `deepcopy`. **The SEARCH no longer materializes anythi
 successors are Rust-core versions whose rows the driver encodes (`gen3_core_search_v1`); the
 search's protocol road, its one-sided VIEW road (`view_successor.py`, the M1 event folder, the
 per-decision fork caches) and `core_successor.py` are DELETED (Rust Core deletion pass, program
-§4 M2). `materialize_branches`, `_PlayerSnapshot` and `clone_pins.py` leave at M7 with the prober.
+§4 M2).
 
 🚨 **`EpisodeTracker.record` and `update_progress_clock` are SPLIT, not copied.** `record_context`
 and `advance_window` are their bodies once the context and the event windows exist; `record` /
