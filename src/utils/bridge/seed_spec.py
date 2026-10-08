@@ -96,9 +96,9 @@ def derive_seed_from_base(seed_base: int, index: int) -> list:
     seeded with n and n+1 is not two independent battles.
 
     Four 16-bit words is the ``[m,n,o,p]`` form :func:`validate_seed_spec` already accepts,
-    so nothing downstream learns a new spelling. Shared by ``local_battle_runner`` (the
-    poke-env driver) and ``ws_frontend`` (the websocket server) so a series replays the
-    same dice through either transport.
+    so nothing downstream learns a new spelling. Used by ``ws_frontend`` (the websocket
+    server); its former second user, the poke-env driver ``local_battle_runner``, is deleted
+    (T27 P6 slice 6d-2).
     """
     import hashlib
 

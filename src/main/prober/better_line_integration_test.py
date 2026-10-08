@@ -1,4 +1,4 @@
-"""End-to-end better-line SEARCH: record a REAL bridge battle, then search for a better line from an
+"""End-to-end better-line SEARCH: play a REAL Rust-core battle (written as a core trace), then search for a better line from an
 anchored move decision with a deterministic FAKE model, exercising the full
 SearchSession-clone → materialize → V pipeline (depth 1 AND depth 2, the interior opponent).
 
@@ -13,19 +13,24 @@ OTHER on the same record: the whole point of a byte-compatible port is that the 
 same question, so a value that moves when only the engine changes is the failure mode worth
 catching. That cross-impl test is the durable regression gate for ``gen3_rust_search_driver_v1``.
 
-Needs a bridge; no server. Run directly or via ``pytest -m integration``."""
+Needs the Node bridge and the env core's cdylib; no server."""
 
 import tempfile
 
 import numpy as np
 import pytest
 
-from agents.training.obs_roundtrip_fuzz_test import record_fixture_battle
+from main.prober.core_trace_integration_test import build_core_lib, record_core_battle
 from main.prober.better_line import better_line_decision
 from main.prober.engine import _has_state
 
 # gen3 test tiers (MEASURED 2026-08-14): 38.8 s / 8 tests
 pytestmark = pytest.mark.sim
+
+
+@pytest.fixture(scope="module")
+def lib():
+    return build_core_lib()
 
 
 class _SumModel:
@@ -57,14 +62,14 @@ class _SumModel:
         return None
 
 
-def _record_one_battle(out_dir: str, record_impl: str = "node"):
-    """The SAME real battle every run — see `record_fixture_battle`'s wall-clock-seed note.
+def _record_one_battle(lib, out_dir: str):
+    """The SAME real battle every run (``record_core_battle``).
 
     This fixture is the antipattern's FIRST named instance: it seeded from the clock, so it
     played a different battle every run and an unlucky one outran the recorded command list
     the depth-2 beam replays (ledger 2026-08-22). A fixed battle makes that either always
     true or always false, which is the only state a failure can be diagnosed from."""
-    return record_fixture_battle(out_dir, key=2, tag="BL", impl=record_impl)
+    return record_core_battle(lib, out_dir, key=2, tag="BL")
 
 
 def _mid_anchor(summary, npz):
@@ -77,9 +82,9 @@ def _mid_anchor(summary, npz):
 
 @pytest.mark.integration
 @pytest.mark.parametrize("impl", ["node", "rust"])
-def test_better_line_depth1_chosen_value_matches_recorded_next_obs(impl):
+def test_better_line_depth1_chosen_value_matches_recorded_next_obs(lib, impl):
     with tempfile.TemporaryDirectory(prefix="better_line_d1_") as out_dir:
-        record, summary, npz = _record_one_battle(out_dir)
+        record, summary, npz = _record_one_battle(lib, out_dir)
         anchor = _mid_anchor(summary, npz)
         assert anchor is not None
         out = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=1, impl=impl)
@@ -107,9 +112,9 @@ def test_better_line_depth1_chosen_value_matches_recorded_next_obs(impl):
 
 @pytest.mark.integration
 @pytest.mark.parametrize("impl", ["node", "rust"])
-def test_better_line_depth2_beam_produces_principal_variation(impl):
+def test_better_line_depth2_beam_produces_principal_variation(lib, impl):
     with tempfile.TemporaryDirectory(prefix="better_line_d2_") as out_dir:
-        record, summary, npz = _record_one_battle(out_dir)
+        record, summary, npz = _record_one_battle(lib, out_dir)
         anchor = _mid_anchor(summary, npz)
         assert anchor is not None
         model = _SumModel()
@@ -130,9 +135,9 @@ def test_better_line_depth2_beam_produces_principal_variation(impl):
 
 @pytest.mark.integration
 @pytest.mark.parametrize("impl", ["node", "rust"])
-def test_better_line_is_deterministic(impl):
+def test_better_line_is_deterministic(lib, impl):
     with tempfile.TemporaryDirectory(prefix="better_line_det_") as out_dir:
-        record, summary, npz = _record_one_battle(out_dir)
+        record, summary, npz = _record_one_battle(lib, out_dir)
         anchor = _mid_anchor(summary, npz)
         assert anchor is not None
         a = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=2,
@@ -144,8 +149,7 @@ def test_better_line_is_deterministic(impl):
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("record_impl", ["node", "rust"])
-def test_better_line_node_and_rust_drivers_agree(record_impl):
+def test_better_line_node_and_rust_drivers_agree(lib):
     """THE cross-impl gate for ``gen3_rust_search_driver_v1``.
 
     The same record, the same anchor, the same deterministic model — searched once through
@@ -155,12 +159,11 @@ def test_better_line_node_and_rust_drivers_agree(record_impl):
     That is a strictly stronger statement than "both ran without error", and it is the property
     that lets a rust-driven ``better-line`` be compared against a node-driven one.
 
-    Parametrized over the LIVE bridge that produced the record too: a mixed run (train on rust,
-    forensics on node) is the realistic deployment, so a record from either engine must search
-    identically on both.
+    The record is the Rust env core's (the only engine that plays a battle since T27 P6; the former
+    parametrization over the live bridge that produced the record went with the Python bridge road).
     """
     with tempfile.TemporaryDirectory(prefix="better_line_xi_") as out_dir:
-        record, summary, npz = _record_one_battle(out_dir, record_impl=record_impl)
+        record, summary, npz = _record_one_battle(lib, out_dir)
         anchor = _mid_anchor(summary, npz)
         assert anchor is not None
         kw = dict(depth=2, beam=3, top_k=4)
@@ -220,17 +223,3 @@ def test_better_line_node_and_rust_drivers_agree(record_impl):
             f"NO scored candidate was compared across impls ({len(nmap)} actions, all unscored "
             f"on at least one driver) — the obs bit-identity claim was never evaluated")
 
-
-if __name__ == "__main__":
-    for fn, args in (
-        (test_better_line_depth1_chosen_value_matches_recorded_next_obs, ("node",)),
-        (test_better_line_depth1_chosen_value_matches_recorded_next_obs, ("rust",)),
-        (test_better_line_depth2_beam_produces_principal_variation, ("node",)),
-        (test_better_line_depth2_beam_produces_principal_variation, ("rust",)),
-        (test_better_line_is_deterministic, ("node",)),
-        (test_better_line_is_deterministic, ("rust",)),
-        (test_better_line_node_and_rust_drivers_agree, ("node",)),
-        (test_better_line_node_and_rust_drivers_agree, ("rust",)),
-    ):
-        fn(*args)
-        print(f"{fn.__name__}[{args[0]}]: PASSED")

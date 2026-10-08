@@ -61,12 +61,14 @@ from utils.bridge.team_validator import validate_teams_locally
 
 logger = logging.getLogger("ws_frontend")
 
-# The asyncio StreamReader limit for a bridge child's stdout. The TWIN is
-# `local_battle_runner.BRIDGE_STREAM_LIMIT`, which carries the full reasoning (a long battle's
-# `__RECON__` line exceeds the 64 KiB default and readline then raises). It is restated rather
-# than imported because that module imports poke-env and THIS one must not: the whole point of a
-# separate-process front end is that the opponent owns `import poke_env`, so the server half has
-# to be poke-env-free. `ws_frontend_test.py` asserts the two constants are equal.
+# The asyncio StreamReader limit for a bridge child's stdout (gen3_bridge_flush_on_exit_v1, part 2):
+# the DEFAULT readline limit is 64 KiB, and a `__RECON__` line for a LONG battle (the 1000-turn
+# runaway cap; a full command log + both packed teams) exceeds it — readline then raises
+# LimitOverrunError -> ValueError and the battle crashes. 16 MiB is a ceiling, not an allocation:
+# asyncio buffers lazily, and the largest observed recon is ~2 orders of magnitude below it.
+# (Its former twin, `local_battle_runner.BRIDGE_STREAM_LIMIT`, is deleted with the Python bridge
+# road, T27 P6 slice 6d-2; this is now the one constant, pinned by
+# `bridge_flush_on_exit_integration_test.py`.)
 BRIDGE_STREAM_LIMIT = 16 * 1024 * 1024
 
 # Ports this process must NEVER bind. 8001 carries the live training run and 8000 is the shared

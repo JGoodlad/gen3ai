@@ -4,9 +4,10 @@ drivers — Node or Rust.
 **Two child families, one seam.** Both are stdin/stdout JSON-line subprocesses, and both are
 impl-selectable through this module:
 
-1. **The live battle transport.** The two transport seams (``bridge_session.py`` for training,
-   ``local_battle_runner.py`` for eval) spawn a child speaking the ``local_sim_bridge.js``
-   protocol. ``node`` → ``node local_sim_bridge.js``; ``rust`` → the std-only Rust binary
+1. **The live battle transport.** The websocket front end (``ws_frontend.py``) spawns a child
+   speaking the ``local_sim_bridge.js`` protocol (its Python in-process seams,
+   ``bridge_session.py`` and ``local_battle_runner.py``, are deleted — training and eval run on the
+   Rust env core). ``node`` → ``node local_sim_bridge.js``; ``rust`` → the std-only Rust binary
    ``src/rust_sim/src/bin/sim_bridge.rs``, byte-for-byte protocol-compatible (validated by
    ``harness/gen_sim_bridge_diff.js``). Selected by the training transport.
 2. **The offline search / replay drivers.** ``search_session.py`` (the warm clone-and-branch

@@ -1,18 +1,11 @@
-"""Unit tests for the reconstruction record + capture registry (no Node, no battles)."""
-
-import json
-import os
+"""Unit tests for the reconstruction record (no Node, no battles)."""
 
 import pytest
 
 from utils.bridge import reconstruction
 from utils.bridge.reconstruction import (
-    RECON_SUFFIX,
     ReconstructionRecord,
     decode_packed_team,
-    offer_record,
-    pop_record,
-    register_trace_prefix,
 )
 
 
@@ -137,65 +130,3 @@ def test_team_details_decodes_the_recorded_side(monkeypatch):
     # one-sided obs never sees but review tooling can now read.
     zapdos = rec.team_details("p1")[0]
     assert zapdos["ivs"]["atk"] == 2 and zapdos["ivs"]["spa"] == 30
-
-
-# ---------------------------------------------------------------------------
-# Capture registry — the __RECON__ ↔ trace-prefix join, both arrival orders
-# ---------------------------------------------------------------------------
-
-def test_join_record_first_then_prefix(tmp_path):
-    tag = "battle-unit-join-a"
-    assert offer_record(tag, _raw()) is None  # no prefix yet → stashed
-    prefix = str(tmp_path / "loss_001")
-    path = register_trace_prefix(tag, prefix, extra={"trainee_username": "Alice"})
-    assert path == prefix + RECON_SUFFIX
-    saved = json.loads(open(path).read())
-    assert saved["battle_tag"] == tag
-    assert saved["trainee_username"] == "Alice"
-    assert saved["prng_seed"].startswith("sodium,")
-    # consumed: a second offer stashes fresh (nothing pending anymore)
-    assert pop_record(tag) is None
-
-
-def test_join_prefix_first_then_record(tmp_path):
-    tag = "battle-unit-join-b"
-    prefix = str(tmp_path / "win_004")
-    assert register_trace_prefix(tag, prefix) is None  # record not arrived → pending
-    path = offer_record(tag, _raw())
-    assert path == prefix + RECON_SUFFIX
-    assert os.path.exists(path)
-    # ReconstructionRecord.load reads what the join wrote
-    rec = ReconstructionRecord.load(path)
-    assert rec.battle_tag == tag
-
-
-def test_pop_record_returns_and_clears():
-    tag = "battle-unit-pop"
-    offer_record(tag, _raw())
-    rec = pop_record(tag)
-    assert rec is not None and rec.battle_tag == tag
-    assert pop_record(tag) is None
-
-
-def test_registry_is_bounded_fifo():
-    cap = reconstruction._REGISTRY_CAP
-    tags = [f"battle-unit-evict-{i}" for i in range(cap + 5)]
-    for t in tags:
-        offer_record(t, _raw(t))
-    # the 5 oldest were evicted, the newest cap survive
-    for t in tags[:5]:
-        assert pop_record(t) is None
-    for t in tags[5:]:
-        assert pop_record(t) is not None
-
-
-def test_pending_prefixes_bounded_too(tmp_path):
-    cap = reconstruction._REGISTRY_CAP
-    tags = [f"battle-unit-pend-{i}" for i in range(cap + 3)]
-    for t in tags:
-        register_trace_prefix(t, str(tmp_path / t))
-    # oldest 3 evicted: offering their record stashes instead of writing
-    assert offer_record(tags[0], _raw()) is None
-    pop_record(tags[0])  # clean up the stash
-    # newest still pending: offering writes
-    assert offer_record(tags[-1], _raw()) == str(tmp_path / tags[-1]) + RECON_SUFFIX

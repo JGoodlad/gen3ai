@@ -78,7 +78,7 @@ def test_reader_limit_admits_long_battle_recon_lines():
     `BRIDGE_STREAM_LIMIT`."""
     import asyncio
 
-    from utils.bridge.local_battle_runner import BRIDGE_STREAM_LIMIT
+    from utils.bridge.ws_frontend import BRIDGE_STREAM_LIMIT
 
     payload_chars = 512 * 1024
     script = f'process.stdout.write("__RECON__ " + "A".repeat({payload_chars}) + "\\n__END__\\n")'

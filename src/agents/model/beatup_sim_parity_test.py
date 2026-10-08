@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import math
+import subprocess
 import sys
 from typing import Dict, List, Optional
 
@@ -30,7 +31,51 @@ from agents.model.damage_op_test import _fake_ctx_out, _make_layout
 from agents.model.features_extractor import DamageOperator, TEAM_SIZE
 from agents.observation.constants import POKEMON_CONDITION_OFFSET
 from agents.observation.types import TypeEncoder
-from agents.training.poke_env_gaps.damage_op_probe_fuzz_test import _parse_hp, _run_probe, mon
+from utils.paths import src_path
+
+# The omniscient constructed-scenario probe (`utils/bridge/damage_probe.js`) and its three helpers, lifted
+# from the deleted `poke_env_gaps/damage_op_probe_fuzz_test.py` (T27 P6 slice 6d-2) — this test was their
+# last user.
+_PROBE_JS = str(src_path("utils", "bridge", "damage_probe.js"))
+_IVS = {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31}
+
+
+def mon(species, moves, *, item="leftovers", ability=None, nature="Serious",
+        evs=None, ivs=None, level=100, gender="N") -> dict:
+    """A full Showdown set (the probe packs it). EVs default to all-0; pass a partial dict to invest."""
+    base = {"hp": 0, "atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0}
+    if evs:
+        base.update(evs)
+    return {"species": species, "item": item, "ability": ability or "No Ability",
+            "moves": moves, "evs": base, "ivs": ivs or dict(_IVS), "nature": nature,
+            "level": level, "gender": gender}
+
+
+def _run_probe(scenarios: List[dict]) -> List[dict]:
+    payload = {"scenarios": [{k: v for k, v in s.items() if not k.startswith("_")} for s in scenarios]}
+    proc = subprocess.run(["node", _PROBE_JS], input=json.dumps(payload), capture_output=True,
+                          text=True, timeout=180)
+    if proc.returncode != 0 and not proc.stdout.strip():
+        raise RuntimeError(f"damage_probe.js failed: {proc.stderr[-2000:]}")
+    out = []
+    for line in proc.stdout.splitlines():
+        line = line.strip()
+        if line:
+            out.append(json.loads(line))
+    return out
+
+
+def _parse_hp(field: str, maxhp: int) -> Optional[float]:
+    tok = field.split()[0]
+    if tok in ("0", "0 fnt") or tok.startswith("0 "):
+        return 0.0
+    if "/" in tok:
+        try:
+            cur, mx = tok.split("/")
+            return float(cur)            # omniscient shows EXACT cur/max → absolute HP
+        except Exception:
+            return None
+    return None
 
 _T2I = TypeEncoder.TYPE_TO_IDX
 _BEATUP = gen3_data.moves.get("beatup").num

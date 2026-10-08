@@ -1,6 +1,5 @@
-"""Win-probability loss + the RLPlayer win-prob read (the future-outcome plumbing)."""
+"""Win-probability loss (the future-outcome plumbing)."""
 
-from types import SimpleNamespace
 
 import torch
 
@@ -111,14 +110,3 @@ def test_loss_grad_flows_to_logits():
     loss, _ = InstrumentedMaskablePPO._win_prob_loss(logits, target, mask)
     loss.backward()
     assert logits.grad is not None and float(logits.grad.abs().sum()) > 0
-
-
-def test_rlplayer_win_prob_reads_stashed_logit():
-    """RLPlayer._win_prob (the trace-capture seam): sigmoid of the extractor's stashed
-    last_win_prob_logits; None when the head is off (--win-prob-mode none)."""
-    from agents.inference.player import RLPlayer
-    fe = SimpleNamespace(last_win_prob_logits=torch.tensor([[2.0]]))
-    fake = SimpleNamespace(model=SimpleNamespace(policy=SimpleNamespace(features_extractor=fe)))
-    assert abs(RLPlayer._win_prob(fake) - float(torch.sigmoid(torch.tensor(2.0)))) < 1e-6
-    fe.last_win_prob_logits = None
-    assert RLPlayer._win_prob(fake) is None

@@ -1,39 +1,21 @@
-"""Battle reconstruction records — capture registry, artifact writer, and the
-offline replay / re-roll primitives.
+"""Battle reconstruction records — the record type and the offline replay / re-roll primitives.
 
-A bridge battle's **reconstruction record** is the full-information (referee-view)
+A battle's **reconstruction record** is the full-information (referee-view)
 data needed to rebuild it bit-for-bit offline: the resolved PRNG seed, both packed
-teams, the sim's own ``inputLog``, and the raw command sequence the bridge child
-processed (``local_sim_bridge.js`` emits it as a ``__RECON__`` frame just before
-``__END__``; see that file's header for the exact fields and why *both* logs are
-kept — ``input_log`` is state-faithful, ``commands`` is protocol-faithful).
+teams, the sim's own ``inputLog``, and the raw command sequence (a Rust core trace
+writes it as the ``<prefix>_reconstruction.json`` artifact beside the trace;
+``input_log`` is state-faithful, ``commands`` is protocol-faithful).
 
 **The one-sided / omniscient wall (hard requirement).** This record contains the
-opponent's full team and the dice. It exists ONLY at the bridge/sim layer and in
-the separate ``<prefix>_reconstruction.json`` artifact written here. Nothing in
-the observation/training pipeline reads it: the obs encoder consumes poke-env's
-one-sided battle view exclusively, and the offline materializer
-(``agents.training.obs_materializer``) is fed only the *per-side protocol chunks*
-that :func:`replay_battle` / :func:`reroll_turn` regenerate — exactly the bytes
-the live agent saw — never the omniscient state. Keep it that way: any new
-consumer that wants "what the agent knew" must go through the per-side chunks.
+opponent's full team and the dice. Nothing in the observation/training pipeline
+reads it: a consumer that wants "what the agent knew" reads the *per-side protocol
+chunks* that :func:`replay_battle` / :func:`reroll_turn` regenerate — exactly the
+bytes the live agent saw — through the Rust core's parse chain
+(``main.prober.core_walk``), never the omniscient state.
 
-Capture → artifact join
------------------------
-The ``__RECON__`` frame arrives on the bridge's stdout *after* the ``|win|``
-chunks (the streams close first), but the eval forensic trace for the same battle
-is written *during* the ``|win|`` chunk's handling — so neither side can simply
-hand the other the data. The two sides meet in the bounded registry below, keyed
-by battle tag; whichever arrives second completes the pair and writes the
-artifact:
-
-- the demux/dispatch loop calls :func:`offer_record` when ``__RECON__`` arrives;
-- the forensic writer calls :func:`register_trace_prefix` right after it persists
-  a trace (``<prefix>_summary.json`` etc.).
-
-Battles whose trace is never persisted (quota-dropped, training episodes) leave
-an orphan entry that FIFO-eviction reclaims — capture is always-on and cheap, so
-no flag is threaded through the bridge.
+(The live-capture registry that joined a bridge battle's ``__RECON__`` frame to its
+forensic trace — ``offer_record`` / ``register_trace_prefix`` — is deleted with the
+Python bridge road, T27 P6 slice 6d-2.)
 
 Offline replay / re-roll (the probe-agnostic primitive)
 -------------------------------------------------------
@@ -60,8 +42,6 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
-import threading
-from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
@@ -247,75 +227,6 @@ class ReconstructionRecord:
 
 
 # ---------------------------------------------------------------------------
-# Capture registry — the __RECON__ ↔ forensic-trace join (see module header)
-# ---------------------------------------------------------------------------
-
-_REGISTRY_CAP = 64  # plenty: traces are written within the same battle's teardown
-
-_lock = threading.Lock()
-_records: "OrderedDict[str, dict]" = OrderedDict()      # tag -> raw record dict
-_pending: "OrderedDict[str, tuple]" = OrderedDict()     # tag -> (out_prefix, extra)
-
-
-def _evict(d: OrderedDict) -> None:
-    while len(d) > _REGISTRY_CAP:
-        d.popitem(last=False)
-
-
-def offer_record(battle_tag: str, raw: dict) -> Optional[str]:
-    """Bridge demux entry point: a battle's ``__RECON__`` record arrived.
-
-    If a forensic trace prefix is already registered for the tag, writes the
-    artifact now and returns its path; otherwise stashes the record (bounded,
-    FIFO-evicted) for a later :func:`register_trace_prefix` and returns None.
-    """
-    with _lock:
-        pending = _pending.pop(battle_tag, None)
-        if pending is None:
-            _records[battle_tag] = raw
-            _records.move_to_end(battle_tag)
-            _evict(_records)
-            return None
-    out_prefix, extra = pending
-    return _write_artifact(out_prefix, battle_tag, raw, extra)
-
-
-def register_trace_prefix(battle_tag: str, out_prefix: str,
-                          extra: Optional[dict] = None) -> Optional[str]:
-    """Forensic-writer entry point: a trace for ``battle_tag`` was persisted at
-    ``<out_prefix>_*``. If the battle's record already arrived, writes the
-    artifact now and returns its path; otherwise remembers the prefix (bounded)
-    for the imminent :func:`offer_record`. ``extra`` keys (e.g.
-    ``trainee_username``) are merged into the artifact."""
-    with _lock:
-        raw = _records.pop(battle_tag, None)
-        if raw is None:
-            _pending[battle_tag] = (out_prefix, extra)
-            _pending.move_to_end(battle_tag)
-            _evict(_pending)
-            return None
-    return _write_artifact(out_prefix, battle_tag, raw, extra)
-
-
-def pop_record(battle_tag: str) -> Optional[ReconstructionRecord]:
-    """Pop a stashed record (tools/tests); None if absent."""
-    with _lock:
-        raw = _records.pop(battle_tag, None)
-    if raw is None:
-        return None
-    return ReconstructionRecord.from_dict({**raw, "battle_tag": battle_tag})
-
-
-def _write_artifact(out_prefix: str, battle_tag: str, raw: dict,
-                    extra: Optional[dict]) -> str:
-    rec = {**raw, "battle_tag": battle_tag, **(extra or {})}
-    path = f"{out_prefix}{RECON_SUFFIX}"
-    with open(path, "w") as f:
-        json.dump(rec, f, indent=1)
-    return path
-
-
-# ---------------------------------------------------------------------------
 # Offline replay / re-roll (drives replay_driver.js)
 # ---------------------------------------------------------------------------
 
@@ -415,9 +326,8 @@ def replay_battle(record: ReconstructionRecord, *, timeout: float = 120.0,
     This is the reproducibility primitive: the per-side chunk sequences are
     byte-identical to what the live battle fed each player — modulo ``|t:|``
     wall-clock timestamp lines, which the sim stamps at emission time and which
-    sit in poke-env's ``MESSAGES_TO_IGNORE`` (state- and obs-invisible). Feed
-    them to ``agents.training.obs_materializer`` to rebuild the agent's exact
-    observations.
+    are state- and obs-invisible. Feed them to the Rust core's parse chain
+    (``main.prober.core_walk.read_streams``) to rebuild the agent's exact rows.
 
     ``impl`` selects the driver child (``"node"`` — the default and the historical behavior —
     or ``"rust"``); see :func:`_run_driver`.

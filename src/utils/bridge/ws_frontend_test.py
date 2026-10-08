@@ -392,14 +392,6 @@ async def test_userdetails_is_answered_because_foul_plays_avatar_call_blocks_on_
 # --------------------------------------------------------------------------------------------
 # invariants
 # --------------------------------------------------------------------------------------------
-def test_the_stream_limit_matches_its_local_battle_runner_twin():
-    """The constant is restated (not imported) to keep this module poke-env-free; that is only
-    safe while something asserts the two cannot drift."""
-    from utils.bridge.local_battle_runner import BRIDGE_STREAM_LIMIT as twin
-
-    assert ws_frontend.BRIDGE_STREAM_LIMIT == twin
-
-
 def test_the_two_reserved_ports_are_the_dev_and_training_servers():
     assert set(RESERVED_PORTS) == {8000, 8001}
 

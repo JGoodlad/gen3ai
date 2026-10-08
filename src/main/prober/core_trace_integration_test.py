@@ -50,8 +50,9 @@ def _cargo() -> str:
     return cargo
 
 
-@pytest.fixture(scope="module")
-def lib():
+def build_core_lib():
+    """Build the env core's SELF-CHECK cdylib and load it NaN-poisoned (shared by the prober's
+    core-trace integration tests)."""
     from utils.rust_env import ffi
 
     crate = src_path("rust_env")
@@ -60,6 +61,11 @@ def lib():
                        env=env, capture_output=True, text=True, timeout=1800)
     assert r.returncode == 0, f"building the cdylib failed:\n{r.stderr[-4000:]}"
     return ffi.load(ffi.default_path("selfcheck"), nan_poison=True)
+
+
+@pytest.fixture(scope="module")
+def lib():
+    return build_core_lib()
 
 
 def _play_core_games(lib, run_dir: str, n: int, *, turn_limit: int, seed: int, tag: str) -> list:
@@ -131,6 +137,21 @@ def _play_core_games(lib, run_dir: str, n: int, *, turn_limit: int, seed: int, t
             out.append(f"{pre}_summary.json")
         stage([f["env"] for f in fin])
     return out
+
+
+def record_core_battle(lib, out_dir: str, *, key: int, tag: str):
+    """ONE seeded core game, written as a core trace and read back the way the prober reads it:
+    ``(record, summary, npz)`` — the reconstruction record, the EXPANDED summary
+    (``core_trace.load_summary``) and the ``states.npz`` arrays. The SAME battle every run for a given
+    ``key`` (fixed teams, battle seed and p1 policy draws; the p2 bot is episode-seeded). The core-trace
+    twin of the deleted ``obs_roundtrip_fuzz_test.record_fixture_battle`` (T27 P6 slice 6d-2), shared by
+    the prober's falsifier / lookahead / better-line integration tests."""
+    from main.prober.core_trace import load_summary
+    from utils.bridge.reconstruction import ReconstructionRecord
+
+    (sp,) = _play_core_games(lib, out_dir, 1, turn_limit=250, seed=1000 + int(key), tag=tag)
+    record = ReconstructionRecord.load(sp.replace("_summary.json", "_reconstruction.json"))
+    return record, load_summary(sp), _npz(sp)
 
 
 @pytest.fixture(scope="module")

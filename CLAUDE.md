@@ -225,7 +225,7 @@ export PYTHONPATH=$PYTHONPATH:src
 # a fresh worktree pays for a cargo build on its first rust test — build first or discount that run.
 # Tests + fuzz scripts run the EMISSION SELF-CHECK build (target/selfcheck/; designs/rust_sim/emission_selfcheck.md)
 cargo build --profile selfcheck --features emission-selfcheck --bin sim_bridge --bin search_driver --bin core_events --manifest-path src/rust_sim/Cargo.toml
-python3 src/agents/action/fuzz_test.py [n_battles]            # + many more: see designs/ops/testing.md
+python3 src/agents/model/beatup_sim_parity_test.py      # a constructed-scenario sim probe; + more: see designs/ops/testing.md
 python -m agents.observation.rust_encoder_benchmark           # 🚨 MANDATORY before/after any obs change (the Rust encoder every run reads)
 python -m agents.training.golden_obs_core --check             # the obs GOLDEN, owned by the Rust core (P6)
 ```

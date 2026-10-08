@@ -476,66 +476,6 @@ def test_from_clause_reads_both_storage_keys():
     assert _ev(3, 1, EventKind.DAMAGE, OURS, "snorlax", amount=-0.30).from_clause is None
 
 
-def test_the_fuzz_ORACLE_reads_the_from_clause_too():
-    """The mirrored-oracle half of the same defect (positional-binding sweep).
-
-    `test_residual_damage_is_not_folded_into_the_move_magnitude` pins the TRACKER. The
-    independent fold in `event_window_fuzz_test` — the thing that is supposed to catch the
-    tracker regressing — kept the ORIGINAL `e.value.get("from")` spelling, which is
-    unconditionally falsy on DAMAGE. An oracle that repeats its subject's key drift cannot
-    detect that drift coming back, and 30 battles of green fuzz would say nothing about it."""
-    from agents.training.poke_env_gaps.event_window_fuzz_test import attributable_damage
-
-    hit = _ev(1, 2, EventKind.DAMAGE, OURS, "snorlax", amount=-0.30)
-    sand = _ev(2, 2, EventKind.DAMAGE, OURS, "snorlax", amount=-0.0625, reason="Sandstorm")
-    assert attributable_damage(hit) is True
-    assert attributable_damage(sand) is False, (
-        "the oracle counted sandstorm chip as part of the move's hit — it is reading "
-        "`value['from']`, which DAMAGE never carries, instead of `from_clause`.")
-
-
-def test_the_fuzz_ORACLE_derives_the_three_id_columns_it_used_to_declare_unmodelled():
-    """`CANT` / `FAINT_CAUSE` / `ITEM_TRANSITION` are modelled by the fuzz oracle now, and its
-    two derivations are written independently of the producer's — so they need their own cheap
-    pin, because a mistyped label reaches `FAINT_CAUSE_VOCAB.index()` only mid-battle.
-
-    What this asserts is the SEMANTIC content, not agreement with the tracker (agreement is
-    what the fuzz measures over real battles): every distinct residual cause gets its own id,
-    a self-KO outranks whatever clause the last damage carried, and the three ways a gen3 item
-    stops being held stay distinct from a mere reveal."""
-    from agents.training.poke_env_gaps.event_window_fuzz_test import (
-        oracle_faint_cause_id, oracle_item_transition,
-    )
-    from agents.battle.battle_event import EventKind as K
-    from agents.observation.constants import ITEM_TR_RECEIVED, ITEM_TR_REVEALED
-
-    causes = {c: oracle_faint_cause_id(fc, False) for c, fc in (
-        ("attack", None), ("hazard", "Spikes"), ("weather", "Sandstorm"),
-        ("status", "psn"), ("recoil", "Recoil"), ("leechseed", "Leech Seed"),
-        ("other", "item: Life Orb"))}
-    assert len(set(causes.values())) == len(causes), f"faint causes collide: {causes}"
-    assert 0 not in causes.values(), "0 is reserved for 'not a FAINT row'"
-    selfko = oracle_faint_cause_id(None, True)
-    assert oracle_faint_cause_id("Sandstorm", True) == selfko, \
-        "a self-KO must outrank whatever clause the last chip carried"
-    assert selfko not in causes.values(), "selfko must be its own id, not folded into another"
-
-    trs = {oracle_item_transition(K.ITEM, None),
-           oracle_item_transition(K.ENDITEM, None),                    # berry spent
-           oracle_item_transition(K.ENDITEM, "move: Knock Off"),       # permanent in ADV
-           oracle_item_transition(K.ENDITEM, "move: Trick")}           # the opp holds it now
-    assert len(trs) == 4, f"the item transitions collapsed onto each other: {trs}"
-    # gen3_event_window_semantics_fixes_v1 (W3): an |-item| line [from] a TRANSFER move is the
-    # item changing hands (Trick writes |-item| on BOTH mons, Thief/Covet on the taker) — reading
-    # it as a disclosure recorded a Trick as two plain reveals. Without a transfer cause it IS a
-    # disclosure.
-    assert oracle_item_transition(K.ITEM, "move: Trick") == ITEM_TR_RECEIVED   # gen3_event_record_v2: the receiving side
-    assert oracle_item_transition(K.ITEM, "move: Thief") == ITEM_TR_RECEIVED
-    assert oracle_item_transition(K.ITEM, None) == ITEM_TR_REVEALED
-    # W2: a faint no damage line KO'd (Destiny Bond / Perish Song) is not an attack
-    assert oracle_faint_cause_id(None, False, False) == causes["other"]
-
-
 def test_an_unknown_status_name_CRASHES_rather_than_reading_as_none():
     """Crash-don't-drop at the H-B status vocabulary (the `normalize_cant_reason` contract).
 
