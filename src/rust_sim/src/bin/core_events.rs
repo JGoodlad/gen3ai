@@ -88,6 +88,7 @@ use pokesim::core_events::{CoreEvent, Line};
 use pokesim::dex::Dex;
 use pokesim::json::Json;
 use pokesim::prng::normalize_seed;
+use pokesim::side_reader::SideReader;
 use pokesim::trackers::clock::ClockConfig;
 use pokesim::version::{self, BattleVersion};
 
@@ -743,7 +744,9 @@ fn present_stream() -> i32 {
 /// `--obs-stream` (`gen3_core_obs_stream_v1`, the prober's counterfactual reader — P5 of the poke-env
 /// retirement): ONE side's protocol TEXT, as a client receives it, folded through the PARSE chain with
 /// the trackers on (the chain `sim_bridge`'s core observation mode encodes on), with the side's own
-/// actions replayed by INDEX — the Rust twin of `obs_materializer.materialize_decisions`.
+/// actions replayed by INDEX — the Rust twin of `obs_materializer.materialize_decisions`. The fold
+/// IS [`SideReader`] (P6 of the poke-env retirement merged the two one-side readers, F-P5-8): this
+/// mode is a batch FRONT END over it, as `live_reader` is a session front end over it.
 ///
 /// stdin, one or more streams:
 ///
@@ -783,19 +786,23 @@ fn obs_stream() -> i32 {
         };
         let actions = nums("actions")?.unwrap_or_default();
         let encode_at = nums("encode_at")?;
-        let mut v = BattleVersion::parse_root_with(viewer, &username, team.as_deref(), Some(ClockConfig::default()))
-            .map_err(|e| e.message().to_string())?;
+        // THE ONE SIDE READER (`pokesim::side_reader`, F-P5-8): the chain `sim_bridge`'s core
+        // observation mode, `live_reader` and `rust_env`'s `bot_reader` fold on — its alignment
+        // rules and its sticky refusal included. A batch is one client WRITE: everything up to and
+        // including the next `|request|` line.
+        let mut r = SideReader::new(viewer, &username, team.as_deref(), ClockConfig::default())?;
         let mut o = String::from("{\"ok\":true,\"error\":null,\"decisions\":[");
         let mut k = 0usize;
         let mut start = 0usize;
         let n = body.len();
         while start < n {
             let end = (start..n).find(|&i| body[i].starts_with("|request|")).map_or(n, |i| i + 1);
-            v = v.parse_advance_lean(&body[start..end]).map_err(|e| e.message().to_string())?;
+            let batch: Vec<&str> = body[start..end].iter().map(String::as_str).collect();
             start = end;
-            if v.decision(viewer).is_none() {
+            if !r.advance_fold(&batch)?.decided {
                 continue;
             }
+            let v = r.version().ok_or("the reader lost its chain after a decision")?;
             let legal = v.legal(viewer).ok_or("a decision with no legality")?;
             let reading = &v.stream(viewer).ok_or("no stream")?.board_reading;
             let tokens = pokesim::present::choice_tokens(reading, &legal).map_err(|e| e.message().to_string())?;
@@ -815,7 +822,7 @@ fn obs_stream() -> i32 {
                 let tok = tokens.iter().find(|(i, _)| *i == a).map(|(_, t)| t.clone())
                     .ok_or_else(|| format!("decision {k} (turn {}): action {a} is not legal (tokens {})",
                                            reading.turn, pokesim::present::tokens_json(&tokens)))?;
-                v.note_choice(viewer, &tok);
+                r.note_choice(&tok);
             }
             k += 1;
         }

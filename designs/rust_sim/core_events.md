@@ -231,8 +231,10 @@ The prober reads a battle from the core, never from poke-env (`src/main/prober/c
   core-trace expansion is built from it (`main.prober.core_recorder`), held field for field to the
   live poke-env recorder by `src/main/prober/core_trace_integration_test.py`.
 - **`core_events --obs-stream`** (`gen3_core_obs_stream_v1`): one side's protocol TEXT (`STREAM
-  {viewer, username, team, actions, encode_at}` … `END`, many per process) through the PARSE chain
-  with the trackers on — the chain `sim_bridge`'s core observation mode encodes on — each batch ending
+  {viewer, username, team, actions, encode_at}` … `END`, many per process) through THE side reader
+  (`pokesim::side_reader::SideReader::advance_fold`, since P6 of the poke-env retirement — the one
+  chain `sim_bridge`'s core observation mode and `live_reader` fold on, its alignment rules and sticky
+  refusal included; a refused stream's error carries the reader's `core_obs: …` prefix) — each batch ending
   at a `|request|` line (the bridge's write rule), the side's own actions replayed by INDEX through the
   decision's `present::choice_tokens`. Per decision: turn, mask, tokens and (where asked) the row.
   It is the Rust twin of `obs_materializer.materialize_decisions` for the prober's lookahead /

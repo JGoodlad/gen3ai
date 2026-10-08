@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-23,342-line file. **The ledger itself is append-only and is never edited by this**;
+23,360-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**814 headings · 759 dated · 2026-08-01 → 2026-10-08 · ledger 23,342 lines.**
+**815 headings · 760 dated · 2026-08-01 → 2026-10-08 · ledger 23,360 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -834,3 +834,4 @@ rename.
   - `L23247` · `2026-10-07` · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 1: the prober's `replay-counterfactual` plays out on the Rust core (`gen3_cf_core_playout_v1`); old vs new IDENTICAL on every rollout of the P5 identity set; no prober command needs poke-env**
   - `L23274` · `2026-10-07` · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 2: `main.anchors` fully off poke-env — a `bot:` our-side is the RUST port of that bot on our side's own reading, `--server node` / `--server-uri` play the checkpoint on P4's live client; the legacy `RLPlayer` client is DELETED. Identity before deletion: 108 / 108 seeded bot battle pairs byte-identical (teeth 0 / 12), the checkpoint on the live client 19 / 20 (the 20th a peer-side H5 desync), 0 differences on 1,349 shadowed Node decisions**
   - `L23319` · `2026-10-08` · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 3: live play and the pre-session drift gate on the Rust stack only — `main.play --client poke-env` DELETED, gate (c)'s bot peers are the Rust ports, gate (d)'s shadow retired (banked), and both reader checks of `ladder_drift_scan` run on the live reader. Effect-source lines judged alike 93 / 93 (pinned and master); 200 public replays: old 198 / 200 (2 = the old scan's own rejoin misread), new 200 / 200**
+  - `L23343` · `2026-10-08` · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 4: ONE Rust side reader — `core_events --obs-stream` (the prober's batch reader, P5) now folds through `pokesim::side_reader::SideReader` (P4's, behind `sim_bridge`'s core observation mode, `live_reader` and `bot_reader`); old vs new BYTE-IDENTICAL on 1,200 banked streams (43,432 decisions, 18,839 rows) of 240 core-trace battles (F-P5-8 closed)**

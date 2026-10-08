@@ -526,6 +526,85 @@ fn core_obs_rows_equal_core_events_obs_byte_for_byte() {
     eprintln!("core_obs: {frames_total} frames over {} battles; {one_sided_writes} one-sided writes; {rerequests} [Unavailable choice] re-requests", f.battles.len());
 }
 
+/// ONE READER, THREE FRONT ENDS (P6 of the poke-env retirement, F-P5-8): `core_events --obs-stream`
+/// — the prober's batch front end over `pokesim::side_reader::SideReader`, fed one side's TEXT as a
+/// client received it and that side's actions by index — reproduces the bridge's `__OBS__` rows (the
+/// training rows) byte for byte, with the mask and tokens equal, at every decision.
+///
+/// The actions are each decision's recorded choice (`core_events --obs`'s `choice`, the FIRST token
+/// the side sent there) inverted through that decision's tokens. An `[Invalid choice]` rejection is
+/// answered on the SAME decision, so the bridge's chain notes a second token the stream reader is
+/// never told: a side's ROWS are compared up to its first `|error|[Invalid choice]` line (a
+/// deterministic cut, by line index), its decision count, masks, tokens and turns everywhere.
+#[test]
+fn obs_stream_reads_the_bridge_rows_from_each_sides_text() {
+    let f = fixture();
+    let per = parse_bridge(&f.both);
+    let mut input = String::new();
+    let mut expected: Vec<(String, Vec<&Val>, usize)> = Vec::new();
+    for (k, (frames, ce)) in per.iter().zip(&f.ce).enumerate() {
+        let b = &f.battles[k];
+        let Some(Val::Arr(trk)) = ce.get("trackers") else { panic!("{}: no trackers", b.label) };
+        for side in 0..2 {
+            let Val::Arr(recs) = &trk[side] else { panic!() };
+            let decs: Vec<&Val> = recs.iter().filter(|r| r.get("obs").is_some()).collect();
+            let flat: Vec<&String> = frames.iter().filter_map(|fr| match fr {
+                Frame::Chunk(s, ls) if *s == side => Some(ls.iter()),
+                _ => None,
+            }).flatten().collect();
+            let cut = flat.iter().position(|l| l.starts_with("|error|[Invalid choice]")).unwrap_or(usize::MAX);
+            let mut actions = Vec::new();
+            for d in &decs {
+                let Some(choice) = d.str_at("choice") else { break };
+                let Some(Val::Obj(toks)) = d.get("tokens") else { panic!("tokens") };
+                // an INVALID first token (a switch to the active mon) has no index: the stream is
+                // told nothing from here, and every compared row lies before this decision's cut
+                let Some(idx) = toks.iter().find(|(_, t)| matches!(t, Val::Str(s) if &**s == choice)).map(|(i, _)| i.to_string()) else { break };
+                actions.push(idx);
+            }
+            input.push_str(&format!(
+                "STREAM {{\"viewer\":{side},\"username\":{},\"team\":{},\"actions\":[{}],\"encode_at\":null}}\n",
+                q(NAMES[side]), q(&b.teams[side]), actions.join(",")
+            ));
+            for fr in frames {
+                if let Frame::Chunk(s, ls) = fr {
+                    if *s == side {
+                        for l in ls {
+                            input.push_str(l);
+                            input.push('\n');
+                        }
+                    }
+                }
+            }
+            input.push_str("END\n");
+            expected.push((format!("{} p{}", b.label, side + 1), obs_of(frames, side), cut));
+        }
+    }
+    let out = run(env!("CARGO_BIN_EXE_core_events"), &["--obs-stream"], &[], input);
+    let got: Vec<Val> = out.lines().map(|l| Val::parse(l).expect("--obs-stream json")).collect();
+    assert_eq!(got.len(), expected.len(), "one answer per stream");
+    let (mut rows, mut decisions) = (0usize, 0usize);
+    for (g, (what, bobs, cut)) in got.iter().zip(&expected) {
+        assert!(matches!(g.get("ok"), Some(Val::Bool(true))), "{what}: --obs-stream refused: {:?}", g.get("error"));
+        let Some(Val::Arr(decs)) = g.get("decisions") else { panic!("{what}: decisions") };
+        assert_eq!(decs.len(), bobs.len(), "{what}: {} stream decisions vs {} bridge frames", decs.len(), bobs.len());
+        for (i, (d, b)) in decs.iter().zip(bobs).enumerate() {
+            if (int(b.get("line").unwrap()) as usize) < *cut {
+                assert!(b64_of(d.get("obs").expect("obs")) == b64_of(b.get("frame").unwrap()), "{what} decision {i}: the stream row differs from the bridge row");
+                rows += 1;
+            }
+            assert_eq!(d.get("mask"), b.get("mask"), "{what} decision {i}: mask");
+            assert_eq!(d.get("tokens"), b.get("tokens"), "{what} decision {i}: tokens");
+            assert_eq!(d.get("turn"), b.get("turn"), "{what} decision {i}: turn");
+            decisions += 1;
+        }
+    }
+    // non-vacuity: a real number of rows and decisions compared
+    assert!(rows >= 100, "only {rows} rows compared");
+    assert!(decisions >= 400, "only {decisions} decisions compared");
+    eprintln!("obs-stream: {rows} rows (before each side's first [Invalid choice]) and {decisions} decisions over {} sides equal the bridge's", expected.len());
+}
+
 /// A persistent child recycled across every battle == a fresh child per battle, and a one-side
 /// request ships exactly that side's frames (the other side's chain is never built).
 #[test]

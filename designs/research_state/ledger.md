@@ -23339,3 +23339,21 @@ Tag: **BUILT · anchors 100% off poke-env (core slot + Rust-stack live client + 
   ports (action-equal per decision by `bots_gate_test.rs`); a P4-era gate-(c) number is not re-measured on them.
 
 Tag: **BUILT · live play + drift gate Rust-only · effect lines 93 / 93 alike · drift 200 / 200 (old 198, both old failures its own misread) · gate (c) PASS on Rust bots, poke-env blocked · allowlist 131 → 130**
+
+### 2026-10-08 · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 4: ONE Rust side reader — `core_events --obs-stream` (the prober's batch reader, P5) now folds through `pokesim::side_reader::SideReader` (P4's, behind `sim_bridge`'s core observation mode, `live_reader` and `bot_reader`); old vs new BYTE-IDENTICAL on 1,200 banked streams (43,432 decisions, 18,839 rows) of 240 core-trace battles (F-P5-8 closed)**
+
+- **Built.** `SideReader::advance_fold` (the fold, the alignment rules and the sticky failure without the frame);
+  `core_events --obs-stream` calls it per batch (each batch ending at a `|request|` line) and encodes only at the asked
+  decisions. New cargo pin `sim_bridge_core_obs_test::obs_stream_reads_the_bridge_rows_from_each_sides_text`: each
+  side's text + recorded choices reproduces the bridge's `__OBS__` rows (112 rows before each side's first `[Invalid
+  choice]`, 1,112 decisions' masks / tokens / turns, 16 sides); teeth — batching at `|turn|` fails it through the
+  reader's `[ALIGN]` refusal, which the old `--obs-stream` lacked.
+- **Measured** (`designs/research_state/measurements/pokeenv_p6_reader_merge_2026-10-08/`): a corpus banked by a tee in
+  front of the OLD binary (240 archived core-trace battles, 5 streams each: both sides with all / half their actions,
+  a spectator read); old vs new stdout **byte-identical on all 1,200 streams**; refusals: same verdicts (an
+  unknown-keyword message gains the reader's `core_obs: parse p1:` prefix).
+- **Findings.** (1) A third fold stays: the env core's `pool::Env` / `search::game::Game` copy the rule on
+  `SideStream::fold_lean` (training's hot path; held equal by gate ① and `search_game_test.rs`; not merged here).
+  (2) Dropping the noted choice did not move the pinned rows — only the batching teeth bites on this fixture.
+
+Tag: **BUILT · one side reader (4 front ends) · obs-stream old vs new 1,200 / 1,200 streams byte-identical · F-P5-8 closed**

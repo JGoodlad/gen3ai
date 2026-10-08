@@ -372,10 +372,10 @@
   },
   "src/agents/training/rust_eval/parity_fixed_test.py::test_teeth_a_fixed_opponent_playing_the_trainees_weights_is_fatal": {
    "status": "pass",
-   "commit": "1f1bba9513e4b1486e49b6b5784fe460f12afe29",
-   "at": "2026-10-08T08:28:44Z",
-   "duration_s": 37.84,
-   "contention": 1.0,
+   "commit": "6cf015113dfa5f1ab35117fa100234b7bd50b83c",
+   "at": "2026-10-08T09:10:00Z",
+   "duration_s": 56.54,
+   "contention": 1.61,
    "detail": ""
   },
   "src/agents/training/rust_eval/parity_test.py::test_milestone_fixed_opponents_and_the_sampled_regime_on_cpu": {
@@ -404,10 +404,10 @@
   },
   "src/agents/training/rust_rollout/fork_crn_integration_test.py::test_the_fork_phase_runs_inside_collect_and_the_lifecycle_stays_clean": {
    "status": "pass",
-   "commit": "1f1bba9513e4b1486e49b6b5784fe460f12afe29",
-   "at": "2026-10-08T08:28:44Z",
-   "duration_s": 31.79,
-   "contention": 1.0,
+   "commit": "6cf015113dfa5f1ab35117fa100234b7bd50b83c",
+   "at": "2026-10-08T09:10:00Z",
+   "duration_s": 42.09,
+   "contention": 1.17,
    "detail": ""
   },
   "src/agents/training/tb_relevance_test.py::test_a_winprob_run_emits_no_noise_tag_and_every_live_tag": {
@@ -927,18 +927,18 @@
   },
   "src/poke_env_free_entry_points_test.py::test_a_debug_smoke_with_eval_runs_with_poke_env_blocked": {
    "status": "pass",
-   "commit": "1f1bba9513e4b1486e49b6b5784fe460f12afe29",
-   "at": "2026-10-08T08:28:44Z",
-   "duration_s": 316.43,
-   "contention": 1.0,
+   "commit": "6cf015113dfa5f1ab35117fa100234b7bd50b83c",
+   "at": "2026-10-08T09:10:00Z",
+   "duration_s": 514.93,
+   "contention": 1.64,
    "detail": ""
   },
   "src/poke_env_free_entry_points_test.py::test_every_prober_command_and_the_web_app_run_with_poke_env_blocked": {
    "status": "pass",
-   "commit": "1f1bba9513e4b1486e49b6b5784fe460f12afe29",
-   "at": "2026-10-08T08:28:44Z",
-   "duration_s": 105.33,
-   "contention": 1.0,
+   "commit": "6cf015113dfa5f1ab35117fa100234b7bd50b83c",
+   "at": "2026-10-08T09:10:00Z",
+   "duration_s": 161.42,
+   "contention": 1.51,
    "detail": ""
   },
   "src/utils/bridge/bridge_impl_parity_test.py::test_a_forfeited_battles_record_logs_the_forcelose_command[node]": {
@@ -1174,5 +1174,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-08T08:28:44Z"
+ "last_written": "2026-10-08T09:10:00Z"
 }

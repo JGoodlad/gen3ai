@@ -7,7 +7,11 @@
 //!   held byte-equal to (gate ①, the env core);
 //! * `live_reader` — the reader SESSION a websocket client feeds a FOREIGN stream to (poke-env
 //!   retirement P4, `main.live.reader`): a real Showdown server's lines, our `--server rust` front
-//!   end's, or a public replay's (spectator, no decisions).
+//!   end's, or a public replay's (spectator, no decisions);
+//! * `rust_env`'s `bot_reader` (`bot_side::BotSide`, P6) — a roster bot deciding on the reading;
+//! * `core_events --obs-stream` — the PROBER's batch reader (P6 merged it in, F-P5-8), through
+//!   [`SideReader::advance_fold`]: the same fold, rules and sticky failure without the frame, so it
+//!   encodes only at the decisions it was asked for.
 //!
 //! Because both roads call [`SideReader::advance`], "the live reader = the training reader" holds by
 //! construction; the P4 gate (a) ("two roads, one row") checks it on real battles anyway.
@@ -88,6 +92,17 @@ impl SideReader {
     /// Fold `lines` — everything this side was newly shipped in ONE write — and, when the write
     /// ended at a decision, append that decision's frame JSON (`encoder::wire::obs_json_into`) to `out`.
     pub fn advance(&mut self, lines: &[&str], out: &mut Vec<u8>) -> Result<Advanced, String> {
+        self.advance_with(lines, Some(out))
+    }
+
+    /// [`SideReader::advance`] WITHOUT the frame: the same fold, alignment rules and sticky failure,
+    /// but no row is encoded — for a caller that reads the decision off [`SideReader::version`] and
+    /// encodes only where it needs a row (`core_events --obs-stream`'s `encode_at`).
+    pub fn advance_fold(&mut self, lines: &[&str]) -> Result<Advanced, String> {
+        self.advance_with(lines, None)
+    }
+
+    fn advance_with(&mut self, lines: &[&str], out: Option<&mut Vec<u8>>) -> Result<Advanced, String> {
         if let Some(m) = &self.failed {
             return Err(format!("core_obs: refused after an earlier failure in this battle: {m}"));
         }
@@ -104,7 +119,7 @@ impl SideReader {
         }
     }
 
-    fn advance_inner(&mut self, lines: &[&str], out: &mut Vec<u8>) -> Result<Advanced, String> {
+    fn advance_inner(&mut self, lines: &[&str], out: Option<&mut Vec<u8>>) -> Result<Advanced, String> {
         let side = self.side;
         let tag = side + 1;
         let chain = self.chain.take().ok_or_else(|| format!("core_obs: p{tag}: the chain is gone"))?;
@@ -133,7 +148,9 @@ impl SideReader {
                     ));
                 }
                 // `n` = this frame's index among this side's frames in this battle.
-                encoder::wire::obs_json_into(&next, side, d.line, self.decided, out)?;
+                if let Some(out) = out {
+                    encoder::wire::obs_json_into(&next, side, d.line, self.decided, out)?;
+                }
                 adv = Advanced { decided: true, line: d.line };
             }
             (d, n) => {

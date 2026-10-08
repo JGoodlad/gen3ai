@@ -23,6 +23,18 @@ __OBS__ p1 {"frame":{"dtype":"<f4","shape":[OBS_DIM],"b64":…},"mask":[11 ints]
 LAST line) and the sticky failure. `sim_bridge` now holds one `SideReader` per requested side, and so does
 `live_reader` — so the live reader IS the training reader by construction, and gate (a) below checks it anyway.
 
+**Its four front ends** (P6 of the poke-env retirement merged the second one-side reader into it, F-P5-8):
+`sim_bridge`'s core observation mode (training's rows), `live_reader` (a live websocket client's session),
+`rust_env`'s `bot_reader` (a roster bot on the same reading, below) and `core_events --obs-stream` (the PROBER's
+batch reader: many streams per process, each batch ending at a `|request|` line; it calls
+`SideReader::advance_fold` — the same fold, rules and sticky failure, no frame — and encodes only at the decisions
+it was asked for, `core_events.md` §9). Before P6 `--obs-stream` folded its own `parse_advance_lean` loop without
+the alignment check; old vs new on 1,200 streams of 240 banked core-trace battles (43,432 decisions, 18,839 rows)
+were byte-identical, and `sim_bridge_core_obs_test.rs::obs_stream_reads_the_bridge_rows_from_each_sides_text` holds
+its rows to the bridge's (`designs/research_state/measurements/pokeenv_p6_reader_merge_2026-10-08/`). The env core
+(`rust_env`'s `pool::Env` / `search::game::Game`) still folds its OWN copy of the rule, held equal by gate ① and
+`tests/search_game_test.rs` — the one fold P6 did not merge (training's hot path).
+
 | layer | file | job |
 |---|---|---|
 | the chain | `src/rust_sim/src/side_reader.rs` | text in, frame out, alignment, sticky failure |
