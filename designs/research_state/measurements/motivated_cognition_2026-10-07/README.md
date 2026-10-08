@@ -160,6 +160,36 @@ is more negative with p < 0.05.
 | `extract.py` | per checkpoint: the forward, per-row self-serving arrays → `rows/<label>.npz`, per-head calibration aggregates → `rows/<label>.calib.json`; resumable (skips a label whose outputs exist) |
 | `analyze.py` | the across-seed / bootstrap read and the decision rule → `result.json`, `result.md` |
 
+### 0.7 FOLLOW-UP T4, added 2026-10-07 AFTER the T1–T3 results (orchestrator request); NOT part of the registered verdict above
+
+T4 is X20's own bending detector, "P(opponent stays) must not inflate when we attack", applied to the
+opponent-INTENT head for the **fixed_mass arm only**: the 8 fm seeds, at the same pin, bank and
+forward as §0.2. Blob is being deleted. This section was written before `alpha_t4.py` ran.
+
+- **The head:** fixed_mass's flat opponent pointer (`flat_intent_logits`, softmax over its live
+  columns). P_sw = its mass on the six switch-slot columns plus OTHER_species. P_stay = 1 − P_sw.
+- **The label:** the opponent's realised action at this decision (`BankRows.event`: a switch iff
+  event ≥ 1000).
+- **Rows:** T1's eligible rows (`free`, both a move and a switch legal for us, rule-8 margin
+  ≥ 1e-6), with a labelled event and ≥ 1 live opponent switch column.
+- **Our action:** STAY (argmax is a move or Struggle) vs SWITCH, exactly as T1. Descriptively, I
+  also report ATTACK (the argmax is a move the bank's `cats` calls `attack`) vs SWITCH.
+- **The statistic:** e = P_sw − 1[opp switched]. **Δ4 = mean e | STAY − mean e | SWITCH.** Δ4 < 0
+  is self-serving: when we stay in, the head expects too few opponent switches, i.e. P(stay)
+  inflated.
+- **The prior column:** intent has no Smogon prior, so the prior is the BASE RATE, a constant equal
+  to the bank's overall opponent switch rate on these rows. A constant cannot select on state, so
+  its gap is −Δ(y), and arm − prior = Δ(P_sw), the head's own swing. Both are reported as asked.
+  **The verdict is on Δ4_arm**, the head's calibration gap conditional on our action. Subtracting
+  the constant only replaces it with Δp, which is not a calibration quantity.
+- **The rule (rule 8):** α BENDS iff mean Δ4_arm < 0 AND both its across-seed t95 CI (df 7) and
+  its battle-cluster bootstrap CI (B = 1,000, `default_rng(20261007)`) lie below 0 by more than
+  1e-9, AND |mean Δ4_arm| − 0.02 > 1e-9. The mirror image reads ANTI-self-serving; anything else
+  reads NOT DETECTED.
+- **Secondary (reported, not gating):** as D1, the same Δ4 with the stay/switch split taken from
+  another fm seed's policy (the mean over the 7 others). If own-policy and cross-policy agree, the
+  gap is the head's, not the policy acting on its own noise.
+
 ---
 
 ## 1. What ran (2026-10-07, after §0 was committed at `742ccc95`)
