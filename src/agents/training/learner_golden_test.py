@@ -53,19 +53,23 @@ def test_a_missing_torch_build_fails_it_never_records(monkeypatch):
     assert L.GOLDEN_PATH.read_bytes() == before
 
 
-def test_the_default_slot_is_the_fixed_mass_entry_moved_verbatim():
-    """The X5 version break MOVED the fixed_mass arm's committed entry into the default slot without
-    re-recording it: the init / post hashes are the pre-break arm's (`version_break_identity_2026-10-07`'s
-    reference, captured at 26131c0c), the buffer is the arm's seed-18 rollout and the blob slot is gone.
+def test_the_default_slot_is_the_break_s_one_deliberate_re_record():
+    """The X5 version break MOVED the fixed_mass arm's committed entry into the default slot verbatim (part 1,
+    init `47c4c5fd…` / post `70a26bfc…`, buffer `4b48eaf0…`), then re-recorded it ONCE at the end of the break
+    (parts 2/4/5 moved the init and the update, part 3 appended the OBS-FACTS block to the observation, so the
+    seed-18 buffer was rebuilt): ONE history row carrying the break's reason, after the moved-verbatim row.
     FAILS if anyone re-records the golden without a new reason row, or restores an arm block."""
     g = L.load_golden()
     e = g["entries"]["2.8.0+cu126"]
-    assert e["init_params_sha256"] == "47c4c5fdde7b4dc171db6f758eda0da097ab2b44224e61fc44fd67a736d92f69"
-    assert e["post_params_sha256"] == "70a26bfc2cfb2ed37f6a951ce791e4c49271c0f4bce84a4a68f96f2e8d977750"
-    assert g["buffer_sha256"] == "4b48eaf0a08c0382b655c79bc8e27aea5c3980f7594856479ab1056a08c66539"
+    assert e["init_params_sha256"] == "b608d0cbdb2dea29104fabcc35e1162e1a546a50684dbbcd077ee39bd88b13dc"
+    assert e["post_params_sha256"] == "5190f88c9f76705a5b1e28e120aae3f8262e39177cc24e81922db55c04ec65ff"
+    assert g["buffer_sha256"] == "75c5a7720ffdf29871da78d0bf2b1f0e84a5867302ec06e308f66d5d556ccd80"
     assert g["perturb"] == "name_keyed" and "arms" not in g
     assert L.RECORD_RUN_SEED == 18
-    assert "MOVED VERBATIM" in g["history"][-1]["reason"]
+    assert "MOVED VERBATIM" in g["history"][-2]["reason"]
+    last = g["history"][-1]["reason"]
+    assert last.startswith("gen3_x5_version_break_v1 (config v144)") and "obs-facts appended (2845)" in last
+    assert sum("gen3_x5_version_break_v1 (config v144)" in h["reason"] for h in g["history"]) == 1
 
 
 def test_record_requires_a_reason():

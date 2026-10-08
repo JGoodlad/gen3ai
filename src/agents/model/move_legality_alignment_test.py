@@ -45,14 +45,17 @@ def test_unmatched_and_empty_slots_read_illegal():
 
 @pytest.fixture(scope="module")
 def fe_rows():
-    """The production-surface extractor (eval mode) + the REAL golden-buffer rows."""
+    """The production-surface extractor (eval mode) + REAL rows: the compile parity fixture's 64 decision rows
+    from reproducible battles (3 misaligned). The learner golden's buffer held one until the X5 version break
+    re-recorded it (its games follow the seeded learner, whose init the break moved) and holds none since."""
     from agents.action.ordering_integrity import row_offsets
+    from agents.model.compile_parity_fixture import load_parity_rows
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     from agents.training import learner_golden as LG
     from main.train.production_args import production_args
 
-    with np.load(LG.BUFFER_PATH) as z:
-        obs = z["obs:observation"]
-    obs = torch.as_tensor(obs.reshape(-1, obs.shape[-1]).astype(np.float32))
+    obs_np, _mask = load_parity_rows(Gen3ObservationEncoder(load_mappings()).dimension)
+    obs = torch.as_tensor(obs_np.astype(np.float32))
     fe = LG.build_learner(args=production_args()).policy.eval().features_extractor
     o = row_offsets()
     rows = []                                  # misaligned rows: non-alphabetical order AND an illegal move
@@ -64,7 +67,7 @@ def fe_rows():
         if len(act) == 1 and (req > 0).sum() == 4 and (legal < 0.5).any() and \
                 not np.array_equal(team[act[0], o.slot_id_cols], req):
             rows.append(i)
-    assert rows, "no misaligned real row in the golden buffer — these tests would be vacuous"
+    assert rows, "no misaligned real row in the compile parity fixture — these tests would be vacuous"
     return fe, obs, rows, o
 
 

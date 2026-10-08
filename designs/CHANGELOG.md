@@ -12701,3 +12701,38 @@ only, re-based onto the break's tree.
   0.371 ms, production shape (cache WARM + view memo WARM) 0.109 → 0.126 ms — the ms are NOT a clean same-load pair
   (load1 0.38 before, ~3.0 after; no BUSY banner on either), so judge by the call counts.
 
+### Goldens — the break's ONE deliberate re-record
+
+Every golden the break moved (parts 1–5) is re-recorded ONCE, with ONE reason string: `gen3_x5_version_break_v1
+(config v144): X5 fixed_mass only, blob deleted; F1/F6a/F7a/F16b; out_gain tied across request slots; pre-gain reads;
+obs-facts appended (2845)`.
+
+- **Learner golden** — `rebuild-buffer` then `record` (torch 2.8.0+cu126, the only entry): buffer `4b48eaf0…` →
+  `75c5a772…` (seed 18; its games follow the SEEDED learner, whose init the break moved, so it is not a prefix-identical
+  copy of the old one); init `47c4c5fd…` → `b608d0cb…`, post `70a26bfc…` → `5190f88c…`, 17 losses. K9(b) on the new
+  buffer: max |Δ log π| 4.8e-7, 0 of 16 rows excluded; the fp64 reference 1 of 64 rows excluded (margin under
+  `FP32_TIE_EPS`), terms ≤ 1.9e-7 abs / 6.1e-7 rel, gradients ≤ 2.4e-6 rel L2; coverage OTHER_species live 29 / dead
+  35, OTHER_move live 61 / dead 3. `learner_golden_test`'s moved-verbatim pin became the re-record pin (the new hashes,
+  the moved-verbatim row second-to-last, ONE break reason row).
+- **The obs golden** (`golden_obs_capture.py --write`): 991 vectors at 2845, digest of digests `cc08091e…` →
+  `fed7f066…`; file `1f77a7e5…` → `aaac6b4b…`.
+- **The compile-parity fixture** (`compile_parity_fixture --write`): 64 rows at 2845, file `6863df56…` → `bb4cf83d…`.
+  ⚠️ Its old rows were STALE before this unit (10 cells, `opp_team[5]` +13 / +14 on 5 rows, last recorded 2026-09-28 —
+  the format spec's prior filter `2021ac00` moved them; the fixture's gate checks the width only).
+- **The Rust env core's oracle-reveal pins** (`src/rust_env/tests/oracle_reveal_test.rs`, `off` / `species` / `full`):
+  re-recorded after the prefix check above reproduced the old values.
+- **The h2h off/off digests** (`play_reveal_integration_test`): bits `c06a6c51…` → `4dd7ba19…`, outcome `ce837ceb…` →
+  `e4c9f4e8…` (part 1's record completed).
+- **Regenerated**: `rust_core_obs_layout --write`, `flag_registry`, the delivery graph (`--dot` / `--json`),
+  `arch_tables`, the architecture viewer.
+- **Green now** (the parts-2/4/5 red list): `learner_golden_test`, `learner_golden_fixed_mass_test` (fp32-vs-fp64, the 4
+  TEETH plants, the B ride-along, the K9(b) reads), `learner_golden_threads_test`, `learner_gates_test::
+  test_the_normal_path_passes_the_behaviour_probe`, `update_fit_test::test_the_probe_releases_its_graph`,
+  `learner_lifecycle_test::…leaves_the_golden_unchanged`, `play_reveal_integration_test::test_off_off…`, and the three
+  collapsed-critic fixtures (`parity_probe_test::test_PREMISE…`, `opponent_parity_test`, `flat_weights_test` ×3) —
+  these pass on the new model with their logits unchanged (no re-basing was needed).
+- **K9(b)'s four X5 EXACT sites** (`damage_kinds` `eff > 0` / `tgt_cur_hp > 0`, `damage_op_pairwise` `mty_k.long()`,
+  `pair_outcome` `set_nums.long()`) still move under the weight-jitter probe on the new buffer (`selection_sites_test`'s
+  pinned set is unchanged); their re-judgment (MARGIN or a new value-continuous reason) is still open.
+- **Still red**: the three untaught-meter tests (`untaught_meter_test` ×2, `untaught_unit_script_test`) — the default
+  opponent baseline no longer loads; the break's baselines part handles them.

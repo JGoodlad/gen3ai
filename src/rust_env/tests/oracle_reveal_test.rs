@@ -97,8 +97,11 @@ fn corpus_digest(level: Level, n: usize, threads: usize, seed: u64, steps: usize
 /// seeds below (27,333 decisions, 168 episodes, 0 refusals). RE-RECORDED 2026-10-07 for the format spec's
 /// prior filter (`gen3_format_spec_priors_v1`, a deliberate TRAINING-INPUT change: a banned ability's prior
 /// is 0, so an unrevealed Dugtrio / Diglett / Gligar / Electrode / Voltorb's ability columns move); the
-/// pre-reveal record was [0xc67256dbfedb798f, 0x08b7ef47213baf22, 0x781a48de5326b9b6].
-const PRE_REVEAL_DIGEST: [u64; 3] = [0x40a4d89469f446eb, 0x8efbe09d6fda4c74, 0x665bb79dbb6e0494];
+/// pre-reveal record was [0xc67256dbfedb798f, 0x08b7ef47213baf22, 0x781a48de5326b9b6]. RE-RECORDED again
+/// 2026-10-07 at the X5 version break's part 3 (`gen3_obs_facts_v1`: the 84-dim OBS-FACTS block appended to
+/// the obs row, 2761 -> 2845); the three pins were first re-run hashing only each row's 2761-dim prefix and
+/// reproduced their previous values (format spec: [0x40a4d89469f446eb, 0x8efbe09d6fda4c74, 0x665bb79dbb6e0494]).
+const PRE_REVEAL_DIGEST: [u64; 3] = [0x7f9bf4ea31d01298, 0x169d6ad36d423b4c, 0xe231223f78fea4e1];
 
 #[test]
 fn off_is_inert() {
@@ -109,8 +112,9 @@ fn off_is_inert() {
 /// The `species` level's bytes, recorded when it was built: the same corpus and seeds as `PRE_REVEAL_DIGEST`. A later
 /// level (or any change to the encoder) must leave `species` byte-identical, and this is what says so.
 /// RE-RECORDED 2026-10-07 with `PRE_REVEAL_DIGEST` (the format spec's prior filter; was
-/// [0x60eeb3f53cc2c6fb, 0x653d80b821978e8b, 0x0f0e923713e27880]).
-const SPECIES_DIGEST: [u64; 3] = [0x13e5366e75f675d1, 0x04d13a7d55a999ad, 0x4b108c1abd8c97be];
+/// [0x60eeb3f53cc2c6fb, 0x653d80b821978e8b, 0x0f0e923713e27880]), and again for the OBS-FACTS append (prefix
+/// reproduced; was [0x13e5366e75f675d1, 0x04d13a7d55a999ad, 0x4b108c1abd8c97be]).
+const SPECIES_DIGEST: [u64; 3] = [0x891cf763e4a2a136, 0x052ba1c32a90dad9, 0x691a5b236ccac9ff];
 
 #[test]
 fn species_bytes_are_pinned() {
@@ -119,7 +123,9 @@ fn species_bytes_are_pinned() {
 }
 
 /// The `full` level's bytes, recorded when it was built (the same corpus and seeds as the two pins above).
-const FULL_DIGEST: [u64; 3] = [0xca6588ea5346cc81, 0xbe296c50b2391687, 0xdd62f412c287f835];
+/// RE-RECORDED for the OBS-FACTS append (prefix reproduced; was
+/// [0xca6588ea5346cc81, 0xbe296c50b2391687, 0xdd62f412c287f835]).
+const FULL_DIGEST: [u64; 3] = [0x8b2b6001c764e4da, 0x8496445448a003a3, 0x0c3727e67aa6f4c0];
 
 #[test]
 fn full_bytes_are_pinned() {

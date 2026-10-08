@@ -10974,6 +10974,14 @@
     {
       "dst": "obs_unpack",
       "note": "validated tiling \u2014 the slice map is proven exact at construction",
+      "source_constant": "schema.slices()['obs_facts']",
+      "src": "obs.obs_facts",
+      "type": "content",
+      "width": 84
+    },
+    {
+      "dst": "obs_unpack",
+      "note": "validated tiling \u2014 the slice map is proven exact at construction",
       "source_constant": "schema.slices()['opp_team']",
       "src": "obs.opp_team",
       "type": "content",
@@ -11826,7 +11834,7 @@
     ],
     "extra_seats": 49,
     "n_tokens": 62,
-    "obs_dim": 2761,
+    "obs_dim": 2845,
     "op_out_dim": 138,
     "pi_projection_in": 1177,
     "value_pooled_dim": 128
@@ -12033,6 +12041,13 @@
       "width": 20
     },
     {
+      "id": "obs.obs_facts",
+      "kind": "obs_block",
+      "offset": 2761,
+      "stage": "T0",
+      "width": 84
+    },
+    {
       "id": "obs.opp_team",
       "kind": "obs_block",
       "offset": 732,
@@ -12095,6 +12110,42 @@
       "parent": "obs.global_env",
       "stage": "T0",
       "width": 7
+    },
+    {
+      "id": "obs.obs_facts.choice",
+      "kind": "obs_group",
+      "leaf": "choice",
+      "offset": 2803,
+      "parent": "obs.obs_facts",
+      "stage": "T0",
+      "width": 4
+    },
+    {
+      "id": "obs.obs_facts.screens",
+      "kind": "obs_group",
+      "leaf": "screens",
+      "offset": 2837,
+      "parent": "obs.obs_facts",
+      "stage": "T0",
+      "width": 8
+    },
+    {
+      "id": "obs.obs_facts.seen",
+      "kind": "obs_group",
+      "leaf": "seen",
+      "offset": 2761,
+      "parent": "obs.obs_facts",
+      "stage": "T0",
+      "width": 42
+    },
+    {
+      "id": "obs.obs_facts.vol",
+      "kind": "obs_group",
+      "leaf": "vol",
+      "offset": 2807,
+      "parent": "obs.obs_facts",
+      "stage": "T0",
+      "width": 30
     },
     {
       "id": "obs.reactive.active_req_moves",

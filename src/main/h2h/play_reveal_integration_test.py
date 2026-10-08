@@ -43,8 +43,10 @@ PAIRS, N_ENVS = 12, 8
 #: and the move / item / species tables; was 395e7d7b… / 82982a8f…).
 #: RE-RECORDED 2026-10-07 for the X5 version break (gen3_x5_version_break_v1, config v144): the conftest's production
 #: checkpoints are X5 now (blob deleted), a different architecture and so different games; was 9bffc7d6… / 54eca92a….
-OFF_BITS = "c06a6c51345c25a2285458d18db6081ad2f615743560dd5b8d7616a72307085b"
-OFF_OUTCOME_ALL = "ce837ceb3ef139677790a3c0fc5fe8ac8733f64394e06238f870d6a0c34c29f5"
+#: COMPLETED at the break's ONE golden re-record (parts 2 / 4 / 5 moved the checkpoints' init and forward, part 3 appended
+#: the OBS-FACTS block, obs 2761 -> 2845); part 1's record was c06a6c51… / ce837ceb….
+OFF_BITS = "4dd7ba19c697ccb5dbb756e15b3f85f7e7838021f2cd0ef708d3ea42f0a1746c"
+OFF_OUTCOME_ALL = "e4c9f4e81a5660bcab41badac82f7f9553158c83c3aa325e7b69b158f3812e6d"
 
 
 def bits_digest(games):

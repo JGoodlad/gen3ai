@@ -71,37 +71,44 @@ it and the golden be re-recorded.
 
 The golden pins the PRODUCTION surface, which since the X5 version break (config v144) is X5's hypothesis tokens.
 Until the break that surface was `arms.fixed_mass` beside a `blob` default; the break deleted blob and MOVED the
-arm's committed entry to the default slot VERBATIM (not re-recorded — init `47c4c5fd…`, post `70a26bfc…`, every
-loss), with its history; the deleted blob default's rows are kept as `history_deleted_blob_default`. What the entry
+arm's committed entry to the default slot VERBATIM (part 1, not re-recorded — init `47c4c5fd…`, post `70a26bfc…`,
+every loss), with its history; the deleted blob default's rows are kept as `history_deleted_blob_default`. The
+break then RE-RECORDED it ONCE, at its end, with ONE reason row naming the break (init `b608d0cb…`, post
+`5190f88c…`): parts 2 / 4 / 5 moved the init bytes and the update, and part 3 appended the OBS-FACTS block (obs
+2761 → 2845), so the seed-18 buffer was rebuilt too — and because its games follow the SEEDED learner, whose init
+the break moved, the rebuilt buffer plays different games from the old one (not a prefix-identical copy). What the entry
 carries, each forced by X5:
 
 | | the entry | why |
 |---|---|---|
 | perturbation | NAME-KEYED (`parity_probe._keyed_noise`: one generator per parameter, seeded by `sha256(seed:name)`; recorded as `"perturb": "name_keyed"`) | X5 adds groups and the policy retires α / β (and discards `belief_slots`); an order-keyed draw would move every later parameter's noise whenever a module is added or retired |
-| buffer | `learner_golden_buffer.npz` (sha `4b48eaf0…`), the rollout recipe at run seed 18 (`RECORD_RUN_SEED`) | its behaviour log-probs are the X5 learner's (K9(b) judges them). Seed 17 (the deleted blob buffer's) gave no OTHER_move-dead row (design §6.4: ≥ 2 rows per X5 case) |
+| buffer | `learner_golden_buffer.npz` (sha `75c5a772…`, rebuilt at the X5 version break), the rollout recipe at run seed 18 (`RECORD_RUN_SEED`) | its behaviour log-probs are the X5 learner's (K9(b) judges them). Seed 17 (the deleted blob buffer's) gave no OTHER_move-dead row (design §6.4: ≥ 2 rows per X5 case) |
 | recorded extras | `init_group_sha256`, `fp64_reference`, `behaviour` (the K9(b) read), `coverage` | design §6: what proves a re-bake correct, not merely new |
 
 **The fp64 reference** (`learner_golden_fp64.py`).
 - **What runs.** At the seeded INIT, on the golden's buffer with the intent labels aligned as `train()` aligns them:
   ONE `micro_step` (region R1, every term of fold steps 1–3a), at fp32 and on a float64 copy under `Fp64Mode`. The
   mode promotes every float32 operand of every torch op, and `.float()` means `.double()`.
-- **Rule 8.** Rows whose K9(b) tie margin is under `FP32_TIE_EPS` are excluded from both runs: 0 of 64 since
-  `gen3_behaviour_tie_consumed_v1` (re-recorded 2026-10-06).
+- **Rule 8.** Rows whose K9(b) tie margin is under `FP32_TIE_EPS` are excluded from both runs: 1 of 64 on the
+  break's re-recorded buffer (min judged margin 1.36e-4; 0 of 64 on the pre-break buffer).
 - **What is compared.** Every term within `5e-6 + 1e-5·|t64|`; seven key gradients (δ_θ, OTHER's map, the hypothesis
   marker, the flat pointer, the set-BCE head, the policy, the critic) within relative L2 `5e-5`.
-- **Measured (recorded).** Terms ≤ 3.3e-7 abs and ≤ 1.3e-6 relative; gradients ≤ 1.5e-6.
+- **Measured (recorded at the break's re-record, 2026-10-07).** Terms ≤ 1.9e-7 abs and ≤ 6.1e-7 relative (the
+  species set BCE); gradients ≤ 2.4e-6 relative L2 (the policy pointer's `move_proj`), under the `5e-5` bar.
 - **Exactness.** Both precisions reproduce EXACTLY within one torch build and one thread.
 - **Teeth.** An fp32-only 1e-3 logit shift fails it.
 - **Limit.** It is the same code at two precisions. The independent fp64 numpy checks of the construction
   (Σπ = k, a direct bisection, OTHER's −1e9 iff its tail is empty) are tests of their own.
 
 **What `learner_golden_fixed_mass_test.py` pins (16 tests, ~26 s).**
-- **Reproduction.** The update reproduces exactly with K9(b) ON. The probe passes: max |Δ| 4.8e-7, excluded 6.25 %
-  (1 of 16) against the 0.15 ceiling. It needed the X5 fix F-X5-44: before it, 47 % of rows were excluded.
+- **Reproduction.** The update reproduces exactly with K9(b) ON. The probe passes: max |Δ| 4.8e-7, excluded 0 %
+  (0 of 16) against the 0.15 ceiling on the break's re-recorded buffer (6.25 %, 1 of 16, on the pre-break one). It
+  needed the X5 fix F-X5-44: before it, 47 % of rows were excluded.
 - **Not vacuous.** The X5 loss keys are logged and nonzero, α / β's are absent, every X5 group moved, and the
   deleted blob path's groups (α / β / `belief_slots`) are absent.
-- **Coverage.** OTHER_species live 36 / dead 28, OTHER_move live 60 / dead 4.
-- **Teeth.** Four planted X5 perturbations each FAIL it, moving 14–15 losses and 35 groups, both X5 groups among them,
+- **Coverage.** OTHER_species live 29 / dead 35, OTHER_move live 61 / dead 3 (the break's re-recorded buffer;
+  ≥ 2 rows per case, design §6.4).
+- **Teeth.** Four planted X5 perturbations each FAIL it, moving 14–15 losses and 35 groups on the pre-break entry, both X5 groups among them,
   never the INIT:
   - τ + 1e-2 in the construction;
   - the log-π key bias's sign;

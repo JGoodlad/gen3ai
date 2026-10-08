@@ -179,8 +179,9 @@ every loss, per torch build — so ANY change to the fold, a term, a coefficient
 fails the routine gate until someone re-records deliberately: `python -m agents.training.learner_golden
 record --reason "..."` under EVERY interpreter with an entry (never a routine step). **Its ONE entry is X5's
 fixed-mass surface** (the production model since the X5 version break, v144): the former `arms.fixed_mass` entry
-MOVED VERBATIM to the default slot — its seed-18 buffer, NAME-KEYED perturbation, fp64 reference, K9(b) read and
-coverage (`learner_golden_fixed_mass_test.py` holds the X5-specific checks); the blob entry and buffer are deleted
+MOVED VERBATIM to the default slot, then was re-recorded ONCE at the end of the break (the seed-18 buffer rebuilt for
+the 2845-dim observation, the NAME-KEYED perturbation, fp64 reference, K9(b) read and coverage re-taken;
+`learner_golden_fixed_mass_test.py` holds the X5-specific checks); the blob entry and buffer are deleted
 (`learner_gates.md`). Every non-finite
 loss / gradient / buffer value / KL is `main.exit_codes.NonFiniteLearnerError` (tagged `[Learner]
 FATAL`; exit 4, the launcher does NOT restart) BEFORE the optimizer moves anything
@@ -626,7 +627,7 @@ Detail: [`designs/training/ppo_step.md`](../../../designs/training/ppo_step.md).
 
 ## Where the trainee's observation comes from — the Rust core, the ONLY source
 
-`gen3_core_obs_source_v1`: the trainee's observation row (2761-dim) and 11-bit mask are produced by the Rust core (`__OBS__` frames
+`gen3_core_obs_source_v1`: the trainee's observation row (2845-dim) and 11-bit mask are produced by the Rust core (`__OBS__` frames
 from the `sim_bridge` / env core) and read by the collector; the obs-source flag (a Python-vs-core choice) was deleted in the deletion pass (U3) with the Python env core, so there is no second source to
 diff against. Labels, reward and the action mapping are served by the core too (`rust_rollout/`). **The trainee's `(observation_space, action_space)` has ONE builder,
 `agents.training.trainee_spaces`** (`trainee_spaces()`, `trainee_env_kwargs()` — the per-run label switches as a pure function of the args; no env is built to read them). 🚨 **A DECISION is recorded only when the env
