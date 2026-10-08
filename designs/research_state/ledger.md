@@ -23457,3 +23457,21 @@ Tag: **FIX · K9(b) flip-judge: one-tie rows judged under both resolutions · u1
   gitignored `tmp/search_golden_node.json` was never committed).
 
 Tag: **BUILT · oracles + Python eval + benchmarks + calibration + BC deleted · core corpus + present golden kept · eval_trace_gen on Rust · allowlist 125 → 107**
+
+### 2026-10-08 · BUILT · **POKE-ENV RETIREMENT P6 slice 6d-1: the owner-approved deletions — the offline cf stack (`cf_producer*`, `cf_audit*`, `cf_q_labels`, `cf_mc_return`, `utils/bridge/counterfactual.py`) and the `main.search_dividend` battery — plus the Python bot roster (`agents/opponents.py`, `eval_roster`); `critic_read`'s cf_audit identity half removed; allowlist 107 → 81**
+
+- **Owner decision 2026-10-08** (via the coordinator): "LGTM for deleting both cf label and search, they need poke-env" —
+  supersedes D6's "not in this pass" (`designs/ops/deletion_pass_manifest.md` D6 row, §8.4). Search INFRA stays
+  (`utils.rust_env.successors`, `utils.bridge.search_session`, `search_driver`, the prober's better-line / lookahead /
+  falsify); `legal_choices_from_request` moved to `utils/rust_env/successors_parity.py`, `MIN_LABELABLE_TURN` to
+  `fork_arm.py`. Banked verdicts of both subsystems stay in this ledger and `measurements/`.
+- **Deleted** (148 files, −26,942 / +687): `src/main/search_dividend/` (37 files), ten `agents/training/cf_*` modules and
+  their tests, the bridge counterfactual, the Python bot roster + `bot_view`, eight tests that drove the deleted roads;
+  `critic_read`'s identity half (the `cf_audit` subprocess and join, 7 flags).
+- **Kept for slice 6d-2** (their consumers are 6d-2's files): `agents/inference/player.py`, `utils/bridge/
+  {battle_stream_client,local_battle_runner}.py`, `agents/training/obs_materializer.py`, `selfplay_opponent_fuzz_test`.
+- **Findings.** (1) `critic_read` still refuses every Rust-core cycle (the gauge / conditioning meters raise
+  `CoreTraceUnsupported`, F-LH-4) — its remaining halves serve archived Python-eval runs only. (2) `forward_guard.py` has no
+  declared caller. (3) `reconstruction.replay_battle` / `reroll_*` are used only by `obs_materializer` (6d-2 orphans them).
+
+Tag: **BUILT · cf stack + search_dividend + Python bot roster deleted (owner) · allowlist 107 → 81**

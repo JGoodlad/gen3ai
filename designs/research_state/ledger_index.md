@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-23,460-line file. **The ledger itself is append-only and is never edited by this**;
+23,478-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**819 headings · 764 dated · 2026-08-01 → 2026-10-08 · ledger 23,460 lines.**
+**820 headings · 765 dated · 2026-08-01 → 2026-10-08 · ledger 23,478 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -839,3 +839,4 @@ rename.
   - `L23371` · `2026-10-08` · BUILT · **POKE-ENV RETIREMENT P6 slice 6b: the Rust core OWNS the obs golden (its 6 battles banked as input logs while core rows == Python rows == the 991 committed hashes) and the MANDATORY observation benchmark is the Rust encoder's; the four checks that replace the Python oracle are recorded**
   - `L23386` · `2026-10-08` · FIX + MEASURED · **K9(b) FLIP-JUDGE (`gen3_behaviour_tie_flip_judge_v1`): a current row whose ONLY near tie is ONE element of ONE selection call (an isolated X5 sort pair, or one threshold element) is JUDGED under BOTH resolutions instead of excluded — it passes if either is within the bar and is FATAL if neither is; the u1480 static-screen dump's excluded share falls 10.2 % → 2.6 % (156 rows judged by the flip, all passing); epsilon, the bar and the ceiling unchanged**
   - `L23436` · `2026-10-08` · BUILT · **POKE-ENV RETIREMENT P6 slice 6c: the Python parity ORACLES, the Python-path benchmarks, the Python bot calibration, the BC reader and the Python EVAL oracle are DELETED; `main.ops.eval_trace_gen` runs on the Rust eval core; the core-only halves are kept as `core_corpus_test` and a CORE PRESENT GOLDEN**
+  - `L23461` · `2026-10-08` · BUILT · **POKE-ENV RETIREMENT P6 slice 6d-1: the owner-approved deletions — the offline cf stack (`cf_producer*`, `cf_audit*`, `cf_q_labels`, `cf_mc_return`, `utils/bridge/counterfactual.py`) and the `main.search_dividend` battery — plus the Python bot roster (`agents/opponents.py`, `eval_roster`); `critic_read`'s cf_audit identity half removed; allowlist 107 → 81**
