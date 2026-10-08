@@ -28,8 +28,9 @@ half; these tests install ``utils.poke_env_blocker`` FIRST (every ``import poke_
 
 6. ``test_every_prober_command_and_the_web_app_run_with_poke_env_blocked`` (``sim``, P5) — the PROBER on real Rust-eval
    core traces and a current-architecture checkpoint: every JSON-CLI command (model-free and model-loading) and the
-   web app's views RUN with the blocker installed; the one command that still needs poke-env is the closed list
-   :data:`PROBER_POKE_ENV_COMMANDS`, and the test pins that it is blocked and that nothing else is.
+   web app's views RUN with the blocker installed — ``replay-counterfactual`` too since P6 (the Rust play-out,
+   a model and a self-model opponent); the commands that still need poke-env are the closed list
+   :data:`PROBER_POKE_ENV_COMMANDS`, EMPTY since P6, and the test pins that nothing else reaches poke-env.
 
 A new import of ``poke_env`` on any of these paths fails here with the importing file and line. Fix the import (the
 data facade, ``utils.showdown_id``, ``utils.team_packing``, ``agents.enums`` are poke-env-free); never allowlist it.
@@ -219,11 +220,10 @@ def test_a_debug_smoke_with_eval_runs_with_poke_env_blocked(tmp_path):
 
 # ---- the PROBER (P5): every JSON-CLI command and the web front end, RUN with poke-env blocked -------------------
 
-#: The ONE prober command that still needs poke-env (P6-blocking): `replay-counterfactual` plays the rest of a
-#: battle LIVE with poke-env players (`RLPlayer`, the Python bots) over the in-process bridge. A Rust play-out
-#: (`utils.rust_env.successors.play_out` + the in-core bot ports) is its port; until then it is the declared
-#: exception, and this test pins that it is the ONLY one.
-PROBER_POKE_ENV_COMMANDS = ("replay-counterfactual",)
+#: The prober commands that still need poke-env: NONE since P6 (`replay-counterfactual` plays the rest of a battle
+#: on the Rust core, `gen3_cf_core_playout_v1`). Kept as a closed, EMPTY list: a command that comes to need poke-env
+#: again must be named here, in review, rather than slip through.
+PROBER_POKE_ENV_COMMANDS: tuple = ()
 
 _PROBER = r"""
 import json, sys, traceback
@@ -234,6 +234,9 @@ from main.prober import query
 run, battle, decide = sys.argv[1], sys.argv[2], int(sys.argv[3])
 from main.prober.session import ProbeSession
 short = next(row["short_id"] for row in ProbeSession(run).battles() if row["id"] == battle)
+from main.prober.core_trace import load_summary
+_acts = list(load_summary(battle)["invocations"][decide]["actions"].values())
+sub = str(next(i for i, a in enumerate(_acts) if a["valid"]))
 P = query._build_parser()
 rr = ["--seeds", "2", "--alts", "1", "--worst", "1"]
 cmds = [["summary", run], ["list", run], ["scan", run], ["scan", run, "--metric", "td_residual"],
@@ -248,7 +251,9 @@ cmds = [["summary", run], ["list", run], ["scan", run], ["scan", run, "--metric"
         ["--impl", "rust", "falsify-scan", run, "--outcome", "loss", "--limit", "1", *rr, "--concurrency", "1"],
         ["--impl", "rust", "calibration", run, "--outcome", "loss", "--limit", "1", *rr, "--concurrency", "1"],
         ["probe", run, "is_faster", "--max-decisions", "60"],
-        ["history-saliency", run, "--max-decisions", "10"]]
+        ["history-saliency", run, "--max-decisions", "10"],
+        ["--impl", "rust", "replay-counterfactual", battle, str(decide), sub, "--rollouts", "2", "--narrate"],
+        ["--impl", "rust", "replay-counterfactual", battle, str(decide), sub, "--opponent-source", "self"]]
 out = {}
 for argv in cmds:
     key = " ".join(a for a in argv if not a.startswith("/"))
@@ -270,16 +275,8 @@ with TestClient(create_app(run, open_access=True, impl="rust")) as c:
         pages[path] = r.status_code
 out_attempts = list(B.ATTEMPTS)
 
-# the declared exception: it reaches poke-env, and nothing else does
+# the declared exceptions (none since P6): each reaches poke-env, and nothing else does
 exc = {}
-for name in ("replay-counterfactual",):
-    try:
-        query._run(P.parse_args(["--impl", "rust", name, battle, str(decide), "0", "--rollouts", "1"]))
-        exc[name] = "ran"
-    except B.PokeEnvBlocked:
-        exc[name] = "blocked"
-    except Exception as e:
-        exc[name] = f"{type(e).__name__}: {e}"
 print("PROBER-RESULT " + json.dumps({"commands": out, "pages": pages, "attempts": [n for n, _ in out_attempts],
                                      "report": B.report() if out_attempts else "", "exceptions": exc}))
 """
@@ -337,7 +334,7 @@ def test_every_prober_command_and_the_web_app_run_with_poke_env_blocked(prober_r
     # `awareness` reads the deleted distributional value head; on a run that never had one it raises by design
     assert set(failed) <= {"awareness --outcome all"}, failed
     for must in ("turns", "overview", "analyze", "--impl rust falsify", "--impl rust lookahead",
-                 "--impl rust better-line"):
+                 "--impl rust better-line", "--impl rust replay-counterfactual"):
         hits = [k for k in res["commands"] if k.startswith(must)]
         assert hits and all(res["commands"][k]["error"] is None for k in hits), (must, res["commands"])
     assert all(code == 200 for code in res["pages"].values()), res["pages"]

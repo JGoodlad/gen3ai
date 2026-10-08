@@ -95,21 +95,57 @@ impl Game {
         }
         let mut g = Game::start(log, clock)?;
         for (k, c) in log.cmds[..at].iter().enumerate() {
-            if let Some(rest) = c.strip_prefix("FORCELOSE p") {
-                let side = side_of(rest).ok_or_else(|| format!("replay: command {k} {c:?}"))?;
-                g.forfeit(side)?;
-                continue;
-            }
-            let rest = c.strip_prefix("CHOOSE p").ok_or_else(|| format!("replay: command {k} {c:?} is not CHOOSE / FORCELOSE"))?;
-            let (tag, tok) = rest.split_once(' ').ok_or_else(|| format!("replay: command {k} {c:?}"))?;
-            let side = side_of(tag).ok_or_else(|| format!("replay: command {k} {c:?}"))?;
-            let idx = g.open[side]
-                .as_ref()
-                .and_then(|o| o.tokens.iter().find(|(_, t)| t == tok).map(|(i, _)| *i))
-                .ok_or_else(|| format!("replay: command {k} {c:?} — p{} has no open decision offering that token", side + 1))?;
-            g.feed(side, idx as i32)?;
+            g.feed_logged(k, c)?;
         }
         Ok(g)
+    }
+
+    /// Start `log`'s battle and feed its commands until the battle sits at the START of turn `turn`
+    /// (both sides at a MOVE request of turn `turn`, none of its choices fed — the search tree's
+    /// `build_to_turn`, `pokesim::search::at_turn_start`). Returns the game and the index of the
+    /// first UNFED command (turn `turn`'s first recorded choice). Refused when the log never gets
+    /// there (the battle ended first, or the commands ran out).
+    pub fn replay_to_turn(log: &Log, turn: u32, clock: ClockConfig) -> Result<(Game, usize), String> {
+        let mut g = Game::start(log, clock)?;
+        for (k, c) in log.cmds.iter().enumerate() {
+            if g.at_turn_start(turn) {
+                return Ok((g, k));
+            }
+            g.feed_logged(k, c)?;
+        }
+        if g.at_turn_start(turn) {
+            return Ok((g, log.cmds.len()));
+        }
+        Err(format!("replay: the log never reaches the start of turn {turn} (ended = {}, at turn {})", g.is_ended(), g.sess.turn()))
+    }
+
+    /// Feed one INPUT-LOG command: `CHOOSE pN <tok>` by TOKEN, through the same feed an index takes
+    /// (a token the open decision does not offer is refused), or `FORCELOSE pN`.
+    pub fn feed_logged(&mut self, k: usize, c: &str) -> Result<(), String> {
+        if let Some(rest) = c.strip_prefix("FORCELOSE p") {
+            let side = side_of(rest).ok_or_else(|| format!("replay: command {k} {c:?}"))?;
+            return self.forfeit(side);
+        }
+        let rest = c.strip_prefix("CHOOSE p").ok_or_else(|| format!("replay: command {k} {c:?} is not CHOOSE / FORCELOSE"))?;
+        let (tag, tok) = rest.split_once(' ').ok_or_else(|| format!("replay: command {k} {c:?}"))?;
+        let side = side_of(tag).ok_or_else(|| format!("replay: command {k} {c:?}"))?;
+        let idx = self.open[side]
+            .as_ref()
+            .and_then(|o| o.tokens.iter().find(|(_, t)| t == tok).map(|(i, _)| *i))
+            .ok_or_else(|| format!("replay: command {k} {c:?} — p{} has no open decision offering that token", side + 1))?;
+        self.feed(side, idx as i32)
+    }
+
+    /// Is the battle at the START of turn `t` (`pokesim::search::at_turn_start`: not ended, both
+    /// sides at a MOVE request of turn `t`)?
+    pub fn at_turn_start(&self, t: u32) -> bool {
+        pokesim::search::at_turn_start(&self.sess, t)
+    }
+
+    /// `side`'s protocol lines this game's session shipped, in flush order. A [`Game::branch`]'s
+    /// session starts EMPTY: its lines are the ones shipped after the branch point.
+    pub fn side_lines(&self, side: usize) -> Vec<String> {
+        self.sess.chunks().chunks.iter().filter(|ch| ch.side == side).flat_map(|ch| ch.lines.iter().cloned()).collect()
     }
 
     /// A branch of this game: the same board, stream and open decisions; its own dice from here
@@ -228,6 +264,20 @@ impl Game {
         // `sim_bridge`'s order: the stream notes the raw token BEFORE the command is fed.
         if let Some(t) = self.streams[side].trk.as_mut() {
             t.choose(&tok);
+        }
+        self.cmds.push(format!("CHOOSE p{} {tok}", side + 1));
+        self.sess.feed_cmd(Cmd { side, choice }, dex());
+        self.advance()
+    }
+
+    /// Feed `side`'s choice TOKEN — an in-core bot's answer: a token of the open decision, or
+    /// `default`, which has no index. [`Game::feed`] without the index lookup.
+    pub fn feed_token(&mut self, side: usize, tok: &str) -> Result<(), String> {
+        self.open[side].take().ok_or_else(|| format!("p{}: no decision open", side + 1))?;
+        let choice = parse_choice(tok).ok_or_else(|| format!("p{}: an unparseable token {tok:?}", side + 1))?;
+        // `sim_bridge`'s order: the stream notes the raw token BEFORE the command is fed.
+        if let Some(t) = self.streams[side].trk.as_mut() {
+            t.choose(tok);
         }
         self.cmds.push(format!("CHOOSE p{} {tok}", side + 1));
         self.sess.feed_cmd(Cmd { side, choice }, dex());

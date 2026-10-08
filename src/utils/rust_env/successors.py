@@ -32,7 +32,7 @@ import json
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence
+from typing import Callable, Dict, List, Mapping, Optional, Sequence
 
 import numpy as np
 
@@ -265,6 +265,12 @@ class PlayoutResult:
     batches: int = 0
     wall_s: float = 0.0
     tokens: Dict[int, str] = field(default_factory=dict)
+    #: The ROOT the core opened (``turn``, ``n``, ``other_open``, ``other_recorded`` — the other side's
+    #: recorded turn-T token a ``{"turn": T, "other": "recorded"}`` root fed, else None — …).
+    root: dict = field(default_factory=dict)
+    #: ``text=`` only: that side's protocol lines up to the branch point (each branch's ``text`` is
+    #: its lines AFTER it).
+    prefix_text: List[str] = field(default_factory=list)
 
     def value(self, b: dict, *, tie: float = 0.0, truncated: float = 0.0) -> float:
         """One branch's value from ``side``'s view: +1 win, -1 loss (a stall forfeit included), ``tie``
@@ -284,26 +290,47 @@ class PlayoutResult:
         return {a: float(np.mean(v)) for a, v in acc.items()}
 
 
-def play_out(log: dict, at: int, side: str, *, policy: Policy, seeds: Sequence[Optional[str]],
+def production_stall(*sides: str) -> dict:
+    """Training's stall forfeit (``StallConfig().threshold``) for ``sides`` — several sides forfeit
+    p1 FIRST when both are open at the limit (the core's rule; ``playout.rs`` module docs)."""
+    from agents.training.stall import StallConfig
+
+    if len(sides) == 1:
+        return {"turn_limit": int(StallConfig().threshold), "side": sides[0]}
+    return {"turn_limit": int(StallConfig().threshold), "sides": list(sides)}
+
+
+def play_out(log: dict, at, side: str, *, policy: Policy, seeds: Sequence[Optional[str]],
              actions: Optional[Sequence[int]] = None, stall: Optional[dict] = "production",
-             max_turns: int = 999, keep_cmds: bool = False, core: Optional[SearchCore] = None) -> PlayoutResult:
-    """Branch ``side``'s decision at command ``at`` of ``log`` — every legal action (or ``actions``)
-    × every seed — and play each branch to the end under ``policy``. ``seeds``: one per dice draw,
-    SHARED by every action (common random numbers); ``None`` keeps the battle's own dice.
-    ``stall="production"`` is training's stall forfeit for ``side`` (``StallConfig().threshold``);
-    ``None`` disables it (then ``max_turns`` < 1000 bounds the battle)."""
+             max_turns: int = 999, keep_cmds: bool = False, core: Optional[SearchCore] = None,
+             bot: Optional[dict] = None, text: Optional[str] = None) -> PlayoutResult:
+    """Branch ``side``'s decision at ``at`` of ``log`` — every legal action (or ``actions``) × every
+    seed — and play each branch to the end under ``policy``. ``seeds``: one per dice draw, SHARED by
+    every action (common random numbers); ``None`` keeps the battle's own dice.
+
+    ``at``: a command INDEX, or ``{"turn": T, "other": "recorded" | "policy"}`` — the START of turn
+    ``T`` with the other side's RECORDED turn-``T`` choice fed (``"recorded"``: the counterfactual
+    root, ``gen3_cf_core_playout_v1``) or left to the policy. ``stall="production"`` is training's
+    stall forfeit for ``side`` (:func:`production_stall`); a dict is passed as is; ``None`` disables
+    it (then ``max_turns`` < 1000 bounds the battle). ``bot={"side", "name", "seed"}`` plays the
+    other side with an IN-CORE scripted bot (never pending; branch ``b``'s streams are
+    ``rust_env_opponents.bot_stream_seed(seed, b, k)``). ``text="p1"/"p2"`` returns that side's
+    protocol lines (``prefix_text`` + each branch's ``text``)."""
     import time
 
     if stall == "production":
-        from agents.training.stall import StallConfig
-
-        stall = {"turn_limit": int(StallConfig().threshold), "side": side}
+        stall = production_stall(side)
     own = core is None
     core = core or SearchCore()
     try:
         t0 = time.monotonic()
-        req = {"log": log, "at": int(at), "side": side, "actions": None if actions is None else [int(a) for a in actions],
+        req = {"log": log, "at": dict(at) if isinstance(at, Mapping) else int(at), "side": side,
+               "actions": None if actions is None else [int(a) for a in actions],
                "seeds": list(seeds), "stall": stall, "max_turns": int(max_turns), "keep_cmds": bool(keep_cmds)}
+        if bot is not None:
+            req["bot"] = dict(bot)
+        if text is not None:
+            req["text"] = text
         root = core._cstr(core.lib.rust_env_playout_open, json.dumps(req).encode())
         cap = 2 * int(root["branches"])
         rows = np.empty((cap, core.obs_dim), dtype=np.float32)
@@ -329,7 +356,8 @@ def play_out(log: dict, at: int, side: str, *, policy: Policy, seeds: Sequence[O
         res = core._cstr(core.lib.rust_env_playout_results)
         return PlayoutResult(side=res["side"], at=res["at"], branches=res["branches"], answered=answered,
                              batches=batches, wall_s=time.monotonic() - t0,
-                             tokens={int(k): v for k, v in root["tokens"].items()})
+                             tokens={int(k): v for k, v in root["tokens"].items()}, root=root,
+                             prefix_text=list(res.get("prefix_text") or []))
     finally:
         if own:
             core.close()

@@ -189,7 +189,57 @@ def test_gate_2_playouts_are_deterministic_with_common_random_numbers(lib, logs)
     assert stats["playout_branches_live"] == 0 and stats["playout_finished"] == 2 * len(a.branches)
 
 
-# ------------------------------------------------------------------ gate 3
+def test_the_counterfactual_keys_through_the_ffi(lib, logs):
+    """``gen3_cf_core_playout_v1`` (P6) over the real cdylib: a divergence-turn root feeds the other side's
+    recorded choice, an in-core bot is never handed to the policy, ``text`` returns the whole protocol, and
+    :func:`utils.rust_env.counterfactual.replay_counterfactual` maps it onto rollouts reproducibly."""
+    import dataclasses
+
+    from utils.rust_env import counterfactual as CF
+
+    log = next(lg for lg in logs if not any(c.startswith("FORCELOSE") for c in lg["cmds"]) and len(lg["cmds"]) > 30)
+    seen = []
+
+    def pol(rows, masks, who):
+        seen.extend(int(w) % 2 for w in who)
+        return _greedy_hash(rows, masks, who)
+
+    with S.SearchCore(lib=lib) as core:
+        root_turn = None
+        for t in range(4, 40):
+            try:
+                a = S.play_out(log, {"turn": t, "other": "recorded"}, "p1", policy=pol, seeds=[None, "3,1,4,1"],
+                               keep_cmds=True, core=core, bot={"side": "p2", "name": "staller", "seed": 7}, text="p1")
+            except S.SuccessorsError:
+                continue
+            root_turn = t
+            break
+        assert root_turn is not None, "no turn of the log was a usable root"
+        b = S.play_out(log, {"turn": root_turn, "other": "recorded"}, "p1", policy=pol, seeds=[None, "3,1,4,1"],
+                       keep_cmds=True, core=core, bot={"side": "p2", "name": "staller", "seed": 7}, text="p1")
+        assert a.branches == b.branches and a.prefix_text == b.prefix_text, "a rerun is identical"
+        assert seen and set(seen) == {0}, "the bot's side was handed to the policy"
+        assert a.root["other_open"] is False and a.root["turn"] == root_turn
+        # turn T's two recorded choices sit at at-1 / at (either order): the root fed p2's
+        assert "CHOOSE p2 " + a.root["other_recorded"] in log["cmds"][a.at - 1:a.at + 1], "p2's recorded turn-T choice"
+        assert any(c.startswith("|turn|") for c in a.prefix_text) and all(br["text"] for br in a.branches)
+        assert all(br["decisions"][1] > 0 for br in a.branches), "the bot decided"
+        # the rollout mapping over the same core (a record built from the log; we are p1)
+        rec = dataclasses.replace(S.log_to_record(log, battle_tag="t"), trainee_username=log["names"][0])
+        tok_idx = int(a.branches[0]["action"])
+
+        class _Hash:
+            def decide(self, row, mask, rollout):
+                return int(_greedy_hash(row[None], mask[None], np.zeros(1, np.uint32))[0])
+
+        out = CF.replay_counterfactual(rec, divergence_turn=root_turn, substitute_action=tok_idx, our_policy=_Hash(),
+                                       opp_bot={"name": "staller", "seed": 7}, post_t_seeds=[None, "3,1,4,1"],
+                                       stall_sides=["p1"], text=True, core=core)
+    want = [br for br in a.branches if br["action"] == tok_idx]
+    assert [r.turns for r in out["rollouts"]] == [br["end"]["turn"] for br in want]
+    assert [r.outcome for r in out["rollouts"]] == [
+        {0: "win", 1: "loss", None: "tie"}[br["end"]["winner"]] for br in want]
+    assert out["rollouts"][0].text == a.prefix_text + want[0]["text"]
 
 
 def _decide(impl: str, record, side, turn, tokens, observed, opp_true):

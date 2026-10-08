@@ -52,9 +52,8 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         self._tier = tier
         self._model_loader = model_loader      # (path)->model; default ProbeModel.load (tests inject)
         self._models: dict = {}                 # checkpoint path → ProbeModel
-        self._play_models: dict = {}            # checkpoint path → MaskablePPO (counterfactual replay players)
-        self._cf_mappings = None                # lazily-loaded encoder mappings for the replay players
-        # torch.compile the no-grad replay models (see _load below). OFF by default: a one-off
+        self._play_models: dict = {}            # checkpoint path → MaskablePPO (counterfactual rollout policies)
+        # torch.compile the no-grad replay models (see _play_model). OFF by default: a one-off
         # `summary`/`list` query would never amortize the compile. Worth it for the search-shaped
         # commands — better-line, falsify, falsify-scan, replay-counterfactual, lookahead.
         self._compile_extractor = bool(compile_extractor)

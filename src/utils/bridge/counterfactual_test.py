@@ -9,8 +9,7 @@ import numpy as np
 from poke_env.player.battle_order import SingleBattleOrder
 
 from utils.bridge.counterfactual import (
-    _battle_outcome, _force_switch, _invert_choice, _passthrough, install_scripted_prefix,
-    summarize_trajectory, turn_cap_of)
+    _battle_outcome, _force_switch, _invert_choice, _passthrough, install_scripted_prefix, turn_cap_of)
 
 
 def test_passthrough_message():
@@ -238,35 +237,3 @@ def test_non_gen3_player_just_passes_through():
                             divergence_turn=1, substitute_choice=None, is_our_side=False)
     assert b.choose_move(_battle(1)).message == "/choose move 0"   # recorded passthrough
     assert b.choose_move(_battle(2)).message == "/choose LIVE"     # live after divergence
-
-
-def test_summarize_trajectory_parses_protocol():
-    side = "p1"   # trainee is p1; opp is p2
-    chunks = [
-        ("p1", "|turn|5\n|switch|p1a: Gengar|Gengar, M|100/100\n"
-               "|move|p2a: Swampert|Earthquake|p1a: Gengar\n|-immune|p1a: Gengar\n"),
-        ("p2", "|turn|5\n|move|p2a: Swampert|Earthquake|p1a: Gengar\n"),   # opp-side chunk → must be IGNORED
-        ("p1", "|turn|6\n|move|p1a: Gengar|Ice Beam|p2a: Swampert\n|-supereffective|p2a: Swampert\n"
-               "|-crit|p2a: Swampert\n|-damage|p2a: Swampert|0 fnt\n|faint|p2a: Swampert\n|win|TraineeName\n"),
-    ]
-    turns = {t["turn"]: t["events"] for t in summarize_trajectory(side, chunks)}
-    assert set(turns) == {5, 6}
-    # turn 5: we switch to Gengar; opp Earthquakes; Gengar immune (no double-count from the p2 chunk).
-    assert any("we sent in Gengar" in e for e in turns[5])
-    assert sum("opp used Earthquake" in e for e in turns[5]) == 1   # the p2-side chunk was ignored
-    assert any("immune" in e for e in turns[5])
-    # turn 6: we Ice Beam → super-effective crit → Swampert faints → we win.
-    assert any("we used Ice Beam" in e for e in turns[6])
-    assert any("super-effective" in e for e in turns[6])
-    assert any("crit" in e for e in turns[6])
-    assert any("Swampert FAINTED" in e for e in turns[6])
-    assert any("WINS" in e for e in turns[6])
-
-
-def test_summarize_trajectory_hp_fraction_and_malformed():
-    side = "p2"   # trainee is p2 this time
-    chunks = [("p2", "|turn|3\n|move|p2a: Milotic|Surf|p1a: Tyranitar\n"
-                     "|-damage|p1a: Tyranitar|140/300\n|garbage line no pipe\n|\n")]
-    turns = {t["turn"]: t["events"] for t in summarize_trajectory(side, chunks)}
-    assert any("we used Surf" in e for e in turns[3])
-    assert any("47% hp" in e for e in turns[3])   # 140/300 → 47%

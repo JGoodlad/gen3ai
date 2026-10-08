@@ -170,11 +170,28 @@ class _CounterfactualMixin:
         (a flagged self-play approximation). A checkpoint opponent plays in the regime the record
         says it played — **stochastic** at temp 1.0, matching ``eval_worker``'s sentinels — unless
         ``opponent_stochastic`` overrides it. **Requires the trace's ``*_reconstruction.json``
-        sibling.**"""
-        from poke_env.ps_client import LocalhostServerConfiguration
-        from agents.model.snapshot import load_checkpoint_strict
-        from agents.observation.state_encoder import load_mappings
+        sibling.** The play-out runs on the in-process RUST CORE (``gen3_cf_core_playout_v1``, P6) —
+        every draw seeded from the battle + decision, so a rerun answers identically; ``--impl node``
+        does not apply and the result's ``caveats`` say so."""
         from main.prober.replay import replay_counterfactual_battle
+
+        b, record = self._cf_record(battle_id)
+        choice = self._resolve(b)
+        if choice.path is None:
+            raise FileNotFoundError(
+                f"no checkpoint resolved for the counterfactual trainee: {choice.detail}")
+        play_model = self._play_model(choice.path)
+        opp_model = self._play_model(opponent_ckpt) if opponent_ckpt else None
+
+        return replay_counterfactual_battle(
+            record, self._summary(b), self._npz(b), int(inv), int(action),
+            play_model=play_model, opp_name=b.opponent, opponent_ckpt=opponent_ckpt,
+            opp_model=opp_model, opponent_source=opponent_source,
+            opponent_stochastic=opponent_stochastic, n_rollouts=n_rollouts,
+            narrate=narrate, impl=self._impl)
+
+    def _cf_record(self, battle_id: str):
+        """``(battle, ReconstructionRecord)`` — the counterfactual replay's input, or a typed refusal."""
         from utils.bridge.reconstruction import ReconstructionRecord
 
         b = self._battle(battle_id)
@@ -183,45 +200,30 @@ class _CounterfactualMixin:
             raise FileNotFoundError(
                 f"no reconstruction record next to this trace ({recon_path}) — counterfactual replay "
                 "needs the re-roll layer's replay data, which only bridge-eval traces carry")
-        record = ReconstructionRecord.load(recon_path)
+        return b, ReconstructionRecord.load(recon_path)
 
-        choice = self._resolve(b)
-        if choice.path is None:
-            raise FileNotFoundError(
-                f"no checkpoint resolved for the counterfactual trainee: {choice.detail}")
-        if self._cf_mappings is None:
-            self._cf_mappings = load_mappings()
+    def _play_model(self, path: str):
+        """A no-grad CPU rollout model for ``path``, loaded once per session."""
+        from agents.model.snapshot import load_checkpoint_strict
 
-        def _load(path):
-            m = self._play_models.get(path)
-            if m is None:
-                # Drop any saved extractor kwarg the CURRENT constructor rejects (a flag deleted or
-                # demoted since the checkpoint was written — v78 value_active_readout /
-                # damage_matrices_outgoing_all, v88 pubval_mode). Without this a bare load TypeErrors
-                # on any current-gen checkpoint, silently breaking every rollout path (this method,
-                # better-line, lookahead). Same sanitizer ProbeModel.load uses.
-                from main.prober.model import sanitized_load_custom_objects
-                custom_objects, _dropped = sanitized_load_custom_objects(path, "cpu")
-                m = load_checkpoint_strict(path, device="cpu", custom_objects=custom_objects)
-                m.policy.set_training_mode(False)
-                # These models are used ONLY for no-grad rollouts (better-line's beam,
-                # replay-counterfactual's Monte-Carlo re-rolls, falsify's paired sweeps) — thousands
-                # of B=1 CPU forwards, the exact shape --compile-opponents targets. Gated on
-                # `compile_extractor` because a one-off `summary`/`list` query should not pay a
-                # ~10-20s compile it will never amortize. Grad-enabled calls (saliency) are routed
-                # to eager inside the helper, so this cannot break the gradient paths.
-                maybe_compile_extractor(m, self._compile_extractor,
-                                        label=f"prober:{os.path.basename(path)}", hide_cuda=True)
-                self._play_models[path] = m
-            return m
-
-        play_model = _load(choice.path)
-        opp_model = _load(opponent_ckpt) if opponent_ckpt else None
-
-        return replay_counterfactual_battle(
-            record, self._summary(b), self._npz(b), int(inv), int(action),
-            play_model=play_model, opp_name=b.opponent, mappings=self._cf_mappings,
-            server_config=LocalhostServerConfiguration, opponent_ckpt=opponent_ckpt,
-            opp_model=opp_model, opponent_source=opponent_source,
-            opponent_stochastic=opponent_stochastic, n_rollouts=n_rollouts,
-            narrate=narrate, impl=self._impl)
+        m = self._play_models.get(path)
+        if m is None:
+            # Drop any saved extractor kwarg the CURRENT constructor rejects (a flag deleted or
+            # demoted since the checkpoint was written — v78 value_active_readout /
+            # damage_matrices_outgoing_all, v88 pubval_mode). Without this a bare load TypeErrors
+            # on any current-gen checkpoint, silently breaking every rollout path (this method,
+            # better-line, lookahead). Same sanitizer ProbeModel.load uses.
+            from main.prober.model import sanitized_load_custom_objects
+            custom_objects, _dropped = sanitized_load_custom_objects(path, "cpu")
+            m = load_checkpoint_strict(path, device="cpu", custom_objects=custom_objects)
+            m.policy.set_training_mode(False)
+            # These models are used ONLY for no-grad rollouts (better-line's beam,
+            # replay-counterfactual's Monte-Carlo re-rolls, falsify's paired sweeps) — thousands
+            # of B=1 CPU forwards, the exact shape --compile-opponents targets. Gated on
+            # `compile_extractor` because a one-off `summary`/`list` query should not pay a
+            # ~10-20s compile it will never amortize. Grad-enabled calls (saliency) are routed
+            # to eager inside the helper, so this cannot break the gradient paths.
+            maybe_compile_extractor(m, self._compile_extractor,
+                                    label=f"prober:{os.path.basename(path)}", hide_cuda=True)
+            self._play_models[path] = m
+        return m

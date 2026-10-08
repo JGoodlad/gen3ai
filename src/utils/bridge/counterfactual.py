@@ -45,6 +45,9 @@ from poke_env.teambuilder.constant_teambuilder import ConstantTeambuilder
 
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.bridge.reconstruction import ReconstructionRecord
+# The narrated play-by-play moved to the poke-env-free Rust play-out module (P6); re-exported for this
+# road's callers (cf_producer, the search-dividend playoff).
+from utils.rust_env.counterfactual import summarize_trajectory
 
 _OTHER = {"p1": "p2", "p2": "p1"}
 
@@ -206,88 +209,6 @@ def install_scripted_prefix(
 
     player.choose_move = scripted_choose_move
     return state
-
-
-def summarize_trajectory(side: str, sink: list, *, max_turns: int = 80) -> list:
-    """Parse the trainee-side protocol chunks (from ``run_local_battles``'s ``chunk_sink``) into a
-    compact, human-readable move-by-move log: a list of ``{turn, events:[str]}`` in chronological order,
-    from OUR (``side``) one-sided view — so a 'could it have won' rollout reads as an actual play-by-play
-    (what each side did, the damage/faints/crits/status, who won). Best-effort: a malformed line is
-    skipped, never raised."""
-    def who(slot: str) -> str:
-        return "we" if slot[:2] == side else "opp"
-
-    def mon(tok: str) -> str:
-        t = tok.split(": ", 1)[1] if ": " in tok else tok
-        return t.split(",")[0].strip()
-
-    def frac(tok: str):
-        head = tok.strip().split(" ")[0]
-        if "fnt" in tok or head.startswith("0/") or head == "0":
-            return 0
-        try:
-            num, den = head.split("/")
-            return int(round(100 * int(num) / max(1, int(den))))
-        except (ValueError, IndexError):
-            return None
-
-    lines = []
-    for s, chunk in sink:
-        if s == side:
-            lines.extend(chunk.split("\n"))
-
-    turns, cur = [], {"turn": 0, "events": []}
-    for ln in lines:
-        if not ln.startswith("|"):
-            continue
-        p = ln.split("|")
-        tag = p[1] if len(p) > 1 else ""
-        try:
-            if tag == "turn":
-                if cur["events"]:
-                    turns.append(cur)
-                cur = {"turn": int(p[2]), "events": []}
-            elif tag == "move":
-                cur["events"].append(f"{who(p[2])} used {p[3]}")
-            elif tag in ("switch", "drag"):
-                cur["events"].append(f"{who(p[2])} sent in {mon(p[2])}")
-            elif tag == "-damage":
-                f = frac(p[3])
-                if f is not None:
-                    cur["events"].append(f"  {mon(p[2])} → {f}% hp")
-            elif tag == "-heal":
-                f = frac(p[3])
-                if f is not None:
-                    cur["events"].append(f"  {mon(p[2])} healed → {f}% hp")
-            elif tag == "-crit":
-                cur["events"].append("  (crit)")
-            elif tag == "-supereffective":
-                cur["events"].append("  (super-effective)")
-            elif tag == "-resisted":
-                cur["events"].append("  (resisted)")
-            elif tag == "-immune":
-                cur["events"].append(f"  {mon(p[2])} immune (no effect)")
-            elif tag in ("-miss", "-fail"):
-                cur["events"].append(f"  ({'missed' if tag == '-miss' else 'failed'})")
-            elif tag == "-status":
-                cur["events"].append(f"  {mon(p[2])} is now {p[3]}")
-            elif tag == "faint":
-                cur["events"].append(f"  {mon(p[2])} FAINTED [{who(p[2])}]")
-            elif tag == "win":
-                cur["events"].append(f"→ {p[2]} WINS")
-        except (IndexError, ValueError):
-            continue
-    if cur["events"]:
-        turns.append(cur)
-
-    def _dedup(evs):                          # collapse consecutive identical lines (sand/leftovers spam)
-        out = []
-        for e in evs:
-            if not out or out[-1] != e:
-                out.append(e)
-        return out
-
-    return [{"turn": t["turn"], "events": _dedup(t["events"])} for t in turns[:max_turns]]
 
 
 def turn_cap_of(*players) -> Optional[int]:
