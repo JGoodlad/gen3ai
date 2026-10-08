@@ -23034,3 +23034,51 @@ Tag: **READ · motivated cognition BITES: T1 blob (move belief, Δ_delta −0.13
   under-dispersion.
 
 Tag: **READ (addendum) · T4 fixed_mass α: declared BENDS (Δ4 −0.057), read as UNDER-DISPERSION (head swing 0.079 vs truth 0.135; base-rate control +0.079), not motivated cognition** · meas: [`measurements/motivated_cognition_2026-10-07/`](measurements/motivated_cognition_2026-10-07/README.md) §0.7, §6
+
+### 2026-10-07 · BUILD · **THE X5 VERSION BREAK (config v144, `gen3_x5_version_break_v1`, `MIGRATION_FLOOR` 144): X5's hypothesis tokens are the only belief representation (the blob path deleted); the exact bundle F1 / F6a / F7a / F16b (the identity proven by weight mapping on the K9 golden: bitwise, F16b's softmax shift aside at 2.4e-7); the op's `out_gain` tied across request slots; every op consumer reads P(first) PRE-gain; the obs-facts block appended (2761 → 2845, `--obs-facts` off in production); the h2h fingerprint ignores default-valued kwargs. Every pre-break checkpoint runs PINNED (≤ `f7567a9f`, the last commit before the break)**
+
+The ONE planned checkpoint break after X5's adoption (design_x5_belief_tokens.md 2026-10-07 Decision row), one
+`MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` bump for all parts. CPU only; no `data/` change (the static-token screen, PINNED, reads
+main's `data/`). Detail: `designs/CHANGELOG.md` v144 (one subsection per part).
+- **Versioning.** 143 → 144, `gen3_event_record_v2` → `gen3_x5_version_break_v1`, floor 121 → 144 (contra legacy
+  manifest D-L1's "decouple": parts 2/4/5 reshape and re-wire the weights, so no pre-break checkpoint, blob or
+  fixed_mass, reproduces at HEAD). The refusal names its belief-specific reason and the pin
+  (`model_version/version_break.py`, `LAST_BLOB_COMMIT` = `f7567a9f`, main's last pre-break commit); the trainer maps it to `FATAL_CONFIG`;
+  `checkargs` reports a pre-break parent; a pickled `belief_tokens` is judged (`fixed_mass` pops, `blob` refused).
+- **Part 1, the flip + blob deletion.** `--belief-tokens` and every blob-only branch / loss / head deleted (180 files,
+  −5.6k / +4.3k lines at that commit); the opponent-belief family builds X5 whenever it is on and refuses a
+  configuration missing one of its requirements. Production byte-identical: the K9 golden's fixed_mass entry
+  (init `47c4c5fd…`, post `70a26bfc…`) reproduced exactly and was MOVED verbatim into the default slot.
+- **Part 2, the exact bundle.** F1 the dead SB3 value tower (592,129 parameters; the value half is `value_pooled`, the
+  critic `sigmoid(win_head)`; MEASURED: T2's compiled `decide` graph kept `value_pre_norm` + `value_projection` per
+  decision before the break, the eager backend the whole tower but `value_net`); F16b the flat opponent pointer's
+  shared-scorer bias (1; the policy pointer head's per-family biases are not dead and stay); F6a every gradient-path
+  value max is `index_max.max_by_index`; F7a the off-path speed-σ lookups; the blob construct-and-retire modules.
+  **Identity** (`measurements/version_break_identity_2026-10-07/`): the pre-break K9 fixed_mass state mapped onto the
+  new model by a DECLARED dropped-key list — forward (values, log π, entropy, masks) and one K9 update (every surviving
+  parameter, every pinned loss) BITWISE without F16b; with F16b log π max |Δ| 2.4e-7, update 6.0e-8 (fp32 rounding of
+  the softmax shift — the control that re-adds the bias in the script is bitwise). Learner parameters 3,111,176 →
+  2,519,046.
+- **Part 4.** `out_gain` is one shared scalar per (region, channel) across request slots / move seats: 138 → 99
+  learned gains in production (2,519,007 parameters); init values unchanged; the starting forward bitwise equal on the
+  compile-parity rows. Positional replicates over MON slots left untied (finding).
+- **Part 5.** `intent_conditional` (both speed modes) and the move-resolution family read P(first), the high roll and
+  the flinch chance from the op's PRE-gain views (`last_raw_tensors`, gradients kept); the `--speed-physics on`-only
+  special case is gone.
+- **Part 3.** The obs-facts block (84) is APPENDED at offset 2761 → obs 2845; the first 2761 dims are byte-identical
+  (all 991 obs-golden prefixes). `--obs-facts {off,v1}` (structural, since v144) is `off` in production. Benchmark
+  (`--turn 25 --reps 400`): calls/encode cold 4,325 → 4,392, warm 1,377 → 1,447; ms figures not a same-load pair.
+  Rust encoder parity green (layout regenerated, `OBS_DIM` 2845).
+- **Part 6.** Every named baseline is `era_checkout_only` with its pin; none re-pointed (no v144 checkpoint exists).
+  The untaught meter's bare launch now refuses at its era-checkout default, naming `--opponent` and the pin.
+- **Part 7.** `slots.canonical_extractor_kwargs`: a kwarg recorded at its extractor-signature default no longer
+  splits a slot group / an h2h engine (X5 look 3 FINDING 1); the look-3 cross now declares one engine of two groups.
+- **Goldens re-recorded ONCE** with one reason: K9 buffer `4b48eaf0` → `75c5a772`, init → `b608d0cb`, post →
+  `5190f88c`; obs golden; compile-parity rows; the oracle-reveal pins; the h2h off/off digests.
+- **Gates.** `--debug --arch production --steps 10000 --rollout-target-samples 2304 --batch-size 384 --n-epochs 1`:
+  exit 0, 5 updates, the X5 set BCE live, vf shape (1, 128). Routine gate `-n 4` (rebased on `f7567a9f`): 12,828 passed, 12 skipped, 15 xfailed, 1 setup error — main's new static layout test named the `static_fixed_mass` fixture the blob deletion folded into `static_model`; fixed, its files re-run green (29 passed).
+- **Deferred to a GPU lease:** the compile parity / compiled-gradient gates on the new graph (the F6a NaN class, the
+  R1 / T2 compiled regions without the tower), T2 throughput and memory, `extractor_compiles_test`'s CUDA cells, a
+  short real launch (the first two minutes are the only test of the compile / warm-start layer).
+
+Tag: **BUILD · the X5 version break · config v144 / `gen3_x5_version_break_v1` · obs 2845 · identity bitwise (F16b 2.4e-7) · every pre-break checkpoint pinned** · design: [`design_x5_belief_tokens.md`](../endstate/design_x5_belief_tokens.md) §3.8, [`design_arch_audit.md`](../endstate/design_arch_audit.md) · meas: [`measurements/version_break_identity_2026-10-07/`](measurements/version_break_identity_2026-10-07/README.md)

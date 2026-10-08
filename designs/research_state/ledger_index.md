@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-23,037-line file. **The ledger itself is append-only and is never edited by this**;
+23,085-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**806 headings · 751 dated · 2026-08-01 → 2026-10-07 · ledger 23,037 lines.**
+**807 headings · 752 dated · 2026-08-01 → 2026-10-07 · ledger 23,085 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -826,3 +826,4 @@ rename.
   - `L22900` · `2026-10-07` · FINDING + FIX · **`--token-encoding static` now runs compiled on CUDA. Two defects the CPU smokes could not show are fixed: the attention bias layout under Inductor (F-ST-8) and an aliasing recompile (F-ST-9). A third, in `--move-resolution on` × `fixed_mass` (F-MR-1), was found by the deferred GPU checks and fixed. Every deferred flag's real CUDA launch then passed T2 startup, R1 parity and the update-10 canary.**
   - `L22955` · `2026-10-07` · READ · **MOTIVATED COGNITION in the shaping-mode belief heads: it BITES on ONE head in ONE arm. The BLOB arm's move belief about the opponent's active over-states super-effective threats by +0.30 expected moves when its policy leaves, vs +0.18 when it stays (Δ_delta −0.136 [−0.159, −0.113], registered BITING). fixed_mass, species presence and Choice Band are NOT DETECTED. Blob's move head is WORSE than its own Smogon prior on the pool; the item, nature, HP-type and EV heads beat their priors by a wide margin and are near-calibrated**
   - `L23012` · `2026-10-07` · READ (addendum) · **X20's bending detector on fixed_mass's OPPONENT-INTENT head (follow-up T4): the declared rule reads BENDS (Δ4 −0.057 [−0.075, −0.039]), but the head UNDER-reacts rather than bends. It over-predicts opponent switches whether we stay (0.317 vs 0.212) or switch (0.238 vs 0.077), and swings only 58 % as far as the truth; against the base-rate control it is the honest side (+0.079)**
+  - `L23038` · `2026-10-07` · BUILD · **THE X5 VERSION BREAK (config v144, `gen3_x5_version_break_v1`, `MIGRATION_FLOOR` 144): X5's hypothesis tokens are the only belief representation (the blob path deleted); the exact bundle F1 / F6a / F7a / F16b (the identity proven by weight mapping on the K9 golden: bitwise, F16b's softmax shift aside at 2.4e-7); the op's `out_gain` tied across request slots; every op consumer reads P(first) PRE-gain; the obs-facts block appended (2761 → 2845, `--obs-facts` off in production); the h2h fingerprint ignores default-valued kwargs. Every pre-break checkpoint runs PINNED (≤ `f7567a9f`, the last commit before the break)**
