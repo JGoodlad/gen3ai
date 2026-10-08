@@ -44,9 +44,10 @@ opponent in its own process and its own poke-env.
 (`main.anchors.server.InProcessFrontEnd`; rows say `server_version =
 ws_frontend[in-process]@<gen3ai head>+rust:<bridge binary>`) and OUR side is an **in-process
 slot** of it (`main.anchors.core_side`, see "The in-process slot" below), so the only websocket
-client is the opponent. The legacy poke-env client (`--our-transport poke-env`, and every `bot:`
-our-side) still gets the SUBPROCESS form (`FrontEndServer`, stopped by PID; `server_version =
-ws_frontend@…`). No Node server is involved in an anchor read unless `--server node` is passed. The promotion's evidence is
+client is the opponent. A `bot:` our-side plays as a websocket CLIENT on the Rust stack
+(`--our-transport live`, P6: `main.live.client` with the Rust port of the bot over the `bot_reader`
+session) and gets the SUBPROCESS form (`FrontEndServer`, stopped by PID; `server_version =
+ws_frontend@…`); the legacy poke-env client is deleted (P6). No Node server is involved in an anchor read unless `--server node` is passed. The promotion's evidence is
 [`anchors_rust_frontend_2026-09-20`](../research_state/measurements/anchors_rust_frontend_2026-09-20/README.md)
 (100 games each way: Δ +0.010 [−0.124, +0.144], NOT DETECTED; 40 MB mean server-tree RSS against
 Node's 3,227 MB; 126 s against 203 s), on top of the 200-battle side-by-side in

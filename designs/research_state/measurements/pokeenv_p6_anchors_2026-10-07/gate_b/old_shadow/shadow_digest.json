@@ -1,0 +1,170 @@
+{
+ "halves": {
+  "ours_challenge": {
+   "kind:race": 665,
+   "decisions": 668,
+   "choices_compared": 667,
+   "stall_forfeits": 1
+  },
+  "peer_challenge": {
+   "kind:race": 663,
+   "decisions": 681,
+   "choices_compared": 680,
+   "stall_forfeits": 1
+  }
+ },
+ "total": {
+  "kind:race": 1328,
+  "decisions": 1349,
+  "choices_compared": 1347,
+  "stall_forfeits": 2
+ },
+ "examples": [
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total | 60 sec grace"
+   ]
+  },
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total"
+   ]
+  },
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total"
+   ]
+  },
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total"
+   ]
+  },
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total"
+   ]
+  },
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total"
+   ]
+  },
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total | 5 sec grace"
+   ]
+  },
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total"
+   ]
+  },
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total | 5 sec grace"
+   ]
+  },
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total"
+   ]
+  },
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total"
+   ]
+  },
+  {
+   "half": "ours_challenge",
+   "battle": "battle-gen3ou-47506181",
+   "kind": "race",
+   "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+   "lines": [
+    "|inactive|Time left: 300 sec this turn | 300 sec total | 5 sec grace"
+   ]
+  }
+ ],
+ "read": {
+  "status": "OK",
+  "n": 20,
+  "W/L/T": "2/18/0",
+  "our_transport": "poke_env_rlplayer",
+  "server_impl": "node",
+  "server_version": "showdown:e0551883f",
+  "failure": null,
+  "forfeits": 2,
+  "their_argmax_match_rates": [
+   1.0
+  ],
+  "server_log_errors": 0,
+  "n_defaults": 0,
+  "n_redecides": 0,
+  "turns": [
+   19,
+   70,
+   38,
+   89,
+   44,
+   30,
+   250,
+   1,
+   61,
+   23,
+   21,
+   79,
+   24,
+   91,
+   41,
+   21,
+   250,
+   1,
+   65,
+   45
+  ]
+ }
+}

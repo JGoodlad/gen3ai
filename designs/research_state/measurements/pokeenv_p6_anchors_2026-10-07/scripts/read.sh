@@ -2,6 +2,8 @@
 # usage: read.sh <blocked:0|1> <anchors args...>
 # One `python -m main.anchors` read from THIS worktree: its own src on PYTHONPATH, its own release binaries
 # (sim_bridge / live_reader / bot_reader), CPU only; blocked=1 runs it under the poke-env import blocker.
+# The legacy modes (0 with --our-transport poke-env, legacybot, legacyshadow) run only at the P6-slice-2 PART-1 commit (local SHA 1b6b11c2 before a rebase), where both
+# paths were present; the commit after it deletes the legacy client.
 WT=${WT:-/home/goodlad/dev/gen3ai/.claude/worktrees/agent-ae1cd62e313f38efc}
 PY=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3
 export PYTHONPATH=$WT/src CUDA_VISIBLE_DEVICES=""

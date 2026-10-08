@@ -12,8 +12,11 @@ What it does, in the order it does it:
    ``--server node`` is the explicit opt-out that starts ``deps/pokemon-showdown``, kept because a
    transport differential needs a reference that is not ours. ``--server-uri`` starts nothing and
    stamps the rows ``server_impl = external``;
-2. **runs OUR checkpoint through `main.play`'s own code path** — not a copy — against the named
-   opponent at a MATCHED regime, role-balanced across two half-series;
+2. **plays OUR side on the Rust stack** — the checkpoint as an in-process slot of the front end on
+   the core's own row (``--our-transport core``, the default), or as a websocket client on
+   ``main.live``'s reader (``live``: ``--server node`` / ``--server-uri`` / a ``bot:`` our-side, the
+   Rust port of that bot) — against the named opponent at a MATCHED regime, role-balanced across
+   two half-series. No side of ours imports poke-env (P3 + P6 of the retirement);
 3. **verifies the regime per decision on both sides** and writes the ``argmax_match_rate``;
 4. **writes ``games.jsonl`` + ``summary.json``** with the Wilson interval AND, on every row, the
    regime, the team set, the opponent's version and commit, our checkpoint's step, the search
@@ -215,7 +218,7 @@ def build_parser() -> argparse.ArgumentParser:
                         "and --games a multiple of 4. A REGIME: stamped on every row, never pooled with "
                         "an unmirrored read.")
     p.add_argument("--our-transport", dest="our_transport", default="auto",
-                   choices=("auto",) + core_side.OUR_TRANSPORTS,
+                   choices=("auto",) + core_side.OUR_TRANSPORTS + (core_side.DELETED_TRANSPORT,),
                    help="HOW our side plays. 'auto' (the DEFAULT) = 'core' wherever it can serve, else "
                         "'live', PRINTED in the plan. 'core' (P3 of the poke-env retirement): an "
                         "IN-PROCESS slot of the Rust websocket front end, deciding on sim_bridge's core "
@@ -223,8 +226,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "and a checkpoint our-side. 'live' (P6): a websocket CLIENT on the Rust stack — "
                         "main.live's reader session (the same reader chain) with our checkpoint, or the "
                         "Rust port of a bot: our-side; serves --server node, --server-uri and a bot: "
-                        "our-side. 'poke-env': the LEGACY main.play -> RLPlayer client, kept only for "
-                        "P6's identity proof. Neither 'core' nor 'live' imports poke-env. Stamped per "
+                        "our-side. Neither imports poke-env. 'poke-env' (the legacy main.play -> "
+                        "RLPlayer client) was DELETED in P6 and is refused with its reason. Stamped per "
                         "row as our_transport.")
     p.add_argument("--bot-seed", dest="bot_seed", type=int, default=None,
                    help="a bot: our-side's DECLARED stream seed (default: --team-seed). Half h's bot draws "
@@ -233,12 +236,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--challenge-mode", dest="challenge_mode", default="serial",
                    choices=("serial", "pipelined"),
                    help="WHEN our side emits the next /challenge in a half we challenge. "
-                        "'serial' (the DEFAULT) waits for the previous battle to END; "
-                        "'pipelined' is poke-env's own loop, which emits it ~0.4 s into the "
-                        "previous battle — hazard H14, the reason --opponent foulplay could not "
-                        "run a multi-game ours_challenge half. At --concurrency 1 the two differ "
-                        "ONLY in when the PM is sent: battle k+1 could never start before battle "
-                        "k ended either way.")
+                        "'serial' (the DEFAULT and the only mode either transport implements) waits "
+                        "for the previous battle to END. 'pipelined' was poke-env's own loop, which "
+                        "emitted it ~0.4 s into the previous battle — hazard H14, the reason "
+                        "--opponent foulplay could not run a multi-game ours_challenge half; it went "
+                        "with the legacy client (P6) and is REFUSED with its reason.")
     p.add_argument("--search-time-ms", type=int, default=1000,
                    help="foulplay only: its ONLY budget, and it is WALL CLOCK — the realized visit "
                         "count is recorded per cell because two runs at the same nominal budget "
@@ -372,16 +374,21 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
             f"--our-side {our_side} equals --opponent: a cell of a policy against ITSELF measures "
             "nothing about the scale, and both sides would try to log in under names derived "
             "from the same agent.")
-    # P3 — WHO BUILDS OUR OBSERVATION. The core slot needs the front end in THIS process (so a
-    # `--server rust` this tool starts) and a checkpoint; anything else is the legacy client.
+    # WHO BUILDS OUR OBSERVATION (P3 + P6). The core slot needs the front end in THIS process (so a
+    # `--server rust` this tool starts) and a checkpoint; anything else is the live client.
     is_peer = our_side.startswith("metamon:") or our_side == "foulplay"
+    our_transport = getattr(args, "our_transport", "auto")
+    if our_transport == core_side.DELETED_TRANSPORT:
+        raise SystemExit(core_side.DELETED_TRANSPORT_REASON)
+    if args.challenge_mode != "serial":
+        raise SystemExit(
+            f"--challenge-mode {args.challenge_mode} was poke-env's own challenge loop (hazard H14: the next "
+            "/challenge ~0.4 s INTO the previous battle) and went with the legacy client in P6; both of our "
+            "transports challenge only after the previous battle ENDED. Use --challenge-mode serial (the default).")
     core_why = (None if is_peer else
                 "a checkpoint our-side (a bot: our-side plays as a live client)" if our_side != "model"
                 else "--server rust started by this tool (--server-uri / --server node have no "
-                     "in-process slot)" if (args.server_uri or args.server_kind != "rust")
-                else "--challenge-mode serial (the slot challenges only after the previous battle "
-                     "ENDED)" if args.challenge_mode != "serial" else None)
-    our_transport = getattr(args, "our_transport", "auto")
+                     "in-process slot)" if (args.server_uri or args.server_kind != "rust") else None)
     transport_note = "explicit"
     if our_transport == "core" and core_why:
         raise SystemExit(f"--our-transport core needs {core_why}; pass --our-transport live "
@@ -390,9 +397,6 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         our_transport = "live" if core_why else "core"
         transport_note = (f"auto: the live client, because the core slot needs {core_why}"
                           if core_why else "auto: the core slot is the default")
-    if our_transport == "live" and not is_peer and args.challenge_mode != "serial":
-        raise SystemExit("--our-transport live challenges only after the previous battle ENDED (hazard H14's "
-                         "serial loop); --challenge-mode pipelined was poke-env's own loop.")
     if our_side.startswith("bot:") and args.regime != "greedy":
         raise SystemExit(
             f"--regime {args.regime} with --our-side {our_side}: a bot has no sampling knob, so "
@@ -611,9 +615,7 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
            if plan.our_transport == "core" else
            "  — a websocket CLIENT on the Rust stack (main.live's reader session"
            + (f"; the Rust bot port, --bot-seed {plan.bot_seed})" if plan.our_side_is_bot else ")")
-           if plan.our_transport == "live" else
-           "  — the LEGACY main.play/RLPlayer client (vendored poke-env + the Python encoder)"
-           if plan.our_transport == "poke-env" else ""),
+           if plan.our_transport == "live" else ""),
         f"  our model         {plan.model_zip or '(none — our side is not a checkpoint)'}"
         + (f"  @ step {plan.model_step} (via {plan.model_rung})" if plan.model_step else ""),
         f"  device            {plan.device}",
@@ -634,10 +636,7 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
          "  forfeit limit     NONE — no client of ours plays, so nothing forfeits at 250; the "
          "sim's 1000-turn TIE is the only cap (set --progress-timeout for a long stall)"),
         f"  challenge mode    {plan.challenge_mode}"
-        + ("  (the next /challenge waits for the previous battle to END — hazard H14)"
-           if plan.challenge_mode == "serial"
-           else "  🚨 poke-env's own loop: the next /challenge lands ~0.4 s INTO the previous "
-                "battle (hazard H14)"),
+        "  (the next /challenge waits for the previous battle to END — hazard H14)",
         f"  deadlines         peer_ready={plan.peer_ready_timeout_s:g}s "
         f"first_game={plan.first_game_timeout_s:g}s progress={plan.progress_timeout_s:g}s",
         f"  out               {plan.out_dir}",
@@ -659,9 +658,8 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
             peer_cmd = f"<unavailable: {type(exc).__name__}: {exc}>"
             teams = "<unavailable>"
         if plan.our_side_is_peer:
-            # Our side is a SECOND external process, not `main.play`. Printing the play.py argv
-            # here would name a command this cell never runs — a plan a human cannot execute is
-            # worse than no plan at all.
+            # Our side is a SECOND external process. Its own command is printed: a plan a human
+            # cannot execute is worse than no plan at all.
             try:
                 ours_cmd = runner_mod.our_peer_plan(plan, cfg, role, n, half).command_line()
             except Exception as exc:                 # noqa: BLE001 - a plan must still PRINT
@@ -671,7 +669,7 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
             ours_cmd = (f"in-process core slot '{our_name}' — we {mode} {peer_name}, {n} games, "
                         f"{'sampled T=' + format(temp, 'g') if stoch else 'greedy'}, "
                         f"forfeit at turn {plan.forfeit_turn_limit}")
-        elif plan.our_transport == "live":
+        else:
             if plan.our_side_is_bot:
                 env = 0 if half == "ours_challenge" else 1
                 who = (f"the Rust {plan.our_side} (streams random.Random(stream_seed({plan.bot_seed}, {env}, k)); "
@@ -681,9 +679,6 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
                 who = (f"{'sampled T=' + format(temp, 'g') if stoch else 'greedy'} checkpoint, "
                        f"forfeit at turn {plan.forfeit_turn_limit}")
             ours_cmd = f"live client '{our_name}' on {plan.server_uri} — we {mode} {peer_name}, {n} games, {who}"
-        else:
-            ours_cmd = ("python -m main.play "
-                        + " ".join(runner_mod.our_argv(plan, mode, n, our_name, peer_name)))
         lines += [
             "",
             f"  --- half {half} ({n} games; we {mode}, peer is {role}) ---",

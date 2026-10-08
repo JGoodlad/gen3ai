@@ -1,5 +1,7 @@
 """THE OLD PATH of P6's bot identity proof — a COMPARISON-HARNESS hook, never production.
 
+🚨 Runs only at the P6-slice-2 PART-1 commit (both paths present; local SHA ``1b6b11c2`` before a rebase): the next commit deletes the legacy client it hooks.
+
 Runs ``python -m main.anchors <args>`` with the LEGACY client (pass ``--our-transport poke-env``) and a
 ``bot:<name>`` our-side, after wrapping ``main.anchors.runner.install_our_side`` so that the Python roster bot
 each half builds gets its RNG streams SEEDED exactly as the Rust bot's are: half ``h`` (0 = ours_challenge,

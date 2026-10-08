@@ -418,6 +418,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-live]": {
+   "status": "pass",
+   "commit": "adaf94d093e0201721d4da94d87708acbbcf19a3",
+   "at": "2026-10-08T06:22:17Z",
+   "duration_s": 20.35,
+   "contention": 1.04,
+   "detail": ""
+  },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-poke-env]": {
    "status": "pass",
    "commit": "49326c1403d2de685c4fb37edfdecb8a632654e8",
@@ -436,10 +444,18 @@
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-core]": {
    "status": "pass",
-   "commit": "49326c1403d2de685c4fb37edfdecb8a632654e8",
-   "at": "2026-10-08T04:08:40Z",
-   "duration_s": 31.56,
-   "contention": 1.71,
+   "commit": "adaf94d093e0201721d4da94d87708acbbcf19a3",
+   "at": "2026-10-08T06:22:17Z",
+   "duration_s": 21.37,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-live]": {
+   "status": "pass",
+   "commit": "adaf94d093e0201721d4da94d87708acbbcf19a3",
+   "at": "2026-10-08T06:22:17Z",
+   "duration_s": 19.74,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-poke-env]": {
@@ -456,6 +472,14 @@
    "at": "2026-10-03T23:25:24Z",
    "duration_s": 29.23,
    "contention": 1.01,
+   "detail": ""
+  },
+  "src/main/anchors/anchors_integration_test.py::test_two_real_games_with_a_RUST_BOT_as_our_side": {
+   "status": "pass",
+   "commit": "adaf94d093e0201721d4da94d87708acbbcf19a3",
+   "at": "2026-10-08T06:22:17Z",
+   "duration_s": 21.21,
+   "contention": 1.02,
    "detail": ""
   },
   "src/main/ops/eval_trace_gen_test.py::test_a_generated_cycle_is_shaped_like_a_live_one": {
@@ -1103,26 +1127,26 @@
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_procedural_teams": {
    "status": "pass",
-   "commit": "2a4a02b2a508f3191f1cfffed70803f67ae917c2",
-   "at": "2026-10-08T01:17:32Z",
-   "duration_s": 27.93,
-   "contention": 1.0,
+   "commit": "1b6b11c2564ce61b3bd5e80ea4fe6848222326b4",
+   "at": "2026-10-08T05:54:24Z",
+   "duration_s": 59.48,
+   "contention": 1.84,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_ladder_milestone_tier": {
    "status": "pass",
-   "commit": "2a4a02b2a508f3191f1cfffed70803f67ae917c2",
-   "at": "2026-10-08T01:17:32Z",
-   "duration_s": 36.83,
-   "contention": 6.84,
+   "commit": "1b6b11c2564ce61b3bd5e80ea4fe6848222326b4",
+   "at": "2026-10-08T05:54:24Z",
+   "duration_s": 60.61,
+   "contention": 1.52,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_training_pool": {
    "status": "pass",
-   "commit": "2a4a02b2a508f3191f1cfffed70803f67ae917c2",
-   "at": "2026-10-08T01:17:32Z",
-   "duration_s": 30.25,
-   "contention": 1.0,
+   "commit": "1b6b11c2564ce61b3bd5e80ea4fe6848222326b4",
+   "at": "2026-10-08T05:54:24Z",
+   "duration_s": 56.82,
+   "contention": 1.63,
    "detail": ""
   },
   "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_milestone[ladder_milestone-12]": {

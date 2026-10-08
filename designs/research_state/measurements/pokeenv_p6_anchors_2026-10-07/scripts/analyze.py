@@ -115,17 +115,19 @@ if __name__ == "__main__":
     cells = [cell(d) for d in sorted(glob.glob(os.path.join(root, "*")))
              if os.path.isdir(os.path.join(d, "new")) and os.path.exists(os.path.join(d, "new", "summary.json"))
              and os.path.exists(os.path.join(d, "old", "summary.json"))]
-    kn = sum(int(c["new"]["W/L/T"].split("/")[0]) for c in cells)
-    ko = sum(int(c["old"]["W/L/T"].split("/")[0]) for c in cells)
-    nn = sum(c["new"]["n"] for c in cells)
-    no = sum(c["old"]["n"] for c in cells)
+    # a TEETH cell (deliberately mismatched) is reported, never pooled
+    real = [c for c in cells if not c["cell"].startswith("teeth")]
+    kn = sum(int(c["new"]["W/L/T"].split("/")[0]) for c in real)
+    ko = sum(int(c["old"]["W/L/T"].split("/")[0]) for c in real)
+    nn = sum(c["new"]["n"] for c in real)
+    no = sum(c["old"]["n"] for c in real)
     pooled = {"n_new": nn, "wins_new": kn, "n_old": no, "wins_old": ko, "shift": newcombe(kn, nn, ko, no),
-              "battles_identical": sum(c["battles_with_identical_actions_both_sides"] for c in cells),
-              "battles_chunks_identical": sum(c["battles_with_identical_per_side_protocol"] for c in cells),
-              "battles": sum(c["battles_compared"] for c in cells),
-              "choices": sum(c["choices_compared"] for c in cells),
-              "our_choices": sum(c["our_choices_compared"] for c in cells)}
-    text = json.dumps({"cells": cells, "pooled": pooled}, indent=1, default=str)
+              "battles_identical": sum(c["battles_with_identical_actions_both_sides"] for c in real),
+              "battles_chunks_identical": sum(c["battles_with_identical_per_side_protocol"] for c in real),
+              "battles": sum(c["battles_compared"] for c in real),
+              "choices": sum(c["choices_compared"] for c in real),
+              "our_choices": sum(c["our_choices_compared"] for c in real)}
+    text = json.dumps({"cells": cells, "pooled_excluding_teeth": pooled}, indent=1, default=str)
     print(text)
     if len(sys.argv) > 2:
         open(sys.argv[2], "w").write(text + "\n")

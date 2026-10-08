@@ -1,0 +1,853 @@
+{
+ "cells": [
+  {
+   "cell": "00_random_home",
+   "new": {
+    "our_transport": "rust_live_bot",
+    "status": "OK",
+    "W/L/T": "0/12/0",
+    "n": 12,
+    "win_rate": [
+     0.0,
+     0.0,
+     0.24249400674145444
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": 101
+   },
+   "old": {
+    "our_transport": "poke_env_bot",
+    "status": "OK",
+    "W/L/T": "0/12/0",
+    "n": 12,
+    "win_rate": [
+     0.0,
+     0.0,
+     0.24249400674145444
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.24249400674145444,
+     0.24249400674145444
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 12,
+   "captures": [
+    12,
+    12
+   ],
+   "battles_with_identical_actions_both_sides": 12,
+   "battles_with_identical_per_side_protocol": 12,
+   "choices_compared": 948,
+   "our_choices_compared": 497,
+   "games_identical_result_turns_team": 12,
+   "diffs": []
+  },
+  {
+   "cell": "01_heuristic_away",
+   "new": {
+    "our_transport": "rust_live_bot",
+    "status": "OK",
+    "W/L/T": "2/10/0",
+    "n": 12,
+    "win_rate": [
+     0.16666666666666666,
+     0.04696514217115219,
+     0.4480308623231507
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": 102
+   },
+   "old": {
+    "our_transport": "poke_env_bot",
+    "status": "OK",
+    "W/L/T": "2/10/0",
+    "n": 12,
+    "win_rate": [
+     0.16666666666666666,
+     0.04696514217115219,
+     0.4480308623231507
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.30576832007906,
+     0.30576832007906
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 12,
+   "captures": [
+    12,
+    12
+   ],
+   "battles_with_identical_actions_both_sides": 12,
+   "battles_with_identical_per_side_protocol": 12,
+   "choices_compared": 1021,
+   "our_choices_compared": 516,
+   "games_identical_result_turns_team": 12,
+   "diffs": []
+  },
+  {
+   "cell": "02_heuristic2_home",
+   "new": {
+    "our_transport": "rust_live_bot",
+    "status": "OK",
+    "W/L/T": "4/8/0",
+    "n": 12,
+    "win_rate": [
+     0.3333333333333333,
+     0.1381200910624633,
+     0.609377911184688
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": 103
+   },
+   "old": {
+    "our_transport": "poke_env_bot",
+    "status": "OK",
+    "W/L/T": "4/8/0",
+    "n": 12,
+    "win_rate": [
+     0.3333333333333333,
+     0.1381200910624633,
+     0.609377911184688
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.33809587237799577,
+     0.33809587237799577
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 12,
+   "captures": [
+    12,
+    12
+   ],
+   "battles_with_identical_actions_both_sides": 12,
+   "battles_with_identical_per_side_protocol": 12,
+   "choices_compared": 645,
+   "our_choices_compared": 329,
+   "games_identical_result_turns_team": 12,
+   "diffs": []
+  },
+  {
+   "cell": "03_staller_away",
+   "new": {
+    "our_transport": "rust_live_bot",
+    "status": "OK",
+    "W/L/T": "0/12/0",
+    "n": 12,
+    "win_rate": [
+     0.0,
+     0.0,
+     0.24249400674145444
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": 104
+   },
+   "old": {
+    "our_transport": "poke_env_bot",
+    "status": "OK",
+    "W/L/T": "0/12/0",
+    "n": 12,
+    "win_rate": [
+     0.0,
+     0.0,
+     0.24249400674145444
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.24249400674145444,
+     0.24249400674145444
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 12,
+   "captures": [
+    12,
+    12
+   ],
+   "battles_with_identical_actions_both_sides": 12,
+   "battles_with_identical_per_side_protocol": 12,
+   "choices_compared": 1087,
+   "our_choices_compared": 556,
+   "games_identical_result_turns_team": 12,
+   "diffs": []
+  },
+  {
+   "cell": "04_staller_v2_home",
+   "new": {
+    "our_transport": "rust_live_bot",
+    "status": "OK",
+    "W/L/T": "1/11/0",
+    "n": 12,
+    "win_rate": [
+     0.08333333333333333,
+     0.014865094400000889,
+     0.3538799112178778
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": 105
+   },
+   "old": {
+    "our_transport": "poke_env_bot",
+    "status": "OK",
+    "W/L/T": "1/11/0",
+    "n": 12,
+    "win_rate": [
+     0.08333333333333333,
+     0.014865094400000889,
+     0.3538799112178778
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.2790758867184154,
+     0.2790758867184154
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 12,
+   "captures": [
+    12,
+    12
+   ],
+   "battles_with_identical_actions_both_sides": 12,
+   "battles_with_identical_per_side_protocol": 12,
+   "choices_compared": 740,
+   "our_choices_compared": 380,
+   "games_identical_result_turns_team": 12,
+   "diffs": []
+  },
+  {
+   "cell": "05_aggressive_away",
+   "new": {
+    "our_transport": "rust_live_bot",
+    "status": "OK",
+    "W/L/T": "1/11/0",
+    "n": 12,
+    "win_rate": [
+     0.08333333333333333,
+     0.014865094400000889,
+     0.3538799112178778
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": 106
+   },
+   "old": {
+    "our_transport": "poke_env_bot",
+    "status": "OK",
+    "W/L/T": "1/11/0",
+    "n": 12,
+    "win_rate": [
+     0.08333333333333333,
+     0.014865094400000889,
+     0.3538799112178778
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.2790758867184154,
+     0.2790758867184154
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 12,
+   "captures": [
+    12,
+    12
+   ],
+   "battles_with_identical_actions_both_sides": 12,
+   "battles_with_identical_per_side_protocol": 12,
+   "choices_compared": 877,
+   "our_choices_compared": 452,
+   "games_identical_result_turns_team": 12,
+   "diffs": []
+  },
+  {
+   "cell": "06_aggressive_v2_home",
+   "new": {
+    "our_transport": "rust_live_bot",
+    "status": "OK",
+    "W/L/T": "3/9/0",
+    "n": 12,
+    "win_rate": [
+     0.25,
+     0.08894166837325393,
+     0.5323053349974733
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": 107
+   },
+   "old": {
+    "our_transport": "poke_env_bot",
+    "status": "OK",
+    "W/L/T": "3/9/0",
+    "n": 12,
+    "win_rate": [
+     0.25,
+     0.08894166837325393,
+     0.5323053349974733
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.3250170585591263,
+     0.3250170585591263
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 12,
+   "captures": [
+    12,
+    12
+   ],
+   "battles_with_identical_actions_both_sides": 12,
+   "battles_with_identical_per_side_protocol": 12,
+   "choices_compared": 675,
+   "our_choices_compared": 345,
+   "games_identical_result_turns_team": 12,
+   "diffs": []
+  },
+  {
+   "cell": "07_setup_sweep_away",
+   "new": {
+    "our_transport": "rust_live_bot",
+    "status": "OK",
+    "W/L/T": "3/9/0",
+    "n": 12,
+    "win_rate": [
+     0.25,
+     0.08894166837325393,
+     0.5323053349974733
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": 108
+   },
+   "old": {
+    "our_transport": "poke_env_bot",
+    "status": "OK",
+    "W/L/T": "3/9/0",
+    "n": 12,
+    "win_rate": [
+     0.25,
+     0.08894166837325393,
+     0.5323053349974733
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.3250170585591263,
+     0.3250170585591263
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 12,
+   "captures": [
+    12,
+    12
+   ],
+   "battles_with_identical_actions_both_sides": 12,
+   "battles_with_identical_per_side_protocol": 12,
+   "choices_compared": 873,
+   "our_choices_compared": 443,
+   "games_identical_result_turns_team": 12,
+   "diffs": []
+  },
+  {
+   "cell": "08_setup_sweep_v2_home",
+   "new": {
+    "our_transport": "rust_live_bot",
+    "status": "OK",
+    "W/L/T": "2/10/0",
+    "n": 12,
+    "win_rate": [
+     0.16666666666666666,
+     0.04696514217115219,
+     0.4480308623231507
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": 109
+   },
+   "old": {
+    "our_transport": "poke_env_bot",
+    "status": "OK",
+    "W/L/T": "2/10/0",
+    "n": 12,
+    "win_rate": [
+     0.16666666666666666,
+     0.04696514217115219,
+     0.4480308623231507
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.30576832007906,
+     0.30576832007906
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 12,
+   "captures": [
+    12,
+    12
+   ],
+   "battles_with_identical_actions_both_sides": 12,
+   "battles_with_identical_per_side_protocol": 12,
+   "choices_compared": 703,
+   "our_choices_compared": 362,
+   "games_identical_result_turns_team": 12,
+   "diffs": []
+  },
+  {
+   "cell": "teeth_random_seed_mismatch",
+   "new": {
+    "our_transport": "rust_live_bot",
+    "status": "OK",
+    "W/L/T": "0/12/0",
+    "n": 12,
+    "win_rate": [
+     0.0,
+     0.0,
+     0.24249400674145444
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": 101
+   },
+   "old": {
+    "our_transport": "poke_env_bot",
+    "status": "OK",
+    "W/L/T": "0/12/0",
+    "n": 12,
+    "win_rate": [
+     0.0,
+     0.0,
+     0.24249400674145444
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": null,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 0,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "shift_new_minus_old": {
+    "delta": 0.0,
+    "ci95": [
+     -0.24249400674145444,
+     0.24249400674145444
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 12,
+   "captures": [
+    12,
+    12
+   ],
+   "battles_with_identical_actions_both_sides": 0,
+   "battles_with_identical_per_side_protocol": 0,
+   "choices_compared": 948,
+   "our_choices_compared": 497,
+   "games_identical_result_turns_team": 0,
+   "diffs": [
+    {
+     "battle": 1,
+     "tag": "battle-gen3ou-1",
+     "start": null,
+     "p1": {
+      "at": 0,
+      "new": "CHOOSE p1 move meteormash",
+      "old": "CHOOSE p1 switch Charizard"
+     },
+     "p2": {
+      "at": 1,
+      "new": "CHOOSE p2 move calmmind",
+      "old": "CHOOSE p2 move surf"
+     },
+     "chunks_equal": false
+    },
+    {
+     "battle": 2,
+     "tag": "battle-gen3ou-2",
+     "start": null,
+     "p1": {
+      "at": 0,
+      "new": "CHOOSE p1 move rockslide",
+      "old": "CHOOSE p1 switch Zapdos"
+     },
+     "p2": {
+      "at": 1,
+      "new": "CHOOSE p2 move hiddenpowergrass",
+      "old": "CHOOSE p2 move bodyslam"
+     },
+     "chunks_equal": false
+    },
+    {
+     "battle": 3,
+     "tag": "battle-gen3ou-3",
+     "start": null,
+     "p1": {
+      "at": 0,
+      "new": "CHOOSE p1 move brickbreak",
+      "old": "CHOOSE p1 switch Skarmory"
+     },
+     "p2": {
+      "at": 1,
+      "new": "CHOOSE p2 switch dugtrio",
+      "old": "CHOOSE p2 switch metagross"
+     },
+     "chunks_equal": false
+    },
+    {
+     "battle": 4,
+     "tag": "battle-gen3ou-4",
+     "start": null,
+     "p1": {
+      "at": 0,
+      "new": "CHOOSE p1 switch Metagross",
+      "old": "CHOOSE p1 move thunderbolt"
+     },
+     "p2": {
+      "at": 1,
+      "new": "CHOOSE p2 move thunderbolt",
+      "old": "CHOOSE p2 move rest"
+     },
+     "chunks_equal": false
+    },
+    {
+     "battle": 5,
+     "tag": "battle-gen3ou-5",
+     "start": null,
+     "p1": {
+      "at": 0,
+      "new": "CHOOSE p1 switch Jirachi",
+      "old": "CHOOSE p1 switch Tyranitar"
+     },
+     "p2": {
+      "at": 2,
+      "new": "CHOOSE p2 switch blissey",
+      "old": "CHOOSE p2 move spikes"
+     },
+     "chunks_equal": false
+    },
+    {
+     "battle": 6,
+     "tag": "battle-gen3ou-6",
+     "start": null,
+     "p1": {
+      "at": 0,
+      "new": "CHOOSE p1 move doubleedge",
+      "old": "CHOOSE p1 move earthquake"
+     },
+     "p2": {
+      "at": 3,
+      "new": "CHOOSE p2 move protect",
+      "old": "CHOOSE p2 move earthquake"
+     },
+     "chunks_equal": false
+    },
+    {
+     "battle": 7,
+     "tag": "battle-gen3ou-7",
+     "start": null,
+     "p1": {
+      "at": 1,
+      "new": "CHOOSE p1 move substitute",
+      "old": "CHOOSE p1 move calmmind"
+     },
+     "p2": {
+      "at": 0,
+      "new": "CHOOSE p2 move psychic",
+      "old": "CHOOSE p2 move meteormash"
+     },
+     "chunks_equal": false
+    },
+    {
+     "battle": 8,
+     "tag": "battle-gen3ou-8",
+     "start": null,
+     "p1": {
+      "at": 1,
+      "new": "CHOOSE p1 move hiddenpowergrass",
+      "old": "CHOOSE p1 move firepunch"
+     },
+     "p2": {
+      "at": 0,
+      "new": "CHOOSE p2 move hiddenpowerbug",
+      "old": "CHOOSE p2 switch Skarmory"
+     },
+     "chunks_equal": false
+    },
+    {
+     "battle": 9,
+     "tag": "battle-gen3ou-9",
+     "start": null,
+     "p1": {
+      "at": 4,
+      "new": "CHOOSE p1 move hydropump",
+      "old": "CHOOSE p1 switch metagross"
+     },
+     "p2": {
+      "at": 1,
+      "new": "CHOOSE p2 move hiddenpowergrass",
+      "old": "CHOOSE p2 move flamethrower"
+     },
+     "chunks_equal": false
+    },
+    {
+     "battle": 10,
+     "tag": "battle-gen3ou-10",
+     "start": null,
+     "p1": {
+      "at": 1,
+      "new": "CHOOSE p1 switch milotic",
+      "old": "CHOOSE p1 move rest"
+     },
+     "p2": {
+      "at": 0,
+      "new": "CHOOSE p2 switch Salamence",
+      "old": "CHOOSE p2 move thunderbolt"
+     },
+     "chunks_equal": false
+    },
+    {
+     "battle": 11,
+     "tag": "battle-gen3ou-11",
+     "start": null,
+     "p1": {
+      "at": 1,
+      "new": "CHOOSE p1 switch skarmory",
+      "old": "CHOOSE p1 move rockslide"
+     },
+     "p2": {
+      "at": 0,
+      "new": "CHOOSE p2 switch Tyranitar",
+      "old": "CHOOSE p2 move thunderbolt"
+     },
+     "chunks_equal": false
+    },
+    {
+     "battle": 12,
+     "tag": "battle-gen3ou-12",
+     "start": null,
+     "p1": {
+      "at": 1,
+      "new": "CHOOSE p1 move hydropump",
+      "old": "CHOOSE p1 switch skarmory"
+     },
+     "p2": {
+      "at": 0,
+      "new": "CHOOSE p2 move dragondance",
+      "old": "CHOOSE p2 switch Celebi"
+     },
+     "chunks_equal": false
+    }
+   ]
+  }
+ ],
+ "pooled_excluding_teeth": {
+  "n_new": 108,
+  "wins_new": 16,
+  "n_old": 108,
+  "wins_old": 16,
+  "shift": [
+   0.0,
+   -0.09619510881293981,
+   0.09619510881293981
+  ],
+  "battles_identical": 108,
+  "battles_chunks_identical": 108,
+  "battles": 108,
+  "choices": 7569,
+  "our_choices": 3880
+ }
+}

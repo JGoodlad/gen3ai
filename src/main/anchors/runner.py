@@ -7,11 +7,12 @@ rather than a wasted axis — inside a single 50-game half it looks large and in
 that is the shape of a 50-game coin.
 
 **Both sides move together or the cell is not matched.** ``--regime greedy`` sets our side to
-``--temperature 0`` and the peer to its own greedy operation (for Metamon, ``get_actions(
+greedy (the argmax of the masked logits) and the peer to its own greedy operation (for Metamon, ``get_actions(
 sample=False)``; Foul Play has no sampling knob at all and is refused for ``t1`` by the CLI). Each
 side's regime is then VERIFIED per decision and the verification is written onto every row.
 
-The half-series is driven in ONE process: our side is `main.play` on this event loop, the peer is a
+The half-series is driven in ONE process: our side (the in-process core slot, or the Rust-stack live
+client — :mod:`main.anchors.core_side` / :mod:`main.anchors.live_side`) runs on this event loop, the peer is a
 subprocess, and :func:`main.anchors.session.watch` runs beside them so a dead peer or a stalled
 series becomes a named failure instead of a report with nothing in it.
 """
@@ -29,11 +30,8 @@ from main.anchors.results import CellSpec, GameRow
 from main.anchors.session import (
     OurSideState,
     SeriesFailure,
-    await_our_login,
     await_peer_exit,
     await_peer_ready,
-    disconnect_our_side,
-    install_our_side,
     read_peer_battles,
     start_peer,
     stop_peer,
@@ -41,7 +39,7 @@ from main.anchors.session import (
     watch_peer_pair,
 )
 
-#: ``(our play.py mode, the peer's role, the username suffix)`` for each half. The names say who
+#: ``(what our side does — challenge / accept, the peer's role, the username suffix)`` for each half. The names say who
 #: sends the challenge; the SUFFIX is a hazard fix, not decoration — see :func:`half_usernames`.
 HALVES = {
     "ours_challenge": ("challenge", "acceptor", "1"),
@@ -53,8 +51,8 @@ def half_usernames(plan: "SeriesPlan", half: str) -> "tuple[str, str]":
     """``(our name, the peer's name)`` for this half — each carrying the half's own suffix.
 
     🚨 **A name still held by the previous half is not an error, it is a GUEST.** Showdown answers
-    a second login under a live name with ``|nametaken|``, and poke-env's fork logs it and carries
-    on under a server-assigned guest name; the peer's ``/challenge`` is then addressed to a user
+    a second login under a live name with ``|nametaken|``, and a client that carries on (the legacy
+    poke-env fork did) plays under a server-assigned guest name; the peer's ``/challenge`` is then addressed to a user
     that does not exist and the half hangs until the peer's own timeout. Measured here on
     2026-09-14. The sockets are closed between halves as well — this is the second lock on the
     same door, because the failure it prevents costs eight minutes and produces no games.
@@ -100,7 +98,7 @@ class SeriesPlan:
     nice: int
     showdown_pin: str
     our_team_spec: Dict[str, Any] = None  # type: ignore[assignment]
-    #: "model" or "bot:<name>" — see :func:`main.anchors.session.install_our_side`.
+    #: "model", "bot:<name>" (the Rust port of a roster bot, :mod:`main.anchors.live_side`) or a peer.
     our_side: str = "model"
     #: "auto" / "bare" / "foreign" — which loader builds our checkpoint.
     model_loader: str = "auto"
@@ -115,17 +113,17 @@ class SeriesPlan:
     #: `--server rust` only: the reproducibility pair. There is no Node counterpart.
     seed_base: Optional[int] = None
     capture_dir: Optional[Path] = None
-    #: "serial" (the default) or "pipelined" — WHEN our side emits the next `/challenge`.
-    #: 🚨 Hazard **H14**: poke-env's own loop emits it 0.4 s into the PREVIOUS battle, and a peer
-    #: that reads its PMs only between battles (Foul Play) drops it and then waits forever for a
-    #: challenge that was already consumed. See `session.serialized_send_challenges`.
+    #: WHEN our side emits the next `/challenge`: "serial" — only after the previous battle ENDED, the
+    #: one mode both transports implement. 🚨 Hazard **H14**: poke-env's own ("pipelined") loop emitted
+    #: it 0.4 s into the PREVIOUS battle, and a peer that reads its PMs only between battles (Foul
+    #: Play) dropped it; that loop went with the legacy client (P6) and the CLI refuses it.
     challenge_mode: str = "serial"
     #: `--opponent-temperature`: the Metamon peer SAMPLES at this action temperature while our
     #: side stays greedy (`regime` stays "greedy" — it names OUR half). None = the peer follows
     #: `regime`. A cell with it set is stamped regime_matched=false.
     opponent_temperature: Optional[float] = None
-    #: `--our-temperature`: OUR checkpoint SAMPLES at this temperature (``main.play
-    #: --temperature T``) instead of the regime's own setting. None = the regime decides. A cell
+    #: `--our-temperature`: OUR checkpoint SAMPLES at this temperature (``core_side.our_stochastic``)
+    #: instead of the regime's own setting. None = the regime decides. A cell
     #: with it set is stamped our_regime='sample:T=<T>' (X22 f).
     our_temperature: Optional[float] = None
     #: T17 `--mirrored-pairs`: every half plays MIRRORED TEAM PAIRS (`main.anchors.mirrored`) on a
@@ -133,9 +131,10 @@ class SeriesPlan:
     mirrored_pairs: bool = False
     pair_log: Optional[Path] = None
     #: `--our-transport`: "core" (the DEFAULT, P3) — our side is an IN-PROCESS slot of the Rust
-    #: front end reading the core's own observation (`main.anchors.core_side`), no poke-env in this
-    #: process; "poke-env" — the legacy `main.play` → `RLPlayer` websocket client (needed for
-    #: `--server node`, `--server-uri` and a `bot:` our-side). Stamped as `our_transport` per row.
+    #: front end reading the core's own observation (`main.anchors.core_side`); "live" (P6) — a
+    #: websocket client on the Rust stack (`main.anchors.live_side`: `main.live`'s reader + the
+    #: checkpoint, or the Rust port of a bot) for `--server node`, `--server-uri` and a `bot:`
+    #: our-side; "peer" for an anchor-vs-anchor cell. Neither imports poke-env. Stamped per row.
     our_transport: str = "core"
     #: How `our_transport` was chosen ("explicit" or the `auto` resolution and its reason) — printed.
     our_transport_note: str = ""
@@ -158,40 +157,6 @@ class SeriesPlan:
         recorded there rather than silently dropped."""
         half = self.games // 2
         return {"ours_challenge": self.games - half, "peer_challenge": half}
-
-
-def our_argv(plan: SeriesPlan, mode: str, n_games: int, our_name: str = "",
-             peer_name: str = "") -> List[str]:
-    """The argv `main.play`'s OWN parser receives. Spelled out rather than hand-built into a
-    namespace, so every default this tool does not set comes from `play.build_parser()` — the
-    forfeit limit included."""
-    return [
-        "--mode", mode,
-        # Our side is the LEGACY poke-env client (`RLPlayer`, patched by `install_our_side`) until P3 moves
-        # it onto the Rust core; `main.play`'s default became the Rust client in P4.
-        "--client", "poke-env",
-        "--server", "local",
-        # Unused when `--server-uri` was given (resolve_server is patched), but a real value keeps
-        # the parser honest and the reserved-port refusal reachable.
-        "--port", str(plan.server_port or 9500),
-        "--format", plan.battle_format,
-        # A bot our-side has no checkpoint, but `play.main` refuses --mode challenge/accept
-        # without a --model, so the SPEC goes here and the patched `build_model_player` ignores
-        # it. It is printed by --dry-run and stamped as `model_spec` on every row, so nothing
-        # about which policy played is hidden by the placeholder.
-        "--model", plan.model_zip or plan.our_side,
-        "--device", plan.device,
-        "--username", our_name or plan.our_username,
-        "--opponent", peer_name or plan.peer_username,
-        "--n-battles", str(n_games),
-        "--concurrency", "1",
-        # THE REGIME, our half. `--temperature 0` is `play.py`'s documented measurement setting and
-        # the protocol every other strength number in this project is taken under.
-        "--temperature", (repr(float(plan.our_temperature)) if plan.our_temperature is not None
-                          else "0.0" if plan.regime == "greedy" else "1.0"),
-        "--connect-timeout", str(plan.connect_timeout_s),
-        "--forfeit-turn-limit", str(plan.forfeit_turn_limit),
-    ]
 
 
 def peer_plan(plan: SeriesPlan, cfg: Any, role: str, n_games: int, half: str,
@@ -257,7 +222,7 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
     awaited first rather than both being launched together.
 
     The per-game record comes from the acting side's own battle CSV (`read_peer_battles`); there
-    is no `RLPlayer` here to observe, and the weaker instrument is NAMED on the rows it produces.
+    is no side of ours here to observe, and the weaker instrument is NAMED on the rows it produces.
     """
     mode, their_role, _suffix = HALVES[half]
     our_name, peer_name = half_usernames(plan, half)
@@ -397,76 +362,8 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int, front: A
                                                   our_name, peer_name, role)
         return _half_report(plan, half, n_games, pplan, proc, state, mirror, failure)
 
-    # ---- the LEGACY poke-env client (`--our-transport poke-env`): `main.play` → `RLPlayer` ----
-    import main.play as play
-    from main.anchors.session import server_config_for
-
-    server_config = server_config_for(plan.server_uri)
-    state = OurSideState()
-    undo = install_our_side(state, team_spec, plan.team_seed,
-                            plan.forfeit_turn_limit, server_config,
-                            our_side=plan.our_side, model_loader=plan.model_loader,
-                            challenge_mode=plan.challenge_mode)
-    args = play.build_parser().parse_args(our_argv(plan, mode, n_games, our_name, peer_name))
-
-    proc = None
-    our_task: Optional[asyncio.Task] = None
-    failure: Optional[SeriesFailure] = None
-    try:
-        if role == "acceptor":
-            # The PEER accepts, so the peer must be online first. Its banner is the gate — for the
-            # 200M Metamon policy this is minutes of model build before the client connects.
-            proc = start_peer(pplan, nice=plan.nice)
-            await await_peer_ready(proc, pplan, plan.peer_ready_timeout_s)
-            our_task = asyncio.create_task(play.main(args))
-        else:
-            # WE accept, so we must be online first. `build_model_player` stashes the player, and
-            # `await_our_login` polls the real `logged_in` event rather than sleeping at it.
-            our_task = asyncio.create_task(play.main(args))
-            await await_our_login(state, plan.connect_timeout_s + 60.0)
-            proc = start_peer(pplan, nice=plan.nice)
-
-        watchdog = asyncio.create_task(
-            watch(proc, pplan, state, n_games,
-                  plan.first_game_timeout_s, plan.progress_timeout_s))
-        done, _pending = await asyncio.wait({our_task, watchdog},
-                                            return_when=asyncio.FIRST_COMPLETED)
-        if watchdog in done and not watchdog.cancelled():
-            exc = watchdog.exception()
-            if exc is not None:
-                raise exc
-        watchdog.cancel()
-        if our_task in done:
-            our_task.result()          # re-raise anything our side died of
-        else:
-            # The watchdog saw the expected game count; let our side settle out.
-            try:
-                await asyncio.wait_for(asyncio.shield(our_task), timeout=120.0)
-            except asyncio.TimeoutError:
-                our_task.cancel()
-    except SeriesFailure as exc:
-        failure = exc
-        print(f"[anchors] 🚨 {half} FAILED — {exc.cause}: {exc.detail}", flush=True)
-    except Exception as exc:                            # noqa: BLE001 - any death must be NAMED
-        failure = SeriesFailure("our_side_error", f"{type(exc).__name__}: {exc}")
-        print(f"[anchors] 🚨 {half} FAILED — our side raised: {exc}", flush=True)
-    finally:
-        if our_task is not None and not our_task.done():
-            our_task.cancel()
-            try:
-                await our_task
-            except (asyncio.CancelledError, Exception):  # noqa: BLE001
-                pass
-        # Let the peer write its own report BEFORE anything terminates it — a cell with games
-        # and no `argmax_match_rate` is a win rate whose regime is unverified, which is exactly
-        # the number this tool exists not to emit. Short grace on a failure: there the peer is
-        # already dead or wedged and its log, not its report, is the evidence.
-        await await_peer_exit(proc, timeout_s=180.0 if failure is None else 15.0)
-        # Close OUR socket before the next half logs in — see `disconnect_our_side`.
-        await disconnect_our_side(state)
-        stop_peer(proc)
-        undo()
-    return _half_report(plan, half, n_games, pplan, proc, state, mirror, failure)
+    raise SeriesFailure("our_side_error", f"unknown --our-transport {plan.our_transport!r} "
+                        "(the legacy poke-env client was DELETED in P6)")
 
 
 async def _play_core_half(plan: SeriesPlan, half: str, n_games: int, pplan: Any,
@@ -475,7 +372,7 @@ async def _play_core_half(plan: SeriesPlan, half: str, n_games: int, pplan: Any,
                           ) -> Tuple[Any, Optional[SeriesFailure]]:
     """One half with OUR side as the in-process core slot (:mod:`main.anchors.core_side`).
 
-    The same role order, watchdog and peer teardown as the legacy client: the acceptor is online
+    The same role order, watchdog and peer teardown as the live client: the acceptor is online
     before the challenger, :func:`watch` turns a dead peer or a stall into a named failure, the
     peer writes its own report before anything terminates it, and our name is released before the
     next half logs in (hazard H10's equivalent — the slot leaves the user table).

@@ -46,15 +46,22 @@ from main.anchors.session import BattleRecord, OurSideState, SeriesFailure, buil
 
 #: ``--our-transport`` values. ``core`` (the DEFAULT) is this module; ``live`` is our side as a websocket
 #: CLIENT on the Rust stack (:mod:`main.anchors.live_side`: P4's ``main.live`` reader + a checkpoint or a Rust
-#: bot) for ``--server node`` / ``--server-uri`` / a ``bot:`` our-side; ``poke-env`` is the legacy ``main.play``
-#: → ``RLPlayer`` websocket client, kept only until P6's identity proof.
-OUR_TRANSPORTS = ("core", "live", "poke-env")
+#: bot) for ``--server node`` / ``--server-uri`` / a ``bot:`` our-side.
+OUR_TRANSPORTS = ("core", "live")
 
-#: What every row stamps as ``our_transport`` — the reader that built OUR observation. A REGIME
-#: BOUNDARY (P3, 2026-10-07): rows without the field were all ``poke_env_rlplayer``.
+#: The DELETED transport (P6): still a parser choice so a typed one is refused with this reason, never with
+#: argparse's bare "invalid choice".
+DELETED_TRANSPORT = "poke-env"
+DELETED_TRANSPORT_REASON = (
+    "--our-transport poke-env was DELETED in P6 of the poke-env retirement (2026-10-07): the legacy main.play -> "
+    "RLPlayer websocket client is gone. Every shape it served plays on the Rust stack: --our-transport live (a "
+    "websocket client on main.live's reader, the training chain; a bot: our-side is the Rust port of that bot) — "
+    "identity evidence: designs/research_state/measurements/pokeenv_p6_anchors_2026-10-07/.")
+
+#: What every row stamps as ``our_transport`` — the reader that built OUR observation. Rows written before
+#: 2026-10-07 have no field and were ``poke_env_rlplayer`` (or ``poke_env_bot`` / ``peer`` by their
+#: ``our_side``); those two legacy values are HISTORY — nothing writes them since P6.
 TRANSPORT_CORE = "rust_core_slot"
-TRANSPORT_POKE_ENV = "poke_env_rlplayer"
-TRANSPORT_POKE_ENV_BOT = "poke_env_bot"
 TRANSPORT_PEER = "peer"
 
 #: The sampling generator seed (the same variable ``RLPlayer`` reads — ``gen3_policy_sample_rng_v1``).
@@ -452,4 +459,4 @@ def row_transport(plan: Any) -> str:
         from main.anchors.live_side import TRANSPORT_LIVE, TRANSPORT_LIVE_BOT
 
         return TRANSPORT_LIVE_BOT if plan.our_side_is_bot else TRANSPORT_LIVE
-    return TRANSPORT_POKE_ENV_BOT if plan.our_side_is_bot else TRANSPORT_POKE_ENV
+    raise ValueError(f"no row stamp for --our-transport {plan.our_transport!r}")

@@ -41,7 +41,6 @@ src/agents/training/obs_build_benchmark.py
 src/agents/training/obs_materializer.py
 src/agents/training/trainer_turn_benchmark.py
 src/agents/training/turn_delta.py
-src/main/anchors/session.py
 src/main/eval_worker.py
 src/main/play.py
 src/main/search_dividend/battery.py
@@ -124,7 +123,6 @@ src/agents/training/server_port_threading_test.py
 src/agents/training/stable_opponent_fuzz_test.py
 src/agents/training/td_residual_parity_fuzz_test.py
 src/agents/training/turn_delta_fold_equivalence_fuzz_test.py
-src/main/anchors/session_test.py
 src/main/prober/belief_obs_fuzz_test.py
 src/main/prober/core_trace_integration_test.py
 src/main/search_dividend/depth2_replay_integration_test.py

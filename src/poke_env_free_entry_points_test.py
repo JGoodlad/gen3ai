@@ -20,11 +20,12 @@ half; these tests install ``utils.poke_env_blocker`` FIRST (every ``import poke_
 4. ``test_a_debug_smoke_with_eval_runs_with_poke_env_blocked`` (``slow``) — the root CLAUDE.md ``--debug`` smoke WITH
    two in-process eval cycles, entered through ``poke_env_blocker.main`` (the trainer's own module name split so no
    argv carries it).
-5. ``main.anchors`` (P3, 2026-10-07) — its import closure is in the list below; its RUN-TIME path (a real anchor
-   read against Metamon, our side the in-process core slot of the Rust front end) runs under the same blocker in
-   ``src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-core]`` (``slow``,
-   its verdict banked in ``designs/ops/slow_tier_status.json``), which needs
-   the Metamon checkout and so lives beside the tool.
+5. ``main.anchors`` (P3 + P6, 2026-10-07) — its import closure is in the list below (the whole package: the legacy
+   poke-env client was deleted in P6); ``test_a_rust_bot_our_side_plays_a_battle_with_poke_env_blocked`` (``sim``)
+   plays a real battle with a ``bot:`` our-side (the Rust bot on the live client) under the blocker; the full
+   RUN-TIME read against Metamon (the core slot, the live client on the front end and on Node, a Rust-bot our-side)
+   runs under the same blocker in ``src/main/anchors/anchors_integration_test.py`` (``slow``, its verdicts banked in
+   ``designs/ops/slow_tier_status.json``), which needs the Metamon checkout and so lives beside the tool.
 
 6. ``test_every_prober_command_and_the_web_app_run_with_poke_env_blocked`` (``sim``, P5) — the PROBER on real Rust-eval
    core traces and a current-architecture checkpoint: every JSON-CLI command (model-free and model-loading) and the
@@ -62,6 +63,11 @@ ENTRY_POINTS = (
     "main.anchors.core_side",
     "main.anchors.runner",
     "main.anchors.server",
+    # P6: the whole anchors package — our side as a live client, and the Rust bot's reader
+    "main.anchors.session",
+    "main.anchors.live_side",
+    "main.live.bot_reader",
+    "utils.rust_env.bot_reader_bin",
     "utils.bridge.ws_frontend",
     "main.launcher",
     "main.checkargs",
@@ -189,6 +195,60 @@ def h2h_edge_blocked():
 def test_a_head_to_head_edge_plays_with_poke_env_blocked(h2h_edge_blocked):
     r = h2h_edge_blocked
     assert r.returncode == 0 and "EDGE-OK" in r.stdout, (r.stdout[-2000:], r.stderr[-4000:])
+
+
+_BOT_SLOT = """
+    import asyncio, os, tempfile
+    from types import SimpleNamespace
+    from utils import poke_env_blocker as B
+    B.install()
+    os.environ["GEN3AI_LIVE_HALT_FILE"] = os.path.join(tempfile.mkdtemp(prefix="p6_halt_"), "halt.json")
+    from main.anchors import live_side
+    from main.anchors.server import InProcessFrontEnd, pick_port
+    from main.anchors.session import OurSideState
+    from main.live.client import ClientConfig, LiveClient
+    from main.live.policy import RandomPolicy
+    from utils.team_sources import packed_teams
+
+    async def series():
+        teams = packed_teams("pool")
+        front = InProcessFrontEnd(pick_port([9500, 9599]), seed_base=61_009)
+        await front.__aenter__()
+        state = OurSideState()
+        plan = SimpleNamespace(server_uri=front.uri, battle_format="gen3ou", connect_timeout_s=60.0,
+                               progress_timeout_s=300.0, our_side="bot:staller_v2", forfeit_turn_limit=250,
+                               team_seed=3, bot_seed=17)
+        ours = live_side.build_client(plan, "ours_challenge", username="p6ours", team_spec={"kind": "pool"},
+                                      state=state)
+        opp = LiveClient(ClientConfig(uri=front.uri, username="p6opp", forfeit_turn_limit=250),
+                         policy=RandomPolicy(5), team_fn=lambda: teams[9])
+        try:
+            await opp.connect()
+            await ours.connect()
+            acc = asyncio.ensure_future(opp.accept("p6ours", 1))
+            await asyncio.wait_for(ours.challenge("p6opp", 1), timeout=600)
+            await asyncio.wait_for(acc, timeout=120)
+        finally:
+            await ours.close()
+            await opp.close()
+            await front.__aexit__(None, None, None)
+        return state
+
+    st = asyncio.run(series())
+    assert len(st.records) == 1 and st.records[0].n_decisions > 0, st.records
+    assert not B.ATTEMPTS, B.report()
+    print("BOT-OK", st.records[0].result, st.records[0].turns, st.records[0].n_decisions)
+"""
+
+
+@pytest.mark.sim
+@pytest.mark.integration
+def test_a_rust_bot_our_side_plays_a_battle_with_poke_env_blocked():
+    """P6: a ``bot:`` our-side of ``main.anchors`` — the Rust port of the roster bot on ``main.live``'s client over
+    the ``bot_reader`` session — plays a real battle on the in-process front end with the blocker installed (the
+    checkpoint's live path shares every module but the policy; the core slot is the slow read's)."""
+    r = _run(_BOT_SLOT, cwd=repo_root(), timeout=900)
+    assert r.returncode == 0 and "BOT-OK" in r.stdout, (r.stdout[-2000:], r.stderr[-4000:])
 
 
 _RUNNER = ("import sys; from utils import poke_env_blocker as B; "

@@ -1,0 +1,101 @@
+{
+ "cells": [
+  {
+   "cell": "ckpt_live_vs_legacy_away",
+   "new": {
+    "our_transport": "rust_live_reader",
+    "status": "OK",
+    "W/L/T": "0/20/0",
+    "n": 20,
+    "win_rate": [
+     0.0,
+     0.0,
+     0.16112515811625733
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": 1.0,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 4,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "old": {
+    "our_transport": "poke_env_rlplayer",
+    "status": "OK",
+    "W/L/T": "1/19/0",
+    "n": 20,
+    "win_rate": [
+     0.05,
+     0.008881448797866148,
+     0.23613119350676545
+    ],
+    "server_log_errors": 0,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "our_argmax_match_rate": 1.0,
+    "their_argmax_match_rates": [
+     1.0
+    ],
+    "forfeits": 4,
+    "failure": null,
+    "our_bot_seed": null
+   },
+   "shift_new_minus_old": {
+    "delta": -0.05,
+    "ci95": [
+     -0.23613119350676542,
+     0.11628906106822369
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "battles_compared": 20,
+   "captures": [
+    20,
+    20
+   ],
+   "battles_with_identical_actions_both_sides": 19,
+   "battles_with_identical_per_side_protocol": 19,
+   "choices_compared": 3181,
+   "our_choices_compared": 1635,
+   "games_identical_result_turns_team": 19,
+   "diffs": [
+    {
+     "battle": 6,
+     "tag": "battle-gen3ou-6",
+     "start": null,
+     "p1": {
+      "at": 1,
+      "len_new": 32,
+      "len_old": 1
+     },
+     "p2": {
+      "at": 0,
+      "new": "CHOOSE p2 move spikes",
+      "old": "FORCELOSE p2"
+     },
+     "chunks_equal": false
+    }
+   ]
+  }
+ ],
+ "pooled_excluding_teeth": {
+  "n_new": 20,
+  "wins_new": 0,
+  "n_old": 20,
+  "wins_old": 1,
+  "shift": [
+   -0.05,
+   -0.23613119350676542,
+   0.11628906106822369
+  ],
+  "battles_identical": 19,
+  "battles_chunks_identical": 19,
+  "battles": 20,
+  "choices": 3181,
+  "our_choices": 1635
+ }
+}

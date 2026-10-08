@@ -90,8 +90,7 @@ def test_opponent_temperature_samples_only_the_metamon_peer_and_is_stamped_unmat
     line = theirs.command_line()
     assert "--regime t1" in line and "--temperature 0.5" in line
     assert theirs.their_regime == "sample:T=0.5"
-    ours = runner_mod.our_argv(plan, "accept", 2)
-    assert ours[ours.index("--temperature") + 1] == "0.0"
+    assert cli_mod.core_side.our_stochastic(plan) == (False, 1.0)       # OUR side stays greedy
     # without the flag the peer command carries no temperature at all (greedy ignores it, H7)
     plain = build_plan(_args("--opponent", "metamon:Kakuna", "--dry-run"), cfg)
     assert "--temperature" not in runner_mod.peer_plan(
@@ -111,14 +110,13 @@ def test_opponent_temperature_is_refused_outside_its_one_shape(cfg, argv) -> Non
 
 
 def test_our_temperature_samples_OUR_checkpoint_and_is_stamped_on_the_cell(cfg) -> None:
-    """X22(f): `--our-temperature T` — main.play gets `--temperature T`, the peer follows
+    """X22(f): `--our-temperature T` — our side samples at T, the peer follows
     --regime greedy (or --opponent-temperature), our_regime names T, and the cell is MATCHED only
     when both nominal temperatures are equal."""
     vs_greedy = build_plan(_args("--opponent", "metamon:Kakuna", "--our-temperature", "1.0",
                                  "--dry-run"), cfg)
     assert vs_greedy.our_temperature == 1.0 and vs_greedy.regime_matched is False
-    ours = runner_mod.our_argv(vs_greedy, "accept", 2)
-    assert ours[ours.index("--temperature") + 1] == "1.0"
+    assert cli_mod.core_side.our_stochastic(vs_greedy) == (True, 1.0)
     assert "--temperature" not in runner_mod.peer_plan(
         vs_greedy, cfg, "acceptor", 2, "ours_challenge").command_line()
     spec = runner_mod.cell_spec(vs_greedy, {"their_regime": "greedy"}, 72)
@@ -190,10 +188,10 @@ def test_the_default_transport_is_the_RUST_front_end_and_no_node_server_is_named
     assert plan.server_version.startswith("ws_frontend[in-process]@")
     rendered = render_plan(plan, cfg)
     assert "[rust, IN-PROCESS]" in rendered and "NO NODE SERVER IS STARTED" in rendered
-    # the legacy client keeps the SUBPROCESS front end, stopped by its PID
-    legacy = build_plan(_args("--our-transport", "poke-env"), cfg)
-    assert legacy.server_version.startswith("ws_frontend@")
-    assert "[rust] (this tool starts and stops it by PID)" in render_plan(legacy, cfg)
+    # the LIVE client (a bot: our-side) keeps the SUBPROCESS front end, stopped by its PID
+    live = build_plan(_args("--our-side", "bot:random"), cfg)
+    assert live.our_transport == "live" and live.server_version.startswith("ws_frontend@")
+    assert "[rust] (this tool starts and stops it by PID)" in render_plan(live, cfg)
 
 
 # --------------------------------------------------------- P3: who builds OUR observation
@@ -208,28 +206,61 @@ def test_the_default_our_transport_is_the_CORE_slot_and_the_plan_says_so(cfg) ->
     assert "in-process core slot" in rendered and "python -m main.play" not in rendered
 
 
-@pytest.mark.parametrize("argv, legacy_reason", [
+@pytest.mark.parametrize("argv, why", [
     (("--server", "node"), "--server rust started by this tool"),
     (("--server-uri", "ws://127.0.0.1:9543/showdown/websocket"), "--server rust started by this tool"),
     (("--our-side", "bot:random"), "a checkpoint our-side"),
-    (("--challenge-mode", "pipelined"), "--challenge-mode serial"),
 ])
-def test_auto_falls_back_to_the_legacy_client_SAYING_why(cfg, argv, legacy_reason) -> None:
+def test_auto_falls_back_to_the_LIVE_client_SAYING_why(cfg, argv, why) -> None:
+    """P6: every shape the core slot cannot serve plays as a websocket client on the Rust stack."""
     plan = build_plan(_args(*argv), cfg)
-    assert plan.our_transport == "poke-env"
-    assert legacy_reason in plan.our_transport_note
-    assert legacy_reason in render_plan(plan, cfg)
+    assert plan.our_transport == "live"
+    assert why in plan.our_transport_note
+    rendered = render_plan(plan, cfg)
+    assert why in rendered and "a websocket CLIENT on the Rust stack" in rendered
+    assert "python -m main.play" not in rendered and "poke-env" not in rendered.split("our transport", 1)[1][:200]
 
 
 @pytest.mark.parametrize("argv", [
     ("--server", "node"),
     ("--server-uri", "ws://127.0.0.1:9543/showdown/websocket"),
     ("--our-side", "bot:random"),
-    ("--challenge-mode", "pipelined"),
 ])
 def test_an_explicit_core_transport_that_cannot_be_served_is_REFUSED(cfg, argv) -> None:
     with pytest.raises(SystemExit, match="--our-transport core needs"):
         build_plan(_args("--our-transport", "core", *argv), cfg)
+
+
+@pytest.mark.parametrize("argv", [(), ("--server", "node"), ("--our-side", "bot:random")])
+def test_the_DELETED_legacy_client_is_refused_with_its_reason(cfg, argv) -> None:
+    """P6 deleted the poke-env `main.play` → `RLPlayer` client; a typed `--our-transport poke-env` names why."""
+    with pytest.raises(SystemExit, match="DELETED in P6") as excinfo:
+        build_plan(_args("--our-transport", "poke-env", *argv), cfg)
+    assert "--our-transport live" in str(excinfo.value)
+
+
+@pytest.mark.parametrize("argv", [(), ("--server", "node"), ("--our-side", "bot:random")])
+def test_pipelined_challenges_are_refused_with_their_reason(cfg, argv) -> None:
+    """`--challenge-mode pipelined` was poke-env's own loop (hazard H14); both of our transports are serial."""
+    with pytest.raises(SystemExit, match="pipelined"):
+        build_plan(_args("--challenge-mode", "pipelined", *argv), cfg)
+
+
+def test_a_bot_our_side_declares_its_stream_seed(cfg) -> None:
+    """`--bot-seed` (default `--team-seed`) is the bot's DECLARED stream seed, stamped on every row."""
+    default = build_plan(_args("--our-side", "bot:staller", "--team-seed", "31", "--dry-run"), cfg)
+    assert default.bot_seed == 31
+    explicit = build_plan(_args("--our-side", "bot:staller", "--bot-seed", "7", "--dry-run"), cfg)
+    assert explicit.bot_seed == 7
+    assert runner_mod.cell_spec(explicit, {}, 1).stamp()["our_bot_seed"] == 7
+    assert "stream_seed(7, 0, k)" in render_plan(explicit, cfg) and "stream_seed(7, 1, k)" in render_plan(explicit, cfg)
+    assert build_plan(_args("--dry-run"), cfg).bot_seed is None
+    assert runner_mod.cell_spec(build_plan(_args("--dry-run"), cfg), {}, 1).stamp()["our_bot_seed"] is None
+
+
+def test_an_unknown_bot_is_refused_by_name(cfg) -> None:
+    with pytest.raises(SystemExit, match="unknown eval bot"):
+        build_plan(_args("--our-side", "bot:baitbot", "--dry-run"), cfg)
 
 
 def test_a_peer_our_side_has_no_transport_of_ours(cfg) -> None:
@@ -239,8 +270,8 @@ def test_a_peer_our_side_has_no_transport_of_ours(cfg) -> None:
 
 @pytest.mark.parametrize("argv, stamp", [
     ((), "rust_core_slot"),
-    (("--our-transport", "poke-env"), "poke_env_rlplayer"),
-    (("--our-side", "bot:random"), "poke_env_bot"),
+    (("--server", "node"), "rust_live_reader"),
+    (("--our-side", "bot:random"), "rust_live_bot"),
     (("--our-side", "metamon:SyntheticRLV2"), "peer"),
 ])
 def test_every_row_stamps_WHICH_reader_built_our_observation(cfg, argv, stamp) -> None:
@@ -291,26 +322,15 @@ def test_the_front_end_carries_the_seed_and_capture_into_the_plan(cfg, tmp_path)
 
 # -------------------------------------------------------------------------------- the regime
 def test_greedy_sets_our_temperature_to_zero_and_t1_to_one(cfg) -> None:
-    """Our half of the regime, read out of the argv `main.play`'s OWN parser receives."""
-    greedy = runner_mod.our_argv(build_plan(_args("--regime", "greedy"), cfg), "challenge", 4)
-    t1 = runner_mod.our_argv(build_plan(_args("--regime", "t1"), cfg), "challenge", 4)
-    assert greedy[greedy.index("--temperature") + 1] == "0.0"
-    assert t1[t1.index("--temperature") + 1] == "1.0"
-
-
-def test_our_argv_parses_cleanly_through_plays_own_parser(cfg) -> None:
-    """The whole point of reusing `play.py`: if this argv did not parse, the tool would be running
-    a client of its own invention."""
+    """Our half of the regime: `(stochastic, temperature)` both of our transports decide with."""
+    greedy = cli_mod.core_side.our_stochastic(build_plan(_args("--regime", "greedy"), cfg))
+    t1 = cli_mod.core_side.our_stochastic(build_plan(_args("--regime", "t1"), cfg))
+    assert greedy == (False, 1.0)
+    assert t1 == (True, 1.0)
+    # The forfeit limit is the TRAINER's number, inherited and not restated.
     import main.play as play
 
-    plan = build_plan(_args("--regime", "greedy"), cfg)
-    args = play.build_parser().parse_args(runner_mod.our_argv(plan, "accept", 7))
-    assert args.mode == "accept"
-    assert args.n_battles == 7
-    assert args.temperature == 0.0
-    assert args.concurrency == 1
-    # The forfeit limit is the TRAINER's number, inherited and not restated.
-    assert args.forfeit_turn_limit == play.DEFAULT_FORFEIT_TURN_LIMIT == 250
+    assert build_plan(_args(), cfg).forfeit_turn_limit == play.DEFAULT_FORFEIT_TURN_LIMIT == 250
 
 
 def test_t1_against_foulplay_is_refused_because_only_one_side_would_move(cfg) -> None:
@@ -466,18 +486,9 @@ def test_a_bot_our_side_needs_no_model_and_says_so_in_the_plan(cfg) -> None:
     assert plan.model_zip == ""
     text = render_plan(plan, cfg)
     assert "our side          bot:aggressive" in text
-    # `play.main` refuses --mode challenge/accept without a --model, so the SPEC stands in — and
-    # it must be VISIBLE in the plan rather than an invisible placeholder.
-    assert "--model bot:aggressive" in text
-
-
-def test_a_bot_our_side_argv_still_parses_through_plays_own_parser(cfg) -> None:
-    import main.play as play
-
-    plan = build_plan(_args("--our-side", "bot:setup_sweep", "--dry-run"), cfg)
-    args = play.build_parser().parse_args(
-        runner_mod.our_argv(plan, "challenge", 4, "A1", "B1"))
-    assert args.model == "bot:setup_sweep"
+    # P6: the bot is the RUST port on the live client, named in each half's line with its streams
+    assert "the Rust bot:aggressive (streams random.Random(stream_seed(" in text
+    assert "never forfeits" in text and "(none — our side is not a checkpoint)" in text
 
 
 # ------------------------------------------------------------- which loader built our checkpoint
@@ -752,8 +763,8 @@ def test_each_side_of_a_pair_cell_is_read_by_its_OWN_adapter(cfg) -> None:
 # -------------------------------------------------------------------------------- --forfeit-turn-limit
 def test_the_forfeit_turn_defaults_to_the_trainers_and_may_only_be_LOWERED(cfg) -> None:
     """A websocket game ends where a training episode ends (root CLAUDE.md, LADDER); a deliberately
-    shorter series — the routine smoke — may lower it, and the lowered limit reaches main.play and
-    the plan (every row stamps `forfeit_turn_limit` from it)."""
+    shorter series — the routine smoke — may lower it, and the lowered limit reaches our side's
+    decision rule and the plan (every row stamps `forfeit_turn_limit` from it)."""
     from main.play import DEFAULT_FORFEIT_TURN_LIMIT
 
     default = build_plan(_args("--dry-run"), cfg)
@@ -761,8 +772,9 @@ def test_the_forfeit_turn_defaults_to_the_trainers_and_may_only_be_LOWERED(cfg) 
     assert "the TRAINER's number" in render_plan(default, cfg)
     low = build_plan(_args("--forfeit-turn-limit", "10", "--dry-run"), cfg)
     assert low.forfeit_turn_limit == 10 and "LOWERED" in render_plan(low, cfg)
-    ours = runner_mod.our_argv(low, "accept", 2)
-    assert ours[ours.index("--forfeit-turn-limit") + 1] == "10"
+    assert "forfeit at turn 10" in render_plan(low, cfg)
+    live = build_plan(_args("--forfeit-turn-limit", "10", "--server", "node", "--dry-run"), cfg)
+    assert "forfeit at turn 10" in render_plan(live, cfg)
     for bad in (str(DEFAULT_FORFEIT_TURN_LIMIT + 1), "0", "-3"):
         with pytest.raises(SystemExit):
             build_plan(_args("--forfeit-turn-limit", bad, "--dry-run"), cfg)

@@ -104,8 +104,8 @@ class CellSpec:
     #: The transport's identity — `ws_frontend@<gen3ai head>+rust:<bridge binary>` or
     #: `showdown:<submodule pin>`. Empty only for an external server.
     server_version: str = ""
-    #: WHO our side is — "model" (a checkpoint through `main.play`) or "bot:<name>" (one of the
-    #: nine pinned eval bots). A bot has no sampling knob at all, exactly like Foul Play, so a
+    #: WHO our side is — "model" (a checkpoint) or "bot:<name>" (one of the nine pinned eval bots;
+    #: since P6 its Rust port). A bot has no sampling knob at all, exactly like Foul Play, so a
     #: bot cell is stamped `regime_matched = False` and `our_regime = "bot:<name>"`; that is the
     #: honest label, not a defect, and it is the reason this field is on the ROW.
     our_side: str = "model"
@@ -119,12 +119,14 @@ class CellSpec:
     #: PEER's team draw, so it is a different population from an unmirrored one and is never read beside
     #: it without this label.
     mirrored_pairs: bool = False
-    #: WHICH READER BUILT OUR OBSERVATION (P3 of the poke-env retirement, 2026-10-07) — a REGIME
-    #: BOUNDARY on the row like `server_impl`: "rust_core_slot" (our side is an in-process slot of
-    #: the Rust front end, deciding on `sim_bridge`'s core row — the training reader; the DEFAULT),
-    #: "poke_env_rlplayer" (the legacy `main.play` client: vendored poke-env + the Python encoder),
-    #: "poke_env_bot" (a Python roster bot) or "peer" (an anchor-vs-anchor cell). A row written
-    #: before the field existed was "poke_env_rlplayer" (or a bot / peer by its `our_side`).
+    #: WHICH READER BUILT OUR OBSERVATION (P3 + P6 of the poke-env retirement, 2026-10-07) —
+    #: provenance on the row like `server_impl`: "rust_core_slot" (an in-process slot of the Rust
+    #: front end, deciding on `sim_bridge`'s core row — the training reader; the DEFAULT),
+    #: "rust_live_reader" (a websocket client on `main.live`'s reader, the same chain),
+    #: "rust_live_bot" (the Rust port of a roster bot on that reader) or "peer" (an
+    #: anchor-vs-anchor cell). HISTORY: "poke_env_rlplayer" (the deleted legacy `main.play` client)
+    #: and "poke_env_bot" (a Python roster bot on it); a row written before the field existed was
+    #: one of those (or a peer) by its `our_side` — hence the default, which reads old rows.
     our_transport: str = "poke_env_rlplayer"
     #: A `bot:` our-side's DECLARED stream seed (`--bot-seed`, P6 of the poke-env retirement): half h's bot
     #: draws `random.Random(stream_seed(seed, h, k))` — the env core's bot-route rule. None for a checkpoint, a

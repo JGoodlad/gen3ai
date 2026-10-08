@@ -21,10 +21,10 @@ is waiting on the games and the process startups. Neither is ``sim`` (no in-proc
 
 **P3 (2026-10-07): our side is the in-process CORE slot by default.** The routine smoke plays it
 (``--our-transport auto`` → ``core``: an in-process slot of the Rust front end deciding on the core's
-own row). The slow read covers both of our readers on the rust server (``core`` and the legacy
-``poke-env`` client) and the legacy client on Node, and its ``core`` case runs the CLI in a FRESH
-interpreter under ``utils.poke_env_blocker`` — any ``import poke_env`` on the RUN-TIME path fails it
-with the importing frame. (That subprocess costs ~20 s of interpreter + torch start over the
+own row). The slow read covers both of our readers on the rust server (``core`` and the P6 ``live``
+client) and the live client on Node, plus a Rust-bot our-side (P6), and EVERY case runs the CLI in a
+FRESH interpreter under ``utils.poke_env_blocker`` — any ``import poke_env`` on the RUN-TIME path fails
+it with the importing frame (the legacy poke-env client was deleted in P6). (That subprocess costs ~20 s of interpreter + torch start over the
 in-process smoke, measured 47-65 s at contention x1.8 on 2026-10-07, which is why it is not the
 routine one; the import CLOSURE is held in the routine gate by ``src/poke_env_free_entry_points_test.py``.)
 
@@ -285,24 +285,45 @@ def test_one_capped_real_game_against_metamon_smallrl(tmp_path: Path, monkeypatc
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("server, transport", [("rust", "core"), ("rust", "poke-env"),
-                                               ("node", "poke-env")])
+@pytest.mark.parametrize("server, transport", [("rust", "core"), ("rust", "live"), ("node", "live")])
 def test_two_real_games_against_metamon_smallrl(tmp_path: Path, server: str, transport: str) -> None:
     """The whole tool, end to end, on the smallest sample that exercises every seam — one game per
     challenge role, played to its natural end at the trainer's own forfeit limit — once per
     transport, because "it works" on one of them says nothing about the other. ``slow`` on both
     (29.9-46.2 s each, 2026-09-30); the routine gate runs the capped one-game smoke above."""
-    # the CORE case runs under the poke-env BLOCKER in a fresh interpreter: P3's run-time claim
-    _rc, summary, rows, out = _read(tmp_path, server, N_GAMES, "--our-transport", transport,
-                                    blocked=(transport == "core"))
+    # EVERY case runs under the poke-env BLOCKER in a fresh interpreter: P3's + P6's run-time claim
+    _rc, summary, rows, out = _read(tmp_path, server, N_GAMES, "--our-transport", transport, blocked=True)
     _assert_the_pieces_fit(summary, rows, out, server, N_GAMES)
     assert all(row["our_transport"] == ("rust_core_slot" if transport == "core"
-                                        else "poke_env_rlplayer") for row in rows)
+                                        else "rust_live_reader") for row in rows)
     # ROLE BALANCE: one game each way, which is what makes two the smallest useful n.
     assert summary["by_half"]["ours_challenge"]["n"] == 1
     assert summary["by_half"]["peer_challenge"]["n"] == 1
     from main.play import DEFAULT_FORFEIT_TURN_LIMIT
     assert all(row["forfeit_turn_limit"] == DEFAULT_FORFEIT_TURN_LIMIT for row in rows)
+
+
+@pytest.mark.slow
+def test_two_real_games_with_a_RUST_BOT_as_our_side(tmp_path: Path) -> None:
+    """P6: a ``bot:`` our-side is the Rust port of that roster bot on the live client, its streams
+    DECLARED (``--bot-seed``), under the poke-env BLOCKER — one game per role against a real Metamon."""
+    reason = _skip_reason("rust")
+    if reason:
+        pytest.skip(reason)
+    out = tmp_path / "out"
+    _run_blocked(["--our-side", "bot:heuristic2", "--bot-seed", "5", "--opponent", "metamon:SmallRL",
+                  "--regime", "greedy", "--teamset", "away", "--games", str(N_GAMES), "--out", str(out),
+                  "--first-game-timeout", "900", "--progress-timeout", "900", "--peer-ready-timeout", "900",
+                  "--username", "Gen3AIitbot", "--peer-username", "MetaItbot", "--server", "rust"], tmp_path)
+    summary = json.loads((out / "summary.json").read_text())
+    rows = [json.loads(line) for line in (out / "games.jsonl").read_text().splitlines()]
+    assert summary["status"] == "OK" and summary["n"] == N_GAMES == len(rows)
+    assert summary["cell"]["our_regime"] == "bot:heuristic2" and summary["cell"]["regime_matched"] is False
+    for row in rows:
+        assert row["our_transport"] == "rust_live_bot" and row["our_bot_seed"] == 5
+        assert row["their_argmax_match_rate"] == 1.0 and row["n_decisions"] > 0
+        assert not [f for f in REQUIRED_ROW_FIELDS if f not in row]
+    assert (out / "ws_frontend.log").exists()
 
 
 def test_the_skip_reason_names_a_specific_missing_thing_when_it_fires() -> None:

@@ -1,20 +1,19 @@
-"""OUR side, and the watchdog that refuses to report nothing.
+"""What BOTH of our sides share, and the watchdog that refuses to report nothing.
 
-Two jobs.
+Our side of a read is played by one of two poke-env-free transports — the in-process core slot
+(:mod:`main.anchors.core_side`) or a websocket client on the Rust stack (:mod:`main.anchors.live_side`);
+the legacy ``main.play`` → ``RLPlayer`` client was deleted in P6 of the poke-env retirement. This module
+holds what they share:
 
-**1. Run our checkpoint through `main.play`'s own code path.** Not a copy of it — `play.main` is
-called, so the client, the account, the connect-or-raise deadline and the 250-turn forfeit limit
-are exactly what a ladder session uses. Three patches are installed around it, each of which adds
-something a MEASUREMENT needs and a session runner has no reason to print:
+* the **team source** (our 719-team pool, a directory of Showdown exports, or a mirrored-pair
+  sequence) with a seeded private draw RNG, and the team actually yielded recorded per game;
+* the **per-battle record** (:class:`BattleRecord`) each transport appends as a battle finishes, so a
+  series that dies halfway keeps what completed, and the per-half :class:`OurSideState` (the records,
+  the draws, the ``stochastic`` value each decision REALLY used, the loader that ran);
+* the **foreign loader** a cross-run snapshot needs, and the PEER plumbing (start / await / stop by
+  PID, Metamon's own battle CSV for an anchor-vs-anchor cell).
 
-* a **team source** (our 719-team pool, or a directory of Showdown exports) with a seeded private
-  draw RNG, and the team actually yielded recorded per game;
-* a **per-battle observer** that appends one row as each battle finishes, so a series that dies
-  halfway keeps what completed; and
-* a **regime observer** that records the ``stochastic`` keyword each decision REALLY received,
-  rather than the flag we believe we passed.
-
-**2. Watch the pair, and FAIL LOUDLY with a named cause.** This is the half that hazard H-B bought:
+**Watch the pair, and FAIL LOUDLY with a named cause.** This is the half that hazard H-B bought:
 when our side forfeits at turn 250, Metamon's long-tail handler force-resets and then calls itself
 (~985 levels, then a ``RecursionError``), the process dies, and a naive harness sits there with a
 live client, no opponent, and nothing to report. Four named causes, never a silent zero:
@@ -40,7 +39,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from main.anchors.peers import TEAM_FILE_GLOBS, PeerPlan
 
@@ -173,7 +172,7 @@ class BattleRecord:
 
     @property
     def result(self) -> str:
-        """``won is None`` with ``finished`` true is a TIE — poke-env's own three flags.
+        """``won is None`` with ``finished`` true is a TIE (the server's ``|tie``, never a ``|win|``).
 
         Ties count in the denominator and not the numerator, as both 2026-09-14 batteries did.
         """
@@ -189,10 +188,7 @@ class OurSideState:
     records: List[BattleRecord] = field(default_factory=list)
     draws: List[Optional[str]] = field(default_factory=list)
     stochastic_kwargs: List[bool] = field(default_factory=list)
-    #: battle_tag -> [decisions whose chosen action == the policy's argmax, decisions observed].
-    argmax_counts: Dict[str, List[int]] = field(default_factory=dict)
     decision_times: List[float] = field(default_factory=list)
-    player: Any = None
     last_progress: float = field(default_factory=time.time)
     error: Optional[str] = None
     #: Which loader actually built our policy — "bare" / "foreign" / "" (our side is a bot).
@@ -232,310 +228,6 @@ def foreign_loader(zip_path: str, device: str):
     return model
 
 
-# --------------------------------------------------------- SERIALIZED challenges (hazard H14)
-#: The one behaviour a `/challenge` loop must have against a peer that reads its PMs only between
-#: battles. See :func:`serialized_send_challenges`.
-CHALLENGE_MODES = ("serial", "pipelined")
-
-
-async def serialized_send_challenges(self: Any, opponent: str, n_challenges: int,
-                                     to_wait: Any = None) -> None:
-    """Issue the next ``/challenge`` only once the PREVIOUS battle has ENDED.
-
-    🚨 **This is hazard H14, and it is OURS.** poke-env's ``Player._send_challenges`` releases its
-    battle semaphore when a battle *starts*, so the loop sends challenge *k+1* while battle *k* is
-    still being played — measured at **0.4 s** after the first on 2026-09-20, in the front end's
-    own log. Foul Play reads its private messages only between battles: the pipelined challenge
-    lands mid-battle, is dropped, and Foul Play then sits at ``Waiting for a gen3ou challenge``
-    for a challenge that was already consumed. The series stalls after one game and the tool
-    reports ``no_progress`` (1/10 games on the front end, 3/3 on Node). **The peer is not at
-    fault for not reading a PM while it is busy; we are at fault for sending one.**
-
-    The fix is one extra await. ``_battle_count_queue`` holds one unfinished item per LIVE battle
-    — ``put`` in ``_create_battle`` *before* the semaphore release, ``get``/``task_done`` on
-    ``|win|``/``|tie|`` — so ``join()`` after the acquire returns exactly when the battle that the
-    challenge produced has finished. Nothing else changes: at ``--concurrency 1`` the queue's
-    maxsize is 1, so battle *k+1* could never have STARTED before battle *k* ended anyway. Only
-    the moment the PM is emitted moves, which is the whole of the defect.
-
-    **Refused above concurrency 1**, rather than silently serializing a cell that asked for
-    parallel battles — a flag honoured as its own opposite is the failure this tool exists to
-    prevent. ``main.anchors`` always passes ``--concurrency 1``.
-    """
-    if getattr(self, "_max_concurrent_battles", 1) != 1:
-        raise SeriesFailure(
-            "challenge_mode_unavailable",
-            f"--challenge-mode serial needs one battle at a time, but this player was built with "
-            f"max_concurrent_battles={self._max_concurrent_battles}. Serializing it would honour "
-            "the concurrency flag as its own opposite; use --challenge-mode pipelined and accept "
-            "hazard H14, or keep --concurrency 1.")
-
-    await self.ps_client.logged_in.wait()
-    if to_wait is not None:
-        await to_wait.wait()
-    for i in range(n_challenges):
-        await self.ps_client.challenge(opponent, self._format, self.get_next_team())
-        # the battle STARTED (the semaphore is released in `_create_battle`, after its `put`)
-        await self._battle_semaphore.acquire()
-        # ...and now it has ENDED. This await is the entire fix.
-        await self._battle_count_queue.join()
-        if i + 1 < n_challenges:
-            self.logger.info("serialized challenge %d/%d: previous battle ended",
-                             i + 1, n_challenges)
-
-
-def install_serial_challenges() -> Callable[[], None]:
-    """Patch the serialized loop onto poke-env's **base** ``Player``; return the undo.
-
-    🚨 **The BASE class, not ``RLPlayer``, and that is a correctness requirement rather than a
-    style choice.** ``Gen3Player._send_challenges`` is a WRAPPER: it awaits
-    ``_await_connected`` — the connect-or-raise deadline that turns a login `action.php` refused
-    into a named error instead of a client that spins until somebody else's timeout — and only
-    then calls ``super()``. An override written onto the leaf class replaces that wrapper whole
-    and DELETES the guard, silently, in the exact configuration (a local `--no-security` server
-    that still authenticates a registered name) the guard was added for. Patching the base leaves
-    every subclass wrapper in place and lands underneath all of them, which is also why one patch
-    covers ``RLPlayer`` and all nine roster bots at once.
-
-    ``_send_challenges`` is defined ON ``Player``, so the undo restores the saved function rather
-    than deleting the attribute.
-    """
-    from poke_env.player.player import Player
-
-    saved = Player._send_challenges
-    Player._send_challenges = serialized_send_challenges
-
-    def undo() -> None:
-        Player._send_challenges = saved
-
-    return undo
-
-
-def server_config_for(uri: str) -> Any:
-    """The poke-env ``ServerConfiguration`` the LEGACY client (``--our-transport poke-env``) dials.
-    Lives here, beside the rest of that client, so the runner itself stays poke-env-free."""
-    from poke_env.ps_client.server_configuration import ServerConfiguration
-
-    return ServerConfiguration(uri, "https://play.pokemonshowdown.com/action.php?")
-
-
-def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: Optional[int],
-                     forfeit_limit: int, server_config: Any, *, our_side: str = "model",
-                     model_loader: str = "auto",
-                     challenge_mode: str = "serial") -> Callable[[], None]:
-    """Patch `main.play` + `RLPlayer` for one half-series. Returns the undo.
-
-    Patching the RLPlayer CLASS (not a module global) is what makes the observers reach the code
-    under test: `play.build_model_player` constructs the instance itself, so there is no other
-    seam, and a class attribute is resolved at call time by every instance.
-
-    ``our_side`` is ``"model"`` or ``"bot:<name>"``. **A bot as our side is what connects an
-    external anchor to the PINNED frame**: the nine eval bots carry fixed ratings from the
-    bot-vs-bot round robin, so a Metamon-vs-bot edge places Metamon on our absolute scale without
-    going through any of our own checkpoints. A bot is an ordinary poke-env ``Player``, so it
-    speaks ``send_challenges`` / ``accept_challenges`` exactly like ``RLPlayer`` does and the rest
-    of the harness is unchanged — only the construction and the observer target differ.
-
-    ``model_loader`` is ``"auto"`` (bare, falling back to foreign and SAYING which ran),
-    ``"bare"`` or ``"foreign"``. Whichever ran is recorded in ``state.model_loader`` and stamped
-    on every row.
-
-    ``challenge_mode`` is ``"serial"`` (the default) or ``"pipelined"`` — see
-    :func:`serialized_send_challenges`, which is hazard **H14**: poke-env's own challenge loop
-    sends the next ``/challenge`` while the previous battle is still being played, and Foul Play
-    reads its PMs only between battles.
-    """
-    import main.play as play
-    from agents.inference.player import RLPlayer
-
-    saved_build_tb = play.build_teambuilder
-    saved_resolve = play.resolve_server
-    saved_build_player = play.build_model_player
-    saved_load_policy = play.load_policy
-    saved_finish = RLPlayer._battle_finished_callback
-    saved_predict = RLPlayer._predict_best_action
-    bot_cls = None
-    saved_bot_finish = None
-
-    seen: set = set()
-
-    def build_teambuilder(team_file, pool):
-        return build_team_source(team_spec, team_seed, state.draws)
-
-    def resolve_server(server, port):
-        return server_config
-
-    def load_policy(path, device):
-        """THE LOADER, and it announces which one ran. ``auto`` tries the bare load first so an
-        ordinary ladder-shaped checkpoint keeps the exact path `main.play` uses, and falls back
-        only on the kwarg mismatch a cross-run snapshot produces — a fallback that is silent is
-        a cell whose policy nobody can identify."""
-        if model_loader == "foreign":
-            state.model_loader = "foreign"
-            return foreign_loader(path, device)
-        try:
-            model = saved_load_policy(path, device)
-            state.model_loader = "bare"
-            return model
-        except Exception as exc:                          # noqa: BLE001 - the CAUSE is reported
-            if model_loader != "auto":
-                raise
-            print(f"[anchors] bare load failed ({type(exc).__name__}: {str(exc)[:140]}) — "
-                  "retrying through load_foreign_opponent, which verifies the arch_signature",
-                  flush=True)
-            model = foreign_loader(path, device)
-            state.model_loader = "foreign"
-            return model
-
-    def build_bot_player(args, teambuilder, cfg, account):
-        """Our side is one of the nine PINNED eval bots, with the anchors account so the peer's
-        `/challenge` is addressed to a name that exists."""
-        from poke_env.ps_client import AccountConfiguration
-
-        from agents.training.eval_callback import BATTLE_FORMAT, eval_opponent_class
-
-        name = our_side.split(":", 1)[1]
-        cls = eval_opponent_class(name)
-        player = cls(
-            battle_format=args.format or BATTLE_FORMAT, team=teambuilder,
-            server_configuration=cfg,
-            account_configuration=account or AccountConfiguration(args.username, "password"),
-            max_concurrent_battles=args.concurrency,
-        )
-        # `play.main` prints the connect-or-raise deadline off the player it was handed; a roster
-        # bot is a plain poke-env Player and has no such field. None = "no extra guard", which is
-        # the bots' actual behaviour — they are built the same way `bot_elo_calibration` builds
-        # them, and nothing about the anchor edge should differ from the calibrated policy.
-        if not hasattr(player, "connect_timeout_s"):
-            player.connect_timeout_s = None
-        state.player = player
-        return player
-
-    def build_model_player(args, teambuilder, cfg, account):
-        player = saved_build_player(args, teambuilder, cfg, account)
-        # Stashed so the driver can wait on a REAL login rather than a sleep — the acceptor must
-        # be online before the challenger's first `/challenge`, or Showdown drops it and the
-        # challenger waits forever.
-        state.player = player
-        return player
-
-    # class -> the callback it had before we touched it. RLPlayer is always in here; a bot class
-    # is added below when our side is a bot.
-    originals: Dict[type, Callable] = {RLPlayer: saved_finish}
-
-    def finished(self, battle):
-        # 🚨 `strict_view()` belongs to our vendored fork's `Gen3Battle`, which `RLPlayer` asks for.
-        # A ROSTER BOT is a plain poke-env `Player` and gets a plain `Battle` — no strict view, and
-        # an observer that assumed one recorded ZERO games while the battles themselves finished
-        # fine (measured here 2026-09-14: `finished=2 won=0`, `0/4 games completed`). The two
-        # fields this observer actually needs exist on both objects, so read them off whichever it
-        # has rather than requiring the richer one.
-        view = battle.strict_view() if hasattr(battle, "strict_view") else battle
-        tag = view.battle_tag
-        if tag not in seen:
-            seen.add(tag)
-            n = len(seen)
-            state.records.append(BattleRecord(
-                battle_tag=tag,
-                turns=view.turn,
-                won=getattr(battle, "won", None),
-                finished=getattr(battle, "finished", None),
-                # A cap forfeit is reported by the server as an ordinary loss; only the turn count
-                # separates it from a decisive one (agents.training.trace_result, same rule).
-                hit_forfeit_limit=view.turn >= forfeit_limit,
-                our_team=(state.draws[n - 1] if n <= len(state.draws) else None),
-                n_decisions=getattr(self, "_n_decisions", None),
-                n_defaults=getattr(self, "_n_defaults", None),
-                n_redecides=getattr(self, "_n_redecides", None),
-                t_finished=time.time(),
-                our_argmax_matches=(state.argmax_counts[tag][0]
-                                    if tag in state.argmax_counts else None),
-                our_argmax_decisions=(state.argmax_counts[tag][1]
-                                      if tag in state.argmax_counts else None),
-            ))
-            state.last_progress = time.time()
-            rec = state.records[-1]
-            print(f"[anchors] game {n}: {rec.result} in {rec.turns} turns "
-                  f"(cap={rec.hit_forfeit_limit}, team={rec.our_team})", flush=True)
-        # The ORIGINAL callback for whichever class this instance really is. Resolved from the
-        # table built at patch time rather than with `super()`, because `finished` is installed on
-        # two unrelated classes at once and a `super(type(self), self)` inside a function that is
-        # itself the class attribute recurses forever the moment anyone subclasses either one.
-        return originals[type(self)](self, battle)
-
-    def predict(self, *a, **k):
-        # THE REGIME VERIFICATION for our half: the `stochastic` keyword the decision REALLY
-        # received, not the flag we think we passed. Signature is
-        # `_predict_best_action(self, battle, stochastic=False, ...)`; `choose_move` passes it by
-        # keyword, so the positional fallback is belt and braces.
-        value = bool(k["stochastic"] if "stochastic" in k else (a[1] if len(a) > 1 else False))
-        if value not in state.stochastic_kwargs:
-            state.stochastic_kwargs.append(value)
-        t0 = time.perf_counter()
-        self._last_masked_logits = None
-        try:
-            out = saved_predict(self, *a, **k)
-        finally:
-            state.decision_times.append(time.perf_counter() - t0)
-        # OUR argmax check, per decision: the chosen index against the argmax of the SAME masked
-        # logits the decision sampled from (stashed by `_predict_best_action`). A decision with no
-        # legal action (idx None) is not a decision and is not counted.
-        idx = out[0] if isinstance(out, tuple) and out else None
-        ml = getattr(self, "_last_masked_logits", None)
-        if idx is not None and ml is not None:
-            battle = a[0] if a else k.get("battle")
-            tag = getattr(battle, "battle_tag", "")
-            c = state.argmax_counts.setdefault(tag, [0, 0])
-            c[0] += int(int(ml.argmax(dim=-1).reshape(-1)[0].item()) == int(idx))
-            c[1] += 1
-        return out
-
-    play.build_teambuilder = build_teambuilder
-    play.resolve_server = resolve_server
-    play.load_policy = load_policy
-    RLPlayer._battle_finished_callback = finished
-    RLPlayer._predict_best_action = predict
-    if our_side.startswith("bot:"):
-        from agents.training.eval_callback import eval_opponent_class
-
-        bot_cls = eval_opponent_class(our_side.split(":", 1)[1])
-        # The bot classes inherit `_battle_finished_callback` from poke-env's Player, so the
-        # subclass may not define one of its own; `undo` therefore restores the INHERITED
-        # attribute by deleting ours rather than writing the base method onto the subclass.
-        saved_bot_finish = bot_cls.__dict__.get("_battle_finished_callback")
-        originals[bot_cls] = bot_cls._battle_finished_callback
-        bot_cls._battle_finished_callback = finished
-        play.build_model_player = build_bot_player
-    else:
-        play.build_model_player = build_model_player
-
-    # 🚨 H14. Installed on whichever class will actually play our half — RLPlayer, or the roster
-    # bot when our side is a bot. `pipelined` restores poke-env's own loop and is the escape hatch
-    # a differential against the old behaviour is taken on.
-    undo_challenges = (install_serial_challenges()
-                       if challenge_mode == "serial" else lambda: None)
-
-    def undo() -> None:
-        undo_challenges()
-        play.build_teambuilder = saved_build_tb
-        play.resolve_server = saved_resolve
-        play.build_model_player = saved_build_player
-        play.load_policy = saved_load_policy
-        RLPlayer._battle_finished_callback = saved_finish
-        RLPlayer._predict_best_action = saved_predict
-        if bot_cls is not None:
-            if saved_bot_finish is None:
-                # It was INHERITED; deleting our override restores the inherited lookup.
-                try:
-                    delattr(bot_cls, "_battle_finished_callback")
-                except AttributeError:
-                    pass
-            else:
-                bot_cls._battle_finished_callback = saved_bot_finish
-
-    return undo
-
-
 # ------------------------------------------------------ a PEER as our side (anchor vs anchor)
 #: Metamon's own per-battle log, written under ``--results-dir``. The header is
 #: ``Player Username, Team File, Opponent Username, Result, Turn Count, Battle ID``.
@@ -546,8 +238,8 @@ def read_peer_battles(results_dir: Path) -> "list[BattleRecord]":
     """Metamon's OWN per-battle CSV, as :class:`BattleRecord`s.
 
     This is the only per-game view available when BOTH sides are external peers — there is no
-    `RLPlayer` in the process to observe. It is a weaker instrument than our own side's poke-env
-    flags and the difference is NAMED rather than smoothed over: Metamon books a result as
+    side of ours in the process to observe. It is a weaker instrument than our own side's record
+    (the server's ``|win|`` / ``|tie``) and the difference is NAMED rather than smoothed over: Metamon books a result as
     ``WIN``/``LOSS`` off a BOOLEAN, so a TIE is recorded as its own LOSS. Ties ran 0-1 per 100
     games in the 2026-09-14 batteries, so the bias is small — but it is a bias, and a head-to-head
     edge built from this source says so.
@@ -705,51 +397,6 @@ async def await_peer_ready(proc: subprocess.Popen, plan: PeerPlan, timeout_s: fl
         "peer_never_ready",
         f"{plan.label} never matched /{plan.ready_pattern}/ within {timeout_s:g}s. "
         + log_tail(plan.log_path))
-
-
-async def await_our_login(state: OurSideState, timeout_s: float) -> None:
-    """Wait for a REAL login, not a sleep.
-
-    `logged_in` is an `asyncio.Event` created in poke-env's OWN loop thread, so it must not be
-    awaited from this loop — its `is_set()` is polled instead. A challenge aimed at a user who is
-    not yet online is dropped by Showdown and the challenger then waits forever, which is why this
-    is a gate and not an optimisation.
-    """
-    deadline = time.time() + timeout_s
-    while time.time() < deadline:
-        player = state.player
-        if player is not None:
-            try:
-                if player.ps_client.logged_in.is_set():
-                    print(f"[anchors] our side online as {player.username}", flush=True)
-                    return
-            except AttributeError:
-                pass
-        await asyncio.sleep(1.0)
-    raise SeriesFailure("our_side_never_ready",
-                        f"our client did not log in within {timeout_s:g}s")
-
-
-async def disconnect_our_side(state: OurSideState, timeout_s: float = 30.0) -> None:
-    """Close OUR websocket at the end of a half — measured 2026-09-14, and not optional.
-
-    `play.main` returns when the battles are done but poke-env keeps the socket open, so the
-    SECOND half's client logs in while the first is still holding the name. Showdown answers with
-    `|nametaken|`, which the fork logs and then **continues as a guest** with a server-assigned
-    name — after which the peer's `/challenge` is addressed to a user that no longer exists and the
-    half dies 8 minutes later with Metamon's own "Agent is not challenging". The failure was NAMED
-    by the watchdog (peer_exited), which is the point of it, but the cause was ours.
-
-    Belt AND braces: each half also plays under its own username suffix, so a socket that somehow
-    survives this cannot collide with the next half either.
-    """
-    player = state.player
-    if player is None:
-        return
-    try:
-        await asyncio.wait_for(player.ps_client.stop_listening(), timeout=timeout_s)
-    except Exception as exc:                        # noqa: BLE001 - teardown must never mask a result
-        print(f"[anchors] warning: could not close our websocket cleanly: {exc}", flush=True)
 
 
 async def watch(proc: subprocess.Popen, plan: PeerPlan, state: OurSideState, expected: int,

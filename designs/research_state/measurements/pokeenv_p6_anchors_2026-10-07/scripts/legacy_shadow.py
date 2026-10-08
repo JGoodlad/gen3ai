@@ -1,5 +1,7 @@
 """THE OLD PATH of P6's `--server node` proof, in SHADOW mode — a COMPARISON-HARNESS hook, never production.
 
+🚨 Runs only at the P6-slice-2 PART-1 commit (both paths present; local SHA `1b6b11c2` before a rebase): the next commit deletes the legacy client it hooks.
+
 A Node Showdown mints its own battle seed, so an old-vs-new pair of `--server node` reads cannot play the same
 battles. Instead (P4 gate (d)'s method): the LEGACY anchors client (`--our-transport poke-env`: `main.play` →
 `RLPlayer`, vendored poke-env + the Python encoder) plays the read, and a SHADOW

@@ -149,8 +149,8 @@ An anchor read does not have to put one of our checkpoints on the board. Three v
 
 | `--our-side` | our half is | why it exists |
 |---|---|---|
-| `model` (default) | the `--model` checkpoint, through `main.play` | the ordinary read |
-| `bot:<name>` | one of the **nine PINNED eval bots** | it puts an external anchor on the **ABSOLUTE** scale without routing through any checkpoint of ours: the bots carry fixed ratings from the bot-vs-bot round robin, so an anchor-vs-bot edge is an edge to a pinned node |
+| `model` (default) | the `--model` checkpoint (the core slot, or the live client — see `--our-transport`) | the ordinary read |
+| `bot:<name>` | one of the **nine PINNED eval bots** — since P6 (2026-10-07) the **Rust port** of that bot (`src/rust_env/src/bots/`, gated action-equal to the Python bot per decision), deciding on our side's own reading of the battle as a live client (`main.live.bot_reader`) | it puts an external anchor on the **ABSOLUTE** scale without routing through any checkpoint of ours: the bots carry fixed ratings from the bot-vs-bot round robin, so an anchor-vs-bot edge is an edge to a pinned node |
 | `metamon:<Agent>` | a SECOND external peer | anchor-vs-anchor — the transitivity check on the fit |
 
 🚨 **A bot cell is stamped `regime_matched = false`, and that is the honest label rather than a
@@ -158,9 +158,18 @@ defect.** A bot has no sampling knob to set to the peer's regime — the same sh
 and its policy IS the one the round robin pinned. `--regime t1` with a bot our-side is REFUSED.
 `our_regime` on those rows reads `bot:<name>`.
 
+**A bot's randomness is DECLARED (P6).** `--bot-seed S` (default: `--team-seed`) seeds the bot exactly as the env
+core's bot route does: half `h` (0 = `ours_challenge`, 1 = `peer_challenge`) draws `random.Random(stream_seed(S, h, k))`
+for its `choice` (k = 0) and the stallers' `protect` (k = 1) streams, which RUN ACROSS the half's games (one bot per
+half, as one `Player` per half was). Every row stamps `our_bot_seed`; each half's report carries both stream seeds
+(`our_bot_streams`). The Python bot drew from the process-wide, UNSEEDED `random` — the same distribution, a
+different (unrepeatable) stream. A bot never forfeits at the 250-turn limit (the Python bots carried no stall check,
+nor does the env core's bot route); its rows still stamp the plan's `forfeit_turn_limit` and `hit_forfeit_limit`
+reads `turns >= limit`.
+
 An anchor-vs-anchor cell IS matched (both peers take `--regime` and both verify it per decision),
-and its per-game record comes from **Metamon's own battle CSV** rather than from our poke-env
-flags, because there is no player of ours in the process. That instrument books a TIE as a LOSS
+and its per-game record comes from **Metamon's own battle CSV** rather than from our own side's
+record, because there is no player of ours in the process. That instrument books a TIE as a LOSS
 (its `won` field is a boolean), so the rows say so; ties ran 0–1 per 100 games in the 2026-09-14
 batteries.
 
@@ -176,8 +185,8 @@ named for whichever Metamon process challenged in that half. Three facts a reade
 * 🚨 **The cell is reported FROM the Metamon side**, whatever order the flags came in — its battle
   CSV is the only per-game record (a tie is booked as a loss there). Foul Play vs Foul Play is
   refused: it has no record.
-* 🚨 **Nothing forfeits at 250 turns.** That rule lives in `main.play`, which a pair cell never
-  runs; the rows carry `forfeit_turn_limit = 0` and the sim's **1000-turn TIE** is the only cap.
+* 🚨 **Nothing forfeits at 250 turns.** That rule lives in our side's client (the core slot / the live client), which a pair
+  cell never runs; the rows carry `forfeit_turn_limit = 0` and the sim's **1000-turn TIE** is the only cap.
   A pair cell is therefore NOT under the forfeit rule its model-vs-anchor neighbours are, and a
   long stall between two non-forfeiting bots needs a `--progress-timeout` above the 900 s default.
 * A Foul Play pair cell's `team_source_asymmetry` compares the two PEERS' directories — both must
@@ -188,7 +197,7 @@ named for whichever Metamon process challenged in that half. Three facts a reade
 The one sanctioned MIXED Metamon cell (added 2026-09-28 for X22(b), "at which temperature is
 Kakuna strongest?"): `--opponent metamon:<Agent> --regime greedy --opponent-temperature 0.5`. The
 peer runs `t1` at `action_temperature` T and verifies it samples (`argmax_match_rate` < 1); our
-side is `--temperature 0.0` exactly as in a greedy cell. Every row is stamped
+side is greedy exactly as in a greedy cell. Every row is stamped
 `regime_matched = false`, `their_regime = sample:T=<T>`. It is refused with any other opponent,
 our-side or `--regime`, and for T ≤ 0 (greedy is `--regime greedy` alone — H7). It is **not** the
 recurring protocol (RULE 2) and it does NOT reopen `--allow-unmatched-regime` against metamon,
@@ -199,7 +208,7 @@ in this shape and is named, not excused, by the usual complete-half rule.
 
 Added 2026-09-28 for X22(f) ("does our model play better greedy?"). Same one shape — a metamon
 `--opponent`, a checkpoint our-side, `--regime greedy` — and it composes with
-`--opponent-temperature`: `main.play` gets `--temperature T`, the peer follows `--regime greedy` or
+`--opponent-temperature`: our side samples at T (`core_side.our_stochastic`), the peer follows `--regime greedy` or
 its own `--opponent-temperature`. Every row is stamped `our_regime = sample:T=<T>`;
 `regime_matched` is true only when both nominal temperatures are equal. Our half is VERIFIED per
 decision: every decision must receive `stochastic=True` (else `regime_verified_decisions = false`),
@@ -246,9 +255,9 @@ an era-spanning campaign's oldest reachable node is whatever the floor admits.
 
 | step | what happens |
 |---|---|
-| 1 | starts a server on an auto-picked **9500–9599** port, and stops it on exit or failure. **8000 and 8001 are refused in code.** 🚨 **That server is the in-repo websocket FRONT END over the Rust bridge (`--server rust`, the DEFAULT): NO Node process is started at all.** With our CORE slot (the default, see `--our-transport` below) it runs **inside the anchors process** — closed, and every battle child reaped, at the end; with the legacy client it is a subprocess, PID recorded and **exactly that PID** stopped. `--server node` is the explicit opt-out that starts `deps/pokemon-showdown`; `--server-uri` uses an existing server, starts nothing, and stamps the rows `server_impl=external`. The transport and its version are on **every row** |
+| 1 | starts a server on an auto-picked **9500–9599** port, and stops it on exit or failure. **8000 and 8001 are refused in code.** 🚨 **That server is the in-repo websocket FRONT END over the Rust bridge (`--server rust`, the DEFAULT): NO Node process is started at all.** With our CORE slot (the default, see `--our-transport` below) it runs **inside the anchors process** — closed, and every battle child reaped, at the end; with the live client (a `bot:` our-side) it is a subprocess, PID recorded and **exactly that PID** stopped. `--server node` is the explicit opt-out that starts `deps/pokemon-showdown`; `--server-uri` uses an existing server, starts nothing, and stamps the rows `server_impl=external`. The transport and its version are on **every row** |
 | 2 | resolves `--model` through `resolve_model_ref` — 🚨 **a bare run directory means that run's LAST SNAPSHOT**; name the `.zip` or `@step` to pin a file. The rung it resolved by is recorded on every row |
-| 3 | plays our checkpoint as an **in-process slot of the front end on the Rust core's own row** (the default; the legacy **`main.play`** client with `--our-transport poke-env`) (`--device cpu`, `--temperature 0`, the trainer's 250-turn forfeit limit — `--forfeit-turn-limit N` may only LOWER it, for a deliberately shorter series such as the routine smoke `anchors_integration_test::test_one_capped_real_game_against_metamon_smallrl`, never a strength read; every row stamps `forfeit_turn_limit`, and a forced forfeit is H5's trigger), role-balanced across two half-series |
+| 3 | plays our checkpoint as an **in-process slot of the front end on the Rust core's own row** (the default), or as a **websocket client on the Rust stack** (`--our-transport live`: `--server node`, `--server-uri`, a `bot:` our-side) — no poke-env on our side either way (`--device cpu`, greedy, the trainer's 250-turn forfeit limit — `--forfeit-turn-limit N` may only LOWER it, for a deliberately shorter series such as the routine smoke `anchors_integration_test::test_one_capped_real_game_against_metamon_smallrl`, never a strength read; every row stamps `forfeit_turn_limit`, and a forced forfeit is H5's trigger), role-balanced across two half-series |
 | 4 | verifies the regime **per decision on both sides**, writes the `argmax_match_rate`, and records the verdict as **two** fields — `regime_verified_decisions` (the regime) and `peer_clean` (the exit). Never one; see hazard **H16** |
 | 5 | writes `games.jsonl` + `summary.json` with the Wilson CI and the full provenance |
 | 6 | on a dead peer or a stalled series, **FAILS with a named cause** and exit code 2 |
@@ -273,7 +282,7 @@ seed per battle and has no capture, so both are REFUSED there rather than ignore
 
 | | **`rust` (the DEFAULT)** | **`node` (the opt-out)** |
 |---|---|---|
-| what runs | `utils.bridge.ws_frontend --impl rust` — IN the anchors process with our core slot (the default), its own subprocess with the legacy client; each battle is backed by ONE `sim_bridge` child | `deps/pokemon-showdown` — a whole Showdown server |
+| what runs | `utils.bridge.ws_frontend --impl rust` — IN the anchors process with our core slot (the default), its own subprocess with the live client; each battle is backed by ONE `sim_bridge` child | `deps/pokemon-showdown` — a whole Showdown server |
 | memory | **40 MB mean / 166 MB peak** server tree over 100 games | **3,227 MB mean / 3,551 MB peak** — 80× the mean |
 | wall, 100 games | **126 s** | 203 s |
 | needs `node` on PATH | only for the `/utm` team validation (a short-lived process per distinct team, cached) | yes, plus the submodule's `dist/` + `node_modules/` |
@@ -292,29 +301,54 @@ compares the front end's per-side bytes against the Node bridge's and is green o
 end deliberately does NOT implement (`designs/rust_sim/ws_frontend.md`'s deferral list —
 reconnection, a battle timer, `/search`, replays). Nothing in the standing procedure needs it.
 
-### `--our-transport {auto,core,poke-env}` — WHO BUILDS OUR OBSERVATION (P3, 2026-10-07)
+### `--our-transport {auto,core,live}` — WHO BUILDS OUR OBSERVATION (P3 + P6, 2026-10-07)
 
 | value | our side is | needs |
 |---|---|---|
-| `core` | an **in-process slot** of the Rust front end (`main.anchors.core_side`): it decides on `sim_bridge`'s core frame — the row, mask and choice tokens training's reader builds — and sends `/choose <token>\|<rqid>` into the front end by function call. **This process imports no poke-env** (`src/poke_env_free_entry_points_test.py`; the slow read's `rust-core` case runs it under the import blocker) | `--server rust` started by this tool, a checkpoint our-side, `--challenge-mode serial` |
-| `poke-env` | the LEGACY websocket client: `main.play` → `RLPlayer` (vendored poke-env + the Python battle layer + the Python encoder) | — (required for `--server node`, `--server-uri`, a `bot:` our-side) |
-| `auto` (DEFAULT) | `core` wherever it can serve, else `poke-env`; the plan PRINTS which and why | — |
+| `core` | an **in-process slot** of the Rust front end (`main.anchors.core_side`): it decides on `sim_bridge`'s core frame — the row, mask and choice tokens training's reader builds — and sends `/choose <token>\|<rqid>` into the front end by function call | `--server rust` started by this tool, a checkpoint our-side |
+| `live` | a **websocket client on the Rust stack** (`main.anchors.live_side` over `main.live.client`): the checkpoint decides on `main.live`'s reader frame (the `live_reader` binary: the SAME `SideReader` chain `sim_bridge`'s core frame comes from) with the core slot's own arithmetic; a `bot:` our-side is the Rust port of that bot deciding on our side's reading (`main.live.bot_reader`, the `bot_reader` binary) | — (serves `--server node`, `--server-uri`, a `bot:` our-side) |
+| `auto` (DEFAULT) | `core` wherever it can serve, else `live`; the plan PRINTS which and why | — |
 
-Every row stamps **`our_transport`**: `rust_core_slot` · `poke_env_rlplayer` · `poke_env_bot` · `peer` (a row
-written before 2026-10-07 has no field and was `poke_env_rlplayer`, or a bot / peer by its `our_side`).
+**No side of ours imports poke-env** (`src/poke_env_free_entry_points_test.py`: the import closure of the whole
+package, a blocked Rust-bot battle; the slow reads run every transport under the import blocker). The legacy
+`main.play` → `RLPlayer` client (`--our-transport poke-env`) was **DELETED in P6** and a typed one is refused with
+its reason (`designs/deleted_flags.md`); so was poke-env's pipelined challenge loop (`--challenge-mode pipelined`).
 
-**They play the SAME games.** 100 seeded battle pairs, one current-architecture checkpoint vs `metamon:SmallRL`
-(greedy away 40, greedy home 40, our side sampling at T = 1.0 under one `GEN3AI_POLICY_SEED` 20): **100 / 100
-battles byte-identical** — both sides' 11,108 choices and every per-side chunk — 47/53 on both paths, shift
-**0.000** (Newcombe [−0.136, +0.136] unpaired; 0 discordant of 100 paired), **0** protocol / parse failures
-(`measurements/pokeenv_p3_anchors_2026-10-07/`). So `our_transport` is PROVENANCE, not a regime boundary: no
-reader refuses a mix. ⚠️ One field changed meaning: a legacy row's `n_decisions` is CUMULATIVE over its half (a
-pre-existing `RLPlayer` counter); a `rust_core_slot` row's is that game's.
+Every row stamps **`our_transport`**: `rust_core_slot` · `rust_live_reader` · `rust_live_bot` · `peer`. History: a
+row written before 2026-10-07 has no field and was `poke_env_rlplayer` (or a bot / peer by its `our_side`); rows
+from 2026-10-07 until P6 also wrote `poke_env_rlplayer` / `poke_env_bot` for the legacy client.
 
-What the slot does NOT do: re-decide or fall back to a default move (the core opens a decision exactly where it
-emits a frame, so there is nothing stale to re-decide), and any protocol surprise — a live request with no frame, a
-frame nobody consumed, a NaN cell, a choice the core mask forbids, `[Invalid choice]`, a popup — FAILS the read as
-`core_slot_error` with the games that finished attached.
+**They play the SAME games.**
+
+* **P3 (the core slot vs the legacy client):** 100 seeded battle pairs, one current-architecture checkpoint vs
+  `metamon:SmallRL` (greedy away 40, greedy home 40, our side sampling at T = 1.0 under one `GEN3AI_POLICY_SEED`
+  20): **100 / 100 battles byte-identical** — both sides' 11,108 choices and every per-side chunk — 47/53 on both
+  paths, shift **0.000**, **0** protocol / parse failures (`measurements/pokeenv_p3_anchors_2026-10-07/`).
+* **P6 (the live client and the Rust bots vs the legacy client)** (`measurements/pokeenv_p6_anchors_2026-10-07/`):
+  every one of the nine roster bots as our side, 12 seeded games each on the front end, the old path's Python bot
+  seeded exactly as the Rust bot is: **108 / 108 battles byte-identical** (7,569 choices, 3,880 of them the bot's,
+  every per-side chunk), 16/92 on both paths, shift **0.000** (Newcombe [−0.096, +0.096]); a seed-mismatched TEETH
+  cell differs on 12 / 12. The checkpoint on the live client vs the legacy client, 20 seeded games: **19 / 20
+  byte-identical**; the 20th diverged when METAMON forfeited at its first decision on the old path only — H5's
+  desync after our stall forfeit in the previous battle, timing-dependent inside the peer (our side's first choice
+  equal on both paths). On a NODE Showdown (no seed): the legacy client with the live reader as a SHADOW, 20 games,
+  **1,347 compared decisions + 2 stall forfeits, 0 row / mask / action / token differences**; then the new path
+  with 0 protocol failures on Node (checkpoint 20 games, a Rust bot 10) and on a master-built Node via
+  `--server-uri` (10).
+
+So `our_transport` is PROVENANCE, not a regime boundary: no reader refuses a mix. ⚠️ Two fields changed meaning:
+a legacy row's `n_decisions` is CUMULATIVE over its half (a pre-existing `RLPlayer` counter) where every Rust-stack
+row's is that game's; and a legacy `poke_env_bot` row's bot drew from the process-wide, UNSEEDED `random` where a
+`rust_live_bot` row's draws are the declared `--bot-seed` streams (`our_bot_seed`).
+
+What our side does NOT do on either transport: re-decide or fall back to a default move (it decides exactly where
+the reader opens a decision, so there is nothing stale to re-decide; `n_redecides` / `n_defaults` are 0 by
+construction). Any protocol surprise FAILS the read by name with the games that finished attached: on the core slot
+as `core_slot_error` (a live request with no frame, a frame nobody consumed, a NaN cell, a masked choice,
+`[Invalid choice]`, a popup); on the live client as **`live_parse_halt`** — P4's T28 HALT (a reader refusal, an
+illegal choice, `[Invalid choice]`): the halt marker is RECORDED (`python -m main.live.halt`; every live entry point,
+this one included, refuses to start past it) and the read exits `FATAL_LIVE_PARSE` (7) — or `live_client_error` (a
+login that never completes, a rejected team, a dropped socket).
 
 ### The team sets
 
@@ -372,10 +406,10 @@ the pin on the env the plan actually carries.
 | **H8** | **Foul Play's budget is WALL CLOCK**, with no iteration/visit/depth budget anywhere | the opponent is a **width meter**, not a setting | the realized visit count is scraped from its own `Iterations N: <visits>` lines and recorded per cell; a log with none reads UNVERIFIED |
 | **H9** | **unflushed prints** (Metamon) | the readiness banner never lands and the peer looks dead | `PYTHONUNBUFFERED=1` in the peer env |
 | **H10** | **a lingering websocket between halves**. Our half-1 client still holds the name when half 2 logs in; Showdown answers `|nametaken|` and the fork **continues as a guest**, so the peer's `/challenge` is addressed to a user that no longer exists | **a HANG** until the peer's own timeout (~8 min) | the socket is closed between halves AND each half plays under its own username suffix |
-| **H11** | **two `poke_env` packages**. Metamon subclasses UPSTREAM poke-env; our `BattleStreamClient` subclasses the vendored fork. One process resolves `import poke_env` to exactly one of them and the other half breaks **silently** | wrong behaviour, no error | the peers are SUBPROCESSES with `PYTHONPATH=""`; nothing in this repo imports Metamon. Since P3 (2026-10-07) the default core slot imports NO poke-env at all on our side, so the upstream copy in the peer's env is the only poke-env in a default read |
+| **H11** | **two `poke_env` packages**. Metamon subclasses UPSTREAM poke-env; our `BattleStreamClient` subclasses the vendored fork. One process resolves `import poke_env` to exactly one of them and the other half breaks **silently** | wrong behaviour, no error | the peers are SUBPROCESSES with `PYTHONPATH=""`; nothing in this repo imports Metamon. Since P6 (2026-10-07) NO side of ours imports poke-env (the core slot since P3; the live client and the Rust bots since P6), so the upstream copy in the peer's env is the only poke-env in any read |
 | **H13** | **thread oversubscription**. Torch's default pool on B = 1 inference; 210% CPU per peer, ~20× slower than necessary on a shared box | a campaign that projects at 18 h instead of 1 h | `OMP_NUM_THREADS=1` (+ MKL/OpenBLAS/numexpr/torch) in the peer env and in `metamon_side.py` before torch |
 | **H12** | **the Showdown pin**. Ours is `e0551883f`, 13 commits behind Metamon's bundled submodule | — | irrelevant while BOTH clients play on ours, which the tool guarantees; it becomes relevant the moment anyone compares against numbers a third party produced on its own server. The pin is recorded on every row |
-| **H14** | ✅ **CLOSED 2026-09-22 (`gen3_anchor_serial_challenge_v1`). `--opponent foulplay` could not run a MULTI-GAME `ours_challenge` half.** poke-env's `Player._send_challenges` releases its battle semaphore when a battle *starts*, so it emitted challenge *k+1* ~0.4 s INTO battle *k*; Foul Play reads its PMs only between battles, dropped it, and then waited forever for a challenge already consumed. 🚨 **The defect was OURS, not Foul Play's** | `no_progress` after 1 game (1/10 on the front end, 3/3 on Node) | `--challenge-mode serial` (the DEFAULT) waits for the previous battle to END before the next `/challenge` — one extra `_battle_count_queue.join()`, patched onto poke-env's **base** `Player` so `Gen3Player`'s connect-or-raise wrapper survives. **Gate: 10/10 games, `status: OK`, both halves, 0 ERRORs, challenges 11–37 s apart** (`anchors_p2_batch_2026-09-22`). `--challenge-mode pipelined` restores the old loop for a differential |
+| **H14** | ✅ **CLOSED 2026-09-22 (`gen3_anchor_serial_challenge_v1`). `--opponent foulplay` could not run a MULTI-GAME `ours_challenge` half.** poke-env's `Player._send_challenges` releases its battle semaphore when a battle *starts*, so it emitted challenge *k+1* ~0.4 s INTO battle *k*; Foul Play reads its PMs only between battles, dropped it, and then waited forever for a challenge already consumed. 🚨 **The defect was OURS, not Foul Play's** | `no_progress` after 1 game (1/10 on the front end, 3/3 on Node) | `--challenge-mode serial` (the DEFAULT) waits for the previous battle to END before the next `/challenge` — one extra `_battle_count_queue.join()`, patched onto poke-env's **base** `Player` so `Gen3Player`'s connect-or-raise wrapper survives. **Gate: 10/10 games, `status: OK`, both halves, 0 ERRORs, challenges 11–37 s apart** (`anchors_p2_batch_2026-09-22`). Since P6 both of our transports challenge serially by construction (the core slot and `main.live.client` await the battle's END), and `--challenge-mode pipelined` — poke-env's own loop — is REFUSED with its reason |
 | **H15** | ⚠️ **A bare TCP readiness probe FABRICATES an ERROR in the front end's log.** `websockets` answers a connect-then-close with `opening handshake failed` and a three-deep traceback; "0 ERRORs in the server log" is the criterion the transport's validation reads | a clean read looks like a protocol failure | fixed 2026-09-20: a server that PRINTS a readiness line (`[ws_frontend] READY`) is never TCP-probed; the Node server, which prints none we parse, still is |
 
 | **H16** | 🚨 **A COMPOSITE VERIFICATION FLAG HIDES WHICH HALF FAILED.** `regime_verified` ANDed *"did the regime take effect?"* with *"did the peer exit cleanly?"*. Metamon raises a `RecursionError` in its post-game teardown when our side forfeits at turn 250 — **after** its last decision and after every game is played and recorded — so the peer exits 1 and the composite read FALSE. On the 2026-09-20 continuation campaign that was **31 of 84 sub-cells** (3,100 of 8,400 games; arms C 6 / F 14 / W 11), every one of which had `argmax_match_rate` = **1.0000** on both halves | a third of a campaign flagged "not a measurement" with nothing wrong with it — and a flag a reader then learns to ignore | **fixed 2026-09-21** (`gen3_anchor_regime_split_v1`): `regime_verified_decisions` and `peer_clean` are separate fields on every row and in every summary, `render` prints them on separate lines, and `regime_verified` survives ONE release as their AND with a deprecation note. The 84 sub-cells are re-derived in `designs/research_state/measurements/anchor_ab_continuation_2026-09-20/regime_split_rederived.json` — **all 31 flip to verified, 0 remain unverified**, and no win rate, CI or verdict changes |

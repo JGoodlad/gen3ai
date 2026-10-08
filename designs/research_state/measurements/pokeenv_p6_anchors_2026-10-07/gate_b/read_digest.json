@@ -1,0 +1,104 @@
+[
+ {
+  "read": "old_shadow",
+  "status": "OK",
+  "n": 20,
+  "W/L/T": "2/18/0",
+  "our_transport": "poke_env_rlplayer",
+  "our_side": "model",
+  "server_impl": "node",
+  "server_version": "showdown:e0551883f",
+  "failure": null,
+  "our_decisions": 7080,
+  "n_defaults": 0,
+  "n_redecides": 0,
+  "hit_forfeit_limit": 2,
+  "max_turns": 250,
+  "regime_verified_decisions": true,
+  "peer_clean": false,
+  "their_argmax_match_rates": [
+   1.0
+  ],
+  "our_argmax_match_rate": 1.0,
+  "our_bot_seed": null,
+  "server_log_errors": {
+   "showdown.log": 0
+  }
+ },
+ {
+  "read": "new_node_model",
+  "status": "OK",
+  "n": 20,
+  "W/L/T": "2/18/0",
+  "our_transport": "rust_live_reader",
+  "our_side": "model",
+  "server_impl": "node",
+  "server_version": "showdown:e0551883f",
+  "failure": null,
+  "our_decisions": 1351,
+  "n_defaults": 0,
+  "n_redecides": 0,
+  "hit_forfeit_limit": 2,
+  "max_turns": 250,
+  "regime_verified_decisions": true,
+  "peer_clean": false,
+  "their_argmax_match_rates": [
+   1.0
+  ],
+  "our_argmax_match_rate": 1.0,
+  "our_bot_seed": null,
+  "server_log_errors": {
+   "showdown.log": 0
+  }
+ },
+ {
+  "read": "new_node_bot",
+  "status": "OK",
+  "n": 10,
+  "W/L/T": "0/10/0",
+  "our_transport": "rust_live_bot",
+  "our_side": "bot:heuristic2",
+  "server_impl": "node",
+  "server_version": "showdown:e0551883f",
+  "failure": null,
+  "our_decisions": 342,
+  "n_defaults": 0,
+  "n_redecides": 0,
+  "hit_forfeit_limit": 0,
+  "max_turns": 63,
+  "regime_verified_decisions": true,
+  "peer_clean": true,
+  "their_argmax_match_rates": [
+   1.0
+  ],
+  "our_argmax_match_rate": null,
+  "our_bot_seed": 77,
+  "server_log_errors": {
+   "showdown.log": 0
+  }
+ },
+ {
+  "read": "new_master_uri_model",
+  "status": "OK",
+  "n": 10,
+  "W/L/T": "0/10/0",
+  "our_transport": "rust_live_reader",
+  "our_side": "model",
+  "server_impl": "external",
+  "server_version": "",
+  "failure": null,
+  "our_decisions": 781,
+  "n_defaults": 0,
+  "n_redecides": 0,
+  "hit_forfeit_limit": 1,
+  "max_turns": 250,
+  "regime_verified_decisions": true,
+  "peer_clean": false,
+  "their_argmax_match_rates": [
+   1.0
+  ],
+  "our_argmax_match_rate": 1.0,
+  "our_bot_seed": null,
+  "server_log_errors": {}
+ }
+]

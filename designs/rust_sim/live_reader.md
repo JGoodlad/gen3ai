@@ -79,6 +79,29 @@ into `ReaderRefusal`, and the client turns that into a T28 halt.
 
 Results: `designs/research_state/measurements/pokeenv_p4_live_2026-10-07/`.
 
+## The BOT reader — a roster bot on the same chain (`bot_reader`, P6)
+
+A `bot:<name>` our-side of an external-anchor read (`main.anchors`) is the Rust port of that roster bot
+(`src/rust_env/src/bots/`, gated action-equal to the Python bots per decision) deciding on OUR side's reading of a
+foreign stream. `src/rust_env/src/bot_side.rs` (`BotSide`) is one `SideReader` + one `bots::Bot`: each write goes
+through `SideReader::advance` exactly as above, and at a decision the bot decides on that side's `BoardReading` over
+the decision's own choice tokens (`present::choice_tokens`, the env core's mapper) — the env core's bot on the env
+core's reading. The binary `src/rust_env/src/bin/bot_reader.rs` is this file's protocol plus one command and one reply:
+
+| command | reply |
+|---|---|
+| `BOT {"bot":<name>,"seed":S,"env":h}` — BEFORE the first `OPEN`; the bot OUTLIVES every battle | `__OK__` |
+| `FEED [...]` | at a decision `__BOT__ {"index","token","choice_words","protect_words","branch"}` BEFORE the `__OBS__` frame; then `__FED__` |
+
+The bot's streams are `random.Random(opponents::stream_seed(S, h, k))` (choice k = 0, protect k = 1) — the env core's
+bot-route rule — and run across the session's battles (one bot per half-series). The Python pipe is
+`src/main/live/bot_reader.py` (`BotReader`, `BotFrame`, `BotPolicy`; a died process is REFUSED, never respawned —
+a respawn would restart the streams); the binary is resolved / built by `src/utils/rust_env/bot_reader_bin.py`
+(`$POKESIM_BOT_READER_BIN` overrides). Gate: `src/rust_env/tests/bot_side_test.rs` (a bot over its side stream ==
+the env core's bot on a `search::game::Game`, token, index and both stream offsets, every decision, two battles
+per bot without a rebuild); the identity against the deleted Python-bot client:
+`designs/research_state/measurements/pokeenv_p6_anchors_2026-10-07/`.
+
 ## Limits (each a reason, not an oversight)
 
 - **The probe cannot see the event window's cant-reason classification**: the trackers fold at DECISIONS, and a

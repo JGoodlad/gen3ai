@@ -23271,3 +23271,47 @@ Tag: **BUILD · the mon-tied out_gain · config v145 / `gen3_mon_tied_gain_v1` �
   per-decision rows / rewards the new API does not return.
 
 Tag: **BUILT · P6 slice 1 · replay-counterfactual on the core · identity 336/336 cases, 840/840 rollouts (+ trained 48/48) · allowlist 135 → 133** · plan: [`pokeenv_and_hotpath_survey_2026-10-06/README.md`](measurements/pokeenv_and_hotpath_survey_2026-10-06/README.md) §A4 · backlog T27
+### 2026-10-07 · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 2: `main.anchors` fully off poke-env — a `bot:` our-side is the RUST port of that bot on our side's own reading, `--server node` / `--server-uri` play the checkpoint on P4's live client; the legacy `RLPlayer` client is DELETED. Identity before deletion: 108 / 108 seeded bot battle pairs byte-identical (teeth 0 / 12), the checkpoint on the live client 19 / 20 (the 20th a peer-side H5 desync), 0 differences on 1,349 shadowed Node decisions**
+
+- **Built.** `src/rust_env/src/bot_side.rs` (`BotSide` = `pokesim::side_reader::SideReader` + `bots::Bot`: the
+  env core's bot deciding on one side's reading of a FOREIGN stream over the decision's own `choice_tokens`) and
+  the `bot_reader` binary (`live_reader`'s protocol + `BOT {"bot","seed","env"}` — streams
+  `random.Random(opponents::stream_seed(S, env, k))`, the env core's bot-route rule — + a `__BOT__` reply); cargo
+  test `tests/bot_side_test.rs` (a bot over its side stream == the env core's bot on a `search::game::Game`, token,
+  index and both stream offsets, 689 decisions, five pairs covering all nine bots, two battles each without a
+  rebuild; a per-battle reseed fails it). Python: `main.live.bot_reader` (`BotReader` / `BotFrame` / `BotPolicy`; a
+  died process refused, never respawned), `utils.rust_env.bot_reader_bin`, `main.anchors.live_side` (our side on
+  `main.live.client`: the checkpoint with `core_side`'s arithmetic, or the Rust bot; a T28 `LiveParseHalt` records
+  the halt marker and exits `FATAL_LIVE_PARSE`). `--our-transport {auto,core,live}` (`auto` → `live` wherever the core
+  slot cannot serve), `--bot-seed` (default `--team-seed`; stamped `our_bot_seed`). DELETED: the legacy client and
+  everything only it used (`session.install_our_side`, the poke-env serialized-challenge patch, `server_config_for`,
+  `await_our_login`, `disconnect_our_side`, `runner.our_argv`); `--our-transport poke-env` and `--challenge-mode
+  pipelined` are refused with their reason (`designs/deleted_flags.md`). Allowlist 135 → 133 (`main/anchors/session.py`
+  + its test). The Metamon / Foul Play peer scripts are unchanged (they run upstream poke-env in the peer's own
+  interpreter).
+- **Measured** (`designs/research_state/measurements/pokeenv_p6_anchors_2026-10-07/`; both paths at the PART-1 commit (local `1b6b11c2`, pre-rebase), CPU,
+  local servers only). **(a)** all nine roster bots as our side vs `metamon:SmallRL` greedy, 12 seeded games each on
+  the front end, the old path's Python bot seeded to the same streams by a harness hook: **108 / 108 battles
+  byte-identical** (7,569 choices, 3,880 the bot's, every per-side chunk), 16/92 on both, shift **0.000 [−0.096,
+  +0.096]**; the seed-mismatched TEETH cell differs 12 / 12. **(c)** a v144 checkpoint on the live client vs the
+  legacy client, 20 seeded games: **19 / 20 byte-identical**; battle 6 diverged because METAMON forfeited at its
+  first decision on the old path only (its `Battle is already finished` long-tail loop after OUR identical stall
+  forfeit ending battle 5 — the turn-250 choices interleaved in the opposite order on the two paths). **(b)** Node:
+  the legacy client with the live reader as a SHADOW, 20 games — **0 row / mask / action / token differences on
+  1,347 choices + 2 stall forfeits**; the new path 0 protocol failures on the pinned Node (checkpoint 20, Rust
+  `heuristic2` 10) and on a master-built Node via `--server-uri` (checkpoint 10).
+- **Decision.** No regime boundary: `our_transport` (`rust_core_slot` · `rust_live_reader` · `rust_live_bot` ·
+  `peer`) is provenance. A `bot:` cell's rows now carry a DECLARED stream (`our_bot_seed`) where the legacy bot drew
+  from the process-wide unseeded `random` — same distribution, a repeatable stream.
+- **Findings.** (1) H5 / H17 can make a seeded old-vs-new pair diverge after a stall forfeit through the PEER's
+  timing — an identity read with forfeits must root-cause each such battle. (2) A bot our-side never forfeits (as
+  before; F-LF-5) while its rows stamp the plan's limit. (3) Bot rows' `n_decisions` is now per game (was `None`).
+  (4) Metamon runs the Node battle TIMER (300 s / turn) in every anchor read on Node. (5) The identity used an
+  UNTRAINED v144 checkpoint (the archive is behind the floor). (6) Two reads started in the same second race
+  `pick_port` (`address already in use`, 6 of the first 18 reads; harness re-run with explicit ports). (7) Metamon's
+  post-forfeit `RecursionError` fired in the ACCEPTOR half too on Node (both paths), which
+  `classify_peer_error` does not name — `peer_clean: false` with no `peer_exit_note`; contradicts H17's
+  "who challenges" reading. **Still on poke-env (slice 3):** `main.play --client poke-env` and
+  `main.live.gate_peer` (anchors no longer use either).
+
+Tag: **BUILT · anchors 100% off poke-env (core slot + Rust-stack live client + Rust bots) · bots 108 / 108 byte-identical, teeth 0 / 12 · checkpoint live client 19 / 20 (1 = peer H5) · Node shadow 0 / 1,349 diffs · allowlist 135 → 133**
