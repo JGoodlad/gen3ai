@@ -13050,3 +13050,30 @@ The last slice of the retirement (backlog T27). Manifest: `designs/ops/deletion_
 - **The one process that still runs poke-env** is the Metamon peer script, UPSTREAM poke-env in Metamon's own
   interpreter (`PEER_PROCESS_PERMANENT`).
 - `live_view.UNKNOWN_ITEM` / `_UNKNOWN_ITEMS` (kept only for the fork pin) deleted.
+
+## 2026-10-08 — CLEANUP BUNDLE after the poke-env retirement (no obs value, weight shape or config version changed)
+
+Five small items from the P6 findings; manifest `designs/ops/deletion_pass_manifest.md` §8.7.
+
+- **Dead code P6 left, deleted** (each grep- and import-graph-checked): `agents/model/forward_guard.py` (+ test) — the
+  extractor's `forward` lost its registry lookup and the `_forward_unguarded` split, so it is one method; the
+  `untaught_meter` python-bridge helpers (`_teambuilders`, `_reseed_player`, `team_env_seeds`, `sim_seed`,
+  `pool_sequence`, `policy_seeds`) and `n0_endofrun_2026-09-27/scripts/gu_unit.py`; `gen3_mechanics`' mon-reading
+  functions (`has_effect`, `is_status_move_immune`, `status_land_*`, `status_move_lands`, `mon_status_str`,
+  `protect_success_probability`, `boosts_array`, `effective_multiplier`, `bucket_effectiveness`,
+  `NOTABLE_EFFECT_NAMES`) and their tests. The model leaf's "forward is not re-entrant" paragraph now says there is no
+  guard.
+- **One inventory for the static gates.** `utils/static_gates.py` scans `pytest.mark.static`; `utils/static_gates_test.py`
+  holds the root `CLAUDE.md` / `CONTRIBUTING.md` / `docs/RUNNING.md` counts (they said Seventeen / Eleven / Eleven, and
+  README said eight), both tables and `tier_budget_guard_test._STATIC_GATES` to it. The guard's list gained
+  `strict_checkpoint_load_gate_test` and `eval_ledger_reader_gate_test`; CONTRIBUTING's table gained five missing rows.
+- **`proc_integration_test` gate 3 is order-independent.** The no-leak census compared COUNTS of the process's memfds,
+  so an earlier test's core awaiting the cyclic GC (`ProcCore.__del__`) moved the baseline under it. It compares the
+  SET of memfd inodes opened after the baseline; a new test plants the leftover, frees it mid-census and shows the old
+  count comparison would have moved.
+- **`tools/replay_corpus_downloader/`** — a documented RE-WRITE of the public-replay downloader (the original, which
+  produced `<main>/replays/showdown/gen3ou/`, was never committed and could not be found). Reproduces the corpus layout
+  (`<date>/battle-<id>.log`, date = the America/Los_Angeles date of `|t:|`, measured on 100 sampled files); resumable,
+  polite, tested on a fake fetcher only; nothing was downloaded.
+- **`scripts/ops/s_read.py`** — the paired speed read, fixed and generalised from the static screen's copy: a pair with
+  no quiet cycles on a side is `insufficient quiet cycles`, not a `TypeError`.
