@@ -436,6 +436,31 @@ def _self_memfds():
     return fds, maps
 
 
+def _self_memfd_inodes():
+    """(inodes of this process's open memfds of ours, inodes of its mappings of them). An INODE names one
+    memfd for its whole life, so a census built on inodes is a set of THINGS, not a count that moves when
+    some other test's core (a ``ProcCore.__del__`` awaiting the cyclic GC) is freed mid-test."""
+    fds = set()
+    for fd in os.listdir("/proc/self/fd"):
+        if MEMFD in _readlink(f"/proc/self/fd/{fd}"):
+            try:
+                fds.add(os.stat(f"/proc/self/fd/{fd}").st_ino)
+            except OSError:
+                continue  # closed between the listing and the stat
+    with open("/proc/self/maps") as f:
+        maps = {int(ln.split()[4]) for ln in f if MEMFD in ln}
+    return fds, maps
+
+
+def _new_memfds(base):
+    """The memfds (fd inodes, mapping inodes) open NOW that were not in ``base``. A leftover core from an
+    earlier test that is freed after ``base`` was taken makes the set SMALLER, never non-empty, so the
+    verdict does not depend on which tests ran before or on when the cyclic GC ran (gate ③ used to compare
+    COUNTS and failed or passed with the order under xdist, 2026-10-08)."""
+    fds, maps = _self_memfd_inodes()
+    return fds - base[0], maps - base[1]
+
+
 def _readlink(p):
     try:
         return os.readlink(p)
@@ -448,29 +473,31 @@ def _shm():
 
 
 def test_gate_3_no_leak_after_a_normal_close_an_error_a_poison_and_a_sigkill(built):
-    shm0, mine0 = _shm(), _self_memfds()  # a baseline: another test's core may still await GC
+    shm0, base = _shm(), _self_memfd_inodes()  # a baseline of THINGS: another test's core may still await GC
+    none = (set(), set())
     children = []
 
     core = proc.ProcCore(_small_spec(), nan_poison=True)  # normal
     children.append(core.pid)
     _stage(core)
     core.reset()
-    assert len(_self_memfds()[0]) > len(mine0[0]) and len(_self_memfds()[1]) > len(mine0[1]), \
-        "the census must SEE the live mapping (no vacuous pass)"
+    live = _new_memfds(base)
+    assert live == ({os.fstat(core._fd).st_ino},) * 2, \
+        f"the census must SEE exactly this core's live fd and mapping (no vacuous pass): {live}"
     assert _shm() == shm0, "the transport never names a /dev/shm segment"
     core.close()
-    assert _self_memfds() == mine0
+    assert _new_memfds(base) == none
 
     with pytest.raises(P.CallerError):  # a startup error
         proc.ProcCore(json.dumps({"n": 1}), nan_poison=True)
-    assert _self_memfds() == mine0
+    assert _new_memfds(base) == none
 
     core = proc.ProcCore(_small_spec(), nan_poison=True)  # a poisoned core
     children.append(core.pid)
     with pytest.raises(P.CorePanic):
         core._control("PANIC_PROBE")
     core.close()
-    assert _self_memfds() == mine0
+    assert _new_memfds(base) == none
 
     core = proc.ProcCore(_small_spec(), nan_poison=True)  # a SIGKILLed child, respawned, then closed
     children.append(core.pid)
@@ -479,9 +506,46 @@ def test_gate_3_no_leak_after_a_normal_close_an_error_a_poison_and_a_sigkill(bui
         core.reset()
     children.append(core.pid)
     core.close()
-    assert _self_memfds() == mine0
+    assert _new_memfds(base) == none
     assert _shm() == shm0
     assert all(_exited(p) for p in children), children
+
+
+def test_gate_3_s_census_does_not_depend_on_what_ran_before_it(built):
+    """THE ORDER-DEPENDENCE this gate used to have (owner rule 2026-10-01: a check passes or fails
+    deterministically). It compared COUNTS of this process's memfds, so an earlier test's core still awaiting
+    the cyclic GC (``ProcCore.__del__``) made the baseline move under it — which tests share a worker is
+    scheduling, so the verdict was too. It now compares the SET of memfd inodes opened after the baseline.
+    This test plants exactly that leftover (a core in a reference cycle, dropped, not yet collected), takes
+    the baseline, frees the leftover MID-census and holds the verdict: nothing new, so no leak; and a REAL
+    leak, a live core, is still seen."""
+    import gc
+
+    gc.collect()                       # nothing but the planted leftover is pending below
+    gc.disable()                       # …and it is freed when WE say so, never by chance
+    try:
+        leftover = proc.ProcCore(_small_spec(), nan_poison=True)
+        leftover.cycle = leftover      # unreachable-but-uncollected once dropped
+        leftover_ino = os.fstat(leftover._fd).st_ino
+        base = _self_memfd_inodes()
+        assert leftover_ino in base[0] and leftover_ino in base[1], "precondition: the leftover is in the baseline"
+        counts0 = _self_memfds()
+        del leftover
+        assert _new_memfds(base) == (set(), set())          # still pending: nothing new
+        gc.collect()                                        # freed mid-census (its __del__ closes the memfd)
+        fds, maps = _self_memfd_inodes()
+        assert leftover_ino not in fds and leftover_ino not in maps, "precondition: the GC freed the leftover"
+        assert _new_memfds(base) == (set(), set()), "a FREED leftover must not read as a leak"
+        assert _self_memfds() != counts0, "the old COUNT comparison WOULD have moved under this same sequence"
+        real = proc.ProcCore(_small_spec(), nan_poison=True)    # a genuine leak: live, unclosed
+        try:
+            new = _new_memfds(base)
+            assert new[0] == new[1] == {os.fstat(real._fd).st_ino}, new
+        finally:
+            real.close()
+        assert _new_memfds(base) == (set(), set())
+    finally:
+        gc.enable()
 
 
 _PARENT = r"""
