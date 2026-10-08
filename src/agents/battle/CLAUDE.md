@@ -130,8 +130,8 @@ lock) + the `src/agents/enums.py` seam (which since P1 of the poke-env retiremen
     battle-queue handshake means the two do not overlap in practice, but the memo does not
     depend on that.)
   * **The memo rides the object it describes.** Both the epoch and the view live on the
-    battle, so the offline materializer's per-arm `deepcopy` restore (`_PlayerSnapshot`)
-    carries a self-consistent pair. A cross-object cache keyed by `battle_tag` — the arms are
+    battle, so a per-arm `deepcopy` restore (the offline materializer's `_PlayerSnapshot`,
+    deleted in P6 slice 5) carried a self-consistent pair. A cross-object cache keyed by `battle_tag` — the arms are
     *indistinguishable* by tag — would serve arm-1's forward state to a rewound arm-2; that
     shape is unrepresentable here. The re-decide rollback (`EpisodeTracker.restore`) rolls
     back tracker state and never touches the battle, so the memo stays correct across it by
@@ -166,7 +166,7 @@ lock) + the `src/agents/enums.py` seam (which since P1 of the poke-env retiremen
   descriptor). All three are now memoized: `max_pp` per INSTANCE (`_id`, `_gen`,
   `_from_transform` are write-once in `Move.__init__`), the enum names per MEMBER, and **`entry`
   at MODULE scope keyed `(gen, id)` — deliberately NOT on the instance**, because
-  `obs_materializer._PlayerSnapshot` deep-copies the whole battle graph per counterfactual arm on
+  `obs_materializer._PlayerSnapshot` (deleted in P6 slice 5) deep-copied the whole battle graph per counterfactual arm on
   the stated ground that *"`Pokemon`/`Move` carry an int `_gen` and look entries up on demand"*;
   an instance-held dex row would be duplicated into every arm. Pinned by a deepcopy test. Plus
   two hot generator expressions turned into list comps and five defensive `getattr(mon, …,

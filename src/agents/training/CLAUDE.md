@@ -1221,14 +1221,14 @@ read identically); `cf_audit_twin.py` holds the twin-head paired read and the sh
 `cf_audit` re-imports every name, so the historic import paths still resolve.
 **Full detail — in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
 
-## Prefix-sharing materialization (`obs_materializer.materialize_branches`)
+## Offline replay (`obs_materializer`) — the prefix-sharing materializer is DELETED
 
-K counterfactual arms of one decision share an identical prefix; the materializer replays it once,
-snapshots the player's whole battle/tracker state at the branch decision, and restores it per arm —
-**exactly equivalent to per-arm `materialize_decisions`, bit-for-bit** (59/59 arms byte-identical,
-15.4 → 5.3 ms per arm). The per-arm restore is serialized ONCE and rebuilt per arm rather than
-deep-copied (1.98 → 0.22 ms). ⚠️ A graph that will not pickle **falls back to deepcopy and says so
-once on stderr** — a 9× regression nothing mentions is the failure shape this tree keeps eating.
+`materialize_branches` (with `open_branch_fork`, `materialize_branches_from`, `Branch`, `BranchFork`,
+`_PlayerSnapshot` and `clone_pins.py`) was deleted in poke-env retirement P6 slice 5 (2026-10-08, F-P5-3):
+nothing in production called it after P5 moved the prober's lookahead / better-line / falsify onto the
+Rust core (`main.prober.core_walk`). What stays is `materialize_decisions`, `infer_action_indices`,
+`scan_record` / `materialize_from_record` and the two replay players, until P6 slice 6. The record of the
+deleted machinery and its measurements is [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).
 
 🚨 **AN OFFLINE REPLAY'S BATTLE TAG IS ALWAYS UNIQUE, AND THAT IS A CORRECTNESS PROPERTY**
 (`gen3_recon_tag_collision_v1`, 2026-09-19). `_next_tag` used to hand the caller's `battle_tag`
@@ -1242,20 +1242,10 @@ rust fails loud, so the node cell ran the same wrong rollouts and reported a cle
 by `main/search_dividend/recon_tag_isolation_test.py`.
 **Full detail — in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
 
-🚨 **NOTHING IN PRODUCTION CALLS IT ANY MORE** (poke-env retirement P5, 2026-10-07): the prober's
-lookahead / better-line / falsify read their rows and choice maps from the RUST CORE
-(`main.prober.core_walk` — `core_events --walk` / `--obs-stream`, byte-equal to this materializer on
-the P5 identity set), so `materialize_branches`, `_PlayerSnapshot` and `clone_pins.py` are exercised
-by their own tests alone and leave with P6. `materialize_branches` replays the shared prefix ONCE
-(`open_branch_fork`, which freezes a `_PlayerSnapshot`) and runs every arm off it
-(`materialize_branches_from`); `clone_pins.py` is the ONE definition of WHICH objects a per-arm
-clone must SHARE rather than copy (a `logging.Logger`, a `MappingProxyType`, the append-only
-immutable records, the `GenData` singleton) and of the pinned-pickle freeze/thaw that makes a
-clone ~9× cheaper than a `deepcopy`. **The SEARCH no longer materializes anything in Python** — its
-successors are Rust-core versions whose rows the driver encodes (`gen3_core_search_v1`); the
-search's protocol road, its one-sided VIEW road (`view_successor.py`, the M1 event folder, the
-per-decision fork caches) and `core_successor.py` are DELETED (Rust Core deletion pass, program
-§4 M2).
+🚨 **The SEARCH does not materialize anything in Python** — its successors are Rust-core versions whose
+rows the driver encodes (`gen3_core_search_v1`); the search's protocol road, its one-sided VIEW road
+(`view_successor.py`, the M1 event folder, the per-decision fork caches) and `core_successor.py` are
+DELETED (Rust Core deletion pass, program §4 M2).
 
 🚨 **`EpisodeTracker.record` and `update_progress_clock` are SPLIT, not copied.** `record_context`
 and `advance_window` are their bodies once the context and the event windows exist; `record` /

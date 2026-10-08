@@ -156,8 +156,8 @@ class Gen3Battle(Battle):
         that. A torn view returned to its own caller is today's behaviour, unchanged.)
 
         **Clone / rollback: the memo rides the object it describes.** Both the epoch and the
-        cached view live on this battle, so the materializer's per-arm ``deepcopy``
-        (``_PlayerSnapshot``) carries a self-consistent pair, and restoring an arm restores
+        cached view live on this battle, so a per-arm ``deepcopy`` (the deleted
+        ``_PlayerSnapshot``, P6 slice 5) carried a self-consistent pair, and restoring an arm restored
         the epoch its view was built at. A cross-object cache keyed by ``battle_tag`` would
         serve arm-1's forward state to a rewound arm-2 — that shape is unrepresentable here.
         The re-decide rollback (``EpisodeTracker.restore``) rolls back *tracker* state and

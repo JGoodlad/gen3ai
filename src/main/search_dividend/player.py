@@ -8,7 +8,8 @@ it with :meth:`SearchEngine.choose`.
 
 Three wiring facts, each of which is load-bearing:
 
-* **``choose_move`` is ``async``.** ``materialize_branches`` refuses to run on ``POKE_LOOP``, and
+* **``choose_move`` is ``async``.** The replay readers (``materialize_decisions``, and the
+  since-deleted ``materialize_branches``, P6 slice 5) refuse to run on ``POKE_LOOP``, and
   a sync ``choose_move`` runs there — so the search executes in a worker thread and this method
   awaits it. poke-env supports that natively (``player.py``: ``if isinstance(choice, Awaitable):
   choice = await choice``), and awaiting frees POKE_LOOP for the replay feed the search needs.
@@ -136,8 +137,9 @@ class SearchDividendPlayer(RLPlayer):
         if self.engine.cfg.arm == "base":
             result = self._search(battle, side, builder, history, mask, int(idx), pub, root_wp)
         else:
-            # OFF POKE_LOOP. `materialize_branches` drives a replay player THROUGH this loop and
-            # blocks on the result, so running it here would deadlock the loop against itself
+            # OFF POKE_LOOP. The replay readers (`obs_materializer.materialize_decisions`; formerly
+            # also `materialize_branches`) drive a replay player THROUGH this loop and
+            # block on the result, so running it here would deadlock the loop against itself
             # (`obs_materializer._refuse_poke_loop` refuses loudly rather than hanging). Awaiting
             # an executor hands the loop back for exactly the duration of the search.
             result = await asyncio.get_running_loop().run_in_executor(

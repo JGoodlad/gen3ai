@@ -217,7 +217,7 @@ def test_a_view_built_across_a_mutation_is_never_served(monkeypatch):
 def test_a_deep_copied_battle_does_not_serve_its_twins_view():
     """The clone-aliasing hazard, as the offline materializer meets it.
 
-    ``_PlayerSnapshot`` deep-copies the battle graph and restores a FRESH copy per arm.
+    The deleted ``_PlayerSnapshot`` (P6 slice 5) deep-copied the battle graph and restored a FRESH copy per arm.
     Arm 1 runs and advances its battle; arm 2 is restored from the pre-arm-1 copy and must
     see its OWN board. The memo rides the battle, so this holds by construction — but a
     cache keyed by ``battle_tag`` (the tags are identical across arms!) would serve arm-1's

@@ -32,7 +32,6 @@ src/agents/training/battle_snapshot.py
 src/agents/training/bot_elo_calibration.py
 src/agents/training/cf_producer_snapshot.py
 src/agents/training/churn_probe.py
-src/agents/training/clone_pins.py
 src/agents/training/episode_tracker.py
 src/agents/training/eval_roster.py
 src/agents/training/golden_obs_capture.py
@@ -89,8 +88,6 @@ src/agents/training/cf_producer_integration_test.py
 src/agents/training/eval_callback_test.py
 src/agents/training/hidden_power_tracker_fuzz_test.py
 src/agents/training/move_attribution_test.py
-src/agents/training/obs_materializer_branch_integration_test.py
-src/agents/training/obs_materializer_test.py
 src/agents/training/obs_roundtrip_fuzz_test.py
 src/agents/training/order_to_action_race_fuzz_test.py
 src/agents/training/poke_env_gaps/abilities_fuzz_test.py

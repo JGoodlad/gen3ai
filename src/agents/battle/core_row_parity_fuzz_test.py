@@ -134,7 +134,7 @@ def _record_one_battle(out_dir: str, impl: str, fixed_key: Optional[int] = None,
 
 class _ProtocolRoad:
     """Feed one-sided protocol text to the ``obs_materializer`` replay player (trackers on) and
-    keep its materialized rows — the same construction and cadence ``materialize_branches`` uses."""
+    keep its materialized rows — the same construction and cadence the deleted ``materialize_branches`` used (P6 slice 5)."""
 
     def __init__(self, record, side: str, actions: List[int]) -> None:
         self.tag = OM._next_tag(None, record.format_id)

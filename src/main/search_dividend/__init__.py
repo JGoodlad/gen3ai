@@ -39,7 +39,8 @@ Performance — WHERE A BUDGET SECOND GOES
 ----------------------------------------
 The realized WIDTH is the probe's statistical power, so the cost breakdown is a finding and not
 housekeeping. Profiled 2026-08-23, oracle arm, ``--budget 1``, mirror, node search driver, on a
-box carrying a live trainer (shares of the per-decision wall):
+box carrying a live trainer (shares of the per-decision wall; `materialize_branches` was deleted in
+P6 slice 5):
 
 ===============================  ======  ==============================================
 stage                             share  per unit

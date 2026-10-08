@@ -294,8 +294,9 @@ def test_selfcheck_a_legitimate_definition_site_patch_is_NOT_a_finding(tmp_path)
 def test_selfcheck_a_deferred_import_in_the_consumer_is_a_real_reach(tmp_path):
     """`from x import f` INSIDE a function re-executes per call, so it DOES see the stub.
 
-    Two real sites depend on this and would be false positives without it
-    (`utils.team_loader.TeamLoader`, `obs_materializer.materialize_branches`).
+    Two real sites depended on this (2026-09-07) and would have been false positives without it
+    (`utils.team_loader.TeamLoader`; the second, `obs_materializer.materialize_branches`, was
+    deleted in P6 slice 5). The synthetic case below is the standing proof.
     """
     root = _tree(tmp_path, {
         "pkg/__init__.py": "",

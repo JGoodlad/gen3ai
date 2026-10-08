@@ -184,8 +184,8 @@ class _ModuleFacts:
     docstring naming a function is not a call to it, so any module whose prose mentions its own
     symbol would clear every patch aimed at it. Measured 2026-09-07: exactly 2 of 397 sites rested
     on that looseness, and BOTH are cleared by the consumer search below on their own merits
-    (``utils.team_loader.TeamLoader`` and ``obs_materializer.materialize_branches``, each reached
-    by a DEFERRED import in its consumer). Precision here costs nothing and the consumer search is
+    (``utils.team_loader.TeamLoader`` and ``obs_materializer.materialize_branches`` — the second
+    deleted in P6 slice 5 — each reached by a DEFERRED import in its consumer). Precision here costs nothing and the consumer search is
     the real safety net, so the loose reads were dropped.
     """
 

@@ -169,8 +169,8 @@ def test_entry_memo_covers_the_synthetic_recharge_branch_and_is_stable():
 
 
 def test_a_deep_copied_move_still_carries_no_reference_to_the_dex():
-    """The materializer's per-arm `deepcopy` of the whole battle graph is justified in
-    `obs_materializer._PlayerSnapshot` by exactly one sentence — *"`Pokemon`/`Move` carry an int
+    """The materializer's per-arm `deepcopy` of the whole battle graph was justified in
+    the deleted `obs_materializer._PlayerSnapshot` (P6 slice 5) by exactly one sentence — *"`Pokemon`/`Move` carry an int
     `_gen` and look entries up on demand"*. Caching `entry` ON THE INSTANCE would break that: a
     dex row would ride inside every `Move` and each arm's deepcopy would duplicate it. That is
     why the entry memo is keyed `(gen, id)` at MODULE scope while `max_pp` (a plain int) is not.

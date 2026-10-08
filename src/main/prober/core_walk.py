@@ -228,7 +228,7 @@ def read_streams(requests: Sequence[StreamRequest], *, timeout: float = 300.0) -
     """Every request's decisions, read by ONE ``core_events --obs-stream`` process
     (``gen3_core_obs_stream_v1``): the parse chain with the trackers on — the chain the training rows
     are encoded on — over exactly the text a client of that side received. The Rust twin of
-    ``obs_materializer.materialize_decisions`` / ``materialize_branches`` (P5). A refused stream raises
+    ``obs_materializer.materialize_decisions`` (and the deleted ``materialize_branches``, P6 slice 5). A refused stream raises
     :class:`CoreWalkError` naming it."""
     from agents.battle.core_obs import wrap_row
     from utils.bridge.sim_bridge_bin import resolve_core_events_bin
