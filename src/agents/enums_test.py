@@ -145,11 +145,13 @@ def test_the_notable_effect_names_are_members_of_the_forks_effect_enum():
 
 
 def test_the_frozen_special_types_equal_the_forks_table():
-    """`rust_core_obs_layout._SPECIAL_TYPES_PRE_SPLIT` is the fork's ``Move._MOVE_CATEGORY_PER_TYPE_PRE_SPLIT`` SPECIAL
-    names, spelled out so the layout generator imports no poke-env (P1 of the retirement). The fork is the oracle
-    until P6 deletes it, so the two are pinned equal here."""
-    from agents.observation.rust_core_obs_layout import _SPECIAL_TYPES_PRE_SPLIT
+    """`layout.rs`'s ``SPECIAL_TYPES_PRE_SPLIT`` is the fork's ``Move._MOVE_CATEGORY_PER_TYPE_PRE_SPLIT`` SPECIAL
+    names (frozen once by the deleted layout generator, P1; `layout.rs` is Rust-owned since P6 slice 6d-2). The fork
+    is the oracle until P6 deletes it, so the two are pinned equal here."""
+    from agents.observation.rust_core_obs_layout_test import _str_table, _text
     from poke_env.battle.move import Move
+
+    _SPECIAL_TYPES_PRE_SPLIT = _str_table(_text(), "SPECIAL_TYPES_PRE_SPLIT")
 
     forks = sorted(t.name for t, cat in Move._MOVE_CATEGORY_PER_TYPE_PRE_SPLIT.items() if cat.name == "SPECIAL")
     assert list(_SPECIAL_TYPES_PRE_SPLIT) == forks

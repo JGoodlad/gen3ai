@@ -18,8 +18,9 @@
 //! fill the row with NaN before encoding, so a cell a branch forgot to write reads NaN and fails
 //! slice O; release builds zero-fill ([`prefill`]).
 //!
-//! Layout: [`layout`] is GENERATED from `agents/observation/constants.py` (`python -m
-//! agents.observation.rust_core_obs_layout --write`). The dex / prior tables: [`data`], read from
+//! Layout: [`layout`] is Rust-OWNED source (since T27 P6 slice 6d-2; it was generated from the Python
+//! encoder until that encoder was deleted) — every value the model also reads is held equal to
+//! `agents/observation/constants.py` by `rust_core_obs_layout_test.py`. The dex / prior tables: [`data`], read from
 //! `data/pokemon/` exactly as `agents.gen3_data` reads them.
 
 pub mod data;
