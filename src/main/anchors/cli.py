@@ -68,12 +68,13 @@ def parse_our_side(spec: str) -> str:
     if not spec.startswith("bot:"):
         raise SystemExit(
             f"--our-side {spec!r}: expected 'model', 'bot:<name>' or 'metamon:<Agent>'")
-    from agents.training.eval_callback import eval_opponent_class
+    # The roster's NAMES, poke-env-free (`eval_schedule`); each is a Rust bot port (`src/rust_env/src/bots/`,
+    # `bots::Kind`), which is what plays a `bot:` our-side (`main.live.bot_reader`).
+    from agents.training.eval_schedule import eval_opponent_names
 
-    try:
-        eval_opponent_class(spec.split(":", 1)[1])
-    except KeyError as exc:
-        raise SystemExit(f"--our-side {spec!r}: {exc}") from exc
+    roster = eval_opponent_names()
+    if spec.split(":", 1)[1] not in roster:
+        raise SystemExit(f"--our-side {spec!r}: unknown eval bot; the roster is {roster}")
     return spec
 
 
@@ -215,14 +216,20 @@ def build_parser() -> argparse.ArgumentParser:
                         "an unmirrored read.")
     p.add_argument("--our-transport", dest="our_transport", default="auto",
                    choices=("auto",) + core_side.OUR_TRANSPORTS,
-                   help="HOW our checkpoint plays. 'auto' (the DEFAULT) = 'core' wherever it can serve, else "
-                        "'poke-env', PRINTED in the plan. 'core' (P3 of the poke-env retirement): an "
+                   help="HOW our side plays. 'auto' (the DEFAULT) = 'core' wherever it can serve, else "
+                        "'live', PRINTED in the plan. 'core' (P3 of the poke-env retirement): an "
                         "IN-PROCESS slot of the Rust websocket front end, deciding on sim_bridge's core "
-                        "observation row (the training reader) — no poke-env in this process; needs "
-                        "--server rust started by this tool and a checkpoint our-side. 'poke-env': the "
-                        "LEGACY main.play -> RLPlayer websocket client (vendored poke-env + the Python "
-                        "encoder) — required for --server node, --server-uri and a bot: our-side. "
-                        "Stamped per row as our_transport, a REGIME BOUNDARY.")
+                        "observation row (the training reader); needs --server rust started by this tool "
+                        "and a checkpoint our-side. 'live' (P6): a websocket CLIENT on the Rust stack — "
+                        "main.live's reader session (the same reader chain) with our checkpoint, or the "
+                        "Rust port of a bot: our-side; serves --server node, --server-uri and a bot: "
+                        "our-side. 'poke-env': the LEGACY main.play -> RLPlayer client, kept only for "
+                        "P6's identity proof. Neither 'core' nor 'live' imports poke-env. Stamped per "
+                        "row as our_transport.")
+    p.add_argument("--bot-seed", dest="bot_seed", type=int, default=None,
+                   help="a bot: our-side's DECLARED stream seed (default: --team-seed). Half h's bot draws "
+                        "random.Random(stream_seed(seed, h, k)) — the env core's bot-route rule — and its "
+                        "streams run across the half's games. Stamped per row as our_bot_seed.")
     p.add_argument("--challenge-mode", dest="challenge_mode", default="serial",
                    choices=("serial", "pipelined"),
                    help="WHEN our side emits the next /challenge in a half we challenge. "
@@ -369,7 +376,7 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
     # `--server rust` this tool starts) and a checkpoint; anything else is the legacy client.
     is_peer = our_side.startswith("metamon:") or our_side == "foulplay"
     core_why = (None if is_peer else
-                "a checkpoint our-side (a bot: our-side is a Python roster bot)" if our_side != "model"
+                "a checkpoint our-side (a bot: our-side plays as a live client)" if our_side != "model"
                 else "--server rust started by this tool (--server-uri / --server node have no "
                      "in-process slot)" if (args.server_uri or args.server_kind != "rust")
                 else "--challenge-mode serial (the slot challenges only after the previous battle "
@@ -377,12 +384,15 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
     our_transport = getattr(args, "our_transport", "auto")
     transport_note = "explicit"
     if our_transport == "core" and core_why:
-        raise SystemExit(f"--our-transport core needs {core_why}; pass --our-transport poke-env "
-                         "(the legacy client) or drop the conflicting flag.")
+        raise SystemExit(f"--our-transport core needs {core_why}; pass --our-transport live "
+                         "(our side as a websocket client on the Rust stack) or drop the conflicting flag.")
     if our_transport == "auto":
-        our_transport = "poke-env" if core_why else "core"
-        transport_note = (f"auto: the legacy client, because the core slot needs {core_why}"
+        our_transport = "live" if core_why else "core"
+        transport_note = (f"auto: the live client, because the core slot needs {core_why}"
                           if core_why else "auto: the core slot is the default")
+    if our_transport == "live" and not is_peer and args.challenge_mode != "serial":
+        raise SystemExit("--our-transport live challenges only after the previous battle ENDED (hazard H14's "
+                         "serial loop); --challenge-mode pipelined was poke-env's own loop.")
     if our_side.startswith("bot:") and args.regime != "greedy":
         raise SystemExit(
             f"--regime {args.regime} with --our-side {our_side}: a bot has no sampling knob, so "
@@ -573,6 +583,8 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         our_temperature=our_t,
         our_transport=("peer" if is_peer else our_transport),
         our_transport_note=transport_note,
+        bot_seed=((args.bot_seed if args.bot_seed is not None else int(args.team_seed))
+                  if our_side.startswith("bot:") else None),
     )
 
 
@@ -597,6 +609,9 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
         f"  our transport     {plan.our_transport}  ({plan.our_transport_note})"
         + ("  — an IN-PROCESS slot of the Rust front end on the core's own row; NO poke-env here"
            if plan.our_transport == "core" else
+           "  — a websocket CLIENT on the Rust stack (main.live's reader session"
+           + (f"; the Rust bot port, --bot-seed {plan.bot_seed})" if plan.our_side_is_bot else ")")
+           if plan.our_transport == "live" else
            "  — the LEGACY main.play/RLPlayer client (vendored poke-env + the Python encoder)"
            if plan.our_transport == "poke-env" else ""),
         f"  our model         {plan.model_zip or '(none — our side is not a checkpoint)'}"
@@ -656,6 +671,16 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
             ours_cmd = (f"in-process core slot '{our_name}' — we {mode} {peer_name}, {n} games, "
                         f"{'sampled T=' + format(temp, 'g') if stoch else 'greedy'}, "
                         f"forfeit at turn {plan.forfeit_turn_limit}")
+        elif plan.our_transport == "live":
+            if plan.our_side_is_bot:
+                env = 0 if half == "ours_challenge" else 1
+                who = (f"the Rust {plan.our_side} (streams random.Random(stream_seed({plan.bot_seed}, {env}, k)); "
+                       "never forfeits)")
+            else:
+                stoch, temp = core_side.our_stochastic(plan)
+                who = (f"{'sampled T=' + format(temp, 'g') if stoch else 'greedy'} checkpoint, "
+                       f"forfeit at turn {plan.forfeit_turn_limit}")
+            ours_cmd = f"live client '{our_name}' on {plan.server_uri} — we {mode} {peer_name}, {n} games, {who}"
         else:
             ours_cmd = ("python -m main.play "
                         + " ".join(runner_mod.our_argv(plan, mode, n, our_name, peer_name)))
@@ -764,6 +789,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     if status != "OK":
         print("")
         print("🚨 THIS READ IS NOT A MEASUREMENT — see summary.json's `failure` block.")
+        if failure is not None and failure.cause == "live_parse_halt":
+            # T28: our live client could not read its input — the HALT marker is recorded (live_side).
+            from main.exit_codes import TrainExitCode
+
+            return int(TrainExitCode.FATAL_LIVE_PARSE)
         return 2
     if not summary["their_argmax_match_rates"] and plan.opponent_kind == "metamon":
         print("")

@@ -70,7 +70,9 @@ def test_the_rust_env_core_suite_passes():
                  "a_game_is_the_env_cores_row_path_and_its_branch_is_exact",
                  "playouts_are_deterministic_with_common_random_numbers_and_the_recorded_continuation_is_reproduced",
                  # M5 Lane F (hand-off): the bots' RNG is CPython's stream (the bot gate is bots_gate_test.py)
-                 "the_stream_is_cpythons"):
+                 "the_stream_is_cpythons",
+                 # P6 (poke-env retirement): a bot over its side's protocol stream is the env core's bot
+                 "a_bot_over_its_side_stream_decides_as_the_env_cores_bot"):
         assert f"{name} ... ok" in r.stdout, f"{name} did not run:\n{tail}"
     # Gate ⑤, cross-language: the Rust build's stamp is what this tree recomputes (a self-check build).
     lines = [ln for ln in r.stdout.splitlines() if ln.startswith("POKESIM_ENV_STAMP=")]

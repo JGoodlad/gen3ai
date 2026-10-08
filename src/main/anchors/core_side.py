@@ -44,10 +44,11 @@ import numpy as np
 
 from main.anchors.session import BattleRecord, OurSideState, SeriesFailure, build_team_source
 
-#: ``--our-transport`` values. ``core`` (the DEFAULT) is this module; ``poke-env`` is the legacy
-#: ``main.play`` → ``RLPlayer`` websocket client, kept for ``--server node`` / ``--server-uri`` /
-#: a ``bot:`` our-side (a Python roster bot) and for the transport differential.
-OUR_TRANSPORTS = ("core", "poke-env")
+#: ``--our-transport`` values. ``core`` (the DEFAULT) is this module; ``live`` is our side as a websocket
+#: CLIENT on the Rust stack (:mod:`main.anchors.live_side`: P4's ``main.live`` reader + a checkpoint or a Rust
+#: bot) for ``--server node`` / ``--server-uri`` / a ``bot:`` our-side; ``poke-env`` is the legacy ``main.play``
+#: → ``RLPlayer`` websocket client, kept only until P6's identity proof.
+OUR_TRANSPORTS = ("core", "live", "poke-env")
 
 #: What every row stamps as ``our_transport`` — the reader that built OUR observation. A REGIME
 #: BOUNDARY (P3, 2026-10-07): rows without the field were all ``poke_env_rlplayer``.
@@ -447,4 +448,8 @@ def row_transport(plan: Any) -> str:
         return TRANSPORT_PEER
     if plan.our_transport == "core":
         return TRANSPORT_CORE
+    if plan.our_transport == "live":
+        from main.anchors.live_side import TRANSPORT_LIVE, TRANSPORT_LIVE_BOT
+
+        return TRANSPORT_LIVE_BOT if plan.our_side_is_bot else TRANSPORT_LIVE
     return TRANSPORT_POKE_ENV_BOT if plan.our_side_is_bot else TRANSPORT_POKE_ENV

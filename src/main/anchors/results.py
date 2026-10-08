@@ -126,6 +126,10 @@ class CellSpec:
     #: "poke_env_bot" (a Python roster bot) or "peer" (an anchor-vs-anchor cell). A row written
     #: before the field existed was "poke_env_rlplayer" (or a bot / peer by its `our_side`).
     our_transport: str = "poke_env_rlplayer"
+    #: A `bot:` our-side's DECLARED stream seed (`--bot-seed`, P6 of the poke-env retirement): half h's bot
+    #: draws `random.Random(stream_seed(seed, h, k))` — the env core's bot-route rule. None for a checkpoint, a
+    #: peer, and every `poke_env_bot` row (that Python bot drew from the process-wide, UNSEEDED `random`).
+    our_bot_seed: Optional[int] = None
 
     def stamp(self) -> Dict[str, Any]:
         return asdict(self)

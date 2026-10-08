@@ -1,6 +1,9 @@
 //! `pokesim_env` — the Rust env core (M5). See `core` for the contract; the column schema is
 //! GENERATED (`core::columns`).
 pub mod core;
+/// A SCRIPTED BOT OVER ONE SIDE'S PROTOCOL STREAM (poke-env retirement P6): the Lane-F bot on
+/// `SideReader`'s reading, for a websocket client (`bin/bot_reader.rs`).
+pub mod bot_side;
 /// THE SCRIPTED BOTS (M5 Lane F): the inventoried bots, reading the core's per-side reading.
 pub mod bots;
 /// EPISODES AND REWARD (M5 Lane D): the terminal reward, `terminated` / `truncated`, the stall

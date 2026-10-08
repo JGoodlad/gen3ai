@@ -139,6 +139,9 @@ class SeriesPlan:
     our_transport: str = "core"
     #: How `our_transport` was chosen ("explicit" or the `auto` resolution and its reason) — printed.
     our_transport_note: str = ""
+    #: `--bot-seed`: a `bot:` our-side's declared stream seed (the env core's bot-route seed): half h's bot
+    #: draws `random.Random(stream_seed(bot_seed, h, k))` (`main.anchors.live_side.bot_streams`).
+    bot_seed: Optional[int] = None
 
     @property
     def our_side_is_bot(self) -> bool:
@@ -386,6 +389,13 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int, front: A
         proc, failure = await _play_core_half(plan, half, n_games, pplan, team_spec, front, state,
                                               our_name, peer_name, role)
         return _half_report(plan, half, n_games, pplan, proc, state, mirror, failure)
+    if plan.our_transport == "live":
+        from main.anchors import live_side
+
+        state = OurSideState()
+        proc, failure = await live_side.play_half(plan, half, n_games, pplan, team_spec, state,
+                                                  our_name, peer_name, role)
+        return _half_report(plan, half, n_games, pplan, proc, state, mirror, failure)
 
     # ---- the LEGACY poke-env client (`--our-transport poke-env`): `main.play` → `RLPlayer` ----
     import main.play as play
@@ -545,6 +555,12 @@ def _half_report(plan: SeriesPlan, half: str, n_games: int, pplan: Any, proc: An
     report["their_regime"] = pplan.their_regime
     report["our_stochastic_kwargs"] = list(state.stochastic_kwargs)
     report["model_loader"] = state.model_loader
+    if plan.our_side_is_bot and plan.our_transport == "live":
+        from main.anchors.live_side import bot_streams
+
+        # the bot's declared streams in THIS half — what a reader needs to re-seed the same bot
+        report["our_bot_streams"] = {"seed": plan.bot_seed, "half": half,
+                                     **bot_streams(int(plan.bot_seed), half)}
     # `--our-temperature`: OUR half's regime is verified too — every decision must have received
     # stochastic=True. A sampled cell whose decisions ran greedy is not the cell it names.
     if plan.our_temperature is not None and state.stochastic_kwargs != [True]:
@@ -607,6 +623,7 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         model_loader=str(report.get("model_loader") or ""),
         mirrored_pairs=bool(plan.mirrored_pairs),
         our_transport=_row_transport(plan),
+        our_bot_seed=(plan.bot_seed if plan.our_side_is_bot and plan.our_transport == "live" else None),
     )
 
 
