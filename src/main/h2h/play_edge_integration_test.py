@@ -113,6 +113,7 @@ def test_play_refuses_to_write_under_models(built, checkpoints, tmp_path, monkey
     assert not (archive / "ledger").exists()
 
 
+@pytest.mark.slow  # 35 s alone / 58 s under -n 4 on a quiet box (2026-10-08): over the 30 s unmarked-tier budget
 def test_each_rows_digest_is_the_digest_of_the_games_it_played(built, checkpoints, played):
     """Replay batch 0 of the banked edge on a fresh engine: its outcome vector hashes to the row's digest, and the
     game-for-game replay audit (§9.2) holds."""
