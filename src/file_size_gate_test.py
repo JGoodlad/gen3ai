@@ -32,9 +32,8 @@ be parked.** There is no "add it to the list" escape for a file you just wrote �
 way `features_extractor.py` was decomposed into per-phase modules on 2026-08-16 with a re-export
 hub that kept every import path working.
 
-**Scope** mirrors the ruff gate exactly: `src/agents`, `src/main`, `src/utils`. `src/poke_env` (a
-vendored FORK) and `src/rust_sim` (a Rust crate whose Python is harness scratch) are out of scope
-— neither is ours to shape.
+**Scope** mirrors the ruff gate exactly: `src/agents`, `src/main`, `src/utils`. `src/rust_sim` (a
+Rust crate whose Python is harness scratch) is out of scope — it is not ours to shape.
 
 **Cost: milliseconds** — it reads 592 files and counts newlines, so there is no tier question. No
 cost marker, runs in the fast inner loop. Opt out explicitly:
@@ -401,7 +400,7 @@ def test_meta_the_scope_matches_the_ruff_gate():
     import ruff_gate_test
     ruff_roots = [a for a in ruff_gate_test._RUFF_ARGV if a.startswith("src/")
                   and "--exclude" not in a]
-    excluded = {"src/poke_env", "src/rust_sim"}
+    excluded = {"src/rust_sim"}
     assert sorted(r for r in ruff_roots if r not in excluded) == sorted(_SOURCE_ROOTS)
 
 

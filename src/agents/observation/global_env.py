@@ -24,7 +24,8 @@ _LOG_MAX_TURNS = math.log(1 + MAX_TURNS)
 
 # Per-side side-conditions encoded as presence bits (gen3ou), as the lower-cased ``SideCondition`` names the
 # LiveView keys its ``side_conditions`` by (``reflect``, ``light_screen``, ``safeguard``, ``mist``). Spelled as ids
-# so this module imports no poke-env (P1 of the retirement); ``global_env_test.py`` pins them to the fork's enum.
+# so this module imports no poke-env (P1 of the retirement); ``agents/enums_test.py`` pins the list (frozen from the
+# fork's enum before P6 deleted it).
 # Spikes is a 0-3 count handled separately.
 _SCREEN_CONDITIONS = ["reflect", "light_screen", "safeguard", "mist"]
 

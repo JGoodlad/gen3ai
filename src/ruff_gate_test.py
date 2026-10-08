@@ -20,9 +20,8 @@ worst at reaching.
 **Complements mypy, does not overlap it.** `mypy_gate_test.py` is deep but covers two packages
 (`src/agents/model` + `src/agents/observation`, per `mypy.ini`). This is shallow but covers
 `agents/` + `main/` + `utils/`
-entire. `src/poke_env` (a vendored FORK) and `src/rust_sim` (a Rust crate; its Python is harness
-scratch) are excluded — neither is ours to lint — and those two excludes are mirrored in
-`ruff.toml` so a bare `ruff check src/` from a shell agrees with this test.
+entire. `src/rust_sim` (a Rust crate; its Python is harness scratch) is excluded — it is not ours
+to lint — and that exclude is mirrored in `ruff.toml` so a bare `ruff check src/` from a shell agrees with this test.
 
 **Known findings are per-file entries in `ruff.toml`, never a blanket exclude.** Two categories
 live there and the file keeps them apart: a genuine PERMANENT pattern (the model package's
@@ -58,7 +57,6 @@ _RUFF_ARGV = [
     "-m", "ruff", "check",
     "src/agents", "src/main", "src/utils",
     "--select", "F,E9",
-    "--exclude", "src/poke_env",
     "--exclude", "src/rust_sim",
 ]
 

@@ -1,8 +1,9 @@
-"""The front end END TO END: two vendored-poke-env `Player`s over a REAL websocket.
+"""The front end END TO END: two websocket CLIENTS over a REAL websocket (our Rust-stack `main.live` clients since P6
+of the poke-env retirement; vendored-poke-env `Player`s before it).
 
 WHAT THIS COVERS THAT THE UNIT FILE CANNOT. `ws_frontend_test.py` drives the protocol through a
 fake socket, so it pins the SHAPES. This file pins that the shapes compose: a real `websockets`
-server, two real clients that opened a real connection, poke-env's own `battle_against` handshake
+server, two real clients that opened a real connection, the client handshake
 (`/trn` → `/utm` → `/challenge`/`/accept`), and two complete gen3ou battles resolved by a real
 bridge child. Every integration defect the de-risks recorded — a challenge that never becomes a
 battle, a `|request|` that never triggers a decision, a room frame poke-env cannot key a battle
@@ -23,9 +24,6 @@ import asyncio
 
 import pytest
 
-from poke_env import AccountConfiguration
-from poke_env.player import RandomPlayer
-from poke_env.ps_client.server_configuration import ServerConfiguration
 
 from utils.bridge.ws_frontend import ShowdownFrontEnd
 from utils.team_loader import TeamLoader
@@ -46,20 +44,40 @@ async def _serve(front: ShowdownFrontEnd):
 
     server = await serve(front.handler, "127.0.0.1", 0, max_size=None, ping_interval=None)
     port = server.sockets[0].getsockname()[1]
-    return server, ServerConfiguration(f"ws://127.0.0.1:{port}/showdown/websocket", _AUTH)
+    return server, f"ws://127.0.0.1:{port}/showdown/websocket"
 
 
-def _players(config, teams, concurrent: int = 2):
-    """Two passwordless `RandomPlayer`s. Passwordless is deliberate: poke-env then BYPASSES the
-    authentication request entirely, so the test needs no network and no login server."""
-    return (
-        RandomPlayer(battle_format="gen3ou", team=Gen3Teambuilder(teams, rng_seed=11),
-                     account_configuration=AccountConfiguration("WsfeItA", None),
-                     server_configuration=config, max_concurrent_battles=concurrent),
-        RandomPlayer(battle_format="gen3ou", team=Gen3Teambuilder(teams, rng_seed=22),
-                     account_configuration=AccountConfiguration("WsfeItB", None),
-                     server_configuration=config, max_concurrent_battles=concurrent),
-    )
+async def _series(uri: str, teams, n: int):
+    """Two Rust-stack clients (`main.live`, seeded random policies) play ``n`` battles over the websocket: one
+    challenges, the other accepts. Until P6 of the poke-env retirement these were two vendored-poke-env
+    `RandomPlayer`s; the front end's poke-env DIALECT is still exercised end to end by the Metamon anchor reads
+    (`main/anchors/anchors_integration_test.py`, upstream poke-env in its own interpreter)."""
+    import random
+
+    from main.live.client import ClientConfig, LiveClient
+    from main.live.policy import RandomPolicy
+
+    def client(name: str, seed: int) -> LiveClient:
+        rng = random.Random(seed)
+        packed = [Gen3Teambuilder(t).yield_team() for t in teams]
+        return LiveClient(ClientConfig(uri=uri, username=name, battle_format="gen3ou", auth="local"),
+                          policy=RandomPolicy(seed), team_fn=lambda: rng.choice(packed))
+
+    a, b = client("WsfeItA", 11), client("WsfeItB", 22)
+    acc = None
+    try:
+        await b.connect()
+        await a.connect()
+        acc = asyncio.ensure_future(b.accept(a.name, n))
+        res_a = await asyncio.wait_for(a.challenge(b.name or "WsfeItB", n), timeout=300)
+        res_b = await asyncio.wait_for(acc, timeout=60)
+    finally:
+        if acc is not None and not acc.done():
+            acc.cancel()
+            await asyncio.gather(acc, return_exceptions=True)
+        await a.close()
+        await b.close()
+    return res_a, res_b
 
 
 @pytest.fixture(scope="module")
@@ -67,40 +85,32 @@ def pool_teams():
     return [t.strip() for t in TeamLoader().get_all_teams()][:12]
 
 
-async def test_two_poke_env_players_complete_a_two_battle_series_over_the_websocket(pool_teams):
+async def test_two_clients_complete_a_two_battle_series_over_the_websocket(pool_teams):
     front = ShowdownFrontEnd(impl="node", seed_base=20260914, validate_teams=False)
-    server, config = await _serve(front)
-    p1, p2 = _players(config, pool_teams)
+    server, uri = await _serve(front)
     try:
-        await asyncio.wait_for(p1.battle_against(p2, n_battles=2), timeout=300)
+        res_a, res_b = await _series(uri, pool_teams, 2)
     finally:
-        await p1.ps_client.stop_listening()
-        await p2.ps_client.stop_listening()
         await front.close()
         server.close()
         await server.wait_closed()
 
-    assert p1.n_finished_battles == 2 and p2.n_finished_battles == 2
+    assert len(res_a) == 2 and len(res_b) == 2
     # Both sides must agree on every result — a front end that mis-routed a `|win|` would show up
     # here as two clients that each think they won, which no amount of "it ran" would reveal.
-    assert p1.n_won_battles + p2.n_won_battles + _ties(p1) == 2
-    for battle in p1.battles.values():
-        assert battle.finished
-        assert battle.turn > 0, "a battle that finished on turn 0 never actually played"
-
-
-def _ties(player) -> int:
-    return sum(1 for b in player.battles.values() if b.finished and b.won is None)
+    for ra, rb in zip(res_a, res_b):
+        assert ra.winner == rb.winner, (ra, rb)
+        assert not (ra.won and rb.won)
+        assert ra.turns > 0, "a battle that finished on turn 0 never actually played"
 
 
 async def test_a_battle_is_backed_by_exactly_one_bridge_child_that_is_reaped(pool_teams):
     """One battle = one child, and the child is gone when the battle is. A leaked child is the
     failure a long series would only reveal as a box that has run out of processes."""
     front = ShowdownFrontEnd(impl="node", seed_base=7, validate_teams=False, capture=True)
-    server, config = await _serve(front)
-    p1, p2 = _players(config, pool_teams, concurrent=1)
+    server, uri = await _serve(front)
     try:
-        await asyncio.wait_for(p1.battle_against(p2, n_battles=1), timeout=300)
+        await _series(uri, pool_teams, 1)
         await front.drain()
         (battle,) = front.captured_battles
         assert battle.finished
@@ -110,8 +120,6 @@ async def test_a_battle_is_backed_by_exactly_one_bridge_child_that_is_reaped(poo
         assert battle.commands and battle.commands[0].startswith("START ")
         assert any(chunk.startswith("|request|") for _, chunk in battle.capture)
     finally:
-        await p1.ps_client.stop_listening()
-        await p2.ps_client.stop_listening()
         await front.close()
         server.close()
         await server.wait_closed()
@@ -124,7 +132,7 @@ async def test_a_rejected_team_never_becomes_a_battle(pool_teams):
     front = ShowdownFrontEnd(impl="node", validate_teams=True)
     front._team_cache[("gen3ou", "Airmure (Skarmory)  |||keeneye|protect|Calm|||||")] = (
         False, ['The Pokemon "airmureskarmory" does not exist.'])
-    server, config = await _serve(front)
+    server, _uri = await _serve(front)
     from utils.bridge.ws_frontend import _Conn
 
     class _WS:

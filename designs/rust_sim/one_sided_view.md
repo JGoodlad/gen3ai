@@ -4,8 +4,8 @@
 > per-side reveal fold, `enable_view_fold`, the `view_pN` / `view_pN_at` payloads, `core_events
 > --views`' `views` / `truth`, `view_adapter.py`, `view_successor.py`, `event_fold.py` and the
 > search's `view` / `protocol` roads are gone: every search successor is a Rust-core version
-> (`present.md`, `encoder.md`) and slice V compares the core's reading, audited against the engine,
-> to the training `LiveView`. This document is kept as the RECORD of the projection, its reading
+> (`present.md`, `encoder.md`) and slice V compared the core's reading, audited against the engine,
+> to the training `LiveView` (slice V and the Python `LiveView` / `Gen3Battle` side were themselves deleted in T27 P6 slices 6c / 6d-2). This document is kept as the RECORD of the projection, its reading
 > rules (V1–V13, still the ids slice V and `present/` use) and the poke-env findings it surfaced;
 > nothing below describes code that exists.
 

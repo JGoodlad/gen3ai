@@ -41,17 +41,16 @@ pipeline runs byte-for-byte the same; only the transport changes (poke-env issue
     on `stdin`; per-side, base64-framed protocol chunks (`p1 <b64>` / `p2 <b64>`) on
     `stdout`. One battle per process. Uses `getPlayerStreams()` so Showdown does the
     per-side channel demux. Accepts an optional fixed PRNG `seed` for reproducible battles.
-2.  **`battle_stream_client.py`**: `BattleStreamClient(PSClient)` — a poke-env transport
-    that subclasses the (vendored) `PSClient` **from outside** `src/poke_env/` (it modifies
-    no poke_env file). No websocket; translates poke-env's `/choose …` onto the bridge and
+2.  **`battle_stream_client.py`** (DELETED, T27 P6 slice 6d-2): `BattleStreamClient(PSClient)` — a poke-env transport
+    that subclassed the (vendored) `PSClient` **from outside** `src/poke_env/` (the fork itself is deleted since 6e). No websocket; translates poke-env's `/choose …` onto the bridge and
     no-ops websocket ceremony (`/utm`, `/timer on`, `/leave`, `/challenge`, …).
-3.  **`local_battle_runner.py`**: `run_local_battles(player1, player2, n_battles, *,
+3.  **`local_battle_runner.py`** (DELETED, T27 P6 slice 6d-2): `run_local_battles(player1, player2, n_battles, *,
     seed=None)` — a drop-in for `player1.battle_against(player2, n_battles=…)`. It spawns one
     bridge per battle, fabricates the `>battle-…`/`|init|` room header the sim does not emit,
     and routes each side's protocol to the right player's client. Build the players with
     `start_listening=False` (no websocket opens); the runner swaps in the bridge transport.
 
-This powers the `*_fuzz_test.py` suite. (A few timing-sensitive checks stay on the live
+This powered the Python `*_fuzz_test.py` suite (deleted; the fuzz tests now play the Rust core). (A few timing-sensitive checks stay on the live
 server as `*_fuzz_e2e_test.py` — e.g. `effectiveness_fuzz_e2e_test`.)
 
 #### Node vs Rust sim bridge (the `impl={node,rust}` argument)
@@ -59,7 +58,7 @@ server as `*_fuzz_e2e_test.py` — e.g. `effectiveness_fuzz_e2e_test`.)
 > **Deletion pass U3:** the Python RL transport (`bridge_session.py`, `BridgeSession` / `attach_bridge_transport`, the Python `Gen3Env` it fed) is DELETED, and the trainer's `--use-bridge` flag is DELETED (the Rust bridge is the only training transport; a typed one is refused at parse time with the reason). Training and eval run on the Rust env core. `BridgeSession` in the Rust-side passages below is `src/rust_sim/src/bridge.rs`'s struct and is live; passages that still describe the Python session (`_dispatch`, `_child_error`, `_recycle_child`, the fatal-report latch) are RECORDED INCIDENT HISTORY of the deleted code.
 
 The bridge child that speaks the `local_sim_bridge.js` stdin/stdout protocol has **two
-implementations**, selected by an `impl` argument (`run_local_battles`, the offline drivers, the harnesses and benchmarks):
+implementations**, selected by an `impl` argument (the offline drivers, the harnesses and benchmarks; `run_local_battles` took it until it was deleted):
 
 - **`node`** (`local_sim_bridge.js`) — the default bridge impl, a relay over the real Showdown
   `BattleStream`. Handles the full gen3 move/ability set and produces the `__RECON__`
@@ -81,7 +80,7 @@ implementations**, selected by an `impl` argument (`run_local_battles`, the offl
   `src/rust_sim/harness/gen_sim_bridge_diff.js`). No Node needed for battle stepping.
 
 `sim_bridge_bin.py::bridge_spawn_argv(impl)` turns the impl into the spawn argv both transport
-seam (`local_battle_runner.py`) execs:
+seam (`local_battle_runner.py`, deleted in 6d-2) exec'd:
 `node` → `["node", local_sim_bridge.js]`; `rust` → `[<resolved sim_bridge binary>]`.
 `resolve_sim_bridge_bin()` honors `$POKESIM_SIM_BRIDGE_BIN` (absolute-path override) first, else
 runs `cargo build --release --bin sim_bridge` in `src/rust_sim` and caches the resulting
@@ -220,9 +219,9 @@ Threading (every default is `"node"`, so this is byte-identical for every existi
 - `reconstruction.replay_battle / reroll_turn / reroll_many (…, impl="node")` →
   `_run_driver(request, timeout, impl)`. (`_sim_aliases` stays node-only by design: it dumps
   Showdown's own `aliases.ts` — a data query against the reference sim, not a sim run.)
-- `obs_materializer.materialize_from_record / infer_action_indices (…, impl="node")`.
-- `counterfactual.replay_counterfactual(…, impl=…)` → `run_local_battles(impl=…)` — this leg plays a
-  REAL game, so it rides the LIVE `bridge_spawn_argv` seam, not the driver one.
+- `obs_materializer.materialize_from_record / infer_action_indices (…, impl="node")` (DELETED, 6d-2).
+- `counterfactual.replay_counterfactual(…, impl=…)` → `run_local_battles(impl=…)` (DELETED, 6d-1 / 6d-2; the Rust core's is
+  `utils/rust_env/counterfactual.py`) — this leg played a REAL game, so it rode the LIVE `bridge_spawn_argv` seam, not the driver one.
 - Prober: `ProbeSession(root, …, impl="node")` holds it **session-wide** (like `compile_extractor`)
   and every re-roll-backed probe reads it; the CLI exposes a global
   `python -m main.prober.query --impl {node,rust} <cmd>`. `better_line` REFUSES an injected warm
@@ -489,8 +488,8 @@ regenerates it exactly.
 
 **The one-sided / omniscient wall (hard rule).** The record holds the opponent's team and the
 dice — referee-view data. It exists only at this bridge layer and in the separate
-`*_reconstruction.json` artifact; the obs pipeline never reads it. Offline obs come from
-`agents.training.obs_materializer`, which is fed **only the per-side chunks** these primitives
+`*_reconstruction.json` artifact; the obs pipeline never reads it. Offline obs came from
+`agents.training.obs_materializer` (DELETED, 6d-2; the prober reads every row off the Rust core's parse chain), which was fed **only the per-side chunks** these primitives
 regenerate and replays them through the real encoder (rebuilding tracker state). The round-trip
 guarantee — materialized obs == the live `states.npz` rows **bit-for-bit** — is enforced by
 `agents/training/obs_roundtrip_fuzz_test.py`; replay/re-roll invariants by
@@ -626,12 +625,12 @@ strings go back to the sim verbatim, so counterfactuals always run with the true
 
 ### Websocket front end (`ws_frontend.py`) — the bridge as a Showdown *server* for OUTSIDE clients
 
-**The transport for an opponent we do not own.** `run_local_battles` is a
-*library* seam (the Python `BridgeSession` was another, deleted in U3): it assigns a `BattleStreamClient` onto a poke-env `Player` **in this process**.
-That is closed to a third party for the reason the metamon de-risk recorded as its verdict (d) —
-their player subclasses *upstream* poke-env, ours subclasses the *vendored fork*, and one process
-resolves `import poke_env` to exactly one of them. So the integration point cannot be an import; it
-has to be a **socket**, with the opponent in its own process and its own poke-env.
+**The transport for an opponent we do not own.** `run_local_battles` was a
+*library* seam (deleted in T27 P6, as was the Python `BridgeSession` in U3): it assigned a `BattleStreamClient` onto a poke-env `Player` **in this process**.
+That was closed to a third party for the reason the metamon de-risk recorded as its verdict (d) —
+their player subclasses *upstream* poke-env, ours subclassed the *vendored fork* (now deleted; nothing of ours imports poke-env), and one process
+resolved `import poke_env` to exactly one of them. So the integration point is not an import; it
+is a **socket**, with the opponent in its own process and its own (upstream) poke-env.
 
 `ws_frontend.py` is that socket: an asyncio websocket server speaking just enough of the Showdown
 *client* protocol (`|challstr|`, a no-op `/trn`, `|updateuser|`, `/utm`, `/challenge`+`/accept`,
@@ -694,8 +693,8 @@ changes**):
 
 | bound | baseline | where |
 |---|---|---|
-| per-battle | `_PER_BATTLE_TIMEOUT` 180 s (parity test overrides to 20 s) | `local_battle_runner._per_battle_timeout()` |
-| silent-stall watchdog | `_RACE_GET_TIMEOUT_S` 120 s (`GEN3_RACE_GET_TIMEOUT_S`) | `poke_env.environment.env._race_get_timeout()` |
+| per-battle | `_PER_BATTLE_TIMEOUT` 180 s (parity test overrides to 20 s) | `local_battle_runner._per_battle_timeout()` (deleted, 6d-2) |
+| silent-stall watchdog | `_RACE_GET_TIMEOUT_S` 120 s (`GEN3_RACE_GET_TIMEOUT_S`) | `poke_env.environment.env._race_get_timeout()` (deleted with the fork, 6e) |
 
 Two rules this encodes, both learned the hard way:
 
@@ -725,14 +724,10 @@ else:
     print(f"Errors: {result['errors']}")
 ```
 
-### Local battle (used by the `*_fuzz_test.py` suite)
-```python
-from utils.bridge.local_battle_runner import run_local_battles
+### Local battle — DELETED (T27 P6 slice 6d-2)
+`run_local_battles` (the poke-env `Player` runner) is gone. A collected test takes its battles from the Rust core
+(`utils.rust_env.fixture_battles`, `core_trace_integration_test.record_core_battle`); a live game is `main.live`.
 
-# Players must be built with start_listening=False so no websocket is opened.
-await run_local_battles(my_player, opponent, n_battles=40)   # no `npm run showdown`
-```
-
-### Impl selection (`run_local_battles(..., impl=…)`)
+### Impl selection (`impl=…`; `run_local_battles` itself is deleted)
 The trainer has no transport flag (the Rust bridge is the only one; `--use-bridge` was deleted, P11b, after U3 deleted the Python RL transport that took `node`). `node` remains an explicit `impl` for the A/B arm and the parity harness; the websocket server is only for `play.py` / the ladder. The deprecated `--use-showdown-bridge` boolean alias is DELETED.
-`run_local_battles(..., impl=…)` takes the impl for the eval driver.
+The offline drivers and the harnesses take the impl.

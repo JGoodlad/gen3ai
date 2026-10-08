@@ -1,6 +1,6 @@
-"""Who wins `import agents` — and `import poke_env`? The static gate for IMPORT PRECEDENCE.
+"""Who wins `import agents`? The static gate for IMPORT PRECEDENCE.
 
-Sits beside `ruff_gate_test.py`, `file_size_gate_test.py` and `poke_env_fork_gate_test.py` at
+Sits beside `ruff_gate_test.py`, `file_size_gate_test.py` and `poke_env_absent_gate_test.py` at
 the `src/` root because, like those, its subject is the whole tree rather than any one package.
 
 ## Why a whole test file about `sys.path` ordering
@@ -39,11 +39,11 @@ within a month:
 | test | claim |
 |---|---|
 | `test_pythonpath_outranks_a_pth_file` | **Finding B.** PYTHONPATH beats an editable install — worktree isolation survives `pip install -e .` |
-| `test_a_pth_file_loses_to_the_site_packages_that_holds_it` | **Finding A.** A `.pth` LOSES to a package installed in the same site-packages — which is exactly how an installed `poke-env` would silently shadow the vendored fork |
+| `test_a_pth_file_loses_to_the_site_packages_that_holds_it` | **Finding A.** A `.pth` LOSES to a package installed in the same site-packages — which is exactly how an installed package claiming one of our names would silently shadow ours |
 
-Finding A is why `poke-env` is not in `environment.yml` and why
-`src/poke_env_fork_gate_test.py` exists. This file proves the *mechanism*; that file guards
-the *consequence*. Neither replaces the other: remove the second copy AND keep the gate.
+Finding A is why `test_nothing_installed_shadows_our_top_level_names` exists (and why, while this repo
+vendored a poke-env fork — deleted in T27 P6 — `poke-env` was kept out of the env files). This file
+proves the *mechanism*; that test guards the *consequence*.
 
 ## What the `.pth` replicas here are, honestly
 
@@ -52,8 +52,8 @@ directory: it appends the directory, then processes its `.pth` files and appends
 they name. So a subprocess that calls it on a temp directory reproduces the real ordering with
 the real machinery — not a model of it. What it does NOT reproduce is a *venv layered over a
 system site-packages*, where the venv's `.pth` paths land ahead of the system directory. That
-layering is why a `--system-site-packages` venv does not exhibit Finding A even with upstream
-`poke-env` installed, and it is a trap for anyone trying to reproduce this: the live conda env
+layering is why a `--system-site-packages` venv does not exhibit Finding A even with a competing
+package installed, and it is a trap for anyone trying to reproduce this: the live conda env
 has ONE site-packages, and there the `.pth` loses.
 
 Cost: milliseconds plus three short subprocesses. Unmarked — it runs in the fast inner loop.
@@ -71,10 +71,10 @@ _SRC_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SRC_DIR.parent
 _PYPROJECT = _REPO_ROOT / "pyproject.toml"
 
-#: The top-level packages `pyproject.toml` must ship. `poke_env` is here because the FORK is
-#: part of this project (see the hazard block in pyproject.toml); `rust_sim` is not, because it
-#: is a Rust crate whose Python is harness scratch and it has no `__init__.py`.
-EXPECTED_TOP_LEVEL = ("agents", "main", "utils", "poke_env")
+#: The top-level packages `pyproject.toml` must ship. `rust_sim` is not one: it is a Rust crate
+#: whose Python is harness scratch and it has no `__init__.py`. (`poke_env`, the vendored fork, was
+#: one until T27 P6 deleted it; `poke_env_absent_gate_test.py` keeps it out.)
+EXPECTED_TOP_LEVEL = ("agents", "main", "utils")
 
 # `src/main/launcher/child.py` -> the module whose PYTHONPATH export IS the isolation.
 _CHILD_PY = _SRC_DIR / "main" / "launcher" / "child.py"
@@ -100,8 +100,8 @@ def test_pyproject_declares_the_src_layout() -> None:
     )
 
 
-def test_pyproject_ships_exactly_the_four_top_level_packages() -> None:
-    """The include patterns must cover all four and must NOT reach `rust_sim`.
+def test_pyproject_ships_exactly_the_three_top_level_packages() -> None:
+    """The include patterns must cover all three and must NOT reach `rust_sim`.
 
     Checked as patterns rather than a resolved package list on purpose: resolving would need
     setuptools' discovery machinery at test time, which is slower and would pass for the wrong
@@ -112,9 +112,12 @@ def test_pyproject_ships_exactly_the_four_top_level_packages() -> None:
     include = find.get("include", [])
     for pkg in EXPECTED_TOP_LEVEL:
         assert f"{pkg}*" in include, (
-            f"`{pkg}` is missing from packages.find include={include!r}. All four top-level "
-            "packages ship — including the vendored poke_env fork, which is ours."
+            f"`{pkg}` is missing from packages.find include={include!r}. All three top-level "
+            "packages ship."
         )
+    assert sorted(include) == sorted(f"{p}*" for p in EXPECTED_TOP_LEVEL), (
+        f"packages.find include={include!r} ships something beyond {EXPECTED_TOP_LEVEL!r}"
+    )
     assert not any(p.startswith("rust_sim") for p in include), (
         f"rust_sim must not be packaged (it is a Rust crate, not a Python package): {include!r}"
     )
@@ -137,14 +140,11 @@ def test_pyproject_declares_no_runtime_dependencies() -> None:
     )
 
 
-def test_nothing_installed_shadows_our_four_top_level_names() -> None:
-    """`agents`, `main` and `utils` are GENERIC names — the fork hazard, generalised.
-
-    `poke_env_fork_gate_test.py` guards the one collision we already know about, because
-    `poke-env` is a real package someone might install. But `utils` and `main` are names a
-    future dependency could plausibly claim, and the symptom would be identical: a clean
-    import of somebody else's module and behaviour nobody can explain. Cheap to check for all
-    four at once, so it is checked for all four.
+def test_nothing_installed_shadows_our_top_level_names() -> None:
+    """`agents`, `main` and `utils` are GENERIC names — names a future dependency could plausibly
+    claim, and the symptom would be silent: a clean import of somebody else's module and behaviour
+    nobody can explain (the hazard the deleted poke-env fork's gate guarded, generalised). Cheap to
+    check for all three at once, so it is checked for all three.
 
     Run in a CLEAN subprocess — no PYTHONPATH, cwd outside the repo — because the root
     `conftest.py` puts THIS checkout's `src/` first in this process (and in its PYTHONPATH), which
@@ -270,15 +270,15 @@ def test_pythonpath_outranks_a_pth_file(tmp_path: Path) -> None:
 
 
 def test_a_pth_file_loses_to_the_site_packages_that_holds_it(tmp_path: Path) -> None:
-    """FINDING A — the mechanism behind the `poke_env` shadowing hazard, kept executable.
+    """FINDING A — the mechanism behind the name-shadowing hazard, kept executable.
 
     A site-packages directory is added to `sys.path` BEFORE the paths its own `.pth` files
     name. So an installed package beats an editable install of the same name — which is
-    precisely how upstream `poke-env` would silently win over the vendored fork.
+    precisely how an installed `utils` / `main` / `agents` would silently win over ours.
 
     This test is the evidence for a claim that otherwise only exists as prose in
-    `pyproject.toml`, `environment.yml` and `poke_env_fork_gate_test.py`. It PASSES when the
-    hazard is real. If it ever fails, the hazard is gone and those three documents are wrong.
+    `pyproject.toml` and `test_nothing_installed_shadows_our_top_level_names`. It PASSES when the
+    hazard is real. If it ever fails, the hazard is gone and that prose is wrong.
     """
     editable_src = tmp_path / "editable-src"
     sitedir = tmp_path / "site-packages"
@@ -291,8 +291,8 @@ def test_a_pth_file_loses_to_the_site_packages_that_holds_it(tmp_path: Path) -> 
 
     assert origin.startswith(str(sitedir)), (
         "A .pth path now beats the site-packages directory that holds it. That would be GOOD "
-        "news — it is the hazard `poke_env_fork_gate_test.py` defends against — but three "
-        f"documents assert the opposite and must be corrected together. Resolved to: {origin}"
+        "news — it is the hazard `test_nothing_installed_shadows_our_top_level_names` defends against — "
+        f"but pyproject.toml and that test assert the opposite and must be corrected together. Resolved to: {origin}"
     )
 
 

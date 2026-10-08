@@ -6,9 +6,9 @@ detail. Program context: `designs/endstate/program_rust_core.md` (milestone M1).
 
 The Rust Core Program's M1 (`designs/endstate/program_rust_core.md`): every omniscient line the
 port emits is TYPED at the source; one side's stream becomes typed [`CoreEvent`]s carrying the
-reading `Gen3Battle` would record; `parse(lines)` reads a side's text into the same events; the
-events persist as a versioned RECORD; and a parity harness holds all of it to `Gen3Battle`, per
-viewer, per event, with no allowlist. **Nothing in training uses any of it** (§1 of the program:
+reading the Python `Gen3Battle` recorded (deleted, T27 P6 slice 6d-2); `parse(lines)` reads a side's text into the same events; the
+events persist as a versioned RECORD; and until slice 6c a parity harness held all of it to `Gen3Battle`, per
+viewer, per event, with no allowlist (§7). **Nothing in training uses any of it** (§1 of the program:
 build alongside, one cutover).
 
 Code: `src/rust_sim/src/core_events/` (`line.rs`, `reading.rs`, `side.rs`, `parse.rs`,
@@ -61,8 +61,8 @@ new keyword is now added IN `schema.rs` (with a drift-scan row, P4). Until P6 sl
 `rust_core_schema_test.py` (routine) parsed the Rust file and compared it with `battle_event.py` — keywords, routes,
 event kinds and both halves of the value-key schema — so the Rust core could not classify a keyword differently from the
 Python reader without that test failing (a keyword Rust routes `Intercept::Ignored` is the frozen
-`Player.MESSAGES_TO_IGNORE` set and was skipped). **That test is DELETED (slice 6c) and nothing replaces it while
-`battle_event.py` lives (until slice 6d): a new keyword is edited into BOTH files by hand.**
+`Player.MESSAGES_TO_IGNORE` set and was skipped). **That test is DELETED (slice 6c), and so is `battle_event.py` (slice 6d-2): `schema.rs` is the ONLY keyword table, a new
+keyword is edited into it alone, and the cargo tests (`core_events_test.rs`, `tracker_semantics_test.rs`, `window_record_test.rs`) are its gates.**
 
 A `Field` is typed only where the keyword's grammar puts that type AND it re-renders to the same
 bytes: `Ident` (`p1a: Nick` / slot-less `p1: Nick`), `SideRef` (a side condition's first field),
@@ -112,7 +112,7 @@ unsourced lines it accepts.
 
 ## 4. The reading (`reading.rs`) and its named rules
 
-`Reader` folds one side's typed lines into `Reading`s — exactly `Gen3Battle._capture_pre` +
+`Reader` folds one side's typed lines into `Reading`s — the port of the deleted Python `Gen3Battle._capture_pre` +
 `_build_event` + `_move_suffix_events` + `record_choice_rejected`, over the five facts of poke-env's
 state those read (species, HP fraction, status, active, the resolving move's side) and the turn,
 each transition mirroring poke-env's own line (requests included — they write our own team).
@@ -189,7 +189,7 @@ clean. Gate: `core_corpus_test.py::test_the_golden_records_round_trip_and_repars
 ## 7. The recorded corpus — what is left of the parity harness (P6 slice 6c)
 
 Until slice 6c this section was the Python parity harness, **slice E**: per viewer and per event, `seq · turn · kind ·
-side · actor · target · value · raw` of the core's readings against the log of a `Gen3Battle` fed the same per-side text
+side · actor · target · value · raw` of the core's readings against the log of a (since deleted) `Gen3Battle` fed the same per-side text
 through `offline_feed` (TYPE-strict, no allowlist), in two tiers (COMMIT: 47 battles, ~18,600 events, ~2 s; MILESTONE,
 `slow`: 2 × 360 seeded-random, 2 × 50 policy battles played live, 2 × 150 LADDER battles, the protocol corpus × 2).
 **It is deleted** (`rust_core_parity.py`, `rust_core_parity_test.py`, the live-play MILESTONE tier and its
@@ -243,7 +243,7 @@ The prober reads a battle from the core, never from poke-env (`src/main/prober/c
   refusal included; a refused stream's error carries the reader's `core_obs: …` prefix) — each batch ending
   at a `|request|` line (the bridge's write rule), the side's own actions replayed by INDEX through the
   decision's `present::choice_tokens`. Per decision: turn, mask, tokens and (where asked) the row.
-  It is the Rust twin of `obs_materializer.materialize_decisions` for the prober's lookahead /
+  It replaced the Python `obs_materializer.materialize_decisions` (deleted in slice 6d-2) for the prober's lookahead /
   better-line successors; its rows equal the stored rows of every core trace in that integration
   test, and the poke-env materializer's rows on the P5 identity set
   (`designs/research_state/measurements/pokeenv_p5_prober_2026-10-07/`).

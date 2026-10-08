@@ -284,9 +284,9 @@
   },
   "src/agents/training/rust_rollout/fork_crn_integration_test.py::test_the_fork_phase_runs_inside_collect_and_the_lifecycle_stays_clean": {
    "status": "pass",
-   "commit": "add80ffacecc8f15010ef449033e92e9eebb7ee5",
-   "at": "2026-10-08T17:28:09Z",
-   "duration_s": 40.34,
+   "commit": "b30502e021721a5787308de44aae9799db401e36",
+   "at": "2026-10-08T18:20:14Z",
+   "duration_s": 39.24,
    "contention": 1.0,
    "detail": ""
   },
@@ -300,10 +300,10 @@
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-live]": {
    "status": "pass",
-   "commit": "adaf94d093e0201721d4da94d87708acbbcf19a3",
-   "at": "2026-10-08T06:22:17Z",
-   "duration_s": 20.35,
-   "contention": 1.04,
+   "commit": "a6c0beb0ffc103f5beaa6e9eecd21a6f6f2afe32",
+   "at": "2026-10-08T18:24:48Z",
+   "duration_s": 21.85,
+   "contention": 1.06,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-poke-env]": {
@@ -324,17 +324,17 @@
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-core]": {
    "status": "pass",
-   "commit": "adaf94d093e0201721d4da94d87708acbbcf19a3",
-   "at": "2026-10-08T06:22:17Z",
-   "duration_s": 21.37,
+   "commit": "a6c0beb0ffc103f5beaa6e9eecd21a6f6f2afe32",
+   "at": "2026-10-08T18:24:48Z",
+   "duration_s": 19.85,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-live]": {
    "status": "pass",
-   "commit": "adaf94d093e0201721d4da94d87708acbbcf19a3",
-   "at": "2026-10-08T06:22:17Z",
-   "duration_s": 19.74,
+   "commit": "a6c0beb0ffc103f5beaa6e9eecd21a6f6f2afe32",
+   "at": "2026-10-08T18:24:48Z",
+   "duration_s": 21.54,
    "contention": 1.0,
    "detail": ""
   },
@@ -356,10 +356,10 @@
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_with_a_RUST_BOT_as_our_side": {
    "status": "pass",
-   "commit": "adaf94d093e0201721d4da94d87708acbbcf19a3",
-   "at": "2026-10-08T06:22:17Z",
-   "duration_s": 21.21,
-   "contention": 1.02,
+   "commit": "a6c0beb0ffc103f5beaa6e9eecd21a6f6f2afe32",
+   "at": "2026-10-08T18:24:48Z",
+   "duration_s": 19.61,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_gate_one_on_the_whole_committed_bank": {
@@ -799,17 +799,17 @@
   },
   "src/poke_env_free_entry_points_test.py::test_a_debug_smoke_with_eval_runs_with_poke_env_blocked": {
    "status": "pass",
-   "commit": "add80ffacecc8f15010ef449033e92e9eebb7ee5",
-   "at": "2026-10-08T17:28:09Z",
-   "duration_s": 331.56,
+   "commit": "b30502e021721a5787308de44aae9799db401e36",
+   "at": "2026-10-08T18:20:14Z",
+   "duration_s": 333.19,
    "contention": 1.01,
    "detail": ""
   },
   "src/poke_env_free_entry_points_test.py::test_every_prober_command_and_the_web_app_run_with_poke_env_blocked": {
    "status": "pass",
-   "commit": "add80ffacecc8f15010ef449033e92e9eebb7ee5",
-   "at": "2026-10-08T17:28:09Z",
-   "duration_s": 110.79,
+   "commit": "b30502e021721a5787308de44aae9799db401e36",
+   "at": "2026-10-08T18:20:14Z",
+   "duration_s": 111.18,
    "contention": 1.0,
    "detail": ""
   },
@@ -870,5 +870,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-08T17:28:09Z"
+ "last_written": "2026-10-08T18:24:48Z"
 }

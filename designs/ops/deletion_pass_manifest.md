@@ -625,3 +625,24 @@ itself; `ws_frontend_test` lost the twin-constant pin (the twin is gone); `enums
 
 **Allowlist effect (for the coordinator):** the entries for the deleted importers are stale (`test_no_stale_allowlist_entry`
 fails on this branch by design until the coordinator shrinks them).
+
+### 8.6 P6 slice 6e (T27), 2026-10-08 — the VENDORED FORK, the acquisition layer's last poke-env read, the end-state gates
+
+The last slice of the poke-env retirement: after it nothing in `src/` / `tools/` / `scripts/` imports `poke_env` (the
+allowlist is EMPTY, frozen counts 0 / 0) and there is no `poke_env` package in the tree. The one process that still runs
+poke-env is the Metamon peer script, UPSTREAM poke-env in Metamon's own interpreter (`PEER_PROCESS_PERMANENT`).
+
+| group (P6 slice 6e, 2026-10-08) | files | lines (module / tests) | replacement / evidence |
+|---|---|---|---|
+| the VENDORED FORK | `src/poke_env/` (80 modules + 13 test files + `LICENSE`, `py.typed`, the static data) | 15,086 / 2,482 Python (498,770 lines with the data) | nothing of ours imports it (allowlist 10 → 0); `src/poke_env_free_entry_points_test.py::test_the_whole_import_surface_loads_with_poke_env_blocked` imports every module of `src/` / `tools/` / `scripts/` (1,200+, every test file included) under the blocker: 0 attempts, 0 failures |
+| the fork's STATIC DATA (acquisition upstream) | moved, not deleted: `tools/pokemon_data_extractor/upstream/poke_env_static/` | — | the 29 JSON files are byte-identical blobs to the fork's; `sync.py --out-dir <tmp>` regenerates all 8 `data/pokemon/` files byte-identically with the fork gone (no `data/` change); the type chart's computation is ported into `sync.build_type_chart` (`extractor_parity_test`) |
+| the fork gate | `src/poke_env_fork_gate_test.py` | 193 | `src/poke_env_absent_gate_test.py` (static): no `poke_env` package under the scanned roots, none in site-packages, neither env file installs one; each half with a teeth test |
+| the fork-ORACLE tests (retargeted, not deleted) | `agents/enums_test.py`, `agents/observation/gen3_effects_test.py`, `agents/observation/pokemon_test.py`, `utils/rust_env/bot_tables_test.py`, `utils/bridge/ws_frontend{,_byte_identity}_integration_test.py` | — | values FROZEN from the fork at its last commit (screen ids, effect names, pre-split special types); the effect vocabulary read from the Rust reader's `tables.rs` (227 names, equal to the fork's `Effect` member for member) and the activation lines read on the live Rust reader; the bot move table held to the frozen upstream JSON through `Move`'s four derivations ported verbatim (equal to `Move` on all 373 rows, checked before the deletion); the two fork teambuilder tests dropped (the parser is `utils.team_packing`, pinned by `poke_env_teambuilder_gate_test.py`); the websocket tests play two `main.live` clients |
+| dead after the above | `live_view.UNKNOWN_ITEM` / `_UNKNOWN_ITEMS` (kept only for the fork pin, as 6d-2 recorded) | — | — |
+| re-scoped | `src/poke_env_enum_str_compare_gate_test.py` → `src/enum_str_compare_gate_test.py` | — | mypy strict-equality over `agents`/`main`/`utils` against the enums `agents.enums` defines (derived); teeth on all four |
+
+**Infrastructure that named the fork:** `pyproject.toml` ships `agents` / `main` / `utils` only (`packaging_gate_test`
+updated); the `src/poke_env` excludes left `ruff.toml`, the ruff / file-size / freshness / stub gates, `scripts/land.sh`
+and `conftest.py`'s src-first list; `scripts/bootstrap.sh` checks three packages and runs the absent gate; the importer
+scanner no longer prunes a `poke_env` directory (a re-vendored copy reads as new importers). The launcher's pinned-argv
+archive keeps `src/poke_env` in its path list on purpose: a pin at an older commit still imports it.

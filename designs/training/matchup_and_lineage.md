@@ -32,8 +32,8 @@ CONSUMED — never re-derived — by the consumers (the `plan.json` pattern).
   (`trainee_teams` / `opponent_teams` → the env's `team=` / `opponent_team=`; the Python `Gen3Env` that took them was deleted in U3) — the mirror-bug class is
   structurally closed.
 - **`PlayMode`** — how the frozen-NN opponents select actions (greedy | stochastic@temp, schedule
-  fixed | anneal | ratchet). Descriptive in P0 — the executors (RLPlayer temp, the anneal/ratchet
-  callbacks) already exist; the spec records the intent so echo/provenance say what a metric was
+  fixed | anneal | ratchet). Descriptive in P0 — the executors (the sampler temperature, the anneal/ratchet
+  callbacks; `RLPlayer`'s was deleted in T27 P6) already exist; the spec records the intent so echo/provenance say what a metric was
   measured under. `eval_opponent_play` defaults greedy; `eval_trainee_teams` defaults to
   `trainee_teams` (**the eval-OOD fix made structural**: eval pilots what training pilots).
 - **Provenance** — `to_dict()` (pin fingerprints via sha1, not full text) + `spec_hash()` (a 10-hex

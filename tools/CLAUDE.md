@@ -1,7 +1,8 @@
 # CLAUDE.md — Acquisition tools (`tools/`)
 
-`tools/` is the **acquisition layer**: the *only* place that knows the three upstreams (poke-env
-static data, the Showdown `.ts` source tree, Smogon usage stats). Each tool *derives* and
+`tools/` is the **acquisition layer**: the *only* place that knows the three upstreams (the poke-env
+static data — FROZEN under `pokemon_data_extractor/upstream/poke_env_static/` since the vendored fork was deleted,
+P6 of the poke-env retirement; its `README.md` — the Showdown `.ts` source tree, Smogon usage stats). Each tool *derives* and
 normalizes its upstream into committed files under `data/`, so the derivation is reproducible
 rather than a one-off hand edit. The runtime never imports `tools/`; it reads `data/` through the
 `agents.gen3_data` facade (see `src/agents/gen3_data/CLAUDE.md`). This is the acquisition-vs-access
@@ -11,7 +12,7 @@ split.
 
 | Tool | Upstream | Output |
 |---|---|---|
-| `pokemon_data_extractor/sync.py` | poke-env pokedex + static moves/natures/`learnset.json` + `GenData` type chart; Showdown `abilities.ts` / `items.ts` / `aliases.ts` | `data/pokemon/gen3_{species,moves,abilities,items,type_chart,natures,learnset,move_aliases}.json` |
+| `pokemon_data_extractor/sync.py` | the frozen poke-env static JSON (`upstream/poke_env_static/`: pokedex, moves, natures, `learnset.json`, typechart); Showdown `abilities.ts` / `items.ts` / `aliases.ts` | `data/pokemon/gen3_{species,moves,abilities,items,type_chart,natures,learnset,move_aliases}.json` |
 | `smogon_stats_downloader/sync.py` | Smogon monthly chaos JSON (12-month window) | `data/pokemon/gen3_smogon_stats.json` |
 | `smogon_stats_downloader/compute_priors.py` | the aggregated stats + pokedex | `data/pokemon/gen3_{ability,hidden_power,move,item,spread,teammate}_priors.json` |
 | `sample_team_downloader/sync.py` | Smogon forum sample-team thread | `data/teams/sample/` |
@@ -65,8 +66,11 @@ python tools/pokemon_data_extractor/sync.py --gen 3 --stdout         # print, do
 ```
 
 Notes that bite:
-- **`build_type_chart`** dumps `GenData.from_gen(gen).type_chart` directly, so the committed JSON
-  is byte-identical to what `gen3_mechanics` used to read live — effectiveness is unchanged.
+- **`build_type_chart`** computes the chart from `upstream/poke_env_static/typechart/gen{N}typechart.json` with
+  poke-env's own `GenData.type_chart` rule (ported in P6: damageTaken 0/1/2/3 → 1 / 2 / 0.5 / 0), so the committed
+  JSON is byte-identical to what `gen3_mechanics` used to read live — effectiveness is unchanged. `sync.py
+  --out-dir <TEMP>` regenerates every file into a temp dir; the P6 move was proven by a byte-identical regeneration of
+  all eight `data/pokemon/gen3_*.json` files.
 - **`build_items`** stores the **item-dex `num`** under our schema's `num` field. The regex is
   `\bnum:` so it matches the item number and NOT `spritenum:` (the sprite index, which appears
   earlier in the block — e.g. Leftovers spritenum=242 vs num=234). Items with no positive item-dex
@@ -293,7 +297,7 @@ in P6 slice 6d-1, 2026-10-08; it moved here.)
 ## Reproducibility is tested
 
 `src/agents/gen3_data/extractor_parity_test.py` re-runs the builders and asserts they reproduce
-the committed `data/` files (and that type-chart/natures still equal their poke-env source). A
+the committed `data/` files (and that type-chart/natures still equal their frozen upstream source). A
 hand-edit that drifts a committed file from what the extractor produces fails there. After editing
 a builder, regenerate (`sync.py`) and run the obs golden
 (`python -m agents.training.golden_obs_core --check`) — a value change there is retrain-class.
@@ -309,4 +313,4 @@ a builder, regenerate (`sync.py`) and run the obs golden
   `agents.gen3_data` facade names its files explicitly and never loads it, so the RL obs is unchanged.
 
 Building items/abilities/aliases needs the Showdown submodule initialized
-(`git submodule update --init`); type-chart/natures/species read only poke-env static data.
+(`git submodule update --init`); type-chart/natures/species read only the frozen poke-env static data.

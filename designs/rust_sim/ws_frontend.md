@@ -21,19 +21,19 @@ python -m utils.bridge.ws_frontend --port 9601 --impl rust --seed-base 914001 \
 
 **Why it exists.** Every external gen3ou opponent measured so far (Metamon, Foul Play) is a
 websocket CLIENT, so playing one has meant `npm run showdown -- 9XXX`. The serverless transports we
-already have — `bridge_session.py` for training (deleted in U3; training is the Rust env core), `local_battle_runner.py` for offline series — are
-*library* seams: they assign a `BattleStreamClient` onto a poke-env `Player` **in this process**.
+already have — `bridge_session.py` for training (deleted in U3; training is the Rust env core), `local_battle_runner.py` for offline series (both deleted; the second in T27 P6 slice 6d-2) — were
+*library* seams: they assigned a `BattleStreamClient` onto a poke-env `Player` **in this process**.
 That is closed to a third party for the reason
 [`metamon_derisk_2026-09-14/README.md`](../research_state/measurements/metamon_derisk_2026-09-14/README.md)
 records as verdict (d): their player subclasses **upstream** poke-env, `BattleStreamClient`
-subclasses the **vendored fork**, and one process resolves `import poke_env` to exactly one of
+subclassed the **vendored fork** (now deleted), and one process resolved `import poke_env` to exactly one of
 them. The integration point therefore cannot be an import; it has to be a socket, with the
 opponent in its own process and its own poke-env.
 
 | | transport | who drives | opponent lives |
 |---|---|---|---|
 | training | the Rust env core (`src/rust_env/`; formerly `bridge_session.py`) | the collector | in-process |
-| offline series | `local_battle_runner.py` | `choose_move` | in-process |
+| offline series (DELETED, T27 P6 slice 6d-2) | `local_battle_runner.py` | `choose_move` | in-process |
 | **external opponent** | **`ws_frontend.py`** | **the opponent's own loop** | **its own process** |
 
 ### Who uses it
@@ -115,7 +115,7 @@ index. Pinned by `src/utils/bridge/ws_frontend_test.py` (the START gating, the r
 ### The two things the front end ADDS to the sim's stream
 
 1. **The room framing** — `>battle-…`, `|init|battle`, `|title|`. The same fabrication
-   `local_battle_runner._frame` does for the in-process path; the sim never emits it.
+   `local_battle_runner._frame` did for the in-process path (deleted); the sim never emits it.
 2. **The `rqid`** — see below. Nothing else is added, removed or reordered.
 
 ---

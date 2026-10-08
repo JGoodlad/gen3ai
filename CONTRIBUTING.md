@@ -65,7 +65,7 @@ documented cause of spurious timeout failures on a fresh checkout.
 
 ```bash
 conda activate gen3ai_torch28
-python -c "import agents, poke_env; print('ok')"
+python -c "import agents, main, utils; print('ok')"
 ```
 
 **No `export PYTHONPATH` needed — in the main checkout.** Step 3 of the bootstrap runs
@@ -98,14 +98,15 @@ header packages). We ship no such file because nobody here runs one; a good one 
 
 ### Do not install `poke-env` from PyPI
 
-This repo **vendors a fork** of poke-env at `src/poke_env/` and that fork is authoritative — it
-carries modules upstream does not, and the battle layer depends on them. Installing the PyPI package
-alongside it creates two importable `poke_env` packages whose winner is decided by `sys.path` order,
-and **the failure is silent**: upstream imports cleanly and behaves subtly differently.
-`src/poke_env_fork_gate_test.py` guards this permanently. To check by hand:
+poke-env is **retired** (T27, finished at P6, 2026-10-08): the vendored fork `src/poke_env/` is deleted, and
+nothing in `src/` / `tools/` / `scripts/` imports `poke_env`. Every battle, row, eval game and live game is
+the Rust core's. Installing the PyPI package would only add a package nothing here uses (the one process
+that still runs upstream poke-env is the Metamon peer script, in Metamon's own interpreter).
+`src/poke_env_absent_gate_test.py` keeps it out for good — no `poke_env` package under the scanned
+roots, none in site-packages, neither env file installing one. To check by hand:
 
 ```bash
-python -c "import poke_env; print(poke_env.__file__)"   # must print a path under this repo's src/
+python -c "import poke_env"   # must raise ModuleNotFoundError
 ```
 
 ---
@@ -155,12 +156,12 @@ suite is a check that rots). All are unmarked, so they run in every tier, and al
 | `src/recipe_doc_gate_test.py` | every training-recipe value `designs/endstate/design_learner_recipe.md` states equals the `recipe.fresh` / `recipe.fork` blocks of `designs/production_config.json` | `GEN3AI_SKIP_RECIPE_DOC_GATE=1` |
 | `src/trace_summary_reader_gate_test.py` | no module but `main/prober/core_trace.py` opens an eval-trace `*_summary.json` — every reader goes through its loaders | `GEN3AI_SKIP_SUMMARY_READER_GATE=1` |
 | `src/ledger_index_gate_test.py` | `designs/research_state/ledger_index.md` matches what `python -m main.ledger_index` renders | `GEN3AI_SKIP_LEDGER_INDEX_GATE=1` |
-| `src/poke_env_enum_str_compare_gate_test.py` | no poke-env enum is compared to a string (mypy `--strict-equality`, typed) — the bug that kept four bots from ever setting up | `GEN3AI_SKIP_ENUM_STR_GATE=1` |
-| `src/poke_env_import_gate_test.py` | no file outside the vendored fork imports `poke_env` unless it is on the GENERATED, shrink-only `designs/ops/poke_env_import_allowlist.txt` (poke-env is being retired to one stack, T27) | `GEN3AI_SKIP_POKE_ENV_IMPORT_GATE=1` |
+| `src/enum_str_compare_gate_test.py` | no enum `agents.enums` defines is compared to a string (mypy `--strict-equality`, typed) — the bug that kept four bots from ever setting up | `GEN3AI_SKIP_ENUM_STR_GATE=1` |
+| `src/poke_env_import_gate_test.py` | no file imports `poke_env` unless it is on the GENERATED, shrink-only `designs/ops/poke_env_import_allowlist.txt` (EMPTY since T27 P6: frozen counts 0 / 0) | `GEN3AI_SKIP_POKE_ENV_IMPORT_GATE=1` |
 
 Two more guard the import path itself — `src/packaging_gate_test.py` (`PYTHONPATH` still outranks
-the editable install) and `src/poke_env_fork_gate_test.py` (the vendored fork still wins
-`import poke_env`). A missing linter **fails** rather than skips: a linter that silently opts out
+the editable install) and `src/poke_env_absent_gate_test.py` (no `poke_env` package
+anywhere). A missing linter **fails** rather than skips: a linter that silently opts out
 reads exactly like a linter that found nothing.
 
 **Fuzz tests are not parametrized unit tests.** In this repo a `*_fuzz_test.py` plays *real
@@ -186,7 +187,7 @@ so they print a "THE BOX IS BUSY" banner rather than stretching. Report whether 
 | **8001** | **the training server — NEVER stop, restart, or kill it** |
 | **9XXX** | pick one for anything ephemeral you start |
 
-Killing :8001 drops every poke-env websocket at once and crashes a training run that may have been
+Killing :8001 drops every websocket client at once and crashes a training run that may have been
 going for days. `npm run stop` with no argument kills :8000 — never run a blanket `node`/`showdown`
 kill, and only ever stop the port you personally started. Most work needs no server at all:
 training and evaluation run on the in-process Rust bridge (the only transport), an in-process reimplementation of the Gen 3

@@ -613,7 +613,7 @@ src/rust_sim/
                           #   session, prints each side's CoreEvents (+ --record-dir / --check-records /
                           #   --bench-parse); never a training transport
     core_events/          # the typed event layer (gen3_core_events_v1): line.rs (the typed Line),
-                          #   reading.rs (Gen3Battle's reading + the named rules), side.rs (the step path's
+                          #   reading.rs (the reading + the named rules, ported from the deleted Python `Gen3Battle`), side.rs (the step path's
                           #   per-side stream), parse.rs, record.rs, jsonval.rs, schema.rs (GENERATED)
   tests/
     prng_golden.rs        # differential vs real prng.js (~2900 assertions)

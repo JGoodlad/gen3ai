@@ -715,7 +715,7 @@ player's battle/tracker state, and restored it per arm, **bit-for-bit equal to p
 `materialize_decisions`** (59/59 arms byte-identical, 15.4 → 5.3 ms per arm, 2.91×). Its per-arm restore
 was serialized ONCE and rebuilt per arm rather than deep-copied (1.98 → 0.22 ms, 9.1×).
 
-What stays in `obs_materializer.py`: `materialize_decisions`, `infer_action_indices`, `scan_record` /
+`obs_materializer.py` itself was DELETED in slice 6d-2 (the Python runtime). It had kept: `materialize_decisions`, `infer_action_indices`, `scan_record` /
 `RecordDecision`, `materialize_from_record` and the two replay players (`cf_producer`, `search_dividend`
-and the reconstruction tests still read them until P6 slice 6). The battle-tag uniqueness rule
-(`gen3_recon_tag_collision_v1`, `_next_tag`) is unchanged.
+and the reconstruction tests read them until then). The battle-tag uniqueness rule
+(`gen3_recon_tag_collision_v1`, `_next_tag`) went with it.

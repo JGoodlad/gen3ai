@@ -79,6 +79,8 @@ from typing import Dict, List, Optional, Tuple
 #: ``baselines.json``; both are ``repo_root()``-relative, so the pinned tree looks for them beside
 #: ITSELF. They are named as FILES, not as ``designs/`` — the directory is 199 MB of documents and
 #: none of the rest is importable. ``_tree_paths`` drops whichever does not exist at the pin.
+#: ``src/poke_env`` (the vendored fork) is gone from HEAD since T27 P6 but stays listed: a pin at an
+#: older commit still imports it, and a pin at a newer one simply has no such path.
 _ARCHIVE_PATHS = ("src/main", "src/agents", "src/utils", "src/poke_env", "data",
                   "designs/baselines.json", "designs/production_config.json")
 

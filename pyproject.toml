@@ -39,14 +39,11 @@
 # ══════════════════════════════════════════════════════════════════════════════════════════
 #
 # An editable install writes a `.pth`, and `.pth` paths are appended to `sys.path` AFTER
-# site-packages. This repo VENDORS a fork of poke-env at `src/poke_env/`, and `poke-env` is
-# also an ordinary PyPI package. So on a machine with both, an editable install makes
-# UPSTREAM WIN SILENTLY — no error, no warning, subtly wrong battle behaviour forever.
-# Proved by experiment in a throwaway replica, 2026-08-22, both directions.
-#
-# The structural fix was to remove `poke-env` from `environment.yml` and uninstall it, so
-# there is no second copy and no ordering question to lose. `src/poke_env_fork_gate_test.py`
-# is what makes that permanent. Do not re-add the pin.
+# site-packages. So an INSTALLED package that claims one of our top-level names (`agents`,
+# `main`, `utils` — generic names) wins SILENTLY over ours. Proved by experiment in a throwaway
+# replica, 2026-08-22 (it was found guarding the vendored poke-env fork, deleted in T27 P6).
+# `src/packaging_gate_test.py` keeps the mechanism executable and checks nothing installed
+# claims our names.
 #
 # ══════════════════════════════════════════════════════════════════════════════════════════
 
@@ -80,17 +77,15 @@ dependencies = []
 # `[tool.setuptools]` section at all, setuptools auto-detects the layout — and it trips over
 # `src/__init__.py` (an empty file that exists so the root `conftest.py`'s rootdir-on-path
 # behaviour yields `src.agents`). The `include` patterns below are what make the result
-# deterministic: exactly four top-level packages and their subpackages, no layout guessing.
+# deterministic: exactly three top-level packages and their subpackages, no layout guessing.
 # `rust_sim` is absent from the list AND has no `__init__.py`, so it is excluded twice over.
 #
-# `poke_env` IS OURS AND SHIPS WITH THE PROJECT. It is a vendored FORK — 57 modules where
-# upstream 0.15.0 has 45 — and the battle layer depends on what the fork adds. It is listed
-# here for the same reason `agents` is: it is part of this project's import surface. Do not
-# "clean this up" by depending on the PyPI package instead; see the hazard block above.
+# There is no `poke_env`: the vendored fork was deleted in T27 P6 (one Rust stack), and
+# `src/poke_env_absent_gate_test.py` keeps it out of the tree and the env.
 [tool.setuptools]
 package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["agents*", "main*", "utils*", "poke_env*"]
+include = ["agents*", "main*", "utils*"]
 namespaces = false

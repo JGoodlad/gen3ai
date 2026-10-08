@@ -110,8 +110,8 @@ Each submodule mirrors `moves.py` (the original `gen3_movedex`, the template):
   crash-don't-drop (raises `KeyError`);
 - the value-enums (`PokemonType`, `MoveCategory`) are used as **keys/names only** — never called, never made to
   carry data. The data is ours; the enums are just the keys. 🚨 **They are OURS too (P1 of the poke-env
-  retirement, 2026-10-07): `agents/enums.py` DEFINES them (standard library only) and the vendored fork's four enum
-  modules re-export them**, so `import agents.gen3_data` loads no `poke_env` module (it used to load six, and the
+  retirement, 2026-10-07): `agents/enums.py` DEFINES them (standard library only); the vendored fork's four enum
+  modules re-exported them until the fork was deleted (T27 P6)**, so `import agents.gen3_data` loads no `poke_env` module (it used to load six, and the
   trainer 36 — survey A-F1). `src/poke_env_free_entry_points_test.py` is the gate.
 - `.raw()` returns the parsed JSON dict; `state_encoder.load_mappings` assembles the encoder
   mappings from `.raw()` so each file is parsed once and shared.
@@ -234,8 +234,8 @@ Pool-derived (a committed calibration artifact, same pattern):
   `agents.training.team_archetypes.load_team_archetypes`.
 
 All are loaded once (lazy singletons) and raise `FileNotFoundError` / `ValueError` if missing or
-empty. The data layer is poke-env-free; the two poke-env touches the battle layer had left — the parser sentinel
-(`GenData.UNKNOWN_ITEM`, now `live_view.UNKNOWN_ITEM`) and the `to_id_str` string util (now `utils/showdown_id.py`,
-which the fork's `poke_env/data/normalize.py` re-exports) — were moved out in P1 and are pinned equal to the fork's
-by `src/agents/enums_test.py`. The ACQUISITION layer (`tools/pokemon_data_extractor/sync.py`) still reads poke-env's
-static data on purpose: that is where `data/pokemon/` comes from.
+empty. The data layer is poke-env-free, and so is the whole tree since T27 P6 deleted the vendored fork: the
+`to_id_str` string util lives in `utils/showdown_id.py`. The ACQUISITION layer (`tools/pokemon_data_extractor/sync.py`)
+reads poke-env's STATIC DATA on purpose — that is where `data/pokemon/` comes from — from a frozen copy under
+`tools/pokemon_data_extractor/upstream/poke_env_static/` (byte-identical to the fork's at its deletion; regenerating
+`data/pokemon/` from it is byte-identical, 8 of 8 files, 2026-10-08).

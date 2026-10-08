@@ -8,10 +8,9 @@ retirement, ``T27``).
 trainer's whole team path subclass or call these; they used to import them from ``poke_env.teambuilder``, which put
 the whole poke-env package on the import path of every run that draws a team.
 
-The vendored fork's ``poke_env/teambuilder/{teambuilder,teambuilder_pokemon,constant_teambuilder}.py`` (and
-``poke_env.stats.STATS_TO_IDX``) now RE-EXPORT these objects, so the fork's ``Player`` still accepts them
-(``isinstance(team, Teambuilder)`` holds: it is the same class). The code below is the fork's, verbatim — including the
-2026-09-14 trailing-blank-line fix in ``parse_showdown_team`` that ``src/poke_env_teambuilder_gate_test.py`` pins.
+From P1 to P6 the vendored fork's teambuilder modules re-exported these objects; P6 deleted the fork. The code
+below is the fork's, verbatim — including the 2026-09-14 trailing-blank-line fix in ``parse_showdown_team`` that
+``src/poke_env_teambuilder_gate_test.py`` pins.
 """
 from abc import ABC, abstractmethod
 from typing import List, Optional

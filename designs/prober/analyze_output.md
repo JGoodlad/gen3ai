@@ -11,7 +11,7 @@ is the block-by-block reference for what `analyze` returns.
   approximate and a surface must say so. The value block gains a γ-discounted `td_residual` (the PopArt `popart_mu`/`popart_sigma`/`normalized_*` fields left with PopArt, L1). Also carries a `win_prob`
   block (`WinProbView`: recorded `P(win|s)` + `delta` ΔP to the next decision) — model-free, read
   from the trace's `win_probs` npz array (NaN/absent → `None` on a non-`--win-prob-mode` run; recorded
-  at trace-capture by `RLPlayer._win_prob` → `BattleRecorder.states_arrays`). The **`value_dist`** block (`ValueDistView`, `engine.build_value_dist`) was DELETED with the distributional value head (L1): no model can be loaded that has one, and no new trace carries the array.
+  at trace-capture by `RLPlayer._win_prob` → `BattleRecorder.states_arrays`, both deleted in T27 P6; a core trace stores NaN here). The **`value_dist`** block (`ValueDistView`, `engine.build_value_dist`) was DELETED with the distributional value head (L1): no model can be loaded that has one, and no new trace carries the array.
   Also an **`opp_intent`** block (`OppIntentView`, v67 — `None` unless the run trained
   `--opp-intent-coef>0`): what the model expected the OPPONENT to do — `alpha` (ranked NAMED believed
   moves + `SWITCH`, each carrying `is_switch` so no surface compares a magic string itself), `beta`

@@ -91,7 +91,7 @@ from agents.gen3_data import format_spec as FS
 STATS_PATH      = "data/pokemon/gen3_smogon_stats.json"
 SPECIES_PATH    = "data/pokemon/gen3_species.json"
 ABILITIES_PATH  = "data/pokemon/gen3_abilities.json"
-POKEDEX_PATH    = "src/poke_env/data/static/pokedex/gen3pokedex.json"
+POKEDEX_PATH    = "tools/pokemon_data_extractor/upstream/poke_env_static/pokedex/gen3pokedex.json"
 HP_OUTPUT_PATH      = "data/pokemon/gen3_hidden_power_priors.json"
 ABILITY_OUTPUT_PATH = "data/pokemon/gen3_ability_priors.json"
 MOVE_OUTPUT_PATH    = "data/pokemon/gen3_move_priors.json"

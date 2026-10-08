@@ -118,7 +118,7 @@ columns and RAISES on a collision — `flat_intent_test.py` pins every key).
 only ever point at options it can name, and rendering is where that becomes checkable.
 
 **The path from the head to a human is WHOLE**, and it is worth naming because for one commit it was
-not — `RLPlayer._opp_intent` built the block and `BattleRecorder` never wrote it, so the payload was
+not — `RLPlayer._opp_intent` built the block and `BattleRecorder` never wrote it (both deleted in T27 P6), so the payload was
 computed on every decision and dropped on the floor:
 
 the flat pointer's logits → the inference player's `_opp_intent` (`render_flat`, plus the `β` naming rule below) → the

@@ -282,7 +282,7 @@ The recorder is the prober's `main.prober.core_recorder` over the Rust core's wa
 its protocol-validated fuzz gate were deleted in T27 P6 slice 6d-2); its labels are `trace_labels.py`, shared.
 ⚠️ **A protocol identifier carries the NICKNAME, not the species** — this pool holds teams with
 localized nicknames (`Triopikeur` = Dugtrio), so any protocol-vs-our-data comparison must resolve
-identifiers through poke-env's `battle.team` map. ⚠️ **A forensic recorder must never take down a
+identifiers through the side reader's own-team map (formerly poke-env's `battle.team`). ⚠️ **A forensic recorder must never take down a
 run**, which is why a mis-read falls back to a slightly-wrong label rather than raising. The
 measured defect and its revert numbers are CLOSED history:
 `designs/research_state/claude_md_archive/training_leaf_faint_attribution_history.md`.
@@ -645,7 +645,7 @@ diff against. Labels, reward and the action mapping are served by the core too (
 `agents.training.trainee_spaces`** (`trainee_spaces()`, `trainee_env_kwargs()` — the per-run label switches as a pure function of the args; no env is built to read them). 🚨 **A DECISION is recorded only when the env
 asks the trainee to move** (`gen3_no_phantom_decision_v1`, a TRAINING-INPUT change): poke-env embeds
 `battle1` on every step, including a `wait` request or its re-embed of an answered request, and the
-trackers used to take a decision there (5.0% of steps); a `wait` request reaching the record RAISES. 🚨 **The OPPONENT is polled only when its order will be SENT** (`gen3_no_phantom_opponent_poll_v1`, M5 Lane E, the opponent twin): `SingleAgentWrapper.step` asked `choose_move` on steps whose p2 order was dropped, so a self-play `RLPlayer` recorded a phantom decision (progress clock one step high) and drew a sample, and a bot drew from its RNG.
+trackers used to take a decision there (5.0% of steps); a `wait` request reaching the record RAISES. 🚨 **The OPPONENT is polled only when its order will be SENT** (`gen3_no_phantom_opponent_poll_v1`, M5 Lane E, the opponent twin): `SingleAgentWrapper.step` asked `choose_move` on steps whose p2 order was dropped, so a self-play `RLPlayer` recorded a phantom decision (progress clock one step high) and drew a sample, and a bot drew from its RNG. (Both fixes were to the Python env road; that road, `RLPlayer` and the trackers are deleted — T27 P6 — and the Rust env core's own step has no such phantom: it records at the env's decision rows.)
 Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` §3.
 
 ## The env core — the Rust core (the ONLY core; the M5 switch, M5 Lane G)

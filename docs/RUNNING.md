@@ -45,9 +45,8 @@ spurious timeouts.
 Two `environment_torch28.yml` details that are load-bearing: the pip block opens with
 `--extra-index-url https://download.pytorch.org/whl/cu126` (the `torch==2.8.0+cu126` pins are
 local-version builds that PyPI does not carry, so without it `conda env create` fails on a fresh
-machine), and `poke-env` is **deliberately not installed** — this repo vendors the fork at
-`src/poke_env/`, and a second installed copy would silently shadow it depending on `sys.path`
-order. `src/poke_env_fork_gate_test.py` guards both.
+machine), and `poke-env` is **deliberately not installed** — poke-env is retired (the vendored fork was deleted in
+T27 P6) and nothing here imports it. `src/poke_env_absent_gate_test.py` guards both.
 
 ## Training — no server required
 
@@ -120,9 +119,9 @@ Two orthogonal marker axes: capability (*what a test needs* — `integration`, `
 
 Eleven static gates run inside the suite, unmarked so they run in every tier: mypy, ruff, file size,
 `CLAUDE.md` freshness, stub vacuity, slow-tier status, the `ARCHITECTURE.md` mode-flag mirror, the
-training-recipe mirror, the ledger index, the eval-trace summary readers and the poke-env enum
+training-recipe mirror, the ledger index, the eval-trace summary readers and the enum-string
 comparison. Two of them also run standalone, and two more guard the import path
-(`src/packaging_gate_test.py`, `src/poke_env_fork_gate_test.py`). The full table with each gate's
+(`src/packaging_gate_test.py`, `src/poke_env_absent_gate_test.py`). The full table with each gate's
 opt-out is in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
 
 ```bash

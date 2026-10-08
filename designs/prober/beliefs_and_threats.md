@@ -105,7 +105,7 @@ the model still lacks switch-in outgoing damage (the op's outgoing is active-onl
 transpose" is a separate, un-built arch follow-up). Pair it with the per-mon INCOMING block: "what hits me on the
 way in" vs "what I'd then do".
 
-**Capture (axis B beyond species).** `RLPlayer._move_belief_active_row` (the opp-active move posterior,
+**Capture (axis B beyond species) — the Python capture (`RLPlayer`, `BattleRecorder`) is DELETED, T27 P6 slice 6d-2; a core trace stores none of these arrays (`src/main/prober/CLAUDE.md`).** `RLPlayer._move_belief_active_row` (the opp-active move posterior,
 `[n_moves]`) and `_spread_belief` (the opp-active believed-spread row `[5]`) stash into the trace, and
 `BattleRecorder.states_arrays` writes them as `move_logits`/`spread_belief` npz arrays — **OMITTED when the
 head is off**, NaN for a captured-but-headless row (parallel to `value_dist`). `build_belief_trajectory`

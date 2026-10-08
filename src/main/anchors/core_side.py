@@ -368,7 +368,7 @@ def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any
             rqid = req.get("rqid")
             turn = int(d.get("turn") or 0)
             if turn >= self.forfeit_limit:
-                # The trainer's rule (RLPlayer._handle_stall): a decision at turn >= the limit
+                # The trainer's rule (the deleted RLPlayer._handle_stall, T27 P6): a decision at turn >= the limit
                 # forfeits instead of moving, and is not counted as a decision.
                 await self.line(f"{b.tag}|/forfeit")
                 return

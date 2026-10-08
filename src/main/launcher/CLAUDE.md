@@ -632,7 +632,7 @@ strips the launcher's own flags before asking, since a recorded `launcher_comman
 `--restart-interval-hours 6` and friends that the child's parser has never heard of.
 
 **How the pinned parser is obtained** (`pinned_argv.pinned_parser_check`, one subprocess):
-`git archive <sha> -- src/main src/agents src/utils src/poke_env data` into a temp dir, copy
+`git archive <sha> -- src/main src/agents src/utils src/poke_env data` into a temp dir (`src/poke_env` is archived only when the pinned commit has it — deleted from HEAD in T27 P6), copy
 `pinned_argv_probe.py` beside it, run it with a **clean environment** (the caller's `PYTHONPATH`
 names the *current* `src` in every worktree shell on this box, so inheriting it would silently
 validate against the parser we are trying not to use). **Measured on this repo (2026-09-05, box

@@ -1,5 +1,14 @@
 # Self-Play Stale-Decision Race — context, fix, and verification
 
+> **HISTORICAL — the Python runtime this document describes is DELETED (T27 P6 slices 6c / 6d-2, 2026-10-08).**
+> `RLPlayer` / `Gen3Player` (`agents/inference/player.py`), the single-agent env wrapper, `EpisodeTracker`
+> (`episode_tracker.py`, the snapshot/restore), the Python action mapper, the bridge JSON road and every test named
+> below (`mapper_test`, `player_test`, `episode_tracker_test`, `redecide_rollback_fuzz_test`,
+> `racing_player_fuzz_e2e_test`, `single_agent_wrapper_test`) went with the poke-env stack
+> (`designs/ops/deletion_pass_manifest.md` §8.5). Training and eval run on the Rust env core, which has no
+> poke-env battle and no Python decision loop; the sections below are the record of the bug class, its
+> fix and its verification, not instructions — none of the commands in them runs any more.
+
 This documents the **self-play opponent stale-decision race**: what it is, why it was hard to
 pin down, how it's fixed, and the **layered verification systems** that reproduce it and prove
 the fix. If this class of bug ever resurfaces, start here — it took ~10 attempts the first time,

@@ -40,7 +40,7 @@ observation rows from any caller into a bucketed, padded, timer-flushed batch an
 values; (3) the **learner**, which is PPO as it is today, receiving rollouts. Search becomes an
 in-process tree over version handles with no serialization on the hot path. The ladder client becomes
 "parse the log into the same structure, encode, act" — one path, no skew. poke-env retires from the
-production path and survives as a parity oracle.
+production path and survives as a parity oracle (until T27 P6, 2026-10-08, when the oracle was retired too: nothing of ours imports poke-env and the Python battle layer is deleted).
 
 ---
 
@@ -192,7 +192,7 @@ as a re-derivation:**
 ### 3.4 The event log — kept as the spine, emitted at the source
 
 The log is load-bearing (§1) and stays the primary structure, not a derived one. The change is
-WHERE it is produced: today `Gen3Battle.parse_message` classifies each protocol line and appends a
+WHERE it is produced: formerly (before T27 P6) `Gen3Battle.parse_message` classified each protocol line and appends a
 `BattleEvent` with attribution resolved before poke-env mutates state; in the end state the
 simulator appends the event at the transition, where attribution is a fact rather than an
 inference. The `EventKind` / `MESSAGE_POLICY` / `EVENT_VALUE_KEYS` / `EVENT_OPTIONAL_KEYS` schema
@@ -335,12 +335,12 @@ the trainee's weights for a collection window exactly as `collect_rollouts_async
 
 | today | end state |
 |---|---|
-| `Gen3Battle(Battle)` over poke-env | retires from production; **survives as the parity ORACLE** for §3.2's gate and for `present()`'s rules |
+| `Gen3Battle(Battle)` over poke-env | retired from production, then **DELETED (T27 P6 slice 6d-2, 2026-10-08)** together with poke-env; the parity ORACLE for §3.2's gate and `present()`'s rules was retired with it (the core's checks are `core_corpus_test.py`, the obs golden, `core_present_golden_test.py` and the cargo tests) |
 | `BattleEvent` schema | **survives verbatim**; emitted by the sim, parsed from logs |
 | `LiveView` / `TurnView` / `LegalActions` / `StrictBattleView` | become `OneSidedView` / version methods; the strict-API lock's *idea* (non-battle code reads only through read-models) survives as the Rust type boundary |
 | `TurnDelta.build_from_events` | `version.turn_delta(side)` |
 | `EpisodeTracker`, belief trackers | fields on the version |
-| `Gen3ObservationEncoder` (Python) | **survives as the oracle** for the Rust encoder's byte gate |
+| `Gen3ObservationEncoder` (Python) | its encode path is **DELETED (T27 P6 slice 6d-2)**; the class keeps the layout / dimension / `describe_vector` for the model and the prober, and the Rust encoder's byte gate is the obs golden (`agents/training/golden_obs_core.py`) |
 | `obs_materializer` / `view_successor` / `view_adapter` / `event_fold` / `expand_many` JSON | `version.successors()` in-process |
 | forkserver, bridge child per env, `SubprocVecEnv`, `AsyncSubprocVecEnv` | one Rust env process, N envs |
 | per-env compiled opponent (`--compile-opponents`, preload) | Tier 2 |
@@ -414,10 +414,7 @@ that rate.
 2. **Tier 2's placement for search at inference on a ladder box** *(still open; M5 Phase A's
    per-consumer rule puts offline search on the FFI front end)* — same process as the tree, or a
    sidecar; decided by the flush-timer latency the tree can tolerate.
-3. **Whether the Python encoder survives as an oracle forever** *(still open; it survives the
-   cutover as a named oracle, `program_rust_core.md` §4)* or is retired once the Rust one has
-   its own goldens; the one-sided view's experience says keep the oracle until two full seeds of
-   fresh boards have been byte-clean.
+3. **Whether the Python encoder survives as an oracle forever** *(CLOSED, T27 P6, 2026-10-08: it was retired — its encode path is deleted and the Rust encoder has its own goldens)*.
 4. **The generated-layout mechanism** (Python constants → Rust table) — a build step or a checked-in
    table with a pin; the latter is simpler and matches `arch_tables`.
 
@@ -450,4 +447,4 @@ line in `ledger_index.md`'s numbering.
 | 2026-09-27 | Tier 2 shape (TASK_BACKLOG row; whose decision is not recorded) | Fixed weight slots, slot-tagged requests, fixed-width or compiled buckets, priority classes with eval as background filler, GPU-over-CPU, judged on the learner's end-to-end throughput | §4.2's open catalogue with a menu of bucket sizes | TASK_BACKLOG T2 (`93745a66`); rationale not recorded |
 | 2026-09-27 | Long-lived processes (TASK_BACKLOG rows) | Allocator discipline in Lane 0; memory-triggered restarts (proposed) | Restarts on a fixed clock only | TASK_BACKLOG T1, T7 (`93745a66`) |
 | 2026-09-27 | Ladder client | M7 after the cutover (TASK_BACKLOG T9) | Moving the ladder client early (would ADD a path) | `program_rust_core.md` §1 rule 5 |
-
+| 2026-10-08 | poke-env and the Python oracles (T27 P6, owner's single-stack direction) | Retired ENTIRELY: the vendored fork, the Python battle layer, trackers, encoder encode path and action stack are deleted; the Rust core's own goldens are the parity references | Keeping the Python encoder / `Gen3Battle` as a standing oracle (§6 and open question 3) | `designs/ops/deletion_pass_manifest.md` §8.3–§8.6; `designs/deleted_flags.md` "Deleted PATHS" |

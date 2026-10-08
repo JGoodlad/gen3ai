@@ -84,7 +84,7 @@ judgement, not a fact derivable from the tree.
 export PYTHONPATH=$PYTHONPATH:src
 python -m mypy src/agents/model                     # model package type-checks
 python -m ruff check src/agents src/main src/utils --select F,E9 \
-    --exclude src/poke_env --exclude src/rust_sim   # pyflakes over the rest
+    --exclude src/rust_sim   # pyflakes over the rest
 ```
 
 Same reasoning as the artifact checks above, and the same failure mode: both of these are tests

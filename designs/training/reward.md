@@ -9,7 +9,7 @@ points here. **This file is the owner of the detail.**
 
 ---
 
-## The reward — the TERMINAL alone (`reward_manager.py`); the no-progress clock (`progress_clock.py`)
+## The reward — the TERMINAL alone (`reward_config.py`; the Rust env core's terminal)
 
 **The shaped reward path is DELETED** (`gen3_shaped_reward_deletion_v1`, config v122, program_rust_core
 §4 M3 row, owner-approved 2026-09-26). Gone: the eight PBRS potentials (`reward_potentials.py`), the
@@ -25,7 +25,7 @@ every term, gate, measurement and hazard — is this file at the last pre-deleti
 >
 > | Module | Holds |
 > |---|---|
-> | `reward_manager.py` | `Gen3RewardManager`: the terminal, the `reward/` export, the episode counters, the `win_margin` by-product; re-exports the three below |
+> | `reward_manager.py`, `progress_clock.py` | DELETED (T27 P6 slice 6d-2, 2026-10-08): the Python `Gen3RewardManager` (terminal, `reward/` export, episode counters, `win_margin` by-product) and the no-progress clock; the terminal, the reward and the clock are the Rust env core's (`src/rust_env/`) |
 > | `reward_config.py` | `RewardClass` (TERMINAL only), `RewardConfig`, `RewardBreakdown` (one field, `win_loss`) |
 > | `reward_composition.py` | the census + its one-line announcer + `inert_reward_flags` + `reward_config_digest` |
 > | `reward_weights.py` | `VICTORY_VALUE` (30.0, what an UNRECORDED `victory_value` means; a constant of the namespace, 1.0, since the flags were deleted), `_TIMEOUT_TURN_CAP` (== the env's forfeit turn), `PBRS_GAMMA` (0.9999, the shaped-critic default discount) |
@@ -45,7 +45,7 @@ Production — and every trainer namespace — is the win-indicator terminal (in
 undiscounted return is exactly `1{win}` and V(s) == P(win|s). The values are constants, not options; under the indicator the draw penalty is INERT (named in
 `inert_reward_flags`), and a resume whose recorded reward is not the production one is REFUSED by `check_reward_config` (run it pinned, or start fresh). Every non-terminal turn pays exactly 0.0.
 
-**The parity proof (2026-09-26).** `reward_golden_test.py` (`gen3_reward_golden_v2`, routine tier,
+**The parity proof (2026-09-26; `reward_golden_test.py` and `reward_golden.json` were DELETED with the Python reward manager, T27 P6 slice 6d-2 — the terminal is held now by the env core's episode tests, `src/rust_env/`, and `utils/rust_env/episode_test.py`).** `reward_golden_test.py` (`gen3_reward_golden_v2`, routine tier,
 `sim`) hashes every decision's reward, `win_loss` and `win_margin` over 30 bridge battles under six
 terminal-only compositions, `production` read from the mirror. It was RECORDED at `029cee83` — the
 last commit with the shaped code — and passes unchanged after the deletion: 2,772 decisions,
@@ -97,7 +97,7 @@ reference clock's attributes, `_gates` and `ProgressClock.apply_reward_config`, 
 `.decision_was_forced_switch` (read by nothing else). The clock now has ONE reading — the forced-switch sit-out is read off the
 request that CLOSES the window (`phase_is_forced_switch`, decision `t+1`), and a voluntary switch that fails the progress
 predicate advances `n` like any other no-op — pinned by `progress_clock_test.py`'s recorded `n` trace (unchanged by the
-deletion: both fixes were OFF). `RewardConfig.progress_decision_tense` / `progress_switch_freeze` stay as RECORDED,
+deletion: both fixes were OFF; the Python test and clock were deleted in T27 P6 slice 6d-2, the Rust clock's tests carry it). `RewardConfig.progress_decision_tense` / `progress_switch_freeze` stay as RECORDED,
 resume-immutable, value-checked run fields (constants of every trainer namespace, `parser/objective.py`): a checkpoint
 that recorded `True` is REFUSED on a resume by `ModelVersion.check_reward_config` (run it pinned to its own commit, or start
 fresh). Their motivating measurements (probes M and N,

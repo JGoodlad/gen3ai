@@ -32,7 +32,7 @@ import pytest
 # with no `PYTHONPATH` collected its own test files and imported MAIN's code — and every subprocess a
 # test spawned (a trainer, a fuzz child, a `-c` probe) did the same, silently. The harness that runs
 # worktree agents refuses `export PYTHONPATH=…` (2026-10-07), so the export could not be relied on.
-# Here, before anything imports `agents` / `main` / `utils` / `poke_env`:
+# Here, before anything imports `agents` / `main` / `utils`:
 #
 #   * `<this checkout>/src` goes to the FRONT of `sys.path` (ahead of site-packages and the `.pth`);
 #   * it is PREPENDED to `os.environ["PYTHONPATH"]`, so every subprocess AND every xdist worker
@@ -52,7 +52,7 @@ def _put_this_checkouts_src_first() -> None:
     if not os.path.isdir(os.path.join(src, "agents")):
         return
     real = os.path.realpath(src)
-    for name in ("agents", "main", "utils", "poke_env"):
+    for name in ("agents", "main", "utils"):
         mod = sys.modules.get(name)
         origin = getattr(mod, "__file__", None) if mod is not None else None
         if origin and not os.path.realpath(origin).startswith(real + os.sep):

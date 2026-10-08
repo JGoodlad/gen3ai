@@ -1,21 +1,20 @@
-"""No code compares a poke-env ENUM to a STRING — the comparison is always False (or always True
+"""No code compares one of OUR value ENUMS to a STRING — the comparison is always False (or always True
 for ``!=``), so the branch behind it is dead in silence.
 
-**Why this gate exists (F-LF-1, 2026-09-29).** Four scripted bots — ``SimpleHeuristicsPlayer``,
-``Gen3HeuristicV2Player``, ``Gen3SetupSweepPlayer`` and ``Gen3SetupSweepV2Player`` — gated their
-SETUP step on ``move.target == "self"``. poke-env's ``Move.target`` is a ``Target`` ENUM, so the
-test was never true: ``setup_sweep`` never set up, and every eval row and training bot mix that
-carried those names measured an attacker with switch logic. Nothing raised; nothing could.
+**Why this gate exists (F-LF-1, 2026-09-29).** Four scripted bots gated their SETUP step on
+``move.target == "self"``. poke-env's ``Move.target`` was a ``Target`` ENUM, so the test was never true:
+``setup_sweep`` never set up, and every eval row and training bot mix that carried those names measured an
+attacker with switch logic. Nothing raised; nothing could. The bots are Rust now and the vendored poke-env
+fork is deleted (T27 P6); the CLASS stays wherever Python holds an enum: ``agents.enums`` (``PokemonType``,
+``Status``, ``MoveCategory``, ``Weather``).
 
-**How it checks — by TYPE, not by name.** A name-based AST scan cannot tell ``move.status``
-(a ``Status`` enum) from ``live_mon.status`` (a LiveView ``str``) or ``device.type`` (torch) — the
-first draft flagged 55 sites of which 5 were real. mypy's ``--strict-equality`` knows the types: it
-reports ``[comparison-overlap]`` for an ``==`` / ``!=`` / ``in`` whose operands cannot overlap. It
-caught all four bot sites on the pre-fix code. This gate runs it over ``agents``, ``main``,
-``utils`` and ``poke_env`` (``--check-untyped-defs``, ``--follow-imports=silent``, independent of
-``mypy.ini``'s strict scope) and FAILS on every overlap finding whose operand types name a poke-env
-enum (the enum set is DERIVED, not typed here: every ``Enum`` the vendored package defines, plus the four
-whose definitions P1 of the retirement moved into ``agents.enums`` — the fork re-exports those).
+**How it checks — by TYPE, not by name.** A name-based AST scan cannot tell a ``Status`` enum from
+``live_mon.status`` (a LiveView ``str``) or ``device.type`` (torch) — the first draft flagged 55 sites of which
+5 were real. mypy's ``--strict-equality`` knows the types: it reports ``[comparison-overlap]`` for an ``==`` /
+``!=`` / ``in`` whose operands cannot overlap. This gate runs it over ``agents``, ``main`` and ``utils``
+(``--check-untyped-defs``, ``--follow-imports=silent``, independent of ``mypy.ini``'s strict scope) and FAILS on
+every overlap finding whose operand types name an ``agents.enums`` enum (the set is DERIVED from that module, not
+typed here, so a new one is covered).
 
 **The honest limit:** mypy can only see a comparison whose receiver it can type. A value that flows
 through ``Any`` (an unannotated ``getattr``, an untyped container) is invisible to it. Other
@@ -36,9 +35,7 @@ from __future__ import annotations
 
 import enum
 import hashlib
-import importlib
 import os
-import pkgutil
 import re
 import subprocess
 import sys
@@ -54,7 +51,7 @@ from utils.paths import src_root
 pytestmark = [pytest.mark.static, pytest.mark.skipif(os.environ.get("GEN3AI_SKIP_ENUM_STR_GATE") == "1",
                                 reason="GEN3AI_SKIP_ENUM_STR_GATE=1")]
 
-_PACKAGES = ("agents", "main", "utils", "poke_env")
+_PACKAGES = ("agents", "main", "utils")
 
 CACHE_PREFIX = "gen3ai_mypy_strict_eq_"
 CACHE_MARKER = ".last_used"
@@ -104,26 +101,12 @@ def prune_sibling_caches(own: Path, now: float | None = None) -> list[Path]:
     return removed
 
 
-def poke_env_enum_names() -> set[str]:
-    """Every ``Enum`` class defined in ``poke_env.battle`` (Target, Status, MoveCategory, Weather,
-    Field, SideCondition, PokemonType, Effect, PokemonGender, …) — derived, so a new one is covered."""
-    import poke_env.battle as pkg
-
-    names = set()
-    for info in pkgutil.iter_modules(pkg.__path__):
-        mod = importlib.import_module(f"poke_env.battle.{info.name}")
-        for obj in vars(mod).values():
-            if isinstance(obj, type) and issubclass(obj, enum.Enum) and obj.__module__ == mod.__name__:
-                names.add(obj.__name__)
-    # P1 of the retirement MOVED four of these classes' DEFINITIONS into `agents.enums` (the fork's modules re-export
-    # them, so their ``__module__`` is no longer ``poke_env.battle.*``): count them by where they are defined now,
-    # or `Status` / `MoveCategory` / `Weather` / `PokemonType` would silently drop out of the gate.
+def owned_enum_names() -> set[str]:
+    """Every ``Enum`` class ``agents.enums`` defines — derived, so a new one is covered."""
     import agents.enums as owned
 
-    for obj in vars(owned).values():
-        if isinstance(obj, type) and issubclass(obj, enum.Enum) and obj.__module__ == owned.__name__:
-            names.add(obj.__name__)
-    return names
+    return {obj.__name__ for obj in vars(owned).values()
+            if isinstance(obj, type) and issubclass(obj, enum.Enum) and obj.__module__ == owned.__name__}
 
 
 def run_mypy(targets: list[str], cwd: Path) -> list[str]:
@@ -145,51 +128,46 @@ def run_mypy(targets: list[str], cwd: Path) -> list[str]:
 
 
 def enum_findings(lines: list[str], enums: set[str]) -> list[str]:
-    """The overlap findings whose operand types name a poke-env enum."""
+    """The overlap findings whose operand types name one of our enums."""
     pat = re.compile(r"\b(" + "|".join(sorted(enums)) + r")\b")
     return [ln for ln in lines if any(pat.search(t) for t in re.findall(r'type: "([^"]*)"', ln))]
 
 
-def test_enum_set_is_derived_and_covers_the_bot_enums():
-    names = poke_env_enum_names()
-    assert {"Target", "Status", "MoveCategory", "Weather", "Field", "SideCondition",
-            "PokemonType", "Effect"} <= names, names
+def test_enum_set_is_derived_and_covers_the_owned_enums():
+    assert {"PokemonType", "Status", "MoveCategory", "Weather"} <= owned_enum_names()
 
 
-def test_no_poke_env_enum_is_compared_to_a_string():
+def test_no_owned_enum_is_compared_to_a_string():
     lines = run_mypy([f"-p={p}" for p in _PACKAGES], cwd=src_root())
-    bad = enum_findings(lines, poke_env_enum_names())
+    bad = enum_findings(lines, owned_enum_names())
     other = [ln for ln in lines if ln not in bad]
     if other:
         print("non-enum [comparison-overlap] findings (reported, not this gate's class):\n  "
               + "\n  ".join(other))
-    assert not bad, ("a poke-env ENUM is compared to a value it can never equal — the branch is "
-                     "dead (F-LF-1: `move.target == \"self\"`). Compare to the enum member "
-                     "(`move.target is Target.SELF`):\n  " + "\n  ".join(bad))
+    assert not bad, ("an ENUM is compared to a value it can never equal — the branch is dead (F-LF-1: "
+                     "`move.target == \"self\"`). Compare to the enum member (`status is Status.SLP`):\n  "
+                     + "\n  ".join(bad))
 
 
 def test_the_gate_has_teeth(tmp_path):
-    """The pre-fix bot shape, and its ``in`` / ``!=`` / Status / Weather cousins, are each caught."""
+    """F-LF-1's shape, and its ``in`` / ``!=`` / reversed cousins, on each owned enum, are each caught."""
     probe = tmp_path / "enum_probe.py"
     probe.write_text(
-        "from poke_env.battle.battle import Battle\n"
-        "from poke_env.battle.move import Move\n"
-        "from poke_env.battle.pokemon import Pokemon\n"
-        "def f(battle: Battle, mon: Pokemon) -> int:\n"
+        "from agents.enums import MoveCategory, PokemonType, Status, Weather\n"
+        "def f(status: Status, cat: MoveCategory, weather: Weather, typ: PokemonType) -> int:\n"
         "    n = 0\n"
-        "    for move in battle.available_moves:\n"
-        "        if move.target == 'self':\n"            # 7: F-LF-1's exact shape
-        "            n += 1\n"
-        "        if move.category in ('physical', 'special'):\n"   # 9
-        "            n += 1\n"
-        "    if mon.status != 'slp':\n"                  # 11
+        "    if status == 'slp':\n"                       # 4: F-LF-1's exact shape
         "        n += 1\n"
-        "    if 'raindance' in battle.weather:\n"        # 13
+        "    if cat in ('physical', 'special'):\n"        # 6
+        "        n += 1\n"
+        "    if weather != 'raindance':\n"                # 8
+        "        n += 1\n"
+        "    if 'fire' == typ:\n"                         # 10
         "        n += 1\n"
         "    return n\n")
     lines = run_mypy([str(probe)], cwd=src_root())
-    hit = {int(ln.split(":")[1]) for ln in enum_findings(lines, poke_env_enum_names())}
-    assert {7, 9, 11, 13} <= hit, lines
+    hit = {int(ln.split(":")[1]) for ln in enum_findings(lines, owned_enum_names())}
+    assert {4, 6, 8, 10} <= hit, lines
 
 
 def test_the_cache_is_bounded_and_prunes_its_siblings(tmp_path, monkeypatch):

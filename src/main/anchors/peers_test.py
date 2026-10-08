@@ -5,9 +5,9 @@ Every assertion here corresponds to something a 2026-09-14 de-risk paid for in w
 * the hardcoded ``ws://localhost:8000`` rebind (Metamon H4) — one port from the live training run;
 * ``PYTHONUNBUFFERED`` (H5), without which the banner a driver waits on never lands;
 * ``CUDA_VISIBLE_DEVICES=""`` — a training arm owns the GPU;
-* ``PYTHONPATH=""`` — the Metamon env runs UPSTREAM poke-env and ours is a vendored fork; one
-  process resolving ``import poke_env`` to the wrong one fails SILENTLY, which is the whole reason
-  ``src/poke_env_fork_gate_test.py`` exists;
+* ``PYTHONPATH=""`` — the Metamon env runs UPSTREAM poke-env and Metamon's own packages; our ``src/``
+  on its path would put our generic top-level names (``utils``, ``main``, ``agents``) ahead of theirs, and a
+  wrong-module import fails SILENTLY (``src/packaging_gate_test.py`` holds the mechanism);
 * the 19-character username ceiling (foul-play H1), whose symptom is a hang, not an error;
 * Foul Play's REALIZED search width, because its only budget is wall clock and a win rate without
   the visit count is not reproducible on another box (UNDERSTANDING rule 23).
@@ -96,8 +96,8 @@ def test_the_metamon_env_carries_every_hazard_workaround(cfg, tmp_path) -> None:
     assert env["CUDA_VISIBLE_DEVICES"] == "", "a training arm owns the GPU"
     assert env["METAMON_CACHE_DIR"] == str(cfg.metamon.cache_dir)
     assert env["PYTHONPATH"] == "", (
-        "our src/ must not reach the Metamon env: it runs UPSTREAM poke-env and we vendor a fork, "
-        "and one process resolving `import poke_env` to the wrong one fails SILENTLY"
+        "our src/ must not reach the Metamon env: it runs UPSTREAM poke-env and its own packages, and "
+        "our generic top-level names on its path would shadow theirs SILENTLY"
     )
 
 

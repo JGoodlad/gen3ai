@@ -147,8 +147,8 @@ def test_audit_states_real_trace_gate_skips_on_an_empty_archive(monkeypatch, tmp
 
 
 # ------------------------------------------------------------------- 3. the class, closed
-#: Scope mirrors the ruff and file-size gates. `src/poke_env` is a vendored fork and
-#: `src/rust_sim` is a Rust crate whose Python is harness scratch — neither is ours to shape.
+#: Scope mirrors the ruff and file-size gates. `src/rust_sim` is a Rust crate whose Python is
+#: harness scratch — not ours to shape.
 _SCANNED_ROOTS = ("agents", "main", "utils")
 
 #: The files allowed to hold an absolute-home literal, because their job IS scanning for them.

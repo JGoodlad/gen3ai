@@ -298,7 +298,7 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   from the prober's `eval_traces/*/summary.json`; the legacy `win_rate_vs_bots.txt` is still read
   as a fallback.
 - **Opponents sample, they don't argmax.** Training opponents are built with `stochastic=True`
-  (now the `RLPlayer` default) so the learner trains against the policy's full action
+  (formerly the `RLPlayer` default; `RLPlayer` is deleted, T27 P6 — the Rust env core's opponents sample) so the learner trains against the policy's full action
   distribution — a richer, less-exploitable signal than the greedy move. Temperature is
   `--self-play-temp` (default `1.0` = the policy's own distribution; >1 flatter). **The measured
   trainee is always greedy** (`stochastic=False`) — that's what gives `win_rate_vs_bots`
@@ -349,7 +349,7 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   loading mismatched weights. The check ignores the ride-along keys alone (F-MEM). The load is
   INFERENCE-ONLY: no optimizer and no ride-along acquisition, because it runs after the learner froze
   (`gen3_opponent_inference_load_v1`, `designs/training/learner_lifecycle.md`).
-- **The opponent RE-DECIDES on a stale decision; the trainee crashes** — split by who *owns* the
+- **HISTORY — the Python road's stale-decision race (the whole bullet, and every module and test it names — `RLPlayer`, `SingleAgentWrapper`, `EpisodeTracker`, `agents/action/mapper.py`, `redecide_rollback_fuzz_test`, `episode_tracker_test`, `single_agent_wrapper_test`, `order_to_action_race_fuzz_test` — is DELETED, T27 P6; the Rust env core has no Python decision loop).** The opponent RE-DECIDED on a stale decision; the trainee crashed — split by who *owned* the
   decision. `SingleAgentWrapper` polls the opponent's `choose_move` on the *training* thread while
   POKE_LOOP mutates its battle, so by serialize time the captured snapshot (`ctx.legal`) can diverge
   from the live battle: POKE_LOOP parses an **in-flight turn-resolution during the model forward**,

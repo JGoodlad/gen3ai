@@ -109,15 +109,14 @@ than randoms, belief modeling, an in-network damage operator, its own simulator 
 was foundational in getting this project set up, and its problem framing shaped ours. A copy
 lives at `designs/references/wang2024_pokemon_rl.pdf`.
 
-Also load-bearing: [poke-env](https://github.com/hsahovic/poke-env) (the Python Showdown client
-this project forked and builds on) and [Pokémon Showdown](https://github.com/smogon/pokemon-showdown)
+Also load-bearing: [Pokémon Showdown](https://github.com/smogon/pokemon-showdown)
 itself — the reference battle engine our Rust port is validated against, move by move.
+The project began on [poke-env](https://github.com/hsahovic/poke-env) (the Python Showdown client),
+which the Rust stack has since retired.
 
 ## License
 
-[MIT](LICENSE) — use it, fork it, build on it; keep the notice. The vendored
-[poke-env](https://github.com/hsahovic/poke-env) fork under `src/poke_env/` retains its original
-MIT notice, and [Pokémon Showdown](https://github.com/smogon/pokemon-showdown) (a git submodule)
+[MIT](LICENSE) — use it, fork it, build on it; keep the notice. [Pokémon Showdown](https://github.com/smogon/pokemon-showdown) (a git submodule)
 is its own MIT-licensed project. Pokémon itself is © Nintendo/Creatures/GAME FREAK — this is an
 unaffiliated fan research project.
 

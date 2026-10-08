@@ -23502,3 +23502,31 @@ Tag: **BUILT · cf stack + search_dividend + Python bot roster deleted (owner) �
   (`designs/training/reward.md`, `designs/rust_sim/{trackers,core_events}.md`, …) — the 6e doc sweep.
 
 Tag: **BUILT · Python battle layer + trackers + encoder encode path + runtime deleted · layout.rs Rust-owned (108-constant gate) · obs golden 991 / 991 unchanged · allowlist 81 → 10**
+
+### 2026-10-08 · BUILT · **POKE-ENV RETIREMENT P6 slice 6e — T27 DONE: the vendored poke-env FORK is DELETED; nothing of ours imports poke-env (allowlist 10 → 0, frozen 0 / 0); the acquisition layer regenerates `data/pokemon/` byte-identically from a frozen copy of the fork's static data**
+
+- **Deleted:** `src/poke_env/` (80 modules + 13 test files; 15,086 + 2,482 Python lines; 498,770 lines with the data)
+  and `src/poke_env_fork_gate_test.py`; `live_view.UNKNOWN_ITEM` / `_UNKNOWN_ITEMS` (kept only for the fork pin).
+  Manifest: `designs/ops/deletion_pass_manifest.md` §8.6.
+- **Moved:** the fork's static data to `tools/pokemon_data_extractor/upstream/poke_env_static/` — 29 / 29 JSON blobs
+  identical to the fork's. `sync.py --out-dir <tmp>` with the fork GONE: **8 / 8 `data/pokemon/` files byte-identical**
+  (no `data/` change); the type chart is computed by `sync.build_type_chart`.
+- **Retargeted oracles:** `enums_test` (screen ids, effect names, pre-split special types frozen from the fork's last
+  commit), `gen3_effects_test` (the reader's `tables.rs` `EFFECTS`: 227 names, equal to the fork's `Effect` member for
+  member; activation lines read on the live Rust reader), `bot_tables_test` (the frozen upstream move JSON through
+  `Move`'s four derivations ported verbatim: **0 mismatches vs `Move` on 373 rows**, checked before the deletion),
+  `pokemon_test` (the two fork-teambuilder tests dropped; `utils.team_packing` is pinned elsewhere), the websocket tests
+  (two `main.live` clients).
+- **End-state gates:** `src/poke_env_absent_gate_test.py` (no package in the tree, none installed, neither env file);
+  `src/enum_str_compare_gate_test.py` (renamed, re-scoped to `agents.enums`); the whole import surface — every module
+  of `src/` / `tools/` / `scripts/`, test files included — imports under the blocker with **0 attempts, 0 failures**
+  (a planted importer fails it). The only process that runs poke-env is the Metamon peer script (upstream, its own
+  interpreter).
+- **Allowlist trajectory over P6:** 135 → 133 (slice 1) → 131 (2) → 130 (3) → 127 (5) → 125 (6a) → 107 (6c) → 81 (6d-1)
+  → 10 (6d-2) → **0** (6e).
+- **Finding.** The MAIN checkout keeps `src/poke_env/**/__pycache__/` after it pulls this (ignored files; git removes
+  only tracked ones), so `src/poke_env` there survives as an empty NAMESPACE package until removed by hand. Harmless to
+  the gates (the absent gate requires an `__init__.py`; nothing imports it) but `import poke_env` succeeds there as an
+  empty namespace.
+
+Tag: **BUILT · T27 DONE · vendored fork deleted · allowlist 0 / 0 · data/pokemon regenerated 8 / 8 byte-identical without it**

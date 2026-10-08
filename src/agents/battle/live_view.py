@@ -23,14 +23,6 @@ from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional, Tuple
 
 
-# The sentinel poke-env's ``Pokemon._item`` starts at — ``GenData.UNKNOWN_ITEM`` — and the "not yet known" item
-# set. No reader here uses them since the poke-env constructors were deleted (T27 P6 slice 6d-2); they are KEPT
-# because ``enums_test.test_the_live_view_unknown_item_sentinel_is_the_forks`` pins them to the fork until slice 6e
-# retires that test with the fork.
-UNKNOWN_ITEM = "unknown_item"
-_UNKNOWN_ITEMS = {None, UNKNOWN_ITEM}
-
-
 @dataclass(frozen=True)
 class LiveMove:
     """One revealed move with its current/maximum PP. Primitives only.

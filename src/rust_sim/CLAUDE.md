@@ -77,9 +77,10 @@ effort is matching Showdown's **control flow**, for two reasons:
    downstream draw desyncs. So you must mirror Showdown's `runEvent`/`singleEvent`
    dispatch order (handlers sorted by order → priority → speed), not just the
    observable formula.
-2. **Byte-identical protocol output.** Our poke-env fork parses the `|...|`
-   lines; they must match exactly (tokens, order, HP-fraction formatting). The
-   one documented exception is `|t:|` wall-clock lines, which poke-env ignores.
+2. **Byte-identical protocol output.** The Rust side reader (`side_reader.rs`) and the websocket
+   front end parse the `|...|` lines (and an outside client does too); they must match exactly
+   (tokens, order, HP-fraction formatting). The one documented exception is `|t:|` wall-clock
+   lines, which no reader uses.
 
 The verification answer to both is **differential testing against the real
 Showdown**, layer by layer. Level 1 (the PRNG) is built; see below.
@@ -109,13 +110,13 @@ read the row you are about to edit.**
 | `search.rs` | DONE, validated | The search + replay KERNELS (`gen3_rust_search_driver_v1`): the aux PRNG, `Record::parse`, `build_to_turn`, `resolve_turn*`, the `outcome_of`/`pre_state` renderers. Pure helpers. |
 | `bin/search_driver.rs` | DONE, validated | The drop-in replacement for BOTH node offline drivers — the persistent `{id, cmd}` search server AND the one-shot `mode` replay verbs. Dispatch is on the KEY. An `expand_many` may carry **`side`** to ELIDE the one-sided payload the caller will not read (`gen3_expand_many_side_elision_v1`). |
 | `driver_timing.rs` | DONE | OPT-IN per-phase wall accounting inside `expand_many` (`POKESIM_SEARCH_TIMING=1`). **Off it renders the empty string**, so an un-set build is byte-identical and the cross-impl parity harness is unaffected. |
-| `core_events/` (+ `bin/core_events.rs`) | M1 BUILT, not used by training | The Rust Core's typed event layer (`gen3_core_events_v1`): every omniscient line is a typed `Line` whose text is its rendering; one side's stream → `CoreEvent`s carrying `Gen3Battle`'s reading; `parse(lines)`; the persisted record. The binary is also the PROBER's battle reader (poke-env retirement P5: `--walk`, `--obs-stream`, `core_events.md` §9). Detail: [`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md). |
+| `core_events/` (+ `bin/core_events.rs`) | M1 BUILT, not used by training | The Rust Core's typed event layer (`gen3_core_events_v1`): every omniscient line is a typed `Line` whose text is its rendering; one side's stream → `CoreEvent`s carrying the named reading rules (ported from the deleted Python `Gen3Battle`); `parse(lines)`; the persisted record. The binary is also the PROBER's battle reader (poke-env retirement P5: `--walk`, `--obs-stream`, `core_events.md` §9). Detail: [`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md). |
 | `emission_check.rs` | BUILT; ON in `cargo test` + the fuzzers, compiled OUT of `--release` | The EMISSION SELF-CHECK (`gen3_core_emission_selfcheck_v1`): at every emission, the omniscient line round-trips (`Line::parse(render(l)) == l`), each viewer's render is the line that viewer is owed (the typed `side_view`) and no secret (exact HP, an owner-only line, a one-side frame) reaches the other viewer; a failure panics with the line, both renders and the viewer. Detail: [`designs/rust_sim/emission_selfcheck.md`](../../designs/rust_sim/emission_selfcheck.md). |
-| `present/` | M2 BUILT; search reads it, training does not | the TRUE reading of one side's stream (`gen3_core_present_v1`): `BoardReading` (poke-env's `Battle` + `Pokemon`, minus its registered mistakes), `present()` (a `LiveView`-shaped view, NO board parameter), `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` GENERATED from poke-env. Every rule named (V1–V17) and pinned; poke-env's mistakes are FINDINGS, not rules. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
+| `present/` | M2 BUILT; search reads it, training does not | the TRUE reading of one side's stream (`gen3_core_present_v1`): `BoardReading` (poke-env's `Battle` + `Pokemon`, minus its registered mistakes), `present()` (a `LiveView`-shaped view, NO board parameter), `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` FROZEN, Rust-owned (once generated from poke-env). Every rule named (V1–V17) and pinned; poke-env's mistakes are FINDINGS, not rules. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
 | `version.rs` | M2 BUILT | `BattleVersion` (`gen3_core_version_v1`): the persistent battle state — `Arc` parent, per-side stream (`BoardReading` + event `Reader`), per-transition events, memoized views, the `Engine` as REFEREE (step-built only); built by step (a fork: an engine clone in a fresh transport, its lines folded from their text), by observing a caller's session (linear), or by parse (one side's text), gated `parse == step` version by version. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
 | `trackers/` | M3 BUILT; read by the encoder (search's rows, the env core), not by training | The per-decision TRACKERS on the version (`gen3_core_trackers_v1`): slots, the Hidden-Power belief, the progress clock (obs half), recency, pair history, the 32-row event window, the wish / sleep folds, the α/β label, the win-indicator reward — folded from one side's stream at each of its decisions, shared by a fork (`Arc`); and the NATIVE window record (`record.rs`: ordered actions + attributed effects, denials incl. the gen-3 turn cut, the information boundary as a type, checked in `agents/battle/core_corpus_test.py`). Opt-in (`SideStream::with_trackers`). The training-input semantics (the M3 loss catalogue's GIGO, fixed on both paths: `gen3_event_window_semantics_fixes_v1` / `gen3_intent_label_semantics_fixes_v1` / `gen3_progress_clock_attribution_fix_v1`; and the cutover stress's `gen3_hp_prior_support_v1`) are pinned in `tests/tracker_semantics_test.rs`. The event window carries the native record's attribution since `gen3_event_record_v2` (E12 — 30-column rows, DENIED rows, the E4 refused-switch target resolved from the side's noted choice token: `trackers::attempted_switch_species`; a step-built version notes the transport's `choice_log` at the line it was fed, so a search root / child resolves it as the parse chain does) — the schema is `designs/ARCHITECTURE.md` §1.6, the per-mechanic fixtures `tests/window_record_test.rs` (its Python-vs-core twin `event_record_v2_fixture_test.py` was deleted in P6 slice 6c). Detail: [`designs/rust_sim/trackers.md`](../../designs/rust_sim/trackers.md) §5. |
 | `encoder/` | M4 BUILT; SEARCH reads it (`expand_many`'s `rows`); `sim_bridge` ships it under the opt-in `core_obs` — the Rust env core reads it | THE ENCODER (`gen3_core_encoder_v1`): `BattleVersion::encode(side, &mut [f32; OBS_DIM])` — the `OBS_DIM`-dim row (2845 since the X5 version break's part 3: its LAST block is the OBS-FACTS block `encoder/facts.rs`, written over the `trackers::facts` fold, held to the ENGINE by `tests/obs_facts_truth_test.rs`; `BattleVersion::encode_facts` computes the block alone) of one side from its reading, view, legality and TRACKERS, byte-equal to `Gen3ObservationEncoder` until P6 slice 6c deleted that comparison (slice O; the row is now held by the obs golden and `designs/rust_sim/encoder.md` §6a); `layout.rs` GENERATED from `agents/observation/constants.py`; the dex / prior tables read from `data/`; NaN-prefilled in test / fuzz builds; the row on the wire as a `<f4` frame (`wire.rs`); `oracle.rs` is the DIAGNOSTIC ORACLE REVEAL — the opponent block's unseen tail under `--oracle-reveal {species,full}` (`full` also overlays the true set on the seen mons), built per chain by the Rust env core, absent (`Inputs.oracle = None`) everywhere else, so `sim_bridge`'s `core_obs` and search build `off` rows. Detail: [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md). |
-| `core_error.rs` | BUILT | `CoreError` (`gen3_core_error_v1`): the core's error — a `Refusal` carrying the Python exception class poke-env raises on the same input (the parity gate compares it), `Malformed` input, or a core `Fault`. Never a bare `String` inside the core; the message converts unchanged at the transport boundary. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md) §2. |
+| `core_error.rs` | BUILT | `CoreError` (`gen3_core_error_v1`): the core's error — a `Refusal` carrying the Python exception class poke-env raised on the same input (the parity gate that compared it was deleted in P6 slice 6c), `Malformed` input, or a core `Fault`. Never a bare `String` inside the core; the message converts unchanged at the transport boundary. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md) §2. |
 | `engine.rs` | BUILT | The ENGINE half of a bridge session (`gen3_core_engine_split_v1`): the battle, the turn loop, the open boundary and the TYPED requests, advancing over a caller-owned command queue into an `EngineSink`. `bridge::BridgeSession` is the TRANSPORT around it (what `sim_bridge` writes, byte-identical); a version owns the engine alone. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md) §2. |
 
 ## The core's event layer — typed at the source (`gen3_core_events_v1`)
@@ -157,13 +158,12 @@ directly for a new keyword / `EventKind` / value key — there is no Python twin
 board fact cannot reach it by construction; the omniscient board is a REFEREE (`check_view`, the
 audit `core_corpus_test.py` replays). 🚨 **Every version folds `parse(render)`** — the one observation path (program
 §6c); the typed-at-source shortcut and its integrity mode are DELETED (program §4 M4 row). A core
-session's lines carry only the engine's SCOPE (`BridgeSession::side_scopes`, the owner truth). 🚨 **`present()` is the TRUE reading — parity with poke-env is not the goal.** Where
-poke-env is wrong about a sim fact the stream establishes, the view carries the truth and the
+session's lines carry only the engine's SCOPE (`BridgeSession::side_scopes`, the owner truth). 🚨 **`present()` is the TRUE reading — parity with poke-env was never the goal.** Where
+poke-env was wrong about a sim fact the stream establishes, the view carries the truth and the
 disagreement was a registered FINDING (`agents/battle/poke_env_findings.py`, deleted in P6 slice 6c — one field, a
 value-aware predicate, the reproduction, whether it reached the obs; EMPTY since M2's three,
 PE-V10 / PE-R1b / PE-V16, were fixed in the fork as `gen3_pe_reading_fixes_v1`); never add a rule
-whose only purpose is to reproduce a poke-env mistake, and never fix the fork from here (that moves
-the training input — the owner's call). Search runs on it:
+whose only purpose is to reproduce a poke-env mistake, and the fork is deleted (T27 P6), so there is nothing to fix there. Search runs on it:
 every successor is a `BattleVersion` (`search_driver`'s `open_root` `core: "text"` / `side`; the
 protocol / view roads are deleted, program §4 M2). Contract, the rules, the search road, the
 gates: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md).
@@ -180,8 +180,8 @@ trackers per requested side (its own `present()` reading) and ship
 
 ## The ENCODER — the observation row on the version — M4 (`gen3_core_encoder_v1`)
 
-`BattleVersion::encode(side, out)` writes the `OBS_DIM`-dim row `Gen3ObservationEncoder.encode` builds for
-the trainee (what the deleted Python `Gen3Env.embed_battle` called), from that side's stream alone: the view for the
+`BattleVersion::encode(side, out)` writes the `OBS_DIM`-dim row the deleted Python `Gen3ObservationEncoder.encode` built for
+the trainee, from that side's stream alone: the view for the
 current-board facts, the raw `PMon` for the item / type / ability / move sub-encoders (Python reads
 the raw `Pokemon` there too), the legality, and the M3 trackers (REQUIRED — a stream without them
 refuses). 🚨 **The encoder reproduces, it never fixes**: a wrong tracker value is fixed in the tracker,
@@ -940,8 +940,8 @@ CONFIRMED already modelled:
 
 ## Protocol emission (level-2, Phase 1 + Phase 2): the byte-identical `|...|` stream
 
-This is the **level-2** goal — emit the byte-identical OMNISCIENT `|...|` protocol stream our
-poke-env fork parses, so the port is a drop-in behind the bridge. The engine is already
+This is the **level-2** goal — emit the byte-identical OMNISCIENT `|...|` protocol stream the Showdown
+clients (and the Rust side reader) parse, so the port is a drop-in behind the bridge. The engine is already
 bit-for-bit RNG+state faithful; this layer is a **side output** of events that ALREADY happened.
 
 - **The emit API** (`protocol.rs`): `ProtocolBuilder` is an **append-only, PRNG-free** line buffer on

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-23,505-line file. **The ledger itself is append-only and is never edited by this**;
+23,533-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**821 headings · 766 dated · 2026-08-01 → 2026-10-08 · ledger 23,505 lines.**
+**822 headings · 767 dated · 2026-08-01 → 2026-10-08 · ledger 23,533 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -841,3 +841,4 @@ rename.
   - `L23436` · `2026-10-08` · BUILT · **POKE-ENV RETIREMENT P6 slice 6c: the Python parity ORACLES, the Python-path benchmarks, the Python bot calibration, the BC reader and the Python EVAL oracle are DELETED; `main.ops.eval_trace_gen` runs on the Rust eval core; the core-only halves are kept as `core_corpus_test` and a CORE PRESENT GOLDEN**
   - `L23461` · `2026-10-08` · BUILT · **POKE-ENV RETIREMENT P6 slice 6d-1: the owner-approved deletions — the offline cf stack (`cf_producer*`, `cf_audit*`, `cf_q_labels`, `cf_mc_return`, `utils/bridge/counterfactual.py`) and the `main.search_dividend` battery — plus the Python bot roster (`agents/opponents.py`, `eval_roster`); `critic_read`'s cf_audit identity half removed; allowlist 107 → 81**
   - `L23479` · `2026-10-08` · BUILT · **POKE-ENV RETIREMENT P6 slice 6d-2: the Python BATTLE LAYER, the TRACKERS, the Python ENCODER's encode path and the last Python runtime (`RLPlayer`, the bridge JSON road, the materializer) are DELETED; `layout.rs` is Rust-OWNED with a shared-constants gate; the obs golden reproduces all 991 hashes unchanged; allowlist 81 → 10**
+  - `L23506` · `2026-10-08` · BUILT · **POKE-ENV RETIREMENT P6 slice 6e — T27 DONE: the vendored poke-env FORK is DELETED; nothing of ours imports poke-env (allowlist 10 → 0, frozen 0 / 0); the acquisition layer regenerates `data/pokemon/` byte-identically from a frozen copy of the fork's static data**

@@ -4,8 +4,8 @@
 the dual stack" (every fact the Rust reader already reads is a second copy in the Python battle layer: the
 change amplification). The retirement is phased (``designs/research_state/measurements/
 pokeenv_and_hotpath_survey_2026-10-06/README.md`` §A4.5, backlog ``T27``), and its first phase is this RATCHET:
-the set of files outside the vendored fork (``src/poke_env/``) that import ``poke_env`` may only SHRINK, so a
-phase's progress is a number that falls and a NEW importer is an event somebody has to look at.
+the set of files that import ``poke_env`` may only SHRINK, so a phase's progress is a number that falls and a
+NEW importer is an event somebody has to look at.
 
 **The rule.**
 
@@ -21,15 +21,16 @@ phase's progress is a number that falls and a NEW importer is an event somebody 
   adding a line, is not a legal move** — it is the one thing this file exists to stop. A file a build is
   genuinely FORCED to add (a new file in the Python encoder that Rust-parity work needs) is named, with the
   reason, in the commit body and decided by the owner; it is never waved through by a green gate.
-* Scope: ``src/``, ``tools/`` and ``scripts/``, minus the vendored fork. ``designs/`` measurement scripts are
+* Scope: ``src/``, ``tools/`` and ``scripts/``. ``designs/`` measurement scripts are
   frozen history and are out of scope; a module name built at run time is a blind spot (see the scanner's
   docstring).
 * The ONE permanent entry is ``PEER_PROCESS_PERMANENT``: a script that runs in Metamon's interpreter against
   UPSTREAM poke-env and is never imported by this repo. It is not on the list and is not counted; the end
   state of the retirement is an empty list plus that file.
 
-**The end state** is an empty allowlist and the vendored fork deleted (P6). Until then every phase's commit
-lowers the two counts, and this file's docstring is the place a reader learns why.
+**The end state is REACHED (P6, 2026-10-08):** the vendored fork is deleted, the allowlist is EMPTY and both
+counts are 0 — the only file that imports ``poke_env`` is the permanent peer-process script. The gate stays: a
+new importer still fails here, and ``poke_env_absent_gate_test.py`` keeps the package itself out of the tree.
 
 Opt out explicitly (never silently): ``GEN3AI_SKIP_POKE_ENV_IMPORT_GATE=1``.
 """
@@ -50,8 +51,8 @@ pytestmark = [pytest.mark.static,   # the `static` budget tier (conftest._STATIC
 #: these two lines (it matches them by a strict regex — keep each on its own line, in this exact form).
 #: Frozen 2026-10-06 at 74 non-test + 97 test importers (+ the permanent peer-process script); every shrink since
 #: has lowered them (the two lines below are the CURRENT ceiling).
-FROZEN_NON_TEST_COUNT = 1
-FROZEN_TEST_COUNT = 9
+FROZEN_NON_TEST_COUNT = 0
+FROZEN_TEST_COUNT = 0
 
 #: A floor under the scan itself, so a wrong root or a broken walk cannot make every check below vacuous.
 MIN_FILES_SCANNED = 1000
@@ -71,8 +72,6 @@ def test_the_scan_walks_the_tree_and_sees_the_live_importers():
     inv = _inventory()
     assert inv.files_scanned >= MIN_FILES_SCANNED, (
         f"the scan saw only {inv.files_scanned} .py files — a wrong root would make every check vacuous")
-    assert not any(p.startswith(pei.VENDORED_FORK + "/") for p in inv.importers), (
-        "the vendored fork must be pruned from the scan — it is what is being retired, not a user of it")
     for permanent in pei.PEER_PROCESS_PERMANENT:
         assert repo_path(*permanent.split("/")).is_file(), f"{permanent} is declared permanent but is gone"
 
@@ -119,8 +118,7 @@ def test_the_permanent_peer_process_entries_are_not_on_the_list():
 def test_every_allowlist_entry_is_in_scope_and_sorted():
     listed = pei.read_allowlist()
     for p in listed:
-        assert p.split("/", 1)[0] in pei.SCAN_ROOTS and not p.startswith(pei.VENDORED_FORK + "/"), (
-            f"{p} is outside the scanned roots {pei.SCAN_ROOTS} (or inside the vendored fork)")
+        assert p.split("/", 1)[0] in pei.SCAN_ROOTS, f"{p} is outside the scanned roots {pei.SCAN_ROOTS}"
         assert p.endswith(".py"), p
     assert listed == sorted(listed, key=lambda x: (pei.is_test_path(x), x)), (
         "the allowlist is written sorted (non-test first, then test); `--shrink` keeps it so")

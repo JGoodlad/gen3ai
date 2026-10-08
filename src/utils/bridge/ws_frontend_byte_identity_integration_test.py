@@ -24,10 +24,6 @@ import os
 
 import pytest
 
-from poke_env import AccountConfiguration
-from poke_env.player import RandomPlayer
-from poke_env.ps_client.server_configuration import ServerConfiguration
-
 from utils.bridge.sim_bridge_bin import _ENV_OVERRIDE
 from utils.bridge.ws_frontend import ShowdownFrontEnd
 from utils.bridge.ws_frontend_replay import BattleCapture, check_capture
@@ -35,9 +31,6 @@ from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
 pytestmark = pytest.mark.sim
-
-_AUTH = "https://play.pokemonshowdown.com/action.php?"
-
 
 def _prebuilt_rust_available() -> bool:
     override = os.environ.get(_ENV_OVERRIDE)
@@ -55,23 +48,40 @@ async def _one_seeded_battle(impl: str) -> BattleCapture:
     front = ShowdownFrontEnd(impl=impl, seed_base=20260914, validate_teams=False, capture=True)
     server = await serve(front.handler, "127.0.0.1", 0, max_size=None, ping_interval=None)
     port = server.sockets[0].getsockname()[1]
-    config = ServerConfiguration(f"ws://127.0.0.1:{port}/showdown/websocket", _AUTH)
+    uri = f"ws://127.0.0.1:{port}/showdown/websocket"
     teams = [t.strip() for t in TeamLoader().get_all_teams()][:8]
-    p1 = RandomPlayer(battle_format="gen3ou", team=Gen3Teambuilder(teams, rng_seed=5),
-                      account_configuration=AccountConfiguration("WsfeByteA", None),
-                      server_configuration=config)
-    p2 = RandomPlayer(battle_format="gen3ou", team=Gen3Teambuilder(teams, rng_seed=6),
-                      account_configuration=AccountConfiguration("WsfeByteB", None),
-                      server_configuration=config)
+    # Two Rust-stack clients (`main.live`, seeded random policies; two vendored-poke-env `RandomPlayer`s until P6 of
+    # the poke-env retirement). What is compared is the SERVER side — the protocol the front end relayed vs the Node
+    # bridge's own bytes for the same command stream — so which client drove the battle does not enter the verdict.
+    import random
+
+    from main.live.client import ClientConfig, LiveClient
+    from main.live.policy import RandomPolicy
+
+    def client(name: str, seed: int) -> LiveClient:
+        rng = random.Random(seed)
+        packed = [Gen3Teambuilder(t).yield_team() for t in teams]
+        return LiveClient(ClientConfig(uri=uri, username=name, battle_format="gen3ou", auth="local"),
+                          policy=RandomPolicy(seed), team_fn=lambda: rng.choice(packed))
+
+    a, b = client("WsfeByteA", 5), client("WsfeByteB", 6)
+    acc = None
     try:
-        await asyncio.wait_for(p1.battle_against(p2, n_battles=1), timeout=300)
+        await b.connect()
+        await a.connect()
+        acc = asyncio.ensure_future(b.accept(a.name, 1))
+        await asyncio.wait_for(a.challenge(b.name or "WsfeByteB", 1), timeout=300)
+        await asyncio.wait_for(acc, timeout=60)
         await front.drain()
         (battle,) = front.captured_battles
         return BattleCapture(tag=battle.tag, seed=battle.seed,
                              commands=list(battle.commands), chunks=list(battle.capture))
     finally:
-        await p1.ps_client.stop_listening()
-        await p2.ps_client.stop_listening()
+        if acc is not None and not acc.done():
+            acc.cancel()
+            await asyncio.gather(acc, return_exceptions=True)
+        await a.close()
+        await b.close()
         await front.close()
         server.close()
         await server.wait_closed()

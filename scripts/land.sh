@@ -150,7 +150,7 @@ if [ -n "$WORKTREE" ]; then
     # edited (root CLAUDE.md → Python Environment).
     GATE_PYTHONPATH="${PYTHONPATH:-}:src"
     PYTHONPATH="$GATE_PYTHONPATH" "$PY" -m ruff check src/agents src/main src/utils \
-          --select F,E9 --exclude src/poke_env --exclude src/rust_sim || gate_failed ruff
+          --select F,E9 --exclude src/rust_sim || gate_failed ruff
     PYTHONPATH="$GATE_PYTHONPATH" "$PY" -m mypy src/agents/model >/dev/null || gate_failed mypy
     # The statics include Showdown-backed gates (the teambuilder pack guard), so a worktree without
     # the submodule + the two build symlinks is REFUSED by the root conftest's deps guard, with the

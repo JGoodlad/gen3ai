@@ -28,7 +28,7 @@ two are distinguishable at the battle layer and are NOT the same event:
 draw_kind    how the battle layer reports it                what it means
 ===========  =============================================  ==================================
 ``timeout``  ``lost`` is true AND ``turn >= turn_cap``      the trainee forfeited at the cap
-                                                            (``inference/player._handle_stall``
+                                                            (the deleted ``player._handle_stall``,
                                                             → ``ForfeitBattleOrder``); a STALL
 ``tie``      ``won``/``lost`` both falsy, ``finished``      the sim emitted ``|tie|``
                                                             (``abstract_battle.tied()`` leaves

@@ -94,8 +94,6 @@ def _tree(tmp_path: Path) -> Path:
         "src/agents/a.py": "from poke_env.battle.move import Move\n",
         "src/agents/a_test.py": "import poke_env\n",
         "src/agents/clean.py": "x = 1\n",
-        "src/poke_env/battle/move.py": "from poke_env.data import GenData\n",        # the fork: pruned
-        "src/poke_env/battle/move_test.py": "import poke_env\n",
         "src/rust_sim/target/gen.py": "import poke_env\n",                           # a build dir: pruned
         "src/web/node_modules/x.py": "import poke_env\n",
         "tools/t/sync.py": "def f():\n    from poke_env.data import GenData\n",
@@ -110,7 +108,7 @@ def _tree(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def test_the_walk_covers_src_tools_scripts_and_prunes_the_fork_and_build_dirs(tmp_path):
+def test_the_walk_covers_src_tools_scripts_and_prunes_the_build_dirs(tmp_path):
     inv = pei.scan_repo(_tree(tmp_path))
     assert set(inv.importers) == {"src/agents/a.py", "src/agents/a_test.py", "tools/t/sync.py",
                                   "src/main/anchors/peer_scripts/metamon_side.py"}
@@ -118,6 +116,15 @@ def test_the_walk_covers_src_tools_scripts_and_prunes_the_fork_and_build_dirs(tm
     assert inv.importers["src/agents/a_test.py"].is_test and not inv.importers["src/agents/a.py"].is_test
     # the permanent peer-process script is scanned but is not something the allowlist must cover
     assert set(inv.allowlistable()) == {"src/agents/a.py", "src/agents/a_test.py", "tools/t/sync.py"}
+
+
+def test_a_re_vendored_fork_is_scanned_not_pruned(tmp_path):
+    """The vendored fork was deleted in T27 P6, so nothing named `poke_env` is pruned any more: a copy that came back
+    is a set of NEW importers here (and `poke_env_absent_gate_test` names the package outright)."""
+    p = tmp_path / "src" / "poke_env" / "battle" / "move.py"
+    p.parent.mkdir(parents=True)
+    p.write_text("from poke_env.data import GenData\n")
+    assert set(pei.scan_repo(tmp_path).allowlistable()) == {"src/poke_env/battle/move.py"}
 
 
 def test_init_then_shrink_only_ever_removes(tmp_path, monkeypatch):

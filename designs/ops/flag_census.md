@@ -50,7 +50,7 @@
 * `--exploiter-temp-ratchet-games` (P11c batch 1) — the exploiter temperature curriculum
 * `--rollout-target-band` (P11c batch 1) — an adaptive-target hook with no controller (`set_target` had no caller outside its test); 0 recorded runs; X28 is an epoch controller
 * `--rollout-trigger` (P11c batch 1) — the window trigger was the python-parity schedule: only tests selected it and its oracle (the Python core's collect) is deleted; the complete-game trigger is a constant
-* `--opponent-sampling` (P11c batch 1) — `generator` was the Python core's RLPlayer stream; production and the fork arm are `keyed` only; 0 recorded runs
+* `--opponent-sampling` (P11c batch 1) — `generator` was the Python core's RLPlayer stream (deleted, T27 P6); production and the fork arm are `keyed` only; 0 recorded runs
 * `--version-pinning` (P11c batch 1) — the first staleness remedy, OFF by owner decision 2026-09-29; no backlog row revisits it; 0 recorded runs
 * `--pair-value-route` (P11c batch 2) — `ARCHITECTURE.md`'s 'available but OFF' structural critic route, 0 recorded runs, its C4 re-entry gate never met; no live row names it (config v135, STRUCTURAL row in `retired_levers`)
 * `--td-aux-coef` (P11c batch 2) — ladder arm `ai_v12_13_ladder_tdaux` NOT DETECTED at matched 10M; 9 older recorded runs; OFF in `production_config.json`; no live row names it (config v135, training-only row)

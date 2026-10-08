@@ -271,7 +271,7 @@ def consumer_index(src_root: Path) -> dict[str, set[str]]:
     """
     out: dict[str, set[str]] = {}
     for p in sorted(src_root.rglob("*.py")):
-        if any(part in ("poke_env", "rust_sim") for part in p.parts) or p.name.endswith("_test.py"):
+        if "rust_sim" in p.parts or p.name.endswith("_test.py"):
             continue
         try:
             tree = ast.parse(p.read_text())
@@ -474,7 +474,7 @@ def scan_tree(src_root: Path) -> list[Site]:
     consumers = consumer_index(src_root)
     out: list[Site] = []
     for p in sorted(src_root.rglob("*_test.py")):
-        if any(part in ("poke_env", "rust_sim") for part in p.parts):
+        if "rust_sim" in p.parts:
             continue
         out.extend(scan_file(p, src_root, cache, consumers))
     return out

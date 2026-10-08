@@ -1,8 +1,9 @@
 """Does a TRAILING BLANK LINE in a Showdown paste still become an empty 7th Pokemon?
 
-Sits beside `poke_env_fork_gate_test.py` at the `src/` root for the same reason: its subject is
-the VENDORED FORK at `src/poke_env/`, which is not ours to litter with test files, and the defect
-it pins is one the fork and upstream poke-env DISAGREE about.
+Sits at the `src/` root because its subject was the VENDORED poke-env FORK's teambuilder (not ours to
+litter with test files), and the defect it pins is one the fork and upstream poke-env DISAGREED about. The
+parser now lives in `utils.team_packing` (P1 of the poke-env retirement) and the fork is deleted (P6); the
+pin stays on our copy.
 
 ## The hazard, stated plainly
 

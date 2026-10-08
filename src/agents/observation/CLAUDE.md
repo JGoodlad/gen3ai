@@ -106,7 +106,7 @@ rule-gated lines (`RULE_GATED_LINES`), and non-obtainable items.
   Sport** own the LAST two volatile slots (`mudsport`, `watersport`; `VOLATILE_DIM` 44 → 46, so the
   active context is 60). poke-env gained `Effect.MUD_SPORT` / `Effect.WATER_SPORT` (both in
   `BATON_PASS_COPIED_EFFECTS`: the gen4 mod sets `noCopy: false`, so a pass carries them silently);
-  a switch or faint ends them. Semantics verified on the vendored sim — `designs/ARCHITECTURE.md`
+  a switch or faint ends them. Semantics verified on the pinned Showdown sim — `designs/ARCHITECTURE.md`
   §1.5. `PENDING_OWNER_LINES` is now EMPTY (kept as the mechanism); `unknown` still raises. The Rust
   SIM does not implement either move, so the core sees them only on a parsed (ladder) stream.
 
@@ -311,15 +311,15 @@ accuracy/evasion check entirely.
 each/252 + spread_known (1.0 own, 0.0 opp) + nature modifiers ×5 [atk, def, spa, spd, spe] as
 raw floats (0.9/1.0/1.1). Opponent slots have all 18 dims as zeros; `spread_known=0`
 distinguishes "unknown opponent" from "own Pokémon with 0 EVs". Own-team `mon.ivs/evs/nature`
-are populated by the poke-env fork's **`backfill_teambuilder_spread`** (`Battle.parse_request`):
+are populated by the Rust reader's **`backfill_teambuilder_spread`** (`src/rust_sim/src/present/board_reading.rs`, ported from the deleted poke-env fork's `Battle.parse_request` backfill):
 gen3ou has no team preview, so `apply_teambuilder_team` never attaches the spread — the backfill
 matches the declared teambuilder team to the request-built team by species and fills in
 IVs/EVs/nature (spread only, never re-running `_update_from_teambuilder`). Without it this block
 emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mon.
 **OBS-FACTS block — 84 dims, the observation's LAST block at `OFFSET_OBS_FACTS` = 2761 (`gen3_obs_facts_v1`,
 `obs_facts.py`; Rust twin `src/rust_sim/src/encoder/facts.rs`; layout `constants.FACTS_*`).**
-`Gen3ObservationEncoder.encode` writes it every decision through `encode_obs_facts(vec, OFFSET_OBS_FACTS,
-live, our_species, event_window)` (appended at the X5 version break, config v144, part 3: obs 2761 → 2845,
+The Rust encoder writes it every decision (`encoder/facts.rs`; the Python `Gen3ObservationEncoder.encode` →
+`encode_obs_facts(vec, OFFSET_OBS_FACTS, live, our_species, event_window)` path was deleted in T27 P6) (appended at the X5 version break, config v144, part 3: obs 2761 → 2845,
 the 2761-dim prefix byte-identical). The model reads it only under `--obs-facts v1`
 (`agents/model/obs_facts_inject.py`; production `off` reads none of it;
 `designs/endstate/design_entity_coverage_audit.md` §8). Four sub-blocks (offsets INSIDE the block; the
@@ -335,8 +335,7 @@ be ROUTED to an entity:
 
 Sources: the view (`LiveMove.seen`, `item_public`, `ability_public`, `residual_done`, the volatiles'
 `|turn|`-counted counters, the side conditions' start turns) and the event window's `facts` fold
-(`agents/training/obs_facts_fold.py`, riding `EventWindowTracker`, so every caller that threads
-`event_window=` threads it). **Elapsed is RESIDUALS**: the counter (or `turn − start`) plus one when
+(the Rust `trackers::facts`; the Python `obs_facts_fold.py` / `EventWindowTracker` were deleted in T27 P6). **Elapsed is RESIDUALS**: the counter (or `turn − start`) plus one when
 `residual_done`. With no window the stint reads zero and the Encore / Disable bounds take the union of
 both adjustments. Gates: `obs_facts_test.py` (constructed protocol, every fact; each FAILS on revert of
 the code it names; the block's offset and the encoder's write on both schedulers), the core's corpus test
@@ -471,7 +470,7 @@ immediately preceding the FAINT in the event log. All-zeros when no faint.
 `our_attempted_move_id`: decoded from the pressed action index at build time, preserved even
 when the move never fired (cant / frozen / KO-before-acting). `attempted_switch_rejected` /
 `our_attempted_switch_to` (gen3_trapping_signals_v1): the rejected-pivot history — folded from
-the out-of-band `CHOICE_REJECTED` event (`TurnView.attempted_rejected`). On a rejected pivot
+the out-of-band `CHOICE_REJECTED` event (the deleted Python `TurnView.attempted_rejected`; the Rust trackers carry it now). On a rejected pivot
 `our_switch_to` is the unknown sentinel (the switch never happened) while `attempted_switch_to`
 names the mon we tried to bring in; both are zero on every turn with no rejection. Opp attempted
 action is not observable. Faint *counts* are kept on the `TurnDelta` dataclass (for reward) but

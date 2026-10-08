@@ -33,6 +33,11 @@ half; these tests install ``utils.poke_env_blocker`` FIRST (every ``import poke_
    a model and a self-model opponent); the commands that still need poke-env are the closed list
    :data:`PROBER_POKE_ENV_COMMANDS`, EMPTY since P6, and the test pins that nothing else reaches poke-env.
 
+7. ``test_the_whole_import_surface_loads_with_poke_env_blocked`` (P6 end state) — EVERY module of the import gate's
+   scope (``src/``, ``tools/``, ``scripts/``, every test file included) imports in one fresh interpreter under the
+   blocker: no attempt and no import failure. The vendored fork is deleted, so this is the suite-wide statement the
+   entry-point list above makes per path.
+
 A new import of ``poke_env`` on any of these paths fails here with the importing file and line. Fix the import (the
 data facade, ``utils.showdown_id``, ``utils.team_packing``, ``agents.enums`` are poke-env-free); never allowlist it.
 """
@@ -167,6 +172,49 @@ def test_the_blocker_has_teeth():
     """
     r = _run(code, cwd=repo_root(), timeout=120)
     assert r.returncode == 0 and "OK" in r.stdout, (r.stdout[-2000:], r.stderr[-4000:])
+
+
+def surface_modules() -> list[str]:
+    """Every module of the import gate's scope (`utils.poke_env_importers.iter_py_files`: `src/`, `tools/`,
+    `scripts/`, test files included — the suite's whole import surface) as an importable name. Out: the Rust crates'
+    harness scratch (`src/rust_sim`, `src/rust_env`: no packages) and the permanent peer-process script, which runs
+    in Metamon's own interpreter against upstream poke-env."""
+    from utils import poke_env_importers as pei
+
+    names = []
+    for rel, _ in pei.iter_py_files():
+        if rel.startswith(("src/rust_sim/", "src/rust_env/")) or rel in pei.PEER_PROCESS_PERMANENT:
+            continue
+        name = (rel[len("src/"):] if rel.startswith("src/") else rel)[:-len(".py")].replace("/", ".")
+        names.append(name[:-len(".__init__")] if name.endswith(".__init__") else name)
+    return names
+
+
+@pytest.mark.integration
+def test_the_whole_import_surface_loads_with_poke_env_blocked():
+    """P6 end state: with the fork deleted, EVERY module of the tree — production, tools, scripts and every test file
+    — imports in one fresh interpreter with poke-env IMPOSSIBLE: no attempt, and no module that fails to import at
+    all (a module that cannot import is a defect whatever the reason, and a skip would hide a blocked import). The
+    repo root is on the path as pytest's rootdir puts it (`tools` is a namespace package)."""
+    names = surface_modules()
+    assert len(names) >= 1000, f"only {len(names)} modules — the walk moved"
+    code = f"""
+        import importlib, sys
+        sys.path.insert(1, {str(repo_root())!r})
+        from utils import poke_env_blocker as B
+        B.install()
+        failed = {{}}
+        for name in {names!r}:
+            try:
+                importlib.import_module(name)
+            except BaseException as e:
+                failed[name] = f"{{type(e).__name__}}: {{str(e)[:200]}}"
+        assert not B.ATTEMPTS, B.report()
+        assert not failed, "\\n".join(f"{{k}} -> {{v}}" for k, v in sorted(failed.items()))
+        print("OK", len({names!r}))
+    """
+    r = _run(code, cwd=repo_root(), timeout=240)
+    assert r.returncode == 0 and "OK" in r.stdout, (r.stdout[-2000:], r.stderr[-6000:])
 
 
 # ---- the RUN-TIME paths ------------------------------------------------------------------------------------------

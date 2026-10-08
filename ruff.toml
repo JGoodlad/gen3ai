@@ -3,7 +3,7 @@
 # Run (the exact command `src/ruff_gate_test.py` shells out to):
 #
 #     ruff check src/agents src/main src/utils --select F,E9 \
-#         --exclude src/poke_env --exclude src/rust_sim
+#         --exclude src/rust_sim
 #
 # Scope note: `--select F,E9` is deliberately narrow. F is pyflakes (undefined names,
 # unused imports/locals, f-strings that forgot their placeholders) and E9 is the syntax /
@@ -11,10 +11,10 @@
 # selected, so this gate can never turn into an argument about formatting, and a red run
 # always means something real.
 
-# `src/poke_env` is a vendored FORK and `src/rust_sim` is a Rust crate whose only Python is
-# harness scratch; neither is ours to lint. Mirrored on the gate's command line so a bare
-# `ruff check src/` from a shell agrees with the test.
-extend-exclude = ["src/poke_env", "src/rust_sim"]
+# `src/rust_sim` is a Rust crate whose only Python is harness scratch; it is not ours to lint.
+# Mirrored on the gate's command line so a bare `ruff check src/` from a shell agrees with the
+# test. (`src/poke_env`, the vendored fork, was the second exclude until T27 P6 deleted it.)
+extend-exclude = ["src/rust_sim"]
 
 # ==============================================================================================
 # Per-file ignores. TWO CATEGORIES, kept apart on purpose — one is a real pattern, the other is

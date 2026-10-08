@@ -50,7 +50,7 @@ Three pieces live here:
 - **Versioning.** `win_prob_mode` (str) is the structural + resume-IMMUTABLE toggle (any change FATALs;
   threaded into `current_model_version` / `arch_toggles_from_model` so a win-prob-ON self-play run doesn't
   FATAL on its own sentinels).
-- **Forensic trace + prober.** `RLPlayer._win_prob` (`inference/player.py`) reads the stashed
+- **Forensic trace + prober.** (The Python capture below — `RLPlayer._win_prob`, `BattleRecorder.states_arrays` — was DELETED in T27 P6 slice 6d-2; a Rust-core trace stores NaN `win_probs` and the prober's `analyze` re-runs the model on the stored obs, `src/main/prober/CLAUDE.md`.) `RLPlayer._win_prob` (`inference/player.py`) read the stashed
   `last_win_prob_logits` at trace-capture time (sigmoid ⇒ P(win)) into the per-decision `state`, which
   `BattleRecorder.states_arrays` writes as a `win_probs` npz array (NaN = no head / not captured, parallel
   to `values`). The prober renders **P(win) + ΔP(win)** in the Summary + Outcome panels beside CRITIC's

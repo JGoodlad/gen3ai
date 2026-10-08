@@ -1,4 +1,4 @@
-# poke-env IMPORT ALLOWLIST — the GENERATED list of every file outside the vendored fork (src/poke_env/) that
+# poke-env IMPORT ALLOWLIST — the GENERATED list of every file under src/, tools/ and scripts/ that
 # imports poke_env, frozen at 2026-10-06. T27 / P0 of the poke-env retirement
 # (designs/research_state/measurements/pokeenv_and_hotpath_survey_2026-10-06/README.md §A4.5).
 #
@@ -11,13 +11,7 @@
 #   * Shrink with:  python -m utils.poke_env_importers --shrink      (removes the stale entries, lowers the counts)
 #   * Regenerating this file from scratch is --init, which refuses while the file exists.
 # One repo-relative path per line, sorted; non-test files first, then test files.
-tools/pokemon_data_extractor/sync.py
-src/agents/enums_test.py
-src/agents/gen3_data/extractor_parity_test.py
-src/agents/observation/gen3_effects_test.py
-src/agents/observation/pokemon_test.py
-src/poke_env_enum_str_compare_gate_test.py
-src/poke_env_fork_gate_test.py
-src/utils/bridge/ws_frontend_byte_identity_integration_test.py
-src/utils/bridge/ws_frontend_integration_test.py
-src/utils/rust_env/bot_tables_test.py
+
+#
+# EMPTY since T27 P6 (2026-10-08): the vendored fork is deleted and nothing but the permanent Metamon peer script
+# (src/main/anchors/peer_scripts/metamon_side.py, never listed) imports poke_env.

@@ -87,7 +87,7 @@ into `ReaderRefusal`, and the client turns that into a T28 halt.
 | (a) TWO ROADS, ONE ROW | `python -m main.live.two_roads` | live frames over a real websocket (`--server rust`) == `sim_bridge` core_obs frames of the replayed battle, byte for byte, every decision (rqid excluded and checked present) |
 | (b) the public replay corpus | `python -m main.live.replay_scan` | the corpus reads from both seats with zero refusals; the per-turn encoder probe finds no unclassified effect |
 | (c) a Node Showdown at MASTER | `main.live` client vs bots / itself on a local master server | real framing, real `rqid`, zero T28 halts |
-| (d) SHADOW | the poke-env `RLPlayer` + a shadow `LiveReader` on the same messages | poke-env's row / mask / action == the reader's, decision by decision |
+| (d) SHADOW (P4 only; the poke-env `RLPlayer` it ran against is deleted, T27 P6) | the poke-env `RLPlayer` + a shadow `LiveReader` on the same messages | poke-env's row / mask / action == the reader's, decision by decision |
 
 Results: `designs/research_state/measurements/pokeenv_p4_live_2026-10-07/`.
 

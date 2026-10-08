@@ -3,11 +3,11 @@
 
 🚨 **THIS FILE IS NEVER IMPORTED BY THIS REPO'S CODE.** It runs under the *Metamon* interpreter
 (``opponents.metamon.python`` in ``designs/ops/anchors.json``), in an environment where
-``import poke_env`` resolves to **upstream poke-env 0.8.3.3**, not our vendored fork. Importing it
-from ``gen3ai_stable`` would fail on ``metamon``/``amago`` and, worse, mixing the two packages in
-one process is the silent-wrong-results hazard ``src/poke_env_fork_gate_test.py`` exists to
-prevent. ``main.anchors.peers.MetamonPeer`` launches it as a subprocess with ``PYTHONPATH=""``,
-which is what keeps the two worlds apart. It is descended from
+``import poke_env`` resolves to **upstream poke-env 0.8.3.3** (our tree has no poke-env at all since
+the retirement's P6). Importing it from our env would fail on ``poke_env``/``metamon``/``amago``.
+``main.anchors.peers.MetamonPeer`` launches it as a subprocess with ``PYTHONPATH=""``, which keeps our
+``src/`` (and its generic top-level names) out of Metamon's interpreter. It is the ONE permanent entry of
+the poke-env import gate (``PEER_PROCESS_PERMANENT``). It is descended from
 ``designs/research_state/measurements/metamon_matched_regime_2026-09-14/run_metamon_side.py``.
 
 WHY THE SERVER REBIND EXISTS (de-risk hazard H4)

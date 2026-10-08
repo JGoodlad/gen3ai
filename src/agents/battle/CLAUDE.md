@@ -16,8 +16,7 @@ What this package holds now:
   `move_slots`, the `switches` / `force_switch` / `trapped` / `maybe_trapped` / `wait` / `struggle` flags, a
   read-only `last_request` mirror, `own_hp_typed_id` and the `display_move_ids` label accessor). They compute
   NOTHING: every field is copied in by `core_view`. Struggle stays single-sourced (a lone `struggle` request entry
-  is the `struggle` flag, never a move slot — the core's rule). `UNKNOWN_ITEM` / `_UNKNOWN_ITEMS` are kept only for
-  `src/agents/enums_test.py`'s fork pin (slice 6e retires both). 🚨 **What a PROTOCOL line revealed is current
+  is the `struggle` flag, never a move slot — the core's rule). 🚨 **What a PROTOCOL line revealed is current
   knowledge and is on the view** (`gen3_obs_facts_v1`): `LiveMove.seen`, `LivePokemon.item_public` /
   `ability_public`, `LiveView.residual_done` — the core's `present()` carries them (rules V18 / V19, pinned by
   `src/rust_sim/src/present/tests.rs` and `tests/obs_facts_truth_test.rs`). `live_view_test.py` pins the shape:

@@ -88,7 +88,7 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   record to the START of turn T, feeds the OPPONENT's recorded turn-T choice (it could not have reacted to
   our change on the same turn), and branches OUR side on the substitute; everything after — an off-script
   forced switch on turn T included — is live. Rows are the TRAINING observation path's; both model sides
-  decide with `RLPlayer._predict_best_action`'s arithmetic on the core row (`ModelPolicy`, one B=1 forward
+  decide with the arithmetic of `RLPlayer._predict_best_action` (deleted in T27 P6; `ModelPolicy` carries it now) on the core row (`ModelPolicy`, one B=1 forward
   per decision). The opponent is RELOADED: a roster bot is the **IN-CORE Rust port** (asked only at a real
   decision, never exposed to the policy); `opponent_ckpt` loads any checkpoint (e.g. a self-play sentinel);
   else the trainee's own model stands in (a flagged `self_model_approx`, sampled). The stall rule is the

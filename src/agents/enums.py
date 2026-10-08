@@ -4,27 +4,19 @@ These four enums are *spec-defined value vocabularies* (a fixed set of Gen-3 typ
 conditions, move categories, and weathers). Our code uses their members **as keys only** — to index a
 lookup table, build a one-hot, or compare identity. It never calls methods on them (no
 ``PokemonType.damage_multiplier``, no behaviour), so routing them through this module gives every
-consumer one import to point at. The static Phase-4 guard (``strict_api_lock_test.py`` /
-``no_raw_battle_read_test.py``) forbids ``from poke_env … import {PokemonType, Status, MoveCategory,
-Weather}`` everywhere under ``agents/{observation,action,training,inference}`` *except* this module's
-own seam — a new direct poke-env enum import fails CI.
+consumer one import to point at.
 
 **Who defines them (P1 of the poke-env retirement, ``T27``).** The DEFINITIONS live HERE, and this module
-imports nothing outside the standard library, so ``agents.gen3_data`` (the data facade) and the trainer's
-whole import closure load no ``poke_env`` module. The vendored fork's four modules
-(``poke_env/battle/{pokemon_type,status,move_category,weather}.py``) are now RE-EXPORTS of these classes,
-so the identity every consumer relies on still holds in the other direction —
-``agents.enums.PokemonType is poke_env.battle.pokemon_type.PokemonType`` — and a poke-env ``Pokemon.status``
-compares equal to ``agents.enums.Status.SLP`` exactly as before (pinned by ``enums_test.py``). Before P1
-the arrow ran the other way (this module re-exported the fork's classes), which put 36 poke-env modules on
-the trainer's import path although training never calls poke-env.
+imports nothing outside the standard library. Before P1 the arrow ran the other way (this module re-exported the
+vendored fork's classes), which put 36 poke-env modules on the trainer's import path although training never
+called poke-env; from P1 to P6 the fork re-exported THESE classes; P6 deleted the fork.
 
-The classes carry the SAME members, ``auto()`` values, ``__str__`` and (for ``PokemonType`` / ``Weather``)
-the two helper methods the fork's Python battle layer calls (``damage_multiplier``, ``from_name``,
-``from_showdown_message``) — copied verbatim, because that layer still runs until P6 deletes it; our own
-code never calls them. Do not add behaviour here, and do not add ``Effect`` — poke-env's ``Effect`` enum is
-the temporal, overwrite-on-every-line volatile vocabulary that has caused real bugs; it is replaced by our
-own source-derived ``agents/observation/gen3_effects.py``.
+The classes carry the members, ``auto()`` values, ``__str__`` and (for ``PokemonType`` / ``Weather``) the helper
+methods the fork's Python battle layer called (``damage_multiplier``, ``from_name``, ``from_showdown_message``),
+copied verbatim. Production code never calls them; ``damage_multiplier`` is still the ORACLE
+``gen3_mechanics_test`` holds the fast type-chart path to. Do not add behaviour here, and do not add ``Effect`` —
+poke-env's ``Effect`` enum was the temporal, overwrite-on-every-line volatile vocabulary that caused real bugs; it
+is replaced by our own source-derived ``agents/observation/gen3_effects.py`` (pinned by ``enums_test.py``).
 """
 from __future__ import annotations
 

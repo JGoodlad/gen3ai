@@ -162,9 +162,10 @@ recorder writes it, the filename prefix carries it and every filter here is buil
 | `DRAW` | `tie` | `won`/`lost` both falsy, finished — the sim's `\|tie\|` |
 
 **A TIMEOUT ARRIVES WEARING A LOSS'S FLAGS.** The trainee forfeits at the cap
-(`inference/player._handle_stall`), so poke-env reports `lost=True`. The training reward never
-agreed — `reward_manager`'s terminal fold pays `draw_penalty` for exactly that state, keyed on the
-TURN COUNT — and `classify_result` now tests the cap **before** the loss, on the same constant
+(the stall forfeit: `agents.training.stall.StallConfig`; the Python `inference/player._handle_stall` that issued it was
+deleted in T27 P6), so the stream reports `lost=True`. The training reward never
+agreed — the terminal fold (`reward_config.terminal_breakdown`, the Rust env core's terminal) pays `draw_penalty`
+for exactly that state, keyed on the TURN COUNT — and `classify_result` now tests the cap **before** the loss, on the same constant
 (`reward_weights._TIMEOUT_TURN_CAP` == `MAX_TURNS`; parity pinned by
 `trace_result_test.test_the_classification_matches_the_training_rewards_own_timeout_rule`).
 

@@ -28,7 +28,7 @@ CAP = 250
 def test_a_timeout_is_a_DRAW_even_though_the_battle_layer_calls_it_a_loss():
     """THE defect, in one assertion.
 
-    At the turn cap the trainee forfeits (`inference/player._handle_stall` →
+    At the turn cap the trainee forfeits (the deleted `inference/player._handle_stall` →
     `ForfeitBattleOrder`), so poke-env reports `lost=True` — which is why a timeout wore a loss's
     clothes for five months. The training reward never agreed: `reward_manager`'s terminal fold
     pays `draw_penalty` for exactly this state, detected by the TURN COUNT, not by won/lost."""

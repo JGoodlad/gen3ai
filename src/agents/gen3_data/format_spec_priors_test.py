@@ -28,7 +28,7 @@ def _committed(name: str) -> dict:
 def _inputs():
     chaos = copy.deepcopy(priors.smogon_stats_raw())
     species = _committed("gen3_species.json")
-    pokedex = json.loads(repo_path("src", "poke_env", "data", "static", "pokedex", "gen3pokedex.json").read_text())
+    pokedex = json.loads(repo_path("tools", "pokemon_data_extractor", "upstream", "poke_env_static", "pokedex", "gen3pokedex.json").read_text())
     return chaos, species, pokedex, set(_committed("gen3_abilities.json"))
 
 

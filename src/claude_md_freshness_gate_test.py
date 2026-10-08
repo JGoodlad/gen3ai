@@ -164,7 +164,6 @@ def collect_path_claims() -> List[Tuple[str, int, str]]:
 # --------------------------------------------------------------------------------------------
 
 _PY_ROOTS = ("src", "tools")
-_PY_EXCLUDED = ("src/poke_env",)  # a vendored fork; its CLI is not ours to document
 
 # Non-Python entry points that a CLAUDE.md documents by flag: the Rust binaries, the Node harness
 # and bridge, and the bootstrap script.
@@ -237,8 +236,6 @@ def cli_flag_surface() -> frozenset:
             continue
         for p in root.rglob("*.py"):
             rel = str(p.relative_to(_REPO_ROOT))
-            if rel.startswith(_PY_EXCLUDED):
-                continue
             text = p.read_text(errors="replace")
             # Cheap prefilter: a file with no `"--x"` substring at all cannot contribute an
             # option string, and parsing it is pure cost. Measured: 2.9 s -> 0.7 s over ~800

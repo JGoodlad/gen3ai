@@ -1,7 +1,13 @@
 # Switch Rewards
 
-All switch-related reward signals are consolidated in `reward_manager.py`.
-Every signal is a focused function; `_compute_all_switch_bonuses` aggregates them.
+> **HISTORICAL — none of this code exists.** The shaped reward path (the BIAS terms and PBRS potentials below) was deleted on
+> 2026-09-26 (`gen3_shaped_reward_deletion_v1`) and `reward_manager.py` itself in T27 P6 slice 6d-2 (2026-10-08). The production
+> reward is the win-prob critic's win-indicator terminal, computed by the Rust env core (`src/rust_env/`;
+> `reward_config.terminal_breakdown` keeps the terminal rule). What follows is the record of what the signals were, not a
+> description of live code.
+
+All switch-related reward signals were consolidated in `reward_manager.py`.
+Every signal was a focused function; `_compute_all_switch_bonuses` aggregated them.
 
 ---
 
@@ -185,7 +191,7 @@ bridge), while a faint never raises Φ. Computed once per turn from the `LiveVie
 `encode_block(live)` the obs uses — no raw battle). `Φ(terminal)=0`, so the **±30 win/loss terminal is
 never touched**; `_prev_phi` is cleared in `reset()` (first transition adds no shaping).
 
-Guard tests (`reward_manager_test.py::TestPbrsSwitchShaping`): active-gating rewards switching a doomed
+Guard tests (`reward_manager_test.py::TestPbrsSwitchShaping`, deleted with the manager): active-gating rewards switching a doomed
 mon; a faint never raises Φ; Φ bounded; the re-gate fires with no revealed SE. Retrain-class (reward
 values change) but **no ARCH bump** — checkpoints still load; measure via the prober
 switch-prob-vs-P(KO) re-check (success = the curve un-inverts).

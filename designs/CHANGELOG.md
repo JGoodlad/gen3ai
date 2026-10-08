@@ -13024,3 +13024,29 @@ the obs-facts tables, the volatile / cant / faint-cause / type / status vocabula
 unchanged on the branch. The prober's falsifier / lookahead / better-line integration tests were retargeted onto
 seeded Rust-core traces (`core_trace_integration_test.record_core_battle`); `gen3_effects_test`'s source-derived gates
 execute each effect line on the Rust reader (`main.live.effect_scan.probe_lines`).
+
+## 2026-10-08 — POKE-ENV RETIREMENT P6 slice 6e: the vendored poke-env FORK is DELETED; T27 is DONE (no obs value changed; no ARCH_SIGNATURE / config bump)
+
+The last slice of the retirement (backlog T27). Manifest: `designs/ops/deletion_pass_manifest.md` §8.6.
+
+- **The fork** — `src/poke_env/` (80 modules + 13 test files, 15,086 + 2,482 Python lines) and its shadowing gate
+  `src/poke_env_fork_gate_test.py`. Nothing of ours imported it after slice 6d-2 but nine fork-oracle tests and the
+  acquisition layer.
+- **The acquisition layer** reads poke-env's STATIC DATA from a frozen copy,
+  `tools/pokemon_data_extractor/upstream/poke_env_static/` (29 JSON files, byte-identical blobs), and computes the type
+  chart itself (`sync.build_type_chart`). `sync.py --out-dir <tmp>` regenerates all 8 `data/pokemon/` files
+  byte-identically with the fork gone; no `data/` file changed.
+- **The fork-oracle tests** now hold OUR tables to values frozen from the fork at its last commit (`enums_test`), to the
+  Rust reader's effect vocabulary (`gen3_effects_test`: `tables.rs`'s 227 `EFFECTS` names, equal to the fork's `Effect`;
+  the activation lines read on the live Rust reader) and to the frozen upstream move data through `Move`'s four
+  derivations ported verbatim (`bot_tables_test`; equal to `Move` on all 373 rows, checked before the deletion). The
+  websocket front-end tests play two `main.live` clients.
+- **New / changed gates:** `src/poke_env_absent_gate_test.py` (static: no `poke_env` package in `src/` / `tools/` /
+  `scripts/`, none installed, neither env file installs one); the enum gate is `src/enum_str_compare_gate_test.py`,
+  re-scoped to the enums `agents.enums` defines; `poke_env_free_entry_points_test` imports EVERY module of the tree
+  (1,200+, test files included) under the blocker; the import allowlist is EMPTY (frozen 0 / 0) and the scanner no
+  longer prunes a `poke_env` directory. `pyproject.toml` ships `agents` / `main` / `utils`; the `src/poke_env` excludes
+  left ruff, the file-size / freshness / stub gates, `land.sh`, `conftest.py` and `bootstrap.sh`.
+- **The one process that still runs poke-env** is the Metamon peer script, UPSTREAM poke-env in Metamon's own
+  interpreter (`PEER_PROCESS_PERMANENT`).
+- `live_view.UNKNOWN_ITEM` / `_UNKNOWN_ITEMS` (kept only for the fork pin) deleted.

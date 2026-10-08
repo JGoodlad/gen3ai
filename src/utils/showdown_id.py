@@ -3,8 +3,8 @@
 ``to_id_str("King's Rock") == "kingsrock"``: the lower-cased alphanumerics of a name, which is exactly how
 Showdown derives an id (``toID``). The battle layer, the observation encoders, the BC log reader and the data
 facade's callers all key their tables by it. It used to be imported from ``poke_env.data.normalize``, which put
-the whole poke-env package on the import path of every one of them; the vendored fork's
-``poke_env/data/normalize.py`` now re-exports THIS function, so the two can never disagree.
+the whole poke-env package on the import path of every one of them; from P1 the vendored fork re-exported THIS
+function, and P6 deleted the fork.
 """
 from __future__ import annotations
 

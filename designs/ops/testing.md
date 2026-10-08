@@ -279,7 +279,7 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 | `*_test.py` | Nothing — pure unit tests with mocks | — |
 | `*_integration_test.py` | An out-of-process dependency, no live server. **The name is historical and no longer implies the tier** — these split across `integration` (light), `sim` (bridge battles) and `browser` (headless chrome, ~19 s, routine since 2026-09-29). Read the file's `pytestmark`, not its name | `integration` and/or `sim` / `browser` / `slow` |
 | `*_fuzz_test.py` | real battles with **no live server** — on the Rust core today (the env core's seeded rows, `utils.rust_env.fixture_battles`, or `core_events`); the Python in-process bridge runner they used to drive (`local_battle_runner`) is deleted (T27 P6 slice 6d-2) | none — run directly as scripts (no `test_*` funcs, so `pytest` imports but collects nothing) |
-| `*_fuzz_e2e_test.py` | A **live Showdown server** — fuzz whose checks need real async-server timing (e.g. `effectiveness_fuzz_e2e_test`, whose TurnDelta-vs-BattleContext effectiveness window is decision-timing-sensitive) | run directly as scripts |
+| `*_fuzz_e2e_test.py` | A **live Showdown server** — fuzz whose checks need real async-server timing (`effectiveness_fuzz_e2e_test`, the former example, was deleted with `poke_env_gaps/` in T27 P6) | run directly as scripts |
 | `*_e2e_test.py` | A **live Showdown server** on localhost:8000 | `@pytest.mark.e2e` (scripts only, run directly) |
 | `*_benchmark.py` | `deps/pokemon-showdown` bridge (no live server) — **performance profiling, not pass/fail**: plays a real battle in-process, then `cProfile`s a hot path | none — run directly as scripts (no `test_*` funcs → `pytest` collects nothing). Place in a dir with no stdlib-shadowing names (e.g. `training/`, not `observation/`) |
 
@@ -401,7 +401,7 @@ rots. Both carry `static` (the budget tier above — they run even in the fast i
 | Gate | Runs | Scope | Measured |
 |---|---|---|---|
 | `src/agents/model/mypy_gate_test.py` | `python -m mypy` (**no path argument** — the scope comes from `mypy.ini`) | `src/agents/model` **+ `src/agents/observation`**, per `mypy.ini`'s `files =` | **0.28 s warm**, 19.6 s cold (32.6 s on a loaded box, 2026-10-02) |
-| `src/ruff_gate_test.py` | `ruff check src/agents src/main src/utils --select F,E9 --exclude src/poke_env --exclude src/rust_sim` | `agents/` + `main/` + `utils/` | **0.10 s** |
+| `src/ruff_gate_test.py` | `ruff check src/agents src/main src/utils --select F,E9 --exclude src/rust_sim` | `agents/` + `main/` + `utils/` | **0.10 s** |
 
 They are complementary, not overlapping: mypy is deep over a **declared short list** of packages
 (`mypy.ini` sets `files = src/agents/model, src/agents/observation` with `follow_imports = silent`,
@@ -483,6 +483,8 @@ The census behind it — what each big `CLAUDE.md` is made of and what size is r
 
 ### The POKE-ENV IMPORT ratchet (`src/poke_env_import_gate_test.py`) — a static gate, shrink-only (T27 / P0, 2026-10-06)
 
+**END STATE (T27 P6, 2026-10-08): the allowlist is EMPTY (frozen counts 0 / 0) and the vendored fork `src/poke_env/` is DELETED** — nothing in `src/` / `tools/` / `scripts/` imports `poke_env`. The gate stays as the ratchet that keeps it so, beside `src/poke_env_absent_gate_test.py` (no `poke_env` package under the scanned roots, none in site-packages, neither env file installing one) and the whole-surface blocker test (§ below). The history of the ratchet follows.
+
 **Why.** The owner's 2026-10-06 direction is to retire poke-env to ONE stack ("not maintain the dual stack": every
 fact the Rust reader already reads is a second copy in the Python battle layer — the change amplification). The plan is
 `designs/research_state/measurements/pokeenv_and_hotpath_survey_2026-10-06/README.md` §A4 (backlog `T27`, phases P0–P6);
@@ -498,7 +500,7 @@ out with `GEN3AI_SKIP_POKE_ENV_IMPORT_GATE=1`. The scanner's own shape tests are
 **What counts as an importer.** `import poke_env[.x]` / `from poke_env[.x] import …` at module level, inside a function
 (LAZY) or under `if TYPE_CHECKING:`; and a literal poke-env module STRING handed to `import_module` / `__import__` /
 `patch` / `monkeypatch.setattr` (so a test whose only contact is a patch target still counts). Scope is `src/`, `tools/`,
-`scripts/` minus the vendored fork (`src/poke_env/`) and build dirs; `designs/` measurement scripts are frozen history
+`scripts/` minus build dirs (the vendored fork `src/poke_env/` was pruned until it was deleted in P6; the scanner no longer prunes a `poke_env` directory, so a re-vendored copy reads as new importers); `designs/` measurement scripts are frozen history
 and out of scope. Blind spots: a module name built at run time; shell `python -c "import poke_env"` (bootstrap's smoke).
 
 **THE SHRINK RULE.**
@@ -526,11 +528,11 @@ record; `GEN3AI_POKE_ENV_BLOCK_LOG` carries the record across child interpreters
 production argv), `main.h2h`, `main.plateau`, the launcher, `checkargs` and the offline meters with the blocker
 installed (routine tier); (2) the blocker's own teeth; (3) a real `main.h2h` edge on the Rust eval engine (`sim`);
 (4) the CPU `--debug --steps 10000 --debug-eval --eval-freq 4000` smoke through `poke_env_blocker.main` (`slow`). The
-owned seams that made it possible are `agents/enums.py` (the four value-enums, DEFINED there; the fork re-exports them),
+owned seams that made it possible are `agents/enums.py` (the four value-enums, DEFINED there; the fork re-exported them until it was deleted),
 `utils/showdown_id.py` (`to_id_str`), `utils/team_packing.py` (the paste <-> packed machinery),
 `agents/training/eval_schedule.py` + `eval_quota.py` (the eval schedule, roster names and forensic quota) and
-`main/train/matchup_setup.TRAIN_BOT_NAMES` (the training roster by name). A test that must read the fork as an ORACLE
-(identity pins, parity fuzzes) goes in an already-listed file — `src/agents/enums_test.py` holds the P1 seam pins.
+`main/train/matchup_setup.TRAIN_BOT_NAMES` (the training roster by name). A test that had to read the fork as an ORACLE
+(identity pins, parity fuzzes) went in an already-listed file — `src/agents/enums_test.py` holds the P1 seam pins; since P6 deleted the fork its oracle values are FROZEN there, and the whole import surface is run under the blocker by `src/poke_env_free_entry_points_test.py::test_the_whole_import_surface_loads_with_poke_env_blocked`.
 
 **P5 (2026-10-07): the allowlist 138 -> 136 (48 non-test + 88 test), and the PROBER runs poke-env-free.** The same test
 file (5) builds a real Rust-eval core-trace run plus a current-architecture checkpoint and RUNS every JSON-CLI command and

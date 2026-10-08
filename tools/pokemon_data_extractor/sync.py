@@ -1,9 +1,10 @@
 """Regenerate the gen-N Pokémon data mappings under data/pokemon/.
 
 These mappings are the source of truth consumed by the observation encoders
-(src/agents/observation/). They are *derived* from the poke-env static data
-shipped in src/poke_env/data/static/ plus the Pokémon Showdown source tree in
-deps/pokemon-showdown/. This tool rebuilds them so the derivation is
+(src/agents/observation/). They are *derived* from the static JSON poke-env shipped (frozen
+under tools/pokemon_data_extractor/upstream/poke_env_static/ since the vendored fork was
+deleted, P6 of the poke-env retirement — see upstream/README.md) plus the Pokémon Showdown
+source tree in deps/pokemon-showdown/. This tool rebuilds them so the derivation is
 reproducible instead of a one-off hand edit.
 
 Extracts (one --datasets entry each; `all` rebuilds every file):
@@ -11,7 +12,7 @@ Extracts (one --datasets entry each; `all` rebuilds every file):
   - moves       -> data/pokemon/gen{N}_moves.json        (poke-env static moves; incl. `accuracy`)
   - species     -> data/pokemon/gen{N}_species.json      (poke-env pokedex; num + base stats)
   - items       -> data/pokemon/gen{N}_items.json        (Showdown items.ts; name + num)
-  - type_chart  -> data/pokemon/gen{N}_type_chart.json   (GenData type chart; effectiveness)
+  - type_chart  -> data/pokemon/gen{N}_type_chart.json   (the static typechart; effectiveness)
   - natures     -> data/pokemon/gen{N}_natures.json      (poke-env natures; stat multipliers)
 
 These are the runtime's source of truth (read via the `agents.gen3_data` facade); rebuilding
@@ -34,7 +35,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 
 
 def _static(*parts):
-    return os.path.join(REPO_ROOT, "src", "poke_env", "data", "static", *parts)
+    return os.path.join(REPO_ROOT, "tools", "pokemon_data_extractor", "upstream", "poke_env_static", *parts)
 
 
 def to_id_str(name):
@@ -1339,12 +1340,25 @@ def build_type_chart(gen):
     """Dump the gen-N type-effectiveness chart so the runtime reads it from data/
     instead of constructing it live from poke-env's `GenData` at import.
 
-    Emitted byte-for-byte as `GenData.from_gen(gen).type_chart` produces it
-    (`{DEFENDING_TYPE: {ATTACKING_TYPE: multiplier}}`, enum-name keys), so the
-    consumer (`gen3_mechanics._CHART`) is identical whether it loads this file or
-    the old `GenData` object — pinned by `gen3_mechanics_test.py`."""
-    from poke_env.data import GenData
-    return GenData.from_gen(gen).type_chart
+    Emitted byte-for-byte as poke-env's `GenData.from_gen(gen).type_chart` produced it
+    (`{DEFENDING_TYPE: {ATTACKING_TYPE: multiplier}}`, upper-cased keys) — the same rule,
+    ported here when the fork was deleted (P6): every type defends at 1.0 against every type,
+    then each `damageTaken` code 0 / 1 / 2 / 3 sets 1 / 2 / 0.5 / 0 (a code naming a
+    non-type, e.g. a weather, is skipped). Pinned by `gen3_mechanics_test.py` and by the
+    byte-identical regeneration of `data/pokemon/gen3_type_chart.json`."""
+    with open(_static("typechart", f"gen{gen}typechart.json"), "r") as f:
+        json_chart = json.load(f)
+    types = [str(t).upper() for t in json_chart]
+    chart = {t1: {t2: 1.0 for t2 in types} for t1 in types}
+    code_to_mult = {0: 1, 1: 2, 2: 0.5, 3: 0}
+    for t, data in json_chart.items():
+        for other, taken in data["damageTaken"].items():
+            if other.upper() not in types:
+                continue
+            if taken not in code_to_mult:
+                raise ValueError(f"typechart gen{gen}: {t} damageTaken[{other}] = {taken!r} is not 0/1/2/3")
+            chart[t.upper()][other.upper()] = code_to_mult[taken]
+    return chart
 
 
 # --------------------------------------------------------------------------- #
@@ -1485,10 +1499,13 @@ def main(argv=None):
         help="Which mappings to regenerate (default: all)",
     )
     parser.add_argument("--stdout", action="store_true", help="Print JSON instead of writing files")
+    parser.add_argument("--out-dir", default=None,
+                        help="write the files here instead of data/pokemon/ (a byte-identity check regenerates "
+                             "into a TEMP dir and diffs it against the committed files — no data/ change)")
     args = parser.parse_args(argv)
 
     datasets = list(_BUILDERS) if "all" in args.datasets else args.datasets
-    out_dir = os.path.join(REPO_ROOT, "data", "pokemon")
+    out_dir = args.out_dir or os.path.join(REPO_ROOT, "data", "pokemon")
 
     for name in datasets:
         filename_tmpl, builder = _BUILDERS[name]

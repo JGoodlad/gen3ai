@@ -1,7 +1,7 @@
 """Tests for the source-derived gen3 effect allowlists + crash-don't-drop encoders.
 
 The derivation test re-derives the volatile set from Showdown move data ∩ the project's
-gen3 move set (filtered to poke-env's Effect enum), so the curated allowlist can't
+gen3 move set (filtered to the reader's effect vocabulary), so the curated allowlist can't
 silently drift from the data. The behaviour tests pin crash-don't-drop: an unknown
 volatile / cant reason RAISES rather than being dropped.
 """
@@ -48,14 +48,25 @@ def _scan_volatiles(ts_path, allowed_ids) -> set[str]:
     return found
 
 
+def _reader_effect_ids() -> set[str]:
+    """The volatile ids the READER can surface: every member of the effect vocabulary in the Rust reader's frozen
+    tables (`src/rust_sim/src/present/tables.rs` ``EFFECTS`` — Rust-owned since P1; it equalled the deleted fork's
+    ``Effect`` enum member for member, 227 names, at the fork's last commit), in ``LiveView``'s id form."""
+    import re
+
+    text = (_ROOT / "src" / "rust_sim" / "src" / "present" / "tables.rs").read_text()
+    names = re.findall(r'EffectRow \{ name: "([A-Z0-9_]+)"', text)
+    assert len(names) >= 200, f"only {len(names)} effect names parsed from tables.rs — the table moved"
+    return {n.lower().replace("_", "") for n in names}
+
+
+
 def _gen3_move_driven_volatiles() -> set[str]:
     """Re-derive every volatile a gen3-legal MOVE or ABILITY can set, filtered to ids
     poke-env's ``Effect`` enum can surface (only those reach ``mon.effects`` →
     LiveView.volatiles). Scanning abilities too is essential — Flash Fire's volatile
     comes from abilities.ts, not moves.ts (the gap the e2e fuzz caught)."""
-    from poke_env.battle.effect import Effect
-
-    enum_ids = {e.name.lower().replace("_", "") for e in Effect}
+    enum_ids = _reader_effect_ids()
     move_ids = set(json.load(open(_ROOT / "data/pokemon/gen3_moves.json")).keys())
     ability_ids = set(json.load(open(_ROOT / "data/pokemon/gen3_abilities.json")).keys())
     found = _scan_volatiles("deps/pokemon-showdown/data/moves.ts", move_ids)
@@ -79,12 +90,10 @@ def _gen3_ability_activation_volatiles() -> set[str]:
     fail CI here instead of crashing 6 hours into training. ``flashfire`` is excluded by
     construction: it emits ``-start``, not ``-activate`` (it's a persistent boosted state,
     not a one-shot activation), and lives in the binary list."""
-    from poke_env.battle.effect import Effect
-
     def _to_id(s: str) -> str:
         return "".join(c for c in s.lower() if c.isalnum())
 
-    enum_ids = {e.name.lower().replace("_", "") for e in Effect}
+    enum_ids = _reader_effect_ids()
     ability_ids = set(json.load(open(_ROOT / "data/pokemon/gen3_abilities.json")).keys())
     txt = (_ROOT / "deps/pokemon-showdown/data/abilities.ts").read_text(
         encoding="utf-8", errors="replace"
@@ -496,32 +505,33 @@ def test_status_immunity_abilities_all_have_volatile_slot():
 
 
 def test_ability_activation_volatiles_resolve_to_effect_enum():
-    """Every ability-activation id must resolve to a REAL poke-env ``Effect`` member, never
-    ``Effect.UNKNOWN`` — checked two ways: (1) as the id ``LiveView.volatiles`` actually
-    emits (``Effect.name`` id-form), and (2) via poke-env's own protocol resolution of the
-    line the ability emits, ``Effect.from_showdown_message('ability: <Name>')``. If an id
-    falls through to ``Effect.UNKNOWN`` it surfaces as volatile id ``'unknown'`` and the
-    allowlist's slot never matches → crash-don't-drop. This is the ``magmaarmor`` lesson
-    (it once mapped to ``Effect.UNKNOWN`` until ``Effect.MAGMA_ARMOR`` was added to the fork
-    enum) turned into a standing CI guard. Pure unit — needs only data/ + the fork enum."""
+    """Every ability-activation id must be a member of the reader's effect vocabulary (``_reader_effect_ids``), never
+    ``unknown`` — the ``magmaarmor`` lesson (it once fell through to ``Effect.UNKNOWN``) as a standing guard. The
+    protocol half — the line the ability emits read by the LIVE reader — is
+    ``test_ability_activation_lines_read_clean_on_the_rust_reader`` below (P6: the fork that resolved it is deleted)."""
     from agents.observation.gen3_effects import _ABILITY_ACTIVATION_VOLATILES
-    from poke_env.battle.effect import Effect
     from agents import gen3_data
 
-    enum_ids = {e.name.lower().replace("_", "") for e in Effect}
+    enum_ids = _reader_effect_ids()
     for vid in _ABILITY_ACTIVATION_VOLATILES:
-        assert vid in enum_ids, (
-            f"{vid!r} matches no poke-env Effect member id — LiveView would surface it as "
-            f"'unknown' (Effect.UNKNOWN); add the member to the fork enum (effect.py)."
-        )
-        ab = gen3_data.abilities.get(vid)
-        assert ab is not None, f"{vid!r} is not a known gen3 ability (data/pokemon)"
-        # The exact path poke-env walks for |-activate|mon|ability: <Name>.
-        eff = Effect.from_showdown_message(f"ability: {ab.name}")
-        assert eff is not Effect.UNKNOWN, (
-            f"poke-env resolves '-activate|...|ability: {ab.name}' to Effect.UNKNOWN — the "
-            f"fork enum is missing this ability; add it to effect.py (the magmaarmor fix)."
-        )
+        assert vid in enum_ids, f"{vid!r} matches no reader effect id — it would surface as 'unknown'"
+        assert gen3_data.abilities.get(vid) is not None, f"{vid!r} is not a known gen3 ability (data/pokemon)"
+
+
+@pytest.mark.sim
+@pytest.mark.integration
+def test_ability_activation_lines_read_clean_on_the_rust_reader():
+    """``|-activate|<mon>|ability: <Name>`` for every ability-activation volatile reads AND encodes clean on the live
+    reader (``main.live.effect_scan.probe_lines``: the spectator chain + an encode) — the path the deleted fork's
+    ``Effect.from_showdown_message`` stood in for."""
+    from agents.observation.gen3_effects import _ABILITY_ACTIVATION_VOLATILES
+    from agents import gen3_data
+    from main.live import effect_scan
+
+    lines = [f"|-activate|{effect_scan.TARGET}|ability: {gen3_data.abilities.get(v).name}"
+             for v in sorted(_ABILITY_ACTIVATION_VOLATILES)]
+    assert lines, "no ability-activation volatiles declared"
+    assert effect_scan.probe_lines(lines) == {}
 
 
 # --------------------------------------------------------------------------- #

@@ -167,9 +167,9 @@ been exonerated by it.
 
 | what draws | when | seed kwarg | env hook |
 |---|---|---|---|
-| **every player's** `choose_random_move` + `DEFAULT_CHOICE_CHANCE` (`poke_env.Player`) | per decision | `rng_seed=` | **`$GEN3AI_PLAYER_SEED`** |
+| **every player's** `choose_random_move` + `DEFAULT_CHOICE_CHANCE` (`poke_env.Player`; the Python roster is deleted, T27 P6 — the Rust bots are seeded by the env core) | per decision | `rng_seed=` | **`$GEN3AI_PLAYER_SEED`** |
 | the **team draw** (`Gen3Teambuilder`) | per battle | `rng_seed=` | **`$GEN3AI_TEAM_SEED`** |
-| the **policy's action sample** (`RLPlayer`, torch's default generator) | per decision, when `stochastic` | `policy_seed=` | **`$GEN3AI_POLICY_SEED`** |
+| the **policy's action sample** (`RLPlayer`, deleted in T27 P6; today the inference service / `main.anchors.core_side`, torch's default generator) | per decision, when `stochastic` | `policy_seed=` | **`$GEN3AI_POLICY_SEED`** |
 | the **self-play pool draw** (`SnapshotPool.sample`) | per episode | `rng_seed=` | **`$GEN3AI_POOL_SEED`** |
 | the two stallers' **Protect coin** (`agents/opponents.py`, deleted in P6 slice 6d-1 — the Rust bots draw the same stream, `bots::rng`) | conditional | `protect_seed=` | **`$GEN3AI_STALLER_SEED`** |
 
@@ -390,7 +390,7 @@ snapshot is promoted by copy, not re-saved). Forensic traces land under
 `battle_recorder.py`): `<outcome>_s<shard>_NNN_summary.json` (the human-readable per-decision dump —
 each invocation also carries a **`belief`** block, the model's top-`BELIEF_TOPK` (3) most-likely species
 per still-HIDDEN opp slot, present ONLY when the hidden-opponent belief is on and a slot is un-revealed;
-`RLPlayer._decode_belief` → `inference/belief_decode`, see `src/agents/model/CLAUDE.md` — and an
+the belief decode (`inference/belief_decode`; formerly `RLPlayer._decode_belief`, deleted in T27 P6), see `src/agents/model/CLAUDE.md` — and an
 **`opp_intent`** block, the v67 `α`/`β` heads' read of what the OPPONENT was about to do: `α` a ranked
 list of NAMED believed moves plus `SWITCH`, `β` the candidate switch-ins each named by the model's own
 species posterior. Present only under `--opp-intent-coef>0`, so an intent-off run's trace is unchanged;
@@ -413,8 +413,7 @@ On a BRIDGE run each trace also gets a fourth sibling,
 PRNG seed + both packed teams + the raw command log), captured at the bridge layer and joined to
 the trace by battle tag (`utils/bridge/reconstruction.py`). It makes the battle fully replayable
 and turn-re-rollable offline (`replay_battle` / `reroll_turn`), and
-`agents.training.obs_materializer` can rebuild the trainee's one-sided obs from it bit-for-bit
-(guarded by `obs_roundtrip_fuzz_test.py`). It is referee-view data in a **separate artifact** on
+the prober's core walk (`main.prober.core_walk`) rebuilds the trainee's one-sided obs from it on the Rust core (the Python `obs_materializer` and `obs_roundtrip_fuzz_test.py` were deleted in T27 P6). It is referee-view data in a **separate artifact** on
 purpose — nothing in the obs/training path reads it (the one-sided/omniscient wall; see the bridge
 README). Websocket eval simply doesn't produce it (degrades gracefully). 🚨 **THE RESULT VOCABULARY IS `WIN` | `LOSS` | `DRAW`** (`gen3_trace_result_v2`,
 `agents/training/trace_result.py`, pure stdlib — one declaration the recorder writes and the
@@ -427,9 +426,9 @@ form, so a captured draw is `draw_s<shard>_NNN_*`. A `DRAW` carries **`meta.draw
 | `tie` | `won`/`lost` both falsy, `finished` | the sim emitted `\|tie\|` |
 
 🚨 **THE DEFECT THIS CLOSED (2026-09-07).** A timeout arrives wearing a loss's flags — the trainee
-forfeits at the cap (`inference/player._handle_stall`), so poke-env reports `lost=True` — and was
-written as an ordinary `loss_*`. The **training reward never agreed**: `reward_manager`'s terminal
-fold pays `draw_penalty` for exactly that state, detected by the TURN COUNT, which is also why the
+forfeits at the cap (the stall forfeit; `inference/player._handle_stall` until T27 P6), so the stream reports `lost=True` — and was
+written as an ordinary `loss_*`. The **training reward never agreed**: the terminal
+fold (then `reward_manager`'s, now `reward_config.terminal_breakdown` and the Rust env core's) pays `draw_penalty` for exactly that state, detected by the TURN COUNT, which is also why the
 G7 kill clause survived (it keys on `meta.turns`, never on the label). A true TIE was worse: it
 matched neither quota branch, so its buffered capture was **dropped** — no file, no count, nothing
 on disk to question. Measured over the whole archive: **145,173 traces, every one `win_*` or

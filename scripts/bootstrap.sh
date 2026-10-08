@@ -484,11 +484,11 @@ else
     if [ "$IS_WORKTREE" -eq 0 ]; then
         info "the editable install (no PYTHONPATH — this is the point of step 3) ..."
         env -u PYTHONPATH "$PY" -c "
-import agents, main, utils, poke_env, pathlib
-for m in (agents, main, utils, poke_env):
+import agents, main, utils, pathlib
+for m in (agents, main, utils):
     assert str(pathlib.Path(m.__file__).resolve()).startswith('$REPO_ROOT/src'), m
 "
-        did "import agents / main / utils / poke_env all resolve to $REPO_ROOT/src"
+        did "import agents / main / utils all resolve to $REPO_ROOT/src"
     fi
 
     export PYTHONPATH="${PYTHONPATH:-}:$REPO_ROOT/src"
@@ -497,9 +497,9 @@ for m in (agents, main, utils, poke_env):
     "$PY" -m pytest src/ruff_gate_test.py src/agents/model/mypy_gate_test.py -q
     did "static gates pass"
 
-    info "the import-precedence gates (fork shadowing + PYTHONPATH vs .pth) ..."
-    "$PY" -m pytest src/poke_env_fork_gate_test.py src/packaging_gate_test.py -q
-    did "the vendored fork wins, and PYTHONPATH still outranks the editable install"
+    info "the import-precedence gates (no poke_env anywhere + PYTHONPATH vs .pth) ..."
+    "$PY" -m pytest src/poke_env_absent_gate_test.py src/packaging_gate_test.py -q
+    did "no poke_env package in the tree or the env, and PYTHONPATH still outranks the editable install"
 
     # A SLICE, not the whole tier: ~600 tests over the obs encoder, the action layer, the
     # event-sourced battle layer and the shared utils — the four packages that actually break
