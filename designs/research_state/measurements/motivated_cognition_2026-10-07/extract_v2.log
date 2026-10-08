@@ -1,0 +1,21 @@
+=== 2026-10-07T19:04:54-07:00 start
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-motivcog-3938936.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[bank] 20712 rows re-encoded in 43s; gate True (19964/19964)
+[done] blob_s1001 (blob) 13s
+[done] blob_s1002 (blob) 13s
+[done] blob_s1003 (blob) 14s
+[done] blob_s1004 (blob) 13s
+[done] blob_s1005 (blob) 13s
+[done] blob_s1006 (blob) 13s
+[done] blob_s1007 (blob) 14s
+[done] blob_s1008 (blob) 14s
+[done] fm_s1001 (fixed_mass) 20s
+[done] fm_s1002 (fixed_mass) 20s
+[done] fm_s1003 (fixed_mass) 20s
+[done] fm_s1004 (fixed_mass) 21s
+[done] fm_s1005 (fixed_mass) 20s
+[done] fm_s1006 (fixed_mass) 19s
+[done] fm_s1007 (fixed_mass) 18s
+[done] fm_s1008 (fixed_mass) 18s
+[mem_cap] done: gen3ai-capped-motivcog-3938936.scope exit 0 · peak 5.24 GB of cap 24.00 GB (22%) · not OOM-killed
+=== 2026-10-07T19:10:02-07:00 DONE

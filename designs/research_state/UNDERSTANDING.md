@@ -585,6 +585,30 @@ on ladder teams and does not beat it even on the pool. 15.8% of hidden ladder sl
 in a species the opponent does not have. The effect on WIN RATE is unmeasured. [ledger 2026-09-24 ·
 *BELIEF-HEAD CALIBRATION OFF THE POOL*]
 
+**ON the pool, the shaping-mode heads are mostly honest. The exception is BLOB's move head, whose
+error leans toward the action taken ("motivated cognition").** This was read on the 16 X5 finals at
+their training pin, Lane S bank, against the Smogon prior each head fuses with.
+
+- **Item, nature, HP-type and EV heads:** far better than their priors in both arms and near-calibrated.
+  Item top-1 accuracy is 0.86 vs 0.76; HP type 0.85 vs 0.64, calibrated; nature is mildly over-confident.
+- **Choice Band:** the item head removes most of the prior's selection gap, the opposite of
+  self-serving.
+- **The revealed-slot MOVE head over-predicts hidden moves in both arms.** Blob's is WORSE than its
+  prior (Brier 0.0330 vs 0.0292); fixed_mass's ties it.
+- **Blob's move head is self-serving.** It over-states the opponent active's hidden super-effective
+  threats by +0.30 expected moves where policies leave, vs +0.18 where they stay. That is a registered
+  BITING, Δ_delta −0.136 [−0.159, −0.113]; fixed_mass shows −0.014, NOT DETECTED.
+- **What it is not:** the policy acting on its own head's noise. The gap survives a split made by a
+  different seed's, or the other arm's, policy.
+- **What it may be:** route C (PPO into the head) and a label loss too weak (coef 0.05) to hold
+  calibration remain UNSEPARATED. The move head is `shaping` in both arms, yet only blob's bends. The
+  causal test is a training contrast: `label_only` on the move head, a belief-head extension of X20.
+
+[SIGNIFICANT (registered rule: t95 and battle-bootstrap CIs exclude 0, |Δ_delta| ≥ 0.02) for T1-blob /
+NOT DETECTED for species presence and Choice Band, and for T1 in fixed_mass · ledger 2026-10-07 ·
+*MOTIVATED COGNITION in the shaping-mode belief heads* · meas:
+[`measurements/motivated_cognition_2026-10-07/`](measurements/motivated_cognition_2026-10-07/README.md)]
+
 ### 2.8 The architecture account is CLOSED
 
 Every leg, all NOT DETECTED or REFUTED [meas: `arch_transfer_2026-09-05/`]:

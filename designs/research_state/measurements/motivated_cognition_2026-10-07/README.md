@@ -159,3 +159,143 @@ is more negative with p < 0.05.
 | `probe_once.py` | the shape-only feasibility probe |
 | `extract.py` | per checkpoint: the forward, per-row self-serving arrays → `rows/<label>.npz`, per-head calibration aggregates → `rows/<label>.calib.json`; resumable (skips a label whose outputs exist) |
 | `analyze.py` | the across-seed / bootstrap read and the decision rule → `result.json`, `result.md` |
+
+---
+
+## 1. What ran (2026-10-07, after §0 was committed at `742ccc95`)
+
+- `extract_all.sh` (detached, under `mem_cap.sh 24`): `extract.py` read all 16 finals at the pin.
+  The bank was re-encoded in 50 s, with obs as recorded on 19,964 of 19,964 checked rows. Each
+  checkpoint took 13–20 s on 4 threads, peak 5.2 GB. Then `analyze.py` produced `result.json` and
+  `result.md`.
+- Eligible rows: 17,728 per seed (17,727 for two fixed_mass seeds). Rule-8 argmax ties excluded:
+  0 for blob, 1 row each in fm s1004 and s1005. The policies STAY on 72–82 % of eligible rows.
+- Rows per test, per seed: T1 14,500 (≈ 10,900–11,800 STAY / 2,700–3,600 SWITCH), T2 13,308, T3 2,446.
+- `rows/` (the registered inputs) and `rows_v2/` (the §3 rerun, a superset) are archived at
+  `~/gen3ai_archive/motivated_cognition_2026-10-07/`, with sha256 in `rows_sha256.txt`. Only the
+  per-checkpoint `*.calib.json` aggregates are committed. To rerun `analyze.py` / `explore.py`, copy
+  the archive's `rows/` and `rows_v2/` back here.
+- Files added after §0: `extract_all.sh` (the detached driver; `ROWS=rows_v2` for §3), `explore.py`
+  → `explore.md` / `explore.json` (§3), `rows_sha256.txt`, `extract.log` / `extract_v2.log`. After
+  §0, `extract.py` gained only the §3 arrays (`s1_*`, `y1`, `p_stay`, `u_*`). The registered arrays
+  are unchanged (D0).
+
+## 2. Result, the registered read (`result.md`)
+
+### 2.1 The self-serving tests: **motivated cognition BITES, on ONE head in ONE arm**
+
+| test | arm | Δ_arm | Δ_prior | **Δ_delta** [t95] [boot95] | verdict |
+|---|---|---|---|---|---|
+| T1 move threat to our active, STAY − SWITCH | **blob** | −0.122 | +0.014 | **−0.136 [−0.159, −0.113] [−0.153, −0.121]** | **BITING** |
+| T1 | fixed_mass | −0.010 | +0.004 | −0.014 [−0.029, +0.001] [−0.020, −0.007] | NOT DETECTED (t-CI straddles 0; below M = 0.02) |
+| T2 hidden counters to the committed mon vs the alternatives | blob | +0.007 | −0.003 | +0.010 [+0.001, +0.018] [+0.001, +0.018] | NOT DETECTED (anti-direction; the Δ_arm CI straddles 0; below M) |
+| T2 | fixed_mass | −0.007 | −0.004 | −0.003 [−0.008, +0.001] [−0.015, +0.008] | NOT DETECTED |
+| T3 Choice Band on the opp active, STAY − SWITCH | blob | −0.006 | −0.032 | +0.026 [+0.017, +0.034] [+0.010, +0.040] | NOT DETECTED (the head REMOVES ~80 % of the prior's selection gap) |
+| T3 | fixed_mass | −0.024 | −0.040 | +0.015 [+0.004, +0.027] [+0.002, +0.030] | NOT DETECTED (the head removes 39 % of it) |
+
+**What T1-blob means in plain numbers** (row means, averaged over the 8 seeds). Θ is the opponent
+active's unrevealed super-effective moves against our active, counted in expected moves:
+
+| | blob head | Smogon prior | truth | fixed_mass head | prior | truth |
+|---|---|---|---|---|---|---|
+| when the policy STAYS | 0.417 | 0.346 | 0.236 | 0.369 | 0.348 | 0.240 |
+| when the policy SWITCHES | **0.772** | 0.565 | 0.468 | 0.593 | 0.558 | 0.454 |
+| over-statement, STAY → SWITCH | +0.18 → **+0.30** | +0.11 → +0.10 | | +0.13 → +0.14 | +0.11 → +0.10 | |
+
+The blob move head over-states the opponent's hidden threats everywhere. It over-states them by
+two-thirds more on the rows where the policy leaves than on the rows where it stays, so its error
+leans the way that justifies the action taken. Neither the prior nor the fixed_mass head shows this.
+
+**Blob vs fixed_mass (§0.5):** on T1, blob − fm Δ_delta = −0.122, Welch t −10.5, p < 0.001, so
+**blob is more exposed**. T2 differs in the ANTI direction (+0.013, p 0.012, not "more exposed").
+T3 does not differ (p 0.11).
+
+### 2.2 Calibration per head (across-seed mean; CIs in `result.md`)
+
+| head | blob | fixed_mass | Smogon prior | reading |
+|---|---|---|---|---|
+| species presence (ECE / Brier / log) | 0.0026 / 0.0060 / 0.0211 | **0.0011 / 0.0046 / 0.0151** | 0.0009 / 0.0060 / 0.0223 | fixed_mass beats the prior on Brier and log score (and blob, p < 0.001). Blob ties the prior on Brier, but its ECE is ~3× the prior's |
+| moves of REVEALED mons (ECE = CITL / Brier / log) | **+0.043** / 0.0330 / 0.124 | +0.030 / 0.0290 / 0.111 | +0.024 / 0.0292 / 0.110 | all three OVER-predict hidden moves (CITL CI > 0). **Blob is WORSE than its Smogon prior** on every score; fixed_mass ≈ the prior (Brier Δ −0.0001 [−0.0010, +0.0008]) |
+| item (top-1 ECE / CITL / Brier / acc) | 0.028 / −0.023 / 0.221 / 0.858 | 0.029 / −0.018 / 0.229 / 0.853 | 0.081 / −0.013 / 0.359 / 0.764 | both far better than the prior; slightly UNDER-confident (CITL CI < 0) |
+| Choice Band, one-vs-rest (ECE / CITL) | 0.021 / −0.003 | 0.025 / −0.011 | 0.085 / −0.076 | calibrated in the large (blob's CI covers 0; fm −0.011, just below) |
+| nature (top-1 ECE / CITL / acc) | 0.056 / **+0.034** / 0.714 | 0.064 / **+0.022** / 0.720 | 0.154 / +0.146 / 0.466 | far better than the prior; mildly OVER-confident (CITL CI > 0) |
+| HP type (top-1 ECE / CITL / acc) | 0.022 / −0.000 / 0.850 | 0.024 / −0.005 / 0.854 | 0.176 / +0.041 / 0.641 | far better than the prior; calibrated (CITL CI covers 0) |
+| EV (MAE, EV points) | 31.7 | 32.0 | 46.2 | both far better than the prior |
+
+Species-presence CITL reads 0.0000 to four decimals, as §0.3 predicts by construction.
+
+## 3. POST-HOC diagnostics of T1 (`explore.py` → `explore.md`; NOT part of the registered verdict)
+
+These were written after §2.1. A frozen checkpoint can show T1's signature WITHOUT route C. The
+head may be honest but noisy, and the policy READS it, so the rows where the head happened to
+under-state a threat are the rows where the policy stays. Call this "acting on its own noise". The
+prior control cannot remove it. `rows_v2/` adds per-unit (p, y) and the T1 sums, and reproduces
+every registered array byte-for-byte (D0: 16 of 16).
+
+| diagnostic | blob | fixed_mass | reading |
+|---|---|---|---|
+| **D1** Δ1_delta, split by the head's OWN policy | −0.136 [−0.159, −0.113] | −0.014 | the registered value |
+| D1, split by ANOTHER seed's policy of the same arm | **−0.133 [−0.150, −0.117]** | −0.009 | **unchanged**: not the policy acting on its own head's noise |
+| D1, split by the OTHER arm's matched-seed policy | **−0.125 [−0.144, −0.107]** | −0.012 | unchanged, even under a policy that never read this head |
+| **D2** STAY − SWITCH error at FIXED belief p (unit level), ARM − PRIOR | **−0.013 [−0.015, −0.011]** | +0.001 [−0.002, +0.004] | blob's head is miscalibrated GIVEN its own p, in the self-serving direction |
+| **D3** STAY − SWITCH change in Σp (head) vs Σy (truth) | −0.355 vs −0.233 | −0.224 vs −0.214 | blob's head swings ~1.5× as far as the truth along the stay/switch axis; fm's tracks the truth |
+
+**What D1–D3 settle, and what they do not.**
+
+- **Settled:** the "acting on its own noise" account is ruled out. The bias is a property of the
+  blob HEAD in the STATES where policies stay or leave. Every policy's split shows it, because all 16
+  policies largely agree on when to stay.
+- **What it looks like:** an over-dispersed threat estimate along the decision axis. The head
+  exaggerates the evidence for whichever action the state favours. That is what route C would
+  produce, since a sharper threat read makes the policy's decision easier.
+- **Not settled:** a frozen read cannot prove the cause. Two other accounts survive. The move head's
+  label loss may be too weak (coef 0.05) to hold calibration against any other pressure. Or blob's
+  head sees inputs that fixed_mass's does not. Only a training contrast that cuts route C on the move
+  head can convict route C (X20's `label_only` / split arms, extended to the belief heads).
+- **The per-mon move head is `shaping` in BOTH arms, yet only blob's bends.** An open route C is
+  therefore not sufficient by itself; something arm-specific carries the pressure. One candidate:
+  blob's intent seats are built from the move belief, and fixed_mass's flat pointer is not.
+  **UNVERIFIED.**
+
+## 4. Verdict, and what it means for X20
+
+- **Registered: motivated cognition BITES on T1 (the move belief about the opponent's active), in
+  the BLOB arm only.** T2 (species) and T3 (Choice Band) are NOT DETECTED in both arms. On T3 the
+  item head is the opposite of self-serving: it removes most of the prior's selection gap.
+- **§0.4's X20 mapping:** T1 bites, so X20 is justified with `label_only` on the per-mon MOVE head.
+  Two qualifications apply:
+  - **(a) It bites only in blob.** Under the owner's pre-committed adoption rule, look 3 implies
+    fixed_mass, and there T1 is NOT DETECTED. If fixed_mass is adopted, this read gives X20's
+    belief-head arms a mechanistic motivation, not a production one.
+  - **(b) X20 as written targets a different head.** In `EXPERIMENT_BACKLOG.md` X20 concerns the
+    opponent-INTENT head α (`opp_intent_grad_mode`), not the belief heads (`belief_grad_mode`).
+    Applying it here needs the owner to widen its scope. This read did not measure α (FINDING 3).
+- **Calibration:** the item, Choice Band, nature, HP-type and EV heads are far better than the Smogon
+  prior in both arms and close to calibrated. They give no sign that PPO-shaped beliefs are a problem.
+  The weak head is MOVES, which over-predicts hidden moves in every column. Blob's move head is worse
+  than the prior it fuses with, and fixed_mass's ties it. That is consistent with the 2026-09-24
+  off-pool read ("does not beat it even on the pool").
+
+## 5. FINDINGS
+
+1. **Blob's revealed-slot move head is WORSE than its own Smogon prior on the pool** (+0.0038 Brier,
+   +0.014 nats/unit). Its error leans toward the action taken: it over-states super-effective threats
+   by +0.30 expected moves when the policy leaves, and by +0.18 when it stays. The head feeds the
+   damage op.
+2. **T1's design cannot separate route C from a weak label.** The registered rule reads BITING.
+   D1–D3 exclude "acting on its own noise", but they cannot exclude "the label loss is too weak to
+   hold calibration". The causal test is a training contrast, not another frozen read.
+3. **Scope mismatch.** The brief maps X20 to the belief heads, but the backlog's X20 is the
+   opponent-INTENT head α. Its mode, `opp_intent_grad_mode`, is recorded as `detached` in these runs:
+   route B cut, route C OPEN. X20's own bending detector ("P(stay) must not inflate when we attack")
+   was NOT run: α is outside this brief's closed head list (standing rule 9). It is cheap to add: the
+   same pipeline plus α (blob) or the flat pointer's switch mass (fixed_mass), about 10 min of CPU.
+4. **Item labels are STARTING items**, because the bank stores no battle-state item. The head is
+   trained on the CURRENT item, so consumed berries and Knocked-Off items mislabel a few rows. T3
+   (Choice Band) is nearly immune. The item-calibration row carries the error.
+5. **The bank's states are not the X5 policies' own.** Older-generation policies and bots recorded
+   them, so every X5 checkpoint is read off-policy. The preference is the checkpoint's greedy argmax
+   on those states.
+6. **T1's Θ drops Levitate only.** Other ability immunities (Flash Fire, Volt / Water Absorb, Thick
+   Fat, Wonder Guard) stay in. The same Θ serves the arm and the prior column, so this blurs both and
+   cannot create Δ_delta or the blob-only gap.
