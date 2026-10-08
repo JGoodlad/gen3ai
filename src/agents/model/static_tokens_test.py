@@ -304,12 +304,12 @@ def _layout_containers(obj: Any, out: Dict[int, str], path: str = "layout") -> N
             _layout_containers(v, out, f"{path}[{k!r}]")
 
 
-def test_the_static_encoder_forward_holds_no_reference_into_the_layout(static_fixed_mass):
+def test_the_static_encoder_forward_holds_no_reference_into_the_layout(static_model):
     """gen3_static_layout_ints_v1 (F-ST-9): the encoder's forward state is PLAIN INTS, never a sub-dict of the
     layout (`ObsUnpack.layout` reaches the same object, and dynamo guarded the two paths' identity — the
     OBJECT_ALIASING guard that fired after the compile lock on the CUDA launch, 2026-10-07). Only the inert
     `layout` record itself may alias it; the move columns are exactly the slot layout's."""
-    fe = static_fixed_mass.policy.features_extractor
+    fe = static_model.policy.features_extractor
     pe = fe.pokemon_encoder
     held: Dict[int, str] = {}
     _layout_containers(fe.unpack.layout, held)
