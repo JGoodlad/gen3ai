@@ -146,7 +146,7 @@ class DamageOperatorPairwise:
 
     def _x5_avg(self, gathered: torch.Tensor, field: str) -> torch.Tensor:
         """X5 fixed_mass, an OTHER-MODE pass only (`hypothesis_tokens.other_roster`): the slots holding
-        OTHER read the tail-AVERAGED table ``field`` (``att_base`` [B,6,6], ``spe`` / ``spe_std`` [B,6])
+        OTHER read the tail-AVERAGED table ``field`` (``att_base`` [B,6,6], ``spe`` [B,6])
         in place of the per-slot ``gathered`` value. Any other pass (and the belief family off): ``gathered`` itself."""
         x5 = self.stash.x5
         if x5 is None or x5.override is None:

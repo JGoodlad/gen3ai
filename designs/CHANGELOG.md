@@ -12571,3 +12571,73 @@ accepting only `winprob`.
   v122–v143 migration branches stay. (4) Main's later `50b034a7` (`gen3_speed_mixture_v1`) deletes the `on`-path
   Gaussian speed read; after it lands here, the OTHER roster's `spe_std` field and its `_x5_avg` read are dead in BOTH
   modes. (5) The init-calibrated goldens and fixtures named above read red until the end-of-break re-record.
+
+### Part 4 — the slot-tied `out_gain` (`designs/endstate/design_arch_audit.md` §9.4)
+
+NO further bump: still v144 / `gen3_x5_version_break_v1` / `MIGRATION_FLOOR` 144 (the floor already refuses every
+pre-break checkpoint; `version_break.pre_break_fixed_mass_reason` now names the reshaped `damage_op.out_gain`).
+
+- **Why.** The op's learned `out_gain` was one free scalar per FLAT block position, so on the per-move outgoing
+  channels the SAME quantity got a different learned gain depending on which REQUEST SLOT the move sat in (trained X5
+  arms: KO gain 1.365 on slot 0 vs 1.146 on slot 3). The order of a mon's moves in the request carries no meaning.
+- **What.** `out_gain` is ONE scalar per distinct (block region, channel): `damage_op_layout.out_gain_channel_keys`
+  gives every flat position a key that drops the request-slot / move-seat index; `DamageOperator.out_gain` holds the
+  distinct gains (keys in `out_gain_keys`), and a fixed NON-PERSISTENT one-hot buffer `_out_gain_tie [n_gain, out_dim]`
+  expands them (`expanded_out_gain()` — a one-hot SUM, so the value is exact and the backward is a fixed-order
+  reduction, no scatter-add; `apply_out_gain(block)` is the forward's one application). Tied across the move axis: the
+  outgoing per-move `[low, high, crit, pko]`, the 7 per-move secondary columns, the status-landing `p_land` / `known`
+  (request slots), and in the render arm the outgoing matrix's cells per our move and the incoming matrix's header and
+  per-(our mon) cells per believed-move seat. Each tied channel's init is the per-slot init it replaced (equal per
+  channel — the build ASSERTS it), so the init forward is unchanged: the unperturbed production extractor's pi / vf /
+  damage block / pointer cells on the 64 compile-parity rows are BITWISE equal to part 2's (CPU, MEASURED). The
+  parameter name stays `damage_op.out_gain` (the compile gates' per-parameter rule reads it by name).
+- **Counts** (MEASURED, CPU, the K9 learner): production `out_gain` 138 → **99** (72 incoming-row + 13 CB + 4 + 1 +
+  7 + 2); the production learner 2,519,046 → **2,519,007** parameters (`--policy-readout trunk`: 1,444,692 →
+  1,444,653); the render arm (both matrices at K = 6) 786 → 222.
+- **NOT tied (findings — positional replicates on a MON axis, out of the brief's scope, the owner decides):** the
+  incoming rows (our 6 TEAM slots × 12 channels, 72 → could be 12), the CB tail's `phys_high_cb` / `phys_pko_cb`
+  (our 6 team slots, 12 → could be 2), and in the render arm the outgoing matrix's per-their-mon cells (6 × 5) and
+  `revealed` bits (6), and the incoming matrix's per-our-mon cells (6 × 6).
+
+### Part 5 — the pre-gain read (F7b `d02aded6` FINDING 1)
+
+- **Why.** The learned gain is a projection ADAPTER, not physics, but production (`--speed-physics off`) fed
+  `intent_conditional` the POST-gain P(first), our moves' post-gain high roll and the post-gain flinch chance — values
+  it multiplies as probabilities / damage fractions — while the move-resolution family read P(first) PRE-gain; only
+  `--speed-physics on` made `intent_conditional` read the pre-gain P(first).
+- **What.** ONE rule: a consumer that reads an op value AS physics reads it PRE-gain. The op stashes
+  `last_raw_tensors` (`OpStashes.raw_tensors`) — the `OpTensors` views over the PRE-gain block, LIVE (gradient-
+  carrying, like `pair_cells` / `pair_in` / `out_cells`; `last_raw_block` stays the DETACHED prober copy).
+  `intent_conditional` reads its high roll, P(first) and flinch chance from it in BOTH speed modes (the `on`-only
+  `tensors_from_block(last_raw_block)` special case is deleted), and the move-resolution family reads P(first) from it
+  (it read the detached `last_raw_block`; MEASURED: under `off` that P(first) carries the spread belief's gradient
+  (`spread_belief.ev_head` / `nature_head`), under `on` no parameter's). Under `off` the pre-gain P(first) keeps the
+  same upstream route the post-gain read had, minus `out_gain`.
+- **The sweep.** Every other post-gain reader is a PROJECTION (the gain's job) and stays: the pointer move / switch
+  cells (`pointer_cells` → the pointer scorers), the `prefuse_proj` injection of the incoming rows, and
+  `value_entity_pool`'s `op_proj` over the incoming rows. Offline: `op_block_split_audit` / `edge_ablation_audit`
+  perturb the gained block (what the heads see, by design); the prober and `concat_readout_probe` read the raw block.
+- **At init** `intent_conditional`'s projection is zero, so the forward is unchanged; what moves is the update (its
+  gradient no longer reaches `out_gain` and now reads the pre-gain operands).
+- **F7a completed** (part 2's FINDING (4), now that `50b034a7` is in): X5's OTHER roster's `spe_std` field, the
+  `other_roster(with_spe_std=…)` parameter and its call-site argument are DELETED — no reader in either speed mode.
+
+### Parts 4 + 5 — tests and the goldens
+
+- **Tests (fail on revert)** — `src/agents/model/x5_version_break_part45_test.py`: the gain count equals the distinct
+  (region, channel) count derived from the layout constants (production 99, the render arm 222); the tied init is the
+  per-slot init; permuting the request slots of a real raw block permutes the gained block identically (planted
+  random gains); after a backward each request slot's copy of a channel accumulates into ONE parameter (and the whole
+  gradient is the per-key sum); the compile gates' per-parameter rule reads `damage_op.out_gain` at its tied size and
+  FAILS naming it when its gradient is dropped; with planted gains ≠ 1 on the outspeed / high-roll / flinch channels
+  `intent_conditional`'s inputs and raw cell are unchanged; in BOTH speed modes its P(first), high roll and flinch are
+  the storage of `last_raw_tensors` (never `last_tensors`) and carry grad; the move-resolution family's P(first) is the
+  same view. `x5_version_break_part2_test.py`: an `on` forward reads no speed-spread sigma, `OpRoster` has no
+  `spe_std` and `other_roster` no `with_spe_std`. Every one was run against the reverted source and FAILS there.
+  `op_lean_forward_test` compares the lean / render gains at the flat width (`expanded_out_gain()`).
+- **Goldens NOT re-recorded** (once, at the end of the break). The red set is UNCHANGED by parts 4 / 5 — the same
+  13 failures + 3 errors fail at the parent commit (part 2's init move): `learner_golden_test` (2),
+  `learner_golden_fixed_mass_test` (6 + 3 errors), `learner_golden_threads_test` (2), `learner_gates_test::
+  test_the_normal_path_passes_the_behaviour_probe`, `update_fit_test::test_the_probe_releases_its_graph` (the K9(b)
+  probe on the pre-break buffer), `learner_lifecycle_test::test_a_production_surface_update_acquires_nothing_and_
+  leaves_the_golden_unchanged`. Parts 4 / 5 move the K9 init hash further (the `out_gain` shape) and the update.

@@ -681,7 +681,7 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
     if (alpha_logits is None or beta_logits is None or imc_ops is None or pair_in is None
             or seat_live is None or pair_type_mult is None or out_cells is None
             or op.last_topk_idx is None or op.last_pair_gate is None or stash.opp_species_post is None
-            or op.last_raw_block is None or (x5 is not None and hs is None)):
+            or op.last_raw_tensors is None or (x5 is not None and hs is None)):
         raise RuntimeError(
             "move_resolution is on but α / β or an op stash is missing — the family would silently contribute "
             "nothing, which is indistinguishable from a null RESULT. Requires opp_intent + damage_op + "
@@ -793,11 +793,11 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
     if out_cells.shape[2] != beta.shape[-1] or imm_dmg.shape[1] != beta.shape[-1]:
         raise ValueError(f"move_resolution: β carries {beta.shape[-1]} mons but out_cells has {out_cells.shape[2]} "
                          f"and the per-slot tables {imm_dmg.shape[1]}")
-    # Every op value the family reads is PRE-gain: the op's learned `out_gain` is one scalar per block channel —
-    # per REQUEST SLOT for the per-move outgoing channels, so a post-gain read would scale the same move by where
-    # it is listed (trained X5 arms learned 1.365 vs 1.146 on the KO channel of slots 0 / 3). `out_cells`,
-    # `pair_cells` / `pair_in` are pre-gain stashes; P(outspeed) is read from the pre-gain block here.
-    ot = op.tensors_from_block(op.last_raw_block)
+    # Every op value the family reads is PRE-gain (the one rule every op consumer follows, gen3_x5_version_break_v1
+    # part 5): the op's learned `out_gain` is a projection adapter, not physics. `out_cells`, `pair_cells` /
+    # `pair_in` are pre-gain stashes; P(outspeed) is the LIVE pre-gain view `last_raw_tensors` (the same read
+    # `intent_conditional` makes; until part 5 it was the DETACHED `last_raw_block`).
+    ot = op.last_raw_tensors
     p_out = ot.out_p_outspeed
     p_out = p_out if p_out.dim() == 2 else p_out[:, None]
     opp_fainted_rev = ((1.0 - alive_all[:, opp]) * (~ctx.opp_believed_mask).float()).sum(-1)

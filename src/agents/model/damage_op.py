@@ -132,8 +132,11 @@ class OpStashes:
     # paralysed)) against their active per our mon, which the pair outcome's paralysis severity reads. None when off.
     item_qc_prob: Optional[torch.Tensor] = None      # [B,6]
     speed_fast_pair: Optional[Tuple[torch.Tensor, torch.Tensor]] = None   # ([B,6], [B,6])
-    raw_block: Optional[torch.Tensor] = None         # [B,out_dim] PRE-gain block (prober decode)
-    tensors: Optional['OpTensors'] = None            # the post-gain typed views
+    raw_block: Optional[torch.Tensor] = None         # [B,out_dim] PRE-gain block, DETACHED (prober decode)
+    # gen3_x5_version_break_v1 part 5: the pre-gain typed views, LIVE (gradient-carrying) — THE read of an op value
+    # used as physics (P(first), a damage fraction, a probability) by a consumer outside the op (`last_raw_tensors`).
+    raw_tensors: Optional['OpTensors'] = None
+    tensors: Optional['OpTensors'] = None            # the post-gain typed views (projection inputs only)
 
 from agents.model.damage_op_blocks import DamageOperatorBlocks
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, gather_beatup, gather_bp,
@@ -469,6 +472,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
     def last_raw_block(self) -> Optional[torch.Tensor]: return self.stash.raw_block
     @property
     def last_tensors(self) -> Optional['OpTensors']: return self.stash.tensors
+    @property
+    def last_raw_tensors(self) -> Optional['OpTensors']: return self.stash.raw_tensors
 
     def _opp_candidate_weights(self, ctx: 'ExtractorContext',
                                move_belief_logits: torch.Tensor) -> torch.Tensor:
@@ -1222,6 +1227,10 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # Read-only stash of the PRE-gain physics (the interpretable damage fractions / P(KO) / accuracy),
         # for the prober/forensic decode — the learned out_gain only rescales for the projection.
         self.stash.raw_block = block.detach()
+        # gen3_x5_version_break_v1 part 5: the SAME pre-gain physics as LIVE typed views — what every consumer that
+        # reads an op value AS a probability / damage fraction reads (P(first) included), so the learned gain
+        # (a projection adapter, not physics) never rescales a value a rule multiplies or compares.
+        self.stash.raw_tensors = self.tensors_from_block(block)
         # learnable per-(region, channel) adapter (×only), tied across request slots / move seats (part 4)
         gained = self.apply_out_gain(block)
         # gen3_op_tensors_views_v1: the typed named views over the post-gain block, computed ONCE

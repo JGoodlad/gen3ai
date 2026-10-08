@@ -494,6 +494,14 @@ from typing import Any, Dict
 #     K9 golden is re-recorded once, at the end of the break); the weight-mapping identity proof
 #     (`designs/research_state/measurements/version_break_identity_2026-10-07/`) is bitwise except F16b's
 #     softmax-shift rounding (log pi max |d| 2.4e-7).
+#   Part 4 — the slot-tied `out_gain` (design_arch_audit §9.4): the op's learned gain is ONE scalar per (block region,
+#     channel), shared across REQUEST SLOTS / move seats (`damage_op_layout.out_gain_channel_keys`, expanded by a
+#     non-persistent one-hot `_out_gain_tie`); `damage_op.out_gain` 138 -> 99 on the production op (2,519,046 ->
+#     2,519,007 production parameters). The mon-axis replicates stay per position. Init forward bitwise equal.
+#   Part 5 — the pre-gain read: every op consumer that reads an op value AS physics reads it PRE-gain through the
+#     op's live `last_raw_tensors` view — `intent_conditional` (high roll, P(first), flinch) in BOTH speed modes
+#     (the `--speed-physics on`-only special case deleted) and the move-resolution family (P(first), was the detached
+#     `last_raw_block`). F7a completed: the X5 OTHER roster's dead `spe_std` / `with_spe_std` deleted.
 MODEL_CONFIG_VERSION = 144
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings

@@ -4,8 +4,9 @@ after X5's adoption (``designs/endstate/design_x5_belief_tokens.md`` Decision re
 WHAT IT MEANS FOR A CHECKPOINT. The break raised ``MIGRATION_FLOOR`` to 144, so EVERY earlier checkpoint is
 refused by ``_migrate_config``'s pre-floor gate — the blob arm because its belief path is DELETED (part 1),
 and a pre-break ``fixed_mass`` one because the break reshapes its weights (part 2 deleted the dead value tower
-and the flat pointer's dead scorer bias; a later part ties the op's per-slot ``out_gain`` to one scalar) and
-changes its forward (the intent_conditional pre/post-gain). Neither can be reproduced at HEAD; both RUN PINNED to their own commit.
+and the flat pointer's dead scorer bias; part 4 tied the op's per-slot ``out_gain`` to one scalar per (block
+region, channel)) and changes its forward (part 5: ``intent_conditional`` reads the op's PRE-gain values). Neither
+can be reproduced at HEAD; both RUN PINNED to their own commit.
 
 This module is the ONE home of:
 
@@ -63,8 +64,9 @@ def pre_break_fixed_mass_reason() -> str:
             "DELETED the dead SB3 value tower (the extractor's value_pre_norm / value_projection, "
             "mlp_extractor.value_net and value_net: 592,129 parameters no loss read under the win-prob critic) "
             "and the flat opponent pointer's shared scorer bias (flat_intent_head.out.bias), so its state_dict "
-            "holds keys this code refuses — and the later parts re-wire the op (its per-slot out_gain tied to "
-            "one scalar, the intent_conditional pre/post-gain), so it cannot be reproduced at HEAD. Run it "
+            "holds keys this code refuses — and parts 4 and 5 re-wired the op (its per-slot out_gain tied to one "
+            "scalar per block region and channel, 138 -> 99 on the production op, so damage_op.out_gain changed "
+            "shape; intent_conditional reads the op's PRE-gain values), so it cannot be reproduced at HEAD. Run it "
             f"PINNED to its own commit (the git_hash in its metadata.json; at the latest {LAST_BLOB_COMMIT[:12]}, "
             "the last pre-break commit), or start a fresh run.")
 

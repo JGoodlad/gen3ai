@@ -502,9 +502,7 @@ class ExtractorForward(ExtractorApi):
             _x5r = other_roster(_x5r, _hs, self.hypothesis_builder, self.move_belief,
                                 self.damage_op.BASE_STATS, self.damage_op.SPECIES_TYPE,
                                 self.damage_op.SPECIES_SPREAD_PRIOR, int(self.damage_op.CHART.shape[-1]),
-                                _SB_SPE, cuts=(self.consequence_topk, self.entity_topk_seats),
-                                # audit F7a: the speed-spread average only where it is read (`--speed-physics on`)
-                                with_spe_std=bool(self.damage_op.speed_physics))
+                                _SB_SPE, cuts=(self.consequence_topk, self.entity_topk_seats))
             self.stash.hypothesis = _hs
         # T0 RESOLVE (spread/HP-type) → T1 REASON (the op). Run the WHOLE physics stack ONCE, here,
         # PRE-attention: the spread + HP-type beliefs read the raw opp role tokens (the move belief
@@ -838,7 +836,11 @@ class ExtractorForward(ExtractorApi):
         # T1-producer/T2-consumer split, same publication read.
         if self.intent_conditional is not None:
             _pc = None if _x5i is None else _x5i.pair_cells
-            _ot = self.damage_op.last_tensors if self.damage_op is not None else None
+            # gen3_x5_version_break_v1 part 5: every op value this cell treats as physics — our moves' high roll
+            # (a damage fraction), P(we act first), the flinch chance (probabilities) — is read PRE-gain, in every
+            # speed mode: the learned `out_gain` is the projection's adapter, not physics (ONE rule, the
+            # move-resolution family's; `--speed-physics on`'s special case is gone).
+            _ot = self.damage_op.last_raw_tensors if self.damage_op is not None else None
             _opko = None if _x5i is None else _x5i.out_pko
             _ready = (_x5i is not None and _pc is not None
                       and _ot is not None and _ot.out_per_move is not None
@@ -861,11 +863,7 @@ class ExtractorForward(ExtractorApi):
                 _x5i.alpha, _pc, self.damage_op.last_pair_gate,  # type: ignore[union-attr]
                 ctx.our_active_idx, self.damage_op.last_topk_idx,  # type: ignore[union-attr]
                 _ot.out_per_move[..., 1],  # type: ignore[index,union-attr]
-                # gen3_speed_physics_v1: under `on` the ORDER rule's input is the PRE-gain P(first) — the value the
-                # move-resolution family reads (one rule, one input); `off` keeps the post-gain read (production).
-                (self.damage_op.tensors_from_block(  # type: ignore[union-attr]
-                    self.damage_op.last_raw_block).out_p_outspeed  # type: ignore[union-attr,arg-type]
-                 if self.damage_op.speed_physics else _ot.out_p_outspeed),  # type: ignore[union-attr]
+                _ot.out_p_outspeed,  # type: ignore[union-attr]
                 _ot.out_secondary[..., _OUT_SEC_FLINCH_COL],  # type: ignore[index,union-attr]
                 ctx.our_active_req_move_ids, _po,
                 _x5i.beta, _opko,

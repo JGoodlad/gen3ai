@@ -216,6 +216,50 @@ def test_the_default_forward_reads_no_speed_spread_sigma(learner):
     assert not _SigmaSpy.reads, f"the default forward read the speed-spread sigma {len(_SigmaSpy.reads)}x"
 
 
+def test_the_speed_physics_forward_reads_no_speed_spread_sigma_either():
+    """F7a COMPLETED (the version break's part 5, after `gen3_speed_mixture_v1`): `--speed-physics on` reads the
+    discrete Smogon speed mixture, so the X5 OTHER roster's speed-SPREAD average (`OpRoster.spe_std`, built only
+    under `on`) had no reader in either mode — it is deleted, and an `on` forward reads no sigma at all."""
+    import dataclasses
+    import inspect
+    import json
+
+    import gymnasium as gym
+    import numpy as np
+
+    from agents.model.damage_tables import sanitize_historical_move_floor
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.model.hypothesis_tokens import OpRoster, other_roster
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    from utils.paths import repo_path, src_path
+    cfg = json.load(open(repo_path("designs", "production_config.json")))
+    kw = {k: v for k, v in cfg.items() if k in set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)}
+    sanitize_historical_move_floor(kw)
+    kw["speed_physics"] = "on"
+    mappings = load_mappings()
+    layout = Gen3ObservationEncoder(mappings).get_layout()
+    torch.manual_seed(0)
+    fe = Gen3FeaturesExtractor(gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32),
+                               layout=layout, mappings=mappings, **kw).eval()
+    op = fe.damage_op
+    assert op.speed_physics and fe.hypothesis_builder is not None, "PRECONDITION: `on`, the X5 OTHER roster built"
+    obs = torch.as_tensor(np.load(src_path("agents", "model", "compile_parity_obs.npz"))["obs"])[:16]
+    real = op._buffers["SPECIES_SPREAD_PRIOR"]
+    _SigmaSpy.reads = []
+    op._buffers["SPECIES_SPREAD_PRIOR"] = real.as_subclass(_SigmaSpy)
+    try:
+        _ = op.SPECIES_SPREAD_PRIOR[:, 4, 1]                      # teeth: the OTHER roster's spelling is seen
+        assert _SigmaSpy.reads, "the spy saw no read — this test would be vacuous"
+        _SigmaSpy.reads = []
+        with torch.no_grad():
+            fe({"observation": obs})
+    finally:
+        op._buffers["SPECIES_SPREAD_PRIOR"] = real
+    assert not _SigmaSpy.reads, f"the `on` forward read the speed-spread sigma {len(_SigmaSpy.reads)}x"
+    assert "spe_std" not in {f.name for f in dataclasses.fields(OpRoster)}
+    assert "with_spe_std" not in inspect.signature(other_roster).parameters
+
+
 # --------------------------------------------------------------------------------------------------- F16b
 def test_the_flat_pointer_scorer_has_no_bias(learner):
     fe = learner.policy.features_extractor

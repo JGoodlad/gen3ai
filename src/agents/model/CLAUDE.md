@@ -226,6 +226,15 @@ block remains the serialization: `decode_damage_block` (the prober's human-reada
 bundle recorded in `designs/research_state/claude_md_archive/model_leaf_history.md`, on 64 real
 gen-9 eval states across three config arms.
 
+🚨 **`last_tensors` is POST-gain and is for PROJECTIONS only.** The op's learned `out_gain` (one scalar per
+(region, channel), tied across request slots and move seats — `damage_op_layout.out_gain_channel_keys`; the X5
+version break's part 4) is a projection adapter, not physics. A consumer that uses an op value AS a probability or a
+damage fraction (P(first), a roll, a secondary chance) reads it PRE-gain: a typed pre-gain stash, or the block's
+channels through **`last_raw_tensors`** (live views; `last_raw_block` is the detached prober copy — never a
+training-path input). `intent_conditional` and the move-resolution family do (part 5;
+`x5_version_break_part45_test.py`). A new region of the block needs a key in `out_gain_channel_keys` (the op
+raises at build if the key walk and `out_dim` disagree) and decides whether its replicates are tied.
+
 **The op's SIDE VALUES and the EXTRACTOR's follow one contract** (`gen3_op_stashes_v1` /
 `gen3_extractor_stashes_v1`): every per-forward stash lives in ONE dataclass the forward replaces at
 ENTRY, **reads** go through the `last_*` properties and **writes** through `op.stash.<field>` /

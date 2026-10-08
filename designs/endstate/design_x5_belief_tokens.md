@@ -859,6 +859,18 @@ listed). What changed in THIS doc's design and why:
   it (log π max |Δ| 2.4e-7; CONTROL with the bias re-attached BITWISE)
   (`designs/research_state/measurements/version_break_identity_2026-10-07/`).
 
+**As built — the X5 VERSION BREAK, parts 4 and 5 (2026-10-07; still config v144): the op's two behaviour changes**
+(`designs/endstate/design_arch_audit.md` §9.4 and its Decision record):
+- **Part 4, the slot-tied `out_gain`.** The op's learned gain is ONE scalar per (block region, channel), shared across
+  request slots and move seats (`damage_op_layout.out_gain_channel_keys`): production `damage_op.out_gain` 138 → 99,
+  2,519,046 → 2,519,007 parameters (MEASURED, CPU, the K9 learner). The init forward is unchanged (each tied channel
+  keeps its per-slot init); the mon-axis replicates stay per position (reported findings).
+- **Part 5, the pre-gain read.** `intent_conditional` (our moves' high roll, P(first), the flinch chance) and the
+  move-resolution family (P(first)) read the op's PRE-gain values through the live `last_raw_tensors` view, in both
+  `--speed-physics` modes — the `on`-only special case is gone.
+- **F7a completed.** The OTHER roster's `spe_std` (and `other_roster`'s `with_spe_std`) is DELETED: after
+  `gen3_speed_mixture_v1` nothing reads it in either speed mode (part 2 above had kept it for `on`).
+
 **Rust.** No runtime observation or label change.
 - The label-writer guard is **DONE** (F-X5-3, `680edc36`, `gen3_label_lookup_guard_v1`): every Rust label writer
   returns an `Err` (a FAULT) on a lookup it cannot make, and species match by dex num. It never fired (0 skips over

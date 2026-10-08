@@ -278,7 +278,6 @@ class OpRoster:
     att_base: Optional[torch.Tensor] = None       # [B,6,6] E_tail[base stats] (exact: the stat formulas are linear)
     has_type: Optional[torch.Tensor] = None       # [B,6,T] E_tail[1(type t is one of the species' types)]
     spe: Optional[torch.Tensor] = None            # [B,6] E_tail[speed] — the spread prior's mean (as the averaged bulk)
-    spe_std: Optional[torch.Tensor] = None        # [B,6] E_tail[the spread prior's speed std]
 
 
 def slot_move_presence(hb: Any, move_logits: torch.Tensor, species: torch.Tensor,
@@ -392,8 +391,7 @@ def bench_tail_cells(ro: OpRoster, K: int, move_bp: torch.Tensor, move_acc: torc
 
 def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, base_stats: torch.Tensor,
                  species_type: torch.Tensor, spread_prior: torch.Tensor, n_types: int,
-                 spe_col: int, cuts: "Optional[tuple[int, ...]]" = None,
-                 with_spe_std: bool = False) -> OpRoster:
+                 spe_col: int, cuts: "Optional[tuple[int, ...]]" = None) -> OpRoster:
     """``ro`` with OTHER attached (M3 (c); ORCHESTRATOR F4 (a) / (b)) and its OTHER-MODE roster: a copy in
     which EVERY hidden slot holds OTHER — the renormalised tail ``P_tail`` (`HypothesisSet.other_tail_probs`)
     priced by the blob's own AVERAGED construction, ``P_tail @ tables``:
@@ -402,9 +400,9 @@ def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, bas
       E[maxhp], E[type x ability multiplier]); ``concrete`` = 0 there, so P(KO) stays NULLED (the averaged
       defender's KO is a threshold of averaged stats — exactly the blob);
     * attacker: ``att_base`` = E[base stats] (atk / spa / max-HP are linear in them, so f(E[base]) = E[f]),
-      ``has_type`` = E[STAB indicator] per move type, ``spe`` / ``spe_std`` = E over the spread prior
-      (``spe_std`` only with ``with_spe_std`` — `--speed-physics on`, its one consumer; audit F7a: the default
-      path computes no speed-spread lookup);
+      ``has_type`` = E[STAB indicator] per move type, ``spe`` = E over the spread prior's mean (audit F7a, completed
+      at the version break's part 5: no speed-SPREAD average — `--speed-physics on` reads the tail's discrete
+      Smogon speed mixture, `gen3_speed_mixture_v1`, and `off` the mean alone);
     * moves: the PARAMETER-FREE E10 mixture over ``P_tail`` (`MoveBelief.hidden_slot_prior_logits`, the
       blob's hidden-slot prior) through the same k = 4 fixed-size construction and one order as every mon.
 
@@ -444,7 +442,6 @@ def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, bas
     e_base = pt @ base_stats                                                            # [B,6]
     e_has = pt @ has                                                                    # [B,T]
     e_spe = pt @ spread_prior[:, spe_col, 0]                                            # [B]
-    e_std = (pt @ spread_prior[:, spe_col, 1]) if with_spe_std else None
     sp_other = pt.unsqueeze(1).expand(-1, hyp.shape[1], -1) * hyp.unsqueeze(-1).to(pt.dtype)
     from agents.model.damage_tables import _pursuit_num
     other = dataclasses.replace(
@@ -453,8 +450,7 @@ def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, bas
         move_w=move_w, move_order=move_order, move_rank=move_rank, override=hyp,
         att_base=e_base.unsqueeze(1).expand(-1, hyp.shape[1], -1),
         has_type=e_has.unsqueeze(1).expand(-1, hyp.shape[1], -1),
-        spe=e_spe.unsqueeze(-1).expand(-1, hyp.shape[1]),
-        spe_std=None if e_std is None else e_std.unsqueeze(-1).expand(-1, hyp.shape[1]))
+        spe=e_spe.unsqueeze(-1).expand(-1, hyp.shape[1]))
     col = torch.argmax(hyp.long(), dim=-1)                                              # the first hidden slot
     return dataclasses.replace(ro, other_live=hs.other_live, other_any=hs.other_any.to(dt), other_col=col,
                                other_pursuit=w_o[:, _pursuit_num()], other=other)

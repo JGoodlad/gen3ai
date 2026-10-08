@@ -10,7 +10,7 @@ two disagree, ARCHITECTURE.md wins.
 ## The op's SIDE VALUES have ONE container (`gen3_op_stashes_v1`)
 
 Every per-forward stash the op exposes (`last_topk_idx`, `last_pair_cells`, `last_w_all`,
-`last_out_pko`, `last_raw_block`, `last_tensors`, …) lives in ONE `OpStashes` dataclass that the
+`last_out_pko`, `last_raw_block`, `last_raw_tensors`, `last_tensors`, …) lives in ONE `OpStashes` dataclass that the
 forward replaces at ENTRY — so no stash can carry a previous batch, uniformly (three different
 clearing conventions used to coexist, and the top-K trio had none). **Reads** use the `last_*`
 properties (the documented surface); **writes** go through `op.stash.<field>` — writing a
@@ -18,6 +18,19 @@ properties (the documented surface); **writes** go through `op.stash.<field>` �
 via `self.stash`, and never add a bare `self.last_x = …` attribute. The extractor's tuple
 stashes are typed the same way (`PointerInputs`, `ThresholdProbs` — NamedTuples, so positional
 unpacks keep working).
+
+**PRE-gain vs POST-gain: a consumer that reads an op value AS physics reads it PRE-gain** (the X5 version break's
+part 5). The op's learned `out_gain` is a projection ADAPTER — one scalar per (block region, channel), tied
+across request slots and move seats (part 4; `damage_op_layout.out_gain_channel_keys` is the key map,
+`expanded_out_gain()` / `apply_out_gain()` the one application) — so only a PROJECTION reads the post-gain block
+(`last_tensors`: the pointer cells, the `prefuse_proj` injection, `value_entity_pool`'s op rows). Any consumer
+that multiplies, compares or otherwise uses an op value as a probability or a damage fraction (P(we act first), a
+roll, a secondary chance) reads a pre-gain stash (`pair_cells`, `pair_in`, `out_cells`, `out_pko`) or the block's
+channels through **`last_raw_tensors`** — the `OpTensors` views over the PRE-gain block, LIVE (they carry the
+op's upstream gradient, like every other pre-gain stash). `last_raw_block` is the same block DETACHED, for the
+prober / forensic decode only; never feed it to a training-path consumer (it would cut that route's gradient).
+Readers today: `intent_conditional` (our moves' high roll, P(first), the flinch chance) and the move-resolution
+family (P(first)), in both `--speed-physics` modes. Tests: `x5_version_break_part45_test.py`.
 
 **The EXTRACTOR's side values follow the same contract (`gen3_extractor_stashes_v1`).** Every
 per-forward stash `Gen3FeaturesExtractor` exposes — `last_pointer_inputs`, the α/β intent trio,
@@ -83,7 +96,8 @@ Two input contracts every op kernel follows (2026-10-07; ARCHITECTURE §4 states
   hypothetical (C1's post-setup stage, C5's inherited stages, a paralysis it prices) is an override ARGUMENT,
   never a second formula. Two `on`-only stashes: `item_qc_prob` (the item belief's P(Quick Claw); never set while
   the format bans it) and `speed_fast_pair` (the forward's P(first) and P(first | this mon paralysed), which
-  `pair_outcome_coords` reads instead of re-deriving). The order rule reads the PRE-gain P(first) under `on`.
+  `pair_outcome_coords` reads instead of re-deriving). The order rule reads the PRE-gain P(first) in both modes
+  (`last_raw_tensors`, below).
   A Python closure inside an op method changes `off`'s dynamo graph (its captured locals become cell variables
   and are renamed) — put an `on`-only helper on `damage_op_speed`, never nested in a site. Tests:
   `move_order_test.py`, `speed_physics_extractor_test.py`, `speed_physics_bridge_integration_test.py`.

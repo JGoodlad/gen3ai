@@ -352,8 +352,9 @@ names the actor widths, `vf=[]`), SB3's orthogonal re-init of the extractor then
 SB3's order), the retire hooks, the pointer head and the optimizer; `action_net` and `value_net` are RAISING
 stubs (`_NoFlatActionNet`, `_NoValueNet`). The policy's `critic` kwarg defaults to `winprob` and any other
 value is refused before anything is built. The inference tier's T2 `DecisionModule` reads the actor only and calls no
-critic; there is no value tower left for it to compute. Production learner: **2,519,046 parameters** (MEASURED, CPU,
-2026-10-07, part 2 of the version break — the K9 learner, the production surface).
+critic; there is no value tower left for it to compute. Production learner: **2,519,007 parameters** (MEASURED, CPU,
+2026-10-07, part 4 of the version break — the K9 learner, the production surface; part 2 left 2,519,046, part 4's
+slot-tied `out_gain` removed 39).
 
 Modules actually built under the production config (`named_children()`) — GENERATED:
 
@@ -456,8 +457,8 @@ A pre-break checkpoint (blob or fixed_mass) is refused at `MIGRATION_FLOOR` 144 
 `latent_pi`, the flat policy tower's output (steps 11 and §3.3 below). The `trunk` mode
 ([`endstate/design_arch_audit.md`](endstate/design_arch_audit.md) F2, `gen3_policy_readout_trunk_v1`)
 RETIRES that tower — the extractor's `pre_proj_norm` / `projection` and SB3's `mlp_extractor.policy_net`,
-1,130,802 parameters at production widths (the production learner holds 2,519,046 under `tower` and
-1,444,692 under `trunk` — MEASURED, CPU, 2026-10-07, part 2 of the version break) — and reads the context off the trunk instead:
+1,130,802 parameters at production widths (the production learner holds 2,519,007 under `tower` and
+1,444,653 under `trunk` — MEASURED, CPU, 2026-10-07, part 4 of the version break) — and reads the context off the trunk instead:
 `PolicyStateQuery` (`agents/model/pools.py`, T3) is ONE learned query, 4 heads, attending over every
 refined trunk token (our 6, their 6, the global token, the entity and event seats) plus the
 `HiddenOppBeliefPool`'s K outputs, under the trunk's own key mask (and X5's per-key log π), then a LayerNorm → `[B, 128]`. That vector IS `pi_features` (no projection, no ReLU); the
@@ -855,8 +856,8 @@ Dropped (judgments): `tempo_cost`, `neutralization`, `wasted_ko`, `spin_value_lo
 `spin_denied`, and the Focus Punch / Substitute / Endure / Endeavor hand thresholds. The op itself now applies
 the incoming side / clause rules and reads an opponent's ability through its `known` flag (§4), so the family's
 own re-application of `status_rules.incoming_status_mask` is an exact no-op on real op output; every op value it
-reads is PRE-gain (the op's `out_gain` is per request slot on the per-move channels), and its projections are
-shared across slots. Requires `opp_intent`, `damage_op`,
+reads is PRE-gain (the one rule every op consumer follows — P(first) from the op's live `last_raw_tensors` view),
+and its projections are shared across slots. Requires `opp_intent`, `damage_op`,
 `damage_outgoing` and both per-move matrices. **Reads X5's flat pointer** (`gen3_move_resolution_x5_v1`):
 the same rules (no mode branch) read the flat opponent pointer's re-expression, the one the
 seven blocks read there — α over the K move seats plus OTHER_move, α_SWITCH, β over the six slots plus
@@ -1243,8 +1244,8 @@ spread belief is not read by these sites. Choice Band does not touch
 speed. Quick Claw (gen 3: ONE shared 1-in-5 roll per turn, holders at 65535) is implemented
 (`move_order.p_first_quick_claw`) and FORMAT-GATED OFF: it is BANNED in gen3ou (Showdown master's banlist, owner
 2026-10-07; `move_order.quick_claw_live`). The PRIORITY bracket is the same module's `p_seat_first`, read by the
-move-resolution family and `intent_conditional`; under `on` both read the PRE-gain P(first) (under `off`
-`intent_conditional` reads the post-gain one, production unchanged). Real battles (the Lane S bank, 580 battles,
+move-resolution family and `intent_conditional`, and both read the PRE-gain P(first) in either mode (the op's
+live `last_raw_tensors` view). Real battles (the Lane S bank, 580 battles,
 23,598 equal-priority turn rows; the mixture's numbers are the same for cold-start and trained beliefs): Brier
 0.0440 vs the logistic's 0.0425 (cold-start; 0.0369 on the trained `rb_x5ab_blob_s1007`), log loss 0.1308 vs
 0.1341 (0.1208), ECE 0.0184 vs 0.0157 (0.0235), 0 rows certain and wrong; 3,428 unequal-priority rows, 0
@@ -1337,9 +1338,25 @@ on a Fire move while either holds `watersport` (read off both actives' context b
 that swaps a holder out still reads the current actives' sports. Pinned by
 `damage_op_test.py::test_op_field_sports_halve_electric_and_fire_from_either_active`.
 
-The block passes through a learned per-channel `out_gain` (a Parameter, multiplicative only, so the
+The block passes through a learned `out_gain` (a Parameter, multiplicative only, so the
 "no threat ⇒ exactly 0" gates stay clean) before it reaches the heads and before `pointer_cells`
-slices it — so the pointer path and the flat concat can never disagree on a value.
+slices it — so the pointer path and the flat concat can never disagree on a value. **The gain is ONE scalar
+per (block region, channel), SHARED across request slots and move seats** (`damage_op_layout.out_gain_channel_keys`;
+the X5 version break's part 4): the outgoing per-move stack `[low, high, crit, pko]`, the per-move secondary
+columns and the status-landing `p_land` / `known` take one gain per channel whichever request slot the move sits
+in (as do, in the render arm, the outgoing matrix's cells per our move and the incoming matrix's header and
+cells per believed-move seat), so the same move is scaled the same wherever it is listed. The MON-axis
+replicates stay per position: the incoming rows (our 6 team slots × 12), the Choice-Band tail per our slot, the
+render matrices' per-their-mon / per-our-mon cells. `out_gain` holds the distinct gains (production: 99 for the
+138-wide block) and a fixed non-persistent one-hot `_out_gain_tie` expands them (`expanded_out_gain()`, a one-hot
+sum: an exact value, a fixed-order backward); each tied channel's init is the per-slot init it replaced.
+**The gain is a projection ADAPTER, not physics:** only the projections read the post-gain block (the pointer
+cells, the `prefuse_proj` injection, `value_entity_pool`'s op rows). Every consumer that reads an op value AS a
+probability or a damage fraction — P(we act first), a roll, a secondary chance — reads it PRE-gain: the typed
+stashes (`pair_cells`, `pair_in`, `out_cells`, `out_pko`) are pre-gain, and the block's own channels come from
+`last_raw_tensors` (live, gradient-carrying views of the pre-gain block; `last_raw_block` is its detached copy
+for the prober). `intent_conditional` (our moves' high roll, P(first), the flinch chance) and the
+move-resolution family (P(first)) read it in both speed modes.
 
 **Every gradient-path max is `max_by_index`** (`agents/model/index_max.py`, a leaf module; `damage_op`
 re-exports it; architecture audit F6a): `max_by_index(x, dim, keepdim)` gathers `x` at
