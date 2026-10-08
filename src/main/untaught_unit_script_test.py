@@ -8,8 +8,8 @@ at its model load, silently for the tree, loudly only for whoever ran a read (F-
 * the STATIC test (routine, ~free): every ``alias.attr`` the script's ``main`` reads, where ``alias`` is
   a module it imports, must exist on that module — a deleted or renamed symbol FAILS here;
 * the UNIT test (``sim``): one real battle through the script's own ``main`` (``CHUNK`` stubbed to 1),
-  on the registered opponent and a lineage checkpoint, writing its one fsynced row. Skips without the
-  run archive.
+  on two FRESH current-architecture checkpoints (every archived one is behind the X5 version break's floor),
+  writing its one fsynced row.
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ import sys
 
 import pytest
 
-from utils.paths import main_models_dir, repo_path
+from utils.paths import repo_path
 
 SCRIPT = repo_path("designs", "research_state", "measurements", "n0_endofrun_2026-09-27", "scripts", "gu_unit.py")
 
@@ -81,13 +81,13 @@ def test_the_static_check_has_teeth(tmp_path):
 
 @pytest.mark.sim
 def test_one_unit_plays_and_writes_its_row(tmp_path, monkeypatch):
-    models = main_models_dir()
-    if models is None:
-        pytest.skip("no run archive (models/) on this box")
-    opp = models / "ai_v14_01_base" / "snapshots" / "snapshot_000024000000.zip"
-    ref = models / "ai_v14_01_base" / "checkpoints" / "checkpoint_4800000_steps.zip"
-    if not (opp.exists() and ref.exists()):
-        pytest.skip("the registered untaught opponent / the N0 checkpoint is not in this archive")
+    # gen3_x5_version_break_v1 (v144): every archived checkpoint (N0's opponent and lineage included) is behind
+    # MIGRATION_FLOOR, so the unit plays two FRESH current-architecture checkpoints (seeded, production surface,
+    # saved through the project's own save path) — the point is that the driver's pieces FIT, not a level.
+    from main.fresh_checkpoint import save_fresh_checkpoint
+
+    opp = save_fresh_checkpoint(tmp_path / "opp_run", 21)
+    ref = save_fresh_checkpoint(tmp_path / "ref_run", 22)
     mod = _load_script()
     monkeypatch.setattr(mod, "CHUNK", 1)                      # one battle: indices [0, 1)
     rows = tmp_path / "rows"

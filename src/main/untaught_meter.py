@@ -190,6 +190,19 @@ def apply_baseline_defaults(args, log=None) -> List[str]:
     for attr, name in (("opponent", engine.DEFAULT_OPPONENT_BASELINE),):
         value = getattr(args, attr)
         if value is None:
+            if baselines.get(name).era_checkout_only:
+                # gen3_x5_version_break_v1 (v144): MIGRATION_FLOOR rose past every checkpoint that existed,
+                # the default opponent included. A default that cannot load at HEAD is refused HERE, naming
+                # the fix, rather than dying at the first model load with a bare floor error (F-LR-2's class).
+                from agents.model.model_version.migrations import MIGRATION_FLOOR
+                from agents.model.model_version.version_break import LAST_BLOB_COMMIT
+                raise MeterError(
+                    f"the default --{attr} {name!r} is era_checkout_only: it is a PRE-BREAK checkpoint "
+                    f"(config v{baselines.get(name).config_version}) that this tree cannot load since the X5 "
+                    f"version break (MIGRATION_FLOOR {MIGRATION_FLOOR}), and no post-break opponent is "
+                    "registered yet (the Rustboro opponent, legacy manifest D-L3). Pass --opponent <a "
+                    f"v{MIGRATION_FLOOR}+ checkpoint> (a NEW series: levels do not compare across opponents), "
+                    f"or run the v14 series PINNED to its own commit (<= {LAST_BLOB_COMMIT[:12]}).")
             setattr(args, attr, baselines.spec(name))
             lines.append(f"[baseline] --{attr} default: {baselines.describe(name)} "
                          f"(INTERIM until the Rustboro opponent, D-L3)")

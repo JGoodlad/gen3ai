@@ -250,33 +250,53 @@ _OPP_B = {"resolved_file": "/m/ai_v14_01_base/snapshots/snapshot_000024000000.zi
           "run_base": "ai_v14_01_base", "num_timesteps": 24000000}
 
 
-def test_the_default_opponent_is_a_registry_entry_that_is_NOT_era_checkout_only():
-    """F-LR-2: the old default (`untaught_meter_opponent`, rev-1's 24M at config v101) is a
-    pre-generation checkpoint, so a bare `main.untaught_meter` died at its first model load. A default
-    that the registry itself marks unloadable at HEAD is the defect; this fails on revert."""
+def test_the_default_opponent_is_loadable_at_HEAD_or_marked_era_checkout_only():
+    """F-LR-2's class: a default the registry does not mark unloadable must load at HEAD — its config is at or
+    above MIGRATION_FLOOR. Since the X5 version break (v144) no registered opponent is (the registry marks
+    `untaught_meter_opponent_v14` era_checkout_only); a stale unmarked default fails here."""
+    from agents.model.model_version.migrations import MIGRATION_FLOOR
     from agents.training import baselines
     name = engine.DEFAULT_OPPONENT_BASELINE
     assert baselines.is_name(name)
-    assert not baselines.get(name).era_checkout_only, (
-        f"{name} is marked era_checkout_only — it cannot load at HEAD")
-    assert baselines.get(name).config_version >= 121
+    b = baselines.get(name)
+    assert b.era_checkout_only or b.config_version >= MIGRATION_FLOOR, (
+        f"{name} (config v{b.config_version}) is below the floor v{MIGRATION_FLOOR} but NOT marked era_checkout_only")
 
 
-def test_the_default_opponent_LOADS_at_HEAD_through_the_sanitizing_loader():
+def test_the_era_wall_of_the_default_opponent_is_real():
+    """The registry's era_checkout_only mark is not a guess: the default opponent's config is refused by the
+    floor at HEAD (deterministic — reads the registry's recorded config version, no archive needed)."""
+    from agents.model.model_version.migrations import MIGRATION_FLOOR, _migrate_config
+    from agents.model.model_version.constants import ModelVersionError
     from agents.training import baselines
-    from utils.paths import main_models_dir, models_skip_reason
-    if main_models_dir() is None:
-        pytest.skip(models_skip_reason())
-    assert baselines.load(engine.DEFAULT_OPPONENT_BASELINE) is not None
+    b = baselines.get(engine.DEFAULT_OPPONENT_BASELINE)
+    if not b.era_checkout_only:
+        assert b.config_version >= MIGRATION_FLOOR
+        return
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": b.config_version})
 
 
-def test_bare_defaults_resolve_the_v14_opponent_and_each_models_own_config():
+def test_a_bare_launch_REFUSES_an_era_checkout_only_default_opponent_naming_the_fix():
+    """FAILS ON REVERT (gen3_x5_version_break_v1): with the default opponent behind the floor, a bare
+    `main.untaught_meter R` must refuse at the default, naming --opponent and the pin — not resolve a spec
+    that dies at its first model load."""
+    from agents.training import baselines
+    from agents.training.untaught_meter import MeterError
+    assert baselines.get(engine.DEFAULT_OPPONENT_BASELINE).era_checkout_only    # the precondition, asserted
     args = cli.build_parser().parse_args(["R"])
-    lines = cli.apply_baseline_defaults(args)
+    with pytest.raises(MeterError) as exc:
+        cli.apply_baseline_defaults(args)
+    msg = str(exc.value)
+    assert engine.DEFAULT_OPPONENT_BASELINE in msg and "--opponent" in msg and "PINNED" in msg
+    assert args.opponent is None
+
+
+def test_an_explicit_opponent_skips_the_default_refusal():
+    args = cli.build_parser().parse_args(["R", "--opponent", "some_run/final_model.zip"])
+    cli.apply_baseline_defaults(args)
     assert args.config == "auto" and cli._config_override(args) is None
-    assert engine.DEFAULT_OPPONENT_BASELINE in " ".join(lines)
-    assert "INTERIM" in " ".join(lines)                    # named as interim until D-L3
-    assert args.opponent.startswith("ai_v14_01_base")
+    assert args.opponent == "some_run/final_model.zip"
 
 
 def test_series_identity_prefers_the_sha_and_falls_back_to_run_and_file():
