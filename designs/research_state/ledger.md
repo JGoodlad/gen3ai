@@ -23201,3 +23201,46 @@ Tag: **BUILD · P5 · identity 283/284 (the 1 = the declared blocked command) ·
   routine smoke.
 
 Tag: **BUILT · anchors' our side = in-process Rust core slot, poke-env-free · old vs new 100 / 100 byte-identical, shift 0.000 [−0.136, +0.136] · 0 protocol failures · allowlist 136 → 135 (after P5)**
+### 2026-10-07 · BUILD · **v145 (`gen3_mon_tied_gain_v1`, `MIGRATION_FLOOR` 145): the op's learned `out_gain` tied across OUR TEAM SLOTS and their mons — one gain per channel, no lead-mon special case (production 99 → 29 gains, 2,519,007 → 2,518,937 parameters). Identity at equal gains BITWISE (forward, every non-gain gradient, a K9 update with the gains frozen); trained X5 arms' per-slot gains had spread up to 1.26× on one channel. The sweep: the only other ARBITRARY position-indexed weight in production is F14's sorted-by-id move concat**
+
+Owner, 2026-10-07: "fix those non-equivariant knobs" (the version break's FINDING 3). Landed before any v144 checkpoint
+existed (archive scan, read-only: max config v138), so the reshape costs one bump. CPU only; no `data/` change; no
+poke-env. Detail: `designs/CHANGELOG.md` v145.
+- **What.** `damage_op_layout.out_gain_channel_keys` drops the MON index: the incoming per-mon rows 72 → 12, the CB
+  tail 12 → 2, the render matrices' per-mon cells (render arm 222 → 92). Tied FULLY: the owner wants no lead-mon
+  feature ("in human games it isn't super strategic"). 144 → 145, `gen3_x5_version_break_v1` → `gen3_mon_tied_gain_v1`,
+  floor 144 → 145; a v144 config is refused with `version_break.v144_reason()` and the pin `LAST_V144_COMMIT`.
+- **Identity** (`measurements/mon_tied_gain_identity_2026-10-07/`): the v144 model rebuilt in-process reproduces the
+  committed v144 K9 init hash; v145 gains = the per-group means. Equal per-slot gains ⇒ forward BITWISE on the 64 K9
+  rows, every non-gain gradient BITWISE (tied gradient = per-slot sum, max abs Δ 1.5e-8), one K9 update with the gains
+  frozen BITWISE. Trainable gains: the update differs through the gains only (≤ 1.45e-4; downstream ≤ 4.7e-6) —
+  by construction, not a defect. **Trained divergence** (22 archived X5 A/B arms, pre-break, read raw): per channel the
+  six team slots' gains spread max/min median 1.08, max 1.26 (P(KO) / crit channels) — a learned positional bias.
+- **Goldens.** K9 learner golden re-recorded once (init moved only in `damage_op`; the buffer rebuilt because the
+  seeded learner's behaviour log-probs follow the gain's perturbation): buffer `66a14392…`, init `60cb6e1c…`, post
+  `1c404cde…`. Order-keyed perturbation draws moved two more fixtures: the h2h off/off digests (`fa189a94…` /
+  `ee8512ee…`) and the collapsed-critic parity fixture (logit −10 → −9.25, inside a measured −9.2…−9.3 window).
+- **The SWEEP** (every OTHER learned parameter indexed by a position, the production surface, CPU build + forward read):
+
+  | parameter | position axis | verdict |
+  |---|---|---|
+  | `pokemon_encoder.role_encoder.0.weight`, the 128 `processed_moves` columns (32,768 weights) | a mon's 4 move slots in sorted-by-`Move.id` order (audit F14) | **ARBITRARY** — the same move hits a different block by its alphabetical rank among its co-moves; an opponent's reveals shift ranks. Live in production (`token_encoding` legacy); fixed by `--token-encoding static` (the move set pooled by sum). Owner already folded it into the static-token rebuild |
+  | `role_encoder.0.weight`, the type-pair columns (8,192) | type1 / type2 in alphabetical order | **ARBITRARY (minor)** — fixed per species, splits a type at most 2 ways; survives under `static` too |
+  | `op_content.outgoing_proj` (static only, Linear 24 → 128) | our 4 moves in REQUEST order | **ARBITRARY**, not production — a new request-ordered concat the static arm adds |
+  | `role_encoder.0.weight`, the ability-pair columns + dominance | ability1 / ability2 | MEANINGFUL — slot 1 is the revealed / most-used ability |
+  | `team_transformer.token_type_emb` (6 × 128) | token TYPE (our / their / global / move / threat / history) | MEANINGFUL — roles, no per-index embedding; the trunk has no positional encoding |
+  | `global_proj`, `hypothesis_builder.delta_global`, `projection` / `pre_proj_norm` columns | [ours, theirs], our active | MEANINGFUL — side and active roles |
+  | `edge_bias.*` maps | direction (2) × head | MEANINGFUL — one map shared over every (row, col) pair |
+  | `entity_seats.*`, `pointer_head.*`, `flat_intent_head.*` | request slots / believed-move seats / team slots | equivariant — one shared projection / scorer per family; the per-FAMILY biases (move vs switch vs struggle) are real |
+  | `history_events.*` | 32 event seats | MEANINGFUL roles (actor, target, side column, recency); no lag-indexed weight |
+  | `hidden_opp_belief.queries` → `projection`, `value_entity_pool.queries` → `out_proj` | learned query identity | not a data position — cross-attention over the tokens is slot-invariant |
+  | `move_network`, `move_latent_encoder`, the belief heads, the intent / pair-outcome / switch-branch / conditional-threat cells, `prefuse_proj`, `value_threat_proj`, `op_proj`, `hypothesis_builder` | shared per slot / seat | equivariant |
+
+  A related side note (UNVERIFIED cost): the legacy shared move network and role encoder read board facts as
+  [ours, theirs] for every mon on BOTH sides, with no "my side" bit before the trunk, so for an opponent mon "ours" is
+  the enemy side; `static`'s side-relative board tokens fix it. Ranked by data split, the arbitrary ones: `out_gain`'s
+  mon axis (now tied, 6×), F14 (up to 4×, every token every decision), the type pair (≤ 2×).
+- **Deferred to a GPU lease** (queued with the break's): compile parity / compiled gradients on the new graph, T2
+  throughput and memory, `extractor_compiles_test`'s CUDA cells, a short real launch.
+
+Tag: **BUILD · the mon-tied out_gain · config v145 / `gen3_mon_tied_gain_v1` · 99 → 29 gains · identity bitwise at equal gains · F14 the last arbitrary production weight** · design: [`design_arch_audit.md`](../endstate/design_arch_audit.md) Decision record 2026-10-07 · measurement: [`measurements/mon_tied_gain_identity_2026-10-07/`](measurements/mon_tied_gain_identity_2026-10-07/)

@@ -12874,3 +12874,60 @@ obs-facts appended (2845)`.
   gating, `__OBS__` routing), `server_test.py` (the in-process server binds, greets, logs, closes; reserved ports),
   `cli_test.py` (the auto resolution, the refusals, the row stamp), `anchors_integration_test.py` (routine smoke on
   the core slot; slow read on `rust-core` blocked, `rust-poke-env`, `node-poke-env`).
+## 2026-10-07 — v145 / `gen3_mon_tied_gain_v1`: the op's `out_gain` tied across OUR TEAM SLOTS and their mons (`MIGRATION_FLOOR` 145)
+
+- **Why.** Owner, 2026-10-07: "fix those non-equivariant knobs." The X5 version break's part 4 tied the damage
+  operator's learned gain across REQUEST slots and left it per position on the MON axis (its FINDING 3). Team-slot
+  order and listing order are as arbitrary as request order: a per-slot gain is a positional bias that also splits
+  each channel's data six ways. The owner does not want a lead-mon feature ("in human games it isn't super
+  strategic"), so the tie is FULL — no slot-0 special case. Landed before any v144 checkpoint was trained (archive
+  scan, read-only: max config v138), so the reshape costs a version bump and nothing else.
+- **What.** `damage_op_layout.out_gain_channel_keys` keys every flat position by (region, channel) with NO position:
+  the incoming per-mon rows 72 → 12 gains, the Choice-Band tail's `phys_high_cb` / `phys_pko_cb` 12 → 2 (the shared
+  `p_cb` stays one), and in the render arm the outgoing matrix's per-their-mon cells (6 × 5 → 5) and `revealed` bits
+  (6 → 1) and the incoming matrix's per-our-mon cells (6 × 6 → 6). Each tied channel's init was already equal per
+  position (the build asserts it), so the init forward is unchanged. **Counts** (MEASURED, CPU): production
+  `damage_op.out_gain` 99 → **29**; the render arm 222 → 92; the production K9 learner 2,519,007 → **2,518,937**
+  parameters (`--policy-readout trunk` 1,444,653 → 1,444,583, derived: the same op).
+- **Versioning.** `MODEL_CONFIG_VERSION` 144 → 145, `ARCH_SIGNATURE` → `gen3_mon_tied_gain_v1`, `MIGRATION_FLOOR` → 145
+  (`SIGNATURE_FIRST_VERSION` appended). `version_break.py` carries it: `MON_TIE_CONFIG` / `MON_TIE_SIGNATURE`,
+  `LAST_V144_COMMIT` (main's last v144 commit), `v144_reason()` — a v144 config is refused at the floor naming the
+  tie, the shape change and the pin; `check_post_break` reports that pin to the trainer and `main.checkargs`. The
+  production mirror and the `production` baseline's signature override follow the code (the same window).
+- **Identity** (`designs/research_state/measurements/mon_tied_gain_identity_2026-10-07/`, CPU): the v144 model
+  rebuilt in-process by patching the key function reproduces the committed v144 K9 init hash (`b608d0cb…`); each v145
+  gain = the mean of the v144 gains it ties. With the per-slot gains already equal: the forward on the 64 K9 rows is
+  BITWISE, every non-gain gradient BITWISE (each tied gradient = the per-slot sum, max abs Δ 1.5e-8), one K9 update
+  with the gains frozen BITWISE (every parameter, every pinned loss). With the gains trainable the update differs
+  through the gains (≤ 1.45e-4; Adam steps per element) and, downstream of them, every other parameter by ≤ 4.7e-6 —
+  reported, not an identity by construction. TRAINED divergence (22 archived X5 A/B arms, pre-break, raw read): the
+  per-team-slot gains of one channel spread max/min median 1.08, max 1.26 (a P(KO) / crit channel in most runs).
+- **Goldens re-recorded** (one reason row): the K9 learner golden — its init moved ONLY in `damage_op` (the
+  name-keyed perturbation follows the new shape), so the seeded learner's behaviour log-probs moved and the buffer
+  was rebuilt (`75c5a772…` → `66a14392…`; init `b608d0cb…` → `60cb6e1c…`, post `5190f88c…` → `1c404cde…`; K9(b) max
+  |Δ log π| 2.4e-7, 0 of 16 rows excluded). `learner_golden_test` pins the new hashes and the v145 row. Two more
+  fixtures moved because a smaller `out_gain` shifts every later parameter's ORDER-keyed perturbation draw:
+  `main.h2h`'s off/off play digests (`play_reveal_integration_test`, `4dd7ba19…` / `e4c9f4e8…` → `fa189a94…` /
+  `ee8512ee…`) and the collapsed-critic parity fixture (`flat_weights_test`: win logit −10 → −9.25, the middle of the
+  measured −9.2…−9.3 window where the 8-row bucket climbs to (0.05, 3) and the 2-row to (0.1, 4); at −10 the 2-row
+  bucket was vacuous on every rung). The delivery graph's meta (signature, config version) regenerated.
+- **Tests (fail on revert).** `src/agents/model/mon_tied_gain_test.py`: the counts from the layout constants (29 / 92)
+  and the extractor exactly 70 parameters lighter than the per-team-slot keying, every other shape equal; permuting
+  OUR TEAM SLOTS of a real raw block (incoming rows + CB tail) permutes the gained block EXACTLY under planted
+  non-uniform gains, and the same for their mons / our mons in the render matrices; each team-slot copy of a channel
+  accumulates into one parameter; the live stamps; a v144 config refused naming the tie and `LAST_V144_COMMIT`. Six of
+  its nine fail on the reverted layout (the three that pass are the init invariant and the two stamp checks, which
+  fail on a reverted version). Updated: `x5_version_break_part45_test` (99 → 29, 222 → 92), `x5_version_break_test`
+  (the break's own stamps, the live ones moved on), `deleted_toggles_v78_test` (the floor tripwire fired again).
+- **The SWEEP (reported, not fixed).** Every other production parameter indexed by a position was audited; the only
+  ARBITRARY one left in production is the legacy role encoder's ordered move concat (audit F14: a mon's 4 moves in
+  sorted-by-id order, 32,768 weights of `role_encoder.0`) and, minor, its alphabetical type-pair columns (8,192);
+  F14 is fixed under `--token-encoding static`, which adds one request-ordered Linear of its own
+  (`op_content.outgoing_proj`). Everything else is shared across positions or indexed by a real role (side, active,
+  actor / target, move vs switch, recency). Detail: the ledger entry.
+- **Gates.** Routine gate `-n 4` (over `25ea2cc6`): 12,877 passed, 12 skipped, 15 xfailed, 7 failed — the delivery graph's
+  meta (regenerated), ARCHITECTURE §0's stamps (fixed), the h2h off/off digests and the collapsed-critic fixture (both
+  re-baselined above); each re-run green. CPU `--debug --steps 10000` smoke: exit 0, `model_config.json` stamped
+  145 / `gen3_mon_tied_gain_v1`, the learner freeze's 10 checks passed.
+- **Deferred to a GPU lease** (queued with the break's own): compile parity and compiled gradients on the new graph,
+  T2 throughput and memory, `extractor_compiles_test`'s CUDA cells, a short real launch.

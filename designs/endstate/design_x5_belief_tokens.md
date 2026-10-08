@@ -864,7 +864,10 @@ listed). What changed in THIS doc's design and why:
 - **Part 4, the slot-tied `out_gain`.** The op's learned gain is ONE scalar per (block region, channel), shared across
   request slots and move seats (`damage_op_layout.out_gain_channel_keys`): production `damage_op.out_gain` 138 → 99,
   2,519,046 → 2,519,007 parameters (MEASURED, CPU, the K9 learner). The init forward is unchanged (each tied channel
-  keeps its per-slot init); the mon-axis replicates stay per position (reported findings).
+  keeps its per-slot init); the mon-axis replicates stayed per position (reported findings) until **v145
+  (`gen3_mon_tied_gain_v1`, 2026-10-07) tied them too** (owner: "fix those non-equivariant knobs"; no lead-mon special
+  case): production `damage_op.out_gain` 99 → 29, 2,519,007 → 2,518,937 parameters, the floor 145
+  (`design_arch_audit.md` Decision record).
 - **Part 5, the pre-gain read.** `intent_conditional` (our moves' high roll, P(first), the flinch chance) and the
   move-resolution family (P(first)) read the op's PRE-gain values through the live `last_raw_tensors` view, in both
   `--speed-physics` modes — the `on`-only special case is gone.

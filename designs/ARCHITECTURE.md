@@ -10,7 +10,7 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **144** in the mirror this file is gated against (the X5 VERSION BREAK's follow-the-code window, row 3: the mirror follows the code, so the obs-architecture batch's surface — the reshaped event rows, the 2845-dim obs since the break's OBS-FACTS append — the shaped-reward deletion's field removal and X5's hypothesis tokens as the only belief representation are what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_x5_version_break_v1`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
+| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **145** in the mirror this file is gated against (the X5 VERSION BREAK's follow-the-code window, row 3 — v145 tied the op's `out_gain` across team slots in the same window: the mirror follows the code, so the obs-architecture batch's surface — the reshaped event rows, the 2845-dim obs since the break's OBS-FACTS append — the shaped-reward deletion's field removal and X5's hypothesis tokens as the only belief representation are what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_mon_tied_gain_v1`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
 | Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 144 / `gen3_x5_version_break_v1`) |
 | `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited, and carrying its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax, so the record cannot live in the file). A **signature-bump window is OPEN** (opened 2026-09-26 by the observation-architecture batch, `gen3_event_record_v2`; moved forward 2026-10-07 by the X5 version break, `gen3_x5_version_break_v1`, config 144): the production run records `gen3_critic_route_wave_v1`, HEAD builds `gen3_x5_version_break_v1`, so the mirror follows the CODE until the first run at the new signature exists — then it closes and the mirror tracks that run. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
@@ -382,9 +382,9 @@ names the actor widths, `vf=[]`), SB3's orthogonal re-init of the extractor then
 SB3's order), the retire hooks, the pointer head and the optimizer; `action_net` and `value_net` are RAISING
 stubs (`_NoFlatActionNet`, `_NoValueNet`). The policy's `critic` kwarg defaults to `winprob` and any other
 value is refused before anything is built. The inference tier's T2 `DecisionModule` reads the actor only and calls no
-critic; there is no value tower left for it to compute. Production learner: **2,519,007 parameters** (MEASURED, CPU,
-2026-10-07, part 4 of the version break — the K9 learner, the production surface; part 2 left 2,519,046, part 4's
-slot-tied `out_gain` removed 39).
+critic; there is no value tower left for it to compute. Production learner: **2,518,937 parameters** (MEASURED, CPU,
+2026-10-07, config v145 — the K9 learner, the production surface; the version break's part 2 left 2,519,046, part 4's
+request-slot-tied `out_gain` removed 39, v145's team-slot tie 70 more).
 
 Modules actually built under the production config (`named_children()`) — GENERATED:
 
@@ -480,15 +480,16 @@ X5 REQUIRES `t0_species_prior`, `move_belief_mode` ≠ off, `move_prior_fusion`,
 `damage_topk_k` when the incoming matrix is on), `damage_candidate_k` = 0 and `entity_tail_seats`: a
 configuration with the family on and one of them off is REFUSED at build (no blob fallback); with the family
 off nothing of X5 is built (the belief-off ablation surface — no hidden-slot token and no intent readout).
-A pre-break checkpoint (blob or fixed_mass) is refused at `MIGRATION_FLOOR` 144 and runs PINNED
-(`model_version/version_break.py`).
+A pre-break checkpoint (blob or fixed_mass) is refused at the migration floor and runs PINNED
+(`model_version/version_break.py`); so is a config v144 one since v145's team-slot `out_gain` tie (floor 145).
 
 **`--policy-readout` (audit F2) is `tower` in production**: the pointer head's decision context is
 `latent_pi`, the flat policy tower's output (steps 11 and §3.3 below). The `trunk` mode
 ([`endstate/design_arch_audit.md`](endstate/design_arch_audit.md) F2, `gen3_policy_readout_trunk_v1`)
 RETIRES that tower — the extractor's `pre_proj_norm` / `projection` and SB3's `mlp_extractor.policy_net`,
-1,130,802 parameters at production widths (the production learner holds 2,519,007 under `tower` and
-1,444,653 under `trunk` — MEASURED, CPU, 2026-10-07, part 4 of the version break) — and reads the context off the trunk instead:
+1,130,802 parameters at production widths (the production learner holds 2,518,937 under `tower` — MEASURED, CPU,
+2026-10-07, config v145 — and 1,444,583 under `trunk` — DERIVED: 1,444,653 MEASURED at the version break's part 4,
+minus v145's 70 tied-away `out_gain` entries, the same op in both modes) — and reads the context off the trunk instead:
 `PolicyStateQuery` (`agents/model/pools.py`, T3) is ONE learned query, 4 heads, attending over every
 refined trunk token (our 6, their 6, the global token, the entity and event seats) plus the
 `HiddenOppBeliefPool`'s K outputs, under the trunk's own key mask (and X5's per-key log π), then a LayerNorm → `[B, 128]`. That vector IS `pi_features` (no projection, no ReLU); the
@@ -1381,15 +1382,19 @@ that swaps a holder out still reads the current actives' sports. Pinned by
 The block passes through a learned `out_gain` (a Parameter, multiplicative only, so the
 "no threat ⇒ exactly 0" gates stay clean) before it reaches the heads and before `pointer_cells`
 slices it — so the pointer path and the flat concat can never disagree on a value. **The gain is ONE scalar
-per (block region, channel), SHARED across request slots and move seats** (`damage_op_layout.out_gain_channel_keys`;
-the X5 version break's part 4): the outgoing per-move stack `[low, high, crit, pko]`, the per-move secondary
-columns and the status-landing `p_land` / `known` take one gain per channel whichever request slot the move sits
-in (as do, in the render arm, the outgoing matrix's cells per our move and the incoming matrix's header and
-cells per believed-move seat), so the same move is scaled the same wherever it is listed. The MON-axis
-replicates stay per position: the incoming rows (our 6 team slots × 12), the Choice-Band tail per our slot, the
-render matrices' per-their-mon / per-our-mon cells. `out_gain` holds the distinct gains (production: 99 for the
-138-wide block) and a fixed non-persistent one-hot `_out_gain_tie` expands them (`expanded_out_gain()`, a one-hot
-sum: an exact value, a fixed-order backward); each tied channel's init is the per-slot init it replaced.
+per (block region, channel), with NO position in its key** (`damage_op_layout.out_gain_channel_keys`): it is shared
+across request slots and move seats (the X5 version break's part 4) AND across our team slots and their mons
+(`gen3_mon_tied_gain_v1`, config v145). The incoming per-mon rows take one gain per channel whichever of our team
+slots the mon sits in (12, not 6 × 12), the Choice-Band tail one each for `phys_high_cb` / `phys_pko_cb` (2, not
+2 × 6) beside the shared `p_cb`; the outgoing per-move stack `[low, high, crit, pko]`, the per-move secondary
+columns and the status-landing `p_land` / `known` one per channel whichever request slot the move sits in; and in
+the render arm the outgoing matrix's cells and `revealed` bits and the incoming matrix's header and cells one per
+channel across moves, seats and mons. Team-slot and listing order carry no meaning, and there is deliberately NO
+lead-mon (slot 0) special case (owner, 2026-10-07: "in human games it isn't super strategic"). So permuting our
+team slots permutes the gained block exactly (`mon_tied_gain_test.py`). `out_gain` holds the distinct gains
+(production: 29 for the 138-wide block; the render arm 92) and a fixed non-persistent one-hot `_out_gain_tie`
+expands them (`expanded_out_gain()`, a one-hot sum: an exact value, a fixed-order backward); each tied channel's
+init is the per-position init it replaced (equal per channel, asserted at build).
 **The gain is a projection ADAPTER, not physics:** only the projections read the post-gain block (the pointer
 cells, the `prefuse_proj` injection, `value_entity_pool`'s op rows). Every consumer that reads an op value AS a
 probability or a damage fraction — P(we act first), a roll, a secondary chance — reads it PRE-gain: the typed

@@ -36,6 +36,27 @@ LAST_BLOB_COMMIT = "f7567a9fafb0135e5f47800d8f5452f3de2d9b9f"
 #: possible past is blob (the hypothesis builder did not exist).
 BELIEF_TOKENS_FIRST_CONFIG = 136
 
+#: gen3_mon_tied_gain_v1 (config v145, owner 2026-10-07: "fix those non-equivariant knobs"): the op's `out_gain`
+#: tied across OUR TEAM SLOTS and THEIR MONS too (production 99 -> 29), landed before any v144 checkpoint was
+#: trained. It raised the floor again, so a v144 config is refused with `v144_reason()`.
+MON_TIE_SIGNATURE = "gen3_mon_tied_gain_v1"
+MON_TIE_CONFIG = 145
+
+#: main's last commit that builds config v144 (the version break's surface, `out_gain` per team slot). A v144
+#: checkpoint runs pinned at or before it.
+LAST_V144_COMMIT = "077197b8080ca81585d8f51920db839cef3530d1"
+
+
+def v144_reason() -> str:
+    """Why a v144 config is refused at HEAD, and the pinned fix."""
+    return (f"It is a config v{VERSION_BREAK_CONFIG} ({VERSION_BREAK_SIGNATURE}) checkpoint: config "
+            f"v{MON_TIE_CONFIG} ({MON_TIE_SIGNATURE}) tied the damage operator's learned out_gain across our TEAM "
+            "SLOTS and their mons (one gain per channel; the incoming per-mon rows 72 -> 12, the Choice-Band tail "
+            "12 -> 2; production damage_op.out_gain 99 -> 29), so damage_op.out_gain changed shape and the "
+            "per-slot gains it trained have no home. Run it PINNED to its own commit (the git_hash in its "
+            f"metadata.json; at the latest {LAST_V144_COMMIT[:12]} ({LAST_V144_COMMIT}), main's last v"
+            f"{VERSION_BREAK_CONFIG} commit), or start a fresh run.")
+
 
 def recorded_belief_tokens(data: dict) -> Optional[str]:
     """What a RAW ``model_config.json`` dict says its belief representation was: ``'blob'`` /
@@ -74,11 +95,14 @@ def pre_break_fixed_mass_reason() -> str:
 
 
 def pre_break_diagnosis(data: dict) -> Optional[str]:
-    """The belief-specific paragraph for a PRE-FLOOR config (``None`` for one older than the X5 era, whose
-    pre-generation diagnosis needs nothing more)."""
+    """The specific paragraph for a PRE-FLOOR config: the mon-tied gain's for v144 (`v144_reason`), the
+    belief-specific one for v121-v143 (``None`` for one older than the X5 era, whose pre-generation diagnosis
+    needs nothing more)."""
     version = int(data.get("config_version", 1))
-    if version >= VERSION_BREAK_CONFIG:
+    if version >= MON_TIE_CONFIG:
         return None
+    if version >= VERSION_BREAK_CONFIG:
+        return v144_reason()
     rec = recorded_belief_tokens(data)
     if rec == "fixed_mass":
         return pre_break_fixed_mass_reason()
@@ -143,4 +167,5 @@ def check_post_break(config_path: Optional[str]) -> None:
     except ModelVersionError as e:
         raise PreBreakCheckpointError(
             f"{config_path}: {e}", config_path=config_path, config_version=version,
-            last_commit=LAST_BLOB_COMMIT if version >= 121 else None) from e
+            last_commit=(LAST_V144_COMMIT if version >= VERSION_BREAK_CONFIG
+                         else LAST_BLOB_COMMIT if version >= 121 else None)) from e

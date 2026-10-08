@@ -20,8 +20,9 @@ stashes are typed the same way (`PointerInputs`, `ThresholdProbs` — NamedTuple
 unpacks keep working).
 
 **PRE-gain vs POST-gain: a consumer that reads an op value AS physics reads it PRE-gain** (the X5 version break's
-part 5). The op's learned `out_gain` is a projection ADAPTER — one scalar per (block region, channel), tied
-across request slots and move seats (part 4; `damage_op_layout.out_gain_channel_keys` is the key map,
+part 5). The op's learned `out_gain` is a projection ADAPTER — one scalar per (block region, channel) with NO
+position in its key: tied across request slots and move seats (part 4) and across our team slots and their mons
+(`gen3_mon_tied_gain_v1`, config v145; no lead-mon special case); `damage_op_layout.out_gain_channel_keys` is the key map,
 `expanded_out_gain()` / `apply_out_gain()` the one application) — so only a PROJECTION reads the post-gain block
 (`last_tensors`: the pointer cells, the `prefuse_proj` injection, `value_entity_pool`'s op rows). Any consumer
 that multiplies, compares or otherwise uses an op value as a probability or a damage fraction (P(we act first), a

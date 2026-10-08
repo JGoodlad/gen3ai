@@ -55,10 +55,12 @@ def _build(production, **override: Any):
 
 # ----------------------------------------------------------------------------- the flip, unconditional
 def test_the_version_stamps_are_the_breaks():
-    assert MODEL_CONFIG_VERSION == VERSION_BREAK_CONFIG == MIGRATION_FLOOR == 144
-    from agents.model.model_version import ARCH_SIGNATURE, SIGNATURE_FIRST_VERSION
-    assert ARCH_SIGNATURE == VERSION_BREAK_SIGNATURE == "gen3_x5_version_break_v1"
-    assert SIGNATURE_FIRST_VERSION[ARCH_SIGNATURE] == 144
+    """The break's own stamps (history: SIGNATURE_FIRST_VERSION is append-only). The LIVE stamps moved on at
+    v145 (`gen3_mon_tied_gain_v1`, `mon_tied_gain_test.py` pins them)."""
+    assert VERSION_BREAK_CONFIG == 144 and VERSION_BREAK_SIGNATURE == "gen3_x5_version_break_v1"
+    assert MODEL_CONFIG_VERSION >= MIGRATION_FLOOR > VERSION_BREAK_CONFIG
+    from agents.model.model_version import SIGNATURE_FIRST_VERSION
+    assert SIGNATURE_FIRST_VERSION[VERSION_BREAK_SIGNATURE] == 144
     assert LAST_BLOB_COMMIT == "f7567a9fafb0135e5f47800d8f5452f3de2d9b9f"
 
 

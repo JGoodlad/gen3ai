@@ -14,8 +14,12 @@ still refuses. Every verdict records its PATH. NaN / Inf weights are refused bef
 touched.
 
 The COLLAPSED fixture reproduces fresh3's shape on a fresh production policy (seed 0): the win
-head's final bias −10 (−9 until the X5 version break made X5 the production surface: at −9 its first rung
-read a spread of 1.58e-4 > the bar, so the fixture no longer exercised the climb) and its weight ×0.01 — vacuous on V at the real weights and the first rung; on
+head's final bias −9.25 (−9 until the X5 version break made X5 the production surface: at −9 its first rung
+read a spread of 1.58e-4 > the bar, so the fixture no longer exercised the climb; −10 until v145's team-slot-tied
+`out_gain` shrank the op's gain, which moves every later parameter's perturbation draw: at −10 the 2-row bucket
+was then vacuous on EVERY rung. Measured at v145, CPU: −9.0 / −9.1 the 8-row bucket is informative at the first
+rung, −9.2…−9.3 the climb works — the 8-row bucket at (0.05, 3), the 2-row at (0.1, 4) — and −9.4 is refused;
+−9.25 is the middle of that window) and its weight ×0.01 — vacuous on V at the real weights and the first rung; on
 the gate's 8/7/2/1-row fills (CPU) the 8-row bucket turns informative at rung (0.05, 3) and the 2-row
 bucket at (0.1, 0) (measured 2026-10-03 after gen3_nonformula_damage_v1 moved the fixture rows' op
 features; before it, (0.1, 3)) — WHICH rung is first is a property of the fixture's features, so no
@@ -63,12 +67,12 @@ def _collapse(policy, bias: float, gain: float = 0.01):
 
 @pytest.fixture(scope="module")
 def collapsed_policy():
-    """A COLLAPSED critic the capped ladder CAN judge: fresh seed 0, win logit ≈ −10 on every row.
-    Measured (CPU, the gate's 8/7/2/1-row fills): vacuous on V through rung (0.1, 2), informative
-    at (0.1, 3) — so it exercises the climb past the first scale and past the first seeds."""
+    """A COLLAPSED critic the capped ladder CAN judge: fresh seed 0, win logit ≈ −9.25 on every row.
+    Measured at v145 (CPU, the gate's 8/7/2/1-row fills): the 8-row bucket informative at (0.05, 3), the 2-row
+    at (0.1, 4) — so it exercises the climb past the first scale and past the first seeds."""
     from main.fresh_checkpoint import build_fresh_model
     with torch_globals(num_threads=2):
-        yield _collapse(build_fresh_model(0)[0].policy.eval(), -10.0)
+        yield _collapse(build_fresh_model(0)[0].policy.eval(), -9.25)
 
 
 @pytest.fixture(scope="module")

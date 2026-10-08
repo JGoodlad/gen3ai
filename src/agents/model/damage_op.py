@@ -400,9 +400,9 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
             _imx_cell = torch.tensor([1.0 / 1.5, 1.0 / 1.5, 1.0 / 3.0, 1.0, 1.0 / 4.0, 1.0])
             gain[_imx0:_imx0 + TEAM_SIZE * self.matrices_incoming_k * _DMG_IMX_CELL] = \
                 _imx_cell.repeat(TEAM_SIZE * self.matrices_incoming_k)
-        # gen3_x5_version_break_v1 part 4 (the slot-tied out_gain; design_arch_audit §9.4): ONE learned scalar per
-        # (block region, channel) — the REQUEST-SLOT / move-seat index is not part of a channel's identity, so the
-        # same move is scaled the same wherever it is listed. `out_gain` holds the DISTINCT gains; the fixed
+        # gen3_x5_version_break_v1 part 4 + gen3_mon_tied_gain_v1 (v145; design_arch_audit §9.4): ONE learned scalar
+        # per (block region, channel) — NO position index (request slot, move seat, our team slot, their mon) is part
+        # of a channel's identity, so the same quantity is scaled the same wherever it is listed. `out_gain` holds the DISTINCT gains; the fixed
         # one-hot `_out_gain_tie` [n_gain, out_dim] (non-persistent: pure layout) expands them to the flat width.
         # Each tied channel's init is the per-slot init it replaces (equal per channel — asserted here).
         keys = out_gain_channel_keys(
@@ -1231,7 +1231,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # reads an op value AS a probability / damage fraction reads (P(first) included), so the learned gain
         # (a projection adapter, not physics) never rescales a value a rule multiplies or compares.
         self.stash.raw_tensors = self.tensors_from_block(block)
-        # learnable per-(region, channel) adapter (×only), tied across request slots / move seats (part 4)
+        # learnable per-(region, channel) adapter (×only), tied across every position axis (request slots / move
+        # seats, part 4; our team slots / their mons, gen3_mon_tied_gain_v1)
         gained = self.apply_out_gain(block)
         # gen3_op_tensors_views_v1: the typed named views over the post-gain block, computed ONCE
         # here so every same-forward consumer (prefuse injection, seed readout) reads a field

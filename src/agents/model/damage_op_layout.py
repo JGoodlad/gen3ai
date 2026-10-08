@@ -221,27 +221,30 @@ def _dmg_imx_dim(k: int) -> int:
 
 def out_gain_channel_keys(*, outgoing: bool, matrices_outgoing: bool, matrices_incoming_k: int
                           ) -> "list[tuple[Any, ...]]":
-    """gen3_x5_version_break_v1 part 4 (the slot-tied ``out_gain``): ONE key per flat block position, in the
-    block's own layout order; positions sharing a key share ONE learned gain scalar.
+    """ONE key per flat block position, in the block's own layout order; positions sharing a key share ONE learned
+    gain scalar. The key names the (block region, channel) and NOTHING POSITIONAL.
 
-    The key names the (block region, channel) and DROPS the REQUEST-SLOT / MOVE-SEAT index, so the same quantity
-    is scaled the same wherever its move is listed (design_arch_audit §9.4: trained X5 arms learned KO gain 1.365
-    on slot 0 vs 1.146 on slot 3). Tied across the move axis: the outgoing per-move stack ``[low,high,crit,pko]``
-    and the per-move secondary columns (request slots), the status-landing ``p_land`` / ``known`` pairs (request
-    slots), the outgoing matrix's cells (our move = request slot; render mode only) and the incoming matrix's
-    per-seat header and per-(our mon, seat) cells (the K believed-move seats; render mode only).
+    gen3_x5_version_break_v1 part 4 dropped the REQUEST-SLOT / MOVE-SEAT index (design_arch_audit §9.4: trained X5
+    arms learned KO gain 1.365 on slot 0 vs 1.146 on slot 3). gen3_mon_tied_gain_v1 (config v145, owner 2026-10-07:
+    "fix those non-equivariant knobs") drops the MON index too: our TEAM-SLOT order and their listing order are as
+    arbitrary as the request order, a per-position gain is a positional bias that splits each channel's data six
+    ways, and the owner wants NO lead-mon feature ("in human games it isn't super strategic"), so slot 0 is tied
+    with the rest. Tied across EVERY position axis:
 
-    NOT tied — positional replicates of one quantity on a MON axis, kept per position on purpose (the brief ties
-    the move axis only; each is a reported finding, the owner decides): the incoming per-mon rows (our 6 TEAM
-    slots × 12 channels), the Choice-Band tail's ``phys_high_cb`` / ``phys_pko_cb`` (our 6 team slots), the
-    outgoing matrix's per-(their mon) cells and ``revealed`` bits (their 6 slots) and the incoming matrix's
-    per-(our mon) cells (our 6 team slots). ``matrices_outgoing`` / ``matrices_incoming_k`` must already be
-    zeroed when the renders are dropped (they then add no position)."""
+    * the incoming per-mon rows (our 6 team slots × 12 channels → 12) and the Choice-Band tail's ``phys_high_cb`` /
+      ``phys_pko_cb`` (our 6 team slots → 2; the shared ``p_cb`` is one position already);
+    * the outgoing per-move ``[low,high,crit,pko]`` and secondary columns, and the status-landing ``p_land`` /
+      ``known`` pairs (request slots);
+    * render mode only: the outgoing matrix's cells (our move = request slot × their mon) and ``revealed`` bits
+      (their mon), the incoming matrix's per-seat header (believed-move seats) and per-(our mon, seat) cells.
+
+    ``matrices_outgoing`` / ``matrices_incoming_k`` must already be zeroed when the renders are dropped (they then
+    add no position)."""
     keys: "list[tuple[Any, ...]]" = []
-    for i in range(TEAM_SIZE):                                    # incoming rows: per OUR team slot (untied)
-        keys += [("incoming_row", i, f) for f in range(_DMG_PER_MON)]
-    keys += [("cb_high", i) for i in range(TEAM_SIZE)]            # the CB tail: per our team slot (untied)
-    keys += [("cb_pko", i) for i in range(TEAM_SIZE)]
+    for _i in range(TEAM_SIZE):                                   # incoming rows: our team slot i, TIED
+        keys += [("incoming_row", f) for f in range(_DMG_PER_MON)]
+    keys += [("cb_high",)] * TEAM_SIZE                            # the CB tail: our team slot i, TIED
+    keys += [("cb_pko",)] * TEAM_SIZE
     keys.append(("p_cb",))
     if outgoing:
         for _k in range(_DMG_OUT_N_MOVES):                        # request slot k: TIED
@@ -253,15 +256,15 @@ def out_gain_channel_keys(*, outgoing: bool, matrices_outgoing: bool, matrices_i
         keys += [("status_known",)] * _DMG_STATUS_N_MOVES
     if matrices_outgoing:
         for _k in range(_DMG_OUT_N_MOVES):                        # our move k (request slot): TIED
-            for d in range(TEAM_SIZE):                            # their mon d: untied
-                keys += [("omx_cell", d, f) for f in range(_DMG_OMX_CELL)]
-        keys += [("omx_revealed", d) for d in range(TEAM_SIZE)]
+            for _d in range(TEAM_SIZE):                           # their mon d: TIED
+                keys += [("omx_cell", f) for f in range(_DMG_OMX_CELL)]
+        keys += [("omx_revealed",)] * TEAM_SIZE                   # their mon d: TIED
     if matrices_incoming_k > 0:
         for _k in range(matrices_incoming_k):                     # believed-move seat k: TIED
             keys += [("imx_header", j) for j in range(_DMG_IMX_HEADER)]
-        for i in range(TEAM_SIZE):                                # our mon i: untied
+        for _i in range(TEAM_SIZE):                               # our mon i: TIED
             for _k in range(matrices_incoming_k):                 # seat k: TIED
-                keys += [("imx_cell", i, f) for f in range(_DMG_IMX_CELL)]
+                keys += [("imx_cell", f) for f in range(_DMG_IMX_CELL)]
     return keys
 
 # `damage_topk_k` is the ONE "how many opponent moves does the discrete block reason about" knob. It used

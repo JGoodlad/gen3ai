@@ -17,7 +17,7 @@ from agents.model.model_version.constants import ARCH_SIGNATURE, ModelVersionErr
 # ⚠️ When ARCH_SIGNATURE next changes, raise this floor to the new signature's first stamped
 # version IN THE SAME COMMIT (and append the pairing to SIGNATURE_FIRST_VERSION below) —
 # migration_floor_test.py fails if the two drift apart.
-MIGRATION_FLOOR = 144
+MIGRATION_FLOOR = 145
 
 # The signature → first-stamped-version pairing the floor is derived from. Append-only: add the
 # new signature's row when it lands. migration_floor_test.py asserts
@@ -34,6 +34,10 @@ SIGNATURE_FIRST_VERSION = {
     # break's later parts reshape weights and change behaviour, so NO pre-break checkpoint — blob or
     # fixed_mass — is reproducible at HEAD; every one runs pinned.
     "gen3_x5_version_break_v1": 144,
+    # gen3_mon_tied_gain_v1 (`version_break.MON_TIE_CONFIG`): the op's out_gain tied across our team slots and
+    # their mons too (production 99 -> 29) before any v144 checkpoint was trained; a v144 config is refused
+    # with `version_break.v144_reason()` and runs pinned (`LAST_V144_COMMIT`).
+    "gen3_mon_tied_gain_v1": 145,
 }
 def _migrate_config(data: dict) -> dict:
     """Apply incremental forward-migrations to bring an old config up to the current schema.

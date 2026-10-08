@@ -4,7 +4,8 @@
 Each test FAILS ON REVERT of its piece:
 
 * Part 4, the slot-tied ``out_gain`` — the gain holds ONE scalar per distinct (block region, channel), counted
-  independently of the code's own key map (production 138 → 99; the render arm too); permuting the REQUEST SLOTS of
+  independently of the code's own key map (production 138 → 99 at v144, → 29 since v145's mon tie,
+  `mon_tied_gain_test.py`; the render arm too); permuting the REQUEST SLOTS of
   a real raw block permutes the gained block identically (planted non-uniform gains, a real production op); after a
   backward every request slot's copy of a channel accumulates into ONE parameter; the compile gates' per-parameter
   rule still reads (and names) ``damage_op.out_gain`` at its tied size.
@@ -23,7 +24,7 @@ import numpy as np
 import pytest
 import torch
 
-from agents.model.damage_op_layout import (_DMG_CB, _DMG_IMX_CELL, _DMG_IMX_HEADER, _DMG_OMX_CELL, _DMG_OUT_PER_MOVE,
+from agents.model.damage_op_layout import (_DMG_CB_PER_MON, _DMG_IMX_CELL, _DMG_IMX_HEADER, _DMG_OMX_CELL, _DMG_OUT_PER_MOVE,
                                            _DMG_PER_MON, _N_OUT_SECONDARY)
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.observation.constants import TEAM_SIZE
@@ -94,13 +95,13 @@ def _raw_block(fe: Gen3FeaturesExtractor, obs: torch.Tensor) -> torch.Tensor:
 
 # ------------------------------------------------------------------------------------------------ PART 4
 def _expected_distinct(*, renders_k: int) -> int:
-    """Counted from the LAYOUT CONSTANTS, not from the code's key map: the untied mon-axis regions in full, every
-    request-slot / move-seat region once."""
-    n = TEAM_SIZE * _DMG_PER_MON + _DMG_CB                     # incoming rows (per our team slot) + the CB tail
+    """Counted from the LAYOUT CONSTANTS, not from the code's key map: every region once per channel — the
+    request-slot / move-seat axis (part 4) and, since v145 (`gen3_mon_tied_gain_v1`), the mon axis are tied."""
+    n = _DMG_PER_MON + _DMG_CB_PER_MON + 1                     # incoming rows + the CB tail (high, pko) + p_cb
     n += _DMG_OUT_PER_MOVE + 1 + _N_OUT_SECONDARY + 2          # out_move, p_outspeed, secondaries, p_land / known
     if renders_k:
-        n += TEAM_SIZE * _DMG_OMX_CELL + TEAM_SIZE             # outgoing matrix: per their mon, + revealed bits
-        n += _DMG_IMX_HEADER + TEAM_SIZE * _DMG_IMX_CELL       # incoming matrix: one header, per our mon cells
+        n += _DMG_OMX_CELL + 1                                 # outgoing matrix: one cell, one revealed bit
+        n += _DMG_IMX_HEADER + _DMG_IMX_CELL                   # incoming matrix: one header, one cell
     return n
 
 
@@ -108,7 +109,7 @@ def test_the_production_gain_holds_one_scalar_per_distinct_region_channel(fe: Ge
     op = fe.damage_op
     assert op.drop_renders and op.outgoing, "PRECONDITION: the production op (lean forward, outgoing on)"
     assert op.out_dim == 138
-    assert op.out_gain.numel() == _expected_distinct(renders_k=0) == 99
+    assert op.out_gain.numel() == _expected_distinct(renders_k=0) == 29
     assert len(op.out_gain_keys) == op.out_gain.numel() == len(set(op.out_gain_keys))
 
 
@@ -117,7 +118,7 @@ def test_the_render_arm_ties_the_matrices_across_moves_and_seats() -> None:
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
     op = DamageOperator(layout, outgoing=True, topk_k=6, matrices_outgoing=True, matrices_incoming=True)
     assert op.matrices_incoming_k == 6
-    assert op.out_gain.numel() == _expected_distinct(renders_k=6) == 222
+    assert op.out_gain.numel() == _expected_distinct(renders_k=6) == 92
     assert op.out_dim == 138 + 126 + 6 * _DMG_IMX_HEADER + TEAM_SIZE * 6 * _DMG_IMX_CELL
 
 
@@ -181,7 +182,7 @@ def test_the_per_parameter_compile_rule_reads_and_names_the_tied_gain(
     names = [n for n, _ in params]
     assert "damage_op.out_gain" in names
     sizes = [int(p.numel()) for _, p in params]
-    assert sizes[names.index("damage_op.out_gain")] == 99
+    assert sizes[names.index("damage_op.out_gain")] == 29
     fe.train()
     try:
         for p in fe.parameters():

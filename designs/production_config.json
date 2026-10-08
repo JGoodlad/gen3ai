@@ -1,7 +1,7 @@
 {
   "ability_embedding_dim": 16,
   "active_context_dim": 60,
-  "arch_signature": "gen3_x5_version_break_v1",
+  "arch_signature": "gen3_mon_tied_gain_v1",
   "attend_unrevealed_opponents": true,
   "belief_grad_mode": "shaping",
   "canary_reset_steps": 1000000,
@@ -9,7 +9,7 @@
   "capacity_telemetry": false,
   "capacity_velocity_every": 50,
   "conditional_threat_cell": true,
-  "config_version": 144,
+  "config_version": 145,
   "consequence_topk": 6,
   "critic": "winprob",
   "damage_candidate_k": 0,

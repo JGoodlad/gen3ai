@@ -189,6 +189,17 @@ every one runs PINNED. `model_version/version_break.py` is the one home of the c
 Every post-floor `if version < N` branch in `_migrate_config` (v122–v143) is now UNREACHABLE and is left in place;
 moving their history into the archive block and deleting them is legacy-manifest unit R1 / L1, not the break's.
 
+🚨 **v145 RAISED THE FLOOR AGAIN (`gen3_mon_tied_gain_v1`, 2026-10-07; owner: "fix those non-equivariant
+knobs")** — the op's learned `out_gain` tied across our TEAM SLOTS and their mons (the incoming per-mon rows 72 → 12,
+the Choice-Band tail 12 → 2, the render matrices' per-mon cells; production `damage_op.out_gain` 99 → 29), landed
+before any v144 checkpoint was trained. `ARCH_SIGNATURE` → `gen3_mon_tied_gain_v1`, `MIGRATION_FLOOR` → 145,
+`SIGNATURE_FIRST_VERSION["gen3_mon_tied_gain_v1"] = 145`. The same `version_break.py` machinery carries it:
+`pre_break_diagnosis` gives a v144 config `v144_reason()` (the tie, the shape change, the pinned fix), and
+`check_post_break` reports **`LAST_V144_COMMIT`** (main's last v144 commit) as the pin a v144 resume must run at or
+before; a v121–v143 config keeps its belief-specific reason and `LAST_BLOB_COMMIT`. No migration branch sits between
+144 and 145. The archive held NO config at or above v144 when it landed (scan 2026-10-07: max v138). Tests:
+`mon_tied_gain_test.py`.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

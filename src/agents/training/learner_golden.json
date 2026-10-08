@@ -2,12 +2,12 @@
  "schema": "gen3_learner_golden_v1",
  "entries": {
   "2.8.0+cu126": {
-   "init_params_sha256": "b608d0cbdb2dea29104fabcc35e1162e1a546a50684dbbcd077ee39bd88b13dc",
+   "init_params_sha256": "60cb6e1cfc147b613c5496433f2f660fdd0a2b981123bb68660f54ccedeb8f5b",
    "init_group_sha256": {
     "features_extractor.belief_head": "8637badd937aaf57",
     "features_extractor.cls_pool": "4c5edd7c47d6c2b0",
     "features_extractor.conditional_threat": "d40496ad20d1a49b",
-    "features_extractor.damage_op": "00bb6e6f13cb61a7",
+    "features_extractor.damage_op": "fc674970ea05f075",
     "features_extractor.edge_bias": "5b240a2c9b26a86a",
     "features_extractor.embeddings": "020db3ded25c4b1e",
     "features_extractor.entity_seats": "ac79a31e50b17694",
@@ -40,108 +40,108 @@
     "pointer_head.switch_proj": "56442780e02a3330",
     "pointer_head.switch_score": "8d7dc4a1a2fda3d3"
    },
-   "post_params_sha256": "5190f88c9f76705a5b1e28e120aae3f8262e39177cc24e81922db55c04ec65ff",
+   "post_params_sha256": "1c404cde769616176a46864118c42cb4c2078e9d5fd378ce58364b995f060d18",
    "group_sha256": {
-    "features_extractor.belief_head": "17cbd909de51d40e",
-    "features_extractor.cls_pool": "44ea97ba3ffaa269",
-    "features_extractor.conditional_threat": "c9c9261ae7169b30",
-    "features_extractor.damage_op": "1418c0d4c8bc3872",
-    "features_extractor.edge_bias": "8c3c02eff3b14040",
-    "features_extractor.embeddings": "e5698b54b3b8c3d0",
-    "features_extractor.entity_seats": "4a70cf95f80bb179",
-    "features_extractor.flat_intent_head": "ca27bf036e3b673e",
-    "features_extractor.hidden_opp_belief": "b5395621226284eb",
-    "features_extractor.history_events": "442c39b85d1cf9f1",
-    "features_extractor.hp_type_belief_head": "0cb204669df5bda8",
-    "features_extractor.hypothesis_builder": "a254b23d601b7d3e",
-    "features_extractor.intent_conditional": "6f19d47e08af5f35",
-    "features_extractor.intent_move_cell": "039357bed91b73cf",
-    "features_extractor.intent_threshold_move": "bb5421b118d0e7f9",
-    "features_extractor.item_belief_head": "48d5937e211dffe7",
-    "features_extractor.move_belief": "c741e8abc26acfe8",
-    "features_extractor.pair_outcome_move": "be23c1668f0d35e3",
-    "features_extractor.pair_outcome_switch": "a501fdf92abdfc3a",
-    "features_extractor.pokemon_encoder": "b02504944b881cea",
-    "features_extractor.pre_proj_norm": "01890801bea0b597",
-    "features_extractor.prefuse_proj": "b45b77ab2dba24a9",
-    "features_extractor.projection": "7ace6b23cf296266",
-    "features_extractor.spread_belief": "48ad26c29b5d616c",
-    "features_extractor.switch_branch": "a74c6e5058c711e3",
-    "features_extractor.team_transformer": "a2aca0074b4af10b",
-    "features_extractor.value_entity_pool": "7b381e862bcbb87f",
-    "features_extractor.win_head": "d3dcdaa68936462d",
-    "mlp_extractor.policy_net": "ad1fd25b5217ea1e",
-    "pointer_head.ctx_proj": "df4b5e202b76ea8d",
-    "pointer_head.move_proj": "bfadf7d02b17f6a0",
-    "pointer_head.move_score": "710e2e2a664de10b",
-    "pointer_head.struggle_score": "99befe7eee1d5cba",
-    "pointer_head.switch_proj": "a8d743697956760f",
-    "pointer_head.switch_score": "35e308240d359ce3"
+    "features_extractor.belief_head": "bbb767b08e4cfa4a",
+    "features_extractor.cls_pool": "15521828850f684b",
+    "features_extractor.conditional_threat": "6a944643e0340d75",
+    "features_extractor.damage_op": "6dd515fde421be42",
+    "features_extractor.edge_bias": "3e8f90f4f92d0475",
+    "features_extractor.embeddings": "a6a5860aae36b994",
+    "features_extractor.entity_seats": "b6aae709fc71c7eb",
+    "features_extractor.flat_intent_head": "26b4ac98160963c7",
+    "features_extractor.hidden_opp_belief": "5aed14b1597930b6",
+    "features_extractor.history_events": "c2fb873d87716f58",
+    "features_extractor.hp_type_belief_head": "e69cd6a87eee427f",
+    "features_extractor.hypothesis_builder": "305418e82296e960",
+    "features_extractor.intent_conditional": "47c52ad7f849887c",
+    "features_extractor.intent_move_cell": "4fb829e21991b6a7",
+    "features_extractor.intent_threshold_move": "373a8f988a62ff51",
+    "features_extractor.item_belief_head": "f3e50fddf73c63c0",
+    "features_extractor.move_belief": "dfba646841d56a37",
+    "features_extractor.pair_outcome_move": "651b3e6c3b3de272",
+    "features_extractor.pair_outcome_switch": "ab695fd18424c08d",
+    "features_extractor.pokemon_encoder": "c5d1a51527659548",
+    "features_extractor.pre_proj_norm": "acfca8b41487a38e",
+    "features_extractor.prefuse_proj": "3f2404da50bdf435",
+    "features_extractor.projection": "7dec5bb8e0e49b42",
+    "features_extractor.spread_belief": "0b53dc30a658adf8",
+    "features_extractor.switch_branch": "12031e7bbc37f3b4",
+    "features_extractor.team_transformer": "ee054839f3afa6ab",
+    "features_extractor.value_entity_pool": "c3e512c483e99bc1",
+    "features_extractor.win_head": "ef39f41917fbfd13",
+    "mlp_extractor.policy_net": "2484ea131677a7cb",
+    "pointer_head.ctx_proj": "64579df30f6255e1",
+    "pointer_head.move_proj": "638a869753d0e463",
+    "pointer_head.move_score": "61ce3d00b5208bfc",
+    "pointer_head.struggle_score": "8674a264582fc942",
+    "pointer_head.switch_proj": "a7de91484fa02a3b",
+    "pointer_head.switch_score": "113ee5d469abc641"
    },
    "losses": {
-    "belief/hptype_loss": 0.8236310631036758,
-    "belief/item_loss": 0.8395005837082863,
-    "belief/move_loss": 0.01708706864155829,
-    "belief/movelatent_loss": 0.5037683770060539,
-    "belief/natureev_loss": 2.1375662237405777,
-    "belief/set_aux_loss": 6.185083508491516,
-    "belief/spread_loss": 0.04556927876546979,
-    "opp_intent/flat_loss": 0.5461468063294888,
-    "train/approx_kl": 0.0013958867639303207,
+    "belief/hptype_loss": 0.8236247152090073,
+    "belief/item_loss": 0.8394970446825027,
+    "belief/move_loss": 0.01708706351928413,
+    "belief/movelatent_loss": 0.5037696734070778,
+    "belief/natureev_loss": 2.1375758349895477,
+    "belief/set_aux_loss": 6.184859275817871,
+    "belief/spread_loss": 0.04556969180703163,
+    "opp_intent/flat_loss": 0.5460954010486603,
+    "train/approx_kl": 0.001419966109097004,
     "train/clip_fraction": 0.0,
-    "train/entropy_loss": -1.9194163978099823,
-    "train/explained_variance": 0.5033307671546936,
-    "train/loss": 0.7202221751213074,
+    "train/entropy_loss": -1.9194308519363403,
+    "train/explained_variance": 0.5033698678016663,
+    "train/loss": 0.71993088722229,
     "train/n_updates": 2.0,
-    "train/policy_gradient_loss": -0.003135907696560025,
-    "train/value_loss": 0.037544283899478614,
-    "win_prob/loss": 1.3376786783337593
+    "train/policy_gradient_loss": -0.0031627637799829245,
+    "train/value_loss": 0.03752138704294339,
+    "win_prob/loss": 1.340450458228588
    },
    "fp64_reference": {
     "rows_judged": 63,
     "rows_excluded": 1,
     "min_margin": 0.00013576826789512097,
     "terms_fp32": {
-     "policy": 7.568844218042159e-09,
-     "entropy": -0.09588133543729782,
-     "species_belief_set": 0.3147740066051483,
+     "policy": 3.4059798537100505e-08,
+     "entropy": -0.09588000178337097,
+     "species_belief_set": 0.31476646661758423,
      "move_belief": 0.0008567348122596741,
-     "opp_intent": 0.027673769742250443,
+     "opp_intent": 0.02767031453549862,
      "move_latent": 0.02512161247432232,
      "spread_belief": 0.0022926973178982735,
      "nature_ev": 0.1069064512848854,
      "hp_type": 0.0413719043135643,
      "item_belief": 0.04109179601073265,
-     "win_prob": 0.9414540529251099,
-     "loss": 1.405661702156067
+     "win_prob": 0.9431003332138062,
+     "loss": 1.4072983264923096
     },
     "terms_fp64": {
-     "policy": -1.4553045809004779e-08,
-     "entropy": -0.09588133657650774,
-     "species_belief_set": 0.3147741979073146,
+     "policy": -2.552383137295721e-09,
+     "entropy": -0.09587998846348122,
+     "species_belief_set": 0.31476661966376857,
      "move_belief": 0.0008567352326534352,
-     "opp_intent": 0.027673768211455587,
+     "opp_intent": 0.02767031534534581,
      "move_latent": 0.025121612151337448,
      "spread_belief": 0.002292697229575594,
      "nature_ev": 0.10690643682777588,
      "hp_type": 0.04137190932745438,
      "item_belief": 0.041091798948331516,
-     "win_prob": 0.9414540534339437,
-     "loss": 1.4056618581402887
+     "win_prob": 0.9431003625367835,
+     "loss": 1.4072984962471617
     },
     "term_abs_err": {
-     "policy": 2.2121890027046936e-08,
-     "entropy": 1.1392099208418216e-09,
-     "species_belief_set": 1.9130216627472052e-07,
+     "policy": 3.661218167439623e-08,
+     "entropy": 1.3319889746732372e-08,
+     "species_belief_set": 1.5304618433686912e-07,
      "move_belief": 4.2039376114359067e-10,
-     "opp_intent": 1.5307948554588169e-09,
+     "opp_intent": 8.098471893092096e-10,
      "move_latent": 3.229848714869643e-10,
      "spread_belief": 8.832267946526362e-11,
      "nature_ev": 1.4457109523413614e-08,
      "hp_type": 5.013890080896033e-09,
      "item_belief": 2.937598865548896e-09,
-     "win_prob": 5.088338639325229e-10,
-     "loss": 1.5598422176132942e-07
+     "win_prob": 2.9322977379564463e-08,
+     "loss": 1.697548521750747e-07
     },
     "grads": {
      "features_extractor.hypothesis_builder.delta_out.weight": {
@@ -149,28 +149,28 @@
       "rel_err": 2.1788759279635804e-07
      },
      "features_extractor.hypothesis_builder.other_map.weight": {
-      "norm_fp64": 0.028002085953653576,
-      "rel_err": 4.002384130546628e-07
+      "norm_fp64": 0.028093847206929153,
+      "rel_err": 3.5951428161958976e-07
      },
      "features_extractor.hypothesis_builder.hypothesis_marker": {
-      "norm_fp64": 0.006722032857101388,
-      "rel_err": 4.912214824728188e-07
+      "norm_fp64": 0.006727950861285741,
+      "rel_err": 5.117181537912743e-07
      },
      "features_extractor.flat_intent_head.hidden.weight": {
-      "norm_fp64": 0.010575117594216144,
-      "rel_err": 5.86787631306685e-07
+      "norm_fp64": 0.010647632664829898,
+      "rel_err": 6.104741191470005e-07
      },
      "features_extractor.belief_head.species_head.weight": {
-      "norm_fp64": 0.27450947918634494,
-      "rel_err": 2.9555204971986296e-07
+      "norm_fp64": 0.27449755317801666,
+      "rel_err": 3.163538255525319e-07
      },
      "pointer_head.move_proj.weight": {
-      "norm_fp64": 0.06308548305537007,
-      "rel_err": 2.385715499896552e-06
+      "norm_fp64": 0.06368214876053492,
+      "rel_err": 2.9533191901531814e-06
      },
      "features_extractor.win_head.net.3.weight": {
-      "norm_fp64": 5.134679031242418,
-      "rel_err": 1.609411603279993e-07
+      "norm_fp64": 5.136490896635421,
+      "rel_err": 1.742141963851854e-07
      }
     },
     "grads_absent": [],
@@ -181,8 +181,8 @@
     }
    },
    "behaviour": {
-    "max_abs_dlogp_current": 4.76837158203125e-07,
-    "max_abs_dlogp_judged": 4.76837158203125e-07,
+    "max_abs_dlogp_current": 2.384185791015625e-07,
+    "max_abs_dlogp_judged": 2.384185791015625e-07,
     "excluded_frac": 0.0,
     "rows_excluded": 0.0,
     "rows_judged": 16.0,
@@ -198,9 +198,9 @@
     "hypothesis_rows": 29,
     "near_tie_rows": 0
    },
-   "recorded_at_commit": "2a4a02b2a508f3191f1cfffed70803f67ae917c2",
+   "recorded_at_commit": "25ea2cc68b9a246c7504bbcf89819f496a4fbdf3",
    "recorded_on": "2026-10-07",
-   "reason": "gen3_x5_version_break_v1 (config v144): X5 fixed_mass only, blob deleted; F1/F6a/F7a/F16b; out_gain tied across request slots; pre-gain reads; obs-facts appended (2845)",
+   "reason": "gen3_mon_tied_gain_v1 (config v145): the damage op's out_gain tied across our team slots and their mons (production 99 -> 29); the buffer re-recorded (the seeded learner's out_gain perturbation follows the tied shape)",
    "torch": "2.8.0+cu126",
    "numpy": "2.4.3",
    "python": "3.11.15"
@@ -366,9 +366,21 @@
    "changed": [
     "(first entry)"
    ]
+  },
+  {
+   "recorded_at_commit": "25ea2cc68b9a246c7504bbcf89819f496a4fbdf3",
+   "recorded_on": "2026-10-07",
+   "reason": "gen3_mon_tied_gain_v1 (config v145): the damage op's out_gain tied across our team slots and their mons (production 99 -> 29); the buffer re-recorded (the seeded learner's out_gain perturbation follows the tied shape)",
+   "torch": "2.8.0+cu126",
+   "numpy": "2.4.3",
+   "python": "3.11.15",
+   "post_params_sha256": "1c404cde769616176a46864118c42cb4c2078e9d5fd378ce58364b995f060d18",
+   "changed": [
+    "(first entry)"
+   ]
   }
  ],
- "buffer_sha256": "75c5a7720ffdf29871da78d0bf2b1f0e84a5867302ec06e308f66d5d556ccd80",
+ "buffer_sha256": "66a1439218721fca5f0ab20a9514ffd804012f45d04a86e51bef65f0ea937b29",
  "buffer": {
   "file": "learner_golden_buffer.npz",
   "n_steps": 16,

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-23,204-line file. **The ledger itself is append-only and is never edited by this**;
+23,247-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**810 headings · 755 dated · 2026-08-01 → 2026-10-07 · ledger 23,204 lines.**
+**811 headings · 756 dated · 2026-08-01 → 2026-10-07 · ledger 23,247 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -830,3 +830,4 @@ rename.
   - `L23086` · `2026-10-07` · BUILD + GATE · **Poke-env retirement P4: live websocket play reads through the TRAINING chain (`live_reader` / `side_reader`), and T28's parse-panic halt is built. Gates (a)–(d) PASS: 318,465 live decisions byte-equal to training rows; 376,410 public replays with 0 unclassified refusals; 315 games on a master-built Node with 0 halts; 16,523 shadow decisions with 0 differences**
   - `L23136` · `2026-10-07` · BUILD · **P5 of the poke-env retirement LANDED: the PROBER reads battles from the Rust core (`core_events --walk` / `--obs-stream`, `main/prober/core_walk.py` + `core_recorder.py`); 283 / 284 JSON-CLI captures byte-identical on 21 banked battles; every command except `replay-counterfactual` (P6-blocking) and the web app RUN with poke-env blocked; import allowlist 138 → 136**
   - `L23178` · `2026-10-07` · BUILT + MEASURED · **POKE-ENV RETIREMENT P3: external-anchor reads play OUR side as an in-process slot of the Rust websocket front end, on the core's own observation row; the opponent stays an external upstream-poke-env process on the socket. Old vs new on 100 seeded battle pairs vs `metamon:SmallRL`: 100 / 100 BYTE-IDENTICAL, shift 0.000, 0 protocol failures**
+  - `L23204` · `2026-10-07` · BUILD · **v145 (`gen3_mon_tied_gain_v1`, `MIGRATION_FLOOR` 145): the op's learned `out_gain` tied across OUR TEAM SLOTS and their mons — one gain per channel, no lead-mon special case (production 99 → 29 gains, 2,519,007 → 2,518,937 parameters). Identity at equal gains BITWISE (forward, every non-gain gradient, a K9 update with the gains frozen); trained X5 arms' per-slot gains had spread up to 1.26× on one channel. The sweep: the only other ARBITRARY position-indexed weight in production is F14's sorted-by-id move concat**

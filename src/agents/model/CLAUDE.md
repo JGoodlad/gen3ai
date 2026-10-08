@@ -228,13 +228,15 @@ bundle recorded in `designs/research_state/claude_md_archive/model_leaf_history.
 gen-9 eval states across three config arms.
 
 🚨 **`last_tensors` is POST-gain and is for PROJECTIONS only.** The op's learned `out_gain` (one scalar per
-(region, channel), tied across request slots and move seats — `damage_op_layout.out_gain_channel_keys`; the X5
-version break's part 4) is a projection adapter, not physics. A consumer that uses an op value AS a probability or a
+(region, channel) with NO position in its key — tied across request slots / move seats, the X5 version break's part 4,
+and across our team slots / their mons, `gen3_mon_tied_gain_v1`; `damage_op_layout.out_gain_channel_keys`) is a
+projection adapter, not physics. A consumer that uses an op value AS a probability or a
 damage fraction (P(first), a roll, a secondary chance) reads it PRE-gain: a typed pre-gain stash, or the block's
 channels through **`last_raw_tensors`** (live views; `last_raw_block` is the detached prober copy — never a
 training-path input). `intent_conditional` and the move-resolution family do (part 5;
 `x5_version_break_part45_test.py`). A new region of the block needs a key in `out_gain_channel_keys` (the op
-raises at build if the key walk and `out_dim` disagree) and decides whether its replicates are tied.
+raises at build if the key walk and `out_dim` disagree), and its key names the channel only — a request slot, seat,
+team slot or listing position is arbitrary and is never part of it (`mon_tied_gain_test.py` permutes team slots).
 
 **The op's SIDE VALUES and the EXTRACTOR's follow one contract** (`gen3_op_stashes_v1` /
 `gen3_extractor_stashes_v1`): every per-forward stash lives in ONE dataclass the forward replaces at
@@ -492,6 +494,8 @@ FATALed. When the past value is unknown, the migration leaves the field `None` r
 pre-break checkpoint (blob or fixed_mass) is refused at the floor with the belief-specific reason and runs PINNED
 (`model_version/version_break.py` — `LAST_BLOB_COMMIT`, `check_post_break`, the pickled `belief_tokens` judgment).
 The post-floor `if version < N` branches (v122–v143) are unreachable and left in place (legacy manifest R1 / L1).
+**v145 (`gen3_mon_tied_gain_v1`) raised the floor to 145** (the op's `out_gain` tied across team slots): a v144 config
+is refused with `version_break.v144_reason()` and runs pinned at or before `LAST_V144_COMMIT`.
 
 **When you DELETE an extractor kwarg** — the case with no automatic gate, and the one this project
 has silently got wrong five times. Every archived checkpoint keeps the deleted name pickled in

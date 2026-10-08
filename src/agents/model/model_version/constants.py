@@ -510,7 +510,15 @@ from typing import Any, Dict
 #     `ObsFactsInject` (`agents/model/obs_facts_inject.py`); `off` (production) builds nothing. `total_dim` (a
 #     `_WEIGHT_FIELDS` entry) carries the observation break too. No migration branch: the field is new AT v144,
 #     and every pre-144 config is refused at the floor.
-MODEL_CONFIG_VERSION = 144
+# v145 (gen3_mon_tied_gain_v1; owner 2026-10-07: "fix those non-equivariant knobs"): the op's learned `out_gain` is
+#   tied across EVERY position axis — our TEAM SLOTS and their mons as well as the request slots / move seats part 4
+#   tied: the incoming per-mon rows 72 -> 12, the Choice-Band tail 12 -> 2, and in the render arm the outgoing
+#   matrix's per-their-mon cells / revealed bits and the incoming matrix's per-our-mon cells. Production
+#   `damage_op.out_gain` 99 -> 29 (render arm 222 -> 92). No lead-mon special case (owner: "in human games it isn't
+#   super strategic"). Landed before any v144 checkpoint was trained; ARCH_SIGNATURE -> "gen3_mon_tied_gain_v1" and
+#   MIGRATION_FLOOR -> 145, so a v144 config is refused with `version_break.v144_reason()` and runs PINNED
+#   (`version_break.LAST_V144_COMMIT`). Init forward bitwise equal (each tied channel's init was equal per slot).
+MODEL_CONFIG_VERSION = 145
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -531,7 +539,7 @@ _BELIEF_GRAD_MODE_EFFECT = {
 # The signature-by-signature history (v2 -> gen3_ctx_dedup_v1: what broke weight
 # compatibility each time, and why) lives in designs/CHANGELOG.md under 'The
 # ARCH_SIGNATURE narrative' — moved there 2026-08-16.
-ARCH_SIGNATURE = "gen3_x5_version_break_v1"
+ARCH_SIGNATURE = "gen3_mon_tied_gain_v1"
 class ModelVersionError(Exception):
     pass
 

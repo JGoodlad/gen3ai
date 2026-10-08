@@ -45,8 +45,11 @@ PAIRS, N_ENVS = 12, 8
 #: checkpoints are X5 now (blob deleted), a different architecture and so different games; was 9bffc7d6… / 54eca92a….
 #: COMPLETED at the break's ONE golden re-record (parts 2 / 4 / 5 moved the checkpoints' init and forward, part 3 appended
 #: the OBS-FACTS block, obs 2761 -> 2845); part 1's record was c06a6c51… / ce837ceb….
-OFF_BITS = "4dd7ba19c697ccb5dbb756e15b3f85f7e7838021f2cd0ef708d3ea42f0a1746c"
-OFF_OUTCOME_ALL = "e4c9f4e81a5660bcab41badac82f7f9553158c83c3aa325e7b69b158f3812e6d"
+#: RE-RECORDED 2026-10-07 for gen3_mon_tied_gain_v1 (config v145): the op's out_gain shrank 99 -> 29, and the
+#: conftest's ORDER-keyed `perturb_` draws every later parameter's noise from one stream, so the checkpoints moved;
+#: was 4dd7ba19… / e4c9f4e8….
+OFF_BITS = "fa189a9413cde29573bc6ce70004f2af2b124e0e79e703d5ae218313326df35f"
+OFF_OUTCOME_ALL = "ee8512eeda767c34f9c9b186c31692943524389eab7131ce1dd6bff2fbfef9fc"
 
 
 def bits_digest(games):
@@ -148,8 +151,10 @@ def first(g):
 def test_off_off_plays_the_engine_of_before_bit_for_bit(plays):
     games, levels = plays["off"][(plays["a"], plays["b"])]
     assert levels == RV.OFF_OFF
-    assert bits_digest(list(games.values())) == OFF_BITS, "the off/off games moved against the pre-reveal record"
-    assert L.outcome_digest(PL.outcome_vector(list(games.values())), []) == OFF_OUTCOME_ALL
+    bits = bits_digest(list(games.values()))
+    outcome = L.outcome_digest(PL.outcome_vector(list(games.values())), [])
+    assert bits == OFF_BITS, f"the off/off games moved against the pre-reveal record (now {bits} / {outcome})"
+    assert outcome == OFF_OUTCOME_ALL, f"the off/off outcomes moved (now {outcome})"
     assert plays["specs"]["off"] == ["off"], "an off engine declares ONE core with the spec's string form, as before"
 
 
