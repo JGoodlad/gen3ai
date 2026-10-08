@@ -23475,3 +23475,30 @@ Tag: **BUILT · oracles + Python eval + benchmarks + calibration + BC deleted ·
   declared caller. (3) `reconstruction.replay_battle` / `reroll_*` are used only by `obs_materializer` (6d-2 orphans them).
 
 Tag: **BUILT · cf stack + search_dividend + Python bot roster deleted (owner) · allowlist 107 → 81**
+
+### 2026-10-08 · BUILT · **POKE-ENV RETIREMENT P6 slice 6d-2: the Python BATTLE LAYER, the TRACKERS, the Python ENCODER's encode path and the last Python runtime (`RLPlayer`, the bridge JSON road, the materializer) are DELETED; `layout.rs` is Rust-OWNED with a shared-constants gate; the obs golden reproduces all 991 hashes unchanged; allowlist 81 → 10**
+
+- **Deleted** (195 files, −43,082 / +1,084; per-group tables with every KEPT symbol and its user in
+  `designs/ops/deletion_pass_manifest.md` §8.5): `agents/inference/player.py`, `utils/bridge/{battle_stream_client,
+  local_battle_runner}.py`, `agents/training/obs_materializer.py`, `poke_env_gaps/` and the Python-battle fuzz tests;
+  `gen3_battle`, `battle_event`, `turn_view`, `strict_view` (+ the strict-API lock test), `offline_feed`; the trackers
+  (`episode_tracker`, `event_window_tracker`, `obs_facts_fold`, `battle_snapshot`, `battle_recorder`, `turn_delta_legacy`,
+  `reward_manager` / `reward_function` / `reward_tracker` + `reward_golden`, `progress_clock`, `slot_registry`); every
+  sub-encoder's `encode`, `assembler`, `wish_belief`, `incoming_damage_encoder`; the action mapper / masker / serializer;
+  `gen3_effect_sources`' `Gen3Battle` half; the layout GENERATOR.
+- **Kept** (each with a live user): `Gen3ObservationEncoder`'s layout / dims / `describe_vector` / `integrity_check`;
+  `constants`, `schema`, `types`, `gen3_effects`, `incoming_damage`, `turn_delta_encoder`, `belief_labels`; the
+  `LiveView` data classes (the prober's core walk); `faint_causes.py`; `TurnDelta` / `DamagingMoveEvent` /
+  `SELF_KO_MOVES`; `trace_labels`; `material_margin`; `ReconstructionRecord` + `replay_battle` / `reroll_*` (the prober's
+  falsifier / lookahead); `action.constants` + `check_obs_move_order` (T2).
+- **The layout gate:** `src/rust_sim/src/encoder/layout.rs` is edited by hand now; `rust_core_obs_layout_test.py` parses
+  it and fails on any of the 108 `usize` constants it shares with `agents/observation/constants.py` (all 8 block offsets
+  and `OBS_DIM`), on `EventCol`, the facts tables and the model-read vocabularies.
+- **Measured:** `golden_obs_core --check` — all 991 hashes reproduced (no obs value moved).
+- **Findings.** (1) The DamageOperator physics probe went with `poke_env_gaps/` — its probe half did not need poke-env (a
+  coverage loss). (2) `untaught_meter`'s legacy driver helpers and `gu_unit.py` are dead code now. (3) Coverage without a
+  replacement: Python `describe_vector` tests fed by `encode`, the "every non-slot volatile id is source-derived" check,
+  `better_line`'s record-impl parametrization. (4) Several always-current topic docs still mention deleted modules
+  (`designs/training/reward.md`, `designs/rust_sim/{trackers,core_events}.md`, …) — the 6e doc sweep.
+
+Tag: **BUILT · Python battle layer + trackers + encoder encode path + runtime deleted · layout.rs Rust-owned (108-constant gate) · obs golden 991 / 991 unchanged · allowlist 81 → 10**
